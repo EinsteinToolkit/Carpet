@@ -326,7 +326,7 @@ namespace Carpet {
     maxreflevelfact = ipow(reffact, maxreflevels-1);
     
     // Map information
-    carpetGH.maps = maps = num_maps;;
+    carpetGH.maps = maps = num_maps;
     
     
     
