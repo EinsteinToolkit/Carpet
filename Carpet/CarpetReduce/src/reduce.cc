@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.37 2004/05/04 22:11:49 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.38 2004/06/14 07:01:21 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -23,7 +23,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.37 2004/05/04 22:11:49 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.38 2004/06/14 07:01:21 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -268,7 +268,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val) { accum += T(1); }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { accum += T(weight); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -281,7 +281,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val) { assert(0); }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { assert(0); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -294,7 +294,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = my_numeric_limits<T>::max(); }
-      static inline void reduce (T& accum, const T& val) { accum = mymin(accum, val); }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight>0) accum = mymin(accum, val); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_MIN; }
@@ -307,7 +307,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = my_numeric_limits<T>::min(); }
-      static inline void reduce (T& accum, const T& val) { accum = mymax(accum, val); }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight>0) accum = mymax(accum, val); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_MAX; }
@@ -320,7 +320,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(1); }
-      static inline void reduce (T& accum, const T& val) { accum *= val; }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight>0) accum *= weight==1 ? val : pow(val,weight); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_PROD; }
@@ -333,7 +333,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val) { accum += val; }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { accum += weight*val; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -346,7 +346,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val) { accum += abs(val); }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { accum += weight*abs(val); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -359,7 +359,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val) { accum += val*val; }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { accum += weight*val*val; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -372,7 +372,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val) { accum += val; }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { accum += weight*val; }
       static inline void finalise (T& accum, const T& cnt) { accum /= cnt; }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -385,7 +385,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val) { accum += abs(val); }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { accum += weight*abs(val); }
       static inline void finalise (T& accum, const T& cnt) { accum /= cnt; }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -398,7 +398,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val) { accum += abs(val)*abs(val); }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { accum += weight*abs(val)*abs(val); }
       static inline void finalise (T& accum, const T& cnt) { accum = mysqrt(accum / cnt); }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -411,10 +411,10 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val) { accum = mymax(accum, (T)abs(val)); }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight>0) accum = mymax(accum, T(abs(val))); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
-    MPI_Op mpi_op () const { return MPI_SUM; }
+    MPI_Op mpi_op () const { return MPI_MAX; }
   };
   
   
@@ -429,7 +429,8 @@ namespace CarpetReduce {
   template<class T,class OP>
   void reduce (const int* const lsh, const int* const bbox,
                const int* const nghostzones,
-	       const void* const inarray, void* const outval, void* const cnt)
+	       const void* const inarray, void* const outval, void* const cnt,
+               const CCTK_REAL* const weight, const CCTK_REAL levfac)
   {
     const T *myinarray = (const T*)inarray;
     T myoutval = *(T*)outval;
@@ -444,8 +445,9 @@ namespace CarpetReduce {
       for (int j=imin[1]; j<imax[1]; ++j) {
         for (int i=imin[0]; i<imax[0]; ++i) {
 	  const int index = i + lsh[0] * (j + lsh[1] * k);
-	  OP::reduce (myoutval, myinarray[index]);
-	  mycnt += 1;
+          CCTK_REAL const w = (weight ? weight[index] : 1.0) * levfac;
+	  OP::reduce (myoutval, myinarray[index], w);
+	  mycnt += w;
 	}
       }
     }
@@ -586,7 +588,8 @@ namespace CarpetReduce {
 	       const int num_outvals,
 	       void* const myoutvals, const int outtype,
 	       void* const mycounts,
-	       const reduction* const red)
+	       const reduction* const red,
+               CCTK_REAL const * const weight, CCTK_REAL const levfac)
   {
     assert (cgh);
     
@@ -622,7 +625,8 @@ namespace CarpetReduce {
         typedef typeconv<S>::goodtype T;                                \
         reduce<T,OP::op<T> > (mylsh, mybbox, mynghostzones, inarrays[n], \
                               &((char*)myoutvals)[vartypesize*n],       \
-                              &((char*)mycounts )[vartypesize*n]);      \
+                              &((char*)mycounts )[vartypesize*n],       \
+                              weight, levfac);                          \
         break;                                                          \
       }
 #define TYPECASE(N,T)				\
@@ -815,7 +819,8 @@ namespace CarpetReduce {
       Reduce   (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
                 num_inarrays, inarrays, intype,
                 num_inarrays * num_outvals, &myoutvals[0], outtype,
-                &mycounts[0], red);
+                &mycounts[0], red,
+                NULL, 1);
     } else {
       Copy     (cgh, proc, lsize, num_inarrays, inarrays, intype,
                 num_inarrays * num_outvals, &myoutvals[0], outtype,
@@ -867,20 +872,18 @@ namespace CarpetReduce {
     
     
     
+    // meta mode
+    if (is_meta_mode()) {
+      CCTK_WARN (0, "Grid variable reductions are not possible in meta mode");
+    }
+    
     bool const reduce_arrays = CCTK_GroupTypeFromVarI(vi) != CCTK_GF;
+    bool const want_global_mode = is_global_mode() && ! reduce_arrays;
     
     for (int n=0; n<num_invars; ++n) {
       if ((CCTK_GroupTypeFromVarI(invars[n]) != CCTK_GF) != reduce_arrays) {
         CCTK_WARN (0, "Cannot (yet) reduce grid functions and grid arrays/scalars at the same time");
       }
-    }
-    
-    // global mode
-    if (! reduce_arrays && is_meta_mode()) {
-      CCTK_WARN (0, "Grid function reductions are not possible in meta mode");
-    }
-    if (! reduce_arrays && is_global_mode()) {
-      CCTK_WARN (0, "Grid function reduction operators in global mode are not yet implemented");
     }
     
     
@@ -895,8 +898,8 @@ namespace CarpetReduce {
     for (int m=0; m<(int)vhh.size(); ++m) {
       assert (vhh.at(m)->reflevels() == vhh.at(0)->reflevels());
     }
-    int const minrl = reduce_arrays ? 0 : reflevel==-1 ? 0                      : reflevel;
-    int const maxrl = reduce_arrays ? 1 : reflevel==-1 ? vhh.at(0)->reflevels() : reflevel+1;
+    int const minrl = reduce_arrays ? 0 : want_global_mode ? 0                      : reflevel;
+    int const maxrl = reduce_arrays ? 1 : want_global_mode ? vhh.at(0)->reflevels() : reflevel+1;
     
     BEGIN_GLOBAL_MODE(cgh) {
       for (int rl=minrl; rl<maxrl; ++rl) {
@@ -942,12 +945,25 @@ namespace CarpetReduce {
               mybbox[d][1] = 0;
               mynghostzones[d] = 0;
             }
-              
+            
+            CCTK_REAL const * weight;
+            CCTK_REAL levfac;
+            if (want_global_mode) {
+              weight = (static_cast<CCTK_REAL const *>
+                        (CCTK_VarDataPtr (cgh, 0, "CarpetReduce::weight")));
+              assert (weight);
+              levfac = pow(1.0*reflevelfact, -grpdim);
+            } else {
+              weight = NULL;
+              levfac = 1.0;
+            }
+            
             Reduce (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
                     num_invars, &inarrays[0], intype,
                     num_invars * num_outvals, &myoutvals[0], outtype,
-                    &mycounts[0], red);
-              
+                    &mycounts[0], red,
+                    weight, levfac);
+            
           } END_LOCAL_COMPONENT_LOOP;
         } END_MAP_LOOP;
         leave_level_mode (const_cast<cGH*>(cgh));

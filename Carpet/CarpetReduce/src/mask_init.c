@@ -1,9 +1,7 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_init.c,v 1.2 2004/08/02 11:43:35 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_init.c,v 1.1 2004/06/14 07:01:21 schnetter Exp $ */
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
-#include "cctk_Parameters.h"
-
 #include "util_Table.h"
 
 
@@ -12,7 +10,6 @@ void
 MaskBase_InitMask (CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
-  DECLARE_CCTK_PARAMETERS;
   
 #if 0
   CCTK_INT symtable;
@@ -33,9 +30,6 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
   
   
   /* Initialise the weight to 1 everywhere */
-  if (verbose) {
-    CCTK_INFO ("Initialising to weight 1");
-  }
   
   for (k=0; k<cctk_lsh[2]; ++k) {
     for (j=0; j<cctk_lsh[1]; ++j) {
@@ -51,9 +45,6 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
   
   
   /* Set the weight to 0 on inter-processor boundaries */
-  if (verbose) {
-    CCTK_INFO ("Setting inter-processor boundaries to weight 0");
-  }
   
   /* Loop over all dimensions and faces */
   for (d=0; d<3; ++d) {
@@ -95,9 +86,6 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
 #if 0
   
   /* Take the symmetry boundaries into account */
-  if (verbose) {
-    CCTK_INFO ("Setting symmetry boundaries to weight 0");
-  }
   
   /* Get symmetry information */
   symtable = SymmetryTableHandleForGrid (cctkGH);

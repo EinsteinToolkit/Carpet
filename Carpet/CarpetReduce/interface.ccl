@@ -1,10 +1,30 @@
 # Interface definition for thorn CarpetReduce
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/interface.ccl,v 1.7 2004/06/08 21:10:28 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/interface.ccl,v 1.8 2004/06/14 07:01:21 schnetter Exp $
 
 IMPLEMENTS: reduce
 
+uses include header: dist.hh
+uses include header: vect.hh
+
 uses include header: carpet.hh
 
-uses include header: dist.hh
 
-uses include header: vect.hh
+
+CCTK_INT FUNCTION \
+    SymmetryTableHandleForGrid (CCTK_POINTER_TO_CONST IN cctkGH)
+REQUIRES FUNCTION SymmetryTableHandleForGrid
+
+CCTK_INT FUNCTION GetBoundarySpecification \
+  (CCTK_INT IN size, \
+   CCTK_INT OUT ARRAY nboundaryzones, \
+   CCTK_INT OUT ARRAY is_internal, \
+   CCTK_INT OUT ARRAY is_staggered, \
+   CCTK_INT OUT ARRAY shiftout)
+REQUIRES FUNCTION GetBoundarySpecification
+
+
+
+REAL weight TYPE=gf TAGS='prolongation="none"'
+{
+  weight
+} "Weight function"
