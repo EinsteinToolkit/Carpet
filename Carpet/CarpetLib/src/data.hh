@@ -87,9 +87,6 @@ private:
   virtual void change_processor_wait (comm_state<D>& state,
                                       const int newproc,
                                       void* const mem=0);
-  virtual void fill_box_arrays( int *srcshp, int *dstshp,
-        int srcbbox[3][D], int dstbbox[3][D], int regbbox[3][D],
-        const ibbox & box, const ibbox & sext, const ibbox & dext );
 public:
 
   // Accessors
@@ -118,6 +115,12 @@ public:
   }
   
   // Data manipulators
+private:
+  static void
+  fill_bbox_arrays (int srcshp[D], int dstshp[D],
+                    int srcbbox[D][D], int dstbbox[D][D], int regbbox[D][D],
+                    const ibbox & box, const ibbox & sext, const ibbox & dext);
+public:
   void copy_from_innerloop (const gdata<D>* gsrc,
 			    const ibbox& box);
   void interpolate_from_innerloop (const vector<const gdata<D>*> gsrcs,

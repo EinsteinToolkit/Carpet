@@ -491,11 +491,11 @@ extern "C" {
 
 template<class T,int D>
 void data<T,D>
-::fill_box_arrays( int *srcshp, int *dstshp,
-	int srcbbox[3][D], int dstbbox[3][D], int regbbox[3][D],
-	const data<T,D>::ibbox & box,
-	const data<T,D>::ibbox & sext,
-	const data<T,D>::ibbox & dext )
+::fill_bbox_arrays (int srcshp[D], int dstshp[D],
+                    int srcbbox[D][D], int dstbbox[D][D], int regbbox[D][D],
+                    const data<T,D>::ibbox & box,
+                    const data<T,D>::ibbox & sext,
+                    const data<T,D>::ibbox & dext)
 {
   for (int d=0; d<D; ++d) {
     srcshp[d] = (sext.shape() / sext.stride())[d];
@@ -540,7 +540,7 @@ void data<CCTK_INT4,3>
   int srcshp[3], dstshp[3];
   int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
   
-  fill_box_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
+  fill_bbox_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
 	box, sext, dext );
   
   assert (all(dext.stride() == box.stride()));
@@ -583,7 +583,7 @@ void data<CCTK_REAL8,3>
   int srcshp[3], dstshp[3];
   int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
   
-  fill_box_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
+  fill_bbox_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
 	box, sext, dext );
   
   assert (all(dext.stride() == box.stride()));
@@ -626,7 +626,7 @@ void data<CCTK_COMPLEX16,3>
   int srcshp[3], dstshp[3];
   int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
   
-  fill_box_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
+  fill_bbox_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
 	box, sext, dext );
   
   assert (all(dext.stride() == box.stride()));
@@ -894,7 +894,7 @@ void data<T,D>
   int srcshp[3], dstshp[3];
   int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
   
-  fill_box_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
+  fill_bbox_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
 	box, sext, dext );
   
   switch (transport_operator) {
@@ -939,7 +939,7 @@ void data<T,D>
   int srcshp[3], dstshp[3];
   int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
   
-  fill_box_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
+  fill_bbox_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
 	box, sext, dext );
   switch (transport_operator) {
       
