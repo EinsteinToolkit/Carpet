@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.9 2002/03/26 13:22:27 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.10 2002/06/06 14:20:15 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Initialise_cc)
 
@@ -67,8 +67,8 @@ namespace Carpet {
 	} else {
 // 	assert (abs(cgh->cctk_delta_time - base_delta_time / reflevelfactor)
 // 		< 1e-6 * base_delta_time);
-	// This circumvents a bug in CactusBase/Time
-	cgh->cctk_delta_time = base_delta_time / reflevelfact;
+	  // This circumvents a bug in CactusBase/Time
+	  cgh->cctk_delta_time = base_delta_time / reflevelfact;
 	}
 	
 	// Set up the initial data

@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.15 2002/05/05 22:17:02 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.16 2002/06/06 14:20:15 schnetter Exp $
 
  ***************************************************************************/
 
@@ -164,6 +164,22 @@ void generic_gf<D>::cycle (int rl, int c, int ml) {
     storage[tl-tmin][rl][c][ml] = storage[tl+1-tmin][rl][c][ml];
   }
   storage[tmax-tmin][rl][c][ml] = tmpdata;
+}
+
+// Flip the time levels by exchanging the data sets
+template<int D>
+void generic_gf<D>::flip (int rl, int c, int ml) {
+  assert (rl>=0 && rl<h.reflevels());
+  assert (c>=0 && c<h.components(rl));
+  assert (ml>=0 && ml<h.mglevels(rl,c));
+  for (int t=0; t<(tmax-tmin)/2; ++t) {
+    const int tl1 = tmin + t;
+    const int tl2 = tmax - t;
+    assert (tl1 < tl2);
+    generic_data<D>* tmpdata = storage[tl1-tmin][rl][c][ml];
+    storage[tl1-tmin][rl][c][ml] = storage[tl2-tmin][rl][c][ml];
+    storage[tl2-tmin][rl][c][ml] = tmpdata;
+  }
 }
 
 

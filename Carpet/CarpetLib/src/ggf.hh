@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.9 2002/05/05 22:17:02 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.10 2002/06/06 14:20:16 schnetter Exp $
 
  ***************************************************************************/
 
@@ -96,6 +96,9 @@ public:
 
   // Cycle the time levels by rotating the data sets
   void cycle (int rl, int c, int ml);
+  
+  // Flip the time levels by exchanging the data sets
+  void flip (int rl, int c, int ml);
   
   
   
