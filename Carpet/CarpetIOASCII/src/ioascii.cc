@@ -31,7 +31,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.68 2004/04/18 13:03:44 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.69 2004/04/22 14:22:59 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -246,6 +246,11 @@ namespace CarpetIOASCII {
     const int rl = grouptype == CCTK_GF ? reflevel : 0;
     
     const int groupdim = CCTK_GroupDimI(group);
+    if (outdim > groupdim) {
+      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Cannot produce %dD ASCII output file \"%s\" for variable \"%s\" because it has only %d dimensions", outdim, alias, varname, groupdim);
+      return -1;
+    }
     assert (outdim <= groupdim);
     
     // Get grid hierarchy extentsion from IOUtil
