@@ -1097,7 +1097,16 @@ namespace CarpetReduce {
             for (int tl=0; tl<num_tl; ++tl) {
               myinarrays.at(tl).resize (num_invars);
               for (int n=0; n<num_invars; ++n) {
+#if 0
                 myinarrays.at(tl).at(n) = CCTK_VarDataPtrI(cgh, tl, invars[n]);
+#else
+                int const vi = invars[n];
+                int const gi = CCTK_GroupIndexFromVarI (vi);
+                int const vi0 = CCTK_FirstVarIndexI (gi);
+                myinarrays.at(tl).at(n)
+                  = ((*arrdata.at(gi).at(Carpet::map).data.at(vi-vi0))
+                     (tl, reflevel, component, mglevel)->storage());
+#endif
                 assert (myinarrays.at(tl).at(n));
               }
               inarrays.at(tl) = &myinarrays.at(tl).at(0);
