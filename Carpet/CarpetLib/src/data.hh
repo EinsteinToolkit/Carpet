@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.6 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.7 2001/03/30 00:50:21 eschnett Exp $
 
  ***************************************************************************/
 
@@ -23,6 +23,7 @@
 
 #include <assert.h>
 
+#include <iostream>
 #include <string>
 
 #include "defs.hh"
@@ -97,7 +98,7 @@ public:
 				   const ibbox& box, const int tl,
 				   const int order_space);
   
-  void write_ascii_output_element (ofstream& file, const ivect& index) const;
+  void write_ascii_output_element (ostream& os, const ivect& index) const;
 //   void write_ieee (const string name, const int time,
 // 		   const int tl, const int rl, const int c, const int ml)
 //     const;

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.10 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.11 2001/03/30 00:50:20 eschnett Exp $
 
  ***************************************************************************/
 
@@ -21,6 +21,7 @@
 #include <assert.h>
 
 #include <fstream>
+#include <iostream>
 #include <string>
 
 #include <mpi.h>
@@ -563,10 +564,10 @@ void data<CCTK_REAL8,3>
 
 // Output
 template<class T, int D>
-void data<T,D>::write_ascii_output_element (ofstream& file, const ivect& index)
+void data<T,D>::write_ascii_output_element (ostream& os, const ivect& index)
   const
 {
-  file << (*this)[index];
+  os << (*this)[index];
 }
 
 

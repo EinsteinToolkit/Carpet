@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.7 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.8 2001/03/30 00:50:21 eschnett Exp $
 
  ***************************************************************************/
 
@@ -158,7 +158,7 @@ public:
                     const int c, const int ml)
     const;
 protected:
-  virtual void write_ascii_output_element (ofstream& file, const ivect& index)
+  virtual void write_ascii_output_element (ostream& os, const ivect& index)
     const = 0;
 public:
 //   void write_ieee (const string name, const int time,
