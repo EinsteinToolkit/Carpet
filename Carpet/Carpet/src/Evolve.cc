@@ -18,7 +18,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.25 2003/07/09 21:59:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.26 2003/07/11 09:27:11 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -170,9 +170,6 @@ namespace Carpet {
 	      // Checking
 	      PoisonCheck (cgh, currenttimebutnotifonly);
 	      
-	      // Checking
-	      CalculateChecksums (cgh, currenttime);
-	      
 	    }
 	  } END_MGLEVEL_LOOP;
 	  
@@ -206,6 +203,9 @@ namespace Carpet {
               
 	      Waypoint ("%*sScheduling POSTRESTRICT", 2*reflevel, "");
 	      CCTK_ScheduleTraverse ("POSTRESTRICT", cgh, CallFunction);
+	      
+	      // Checking
+	      CalculateChecksums (cgh, currenttime);
 	      
 	    }
 	  } END_MGLEVEL_LOOP;
