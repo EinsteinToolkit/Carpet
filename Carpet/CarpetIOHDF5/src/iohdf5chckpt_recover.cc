@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$ $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.10 2004/03/16 14:40:04 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -63,13 +63,10 @@ namespace CarpetIOHDF5 {
       ((checkpoint_every > 0 && cgh->cctk_iteration % checkpoint_every == 0) ||
        checkpoint_next))
       {
-	if (h5verbose)
-	{
-	  CCTK_INFO ("---------------------------------------------------------");
-	  CCTK_VInfo (CCTK_THORNSTRING, "Dumping periodic checkpoint at "
-		      "iteration %d", cgh->cctk_iteration);
-	  CCTK_INFO ("---------------------------------------------------------");
-	}
+	CCTK_INFO ("---------------------------------------------------------");
+	CCTK_VInfo (CCTK_THORNSTRING, "Dumping periodic checkpoint at "
+		    "iteration %d", cgh->cctk_iteration);
+	CCTK_INFO ("---------------------------------------------------------");
 
 	Checkpoint (cgh, CP_EVOLUTION_DATA);
 
@@ -154,8 +151,6 @@ namespace CarpetIOHDF5 {
 
 	// Actually, we do have to do this only once
 
-	//	if(reflevel==0){
-	  
 	  hid_t group = H5Gopen (reader, PARAMETERS_GLOBAL_ATTRIBUTES_GROUP);
 	  assert(group>=0);
 	  hid_t dataset = H5Dopen (group, ALL_PARAMETERS);
@@ -187,12 +182,11 @@ namespace CarpetIOHDF5 {
 	  } else {
 	    CCTK_WARN(0,"BAD BAD BAD! Can't read leveltimes!!");
 	  }
-	  // Now let us recover the GHextentions
-
-
-	  //} // if reflevel==0
 
       } // myproc == 0  	
+
+
+      // communicate the time on all the mglevels and reflevels
 
       int mpierr = MPI_Bcast (&numberofmgtimes, 1, CARPET_MPI_INT4, 0,MPI_COMM_WORLD);
       assert(!mpierr);
@@ -207,13 +201,8 @@ namespace CarpetIOHDF5 {
 
       cctkGH->cctk_time = leveltimes[mglevel][reflevel];
 
-      //      int ibuffer = cctkGH->cctk_time;
-      //mpierr = MPI_Bcast (&ibuffer,1,MPI_INT,MPI_COMM_WORLD);
-      
       result += RecoverGHextensions(cctkGH,reader);
 
-      // set tt (ask Erik why...)
-      //	  arrdata[0][0].tt->set_time(reflevel,mglevel,(CCTK_REAL) cctkGH->cctk_iteration/maxreflevelfact);
 	  
       if (h5verbose) cout << "reflevel: " << reflevel << endl;
       result += RecoverVariables (cctkGH,reader);
@@ -227,9 +216,6 @@ namespace CarpetIOHDF5 {
     if (myproc == 0 && reflevel==maxreflevels) 	
       H5Fclose(reader);
 
-
-    //    CCTK_WARN (-1,"Sorry, this feature is not implemented yet.");
-  
     return (result);
   } // CarpetIOHDF5_Recover
   
@@ -627,9 +613,6 @@ namespace CarpetIOHDF5 {
 	} // else
       } // myproc == 0
     } // retval == 0
-
-    
-    //    CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,"This feature is not working yet. Sorry!");
 
     return retval;
 

@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.19 2004/03/15 23:45:24 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.20 2004/03/16 14:40:04 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -40,8 +40,6 @@ namespace CarpetIOHDF5 {
   
   using namespace std;
   using namespace Carpet;
-  
-  
   
   
   // Variable definitions
@@ -343,29 +341,8 @@ namespace CarpetIOHDF5 {
 	      const hid_t dataspace = H5Screate_simple (ldim, shape, NULL);
 	      assert (dataspace>=0);
 
-	      //cout << varname << endl;
 
-	      //	      if ( CCTK_Equals("CARPETIOASCII::next_output_iteration",varname) ) {
-	      //	const int * testdata = (int * ) tmp->storage();
-	      //		cout << "testdata: " << ((int *)h5data)[0] << endl;
-	      //}
-	      
-//         hsize_t shape[dim];
-//          for (int d=0; d<dim; ++d) {
-//            shape[dim-1-d] = (ext.shape() / ext.stride())[d];
-//          }
-//          const hid_t dataspace = H5Screate_simple (dim, shape, NULL);
-//          assert (dataspace>=0);
-//          
-          // Select datatype
-#if 0
-	      assert (true
-		      || (CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL8
-			  && sizeof(CCTK_REAL8) == sizeof(double))
-		      || (CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL
-			  && sizeof(CCTK_REAL) == sizeof(double)));
-	    // TODO: Set datatype correctly
-#endif 
+	      // Select datatype
 
 	      const hid_t datatype = h5DataType(CCTK_VarTypeI(n));
           
@@ -786,11 +763,12 @@ namespace CarpetIOHDF5 {
 		 ub[i]=0;
 	       }
 	     } else {
-	       //	       lb[dim-1] = lb[dim-1] + (ub[dim-1]-lb[dim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
-	       //ub[dim-1] = ub[dim-1] + (ub[dim-1]-lb[dim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
-	       const int newlb = lb[gpdim-1] + (ub[gpdim-1]-lb[gpdim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
-	       const int newub = ub[gpdim-1] + (ub[gpdim-1]-lb[gpdim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
-	       cout << (ub[gpdim-1]-lb[gpdim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component)) << endl;
+	       const int newlb = lb[gpdim-1] + 
+		 (ub[gpdim-1]-lb[gpdim-1]+1)*
+		 (arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
+	       const int newub = ub[gpdim-1] + 
+		 (ub[gpdim-1]-lb[gpdim-1]+1)*
+		 (arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
 	       lb[gpdim-1] = newlb;
 	       ub[gpdim-1] = newub;
 	     }
