@@ -1,8 +1,9 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.3 2003/05/08 15:35:49 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.4 2003/05/12 16:25:40 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
 
+#include <algorithm>
 #include <vector>
 
 #include <mpi.h>
@@ -18,7 +19,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.3 2003/05/08 15:35:49 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.4 2003/05/12 16:25:40 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -34,18 +35,6 @@ namespace CarpetInterp {
   typedef vect<CCTK_REAL,dim> rvect;
   
   typedef bbox<int,dim> ibbox;
-  
-  
-  
-  ivect rvect2ivect (rvect const & pos,
-                     rvect const & lower,
-                     rvect const finest_delta)
-  {
-    static CCTK_REAL (* const rfloor) (CCTK_REAL const) = floor;
-    int const stride = maxreflevelfact / reflevelfact;
-    return (ivect(map(rfloor, (pos - lower) / finest_delta / stride + 0.5))
-            * stride);
-  }
   
   
   
@@ -77,11 +66,9 @@ namespace CarpetInterp {
     
     
     
-    // We want to be in level mode
-    assert (reflevel != -1);
+    // We want to be in global or in level mode
     if (hh->local_components(reflevel) != 1 && component != -1) {
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-		  "Cannot interpolate in local mode");
+      CCTK_WARN (0, "Cannot interpolate in local mode");
     }
     if (hh->local_components(reflevel) != 1) assert (component == -1);
     
@@ -91,17 +78,13 @@ namespace CarpetInterp {
     const char * coord_system_name
       = CCTK_CoordSystemName (coord_system_handle);
     assert (coord_system_name);
-    rvect lower, upper;
+    rvect clower, cupper, cdelta;
     for (int d=0; d<dim; ++d) {
-//       ierr = CCTK_CoordRange
-//         (cgh, &lower[d], &upper[d], d+1, 0, coord_system_name);
-//       assert (!ierr);
-      lower[d] = cgh->cctk_origin_space[d];
-      upper[d] = cgh->cctk_origin_space[d] + (cgh->cctk_gsh[d] - 1) * cgh->cctk_delta_space[d] / cgh->cctk_levfac[d];
+      ierr = CCTK_CoordRange
+        (cgh, &clower[d], &cupper[d], d+1, 0, coord_system_name);
+      assert (!ierr);
+      cdelta[d] = cgh->cctk_delta_space[d];
     }
-    
-    const ivect gsh   (cgh->cctk_gsh );
-    const rvect delta ((upper - lower) / rvect((gsh - 1) * maxreflevelfact));
     
     assert (interp_coords);
     for (int d=0; d<dim; ++d) {
@@ -116,13 +99,19 @@ namespace CarpetInterp {
     int const nprocs = CCTK_nProcs (cgh);
     assert (myproc>=0 && myproc<nprocs);
     
-    int const ncomps = hh->components(reflevel);
+    int const minrl = reflevel==-1 ? 0 : reflevel;
+    int const maxrl = reflevel==-1 ? hh->reflevels()-1 : reflevel;
+    int maxncomps = 0;
+    for (int rl=minrl; rl<maxrl; ++rl) {
+      maxncomps = max(maxncomps, hh->components(rl));
+    }
     
     
     
     // Assign interpolation points to components
+    vector<int> rlev (N_interp_points); // refinement level of point n
     vector<int> home (N_interp_points); // component of point n
-    vector<int> homecnts (ncomps); // number of points in component c
+    vector<int> homecnts ((maxrl-minrl) * maxncomps); // number of points in component c
     
     for (int n=0; n<N_interp_points; ++n) {
       
@@ -132,87 +121,111 @@ namespace CarpetInterp {
       for (int d=0; d<dim; ++d) {
         pos[d] = ((CCTK_REAL const *)interp_coords[d])[n];
       }
-      ivect const ipos = rvect2ivect (pos, lower, delta);
       
       // Find the component that this grid point belongs to
+      rlev[n] = -1;
       home[n] = -1;
-      // TODO: use something faster than a linear search
-      for (int c=0; c<ncomps; ++c) {
-        if (hh->extents[reflevel][c][mglevel].contains(ipos)) {
-          home[n] = c;
-          break;
+      for (int rl=maxrl-1; rl>=minrl; --rl) {
+        
+        bbox<int,dim> const& baseext = dd->bases[rl][0].exterior;
+        rvect const lower = clower + cdelta / maxreflevelfact * rvect(baseext.lower());
+        rvect const delta = cdelta / maxreflevelfact;
+        
+        CCTK_REAL (* const rfloor) (CCTK_REAL const) = floor;
+        int const stride = maxreflevelfact / reflevelfact;
+        ivect const ipos = ivect(map(rfloor, (pos - lower) / delta / stride + 0.5)) * stride;
+        
+        // TODO: use something faster than a linear search
+        for (int c=0; c<hh->components(rl); ++c) {
+          if (hh->extents[reflevel][c][mglevel].contains(ipos)) {
+            rlev[n] = rl;
+            home[n] = c;
+            break;
+          }
         }
       }
-      if (! (home[n]>=0 && home[n]<ncomps)) {
+      if (! (rlev[n]>=minrl && rlev[n]<maxrl && home[n]>=0 && home[n]<hh->components(rlev[n]))) {
         CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Interpolation point #%d at real [%g,%g,%g] is at integer [%d,%d,%d], which is not on any grid patch",
-                    n, pos[0], pos[1], pos[2], ipos[0], ipos[1], ipos[2]);
+                    "Interpolation point #%d at [%g,%g,%g] is not on any grid patch",
+                    n, pos[0], pos[1], pos[2]);
       }
-      assert (home[n]>=0 && home[n]<ncomps);
-      ++ homecnts [home[n]];
+      assert (rlev[n]>=minrl && rlev[n]<maxrl);
+      assert (home[n]>=0 && home[n]<hh->components(rlev[n]));
+      ++ homecnts [home[n] + (rlev[n]-minrl) * maxncomps];
       
     } // for n
     
     // Communicate counts
-    vector<int> allhomecnts(nprocs * ncomps);
-    MPI_Allgather (&homecnts   [0], ncomps, MPI_INT,
-                   &allhomecnts[0], ncomps, MPI_INT, comm);
+    vector<int> allhomecnts(nprocs * (maxrl-minrl) * maxncomps);
+    MPI_Allgather (&homecnts   [0], (maxrl-minrl) * maxncomps, MPI_INT,
+                   &allhomecnts[0], (maxrl-minrl) * maxncomps, MPI_INT, comm);
     
     
     
     // Create coordinate patches
-    vector<data<CCTK_REAL,dim> > allcoords (nprocs * ncomps);
+    vector<data<CCTK_REAL,dim> > allcoords (nprocs * (maxrl-minrl) * maxncomps);
     for (int p=0; p<nprocs; ++p) {
-      for (int c=0; c<ncomps; ++c) {
-        ivect lo (0);
-        ivect up (1);
-        up[0] = allhomecnts[c+ncomps*p];
-        up[1] = dim;
-        ivect str (1);
-        ibbox extent (lo, up-str, str);
-        allcoords [c+ncomps*p].allocate (extent, p);
+      for (int rl=minrl; rl<maxrl; ++rl) {
+        for (int c=0; c<hh->components(rl); ++c) {
+          ivect lo (0);
+          ivect up (1);
+          up[0] = allhomecnts[c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p];
+          up[1] = dim;
+          ivect str (1);
+          ibbox extent (lo, up-str, str);
+          allcoords [c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p].allocate (extent, p);
+        }
       }
     }
     
     // Fill in local coordinate patches
     {
-      vector<int> tmpcnts (ncomps);
+      vector<int> tmpcnts ((maxrl-minrl) * maxncomps);
       for (int n=0; n<N_interp_points; ++n) {
+        int const rl = rlev[n];
         int const c = home[n];
-        assert (c>=0 && c<ncomps);
-        assert (tmpcnts[c]>=0 && tmpcnts[c]<homecnts[c]);
+        assert (rl>=minrl && rl<maxrl);
+        assert (c>=0 && c<hh->components(rl));
+        assert (tmpcnts[c + (rl-minrl)*maxncomps] >= 0
+                && tmpcnts[c + (rl-minrl)*maxncomps] < homecnts[c + (rl-minrl)*maxncomps]);
         assert (dim==3);
         for (int d=0; d<dim; ++d) {
-          allcoords[c+ncomps*myproc][ivect(tmpcnts[c],d,0)]
+          allcoords[c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*myproc][ivect(tmpcnts[c + (rl-minrl)*maxncomps],d,0)]
             = ((CCTK_REAL const *)interp_coords[d])[n];
         }
-        ++ tmpcnts[c];
+        ++ tmpcnts[c + (rl-minrl)*maxncomps];
       }
-      for (int c=0; c<ncomps; ++c) {
-        assert (tmpcnts[c] == homecnts[c]);
+      for (int rl=minrl; rl<maxrl; ++rl) {
+        for (int c=0; c<hh->components(rl); ++c) {
+          assert (tmpcnts[c + (rl-minrl)*maxncomps] == homecnts[c + (rl-minrl)*maxncomps]);
+        }
       }
     }
     
     // Transfer coordinate patches
     for (int p=0; p<nprocs; ++p) {
-      for (int c=0; c<ncomps; ++c) {
-        allcoords[c+ncomps*p].change_processor (hh->processors[reflevel][c]);
+      for (int rl=minrl; rl<maxrl; ++rl) {
+        for (int c=0; c<hh->components(rl); ++c) {
+          allcoords[c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p].change_processor (hh->processors[rl][c]);
+        }
       }
     }
     
     
     
     // Create output patches
-    vector<data<CCTK_REAL,dim> > alloutputs (nprocs * ncomps);
+    vector<data<CCTK_REAL,dim> > alloutputs (nprocs * (maxrl-minrl) * maxncomps);
     for (int p=0; p<nprocs; ++p) {
-      for (int c=0; c<ncomps; ++c) {
-        ivect lo (0);
-        ivect up (1);
-        up[0] = allhomecnts[c+ncomps*p];
-        up[1] = N_output_arrays;
-        ivect str (1);
-        ibbox extent (lo, up-str, str);
-        alloutputs[c+ncomps*p].allocate (extent, hh->processors[reflevel][c]);
+      for (int rl=minrl; rl<maxrl; ++rl) {
+        for (int c=0; c<hh->components(rl); ++c) {
+          ivect lo (0);
+          ivect up (1);
+          up[0] = allhomecnts[c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p];
+          up[1] = N_output_arrays;
+          ivect str (1);
+          ibbox extent (lo, up-str, str);
+          alloutputs[c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p].allocate (extent, hh->processors[rl][c]);
+        }
       }
     }
     
@@ -221,115 +234,139 @@ namespace CarpetInterp {
     //
     // Do the local interpolation
     //
-    BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
-      
-      // Find out about the local geometry
-      const ivect lbnd (cgh->cctk_lbnd);
-      const ivect lsh  (cgh->cctk_lsh );
-      
-      const rvect coord_delta  = delta * (maxreflevelfact / reflevelfact);
-      const rvect coord_origin = lower + rvect(lbnd) * coord_delta;
-      
-      
-      
-      // Find out about the grid functions
-      vector<CCTK_INT> input_array_type_codes(N_input_arrays);
-      vector<const void *> input_arrays(N_input_arrays);
-      for (int n=0; n<N_input_arrays; ++n) {
-        if (input_array_variable_indices[n] == -1) {
+    int const saved_reflevel = reflevel;
+    int const saved_mglevel = mglevel;
+    if (reflevel!=-1) {
+      set_mglevel ((cGH*)(cgh), -1);
+      set_reflevel ((cGH*)(cgh), -1);
+    }
+    BEGIN_REFLEVEL_LOOP(cgh) {
+      if (reflevel>=minrl && reflevel<maxrl) {
+        BEGIN_MGLEVEL_LOOP(cgh) {
           
-          // Ignore this entry
-          input_array_type_codes[n] = -1;
-          input_arrays[n] = 0;
-          
-        } else {
-          
-          int const vi = input_array_variable_indices[n];
-          assert (vi>=0 && vi<CCTK_NumVars());
-          
-          int const gi = CCTK_GroupIndexFromVarI (vi);
-          assert (gi>=0 && gi<CCTK_NumGroups());
-          
-          cGroup group;
-          ierr = CCTK_GroupData (gi, &group);
-          assert (!ierr);
-          assert (group.grouptype == CCTK_GF);
-          assert (group.dim == dim);
-          assert (group.disttype == CCTK_DISTRIB_DEFAULT);
-          assert (group.stagtype == 0); // not staggered
-          
-          input_array_type_codes[n] = group.vartype;
-          input_arrays[n] = CCTK_VarDataPtrI (cgh, 0, vi);
-          
-        }
+          BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
+            
+            // Find out about the local geometry
+            ivect lsh;
+            rvect coord_origin, coord_delta;
+            for (int d=0; d<dim; ++d) {
+              lsh[d] = cgh->cctk_lsh[d];
+              coord_origin[d] = cgh->cctk_origin_space[d];
+              coord_delta[d] = cgh->cctk_delta_space[d] / cgh->cctk_levfac[d];
+            }
+            
+            
+            
+            // Find out about the grid functions
+            vector<CCTK_INT> input_array_type_codes(N_input_arrays);
+            vector<const void *> input_arrays(N_input_arrays);
+            for (int n=0; n<N_input_arrays; ++n) {
+              if (input_array_variable_indices[n] == -1) {
+                
+                // Ignore this entry
+                input_array_type_codes[n] = -1;
+                input_arrays[n] = 0;
+                
+              } else {
+                
+                int const vi = input_array_variable_indices[n];
+                assert (vi>=0 && vi<CCTK_NumVars());
+                
+                int const gi = CCTK_GroupIndexFromVarI (vi);
+                assert (gi>=0 && gi<CCTK_NumGroups());
+                
+                cGroup group;
+                ierr = CCTK_GroupData (gi, &group);
+                assert (!ierr);
+                assert (group.grouptype == CCTK_GF);
+                assert (group.dim == dim);
+                assert (group.disttype == CCTK_DISTRIB_DEFAULT);
+                assert (group.stagtype == 0); // not staggered
+                
+                input_array_type_codes[n] = group.vartype;
+                input_arrays[n] = CCTK_VarDataPtrI (cgh, 0, vi);
+                
+              }
+            } // for input arrays
+            
+            
+            
+            // Work on the data from all processors
+            for (int p=0; p<nprocs; ++p) {
+              assert (allcoords[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p].owns_storage());
+              assert (allhomecnts[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p]
+                      == allcoords[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p].shape()[0]);
+              assert (allhomecnts[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p]
+                      == alloutputs[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p].shape()[0]);
+              
+              // Do the processor-local interpolation
+              vector<const void *> tmp_interp_coords (dim);
+              for (int d=0; d<dim; ++d) {
+                tmp_interp_coords[d]
+                  = &allcoords[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p][ivect(0,d,0)];
+              }
+              vector<void *> tmp_output_arrays (N_output_arrays);
+              for (int m=0; m<N_output_arrays; ++m) {
+                assert (output_array_type_codes[m] == CCTK_VARIABLE_REAL);
+                tmp_output_arrays[m]
+                  = &alloutputs[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p][ivect(0,m,0)];
+              }
+              ierr = CCTK_InterpLocalUniform (N_dims,
+                                              local_interp_handle,
+                                              param_table_handle,
+                                              &coord_origin[0],
+                                              &coord_delta[0],
+                                              allhomecnts[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p],
+                                              interp_coords_type_code,
+                                              &tmp_interp_coords[0],
+                                              N_input_arrays,
+                                              &lsh[0],
+                                              &input_array_type_codes[0],
+                                              &input_arrays[0],
+                                              N_output_arrays,
+                                              output_array_type_codes,
+                                              &tmp_output_arrays[0]);
+              
+            } // for processors
+            
+          } END_LOCAL_COMPONENT_LOOP(cgh);
+        } END_MGLEVEL_LOOP(cgh);
       }
-      
-      
-      
-      // Work on the data from all processors
-      for (int p=0; p<nprocs; ++p) {
-        assert (allcoords[component+ncomps*p].owns_storage());
-        assert (allhomecnts[component+ncomps*p]
-                == allcoords[component+ncomps*p].shape()[0]);
-        assert (allhomecnts[component+ncomps*p]
-                == alloutputs[component+ncomps*p].shape()[0]);
-        
-        // Do the processor-local interpolation
-        vector<const void *> tmp_interp_coords (dim);
-        for (int d=0; d<dim; ++d) {
-          tmp_interp_coords[d]
-            = &allcoords[component+ncomps*p][ivect(0,d,0)];
-        }
-        vector<void *> tmp_output_arrays (N_output_arrays);
-        for (int m=0; m<N_output_arrays; ++m) {
-          assert (output_array_type_codes[m] == CCTK_VARIABLE_REAL);
-          tmp_output_arrays[m]
-            = &alloutputs[component+ncomps*p][ivect(0,m,0)];
-        }
-        ierr = CCTK_InterpLocalUniform (N_dims,
-                                        local_interp_handle,
-                                        param_table_handle,
-                                        &coord_origin[0],
-                                        &coord_delta[0],
-                                        allhomecnts[component+ncomps*p],
-                                        interp_coords_type_code,
-                                        &tmp_interp_coords[0],
-                                        N_input_arrays,
-                                        &lsh[0],
-                                        &input_array_type_codes[0],
-                                        &input_arrays[0],
-                                        N_output_arrays,
-                                        output_array_type_codes,
-                                        &tmp_output_arrays[0]);
-        
-      } // for p
-      
-    } END_LOCAL_COMPONENT_LOOP(cgh);
+    } END_REFLEVEL_LOOP(cgh);
+    if (saved_reflevel!=-1) {
+      set_reflevel ((cGH*)(cgh), saved_reflevel);
+      set_mglevel ((cGH*)(cgh), saved_mglevel);
+    }
     
     
     
     // Transfer output patches back
     for (int p=0; p<nprocs; ++p) {
-      for (int c=0; c<ncomps; ++c) {
-        alloutputs[c+ncomps*p].change_processor (p);
+      for (int rl=0; rl<minrl; ++rl) {
+        for (int c=0; c<hh->components(rl); ++c) {
+          alloutputs[c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p].change_processor (p);
+        }
       }
     }
     
     // Read out local output patches
     {
-      vector<int> tmpcnts (ncomps);
+      vector<int> tmpcnts ((maxrl-minrl) * maxncomps);
       for (int n=0; n<N_interp_points; ++n) {
+        int const rl = rlev[n];
         int const c = home[n];
         for (int m=0; m<N_output_arrays; ++m) {
           assert (interp_coords_type_code == CCTK_VARIABLE_REAL);
           assert (dim==3);
           ((CCTK_REAL *)output_arrays[m])[n] =
-            alloutputs[c+ncomps*myproc][ivect(tmpcnts[c],m,0)];
+            alloutputs[c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*myproc][ivect(tmpcnts[c + (rl-minrl)*maxncomps],m,0)];
         }
-        ++ tmpcnts[c];
+        ++ tmpcnts[c + (rl-minrl)*maxncomps];
       }
-      for (int c=0; c<ncomps; ++c) {
-        assert (tmpcnts[c] == homecnts[c]);
+      for (int rl=minrl; rl<maxrl; ++rl) {
+        for (int c=0; c<hh->components(rl); ++c) {
+          assert (tmpcnts[c + (rl-minrl)*maxncomps] == homecnts[c + (rl-minrl)*maxncomps]);
+        }
       }
     }
     
