@@ -25,7 +25,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.36 2003/03/26 17:37:19 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.37 2003/03/26 20:50:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -441,8 +441,6 @@ namespace Carpet {
                                            vector<ibbox> & bbs,
                                            vector<bbvect> & obs)
   {
-    cout << "srar dims=" << dims << " nprocs=" << nprocs << endl
-         << "   bb=" << bb << " ob=" << ob << endl;
     // check preconditions
     assert (nprocs >= 1);
     
@@ -485,7 +483,6 @@ namespace Carpet {
     } else {
       nslices = floor(mysize + 0.5);
     }
-    cout << "   nslices=" << nslices << endl;
     
     // split the remaining processors
     vector<int> mynprocs(nslices);
