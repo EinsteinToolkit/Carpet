@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="ISO-8859-15"?>
+<!DOCTYPE html
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15" />
+<title>Carpet Design Walkthrough</title>
+</head>
+<body>
+<h1>Carpet Design Walkthrough</h1>
+
+<!-- ======================================================================= -->
+<h2>Introduction</h2>
+
+<p>
+The <a href="http://numrel.aei.mpg.de">AEI numrel group</a>
+is hosting a "Carpet Design Walkthrough"
+on 13-15.Dec.2004.  We plan to start at 3:30pm each day (European time),
+and run for roughly 2&nbsp;hours each day.  The meetings will be held at
+the
+<a href="http://numrel.aei.mpg.de/VisitorInfo/benzstrasse-map.png">
+   numrel group offices at Benzstrasse 8/9, Potsdam Babelsberg</a>.
+Anyone interested is welcome to attend in person, to listen in by telephone,
+or to watch/listen/participate by Access Grid video conferencing.
+</p>
+
+<p>
+General discussion about this meeting (including topics to be covered)
+should be on the
+<a href="mailto:developers@lists.carpetcode.org">
+   <code>developers@lists.carpetcode.org</code></a>
+mailing list
+(<a href="http://lists.carpetcode.org/archives/developers/">archives here</a>).
+Most questions about organization should be directed to
+Jonathan Thornburg <code>&lt;jthorn@aei.mpg-zebra.de&gt;</code>
+(remove "-animal");
+questions about the Access Grid should be directed to
+Steve White <code>&lt;swhite@aei.mpg-zebra.de&gt;</code>
+(again, remove "-animal").
+</p>
+
+<p>
+Our current plan is to start things off with a more general
+"Cactus/Carpet Design Overview" on monday, covering design topics
+that should be useful to everyone using Carpet.
+Then on tuesday &amp;&amp; wednesday we will move to more technical
+material (likely to be of interest only to people who are programming
+either inside the Carpet code itself, or infrastructure thorns that
+must closely interoperate with Carpet).
+</p>
+
+<!-- ======================================================================= -->
+<h2>Agenda</h2>
+
+<p>
+Here's the current draft agenda:
+</p>
+<ul>
+<li>	Overview of the Carpet (= Berger-Oliger) mesh refinement
+	&amp; time evolution algorithm</li>
+<li>	Basic Carpet Terminology
+	<ul>
+	<li>	terminology for patches, components, grids,
+		refinement levels, ...</li>
+	<li>	how grid points are numbered</li>
+	</ul></li>
+<li>	Overview of relevant parts of Cactus architecture
+	<ul>
+	<li>	the schedule tree</li>
+	<li>	the MoL thorn for time evolution</li>
+	<li>	what's done by the flesh / the driver (Carpet, PUGH, etc)
+		/ MoL / other infrastructure thorns</li>
+	<li>	how multipatch works (or is supposed to work) in Carpet</li>
+	</ul></li>
+<li>	More on Cactus Architecture
+	<ul>
+	<li>	flesh/driver interface</li>
+	<li>	the GH structure</li>
+	<li>	how I/O and checkpoint/recover work</li>
+	<li>	other important flesh data structures</li>
+	</ul></li>
+<li>	More on Carpet Design
+	<ul>
+	<li>	interaction with the flesh</li>
+	<li>	interaction with MoL for time evolution</li>
+	<li>	interaction with CoordBase (set up grid size/shape/etc)
+		and SymBase (symmetries and symmetry interpolation)</li>
+	<li>	strategy for managing the GH</li>
+	<li>	modes &amp; mode switching</li>
+	<li>	how grid {functions,arrays} are distributed across processors</li>
+	</ul></li>
+<li>	A (Very) High-Level Tour of the Carpet Implementation
+	<ul>
+	<li>	partitioning into CarpetLib/Carpet/CarpetRegrid</li>
+	<li>	main global data structures which infrastructure
+		thorns might want (eg current component, level, patch, ...)</li>
+	<li>	APIs for mode switching and setting the current
+		component/level/patch/etc</li>
+	<li>	how Carpet manages interprocessor communication
+		(and how this could/should be changed to improve
+		performance scaling)</li>
+	</ul></li>
+</ul>
+
+<!-- ======================================================================= -->
+<hr />
+
+<p>Go back to the <a href=".">Carpet home page</a>.</p>
+
+<hr />
+
+<p>
+  <a href="http://validator.w3.org/check?uri=referer"><img
+  src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0!" 
+  height="31" width="88" /></a>
+</p>
+
+<hr />
+<address><a href="mailto:schnetter@uni-tuebingen.de">Erik Schnetter</a></address>
+<!-- hhmts start -->
+Last modified: Tue Dec  7 17:04:54 CET 2004
+<!-- hhmts end -->
+
+<!-- ======================================================================= -->
+</body>
+</html>
