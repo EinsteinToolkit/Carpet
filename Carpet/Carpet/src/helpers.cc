@@ -15,7 +15,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.37 2003/06/18 18:28:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.38 2003/07/08 23:01:29 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -200,7 +200,7 @@ namespace Carpet {
     reflevel = rl;
     if (reflevel == -1) {
       // global mode
-      reflevelfact = 0xdeadbeef;
+      reflevelfact = 0xdead;
     } else {
       // level mode or local mode
       reflevelfact = ipow(reffact, reflevel);
@@ -219,8 +219,8 @@ namespace Carpet {
     
     // Save
     if (mglevel == -1) {
-      assert (cgh->cctk_time == 0xdeadbeef);
-      assert (cgh->cctk_delta_time == 0xdeadbeef);
+      assert (cgh->cctk_time == 0xdead);
+      assert (cgh->cctk_delta_time == 0xdead);
     } else {
       refleveltimes[reflevel] = cgh->cctk_time;
       delta_time = cgh->cctk_delta_time;
@@ -234,21 +234,21 @@ namespace Carpet {
     // Set gsh
     if (mglevel == -1) {
       
-      mglevelfact = 0xdeadbeef;
-      cgh->cctk_convlevel = 0xdeadbeef;
+      mglevelfact = 0xdead;
+      cgh->cctk_convlevel = 0xdead;
       
       cgh->cctk_timefac = 0;
       for (int d=0; d<dim; ++d) {
-        cgh->cctk_levoff[d] = 0xdeadbeef;
-        cgh->cctk_levoffdenom[d] = 0xdeadbeef;
+        cgh->cctk_levoff[d] = 0xdead;
+        cgh->cctk_levoffdenom[d] = 0xdead;
       }
-      cgh->cctk_time = 0xdeadbeef;
-      cgh->cctk_delta_time = 0xdeadbeef;
+      cgh->cctk_time = 0xdead;
+      cgh->cctk_delta_time = 0xdead;
       
-      vect<int,dim>::ref(cgh->cctk_gsh) = 0xdeadbeef;
+      vect<int,dim>::ref(cgh->cctk_gsh) = 0xdead;
       for (int group=0; group<CCTK_NumGroups(); ++group) {
         if (CCTK_GroupTypeI(group) == CCTK_GF) {
-          vect<int,dim>::ref((int*)arrdata[group].info.gsh) = 0xdeadbeef;
+          vect<int,dim>::ref((int*)arrdata[group].info.gsh) = 0xdead;
         }
       }
       
@@ -297,13 +297,13 @@ namespace Carpet {
       // Level mode -- no component is active
       
       for (int d=0; d<dim; ++d) {
-	cgh->cctk_lsh[d]      = 0xdeadbeef;
-	cgh->cctk_bbox[2*d  ] = 0xdeadbeef;
-	cgh->cctk_bbox[2*d+1] = 0xdeadbeef;
-	cgh->cctk_lbnd[d]     = 0xdeadbeef;
-	cgh->cctk_ubnd[d]     = 0xdeadbeef;
+	cgh->cctk_lsh[d]      = 0xdead;
+	cgh->cctk_bbox[2*d  ] = 0xdead;
+	cgh->cctk_bbox[2*d+1] = 0xdead;
+	cgh->cctk_lbnd[d]     = -0xdead;
+	cgh->cctk_ubnd[d]     = 0xdead;
 	for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
-	  cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = 0xdeadbeef;
+	  cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = 0xdead;
 	}
       }
       
@@ -311,11 +311,11 @@ namespace Carpet {
         if (CCTK_GroupTypeI(group) == CCTK_GF) {
           
           for (int d=0; d<dim; ++d) {
-            ((int*)arrdata[group].info.lsh)[d]      = 0xdeadbeef;
-            ((int*)arrdata[group].info.bbox)[2*d  ] = 0xdeadbeef;
-            ((int*)arrdata[group].info.bbox)[2*d+1] = 0xdeadbeef;
-            ((int*)arrdata[group].info.lbnd)[d]     = 0xdeadbeef;
-            ((int*)arrdata[group].info.ubnd)[d]     = 0xdeadbeef;
+            ((int*)arrdata[group].info.lsh)[d]      = 0xdead;
+            ((int*)arrdata[group].info.bbox)[2*d  ] = 0xdead;
+            ((int*)arrdata[group].info.bbox)[2*d+1] = 0xdead;
+            ((int*)arrdata[group].info.lbnd)[d]     = -0xdead;
+            ((int*)arrdata[group].info.ubnd)[d]     = 0xdead;
           }
           
           const int numvars = CCTK_NumVarsInGroupI (group);

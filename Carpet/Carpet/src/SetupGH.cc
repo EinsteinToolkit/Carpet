@@ -19,7 +19,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.48 2003/07/07 21:55:24 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.49 2003/07/08 23:01:29 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -468,8 +468,8 @@ namespace Carpet {
     }
     
     refleveltimes.resize (maxreflevels);
-    cgh->cctk_time = 0xdeadbeef;
-    cgh->cctk_delta_time = 0xdeadbeef;
+    cgh->cctk_time = 0xdead;
+    cgh->cctk_delta_time = 0xdead;
     
     
     
