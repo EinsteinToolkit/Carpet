@@ -254,7 +254,7 @@ namespace CarpetIOScalar {
           const char* const filename = filenamestr.c_str();
           
           // If this is the first time, then write a nice header
-          if (do_truncate.at(n) && ! iogh->recovered) {
+          if (do_truncate.at(n) && IO_TruncateOutputFiles (cctkGH)) {
             file.open (filename, ios::out | ios::trunc);
             file << "# " << varname << " (" << alias << ")" << endl;
             file << "# iteration time data" << endl;

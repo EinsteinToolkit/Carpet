@@ -15,8 +15,6 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
-#include "CactusBase/IOUtil/src/ioGH.h"
-
 #include "bbox.hh"
 #include "bboxset.hh"
 #include "defs.hh"
@@ -249,14 +247,6 @@ namespace Carpet {
     // Output only if output is desired
     if (strcmp(grid_structure_filename, "") == 0) return;
     
-    // Get grid hierarchy extention from IOUtil
-    const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cgh, "IO");
-    
-    // Output only if IO exists and has been initialised
-    if (! iogh) return;
-    
-    assert (iogh);
-    
     // Create the output directory
     CCTK_CreateDirectory (0755, out_dir);
     
@@ -273,7 +263,7 @@ namespace Carpet {
     if (do_truncate) {
       do_truncate = false;
       struct stat fileinfo;
-      if (! iogh->recovered
+      if (IO_TruncateOutputFiles (cgh)
 	  || stat(filename, &fileinfo)!=0) {
 	file.open (filename, ios::out | ios::trunc);
 	assert (file.good());

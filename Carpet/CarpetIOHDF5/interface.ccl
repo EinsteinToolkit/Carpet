@@ -18,3 +18,10 @@ uses include header: ggf.hh
 CCTK_INT next_output_iteration TYPE=scalar
 CCTK_REAL next_output_time TYPE=scalar
 CCTK_INT this_iteration TYPE=scalar
+
+
+# function to check whether existing output files should be truncated or not
+CCTK_INT FUNCTION IO_TruncateOutputFiles \
+  (CCTK_POINTER_TO_CONST IN GH)
+
+REQUIRES FUNCTION IO_TruncateOutputFiles

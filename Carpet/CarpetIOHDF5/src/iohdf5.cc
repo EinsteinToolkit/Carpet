@@ -269,7 +269,7 @@ int OutputVarAs (const cGH* const cctkGH, const char* const varname,
     if (do_truncate.at(vindex))
     {
       struct stat fileinfo;
-      if (! iogh->recovered || stat(filename, &fileinfo)!=0)
+      if (IO_TruncateOutputFiles (cctkGH) || stat(filename, &fileinfo)!=0)
       {
         HDF5_ERROR (writer = H5Fcreate (filename, H5F_ACC_TRUNC, H5P_DEFAULT,
                                         H5P_DEFAULT));

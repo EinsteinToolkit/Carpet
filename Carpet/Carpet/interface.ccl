@@ -87,3 +87,10 @@ CCTK_INT FUNCTION Carpet_Regrid (CCTK_POINTER_TO_CONST IN cctkGH,  \
                                  CCTK_POINTER IN pss,		   \
 				 CCTK_INT IN force)
 USES FUNCTION Carpet_Regrid
+
+
+# function to check whether existing output files should be truncated or not
+CCTK_INT FUNCTION IO_TruncateOutputFiles \
+  (CCTK_POINTER_TO_CONST IN GH)
+
+REQUIRES FUNCTION IO_TruncateOutputFiles

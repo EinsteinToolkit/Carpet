@@ -466,7 +466,7 @@ namespace CarpetIOASCII {
               // If this is the first time, then write a nice header
               if (do_truncate.at(n)) {
                 struct stat fileinfo;
-                if (! iogh->recovered
+                if (IO_TruncateOutputFiles (cgh)
                     || stat(filename, &fileinfo)!=0) {
                   file.open (filename, ios::out | ios::trunc);
                   if (! file.good()) {
