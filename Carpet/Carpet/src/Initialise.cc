@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.39 2004/03/12 11:59:06 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.40 2004/03/12 12:32:13 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -66,8 +66,12 @@ namespace Carpet {
       CCTKi_FinaliseParamWarn();
     } END_MGLEVEL_LOOP;
     
+    
+    
     if (fc->recovered) {
       // if recovering
+      
+      
       
       for (int rl=0; rl<reflevels; ++rl) {
         
@@ -78,6 +82,11 @@ namespace Carpet {
           
           cgh->cctk_time = global_time;
           
+          Waypoint ("Recovering I at iteration %d time %g%s%s",
+                    cgh->cctk_iteration, (double)cgh->cctk_time,
+                    (do_global_mode ? " (global)" : ""),
+                    (do_meta_mode ? " (meta)" : ""));
+          
           // Set up the grids
           Checkpoint ("Scheduling BASEGRID");
           CCTK_ScheduleTraverse ("CCTK_BASEGRID", cgh, CallFunction);
@@ -85,6 +94,31 @@ namespace Carpet {
           // Recover
           Checkpoint ("Scheduling RECOVER_VARIABLES");
           CCTK_ScheduleTraverse ("CCTK_RECOVER_VARIABLES", cgh, CallFunction);
+          
+          leave_level_mode (cgh);
+        } END_MGLEVEL_LOOP;
+        
+        // Regrid
+        Checkpoint ("Regrid");
+        Regrid (cgh, rl, rl+1, false);
+        
+      } // for rl
+      
+      
+      
+      for (int rl=0; rl<reflevels; ++rl) {
+        
+        BEGIN_MGLEVEL_LOOP(cgh) {
+          enter_level_mode (cgh, rl);
+          do_global_mode = reflevel==0;
+          do_meta_mode = do_global_mode && mglevel==mglevels-1;
+          
+          Waypoint ("Recovering II at iteration %d time %g%s%s",
+                    cgh->cctk_iteration, (double)cgh->cctk_time,
+                    (do_global_mode ? " (global)" : ""),
+                    (do_meta_mode ? " (meta)" : ""));
+          
+          cgh->cctk_time = global_time;
           
           // Post recover
           Checkpoint ("Scheduling POST_RECOVER_VARIABLES");
@@ -109,15 +143,14 @@ namespace Carpet {
           
           leave_level_mode (cgh);
         } END_MGLEVEL_LOOP;
-        
-        // Regrid
-        Checkpoint ("Regrid");
-        Regrid (cgh, rl, rl+1, prolongate_initial_data);
-        
       } // for rl
+      
+      
       
     } else {
       // if not recovering
+      
+      
       
       for (int rl=0; rl<reflevels; ++rl) {
         BEGIN_MGLEVEL_LOOP(cgh) {
