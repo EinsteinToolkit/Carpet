@@ -1,45 +1,39 @@
 # Main make.configuration.deps file for thorn CarpetIOASCII
 
+CARPETIOASCII_BUILD_DIR = $(BUILD_DIR)/CarpetIOASCII
+CARPETIOASCII_SRC_DIR   = $(PACKAGE_DIR)/Carpet/CarpetIOASCII/src/util
 
+CARPETIOASCII_CFLAGS  = -DCCODE $(CFLAGS)
+CARPETIOASCII_LDFLAGS = $(DEBUG_LD) $(LDFLAGS) $(EXTRAFLAGS)
 
-SDF_INCDIRS := $(HOME)/include
-SDF_LIBDIRS := $(HOME)/lib
-SDF_LIBS := rnpl mfhdf df jpeg z vsso sv m
-
+# add includes
+CARPETIOASCII_CFLAGS += -I$(CONFIG) -I$(BINDINGS_DIR)/include -I$(FLESH_DIR)/include
 
 
 # Compile
-
-$(BUILD_DIR)$(DIRSEP)CarpetIOASCII$(DIRSEP)%.o: $(PACKAGE_DIR)$(DIRSEP)Carpet$(DIRSEP)CarpetIOASCII$(DIRSEP)src$(DIRSEP)util$(DIRSEP)%.c
+$(CARPETIOASCII_BUILD_DIR)/%.o: $(CARPETIOASCII_SRC_DIR)/%.c
 	@echo "Compiling $<"
-	-$(MKDIR) $(MKDIRFLAGS) $(BUILD_DIR)$(DIRSEP)CarpetIOASCII 2> /dev/null
-	$(CC) $< -DCCODE $(CFLAGS) -I$(CONFIG) -I$(BINDINGS_DIR)$(DIRSEP)include -I$(FLESH_DIR)$(DIRSEP)include -I$(CCTK_HOME)$(DIRSEP)arrangement $(CCOMPILEONLY)$(OPTIONSEP)$@
-
+	-$(MKDIR) $(MKDIRFLAGS) $(CARPETIOASCII_BUILD_DIR) 2> /dev/null
+	$(CC) $< $(CARPETIOASCII_CFLAGS) -c -o $@
 
 
 # Link
-
-$(UTIL_DIR)$(DIRSEP)%: $(BUILD_DIR)$(DIRSEP)CarpetIOASCII$(DIRSEP)%.o
+$(UTIL_DIR)/%: $(CARPETIOASCII_BUILD_DIR)/%.o
 	@echo "Creating $* in $(UTIL_DIR) from $<"
 	-$(MKDIR) $(MKDIRFLAGS) $(UTIL_DIR) 2> /dev/null
-	$(LD) $(CREATEEXE)$(OPTIONSEP)$@ $(DEBUG_LD) $(LDFLAGS) $(EXTRAFLAGS) $<
-
+	$(LD) $< $(CARPETIOASCII_LDFLAGS) -o $@
 
 
 # Special versions for carpet2sdf:
 
 # Compile
-
-$(BUILD_DIR)$(DIRSEP)CarpetIOASCII$(DIRSEP)carpet2sdf.o: $(PACKAGE_DIR)$(DIRSEP)Carpet$(DIRSEP)CarpetIOASCII$(DIRSEP)src$(DIRSEP)util$(DIRSEP)carpet2sdf.c
+$(CARPETIOASCII_BUILD_DIR)/carpet2sdf.o: $(CARPETIOASCII_SRC_DIR)/carpet2sdf.c
 	@echo "Compiling carpet2sdf"
-	-$(MKDIR) $(MKDIRFLAGS) $(BUILD_DIR)$(DIRSEP)CarpetIOASCII 2> /dev/null
-	$(CC) $< -DCCODE $(CFLAGS) $(INC_DIRS:%=-I%) $(CCOMPILEONLY)$(OPTIONSEP)$@
-
-
+	-$(MKDIR) $(MKDIRFLAGS) $(CARPETIOASCII_BUILD_DIR) 2> /dev/null
+	$(CC) $< $(CARPETIOASCII_CFLAGS) $(INC_DIRS:%=-I%) -c -o $@
 
 # Link
-
-$(UTIL_DIR)$(DIRSEP)carpet2sdf: $(BUILD_DIR)$(DIRSEP)CarpetIOASCII$(DIRSEP)carpet2sdf.o
+$(UTIL_DIR)/carpet2sdf: $(CARPETIOASCII_BUILD_DIR)/carpet2sdf.o
 	@echo "Creating $* in $(UTIL_DIR) from $<"
 	-$(MKDIR) $(MKDIRFLAGS) $(UTIL_DIR) 2> /dev/null
-	$(LD) $(CREATEEXE)$(OPTIONSEP)$@ $(DEBUG_LD) $(LDFLAGS) $(EXTRAFLAGS) $< $(GENERAL_LIBRARIES)
+	$(LD) $< $(CARPETIOASCII_LDFLAGS) $(GENERAL_LIBRARIES) -o $@
