@@ -45,7 +45,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.9 2003/09/30 13:33:19 cvs_anon Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.10 2003/10/02 11:34:03 cvs_anon Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -167,7 +167,7 @@ namespace CarpetIOFlexIO {
     const int grouptype = CCTK_GroupTypeI(group);
 
     assert (! ( (grouptype != CCTK_GF) && reflevel>0));
-    fprintf(stderr,"\nSTARTED WRITING\n");
+
 
     if (CCTK_MyProc(cgh)==0) {
 
@@ -230,18 +230,18 @@ namespace CarpetIOFlexIO {
     BEGIN_COMPONENT_LOOP(cgh, grouptype) {
 
       const ggf<dim>* ff = 0;
-
-
+#if 0
     if (grouptype == CCTK_ARRAY){
-#warning "additional if outside component loop"
       // this is a DIRTY hack to fix problems caused by the fact that I am to lazy to write a more
       //   general output routine...
-      CCTK_VInfo (CCTK_THORNSTRING, "ARRAY reflevel: %d component: %d grouptype: %d ",reflevel,component,grouptype);
       if(reflevel !=0)
 	return 0;
     }
     else
-      CCTK_VInfo (CCTK_THORNSTRING, "GF reflevel: %d component: %d grouptype: %d",reflevel,component,grouptype);
+#endif
+      
+      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "GF reflevel: %d component: %d grouptype: %d",reflevel,component,grouptype);
+      
 
       assert (var < (int)arrdata[group].data.size());
       ff = (ggf<dim>*)arrdata[group].data[var];
@@ -310,7 +310,7 @@ namespace CarpetIOFlexIO {
   
   int WriteGS (const cGH* const cgh, IObase* writer, ioRequest* request)
   {
-
+#warning This function should be obsolete by now!!!
     // writes out a grid scalar 
 
     DECLARE_CCTK_PARAMETERS;
@@ -381,8 +381,9 @@ namespace CarpetIOFlexIO {
        // same on all components. in fact, the loop is not being
        // executed for scalars; see macro definition.
 
+       if (verbose)
+	 CCTK_VInfo (CCTK_THORNSTRING, "SCALAR reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
 
-      CCTK_VInfo (CCTK_THORNSTRING, "SCALAR reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
       writer->write(FlexIODataType(CCTK_VarTypeI(varindex)),1,&dim,buffer);
       /* scalars have size 0 */
       request->hsize[0] = 0;
@@ -400,7 +401,6 @@ namespace CarpetIOFlexIO {
   int OutputVarAs (const cGH* const cgh, const char* const varname,
 		   const char* const alias) {
     DECLARE_CCTK_PARAMETERS;
-    //    CCTK_VInfo (CCTK_THORNSTRING, "bogusnewout reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
     const int n = CCTK_VarIndex(varname);
     assert (n>=0 && n<CCTK_NumVars());
     const int group = CCTK_GroupIndexFromVarI (n);
@@ -609,7 +609,8 @@ namespace CarpetIOFlexIO {
     assert (n0>=0 && n0<CCTK_NumVars());
     const int var = n - n0;
     assert (var>=0 && var<CCTK_NumVars());
-    const int tl = 0;
+    const int tl = 0;      //   CCTK_VInfo (CCTK_THORNSTRING, "boguscheck reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
+
     
     // Check for storage
     if (! CCTK_QueryGroupStorageI(cgh, group)) {

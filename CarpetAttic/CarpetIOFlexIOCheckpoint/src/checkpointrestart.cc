@@ -48,7 +48,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.10 2003/09/30 13:33:19 cvs_anon Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.11 2003/10/02 11:34:03 cvs_anon Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
@@ -69,12 +69,11 @@ namespace CarpetCheckpointRestart {
     
     DECLARE_CCTK_PARAMETERS
 
-      CCTK_VInfo (CCTK_THORNSTRING, "CHECKPOINT? cgh->cctk_iteration %d, cgh->cctk_iteration mod checkpoint_every = %d, checkpoint = %d, checkpoint_next = %d", cgh->cctk_iteration, cgh->cctk_iteration % checkpoint_every,checkpoint,checkpoint_next);
       if (checkpoint &&
       ((checkpoint_every > 0 && cgh->cctk_iteration % checkpoint_every == 0) ||
        checkpoint_next))
       {
-	if (! CCTK_Equals ("verbose", "none"))
+	if (verbose)
 	{
 	  CCTK_INFO ("---------------------------------------------------------");
 	  CCTK_VInfo (CCTK_THORNSTRING, "Dumping periodic checkpoint at "
@@ -110,7 +109,7 @@ namespace CarpetCheckpointRestart {
 			     strlen(parameters)+1,parameters);
       free(parameters);
     }
-    fprintf(stderr,"\nFINISHED WRITING PARAMETERS\n");
+    
     return 0;
   }
 
@@ -170,7 +169,6 @@ namespace CarpetCheckpointRestart {
     ioRequest *request;
 
     DECLARE_CCTK_PARAMETERS
-      //   CCTK_VInfo (CCTK_THORNSTRING, "boguscheck reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
 
     CarpetIOFlexIOGH *myGH;
     myGH = (CarpetIOFlexIOGH *) CCTK_GHExtension (cgh, "CarpetIOFlexIO");
@@ -206,12 +204,14 @@ namespace CarpetCheckpointRestart {
     }
   
     sprintf(cp_tempname,"%s.tmp%s",cp_filename,extension);
+
+
     sprintf(cp_filename,"%s%s",cp_filename,extension);
   
 
     if (CCTK_MyProc(cgh)==0)
       {
-	if (CCTK_Equals ("verbose", "full"))
+	if (verbose)
 	  {
 	    CCTK_VInfo (CCTK_THORNSTRING, "Creating temporary checkpoint file '%s'", cp_tempname);
 	  }
@@ -239,17 +239,24 @@ namespace CarpetCheckpointRestart {
 			cp_tempname);
 	    return (-1);
 	  }
+
 	amrwriter = new AMRwriter(*writer);
 
+	/* now we are writing a first (bogus) dataset to which
+	   we will attach all parameters and GHextensions as Attributes
+	*/
+
+	CCTK_REAL startdata = 666.66;
+	writer->write(FLEXIO_REAL,0,0,&startdata);
 	
-	
-	// dump parameters 
-	fprintf(stderr,"\nSTARTED WRITING1\n");
+
+	/* now dump parameters */ 
 	DumpParams (cgh, 1, writer);
-	fprintf(stderr,"\nSTARTED WRITING2\n");
-	// dump GH extentions
+
+
+	/* and now dump GH extentions */
 	DumpGHExtensions(cgh,writer);
-	fprintf(stderr,"\nSTARTED WRITING3\n");
+
       }
 
     
@@ -258,7 +265,7 @@ namespace CarpetCheckpointRestart {
 
   	BEGIN_MGLEVEL_LOOP(cgh) {
 	      
-	    if (CCTK_Equals ("verbose", "full"))
+	    if (verbose)
 	    {
 	      CCTK_INFO ("Dumping Grid Variables ...");
 	    }
@@ -329,7 +336,8 @@ namespace CarpetCheckpointRestart {
 		  //#if 1	    
 		  if (grouptype == CCTK_SCALAR)
 		  {
-		    retval += WriteGS(cgh,writer,request);
+		    //		    retval += WriteGS(cgh,writer,request);
+		    retval += WriteGF(cgh,writer,amrwriter,request);
 		  }
 		  else 
 		    //#endif
@@ -337,7 +345,8 @@ namespace CarpetCheckpointRestart {
 		    //else if (grouptype == CCTK_GF)
 		  {
 		    char* fullname = CCTK_FullName (request->vindex);
-		    CCTK_VInfo (CCTK_THORNSTRING,"%s:: reflevel: %d component: %d grouptype: %d ",fullname,reflevel,component,grouptype);
+		    if (verbose)
+		      CCTK_VInfo (CCTK_THORNSTRING,"%s:: reflevel: %d component: %d grouptype: %d ",fullname,reflevel,component,grouptype);
 		    free(fullname);
 		    retval += WriteGF(cgh,writer,amrwriter,request);
 		  }
