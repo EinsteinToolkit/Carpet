@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.41 2004/02/09 14:55:07 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.42 2004/02/09 14:56:46 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -1004,7 +1004,7 @@ void data<CCTK_REAL8,3>
         switch (order_space) {
         case 0:
         case 1:
-          CCTK_WARN (0, "There is no stencil for op=""TVD"" with order_space=1");
+          CCTK_WARN (0, "There is no stencil for op=\"TVD\" with order_space=1");
           break;
         case 2:
         case 3:
@@ -1023,7 +1023,7 @@ void data<CCTK_REAL8,3>
         switch (order_space) {
         case 0:
         case 1:
-          CCTK_WARN (0, "There is no stencil for op=""TVD"" with order_space=1");
+          CCTK_WARN (0, "There is no stencil for op=\"TVD\" with order_space=1");
           break;
         case 2:
         case 3:
@@ -1043,7 +1043,7 @@ void data<CCTK_REAL8,3>
         switch (order_space) {
         case 0:
         case 1:
-          CCTK_WARN (0, "There is no stencil for op=""TVD"" with order_space=1");
+          CCTK_WARN (0, "There is no stencil for op=\"TVD\" with order_space=1");
           break;
         case 2:
         case 3:
