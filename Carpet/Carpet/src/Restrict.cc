@@ -108,7 +108,7 @@ namespace Carpet {
       for (int group=0; group<CCTK_NumGroups(); ++group) {
         if (CCTK_GroupTypeI(group) == CCTK_GF
             && CCTK_QueryGroupStorageI(cgh, group)) {
-          SyncGFGroup(cgh, group);
+          SyncGVGroup(cgh, group);
         }
       }
     } // if not finest refinement level

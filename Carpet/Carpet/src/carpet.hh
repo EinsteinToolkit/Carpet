@@ -36,7 +36,7 @@ namespace Carpet {
   void CycleTimeLevels (const cGH* cgh);
   void FlipTimeLevels (const cGH* cgh);
   void Restrict (const cGH* cgh);
-  void SyncGFGroup (const cGH* cgh, int group);
+  void SyncGVGroup (const cGH* cgh, int group);
  
   // Sanity checks
   enum checktimes { currenttime,

@@ -20,7 +20,6 @@ namespace Carpet {
                                           const char *groupname );
   static void ProlongateGroupBoundaries ( const cGH* cgh,
                                           CCTK_REAL initial_time, int group );
-  static void SyncGFArrayGroup ( const cGH* cgh, int group );
   
   int SyncGroup (const cGH* cgh, const char* groupname)
   {
@@ -29,54 +28,27 @@ namespace Carpet {
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 and group<CCTK_NumGroups());
     assert (group<(int)arrdata.size());
-    
+    const int grouptype = CCTK_GroupTypeI(group);
+    assert(grouptype == CCTK_GF ||
+           grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY);
+    assert (CCTK_NumVarsInGroupI(group) != 0);
+
     Checkpoint ("SyncGroup \"%s\" time=%g", groupname, (double)cgh->cctk_time);
     
-    const int grouptype = CCTK_GroupTypeI(group);
     retval = CheckSyncGroupConsistency (cgh, groupname);
     
-    if (retval == 0 and CCTK_NumVarsInGroupI(group) != 0) {
-      const int n0 = CCTK_FirstVarIndexI(group);
-      assert (n0>=0);
-      const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
-      assert (num_tl>0);
+    if (retval == 0) {
     
       // Prolongate the boundaries
-      if (do_prolongate) {
-        switch (grouptype) {
-          
-        case CCTK_GF:
-          assert (reflevel>=0 and reflevel<reflevels);
-          if (reflevel > 0) {
-            ProlongateGroupBoundaries ( cgh, cctk_initial_time, group );
-          }
-          break;
-        
-        case CCTK_SCALAR:
-        case CCTK_ARRAY:
-          // do nothing
-          break;
-        
-        default:
-          assert (0);
+      if (do_prolongate && grouptype == CCTK_GF) {
+        assert (reflevel>=0 and reflevel<reflevels);
+        if (reflevel > 0) {
+          ProlongateGroupBoundaries ( cgh, cctk_initial_time, group );
         }
       }
     
       // Sync
-      switch (CCTK_GroupTypeI(group)) {
-        
-      case CCTK_GF:
-        SyncGFGroup ( cgh, group );
-        break;
-      
-      case CCTK_SCALAR:
-      case CCTK_ARRAY:
-        SyncGFArrayGroup ( cgh, group );
-        break;
-      
-      default:
-        assert (0);
-      }
+      SyncGVGroup ( cgh, group );
     }
     return retval;
   }
@@ -117,7 +89,7 @@ namespace Carpet {
     }
   }
 
-  void SyncGFGroup ( const cGH* cgh, int group )
+  void SyncGVGroup ( const cGH* cgh, int group )
   {
     DECLARE_CCTK_PARAMETERS;
     const int tl = 0;
@@ -126,7 +98,8 @@ namespace Carpet {
     // in order to minimise the number of outstanding communications
     if (minimise_outstanding_communications) {
       for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-        for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+                        CCTK_GroupName (group));
+        for (int var=0; var<(int)arrdata.at(group).at(m).data.size(); ++var) {
           for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
             for (comm_state state; ! state.done(); state.step()) {
               arrdata.at(group).at(m).data.at(var)->sync
@@ -134,37 +107,17 @@ namespace Carpet {
             }
           }
         }
+                        CCTK_GroupName (group));
       }
     } else {
       for (comm_state state; ! state.done(); state.step()) {
         for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-          for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+          for (int var=0; var<(int)arrdata.at(group).at(m).data.size(); ++var) {
             for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
               arrdata.at(group).at(m).data.at(var)->sync
                 (state, tl, reflevel, c, mglevel);
             }
           }
-        }
-      }
-    }
-  }
-
-  void SyncGFArrayGroup ( const cGH* cgh, int group )
-  {
-    DECLARE_CCTK_PARAMETERS;
-
-    // make the comm_state loop the innermost
-    // in order to minimise the number of outstanding communications
-    if (minimise_outstanding_communications) {
-      for (int var=0; var<(int)arrdata.at(group).at(0).data.size(); ++var) {
-        for (comm_state state; ! state.done(); state.step()) {
-          arrdata.at(group).at(0).data.at(var)->sync (state, 0, 0, 0, 0);
-        }
-      }
-    } else {
-      for (comm_state state; ! state.done(); state.step()) {
-        for (int var=0; var<(int)arrdata.at(group).at(0).data.size(); ++var) {
-          arrdata.at(group).at(0).data.at(var)->sync (state, 0, 0, 0, 0);
         }
       }
     }
