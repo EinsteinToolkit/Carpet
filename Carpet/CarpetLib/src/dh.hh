@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.18 2004/04/18 13:29:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.19 2004/04/20 11:55:52 schnetter Exp $
 
 #ifndef DH_HH
 #define DH_HH
@@ -71,6 +71,14 @@ public:
     iblistvect recv_ref_bnd_coarse; // received from coarser grids
     ibset sync_not;		// not received while syncing (outer boundary of that level)
     ibset recv_not;		// not received while syncing or prolongating (globally outer boundary)
+    
+#if 0
+    // after regridding:
+    iblistvect prev_send;       // sent from previous dh
+    iblistvect recv_prev;       // received from previous dh
+    iblistvect send_prev_fine;  // sent to finer
+    iblistvect recv_prev_coarse; // received from coarser
+#endif
   };
   
 private:
