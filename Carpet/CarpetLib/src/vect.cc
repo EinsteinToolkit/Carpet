@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.13 2004/01/25 14:57:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.14 2004/02/18 15:10:17 schnetter Exp $
 
 #include <assert.h>
 
@@ -44,6 +44,7 @@ void vect<T,D>::output (ostream& os) const {
 
 
 // Note: We need all dimensions all the time.
+template class vect<int,0>;
 template class vect<int,1>;
 template class vect<int,2>;
 template class vect<int,3>;
