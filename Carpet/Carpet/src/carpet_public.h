@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.14 2004/05/21 18:16:23 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.15 2004/06/16 16:36:02 schnetter Exp $ */
 
 #ifndef CARPET_PUBLIC_H
 #define CARPET_PUBLIC_H
@@ -100,6 +100,8 @@ namespace Carpet {
     /* Helper functions */
     MPI_Comm CarpetMPIComm (void);
     MPI_Datatype CarpetMPIDatatype (int vartype);
+    MPI_Datatype CarpetSimpleMPIDatatype (int vartype);
+    int CarpetSimpleMPIDatatypeLength (int vartype);
     
     
     
