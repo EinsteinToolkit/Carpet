@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.48 2004/03/23 15:37:21 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.49 2004/04/07 16:55:22 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -865,6 +865,7 @@ void data<CCTK_REAL8,3>
   CCTK_REAL min_time = times[0];
   CCTK_REAL max_time = times[0];
   for (size_t tl=1; tl<times.size(); ++tl) {
+    // Catch broken compilers that only know min(int) and max(int)
     assert (min(1.3, 1.4) > 1.2);
     min_time = min(min_time, times[tl]);
     max_time = max(max_time, times[tl]);
@@ -880,6 +881,7 @@ void data<CCTK_REAL8,3>
   // Is it necessary to interpolate in time?
   if (times.size() > 1) {
     for (size_t tl=0; tl<times.size(); ++tl) {
+      // Catch broken compilers that only know abs(int)
       assert (abs(1.5) > 1.4);
       if (abs(times[tl] - time) < eps) {
         // It is not.
