@@ -429,8 +429,8 @@ namespace CarpetReduce {
     T mycnt = *(T*)cnt;
     vect<int,dim> imin, imax;
     for (int d=0; d<dim; ++d) {
-      imin[d] = bbox[2*d  ] ? 0      : nghostzones[d];
-      imax[d] = bbox[2*d+1] ? lsh[d] : lsh[d] - nghostzones[d];
+      imin[d] =          (bbox[2*d  ] ? 0 : nghostzones[d]);
+      imax[d] = lsh[d] - (bbox[2*d+1] ? 0 : nghostzones[d]);
     }
     assert (dim==3);
     for (int k=imin[2]; k<imax[2]; ++k) {
