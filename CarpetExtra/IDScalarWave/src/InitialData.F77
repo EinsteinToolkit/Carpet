@@ -72,11 +72,9 @@ c     call CCTK_INFO ("IDScalarWave_InitialData")
                do i=1, cctk_lsh(1)
 
                   phi(i,j,k) = amplitude
-     $                 * exp(- (sqrt(cart3d_x(i,j,k)**2 + cart3d_y(i,j,k)**2
-     $                 + cart3d_z(i,j,k)**2) - radius)**2 / sigma**2)
+     $                 * exp(- (spher3d_r(i,j,k) - radius)**2 / sigma**2)
                   phi_p(i,j,k) = amplitude
-     $                 * exp(- (sqrt(cart3d_x(i,j,k)**2 + cart3d_y(i,j,k)**2
-     $                 + cart3d_z(i,j,k)**2) - radius - dt)**2 / sigma**2)
+     $                 * exp(- (spher3d_r(i,j,k)**2 - radius - dt)**2 / sigma**2)
 
                end do
             end do
@@ -96,7 +94,7 @@ c        Use kx,ky,kz as number of modes in each direction.
      $                 * sin(kz * (cart3d_z(i,j,k) - 0.5d0) * pi)
      $                 * cos(omega * cctk_time * pi)
                   
-                  phi_p(i,j,k)= amplitude
+                  phi_p(i,j,k) = amplitude
      $                 * sin(kx * (cart3d_x(i,j,k) - 0.5d0) * pi)
      $                 * sin(ky * (cart3d_y(i,j,k) - 0.5d0) * pi)
      $                 * sin(kz * (cart3d_z(i,j,k) - 0.5d0) * pi)
