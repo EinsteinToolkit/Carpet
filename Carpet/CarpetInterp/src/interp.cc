@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.5 2003/05/13 12:14:00 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.6 2003/05/13 12:19:42 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -19,7 +19,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.5 2003/05/13 12:14:00 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.6 2003/05/13 12:19:42 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -229,13 +229,13 @@ namespace CarpetInterp {
     int const saved_mglevel = mglevel;
     int const saved_component = component;
     if (component!=-1) {
-      set_component (cgh, -1);
+      set_component ((cGH*)cgh, -1);
     }
     if (mglevel!=-1) {
-      set_mglevel (cgh, -1);
+      set_mglevel ((cGH*)cgh, -1);
     }
     if (reflevel!=-1) {
-      set_reflevel (cgh, -1);
+      set_reflevel ((cGH*)cgh, -1);
     }
     BEGIN_REFLEVEL_LOOP(cgh) {
       if (reflevel>=minrl && reflevel<maxrl) {
@@ -331,13 +331,13 @@ namespace CarpetInterp {
       }
     } END_REFLEVEL_LOOP(cgh);
     if (saved_reflevel!=-1) {
-      set_reflevel (cgh, saved_reflevel);
+      set_reflevel ((cGH*)cgh, saved_reflevel);
     }
     if (saved_mglevel!=-1) {
-      set_mglevel (cgh, saved_mglevel);
+      set_mglevel ((cGH*)cgh, saved_mglevel);
     }
     if (saved_component!=-1) {
-      set_component (cgh, saved_component);
+      set_component ((cGH*)cgh, saved_component);
     }
     
     

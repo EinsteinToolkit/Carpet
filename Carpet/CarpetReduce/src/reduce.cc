@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.20 2003/05/13 12:14:00 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.21 2003/05/13 12:19:42 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -22,7 +22,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.20 2003/05/13 12:14:00 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.21 2003/05/13 12:19:42 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -713,7 +713,7 @@ namespace CarpetReduce {
     
     int const saved_component = component;
     if (component!=-1) {
-      set_component (cgh, -1);
+      set_component ((cGH*)cgh, -1);
     }
     BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
       
@@ -762,7 +762,7 @@ namespace CarpetReduce {
       
     } END_LOCAL_COMPONENT_LOOP(cgh);
     if (saved_component!=-1) {
-      set_component (cgh, saved_component);
+      set_component ((cGH*)cgh, saved_component);
     }
     
     Finalise (cgh, proc, num_outvals, outvals, outtype,
