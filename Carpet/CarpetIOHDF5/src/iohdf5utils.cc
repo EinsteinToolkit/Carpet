@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5utils.cc,v 1.7 2004/07/07 11:01:05 tradke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5utils.cc,v 1.8 2004/07/07 17:09:17 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5utils_cc);
 }
 
@@ -56,11 +56,18 @@ namespace CarpetIOHDF5 {
     return flags.at(vindex);
   }
   
-  void SetFlag (int index, const char* optstring, void* arg)
+  void SetFlag (int vindex, const char* optstring, void* arg)
   {
-    optstring = optstring;
+    if (optstring)
+    {
+      char *fullname = CCTK_FullName (vindex);
+      CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Option string '%s' will be ignored for HDF5 output of "
+                  "variable '%s'", optstring, fullname);
+      free (fullname);
+    }
     vector<bool>& flags = *(vector<bool>*)arg;
-    flags.at(index) = true;
+    flags.at(vindex) = true;
   }
   
   
