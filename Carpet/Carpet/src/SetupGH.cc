@@ -793,6 +793,7 @@ namespace Carpet {
     int ierr = CCTK_GroupData (group, &gp);
     assert (!ierr);
     
+#if 0
     if (gp.compact) {
       char * const groupname = CCTK_GroupName (group);
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -800,6 +801,7 @@ namespace Carpet {
                   groupname);
       free (groupname);
     }
+#endif
     
 #if 0
     if (gp.contiguous) {
