@@ -1,8 +1,8 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.hh,v 1.1 2001/03/01 13:40:11 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.hh,v 1.2 2001/03/07 13:01:11 eschnett Exp $
 
 #include "cctk.h"
 
-namespace Carpet {
+namespace CarpetSlab {
   
   extern "C" {
     
@@ -33,4 +33,4 @@ namespace Carpet {
     
   } // extern "C"
   
-} // namespace Carpet
+} // namespace CarpetSlab

@@ -40,7 +40,7 @@ c     -*-Fortran-*-
       INTEGER    i,j,k
       CCTK_REAL  dt,omega, pi
       
-      print '("IDScalarWave_InitialData")'
+c      print '("IDScalarWave_InitialData")'
       
       pi = 4.d0*atan(1.d0)
 

@@ -1,2 +1,12 @@
 # Parameter definitions for thorn CarpetLib
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/param.ccl,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/param.ccl,v 1.2 2001/03/07 13:00:05 eschnett Exp $
+
+private:
+
+BOOLEAN verbose "Print info to the screen"
+{
+} "no"
+
+BOOLEAN barriers "Insert barriers at strategic places for debugging purposes (slows down execution)"
+{
+} "no"

@@ -1,8 +1,8 @@
 # Interface definition for thorn WaveToyF77
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/interface.ccl,v 1.1 2001/03/01 13:40:11 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/interface.ccl,v 1.2 2001/03/07 13:01:47 eschnett Exp $
 
 implements: wavetoy
-inherits: boundary grid
+inherits: grid
 
 public:
 

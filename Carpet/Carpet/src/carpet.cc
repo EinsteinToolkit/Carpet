@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.3 2001/03/05 21:48:28 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.4 2001/03/07 12:59:53 eschnett Exp $
 
 /* It is assumed that the number of components of all arrays is equal
    to the number of components of the grid functions, and that their
@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cmath>
 #include <complex>
+#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -33,10 +34,6 @@
 
 
 
-#define DEBUG_DIST DIST_NODEBUG
-
-
-
 namespace Carpet {
   
   static void RecursiveInitialise (cGH* cgh);
@@ -46,6 +43,9 @@ namespace Carpet {
   static void Recompose (cGH* cgh);
   static void CycleTimeLevels (cGH* cgh);
   static void Restrict (cGH* cgh);
+  
+  // Debugging output
+  static void Checkpoint (const char* fmt, ...);
   
   
   
@@ -91,7 +91,6 @@ namespace Carpet {
     CCTK_OverloadEnableGroupComm (EnableGroupComm);
     CCTK_OverloadDisableGroupComm (DisableGroupComm);
     CCTK_OverloadBarrier (Barrier);
-//     CCTK_OverloadParallelInit (ParallelInit);
     CCTK_OverloadExit (Exit);
     CCTK_OverloadAbort (Abort);
     CCTK_OverloadMyProc (myProc);
@@ -112,7 +111,7 @@ namespace Carpet {
     assert (convLevel==0);
     
     dist::pseudoinit();
-    DEBUG_DIST;
+    Checkpoint ("starting SetupGH...");
     
     // ghost zones
     const vect<int,dim> lghosts(ghost_size_x, ghost_size_y, ghost_size_z);
@@ -222,6 +221,8 @@ namespace Carpet {
     // Recompose grid hierarchy
     Recompose (cgh); 
     
+    Checkpoint ("done with SetupGH.");
+    
     // We register only once, ergo we get only one handle, ergo there
     // is only one grid hierarchy for us.  We store that statically,
     // so there is no need to pass it to Cactus.
@@ -234,14 +235,13 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    CCTK_INFO ("starting Initialise...");
-    
     // Initialise stuff
     const int convlev = 0;
     cGH* const cgh = CCTK_SetupGH (fc, convlev);
     CCTKi_AddGH (fc, convlev, cgh);
     
-    DEBUG_DIST;
+    // Delay checkpoint until MPI has been initialised
+    Checkpoint ("starting Initialise...");
     
     // Initialise stuff
     cgh->cctk_iteration = 0;
@@ -263,7 +263,7 @@ namespace Carpet {
     // Output
     CCTK_OutputGH (cgh);
     
-    CCTK_INFO ("done with Initialise.");
+    Checkpoint ("done with Initialise.");
     
     return 0;
   }
@@ -272,16 +272,8 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    {
-      char msg[1000];
-      strcpy (msg, "");
-      for (int i=0; i<reflevel; ++i) strcat (msg, "  ");
-      sprintf (msg, "%s starting RecursiveInitialise on level %d...",
-	       msg, reflevel);
-      CCTK_INFO (msg);
-    }
-    
-    DEBUG_DIST;
+    Checkpoint ("%*sstarting RecursiveInitialise on level %d...",
+		2*reflevel, "", reflevel);
     
     // Set up the grid
     CCTK_ScheduleTraverse ("CCTK_BASEGRID", cgh, CallFunction);
@@ -307,14 +299,8 @@ namespace Carpet {
     // Analysis
     CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
     
-    {
-      char msg[1000];
-      strcpy (msg, "");
-      for (int i=0; i<reflevel; ++i) strcat (msg, "  ");
-      sprintf (msg, "%s done with RecursiveInitialise on level %d.",
-	       msg, reflevel);
-      CCTK_INFO (msg);
-    }
+    Checkpoint ("%*sdone with RecursiveInitialise on level %d...",
+		2*reflevel, "", reflevel);
   }
   
   
@@ -323,9 +309,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    CCTK_INFO ("starting Evolve...");
-    
-    DEBUG_DIST;
+    Checkpoint ("starting Evolve...");
     
     const int convlev = 0;
     cGH* cgh = fc->GH[convlev];
@@ -338,11 +322,7 @@ namespace Carpet {
       // Next iteration
       ++cgh->cctk_iteration;
       
-      {
-	char msg[1000];
-	sprintf (msg, "Evolving iteration %d...", cgh->cctk_iteration);
-	CCTK_INFO (msg);
-      }
+      Checkpoint ("Evolving iteration %d...", cgh->cctk_iteration);
       
       RecursiveEvolve (cgh);
       
@@ -350,7 +330,7 @@ namespace Carpet {
       CCTK_OutputGH (cgh);
     }
     
-    CCTK_INFO ("done with Evolve.");
+    Checkpoint ("done with Evolve.");
     
     return 0;
   }
@@ -359,16 +339,8 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    {
-      char msg[1000];
-      strcpy (msg, "");
-      for (int i=0; i<reflevel; ++i) strcat (msg, "  ");
-      sprintf (msg, "%s starting RecursiveEvolve on level %d...",
-	       msg, reflevel);
-      CCTK_INFO (msg);
-    }
-    
-    DEBUG_DIST;
+    Checkpoint ("%*sstarting RecursiveEvolve on level %d...",
+		2*reflevel, "", reflevel);
     
     // Prestep
     CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
@@ -402,14 +374,8 @@ namespace Carpet {
     // Analysis
     CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
     
-    {
-      char msg[1000];
-      strcpy (msg, "");
-      for (int i=0; i<reflevel; ++i) strcat (msg, "  ");
-      sprintf (msg, "%s done with RecursiveEvolve on level %d.",
-	       msg, reflevel);
-      CCTK_INFO (msg);
-    }
+    Checkpoint ("%*sdone with RecursiveEvolve on level %d...",
+		2*reflevel, "", reflevel);
   }
   
   
@@ -418,21 +384,18 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    CCTK_INFO ("starting Shutdown...");
-    
-    DEBUG_DIST;
+    Checkpoint ("starting Shutdown...");
     
     const int convlev = 0;
     cGH* cgh = fc->GH[convlev];
     
     RecursiveShutdown (cgh);
     
-    CCTK_Barrier (cgh);
-    
     fprintf (stdout, "--------------------------------------------------------------------------------\n"
 	     "Done.\n");
     
-    CCTK_INFO ("done with Shutdown.");
+    // earlier checkpoint before calling finalising MPI
+    Checkpoint ("done with Shutdown.");
     
     dist::finalize();
     
@@ -443,16 +406,8 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    {
-      char msg[1000];
-      strcpy (msg, "");
-      for (int i=0; i<reflevel; ++i) strcat (msg, "  ");
-      sprintf (msg, "%s starting RecursiveShutdown on level %d...",
-	       msg, reflevel);
-      CCTK_INFO (msg);
-    }
-    
-    DEBUG_DIST;
+    Checkpoint ("%*sstarting RecursiveShutdown on level %d...",
+		2*reflevel, "", reflevel);
     
     // Recurse
     if (reflevel < hh->reflevels()-1) {
@@ -467,14 +422,8 @@ namespace Carpet {
     // Shutdown
     CCTK_ScheduleTraverse ("CCTK_SHUTDOWN", cgh, CallFunction);
     
-    {
-      char msg[1000];
-      strcpy (msg, "");
-      for (int i=0; i<reflevel; ++i) strcat (msg, "  ");
-      sprintf (msg, "%s done with RecursiveShutdown on level %d.",
-	       msg, reflevel);
-      CCTK_INFO (msg);
-    }
+    Checkpoint ("%*sdone with RecursiveShutdown on level %d...",
+		2*reflevel, "", reflevel);
   }
   
   
@@ -509,7 +458,7 @@ namespace Carpet {
     assert (mglevel>=0);
     assert (reflevel>=0);
     
-    DEBUG_DIST;
+//     Checkpoint ("%*sstarting CallFunction...", 2*reflevel, "");
     
     cGH* cgh = (cGH*)data;
     
@@ -588,7 +537,6 @@ namespace Carpet {
 	    default:
 	      abort();
 	    }
-	    assert (cgh->data[n][tl]);
 	    
 	  } else {
 	    
@@ -613,6 +561,9 @@ namespace Carpet {
 	// maybe: traverse only if the component is local to the processor
 	// maybe not, because arrays might have different distribution
 	// than grid functions
+	
+	// this requires that all processors have the same number of
+	// local components
  	if (hh->is_local(reflevel, component)) {
 	  
 	  // set Cactus parameters to pseudo values
@@ -718,8 +669,6 @@ namespace Carpet {
 		default:
 		  abort();
 		}
-// 		cerr << CCTK_MyProc(cgh) << " trcm " << tl << " " << reflevel << " " << component << " " << mglevel << endl;
-// 		cerr << CCTK_MyProc(cgh) << " gvn " << group << " " << var << " " << n << endl;
 		assert (cgh->data[n][tl]);
 		
 	      } else {
@@ -742,8 +691,20 @@ namespace Carpet {
       
     } // if local operation
     
-    // let the flesh do the synchronisation, if necessary
+//     Checkpoint ("%*sdone with CallFunction.", 2*reflevel, "");
+    
+#if 0
+    // return 0: let the flesh do the synchronisation, if necessary
     return 0;
+#endif
+    
+    // synchronise, because our bbox information was wrong
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
+      SyncGroup (cgh, CCTK_GroupName(group));
+    }
+    
+    // return 1: we did synchronise
+    return 1;
   }
   
   
@@ -776,8 +737,7 @@ namespace Carpet {
   {
     assert (component == -1);
     
-    CCTK_VInfo (CCTK_THORNSTRING, "SyncGroup %s", groupname);
-    DEBUG_DIST;
+    Checkpoint ("SyncGroup %s", groupname);
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
@@ -838,8 +798,7 @@ namespace Carpet {
   
   int EnableGroupStorage (cGH* cgh, const char* groupname)
   {
-    CCTK_VInfo (CCTK_THORNSTRING, "EnableGroupStorage %s", groupname);
-    DEBUG_DIST;
+    Checkpoint ("EnableGroupStorage %s", groupname);
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
@@ -925,15 +884,14 @@ namespace Carpet {
     
     // The return value seems to be 1 (success) no matter whether
     // storage has actually been disabled.
-    return 1;
+    return retval;
   }
   
   
   
   int DisableGroupStorage (cGH* cgh, const char* groupname)
   {
-    CCTK_VInfo (CCTK_THORNSTRING, "DisableGroupStorage %s", groupname);
-    DEBUG_DIST;
+    Checkpoint ("DisableGroupStorage %s", groupname);
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
@@ -1011,7 +969,9 @@ namespace Carpet {
       abort();
     }
     
-    return 0;
+    // The return value seems to be 1 (success) no matter whether
+    // storage has actually been disabled.
+    return 1;
   }
   
   
@@ -1035,8 +995,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     assert (component == -1);
-    
-    DEBUG_DIST;
+    Checkpoint ("%*sRecompose", 2*reflevel, "");
     
     const int nprocs    = CCTK_nProcs(cgh);
     const int reflevels = max_refinement_levels; // arbitrary value
@@ -1073,6 +1032,8 @@ namespace Carpet {
     vector<vector<int> > pss(bbss.size());
     for (int rl=0; rl<reflevels; ++rl) {
       pss[rl] = vector<int>(bbss[rl].size());
+      // make sure all processors have the same number of components
+      assert (bbss[rl].size() % nprocs == 0);
       for (int c=0; c<(int)bbss[rl].size(); ++c) {
 	pss[rl][c] = c % nprocs; // distribute among processors
       }
@@ -1084,7 +1045,7 @@ namespace Carpet {
   
   static void CycleTimeLevels (cGH* cgh)
   {
-    DEBUG_DIST;
+    Checkpoint ("%*sCycleTimeLevels", 2*reflevel, "");
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cgh, group)) {
@@ -1134,7 +1095,7 @@ namespace Carpet {
   {
     assert (component == -1);
     
-    DEBUG_DIST;
+    Checkpoint ("%*sRestrict", 2*reflevel, "");
     
     if (reflevel == hh->reflevels()-1) return;
     
@@ -1181,13 +1142,6 @@ namespace Carpet {
   
   
   
-//   int ParallelInit (cGH* cgh)
-//   {
-//     return 0;
-//   }
-  
-  
-  
   int Exit (cGH* cgh, int retval)
   {
     CCTK_Barrier (cgh);
@@ -1224,7 +1178,10 @@ namespace Carpet {
   {
     static const int zero = 0, one = 1;
     
-    assert (component!=-1);
+    if (component == -1) {
+      // global routine
+      return &zero;
+    }
     
     if (groupname) {
       group = CCTK_GroupIndex(groupname);
@@ -1233,7 +1190,6 @@ namespace Carpet {
     
     assert (dir>=0 && dir<dim);
     
-//     cout << "ArrayGroupSizeB group=" << CCTK_GroupName(group) << " dir=" << dir << endl;
     if (CCTK_QueryGroupStorageI(cgh, group)) {
       
       const int var = CCTK_FirstVarIndexI(group);
@@ -1243,17 +1199,14 @@ namespace Carpet {
 	
       case CCTK_SCALAR:
 	assert (group<(int)scdata.size());
-// 	cout << "   SCALAR" << endl;
 	return &one;
 	
       case CCTK_ARRAY:
 	assert (group<(int)arrdata.size());
-// 	cout << "   ARRAY " << arrdata[group].size[dir] << endl;
 	return &arrdata[group].size[dir];
 	
       case CCTK_GF:
 	assert (group<(int)gfdata.size());
-// 	cout << "   GF " << gfsize[dir] << endl;
 	return &gfsize[dir];
 	
       default:
@@ -1276,8 +1229,6 @@ namespace Carpet {
       group = CCTK_GroupIndex(groupname);
     }
     assert (group>=0 && group<CCTK_NumGroups());
-    
-//     cout << "QueryGroupStorageB " << CCTK_GroupName(group) << endl;
     
     const int n = CCTK_FirstVarIndexI(group);
     assert (n>=0 && n<CCTK_NumVars());
@@ -1307,6 +1258,24 @@ namespace Carpet {
       
     default:
       abort();
+    }
+  }
+  
+  
+  
+  void Checkpoint (const char* fmt, ...)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    if (verbose) {
+      va_list args;
+      char msg[1000];
+      va_start (args, fmt);
+      vsnprintf (msg, sizeof(msg), fmt, args);
+      va_end (args);
+      CCTK_INFO (msg);
+    }
+    if (barriers) {
+      MPI_Barrier (dist::comm);
     }
   }
   

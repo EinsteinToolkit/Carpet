@@ -1,45 +1,41 @@
-# wavetoy_none.par - wavetoy evolution with no boundaries
-# $Id: wavetoyf77_none.par,v 1.1 2001/03/01 13:40:11 eschnett Exp $
-#
 # /*@@
-#   @file      wavetoy_rad.par
-#   @date      Sunday 24th July
-#   @author    Gabrielle Allen
+#   @file      wavetoy_none.par
+#   @date      2001-03-06
+#   @author    Erik Schnetter
 #   @desc
-#   Wavetoy parameter file demonstrating no boundaries in Octant
+#   Wavetoy parameter file demonstrating no boundaries in octant mode
 #   @enddesc
-# @@*/          
+# @@*/
+#
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_none.par,v 1.2 2001/03/07 13:02:01 eschnett Exp $
 
-ActiveThorns = "idscalarwave time wavetoyf77 pugh pughreduce pughslab cartgrid3d ioutil ioascii iobasic"
- 
-time::dtfac = 0.5
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetSlab IDScalarWave WaveToyF77"
 
-idscalarwave::initial_data = "gaussian"
-idscalarwave::sigma = 2.8 
-idscalarwave::radius = 0
+Cactus::cctk_itlast		= 500
 
-wavetoyf77::bound = "none"
+Time::dtfac			= 0.5
 
-grid::type = "BySpacing"
-grid::domain = "octant"
-grid::dxyz = 0.3
+driver::global_nx		= 30
+driver::global_ny		= 30
+driver::global_nz		= 30
 
-driver::global_nx = 30
-driver::global_ny = 30
-driver::global_nz = 30
+grid::type			= byspacing
+grid::mode			= octant
+grid::dxyz			= 0.3
 
-cactus::cctk_itlast = 500
+IO::outdir			= "wavetoyf77_none"
 
-IOBasic::outScalar_every = 10
-IOBasic::outScalar_vars = "wavetoy::phi"
+IOBasic::outInfo_every		= 50
+#IOBasic::outInfo_vars		= "wavetoy::phi"
 
-IOASCII::out1D_every = 10
-IOASCII::out1D_z = "no"
-IOASCII::out1D_y = "no"
-IOASCII::out1D_vars = "wavetoy::phi "
+#IOBasic::outScalar_every	= 10
+#IOBasic::outScalar_vars		= "wavetoy::phi"
 
-IOBasic::outInfo_every = 50
-IOBasic::outInfo_vars = "wavetoy::phi"
- 
-IO::outdir = "wavetoyf77_none"
+IOASCII::out1D_every		= 10
+IOASCII::out1D_vars		= "wavetoy::phi "
 
+WaveToyF77::bound		= none
+
+IDScalarWave::initial_data	= gaussian
+IDScalarWave::sigma		= 2.8
+IDScalarWave::radius		= 0

@@ -39,7 +39,7 @@ c     Declare variables in argument list
       DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
       
-      INTEGER   i,j,k,ierr
+      INTEGER   i,j,k
       INTEGER   istart, jstart, kstart, iend, jend, kend
       CCTK_REAL dx,dy,dz,dt
       CCTK_REAL dx2,dy2,dz2,dt2
@@ -47,7 +47,7 @@ c     Declare variables in argument list
       
       CCTK_REAL factor
       
-      print '("WaveToyF77_Evolution")'
+c     call CCTK_INFO ("WaveToyF77_Evolution")
       
 c     Set up shorthands
 c     -----------------
@@ -125,7 +125,7 @@ c     Local declarations
       integer ierr
       integer sw(3)
       
-      print '("WaveToyF77_Boundaries")'
+c     call CCTK_INFO ("WaveToyF77_Boundaries")
       
       npow = 1
       finf = 1

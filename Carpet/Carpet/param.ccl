@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.2 2001/03/07 12:59:40 eschnett Exp $
 
 shares: Cactus
 
@@ -60,3 +60,17 @@ CCTK_INT multigrid_factor "Multigrid factor"
 {
   1:* :: "must be positive"
 } 2
+
+
+
+BOOLEAN verbose "Display info on the screen"
+{
+} "no"
+
+BOOLEAN vverbose "Display a lot of info on the screen"
+{
+} "no"
+
+BOOLEAN barriers "Insert barriers at strategic places for debugging purposes (slows down execution)"
+{
+} "no"
