@@ -106,6 +106,18 @@ void gdata::copy_from (comm_state& state,
 {
   DECLARE_CCTK_PARAMETERS;
   
+  assert (has_storage() && src->has_storage());
+  assert (all(box.lower()>=extent().lower()
+	      && box.lower()>=src->extent().lower()));
+  assert (all(box.upper()<=extent().upper()
+	      && box.upper()<=src->extent().upper()));
+  assert (all(box.stride()==extent().stride()
+	      && box.stride()==src->extent().stride()));
+  assert (all((box.lower()-extent().lower())%box.stride() == 0
+	      && (box.lower()-src->extent().lower())%box.stride() == 0));
+  
+  if (box.empty()) return;
+  
   switch (state.thestate) {
   case state_recv:
     if (combine_recv_send) {
@@ -135,18 +147,6 @@ void gdata::copy_from (comm_state& state,
 void gdata::copy_from_nocomm (const gdata* src, const ibbox& box)
 {
   assert (has_storage() && src->has_storage());
-  assert (all(box.lower()>=extent().lower()
-	      && box.lower()>=src->extent().lower()));
-  assert (all(box.upper()<=extent().upper()
-	      && box.upper()<=src->extent().upper()));
-  assert (all(box.stride()==extent().stride()
-	      && box.stride()==src->extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0
-	      && (box.lower()-src->extent().lower())%box.stride() == 0));
-  
-  if (box.empty()) return;
-  
-  assert (has_storage() && src->has_storage());
   assert (proc() == src->proc());
   
   // copy on same processor
@@ -161,18 +161,6 @@ void gdata::copy_from_recv (comm_state& state,
                             const gdata* src, const ibbox& box)
 {
   DECLARE_CCTK_PARAMETERS;
-  
-  assert (has_storage() && src->has_storage());
-  assert (all(box.lower()>=extent().lower()
-	      && box.lower()>=src->extent().lower()));
-  assert (all(box.upper()<=extent().upper()
-	      && box.upper()<=src->extent().upper()));
-  assert (all(box.stride()==extent().stride()
-	      && box.stride()==src->extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0
-	      && (box.lower()-src->extent().lower())%box.stride() == 0));
-  
-  if (box.empty()) return;
   
   wtime_copyfrom_recv.start();
   
@@ -229,18 +217,6 @@ void gdata::copy_from_send (comm_state& state,
                             const gdata* src, const ibbox& box)
 {
   DECLARE_CCTK_PARAMETERS;
-  
-  assert (has_storage() && src->has_storage());
-  assert (all(box.lower()>=extent().lower()
-	      && box.lower()>=src->extent().lower()));
-  assert (all(box.upper()<=extent().upper()
-	      && box.upper()<=src->extent().upper()));
-  assert (all(box.stride()==extent().stride()
-	      && box.stride()==src->extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0
-	      && (box.lower()-src->extent().lower())%box.stride() == 0));
-  
-  if (box.empty()) return;
   
   wtime_copyfrom_send.start();
   
@@ -309,18 +285,6 @@ void gdata::copy_from_wait (comm_state& state,
                             const gdata* src, const ibbox& box)
 {
   DECLARE_CCTK_PARAMETERS;
-  
-  assert (has_storage() && src->has_storage());
-  assert (all(box.lower()>=extent().lower()
-	      && box.lower()>=src->extent().lower()));
-  assert (all(box.upper()<=extent().upper()
-	      && box.upper()<=src->extent().upper()));
-  assert (all(box.stride()==extent().stride()
-	      && box.stride()==src->extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0
-	      && (box.lower()-src->extent().lower())%box.stride() == 0));
-  
-  if (box.empty()) return;
   
   wtime_copyfrom_wait.start();
   
@@ -431,6 +395,22 @@ void gdata
   
   assert (transport_operator != op_error);
   if (transport_operator == op_none) return;
+
+  assert (has_storage());
+  assert (all(box.lower()>=extent().lower()));
+  assert (all(box.upper()<=extent().upper()));
+  assert (all(box.stride()==extent().stride()));
+  assert (all((box.lower()-extent().lower())%box.stride() == 0));
+  assert (srcs.size() == times.size() && srcs.size()>0);
+  for (int t=0; t<(int)srcs.size(); ++t) {
+    assert (srcs.at(t)->has_storage());
+    assert (all(box.lower()>=srcs.at(t)->extent().lower()));
+    assert (all(box.upper()<=srcs.at(t)->extent().upper()));
+  }
+  
+  assert (! box.empty());
+  if (box.empty()) return;
+  
   switch (state.thestate) {
   case state_recv:
     if (combine_recv_send) {
@@ -464,21 +444,6 @@ void gdata
                            const int order_space,
                            const int order_time)
 {
-  assert (has_storage());
-  assert (all(box.lower()>=extent().lower()));
-  assert (all(box.upper()<=extent().upper()));
-  assert (all(box.stride()==extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0));
-  assert (srcs.size() == times.size() && srcs.size()>0);
-  for (int t=0; t<(int)srcs.size(); ++t) {
-    assert (srcs.at(t)->has_storage());
-    assert (all(box.lower()>=srcs.at(t)->extent().lower()));
-    assert (all(box.upper()<=srcs.at(t)->extent().upper()));
-  }
-  
-  assert (! box.empty());
-  if (box.empty()) return;
-  
   assert (proc() == srcs.at(0)->proc());
   
   assert (transport_operator != op_error);
@@ -503,21 +468,6 @@ void gdata
 {
   DECLARE_CCTK_PARAMETERS;
   
-  assert (has_storage());
-  assert (all(box.lower()>=extent().lower()));
-  assert (all(box.upper()<=extent().upper()));
-  assert (all(box.stride()==extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0));
-  assert (srcs.size() == times.size() && srcs.size()>0);
-  for (int t=0; t<(int)srcs.size(); ++t) {
-    assert (srcs.at(t)->has_storage());
-    assert (all(box.lower()>=srcs.at(t)->extent().lower()));
-    assert (all(box.upper()<=srcs.at(t)->extent().upper()));
-  }
-  
-  assert (! box.empty());
-  if (box.empty()) return;
-  
   if (proc() == srcs.at(0)->proc()) {
     // interpolate on same processor
     
@@ -538,7 +488,6 @@ void gdata
         
         comm_state::gcommbuf * b = make_typed_commbuf (box);
         
-        assert (dist::rank() == proc());
         MPI_Irecv (b->pointer(), b->size(), b->datatype(), srcs.at(0)->proc(),
                    tag, dist::comm, &b->request);
         if (use_waitall) {
@@ -564,21 +513,6 @@ void gdata
                          const int order_time)
 {
   DECLARE_CCTK_PARAMETERS;
-  
-  assert (has_storage());
-  assert (all(box.lower()>=extent().lower()));
-  assert (all(box.upper()<=extent().upper()));
-  assert (all(box.stride()==extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0));
-  assert (srcs.size() == times.size() && srcs.size()>0);
-  for (int t=0; t<(int)srcs.size(); ++t) {
-    assert (srcs.at(t)->has_storage());
-    assert (all(box.lower()>=srcs.at(t)->extent().lower()));
-    assert (all(box.upper()<=srcs.at(t)->extent().upper()));
-  }
-  
-  assert (! box.empty());
-  if (box.empty()) return;
   
   if (proc() == srcs.at(0)->proc()) {
     // interpolate on same processor
@@ -614,7 +548,6 @@ void gdata
           (srcs, times, box, time, order_space, order_time);
         delete tmp;
         
-        assert (dist::rank() == srcs.at(0)->proc());
         MPI_Isend (b->pointer(), b->size(), b->datatype(), proc(),
                    tag, dist::comm, &b->request);
         if (use_waitall) {
@@ -640,21 +573,6 @@ void gdata
                          const int order_time)
 {
   DECLARE_CCTK_PARAMETERS;
-  
-  assert (has_storage());
-  assert (all(box.lower()>=extent().lower()));
-  assert (all(box.upper()<=extent().upper()));
-  assert (all(box.stride()==extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0));
-  assert (srcs.size() == times.size() && srcs.size()>0);
-  for (int t=0; t<(int)srcs.size(); ++t) {
-    assert (srcs.at(t)->has_storage());
-    assert (all(box.lower()>=srcs.at(t)->extent().lower()));
-    assert (all(box.upper()<=srcs.at(t)->extent().upper()));
-  }
-  
-  assert (! box.empty());
-  if (box.empty()) return;
   
   if (proc() == srcs.at(0)->proc()) {
     // interpolate on same processor
