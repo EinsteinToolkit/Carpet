@@ -1001,7 +1001,6 @@ namespace CarpetIOASCII {
 		   const vect<CCTK_REAL,D>& coord_upper)
   {
     assert (DD<=D);
-    assert (gfdata->has_storage());
 
     if (gfdata->proc()==0) {
       // output on processor 0

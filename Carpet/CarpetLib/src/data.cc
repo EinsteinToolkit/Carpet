@@ -177,7 +177,7 @@ void data<T,D>::allocate (const ibbox& extent_,
     this->_size *= this->_shape[d];
   }
   this->_proc = proc_;
-  if (this->lives_on_this_processor()) {
+  if (dist::rank() == this->_proc) {
     this->_owns_storage = !mem;
     if (this->_owns_storage) {
       if (this->vectorindex == 0) {
@@ -239,7 +239,7 @@ void data<T,D>::change_processor_recv (comm_state<D>& state,
   assert (!this->comm_active);
   this->comm_active = true;
   
-  if (newproc == this->proc()) {
+  if (newproc == this->_proc) {
     assert (!mem);
     return;
   }
@@ -247,7 +247,7 @@ void data<T,D>::change_processor_recv (comm_state<D>& state,
   wtime_changeproc_recv.start();
 
   if (this->_has_storage) {
-    if (this->this_processor_is ( newproc)) {
+    if (dist::rank() == newproc) {
       // copy from other processor
       
       assert (!_storage);
@@ -268,7 +268,7 @@ void data<T,D>::change_processor_recv (comm_state<D>& state,
         state.requests.push_back (this->request);
       }
       
-    } else if (this->lives_on_this_processor()) {
+    } else if (dist::rank() == this->_proc) {
       // copy to other processor
       
     } else {
@@ -291,7 +291,7 @@ void data<T,D>::change_processor_send (comm_state<D>& state,
   
   assert (this->comm_active);
   
-  if (newproc == this->proc()) {
+  if (newproc == this->_proc) {
     assert (!mem);
     return;
   }
@@ -299,10 +299,10 @@ void data<T,D>::change_processor_send (comm_state<D>& state,
   wtime_changeproc_send.start();
   
   if (this->_has_storage) {
-    if (this->this_processor_is ( newproc)) {
+    if (dist::rank() == newproc) {
       // copy from other processor
       
-    } else if (this->lives_on_this_processor()) {
+    } else if (dist::rank() == this->_proc) {
       // copy to other processor
       
       assert (!mem);
@@ -338,7 +338,7 @@ void data<T,D>::change_processor_wait (comm_state<D>& state,
   assert (this->comm_active);
   this->comm_active = false;
   
-  if (newproc == this->proc()) {
+  if (newproc == this->_proc) {
     assert (!mem);
     return;
   }
@@ -357,7 +357,7 @@ void data<T,D>::change_processor_wait (comm_state<D>& state,
   }
   
   if (this->_has_storage) {
-    if (this->this_processor_is ( newproc )) {
+    if (dist::rank() == newproc) {
       // copy from other processor
       
       if (! use_waitall) {
@@ -367,7 +367,7 @@ void data<T,D>::change_processor_wait (comm_state<D>& state,
         wtime_irecvwait.stop();
       }
       
-    } else if (this->lives_on_this_processor()) {
+    } else if (dist::rank() == this->_proc) {
       // copy to other processor
       
       assert (!mem);
@@ -426,7 +426,7 @@ void data<T,D>
               "There is no copy operator available for the variable type %s, dimension %d.",
               typestring(Tdummy), D);
   
-  assert (this->lives_on_this_processor());
+  assert (dist::rank() == this->proc());
   
   for (typename ibbox::iterator it=box.begin(); it!=box.end(); ++it) {
     const ivect index = *it;
@@ -462,7 +462,7 @@ void data<T,D>
   assert (order_space >= 0);
   assert (order_time >= 0);
   
-  assert (this->lives_on_this_processor());
+  assert (dist::rank() == this->proc());
   
   assert (this->varindex >= 0);
   const int groupindex = CCTK_GroupIndexFromVarI (this->varindex);
@@ -547,7 +547,7 @@ void data<CCTK_INT4,3>
   
   assert (proc() == src->proc());
   
-  assert (lives_on_this_processor());
+  assert (dist::rank() == proc());
   
   const ibbox& sext = src->extent();
   const ibbox& dext = extent();
@@ -590,7 +590,7 @@ void data<CCTK_REAL8,3>
   
   assert (proc() == src->proc());
   
-  assert (lives_on_this_processor());
+  assert (dist::rank() == proc());
   
   const ibbox& sext = src->extent();
   const ibbox& dext = extent();
@@ -633,7 +633,7 @@ void data<CCTK_COMPLEX16,3>
   
   assert (proc() == src->proc());
   
-  assert (lives_on_this_processor());
+  assert (dist::rank() == proc());
   
   const ibbox& sext = src->extent();
   const ibbox& dext = extent();
@@ -1356,7 +1356,7 @@ void data<CCTK_REAL8,3>
   
   assert (proc() == srcs[0]->proc());
   
-  assert (lives_on_this_processor());
+  assert (dist::rank() == proc());
   
   Check_that_the_times_are_consistent (times, time);
 

@@ -229,6 +229,13 @@ gdata<D>::~gdata ()
   }
 }
 
+// Assignment
+template<int D>
+gdata<D> & gdata<D>::operator= (gdata const & from)
+{
+  return * this = from;
+}
+
 
 
 // Processor management
@@ -317,7 +324,7 @@ void gdata<D>::copy_from_nocomm (const gdata* src, const ibbox& box)
   assert (proc() == src->proc());
   
   // copy on same processor
-  if (lives_on_this_processor()) {
+  if (dist::rank() == proc()) {
     copy_from_innerloop (src, box);
   }
 }
@@ -524,7 +531,7 @@ void gdata<D>
   assert (transport_operator != op_none);
   
   // interpolate on same processor
-  if (lives_on_this_processor()) {
+  if (dist::rank() == proc()) {
     interpolate_from_innerloop
       (srcs, times, box, time, order_space, order_time);
   }
@@ -657,28 +664,6 @@ void gdata<D>
 }
 
 
-template<int D>
-bool gdata<D>
-::this_processor_is (int procno)
-{
-  int rank;
-  MPI_Comm_rank (dist::comm, &rank);
-  return rank == procno;
-}
-
-template<int D>
-bool gdata<D>
-::lives_on_this_processor ()
-{
-  return this_processor_is( proc() );
-}
-
-template<int D>
-gdata<D>& gdata<D>
-::operator = ( const gdata & ) // canonical copy
-{
-	return *this; // does nothing
-}
 
 template class comm_state<3>;
 template class gdata<3>;

@@ -102,7 +102,7 @@ class gdata {
 protected:                      // should be readonly
 
   // Fields
-  const int varindex;                 // Cactus variable index, or -1
+  const int varindex;           // Cactus variable index, or -1
   operator_type transport_operator;
   
   bool _has_storage;		// has storage associated (on some processor)
@@ -136,6 +136,9 @@ public:
   make_typed (const int varindex,
               const operator_type transport_operator = op_error) const = 0;
   
+  // Assignment
+  gdata & operator= (gdata const & from);
+
   // Processor management
   void change_processor (comm_state<D>& state,
                          const int newproc,
@@ -182,6 +185,7 @@ public:
   }
 
   int proc () const {
+    assert (_has_storage);
     return _proc;
   }
   
@@ -255,9 +259,6 @@ public:
  public:
   
 protected:
-  bool this_processor_is (int procno);
-  bool lives_on_this_processor ();
-
   virtual void
   copy_from_innerloop (const gdata* src, const ibbox& box) = 0;
   virtual void
@@ -266,7 +267,6 @@ protected:
 			      const ibbox& box, const CCTK_REAL time,
 			      const int order_space,
 			      const int order_time) = 0;
-   gdata & operator =( const gdata & ); // canonical copy
 };
 
 
