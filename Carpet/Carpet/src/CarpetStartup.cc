@@ -6,7 +6,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CarpetStartup.cc,v 1.4 2002/10/24 10:39:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CarpetStartup.cc,v 1.5 2003/09/19 16:04:31 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_CarpetStartup_cc);
 }
 
@@ -16,7 +16,7 @@ namespace Carpet {
   
   using namespace std;
   
-  int CarpetStartup()
+  void CarpetStartup()
   {
     CCTK_RegisterBanner ("AMR driver provided by Carpet");
     
@@ -40,8 +40,6 @@ namespace Carpet {
     CCTK_OverloadArrayGroupSizeB (ArrayGroupSizeB);
     CCTK_OverloadQueryGroupStorageB (QueryGroupStorageB);
     CCTK_OverloadGroupDynamicData (GroupDynamicData);
-    
-    return 0;
   }
   
 } // namespace Carpet

@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.10 2003/07/20 21:03:43 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.11 2003/09/19 16:04:31 schnetter Exp $ */
 
 #ifndef CARPET_PUBLIC_H
 #define CARPET_PUBLIC_H
@@ -20,8 +20,8 @@ namespace Carpet {
 #endif
     
     /* Scheduled functions */
-    int CarpetParamCheck (CCTK_ARGUMENTS);
-    int CarpetStartup (void);
+    void CarpetParamCheck (CCTK_ARGUMENTS);
+    void CarpetStartup (void);
     
     
     
