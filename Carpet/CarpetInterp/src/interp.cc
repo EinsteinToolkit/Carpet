@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.30 2004/05/28 13:50:04 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.31 2004/06/27 21:17:32 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -21,7 +21,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.30 2004/05/28 13:50:04 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.31 2004/06/27 21:17:32 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -146,6 +146,8 @@ namespace CarpetInterp {
       CCTK_WARN (0, "It is not possible to interpolate in meta mode");
     }
     
+    bool const want_global_mode = is_global_mode();
+    
     
     
     // Get some information
@@ -159,8 +161,8 @@ namespace CarpetInterp {
     assert (maps == 1);
     const int m = 0;
     
-    int const minrl = reflevel==-1 ? 0                      : reflevel;
-    int const maxrl = reflevel==-1 ? vhh.at(m)->reflevels() : reflevel+1;
+    int const minrl = want_global_mode ? 0                      : reflevel;
+    int const maxrl = want_global_mode ? vhh.at(m)->reflevels() : reflevel+1;
     
     // Multiple convergence levels are not supported
     assert (mglevels == 1);
@@ -180,6 +182,8 @@ namespace CarpetInterp {
     assert (parptr);
     assert (partype == PARAMETER_INTEGER);
     int const prolongation_order_time = * (CCTK_INT const *) parptr;
+    
+    CCTK_REAL const current_time = cgh->cctk_time / cgh->cctk_delta_time;
     
     
     
@@ -352,13 +356,13 @@ namespace CarpetInterp {
         enter_level_mode (const_cast<cGH*>(cgh), rl);
         
         // Number of necessary time levels
-        CCTK_REAL const time1 = vtt.at(m)->time (0, reflevel, mglevel);
-        CCTK_REAL const time2 = cgh->cctk_time / cgh->cctk_delta_time;
+        CCTK_REAL const level_time = cgh->cctk_time / cgh->cctk_delta_time;
         bool const need_time_interp
-          = fabs((time1 - time2) / (fabs(time1) + fabs(time2)
-                                    + fabs(cgh->cctk_delta_time))) > 1e-12;
-        int const num_tl
-          = need_time_interp ? prolongation_order_time + 1 : 1;
+          = (fabs(current_time - level_time)
+             > 1e-12 * (fabs(level_time) + fabs(current_time)
+                        + fabs(cgh->cctk_delta_time)));
+        assert (! (! want_global_mode && need_time_interp));
+        int const num_tl = need_time_interp ? prolongation_order_time + 1 : 1;
         
         BEGIN_MAP_LOOP(cgh, CCTK_GF) {
           BEGIN_LOCAL_COMPONENT_LOOP(cgh, CCTK_GF) {
@@ -400,6 +404,7 @@ namespace CarpetInterp {
                 assert (group.disttype == CCTK_DISTRIB_DEFAULT);
                 assert (group.stagtype == 0); // not staggered
                 
+                // TODO: emit better warning
                 assert (group.numtimelevels >= num_tl);
                 
                 input_array_type_codes.at(n) = group.vartype;
@@ -465,15 +470,15 @@ namespace CarpetInterp {
                 overall_ierr = min(overall_ierr, ierr);
                 
               } // for tl
-                
-                // Interpolate in time, if necessary
+              
+              // Interpolate in time, if necessary
               if (need_time_interp) {
                   
                 // Get interpolation times
-                CCTK_REAL const time = cgh->cctk_time / cgh->cctk_delta_time;
+                CCTK_REAL const time = current_time;
                 vector<CCTK_REAL> times(num_tl);
                 for (int tl=0; tl<num_tl; ++tl) {
-                  times.at(tl) = vtt.at(m)->time (tl, reflevel, mglevel);
+                  times.at(tl) = vtt.at(m)->time (-tl, reflevel, mglevel);
                 }
                   
                 // Calculate interpolation weights
