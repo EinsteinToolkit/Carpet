@@ -48,7 +48,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.11 2003/10/02 11:34:03 cvs_anon Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.12 2003/12/01 13:15:21 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
@@ -62,7 +62,7 @@ namespace CarpetCheckpointRestart {
 
   int Checkpoint (const cGH* const cgh, int called_from);
 
-
+  int RecoverParameters (IObase* reader);
 
 
   void CarpetIOFlexIO_EvolutionCheckpoint( const cGH* const cgh){
@@ -92,9 +92,191 @@ namespace CarpetCheckpointRestart {
 
   }
 
+/*@@
+   @routine    CarpetIOFlexIO_RecoverParameters
+   @date       Fri Oct 10 2003
+   @author     Christian Ott, Thomas Radke
+   @desc
+   @desc
+               Recovers the parameters from an HDF5 checkpoint file.
+               This routine is scheduled at CCTK_RECOVER_PARAMETERS.
+
+               Note that it cannot be registered with IOUtil to be scheduled
+               from there (as done with the CarpetIOFlexIO_Recover routine) because
+               the registration mechanism isn't activated yet
+               at CCTK_RECOVER_PARAMETERS.
+               Instead we call the generic parameter recovery routine
+               from IOUtil here, and just pass the necessary callback function
+               and its arguments.
+
+               Note also that this routine doesn't get passed any parameters,
+               not even a GH, because this doesn't exist yet at the time it is
+               being called.
+   @enddesc
+
+   @calls      IOUtil_RecoverParameters
+
+   @returntype int
+   @returndesc
+               return code of @seeroutine IOUtil_RecoverParameters, ie.
+               positive for successful parameter recovery, or<BR>
+               0 if recovery wasn't requested, or<BR>
+               negative if parameter recovery failed
+   @endreturndesc
+@@*/
+
+
+  int CarpetIOFlexIO_RecoverParameters(void){
+    return (IOUtil_RecoverParameters (CarpetIOFlexIO_Recover, ".hdf5", "HDF5"));
+  }
+
+/*@@
+   @routine    CarpetIOFlexIO_Recover
+   @date       Fri Oct 10 2003
+   @author     Christian Ott (Tom Goodale IOFlexIO version)
+   @desc
+               Recovers a Carpet GH from an HDF5 file.
+               This routine is registered with IOUtil as CarpetIOFlexIO's recovery
+               routine.
+   @enddesc
+
+   @calls      OpenFile
+               RecoverParameters
+               RecoverGHextensions
+               CarpetIOFlexIOi_RecoverVariables
+               IOUtil_PrintTimings
+
+   @var        GH
+   @vdesc      Pointer to CCTK grid hierarchy
+   @vtype      cGH *
+   @vio        in
+   @endvar
+   @var        basefilename
+   @vdesc      the basefilename of the file to recover from
+               The file suffix is appended by the routine.
+   @vtype      const char *
+   @vio        in
+   @endvar
+   @var        called_from
+   @vdesc      flag indicating where this routine was called from
+               (either CP_RECOVER_DATA or FILEREADER_DATA)
+   @vtype      int
+   @vio        in
+   @endvar
+
+   @returntype int
+   @returndesc
+               >0 = success
+               -1 = recovery failed
+   @endreturndesc
+@@*/
+
+
+int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
+{
+  int result,myproc;
+  CarpetIOFlexIOGH *myGH;
+  char filename[1024];
+  static IObase* reader;
+
+  DECLARE_CCTK_PARAMETERS
+
+  /* to make the compiler happy */
+  myGH = NULL;
+  result = 0;
+
+  myproc = CCTK_MyProc (cgh);
+
+
+  CCTK_VInfo (CCTK_THORNSTRING, "got this far... '%s'", basefilename);  
+
+  if (called_from == CP_RECOVER_PARAMETERS ||
+      called_from == FILEREADER_DATA ||
+      (cgh && (cgh->cctk_levfac[0] > 1 || cgh->cctk_convlevel > 0)))
+  {
+    if (myproc == 0){
+      reader = new H5IO(basefilename,IObase::Read);
+      if ( ! reader->isValid() )
+	{
+	  CCTK_VInfo(CCTK_THORNSTRING,"file is not open");
+	  return (-1);
+	}
+      CCTK_VInfo(CCTK_THORNSTRING,"file is open");
+    }
+  }
+  else
+  {
+    /* This is the case for CP_RECOVER_DATA.
+       CCTK_RECOVER_PARAMETERS must have been called before
+       and set up the file info structure. */
+    if (myproc == 0){
+      if (! reader->isValid() )
+	{
+	  CCTK_VInfo(CCTK_THORNSTRING,"file is not open2");
+	  return (-1);
+	}
+    }
+  }
+
+  if (called_from == CP_RECOVER_PARAMETERS)
+  {
+       CCTK_VInfo(CCTK_THORNSTRING,"called from recover parameters");
+   return (RecoverParameters (reader));
+  }
+
+
+  if (myproc == 0)
+    delete reader;
+
+  CCTK_WARN (-1,"STOPSTOPSTOP2");
+
+  return (result);
+}
+
+
 /********************************************************************
  ********************    Internal Routines   ************************
  ********************************************************************/
+
+  int RecoverParameters(IObase* reader){
+
+    int myproc, retval;
+    
+    IObase::DataType datatype;
+    CCTK_REAL bogusdata;
+
+    int dims[3];
+    int rank=0;
+    int maxdims=3;
+
+    myproc = CCTK_MyProc (NULL);
+
+    if (myproc == 0){
+      CCTK_VInfo (CCTK_THORNSTRING, "Recovering parameters from checkpoint ");
+      
+      /* read the first (bogus) dataset to which the parameters an GHExtensions
+         are attached */
+      
+      reader->readInfo(datatype,rank,dims,maxdims);
+
+      if(datatype != FLEXIO_REAL || rank !=0 )
+	CCTK_WARN (-1,"Wrong recover file format! First dataset type mismatch!");
+   
+      reader->read(&bogusdata);
+
+      //      reader->readAttributeInfo(
+
+
+
+      delete reader;
+    }
+
+
+    CCTK_WARN (-1,"STOPSTOPSTOP");
+
+    return 0;
+  }
+
 
 
   int DumpParams (const cGH* const cgh, int all, IObase* writer){
@@ -151,7 +333,7 @@ namespace CarpetCheckpointRestart {
   int Checkpoint (const cGH* const cgh, int called_from)
   {
     char cp_filename[1024], cp_tempname[1024];
-    int myproc, first_vindex, gindex, retval;
+    int myproc, first_vindex, gindex;
     char *fullname;
     const char *timer_descriptions[3] = {"Time to dump parameters: ",
 					 "Time to dump datasets:   ",
@@ -162,6 +344,7 @@ namespace CarpetCheckpointRestart {
     //    const int varindex = CCTK_VarIndex("ADMBASE:gxx");
     int varindex = 0;
     int group = 0;
+    int retval = 0;
 
     cGroup  gdata;
     IObase* writer = 0;
@@ -179,7 +362,6 @@ namespace CarpetCheckpointRestart {
       CCTK_WARN (-1, "No CarpetIOFlexIO I/O methods registered");
       return (-1);
     }
-
 
   
     myproc = CCTK_MyProc (cgh);
@@ -216,7 +398,7 @@ namespace CarpetCheckpointRestart {
 	    CCTK_VInfo (CCTK_THORNSTRING, "Creating temporary checkpoint file '%s'", cp_tempname);
 	  }
 
-	writer = new IEEEIO(cp_tempname, IObase::Create);
+	//	writer = new IEEEIO(cp_tempname, IObase::Create);
 
 	if (CCTK_Equals(out3D_format, "IEEE")) {
 	  writer = new IEEEIO(cp_tempname, IObase::Create);
@@ -374,6 +556,8 @@ namespace CarpetCheckpointRestart {
       delete writer;
       writer = 0;
     }
+
+    CCTK_VInfo(CCTK_THORNSTRING,"retval: %d",retval);
 
     if (retval == 0)
     {

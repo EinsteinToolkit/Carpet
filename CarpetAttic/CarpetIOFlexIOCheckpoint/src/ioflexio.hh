@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.6 2003/10/02 11:34:03 cvs_anon Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.7 2003/12/01 13:15:21 cott Exp $
 
 #ifndef CARPETIOFLEXIO_HH
 #define CARPETIOFLEXIO_HH
@@ -90,4 +90,7 @@ namespace CarpetIOFlexIOUtil {
 
 }
 #endif // !defined(CARPETIOFLEXIO_HH)
+
+/* structure holding necessary information about a recovery file */
+
 

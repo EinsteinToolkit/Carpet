@@ -45,7 +45,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.10 2003/10/02 11:34:03 cvs_anon Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.11 2003/12/01 13:15:21 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -275,11 +275,13 @@ namespace CarpetIOFlexIO {
       
       ext = bbox<int,dim>(lo,hi,str);
       
-      gdata<dim>* const tmp = data->make_typed ();
+      gdata<dim>* const tmp = data->make_typed (varindex);
       tmp->allocate (ext, 0);
-      tmp->copy_from (data, ext);
 
-
+      
+      for (comm_state<dim> state; !state.done(); state.step()) {
+	tmp->copy_from (state, data, ext);
+      }
       
       // Write data
       if (CCTK_MyProc(cgh)==0) {
@@ -289,7 +291,6 @@ namespace CarpetIOFlexIO {
 	  dims[d]   = (ext.shape() / ext.stride())[d];
 	}
 	amrwriter->write (origin, dims, (void*)tmp->storage());
-
 
 	// dump attributes
 	DumpCommonAttributes(cgh,writer,request);
@@ -780,7 +781,7 @@ namespace CarpetIOFlexIO {
         const vect<int,dim> ub
           = lb + (vect<int,dim>(amr_dims) - 1) * str;
         const bbox<int,dim> ext(lb,ub,str);
-        gdata<dim>* const tmp = data->make_typed ();
+        gdata<dim>* const tmp = data->make_typed (n);
         
         if (CCTK_MyProc(cgh)==0) {
           tmp->allocate (ext, 0, amrgrid->data);
@@ -789,7 +790,9 @@ namespace CarpetIOFlexIO {
         }
         
         // Copy into grid function
-        data->copy_from (tmp, ext);
+	for (comm_state<dim> state; !state.done(); state.step()) {
+           data->copy_from (state, tmp, ext);
+         }
         
         // Delete temporary copy
         delete tmp;
