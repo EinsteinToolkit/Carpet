@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.10 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.11 2003/08/10 21:53:09 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -38,13 +38,14 @@ void th<D>::recompose () {
     const int old_mglevels = times[rl].size();
     CCTK_REAL mgtime;
     // Select default time
-    if (old_mglevels==0 && rl==0) {
-      mgtime = 0;
-    } else if (old_mglevels==0) {
-      mgtime = times[rl-1][0];
-    } else {
-      mgtime = times[rl][old_mglevels-1];
-    }
+    mgtime = 0;
+//     if (old_mglevels==0 && rl==0) {
+//       mgtime = 0;
+//     } else if (old_mglevels==0) {
+//       mgtime = times[rl-1][0];
+//     } else {
+//       mgtime = times[rl][old_mglevels-1];
+//     }
     times[rl].resize(h->mglevels(rl,0), mgtime);
     deltas[rl].resize(h->mglevels(rl,0));
     for (int ml=0; ml<h->mglevels(rl,0); ++ml) {
