@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.31 2004/02/03 14:33:22 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.32 2004/02/27 16:25:53 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -318,7 +318,7 @@ void ggf<D>::intercat (comm_state<D>& state,
   for (int i=0; i<(int)gsrcs.size(); ++i) {
     assert (rl2<(int)storage[tl2s[i]-tmin].size());
     assert (c2<(int)storage[tl2s[i]-tmin][rl2].size());
-    assert (ml2<(int)storage[tl2s[i]-tmin][rl2][ml2].size());
+    assert (ml2<(int)storage[tl2s[i]-tmin][rl2][c2].size());
     gsrcs[i] = storage[tl2s[i]-tmin][rl2][c2][ml2];
     times[i] = t.time(tl2s[i],rl2,ml2);
   }
@@ -358,7 +358,7 @@ void ggf<D>::intercat (comm_state<D>& state,
   for (int i=0; i<(int)gsrcs.size(); ++i) {
     assert (rl2<(int)storage[tl2s[i]-tmin].size());
     assert (c2<(int)storage[tl2s[i]-tmin][rl2].size());
-    assert (ml2<(int)storage[tl2s[i]-tmin][rl2][ml2].size());
+    assert (ml2<(int)storage[tl2s[i]-tmin][rl2][c2].size());
     gsrcs[i] = storage[tl2s[i]-tmin][rl2][c2][ml2];
     times[i] = t.time(tl2s[i],rl2,ml2);
   }
@@ -403,7 +403,7 @@ void ggf<D>::intercat (comm_state<D>& state,
     for (int i=0; i<(int)gsrcs.size(); ++i) {
       assert (rl2<(int)storage[tl2s[i]-tmin].size());
       assert (c2<(int)storage[tl2s[i]-tmin][rl2].size());
-      assert (ml2<(int)storage[tl2s[i]-tmin][rl2][ml2].size());
+      assert (ml2<(int)storage[tl2s[i]-tmin][rl2][c2].size());
       gsrcs[i] = storage[tl2s[i]-tmin][rl2][c2][ml2];
       times[i] = t.time(tl2s[i],rl2,ml2);
     }
