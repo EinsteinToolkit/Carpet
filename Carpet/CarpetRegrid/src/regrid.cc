@@ -22,9 +22,9 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.16 2002/08/02 15:11:17 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.17 2002/10/24 10:26:20 schnetter Exp $";
 
-CCTK_FILEVERSION(CarpetRegrid_regrid_cc)
+CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 
 
 
