@@ -129,6 +129,8 @@ c     Local declarations
       parameter (zero=0, one=1)
       
       integer table
+      save table
+      data table /-1/
       
       character fbound*100
       CCTK_INT  fboundlen
@@ -182,20 +184,21 @@ c     -------------------------------------------------------------
 c     Apply the outer boundary conditions
 c     -----------------------------------
       
+      if (table.eq.-1) then
+         
+         call Util_TableCreateFromString (table, "LIMIT=0.0 SPEED=1.0")
+         if (table.lt.0) call CCTK_WARN (0, "internal error")
+         
+      end if
+      
       call CCTK_FortranString (fboundlen, bound, fbound)
       if (fboundlen.lt.0) call CCTK_WARN (0, "internal error")
-      
-      call Util_TableCreateFromString (table, "LIMIT=0.0 SPEED=1.0")
-      if (table.lt.0) call CCTK_WARN (0, "internal error")
       
       ierr = Boundary_SelectGroupForBC (cctkGH, CCTK_ALL_FACES, 1, table,
      $     "fowavetoy::scalarevolve", fbound)
       if (ierr.ne.0) call CCTK_WARN (0, "internal error")
       ierr = Boundary_SelectGroupForBC (cctkGH, CCTK_ALL_FACES, 1, table,
      $     "fowavetoy::scalarevolve_derivs", fbound)
-      if (ierr.ne.0) call CCTK_WARN (0, "internal error")
-      
-      call Util_TableDestroy (ierr, table)
       if (ierr.ne.0) call CCTK_WARN (0, "internal error")
       
       end
