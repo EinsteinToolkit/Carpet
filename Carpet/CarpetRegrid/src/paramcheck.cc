@@ -7,7 +7,7 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/paramcheck.cc,v 1.2 2004/04/18 13:29:43 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/paramcheck.cc,v 1.3 2004/08/02 11:42:36 schnetter Exp $";
 
 CCTK_FILEVERSION(CarpetRegrid_paramcheck_cc)
 
@@ -37,7 +37,7 @@ namespace CarpetRegrid {
       if (CCTK_Equals(refined_regions, "manual-coordinate-list")) {
         // do nothing
       } else {
-        CCTK_PARAMWARN ("The parameter CarpetRegrid::smart_outer_boundaries can currently only be used when CarpetRegrid::refined_regions=manual-coordinate-list");
+        CCTK_PARAMWARN ("The parameter CarpetRegrid::smart_outer_boundaries can currently only be used when CarpetRegrid::refined_regions is set to \"manual-coordinate-list\"");
       }
     }
     
