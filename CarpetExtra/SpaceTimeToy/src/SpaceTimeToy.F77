@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.6 2001/03/22 18:42:06 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.7 2001/03/26 02:29:24 eschnett Exp $
       
 #include "cctk.h" 
 #include "cctk_Parameters.h"
@@ -25,14 +25,41 @@ c     Copy
                phi_i(i,j,k) = phi(i,j,k)
                psi_i(i,j,k) = psi(i,j,k)
                
-               u_i(i,j,k)  = u(i,j,k)
-               vx_i(i,j,k) = vx(i,j,k)
-               vy_i(i,j,k) = vy(i,j,k)
-               vz_i(i,j,k) = vz(i,j,k)
-               
             end do
          end do
       end do
+      
+      if (cctk_isthornactive("hydrotoy").eq.1) then
+         
+         do k=1,cctk_lsh(3)
+            do j=1,cctk_lsh(2)
+               do i=1,cctk_lsh(1)
+               
+                  u_i(i,j,k)  = u(i,j,k)
+                  vx_i(i,j,k) = vx(i,j,k)
+                  vy_i(i,j,k) = vy(i,j,k)
+                  vz_i(i,j,k) = vz(i,j,k)
+                  
+               end do
+            end do
+         end do
+         
+      else
+         
+         do k=1,cctk_lsh(3)
+            do j=1,cctk_lsh(2)
+               do i=1,cctk_lsh(1)
+                  
+                  u_i(i,j,k)  = 0
+                  vx_i(i,j,k) = 0
+                  vy_i(i,j,k) = 0
+                  vz_i(i,j,k) = 0
+                  
+               end do
+            end do
+         end do
+         
+      end if
       
 c     Evolve
       call SpaceTimeToy_Step (CCTK_PASS_FTOF)
@@ -72,14 +99,41 @@ c     Average
                phi_i(i,j,k) = half * (phi(i,j,k) + phi_n(i,j,k))
                psi_i(i,j,k) = half * (psi(i,j,k) + psi_n(i,j,k))
                
-               u_i(i,j,k)  = half * (u(i,j,k)  + u_n(i,j,k))
-               vx_i(i,j,k) = half * (vx(i,j,k) + vx_n(i,j,k))
-               vy_i(i,j,k) = half * (vy(i,j,k) + vy_n(i,j,k))
-               vz_i(i,j,k) = half * (vz(i,j,k) + vz_n(i,j,k))
-               
             end do
          end do
       end do
+      
+      if (cctk_isthornactive("hydrotoy").eq.1) then
+         
+         do k=1,cctk_lsh(3)
+            do j=1,cctk_lsh(2)
+               do i=1,cctk_lsh(1)
+                  
+                  u_i(i,j,k)  = half * (u(i,j,k)  + u_n(i,j,k))
+                  vx_i(i,j,k) = half * (vx(i,j,k) + vx_n(i,j,k))
+                  vy_i(i,j,k) = half * (vy(i,j,k) + vy_n(i,j,k))
+                  vz_i(i,j,k) = half * (vz(i,j,k) + vz_n(i,j,k))
+                  
+               end do
+            end do
+         end do
+         
+      else
+         
+         do k=1,cctk_lsh(3)
+            do j=1,cctk_lsh(2)
+               do i=1,cctk_lsh(1)
+                  
+                  u_i(i,j,k)  = 0
+                  vx_i(i,j,k) = 0
+                  vy_i(i,j,k) = 0
+                  vz_i(i,j,k) = 0
+                  
+               end do
+            end do
+         end do
+         
+      end if
       
 c     Evolve
       call SpaceTimeToy_Step (CCTK_PASS_FTOF)

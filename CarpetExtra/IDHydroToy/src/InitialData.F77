@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDHydroToy/src/InitialData.F77,v 1.2 2001/03/19 21:30:37 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDHydroToy/src/InitialData.F77,v 1.3 2001/03/26 02:28:50 eschnett Exp $
       
 #include "cctk.h"
 #include "cctk_Parameters.h"
@@ -15,6 +15,7 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDHydroToy/src/Initial
       
       CCTK_REAL pi
       CCTK_REAL omega
+      CCTK_REAL dt
       integer i,j,k
       
       CCTK_REAL vr
@@ -25,6 +26,8 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDHydroToy/src/Initial
       pi = 4*atan(1.d0)
       
       omega = sqrt(kx**2+ky**2+kz**2)
+      
+      dt = CCTK_DELTA_TIME
       
       if (CCTK_EQUALS(initial_data,"plane")) then 
          
@@ -39,6 +42,13 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDHydroToy/src/Initial
                   vy(i,j,k) = u(i,j,k) * ky / omega
                   vz(i,j,k) = u(i,j,k) * kz / omega
                   
+                  u_p(i,j,k) = amplitude
+     $                 * cos((kx*cart3d_x(i,j,k) + ky*cart3d_y(i,j,k)
+     $                 + kz*cart3d_z(i,j,k) + omega*(cctk_time-dt)) * pi)
+                  vx_p(i,j,k) = u_p(i,j,k) * kx / omega
+                  vy_p(i,j,k) = u_p(i,j,k) * ky / omega
+                  vz_p(i,j,k) = u_p(i,j,k) * kz / omega
+                  
                end do
             end do
          end do
@@ -51,8 +61,7 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDHydroToy/src/Initial
                   
                   u(i,j,k) = amplitude / spher3d_r(i,j,k)
      $                 * exp(- (spher3d_r(i,j,k) - radius + cctk_time)**2 / sigma**2)
-
-c     vr = -1/2*A*(sqrt(Pi)*sigma*erf((t-r+R)/sigma)+2*exp(-(t-r+R)^2/(sigma^2))*r)/(r^2)
+                  
                   vr = -0.5d0 * amplitude
      $                 * (sqrt(pi) * sigma * erf((cctk_time - spher3d_r(i,j,k) + radius) / sigma)
      $                    + 2*exp(-(cctk_time - spher3d_r(i,j,k) + radius)**2 / sigma**2) * spher3d_r(i,j,k))
@@ -60,6 +69,17 @@ c     vr = -1/2*A*(sqrt(Pi)*sigma*erf((t-r+R)/sigma)+2*exp(-(t-r+R)^2/(sigma^2))
                   vx(i,j,k) = vr * cart3d_x(i,j,k)/spher3d_r(i,j,k)
                   vy(i,j,k) = vr * cart3d_y(i,j,k)/spher3d_r(i,j,k)
                   vz(i,j,k) = vr * cart3d_z(i,j,k)/spher3d_r(i,j,k)
+                  
+                  u_p(i,j,k) = amplitude / spher3d_r(i,j,k)
+     $                 * exp(- (spher3d_r(i,j,k) - radius + (cctk_time-dt))**2 / sigma**2)
+                  
+                  vr = -0.5d0 * amplitude
+     $                 * (sqrt(pi) * sigma * erf((cctk_time - spher3d_r(i,j,k) + radius) / sigma)
+     $                    + 2*exp(-((cctk_time-dt) - spher3d_r(i,j,k) + radius)**2 / sigma**2) * spher3d_r(i,j,k))
+     $                 / spher3d_r(i,j,k)**2
+                  vx_p(i,j,k) = vr * cart3d_x(i,j,k)/spher3d_r(i,j,k)
+                  vy_p(i,j,k) = vr * cart3d_y(i,j,k)/spher3d_r(i,j,k)
+                  vz_p(i,j,k) = vr * cart3d_z(i,j,k)/spher3d_r(i,j,k)
                   
                end do
             end do
@@ -78,7 +98,6 @@ c     Use kx,ky,kz as number of modes in each direction.
      $                 * sin(ky * (cart3d_y(i,j,k) - 0.5d0) * pi)
      $                 * sin(kz * (cart3d_z(i,j,k) - 0.5d0) * pi)
      $                 * cos(omega * cctk_time * pi)
-                  
                   vx(i,j,k) = amplitude
      $                 * cos(kx * (cart3d_x(i,j,k) - 0.5d0) * pi)
      $                 * sin(ky * (cart3d_y(i,j,k) - 0.5d0) * pi)
@@ -98,6 +117,30 @@ c     Use kx,ky,kz as number of modes in each direction.
      $                 * sin(omega * cctk_time * pi)
      $                 * kz / omega
                   
+                  u_p(i,j,k) = amplitude
+     $                 * sin(kx * (cart3d_x(i,j,k) - 0.5d0) * pi)
+     $                 * sin(ky * (cart3d_y(i,j,k) - 0.5d0) * pi)
+     $                 * sin(kz * (cart3d_z(i,j,k) - 0.5d0) * pi)
+     $                 * cos(omega * (cctk_time-dt) * pi)
+                  vx_p(i,j,k) = amplitude
+     $                 * cos(kx * (cart3d_x(i,j,k) - 0.5d0) * pi)
+     $                 * sin(ky * (cart3d_y(i,j,k) - 0.5d0) * pi)
+     $                 * sin(kz * (cart3d_z(i,j,k) - 0.5d0) * pi)
+     $                 * sin(omega * (cctk_time-dt) * pi)
+     $                 * kx / omega
+                  vy_p(i,j,k) = amplitude
+     $                 * sin(kx * (cart3d_x(i,j,k) - 0.5d0) * pi)
+     $                 * cos(ky * (cart3d_y(i,j,k) - 0.5d0) * pi)
+     $                 * sin(kz * (cart3d_z(i,j,k) - 0.5d0) * pi)
+     $                 * sin(omega * (cctk_time-dt) * pi)
+     $                 * ky / omega
+                  vz_p(i,j,k) = amplitude
+     $                 * sin(kx * (cart3d_x(i,j,k) - 0.5d0) * pi)
+     $                 * sin(ky * (cart3d_y(i,j,k) - 0.5d0) * pi)
+     $                 * cos(kz * (cart3d_z(i,j,k) - 0.5d0) * pi)
+     $                 * sin(omega * (cctk_time-dt) * pi)
+     $                 * kz / omega
+                  
                end do
             end do
          end do
@@ -112,6 +155,11 @@ c     Use kx,ky,kz as number of modes in each direction.
                   vx(i,j,k) = 0
                   vy(i,j,k) = 0
                   vz(i,j,k) = 0
+                  
+                  u_p(i,j,k)  = 0
+                  vx_p(i,j,k) = 0
+                  vy_p(i,j,k) = 0
+                  vz_p(i,j,k) = 0
                   
                end do
             end do
