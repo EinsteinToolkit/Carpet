@@ -28,11 +28,11 @@
 #include "Carpet/CarpetLib/src/ggf.hh"
 #include "Carpet/CarpetLib/src/vect.hh"
 
-#include "Carpet/Carpet/src/carpet.hh"
+#include "carpet.hh"
 
 #include "ioflexio.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.10 2001/07/04 12:29:50 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.11 2001/07/09 09:00:22 schnetter Exp $";
 
 
 
@@ -118,206 +118,171 @@ namespace CarpetIOFlexIO {
     const int n = CCTK_VarIndex(varname);
     assert (n>=0 && n<CCTK_NumVars());
     const int group = CCTK_GroupIndexFromVarI (n);
-    assert (group>=0 && group<(int)Carpet::gfdata.size());
+    assert (group>=0 && group<(int)Carpet::arrdata.size());
     const int n0 = CCTK_FirstVarIndexI(group);
     assert (n0>=0 && n0<CCTK_NumVars());
     const int var = n - n0;
     assert (var>=0 && var<CCTK_NumVars());
     const int tl = 0;
     
-    switch (CCTK_GroupTypeI(group)) {
-      
-    case CCTK_SCALAR: {
-      // Don't output scalars
-      CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
-		  "Cannout output variable \"%s\" because it is a scalar",
+    // Check for storage
+    if (! CCTK_QueryGroupStorageI(cgh, group)) {
+      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+		  "Cannot output variable \"%s\" because it has no storage",
 		  varname);
       return 0;
     }
     
-    case CCTK_ARRAY:
-    case CCTK_GF: {
+    // Create the output directory
+    const char* myoutdir = GetStringParameter("outdir3D", outdir);
+    if (CCTK_MyProc(cgh)==0) {
+      CCTK_CreateDirectory (0755, myoutdir);
+    }
+    
+    // Invent a file name
+    const char* extension = 0;
+    if (CCTK_Equals(out3D_format, "IEEE")) {
+      extension = ".raw";
+#ifdef HDF5
+    } else if (CCTK_Equals(out3D_format, "HDF4")) {
+      extension = ".hdf";
+    } else if (CCTK_Equals(out3D_format, "HDF5")) {
+      extension = ".h5";
+#endif
+    } else {
+      abort();
+    }
+    extension = GetStringParameter ("out3D_extension", extension);
+    
+    char* const filename = (char*)alloca(strlen(myoutdir)
+					 +strlen(alias)
+					 +strlen(extension)+100);
+    sprintf (filename, "%s/%s%s", myoutdir, alias, extension);
+    
+    IObase* writer = 0;
+    AMRwriter* amrwriter = 0;
+    
+    // Write the file only on the root processor
+    if (CCTK_MyProc(cgh)==0) {
       
-      // Check for storage
-      if (! CCTK_QueryGroupStorageI(cgh, group)) {
-	CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-		    "Cannot output variable \"%s\" because it has no storage",
-		    varname);
-	return 0;
+      // If this is the first time, then create and truncate the file
+      if (do_truncate[n]) {
+	struct stat fileinfo;
+	if (! IOUtil_RestartFromRecovery(cgh)
+	    || stat(filename, &fileinfo)!=0) {
+	  writer = 0;
+	  if (CCTK_Equals(out3D_format, "IEEE")) {
+	    writer = new IEEEIO(filename, IObase::Create);
+#ifdef HDF5
+	  } else if (CCTK_Equals(out3D_format, "HDF4")) {
+	    writer = new HDFIO(filename, IObase::Create);
+	  } else if (CCTK_Equals(out3D_format, "HDF5")) {
+	    writer = new H5IO(filename, IObase::Create);
+#endif
+	  } else {
+	    abort();
+	  }
+	  delete writer;
+	  writer = 0;
+	}
       }
       
-      // Create the output directory
-      const char* myoutdir = GetStringParameter("outdir3D", outdir);
-      if (CCTK_MyProc(cgh)==0) {
-	CCTK_CreateDirectory (0755, myoutdir);
-      }
-      
-      // Invent a file name
-      const char* extension = 0;
+      // Open the file 
       if (CCTK_Equals(out3D_format, "IEEE")) {
-	extension = ".raw";
+	writer = new IEEEIO(filename, IObase::Append);
 #ifdef HDF5
       } else if (CCTK_Equals(out3D_format, "HDF4")) {
-	extension = ".hdf";
+	writer = new HDFIO(filename, IObase::Append);
       } else if (CCTK_Equals(out3D_format, "HDF5")) {
-	extension = ".h5";
+	writer = new H5IO(filename, IObase::Append);
 #endif
       } else {
 	abort();
       }
-      extension = GetStringParameter ("out3D_extension", extension);
+      assert (writer->isValid());
+      amrwriter = new AMRwriter(*writer);
       
-      char* const filename = (char*)alloca(strlen(myoutdir)
-					   +strlen(alias)
-					   +strlen(extension)+100);
-      sprintf (filename, "%s/%s%s", myoutdir, alias, extension);
+      // Set datatype
+      assert (CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL8
+	      || (sizeof(CCTK_REAL) == sizeof(CCTK_REAL8)
+		  && CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL));
+      // TODO: Set datatype correctly
+      amrwriter->setType (IObase::Float64);
       
-      IObase* writer = 0;
-      AMRwriter* amrwriter = 0;
+      const int gpdim = CCTK_GroupDimI(group);
       
-      // Write the file only on the root processor
+      // Set coordinate information
+      CCTK_REAL lower[dim], upper[dim];
+      double origin[dim], delta[dim], timestep;
+      for (int d=0; d<dim; ++d) {
+	const int ierr = CCTK_CoordRange
+	  (cgh, &lower[d], &upper[d], d+1, 0, "cart3d");
+	assert (ierr==0);
+	origin[d] = lower[d];
+	delta[d] = cgh->cctk_delta_space[d];
+      }
+      timestep = base_delta_time;
+      amrwriter->setTopLevelParameters
+	(gpdim, origin, delta, timestep, maxreflevels);
+      
+      // Set refinement information
+      int interlevel_timerefinement;
+      int interlevel_spacerefinement[dim];
+      int initial_gridplacementrefinement[dim];
+      interlevel_timerefinement = hh->reffact;
+      for (int d=0; d<dim; ++d) {
+	interlevel_spacerefinement[d] = hh->reffact;
+	initial_gridplacementrefinement[d] = 1;
+      }
+      amrwriter->setRefinement
+	(interlevel_timerefinement, interlevel_spacerefinement,
+	 initial_gridplacementrefinement);
+      
+      // Set level
+      amrwriter->setLevel (reflevel);
+      
+      // Set current time
+      amrwriter->setTime (cgh->cctk_iteration);
+    }
+    
+    // Traverse all components on this refinement and multigrid level
+    BEGIN_COMPONENT_LOOP(cgh) {
+      
+      const generic_gf<dim>* ff = 0;
+      
+      assert (var < (int)arrdata[group].data.size());
+      ff = (generic_gf<dim>*)arrdata[group].data[var];
+      
+      const generic_data<dim>* const data
+	= (*ff) (tl, reflevel, component, mglevel);
+      
+      // Make temporary copy on processor 0
+      const bbox<int,dim> ext = data->extent();
+      generic_data<dim>* const tmp = data->make_typed ();
+      tmp->allocate (ext, 0);
+      tmp->copy_from (data, ext);
+      
+      // Write data
       if (CCTK_MyProc(cgh)==0) {
-	
-	// If this is the first time, then create and truncate the
-	// file
-	if (do_truncate[n]) {
-	  struct stat fileinfo;
-	  if (! IOUtil_RestartFromRecovery(cgh)
-	      || stat(filename, &fileinfo)!=0) {
-	    writer = 0;
-	    if (CCTK_Equals(out3D_format, "IEEE")) {
-	      writer = new IEEEIO(filename, IObase::Create);
-#ifdef HDF5
-	    } else if (CCTK_Equals(out3D_format, "HDF4")) {
-	      writer = new HDFIO(filename, IObase::Create);
-	    } else if (CCTK_Equals(out3D_format, "HDF5")) {
-	      writer = new H5IO(filename, IObase::Create);
-#endif
-	    } else {
-	      abort();
-	    }
-	    delete writer;
-	    writer = 0;
-	  }
-	}
-	
-	// Open the file 
-	if (CCTK_Equals(out3D_format, "IEEE")) {
-	  writer = new IEEEIO(filename, IObase::Append);
-#ifdef HDF5
-	} else if (CCTK_Equals(out3D_format, "HDF4")) {
-	  writer = new HDFIO(filename, IObase::Append);
-	} else if (CCTK_Equals(out3D_format, "HDF5")) {
-	  writer = new H5IO(filename, IObase::Append);
-#endif
-	} else {
-	  abort();
-	}
-	assert (writer->isValid());
-	amrwriter = new AMRwriter(*writer);
-	
-	// Set datatype
-	assert (CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL8
-		|| (sizeof(CCTK_REAL) == sizeof(CCTK_REAL8)
-		    && CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL));
-	// TODO: Set datatype correctly
-	amrwriter->setType (IObase::Float64);
-	
-	const int gpdim = CCTK_GroupDimI(group);
-	
-	// Set coordinate information
-	CCTK_REAL lower[dim], upper[dim];
-	double origin[dim], delta[dim], timestep;
+	int origin[dim], dims[dim];
 	for (int d=0; d<dim; ++d) {
-	  const int ierr = CCTK_CoordRange
-	    (cgh, &lower[d], &upper[d], d+1, 0, "cart3d");
-	  assert (ierr==0);
-	  origin[d] = lower[d];
-	  delta[d] = cgh->cctk_delta_space[d];
+	  origin[d] = (ext.lower() / ext.stride())[d];
+	  dims[d]   = (ext.shape() / ext.stride())[d];
 	}
-	timestep = base_delta_time;
-	amrwriter->setTopLevelParameters
-	  (gpdim, origin, delta, timestep, maxreflevels);
-	
-	// Set refinement information
-	int interlevel_timerefinement;
-	int interlevel_spacerefinement[dim];
-	int initial_gridplacementrefinement[dim];
-	interlevel_timerefinement = hh->reffact;
-	for (int d=0; d<dim; ++d) {
-	  interlevel_spacerefinement[d] = hh->reffact;
- 	  initial_gridplacementrefinement[d] = 1;
-	}
-	amrwriter->setRefinement
-	  (interlevel_timerefinement, interlevel_spacerefinement,
-	   initial_gridplacementrefinement);
-	
-	// Set level
-	amrwriter->setLevel (reflevel);
-	
-	// Set current time
-	amrwriter->setTime (cgh->cctk_iteration);
+	amrwriter->write (origin, dims, (void*)tmp->storage());
       }
       
-      // Traverse all components on this refinement and multigrid
-      // level
-      BEGIN_COMPONENT_LOOP(cgh) {
-	
-	const generic_gf<dim>* ff = 0;
-	
-	switch (CCTK_GroupTypeI(group)) {
-	  
-	case CCTK_ARRAY:
-	  assert (var < (int)arrdata[group].data.size());
-	  ff = (generic_gf<dim>*)arrdata[group].data[var];
-	  break;
-	  
-	case CCTK_GF:
-	  assert (var < (int)gfdata[group].data.size());
-	  ff = (generic_gf<dim>*)gfdata[group].data[var];
-	  break;
-	  
-	default:
-	  abort();
-	}
-	
-	const generic_data<dim>* const data
-	  = (*ff) (tl, reflevel, component, mglevel);
-	
-	/* Make temporary copy on processor 0 */
-	const bbox<int,dim> ext = data->extent();
-	generic_data<dim>* const tmp = data->make_typed ();
-	tmp->allocate (ext, 0);
-	tmp->copy_from (data, ext);
-	
-	/* Write data */
-	if (CCTK_MyProc(cgh)==0) {
-	  int origin[dim], dims[dim];
-	  for (int d=0; d<dim; ++d) {
-	    origin[d] = (ext.lower() / ext.stride())[d];
-	    dims[d]   = (ext.shape() / ext.stride())[d];
-	  }
-	  amrwriter->write (origin, dims, (void*)tmp->storage());
-	}
-	
-	/* Delete temporary copy */
-	delete tmp;
-	
-      } END_COMPONENT_LOOP(cgh);
+      // Delete temporary copy
+      delete tmp;
       
-      // Close the file
-      if (CCTK_MyProc(cgh)==0) {
-	delete amrwriter;
-	amrwriter = 0;
-	delete writer;
-	writer = 0;
-      }
-      
-      break;
-    } // ARRAY or GROUP
-      
-    default:
-      abort();
+    } END_COMPONENT_LOOP(cgh);
+    
+    // Close the file
+    if (CCTK_MyProc(cgh)==0) {
+      delete amrwriter;
+      amrwriter = 0;
+      delete writer;
+      writer = 0;
     }
     
     // Don't truncate again
@@ -406,7 +371,7 @@ namespace CarpetIOFlexIO {
     const int n = CCTK_VarIndex(varname);
     assert (n>=0 && n<CCTK_NumVars());
     const int group = CCTK_GroupIndexFromVarI (n);
-    assert (group>=0 && group<(int)Carpet::gfdata.size());
+    assert (group>=0 && group<(int)Carpet::arrdata.size());
     const int n0 = CCTK_FirstVarIndexI(group);
     assert (n0>=0 && n0<CCTK_NumVars());
     const int var = n - n0;
@@ -550,26 +515,13 @@ namespace CarpetIOFlexIO {
 	  
 	  generic_gf<dim>* ff = 0;
 	  
-	  switch (CCTK_GroupTypeI(group)) {
-	    
-	  case CCTK_ARRAY:
-	    assert (var < (int)arrdata[group].data.size());
-	    ff = (generic_gf<dim>*)arrdata[group].data[var];
-	    break;
-	    
-	  case CCTK_GF:
-	    assert (var < (int)gfdata[group].data.size());
-	    ff = (generic_gf<dim>*)gfdata[group].data[var];
-	    break;
-	    
-	  default:
-	    abort();
-	  }
+	  assert (var < (int)arrdata[group].data.size());
+	  ff = (generic_gf<dim>*)arrdata[group].data[var];
 	  
 	  generic_data<dim>* const data
 	    = (*ff) (tl, reflevel, component, mglevel);
 	  
-	  /* Create temporary data storage on processor 0 */
+	  // Create temporary data storage on processor 0
 	  const vect<int,dim> str = vect<int,dim>(reflevelfact);
 	  const vect<int,dim> lb = vect<int,dim>(amr_origin) * str;
 	  const vect<int,dim> ub
@@ -583,10 +535,10 @@ namespace CarpetIOFlexIO {
 	    tmp->allocate (ext, 0, 0);
 	  }
 	  
-	  /* Copy into grid function */
+	  // Copy into grid function
 	  data->copy_from (tmp, ext);
 	  
-	  /* Delete temporary copy */
+	  // Delete temporary copy
 	  delete tmp;
 	  
 	} END_COMPONENT_LOOP(cgh);

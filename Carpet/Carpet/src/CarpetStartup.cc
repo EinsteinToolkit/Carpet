@@ -5,7 +5,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CarpetStartup.cc,v 1.1 2001/07/04 12:29:46 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CarpetStartup.cc,v 1.2 2001/07/09 09:00:04 schnetter Exp $";
 
 
 
@@ -36,6 +36,7 @@ namespace Carpet {
     CCTK_OverloadnProcs (nProcs);
     CCTK_OverloadArrayGroupSizeB (ArrayGroupSizeB);
     CCTK_OverloadQueryGroupStorageB (QueryGroupStorageB);
+    CCTK_OverloadGroupDynamicData (GroupDynamicData);
     
     return 0;
   }

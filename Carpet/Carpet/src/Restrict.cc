@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.1 2001/07/04 12:29:47 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.2 2001/07/09 09:00:10 schnetter Exp $";
 
 
 
@@ -33,37 +33,14 @@ namespace Carpet {
 	
 	const int tl = 0;
 	
-	switch (CCTK_GroupTypeI(group)) {
-	  
-	case CCTK_SCALAR:
-	  break;
-	  
-	case CCTK_ARRAY:
-	  for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-	    for (int c=0; c<hh->components(reflevel); ++c) {
-	      arrdata[group].data[var]->ref_restrict
-		(tl, reflevel, c, mglevel);
-	    }
-	    for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
-	      arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);
-	    }
+	for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
+	  for (int c=0; c<hh->components(reflevel); ++c) {
+	    arrdata[group].data[var]->ref_restrict
+	      (tl, reflevel, c, mglevel);
 	  }
-	  break;
-	  
-	case CCTK_GF:
-	  for (int var=0; var<(int)gfdata[group].data.size(); ++var) {
-	    for (int c=0; c<hh->components(reflevel); ++c) {
-	      gfdata[group].data[var]->ref_restrict
-		(tl, reflevel, c, mglevel);
-	    }
-	    for (int c=0; c<hh->components(reflevel); ++c) {
-	      gfdata[group].data[var]->sync (tl, reflevel, c, mglevel);
-	    }
+	  for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
+	    arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);
 	  }
-	  break;
-	  
-	default:
-	  abort();
 	}
 	
       }	// if group has storage

@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.1 2001/07/04 12:29:47 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.2 2001/07/09 09:00:11 schnetter Exp $";
 
 
 
@@ -41,8 +41,8 @@ namespace Carpet {
     // There is a difference between the Cactus time levels and the
     // Carpet time levels.  If there are n time levels, then the
     // Cactus time levels are numbered 0 ... n-1, with the current
-    // time level being n-1.  In Carpet, the time levels are numbered
-    // -(n-1) ... 0, where the current time level is always 0.
+    // time level being 0.  In Carpet, the time levels are numbered
+    // -(n-1) ... 0, where the current time level is also 0.
     const int n0 = CCTK_FirstVarIndexI(group);
     assert (n0>=0);
     const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
@@ -50,74 +50,23 @@ namespace Carpet {
     const int tmin = 1 - num_tl;
     const int tmax = 0;
     
-    switch (CCTK_GroupTypeI(group)) {
-      
-    case CCTK_SCALAR:
-      assert (scdata[group].data.size()==0
-	      || scdata[group].data[0].size()==0
-	      || scdata[group].data[0][0].size()==0
-	      || scdata[group].data[0][0][0] == 0);
-      for (int var=0; var<(int)scdata[group].data.size(); ++var) {
-	for (int rl=0; rl<(int)scdata[group].data[var].size(); ++rl) {
-	  for (int tl=0; tl<(int)scdata[group].data[var][rl].size(); ++tl) {
-	    const int n = n0 + var;
-	    switch (CCTK_VarTypeI(n)) {
-#define TYPECASE(N,T)					\
-	    case N:					\
-	      scdata[group].data[var][rl][tl] = new T;	\
-	      break;
-#include "typecase"
-#undef TYPECASE
-	    default:
-	      UnsupportedVarType(n);
-	    } // switch
-	  } // for
-	} // for
-      }	// for
-      break;
-      
-    case CCTK_ARRAY:
-      assert (arrdata[group].data.size()==0
-	      || arrdata[group].data[0] == 0);
-      for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-	const int n = n0 + var;
-	switch (CCTK_VarTypeI(n)) {
+    assert (arrdata[group].data.size()==0
+	    || arrdata[group].data[0] == 0);
+    for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
+      const int n = n0 + var;
+      switch (CCTK_VarTypeI(n)) {
 #define TYPECASE(N,T)							\
-	case N:								\
-	  arrdata[group].data[var] = new gf<T,dim>			\
-	    (CCTK_VarName(n), *arrdata[group].tt, *arrdata[group].dd,	\
-	     tmin, tmax);						\
-	  break;
+      case N:								\
+	arrdata[group].data[var] = new gf<T,dim>			\
+	  (CCTK_VarName(n), *arrdata[group].tt, *arrdata[group].dd,	\
+	   tmin, tmax);							\
+	break;
 #include "typecase"
 #undef TYPECASE
-	default:
-	  UnsupportedVarType(n);
-	} // switch
-      }	// for
-      break;
-      
-    case CCTK_GF:
-      assert (gfdata[group].data.size()==0
-	      || gfdata[group].data[0] == 0);
-      for (int var=0; var<(int)gfdata[group].data.size(); ++var) {
-	const int n = n0 + var;
-	switch (CCTK_VarTypeI(n)) {
-#define TYPECASE(N,T)						\
-	case N:							\
-	  gfdata[group].data[var] = new gf<T,dim>		\
-	    (CCTK_VarName(n), *tt, *(dh<dim>*)dd, tmin, tmax);	\
-	  break;
-#include "typecase"
-#undef TYPECASE
-	default:
-	  UnsupportedVarType(n);
-	} // switch
-      }	// for
-      break;
-      
-    default:
-      abort();
-    }
+      default:
+	UnsupportedVarType(n);
+      } // switch
+    } // for
     
     // Reinitialise Cactus variables
     set_component (cgh, component);
@@ -147,82 +96,22 @@ namespace Carpet {
     
     const int n0 = CCTK_FirstVarIndexI(group);
     
-    switch (CCTK_GroupTypeI(group)) {
-      
-    case CCTK_SCALAR:
-      if (scdata[group].data.size()==0
-	  || scdata[group].data[0].size()==0
-	  || scdata[group].data[0][0].size()==0
-	  || scdata[group].data[0][0][0] == 0) {
-	// group already has no storage
-	break;
-      }
-      for (int var=0; var<(int)scdata[group].data.size(); ++var) {
-	const int n = n0 + var;
-	for (int rl=0; rl<(int)scdata[group].data[var].size(); ++rl) {
-	  for (int tl=0; tl<(int)scdata[group].data[var][rl].size(); ++tl) {
-	    switch (CCTK_VarTypeI(n)) {
-#define TYPECASE(N,T)						\
-	    case N:						\
-	      delete (T*)scdata[group].data[var][rl][tl];	\
-	      break;
-#include "typecase"
-#undef TYPECASE
-	    default:
-	      UnsupportedVarType(n);
-	    }
-	    scdata[group].data[var][rl][tl] = 0;
-	  }
-	}
-      }
-      break;
-      
-    case CCTK_ARRAY:
-      if (arrdata[group].data.size()==0 || arrdata[group].data[0] == 0) {
-	// group already has no storage
-	break;
-      }
-      for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-	const int n = CCTK_FirstVarIndexI(group) + var;
-	switch (CCTK_VarTypeI(n)) {
+    assert (arrdata[group].data.size());
+    assert (arrdata[group].data[0]);
+    for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
+      const int n = n0 + var;
+      switch (CCTK_VarTypeI(n)) {
 #define TYPECASE(N,T)					\
-	case N:						\
-	  delete (gf<T,dim>*)arrdata[group].data[var];	\
-	  break;
-#include "typecase"
-#undef TYPECASE
-	default:
-	  UnsupportedVarType(n);
-	} // switch
-	arrdata[group].data[var] = 0;
-      }	// for
-      break;
-      
-    case CCTK_GF:
-      if (gfdata[group].data.size()==0
-	  || gfdata[group].data[0] == 0) {
-	// group already has no storage
+      case N:						\
+	delete (gf<T,dim>*)arrdata[group].data[var];	\
 	break;
-      }
-      for (int var=0; var<(int)gfdata[group].data.size(); ++var) {
-	const int n = CCTK_FirstVarIndexI(group) + var;
-	switch (CCTK_VarTypeI(n)) {
-#define TYPECASE(N,T)					\
-	case N:						\
-	  delete (gf<T,dim>*)gfdata[group].data[var];	\
-	  break;
 #include "typecase"
 #undef TYPECASE
-	default:
-	  UnsupportedVarType(n);
-	} // switch
-	gfdata[group].data[var] = 0;
-      }	// for
-      break;
-      
-    default:
-      abort();
-    }
+      default:
+	UnsupportedVarType(n);
+      } // switch
+      arrdata[group].data[var] = 0;
+    } // for
     
     // Reinitialise Cactus variables
     set_component (cgh, component);
@@ -244,32 +133,55 @@ namespace Carpet {
     assert (n>=0 && n<CCTK_NumVars());
     const int var = 0;
     
-    switch (CCTK_GroupTypeFromVarI(n)) {
-      
-    case CCTK_SCALAR: {
-      assert (group<(int)scdata.size());
-      assert (var<(int)scdata[group].data.size());
-      assert (reflevel<(int)scdata[group].data[var].size());
-      const int tl=0;
-      assert (tl<(int)scdata[group].data[var][reflevel].size());
-      return scdata[group].data[var][reflevel][tl] != 0;
+    assert (group<(int)arrdata.size());
+    assert (var<(int)arrdata[group].data.size());
+    return arrdata[group].data[var] != 0;
+  }
+  
+  
+  
+  const int* ArrayGroupSizeB (cGH* cgh, int dir, int group,
+			      const char* groupname)
+  {
+    static const int zero = 0;
+    
+    if (component == -1) {
+      // global routine
+      return &zero;
     }
+    
+    if (groupname) {
+      group = CCTK_GroupIndex(groupname);
+    }
+    assert (group>=0 && group<CCTK_NumGroups());
+    
+    const int gpdim = arrdata[group].info.dim;
+    
+    assert (dir>=0 && dir<gpdim);
+    
+    if (CCTK_QueryGroupStorageI(cgh, group)) {
       
-    case CCTK_ARRAY: {
+      const int var = CCTK_FirstVarIndexI(group);
+      assert (var>=0 && var<CCTK_NumVars());
+      
       assert (group<(int)arrdata.size());
-      assert (var<(int)arrdata[group].data.size());
-      return arrdata[group].data[var] != 0;
-    }
+      return &arrdata[group].info.lsh[dir];
       
-    case CCTK_GF: {
-      assert (group<(int)gfdata.size());
-      assert (var<(int)gfdata[group].data.size());
-      return gfdata[group].data[var] != 0;
-    }
+    } else {
       
-    default:
-      abort();
+      // no storage
+      return &zero;
+      
     }
+  }
+  
+  
+  
+  int GroupDynamicData (cGH* cgh, int group, cGroupDynamicData* data)
+  {
+    assert (group>=0 && group<CCTK_NumGroups());
+    *data = arrdata[group].info;
+    return 0;
   }
   
 } // namespace Carpet

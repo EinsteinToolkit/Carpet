@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.10 2001/07/04 12:29:52 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.11 2001/07/09 09:00:24 schnetter Exp $
 
 #include <alloca.h>
 #include <assert.h>
@@ -18,7 +18,7 @@
 
 #include "carpetslab.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.10 2001/07/04 12:29:52 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.11 2001/07/09 09:00:24 schnetter Exp $";
 
 
 
@@ -108,28 +108,13 @@ namespace CarpetSlab {
     const gh<dim>* myhh;
     const dh<dim>* mydd;
     const generic_gf<dim>* myff;
-    switch (gp.grouptype) {
-    case CCTK_SCALAR:
-      abort();
-    case CCTK_ARRAY:
-      assert (group < (int)arrdata.size());
-      myhh = arrdata[group].hh;
-      mydd = arrdata[group].dd;
-      assert (var < (int)arrdata[group].data.size());
-      myff = arrdata[group].data[var];
-      break;
-    case CCTK_GF:
-      myhh = hh;
-      mydd = Carpet::dd;	// dd is int dd above for old C++ compilers
-      assert (group < (int)gfdata.size());
-      assert (var < (int)gfdata[group].data.size());
-      myff = gfdata[group].data[var];
-      break;
-    default:
-      abort();
-    }
+    assert (group < (int)arrdata.size());
+    myhh = arrdata[group].hh;
     assert (myhh);
+    mydd = arrdata[group].dd;
     assert (mydd);
+    assert (var < (int)arrdata[group].data.size());
+    myff = arrdata[group].data[var];
     assert (myff);
     
     // Detemine collecting processor

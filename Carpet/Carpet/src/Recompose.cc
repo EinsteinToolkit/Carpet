@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.1 2001/07/04 12:29:47 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.2 2001/07/09 09:00:09 schnetter Exp $";
 
 
 
@@ -34,6 +34,7 @@ namespace Carpet {
     Checkpoint ("%*sRecompose", 2*reflevel, "");
     
     Recompose_gh (cgh, hh);
+    Recompose_gh (cgh, hh0);
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       switch (CCTK_GroupTypeI(group)) {

@@ -10,7 +10,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.1 2001/07/04 12:29:47 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.2 2001/07/09 09:00:10 schnetter Exp $";
 
 
 
@@ -85,10 +85,24 @@ namespace Carpet {
       }
     }
     
+    // Allocate grid hierarchy for scalars
+    const vect<int,dim> lb0(0);
+    const vect<int,dim> ub0(0);
+    const bbox<int,dim> baseext0(lb0, ub0, str);
+    hh0 = new gh<dim>(refinement_factor, vertex_centered,
+		      multigrid_factor, vertex_centered,
+		      baseext0);
+    
+    // Allocate time hierarchy for scalars
+    tt0 = new th(hh0, maxreflevelfact);
+    
+    // Allocate data hierarchy for scalars
+    const vect<int,dim> lghosts0(0);
+    const vect<int,dim> ughosts0(0);
+    dd0 = new dh<dim>(*hh0, lghosts0, ughosts0, prolongation_order_space);
+    
     // Allocate space for groups
-    scdata.resize(CCTK_NumGroups());
     arrdata.resize(CCTK_NumGroups());
-    gfdata.resize(CCTK_NumGroups());
     
     // Allocate space for variables in group (but don't enable storage
     // yet)
@@ -97,17 +111,10 @@ namespace Carpet {
       switch (CCTK_GroupTypeI(group)) {
 	
       case CCTK_SCALAR: {
-	scdata[group].data.resize(CCTK_NumVarsInGroupI(group));
-	for (int var=0; var<(int)scdata[group].data.size(); ++var) {
-	  const int n = (CCTK_FirstVarIndexI(group) + var);
-	  scdata[group].data[var].resize(maxreflevels);
-	  for (int rl=0; rl<maxreflevels; ++rl) {
-	    scdata[group].data[var][rl].resize(CCTK_NumTimeLevelsFromVarI(n));
-	    for (int tl=0; tl<(int)scdata[group].data[var].size(); ++tl) {
-	      scdata[group].data[var][rl][tl] = 0;
-	    }
-	  }
-	}
+	arrdata[group].info.dim = 0;
+	arrdata[group].hh = hh0;
+	arrdata[group].tt = tt0;
+	arrdata[group].dd = dd0;
 	break;
       }
 	
@@ -116,6 +123,7 @@ namespace Carpet {
 	CCTK_GroupData (group, &gp);
 	
 	assert (gp.dim>=1 || gp.dim<=dim);
+	arrdata[group].info.dim = gp.dim;
 	
 	switch (gp.disttype) {
 	case CCTK_DISTRIB_CONSTANT:
@@ -148,7 +156,7 @@ namespace Carpet {
 					multigrid_factor, vertex_centered,
 					arrext);
 	
-	arrdata[group].tt = new th (arrdata[group].hh, maxreflevelfact);
+	arrdata[group].tt = new th(arrdata[group].hh, maxreflevelfact);
 	
 	vect<int,dim> alghosts(0), aughosts(0);
 	for (int d=0; d<gp.dim; ++d) {
@@ -173,32 +181,43 @@ namespace Carpet {
 			prolongation_order_space, min_nghosts);
 	  }
 	}
-	
-	arrdata[group].data.resize(CCTK_NumVarsInGroupI(group));
-	for (int var=0; var<(int)scdata[group].data.size(); ++var) {
-	  arrdata[group].data[var] = 0;
-	}
 	break;
       }
 	
       case CCTK_GF: {
 	assert (CCTK_GroupDimI(group) == dim);
-	
-	gfdata[group].data.resize(CCTK_NumVarsInGroupI(group));
-	for (int var=0; var<(int)scdata[group].data.size(); ++var) {
-	  gfdata[group].data[var] = 0;
-	}
+	arrdata[group].info.dim = dim;
+	arrdata[group].hh = hh;
+	arrdata[group].tt = tt;
+	arrdata[group].dd = dd;
 	break;
       }
 	
       default:
 	abort();
       }
+      
+      arrdata[group].info.gsh         = (int*)malloc(  dim * sizeof(int));
+      arrdata[group].info.lsh         = (int*)malloc(  dim * sizeof(int));
+      arrdata[group].info.lbnd        = (int*)malloc(  dim * sizeof(int));
+      arrdata[group].info.ubnd        = (int*)malloc(  dim * sizeof(int));
+      arrdata[group].info.bbox        = (int*)malloc(2*dim * sizeof(int));
+      arrdata[group].info.nghostzones = (int*)malloc(  dim * sizeof(int));
+      
+      arrdata[group].data.resize(CCTK_NumVarsInGroupI(group));
+      for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
+	arrdata[group].data[var] = 0;
+      }
     }
     
     // Initialise cgh
     for (int d=0; d<dim; ++d) {
       cgh->cctk_nghostzones[d] = dd->lghosts[d];
+    }
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
+      for (int d=0; d<dim; ++d) {
+	cgh->cctk_nghostzones[d] = arrdata[group].dd->lghosts[d];
+      }
     }
     
     // Initialise current position

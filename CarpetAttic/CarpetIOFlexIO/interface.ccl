@@ -1,4 +1,6 @@
 # Interface definition for thorn CarpetIOFlexIO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/interface.ccl,v 1.1 2001/03/15 23:28:45 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/interface.ccl,v 1.2 2001/07/09 09:00:21 schnetter Exp $
 
 implements: IOFlexIO
+
+uses include header: carpet.hh

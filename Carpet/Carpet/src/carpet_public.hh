@@ -1,15 +1,182 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.40 2004/01/25 14:57:27 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.1 2001/07/09 09:00:14 schnetter Exp $
 
-#ifndef CARPET_PUBLIC_HH
-#define CARPET_PUBLIC_HH
+// It is assumed that the number of components of all arrays is equal
+// to the number of components of the grid functions, and that their
+// distribution onto the processors is the same, and that all
+// processors own the same number of components.
 
-// Stuff with C linkage
+#include <vector>
+
+#include "cctk.h"
+#include "cctk_Schedule.h"
+
+#include "Carpet/CarpetLib/src/dh.hh"
+#include "Carpet/CarpetLib/src/ggf.hh"
+#include "Carpet/CarpetLib/src/gh.hh"
+#include "Carpet/CarpetLib/src/th.hh"
+
+namespace Carpet {
+  
+  
+  
+  const int dim = 3;
+  
+  
+  
+  // Handle from CCTK_RegisterGHExtension
+  extern int GHExtension;
+  
+  // Maximum number of refinement levels
+  extern int maxreflevels;
+  
+  // Refinement factor on finest grid
+  extern int maxreflevelfact;
+  
+  // Current iteration per refinement level
+  extern vector<int> iteration;
+  
+  // Current position on the grid hierarchy
+  extern int reflevel;
+  extern int mglevel;
+  extern int component;
+  
+  // Current refinement factor
+  extern int reflevelfact;
+  
+  // Time step on base grid
+  extern CCTK_REAL base_delta_time;
+  
+  
+  
+  // Data for grid functions
+  
+  // The grid hierarchy
+  extern gh<dim>* hh;
+  extern th* tt;
+  extern dh<dim>* dd;
+  
+  // Data for scalars
+  extern gh<dim>* hh0;
+  extern th* tt0;
+  extern dh<dim>* dd0;
+  
+  // Data for everything
+  struct arrdesc {
+    // points to hh etc. for GF, and to hh0 etc. for SCALAR
+    // is unique for ARRAY
+    cGroupDynamicData info;
+    gh<dim>* hh;
+    th* tt;
+    dh<dim>* dd;
+    vector<generic_gf<dim>* > data; // [var]
+  };
+  extern vector<arrdesc> arrdata; // [group]
+  
+  
+  
+  // Checksums
+  struct ckdesc {
+    bool valid;
+    int sum;
+  };
+  extern vector<vector<vector<vector<ckdesc> > > > checksums; // [n][rl][tl][c]
+  
+  
+  
+  // Stuff with C linkage
+  extern "C" {
 #include "carpet_public.h"
-
-// Other declarations
-#include "defines.hh"
-#include "functions.hh"
-#include "modes.hh"
-#include "variables.hh"
-
-#endif // !defined(CARPET_PUBLIC_HH)
+  }
+  
+  // Registered functions
+  void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cgh);
+  
+  int Initialise (tFleshConfig* config);
+  int Evolve (tFleshConfig* config);
+  int Shutdown (tFleshConfig* config);
+  int CallFunction (void* function, cFunctionData* attribute, void* data);
+  
+  int SyncGroup (cGH* cgh, const char* groupname);
+  int EnableGroupStorage (cGH* cgh, const char* groupname);
+  int DisableGroupStorage (cGH* cgh, const char* groupname); 
+  int EnableGroupComm (cGH* cgh, const char* groupname);
+  int DisableGroupComm (cGH* cgh, const char* groupname);
+  int Barrier (cGH* cgh);
+  int Exit (cGH* cgh, int retval);
+  int Abort (cGH* cgh, int retval);
+  int MyProc (cGH* cgh);
+  int nProcs (cGH* cgh);
+  const int* ArrayGroupSizeB (cGH* cgh, int dir, int group,
+			      const char* groupname);
+  int QueryGroupStorageB (cGH* cgh, int group, const char* groupname);
+  int GroupDynamicData (cGH* cgh, int group, cGroupDynamicData* data);
+  
+  
+  
+  // Helper functions
+  void set_reflevel (cGH* cgh, int rl);
+  void set_mglevel (cGH* cgh, int ml);
+  void set_component (cGH* cgh, int c);
+  
+  
+  
+  // Refinement level iterator
+  
+#define BEGIN_REFLEVEL_LOOP(cgh)		\
+  do {						\
+    int _rl;					\
+    assert (reflevel==0);			\
+    for (;;) {					\
+      {
+#define END_REFLEVEL_LOOP(cgh)			\
+      }						\
+      if (reflevel==maxreflevels-1) break;	\
+      set_reflevel ((cgh), reflevel+1);		\
+    }						\
+    set_reflevel ((cgh), 0);			\
+    assert (reflevel==0);			\
+    _rl = 0;					\
+  } while (0)
+  
+  
+  
+  // Reverse refinement level iterator
+  
+#define BEGIN_REVERSE_REFLEVEL_LOOP(cgh)	\
+  do {						\
+    int _rrl;					\
+    assert (reflevel==0);			\
+    set_reflevel ((cgh), maxreflevels-1);	\
+    for (;;) {					\
+      {
+#define END_REVERSE_REFLEVEL_LOOP(cgh)		\
+      }						\
+      if (reflevel==0) break;			\
+      set_reflevel ((cgh), reflevel-1);		\
+    }						\
+    assert (reflevel==0);			\
+    _rrl = 0;					\
+  } while (0)
+  
+  
+  
+  // Component iterator
+  
+#define BEGIN_COMPONENT_LOOP(cgh)		\
+  do {						\
+    int _cl;					\
+    assert (component==-1);			\
+    set_component ((cgh), 0);			\
+    for (;;) {					\
+      {
+#define END_COMPONENT_LOOP(cgh)				\
+      }							\
+      if (component==hh->components(reflevel)-1) break;	\
+      set_component ((cgh), component+1);		\
+    }							\
+    set_component ((cgh), -1);				\
+    assert (component==-1);				\
+    _cl = 0;						\
+  } while (0)
+  
+} // namespace Carpet

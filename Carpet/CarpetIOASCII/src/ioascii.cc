@@ -20,11 +20,11 @@
 #include "Carpet/CarpetLib/src/gf.hh"
 #include "Carpet/CarpetLib/src/ggf.hh"
 
-#include "Carpet/Carpet/src/carpet.hh"
+#include "carpet.hh"
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.15 2001/07/04 13:55:23 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.16 2001/07/09 09:00:19 schnetter Exp $";
 
 
 
@@ -129,71 +129,154 @@ int CarpetIOASCII<outdim>
   const int n = CCTK_VarIndex(varname);
   assert (n>=0 && n<CCTK_NumVars());
   const int group = CCTK_GroupIndexFromVarI (n);
-  assert (group>=0 && group<(int)Carpet::gfdata.size());
+  assert (group>=0 && group<(int)Carpet::arrdata.size());
   const int n0 = CCTK_FirstVarIndexI(group);
   assert (n0>=0 && n0<CCTK_NumVars());
   const int var = n - n0;
   assert (var>=0 && var<CCTK_NumVars());
   const int tl = 0;
   
-  switch (CCTK_GroupTypeI(group)) {
-    
-  case CCTK_SCALAR: {
-    // Don't output scalars
-    CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
-		"Cannout output variable \"%s\" because it is a scalar",
+  // Check for storage
+  if (! CCTK_QueryGroupStorageI(cgh, group)) {
+    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+		"Cannot output variable \"%s\" because it has no storage",
 		varname);
     return 0;
   }
+  
+  // Create the output directory
+  const char* myoutdir = GetStringParameter("outdir%dD", outdir);
+  if (CCTK_MyProc(cgh)==0) {
+    CCTK_CreateDirectory (0755, myoutdir);
+  }
+  
+  // Loop over all direction combinations
+  vect<int,outdim> dirs;
+  for (int d=0; d<outdim; ++d) dirs[d] = 0;
+  
+  bool done;
+  do {
     
-  case CCTK_ARRAY:
-  case CCTK_GF: {
-    
-    // Check for storage
-    if (! CCTK_QueryGroupStorageI(cgh, group)) {
-      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-		  "Cannot output variable \"%s\" because it has no storage",
-		  varname);
-      return 0;
+    // Output each combination only once
+    bool ascending = true;
+    for (int d1=0; d1<outdim; ++d1) {
+      for (int d2=d1+1; d2<outdim; ++d2) {
+	ascending = ascending && dirs[d1] < dirs[d2];
+      }
     }
     
-    // Create the output directory
-    const char* myoutdir = GetStringParameter("outdir%dD", outdir);
-    if (CCTK_MyProc(cgh)==0) {
-      CCTK_CreateDirectory (0755, myoutdir);
-    }
-    
-    // Loop over all direction combinations
-    vect<int,outdim> dirs;
-    for (int d=0; d<outdim; ++d) dirs[d] = 0;
-    
-    bool done;
-    do {
+    // Skip output if the dimensions are not ascending
+    if (ascending) {
       
-      // Output each combination only once
-      bool ascending = true;
-      for (int d1=0; d1<outdim; ++d1) {
-	for (int d2=d1+1; d2<outdim; ++d2) {
-	  ascending = ascending && dirs[d1] < dirs[d2];
+      // If this output is desired at all
+      bool desired;
+      switch (outdim) {
+      case 1:
+	switch (dirs[0]) {
+	case 0:
+	  desired = out1D_x;
+	  break;
+	case 1:
+	  desired = out1D_y;
+	  break;
+	case 2:
+	  desired = out1D_z;
+	  break;
+	default:
+	  abort();
 	}
+	break;
+      case 2:
+	if (dirs[0]==0 && dirs[1]==1) {
+	  desired = out2D_xy;
+	} else if (dirs[0]==0 && dirs[1]==2) {
+	  desired = out2D_xz;
+	} else if (dirs[0]==1 && dirs[1]==2) {
+	  desired = out2D_yz;
+	} else {
+	  abort();
+	}
+	break;
+      case 3:
+	// Output is always desired (if switched on)
+	desired = true;
+	break;
+      default:
+	abort();
       }
       
-      // Skip output if the dimensions are not ascending
-      if (ascending) {
+      // Skip output if not desired
+      if (desired) {
 	
-	// If this output is desired at all
-	bool desired;
+	// Invent a file name
+	char* const filename
+	  = (char*)alloca(strlen(myoutdir)+strlen(alias)+100);
+	sprintf (filename, "%s/%s.", myoutdir, alias);
+	for (int d=0; d<outdim; ++d) {
+	  assert (dirs[d]>=0 && dirs[d]<3);
+	  const char* const coords = "xyz";
+	  sprintf (filename, "%s%c", filename, coords[dirs[d]]);
+	}
+	const char* const suffixes = "lpv";
+	sprintf (filename, "%s%c", filename, suffixes[outdim-1]);
+	
+	// If this is the first time, then write a nice header on
+	// the root processor
+	if (do_truncate[n]) {
+	  if (CCTK_MyProc(cgh)==0) {
+	    struct stat fileinfo;
+	    if (! IOUtil_RestartFromRecovery(cgh)
+		|| stat(filename, &fileinfo)!=0) {
+	      ofstream file(filename, ios::out | ios::trunc);
+	      assert (file.good());
+	      file << "# " << varname;
+	      for (int d=0; d<outdim; ++d) {
+		file << " " << "xyz"[dirs[d]];
+	      }
+	      file << " (" << alias << ")" << endl;
+	      file << "#" << endl;
+	      file.close();
+	      assert (file.good());
+	    }
+	  }
+	}
+	
+	assert (outdim <= CCTK_GroupDimI(group));
+	
+	// Find the output offset
+	vect<int,dim> offset(0);
 	switch (outdim) {
 	case 1:
 	  switch (dirs[0]) {
 	  case 0:
-	    desired = out1D_x;
+	    offset[1] = GetGridOffset (cgh, 2,
+				       "out%dD_xline_yi", "out_xline_yi",
+				       "out%dD_xline_y",  "out_xline_y",
+				       out_xline_y);
+	    offset[2] = GetGridOffset (cgh, 3,
+				       "out%dD_xline_zi", "out_xline_zi",
+				       "out%dD_xline_z",  "out_xline_z",
+				       out_xline_z);
 	    break;
 	  case 1:
-	    desired = out1D_y;
+	    offset[0] = GetGridOffset (cgh, 1,
+				       "out%dD_yline_xi", "out_yline_xi",
+				       "out%dD_yline_x",  "out_yline_x",
+				       out_yline_x);
+	    offset[2] = GetGridOffset (cgh, 3,
+				       "out%dD_yline_zi", "out_yline_zi",
+				       "out%dD_yline_z",  "out_yline_z",
+				       out_yline_z);
 	    break;
 	  case 2:
-	    desired = out1D_z;
+	    offset[0] = GetGridOffset (cgh, 1,
+				       "out%dD_zline_xi", "out_zline_xi",
+				       "out%dD_zline_x",  "out_zline_x",
+				       out_zline_x);
+	    offset[1] = GetGridOffset (cgh, 2,
+				       "out%dD_zline_yi", "out_zline_yi",
+				       "out%dD_zline_y",  "out_zline_y",
+				       out_zline_y);
 	    break;
 	  default:
 	    abort();
@@ -201,194 +284,78 @@ int CarpetIOASCII<outdim>
 	  break;
 	case 2:
 	  if (dirs[0]==0 && dirs[1]==1) {
-	    desired = out2D_xy;
+	    offset[2] = GetGridOffset
+	      (cgh, 3,
+	       "out%dD_xyplane_zi", "out_xyplane_zi",
+	       "out%dD_xyplane_z",  "out_xyplane_z",
+	       out_xyplane_z);
 	  } else if (dirs[0]==0 && dirs[1]==2) {
-	    desired = out2D_xz;
+	    offset[1] = GetGridOffset
+	      (cgh, 2,
+	       "out%dD_xzplane_yi", "out_xzplane_yi",
+	       "out%dD_xzplane_y",  "out_xzplane_y",
+	       out_xzplane_y);
 	  } else if (dirs[0]==1 && dirs[1]==2) {
-	    desired = out2D_yz;
+	    offset[0] = GetGridOffset
+	      (cgh, 1,
+	       "out%dD_yzplane_xi", "out_yzplane_xi",
+	       "out%dD_yzplane_x",  "out_yzplane_x",
+	       out_yzplane_x);
 	  } else {
 	    abort();
 	  }
 	  break;
 	case 3:
-	  // Output is always desired (if switched on)
-	  desired = true;
+	  // The offset doesn't matter in this case
 	  break;
 	default:
 	  abort();
 	}
 	
-	// Skip output if not desired
-	if (desired) {
+	// Traverse all components on this refinement and multigrid
+	// level
+	BEGIN_COMPONENT_LOOP(cgh) {
 	  
-	  // Invent a file name
-	  char* const filename
-	    = (char*)alloca(strlen(myoutdir)+strlen(alias)+100);
-	  sprintf (filename, "%s/%s.", myoutdir, alias);
-	  for (int d=0; d<outdim; ++d) {
-	    assert (dirs[d]>=0 && dirs[d]<3);
-	    const char* const coords = "xyz";
-	    sprintf (filename, "%s%c", filename, coords[dirs[d]]);
-	  }
-	  const char* const suffixes = "lpv";
-	  sprintf (filename, "%s%c", filename, suffixes[outdim-1]);
+	  generic_gf<dim>* ff = 0;
 	  
-	  // If this is the first time, then write a nice header on
-	  // the root processor
-	  if (do_truncate[n]) {
-	    if (CCTK_MyProc(cgh)==0) {
-	      struct stat fileinfo;
-	      if (! IOUtil_RestartFromRecovery(cgh)
-		  || stat(filename, &fileinfo)!=0) {
-		ofstream file(filename, ios::out | ios::trunc);
-		assert (file.good());
-		file << "# " << varname;
-		for (int d=0; d<outdim; ++d) {
-		  file << " " << "xyz"[dirs[d]];
-		}
-		file << " (" << alias << ")" << endl;
-		file << "#" << endl;
-		file.close();
-		assert (file.good());
-	      }
-	    }
-	  }
+	  assert (var < (int)arrdata[group].data.size());
+	  ff = (generic_gf<dim>*)arrdata[group].data[var];
 	  
-	  assert (outdim <= CCTK_GroupDimI(group));
+	  const generic_data<dim>* const data
+	    = (*ff) (tl, reflevel, component, mglevel);
+	  const bbox<int,dim> ext = data->extent();
+	  const vect<int,dim> offset1 = offset * ext.stride();
 	  
-	  // Find the output offset
-	  vect<int,dim> offset(0);
-	  switch (outdim) {
-	  case 1:
-	    switch (dirs[0]) {
-	    case 0:
-	      offset[1] = GetGridOffset (cgh, 2,
-					 "out%dD_xline_yi", "out_xline_yi",
-					 "out%dD_xline_y",  "out_xline_y",
-					 out_xline_y);
-	      offset[2] = GetGridOffset (cgh, 3,
-					 "out%dD_xline_zi", "out_xline_zi",
-					 "out%dD_xline_z",  "out_xline_z",
-					 out_xline_z);
-	      break;
-	    case 1:
-	      offset[0] = GetGridOffset (cgh, 1,
-					 "out%dD_yline_xi", "out_yline_xi",
-					 "out%dD_yline_x",  "out_yline_x",
-					 out_yline_x);
-	      offset[2] = GetGridOffset (cgh, 3,
-					 "out%dD_yline_zi", "out_yline_zi",
-					 "out%dD_yline_z",  "out_yline_z",
-					 out_yline_z);
-	      break;
-	    case 2:
-	      offset[0] = GetGridOffset (cgh, 1,
-					 "out%dD_zline_xi", "out_zline_xi",
-					 "out%dD_zline_x",  "out_zline_x",
-					 out_zline_x);
-	      offset[1] = GetGridOffset (cgh, 2,
-					 "out%dD_zline_yi", "out_zline_yi",
-					 "out%dD_zline_y",  "out_zline_y",
-					 out_zline_y);
-	      break;
-	    default:
-	      abort();
-	    }
-	    break;
-	  case 2:
-	    if (dirs[0]==0 && dirs[1]==1) {
-	      offset[2] = GetGridOffset
-		(cgh, 3,
-		 "out%dD_xyplane_zi", "out_xyplane_zi",
-		 "out%dD_xyplane_z",  "out_xyplane_z",
-		 out_xyplane_z);
-	    } else if (dirs[0]==0 && dirs[1]==2) {
-	      offset[1] = GetGridOffset
-		(cgh, 2,
-		 "out%dD_xzplane_yi", "out_xzplane_yi",
-		 "out%dD_xzplane_y",  "out_xzplane_y",
-		 out_xzplane_y);
-	    } else if (dirs[0]==1 && dirs[1]==2) {
-	      offset[0] = GetGridOffset
-		(cgh, 1,
-		 "out%dD_yzplane_xi", "out_yzplane_xi",
-		 "out%dD_yzplane_x",  "out_yzplane_x",
-		 out_yzplane_x);
-	    } else {
-	      abort();
-	    }
-	    break;
-	  case 3:
-	    // The offset doesn't matter in this case
-	    break;
-	  default:
-	    abort();
-	  }
+	  data->write_ascii (filename, cgh->cctk_iteration, offset1, dirs,
+			     tl, reflevel, component, mglevel);
 	  
-	  // Traverse all components on this refinement and multigrid
-	  // level
-	  BEGIN_COMPONENT_LOOP(cgh) {
-	    
-	    generic_gf<dim>* ff = 0;
-	    
-	    switch (CCTK_GroupTypeI(group)) {
-	      
-	    case CCTK_ARRAY:
-	      assert (var < (int)arrdata[group].data.size());
-	      ff = (generic_gf<dim>*)arrdata[group].data[var];
-	      break;
-	      
-	    case CCTK_GF:
-	      assert (var < (int)gfdata[group].data.size());
-	      ff = (generic_gf<dim>*)gfdata[group].data[var];
-	      break;
-	      
-	    default:
-	      abort();
-	    }
-	    
-	    const generic_data<dim>* const data
-	      = (*ff) (tl, reflevel, component, mglevel);
-	    const bbox<int,dim> ext = data->extent();
-	    const vect<int,dim> offset1 = offset * ext.stride();
-	    
-	    data->write_ascii (filename, cgh->cctk_iteration, offset1, dirs,
-			       tl, reflevel, component, mglevel);
-	    
-	  } END_COMPONENT_LOOP(cgh);
-	  
-	  // Append EOL after every complete set of components
-	  if (CCTK_MyProc(cgh)==0) {
-	    ofstream file(filename, ios::app);
-	    assert (file.good());
-	    file << endl;
-	    file.close();
-	    assert (file.good());
-	  }
-	  
-	} // if (desired)
+	} END_COMPONENT_LOOP(cgh);
 	
-      } // if (ascending)
-      
-      // Next direction combination
-      done = true;
-      for (int d=0; d<outdim; ++d) {
-	++dirs[d];
-	if (dirs[d]<CCTK_GroupDimI(group)) {
-	  done = false;
-	  break;
+	// Append EOL after every complete set of components
+	if (CCTK_MyProc(cgh)==0) {
+	  ofstream file(filename, ios::app);
+	  assert (file.good());
+	  file << endl;
+	  file.close();
+	  assert (file.good());
 	}
-	dirs[d] = 0;
-      }
+	
+      } // if (desired)
       
-    } while (! done);		// all directions
+    } // if (ascending)
     
-    break;
-  }
+      // Next direction combination
+    done = true;
+    for (int d=0; d<outdim; ++d) {
+      ++dirs[d];
+      if (dirs[d]<CCTK_GroupDimI(group)) {
+	done = false;
+	break;
+      }
+      dirs[d] = 0;
+    }
     
-  default:
-    abort();
-  }
+  } while (! done);		// all directions
   
   // Don't truncate again
   do_truncate[n] = false;

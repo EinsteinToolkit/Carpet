@@ -5,7 +5,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.1 2001/07/04 12:29:48 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.2 2001/07/09 09:00:15 schnetter Exp $";
 
 
 
@@ -40,21 +40,20 @@ namespace Carpet {
   
   
   
-  // Data for scalars
-  vector<scdesc> scdata;	// [group]
-  
-  // Data for arrays
-  // TODO: have replicated arrays
-  vector<arrdesc> arrdata;	// [group]
+  // Data for grid functions
   
   // The grid hierarchy
   gh<dim>* hh;
   th* tt;
   dh<dim>* dd;
-  int gfsize[dim];
   
-  // Data for grid functions
-  vector<gfdesc> gfdata;	// [group]
+  // Data for scalars
+  gh<dim>* hh0;
+  th* tt0;
+  dh<dim>* dd0;
+
+    // Data for everything
+  vector<arrdesc> arrdata;	// [group]
   
   // Checksums
   vector<vector<vector<vector<ckdesc> > > > checksums; // [n][rl][tl][c]

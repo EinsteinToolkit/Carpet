@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.1 2001/07/04 12:29:46 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.2 2001/07/09 09:00:08 schnetter Exp $";
 
 
 
@@ -46,6 +46,7 @@ namespace Carpet {
 	  
 	  // Advance level times
 	  tt->advance_time (reflevel, mglevel);
+	  tt0->advance_time (reflevel, mglevel);
 	  for (int group=0; group<CCTK_NumGroups(); ++group) {
 	    switch (CCTK_GroupTypeI(group)) {
 	    case CCTK_SCALAR:

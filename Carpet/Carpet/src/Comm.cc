@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.1 2001/07/04 12:29:46 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.2 2001/07/09 09:00:07 schnetter Exp $";
 
 
 
@@ -43,46 +43,18 @@ namespace Carpet {
     assert (num_tl>0);
     const int tl = 0;
     
-    switch (CCTK_GroupTypeI(group)) {
-      
-    case CCTK_SCALAR:
-      // TODO: Check whether the local values are consistent
-      break;
-      
-    case CCTK_ARRAY:
-      assert (group<(int)arrdata.size());
-      for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-	if (num_tl>1 && reflevel>0) {
-	  for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
-	    arrdata[group].data[var]->ref_bnd_prolongate
-	      (tl, reflevel, c, mglevel,
-	       prolongation_order_space, prolongation_order_time);
-	  }
-	}
+    assert (group<(int)arrdata.size());
+    for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
+      if (num_tl>1 && reflevel>0) {
 	for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
-	  arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);
+	  arrdata[group].data[var]->ref_bnd_prolongate
+	    (tl, reflevel, c, mglevel,
+	     prolongation_order_space, prolongation_order_time);
 	}
       }
-      break;
-      
-    case CCTK_GF:
-      assert (group<(int)gfdata.size());
-      for (int var=0; var<(int)gfdata[group].data.size(); ++var) {
-	if (num_tl>1 && reflevel>0) {
-	  for (int c=0; c<hh->components(reflevel); ++c) {
-	    gfdata[group].data[var]->ref_bnd_prolongate
-	      (tl, reflevel, c, mglevel,
-	       prolongation_order_space, prolongation_order_time);
-	  }
-	}
-	for (int c=0; c<hh->components(reflevel); ++c) {
-	  gfdata[group].data[var]->sync (tl, reflevel, c, mglevel);
-	}
+      for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
+	arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);
       }
-      break;
-      
-    default:
-      abort();
     }
     
     return 0;

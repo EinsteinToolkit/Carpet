@@ -1,4 +1,5 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/src/carpettest_check_arguments.F77,v 1.2 2001/07/04 13:55:25 schnetter Exp $
+c     -*-Fortran-*-
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/src/carpettest_check_arguments.F77,v 1.3 2001/07/09 09:00:27 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
@@ -13,6 +14,7 @@ c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/src/carpettest_c
       print *, "arrg3 ", arrg30, arrg31, arrg32
       print *, "arrg2 ", arrg20, arrg21
       print *, "arrg1 ", arrg10
+      print *, "scg"
       print *
       do k=1,gfg2
          do j=1,gfg1
@@ -36,4 +38,5 @@ c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/src/carpettest_c
       do i=1,arrg10
          arr1(i) = i
       end do
+      sc = 42
       end
