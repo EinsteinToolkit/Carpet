@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.14 2003/11/05 16:18:38 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.15 2003/11/06 14:33:19 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -21,7 +21,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.14 2003/11/05 16:18:38 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.15 2003/11/06 14:33:19 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -299,6 +299,7 @@ namespace CarpetInterp {
     //
     // Do the local interpolation
     //
+    int overall_ierr = 0;
     int const saved_reflevel = reflevel;
     int const saved_mglevel = mglevel;
     int const saved_component = component;
@@ -416,7 +417,11 @@ namespace CarpetInterp {
                  &input_array_type_codes[0], &input_arrays[0],
                  N_output_arrays * num_tl,
                  output_array_type_codes, &tmp_output_arrays[0]);
-              assert (!ierr);
+              if (ierr) {
+                CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                            "The local interpolator returned the error code %d", ierr);
+              }
+              overall_ierr |= ierr;
               
               // Interpolate in time, if necessary
               if (need_time_interp) {
@@ -516,8 +521,14 @@ namespace CarpetInterp {
     
     
     
+    int global_overall_ierr;
+    MPI_Allreduce (&overall_ierr, &global_overall_ierr, 1, MPI_INT,
+                   MPI_LOR, comm);
+    
+    
+    
     // Done.
-    return 0;
+    return global_overall_ierr ? -1 : 0;
   }
   
 } // namespace CarpetInterp
