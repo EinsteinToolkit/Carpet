@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.32 2004/06/04 10:17:56 bzink Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.33 2004/06/14 09:34:12 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -67,6 +67,17 @@ namespace CarpetIOHDF5 {
     CCTK_RegisterIOMethodTriggerOutput (IOMethod, TriggerOutput);
     
 
+    /* initial I/O parameter check */
+    int numvars = CCTK_NumVars ();
+    vector<bool> flags(numvars);
+   
+    if (CCTK_TraverseString (out3D_vars, SetFlag, &flags,CCTK_GROUP_OR_VAR) < 0)
+    {
+      CCTK_VWarn (strict_io_parameter_check ? 0 : 1,
+                  __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "error while parsing parameter 'IOHDF5::out3D_vars'");
+    }
+
 
     // Christian's Recovery routine
     if ( !(CCTK_Equals(recover,"no")) ) {
@@ -101,6 +112,12 @@ namespace CarpetIOHDF5 {
     DECLARE_CCTK_PARAMETERS;
     
     CarpetIOHDF5GH* myGH;
+
+    const void *dummy;
+    dummy = &fc;
+    dummy = &convLevel;
+    dummy = &cctkGH;
+    dummy = &dummy;
 
     // Truncate all files if this is not a restart
     do_truncate.resize(CCTK_NumVars(), true);
@@ -198,7 +215,6 @@ namespace CarpetIOHDF5 {
     assert (n0>=0 && n0<CCTK_NumVars());
     const int var = n - n0;
     assert (var>=0 && var<CCTK_NumVars());
-    const int tl = 0;
     
     // Check for storage
     if (! CCTK_QueryGroupStorageI(cctkGH, group)) {
@@ -220,8 +236,7 @@ namespace CarpetIOHDF5 {
     default:
       assert (0);
     }
-    const int rl = grouptype==CCTK_GF ? reflevel : 0;
-    
+
     /* get the default I/O request for this variable */
     ioRequest* request = IOUtil_DefaultIORequest (cctkGH, n, 1);
  
@@ -293,6 +308,10 @@ namespace CarpetIOHDF5 {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
+    const void *dummy;
+    dummy = &called_from_checkpoint;
+    dummy = &dummy;
+
     herr_t herr=0;
     
     void * h5data=NULL;
@@ -734,6 +753,10 @@ namespace CarpetIOHDF5 {
 
     DECLARE_CCTK_PARAMETERS;
 
+    const void *dummy;
+    dummy = &reader;
+    dummy = &dummy;
+
     const int n = CCTK_VarIndex(varname);
     assert (n>=0 && n<CCTK_NumVars());
     const int group = CCTK_GroupIndexFromVarI (n);
@@ -753,7 +776,7 @@ namespace CarpetIOHDF5 {
     int recovery_rl = -1;
     int recovery_comp = -1;
 
-    void * h5data;
+    void * h5data = NULL;
 
     // Check for storage
     if (! CCTK_QueryGroupStorageI(cctkGH, group)) {
@@ -781,7 +804,7 @@ namespace CarpetIOHDF5 {
 	 // get dataset dimensions
 	 const hid_t dataspace = H5Dget_space(dataset);
 	 assert (dataspace>=0);
-	 hsize_t rank = H5Sget_simple_extent_ndims(dataspace);
+	 int rank = (int) H5Sget_simple_extent_ndims(dataspace);
 	 vector<hsize_t> shape(rank);
 	 int rank2 = H5Sget_simple_extent_dims (dataspace, &shape[0], NULL);
 	 herr = H5Sclose(dataspace);
@@ -983,7 +1006,6 @@ namespace CarpetIOHDF5 {
     assert (n0>=0 && n0<CCTK_NumVars());
     const int var = n - n0;
     assert (var>=0 && var<CCTK_NumVars());
-    const int tl = 0;
 
     herr_t herr = 1;
     int want_dataset = 0;
@@ -992,8 +1014,6 @@ namespace CarpetIOHDF5 {
     hid_t dataset = 0;
 
     char datasetname[1024];
-
-    CCTK_REAL *h5data;
 
     // Check for storage
     if (! CCTK_QueryGroupStorageI(cctkGH, group)) {
@@ -1017,8 +1037,6 @@ namespace CarpetIOHDF5 {
     const char * const filename = filenamestr.c_str();
     
     hid_t reader = -1;
-    
-    const int gpdim = CCTK_GroupDimI(group);
     
     // Read the file only on the root processor
     if (CCTK_MyProc(cctkGH)==0) {
@@ -1056,9 +1074,11 @@ namespace CarpetIOHDF5 {
       }
     
       
+#if 0
       int amr_level;
       int amr_origin[dim];
       int amr_dims[dim];
+#endif
 
       if (CCTK_MyProc(cctkGH)==0) {
 	  

@@ -31,7 +31,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.73 2004/06/14 06:58:51 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.74 2004/06/14 09:34:10 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -160,7 +160,13 @@ namespace CarpetIOASCII {
   ::SetupGH (tFleshConfig* const fc, const int convLevel, cGH* const cgh)
   {
     DECLARE_CCTK_PARAMETERS;
+    const void *dummy;
     
+    dummy = &fc;
+    dummy = &convLevel;
+    dummy = &cgh;
+    dummy = &dummy;
+
     // Truncate all files if this is not a restart
     do_truncate.resize(CCTK_NumVars(), true);
     
@@ -734,13 +740,20 @@ namespace CarpetIOASCII {
     static int output_variables_iteration = -1;
     
     if (cctk_iteration > output_variables_iteration) {
-      output_variables_iteration = cctk_iteration;
-      
       output_variables.resize (CCTK_NumVars());
       
       const char* const varlist = GetStringParameter("out%dD_vars");
-      CCTK_TraverseString
-        (varlist, SetFlag, &output_variables, CCTK_GROUP_OR_VAR);
+      if (CCTK_TraverseString (varlist, SetFlag, &output_variables,
+                               CCTK_GROUP_OR_VAR) < 0)
+      {
+        int abort_on_error = output_variables_iteration < 0 &&
+                             strict_io_parameter_check;
+        CCTK_VWarn (abort_on_error ? 0 : 1, __LINE__, __FILE__,CCTK_THORNSTRING,
+                    "error while parsing parameter 'IOASCII::out%dD_vars'",
+                    outdim);
+      }
+
+      output_variables_iteration = cctk_iteration;
     }
     
     if (! output_variables.at(vindex)) return 0;
@@ -869,10 +882,12 @@ namespace CarpetIOASCII {
     
     assert (mglevel!=-1 && reflevel!=-1 && Carpet::map!=-1);
     
-    const int npoints = cgh->cctk_gsh[dir-1];
     const CCTK_REAL delta = cgh->cctk_delta_space[dir-1] / cgh->cctk_levfac[dir-1];
     const CCTK_REAL lower = cgh->cctk_origin_space[dir-1];
+#if 0
+    const int npoints = cgh->cctk_gsh[dir-1];
     const CCTK_REAL upper = lower + (npoints-1) * delta;
+#endif
     
     const CCTK_REAL rindex = (coord - lower) / delta;
     int cindex = (int)floor(rindex + 0.75);
@@ -889,6 +904,10 @@ namespace CarpetIOASCII {
     }
     
     assert (cindex>=0 && cindex<npoints);
+#else
+    const void *dummy;
+    dummy = &ifallback;
+    dummy = &dummy;
 #endif
     
     return cindex;
@@ -951,6 +970,7 @@ namespace CarpetIOASCII {
   
   void SetFlag (int index, const char* optstring, void* arg)
   {
+    optstring = optstring;
     vector<bool>& flags = *(vector<bool>*)arg;
     flags.at(index) = true;
   }
