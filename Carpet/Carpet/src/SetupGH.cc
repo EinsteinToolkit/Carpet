@@ -19,7 +19,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.41 2003/05/08 15:35:49 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.42 2003/05/12 13:48:05 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -361,7 +361,7 @@ namespace Carpet {
         const vect<vect<bool,2>,dim>& obnds = arrdata[group].hh->outer_boundaries[rl][c];
 	const bbox<int,dim>& ext  = arrdata[group].dd->boxes[rl][c][ml].exterior;
         
-        for (int d=0; d<dim; ++d) {
+        for (int d=0; d<arrdata[group].info.dim; ++d) {
           ((int*)arrdata[group].info.gsh )[d] = (base.shape() / base.stride())[d];
           ((int*)arrdata[group].info.lsh )[d] = (ext.shape() / ext.stride())[d];
           ((int*)arrdata[group].info.lbnd)[d] = (ext.lower() / ext.stride())[d];
@@ -370,8 +370,11 @@ namespace Carpet {
             ((int*)arrdata[group].info.bbox)[2*d+f] = obnds[d][f];
           }
           
-          assert (arrdata[group].info.lsh[d]>=0 && arrdata[group].info.lsh[d]<=arrdata[group].info.gsh[d]);
-          assert (arrdata[group].info.lbnd[d]>=0 && arrdata[group].info.ubnd[d]<arrdata[group].info.gsh[d]);
+          assert (arrdata[group].info.lsh[d]>=0
+                  && arrdata[group].info.lsh[d]<=arrdata[group].info.gsh[d]);
+          assert (arrdata[group].info.lbnd[d]>=0
+                  && arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]
+                  && arrdata[group].info.ubnd[d]<arrdata[group].info.gsh[d]);
           assert (arrdata[group].info.ubnd[d]-arrdata[group].info.lbnd[d]+1 == arrdata[group].info.lsh[d]);
           assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
         }

@@ -13,7 +13,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.30 2003/05/08 15:35:49 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.31 2003/05/12 13:48:05 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -295,7 +295,7 @@ namespace Carpet {
       for (int group=0; group<CCTK_NumGroups(); ++group) {
         if (CCTK_GroupTypeI(group) == CCTK_GF) {
           
-          for (int d=0; d<dim; ++d) {
+          for (int d=0; d<arrdata[group].info.dim; ++d) {
             ((int*)arrdata[group].info.lsh)[d]      = 0xdeadbeef;
             ((int*)arrdata[group].info.bbox)[2*d  ] = 0xdeadbeef;
             ((int*)arrdata[group].info.bbox)[2*d+1] = 0xdeadbeef;
@@ -359,7 +359,7 @@ namespace Carpet {
           const vect<vect<bool,2>,dim>& obnds = arrdata[group].hh->outer_boundaries[reflevel][component];
           const bbox<int,dim>& ext = arrdata[group].dd->boxes[reflevel][component][mglevel].exterior;
           
-          for (int d=0; d<dim; ++d) {
+          for (int d=0; d<arrdata[group].info.dim; ++d) {
             
             ((int*)arrdata[group].info.lsh)[d]  = (ext.shape() / ext.stride())[d];
             ((int*)arrdata[group].info.lbnd)[d] = ((ext.lower() - baseext.lower()) / ext.stride())[d];
