@@ -1,26 +1,29 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-harpo-sgi,v 1.3 2002/05/05 22:16:56 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-harpo-sgi,v 1.4 2002/06/06 14:19:50 schnetter Exp $
 
 CPP			= /lib/cpp -DMPIPP_H
+
+# -ptused -restrict=ON
 
 CXXFLAGS		= -LANG:std -LANG:vla=ON -64 -mips4 -r12000 -no_auto_include -ptused -DMPIPP_H
 LDFLAGS			= -LANG:std -LANG:vla=ON -64 -mips4 -r12000 -Wl,"-woff 84","-woff 85"
 
-C_OPTIMISE_FLAGS	= -O3 -INLINE -LNO -OPT:Olimit=100000
-CXX_OPTIMISE_FLAGS	= -O3 -INLINE -LNO -OPT:Olimit=100000
-F77_OPTIMISE_FLAGS	= -O3 -INLINE -LNO -OPT:Olimit=100000
-F90_OPTIMISE_FLAGS	= -O3 -INLINE -LNO -OPT:Olimit=100000
+C_OPTIMISE_FLAGS	= -O3 -INLINE:ON -LNO:ON -OPT:Olimit=100000
+CXX_OPTIMISE_FLAGS	= -O3 -INLINE:ON -LNO:ON -OPT:Olimit=100000
+F77_OPTIMISE_FLAGS	= -O3 -INLINE:ON -LNO:ON -OPT:Olimit=100000
+F90_OPTIMISE_FLAGS	= -O3 -INLINE:ON -LNO:ON -OPT:Olimit=100000
 
 C_DEBUG_FLAGS		= -g3
 CXX_DEBUG_FLAGS		= -g3
 F77_DEBUG_FLAGS		= -g3
 F90_DEBUG_FLAGS		= -g3
 
-SYS_INC_DIRS		= /usr/local/hdf/include /u1/eschnett/scratch/FlexIO
-LIBDIRS			= /usr/local/hdf/lib /u1/eschnett/scratch/FlexIO
-LIBS			= AMR h5io hdfio hlio ieeeio  hdf5 mfhdf df jpeg z
+SYS_INC_DIRS		= /usr/local/hdf/include /u1/eschnett/FlexIO
+LIBDIRS			= /usr/local/hdf/lib /u1/eschnett/FlexIO
+LIBS			= AMR h5io hdfio hlio ieeeio   ffio fpe fortran ftn ftn90   hdf5 mfhdf df jpeg z
 
 HDF5			= yes
 HDF5_DIR		= /usr/local/hdf5_64
+
 MPI			= NATIVE
 
 OPTIMISE		= yes
