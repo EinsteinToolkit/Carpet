@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.8 2002/09/25 15:49:17 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.9 2002/09/25 19:54:08 schnetter Exp $
 
  ***************************************************************************/
 
@@ -67,8 +67,6 @@ void th::recompose () {
       if (rl==0 && ml==0) {
 	deltas[rl][ml] = delta;
       } else if (ml==0) {
-// 	assert (deltas[rl-1][ml] % h->reffact == 0);
-	assert (fabs(fmod(deltas[rl-1][ml], h->reffact)) < 1e-10);
 	deltas[rl][ml] = deltas[rl-1][ml] / h->reffact;
       } else {
 	deltas[rl][ml] = deltas[rl][ml-1] * h->mgfact;

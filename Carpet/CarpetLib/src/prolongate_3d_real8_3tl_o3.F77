@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_3tl_o3.F77,v 1.8 2002/09/25 15:49:16 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_3tl_o3.F77,v 1.9 2002/09/25 19:54:08 schnetter Exp $
       
 #include "cctk.h"
       
@@ -12,6 +12,9 @@ c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d
       
       CCTK_REAL8 one
       parameter (one = 1)
+      
+      CCTK_REAL8 eps
+      parameter (eps = 1.0d-10)
       
       integer srciext, srcjext, srckext
       CCTK_REAL8 src1(srciext,srcjext,srckext)
@@ -116,7 +119,7 @@ c     Quadratic (second order) interpolation
       if (t1.eq.t2 .or. t1.eq.t3 .or. t2.eq.t3) then
          call CCTK_WARN (0, "Internal error: arrays have same time")
       end if
-      if (t.lt.min(t1,t2,t3) .or. t.gt.max(t1,t2,t3)) then
+      if (t.lt.min(t1,t2,t3)-eps .or. t.gt.max(t1,t2,t3)+eps) then
          call CCTK_WARN (0, "Internal error: extrapolation")
       end if
       
