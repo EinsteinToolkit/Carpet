@@ -127,15 +127,18 @@ namespace Carpet {
         if (numvars>0) {
           const int firstvar = CCTK_FirstVarIndexI (group);
           assert (firstvar>=0);
-          const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
+          const int max_tl = CCTK_MaxTimeLevelsGI (group);
+          assert (max_tl>=0);
+          const int active_tl = CCTK_ActiveTimeLevelsGI (cgh, group);
+          assert (active_tl>=0 and active_tl<=max_tl);
           
           assert (arrdata.at(group).at(m).hh->is_local(rl,c));
           
           for (int var=0; var<numvars; ++var) {
             assert (firstvar+var<CCTK_NumVars());
-            for (int tl=0; tl<num_tl; ++tl) {
-              ggf * const ff = arrdata.at(group).at(m).data.at(var);
-              if (ff) {
+            ggf * const ff = arrdata.at(group).at(m).data.at(var);
+            for (int tl=0; tl<max_tl; ++tl) {
+              if (ff and tl<active_tl) {
                 gdata * const data = (*ff) (tl, rl, c, ml);
                 assert (data);
                 cgh->data[firstvar+var][tl] = data->storage();
@@ -198,13 +201,14 @@ namespace Carpet {
         if (numvars>0) {
           const int firstvar = CCTK_FirstVarIndexI (group);
           assert (firstvar>=0);
-          const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
+          const int max_tl = CCTK_MaxTimeLevelsGI (group);
+          assert (max_tl>=0);
           
           assert (group<(int)arrdata.size());
           for (int var=0; var<numvars; ++var) {
             assert (firstvar+var<CCTK_NumVars());
-            for (int tl=0; tl<num_tl; ++tl) {
-              cgh->data[firstvar+var][tl] = 0;
+            for (int tl=0; tl<max_tl; ++tl) {
+              cgh->data[firstvar+var][tl] = NULL;
             }
           }
         }
@@ -406,16 +410,19 @@ namespace Carpet {
         if (numvars>0) {
           const int firstvar = CCTK_FirstVarIndexI (group);
           assert (firstvar>=0);
-          const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
+          const int max_tl = CCTK_MaxTimeLevelsGI (group);
+          assert (max_tl>=0);
+          const int active_tl = CCTK_ActiveTimeLevelsGI (cgh, group);
+          assert (active_tl>=0 and active_tl<=max_tl);
           
 //           assert (vhh.at(map)->is_local(reflevel,component));
           
           assert (group<(int)arrdata.size());
           for (int var=0; var<numvars; ++var) {
             assert (firstvar+var<CCTK_NumVars());
-            for (int tl=0; tl<num_tl; ++tl) {
-              ggf * const ff = arrdata.at(group).at(map).data.at(var);
-              if (ff) {
+            ggf * const ff = arrdata.at(group).at(map).data.at(var);
+            for (int tl=0; tl<max_tl; ++tl) {
+              if (ff and tl<active_tl) {
                 gdata * const data = (*ff) (tl, reflevel, component, mglevel);
                 assert (data);
                 cgh->data[firstvar+var][tl] = data->storage();
@@ -479,13 +486,14 @@ namespace Carpet {
         if (numvars>0) {
           const int firstvar = CCTK_FirstVarIndexI (group);
           assert (firstvar>=0);
-          const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
+          const int max_tl = CCTK_MaxTimeLevelsGI (group);
+          assert (max_tl>=0);
           
           assert (group<(int)arrdata.size());
           for (int var=0; var<numvars; ++var) {
             assert (firstvar+var<CCTK_NumVars());
-            for (int tl=0; tl<num_tl; ++tl) {
-              cgh->data[firstvar+var][tl] = 0;
+            for (int tl=0; tl<max_tl; ++tl) {
+              cgh->data[firstvar+var][tl] = NULL;
             }
           }
         }
