@@ -50,7 +50,7 @@ c     bbox(:,3) is stride
       integer srcioff, srcjoff, srckoff
       integer dstioff, dstjoff, dstkoff
       
-      CCTK_REAL8 s1fac, s2fac, s3fac
+      CCTK_REAL8 s1fac, s2fac
       
       CCTK_REAL8 dstdiv
       integer i, j, k

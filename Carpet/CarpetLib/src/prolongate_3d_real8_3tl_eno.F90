@@ -74,13 +74,8 @@ subroutine prolongate_3d_real8_3tl_eno (src1, t1, src2, t2, &
   integer i, j, k
   integer i0, j0, k0
   integer fi, fj, fk
-  integer ifac(4), jfac(4), kfac(4)
   integer ii, jj, kk
-  integer fac
-  CCTK_REAL8 res
   integer d
-
-  character msg*1000
 
   CCTK_REAL8, dimension(0:3,0:3) :: tmp1
   CCTK_REAL8, dimension(0:3) :: tmp2

@@ -29,7 +29,6 @@ c     -*-Fortran-*-
       CCTK_REAL8 src(srciext,srcjext,srckext)
       integer dstiext, dstjext, dstkext
       CCTK_REAL8 dst(dstiext,dstjext,dstkext)
-      CCTK_REAL8 t
 c     bbox(:,1) is lower boundary (inclusive)
 c     bbox(:,2) is upper boundary (inclusive)
 c     bbox(:,3) is stride
@@ -43,8 +42,6 @@ c     bbox(:,3) is stride
       
       integer srcioff, srcjoff, srckoff
       integer dstioff, dstjoff, dstkoff
-      
-      CCTK_REAL8 s1fac, s2fac, s3fac
       
       CCTK_REAL8 dstdiv
       integer i, j, k

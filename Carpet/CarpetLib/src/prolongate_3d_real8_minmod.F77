@@ -83,10 +83,7 @@ c     bbox(:,3) is stride
       integer i, j, k
       integer i0, j0, k0
       integer fi, fj, fk
-      integer ifac(4), jfac(4), kfac(4)
       integer ii, jj, kk
-      integer fac
-      CCTK_REAL8 res
       integer d
       
       character msg*1000

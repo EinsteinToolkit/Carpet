@@ -31,8 +31,6 @@ c     bbox(:,3) is stride
       integer i, j, k
       integer d
       
-      character msg*1000
-      
       
       
       do d=1,3
