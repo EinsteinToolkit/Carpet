@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.5 2001/03/12 16:54:25 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.6 2001/03/13 13:06:59 eschnett Exp $
 
  ***************************************************************************/
 
@@ -30,7 +30,7 @@
 #  include "dh.hh"
 #endif
 
-#undef DEBUG_OUTPUT
+#define DEBUG_OUTPUT
 
 
 

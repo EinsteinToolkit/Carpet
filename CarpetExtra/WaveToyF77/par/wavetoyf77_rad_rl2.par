@@ -7,11 +7,11 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/Attic/wavetoyf77_rad_rl2.par,v 1.1 2001/03/12 16:54:25 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/Attic/wavetoyf77_rad_rl2.par,v 1.2 2001/03/13 13:07:32 eschnett Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetSlab IDScalarWave WaveToyF77"
 
-Cactus::cctk_itlast		= 120
+Cactus::cctk_itlast		= 1 # 120
  
 Time::dtfac			= 0.5
 
@@ -27,13 +27,13 @@ grid::dxyz			= 0.3
  
 IO::outdir			= "wavetoyf77_rad_rl2"
 
-IOBasic::outinfo_every		= 10
+IOBasic::outinfo_every		= 1 # 10
 #IOBasic::outinfo_vars		= "wavetoy::phi"
 
 #IOBasic::outScalar_every	= 2
 #IOBasic::outScalar_vars		= "wavetoy::phi"
 
-IOASCII::out1D_every		= 2
+IOASCII::out1D_every		= 1 # 2
 IOASCII::out1D_vars		= "wavetoy::phi grid::coordinates"
 
 WaveToyF77::bound		= radiation

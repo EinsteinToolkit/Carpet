@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.7 2001/03/12 16:54:17 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.8 2001/03/13 13:06:52 eschnett Exp $
 
 /* It is assumed that the number of components of all arrays is equal
    to the number of components of the grid functions, and that their
@@ -32,7 +32,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.7 2001/03/12 16:54:17 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.8 2001/03/13 13:06:52 eschnett Exp $";
 
 
 
@@ -652,10 +652,12 @@ namespace Carpet {
 		 * cgh->cctk_levfac[d]);
 	    cgh->cctk_lbnd[d] = (ext.lower() / ext.stride())[d];
 	    cgh->cctk_ubnd[d] = (ext.upper() / ext.stride())[d];
-	    cgh->cctk_bbox[2*d  ]
-	      = reflevel==0 && cgh->cctk_lbnd[d] == 0;
-	    cgh->cctk_bbox[2*d+1]
-	      = reflevel==0 && cgh->cctk_ubnd[d] == cgh->cctk_gsh[d]-1;
+// 	    cgh->cctk_bbox[2*d  ]
+// 	      = reflevel==0 && cgh->cctk_lbnd[d] == 0;
+// 	    cgh->cctk_bbox[2*d+1]
+// 	      = reflevel==0 && cgh->cctk_ubnd[d] == cgh->cctk_gsh[d]-1;
+	    cgh->cctk_bbox[2*d  ] = (ext.lower() < base.lower())[d];
+	    cgh->cctk_bbox[2*d+1] = (ext.upper() > base.upper())[d];
 	    for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
 	      // TODO: support staggering
 	      cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];

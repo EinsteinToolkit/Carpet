@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.4 2001/03/12 16:54:25 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.5 2001/03/13 13:06:59 eschnett Exp $
 
 #include <cassert>
 #include <cstdio>
@@ -507,7 +507,7 @@ int IOASCII<outdim>::CoordToOffset (cGH* cgh, int dir, double coord)
   
   const int npoints = cgh->cctk_gsh[dir-1];
   
-  const CCTK_REAL rindex = (coord - lower) / (upper - lower) * npoints;
+  const CCTK_REAL rindex = (coord - lower) / (upper - lower) * (npoints-1);
   const int cindex = (int)floor(rindex + 0.5 + 1e-6);
   assert (cindex>=0 && cindex<npoints);
   

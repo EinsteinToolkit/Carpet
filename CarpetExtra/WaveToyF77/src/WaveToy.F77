@@ -136,10 +136,6 @@ c     ---------------------
       sw(2) = 1
       sw(3) = 1
       
-c     Apply the symmetry boundary conditions on any coordinate axes
-c     -------------------------------------------------------------
-      call Cart3dSymGN (ierr, cctkGH, "wavetoy::scalarevolve")
-      
 c     Apply the outer boundary conditions
 c     -----------------------------------
       if (CCTK_EQUALS(bound, "flat")) then
@@ -154,6 +150,14 @@ c     -----------------------------------
       else
          call CCTK_WARN (0, "No boundary condition selected")
       end if
+      
+      if (ierr .lt. 0)  then
+        call CCTK_WARN (0, "Boundary conditions not applied - giving up!")
+      end if
+      
+c     Apply the symmetry boundary conditions on any coordinate axes
+c     -------------------------------------------------------------
+      call Cart3dSymGN (ierr, cctkGH, "wavetoy::scalarevolve")
       
       if (ierr .lt. 0)  then
         call CCTK_WARN (0, "Boundary conditions not applied - giving up!")
