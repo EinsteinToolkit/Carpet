@@ -319,7 +319,8 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer, const ioRequest* requ
 
   const int n = request->vindex;
   assert (n>=0 && n<CCTK_NumVars());
-  const char * varname = CCTK_FullName(n);
+  char * varname = CCTK_FullName(n);
+  assert (varname);
   const int group = CCTK_GroupIndexFromVarI (n);
   assert (group>=0 && group<(int)Carpet::arrdata.size());
   const int n0 = CCTK_FirstVarIndexI(group);
@@ -335,6 +336,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer, const ioRequest* requ
     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                 "Cannot output variable \"%s\" because it has no storage",
                 varname);
+    free (varname);
     return 0;
   }
 
@@ -590,7 +592,9 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer, const ioRequest* requ
 
     } END_COMPONENT_LOOP;
   } END_MAP_LOOP;
-
+  
+  free (varname);
+  
   return 0;
 }
 
