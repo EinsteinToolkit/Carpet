@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.23 2004/04/18 13:03:44 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.24 2004/04/19 13:50:07 schnetter Exp $
 
 #include <assert.h>
 
@@ -226,8 +226,6 @@ void bbox<T,D>::input (istream& is) {
   is >> _stride;
   skipws (is);
   consume (is, ')');
-  cerr << "bbox " << *this << endl;
-  cerr << (_upper-_lower)%_stride << endl;
   assert (all(_stride>T(0)));
   assert (all((_upper-_lower)%_stride == T(0)));
 }
