@@ -1,5 +1,4 @@
-#include <assert.h>
-
+#include <cassert>
 #include <sstream>
 #include <string>
 
