@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.61 2004/03/23 19:41:11 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.62 2004/03/23 19:47:21 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -624,7 +624,6 @@ namespace Carpet {
     const int nprocs = CCTK_nProcs(cgh);
     if (DEBUG) cout << "SRA nprocs " << nprocs << endl;
     
-    // split the processors
     // nslices: number of disjoint bboxes
     int const nslices = bbs.size();
     if (DEBUG) cout << "SRA nslices " << nslices << endl;
@@ -659,6 +658,11 @@ namespace Carpet {
         -- ncomps_left;
       }
       assert (ncomps_left == 0);
+      int sum_nprocs = 0;
+      for (int c=0; c<nslices; ++c) {
+        sum_nprocs += mynprocs.at(c);
+      }
+      assert (sum_nprocs == nprocs * ncomps);
     }
     if (DEBUG) cout << "SRA mynprocs " << mynprocs << endl;
     
@@ -667,16 +671,12 @@ namespace Carpet {
     vector<int> allps;
     
     if (DEBUG) cout << "SRA: splitting regions" << endl;
-    for (int c=0; c<nslices; ++c) {
+    for (int c=0, p=0; c<nslices; p+=mynprocs.at(c), ++c) {
       
       const ibbox bb = bbs.at(c);
       const bbvect ob = obs.at(c);
-      int p = 0;
-      for (int cc=0; cc<c; ++cc) {
-        p += mynprocs.at(cc);
-      }
-      assert (p>=0 && p<=nprocs);
       if (DEBUG) cout << "SRA c " << c << endl;
+      if (DEBUG) cout << "SRA p " << p << endl;
       if (DEBUG) cout << "SRA bb " << bb << endl;
       if (DEBUG) cout << "SRA ob " << ob << endl;
       
@@ -721,7 +721,8 @@ namespace Carpet {
     obs = allobs;
     ps = allps;
     for (size_t n=0; n<ps.size(); ++n) {
-      assert (ps.at(n) == n);
+      ps.at(n) /= ncomps;
+      assert (ps.at(n) >= 0 && ps.at(n) < nprocs);
     }
     
     if (DEBUG) cout << "SRA exit" << endl;
