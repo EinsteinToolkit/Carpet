@@ -315,9 +315,7 @@ CCTK_STRING coordinates "List of bounding box coordinates" STEERABLE=always
 
 # Offsets for manual-coordinate-list
 
-#RESTRICTED:
-
-PRIVATE:
+RESTRICTED:
 
 CCTK_INT num_offsets "Number of given offsets" STEERABLE=always
 {
