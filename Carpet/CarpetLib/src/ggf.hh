@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.10 2002/06/06 14:20:16 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.11 2002/07/18 14:33:50 shawley Exp $
 
  ***************************************************************************/
 
@@ -100,6 +100,8 @@ public:
   // Flip the time levels by exchanging the data sets
   void flip (int rl, int c, int ml);
   
+  // Copy data from current time level to all previous time levels
+  void copytoprevs (int rl, int c, int ml);
   
   
   // Helpers
