@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "cctk.h"
+#include "cctk_Parameters.h"
 
 #include "defs.hh"
 #include "ggf.hh"
@@ -158,6 +159,8 @@ namespace Carpet {
   
   void leave_global_mode (cGH * const cgh)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     assert (is_global_mode() || is_meta_mode());
     Checkpoint ("Leaving global mode");
     
@@ -180,20 +183,20 @@ namespace Carpet {
         const int m = 0;
         
 //         ivect::ref(const_cast<int*>(groupdata.at(group).info.nghostzones))
-//           = 0xdead;
+//           = deadbeef;
         ivect::ref(const_cast<int*>(groupdata.at(group).info.nghostzones))
           = arrdata.at(group).at(m).dd->lghosts;
         ivect::ref(const_cast<int*>(groupdata.at(group).info.gsh))
-          = 0xdead;
+          = deadbeef;
         ivect::ref(const_cast<int*>(groupdata.at(group).info.lsh))
-          = 0xdead;
+          = deadbeef;
         ivect::ref(const_cast<int*>(groupdata.at(group).info.lbnd))
-          = -0xdead;
+          = -deadbeef;
         ivect::ref(const_cast<int*>(groupdata.at(group).info.ubnd))
-          = 0xdead;
+          = deadbeef;
         for (int d=0; d<dim; ++d) {
-          const_cast<int*>(groupdata.at(group).info.bbox)[2*d  ] = 0xdead;
-          const_cast<int*>(groupdata.at(group).info.bbox)[2*d+1] = 0xdead;
+          const_cast<int*>(groupdata.at(group).info.bbox)[2*d  ] = deadbeef;
+          const_cast<int*>(groupdata.at(group).info.bbox)[2*d+1] = deadbeef;
         }
         
         const int numvars = CCTK_NumVarsInGroupI (group);
@@ -215,8 +218,8 @@ namespace Carpet {
     } // for group
     
     mglevel = -1;
-    mglevelfact = -0xdead;
-    cgh->cctk_convlevel = -0xdead;
+    mglevelfact = -deadbeef;
+    cgh->cctk_convlevel = -deadbeef;
     
     assert (is_meta_mode());
   }
@@ -246,6 +249,8 @@ namespace Carpet {
   
   void leave_level_mode (cGH * const cgh)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     assert (is_level_mode() || is_global_mode());
     Checkpoint ("Leaving level mode");
     
@@ -258,9 +263,9 @@ namespace Carpet {
     cgh->cctk_time = global_time;
     
     reflevel = -1;
-    reflevelfact = -0xdead;
-    ivect::ref(cgh->cctk_levfac) = -0xdead;
-    cgh->cctk_timefac = -0xdead;
+    reflevelfact = -deadbeef;
+    ivect::ref(cgh->cctk_levfac) = -deadbeef;
+    cgh->cctk_timefac = -deadbeef;
     
     assert (is_global_mode());
   }
@@ -302,16 +307,18 @@ namespace Carpet {
   
   void leave_singlemap_mode (cGH * const cgh)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     assert (is_singlemap_mode() || is_level_mode());
     Checkpoint ("Leaving singlemap mode");
     
     if (map == -1) return;      // early return
     
     // Unset grid shape
-    ivect::ref(cgh->cctk_levoff) = 0xdead;
+    ivect::ref(cgh->cctk_levoff) = deadbeef;
     ivect::ref(cgh->cctk_levoffdenom) = 0;
-    ivect::ref(cgh->cctk_gsh) = 0xdead;
-//     ivect::ref(cgh->cctk_nghostzones) = 0xdead;
+    ivect::ref(cgh->cctk_gsh) = deadbeef;
+//     ivect::ref(cgh->cctk_nghostzones) = deadbeef;
     ivect::ref(cgh->cctk_nghostzones) = vdd.at(map)->lghosts;
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
@@ -423,19 +430,21 @@ namespace Carpet {
   
   void leave_local_mode (cGH * const cgh)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     assert (is_local_mode() || is_singlemap_mode());
     Checkpoint ("Leaving local mode");
     
     if (component == -1) return; // early return
     
     // Unset cGH fields
-    ivect::ref(cgh->cctk_lsh) = 0xdead;
-    ivect::ref(cgh->cctk_lbnd) = -0xdead;
-    ivect::ref(cgh->cctk_ubnd) = 0xdead;
+    ivect::ref(cgh->cctk_lsh) = deadbeef;
+    ivect::ref(cgh->cctk_lbnd) = -deadbeef;
+    ivect::ref(cgh->cctk_ubnd) = deadbeef;
     
     for (int d=0; d<dim; ++d) {
-      cgh->cctk_bbox[2*d  ] = 0xdead;
-      cgh->cctk_bbox[2*d+1] = 0xdead;
+      cgh->cctk_bbox[2*d  ] = deadbeef;
+      cgh->cctk_bbox[2*d+1] = deadbeef;
     }
       
     for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {

@@ -214,6 +214,13 @@ CCTK_INT max_poison_locations "Maximum number of poison locations that are print
 
 
 
+CCTK_INT deadbeef "A strange integer value that indicates that something has gone wrong; the integer equivalent of a nan"
+{
+  *:* :: "should be large and positive"
+} 7353315
+
+
+
 BOOLEAN checksum_timelevels "Try to catch unintentionally changed timelevels by taking checksums and comparing against these" STEERABLE=always
 {
 } "no"
