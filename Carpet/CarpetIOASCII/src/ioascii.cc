@@ -1002,6 +1002,7 @@ namespace CarpetIOASCII {
 		   const vect<CCTK_REAL,dim>& coord_upper)
   {
     assert (outdim<=dim);
+    const int vartype = CCTK_VarTypeI(vi);
 
     if (gfdata->proc()==0) {
       // output on processor 0
@@ -1061,7 +1062,7 @@ namespace CarpetIOASCII {
               if (d != dim-1) os << " ";
 	    }
 	    os << "\t";
-	    switch (CCTK_VarTypeI(vi)) {
+	    switch (vartype) {
 #define TYPECASE(N,T)					\
 	    case N:					\
 	      os << (*(const data<T>*)gfdata)[index];	\
@@ -1097,7 +1098,7 @@ namespace CarpetIOASCII {
 
       gdata* const tmp = gfdata->make_typed(vi);
       tmp->allocate(gfdata->extent(), 0);
-      for (comm_state state; !state.done(); state.step()) {
+      for (comm_state state(vartype); !state.done(); state.step()) {
         tmp->copy_from (state, gfdata, gfdata->extent());
       }
       WriteASCII (os, tmp, gfext, vi, time, org, dirs, rl, ml, m, c, tl,
