@@ -46,6 +46,10 @@ typedef struct
   /* iteration number of the last checkpoint */
   int last_checkpoint_iteration;
 
+  /* hdf5 datatype for stupid complex variables; to be set at run time */
+  hid_t HDF5_COMPLEX, HDF5_COMPLEX8, HDF5_COMPLEX16, HDF5_COMPLEX32;
+  
+
 } CarpetIOHDF5GH;
 
 

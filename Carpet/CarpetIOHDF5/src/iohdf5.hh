@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.9 2004/04/03 12:40:21 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.10 2004/04/12 22:59:04 cott Exp $
 
 #ifndef CARPETIOHDF5_HH
 #define CARPETIOHDF5_HH
@@ -52,7 +52,6 @@
 
 /*** Define the different datatypes used for HDF5 I/O
      NOTE: the complex datatype SHOULD be [is] defined dynamically at runtime in Startup.c
-
      100% of the definitions below were taken from Thomas Radke's IOHDF5Util thorn for PUGH
  ***/
 /* char type is easy */
@@ -118,6 +117,23 @@
 #define HDF5_INT    HDF5_INT1
 #endif
 
+/* Nice error handling. Stolen from Thomas Radke */
+/* check return code of HDF5 call and print a warning in case of an error */
+#define HDF5_ERROR(fn_call)                                                   \
+        {                                                                     \
+          int _error_code = fn_call;                                          \
+                                                                              \
+                                                                              \
+          if (_error_code < 0)                                                \
+          {                                                                   \
+            CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,              \
+                        "HDF5 call '%s' returned error code %d",              \
+                        #fn_call, _error_code);                               \
+          }                                                                   \
+        }
+
+
+
 
 namespace CarpetIOHDF5 {
   
@@ -180,7 +196,7 @@ namespace CarpetIOHDF5 {
   int GetnDatasets (const hid_t reader);
   void GetDatasetName (const hid_t reader, const int _index, char* name);
 
-  hid_t h5DataType(int cctk_type);
+  hid_t h5DataType(const cGH* const cctkGH, int cctk_type);
 
 } // namespace CarpetIOHDF5
 

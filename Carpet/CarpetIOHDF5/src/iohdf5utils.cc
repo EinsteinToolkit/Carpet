@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5utils.cc,v 1.5 2004/04/03 12:40:21 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5utils.cc,v 1.6 2004/04/12 22:59:04 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5utils_cc);
 }
 
@@ -33,6 +33,7 @@ extern "C" {
 #include "carpet.hh"
 
 #include "iohdf5.hh"
+#include "iohdf5GH.h"
 
 
 
@@ -460,9 +461,12 @@ namespace CarpetIOHDF5 {
 		     &getn)<0){}
   }
 
-  hid_t h5DataType (int cctk_type) {
+  hid_t h5DataType (const cGH* const cctkGH, int cctk_type) {
 
     hid_t retval;  
+
+    CarpetIOHDF5GH *myGH;
+    myGH = (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, "CarpetIOHDF5");
   
     // this is adapted from Thomas Radke's IOHDF5Util. Thanks, Thomas!
 
@@ -471,7 +475,7 @@ namespace CarpetIOHDF5 {
       case CCTK_VARIABLE_CHAR:      retval = HDF5_CHAR; break;
       case CCTK_VARIABLE_INT:       retval = HDF5_INT; break;
       case CCTK_VARIABLE_REAL:      retval = HDF5_REAL; break;
-	//      case CCTK_VARIABLE_COMPLEX:   retval = myGH->HDF5_COMPLEX; break;
+      case CCTK_VARIABLE_COMPLEX:   retval = myGH->HDF5_COMPLEX; break;
 #ifdef CCTK_INT1
       case CCTK_VARIABLE_INT1:      retval = HDF5_INT1; break;
 #endif
@@ -486,15 +490,15 @@ namespace CarpetIOHDF5 {
 #endif
 #ifdef CCTK_REAL4
       case CCTK_VARIABLE_REAL4:     retval = HDF5_REAL4; break;
-	//      case CCTK_VARIABLE_COMPLEX8:  retval = myGH->HDF5_COMPLEX8; break;
+      case CCTK_VARIABLE_COMPLEX8:  retval = myGH->HDF5_COMPLEX8; break;
 #endif
 #ifdef CCTK_REAL8
       case CCTK_VARIABLE_REAL8:     retval = HDF5_REAL8; break;
-	//case CCTK_VARIABLE_COMPLEX16: retval = myGH->HDF5_COMPLEX16; break;
+      case CCTK_VARIABLE_COMPLEX16: retval = myGH->HDF5_COMPLEX16; break;
 #endif
 #ifdef CCTK_REAL16
       case CCTK_VARIABLE_REAL16:    retval = HDF5_REAL16; break;
-	//case CCTK_VARIABLE_COMPLEX32: retval = myGH->HDF5_COMPLEX32; break;
+      case CCTK_VARIABLE_COMPLEX32: retval = myGH->HDF5_COMPLEX32; break;
 #endif
   
       default: CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,

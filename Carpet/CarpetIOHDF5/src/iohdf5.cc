@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.26 2004/04/07 14:10:23 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.27 2004/04/12 22:59:04 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -126,10 +126,40 @@ namespace CarpetIOHDF5 {
 
     myGH->open_output_files = NULL;
 
+    // Now set hdf5 complex datatypes
+    // Stolen from Thomas Radke
+    HDF5_ERROR (myGH->HDF5_COMPLEX =
+              H5Tcreate (H5T_COMPOUND, sizeof (CCTK_COMPLEX)));
+    HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX, "real",
+                         offsetof (CCTK_COMPLEX, Re), HDF5_REAL));
+    HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX, "imag",
+                         offsetof (CCTK_COMPLEX, Im), HDF5_REAL));
+#ifdef CCTK_REAL4
+    HDF5_ERROR (myGH->HDF5_COMPLEX8 =
+		H5Tcreate (H5T_COMPOUND, sizeof (CCTK_COMPLEX8)));
+    HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX8, "real",
+			   offsetof (CCTK_COMPLEX8, Re), HDF5_REAL4));
+    HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX8, "imag",
+			   offsetof (CCTK_COMPLEX8, Im), HDF5_REAL4));
+#endif
+#ifdef CCTK_REAL8
+    HDF5_ERROR (myGH->HDF5_COMPLEX16 =
+		H5Tcreate (H5T_COMPOUND, sizeof (CCTK_COMPLEX16)));
+    HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX16, "real",
+			   offsetof (CCTK_COMPLEX16, Re), HDF5_REAL8));
+    HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX16, "imag",
+			   offsetof (CCTK_COMPLEX16, Im), HDF5_REAL8));
+#endif
+#ifdef CCTK_REAL16
+    HDF5_ERROR (myGH->HDF5_COMPLEX32 =
+		H5Tcreate (H5T_COMPOUND, sizeof (CCTK_COMPLEX32)));
+    HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX32, "real",
+			   offsetof (CCTK_COMPLEX32, Re), HDF5_REAL16));
+    HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX32, "imag",
+			   offsetof (CCTK_COMPLEX32, Im), HDF5_REAL16));
+#endif
     return (myGH);
   }
-  
-  
   
   int OutputGH (const cGH* const cctkGH) {
     for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
@@ -355,7 +385,7 @@ namespace CarpetIOHDF5 {
 
 	      // Select datatype
 
-	      const hid_t datatype = h5DataType(CCTK_VarTypeI(n));
+	      const hid_t datatype = h5DataType(cctkGH,CCTK_VarTypeI(n));
           
 	      ostringstream datasetnamebuf;
 	      datasetnamebuf << varname
@@ -630,7 +660,7 @@ namespace CarpetIOHDF5 {
     int recovery_rl = -1;
     int recovery_comp = -1;
 
-    CCTK_REAL *h5data;
+    void * h5data;
 
     // Check for storage
     if (! CCTK_QueryGroupStorageI(cctkGH, group)) {
@@ -685,12 +715,16 @@ namespace CarpetIOHDF5 {
 	   }
 
 	 }
-	 const hid_t datatype = H5T_NATIVE_DOUBLE;
+         const int cctkDataType = CCTK_VarTypeI(n);
+	 const hid_t datatype = h5DataType(cctkGH,cctkDataType);
 	 
          //cout << "datalength: " << datalength << " rank: " << rank << "\n";
          //cout << shape[0] << " " << shape[1] << " " << shape[2] << "\n";
 	 
-	 h5data = (CCTK_REAL*) malloc(sizeof(double)*datalength);
+	 // to do: read in an allocate with correct datatype
+
+	 h5data = (void*) malloc( CCTK_VarTypeSize(cctkDataType) *datalength);
+
 	 herr = H5Dread(dataset,datatype,H5S_ALL, H5S_ALL, H5P_DEFAULT,(void*)h5data);
 	 assert(!herr);
 	 
