@@ -19,6 +19,10 @@ BOOLEAN output_bboxes "Output bounding box information to the screen" STEERABLE=
 {
 } "no"
 
+BOOLEAN print_timestats "Print timing statistics at every iteration" STEERABLE=always
+{
+} "no"
+
 BOOLEAN save_memory_during_regridding "Save some memory during regridding at the expense of speed"
 {
 } "no"

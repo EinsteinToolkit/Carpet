@@ -27,7 +27,10 @@ using namespace std;
 
 
 
-static size_t total_allocated_bytes; // total number of allocated bytes
+// Total number of currently allocated bytes and objects
+static size_t total_allocated_bytes = 0;
+static size_t total_allocated_objects = 0;
+
 
 
 static const CCTK_REAL eps = 1.0e-10;
@@ -128,12 +131,15 @@ void data<T,D>::getmem (const size_t nelems)
   } catch (...) {
     T Tdummy;
     CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "Failed to allocate %.0f bytes (%.3f MB) of memory for type %s.  %.0f bytes (%.3f MB) are currently allocated.",
-                (double)nbytes, nbytes/1.0e6,
+                "Failed to allocate %.0f bytes (%.3f MB) of memory for type %s.  %.0f bytes (%.3f MB) are currently allocated in %d objects.",
+                double(nbytes), double(nbytes/1.0e6),
                 typestring(Tdummy),
-                (double)total_allocated_bytes, total_allocated_bytes/1.0e6);
+                double(total_allocated_bytes),
+                double(total_allocated_bytes/1.0e6),
+                int(total_allocated_objects));
   }
   total_allocated_bytes += nbytes;
+  ++ total_allocated_objects;
 }
 
 
@@ -142,7 +148,10 @@ template<class T, int D>
 void data<T,D>::freemem ()
 {
   delete [] _storage;
+  assert (total_allocated_bytes > this->_allocated_bytes);
+  assert (total_allocated_objects > 0);
   total_allocated_bytes -= this->_allocated_bytes;
+  -- total_allocated_objects;
   this->_allocated_bytes = 0;
 }
 
@@ -237,6 +246,8 @@ void data<T,D>::change_processor_recv (comm_state<D>& state,
     return;
   }
   
+  wtime_changeproc_recv.start();
+
   if (this->_has_storage) {
     if (this->this_processor_is ( newproc)) {
       // copy from other processor
@@ -249,12 +260,12 @@ void data<T,D>::change_processor_recv (comm_state<D>& state,
 	_storage = (T*)mem;
       }
       
+      wtime_irecv.start();
       const double wtime1 = MPI_Wtime();
       T dummy;
       MPI_Irecv (_storage, this->_size, dist::datatype(dummy), this->proc(),
                  this->tag, dist::comm, &this->request);
-      const double wtime2 = MPI_Wtime();
-      this->wtime_irecv += wtime2 - wtime1;
+      wtime_irecv.stop();
       if (use_waitall) {
         state.requests.push_back (this->request);
       }
@@ -267,6 +278,8 @@ void data<T,D>::change_processor_recv (comm_state<D>& state,
       assert (!_storage);
     }
   }
+  
+  wtime_changeproc_recv.stop();
 }
 
 
@@ -285,6 +298,8 @@ void data<T,D>::change_processor_send (comm_state<D>& state,
     return;
   }
   
+  wtime_changeproc_send.start();
+  
   if (this->_has_storage) {
     if (this->this_processor_is ( newproc)) {
       // copy from other processor
@@ -295,12 +310,11 @@ void data<T,D>::change_processor_send (comm_state<D>& state,
       assert (!mem);
       assert (_storage);
       
-      const double wtime1 = MPI_Wtime();
+      wtime_isend.start();
       T dummy;
       MPI_Isend (_storage, this->_size, dist::datatype(dummy), newproc,
                  this->tag, dist::comm, &this->request);
-      const double wtime2 = MPI_Wtime();
-      this->wtime_isend += wtime2 - wtime1;
+      wtime_isend.stop();
       if (use_waitall) {
         state.requests.push_back (this->request);
       }
@@ -310,6 +324,8 @@ void data<T,D>::change_processor_send (comm_state<D>& state,
       assert (!_storage);
     }
   }
+  
+  wtime_changeproc_send.stop();
 }
 
 
@@ -328,15 +344,16 @@ void data<T,D>::change_processor_wait (comm_state<D>& state,
     assert (!mem);
     return;
   }
+  
+  wtime_changeproc_wait.start();
 
   if (use_waitall) {
     if (! state.requests.empty()) {
       // wait for all requests at once
-      const double wtime1 = MPI_Wtime();
+      wtime_irecvwait.start();
       MPI_Waitall
         (state.requests.size(), &state.requests.front(), MPI_STATUSES_IGNORE);
-      const double wtime2 = MPI_Wtime();
-      this->wtime_irecvwait += wtime2 - wtime1;
+      wtime_irecvwait.stop();
       state.requests.clear();
     }
   }
@@ -346,11 +363,10 @@ void data<T,D>::change_processor_wait (comm_state<D>& state,
       // copy from other processor
       
       if (! use_waitall) {
-        const double wtime1 = MPI_Wtime();
+        wtime_irecvwait.start();
         MPI_Status status;
         MPI_Wait (&this->request, &status);
-        const double wtime2 = MPI_Wtime();
-        this->wtime_irecvwait += wtime2 - wtime1;
+        wtime_irecvwait.stop();
       }
       
     } else if (this->lives_on_this_processor()) {
@@ -360,11 +376,10 @@ void data<T,D>::change_processor_wait (comm_state<D>& state,
       assert (_storage);
       
       if (! use_waitall) {
-        const double wtime1 = MPI_Wtime();
+        wtime_isendwait.start();
         MPI_Status status;
         MPI_Wait (&this->request, &status);
-        const double wtime2 = MPI_Wtime();
-        this->wtime_isendwait += wtime2 - wtime1;
+        wtime_isendwait.stop();
       }
       
       if (this->_owns_storage) {
@@ -379,6 +394,8 @@ void data<T,D>::change_processor_wait (comm_state<D>& state,
   }
   
   this->_proc = newproc;
+  
+  wtime_changeproc_wait.stop();
 }
 
 

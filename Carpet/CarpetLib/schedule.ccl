@@ -1,2 +1,8 @@
 # Schedule definitions for thorn CarpetLib
 # $Header:$
+
+SCHEDULE CarpetLib_printtimestats AT analysis
+{
+  LANG: C
+  OPTIONS: global
+} "Print timing statistics if desired"
