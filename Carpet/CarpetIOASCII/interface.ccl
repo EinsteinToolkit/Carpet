@@ -1,9 +1,9 @@
 # Interface definition for thorn CarpetIOASCII
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/interface.ccl,v 1.10 2004/05/04 22:09:54 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/interface.ccl,v 1.11 2004/05/04 22:52:39 schnetter Exp $
 
 IMPLEMENTS: IOASCII
 
-INHERITS: Carpet CarpetLib IOUtil
+#INHERITS: Carpet CarpetLib IOUtil
 
 uses include header: carpet.hh
 
