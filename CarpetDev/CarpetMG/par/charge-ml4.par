@@ -37,7 +37,7 @@ Carpet::init_3_timelevels = yes
 ActiveThorns = "TATelliptic CarpetMG"
 
 CarpetMG::verbose = yes
-#CarpetMG::veryverbose = yes
+CarpetMG::veryverbose = yes
 
 
 
@@ -103,10 +103,13 @@ ActiveThorns = "IDScalarWave IDSWTEcarpet"
 
 IDScalarWave::initial_data = charge-TATelliptic-carpet
 
-IDSWTEcarpet::solver  = CarpetMG
-IDSWTEcarpet::options = "mgiters=10"
-IDSWTEcarpet::radius  = 5.5
-IDSWTEcarpet::charge  = 1.0
+IDSWTEcarpet::solver   = CarpetMG
+#IDSWTEcarpet::options  = "presteps=4 poststeps=4"
+IDSWTEcarpet::options  = "presteps=4 poststeps=4 mgiters=10 maxiters=1000"
+IDSWTEcarpet::shape    = Gauss
+IDSWTEcarpet::radius   = 5.5
+IDSWTEcarpet::charge   = 1.0
+IDSWTEcarpet::boundary = scalar
 
 
 

@@ -28,6 +28,7 @@ namespace CarpetMG {
   
   
   struct options_t {
+    
     // Width of outer boundary
     CCTK_INT bndwidth;
     
@@ -38,17 +39,19 @@ namespace CarpetMG {
     // Coarsest level on which the full multigrid algorithm should start
     CCTK_INT firstlevel;
     
-    // Maximum number of direct solver iterations
-    CCTK_INT maxiters;
+    // Direct solver
+    CCTK_INT maxiters;          // Maximum number of iterations
+    CCTK_REAL sor_factor;       // SOR factor
     
     // Weight factors for the equations
     CCTK_REAL factor;
     vector<CCTK_REAL> factors;
     
-    // Maximum number of multigrid iterations (per level) and smoothing steps
-    CCTK_INT mgiters;
-    CCTK_INT presteps;
-    CCTK_INT poststeps;
+    // Multigrid iterations
+    CCTK_INT mgiters;           // maximum number of iterations (per level)
+    CCTK_INT presteps;          // number of presmoothing steps
+    CCTK_INT poststeps;         // number of postsmoothing steps
+    
   };
   
   
@@ -111,7 +114,8 @@ namespace CarpetMG {
           vector<CCTK_INT> const & wgt,
           options_t const & options,
           CCTK_REAL const old_error,
-          CCTK_REAL & error);
+          CCTK_REAL & error,
+          bool const use_sor = false);
   
   void
   norm (cGH const * restrict const cctkGH,
@@ -338,19 +342,22 @@ namespace CarpetMG {
     
     // Get symmetry information
     {
-      int icnt;
       int const symtable = SymmetryTableHandleForGrid (cctkGH);
       assert (symtable >= 0);
-      
-      icnt = (Util_TableGetIntArray
-              (symtable, 6,
-               options.symmetry_handle, "symmetry_handle"));
-      assert (icnt == 6);
-      
-      icnt = (Util_TableGetIntArray
-              (symtable, 6,
-               options.symmetry_zone_width, "symmetry_zone_width"));
-      assert (icnt == 6);
+      {
+        int const icnt
+          = (Util_TableGetIntArray
+             (symtable, 6,
+              options.symmetry_handle, "symmetry_handle"));
+        assert (icnt == 6);
+      }
+      {
+        int const icnt
+          = (Util_TableGetIntArray
+             (symtable, 6,
+              options.symmetry_zone_width, "symmetry_zone_width"));
+        assert (icnt == 6);
+      }
     }
     
     // Get full multigrid information
@@ -368,40 +375,49 @@ namespace CarpetMG {
         = Util_TableGetInt (options_table, &options.maxiters, "maxiters");
       assert (icnt == 1 or icnt == UTIL_ERROR_TABLE_NO_SUCH_KEY);
     }
+    {
+      options.sor_factor = 1.0;
+      int const icnt
+        = Util_TableGetReal (options_table, &options.sor_factor, "sor_factor");
+      assert (icnt == 1 or icnt == UTIL_ERROR_TABLE_NO_SUCH_KEY);
+    }
     
     // Get equation information
     {
-      int icnt;
-      
       options.factor = 0.5;
-      icnt = Util_TableGetReal (options_table, &options.factor, "factor");
+      int const icnt
+        = Util_TableGetReal (options_table, &options.factor, "factor");
       assert (icnt == 1 or icnt == UTIL_ERROR_TABLE_NO_SUCH_KEY);
-      
+    }
+    {
       options.factors.resize (var.size());
       for (int n=0; n<options.factors.size(); ++n) {
         options.factors.at(n) = 1.0;
       }
-      icnt = (Util_TableGetRealArray
-              (options_table, options.factors.size(),
-               &options.factors.front(), "factors"));
+      int const icnt = (Util_TableGetRealArray
+                        (options_table, options.factors.size(),
+                         &options.factors.front(), "factors"));
       assert (icnt == options.factors.size()
               or icnt == UTIL_ERROR_TABLE_NO_SUCH_KEY);
     }
     
     // Get multigrid information
     {
-      int icnt;
-      
-      options.mgiters = 100;
-      icnt = Util_TableGetInt (options_table, &options.mgiters, "mgiters");
+      options.mgiters = 10;
+      int const icnt
+        = Util_TableGetInt (options_table, &options.mgiters, "mgiters");
       assert (icnt == 1 or icnt == UTIL_ERROR_TABLE_NO_SUCH_KEY);
-      
+    }
+    {
       options.presteps = 2;
-      icnt = Util_TableGetInt (options_table, &options.presteps, "presteps");
+      int const icnt
+        = Util_TableGetInt (options_table, &options.presteps, "presteps");
       assert (icnt == 1 or icnt == UTIL_ERROR_TABLE_NO_SUCH_KEY);
-      
+    }
+    {
       options.poststeps = 2;
-      icnt = Util_TableGetInt (options_table, &options.poststeps, "poststeps");
+      int const icnt
+        = Util_TableGetInt (options_table, &options.poststeps, "poststeps");
       assert (icnt == 1 or icnt == UTIL_ERROR_TABLE_NO_SUCH_KEY);
     }
     
@@ -471,33 +487,10 @@ namespace CarpetMG {
              options_t const & options,
              CCTK_REAL const minerror)
   {
-#if 0
-    DECLARE_CCTK_ARGUMENTS;
-#endif
     DECLARE_CCTK_PARAMETERS;
     
     // Solve on this and some coarser levels
     assert (is_level_mode());
-    
-#if 0
-    // Calculate the domain size
-    int minsize = INT_MAX;
-    int size = 1;
-    int maxsize = INT_MAX;
-    for (d=0; d<dim; ++d) {
-      int const gsize = cctk_gsh[d];
-      assert (gsize >= 0);
-      minsize = min (minsize, gsize);
-      
-      int const lsize = (cctk_lsh[d]
-                         - (cctk_bbox[2*d  ] ? 0 : cctk_nghostzones[d])
-                         - (cctk_bbox[2*d+1] ? 0 : cctk_nghostzones[d]));
-      assert (lsize >= 0);
-      assert (lsize <= maxsize);
-      size *= lsize;
-      maxsize /= lsize;
-    }
-#endif
     
     // Solve directly when on the coarsest level
     if (reflevel == 0) {
@@ -515,8 +508,8 @@ namespace CarpetMG {
       
       if (verbose) {
         CCTK_VInfo (CCTK_THORNSTRING,
-                    "%*s[%d] beginning multigrid solve",
-                    indwidth(), "", reflevel);
+                    "%*s[%d] beginning multigrid solve, desired residual %g",
+                    indwidth(), "", reflevel, double(minerror));
       }
       
       // Loop until converged
@@ -564,70 +557,40 @@ namespace CarpetMG {
         
         // Restrict
         
-        // solve L(u) = r
-        // set f := L(u) - r
-        //
-        // given:  f = L(u ) - r
-        // wanted: 0 = L(u') - r
-        // known:  R(f) - f is small
-        // assume: R(u'-u) is also small
-        // define: fc = R(f)
-        //         uc = R(u)
-        //         fc = L(uc) - rc   (defines rc)
-        // solve:  L(uc') = rc
-        // use:    R(u'-u) = uc'-uc   (defines u')
-        // yields: f' = L(u') - r
-        // where f' is smaller than f
-        //
-        // uc <- R(u)
-        // fc <- R(f)
-        // rc <- fc
-        // fc <- L(uc) - rc
-        // rc <- fc
-        // then solve L(uc) = rc
-        //
-        // the above is identical to:
-        // uc <- R(u)
-        // rc <- R(f)
-        // rc <- L(uc) - rc
-        // then solve L(uc) = rc
-        //
-        // now change the notation:
-        // varc      <- R(var)
-        // resc-rhsc <- R(res-rhs)
-        // rhsc      <- resc-rhsc
-        // resc-rhsc <- L(varc) - rhsc
-        // rhsc      <- resc-rhsc
-        // then solve L(varc) = rhsc
-        //
-        // the above is identical to:
-        // varc <- R(var)
-        // rhsc <- R(res-rhs)
-        // rhsc <- L(varc) - rhsc
-        // then solve L(varc) = rhsc
-        
         residual (cctkGH, options_table, calcres, userdata);
         norm (cctkGH, res, rhs, options, error);
         subtract (cctkGH, res, rhs, options);
         // TODO: restrict and fixup aux
-        assert (aux.size() == 0);
+        assert (aux.empty());
         
         int const coarse_reflevel = reflevel - 1;
         BEGIN_GLOBAL_MODE (cctkGH) {
           enter_level_mode (const_cast<cGH *>(cctkGH), coarse_reflevel);
           try {
             
+            // Restrict variable
             restrict_var (cctkGH, var, options);
             boundary (cctkGH, options_table, applybnds, userdata);
             copy (cctkGH, sav, var, options);
+            
+            // Restrict residual
             zero (cctkGH, res, options);
             restrict_var (cctkGH, res, options);
             copy (cctkGH, rhs, res, options);
             residual (cctkGH, options_table, calcres, userdata);
             subtract (cctkGH, rhs, res, options);
             
+            CCTK_REAL coarse_error;
+            norm (cctkGH, res, rhs, options, coarse_error);
+            if (veryverbose) {
+              CCTK_VInfo (CCTK_THORNSTRING,
+                          "%*s[%d] iteration %d, initial coarse residual %g",
+                          indwidth(), "", reflevel,
+                          iter, double(coarse_error));
+            }
+            
             // Recurse
-            CCTK_REAL const coarse_minerror = error / ipow(reflevelfact, dim);
+            CCTK_REAL const coarse_minerror = error / ipow(reffact, dim);
             int const ierr
               = multigrid (cctkGH,
                            var, res, rhs, sav, wgt, aux,
@@ -649,10 +612,28 @@ namespace CarpetMG {
           leave_level_mode (const_cast<cGH *>(cctkGH));
         } END_GLOBAL_MODE;
             
+#warning "TODO"
+        // save old solution
+        copy (cctkGH, sav, var, options);
+
         zero (cctkGH, res, options);
         prolongate_var (cctkGH, res, options);
         add (cctkGH, var, res, options);
         boundary (cctkGH, options_table, applybnds, userdata);
+        
+        CCTK_REAL const old_error = error;
+
+        try {
+          residual (cctkGH, options_table, calcres, userdata);
+        } catch (char const *) {
+          assert (0);
+        }
+        norm (cctkGH, res, rhs, options, error);
+        if (error > old_error) {
+          CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Residual increased during recursion at level %d from %g to %g",
+                      reflevel, double(old_error), double(error));
+        }
         
         if (veryverbose) {
           CCTK_VInfo (CCTK_THORNSTRING,
@@ -733,8 +714,8 @@ namespace CarpetMG {
     
     if (verbose) {
       CCTK_VInfo (CCTK_THORNSTRING,
-                  "%*s[%d] beginning direct solve",
-                  indwidth(), "", reflevel);
+                  "%*s[%d] beginning direct solve, desired residual %g",
+                  indwidth(), "", reflevel, double(minerror));
     }
     
     assert (is_level_mode());
@@ -759,7 +740,7 @@ namespace CarpetMG {
         
         residual (cctkGH, options_table, calcres, userdata);
         CCTK_REAL const old_error = error;
-        smooth (cctkGH, var, res, rhs, wgt, options, old_error, error);
+        smooth (cctkGH, var, res, rhs, wgt, options, old_error, error, true);
         boundary (cctkGH, options_table, applybnds, userdata);
         
         if (veryverbose) {
@@ -799,7 +780,8 @@ namespace CarpetMG {
           vector<CCTK_INT> const & wgt,
           options_t const & options,
           CCTK_REAL const old_error,
-          CCTK_REAL & error)
+          CCTK_REAL & error,
+          bool const use_sor)
   {
     DECLARE_CCTK_ARGUMENTS;
     
@@ -810,7 +792,7 @@ namespace CarpetMG {
     
     
     // Calculate grid spacings
-    CCTK_REAL dxinv2 = 0;
+    CCTK_REAL dxinv2 = 0.0;
     CCTK_REAL dx[dim];
     for (int d=0; d<dim; ++d) {
       // TODO: correct this for solving on grid arrays instead of grid
@@ -845,10 +827,11 @@ namespace CarpetMG {
                ? (static_cast<CCTK_REAL const *>
                   (CCTK_VarDataPtrI (cctkGH, 0, wgt.at(n))))
                : NULL);
-          assert (wgt.size() == 0 or wgtptr);
+          assert (wgt.empty() or wgtptr);
           
           CCTK_REAL const fac
-            = options.factor * (wgtptr ? 1.0 : options.factors.at(n));
+            = ((use_sor ? options.sor_factor : options.factor)
+               * (wgtptr ? 1.0 : options.factors.at(n) * mdxinv2inv));
           
           int imin[3], imax[3];
           interior_shape (cctkGH, options, imin, imax);
@@ -859,9 +842,9 @@ namespace CarpetMG {
                 int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                 
                 CCTK_REAL const diff = resptr[ind] - rhsptr[ind];
-                CCTK_REAL const w = wgtptr ? 1.0 / wgtptr[ind] : mdxinv2inv;
+                CCTK_REAL const w = wgtptr ? fac / wgtptr[ind] : fac;
                 
-                varptr[ind] -= fac * w * diff;
+                varptr[ind] -= w * diff;
                 
                 ++ count;
                 error2 += pow(diff, 2);

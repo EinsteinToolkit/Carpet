@@ -1,3 +1,55 @@
+Old documentation:
+
+solve L(u) = r
+set f := L(u) - r
+
+given:  f = L(u ) - r
+wanted: 0 = L(u') - r
+known:  R(f) - f is small
+assume: R(u'-u) is also small
+define: fc = R(f)
+        uc = R(u)
+        fc = L(uc) - rc   (defines rc)
+solve:  L(uc') = rc
+use:    R(u'-u) = uc'-uc   (defines u')
+yields: f' = L(u') - r
+where f' is smaller than f
+
+uc <- R(u)
+fc <- R(f)
+rc <- fc
+fc <- L(uc) - rc
+rc <- fc
+then solve L(uc) = rc
+
+the above is identical to:
+uc <- R(u)
+rc <- R(f)
+rc <- L(uc) - rc
+then solve L(uc) = rc
+
+now change the notation:
+varc      <- R(var)
+resc-rhsc <- R(res-rhs)
+rhsc      <- resc-rhsc
+resc-rhsc <- L(varc) - rhsc
+rhsc      <- resc-rhsc
+then solve L(varc) = rhsc
+
+the above is identical to:
+varc <- R(var)
+rhsc <- R(res-rhs)
+rhsc <- L(varc) - rhsc
+then solve L(varc) = rhsc
+
+
+
+*******************************************************************************
+
+
+
+New documentation:
+
 equation: L(varc) = rhsc
 
 
