@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.28 2004/05/27 12:26:09 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.29 2004/08/14 07:41:25 schnetter Exp $
 
 #ifndef VECT_HH
 #define VECT_HH
@@ -55,18 +55,24 @@ public:
   /** Constructor for 2-element vectors from 2 elements.  */
   vect (const T x, const T y) {
     assert (D==2);
+    // Note: this statement may give "index out of range" warnings.
+    // You can safely ignore these.
     elt[0]=x; elt[1]=y;
   }
   
   /** Constructor for 3-element vectors from 3 elements.  */
   vect (const T x, const T y, const T z) {
     assert (D==3);
+    // Note: this statement may give "index out of range" warnings.
+    // You can safely ignore these.
     elt[0]=x; elt[1]=y; elt[2]=z;
   }
   
   /** Constructor for 4-element vectors from 4 elements.  */
   vect (const T x, const T y, const T z, const T t) {
     assert (D==4);
+    // Note: this statement may give "index out of range" warnings.
+    // You can safely ignore these.
     elt[0]=x; elt[1]=y; elt[2]=z; elt[3]=t;
   }
   
