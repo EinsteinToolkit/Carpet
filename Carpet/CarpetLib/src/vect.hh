@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.20 2003/11/05 16:18:39 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.21 2003/11/13 16:03:58 schnetter Exp $
 
 #ifndef VECT_HH
 #define VECT_HH
@@ -20,6 +20,18 @@ template<class T,int D>
 istream& operator>> (istream& is, vect<T,D>& a);
 template<class T,int D>
 ostream& operator<< (ostream& os, const vect<T,D>& a);
+
+
+
+template<typename T>
+struct integral {
+  typedef T substitute;
+};
+
+template<>
+struct integral<double> {
+  typedef int substitute;
+};
 
 
 
@@ -232,7 +244,13 @@ public:
   }
   
   vect& operator%=(const vect& a) {
-    for (int d=0; d<D; ++d) elt[d]%=a[d];
+    for (int d=0; d<D; ++d) {
+//       elt[d]%=a[d];
+      typename integral<T>::substitute se, sa;
+      se = elt[d]; sa = a[d];
+      se %= sa;
+      elt[d] = se;
+    }
     return *this;
   }
   

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.17 2003/09/19 16:06:41 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.18 2003/11/13 16:03:58 schnetter Exp $
 
 #include <assert.h>
 
@@ -16,7 +16,7 @@ using namespace std;
 
 // Constructors
 template<class T, int D>
-bbox<T,D>::bbox (): _lower(1), _upper(0), _stride(1) { }
+bbox<T,D>::bbox (): _lower(T(1)), _upper(T(0)), _stride(T(1)) { }
 
 template<class T, int D>
 bbox<T,D>::bbox (const bbox& b)
@@ -35,7 +35,7 @@ bbox<T,D>::bbox (const vect<T,D>& lower, const vect<T,D>& upper,
   : _lower(lower), _upper(upper), _stride(stride)
 {
   assert (all(stride>=1));
-  assert (all((upper-lower)%stride==0));
+  assert (all((upper-lower)%stride == T(0)));
 }
 
 // Accessors
@@ -128,14 +128,14 @@ bool bbox<T,D>::is_contained_in (const bbox& b) const {
 // Alignment check
 template<class T, int D>
 bool bbox<T,D>::is_aligned_with (const bbox& b) const {
-  return all(stride()==b.stride() && (lower()-b.lower()) % stride() == 0);
+  return all(stride()==b.stride() && (lower()-b.lower()) % stride() == T(0));
 }
 
 // Expand the bbox a little by multiples of the stride
 template<class T, int D>
 bbox<T,D> bbox<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi) const {
   // Allow expansion only into directions where the extent is not negative
-  assert (all(lower()<=upper() || (lo==0 && hi==0)));
+  assert (all(lower()<=upper() || (lo==T(0) && hi==T(0))));
   const vect<T,D> str = stride();
   const vect<T,D> lb = lower() - lo * str;
   const vect<T,D> ub = upper() + hi * str;
@@ -279,3 +279,4 @@ void bbox<T,D>::output (ostream& os) const {
 template class bbox<int,1>;
 template class bbox<int,2>;
 template class bbox<int,3>;
+template class bbox<double,3>;
