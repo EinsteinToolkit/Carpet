@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.9 2002/08/28 09:53:39 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.10 2002/12/12 14:36:06 schnetter Exp $
 
 
 
@@ -23,6 +23,14 @@ CCTK_INT activate_newlevels_on_regrid "When regridding, activate this many new l
 {
   : :: "Number of new levels to activate.  Negative numbers mean to de-activate"
 } 0
+
+
+
+BOOLEAN outside_boundary_points[3] "On finer grids, where the upper grid boundary is adjacent to the outer boundary, put points outside the outer boundary (needed e.g. for periodicity)"
+{
+} "no"
+
+
 
 KEYWORD refined_regions "Regions where the grid is refined" STEERABLE=always
 {
@@ -256,7 +264,7 @@ CCTK_REAL maxerror "Maximum allowed error for non-refined grid points" STEERABLE
   *:* :: "everything goes"
 } 1.0
 
-STRING errorvar "Name of grid function that contains the error" STEERABLE=always
+CCTK_STRING errorvar "Name of grid function that contains the error" STEERABLE=always
 {
   ".*" :: "must be the name of a grid function"
 } ""
