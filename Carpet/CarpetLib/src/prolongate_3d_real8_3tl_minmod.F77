@@ -31,7 +31,7 @@ c$$$      prolongate_3d_real8_minmod.F77
            .or. (k).lt.1 .or. (k).gt.(kmax)) then                           &&\
          write (msg, '(a, " array index out of bounds: shape is (",i4,",",i4,",",i4,"), index is (",i4,",",i4,",",i4,")")') \
               (where), (imax), (jmax), (kmax), (i), (j), (k)                &&\
-         call CCTK_WARN (0, msg(1:len_trim(msg)))                           &&\
+         call CCTK_WARN (0, msg)                                            &&\
       end if
 
 
