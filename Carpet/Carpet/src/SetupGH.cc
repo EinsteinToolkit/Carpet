@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.64 2004/03/23 13:56:53 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.65 2004/03/23 14:13:48 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -373,9 +373,8 @@ namespace Carpet {
         Output (buf.str().c_str());
       }
       
-      CCTK_REAL (* const rfloor) (CCTK_REAL const) = floor;
-      const ivect npoints = ::map(rfloor, real_npoints + 0.5);
-      if (any(abs(npoints - real_npoints) > 0.001)) {
+      const ivect npoints = floor(real_npoints + 0.5);
+      if (any(abs(rvect(npoints) - real_npoints) > 0.001)) {
         CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "The domain size for map %d scaled for convergence level %d with convergence factor %d is not integer",
                     m, basemglevel, convergence_factor);
