@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOSer
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIOSer/param.ccl,v 1.1 2002/02/08 14:55:30 shawley Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIOSer/param.ccl,v 1.2 2002/02/22 11:16:53 shawley Exp $
 
 
 
@@ -9,7 +9,7 @@ USES STRING outdir
 
 USES CCTK_INT out_every
 
-
+  
 
 USES CCTK_INT out_xline_yi
 USES CCTK_INT out_xline_zi
