@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.21 2003/05/13 12:19:42 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.22 2003/05/14 08:12:52 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -22,7 +22,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.21 2003/05/13 12:19:42 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.22 2003/05/14 08:12:52 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -717,7 +717,8 @@ namespace CarpetReduce {
     }
     BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
       
-      int lsh[grpdim], bbox[2*grpdim], nghostzones[grpdim];
+      assert (grpdim<=dim);
+      int lsh[dim], bbox[2*dim], nghostzones[dim];
       ierr = CCTK_GrouplshVI(cgh, grpdim, lsh, vi);
       assert (!ierr);
       ierr = CCTK_GroupbboxVI(cgh, 2*grpdim, bbox, vi);
