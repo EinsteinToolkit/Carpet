@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOASCII
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/param.ccl,v 1.9 2003/09/02 12:37:17 tradke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/param.ccl,v 1.10 2004/01/13 15:26:58 cott Exp $
 
 
 
@@ -51,7 +51,7 @@ BOOLEAN out3D_outer_ghosts "Output outer boundary ghost zones as well"
 
 
 
-BOOLEAN output_all_timelevels "Output all timelevels instead of only the current"
+BOOLEAN output_all_timelevels "Output all timelevels instead of only the current" STEERABLE = ALWAYS
 {
 } "no"
 
