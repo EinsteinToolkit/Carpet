@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.11 2001/12/14 16:39:42 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.12 2002/01/08 12:03:55 schnetter Exp $
 
  ***************************************************************************/
 
@@ -120,7 +120,10 @@ public:
   void write_ascii (ostream& os, const int time,
                     const vect<int,D>& org, const vect<int,DD>& dirs,
 		    const int tl, const int rl,
-                    const int c, const int ml)
+                    const int c, const int ml,
+		    const double ctime,
+		    const vect<double,D>& coord_lower,
+		    const vect<double,D>& coord_upper)
     const;
 protected:
   virtual void write_ascii_output_element (ostream& os, const ivect& index)

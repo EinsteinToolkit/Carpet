@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.5 2001/07/02 13:22:14 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.6 2002/01/08 12:03:55 schnetter Exp $
 
  ***************************************************************************/
 
@@ -51,5 +51,7 @@ void vect<T,D>::output (ostream& os) const {
 template class vect<int,1>;
 template class vect<int,2>;
 template class vect<int,3>;
+
+template void vect<double,3>::output (ostream& os) const;
 
 #endif

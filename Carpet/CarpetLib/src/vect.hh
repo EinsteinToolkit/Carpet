@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.6 2001/12/14 16:39:43 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.7 2002/01/08 12:03:56 schnetter Exp $
 
  ***************************************************************************/
 
@@ -85,7 +85,7 @@ public:
   }
   
   static vect dir (const int d) {
-    vect r=0;
+    vect r=(T)0;
     r[d]=1;
     return r;
   }

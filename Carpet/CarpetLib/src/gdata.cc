@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.16 2001/12/14 16:39:42 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.17 2002/01/08 12:03:55 schnetter Exp $
 
  ***************************************************************************/
 
@@ -135,7 +135,10 @@ void generic_data<D>::write_ascii (ostream& os, const int time,
 				   const vect<int,D>& org,
 				   const vect<int,DD>& dirs,
 				   const int tl, const int rl,
-				   const int c, const int ml)
+				   const int c, const int ml,
+				   const double coord_time,
+				   const vect<double,D>& coord_lower,
+				   const vect<double,D>& coord_upper)
   const
 {
   assert (_has_storage);
@@ -155,11 +158,13 @@ void generic_data<D>::write_ascii (ostream& os, const int time,
       os << "# iteration " << time << endl
 	 << "# time level " << tl << "   refinement level " << rl
 	 << "   component " << c << "   multigrid level " << ml << endl
-	 << "# column format: it tl rl c ml";
+	 << "# column format: it   tl rl c ml  ";
       assert (D>=1 && D<=3);
       const char* const coords = "xyz";
+      for (int d=0; d<D; ++d) os << " i" << coords[d];
+      os << "   time  ";
       for (int d=0; d<D; ++d) os << " " << coords[d];
-      os << " data" << endl;
+      os << "   data" << endl;
       
       const vect<int,DD> lo = extent().lower()[dirs];
       const vect<int,DD> up = extent().upper()[dirs];
@@ -175,9 +180,18 @@ void generic_data<D>::write_ascii (ostream& os, const int time,
 	for (bbox<int,DD>::iterator it=ext.begin(); it!=ext.end(); ++it) {
 	  ivect index(org);
 	  for (int d=0; d<DD; ++d) index[dirs[d]] = (*it)[d];
-	  os << time << " " << tl << " " << rl << " " << c << " " << ml
-	     << " ";
+	  os << time << "   " << tl << " " << rl << " " << c << " " << ml
+	     << "   ";
 	  for (int d=0; d<D; ++d) os << index[d] << " ";
+	  os << "  " << coord_time << "   ";
+	  for (int d=0; d<D; ++d) {
+	    if (extent().upper()[d] - extent().lower()[d] != 0) {
+	      os << coord_lower[d] + (index[d] - extent().lower()[d]) * (coord_upper[d] - coord_lower[d]) / (extent().upper()[d] - extent().lower()[d]) << " ";
+	    } else {
+	      os << coord_lower[d] << " ";
+	    }
+	  }
+	  os << "  ";
 	  write_ascii_output_element (os, index);
 	  os << endl;
 	  for (int d=0; d<DD; ++d) {
@@ -202,7 +216,8 @@ void generic_data<D>::write_ascii (ostream& os, const int time,
     generic_data* const tmp = make_typed();
     tmp->allocate(extent(), 0);
     tmp->copy_from (this, extent());
-    tmp->write_ascii (os, time, org, dirs, tl, rl, c, ml);
+    tmp->write_ascii (os, time, org, dirs, tl, rl, c, ml,
+		      coord_time, coord_lower, coord_upper);
     delete tmp;
     
   }
@@ -217,14 +232,23 @@ template class generic_data<3>;
 template void generic_data<3>
 ::write_ascii (ostream& os, const int time,
 	       const vect<int,3>& org, const vect<int,1>& dirs,
-	       const int tl, const int rl, const int c, const int ml) const;
+	       const int tl, const int rl, const int c, const int ml,
+	       const double coord_time,
+	       const vect<double,3>& coord_lower,
+	       const vect<double,3>& coord_upper) const;
 template void generic_data<3>
 ::write_ascii (ostream& os, const int time,
 	       const vect<int,3>& org, const vect<int,2>& dirs,
-	       const int tl, const int rl, const int c, const int ml) const;
+	       const int tl, const int rl, const int c, const int ml,
+	       const double coord_time,
+	       const vect<double,3>& coord_lower,
+	       const vect<double,3>& coord_upper) const;
 template void generic_data<3>
 ::write_ascii (ostream& os, const int time,
 	       const vect<int,3>& org, const vect<int,3>& dirs,
-	       const int tl, const int rl, const int c, const int ml) const;
+	       const int tl, const int rl, const int c, const int ml,
+	       const double coord_time,
+	       const vect<double,3>& coord_lower,
+	       const vect<double,3>& coord_upper) const;
 
 #endif

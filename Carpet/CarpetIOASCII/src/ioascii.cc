@@ -20,12 +20,13 @@
 #include "Carpet/CarpetLib/src/gdata.hh"
 #include "Carpet/CarpetLib/src/gf.hh"
 #include "Carpet/CarpetLib/src/ggf.hh"
+#include "Carpet/CarpetLib/src/vect.hh"
 
 #include "carpet.hh"
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.25 2001/12/17 13:34:03 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.26 2002/01/08 12:03:54 schnetter Exp $";
 
 
 
@@ -324,7 +325,7 @@ int CarpetIOASCII<outdim>
 	// level
 	BEGIN_COMPONENT_LOOP(cgh) {
 	  
-	  generic_gf<dim>* ff = 0;
+	  const generic_gf<dim>* ff = 0;
 	  
 	  assert (var < (int)arrdata[group].data.size());
 	  ff = (generic_gf<dim>*)arrdata[group].data[var];
@@ -334,8 +335,34 @@ int CarpetIOASCII<outdim>
 	  const bbox<int,dim> ext = data->extent();
 	  const vect<int,dim> offset1 = offset * ext.stride();
 	  
+	  // coordinates
+	  const double coord_time = cgh->cctk_time;
+	  vect<double,dim> global_lower, global_upper;
+	  for (int d=0; d<dim; ++d) {
+	    const int ierr = CCTK_CoordRange
+	      (cgh, &global_lower[d], &global_upper[d], d+1, 0, "cart3d");
+	    if (ierr<0) {
+	      global_lower[d] = 0;
+	      global_upper[d] = 0;
+	    }
+	  }
+	  const vect<double,dim> global_extent = hh->baseextent.upper() - hh->baseextent.lower() + hh->baseextent.stride() * (dd->lghosts + dd->ughosts);
+	  vect<double,dim> coord_delta;
+	  for (int d=0; d<dim; ++d) {
+	    if (global_extent[d] != 0) {
+	      coord_delta[d] = (global_upper[d] - global_lower[d]) / global_extent[d];
+	    } else {
+	      coord_delta[d] = 0;
+	    }
+	  }
+	  // Note: don't permute the "coord_delta" and "data->extent().lower()"
+	  // (you'll pick up the integer operator* then)
+ 	  const vect<double,dim> coord_lower = global_lower + coord_delta * data->extent().lower();
+ 	  const vect<double,dim> coord_upper = global_lower + coord_delta * data->extent().upper();
+	  
 	  data->write_ascii (file, cgh->cctk_iteration, offset1, dirs,
-			     tl, reflevel, component, mglevel);
+			     tl, reflevel, component, mglevel,
+			     coord_time, coord_lower, coord_upper);
 	  
 	  // Append EOL after every component
 	  if (CCTK_MyProc(cgh)==0) {
