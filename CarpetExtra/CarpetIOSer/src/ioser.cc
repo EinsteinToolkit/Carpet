@@ -32,7 +32,7 @@ int vsxynt(const char *name, double t, double *x, double *y, int n);
 }
 
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIOSer/src/ioser.cc,v 1.1.1.1 2002/02/08 14:55:31 shawley Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIOSer/src/ioser.cc,v 1.1 2002/02/08 14:55:31 shawley Exp $";
 
 // That's a hack
 namespace Carpet {
