@@ -32,7 +32,7 @@
 
 #include "ioflexio.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.13 2001/12/05 01:06:31 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.14 2002/01/09 21:14:25 schnetter Exp $";
 
 
 
@@ -257,7 +257,28 @@ namespace CarpetIOFlexIO {
 	= (*ff) (tl, reflevel, component, mglevel);
       
       // Make temporary copy on processor 0
-      const bbox<int,dim> ext = data->extent();
+      bbox<int,dim> ext = data->extent();
+      vect<int,dim> lo = ext.lower();
+      vect<int,dim> hi = ext.upper();
+      vect<int,dim> str = ext.stride();
+      
+      // Ignore ghost zones if desired
+      for (int d=0; d<dim; ++d) {
+	bool output_lower_ghosts
+	  = cgh->cctk_bbox[2*d] ? out3D_outer_ghosts : out3D_ghosts;
+	bool output_upper_ghosts
+	  = cgh->cctk_bbox[2*d+1] ? out3D_outer_ghosts : out3D_ghosts;
+	
+	if (! output_lower_ghosts) {
+	  lo[d] += cgh->cctk_nghostzones[d] * str[d];
+	}
+	if (! output_upper_ghosts) {
+	  hi[d] -= cgh->cctk_nghostzones[d] * str[d];
+	}
+      }
+      
+      ext = bbox<int,dim>(lo,hi,str);
+      
       generic_data<dim>* const tmp = data->make_typed ();
       tmp->allocate (ext, 0);
       tmp->copy_from (data, ext);
