@@ -89,7 +89,7 @@ c     ----------------
                phiz(i,j,k) = phiz_p_p(i,j,k) + dt * dzi * ( 
      $                       pi_p(i,j,k+1) - pi_p(i,j,k-1)  )
 
-               phi(i,j,k) = phiz_p_p(i,j,k) + 2*dt * pi_p(i,j,i) 
+               phi(i,j,k) = phi_p_p(i,j,k) + 2*dt * pi_p(i,j,i) 
                
             end do
          end do
