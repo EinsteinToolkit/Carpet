@@ -1,7 +1,8 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyExpl/src/finalstep.F77,v 1.1 2003/06/18 18:24:30 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyExpl/src/finalstep.F77,v 1.2 2003/10/27 15:31:40 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
+#include "cctk_Functions.h"
 #include "cctk_Parameters.h"
 
       subroutine WaveToyExpl_FinalStep (CCTK_ARGUMENTS)
