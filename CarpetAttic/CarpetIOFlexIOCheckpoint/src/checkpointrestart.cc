@@ -48,11 +48,9 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.9 2003/09/25 08:38:04 cvs_anon Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.10 2003/09/30 13:33:19 cvs_anon Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
-
-
 
 
 namespace CarpetCheckpointRestart {
@@ -62,7 +60,7 @@ namespace CarpetCheckpointRestart {
   using namespace CarpetIOFlexIO;
   using namespace CarpetIOFlexIOUtil;
 
-  static int Checkpoint (const cGH* const cgh, int called_from);
+  int Checkpoint (const cGH* const cgh, int called_from);
 
 
 
@@ -100,22 +98,24 @@ namespace CarpetCheckpointRestart {
  ********************************************************************/
 
 
-  static int DumpParams (const cGH* const cgh, int all, IObase* writer){
+  int DumpParams (const cGH* const cgh, int all, IObase* writer){
 
     char *parameters;
     
     parameters = IOUtil_GetAllParameters(cgh,all);
-
+    
     if(parameters)
     {
       writer->writeAttribute("global_parameters",IObase::Char,
 			     strlen(parameters)+1,parameters);
       free(parameters);
     }
+    fprintf(stderr,"\nFINISHED WRITING PARAMETERS\n");
     return 0;
   }
 
-  static int DumpGHExtensions (const cGH* const cgh, IObase* writer){
+
+  int DumpGHExtensions (const cGH* const cgh, IObase* writer){
 
     CCTK_INT4 itmp;
     CCTK_REAL dtmp;
@@ -149,7 +149,7 @@ namespace CarpetCheckpointRestart {
   }
 
 
-  static int Checkpoint (const cGH* const cgh, int called_from)
+  int Checkpoint (const cGH* const cgh, int called_from)
   {
     char cp_filename[1024], cp_tempname[1024];
     int myproc, first_vindex, gindex, retval;
@@ -241,11 +241,15 @@ namespace CarpetCheckpointRestart {
 	  }
 	amrwriter = new AMRwriter(*writer);
 
+	
+	
 	// dump parameters 
+	fprintf(stderr,"\nSTARTED WRITING1\n");
 	DumpParams (cgh, 1, writer);
+	fprintf(stderr,"\nSTARTED WRITING2\n");
 	// dump GH extentions
 	DumpGHExtensions(cgh,writer);
-
+	fprintf(stderr,"\nSTARTED WRITING3\n");
       }
 
     
@@ -261,11 +265,18 @@ namespace CarpetCheckpointRestart {
 	    for (group = CCTK_NumGroups () - 1; group >= 0; group--)
 	    {
 	      /* only dump groups which have storage assigned */
+
 	      if (CCTK_QueryGroupStorageI (cgh, group) <= 0)
 	      {
 		continue;
 	      }
-	       
+
+	      const int grouptype = CCTK_GroupTypeI(group);
+
+	      /* scalars and grid arrays only have 1 reflevel: */
+	      if ( (grouptype != CCTK_GF) && (reflevel != 0) )
+		continue;
+
 	      /* get the number of allocated timelevels */
 	      CCTK_GroupData (gindex, &gdata);
 	      gdata.numtimelevels = 0;
@@ -281,7 +292,7 @@ namespace CarpetCheckpointRestart {
 	      
 	      int first_vindex = CCTK_FirstVarIndexI (group);
 
-	      const int grouptype = CCTK_GroupTypeI(group);
+
 
 	      /* get the default I/O request for this group */
 	      request = IOUtil_DefaultIORequest (cgh, first_vindex, 1);
@@ -314,12 +325,15 @@ namespace CarpetCheckpointRestart {
 		    free (fullname);
 		  }
 		  // write the var
-	    
+
+		  //#if 1	    
 		  if (grouptype == CCTK_SCALAR)
 		  {
 		    retval += WriteGS(cgh,writer,request);
 		  }
-		  else if (grouptype == CCTK_ARRAY || grouptype == CCTK_GF)
+		  else 
+		    //#endif
+		  if (grouptype == CCTK_ARRAY || grouptype == CCTK_GF)
 		    //else if (grouptype == CCTK_GF)
 		  {
 		    char* fullname = CCTK_FullName (request->vindex);

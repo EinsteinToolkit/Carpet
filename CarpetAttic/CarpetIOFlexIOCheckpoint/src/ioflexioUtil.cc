@@ -98,31 +98,38 @@ void DumpCommonAttributes (const cGH *cgh, IObase* writer, ioRequest* request)
   char coord_system_name[20];
   DECLARE_CCTK_PARAMETERS
 
-    int varindex = request->vindex;
-
   /* attributes describing the variable */
-  char* groupname = CCTK_GroupNameFromVarI (varindex);
+  char* groupname = CCTK_GroupNameFromVarI (request->vindex);
 
-  //DEBUG
-  //CCTK_VInfo (CCTK_THORNSTRING, "DUMPATTRIB reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
 
-  writer->writeAttribute("groupname",IObase::Char,strlen(groupname)+1,groupname);
+//	
+  char *name = CCTK_FullName (request->vindex);
+  writer->writeAttribute("name",IObase::Char,strlen(name)+1,name);
+  free(name); 
+  
+  //CCTK_VInfo (CCTK_THORNSTRING, "DUMPATTRIB");
+  //fprintf(stderr,"\nattrib %s\n",groupname);
+  writer->writeAttribute("groupname",IObase::String,strlen(groupname)+1,groupname);
   free (groupname);
 
-  CCTK_INT attr_int = CCTK_GroupTypeFromVarI (varindex);
+  CCTK_INT attr_int = CCTK_GroupTypeFromVarI (request->vindex);
   writer->writeAttribute("grouptype",FlexIODataType(CCTK_VARIABLE_INT),1,&attr_int);
 
   writer->writeAttribute("reflevel",FlexIODataType(CCTK_VARIABLE_INT),1,&reflevel);
   writer->writeAttribute("component",FlexIODataType(CCTK_VARIABLE_INT),1,&component);
   writer->writeAttribute("mglevel",FlexIODataType(CCTK_VARIABLE_INT),1,&mglevel);
 
-  attr_int = CCTK_MaxTimeLevelsVI (varindex);
+  attr_int = CCTK_MaxTimeLevelsVI (request->vindex);
   writer->writeAttribute("ntimelevels",FlexIODataType(CCTK_VARIABLE_INT),1,&attr_int);
 
   writer->writeAttribute("timelevel",FlexIODataType(CCTK_VARIABLE_INT),1,&request->timelevel);
 
   writer->writeAttribute("global_size",FlexIODataType(CCTK_VARIABLE_INT),request->hdim,request->hsize);
-  writer->writeAttribute("time",FlexIODataType(CCTK_VARIABLE_REAL),1,&cgh->cctk_time);
+
+  // already dumped by amrwriter if we are dealing with a grid function or a grid array:
+  if (CCTK_GroupTypeFromVarI (request->vindex) == CCTK_SCALAR)
+    writer->writeAttribute("time",FlexIODataType(CCTK_VARIABLE_REAL),1,&cgh->cctk_time);
+
 
   /* attributes describing the underlying grid
      These are only stored for CCTK_GF variables if they are associated
@@ -132,6 +139,10 @@ void DumpCommonAttributes (const cGH *cgh, IObase* writer, ioRequest* request)
             system which is associated with the variable. */
   vdim = CCTK_GroupDimFromVarI (request->vindex);
   sprintf (coord_system_name, "cart%dd", vdim);
+
+  /* this is already dumped by amrwriter or */
+#if 0
+  /*
   if (CCTK_GroupTypeFromVarI (request->vindex) == CCTK_GF &&
       CCTK_CoordSystemHandle (coord_system_name) >= 0)
   {
@@ -155,8 +166,11 @@ void DumpCommonAttributes (const cGH *cgh, IObase* writer, ioRequest* request)
     writer->writeAttribute ("max_ext", FlexIODataType(CCTK_VARIABLE_REAL), vdim, attr_real+vdim);
     writer->writeAttribute ("delta", FlexIODataType(CCTK_VARIABLE_REAL), vdim, attr_real+2*vdim);
     free (attr_real);
+  } 
+  */
+#endif
+
   }
-}
 
 } // namespace CarpetIOFlexIOUtil
 

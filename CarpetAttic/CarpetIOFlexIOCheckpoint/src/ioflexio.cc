@@ -45,7 +45,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.8 2003/09/25 08:38:04 cvs_anon Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.9 2003/09/30 13:33:19 cvs_anon Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -154,9 +154,8 @@ namespace CarpetIOFlexIO {
 
     DECLARE_CCTK_PARAMETERS;
 
-
     /* I have got no idea why this stuff below is needed... ask Erik Schnetter */
-    
+#warning "this should work now also for scalars - try it!"    
     const int varindex  = request->vindex;
 
     const int group = CCTK_GroupIndexFromVarI (varindex);
@@ -167,8 +166,9 @@ namespace CarpetIOFlexIO {
     const int tl = 0;
     const int grouptype = CCTK_GroupTypeI(group);
 
-    assert (! ( (grouptype != CCTK_GF && grouptype != CCTK_ARRAY) && reflevel>0));
-    
+    assert (! ( (grouptype != CCTK_GF) && reflevel>0));
+    fprintf(stderr,"\nSTARTED WRITING\n");
+
     if (CCTK_MyProc(cgh)==0) {
 
       // Set datatype
@@ -179,8 +179,6 @@ namespace CarpetIOFlexIO {
 		  && CCTK_VarTypeI(varindex) == CCTK_VARIABLE_REAL));
       */
       amrwriter->setType (FlexIODataType(CCTK_VarTypeI(varindex)));
-    // Set name information
-
       
 
 
@@ -235,18 +233,15 @@ namespace CarpetIOFlexIO {
 
 
     if (grouptype == CCTK_ARRAY){
+#warning "additional if outside component loop"
       // this is a DIRTY hack to fix problems caused by the fact that I am to lazy to write a more
       //   general output routine...
       CCTK_VInfo (CCTK_THORNSTRING, "ARRAY reflevel: %d component: %d grouptype: %d ",reflevel,component,grouptype);
-      if(reflevel !=0 || component !=0)
+      if(reflevel !=0)
 	return 0;
     }
     else
       CCTK_VInfo (CCTK_THORNSTRING, "GF reflevel: %d component: %d grouptype: %d",reflevel,component,grouptype);
-
-
-
-
 
       assert (var < (int)arrdata[group].data.size());
       ff = (ggf<dim>*)arrdata[group].data[var];
@@ -266,6 +261,7 @@ namespace CarpetIOFlexIO {
       vect<int,dim> str = ext.stride();
 
       // Ignore ghost zones if desired
+#warning "need to check size of gdyndata.bbox"
       for (int d=0; d<dim; ++d) {
 	const int max_lower_ghosts = (gdyndata.bbox[2*d  ] && !out3D_output_outer_boundary) ? -1 : out3D_max_num_lower_ghosts;
 	const int max_upper_ghosts = (gdyndata.bbox[2*d+1] && !out3D_output_outer_boundary) ? -1 : out3D_max_num_upper_ghosts;
