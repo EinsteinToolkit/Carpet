@@ -20,7 +20,6 @@ namespace Carpet {
                                           const char *groupname );
   static void ProlongateGroupBoundaries ( const cGH* cgh,
                                           CCTK_REAL initial_time, int group );
-  static void SyncGFGroup ( const cGH* cgh, int group );
   static void SyncGFArrayGroup ( const cGH* cgh, int group );
   
   int SyncGroup (const cGH* cgh, const char* groupname)
