@@ -1,5 +1,5 @@
 # Parameter definitions for thorn WaveToyF77
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/param.ccl,v 1.2 2002/02/22 14:09:58 shawley Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/param.ccl,v 1.3 2003/06/27 15:29:53 shawley Exp $
 
 
 private:
@@ -9,6 +9,7 @@ KEYWORD bound "Type of boundary condition to use"
   "none"      :: "No boundary condition"
   "flat"      :: "Flat boundary condition"
   "zero"      :: "Zero boundary condition"
+  "radiation"      :: "Radiation boundary condition"
   "static"      :: "Static boundary condition - copy from previous time level"
 } "zero"
 
