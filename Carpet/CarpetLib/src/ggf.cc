@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.32 2004/02/27 16:25:53 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.33 2004/03/22 18:12:33 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -138,10 +138,6 @@ void ggf<D>::recompose (const int initialise_from, const bool do_prolongate) {
       for (int c=0; c<h.components(rl); ++c) {
       	for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
           
-          for (comm_state<D> state; !state.done(); state.step()) {
-            sync (state,tl,rl,c,ml);
-          }
-          
           if (do_prolongate) {
             // TODO: assert that reflevel 0 boundaries are copied
             if (rl>0) {
@@ -150,6 +146,10 @@ void ggf<D>::recompose (const int initialise_from, const bool do_prolongate) {
                 ref_bnd_prolongate (state,tl,rl,c,ml,time);
               }
             } // if rl
+          }
+          
+          for (comm_state<D> state; !state.done(); state.step()) {
+            sync (state,tl,rl,c,ml);
           }
           
       	} // for ml
