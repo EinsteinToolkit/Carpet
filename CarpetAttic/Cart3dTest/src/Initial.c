@@ -6,7 +6,7 @@
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
 
-#include "AlphaThorns/Cart3d/src/Cart3d.h"
+#include "Symmetry.h"
 
 
 
