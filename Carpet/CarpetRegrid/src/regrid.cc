@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
 #include <list>
 #include <sstream>
 #include <string>
@@ -23,7 +24,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.18 2002/10/24 10:57:42 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.19 2002/12/12 13:00:11 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -711,14 +712,33 @@ namespace CarpetRegrid {
 //     }
 //     cout << "MRA: Chose " << bbl.size() << " regions with a total size of " << numpoints << " to refine." << endl << endl;
     
-    // TODO: remove grid points outside the outer boundary
+    // Remove grid points outside the outer boundary
+    for (list<ibbox>::iterator it = bbl.begin();
+	 it != bbl.end();
+	 ++it) {
+      const ivect ub = min (it->upper(), hh->baseextent.upper());
+      *it = ibbox(it->lower(), ub, it->stride());
+    }
     
+    // Create obl from bbl
     // TODO: create obl depending on the boundary position
     // (at or close to the boundary)
     for (list<ibbox>::const_iterator it = bbl.begin();
 	 it != bbl.end();
 	 ++it) {
-      obl.push_back (bvect(vect<bool,2>(false)));
+      obl.push_back (zip ((vect<bool,2> (*) (bool, bool)) &vect<bool,2>::make,
+			  it->lower() == hh->baseextent.lower(),
+			  it->upper() == hh->baseextent.upper()));
+#if 0
+      const vect<bool,dim> lb = it->lower() == hh->baseextent.lower();
+      const vect<bool,dim> ub = it->upper() == hh->baseextent.upper();
+      bvect bnd;
+      for (int d=0; d<dim; ++d) {
+	bnd[d][0] = lb[d];
+	bnd[d][1] = ub[d];
+      }
+      obl.push_back (bnd);
+#endif
     }
     
   }
