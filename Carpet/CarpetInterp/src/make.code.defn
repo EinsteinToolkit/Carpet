@@ -1,8 +1,8 @@
 # Main make.code.defn file for thorn CarpetInterp
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/make.code.defn,v 1.1 2003/04/29 14:02:25 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/make.code.defn,v 1.2 2003/04/30 12:37:31 schnetter Exp $
 
 # Source files in this directory
-SRCS = 
+SRCS = interp.cc
 
 # Subdirectories containing source files
 SUBDIRS = 

@@ -1,6 +1,6 @@
 # Interface definition for thorn CarpetInterp
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/interface.ccl,v 1.1 2003/04/29 14:02:25 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/interface.ccl,v 1.2 2003/04/30 12:37:31 schnetter Exp $
 
 implements: interp
 
-inherits: CarpetLib driver
+inherits: CarpetLib driver LocalInterp
