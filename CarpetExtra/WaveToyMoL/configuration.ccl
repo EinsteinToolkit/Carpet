@@ -1,4 +1,4 @@
 # Configuration definition for thorn Carpet/WaveToyMoL
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/configuration.ccl,v 1.2 2004/04/18 14:10:29 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/configuration.ccl,v 1.1 2003/11/17 12:47:31 schnetter Exp $
 
-REQUIRES CartGrid3D
+REQUIRES THORNS: CartGrid3D
