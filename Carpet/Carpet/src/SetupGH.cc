@@ -19,7 +19,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.36 2003/01/03 15:49:36 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.37 2003/01/07 22:17:32 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -77,23 +77,43 @@ namespace Carpet {
     }
     switch (type1) {
       
+#ifdef CCTK_REAL8
     case CCTK_VARIABLE_REAL8:
       // This type is supported.
       return true;
+#endif
       
+#ifdef CCTK_REAL4
     case CCTK_VARIABLE_REAL4:
+#endif
+#ifdef CCTK_REAL16
     case CCTK_VARIABLE_REAL16:
+#endif
+#ifdef CCTK_COMPLEX8
     case CCTK_VARIABLE_COMPLEX8:
+#endif
+#ifdef CCTK_COMPLEX16
     case CCTK_VARIABLE_COMPLEX16:
+#endif
+#ifdef CCTK_COMPLEX32
     case CCTK_VARIABLE_COMPLEX32:
+#endif
       // This type is not supported, but could be.
       return false;
       
     case CCTK_VARIABLE_BYTE:
+#ifdef CCTK_INT1
     case CCTK_VARIABLE_INT1:
+#endif
+#ifdef CCTK_INT2
     case CCTK_VARIABLE_INT2:
+#endif
+#ifdef CCTK_INT4
     case CCTK_VARIABLE_INT4:
+#endif
+#ifdef CCTK_INT8
     case CCTK_VARIABLE_INT8:
+#endif
       // This type is not supported, and cannot be.
       return false;
       

@@ -1,7 +1,7 @@
 // Instantiate type cases for all available types    -*-C++-*-
 // (C) 2001 Erik Schnetter <schnetter@uni-tuebingen.de>
 
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/typecase,v 1.4 2002/01/04 18:21:57 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/typecase,v 1.5 2003/01/07 22:17:32 schnetter Exp $
 
 // Usage:
 // Define the macro TYPECASE(N,T) to be a typecase for the type T with name N,
@@ -24,9 +24,11 @@
 #endif
 
 #ifdef CARPET_ALL_INT
+#  undef CARPET_INT1
 #  undef CARPET_INT2
 #  undef CARPET_INT4
 #  undef CARPET_INT8
+#  define CARPET_INT1
 #  define CARPET_INT2
 #  define CARPET_INT4
 #  define CARPET_INT8
@@ -59,6 +61,10 @@
 #endif
 
 #ifdef CARPET_INT
+#  ifdef CCTK_INTEGER_PRECISION_1
+#    undef CARPET_INT1
+#    define CARPET_INT1
+#  endif
 #  ifdef CCTK_INTEGER_PRECISION_2
 #    undef CARPET_INT2
 #    define CARPET_INT2
@@ -104,7 +110,7 @@
 
 
 // // Check
-// #if !defined(CARPET_BYTE) && !defined(CARPET_INT2) && !defined(CARPET_INT4) && !defined(CARPET_INT8) && !defined(CARPET_REAL4) && !defined(CARPET_REAL8) && !defined(CARPET_REAL16) && !defined(CARPET_COMPLEX8) && !defined(CARPET_COMPLEX16) && !defined(CARPET_COMPLEX32)
+// #if !defined(CARPET_BYTE) && !defined(CARPET_INT1) && !defined(CARPET_INT2) && !defined(CARPET_INT4) && !defined(CARPET_INT8) && !defined(CARPET_REAL4) && !defined(CARPET_REAL8) && !defined(CARPET_REAL16) && !defined(CARPET_COMPLEX8) && !defined(CARPET_COMPLEX16) && !defined(CARPET_COMPLEX32)
 // #  error "You have not defined which grid function types to instantiate."
 // #endif
 
@@ -118,6 +124,11 @@ TYPECASE(CCTK_VARIABLE_BYTE, CCTK_BYTE)
 
 #ifdef CARPET_INT
 TYPECASE(CCTK_VARIABLE_INT, CCTK_INT)
+#endif
+#ifdef CARPET_INT1
+#  ifdef CCTK_INT1
+TYPECASE(CCTK_VARIABLE_INT1, CCTK_INT1)
+#  endif
 #endif
 #ifdef CARPET_INT2
 #  ifdef CCTK_INT2
