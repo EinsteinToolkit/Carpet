@@ -43,7 +43,7 @@ using namespace Carpet;
 
 namespace CarpetIOASCII {
   
-  const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.38 2002/09/01 19:07:22 schnetter Exp $";
+  const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.39 2002/09/26 10:03:48 schnetter Exp $";
   
   CCTK_FILEVERSION(CarpetIOASCII_ioascii_cc);
   
@@ -255,7 +255,9 @@ namespace CarpetIOASCII {
 	  }
 	  const char* const suffixes = "lpv";
 	  filenamebuf << suffixes[outdim-1];
-	  const char* const filename = filenamebuf.str().c_str();
+	  // we need a persistent temporary here
+	  string filenamestr = filenamebuf.str();
+	  const char* const filename = filenamestr.c_str();
 	  
 	  ofstream file;
 	  

@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <list>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "cctk.h"
@@ -22,7 +23,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.31 2002/09/25 15:50:31 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.32 2002/09/26 10:04:07 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Recompose_cc)
 
@@ -310,7 +311,9 @@ namespace Carpet {
     
     ostringstream filenamebuf;
     filenamebuf << outdir << "/" << grid_structure_filename;
-    const char * filename = filenamebuf.str().c_str();
+    // we need a persistent temporary here
+    string filenamestr = filenamebuf.str();
+    const char * filename = filenamestr.c_str();
     
     ofstream file;
     
