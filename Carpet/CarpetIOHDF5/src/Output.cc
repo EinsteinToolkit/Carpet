@@ -534,6 +534,8 @@ static int OutputGH (const cGH* const cctkGH)
       if (WarnAboutDeprecatedParameters ())
       {
         // annoy the user if (s)he still used deprecated parameters
+        CCTK_WARN (1, "Now waiting 5 seconds to let your notice the "
+                      "warning message(s) above...");
         sleep (5);
       }
     }
