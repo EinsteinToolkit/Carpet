@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.15 2001/03/18 05:20:20 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.16 2001/03/19 21:29:59 eschnett Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -36,7 +36,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.15 2001/03/18 05:20:20 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.16 2001/03/19 21:29:59 eschnett Exp $";
 
 
 
@@ -884,25 +884,28 @@ namespace Carpet {
       if (CCTK_QueryGroupStorageI(cgh, group)) {
 	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
 	  const int n = CCTK_FirstVarIndexI(group) + var;
+	  const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
 	  switch (CCTK_GroupTypeFromVarI(n)) {
 	  case CCTK_SCALAR: {
 	    assert (group<(int)scdata.size());
 	    assert (var<(int)scdata[group].size());
-	    const int sz = CCTK_VarTypeSize(CCTK_VarTypeI(n));
-	    for (int ti=0; ti<CCTK_NumTimeLevelsFromVarI(n)-1; ++ti) {
+	    void* tmpdata = scdata[group][var][0];
+	    for (int ti=0; ti<num_tl-1; ++ti) {
 	      // TODO: Which refinement level to use?
-	      memcpy (scdata[group][var][ti], scdata[group][var][ti+1], sz);
+	      scdata[group][var][ti] = scdata[group][var][ti+1];
 	    }
+	    scdata[group][var][num_tl-1] = tmpdata;
+	    tmpdata = 0;
 	    break;
 	  }
 	  case CCTK_ARRAY: {
 	    assert (group<(int)arrdata.size());
 	    assert (var<(int)arrdata[group].data.size());
 	    for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
-	      for (int ti=0; ti<CCTK_NumTimeLevelsFromVarI(n)-1; ++ti) {
-		const int tmin = min(0, 2 - CCTK_NumTimeLevelsFromVarI(n));
-		const int tl   = tmin + ti;
-		arrdata[group].data[var]->copy(tl, reflevel, c, mglevel);
+	      for (int ti=0; ti<num_tl-1; ++ti) {
+		const int tmin = min(0, 2 - num_tl);
+		const int tl = tmin + ti;
+ 		arrdata[group].data[var]->copy(tl, reflevel, c, mglevel);
 	      }
 	    }
 	    break;
