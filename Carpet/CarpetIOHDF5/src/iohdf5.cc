@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.33 2004/06/14 09:34:12 tradke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.34 2004/06/21 16:04:08 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -60,7 +60,7 @@ namespace CarpetIOHDF5 {
     GHExtension = CCTK_RegisterGHExtension ("CarpetIOHDF5");
     CCTK_RegisterGHExtensionSetupGH (GHExtension, SetupGH);
     
-    IOMethod = CCTK_RegisterIOMethod ("CarpetIOHDF5");
+    IOMethod = CCTK_RegisterIOMethod ("IOHDF5");
     CCTK_RegisterIOMethodOutputGH (IOMethod, OutputGH);
     CCTK_RegisterIOMethodOutputVarAs (IOMethod, OutputVarAs);
     CCTK_RegisterIOMethodTimeToOutput (IOMethod, TimeToOutput);
