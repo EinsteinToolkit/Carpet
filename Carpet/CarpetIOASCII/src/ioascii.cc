@@ -31,7 +31,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.69 2004/04/22 14:22:59 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.70 2004/05/21 18:10:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -97,12 +97,13 @@ namespace CarpetIOASCII {
   
   
   
-  void CarpetIOASCIIStartup()
+  int CarpetIOASCIIStartup()
   {
     IOASCII<0>::Startup();
     IOASCII<1>::Startup();
     IOASCII<2>::Startup();
     IOASCII<3>::Startup();
+    return 0;
   }
   
   
@@ -114,7 +115,7 @@ namespace CarpetIOASCII {
     for (int d=0; d<4; ++d) {
       this_iteration[d] = -1;
       next_output_iteration[d] = 0;
-      next_output_time[d] = cctkGH->cctk_time;
+      next_output_time[d] = cctk_time;
     }
   }
   
@@ -636,7 +637,7 @@ namespace CarpetIOASCII {
       if (! do_global_mode) return 0;
       break;
     case CCTK_GF:
-      /* do nothing */
+      // do nothing
       break;
     default:
       assert (0);
@@ -664,15 +665,19 @@ namespace CarpetIOASCII {
         myoutevery = out_every;
       }
       if (myoutevery <= 0) {
+        // output is disabled
         output_this_iteration = false;
+      } else if (cctk_iteration == this_iteration[outdim]) {
+        // we already decided to output this iteration
+        output_this_iteration = true;
+      } else if (cctk_iteration >= next_output_iteration[outdim]) {
+        // it is time for the next output
+        output_this_iteration = true;
+        next_output_iteration[outdim] = cctk_iteration + myoutevery;
+        this_iteration[outdim] = cctk_iteration;
       } else {
-        output_this_iteration
-          = (cctk_iteration == this_iteration[outdim]
-             || cctk_iteration >= next_output_iteration[outdim]);
-        if (output_this_iteration && cctk_iteration > this_iteration[outdim]) {
-          next_output_iteration[outdim] += myoutevery;
-          this_iteration[outdim] = cctk_iteration;
-        }
+        // we want no output at this iteration
+        output_this_iteration = false;
       }
       
     } else if (CCTK_EQUALS (myoutcriterion, "time")) {
@@ -682,18 +687,23 @@ namespace CarpetIOASCII {
         myoutdt = out_dt;
       }
       if (myoutdt < 0) {
+        // output is disabled
         output_this_iteration = false;
       } else if (myoutdt == 0) {
+        // output all iterations
         output_this_iteration = true;
+      } else if (cctk_iteration == this_iteration[outdim]) {
+        // we already decided to output this iteration
+        output_this_iteration = true;
+      } else if (cctk_time / cctk_delta_time
+                 >= next_output_time[outdim] / cctk_delta_time - 1.0e-12) {
+        // it is time for the next output
+        output_this_iteration = true;
+        next_output_time[outdim] = cctk_time + myoutdt;
+        this_iteration[outdim] = cctk_iteration;
       } else {
-        output_this_iteration
-          = (cctk_iteration == this_iteration[outdim]
-             || cctk_time >= (next_output_time[outdim]
-                              - 1.0e-12 * cctk_delta_time));
-        if (output_this_iteration && cctk_iteration > this_iteration[outdim]) {
-          next_output_time[outdim] += myoutdt;
-          this_iteration[outdim] = cctk_iteration;
-        }
+        // we want no output at this iteration
+        output_this_iteration = false;
       }
       
     } else {
