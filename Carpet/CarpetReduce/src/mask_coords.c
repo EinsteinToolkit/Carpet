@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_coords.c,v 1.2 2004/08/02 11:43:35 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_coords.c,v 1.3 2004/08/04 13:03:09 schnetter Exp $ */
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
@@ -73,7 +73,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
           /* Loop over the boundary */
           if (verbose) {
             CCTK_VInfo (CCTK_THORNSTRING,
-                        "Setting symmetry boundary in direction %d face %d to weight 0", d, f);
+                        "Setting boundary points in direction %d face %d to weight 0", d, f);
           }
           for (k=imin[2]; k<imax[2]; ++k) {
             for (j=imin[1]; j<imax[1]; ++j) {
@@ -104,7 +104,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
             /* Loop over the points next to boundary */
             if (verbose) {
               CCTK_VInfo (CCTK_THORNSTRING,
-                          "Setting symmetry axis in direction %d face %d to weight 1/2", d, f);
+                          "Setting staggered boundary points in direction %d face %d to weight 1/2", d, f);
             }
             for (k=imin[2]; k<imax[2]; ++k) {
               for (j=imin[1]; j<imax[1]; ++j) {
