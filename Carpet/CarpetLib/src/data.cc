@@ -361,8 +361,7 @@ void data<T>::change_processor_wait (comm_state& state,
       
       if (! use_waitall) {
         wtime_irecvwait.start();
-        MPI_Status status;
-        MPI_Wait (&request, &status);
+        MPI_Wait (&request, MPI_STATUS_IGNORE);
         wtime_irecvwait.stop();
       }
       
@@ -374,8 +373,7 @@ void data<T>::change_processor_wait (comm_state& state,
       
       if (! use_waitall) {
         wtime_isendwait.start();
-        MPI_Status status;
-        MPI_Wait (&request, &status);
+        MPI_Wait (&request, MPI_STATUS_IGNORE);
         wtime_isendwait.stop();
       }
       
@@ -511,8 +509,7 @@ data<T>::copy_from_recv_wait_inner (comm_state& state,
   }
   
   if (! use_waitall) {
-    MPI_Status status;
-    MPI_Wait (&b->request, &status);
+    MPI_Wait (&b->request, MPI_STATUS_IGNORE);
   }
   wtime_copyfrom_recvwaitinner_wait.stop();
   
@@ -570,8 +567,7 @@ data<T>::copy_from_send_wait_inner (comm_state& state,
   }
   
   if (! use_waitall) {
-    MPI_Status status;
-    MPI_Wait (&b->request, &status);
+    MPI_Wait (&b->request, MPI_STATUS_IGNORE);
   }
   wtime_copyfrom_sendwaitinner_wait.stop();
   

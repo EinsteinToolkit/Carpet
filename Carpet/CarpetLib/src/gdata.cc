@@ -364,8 +364,7 @@ void gdata::copy_from_wait (comm_state& state,
         }
         
         if (! use_waitall) {
-          MPI_Status status;
-          MPI_Wait (&b->request, &status);
+          MPI_Wait (&b->request, MPI_STATUS_IGNORE);
         }
         wtime_copyfrom_recvwaitinner_wait.stop();
         
@@ -401,8 +400,7 @@ void gdata::copy_from_wait (comm_state& state,
         }
         
         if (! use_waitall) {
-          MPI_Status status;
-          MPI_Wait (&b->request, &status);
+          MPI_Wait (&b->request, MPI_STATUS_IGNORE);
         }
         wtime_copyfrom_sendwaitinner_wait.stop();
         
@@ -691,8 +689,7 @@ void gdata
         }
         
         if (! use_waitall) {
-          MPI_Status status;
-          MPI_Wait (&b->request, &status);
+          MPI_Wait (&b->request, MPI_STATUS_IGNORE);
         }
         
         assert (_has_storage);
@@ -722,8 +719,7 @@ void gdata
         }
         
         if (! use_waitall) {
-          MPI_Status status;
-          MPI_Wait (&b->request, &status);
+          MPI_Wait (&b->request, MPI_STATUS_IGNORE);
         }
         
         delete b;
