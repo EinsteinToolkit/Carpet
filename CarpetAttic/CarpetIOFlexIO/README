@@ -1,8 +1,7 @@
 Cactus Code Thorn CarpetIOFlexIO
-Authors    : Erik Schnetter <schnetter@uni-tuebingen.de>
-CVS info   : $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/README,v 1.4 2004/01/25 14:57:29 schnetter Exp $
+Authors    : ...
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/README,v 1.1 2001/03/15 23:28:45 eschnett Exp $
 --------------------------------------------------------------------------
 
 Purpose of the thorn:
 
-This thorn provides FlexIO based file I/O for Carpet.
