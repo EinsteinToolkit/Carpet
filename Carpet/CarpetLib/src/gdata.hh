@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.16 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.17 2003/05/02 15:59:18 schnetter Exp $
 
 #ifndef GDATA_HH
 #define GDATA_HH
@@ -33,6 +33,8 @@ protected:                      // should be readonly
   // Fields
   bool _has_storage;		// has storage associated (on some processor)
   bool _owns_storage;		// owns the storage
+  // (only valid if there is storage on this processor; it means that
+  // the memory is allocated and freed by this class)
   int _size;			// size
 
   int _proc;			// stored on processor
