@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.16 2003/08/15 09:32:54 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.17 2003/09/19 16:06:41 schnetter Exp $
 
 #include <assert.h>
 
@@ -42,23 +42,9 @@ bbox<T,D>::bbox (const vect<T,D>& lower, const vect<T,D>& upper,
 template<class T, int D>
 T bbox<T,D>::size () const {
   if (empty()) return 0;
-//   return prod(shape());
-  const vect<T,D> sh(shape());
-  int sz = 1, max = numeric_limits<T>::max();
-  for (int d=0; d<D; ++d) {
-    assert (sh[d] <= max);
-    sz *= sh[d];
-    max /= sh[d];
-  }
-  return sz;
-}
-
-template<class T, int D>
-T bbox<T,D>::num_points () const {
-  if (empty()) return 0;
 //   return prod((shape()+stride()-1)/stride());
   const vect<T,D> sh((shape()+stride()-1)/stride());
-  int sz = 1, max = numeric_limits<T>::max();
+  T sz = 1, max = numeric_limits<T>::max();
   for (int d=0; d<D; ++d) {
     assert (sh[d] <= max);
     sz *= sh[d];

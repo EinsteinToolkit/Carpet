@@ -1,8 +1,9 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.14 2003/03/26 17:34:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.15 2003/09/19 16:06:41 schnetter Exp $
 
 #include <assert.h>
 
 #include <iostream>
+#include <limits>
 #include <set>
 #include <stack>
 
@@ -129,10 +130,13 @@ template<class T, int D>
 T bboxset<T,D>::size () const {
   T s=0;
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
-    s += (*bi).size();
+    const T bs = (*bi).size();
+    assert (numeric_limits<T>::max() - bs >= s);
+    s += bs;
   }
   return s;
 }
+
 
 
 // Add (bboxes that don't overlap)
@@ -380,7 +384,8 @@ template<class T,int D>
 void bboxset<T,D>::output (ostream& os) const {
   T Tdummy;
   os << "bboxset<" << typestring(Tdummy) << "," << D << ">:"
-     << "setsize=" << setsize() << "," << "size=" << size() << ","
+     << "size=" << size() << ","
+     << "setsize=" << setsize() << ","
      << "set=" << bs;
 }
 

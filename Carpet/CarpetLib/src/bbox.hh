@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.12 2003/03/17 10:24:18 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.13 2003/09/19 16:06:41 schnetter Exp $
 
 #ifndef BBOX_HH
 #define BBOX_HH
@@ -51,7 +51,6 @@ public:
   }
   
   T size () const;
-  T num_points () const;
   
   // Queries
   bool contains (const vect<T,D>& x) const;

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.hh,v 1.7 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.hh,v 1.8 2003/09/19 16:06:41 schnetter Exp $
 
 #ifndef GF_HH
 #define GF_HH
@@ -42,6 +42,7 @@ class gf: public ggf<D> {
 public:
   
   // Constructors
+  // VGF
   gf (const string name, th<D>& t, dh<D>& d,
       const int tmin, const int tmax, const int prolongation_order_time);
   

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.26 2003/08/10 12:52:09 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.27 2003/09/19 16:06:41 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -49,6 +49,7 @@ bool ggf<D>::operator== (const ggf<D>& f) const {
 
 
 // Modifiers
+// VGF
 template<int D>
 void ggf<D>::recompose (const int initialise_upto) {
   
@@ -79,6 +80,7 @@ void ggf<D>::recompose (const int initialise_upto) {
 	  storage[tl-tmin][rl][c][ml] = typed_data();
 	  
       	  // Allocate storage
+          // VGF
       	  storage[tl-tmin][rl][c][ml]->allocate
       	    (d.boxes[rl][c][ml].exterior, h.proc(rl,c));
 	  
@@ -214,7 +216,7 @@ void ggf<D>::copycat (int tl1, int rl1, int c1, int ml1,
   assert (ml2<h.mglevels(rl2,c2));
   const ibbox recv = d.boxes[rl1][c1][ml1].*recv_list;
   const ibbox send = d.boxes[rl2][c2][ml2].*send_list;
-  assert (recv.size()==send.size());
+  assert (all(recv.shape()==send.shape()));
   // copy the content
   assert (recv==send);
   storage[tl1-tmin][rl1][c1][ml1]->copy_from
@@ -311,7 +313,7 @@ void ggf<D>::intercat (int tl1, int rl1, int c1, int ml1,
   
   const ibbox recv = d.boxes[rl1][c1][ml1].*recv_list;
   const ibbox send = d.boxes[rl2][c2][ml2].*send_list;
-  assert (recv.size()==send.size());
+  assert (all(recv.shape()==send.shape()));
   // interpolate the content
   assert (recv==send);
   storage[tl1-tmin][rl1][c1][ml1]->interpolate_from

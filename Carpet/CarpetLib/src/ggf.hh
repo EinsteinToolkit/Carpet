@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.14 2003/05/02 14:23:12 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.15 2003/09/19 16:06:41 schnetter Exp $
 
 #ifndef GGF_HH
 #define GGF_HH
@@ -79,6 +79,7 @@ public:
 
 
   // Modifiers
+  // VGF
   void recompose (const int initialise_upto = -1);
 
   // Cycle the time levels by rotating the data sets

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.21 2003/07/25 16:19:59 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.22 2003/09/19 16:06:41 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -103,13 +103,13 @@ void gh<D>::recompose (const rexts& exts,
       all |= extents[rl-1][c][0];
     }
     // ... remember their size ...
-    const int s = all.size();
+    const int sz = all.size();
     // ... then add the coarsified fine grids ...
     for (int c=0; c<components(rl); ++c) {
       all |= extents[rl][c][0].contracted_for(extents[rl-1][0][0]);
     }
     // ... and then check the sizes:
-    assert (all.size() == s);
+    assert (all.size() == sz);
   }
   
   // Calculate base extents of all levels

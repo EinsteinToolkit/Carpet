@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.11 2003/08/28 21:27:03 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.12 2003/09/19 16:06:41 schnetter Exp $
 
 #include <assert.h>
 
@@ -11,11 +11,13 @@ using namespace std;
 
 
 // Constructors
+// VGF
 template<class T,int D>
 gf<T,D>::gf (const string name, th<D>& t, dh<D>& d,
 	     const int tmin, const int tmax, const int prolongation_order_time)
   : ggf<D>(name, t, d, tmin, tmax, prolongation_order_time)
 {
+  // VGF
   this->recompose();
 }
 
