@@ -11,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.2 2001/07/09 09:00:15 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.3 2001/08/17 19:15:59 schnetter Exp $";
 
 
 
@@ -304,6 +304,9 @@ namespace Carpet {
 	    
 	    assert (group<(int)arrdata.size());
 	    assert (var<(int)arrdata[group].data.size());
+	    assert (arrdata[group].data[var]);
+	    assert ((*arrdata[group].data[var])
+		    (-tl, reflevel, component, mglevel));
 	    cgh->data[n][tl]
 	      = ((*arrdata[group].data[var])
 		 (-tl, reflevel, component, mglevel)->storage());

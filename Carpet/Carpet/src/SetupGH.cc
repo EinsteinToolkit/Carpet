@@ -10,7 +10,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.4 2001/08/15 22:03:49 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.5 2001/08/17 19:15:59 schnetter Exp $";
 
 
 
@@ -137,20 +137,20 @@ namespace Carpet {
 	const CCTK_INT * const * const gsz = CCTK_GroupGhostsizesI(group);
 	vect<int,dim> sizes(1), ghostsizes(0);
 	for (int d=0; d<gp.dim; ++d) {
-	  if (sz) sizes[d] = (*sz)[d];
-	  if (gsz) ghostsizes[d] = (*gsz)[d];
+	  if (sz) sizes[d] = *sz[d];
+	  if (gsz) ghostsizes[d] = *gsz[d];
 	}
 	
 	vect<int,dim> alb(0), aub(stride), astr(stride);
 	for (int d=0; d<gp.dim; ++d) {
 	  if (gp.disttype==CCTK_DISTRIB_CONSTANT && d==gp.dim-1) {
-	    aub[d] = (CCTK_nProcs(cgh) * sizes[d]
-		      - (CCTK_nProcs(cgh)-1) * ghostsizes[d]);
+	    aub[d] = astr[d] * ((CCTK_nProcs(cgh) * sizes[d]
+				 - (CCTK_nProcs(cgh)-1) * ghostsizes[d]) - 1);
 	  } else {
-	    aub[d] = sizes[d];
+	    aub[d] = astr[d] * (sizes[d]-1);
 	  }
 	}
-	const bbox<int,dim> arrext(alb*astr, (aub-1)*astr, astr);
+	const bbox<int,dim> arrext(alb, aub, astr);
 	
 	arrdata[group].hh = new gh<dim>(refinement_factor, vertex_centered,
 					multigrid_factor, vertex_centered,
