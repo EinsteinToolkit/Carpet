@@ -31,7 +31,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.49 2004/06/27 10:02:42 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.50 2004/06/27 11:19:38 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -146,28 +146,53 @@ namespace Carpet {
       
       
       // Regrid
-      for (int rl=0; rl<reflevels; ++rl) {
-        const int do_every = maxreflevelfact / ipow(reffact, rl);
-        if ((cgh->cctk_iteration-1) % do_every == 0) {
-          {
-            const int ml=0;
-            enter_global_mode (cgh, ml);
-            enter_level_mode (cgh, rl);
-            
-            Checkpoint ("Regrid");
-            const bool did_change = Regrid (cgh);
-            
-            if (did_change) {
-              // Postregrid
-              Checkpoint ("Scheduling POSTREGRID");
-              CCTK_ScheduleTraverse ("CCTK_POSTREGRID", cgh, CallFunction);
-            }
-            
-            leave_level_mode (cgh);
-            leave_global_mode (cgh);
-          } // ml
-        } // if do_every
-      } // for rl
+      {
+        bool did_regrid = false;
+        {
+          const int ml=0;
+          for (int rl=0; rl<reflevels; ++rl) {
+            const int do_every = maxreflevelfact / ipow(reffact, rl);
+            if ((cgh->cctk_iteration-1) % do_every == 0) {
+              enter_global_mode (cgh, ml);
+              enter_level_mode (cgh, rl);
+              
+              Checkpoint ("Regrid");
+              did_regrid |= Regrid (cgh);
+              
+              leave_level_mode (cgh);
+              leave_global_mode (cgh);
+            } // if do_every
+          } // for rl
+        } // ml
+        
+        if (did_regrid) {
+          for (int ml=mglevels-1; ml>=0; --ml) {
+            for (int rl=0; rl<reflevels; ++rl) {
+              const int do_every
+                = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl));
+              if ((cgh->cctk_iteration-1) % do_every == 0) {
+                enter_global_mode (cgh, ml);
+                enter_level_mode (cgh, rl);
+                
+                do_global_mode = true;
+                do_meta_mode = do_global_mode && mglevel==mglevels-1;
+                
+                Waypoint ("Postregrid at iteration %d time %g%s%s",
+                          cgh->cctk_iteration, (double)cgh->cctk_time,
+                          (do_global_mode ? " (global)" : ""),
+                          (do_meta_mode ? " (meta)" : ""));
+                
+                // Postregrid
+                Checkpoint ("Scheduling POSTREGRID");
+                CCTK_ScheduleTraverse ("CCTK_POSTREGRID", cgh, CallFunction);
+                
+                leave_level_mode (cgh);
+                leave_global_mode (cgh);
+              } // if do_every
+            } // for rl
+          } // for ml
+        } // if did_regrid
+      }
       
       
       

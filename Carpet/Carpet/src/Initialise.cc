@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.47 2004/06/27 10:02:42 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.48 2004/06/27 11:19:38 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -98,7 +98,7 @@ namespace Carpet {
           
           leave_level_mode (cgh);
         } END_MGLEVEL_LOOP;
-
+        
         {
           const int ml=0;
           enter_global_mode (cgh, ml);
@@ -106,17 +106,23 @@ namespace Carpet {
           
           // Regrid
           Checkpoint ("Regrid");
-          const bool did_change = Regrid (cgh, true);
-          
-          if (did_change) {
-            // Postregrid
-            Checkpoint ("Scheduling POSTREGRID");
-            CCTK_ScheduleTraverse ("CCTK_POSTREGRID", cgh, CallFunction);
-          }
+          Regrid (cgh, true);
           
           leave_level_mode (cgh);
           leave_global_mode (cgh);
         } // ml
+          
+        BEGIN_MGLEVEL_LOOP(cgh) {
+          enter_level_mode (cgh, rl);
+          do_global_mode = reflevel==0;
+          do_meta_mode = do_global_mode && mglevel==mglevels-1;
+          
+          // Postregrid
+          Checkpoint ("Scheduling POSTREGRID");
+          CCTK_ScheduleTraverse ("CCTK_POSTREGRID", cgh, CallFunction);
+          
+          leave_level_mode (cgh);
+        } END_MGLEVEL_LOOP;
         
       } // for rl
       
@@ -222,17 +228,23 @@ namespace Carpet {
           
           // Regrid
           Checkpoint ("Regrid");
-          const bool did_change = Regrid (cgh);
-          
-          if (did_change) {
-            // Postregrid
-            Checkpoint ("Scheduling POSTREGRID");
-            CCTK_ScheduleTraverse ("CCTK_POSTREGRID", cgh, CallFunction);
-          }
+          Regrid (cgh);
           
           leave_level_mode (cgh);
           leave_global_mode (cgh);
         } // ml
+        
+        BEGIN_MGLEVEL_LOOP(cgh) {
+          enter_level_mode (cgh, rl);
+          do_global_mode = reflevel==0;
+          do_meta_mode = do_global_mode && mglevel==mglevels-1;
+          
+          // Postregrid
+          Checkpoint ("Scheduling POSTREGRID");
+          CCTK_ScheduleTraverse ("CCTK_POSTREGRID", cgh, CallFunction);
+          
+          leave_level_mode (cgh);
+        } END_MGLEVEL_LOOP;
         
       } // for rl
       
