@@ -1,5 +1,5 @@
 # Check Cartesian coordinates and symmetries
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/test/bitant.par,v 1.3 2002/10/24 21:11:55 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/test/bitant.par,v 1.4 2004/03/23 11:59:46 schnetter Exp $
 
 ActiveThorns = "CarpetIOASCII IOBasic IOUtil Carpet CarpetLib CarpetSlab Cart3d Cart3dTest"
 

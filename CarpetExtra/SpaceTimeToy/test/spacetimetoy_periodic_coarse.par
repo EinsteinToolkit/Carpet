@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/test/spacetimetoy_periodic_coarse.par,v 1.4 2003/06/18 18:24:30 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/test/spacetimetoy_periodic_coarse.par,v 1.5 2004/03/23 12:00:15 schnetter Exp $
 
 !DESC "SpaceTimeToy with periodic boundaries, no refinement"
 

@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/test/doubletoy_periodic_coarse_rl2.par,v 1.3 2002/10/24 21:11:07 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/test/doubletoy_periodic_coarse_rl2.par,v 1.4 2004/03/23 12:00:15 schnetter Exp $
 
 !DESC "DoubleToy with periodic boundaries, 1 refinement level"
 

@@ -7,7 +7,7 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77.par,v 1.5 2003/04/09 18:33:01 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77.par,v 1.6 2004/03/23 12:00:37 schnetter Exp $
 
 !DESC "Octant evolution with no boundary condition"
 

@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyExpl/par/ew1d_2l_0320.par,v 1.1 2003/06/18 18:24:30 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyExpl/par/ew1d_2l_0320.par,v 1.2 2004/03/23 12:00:28 schnetter Exp $
 
 Cactus::cctk_initial_time = 0
 Cactus::cctk_itlast = 51200

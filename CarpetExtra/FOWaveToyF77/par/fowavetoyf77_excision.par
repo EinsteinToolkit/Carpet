@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/par/fowavetoyf77_excision.par,v 1.3 2003/06/30 17:28:51 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/par/fowavetoyf77_excision.par,v 1.4 2004/03/23 12:02:09 schnetter Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time CartGrid3D Carpet CarpetIOASCII  CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDFOScalarWave FOWaveToyF77"
 
