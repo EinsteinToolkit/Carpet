@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.12 2004/01/25 14:57:29 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.13 2004/03/01 19:43:08 schnetter Exp $
 
 #ifndef DEFS_HH
 #define DEFS_HH
@@ -17,13 +17,9 @@
 #include <stack>
 #include <vector>
 
+#include "cctk.h"
+
 using namespace std;
-
-// Stringification
-#define STR(s) #s
-
-// Fortranification
-#define FORTRAN_NAME(x) x##_
 
 // A general type
 enum centering { vertex_centered, cell_centered };
@@ -47,6 +43,9 @@ void consume (istream& is, const char c);
 
 
 // Names for types
+
+#if 0
+
 inline const char * typestring (const char& dummy)
 { return "char"; }
 
@@ -97,6 +96,60 @@ inline const char * typestring (const complex<double>& dummy)
 
 inline const char * typestring (const complex<long double>& dummy)
 { return "complex<long double>"; }
+
+#else
+
+#  ifdef CCTK_INT1
+inline const char * typestring (const CCTK_INT1& dummy)
+{ return "CCTK_INT1"; }
+#  endif
+
+#  ifdef CCTK_INT2
+inline const char * typestring (const CCTK_INT2& dummy)
+{ return "CCTK_INT2"; }
+#  endif
+
+#  ifdef CCTK_INT4
+inline const char * typestring (const CCTK_INT4& dummy)
+{ return "CCTK_INT4"; }
+#  endif
+
+#  ifdef CCTK_INT8
+inline const char * typestring (const CCTK_INT8& dummy)
+{ return "CCTK_INT8"; }
+#  endif
+
+#  ifdef CCTK_REAL4
+inline const char * typestring (const CCTK_REAL4& dummy)
+{ return "CCTK_REAL4"; }
+#  endif
+
+#  ifdef CCTK_REAL8
+inline const char * typestring (const CCTK_REAL8& dummy)
+{ return "CCTK_REAL8"; }
+#  endif
+
+#  ifdef CCTK_REAL16
+inline const char * typestring (const CCTK_REAL16& dummy)
+{ return "CCTK_REAL16"; }
+#  endif
+
+#  ifdef CCTK_REAL4
+inline const char * typestring (const CCTK_COMPLEX8& dummy)
+{ return "CCTK_COMPLEX8"; }
+#  endif
+
+#  ifdef CCTK_REAL8
+inline const char * typestring (const CCTK_COMPLEX16& dummy)
+{ return "CCTK_COMPLEX16"; }
+#  endif
+
+#  ifdef CCTK_REAL16
+inline const char * typestring (const CCTK_COMPLEX32& dummy)
+{ return "CCTK_COMPLEX32"; }
+#  endif
+
+#endif
 
 
 
