@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.67 2004/06/21 12:28:59 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.68 2004/06/22 13:43:03 hawke Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -255,6 +255,11 @@ namespace Carpet {
     // Output only if IO exists and has been initialised
     if (! iogh) return;
     
+    // FIXME:
+    // Problems with GH setup order.
+    // FIXME: (see PR 55)
+    return;
+
     assert (iogh);
     
     // Create the output directory
