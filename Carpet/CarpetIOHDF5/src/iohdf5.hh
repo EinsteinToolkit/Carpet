@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.3 2004/03/08 22:50:41 cott Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.4 2004/03/09 16:02:48 cott Exp $
 
 #ifndef CARPETIOHDF5_HH
 #define CARPETIOHDF5_HH
@@ -9,6 +9,7 @@
 #include "cctk_Arguments.h"
 
 #include "iohdf5.h"
+#include "CactusBase/IOUtil/src/ioutil_Utils.h"
 
 namespace CarpetIOHDF5 {
   
@@ -22,8 +23,11 @@ namespace CarpetIOHDF5 {
 		 const int convLevel, cGH* const cctkGH);
   
   int OutputGH (const cGH* const cctkGH);
+  int WriteVar (const cGH* const cctkGH, hid_t writer, const ioRequest* request,
+		   const int called_from_checkpoint);
   int OutputVarAs (const cGH* const cctkGH, const char* const varname,
 		   const char* const alias);
+
   int TimeToOutput (const cGH* const cctkGH, const int vindex);
   int TriggerOutput (const cGH* const cctkGH, const int vindex);
   
