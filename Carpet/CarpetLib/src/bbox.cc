@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.22 2004/03/11 12:03:44 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.23 2004/04/18 13:03:44 schnetter Exp $
 
 #include <assert.h>
 
@@ -34,8 +34,8 @@ bbox<T,D>::bbox (const vect<T,D>& lower, const vect<T,D>& upper,
 		 const vect<T,D>& stride)
   : _lower(lower), _upper(upper), _stride(stride)
 {
-  assert (all(stride>=1));
-  assert (all((upper-lower)%stride == T(0)));
+  assert (all(_stride>T(0)));
+  assert (all((_upper-_lower)%_stride == T(0)));
 }
 
 // Accessors
@@ -194,7 +194,7 @@ template<class T, int D>
 typename bbox<T,D>::iterator& bbox<T,D>::iterator::operator++ () {
   for (int d=0; d<D; ++d) {
     pos[d]+=box.stride()[d];
-    if (pos[d]<=box.upper()[d]) return *this;
+    if (pos[d]<=box.upper()[d]) break;
     pos[d]=box.lower()[d];
   }
   return *this;
@@ -207,7 +207,7 @@ typename bbox<T,D>::iterator bbox<T,D>::begin () const {
 
 template<class T, int D>
 typename bbox<T,D>::iterator bbox<T,D>::end () const {
-  return iterator(*this, upper());
+  return iterator(*this, lower());
 }
 
 
@@ -226,6 +226,10 @@ void bbox<T,D>::input (istream& is) {
   is >> _stride;
   skipws (is);
   consume (is, ')');
+  cerr << "bbox " << *this << endl;
+  cerr << (_upper-_lower)%_stride << endl;
+  assert (all(_stride>T(0)));
+  assert (all((_upper-_lower)%_stride == T(0)));
 }
 
 

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.14 2004/03/11 12:03:44 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.15 2004/04/18 13:03:44 schnetter Exp $
 
 #ifndef BBOX_HH
 #define BBOX_HH
@@ -135,7 +135,8 @@ public:
   
   /** Create an iterator that points to the first point in a bbox.  */
   iterator begin () const;
-  /** Create an iterator that points to the last point in a bbox.  */
+  /** Create an iterator that points "after the last point" in a bbox,
+      which means that it also points to the first point.  */
   iterator end () const;
   
   // Input/Output helpers
