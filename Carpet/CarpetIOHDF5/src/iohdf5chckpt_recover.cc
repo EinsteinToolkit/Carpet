@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.21 2004/04/03 15:42:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.22 2004/04/19 13:17:24 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -568,7 +568,7 @@ namespace CarpetIOHDF5 {
 
 
     /* ... and append the extension */
-    sprintf (cp_tempname, "%s.tmp.h5", cp_filename);
+    sprintf (cp_tempname, "tmp_%s.h5", cp_filename);
     sprintf (cp_filename, "%s.h5",     cp_filename);
 
     hid_t writer = -1;
