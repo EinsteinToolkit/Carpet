@@ -348,6 +348,15 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
         HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
         HDF5_ERROR (memdataset = H5Dcreate (memfile, datasetname.str().c_str(),
                                          filedatatype, dataspace, H5P_DEFAULT));
+
+        // remove an already existing dataset of the same name
+        if (request->check_exist)
+        {
+          H5E_BEGIN_TRY
+          {
+            H5Gunlink (writer, datasetname.str().c_str());
+          } H5E_END_TRY;
+        }
         HDF5_ERROR (dataset = H5Dcreate (writer, datasetname.str().c_str(),
                                          filedatatype, dataspace, H5P_DEFAULT));
       }
