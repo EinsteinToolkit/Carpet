@@ -2,7 +2,12 @@
 
 STORAGE: integrand[3]
 
-schedule CarpetIntegrate_Local AT CCTK_POSTSTEP
+schedule CarpetIntegrate_Local AT CCTK_INITIAL
+{
+  LANG: C
+} "Setup integrand function"
+
+schedule CarpetIntegrate_Local AT CCTK_EVOL
 {
   LANG: C
 } "Setup integrand function"
