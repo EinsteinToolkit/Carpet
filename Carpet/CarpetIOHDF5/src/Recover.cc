@@ -496,6 +496,9 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
     if(called_from_recovery)
     {
       ReadAttribute(dataset,"group_timelevel", group_timelevel);
+      // in old days (before February 2005) timelevels used to be stored
+      // as negative numbers
+      group_timelevel = abs (group_timelevel);
     }
   } // MyProc == 0
 
