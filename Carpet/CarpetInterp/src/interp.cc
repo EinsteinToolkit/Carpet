@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.19 2004/01/29 12:39:15 hawke Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.20 2004/02/14 15:09:29 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -21,7 +21,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.19 2004/01/29 12:39:15 hawke Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.20 2004/02/14 15:09:29 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -51,7 +51,7 @@ namespace CarpetInterp {
     assert (minrl>=0 && maxrl<=hh.at(m)->reflevels());
     assert (c>=0 && c<maxncomps);
     assert (maxncomps>=0 && maxncomps<=hh.at(m)->components(rl));
-    int const ind = rl * maxncomps + c;
+    int const ind = (rl-minrl) * maxncomps + c;
     assert (ind>=0 && ind < (maxrl-minrl) * maxncomps);
     return ind;
   }
@@ -72,7 +72,7 @@ namespace CarpetInterp {
     assert (minrl>=0 && maxrl<=hh.at(m)->reflevels());
     assert (c>=0 && c<maxncomps);
     assert (maxncomps>=0 && maxncomps<=hh.at(m)->components(rl));
-    int const ind = (p * (maxrl-minrl) + rl) * maxncomps + c;
+    int const ind = (p * (maxrl-minrl) + (rl-minrl)) * maxncomps + c;
     assert (ind>=0 && ind < nprocs * (maxrl-minrl) * maxncomps);
     return ind;
   }
