@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.12 2003/12/19 16:01:55 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.13 2004/01/13 13:50:05 hawke Exp $
 
 
 
@@ -268,3 +268,10 @@ CCTK_STRING errorvar "Name of grid function that contains the error" STEERABLE=a
 {
   ".*" :: "must be the name of a grid function"
 } ""
+
+
+# Should we set the regridding criteria from an aliased function?
+
+BOOLEAN regrid_from_function "Regridding criteria from the aliased function?"
+{
+} "no"

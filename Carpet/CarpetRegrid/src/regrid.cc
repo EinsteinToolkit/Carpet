@@ -24,7 +24,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.31 2003/11/21 12:51:56 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.32 2004/01/13 13:49:38 hawke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -39,7 +39,15 @@ namespace CarpetRegrid {
   using namespace std;
   using namespace Carpet;
   
-  
+  int initial_refinement_levels = 0; // Store the initial number of 
+                                     // levels to refine for correct
+                                     // progressive MR.
+                                     // Note that this does not need
+                                     // to be checkpointed as it is
+                                     // reset at the beginning of every
+                                     // iteration.
+  int last_regridded_iteration = -1; // The last iteration where any
+                                     // regridding was done.
   
   int CarpetRegridStartup ()
   {
@@ -71,14 +79,47 @@ namespace CarpetRegrid {
     // Return if we want to regrid during initial data only, and this
     // is not the time for initial data
     if (regrid_every == 0 && cctkGH->cctk_iteration != 0) return 0;
-    
+
     // Return if we want to regrid regularly, but not at this time
     if (regrid_every > 0 && cctkGH->cctk_iteration != 0
 	&& cctkGH->cctk_iteration % regrid_every != 0) {
       return 0;
     }
 
-    int newnumlevels = refinement_levels + activate_newlevels_on_regrid;
+    // Find the number of levels that should be active.
+    int newnumlevels;
+
+    // Is this the first time that we have regridded this iteration?
+    if (cctkGH->cctk_iteration > last_regridded_iteration) {
+      last_regridded_iteration = cctkGH->cctk_iteration;
+      initial_refinement_levels = refinement_levels;
+    }
+    
+    if (cctkGH->cctk_iteration == 0) {
+      newnumlevels = refinement_levels;
+    } else {
+      if (regrid_from_function) {
+        if (CCTK_IsFunctionAliased("RegridLevel")) {
+          int tempnewnumlevels = 0;
+          newnumlevels = 0;
+          BEGIN_MGLEVEL_LOOP(cctkGH) {
+            tempnewnumlevels = 
+              RegridLevel(cctkGH, reflevel, refinement_levels);
+            newnumlevels = max(tempnewnumlevels, newnumlevels);
+          } END_MGLEVEL_LOOP;
+        } else {
+          CCTK_WARN(1, "No thorn has provided the function " 
+                    "\"RegridLevel\". Regridding will not be done.");
+        }
+      } else {
+        // The standard progressive MR number of levels.
+        newnumlevels = initial_refinement_levels + 
+          activate_newlevels_on_regrid;
+      }
+    }
+
+    newnumlevels = min(newnumlevels, maxreflevels);
+
     if ( ( newnumlevels >= 1) && (newnumlevels <= maxreflevels )) {
       char numlevelstring[10];
       sprintf(numlevelstring,"%d",newnumlevels);
@@ -94,7 +135,7 @@ namespace CarpetRegrid {
       
     } else if (CCTK_EQUALS(refined_regions, "centre")) {
       
-      MakeRegions_RefineCentre (cctkGH, refinement_levels, bbl, obl);
+      MakeRegions_RefineCentre (cctkGH, newnumlevels, bbl, obl);
       
     } else if (CCTK_EQUALS(refined_regions, "manual-gridpoints")) {
       
@@ -109,7 +150,7 @@ namespace CarpetRegrid {
       upper[1] = ivect (l2ixmax, l2iymax, l2izmax);
       lower[2] = ivect (l3ixmin, l3iymin, l3izmin);
       upper[2] = ivect (l3ixmax, l3iymax, l3izmax);
-      MakeRegions_AsSpecified (cctkGH, refinement_levels, lower, upper,
+      MakeRegions_AsSpecified (cctkGH, newnumlevels, lower, upper,
 			       bbl, obl);
       
     } else if (CCTK_EQUALS(refined_regions, "manual-coordinates")) {
@@ -125,7 +166,7 @@ namespace CarpetRegrid {
       upper[1] = rvect (l2xmax, l2ymax, l2zmax);
       lower[2] = rvect (l3xmin, l3ymin, l3zmin);
       upper[2] = rvect (l3xmax, l3ymax, l3zmax);
-      MakeRegions_AsSpecified (cctkGH, refinement_levels, lower, upper,
+      MakeRegions_AsSpecified (cctkGH, newnumlevels, lower, upper,
 			       bbl, obl);
       
     } else if (CCTK_EQUALS(refined_regions, "manual-gridpoint-list")) {
@@ -161,7 +202,7 @@ namespace CarpetRegrid {
 	}
       }
       
-      MakeRegions_AsSpecified (cctkGH, refinement_levels, bbss, obss,
+      MakeRegions_AsSpecified (cctkGH, newnumlevels, bbss, obss,
 			       bbl, obl);
       
     } else if (CCTK_EQUALS(refined_regions, "manual-coordinate-list")) {
@@ -197,7 +238,7 @@ namespace CarpetRegrid {
 	}
       }
       
-      MakeRegions_AsSpecified (cctkGH, refinement_levels, bbss, obss,
+      MakeRegions_AsSpecified (cctkGH, newnumlevels, bbss, obss,
 			       bbl, obl);
       
     } else if (CCTK_EQUALS(refined_regions, "automatic")) {
