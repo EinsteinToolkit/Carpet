@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.52 2004/03/05 17:46:04 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.53 2004/03/23 14:40:46 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -53,20 +53,6 @@ namespace Carpet {
     }
     return res;
   }
-  
-  
-  
-  static void CheckRegions (const gh<dim>::rexts & bbsss,
-			    const gh<dim>::rbnds & obss,
-			    const gh<dim>::rprocs& pss);
-  
-  static void Output (const cGH* cgh, const int m, const gh<dim>& hh);
-  
-  static void OutputGridStructure (const cGH *cgh,
-                                   const int m,
-				   const gh<dim>::rexts & bbsss,
-				   const gh<dim>::rbnds & obss,
-				   const gh<dim>::rprocs& pss);
   
   
   
@@ -180,7 +166,7 @@ namespace Carpet {
         vhh[m]->recompose (bbsss, obss, pss,
                            initialise_from, do_prolongate);
         
-        Output (cgh, m, *vhh[m]);
+        OutputGrids (cgh, m, *vhh[m]);
         
       }
       
@@ -198,7 +184,7 @@ namespace Carpet {
   
   
   
-  static void Output (const cGH* cgh, const int m, const gh<dim>& hh)
+  void OutputGrids (const cGH* cgh, const int m, const gh<dim>& hh)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -296,11 +282,11 @@ namespace Carpet {
   
   
   
-  static void OutputGridStructure (const cGH * const cgh,
-                                   const int m,
-				   const gh<dim>::rexts & bbsss,
-				   const gh<dim>::rbnds & obss,
-				   const gh<dim>::rprocs& pss)
+  void OutputGridStructure (const cGH * const cgh,
+                            const int m,
+                            const gh<dim>::rexts & bbsss,
+                            const gh<dim>::rbnds & obss,
+                            const gh<dim>::rprocs& pss)
   {
     DECLARE_CCTK_PARAMETERS;
     

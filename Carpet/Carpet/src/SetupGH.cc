@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.65 2004/03/23 14:13:48 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.66 2004/03/23 14:40:46 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -482,8 +482,32 @@ namespace Carpet {
       obss[0] = obs;
       pss[0] = ps;
       
+      // Check the regions
+      CheckRegions (bbsss, obss, pss);
+      
+      // Write grid structure to file
+      OutputGridStructure (cgh, m, bbsss, obss, pss);
+      
       // Recompose grid hierarchy
       vhh[m]->recompose (bbsss, obss, pss, maxreflevels, false);
+      
+      CCTK_INFO ("Grid structure (grid points):");
+      const int rl = 0;
+      for (int c=0; c<vhh.at(m)->components(rl); ++c) {
+        for (int ml=0; ml<vhh.at(m)->mglevels(rl,c); ++ml) {
+          const ivect lower = vhh.at(m)->extents.at(rl).at(c).at(ml).lower();
+          const ivect upper = vhh.at(m)->extents.at(rl).at(c).at(ml).upper();
+          const int convfact = ipow(mgfact, ml);
+          assert (all(lower % maxreflevelfact == 0));
+          assert (all(upper % maxreflevelfact == 0));
+          assert (all(((upper - lower) / maxreflevelfact) % convfact == 0));
+          cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
+               << "   exterior extent: " << lower / maxreflevelfact
+               << " : " << upper / maxreflevelfact
+               << "   (" << (upper - lower) / maxreflevelfact / convfact + 1
+               << ")" << endl;
+        }
+      }
       
     } // loop over maps
     
