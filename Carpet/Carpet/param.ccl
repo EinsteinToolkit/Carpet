@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.27 2003/03/26 17:38:50 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.28 2003/05/02 14:22:31 schnetter Exp $
 
 shares: Cactus
 
@@ -230,5 +230,9 @@ BOOLEAN periodic_z "do not use this parameter"
 private:
 
 BOOLEAN init_3_timelevels "Set up 3 timelevels of initial data"
+{
+} "no"
+
+BOOLEAN prolongate_initial_data "Prolongate the refined regions during initial data generation"
 {
 } "no"
