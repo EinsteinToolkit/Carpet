@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.27 2003/09/19 16:06:41 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.28 2003/10/14 16:39:16 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -20,10 +20,10 @@ using namespace std;
 
 // Constructors
 template<int D>
-ggf<D>::ggf (const string name, th<D>& t, dh<D>& d,
+ggf<D>::ggf (const int varindex, th<D>& t, dh<D>& d,
              const int tmin, const int tmax,
              const int prolongation_order_time)
-  : name(name), t(t),
+  : varindex(varindex), t(t),
     tmin(tmin), tmax(tmax),
     prolongation_order_time(prolongation_order_time),
     h(d.h), d(d),

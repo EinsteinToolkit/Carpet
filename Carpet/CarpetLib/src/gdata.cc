@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.22 2003/02/25 22:57:00 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.23 2003/10/14 16:39:16 schnetter Exp $
 
 #include <assert.h>
 
@@ -19,8 +19,9 @@ using namespace std;
 
 // Constructors
 template<int D>
-gdata<D>::gdata ()
-  : _has_storage(false)
+gdata<D>::gdata (const int varindex_)
+  : varindex(varindex_),
+    _has_storage(false)
 { }
 
 // Destructors
@@ -57,7 +58,7 @@ void gdata<D>::copy_from (const gdata* src, const ibbox& box)
   } else {
     
     // copy to different processor
-    gdata* const tmp = make_typed();
+    gdata* const tmp = make_typed(varindex);
     tmp->allocate (box, src->proc());
     tmp->copy_from (src, box);
     tmp->change_processor (proc());
@@ -105,7 +106,7 @@ void gdata<D>
   } else {
     // interpolate from other processor
     
-    gdata* const tmp = make_typed();
+    gdata* const tmp = make_typed(varindex);
     tmp->allocate (box, srcs[0]->proc());
     tmp->interpolate_from (srcs, times, box, time, order_space, order_time);
     tmp->change_processor (proc());

@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.27 2003/09/19 16:08:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.28 2003/10/14 16:39:16 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -100,13 +100,13 @@ namespace Carpet {
     for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
       const int n = n0 + var;
       switch (CCTK_VarTypeI(n)) {
-#define TYPECASE(N,T)                                                   \
-      case N:                                                           \
-        assert (! arrdata[group].data[var]);                            \
-        /* VGF */                                                       \
-	arrdata[group].data[var] = new gf<T,dim>                        \
-	  (CCTK_VarName(n), *arrdata[group].tt, *arrdata[group].dd,     \
-	   tmin, tmax, my_prolongation_order_time);                     \
+#define TYPECASE(N,T)                                   \
+      case N:                                           \
+        assert (! arrdata[group].data[var]);            \
+        /* VGF */                                       \
+	arrdata[group].data[var] = new gf<T,dim>        \
+	  (n, *arrdata[group].tt, *arrdata[group].dd,   \
+	   tmin, tmax, my_prolongation_order_time);     \
 	break;
 #include "typecase"
 #undef TYPECASE

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.29 2003/08/28 21:27:03 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.30 2003/10/14 16:39:16 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -23,15 +23,17 @@ using namespace std;
 
 // Constructors
 template<class T, int D>
-data<T,D>::data ()
-  : _storage(0)
+data<T,D>::data (const int varindex_)
+  : gdata<D>(varindex_),
+    _storage(0)
 { }
 
 template<class T, int D>
-data<T,D>::data (const ibbox& extent, const int proc)
-  : _storage(0)
+data<T,D>::data (const int varindex_, const ibbox& extent_, const int proc_)
+  : gdata<D>(varindex_),
+    _storage(0)
 {
-  allocate(extent, proc);
+  allocate(extent_, proc_);
 }
 
 // Destructors
@@ -42,20 +44,20 @@ data<T,D>::~data () {
   
 // Pseudo constructors
 template<class T, int D>
-data<T,D>* data<T,D>::make_typed () const {
-  return new data();
+data<T,D>* data<T,D>::make_typed (const int varindex_) const {
+  return new data(varindex_);
 }
 
 
 
 // Storage management
 template<class T, int D>
-void data<T,D>::allocate (const ibbox& extent, const int proc,
+void data<T,D>::allocate (const ibbox& extent_, const int proc_,
 			  void* const mem) {
   assert (!this->_has_storage);
   this->_has_storage = true;
   // data
-  this->_extent = extent;
+  this->_extent = extent_;
   this->_shape = max(ivect(0), this->_extent.shape() / this->_extent.stride());
   this->_size = 1;
   for (int d=0; d<D; ++d) {
@@ -63,7 +65,7 @@ void data<T,D>::allocate (const ibbox& extent, const int proc,
     assert (this->_shape[d]==0 || this->_size <= INT_MAX / this->_shape[d]);
     this->_size *= this->_shape[d];
   }
-  this->_proc = proc;
+  this->_proc = proc_;
   int rank;
   MPI_Comm_rank (dist::comm, &rank);
   if (rank==this->_proc) {
@@ -90,7 +92,7 @@ void data<T,D>::transfer_from (gdata<D>* gsrc) {
   data* src = (data*)gsrc;
   assert (!_storage);
   *this = *src;
-  *src = data();
+  *src = data(varindex);
 }
 
 
@@ -580,9 +582,6 @@ void data<CCTK_REAL8,3>
 // Output
 template<class T,int D>
 ostream& data<T,D>::output (ostream& os) const {
-  // The IBM C++ compiler has a bug: when "this->size()" is changed to
-  // "size()", it wants to use size(vect) instead, and complains about
-  // the missing argument.
   T Tdummy;
   os << "data<" << typestring(Tdummy) << "," << D << ">:"
      << "extent=" << this->extent() << ","

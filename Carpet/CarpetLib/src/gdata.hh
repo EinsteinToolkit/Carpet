@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.17 2003/05/02 15:59:18 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.18 2003/10/14 16:39:16 schnetter Exp $
 
 #ifndef GDATA_HH
 #define GDATA_HH
@@ -31,6 +31,8 @@ class gdata {
 protected:                      // should be readonly
 
   // Fields
+  int varindex;                 // Cactus variable index, or -1
+  
   bool _has_storage;		// has storage associated (on some processor)
   bool _owns_storage;		// owns the storage
   // (only valid if there is storage on this processor; it means that
@@ -42,17 +44,17 @@ protected:                      // should be readonly
   ivect _shape, _stride;      	// shape and index order
   
   ibbox _extent;		// bbox for all data
-
+  
 public:
 
   // Constructors
-  gdata ();
+  gdata (const int varindex);
 
   // Destructors
   virtual ~gdata ();
 
   // Pseudo constructors
-  virtual gdata<D>* make_typed () const = 0;
+  virtual gdata<D>* make_typed (const int varindex) const = 0;
   
   // Processor management
   virtual void change_processor (const int newproc, void* const mem=0) = 0;

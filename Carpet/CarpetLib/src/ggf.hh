@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.15 2003/09/19 16:06:41 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.16 2003/10/14 16:39:16 schnetter Exp $
 
 #ifndef GGF_HH
 #define GGF_HH
@@ -51,8 +51,8 @@ class ggf {
 public:				// should be readonly
 
   // Fields
-  string name;
-
+  int varindex;                 // Cactus variable index
+  
   th<D> &t;			// time hierarchy
   int tmin, tmax;		// timelevels
   int prolongation_order_time;	// order of temporal prolongation operator
@@ -66,7 +66,7 @@ protected:
 public:
 
   // Constructors
-  ggf (const string name, th<D>& t, dh<D>& d,
+  ggf (const int varindex, th<D>& t, dh<D>& d,
        const int tmin, const int tmax,
        const int prolongation_order_time);
 

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.11 2003/09/20 13:53:18 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.12 2003/10/14 16:39:17 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -21,7 +21,7 @@
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.11 2003/09/20 13:53:18 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.12 2003/10/14 16:39:17 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 
@@ -170,7 +170,7 @@ namespace CarpetSlab {
     
     // Create collector data object
     void* myhdata = rank==collect_proc ? hdata : 0;
-    gdata<dim>* const alldata = mydata->make_typed();
+    gdata<dim>* const alldata = mydata->make_typed(-1);
     alldata->allocate (hextent, collect_proc, myhdata);
     
     // Done with the temporary stuff
@@ -208,7 +208,7 @@ namespace CarpetSlab {
         if (proc != collect_proc) {
           
           void* myhdata = rank==proc ? hdata : 0;
-          gdata<dim>* const tmpdata = mydata->make_typed();
+          gdata<dim>* const tmpdata = mydata->make_typed(-1);
           tmpdata->allocate (alldata->extent(), proc, myhdata);
           tmpdata->copy_from (alldata, alldata->extent());
           delete tmpdata;

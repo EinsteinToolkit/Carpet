@@ -1,6 +1,8 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.12 2003/09/19 16:06:41 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.13 2003/10/14 16:39:16 schnetter Exp $
 
 #include <assert.h>
+
+#include "cctk.h"
 
 #include "defs.hh"
 
@@ -13,9 +15,9 @@ using namespace std;
 // Constructors
 // VGF
 template<class T,int D>
-gf<T,D>::gf (const string name, th<D>& t, dh<D>& d,
+gf<T,D>::gf (const int varindex, th<D>& t, dh<D>& d,
 	     const int tmin, const int tmax, const int prolongation_order_time)
-  : ggf<D>(name, t, d, tmin, tmax, prolongation_order_time)
+  : ggf<D>(varindex, t, d, tmin, tmax, prolongation_order_time)
 {
   // VGF
   this->recompose();
@@ -53,7 +55,7 @@ template<class T,int D>
 ostream& gf<T,D>::output (ostream& os) const {
   T Tdummy;
   os << "gf<" << typestring(Tdummy) << "," << D << ">:"
-     << "\"" << this->name << "\","
+     << this->varindex << "[" << CCTK_VarName(this->varindex) << "],"
      << "dt=[" << this->tmin << ":" << this->tmax<< "]";
   return os;
 }

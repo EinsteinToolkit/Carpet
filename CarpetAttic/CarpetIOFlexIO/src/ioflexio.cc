@@ -303,7 +303,7 @@ namespace CarpetIOFlexIO {
       
       ext = bbox<int,dim>(lo,hi,str);
       
-      gdata<dim>* const tmp = data->make_typed ();
+      gdata<dim>* const tmp = data->make_typed (n);
       tmp->allocate (ext, 0);
       tmp->copy_from (data, ext);
       
@@ -591,7 +591,7 @@ namespace CarpetIOFlexIO {
         const vect<int,dim> ub
           = lb + (vect<int,dim>(amr_dims) - 1) * str;
         const bbox<int,dim> ext(lb,ub,str);
-        gdata<dim>* const tmp = data->make_typed ();
+        gdata<dim>* const tmp = data->make_typed (n);
         
         if (CCTK_MyProc(cgh)==0) {
           tmp->allocate (ext, 0, amrgrid->data);

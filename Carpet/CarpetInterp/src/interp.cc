@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.12 2003/08/15 11:42:25 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.13 2003/10/14 16:39:16 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -19,7 +19,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.12 2003/08/15 11:42:25 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.13 2003/10/14 16:39:16 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -211,7 +211,7 @@ namespace CarpetInterp {
     
     
     // Create coordinate patches
-    vector<data<CCTK_REAL,dim> > allcoords (nprocs * (maxrl-minrl) * maxncomps);
+    vector<data<CCTK_REAL,dim> > allcoords (nprocs * (maxrl-minrl) * maxncomps, -1);
     for (int p=0; p<nprocs; ++p) {
       for (int rl=minrl; rl<maxrl; ++rl) {
         for (int c=0; c<hh->components(rl); ++c) {
@@ -262,7 +262,7 @@ namespace CarpetInterp {
     
     
     // Create output patches
-    vector<data<CCTK_REAL,dim> > alloutputs (nprocs * (maxrl-minrl) * maxncomps);
+    vector<data<CCTK_REAL,dim> > alloutputs (nprocs * (maxrl-minrl) * maxncomps, -1);
     for (int p=0; p<nprocs; ++p) {
       for (int rl=minrl; rl<maxrl; ++rl) {
         for (int c=0; c<hh->components(rl); ++c) {
