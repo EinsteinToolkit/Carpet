@@ -1,19 +1,11 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/par/sw1d_1l_0020.par,v 1.3 2004/03/23 12:01:21 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/par/sw1d_1l_0020.par,v 1.4 2004/07/07 16:15:31 tradke Exp $
 
 Cactus::cctk_initial_time = 0
 Cactus::cctk_itlast = 3200
 
 
 
-ActiveThorns = "LocalInterp NaNChecker Slab"
-
-NaNChecker::check_every = 16
-NaNChecker::check_vars = "all"
-NaNChecker::action_if_found = terminate
-
-
-
-ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce CarpetSlab"
+ActiveThorns = "IOUtil Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce CarpetSlab"
 
 driver::global_nx = 24
 driver::global_ny = 5
@@ -37,7 +29,15 @@ CarpetRegrid::outerbounds = "[[ [[0,0],[1,1],[1,1]] ]]"
 
 
 
-ActiveThorns = "Boundary CartGrid3D Periodic"
+ActiveThorns = "LocalInterp NaNChecker Slab"
+
+NaNChecker::check_every = 16
+NaNChecker::check_vars = "all"
+NaNChecker::action_if_found = terminate
+
+
+
+ActiveThorns = "Boundary CoordBase SymBase CartGrid3D Periodic"
 
 grid::domain = full
 grid::type = byrange
@@ -77,7 +77,7 @@ IDScalarWaveMoL::wave_number[0] = 1.0
 
 
 
-ActiveThorns = "IOUtil IOBasic CarpetIOASCII"
+ActiveThorns = "IOBasic CarpetIOASCII"
 
 IO::out_dir = "sw1d_1l_0020"
 
