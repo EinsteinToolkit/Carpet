@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/InitialData.F77,v 1.11 2002/02/27 18:57:54 shawley Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/InitialData.F77,v 1.12 2002/06/05 21:03:01 schnetter Exp $
 
  /*@@
    @file      InitialData.F77
@@ -40,12 +40,14 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/Initi
 
       INTEGER    i,j,k
       CCTK_REAL  dt,omega, pi
+      CCTK_REAL  t
       CCTK_REAL  x,y,z, r
       
 c     call CCTK_INFO ("IDScalarWave_InitialData")
       
       pi = 4.d0*atan(1.d0)
 
+      t = cctk_time
       dt = CCTK_DELTA_TIME
 
       omega = sqrt(kx**2+ky**2+kz**2)
@@ -78,22 +80,41 @@ c     call CCTK_INFO ("IDScalarWave_InitialData")
          do k=1, cctk_lsh(3)
             do j=1, cctk_lsh(2)
                do i=1, cctk_lsh(1)
-
+                  
                   r = spher3d_r(i,j,k)
-
-                  phi(i,j,k) = amplitude
-     $                 * exp(- (r - radius)**2 / sigma**2)
-
-                  phi_p(i,j,k) = amplitude/2 * (r - dt) / r
-     $                 * exp(- (r - radius - dt)**2 / sigma**2)
-     $                 + amplitude/2 * (r + dt) / r
-     $                 * exp(- (r - radius + dt)**2 / sigma**2)
-
-                  phi_p_p(i,j,k) = amplitude/2 * (r - 2*dt) / r
-     $                 * exp(- (r - radius - 2*dt)**2 / sigma**2)
-     $                 + amplitude/2 * (r + 2*dt) / r
-     $                 * exp(- (r - radius + 2*dt)**2 / sigma**2)
-
+                  
+                  if (r .ne. 0) then
+                     phi(i,j,k) = amplitude/2 * (r - radius - t) / r
+     $                    * exp(- (r - radius - t)**2 / sigma**2)
+     $                    + amplitude/2 * (r + radius + t) / r
+     $                    * exp(- (r + radius + t)**2 / sigma**2)
+                     
+                     phi_p(i,j,k) = amplitude/2 * (r - radius - t + dt) / r
+     $                    * exp(- (r - radius - t + dt)**2 / sigma**2)
+     $                    + amplitude/2 * (r + radius + t - dt) / r
+     $                    * exp(- (r + radius + t - dt)**2 / sigma**2)
+                     
+                     phi_p_p(i,j,k) = amplitude/2 * (r - radius - t + 2*dt) / r
+     $                    * exp(- (r - radius - t + 2*dt)**2 / sigma**2)
+     $                    + amplitude/2 * (r + radius + t - 2*dt) / r
+     $                    * exp(- (r + radius + t - 2*dt)**2 / sigma**2)
+                     
+                  else
+                     
+                     phi(i,j,k) = amplitude
+     $                    * (1 - 2 * (radius + t)**2 / sigma**2)
+     $                    * exp(- (radius + t)**2 / sigma**2)
+                     
+                     phi_p(i,j,k) = amplitude
+     $                    * (1 - 2 * (radius + t - dt)**2 / sigma**2)
+     $                    * exp(- (radius + t - dt)**2 / sigma**2)
+                     
+                     phi_p_p(i,j,k) = amplitude
+     $                    * (1 - 2 * (radius + t - 2*dt)**2 / sigma**2)
+     $                    * exp(- (radius + t - 2*dt)**2 / sigma**2)
+                     
+                  end if
+                  
                end do
             end do
          end do
