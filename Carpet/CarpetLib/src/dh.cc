@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.20 2002/08/30 16:03:20 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.21 2002/10/14 20:40:38 schnetter Exp $
 
  ***************************************************************************/
 
@@ -80,7 +80,12 @@ void dh<D>::recompose () {
        	// (the content of the exterior is completely determined by
        	// the interior of this or other components; the content of
        	// the exterior is redundant)
-       	boxes[rl][c][ml].exterior = intr.expand(lghosts, ughosts);
+	ivect ldist(lghosts), udist(ughosts);
+	for (int d=0; d<D; ++d) {
+	  if (h.outer_boundaries[rl][c][d][0]) ldist[d] = 0;
+	  if (h.outer_boundaries[rl][c][d][1]) udist[d] = 0;
+	}
+       	boxes[rl][c][ml].exterior = intr.expand(ldist, udist);
 	
        	// Boundaries (ghost zones only)
        	// (interior + boundaries = exterior)
@@ -251,6 +256,10 @@ void dh<D>::recompose () {
 	    recv_not -= *li;
 	  }
 	}
+	
+	// Check that no boundaries are left over
+	if (rl==0) assert (sync_not.empty());
+	assert (recv_not.empty());
 	
       } // for ml
     } // for c

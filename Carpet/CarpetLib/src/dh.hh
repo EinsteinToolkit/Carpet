@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.10 2002/05/05 22:17:01 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.11 2002/10/14 20:40:39 schnetter Exp $
 
  ***************************************************************************/
 
@@ -57,6 +57,11 @@ class dh: public dimgeneric_dh {
   typedef vector<iblist> iblistvect; // vector of lists
   
 public:
+  
+  // in here, the term "boundary" means both ghost zones and
+  // refinement boundaries, but does not refer to outer (physical)
+  // boundaries.
+  
   struct dboxes {
     ibbox exterior;		// whole region (including boundaries)
     
