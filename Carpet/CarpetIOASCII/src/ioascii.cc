@@ -24,7 +24,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.20 2001/11/05 17:53:02 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.21 2001/12/05 16:27:26 schnetter Exp $";
 
 
 
@@ -444,7 +444,7 @@ int CarpetIOASCII<outdim>
     assert (pcoord);
     const CCTK_REAL coord = *pcoord;
     assert (ptype == PARAMETER_REAL);
-    return CoordToOffset (cgh, dir, coord);
+    return CoordToOffset (cgh, dir, coord, 0);
   }
   
   // Second choice: explicit index
@@ -468,7 +468,7 @@ int CarpetIOASCII<outdim>
     assert (pcoord);
     const CCTK_REAL coord = *pcoord;
     assert (ptype == PARAMETER_REAL);
-    return CoordToOffset (cgh, dir, coord);
+    return CoordToOffset (cgh, dir, coord, 0);
   }
   
   // Fourth choice: explicit global index
@@ -483,22 +483,30 @@ int CarpetIOASCII<outdim>
   }
   
   // Fifth choice: default coordinate
-  return CoordToOffset (cgh, dir, cfallback);
+  return CoordToOffset (cgh, dir, cfallback, 0);
 }
 
 
 
 template<int outdim>
 int CarpetIOASCII<outdim>
-::CoordToOffset (const cGH* cgh, int dir, CCTK_REAL coord)
+::CoordToOffset (const cGH* cgh, const int dir, const CCTK_REAL coord,
+		 const int ifallback)
 {
+  assert (dir>=1 && dir<=dim);
+  
   CCTK_REAL lower, upper;
   CCTK_CoordRange (cgh, &lower, &upper, dir, 0, "cart3d");
   
   const int npoints = cgh->cctk_gsh[dir-1];
   
   const CCTK_REAL rindex = (coord - lower) / (upper - lower) * (npoints-1);
-  const int cindex = (int)floor(rindex + 0.5 + 1e-6);
+  int cindex = (int)floor(rindex + 0.5 + 1e-6);
+  
+  if (cindex<0 || cindex>=npoints) {
+    cindex = ifallback;
+  }
+  
   assert (cindex>=0 && cindex<npoints);
   
   return cindex;
@@ -517,7 +525,7 @@ const char* CarpetIOASCII<outdim>
     int ptype;
     const char* const* const ppval
       = (const char* const*)CCTK_ParameterGet (parametername, CCTK_THORNSTRING,
-					 &ptype);
+					       &ptype);
     assert (ppval);
     const char* const pval = *ppval;
     assert (ptype == PARAMETER_STRING);

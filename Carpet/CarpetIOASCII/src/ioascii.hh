@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.9 2001/11/05 17:53:03 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.10 2001/12/05 16:27:27 schnetter Exp $
 
 #include <vector>
 
@@ -57,7 +57,8 @@ struct CarpetIOASCII {
 			    const char* itempl, const char* iglobal,
 			    const char* ctempl, const char* cglobal,
 			    CCTK_REAL cfallback);
-  static int CoordToOffset (const cGH* cgh, int dir, CCTK_REAL coord);
+  static int CoordToOffset (const cGH* cgh, int dir, CCTK_REAL coord,
+			    int ifallback);
   
   static const char* GetStringParameter
   (const char* parametertemplate, const char* fallback);
