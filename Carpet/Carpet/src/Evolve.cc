@@ -31,7 +31,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.44 2004/04/18 13:29:43 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.45 2004/05/21 18:16:53 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -130,6 +130,19 @@ namespace Carpet {
       
       
       
+      // Advance time
+      ++cgh->cctk_iteration;
+      global_time = cctk_initial_time
+        + cgh->cctk_iteration * delta_time / maxreflevelfact;
+      cgh->cctk_time = global_time;
+      if ((cgh->cctk_iteration-1)
+          % (maxreflevelfact / ipow(reffact, reflevels-1)) == 0) {
+        Waypoint ("Evolving iteration %d at t=%g",
+                  cgh->cctk_iteration, (double)cgh->cctk_time);
+      }
+      
+      
+      
       // Regrid
       for (int rl=0; rl<reflevels; ++rl) {
         const int do_every = maxreflevelfact / ipow(reffact, rl);
@@ -141,25 +154,16 @@ namespace Carpet {
             
             Checkpoint ("Regrid");
             Regrid (cgh);
-
+            
+            // Postregrid
+            Checkpoint ("Scheduling POSTREGRID");
+            CCTK_ScheduleTraverse ("CCTK_POSTREGRID", cgh, CallFunction);
+            
             leave_level_mode (cgh);
             leave_global_mode (cgh);
           } // ml
         } // if do_every
       } // for rl
-      
-      
-      
-      // Advance time
-      ++cgh->cctk_iteration;
-      global_time = cctk_initial_time
-        + cgh->cctk_iteration * delta_time / maxreflevelfact;
-      cgh->cctk_time = global_time;
-      if ((cgh->cctk_iteration-1)
-          % (maxreflevelfact / ipow(reffact, reflevels-1)) == 0) {
-        Waypoint ("Evolving iteration %d at t=%g",
-                  cgh->cctk_iteration, (double)cgh->cctk_time);
-      }
       
       
       
