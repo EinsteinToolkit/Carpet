@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.78 2004/04/22 14:16:24 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.79 2004/05/21 18:16:23 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -242,10 +242,7 @@ namespace Carpet {
     maxreflevelfact = ipow(reffact, maxreflevels-1);
     
     // Map information
-    maps = num_maps;
-// TODO: disable temporarily
-//     cgh->cctk_nmaps = maps;
-    assert (maps == 1);
+    carpetGH.maps = maps = num_maps;;
     
     
     
@@ -759,7 +756,7 @@ namespace Carpet {
       groupdata.at(group).transport_operator = GetTransportOperator (cgh, group);
       
       // Initialise group variables
-      for (int m=0; m<arrdata.at(group).size(); ++m) {
+      for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
         
         arrdata.at(group).at(m).data.resize(CCTK_NumVarsInGroupI(group));
         for (int var=0; var<(int)arrdata.at(group).at(m).data.size(); ++var) {
@@ -870,10 +867,7 @@ namespace Carpet {
     
     Waypoint ("Done with setting up the grid hierarchy");
     
-    // We register only once, ergo we get only one handle, ergo there
-    // is only one grid hierarchy for us.  We store that statically,
-    // so there is no need to pass anything to Cactus.
-    return 0;
+    return &carpetGH;
   }
   
 } // namespace Carpet

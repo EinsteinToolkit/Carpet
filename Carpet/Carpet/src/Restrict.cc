@@ -11,7 +11,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.26 2004/03/23 19:30:14 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.27 2004/05/21 18:16:23 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Restrict_cc);
 }
 
@@ -45,7 +45,7 @@ namespace Carpet {
               
               const int tl = 0;
               
-              for (int m=0; m<maps; ++m) {
+              for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
                 assert (m<(int)arrdata.at(group).size());
                 
                 // use background time here (which may not be modified
@@ -83,7 +83,7 @@ namespace Carpet {
               
               const int tl = 0;
               
-              for (int m=0; m<maps; ++m) {
+              for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
                 assert (m<(int)arrdata.at(group).size());
                 for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
                   assert (var<(int)arrdata.at(group).at(m).data.size());

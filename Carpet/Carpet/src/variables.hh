@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.hh,v 1.4 2004/03/24 17:44:51 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.hh,v 1.5 2004/05/21 18:16:23 schnetter Exp $
 
 // It is assumed that each group has at least one map.  All arrays
 // have exactly one map.  All maps have the same number of refinement
@@ -26,6 +26,7 @@
 #include "th.hh"
 #include "vect.hh"
 
+#include "carpet_public.h"
 #include "defines.hh"
 
 
@@ -48,7 +49,7 @@ namespace Carpet {
   // Refinement factor
   extern int reffact;
   
-  // Refinement factor on finest grid
+  // Refinement factor on finest possible grid
   extern int maxreflevelfact;
   
   // Base multigrid level
@@ -79,6 +80,11 @@ namespace Carpet {
   
   // Current multigrid factor
   extern int mglevelfact;
+  
+  
+  
+  // Carpet's GH
+  extern CarpetGH carpetGH;
   
   
   

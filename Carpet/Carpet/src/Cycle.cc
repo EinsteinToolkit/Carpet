@@ -9,7 +9,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.18 2004/04/22 11:37:22 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.19 2004/05/21 18:16:23 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Cycle_cc);
 }
 
@@ -34,7 +34,7 @@ namespace Carpet {
         case CCTK_GF:
           assert (reflevel>=0 && reflevel<reflevels);
           for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-            for (int m=0; m<maps; ++m) {
+            for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
               assert (m<(int)arrdata.at(group).size());
               assert (var<(int)arrdata.at(group).at(m).data.size());
               for (int c=0; c<arrdata.at(group).at(m).hh->components(reflevel); ++c) {

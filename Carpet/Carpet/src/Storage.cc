@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.34 2004/04/18 11:48:35 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.35 2004/05/21 18:16:23 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -87,7 +87,7 @@ namespace Carpet {
     
     assert (arrdata.at(group).at(0).data.size()==0
 	    || arrdata.at(group).at(0).data.at(0) == 0);
-    for (int m=0; m<maps; ++m) {
+    for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
       for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
         const int vectorindex = gp.vectorgroup ? var % vectorlength : 0;
         ggf<dim>* vectorleader
@@ -156,7 +156,7 @@ namespace Carpet {
     
     assert (arrdata.at(group).at(0).data.size());
     assert (arrdata.at(group).at(0).data.at(0));
-    for (int m=0; m<maps; ++m) {
+    for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
       assert (m<(int)arrdata.at(group).size());
       for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
         assert (var<(int)arrdata.at(group).at(m).data.size());

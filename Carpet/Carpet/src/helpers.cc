@@ -17,7 +17,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.46 2004/04/04 19:24:13 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.47 2004/05/21 18:16:23 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -26,6 +26,15 @@ extern "C" {
 namespace Carpet {
   
   using namespace std;
+  
+  
+  
+  // Get Carpet's GH extension
+  CarpetGH const * GetCarpetGH (const cGH * const cgh)
+  {
+    assert (cgh);
+    return &carpetGH;
+  }
   
   
   

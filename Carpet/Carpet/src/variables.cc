@@ -2,7 +2,7 @@
 #include "variables.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.21 2004/03/24 17:44:51 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.22 2004/05/21 18:16:23 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_variables_cc);
 }
 
@@ -55,6 +55,11 @@ namespace Carpet {
   
   // multigrid factor of current level: ipow(multigrid_factor, mglevel)
   int mglevelfact;
+  
+  
+  
+  // Carpet's GH
+  CarpetGH carpetGH;
   
   
   

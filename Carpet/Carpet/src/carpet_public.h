@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.13 2004/04/04 19:24:13 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.14 2004/05/21 18:16:23 schnetter Exp $ */
 
 #ifndef CARPET_PUBLIC_H
 #define CARPET_PUBLIC_H
@@ -18,6 +18,62 @@
 namespace Carpet {
   extern "C" {
 #endif
+    
+    /* Carpet's GH extension */
+    struct CarpetGH {
+      
+#if 0
+      /* Maximum number of refinement levels */
+      int maxreflevels;
+      
+      /* Refinement levels */
+      int reflevels;
+      
+      /* Refinement factor */
+      int reffact;
+      
+      /* Refinement factor on finest possible grid */
+      int maxreflevelfact;
+      
+      /* Base multigrid level */
+      int basemglevel;
+      
+      /* Multigrid levels */
+      int mglevels;
+      
+      /* Multigrid factor */
+      int mgfact;
+      
+      /* Multigrid factor on coarsest grid */
+      int maxmglevelfact;
+#endif
+      
+      /* Maps */
+      int maps;
+      
+      
+      
+#if 0
+      /* Current position on the grid hierarchy */
+      int reflevel;
+      int mglevel;
+#endif
+      int map;
+#if 0
+      int component;
+      
+      /* Current refinement factor */
+      int reflevelfact;
+      
+      /* Current multigrid factor */
+      int mglevelfact;
+#endif
+      
+    };
+    
+    struct CarpetGH const * GetCarpetGH (const cGH * const cgh);
+    
+    
     
     /* Prolongation management */
     CCTK_INT CarpetEnableProlongating (const CCTK_INT flag);
@@ -44,6 +100,8 @@ namespace Carpet {
     /* Helper functions */
     MPI_Comm CarpetMPIComm (void);
     MPI_Datatype CarpetMPIDatatype (int vartype);
+    
+    
     
 #ifdef __cplusplus
   } /* extern "C" */

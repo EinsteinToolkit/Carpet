@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.cc,v 1.6 2004/03/23 19:59:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.cc,v 1.7 2004/05/21 18:16:23 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_modes_cc);
 }
 
@@ -275,10 +275,7 @@ namespace Carpet {
     assert (m>=0 && m<maps);
     Checkpoint ("Entering singlemap mode");
     
-    map = m;
-// TODO: disable temporarily
-//     cgh->cctk_map = map;
-    assert (map==0);
+    carpetGH.map = map = m;
     
     // Set grid shape
     const ibbox& coarseext = vdd.at(map)->bases.at(0       ).at(mglevel).exterior;
@@ -326,9 +323,7 @@ namespace Carpet {
       }
     }
     
-    map = -1;
-// TODO: disable temporarily
-//     cgh->cctk_map = -0xdead;
+    carpetGH.map = map = -1;
     
     assert (is_level_mode());
   }

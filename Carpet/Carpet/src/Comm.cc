@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.28 2004/03/23 13:05:25 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.29 2004/05/21 18:16:23 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Comm_cc);
 }
 
@@ -96,7 +96,7 @@ namespace Carpet {
             = (cgh->cctk_time - cctk_initial_time) / delta_time;
           
           for (comm_state<dim> state; !state.done(); state.step()) {
-            for (int m=0; m<maps; ++m) {
+            for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
               for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
                 for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
                   arrdata.at(group).at(m).data.at(var)->ref_bnd_prolongate
@@ -123,7 +123,7 @@ namespace Carpet {
       switch (CCTK_GroupTypeI(group)) {
         
       case CCTK_GF:
-        for (int m=0; m<maps; ++m) {
+        for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
           for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
             for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
               arrdata.at(group).at(m).data.at(var)->sync
