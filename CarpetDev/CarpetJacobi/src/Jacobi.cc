@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetJacobi/src/Jacobi.cc,v 1.1 2003/09/02 14:35:58 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetJacobi/src/Jacobi.cc,v 1.2 2003/11/19 14:05:14 schnetter Exp $
 
 #include <cassert>
 #include <cmath>
@@ -329,8 +329,10 @@ namespace CarpetJacobi {
     assert (reflevel==-1 || component==-1);
     const int saved_reflevel = reflevel;
     const int saved_mglevel = mglevel;
-    set_mglevel ((cGH *)cctkGH, -1);
-    set_reflevel ((cGH *)cctkGH, -1);
+    if (reflevel!=-1) {
+      set_mglevel ((cGH *)cctkGH, -1);
+      set_reflevel ((cGH *)cctkGH, -1);
+    }
     
     // Fill common block
     common::var = var;
@@ -509,8 +511,10 @@ namespace CarpetJacobi {
   done:
     
     // Restore state
-    set_reflevel ((cGH *)cctkGH, saved_reflevel);
-    set_mglevel ((cGH *)cctkGH, saved_mglevel);
+    if (reflevel!=saved_reflevel) {
+      set_reflevel ((cGH *)cctkGH, saved_reflevel);
+      set_mglevel ((cGH *)cctkGH, saved_mglevel);
+    }
     
     return ierr;
   }
