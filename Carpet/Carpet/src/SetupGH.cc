@@ -19,7 +19,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.37 2003/01/07 22:17:32 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.38 2003/01/10 18:05:32 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -42,8 +42,8 @@ namespace Carpet {
 #  define CCTK_DEFAULT_INTEGER_TYPE CCTK_VARIABLE_INT4
 #elif CCTK_INTEGER_PRECISION_8
 #  define CCTK_DEFAULT_INTEGER_TYPE CCTK_VARIABLE_INT8
-#else "Unsupported default integer type"
-#  error
+#else
+#  error "Unsupported default integer type"
 #endif
     
 #if CCTK_REAL_PRECISION_4

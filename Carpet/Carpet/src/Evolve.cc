@@ -5,12 +5,20 @@
 #include "cctk_Parameters.h"
 #include "cctk_Termination.h"
 
+#ifdef HAVE_TIME_GETTIMEOFDAY
+#  ifdef HAVE_SYS_TIME_H
+#    include <sys/time.h>
+#  endif
+#  include <unistd.h>
+#endif
+
+#include "Carpet/CarpetLib/src/dist.hh"
 #include "Carpet/CarpetLib/src/th.hh"
 
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.16 2002/12/12 12:55:45 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.17 2003/01/10 18:05:32 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -22,31 +30,68 @@ namespace Carpet {
   
   
   
+  static double initial_time;
+  
+  
+  
   static bool do_terminate (const cGH *cgh, CCTK_REAL time, int iteration)
   {
     DECLARE_CCTK_PARAMETERS;
     
+    bool term;
+    
     // Early shortcut
-    if (terminate_next || CCTK_TerminationReached(cgh)) return false;
-    
-    bool term_iter = iteration >= cctk_itlast;
-    bool term_time = (cctk_initial_time < cctk_final_time
-		     ? time >= cctk_final_time
-		     : time <= cctk_final_time);
-    
-    if (CCTK_Equals(terminate, "never")) {
-      return true;
-    } else if (CCTK_Equals(terminate, "iteration")) {
-      return term_iter;
-    } else if (CCTK_Equals(terminate, "time")) {
-      return term_time;
-    } else if (CCTK_Equals(terminate, "either")) {
-      return term_iter || term_time;
-    } else if (CCTK_Equals(terminate, "both")) {
-      return term_iter && term_time;
+    if (terminate_next || CCTK_TerminationReached(cgh)) {
+      
+      term = true;
+      
     } else {
-      assert (0);
+      
+      bool term_iter = iteration >= cctk_itlast;
+      bool term_time = (cctk_initial_time < cctk_final_time
+                        ? time >= cctk_final_time
+                        : time <= cctk_final_time);
+      double runtime;
+#ifdef HAVE_TIME_GETTIMEOFDAY
+      // get the current time
+      struct timeval tv;
+      gettimeofday (&tv, 0);
+      runtime = (tv.tv_sec + tv.tv_usec / 1e6) - initial_time;
+#else
+      runtime = 0;
+#endif
+      bool term_runtime = max_runtime > 0 && runtime >= 60.0 * max_runtime;
+      
+      if (CCTK_Equals(terminate, "never")) {
+        term = false;
+      } else if (CCTK_Equals(terminate, "iteration")) {
+        term = term_iter;
+      } else if (CCTK_Equals(terminate, "time")) {
+        term = term_time;
+      } else if (CCTK_Equals(terminate, "runtime")) {
+        term = term_runtime;
+      } else if (CCTK_Equals(terminate, "any")) {
+        term = term_iter || term_time || term_runtime;
+      } else if (CCTK_Equals(terminate, "all")) {
+        term = term_iter && term_time && term_runtime;
+      } else if (CCTK_Equals(terminate, "either")) {
+        term = term_iter || term_time;
+      } else if (CCTK_Equals(terminate, "both")) {
+        term = term_iter && term_time;
+      } else {
+        assert (0);
+      }
+      
     }
+    
+    {
+      int local, global;
+      local = term;
+      MPI_Allreduce (&local, &global, 1, MPI_INT, MPI_LOR, dist::comm);
+      term = global;
+    }
+    
+    return term;
   }
   
   
@@ -59,6 +104,15 @@ namespace Carpet {
     
     const int convlev = 0;
     cGH* cgh = fc->GH[convlev];
+    
+#ifdef HAVE_TIME_GETTIMEOFDAY
+    // get the starting time
+    struct timeval tv;
+    gettimeofday (&tv, 0);
+    initial_time = tv.tv_sec + tv.tv_usec / 1e6;
+#else
+    initial_time = 0;
+#endif
     
     // Main loop
     while (! do_terminate(cgh, cgh->cctk_time, cgh->cctk_iteration)) {
