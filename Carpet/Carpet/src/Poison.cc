@@ -8,7 +8,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.12 2003/06/18 18:24:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.13 2003/07/14 15:45:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Poison_cc);
 }
 
@@ -20,7 +20,7 @@ namespace Carpet {
   
   
   
-  void Poison (cGH* cgh, const checktimes where)
+  void Poison (const cGH* cgh, const checktimes where)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -35,7 +35,7 @@ namespace Carpet {
   
   
   
-  void PoisonGroup (cGH* cgh, const int group, const checktimes where)
+  void PoisonGroup (const cGH* cgh, const int group, const checktimes where)
   {
     DECLARE_CCTK_PARAMETERS;
     int ierr;
@@ -90,7 +90,7 @@ namespace Carpet {
   
   
   
-  void PoisonCheck (cGH* cgh, const checktimes where)
+  void PoisonCheck (const cGH* cgh, const checktimes where)
   {
     DECLARE_CCTK_PARAMETERS;
     

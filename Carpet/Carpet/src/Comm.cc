@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.18 2003/06/18 18:28:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.19 2003/07/14 15:45:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Comm_cc);
 }
 
@@ -22,7 +22,7 @@ namespace Carpet {
   
   
   
-  int SyncGroup (cGH* cgh, const char* groupname)
+  int SyncGroup (const cGH* cgh, const char* groupname)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -100,13 +100,13 @@ namespace Carpet {
   
   
   
-  int EnableGroupComm (cGH* cgh, const char* groupname)
+  int EnableGroupComm (const cGH* cgh, const char* groupname)
   {
     // Communication is always enabled
     return 0;
   }
   
-  int DisableGroupComm (cGH* cgh, const char* groupname)
+  int DisableGroupComm (const cGH* cgh, const char* groupname)
   {
     // Communication is always enabled
     return -1;

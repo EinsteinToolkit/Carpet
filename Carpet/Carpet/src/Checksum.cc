@@ -9,7 +9,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Checksum.cc,v 1.10 2003/06/18 18:28:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Checksum.cc,v 1.11 2003/07/14 15:45:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Checksum_cc);
 }
 
@@ -21,7 +21,7 @@ namespace Carpet {
   
   
   
-  void CalculateChecksums (cGH* cgh, const checktimes where)
+  void CalculateChecksums (const cGH* cgh, const checktimes where)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -91,7 +91,7 @@ namespace Carpet {
   
   
   
-  void CheckChecksums (cGH* cgh, const checktimes where)
+  void CheckChecksums (const cGH* cgh, const checktimes where)
   {
     DECLARE_CCTK_PARAMETERS;
     

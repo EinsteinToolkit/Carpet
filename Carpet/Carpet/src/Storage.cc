@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.22 2003/06/18 18:28:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.23 2003/07/14 15:45:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -22,7 +22,7 @@ namespace Carpet {
   
   
   
-  int EnableGroupStorage (cGH* cgh, const char* groupname)
+  int EnableGroupStorage (const cGH* cgh, const char* groupname)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -127,7 +127,7 @@ namespace Carpet {
   
   
   
-  int DisableGroupStorage (cGH* cgh, const char* groupname)
+  int DisableGroupStorage (const cGH* cgh, const char* groupname)
   {
     Checkpoint ("%*sDisableGroupStorage %s", 2*reflevel, "", groupname);
     
