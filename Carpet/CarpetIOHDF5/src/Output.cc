@@ -15,6 +15,7 @@
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
+#include "util_String.h"
 
 extern "C" {
   static const char* rcsid = "$Header:$";
@@ -64,40 +65,21 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
                            ibset::const_iterator bbox, hid_t dataset);
 
 // callback for I/O parameter parsing routine
-static void SetFlag (int vindex, const char* optstring, void* arg);
+static void GetVarIndex (int vindex, const char* optstring, void* arg);
 
+static void CheckSteerableParameters (const cGH *const cctkGH,
+                                      CarpetIOHDF5GH *myGH);
+
+//////////////////////////////////////////////////////////////////////////////
+// public routines
+//////////////////////////////////////////////////////////////////////////////
 
 int CarpetIOHDF5_Startup (void)
 {
-  DECLARE_CCTK_PARAMETERS
-
-
   CCTK_RegisterBanner ("AMR HDF5 I/O provided by CarpetIOHDF5");
-
-  // initial I/O parameter check
-  vector<bool> flags (CCTK_NumVars ());
-
-  if (CCTK_TraverseString (out3D_vars, SetFlag, &flags, CCTK_GROUP_OR_VAR) < 0)
-  {
-    CCTK_VWarn (strict_io_parameter_check ? 0 : 1,
-                __LINE__, __FILE__, CCTK_THORNSTRING,
-                "error while parsing parameter 'IOHDF5::out3D_vars'");
-  }
 
   const int GHExtension = CCTK_RegisterGHExtension ("CarpetIOHDF5");
   CCTK_RegisterGHExtensionSetupGH (GHExtension, SetupGH);
-
-  const int IOMethod = CCTK_RegisterIOMethod ("IOHDF5");
-  CCTK_RegisterIOMethodOutputGH (IOMethod, OutputGH);
-  CCTK_RegisterIOMethodOutputVarAs (IOMethod, OutputVarAs);
-  CCTK_RegisterIOMethodTimeToOutput (IOMethod, TimeToOutput);
-  CCTK_RegisterIOMethodTriggerOutput (IOMethod, TriggerOutput);
-
-  // register CarpetIOHDF5's recovery routine
-  if (IOUtil_RegisterRecover ("CarpetIOHDF5 recovery", Recover) < 0)
-  {
-    CCTK_WARN (1, "Failed to register " CCTK_THORNSTRING " recovery routine");
-  }
 
   return (0);
 }
@@ -117,21 +99,26 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
   dummy = &cctkGH;
   dummy = &dummy;
 
-  const int numvars = CCTK_NumVars ();
+  // register CarpetIOHDF5's routines as a new I/O method
+  const int IOMethod = CCTK_RegisterIOMethod ("IOHDF5");
+  CCTK_RegisterIOMethodOutputGH (IOMethod, OutputGH);
+  CCTK_RegisterIOMethodOutputVarAs (IOMethod, OutputVarAs);
+  CCTK_RegisterIOMethodTimeToOutput (IOMethod, TimeToOutput);
+  CCTK_RegisterIOMethodTriggerOutput (IOMethod, TriggerOutput);
 
-  // Truncate all files if this is not a restart
-  do_truncate.resize(numvars, true);
-
-  // No iterations have yet been output
-  last_output.resize(mglevels);
-  for (int ml=0; ml<mglevels; ++ml)
+  if (! CCTK_Equals (verbose, "none"))
   {
-    last_output.at(ml).resize(maxreflevels);
-    for (int rl=0; rl<maxreflevels; ++rl)
-    {
-      last_output.at(ml).at(rl).resize(numvars, INT_MIN);
-    }
+    CCTK_INFO ("I/O Method 'IOHDF5' registered: AMR output of grid variables "
+               "to HDF5 files");
   }
+
+  // register CarpetIOHDF5's recovery routine with IOUtil
+  if (IOUtil_RegisterRecover ("CarpetIOHDF5 recovery", Recover) < 0)
+  {
+    CCTK_WARN (1, "Failed to register " CCTK_THORNSTRING " recovery routine");
+  }
+
+  const int numvars = CCTK_NumVars ();
 
   // allocate a new GH extension structure
   myGH            = (CarpetIOHDF5GH*) malloc (sizeof (CarpetIOHDF5GH));
@@ -142,9 +129,38 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
   myGH->out_vars = strdup ("");
   myGH->out_every_default = out_every - 1;
 
+  // initial I/O parameter check
+  myGH->stop_on_parse_errors = strict_io_parameter_check;
+  CheckSteerableParameters (cctkGH, myGH);
+  myGH->stop_on_parse_errors = 0;
+
   for (int i = 0; i < numvars; i++)
   {
     myGH->out_last[i] = -1;
+  }
+
+  // create the output directory (if it doesn't match ".")
+  const char *my_out_dir = *out3D_dir ? out3D_dir : out_dir;
+  myGH->out_dir = (char *) calloc (1, strlen (my_out_dir) + 2);
+  if (strcmp (myGH->out_dir, "."))
+  {
+    sprintf (myGH->out_dir, "%s/", my_out_dir);
+    if (CCTK_MyProc (cctkGH) == 0)
+    {
+      int result = CCTK_CreateDirectory (0755, myGH->out_dir);
+      if (result < 0)
+      {
+        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Problem creating CarpetIOHDF5 output directory '%s'",
+                    myGH->out_dir);
+      }
+      else if (result > 0 && CCTK_Equals (verbose, "full"))
+      {
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "CarpetIOHDF5 output directory '%s' already exists",
+                    myGH->out_dir);
+      }
+    }
   }
 
   // Now set hdf5 complex datatypes
@@ -179,6 +195,20 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
                          offsetof (CCTK_COMPLEX32, Im), HDF5_REAL16));
 #endif
 
+  // Truncate all files if this is not a restart
+  do_truncate.resize(numvars, true);
+
+  // No iterations have yet been output
+  last_output.resize(mglevels);
+  for (int ml=0; ml<mglevels; ++ml)
+  {
+    last_output.at(ml).resize(maxreflevels);
+    for (int rl=0; rl<maxreflevels; ++rl)
+    {
+      last_output.at(ml).at(rl).resize(numvars, INT_MIN);
+    }
+  }
+
   return (myGH);
 }
 
@@ -190,294 +220,6 @@ int CarpetIOHDF5_Init (const cGH* const cctkGH)
   *this_iteration = -1;
   *next_output_iteration = 0;
   *next_output_time = cctk_time;
-
-  return (0);
-}
-
-
-static int OutputGH (const cGH* const cctkGH)
-{
-  for (int vindex = CCTK_NumVars () - 1; vindex >= 0; vindex--)
-  {
-    if (TimeToOutput (cctkGH, vindex))
-    {
-      TriggerOutput (cctkGH, vindex);
-    }
-  }
-
-  return (0);
-}
-
-
-static int TimeToOutput (const cGH* const cctkGH, const int vindex)
-{
-  DECLARE_CCTK_ARGUMENTS
-  DECLARE_CCTK_PARAMETERS
-
-  const int numvars = CCTK_NumVars();
-  assert (vindex>=0 && vindex<numvars);
-
-  if (CCTK_GroupTypeFromVarI (vindex) != CCTK_GF && ! do_global_mode)
-  {
-    return 0;
-  }
-
-  const char *myoutcriterion = CCTK_EQUALS (out3D_criterion, "default") ?
-                               out_criterion : out3D_criterion;
-
-  if (CCTK_EQUALS (myoutcriterion, "never"))
-  {
-    return (0);
-  }
-
-  // check whether to output at this iteration
-  bool output_this_iteration;
-
-  if (CCTK_EQUALS (myoutcriterion, "iteration"))
-  {
-    int myoutevery = out3D_every;
-    if (myoutevery == -2)
-    {
-      myoutevery = out_every;
-    }
-    if (myoutevery <= 0)
-    {
-      // output is disabled
-      output_this_iteration = false;
-    }
-    else if (cctk_iteration == *this_iteration)
-    {
-      // we already decided to output this iteration
-      output_this_iteration = true;
-    }
-    else if (cctk_iteration >= *next_output_iteration)
-    {
-      // it is time for the next output
-      output_this_iteration = true;
-      *next_output_iteration = cctk_iteration + myoutevery;
-      *this_iteration = cctk_iteration;
-    }
-    else
-    {
-      // we want no output at this iteration
-      output_this_iteration = false;
-    }
-  }
-  else if (CCTK_EQUALS (myoutcriterion, "divisor"))
-  {
-    int myoutevery = out3D_every;
-    if (myoutevery == -2)
-    {
-      myoutevery = out_every;
-    }
-    if (myoutevery <= 0)
-    {
-      // output is disabled
-      output_this_iteration = false;
-    }
-    else if ((cctk_iteration % myoutevery) == 0)
-    {
-      // we already decided to output this iteration
-      output_this_iteration = true;
-    }
-    else
-    {
-      // we want no output at this iteration
-      output_this_iteration = false;
-    }
-  }
-  else if (CCTK_EQUALS (myoutcriterion, "time"))
-  {
-    CCTK_REAL myoutdt = out3D_dt;
-    if (myoutdt == -2)
-    {
-      myoutdt = out_dt;
-    }
-    if (myoutdt < 0)
-    {
-      // output is disabled
-      output_this_iteration = false;
-    }
-    else if (myoutdt == 0)
-    {
-      // output all iterations
-      output_this_iteration = true;
-    }
-    else if (cctk_iteration == *this_iteration)
-    {
-      // we already decided to output this iteration
-      output_this_iteration = true;
-    }
-    else if (cctk_time / cctk_delta_time
-               >= *next_output_time / cctk_delta_time - 1.0e-12)
-    {
-      // it is time for the next output
-      output_this_iteration = true;
-      *next_output_time = cctk_time + myoutdt;
-      *this_iteration = cctk_iteration;
-    }
-    else
-    {
-      // we want no output at this iteration
-      output_this_iteration = false;
-    }
-  }
-  else
-  {
-    assert (0);
-  } // select output criterion
-
-  if (! output_this_iteration)
-  {
-    return 0;
-  }
-
-  vector<bool> flags(numvars, false);
-
-  CCTK_TraverseString (out3D_vars, SetFlag, &flags, CCTK_GROUP_OR_VAR);
-
-  if (! flags.at(vindex))
-  {
-    // This variable should not be output
-    return 0;
-  }
-
-  if (last_output.at(mglevel).at(reflevel).at(vindex) == cctk_iteration)
-  {
-    // Has already been output during this iteration
-    char* varname = CCTK_FullName(vindex);
-    CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "Skipping output for variable \"%s\", because this variable "
-                "has already been output during the current iteration -- "
-                "probably via a trigger during the analysis stage",
-                varname);
-    free (varname);
-    return 0;
-  }
-
-  assert (last_output.at(mglevel).at(reflevel).at(vindex) < cctk_iteration);
-
-  // Should be output during this iteration
-  return 1;
-}
-
-
-static int TriggerOutput (const cGH* const cctkGH, const int vindex)
-{
-  char *fullname = CCTK_FullName (vindex);
-  const char *varname = CCTK_VarName (vindex);
-  const int retval = OutputVarAs (cctkGH, fullname, varname);
-  free (fullname);
-
-  last_output.at(mglevel).at(reflevel).at(vindex) = cctkGH->cctk_iteration;
-
-  return (retval);
-}
-
-
-static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
-                        const char* const alias)
-{
-  DECLARE_CCTK_ARGUMENTS
-  DECLARE_CCTK_PARAMETERS
-
-  int numvars = CCTK_NumVars ();
-  vector<bool> flags (numvars, false);
-
-  if (CCTK_TraverseString (fullname, SetFlag, &flags, CCTK_VAR) < 0)
-  {
-    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "error while parsing variable name '%s' (alias name '%s')",
-                fullname, alias);
-    return (-1);
-  }
-
-  int vindex = 0;
-  while (! flags.at (vindex) && vindex < numvars) vindex++;
-  if (vindex >= numvars)
-  {
-    return (-1);
-  }
-
-  const int group = CCTK_GroupIndexFromVarI (vindex);
-  assert (group>=0 && group<(int)Carpet::arrdata.size());
-
-  // Check for storage
-  if (! CCTK_QueryGroupStorageI(cctkGH, group))
-  {
-    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "Cannot output variable '%s' because it has no storage",
-                fullname);
-    return (0);
-  }
-
-  const int grouptype = CCTK_GroupTypeI(group);
-  if (grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY)
-  {
-    assert (do_global_mode);
-  }
-
-  const int myproc = CCTK_MyProc (cctkGH);
-
-  /* get the default I/O request for this variable */
-  ioRequest* request = IOUtil_DefaultIORequest (cctkGH, vindex, 1);
-
-  // Get grid hierarchy extentsion from IOUtil
-  const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cctkGH, "IO");
-  assert (iogh);
-
-  // Create the output directory
-  const char* myoutdir = *out3D_dir ? out3D_dir : out_dir;
-  if (myproc == 0)
-  {
-    CCTK_CreateDirectory (0755, myoutdir);
-  }
-
-  // Invent a file name
-  ostringstream filenamebuf;
-  filenamebuf << myoutdir << "/" << alias << out3D_extension;
-  string filenamestr = filenamebuf.str();
-  const char * const filename = filenamestr.c_str();
-
-  hid_t writer = -1;
-
-  // Write the file only on the root processor
-  if (myproc == 0)
-  {
-    // If this is the first time, then create and truncate the file
-    if (do_truncate.at(vindex))
-    {
-      struct stat fileinfo;
-      if (IO_TruncateOutputFiles (cctkGH) || stat(filename, &fileinfo)!=0)
-      {
-        HDF5_ERROR (writer = H5Fcreate (filename, H5F_ACC_TRUNC, H5P_DEFAULT,
-                                        H5P_DEFAULT));
-        assert (writer>=0);
-        HDF5_ERROR (H5Fclose (writer));
-        writer = -1;
-      }
-    }
-
-    // Open the file
-    HDF5_ERROR (writer = H5Fopen (filename, H5F_ACC_RDWR, H5P_DEFAULT));
-  }
-
-  if (verbose)
-  {
-    CCTK_VInfo (CCTK_THORNSTRING,
-                "Writing variable '%s' on mglevel %d reflevel %d",
-                fullname, mglevel, reflevel);
-  }
-  WriteVar (cctkGH, writer, request, 0);
-
-  // Close the file
-  if (writer >= 0)
-  {
-    HDF5_ERROR (H5Fclose (writer));
-  }
-
-  // Don't truncate again
-  do_truncate.at(vindex) = false;
 
   return (0);
 }
@@ -715,6 +457,314 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
 }
 
 
+//////////////////////////////////////////////////////////////////////////////
+// private routines
+//////////////////////////////////////////////////////////////////////////////
+static void CheckSteerableParameters (const cGH *const cctkGH,
+                                      CarpetIOHDF5GH *myGH)
+{
+  DECLARE_CCTK_PARAMETERS
+
+
+  // re-parse the 'IOHDF5::out3D_vars' parameter if it has changed
+  if (strcmp (out3D_vars, myGH->out_vars))
+  {
+    IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING, "IOHDF5::out3D_vars",
+                               myGH->stop_on_parse_errors, out3D_vars,
+                               -1, myGH->requests);
+
+    // notify the user about the new setting
+    if (! CCTK_Equals (verbose, "none"))
+    {
+      char *msg = NULL;
+      for (int i = CCTK_NumVars () - 1; i >= 0; i--)
+      {
+        if (myGH->requests[i])
+        {
+          char *fullname = CCTK_FullName (i);
+          if (! msg)
+          {
+            Util_asprintf (&msg, "Periodic HDF5 output requested for '%s'",
+                           fullname);
+          }
+          else
+          {
+            Util_asprintf (&msg, "%s, '%s'", msg, fullname);
+          }
+          free (fullname);
+        }
+      }
+      if (msg)
+      {
+        CCTK_INFO (msg);
+        free (msg);
+      }
+    }
+
+    // save the last setting of 'IOHDF5::out3D_vars' parameter
+    free (myGH->out_vars);
+    myGH->out_vars = strdup (out3D_vars);
+  }
+}
+
+
+static int OutputGH (const cGH* const cctkGH)
+{
+  for (int vindex = CCTK_NumVars () - 1; vindex >= 0; vindex--)
+  {
+    if (TimeToOutput (cctkGH, vindex))
+    {
+      TriggerOutput (cctkGH, vindex);
+    }
+  }
+
+  return (0);
+}
+
+
+static int TimeToOutput (const cGH* const cctkGH, const int vindex)
+{
+  DECLARE_CCTK_ARGUMENTS
+  DECLARE_CCTK_PARAMETERS
+
+  const int numvars = CCTK_NumVars();
+  assert (vindex>=0 && vindex<numvars);
+
+  if (CCTK_GroupTypeFromVarI (vindex) != CCTK_GF && ! do_global_mode)
+  {
+    return 0;
+  }
+
+  CarpetIOHDF5GH *myGH =
+    (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
+  CheckSteerableParameters (cctkGH, myGH);
+
+  // check if output for this variable was requested
+  if (! myGH->requests[vindex])
+  {
+    return (0);
+  }
+
+  // check if output for this variable was requested individually
+  // by a "<varname>{ out_every = <number> }" option string
+  // this will overwrite the output criterion setting
+  const char *myoutcriterion = CCTK_EQUALS (out3D_criterion, "default") ?
+                               out_criterion : out3D_criterion;
+  if (myGH->requests[vindex]->out_every >= 0)
+  {
+    myoutcriterion = "divisor";
+  }
+
+  if (CCTK_EQUALS (myoutcriterion, "never"))
+  {
+    return (0);
+  }
+
+  // check whether to output at this iteration
+  bool output_this_iteration = false;
+
+  if (CCTK_EQUALS (myoutcriterion, "iteration"))
+  {
+    int myoutevery = out3D_every == -2 ? out_every : out3D_every;
+    if (myoutevery > 0)
+    {
+      if (*this_iteration == cctk_iteration)
+      {
+        // we already decided to output this iteration
+        output_this_iteration = true;
+      }
+      else if (cctk_iteration >= *next_output_iteration)
+      {
+        // it is time for the next output
+        output_this_iteration = true;
+        *this_iteration = cctk_iteration;
+        *next_output_iteration = cctk_iteration + myoutevery;
+      }
+    }
+  }
+  else if (CCTK_EQUALS (myoutcriterion, "divisor"))
+  {
+    int myoutevery = out3D_every == -2 ? out_every : out3D_every;
+    if (myGH->requests[vindex]->out_every >= 0)
+    {
+      myoutevery = myGH->requests[vindex]->out_every;
+    }
+    if (myoutevery > 0 && (cctk_iteration % myoutevery) == 0)
+    {
+      // we already decided to output this iteration
+      output_this_iteration = true;
+    }
+  }
+  else if (CCTK_EQUALS (myoutcriterion, "time"))
+  {
+    CCTK_REAL myoutdt = out3D_dt == -2 ? out_dt : out3D_dt;
+    if (myoutdt == 0 || *this_iteration == cctk_iteration)
+    {
+      output_this_iteration = true;
+    }
+    else if (myoutdt > 0 && (cctk_time / cctk_delta_time
+                             >= *next_output_time / cctk_delta_time - 1.0e-12))
+    {
+      // it is time for the next output
+      output_this_iteration = true;
+      *this_iteration = cctk_iteration;
+      *next_output_time = cctk_time + myoutdt;
+    }
+  }
+
+  if (! output_this_iteration)
+  {
+    return 0;
+  }
+
+  if (last_output.at(mglevel).at(reflevel).at(vindex) == cctk_iteration)
+  {
+    // Has already been output during this iteration
+    char* varname = CCTK_FullName(vindex);
+    CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Skipping output for variable \"%s\", because this variable "
+                "has already been output during the current iteration -- "
+                "probably via a trigger during the analysis stage",
+                varname);
+    free (varname);
+    return 0;
+  }
+
+  assert (last_output.at(mglevel).at(reflevel).at(vindex) < cctk_iteration);
+
+  // Should be output during this iteration
+  return 1;
+}
+
+
+static int TriggerOutput (const cGH* const cctkGH, const int vindex)
+{
+  char *fullname = CCTK_FullName (vindex);
+  const char *varname = CCTK_VarName (vindex);
+  const int retval = OutputVarAs (cctkGH, fullname, varname);
+  free (fullname);
+
+  last_output.at(mglevel).at(reflevel).at(vindex) = cctkGH->cctk_iteration;
+
+  return (retval);
+}
+
+
+static void GetVarIndex (int vindex, const char* optstring, void* arg)
+{
+  if (optstring)
+  {
+    char *fullname = CCTK_FullName (vindex);
+    CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Option string '%s' will be ignored for HDF5 output of "
+                "variable '%s'", optstring, fullname);
+    free (fullname);
+  }
+
+  *((int *) arg) = vindex;
+}
+
+
+static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
+                        const char* const alias)
+{
+  DECLARE_CCTK_ARGUMENTS
+  DECLARE_CCTK_PARAMETERS
+
+  int vindex = -1;
+
+  if (CCTK_TraverseString (fullname, GetVarIndex, &vindex, CCTK_VAR) < 0)
+  {
+    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "error while parsing variable name '%s' (alias name '%s')",
+                fullname, alias);
+    return (-1);
+  }
+
+  if (vindex < 0)
+  {
+    return (-1);
+  }
+
+  const int group = CCTK_GroupIndexFromVarI (vindex);
+  assert (group>=0 && group<(int)Carpet::arrdata.size());
+
+  // Check for storage
+  if (! CCTK_QueryGroupStorageI(cctkGH, group))
+  {
+    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Cannot output variable '%s' because it has no storage",
+                fullname);
+    return (0);
+  }
+
+  const int grouptype = CCTK_GroupTypeI(group);
+  if (grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY)
+  {
+    assert (do_global_mode);
+  }
+
+  const int myproc = CCTK_MyProc (cctkGH);
+
+  /* get the default I/O request for this variable */
+  ioRequest* request = IOUtil_DefaultIORequest (cctkGH, vindex, 1);
+
+  // Get grid hierarchy extentsion from IOUtil
+  const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cctkGH, "IO");
+  assert (iogh);
+
+  // Invent a file name
+  const CarpetIOHDF5GH *myGH =
+    (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
+  ostringstream filenamebuf;
+  filenamebuf << myGH->out_dir << alias << out3D_extension;
+  string filenamestr = filenamebuf.str();
+  const char * const filename = filenamestr.c_str();
+
+  hid_t writer = -1;
+
+  // Write the file only on the root processor
+  if (myproc == 0)
+  {
+    // If this is the first time, then create and truncate the file
+    if (do_truncate.at(vindex))
+    {
+      struct stat fileinfo;
+      if (IO_TruncateOutputFiles (cctkGH) || stat(filename, &fileinfo)!=0)
+      {
+        HDF5_ERROR (writer = H5Fcreate (filename, H5F_ACC_TRUNC, H5P_DEFAULT,
+                                        H5P_DEFAULT));
+        assert (writer>=0);
+        HDF5_ERROR (H5Fclose (writer));
+        writer = -1;
+      }
+    }
+
+    // Open the file
+    HDF5_ERROR (writer = H5Fopen (filename, H5F_ACC_RDWR, H5P_DEFAULT));
+  }
+
+  if (CCTK_Equals (verbose, "full"))
+  {
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Writing variable '%s' on mglevel %d reflevel %d",
+                fullname, mglevel, reflevel);
+  }
+  WriteVar (cctkGH, writer, request, 0);
+
+  // Close the file
+  if (writer >= 0)
+  {
+    HDF5_ERROR (H5Fclose (writer));
+  }
+
+  // Don't truncate again
+  do_truncate.at(vindex) = false;
+
+  return (0);
+}
+
+
 static void AddAttributes (const cGH *const cctkGH, const char *fullname,
                            int vdim, int refinementlevel, int timelevel,
                            ibset::const_iterator bbox, hid_t dataset)
@@ -757,21 +807,6 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
   // Carpet arguments
   WriteAttribute (dataset, "carpet_mglevel", mglevel);
   WriteAttribute (dataset, "carpet_reflevel", refinementlevel);
-}
-
-
-static void SetFlag (int vindex, const char* optstring, void* arg)
-{
-  if (optstring)
-  {
-    char *fullname = CCTK_FullName (vindex);
-    CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "Option string '%s' will be ignored for HDF5 output of "
-                "variable '%s'", optstring, fullname);
-    free (fullname);
-  }
-  vector<bool>& flags = *(vector<bool>*)arg;
-  flags.at(vindex) = true;
 }
 
 

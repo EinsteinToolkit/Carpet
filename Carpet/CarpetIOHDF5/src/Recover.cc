@@ -114,7 +114,7 @@ int CarpetIOHDF5_CloseFile (void)
   }
   infile.num_datasets = -1;
 
-  if (verbose)
+  if (CCTK_Equals (verbose, "full"))
   {
     CCTK_VInfo (CCTK_THORNSTRING, "closing file '%s' after recovery",
                 infile.filename);
@@ -151,7 +151,7 @@ static int OpenFile (const char *basefilename, file_t *file, int called_from)
   // generate filename for an unchunked checkpoint file */
   file->filename = IOUtil_AssembleFilename (NULL, basefilename, "", ".h5",
                                             called_from, 0, 1);
-  if (verbose)
+  if (CCTK_Equals (verbose, "full"))
   {
     CCTK_VInfo (CCTK_THORNSTRING, "opening %s file '%s'",
                 called_from == CP_RECOVER_PARAMETERS ? "checkpoint" : "input",
@@ -422,7 +422,7 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
 
   void *h5data = NULL;
 
-  if (verbose)
+  if (CCTK_Equals (verbose, "full"))
   {
     CCTK_VInfo (CCTK_THORNSTRING, "  reading '%s'", fullname);
   }
@@ -679,7 +679,10 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
   if (CCTK_MyProc(cctkGH)==0)
   {
     // Open the file
-    if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Opening file \"%s\"", filename);
+    if (CCTK_Equals (verbose, "full"))
+    {
+      CCTK_VInfo (CCTK_THORNSTRING, "Opening file \"%s\"", filename);
+    }
     reader = H5Fopen (filename, H5F_ACC_RDONLY, H5P_DEFAULT);
     if (reader<0)
     {
@@ -700,7 +703,7 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
 
   for (int datasetid=0; datasetid<ndatasets; ++datasetid)
   {
-    if (verbose)
+    if (CCTK_Equals (verbose, "full"))
     {
       CCTK_VInfo (CCTK_THORNSTRING, "Handling dataset #%d", datasetid);
     }
@@ -720,7 +723,7 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
       char * name;
       ReadAttribute (dataset, "name", name);
       //        cout << "dataset name is " << name << endl;
-      if (verbose && name)
+      if (CCTK_Equals (verbose, "full") && name)
       { 
         CCTK_VInfo (CCTK_THORNSTRING, "Dataset name is \"%s\"", name);
       }
@@ -740,7 +743,10 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
   // Close the file
   if (CCTK_MyProc(cctkGH)==0)
   {
-    if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Closing file");
+    if (CCTK_Equals (verbose, "full"))
+    {
+      CCTK_VInfo (CCTK_THORNSTRING, "Closing file");
+    }
     HDF5_ERROR (H5Fclose(reader));
     reader=-1;
   }
@@ -917,8 +923,10 @@ static int RecoverVariables (cGH* cctkGH, file_t *file)
   leveltime = MPI_Wtime() - leveltime;
   totaltime += leveltime;
 
-  if (verbose)
+  if (CCTK_Equals (verbose, "full"))
+  {
     cout << "Timers: leveltime: " << leveltime << " totaltime: " << totaltime << endl;
+  }
 #endif
 
   return (0);

@@ -151,6 +151,9 @@ typedef struct
   /* list of variables to output */
   char *out_vars;
 
+  /* stop on I/O parameter parsing errors ? */
+  int stop_on_parse_errors;
+
   /* I/O request description list (for all variables) */
   ioRequest **requests;
 

@@ -53,10 +53,15 @@ static int DumpParametersGHExtentions (const cGH *cctkGH, int all, hid_t writer)
 
 int CarpetIOHDF5_InitialDataCheckpoint (const cGH* const cctkGH)
 {
-  CCTK_INFO ("---------------------------------------------------------");
-  CCTK_INFO ("Dumping initial data checkpoint");
-  CCTK_INFO ("---------------------------------------------------------");
+  DECLARE_CCTK_PARAMETERS
 
+
+  if (! CCTK_Equals (verbose, "none"))
+  {
+    CCTK_INFO ("---------------------------------------------------------");
+    CCTK_INFO ("Dumping initial data checkpoint");
+    CCTK_INFO ("---------------------------------------------------------");
+  }
   int retval = Checkpoint (cctkGH, CP_INITIAL_DATA);
 
   return (retval);
@@ -86,10 +91,13 @@ int CarpetIOHDF5_EvolutionCheckpoint (const cGH* const cctkGH)
     ((checkpoint_every > 0 && cctkGH->cctk_iteration % checkpoint_every == 0) ||
      checkpoint_next))
   {
-    CCTK_INFO ("---------------------------------------------------------");
-    CCTK_VInfo (CCTK_THORNSTRING, "Dumping periodic checkpoint at "
-                "iteration %d", cctkGH->cctk_iteration);
-    CCTK_INFO ("---------------------------------------------------------");
+    if (! CCTK_Equals (verbose, "none"))
+    {
+      CCTK_INFO ("---------------------------------------------------------");
+      CCTK_VInfo (CCTK_THORNSTRING, "Dumping periodic checkpoint at "
+                  "iteration %d", cctkGH->cctk_iteration);
+      CCTK_INFO ("---------------------------------------------------------");
+    }
 
     retval = Checkpoint (cctkGH, CP_EVOLUTION_DATA);
 
@@ -113,14 +121,17 @@ int CarpetIOHDF5_TerminationCheckpoint (const cGH *const GH)
   {
     if (last_checkpoint_iteration < GH->cctk_iteration)
     {
-      CCTK_INFO ("---------------------------------------------------------");
-      CCTK_VInfo (CCTK_THORNSTRING, "Dumping termination checkpoint at "
-                  "iteration %d", GH->cctk_iteration);
-      CCTK_INFO ("---------------------------------------------------------");
+      if (! CCTK_Equals (verbose, "none"))
+      {
+        CCTK_INFO ("---------------------------------------------------------");
+        CCTK_VInfo (CCTK_THORNSTRING, "Dumping termination checkpoint at "
+                    "iteration %d", GH->cctk_iteration);
+        CCTK_INFO ("---------------------------------------------------------");
+      }
 
       retval = Checkpoint (GH, CP_EVOLUTION_DATA);
     }
-    else if (verbose)
+    else if (! CCTK_Equals (verbose, "none"))
     {
       CCTK_INFO ("---------------------------------------------------------");
       CCTK_VInfo (CCTK_THORNSTRING, "Termination checkpoint already dumped "
@@ -162,7 +173,7 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
 
   if (myproc == 0)
   {
-    if (verbose)
+    if (CCTK_Equals (verbose, "full"))
     {
       CCTK_VInfo (CCTK_THORNSTRING, "Creating temporary checkpoint file '%s'",
                   tempname);
@@ -181,7 +192,7 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
   {
     BEGIN_REFLEVEL_LOOP (cctkGH)
     {
-      if (verbose)
+      if (CCTK_Equals (verbose, "full"))
       {
         CCTK_VInfo (CCTK_THORNSTRING,
                     "Dumping grid variables on mglevel %d reflevel %d ...",
@@ -240,7 +251,7 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
                request->timelevel < gdata.numtimelevels;
                request->timelevel++)
           {
-            if (verbose)
+            if (CCTK_Equals (verbose, "full"))
             {
               CCTK_VInfo (CCTK_THORNSTRING, "  %s (timelevel %d)",
                           fullname, request->timelevel);
@@ -320,7 +331,7 @@ static int DumpParametersGHExtentions (const cGH *cctkGH, int all, hid_t writer)
   const char *version;
   const ioGH *ioUtilGH;
 
-  if (verbose)
+  if (CCTK_Equals (verbose, "full"))
   {
     CCTK_INFO ("Dumping Parameters and GH Extentions...");
   }
