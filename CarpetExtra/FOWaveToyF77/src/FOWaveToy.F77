@@ -44,7 +44,7 @@ c     Declare variables in argument list
       DECLARE_CCTK_PARAMETERS
       
       INTEGER   bndwidth
-      PARAMETER (bndwidth=1)
+      PARAMETER (bndwidth=2)
 
       INTEGER   i,j,k
       INTEGER   istart(3), iend(3)
@@ -135,7 +135,7 @@ c     ----------------
       
 c     Local declarations
       INTEGER   bndwidth
-      PARAMETER (bndwidth=1)
+      PARAMETER (bndwidth=2)
 
       integer table
       save table
