@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.4 2003/02/28 10:09:27 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.5 2003/05/12 16:25:11 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -21,7 +21,7 @@
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.4 2003/02/28 10:09:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.5 2003/05/12 16:25:11 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 
@@ -43,6 +43,10 @@ namespace CarpetSlab {
 		 const int stride[/*hdim*/],
 		 const int length[/*hdim*/])
   {
+    if (reflevel == -1) {
+      CCTK_WARN (0, "It is not possible to use hyperslabbing in global mode");
+    }
+    
     // Check global state
     assert (reflevel>=0);
     assert (mglevel>=0);
