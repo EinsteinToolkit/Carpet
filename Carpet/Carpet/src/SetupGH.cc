@@ -361,6 +361,8 @@ namespace Carpet {
     
     Waypoint ("Setting up the grid hierarchy");
     
+    cgh->identity = strdup ("");
+    
     // Processor information
     Output ("Carpet is running on %d processors", CCTK_nProcs(cgh));
     
@@ -529,7 +531,7 @@ namespace Carpet {
       
     // Adapt for convergence level
     rvect const spacing
-      = base_spacing * ipow (CCTK_REAL (convergence_factor), basemglevel);
+      = base_spacing * ipow ((CCTK_REAL) convergence_factor, basemglevel);
     
     // Calculate global number of grid points
     // SW note this and other examples break the encapsulation of vect class
@@ -791,6 +793,24 @@ namespace Carpet {
     int ierr = CCTK_GroupData (group, &gp);
     assert (!ierr);
     
+    if (gp.compact) {
+      char * const groupname = CCTK_GroupName (group);
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "The group \"%s\" has COMPACT=1.  Compact groups are not yet supported",
+                  groupname);
+      free (groupname);
+    }
+    
+#if 0
+    if (gp.contiguous) {
+      char * const groupname = CCTK_GroupName (group);
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "The group \"%s\" has CONTIGUOUS=1.  Contiguous groups are not yet supported",
+                  groupname);
+      free (groupname);
+    }
+#endif
+    
     switch (gp.grouptype) {
 
     case CCTK_GF: {
@@ -893,7 +913,7 @@ namespace Carpet {
                       + 2*ghostsizes[d];
         assert (sizes[d] >= 0);
       }
-        
+      
       const ivect alb(0);
       const ivect aub(sizes-1);
       const ivect astr(1);
