@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.7 2001/12/05 03:31:57 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.8 2001/12/09 16:41:53 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -14,7 +14,9 @@
 #include "Carpet/CarpetLib/src/ggf.hh"
 #include "Carpet/CarpetLib/src/gh.hh"
 #include "Carpet/CarpetLib/src/th.hh"
-
+  
+  
+  
 namespace Carpet {
   
   
@@ -147,7 +149,7 @@ namespace Carpet {
       {
 #define END_REFLEVEL_LOOP(cgh)			\
       }						\
-      if (reflevel==maxreflevels-1) break;	\
+      if (reflevel==hh->reflevels()-1) break;	\
       set_reflevel ((cGH*)(cgh), reflevel+1);	\
     }						\
     set_reflevel ((cGH*)(cgh), 0);		\
@@ -159,12 +161,12 @@ namespace Carpet {
   
   // Reverse refinement level iterator
   
-#define BEGIN_REVERSE_REFLEVEL_LOOP(cgh)	\
-  do {						\
-    int _rrl;					\
-    assert (reflevel==0);			\
-    set_reflevel ((cGH*)(cgh), maxreflevels-1);	\
-    for (;;) {					\
+#define BEGIN_REVERSE_REFLEVEL_LOOP(cgh)		\
+  do {							\
+    int _rrl;						\
+    assert (reflevel==0);				\
+    set_reflevel ((cGH*)(cgh), hh->reflevels()-1);	\
+    for (;;) {						\
       {
 #define END_REVERSE_REFLEVEL_LOOP(cgh)		\
       }						\

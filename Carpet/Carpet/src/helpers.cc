@@ -11,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.11 2001/12/07 18:24:17 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.12 2001/12/09 16:41:53 schnetter Exp $";
 
 
 
@@ -287,12 +287,13 @@ namespace Carpet {
 	assert (cgh->cctk_lsh[d]>=0 && cgh->cctk_lsh[d]<=cgh->cctk_gsh[d]);
 	assert (cgh->cctk_lbnd[d]>=0 && cgh->cctk_ubnd[d]<cgh->cctk_gsh[d]);
 	assert (cgh->cctk_lbnd[d]<=cgh->cctk_ubnd[d]+1);
+#if 0
 	// No outer boundaries on the finer grids
 	cgh->cctk_bbox[2*d  ]
 	  = reflevel==0 && cgh->cctk_lbnd[d] == 0;
 	cgh->cctk_bbox[2*d+1]
 	  = reflevel==0 && cgh->cctk_ubnd[d] == cgh->cctk_gsh[d]-1;
-#if 0
+#else
 	// Do allow outer boundaries on the finer grids (but this is
 	// generally inconsistent -- c. f. periodicity)
 	const bbox<int,dim>& base = hh->baseextent;

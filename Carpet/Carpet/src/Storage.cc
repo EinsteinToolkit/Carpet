@@ -2,13 +2,14 @@
 #include <stdlib.h>
 
 #include "cctk.h"
+#include "cctk_Parameters.h"
 
 #include "Carpet/CarpetLib/src/dh.hh"
 #include "Carpet/CarpetLib/src/gf.hh"
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.5 2001/11/05 17:53:02 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.6 2001/12/09 16:41:53 schnetter Exp $";
 
 
 
@@ -20,6 +21,8 @@ namespace Carpet {
   
   int EnableGroupStorage (cGH* cgh, const char* groupname)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     Checkpoint ("%*sEnableGroupStorage %s", 2*reflevel, "", groupname);
     
     // TODO: Enabling storage for one refinement level has to enable
@@ -49,6 +52,8 @@ namespace Carpet {
     assert (num_tl>0);
     const int tmin = 1 - num_tl;
     const int tmax = 0;
+    const int my_prolongation_order_time
+      = num_tl==1 ? 0 : prolongation_order_time;
     
     assert (arrdata[group].data.size()==0
 	    || arrdata[group].data[0] == 0);
@@ -59,7 +64,7 @@ namespace Carpet {
       case N:								\
 	arrdata[group].data[var] = new gf<T,dim>			\
 	  (CCTK_VarName(n), *arrdata[group].tt, *arrdata[group].dd,	\
-	   tmin, tmax);							\
+	   tmin, tmax, my_prolongation_order_time);			\
 	break;
 #include "typecase"
 #undef TYPECASE

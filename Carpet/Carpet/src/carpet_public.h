@@ -1,11 +1,14 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.3 2001/12/07 18:24:17 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.4 2001/12/09 16:41:53 schnetter Exp $ */
 
 #include <mpi.h>
 
 #include "cctk.h"
+#include "cctk_Arguments.h"
+
+
 
 /* Scheduled functions */
-int CarpetParamCheck (void);
+int CarpetParamCheck (CCTK_ARGUMENTS);
 int CarpetStartup (void);
 
 /* Helper functions */

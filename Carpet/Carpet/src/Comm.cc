@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.5 2001/11/05 17:53:01 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.6 2001/12/09 16:41:52 schnetter Exp $";
 
 
 
@@ -21,8 +21,6 @@ namespace Carpet {
   
   int SyncGroup (cGH* cgh, const char* groupname)
   {
-    DECLARE_CCTK_PARAMETERS;
-    
     if (hh->components(reflevel) > 1) assert (component == -1);
     
     Checkpoint ("%*sSyncGroup %s", 2*reflevel, "", groupname);
@@ -45,11 +43,11 @@ namespace Carpet {
     
     assert (group<(int)arrdata.size());
     for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-      if (num_tl>1 && reflevel>0) {
+//       if (num_tl>1 && reflevel>0) {
+      if (reflevel>0) {
 	for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
 	  arrdata[group].data[var]->ref_bnd_prolongate
-	    (tl, reflevel, c, mglevel,
-	     prolongation_order_space, prolongation_order_time);
+	    (tl, reflevel, c, mglevel);
 	}
       }
       for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
