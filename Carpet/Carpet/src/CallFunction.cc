@@ -11,7 +11,7 @@
 #include "carpet.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.15 2004/03/11 10:16:50 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.16 2004/03/11 10:45:55 cott Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_CallFunction_cc);
 }
 
@@ -31,13 +31,10 @@ namespace Carpet {
     
     cGH* cgh = (cGH*)data;
     
-// TODO: disable temporarily
-//    if (attribute->meta || is_meta_mode()) {
-    if (is_meta_mode()) {
+    if (attribute->meta || is_meta_mode()) {
       // Convtest operation
       
       if (do_meta_mode) {
-        assert (is_meta_mode());
         Checkpoint ("Meta mode call at %s to %s::%s",
                     attribute->where, attribute->thorn, attribute->routine);
 	BEGIN_META_MODE(cgh) {
