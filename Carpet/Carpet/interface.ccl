@@ -1,5 +1,5 @@
 # Interface definition for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/interface.ccl,v 1.13 2004/05/04 22:52:39 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/interface.ccl,v 1.14 2004/05/10 13:56:24 hawke Exp $
 
 IMPLEMENTS: Driver
 
@@ -52,7 +52,7 @@ USES FUNCTION GetDomainSpecification
 
 # Conversion between boundary types
 CCTK_INT FUNCTION ConvertFromPhysicalBoundary \
-  (CCTK_INT INT size, \
+  (CCTK_INT IN size, \
    CCTK_REAL IN  ARRAY physical_min, \
    CCTK_REAL IN  ARRAY physical_max, \
    CCTK_REAL OUT ARRAY interior_min, \
@@ -63,7 +63,7 @@ CCTK_INT FUNCTION ConvertFromPhysicalBoundary \
 USES FUNCTION ConvertFromPhysicalBoundary
 
 CCTK_INT FUNCTION ConvertFromExteriorBoundary \
-  (CCTK_INT INT size, \
+  (CCTK_INT IN size, \
    CCTK_REAL OUT ARRAY physical_min, \
    CCTK_REAL OUT ARRAY physical_max, \
    CCTK_REAL OUT ARRAY interior_min, \
