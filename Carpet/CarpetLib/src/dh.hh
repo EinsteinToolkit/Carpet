@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.12 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.13 2003/03/26 17:34:43 schnetter Exp $
 
 #ifndef DH_HH
 #define DH_HH
@@ -46,6 +46,10 @@ public:
   // in here, the term "boundary" means both ghost zones and
   // refinement boundaries, but does not refer to outer (physical)
   // boundaries.
+  
+  // ghost zones, refinement boundaries, and outer boundaries are not
+  // used as sources for synchronisation.  this design choice might
+  // not be good.
   
   struct dboxes {
     ibbox exterior;		// whole region (including boundaries)

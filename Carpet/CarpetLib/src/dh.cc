@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.27 2003/03/18 17:30:25 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.28 2003/03/26 17:34:43 schnetter Exp $
 
 #include <assert.h>
 
@@ -76,6 +76,7 @@ void dh<D>::recompose () {
 	  if (h.outer_boundaries[rl][c][d][0]) ldist[d] = 0;
 	  if (h.outer_boundaries[rl][c][d][1]) udist[d] = 0;
 	}
+#warning "This can happen on multiple processors"
         assert (! intr.empty());
        	boxes[rl][c][ml].exterior = intr.expand(ldist, udist);
 	
@@ -175,6 +176,7 @@ void dh<D>::recompose () {
     } // for c
   } // for rl
   
+#warning "TODO: prefer boxes from the same processor"
   for (int rl=0; rl<h.reflevels(); ++rl) {
     for (int c=0; c<h.components(rl); ++c) {
       for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
@@ -214,7 +216,7 @@ void dh<D>::recompose () {
       	    // Prolongation (boundaries)
       	    {
               const int pss = prolongation_stencil_size();
-      	      ibset bndsf = boxes[rl+1][cc][ml].boundaries;
+      	      const ibset& bndsf = boxes[rl+1][cc][ml].boundaries;
       	      // coarsify boundaries of fine component
       	      for (typename ibset::const_iterator bi=bndsf.begin();
 		   bi!=bndsf.end(); ++bi) {
@@ -241,9 +243,10 @@ void dh<D>::recompose () {
                     recvs -= *li;
                   }
                 }
-                assert (recvs.setsize() <= 1);
-                if (recvs.setsize() == 1) {
-                  const ibbox recv = *recvs.begin();
+                recvs.normalize();
+                for (typename ibset::const_iterator si = recvs.begin();
+                     si != recvs.end(); ++si) {
+                  const ibbox & recv = *si;
                   const ibbox send = recv.expanded_for(extr);
                   assert (! send.empty());
                   assert (send.is_contained_in(extr));
@@ -268,10 +271,13 @@ void dh<D>::recompose () {
                   recvs -= *sli;
                 }
               }
-//               recvs.normalize();
+              recvs.normalize();
+              // This is just an assumption: the restriction should
+              // always be a single (convex) bbox.
               assert (recvs.setsize() <= 1);
-              if (recvs.setsize() == 1) {
-                const ibbox recv = *recvs.begin();
+              for (typename ibset::const_iterator si = recvs.begin();
+                   si != recvs.end(); ++si) {
+                const ibbox & recv = *si;
                 assert (! recv.empty());
                 const ibbox send = recv.expanded_for(intrf);
                 assert (! send.empty());

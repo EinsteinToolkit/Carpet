@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.13 2003/03/18 17:30:25 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.14 2003/03/26 17:34:43 schnetter Exp $
 
 #include <assert.h>
 
@@ -380,7 +380,8 @@ template<class T,int D>
 void bboxset<T,D>::output (ostream& os) const {
   T Tdummy;
   os << "bboxset<" << typestring(Tdummy) << "," << D << ">:"
-     << "size=" << size() << "," << "set=" << bs;
+     << "setsize=" << setsize() << "," << "size=" << size() << ","
+     << "set=" << bs;
 }
 
 

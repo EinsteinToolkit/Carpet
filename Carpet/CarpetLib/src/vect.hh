@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.14 2003/03/18 17:30:26 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.15 2003/03/26 17:34:43 schnetter Exp $
 
 #ifndef VECT_HH
 #define VECT_HH
@@ -221,7 +221,7 @@ public:
   }
   
   // Non-modifying operators
-  vect replace (const int d, const T x) {
+  vect replace (const int d, const T x) const {
     assert (d>=0 && d<D);
     vect r;
     for (int dd=0; dd<D; ++dd) r[dd]=dd==d?x:(*this)[dd];
