@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.26 2004/02/09 12:43:16 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.27 2004/02/09 12:59:53 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Comm_cc);
 }
 
@@ -41,7 +41,7 @@ namespace Carpet {
                     "(Tried to synchronise group \"%s\")",
                     groupname);
       }
-      if (map != -1) {
+      if (map != -1 && component == -1) {
         if (maps == 1) {
           CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "Synchronising group \"%s\" in singlemap mode",
