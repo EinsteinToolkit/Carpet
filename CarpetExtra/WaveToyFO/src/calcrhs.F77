@@ -1,4 +1,4 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.F77,v 1.7 2004/05/07 22:06:08 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.F77,v 1.8 2004/08/28 19:10:33 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
@@ -74,7 +74,7 @@ c$$$         WaveToyFO_Deriv = (- 3*f0 + 4*fp1 - fp2) / (2*dx)
       end do
       
       do d=1,3
-         dx(d) = CCTK_DELTA_SPACE(3)
+         dx(d) = CCTK_DELTA_SPACE(d)
       end do
       
       do k=imin(3),imax(3)
