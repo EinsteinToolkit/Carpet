@@ -7,7 +7,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.7 2002/09/25 19:55:05 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.8 2002/09/25 21:08:56 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Poison_cc)
 
@@ -116,12 +116,13 @@ namespace Carpet {
 		    const int idx = CCTK_GFINDEX3D(cgh,i,j,k);
 		    bool poisoned=false;
 		    switch (tp) {
-#define TYPECASE(N,T)							\
-		    case N: {						\
-		      T worm;						\
-		      memset (&worm, poison_value, sizeof worm);	\
-		      poisoned = ((const T*)data)[idx] == worm;		\
-		      break;						\
+#define TYPECASE(N,T)							 \
+		    case N: {						 \
+		      T worm;						 \
+		      memset (&worm, poison_value, sizeof worm);	 \
+		      const T & val = ((const T*)data)[idx];		 \
+		      poisoned = memcmp (&worm, &val, sizeof worm) == 0; \
+		      break;						 \
 		    }
 #include "typecase"
 #undef TYPECASE
