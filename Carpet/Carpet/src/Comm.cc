@@ -34,11 +34,9 @@ namespace Carpet {
     Checkpoint ("SyncGroup \"%s\" time=%g", groupname, (double)cgh->cctk_time);
     
     const int grouptype = CCTK_GroupTypeI(group);
-    retval = CheckSyncGroupConsistency ( cgh, groupname);
+    retval = CheckSyncGroupConsistency (cgh, groupname);
     
-    if( retval == 0
-    and CCTK_NumVarsInGroupI(group) != 0 )
-    {
+    if (retval == 0 and CCTK_NumVarsInGroupI(group) != 0) {
       const int n0 = CCTK_FirstVarIndexI(group);
       assert (n0>=0);
       const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
