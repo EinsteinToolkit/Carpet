@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.42 2004/02/09 14:56:46 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.43 2004/02/09 14:58:07 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -376,6 +376,14 @@ extern "C" {
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
+  void CCTK_FCALL CCTK_FNAME(copy_3d_complex16)
+    (const CCTK_COMPLEX16* src,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_COMPLEX16* dst,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
 }
 
 template<>
@@ -490,6 +498,65 @@ void data<CCTK_REAL8,3>
 			       srcbbox,
 			       dstbbox,
 			       regbbox);
+    
+  } else {
+    assert (0);
+  }
+}
+
+template<>
+void data<CCTK_COMPLEX16,3>
+::copy_from_innerloop (const gdata<3>* gsrc, const ibbox& box)
+{
+  const data* src = (const data*)gsrc;
+  assert (has_storage() && src->has_storage());
+  assert (all(box.lower()>=extent().lower()
+	      && box.lower()>=src->extent().lower()));
+  assert (all(box.upper()<=extent().upper()
+	      && box.upper()<=src->extent().upper()));
+  assert (all(box.stride()==extent().stride()
+	      && box.stride()==src->extent().stride()));
+  assert (all((box.lower()-extent().lower())%box.stride() == 0
+	      && (box.lower()-src->extent().lower())%box.stride() == 0));
+  
+  assert (proc() == src->proc());
+  
+  int rank;
+  MPI_Comm_rank (dist::comm, &rank);
+  assert (rank == proc());
+  
+  const ibbox& sext = src->extent();
+  const ibbox& dext = extent();
+  
+  int srcshp[3], dstshp[3];
+  int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
+  
+  for (int d=0; d<3; ++d) {
+    srcshp[d] = (sext.shape() / sext.stride())[d];
+    dstshp[d] = (dext.shape() / dext.stride())[d];
+    
+    srcbbox[0][d] = sext.lower()[d];
+    srcbbox[1][d] = sext.upper()[d];
+    srcbbox[2][d] = sext.stride()[d];
+    
+    dstbbox[0][d] = dext.lower()[d];
+    dstbbox[1][d] = dext.upper()[d];
+    dstbbox[2][d] = dext.stride()[d];
+    
+    regbbox[0][d] = box.lower()[d];
+    regbbox[1][d] = box.upper()[d];
+    regbbox[2][d] = box.stride()[d];
+  }
+  
+  assert (all(dext.stride() == box.stride()));
+  if (all(sext.stride() == dext.stride())) {
+    CCTK_FNAME(copy_3d_complex16) ((const CCTK_COMPLEX16*)src->storage(),
+                                   srcshp[0], srcshp[1], srcshp[2],
+                                   (CCTK_COMPLEX16*)storage(),
+                                   dstshp[0], dstshp[1], dstshp[2],
+                                   srcbbox,
+                                   dstbbox,
+                                   regbbox);
     
   } else {
     assert (0);
