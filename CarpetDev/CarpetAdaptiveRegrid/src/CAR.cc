@@ -398,13 +398,17 @@ namespace CarpetAdaptiveRegrid {
                 
           CCTK_INT currentml = mglevel;
           CCTK_INT currentrl = reflevel;
-          CCTK_INT currentmap = carpetGH.map;            
-          
+          CCTK_INT currentmap = carpetGH.map;
+
           leave_singlemap_mode(const_cast<cGH *> (cctkGH));
           leave_level_mode(const_cast<cGH *> (cctkGH));
       
           enter_level_mode(const_cast<cGH *> (cctkGH), currentrl + 1);
           enter_singlemap_mode(const_cast<cGH *> (cctkGH), currentmap);
+
+          const ibbox& child_baseext = 
+            vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
+          ivect child_levoff = child_baseext.lower()/(bb.stride()/reffact);
                           
           if (verbose) {
             ostringstream buf;
@@ -432,6 +436,18 @@ namespace CarpetAdaptiveRegrid {
             // FIXME: Why should the following assert be true?
             //      assert(all(imax < ivect::ref(cctkGH->cctk_lsh)));
             assert(all(imin <= imax));
+
+            if (verbose) {
+              ostringstream buf;
+              buf << "Checking for errors on child level " 
+                  << reflevel << " map " << currentmap
+                  << " component " << component << endl
+                  << "Mask: " << imin << imax << endl
+                  << "Component: " << ivect::ref(cctkGH->cctk_lbnd)
+                  << ivect::ref(cctkGH->cctk_lsh) << endl
+                  << "level offset: " << child_levoff;
+              CCTK_INFO(buf.str().c_str());
+            }
             
             for (CCTK_INT k = 0; k < cctkGH->cctk_lsh[2]; ++k) {
               for (CCTK_INT j = 0; j < cctkGH->cctk_lsh[1]; ++j) {
@@ -440,11 +456,17 @@ namespace CarpetAdaptiveRegrid {
                   CCTK_REAL local_error = abs(error_var_ptr[index]);
                   if (local_error > max_error) {
                     // Correct for the change in level !
-                    CCTK_INT ii = (i + cctkGH->cctk_lbnd[0]) / reffact - 
+                    CCTK_INT ii = (i + cctkGH->cctk_lbnd[0] 
+                                   - cctkGH->cctk_nghostzones[0]
+                                   + child_levoff[0]) / reffact - 
                       imin[0];
-                    CCTK_INT jj = (j + cctkGH->cctk_lbnd[1]) / reffact - 
+                    CCTK_INT jj = (j + cctkGH->cctk_lbnd[1] 
+                                   - cctkGH->cctk_nghostzones[1]
+                                   + child_levoff[1]) / reffact - 
                       imin[1];
-                    CCTK_INT kk = (k + cctkGH->cctk_lbnd[2]) / reffact - 
+                    CCTK_INT kk = (k + cctkGH->cctk_lbnd[2] 
+                                   - cctkGH->cctk_nghostzones[2]
+                                   + child_levoff[1]) / reffact - 
                       imin[2];
                     // Check that this point actually intersects with 
                     // this box (if this component was actually a
