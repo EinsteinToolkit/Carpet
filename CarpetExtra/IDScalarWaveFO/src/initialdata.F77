@@ -1,4 +1,4 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveFO/src/initialdata.F77,v 1.1 2003/06/18 18:24:29 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveFO/src/initialdata.F77,v 1.2 2003/06/18 20:08:29 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
@@ -22,17 +22,17 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveFO/src/ini
      $              + wave_number(2)*(y(i,j,k)-phase_offset(2))
      $              + wave_number(3)*(z(i,j,k)-phase_offset(3))
      $              + omega*(cctk_time-time_offset)))
-               psix(i,j,k) = - amplitude * (2*pi)**2 * wave_number(1) * omega * cos (2*pi *
+               psix(i,j,k) = amplitude * wave_number(1) / omega * cos (2*pi *
      $              ( wave_number(1)*(x(i,j,k)-phase_offset(1))
      $              + wave_number(2)*(y(i,j,k)-phase_offset(2))
      $              + wave_number(3)*(z(i,j,k)-phase_offset(3))
      $              + omega*(cctk_time-time_offset)))
-               psiy(i,j,k) = - amplitude * (2*pi)**2 * wave_number(2) * omega * cos (2*pi *
+               psiy(i,j,k) = amplitude * wave_number(2) / omega * cos (2*pi *
      $              ( wave_number(1)*(x(i,j,k)-phase_offset(1))
      $              + wave_number(2)*(y(i,j,k)-phase_offset(2))
      $              + wave_number(3)*(z(i,j,k)-phase_offset(3))
      $              + omega*(cctk_time-time_offset)))
-               psiz(i,j,k) = - amplitude * (2*pi)**2 * wave_number(3) * omega * cos (2*pi *
+               psiz(i,j,k) = amplitude * wave_number(3) / omega * cos (2*pi *
      $              ( wave_number(1)*(x(i,j,k)-phase_offset(1))
      $              + wave_number(2)*(y(i,j,k)-phase_offset(2))
      $              + wave_number(3)*(z(i,j,k)-phase_offset(3))

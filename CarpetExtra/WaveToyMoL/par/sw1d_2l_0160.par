@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/par/sw1d_2l_0160.par,v 1.1 2003/06/18 18:24:31 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/par/sw1d_2l_0160.par,v 1.2 2003/06/18 20:08:29 schnetter Exp $
 
 Cactus::cctk_initial_time = 0
 Cactus::cctk_itlast = 25600
@@ -7,7 +7,7 @@ Cactus::cctk_itlast = 25600
 
 ActiveThorns = "LocalInterp NaNChecker Slab"
 
-NaNChecker::check_every = 256
+NaNChecker::check_every = 128
 NaNChecker::check_vars = "all"
 NaNChecker::action_if_found = terminate
 
@@ -81,19 +81,19 @@ ActiveThorns = "IOUtil IOBasic CarpetIOASCII"
 
 IO::out_dir = "sw1d_2l_0160"
 
-IOBasic::outInfo_every = 256
+IOBasic::outInfo_every = 128
 IOBasic::outInfo_vars = "WaveToyMoL::phi IDScalarWaveMoL::phierror"
  
-IOBasic::outScalar_every = 256
+IOBasic::outScalar_every = 128
 IOBasic::outScalar_reductions = "minimum maximum norm1 norm2 norm_inf"
 IOBasic::outScalar_vars = "WaveToyMoL::scalarevolve IDScalarWaveMoL::scalarevolveerror"
 
 #IOASCII::output_all_timelevels = yes
 
-IOASCII::out1D_every = 256
+IOASCII::out1D_every = 128
 IO::out_yline_x = 0.5
 IO::out_zline_x = 0.5
 IOASCII::out1D_vars = "WaveToyMoL::scalarevolve IDScalarWaveMoL::scalarevolveerror"
 
-#IOASCII::out3D_every = 256
+#IOASCII::out3D_every = 128
 #IOASCII::out3D_vars = "WaveToyMoL::scalarevolve IDScalarWaveMoL::scalarevolveerror"

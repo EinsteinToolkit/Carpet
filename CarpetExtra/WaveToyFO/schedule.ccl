@@ -1,5 +1,5 @@
 # Schedule definitions for thorn WaveToyFO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/schedule.ccl,v 1.1 2003/06/18 18:24:30 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/schedule.ccl,v 1.2 2003/06/18 20:08:29 schnetter Exp $
 
 STORAGE: scalarevolve[3]
 STORAGE: scalarevolvedot
@@ -17,7 +17,7 @@ SCHEDULE WaveToyFO_InitSymBound AT basegrid
   OPTIONS: global
 } "Schedule symmetries"
 
-SCHEDULE WaveToyFO_RegisterVars IN FO_Register
+SCHEDULE WaveToyFO_RegisterVars IN MoL_Register
 {
   LANG: Fortran
   OPTIONS: global
@@ -25,18 +25,18 @@ SCHEDULE WaveToyFO_RegisterVars IN FO_Register
 
 
 
-SCHEDULE WaveToyFO_CalcRHS IN FO_CalcRHS
+SCHEDULE WaveToyFO_CalcRHS IN MoL_CalcRHS
 {
   LANG: Fortran
 } "Calculate RHS for FO"
 
-SCHEDULE WaveToyFO_Boundaries IN FO_PostStep
+SCHEDULE WaveToyFO_Boundaries IN MoL_PostStep
 {
   LANG: Fortran
   SYNC: scalarevolve
 } "Select boundary conditions in FO"
 
-SCHEDULE GROUP ApplyBCs IN FO_PostStep AFTER WaveToyFO_Boundaries
+SCHEDULE GROUP ApplyBCs IN MoL_PostStep AFTER WaveToyFO_Boundaries
 {
 } "Apply boundary conditions in FO"
 

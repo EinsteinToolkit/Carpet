@@ -1,4 +1,4 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.F77,v 1.1 2003/06/18 18:24:30 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.F77,v 1.2 2003/06/18 20:08:29 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
@@ -38,8 +38,8 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.
             do i=imin(1),imax(1)
                phidot(i,j,k) =
      $              ( (psix(i+1,j,k) - psix(i-1,j,k)) / (2*dx(1))
-     $              + (psix(i,j+1,k) - psix(i,j-1,k)) / (2*dx(2))
-     $              + (psix(i,j,k+1) - psix(i,j,k-1)) / (2*dx(3)))
+     $              + (psiy(i,j+1,k) - psiy(i,j-1,k)) / (2*dx(2))
+     $              + (psiz(i,j,k+1) - psiz(i,j,k-1)) / (2*dx(3)))
                psixdot(i,j,k) = (phi(i+1,j,k) - phi(i-1,j,k)) / (2*dx(1))
                psiydot(i,j,k) = (phi(i,j+1,k) - phi(i,j-1,k)) / (2*dx(2))
                psizdot(i,j,k) = (phi(i,j,k+1) - phi(i,j,k-1)) / (2*dx(3))

@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/par/sw1d_1l_0020.par,v 1.1 2003/06/18 18:24:31 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/par/sw1d_1l_0020.par,v 1.2 2003/06/18 20:08:29 schnetter Exp $
 
 Cactus::cctk_initial_time = 0
 Cactus::cctk_itlast = 3200
@@ -7,7 +7,7 @@ Cactus::cctk_itlast = 3200
 
 ActiveThorns = "LocalInterp NaNChecker Slab"
 
-NaNChecker::check_every = 32
+NaNChecker::check_every = 16
 NaNChecker::check_vars = "all"
 NaNChecker::action_if_found = terminate
 
@@ -16,8 +16,8 @@ NaNChecker::action_if_found = terminate
 ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce CarpetSlab"
 
 driver::global_nx = 24
-driver::global_ny = 7
-driver::global_nz = 7
+driver::global_ny = 5
+driver::global_nz = 5
 driver::ghost_size = 2
 
 #Carpet::verbose = yes
@@ -32,7 +32,7 @@ Carpet::init_each_timelevel = yes
 
 CarpetRegrid::refinement_levels = 1
 CarpetRegrid::refined_regions = manual-gridpoint-list
-CarpetRegrid::gridpoints = "[[ ([28,6,6]:[68,16,16]:[2,2,2]) ]]"
+CarpetRegrid::gridpoints = "[[ ([28,4,4]:[68,12,12]:[2,2,2]) ]]"
 CarpetRegrid::outerbounds = "[[ [[0,0],[1,1],[1,1]] ]]"
 
 
