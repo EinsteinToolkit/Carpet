@@ -22,9 +22,10 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.17 2002/10/24 10:26:20 schnetter Exp $";
-
-CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
+extern "C" {
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.18 2002/10/24 10:57:42 schnetter Exp $";
+  CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
+}
 
 
 
@@ -298,9 +299,10 @@ namespace CarpetRegrid {
       // refined boxes have smaller stride
       assert (all(rstr%hh->reffact == 0));
       rstr /= hh->reffact;
+#if 1
       // refine (arbitrarily) around the center only
       rlb = rcentre - (newrextent/2 / rstr) * rstr;
-#if 0
+#else
       // refine (arbitrarily) around the lower boundary only
       rlb = rlb;
 #endif
