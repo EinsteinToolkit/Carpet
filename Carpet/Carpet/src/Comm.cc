@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.2 2001/07/09 09:00:07 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.3 2001/11/02 10:58:57 schnetter Exp $";
 
 
 
@@ -19,7 +19,7 @@ namespace Carpet {
   
   
   
-  int SyncGroup (cGH* cgh, const char* groupname)
+  int SyncGroup (const cGH* cgh, const char* groupname)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -30,7 +30,7 @@ namespace Carpet {
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
     
-    if (! CCTK_QueryGroupStorageI(cgh, group)) {
+    if (! CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
       CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
 		  "Cannot synchronise group \"%s\" because it has no storage",
 		  groupname);
@@ -62,13 +62,13 @@ namespace Carpet {
   
   
   
-  int EnableGroupComm (cGH* cgh, const char* groupname)
+  int EnableGroupComm (const cGH* cgh, const char* groupname)
   {
     // Communication is always enabled
     return 0;
   }
   
-  int DisableGroupComm (cGH* cgh, const char* groupname)
+  int DisableGroupComm (const cGH* cgh, const char* groupname)
   {
     // Communication is always enabled
     return -1;

@@ -24,7 +24,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.16 2001/07/09 09:00:19 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.17 2001/11/02 10:59:01 schnetter Exp $";
 
 
 
@@ -33,7 +33,7 @@ using namespace Carpet;
 
 
 
-static bool CheckForVariable (cGH* const cgh,
+static bool CheckForVariable (const cGH* const cgh,
 			      const char* const varlist, const int vindex);
 static void SetFlag (int index, const char* optstring, void* arg);
 
@@ -85,7 +85,8 @@ int CarpetIOASCII<outdim>::Startup()
 
 template<int outdim>
 void* CarpetIOASCII<outdim>
-::SetupGH (tFleshConfig* const fc, const int convLevel, cGH* const cgh)
+::SetupGH (const tFleshConfig* const fc, const int convLevel,
+	   const cGH* const cgh)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -137,7 +138,7 @@ int CarpetIOASCII<outdim>
   const int tl = 0;
   
   // Check for storage
-  if (! CCTK_QueryGroupStorageI(cgh, group)) {
+  if (! CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
 		"Cannot output variable \"%s\" because it has no storage",
 		varname);
@@ -367,7 +368,7 @@ int CarpetIOASCII<outdim>
 
 template<int outdim>
 int CarpetIOASCII<outdim>
-::TimeToOutput (cGH* const cgh, const int vindex)
+::TimeToOutput (const cGH* const cgh, const int vindex)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -429,7 +430,7 @@ int CarpetIOASCII<outdim>
 
 template<int outdim>
 int CarpetIOASCII<outdim>
-::GetGridOffset (cGH* cgh, int dir,
+::GetGridOffset (const cGH* cgh, int dir,
 		 const char* itempl, const char* iglobal,
 		 const char* ctempl, const char* cglobal,
 		 const CCTK_REAL cfallback)
@@ -440,7 +441,7 @@ int CarpetIOASCII<outdim>
   if (CCTK_ParameterQueryTimesSet (cparam, CCTK_THORNSTRING) > 0) {
     int ptype;
     const CCTK_REAL* const pcoord
-      = (CCTK_REAL*)CCTK_ParameterGet (cparam, CCTK_THORNSTRING, &ptype);
+      = (const CCTK_REAL*)CCTK_ParameterGet (cparam, CCTK_THORNSTRING, &ptype);
     assert (pcoord);
     const CCTK_REAL coord = *pcoord;
     assert (ptype == PARAMETER_REAL);
@@ -453,7 +454,7 @@ int CarpetIOASCII<outdim>
   if (CCTK_ParameterQueryTimesSet (iparam, CCTK_THORNSTRING) > 0) {
     int ptype;
     const int* const pindex
-      = (int*)CCTK_ParameterGet (iparam, CCTK_THORNSTRING, &ptype);
+      = (const int*)CCTK_ParameterGet (iparam, CCTK_THORNSTRING, &ptype);
     assert (pindex);
     const int index = *pindex;
     assert (ptype == PARAMETER_INT);
@@ -464,7 +465,7 @@ int CarpetIOASCII<outdim>
   if (CCTK_ParameterQueryTimesSet (cglobal, "IO") > 0) {
     int ptype;
     const CCTK_REAL* const pcoord
-      = (CCTK_REAL*)CCTK_ParameterGet (cglobal, "IO", &ptype);
+      = (const CCTK_REAL*)CCTK_ParameterGet (cglobal, "IO", &ptype);
     assert (pcoord);
     const CCTK_REAL coord = *pcoord;
     assert (ptype == PARAMETER_REAL);
@@ -475,7 +476,7 @@ int CarpetIOASCII<outdim>
   if (CCTK_ParameterQueryTimesSet (iglobal, "IO") > 0) {
     int ptype;
     const int* const pindex
-      = (int*)CCTK_ParameterGet (iglobal, "IO", &ptype);
+      = (const int*)CCTK_ParameterGet (iglobal, "IO", &ptype);
     assert (pindex);
     const int index = *pindex;
     assert (ptype == PARAMETER_INT);
@@ -490,7 +491,7 @@ int CarpetIOASCII<outdim>
 
 template<int outdim>
 int CarpetIOASCII<outdim>
-::CoordToOffset (cGH* cgh, int dir, CCTK_REAL coord)
+::CoordToOffset (const cGH* cgh, int dir, CCTK_REAL coord)
 {
   CCTK_REAL lower, upper;
   CCTK_CoordRange (cgh, &lower, &upper, dir, 0, "cart3d");
@@ -515,8 +516,9 @@ const char* CarpetIOASCII<outdim>
   sprintf (parametername, parametertemplate, outdim);
   if (CCTK_ParameterQueryTimesSet (parametername, CCTK_THORNSTRING) > 0) {
     int ptype;
-    const char** const ppval = (const char**)CCTK_ParameterGet
-      (parametername, CCTK_THORNSTRING, &ptype);
+    const char* const* const ppval
+      = (const char* const*)CCTK_ParameterGet (parametername, CCTK_THORNSTRING,
+					 &ptype);
     assert (ppval);
     const char* const pval = *ppval;
     assert (ptype == PARAMETER_STRING);
@@ -537,7 +539,8 @@ int CarpetIOASCII<outdim>
   if (CCTK_ParameterQueryTimesSet (parametername, CCTK_THORNSTRING) > 0) {
     int ptype;
     const int* const ppval
-      = (int*)CCTK_ParameterGet (parametername, CCTK_THORNSTRING, &ptype);
+      = (const int*)CCTK_ParameterGet (parametername, CCTK_THORNSTRING,
+				       &ptype);
     assert (ppval);
     const int pval = *ppval;
     assert (ptype == PARAMETER_INT);
@@ -549,7 +552,7 @@ int CarpetIOASCII<outdim>
 
 
 
-bool CheckForVariable (cGH* const cgh,
+bool CheckForVariable (const cGH* const cgh,
 		       const char* const varlist, const int vindex)
 {
   const int numvars = CCTK_NumVars();

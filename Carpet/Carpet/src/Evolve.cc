@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.3 2001/07/11 17:41:13 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.4 2001/11/02 10:58:58 schnetter Exp $";
 
 
 
@@ -19,7 +19,7 @@ namespace Carpet {
   
   
   
-  static bool do_terminate (cGH *cgh, CCTK_REAL time, int iteration)
+  static bool do_terminate (const cGH *cgh, CCTK_REAL time, int iteration)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -48,7 +48,7 @@ namespace Carpet {
   
   
   
-  int Evolve (tFleshConfig* fc)
+  int Evolve (const tFleshConfig* fc)
   {
     DECLARE_CCTK_PARAMETERS;
     

@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.6 2001/10/29 08:36:45 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.7 2001/11/02 10:58:59 schnetter Exp $";
 
 
 
@@ -28,7 +28,7 @@ namespace Carpet {
   
   
   
-  static void Adapt (cGH* cgh, int reflevels, gh<dim>* hh);
+  static void Adapt (const cGH* cgh, int reflevels, gh<dim>* hh);
   
   
   
@@ -43,7 +43,7 @@ namespace Carpet {
   
   
   
-  void Recompose (cGH* cgh)
+  void Recompose (const cGH* cgh)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -101,7 +101,7 @@ namespace Carpet {
   
   
   
-  static void Adapt (cGH* cgh, const int reflevels, gh<dim>* hh)
+  static void Adapt (const cGH* cgh, const int reflevels, gh<dim>* hh)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -163,7 +163,7 @@ namespace Carpet {
   
   
   
-  void MakeRegions_RefineCentre (cGH* cgh, const int reflevels,
+  void MakeRegions_RefineCentre (const cGH* cgh, const int reflevels,
 				 gh<dim>::rexts& bbsss, gh<dim>::rprocs& pss)
   {
     DECLARE_CCTK_PARAMETERS;

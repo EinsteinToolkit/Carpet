@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.2 2001/07/09 09:00:10 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.3 2001/11/02 10:58:59 schnetter Exp $";
 
 
 
@@ -18,7 +18,7 @@ namespace Carpet {
   
   
   
-  void Restrict (cGH* cgh)
+  void Restrict (const cGH* cgh)
   {
     assert (component == -1);
     
@@ -29,7 +29,7 @@ namespace Carpet {
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       
       // Restrict only groups with storage
-      if (CCTK_QueryGroupStorageI(cgh, group)) {
+      if (CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
 	
 	const int tl = 0;
 	

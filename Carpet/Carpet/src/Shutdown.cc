@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.1 2001/07/04 12:29:47 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.2 2001/11/02 10:58:59 schnetter Exp $";
 
 
 
@@ -19,7 +19,7 @@ namespace Carpet {
   
   
   
-  int Shutdown (tFleshConfig* fc)
+  int Shutdown (const tFleshConfig* fc)
   {
     DECLARE_CCTK_PARAMETERS;
     

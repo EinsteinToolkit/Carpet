@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.2 2001/08/26 13:59:08 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.3 2001/11/02 10:59:00 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -91,27 +91,27 @@ namespace Carpet {
   
   
   // Registered functions
-  void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cgh);
+  void* SetupGH (const tFleshConfig* fc, int convLevel, cGH* cgh);
   
   int Initialise (tFleshConfig* config);
-  int Evolve (tFleshConfig* config);
-  int Shutdown (tFleshConfig* config);
+  int Evolve (const tFleshConfig* config);
+  int Shutdown (const tFleshConfig* config);
   int CallFunction (void* function, cFunctionData* attribute, void* data);
   
-  int SyncGroup (cGH* cgh, const char* groupname);
+  int SyncGroup (const cGH* cgh, const char* groupname);
   int EnableGroupStorage (cGH* cgh, const char* groupname);
   int DisableGroupStorage (cGH* cgh, const char* groupname); 
-  int EnableGroupComm (cGH* cgh, const char* groupname);
-  int DisableGroupComm (cGH* cgh, const char* groupname);
-  int Barrier (cGH* cgh);
-  int Exit (cGH* cgh, int retval);
-  int Abort (cGH* cgh, int retval);
-  int MyProc (cGH* cgh);
-  int nProcs (cGH* cgh);
-  const int* ArrayGroupSizeB (cGH* cgh, int dir, int group,
+  int EnableGroupComm (const cGH* cgh, const char* groupname);
+  int DisableGroupComm (const cGH* cgh, const char* groupname);
+  int Barrier (const cGH* cgh);
+  int Exit (const cGH* cgh, int retval);
+  int Abort (const cGH* cgh, int retval);
+  int MyProc (const cGH* cgh);
+  int nProcs (const cGH* cgh);
+  const int* ArrayGroupSizeB (const cGH* cgh, int dir, int group,
 			      const char* groupname);
-  int QueryGroupStorageB (cGH* cgh, int group, const char* groupname);
-  int GroupDynamicData (cGH* cgh, int group, cGroupDynamicData* data);
+  int QueryGroupStorageB (const cGH* cgh, int group, const char* groupname);
+  int GroupDynamicData (const cGH* cgh, int group, cGroupDynamicData* data);
   
   
   
@@ -119,7 +119,7 @@ namespace Carpet {
   void RegisterRecomposeRegions (const gh<dim>::rexts& bbsss,
 				 const gh<dim>::rprocs& pss);
   
-  void MakeRegions_RefineCentre (cGH* cgh, int reflevels,
+  void MakeRegions_RefineCentre (const cGH* cgh, int reflevels,
 				 gh<dim>::rexts& bbsss, gh<dim>::rprocs& pss);
   
   

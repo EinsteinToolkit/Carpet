@@ -11,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.5 2001/08/26 13:59:15 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.6 2001/11/02 10:59:00 schnetter Exp $";
 
 
 
@@ -21,7 +21,7 @@ namespace Carpet {
   
   
   
-  int Barrier (cGH* cgh)
+  int Barrier (const cGH* cgh)
   {
     MPI_Barrier (dist::comm);
     return 0;
@@ -29,14 +29,14 @@ namespace Carpet {
   
   
   
-  int Exit (cGH* cgh, int retval)
+  int Exit (const cGH* cgh, int retval)
   {
     CCTK_Barrier (cgh);
     dist::finalize();
     exit (retval);
   }
   
-  int Abort (cGH* cgh, int retval)
+  int Abort (const cGH* cgh, int retval)
   {
     MPI_Abort (dist::comm, retval);
     abort ();
@@ -44,14 +44,14 @@ namespace Carpet {
   
   
   
-  int MyProc (cGH* cgh)
+  int MyProc (const cGH* cgh)
   {
     int rank;
     MPI_Comm_rank (dist::comm, &rank);
     return rank;
   }
   
-  int nProcs (cGH* cgh)
+  int nProcs (const cGH* cgh)
   {
     int size;
     MPI_Comm_size (dist::comm, &size);
@@ -229,7 +229,7 @@ namespace Carpet {
 	  } else {
 	    // Scalars can be accessed
 	    
-	    if (CCTK_QueryGroupStorageI(cgh, group)) {
+	    if (CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
 	      // Group has storage
 	      
 	      assert (group<(int)arrdata.size());
@@ -329,7 +329,7 @@ namespace Carpet {
 	
 	for (int tl=0; tl<num_tl; ++tl) {
 	  
-	  if (CCTK_QueryGroupStorageI(cgh, group)) {
+	  if (CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
 	    // Group has storage
 	    
 	    assert (group<(int)arrdata.size());

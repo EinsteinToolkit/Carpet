@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.2 2001/07/09 09:00:11 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.3 2001/11/02 10:59:00 schnetter Exp $";
 
 
 
@@ -33,7 +33,7 @@ namespace Carpet {
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
     
-    if (CCTK_QueryGroupStorageI(cgh, group)) {
+    if (CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
       // storage was enabled previously
       return 1;
     }
@@ -85,7 +85,7 @@ namespace Carpet {
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
     
-    if (! CCTK_QueryGroupStorageI(cgh, group)) {
+    if (! CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
       // storage was disabled previously
       return 0;
     }
@@ -122,7 +122,7 @@ namespace Carpet {
   
   
   
-  int QueryGroupStorageB (cGH* cgh, int group, const char* groupname)
+  int QueryGroupStorageB (const cGH* cgh, int group, const char* groupname)
   {
     if (groupname) {
       group = CCTK_GroupIndex(groupname);
@@ -140,7 +140,7 @@ namespace Carpet {
   
   
   
-  const int* ArrayGroupSizeB (cGH* cgh, int dir, int group,
+  const int* ArrayGroupSizeB (const cGH* cgh, int dir, int group,
 			      const char* groupname)
   {
     static const int zero = 0;
@@ -159,7 +159,7 @@ namespace Carpet {
     
     assert (dir>=0 && dir<gpdim);
     
-    if (CCTK_QueryGroupStorageI(cgh, group)) {
+    if (CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
       
       const int var = CCTK_FirstVarIndexI(group);
       assert (var>=0 && var<CCTK_NumVars());
@@ -177,7 +177,7 @@ namespace Carpet {
   
   
   
-  int GroupDynamicData (cGH* cgh, int group, cGroupDynamicData* data)
+  int GroupDynamicData (const cGH* cgh, int group, cGroupDynamicData* data)
   {
     assert (group>=0 && group<CCTK_NumGroups());
     *data = arrdata[group].info;

@@ -1,12 +1,12 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.12 2001/07/09 09:00:13 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.13 2001/11/02 10:59:00 schnetter Exp $
 
 #include "carpet_public.hh"
 
 namespace Carpet {
   
-  void Recompose (cGH* cgh);
-  void CycleTimeLevels (cGH* cgh);
-  void Restrict (cGH* cgh);
+  void Recompose (const cGH* cgh);
+  void CycleTimeLevels (const cGH* cgh);
+  void Restrict (const cGH* cgh);
   
   enum checktimes { currenttime,
 		    currenttimebutnotifonly,

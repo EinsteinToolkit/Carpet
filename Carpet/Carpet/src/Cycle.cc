@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.2 2001/07/09 09:00:08 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.3 2001/11/02 10:58:58 schnetter Exp $";
 
 
 
@@ -18,12 +18,12 @@ namespace Carpet {
   
   
   
-  void CycleTimeLevels (cGH* cgh)
+  void CycleTimeLevels (const cGH* cgh)
   {
     Checkpoint ("%*sCycleTimeLevels", 2*reflevel, "");
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
-      if (CCTK_QueryGroupStorageI(cgh, group)) {
+      if (CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
 	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
 	  
 	  assert (group<(int)arrdata.size());
