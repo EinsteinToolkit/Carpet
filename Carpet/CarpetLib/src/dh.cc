@@ -55,7 +55,7 @@ void dh<D>::recompose (const bool do_prolongate) {
   DECLARE_CCTK_PARAMETERS;
   
   CHECKPOINT;
-  
+
   boxes.clear();
 
   allocate_bboxes();
@@ -230,7 +230,7 @@ void dh<D>::setup_refinement_interior_boxes( dh<D>::dboxes & box, int rl, int c,
   // Refinement boxes
   if (rl<h.reflevels()-1) {
     for (int cc=0; cc<h.components(rl+1); ++cc) {
-      dboxes & box1 = boxes.at(rl).at(cc).at(ml);
+      dboxes & box1 = boxes.at(rl+1).at(cc).at(ml);
       const ibbox intrf = box1.interior;
       // Prolongation (interior)
       // TODO: prefer boxes from the same processor
