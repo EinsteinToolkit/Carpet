@@ -96,10 +96,14 @@ private:
   typedef vector<dbases> mbases; // ... for each multigrid level
   typedef vector<mbases> rbases; // ... for each refinement level
  
-  void allocate_bboxes(); 
+  void allocate_bboxes();
+                                 // generic member function taking a dboxes,
+                                 // a refinement level, a component, and a 
+                                 // multigrid level
   typedef void    (dh<D>::*boxesop)( dboxes &, int rl, int c, int ml ); 
   void foreach_reflevel_component_mglevel ( boxesop op );
 
+                                 // these all of form 'boxesop'
   void setup_sync_and_refine_boxes( dboxes & b, int rl, int c, int ml );
   void intersect_sync_with_interior( dboxes & b, int rl, int c, int ml );
   void setup_multigrid_boxes( dboxes & b, int rl, int c, int ml );
@@ -109,6 +113,7 @@ private:
   void trim_unsynced_boundaries( dboxes & b, int rl, int c, int ml );
   void output_bboxes( dboxes & b, int rl, int c, int ml );
   void assert_assert_assert( dboxes & b, int rl, int c, int ml );
+
   void calculate_bases(); 
   void output_bases(); 
   void save_time( bool do_prolongate); 
