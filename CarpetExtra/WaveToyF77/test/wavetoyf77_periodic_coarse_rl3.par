@@ -1,15 +1,6 @@
-# /*@@
-#   @file      wavetoyf77_rad.par
-#   @date      2001-03-06
-#   @author    Erik Schnetter
-#   @desc
-#   Wavetoy parameter file demonstrating radiation boundaries in octant mode
-#   @enddesc
-# @@*/
-#
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77_periodic_coarse_rl3.par,v 1.2 2001/07/02 13:22:16 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77_periodic_coarse_rl3.par,v 1.3 2001/12/03 17:22:09 schnetter Exp $
 
-!DESC "WaveToy with radiation boundaries, 2 refinement levels"
+!DESC "WaveToy with periodic boundaries, 2 refinement levels"
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetSlab IDScalarWave WaveToyF77"
 
