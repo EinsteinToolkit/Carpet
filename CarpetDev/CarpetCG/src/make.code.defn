@@ -1,5 +1,5 @@
 # Main make.code.defn file for thorn CarpetCG
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetCG/src/make.code.defn,v 1.1.1.1 2003/11/19 10:40:47 hawke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetCG/src/make.code.defn,v 1.1 2003/11/19 10:40:47 hawke Exp $
 
 # Source files in this directory
 SRCS = CG.cc
