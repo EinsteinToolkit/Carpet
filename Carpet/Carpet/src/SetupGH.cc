@@ -10,7 +10,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.3 2001/07/18 16:17:38 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.4 2001/08/15 22:03:49 schnetter Exp $";
 
 
 
@@ -150,7 +150,7 @@ namespace Carpet {
 	    aub[d] = sizes[d];
 	  }
 	}
-	const bbox<int,dim> arrext(alb, aub-astr, astr);
+	const bbox<int,dim> arrext(alb*astr, (aub-1)*astr, astr);
 	
 	arrdata[group].hh = new gh<dim>(refinement_factor, vertex_centered,
 					multigrid_factor, vertex_centered,
