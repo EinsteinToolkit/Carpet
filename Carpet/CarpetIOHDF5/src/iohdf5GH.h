@@ -1,3 +1,6 @@
+// This was adopted from Thomas Radke's IOHDF5 thorn.
+// Thanks, Thomas!
+
 #ifndef _CARPETIOHDF5_IOHDF5GH_H_
 #define _CARPETIOHDF5_IOHDF5GH_H_ 1
 

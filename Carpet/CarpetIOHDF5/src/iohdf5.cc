@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.10 2004/03/10 22:29:58 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.11 2004/03/11 09:33:23 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -65,7 +65,12 @@ namespace CarpetIOHDF5 {
     CCTK_RegisterIOMethodTimeToOutput (IOMethod, TimeToOutput);
     CCTK_RegisterIOMethodTriggerOutput (IOMethod, TriggerOutput);
     
+    // Erik's Recovery routine
     ierr = IOUtil_RegisterRecover ("CarpetIOHDF5", Recover);
+    assert (! ierr);
+
+    // Christian's Recovery routine
+    ierr = IOUtil_RegisterRecover ("CarpetIOHDF5 recovery", CarpetIOHDF5_Recover);
     assert (! ierr);
     
     return 0;
@@ -283,7 +288,7 @@ namespace CarpetIOHDF5 {
 		  varname);
       return 0;
     }
-    
+
     const int grouptype = CCTK_GroupTypeI(group);
     switch (grouptype) {
     case CCTK_SCALAR:

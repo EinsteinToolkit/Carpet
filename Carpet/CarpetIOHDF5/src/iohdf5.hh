@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.5 2004/03/10 21:20:24 cott Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.6 2004/03/11 09:33:23 cott Exp $
 
 #ifndef CARPETIOHDF5_HH
 #define CARPETIOHDF5_HH
@@ -47,6 +47,7 @@ namespace CarpetIOHDF5 {
   int Recover (cGH* const cctkGH, const char *basefilename,
                const int called_from);
   
+  int CarpetIOHDF5_Recover (cGH* cgh, const char *basefilename, int called_from);
 
   // auxiliary functions defined in iohdf5utils.cc
 

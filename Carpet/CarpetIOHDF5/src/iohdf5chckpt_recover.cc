@@ -80,6 +80,49 @@ namespace CarpetIOHDF5 {
       }
   } // CarpetIOHDF5_EvolutionCheckpoint
 
+
+  int CarpetIOHDF5_RecoverParameters(void){
+    // Register with the Cactus Recovery Interface
+    return (IOUtil_RecoverParameters (CarpetIOHDF5_Recover, ".h5", "HDF5"));
+  }
+
+  int CarpetIOHDF5_Recover (cGH* cctkGH, const char *basefilename, int called_from) {
+    
+    DECLARE_CCTK_PARAMETERS;
+
+    int result,myproc;
+    CarpetIOHDF5GH *myGH;
+    char filename[1024];
+    
+    myGH = NULL;
+    result = 0;
+
+    myproc = CCTK_MyProc (cctkGH);
+    
+  
+    if (called_from == CP_RECOVER_PARAMETERS) {
+	CCTK_WARN (-1,"Sorry, this feature is not implemented yet.");
+      }
+    else {
+	/* This is the case for CP_RECOVER_DATA.
+	   CCTK_RECOVER_PARAMETERS must have been called before
+	   and set up the file info structure. */
+	if (myproc == 0) {
+	  CCTK_WARN (-1,"Sorry, this feature is not implemented yet.");
+	}
+    }
+  
+  
+    if (called_from == CP_RECOVER_DATA) {
+      CCTK_VInfo (CCTK_THORNSTRING,
+		  "Restarting simulation at iteration %d (physical time %g)",
+		  cctkGH->cctk_iteration, (double) cctkGH->cctk_time);
+    }
+  
+    CCTK_WARN (-1,"STOPSTOPSTOP2");
+  
+    return (result);
+  } // CarpetIOHDF5_Recover
   
 
   int Checkpoint (const cGH* const cctkGH, int called_from)
@@ -141,14 +184,39 @@ namespace CarpetIOHDF5 {
     } // myproc == 0 
 
     // Dump all parameters and GHExtentions
-    DumpParametersGHExtentions (cctkGH, 1, writer);
+    retval += DumpParametersGHExtentions (cctkGH, 1, writer);
+    assert(!retval);
 
-
-    CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,"This feature is not working yet. Sorry!");
+    if (myproc==0) {
+      // Close the file
+      herr = H5Fclose(writer);
+      assert(!herr);
+    }
     
+    if (retval == 0) {
+      if (myproc==0) {
+	if (rename (cp_tempname, cp_filename))
+	  {
+	    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+			"Could not rename temporary checkpoint file '%s' to '%s'",
+			cp_tempname, cp_filename);
+	    retval = -1;
+	  }
+	else {
+	  if (myGH->cp_filename_list[myGH->cp_filename_index]) {
+	    if (checkpoint_keep > 0) {
+	      remove (myGH->cp_filename_list[myGH->cp_filename_index]);
+	    }
+	    free (myGH->cp_filename_list[myGH->cp_filename_index]);
+	  }
+	  myGH->cp_filename_list[myGH->cp_filename_index] = strdup (cp_filename);
+	  myGH->cp_filename_index = (myGH->cp_filename_index+1) % abs (checkpoint_keep);
+	} // else
+      } // myproc == 0
+    } // retval == 0
 
-    // Close the file
-    H5Fclose(writer);
+    
+    CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,"This feature is not working yet. Sorry!");
 
     return retval;
 
