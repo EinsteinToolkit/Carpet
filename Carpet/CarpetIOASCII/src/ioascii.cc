@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.2 2001/03/05 14:30:27 eschnett Exp $
 
 #include <cassert>
 #include <cstdio>
@@ -16,6 +16,7 @@
 #include "Carpet/CarpetLib/src/gdata.hh"
 #include "Carpet/CarpetLib/src/gf.hh"
 #include "Carpet/CarpetLib/src/ggf.hh"
+
 #include "Carpet/Carpet/src/carpet.hh"
 
 #include "ioascii.hh"
@@ -69,11 +70,10 @@ int IOASCII<outdim>::Startup()
 
 
 template<int outdim>
-void* IOASCII<outdim>::SetupGH (tFleshConfig *fc, int convLevel, cGH *cgh)
+void* IOASCII<outdim>::SetupGH (tFleshConfig* const fc,
+				const int convLevel, cGH* const cgh)
 {
   DECLARE_CCTK_PARAMETERS;
-  
-  CCTK_CreateDirectory (0755, outdir);
   
   // Truncate all files if this is not a restart
   do_truncate.resize(CCTK_NumVars(), ! IOUtil_RestartFromRecovery(cgh));
@@ -89,7 +89,7 @@ void* IOASCII<outdim>::SetupGH (tFleshConfig *fc, int convLevel, cGH *cgh)
 
 
 template<int outdim>
-int IOASCII<outdim>::OutputGH (cGH* cgh) {
+int IOASCII<outdim>::OutputGH (cGH* const cgh) {
   for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
     if (TimeToOutput(cgh, vindex)) {
       TriggerOutput(cgh, vindex);
@@ -99,8 +99,8 @@ int IOASCII<outdim>::OutputGH (cGH* cgh) {
 }
 
 template<int outdim>
-int IOASCII<outdim>::OutputVarAs (cGH* cgh, const char* varname,
-				const char* alias) {
+int IOASCII<outdim>::OutputVarAs (cGH* const cgh, const char* const varname,
+				  const char* const alias) {
   DECLARE_CCTK_PARAMETERS;
   
   const int n = CCTK_VarIndex(varname);
@@ -111,7 +111,7 @@ int IOASCII<outdim>::OutputVarAs (cGH* cgh, const char* varname,
   assert (n0>=0 && n0<CCTK_NumVars());
   const int var = n - n0;
   assert (var>=0 && var<CCTK_NumVars());
-  const int tl = max(0, CCTK_NumTimeLevelsFromVarI(n) - 1);
+  const int tl = max(0, CCTK_NumTimeLevelsFromVarI(n) - 2);
   
   switch (CCTK_GroupTypeI(group)) {
     
@@ -134,6 +134,10 @@ int IOASCII<outdim>::OutputVarAs (cGH* cgh, const char* varname,
       return 0;
     }
     
+    // Create the output directory
+    const char* myoutdir = GetStringParameter("outdir%dD", outdir);
+    CCTK_CreateDirectory (0755, myoutdir);
+    
     // Loop over all direction combinations
     vect<int,outdim> dirs;
     for (int d=0; d<outdim; ++d) dirs[d] = 0;
@@ -148,62 +152,177 @@ int IOASCII<outdim>::OutputVarAs (cGH* cgh, const char* varname,
 	}
       }
       
+      // Skip output if the dimensions are not ascending
       if (ascending) {
 	
-	// Invent a file name
-	char filename[strlen(outdir)+strlen(alias)+100];
-	sprintf (filename, "%s/%s.", outdir, alias);
-	for (int d=0; d<outdim; ++d) {
-	  assert (dirs[d]>=0 && dirs[d]<3);
-	  sprintf (filename, "%s%c", filename, "xyz"[dirs[d]]);
-	}
-	sprintf (filename, "%s%c", filename, "lpv"[outdim-1]);
-	
-	// If this is the first time, then write a nice header
-	if (do_truncate[n]) {
-	  ofstream file(filename, ios::trunc);
-	  assert (file.good());
-	  file << "# " << varname;
-	  for (int d=0; d<outdim; ++d) {
-	    file << " " << "xyz"[dirs[d]];
+	// If this output is desired at all
+	bool desired;
+	switch (outdim) {
+	case 1:
+	  switch (dirs[0]) {
+	  case 0:
+	    desired = out1D_x;
+	    break;
+	  case 1:
+	    desired = out1D_y;
+	    break;
+	  case 2:
+	    desired = out1D_z;
+	    break;
+	  default:
+	    abort();
 	  }
-	  file << " (" << alias << ")" << endl;
-	  file << "#" << endl;
-	  file.close();
-	  assert (file.good());
+	  break;
+	case 2:
+	  if (dirs[0]==0 && dirs[1]==1) {
+	    desired = out2D_xy;
+	  } else if (dirs[0]==0 && dirs[1]==2) {
+	    desired = out2D_xz;
+	  } else if (dirs[0]==1 && dirs[1]==2) {
+	    desired = out2D_yz;
+	  } else {
+	    abort();
+	  }
+	  break;
+	case 3:
+	  // Output is always desired (if switched on)
+	  desired = true;
+	  break;
+	default:
+	  abort();
 	}
 	
-	// Traverse all components on all refinement levels
-  	assert (mglevel>=0);
-	assert (reflevel==0);
-	for (reflevel=0; reflevel<hh->reflevels(); ++reflevel) {
-	  assert (component==-1);
-	  for (component=0; component<hh->components(reflevel); ++component) {
-	    
-	    switch (CCTK_GroupTypeI(group)) {
-	      
-	    case CCTK_ARRAY:
-	      assert (var < (int)Carpet::arrdata[group].data.size());
-	      (*arrdata[group].data[var]) (tl, reflevel, component, mglevel)
-		->write_ascii (filename, cgh->cctk_time, dirs,
-			       tl, reflevel, component, mglevel);
+	// Skip output if not desired
+	if (desired) {
+	  
+	  // Invent a file name
+	  char filename[strlen(myoutdir)+strlen(alias)+100];
+	  sprintf (filename, "%s/%s.", myoutdir, alias);
+	  for (int d=0; d<outdim; ++d) {
+	    assert (dirs[d]>=0 && dirs[d]<3);
+	    sprintf (filename, "%s%c", filename, "xyz"[dirs[d]]);
+	  }
+	  sprintf (filename, "%s%c", filename, "lpv"[outdim-1]);
+	  
+	  // If this is the first time, then write a nice header
+	  if (do_truncate[n]) {
+	    ofstream file(filename, ios::trunc);
+	    assert (file.good());
+	    file << "# " << varname;
+	    for (int d=0; d<outdim; ++d) {
+	      file << " " << "xyz"[dirs[d]];
+	    }
+	    file << " (" << alias << ")" << endl;
+	    file << "#" << endl;
+	    file.close();
+	    assert (file.good());
+	  }
+	  
+	  // Find the output offset
+	  vect<int,dim> offset(0);
+	  switch (outdim) {
+	  case 1:
+	    switch (dirs[0]) {
+	    case 0:
+	      offset[1] = GetGridOffset (cgh, 2,
+					 "out%dD_xline_yi", "out_xline_yi",
+					 "out%dD_xline_y",  "out_xline_y",
+					 out_xline_y);
+	      offset[2] = GetGridOffset (cgh, 3,
+					 "out%dD_xline_zi", "out_xline_zi",
+					 "out%dD_xline_z",  "out_xline_z",
+					 out_xline_z);
 	      break;
-	      
-	    case CCTK_GF:
-	      assert (var < (int)Carpet::gfdata[group].data.size());
-	      (*gfdata[group].data[var]) (tl, reflevel, component, mglevel)
-		->write_ascii (filename, cgh->cctk_time, dirs,
-			       tl, reflevel, component, mglevel);
+	    case 1:
+	      offset[0] = GetGridOffset (cgh, 1,
+					 "out%dD_yline_xi", "out_yline_xi",
+					 "out%dD_yline_x",  "out_yline_x",
+					 out_yline_x);
+	      offset[2] = GetGridOffset (cgh, 3,
+					 "out%dD_yline_zi", "out_yline_zi",
+					 "out%dD_yline_z",  "out_yline_z",
+					 out_yline_z);
 	      break;
-	      
+	    case 2:
+	      offset[0] = GetGridOffset (cgh, 1,
+					 "out%dD_zline_xi", "out_zline_xi",
+					 "out%dD_zline_x",  "out_zline_x",
+					 out_zline_x);
+	      offset[1] = GetGridOffset (cgh, 2,
+					 "out%dD_zline_yi", "out_zline_yi",
+					 "out%dD_zline_y",  "out_zline_y",
+					 out_zline_y);
+	      break;
 	    default:
 	      abort();
 	    }
-	    
+	    break;
+	  case 2:
+	    if (dirs[0]==0 && dirs[1]==1) {
+	      offset[2] = GetGridOffset (cgh, 3,
+					 "out%dD_xyplane_zi", "out_xyplane_zi",
+					 "out%dD_xyplane_z",  "out_xyplane_z",
+					 out_xyplane_z);
+	    } else if (dirs[0]==0 && dirs[1]==2) {
+	      offset[1]	= GetGridOffset (cgh, 2,
+					 "out%dD_xzplane_yi", "out_xzplane_yi",
+					 "out%dD_xzplane_y",  "out_xzplane_y",
+					 out_xzplane_y);
+	    } else if (dirs[0]==1 && dirs[1]==2) {
+	      offset[0] = GetGridOffset (cgh, 1,
+					 "out%dD_yzplane_xi", "out_yzplane_xi",
+					 "out%dD_yzplane_x",  "out_yzplane_x",
+					 out_yzplane_x);
+	    } else {
+	      abort();
+	    }
+	    break;
+	  case 3:
+	    // The offset doesn't matter in this case
+	    break;
+	  default:
+	    abort();
 	  }
-	  component = -1;
-	}
-	reflevel = 0;
+	  
+	  // Traverse all components on all refinement levels
+	  assert (mglevel>=0);
+	  assert (reflevel==0);
+	  for (reflevel=0; reflevel<hh->reflevels(); ++reflevel) {
+	    assert (component==-1);
+	    for (component=0; component<hh->components(reflevel);
+		 ++component) {
+	      
+	      generic_gf<dim>* ff = 0;
+	      
+	      switch (CCTK_GroupTypeI(group)) {
+		
+	      case CCTK_ARRAY:
+		assert (var < (int)arrdata[group].data.size());
+		ff = arrdata[group].data[var];
+		break;
+		
+	      case CCTK_GF:
+		assert (var < (int)gfdata[group].data.size());
+		ff = gfdata[group].data[var];
+		break;
+		
+	      default:
+		abort();
+	      }
+	      
+	      const generic_data<dim>* const data
+		= (*ff) (tl, reflevel, component, mglevel);
+	      const vect<int,dim> offset1 = offset * data->extent().stride();
+	      
+	      data->write_ascii (filename, cgh->cctk_iteration, offset1, dirs,
+				 tl, reflevel, component, mglevel);
+	      
+	    }
+	    component = -1;
+	  }
+	  reflevel = 0;
+	  
+	} // if (desired)
 	
       } // if (ascending)
       
@@ -235,11 +354,30 @@ int IOASCII<outdim>::OutputVarAs (cGH* cgh, const char* varname,
 
 
 template<int outdim>
-int IOASCII<outdim>::TimeToOutput (cGH* cgh, int vindex) {
+int IOASCII<outdim>::TimeToOutput (cGH* const cgh, const int vindex) {
+  DECLARE_CCTK_PARAMETERS;
+  
   assert (vindex>=0 && vindex<(int)last_output.size());
-  if (last_output[vindex] < cgh->cctk_iteration) {
-    return 1;
-  } else if (last_output[vindex] == cgh->cctk_iteration) {
+  
+  const int myoutevery = GetIntParameter("out%dD_every", out_every);
+  
+  if (myoutevery < 0) {
+    // Nothing should be output at all
+    return 0;
+  }
+  
+  if (cgh->cctk_iteration % myoutevery != 0) {
+    // Nothing should be output during this iteration
+    return 0;
+  }
+  
+  if (! CheckForVariable(cgh, GetStringParameter("out%dD_vars", ""), vindex)) {
+    // This variable should not be output
+    return 0;
+  }
+  
+  if (last_output[vindex] == cgh->cctk_iteration) {
+    // Has already been output during this iteration
     char* varname = CCTK_FullName(vindex);
     CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
 		"Skipping output for variable \"%s\", because this variable "
@@ -248,24 +386,169 @@ int IOASCII<outdim>::TimeToOutput (cGH* cgh, int vindex) {
 		varname);
     free (varname);
     return 0;
-  } else {
-    abort();
   }
+  
+  assert (last_output[vindex] < cgh->cctk_iteration);
+  
+  // Should be output during this iteration
+  return 1;
 }
 
 
 
 template<int outdim>
-int IOASCII<outdim>::TriggerOutput (cGH* cgh, int vindex) {
+int IOASCII<outdim>::TriggerOutput (cGH* const cgh, const int vindex) {
   assert (vindex>=0 && vindex<CCTK_NumVars());
   
   char* varname = CCTK_FullName(vindex);
-  int retval = OutputVarAs (cgh, varname, CCTK_VarName(vindex));
+  const int retval = OutputVarAs (cgh, varname, CCTK_VarName(vindex));
   free (varname);
   
   last_output[vindex] = cgh->cctk_iteration;
   
   return retval;
+}
+
+
+
+template<int outdim>
+int IOASCII<outdim>::GetGridOffset (cGH* cgh, int dir,
+				    const char* itempl, const char* iglobal,
+				    const char* ctempl, const char* cglobal,
+				    double cfallback)
+{
+  /* First choice: explicit coordinate */
+  char cparam[1000];
+  sprintf (cparam, ctempl, outdim);
+  if (CCTK_ParameterQueryTimesSet (cparam, CCTK_THORNSTRING) > 0) {
+    int ptype;
+    const double* const pcoord
+      = (double*)CCTK_ParameterGet (cparam, CCTK_THORNSTRING, &ptype);
+    assert (pcoord);
+    const double coord = *pcoord;
+    assert (ptype == PARAMETER_REAL);
+    return CoordToOffset (cgh, dir, coord);
+  }
+  
+  /* Second choice: explicit index */
+  char iparam[1000];
+  sprintf (iparam, itempl, outdim);
+  if (CCTK_ParameterQueryTimesSet (iparam, CCTK_THORNSTRING) > 0) {
+    int ptype;
+    const int* const pindex
+      = (int*)CCTK_ParameterGet (iparam, CCTK_THORNSTRING, &ptype);
+    assert (pindex);
+    const int index = *pindex;
+    assert (ptype == PARAMETER_INT);
+    return index;
+  }
+  
+  /* Third choice: explicit global coordinate */
+  if (CCTK_ParameterQueryTimesSet (cglobal, "IO") > 0) {
+    int ptype;
+    const double* const pcoord
+      = (double*)CCTK_ParameterGet (cglobal, "IO", &ptype);
+    assert (pcoord);
+    const double coord = *pcoord;
+    assert (ptype == PARAMETER_REAL);
+    return CoordToOffset (cgh, dir, coord);
+  }
+  
+  /* Fourth choice: explicit global index */
+  if (CCTK_ParameterQueryTimesSet (iglobal, "IO") > 0) {
+    int ptype;
+    const int* const pindex
+      = (int*)CCTK_ParameterGet (iglobal, "IO", &ptype);
+    assert (pindex);
+    const int index = *pindex;
+    assert (ptype == PARAMETER_INT);
+    return index;
+  }
+  
+  /* Fifth choice: default coordinate */
+  return CoordToOffset (cgh, dir, cfallback);
+}
+
+
+
+template<int outdim>
+int IOASCII<outdim>::CoordToOffset (cGH* cgh, int dir, double coord)
+{
+  CCTK_REAL lower, upper;
+  CCTK_CoordRange (cgh, &lower, &upper, dir, 0, "cart3d");
+  
+  const int npoints = cgh->cctk_gsh[dir-1];
+  
+  int cindex = (int)floor((coord - lower) / (upper - lower) * npoints + 0.75);
+  assert (cindex>=0 && cindex<npoints);
+  
+  return cindex;
+}
+
+
+
+template<int outdim>
+const char* IOASCII<outdim>::GetStringParameter
+(const char* const parametertemplate, const char* const fallback)
+{
+  char parametername[1000];
+  sprintf (parametername, parametertemplate, outdim);
+  if (CCTK_ParameterQueryTimesSet (parametername, CCTK_THORNSTRING) > 0) {
+    int ptype;
+    const char** const ppval = (const char**)CCTK_ParameterGet
+      (parametername, CCTK_THORNSTRING, &ptype);
+    assert (ppval);
+    const char* const pval = *ppval;
+    assert (ptype == PARAMETER_STRING);
+    return pval;
+  }
+  
+  return fallback;
+}
+
+
+
+template<int outdim>
+int IOASCII<outdim>::GetIntParameter (const char* const parametertemplate,
+				      int fallback)
+{
+  char parametername[1000];
+  sprintf (parametername, parametertemplate, outdim);
+  if (CCTK_ParameterQueryTimesSet (parametername, CCTK_THORNSTRING) > 0) {
+    int ptype;
+    const int* const ppval
+      = (int*)CCTK_ParameterGet (parametername, CCTK_THORNSTRING, &ptype);
+    assert (ppval);
+    const int pval = *ppval;
+    assert (ptype == PARAMETER_INT);
+    return pval;
+  }
+  
+  return fallback;
+}
+
+
+
+bool CheckForVariable (cGH* const cgh,
+		       const char* const varlist, const int vindex)
+{
+  const int numvars = CCTK_NumVars();
+  assert (vindex>=0 && vindex<numvars);
+  
+  bool flags[numvars];
+  
+  for (int i=0; i<numvars; ++i) {
+    flags[i] = false;
+  }
+  
+  CCTK_TraverseString (varlist, SetFlag, flags, CCTK_GROUP_OR_VAR);
+  
+  return flags[vindex];
+}
+
+void SetFlag (int index, const char* optstring, void* arg)
+{
+  ((bool*)arg)[index] = true;
 }
 
 
