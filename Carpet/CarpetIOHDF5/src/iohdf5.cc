@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.30 2004/05/21 18:11:34 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.31 2004/05/31 18:59:20 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -363,7 +363,7 @@ namespace CarpetIOHDF5 {
 
 	  if (cgdata.disttype == CCTK_DISTRIB_CONSTANT) {
 	    assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
-	    if(component!=0) continue;
+	    if(component!=0) goto skip;
 	    h5data = CCTK_VarDataPtrI(cctkGH,tl,n);
 	  } else {
 	    for (comm_state<dim> state; !state.done(); state.step()) {
@@ -544,10 +544,12 @@ namespace CarpetIOHDF5 {
 	      assert (!herr);
 	      
 	    } // if on root processor
-	    
-	    // Delete temporary copy
-	    delete tmp;
 	} // if ! CCTK_DISTRIB_BLAH
+
+      skip:
+        // Delete temporary copy
+        delete tmp;
+        
       } END_COMPONENT_LOOP;
     } END_MAP_LOOP;
     
