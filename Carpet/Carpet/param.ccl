@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.19 2002/03/23 20:20:54 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.20 2002/06/06 19:48:46 shawley Exp $
 
 shares: Cactus
 
@@ -17,7 +17,7 @@ USES STRING outdir
 
 
 
-private:
+restricted:
 
 CCTK_INT global_nx "Grid size in x direction"
 {
@@ -220,3 +220,10 @@ BOOLEAN periodic_y "do not use this parameter"
 BOOLEAN periodic_z "do not use this parameter"
 {
 } "yes"
+
+
+private:
+
+BOOLEAN init_3_timelevels "Set up 3 timelevels of initial data"
+{
+} "no"
