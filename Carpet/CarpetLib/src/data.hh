@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.12 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.13 2003/08/28 21:27:03 schnetter Exp $
 
 #ifndef DATA_HH
 #define DATA_HH
@@ -54,12 +54,12 @@ public:
 
   // Accessors
   virtual const void* storage () const {
-    assert (_has_storage);
+    assert (this->_has_storage);
     return _storage;
   }
 
   virtual void* storage () {
-    assert (_has_storage);
+    assert (this->_has_storage);
     return _storage;
   }
   

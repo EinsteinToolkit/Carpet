@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.28 2003/08/15 09:32:54 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.29 2003/08/28 21:27:03 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -52,26 +52,26 @@ data<T,D>* data<T,D>::make_typed () const {
 template<class T, int D>
 void data<T,D>::allocate (const ibbox& extent, const int proc,
 			  void* const mem) {
-  assert (!_has_storage);
-  _has_storage = true;
+  assert (!this->_has_storage);
+  this->_has_storage = true;
   // data
-  _extent = extent;
-  _shape = max(ivect(0), _extent.shape() / _extent.stride());
-  _size = 1;
+  this->_extent = extent;
+  this->_shape = max(ivect(0), this->_extent.shape() / this->_extent.stride());
+  this->_size = 1;
   for (int d=0; d<D; ++d) {
-    _stride[d] = _size;
-    assert (_shape[d]==0 || _size <= INT_MAX / _shape[d]);
-    _size *= _shape[d];
+    this->_stride[d] = this->_size;
+    assert (this->_shape[d]==0 || this->_size <= INT_MAX / this->_shape[d]);
+    this->_size *= this->_shape[d];
   }
-  _proc = proc;
+  this->_proc = proc;
   int rank;
   MPI_Comm_rank (dist::comm, &rank);
-  if (rank==_proc) {
-    _owns_storage = !mem;
-    if (_owns_storage) {
-      _storage = new T[_size];
+  if (rank==this->_proc) {
+    this->_owns_storage = !mem;
+    if (this->_owns_storage) {
+      this->_storage = new T[this->_size];
     } else {
-      _storage = (T*)mem;
+      this->_storage = (T*)mem;
     }
   } else {
     assert (!mem);
@@ -80,9 +80,9 @@ void data<T,D>::allocate (const ibbox& extent, const int proc,
 
 template<class T, int D>
 void data<T,D>::free () {
-  if (_storage && _owns_storage) delete [] _storage;
+  if (this->_storage && this->_owns_storage) delete [] _storage;
   _storage = 0;
-  _has_storage = false;
+  this->_has_storage = false;
 }
 
 template<class T, int D>
@@ -98,40 +98,40 @@ void data<T,D>::transfer_from (gdata<D>* gsrc) {
 // Processor management
 template<class T, int D>
 void data<T,D>::change_processor (const int newproc, void* const mem) {
-  if (newproc == _proc) {
+  if (newproc == this->_proc) {
     assert (!mem);
     return;
   }
   
-  if (_has_storage) {
+  if (this->_has_storage) {
     int rank;
     MPI_Comm_rank (dist::comm, &rank);
     if (rank == newproc) {
       // copy from other processor
       
       assert (!_storage);
-      _owns_storage = !mem;
-      if (_owns_storage) {
-	_storage = new T[_size];
+      this->_owns_storage = !mem;
+      if (this->_owns_storage) {
+	_storage = new T[this->_size];
       } else {
 	_storage = (T*)mem;
       }
 
       T dummy;
       MPI_Status status;
-      MPI_Recv (_storage, _size, dist::datatype(dummy), _proc,
+      MPI_Recv (_storage, this->_size, dist::datatype(dummy), this->_proc,
 		dist::tag, dist::comm, &status);
 
-    } else if (rank == _proc) {
+    } else if (rank == this->_proc) {
       // copy to other processor
       
       assert (!mem);
       assert (_storage);
       T dummy;
-      MPI_Send (_storage, _size, dist::datatype(dummy), newproc,
+      MPI_Send (_storage, this->_size, dist::datatype(dummy), newproc,
 		dist::tag, dist::comm);
 
-      if (_owns_storage) {
+      if (this->_owns_storage) {
 	delete [] _storage;
       }
       _storage = 0;
@@ -142,7 +142,7 @@ void data<T,D>::change_processor (const int newproc, void* const mem) {
     }
   }
 
-  _proc = newproc;
+  this->_proc = newproc;
 }
 
 
@@ -153,21 +153,21 @@ void data<T,D>
 ::copy_from_innerloop (const gdata<D>* gsrc, const ibbox& box)
 {
   const data* src = (const data*)gsrc;
-  assert (has_storage() && src->has_storage());
-  assert (all(box.lower()>=extent().lower()
+  assert (this->has_storage() && src->has_storage());
+  assert (all(box.lower()>=this->extent().lower()
 	      && box.lower()>=src->extent().lower()));
-  assert (all(box.upper()<=extent().upper()
+  assert (all(box.upper()<=this->extent().upper()
 	      && box.upper()<=src->extent().upper()));
-  assert (all(box.stride()==extent().stride()
+  assert (all(box.stride()==this->extent().stride()
 	      && box.stride()==src->extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0
+  assert (all((box.lower()-this->extent().lower())%box.stride() == 0
 	      && (box.lower()-src->extent().lower())%box.stride() == 0));
   
-  assert (proc() == src->proc());
+  assert (this->proc() == src->proc());
   
   int rank;
   MPI_Comm_rank (dist::comm, &rank);
-  assert (rank == proc());
+  assert (rank == this->proc());
   
   for (typename ibbox::iterator it=box.begin(); it!=box.end(); ++it) {
     const ivect index = *it;
@@ -186,11 +186,11 @@ void data<T,D>
 			      const int order_space,
 			      const int order_time)
 {
-  assert (has_storage());
-  assert (all(box.lower()>=extent().lower()));
-  assert (all(box.upper()<=extent().upper()));
-  assert (all(box.stride()==extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0));
+  assert (this->has_storage());
+  assert (all(box.lower()>=this->extent().lower()));
+  assert (all(box.upper()<=this->extent().upper()));
+  assert (all(box.stride()==this->extent().stride()));
+  assert (all((box.lower()-this->extent().lower())%box.stride() == 0));
   vector<const data*> srcs(gsrcs.size());
   for (int t=0; t<(int)srcs.size(); ++t) srcs[t] = (const data*)gsrcs[t];
   assert (srcs.size() == times.size() && srcs.size()>0);
@@ -198,14 +198,14 @@ void data<T,D>
     assert (srcs[t]->has_storage());
     assert (all(box.lower()>=srcs[t]->extent().lower()));
     assert (all(box.upper()<=srcs[t]->extent().upper()));
-    assert (proc() == srcs[t]->proc());
+    assert (this->proc() == srcs[t]->proc());
   }
   assert (order_space >= 0);
   assert (order_time >= 0);
   
   int rank;
   MPI_Comm_rank (dist::comm, &rank);
-  assert (rank == proc());
+  assert (rank == this->proc());
   
   T Tdummy;
   CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -585,8 +585,8 @@ ostream& data<T,D>::output (ostream& os) const {
   // the missing argument.
   T Tdummy;
   os << "data<" << typestring(Tdummy) << "," << D << ">:"
-     << "extent=" << extent() << ","
-     << "stride=" << stride() << ",size=" << this->size();
+     << "extent=" << this->extent() << ","
+     << "stride=" << this->stride() << ",size=" << this->size();
   return os;
 }
 
