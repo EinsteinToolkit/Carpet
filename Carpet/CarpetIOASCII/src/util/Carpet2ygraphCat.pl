@@ -16,90 +16,44 @@ my $fh = new FileHandle(">$file") || die "Unable to open file \"$file\".";
 my %data;
 my $time = -1;
 my $new = 0;
-my $currentit = -1;
-my $lastit = -1;
 
-my @datatoprint;
-my $nsets = 1;
-my $maxlength = 0;
-my @lengths;
-
-$lengths[0]=0;
 while (<CARPETFILE>)
 {
     $line = $_;
-    if ($line =~ "iteration") {
-      @itline = split(/ +/,$line);
-      $currentit = @itline[2];
-    }
-    elsif ($line =~ /^#/)
+    if ($line =~ /^#/)
     {
 	#Do nothing for headers!
     }
     elsif ($line =~ /([0-9+-ed.]+)*/)
     {
-	@dataline = split(/[ \t]+/,$line);
-	if ($currentit != $lastit)
+	@dataline = split(/ +/,$line);
+	if ($dataline[8] - $time > 1.e-10)
 	{
 	    if ($new)
 	    {
-		push(@datatoprint,"\n\n\"Time = ".$time."\n");
+		print $fh "\n\n\"Time = ",$time,"\n";
 		my @sortedcoords = sort numerically (keys %data);
 		my $localcoord;
 		foreach $localcoord (@sortedcoords)
 		{
-		    push(@datatoprint, $localcoord." ".$data{$localcoord});
+		    print $fh $localcoord." ".$data{$localcoord};
 		}
-		$maxlength = $maxlength > (scalar @sortedcoords) ? $maxlength : (scalar @sortedcoords);
-		$lengths[$nsets-1]=(scalar @sortedcoords);
-		$nsets++;
-		$lengths[$nsets-1]=0;
-		%data=();
 	    }
 	    $new++;
 	    $time = $dataline[8];
-	    $lastit = $currentit;
+
 	}
 	my $coord = $dataline[9+$ARGV[0]];
 	my $val = $dataline[12];
 	$data{$coord} = $val;
     }
 }
-push(@datatoprint, "\n\"Time = ",$time,"\n");
+print $fh "\n\"Time = ",$time,"\n";
 my @sortedcoords = sort numerically (keys %data);
 my $localcoord;
 foreach $localcoord (@sortedcoords)
 {
-    push(@datatoprint, $localcoord." ".$data{$localcoord});
-}
-$maxlength = $maxlength > (scalar @sortedcoords) ? $maxlength : (scalar @sortedcoords);
-$lengths[$nsets-1]=(scalar @sortedcoords);
-$nsets++;
-$lengths[$nsets-1]=0;
-
-my $oldline="";
-$nouts=0;
-my $set=0;
-foreach $line (@datatoprint) {
-  if ($line =~ "Time") {
-    if ($oldline) {
-      for (my $i=$lengths[$set-1]; $i<$maxlength;$i++) {
-	$nouts++;
-	print $fh $oldline;
-      }
-    }
-    $set++;
-    print $fh $line;
-  }
-  else {
-    $nouts++;
-    print $fh $line;
-    $oldline=$line
-  }
-}
-for (my $i=$lengths[$set-1]; $i<$maxlength;$i++) {
-  $nouts++;
-  print $fh $oldline;
+    print $fh $localcoord." ".$data{$localcoord};
 }
 
 sub numerically {$a <=> $b;}
