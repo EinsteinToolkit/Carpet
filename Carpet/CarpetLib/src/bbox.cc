@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.19 2004/01/25 14:57:29 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.20 2004/02/18 15:10:01 schnetter Exp $
 
 #include <assert.h>
 
@@ -226,10 +226,9 @@ template<class T, int D>
 typename bbox<T,D>::iteratorT& bbox<T,D>::iteratorT::operator++ () {
   for (int d=D-1; d>=0; --d) {
     pos[d]+=box.stride()[d];
-    if (pos[d]<=box.upper()[d]) return *this;
+    if (pos[d]<=box.upper()[d]) break;
     pos[d]=box.lower()[d];
   }
-  pos=box.endT().pos;
   return *this;
 }
 
@@ -240,7 +239,7 @@ typename bbox<T,D>::iteratorT bbox<T,D>::beginT () const {
 
 template<class T, int D>
 typename bbox<T,D>::iteratorT bbox<T,D>::endT () const {
-  return iteratorT(*this, upper()+stride());
+  return iteratorT(*this, upper());
 }
 
 
@@ -272,6 +271,7 @@ void bbox<T,D>::output (ostream& os) const {
 
 
 // Note: We need all dimensions all the time.
+template class bbox<int,0>;
 template class bbox<int,1>;
 template class bbox<int,2>;
 template class bbox<int,3>;
