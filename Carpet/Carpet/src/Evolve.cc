@@ -117,6 +117,12 @@ namespace Carpet {
   }
   
   
+  static void AdvanceTime( cGH* cgh, CCTK_REAL initial_time );
+  static bool Regrid( cGH* cgh );
+  static void PostRegrid( cGH* cgh );
+  static void EvolutionI( cGH* cgh );
+  static void Evolution_Restrict( cGH* cgh );
+  static void EvolutionII( cGH* cgh );
   
   int Evolve (tFleshConfig* fc)
   {
@@ -129,223 +135,234 @@ namespace Carpet {
     
     // Main loop
     while (! do_terminate(cgh, cgh->cctk_time, cgh->cctk_iteration)) {
-      
-      
-      
-      // Advance time
-      ++cgh->cctk_iteration;
-      global_time = cctk_initial_time
-        + cgh->cctk_iteration * delta_time / maxreflevelfact;
-      cgh->cctk_time = global_time;
+
+      AdvanceTime( cgh, cctk_initial_time );
+
       if ((cgh->cctk_iteration-1)
           % (maxreflevelfact / ipow(reffact, reflevels-1)) == 0) {
         Waypoint ("Evolving iteration %d at t=%g",
                   cgh->cctk_iteration, (double)cgh->cctk_time);
       }
+  
+      if( Regrid( cgh ) )
+        PostRegrid( cgh );
       
+      EvolutionI( cgh );
       
+      Evolution_Restrict( cgh );
       
-      // Regrid
-      {
-        bool did_regrid = false;
-        for (int rl=0; rl<reflevels; ++rl) {
-          {
-            const int ml=0;
-            const int do_every = maxreflevelfact / ipow(reffact, rl);
-            if ((cgh->cctk_iteration-1) % do_every == 0) {
-              enter_global_mode (cgh, ml);
-              enter_level_mode (cgh, rl);
-              
-              Checkpoint ("Regrid");
-              did_regrid |= Regrid (cgh, false, true);
-              
-              leave_level_mode (cgh);
-              leave_global_mode (cgh);
-            } // if do_every
-          } // ml
-        } // for rl
-        
-        if (did_regrid) {
-          for (int rl=0; rl<reflevels; ++rl) {
-            for (int ml=mglevels-1; ml>=0; --ml) {
-              enter_global_mode (cgh, ml);
-              enter_level_mode (cgh, rl);
-              
-              do_global_mode = reflevel==0;
-              do_meta_mode = do_global_mode && mglevel==mglevels-1;
-              
-              Waypoint ("Postregrid at iteration %d time %g%s%s",
-                        cgh->cctk_iteration, (double)cgh->cctk_time,
-                        (do_global_mode ? " (global)" : ""),
-                        (do_meta_mode ? " (meta)" : ""));
-              
-              // Postregrid
-              Checkpoint ("Scheduling POSTREGRID");
-              CCTK_ScheduleTraverse ("CCTK_POSTREGRID", cgh, CallFunction);
-              
-              leave_level_mode (cgh);
-              leave_global_mode (cgh);
-            } // for ml
-          } // for rl
-        } // if did_regrid
-      }
-      
-      
-      
-      for (int ml=mglevels-1; ml>=0; --ml) {
-        
-        bool have_done_global_mode = false;
-        bool have_done_anything = false;
-        
-        for (int rl=0; rl<reflevels; ++rl) {
-          const int do_every
-            = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl));
-          if ((cgh->cctk_iteration-1) % do_every == 0) {
-            enter_global_mode (cgh, ml);
-            enter_level_mode (cgh, rl);
-            
-            do_global_mode = ! have_done_global_mode;
-            do_meta_mode = do_global_mode && mglevel==mglevels-1;
-            assert (! (have_done_global_mode && do_global_mode));
-            have_done_global_mode |= do_global_mode;
-            have_done_anything = true;
-            
-            // Advance times
-            for (int m=0; m<maps; ++m) {
-              vtt.at(m)->advance_time (reflevel, mglevel);
-            }
-            cgh->cctk_time = (global_time
-                              - delta_time / maxreflevelfact
-                              + delta_time * mglevelfact / reflevelfact);
-            CycleTimeLevels (cgh);
-	    
-            Waypoint ("Evolution I at iteration %d time %g%s%s",
-                      cgh->cctk_iteration, (double)cgh->cctk_time,
-                      (do_global_mode ? " (global)" : ""),
-                      (do_meta_mode ? " (meta)" : ""));
-            
-            // Checking
-            CalculateChecksums (cgh, allbutcurrenttime);
-            Poison (cgh, currenttimebutnotifonly);
-	    
-            // Evolve
-            Checkpoint ("Scheduling PRESTEP");
-            CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
-            Checkpoint ("Scheduling EVOL");
-            CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
-            
-            // Checking
-            PoisonCheck (cgh, currenttime);
-            
-            leave_level_mode (cgh);
-            leave_global_mode (cgh);
-          } // if do_every
-        } // for rl
-        
-        if (have_done_anything) assert (have_done_global_mode);
-        
-      } // for ml
-      
-      
-      
-      for (int ml=mglevels-1; ml>=0; --ml) {
-        for (int rl=reflevels-1; rl>=0; --rl) {
-          const int do_every
-            = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl));
-          if (cgh->cctk_iteration % do_every == 0) {
-            enter_global_mode (cgh, ml);
-            enter_level_mode (cgh, rl);
-            
-            Waypoint ("Evolution/Restrict at iteration %d time %g",
-                      cgh->cctk_iteration, (double)cgh->cctk_time);
-            
-            // Restrict
-            Restrict (cgh);
-            
-            leave_level_mode (cgh);
-            leave_global_mode (cgh);
-          } // if do_every
-        } // for rl
-      } // for ml
-      
-      
-      
-      for (int ml=mglevels-1; ml>=0; --ml) {
-        
-        bool have_done_global_mode = false;
-        bool have_done_anything = false;
-        
-        for (int rl=0; rl<reflevels; ++rl) {
-          const int do_every
-            = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl));
-          if (cgh->cctk_iteration % do_every == 0) {
-            enter_global_mode (cgh, ml);
-            enter_level_mode (cgh, rl);
-            
-            int finest_active_reflevel = -1;
-            {
-              for (int rl_=0; rl_<reflevels; ++rl_) {
-                const int do_every_
-                  = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl_));
-                if (cgh->cctk_iteration % do_every_ == 0) {
-                  finest_active_reflevel = rl_;
-                }
-              }
-              assert (finest_active_reflevel >= 0);
-            }
-            do_global_mode = rl == finest_active_reflevel;
-            do_meta_mode = do_global_mode && mglevel==mglevels-1;
-            assert (! (have_done_global_mode && do_global_mode));
-            have_done_global_mode |= do_global_mode;
-            have_done_anything = true;
-            
-            Waypoint ("Evolution II at iteration %d time %g%s%s",
-                      cgh->cctk_iteration, (double)cgh->cctk_time,
-                      (do_global_mode ? " (global)" : ""),
-                      (do_meta_mode ? " (meta)" : ""));
-            
-            Checkpoint ("Scheduling POSTRESTRICT");
-            CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cgh, CallFunction);
-            
-            // Poststep
-            Checkpoint ("Scheduling POSTSTEP");
-            CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
-	    
-            // Checking
-            PoisonCheck (cgh, currenttime);
-            CalculateChecksums (cgh, currenttime);
-            
-            // Checkpoint
-            Checkpoint ("Scheduling CHECKPOINT");
-            CCTK_ScheduleTraverse ("CCTK_CHECKPOINT", cgh, CallFunction);
-	    
-            // Analysis
-            Checkpoint ("Scheduling ANALYSIS");
-            CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
-            
-            // Output
-            Checkpoint ("OutputGH");
-            CCTK_OutputGH (cgh);
-            
-            // Checking
-            CheckChecksums (cgh, alltimes);
-            
-            leave_level_mode (cgh);
-            leave_global_mode (cgh);
-          } // if do_every
-        } // for rl
-        
-        if (have_done_anything) assert (have_done_global_mode);
-        
-      } // for ml
-      
-      
-      
-    } // main loop
+      EvolutionII( cgh );
+    }
     
     Waypoint ("Done with evolution loop");
     
     return 0;
+  }
+
+  void AdvanceTime( cGH* cgh, CCTK_REAL initial_time )
+  {
+      ++cgh->cctk_iteration;
+      global_time = initial_time
+        + cgh->cctk_iteration * delta_time / maxreflevelfact;
+      cgh->cctk_time = global_time;
+  }
+
+  bool Regrid( cGH* cgh )
+  {
+    bool did_regrid = false;
+
+    for (int rl=0; rl<reflevels; ++rl) {
+      const int ml=0;
+      const int do_every = maxreflevelfact / ipow(reffact, rl);
+      if ((cgh->cctk_iteration-1) % do_every == 0) {
+        enter_global_mode (cgh, ml);
+        enter_level_mode (cgh, rl);
+        
+        Checkpoint ("Regrid");
+        did_regrid |= Regrid (cgh, false, true);
+         
+        leave_level_mode (cgh);
+        leave_global_mode (cgh);
+      }
+    }
+    return did_regrid;
+  }
+
+  void PostRegrid( cGH* cgh )
+  {
+    for (int rl=0; rl<reflevels; ++rl) {
+      for (int ml=mglevels-1; ml>=0; --ml) {
+        enter_global_mode (cgh, ml);
+        enter_level_mode (cgh, rl);
+        
+        do_global_mode = reflevel==0;
+        do_meta_mode = do_global_mode && mglevel==mglevels-1;
+        
+        Waypoint ("Postregrid at iteration %d time %g%s%s",
+                  cgh->cctk_iteration, (double)cgh->cctk_time,
+                  (do_global_mode ? " (global)" : ""),
+                  (do_meta_mode ? " (meta)" : ""));
+        
+        Checkpoint ("Scheduling POSTREGRID");
+        CCTK_ScheduleTraverse ("CCTK_POSTREGRID", cgh, CallFunction);
+        
+        leave_level_mode (cgh);
+        leave_global_mode (cgh);
+      }
+    }
+  }
+
+  void EvolutionI( cGH* cgh )
+  {
+    for (int ml=mglevels-1; ml>=0; --ml) {
+      
+      bool have_done_global_mode = false;
+      bool have_done_anything = false;
+      
+      for (int rl=0; rl<reflevels; ++rl) {
+        const int do_every
+          = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl));
+        if ((cgh->cctk_iteration-1) % do_every == 0) {
+          enter_global_mode (cgh, ml);
+          enter_level_mode (cgh, rl);
+          
+          do_global_mode = ! have_done_global_mode;
+          do_meta_mode = do_global_mode && mglevel==mglevels-1;
+          assert (! (have_done_global_mode && do_global_mode));
+          have_done_global_mode |= do_global_mode;
+          have_done_anything = true;
+          
+          // Advance times
+          for (int m=0; m<maps; ++m) {
+            vtt.at(m)->advance_time (reflevel, mglevel);
+          }
+          cgh->cctk_time = (global_time
+                            - delta_time / maxreflevelfact
+                            + delta_time * mglevelfact / reflevelfact);
+          CycleTimeLevels (cgh);
+   
+          Waypoint ("Evolution I at iteration %d time %g%s%s",
+                    cgh->cctk_iteration, (double)cgh->cctk_time,
+                    (do_global_mode ? " (global)" : ""),
+                    (do_meta_mode ? " (meta)" : ""));
+          
+          // Checking
+          CalculateChecksums (cgh, allbutcurrenttime);
+          Poison (cgh, currenttimebutnotifonly);
+   
+          // Evolve
+          Checkpoint ("Scheduling PRESTEP");
+          CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
+          Checkpoint ("Scheduling EVOL");
+          CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
+          
+          // Checking
+          PoisonCheck (cgh, currenttime);
+          
+          leave_level_mode (cgh);
+          leave_global_mode (cgh);
+        }
+      }
+      
+      if (have_done_anything)
+        assert (have_done_global_mode);
+        
+    }
+  }
+
+  void Evolution_Restrict( cGH* cgh )
+  {
+    for (int ml=mglevels-1; ml>=0; --ml) {
+      for (int rl=reflevels-1; rl>=0; --rl) {
+        const int do_every
+          = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl));
+        if (cgh->cctk_iteration % do_every == 0) {
+          enter_global_mode (cgh, ml);
+          enter_level_mode (cgh, rl);
+          
+          Waypoint ("Evolution/Restrict at iteration %d time %g",
+                    cgh->cctk_iteration, (double)cgh->cctk_time);
+          
+          Restrict (cgh);
+          
+          leave_level_mode (cgh);
+          leave_global_mode (cgh);
+        }
+      }
+    }
+  }
+
+  void EvolutionII( cGH* cgh )
+  {
+    for (int ml=mglevels-1; ml>=0; --ml) {
+      
+      bool have_done_global_mode = false;
+      bool have_done_anything = false;
+      
+      for (int rl=0; rl<reflevels; ++rl) {
+        const int do_every
+          = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl));
+        if (cgh->cctk_iteration % do_every == 0) {
+          enter_global_mode (cgh, ml);
+          enter_level_mode (cgh, rl);
+            
+          int finest_active_reflevel = -1;
+          {
+            for (int rl_=0; rl_<reflevels; ++rl_) {
+              const int do_every_
+                = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl_));
+              if (cgh->cctk_iteration % do_every_ == 0) {
+                finest_active_reflevel = rl_;
+              }
+            }
+            assert (finest_active_reflevel >= 0);
+          }
+          do_global_mode = rl == finest_active_reflevel;
+          do_meta_mode = do_global_mode && mglevel==mglevels-1;
+          assert (! (have_done_global_mode && do_global_mode));
+          have_done_global_mode |= do_global_mode;
+          have_done_anything = true;
+          
+          Waypoint ("Evolution II at iteration %d time %g%s%s",
+                    cgh->cctk_iteration, (double)cgh->cctk_time,
+                    (do_global_mode ? " (global)" : ""),
+                    (do_meta_mode ? " (meta)" : ""));
+          
+          Checkpoint ("Scheduling POSTRESTRICT");
+          CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cgh, CallFunction);
+          
+          // Poststep
+          Checkpoint ("Scheduling POSTSTEP");
+          CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
+   
+          // Checking
+          PoisonCheck (cgh, currenttime);
+          CalculateChecksums (cgh, currenttime);
+          
+          // Checkpoint
+          Checkpoint ("Scheduling CHECKPOINT");
+          CCTK_ScheduleTraverse ("CCTK_CHECKPOINT", cgh, CallFunction);
+   
+          // Analysis
+          Checkpoint ("Scheduling ANALYSIS");
+          CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
+          
+          // Output
+          Checkpoint ("OutputGH");
+          CCTK_OutputGH (cgh);
+          
+          // Checking
+          CheckChecksums (cgh, alltimes);
+          
+          leave_level_mode (cgh);
+          leave_global_mode (cgh);
+        }
+      }
+ 
+      if (have_done_anything)
+        assert (have_done_global_mode);
+        
+    }
   }
   
 } // namespace Carpet
