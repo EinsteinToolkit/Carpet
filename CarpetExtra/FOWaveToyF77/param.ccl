@@ -1,5 +1,5 @@
 # Parameter definitions for thorn WaveToyF77
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/param.ccl,v 1.4 2003/06/27 15:54:58 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/param.ccl,v 1.5 2003/07/08 23:12:45 schnetter Exp $
 
 private:
  
@@ -7,6 +7,11 @@ STRING bound "Type of boundary condition to use"
 {
   ".*" :: "Must be a registered boundary condition"
 } "Zero"
+
+INT bound_width "Number of boundary points"
+{
+  1:* :: ""
+} 1
 
 KEYWORD excision_bound "Type of excision boundary condition to use"
 {

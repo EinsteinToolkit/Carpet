@@ -42,9 +42,6 @@ c     Declare variables in argument list
       DECLARE_CCTK_ARGUMENTS
       DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
-      
-      INTEGER   bndwidth
-      PARAMETER (bndwidth=2)
 
       INTEGER   i,j,k
       INTEGER   istart(3), iend(3)
@@ -69,12 +66,12 @@ c     -----------------
          if (cctk_bbox(2*d-1).eq.0) then
             istart(d) = 1+cctk_nghostzones(d)
          else
-            istart(d) = 1+bndwidth
+            istart(d) = 1+bound_width
          end if
          if (cctk_bbox(2*d).eq.0) then
             iend(d) = cctk_lsh(d)-cctk_nghostzones(d)
          else
-            iend(d) = cctk_lsh(d)-bndwidth
+            iend(d) = cctk_lsh(d)-bound_width
          end if
       end do
       
@@ -134,12 +131,8 @@ c     ----------------
       CCTK_INT Boundary_SelectGroupForBC 
       
 c     Local declarations
-      INTEGER   bndwidth
-      PARAMETER (bndwidth=2)
-
       integer table
-      save table
-      data table /-1/
+      data    table /-1/
       
       character fbound*100
       CCTK_INT  fboundlen
@@ -196,10 +189,10 @@ c     -----------------------------------
       call CCTK_FortranString (fboundlen, bound, fbound)
       if (fboundlen.lt.0) call CCTK_WARN (0, "internal error")
       
-      ierr = Boundary_SelectGroupForBC (cctkGH, CCTK_ALL_FACES, bndwidth,
+      ierr = Boundary_SelectGroupForBC (cctkGH, CCTK_ALL_FACES, bound_width,
      $     table, "fowavetoy::scalarevolve", fbound)
       if (ierr.ne.0) call CCTK_WARN (0, "internal error")
-      ierr = Boundary_SelectGroupForBC (cctkGH, CCTK_ALL_FACES, bndwidth,
+      ierr = Boundary_SelectGroupForBC (cctkGH, CCTK_ALL_FACES, bound_width,
      $     table, "fowavetoy::scalarevolve_derivs", fbound)
       if (ierr.ne.0) call CCTK_WARN (0, "internal error")
       
