@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.62 2004/02/09 13:10:33 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.63 2004/03/07 13:19:41 hawke Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -195,6 +195,8 @@ namespace Carpet {
       return op_Lagrange;
     } else if (CCTK_Equals(prolong_string, "TVD")) {
       return op_TVD;
+    } else if (CCTK_Equals(prolong_string, "ENO")) {
+      return op_ENO;
     } else {
       assert (0);
     }
