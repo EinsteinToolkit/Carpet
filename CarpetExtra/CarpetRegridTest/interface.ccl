@@ -1,11 +1,12 @@
 # Interface definition for thorn CarpetRegridTest
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetRegridTest/interface.ccl,v 1.1 2004/05/23 15:56:14 cott Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetRegridTest/interface.ccl,v 1.2 2004/05/24 10:50:55 cott Exp $
 
 implements: CarpetRegridTest
 inherits: grid
 
-CCTK_REAL testscalar type=GF timelevels=3 tags='Prolongation="ENO"
+#tags='Prolongation="ENO"
+CCTK_REAL testscalar type=GF timelevels=3 
 {
-  phi, phi_error
+  phi, phi_error, phi_relerror
 } "The test scalar field"
 
