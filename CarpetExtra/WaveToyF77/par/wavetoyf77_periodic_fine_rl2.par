@@ -7,9 +7,9 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_periodic_fine_rl2.par,v 1.5 2004/03/23 12:00:37 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_periodic_fine_rl2.par,v 1.1 2002/01/08 15:30:02 schnetter Exp $
 
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Slab Carpet CarpetIOASCII CarpetIOFlexIO FlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
 
 Carpet::poison_new_timelevels	= yes
 Carpet::check_for_poison	= yes
@@ -29,8 +29,6 @@ Carpet::max_refinement_levels	= 2
 Carpet::prolongation_order_space= 3
 Carpet::prolongation_order_time	= 2
 
-CarpetRegrid::refinement_levels	= 2
-
 grid::type			= byrange
 grid::xmin			= -4.95
 grid::ymin			= -6.75
@@ -40,7 +38,7 @@ grid::ymax			=  6.9
 grid::zmax			=  9.3
 grid::mode			= periodic
 
-IO::out_dir			= "wavetoyf77_periodic_fine_rl2"
+IO::outdir			= "wavetoyf77_periodic_fine_rl2"
 
 IOBasic::outinfo_every		= 1 # 10
 IOBasic::outinfo_vars		= "wavetoy::phi"
@@ -51,9 +49,9 @@ IOBasic::outScalar_vars		= "wavetoy::phi"
 IOASCII::out1D_every		= 1 # 2
 IOASCII::out1D_vars		= "wavetoy::phi grid::coordinates"
 
-#IOFlexIO::out3D_every		= 96
-#IOFlexIO::out3D_vars		= "wavetoy::phi"
-#IOFlexIO::out3D_format		= IEEE
+IOFlexIO::out3D_every		= 96
+IOFlexIO::out3D_vars		= "wavetoy::phi"
+IOFlexIO::out3D_format		= IEEE
 
 WaveToyF77::bound		= radiation
 

@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_excision_rl2.par,v 1.1 2002/01/08 14:21:12 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_excision_rl2.par,v 1.2 2002/01/08 15:30:02 schnetter Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
 
@@ -11,9 +11,7 @@ Cactus::cctk_final_time		= 10.0
  
 Time::dtfac			= 0.5
 
-driver::global_nx		= 35
-driver::global_ny		= 35
-driver::global_nz		= 35
+driver::global_nsize		= 35
 
 Carpet::max_refinement_levels	= 4
 
