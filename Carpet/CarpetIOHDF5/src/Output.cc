@@ -368,7 +368,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
       }
 
       // Loop over all components
-      int first_time = 1;
+      bool first_time = true;
       BEGIN_COMPONENT_LOOP (cctkGH, group.grouptype)
       {
         // Get the intersection of the current component with this combination
@@ -452,7 +452,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
             {
               AddAttributes (cctkGH, fullname, group.dim, refinementlevel,
                              request->timelevel, bbox, dataset);
-              first_time = 0;
+              first_time = false;
             }
           }
         }
@@ -543,7 +543,7 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
 static int OutputGH (const cGH* const cctkGH)
 {
   DECLARE_CCTK_PARAMETERS;
-  static int first_time = 1;
+  static bool first_time = true;
 
   // check if any deprecated parameters have been set in the parameter file
   //  (don't check after recovery though)
@@ -562,7 +562,7 @@ static int OutputGH (const cGH* const cctkGH)
 #endif
       }
     }
-    first_time = 0;
+    first_time = false;
   }
 
   for (int vindex = CCTK_NumVars () - 1; vindex >= 0; vindex--)
