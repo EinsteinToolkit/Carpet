@@ -1,6 +1,5 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.2 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.3 2003/02/28 09:56:04 schnetter Exp $
 
-#include <alloca.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,7 +19,7 @@
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.2 2003/01/03 15:49:36 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.3 2003/02/28 09:56:04 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 
@@ -261,7 +260,7 @@ namespace CarpetSlab {
     assert (hsize);
     
     // Calculate more convenient representation of the direction
-    int* const dirs = (int*)alloca(hdim * sizeof(int));
+    int* const dirs = new int [hdim];
     // The following if statement is written according to the
     // definition of "dir".
     if (hdim==1) {
@@ -346,6 +345,9 @@ namespace CarpetSlab {
 		      dirs,
 		      downsample,
 		      hsize);
+    
+    // Release memory
+    delete [] dirs;
     
     // Return with success
     return 1;
