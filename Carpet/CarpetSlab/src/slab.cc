@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.17 2004/04/16 11:52:18 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.18 2004/04/16 14:02:26 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -23,7 +23,7 @@
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.17 2004/04/16 11:52:18 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.18 2004/04/16 14:02:26 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 
@@ -40,10 +40,10 @@ namespace CarpetSlab {
   struct mapping {
     int vindex;
     int hdim;
-    int * origin;               // [vdim]
-    int * dirs;                 // [hdim]
-    int * stride;               // [hdim]
-    int * length;               // [hdim]
+    vector<int> origin;         // [vdim]
+    vector<int> dirs;           // [hdim]
+    vector<int> stride;         // [hdim]
+    vector<int> length;         // [hdim]
   };
   
   
@@ -110,14 +110,15 @@ namespace CarpetSlab {
     assert (typesize>0);
     
     if (gp.grouptype==CCTK_GF && reflevel==-1) {
-      CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in global mode (use singlemap mode instead)");
+      CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in meta mode or global mode (use singlemap mode instead)");
     }
     const int rl = gp.grouptype==CCTK_GF ? reflevel : 0;
     
-    if (gp.grouptype==CCTK_GF && Carpet::map==-1) {
-      CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in level mode (use singlemap mode instead)");
+    if (gp.grouptype==CCTK_GF && Carpet::map==-1 && maps>1) {
+      CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in level mode when there are multiple maps (use singlemap mode instead, or make sure that there is only one map)");
     }
-    const int m = gp.grouptype==CCTK_GF ? Carpet::map : 0;
+    // const int m = gp.grouptype==CCTK_GF ? Carpet::map : 0;
+    const int m = 0;
     
     // Check dimension
     assert (hdim>=0 && hdim<=gp.dim);
@@ -531,7 +532,9 @@ namespace CarpetSlab {
     
     // Forward call
     FillSlab (cctkGH, proc, vindex, timelevel,
-              mp->hdim, mp->origin, mp->dirs, mp->stride, mp->length, hdata);
+              mp->hdim,
+              &mp->origin[0], &mp->dirs[0], &mp->stride[0], &mp->length[0],
+              hdata);
     
     return 0;
   }
@@ -629,12 +632,13 @@ namespace CarpetSlab {
     assert (direction);
     assert (origin);
     assert (extent);
-    assert (table_handle>=0);
+    // assert (downsample);
+    // assert (table_handle>=0);
     assert (hsize);
     
     // Get more information
     int const vdim = CCTK_GroupDimFromVarI (vindex);
-    assert (vdim>=0 && vdim<dim);
+    assert (vdim>=0 && vdim<=dim);
     assert (hdim<=vdim);
     
     // Not implemented
@@ -642,75 +646,30 @@ namespace CarpetSlab {
     
     // Allocate memory
     mapping * mp = new mapping;
-    mp->origin = new int[vdim];
-    mp->dirs   = new int[hdim];
-    mp->stride = new int[hdim];
-    mp->length = new int[hdim];
     
     // Calculate more convenient representation of the direction
-    int dirs[dim];              // should really be dirs[hdim]
-    // The following if statement is written according to the
-    // definition of "dir".
-    if (hdim==1) {
-      // 1-dimensional hyperslab
-      int mydir = 0;
-      for (int d=0; d<vdim; ++d) {
-	if (direction[d]!=0) {
-	  mydir = d+1;
-	  break;
+    vector<int> dirs(hdim);
+    for (int d=0; d<hdim; ++d) {
+      for (int dd=0; dd<vdim; ++dd) {
+	if (direction[d*vdim+dd]!=0) {
+          dirs[d] = dd+1;
+          goto found;
 	}
       }
-      assert (mydir>0);
-      for (int d=0; d<vdim; ++d) {
-	if (d == mydir-1) {
-	  assert (direction[d]!=0);
-	} else {
-	  assert (direction[d]==0);
-	}
-      }
-      dirs[0] = mydir;
-    } else if (hdim==vdim) {
-      // vdim-dimensional hyperslab
-      for (int d=0; d<vdim; ++d) {
-	dirs[d] = d+1;
-      }
-    } else if (hdim==2) {
-      // 2-dimensional hyperslab with vdim==3
-      assert (vdim==3);
-      int mydir = 0;
-      for (int d=0; d<vdim; ++d) {
-	if (direction[d]==0) {
-	  mydir = d+1;
-	  break;
-	}
-      }
-      assert (mydir>0);
-      for (int d=0; d<vdim; ++d) {
-	if (d == mydir-1) {
-	  assert (direction[d]==0);
-	} else {
-	  assert (direction[d]!=0);
-	}
-      }
-      int dd=0;
-      for (int d=0; d<vdim; ++d) {
-	if (d != mydir-1) {
-	  dirs[dd] = d+1;
-	  ++dd;
-	}
-      }
-      assert (dd==hdim);
-    } else {
       assert (0);
-    }
-    // Fill remaining length
-    for (int d=vdim; d<dim; ++d) {
-      dirs[d] = d+1;
+    found:;
+      for (int dd=0; dd<vdim; ++dd) {
+        assert ((direction[d*vdim+dd]!=0) == (dirs[d]==dd+1));
+      }
+      for (int dd=0; dd<d; ++dd) {
+        assert (dirs[dd] != dirs[d]);
+      }
     }
     
     // Calculate lengths
     vector<CCTK_INT> downsample(hdim);
     for (int dd=0; dd<hdim; ++dd) {
+      downsample[dd] = downsample_ ? downsample_[dd] : 1;
       if (extent[dd]<0) {
 	int gsh[dim];
 	int ierr = CCTK_GroupgshVI(cctkGH, dim, gsh, vindex);
@@ -720,7 +679,6 @@ namespace CarpetSlab {
 	// Partial argument check
 	assert (origin[dirs[dd]-1]>=0);
 	assert (origin[dirs[dd]-1]<=totlen);
-        downsample[dd] = downsample_ ? downsample_[dd] : 1;
 	assert (downsample[dd]>0);
 	hsize[dd] = (totlen - origin[dirs[dd]-1]) / downsample[dd];
       } else {
@@ -732,14 +690,20 @@ namespace CarpetSlab {
     // Store information
     mp->vindex = vindex;
     mp->hdim = hdim;
-    for (size_t d=0; d<(size_t)hdim; ++d) {
+    mp->origin.resize(vdim);
+    mp->dirs  .resize(hdim);
+    mp->stride.resize(hdim);
+    mp->length.resize(hdim);
+    for (size_t d=0; d<(size_t)vdim; ++d) {
       mp->origin[d] = origin[d];
+    }
+    for (size_t d=0; d<(size_t)hdim; ++d) {
       mp->dirs[d]   = dirs[d];
       mp->stride[d] = downsample[d];
       mp->length[d] = hsize[d];
     }
     
-    return 0;
+    return StoreMapping (mp);
   }
   
   
@@ -756,11 +720,6 @@ namespace CarpetSlab {
     // Delete storage
     DeleteMapping (mapping_handle);
     
-    // Free memory
-    delete [] mp->origin;
-    delete [] mp->dirs;
-    delete [] mp->stride;
-    delete [] mp->length;
     delete mp;
     
     return 0;
