@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.12 2004/01/25 14:57:27 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.13 2004/04/04 19:24:13 schnetter Exp $ */
 
 #ifndef CARPET_PUBLIC_H
 #define CARPET_PUBLIC_H
@@ -20,7 +20,7 @@ namespace Carpet {
 #endif
     
     /* Prolongation management */
-    int CarpetEnableProlongating (const int flag);
+    CCTK_INT CarpetEnableProlongating (const CCTK_INT flag);
     
     
     

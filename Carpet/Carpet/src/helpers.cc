@@ -17,7 +17,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.45 2004/01/25 14:57:28 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.46 2004/04/04 19:24:13 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -30,7 +30,7 @@ namespace Carpet {
   
   
   // Enable or disable prolongating
-  int CarpetEnableProlongating (const int flag)
+  CCTK_INT CarpetEnableProlongating (const CCTK_INT flag)
   {
     assert (flag==0 || flag==1);
     do_prolongate = flag;
