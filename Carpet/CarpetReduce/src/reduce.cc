@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.22 2003/05/14 08:12:52 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.23 2003/05/21 14:31:03 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -22,7 +22,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.22 2003/05/14 08:12:52 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.23 2003/05/21 14:31:03 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -664,19 +664,6 @@ namespace CarpetReduce {
   {
     int ierr;
     
-    // TODO: allow all modes for grid scalars and grid arrays, and
-    // restrict usage only for grid functions.
-    for (int n=0; n<num_invars; ++n) {
-      if (CCTK_GroupTypeFromVarI(invars[n]) != CCTK_GF) {
-        CCTK_WARN (0, "Reduction operators for grid scalars and grid arrays are not yet implemented");
-      }
-    }
-    
-    // global mode
-    if (reflevel == -1) {
-      CCTK_WARN (0, "Reduction operators in global mode are not yet implemented");
-    }
-    
     assert (cgh);
     
     assert (proc == -1 || (proc>=0 && proc<CCTK_nProcs(cgh)));
@@ -693,6 +680,7 @@ namespace CarpetReduce {
     
     if (num_outvals==0) return 0;
     
+    assert (num_invars>0);
     const int vi = invars[0];
     assert (vi>=0 && vi<CCTK_NumVars());
     
@@ -705,17 +693,30 @@ namespace CarpetReduce {
     const int vartypesize = CCTK_VarTypeSize(outtype);
     assert (vartypesize>=0);
     
+    
+    
+    int const reduce_arrays = CCTK_GroupTypeFromVarI(vi) != CCTK_GF;
+    
+    for (int n=0; n<num_invars; ++n) {
+      if ((CCTK_GroupTypeFromVarI(invars[n]) != CCTK_GF) != reduce_arrays) {
+        CCTK_WARN (0, "Cannot (yet) reduce grid functions and grid arrays at the same time");
+      }
+    }
+    
+    // global mode
+    if (! reduce_arrays && reflevel == -1) {
+      CCTK_WARN (0, "Grid function reduction operators in global mode are not yet implemented");
+    }
+    
+    
+    
     vector<char> myoutvals (vartypesize * num_outvals);
     vector<char> mycounts  (vartypesize * num_outvals);
     
     Initialise (cgh, proc, num_outvals, &myoutvals[0], outtype, &mycounts[0],
                 red);
     
-    int const saved_component = component;
-    if (component!=-1) {
-      set_component ((cGH*)cgh, -1);
-    }
-    BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
+    if (reduce_arrays) {
       
       assert (grpdim<=dim);
       int lsh[dim], bbox[2*dim], nghostzones[dim];
@@ -761,10 +762,64 @@ namespace CarpetReduce {
               num_outvals, &myoutvals[0], outtype,
               &mycounts[0], red);
       
-    } END_LOCAL_COMPONENT_LOOP(cgh);
-    if (saved_component!=-1) {
-      set_component ((cGH*)cgh, saved_component);
-    }
+    } else {                    // ! reduce_arrays
+    
+      int const saved_component = component;
+      if (component!=-1) {
+        set_component ((cGH*)cgh, -1);
+      }
+      BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
+      
+        assert (grpdim<=dim);
+        int lsh[dim], bbox[2*dim], nghostzones[dim];
+        ierr = CCTK_GrouplshVI(cgh, grpdim, lsh, vi);
+        assert (!ierr);
+        ierr = CCTK_GroupbboxVI(cgh, 2*grpdim, bbox, vi);
+        assert (!ierr);
+        ierr = CCTK_GroupnghostzonesVI(cgh, grpdim, nghostzones, vi);
+        assert (!ierr);
+        for (int d=0; d<grpdim; ++d) {
+          assert (lsh[d]>=0);
+          assert (nghostzones[d]>=0 && 2*nghostzones[d]<=lsh[d]);
+        }
+      
+        vector<const void*> inarrays (num_invars);
+        for (int n=0; n<num_invars; ++n) {
+          inarrays[n] = CCTK_VarDataPtrI(cgh, 0, invars[n]);
+          assert (inarrays[n]);
+        }
+      
+        const int intype = CCTK_VarTypeI(vi);
+        for (int n=0; n<num_invars; ++n) {
+          assert (CCTK_VarTypeI(invars[n]) == intype);
+        }
+      
+        vect<int,dim> mylsh, mynghostzones;
+        vect<vect<int,2>,dim> mybbox;
+        for (int d=0; d<grpdim; ++d) {
+          mylsh[d] = lsh[d];
+          mybbox[d][0] = bbox[2*d  ];
+          mybbox[d][1] = bbox[2*d+1];
+          mynghostzones[d] = nghostzones[d];
+        }
+        for (int d=grpdim; d<dim; ++d) {
+          mylsh[d] = 1;
+          mybbox[d][0] = 0;
+          mybbox[d][1] = 0;
+          mynghostzones[d] = 0;
+        }
+      
+        Reduce (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
+                num_invars, &inarrays[0], intype,
+                num_outvals, &myoutvals[0], outtype,
+                &mycounts[0], red);
+        
+      } END_LOCAL_COMPONENT_LOOP(cgh);
+      if (saved_component!=-1) {
+        set_component ((cGH*)cgh, saved_component);
+      }
+      
+    } // ! reduce_arrays
     
     Finalise (cgh, proc, num_outvals, outvals, outtype,
               &myoutvals[0], &mycounts[0],
