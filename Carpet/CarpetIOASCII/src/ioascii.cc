@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.61 2004/02/27 15:40:18 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.62 2004/02/27 17:09:59 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -500,8 +500,8 @@ namespace CarpetIOASCII {
                 rvect coord_delta;
                 if (grouptype == CCTK_GF) {
                   for (int d=0; d<dim; ++d) {
-                    global_lower[d] = origin_space.at(0)[d];
-                    coord_delta[d] = delta_space[d] / maxreflevelfact;
+                    global_lower[d] = cgh->cctk_origin_space[d];
+                    coord_delta[d] = cgh->cctk_delta_space[d] / maxreflevelfact;
                   }
                 } else {
                   for (int d=0; d<dim; ++d) {
