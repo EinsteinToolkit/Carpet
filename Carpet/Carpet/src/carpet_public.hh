@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.33 2003/07/20 21:03:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.34 2003/07/23 09:46:41 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -220,29 +220,30 @@ namespace Carpet {
   
   // Component iterator
   
-#define BEGIN_COMPONENT_LOOP(cgh, grouptype)                            \
-  do {                                                                  \
-    int _cl;                                                            \
-    cGH * const _cgh = const_cast<cGH*>(cgh);                           \
-    int const _grouptype = (grouptype);                                 \
-    int _mincl, _maxcl;                                                 \
-    if (_grouptype == CCTK_GF) {                                        \
-      assert (reflevel>=0 && reflevel<hh->reflevels());                 \
-      assert (mglevel>=0 && mglevel<mglevels);                          \
-      assert (hh->local_components(reflevel)==1 || component==-1);      \
-      _mincl=0;                                                         \
-      _maxcl=hh->components(reflevel);                                  \
-    } else {                                                            \
-      _mincl=component;                                                 \
-      _maxcl=component;                                                 \
-    }                                                                   \
-    for (int _c=_mincl; _c<_maxcl; ++_c) {                              \
-      if (_grouptype==CCTK_GF) set_component (_cgh, _c);                \
+#define BEGIN_COMPONENT_LOOP(cgh, grouptype)            \
+  do {                                                  \
+    int _cl;                                            \
+    cGH * const _cgh = const_cast<cGH*>(cgh);           \
+    int const _grouptype = (grouptype);                 \
+    int const _savec = (component);                     \
+    int _minc, _maxc;                                   \
+    if (_grouptype == CCTK_GF) {                        \
+      assert (reflevel>=0 && reflevel<hh->reflevels()); \
+      assert (mglevel>=0 && mglevel<mglevels);          \
+      assert (component==-1);                           \
+      _minc=0;                                          \
+      _maxc=hh->components(reflevel);                   \
+    } else {                                            \
+      _minc=component;                                  \
+      _maxc=component+1;                                \
+    }                                                   \
+    for (int _c=_minc; _c<_maxc; ++_c) {                \
+      if (component!=_c) set_component (_cgh, _c);      \
       {
 #define END_COMPONENT_LOOP                              \
       }                                                 \
     }                                                   \
-    if (_grouptype==CCTK_GF) set_component (_cgh, -1);  \
+    if (component!=_savec) set_component (_cgh, -1);    \
     _cl = 0;                                            \
   } while (0)
 
@@ -253,27 +254,28 @@ namespace Carpet {
     int _lcl;                                                           \
     cGH * const _cgh = const_cast<cGH*>(cgh);                           \
     int const _grouptype = (grouptype);                                 \
-    int _mincl, _maxcl;                                                 \
+    int const _savec = (component);                                     \
+    int _minc, _maxc;                                                   \
     if (_grouptype == CCTK_GF) {                                        \
       assert (reflevel>=0 && reflevel<hh->reflevels());                 \
       assert (mglevel>=0 && mglevel<mglevels);                          \
       assert (hh->local_components(reflevel)==1 || component==-1);      \
-      _mincl=0;                                                         \
-      _maxcl=hh->components(reflevel);                                  \
+      _minc=0;                                                          \
+      _maxc=hh->components(reflevel);                                   \
     } else {                                                            \
-      _mincl=component;                                                 \
-      _maxcl=component;                                                 \
+      _minc=component;                                                  \
+      _maxc=component+1;                                                \
     }                                                                   \
-    for (int _c=_mincl; _c<_maxcl; ++_c) {                              \
+    for (int _c=_minc; _c<_maxc; ++_c) {                                \
       if (_grouptype!=CCTK_GF || hh->is_local(reflevel,_c)) {           \
-        if (_grouptype==CCTK_GF) set_component (_cgh, _c);              \
+        if (component!=_c) set_component (_cgh, _c);                    \
         {
-#define END_LOCAL_COMPONENT_LOOP                        \
-        }                                               \
-      }                                                 \
-    }                                                   \
-    if (_grouptype==CCTK_GF) set_component (_cgh, -1);  \
-    _lcl = 0;                                           \
+#define END_LOCAL_COMPONENT_LOOP                                \
+        }                                                       \
+      }                                                         \
+    }                                                           \
+    if (component!=_savec) set_component (_cgh, _savec);        \
+    _lcl = 0;                                                   \
   } while (0)
   
 } // namespace Carpet
