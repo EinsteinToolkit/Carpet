@@ -1,17 +1,8 @@
 -*-Text-*-
-$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/doc/TODO,v 1.5 2001/04/23 08:10:11 schnetter Exp $
+$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/doc/TODO,v 1.1 2001/03/11 10:31:55 eschnett Exp $
 
 CarpetSlab: Add support for diagonal lines
 
 Carpet: Add support for a shadow hierarchy
 
 Carpet: Distribute processes in all directions, not only z
-
-Carpet: Test suite
-
-Carpet: Finish documentation
-
-CarpetIOASCII: put more information into output files
-
-Carpet: Allow en-/disabling storage for grid functions with one time
-level
