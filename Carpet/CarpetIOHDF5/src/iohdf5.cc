@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.2 2004/03/03 13:07:01 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.3 2004/03/08 09:09:32 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -309,10 +309,10 @@ namespace CarpetIOHDF5 {
             CCTK_REAL origin[dim], delta[dim];
             CCTK_REAL min_ext[dim], max_ext[dim];
             for (int d=0; d<dim; ++d) {
-              origin[d] = CCTK_ORIGIN_SPACE(d);
+              origin[d] = CCTK_ORIGIN_SPACE(d) + cctk_lbnd[d] * delta[d];
               delta[d] = CCTK_DELTA_SPACE(d);
               min_ext[d] = origin[d];
-              max_ext[d] = origin[d] + (cctk_lsh[d] - 1) * delta[d];
+              max_ext[d] = origin[d] + cctk_lsh[d] * delta[d];
             }
             WriteAttribute (dataset, "origin", origin, dim);
             WriteAttribute (dataset, "delta", delta, dim);
@@ -322,7 +322,7 @@ namespace CarpetIOHDF5 {
           WriteAttribute (dataset, "time", cctk_time);
           WriteAttribute (dataset, "timestep", cctk_iteration);
           WriteAttribute (dataset, "level_timestep", cctk_iteration / reflevelfact);
-          WriteAttribute (dataset, "persistence", reflevelfact);
+          WriteAttribute (dataset, "persistence", maxreflevelfact / reflevelfact);
           {
             int time_refinement;
             int spatial_refinement[dim];
