@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.35 2004/01/25 14:57:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.36 2004/02/03 16:45:01 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -103,7 +103,7 @@ namespace Carpet {
           
           cgh->cctk_time = global_time;
           
-          Waypoint ("Initialisation at iteration %d time %g%s%s",
+          Waypoint ("Initialisation I at iteration %d time %g%s%s",
                     cgh->cctk_iteration, (double)cgh->cctk_time,
                     (do_global_mode ? " (global)" : ""),
                     (do_meta_mode ? " (meta)" : ""));
