@@ -1,7 +1,9 @@
 # Interface definition for thorn CarpetSlab
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/interface.ccl,v 1.8 2004/01/22 13:31:07 tradke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/interface.ccl,v 1.9 2004/05/04 22:09:54 schnetter Exp $
 
-implements: Hyperslab
+IMPLEMENTS: Hyperslab
+
+INHERITS: Carpet CarpetLib
 
 includes header: slab.h in Hyperslab.h
 

@@ -1,7 +1,9 @@
 # Interface definition for thorn CarpetIOHDF5
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/interface.ccl,v 1.1 2004/03/03 09:44:59 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/interface.ccl,v 1.2 2004/05/04 22:09:54 schnetter Exp $
 
-implements: IOHDF5
+IMPLEMENTS: IOHDF5
+
+INHERITS: Carpet CarpetLib IOUtil
 
 uses include header: carpet.hh
 
