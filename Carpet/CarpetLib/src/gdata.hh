@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.14 2002/05/05 22:17:02 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.15 2002/09/25 15:49:16 schnetter Exp $
 
  ***************************************************************************/
 
@@ -26,6 +26,8 @@
 
 #include <iostream>
 #include <string>
+
+#include "cctk.h"
 
 #include "defs.hh"
 #include "dgdata.hh"
@@ -99,8 +101,8 @@ public:
   // Data manipulators
   void copy_from (const generic_data* src, const ibbox& box);
   void interpolate_from (const vector<const generic_data*> srcs,
-			 const vector<int> tls,
-			 const ibbox& box, const int tl,
+			 const vector<CCTK_REAL> times,
+			 const ibbox& box, const CCTK_REAL time,
 			 const int order_space,
 			 const int order_time);
 protected:
@@ -108,8 +110,8 @@ protected:
   copy_from_innerloop (const generic_data* src, const ibbox& box) = 0;
   virtual void
   interpolate_from_innerloop (const vector<const generic_data*> srcs,
-			      const vector<int> tls,
-			      const ibbox& box, const int tl,
+			      const vector<CCTK_REAL> times,
+			      const ibbox& box, const CCTK_REAL time,
 			      const int order_space,
 			      const int order_time) = 0;
   

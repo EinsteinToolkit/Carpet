@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.11 2002/07/18 14:33:50 shawley Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.12 2002/09/25 15:49:16 schnetter Exp $
 
  ***************************************************************************/
 
@@ -27,6 +27,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include "cctk.h"
 
 #include "defs.hh"
 #include "dggf.hh"
@@ -138,19 +140,22 @@ protected:
   void intercat (int tl1, int rl1, int c1, int ml1,
 		 const ibbox dh<D>::dboxes::* recv_list,
 		 const vector<int> tl2s, int rl2, int ml2,
-		 const ibbox dh<D>::dboxes::* send_list);
+		 const ibbox dh<D>::dboxes::* send_list,
+		 CCTK_REAL time);
 
   // Interpolate regions
   void intercat (int tl1, int rl1, int c1, int ml1,
 		 const iblist dh<D>::dboxes::* recv_list,
 		 const vector<int> tl2s, int rl2, int ml2,
-		 const iblist dh<D>::dboxes::* send_list);
+		 const iblist dh<D>::dboxes::* send_list,
+		 CCTK_REAL time);
 
   // Interpolate regions
   void intercat (int tl1, int rl1, int c1, int ml1,
 		 const iblistvect dh<D>::dboxes::* recv_listvect,
 		 const vector<int> tl2s, int rl2, int ml2,
-		 const iblistvect dh<D>::dboxes::* send_listvect);
+		 const iblistvect dh<D>::dboxes::* send_listvect,
+		 CCTK_REAL time);
 
 
 
@@ -169,19 +174,19 @@ public:
   void sync (int tl, int rl, int c, int ml);
 
   // Prolongate the boundaries of a component
-  void ref_bnd_prolongate (int tl, int rl, int c, int ml);
+  void ref_bnd_prolongate (int tl, int rl, int c, int ml, CCTK_REAL time);
 
   // Restrict a multigrid level
-  void mg_restrict (int tl, int rl, int c, int ml);
+  void mg_restrict (int tl, int rl, int c, int ml, CCTK_REAL time);
 
   // Prolongate a multigrid level
-  void mg_prolongate (int tl, int rl, int c, int ml);
+  void mg_prolongate (int tl, int rl, int c, int ml, CCTK_REAL time);
 
   // Restrict a refinement level
-  void ref_restrict (int tl, int rl, int c, int ml);
+  void ref_restrict (int tl, int rl, int c, int ml, CCTK_REAL time);
 
   // Prolongate a refinement level
-  void ref_prolongate (int tl, int rl, int c, int ml);
+  void ref_prolongate (int tl, int rl, int c, int ml, CCTK_REAL time);
   
   
   

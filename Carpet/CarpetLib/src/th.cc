@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.7 2002/05/05 22:17:03 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.8 2002/09/25 15:49:17 schnetter Exp $
 
  ***************************************************************************/
 
@@ -20,8 +20,11 @@
  ***************************************************************************/
 
 #include <assert.h>
+#include <math.h>
 
 #include <iostream>
+
+#include "cctk.h"
 
 #include "defs.hh"
 #include "dggh.hh"
@@ -33,7 +36,7 @@ using namespace std;
 
 
 // Constructors
-th::th (dimgeneric_gh* h, const int basedelta)
+th::th (dimgeneric_gh* h, const CCTK_REAL basedelta)
   : h(h), delta(basedelta) {
   h->add(this);
 }
@@ -49,7 +52,7 @@ void th::recompose () {
   deltas.resize(h->reflevels());
   for (int rl=0; rl<h->reflevels(); ++rl) {
     const int old_mglevels = times[rl].size();
-    int mgtime;
+    CCTK_REAL mgtime;
     // Select default time
     if (old_mglevels==0 && rl==0) {
       mgtime = 0;
@@ -64,7 +67,8 @@ void th::recompose () {
       if (rl==0 && ml==0) {
 	deltas[rl][ml] = delta;
       } else if (ml==0) {
-	assert (deltas[rl-1][ml] % h->reffact == 0);
+// 	assert (deltas[rl-1][ml] % h->reffact == 0);
+	assert (fabs(fmod(deltas[rl-1][ml], h->reffact)) < 1e-10);
 	deltas[rl][ml] = deltas[rl-1][ml] / h->reffact;
       } else {
 	deltas[rl][ml] = deltas[rl][ml-1] * h->mgfact;

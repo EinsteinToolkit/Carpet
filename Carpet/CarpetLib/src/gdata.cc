@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.19 2002/05/05 22:17:01 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.20 2002/09/25 15:49:16 schnetter Exp $
 
  ***************************************************************************/
 
@@ -21,6 +21,8 @@
 #include <assert.h>
 
 #include <iostream>
+
+#include "cctk.h"
 
 #include "bbox.hh"
 #include "defs.hh"
@@ -85,8 +87,8 @@ void generic_data<D>::copy_from (const generic_data* src, const ibbox& box)
 template<int D>
 void generic_data<D>
 ::interpolate_from (const vector<const generic_data*> srcs,
-		    const vector<int> tls,
-		    const ibbox& box, const int tl,
+		    const vector<CCTK_REAL> times,
+		    const ibbox& box, const CCTK_REAL time,
 		    const int order_space,
 		    const int order_time)
 {
@@ -95,7 +97,7 @@ void generic_data<D>
   assert (all(box.upper()<=extent().upper()));
   assert (all(box.stride()==extent().stride()));
   assert (all((box.lower()-extent().lower())%box.stride() == 0));
-  assert (srcs.size() == tls.size() && srcs.size()>0);
+  assert (srcs.size() == times.size() && srcs.size()>0);
   for (int t=0; t<(int)srcs.size(); ++t) {
     assert (srcs[t]->has_storage());
     assert (all(box.lower()>=srcs[t]->extent().lower()));
@@ -108,7 +110,8 @@ void generic_data<D>
     int rank;
     MPI_Comm_rank (dist::comm, &rank);
     if (rank == proc()) {
-      interpolate_from_innerloop (srcs, tls, box, tl, order_space, order_time);
+      interpolate_from_innerloop
+	(srcs, times, box, time, order_space, order_time);
     }
     
   } else {
@@ -116,7 +119,7 @@ void generic_data<D>
     
     generic_data* const tmp = make_typed();
     tmp->allocate (box, srcs[0]->proc());
-    tmp->interpolate_from (srcs, tls, box, tl, order_space, order_time);
+    tmp->interpolate_from (srcs, times, box, time, order_space, order_time);
     tmp->change_processor (proc());
     copy_from (tmp, box);
     delete tmp;

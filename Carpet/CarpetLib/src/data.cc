@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.19 2002/08/30 16:03:19 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.20 2002/09/25 15:49:15 schnetter Exp $
 
  ***************************************************************************/
 
@@ -197,8 +197,8 @@ void data<T,D>
 template<class T, int D>
 void data<T,D>
 ::interpolate_from_innerloop (const vector<const generic_data<D>*> gsrcs,
-			      const vector<int> tls,
-			      const ibbox& box, const int tl,
+			      const vector<CCTK_REAL> times,
+			      const ibbox& box, const CCTK_REAL time,
 			      const int order_space,
 			      const int order_time)
 {
@@ -209,7 +209,7 @@ void data<T,D>
   assert (all((box.lower()-extent().lower())%box.stride() == 0));
   vector<const data*> srcs(gsrcs.size());
   for (int t=0; t<(int)srcs.size(); ++t) srcs[t] = (const data*)gsrcs[t];
-  assert (srcs.size() == tls.size() && srcs.size()>0);
+  assert (srcs.size() == times.size() && srcs.size()>0);
   for (int t=0; t<(int)srcs.size(); ++t) {
     assert (srcs[t]->has_storage());
     assert (all(box.lower()>=srcs[t]->extent().lower()));
@@ -229,7 +229,7 @@ void data<T,D>
     src_fac[t] = 1;
     for (int tt=0; tt<(int)src_fac.size(); ++tt) {
       if (tt!=t) {
-	src_fac[t] *= (T)(tl - tls[tt]) / (T)(tls[t] - tls[tt]);
+	src_fac[t] *= (T)(time - times[tt]) / (T)(times[t] - times[tt]);
       }
     }
   }
@@ -366,40 +366,40 @@ extern "C" {
      const int regbbox[3][3]);
   
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_2tl)
-    (const CCTK_REAL8* src1, const int& t1,
-     const CCTK_REAL8* src2, const int& t2,
+    (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
+     const CCTK_REAL8* src2, const CCTK_REAL8& t2,
      const int& srciext, const int& srcjext, const int& srckext,
-     CCTK_REAL8* dst, const int& t,
+     CCTK_REAL8* dst, const CCTK_REAL8& t,
      const int& dstiext, const int& dstjext, const int& dstkext,
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_2tl_o3)
-    (const CCTK_REAL8* src1, const int& t1,
-     const CCTK_REAL8* src2, const int& t2,
+    (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
+     const CCTK_REAL8* src2, const CCTK_REAL8& t2,
      const int& srciext, const int& srcjext, const int& srckext,
-     CCTK_REAL8* dst, const int& t,
+     CCTK_REAL8* dst, const CCTK_REAL8& t,
      const int& dstiext, const int& dstjext, const int& dstkext,
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
   
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_3tl)
-    (const CCTK_REAL8* src1, const int& t1,
-     const CCTK_REAL8* src2, const int& t2,
-     const CCTK_REAL8* src3, const int& t3,
+    (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
+     const CCTK_REAL8* src2, const CCTK_REAL8& t2,
+     const CCTK_REAL8* src3, const CCTK_REAL8& t3,
      const int& srciext, const int& srcjext, const int& srckext,
-     CCTK_REAL8* dst, const int& t,
+     CCTK_REAL8* dst, const CCTK_REAL8& t,
      const int& dstiext, const int& dstjext, const int& dstkext,
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_3tl_o3)
-    (const CCTK_REAL8* src1, const int& t1,
-     const CCTK_REAL8* src2, const int& t2,
-     const CCTK_REAL8* src3, const int& t3,
+    (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
+     const CCTK_REAL8* src2, const CCTK_REAL8& t2,
+     const CCTK_REAL8* src3, const CCTK_REAL8& t3,
      const int& srciext, const int& srcjext, const int& srckext,
-     CCTK_REAL8* dst, const int& t,
+     CCTK_REAL8* dst, const CCTK_REAL8& t,
      const int& dstiext, const int& dstjext, const int& dstkext,
      const int srcbbox[3][3],
      const int dstbbox[3][3],
@@ -410,8 +410,8 @@ extern "C" {
 template<>
 void data<CCTK_REAL8,3>
 ::interpolate_from_innerloop (const vector<const generic_data<3>*> gsrcs,
-			      const vector<int> tls,
-			      const ibbox& box, const int tl,
+			      const vector<CCTK_REAL> times,
+			      const ibbox& box, const CCTK_REAL time,
 			      const int order_space,
 			      const int order_time)
 {
@@ -422,7 +422,7 @@ void data<CCTK_REAL8,3>
   assert (all((box.lower()-extent().lower())%box.stride() == 0));
   vector<const data*> srcs(gsrcs.size());
   for (int t=0; t<(int)srcs.size(); ++t) srcs[t] = (const data*)gsrcs[t];
-  assert (srcs.size() == tls.size() && srcs.size()>0);
+  assert (srcs.size() == times.size() && srcs.size()>0);
   for (int t=0; t<(int)srcs.size(); ++t) {
     assert (srcs[t]->has_storage());
     assert (all(box.lower()>=srcs[t]->extent().lower()));
@@ -505,20 +505,20 @@ void data<CCTK_REAL8,3>
       case 0:
       case 1:
 	CCTK_FNAME(prolongate_3d_real8_2tl)
-	  ((const CCTK_REAL8*)srcs[0]->storage(), tls[0],
-	   (const CCTK_REAL8*)srcs[1]->storage(), tls[1],
+	  ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+	   (const CCTK_REAL8*)srcs[1]->storage(), times[1],
 	   srcshp[0], srcshp[1], srcshp[2],
-	   (CCTK_REAL8*)storage(), tl,
+	   (CCTK_REAL8*)storage(), time,
 	   dstshp[0], dstshp[1], dstshp[2],
 	   srcbbox, dstbbox, regbbox);
 	break;
       case 2:
       case 3:
 	CCTK_FNAME(prolongate_3d_real8_2tl_o3)
-	  ((const CCTK_REAL8*)srcs[0]->storage(), tls[0],
-	   (const CCTK_REAL8*)srcs[1]->storage(), tls[1],
+	  ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+	   (const CCTK_REAL8*)srcs[1]->storage(), times[1],
 	   srcshp[0], srcshp[1], srcshp[2],
-	   (CCTK_REAL8*)storage(), tl,
+	   (CCTK_REAL8*)storage(), time,
 	   dstshp[0], dstshp[1], dstshp[2],
 	   srcbbox, dstbbox, regbbox);
 	break;
@@ -533,22 +533,22 @@ void data<CCTK_REAL8,3>
       case 0:
       case 1:
 	CCTK_FNAME(prolongate_3d_real8_3tl)
-	  ((const CCTK_REAL8*)srcs[0]->storage(), tls[0],
-	   (const CCTK_REAL8*)srcs[1]->storage(), tls[1],
-	   (const CCTK_REAL8*)srcs[2]->storage(), tls[2],
+	  ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+	   (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+	   (const CCTK_REAL8*)srcs[2]->storage(), times[2],
 	   srcshp[0], srcshp[1], srcshp[2],
-	   (CCTK_REAL8*)storage(), tl,
+	   (CCTK_REAL8*)storage(), time,
 	   dstshp[0], dstshp[1], dstshp[2],
 	   srcbbox, dstbbox, regbbox);
 	break;
       case 2:
       case 3:
 	CCTK_FNAME(prolongate_3d_real8_3tl_o3)
-	  ((const CCTK_REAL8*)srcs[0]->storage(), tls[0],
-	   (const CCTK_REAL8*)srcs[1]->storage(), tls[1],
-	   (const CCTK_REAL8*)srcs[2]->storage(), tls[2],
+	  ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+	   (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+	   (const CCTK_REAL8*)srcs[2]->storage(), times[2],
 	   srcshp[0], srcshp[1], srcshp[2],
-	   (CCTK_REAL8*)storage(), tl,
+	   (CCTK_REAL8*)storage(), time,
 	   dstshp[0], dstshp[1], dstshp[2],
 	   srcbbox, dstbbox, regbbox);
 	break;

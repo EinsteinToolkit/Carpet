@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.10 2002/05/05 22:16:59 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.11 2002/09/25 15:49:15 schnetter Exp $
 
  ***************************************************************************/
 
@@ -25,6 +25,8 @@
 
 #include <iostream>
 #include <string>
+
+#include "cctk.h"
 
 #include "defs.hh"
 #include "dist.hh"
@@ -94,8 +96,8 @@ public:
   void copy_from_innerloop (const generic_data<D>* gsrc,
 			    const ibbox& box);
   void interpolate_from_innerloop (const vector<const generic_data<D>*> gsrcs,
-				   const vector<int> tls,
-				   const ibbox& box, const int tl,
+				   const vector<CCTK_REAL> times,
+				   const ibbox& box, const CCTK_REAL time,
 				   const int order_space,
 				   const int order_time);
   

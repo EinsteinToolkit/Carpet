@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_2tl_o3.F77,v 1.7 2002/01/09 17:45:41 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_2tl_o3.F77,v 1.8 2002/09/25 15:49:16 schnetter Exp $
       
 #include "cctk.h"
       
@@ -15,12 +15,12 @@ c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d
       
       integer srciext, srcjext, srckext
       CCTK_REAL8 src1(srciext,srcjext,srckext)
-      integer t1
+      CCTK_REAL8 t1
       CCTK_REAL8 src2(srciext,srcjext,srckext)
-      integer t2
+      CCTK_REAL8 t2
       integer dstiext, dstjext, dstkext
       CCTK_REAL8 dst(dstiext,dstjext,dstkext)
-      integer t
+      CCTK_REAL8 t
 c     bbox(:,1) is lower boundary (inclusive)
 c     bbox(:,2) is upper boundary (inclusive)
 c     bbox(:,3) is stride
@@ -114,9 +114,12 @@ c     Linear (first order) interpolation
       if (t1.eq.t2) then
          call CCTK_WARN (0, "Internal error: arrays have same time")
       end if
+      if (t.lt.min(t1,t2) .or. t.gt.max(t1,t2)) then
+         call CCTK_WARN (0, "Internal error: extrapolation")
+      end if
       
-      s1fac = (t - t2) * one / (t1 - t2)
-      s2fac = (t - t1) * one / (t2 - t1)
+      s1fac = (t - t2) / (t1 - t2)
+      s2fac = (t - t1) / (t2 - t1)
       
       
       

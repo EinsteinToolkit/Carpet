@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dggf.cc,v 1.3 2002/05/05 22:17:00 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dggf.cc,v 1.4 2002/09/25 15:49:15 schnetter Exp $
 
  ***************************************************************************/
 
@@ -22,12 +22,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
-// #include <iostream>
-// #include <string>
-
-// #include "defs.hh"
-// #include "dh.hh"
-// #include "th.hh"
+#include "defs.hh"
+#include "th.hh"
 
 #include "dggf.hh"
 
