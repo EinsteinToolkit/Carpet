@@ -1,5 +1,3 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.6 2001/03/13 17:40:37 eschnett Exp $
-
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
@@ -21,15 +19,25 @@
 
 #include "ioascii.hh"
 
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.7 2001/03/15 23:28:33 eschnett Exp $";
 
 
-namespace Carpet {
-  
+
+using namespace Carpet;
+
+
+
+static bool CheckForVariable (cGH* const cgh,
+			      const char* const varlist, const int vindex);
+static void SetFlag (int index, const char* optstring, void* arg);
+
+
+
 int CarpetIOASCIIStartup()
 {
-  IOASCII<1>::Startup();
-  IOASCII<2>::Startup();
-  IOASCII<3>::Startup();
+  CarpetIOASCII<1>::Startup();
+  CarpetIOASCII<2>::Startup();
+  CarpetIOASCII<3>::Startup();
   
   return 0;
 }
@@ -37,15 +45,15 @@ int CarpetIOASCIIStartup()
 
 
 // Definition of static members
-template<int outdim> int IOASCII<outdim>::GHExtension;
-template<int outdim> int IOASCII<outdim>::IOMethod;
-template<int outdim> vector<bool> IOASCII<outdim>::do_truncate;
-template<int outdim> vector<int> IOASCII<outdim>::last_output;
+template<int outdim> int CarpetIOASCII<outdim>::GHExtension;
+template<int outdim> int CarpetIOASCII<outdim>::IOMethod;
+template<int outdim> vector<bool> CarpetIOASCII<outdim>::do_truncate;
+template<int outdim> vector<int> CarpetIOASCII<outdim>::last_output;
 
 
 
 template<int outdim>
-int IOASCII<outdim>::Startup()
+int CarpetIOASCII<outdim>::Startup()
 {
   char msg[1000];
   sprintf (msg, "AMR %dD ASCII I/O provided by CarpetIOASCII", outdim);
@@ -70,7 +78,7 @@ int IOASCII<outdim>::Startup()
 
 
 template<int outdim>
-void* IOASCII<outdim>::SetupGH (tFleshConfig* const fc,
+void* CarpetIOASCII<outdim>::SetupGH (tFleshConfig* const fc,
 				const int convLevel, cGH* const cgh)
 {
   DECLARE_CCTK_PARAMETERS;
@@ -89,7 +97,7 @@ void* IOASCII<outdim>::SetupGH (tFleshConfig* const fc,
 
 
 template<int outdim>
-int IOASCII<outdim>::OutputGH (cGH* const cgh) {
+int CarpetIOASCII<outdim>::OutputGH (cGH* const cgh) {
   for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
     if (TimeToOutput(cgh, vindex)) {
       TriggerOutput(cgh, vindex);
@@ -98,8 +106,10 @@ int IOASCII<outdim>::OutputGH (cGH* const cgh) {
   return 0;
 }
 
+
+
 template<int outdim>
-int IOASCII<outdim>::OutputVarAs (cGH* const cgh, const char* const varname,
+int CarpetIOASCII<outdim>::OutputVarAs (cGH* const cgh, const char* const varname,
 				  const char* const alias) {
   DECLARE_CCTK_PARAMETERS;
   
@@ -111,7 +121,7 @@ int IOASCII<outdim>::OutputVarAs (cGH* const cgh, const char* const varname,
   assert (n0>=0 && n0<CCTK_NumVars());
   const int var = n - n0;
   assert (var>=0 && var<CCTK_NumVars());
-  const int tl = 0;
+  const int tl = activetimelevel;
   
   switch (CCTK_GroupTypeI(group)) {
     
@@ -382,7 +392,7 @@ int IOASCII<outdim>::OutputVarAs (cGH* const cgh, const char* const varname,
 
 
 template<int outdim>
-int IOASCII<outdim>::TimeToOutput (cGH* const cgh, const int vindex) {
+int CarpetIOASCII<outdim>::TimeToOutput (cGH* const cgh, const int vindex) {
   DECLARE_CCTK_PARAMETERS;
   
   assert (vindex>=0 && vindex<(int)last_output.size());
@@ -425,7 +435,7 @@ int IOASCII<outdim>::TimeToOutput (cGH* const cgh, const int vindex) {
 
 
 template<int outdim>
-int IOASCII<outdim>::TriggerOutput (cGH* const cgh, const int vindex) {
+int CarpetIOASCII<outdim>::TriggerOutput (cGH* const cgh, const int vindex) {
   assert (vindex>=0 && vindex<CCTK_NumVars());
   
   char* varname = CCTK_FullName(vindex);
@@ -440,7 +450,7 @@ int IOASCII<outdim>::TriggerOutput (cGH* const cgh, const int vindex) {
 
 
 template<int outdim>
-int IOASCII<outdim>::GetGridOffset (cGH* cgh, int dir,
+int CarpetIOASCII<outdim>::GetGridOffset (cGH* cgh, int dir,
 				    const char* itempl, const char* iglobal,
 				    const char* ctempl, const char* cglobal,
 				    CCTK_REAL cfallback)
@@ -500,7 +510,7 @@ int IOASCII<outdim>::GetGridOffset (cGH* cgh, int dir,
 
 
 template<int outdim>
-int IOASCII<outdim>::CoordToOffset (cGH* cgh, int dir, CCTK_REAL coord)
+int CarpetIOASCII<outdim>::CoordToOffset (cGH* cgh, int dir, CCTK_REAL coord)
 {
   CCTK_REAL lower, upper;
   CCTK_CoordRange (cgh, &lower, &upper, dir, 0, "cart3d");
@@ -517,7 +527,7 @@ int IOASCII<outdim>::CoordToOffset (cGH* cgh, int dir, CCTK_REAL coord)
 
 
 template<int outdim>
-const char* IOASCII<outdim>::GetStringParameter
+const char* CarpetIOASCII<outdim>::GetStringParameter
 (const char* const parametertemplate, const char* const fallback)
 {
   char parametername[1000];
@@ -538,7 +548,7 @@ const char* IOASCII<outdim>::GetStringParameter
 
 
 template<int outdim>
-int IOASCII<outdim>::GetIntParameter (const char* const parametertemplate,
+int CarpetIOASCII<outdim>::GetIntParameter (const char* const parametertemplate,
 				      int fallback)
 {
   char parametername[1000];
@@ -583,8 +593,6 @@ void SetFlag (int index, const char* optstring, void* arg)
 
 
 // Explicit instantiation for all output dimensions
-template IOASCII<1>;
-template IOASCII<2>;
-template IOASCII<3>;
-
-} // namespace Carpet
+template CarpetIOASCII<1>;
+template CarpetIOASCII<2>;
+template CarpetIOASCII<3>;
