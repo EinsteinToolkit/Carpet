@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.22 2002/12/31 13:29:07 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.23 2003/01/03 13:19:58 schnetter Exp $
 
  ***************************************************************************/
 
@@ -225,13 +225,8 @@ void data<T,D>
   
   T Tdummy;
   CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-	      "There is no interpolator available for variable type %s, dimension %d, spatial interpolation order %d, temporal interpolation order %d.  The result will be set to -1 instead.",
+	      "There is no interpolator available for variable type %s, dimension %d, spatial interpolation order %d, temporal interpolation order %d.  The interpolation will not be done.",
 	      typestring(Tdummy), D, order_space, order_time);
-  
-  for (typename ibbox::iterator posi=box.begin(); posi!=box.end(); ++posi) {
-    const ivect& pos = *posi;
-    (*this)[pos] = -1;
-  }
 }
 
 
