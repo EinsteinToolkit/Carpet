@@ -7,11 +7,11 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_rad_full_coarse_rl2.par,v 1.3 2002/01/30 16:07:31 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_rad_full_coarse_rl2.par,v 1.4 2002/03/11 13:17:16 schnetter Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
 
-Cactus::cctk_itlast		= 60
+Cactus::cctk_itlast		= 120
  
 Time::dtfac			= 0.5
 
@@ -21,19 +21,21 @@ driver::global_nz		= 31
 
 Carpet::max_refinement_levels	= 2
 
+CarpetRegrid::refinement_levels	= 2
+
 grid::type			= byspacing
 grid::dxyz			= 0.6
 grid::avoid_origin		= no
 
 IO::outdir			= "wavetoyf77_rad_full_coarse_rl2"
 
-IOBasic::outinfo_every		= 1 # 10
-#IOBasic::outinfo_vars		= "wavetoy::phi"
+IOBasic::outinfo_every		= 1
+IOBasic::outinfo_vars		= "wavetoy::phi"
 
-#IOBasic::outScalar_every	= 2
-#IOBasic::outScalar_vars		= "wavetoy::phi"
+IOBasic::outScalar_every	= 2
+IOBasic::outScalar_vars		= "wavetoy::phi"
 
-IOASCII::out1D_every		= 1 # 2
+IOASCII::out1D_every		= 1
 IOASCII::out1D_vars		= "wavetoy::phi grid::coordinates"
 
 WaveToyF77::bound		= radiation

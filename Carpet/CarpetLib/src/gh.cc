@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.11 2002/01/09 13:56:27 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.12 2002/03/11 13:17:13 schnetter Exp $
 
  ***************************************************************************/
 
@@ -52,8 +52,10 @@ gh<D>::~gh () { }
 
 // Modifiers
 template<int D>
-void gh<D>::recompose (const rexts& exts, const rprocs& procs) {
+void gh<D>::recompose (const rexts& exts, const rbnds& outer_bounds,
+		       const rprocs& procs) {
   extents = exts;
+  outer_boundaries = outer_bounds;
   processors = procs;
   
   // Consistency checks
@@ -63,8 +65,10 @@ void gh<D>::recompose (const rexts& exts, const rprocs& procs) {
   // Check processor number consistency
   for (int rl=0; rl<reflevels(); ++rl) {
     assert (processors.size() == extents.size());
+    assert (outer_boundaries.size() == extents.size());
     for (int c=0; c<components(rl); ++c) {
-      assert (procs[rl].size() == extents[rl].size());
+      assert (processors[rl].size() == extents[rl].size());
+      assert (outer_boundaries[rl].size() == extents[rl].size());
     }
   }
   

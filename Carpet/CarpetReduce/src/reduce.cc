@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.4 2002/03/06 17:46:15 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.5 2002/03/11 13:17:14 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -17,7 +17,7 @@
 
 #include "reduce.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.4 2002/03/06 17:46:15 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.5 2002/03/11 13:17:14 schnetter Exp $";
 
 
 
@@ -41,7 +41,7 @@ namespace CarpetReduce {
   
   // Poor man's RTTI
   enum ared { do_count, do_minimum, do_maximum, do_sum, do_sum_abs,
-	      do_average, do_norm1, do_norm2, do_norm_inf };
+	      do_sum_squared, do_average, do_norm1, do_norm2, do_norm_inf };
   
   
   
@@ -169,6 +169,18 @@ namespace CarpetReduce {
     struct op {
       static inline void initialise (T& accum) { accum = 0; }
       static inline void reduce (T& accum, const T& val) { accum += abs(val); }
+      static inline void finalise (T& accum, const T& cnt) { }
+    };
+    MPI_Op mpi_op () const { return MPI_SUM; }
+  };
+  
+  struct sum_squared : reduction {
+    ared thered () const { return do_sum_squared; }
+    bool uses_cnt () const { return false; }
+    template<class T>
+    struct op {
+      static inline void initialise (T& accum) { accum = 0; }
+      static inline void reduce (T& accum, const T& val) { accum += val*val; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -302,6 +314,7 @@ namespace CarpetReduce {
 	  INITIALISE(maximum,T);		\
 	  INITIALISE(sum,T);			\
 	  INITIALISE(sum_abs,T);		\
+	  INITIALISE(sum_squared,T);		\
 	  INITIALISE(average,T);		\
 	  INITIALISE(norm1,T);			\
 	  INITIALISE(norm2,T);			\
@@ -373,6 +386,7 @@ namespace CarpetReduce {
 	  REDUCE(maximum,T);			\
 	  REDUCE(sum,T);			\
 	  REDUCE(sum_abs,T);			\
+	  REDUCE(sum_squared,T);		\
 	  REDUCE(average,T);			\
 	  REDUCE(norm1,T);			\
 	  REDUCE(norm2,T);			\
@@ -460,6 +474,7 @@ namespace CarpetReduce {
 	    FINALISE(maximum,T);		\
 	    FINALISE(sum,T);			\
 	    FINALISE(sum_abs,T);		\
+	    FINALISE(sum_squared,T);		\
 	    FINALISE(average,T);		\
 	    FINALISE(norm1,T);			\
 	    FINALISE(norm2,T);			\
@@ -671,6 +686,7 @@ namespace CarpetReduce {
   REDUCTION(maximum);
   REDUCTION(sum);
   REDUCTION(sum_abs);
+  REDUCTION(sum_squared);
   REDUCTION(average);
   REDUCTION(norm1);
   REDUCTION(norm2);
@@ -682,25 +698,27 @@ namespace CarpetReduce {
   
   int CarpetReduceStartup ()
   {
-    CCTK_RegisterReductionOperator (count_GVs,    "count");
-    CCTK_RegisterReductionOperator (minimum_GVs,  "minimum");
-    CCTK_RegisterReductionOperator (maximum_GVs,  "maximum");
-    CCTK_RegisterReductionOperator (sum_GVs,      "sum");
-    CCTK_RegisterReductionOperator (sum_abs_GVs,  "sum_abs");
-    CCTK_RegisterReductionOperator (average_GVs,  "average");
-    CCTK_RegisterReductionOperator (norm1_GVs,    "norm1");
-    CCTK_RegisterReductionOperator (norm2_GVs,    "norm2");
-    CCTK_RegisterReductionOperator (norm_inf_GVs, "norm_inf");
+    CCTK_RegisterReductionOperator (count_GVs,       "count");
+    CCTK_RegisterReductionOperator (minimum_GVs,     "minimum");
+    CCTK_RegisterReductionOperator (maximum_GVs,     "maximum");
+    CCTK_RegisterReductionOperator (sum_GVs,         "sum");
+    CCTK_RegisterReductionOperator (sum_abs_GVs,     "sum_abs");
+    CCTK_RegisterReductionOperator (sum_squared_GVs, "sum_squared");
+    CCTK_RegisterReductionOperator (average_GVs,     "average");
+    CCTK_RegisterReductionOperator (norm1_GVs,       "norm1");
+    CCTK_RegisterReductionOperator (norm2_GVs,       "norm2");
+    CCTK_RegisterReductionOperator (norm_inf_GVs,    "norm_inf");
     
-    CCTK_RegisterReductionArrayOperator (count_arrays,    "count");
-    CCTK_RegisterReductionArrayOperator (minimum_arrays,  "minimum");
-    CCTK_RegisterReductionArrayOperator (maximum_arrays,  "maximum");
-    CCTK_RegisterReductionArrayOperator (sum_arrays,      "sum");
-    CCTK_RegisterReductionArrayOperator (sum_abs_arrays,  "sum_abs");
-    CCTK_RegisterReductionArrayOperator (average_arrays,  "average");
-    CCTK_RegisterReductionArrayOperator (norm1_arrays,    "norm1");
-    CCTK_RegisterReductionArrayOperator (norm2_arrays,    "norm2");
-    CCTK_RegisterReductionArrayOperator (norm_inf_arrays, "norm_inf");
+    CCTK_RegisterReductionArrayOperator (count_arrays,       "count");
+    CCTK_RegisterReductionArrayOperator (minimum_arrays,     "minimum");
+    CCTK_RegisterReductionArrayOperator (maximum_arrays,     "maximum");
+    CCTK_RegisterReductionArrayOperator (sum_arrays,         "sum");
+    CCTK_RegisterReductionArrayOperator (sum_abs_arrays,     "sum_abs");
+    CCTK_RegisterReductionArrayOperator (sum_squared_arrays, "sum_squared");
+    CCTK_RegisterReductionArrayOperator (average_arrays,     "average");
+    CCTK_RegisterReductionArrayOperator (norm1_arrays,       "norm1");
+    CCTK_RegisterReductionArrayOperator (norm2_arrays,       "norm2");
+    CCTK_RegisterReductionArrayOperator (norm_inf_arrays,    "norm_inf");
     
     return 0;
   }

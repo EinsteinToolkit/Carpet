@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.7 2001/07/02 13:22:11 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.8 2002/03/11 13:17:12 schnetter Exp $
 
  ***************************************************************************/
 
@@ -221,6 +221,28 @@ bbox<T,D>::iterator bbox<T,D>::begin () const {
 template<class T, int D>
 bbox<T,D>::iterator bbox<T,D>::end () const {
   return iterator(*this, upper()+stride());
+}
+
+
+
+// Input
+template<class T,int D>
+void bbox<T,D>::input (istream& is) {
+  skipws (is);
+  assert (is.peek() == '(');
+  is.get();
+  is >> _lower;
+  skipws (is);
+  assert (is.peek() == ':');
+  is.get();
+  is >> _upper;
+  skipws (is);
+  assert (is.peek() == ':');
+  is.get();
+  is >> _stride;
+  skipws (is);
+  assert (is.peek() == ')');
+  is.get();
 }
 
 

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.6 2002/01/08 12:03:55 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.7 2002/03/11 13:17:13 schnetter Exp $
 
  ***************************************************************************/
 
@@ -32,13 +32,34 @@ using namespace std;
 
 
 
+// Input
+template<class T,int D>
+void vect<T,D>::input (istream& is) {
+  skipws (is);
+  assert (is.peek() == '[');
+  is.get();
+  for (int d=0; d<D; ++d) {
+    is >> (*this)[d];
+    if (d<D-1) {
+      skipws (is);
+      assert (is.peek() == ',');
+      is.get();
+    }
+  }
+  skipws (is);
+  assert (is.peek() == ']');
+  is.get();
+}
+
+
+
 // Output
 template<class T,int D>
 void vect<T,D>::output (ostream& os) const {
   os << "[";
   for (int d=0; d<D; ++d) {
-    if (d>0) os << ",";
     os << (*this)[d];
+    if (d<D-1) os << ",";
   }
   os << "]";
 }
@@ -52,6 +73,9 @@ template class vect<int,1>;
 template class vect<int,2>;
 template class vect<int,3>;
 
+template void vect<double,3>::input (istream& is);
+template void vect<vect<bool,2>,3>::input (istream& is);
 template void vect<double,3>::output (ostream& os) const;
+template void vect<vect<bool,2>,3>::output (ostream& os) const;
 
 #endif

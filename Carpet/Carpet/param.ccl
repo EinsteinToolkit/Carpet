@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.17 2002/01/11 17:58:47 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.18 2002/03/11 13:17:09 schnetter Exp $
 
 shares: Cactus
 
@@ -95,6 +95,40 @@ CCTK_INT prolongation_order_time "Order of prolongation operator in time"
   1 :: "first order (linear)"
   2 :: "second order (quadratic)"
 } 1
+
+
+
+CCTK_STRING base_extents "Extents of base grid components, in grid point units of the finest level"
+{
+  "^$" :: "leave empty for one grid component covering the whole region (default)"
+# We want the string to contain a list of bboxes.  Each bbox contains
+# three vectors specifying the lower bound, upper bound, and stride.
+# (The upper bound is inclusive.  All values are nonnegative integers.)
+# The syntax for vectors, bboxes, and lists is described below.
+# All spaces are optional.
+# The () parentheses and [] brackets are literals.
+# The {} braces are used for grouping.
+# If you put everything together, you get the tapeworm below.
+# There should be a way to define abbreviations in regexps!
+# Having #defines in param.ccl files would help a lot.
+# VECT := " [ 0 , 0 , 0 ]"
+# BBOX := " (VECT :VECT :VECT )"
+# LIST := " [{{BBOX ,}*BBOX}? ]"
+  "^\[(([[:space:]]*\([[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\)[[:space:]]*,)*[[:space:]]*\([[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\))?[[:space:]]*\]$" :: "[ ([<imin>,<jmin>,<kmin>]:[<imax>,<jmax>,<kmax>]:[<istride>,<jstride>,<kstride>]), ... ]"
+} ""
+
+CCTK_STRING base_bboxes "Bounding boxes of base grid components"
+{
+  "^$" :: "leave empty for using the default, which depends on cctk_gsh"
+# See above for an explanation of this syntax, and of the tapeworm below.
+# Each vector element is 0 or 1,
+# where 0 is handled by synchronisation or prolongation,
+# and 1 stands for a user-supplied ("outer") boundary condition.
+# BND := " [ 0 , 0 ]"
+# VECT := " [ BND , BND , BND ]"
+# LIST := " [{{VECT ,}*VECT}? ]"
+  "^\[(([[:space:]]*\[[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\][[:space:]]*,)*[[:space:]]*\[[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\])?[[:space:]]*\]$" :: "[ [ [<ilower>,<iupper>], [<jlower>,<jupper>], [<klower>,<kupper>] ], ... ]"
+} ""
 
 
 

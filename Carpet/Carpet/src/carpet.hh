@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.15 2002/01/11 17:19:46 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.16 2002/03/11 13:17:10 schnetter Exp $
 
 #include "Carpet/CarpetLib/src/gh.hh"
 
@@ -12,6 +12,7 @@ namespace Carpet {
   
   void Recompose (const cGH* cgh,
 		  const gh<dim>::rexts& bbsss,
+		  const gh<dim>::rbnds& obss,
 		  const gh<dim>::rprocs& pss);
   
   enum checktimes { currenttime,

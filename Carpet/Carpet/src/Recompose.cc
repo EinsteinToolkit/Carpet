@@ -21,7 +21,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.20 2002/01/30 16:07:58 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.21 2002/03/11 13:17:10 schnetter Exp $";
 
 
 
@@ -31,13 +31,22 @@ namespace Carpet {
   
   
   
+  typedef vect<int,dim> ivect;
+  typedef bbox<int,dim> ibbox;
+  
+  typedef vect<vect<bool,2>,dim> bvect;
+  
+  
+  
   static int (*regrid_routine) (const cGH * cckgGH,
 				gh<dim>::rexts& bbsss,
+				gh<dim>::rbnds& obss,
 				gh<dim>::rprocs& pss) = 0;
   
   
   
   static void CheckRegions (const gh<dim>::rexts& bbsss,
+			    const gh<dim>::rbnds& obss,
 			    const gh<dim>::rprocs& pss);
   static void Adapt (const cGH* cgh, int reflevels, gh<dim>* hh);
   
@@ -45,14 +54,17 @@ namespace Carpet {
   
   static void OutputGridStructure (const cGH *cgh,
 				   const gh<dim>::rexts& bbsss,
+				   const gh<dim>::rbnds& obss,
 				   const gh<dim>::rprocs& pss);
   
   
   
   static void SplitRegions_AlongZ       (const cGH* cgh,
-					 vector<bbox<int,dim> >& bbs);
+					 vector<ibbox>& bbs,
+					 vector<bvect>& obs);
   static void SplitRegions_AsSpecified  (const cGH* cgh,
-					 vector<bbox<int,dim> >& bbs);
+					 vector<ibbox>& bbs,
+					 vector<bvect>& obs);
   
   static void MakeProcessors_RoundRobin (const cGH* cgh,
 					 const gh<dim>::rexts& bbss,
@@ -60,7 +72,8 @@ namespace Carpet {
   
   
   
-  void CheckRegions (const gh<dim>::rexts& bbsss, const gh<dim>::rprocs& pss)
+  void CheckRegions (const gh<dim>::rexts& bbsss, const gh<dim>::rbnds& obss,
+		     const gh<dim>::rprocs& pss)
   {
     // At least one level
     assert (bbsss.size() > 0);
@@ -84,7 +97,9 @@ namespace Carpet {
     }
     
     assert (pss.size() == bbsss.size());
+    assert (obss.size() == bbsss.size());
     for (int rl=0; rl<(int)bbsss.size(); ++rl) {
+      assert (obss[rl].size() == bbsss[rl].size());
       assert (pss[rl].size() == bbsss[rl].size());
     }
   }
@@ -93,6 +108,7 @@ namespace Carpet {
   
   void RegisterRegridRoutine (int (*routine)(const cGH * cckgGH,
 					     gh<dim>::rexts& bbsss,
+					     gh<dim>::rbnds& obss,
 					     gh<dim>::rprocs& pss))
   {
     assert (!regrid_routine);
@@ -113,30 +129,32 @@ namespace Carpet {
     
     // Check whether to recompose
     gh<dim>::rexts bbsss;
+    gh<dim>::rbnds obss;
     gh<dim>::rprocs pss;
-    int do_recompose = (*regrid_routine) (cgh, bbsss, pss);
+    int do_recompose = (*regrid_routine) (cgh, bbsss, obss, pss);
     assert (do_recompose >= 0);
     if (do_recompose == 0) return;
-    Recompose (cgh, bbsss, pss);
+    Recompose (cgh, bbsss, obss, pss);
   }
   
   
   
   void Recompose (const cGH* const cgh,
 		  const gh<dim>::rexts& bbsss,
+		  const gh<dim>::rbnds& obss,
 		  const gh<dim>::rprocs& pss)
   {
     assert (mglevel == -1);
     assert (component == -1);
     
     // Check the regions
-    CheckRegions (bbsss, pss);
+    CheckRegions (bbsss, obss, pss);
     
     // Write grid structure to file
-    OutputGridStructure (cgh, bbsss, pss);
+    OutputGridStructure (cgh, bbsss, obss, pss);
     
     // Recompose
-    hh->recompose (bbsss, pss);
+    hh->recompose (bbsss, obss, pss);
     Output (cgh, hh, 0);
     
     // Adapt grid scalars
@@ -151,6 +169,7 @@ namespace Carpet {
       case CCTK_ARRAY:
 	Adapt (cgh, hh->reflevels(), arrdata[group].hh);
 	Output (cgh, arrdata[group].hh, CCTK_GroupName(group));
+	break;
       case CCTK_GF:
 	break;
       default:
@@ -167,21 +186,21 @@ namespace Carpet {
   static void Adapt (const cGH* cgh, const int reflevels, gh<dim>* hh)
   {
     const int nprocs   = CCTK_nProcs(cgh);
-    vector<vector<bbox<int,dim> > > bbss(reflevels);
+    vector<vector<ibbox> > bbss(reflevels);
     // note: what this routine calls "ub" is "ub+str" elsewhere
-    vect<int,dim> rstr = hh->baseextent.stride();
-    vect<int,dim> rlb  = hh->baseextent.lower();
-    vect<int,dim> rub  = hh->baseextent.upper() + rstr;
+    ivect rstr = hh->baseextent.stride();
+    ivect rlb  = hh->baseextent.lower();
+    ivect rub  = hh->baseextent.upper() + rstr;
     for (int rl=0; rl<reflevels; ++rl) {
       if (rl>0) {
 	// save old values
-	const vect<int,dim> oldrlb = rlb;
-	const vect<int,dim> oldrub = rub;
+	const ivect oldrlb = rlb;
+	const ivect oldrub = rub;
 	// calculate extent
-	const vect<int,dim> rextent = rub - rlb;
+	const ivect rextent = rub - rlb;
 	// calculate new extent
 	assert (all(rextent % hh->reffact == 0));
-	const vect<int,dim> newrextent = rextent / hh->reffact;
+	const ivect newrextent = rextent / hh->reffact;
 	// refined boxes have smaller stride
 	assert (all(rstr%hh->reffact == 0));
 	rstr /= hh->reffact;
@@ -191,11 +210,12 @@ namespace Carpet {
 	// require rub<oldrub because we really want rub-rstr<=oldrub-oldstr
 	assert (all(rlb >= oldrlb && rub < oldrub));
       }
-      vector<bbox<int,dim> > bbs(nprocs);
+      vector<ibbox> bbs(nprocs);
       for (int c=0; c<nprocs; ++c) {
-	vect<int,dim> cstr = rstr;
-	vect<int,dim> clb = rlb;
-	vect<int,dim> cub = rub;
+	ivect cstr = rstr;
+	ivect clb = rlb;
+	ivect cub = rub;
+	// split the components along the z axis
 	const int glonpz = (rub[dim-1] - rlb[dim-1]) / cstr[dim-1];
 	const int locnpz = (glonpz + nprocs - 1) / nprocs;
 	const int zstep = locnpz * cstr[dim-1];
@@ -205,7 +225,7 @@ namespace Carpet {
  	if (cub[dim-1] > rub[dim-1]) cub[dim-1] = rub[dim-1];
 	assert (clb[dim-1] <= cub[dim-1]);
 	assert (cub[dim-1] <= rub[dim-1]);
-	bbs[c] = bbox<int,dim>(clb, cub-cstr, cstr);
+	bbs[c] = ibbox(clb, cub-cstr, cstr);
       }
 //       bbss[rl] = bbs;
       bbss[rl].clear();
@@ -215,20 +235,28 @@ namespace Carpet {
       }
     }
     
-    vector<vector<vector<bbox<int,dim> > > > bbsss
+    vector<vector<vector<ibbox> > > bbsss
       = hh->make_multigrid_boxes(bbss, mglevels);
     
     vector<vector<int> > pss(bbss.size());
+    vector<vector<bvect> > obss(bbss.size());
     for (int rl=0; rl<reflevels; ++rl) {
       pss[rl] = vector<int>(bbss[rl].size());
+      obss[rl] = vector<bvect>(bbss[rl].size());
       // make sure all processors have the same number of components
       assert (bbss[rl].size() % nprocs == 0);
       for (int c=0; c<(int)bbss[rl].size(); ++c) {
-	pss[rl][c] = c % nprocs; // distribute among processors
+	// distribute among processors
+	pss[rl][c] = c % nprocs;
+	for (int d=0; d<dim; ++d) {
+	  // assume the components are split along the z axis
+	  obss[rl][c][d][0] = d<dim-1 || c==0;
+	  obss[rl][c][d][1] = d<dim-1 || c==(int)bbss[rl].size()-1;
+	}
       }
     }
     
-    hh->recompose(bbsss, pss);
+    hh->recompose(bbsss, obss, pss);
   }
   
   
@@ -284,6 +312,7 @@ namespace Carpet {
   
   static void OutputGridStructure (const cGH * const cgh,
 				   const gh<dim>::rexts& bbsss,
+				   const gh<dim>::rbnds& obss,
 				   const gh<dim>::rprocs& pss)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -309,7 +338,7 @@ namespace Carpet {
 	file.open (filename, ios::out | ios::trunc);
 	assert (file.good());
 	file << "# grid structure" << endl
-	     << "# format: reflevel component mglevel   processor bounding-box" << endl;
+	     << "# format: reflevel component mglevel   processor bounding-box is-outer-boundary" << endl;
 	assert (file.good());
       }
     }
@@ -325,7 +354,7 @@ namespace Carpet {
       for (int c=0; c<(int)bbsss[rl].size(); ++c) {
 	file << rl << " " << c << " mglevels " << bbsss[rl][c].size() << endl;
 	for (int ml=0; ml<(int)bbsss[rl][c].size(); ++ml) {
-	  file << rl << " " << c << " " << ml << "   " << pss[rl][c] << " " << bbsss[rl][c][ml] << endl;
+	  file << rl << " " << c << " " << ml << "   " << pss[rl][c] << " " << bbsss[rl][c][ml] << obss[rl][c] << endl;
 	}
       }
     }
@@ -337,14 +366,14 @@ namespace Carpet {
   
   
   
-  void SplitRegions (const cGH* cgh, vector<bbox<int,dim> >& bbs)
+  void SplitRegions (const cGH* cgh, vector<ibbox>& bbs, vector<bvect>& obs)
   {
     DECLARE_CCTK_PARAMETERS;
     
     if (CCTK_EQUALS (processor_topology, "automatic")) {
-      SplitRegions_AlongZ (cgh, bbs);
+      SplitRegions_AlongZ (cgh, bbs, obs);
     } else if (CCTK_EQUALS (processor_topology, "manual")) {
-      SplitRegions_AsSpecified (cgh, bbs);
+      SplitRegions_AsSpecified (cgh, bbs, obs);
     } else {
       abort();
     }
@@ -352,7 +381,8 @@ namespace Carpet {
   
   
   
-  void SplitRegions_AlongZ (const cGH* cgh, vector<bbox<int,dim> >& bbs)
+  void SplitRegions_AlongZ (const cGH* cgh, vector<ibbox>& bbs,
+			    vector<bvect>& obs)
   {
     // Something to do?
     if (bbs.size() == 0) return;
@@ -363,15 +393,17 @@ namespace Carpet {
     
     assert (bbs.size() == 1);
     
-    const vect<int,dim> rstr = bbs[0].stride();
-    const vect<int,dim> rlb  = bbs[0].lower();
-    const vect<int,dim> rub  = bbs[0].upper() + rstr;
+    const ivect rstr = bbs[0].stride();
+    const ivect rlb  = bbs[0].lower();
+    const ivect rub  = bbs[0].upper() + rstr;
+    const bvect obnd = obs[0];
     
     bbs.resize(nprocs);
+    obs.resize(nprocs);
     for (int c=0; c<nprocs; ++c) {
-      vect<int,dim> cstr = rstr;
-      vect<int,dim> clb = rlb;
-      vect<int,dim> cub = rub;
+      ivect cstr = rstr;
+      ivect clb = rlb;
+      ivect cub = rub;
       const int glonpz = (rub[dim-1] - rlb[dim-1]) / cstr[dim-1];
       const int locnpz = (glonpz + nprocs - 1) / nprocs;
       const int zstep = locnpz * cstr[dim-1];
@@ -381,13 +413,17 @@ namespace Carpet {
       if (cub[dim-1] > rub[dim-1]) cub[dim-1] = rub[dim-1];
       assert (clb[dim-1] <= cub[dim-1]);
       assert (cub[dim-1] <= rub[dim-1]);
-      bbs[c] = bbox<int,dim>(clb, cub-cstr, cstr);
+      bbs[c] = ibbox(clb, cub-cstr, cstr);
+      obs[c] = obnd;
+      if (c>0)        obs[c][dim-1][0] = false;
+      if (c<nprocs-1) obs[c][dim-1][1] = false;
     }
   }
   
   
   
-  void SplitRegions_AsSpecified (const cGH* cgh, vector<bbox<int,dim> >& bbs)
+  void SplitRegions_AsSpecified (const cGH* cgh, vector<ibbox>& bbs,
+				 vector<bvect>& obs)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -400,11 +436,12 @@ namespace Carpet {
     
     assert (bbs.size() == 1);
     
-    const vect<int,dim> rstr = bbs[0].stride();
-    const vect<int,dim> rlb  = bbs[0].lower();
-    const vect<int,dim> rub  = bbs[0].upper() + rstr;
+    const ivect rstr = bbs[0].stride();
+    const ivect rlb  = bbs[0].lower();
+    const ivect rub  = bbs[0].upper() + rstr;
+    const bvect obnd = obs[0];
     
-    const vect<int,dim> nprocs_dir
+    const ivect nprocs_dir
       (processor_topology_3d_x, processor_topology_3d_y,
        processor_topology_3d_z);
     assert (all (nprocs_dir > 0));
@@ -415,25 +452,33 @@ namespace Carpet {
     assert (prod(nprocs_dir) == nprocs);
     
     bbs.resize(nprocs);
+    obs.resize(nprocs);
     assert (dim==3);
     for (int k=0; k<nprocs_dir[2]; ++k) {
       for (int j=0; j<nprocs_dir[1]; ++j) {
 	for (int i=0; i<nprocs_dir[0]; ++i) {
 	  const int c = i + nprocs_dir[0] * (j + nprocs_dir[1] * k);
-	  const vect<int,dim> ipos (i, j, k);
-	  vect<int,dim> cstr = rstr;
-	  vect<int,dim> clb = rlb;
-	  vect<int,dim> cub = rub;
-	  const vect<int,dim> glonp = (rub - rlb) / cstr;
-	  const vect<int,dim> locnp = (glonp + nprocs_dir - 1) / nprocs_dir;
-	  const vect<int,dim> step = locnp * cstr;
+	  const ivect ipos (i, j, k);
+	  ivect cstr = rstr;
+	  ivect clb = rlb;
+	  ivect cub = rub;
+	  const ivect glonp = (rub - rlb) / cstr;
+	  const ivect locnp = (glonp + nprocs_dir - 1) / nprocs_dir;
+	  const ivect step = locnp * cstr;
 	  clb = rlb + step *  ipos;
 	  cub = rlb + step * (ipos+1);
 	  clb = min (clb, rub);
 	  cub = min (cub, rub);
 	  assert (all (clb <= cub));
 	  assert (all (cub <= rub));
-	  bbs[c] = bbox<int,dim>(clb, cub-cstr, cstr);
+	  bbs[c] = ibbox(clb, cub-cstr, cstr);
+	  obs[c] = obnd;
+	  if (i>0) obs[c][0][0] = false;
+	  if (j>0) obs[c][1][0] = false;
+	  if (k>0) obs[c][2][0] = false;
+	  if (i<nprocs_dir[0]-1) obs[c][0][1] = false;
+	  if (j<nprocs_dir[1]-1) obs[c][1][1] = false;
+	  if (k<nprocs_dir[2]-1) obs[c][2][1] = false;
 	}
       }
     }

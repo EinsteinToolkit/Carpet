@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.6 2002/01/09 13:56:26 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.7 2002/03/11 13:17:13 schnetter Exp $
 
  ***************************************************************************/
 
@@ -61,6 +61,23 @@ inline T ipow (const T& x, const int y) {
     return ipow(x*x,y/2);
   }
 }
+
+
+
+// Skip whitespace
+void skipws (istream& is);
+
+
+
+// Container input
+template<class T> istream& input (istream& is, vector<T>& v);
+
+template<class T>
+inline istream& operator>> (istream& is, vector<T>& v) {
+  return input(is,v);
+}
+
+
 
 // Container output
 template<class T> ostream& output (ostream& os, const list<T>& l);

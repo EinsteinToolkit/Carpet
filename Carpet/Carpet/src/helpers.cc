@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.18 2002/01/14 15:56:02 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.19 2002/03/11 13:17:11 schnetter Exp $";
 
 
 
@@ -320,8 +320,6 @@ namespace Carpet {
 	assert (reflevel < (int)dd->boxes.size());
 	assert (component < (int)dd->boxes[reflevel].size());
 	assert (mglevel < (int)dd->boxes[reflevel][component].size());
-	const bbox<int,dim>& bext = hh->baseextent;
-	const bbox<int,dim>& iext = hh->extents[reflevel][component][mglevel];
 	const bbox<int,dim>& ext
 	  = dd->boxes[reflevel][component][mglevel].exterior;
 	for (int d=0; d<dim; ++d) {
@@ -332,16 +330,8 @@ namespace Carpet {
 // 	  assert (cgh->cctk_lbnd[d]>=0 && cgh->cctk_ubnd[d]<cgh->cctk_gsh[d]);
 	  assert (cgh->cctk_ubnd[d]-cgh->cctk_lbnd[d]+1 == cgh->cctk_lsh[d]);
 	  assert (cgh->cctk_lbnd[d]<=cgh->cctk_ubnd[d]+1);
-	  // Do not allow outer boundaries on the finer grids
-	  if (reflevel==0) {
-	    assert (iext.lower()[d] >= bext.lower()[d]);
-	    assert (iext.upper()[d] <= bext.upper()[d]);
-	    cgh->cctk_bbox[2*d  ] = iext.lower()[d] == bext.lower()[d];
-	    cgh->cctk_bbox[2*d+1] = iext.upper()[d] == bext.upper()[d];
-	  } else {
-	    cgh->cctk_bbox[2*d  ] = 0;
-	    cgh->cctk_bbox[2*d+1] = 0;
-	  }
+	  cgh->cctk_bbox[2*d  ] = hh->outer_boundaries[reflevel][component][d][0];
+	  cgh->cctk_bbox[2*d+1] = hh->outer_boundaries[reflevel][component][d][1];
 	  for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
 	    // TODO: support staggering
 	    cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];

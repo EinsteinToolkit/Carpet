@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.8 2001/12/14 16:39:43 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.9 2002/03/11 13:17:13 schnetter Exp $
 
  ***************************************************************************/
 
@@ -56,19 +56,26 @@ public:
   typedef vect<int,D> ivect;
   typedef bbox<int,D> ibbox;
   
-  typedef vector<ibbox> mexts;          // ... for each multigrid level
-  typedef vector<mexts> cexts;          // ... for each component
-  typedef vector<cexts> rexts;          // ... for each refinement level
+  typedef vect<vect<bool,2>,D> bvect;
   
-  typedef vector<int>    cprocs;        // ... for each component
-  typedef vector<cprocs> rprocs;        // ... for each refinement level
+  typedef vector<ibbox> mexts;	// ... for each multigrid level
+  typedef vector<mexts> cexts;	// ... for each component
+  typedef vector<cexts> rexts;	// ... for each refinement level
+  
+  typedef vector<bvect> cbnds;	// ... for each component
+  typedef vector<cbnds> rbnds;	// ... for each refinement level
+  
+  typedef vector<int>    cprocs; // ... for each component
+  typedef vector<cprocs> rprocs; // ... for each refinement level
   
 public:				// should be readonly
   
   ibbox baseextent;		// bounds (inclusive) of base level
   vector<vector<ibbox> > bases; // [rl][ml]
   
-  rexts extents;		// bounds of all grids
+  // TODO: invent structure for this
+  rexts extents;		// extents of all grids
+  rbnds outer_boundaries;	// boundary descriptions of all grids
   rprocs processors;		// processor numbers of all grids
   
   list<dh<D>*> dhs;		// list of all data hierarchies
@@ -84,7 +91,8 @@ public:
   virtual ~gh ();
   
   // Modifiers
-  void recompose (const rexts& exts, const rprocs& procs);
+  void recompose (const rexts& exts, const rbnds& outer_bounds,
+		  const rprocs& procs);
   
   // Helpers
   cexts make_reflevel_multigrid_boxes (const vector<ibbox>& exts,
@@ -108,6 +116,12 @@ public:
     assert (rl>=0 && rl<reflevels());
     assert (c>=0 && c<components(rl));
     return (int)extents[rl][c].size();
+  }
+  
+  bvect outer_boundary (const int rl, const int c) const {
+    assert (rl>=0 && rl<reflevels());
+    assert (c>=0 && c<components(rl));
+    return outer_boundaries[rl][c];
   }
   
   int proc (const int rl, const int c) const {

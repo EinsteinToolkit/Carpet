@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.8 2002/01/09 17:45:42 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.9 2002/03/11 13:17:13 schnetter Exp $
 
  ***************************************************************************/
 
@@ -33,7 +33,9 @@ using namespace std;
 // Forward definition
 template<class T, int D> class vect;
 
-// Output
+// Input/Output
+template<class T,int D>
+istream& operator>> (istream& is, vect<T,D>& a);
 template<class T,int D>
 ostream& operator<< (ostream& os, const vect<T,D>& a);
 
@@ -444,6 +446,8 @@ public:
     return r;
   }
   
+  // Input/Output
+  void input (istream& is);
   void output (ostream& os) const;
 };
 
@@ -598,6 +602,16 @@ inline vect<TT,D> scan1 (TT (* const func)(TT val, T x), TT val,
 
 
 
+// Input
+template<class T,int D>
+inline istream& operator>> (istream& is, vect<T,D>& a) {
+  a.input(is);
+  return is;
+}
+
+
+
+// Output
 template<class T,int D>
 inline ostream& operator<< (ostream& os, const vect<T,D>& a) {
   a.output(os);

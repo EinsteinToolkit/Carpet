@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.3 2002/01/11 17:37:14 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.4 2002/03/11 13:17:16 schnetter Exp $
 
 #ifndef REGRID_HH
 #define REGRID_HH
@@ -28,6 +28,7 @@ namespace CarpetRegrid {
   
   int CarpetRegridRegrid (const cGH * const cctkGH,
 			  gh<dim>::rexts& bbsss,
+			  gh<dim>::rbnds& obss,
 			  gh<dim>::rprocs& pss);
   
   

@@ -1,6 +1,9 @@
 #include <assert.h>
-#include <iostream.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include <iostream>
+#include <sstream>
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
@@ -12,7 +15,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.23 2002/01/14 16:40:45 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.24 2002/03/11 13:17:10 schnetter Exp $";
 
 
 
@@ -246,14 +249,34 @@ namespace Carpet {
     mglevel   = -1;
     component = -1;
     
-    // Invent a refinement structure
-    vector<bbox<int,dim> > bbs(1);
-    bbs[0] = hh->baseextent;
+    // Set initial refinement structure
+    vector<bbox<int,dim> > bbs;
+    vector<vect<vect<bool,2>,dim> > obs;
+    if (strcmp(base_extents, "")==0) {
+      // default: one grid component covering everything
+      bbs.push_back (hh->baseextent);
+      obs.push_back (vect<vect<bool,2>,dim>(vect<bool,2>(true)));
+    } else {
+      // explicit grid components
+      istringstream istr (base_extents);
+      istr >> bbs;
+      CCTK_VInfo (CCTK_THORNSTRING, "Using %d grid patches", bbs.size());
+      cout << "grid-patches-are " << bbs << endl;
+      if (bbs.size()<=0) {
+	CCTK_WARN (0, "Cannot evolve with 0 grid patches");
+      }
+      istringstream istr2 (base_bboxes);
+      istr2 >> obs;
+      cout << "outer-boundaries-are " << obs << endl;
+      assert (obs.size() == bbs.size());
+    }
     
-    SplitRegions (cgh, bbs);
+    SplitRegions (cgh, bbs, obs);
     
     vector<vector<bbox<int,dim> > > bbss(1);
+    vector<vector<vect<vect<bool,2>,dim> > > obss(1);
     bbss[0] = bbs;
+    obss[0] = obs;
     
     gh<dim>::rexts bbsss;
     bbsss = hh->make_multigrid_boxes(bbss, mglevels);
@@ -262,7 +285,7 @@ namespace Carpet {
     MakeProcessors (cgh, bbsss, pss);
     
     // Recompose grid hierarchy
-    Recompose (cgh, bbsss, pss);
+    Recompose (cgh, bbsss, obss, pss);
     
     // Initialise time step on coarse grid
     base_delta_time = 0;

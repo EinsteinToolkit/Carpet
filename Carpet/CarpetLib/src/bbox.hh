@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.8 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.9 2002/03/11 13:17:12 schnetter Exp $
 
  ***************************************************************************/
 
@@ -33,7 +33,9 @@ using namespace std;
 // Forward declaration
 template<class T, int D> class bbox;
 
-// Output
+// Input/Output
+template<class T, int D>
+istream& operator>> (istream& is, bbox<T,D>& b);
 template<class T, int D>
 ostream& operator<< (ostream& os, const bbox<T,D>& b);
 
@@ -116,9 +118,19 @@ public:
   iterator begin () const;
   iterator end () const;
   
-  // Output
+  // Input/Output
+  void input (istream& is);
   void output (ostream& os) const;
 };
+
+
+
+// Input
+template<class T,int D>
+inline istream& operator>> (istream& is, bbox<T,D>& b) {
+  b.input(is);
+  return is;
+}
 
 
 
