@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.7 2002/01/09 17:45:39 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.8 2002/01/09 21:15:10 schnetter Exp $";
 
 
 
@@ -66,14 +66,15 @@ namespace Carpet {
       
       Waypoint ("Evolving iteration %d...", cgh->cctk_iteration);
       
-      BEGIN_MGLEVEL_LOOP(cgh) {
-	if ((cgh->cctk_iteration-1) % mglevelfact == 0) {
+      BEGIN_REFLEVEL_LOOP(cgh) {
+	const int do_every = maxreflevelfact/reflevelfact;
+	if ((cgh->cctk_iteration-1) % do_every == 0) {
 	  
-	  Waypoint ("Evolving multigrid level %d...", mglevel);
-	  
-	  BEGIN_REFLEVEL_LOOP(cgh) {
+	  BEGIN_MGLEVEL_LOOP(cgh) {
 	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
 	    if ((cgh->cctk_iteration-1) % do_every == 0) {
+	      
+	      Waypoint ("Evolving multigrid level %d...", mglevel);
 	      
 	      // Cycle time levels
 	      CycleTimeLevels (cgh);
@@ -110,19 +111,20 @@ namespace Carpet {
 	      // Checking
 	      PoisonCheck (cgh, currenttimebutnotifonly);
 	      
-	      // Recompose grid hierarchy
-	      Recompose (cgh);
-	      
 	    }
-	  } END_REFLEVEL_LOOP(cgh);
+	  } END_MGLEVEL_LOOP(cgh);
+	  
+	  // Recompose grid hierarchy
+	  Recompose (cgh);
 	  
 	}
-      } END_MGLEVEL_LOOP(cgh);
+      } END_REFLEVEL_LOOP(cgh);
       
-      BEGIN_MGLEVEL_LOOP(cgh) {
-	if (cgh->cctk_iteration % mglevelfact == 0) {
+      BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
+	const int do_every = maxreflevelfact/reflevelfact;
+	if (cgh->cctk_iteration % do_every == 0) {
 	  
-	  BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
+	  BEGIN_MGLEVEL_LOOP(cgh) {
 	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
 	    if (cgh->cctk_iteration % do_every == 0) {
 	      
@@ -148,10 +150,10 @@ namespace Carpet {
 	      CheckChecksums (cgh, alltimes);
 	      
 	    }
-	  } END_REVERSE_REFLEVEL_LOOP(cgh);
+	  } END_MGLEVEL_LOOP(cgh);
 	  
 	}
-      } END_MGLEVEL_LOOP(cgh);
+      } END_REVERSE_REFLEVEL_LOOP(cgh);
       
     } // main loop
     

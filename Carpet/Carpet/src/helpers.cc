@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.16 2002/01/09 17:45:40 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.17 2002/01/09 21:15:11 schnetter Exp $";
 
 
 
@@ -176,45 +176,60 @@ namespace Carpet {
   
   
   
-  void set_mglevel (cGH* cgh, const int ml)
-  {
-    // Check
-    assert (ml>=0 && ml<mglevels);
-    assert (reflevel == 0);
-    assert (component == -1);
-    
-    mglevel = ml;
-    mglevelfact = ipow(mgfact, mglevel);
-    cgh->cctk_convlevel = mglevel;
-  }
-  
-  
-  
   void set_reflevel (cGH* cgh, const int rl)
   {
     // Check
     assert (rl>=0 && rl<maxreflevels && rl<hh->reflevels());
+    assert (mglevel == -1);
     assert (component == -1);
     
     // Change
     reflevel = rl;
-    const bbox<int,dim>& base = hh->baseextent;
     reflevelfact = ipow(reffact, reflevel);
-    cgh->cctk_delta_time = base_delta_time / reflevelfact * mglevelfact;
-    assert (all(base.shape() % base.stride() == 0));
-    assert (all((base.shape() / base.stride()) % mglevelfact == 0));
-    vect<int,dim>::ref(cgh->cctk_gsh)
-      = (((base.shape() / base.stride() - 1) / mglevelfact
-	  + dd->lghosts + dd->ughosts)
-	 * reflevelfact + 1);
     vect<int,dim>::ref(cgh->cctk_levfac) = reflevelfact;
-    for (int group=0; group<CCTK_NumGroups(); ++group) {
-      const bbox<int,dim>& base = arrdata[group].hh->baseextent;
-      vect<int,dim>::ref((int*)arrdata[group].info.gsh)
+  }
+  
+  
+  
+  void set_mglevel (cGH* cgh, const int ml)
+  {
+    // Check
+    assert (ml==-1 || (ml>=0 && ml<mglevels));
+    assert (component == -1);
+    
+    // Change
+    mglevel = ml;
+    mglevelfact = ipow(mgfact, mglevel);
+    cgh->cctk_convlevel = mglevel;
+    
+    // Set gsh
+    if (mglevel == -1) {
+      
+      cgh->cctk_delta_time = 0xdeadbeef;
+      vect<int,dim>::ref(cgh->cctk_gsh) = 0xdeadbeef;
+      for (int group=0; group<CCTK_NumGroups(); ++group) {
+	vect<int,dim>::ref((int*)arrdata[group].info.gsh) = 0xdeadbeef;
+      }
+      
+    } else {
+      
+      const bbox<int,dim>& base = hh->baseextent;
+      cgh->cctk_delta_time = base_delta_time / reflevelfact * mglevelfact;
+      assert (all(base.shape() % base.stride() == 0));
+      assert (all((base.shape() / base.stride()) % mglevelfact == 0));
+      vect<int,dim>::ref(cgh->cctk_gsh)
 	= (((base.shape() / base.stride() - 1) / mglevelfact
-	    + arrdata[group].dd->lghosts + arrdata[group].dd->ughosts)
+	    + dd->lghosts + dd->ughosts)
 	   * reflevelfact + 1);
-    }
+      for (int group=0; group<CCTK_NumGroups(); ++group) {
+	const bbox<int,dim>& base = arrdata[group].hh->baseextent;
+	vect<int,dim>::ref((int*)arrdata[group].info.gsh)
+	  = (((base.shape() / base.stride() - 1) / mglevelfact
+	      + arrdata[group].dd->lghosts + arrdata[group].dd->ughosts)
+	     * reflevelfact + 1);
+      }
+      
+    } // if mglevel != -1
   }
   
   

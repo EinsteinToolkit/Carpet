@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.4 2002/01/09 17:45:39 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.5 2002/01/09 21:15:10 schnetter Exp $";
 
 
 
@@ -42,41 +42,47 @@ namespace Carpet {
     CCTKi_InitGHExtensions (cgh);
     
     // Check parameters
+    set_mglevel (cgh, 0);
     Waypoint ("PARAMCHECK");
     CCTK_ScheduleTraverse ("CCTK_PARAMCHECK", cgh, CallFunction);
     CCTKi_FinaliseParamWarn();
+    set_mglevel (cgh, -1);
     
     Waypoint ("Initialising iteration %d...", cgh->cctk_iteration);
     
     BEGIN_REFLEVEL_LOOP(cgh) {
       
-      // Checking
-      Poison (cgh, alltimes);
-      
-      // Set up the grid
-      Waypoint ("%*sScheduling BASEGRID", 2*reflevel, "");
-      CCTK_ScheduleTraverse ("CCTK_BASEGRID", cgh, CallFunction);
-      if (reflevel==0) {
-	base_delta_time = cgh->cctk_delta_time;
-      } else {
+      BEGIN_MGLEVEL_LOOP(cgh) {
+	
+	// Checking
+	Poison (cgh, alltimes);
+	
+	// Set up the grid
+	Waypoint ("%*sScheduling BASEGRID", 2*reflevel, "");
+	CCTK_ScheduleTraverse ("CCTK_BASEGRID", cgh, CallFunction);
+	if (reflevel==0) {
+	  base_delta_time = cgh->cctk_delta_time;
+	} else {
 // 	assert (abs(cgh->cctk_delta_time - base_delta_time / reflevelfactor)
 // 		< 1e-6 * base_delta_time);
 	// This circumvents a bug in CactusBase/Time
 	cgh->cctk_delta_time = base_delta_time / reflevelfact;
-      }
-      
-      // Set up the initial data
-      Waypoint ("%*sScheduling INITIAL", 2*reflevel, "");
-      CCTK_ScheduleTraverse ("CCTK_INITIAL", cgh, CallFunction);
-      Waypoint ("%*sScheduling POSTINITIAL", 2*reflevel, "");
-      CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
-      
-      // Poststep
-      Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
-      CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
-      
-      // Checking
-      PoisonCheck (cgh, alltimes);
+	}
+	
+	// Set up the initial data
+	Waypoint ("%*sScheduling INITIAL", 2*reflevel, "");
+	CCTK_ScheduleTraverse ("CCTK_INITIAL", cgh, CallFunction);
+	Waypoint ("%*sScheduling POSTINITIAL", 2*reflevel, "");
+	CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
+	
+	// Poststep
+	Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
+	CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
+	
+	// Checking
+	PoisonCheck (cgh, alltimes);
+	
+      } END_MGLEVEL_LOOP(cgh);
       
       // Recompose grid hierarchy
       Recompose (cgh);
@@ -85,28 +91,32 @@ namespace Carpet {
     
     BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
       
-      // Restrict
-      Restrict (cgh);
+      BEGIN_MGLEVEL_LOOP(cgh) {
+	
+	// Restrict
+	Restrict (cgh);
+	
+	// Checking
+	CalculateChecksums (cgh, allbutcurrenttime);
+	
+	// Recover
+	Waypoint ("%*sScheduling RECOVER_VARIABLES", 2*reflevel, "");
+	CCTK_ScheduleTraverse ("CCTK_RECOVER_VARIABLES", cgh, CallFunction);
+	Waypoint ("%*sScheduling CPINITIAL", 2*reflevel, "");
+	CCTK_ScheduleTraverse ("CCTK_CPINITIAL", cgh, CallFunction);
+	
+	// Analysis
+	Waypoint ("%*sScheduling ANALYSIS", 2*reflevel, "");
+	CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
+	
+	// Output
+	Waypoint ("%*sOutputGH", 2*reflevel, "");
+	CCTK_OutputGH (cgh);
       
-      // Checking
-      CalculateChecksums (cgh, allbutcurrenttime);
-      
-      // Recover
-      Waypoint ("%*sScheduling RECOVER_VARIABLES", 2*reflevel, "");
-      CCTK_ScheduleTraverse ("CCTK_RECOVER_VARIABLES", cgh, CallFunction);
-      Waypoint ("%*sScheduling CPINITIAL", 2*reflevel, "");
-      CCTK_ScheduleTraverse ("CCTK_CPINITIAL", cgh, CallFunction);
-      
-      // Analysis
-      Waypoint ("%*sScheduling ANALYSIS", 2*reflevel, "");
-      CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
-      
-      // Output
-      Waypoint ("%*sOutputGH", 2*reflevel, "");
-      CCTK_OutputGH (cgh);
-      
-      // Checking
-      CheckChecksums (cgh, allbutcurrenttime);
+	// Checking
+	CheckChecksums (cgh, allbutcurrenttime);
+	
+      } END_MGLEVEL_LOOP(cgh);
       
     } END_REVERSE_REFLEVEL_LOOP(cgh);
     

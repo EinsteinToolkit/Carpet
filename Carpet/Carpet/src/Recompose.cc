@@ -15,7 +15,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.16 2002/01/09 17:45:39 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.17 2002/01/09 21:15:10 schnetter Exp $";
 
 
 
@@ -83,8 +83,6 @@ namespace Carpet {
   void RegisterRecomposeRegions (const gh<dim>::rexts& bbsss,
 				 const gh<dim>::rprocs& pss)
   {
-    assert (mglevel == 0);
-    
     // Check the regions
     CheckRegions (bbsss, pss);
     // Save the region information for the next regridding
@@ -97,9 +95,8 @@ namespace Carpet {
   
   void Recompose (const cGH* cgh)
   {
+    assert (mglevel == -1);
     assert (component == -1);
-    
-    if (mglevel > 0) return;
     
     Waypoint ("%*sRecompose", 2*reflevel, "");
     

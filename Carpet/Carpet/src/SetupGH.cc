@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.19 2002/01/09 17:45:40 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.20 2002/01/09 21:15:10 schnetter Exp $";
 
 
 
@@ -243,7 +243,7 @@ namespace Carpet {
     
     // Initialise current position
     reflevel  = 0;
-    mglevel   = 0;
+    mglevel   = -1;
     component = -1;
     
     // Invent a refinement structure
@@ -273,16 +273,20 @@ namespace Carpet {
     iteration.resize(maxreflevels, 0);
     
     // Set current position (this time for real)
-    set_mglevel   (cgh, 0);
     set_reflevel  (cgh, 0);
+    set_mglevel   (cgh, -1);
     set_component (cgh, -1);
     
     // Enable storage for all groups if desired
     // XXX
     if (true || enable_all_storage) {
-      for (int group=0; group<CCTK_NumGroups(); ++group) {
-	EnableGroupStorage (cgh, CCTK_GroupName(group));
-      }
+      BEGIN_REFLEVEL_LOOP(cgh) {
+	BEGIN_MGLEVEL_LOOP(cgh) {
+	  for (int group=0; group<CCTK_NumGroups(); ++group) {
+	    EnableGroupStorage (cgh, CCTK_GroupName(group));
+	  }
+	} END_MGLEVEL_LOOP(cgh);
+      } END_REFLEVEL_LOOP(cgh);
     }
     
     Waypoint ("done with SetupGH.");

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.14 2002/01/09 17:45:40 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.15 2002/01/09 21:15:11 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -32,6 +32,12 @@ namespace Carpet {
   // Handle from CCTK_RegisterGHExtension
   extern int GHExtension;
   
+  // Refinement factor
+  extern int reffact;
+  
+  // Refinement factor on finest grid
+  extern int maxreflevelfact;
+  
   // Multigrid levels
   extern int mglevels;
   
@@ -44,25 +50,19 @@ namespace Carpet {
   // Multigrid factor on coarsest grid
   extern int maxmglevelfact;
   
-  // Refinement factor
-  extern int reffact;
-  
-  // Refinement factor on finest grid
-  extern int maxreflevelfact;
-  
   // Current iteration per refinement level
   extern vector<int> iteration;
   
   // Current position on the grid hierarchy
-  extern int mglevel;
   extern int reflevel;
+  extern int mglevel;
   extern int component;
-  
-  // Current multigrid factor
-  extern int mglevelfact;
   
   // Current refinement factor
   extern int reflevelfact;
+  
+  // Current multigrid factor
+  extern int mglevelfact;
   
   // Time step on base grid
   extern CCTK_REAL base_delta_time;
@@ -154,24 +154,6 @@ namespace Carpet {
   
   
   
-  // Multigrid level iterator
-  
-#define BEGIN_MGLEVEL_LOOP(cgh)			\
-  do {						\
-    int _mgl;					\
-    assert (mglevel==0);			\
-    for (int _ml=mglevels-1; _ml>=0; --_ml) {	\
-      set_mglevel ((cGH*)(cgh), _ml);		\
-      {
-#define END_MGLEVEL_LOOP(cgh)			\
-      }						\
-    }						\
-    assert (mglevel==0);			\
-    _mgl = 0;					\
-  } while (0)
-  
-  
-  
   // Refinement level iterator
   
 #define BEGIN_REFLEVEL_LOOP(cgh)			\
@@ -209,12 +191,33 @@ namespace Carpet {
   
   
   
+  // Multigrid level iterator
+  
+#define BEGIN_MGLEVEL_LOOP(cgh)				\
+  do {							\
+    int _mgl;						\
+    assert (reflevel>=0 && reflevel<hh->reflevels());	\
+    assert (mglevel==-1);				\
+    for (int _ml=mglevels-1; _ml>=0; --_ml) {		\
+      set_mglevel ((cGH*)(cgh), _ml);			\
+      {
+#define END_MGLEVEL_LOOP(cgh)			\
+      }						\
+    }						\
+    set_mglevel ((cGH*)(cgh), -1);		\
+    assert (mglevel==-1);			\
+    _mgl = 0;					\
+  } while (0)
+  
+  
+  
   // Component iterator
   
 #define BEGIN_COMPONENT_LOOP(cgh)			\
   do {							\
     int _cl;						\
     assert (reflevel>=0 && reflevel<hh->reflevels());	\
+    assert (mglevel>=0 && mglevel<mglevels);		\
     assert (component==-1);				\
     for (int _c=0; _c<hh->components(reflevel); ++_c) {	\
       set_component ((cGH*)(cgh), _c);			\
@@ -233,6 +236,7 @@ namespace Carpet {
   do {							\
     int _lcl;						\
     assert (reflevel>=0 && reflevel<hh->reflevels());	\
+    assert (mglevel>=0 && mglevel<mglevels);		\
     assert (component==-1);				\
     for (int _c=0; _c<hh->components(reflevel); ++_c) {	\
       if (hh->is_local(reflevel,_c)) {			\

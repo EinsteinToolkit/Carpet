@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.7 2001/12/14 16:39:08 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.8 2002/01/09 21:15:10 schnetter Exp $";
 
 
 
@@ -83,7 +83,7 @@ namespace Carpet {
     } // for
     
     // Reinitialise Cactus variables
-    set_component (cgh, component);
+    if (component!=-1) set_component (cgh, component);
     PoisonGroup (cgh, group, alltimes);
     
     // storage was not enabled previously
