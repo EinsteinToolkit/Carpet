@@ -366,19 +366,15 @@ namespace Carpet {
       const int zstep = locnpz * cstr[dir];
       clb[dir] = rlb[dir] + zstep *  c;
       cub[dir] = rlb[dir] + zstep * (c+1);
-      if (clb[dir] > rub[dir])
-        clb[dir] = rub[dir];
-      if (cub[dir] > rub[dir])
-        cub[dir] = rub[dir];
+      if (clb[dir] > rub[dir]) clb[dir] = rub[dir];
+      if (cub[dir] > rub[dir]) cub[dir] = rub[dir];
       assert (clb[dir] <= cub[dir]);
       assert (cub[dir] <= rub[dir]);
       bbs.at(c) = ibbox(clb, cub-cstr, cstr);
       obs.at(c) = obnd;
       ps.at(c) = c;
-      if (c>0)
-        obs.at(c)[dir][0] = false;
-      if (c<nprocs-1)
-        obs.at(c)[dir][1] = false;
+      if (c>0)        obs.at(c)[dir][0] = false;
+      if (c<nprocs-1) obs.at(c)[dir][1] = false;
     }
     
     for (int n=0; n<(int)ps.size(); ++n) {

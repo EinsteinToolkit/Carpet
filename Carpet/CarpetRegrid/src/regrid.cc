@@ -163,19 +163,23 @@ namespace CarpetRegrid {
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-gridpoints")) {
       
-      do_recompose = ManualGridpoints (cctkGH, hh, bbsss, obss, pss);
+      do_recompose
+        = ManualGridpoints (cctkGH, hh, bbsss, obss, pss);
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-coordinates")) {
       
-      do_recompose = ManualCoordinates (cctkGH, hh, bbsss, obss, pss);
+      do_recompose
+        = ManualCoordinates (cctkGH, hh, bbsss, obss, pss);
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-gridpoint-list")) {
       
-      do_recompose = ManualGridpointList (cctkGH, hh, bbsss, obss, pss);
+      do_recompose
+        = ManualGridpointList (cctkGH, hh, bbsss, obss, pss);
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-coordinate-list")) {
       
-      do_recompose = ManualCoordinateList (cctkGH, hh, bbsss, obss, pss);
+      do_recompose
+        = ManualCoordinateList (cctkGH, hh, bbsss, obss, pss);
                  
     } else if (CCTK_EQUALS(refined_regions, "moving")) {
       

@@ -136,7 +136,8 @@ namespace Carpet {
     // not reached
     return false;
   }
-
+  
+  
   
   static operator_type GetTransportOperator (const cGH * const cgh,
                                              const int group)

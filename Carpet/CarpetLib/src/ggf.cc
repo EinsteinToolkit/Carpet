@@ -94,16 +94,13 @@ void ggf<D>::recompose_allocate (const int rl)
   // Resize structure and allocate storage
   storage.resize(tmax-tmin+1);
   for (int tl=tmin; tl<=tmax; ++tl) {
-    rdata &rd = storage.at(tl-tmin);
-    rd.resize(h.reflevels());
-    cdata &cd = rd.at(rl);
-    cd.resize(h.components(rl));
+    storage.at(tl-tmin).resize(h.reflevels());
+    storage.at(tl-tmin).at(rl).resize(h.components(rl));
     for (int c=0; c<h.components(rl); ++c) {
-      mdata &md = cd.at(c);
-      md.resize(h.mglevels(rl,c));
+      storage.at(tl-tmin).at(rl).at(c).resize(h.mglevels(rl,c));
       for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-        md.at(ml) = typed_data(tl,rl,c,ml);
-        md.at(ml)->allocate
+        storage.at(tl-tmin).at(rl).at(c).at(ml) = typed_data(tl,rl,c,ml);
+        storage.at(tl-tmin).at(rl).at(c).at(ml)->allocate
           (d.boxes.at(rl).at(c).at(ml).exterior, h.proc(rl,c));
       } // for ml
     } // for c
