@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.36 2003/07/14 15:41:34 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.37 2003/07/16 21:45:58 schnetter Exp $
 
 #include <assert.h>
 
@@ -281,7 +281,9 @@ void dh<D>::recompose (const int initialise_upto) {
                 boxes[rl  ][c ][ml].recv_ref_fine  [cc].push_back(recv);
               }
 #else
-              const ibbox recv = intrf.contracted_for(intr) & intr;
+              const ivect buf (buffer_width);
+              const ibbox recv = (intrf.contracted_for(intr).expand(-buf,-buf)
+                                  & intr);
               const ibbox send = recv.expanded_for(intrf);
               assert (send.empty() == recv.empty());
               if (! send.empty()) {
