@@ -331,12 +331,12 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
         {
           datasetname << " ml=" << mglevel;
         }
-        if (Carpet::maps > 1)
-        {
-          datasetname << " m="  << Carpet::map;
-        }
         if (group.grouptype == CCTK_GF)
         {
+          if (Carpet::maps > 1)
+          {
+            datasetname << " m="  << Carpet::map;
+          }
           datasetname << " rl=" << refinementlevel;
         }
         if (bboxes.setsize () > 1 && group.disttype != CCTK_DISTRIB_CONSTANT)
