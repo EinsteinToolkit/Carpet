@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.h,v 1.1 2003/04/30 12:37:31 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.h,v 1.2 2003/11/05 16:18:38 schnetter Exp $ */
 
 #ifndef CARPETINTERP_H
 #define CARPETINTERP_H

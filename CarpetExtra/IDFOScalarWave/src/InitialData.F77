@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/InitialData.F77,v 1.7 2003/07/08 23:02:19 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/InitialData.F77,v 1.8 2003/11/05 16:18:40 schnetter Exp $
 
  /*@@
    @file      InitialData.F77
@@ -11,8 +11,9 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/Ini
  @@*/
 
 #include "cctk.h" 
-#include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
+#include "cctk_Functions.h"
+#include "cctk_Parameters.h"
 
 
  /*@@

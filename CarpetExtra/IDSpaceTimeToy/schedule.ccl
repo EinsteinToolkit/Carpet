@@ -1,5 +1,5 @@
 # Schedule definitions for thorn IDSpaceTimeToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/schedule.ccl,v 1.4 2002/04/29 11:28:05 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/schedule.ccl,v 1.5 2003/11/05 16:18:40 schnetter Exp $
 
 schedule IDSpaceTimeToy_Startup at STARTUP
 {

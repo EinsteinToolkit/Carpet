@@ -1,10 +1,10 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/src/InitSymBound.F77,v 1.2 2003/10/27 15:31:40 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/src/InitSymBound.F77,v 1.3 2003/11/05 16:18:39 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
-#include "cctk_Parameters.h"
 #include "cctk_Functions.h"
+#include "cctk_Parameters.h"
       
       subroutine HydroToy_InitSymBound (CCTK_ARGUMENTS)
       

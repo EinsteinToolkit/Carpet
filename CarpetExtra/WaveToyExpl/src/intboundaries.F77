@@ -1,4 +1,4 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyExpl/src/intboundaries.F77,v 1.2 2003/10/27 15:31:40 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyExpl/src/intboundaries.F77,v 1.3 2003/11/05 16:18:40 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
@@ -10,8 +10,6 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyExpl/src/intbou
       DECLARE_CCTK_ARGUMENTS
       DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
-      external Boundary_SelectGroupForBC
-      CCTK_INT Boundary_SelectGroupForBC
       CCTK_INT bndwidth
       parameter (bndwidth = 1)
       character fbound*100

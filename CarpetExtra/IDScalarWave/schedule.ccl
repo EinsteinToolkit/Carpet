@@ -1,5 +1,5 @@
 # Schedule definitions for thorn IDScalarWave
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/schedule.ccl,v 1.4 2002/04/29 11:28:03 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/schedule.ccl,v 1.5 2003/11/05 16:18:40 schnetter Exp $
 
 schedule IDScalarWave_CheckParameters at PARAMCHECK
 {
