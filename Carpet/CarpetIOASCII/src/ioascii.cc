@@ -31,7 +31,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.64 2004/03/11 14:37:42 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.65 2004/03/23 16:13:03 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -897,8 +897,8 @@ namespace CarpetIOASCII {
 	= (const CCTK_INT*)CCTK_ParameterGet
         (parametername, CCTK_THORNSTRING, &ptype);
       assert (ppval);
-      const CCTK_INT pval = *ppval;
       assert (ptype == PARAMETER_INT || ptype == PARAMETER_BOOLEAN);
+      const CCTK_INT pval = *ppval;
       return pval;
     }
     
@@ -923,8 +923,8 @@ namespace CarpetIOASCII {
 	= (const CCTK_REAL*)CCTK_ParameterGet
         (parametername, CCTK_THORNSTRING, &ptype);
       assert (ppval);
-      const CCTK_REAL pval = *ppval;
       assert (ptype == PARAMETER_REAL);
+      const CCTK_REAL pval = *ppval;
       return pval;
     }
     
