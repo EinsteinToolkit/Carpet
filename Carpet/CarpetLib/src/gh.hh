@@ -55,15 +55,13 @@ public:
 public:				// should be readonly
   
   // Fields
-  int reffact;			// refinement factor
-  centering refcent;		// vertex or cell centered
+  const int reffact;		// refinement factor
+  const centering refcent;	// vertex or cell centered
+ 
+  const int mgfact;		// default multigrid factor
+  const centering mgcent;	// default (vertex or cell centered)
   
-  int mgfact;			// default multigrid factor
-  centering mgcent;		// default (vertex or cell centered)
-  
-  list<th<D>*> ths;		// list of all time hierarchies
-  
-  ibbox baseextent;
+  const ibbox baseextent;
   vector<vector<ibbox> > bases; // [rl][ml]
   
   // TODO: invent structure for this
@@ -71,6 +69,8 @@ public:				// should be readonly
   rbnds outer_boundaries;	// boundary descriptions of all grids
   rprocs processors;		// processor numbers of all grids
   
+private:
+  list<th<D>*> ths;		// list of all time hierarchies
   list<dh<D>*> dhs;		// list of all data hierarchies
   
 public:
