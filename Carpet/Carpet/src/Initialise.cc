@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.1 2001/07/04 12:29:47 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.2 2001/12/14 16:39:07 schnetter Exp $";
 
 
 
@@ -29,7 +29,7 @@ namespace Carpet {
     CCTKi_AddGH (fc, convlev, cgh);
     
     // Delay checkpoint until MPI has been initialised
-    Checkpoint ("starting Initialise...");
+    Waypoint ("starting Initialise...");
     
     // Initialise stuff
     cgh->cctk_iteration = 0;
@@ -42,17 +42,17 @@ namespace Carpet {
     CCTKi_InitGHExtensions (cgh);
     
     // Check parameters
-    Checkpoint ("PARAMCHECK");
+    Waypoint ("PARAMCHECK");
     CCTK_ScheduleTraverse ("CCTK_PARAMCHECK", cgh, CallFunction);
     CCTKi_FinaliseParamWarn();
     
     BEGIN_REFLEVEL_LOOP(cgh) {
       
       // Checking
-      Poison (cgh, allbutlasttime);
+      Poison (cgh, alltimes);
       
       // Set up the grid
-      Checkpoint ("%*sScheduling BASEGRID", 2*reflevel, "");
+      Waypoint ("%*sScheduling BASEGRID", 2*reflevel, "");
       CCTK_ScheduleTraverse ("CCTK_BASEGRID", cgh, CallFunction);
       if (reflevel==0) {
 	base_delta_time = cgh->cctk_delta_time;
@@ -64,23 +64,26 @@ namespace Carpet {
       }
       
       // Set up the initial data
-      Checkpoint ("%*sScheduling INITIAL", 2*reflevel, "");
+      Waypoint ("%*sScheduling INITIAL", 2*reflevel, "");
       CCTK_ScheduleTraverse ("CCTK_INITIAL", cgh, CallFunction);
-      Checkpoint ("%*sScheduling POSTINITIAL", 2*reflevel, "");
+      Waypoint ("%*sScheduling POSTINITIAL", 2*reflevel, "");
       CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
       
       // Recover
-      Checkpoint ("%*sScheduling RECOVER_VARIABLES", 2*reflevel, "");
+      Waypoint ("%*sScheduling RECOVER_VARIABLES", 2*reflevel, "");
       CCTK_ScheduleTraverse ("CCTK_RECOVER_VARIABLES", cgh, CallFunction);
-      Checkpoint ("%*sScheduling CPINITIAL", 2*reflevel, "");
+      Waypoint ("%*sScheduling CPINITIAL", 2*reflevel, "");
       CCTK_ScheduleTraverse ("CCTK_CPINITIAL", cgh, CallFunction);
       
       // Poststep
-      Checkpoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
+      Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
       CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
       
       // Checking
-      PoisonCheck (cgh, allbutlasttime);
+      PoisonCheck (cgh, alltimes);
+      
+      // Recompose grid hierarchy
+      Recompose (cgh);
       
     } END_REFLEVEL_LOOP(cgh);
     
@@ -90,22 +93,22 @@ namespace Carpet {
       Restrict (cgh);
       
       // Checking
-      CalculateChecksums (cgh, allbutlasttime);
+      CalculateChecksums (cgh, allbutcurrenttime);
       
       // Analysis
-      Checkpoint ("%*sScheduling ANALYSIS", 2*reflevel, "");
+      Waypoint ("%*sScheduling ANALYSIS", 2*reflevel, "");
       CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
       
       // Output
-      Checkpoint ("%*sOutputGH", 2*reflevel, "");
+      Waypoint ("%*sOutputGH", 2*reflevel, "");
       CCTK_OutputGH (cgh);
       
       // Checking
-      CheckChecksums (cgh, allbutlasttime);
+      CheckChecksums (cgh, allbutcurrenttime);
       
     } END_REVERSE_REFLEVEL_LOOP(cgh);
     
-    Checkpoint ("done with Initialise.");
+    Waypoint ("done with Initialise.");
     
     return 0;
   }

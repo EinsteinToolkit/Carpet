@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.13 2001/11/02 10:59:00 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.14 2001/12/14 16:39:09 schnetter Exp $
 
 #include "carpet_public.hh"
 
@@ -25,6 +25,7 @@ namespace Carpet {
   void CheckChecksums (cGH* cgh, checktimes where);
   
   // Debugging output
+  void Waypoint (const char* fmt, ...);
   void Checkpoint (const char* fmt, ...);
   
   // Error output

@@ -1,9 +1,12 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.8 2001/12/09 16:41:53 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.9 2001/12/14 16:39:09 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
 // distribution onto the processors is the same, and that all
 // processors own the same number of components.
+
+#ifndef CARPET_PUBLIC_HH
+#define CARPET_PUBLIC_HH
 
 #include <vector>
 
@@ -11,6 +14,7 @@
 #include "cctk_Schedule.h"
 
 #include "Carpet/CarpetLib/src/dh.hh"
+#include "Carpet/CarpetLib/src/gf.hh"
 #include "Carpet/CarpetLib/src/ggf.hh"
 #include "Carpet/CarpetLib/src/gh.hh"
 #include "Carpet/CarpetLib/src/th.hh"
@@ -121,14 +125,10 @@ namespace Carpet {
   void RegisterRecomposeRegions (const gh<dim>::rexts& bbsss,
 				 const gh<dim>::rprocs& pss);
   
-  void MakeRegions_RefineCentre  (const cGH* cgh, int reflevels,
-				  gh<dim>::rexts& bbsss);
-  void MakeRegions_AsSpecified   (const cGH* cgh, int reflevels,
-				  gh<dim>::rexts& bbsss);
-  void SplitRegions_AlongZ       (const cGH* cgh, gh<dim>::rexts& bbsss);
-  void SplitRegions_AsSpecified  (const cGH* cgh, gh<dim>::rexts& bbsss);
-  void MakeProcessors_RoundRobin (const cGH* cgh, const gh<dim>::rexts& bbsss,
-				  gh<dim>::rprocs& pss);
+  void SplitRegions (const cGH* cgh, gh<dim>::cexts& bbss);
+  
+  void MakeProcessors (const cGH* cgh, const gh<dim>::rexts& bbsss,
+		       gh<dim>::rprocs& pss);
   
   
   
@@ -200,3 +200,5 @@ namespace Carpet {
   } while (0)
   
 } // namespace Carpet
+
+#endif // ! defined(CARPET_PUBLIC_HH)

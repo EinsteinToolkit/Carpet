@@ -11,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.12 2001/12/09 16:41:53 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.13 2001/12/14 16:39:10 schnetter Exp $";
 
 
 
@@ -129,10 +129,26 @@ namespace Carpet {
   
   
   
+  void Waypoint (const char* fmt, ...)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    if (verbose || veryverbose) {
+      va_list args;
+      char msg[1000];
+      va_start (args, fmt);
+      vsnprintf (msg, sizeof(msg), fmt, args);
+      va_end (args);
+      CCTK_INFO (msg);
+    }
+    if (barriers) {
+      MPI_Barrier (dist::comm);
+    }
+  }
+  
   void Checkpoint (const char* fmt, ...)
   {
     DECLARE_CCTK_PARAMETERS;
-    if (verbose) {
+    if (veryverbose) {
       va_list args;
       char msg[1000];
       va_start (args, fmt);

@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.6 2001/12/09 16:41:53 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.7 2001/12/14 16:39:08 schnetter Exp $";
 
 
 
@@ -54,6 +54,15 @@ namespace Carpet {
     const int tmax = 0;
     const int my_prolongation_order_time
       = num_tl==1 ? 0 : prolongation_order_time;
+    
+    if (max_refinement_levels > 1) {
+      if (num_tl <= my_prolongation_order_time) {
+	CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+		    "There are not enough time levels for the desired temporal prolongation order in the grid function group \"%s\".  With Carpet::prolongation_order_time=%d, you need at least %d time levels.",
+		    CCTK_GroupName(group),
+		    prolongation_order_time, prolongation_order_time+1);
+      }
+    }
     
     assert (arrdata[group].data.size()==0
 	    || arrdata[group].data[0] == 0);

@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.3 2001/11/02 17:51:15 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.4 2001/12/14 16:39:08 schnetter Exp $";
 
 
 
@@ -23,20 +23,20 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    Checkpoint ("starting Shutdown...");
+    Waypoint ("starting Shutdown...");
     
     const int convlev = 0;
     cGH* cgh = fc->GH[convlev];
     
     // Terminate
     BEGIN_REFLEVEL_LOOP(cgh) {
-      Checkpoint ("%*sScheduling TERMINATE", 2*reflevel, "");
+      Waypoint ("%*sScheduling TERMINATE", 2*reflevel, "");
       CCTK_ScheduleTraverse ("CCTK_TERMINATE", cgh, CallFunction);
     } END_REFLEVEL_LOOP(cgh);
     
     // Shutdown
     BEGIN_REFLEVEL_LOOP(cgh) {
-      Checkpoint ("%*sScheduling SHUTDOWN", 2*reflevel, "");
+      Waypoint ("%*sScheduling SHUTDOWN", 2*reflevel, "");
       CCTK_ScheduleTraverse ("CCTK_SHUTDOWN", cgh, CallFunction);
     } END_REFLEVEL_LOOP(cgh);
     
@@ -44,7 +44,7 @@ namespace Carpet {
     printf ("Done.\n");
     
     // earlier checkpoint before calling finalising MPI
-    Checkpoint ("done with Shutdown.");
+    Waypoint ("done with Shutdown.");
     
     dist::finalize();
     

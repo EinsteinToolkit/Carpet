@@ -11,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.15 2001/12/09 16:41:53 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.16 2001/12/14 16:39:08 schnetter Exp $";
 
 
 
@@ -35,7 +35,7 @@ namespace Carpet {
     CCTK_VInfo (CCTK_THORNSTRING,
 		"Carpet is running on %d processors", CCTK_nProcs(cgh));
     
-    Checkpoint ("starting SetupGH...");
+    Waypoint ("starting SetupGH...");
     
     // Refinement information
     maxreflevels = max_refinement_levels;
@@ -240,22 +240,20 @@ namespace Carpet {
     component = -1;
     
     // Invent a refinement structure
+    vector<bbox<int,dim> > bbs(1);
+    bbs[0] = hh->baseextent;
+    
+    vector<vector<bbox<int,dim> > > bbss(1);
+    bbss[0] = bbs;
+    
+    SplitRegions (cgh, bbss);
+    
     gh<dim>::rexts bbsss;
+    bbsss = hh->make_multigrid_boxes(bbss, 1);
+    
     gh<dim>::rprocs pss;
-    assert (refinement_levels <= max_refinement_levels);
-    if (CCTK_EQUALS (refined_regions, "centre")) {
-      MakeRegions_RefineCentre (cgh, refinement_levels, bbsss);
-    } else if (CCTK_EQUALS (refined_regions, "manual")) {
-      MakeRegions_AsSpecified (cgh, refinement_levels, bbsss);
-    }
-    if (CCTK_EQUALS (processor_topology, "automatic")) {
-      SplitRegions_AlongZ (cgh, bbsss);
-    } else if (CCTK_EQUALS (processor_topology, "manual")) {
-      SplitRegions_AsSpecified (cgh, bbsss);
-    } else {
-      abort();
-    }
-    MakeProcessors_RoundRobin (cgh, bbsss, pss);
+    MakeProcessors (cgh, bbsss, pss);
+    
     RegisterRecomposeRegions (bbsss, pss);
     
     // Recompose grid hierarchy
@@ -280,7 +278,7 @@ namespace Carpet {
       }
     }
     
-    Checkpoint ("done with SetupGH.");
+    Waypoint ("done with SetupGH.");
     
     // We register only once, ergo we get only one handle, ergo there
     // is only one grid hierarchy for us.  We store that statically,
