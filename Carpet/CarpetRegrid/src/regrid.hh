@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.5 2002/03/23 20:20:57 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.6 2002/05/16 23:25:54 schnetter Exp $
 
 #ifndef REGRID_HH
 #define REGRID_HH
@@ -22,6 +22,7 @@ namespace CarpetRegrid {
   // scheduled functions
   extern "C" {
     int CarpetRegridStartup ();
+    int CarpetRegridParamcheck (CCTK_ARGUMENTS);
   }
   
   
