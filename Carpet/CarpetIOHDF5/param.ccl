@@ -7,6 +7,7 @@ shares: IO
 
 USES STRING  out_dir
 USES BOOLEAN out_single_precision
+USES KEYWORD verbose
 
 USES KEYWORD   out_criterion
 USES CCTK_INT  out_every
@@ -32,13 +33,6 @@ USES CCTK_REAL cctk_initial_time
 
 
 private:
-
-
-
-BOOLEAN verbose "Produce log output" STEERABLE = ALWAYS
-{
-} "no"
-
 
 
 CCTK_STRING out3D_dir "Name of 3D CarpetIOHDF5 output directory, overrides IO::out_dir" STEERABLE = ALWAYS
