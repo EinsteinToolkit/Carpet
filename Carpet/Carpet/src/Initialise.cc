@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.14 2002/06/07 16:37:53 shawley Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.15 2002/06/07 16:44:42 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Initialise_cc)
 
@@ -107,7 +107,6 @@ namespace Carpet {
 	  CycleTimeLevels (cgh);
 	  // Advance level times
 	  tt->advance_time (reflevel, mglevel);
-
 	  Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
 	  CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
 	  Waypoint ("%*sScheduling EVOL", 2*reflevel, "");
@@ -117,10 +116,12 @@ namespace Carpet {
 	  
 	  // erik: what about arrays?
 	  FlipTimeLevels(cgh);
+	  for (int rl=0; rl<hh->reflevels(); ++rl) {
+	    tt->set_time (rl, mglevel, 2*tt->get_delta (rl, mglevel) - tt->get_time (rl, mglevel));
+	  }
 	  // Keep track of which direction (in time) we're integrating
 	  time_dir *= -1;
-	  cgh->cctk_delta_time = time_dir * base_delta_time / reflevelfact * 
-mglevelfact;
+	  cgh->cctk_delta_time = time_dir * base_delta_time / reflevelfact * mglevelfact;
 	  
 	  // Evolve in the opposite time-direction
 	  // Cycle time levels
@@ -147,10 +148,12 @@ mglevelfact;
 	// erik: what about arrays?
 	BEGIN_MGLEVEL_LOOP(cgh) {
 	  FlipTimeLevels(cgh);
+	  for (int rl=0; rl<hh->reflevels(); ++rl) {
+	    tt->set_time (rl, mglevel, 2*tt->get_delta (rl, mglevel) - tt->get_time (rl, mglevel));
+	  }
 	} END_MGLEVEL_LOOP(cgh);
 	time_dir *= -1;
-	cgh->cctk_delta_time = time_dir * base_delta_time / reflevelfact * 
-mglevelfact;
+	cgh->cctk_delta_time = time_dir * base_delta_time / reflevelfact * mglevelfact;
       }
       
       // Evolve each level backwards one more timestep
@@ -159,8 +162,9 @@ mglevelfact;
 	  
 	  // Cycle time levels
 	  // erik: advance time here
-	  // erik: what about arrays?
 	  CycleTimeLevels (cgh);
+	  // Advance level times
+	  tt->advance_time (reflevel, mglevel);
 	  Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
 	  CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
 	  Waypoint ("%*sScheduling EVOL", 2*reflevel, "");
@@ -179,11 +183,12 @@ mglevelfact;
       // erik: what about arrays?
       BEGIN_MGLEVEL_LOOP(cgh) {
          FlipTimeLevels(cgh);
+	 for (int rl=0; rl<hh->reflevels(); ++rl) {
+	   tt->set_time (rl, mglevel, 2*tt->get_delta (rl, mglevel) - tt->get_time (rl, mglevel));
+	 }
       } END_MGLEVEL_LOOP(cgh);
       time_dir *= -1;
-      cgh->cctk_delta_time = time_dir * base_delta_time / reflevelfact * 
-
-mglevelfact;
+      cgh->cctk_delta_time = time_dir * base_delta_time / reflevelfact * mglevelfact;
 
 
       CCTK_INFO("Finished initializing three timelevels");
