@@ -1,5 +1,5 @@
 # Schedule definitions for thorn WaveToyMoL
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/schedule.ccl,v 1.1 2003/06/18 18:24:30 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/schedule.ccl,v 1.2 2003/07/20 21:03:43 schnetter Exp $
 
 STORAGE: scalarevolve[3]
 STORAGE: scalarevolvedot
@@ -42,12 +42,12 @@ SCHEDULE GROUP ApplyBCs IN MoL_PostStep AFTER WaveToyMoL_Boundaries
 
 
 
-SCHEDULE WaveToyMoL_Boundaries IN postrestrict
+SCHEDULE WaveToyMoL_Boundaries IN PostRestrict
 {
   LANG: Fortran
   SYNC: scalarevolve
 } "Select boundary conditions after restricting"
 
-SCHEDULE GROUP ApplyBCs IN postrestrict AFTER WaveToyMoL_Boundaries
+SCHEDULE GROUP ApplyBCs IN PostRestrict AFTER WaveToyMoL_Boundaries
 {
 } "Apply boundary conditions after restricting"

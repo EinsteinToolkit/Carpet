@@ -1,7 +1,13 @@
 # Schedule definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/schedule.ccl,v 1.4 2001/12/14 16:39:05 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/schedule.ccl,v 1.5 2003/07/20 21:03:43 schnetter Exp $
 
 schedule CarpetStartup at STARTUP as Driver_Startup
 {
   LANG: C
 } "Startup routine"
+
+
+
+schedule group PostRestrict
+{
+} "Apply boundary conditions after restricting"

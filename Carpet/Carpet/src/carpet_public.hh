@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.32 2003/07/14 15:41:34 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.33 2003/07/20 21:03:43 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -72,6 +72,9 @@ namespace Carpet {
   
   // Is this the time for a global mode call?
   extern bool do_global_mode;
+  
+  // Is prolongation enabled?
+  extern bool do_prolongate;
   
   // Current times on the refinement levels
   extern vector<CCTK_REAL> refleveltimes;

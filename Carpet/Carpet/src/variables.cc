@@ -6,7 +6,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.16 2003/06/18 18:28:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.17 2003/07/20 21:03:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_variables_cc);
 }
 
@@ -54,6 +54,9 @@ namespace Carpet {
   
   // Is this the time for a global mode call?
   bool do_global_mode;
+  
+  // Is prolongation enabled?
+  bool do_prolongate;
   
   // Current times on the refinement levels
   vector<CCTK_REAL> refleveltimes;

@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.18 2003/07/16 21:46:38 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.19 2003/07/20 21:03:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Restrict_cc);
 }
 
@@ -45,18 +45,6 @@ namespace Carpet {
               const CCTK_REAL time2 = cgh->cctk_time / cgh->cctk_delta_time;
               assert (fabs((time1 - time2) / (fabs(time1) + fabs(time2) + fabs(cgh->cctk_delta_time))) < 1e-12);
             }
-            
-            if (mglevel > 0) {
-              
-              for (int c=0; c<hh->components(reflevel); ++c) {
-                arrdata[group].data[var]->mg_restrict
-                  (tl, reflevel, c, mglevel, time);
-              }
-              for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
-                arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);
-              }
-              
-            } // if not finest multigrid level
             
             if (reflevel < hh->reflevels()-1) {
               

@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.30 2003/06/24 15:18:51 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.31 2003/07/20 21:03:43 schnetter Exp $
 
 shares: Cactus
 
@@ -37,7 +37,8 @@ CCTK_INT global_nz "Grid size in z direction"
 
 CCTK_INT global_nsize "Grid size in each spatial direction"
 {
-  -1:* :: "must be nonnegative, or -1 to use the individual parameters"
+  0:* :: "must be nonnegative"
+  -1  :: "use the per-dimension parameters"
 } -1
 
 
@@ -59,7 +60,8 @@ CCTK_INT ghost_size_z "Ghost zones in z direction"
 
 CCTK_INT ghost_size "Ghost zones in each spatial direction"
 {
-  -1:* :: "must be nonnegative, or -1 to use the individual parameters"
+  0:* :: "must be nonnegative"
+  -1  :: "use the per-dimension parameters"
 } -1
 
 
@@ -99,6 +101,11 @@ CCTK_INT prolongation_order_time "Order of prolongation operator in time"
   1 :: "first order (linear)"
   2 :: "second order (quadratic)"
 } 1
+
+CCTK_INT buffer_width "Width of the buffer zone inside the fine grid"
+{
+  0:* :: "Should be the radius of the numerical domain of dependence of the time integrator, minus the number of ghost zones"
+} 0
 
 
 

@@ -19,7 +19,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.50 2003/07/09 21:59:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.51 2003/07/20 21:03:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -196,7 +196,8 @@ namespace Carpet {
     tt = new th<dim>(hh, 1.0);
     
     // Allocate data hierarchy
-    dd = new dh<dim>(*hh, lghosts, ughosts, prolongation_order_space);
+    dd = new dh<dim>(*hh, lghosts, ughosts,
+                     prolongation_order_space, buffer_width);
     
     if (max_refinement_levels > 1) {
       const int prolongation_stencil_size = dd->prolongation_stencil_size();
@@ -279,7 +280,7 @@ namespace Carpet {
 	}
 	
 	arrdata[group].dd
-	  = new dh<dim>(*arrdata[group].hh, alghosts, aughosts, 0);
+	  = new dh<dim>(*arrdata[group].hh, alghosts, aughosts, 0, 0);
 	
 	// Set refinement structure for scalars and arrays:
 	
@@ -416,6 +417,9 @@ namespace Carpet {
     reflevel  = -1;
     mglevel   = -1;
     component = -1;
+    
+    // Enable prolongating
+    do_prolongate = true;
     
     
     

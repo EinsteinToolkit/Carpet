@@ -15,7 +15,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.39 2003/07/09 21:59:08 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.40 2003/07/20 21:03:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -424,6 +424,21 @@ namespace Carpet {
       
     } // if local mode
     
+  }
+  
+  
+  
+  // Enable or disable prolongating
+  int CarpetEnableProlongating (const int flag)
+  {
+    assert (flag==0 || flag==1);
+    do_prolongate = flag;
+    if (do_prolongate) {
+      Checkpoint ("Prolongating enabled");
+    } else {
+      Checkpoint ("Prolongating disabled");
+    }
+    return 0;
   }
   
   

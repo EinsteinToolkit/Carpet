@@ -18,7 +18,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.26 2003/07/11 09:27:11 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.27 2003/07/20 21:03:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -166,7 +166,7 @@ namespace Carpet {
 	      CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
 	      Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
 	      CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
-	      
+              
 	      // Checking
 	      PoisonCheck (cgh, currenttimebutnotifonly);
 	      
@@ -201,8 +201,8 @@ namespace Carpet {
                         do_global_mode ? "   (global time)" : "");
 	      Restrict (cgh);
               
-	      Waypoint ("%*sScheduling POSTRESTRICT", 2*reflevel, "");
-	      CCTK_ScheduleTraverse ("POSTRESTRICT", cgh, CallFunction);
+	      Waypoint ("%*sScheduling PostRestrict", 2*reflevel, "");
+	      CCTK_ScheduleTraverse ("PostRestrict", cgh, CallFunction);
 	      
 	      // Checking
 	      CalculateChecksums (cgh, currenttime);

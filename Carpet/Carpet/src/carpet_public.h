@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.9 2003/05/27 12:01:11 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.10 2003/07/20 21:03:43 schnetter Exp $ */
 
 #ifndef CARPET_PUBLIC_H
 #define CARPET_PUBLIC_H
@@ -6,6 +6,11 @@
 #include <mpi.h>
 
 #include "cctk_Arguments.h"
+
+
+
+/* Tell thorns that the Carpet routines exist */
+#define HAVE_CARPET
 
 
 
@@ -17,6 +22,11 @@ namespace Carpet {
     /* Scheduled functions */
     int CarpetParamCheck (CCTK_ARGUMENTS);
     int CarpetStartup (void);
+    
+    
+    
+    /* Prolongation management */
+    int CarpetEnableProlongating (const int flag);
     
     
     

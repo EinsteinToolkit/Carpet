@@ -1,5 +1,5 @@
 # Schedule definitions for thorn FOWaveToy77
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/schedule.ccl,v 1.8 2003/07/08 22:52:48 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/schedule.ccl,v 1.9 2003/07/20 21:03:43 schnetter Exp $
 
 STORAGE: scalarevolve[3] scalarevolve_derivs[3]
 
@@ -45,12 +45,12 @@ schedule group ApplyBCs as FOWaveToy_ApplyBCs at EVOL after FOWaveToy_Boundaries
 
 
 
-schedule FOWaveToyF77_Boundaries as FOWaveToy_Boundaries in POSTRESTRICT
+schedule FOWaveToyF77_Boundaries as FOWaveToy_Boundaries in PostRestrict
 {
   LANG: Fortran
   SYNC: scalarevolve scalarevolve_derivs
 } "Select boundary conditions of 3D wave equation"
 
-schedule group ApplyBCs as FOWaveToy_ApplyBCs in POSTRESTRICT after FOWaveToy_Boundaries
+schedule group ApplyBCs as FOWaveToy_ApplyBCs in PostRestrict after FOWaveToy_Boundaries
 {
 } "Apply boundary conditions of 3D wave equation"

@@ -1,5 +1,5 @@
 # Schedule definitions for thorn SpaceTimeToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/schedule.ccl,v 1.6 2003/06/18 18:24:29 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/schedule.ccl,v 1.7 2003/07/20 21:03:43 schnetter Exp $
 
 STORAGE: spacetimeevolve[3]
 STORAGE: icn_state
@@ -72,13 +72,13 @@ schedule GROUP ApplyBCs in SpaceTimeToy_ICNLoop \
 
 
 
-schedule SpaceTimeToy_Boundaries in POSTRESTRICT
+schedule SpaceTimeToy_Boundaries in PostRestrict
 {
   LANG: Fortran
   SYNC: spacetimeevolve
 } "Select boundary conditions after restricting"
 
-schedule GROUP ApplyBCs in POSTRESTRICT \
+schedule GROUP ApplyBCs in PostRestrict \
 	after SpaceTimeToy_Boundaries
 {
 } "Apply boundary conditions after restricting"

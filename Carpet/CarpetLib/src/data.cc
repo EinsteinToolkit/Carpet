@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.26 2003/06/24 14:00:58 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.27 2003/07/20 21:03:43 schnetter Exp $
 
 #include <assert.h>
 
@@ -206,7 +206,7 @@ void data<T,D>
   assert (rank == proc());
   
   T Tdummy;
-  CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+  CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
 	      "There is no interpolator available for variable type %s, dimension %d, spatial interpolation order %d, temporal interpolation order %d.  The interpolation will not be done.",
 	      typestring(Tdummy), D, order_space, order_time);
 }

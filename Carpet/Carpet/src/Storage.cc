@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.24 2003/07/16 21:46:38 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.25 2003/07/20 21:03:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -61,7 +61,7 @@ namespace Carpet {
         assert (var>=0);
         const int vartype = CCTK_VarTypeI(var);
         const char * vartypename = CCTK_VarTypeName(vartype);
-        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+        CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "(Allocating storage for Cactus group \"%s\".)  Note: This group (which has the variable type %s) will be neither prolongated nor restricted.",
                     groupname, vartypename);
       }
@@ -143,8 +143,8 @@ namespace Carpet {
       return 0;
     }
     
-    // XXX
-    CCTK_WARN (1, "Cannot disable storage -- storage management is not yet consistent for FMR");
+    // TODO
+    CCTK_WARN (2, "Cannot disable storage -- storage management is not yet consistent for FMR");
     return 1;
     
     const int n0 = CCTK_FirstVarIndexI(group);

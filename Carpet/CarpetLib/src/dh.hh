@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.14 2003/05/02 14:23:12 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.15 2003/07/20 21:03:43 schnetter Exp $
 
 #ifndef DH_HH
 #define DH_HH
@@ -95,17 +95,18 @@ public:				// should be readonly
   ivect lghosts, ughosts;	// ghost zones
   
   int prolongation_order_space;	// order of spatial prolongation operator
+  int buffer_width;             // buffer inside refined grids
   
   rboxes boxes;
   rbases bases;
   
-  list<ggf<D>*> gfs;	// list of all grid functions
+  list<ggf<D>*> gfs;            // list of all grid functions
   
 public:
   
   // Constructors
   dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts,
-      int prolongation_order_space);
+      int prolongation_order_space, int buffer_width);
   
   // Destructors
   virtual ~dh ();
