@@ -48,7 +48,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.14 2003/12/10 14:49:30 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.15 2004/01/05 22:54:16 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
@@ -241,13 +241,18 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
   int RecoverParameters(IObase* reader){
 
     int myproc, retval;
-    
+    int i, asize;
+    char *parameters;
+    CCTK_INT4 parameterSize;
+
     IObase::DataType datatype;
     CCTK_REAL bogusdata;
 
     int dims[3];
     int rank=0;
     int maxdims=3;
+
+    DECLARE_CCTK_PARAMETERS 
 
     myproc = CCTK_MyProc (NULL);
 
@@ -258,16 +263,27 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
          are attached */
       
       reader->readInfo(datatype,rank,dims,maxdims);
-
-      if(datatype != FLEXIO_REAL || rank !=0 )
+      CCTK_VInfo (CCTK_THORNSTRING, "blahbalh: datatype %d FLEXIO_REAL: %d",datatype,FLEXIO_REAL);
+      
+      if(datatype != FLEXIO_REAL || rank !=1 )
 	CCTK_WARN (-1,"Wrong recover file format! First dataset type mismatch!");
    
       reader->read(&bogusdata);
 
-      //      reader->readAttributeInfo(
-
-
-
+      /* get the parameters attribute. */
+      i = reader->readAttributeInfo ("global_parameters", datatype, asize);
+      if (i >= 0 && datatype == FLEXIO_CHAR && asize > 0)
+      {
+	parameterSize = (CCTK_INT4) asize;
+	parameters = (char*) malloc (parameterSize + 1);
+	reader->readAttribute (i, parameters);
+      }
+      else
+	{
+	  CCTK_WARN (1, "Can't read global parameters. "
+		     "Is this really a Cactus IEEEIO checkpoint file ?");
+	}
+      CCTK_VInfo (CCTK_THORNSTRING, "\n%s\n",parameters);
       delete reader;
     }
 
@@ -428,12 +444,12 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
 	   we will attach all parameters and GHextensions as Attributes
 	*/
 
-	CCTK_REAL startdata = 666.66;
+	
+       	CCTK_REAL startdata = 666.66;
 	int rank=1;
 	int dim[1]={1};
 	writer->write(FLEXIO_REAL,rank,dim,&startdata);
 	
-
 	/* now dump parameters */ 
 	if (verbose)
 	  {
