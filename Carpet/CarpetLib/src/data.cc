@@ -17,6 +17,7 @@
 #include "bbox.hh"
 #include "defs.hh"
 #include "dist.hh"
+#include "timestat.hh"
 #include "vect.hh"
 
 #include "data.hh"
