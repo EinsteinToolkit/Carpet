@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.26 2004/04/18 13:25:56 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.27 2004/05/04 22:12:07 schnetter Exp $
 
 #ifndef VECT_HH
 #define VECT_HH
@@ -742,6 +742,30 @@ inline ostream& operator<< (ostream& os, const vect<T,D>& a) {
   a.output(os);
   return os;
 }
+
+
+
+#if 0  
+// Specialise explicit constructors
+
+/** Constructor for 2-element vectors from 2 elements.  */
+template<class T>
+inline vect<T,2>::vect<T,2> (const T x, const T y) {
+  elt[0]=x; elt[1]=y;
+}
+
+/** Constructor for 3-element vectors from 3 elements.  */
+vect (const T x, const T y, const T z) {
+  assert (D==3);
+  elt[0]=x; elt[1]=y; elt[2]=z;
+}
+
+/** Constructor for 4-element vectors from 4 elements.  */
+vect (const T x, const T y, const T z, const T t) {
+  assert (D==4);
+  elt[0]=x; elt[1]=y; elt[2]=z; elt[3]=t;
+}
+#endif
 
 
 
