@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.13 2003/11/05 16:18:39 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.14 2004/01/22 13:31:07 tradke Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -23,7 +23,7 @@
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.13 2003/11/05 16:18:39 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.14 2004/01/22 13:31:07 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 
@@ -564,24 +564,24 @@ namespace CarpetSlab {
   
   
   
-  CCTK_INT CarpetSlab_DefineLocalMappingByIndex (cGH const * const cctkGH,
-                                                 CCTK_INT const vindex,
-                                                 CCTK_INT const hdim,
-                                                 CCTK_INT const * const direction,
-                                                 CCTK_INT const * const origin,
-                                                 CCTK_INT const * const extent,
-                                                 CCTK_INT const * const downsample,
-                                                 CCTK_INT const table_handle,
-                                                 CCTK_INT (* const conversion_fn) (CCTK_INT const nelems,
-                                                                                   CCTK_INT const src_stride,
-                                                                                   CCTK_INT const dst_stride,
-                                                                                   CCTK_INT const src_type,
-                                                                                   CCTK_INT const dst_type,
-                                                                                   void const * const from,
-                                                                                   void * const to),
-                                                 CCTK_INT * const hsize_local,
-                                                 CCTK_INT * const hsize_global,
-                                                 CCTK_INT * const hoffset_global)
+  CCTK_INT CarpetSlab_LocalMappingByIndex (cGH const * const cctkGH,
+                                           CCTK_INT const vindex,
+                                           CCTK_INT const hdim,
+                                           CCTK_INT const * const direction,
+                                           CCTK_INT const * const origin,
+                                           CCTK_INT const * const extent,
+                                           CCTK_INT const * const downsample,
+                                           CCTK_INT const table_handle,
+                                           CCTK_INT (* const conversion_fn) (CCTK_INT const nelems,
+                                                                             CCTK_INT const src_stride,
+                                                                             CCTK_INT const dst_stride,
+                                                                             CCTK_INT const src_type,
+                                                                             CCTK_INT const dst_type,
+                                                                             void const * const from,
+                                                                             void * const to),
+                                           CCTK_INT * const hsize_local,
+                                           CCTK_INT * const hsize_global,
+                                           CCTK_INT * const hoffset_global)
   {
     CCTK_WARN (0, "not implemented");
     return 0;
@@ -589,22 +589,22 @@ namespace CarpetSlab {
   
   
   
-  CCTK_INT CarpetSlab_DefineGlobalMappingByIndex (cGH const * const cctkGH,
-                                                  CCTK_INT const vindex,
-                                                  CCTK_INT const hdim,
-                                                  CCTK_INT const * const direction,
-                                                  CCTK_INT const * const origin,
-                                                  CCTK_INT const * const extent,
-                                                  CCTK_INT const * const downsample,
-                                                  CCTK_INT const table_handle,
-                                                  CCTK_INT (* const conversion_fn) (CCTK_INT const nelems,
-                                                                                    CCTK_INT const src_stride,
-                                                                                    CCTK_INT const dst_stride,
-                                                                                    CCTK_INT const src_type,
-                                                                                    CCTK_INT const dst_type,
-                                                                                    void const * const from,
-                                                                                    void * const to),
-                                                  CCTK_INT * const hsize)
+  CCTK_INT CarpetSlab_GlobalMappingByIndex (cGH const * const cctkGH,
+                                            CCTK_INT const vindex,
+                                            CCTK_INT const hdim,
+                                            CCTK_INT const * const direction,
+                                            CCTK_INT const * const origin,
+                                            CCTK_INT const * const extent,
+                                            CCTK_INT const * const downsample,
+                                            CCTK_INT const table_handle,
+                                            CCTK_INT (* const conversion_fn) (CCTK_INT const nelems,
+                                                                              CCTK_INT const src_stride,
+                                                                              CCTK_INT const dst_stride,
+                                                                              CCTK_INT const src_type,
+                                                                              CCTK_INT const dst_type,
+                                                                              void const * const from,
+                                                                              void * const to),
+                                            CCTK_INT * const hsize)
   {
     // Check arguments
     assert (cctkGH);
