@@ -103,7 +103,7 @@ private:
   void setup_refinement_exterior_boxes( dboxes & b, int rl, int c, int ml );
   void setup_restrict_interior_boxes( dboxes & b, int rl, int c, int ml );
   void trim_unsynced_boundaries( dboxes & b, int rl, int c, int ml );
-  void output_bboxes( dboxes & b, int rl, int c, int ml );
+  void do_output_bboxes( dboxes & b, int rl, int c, int ml );
   void assert_assert_assert( dboxes & b, int rl, int c, int ml );
 
   void calculate_bases(); 

@@ -17,19 +17,19 @@ using namespace std;
 
 
 // Constructors
-ggf::ggf (const int varindex, const operator_type transport_operator,
-          th& t, dh& d,
-          const int tmin, const int tmax,
-          const int prolongation_order_time,
-          const int vectorlength, const int vectorindex,
-          ggf* const vectorleader)
-  : varindex(varindex), transport_operator(transport_operator), t(t),
-    tmin(tmin), tmax(tmax),
-    prolongation_order_time(prolongation_order_time),
-    h(d.h), d(d),
+ggf::ggf (const int varindex_, const operator_type transport_operator_,
+          th& t_, dh& d_,
+          const int tmin_, const int tmax_,
+          const int prolongation_order_time_,
+          const int vectorlength_, const int vectorindex_,
+          ggf* const vectorleader_)
+  : varindex(varindex_), transport_operator(transport_operator_), t(t_),
+    tmin(tmin_), tmax(tmax_),
+    prolongation_order_time(prolongation_order_time_),
+    h(d_.h), d(d_),
     storage(tmax-tmin+1),
-    vectorlength(vectorlength), vectorindex(vectorindex),
-    vectorleader(vectorleader)
+    vectorlength(vectorlength_), vectorindex(vectorindex_),
+    vectorleader(vectorleader_)
 {
   assert (&t.h == &d.h);
   
@@ -250,9 +250,9 @@ void ggf::flip (int rl, int c, int ml) {
   assert (rl>=0 && rl<h.reflevels());
   assert (c>=0 && c<h.components(rl));
   assert (ml>=0 && ml<h.mglevels(rl,c));
-  for (int t=0; t<(tmax-tmin)/2; ++t) {
-    const int tl1 = tmin + t;
-    const int tl2 = tmax - t;
+  for (int tl=0; tl<(tmax-tmin)/2; ++tl) {
+    const int tl1 = tmin + tl;
+    const int tl2 = tmax - tl;
     assert (tl1 < tl2);
     gdata* tmpdata = storage.at(tl1-tmin).at(rl).at(c).at(ml);
     storage.at(tl1-tmin).at(rl).at(c).at(ml) = storage.at(tl2-tmin).at(rl).at(c).at(ml);

@@ -29,9 +29,9 @@ bbox<T,D>& bbox<T,D>::operator= (const bbox& b) {
 }
 
 template<class T, int D>
-bbox<T,D>::bbox (const vect<T,D>& lower, const vect<T,D>& upper,
-		 const vect<T,D>& stride)
-  : _lower(lower), _upper(upper), _stride(stride)
+bbox<T,D>::bbox (const vect<T,D>& lower_, const vect<T,D>& upper_,
+		 const vect<T,D>& stride_)
+  : _lower(lower_), _upper(upper_), _stride(stride_)
 {
   assert (all(_stride>T(0)));
   assert (all((_upper-_lower)%_stride == T(0)));
@@ -186,9 +186,9 @@ bbox<T,D> bbox<T,D>::expanded_containing (const bbox& b) const {
 
 // Iterators
 template<class T, int D>
-bbox<T,D>::iterator::iterator (const bbox& box, const vect<T,D>& pos)
-  : box(box), pos(pos) {
-  if (box.empty()) this->pos=box.upper();
+bbox<T,D>::iterator::iterator (const bbox& box_, const vect<T,D>& pos_)
+  : box(box_), pos(pos_) {
+  if (box.empty()) pos=box.upper();
 }
 
 template<class T, int D>

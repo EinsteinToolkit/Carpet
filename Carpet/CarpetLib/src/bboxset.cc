@@ -30,7 +30,7 @@ bboxset<T,D>::bboxset (const bboxset& s): bs(s.bs) {
 }
 
 template<class T, int D>
-bboxset<T,D>::bboxset (const bset& bs): bs(bs) {
+bboxset<T,D>::bboxset (const bset& bs_): bs(bs_) {
   assert (invariant());
 }
 
@@ -131,9 +131,9 @@ template<class T, int D>
 T bboxset<T,D>::size () const {
   T s=0;
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
-    const T bs = (*bi).size();
-    assert (numeric_limits<T>::max() - bs >= s);
-    s += bs;
+    const T bsz = (*bi).size();
+    assert (numeric_limits<T>::max() - bsz >= s);
+    s += bsz;
   }
   return s;
 }

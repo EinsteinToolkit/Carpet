@@ -12,14 +12,15 @@ using namespace std;
 
 // Constructors
 template<typename T>
-gf<T>::gf (const int varindex, const operator_type transport_operator,
-           th& t, dh& d,
-           const int tmin, const int tmax, const int prolongation_order_time,
-           const int vectorlength, const int vectorindex,
-           gf* const vectorleader)
-  : ggf(varindex, transport_operator,
-        t, d, tmin, tmax, prolongation_order_time,
-        vectorlength, vectorindex, vectorleader)
+gf<T>::gf (const int varindex_, const operator_type transport_operator_,
+           th& t_, dh& d_,
+           const int tmin_, const int tmax_,
+           const int prolongation_order_time_,
+           const int vectorlength_, const int vectorindex_,
+           gf* const vectorleader_)
+  : ggf(varindex_, transport_operator_,
+        t_, d_, tmin_, tmax_, prolongation_order_time_,
+        vectorlength_, vectorindex_, vectorleader_)
 {
   // recompose ();
   recompose_crop ();

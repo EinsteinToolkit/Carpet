@@ -15,13 +15,13 @@ using namespace std;
 
 
 // Constructors
-dh::dh (gh& h,
-        const ivect& lghosts, const ivect& ughosts,
-        const int prolongation_order_space, const int buffer_width)
-  : h(h),
-    lghosts(lghosts), ughosts(ughosts),
-    prolongation_order_space(prolongation_order_space),
-    buffer_width(buffer_width)
+dh::dh (gh& h_,
+        const ivect& lghosts_, const ivect& ughosts_,
+        const int prolongation_order_space_, const int buffer_width_)
+  : h(h_),
+    lghosts(lghosts_), ughosts(ughosts_),
+    prolongation_order_space(prolongation_order_space_),
+    buffer_width(buffer_width_)
 {
   assert (all(lghosts>=0 and ughosts>=0));
   assert (prolongation_order_space>=0);
@@ -66,7 +66,7 @@ void dh::recompose (const bool do_prolongate) {
 
   if (output_bboxes) {
     cout << endl << h << endl;
-    foreach_reflevel_component_mglevel (&dh::output_bboxes );
+    foreach_reflevel_component_mglevel (&dh::do_output_bboxes );
     output_bases();
   }
   
@@ -212,7 +212,6 @@ void dh::setup_multigrid_boxes( dh::dboxes & box, int rl, int c, int ml )
 
 void dh::setup_refinement_interior_boxes( dh::dboxes & box, int rl, int c, int ml )
 {
-  const ibbox& intr = box.interior;
   const ibbox& extr = box.exterior;
 
   // Refinement boxes
@@ -253,7 +252,6 @@ void dh::setup_refinement_interior_boxes( dh::dboxes & box, int rl, int c, int m
 
 void dh::setup_refinement_exterior_boxes( dh::dboxes & box, int rl, int c, int ml )
 {
-  const ibbox& intr = box.interior;
   const ibbox& extr = box.exterior;
 
   // Refinement boxes
@@ -330,7 +328,6 @@ void dh::setup_refinement_exterior_boxes( dh::dboxes & box, int rl, int c, int m
 void dh::setup_restrict_interior_boxes( dh::dboxes & box, int rl, int c, int ml )
 {
   const ibbox& intr = box.interior;
-  const ibbox& extr = box.exterior;
 
   // Refinement boxes
   if (rl<h.reflevels()-1) {
@@ -621,7 +618,7 @@ void dh::output (ostream& os) const {
   os << "}";
 }
 
-void dh::output_bboxes( dh::dboxes & box, int rl, int c, int ml )
+void dh::do_output_bboxes( dh::dboxes & box, int rl, int c, int ml )
 {
   cout << endl;
   cout << "dh bboxes:" << endl;

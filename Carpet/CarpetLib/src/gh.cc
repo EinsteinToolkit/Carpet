@@ -16,12 +16,12 @@ using namespace std;
 
 
   // Constructors
-gh::gh (const int reffact, const centering refcent,
-        const int mgfact, const centering mgcent,
-        const ibbox baseextent)
-  : reffact(reffact), refcent(refcent),
-    mgfact(mgfact), mgcent(mgcent),
-    baseextent(baseextent)
+gh::gh (const int reffact_, const centering refcent_,
+        const int mgfact_, const centering mgcent_,
+        const ibbox baseextent_)
+  : reffact(reffact_), refcent(refcent_),
+    mgfact(mgfact_), mgcent(mgcent_),
+    baseextent(baseextent_)
 {
 }
 

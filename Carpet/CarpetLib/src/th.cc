@@ -14,8 +14,8 @@ using namespace std;
 
 
 // Constructors
-th::th (gh& h, const CCTK_REAL basedelta)
-  : h(h), delta(basedelta) {
+th::th (gh& h_, const CCTK_REAL basedelta)
+  : h(h_), delta(basedelta) {
   h.add(this);
 }
 
