@@ -32,9 +32,6 @@ void CarpetRegrid_SetupGaussian(CCTK_ARGUMENTS)
 	      R = r[index];
 
 	      phi[index] = amplitude*exp( - pow( (R - radius) / sigma, 2.0 ) );
-
-	      phi_p[index] = phi[index];
-	      phi_p_p[index] = phi[index];
 	    }
 	}
     }
