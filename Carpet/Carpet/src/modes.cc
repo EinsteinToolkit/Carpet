@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.cc,v 1.8 2004/08/03 19:39:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.cc,v 1.9 2004/08/07 20:07:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_modes_cc);
 }
 
@@ -90,7 +90,6 @@ namespace Carpet {
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_GroupTypeI(group) != CCTK_GF) {
         
-        const int ml = mglevel;
         const int rl = 0;
         const int m = 0;
         const int c = CCTK_MyProc(cgh);
@@ -238,8 +237,8 @@ namespace Carpet {
     cgh->cctk_timefac = reflevelfact;
     
     // Set current time
-    assert (mglevel>=0 && mglevel<leveltimes.size());
-    assert (reflevel>=0 && reflevel<leveltimes.at(mglevel).size());
+    assert (mglevel>=0 && mglevel<(int)leveltimes.size());
+    assert (reflevel>=0 && reflevel<(int)leveltimes.at(mglevel).size());
     cgh->cctk_time = leveltimes.at(mglevel).at(reflevel);
     
     assert (is_level_mode());
@@ -253,8 +252,8 @@ namespace Carpet {
     if (reflevel == -1) return; // early return
     
     // Save and unset current time
-    assert (mglevel>=0 && mglevel<leveltimes.size());
-    assert (reflevel>=0 && reflevel<leveltimes.at(mglevel).size());
+    assert (mglevel>=0 && mglevel<(int)leveltimes.size());
+    assert (reflevel>=0 && reflevel<(int)leveltimes.at(mglevel).size());
     leveltimes.at(mglevel).at(reflevel) = cgh->cctk_time;
     cgh->cctk_time = global_time;
     

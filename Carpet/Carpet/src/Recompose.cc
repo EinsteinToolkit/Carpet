@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.70 2004/08/07 19:47:11 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.71 2004/08/07 20:07:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -289,11 +289,11 @@ namespace Carpet {
     file << "iteration " << cgh->cctk_iteration << endl;
     file << "maps " << maps << endl;
     file << m << " reflevels " << bbsss.size() << endl;
-    for (size_t rl=0; rl<bbsss.size(); ++rl) {
+    for (int rl=0; rl<(int)bbsss.size(); ++rl) {
       file << m << " " << rl << " components " << bbsss.at(rl).size() << endl;
-      for (size_t c=0; c<bbsss.at(rl).size(); ++c) {
+      for (int c=0; c<(int)bbsss.at(rl).size(); ++c) {
         file << m << " " << rl << " " << c << " mglevels " << bbsss.at(rl).at(c).size() << endl;
-        for (size_t ml=0; ml<bbsss.at(rl).at(c).size(); ++ml) {
+        for (int ml=0; ml<(int)bbsss.at(rl).at(c).size(); ++ml) {
           file << m << " " << rl << " " << c << " " << ml << "   " << pss.at(rl).at(c) << " " << bbsss.at(rl).at(c).at(ml) << obss.at(rl).at(c) << endl;
         }
       }
@@ -386,7 +386,7 @@ namespace Carpet {
       if (c<nprocs-1) obs.at(c)[dir][1] = false;
     }
     
-    for (size_t n=0; n<ps.size(); ++n) {
+    for (int n=0; n<(int)ps.size(); ++n) {
       assert (ps.at(n) == n);
     }
   }
@@ -468,12 +468,12 @@ namespace Carpet {
       // store
       bbs.insert (bbs.end(), nprocs, newbb);
       obs.insert (obs.end(), nprocs, newob);
-      for (int p=0; p<nprocs; ++p) ps.insert (ps.end(), 1, newp+p);
+      for (int pp=0; pp<nprocs; ++pp) ps.insert (ps.end(), 1, newp+pp);
       
       // check postconditions
-      assert (bbs.size() == nprocs);
-      assert (obs.size() == nprocs);
-      assert (ps.size() == nprocs);
+      assert ((int)bbs.size() == nprocs);
+      assert ((int)obs.size() == nprocs);
+      assert ((int)ps.size() == nprocs);
       if (DEBUG) cout << "SRAR exit" << endl;
       return;
     }
@@ -566,20 +566,20 @@ namespace Carpet {
       if (DEBUG) cout << "SRAR " << mydim << " newps " << newps << endl;
       
       // store
-      assert (newbbs.size() == mynprocs.at(n));
-      assert (newobs.size() == mynprocs.at(n));
-      assert (newps.size() == mynprocs.at(n));
+      assert ((int)newbbs.size() == mynprocs.at(n));
+      assert ((int)newobs.size() == mynprocs.at(n));
+      assert ((int)newps.size() == mynprocs.at(n));
       bbs.insert (bbs.end(), newbbs.begin(), newbbs.end());
       obs.insert (obs.end(), newobs.begin(), newobs.end());
       ps.insert (ps.end(), newps.begin(), newps.end());
     }
     
     // check postconditions
-    assert (bbs.size() == nprocs);
-    assert (obs.size() == nprocs);
-    assert (ps.size() == nprocs);
-    for (size_t n=0; n<ps.size(); ++n) {
-      assert (ps.at(n) == p+n);
+    assert ((int)bbs.size() == nprocs);
+    assert ((int)obs.size() == nprocs);
+    assert ((int)ps.size() == nprocs);
+    for (int n=0; n<(int)ps.size(); ++n) {
+      assert ((int)ps.at(n) == p+n);
     }
     if (DEBUG) cout << "SRAR exit" << endl;
   }
@@ -695,7 +695,7 @@ namespace Carpet {
     bbs = allbbs;
     obs = allobs;
     ps = allps;
-    for (size_t n=0; n<ps.size(); ++n) {
+    for (int n=0; n<(int)ps.size(); ++n) {
       ps.at(n) /= ncomps;
       assert (ps.at(n) >= 0 && ps.at(n) < nprocs);
     }
@@ -783,7 +783,7 @@ namespace Carpet {
       }
     }
     
-    for (size_t n=0; n<ps.size(); ++n) {
+    for (int n=0; n<(int)ps.size(); ++n) {
       assert (ps.at(n) == n);
     }
   }
@@ -848,11 +848,11 @@ namespace Carpet {
   {
     assert (bbs.size() == obs.size());
     ibbox base;
-    for (size_t c=0; c<bbs.size(); ++c) {
+    for (int c=0; c<(int)bbs.size(); ++c) {
       base = base.expanded_containing(bbs.at(c));
     }
     bbss.resize(bbs.size());
-    for (size_t c=0; c<bbs.size(); ++c) {
+    for (int c=0; c<(int)bbs.size(); ++c) {
       MakeMultigridBoxes (cgh, base, bbs.at(c), obs.at(c), bbss.at(c));
     }
   }

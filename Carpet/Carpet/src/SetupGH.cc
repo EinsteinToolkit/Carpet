@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.84 2004/08/07 19:47:11 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.85 2004/08/07 20:07:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -144,6 +144,8 @@ namespace Carpet {
   {
     assert (group>=0 && group<CCTK_NumGroups());
     
+    int ierr;
+    
     if (CCTK_GroupTypeI(group) != CCTK_GF) {
       // Ignore everything but true grid functions
       return op_error;
@@ -152,7 +154,7 @@ namespace Carpet {
     const bool can_transfer = CanTransferVariableType (cgh, group);
     
     cGroup gp;
-    const int ierr = CCTK_GroupData (group, &gp);
+    ierr = CCTK_GroupData (group, &gp);
     assert (!ierr);
     
     // Get prolongation method
@@ -199,8 +201,7 @@ namespace Carpet {
     if (have_prolong_param_string) {
       char * thorn;
       char * name;
-      int const ierr
-        = CCTK_DecomposeName (prolong_param_string, &thorn, &name);
+      ierr = CCTK_DecomposeName (prolong_param_string, &thorn, &name);
       if (ierr < 0) {
         char * const groupname = CCTK_GroupName (group);
         CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -714,7 +715,7 @@ namespace Carpet {
                       groupname, basemglevel, convergence_factor);
           free (groupname);
         }
-        if (any(abs(sizes - real_sizes) > 0.001)) {
+        if (any(abs(rvect(sizes) - real_sizes) > 0.001)) {
           char * const groupname = CCTK_GroupName(group);
           CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "The shape of group \"%s\" scaled for convergence level %d with convergence factor %d is not integer",
@@ -902,7 +903,7 @@ namespace Carpet {
       for (int group=0; group<CCTK_NumGroups(); ++group) {
         
         cGroup data;
-        const int ierr = CCTK_GroupData (group, &data);
+        ierr = CCTK_GroupData (group, &data);
         assert (!ierr);
         
         switch (data.grouptype) {
@@ -927,10 +928,10 @@ namespace Carpet {
       CCTK_VInfo (CCTK_THORNSTRING,
                   "   There are %d grid scalars in %d groups",
                   num_array_vars.at(0), num_array_groups.at(0));
-      for (int dim=1; dim<=3; ++dim) {
+      for (int d=1; d<=3; ++d) {
         CCTK_VInfo (CCTK_THORNSTRING,
                     "   There are %d %d-dimensional grid arrays in %d groups",
-                    num_array_vars.at(dim), dim, num_array_groups.at(dim));
+                    num_array_vars.at(d), d, num_array_groups.at(d));
       }
       CCTK_VInfo (CCTK_THORNSTRING,
                   "   (The number of variables counts all time levels)");
