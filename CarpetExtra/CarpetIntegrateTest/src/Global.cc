@@ -1,5 +1,8 @@
 // $Header:$
 
+#include <assert.h>
+#include <stdio.h>
+
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
@@ -8,8 +11,8 @@
 #include "defs.hh"
 #include "vect.hh"
 
-
 #include "util_Table.h"
+
 
 
 extern "C" { CCTK_INT CarpetIntegrate_Global(CCTK_ARGUMENTS);
@@ -30,7 +33,7 @@ CCTK_INT CarpetIntegrate_Global(CCTK_ARGUMENTS)
 
   int reduction_handle = CCTK_ReductionHandle("sum");
 
-  varindex = CCTK_VarIndex("CarpetIntegrate::integrand");
+  varindex = CCTK_VarIndex("CarpetIntegrateTest::integrand");
   assert(varindex>=0);
   ierr = CCTK_Reduce(cctkGH, -1, reduction_handle, 
 		     1, CCTK_VARIABLE_REAL, &integral, 1, varindex);
@@ -39,8 +42,7 @@ CCTK_INT CarpetIntegrate_Global(CCTK_ARGUMENTS)
   CCTK_REAL d3x = cctk_delta_space[0]*cctk_delta_space[1]*cctk_delta_space[2];
   integral *= d3x;
 
-  if (CCTK_MyProc(cctkGH)==0) printf("Integral: %f\n", integral);
+  printf("Integral: %g\n", integral);
 
   return 0;
 }
-

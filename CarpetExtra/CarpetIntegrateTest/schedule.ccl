@@ -2,13 +2,12 @@
 
 STORAGE: integrand[3]
 
-schedule CarpetIntegrate_Local IN CCTK_ANALYSIS \
-	BEFORE CarpetIntegrate_Extract
+schedule CarpetIntegrate_Local AT CCTK_POSTSTEP
 {
   LANG: C
 } "Setup integrand function"
 
-schedule CarpetIntegrate_Global IN CCTK_ANALYSIS 
+schedule CarpetIntegrate_Global AT CCTK_ANALYSIS 
 {
   LANG: C
   OPTIONS: global
