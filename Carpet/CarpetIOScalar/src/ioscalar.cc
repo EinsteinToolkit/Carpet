@@ -18,7 +18,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/src/ioscalar.cc,v 1.2 2004/06/14 06:59:26 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/src/ioscalar.cc,v 1.3 2004/06/14 10:50:06 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOScalar_ioscalar_cc);
 }
 
@@ -123,6 +123,12 @@ namespace CarpetIOScalar {
   SetupGH (tFleshConfig* const fc, int const convLevel, cGH* const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
+    const void *dummy;
+
+    dummy = &fc;
+    dummy = &convLevel;
+    dummy = &cctkGH;
+    dummy = &dummy;
     
     // Truncate all files if this is not a restart
     do_truncate.resize (CCTK_NumVars(), true);
@@ -422,13 +428,18 @@ namespace CarpetIOScalar {
     static int output_variables_iteration = -1;
     
     if (cctk_iteration > output_variables_iteration) {
-      output_variables_iteration = cctk_iteration;
-      
       output_variables.resize (CCTK_NumVars());
       
       const char* const varlist = outScalar_vars;
-      CCTK_TraverseString
-        (varlist, SetFlag, &output_variables, CCTK_GROUP_OR_VAR);
+      if (CCTK_TraverseString (varlist, SetFlag, &output_variables,
+                               CCTK_GROUP_OR_VAR) < 0)
+      {
+        CCTK_WARN (output_variables_iteration < 0 && strict_io_parameter_check ?
+                   0 : 1,
+                   "error while parsing parameter 'IOScalar::outScalar_vars'");
+      }
+
+      output_variables_iteration = cctk_iteration;
     }
     
     if (! output_variables.at(vindex)) return 0;
@@ -476,6 +487,11 @@ namespace CarpetIOScalar {
   void
   SetFlag (int const index, const char * const optstring, void * const arg)
   {
+    const void *dummy;
+
+    dummy = &optstring;
+    dummy = &dummy;
+
     vector<bool>& flags = *(vector<bool>*)arg;
     flags.at(index) = true;
   }
