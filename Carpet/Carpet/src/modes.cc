@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.cc,v 1.5 2004/03/23 19:57:25 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.cc,v 1.6 2004/03/23 19:59:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_modes_cc);
 }
 
@@ -205,7 +205,6 @@ namespace Carpet {
           assert (group<(int)arrdata.size());
           for (int var=0; var<numvars; ++var) {
             assert (firstvar+var<CCTK_NumVars());
-            assert (var<(int)arrdata.at(group).at(m).data.size());
             for (int tl=0; tl<num_tl; ++tl) {
               cgh->data[firstvar+var][tl] = 0;
             }
@@ -406,7 +405,7 @@ namespace Carpet {
           
           assert (group<(int)arrdata.size());
           for (int var=0; var<numvars; ++var) {
-            assert (var<(int)arrdata.at(group).at(map).data.size());
+            assert (firstvar+var<CCTK_NumVars());
             for (int tl=0; tl<num_tl; ++tl) {
               ggf<dim> * const ff = arrdata.at(group).at(map).data.at(var);
               if (ff) {
@@ -476,7 +475,7 @@ namespace Carpet {
           
           assert (group<(int)arrdata.size());
           for (int var=0; var<numvars; ++var) {
-            assert (var<(int)arrdata.at(group).at(map).data.size());
+            assert (firstvar+var<CCTK_NumVars());
             for (int tl=0; tl<num_tl; ++tl) {
               cgh->data[firstvar+var][tl] = 0;
             }
