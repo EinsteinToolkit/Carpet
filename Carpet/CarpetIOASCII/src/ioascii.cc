@@ -43,7 +43,7 @@ using namespace Carpet;
 
 namespace CarpetIOASCII {
   
-  const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.39 2002/09/26 10:03:48 schnetter Exp $";
+  const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.40 2002/10/15 15:30:42 schnetter Exp $";
   
   CCTK_FILEVERSION(CarpetIOASCII_ioascii_cc);
   
@@ -402,7 +402,7 @@ namespace CarpetIOASCII {
 		global_upper[d] = 1;
 	      }
 	    }
-	    const vect<int,dim> global_extent (hh->baseextent.upper() - hh->baseextent.lower() + hh->baseextent.stride() * (dd->lghosts + dd->ughosts));
+	    const vect<int,dim> global_extent (hh->baseextent.upper() - hh->baseextent.lower());
 	    vect<CCTK_REAL,dim> coord_delta;
 	    for (int d=0; d<dim; ++d) {
 	      assert (global_extent[d] != 0);
