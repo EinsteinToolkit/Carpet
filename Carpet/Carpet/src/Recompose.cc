@@ -26,7 +26,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.42 2003/07/25 16:19:35 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.43 2003/08/27 10:49:10 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -686,17 +686,17 @@ namespace Carpet {
 // 	  cub = min (cub, rub);
           for (int d=0; d<dim; ++d) {
             if (ipos[d]<rem[d]) {
-              clb[d] += ipos[d];
-              cub[d] += ipos[d]+1;
+              clb[d] += step * ipos[d];
+              cub[d] += step * (ipos[d]+1);
             } else {
-              clb[d] += rem[d];
-              cub[d] += rem[d];
+              clb[d] += step * rem[d];
+              cub[d] += step * rem[d];
             }
           }
 	  assert (all (clb >= 0));
 	  assert (all (clb <= cub));
 	  assert (all (cub <= rub));
-          assert (all (! (ipos==0) || clb==0));
+          assert (all (! (ipos==0) || clb==rlb));
           assert (all (! (ipos==nprocs_dir-1) || cub==rub));
 	  bbs[c] = ibbox(clb, cub-cstr, cstr);
 	  obs[c] = obnd;
