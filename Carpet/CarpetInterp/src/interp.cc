@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.20 2004/02/14 15:09:29 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.21 2004/02/15 10:34:14 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -21,7 +21,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.20 2004/02/14 15:09:29 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.21 2004/02/15 10:34:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -332,7 +332,7 @@ namespace CarpetInterp {
             
             
               // Find out about the grid functions
-              vector<CCTK_INT> input_array_type_codes(N_input_arrays);
+              vector<CCTK_INT> input_array_type_codes(N_input_arrays * num_tl);
               vector<const void *> input_arrays(N_input_arrays * num_tl);
               for (int n=0; n<N_input_arrays; ++n) {
                 if (input_array_variable_indices[n] == -1) {
