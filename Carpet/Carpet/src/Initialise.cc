@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.13 2002/06/07 15:57:08 shawley Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.14 2002/06/07 16:37:53 shawley Exp $";
 
 CCTK_FILEVERSION(Carpet_Initialise_cc)
 
@@ -103,9 +103,11 @@ namespace Carpet {
 	BEGIN_MGLEVEL_LOOP(cgh) {
 	  // Evolve "forward" (which may be backward for lev=1,3,5,7...)
 	  // Cycle time levels
-	  // erik: advance time here
 	  // erik: what about arrays?
 	  CycleTimeLevels (cgh);
+	  // Advance level times
+	  tt->advance_time (reflevel, mglevel);
+
 	  Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
 	  CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
 	  Waypoint ("%*sScheduling EVOL", 2*reflevel, "");
@@ -122,9 +124,10 @@ mglevelfact;
 	  
 	  // Evolve in the opposite time-direction
 	  // Cycle time levels
-	  // erik: advance time here
 	  // erik: what about arrays?
 	  CycleTimeLevels (cgh);
+	  // Advance level times
+	  tt->advance_time (reflevel, mglevel);
 	  Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
 	  CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
 	  Waypoint ("%*sScheduling EVOL", 2*reflevel, "");
