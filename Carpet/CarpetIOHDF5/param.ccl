@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOHDF5
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/param.ccl,v 1.4 2004/03/14 15:14:00 cott Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/param.ccl,v 1.5 2004/03/15 23:45:24 cott Exp $
 
 
 
@@ -28,7 +28,7 @@ private:
 
 
 
-BOOLEAN verbose "Produce log output"
+BOOLEAN h5verbose "Produce log output"
 {
 } "no"
 

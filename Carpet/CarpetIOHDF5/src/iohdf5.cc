@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.18 2004/03/15 20:19:44 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.19 2004/03/15 23:45:24 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -40,6 +40,7 @@ namespace CarpetIOHDF5 {
   
   using namespace std;
   using namespace Carpet;
+  
   
   
   
@@ -735,7 +736,7 @@ namespace CarpetIOHDF5 {
       return 0;
     }  
 
-    if (verbose) cout << "amr_level: " << amr_level << " reflevel: " << reflevel << endl;
+    if (h5verbose) cout << "amr_level: " << amr_level << " reflevel: " << reflevel << endl;
     
     if (amr_level == rl) {
 	  
@@ -772,10 +773,10 @@ namespace CarpetIOHDF5 {
 	   cGroup cgdata;
 	   int ierr = CCTK_GroupData(group,&cgdata);
 	   assert(ierr==0);
-	   cout << "lb_before: " << lb << endl;
-	   cout << "ub_before: " << ub << endl;
+	   //cout << "lb_before: " << lb << endl;
+	   //cout << "ub_before: " << ub << endl;
 	   if (cgdata.disttype == CCTK_DISTRIB_CONSTANT) {
-	     if (verbose) cout << "CCTK_DISTRIB_CONSTANT: " << varname << endl;
+	     if (h5verbose) cout << "CCTK_DISTRIB_CONSTANT: " << varname << endl;
 	     assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
 	     if (grouptype == CCTK_SCALAR) {
 	       lb[0] = arrdata[group][Carpet::map].hh->processors.at(rl).at(component);
@@ -793,12 +794,12 @@ namespace CarpetIOHDF5 {
 	       lb[gpdim-1] = newlb;
 	       ub[gpdim-1] = newub;
 	     }
-	      if (verbose)  cout << "lb: " << lb << endl;
-	      if (verbose)  cout << "ub: " << ub << endl;
+	      if (h5verbose)  cout << "lb: " << lb << endl;
+	      if (h5verbose)  cout << "ub: " << ub << endl;
 	   }
 	   const bbox<int,dim> ext(lb,ub,str);
 	   
-	   if (verbose) cout << "ext: " << ext << endl;
+	   if (h5verbose) cout << "ext: " << ext << endl;
 	     
 	   if (CCTK_MyProc(cctkGH)==0) {
 	     tmp->allocate (ext, 0, h5data);
@@ -811,7 +812,7 @@ namespace CarpetIOHDF5 {
 	   const bbox<int,dim> overlap = tmp->extent() & data->extent();
 	   regions_read.at(Carpet::map) |= overlap;
 
-	   if (verbose) {
+	   if (h5verbose) {
 	     cout << "working on component: " << component << endl;
 	     cout << "tmp->extent " << tmp->extent() << endl;
 	     cout << "data->extent " << data->extent() << endl;
@@ -905,7 +906,7 @@ namespace CarpetIOHDF5 {
     if (CCTK_MyProc(cctkGH)==0) {
       
       // Open the file 
-      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Opening file \"%s\"", filename);
+      if (h5verbose) CCTK_VInfo (CCTK_THORNSTRING, "Opening file \"%s\"", filename);
       reader = H5Fopen (filename, H5F_ACC_RDONLY, H5P_DEFAULT);
       if (reader<0) {
         CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -924,7 +925,7 @@ namespace CarpetIOHDF5 {
       
 
     for (int datasetid=0; datasetid<ndatasets; ++datasetid) {
-      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Handling dataset #%d", datasetid);
+      if (h5verbose) CCTK_VInfo (CCTK_THORNSTRING, "Handling dataset #%d", datasetid);
 
         
       // Read data
@@ -947,7 +948,7 @@ namespace CarpetIOHDF5 {
        char * name;
        ReadAttribute (dataset, "name", name);
        //        cout << "dataset name is " << name << endl;
-       if (verbose) {
+       if (h5verbose) {
 	 if (name) {
 		CCTK_VInfo (CCTK_THORNSTRING, "Dataset name is \"%s\"", name);
 	 }
@@ -969,7 +970,7 @@ namespace CarpetIOHDF5 {
       
     // Close the file
     if (CCTK_MyProc(cctkGH)==0) {
-      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Closing file");
+      if (h5verbose) CCTK_VInfo (CCTK_THORNSTRING, "Closing file");
       herr = H5Fclose(reader);
       //	  cout << "blah! " << reader << "\n";
       // cout << "closing file " << herr << "\n";
