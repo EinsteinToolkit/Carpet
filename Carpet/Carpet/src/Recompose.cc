@@ -1,11 +1,17 @@
 #include <assert.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
+#include <fstream>
+#include <iomanip>
 #include <list>
 #include <vector>
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
+
+#include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
 
 #include "Carpet/CarpetLib/src/bbox.hh"
 #include "Carpet/CarpetLib/src/bboxset.hh"
@@ -15,7 +21,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.18 2002/01/11 17:19:45 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.19 2002/01/11 17:58:48 schnetter Exp $";
 
 
 
@@ -31,6 +37,18 @@ namespace Carpet {
   
   
   
+  static void CheckRegions (const gh<dim>::rexts& bbsss,
+			    const gh<dim>::rprocs& pss);
+  static void Adapt (const cGH* cgh, int reflevels, gh<dim>* hh);
+  
+  static void Output (const cGH* cgh, const gh<dim>* hh, const char* descr);
+  
+  static void OutputGridStructure (const cGH *cgh,
+				   const gh<dim>::rexts& bbsss,
+				   const gh<dim>::rprocs& pss);
+  
+  
+  
   static void SplitRegions_AlongZ       (const cGH* cgh,
 					 vector<bbox<int,dim> >& bbs);
   static void SplitRegions_AsSpecified  (const cGH* cgh,
@@ -39,13 +57,6 @@ namespace Carpet {
   static void MakeProcessors_RoundRobin (const cGH* cgh,
 					 const gh<dim>::rexts& bbss,
 					 gh<dim>::rprocs& pss);
-  
-  
-  
-  static void CheckRegions (const gh<dim>::rexts& bbsss,
-			    const gh<dim>::rprocs& pss);
-  static void Adapt (const cGH* cgh, int reflevels, gh<dim>* hh);
-  static void Output (const cGH* cgh, const gh<dim>* hh, const char* descr);
   
   
   
@@ -115,6 +126,9 @@ namespace Carpet {
     
     // Check the regions
     CheckRegions (bbsss, pss);
+    
+    // Write grid structure to file
+    OutputGridStructure (cgh, bbsss, pss);
     
     // Recompose
     hh->recompose (bbsss, pss);
@@ -259,6 +273,61 @@ namespace Carpet {
       }
       cout << endl;
     }
+  }
+  
+  
+  
+  static void OutputGridStructure (const cGH * const cgh,
+				   const gh<dim>::rexts& bbsss,
+				   const gh<dim>::rprocs& pss)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    // Output only on the root processor
+    if (CCTK_MyProc(cgh) != 0) return;
+    
+    // Output only if output is desired
+    if (strcmp(grid_structure_filename, "") == 0) return;
+    
+    ofstream file;
+    char filename[1000];
+    snprintf (filename, sizeof(filename), "%s/%s",
+	      outdir, grid_structure_filename);
+    
+    static bool do_truncate = true;
+    
+    if (do_truncate) {
+      do_truncate = false;
+      struct stat fileinfo;
+      if (! IOUtil_RestartFromRecovery(cgh)
+	  || stat(filename, &fileinfo)!=0) {
+	file.open (filename, ios::out | ios::trunc);
+	assert (file.good());
+	file << "# grid structure" << endl
+	     << "# format: reflevel component mglevel   processor bounding-box" << endl;
+	assert (file.good());
+      }
+    }
+    if (! file.is_open()) {
+      file.open (filename, ios::app);
+      assert (file.good());
+    }
+    
+    file << "iteration " << cgh->cctk_iteration << endl;
+    file << "reflevels " << bbsss.size() << endl;
+    for (int rl=0; rl<(int)bbsss.size(); ++rl) {
+      file << rl << " components " << bbsss[rl].size() << endl;
+      for (int c=0; c<(int)bbsss[rl].size(); ++c) {
+	file << rl << " " << c << " mglevels " << bbsss[rl][c].size() << endl;
+	for (int ml=0; ml<(int)bbsss[rl][c].size(); ++ml) {
+	  file << rl << " " << c << " " << ml << "   " << pss[rl][c] << " " << bbsss[rl][c][ml] << endl;
+	}
+      }
+    }
+    file << endl;
+    
+    file.close();
+    assert (file.good());
   }
   
   
