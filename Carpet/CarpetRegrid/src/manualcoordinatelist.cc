@@ -13,7 +13,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinatelist.cc,v 1.9 2004/07/02 10:14:51 tradke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinatelist.cc,v 1.10 2004/08/02 11:41:05 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_manualcoordinatelist_cc);
 }
 
@@ -142,7 +142,7 @@ namespace CarpetRegrid {
     
     if (newbbss.size() < refinement_levels-1) {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The parameter \"coordinates\" must contain at least \"refinement_levels-1\" (here: %d) levels", (int)refinement_levels-1);
+                  "The parameter \"coordinates\" must contain at least \"refinement_levels-1\" (here: %d) levels", int(refinement_levels-1));
     }
     
     for (size_t rl=1; rl<refinement_levels; ++rl) {
