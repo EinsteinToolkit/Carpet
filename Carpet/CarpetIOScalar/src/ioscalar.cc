@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
+#include <list>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -17,7 +18,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/src/ioscalar.cc,v 1.1 2004/06/11 17:41:51 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/src/ioscalar.cc,v 1.2 2004/06/14 06:59:26 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOScalar_ioscalar_cc);
 }
 
@@ -93,14 +94,11 @@ namespace CarpetIOScalar {
   extern "C" void
   CarpetIOScalarStartup ()
   {
-    ostringstream msg;
     CCTK_RegisterBanner ("AMR scalar I/O provided by CarpetIOScalar");
     
-    ostringstream extension_name;
     GHExtension = CCTK_RegisterGHExtension("CarpetIOScalar");
     CCTK_RegisterGHExtensionSetupGH (GHExtension, SetupGH);
     
-    ostringstream method_name;
     IOMethod = CCTK_RegisterIOMethod ("CarpetIOScalar");
     CCTK_RegisterIOMethodOutputGH (IOMethod, OutputGH);
     CCTK_RegisterIOMethodOutputVarAs (IOMethod, OutputVarAs);
@@ -186,10 +184,9 @@ namespace CarpetIOScalar {
       return 0;
     }
     
-    const int grouptype = CCTK_GroupTypeI(group);
-    if (grouptype != CCTK_GF) assert (reflevel==0);
+    assert (do_global_mode);
     
-    const int vartype = CCTK_VarTypeI(var);
+    const int vartype = CCTK_VarTypeI(n);
     assert (vartype >= 0);
     
     // Get grid hierarchy extentsion from IOUtil
@@ -205,106 +202,110 @@ namespace CarpetIOScalar {
       CCTK_CreateDirectory (0755, myoutdir);
     }
     
-    // If it is time to do global mode output
-    if (do_global_mode) {
-      
-      // Find the set of desired reductions
-      list<info const> reductions;
-      char const * p = outScalar_reductions;
-      while (*p) {
-        while (*p && isspace(*p)) ++p;
-        if (!*p) break;
-        char const * const start = p;
-        while (*p && !isspace(*p)) ++p;
-        char const * const end = p;
-        string const reduction (start, end);
-        int const handle = CCTK_ReductionHandle (reduction.c_str());
-        if (handle < 0) {
-          CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "Reduction operator \"%s\" does not exist (maybe there is no reduction thorn active?)",
-                      reduction.c_str());
-        } else {
-          info i;
-          i.reduction = reduction;
-          i.handle = handle;
-          reductions.push_back (i);
-        }
+    // Find the set of desired reductions
+    list<info> reductions;
+    char const * p = outScalar_reductions;
+    while (*p) {
+      while (*p && isspace(*p)) ++p;
+      if (!*p) break;
+      char const * const start = p;
+      while (*p && !isspace(*p)) ++p;
+      char const * const end = p;
+      string const reduction (start, end);
+      int const handle = CCTK_ReductionHandle (reduction.c_str());
+      if (handle < 0) {
+        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Reduction operator \"%s\" does not exist (maybe there is no reduction thorn active?)",
+                    reduction.c_str());
+      } else {
+        info i;
+        i.reduction = reduction;
+        i.handle = handle;
+        reductions.push_back (i);
       }
+    }
+    
+    // Output in global mode
+    BEGIN_GLOBAL_MODE(cctkGH) {
       
-      // Output in global mode
-      BEGIN_GLOBAL_MODE(cctkGH) {
+      for (list<info>::const_iterator ireduction = reductions.begin();
+           ireduction != reductions.end();
+           ++ireduction)
+      {
+        string const reduction = ireduction->reduction;
         
-        for (list<info const>::const_iterator ireduction = reductions.begin();
-             ireduction != reductions.end();
-             ++ireduction)
-        {
-          string const reduction = ireduction->reduction;
+        ofstream file;
+        if (CCTK_MyProc(cctkGH)==0) {
           
-          ofstream file;
-          if (CCTK_MyProc(cctkGH)==0) {
-            
-            // Invent a file name
-            ostringstream filenamebuf;
-            filenamebuf << myoutdir << "/" << alias << "." << reduction
-                        << ".asc";
-            // we need a persistent temporary here
-            string filenamestr = filenamebuf.str();
-            const char* const filename = filenamestr.c_str();
-            
-            // If this is the first time, then write a nice header
-            if (do_truncate.at(n) && ! iogh->recovered) {
-              file.open (filename, ios::out | ios::trunc);
-              file << "# " << varname << " (" << alias << ")" << endl;
-              file << "# iteration time data" << endl;
-            } else {
-              file.open (filename, ios::out | ios::app);
-            }
-            if (! file.good()) {
-              CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                          "Could not open output file \"%s\" for variable \"%s\"",
-                          filename, varname);
-            }
-            
-            file << setprecision(15);
-            assert (file.good());
-            
-          } // if on the root processor
+          // Invent a file name
+          ostringstream filenamebuf;
+          filenamebuf << myoutdir << "/" << alias << "." << reduction
+                      << ".asc";
+          // we need a persistent temporary here
+          string filenamestr = filenamebuf.str();
+          const char* const filename = filenamestr.c_str();
           
-          int const handle = ireduction->handle;
-          
-          if (CCTK_MyProc(cctkGH)==0) {
-            file << cctk_iteration << " " << cctk_time << " ";
+          // If this is the first time, then write a nice header
+          if (do_truncate.at(n) && ! iogh->recovered) {
+            file.open (filename, ios::out | ios::trunc);
+            file << "# " << varname << " (" << alias << ")" << endl;
+            file << "# iteration time data" << endl;
+          } else {
+            file.open (filename, ios::out | ios::app);
+          }
+          if (! file.good()) {
+            CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "Could not open output file \"%s\" for variable \"%s\"",
+                        filename, varname);
           }
           
-          switch (vartype) {
+          assert (file.is_open());
+          
+          file << setprecision(15);
+          assert (file.good());
+          
+        } // if on the root processor
+        
+        int const handle = ireduction->handle;
+        
+        if (CCTK_MyProc(cctkGH)==0) {
+          file << cctk_iteration << " " << cctk_time << " ";
+        }
+        
+        switch (vartype) {
 #define TYPECASE(N,T)                                                   \
-          case N: {                                                     \
-            T result;                                                   \
-            int const ierr                                              \
-              = CCTK_Reduce (cctkGH, 0, handle, 1, vartype, &result, 1, var); \
-            assert (! ierr);                                            \
+        case N: {                                                       \
+          T result;                                                     \
+          int const ierr                                                \
+            = CCTK_Reduce (cctkGH, 0, handle, 1, vartype, &result, 1, n); \
+          assert (! ierr);                                              \
                                                                         \
-            if (CCTK_MyProc(cctkGH)==0) {                               \
-              file << result;                                           \
-            }                                                           \
-            break;                                                      \
-          }
+          if (CCTK_MyProc(cctkGH)==0) {                                 \
+            file << result;                                             \
+          }                                                             \
+          break;                                                        \
+        }
 #include "Carpet/Carpet/src/typecase"
 #undef TYPECASE
-          default:
-            UnsupportedVarType (n);
-          }
-          
-          if (CCTK_MyProc(cctkGH)==0) {
-            file << endl;
-            assert (file.good());
-          }
-          
-        } // for reductions
+        default:
+          UnsupportedVarType (n);
+        }
         
-      } END_GLOBAL_MODE;
+        if (CCTK_MyProc(cctkGH)==0) {
+          file << endl;
+          assert (file.good());
+        }
+        
+        if (CCTK_MyProc(cctkGH)==0) {
+          file.close();
+          assert (file.good());
+        }
+        
+        assert (! file.is_open());
+        
+      } // for reductions
       
-    } // if do_global_mode
+    } END_GLOBAL_MODE;
     
     // Don't truncate again
     do_truncate.at(n) = false;
@@ -321,6 +322,10 @@ namespace CarpetIOScalar {
     DECLARE_CCTK_PARAMETERS;
     
     assert (vindex>=0 && vindex<CCTK_NumVars());
+    
+    
+    
+    if (! do_global_mode) return 0;
     
     
     
