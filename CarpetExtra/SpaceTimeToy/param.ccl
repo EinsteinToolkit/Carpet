@@ -1,10 +1,11 @@
 # Parameter definitions for thorn SpaceTimeToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/param.ccl,v 1.1 2001/03/17 16:05:56 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/param.ccl,v 1.2 2001/03/21 22:57:40 eschnett Exp $
 
 private:
  
 KEYWORD bound "Type of boundary condition to use"
 {
+  "none"      :: "No boundary condition"
   "flat"      :: "Flat boundary condition"
   "radiation" :: "Radiation boundary condition"
   "robin"     :: "Robin boundary condition"

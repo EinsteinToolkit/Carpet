@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.4 2001/03/20 16:29:55 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.5 2001/03/21 22:57:40 eschnett Exp $
       
 #include "cctk.h" 
 #include "cctk_Parameters.h"
@@ -163,7 +163,7 @@ c     Apply boundary condition
       if (CCTK_EQUALS(bound, "flat")) then
          call BndFlatGN (ierr, cctkGH, sw, "spacetimetoy::spacetimeevolve")
       else if (CCTK_EQUALS(bound, "zero")) then
-         call BndScalarGN (ierr, cctkGH, zero, sw,
+         call BndScalarGN (ierr, cctkGH, sw, zero,
      $        "spacetimetoy::spacetimeevolve")
       else if (CCTK_EQUALS(bound, "radiation")) then
          call BndRadiativeGN (ierr, cctkGH, sw, zero, one,
@@ -171,8 +171,10 @@ c     Apply boundary condition
       else if (CCTK_EQUALS(bound, "robin")) then
          call BndRobinGN (ierr, cctkGH, sw, finf, npow,
      $        "spacetimetoy::spacetimeevolve")
+      else if (CCTK_EQUALS(bound, "none")) then
+         ierr = 0
       else
-         call CCTK_WARN (0, "Internal error")
+         call CCTK_WARN (0, "internal error")
       end if
       if (ierr .lt. 0)  then
          call CCTK_WARN (0, "Error while applying boundary condition")

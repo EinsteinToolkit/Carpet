@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/src/HydroToy.F77,v 1.2 2001/03/19 21:30:34 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/src/HydroToy.F77,v 1.3 2001/03/21 22:57:40 eschnett Exp $
       
 #include "cctk.h" 
 #include "cctk_Parameters.h"
@@ -158,7 +158,7 @@ c     Apply boundary condition
       if (CCTK_EQUALS(bound, "flat")) then
          call BndFlatGN (ierr, cctkGH, sw, "hydrotoy::hydroevolve")
       else if (CCTK_EQUALS(bound, "zero")) then
-         call BndScalarGN (ierr, cctkGH, zero, sw,
+         call BndScalarGN (ierr, cctkGH, sw, zero,
      $        "hydrotoy::hydroevolve")
       else if (CCTK_EQUALS(bound, "radiation")) then
          call BndRadiativeGN (ierr, cctkGH, sw, zero, one,
@@ -166,8 +166,10 @@ c     Apply boundary condition
       else if (CCTK_EQUALS(bound, "robin")) then
          call BndRobinGN (ierr, cctkGH, sw, finf, npow,
      $        "hydrotoy::hydroevolve")
+      else if (CCTK_EQUALS(bound, "none")) then
+         ierr = 0
       else
-         call CCTK_WARN (0, "Internal error")
+         call CCTK_WARN (0, "internal error")
       end if
       if (ierr .lt. 0)  then
          call CCTK_WARN (0, "Error while applying boundary condition")
