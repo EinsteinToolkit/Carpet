@@ -44,7 +44,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.6 2003/09/23 12:34:43 cvs_anon Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.7 2003/09/24 08:35:30 cvs_anon Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -209,8 +209,13 @@ namespace CarpetIOFlexIO {
       const ggf<dim>* ff = 0;
 
 
-    if (grouptype == CCTK_ARRAY)
+    if (grouptype == CCTK_ARRAY){
+      // this is a DIRTY hack to fix problems caused by the fact that I am to lazy to write a more
+      //   general output routine...
       CCTK_VInfo (CCTK_THORNSTRING, "ARRAY reflevel: %d component: %d grouptype: %d ",reflevel,component,grouptype);
+      component = 0;
+      reflevel = 0;
+    }
     else
       CCTK_VInfo (CCTK_THORNSTRING, "GF reflevel: %d component: %d grouptype: %d",reflevel,component,grouptype);
 
@@ -351,7 +356,7 @@ namespace CarpetIOFlexIO {
        // executed for scalars; see macro definition.
 
 
-       //      CCTK_VInfo (CCTK_THORNSTRING, "SCALAR reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
+      CCTK_VInfo (CCTK_THORNSTRING, "SCALAR reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
       writer->write(FlexIODataType(CCTK_VarTypeI(varindex)),1,&dim,buffer);
       /* scalars have size 0 */
       request->hsize[0] = 0;

@@ -48,7 +48,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.7 2003/09/23 12:34:43 cvs_anon Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.8 2003/09/24 08:35:30 cvs_anon Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
@@ -224,17 +224,9 @@ namespace CarpetCheckpointRestart {
 
     
     // now dump the grid varibles for all reflevels and components, sorted by groups
-    //   CCTK_VInfo (CCTK_THORNSTRING, "maxreflevelfact,reflevelfact,it %d,%d,%d",maxreflevelfact,reflevelfact,cgh->cctk_iteration);
     BEGIN_REFLEVEL_LOOP(cgh) {
 
-     const int do_every = maxreflevelfact/reflevelfact;
-      if (cgh->cctk_iteration % do_every == 0) {
-	
-	BEGIN_MGLEVEL_LOOP(cgh) {
-	  const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
-          CCTK_VInfo (CCTK_THORNSTRING, "do_every %d",do_every);	 	  
-
-	  if (cgh->cctk_iteration % do_every == 0) {
+  	BEGIN_MGLEVEL_LOOP(cgh) {
 	      
 	    if (CCTK_Equals ("verbose", "full"))
 	    {
@@ -301,9 +293,12 @@ namespace CarpetCheckpointRestart {
 		  {
 		    retval += WriteGS(cgh,writer,request);
 		  }
-		  //		  else if (grouptype == CCTK_ARRAY || grouptype == CCTK_GF)
-		  else if (grouptype == CCTK_GF)
+		  else if (grouptype == CCTK_ARRAY || grouptype == CCTK_GF)
+		    //else if (grouptype == CCTK_GF)
 		  {
+		    char* fullname = CCTK_FullName (request->vindex);
+		    CCTK_VInfo (CCTK_THORNSTRING,"%s:: reflevel: %d component: %d grouptype: %d ",fullname,reflevel,component,grouptype);
+		    free(fullname);
 		    retval += WriteGF(cgh,writer,amrwriter,request);
 		  }
 		  else
@@ -317,9 +312,9 @@ namespace CarpetCheckpointRestart {
 	      } /* end of loop over all variables */
 	
 	    } /* end of loop over all groups */
-	  }
+	
 	} END_MGLEVEL_LOOP;
-      }
+    
     } END_REFLEVEL_LOOP;
 
 
