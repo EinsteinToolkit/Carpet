@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/src/HydroToy.F77,v 1.3 2001/03/21 22:57:40 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/src/HydroToy.F77,v 1.4 2001/03/26 02:28:36 eschnett Exp $
       
 #include "cctk.h" 
 #include "cctk_Parameters.h"
@@ -109,9 +109,9 @@ c     Apply boundaries
       dt = CCTK_DELTA_TIME
       
 c     Evolve
-      do k=1,cctk_lsh(3)
-         do j=1,cctk_lsh(2)
-            do i=1,cctk_lsh(1)
+      do k=2,cctk_lsh(3)-1
+         do j=2,cctk_lsh(2)-1
+            do i=2,cctk_lsh(1)-1
                
                u_n(i,j,k)  = u_i(i,j,k)
      $              + dt * (vx_i(i+1,j,k) - vx_i(i-1,j,k)) / (2*dx)
