@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.24 2004/02/27 10:25:23 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.25 2004/03/11 12:04:13 schnetter Exp $
 
 #ifndef VECT_HH
 #define VECT_HH
@@ -496,7 +496,7 @@ public:
   };
 #endif
   
-  // Input/Output
+  // Input/Output helpers
   void input (istream& is);
   void output (ostream& os) const;
 };
