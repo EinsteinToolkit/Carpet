@@ -1,11 +1,11 @@
-% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/internals.tex,v 1.1 2003/04/30 20:41:38 schnetter Exp $
+% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/internals.tex,v 1.2 2003/05/02 14:24:14 schnetter Exp $
 
 \documentclass{article}
 \begin{document}
 
 \title{Carpet under the hood}
 \author{Erik Schnetter \textless schnetter@uni-tuebingen.de\textgreater}
-\date{$ $Date: 2003/04/30 20:41:38 $ $}
+\date{$ $Date: 2003/05/02 14:24:14 $ $}
 \maketitle
 
 \tableofcontents
@@ -645,7 +645,7 @@ subroutine restrict_3d_real8
 
 
 
-\section{Regridding, where and when}
+\section{Regridding, how and where and when}
 
    The thorn \texttt{Carpet} provides a routine
    \texttt{RegisterRegridRoutine} where one can register a regridding
@@ -707,13 +707,6 @@ subroutine restrict_3d_real8
 
 
 
-\section{TO DO}
-
-   don't use symmetries or boundary conditions on finer grids;
-   coordinates on finer grids.
-
-
-
 \section{Random ramblings}
 
    Carpet uses the STL, because the STL provides very useful container
@@ -745,5 +738,15 @@ subroutine restrict_3d_real8
    theaccompanying file name and line number.  It would also be useful
    to extract from the core file a stack backtrace and the values of
    the local variables of the current stack frame.
+
+   Using symmetry boundary conditions such as octant mode is currently
+   still awkward in Carpet.  There are several reasons for this:
+   \texttt{CarpetRegrid} does not know about symmetries, and hence
+   doesn't take them into account when choosing refinement regions.
+   The symmetry conditions on the finer grid might be different from
+   the conditions on the coarser grids, and the symmetry thorns cannot
+   cope with this, so this situation must be avoided: one cannot use
+   \texttt{avoid\_origin=yes}, because the finer grids all have
+   \texttt{avoid\_origin=no} due to the vertex-centred refinement.
 
 \end{document}

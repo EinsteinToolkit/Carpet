@@ -2,7 +2,7 @@
 %  Cactus Thorn template for ThornGuide documentation
 %  Author: Ian Kelley
 %  Date: Sun Jun 02, 2002
-%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.5 2003/04/30 20:41:38 schnetter Exp $                                                             
+%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.6 2003/05/02 14:24:14 schnetter Exp $                                                             
 %
 %  Thorn documentation in the latex file doc/documentation.tex 
 %  will be included in ThornGuides built with the Cactus make system.
@@ -64,7 +64,7 @@
 % *======================================================================* 
 
 % If you are using CVS use this line to give version information
-% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.5 2003/04/30 20:41:38 schnetter Exp $
+% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.6 2003/05/02 14:24:14 schnetter Exp $
 
 \documentclass{article}
 
@@ -72,7 +72,7 @@
 % (Automatically used from Cactus distribution, if you have a 
 %  thorn without the Cactus Flesh download this from the Cactus
 %  homepage at www.cactuscode.org)
-\usepackage{../../../doc/ThornGuide/cactus}
+\usepackage{../../../doc/latex/cactus}
 \usepackage{hyperref}
 
 \begin{document}
@@ -85,7 +85,7 @@
 
 % the date your document was last changed, if your document is in CVS, 
 % please use:
-\date{$ $Date: 2003/04/30 20:41:38 $ $}
+\date{$ $Date: 2003/05/02 14:24:14 $ $}
 
 \maketitle
 
@@ -737,6 +737,17 @@ after handling the time levels has been straightened out.
 
 
 
+\section{Further documentation}
+
+The individual thorns in the Carpet arrangement might contain further
+documentation, which is also available in the thorn guide.
+Additionally, there is a document \texttt{internals.tex} in the
+arrangement's doc directory, and a document
+\texttt{threelev\_initdata.tex} in thorn \texttt{Carpet}'s doc
+directory.
+
+
+
 %% \bibliographystyle{amsalpha}      % initials + year
 %% \bibliography{carpet}
 
@@ -744,8 +755,7 @@ after handling the time levels has been straightened out.
 \providecommand{\MR}{\relax\ifhmode\unskip\space\fi MR }
 % \MRhref is called by the amsart/book/proc definition of \MR.
 \providecommand{\MRhref}[2]{%
-  \href{http://www.ams.org/mathscinet-getitem?mr=#1}{#2}
-}
+  \href{http://www.ams.org/mathscinet-getitem?mr=#1}{#2} }
 \providecommand{\href}[2]{#2}
 \begin{thebibliography}{{Pen}}
 
