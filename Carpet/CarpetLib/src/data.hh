@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.14 2003/10/14 16:39:16 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.15 2003/11/05 16:18:39 schnetter Exp $
 
 #ifndef DATA_HH
 #define DATA_HH
@@ -30,7 +30,12 @@ class data: public gdata<D> {
 
   // Fields
   T* _storage;			// the data (if located on this processor)
-
+  
+  bool comm_active;
+  MPI_Request request;
+  
+  int tag;                      // MPI tag for this object
+  
 public:
   
   // Constructors
@@ -50,7 +55,13 @@ public:
   virtual void transfer_from (gdata<D>* gsrc);
 
   // Processor management
-  virtual void change_processor (const int newproc, void* const mem=0);
+  virtual void change_processor (comm_state<D>& state,
+                                 const int newproc, void* const mem=0);
+ private:
+  virtual void change_processor_recv (const int newproc, void* const mem=0);
+  virtual void change_processor_send (const int newproc, void* const mem=0);
+  virtual void change_processor_wait (const int newproc, void* const mem=0);
+ public:
 
   // Accessors
   virtual const void* storage () const {

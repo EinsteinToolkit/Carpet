@@ -1,5 +1,5 @@
 # Schedule definitions for thorn CarpetReduce
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/schedule.ccl,v 1.1 2001/12/11 13:08:56 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/schedule.ccl,v 1.2 2003/11/05 16:18:39 schnetter Exp $
 
 schedule CarpetReduceStartup at STARTUP
 {

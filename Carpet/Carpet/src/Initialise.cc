@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.33 2003/09/02 13:11:16 tradke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.34 2003/11/05 16:18:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -47,12 +47,12 @@ namespace Carpet {
     CCTKi_InitGHExtensions (cgh);
 
     // Register coordinates
-    Waypoint ("CCTK_WRAGH");
+    Waypoint ("Scheduling CCTK_WRAGH");
     CCTK_ScheduleTraverse ("CCTK_WRAGH", cgh, CallFunction);
 
     // Check parameters
     Waypoint ("Current time is %g", cgh->cctk_time);
-    Waypoint ("PARAMCHECK");
+    Waypoint ("Scheduling PARAMCHECK");
     CCTK_ScheduleTraverse ("CCTK_PARAMCHECK", cgh, CallFunction);
     CCTKi_FinaliseParamWarn();
     
@@ -153,7 +153,7 @@ namespace Carpet {
       
       // Regrid
       Waypoint ("%*sRegrid", 2*reflevel, "");
-      Regrid (cgh, reflevel);
+      Regrid (cgh, reflevel+1, prolongate_initial_data);
       
       BEGIN_MGLEVEL_LOOP(cgh) {
         
@@ -294,8 +294,8 @@ namespace Carpet {
           cout << "3TL rl=" << reflevel << " restricting" << endl;
           Restrict (cgh);
           
-          Waypoint ("%*sScheduling PostRestrict", 2*reflevel, "");
-          CCTK_ScheduleTraverse ("PostRestrict", cgh, CallFunction);
+          Waypoint ("%*sScheduling POSTRESTRICT", 2*reflevel, "");
+          CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cgh, CallFunction);
           
           // Checking
           CalculateChecksums (cgh, currenttime);
@@ -370,8 +370,8 @@ namespace Carpet {
 	// Restrict
  	Restrict (cgh);
         
-        Waypoint ("%*sScheduling PostRestrict", 2*reflevel, "");
-        CCTK_ScheduleTraverse ("PostRestrict", cgh, CallFunction);
+        Waypoint ("%*sScheduling POSTRESTRICT", 2*reflevel, "");
+        CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cgh, CallFunction);
 	
       } END_MGLEVEL_LOOP;
     } END_REVERSE_REFLEVEL_LOOP;

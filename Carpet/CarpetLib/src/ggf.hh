@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.16 2003/10/14 16:39:16 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.17 2003/11/05 16:18:39 schnetter Exp $
 
 #ifndef GGF_HH
 #define GGF_HH
@@ -80,7 +80,7 @@ public:
 
   // Modifiers
   // VGF
-  void recompose (const int initialise_upto = -1);
+  void recompose (const int initialise_from, const bool do_prolongate);
 
   // Cycle the time levels by rotating the data sets
   void cycle (int rl, int c, int ml);
@@ -88,8 +88,11 @@ public:
   // Flip the time levels by exchanging the data sets
   void flip (int rl, int c, int ml);
   
+#if 0
   // Copy data from current time level to all previous time levels
   void copytoprevs (int rl, int c, int ml);
+#endif
+  
   
   
   // Helpers
@@ -105,39 +108,45 @@ protected:
 protected:
   
   // Copy a region
-  void copycat (int tl1, int rl1, int c1, int ml1,
+  void copycat (comm_state<D>& state,
+                int tl1, int rl1, int c1, int ml1,
 		const ibbox dh<D>::dboxes::* recv_list,
 		int tl2, int rl2, int ml2,
 		const ibbox dh<D>::dboxes::* send_list);
 
   // Copy regions
-  void copycat (int tl1, int rl1, int c1, int ml1,
+  void copycat (comm_state<D>& state,
+                int tl1, int rl1, int c1, int ml1,
 		const iblist dh<D>::dboxes::* recv_list,
 		int tl2, int rl2, int ml2,
 		const iblist dh<D>::dboxes::* send_list);
 
   // Copy regions
-  void copycat (int tl1, int rl1, int c1, int ml1,
+  void copycat (comm_state<D>& state,
+                int tl1, int rl1, int c1, int ml1,
 		const iblistvect dh<D>::dboxes::* recv_listvect,
 		int tl2, int rl2, int ml2,
 		const iblistvect dh<D>::dboxes::* send_listvect);
   
   // Interpolate a region
-  void intercat (int tl1, int rl1, int c1, int ml1,
+  void intercat (comm_state<D>& state,
+                 int tl1, int rl1, int c1, int ml1,
 		 const ibbox dh<D>::dboxes::* recv_list,
 		 const vector<int> tl2s, int rl2, int ml2,
 		 const ibbox dh<D>::dboxes::* send_list,
 		 CCTK_REAL time);
 
   // Interpolate regions
-  void intercat (int tl1, int rl1, int c1, int ml1,
+  void intercat (comm_state<D>& state,
+                 int tl1, int rl1, int c1, int ml1,
 		 const iblist dh<D>::dboxes::* recv_list,
 		 const vector<int> tl2s, int rl2, int ml2,
 		 const iblist dh<D>::dboxes::* send_list,
 		 CCTK_REAL time);
 
   // Interpolate regions
-  void intercat (int tl1, int rl1, int c1, int ml1,
+  void intercat (comm_state<D>& state,
+                 int tl1, int rl1, int c1, int ml1,
 		 const iblistvect dh<D>::dboxes::* recv_listvect,
 		 const vector<int> tl2s, int rl2, int ml2,
 		 const iblistvect dh<D>::dboxes::* send_listvect,
@@ -154,25 +163,25 @@ public:
   // synchronised.  They don't need to be prolongated.
 
   // Copy a component from the next time level
-  void copy (int tl, int rl, int c, int ml);
+  void copy (comm_state<D>& state, int tl, int rl, int c, int ml);
 
   // Synchronise the boundaries of a component
-  void sync (int tl, int rl, int c, int ml);
+  void sync (comm_state<D>& state, int tl, int rl, int c, int ml);
 
   // Prolongate the boundaries of a component
-  void ref_bnd_prolongate (int tl, int rl, int c, int ml, CCTK_REAL time);
+  void ref_bnd_prolongate (comm_state<D>& state, int tl, int rl, int c, int ml, CCTK_REAL time);
 
   // Restrict a multigrid level
-  void mg_restrict (int tl, int rl, int c, int ml, CCTK_REAL time);
+  void mg_restrict (comm_state<D>& state, int tl, int rl, int c, int ml, CCTK_REAL time);
 
   // Prolongate a multigrid level
-  void mg_prolongate (int tl, int rl, int c, int ml, CCTK_REAL time);
+  void mg_prolongate (comm_state<D>& state, int tl, int rl, int c, int ml, CCTK_REAL time);
 
   // Restrict a refinement level
-  void ref_restrict (int tl, int rl, int c, int ml, CCTK_REAL time);
+  void ref_restrict (comm_state<D>& state, int tl, int rl, int c, int ml, CCTK_REAL time);
 
   // Prolongate a refinement level
-  void ref_prolongate (int tl, int rl, int c, int ml, CCTK_REAL time);
+  void ref_prolongate (comm_state<D>& state, int tl, int rl, int c, int ml, CCTK_REAL time);
   
   
   

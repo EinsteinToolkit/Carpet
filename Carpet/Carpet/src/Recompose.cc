@@ -26,9 +26,11 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.46 2003/10/16 17:00:04 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.47 2003/11/05 16:18:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
+
+#define DEBUG false             // false or true
 
 
 
@@ -70,9 +72,16 @@ namespace Carpet {
   
   
   
-  void SplitRegions_AlongZ              (const cGH* cgh,
-					 vector<ibbox>& bbs,
-					 vector<bbvect>& obs);
+  void SplitRegions (const cGH* cgh,
+                     vector<ibbox>& bbs,
+                     vector<bbvect>& obs);
+  void SplitRegions_AlongZ (const cGH* cgh,
+                            vector<ibbox>& bbs,
+                            vector<bbvect>& obs);
+  void SplitRegions_AlongDir (const cGH* cgh,
+                              vector<ibbox>& bbs,
+                              vector<bbvect>& obs,
+                              const int dir);
   static void SplitRegions_Automatic_Recursively (bvect const & dims,
                                                   int const nprocs,
                                                   dvect const dshape,
@@ -80,12 +89,12 @@ namespace Carpet {
                                                   bbvect const & ob,
                                                   vector<ibbox> & bbs,
                                                   vector<bbvect> & obs);
-  static void SplitRegions_Automatic    (const cGH* cgh,
-					 vector<ibbox>& bbs,
-					 vector<bbvect>& obs);
-  static void SplitRegions_AsSpecified  (const cGH* cgh,
-					 vector<ibbox>& bbs,
-					 vector<bbvect>& obs);
+  void SplitRegions_Automatic (const cGH* cgh,
+                               vector<ibbox>& bbs,
+                               vector<bbvect>& obs);
+  static void SplitRegions_AsSpecified (const cGH* cgh,
+                                        vector<ibbox>& bbs,
+                                        vector<bbvect>& obs);
   
   static void MakeProcessors_RoundRobin (const cGH* cgh,
 					 const gh<dim>::rexts& bbss,
@@ -149,7 +158,8 @@ namespace Carpet {
   
   
   
-  void Regrid (const cGH* cgh, const int initialise_upto)
+  void Regrid (const cGH* cgh,
+               const int initialise_from, const bool do_prolongate)
   {
     assert (mglevel == -1);
     assert (component == -1);
@@ -170,7 +180,7 @@ namespace Carpet {
     int do_recompose = (*regrid_routine) (cgh, bbsss, obss, pss);
     assert (do_recompose >= 0);
     if (do_recompose == 0) return;
-    Recompose (cgh, bbsss, obss, pss, initialise_upto);
+    Recompose (cgh, bbsss, obss, pss, initialise_from, do_prolongate);
   }
   
   
@@ -179,7 +189,8 @@ namespace Carpet {
 		  const gh<dim>::rexts& bbsss,
 		  const gh<dim>::rbnds& obss,
 		  const gh<dim>::rprocs& pss,
-                  const int initialise_upto)
+                  const int initialise_from,
+                  const bool do_prolongate)
   {
     assert (mglevel == -1);
     assert (component == -1);
@@ -191,7 +202,7 @@ namespace Carpet {
     OutputGridStructure (cgh, bbsss, obss, pss);
     
     // Recompose
-    hh->recompose (bbsss, obss, pss, initialise_upto);
+    hh->recompose (bbsss, obss, pss, initialise_from, do_prolongate);
     
     Output (cgh, hh);
   }
@@ -274,7 +285,7 @@ namespace Carpet {
       }
     }
     
-    hh->recompose(bbsss, obss, pss);
+    hh->recompose(bbsss, obss, pss, 0, true);
   }
   
   
@@ -386,6 +397,8 @@ namespace Carpet {
     
     if (CCTK_EQUALS (processor_topology, "along-z")) {
       SplitRegions_AlongZ (cgh, bbs, obs);
+    } else if (CCTK_EQUALS (processor_topology, "along-dir")) {
+      SplitRegions_AlongDir (cgh, bbs, obs, split_direction);
     } else if (CCTK_EQUALS (processor_topology, "automatic")) {
       SplitRegions_Automatic (cgh, bbs, obs);
     } else if (CCTK_EQUALS (processor_topology, "manual")) {
@@ -400,6 +413,15 @@ namespace Carpet {
   void SplitRegions_AlongZ (const cGH* cgh, vector<ibbox>& bbs,
 			    vector<bbvect>& obs)
   {
+    SplitRegions_AlongDir (cgh, bbs, obs, 2);
+  }
+  
+  
+  
+  void SplitRegions_AlongDir (const cGH* cgh, vector<ibbox>& bbs,
+                              vector<bbvect>& obs,
+                              const int dir)
+  {
     // Something to do?
     if (bbs.size() == 0) return;
     
@@ -408,6 +430,8 @@ namespace Carpet {
     if (nprocs==1) return;
     
     assert (bbs.size() == 1);
+    
+    assert (dir>=0 && dir<dim);
     
     const ivect rstr = bbs[0].stride();
     const ivect rlb  = bbs[0].lower();
@@ -420,19 +444,19 @@ namespace Carpet {
       ivect cstr = rstr;
       ivect clb = rlb;
       ivect cub = rub;
-      const int glonpz = (rub[dim-1] - rlb[dim-1]) / cstr[dim-1];
+      const int glonpz = (rub[dir] - rlb[dir]) / cstr[dir];
       const int locnpz = (glonpz + nprocs - 1) / nprocs;
-      const int zstep = locnpz * cstr[dim-1];
-      clb[dim-1] = rlb[dim-1] + zstep *  c;
-      cub[dim-1] = rlb[dim-1] + zstep * (c+1);
-      if (clb[dim-1] > rub[dim-1]) clb[dim-1] = rub[dim-1];
-      if (cub[dim-1] > rub[dim-1]) cub[dim-1] = rub[dim-1];
-      assert (clb[dim-1] <= cub[dim-1]);
-      assert (cub[dim-1] <= rub[dim-1]);
+      const int zstep = locnpz * cstr[dir];
+      clb[dir] = rlb[dir] + zstep *  c;
+      cub[dir] = rlb[dir] + zstep * (c+1);
+      if (clb[dir] > rub[dir]) clb[dir] = rub[dir];
+      if (cub[dir] > rub[dir]) cub[dir] = rub[dir];
+      assert (clb[dir] <= cub[dir]);
+      assert (cub[dir] <= rub[dir]);
       bbs[c] = ibbox(clb, cub-cstr, cstr);
       obs[c] = obnd;
-      if (c>0)        obs[c][dim-1][0] = false;
-      if (c<nprocs-1) obs[c][dim-1][1] = false;
+      if (c>0)        obs[c][dir][0] = false;
+      if (c<nprocs-1) obs[c][dir][1] = false;
     }
   }
   
@@ -446,11 +470,13 @@ namespace Carpet {
                                            vector<ibbox> & bbs,
                                            vector<bbvect> & obs)
   {
+    if (DEBUG) cout << "SRAR enter" << endl;
     // check preconditions
     assert (nprocs >= 1);
     
     // are we done?
     if (all(dims)) {
+      if (DEBUG) cout << "SRAR bottom" << endl;
       
       // check precondition
       assert (nprocs == 1);
@@ -460,6 +486,7 @@ namespace Carpet {
       obs.assign (1, ob);
       
       // return
+      if (DEBUG) cout << "SRAR exit" << endl;
       return;
     }
     
@@ -479,7 +506,37 @@ namespace Carpet {
       }
     }
     assert (mydim>=0 && mydim<dim);
-    assert (mysize>0);
+    assert (mysize>=0);
+    if (DEBUG) cout << "SRAR mydim " << mydim << endl;
+    if (DEBUG) cout << "SRAR mysize " << mysize << endl;
+    
+    if (mysize == 0) {
+      // the bbox is empty
+      if (DEBUG) cout << "SRAR empty" << endl;
+      
+      // create the bboxes
+      bbs.clear();
+      obs.clear();
+      bbs.reserve(nprocs);
+      obs.reserve(nprocs);
+      
+      // create a new bbox
+      assert (bb.empty());
+      bbvect const newob (vect<bool,2>(false));
+      ibbox const newbb (bb);
+      if (DEBUG) cout << "SRAR " << mydim << " newbb " << newbb << endl;
+      if (DEBUG) cout << "SRAR " << mydim << " newob " << newob << endl;
+      
+      // store
+      bbs.insert (bbs.end(), nprocs, newbb);
+      obs.insert (obs.end(), nprocs, newob);
+      
+      // check postconditions
+      assert (bbs.size() == nprocs);
+      assert (obs.size() == nprocs);
+      if (DEBUG) cout << "SRAR exit" << endl;
+      return;
+    }
     
     // mark this direction as done
     assert (! dims[mydim]);
@@ -488,6 +545,8 @@ namespace Carpet {
     // choose a number of slices for this direction
     int const nslices = min(nprocs, (int)floor(mysize * pow(nprocs/allsizes, 1.0/alldims) + 0.5));
     assert (nslices <= nprocs);
+    if (DEBUG) cout << "SRAR " << mydim << " nprocs " << nprocs << endl;
+    if (DEBUG) cout << "SRAR " << mydim << " nslices " << nslices << endl;
     
     // split the remaining processors
     vector<int> mynprocs(nslices);
@@ -501,6 +560,7 @@ namespace Carpet {
       sum_mynprocs += mynprocs[n];
     }
     assert (sum_mynprocs == nprocs);
+    if (DEBUG) cout << "SRAR " << mydim << " mynprocs " << mynprocs << endl;
     
     // split the region
     vector<int> myslice(nslices);
@@ -512,19 +572,23 @@ namespace Carpet {
       } else {
         myslice[n] = (int)floor(1.0 * slice_left * mynprocs[n] / nprocs_left + 0.5);
       }
+      assert (myslice[n] > 0);
       slice_left -= myslice[n];
       nprocs_left -= mynprocs[n];
     }
     assert (slice_left == 0);
     assert (nprocs_left == 0);
+    if (DEBUG) cout << "SRAR " << mydim << " myslice " << myslice << endl;
     
     // create the bboxes and recurse
+    if (DEBUG) cout << "SRAR " << mydim << ": create bboxes" << endl;
     bbs.clear();
     obs.clear();
     bbs.reserve(nprocs);
     obs.reserve(nprocs);
     ivect last_up;
     for (int n=0; n<nslices; ++n) {
+      if (DEBUG) cout << "SRAR " << mydim << " n " << n << endl;
       
       // create a new bbox
       ivect lo = bb.lower();
@@ -541,12 +605,16 @@ namespace Carpet {
         last_up = up;
       }
       ibbox newbb(lo, up, str);
+      if (DEBUG) cout << "SRAR " << mydim << " newbb " << newbb << endl;
+      if (DEBUG) cout << "SRAR " << mydim << " newob " << newob << endl;
       
       // recurse
       vector<ibbox> newbbs;
       vector<bbvect> newobs;
       SplitRegions_Automatic_Recursively
         (newdims, mynprocs[n], dshape, newbb, newob, newbbs, newobs);
+      if (DEBUG) cout << "SRAR " << mydim << " newbbs " << newbbs << endl;
+      if (DEBUG) cout << "SRAR " << mydim << " newobs " << newobs << endl;
       
       // store
       assert (newbbs.size() == mynprocs[n]);
@@ -558,21 +626,28 @@ namespace Carpet {
     // check postconditions
     assert (bbs.size() == nprocs);
     assert (obs.size() == nprocs);
+    if (DEBUG) cout << "SRAR exit" << endl;
   }
   
   void SplitRegions_Automatic (const cGH* cgh, vector<ibbox>& bbs,
                                vector<bbvect>& obs)
   {
+    if (DEBUG) cout << "SRA enter" << endl;
     // Something to do?
     if (bbs.size() == 0) return;
     
     const int nprocs = CCTK_nProcs(cgh);
+    if (DEBUG) cout << "SRA nprocs " << nprocs << endl;
     
 //     if (nprocs==1) return;
     
     // split the processors
+    // nslices: number of disjoint bboxes
     int const nslices = bbs.size();
+    if (DEBUG) cout << "SRA nslices " << nslices << endl;
+    // ncomps: number of components per processor
     int const ncomps = (nslices + nprocs - 1) / nprocs;
+    if (DEBUG) cout << "SRA ncomps " << ncomps << endl;
     assert (ncomps > 0);
     vector<int> mysize(nslices);
     for (int c=0; c<nslices; ++c) {
@@ -580,32 +655,41 @@ namespace Carpet {
     }
     vector<int> mynprocs(nslices);
     {
+      if (DEBUG) cout << "SRA: distributing processors to slices" << endl;
       int ncomps_left = nprocs * ncomps;
       for (int c=0; c<nslices; ++c) {
         mynprocs[c] = 1;
         -- ncomps_left;
       }
       while (ncomps_left > 0) {
+        if (DEBUG) cout << "SRA ncomps_left " << ncomps_left << endl;
         int maxc = -1;
-        double maxratio = 0;
+        double maxratio = -1;
         for (int c=0; c<nslices; ++c) {
           double const ratio = (double)mysize[c] / mynprocs[c];
           if (ratio > maxratio) { maxc=c; maxratio=ratio; }
         }
         assert (maxc>=0 && maxc<nslices);
         ++ mynprocs[maxc];
+        if (DEBUG) cout << "SRA maxc " << maxc << endl;
+        if (DEBUG) cout << "SRA mynprocs[maxc] " << mynprocs[maxc] << endl;
         -- ncomps_left;
       }
       assert (ncomps_left == 0);
     }
+    if (DEBUG) cout << "SRA mynprocs " << mynprocs << endl;
     
     vector<ibbox> allbbs;
     vector<bbvect> allobs;
     
+    if (DEBUG) cout << "SRA: splitting regions" << endl;
     for (int c=0; c<nslices; ++c) {
       
       const ibbox bb = bbs[c];
       const bbvect ob = obs[c];
+      if (DEBUG) cout << "SRA c " << c << endl;
+      if (DEBUG) cout << "SRA bb " << bb << endl;
+      if (DEBUG) cout << "SRA ob " << ob << endl;
       
       const ivect rstr = bb.stride();
       const ivect rlb  = bb.lower();
@@ -613,20 +697,28 @@ namespace Carpet {
     
       // calculate real shape factors
       dvect dshape;
-      for (int d=0; d<dim; ++d) {
-        dshape[d] = (double)(rub[d]-rlb[d]) / (rub[0]-rlb[0]);
+      if (any(rub == rlb)) {
+        // the bbox is empty
+        dshape = 0.0;
+      } else {
+        for (int d=0; d<dim; ++d) {
+          dshape[d] = (double)(rub[d]-rlb[d]) / (rub[0]-rlb[0]);
+        }
+        const double dfact = pow(nprocs / prod(dshape), 1.0/dim);
+        dshape *= dfact;
+        assert (abs(prod(dshape) - nprocs) < 1e-6);
       }
-      const double dfact = pow(nprocs / prod(dshape), 1.0/dim);
-      dshape *= dfact;
-      assert (abs(prod(dshape) - nprocs) < 1e-6);
+      if (DEBUG) cout << "SRA shapes " << dshape << endl;
       
       bvect const dims = false;
       
       vector<ibbox> thebbs;
       vector<bbvect> theobs;
-
+      
       SplitRegions_Automatic_Recursively
         (dims, mynprocs[c], dshape, bb, ob, thebbs, theobs);
+      if (DEBUG) cout << "SRA thebbs " << thebbs << endl;
+      if (DEBUG) cout << "SRA theobs " << theobs << endl;
       
       allbbs.insert(allbbs.end(), thebbs.begin(), thebbs.end());
       allobs.insert(allobs.end(), theobs.begin(), theobs.end());
@@ -635,6 +727,8 @@ namespace Carpet {
     
     bbs = allbbs;
     obs = allobs;
+    
+    if (DEBUG) cout << "SRA exit" << endl;
   }
   
   
@@ -648,8 +742,6 @@ namespace Carpet {
     if (bbs.size() == 0) return;
     
     const int nprocs = CCTK_nProcs(cgh);
-    
-    if (nprocs==1) return;
     
     assert (bbs.size() == 1);
     
@@ -667,6 +759,8 @@ namespace Carpet {
 		  "The specified processor topology [%d,%d,%d] is inconsistent with the number of processors, which is %d", nprocs_dir[0], nprocs_dir[1], nprocs_dir[2], nprocs);
     }
     assert (prod(nprocs_dir) == nprocs);
+    
+    if (nprocs==1) return;
     
     bbs.resize(nprocs);
     obs.resize(nprocs);
@@ -688,11 +782,11 @@ namespace Carpet {
 // 	  cub = min (cub, rub);
           for (int d=0; d<dim; ++d) {
             if (ipos[d]<rem[d]) {
-              clb[d] += step[d] * ipos[d];
-              cub[d] += step[d] * (ipos[d]+1);
+              clb[d] += cstr[d] * ipos[d];
+              cub[d] += cstr[d] * (ipos[d]+1);
             } else {
-              clb[d] += step[d] * rem[d];
-              cub[d] += step[d] * rem[d];
+              clb[d] += cstr[d] * rem[d];
+              cub[d] += cstr[d] * rem[d];
             }
           }
 	  assert (all (clb >= 0));

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.19 2003/10/15 07:14:01 hawke Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.20 2003/11/05 16:18:39 schnetter Exp $
 
 #ifndef GDATA_HH
 #define GDATA_HH
@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "cctk.h"
 
@@ -17,6 +18,29 @@
 #include "vect.hh"
 
 using namespace std;
+
+
+  
+
+template<int D>
+class gdata;
+
+
+
+// State information for communications
+enum astate { state_recv, state_send, state_wait, state_done };
+
+template<int D>
+struct comm_state {
+  astate thestate;
+  comm_state ();
+  void step ();
+  bool done ();
+  ~comm_state ();
+  
+  vector<gdata<D>*> tmps;
+  size_t current;
+};
 
 
 
@@ -57,7 +81,13 @@ public:
   virtual gdata<D>* make_typed (const int varindex) const = 0;
   
   // Processor management
-  virtual void change_processor (const int newproc, void* const mem=0) = 0;
+  virtual void change_processor (comm_state<D>& state,
+                                 const int newproc, void* const mem=0) = 0;
+ protected:
+  virtual void change_processor_recv (const int newproc, void* const mem=0) = 0;
+  virtual void change_processor_send (const int newproc, void* const mem=0) = 0;
+  virtual void change_processor_wait (const int newproc, void* const mem=0) = 0;
+ public:
   
   // Storage management
   virtual void transfer_from (gdata<D>* src) = 0;
@@ -68,10 +98,6 @@ public:
   
   // Accessors
 
-  int var_index () const {
-    return varindex;
-  }
-  
   bool has_storage () const {
     return _has_storage;
   }
@@ -117,14 +143,59 @@ public:
     assert (all(ind>=0 && ind<=shape()));
     return dot(ind, stride());
   }
-
+  
+  // Transport operator types
+ protected:
+  enum operator_type { op_error, op_none, op_Lagrange, op_TVD };
+  // readonly
+  operator_type transport_operator;
+ private:
+  static operator_type find_transport_operator (const int varindex_);
+  
   // Data manipulators
-  void copy_from (const gdata* src, const ibbox& box);
-  void interpolate_from (const vector<const gdata*> srcs,
-			 const vector<CCTK_REAL> times,
-			 const ibbox& box, const CCTK_REAL time,
-			 const int order_space,
-			 const int order_time);
+ public:
+    void copy_from (comm_state<D>& state, const gdata* src, const ibbox& box);
+ private:
+  void copy_from_nocomm (const gdata* src, const ibbox& box);
+  void copy_from_recv (comm_state<D>& state,
+                       const gdata* src, const ibbox& box);
+  void copy_from_send (comm_state<D>& state,
+                       const gdata* src, const ibbox& box);
+  void copy_from_wait (comm_state<D>& state,
+                       const gdata* src, const ibbox& box);
+ public:
+  void interpolate_from (comm_state<D>& state,
+                         const vector<const gdata*> srcs,
+                         const vector<CCTK_REAL> times,
+                         const ibbox& box, const CCTK_REAL time,
+                         const int order_space,
+                         const int order_time);
+ private:
+  void interpolate_from_nocomm (const vector<const gdata*> srcs,
+                                const vector<CCTK_REAL> times,
+                                const ibbox& box, const CCTK_REAL time,
+                                const int order_space,
+                                const int order_time);
+  void interpolate_from_recv (comm_state<D>& state,
+                              const vector<const gdata*> srcs,
+                              const vector<CCTK_REAL> times,
+                              const ibbox& box, const CCTK_REAL time,
+                              const int order_space,
+                              const int order_time);
+  void interpolate_from_send (comm_state<D>& state,
+                              const vector<const gdata*> srcs,
+                              const vector<CCTK_REAL> times,
+                              const ibbox& box, const CCTK_REAL time,
+                              const int order_space,
+                              const int order_time);
+  void interpolate_from_wait (comm_state<D>& state,
+                              const vector<const gdata*> srcs,
+                              const vector<CCTK_REAL> times,
+                              const ibbox& box, const CCTK_REAL time,
+                              const int order_space,
+                              const int order_time);
+ public:
+  
 protected:
   virtual void
   copy_from_innerloop (const gdata* src, const ibbox& box) = 0;

@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.53 2003/10/14 16:39:16 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.54 2003/11/05 16:18:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -829,7 +829,9 @@ namespace CarpetIOASCII {
       
       gdata<D>* const tmp = gfdata->make_typed(vi);
       tmp->allocate(gfdata->extent(), 0);
-      tmp->copy_from (gfdata, gfdata->extent());
+      for (comm_state<dim> state; !state.done(); state.step()) {
+        tmp->copy_from (state, gfdata, gfdata->extent());
+      }
       WriteASCII (os, tmp, gfext, vi, time, org, dirs, tl, rl, c, ml,
 		  coord_time, coord_lower, coord_upper);
       delete tmp;

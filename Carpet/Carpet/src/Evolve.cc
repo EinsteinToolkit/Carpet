@@ -5,10 +5,23 @@
 #include "cctk_Parameters.h"
 #include "cctk_Termination.h"
 
-#ifdef HAVE_TIME_GETTIMEOFDAY
-#  ifdef HAVE_SYS_TIME_H
+// IRIX wants this before <time.h>
+#if HAVE_SYS_TYPES_H
+#  include <sys/types.h>
+#endif
+
+#if TIME_WITH_SYS_TIME
+#  include <sys/time.h>
+#  include <time.h>
+#else
+#  if HAVE_SYS_TIME_H
 #    include <sys/time.h>
+#  elif HAVE_TIME_H
+#    include <time.h>
 #  endif
+#endif
+
+#if HAVE_UNISTD_H
 #  include <unistd.h>
 #endif
 
@@ -18,7 +31,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.28 2003/08/10 21:59:51 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.29 2003/11/05 16:18:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -134,7 +147,7 @@ namespace Carpet {
 	if ((cgh->cctk_iteration-1) % do_every == 0) {
 	  
 	  BEGIN_MGLEVEL_LOOP(cgh) {
-	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
+	    const int do_every = mglevelfact * (maxreflevelfact/reflevelfact);
 	    if ((cgh->cctk_iteration-1) % do_every == 0) {
 	      
               do_global_mode
@@ -175,7 +188,7 @@ namespace Carpet {
 	  
 	  // Regrid
 	  Waypoint ("%*sRegrid", 2*reflevel, "");
-	  Regrid (cgh);
+	  Regrid (cgh, reflevel+1, true);
           
 	}
       } END_REFLEVEL_LOOP;
@@ -187,7 +200,7 @@ namespace Carpet {
 	if (cgh->cctk_iteration % do_every == 0) {
 	  
 	  BEGIN_MGLEVEL_LOOP(cgh) {
-	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
+	    const int do_every = mglevelfact * (maxreflevelfact/reflevelfact);
 	    if (cgh->cctk_iteration % do_every == 0) {
 	      
               do_global_mode
@@ -201,8 +214,8 @@ namespace Carpet {
                         do_global_mode ? "   (global time)" : "");
 	      Restrict (cgh);
               
-	      Waypoint ("%*sScheduling PostRestrict", 2*reflevel, "");
-	      CCTK_ScheduleTraverse ("PostRestrict", cgh, CallFunction);
+	      Waypoint ("%*sScheduling POSTRESTRICT", 2*reflevel, "");
+	      CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cgh, CallFunction);
 	      
 	      // Checking
 	      CalculateChecksums (cgh, currenttime);
@@ -220,7 +233,7 @@ namespace Carpet {
 	if (cgh->cctk_iteration % do_every == 0) {
 	  
 	  BEGIN_MGLEVEL_LOOP(cgh) {
-	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
+	    const int do_every = mglevelfact * (maxreflevelfact/reflevelfact);
 	    if (cgh->cctk_iteration % do_every == 0) {
 	      
               do_global_mode

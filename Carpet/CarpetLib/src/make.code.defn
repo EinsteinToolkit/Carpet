@@ -1,5 +1,5 @@
 # Main make.code.defn file for thorn CarpetLib   -*-Makefile-*-
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/make.code.defn,v 1.9 2003/10/14 14:53:46 hawke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/make.code.defn,v 1.10 2003/11/05 16:18:39 schnetter Exp $
 
 # Source files in this directory
 SRCS =	bbox.cc					\
@@ -14,20 +14,27 @@ SRCS =	bbox.cc					\
 	gh.cc					\
 	th.cc					\
 	vect.cc					\
+	checkindex.F77				\
+	copy_3d_int4.F77			\
 	copy_3d_real8.F77			\
 	prolongate_3d_real8.F77			\
+	prolongate_3d_real8_rf2.F77		\
 	prolongate_3d_real8_o3.F77		\
+	prolongate_3d_real8_o3_rf2.F77		\
 	prolongate_3d_real8_o5.F77		\
 	prolongate_3d_real8_2tl.F77		\
 	prolongate_3d_real8_2tl_o3.F77		\
 	prolongate_3d_real8_2tl_o5.F77		\
 	prolongate_3d_real8_3tl.F77		\
+	prolongate_3d_real8_3tl_rf2.F77		\
 	prolongate_3d_real8_3tl_o3.F77		\
+	prolongate_3d_real8_3tl_o3_rf2.F77	\
 	prolongate_3d_real8_3tl_o5.F77		\
 	prolongate_3d_real8_minmod.F77		\
 	prolongate_3d_real8_2tl_minmod.F77	\
 	prolongate_3d_real8_3tl_minmod.F77	\
-	restrict_3d_real8.F77
+	restrict_3d_real8.F77			\
+	restrict_3d_real8_rf2.F77
 
 # Subdirectories containing source files
 SUBDIRS = 

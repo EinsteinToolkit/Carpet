@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.hh,v 1.8 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.hh,v 1.9 2003/11/05 16:18:39 schnetter Exp $
 
 #ifndef DIST_HH
 #define DIST_HH
@@ -18,8 +18,6 @@ using namespace std;
 
 
 namespace dist {
-  
-  const int tag = 1;
   
   extern MPI_Comm comm;
   

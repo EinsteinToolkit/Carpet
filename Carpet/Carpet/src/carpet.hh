@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.25 2003/08/10 21:59:51 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.26 2003/11/05 16:18:37 schnetter Exp $
 
 #ifndef CARPET_HH
 #define CARPET_HH
@@ -11,7 +11,8 @@
 
 namespace Carpet {
   
-  void Regrid (const cGH* cgh, const int initialise_upto = -1);
+  void Regrid (const cGH* cgh,
+               const int initialise_from, const bool do_prolongate);
   void CycleTimeLevels (const cGH* cgh);
   void FlipTimeLevels (const cGH* cgh);
   void Restrict (const cGH* cgh);
@@ -20,7 +21,8 @@ namespace Carpet {
 		  const gh<dim>::rexts& bbsss,
 		  const gh<dim>::rbnds& obss,
 		  const gh<dim>::rprocs& pss,
-                  const int initialise_upto = -1);
+                  const int initialise_from,
+                  const bool do_prolongate);
   
   enum checktimes { currenttime,
 		    currenttimebutnotifonly,

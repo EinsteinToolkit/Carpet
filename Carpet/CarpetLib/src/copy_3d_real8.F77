@@ -1,18 +1,8 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/copy_3d_real8.F77,v 1.6 2003/02/25 22:57:00 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/copy_3d_real8.F77,v 1.7 2003/11/05 16:18:39 schnetter Exp $
       
 #include "cctk.h"
-
-
-
-#define CHKIDX(i,j,k, imax,jmax,kmax, where)                                  \
-      if ((i).lt.1 .or. (i).gt.(imax)                                         \
-           .or. (j).lt.1 .or. (j).gt.(jmax)                                   \
-           .or. (k).lt.1 .or. (k).gt.(kmax)) then                           &&\
-         write (msg, '(a, " array index out of bounds: shape is (",i4,",",i4,",",i4,"), index is (",i4,",",i4,",",i4,")")') \
-              (where), (imax), (jmax), (kmax), (i), (j), (k)                &&\
-         call CCTK_WARN (0, msg(1:len_trim(msg)))                           &&\
-      end if
+#include "cctk_Parameters.h"
 
 
       
@@ -22,6 +12,8 @@ c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/copy_3d_real8
      $     srcbbox, dstbbox, regbbox)
       
       implicit none
+      
+      DECLARE_CCTK_PARAMETERS
       
       integer srciext, srcjext, srckext
       CCTK_REAL8 src(srciext,srcjext,srckext)
@@ -96,16 +88,19 @@ c     This could be handled, but is likely to point to an error elsewhere
       
       
 c     Loop over region
-      do k = 0, regkext-1
-         do j = 0, regjext-1
-            do i = 0, regiext-1
+      do k = 1, regkext
+         do j = 1, regjext
+            do i = 1, regiext
                
-               CHKIDX (srcioff+i+1, srcjoff+j+1, srckoff+k+1, \
-                       srciext,srcjext,srckext, "source")
-               CHKIDX (dstioff+i+1, dstjoff+j+1, dstkoff+k+1, \
-                       dstiext,dstjext,dstkext, "destination")
-               dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1)
-     $              = src (srcioff+i+1, srcjoff+j+1, srckoff+k+1)
+               if (check_array_accesses.ne.0) then
+                  call checkindex (srcioff+i, srcjoff+j+1, srckoff+k+1, 1,1,1,
+     $                 "source")
+                  call checkindex (dstioff+i, dstjoff+j+1, dstkoff+k+1, 1,1,1,
+     $                 "destination")
+               end if
+               
+               dst (dstioff+i, dstjoff+j, dstkoff+k)
+     $              = src (srcioff+i, srcjoff+j, srckoff+k)
                
             end do
          end do

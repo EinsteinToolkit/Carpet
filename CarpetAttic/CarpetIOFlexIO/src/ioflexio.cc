@@ -305,7 +305,9 @@ namespace CarpetIOFlexIO {
       
       gdata<dim>* const tmp = data->make_typed (n);
       tmp->allocate (ext, 0);
-      tmp->copy_from (data, ext);
+      for (comm_state<dim> state; !state.done(); state.step()) {
+        tmp->copy_from (state, data, ext);
+      }
       
       // Write data
       if (CCTK_MyProc(cgh)==0) {
@@ -600,7 +602,9 @@ namespace CarpetIOFlexIO {
         }
         
         // Copy into grid function
-        data->copy_from (tmp, ext);
+        for (comm_state<dim> state; !state.done(); state.step()) {
+          data->copy_from (state, tmp, ext);
+        }
         
         // Delete temporary copy
         delete tmp;

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.32 2003/10/17 08:14:41 cvs_anon Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.33 2003/11/05 16:18:39 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -17,10 +17,18 @@
 
 #include "data.hh"
 
-#include "util_ErrorCodes.h"
-#include "util_Table.h"
-
 using namespace std;
+
+
+
+// Hand out the next MPI tag
+static int nexttag ()
+{
+  static int last = 100;
+  ++last;
+  if (last > 30000) last = 100;
+  return last;
+}
 
 
 
@@ -28,13 +36,17 @@ using namespace std;
 template<class T, int D>
 data<T,D>::data (const int varindex_)
   : gdata<D>(varindex_),
-    _storage(0)
+    _storage(0),
+    comm_active(false),
+    tag(nexttag())
 { }
 
 template<class T, int D>
 data<T,D>::data (const int varindex_, const ibbox& extent_, const int proc_)
   : gdata<D>(varindex_),
-    _storage(0)
+    _storage(0),
+    comm_active(false),
+    tag(nexttag())
 {
   allocate(extent_, proc_);
 }
@@ -102,7 +114,32 @@ void data<T,D>::transfer_from (gdata<D>* gsrc) {
 
 // Processor management
 template<class T, int D>
-void data<T,D>::change_processor (const int newproc, void* const mem) {
+void data<T,D>::change_processor (comm_state<D>& state,
+                                  const int newproc, void* const mem)
+{
+  switch (state.thestate) {
+  case state_recv:
+    change_processor_recv (newproc, mem);
+    break;
+  case state_send:
+    change_processor_send (newproc, mem);
+    break;
+  case state_wait:
+    change_processor_wait (newproc, mem);
+    break;
+  default:
+    assert(0);
+  }
+}
+
+
+
+template<class T, int D>
+void data<T,D>::change_processor_recv (const int newproc, void* const mem)
+{
+  assert (!comm_active);
+  comm_active = true;
+  
   if (newproc == this->_proc) {
     assert (!mem);
     return;
@@ -121,21 +158,87 @@ void data<T,D>::change_processor (const int newproc, void* const mem) {
       } else {
 	_storage = (T*)mem;
       }
-
+      
       T dummy;
-      MPI_Status status;
-      MPI_Recv (_storage, this->_size, dist::datatype(dummy), this->_proc,
-		dist::tag, dist::comm, &status);
+      MPI_Irecv (_storage, this->_size, dist::datatype(dummy), this->_proc,
+                 this->tag, dist::comm, &request);
+      
+    } else if (rank == this->_proc) {
+      // copy to other processor
+      
+    } else {
+      assert (!mem);
+      assert (!_storage);
+    }
+  }
+}
 
+
+
+template<class T, int D>
+void data<T,D>::change_processor_send (const int newproc, void* const mem)
+{
+  assert (comm_active);
+  
+  if (newproc == this->_proc) {
+    assert (!mem);
+    return;
+  }
+  
+  if (this->_has_storage) {
+    int rank;
+    MPI_Comm_rank (dist::comm, &rank);
+    if (rank == newproc) {
+      // copy from other processor
+      
     } else if (rank == this->_proc) {
       // copy to other processor
       
       assert (!mem);
       assert (_storage);
+      
       T dummy;
-      MPI_Send (_storage, this->_size, dist::datatype(dummy), newproc,
-		dist::tag, dist::comm);
+      MPI_Isend (_storage, this->_size, dist::datatype(dummy), newproc,
+                 this->tag, dist::comm, &request);
+      
+    } else {
+      assert (!mem);
+      assert (!_storage);
+    }
+  }
+}
 
+
+
+template<class T, int D>
+void data<T,D>::change_processor_wait (const int newproc, void* const mem)
+{
+  assert (comm_active);
+  comm_active = false;
+  
+  if (newproc == this->_proc) {
+    assert (!mem);
+    return;
+  }
+  
+  if (this->_has_storage) {
+    int rank;
+    MPI_Comm_rank (dist::comm, &rank);
+    if (rank == newproc) {
+      // copy from other processor
+      
+      MPI_Status status;
+      MPI_Wait (&request, &status);
+      
+    } else if (rank == this->_proc) {
+      // copy to other processor
+      
+      assert (!mem);
+      assert (_storage);
+      
+      MPI_Status status;
+      MPI_Wait (&request, &status);
+      
       if (this->_owns_storage) {
 	delete [] _storage;
       }
@@ -146,7 +249,7 @@ void data<T,D>::change_processor (const int newproc, void* const mem) {
       assert (!_storage);
     }
   }
-
+  
   this->_proc = newproc;
 }
 
@@ -169,6 +272,13 @@ void data<T,D>
 	      && (box.lower()-src->extent().lower())%box.stride() == 0));
   
   assert (this->proc() == src->proc());
+
+  const int groupindex = CCTK_GroupIndexFromVarI(varindex);
+  const int group_tags_table = CCTK_GroupTagsTableI(groupindex);
+  assert (group_tags_table >= 0);
+  
+  // Disallow this.
+  assert (0);
   
   int rank;
   MPI_Comm_rank (dist::comm, &rank);
@@ -212,15 +322,27 @@ void data<T,D>
   MPI_Comm_rank (dist::comm, &rank);
   assert (rank == this->proc());
   
-  T Tdummy;
-  CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
-	      "There is no interpolator available for variable type %s, dimension %d, spatial interpolation order %d, temporal interpolation order %d.  The interpolation will not be done.",
-	      typestring(Tdummy), D, order_space, order_time);
+  assert (varindex >= 0);
+  const int groupindex = CCTK_GroupIndexFromVarI (varindex);
+  assert (groupindex >= 0);
+  char* groupname = CCTK_GroupName(groupindex);
+  CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+	      "There is no interpolator available for the group \"%s\" with variable type %s, dimension %d, spatial interpolation order %d, temporal interpolation order %d.",
+	      groupname, D, order_space, order_time);
+  ::free (groupname);
 }
 
 
 
 extern "C" {
+  void CCTK_FCALL CCTK_FNAME(copy_3d_int4)
+    (const CCTK_INT4* src,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_INT4* dst,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
   void CCTK_FCALL CCTK_FNAME(copy_3d_real8)
     (const CCTK_REAL8* src,
      const int& srciext, const int& srcjext, const int& srckext,
@@ -229,6 +351,65 @@ extern "C" {
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
+}
+
+template<>
+void data<CCTK_INT4,3>
+::copy_from_innerloop (const gdata<3>* gsrc, const ibbox& box)
+{
+  const data* src = (const data*)gsrc;
+  assert (has_storage() && src->has_storage());
+  assert (all(box.lower()>=extent().lower()
+	      && box.lower()>=src->extent().lower()));
+  assert (all(box.upper()<=extent().upper()
+	      && box.upper()<=src->extent().upper()));
+  assert (all(box.stride()==extent().stride()
+	      && box.stride()==src->extent().stride()));
+  assert (all((box.lower()-extent().lower())%box.stride() == 0
+	      && (box.lower()-src->extent().lower())%box.stride() == 0));
+  
+  assert (proc() == src->proc());
+  
+  int rank;
+  MPI_Comm_rank (dist::comm, &rank);
+  assert (rank == proc());
+  
+  const ibbox& sext = src->extent();
+  const ibbox& dext = extent();
+  
+  int srcshp[3], dstshp[3];
+  int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
+  
+  for (int d=0; d<3; ++d) {
+    srcshp[d] = (sext.shape() / sext.stride())[d];
+    dstshp[d] = (dext.shape() / dext.stride())[d];
+    
+    srcbbox[0][d] = sext.lower()[d];
+    srcbbox[1][d] = sext.upper()[d];
+    srcbbox[2][d] = sext.stride()[d];
+    
+    dstbbox[0][d] = dext.lower()[d];
+    dstbbox[1][d] = dext.upper()[d];
+    dstbbox[2][d] = dext.stride()[d];
+    
+    regbbox[0][d] = box.lower()[d];
+    regbbox[1][d] = box.upper()[d];
+    regbbox[2][d] = box.stride()[d];
+  }
+  
+  assert (all(dext.stride() == box.stride()));
+  if (all(sext.stride() == dext.stride())) {
+    CCTK_FNAME(copy_3d_int4) ((const CCTK_INT4*)src->storage(),
+                              srcshp[0], srcshp[1], srcshp[2],
+                              (CCTK_INT4*)storage(),
+                              dstshp[0], dstshp[1], dstshp[2],
+                              srcbbox,
+                              dstbbox,
+                              regbbox);
+    
+  } else {
+    assert (0);
+  }
 }
 
 template<>
@@ -302,6 +483,14 @@ extern "C" {
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
+  void CCTK_FCALL CCTK_FNAME(restrict_3d_real8_rf2)
+    (const CCTK_REAL8* src,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
   
   
   
@@ -313,7 +502,23 @@ extern "C" {
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
+  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_rf2)
+    (const CCTK_REAL8* src,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_o3)
+    (const CCTK_REAL8* src,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
+  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_o3_rf2)
     (const CCTK_REAL8* src,
      const int& srciext, const int& srcjext, const int& srckext,
      CCTK_REAL8* dst,
@@ -385,7 +590,27 @@ extern "C" {
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
+  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_3tl_rf2)
+    (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
+     const CCTK_REAL8* src2, const CCTK_REAL8& t2,
+     const CCTK_REAL8* src3, const CCTK_REAL8& t3,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst, const CCTK_REAL8& t,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_3tl_o3)
+    (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
+     const CCTK_REAL8* src2, const CCTK_REAL8& t2,
+     const CCTK_REAL8* src3, const CCTK_REAL8& t3,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst, const CCTK_REAL8& t,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
+  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_3tl_o3_rf2)
     (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
      const CCTK_REAL8* src2, const CCTK_REAL8& t2,
      const CCTK_REAL8* src3, const CCTK_REAL8& t3,
@@ -415,7 +640,6 @@ extern "C" {
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
-  
 }
 
 template<>
@@ -468,230 +692,142 @@ void data<CCTK_REAL8,3>
     regbbox[1][d] = box.upper()[d];
     regbbox[2][d] = box.stride()[d];
   }
-
-  const int varindex = (gsrcs[0])->var_index();
-  const int groupindex = CCTK_GroupIndexFromVarI(varindex);
-  const int group_tags_table = CCTK_GroupTagsTableI(groupindex);
-  assert(group_tags_table >= 0);
-  
-  int typecode = -1;
-  int keysize = -1;
-  if (! Util_TableQueryValueInfo(group_tags_table,
-                                 &typecode,
-                                 &keysize,
-                                 "Prolongation"))
-  {
-    CCTK_VWarn(4, __LINE__, __FILE__, CCTK_THORNSTRING,
-               "Tags table for group %s does not contain 'Prolongation'"
-               " tag", CCTK_GroupName(groupindex));
-  }
-  else
-  {  
-    assert(typecode == CCTK_VARIABLE_CHAR);
-  }
-
-#define PROLONG_NONE 0
-#define PROLONG_LAGRANGE 1
-#define PROLONG_TVD 2
-
-  int prolong_method;
-  if (keysize < 0) { // No key in table - default to Lagrange.
-    prolong_method = 1;
-  }
-  else {
-    char prolong_string[keysize+10];
-    const int error = Util_TableGetString(group_tags_table,
-                                          keysize+10,
-                                          prolong_string,
-                                          "Prolongation");
-    if (error < 0) {
-      CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Error code %d getting prolongation method"
-                 " from tags table for group %s.",
-                 error, CCTK_GroupName(groupindex));
-    }
-    if (CCTK_Equals(prolong_string, "None")){
-      prolong_method = PROLONG_NONE;
-    }
-    else if (CCTK_Equals(prolong_string, "Lagrange")){
-      prolong_method = PROLONG_LAGRANGE;
-    }
-    else if (CCTK_Equals(prolong_string, "TVD")){
-      prolong_method = PROLONG_TVD;
-    }
-    else {
-      CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                 "Prolongation method %s for group %s not recognized.\n"
-                 "Is this is a typo? Known values are:\n"
-                 "None\nLagrange\nTVD",
-                 prolong_method, CCTK_GroupName(groupindex));
-    }
-      
-  }
-
-//   CCTK_VInfo(CCTK_THORNSTRING,
-//              "Variable %d is %s with method %d", 
-//              varindex, CCTK_VarName(varindex), prolong_method);
   
   assert (all(dext.stride() == box.stride()));
   if (all(sext.stride() < dext.stride())) {
     
-    assert (srcs.size() == 1);
-    CCTK_FNAME(restrict_3d_real8)
-      ((const CCTK_REAL8*)srcs[0]->storage(),
-       srcshp[0], srcshp[1], srcshp[2],
-       (CCTK_REAL8*)storage(),
-       dstshp[0], dstshp[1], dstshp[2],
-       srcbbox, dstbbox, regbbox);
+    switch (transport_operator) {
+      
+    case op_Lagrange:
+    case op_TVD:
+      assert (srcs.size() == 1);
+      if (all (dext.stride() == sext.stride() * 2)) {
+        CCTK_FNAME(restrict_3d_real8_rf2)
+          ((const CCTK_REAL8*)srcs[0]->storage(),
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(),
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+      } else {
+        CCTK_FNAME(restrict_3d_real8)
+          ((const CCTK_REAL8*)srcs[0]->storage(),
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(),
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+      }
+      break;
+      
+    default:
+      assert (0);
+      
+    } // switch (prolong_method)
     
   } else if (all(sext.stride() > dext.stride())) {
-
-    switch (prolong_method) {
-
-      case PROLONG_NONE:  // PROLONG_NONE: NOTHING
-        break;
-      case PROLONG_LAGRANGE:  // PROLONG_LAGRANGE: DEFAULT
-        switch (order_time) {
-          
-          case 0:
-            assert (srcs.size()>=1);
-            switch (order_space) {
-              case 0:
-              case 1:
-                CCTK_FNAME(prolongate_3d_real8)
-                  ((const CCTK_REAL8*)srcs[0]->storage(),
-                   srcshp[0], srcshp[1], srcshp[2],
-                   (CCTK_REAL8*)storage(),
-                   dstshp[0], dstshp[1], dstshp[2],
-                   srcbbox, dstbbox, regbbox);
-                break;
-              case 2:
-              case 3:
-                CCTK_FNAME(prolongate_3d_real8_o3)
-                  ((const CCTK_REAL8*)srcs[0]->storage(),
-                   srcshp[0], srcshp[1], srcshp[2],
-                   (CCTK_REAL8*)storage(),
-                   dstshp[0], dstshp[1], dstshp[2],
-                   srcbbox, dstbbox, regbbox);
-                break;
-              case 4:
-              case 5:
-                CCTK_FNAME(prolongate_3d_real8_o5)
-                  ((const CCTK_REAL8*)srcs[0]->storage(),
-                   srcshp[0], srcshp[1], srcshp[2],
-                   (CCTK_REAL8*)storage(),
-                   dstshp[0], dstshp[1], dstshp[2],
-                   srcbbox, dstbbox, regbbox);
-                break;
-              default:
-                assert (0);
-            }
-            break;
-            
-          case 1:
-            assert (srcs.size()>=2);
-            switch (order_space) {
-              case 0:
-              case 1:
-                CCTK_FNAME(prolongate_3d_real8_2tl)
-                  ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-                   (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-                   srcshp[0], srcshp[1], srcshp[2],
-                   (CCTK_REAL8*)storage(), time,
-                   dstshp[0], dstshp[1], dstshp[2],
-                   srcbbox, dstbbox, regbbox);
-                break;
-              case 2:
-              case 3:
-                CCTK_FNAME(prolongate_3d_real8_2tl_o3)
-                  ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-                   (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-                   srcshp[0], srcshp[1], srcshp[2],
-                   (CCTK_REAL8*)storage(), time,
-                   dstshp[0], dstshp[1], dstshp[2],
-                   srcbbox, dstbbox, regbbox);
-                break;
-              case 4:
-              case 5:
-                CCTK_FNAME(prolongate_3d_real8_2tl_o5)
-                  ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-                   (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-                   srcshp[0], srcshp[1], srcshp[2],
-                   (CCTK_REAL8*)storage(), time,
-                   dstshp[0], dstshp[1], dstshp[2],
-                   srcbbox, dstbbox, regbbox);
-                break;
-              default:
-                assert (0);
-            }
-            break;
-            
-          case 2:
-            assert (srcs.size()>=3);
-            switch (order_space) {
-              case 0:
-              case 1:
-                CCTK_FNAME(prolongate_3d_real8_3tl)
-                  ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-                   (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-                   (const CCTK_REAL8*)srcs[2]->storage(), times[2],
-                   srcshp[0], srcshp[1], srcshp[2],
-                   (CCTK_REAL8*)storage(), time,
-                   dstshp[0], dstshp[1], dstshp[2],
-                   srcbbox, dstbbox, regbbox);
-                break;
-              case 2:
-              case 3:
-                CCTK_FNAME(prolongate_3d_real8_3tl_o3)
-                  ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-                   (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-                   (const CCTK_REAL8*)srcs[2]->storage(), times[2],
-                   srcshp[0], srcshp[1], srcshp[2],
-                   (CCTK_REAL8*)storage(), time,
-                   dstshp[0], dstshp[1], dstshp[2],
-                   srcbbox, dstbbox, regbbox);
-                break;
-              case 4:
-              case 5:
-                CCTK_FNAME(prolongate_3d_real8_3tl_o5)
-                  ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-                   (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-                   (const CCTK_REAL8*)srcs[2]->storage(), times[2],
-                   srcshp[0], srcshp[1], srcshp[2],
-                   (CCTK_REAL8*)storage(), time,
-                   dstshp[0], dstshp[1], dstshp[2],
-                   srcbbox, dstbbox, regbbox);
-                break;
-              default:
-                assert (0);
-            }
-            break;
-            
-          default:
-            assert (0);
-        } // switch (order_time)
-        break;
-      case PROLONG_TVD: // PROLONG_TVD
-        switch (order_time) {
-          case 0: 
-            CCTK_FNAME(prolongate_3d_real8_minmod)
+    
+    switch (transport_operator) {
+      
+    case op_Lagrange:
+      switch (order_time) {
+        
+      case 0:
+        assert (srcs.size()>=1);
+        switch (order_space) {
+        case 0:
+        case 1:
+          if (all (sext.stride() == dext.stride() * 2)) {
+            CCTK_FNAME(prolongate_3d_real8_rf2)
               ((const CCTK_REAL8*)srcs[0]->storage(),
                srcshp[0], srcshp[1], srcshp[2],
                (CCTK_REAL8*)storage(),
                dstshp[0], dstshp[1], dstshp[2],
                srcbbox, dstbbox, regbbox);
-            break;
-         case 1:
-            CCTK_FNAME(prolongate_3d_real8_2tl_minmod)
-              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+          } else {
+            CCTK_FNAME(prolongate_3d_real8)
+              ((const CCTK_REAL8*)srcs[0]->storage(),
                srcshp[0], srcshp[1], srcshp[2],
-               (CCTK_REAL8*)storage(), time,
+               (CCTK_REAL8*)storage(),
                dstshp[0], dstshp[1], dstshp[2],
                srcbbox, dstbbox, regbbox);
-	    break;
-          case 2: 
-            CCTK_FNAME(prolongate_3d_real8_3tl_minmod)
+          }
+          break;
+        case 2:
+        case 3:
+          if (all (sext.stride() == dext.stride() * 2)) {
+            CCTK_FNAME(prolongate_3d_real8_o3_rf2)
+              ((const CCTK_REAL8*)srcs[0]->storage(),
+               srcshp[0], srcshp[1], srcshp[2],
+               (CCTK_REAL8*)storage(),
+               dstshp[0], dstshp[1], dstshp[2],
+               srcbbox, dstbbox, regbbox);
+          } else {
+            CCTK_FNAME(prolongate_3d_real8_o3)
+              ((const CCTK_REAL8*)srcs[0]->storage(),
+               srcshp[0], srcshp[1], srcshp[2],
+               (CCTK_REAL8*)storage(),
+               dstshp[0], dstshp[1], dstshp[2],
+               srcbbox, dstbbox, regbbox);
+          }
+          break;
+        case 4:
+        case 5:
+          CCTK_FNAME(prolongate_3d_real8_o5)
+            ((const CCTK_REAL8*)srcs[0]->storage(),
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(),
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+          break;
+        default:
+          assert (0);
+        }
+        break;
+        
+      case 1:
+        assert (srcs.size()>=2);
+        switch (order_space) {
+        case 0:
+        case 1:
+          CCTK_FNAME(prolongate_3d_real8_2tl)
+            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(), time,
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+          break;
+        case 2:
+        case 3:
+          CCTK_FNAME(prolongate_3d_real8_2tl_o3)
+            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(), time,
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+          break;
+        case 4:
+        case 5:
+          CCTK_FNAME(prolongate_3d_real8_2tl_o5)
+            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(), time,
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+          break;
+        default:
+          assert (0);
+        }
+        break;
+        
+      case 2:
+        assert (srcs.size()>=3);
+        switch (order_space) {
+        case 0:
+        case 1:
+          if (all (sext.stride() == dext.stride() * 2)) {
+            CCTK_FNAME(prolongate_3d_real8_3tl_rf2)
               ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
                (const CCTK_REAL8*)srcs[1]->storage(), times[1],
                (const CCTK_REAL8*)srcs[2]->storage(), times[2],
@@ -699,15 +835,96 @@ void data<CCTK_REAL8,3>
                (CCTK_REAL8*)storage(), time,
                dstshp[0], dstshp[1], dstshp[2],
                srcbbox, dstbbox, regbbox);
-            break;
-          default:
-            assert (0);
+          } else {
+            CCTK_FNAME(prolongate_3d_real8_3tl)
+              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+               (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+               srcshp[0], srcshp[1], srcshp[2],
+               (CCTK_REAL8*)storage(), time,
+               dstshp[0], dstshp[1], dstshp[2],
+               srcbbox, dstbbox, regbbox);
+          }
+          break;
+        case 2:
+        case 3:
+          if (all (sext.stride() == dext.stride() * 2)) {
+            CCTK_FNAME(prolongate_3d_real8_3tl_o3_rf2)
+              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+               (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+               srcshp[0], srcshp[1], srcshp[2],
+               (CCTK_REAL8*)storage(), time,
+               dstshp[0], dstshp[1], dstshp[2],
+               srcbbox, dstbbox, regbbox);
+          } else {
+            CCTK_FNAME(prolongate_3d_real8_3tl_o3)
+              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+               (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+               srcshp[0], srcshp[1], srcshp[2],
+               (CCTK_REAL8*)storage(), time,
+               dstshp[0], dstshp[1], dstshp[2],
+               srcbbox, dstbbox, regbbox);
+          }
+          break;
+        case 4:
+        case 5:
+          CCTK_FNAME(prolongate_3d_real8_3tl_o5)
+            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+             (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(), time,
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+          break;
+        default:
+          assert (0);
         }
         break;
+        
       default:
-        assert(0);
+        assert (0);
+      } // switch (order_time)
+      break;
+      
+    case op_TVD:
+      switch (order_time) {
+      case 0: 
+        CCTK_FNAME(prolongate_3d_real8_minmod)
+          ((const CCTK_REAL8*)srcs[0]->storage(),
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(),
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+        break;
+      case 1:
+        CCTK_FNAME(prolongate_3d_real8_2tl_minmod)
+          ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+           (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(), time,
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+      case 2: 
+        CCTK_FNAME(prolongate_3d_real8_3tl_minmod)
+          ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+           (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+           (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(), time,
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+        break;
+      default:
+        assert (0);
+      }
+      break;
+      
+    default:
+      assert(0);
     } // switch (prolong_method)
-    
     
   } else {
     assert (0);

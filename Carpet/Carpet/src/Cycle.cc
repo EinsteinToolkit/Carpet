@@ -9,7 +9,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.14 2003/06/18 18:28:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.15 2003/11/05 16:18:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Cycle_cc);
 }
 
@@ -63,7 +63,7 @@ namespace Carpet {
 	    
 	    assert (group<(int)arrdata.size());
 	    assert (var<(int)arrdata[group].data.size());
-	    for (int rl=0; rl<hh->reflevels(); ++rl) {
+	    for (int rl=0; rl<arrdata[group].hh->reflevels(); ++rl) {
 	      for (int c=0; c<arrdata[group].hh->components(rl); ++c) {
 		arrdata[group].data[var]->flip (rl, c, mglevel);
 	      }

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.19 2003/08/28 21:07:27 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.20 2003/11/05 16:18:39 schnetter Exp $
 
 #ifndef VECT_HH
 #define VECT_HH
@@ -58,7 +58,7 @@ public:
     elt[0]=x; elt[1]=y;
   }
   
-  /** Constructor for 3-element vectors from 4 elements.  */
+  /** Constructor for 3-element vectors from 3 elements.  */
   vect (const T x, const T y, const T z) {
     assert (D==3);
     elt[0]=x; elt[1]=y; elt[2]=z;
@@ -149,7 +149,7 @@ public:
   
   /** Return a non-writable element of a vector.  */
   // Don't return a reference; *this might be a temporary
-  const T operator[] (const int d) const {
+  T operator[] (const int d) const {
     assert(d>=0 && d<D);
     return elt[d];
   }

@@ -20,7 +20,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.53 2003/09/19 16:08:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.54 2003/11/05 16:18:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -245,7 +245,7 @@ namespace Carpet {
 	  
 	case CCTK_SCALAR:
 	  // treat scalars as DIM=0, DISTRIB=const arrays
-	  arrdata[group].info.dim = 0;
+	  assert (arrdata[group].info.dim == 0);
 	  disttype = CCTK_DISTRIB_CONSTANT;
 	  break;
 	  
@@ -270,7 +270,12 @@ namespace Carpet {
 		|| disttype==CCTK_DISTRIB_DEFAULT);
 	
 	if (disttype==CCTK_DISTRIB_CONSTANT) {
-	  sizes[dim-1] = (sizes[dim-1] - 2*ghostsizes[dim-1]) * CCTK_nProcs(cgh) + 2*ghostsizes[dim-1];
+          for (int d=0; d<dim; ++d) {
+            ghostsizes[d] = 0;
+          }
+          const int d = gp.dim==0 ? 0 : gp.dim-1;
+	  sizes[d] = (sizes[d] - 2*ghostsizes[d]) * CCTK_nProcs(cgh) + 2*ghostsizes[d];
+          assert (sizes[d] >= 0);
 	}
 	
 	const vect<int,dim> alb(0);
@@ -302,7 +307,11 @@ namespace Carpet {
 	obs.push_back (vect<vect<bool,2>,dim>(vect<bool,2>(true)));
 	
 	// Split it into components, one for each processor
-	SplitRegions_AlongZ (cgh, bbs, obs);
+        if (disttype==CCTK_DISTRIB_CONSTANT) {
+          SplitRegions_AlongDir (cgh, bbs, obs, gp.dim==0 ? 0 : gp.dim-1);
+        } else {
+          SplitRegions_Automatic (cgh, bbs, obs);
+        }
 	
 	// For all refinement levels (but there is only one)
 	vector<vector<bbox<int,dim> > >          bbss(1);
@@ -323,7 +332,7 @@ namespace Carpet {
         assert (groupname);
         Checkpoint ("Recomposing grid array group %s", groupname);
         free (groupname);
-	arrdata[group].hh->recompose (bbsss, obss, pss);
+	arrdata[group].hh->recompose (bbsss, obss, pss, 1, false);
 	
 	break;
       }
@@ -383,14 +392,24 @@ namespace Carpet {
         for (int d=0; d<dim; ++d) {
           ((int*)arrdata[group].info.gsh )[d] = (base.shape() / base.stride())[d];
           ((int*)arrdata[group].info.lsh )[d] = (ext.shape() / ext.stride())[d];
-          ((int*)arrdata[group].info.lbnd)[d] = (ext.lower() / ext.stride())[d];
-          ((int*)arrdata[group].info.ubnd)[d] = (ext.upper() / ext.stride())[d];
-          for (int f=0; f<2; ++f) {
-            ((int*)arrdata[group].info.bbox)[2*d+f] = obnds[d][f];
-          }
+          ((int*)arrdata[group].info.lbnd)[d] = ((ext.lower() - baseext.lower()) / ext.stride())[d];
+          ((int*)arrdata[group].info.ubnd)[d] = ((ext.upper() - baseext.lower()) / ext.stride())[d];
+          ((int*)arrdata[group].info.bbox)[2*d  ] = obnds[d][0];
+          ((int*)arrdata[group].info.bbox)[2*d+1] = obnds[d][1];
           
           assert (arrdata[group].info.lsh[d]>=0);
           assert (arrdata[group].info.lsh[d]<=arrdata[group].info.gsh[d]);
+          if (d>=arrdata[group].info.dim)
+            if (! (arrdata[group].info.lsh[d]==1)) {
+              cout << "group " << group << " " << CCTK_GroupName(group) << " "
+                   << "dim " << arrdata[group].info.dim << " "
+                   << "d " << d << endl;
+              cout << "gsh " << arrdata[group].info.gsh[0] << " " << arrdata[group].info.gsh[1] << " " << arrdata[group].info.gsh[2] << endl;
+              cout << "lsh " << arrdata[group].info.lsh[0] << " " << arrdata[group].info.lsh[1] << " " << arrdata[group].info.lsh[2] << endl;
+              cout << "lbnd " << arrdata[group].info.lbnd[0] << " " << arrdata[group].info.lbnd[1] << " " << arrdata[group].info.lbnd[2] << endl;
+            }
+          if (d>=arrdata[group].info.dim)
+            assert (arrdata[group].info.lsh[d]==1);
           assert (arrdata[group].info.lbnd[d]>=0);
           assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
           assert (arrdata[group].info.ubnd[d]<arrdata[group].info.gsh[d]);
@@ -403,7 +422,10 @@ namespace Carpet {
         if (numvars>0) {
           const int firstvar = CCTK_FirstVarIndexI (group);
           assert (firstvar>=0);
+          
           const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
+          // We don't know when to cycle arrays or scalars
+          assert (num_tl==1);
           
           assert (rl>=0 && rl<(int)arrdata[group].dd->boxes.size());
           assert (c>=0 && c<(int)arrdata[group].dd->boxes[rl].size());
@@ -471,7 +493,7 @@ namespace Carpet {
     
     // Recompose grid hierarchy
     Checkpoint ("Recomposing grid functions");
-    Recompose (cgh, bbsss, obss, pss);
+    Recompose (cgh, bbsss, obss, pss, maxreflevels, false);
     
     
     

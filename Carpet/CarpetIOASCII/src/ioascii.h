@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.h,v 1.4 2002/09/01 14:52:25 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.h,v 1.5 2003/11/05 16:18:37 schnetter Exp $ */
 
 #ifndef CARPETIOASCII_H
 #define CARPETIOASCII_H

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.38 2003/10/13 11:44:51 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.39 2003/11/05 16:18:37 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -149,6 +149,11 @@ namespace Carpet {
 		     vector<vect<vect<bool,2>,dim> >& obs);
   void SplitRegions_AlongZ (const cGH* cgh, vector<bbox<int,dim> >& bbs,
 			    vector<vect<vect<bool,2>,dim> >& obs);
+  void SplitRegions_AlongDir (const cGH* cgh, vector<bbox<int,dim> >& bbs,
+                              vector<vect<vect<bool,2>,dim> >& obs,
+                              const int dir);
+  void SplitRegions_Automatic (const cGH* cgh, vector<bbox<int,dim> >& bbs,
+                               vector<vect<vect<bool,2>,dim> >& obs);
   
   void MakeProcessors (const cGH* cgh, const gh<dim>::rexts& bbsss,
 		       gh<dim>::rprocs& pss);

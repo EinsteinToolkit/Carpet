@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.33 2003/08/15 09:34:36 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.34 2003/11/05 16:18:37 schnetter Exp $
 
 shares: Cactus
 
@@ -194,6 +194,7 @@ KEYWORD processor_topology "How to determine the processor topology"
 {
   "manual"    :: "Specified by processor_topology_*"
   "along-z"   :: "Split the region along the z direction only"
+  "along-dir" :: "Split the region along one direction only"
   "automatic" :: "Choose the topology automatically"
 } "automatic"
 
@@ -211,6 +212,11 @@ CCTK_INT processor_topology_3d_z "Number of processors in z-direction"
 {
   1:* :: "must be positive"
 } 1
+
+CCTK_INT split_direction "Direction in which the domain should be split"
+{
+  0:* :: "0 for x, 1 for y, 2 for z, etc."
+} 2
 
 
 

@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetSlab
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/interface.ccl,v 1.6 2003/09/04 16:23:22 tradke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/interface.ccl,v 1.7 2003/11/05 16:18:39 schnetter Exp $
 
 implements: Hyperslab
 
@@ -16,3 +16,82 @@ uses include header: gdata.hh
 uses include header: dh.hh
 uses include header: ggf.hh
 uses include header: gh.hh
+
+
+
+CCTK_INT FUNCTION \
+  Hyperslab_Get (CCTK_POINTER_TO_CONST IN cctkGH, \
+                 CCTK_INT IN mapping_handle, \
+                 CCTK_INT IN proc, \
+                 CCTK_INT IN vindex, \
+                 CCTK_INT IN timelevel, \
+                 CCTK_INT IN hdatatype, \
+                 CCTK_POINTER IN hdata)
+
+CCTK_INT FUNCTION \
+  Hyperslab_GetList (CCTK_POINTER_TO_CONST IN cctkGH, \
+                     CCTK_INT IN mapping_handle, \
+                     CCTK_INT IN num_arrays, \
+                     CCTK_INT ARRAY IN procs, \
+                     CCTK_INT ARRAY IN vindices, \
+                     CCTK_INT ARRAY IN timelevels, \
+                     CCTK_INT ARRAY IN hdatatypes, \
+                     CCTK_POINTER ARRAY IN hdata, \
+                     CCTK_INT ARRAY OUT retvals)
+
+#CCTK_INT FUNCTION \
+#  Hyperslab_DefineLocalMappingByIndex (CCTK_POINTER_TO_CONST IN cctkGH, \
+#                                       CCTK_INT IN vindex, \
+#                                       CCTK_INT IN hdim, \
+#                                       CCTK_INT ARRAY IN direction, \
+#                                       CCTK_INT ARRAY IN origin, \
+#                                       CCTK_INT ARRAY IN extent, \
+#                                       CCTK_INT ARRAY IN downsample, \
+#                                       CCTK_INT IN table_handle, \
+#                                       CCTK_INT CCTK_FPOINTER IN \
+#                                         conversion_fn (CCTK_INT IN nelems, \
+#                                                        CCTK_INT IN src_stride, \
+#                                                        CCTK_INT IN dst_stride, \
+#                                                        CCTK_INT IN src_type, \
+#                                                        CCTK_INT IN dst_type, \
+#                                                        CCTK_POINTER_TO_CONST IN from, \
+#                                                        CCTK_POINTER IN to), \
+#                                       CCTK_INT ARRAY OUT hsize_local, \
+#                                       CCTK_INT ARRAY OUT hsize_global, \
+#                                       CCTK_INT ARRAY OUT hoffset_global)
+
+CCTK_INT FUNCTION \
+  Hyperslab_DefineGlobalMappingByIndex (CCTK_POINTER_TO_CONST IN cctkGH, \
+                                        CCTK_INT IN vindex, \
+                                        CCTK_INT IN hdim, \
+                                        CCTK_INT ARRAY IN direction, \
+                                        CCTK_INT ARRAY IN origin, \
+                                        CCTK_INT ARRAY IN extent, \
+                                        CCTK_INT ARRAY IN downsample, \
+                                        CCTK_INT IN table_handle, \
+                                        CCTK_INT CCTK_FPOINTER IN \
+                                          conversion_fn (CCTK_INT IN nelems, \
+                                                         CCTK_INT IN src_stride, \
+                                                         CCTK_INT IN dst_stride, \
+                                                         CCTK_INT IN src_type, \
+                                                         CCTK_INT IN dst_type, \
+                                                         CCTK_POINTER_TO_CONST IN from, \
+                                                         CCTK_POINTER IN to), \
+                                        CCTK_INT ARRAY OUT hsize)
+
+CCTK_INT FUNCTION Hyperslab_FreeMapping (CCTK_INT IN mapping_handle)
+
+
+
+PROVIDES FUNCTION Hyperslab_Get \
+  WITH CarpetSlab_Get LANGUAGE C
+PROVIDES FUNCTION Hyperslab_GetList \
+  WITH CarpetSlab_GetList LANGUAGE C
+PROVIDES FUNCTION Hyperslab_Get \
+  WITH CarpetSlab_Fill LANGUAGE C
+PROVIDES FUNCTION Hyperslab_DefineGlobalMappingByIndex \
+  WITH CarpetSlab_DefineGlobalMappingByIndex LANGUAGE C
+#PROVIDES FUNCTION Hyperslab_DefineLocalMappingByIndex \
+#  WITH CarpetSlab_DefineLocalMappingByIndex LANGUAGE C
+PROVIDES FUNCTION Hyperslab_FreeMapping \
+  WITH CarpetSlab_FreeMapping LANGUAGE C

@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_3tl_rf2.F77,v 1.3 2004/03/11 12:03:09 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_3tl_rf2.F77,v 1.1 2003/11/05 16:18:39 schnetter Exp $
       
 #include "cctk.h"
 #include "cctk_Parameters.h"
@@ -77,11 +77,6 @@ c     bbox(:,3) is stride
 c     This could be handled, but is likely to point to an error elsewhere
             call CCTK_WARN (0, "Internal error: region extent is empty")
          end if
-         if (mod(srcbbox(d,2) - srcbbox(d,1), srcbbox(d,3)).ne.0
-     $        .or. mod(dstbbox(d,2) - dstbbox(d,1), dstbbox(d,3)).ne.0
-     $        .or. mod(regbbox(d,2) - regbbox(d,1), regbbox(d,3)).ne.0) then
-            call CCTK_WARN (0, "Internal error: array extents are not integer multiples of the strides")
-         end if
          if (regbbox(d,1).lt.srcbbox(d,1)
      $        .or. regbbox(d,1).lt.dstbbox(d,1)
      $        .or. regbbox(d,2).gt.srcbbox(d,2)
@@ -120,7 +115,7 @@ c     Quadratic (second order) time interpolation
          call CCTK_WARN (0, "Internal error: arrays have same time")
       end if
       if (t.lt.min(t1,t2,t3)-eps .or. t.gt.max(t1,t2,t3)+eps) then
-         call CCTK_WARN (0, "Internal error: extrapolation in time")
+         call CCTK_WARN (0, "Internal error: extrapolation")
       end if
       
       s1fac = (t - t2) * (t - t3) / ((t1 - t2) * (t1 - t3))

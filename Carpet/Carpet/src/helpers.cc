@@ -15,7 +15,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.41 2003/08/10 21:59:51 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.42 2003/11/05 16:18:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -266,8 +266,8 @@ namespace Carpet {
       assert (mglevelfact==1);
       cgh->cctk_timefac = reflevelfact / mglevelfact;
       for (int d=0; d<dim; ++d) {
-        assert (baseext.lower()[d] * reflevelfact % maxreflevelfact == 0);
-        cgh->cctk_levoff[d] = baseext.lower()[d] * reflevelfact / maxreflevelfact;
+        assert (baseext.lower()[d] % (maxreflevelfact/reflevelfact) == 0);
+        cgh->cctk_levoff[d] = baseext.lower()[d] / (maxreflevelfact/reflevelfact);
         cgh->cctk_levoffdenom[d] = 1;
       }
       
@@ -384,7 +384,7 @@ namespace Carpet {
           
           for (int d=0; d<dim; ++d) {
             
-            ((int*)arrdata[group].info.lsh)[d]  = (ext.shape() / ext.stride())[d];
+            ((int*)arrdata[group].info.lsh )[d]  = (ext.shape() / ext.stride())[d];
             ((int*)arrdata[group].info.lbnd)[d] = ((ext.lower() - baseext.lower()) / ext.stride())[d];
             ((int*)arrdata[group].info.ubnd)[d] = ((ext.upper() - baseext.lower()) / ext.stride())[d];
             ((int*)arrdata[group].info.bbox)[2*d  ] = obnds[d][0];
@@ -392,6 +392,8 @@ namespace Carpet {
             
             assert (arrdata[group].info.lsh[d]>=0);
             assert (arrdata[group].info.lsh[d]<=arrdata[group].info.gsh[d]);
+            if (d>=arrdata[group].info.dim)
+              assert (arrdata[group].info.lsh[d]==1);
             assert (arrdata[group].info.lbnd[d]>=0);
             assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
             assert (arrdata[group].info.ubnd[d]<arrdata[group].info.gsh[d]);
@@ -458,10 +460,10 @@ namespace Carpet {
   }
   
   extern "C" void CCTK_FCALL CCTK_FNAME(CallScheduleGroup)
-    (int * const ierr, cGH * const cgh, ONE_FORTSTRING_ARG)
+    (int * const ierr, cGH * const * const cgh, ONE_FORTSTRING_ARG)
   {
     ONE_FORTSTRING_CREATE (group);
-    *ierr = CallScheduleGroup (cgh, group);
+    *ierr = CallScheduleGroup (*cgh, group);
     free (group);
   }
   
