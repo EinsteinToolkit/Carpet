@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_3tl_o5.F77,v 1.1 2003/06/24 14:00:58 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_3tl_o5.F77,v 1.2 2004/01/09 13:21:20 schnetter Exp $
       
 #include "cctk.h"
 
@@ -149,7 +149,7 @@ c     Quadratic (second order) interpolation
          call CCTK_WARN (0, "Internal error: arrays have same time")
       end if
       if (t.lt.min(t1,t2,t3)-eps .or. t.gt.max(t1,t2,t3)+eps) then
-         call CCTK_WARN (0, "Internal error: extrapolation")
+         call CCTK_WARN (0, "Internal error: extrapolation in time")
       end if
       
       s1fac = (t - t2) * (t - t3) / ((t1 - t2) * (t1 - t3))
