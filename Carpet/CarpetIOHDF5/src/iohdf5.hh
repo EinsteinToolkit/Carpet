@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.4 2004/03/09 16:02:48 cott Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.5 2004/03/10 21:20:24 cott Exp $
 
 #ifndef CARPETIOHDF5_HH
 #define CARPETIOHDF5_HH
@@ -8,10 +8,15 @@
 #include "cctk.h"
 #include "cctk_Arguments.h"
 
+#include "carpet.hh"
+
 #include "iohdf5.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
 
 namespace CarpetIOHDF5 {
+  
+  using namespace std;
+  using namespace Carpet;
   
   // Variable definitions
   extern int GHExtension;
@@ -23,7 +28,7 @@ namespace CarpetIOHDF5 {
 		 const int convLevel, cGH* const cctkGH);
   
   int OutputGH (const cGH* const cctkGH);
-  int WriteVar (const cGH* const cctkGH, hid_t writer, const ioRequest* request,
+  int WriteVar (const cGH* const cctkGH, const hid_t writer, const ioRequest* request,
 		   const int called_from_checkpoint);
   int OutputVarAs (const cGH* const cctkGH, const char* const varname,
 		   const char* const alias);
@@ -32,6 +37,10 @@ namespace CarpetIOHDF5 {
   int TriggerOutput (const cGH* const cctkGH, const int vindex);
   
   int InputGH (const cGH* const cctkGH);
+  int ReadVar (const cGH* const cctkGH, const hid_t reader, const char* const varname,
+	       const hid_t currdataset, vector<ibset> &regions_read, 
+	       const int called_from_recovery);
+
   int InputVarAs (const cGH* const cctkGH, const char* const varname,
 		  const char* const alias);
   
