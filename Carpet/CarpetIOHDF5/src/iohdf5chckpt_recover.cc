@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include <hdf5.h>
@@ -18,7 +19,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.33 2004/06/07 09:53:06 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.34 2004/06/25 12:44:02 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -576,49 +577,62 @@ namespace CarpetIOHDF5 {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
 
-    char cp_filename[1024], cp_tempname[1024];
-    char cp_tempname_copy[1024];
-    char *fullname;
-    
     herr_t herr;
     
     int retval = 0;
 
     const ioGH *ioUtilGH;
     
-    cGroup  gdata;
     ioRequest *request;
 
     CarpetIOHDF5GH *myGH;
     myGH = (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, "CarpetIOHDF5");
 
-    /* check if CarpetIOHDF5 was registered as I/O method */
+    // check if CarpetIOHDF5 was registered as I/O method
     if (myGH == NULL) {
-      CCTK_WARN (-1, "No CarpetIOHDF5 I/O methods registered");
-      return (-1);
+      CCTK_WARN (0, "No CarpetIOHDF5 I/O methods registered");
+      return -1;
     }
-  
-    int myproc = CCTK_MyProc (cctkGH);
-
-    // Invent a filename
-
-    ioUtilGH = (const ioGH *) CCTK_GHExtension (cctkGH, "IO");
-
-    // I didn't like what the flesh provides:
     
-    IOUtil_PrepareFilename (cctkGH, NULL, cp_filename, called_from,
-           myproc / ioUtilGH->ioproc_every,1);
-
-
-    /* ... and append the extension */
-    sprintf (cp_tempname, "%s.h5", cp_filename);
-    sprintf (cp_filename, "%s.h5", cp_filename);
-
-    /* For temp filenames, some post-processing is necessary */
-    strcat(cp_tempname_copy,cp_tempname);
-    strcpy(&rindex(cp_tempname,'/')[1],"tmp_");
-    strcpy(&rindex(cp_tempname,'/')[5],&rindex(cp_tempname_copy,'/')[1]);
-
+    int const myproc = CCTK_MyProc (cctkGH);
+    
+    
+    
+    // Invent a file name
+    ostringstream cp_tempname_buf;
+    ostringstream cp_filename_buf;
+    
+    switch (called_from)
+    {
+    case CP_INITIAL_DATA:
+      cp_tempname_buf << checkpoint_dir << "/tmp_" << checkpoint_ID_file << ".it_" << cctkGH->cctk_iteration << ".h5";
+      cp_filename_buf << checkpoint_dir << "/" << checkpoint_ID_file << ".it_" << cctkGH->cctk_iteration << ".h5";
+      break;
+      
+    case CP_EVOLUTION_DATA:
+      cp_tempname_buf << checkpoint_dir << "/tmp_" << checkpoint_file << ".it_" << cctkGH->cctk_iteration << ".h5";
+      cp_filename_buf << checkpoint_dir << "/" << checkpoint_file << ".it_" << cctkGH->cctk_iteration << ".h5";
+      break;
+      
+    case CP_RECOVER_DATA:
+    case CP_RECOVER_PARAMETERS:
+    case FILEREADER_DATA:
+      cp_tempname_buf << recover_dir << "/tmp_" << recover_file << ".h5";
+      cp_filename_buf << recover_dir << "/" << recover_file << ".h5";
+      break;
+      
+    default:
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "IOUtil_PrepareFilename: Unknown calling mode %d",
+                  called_from);
+      break;
+    }
+    
+    char const * const cp_tempname = cp_tempname_buf.str().c_str();
+    char const * const cp_filename = cp_filename_buf.str().c_str();
+    
+    
+    
     hid_t writer = -1;
 
     if (myproc == 0) {
@@ -695,6 +709,7 @@ namespace CarpetIOHDF5 {
 	    }
 	    
 	    /* get the number of allocated timelevels */
+            cGroup gdata;
 	    CCTK_GroupData (group, &gdata);
 	    gdata.numtimelevels = 0;
 	    gdata.numtimelevels = CCTK_GroupStorageIncrease (cctkGH, 1, &group,
@@ -726,7 +741,7 @@ namespace CarpetIOHDF5 {
 		  {
 		    if (verbose)
 		      {
-			fullname = CCTK_FullName (request->vindex);
+			char *fullname = CCTK_FullName (request->vindex);
 			if (fullname != NULL) {
 			    CCTK_VInfo (CCTK_THORNSTRING, "  %s (timelevel %d)",
 					fullname, request->timelevel);
@@ -750,8 +765,10 @@ namespace CarpetIOHDF5 {
 		      }
 		    else
 		      {
+			char *fullname = CCTK_FullName (request->vindex);
 			CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
 				    "Invalid group type %d for variable '%s'", grouptype, fullname);
+			free(fullname);
 			retval = -1;
 		      }
 		    
