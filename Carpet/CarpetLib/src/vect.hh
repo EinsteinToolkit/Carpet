@@ -564,6 +564,14 @@ inline vect<T,D> pow (const vect<T,D>& a, const vect<U,D>& b) {
   return r;
 }
 
+/** Return the element-wise integer power of two vectors.  */
+template<class T,int D>
+inline vect<T,D> ipow (const vect<T,D>& a, const vect<int,D>& b) {
+  vect<T,D> r;
+  for (int d=0; d<D; ++d) r[d]=ipow(a[d],b[d]);
+  return r;
+}
+
 
 
 // Reduction operators
