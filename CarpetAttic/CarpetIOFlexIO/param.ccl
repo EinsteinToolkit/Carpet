@@ -1,11 +1,11 @@
 # Parameter definitions for thorn CarpetIOFlexIO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/param.ccl,v 1.5 2002/01/14 14:59:25 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/param.ccl,v 1.6 2002/10/24 12:00:32 schnetter Exp $
 
 
 
 shares: IO
 
-USES STRING outdir
+USES STRING out_dir
 
 USES CCTK_INT out_every
 
@@ -21,7 +21,7 @@ BOOLEAN verbose "Produce log output"
 
 
 
-CCTK_STRING outdir3D "Name of 3D FlexIO output directory, overrides outdir" STEERABLE = ALWAYS
+CCTK_STRING out3D_dir "Name of 3D FlexIO output directory, overrides out_dir" STEERABLE = ALWAYS
 {
   .* :: "A regex which matches everything"
 } "."

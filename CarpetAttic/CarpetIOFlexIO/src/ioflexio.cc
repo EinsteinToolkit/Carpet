@@ -34,7 +34,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.19 2002/10/24 10:50:01 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.20 2002/10/24 12:00:32 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -142,7 +142,7 @@ namespace CarpetIOFlexIO {
     assert (iogh);
     
     // Create the output directory
-    const char* myoutdir = GetStringParameter("outdir3D", outdir);
+    const char* myoutdir = GetStringParameter("out3D_dir", out_dir);
     if (CCTK_MyProc(cgh)==0) {
       CCTK_CreateDirectory (0755, myoutdir);
     }
@@ -638,7 +638,7 @@ namespace CarpetIOFlexIO {
   {
     if (CCTK_ParameterQueryTimesSet (parametername, CCTK_THORNSTRING) > 0) {
       int ptype;
-      const char** const ppval = (const char**)CCTK_ParameterGet
+      const char* const* const ppval = (const char* const*)CCTK_ParameterGet
 	(parametername, CCTK_THORNSTRING, &ptype);
       assert (ppval);
       const char* const pval = *ppval;
@@ -655,8 +655,8 @@ namespace CarpetIOFlexIO {
   {
     if (CCTK_ParameterQueryTimesSet (parametername, CCTK_THORNSTRING) > 0) {
       int ptype;
-      const int* const ppval
-	= (int*)CCTK_ParameterGet (parametername, CCTK_THORNSTRING, &ptype);
+      const int* const ppval = (const int*)CCTK_ParameterGet
+	(parametername, CCTK_THORNSTRING, &ptype);
       assert (ppval);
       const int pval = *ppval;
       assert (ptype == PARAMETER_INT);

@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.41 2002/10/24 10:40:19 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.42 2002/10/24 12:00:35 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -181,7 +181,7 @@ namespace CarpetIOASCII {
     assert (iogh);
     
     // Create the output directory
-    const char* myoutdir = GetStringParameter("outdir%dD", outdir);
+    const char* myoutdir = GetStringParameter("out%dD_dir", out_dir);
     if (CCTK_MyProc(cgh)==0) {
       CCTK_CreateDirectory (0755, myoutdir);
     }
