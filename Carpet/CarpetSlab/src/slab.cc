@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.9 2003/06/18 18:24:28 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.10 2003/06/18 18:28:08 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -8,20 +8,20 @@
 
 #include "cctk.h"
 
-#include "Carpet/CarpetLib/src/bbox.hh"
-#include "Carpet/CarpetLib/src/bboxset.hh"
-#include "Carpet/CarpetLib/src/dh.hh"
-#include "Carpet/CarpetLib/src/gdata.hh"
-#include "Carpet/CarpetLib/src/gh.hh"
-#include "Carpet/CarpetLib/src/ggf.hh"
-#include "Carpet/CarpetLib/src/vect.hh"
+#include "bbox.hh"
+#include "bboxset.hh"
+#include "dh.hh"
+#include "gdata.hh"
+#include "gh.hh"
+#include "ggf.hh"
+#include "vect.hh"
 
-#include "Carpet/Carpet/src/carpet.hh"
+#include "carpet.hh"
 
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.9 2003/06/18 18:24:28 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.10 2003/06/18 18:28:08 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 

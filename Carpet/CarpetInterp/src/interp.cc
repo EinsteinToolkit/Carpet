@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.10 2003/06/18 18:24:28 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.11 2003/06/18 18:28:07 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -10,16 +10,16 @@
 
 #include "cctk.h"
 
-#include "Carpet/CarpetLib/src/bbox.hh"
-#include "Carpet/CarpetLib/src/data.hh"
-#include "Carpet/CarpetLib/src/vect.hh"
+#include "bbox.hh"
+#include "data.hh"
+#include "vect.hh"
 
-#include "Carpet/Carpet/src/carpet.hh"
+#include "carpet.hh"
 
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.10 2003/06/18 18:24:28 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.11 2003/06/18 18:28:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 

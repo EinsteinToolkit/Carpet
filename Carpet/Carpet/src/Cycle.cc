@@ -3,13 +3,13 @@
 
 #include "cctk.h"
 
-#include "Carpet/CarpetLib/src/ggf.hh"
-#include "Carpet/CarpetLib/src/gh.hh"
+#include "ggf.hh"
+#include "gh.hh"
 
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.13 2003/05/23 23:51:17 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.14 2003/06/18 18:28:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Cycle_cc);
 }
 

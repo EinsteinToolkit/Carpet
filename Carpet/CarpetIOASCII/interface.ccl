@@ -1,8 +1,18 @@
 # Interface definition for thorn CarpetIOASCII
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/interface.ccl,v 1.4 2001/07/12 06:11:06 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/interface.ccl,v 1.5 2003/06/18 18:28:07 schnetter Exp $
 
 implements: IOASCII
 
 inherits: CarpetLib driver Hyperslab
 
 uses include header: carpet.hh
+
+uses include header: dist.hh
+
+uses include header: vect.hh
+
+uses include header: data.hh
+uses include header: gdata.hh
+
+uses include header: gf.hh
+uses include header: ggf.hh

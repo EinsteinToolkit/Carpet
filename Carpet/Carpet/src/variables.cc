@@ -1,12 +1,12 @@
 #include <vector>
-#include "Carpet/CarpetLib/src/dh.hh"
-#include "Carpet/CarpetLib/src/gh.hh"
-#include "Carpet/CarpetLib/src/th.hh"
+#include "dh.hh"
+#include "gh.hh"
+#include "th.hh"
 
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.15 2003/06/18 18:24:28 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.16 2003/06/18 18:28:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_variables_cc);
 }
 

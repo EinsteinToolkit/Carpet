@@ -17,16 +17,16 @@
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 
-#include "Carpet/CarpetLib/src/bbox.hh"
-#include "Carpet/CarpetLib/src/bboxset.hh"
-#include "Carpet/CarpetLib/src/defs.hh"
-#include "Carpet/CarpetLib/src/gh.hh"
-#include "Carpet/CarpetLib/src/vect.hh"
+#include "bbox.hh"
+#include "bboxset.hh"
+#include "defs.hh"
+#include "gh.hh"
+#include "vect.hh"
 
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.40 2003/05/12 16:24:25 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.41 2003/06/18 18:28:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 

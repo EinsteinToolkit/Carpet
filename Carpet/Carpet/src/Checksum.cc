@@ -4,12 +4,12 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
-#include "Carpet/CarpetLib/src/gh.hh"
+#include "gh.hh"
 
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Checksum.cc,v 1.9 2003/06/18 18:24:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Checksum.cc,v 1.10 2003/06/18 18:28:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Checksum_cc);
 }
 

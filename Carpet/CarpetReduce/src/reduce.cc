@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.24 2003/06/18 18:24:28 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.25 2003/06/18 18:28:07 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -14,15 +14,15 @@
 
 #include "cctk.h"
 
-#include "Carpet/CarpetLib/src/dist.hh"
-#include "Carpet/CarpetLib/src/vect.hh"
+#include "dist.hh"
+#include "vect.hh"
 
-#include "Carpet/Carpet/src/carpet.hh"
+#include "carpet.hh"
 
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.24 2003/06/18 18:24:28 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.25 2003/06/18 18:28:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 

@@ -5,12 +5,12 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
-#include "Carpet/CarpetLib/src/dist.hh"
+#include "dist.hh"
 
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.10 2003/06/18 18:24:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.11 2003/06/18 18:28:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Shutdown_cc);
 }
 

@@ -1,9 +1,9 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.22 2003/05/02 14:22:32 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.23 2003/06/18 18:28:07 schnetter Exp $
 
 #ifndef CARPET_HH
 #define CARPET_HH
 
-#include "Carpet/CarpetLib/src/gh.hh"
+#include "gh.hh"
 
 #include "carpet_public.hh"
 

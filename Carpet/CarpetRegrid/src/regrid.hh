@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.8 2003/04/30 12:37:56 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.9 2003/06/18 18:28:07 schnetter Exp $
 
 #ifndef CARPETREGRID_HH
 #define CARPETREGRID_HH
@@ -7,8 +7,8 @@
 
 #include "cctk.h"
 
-#include "Carpet/CarpetLib/src/gf.hh"
-#include "Carpet/CarpetLib/src/gh.hh"
+#include "gf.hh"
+#include "gh.hh"
 
 #include "carpet.hh"
 

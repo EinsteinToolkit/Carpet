@@ -23,18 +23,18 @@
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 
-#include "Carpet/CarpetLib/src/bbox.hh"
-#include "Carpet/CarpetLib/src/data.hh"
-#include "Carpet/CarpetLib/src/gdata.hh"
-#include "Carpet/CarpetLib/src/ggf.hh"
-#include "Carpet/CarpetLib/src/vect.hh"
+#include "bbox.hh"
+#include "data.hh"
+#include "gdata.hh"
+#include "ggf.hh"
+#include "vect.hh"
 
 #include "carpet.hh"
 
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.26 2003/06/18 18:24:28 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.27 2003/06/18 18:28:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 

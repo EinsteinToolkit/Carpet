@@ -18,19 +18,19 @@
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 
-#include "Carpet/CarpetLib/src/data.hh"
-#include "Carpet/CarpetLib/src/dist.hh"
-#include "Carpet/CarpetLib/src/gdata.hh"
-#include "Carpet/CarpetLib/src/gf.hh"
-#include "Carpet/CarpetLib/src/ggf.hh"
-#include "Carpet/CarpetLib/src/vect.hh"
+#include "data.hh"
+#include "dist.hh"
+#include "gdata.hh"
+#include "gf.hh"
+#include "ggf.hh"
+#include "vect.hh"
 
 #include "carpet.hh"
 
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.49 2003/06/18 18:24:28 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.50 2003/06/18 18:28:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 

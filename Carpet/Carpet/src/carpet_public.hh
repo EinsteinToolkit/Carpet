@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.29 2003/06/18 18:24:28 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.30 2003/06/18 18:28:07 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -13,11 +13,11 @@
 #include "cctk.h"
 #include "cctk_Schedule.h"
 
-#include "Carpet/CarpetLib/src/dh.hh"
-#include "Carpet/CarpetLib/src/gf.hh"
-#include "Carpet/CarpetLib/src/ggf.hh"
-#include "Carpet/CarpetLib/src/gh.hh"
-#include "Carpet/CarpetLib/src/th.hh"
+#include "dh.hh"
+#include "gf.hh"
+#include "ggf.hh"
+#include "gh.hh"
+#include "th.hh"
   
 #include "carpet_public.h"
   

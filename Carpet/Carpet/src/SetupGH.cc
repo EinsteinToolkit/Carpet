@@ -9,17 +9,17 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
-#include "Carpet/CarpetLib/src/bbox.hh"
-#include "Carpet/CarpetLib/src/defs.hh"
-#include "Carpet/CarpetLib/src/dist.hh"
-#include "Carpet/CarpetLib/src/ggf.hh"
-#include "Carpet/CarpetLib/src/gh.hh"
-#include "Carpet/CarpetLib/src/vect.hh"
+#include "bbox.hh"
+#include "defs.hh"
+#include "dist.hh"
+#include "ggf.hh"
+#include "gh.hh"
+#include "vect.hh"
 
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.46 2003/06/18 18:24:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.47 2003/06/18 18:28:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 

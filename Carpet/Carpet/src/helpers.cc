@@ -8,14 +8,14 @@
 #include "cctk_FortranString.h"
 #include "cctk_Parameters.h"
 
-#include "Carpet/CarpetLib/src/defs.hh"
-#include "Carpet/CarpetLib/src/dist.hh"
-#include "Carpet/CarpetLib/src/ggf.hh"
+#include "defs.hh"
+#include "dist.hh"
+#include "ggf.hh"
 
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.36 2003/06/18 18:24:28 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.37 2003/06/18 18:28:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 

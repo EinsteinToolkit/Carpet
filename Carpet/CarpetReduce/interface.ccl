@@ -1,6 +1,12 @@
 # Interface definition for thorn CarpetReduce
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/interface.ccl,v 1.1 2001/12/11 13:08:56 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/interface.ccl,v 1.2 2003/06/18 18:28:07 schnetter Exp $
 
 implements: reduce
 
 inherits: CarpetLib driver
+
+uses include header: carpet.hh
+
+uses include header: dist.hh
+
+uses include header: vect.hh

@@ -13,18 +13,18 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
-#include "Carpet/CarpetLib/src/bbox.hh"
-#include "Carpet/CarpetLib/src/bboxset.hh"
-#include "Carpet/CarpetLib/src/defs.hh"
-#include "Carpet/CarpetLib/src/gh.hh"
-#include "Carpet/CarpetLib/src/gf.hh"
-#include "Carpet/CarpetLib/src/vect.hh"
+#include "bbox.hh"
+#include "bboxset.hh"
+#include "defs.hh"
+#include "gh.hh"
+#include "gf.hh"
+#include "vect.hh"
 
 #include "carpet.hh"
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.23 2003/05/23 23:52:47 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.24 2003/06/18 18:28:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 

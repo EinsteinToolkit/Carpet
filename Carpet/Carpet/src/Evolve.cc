@@ -12,13 +12,13 @@
 #  include <unistd.h>
 #endif
 
-#include "Carpet/CarpetLib/src/dist.hh"
-#include "Carpet/CarpetLib/src/th.hh"
+#include "dist.hh"
+#include "th.hh"
 
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.22 2003/06/18 18:24:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.23 2003/06/18 18:28:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
