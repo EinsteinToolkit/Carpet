@@ -40,58 +40,55 @@ namespace Carpet {
     
     const int grouptype = CCTK_GroupTypeI(group);
     retval = CheckSyncGroupConsistency ( cgh, groupname);
-    if( retval != 0 )
-      goto quits;
     
-    if (CCTK_NumVarsInGroupI(group) == 0)
-      goto quits;
+    if( retval == 0
+    && CCTK_NumVarsInGroupI(group) != 0 )
+    {
+      const int n0 = CCTK_FirstVarIndexI(group);
+      assert (n0>=0);
+      const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
+      assert (num_tl>0);
     
-    const int n0 = CCTK_FirstVarIndexI(group);
-    assert (n0>=0);
-    const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
-    assert (num_tl>0);
-    const int tl = 0;
-    
-    // Prolongate the boundaries
-    if (do_prolongate) {
-      switch (grouptype) {
+      // Prolongate the boundaries
+      if (do_prolongate) {
+        switch (grouptype) {
+          
+        case CCTK_GF:
+          assert (reflevel>=0 && reflevel<reflevels);
+          if (reflevel > 0) {
+            ProlongateGroupBoundaries ( cgh, cctk_initial_time, group );
+          }
+          break;
         
-      case CCTK_GF:
-        assert (reflevel>=0 && reflevel<reflevels);
-        if (reflevel > 0) {
-          ProlongateGroupBoundaries ( cgh, cctk_initial_time, group );
+        case CCTK_SCALAR:
+        case CCTK_ARRAY:
+          // do nothing
+          break;
+        
+        default:
+          assert (0);
         }
-        break;
-        
-      case CCTK_SCALAR:
-      case CCTK_ARRAY:
-        // do nothing
-        break;
-        
-      default:
-        assert (0);
       }
-    }
     
-    // Sync
-    for (comm_state<dim> state; !state.done(); state.step()) {
-      switch (CCTK_GroupTypeI(group)) {
+      // Sync
+      for (comm_state<dim> state; !state.done(); state.step()) {
+        switch (CCTK_GroupTypeI(group)) {
+          
+        case CCTK_GF:
+          SyncGFGroup ( cgh, state, group );
+          break;
         
-      case CCTK_GF:
-        SyncGFGroup ( cgh, state, group );
-        break;
+        case CCTK_SCALAR:
+        case CCTK_ARRAY:
+          SyncGFArrayGroup ( cgh, state, group );
+          break;
         
-      case CCTK_SCALAR:
-      case CCTK_ARRAY:
-        SyncGFArrayGroup ( cgh, state, group );
-        break;
-        
-      default:
-        assert (0);
+        default:
+          assert (0);
+        }
       }
     }
-    quits:
-      return retval;
+    return retval;
   }
   
   void ProlongateGroupBoundaries ( const cGH* cgh, CCTK_REAL initial_time,
