@@ -1,6 +1,6 @@
-#include <assert.h>
-#include <string.h>
-
+#include <cassert>
+#include <cmath>
+#include <cstring>
 #include <vector>
 
 #include "cctk.h"
@@ -12,7 +12,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinatelist.cc,v 1.7 2004/06/14 06:59:52 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinatelist.cc,v 1.8 2004/06/27 21:18:47 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_manualcoordinatelist_cc);
 }
 
@@ -155,6 +155,8 @@ namespace CarpetRegrid {
       for (size_t c=0; c<newbbss.at(rl-1).size(); ++c) {
         rbbox const & ext = newbbss.at(rl-1).at(c);
         bbvect const & ob = newobss.at(rl-1).at(c);
+        rvect const spacing = base_spacing / ipow(reffact, rl);
+        assert (all(abs(ext.stride() - spacing) < spacing * 1.0e-10));
         ManualCoordinates_OneLevel
           (cctkGH, hh, rl, refinement_levels,
            ext.lower(), ext.upper(), ob, bbs, obs);
