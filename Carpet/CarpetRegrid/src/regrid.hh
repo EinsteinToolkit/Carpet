@@ -123,18 +123,12 @@ namespace CarpetRegrid {
                            const gh & hh,
                            const int rl,
                            const int numrl,
-                           const int minwidth,
-                           const CCTK_REAL minfraction,
-                           const CCTK_REAL maxerror,
                            const gf<CCTK_REAL> & errorvar,
                            vector<ibbox> & bbs,
                            vector<bbvect> & obs);
   
   void Automatic_Recursive (const cGH * const cctkGH,
                             const gh & hh,
-                            const int minwidth,
-                            const CCTK_REAL minfraction,
-                            const CCTK_REAL maxerror,
                             const data<CCTK_REAL> & errorvar,
                             list<ibbox> & bbl,
                             const ibbox & region);

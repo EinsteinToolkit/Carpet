@@ -6,6 +6,10 @@ BOOLEAN verbose "Print screen output while running"
 {
 } "no"
 
+BOOLEAN veryverbose "Print much screen output while running"
+{
+} "no"
+
 
 
 CCTK_INT refinement_levels "Number of refinement levels (including the base level)" STEERABLE=always
