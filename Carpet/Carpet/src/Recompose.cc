@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.71 2004/08/07 20:07:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.72 2004/08/19 15:38:20 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -119,7 +119,7 @@ namespace Carpet {
   
   
  
-  bool Regrid (const cGH* cgh, const bool do_init)
+  bool Regrid (const cGH* cgh, const bool force_recompose, const bool do_init)
   {
     assert (is_level_mode());
     
@@ -140,7 +140,8 @@ namespace Carpet {
       gh<dim>::rprocs pss   = vhh.at(map)->processors;
       
       // Check whether to recompose
-      CCTK_INT const do_recompose = Carpet_Regrid (cgh, &bbsss, &obss, &pss, false);
+      CCTK_INT const do_recompose
+        = Carpet_Regrid (cgh, &bbsss, &obss, &pss, force_recompose);
       assert (do_recompose >= 0);
       did_change = did_change || do_recompose;
       
