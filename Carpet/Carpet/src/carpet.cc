@@ -35,7 +35,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.19 2001/03/28 18:56:04 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.20 2001/03/29 18:21:29 eschnett Exp $";
 
 
 
@@ -46,6 +46,9 @@ namespace Carpet {
   static void Recompose (cGH* cgh);
   static void CycleTimeLevels (cGH* cgh);
   static void Restrict (cGH* cgh);
+  
+  static void Poison (cGH* cgh);
+  static void PoisonCheck (cGH* cgh);
   
   // Debugging output
   static void Checkpoint (const char* fmt, ...);
@@ -428,7 +431,9 @@ namespace Carpet {
 	if (cgh->cctk_iteration % (maxreflevelfact/reflevelfact) == 0) {
 	  
 	  // Cycle time levels
+	  PoisonCheck (cgh);
 	  CycleTimeLevels (cgh);
+	  Poison (cgh);
 	  
 	  // Advance level times
 	  tt->advance_time (reflevel, mglevel);
@@ -1157,6 +1162,183 @@ namespace Carpet {
     default:
       abort();
     }
+  }
+  
+  
+  
+  void Poison (cGH* cgh)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (! poison_new_timelevels) return;
+    
+    Checkpoint ("%*sPoison", 2*reflevel, "");
+    
+    BEGIN_COMPONENT_LOOP(cgh) {
+      if (hh->is_local(reflevel,component)) {
+	
+	for (int group=0; group<CCTK_NumGroups(); ++group) {
+	  if (CCTK_QueryGroupStorageI(cgh, group)) {
+	    for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+	      
+	      const int n = CCTK_FirstVarIndexI(group) + var;
+	      const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
+	      const int sz = CCTK_VarTypeSize(CCTK_VarTypeI(n));
+	      assert (sz>0);
+	      
+	      if (num_tl>1) {
+		
+		switch (CCTK_GroupTypeFromVarI(n)) {
+		case CCTK_SCALAR: {
+		  assert (group<(int)scdata.size());
+		  assert (var<(int)scdata[group].size());
+		  memset (cgh->data[n][num_tl-1], poison_value, sz);
+		  break;
+		}
+		case CCTK_ARRAY: {
+		  assert (group<(int)arrdata.size());
+		  assert (var<(int)arrdata[group].data.size());
+		  assert (arrdata[group].hh->is_local(reflevel,component));
+		  int np = 1;
+		  for (int d=0; d<dim; ++d) np *= arrdata[group].size[d];
+		  memset (cgh->data[n][num_tl-1], poison_value, np*sz);
+		  break;
+		}
+		case CCTK_GF: {
+		  assert (group<(int)gfdata.size());
+		  assert (var<(int)gfdata[group].data.size());
+		  int np = 1;
+		  for (int d=0; d<dim; ++d) np *= gfsize[d];
+		  memset (cgh->data[n][num_tl-1], poison_value, np*sz);
+		  break;
+		}
+		default:
+		  abort();
+		}
+		
+	      }	// if more than one timelevel
+	      
+	    } // for var
+	  } // if has storage
+	} // for group
+	
+      }
+    } END_COMPONENT_LOOP(cgh);
+  }
+  
+  
+  
+  void PoisonCheck (cGH* cgh)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (! check_for_poison) return;
+    
+    Checkpoint ("%*sPoisonCheck", 2*reflevel, "");
+    
+    BEGIN_COMPONENT_LOOP(cgh) {
+      if (hh->is_local(reflevel,component)) {
+	
+	for (int group=0; group<CCTK_NumGroups(); ++group) {
+	  if (CCTK_QueryGroupStorageI(cgh, group)) {
+	    for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+	      
+	      const int n = CCTK_FirstVarIndexI(group) + var;
+	      const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
+	      
+	      if (num_tl>1) {
+		
+		switch (CCTK_GroupTypeFromVarI(n)) {
+		  
+		case CCTK_SCALAR: {
+		  bool poisoned=false;
+		  switch (CCTK_VarTypeI(n)) {
+#define TYPECASE(N,T)							  \
+		  case N: {						  \
+		    T worm;						  \
+		    memset (&worm, poison_value, sizeof(worm));		  \
+		    poisoned = *(const T*)cgh->data[n][num_tl-1] == worm; \
+		    break;						  \
+		  }
+#include "typecase"
+#undef TYPECASE
+		  default:
+		    CCTK_VWarn
+		      (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+		       "Carpet does not support the type of the variable \"%s\".\n"
+		       "Either enable support for this type, "
+		       "or change the type of this variable.", CCTK_FullName(n));
+		  }
+		  if (poisoned) {
+		    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+				"The variable \"%s\" contains poison",
+				CCTK_VarName(n));
+		  }
+		  break;
+		}
+		  
+		case CCTK_ARRAY:
+		case CCTK_GF: {
+		  int size[dim];
+		  for (int d=0; d<dim; ++d) {
+		    size[d] = *CCTK_ArrayGroupSizeI(cgh, d, group);
+		  }
+		  const int tp = CCTK_VarTypeI(n);
+		  const void* const data = cgh->data[n][num_tl-1];
+		  int numpoison=0;
+		  for (int k=0; k<size[2]; ++k) {
+		    for (int j=0; j<size[1]; ++j) {
+		      for (int i=0; i<size[0]; ++i) {
+			const int idx = CCTK_GFINDEX3D(cgh,i,j,k);
+			bool poisoned=false;
+			switch (tp) {
+#define TYPECASE(N,T)							\
+			case N: {					\
+			  T worm;					\
+			  memset (&worm, poison_value, sizeof(worm));	\
+			  poisoned = ((const T*)data)[idx] == worm;	\
+			  break;					\
+			}
+#include "typecase"
+#undef TYPECASE
+			default:
+			  CCTK_VWarn
+			    (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+			     "Carpet does not support the type of the variable \"%s\".\n"
+			     "Either enable support for this type, "
+			     "or change the type of this variable.", CCTK_FullName(n));
+			}
+			if (poisoned) {
+			  ++numpoison;
+			  if (numpoison<=10) {
+			    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+					"The variable \"%s\" contains poison at [%d,%d,%d]",
+					CCTK_VarName(n), i,j,k);
+			  }
+			} // if poisoned
+		      } // for i
+		    } // for j
+		  } // for k
+		  if (numpoison>10) {
+		    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+				"The variable \"%s\" contains poison at alltogether %d locations",
+				CCTK_VarName(n), numpoison);
+		  }
+		  break;
+		}
+		  
+		default:
+		  abort();
+		}
+		
+	      }	// if more than one timelevel
+	      
+	    } // for var
+	  } // if has storage
+	} // for group
+	
+      }	// if is local
+    } END_COMPONENT_LOOP(cgh);
   }
   
   

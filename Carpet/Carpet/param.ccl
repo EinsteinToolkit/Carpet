@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.6 2001/03/24 22:38:42 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.7 2001/03/29 18:21:25 eschnett Exp $
 
 shares: Cactus
 
@@ -83,6 +83,27 @@ CCTK_INT prolongation_order_time "Order of prolongation operator in time"
   1 :: "first order (linear)"
   2 :: "second order (quadratic)"
 } 1
+
+
+
+BOOLEAN poison_new_timelevels "Try to catch uninitialised grid elements by setting new timelevels to values that will catch your attention"
+{
+} "no"
+
+BOOLEAN check_for_poison "Explicitely check for the poison value after every time step"
+{
+} "no"
+
+CCTK_INT poison_value "Integer value (0..255) used to poison new timelevels (with memset)"
+{
+  0:255 :: "Must fit into a byte"
+} 113
+
+
+
+BOOLEAN checksum_timelevels "Try to catched unintentionally changed timelevels by taking checksums and comparing against these"
+{
+} "no"
 
 
 
