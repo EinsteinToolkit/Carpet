@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.8 2003/05/21 14:30:50 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.9 2003/05/21 16:03:32 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -19,7 +19,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.8 2003/05/21 14:30:50 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.9 2003/05/21 16:03:32 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -41,7 +41,7 @@ namespace CarpetInterp {
 #define ind_rc(rl,c) ind_rc_(rl,minrl,maxrl,c,maxncomps,hh)
   static inline int ind_rc_(int const rl, int const minrl, int const maxrl,
                             int const c, int const maxncomps,
-                            gh<dim> const * restrict const hh)
+                            gh<dim> const * const hh)
   {
     assert (rl>=minrl && rl<maxrl);
     assert (minrl>=0 && maxrl<=hh->reflevels());
@@ -56,8 +56,8 @@ namespace CarpetInterp {
   static inline int ind_prc_(int const p, int const nprocs,
                              int const rl, int const minrl, int const maxrl,
                              int const c, int const maxncomps,
-                             cGH const * restrict const cgh,
-                             gh<dim> const * restrict const hh)
+                             cGH const * const cgh,
+                             gh<dim> const * const hh)
   {
     assert (p>=0 && p<nprocs);
     assert (nprocs==CCTK_nProcs(cgh));
