@@ -7,7 +7,7 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/doubletoy_periodic_coarse_rl3.par,v 1.1 2001/03/20 17:27:26 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/doubletoy_periodic_coarse_rl3.par,v 1.2 2001/03/26 02:29:12 eschnett Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetSlab IDSpaceTimeToy SpaceTimeToy IDHydroToy HydroToy"
 
@@ -20,6 +20,8 @@ driver::global_ny		= 24
 driver::global_nz		= 32
 
 Carpet::max_refinement_levels	= 3
+Carpet::prolongation_order_space= 3
+Carpet::prolongation_order_time	= 2
 
 grid::type			= byrange
 grid::xmin			= -4.8
