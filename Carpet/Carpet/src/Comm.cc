@@ -98,7 +98,6 @@ namespace Carpet {
     // in order to minimise the number of outstanding communications
     if (minimise_outstanding_communications) {
       for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-                        CCTK_GroupName (group));
         for (int var=0; var<(int)arrdata.at(group).at(m).data.size(); ++var) {
           for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
             for (comm_state state; ! state.done(); state.step()) {
@@ -107,7 +106,6 @@ namespace Carpet {
             }
           }
         }
-                        CCTK_GroupName (group));
       }
     } else {
       for (comm_state state; ! state.done(); state.step()) {
