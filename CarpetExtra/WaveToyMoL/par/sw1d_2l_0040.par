@@ -1,15 +1,11 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/par/sw1d_2l_0040.par,v 1.4 2004/03/23 12:01:21 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/par/sw1d_2l_0040.par,v 1.5 2004/05/21 18:07:12 schnetter Exp $
 
 Cactus::cctk_initial_time = 0
 Cactus::cctk_itlast = 6400
 
 
 
-ActiveThorns = "LocalInterp NaNChecker Slab"
-
-NaNChecker::check_every = 32
-NaNChecker::check_vars = "all"
-NaNChecker::action_if_found = terminate
+ActiveThorns = "CoordBase LocalInterp Slab SymBase"
 
 
 
@@ -34,6 +30,14 @@ CarpetRegrid::refinement_levels = 2
 CarpetRegrid::refined_regions = manual-gridpoint-list
 CarpetRegrid::gridpoints = "[[ ([50,4,4]:[126,12,12]:[2,2,2]) ]]"
 CarpetRegrid::outerbounds = "[[ [[0,0],[1,1],[1,1]] ]]"
+
+
+
+ActiveThorns = "NaNChecker"
+
+NaNChecker::check_every = 32
+NaNChecker::check_vars = "all"
+NaNChecker::action_if_found = terminate
 
 
 
@@ -70,9 +74,7 @@ IDScalarWaveMoL::wave_number[0] = 1.0
 
 
 #ActiveThorns = "Dissipation"
-#
-#Dissipation::epsdis = 0.1
-#Dissipation::timelevel = "n+1"
+
 #Dissipation::vars = "WaveToyMoL::scalarevolve"
 
 
