@@ -38,7 +38,7 @@ while (<CARPETFILE>)
     }
     elsif ($line =~ /([0-9+-ed.]+)*/)
     {
-	@dataline = split(/ +/,$line);
+	@dataline = split(/[ \t]+/,$line);
 	if ($currentit != $lastit)
 	{
 	    if ($new)
