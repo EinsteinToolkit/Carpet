@@ -1,4 +1,7 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.11 2002/08/30 18:08:53 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.12 2002/09/01 14:37:13 schnetter Exp $
+
+#ifndef CARPETIOASCII_HH
+#define CARPETIOASCII_HH
 
 #include <vector>
 
@@ -13,9 +16,7 @@ namespace CarpetIOASCII {
   
   
   // scheduled functions
-  extern "C" {
-    int CarpetIOASCIIStartup();
-  }
+#include "ioascii.h"
   
   
   
@@ -71,3 +72,5 @@ namespace CarpetIOASCII {
   };				// struct IOASCII
   
 } // namespace CarpetIOASCII
+
+#endif // !defined(CARPETIOASCII_HH)
