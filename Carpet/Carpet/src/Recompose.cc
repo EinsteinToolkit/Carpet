@@ -21,7 +21,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.26 2002/06/06 00:23:34 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.27 2002/06/06 22:12:57 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Recompose_cc)
 
@@ -89,7 +89,8 @@ namespace Carpet {
 	assert (bbsss[rl][c].size() > 0);
 	for (int ml=0; ml<(int)bbsss[rl][c].size(); ++ml) {
 	  // Check sizes
-	  assert (all(bbsss[rl][c][ml].lower() <= bbsss[rl][c][ml].upper()));
+	  // Do allow processors with zero grid points
+// 	  assert (all(bbsss[rl][c][ml].lower() <= bbsss[rl][c][ml].upper()));
 	  // Check strides
 	  const int str = ipow(reffact, maxreflevels-rl-1) * ipow(mgfact, ml);
 	  assert (all(bbsss[rl][c][ml].stride() == str));

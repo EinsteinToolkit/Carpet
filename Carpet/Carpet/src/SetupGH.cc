@@ -18,7 +18,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.28 2002/06/06 21:38:31 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.29 2002/06/06 22:12:57 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_SetupGH_cc)
 
@@ -139,8 +139,6 @@ namespace Carpet {
 	  disttype = gp.disttype;
 	  const CCTK_INT * const * const sz  = CCTK_GroupSizesI(group);
 	  const CCTK_INT * const * const gsz = CCTK_GroupGhostsizesI(group);
-	  assert (sz);
-	  assert (gsz);
 	  for (int d=0; d<gp.dim; ++d) {
 	    if (sz) sizes[d] = *sz[d];
 	    if (gsz) ghostsizes[d] = *gsz[d];
