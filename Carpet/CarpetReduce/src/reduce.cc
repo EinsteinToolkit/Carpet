@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.16 2003/04/29 14:01:52 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.17 2003/04/30 12:41:02 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -8,19 +8,21 @@
 #include <stdlib.h>
 
 #include <complex>
+#include <vector>
 
 #include <mpi.h>
 
 #include "cctk.h"
 
 #include "Carpet/CarpetLib/src/dist.hh"
+#include "Carpet/CarpetLib/src/vect.hh"
 
 #include "Carpet/Carpet/src/carpet.hh"
 
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.16 2003/04/29 14:01:52 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.17 2003/04/30 12:41:02 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -271,7 +273,7 @@ namespace CarpetReduce {
     const T *myinarray = (const T*)inarray;
     T myoutval = *(T*)outval;
     T mycnt = *(T*)cnt;
-    int imin[dim], imax[dim];
+    vect<int,dim> imin, imax;
     for (int d=0; d<dim; ++d) {
       imin[d] = bbox[2*d  ] ? 0      : nghostzones[d];
       imax[d] = bbox[2*d+1] ? lsh[d] : lsh[d] - nghostzones[d];
@@ -324,7 +326,7 @@ namespace CarpetReduce {
 #define INITIALISE(OP,T)						\
       case do_##OP:							\
 	initialise<T,OP::op<T> > (&((char*)myoutvals)[vartypesize*n],	\
-				  &((char*)mycounts)[vartypesize*n]);	\
+				  &((char*)mycounts )[vartypesize*n]);	\
 	break;
 #define TYPECASE(N,T)				\
       case N: {					\
@@ -353,6 +355,58 @@ namespace CarpetReduce {
       }
       
     } // for n
+  }
+  
+  
+  
+  void Copy (const cGH* const cgh, const int proc,
+             const int lsize,
+             const int num_inarrays,
+             const void* const* const inarrays, const int intype,
+             const int num_outvals,
+             void* const myoutvals, const int outtype,
+             void* const mycounts)
+  {
+    assert (cgh);
+    
+    assert (proc == -1 || (proc>=0 && proc<CCTK_nProcs(cgh)));
+    
+    assert (lsize >= 0);
+    assert (num_outvals>=0);
+    
+    assert (num_inarrays>=0);
+    assert (num_inarrays * lsize == num_outvals);
+    assert (inarrays);
+    for (int n=0; n<num_inarrays; ++n) {
+      assert (inarrays[n]);
+    }
+    
+    assert (myoutvals);
+    assert (mycounts);
+    
+    assert (outtype == intype);
+    
+    for (int m=0; m<num_inarrays; ++m) {
+      for (int n=0; n<lsize; ++n) {
+        
+        switch (outtype) {
+#define COPY(T)                                                         \
+          ((T*)myoutvals)[n+lsize*m] = ((const T*)inarrays[m])[n];      \
+          ((T*)mycounts )[n+lsize*m] = (T)1;
+#define TYPECASE(N,T)                           \
+        case N: {                               \
+          COPY(T);                              \
+          break;                                \
+        }
+#include "Carpet/Carpet/src/typecase"
+#undef TYPECASE
+#undef COPY
+        default:
+          assert (0);
+        }
+        
+      } // for
+    } // for
   }
   
   
@@ -390,6 +444,8 @@ namespace CarpetReduce {
     
     assert (myoutvals);
     assert (mycounts);
+    
+    assert (outtype == intype);
     
     for (int n=0; n<num_outvals; ++n) {
       
@@ -451,9 +507,9 @@ namespace CarpetReduce {
     assert (myoutvals);
     assert (mycounts);
     
-    char *counts = 0;
+    vector<char> counts;
     if (proc==-1 || proc==CCTK_MyProc(cgh)) {
-      counts = new char [vartypesize * num_outvals];
+      counts.resize(vartypesize * num_outvals);
     }
     
     if (proc == -1) {
@@ -461,7 +517,7 @@ namespace CarpetReduce {
 		     CarpetMPIDatatype(outtype), red->mpi_op(),
 		     CarpetMPIComm());
       if (red->uses_cnt()) {
-	MPI_Allreduce ((void*)mycounts, counts, num_outvals,
+	MPI_Allreduce ((void*)mycounts, &counts[0], num_outvals,
 		       CarpetMPIDatatype(outtype), MPI_SUM,
 		       CarpetMPIComm());
       }
@@ -470,7 +526,7 @@ namespace CarpetReduce {
 		  CarpetMPIDatatype(outtype), red->mpi_op(),
 		  proc, CarpetMPIComm());
       if (red->uses_cnt()) {
-	MPI_Reduce ((void*)mycounts, counts, num_outvals,
+	MPI_Reduce ((void*)mycounts, &counts[0], num_outvals,
 		    CarpetMPIDatatype(outtype), MPI_SUM,
 		    proc, CarpetMPIComm());
       }
@@ -481,7 +537,7 @@ namespace CarpetReduce {
       for (int n=0; n<num_outvals; ++n) {
 	
 	assert (outvals);
-	assert (counts);
+	assert (counts.size() == vartypesize * num_outvals);
 	
 	switch (outtype) {
 #define FINALISE(OP,T)							\
@@ -517,8 +573,6 @@ namespace CarpetReduce {
 	
       } // for n
       
-      delete [] counts;
-      
     } // if
   }
   
@@ -540,7 +594,6 @@ namespace CarpetReduce {
     assert (outvals || (proc!=-1 && proc!=CCTK_MyProc(cgh)));
     
     assert (num_inarrays>=0);
-    assert (num_inarrays == num_outvals);
     assert (inarrays);
     for (int n=0; n<num_inarrays; ++n) {
       assert (inarrays[n]);
@@ -551,35 +604,53 @@ namespace CarpetReduce {
       assert (dims[d]>=0);
     }
     
-    int mylsh[dim], mybbox[2*dim], mynghostzones[dim];
+    const bool do_local_reduction = num_inarrays == num_outvals;
+    
+    int lsize = 1;
+    if (do_local_reduction) {
+      assert (num_inarrays == num_outvals);
+    } else {
+      for (int d=0; d<num_dims; ++d) {
+        lsize *= dims[d];
+      }
+      assert (num_inarrays * lsize == num_outvals);
+    }
+    assert (num_inarrays * lsize == num_outvals);
+    
+    vect<int,dim> mylsh, mynghostzones;
+    vect<vect<int,2>,dim> mybbox;
     for (int d=0; d<num_dims; ++d) {
       mylsh[d] = dims[d];
-      mybbox[2*d  ] = 0;
-      mybbox[2*d+1] = 0;
+      mybbox[d][0] = 0;
+      mybbox[d][1] = 0;
       mynghostzones[d] = 0;
     }
     for (int d=num_dims; d<dim; ++d) {
       mylsh[d] = 1;
-      mybbox[2*d  ] = 0;
-      mybbox[2*d+1] = 0;
+      mybbox[d][0] = 0;
+      mybbox[d][1] = 0;
       mynghostzones[d] = 0;
     }
     
     const int vartypesize = CCTK_VarTypeSize(outtype);
     assert (vartypesize>=0);
     
-    char *myoutvals = new char [vartypesize * num_outvals];
-    char *mycounts  = new char [vartypesize * num_outvals];
+    vector<char> myoutvals (vartypesize * num_outvals);
+    vector<char> mycounts  (vartypesize * num_outvals);
     
-    Initialise (cgh, proc, num_outvals, myoutvals, outtype, mycounts, red);
-    Reduce     (cgh, proc, mylsh, mybbox, mynghostzones,
-		num_inarrays, inarrays, intype,
-		num_outvals, myoutvals, outtype, mycounts, red);
-    Finalise   (cgh, proc, num_outvals, outvals, outtype, myoutvals, mycounts,
+    Initialise (cgh, proc, num_outvals, &myoutvals[0], outtype, &mycounts[0],
+                red);
+    if (do_local_reduction) {
+      Reduce   (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
+                num_inarrays, inarrays, intype,
+                num_outvals, &myoutvals[0], outtype, &mycounts[0], red);
+    } else {
+      Copy     (cgh, proc, lsize, num_inarrays, inarrays, intype,
+                num_outvals, &myoutvals[0], outtype, &mycounts[0]);
+    }
+    Finalise   (cgh, proc, num_outvals, outvals, outtype,
+                &myoutvals[0], &mycounts[0],
 		red);
-    
-    delete [] myoutvals;
-    delete [] mycounts;
     
     return 0;
   }
@@ -629,10 +700,11 @@ namespace CarpetReduce {
     const int vartypesize = CCTK_VarTypeSize(outtype);
     assert (vartypesize>=0);
     
-    char *myoutvals = new char [vartypesize * num_outvals];
-    char *mycounts  = new char [vartypesize * num_outvals];
+    vector<char> myoutvals (vartypesize * num_outvals);
+    vector<char> mycounts  (vartypesize * num_outvals);
     
-    Initialise (cgh, proc, num_outvals, myoutvals, outtype, mycounts, red);
+    Initialise (cgh, proc, num_outvals, &myoutvals[0], outtype, &mycounts[0],
+                red);
     
     BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
       
@@ -648,7 +720,7 @@ namespace CarpetReduce {
 	assert (nghostzones[d]>=0 && 2*nghostzones[d]<=lsh[d]);
       }
       
-      const void** inarrays = new const void * [num_invars];
+      vector<const void*> inarrays (num_invars);
       for (int n=0; n<num_invars; ++n) {
 	inarrays[n] = CCTK_VarDataPtrI(cgh, 0, invars[n]);
 	assert (inarrays[n]);
@@ -659,33 +731,31 @@ namespace CarpetReduce {
 	assert (CCTK_VarTypeI(invars[n]) == intype);
       }
       
-      int mylsh[dim], mybbox[2*dim], mynghostzones[dim];
+      vect<int,dim> mylsh, mynghostzones;
+      vect<vect<int,2>,dim> mybbox;
       for (int d=0; d<grpdim; ++d) {
 	mylsh[d] = lsh[d];
-        mybbox[2*d  ] = bbox[2*d  ];
-        mybbox[2*d+1] = bbox[2*d+1];
+        mybbox[d][0] = bbox[2*d  ];
+        mybbox[d][1] = bbox[2*d+1];
 	mynghostzones[d] = nghostzones[d];
       }
       for (int d=grpdim; d<dim; ++d) {
 	mylsh[d] = 1;
-        mybbox[2*d  ] = 0;
-        mybbox[2*d+1] = 0;
+        mybbox[d][0] = 0;
+        mybbox[d][1] = 0;
 	mynghostzones[d] = 0;
       }
       
-      Reduce (cgh, proc, mylsh, mybbox, mynghostzones,
-              num_invars, inarrays, intype, num_outvals, myoutvals, outtype,
-              mycounts, red);
-      
-      delete [] inarrays;
+      Reduce (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
+              num_invars, &inarrays[0], intype,
+              num_outvals, &myoutvals[0], outtype,
+              &mycounts[0], red);
       
     } END_LOCAL_COMPONENT_LOOP(cgh);
     
-    Finalise (cgh, proc, num_outvals, outvals, outtype, myoutvals, mycounts,
+    Finalise (cgh, proc, num_outvals, outvals, outtype,
+              &myoutvals[0], &mycounts[0],
 	      red);
-    
-    delete [] myoutvals;
-    delete [] mycounts;
     
     component = saved_component;
     
@@ -736,7 +806,7 @@ namespace CarpetReduce {
   
   
   
-  int CarpetReduceStartup ()
+  void CarpetReduceStartup ()
   {
     CCTK_RegisterReductionOperator (count_GVs,       "count");
     CCTK_RegisterReductionOperator (minimum_GVs,     "minimum");
@@ -761,8 +831,6 @@ namespace CarpetReduce {
     CCTK_RegisterReductionArrayOperator (norm1_arrays,       "norm1");
     CCTK_RegisterReductionArrayOperator (norm2_arrays,       "norm2");
     CCTK_RegisterReductionArrayOperator (norm_inf_arrays,    "norm_inf");
-    
-    return 0;
   }
   
 } // namespace CarpetReduce
