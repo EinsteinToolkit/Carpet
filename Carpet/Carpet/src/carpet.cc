@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.5 2001/03/10 20:55:03 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.6 2001/03/11 10:32:30 eschnett Exp $
 
 /* It is assumed that the number of components of all arrays is equal
    to the number of components of the grid functions, and that their
@@ -32,7 +32,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.5 2001/03/10 20:55:03 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.6 2001/03/11 10:32:30 eschnett Exp $";
 
 
 
@@ -602,10 +602,12 @@ namespace Carpet {
 	    cgh->cctk_gsh[d]
 	      = ((base.shape() / base.stride() + dd->lghosts + dd->ughosts)[d]
 		 * cgh->cctk_levfac[d]);
-	    cgh->cctk_lbnd[d]     = (ext.lower() / ext.stride())[d];
-	    cgh->cctk_ubnd[d]     = (ext.upper() / ext.stride())[d];
-	    cgh->cctk_bbox[2*d  ] = cgh->cctk_lbnd[d] == 0;
-	    cgh->cctk_bbox[2*d+1] = cgh->cctk_ubnd[d] == cgh->cctk_gsh[d]-1;
+	    cgh->cctk_lbnd[d] = (ext.lower() / ext.stride())[d];
+	    cgh->cctk_ubnd[d] = (ext.upper() / ext.stride())[d];
+	    cgh->cctk_bbox[2*d  ]
+	      = reflevel==0 && cgh->cctk_lbnd[d] == 0;
+	    cgh->cctk_bbox[2*d+1]
+	      = reflevel==0 && cgh->cctk_ubnd[d] == cgh->cctk_gsh[d]-1;
 	    for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
 	      // TODO: support staggering
 	      cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
@@ -613,21 +615,11 @@ namespace Carpet {
 	  }
 	  
 	  // set local grid function and array sizes
-#if 0
-	  if (hh->is_local(reflevel, component)) {
-#endif
-	    const bbox<int,dim> ext =
-	      dd->boxes[reflevel][component][mglevel].exterior;
-	    for (int d=0; d<dim; ++d) {
-	      gfsize[d] = ext.shape()[d] / ext.stride()[d];
-	    }
-#if 0
-	  } else {
-	    for (int d=0; d<dim; ++d) {
-	      gfsize[d] = 0;
-	    }
+	  const bbox<int,dim> ext =
+	    dd->boxes[reflevel][component][mglevel].exterior;
+	  for (int d=0; d<dim; ++d) {
+	    gfsize[d] = ext.shape()[d] / ext.stride()[d];
 	  }
-#endif
 	  
 	  for (int group=0; group<CCTK_NumGroups(); ++group) {
 	    const int n0 = CCTK_FirstVarIndexI(group);
@@ -719,11 +711,10 @@ namespace Carpet {
     
 //     Checkpoint ("%*sdone with CallFunction.", 2*reflevel, "");
     
-#if 0
     // return 0: let the flesh do the synchronisation, if necessary
     return 0;
-#endif
     
+#if 0
     // synchronise, because our bbox information was wrong
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       SyncGroup (cgh, CCTK_GroupName(group));
@@ -731,6 +722,7 @@ namespace Carpet {
     
     // return 1: we did synchronise
     return 1;
+#endif
   }
   
   
