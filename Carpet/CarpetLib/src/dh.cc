@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.54 2004/05/21 18:13:41 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.55 2004/06/08 22:58:01 schnetter Exp $
 
 #include <assert.h>
 
@@ -603,6 +603,7 @@ void dh<D>::recompose () {
     
   } else {                      // save memory
     
+    ggf<D>* vectorleader = NULL;
     for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
       
       (*f)->recompose_crop ();
@@ -611,7 +612,25 @@ void dh<D>::recompose () {
         for (comm_state<D> state; !state.done(); state.step()) {
           (*f)->recompose_fill (state, rl);
         }
-        (*f)->recompose_free (rl);
+        if ((*f)->vectorlength == 1) {
+          (*f)->recompose_free (rl);
+        } else {
+          // treat vector groups specially: delete the leader only
+          // after all other elements have been deleted
+          if ((*f)->vectorindex == 0) {
+            // first element: delete nothing
+            assert (! vectorleader);
+            vectorleader = *f;
+          } else {
+            assert (vectorleader);
+            (*f)->recompose_free (rl);
+            if ((*f)->vectorindex == (*f)->vectorlength-1) {
+              // this was the last element: delete the leader as well
+              vectorleader->recompose_free (rl);
+              vectorleader = NULL;
+            }
+          }
+        }
         for (comm_state<D> state; !state.done(); state.step()) {
           (*f)->recompose_bnd_prolongate (state, rl);
         }
@@ -621,6 +640,7 @@ void dh<D>::recompose () {
       } // for rl
       
     } // for gf
+    assert (! vectorleader);
     
   } // save memory
 }

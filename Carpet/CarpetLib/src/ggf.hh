@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.23 2004/04/19 21:38:33 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.24 2004/06/08 22:58:01 schnetter Exp $
 
 #ifndef GGF_HH
 #define GGF_HH
@@ -64,6 +64,7 @@ public:				// should be readonly
 protected:
   fdata storage;		// storage
   
+public:
   int vectorlength;             // vector length
   int vectorindex;              // index of *this
   ggf* vectorleader;            // first vector element
