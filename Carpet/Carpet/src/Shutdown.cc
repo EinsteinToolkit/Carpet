@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.6 2002/03/26 13:22:27 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.7 2002/09/25 19:55:06 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Shutdown_cc)
 
@@ -31,7 +31,9 @@ namespace Carpet {
     cGH* cgh = fc->GH[convlev];
     
     set_mglevel (cgh, 0);
-
+    
+    Waypoint ("Current time is %g", cgh->cctk_time);
+    
     // Terminate
     Waypoint ("%*sScheduling TERMINATE", 2*reflevel, "");
     CCTK_ScheduleTraverse ("CCTK_TERMINATE", cgh, CallFunction);

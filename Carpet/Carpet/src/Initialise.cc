@@ -11,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.18 2002/09/25 15:50:31 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.19 2002/09/25 19:55:05 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Initialise_cc)
 
@@ -47,6 +47,7 @@ namespace Carpet {
     
     // Check parameters
     set_mglevel (cgh, 0);
+    Waypoint ("Current time is %g", cgh->cctk_time);
     Waypoint ("PARAMCHECK");
     CCTK_ScheduleTraverse ("CCTK_PARAMCHECK", cgh, CallFunction);
     CCTKi_FinaliseParamWarn();
@@ -58,13 +59,18 @@ namespace Carpet {
       
       BEGIN_MGLEVEL_LOOP(cgh) {
 	
+	Waypoint ("%*sCurrent time is %g", 2*reflevel, "", cgh->cctk_time);
+	
 	// Checking
 	Poison (cgh, alltimes);
 	
 	// Set up the grid
 	Waypoint ("%*sScheduling BASEGRID", 2*reflevel, "");
 	CCTK_ScheduleTraverse ("CCTK_BASEGRID", cgh, CallFunction);
+	
+	// Allow the time step to be changed
 	if (reflevel==0) {
+	  // Initialise time and time step on coarse grid
 	  base_delta_time = cgh->cctk_delta_time;
 	} else {
 // 	assert (abs(cgh->cctk_delta_time - base_delta_time / reflevelfactor)
@@ -76,15 +82,6 @@ namespace Carpet {
 	// Set up the initial data
 	Waypoint ("%*sScheduling INITIAL", 2*reflevel, "");
 	CCTK_ScheduleTraverse ("CCTK_INITIAL", cgh, CallFunction);
-	Waypoint ("%*sScheduling POSTINITIAL", 2*reflevel, "");
-	CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
-	
-	// Poststep
-	Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
-	CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
-	
-	// Checking
-	PoisonCheck (cgh, alltimes);
 	
       } END_MGLEVEL_LOOP(cgh);
       
@@ -261,8 +258,19 @@ namespace Carpet {
       
       BEGIN_MGLEVEL_LOOP(cgh) {
 	
+	Waypoint ("%*sCurrent time is %g", 2*reflevel, "", cgh->cctk_time);
+	
 	// Restrict
 	Restrict (cgh);
+	
+	// Poststep
+	Waypoint ("%*sScheduling POSTINITIAL", 2*reflevel, "");
+	CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
+	Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
+	CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
+	
+	// Checking
+	PoisonCheck (cgh, alltimes);
 	
 	// Checking
 	CalculateChecksums (cgh, allbutcurrenttime);
@@ -293,4 +301,5 @@ namespace Carpet {
     return 0;
   }
   
+
 } // namespace Carpet

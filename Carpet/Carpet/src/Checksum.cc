@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Checksum.cc,v 1.6 2002/03/26 13:22:26 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Checksum.cc,v 1.7 2002/09/25 19:55:05 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Checksum_cc)
 
@@ -70,7 +70,7 @@ namespace Carpet {
 	      }
 	      const void* data = cgh->data[n][tl];
 	      int chk = 0;
-	      for (int i=0; i<np*sz/(int)sizeof(chk); ++i) {
+	      for (int i=0; i<np*sz/(int)sizeof chk; ++i) {
 		chk += ((const int*)data)[i];
 	      }
 	      checksums[n][reflevel][tl][component].sum = chk;
@@ -123,7 +123,7 @@ namespace Carpet {
 		}
 		const void* data = cgh->data[n][tl];
 		int chk = 0;
-		for (int i=0; i<np*sz/(int)sizeof(chk); ++i) {
+		for (int i=0; i<np*sz/(int)sizeof chk; ++i) {
 		  chk += ((const int*)data)[i];
 		}
 		unexpected_change

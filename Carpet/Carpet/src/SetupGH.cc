@@ -18,7 +18,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.31 2002/08/02 15:11:13 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.32 2002/09/25 19:55:06 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_SetupGH_cc)
 
@@ -89,7 +89,7 @@ namespace Carpet {
 		     baseext);
     
     // Allocate time hierarchy
-    tt = new th(hh, maxreflevelfact);
+    tt = new th(hh, 1.0);
     
     // Allocate data hierarchy
     dd = new dh<dim>(*hh, lghosts, ughosts, prolongation_order_space);
@@ -166,7 +166,7 @@ namespace Carpet {
 					multigrid_factor, vertex_centered,
 					arrext);
 	
-	arrdata[group].tt = new th(arrdata[group].hh, 1);
+	arrdata[group].tt = new th(arrdata[group].hh, 1.0);
 	
 	vect<int,dim> alghosts(0), aughosts(0);
 	for (int d=0; d<gp.dim; ++d) {
@@ -295,7 +295,7 @@ namespace Carpet {
     
     
     // Initialise time step on coarse grid
-    base_delta_time = 0;
+    base_delta_time = 1.0;
     
     // Current iteration
     iteration.resize(maxreflevels, 0);

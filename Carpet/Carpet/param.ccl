@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.20 2002/06/06 19:48:46 shawley Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.21 2002/09/25 19:55:04 schnetter Exp $
 
 shares: Cactus
 
@@ -220,6 +220,7 @@ BOOLEAN periodic_y "do not use this parameter"
 BOOLEAN periodic_z "do not use this parameter"
 {
 } "yes"
+
 
 
 private:

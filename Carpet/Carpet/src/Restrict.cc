@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include <stdlib.h>
 
 #include "cctk.h"
@@ -8,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.9 2002/09/25 15:50:31 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.10 2002/09/25 19:55:06 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Restrict_cc)
 
@@ -37,7 +38,11 @@ namespace Carpet {
 	  // use background time here (which may not be modified by
 	  // the user)
 	  const CCTK_REAL time = tt->time (tl, reflevel, mglevel);
-	  if (tl==0) assert (time == cgh->cctk_time);
+	  if (tl==0) {
+	    const CCTK_REAL time1 = tt->time (tl, reflevel, mglevel);
+	    const CCTK_REAL time2 = cgh->cctk_time / base_delta_time;
+	    assert (fabs(time1 - time2) < 1e-10);
+	  }
 	  
 	  if (mglevel > 0) {
 	    

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.20 2002/09/25 15:50:32 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.21 2002/09/25 19:55:06 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -19,6 +19,11 @@
 #include "Carpet/CarpetLib/src/gh.hh"
 #include "Carpet/CarpetLib/src/th.hh"
   
+#include "carpet_public.h"
+  
+  
+  
+// Stuff with C linkage
 #include "carpet_public.h"
 
   
@@ -69,9 +74,6 @@ namespace Carpet {
   // Time step on base grid
   extern CCTK_REAL base_delta_time;
   
-  // Current time
-  extern CCTK_REAL current_time;
-  
   
   
   // Data for grid functions
@@ -88,7 +90,7 @@ namespace Carpet {
     gh<dim>* hh;
     th* tt;
     dh<dim>* dd;
-    vector<generic_gf<dim>* > data; // [var]
+    vector<generic_gf<dim>*> data; // [var]
   };
   extern vector<arrdesc> arrdata; // [group]
   
@@ -100,13 +102,6 @@ namespace Carpet {
     int sum;
   };
   extern vector<vector<vector<vector<ckdesc> > > > checksums; // [n][rl][tl][c]
-  
-  
-  
-  // Stuff with C linkage
-  extern "C" {
-#include "carpet_public.h"
-  }
   
   
   

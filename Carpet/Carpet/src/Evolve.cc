@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.13 2002/08/02 15:11:12 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.14 2002/09/25 19:55:05 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Evolve_cc)
 
@@ -64,7 +64,6 @@ namespace Carpet {
       
       // Advance time
       ++cgh->cctk_iteration;
-      cgh->cctk_time += base_delta_time / maxreflevelfact;
       
       Waypoint ("Evolving iteration %d...", cgh->cctk_iteration);
       
@@ -76,7 +75,11 @@ namespace Carpet {
 	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
 	    if ((cgh->cctk_iteration-1) % do_every == 0) {
 	      
-	      Waypoint ("Evolving multigrid level %d...", mglevel);
+	      const CCTK_REAL saved_time = cgh->cctk_time;
+	      cgh->cctk_time += cgh->cctk_delta_time;
+	      
+	      Waypoint ("%*sCurrent time is %g", 2*reflevel, "",
+			cgh->cctk_time);
 	      
 	      // Cycle time levels
 	      CycleTimeLevels (cgh);
@@ -88,16 +91,13 @@ namespace Carpet {
 	      CalculateChecksums (cgh, allbutcurrenttime);
 	      Poison (cgh, currenttimebutnotifonly);
 	      
-	      // Evolve
+	      // Evolve, part 1
 	      Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
 	      CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
 	      Waypoint ("%*sScheduling EVOL", 2*reflevel, "");
 	      CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
-	      Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
-	      CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
 	      
-	      // Checking
-	      PoisonCheck (cgh, currenttimebutnotifonly);
+	      cgh->cctk_time = saved_time;
 	      
 	    }
 	  } END_MGLEVEL_LOOP(cgh);
@@ -105,10 +105,14 @@ namespace Carpet {
 	}
       } END_REFLEVEL_LOOP(cgh);
       
+      cgh->cctk_time += base_delta_time / maxreflevelfact;
+      
       BEGIN_REFLEVEL_LOOP(cgh) {
 	const int do_every = maxreflevelfact/reflevelfact;
 	if (cgh->cctk_iteration % do_every == 0) {
 	  
+	  Waypoint ("%*sCurrent time is %g", 2*reflevel, "", cgh->cctk_time);
+
 	  // Regrid
 	  Waypoint ("%*sRegrid", 2*reflevel, "");
 	  Regrid (cgh);
@@ -124,8 +128,18 @@ namespace Carpet {
 	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
 	    if (cgh->cctk_iteration % do_every == 0) {
 	      
+	      Waypoint ("%*sCurrent time is %g", 2*reflevel, "",
+			cgh->cctk_time);
+	      
 	      // Restrict
 	      Restrict (cgh);
+	      
+	      // Evolve, part 2
+	      Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
+	      CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
+	      
+	      // Checking
+	      PoisonCheck (cgh, currenttimebutnotifonly);
 	      
 	      // Checking
 	      CalculateChecksums (cgh, currenttime);
