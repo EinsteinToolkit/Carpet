@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.30 2004/01/25 14:57:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.31 2004/02/09 13:06:05 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -26,7 +26,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    Checkpoint ("EnableGroupStorage %s", groupname);
+    Checkpoint ("EnableGroupStorage \"%s\"", groupname);
     
     // TODO: Enabling storage for one refinement level has to enable
     // it for all other refinement levels as well.  Disabling must
@@ -123,7 +123,7 @@ namespace Carpet {
   
   int DisableGroupStorage (const cGH* cgh, const char* groupname)
   {
-    Checkpoint ("DisableGroupStorage %s", groupname);
+    Checkpoint ("DisableGroupStorage \"%s\"", groupname);
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());

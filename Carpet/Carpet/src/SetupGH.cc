@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.60 2004/02/09 12:43:16 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.61 2004/02/09 13:06:05 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -697,7 +697,7 @@ namespace Carpet {
 	// Recompose for this map
         char * const groupname = CCTK_GroupName (group);
         assert (groupname);
-        Checkpoint ("Recomposing grid array group %s", groupname);
+        Checkpoint ("Recomposing grid array group \"%s\"", groupname);
         free (groupname);
 	arrdata[group][0].hh->recompose (bbsss, obss, pss, 1, false);
 	

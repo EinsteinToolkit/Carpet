@@ -8,7 +8,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.15 2004/01/25 14:57:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.16 2004/02/09 13:06:05 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Poison_cc);
 }
 
@@ -67,7 +67,7 @@ namespace Carpet {
       
       {
         char * const groupname = CCTK_GroupName(group);
-        Checkpoint ("PoisonGroup %s", groupname);
+        Checkpoint ("PoisonGroup \"%s\"", groupname);
         free (groupname);
       }
       
