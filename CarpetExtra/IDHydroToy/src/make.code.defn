@@ -1,8 +1,8 @@
 # Main make.code.defn file for thorn IDHydroToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDHydroToy/src/make.code.defn,v 1.3 2003/09/20 13:47:27 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDHydroToy/src/make.code.defn,v 1.1 2001/03/18 22:37:10 eschnett Exp $
 
 # Source files in this directory
-SRCS = InitialData.F77 Startup.F77 erf.f77 gammln.f77 gammp.f77 gcf.f77 gser.f77
+SRCS = InitialData.F77 Startup.F77
 
 # Subdirectories containing source files
 SUBDIRS = 

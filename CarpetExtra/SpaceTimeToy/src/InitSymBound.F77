@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/InitSymBound.F77,v 1.1 2001/03/17 16:05:56 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/InitSymBound.F77,v 1.2 2001/03/18 22:37:10 eschnett Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
@@ -14,11 +14,6 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/InitS
       DECLARE_CCTK_PARAMETERS
       
       integer ierr
-      integer sym(3)
-      
-      sym(1) = 1
-      sym(2) = 1
-      sym(3) = 1
       
       call Cart3dSetTensorTypeVN (ierr, cctkGH, "SpaceTimeToy::phi", "scalar")
       call Cart3dSetTensorTypeVN (ierr, cctkGH, "SpaceTimeToy::psi", "scalar")

@@ -1,7 +1,7 @@
 # Schedule definitions for thorn SpaceTimeToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/schedule.ccl,v 1.1 2001/03/17 16:05:56 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/schedule.ccl,v 1.2 2001/03/18 22:37:10 eschnett Exp $
 
-STORAGE: scalarevolve
+STORAGE: spacetimeevolve
 STORAGE: icn_state
 
 
@@ -21,13 +21,13 @@ schedule SpaceTimeToy_InitSymBound at BASEGRID
 
 
 
-# ICN integration
+# Iterative Crank-Nicholson integration
 
 schedule SpaceTimeToy_EulerStep at EVOL
 {
   LANG: Fortran
-  STORAGE: scalartemps
-  SYNC: scalarevolve
+  STORAGE: spacetimetemps
+  SYNC: spacetimeevolve
 } "Initial Euler step"
   
 schedule SpaceTimeToy_ICNStep at EVOL \
@@ -35,6 +35,6 @@ schedule SpaceTimeToy_ICNStep at EVOL \
 	while SpaceTimeToy::do_iterate
 {
   LANG: Fortran
-  STORAGE: scalartemps
-  SYNC: scalarevolve
+  STORAGE: spacetimetemps
+  SYNC: spacetimeevolve
 } "One ICN step"

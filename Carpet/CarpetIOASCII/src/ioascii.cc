@@ -22,7 +22,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.9 2001/03/18 05:20:24 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.10 2001/03/18 22:37:04 eschnett Exp $";
 
 
 
@@ -233,7 +233,7 @@ int CarpetIOASCII<outdim>
 	      struct stat fileinfo;
 	      if (! IOUtil_RestartFromRecovery(cgh)
 		  || stat(filename, &fileinfo)!=0) {
-		ofstream file(filename, ios::trunc);
+		ofstream file(filename, ios::out | ios::trunc);
 		assert (file.good());
 		file << "# " << varname;
 		for (int d=0; d<outdim; ++d) {

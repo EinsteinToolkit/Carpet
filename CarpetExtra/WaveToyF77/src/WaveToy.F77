@@ -151,16 +151,16 @@ c     -----------------------------------
          call CCTK_WARN (0, "No boundary condition selected")
       end if
       
-      if (ierr .lt. 0)  then
-        call CCTK_WARN (0, "Boundary conditions not applied - giving up!")
-      end if
+c$$$      if (ierr .lt. 0)  then
+c$$$        call CCTK_WARN (0, "Boundary conditions not applied - giving up!")
+c$$$      end if
       
 c     Apply the symmetry boundary conditions on any coordinate axes
 c     -------------------------------------------------------------
       call Cart3dSymGN (ierr, cctkGH, "wavetoy::scalarevolve")
       
       if (ierr .lt. 0)  then
-        call CCTK_WARN (0, "Boundary conditions not applied - giving up!")
+        call CCTK_WARN (0, "Symmetry conditions not applied - giving up!")
       end if
       
       end

@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.1 2001/03/17 16:05:56 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.2 2001/03/18 22:37:10 eschnett Exp $
       
 #include "cctk.h" 
 #include "cctk_Parameters.h"
@@ -128,24 +128,24 @@ c     Evolve
       
 c     Apply boundary condition
       if (CCTK_EQUALS(bound, "flat")) then
-         call BndFlatGN (ierr, cctkGH, sw, "spacetimetoy::scalarevolve")
+         call BndFlatGN (ierr, cctkGH, sw, "spacetimetoy::spacetimeevolve")
       else if (CCTK_EQUALS(bound, "zero")) then
          call BndScalarGN (ierr, cctkGH, zero, sw,
-     $        "spacetimetoy::scalarevolve")
+     $        "spacetimetoy::spacetimeevolve")
       else if (CCTK_EQUALS(bound, "radiation")) then
          call BndRadiativeGN (ierr, cctkGH, sw, zero, one,
-     $        "spacetimetoy::scalarevolve", "spacetimetoy::scalarevolve")
+     $        "spacetimetoy::spacetimeevolve", "spacetimetoy::spacetimeevolve")
       else if (CCTK_EQUALS(bound, "robin")) then
          call BndRobinGN (ierr, cctkGH, sw, finf, npow,
-     $        "spacetimetoy::scalarevolve")
+     $        "spacetimetoy::spacetimeevolve")
       else
          call CCTK_WARN (0, "Internal error")
       end if
-      if (ierr .lt. 0)  then
-         call CCTK_WARN (0, "Error while applying boundary condition")
-      end if
+c$$$      if (ierr .lt. 0)  then
+c$$$         call CCTK_WARN (0, "Error while applying boundary condition")
+c$$$      end if
       
-      call Cart3dSymGN (ierr, cctkGH, "spacetimetoy::scalarevolve")
+      call Cart3dSymGN (ierr, cctkGH, "spacetimetoy::spacetimeevolve")
       if (ierr .lt. 0)  then
          call CCTK_WARN (0, "Error while applying boundary condition")
       end if

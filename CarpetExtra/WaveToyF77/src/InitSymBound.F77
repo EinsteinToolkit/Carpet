@@ -37,13 +37,7 @@ c	-*-Fortran-*-
       DECLARE_CCTK_PARAMETERS
       
       integer ierr
-      integer sym(3)
       
-      sym(1) = 1
-      sym(2) = 1
-      sym(3) = 1
-      
-      call Cart3dSetTensorTypeVN (ierr, cctkGH,
-     $     'wavetoy::phi', 'SCALAR')
+      call Cart3dSetTensorTypeVN (ierr, cctkGH, 'wavetoy::phi', 'SCALAR')
       
       end

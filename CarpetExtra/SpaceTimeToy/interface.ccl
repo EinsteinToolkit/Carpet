@@ -1,21 +1,20 @@
 # Interface definition for thorn SpaceTimeToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/interface.ccl,v 1.1 2001/03/17 16:05:56 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/interface.ccl,v 1.2 2001/03/18 22:37:10 eschnett Exp $
 
 implements: spacetimetoy
-inherits: grid
 
 
 
 public:
 
-CCTK_REAL scalarevolve type=GF timelevels=2
+CCTK_REAL spacetimeevolve type=GF timelevels=2
 {
   phi psi
-} "The evolved scalar fields"
+} "The evolved spacetime fields"
 
 private:
 
-CCTK_REAL scalartemps type=GF
+CCTK_REAL spacetimetemps type=GF
 {
   phi_i psi_i
 } "Intermediate values for the integrator"
