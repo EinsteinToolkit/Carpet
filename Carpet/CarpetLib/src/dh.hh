@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.2 2001/03/07 13:00:57 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.3 2001/03/10 20:55:06 eschnett Exp $
 
  ***************************************************************************/
 
@@ -73,13 +73,15 @@ class dh {
     iblistvect send_ref_bnd_fine;
     
     ibset boundaries;		// boundaries
-    iblistvect recv_sync;	// receive while syncing
-    iblistvect recv_ref_bnd_coarse;
+    iblistvect recv_sync;	// received while syncing
+    iblistvect recv_ref_bnd_coarse; // received from coarser grids
+    ibset sync_not;		// not received while syncing (outer boundary)
   };
   
   struct dbases {
     ibbox exterior;		// whole region (including boundaries)
     ibbox interior;		// interior (without boundaries)
+    ibset boundaries;		// boundaries
   };
   
   typedef vector<dboxes> mboxes; // ... for each multigrid level

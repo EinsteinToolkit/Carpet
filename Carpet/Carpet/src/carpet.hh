@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.2 2001/03/05 14:30:03 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.3 2001/03/10 20:55:03 eschnett Exp $
 
 #include <vector>
 
@@ -47,6 +47,9 @@ namespace Carpet {
   };
   extern vector<gfdesc> gfdata;	// [group]
   
+  // active time level
+  extern int activetimelevel;	// 0 for current, 1 for next
+  
   // current position on the grid hierarchy
   extern int mglevel;
   extern int reflevel;
@@ -76,7 +79,6 @@ namespace Carpet {
   int EnableGroupComm (cGH *cgh, const char *groupname);
   int DisableGroupComm (cGH *cgh, const char *groupname);
   int Barrier (cGH *cgh);
-//   int ParallelInit (cGH *cgh);
   int Exit (cGH *cgh, int retval);
   int Abort (cGH *cgh, int retval);
   int myProc (cGH *cgh);

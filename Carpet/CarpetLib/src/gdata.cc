@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.4 2001/03/07 13:00:57 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.5 2001/03/10 20:55:06 eschnett Exp $
 
  ***************************************************************************/
 
@@ -20,6 +20,7 @@
 
 #include <cassert>
 #include <fstream>
+#include <iomanip>
 
 #include "bbox.hh"
 #include "defs.hh"
@@ -67,6 +68,8 @@ void generic_data<D>::write_ascii (const string name, const int time,
       ofstream file(name.c_str(), ios::app);
       assert (file.good());
       
+      file << setprecision(15);
+      
       file << "#" << endl
 	   << "# iteration " << time << endl
 	   << "# time level " << tl << "   refinement level " << rl
@@ -111,7 +114,8 @@ void generic_data<D>::write_ascii (const string name, const int time,
   } else {
     // copy to processor 0 and output there
     
-    generic_data* tmp = make_typed(_extent, 0);
+    generic_data* const tmp = make_typed();
+    tmp->allocate(_extent, 0);
     tmp->copy_from (this, _extent);
     tmp->write_ascii (name, time, org, dirs, tl, rl, c, ml);
     delete tmp;

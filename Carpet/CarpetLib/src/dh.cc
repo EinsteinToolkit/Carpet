@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.3 2001/03/07 13:00:57 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.4 2001/03/10 20:55:06 eschnett Exp $
 
  ***************************************************************************/
 
@@ -66,18 +66,18 @@ void dh<D>::recompose () {
       boxes[rl][c].resize(h.mglevels(rl,c));
       for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
        	const ibbox intr = h.extents[rl][c][ml];
-        	
+	
        	// Interior
        	// (the interior of the grid has the extent as specified by
        	// the user)
        	boxes[rl][c][ml].interior = intr;
-        	
+	
        	// Exterior (add ghost zones)
        	// (the content of the exterior is completely determined by
        	// the interior of this or other components; the content of
        	// the exterior is redundant)
        	boxes[rl][c][ml].exterior = intr.expand(lghosts, ughosts);
-        	
+	
        	// Boundaries (ghost zones only)
        	// (interior + boundaries = exterior)
        	boxes[rl][c][ml].boundaries = boxes[rl][c][ml].exterior - intr;
@@ -118,8 +118,9 @@ void dh<D>::recompose () {
       for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
       	const ibbox intr = boxes[rl][c][ml].interior;
       	const ibbox extr = boxes[rl][c][ml].exterior;
+
       	const ibset bnds = boxes[rl][c][ml].boundaries;
-      	
+	
       	// Sync boxes
       	for (int cc=0; cc<h.components(rl); ++cc) {
       	  assert (ml<h.mglevels(rl,cc));
@@ -208,6 +209,31 @@ void dh<D>::recompose () {
     } // for c
   } // for rl
   
+  for (int rl=0; rl<h.reflevels(); ++rl) {
+    for (int c=0; c<h.components(rl); ++c) {
+      for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
+	
+	// Boundaries that are neither synced nor prolonged from
+	// coarser grids (outer boundaries)
+	ibset& sync_not = boxes[rl][c][ml].sync_not;
+	
+	// The whole boundary
+	sync_not = boxes[rl][c][ml].boundaries;
+	
+	// Subtract boxes received during synchronisation
+	const iblistvect& recv_sync = boxes[rl][c][ml].recv_sync;
+	for (iblistvect::const_iterator lvi=recv_sync.begin();
+	     lvi!=recv_sync.end(); ++lvi) {
+	  for (iblist::const_iterator li=lvi->begin();
+	       li!=lvi->end(); ++li) {
+	    sync_not -= *li;
+	  }
+	}
+	
+      } // for ml
+    } // for c
+  } // for rl
+  
   bases.resize(h.reflevels());
   for (int rl=0; rl<h.reflevels(); ++rl) {
     if (h.components(rl)==0) {
@@ -221,6 +247,8 @@ void dh<D>::recompose () {
 	  bases[rl][ml].exterior *= boxes[rl][c][ml].exterior;
 	  bases[rl][ml].interior *= boxes[rl][c][ml].interior;
 	}
+	bases[rl][ml].boundaries
+	  = bases[rl][ml].exterior - bases[rl][ml].interior;
       }
     }
   }
@@ -247,6 +275,7 @@ void dh<D>::recompose () {
       	cout << "boundaries=" << boxes[rl][c][ml].boundaries << endl;
       	cout << "recv_sync=" << boxes[rl][c][ml].recv_sync << endl;
       	cout << "recv_ref_bnd_coarse=" << boxes[rl][c][ml].recv_ref_bnd_coarse << endl;
+      	cout << "sync_not=" << boxes[rl][c][ml].sync_not << endl;
       }
     }
   }
@@ -258,6 +287,7 @@ void dh<D>::recompose () {
       	cout << "rl=" << rl << " ml=" << ml << endl;
       	cout << "exterior=" << bases[rl][ml].exterior << endl;
       	cout << "interior=" << bases[rl][ml].interior << endl;
+      	cout << "boundaries=" << bases[rl][ml].boundaries << endl;
       }
     }
   }

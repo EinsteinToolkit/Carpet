@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.2 2001/03/05 14:31:03 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.3 2001/03/10 20:55:06 eschnett Exp $
 
  ***************************************************************************/
 
@@ -27,7 +27,6 @@
 #include "defs.hh"
 #include "dist.hh"
 #include "bbox.hh"
-#include "bboxset.hh"
 #include "gdata.hh"
 #include "vect.hh"
 
@@ -49,7 +48,6 @@ class data: public generic_data<D> {
   // Types
   typedef vect<int,D> ivect;
   typedef bbox<int,D> ibbox;
-  typedef bboxset<int,D> ibset;
 
   // Fields
   T* restrict _storage;		// the data (if located on this processor)
@@ -64,15 +62,16 @@ public:
   virtual ~data ();
 
   // Pseudo constructors
-  virtual data* make_typed (const ibbox& extent, const int proc) const;
+  virtual data* make_typed () const;
 
   // Storage management
-  virtual void allocate (const ibbox& extent, const int proc);
+  virtual void allocate (const ibbox& extent, const int proc,
+			 void* const mem=0);
   virtual void free ();
   virtual void transfer_from (generic_data<D>* gsrc);
 
   // Processor management
-  virtual void change_processor (const int newproc);
+  virtual void change_processor (const int newproc, void* const mem=0);
 
   // Accessors
   virtual const T* storage () const {

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.3 2001/03/05 21:48:38 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.4 2001/03/10 20:55:06 eschnett Exp $
 
  ***************************************************************************/
 
@@ -56,13 +56,14 @@ data<T,D>::~data () {
   
 // Pseudo constructors
 template<class T, int D>
-data<T,D>* data<T,D>::make_typed (const ibbox& extent, const int proc) const {
-  return new data(extent, proc);
+data<T,D>* data<T,D>::make_typed () const {
+  return new data();
 }
 
 // Storage management
 template<class T, int D>
-void data<T,D>::allocate (const ibbox& extent, const int proc) {
+void data<T,D>::allocate (const ibbox& extent, const int proc,
+			  void* const mem=0) {
   assert (!_has_storage);
   _has_storage = true;
   // data
@@ -77,13 +78,20 @@ void data<T,D>::allocate (const ibbox& extent, const int proc) {
   int rank;
   MPI_Comm_rank (dist::comm, &rank);
   if (rank==_proc) {
-    _storage = new T[_size];
+    _owns_storage = !mem;
+    if (!mem) {
+      _storage = new T[_size];
+    } else {
+      _storage = (T*)mem;
+    }
+  } else {
+    assert (!mem);
   }
 }
 
 template<class T, int D>
 void data<T,D>::free () {
-  if (_storage) delete [] _storage;
+  if (_storage && _owns_storage) delete [] _storage;
   _storage = 0;
   _has_storage = false;
 }
@@ -99,9 +107,12 @@ void data<T,D>::transfer_from (generic_data<D>* gsrc) {
 // Processor management
 
 template<class T, int D>
-void data<T,D>::change_processor (const int newproc) {
-  if (newproc == _proc) return;
-
+void data<T,D>::change_processor (const int newproc, void* const mem=0) {
+  if (newproc == _proc) {
+    assert (!mem);
+    return;
+  }
+  
   if (_has_storage) {
     int rank;
     MPI_Comm_rank (dist::comm, &rank);
@@ -109,7 +120,12 @@ void data<T,D>::change_processor (const int newproc) {
       // copy from other processor
       
       assert (!_storage);
-      _storage = new T[_size];
+      _owns_storage = !mem;
+      if (!mem) {
+	_storage = new T[_size];
+      } else {
+	_storage = (T*)mem;
+      }
 
       T dummy;
       MPI_Status status;
@@ -118,16 +134,20 @@ void data<T,D>::change_processor (const int newproc) {
 
     } else if (rank == _proc) {
       // copy to other processor
-
+      
+      assert (!mem);
       assert (_storage);
       T dummy;
       MPI_Send (_storage, _size, dist::datatype(dummy), newproc,
 		dist::tag, dist::comm);
 
-      delete [] _storage;
+      if (_owns_storage) {
+	delete [] _storage;
+      }
       _storage = 0;
-  	
+      
     } else {
+      assert (!mem);
       assert (!_storage);
     }
   }
@@ -166,7 +186,7 @@ void data<T,D>::copy_from (const generic_data<D>* gsrc, const ibbox& box) {
   } else {
     
     // copy to different processor
-    data* tmp = new data(box, src->_proc);
+    data* const tmp = new data(box, src->_proc);
     tmp->copy_from (src, box);
     tmp->change_processor (_proc);
     copy_from (tmp, box);
@@ -228,7 +248,7 @@ void data<T,D>::interpolate_from (const generic_data<D>* gsrc,
   } else {
     // interpolate from other processor
     
-    data* tmp = new data(box, src->_proc);
+    data* const tmp = new data(box, src->_proc);
     tmp->interpolate_from (src, box);
     tmp->change_processor (_proc);
     copy_from (tmp, box);
@@ -300,9 +320,9 @@ void data<T,D>::interpolate_from (const generic_data<D>* gsrc,
   } else {
     // interpolate from other processors
 
-    data* smp = new data(box, src->_proc);
+    data* const smp = new data(box, src->_proc);
     smp->copy_from (src, box);
-    data* tmp = new data(box, trc->_proc);
+    data* const tmp = new data(box, trc->_proc);
     tmp->copy_from (trc, box);
     interpolate_from (smp, sfact, tmp, tfact, box);
     delete smp;

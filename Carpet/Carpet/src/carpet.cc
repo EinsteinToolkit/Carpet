@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.4 2001/03/07 12:59:53 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.5 2001/03/10 20:55:03 eschnett Exp $
 
 /* It is assumed that the number of components of all arrays is equal
    to the number of components of the grid functions, and that their
@@ -31,6 +31,8 @@
 #include "Carpet/CarpetLib/src/vect.hh"
 
 #include "carpet.hh"
+
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.5 2001/03/10 20:55:03 eschnett Exp $";
 
 
 
@@ -66,6 +68,9 @@ namespace Carpet {
   
   // data for grid functions
   vector<gfdesc> gfdata;	// [group]
+  
+  // active time level
+  int activetimelevel;		// 0 for current, 1 for next
   
   // current position on the grid hierarchy
   int mglevel;
@@ -114,13 +119,24 @@ namespace Carpet {
     Checkpoint ("starting SetupGH...");
     
     // ghost zones
-    const vect<int,dim> lghosts(ghost_size_x, ghost_size_y, ghost_size_z);
-    const vect<int,dim> ughosts(ghost_size_x, ghost_size_y, ghost_size_z);
+    vect<int,dim> lghosts, ughosts;
+    if (ghost_size == -1) {
+      lghosts = vect<int,dim>(ghost_size_x, ghost_size_y, ghost_size_z);
+      ughosts = vect<int,dim>(ghost_size_x, ghost_size_y, ghost_size_z);
+    } else {
+      lghosts = vect<int,dim>(ghost_size, ghost_size, ghost_size);
+      ughosts = vect<int,dim>(ghost_size, ghost_size, ghost_size);
+    }
     
     // grid size
     const int stride
       = (int)floor(pow(refinement_factor, max_refinement_levels) + 0.5);
-    const vect<int,dim> npoints(global_nx, global_ny, global_nz);
+    vect<int,dim> npoints;
+    if (global_nsize == -1) {
+      npoints =  vect<int,dim>(global_nx, global_ny, global_nz);
+    } else {
+      npoints =  vect<int,dim>(global_nsize, global_nsize, global_nsize);
+    }
     
     const vect<int,dim> str(stride);
     const vect<int,dim> lb(lghosts * str);
@@ -206,6 +222,9 @@ namespace Carpet {
 	abort();
       }
     }
+    
+    // active time level
+    activetimelevel = 0;
     
     // current position
     reflevel  = 0;
@@ -342,6 +361,10 @@ namespace Carpet {
     Checkpoint ("%*sstarting RecursiveEvolve on level %d...",
 		2*reflevel, "", reflevel);
     
+    // Move activity to next time level
+    assert (activetimelevel == 0);
+    activetimelevel = 1;
+    
     // Prestep
     CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
     
@@ -359,11 +382,15 @@ namespace Carpet {
       cgh->cctk_time += cgh->cctk_delta_time;
     }
     
+    // Restrict
+    Restrict (cgh);
+    
     // Cycle time levels
     CycleTimeLevels (cgh);
     
-    // Restrict
-    Restrict (cgh);
+    // Move activity back to current time level
+    assert (activetimelevel == 1);
+    activetimelevel = 0;
     
     // Poststep
     CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
@@ -391,8 +418,8 @@ namespace Carpet {
     
     RecursiveShutdown (cgh);
     
-    fprintf (stdout, "--------------------------------------------------------------------------------\n"
-	     "Done.\n");
+    CCTK_PRINTSEPARATOR;
+    printf ("Done.\n");
     
     // earlier checkpoint before calling finalising MPI
     Checkpoint ("done with Shutdown.");
@@ -575,11 +602,10 @@ namespace Carpet {
 	    cgh->cctk_gsh[d]
 	      = ((base.shape() / base.stride() + dd->lghosts + dd->ughosts)[d]
 		 * cgh->cctk_levfac[d]);
-	    // TODO: set boundary information correctly
-	    cgh->cctk_bbox[2*d  ] = 1;
-	    cgh->cctk_bbox[2*d+1] = 1;
 	    cgh->cctk_lbnd[d]     = (ext.lower() / ext.stride())[d];
 	    cgh->cctk_ubnd[d]     = (ext.upper() / ext.stride())[d];
+	    cgh->cctk_bbox[2*d  ] = cgh->cctk_lbnd[d] == 0;
+	    cgh->cctk_bbox[2*d+1] = cgh->cctk_ubnd[d] == cgh->cctk_gsh[d]-1;
 	    for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
 	      // TODO: support staggering
 	      cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
@@ -750,7 +776,8 @@ namespace Carpet {
     }
     
     const int n0 = CCTK_FirstVarIndexI(group);
-    const int tl = max(0, CCTK_NumTimeLevelsFromVarI(n0) - 1);
+    const int tl = max(0, (CCTK_NumTimeLevelsFromVarI(n0)
+			   + activetimelevel - 2));
     
     switch (CCTK_GroupTypeI(group)) {
       
@@ -1001,6 +1028,7 @@ namespace Carpet {
     const int reflevels = max_refinement_levels; // arbitrary value
     const int mglevels  = 1;	// arbitrary value
     vector<vector<bbox<int,dim> > > bbss(reflevels);
+    // note: what this routine calls "ub" is "ub+str" elsewhere
     vect<int,dim> rstr = hh->baseextent.stride();
     vect<int,dim> rlb  = hh->baseextent.lower();
     vect<int,dim> rub  = hh->baseextent.upper() + rstr;
@@ -1018,8 +1046,9 @@ namespace Carpet {
 	vect<int,dim> cstr = rstr;
 	vect<int,dim> clb = rlb;
 	vect<int,dim> cub = rub;
-	const int zstep = ((rub[dim-1] - rlb[dim-1] + rstr[dim-1])
-			   / cstr[dim-1] + nprocs) / nprocs * cstr[dim-1];
+	const int glonpz = (rub[dim-1] - rlb[dim-1]) / cstr[dim-1];
+	const int locnpz = (glonpz + nprocs - 1) / nprocs;
+	const int zstep = locnpz * cstr[dim-1];
 	clb[dim-1] = rlb[dim-1] + zstep *  c;
 	cub[dim-1] = rlb[dim-1] + zstep * (c+1);
 	if (c == nprocs-1) cub[dim-1] = rub[dim-1];
@@ -1103,7 +1132,8 @@ namespace Carpet {
       for (int group=0; group<CCTK_NumGroups(); ++group) {
 	
 	const int n0 = CCTK_FirstVarIndexI(group);
-	const int tl = max(0, CCTK_NumTimeLevelsFromVarI(n0) - 1);
+	const int tl = max(0, (CCTK_NumTimeLevelsFromVarI(n0)
+			       + activetimelevel - 2));
 	
 	switch (CCTK_GroupTypeI(group)) {
 	  

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.2 2001/03/05 14:31:03 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.3 2001/03/10 20:55:06 eschnett Exp $
 
  ***************************************************************************/
 
@@ -30,7 +30,6 @@
 #include "defs.hh"
 #include "dist.hh"
 #include "bbox.hh"
-#include "bboxset.hh"
 #include "vect.hh"
 
 
@@ -51,12 +50,12 @@ class generic_data {
   // Types
   typedef vect<int,D> ivect;
   typedef bbox<int,D> ibbox;
-  typedef bboxset<int,D> ibset;
 
 protected:                      // should be readonly
 
   // Fields
   bool _has_storage;		// has storage associated (on some processor)
+  bool _owns_storage;		// owns the storage
   ivect _shape, _stride;      	// shape and index order
   int _size;			// size
 
@@ -73,20 +72,24 @@ public:
   virtual ~generic_data ();
 
   // Pseudo constructors
-  virtual generic_data* make_typed (const ibbox& extent, const int proc) const
-    = 0;
+  virtual generic_data* make_typed () const = 0;
 
   // Storage management
-  virtual void allocate (const ibbox& extent, const int proc) = 0;
+  virtual void allocate (const ibbox& extent, const int proc,
+			 void* const mem=0) = 0;
   virtual void free () = 0;
   virtual void transfer_from (generic_data* src) = 0;
 
   // Processor management
-  virtual void change_processor (const int newproc) = 0;
+  virtual void change_processor (const int newproc, void* const mem=0) = 0;
 
   // Accessors
   bool has_storage () const {
     return _has_storage;
+  }
+  bool owns_storage () const {
+    assert (_has_storage);
+    return _owns_storage;
   }
   
   virtual const void* storage () const = 0;

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.3 2001/03/07 13:00:57 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.4 2001/03/10 20:55:06 eschnett Exp $
 
  ***************************************************************************/
 
@@ -96,6 +96,8 @@ public:
   bbox contracted_for (const bbox& b) const;
   
   // Set operations
+  // TODO: rename these; they clash with the bboxset operations
+  // (and name them & and | instead)
   // Smallest bbox containing both boxes
   bbox operator* (const bbox& b) const;
   bbox& operator*= (const bbox& b);

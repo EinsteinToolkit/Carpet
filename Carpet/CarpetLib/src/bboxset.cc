@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.2 2001/03/10 20:55:06 eschnett Exp $
 
  ***************************************************************************/
 
@@ -38,7 +38,7 @@ bboxset<T,D>::bboxset () {
 
 template<class T, int D>
 bboxset<T,D>::bboxset (const box& b) {
-  bs.insert(b);
+  if (!b.empty()) bs.insert(b);
   assert (invariant());
 }
 
