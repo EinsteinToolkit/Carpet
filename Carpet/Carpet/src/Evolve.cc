@@ -31,7 +31,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.34 2004/02/03 16:48:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.35 2004/02/09 12:58:00 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -58,10 +58,10 @@ namespace Carpet {
     } else {
       
       const bool term_iter = iteration >= cctk_itlast;
-      const bool term_time = ((cctk_initial_time < cctk_final_time
-                              ? time >= cctk_final_time
-                              : time <= cctk_final_time)
-                              && iteration % maxreflevelfact == 0);
+      const bool term_time
+        = (cctk_initial_time < cctk_final_time
+           ? time >= cctk_final_time - 1.0e-8 * cgh->cctk_delta_time
+           : time <= cctk_final_time - 1.0e-8 * cgh->cctk_delta_time);
 #ifdef HAVE_TIME_GETTIMEOFDAY
       // get the current time
       struct timeval tv;
@@ -138,26 +138,35 @@ namespace Carpet {
       ++cgh->cctk_iteration;
       global_time += delta_time / maxreflevelfact;
       cgh->cctk_time = global_time;
-      Waypoint ("Evolving iteration %d at t=%g",
-                cgh->cctk_iteration, (double)cgh->cctk_time);
+      if ((cgh->cctk_iteration-1) % (maxreflevelfact / ipow(reffact, reflevels-1)) == 0) {
+        Waypoint ("Evolving iteration %d at t=%g",
+                  cgh->cctk_iteration, (double)cgh->cctk_time);
+      }
+      
+      
       
       bool have_done_global_mode = false;
       bool have_done_anything = false;
+      
       for (int rl=0; rl<reflevels; ++rl) {
-        BEGIN_MGLEVEL_LOOP(cgh) {
-          enter_level_mode (cgh, rl);
-          const int do_every = mglevelfact * (maxreflevelfact/reflevelfact);
+        for (int ml=mglevels-1; ml>=0; --ml) {
+          const int do_every = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl));
           if ((cgh->cctk_iteration-1) % do_every == 0) {
-            int coarsest_reflevel = maxreflevels;
-            while (coarsest_reflevel > 0
-                   && (cgh->cctk_iteration-1) % (mglevelfact * (maxreflevelfact / ipow(reffact, coarsest_reflevel-1))) == 0) {
-              --coarsest_reflevel;
+            enter_global_mode (cgh, ml);
+            enter_level_mode (cgh, rl);
+            
+            {
+              int coarsest_reflevel = maxreflevels;
+              while (coarsest_reflevel > 0
+                     && (cgh->cctk_iteration-1) % (mglevelfact * (maxreflevelfact / ipow(reffact, coarsest_reflevel-1))) == 0) {
+                --coarsest_reflevel;
+              }
+              do_global_mode = reflevel==coarsest_reflevel;
+              do_meta_mode = do_global_mode && mglevel==mglevels-1;
+              if (do_global_mode) assert (! have_done_global_mode);
+              have_done_global_mode = have_done_global_mode || do_global_mode;
+              have_done_anything = true;
             }
-            do_global_mode = reflevel==coarsest_reflevel;
-            do_meta_mode = do_global_mode && mglevel==mglevels-1;
-            if (do_global_mode) assert (! have_done_global_mode);
-            have_done_global_mode = have_done_global_mode || do_global_mode;
-            have_done_anything = true;
             
             // Advance times
             for (int m=0; m<maps; ++m) {
@@ -186,42 +195,66 @@ namespace Carpet {
             // Checking
             PoisonCheck (cgh, currenttime);
             
+            leave_level_mode (cgh);
+            leave_global_mode (cgh);
           } // if do_every
-          leave_level_mode (cgh);
-        } END_MGLEVEL_LOOP;
+        } // for ml
       } // for rl
+      
       if (have_done_anything) assert (have_done_global_mode);
+      
+      
+      
+      for (int rl=reflevels-1; rl>=0; --rl) {
+        for (int ml=mglevels-1; ml>=0; --ml) {
+          const int do_every = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl));
+          if (cgh->cctk_iteration % do_every == 0) {
+            enter_global_mode (cgh, ml);
+            enter_level_mode (cgh, rl);
+            
+            // Restrict
+            Restrict (cgh);
+            
+            leave_level_mode (cgh);
+            leave_global_mode (cgh);
+          } // if do_every
+        } // for ml
+      } // for rl
       
       
       
       have_done_global_mode = false;
       have_done_anything = false;
-      for (int rl=reflevels-1; rl>=0; --rl) {
-        BEGIN_REVERSE_MGLEVEL_LOOP(cgh) {
-          enter_level_mode (cgh, rl);
-          const int do_every = mglevelfact * (maxreflevelfact/reflevelfact);
+      
+      for (int rl=0; rl<reflevels; ++rl) {
+        for (int ml=mglevels-1; ml>=0; --ml) {
+          const int do_every = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl));
           if (cgh->cctk_iteration % do_every == 0) {
-            int coarsest_reflevel = maxreflevels;
-            while (coarsest_reflevel > 0
-                   && cgh->cctk_iteration % (mglevelfact * (maxreflevelfact / ipow(reffact, coarsest_reflevel-1))) == 0) {
-              --coarsest_reflevel;
+            enter_global_mode (cgh, ml);
+            enter_level_mode (cgh, rl);
+            
+            {
+              int coarsest_reflevel = maxreflevels;
+              while (coarsest_reflevel > 0
+                     && cgh->cctk_iteration % (mglevelfact * (maxreflevelfact / ipow(reffact, coarsest_reflevel-1))) == 0) {
+                --coarsest_reflevel;
+              }
+              do_global_mode = reflevel==coarsest_reflevel;
+              do_meta_mode = do_global_mode && mglevel==mglevels-1;
+              if (do_global_mode) assert (! have_done_global_mode);
+              have_done_global_mode = have_done_global_mode || do_global_mode;
+              have_done_anything = true;
             }
-            do_global_mode = reflevel==coarsest_reflevel;
-            do_meta_mode = do_global_mode && mglevel==mglevels-1;
-            if (do_global_mode) assert (! have_done_global_mode);
-            have_done_global_mode = have_done_global_mode || do_global_mode;
-            have_done_anything = true;
             
             Waypoint ("Evolution II at iteration %d time %g%s%s",
                       cgh->cctk_iteration, (double)cgh->cctk_time,
                       (do_global_mode ? " (global)" : ""),
                       (do_meta_mode ? " (meta)" : ""));
             
-            // Restrict
-            Restrict (cgh);
-            
             Checkpoint ("Scheduling POSTRESTRICT");
             CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cgh, CallFunction);
+            
+            // Poststep
             Checkpoint ("Scheduling POSTSTEP");
             CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
 	    
@@ -244,10 +277,12 @@ namespace Carpet {
             // Checking
             CheckChecksums (cgh, alltimes);
 	    
+            leave_level_mode (cgh);
+            leave_global_mode (cgh);
           } // if do_every
-          leave_level_mode (cgh);
-        } END_REVERSE_MGLEVEL_LOOP;
+        } // for ml
       } // for rl
+      
       if (have_done_anything) assert (have_done_global_mode);
       
     } // main loop
