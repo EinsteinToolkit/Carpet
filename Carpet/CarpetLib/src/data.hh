@@ -35,7 +35,7 @@ class data: public gdata
   
   void register_client (int index);
   void unregister_client (int index);
-  bool has_clients ();
+  bool has_clients () const;
   
 public:
   

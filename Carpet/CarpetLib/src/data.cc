@@ -50,7 +50,7 @@ data<T>::data (const int varindex_, const operator_type transport_operator_,
   assert ((vectorindex==0 && !vectorleader)
           || (vectorindex!=0 && vectorleader));
   if (vectorindex==0) vectorclients.resize (vectorlength);
-  if (vectorleader) vectorleader->register_client (vectorindex);
+  if (vectorindex!=0) vectorleader->register_client (vectorindex);
 }
 
 template<typename T>
@@ -68,7 +68,7 @@ data<T>::data (const int varindex_, const operator_type transport_operator_,
   assert ((vectorindex==0 && !vectorleader)
           || (vectorindex!=0 && vectorleader));
   if (vectorindex==0) vectorclients.resize (vectorlength);
-  if (vectorleader) vectorleader->register_client (vectorindex);
+  if (vectorindex!=0) vectorleader->register_client (vectorindex);
   allocate(extent_, proc_);
 }
 
@@ -109,13 +109,10 @@ void data<T>::unregister_client (const int index)
 }
 
 template<typename T>
-bool data<T>::has_clients ()
+bool data<T>::has_clients () const
 {
-  bool retval = false;
-  for (int n=0; n<vectorlength; ++n) {
-    retval |= vectorclients.at(n);
-  }
-  return retval;
+  return (find (vectorclients.begin(), vectorclients.end(), true)
+          != vectorclients.end());
 }
 
 
