@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.19 2004/03/26 14:43:55 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.20 2004/03/26 15:51:12 bzink Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -629,8 +629,8 @@ namespace CarpetIOHDF5 {
 	    if ( (grouptype == CCTK_GF) || (grouptype == CCTK_ARRAY)){
 	      const int gpdim = CCTK_GroupDimI(group);
 	      int gtotalsize=1;
-	      int tlsh[gpdim];
-	      assert(!CCTK_GrouplshGI(cctkGH,gpdim,tlsh,group));
+	      vector<int> tlsh(gpdim);
+	      assert(!CCTK_GrouplshGI(cctkGH,gpdim,&tlsh[0],group));
 	      for(int i=0;i<gpdim;i++) {
 		gtotalsize=tlsh[i];		  
 	      }
