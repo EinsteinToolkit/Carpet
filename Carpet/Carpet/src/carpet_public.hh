@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.37 2003/09/30 11:58:42 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.38 2003/10/13 11:44:51 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -165,7 +165,7 @@ namespace Carpet {
   // Refinement level iterator
   
 #define BEGIN_REFLEVEL_LOOP(cgh)                        \
-  do {                                                  \
+  if (true) {                                           \
     int _rll;                                           \
     cGH * const _cgh = const_cast<cGH*>(cgh);           \
     assert (reflevel==-1);                              \
@@ -177,14 +177,14 @@ namespace Carpet {
     }                                           \
     set_reflevel (_cgh, -1);                    \
     _rll = 0;                                   \
-  } while (0)
+  } else
   
   
   
   // Reverse refinement level iterator
   
 #define BEGIN_REVERSE_REFLEVEL_LOOP(cgh)                \
-  do {                                                  \
+  if (true) {                                           \
     int _rrll;                                          \
     cGH * const _cgh = const_cast<cGH*>(cgh);           \
     assert (reflevel==-1);                              \
@@ -196,14 +196,14 @@ namespace Carpet {
     }                                           \
     set_reflevel (_cgh, -1);                    \
     _rrll = 0;                                  \
-  } while (0)
+  } else
   
   
   
   // Multigrid level iterator
   
 #define BEGIN_MGLEVEL_LOOP(cgh)                         \
-  do {                                                  \
+  if (true) {                                           \
     int _mgl;                                           \
     cGH * const _cgh = const_cast<cGH*>(cgh);           \
     assert (reflevel>=0 && reflevel<hh->reflevels());   \
@@ -216,7 +216,7 @@ namespace Carpet {
     }                                           \
     set_mglevel (_cgh, -1);                     \
     _mgl = 0;                                   \
-  } while (0)
+  } else
   
   
   
@@ -229,7 +229,7 @@ namespace Carpet {
   // grid array component, i.e. it cannot be used to index grid
   // functions.
 #define BEGIN_COMPONENT_LOOP(cgh, grouptype)            \
-  do {                                                  \
+  if (true) {                                           \
     int _cl;                                            \
     cGH * const _cgh = const_cast<cGH*>(cgh);           \
     int const _grouptype = (grouptype);                 \
@@ -253,7 +253,7 @@ namespace Carpet {
     }                                                   \
     if (component!=_savec) set_component (_cgh, -1);    \
     _cl = 0;                                            \
-  } while (0)
+  } else
 
 
   
@@ -264,7 +264,7 @@ namespace Carpet {
   // latter case, component denotes the current grid array component,
   // i.e. it cannot be used to index grid functions.
 #define BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype)                      \
-  do {                                                                  \
+  if (true) {                                                           \
     int _lcl;                                                           \
     cGH * const _cgh = const_cast<cGH*>(cgh);                           \
     int const _grouptype = (grouptype);                                 \
@@ -277,7 +277,7 @@ namespace Carpet {
       _minc=0;                                                          \
       _maxc=hh->components(reflevel);                                   \
     } else {                                                            \
-      _minc=CCTK_MyProc(_cgh);                                          \
+      _minc=component;                                                  \
       _maxc=_minc+1;                                                    \
     }                                                                   \
     for (int _c=_minc; _c<_maxc; ++_c) {                                \
@@ -290,7 +290,7 @@ namespace Carpet {
     }                                                           \
     if (component!=_savec) set_component (_cgh, _savec);        \
     _lcl = 0;                                                   \
-  } while (0)
+  } else
   
 } // namespace Carpet
 
