@@ -50,6 +50,7 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
   
   
   
+#if 0
   /* Set the weight to 0 on inter-processor boundaries */
   if (verbose) {
     CCTK_INFO ("Setting inter-processor boundaries to weight 0");
@@ -89,6 +90,7 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
       }
     }
   }
+#endif
   
   
   
