@@ -12,6 +12,7 @@
 #include "dist.hh"
 #include "bbox.hh"
 #include "gdata.hh"
+#include "mem.hh"
 #include "vect.hh"
 
 using namespace std;
@@ -24,18 +25,12 @@ class data: public gdata
 {
   
   // Fields
-  T * _storage;                 // the data (if located on this processor)
-  size_t _allocated_bytes;
+  mem<T> * _memory;             // the data (if located on this processor)
   
   // For vector groups with contiguous storage
   int vectorlength;             // number of vector elements
   int vectorindex;              // index of this vector element
   data* vectorleader;           // if index!=0: first vector element
-  vector<bool> vectorclients;   // if index==0: registered elements
-  
-  void register_client (int index);
-  void unregister_client (int index);
-  bool has_clients () const;
   
 public:
   
@@ -59,55 +54,47 @@ public:
                             const int tag) const;
 
   // Storage management
-private:
-  void getmem (const size_t nelems);
-  void freemem ();
-public:
   virtual void allocate (const ibbox& extent, const int proc,
-			 void* const mem=0);
+			 void* const memptr = NULL);
   virtual void free ();
   virtual void transfer_from (gdata* gsrc);
-
-private:
-  T* vectordata (const int vectorindex) const;
-public:
 
   // Processor management
 private:
   virtual void change_processor_recv (comm_state& state,
                                       const int newproc,
-                                      void* const mem=0);
+                                      void* const memptr = NULL);
   virtual void change_processor_send (comm_state& state,
                                       const int newproc,
-                                      void* const mem=0);
+                                      void* const memptr = NULL);
   virtual void change_processor_wait (comm_state& state,
                                       const int newproc,
-                                      void* const mem=0);
+                                      void* const memptr = NULL);
 public:
 
   // Accessors
   virtual const void* storage () const
   {
     assert (_has_storage);
-    return _storage;
+    return _memory->storage(vectorindex);
   }
 
   virtual void* storage () {
     assert (_has_storage);
-    return _storage;
+    return _memory->storage(vectorindex);
   }
   
   // Data accessors
   const T& operator[] (const ivect& index) const
   {
-    assert (_storage);
-    return _storage[offset(index)];
+    assert (_memory);
+    return _memory->storage(vectorindex)[offset(index)];
   }
   
   T& operator[] (const ivect& index)
   {
-    assert (_storage);
-    return _storage[offset(index)];
+    assert (_memory);
+    return _memory->storage(vectorindex)[offset(index)];
   }
 
 #if 0

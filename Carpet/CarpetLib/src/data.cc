@@ -26,12 +26,6 @@ using namespace std;
 
 
 
-// Total number of currently allocated bytes and objects
-static size_t total_allocated_bytes = 0;
-static size_t total_allocated_objects = 0;
-
-
-
 static const CCTK_REAL eps = 1.0e-10;
 
 // Constructors
@@ -41,7 +35,7 @@ data<T>::data (const int varindex_, const operator_type transport_operator_,
                data* const vectorleader_,
                const int tag_)
   : gdata(varindex_, transport_operator_, tag_),
-    _storage(NULL), _allocated_bytes(0),
+    _memory(NULL),
     vectorlength(vectorlength_), vectorindex(vectorindex_),
     vectorleader(vectorleader_)
 {
@@ -49,8 +43,6 @@ data<T>::data (const int varindex_, const operator_type transport_operator_,
   assert (vectorindex>=0 && vectorindex<vectorlength);
   assert ((vectorindex==0 && !vectorleader)
           || (vectorindex!=0 && vectorleader));
-  if (vectorindex==0) vectorclients.resize (vectorlength);
-  if (vectorindex!=0) vectorleader->register_client (vectorindex);
 }
 
 template<typename T>
@@ -59,7 +51,7 @@ data<T>::data (const int varindex_, const operator_type transport_operator_,
                data* const vectorleader_,
                const ibbox& extent_, const int proc_)
   : gdata(varindex_, transport_operator_),
-    _storage(NULL), _allocated_bytes(0),
+    _memory(NULL),
     vectorlength(vectorlength_), vectorindex(vectorindex_),
     vectorleader(vectorleader_)
 {
@@ -67,8 +59,6 @@ data<T>::data (const int varindex_, const operator_type transport_operator_,
   assert (vectorindex>=0 && vectorindex<vectorlength);
   assert ((vectorindex==0 && !vectorleader)
           || (vectorindex!=0 && vectorleader));
-  if (vectorindex==0) vectorclients.resize (vectorlength);
-  if (vectorindex!=0) vectorleader->register_client (vectorindex);
   allocate(extent_, proc_);
 }
 
@@ -76,8 +66,6 @@ data<T>::data (const int varindex_, const operator_type transport_operator_,
 template<typename T>
 data<T>::~data ()
 {
-  if (vectorleader) vectorleader->unregister_client (vectorindex);
-  if (vectorindex==0) assert (! has_clients());
   free();
 }
   
@@ -93,72 +81,11 @@ data<T>* data<T>::make_typed (const int varindex_,
 
 
 
-// Vector mamagement
-template<typename T>
-void data<T>::register_client (const int index)
-{
-  assert (! vectorclients.at(index));
-  vectorclients.at(index) = true;
-}
-
-template<typename T>
-void data<T>::unregister_client (const int index)
-{
-  assert (vectorclients.at(index));
-  vectorclients.at(index) = false;
-}
-
-template<typename T>
-bool data<T>::has_clients () const
-{
-  return (find (vectorclients.begin(), vectorclients.end(), true)
-          != vectorclients.end());
-}
-
-
-
 // Storage management
-template<typename T>
-void data<T>::getmem (const size_t nelems)
-{
-  const size_t nbytes = nelems * sizeof(T);
-  try {
-    assert (_allocated_bytes == 0);
-    _storage = new T[nelems];
-    _allocated_bytes = nbytes;
-  } catch (...) {
-    T Tdummy;
-    CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "Failed to allocate %.0f bytes (%.3f MB) of memory for type %s.  %.0f bytes (%.3f MB) are currently allocated in %d objects",
-                double(nbytes), double(nbytes/1.0e6),
-                typestring(Tdummy),
-                double(total_allocated_bytes),
-                double(total_allocated_bytes/1.0e6),
-                int(total_allocated_objects));
-  }
-  total_allocated_bytes += nbytes;
-  ++ total_allocated_objects;
-}
-
-
-
-template<typename T>
-void data<T>::freemem ()
-{
-  delete [] _storage;
-  assert (total_allocated_bytes > _allocated_bytes);
-  assert (total_allocated_objects > 0);
-  total_allocated_bytes -= _allocated_bytes;
-  -- total_allocated_objects;
-  _allocated_bytes = 0;
-}
-
-
-
 template<typename T>
 void data<T>::allocate (const ibbox& extent_,
                         const int proc_,
-                        void* const mem)
+                        void* const memptr)
 {
   assert (!_has_storage);
   _has_storage = true;
@@ -178,30 +105,25 @@ void data<T>::allocate (const ibbox& extent_,
   }
   _proc = proc_;
   if (dist::rank() == _proc) {
-    _owns_storage = !mem;
-    if (_owns_storage) {
-      if (vectorindex == 0) {
-        assert (! vectorleader);
-        getmem (vectorlength * _size);
-      } else {
-        assert (vectorleader);
-        _storage = vectorleader->vectordata (vectorindex);
-      }
+    if (vectorindex == 0) {
+      assert (! vectorleader);
+      _memory = new mem<T> (vectorlength, _size, (T*)memptr);
     } else {
-      _storage = (T*)mem;
+      assert (vectorleader);
+      _memory = vectorleader->_memory;
     }
+    _memory->register_client (vectorindex);
   } else {
-    assert (!mem);
+    assert (!memptr);
   }
 }
 
 template<typename T>
 void data<T>::free ()
 {
-  if (_storage && _owns_storage && vectorindex==0) {
-    freemem ();
-  }
-  _storage = 0;
+  _memory->unregister_client (vectorindex);
+  if (! _memory->has_clients()) delete _memory;
+  _memory = NULL;
   _has_storage = false;
 }
 
@@ -211,19 +133,9 @@ void data<T>::transfer_from (gdata* gsrc)
   assert (vectorlength==1);
   data* src = (data*)gsrc;
   assert (src->vectorlength==1);
-  assert (!_storage);
+  assert (!_memory);
   *this = *src;
   *src = data(varindex, transport_operator);
-}
-
-template<typename T>
-T* data<T>::vectordata (const int vectorindex_) const
-{
-  assert (vectorindex==0);
-  assert (! vectorleader);
-  assert (vectorindex_>=0 && vectorindex_<vectorlength);
-  assert (_storage && _owns_storage);
-  return _storage + vectorindex_ * _size;
 }
 
 
@@ -232,7 +144,7 @@ T* data<T>::vectordata (const int vectorindex_) const
 template<typename T>
 void data<T>::change_processor_recv (comm_state& state,
                                      const int newproc,
-                                     void* const mem)
+                                     void* const memptr)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -240,7 +152,7 @@ void data<T>::change_processor_recv (comm_state& state,
   comm_active = true;
   
   if (newproc == _proc) {
-    assert (!mem);
+    assert (!memptr);
     return;
   }
   
@@ -250,17 +162,13 @@ void data<T>::change_processor_recv (comm_state& state,
     if (dist::rank() == newproc) {
       // copy from other processor
       
-      assert (!_storage);
-      _owns_storage = !mem;
-      if (_owns_storage) {
-        getmem (_size);
-      } else {
-	_storage = (T*)mem;
-      }
+      assert (!_memory);
+      _memory = new mem<T> (1, _size, (T*)memptr);
       
       wtime_irecv.start();
       T dummy;
-      MPI_Irecv (_storage, _size, dist::datatype(dummy), proc(),
+      MPI_Irecv (_memory->storage(vectorindex),
+                 _size, dist::datatype(dummy), proc(),
                  tag, dist::comm, &request);
       wtime_irecv.stop();
       if (use_waitall) {
@@ -271,8 +179,8 @@ void data<T>::change_processor_recv (comm_state& state,
       // copy to other processor
       
     } else {
-      assert (!mem);
-      assert (!_storage);
+      assert (!memptr);
+      assert (!_memory);
     }
   }
   
@@ -284,14 +192,14 @@ void data<T>::change_processor_recv (comm_state& state,
 template<typename T>
 void data<T>::change_processor_send (comm_state& state,
                                      const int newproc,
-                                     void* const mem)
+                                     void* const memptr)
 {
   DECLARE_CCTK_PARAMETERS;
   
   assert (comm_active);
   
   if (newproc == _proc) {
-    assert (!mem);
+    assert (!memptr);
     return;
   }
   
@@ -304,12 +212,13 @@ void data<T>::change_processor_send (comm_state& state,
     } else if (dist::rank() == _proc) {
       // copy to other processor
       
-      assert (!mem);
-      assert (_storage);
+      assert (!memptr);
+      assert (_memory);
       
       wtime_isend.start();
       T dummy;
-      MPI_Isend (_storage, _size, dist::datatype(dummy), newproc,
+      MPI_Isend (_memory->storage(vectorindex),
+                 _size, dist::datatype(dummy), newproc,
                  tag, dist::comm, &request);
       wtime_isend.stop();
       if (use_waitall) {
@@ -317,8 +226,8 @@ void data<T>::change_processor_send (comm_state& state,
       }
       
     } else {
-      assert (!mem);
-      assert (!_storage);
+      assert (!memptr);
+      assert (!_memory);
     }
   }
   
@@ -330,7 +239,7 @@ void data<T>::change_processor_send (comm_state& state,
 template<typename T>
 void data<T>::change_processor_wait (comm_state& state,
                                      const int newproc,
-                                     void* const mem)
+                                     void* const memptr)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -338,7 +247,7 @@ void data<T>::change_processor_wait (comm_state& state,
   comm_active = false;
   
   if (newproc == _proc) {
-    assert (!mem);
+    assert (!memptr);
     return;
   }
   
@@ -368,8 +277,8 @@ void data<T>::change_processor_wait (comm_state& state,
     } else if (dist::rank() == _proc) {
       // copy to other processor
       
-      assert (!mem);
-      assert (_storage);
+      assert (!memptr);
+      assert (_memory);
       
       if (! use_waitall) {
         wtime_isendwait.start();
@@ -377,14 +286,12 @@ void data<T>::change_processor_wait (comm_state& state,
         wtime_isendwait.stop();
       }
       
-      if (_owns_storage) {
-	freemem ();
-      }
-      _storage = 0;
+      if (! _memory->has_clients()) delete _memory;
+      _memory = NULL;
       
     } else {
-      assert (!mem);
-      assert (!_storage);
+      assert (!memptr);
+      assert (!_memory);
     }
   }
   

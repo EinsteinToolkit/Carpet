@@ -165,6 +165,7 @@ template ostream& output (ostream& os, const list<bbox<int,3> >& l);
 template ostream& output (ostream& os, const set<bbox<int,3> >& s);
 template ostream& output (ostream& os, const set<bboxset<int,3> >& s);
 template ostream& output (ostream& os, const stack<bbox<int,3> >& s);
+template ostream& output (ostream& os, const vector<bool>& v);
 template ostream& output (ostream& os, const vector<int>& v);
 template ostream& output (ostream& os, const vector<CCTK_REAL>& v);
 template ostream& output (ostream& os, const vector<bbox<int,3> >& v);

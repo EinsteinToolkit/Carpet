@@ -9,6 +9,10 @@ includes header: bbox.hh in bbox.hh
 includes header: bboxset.hh in bboxset.hh
 includes header: vect.hh in vect.hh
 
+includes header: commstate.hh in commstate.hh
+includes header: mem.hh in mem.hh
+includes header: timestat.hh in timestat.hh
+
 includes header: data.hh in data.hh
 includes header: gdata.hh in gdata.hh
 
