@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.60 2004/03/23 19:32:59 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.61 2004/03/23 19:41:11 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -508,7 +508,9 @@ namespace Carpet {
     bvect const newdims = dims.replace(mydim, true);
     
     // choose a number of slices for this direction
-    int const nslices = min(nprocs, (int)floor(mysize * pow(nprocs/allsizes, 1.0/alldims) + 0.5));
+    int const nslices
+      = min(nprocs,
+            (int)floor(mysize * pow(nprocs/allsizes, 1.0/alldims) + 0.5));
     assert (nslices <= nprocs);
     if (DEBUG) cout << "SRAR " << mydim << " nprocs " << nprocs << endl;
     if (DEBUG) cout << "SRAR " << mydim << " nslices " << nslices << endl;
@@ -621,8 +623,6 @@ namespace Carpet {
     
     const int nprocs = CCTK_nProcs(cgh);
     if (DEBUG) cout << "SRA nprocs " << nprocs << endl;
-    
-//     if (nprocs==1) return;
     
     // split the processors
     // nslices: number of disjoint bboxes

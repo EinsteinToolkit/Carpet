@@ -31,7 +31,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.41 2004/03/23 19:30:14 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.42 2004/03/23 19:41:11 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -293,7 +293,7 @@ namespace Carpet {
 	    
             // Checking
             CheckChecksums (cgh, alltimes);
-	    
+            
             leave_level_mode (cgh);
             leave_global_mode (cgh);
           } // if do_every
