@@ -77,74 +77,99 @@
 \begin{document}
 
 % The author of the documentation
-\author{Erik Schnetter $<$schnetter@uni-tuebingen.de$>$, Christian D. Ott $<$cott@aei.mpg.de$>$}
+\author{Erik Schnetter $<$schnetter@uni-tuebingen.de$>$\\
+        Christian D. Ott $<$cott@aei.mpg.de$>$\\
+        Thomas Radke $<$tradke@aei.mpg.de$>$}
 
 % The title of the document (not necessarily the name of the Thorn)
 \title{CarpetIOHDF5}
 
 % the date your document was last changed, if your document is in CVS, 
 % please use:
-\date{June 22, 2004}
+\date{1 December 2004}
 
 \maketitle
 
 % Do not delete next line
 % START CACTUS THORNGUIDE
 
-% Add all definitions used in this documentation here 
-%   \def\mydef etc
 
-% Add an abstract for this thorn's documentation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
-CarpetIOHDF5 provides HDF5 based 3-D output to the Cactus mesh refinement driver Carpet.
-This document explains CarpetIOHDF5's usage and contains a specification of the
-CarpetIOHDF5 file format that was adapted from John Shalf's FlexIO library.
+{\bf CarpetIOHDF5} provides HDF5-based output to the {\em Carpet} mesh
+refinement driver in {\em Cactus}.
+This document explains {\bf CarpetIOHDF5}'s usage and contains a specification
+of the HDF5 file format that was adapted from John Shalf's FlexIO library.
 \end{abstract}
 
-% The following sections are suggestive only.
-% Remove them or add your own.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 
-Having encountered various problems with CarpetIOFlexIO and the underlying FlexIO library,
-Erik Schnetter decided to create CarpetIOHDF5. CarpetIOHDF5 provides 3-D output for the
-Carpet Mesh Refinement driver within the Cactus Code. Christian D. Ott added  
-file reader (analogous to Erik Schnetter's implementation present in CarpetIOFlexIO) 
-and checkpoint/recovery features to CarpetIOHDF5.
+Having encountered various problems with the Carpet I/O thorn
+{\bf CarpetIOFlexIO} and the underlying FlexIO library,
+Erik Schnetter decided to write this thorn {\bf CarpetIOHDF5} which bypasses
+any intermediate binary I/O layer and outputs in HDF5 file format directly.
 
-Right now, CarpetIOHDF5 only uses serial I/O - all data are copied to processor 0 for I/O.
+{\bf CarpetIOHDF5} provides output for the {\em Carpet} Mesh Refinement driver
+within the Cactus Code. Christian D. Ott added  a file reader (analogous to
+Erik Schnetter's implementation present in {\bf CarpetIOFlexIO}) 
+as well as checkpoint/recovery functionality to {\bf CarpetIOHDF5}.
+Thomas Radke has taken over maintainence of this I/O thorn and is continuously
+working on fixing known bugs and improving the code functionality and
+efficiency.
+
+Right now, {\bf CarpetIOHDF5} uses serial I/O -- all data are copied to/from
+processor 0 for any file I/O operations.
 
 This document aims at giving the user a first handle on how to use
-CarpetIOHDF5. It also documents the HDF5 file layout used.
+{\bf CarpetIOHDF5}. It also documents the HDF5 file layout used.
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Using This Thorn}
-
 
 \subsection{Obtaining This Thorn}
 
-You can get a checkout from 
+You can get a checkout from the stable version of Carpet in CVS via
 
-{\tt cvs.carpetcode.org:/home/cvs Carpet/CarpetIOHDF5}
+\begin{verbatim}
+  cvs -d :pserver:cvs\_anon@cvs.carpetcode.org:/home/cvs/carpet \
+      checkout Carpet/CarpetIOHDF5
+\end{verbatim}
+
 
 \subsection{Basic Usage}
 
 First, you have to activate the thorn in your Cactus parameter file:
 
-{\tt ActiveThorns = "CarpetIOHDF5"}
+\begin{verbatim}
+  ActiveThorns = "CarpetIOHDF5"
+\end{verbatim}
 
-\subsubsection{3-D Output}
+\subsubsection{CarpetIOHDF5 Output Parameters}
 
 \begin{itemize}
-  \item {\tt iohdf5::out3D\_vars = "your list of Cactus grid functions to output"}
-  \item {\tt iohdf5::out3D\_every = n} : Output every {\tt n} time steps
-  \item {\tt iohdf5::out3D\_dir = "your preferred 3-D output directory"}
-  \item {\tt IO::out\_single\_precision = "yes/no (output double-precision data in single precision)"}
+  \item {\tt IOHDF5::out\_vars = "$<$variable list$>$"}\\
+        list of full names of Cactus grid variables to output;
+        Each variable name can have an option string attached in which you
+        can specify a different output frequency for that individual variable
+        (e.g. {\tt IOHDF5::out\_vars = "wavetoy::phi\{ out\_every = 4 \}"})
+  \item {\tt IOHDF5::out\_criterion = "$<$keyword choice$>$"}\\
+        criterion to select output intervals (overwrites {\tt IO::out\_criterion})
+  \item {\tt IOHDF5::out\_every = $<$integer$>$}\\
+        output every {\tt integer} iterations (overwrites {\tt IO::out\_every})
+  \item {\tt IOHDF5::out\_dt = $<$number$>$}\\
+        output in intervals of that much coordinate time (overwrites {\tt IO::out\_dt})
+  \item {\tt IOHDF5::out\_dir = "$<$out\_dir$>$"}\\
+        the output directory for HDF5 files (overwrites {\tt IO::out\_dir})
+  \item {\tt IO::out\_single\_precision = "yes/no"}\\
+        output double-precision data in single precision
 \end{itemize}
 
-\subsubsection{3-D Input}
+\subsubsection{Input Parameters}
 
-There are two ways to use the 3-D input capabilities:
+There are two ways to use the input capabilities:
 
 \begin{enumerate}
   \item For evolutions using ADMBase, one may use the thorn IDFileADM and the following parameter settings:
@@ -155,128 +180,89 @@ There are two ways to use the 3-D input capabilities:
     \end{itemize}
   \item For evolutions not using ADMBase one may try to read in data by setting
     \begin{itemize}
-      \item {\tt iohdf5::in3D\_dir = "directory from where to read data"}
-      \item {\tt iohdf5::in3D\_vars = "space separated list of variables to be read in"}
+      \item {\tt IOHDF5::in\_dir = "directory from where to read data"}
+      \item {\tt IOHDF5::in\_vars = "space separated list of variables to be read in"}
     \end{itemize}
 \end{enumerate}
 
 
 \subsubsection{Checkpointing}
 
-CarpetIOHDF5 uses the Cactus checkpoint/recovery infrastructure provided by
-CactusBase/IOUtil.
+{\bf CarpetIOHDF5} uses the Cactus checkpoint/recovery infrastructure provided
+by {\bf CactusBase/IOUtil}.
 
 \begin{itemize}
-  \item {\tt iohdf5::checkpoint = "yes"} : Turns on checkpointing
-  \item {\tt iohdf5::checkpoint\_every = n} : Checkpointing every {\tt n} time steps
-  \item {\tt iohdf5::checkpoint\_ID = "yes"} : Turns on checkpointing after initial data
-  \item {\tt io::checkpoint\_dir = "your preferred checkpoint directory"} 
-  \item  {\tt iohdf5::checkpoint\_keep = n} : Keep {\tt n} checkpoint files around
+  \item {\tt IOHDF5::checkpoint = "yes/no"}\\
+        Enables/disables checkpointing
+  \item {\tt IO::checkpoint\_every = n}\\
+        Checkpoint every {\tt n} iterations
+  \item {\tt IO::checkpoint\_ID = "yes/no"}\\
+        Enables/disables checkpointing after initial data
+  \item {\tt IO::checkpoint\_dir = "your preferred checkpoint directory"} 
+  \item {\tt IO::checkpoint\_keep = n}\\
+        Keep {\tt n} checkpoint files around
 \end{itemize}
 
 
-\subsubsection{Recover}
+\subsubsection{Recovery}
 
-CarpetIOHDF5 uses the Cactus checkpoint/recovery infrastructure provided by
-CactusBase/IOUtil. Currently all the checkpoint information is copied onto processor 0 and
- written into a single file whose name is invented by IOUtil. Unfortunately, single cpu
-checkpoint files have a different name (a missing \_file\_0 tag) than checkpoint
-files from multi-cpu runs. Somebody should tweek IOBase... 
+{\bf CarpetIOHDF5} uses the Cactus checkpoint/recovery infrastructure provided
+by {\bf CactusBase/IOUtil}.
+Currently all the checkpoint information is copied onto processor 0 and
+written into a single file whose name is invented by {\bf IOUtil}.
 
-In principle, CarpetIOHDF5 is able to restart on any number
-of cpus  from a checkpoint file of a run using any (other or same) number of cpus.
+In principle, {\bf CarpetIOHDF5} is able to restart on any number of CPUs
+from a checkpoint file of a run using any (other or same) number of CPUs.
 
 \begin{itemize}
-  \item {\tt iohdf5::recover = "auto"} : Recover from the most recent Checkpoint file. This bombs,
+  \item {\tt IO::recover = "auto"}\\
+        Recover from the most recent Checkpoint file. This bombs,
     if no checkpoint file is found.
-  \item {\tt iohdf5::recover = "autoprobe"} : Recover from the most recent Checkpoint file. This continues
+  \item {\tt IO::recover = "autoprobe"}\\
+        Recover from the most recent Checkpoint file. This continues
     without recovering if no checkpoint file is found.
-  \item {\tt iohdf5::recover\_dir = "directory containing the checkpoint file"} 
-  \item {\tt iohdf5::recover = "manual"} : Recover from a file specified by {\tt iohdf5::recover\_file}. This
+  \item {\tt IO::recover\_dir = "directory containing the checkpoint file"} 
+  \item {\tt IO::recover = "manual"}\\
+        Recover from a file specified by {\tt iohdf5::recover\_file}. This
      bombs if the file is not found.
-  \item {\tt iohdf5::recover\_file = "file you want to recover from"} : Only needs to be set if
-    {\tt iohdf5::recover = "manual"}.
-
-\end{itemize}
-
-
-
-\subsection{Special Behaviour}
-
-\begin{itemize}
-  \item {\tt iohdf5::h5verbose = "yes"} : Makes CarpetIOHDF5 very talkative.
+  \item {\tt IO::recover\_file = "file you want to recover from"}\\
+        Only needs to be set if {\tt IO::recover = "manual"}.
 \end{itemize}
 
 
 \section{CarpetIOHDF5's HDF5 file layout}
 
-The HDF5 file layout of CarpetIOHDF5 is quite simple. There are no groups besides the 
-standard HDF5 root data object group:
+The HDF5 file layout of {\bf CarpetIOHDF5} is quite simple.
+There are no groups besides the standard HDF5 root data object group:
+
+Each dataset is named according to this template:
+
+\begin{verbatim}
+  <group::varname> it=<cctk_iteration> tl=<timelevel> [ml=<mglevel>] [m=<map>]
+  [rl=<reflevel>] [c=<component>]}
+\end{verbatim}
+
+where optional parts only contribute to the name if they vary (if there is
+more than one multigrid level, map, refinement level, component respectively).
+
+Each HDF5 dataset has the following attributes associated with it:
 
 \begin{itemize}
-  \item Each dataset is named according to this template: \\
-    {\tt \small [Full Variable Name] it=[Iteration] tl=[Timelevel] ml=[mglevel] rl=[reflevel] m=[map] c=[component]}
-    
-  \item Each dataset has the following (largely redundant!) attributes associated with it:
-
-    \begin{itemize}
-    \item {\tt level} : Carpet::reflevel
-    \item {\tt origin} : 1-D array of length Carpet::dim. \\ origin[d]=CCTK\_ORIGIN\_SPACE(d) + 
-      cctk\_lbnd[d] * delta[d]
-    \item {\tt delta} : 1-D array of length Carpet::dim. \\ delta[d] = CCTK\_DELTA\_SPACE(d)
-    \item {\tt min\_ext} : 1-D array of length Carpet::dim. \\ min\_ext[d] = delta[d] 
-    \item {\tt max\_ext} : 1-D array of length Carpet::dim. \\ origin[d] + cctk\_lsh[d] * delta[d]
-    \item {\tt time} : cctk\_time
-    \item {\tt timestep} : cctk\_iteration
-    \item {\tt level\_timestep} : cctk\_iteration / Carpet::reflevelfact
-    \item {\tt persistence} : cctk\_iteration / Carpet::reflevelfact
-    \item {\tt time\_refinement} : Carpet::time\_refinement
-    \item {\tt spatial\_refinement} : 1-D array of length Carpet::dim. \\ spatial\_refinement[d] = Carpet::reflevelfact
-    \item {\tt grid\_placement\_refinement} : 1-D array of length Carpet::dim. \\ grid\_placement\_refinement[d] = Carpet::reflevelfact
-    \item {\tt iorigin} : 1-D array of length Carpet::dim. \\ iorigin[d] = (Carpet::ext.lower() / Carpet::ext.stride())[d]
-    \item {\tt name} : CCTK\_FullName(variable index)
-    \item {\tt group\_version} : 1
-    \item {\tt group\_fullname} : CCTK\_FullName(variable index)
-    \item {\tt group\_varname} : CCTK\_VarName(variable index)
-    \item {\tt group\_groupname} : CCTK\_GroupName(group index)
-    \item {\tt group\_grouptype} : CCTK\_GF, CCTK\_ARRAY or CCTK\_SCALAR
-    \item {\tt group\_dim} : CCTK\_GroupDimI(group index)
-    \item {\tt group\_timelevel} : tl (current timelevel)
-    \item {\tt group\_numtimelevels} : CCTK\_NumTimeLevelsI(group index)
-    \item {\tt cctk\_version} : 1
-    \item {\tt cctk\_dim} : cctk\_dim
-    \item {\tt cctk\_iteration} : cctk\_iteration
-    \item {\tt cctk\_gsh} : 1-D array of length Carpet::dim. cctk\_gsh
-    \item {\tt cctk\_lsh} : 1-D array of length Carpet::dim. cctk\_lsh
-    \item {\tt cctk\_lbnd} : 1-D array of length Carpet::dim. cctk\_lbnd
-    \item {\tt cctk\_delta\_time} : 1-D array of length Carpet::dim. cctk\_delta\_time
-    \item {\tt cctk\_delta\_space} : 1-D array of length Carpet::dim. cctk\_delta\_space
-    \item {\tt cctk\_origin\_space} : 1-D array of length Carpet::dim. cctk\_origin\_space
-    \item {\tt cctk\_bbox} : 1-D array of length 2*Carpet::dim. cctk\_box
-    \item {\tt cctk\_levfac} : 1-D array of length Carpet::dim. cctk\_levfac
-    \item {\tt cctk\_levoff} : 1-D array of length Carpet::dim. cctk\_levoff
-    \item {\tt cctk\_levoffdenom} : 1-D array of length Carpet::dim. cctk\_levoffdenom
-    \item {\tt cctk\_timefac} : cctk\_timefac
-    \item {\tt cctk\_convlevel} : cctk\_convlevel
-    \item {\tt cctk\_convfac} : cctk\_convfac
-    \item {\tt cctk\_nghostzones} : 1-D array of length Carpet::dim. cctk\_nghostzones
-    \item {\tt cctk\_time} : cctk\_time
-    \item {\tt carpet\_version} : 1
-    \item {\tt carpet\_dim} : Carpet::dim
-    \item {\tt carpet\_basemglevel} : Carpet::basemglevel
-    \item {\tt carpet\_mglevel} : Carpet::mglevel
-    \item {\tt carpet\_mglevels} : Carpet::mglevels
-    \item {\tt carpet\_mgface} : Carpet::mgfact
-    \item {\tt carpet\_reflevel} : Carpet::reflevel
-    \item {\tt carpet\_reflevels} : Carpet::reflevels
-    \item {\tt carpet\_reffact} : Carpet::reffact
-    \item {\tt carpet\_map} : Carpet::map
-    \item {\tt carpet\_maps} : Carpet::maps
-    \item {\tt carpet\_component} : Carpet::component
-    \item {\tt carpet\_components} : Carpet::vhh.at(Carpet::map)->components(reflevel))
-
-    \end{itemize}
+  \item {\tt level} : Carpet::reflevel
+  \item {\tt origin} : 1-D array of length vdim. \\
+        origin[d] = CCTK\_ORIGIN\_SPACE(d) + cctk\_lbnd[d] * delta[d]
+  \item {\tt delta} : 1-D array of length vdim. \\
+        delta[d] = CCTK\_DELTA\_SPACE(d)
+  \item {\tt time} : cctk\_time
+  \item {\tt timestep} : cctk\_iteration
+  \item {\tt iorigin} : 1-D array of length vdim. \\ iorigin[d] = (Carpet::ext.lower() / Carpet::ext.stride())[d]
+  \item {\tt name} : CCTK\_FullName(variable index)
+  \item {\tt cctk\_bbox} : 1-D array of length 2*Carpet::dim. cctk\_box
+  \item {\tt cctk\_nghostzones} : 1-D array of length Carpet::dim. cctk\_nghostzones
+  \item {\tt carpet\_mglevel} : Carpet::mglevel
+  \item {\tt carpet\_reflevel} : Carpet::reflevel
 \end{itemize}
+
 
 \subsection{Attributes needed by the file reader}
 

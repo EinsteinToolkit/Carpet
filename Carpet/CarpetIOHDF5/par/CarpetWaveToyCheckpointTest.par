@@ -38,6 +38,6 @@ IOASCII::out3D_every = 12
 # Checkpoint
 IO::checkpoint_every = 12
 IO::checkpoint_keep  = 2
+IO::verbose          = "full"
 
 IOHDF5::checkpoint = "yes"
-IOHDF5::verbose    = "yes"

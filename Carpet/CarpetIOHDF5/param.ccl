@@ -5,13 +5,13 @@
 
 shares: IO
 
-USES STRING  out_dir
-USES BOOLEAN out_single_precision
-USES KEYWORD verbose
+USES STRING  out_dir       AS io_out_dir
+USES KEYWORD out_criterion AS io_out_criterion
+USES INT     out_every     AS io_out_every
+USES REAL    out_dt        AS io_out_dt
 
-USES KEYWORD   out_criterion
-USES CCTK_INT  out_every
-USES CCTK_REAL out_dt
+USES KEYWORD verbose
+USES BOOLEAN out_single_precision
 
 USES INT     checkpoint_every
 USES INT     checkpoint_keep
@@ -29,45 +29,85 @@ USES STRING  recover_file
 
 shares: Cactus
 
-USES CCTK_REAL cctk_initial_time
+USES REAL cctk_initial_time
 
 
 private:
 
 
-CCTK_STRING out3D_dir "Name of 3D CarpetIOHDF5 output directory, overrides IO::out_dir" STEERABLE = ALWAYS
+STRING out_dir "Name of CarpetIOHDF5 output directory, overrides 'IO::out_dir'" STEERABLE = ALWAYS
 {
   "^$" :: "Empty: use IO::out_dir"
   ".+" :: "Not empty: directory name"
 } ""
 
-CCTK_STRING out3D_vars "Variables to output in 3D CarpetIOHDF5 file format" STEERABLE = ALWAYS
+STRING out3D_dir "Name of 3D CarpetIOHDF5 output directory, overrides 'IO::out_dir' (DEPRECATED - please use 'IOHDF5::out_dir' instead)" STEERABLE = ALWAYS
 {
-  .* :: "List of group and variable names"
+  "^$" :: "Empty: use IO::out_dir"
+  ".+" :: "Not empty: directory name"
 } ""
 
-CCTK_STRING out3D_extension "File extension to use for 3D CarpetIOHDF5 output" STEERABLE = ALWAYS
+STRING out_vars "Variables to output in CarpetIOHDF5 file format" STEERABLE = ALWAYS
+{
+  .* :: "List of group or variable names"
+} ""
+
+STRING out3D_vars "Variables to output in CarpetIOHDF5 file format (DEPRECATED - please use 'IOHDF5::out_vars' instead)" STEERABLE = ALWAYS
+{
+  .* :: "List of group or variable names"
+} ""
+
+STRING out_extension "File extension to use for CarpetIOHDF5 output" STEERABLE = ALWAYS
 {
   ".*" :: "File extension (including a leading dot, if desired)"
 } ".h5"
 
-KEYWORD out3D_criterion "Criterion to select 3D CarpetIOHDF5 output intervals, overrides out_every" STEERABLE = ALWAYS
+STRING out3D_extension "File extension to use for CarpetIOHDF5 output (DEPRECATED - please use 'IOHDF5::out_extension' instead)" STEERABLE = ALWAYS
 {
-  "default"   :: "Use IO::out_criterion"
+  ".*" :: "File extension (including a leading dot, if desired)"
+} ".h5"
+
+KEYWORD out_criterion "Criterion to select CarpetIOHDF5 output intervals, overrides out_every" STEERABLE = ALWAYS
+{
+  "default"   :: "Use 'IO::out_criterion'"
   "never"     :: "Never output"
   "iteration" :: "Output every so many iterations"
   "divisor"   :: "Output if (iteration % out_every) == 0."
   "time"      :: "Output every that much coordinate time"
 } "default"
 
-CCTK_INT out3D_every "How often to do 3D CarpetIOHDF5 output, overrides out_every" STEERABLE = ALWAYS
+KEYWORD out3D_criterion "Criterion to select CarpetIOHDF5 output intervals, overrides out_every (DEPRECATED - please use 'IOHDF5::out_criterion' instead)" STEERABLE = ALWAYS
+{
+  "default"   :: "Use 'IO::out_criterion'"
+  "never"     :: "Never output"
+  "iteration" :: "Output every so many iterations"
+  "divisor"   :: "Output if (iteration % out_every) == 0."
+  "time"      :: "Output every that much coordinate time"
+} "default"
+
+INT out_every "How often to do CarpetIOHDF5 output, overrides out_every" STEERABLE = ALWAYS
 {
   1:*  :: "Output every so many time steps"
   -1:0 :: "No output"
-  -2   :: "Use IO::out_every"
+  -2   :: "Use 'IO::out_every'"
 } -2
 
-REAL out3D_dt "How often to do 3D CarpetIOHDF5 output, overrides IO::out_dt" STEERABLE = ALWAYS
+INT out3D_every "How often to do CarpetIOHDF5 output, overrides out_every (DEPRECATED - please use 'IOHDF5::out_every' instead)" STEERABLE = ALWAYS
+{
+  1:*  :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Use 'IO::out_every'"
+} -2
+
+REAL out_dt "How often to do CarpetIOHDF5 output, overrides 'IO::out_dt'" STEERABLE = ALWAYS
+{
+  (0:* :: "In intervals of that much coordinate time"
+   0   :: "As often as possible"
+  -1   :: "Disable output"
+  -2   :: "Default to 'IO::out_dt'"
+} -2
+
+REAL out3D_dt "How often to do CarpetIOHDF5 output, overrides 'IO::out_dt' (DEPRECATED - please use 'IOHDF5::out_dt' instead)" STEERABLE = ALWAYS
 {
   (0:* :: "In intervals of that much coordinate time"
    0   :: "As often as possible"
@@ -77,31 +117,46 @@ REAL out3D_dt "How often to do 3D CarpetIOHDF5 output, overrides IO::out_dt" STE
 
 
 
-CCTK_STRING in3D_dir "Name of 3D CarpetIOHDF5 input directory" STEERABLE = ALWAYS
+STRING in_dir "Name of CarpetIOHDF5 input directory" STEERABLE = ALWAYS
 {
   ".+" :: "Directory name"
 } "."
 
-CCTK_STRING in3D_vars "Variables to input in 3D CarpetIOHDF5 file format" STEERABLE = ALWAYS
+STRING in3D_dir "Name of CarpetIOHDF5 input directory (DEPRECATED - please use 'IOHDF5::in_dir' instead)" STEERABLE = ALWAYS
 {
-  .* :: "List of group and variable names"
+  ".+" :: "Directory name"
+} "."
+
+STRING in_vars "Variables to input in CarpetIOHDF5 file format" STEERABLE = ALWAYS
+{
+  .* :: "List of group or variable names"
 } ""
 
-CCTK_STRING in3D_extension "File extension to use for 3D CarpetIOHDF5 input" STEERABLE = ALWAYS
+STRING in3D_vars "Variables to input in CarpetIOHDF5 file format (DEPRECATED - please use 'IOHDF5::in_vars' instead)" STEERABLE = ALWAYS
+{
+  .* :: "List of group or variable names"
+} ""
+
+STRING in_extension "File extension to use for CarpetIOHDF5 input" STEERABLE = ALWAYS
+{
+  ".*" :: "File extension (including a leading dot, if desired)"
+} ".h5"
+
+STRING in3D_extension "File extension to use for CarpetIOHDF5 input (DEPRECATED - please use 'IOHDF5::in_extension' instead)" STEERABLE = ALWAYS
 {
   ".*" :: "File extension (including a leading dot, if desired)"
 } ".h5"
 
 
-BOOLEAN checkpoint "Do checkpointing with CarpetIOHDF5" STEERABLE = ALWAYS
+BOOLEAN checkpoint "Do checkpointing with CarpetIOHDF5 ?" STEERABLE = ALWAYS
 {
 } "no"
 
-BOOLEAN checkpoint_next "Checkpoint at next iteration" STEERABLE = ALWAYS
+BOOLEAN checkpoint_next "Checkpoint at next iteration ?" STEERABLE = ALWAYS
 {
 } "no"
 
 
-BOOLEAN use_reflevels_from_checkpoint "Use CarpetRegrid::refinement_levels from the checkpoint file rather than from the parameter file." STEERABLE = ALWAYS
+BOOLEAN use_reflevels_from_checkpoint "Use 'CarpetRegrid::refinement_levels' from the checkpoint file rather than from the parameter file ?" STEERABLE = ALWAYS
 {
 } "no"

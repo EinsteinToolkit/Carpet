@@ -56,4 +56,4 @@ IO::out_dir       = "scratch"
 IO::parfile_write = "no"
 
 IOBasic::outInfo_vars = "wavetoy::phi"
-IOHDF5::out3D_vars    = "wavetoy::phi"
+IOHDF5::out_vars      = "wavetoy::phi"

@@ -665,11 +665,11 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
   //cout << "want level " << rl << " reflevel " << reflevel << endl;
 
   // Find the input directory
-  const char* const myindir = in3D_dir;
+  const char* const myindir = in_dir;
 
   // Invent a file name
   ostringstream filenamebuf;
-  filenamebuf << myindir << "/" << alias << in3D_extension;
+  filenamebuf << myindir << "/" << alias << in_extension;
   string filenamestr = filenamebuf.str();
   const char * const filename = filenamestr.c_str();
 
@@ -789,11 +789,11 @@ int CarpetIOHDF5_ReadData (const cGH* const cctkGH)
   int numvars = CCTK_NumVars ();
   vector<bool> flags (numvars);
 
-  if (CCTK_TraverseString (in3D_vars, SetFlag, &flags, CCTK_GROUP_OR_VAR) < 0)
+  if (CCTK_TraverseString (in_vars, SetFlag, &flags, CCTK_GROUP_OR_VAR) < 0)
   {
     CCTK_VWarn (strict_io_parameter_check ? 0 : 1,
                 __LINE__, __FILE__, CCTK_THORNSTRING,
-                "error while parsing parameter 'IOHDF5::in3D_vars'");
+                "error while parsing parameter 'IOHDF5::in_vars'");
   }
 
   for (int vindex = 0; vindex < numvars && retval == 0; vindex++)

@@ -52,6 +52,6 @@ IOBasic::outInfo_vars   = "WaveToyMoL::scalarevolve"
 IOBasic::outScalar_vars = "WaveToyMoL::scalarevolve"
 
 # HDF5 output only for initial data
-IOHDF5::out3D_every = 513
-IOHDF5::out3D_vars  = "WaveToyMoL::scalarevolve"
-IOHDF5::out3D_dir   = "input_initial_data"
+IOHDF5::out_every = 513
+IOHDF5::out_vars  = "WaveToyMoL::scalarevolve"
+IOHDF5::out_dir   = "input_initial_data"

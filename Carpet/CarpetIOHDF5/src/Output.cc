@@ -69,6 +69,7 @@ static void GetVarIndex (int vindex, const char* optstring, void* arg);
 
 static void CheckSteerableParameters (const cGH *const cctkGH,
                                       CarpetIOHDF5GH *myGH);
+static int WarnAboutDeprecatedParameters (void);
 
 //////////////////////////////////////////////////////////////////////////////
 // public routines
@@ -140,7 +141,7 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
   }
 
   // create the output directory (if it doesn't match ".")
-  const char *my_out_dir = *out3D_dir ? out3D_dir : out_dir;
+  const char *my_out_dir = *out_dir ? out_dir : io_out_dir;
   myGH->out_dir = (char *) calloc (1, strlen (my_out_dir) + 2);
   if (strcmp (myGH->out_dir, "."))
   {
@@ -466,11 +467,11 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
   DECLARE_CCTK_PARAMETERS
 
 
-  // re-parse the 'IOHDF5::out3D_vars' parameter if it has changed
-  if (strcmp (out3D_vars, myGH->out_vars))
+  // re-parse the 'IOHDF5::out_vars' parameter if it has changed
+  if (strcmp (out_vars, myGH->out_vars))
   {
-    IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING, "IOHDF5::out3D_vars",
-                               myGH->stop_on_parse_errors, out3D_vars,
+    IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING, "IOHDF5::out_vars",
+                               myGH->stop_on_parse_errors, out_vars,
                                -1, myGH->requests);
 
     // notify the user about the new setting
@@ -501,15 +502,35 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
       }
     }
 
-    // save the last setting of 'IOHDF5::out3D_vars' parameter
+    // save the last setting of 'IOHDF5::out_vars' parameter
     free (myGH->out_vars);
-    myGH->out_vars = strdup (out3D_vars);
+    myGH->out_vars = strdup (out_vars);
   }
 }
 
 
 static int OutputGH (const cGH* const cctkGH)
 {
+  static int first_time = 1;
+
+
+  // check if any deprecated parameters have been set in the parameter file
+  //  (don't check after recovery though)
+  if (first_time)
+  {
+    DECLARE_CCTK_PARAMETERS
+
+    if (CCTK_Equals (recover, "no") || ! *recover_file)
+    {
+      if (WarnAboutDeprecatedParameters ())
+      {
+        // annoy the user if (s)he still used deprecated parameters
+        sleep (5);
+      }
+    }
+    first_time = 0;
+  }
+
   for (int vindex = CCTK_NumVars () - 1; vindex >= 0; vindex--)
   {
     if (TimeToOutput (cctkGH, vindex))
@@ -548,8 +569,8 @@ static int TimeToOutput (const cGH* const cctkGH, const int vindex)
   // check if output for this variable was requested individually
   // by a "<varname>{ out_every = <number> }" option string
   // this will overwrite the output criterion setting
-  const char *myoutcriterion = CCTK_EQUALS (out3D_criterion, "default") ?
-                               out_criterion : out3D_criterion;
+  const char *myoutcriterion = CCTK_EQUALS (out_criterion, "default") ?
+                               io_out_criterion : out_criterion;
   if (myGH->requests[vindex]->out_every >= 0)
   {
     myoutcriterion = "divisor";
@@ -565,7 +586,7 @@ static int TimeToOutput (const cGH* const cctkGH, const int vindex)
 
   if (CCTK_EQUALS (myoutcriterion, "iteration"))
   {
-    int myoutevery = out3D_every == -2 ? out_every : out3D_every;
+    int myoutevery = out_every == -2 ? io_out_every : out_every;
     if (myoutevery > 0)
     {
       if (*this_iteration == cctk_iteration)
@@ -584,7 +605,7 @@ static int TimeToOutput (const cGH* const cctkGH, const int vindex)
   }
   else if (CCTK_EQUALS (myoutcriterion, "divisor"))
   {
-    int myoutevery = out3D_every == -2 ? out_every : out3D_every;
+    int myoutevery = out_every == -2 ? io_out_every : out_every;
     if (myGH->requests[vindex]->out_every >= 0)
     {
       myoutevery = myGH->requests[vindex]->out_every;
@@ -597,7 +618,7 @@ static int TimeToOutput (const cGH* const cctkGH, const int vindex)
   }
   else if (CCTK_EQUALS (myoutcriterion, "time"))
   {
-    CCTK_REAL myoutdt = out3D_dt == -2 ? out_dt : out3D_dt;
+    CCTK_REAL myoutdt = out_dt == -2 ? io_out_dt : out_dt;
     if (myoutdt == 0 || *this_iteration == cctk_iteration)
     {
       output_this_iteration = true;
@@ -717,7 +738,7 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
   const CarpetIOHDF5GH *myGH =
     (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
   ostringstream filenamebuf;
-  filenamebuf << myGH->out_dir << alias << out3D_extension;
+  filenamebuf << myGH->out_dir << alias << out_extension;
   string filenamestr = filenamebuf.str();
   const char * const filename = filenamestr.c_str();
 
@@ -807,6 +828,92 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
   // Carpet arguments
   WriteAttribute (dataset, "carpet_mglevel", mglevel);
   WriteAttribute (dataset, "carpet_reflevel", refinementlevel);
+}
+
+
+static int WarnAboutDeprecatedParameters (void)
+{
+  int warnings = 0;
+  char buffer[20];
+  DECLARE_CCTK_PARAMETERS
+
+
+  if (CCTK_ParameterQueryTimesSet ("out3D_dir", CCTK_THORNSTRING) >
+      CCTK_ParameterQueryTimesSet ("out_dir", CCTK_THORNSTRING))
+  { 
+    CCTK_WARN (1, "Parameter 'IOHDF5::out3D_dir' is deprecated, please use "
+                  "'IOHDF5::out_dir' instead");
+    CCTK_ParameterSet ("out_dir", CCTK_THORNSTRING, out3D_dir);
+    warnings++;
+  }
+  if (CCTK_ParameterQueryTimesSet ("out3D_vars", CCTK_THORNSTRING) >
+      CCTK_ParameterQueryTimesSet ("out_vars", CCTK_THORNSTRING))
+  { 
+    CCTK_WARN (1, "Parameter 'IOHDF5::out3D_vars' is deprecated, please use "
+                  "'IOHDF5::out_vars' instead");
+    CCTK_ParameterSet ("out_vars", CCTK_THORNSTRING, out3D_vars);
+    warnings++;
+  }
+  if (CCTK_ParameterQueryTimesSet ("out3D_extension", CCTK_THORNSTRING) >
+      CCTK_ParameterQueryTimesSet ("out_extension", CCTK_THORNSTRING))
+  { 
+    CCTK_WARN (1, "Parameter 'IOHDF5::out3D_extension' is deprecated, please use "
+                  "'IOHDF5::out_extension' instead");
+    CCTK_ParameterSet ("out_extension", CCTK_THORNSTRING, out3D_extension);
+    warnings++;
+  }
+  if (CCTK_ParameterQueryTimesSet ("out3D_criterion", CCTK_THORNSTRING) >
+      CCTK_ParameterQueryTimesSet ("out_criterion", CCTK_THORNSTRING))
+  { 
+    CCTK_WARN (1, "Parameter 'IOHDF5::out3D_criterion' is deprecated, please use "
+                  "'IOHDF5::out_criterion' instead");
+    CCTK_ParameterSet ("out_criterion", CCTK_THORNSTRING, out3D_criterion);
+    warnings++;
+  }
+  if (CCTK_ParameterQueryTimesSet ("out3D_every", CCTK_THORNSTRING) >
+      CCTK_ParameterQueryTimesSet ("out_every", CCTK_THORNSTRING))
+  { 
+    CCTK_WARN (1, "Parameter 'IOHDF5::out3D_every' is deprecated, please use "
+                  "'IOHDF5::out_every' instead");
+    snprintf (buffer, sizeof (buffer), "%d", out3D_every);
+    CCTK_ParameterSet ("out_every", CCTK_THORNSTRING, buffer);
+    warnings++;
+  }
+  if (CCTK_ParameterQueryTimesSet ("out3D_dt", CCTK_THORNSTRING) >
+      CCTK_ParameterQueryTimesSet ("out_dt", CCTK_THORNSTRING))
+  { 
+    CCTK_WARN (1, "Parameter 'IOHDF5::out3D_dt' is deprecated, please use "
+                  "'IOHDF5::out_dt' instead");
+    snprintf (buffer, sizeof (buffer), "%f", out3D_dt);
+    CCTK_ParameterSet ("out_dt", CCTK_THORNSTRING, buffer);
+    warnings++;
+  }
+  if (CCTK_ParameterQueryTimesSet ("in3D_dir", CCTK_THORNSTRING) >
+      CCTK_ParameterQueryTimesSet ("in_dir", CCTK_THORNSTRING))
+  { 
+    CCTK_WARN (1, "Parameter 'IOHDF5::in3D_dir' is deprecated, please use "
+                  "'IOHDF5::in_dir' instead");
+    CCTK_ParameterSet ("in_dir", CCTK_THORNSTRING, in3D_dir);
+    warnings++;
+  }
+  if (CCTK_ParameterQueryTimesSet ("in3D_vars", CCTK_THORNSTRING) >
+      CCTK_ParameterQueryTimesSet ("in_vars", CCTK_THORNSTRING))
+  { 
+    CCTK_WARN (1, "Parameter 'IOHDF5::in3D_vars' is deprecated, please use "
+                  "'IOHDF5::in_vars' instead");
+    CCTK_ParameterSet ("in_vars", CCTK_THORNSTRING, in3D_vars);
+    warnings++;
+  }
+  if (CCTK_ParameterQueryTimesSet ("in3D_extension", CCTK_THORNSTRING) >
+      CCTK_ParameterQueryTimesSet ("in_extension", CCTK_THORNSTRING))
+  { 
+    CCTK_WARN (1, "Parameter 'IOHDF5::in3D_extension' is deprecated, please use "
+                  "'IOHDF5::in_extension' instead");
+    CCTK_ParameterSet ("in_extension", CCTK_THORNSTRING, in3D_extension);
+    warnings++;
+  }
+
+  return (warnings);
 }
 
 
