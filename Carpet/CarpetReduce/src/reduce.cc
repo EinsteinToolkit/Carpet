@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.29 2003/07/30 15:33:11 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.30 2003/11/12 17:29:30 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -23,7 +23,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.29 2003/07/30 15:33:11 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.30 2003/11/12 17:29:30 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -36,20 +36,6 @@ namespace CarpetReduce {
   
   
   // Helper functions
-  template<class T> inline T mymin () { return numeric_limits<T>::min(); }
-  template<> inline complex<float> mymin () { return complex<float> (numeric_limits<float>::min(), numeric_limits<float>::min()); }
-  template<> inline complex<double> mymin () { return complex<double> (numeric_limits<double>::min(), numeric_limits<double>::min()); }
-#ifdef LDBL_MAX
-  template<> inline complex<long double> mymin () { return complex<long double> (numeric_limits<long double>::min(), numeric_limits<long double>::min()); }
-#endif
-  
-  template<class T> inline T mymax () { return numeric_limits<T>::max(); }
-  template<> inline complex<float> mymax () { return complex<float> (numeric_limits<float>::max(), numeric_limits<float>::max()); }
-  template<> inline complex<double> mymax () { return complex<double> (numeric_limits<double>::max(), numeric_limits<double>::max()); }
-#ifdef LDBL_MAX
-  template<> inline complex<long double> mymax () { return complex<long double> (numeric_limits<long double>::max(), numeric_limits<long double>::max()); }
-#endif
-  
   template<class T> inline T mymin (const T x, const T y) { return min(x, y); }
   template<> inline complex<float> mymin (const complex<float> x, const complex<float> y) { return complex<float> (min(x.real(), y.real()), min(x.imag(), y.imag())); }
   template<> inline complex<double> mymin (const complex<double> x, const complex<double> y) { return complex<double> (min(x.real(), y.real()), min(x.imag(), y.imag())); }
@@ -62,6 +48,20 @@ namespace CarpetReduce {
   template<> inline complex<double> mymax (const complex<double> x, const complex<double> y) { return complex<double> (max(x.real(), y.real()), max(x.imag(), y.imag())); }
 #ifdef LDBL_MAX
   template<> inline complex<long double> mymax (const complex<long double> x, const complex<long double> y) { return complex<long double> (max(x.real(), y.real()), max(x.imag(), y.imag())); }
+#endif
+  
+  template<class T> inline T mymin () { return mymin(numeric_limits<T>::min(),-numeric_limits<T>::max()); }
+  template<> inline complex<float> mymin () { return complex<float> (mymin<float>(),mymin<float>()); }
+  template<> inline complex<double> mymin () { return complex<double> (mymin<double>(),mymin<double>()); }
+#ifdef LDBL_MAX
+  template<> inline complex<long double> mymin () { return complex<long double> (mymin<long double>(),mymin<long double>()); }
+#endif
+  
+  template<class T> inline T mymax () { return mymax(numeric_limits<T>::max(),-numeric_limits<T>::min()); }
+  template<> inline complex<float> mymax () { return complex<float> (mymax<float>(),mymax<float>()); }
+  template<> inline complex<double> mymax () { return complex<double> (mymax<double>(),mymax<double>()); }
+#ifdef LDBL_MAX
+  template<> inline complex<long double> mymax () { return complex<long double> (mymax<long double>(),mymax<long double>()); }
 #endif
   
   
@@ -298,10 +298,10 @@ namespace CarpetReduce {
     for (int n=0; n<num_outvals; ++n) {
       
       switch (outtype) {
-#define INITIALISE(OP,T)						\
-      case do_##OP:							\
-	initialise<T,OP::op<T> > (&((char*)myoutvals)[vartypesize*n],	\
-				  &((char*)mycounts )[vartypesize*n]);	\
+#define INITIALISE(OP,T)                                                \
+      case do_##OP:                                                     \
+	initialise<T,OP::op<T> > (&((char*)myoutvals)[vartypesize*n],   \
+				  &((char*)mycounts )[vartypesize*n]);  \
 	break;
 #define TYPECASE(N,T)				\
       case N: {					\
@@ -425,11 +425,11 @@ namespace CarpetReduce {
     for (int n=0; n<num_outvals; ++n) {
       
       switch (outtype) {
-#define REDUCE(OP,T)                                                       \
-	case do_##OP:                                                      \
+#define REDUCE(OP,T)                                                    \
+	case do_##OP:                                                   \
 	  reduce<T,OP::op<T> > (mylsh, mybbox, mynghostzones, inarrays[n], \
-				&((char*)myoutvals)[vartypesize*n],        \
-				&((char*)mycounts)[vartypesize*n]);        \
+				&((char*)myoutvals)[vartypesize*n],     \
+				&((char*)mycounts )[vartypesize*n]);    \
 	  break;
 #define TYPECASE(N,T)				\
       case N: {					\
@@ -515,10 +515,10 @@ namespace CarpetReduce {
 	assert ((int)counts.size() == vartypesize * num_outvals);
 	
 	switch (outtype) {
-#define FINALISE(OP,T)							\
-	case do_##OP:							\
-	  finalise<T,OP::op<T> >					\
-	    (&((char*)outvals)[vartypesize*n], &counts[vartypesize*n]);	\
+#define FINALISE(OP,T)                                                  \
+	case do_##OP:                                                   \
+	  finalise<T,OP::op<T> > (&((char*)outvals)[vartypesize*n],     \
+                                  &        counts  [vartypesize*n]);    \
 	  break;
 #define TYPECASE(N,T)				\
 	case N: {				\
