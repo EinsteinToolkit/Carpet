@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/interface.ccl,v 1.13 2004/05/21 18:14:28 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/interface.ccl,v 1.14 2004/05/27 12:26:50 schnetter Exp $
 
 IMPLEMENTS: CarpetRegrid
 
@@ -59,7 +59,7 @@ USES FUNCTION ConvertFromPhysicalBoundary
 #                      gh<dim>::rbnds  * obss,
 #                      gh<dim>::rprocs * pss);
 CCTK_INT FUNCTION Carpet_Regrid (CCTK_POINTER_TO_CONST IN cctkGH,  \
-                                 CCTK_POINTER IN bsss,             \
+                                 CCTK_POINTER IN bbsss,            \
                                  CCTK_POINTER IN obss,             \
                                  CCTK_POINTER IN pss)
 PROVIDES FUNCTION Carpet_Regrid WITH CarpetRegrid_Regrid LANGUAGE C
