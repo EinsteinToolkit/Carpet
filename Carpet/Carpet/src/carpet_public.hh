@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.1 2001/07/09 09:00:14 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.2 2001/08/26 13:59:08 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -88,6 +88,8 @@ namespace Carpet {
 #include "carpet_public.h"
   }
   
+  
+  
   // Registered functions
   void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cgh);
   
@@ -110,6 +112,15 @@ namespace Carpet {
 			      const char* groupname);
   int QueryGroupStorageB (cGH* cgh, int group, const char* groupname);
   int GroupDynamicData (cGH* cgh, int group, cGroupDynamicData* data);
+  
+  
+  
+  // Functions for recomposing the grid hierarchy
+  void RegisterRecomposeRegions (const gh<dim>::rexts& bbsss,
+				 const gh<dim>::rprocs& pss);
+  
+  void MakeRegions_RefineCentre (cGH* cgh, int reflevels,
+				 gh<dim>::rexts& bbsss, gh<dim>::rprocs& pss);
   
   
   
@@ -162,12 +173,13 @@ namespace Carpet {
   
   // Component iterator
   
-#define BEGIN_COMPONENT_LOOP(cgh)		\
-  do {						\
-    int _cl;					\
-    assert (component==-1);			\
-    set_component ((cgh), 0);			\
-    for (;;) {					\
+#define BEGIN_COMPONENT_LOOP(cgh)			\
+  do {							\
+    int _cl;						\
+    assert (reflevel>=0 && reflevel<hh->reflevels());	\
+    assert (component==-1);				\
+    set_component ((cgh), 0);				\
+    for (;;) {						\
       {
 #define END_COMPONENT_LOOP(cgh)				\
       }							\

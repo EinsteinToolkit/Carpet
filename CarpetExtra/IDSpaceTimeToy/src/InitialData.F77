@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/src/InitialData.F77,v 1.4 2001/03/26 02:28:54 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/src/InitialData.F77,v 1.5 2001/08/26 13:59:47 schnetter Exp $
       
 #include "cctk.h"
 #include "cctk_Parameters.h"
@@ -124,7 +124,7 @@ c     Use kx,ky,kz as number of modes in each direction.
          
       end if
       
-      if (cctk_isthornactive("hydrotoy").eq.1) then
+      if (hydrotoy_active.eq.1) then
          
          do k=1,cctk_lsh(3)
             do j=1,cctk_lsh(2)

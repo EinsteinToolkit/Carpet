@@ -7,12 +7,12 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/spacetimetoy_periodic_rl2.par,v 1.5 2001/04/23 08:10:21 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/spacetimetoy_periodic_rl2.par,v 1.6 2001/08/26 13:59:55 schnetter Exp $
 
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetSlab IDSpaceTimeToy SpaceTimeToy"
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetSlab IDSpaceTimeToy SpaceTimeToy Hydrotoy"
 
 Carpet::poison_new_timelevels	= yes
-Carpet::check_for_poison	= yes
+#Carpet::check_for_poison	= yes
 Carpet::checksum_timelevels	= yes
 
 Cactus::cctk_itlast		= 240
@@ -55,6 +55,8 @@ IOFlexIO::out3D_format		= IEEE
 
 SpaceTimeToy::icn_iterations	= 2
 SpaceTimeToy::bound		= radiation
+
+HydroToy::hydrotoy_active	= no
 
 IDSpaceTimeToy::initial_data	= plane
 IDSpaceTimeToy::kx		= 0.222222222222222	# 2 / ((32-2) * 0.3)

@@ -1,5 +1,9 @@
 # Schedule definitions for thorn HydroToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/schedule.ccl,v 1.1 2001/03/18 22:37:09 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/schedule.ccl,v 1.2 2001/08/26 13:59:40 schnetter Exp $
+
+if (hydrotoy_active) {
+
+
 
 STORAGE: hydroevolve
 
@@ -29,10 +33,13 @@ schedule HydroToy_EulerPredictor at EVOL
   SYNC: hydroevolve
 } "Euler predictor step"
 
-schedule HydroToy_EulerCorrector at EVOL \
-	after HydroToy_EulerPredictor
+schedule HydroToy_EulerCorrector at EVOL after HydroToy_EulerPredictor
 {
   LANG: Fortran
   STORAGE: hydrotemps
   SYNC: hydroevolve
 } "Euler corrector step"
+
+
+
+}

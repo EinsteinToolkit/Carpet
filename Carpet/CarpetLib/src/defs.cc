@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.7 2001/07/04 12:29:51 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.8 2001/08/26 13:59:31 schnetter Exp $
 
  ***************************************************************************/
 
@@ -79,7 +79,10 @@ ostream& output (ostream& os, const vector<T>& v) {
 template ostream& output (ostream& os, const list<bbox<int,3> >& l);
 template ostream& output (ostream& os, const set<bbox<int,3> >& s);
 template ostream& output (ostream& os, const set<bboxset<int,3> >& s);
+template ostream& output (ostream& os, const vector<int>& v);
+template ostream& output (ostream& os, const vector<bbox<int,3> >& v);
 template ostream& output (ostream& os, const vector<list<bbox<int,3> > >& v);
+template ostream& output (ostream& os, const vector<vector<int> >& v);
 template ostream& output (ostream& os, const vector<vector<bbox<int,3> > >& v);
 template ostream& output (ostream& os, const vector<vector<vector<bbox<int,3> > > >& v);
 #endif

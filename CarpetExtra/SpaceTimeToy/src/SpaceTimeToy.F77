@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.8 2001/04/23 08:10:22 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.9 2001/08/26 13:59:58 schnetter Exp $
       
 #include "cctk.h" 
 #include "cctk_Parameters.h"
@@ -29,7 +29,7 @@ c     Copy
          end do
       end do
       
-      if (cctk_isthornactive("hydrotoy").eq.1) then
+      if (hydrotoy_active.eq.1) then
          
          do k=1,cctk_lsh(3)
             do j=1,cctk_lsh(2)
@@ -103,7 +103,7 @@ c     Average
          end do
       end do
       
-      if (cctk_isthornactive("hydrotoy").eq.1) then
+      if (hydrotoy_active.eq.1) then
          
          do k=1,cctk_lsh(3)
             do j=1,cctk_lsh(2)

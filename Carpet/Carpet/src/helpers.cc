@@ -11,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.4 2001/08/23 17:52:58 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.5 2001/08/26 13:59:15 schnetter Exp $";
 
 
 
@@ -182,9 +182,12 @@ namespace Carpet {
   
   void set_component (cGH* cgh, const int c)
   {
+    assert (reflevel>=0 && reflevel<hh->reflevels());
     assert (c==-1 || (c>=0 && c<hh->components(reflevel)));
     component = c;
-      
+    assert (component==-1
+	    || (mglevel>=0 && mglevel<hh->mglevels(reflevel,component)));
+    
     if (component == -1) {
       // Global mode -- no component is active
       
@@ -218,8 +221,35 @@ namespace Carpet {
 	  const int var   = n - CCTK_FirstVarIndexI(group);
 	  assert (var>=0);
 	  
-	  // Scalars, arrays, and grid functions cannot be accessed
-	  cgh->data[n][tl] = 0;
+	  if (CCTK_GroupTypeI(group) != CCTK_SCALAR) {
+	    // Arrays and grid functions cannot be accessed
+	    
+	    cgh->data[n][tl] = 0;
+	    
+	  } else {
+	    // Scalars can be accessed
+	    
+	    if (CCTK_QueryGroupStorageI(cgh, group)) {
+	      // Group has storage
+	      
+	      assert (group<(int)arrdata.size());
+	      assert (var<(int)arrdata[group].data.size());
+	      assert (arrdata[group].data[var]);
+	      const int c = CCTK_MyProc(cgh);
+	      assert (hh->is_local(reflevel,c));
+	      cgh->data[n][tl]
+		= ((*arrdata[group].data[var])
+		   (-tl, reflevel, c, mglevel)->storage());
+	      assert (cgh->data[n][tl]);
+	      
+	    } else {
+	      // Group has no storage
+	      
+	      cgh->data[n][tl] = 0;
+	      
+	    } // if ! has storage
+	    
+	  } // if group type is SCALAR
 	  
 	} // for tl
       }	// for n
