@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.11 2004/03/18 15:12:45 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.12 2004/03/20 15:43:37 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -259,12 +259,21 @@ namespace CarpetIOHDF5 {
     MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
     assert (ndatasets>=0);
 
+    char datasetnames[ndatasets+1][1024];
+
+    for (currdataset=0;currdataset<ndatasets+1;currdataset++){
+      if (myproc==0) {
+	GetDatasetName(reader,currdataset,datasetnames[currdataset]);
+      } //myproc = 0
+    }
+
     if (h5verbose) cout << "ndatasets: " << ndatasets << endl;
 
-    for (currdataset=0;currdataset < ndatasets+1;currdataset++) {
+     for (currdataset=0;currdataset < ndatasets+1;currdataset++) {
       if (myproc==0) {
-	GetDatasetName(reader,currdataset,datasetname);
-	dataset = H5Dopen (reader, datasetname);
+	//GetDatasetName(reader,currdataset,datasetname);
+       	dataset = H5Dopen (reader, datasetnames[currdataset]);
+	//dataset = H5Dopen (reader, datasetname);
 	assert(dataset);
 	// Read data
 	ReadAttribute (dataset, "name", name);

@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOHDF5
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/param.ccl,v 1.5 2004/03/15 23:45:24 cott Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/param.ccl,v 1.6 2004/03/20 15:43:37 cott Exp $
 
 
 
@@ -28,7 +28,7 @@ private:
 
 
 
-BOOLEAN h5verbose "Produce log output"
+BOOLEAN h5verbose "Produce log output" STEERABLE = ALWAYS
 {
 } "no"
 
