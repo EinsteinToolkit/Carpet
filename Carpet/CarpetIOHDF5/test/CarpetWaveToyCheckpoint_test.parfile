@@ -39,6 +39,6 @@ IOASCII::out1D_every = 32
 # Checkpointing
 IO::checkpoint_file  = $parfile
 IO::checkpoint_every = 32
+IO::verbose          = "full"
 
 IOHDF5::checkpoint   = "yes"
-IOHDF5::verbose      = "yes"
