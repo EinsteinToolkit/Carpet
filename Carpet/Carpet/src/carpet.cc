@@ -1,5 +1,3 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.16 2001/03/19 21:29:59 eschnett Exp $
-
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
 // distribution onto the processors is the same, and that all
@@ -8,14 +6,15 @@
 // Scalar variables currently exist in one single incarnation for all
 // refinement levels and all components.
 
+#include <assert.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <algorithm>
-#include <cassert>
-#include <cmath>
 #include <complex>
-#include <cstdarg>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 
 #include <mpi.h>
 
@@ -36,11 +35,13 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.16 2001/03/19 21:29:59 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.17 2001/03/22 18:42:05 eschnett Exp $";
 
 
 
 namespace Carpet {
+  
+  using namespace std;
   
   static void Recompose (cGH* cgh);
   static void CycleTimeLevels (cGH* cgh);
@@ -138,7 +139,8 @@ namespace Carpet {
     
     // Refinement information
     maxreflevels = max_refinement_levels;
-    maxreflevelfact = (int)floor(pow(refinement_factor, maxreflevels-1) + 0.5);
+    maxreflevelfact
+      = (int)floor(pow((double)refinement_factor, maxreflevels-1) + 0.5);
     
     // Ghost zones
     vect<int,dim> lghosts, ughosts;
@@ -212,9 +214,7 @@ namespace Carpet {
 	   multigrid_factor, vertex_centered,
 	   arrext);
 	
-	arrdata[group].tt = new th<dim>
-	  (*hh,
-	   (int)floor(pow(refinement_factor, max_refinement_levels-1) + 0.5));
+	arrdata[group].tt = new th<dim> (*hh, maxreflevelfact);
 	
 	vect<int,dim> alghosts, aughosts;
 	for (int d=0; d<dim; ++d) {
@@ -642,7 +642,11 @@ namespace Carpet {
 #include "typecase"
 #undef TYPECASE
 	  default:
-	    abort();
+	    CCTK_VWarn
+	      (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+	       "Carpet does not support the type of the variable \"%s\".\n"
+	       "Either enable support for this type, "
+	       "or change the type of this variable.", CCTK_FullName(n));
 	  }
 	}
       }
@@ -666,7 +670,11 @@ namespace Carpet {
 #include "typecase"
 #undef TYPECASE
 	default:
-	  abort();
+	  CCTK_VWarn
+	    (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+	     "Carpet does not support the type of the variable \"%s\".\n"
+	     "Either enable support for this type, "
+	     "or change the type of this variable.", CCTK_FullName(n));
 	}
       }
       break;
@@ -688,7 +696,11 @@ namespace Carpet {
 #include "typecase"
 #undef TYPECASE
 	default:
-	  abort();
+	  CCTK_VWarn
+	    (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+	     "Carpet does not support the type of the variable \"%s\".\n"
+	     "Either enable support for this type, "
+	     "or change the type of this variable.", CCTK_FullName(n));
 	}
       }
       break;
@@ -732,7 +744,11 @@ namespace Carpet {
 #include "typecase"
 #undef TYPECASE
 	  default:
-	    abort();
+	    CCTK_VWarn
+	      (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+	       "Carpet does not support the type of the variable \"%s\".\n"
+	       "Either enable support for this type, "
+	       "or change the type of this variable.", CCTK_FullName(n));
 	  }
 	  scdata[group][var][ti] = 0;
 	}
@@ -754,7 +770,11 @@ namespace Carpet {
 #include "typecase"
 #undef TYPECASE
 	default:
-	  abort();
+	  CCTK_VWarn
+	    (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+	     "Carpet does not support the type of the variable \"%s\".\n"
+	     "Either enable support for this type, "
+	     "or change the type of this variable.", CCTK_FullName(n));
 	}
 	arrdata[group].data[var] = 0;
       }
@@ -776,7 +796,11 @@ namespace Carpet {
 #include "typecase"
 #undef TYPECASE
 	default:
-	  abort();
+	  CCTK_VWarn
+	    (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+	     "Carpet does not support the type of the variable \"%s\".\n"
+	     "Either enable support for this type, "
+	     "or change the type of this variable.", CCTK_FullName(n));
 	}
 	gfdata[group].data[var] = 0;
       }
@@ -889,6 +913,7 @@ namespace Carpet {
 	  case CCTK_SCALAR: {
 	    assert (group<(int)scdata.size());
 	    assert (var<(int)scdata[group].size());
+	    const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
 	    void* tmpdata = scdata[group][var][0];
 	    for (int ti=0; ti<num_tl-1; ++ti) {
 	      // TODO: Which refinement level to use?
@@ -902,11 +927,7 @@ namespace Carpet {
 	    assert (group<(int)arrdata.size());
 	    assert (var<(int)arrdata[group].data.size());
 	    for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
-	      for (int ti=0; ti<num_tl-1; ++ti) {
-		const int tmin = min(0, 2 - num_tl);
-		const int tl = tmin + ti;
- 		arrdata[group].data[var]->copy(tl, reflevel, c, mglevel);
-	      }
+	      arrdata[group].data[var]->cycle (reflevel, c, mglevel);
 	    }
 	    break;
 	  }
@@ -914,11 +935,7 @@ namespace Carpet {
 	    assert (group<(int)gfdata.size());
 	    assert (var<(int)gfdata[group].data.size());
 	    for (int c=0; c<hh->components(reflevel); ++c) {
-	      for (int ti=0; ti<CCTK_NumTimeLevelsFromVarI(n)-1; ++ti) {
-		const int tmin = min(0, 2 - CCTK_NumTimeLevelsFromVarI(n));
-		const int tl   = tmin + ti;
-		gfdata[group].data[var]->copy(tl, reflevel, c, mglevel);
-	      }
+	      gfdata[group].data[var]->cycle (reflevel, c, mglevel);
 	    }
 	    break;
 	  }
@@ -1143,7 +1160,7 @@ namespace Carpet {
     // Change
     reflevel = rl;
     const bbox<int,dim>& base = hh->baseextent;
-    reflevelfact = (int)floor(pow(hh->reffact, reflevel)+0.5);
+    reflevelfact = (int)floor(pow((double)hh->reffact, reflevel)+0.5);
     cgh->cctk_delta_time = base_delta_time / reflevelfact;
     for (int d=0; d<dim; ++d) {
       cgh->cctk_gsh[d]

@@ -1,8 +1,10 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.4 2001/03/16 21:32:17 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.5 2001/03/22 18:42:05 eschnett Exp $
 
 #include <vector>
 
 #include "cctk.h"
+
+using namespace std;
 
 
 

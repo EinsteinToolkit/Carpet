@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.3 2001/03/10 20:55:06 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.4 2001/03/22 18:42:05 eschnett Exp $
 
  ***************************************************************************/
 
@@ -21,7 +21,8 @@
 #ifndef DATA_HH
 #define DATA_HH
 
-#include <cassert>
+#include <assert.h>
+
 #include <string>
 
 #include "defs.hh"
@@ -29,6 +30,8 @@
 #include "bbox.hh"
 #include "gdata.hh"
 #include "vect.hh"
+
+using namespace std;
 
 
 
@@ -50,7 +53,7 @@ class data: public generic_data<D> {
   typedef bbox<int,D> ibbox;
 
   // Fields
-  T* restrict _storage;		// the data (if located on this processor)
+  T* _storage;			// the data (if located on this processor)
 
 public:
   
@@ -74,12 +77,12 @@ public:
   virtual void change_processor (const int newproc, void* const mem=0);
 
   // Accessors
-  virtual const T* storage () const {
+  virtual const void* storage () const {
     assert (_has_storage);
     return _storage;
   }
 
-  virtual T* storage () {
+  virtual void* storage () {
     assert (_has_storage);
     return _storage;
   }
@@ -96,14 +99,13 @@ public:
   }
   
   // Data manipulators
-  virtual void copy_from (const generic_data<D>* gsrc, const ibbox& b);
-  virtual void interpolate_from (const generic_data<D>* gsrc,
-				 const ibbox& box);
-  virtual void interpolate_from (const generic_data<D>* gsrc,
-                                 const double sfact,
-				 const generic_data<D>* gtrc,
-				 const double tfact,
-				 const ibbox& box);
+  void copy_from_innerloop (const generic_data<D>* src,
+			    const ibbox& box);
+  void interpolate_from_innerloop (const generic_data<D>* src,
+				   const ibbox& box);
+  void interpolate_from_innerloop (const generic_data<D>* src1, const int t1,
+				   const generic_data<D>* src2, const int t2,
+				   const ibbox& box, const int t);
   
   void write_ascii_output_element (ofstream& file, const ivect& index) const;
 //   void write_ieee (const string name, const int time,

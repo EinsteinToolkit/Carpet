@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.2 2001/03/17 22:37:56 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.3 2001/03/22 18:42:06 eschnett Exp $
 
  ***************************************************************************/
 
@@ -21,9 +21,12 @@
 #ifndef VECT_HH
 #define VECT_HH
 
-#include <cassert>
-#include <cmath>
+#include <assert.h>
+#include <math.h>
+
 #include <iostream>
+
+using namespace std;
 
 
 
@@ -201,25 +204,25 @@ public:
   
   // Non-modifying operators
   vect operator+ () const {
-    vect r(*this);
+    vect r;
     for (int d=0; d<D; ++d) r[d]=+r[d];
     return r;
   }
   
   vect operator- () const {
-    vect r(*this);
+    vect r;
     for (int d=0; d<D; ++d) r[d]=-r[d];
     return r;
   }
   
   vect<bool,D> operator! () const {
-    vect r(*this);
+    vect<bool,D> r;
     for (int d=0; d<D; ++d) r[d]=!r[d];
     return r;
   }
   
   vect operator~ () const {
-    vect r(*this);
+    vect r;
     for (int d=0; d<D; ++d) r[d]=~r[d];
     return r;
   }
@@ -273,14 +276,14 @@ public:
   }
   
   vect<bool,D> operator&& (const T x) const {
-    vect r(*this);
-    for (int d=0; d<D; ++d) r[d]=r[d]&&x;
+    vect<bool,D> r;
+    for (int d=0; d<D; ++d) r[d]=(*this)[d]&&x;
     return r;
   }
   
   vect<bool,D> operator|| (const T x) const {
-    vect r(*this);
-    for (int d=0; d<D; ++d) r[d]=r[d]||x;
+    vect<bool,D> r;
+    for (int d=0; d<D; ++d) r[d]=(*this)[d]||x;
     return r;
   }
   
@@ -402,8 +405,6 @@ public:
   };
 #endif
   
-  // Output
-  friend ostream& operator<< <>(ostream& os, const vect& a);
 };
 
 

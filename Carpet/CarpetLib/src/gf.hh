@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.hh,v 1.2 2001/03/22 18:42:05 eschnett Exp $
 
  ***************************************************************************/
 
@@ -22,8 +22,9 @@
 #ifndef GF_HH
 #define GF_HH
 
-#include <cassert>
-#include <cmath>
+#include <assert.h>
+#include <math.h>
+
 #include <iostream>
 #include <string>
 
@@ -35,6 +36,8 @@
 #include "ggf.hh"
 #include "th.hh"
 #include "vect.hh"
+
+using namespace std;
 
 
 

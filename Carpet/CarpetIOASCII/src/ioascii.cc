@@ -1,11 +1,13 @@
-#include <cassert>
-#include <climits>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <fstream>
+#include <alloca.h>
+#include <assert.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#include <fstream>
 #include <vector>
 
 #include "cctk.h"
@@ -22,10 +24,11 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.10 2001/03/18 22:37:04 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.11 2001/03/22 18:42:05 eschnett Exp $";
 
 
 
+using namespace std;
 using namespace Carpet;
 
 
@@ -218,13 +221,16 @@ int CarpetIOASCII<outdim>
 	if (desired) {
 	  
 	  // Invent a file name
-	  char filename[strlen(myoutdir)+strlen(alias)+100];
+	  char* const filename
+	    = (char*)alloca(strlen(myoutdir)+strlen(alias)+100);
 	  sprintf (filename, "%s/%s.", myoutdir, alias);
 	  for (int d=0; d<outdim; ++d) {
 	    assert (dirs[d]>=0 && dirs[d]<3);
-	    sprintf (filename, "%s%c", filename, "xyz"[dirs[d]]);
+	    const char* const coords = "xyz";
+	    sprintf (filename, "%s%c", filename, coords[dirs[d]]);
 	  }
-	  sprintf (filename, "%s%c", filename, "lpv"[outdim-1]);
+	  const char* const suffixes = "lpv";
+	  sprintf (filename, "%s%c", filename, suffixes[outdim-1]);
 	  
 	  // If this is the first time, then write a nice header on
 	  // the root processor
@@ -575,7 +581,7 @@ bool CheckForVariable (cGH* const cgh,
   const int numvars = CCTK_NumVars();
   assert (vindex>=0 && vindex<numvars);
   
-  bool flags[numvars];
+  bool* const flags = (bool*)alloca(numvars * sizeof(bool));
   
   for (int i=0; i<numvars; ++i) {
     flags[i] = false;
@@ -594,6 +600,6 @@ void SetFlag (int index, const char* optstring, void* arg)
 
 
 // Explicit instantiation for all output dimensions
-template CarpetIOASCII<1>;
-template CarpetIOASCII<2>;
-template CarpetIOASCII<3>;
+template class CarpetIOASCII<1>;
+template class CarpetIOASCII<2>;
+template class CarpetIOASCII<3>;

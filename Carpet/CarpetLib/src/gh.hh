@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.2 2001/03/07 13:00:57 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.3 2001/03/22 18:42:06 eschnett Exp $
 
  ***************************************************************************/
 
@@ -23,7 +23,8 @@
 #ifndef GH_HH
 #define GH_HH
 
-#include <cassert>
+#include <assert.h>
+
 #include <iostream>
 #include <list>
 #include <vector>
@@ -32,6 +33,8 @@
 #include "defs.hh"
 #include "dist.hh"
 #include "vect.hh"
+
+using namespace std;
 
 
 

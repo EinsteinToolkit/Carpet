@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.2 2001/03/15 09:59:43 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.3 2001/03/22 18:42:06 eschnett Exp $
 
  ***************************************************************************/
 
@@ -22,7 +22,8 @@
 #ifndef GGF_HH
 #define GGF_HH
 
-#include <cassert>
+#include <assert.h>
+
 #include <iostream>
 #include <string>
 
@@ -31,6 +32,8 @@
 #include "gdata.hh"
 #include "gh.hh"
 #include "th.hh"
+
+using namespace std;
 
 
 
@@ -83,12 +86,15 @@ public:
   virtual ~generic_gf ();
 
   // Comparison
-  virtual bool operator== (const generic_gf<D>& f) const;
+  bool operator== (const generic_gf<D>& f) const;
 
 
 
   // Modifiers
-  virtual void recompose ();
+  void recompose ();
+
+  // Cycle the time levels by rotating the data sets
+  void cycle (int rl, int c, int ml);
   
   
   
@@ -105,46 +111,40 @@ protected:
 protected:
   
   // Copy region for a component (between time levels)
-  virtual void copycat (int tl1, int rl1, int c1, int ml1,
-			const ibbox dh<D>::dboxes::* recv_list,
-			int tl2, int rl2, int ml2,
-			const ibbox dh<D>::dboxes::* send_list);
+  void copycat (int tl1, int rl1, int c1, int ml1,
+		const ibbox dh<D>::dboxes::* recv_list,
+		int tl2, int rl2, int ml2,
+		const ibbox dh<D>::dboxes::* send_list);
 
   // Copy regions for a component (between multigrid levels)
-  virtual void copycat (int tl1, int rl1, int c1, int ml1,
-			const iblist dh<D>::dboxes::* recv_list,
-			int tl2, int rl2, int ml2,
-			const iblist dh<D>::dboxes::* send_list);
+  void copycat (int tl1, int rl1, int c1, int ml1,
+		const iblist dh<D>::dboxes::* recv_list,
+		int tl2, int rl2, int ml2,
+		const iblist dh<D>::dboxes::* send_list);
 
   // Copy regions for a level (between refinement levels)
-  virtual void copycat (int tl1, int rl1, int c1, int ml1,
-			const iblistvect dh<D>::dboxes::* recv_listvect,
-			int tl2, int rl2, int ml2,
-			const iblistvect dh<D>::dboxes::* send_listvect);
+  void copycat (int tl1, int rl1, int c1, int ml1,
+		const iblistvect dh<D>::dboxes::* recv_listvect,
+		int tl2, int rl2, int ml2,
+		const iblistvect dh<D>::dboxes::* send_listvect);
   
   // Interpolate a component (between time levels)
-  virtual void intercat (int tl1, int rl1, int c1, int ml1,
-			 const ibbox dh<D>::dboxes::* recv_list,
-			 int tl2, const double fact2,
-			 int tl3, const double fact3,
-			 int rl2, int ml2,
-			 const ibbox dh<D>::dboxes::* send_list);
+  void intercat (int tl1, int rl1, int c1, int ml1,
+		 const ibbox dh<D>::dboxes::* recv_list,
+		 int tl2a, int tl2b, int rl2, int ml2,
+		 const ibbox dh<D>::dboxes::* send_list);
 
   // Interpolate a component (between multigrid levels)
-  virtual void intercat (int tl1, int rl1, int c1, int ml1,
-			 const iblist dh<D>::dboxes::* recv_list,
-			 int tl2, const double fact2,
-			 int tl3, const double fact3,
-			 int rl2, int ml2,
-			 const iblist dh<D>::dboxes::* send_list);
+  void intercat (int tl1, int rl1, int c1, int ml1,
+		 const iblist dh<D>::dboxes::* recv_list,
+		 int tl2a, int tl2b, int rl2, int ml2,
+		 const iblist dh<D>::dboxes::* send_list);
 
   // Interpolate a level (between refinement levels)
-  virtual void intercat (int tl1, int rl1, int c1, int ml1,
-			 const iblistvect dh<D>::dboxes::* recv_listvect,
-			 int tl2, const double fact2,
-			 int tl3, const double fact3,
-			 int rl2, int ml2,
-			 const iblistvect dh<D>::dboxes::* send_listvect);
+  void intercat (int tl1, int rl1, int c1, int ml1,
+		 const iblistvect dh<D>::dboxes::* recv_listvect,
+		 int tl2a, int tl2b, int rl2, int ml2,
+		 const iblistvect dh<D>::dboxes::* send_listvect);
 
 
 
@@ -157,25 +157,25 @@ public:
   // synchronised.  They don't need to be prolongated.
 
   // Copy a component from the next time level
-  virtual void copy (int tl, int rl, int c, int ml);
+  void copy (int tl, int rl, int c, int ml);
 
   // Synchronise the boundaries of a component
-  virtual void sync (int tl, int rl, int c, int ml);
+  void sync (int tl, int rl, int c, int ml);
 
   // Prolongate the boundaries of a component
-  virtual void ref_bnd_prolongate (int tl, int rl, int c, int ml);
+  void ref_bnd_prolongate (int tl, int rl, int c, int ml);
 
   // Restrict a multigrid level
-  virtual void mg_restrict (int tl, int rl, int c, int ml);
+  void mg_restrict (int tl, int rl, int c, int ml);
 
   // Prolongate a multigrid level
-  virtual void mg_prolongate (int tl, int rl, int c, int ml);
+  void mg_prolongate (int tl, int rl, int c, int ml);
 
   // Restrict a refinement level
-  virtual void ref_restrict (int tl, int rl, int c, int ml);
+  void ref_restrict (int tl, int rl, int c, int ml);
 
   // Prolongate a refinement level
-  virtual void ref_prolongate (int tl, int rl, int c, int ml);
+  void ref_prolongate (int tl, int rl, int c, int ml);
   
   
   

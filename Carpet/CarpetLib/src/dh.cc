@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.9 2001/03/19 21:30:19 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.10 2001/03/22 18:42:05 eschnett Exp $
 
  ***************************************************************************/
 
@@ -19,7 +19,7 @@
  *                                                                         *
  ***************************************************************************/
 
-#include <cassert>
+#include <assert.h>
 
 #include "defs.hh"
 #include "dist.hh"
@@ -31,6 +31,8 @@
 #endif
 
 #undef DEBUG_OUTPUT
+
+using namespace std;
 
 
 

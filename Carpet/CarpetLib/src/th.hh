@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.hh,v 1.2 2001/03/22 18:42:06 eschnett Exp $
 
  ***************************************************************************/
 
@@ -22,12 +22,15 @@
 #ifndef TH_HH
 #define TH_HH
 
-#include <cassert>
+#include <assert.h>
+
 #include <iostream>
 #include <vector>
 
 #include "defs.hh"
 #include "gh.hh"
+
+using namespace std;
 
 
 

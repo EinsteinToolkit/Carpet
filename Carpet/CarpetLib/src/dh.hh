@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.3 2001/03/10 20:55:06 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.4 2001/03/22 18:42:05 eschnett Exp $
 
  ***************************************************************************/
 
@@ -22,7 +22,8 @@
 #ifndef DH_HH
 #define DH_HH
 
-#include <cassert>
+#include <assert.h>
+
 #include <iostream>
 #include <list>
 #include <string>
@@ -33,6 +34,8 @@
 #include "defs.hh"
 #include "gh.hh"
 #include "vect.hh"
+
+using namespace std;
 
 
 
@@ -57,6 +60,7 @@ class dh {
   typedef list<ibbox>    iblist;
   typedef vector<iblist> iblistvect; // vector of lists
   
+public:
   struct dboxes {
     ibbox exterior;		// whole region (including boundaries)
     
@@ -77,6 +81,7 @@ class dh {
     iblistvect recv_ref_bnd_coarse; // received from coarser grids
     ibset sync_not;		// not received while syncing (outer boundary)
   };
+private:
   
   struct dbases {
     ibbox exterior;		// whole region (including boundaries)

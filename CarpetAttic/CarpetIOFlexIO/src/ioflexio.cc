@@ -1,11 +1,13 @@
-#include <cassert>
-#include <climits>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <fstream>
+#include <alloca.h>
+#include <assert.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#include <fstream>
 #include <vector>
 
 #include <AMRwriter.hh>
@@ -31,12 +33,13 @@
 
 #include "ioflexio.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.6 2001/03/19 21:30:09 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.7 2001/03/22 18:42:05 eschnett Exp $";
 
 
 
 namespace CarpetIOFlexIO {
   
+  using namespace std;
   using namespace Carpet;
   
   
@@ -165,7 +168,7 @@ namespace CarpetIOFlexIO {
       }
       extension = GetStringParameter ("out3D_extension", extension);
       
-      char filename[strlen(myoutdir)+strlen(alias)+strlen(extension)+100];
+      char* const filename = (char*)alloca(strlen(myoutdir)+strlen(alias)+strlen(extension)+100);
       sprintf (filename, "%s/%s%s", myoutdir, alias, extension);
       
       IObase* writer = 0;
@@ -446,7 +449,7 @@ namespace CarpetIOFlexIO {
       }
       extension = GetStringParameter ("in3D_extension", extension);
       
-      char filename[strlen(myindir)+strlen(alias)+strlen(extension)+100];
+      char* const filename = (char*)alloca(strlen(myindir)+strlen(alias)+strlen(extension)+100);
       sprintf (filename, "%s/%s.%s", myindir, alias, extension);
       
       IObase* reader = 0;
@@ -652,7 +655,7 @@ namespace CarpetIOFlexIO {
     const int numvars = CCTK_NumVars();
     assert (vindex>=0 && vindex<numvars);
     
-    bool flags[numvars];
+    bool* const flags = (bool*)alloca(numvars * sizeof(bool));
     
     for (int i=0; i<numvars; ++i) {
       flags[i] = false;

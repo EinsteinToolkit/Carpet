@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.4 2001/03/14 11:00:26 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.5 2001/03/22 18:42:05 eschnett Exp $
 
  ***************************************************************************/
 
@@ -21,8 +21,9 @@
 #ifndef GDATA_HH
 #define GDATA_HH
 
-#include <cassert>
-#include <cstdlib>
+#include <assert.h>
+#include <stdlib.h>
+
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -31,6 +32,8 @@
 #include "dist.hh"
 #include "bbox.hh"
 #include "vect.hh"
+
+using namespace std;
 
 
 
@@ -131,13 +134,22 @@ public:
   }
 
   // Data manipulators
-  virtual void copy_from (const generic_data* src,
-                          const ibbox& b) = 0;
-  virtual void interpolate_from (const generic_data* src,
-				 const ibbox& box) = 0;
-  virtual void interpolate_from (const generic_data* src, const double sfact,
-				 const generic_data* trc, const double tfact,
-				 const ibbox& box) = 0;
+  void copy_from (const generic_data* src, const ibbox& box);
+  void interpolate_from (const generic_data* src, const ibbox& box);
+  void interpolate_from (const generic_data* src1, const int t1,
+			 const generic_data* src2, const int t2,
+			 const ibbox& box, const int t);
+protected:
+  virtual void
+  copy_from_innerloop (const generic_data* src, const ibbox& box) = 0;
+  virtual void
+  interpolate_from_innerloop (const generic_data* src, const ibbox& box) =0;
+  virtual void
+  interpolate_from_innerloop (const generic_data* src1, const int t1,
+			      const generic_data* src2, const int t2,
+			      const ibbox& box, const int t) = 0;
+  
+public:
   
   // Output
   template<int DD>

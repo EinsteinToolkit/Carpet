@@ -1,20 +1,7 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_2tl.F77,v 1.12 2004/03/11 12:03:09 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_2tl.F77,v 1.2 2001/03/22 18:42:06 eschnett Exp $
       
 #include "cctk.h"
-
-
-
-#define CHKIDX(i,j,k, imax,jmax,kmax, where)                                  \
-      if ((i).lt.1 .or. (i).gt.(imax)                                         \
-           .or. (j).lt.1 .or. (j).gt.(jmax)                                   \
-           .or. (k).lt.1 .or. (k).gt.(kmax)) then                           &&\
-         write (msg, '(a, " array index out of bounds: shape is (",i4,",",i4,",",i4,"), index is (",i4,",",i4,",",i4,")")') \
-              (where), (imax), (jmax), (kmax), (i), (j), (k)                &&\
-         call CCTK_WARN (0, msg(1:len_trim(msg)))                           &&\
-      end if
-
-
       
       subroutine prolongate_3d_real8_2tl (
      $     src1, t1, src2, t2, srciext, srcjext, srckext,
@@ -26,17 +13,14 @@ c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d
       CCTK_REAL8 one
       parameter (one = 1)
       
-      CCTK_REAL8 eps
-      parameter (eps = 1.0d-10)
-      
       integer srciext, srcjext, srckext
       CCTK_REAL8 src1(srciext,srcjext,srckext)
-      CCTK_REAL8 t1
+      integer t1
       CCTK_REAL8 src2(srciext,srcjext,srckext)
-      CCTK_REAL8 t2
+      integer t2
       integer dstiext, dstjext, dstkext
       CCTK_REAL8 dst(dstiext,dstjext,dstkext)
-      CCTK_REAL8 t
+      integer t
 c     bbox(:,1) is lower boundary (inclusive)
 c     bbox(:,2) is upper boundary (inclusive)
 c     bbox(:,3) is stride
@@ -51,17 +35,13 @@ c     bbox(:,3) is stride
       
       CCTK_REAL8 s1fac, s2fac
       
-      CCTK_REAL8 dstdiv
       integer i, j, k
       integer i0, j0, k0
       integer fi, fj, fk
-      integer ifac(2), jfac(2), kfac(2)
       integer ii, jj, kk
       integer fac
       CCTK_REAL8 res
       integer d
-      
-      character msg*1000
       
       
       
@@ -78,24 +58,9 @@ c     bbox(:,3) is stride
             call CCTK_WARN (0, "Internal error: destination strides are not integer multiples of the source strides")
          end if
          if (mod(srcbbox(d,1), srcbbox(d,3)).ne.0
-     $        .or. mod(dstbbox(d,1), dstbbox(d,3)).ne.0
+     $     .or. mod(dstbbox(d,1), dstbbox(d,3)).ne.0
      $        .or. mod(regbbox(d,1), regbbox(d,3)).ne.0) then
             call CCTK_WARN (0, "Internal error: array origins are not integer multiples of the strides")
-         end if
-         if (regbbox(d,1).gt.regbbox(d,2)) then
-c     This could be handled, but is likely to point to an error elsewhere
-            call CCTK_WARN (0, "Internal error: region extent is empty")
-         end if
-         if (mod(srcbbox(d,2) - srcbbox(d,1), srcbbox(d,3)).ne.0
-     $        .or. mod(dstbbox(d,2) - dstbbox(d,1), dstbbox(d,3)).ne.0
-     $        .or. mod(regbbox(d,2) - regbbox(d,1), regbbox(d,3)).ne.0) then
-            call CCTK_WARN (0, "Internal error: array extents are not integer multiples of the strides")
-         end if
-         if (regbbox(d,1).lt.srcbbox(d,1)
-     $        .or. regbbox(d,1).lt.dstbbox(d,1)
-     $        .or. regbbox(d,2).gt.srcbbox(d,2)
-     $        .or. regbbox(d,2).gt.dstbbox(d,2)) then
-            call CCTK_WARN (0, "Internal error: region extent is not contained in array extent")
          end if
       end do
       
@@ -128,63 +93,60 @@ c     This could be handled, but is likely to point to an error elsewhere
       
       
       
-c     Linear (first order) interpolation
-      if (t1.eq.t2) then
-         call CCTK_WARN (0, "Internal error: arrays have same time")
-      end if
-      if (t.lt.min(t1,t2)-eps .or. t.gt.max(t1,t2)+eps) then
-         call CCTK_WARN (0, "Internal error: extrapolation in time")
-      end if
-      
-      s1fac = (t - t2) / (t1 - t2)
-      s2fac = (t - t1) / (t2 - t1)
+      s1fac = (t - t2) * one / (t1 - t2)
+      s2fac = (t - t1) * one / (t2 - t1)
       
       
       
 c     Loop over fine region
-      dstdiv = one / (dstifac * dstjfac * dstkfac)
-      
       do k = 0, regkext-1
-         k0 = (srckoff + k) / dstkfac
-         fk = mod(srckoff + k, dstkfac)
-         kfac(1) = (fk-dstkfac) * (-1)
-         kfac(2) = (fk        ) * 1
-         
          do j = 0, regjext-1
-            j0 = (srcjoff + j) / dstjfac
-            fj = mod(srcjoff + j, dstjfac)
-            jfac(1) = (fj-dstjfac) * (-1)
-            jfac(2) = (fj        ) * 1
-            
             do i = 0, regiext-1
-               i0 = (srcioff + i) / dstifac
+               
+               i0 = (srcioff + i) / dstifac + 1
+               j0 = (srcjoff + j) / dstjfac + 1
+               k0 = (srckoff + k) / dstkfac + 1
+               
                fi = mod(srcioff + i, dstifac)
-               ifac(1) = (fi-dstifac) * (-1)
-               ifac(2) = (fi        ) * 1
+               fj = mod(srcjoff + j, dstjfac)
+               fk = mod(srckoff + k, dstkfac)
                
                res = 0
                
-               do kk=1,2
-                  do jj=1,2
-                     do ii=1,2
+               do kk=0,1
+                  do jj=0,1
+                     do ii=0,1
                         
-                        fac = ifac(ii) * jfac(jj) * kfac(kk)
+                        fac = 1
+                        
+                        if (ii.eq.0) then
+                           fac = fac * (dstifac - fi)
+                        else
+                           fac = fac *            fi
+                        end if
+                        if (jj.eq.0) then
+                           fac = fac * (dstjfac - fj)
+                        else
+                           fac = fac *            fj
+                        end if
+                        if (kk.eq.0) then
+                           fac = fac * (dstkfac - fk)
+                        else
+                           fac = fac *            fk
+                        end if
                         
                         if (fac.ne.0) then
-                           CHKIDX (i0+ii, j0+jj, k0+kk, \
-                                   srciext,srcjext,srckext, "source")
                            res = res
-     $                          + fac * s1fac * src1(i0+ii, j0+jj, k0+kk)
-     $                          + fac * s2fac * src2(i0+ii, j0+jj, k0+kk)
+     $                          + fac * s1fac * src1(i0+ii,j0+jj,k0+kk)
+     $                          + fac * s2fac * src2(i0+ii,j0+jj,k0+kk)
                         end if
                         
                      end do
                   end do
                end do
                
-               CHKIDX (dstioff+i+1, dstjoff+j+1, dstkoff+k+1, \
-                       dstiext,dstjext,dstkext, "destination")
-               dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = dstdiv * res
+               dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1)
+     $              = res / (dstifac * dstjfac * dstkfac)
                
             end do
          end do

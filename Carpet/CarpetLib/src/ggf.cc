@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.5 2001/03/19 21:30:19 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.6 2001/03/22 18:42:05 eschnett Exp $
 
  ***************************************************************************/
 
@@ -19,7 +19,8 @@
  *                                                                         *
  ***************************************************************************/
 
-#include <cassert>
+#include <assert.h>
+
 #include <iostream>
 #include <string>
 
@@ -30,6 +31,8 @@
 #if !defined(TMPL_IMPLICIT) || !defined(GGF_HH)
 #  include "ggf.hh"
 #endif
+
+using namespace std;
 
 
 
@@ -150,6 +153,19 @@ void generic_gf<D>::recompose () {
   } // for tl
 }
 
+// Cycle the time levels by rotating the data sets
+template<int D>
+void generic_gf<D>::cycle (int rl, int c, int ml) {
+  assert (rl>=0 && rl<h.reflevels());
+  assert (c>=0 && c<h.components(rl));
+  assert (ml>=0 && ml<h.mglevels(rl,c));
+  generic_data<D>* tmpdata = storage[tmin-tmin][rl][c][ml];
+  for (int tl=tmin; tl<=tmax-1; ++tl) {
+    storage[tl-tmin][rl][c][ml] = storage[tl+1-tmin][rl][c][ml];
+  }
+  storage[tmax-tmin][rl][c][ml] = tmpdata;
+}
+
 
 
 // Operations
@@ -240,17 +256,15 @@ void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
 template<int D>
 void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
 			      const ibbox dh<D>::dboxes::* recv_list,
-			      int tl2, const double fact2,
-			      int tl3, const double fact3,
-			      int rl2, int ml2,
+			      int tl2a, int tl2b, int rl2, int ml2,
 			      const ibbox dh<D>::dboxes::* send_list)
 {
   assert (tl1>=tmin && tl1<=tmax);
   assert (rl1>=0 && rl1<h.reflevels());
   assert (c1>=0 && c1<h.components(rl1));
   assert (ml1>=0 && ml1<h.mglevels(rl1,c1));
-  assert (tl2>=tmin && tl2<=tmax);
-  assert (tl3>=tmin && tl3<=tmax);
+  assert (tl2a>=tmin && tl2a<=tmax);
+  assert (tl2b>=tmin && tl2b<=tmax);
   assert (rl2>=0 && rl2<h.reflevels());
   const int c2=c1;
   assert (ml2<h.mglevels(rl2,c2));
@@ -260,25 +274,23 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
   // interpolate the content
   assert (recv==send);
   storage[tl1-tmin][rl1][c1][ml1]->interpolate_from
-    (storage[tl2-tmin][rl2][c2][ml2], fact2,
-     storage[tl3-tmin][rl2][c2][ml2], fact3, recv);
+    (storage[tl2a-tmin][rl2][c2][ml2], tl2a,
+     storage[tl2b-tmin][rl2][c2][ml2], tl2b, recv, tl1);
 }
 
 // Interpolate a component (between multigrid levels)
 template<int D>
 void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
 			      const iblist dh<D>::dboxes::* recv_list,
-			      int tl2, const double fact2,
-			      int tl3, const double fact3,
-			      int rl2, int ml2,
+			      int tl2a, int tl2b, int rl2, int ml2,
 			      const iblist dh<D>::dboxes::* send_list)
 {
   assert (tl1>=tmin && tl1<=tmax);
   assert (rl1>=0 && rl1<h.reflevels());
   assert (c1>=0 && c1<h.components(rl1));
   assert (ml1>=0 && ml1<h.mglevels(rl1,c1));
-  assert (tl2>=tmin && tl2<=tmax);
-  assert (tl3>=tmin && tl3<=tmax);
+  assert (tl2a>=tmin && tl2a<=tmax);
+  assert (tl2b>=tmin && tl2b<=tmax);
   assert (rl2>=0 && rl2<h.reflevels());
   const int c2=c1;
   assert (ml2<h.mglevels(rl2,c2));
@@ -291,8 +303,8 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
     // (use the send boxes for communication)
     // interpolate the content
     storage[tl1-tmin][rl1][c1][ml1]->interpolate_from
-      (storage[tl2-tmin][rl2][c2][ml2], fact2,
-       storage[tl3-tmin][rl2][c2][ml2], fact3, *r);
+      (storage[tl2a-tmin][rl2][c2][ml2], tl2a,
+       storage[tl2b-tmin][rl2][c2][ml2], tl2b, *r, tl1);
   }
 }
 
@@ -300,18 +312,16 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
 template<int D>
 void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
 			      const iblistvect dh<D>::dboxes::* recv_listvect,
-			      int tl2, const double fact2,
-			      int tl3, const double fact3,
-			      int rl2, int ml2,
+			      int tl2a, int tl2b, int rl2, int ml2,
 			      const iblistvect dh<D>::dboxes::* send_listvect)
 {
   assert (tl1>=tmin && tl1<=tmax);
   assert (rl1>=0 && rl1<h.reflevels());
   assert (c1>=0 && c1<h.components(rl1));
   assert (ml1>=0 && ml1<h.mglevels(rl1,c1));
-  assert (tl2>=tmin && tl2<=tmax);
+  assert (tl2a>=tmin && tl2a<=tmax);
+  assert (tl2b>=tmin && tl2b<=tmax);
   assert (rl2>=0 && rl2<h.reflevels());
-  assert (tl3>=tmin && tl3<=tmax);
   // walk all components
   for (int c2=0; c2<h.components(rl2); ++c2) {
     assert (ml2<h.mglevels(rl2,c2));
@@ -324,8 +334,8 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
       // (use the send boxes for communication)
       // interpolate the content
       storage[tl1-tmin][rl1][c1][ml1]->interpolate_from
-      	(storage[tl2-tmin][rl2][c2][ml2], fact2,
-      	 storage[tl3-tmin][rl2][c2][ml2], fact3, *r);
+      	(storage[tl2a-tmin][rl2][c2][ml2], tl2a,
+      	 storage[tl2b-tmin][rl2][c2][ml2], tl2b, *r, tl1);
     }
   }
 }
@@ -361,13 +371,11 @@ void generic_gf<D>::ref_bnd_prolongate (int tl, int rl, int c, int ml) {
     copycat (tl ,rl  ,c,ml, &dh<D>::dboxes::recv_ref_bnd_coarse,
       	     tl2,rl-1,  ml, &dh<D>::dboxes::send_ref_bnd_fine);
   } else {
-    int tl3=tl2+1;
-    assert (tl3>=tmin && tl3<=tmax);
-    const double fact2 = 1 - (time - tl2);
-    const double fact3 = 1 - fact2;
+    const int tl2a=tl2;
+    const int tl2b=tl2+1;
+    assert (tl2b>=tmin && tl2b<=tmax);
     intercat (tl,rl,c,ml, &dh<D>::dboxes::recv_ref_bnd_coarse,
-      	      tl2,fact2, tl3,fact3,
-      	      rl-1,ml, &dh<D>::dboxes::send_ref_bnd_fine);
+      	      tl2a, tl2b, rl-1,ml, &dh<D>::dboxes::send_ref_bnd_fine);
   }
 }
 

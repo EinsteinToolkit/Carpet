@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.6 2001/03/14 11:00:26 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.7 2001/03/22 18:42:05 eschnett Exp $
 
  ***************************************************************************/
 
@@ -26,13 +26,15 @@
 #include "defs.hh"
 #include "vect.hh"
 
+using namespace std;
+
 
 
 // Forward definition
 template<class T, int D> class bbox;
 
 // Output
-template<class T,int D>
+template<class T, int D>
 ostream& operator<< (ostream& os, const bbox<T,D>& b);
 
 
@@ -102,7 +104,7 @@ public:
   // Iterators
   class iterator {
   protected:
-    bbox box;
+    const bbox& box;
     vect<T,D> pos;
   public:
     iterator (const bbox& box, const vect<T,D>& pos);
@@ -115,7 +117,7 @@ public:
   iterator end () const;
   
   // Output
-  friend ostream& operator<< <>(ostream& os, const bbox& b);
+  friend ostream& operator<< <>(ostream& os, const bbox& s);
 };
 
 

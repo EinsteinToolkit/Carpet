@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.2 2001/03/19 21:30:19 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.3 2001/03/22 18:42:06 eschnett Exp $
 
  ***************************************************************************/
 
@@ -18,7 +18,8 @@
  *                                                                         *
  ***************************************************************************/
 
-#include <cassert>
+#include <assert.h>
+
 #include <iostream>
 
 #include "defs.hh"
@@ -27,9 +28,13 @@
 #  include "vect.hh"
 #endif
 
+using namespace std;
+
 
 
 // Output
+#ifndef SGI
+// This doesn't work on SGIs.  Is this legal C++?
 template<class T,int D>
 ostream& operator<< (ostream& os, const vect<T,D>& a) {
   os << "[";
@@ -40,6 +45,35 @@ ostream& operator<< (ostream& os, const vect<T,D>& a) {
   os << "]";
   return os;
 }
+#else
+ostream& operator<< (ostream& os, const vect<int,1>& a) {
+  os << "[";
+  for (int d=0; d<1; ++d) {
+    if (d>0) os << ",";
+    os << a[d];
+  }
+  os << "]";
+  return os;
+}
+ostream& operator<< (ostream& os, const vect<int,2>& a) {
+  os << "[";
+  for (int d=0; d<2; ++d) {
+    if (d>0) os << ",";
+    os << a[d];
+  }
+  os << "]";
+  return os;
+}
+ostream& operator<< (ostream& os, const vect<int,3>& a) {
+  os << "[";
+  for (int d=0; d<3; ++d) {
+    if (d>0) os << ",";
+    os << a[d];
+  }
+  os << "]";
+  return os;
+}
+#endif
 
 
 

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.cc,v 1.3 2001/03/07 13:00:57 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.cc,v 1.4 2001/03/22 18:42:05 eschnett Exp $
 
  ***************************************************************************/
 
@@ -18,7 +18,7 @@
  *                                                                         *
  ***************************************************************************/
 
-#include <cassert>
+#include <assert.h>
 
 #include <mpi.h>
 
@@ -30,6 +30,8 @@
 #if !defined(TMPL_IMPLICIT) || !defined(DIST_HH)
 #  include "dist.hh"
 #endif
+
+using namespace std;
 
 
 

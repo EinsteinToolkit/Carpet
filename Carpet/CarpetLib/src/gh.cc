@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.4 2001/03/19 21:30:19 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.5 2001/03/22 18:42:06 eschnett Exp $
 
  ***************************************************************************/
 
@@ -20,8 +20,8 @@
  *                                                                         *
  ***************************************************************************/
 
-#include <cassert>
-#include <cstdlib>
+#include <assert.h>
+#include <stdlib.h>
 #include <iostream>
 
 #include "defs.hh"
@@ -31,6 +31,8 @@
 #if !defined(TMPL_IMPLICIT) || !defined(GH_HH)
 #  include "gh.hh"
 #endif
+
+using namespace std;
 
 
 

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.4 2001/03/12 16:54:25 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.5 2001/03/22 18:42:05 eschnett Exp $
 
  ***************************************************************************/
 
@@ -18,7 +18,8 @@
  *                                                                         *
  ***************************************************************************/
 
-#include <cassert>
+#include <assert.h>
+
 #include <iostream>
 
 #include "defs.hh"
@@ -27,6 +28,8 @@
 #if !defined(TMPL_IMPLICIT) || !defined(BBOX_HH)
 #  include "bbox.hh"
 #endif
+
+using namespace std;
 
 
 
@@ -223,19 +226,37 @@ bbox<T,D>::iterator bbox<T,D>::end () const {
 
 
 // Output
+#ifndef SGI
+// This doesn't work on SGIs.  Is this legal C++?
 template<class T,int D>
 ostream& operator<< (ostream& os, const bbox<T,D>& b) {
   os << "(" << b.lower() << ":" << b.upper() << ":" << b.stride() << ")";
   return os;
 }
+#else
+ostream& operator<< (ostream& os, const bbox<int,1>& b) {
+  os << "(" << b.lower() << ":" << b.upper() << ":" << b.stride() << ")";
+  return os;
+}
+ostream& operator<< (ostream& os, const bbox<int,2>& b) {
+  os << "(" << b.lower() << ":" << b.upper() << ":" << b.stride() << ")";
+  return os;
+}
+ostream& operator<< (ostream& os, const bbox<int,3>& b) {
+  os << "(" << b.lower() << ":" << b.upper() << ":" << b.stride() << ")";
+  return os;
+}
+#endif
 
 
 
 #if defined(TMPL_EXPLICIT)
 template class bbox<int,1>;
 template ostream& operator<< (ostream& os, const bbox<int,1>& b);
+
 template class bbox<int,2>;
 template ostream& operator<< (ostream& os, const bbox<int,2>& b);
+
 template class bbox<int,3>;
 template ostream& operator<< (ostream& os, const bbox<int,3>& b);
 #endif

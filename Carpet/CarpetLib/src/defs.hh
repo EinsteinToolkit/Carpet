@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.3 2001/03/18 05:20:24 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.4 2001/03/22 18:42:05 eschnett Exp $
 
  ***************************************************************************/
 
@@ -30,6 +30,8 @@
 #include <list>
 #include <set>
 #include <vector>
+
+using namespace std;
 
 // Stringification
 #define STR(s) #s

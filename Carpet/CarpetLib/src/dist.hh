@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.hh,v 1.3 2001/03/07 13:00:57 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.hh,v 1.4 2001/03/22 18:42:05 eschnett Exp $
 
  ***************************************************************************/
 
@@ -21,15 +21,17 @@
 #ifndef DIST_HH
 #define DIST_HH
 
-#include <cassert>
-#include <cstdio>
-#include <cstdlib>
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <complex>
 
 #include <mpi.h>
 
 #include "defs.hh"
+
+using namespace std;
 
 
 

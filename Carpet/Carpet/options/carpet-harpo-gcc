@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-harpo-gcc,v 1.4 2002/09/08 20:38:35 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-harpo-gcc,v 1.2 2001/03/22 18:42:00 eschnett Exp $
 
 CC			= gcc
 CXX			= g++
@@ -13,14 +13,14 @@ LD			= g++
 #LD			= /u1/eschnett/bin/g++
 
 CFLAGS			=
-CXXFLAGS		= -ftemplate-depth-30 -DMPIPP_H
+CXXFLAGS		= -DTMPL_EXPLICIT -ftemplate-depth-30 -DMPIPP_H
 FFLAGS			=
 F90FLAGS		=
 
 C_OPTIMISE_FLAGS	= -O3 -funroll-loops
 CXX_OPTIMISE_FLAGS	= -O3 -funroll-loops
-F90_OPTIMISE_FLAGS	= -O3 -funroll-loops -malign-double
-F77_OPTIMISE_FLAGS	= -O3 -funroll-loops -malign-double
+F90_OPTIMISE_FLAGS	= -O3 -funroll-loops
+F77_OPTIMISE_FLAGS	= -O3 -funroll-loops
 
 C_WARN_FLAGS		= -Wall -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wstrict-prototypes -Wmissing-declarations -Winline
 CXX_WARN_FLAGS		= -Wall -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wstrict-prototypes -Wmissing-declarations -Winline

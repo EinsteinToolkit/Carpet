@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.5 2001/03/21 22:57:40 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.6 2001/03/22 18:42:06 eschnett Exp $
       
 #include "cctk.h" 
 #include "cctk_Parameters.h"
@@ -182,7 +182,7 @@ c     Apply boundary condition
       
       call Cart3dSymGN (ierr, cctkGH, "spacetimetoy::spacetimeevolve")
       if (ierr .lt. 0)  then
-         call CCTK_WARN (0, "Error while applying boundary condition")
+         call CCTK_WARN (0, "Error while applying symmetry condition")
       end if
       
       end
