@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.1 2004/03/03 09:44:26 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.2 2004/03/03 13:07:01 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -1051,6 +1051,12 @@ namespace CarpetIOHDF5 {
       values[i] = values1[i];
     }
     
+    herr = H5Tclose (datatype);
+    assert (!herr);
+    
+    herr = H5Sclose (dataspace);
+    assert (!herr);
+    
     herr = H5Aclose (attribute);
     assert (!herr);
     
@@ -1104,6 +1110,12 @@ namespace CarpetIOHDF5 {
       values[i] = values1[i];
     }
     
+    herr = H5Tclose (datatype);
+    assert (!herr);
+    
+    herr = H5Sclose (dataspace);
+    assert (!herr);
+    
     herr = H5Aclose (attribute);
     assert (!herr);
     
@@ -1146,6 +1158,15 @@ namespace CarpetIOHDF5 {
     assert (!herr);
     values[length] = '\0';
     
+    herr = H5Tclose (datatype);
+    assert (!herr);
+    
+    herr = H5Sclose (dataspace);
+    assert (!herr);
+    
+    herr = H5Aclose (attribute);
+    assert (!herr);
+    
     return length;
   }
   
@@ -1181,6 +1202,12 @@ namespace CarpetIOHDF5 {
     for (int i=0; i<min(length, nvalues); ++i) {
       values[i] = values1[i];
     }
+    
+    herr = H5Tclose (datatype);
+    assert (!herr);
+    
+    herr = H5Sclose (dataspace);
+    assert (!herr);
     
     herr = H5Aclose (attribute);
     assert (!herr);
