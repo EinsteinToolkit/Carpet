@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.9 2002/07/18 14:30:44 shawley Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.10 2002/07/18 14:32:18 shawley Exp $";
 
 CCTK_FILEVERSION(Carpet_Cycle_cc)
 
@@ -67,7 +67,7 @@ namespace Carpet {
   
   void FlipTimeLevelsOnCoarser (const cGH* cgh, const int cur_rl)
   {
-    Checkpoint ("%*sFlipTimeLevels", 2*reflevel, "");
+    Checkpoint ("%*sFlipTimeLevels", 2*reflevel,  "");
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_GroupTypeI(group) == CCTK_GF
