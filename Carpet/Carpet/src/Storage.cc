@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.14 2003/04/30 12:43:21 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.15 2003/05/02 14:20:26 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -46,12 +46,15 @@ namespace Carpet {
     
     // Check whether this group has transfer operators
     if (! arrdata[group].do_transfer) {
-      const int var = CCTK_FirstVarIndexI(group);
-      const int vartype = CCTK_VarTypeI(var);
-      const char * vartypename = CCTK_VarTypeName(vartype);
-      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "(Allocating storage for Cactus group \"%s\".)  Note: This group (which has the variable type %s) will be neither prolongated nor restricted.",
-                  groupname, vartypename);
+      const int grouptype = CCTK_GroupTypeI(group);
+      if (grouptype == CCTK_GF) {
+        const int var = CCTK_FirstVarIndexI(group);
+        const int vartype = CCTK_VarTypeI(var);
+        const char * vartypename = CCTK_VarTypeName(vartype);
+        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "(Allocating storage for Cactus group \"%s\".)  Note: This group (which has the variable type %s) will be neither prolongated nor restricted.",
+                    groupname, vartypename);
+      }
     }
     
     // There is a difference between the Cactus time levels and the
