@@ -940,7 +940,8 @@ namespace CarpetReduce {
         bool need_time_interp
           = (! reduce_arrays
              && (fabs(current_time - level_time)
-                 > 1e-12 * fabs(cgh->cctk_delta_time)));
+                 > 1e-12 * (fabs(level_time) + fabs(current_time)
+                            + fabs(cgh->cctk_delta_time))));
         assert (! (! want_global_mode && need_time_interp));
         assert (! (reduce_arrays && need_time_interp));
         
