@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.33 2004/03/22 18:12:33 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.34 2004/03/23 09:26:49 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -187,22 +187,6 @@ void ggf<D>::flip (int rl, int c, int ml) {
     storage[tl2-tmin][rl][c][ml] = tmpdata;
   }
 }
-
-#if 0
-// Copy data from current time level to all previous levels
-template<int D>
-void ggf<D>::copytoprevs (int rl, int c, int ml) {
-  assert (rl>=0 && rl<h.reflevels());
-  assert (c>=0 && c<h.components(rl));
-  assert (ml>=0 && ml<h.mglevels(rl,c));
-  for (int tl=tmin; tl<=tmax-1; ++tl) {
-    storage[tl-tmin][rl][c][ml]->copy_from 
-      (storage[tmax-tmin][rl][c][ml], storage[tmax-tmin][rl][c][ml]->extent());
-  }
-}
-#endif
-
-
 
 
 

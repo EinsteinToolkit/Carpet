@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.18 2004/01/25 14:57:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.19 2004/03/23 09:26:49 schnetter Exp $
 
 #ifndef GGF_HH
 #define GGF_HH
@@ -89,11 +89,6 @@ public:
   
   // Flip the time levels by exchanging the data sets
   void flip (int rl, int c, int ml);
-  
-#if 0
-  // Copy data from current time level to all previous time levels
-  void copytoprevs (int rl, int c, int ml);
-#endif
   
   
   
