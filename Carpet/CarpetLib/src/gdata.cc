@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.26 2004/01/25 14:57:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.27 2004/03/23 12:14:29 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -52,13 +52,26 @@ comm_state<D>::~comm_state ()
 
 
 
+// Hand out the next MPI tag
+static int nexttag ()
+{
+  static int last = 100;
+  ++last;
+  if (last > 30000) last = 100;
+  return last;
+}
+
+
+
 // Constructors
 template<int D>
 gdata<D>::gdata (const int varindex_, const operator_type transport_operator_)
   : varindex(varindex_), transport_operator(transport_operator_),
     wtime_isend(0.0), wtime_isendwait(0.0),
     wtime_irecv(0.0), wtime_irecvwait(0.0),
-    _has_storage(false)
+    _has_storage(false),
+    comm_active(false),
+    tag(nexttag())
 { }
 
 // Destructors

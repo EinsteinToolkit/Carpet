@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.22 2004/01/25 14:57:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.23 2004/03/23 12:14:29 schnetter Exp $
 
 #ifndef GDATA_HH
 #define GDATA_HH
@@ -73,6 +73,11 @@ protected:                      // should be readonly
   ivect _shape, _stride;      	// shape and index order
   
   ibbox _extent;		// bbox for all data
+  
+  bool comm_active;
+  MPI_Request request;
+  
+  int tag;                      // MPI tag for this object
   
 public:
 

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.45 2004/03/03 15:30:40 hawke Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.46 2004/03/23 12:14:29 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -26,33 +26,18 @@ using namespace std;
 
 
 
-// Hand out the next MPI tag
-static int nexttag ()
-{
-  static int last = 100;
-  ++last;
-  if (last > 30000) last = 100;
-  return last;
-}
-
-
-
 // Constructors
 template<class T, int D>
 data<T,D>::data (const int varindex_, const operator_type transport_operator_)
   : gdata<D>(varindex_, transport_operator_),
-    _storage(0),
-    comm_active(false),
-    tag(nexttag())
+    _storage(0)
 { }
 
 template<class T, int D>
 data<T,D>::data (const int varindex_, const operator_type transport_operator_,
                  const ibbox& extent_, const int proc_)
   : gdata<D>(varindex_, transport_operator_),
-    _storage(0),
-    comm_active(false),
-    tag(nexttag())
+    _storage(0)
 {
   allocate(extent_, proc_);
 }
@@ -146,8 +131,8 @@ void data<T,D>::change_processor (comm_state<D>& state,
 template<class T, int D>
 void data<T,D>::change_processor_recv (const int newproc, void* const mem)
 {
-  assert (!comm_active);
-  comm_active = true;
+  assert (!this->comm_active);
+  this->comm_active = true;
   
   if (newproc == this->_proc) {
     assert (!mem);
@@ -171,7 +156,7 @@ void data<T,D>::change_processor_recv (const int newproc, void* const mem)
       const double wtime1 = MPI_Wtime();
       T dummy;
       MPI_Irecv (_storage, this->_size, dist::datatype(dummy), this->_proc,
-                 this->tag, dist::comm, &request);
+                 this->tag, dist::comm, &this->request);
       const double wtime2 = MPI_Wtime();
       this->wtime_irecv += wtime2 - wtime1;
       
@@ -190,7 +175,7 @@ void data<T,D>::change_processor_recv (const int newproc, void* const mem)
 template<class T, int D>
 void data<T,D>::change_processor_send (const int newproc, void* const mem)
 {
-  assert (comm_active);
+  assert (this->comm_active);
   
   if (newproc == this->_proc) {
     assert (!mem);
@@ -212,7 +197,7 @@ void data<T,D>::change_processor_send (const int newproc, void* const mem)
       const double wtime1 = MPI_Wtime();
       T dummy;
       MPI_Isend (_storage, this->_size, dist::datatype(dummy), newproc,
-                 this->tag, dist::comm, &request);
+                 this->tag, dist::comm, &this->request);
       const double wtime2 = MPI_Wtime();
       this->wtime_isend += wtime2 - wtime1;
       
@@ -228,8 +213,8 @@ void data<T,D>::change_processor_send (const int newproc, void* const mem)
 template<class T, int D>
 void data<T,D>::change_processor_wait (const int newproc, void* const mem)
 {
-  assert (comm_active);
-  comm_active = false;
+  assert (this->comm_active);
+  this->comm_active = false;
   
   if (newproc == this->_proc) {
     assert (!mem);
@@ -244,7 +229,7 @@ void data<T,D>::change_processor_wait (const int newproc, void* const mem)
       
       const double wtime1 = MPI_Wtime();
       MPI_Status status;
-      MPI_Wait (&request, &status);
+      MPI_Wait (&this->request, &status);
       const double wtime2 = MPI_Wtime();
       this->wtime_irecvwait += wtime2 - wtime1;
       
@@ -256,7 +241,7 @@ void data<T,D>::change_processor_wait (const int newproc, void* const mem)
       
       const double wtime1 = MPI_Wtime();
       MPI_Status status;
-      MPI_Wait (&request, &status);
+      MPI_Wait (&this->request, &status);
       const double wtime2 = MPI_Wtime();
       this->wtime_isendwait += wtime2 - wtime1;
       

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.16 2004/01/25 14:57:29 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.17 2004/03/23 12:14:29 schnetter Exp $
 
 #ifndef DATA_HH
 #define DATA_HH
@@ -30,11 +30,6 @@ class data: public gdata<D> {
 
   // Fields
   T* _storage;			// the data (if located on this processor)
-  
-  bool comm_active;
-  MPI_Request request;
-  
-  int tag;                      // MPI tag for this object
   
 public:
   
