@@ -24,7 +24,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.29 2003/11/13 16:04:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.30 2003/11/14 12:50:47 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -434,7 +434,12 @@ namespace CarpetRegrid {
     assert (all (hh->baseextent.stride() % levfac == 0));
     const ivect istride = hh->baseextent.stride() / levfac;
     
-    return ivect(map(rfloor, (rpos - global_lower) * scale / rvect(istride) + 0.5)) * istride;
+    const ivect ipos = ivect(map(rfloor, (rpos - global_lower) * scale / rvect(istride) + 0.5)) * istride;
+    
+    const rvect apos = (rpos - global_lower) * scale;
+    assert (all(abs(apos - rvect(ipos)) < rvect(istride)*0.01));
+    
+    return ipos;
   }
   
   
