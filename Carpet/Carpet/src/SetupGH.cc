@@ -19,7 +19,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.47 2003/06/18 18:28:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.48 2003/07/07 21:55:24 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -478,7 +478,9 @@ namespace Carpet {
       BEGIN_REFLEVEL_LOOP(cgh) {
 	BEGIN_MGLEVEL_LOOP(cgh) {
 	  for (int group=0; group<CCTK_NumGroups(); ++group) {
-	    EnableGroupStorage (cgh, CCTK_GroupName(group));
+            char * groupname = CCTK_GroupName(group);
+	    EnableGroupStorage (cgh, groupname);
+            free (groupname);
 	  }
 	} END_MGLEVEL_LOOP;
       } END_REFLEVEL_LOOP;
