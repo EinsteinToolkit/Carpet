@@ -15,7 +15,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.13 2001/12/17 13:34:01 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.14 2002/01/01 16:48:29 schnetter Exp $";
 
 
 
@@ -204,7 +204,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    if (verbose && CCTK_MyProc(cgh)==0) {
+    if (verbose) {
       cout << endl;
       cout << "New bounding boxes";
       if (descr) {

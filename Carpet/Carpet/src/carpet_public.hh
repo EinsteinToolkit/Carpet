@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.10 2001/12/17 13:34:01 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.11 2002/01/01 16:48:30 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -200,6 +200,26 @@ namespace Carpet {
     set_component ((cGH*)(cgh), -1);			\
     assert (component==-1);				\
     _cl = 0;						\
+  } while (0)
+
+
+  
+#define BEGIN_LOCAL_COMPONENT_LOOP(cgh)			\
+  do {							\
+    int _lcl;						\
+    assert (reflevel>=0 && reflevel<hh->reflevels());	\
+    assert (component==-1);				\
+    set_component ((cGH*)(cgh), 0);			\
+    for (;;) {						\
+      if (hh->is_local(reflevel,component)) {
+#define END_LOCAL_COMPONENT_LOOP(cgh)			\
+      }							\
+      if (component==hh->components(reflevel)-1) break;	\
+      set_component ((cGH*)(cgh), component+1);		\
+    }							\
+    set_component ((cGH*)(cgh), -1);			\
+    assert (component==-1);				\
+    _lcl = 0;						\
   } while (0)
   
 } // namespace Carpet

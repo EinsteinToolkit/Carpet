@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_3tl_o3.F77,v 1.4 2001/12/09 16:43:11 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_3tl_o3.F77,v 1.5 2002/01/01 16:48:31 schnetter Exp $
       
 #include "cctk.h"
       
@@ -27,6 +27,8 @@ c     bbox(:,1) is lower boundary (inclusive)
 c     bbox(:,2) is upper boundary (inclusive)
 c     bbox(:,3) is stride
       integer srcbbox(3,3), dstbbox(3,3), regbbox(3,3)
+      
+      integer offsetlo, offsethi
       
       integer regiext, regjext, regkext
       
@@ -64,8 +66,15 @@ c     bbox(:,3) is stride
      $        .or. mod(regbbox(d,1), regbbox(d,3)).ne.0) then
             call CCTK_WARN (0, "Internal error: array origins are not integer multiples of the strides")
          end if
-         if (regbbox(d,1)-regbbox(d,3).lt.srcbbox(d,1)
-     $        .or. regbbox(d,2)+regbbox(d,3).gt.srcbbox(d,2)
+         regkext = (regbbox(d,2) - regbbox(d,1)) / regbbox(d,3) + 1
+         dstkfac = srcbbox(d,3) / dstbbox(d,3)
+         srckoff = (regbbox(d,1) - srcbbox(d,1)) / dstbbox(d,3)
+         offsetlo = regbbox(d,3)
+         if (mod(srckoff + 0, dstkfac).eq.0) offsetlo = 0
+         offsethi = regbbox(d,3)
+         if (mod(srckoff + regkext-1, dstkfac).eq.0) offsethi = 0
+         if (regbbox(d,1)-offsetlo.lt.srcbbox(d,1)
+     $        .or. regbbox(d,2)+offsethi.gt.srcbbox(d,2)
      $        .or. regbbox(d,1).lt.dstbbox(d,1)
      $        .or. regbbox(d,2).gt.dstbbox(d,2)) then
             call CCTK_WARN (0, "Internal error: region extent is not contained in array extent")
