@@ -1,0 +1,146 @@
+# Schedule definitions for thorn MultiPatchWaveToy
+# $Header: /numrelcvs/AEIDevelopment/MultiPatchWaveToy/schedule.ccl,v 1.14 2004/12/08 21:20:47 schnetter Exp $
+
+# Evolved variables
+STORAGE: scalar[3] density[3] velocity[3]
+
+# Background metric
+STORAGE: metric inverse_metric lapse shift volume_element
+
+
+
+# Startup
+
+SCHEDULE MPWT_startup AT startup
+{
+  LANG: C
+  OPTIONS: meta
+} "Register banner with Cactus"
+
+SCHEDULE MPWT_register_MoL IN MoL_Register
+{
+  LANG: C
+  OPTIONS: meta
+} "Register variables with MoL"
+
+
+
+# Set up initial data
+
+SCHEDULE MPWT_init_metric AT initial
+{
+  LANG: C
+} "Initialise the metric"
+
+SCHEDULE MPWT_transform_metric AT initial AFTER MPWT_init_metric
+{
+  LANG: Fortran
+} "Transform the metric"
+
+SCHEDULE MPWT_init AT initial
+{
+  LANG: C
+} "Initialise the system"
+
+SCHEDULE MPWT_transform AT initial AFTER MPWT_init AFTER MPWT_transform_metric
+{
+  LANG: Fortran
+} "Transform the system"
+
+SCHEDULE MPWT_init2 AT initial AFTER MPWT_transform
+{
+  LANG: C
+} "Initialise the system, part 2"
+
+
+
+# Calculate the RHS
+
+SCHEDULE GROUP MPWT_RHS IN MoL_CalcRHS
+{
+  STORAGE: densitydot velocitydot
+} "Calculate the RHS of the evolution equations"
+
+SCHEDULE MPWT_calc_rhs IN MPWT_RHS
+{
+  LANG: Fortran
+  SYNC: scalardot densitydot velocitydot
+  STORAGE: velocity_upper
+} "Calculate the RHS"
+
+SCHEDULE MPWT_rhs_boundaries IN MPWT_RHS AFTER MPWT_calc_rhs
+{
+  LANG: Fortran
+  OPTIONS: level
+} "Select the RHS boundary conditions"
+
+SCHEDULE GROUP ApplyBCs AS MPWT_ApplyBCs_rhs IN MPWT_RHS AFTER MPWT_rhs_boundaries
+{
+} "Apply the RHS boundary conditions"
+
+
+
+# Apply the boundary conditions
+
+SCHEDULE MPWT_boundaries IN MoL_PostStep
+{
+  LANG: Fortran
+  SYNC: density velocity
+  OPTIONS: level
+} "Select the boundary condition"
+
+SCHEDULE GROUP ApplyBCs AS MPWT_ApplyBCs IN MoL_PostStep AFTER MPWT_boundaries
+{
+} "Apply the boundary conditions"
+
+
+
+# Calculate the constraints
+
+SCHEDULE GROUP MPWT_constraints AT analysis
+{
+  STORAGE: constraints difference_v velocity_squared
+  TRIGGERS: constraints difference_v velocity_squared
+} "Calculate the constraints"
+
+SCHEDULE MPWT_calc_constraints IN MPWT_constraints
+{
+  LANG: Fortran
+} "Calculate the constraints"
+
+SCHEDULE MPWT_constraint_boundaries IN MPWT_constraints AFTER MPWT_calc_constraints
+{
+  LANG: Fortran
+  SYNC: constraints difference_v velocity_squared
+  OPTIONS: level
+} "Select the constraint boundary conditions"
+
+SCHEDULE GROUP ApplyBCs AS MPWT_ApplyBCs_constraints IN MPWT_constraints AFTER MPWT_constraint_boundaries
+{
+} "Apply the constraint boundary conditions"
+
+
+
+# Calculate other analysis quantities
+
+SCHEDULE GROUP MPWT_RHS AT analysis
+{
+  STORAGE: scalardot densitydot velocitydot
+  TRIGGERS: scalardot densitydot velocitydot
+} "Calculate the RHS of the evolution equations"
+
+SCHEDULE MPWT_CalcEnergy AT analysis
+{
+  LANG: Fortran
+  SYNC: scalarenergy
+  STORAGE: scalarenergy
+  TRIGGERS: scalarenergy
+} "Calculate the energy of the scalar field"
+
+SCHEDULE MPWT_min_spacing AT analysis
+{
+  LANG: Fortran
+  SYNC: min_spacing
+  STORAGE: min_spacing
+  TRIGGERS: min_spacing
+} "Calculate the smallest grid spacing"
