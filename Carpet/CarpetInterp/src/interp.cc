@@ -13,6 +13,7 @@
 #include "bbox.hh"
 #include "data.hh"
 #include "defs.hh"
+#include "dist.hh"
 #include "ggf.hh"
 #include "vect.hh"
 
@@ -458,7 +459,7 @@ namespace CarpetInterp {
             
               // Work on the data from all processors
             for (int p=0; p<nprocs; ++p) {
-              assert (allcoords.at(ind_prc(p,m,reflevel,component)).owns_storage());
+              assert (allcoords.at(ind_prc(p,m,reflevel,component)).proc() == dist::rank());
               assert (allhomecnts.at(ind_prc(p,m,reflevel,component)) == allcoords.at(ind_prc(p,m,reflevel,component)).shape()[0]);
               assert (allhomecnts.at(ind_prc(p,m,reflevel,component)) == alloutputs.at(ind_prc(p,m,reflevel,component)).shape()[0]);
               
@@ -781,7 +782,7 @@ namespace CarpetInterp {
         int const c = home.at(n);
         for (int j=0; j<N_output_arrays; ++j) {
           assert (interp_coords_type_code == CCTK_VARIABLE_REAL);
-          assert (alloutputs.at(ind_prc(myproc,m,rl,c)).owns_storage());
+          assert (alloutputs.at(ind_prc(myproc,m,rl,c)).proc() == dist::rank());
           assert (output_arrays);
           assert (output_arrays[j]);
           static_cast<CCTK_REAL *>(output_arrays[j])[n] = alloutputs.at(ind_prc(myproc,m,rl,c))[ivect(tmpcnts.at(ind_rc(m,rl,c)),j,0)];
