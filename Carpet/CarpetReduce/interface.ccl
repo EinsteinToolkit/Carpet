@@ -1,9 +1,7 @@
 # Interface definition for thorn CarpetReduce
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/interface.ccl,v 1.6 2004/05/21 18:13:53 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/interface.ccl,v 1.7 2004/06/08 21:10:28 schnetter Exp $
 
 IMPLEMENTS: reduce
-
-#INHERITS: Carpet CarpetLib
 
 uses include header: carpet.hh
 

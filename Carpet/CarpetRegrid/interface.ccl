@@ -1,9 +1,7 @@
 # Interface definition for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/interface.ccl,v 1.15 2004/06/02 07:08:52 bzink Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/interface.ccl,v 1.16 2004/06/08 21:09:25 schnetter Exp $
 
 IMPLEMENTS: CarpetRegrid
-
-#INHERITS: Carpet CarpetLib
 
 uses include header: carpet.hh
 
