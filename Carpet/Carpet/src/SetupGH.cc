@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.63 2004/03/07 13:19:41 hawke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.64 2004/03/23 13:56:53 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -342,16 +342,7 @@ namespace Carpet {
       
       // Adapt for convergence level
       rvect const spacing
-        = base_spacing * pow ((CCTK_REAL)convergence_factor, basemglevel);
-      
-      {
-        ostringstream buf;
-        buf << "Adapted domain specification for map " << m << ":" << endl
-            << "   convergence factor: " << convergence_factor << endl
-            << "   convergence level : " << basemglevel << endl
-            << "   spacing           : " << spacing;
-        Output (buf.str().c_str());
-      }
+        = base_spacing * pow (CCTK_REAL(convergence_factor), basemglevel);
       
       // Calculate global number of grid points
       ierr = ConvertFromPhysicalBoundary
@@ -359,6 +350,19 @@ namespace Carpet {
          &interior_min[0], &interior_max[0],
          &exterior_min[0], &exterior_max[0], &spacing[0]);
       assert (!ierr);
+      
+      {
+        ostringstream buf;
+        buf << "Adapted domain specification for map " << m << ":" << endl
+            << "   convergence factor: " << convergence_factor << endl
+            << "   convergence level : " << basemglevel << endl
+            << "   physical extent   : " << physical_min << " : " << physical_max << endl
+            << "   interior extent   : " << interior_min << " : " << interior_max << endl
+            << "   exterior extent   : " << exterior_min << " : " << exterior_max << endl
+            << "   spacing           : " << spacing;
+        Output (buf.str().c_str());
+      }
+      
       rvect const real_npoints = (exterior_max - exterior_min) / spacing + 1;
       
       {
