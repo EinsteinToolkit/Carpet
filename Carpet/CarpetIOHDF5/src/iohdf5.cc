@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.25 2004/04/03 15:42:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.26 2004/04/07 14:10:23 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -189,7 +189,10 @@ namespace CarpetIOHDF5 {
     assert (iogh);
     
     // Create the output directory
-    const char* const myoutdir = out3D_dir;
+    const char* myoutdir = out3D_dir;
+    if (CCTK_EQUALS(myoutdir, "")) {
+      myoutdir = out_dir;
+    }
     if (CCTK_MyProc(cctkGH)==0) {
       CCTK_CreateDirectory (0755, myoutdir);
     }
