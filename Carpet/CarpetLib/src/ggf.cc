@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.40 2004/04/20 11:55:52 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.41 2004/05/11 07:53:04 bzink Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -553,7 +553,7 @@ void ggf<D>::ref_restrict (comm_state<D>& state,
                            CCTK_REAL time)
 {
   // Require same times
-  assert (t.get_time(rl,ml) == t.get_time(rl+1,ml));
+  // assert (t.get_time(rl,ml) == t.get_time(rl+1,ml));
   if (transport_operator == op_none) return;
   const vector<int> tl2s(1,tl);
   intercat (state,
