@@ -1,16 +1,12 @@
 // Instantiate templates for all available types    -*-C++-*-
 // (C) 2001 Erik Schnetter <schnetter@uni-tuebingen.de>
 
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/instantiate,v 1.9 2004/03/01 19:56:55 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/instantiate,v 1.10 2004/03/01 21:35:13 schnetter Exp $
 
 // Usage:
 // Define the macro INSTANTIATE(T) to instantiate for the type T,
 // then include this file,
 // then undefine the macro INSTANTIATE.
-
-#include <complex>
-
-#include "cctk.h"
 
 
 
@@ -57,7 +53,7 @@
 #endif
 
 #if !defined(CARPET_BYTE) && !defined(CARPET_INT) && !defined(CARPET_INT1) && !defined(CARPET_INT2) && !defined(CARPET_INT4) && !defined(CARPET_INT8) && !defined(CARPET_REAL) && !defined(CARPET_REAL4) && !defined(CARPET_REAL8) && !defined(CARPET_REAL16) && !defined(CARPET_COMPLEX) && !defined(CARPET_COMPLEX8) && !defined(CARPET_COMPLEX16) && !defined(CARPET_COMPLEX32)
-// Assume the user just wants INT and REAL
+// Assume the user just wants INT, REAL, and COMPLEX
 #  undef CARPET_INT
 #  define CARPET_INT
 #  undef CARPET_REAL
@@ -167,19 +163,16 @@ INSTANTIATE(CCTK_REAL16)
 
 #ifdef CARPET_COMPLEX8
 #  ifdef CCTK_REAL4
-// INSTANTIATE(complex<CCTK_REAL4>)
 INSTANTIATE(CCTK_COMPLEX8)
 #  endif
 #endif
 #ifdef CARPET_COMPLEX16
 #  ifdef CCTK_REAL8
-// INSTANTIATE(complex<CCTK_REAL8>)
 INSTANTIATE(CCTK_COMPLEX16)
 #  endif
 #endif
 #ifdef CARPET_COMPLEX32
 #  ifdef CCTK_REAL16
-// INSTANTIATE(complex<CCTK_REAL16>)
 INSTANTIATE(CCTK_COMPLEX32)
 #  endif
 #endif
