@@ -1,5 +1,5 @@
 # Schedule definitions for thorn WaveToyFO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/schedule.ccl,v 1.5 2004/05/05 21:43:44 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/schedule.ccl,v 1.6 2004/05/06 14:21:18 schnetter Exp $
 
 STORAGE: scalarevolve[3]
 STORAGE: scalarevolvedot
@@ -29,6 +29,19 @@ SCHEDULE WaveToyFO_CalcRHS IN MoL_CalcRHS
 {
   LANG: Fortran
 } "Calculate RHS for FO"
+
+SCHEDULE WaveToyFO_RHSBoundaries IN MoL_CalcRHS AFTER WaveToyFO_CalcRHS
+{
+  LANG: Fortran
+  SYNC: scalarevolvedot
+  OPTIONS: level
+} "Select RHS boundary conditions in FO"
+
+SCHEDULE GROUP ApplyBCs IN MoL_CalcRHS AFTER WaveToyFO_RHSBoundaries
+{
+} "Apply RHSboundary conditions in FO"
+
+
 
 SCHEDULE WaveToyFO_Boundaries IN MoL_PostStep
 {

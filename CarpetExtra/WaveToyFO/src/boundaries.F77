@@ -1,4 +1,4 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/boundaries.F77,v 1.2 2003/10/27 15:31:41 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/boundaries.F77,v 1.3 2004/05/06 14:21:18 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
@@ -19,7 +19,5 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/boundari
       if (fboundlen.lt.0) call CCTK_WARN (0, "internal error")
       ierr = Boundary_SelectGroupForBC(cctkGH, CCTK_ALL_FACES, bndwidth, -1,
      $     "WaveToyFO::scalarevolve", fbound);
-      if (ierr.ne.0) call CCTK_WARN (0, "internal error")
-      call CartSymGN (ierr, cctkGH, "WaveToyFO::scalarevolve")
       if (ierr.ne.0) call CCTK_WARN (0, "internal error")
       end

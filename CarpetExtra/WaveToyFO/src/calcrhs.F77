@@ -1,4 +1,4 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.F77,v 1.3 2003/10/27 15:31:41 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.F77,v 1.4 2004/05/06 14:21:18 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
@@ -14,10 +14,11 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.
       integer bndwidth(3)
       integer imin(3), imax(3)
       integer i, j, k
+      integer im, jm, km
+      integer ip, jp, kp
       integer d
-      integer ierr
       do d=1,3
-         bndwidth(d) = 1
+         bndwidth(d) = 0
       end do
       do d=1,3
          if (cctk_bbox(2*d).ne.0) then
@@ -37,13 +38,19 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.
       do k=imin(3),imax(3)
          do j=imin(2),imax(2)
             do i=imin(1),imax(1)
+               im = max(i-1,1)
+               jm = max(j-1,1)
+               km = max(k-1,1)
+               ip = min(i+1,cctk_lsh(1))
+               jp = min(j+1,cctk_lsh(2))
+               kp = min(k+1,cctk_lsh(3))
                phidot(i,j,k) =
-     $              ( (psix(i+1,j,k) - psix(i-1,j,k)) / (2*dx(1))
-     $              + (psiy(i,j+1,k) - psiy(i,j-1,k)) / (2*dx(2))
-     $              + (psiz(i,j,k+1) - psiz(i,j,k-1)) / (2*dx(3)))
-               psixdot(i,j,k) = (phi(i+1,j,k) - phi(i-1,j,k)) / (2*dx(1))
-               psiydot(i,j,k) = (phi(i,j+1,k) - phi(i,j-1,k)) / (2*dx(2))
-               psizdot(i,j,k) = (phi(i,j,k+1) - phi(i,j,k-1)) / (2*dx(3))
+     $              ( (psix(ip,j,k) - psix(im,j,k)) / ((ip-im)*dx(1))
+     $              + (psiy(i,jp,k) - psiy(i,jm,k)) / ((jp-jm)*dx(2))
+     $              + (psiz(i,j,kp) - psiz(i,j,km)) / ((kp-km)*dx(3)))
+               psixdot(i,j,k) = (phi(ip,j,k) - phi(im,j,k)) / ((ip-im)*dx(1))
+               psiydot(i,j,k) = (phi(i,jp,k) - phi(i,jm,k)) / ((jp-jm)*dx(2))
+               psizdot(i,j,k) = (phi(i,j,kp) - phi(i,j,km)) / ((kp-km)*dx(3))
             end do
          end do
       end do
