@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.33 2002/10/24 10:39:38 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.34 2002/12/12 12:54:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -305,6 +305,10 @@ namespace Carpet {
     
     // Get grid hierarchy extentsion from IOUtil
     const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cgh, "IO");
+    
+    // Output only if IO exists and has been initialised
+    if (! iogh) return;
+    
     assert (iogh);
     
     // Create the output directory
