@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.21 2002/10/14 20:40:38 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.22 2002/10/24 11:36:34 schnetter Exp $
 
  ***************************************************************************/
 
@@ -21,14 +21,15 @@
 
 #include <assert.h>
 
+#include "cctk.h"
+#include "cctk_Parameters.h"
+
 #include "defs.hh"
 #include "dist.hh"
 #include "ggf.hh"
 #include "vect.hh"
 
 #include "dh.hh"
-
-#undef DEBUG_OUTPUT
 
 using namespace std;
 
@@ -59,6 +60,8 @@ dh<D>::~dh ()
 // Modifiers
 template<int D>
 void dh<D>::recompose () {
+  DECLARE_CCTK_PARAMETERS;
+  
   CHECKPOINT;
   
   boxes.clear();
@@ -288,47 +291,47 @@ void dh<D>::recompose () {
     }
   }
   
-#ifdef DEBUG_OUTPUT
-  cout << endl << h << endl;
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    for (int c=0; c<h.components(rl); ++c) {
-      for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-      	cout << endl;
-      	cout << "dh bboxes:" << endl;
-      	cout << "rl=" << rl << " c=" << c << " ml=" << ml << endl;
-      	cout << "exterior=" << boxes[rl][c][ml].exterior << endl;
-      	cout << "interior=" << boxes[rl][c][ml].interior << endl;
-      	cout << "send_mg_fine=" << boxes[rl][c][ml].send_mg_fine << endl;
-      	cout << "send_mg_coarse=" << boxes[rl][c][ml].send_mg_coarse << endl;
-      	cout << "recv_mg_fine=" << boxes[rl][c][ml].recv_mg_fine << endl;
-      	cout << "recv_mg_coarse=" << boxes[rl][c][ml].recv_mg_coarse << endl;
-      	cout << "send_ref_fine=" << boxes[rl][c][ml].send_ref_fine << endl;
-      	cout << "send_ref_coarse=" << boxes[rl][c][ml].send_ref_coarse << endl;
-      	cout << "recv_ref_fine=" << boxes[rl][c][ml].recv_ref_fine << endl;
-      	cout << "recv_ref_coarse=" << boxes[rl][c][ml].recv_ref_coarse << endl;
-      	cout << "send_sync=" << boxes[rl][c][ml].send_sync << endl;
-      	cout << "send_ref_bnd_fine=" << boxes[rl][c][ml].send_ref_bnd_fine << endl;
-      	cout << "boundaries=" << boxes[rl][c][ml].boundaries << endl;
-      	cout << "recv_sync=" << boxes[rl][c][ml].recv_sync << endl;
-      	cout << "recv_ref_bnd_coarse=" << boxes[rl][c][ml].recv_ref_bnd_coarse << endl;
-      	cout << "sync_not=" << boxes[rl][c][ml].sync_not << endl;
-      	cout << "recv_not=" << boxes[rl][c][ml].recv_not << endl;
+  if (output_bboxes) {
+    cout << endl << h << endl;
+    for (int rl=0; rl<h.reflevels(); ++rl) {
+      for (int c=0; c<h.components(rl); ++c) {
+	for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
+	  cout << endl;
+	  cout << "dh bboxes:" << endl;
+	  cout << "rl=" << rl << " c=" << c << " ml=" << ml << endl;
+	  cout << "exterior=" << boxes[rl][c][ml].exterior << endl;
+	  cout << "interior=" << boxes[rl][c][ml].interior << endl;
+	  cout << "send_mg_fine=" << boxes[rl][c][ml].send_mg_fine << endl;
+	  cout << "send_mg_coarse=" << boxes[rl][c][ml].send_mg_coarse << endl;
+	  cout << "recv_mg_fine=" << boxes[rl][c][ml].recv_mg_fine << endl;
+	  cout << "recv_mg_coarse=" << boxes[rl][c][ml].recv_mg_coarse << endl;
+	  cout << "send_ref_fine=" << boxes[rl][c][ml].send_ref_fine << endl;
+	  cout << "send_ref_coarse=" << boxes[rl][c][ml].send_ref_coarse << endl;
+	  cout << "recv_ref_fine=" << boxes[rl][c][ml].recv_ref_fine << endl;
+	  cout << "recv_ref_coarse=" << boxes[rl][c][ml].recv_ref_coarse << endl;
+	  cout << "send_sync=" << boxes[rl][c][ml].send_sync << endl;
+	  cout << "send_ref_bnd_fine=" << boxes[rl][c][ml].send_ref_bnd_fine << endl;
+	  cout << "boundaries=" << boxes[rl][c][ml].boundaries << endl;
+	  cout << "recv_sync=" << boxes[rl][c][ml].recv_sync << endl;
+	  cout << "recv_ref_bnd_coarse=" << boxes[rl][c][ml].recv_ref_bnd_coarse << endl;
+	  cout << "sync_not=" << boxes[rl][c][ml].sync_not << endl;
+	  cout << "recv_not=" << boxes[rl][c][ml].recv_not << endl;
+	}
       }
     }
-  }
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    if (h.components(rl)>0) {
-      for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
-      	cout << endl;
-      	cout << "dh bases:" << endl;
-      	cout << "rl=" << rl << " ml=" << ml << endl;
-      	cout << "exterior=" << bases[rl][ml].exterior << endl;
-      	cout << "interior=" << bases[rl][ml].interior << endl;
-      	cout << "boundaries=" << bases[rl][ml].boundaries << endl;
+    for (int rl=0; rl<h.reflevels(); ++rl) {
+      if (h.components(rl)>0) {
+	for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
+	  cout << endl;
+	  cout << "dh bases:" << endl;
+	  cout << "rl=" << rl << " ml=" << ml << endl;
+	  cout << "exterior=" << bases[rl][ml].exterior << endl;
+	  cout << "interior=" << bases[rl][ml].interior << endl;
+	  cout << "boundaries=" << bases[rl][ml].boundaries << endl;
+	}
       }
     }
-  }
-#endif
+  } // if output_bboxes
   
   for (typename list<generic_gf<D>*>::iterator f=gfs.begin();
        f!=gfs.end(); ++f) {

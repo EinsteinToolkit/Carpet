@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dgdh.cc,v 1.3 2002/05/05 22:17:00 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dgdh.cc,v 1.4 2002/10/24 11:36:34 schnetter Exp $
 
  ***************************************************************************/
 
@@ -26,8 +26,6 @@
 #include "ggf.hh"
 
 #include "dgdh.hh"
-
-#undef DEBUG_OUTPUT
 
 using namespace std;
 
