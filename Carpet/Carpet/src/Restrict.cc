@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.5 2001/12/09 16:41:53 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.6 2002/01/09 17:45:39 schnetter Exp $";
 
 
 
@@ -24,36 +24,49 @@ namespace Carpet {
     
     Checkpoint ("%*sRestrict", 2*reflevel, "");
     
-    if (reflevel == hh->reflevels()-1) return;
-    
+    // Loop over variables with storage
     for (int group=0; group<CCTK_NumGroups(); ++group) {
-      
-      // Restrict only groups with storage
       if (CCTK_QueryGroupStorageI(cgh, group)) {
-	
-	const int tl = 0;
-	
 	for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-	  for (int c=0; c<hh->components(reflevel); ++c) {
-	    arrdata[group].data[var]->ref_restrict (tl, reflevel, c, mglevel);
-	  }
-	  for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
-	    arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);
-	  }
 	  
-	  for (int c=0; c<arrdata[group].hh->components(reflevel+1); ++c) {
-	    arrdata[group].data[var]->ref_bnd_prolongate
-	      (tl, reflevel+1, c, mglevel);
-	  }
-	  // TODO: is this necessary?
-	  for (int c=0; c<arrdata[group].hh->components(reflevel+1); ++c) {
-	    arrdata[group].data[var]->sync (tl, reflevel+1, c, mglevel);
-	  }
-	}
-	
-      }	// if group has storage
-      
+	  const int tl = 0;
+	  
+	  if (mglevel > 0) {
+	    
+	    for (int c=0; c<hh->components(reflevel); ++c) {
+	      arrdata[group].data[var]->mg_restrict (tl, reflevel, c, mglevel);
+	    }
+	    for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
+	      arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);
+	    }
+	    
+	  } // if not finest multigrid level
+	  
+	  if (reflevel < hh->reflevels()-1) {
+	    
+	    for (int c=0; c<hh->components(reflevel); ++c) {
+	      arrdata[group].data[var]->ref_restrict
+		(tl, reflevel, c, mglevel);
+	    }
+	    for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
+	      arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);
+	    }
+	    
+	    for (int c=0; c<arrdata[group].hh->components(reflevel+1); ++c) {
+	      arrdata[group].data[var]->ref_bnd_prolongate
+		(tl, reflevel+1, c, mglevel);
+	    }
+	    // TODO: is this necessary?
+	    for (int c=0; c<arrdata[group].hh->components(reflevel+1); ++c) {
+	      arrdata[group].data[var]->sync (tl, reflevel+1, c, mglevel);
+	    }
+	    
+	  } // if not finest refinement level
+	  
+	} // loop over variables
+      } // if group has storage
     } // loop over groups
+    
   }
   
 } // namespace Carpet

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.13 2002/01/09 13:56:25 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.14 2002/01/09 17:45:40 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -32,8 +32,17 @@ namespace Carpet {
   // Handle from CCTK_RegisterGHExtension
   extern int GHExtension;
   
+  // Multigrid levels
+  extern int mglevels;
+  
+  // Multigrid factor
+  extern int mgfact;
+  
   // Maximum number of refinement levels
   extern int maxreflevels;
+  
+  // Multigrid factor on coarsest grid
+  extern int maxmglevelfact;
   
   // Refinement factor
   extern int reffact;
@@ -41,19 +50,16 @@ namespace Carpet {
   // Refinement factor on finest grid
   extern int maxreflevelfact;
   
-  // Multigrid levels
-  extern int mglevels;
-  
-  // Multigrid factor
-  extern int mgfact;
-  
   // Current iteration per refinement level
   extern vector<int> iteration;
   
   // Current position on the grid hierarchy
-  extern int reflevel;
   extern int mglevel;
+  extern int reflevel;
   extern int component;
+  
+  // Current multigrid factor
+  extern int mglevelfact;
   
   // Current refinement factor
   extern int reflevelfact;
@@ -145,6 +151,24 @@ namespace Carpet {
   void set_reflevel (cGH* cgh, int rl);
   void set_mglevel (cGH* cgh, int ml);
   void set_component (cGH* cgh, int c);
+  
+  
+  
+  // Multigrid level iterator
+  
+#define BEGIN_MGLEVEL_LOOP(cgh)			\
+  do {						\
+    int _mgl;					\
+    assert (mglevel==0);			\
+    for (int _ml=mglevels-1; _ml>=0; --_ml) {	\
+      set_mglevel ((cGH*)(cgh), _ml);		\
+      {
+#define END_MGLEVEL_LOOP(cgh)			\
+      }						\
+    }						\
+    assert (mglevel==0);			\
+    _mgl = 0;					\
+  } while (0)
   
   
   

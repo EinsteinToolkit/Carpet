@@ -19,7 +19,7 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.3 2002/01/09 13:56:28 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.4 2002/01/09 17:45:42 schnetter Exp $";
 
 
 
@@ -42,6 +42,9 @@ namespace CarpetRegrid {
     
     // Return if no regridding is desired
     if (regrid_every == -1) return 0;
+    
+    // Return if this is not the main hierarchy
+    if (mglevel != 0) return 0;
     
     // Return if this is the finest possible level
     if (reflevel == maxreflevels-1) return 0;

@@ -5,7 +5,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.4 2002/01/09 13:56:26 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.5 2002/01/09 17:45:40 schnetter Exp $";
 
 
 
@@ -18,6 +18,15 @@ namespace Carpet {
   // Handle from CCTK_RegisterGHExtension
   int GHExtension;
   
+  // Multigrid levels
+  int mglevels;
+  
+  // Multigrid factor
+  int mgfact;
+  
+  // Multigrid factor on coarsest grid
+  int maxmglevelfact;
+  
   // Maximum number of refinement levels
   int maxreflevels;
   
@@ -27,12 +36,6 @@ namespace Carpet {
   // Refinement factor on finest grid
   int maxreflevelfact;
   
-  // Multigrid levels
-  int mglevels;
-  
-  // Multigrid factor
-  int mgfact;
-  
   // Current iteration per refinement level
   vector<int> iteration;
   
@@ -40,6 +43,9 @@ namespace Carpet {
   int mglevel;
   int reflevel;
   int component;
+  
+  // multigrid factor of current level: ipow(multigrid_factor, mglevel)
+  int mglevelfact;
   
   // refinement factor of current level: ipow(refinement_factor, reflevel)
   int reflevelfact;

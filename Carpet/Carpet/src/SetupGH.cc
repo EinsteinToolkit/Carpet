@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.18 2002/01/09 13:56:25 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.19 2002/01/09 17:45:40 schnetter Exp $";
 
 
 
@@ -46,6 +46,7 @@ namespace Carpet {
     // Multigrid information
     mglevels = multigrid_levels;
     mgfact = multigrid_factor;
+    maxmglevelfact = ipow(mgfact, mglevels-1);
     
     // Ghost zones
     vect<int,dim> lghosts, ughosts;
@@ -272,8 +273,8 @@ namespace Carpet {
     iteration.resize(maxreflevels, 0);
     
     // Set current position (this time for real)
-    set_reflevel  (cgh, 0);
     set_mglevel   (cgh, 0);
+    set_reflevel  (cgh, 0);
     set_component (cgh, -1);
     
     // Enable storage for all groups if desired

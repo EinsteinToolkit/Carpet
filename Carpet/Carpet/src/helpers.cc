@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.15 2002/01/09 13:56:26 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.16 2002/01/09 17:45:40 schnetter Exp $";
 
 
 
@@ -176,43 +176,45 @@ namespace Carpet {
   
   
   
+  void set_mglevel (cGH* cgh, const int ml)
+  {
+    // Check
+    assert (ml>=0 && ml<mglevels);
+    assert (reflevel == 0);
+    assert (component == -1);
+    
+    mglevel = ml;
+    mglevelfact = ipow(mgfact, mglevel);
+    cgh->cctk_convlevel = mglevel;
+  }
+  
+  
+  
   void set_reflevel (cGH* cgh, const int rl)
   {
     // Check
-    assert (rl>=0 && rl<hh->reflevels());
+    assert (rl>=0 && rl<maxreflevels && rl<hh->reflevels());
     assert (component == -1);
     
     // Change
     reflevel = rl;
     const bbox<int,dim>& base = hh->baseextent;
-    reflevelfact = ipow(hh->reffact, reflevel);
-    cgh->cctk_delta_time = base_delta_time / reflevelfact;
-    for (int d=0; d<dim; ++d) {
-      cgh->cctk_gsh[d]
-	= ((base.shape() / base.stride()
-	    + dd->lghosts + dd->ughosts)[d] - 1) * reflevelfact + 1;
-      cgh->cctk_levfac[d] = reflevelfact;
-    }
+    reflevelfact = ipow(reffact, reflevel);
+    cgh->cctk_delta_time = base_delta_time / reflevelfact * mglevelfact;
+    assert (all(base.shape() % base.stride() == 0));
+    assert (all((base.shape() / base.stride()) % mglevelfact == 0));
+    vect<int,dim>::ref(cgh->cctk_gsh)
+      = (((base.shape() / base.stride() - 1) / mglevelfact
+	  + dd->lghosts + dd->ughosts)
+	 * reflevelfact + 1);
+    vect<int,dim>::ref(cgh->cctk_levfac) = reflevelfact;
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       const bbox<int,dim>& base = arrdata[group].hh->baseextent;
-      for (int d=0; d<dim; ++d) {
-	((int*)arrdata[group].info.gsh)[d]
-	  = (((base.shape() / base.stride()
-	       + arrdata[group].dd->lghosts + arrdata[group].dd->ughosts)[d]
-	      - 1)
-	     * reflevelfact + 1);
-      }
+      vect<int,dim>::ref((int*)arrdata[group].info.gsh)
+	= (((base.shape() / base.stride() - 1) / mglevelfact
+	    + arrdata[group].dd->lghosts + arrdata[group].dd->ughosts)
+	   * reflevelfact + 1);
     }
-  }
-  
-  
-  
-  void set_mglevel (cGH* cgh, const int ml)
-  {
-    assert (ml==0);
-    assert (component==-1);
-    mglevel = ml;
-    cgh->cctk_convlevel = mglevel;
   }
   
   
@@ -299,18 +301,28 @@ namespace Carpet {
 	assert (reflevel < (int)dd->boxes.size());
 	assert (component < (int)dd->boxes[reflevel].size());
 	assert (mglevel < (int)dd->boxes[reflevel][component].size());
+	const bbox<int,dim>& bext = hh->baseextent;
+	const bbox<int,dim>& iext = hh->extents[reflevel][component][mglevel];
 	const bbox<int,dim>& ext
 	  = dd->boxes[reflevel][component][mglevel].exterior;
 	for (int d=0; d<dim; ++d) {
 	  cgh->cctk_lsh[d] = (ext.shape() / ext.stride())[d];
 	  cgh->cctk_lbnd[d] = (ext.lower() / ext.stride())[d];
 	  cgh->cctk_ubnd[d] = (ext.upper() / ext.stride())[d];
-	  assert (cgh->cctk_lsh[d]>=0 && cgh->cctk_lsh[d]<=cgh->cctk_gsh[d]);
-	  assert (cgh->cctk_lbnd[d]>=0 && cgh->cctk_ubnd[d]<cgh->cctk_gsh[d]);
+ 	  assert (cgh->cctk_lsh[d]>=0 && cgh->cctk_lsh[d]<=cgh->cctk_gsh[d]);
+// 	  assert (cgh->cctk_lbnd[d]>=0 && cgh->cctk_ubnd[d]<cgh->cctk_gsh[d]);
+	  assert (cgh->cctk_ubnd[d]-cgh->cctk_lbnd[d]+1 == cgh->cctk_lsh[d]);
 	  assert (cgh->cctk_lbnd[d]<=cgh->cctk_ubnd[d]+1);
-	  // Do allow outer boundaries on the finer grids
-	  cgh->cctk_bbox[2*d  ] = cgh->cctk_lbnd[d] == 0;
-	  cgh->cctk_bbox[2*d+1] = cgh->cctk_ubnd[d] == cgh->cctk_gsh[d]-1;
+	  // Do not allow outer boundaries on the finer grids
+	  if (reflevel==0) {
+	    assert (iext.lower()[d] >= bext.lower()[d]);
+	    assert (iext.upper()[d] <= bext.upper()[d]);
+	    cgh->cctk_bbox[2*d  ] = iext.lower()[d] == bext.lower()[d];
+	    cgh->cctk_bbox[2*d+1] = iext.upper()[d] == bext.upper()[d];
+	  } else {
+	    cgh->cctk_bbox[2*d  ] = 0;
+	    cgh->cctk_bbox[2*d+1] = 0;
+	  }
 	  for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
 	    // TODO: support staggering
 	    cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
@@ -321,6 +333,9 @@ namespace Carpet {
 	assert (reflevel < (int)arrdata[group].dd->boxes.size());
 	assert (component < (int)arrdata[group].dd->boxes[reflevel].size());
 	assert (mglevel < (int)arrdata[group].dd->boxes[reflevel][component].size());
+	const bbox<int,dim>& bext = arrdata[group].hh->baseextent;
+	const bbox<int,dim>& iext
+	  = arrdata[group].hh->extents[reflevel][component][mglevel];
 	const bbox<int,dim>& ext
 	  = arrdata[group].dd->boxes[reflevel][component][mglevel].exterior;
 	for (int d=0; d<dim; ++d) {
@@ -332,14 +347,23 @@ namespace Carpet {
 	    = (ext.upper() / ext.stride())[d];
 	  assert (arrdata[group].info.lsh[d]>=0
 		  && arrdata[group].info.lsh[d]<=arrdata[group].info.gsh[d]);
-	  assert (arrdata[group].info.lbnd[d]>=0
-		  && arrdata[group].info.ubnd[d]<arrdata[group].info.gsh[d]);
+// 	  assert (arrdata[group].info.lbnd[d]>=0
+// 		  && arrdata[group].info.ubnd[d]<arrdata[group].info.gsh[d]);
+	  assert (arrdata[group].info.ubnd[d]-arrdata[group].info.lbnd[d]+1
+		  == arrdata[group].info.lsh[d]);
 	  assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
-	  // Do allow outer boundaries on the finer grids
-	  ((int*)arrdata[group].info.bbox)[2*d  ]
-	    = arrdata[group].info.lbnd[d] == 0;
-	  ((int*)arrdata[group].info.bbox)[2*d+1]
-	    = arrdata[group].info.ubnd[d] == arrdata[group].info.gsh[d]-1;
+	  // Do not allow outer boundaries on the finer grids
+	  if (reflevel==0) {
+	    assert (iext.lower()[d] >= bext.lower()[d]);
+	    assert (iext.upper()[d] <= bext.upper()[d]);
+	    ((int*)arrdata[group].info.bbox)[2*d  ]
+	      = iext.lower()[d] == bext.lower()[d];
+	    ((int*)arrdata[group].info.bbox)[2*d+1]
+	      = iext.upper()[d] == bext.upper()[d];
+	  } else {
+	    ((int*)arrdata[group].info.bbox)[2*d  ] = 0;
+	    ((int*)arrdata[group].info.bbox)[2*d+1] = 0;
+	  }
 	}
       }
       

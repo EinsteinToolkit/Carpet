@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.6 2001/12/09 16:41:52 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.7 2002/01/09 17:45:39 schnetter Exp $";
 
 
 
@@ -43,7 +43,6 @@ namespace Carpet {
     
     assert (group<(int)arrdata.size());
     for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-//       if (num_tl>1 && reflevel>0) {
       if (reflevel>0) {
 	for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
 	  arrdata[group].data[var]->ref_bnd_prolongate

@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.3 2001/12/18 10:29:35 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.4 2002/01/09 17:45:39 schnetter Exp $";
 
 
 
@@ -45,6 +45,8 @@ namespace Carpet {
     Waypoint ("PARAMCHECK");
     CCTK_ScheduleTraverse ("CCTK_PARAMCHECK", cgh, CallFunction);
     CCTKi_FinaliseParamWarn();
+    
+    Waypoint ("Initialising iteration %d...", cgh->cctk_iteration);
     
     BEGIN_REFLEVEL_LOOP(cgh) {
       

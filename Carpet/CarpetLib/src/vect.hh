@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.7 2002/01/08 12:03:56 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.8 2002/01/09 17:45:42 schnetter Exp $
 
  ***************************************************************************/
 
@@ -82,6 +82,10 @@ public:
   template<class S>
   explicit vect (const vect<S,D>& a) {
     for (int d=0; d<D; ++d) elt[d]=(T)a[d];
+  }
+  
+  static vect& ref (T* const x) {
+    return *(vect*)x;
   }
   
   static vect dir (const int d) {

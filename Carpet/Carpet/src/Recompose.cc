@@ -15,7 +15,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.15 2002/01/09 13:56:25 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.16 2002/01/09 17:45:39 schnetter Exp $";
 
 
 
@@ -83,6 +83,8 @@ namespace Carpet {
   void RegisterRecomposeRegions (const gh<dim>::rexts& bbsss,
 				 const gh<dim>::rprocs& pss)
   {
+    assert (mglevel == 0);
+    
     // Check the regions
     CheckRegions (bbsss, pss);
     // Save the region information for the next regridding
@@ -96,6 +98,9 @@ namespace Carpet {
   void Recompose (const cGH* cgh)
   {
     assert (component == -1);
+    
+    if (mglevel > 0) return;
+    
     Waypoint ("%*sRecompose", 2*reflevel, "");
     
     // Check whether to recompose
@@ -212,7 +217,9 @@ namespace Carpet {
     if (verbose) {
       cout << endl;
       cout << "New bounding boxes";
-      if (descr) {
+      if (!descr) {
+	cout << " for grid functions";
+      } else {
 	if (strlen(descr)) {
 	  cout << " for group " << descr;
 	} else {
@@ -230,7 +237,9 @@ namespace Carpet {
       }
       cout << endl;
       cout << "New processor distribution";
-      if (descr) {
+      if (!descr) {
+	cout << " for grid functions";
+      } else {
 	if (strlen(descr)) {
 	  cout << " for group " << descr;
 	} else {

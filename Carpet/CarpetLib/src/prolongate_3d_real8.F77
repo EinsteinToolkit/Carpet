@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8.F77,v 1.5 2001/12/09 16:43:10 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8.F77,v 1.6 2002/01/09 17:45:40 schnetter Exp $
       
 #include "cctk.h"
       
@@ -125,7 +125,7 @@ c     Loop over fine region
                         fac = ifac(ii) * jfac(jj) * kfac(kk)
                         
                         if (fac.ne.0) then
-                           res = res + fac * src(i0+ii ,j0+jj ,k0+kk)
+                           res = res + fac * src(i0+ii, j0+jj, k0+kk)
                         end if
                         
                      end do
