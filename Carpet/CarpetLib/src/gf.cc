@@ -1,47 +1,41 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.21 2004/08/07 19:47:11 schnetter Exp $
+/***************************************************************************
+                          gf.cc  -  Grid Function
+                          data for every element of a data hierarchy
+                             -------------------
+    begin                : Sun Jun 11 2000
+    copyright            : (C) 2000 by Erik Schnetter
+    email                : schnetter@astro.psu.edu
 
-#include <assert.h>
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
 
-#include "cctk.h"
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
+#include <cassert>
 
 #include "defs.hh"
 
-#include "gf.hh"
-
-using namespace std;
+#if !defined(TMPL_IMPLICIT) || !defined(GF_HH)
+#  include "gf.hh"
+#endif
 
 
 
 // Constructors
 template<class T,int D>
-gf<T,D>::gf (const int varindex, const operator_type transport_operator,
-             th<D>& t, dh<D>& d,
-	     const int tmin, const int tmax, const int prolongation_order_time,
-             const int vectorlength, const int vectorindex,
-             gf* const vectorleader)
-  : ggf<D>(varindex, transport_operator,
-           t, d, tmin, tmax, prolongation_order_time,
-           vectorlength, vectorindex, vectorleader)
+gf<T,D>::gf (const string name, th<D>& t, dh<D>& d,
+	     const int tmin, const int tmax)
+  : generic_gf<D>(name, t, d, tmin, tmax)
 {
-  // this->recompose ();
-  this->recompose_crop ();
-  for (int rl=0; rl<this->h.reflevels(); ++rl) {
-    this->recompose_allocate (rl);
-#if 0
-    for (comm_state<D> state; !state.done(); state.step()) {
-      this->recompose_fill (state, rl, false);
-    }
-#endif
-    this->recompose_free (rl);
-#if 0
-    for (comm_state<D> state; !state.done(); state.step()) {
-      this->recompose_bnd_prolongate (state, rl, false);
-    }
-    for (comm_state<D> state; !state.done(); state.step()) {
-      this->recompose_sync (state, rl, false);
-    }
-#endif
-  } // for rl
+  recompose();
 }
 
 // Destructors
@@ -53,39 +47,42 @@ gf<T,D>::~gf () { }
 // Access to the data
 template<class T,int D>
 const data<T,D>* gf<T,D>::operator() (int tl, int rl, int c, int ml) const {
-  assert (tl>=this->tmin && tl<=this->tmax);
-  assert (rl>=0 && rl<this->h.reflevels());
-  assert (c>=0 && c<this->h.components(rl));
-  assert (ml>=0 && ml<this->h.mglevels(rl,c));
-  return (const data<T,D>*)this->storage.at(tl-this->tmin).at(rl).at(c).at(ml);
+  assert (tl>=tmin && tl<=tmax);
+  assert (rl>=0 && rl<h.reflevels());
+  assert (c>=0 && c<h.components(rl));
+  assert (ml>=0 && ml<h.mglevels(rl,c));
+  return (const data<T,D>*)storage[tl-tmin][rl][c][ml];
 }
 
 template<class T,int D>
 data<T,D>* gf<T,D>::operator() (int tl, int rl, int c, int ml) {
-  assert (tl>=this->tmin && tl<=this->tmax);
-  assert (rl>=0 && rl<this->h.reflevels());
-  assert (c>=0 && c<this->h.components(rl));
-  assert (ml>=0 && ml<this->h.mglevels(rl,c));
-  return (data<T,D>*)this->storage.at(tl-this->tmin).at(rl).at(c).at(ml);
+  assert (tl>=tmin && tl<=tmax);
+  assert (rl>=0 && rl<h.reflevels());
+  assert (c>=0 && c<h.components(rl));
+  assert (ml>=0 && ml<h.mglevels(rl,c));
+  return (data<T,D>*)storage[tl-tmin][rl][c][ml];
 }
 
 
 
 // Output
 template<class T,int D>
-ostream& gf<T,D>::output (ostream& os) const {
-  T Tdummy;
-  os << "gf<" << typestring(Tdummy) << "," << D << ">:"
-     << this->varindex << "[" << CCTK_VarName(this->varindex) << "],"
-     << "dt=[" << this->tmin << ":" << this->tmax<< "]";
+ostream& gf<T,D>::out (ostream& os) const {
+  os << "gf<" STR(T) "," << D << ">:\"" << name << "\","
+     << "dt=[" << tmin << ":" << tmax<< "]";
   return os;
 }
 
 
 
+#if defined(TMPL_EXPLICIT)
+
 #define INSTANTIATE(T)				\
+template class gf<T,1>;				\
+template class gf<T,2>;				\
 template class gf<T,3>;
 
 #include "instantiate"
-
 #undef INSTANTIATE
+
+#endif

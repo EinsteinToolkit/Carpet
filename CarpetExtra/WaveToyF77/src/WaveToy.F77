@@ -10,9 +10,8 @@ c     -*-Fortran-*-
  @@*/
   
 #include "cctk.h" 
-#include "cctk_Arguments.h"
-#include "cctk_Functions.h"
 #include "cctk_Parameters.h"
+#include "cctk_Arguments.h"
 
 
 
@@ -40,7 +39,7 @@ c     Declare variables in argument list
       DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
       
-      INTEGER   i,j,k
+      INTEGER   i,j,k,ierr
       INTEGER   istart, jstart, kstart, iend, jend, kend
       CCTK_REAL dx,dy,dz,dt
       CCTK_REAL dx2,dy2,dz2,dt2
@@ -48,7 +47,7 @@ c     Declare variables in argument list
       
       CCTK_REAL factor
       
-c     call CCTK_INFO ("WaveToyF77_Evolution")
+      print '("WaveToyF77_Evolution")'
       
 c     Set up shorthands
 c     -----------------
@@ -66,13 +65,13 @@ c     -----------------
       dy2i = 1/dy2
       dz2i = 1/dz2
       
-      istart = 1+cctk_nghostzones(1)
-      jstart = 1+cctk_nghostzones(2)
-      kstart = 1+cctk_nghostzones(3)
+      istart = 2
+      jstart = 2
+      kstart = 2
       
-      iend = cctk_lsh(1)-cctk_nghostzones(1)
-      jend = cctk_lsh(2)-cctk_nghostzones(2)
-      kend = cctk_lsh(3)-cctk_nghostzones(3)
+      iend = cctk_lsh(1)-1
+      jend = cctk_lsh(2)-1
+      kend = cctk_lsh(3)-1
       
       factor = 2 * (1 - dt2 * (dx2i + dy2i + dz2i))
       
@@ -82,11 +81,11 @@ c     ----------------
          do j = jstart, jend
             do i = istart, iend
                
-               phi(i,j,k) = factor*phi_p(i,j,k) -
-     $              phi_p_p(i,j,k) + (dt2) * 
-     $              ((phi_p(i+1,j,k)+phi_p(i-1,j,k))*dx2i
-     $              +(phi_p(i,j+1,k)+phi_p(i,j-1,k))*dy2i
-     $              +(phi_p(i,j,k+1)+phi_p(i,j,k-1))*dz2i)
+               phi_n(i,j,k) = factor*phi(i,j,k) -
+     $              phi_p(i,j,k) + (dt2) * 
+     $              ((phi(i+1,j,k)+phi(i-1,j,k))*dx2i
+     $              +(phi(i,j+1,k)+phi(i,j-1,k))*dy2i
+     $              +(phi(i,j,k+1)+phi(i,j,k-1))*dz2i)
                
             end do
          end do
@@ -123,69 +122,41 @@ c     Local declarations
       
       CCTK_REAL finf
       integer npow
-      parameter (finf = 1)
-      parameter (npow = 1)
-      
-      integer i,j,k
-      
       integer ierr
       integer sw(3)
       
-c     call CCTK_INFO ("WaveToyF77_Boundaries")
+      print '("WaveToyF77_Boundaries")'
+      
+      npow = 1
+      finf = 1
       
 c     Set the stencil width
 c     ---------------------
-      sw(1) = cctk_nghostzones(1)
-      sw(2) = cctk_nghostzones(2)
-      sw(3) = cctk_nghostzones(3)
+      sw(1) = 1  
+      sw(2) = 1
+      sw(3) = 1
       
-c     Apply the excision boundary condition
-c     -------------------------------------
-      if (CCTK_EQUALS(excision_bound, "none")) then
-c     do nothing
-      else if (CCTK_EQUALS(excision_bound, "1/r")) then
-         do k=1,cctk_lsh(3)
-            do j=1,cctk_lsh(2)
-               do i=1,cctk_lsh(1)
-                  if (spher3d_r(i,j,k) .le. excision_radius) then
-                     phi(i,j,k) = 1 / spher3d_r(i,j,k)
-                  end if
-               end do
-            end do
-         end do 
-      else
-         call CCTK_WARN (0, "internal error")
-      end if
+c     Apply the symmetry boundary conditions on any coordinate axes
+c     -------------------------------------------------------------
+      call Cart3dSymGN (ierr, cctkGH, "wavetoy::scalarevolve")
       
 c     Apply the outer boundary conditions
 c     -----------------------------------
       if (CCTK_EQUALS(bound, "flat")) then
          call BndFlatVN (ierr, cctkGH, sw, "wavetoy::phi")
       else if (CCTK_EQUALS(bound, "zero")) then
-         call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phi")
-      else if (CCTK_EQUALS(bound, "static")) then
-         call BndStaticVN (ierr, cctkGH, sw, 1, 0, "wavetoy::phi")
+         call BndScalarVN (ierr, cctkGH, zero, sw, "wavetoy::phi")
       else if (CCTK_EQUALS(bound, "radiation")) then
          call BndRadiativeVN (ierr, cctkGH, sw, zero, one,
      $        "wavetoy::phi", "wavetoy::phi")
       else if (CCTK_EQUALS(bound, "robin")) then
          call BndRobinVN (ierr, cctkGH, sw, finf, npow, "wavetoy::phi")
-
-      else if (CCTK_EQUALS(bound, "none")) then
-         ierr = 0
       else
-         call CCTK_WARN (0, "internal error")
+         call CCTK_WARN (0, "No boundary condition selected")
       end if
+      
       if (ierr .lt. 0)  then
         call CCTK_WARN (0, "Boundary conditions not applied - giving up!")
-      end if
-      
-c     Apply the symmetry boundary conditions on any coordinate axes
-c     -------------------------------------------------------------
-      call Cart3dSymGN (ierr, cctkGH, "wavetoy::scalarevolve")
-      
-      if (ierr .lt. 0)  then
-        call CCTK_WARN (0, "Symmetry conditions not applied - giving up!")
       end if
       
       end

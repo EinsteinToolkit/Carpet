@@ -1,83 +1,53 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.cc,v 1.8 2004/07/08 12:36:01 tradke Exp $
+/***************************************************************************
+                          dist.cc  -  Helpers for distributed computing
+                             -------------------
+    begin                : Sun Jun 11 2000
+    copyright            : (C) 2000 by Erik Schnetter
+    email                : schnetter@astro.psu.edu
 
-#include <assert.h>
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
+#include <cassert>
 
 #include <mpi.h>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
-
 #include "defs.hh"
 
-#include "dist.hh"
-
-using namespace std;
-
-
-
-namespace dist {
-  
-  MPI_Comm comm = MPI_COMM_NULL;
-  
-#if 0
-  MPI_Datatype mpi_complex_float;
-  MPI_Datatype mpi_complex_double;
-  MPI_Datatype mpi_complex_long_double;
-#else
-  MPI_Datatype mpi_complex8;
-  MPI_Datatype mpi_complex16;
-  MPI_Datatype mpi_complex32;
+#if !defined(TMPL_IMPLICIT) || !defined(DIST_HH)
+#  include "dist.hh"
 #endif
-  
-  void init (int& argc, char**& argv) {
-    MPI_Init (&argc, &argv);
-    pseudoinit();
-  }
-  
-  void pseudoinit () {
-    comm = MPI_COMM_WORLD;
-    
-#if 0
-    MPI_Type_contiguous (2, MPI_FLOAT, &mpi_complex_float);
-    MPI_Type_commit (&mpi_complex_float);
-    MPI_Type_contiguous (2, MPI_DOUBLE, &mpi_complex_double);
-    MPI_Type_commit (&mpi_complex_double);
-    MPI_Type_contiguous (2, MPI_LONG_DOUBLE, &mpi_complex_long_double);
-    MPI_Type_commit (&mpi_complex_long_double);
-#else
-#  ifdef CCTK_REAL4
-    CCTK_REAL4 dummy4;
-    MPI_Type_contiguous (2, datatype(dummy4), &mpi_complex8);
-    MPI_Type_commit (&mpi_complex8);
-#  endif
-#  ifdef CCTK_REAL8
-    CCTK_REAL8 dummy8;
-    MPI_Type_contiguous (2, datatype(dummy8), &mpi_complex16);
-    MPI_Type_commit (&mpi_complex16);
-#  endif
-#  ifdef CCTK_REAL16
-    CCTK_REAL16 dummy16;
-    MPI_Type_contiguous (2, datatype(dummy16), &mpi_complex32);
-    MPI_Type_commit (&mpi_complex32);
-#  endif
+
+
+
+MPI_Comm dist::comm;
+
+
+
+void dist::init (int& argc, char**& argv) {
+  MPI_Init (&argc, &argv);
+  comm = MPI_COMM_WORLD;
+}
+
+void dist::pseudoinit () {
+  comm = MPI_COMM_WORLD;
+}
+
+void dist::finalize () {
+  MPI_Finalize ();
+}
+
+
+
+#if defined(TMPL_EXPLICIT)
 #endif
-  }
-  
-  void finalize () {
-    MPI_Finalize ();
-  }
-  
-  void checkpoint (const char* file, int line) {
-    DECLARE_CCTK_PARAMETERS;
-    if (verbose) {
-      int rank;
-      MPI_Comm_rank (comm, &rank);
-      printf ("CHECKPOINT: processor %d, file %s, line %d\n",
-	      rank, file, line);
-    }
-    if (barriers) {
-      MPI_Barrier (comm);
-    }
-  }
-  
-} // namespace dist

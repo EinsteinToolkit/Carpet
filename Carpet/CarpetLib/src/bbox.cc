@@ -1,22 +1,38 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.26 2004/06/26 15:08:09 schnetter Exp $
+/***************************************************************************
+                          bbox.cc  -  Bounding boxes
+                             -------------------
+    begin                : Sun Jun 11 2000
+    copyright            : (C) 2000 by Erik Schnetter
+    email                : schnetter@astro.psu.edu
 
-#include <assert.h>
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
 
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
+#include <cassert>
 #include <iostream>
-#include <limits>
 
 #include "defs.hh"
 #include "vect.hh"
 
-#include "bbox.hh"
-
-using namespace std;
+#if !defined(TMPL_IMPLICIT) || !defined(BBOX_HH)
+#  include "bbox.hh"
+#endif
 
 
 
 // Constructors
 template<class T, int D>
-bbox<T,D>::bbox (): _lower(T(1)), _upper(T(0)), _stride(T(1)) { }
+bbox<T,D>::bbox (): _lower(1), _upper(0), _stride(1) { }
 
 template<class T, int D>
 bbox<T,D>::bbox (const bbox& b)
@@ -34,36 +50,8 @@ bbox<T,D>::bbox (const vect<T,D>& lower, const vect<T,D>& upper,
 		 const vect<T,D>& stride)
   : _lower(lower), _upper(upper), _stride(stride)
 {
-  assert (all(_stride>T(0)));
-  assert (all((_upper-_lower)%_stride == T(0)));
-  if (numeric_limits<T>::is_integer && numeric_limits<T>::is_signed) {
-    // prevent accidental wrap-around
-    assert (all(_lower < numeric_limits<T>::max() / 2));
-    assert (all(_lower > numeric_limits<T>::min() / 2));
-    assert (all(_upper < numeric_limits<T>::max() / 2));
-    assert (all(_upper > numeric_limits<T>::min() / 2));
-  }
-}
-
-// Accessors
-template<class T, int D>
-T bbox<T,D>::size () const {
-  if (empty()) return 0;
-//   return prod((shape()+stride()-1)/stride());
-  const vect<T,D> sh((shape()+stride()-1)/stride());
-  T sz = 1, max = numeric_limits<T>::max();
-  for (int d=0; d<D; ++d) {
-    assert (sh[d] <= max);
-    sz *= sh[d];
-    max /= sh[d];
-  }
-  return sz;
-}
-
-// Queries
-template<class T, int D>
-bool bbox<T,D>::contains (const vect<T,D>& x) const {
-  return all(x>=lower() && x<=upper());
+  assert (all(stride>=1));
+  assert (all((upper-lower)%stride==0));
 }
 
 // Operators
@@ -126,23 +114,20 @@ bbox<T,D> bbox<T,D>::operator& (const bbox& b) const {
 
 // Containment
 template<class T, int D>
-bool bbox<T,D>::is_contained_in (const bbox& b) const {
-  if (empty()) return true;
+bool bbox<T,D>::contained_in (const bbox& b) const {
   // no alignment check
   return all(lower()>=b.lower() && upper()<=b.upper());
 }
 
 // Alignment check
 template<class T, int D>
-bool bbox<T,D>::is_aligned_with (const bbox& b) const {
-  return all(stride()==b.stride() && (lower()-b.lower()) % stride() == T(0));
+bool bbox<T,D>::aligned_with (const bbox& b) const {
+  return all(stride()==b.stride() && (lower()-b.lower()) % stride() == 0);
 }
 
 // Expand the bbox a little by multiples of the stride
 template<class T, int D>
 bbox<T,D> bbox<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi) const {
-  // Allow expansion only into directions where the extent is not negative
-  assert (all(lower()<=upper() || (lo==T(0) && hi==T(0))));
   const vect<T,D> str = stride();
   const vect<T,D> lb = lower() - lo * str;
   const vect<T,D> ub = upper() + hi * str;
@@ -152,7 +137,6 @@ bbox<T,D> bbox<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi) const {
 // Find the smallest b-compatible box around *this
 template<class T, int D>
 bbox<T,D> bbox<T,D>::expanded_for (const bbox& b) const {
-  if (empty()) return bbox(b.lower(), b.lower()-b.stride(), b.stride());
   const vect<T,D> str = b.stride();
   const vect<T,D> loff = ((lower() - b.lower()) % str + str) % str;
   const vect<T,D> uoff = ((upper() - b.lower()) % str + str) % str;
@@ -164,7 +148,6 @@ bbox<T,D> bbox<T,D>::expanded_for (const bbox& b) const {
 // Find the largest b-compatible box inside *this
 template<class T, int D>
 bbox<T,D> bbox<T,D>::contracted_for (const bbox& b) const {
-  if (empty()) return bbox(b.lower(), b.lower()-b.stride(), b.stride());
   const vect<T,D> str = b.stride();
   const vect<T,D> loff = ((lower() - b.lower()) % str + str) % str;
   const vect<T,D> uoff = ((upper() - b.lower()) % str + str) % str;
@@ -173,23 +156,11 @@ bbox<T,D> bbox<T,D>::contracted_for (const bbox& b) const {
   return bbox(lo,up,str);
 }
 
-// Smallest bbox containing both boxes
-template<class T, int D>
-bbox<T,D> bbox<T,D>::expanded_containing (const bbox& b) const {
-  if (empty()) return b;
-  if (b.empty()) return *this;
-  assert (is_aligned_with(b));
-  const vect<T,D> lo = min(lower(), b.lower());
-  const vect<T,D> up = max(upper(), b.upper());
-  const vect<T,D> str = min(stride(), b.stride());
-  return bbox(lo,up,str);
-}
-
 // Iterators
 template<class T, int D>
 bbox<T,D>::iterator::iterator (const bbox& box, const vect<T,D>& pos)
   : box(box), pos(pos) {
-  if (box.empty()) this->pos=box.upper();
+  if (box.empty()) this->pos=box.upper()+box.stride();
 }
 
 template<class T, int D>
@@ -198,73 +169,42 @@ bool bbox<T,D>::iterator::operator!= (const iterator& i) const {
 }
 
 template<class T, int D>
-typename bbox<T,D>::iterator& bbox<T,D>::iterator::operator++ () {
+bbox<T,D>::iterator& bbox<T,D>::iterator::operator++ () {
   for (int d=0; d<D; ++d) {
     pos[d]+=box.stride()[d];
-    if (pos[d]<=box.upper()[d]) break;
+    if (pos[d]<=box.upper()[d]) return *this;
     pos[d]=box.lower()[d];
   }
+  pos=box.end().pos;
   return *this;
 }
 
 template<class T, int D>
-typename bbox<T,D>::iterator bbox<T,D>::begin () const {
+bbox<T,D>::iterator bbox<T,D>::begin () const {
   return iterator(*this, lower());
 }
 
 template<class T, int D>
-typename bbox<T,D>::iterator bbox<T,D>::end () const {
-  return iterator(*this, lower());
-}
-
-
-
-// Input
-template<class T,int D>
-void bbox<T,D>::input (istream& is) {
-  try {
-    skipws (is);
-    consume (is, '(');
-    is >> _lower;
-    skipws (is);
-    consume (is, ':');
-    is >> _upper;
-    skipws (is);
-    consume (is, ':');
-    is >> _stride;
-    skipws (is);
-    consume (is, ')');
-  } catch (input_error &err) {
-    cout << "Input error while reading a bbox" << endl;
-    throw err;
-  }
-  if (any(_stride<=T(0))) {
-    cout << "While reading the bbox " << *this << ":" << endl
-         << "   The stride is not positive." << endl;
-    throw input_error();
-  }
-  if (any((_upper-_lower)%_stride != T(0))) {
-    cout << "While reading the bbox " << *this << ":" << endl
-         << "   The stride does not evenly divide the extent." << endl;
-    throw input_error();
-  }
-  assert (all(_stride>T(0)));
-  assert (all((_upper-_lower)%_stride == T(0)));
+bbox<T,D>::iterator bbox<T,D>::end () const {
+  return iterator(*this, upper()+stride());
 }
 
 
 
 // Output
 template<class T,int D>
-void bbox<T,D>::output (ostream& os) const {
-  os << "(" << lower() << ":" << upper() << ":" << stride() << ")";
+ostream& operator<< (ostream& os, const bbox<T,D>& b) {
+  os << "(" << b.lower() << ":" << b.upper() << ":" << b.stride() << ")";
+  return os;
 }
 
 
 
-// Note: We need all dimensions all the time.
-template class bbox<int,0>;
+#if defined(TMPL_EXPLICIT)
 template class bbox<int,1>;
+template ostream& operator<< (ostream& os, const bbox<int,1>& b);
 template class bbox<int,2>;
+template ostream& operator<< (ostream& os, const bbox<int,2>& b);
 template class bbox<int,3>;
-template class bbox<double,3>;
+template ostream& operator<< (ostream& os, const bbox<int,3>& b);
+#endif

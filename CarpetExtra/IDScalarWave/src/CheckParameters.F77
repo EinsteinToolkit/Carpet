@@ -1,5 +1,4 @@
-c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/CheckParameters.F77,v 1.5 2003/11/05 16:18:40 schnetter Exp $
+c	-*-Fortran-*-
 
  /*@@
    @file      CheckParameters.F77
@@ -11,9 +10,8 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/Check
  @@*/
 
 #include "cctk.h" 
-#include "cctk_Arguments.h"
-#include "cctk_Functions.h"
 #include "cctk_Parameters.h"
+#include "cctk_Arguments.h"
 
 
  /*@@
@@ -36,10 +34,15 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/Check
       implicit none
 
       DECLARE_CCTK_ARGUMENTS
-      DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
 
-      if (CCTK_EQUALS(initial_data,"box")) then
+      INTEGER CCTK_Equals
+
+      if (CCTK_Equals(initial_data,"box").eq.1) then
+
+         if (CCTK_Equals(type, "box").eq.0) then
+            call CCTK_PARAMWARN("Must have a box grid with box initial data")
+         end if
 
          if (kx.eq.0 .or. ky.eq.0 .or. kz.eq.0) then
             call CCTK_PARAMWARN("Cannot have zero kx,ky,kz for box initial data")

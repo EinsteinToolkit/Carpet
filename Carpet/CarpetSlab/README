@@ -1,8 +1,7 @@
 Cactus Code Thorn CarpetSlab
 Authors    : Erik Schnetter <schnetter@uni-tuebingen.de>
-CVS info   : $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/README,v 1.2 2004/01/25 14:57:30 schnetter Exp $
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/README,v 1.1 2001/03/01 13:40:10 eschnett Exp $
 --------------------------------------------------------------------------
 
 Purpose of the thorn:
 
-This thorn provides hyperslabbing for Carpet.

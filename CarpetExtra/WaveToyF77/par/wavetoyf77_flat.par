@@ -1,41 +1,45 @@
-# /*@@
-#   @file      wavetoy_flat.par
-#   @date      2001-03-06
-#   @author    Erik Schnetter
-#   @desc
-#   Wavetoy parameter file demonstrating flat boundaries in octant mode
-#   @enddesc
-# @@*/
+# wavetoy_flat.par - wavetoy evolution with flat boundaries
+# $Id: wavetoyf77_flat.par,v 1.1 2001/03/01 13:40:11 eschnett Exp $
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_flat.par,v 1.6 2004/03/23 12:00:37 schnetter Exp $
+# /*@@
+#   @file      wavetoy_rad.par
+#   @date      Sunday 24th July
+#   @author    Gabrielle Allen
+#   @desc
+#   Wavetoy parameter file demonstrating flat boundaries in Octant
+#   @enddesc
+# @@*/          
 
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
+ActiveThorns = "idscalarwave time wavetoyf77 pugh pughreduce pughslab cartgrid3d ioutil ioascii iobasic"
+ 
+time::dtfac = 0.5
 
-Cactus::cctk_itlast		= 500
+idscalarwave::initial_data = "gaussian"
+idscalarwave::sigma = 2.8
+idscalarwave::radius = 0
 
-Time::dtfac			= 0.5
+wavetoyf77::bound = "flat"
 
-driver::global_nx		= 30
-driver::global_ny		= 30
-driver::global_nz		= 30
+grid::type = "BySpacing"
+grid::domain = "octant"
+grid::dxyz = 0.3
 
-grid::type			= byspacing
-grid::mode			= octant
-grid::dxyz			= 0.3
+driver::global_nx = 30
+driver::global_ny = 30
+driver::global_nz = 30
 
-IO::out_dir			= "wavetoyf77_flat"
+cactus::cctk_itlast = 500
 
-IOBasic::outInfo_every		= 50
-#IOBasic::outInfo_vars		= "wavetoy::phi"
+IOBasic::outScalar_every = 10
+IOBasic::outScalar_vars = "wavetoy::phi"
 
-#IOBasic::outScalar_every	= 10
-#IOBasic::outScalar_vars		= "wavetoy::phi"
+IOASCII::out1D_every = 10
+IOASCII::out1D_z = "no"
+IOASCII::out1D_y = "no"
+IOASCII::out1D_vars = "wavetoy::phi "
 
-IOASCII::out1D_every		= 10
-IOASCII::out1D_vars		= "wavetoy::phi "
+IOBasic::outInfo_every = 50
+IOBasic::outInfo_vars = "wavetoy::phi"
+ 
+IO::outdir = "wavetoyf77_flat"
 
-WaveToyF77::bound		= flat
-
-IDScalarWave::initial_data	= gaussian
-IDScalarWave::sigma		= 2.8
-IDScalarWave::radius		= 0

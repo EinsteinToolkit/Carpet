@@ -1,15 +1,30 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.25 2004/08/07 19:47:11 schnetter Exp $
+/***************************************************************************
+                          ggf.hh  -  Generic Grid Function
+                          grid function without type information
+                             -------------------
+    begin                : Sun Jun 11 2000
+    copyright            : (C) 2000 by Erik Schnetter
+    email                : schnetter@astro.psu.edu
+
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
 
 #ifndef GGF_HH
 #define GGF_HH
 
-#include <assert.h>
-
+#include <cassert>
 #include <iostream>
 #include <string>
-#include <vector>
-
-#include "cctk.h"
 
 #include "defs.hh"
 #include "dh.hh"
@@ -17,93 +32,63 @@
 #include "gh.hh"
 #include "th.hh"
 
-using namespace std;
-
 
 
 // Forward declaration
-template<int D> class ggf;
+template<int D> class generic_gf;
 
 // Output
 template<int D>
-ostream& operator<< (ostream& os, const ggf<D>& f);
+ostream& operator<< (ostream& os, const generic_gf<D>& f);
 
 
 
 // A generic grid function without type information
 template<int D>
-class ggf {
+class generic_gf {
 
   // Types
-
   typedef vect<int,D>    ivect;
   typedef bbox<int,D>    ibbox;
   typedef bboxset<int,D> ibset;
   typedef list<ibbox>    iblist;
   typedef vector<iblist> iblistvect;
 
-  typedef gdata<D>*     tdata;  // data ...
-  typedef vector<tdata> mdata;  // ... for each multigrid level
-  typedef vector<mdata> cdata;  // ... for each component
-  typedef vector<cdata> rdata;  // ... for each refinement level
-  typedef vector<rdata> fdata;  // ... for each time level
-  
+  typedef generic_data<D>* tdata; // data ...
+  typedef vector<tdata>    mdata; // ... for each multigrid level
+  typedef vector<mdata>    cdata; // ... for each component
+  typedef vector<cdata>    rdata; // ... for each refinement level
+  typedef vector<rdata>    fdata; // ... for each time level
+
 public:				// should be readonly
-  
+
   // Fields
-  int varindex;                 // Cactus variable index
-  operator_type transport_operator;
-  
-  th<D> &t;			// time hierarchy
-  int tmin, tmax;		// timelevels
-  int prolongation_order_time;	// order of temporal prolongation operator
-  
+  string name;
+
   gh<D> &h;			// grid hierarchy
+  th<D> &t;			// time hierarchy
   dh<D> &d;			// data hierarchy
+  int tmin, tmax;		// timelevels
 
 protected:
   fdata storage;		// storage
-  
-public:
-  int vectorlength;             // vector length
-  int vectorindex;              // index of *this
-  ggf* vectorleader;            // first vector element
-  
-private:
-  fdata oldstorage;
-  
+
 public:
 
   // Constructors
-  ggf (const int varindex, const operator_type transport_operator,
-       th<D>& t, dh<D>& d,
-       const int tmin, const int tmax,
-       const int prolongation_order_time,
-       const int vectorlength, const int vectorindex,
-       ggf* const vectorleader);
+  generic_gf (const string name, th<D>& t, dh<D>& d,
+              const int tmin, const int tmax);
 
   // Destructors
-  virtual ~ggf ();
+  virtual ~generic_gf ();
 
   // Comparison
-  bool operator== (const ggf<D>& f) const;
+  virtual bool operator== (const generic_gf<D>& f) const;
 
 
 
   // Modifiers
-  // void recompose ();
-  void recompose_crop ();
-  void recompose_allocate (int rl);
-  void recompose_fill (comm_state<D>& state, int rl, bool do_prolongate);
-  void recompose_free (int rl);
-  void recompose_bnd_prolongate (comm_state<D>& state, int rl, bool do_prolongate);
-  void recompose_sync (comm_state<D>& state, int rl, bool do_prolongate);
-
-  // Cycle the time levels by rotating the data sets
-  void cycle (int rl, int c, int ml);
-  
-  // Flip the time levels by exchanging the data sets
-  void flip (int rl, int c, int ml);
+  virtual void recompose ();
   
   
   
@@ -111,7 +96,7 @@ public:
   
 protected:
   
-  virtual gdata<D>* typed_data (int tl, int rl, int c, int ml) = 0;
+  virtual generic_data<D>* typed_data() = 0;
   
   
   
@@ -119,50 +104,47 @@ protected:
   
 protected:
   
-  // Copy a region
-  void copycat (comm_state<D>& state,
-                int tl1, int rl1, int c1, int ml1,
-		const ibbox dh<D>::dboxes::* recv_list,
-		int tl2, int rl2, int ml2,
-		const ibbox dh<D>::dboxes::* send_list);
+  // Copy region for a component (between time levels)
+  virtual void copycat (int tl1, int rl1, int c1, int ml1,
+			const ibbox dh<D>::dboxes::* recv_list,
+			int tl2, int rl2, int ml2,
+			const ibbox dh<D>::dboxes::* send_list);
 
-  // Copy regions
-  void copycat (comm_state<D>& state,
-                int tl1, int rl1, int c1, int ml1,
-		const iblist dh<D>::dboxes::* recv_list,
-		int tl2, int rl2, int ml2,
-		const iblist dh<D>::dboxes::* send_list);
+  // Copy regions for a component (between multigrid levels)
+  virtual void copycat (int tl1, int rl1, int c1, int ml1,
+			const iblist dh<D>::dboxes::* recv_list,
+			int tl2, int rl2, int ml2,
+			const iblist dh<D>::dboxes::* send_list);
 
-  // Copy regions
-  void copycat (comm_state<D>& state,
-                int tl1, int rl1, int c1, int ml1,
-		const iblistvect dh<D>::dboxes::* recv_listvect,
-		int tl2, int rl2, int ml2,
-		const iblistvect dh<D>::dboxes::* send_listvect);
+  // Copy regions for a level (between refinement levels)
+  virtual void copycat (int tl1, int rl1, int c1, int ml1,
+			const iblistvect dh<D>::dboxes::* recv_listvect,
+			int tl2, int rl2, int ml2,
+			const iblistvect dh<D>::dboxes::* send_listvect);
   
-  // Interpolate a region
-  void intercat (comm_state<D>& state,
-                 int tl1, int rl1, int c1, int ml1,
-		 const ibbox dh<D>::dboxes::* recv_list,
-		 const vector<int> tl2s, int rl2, int ml2,
-		 const ibbox dh<D>::dboxes::* send_list,
-		 CCTK_REAL time);
+  // Interpolate a component (between time levels)
+  virtual void intercat (int tl1, int rl1, int c1, int ml1,
+			 const ibbox dh<D>::dboxes::* recv_list,
+			 int tl2, const double fact2,
+			 int tl3, const double fact3,
+			 int rl2, int ml2,
+			 const ibbox dh<D>::dboxes::* send_list);
 
-  // Interpolate regions
-  void intercat (comm_state<D>& state,
-                 int tl1, int rl1, int c1, int ml1,
-		 const iblist dh<D>::dboxes::* recv_list,
-		 const vector<int> tl2s, int rl2, int ml2,
-		 const iblist dh<D>::dboxes::* send_list,
-		 CCTK_REAL time);
+  // Interpolate a component (between multigrid levels)
+  virtual void intercat (int tl1, int rl1, int c1, int ml1,
+			 const iblist dh<D>::dboxes::* recv_list,
+			 int tl2, const double fact2,
+			 int tl3, const double fact3,
+			 int rl2, int ml2,
+			 const iblist dh<D>::dboxes::* send_list);
 
-  // Interpolate regions
-  void intercat (comm_state<D>& state,
-                 int tl1, int rl1, int c1, int ml1,
-		 const iblistvect dh<D>::dboxes::* recv_listvect,
-		 const vector<int> tl2s, int rl2, int ml2,
-		 const iblistvect dh<D>::dboxes::* send_listvect,
-		 CCTK_REAL time);
+  // Interpolate a level (between refinement levels)
+  virtual void intercat (int tl1, int rl1, int c1, int ml1,
+			 const iblistvect dh<D>::dboxes::* recv_listvect,
+			 int tl2, const double fact2,
+			 int tl3, const double fact3,
+			 int rl2, int ml2,
+			 const iblistvect dh<D>::dboxes::* send_listvect);
 
 
 
@@ -171,55 +153,47 @@ public:
   // The grid boundaries have to be updated after calling mg_restrict,
   // mg_prolongate, ref_restrict, or ref_prolongate.
 
-  // "Updating" means here that the boundaries have to be
-  // synchronised.  They don't need to be prolongated.
-
   // Copy a component from the next time level
-  void copy (comm_state<D>& state, int tl, int rl, int c, int ml);
+  virtual void copy (int tl, int rl, int c, int ml);
 
   // Synchronise the boundaries of a component
-  void sync (comm_state<D>& state, int tl, int rl, int c, int ml);
+  virtual void sync (int tl, int rl, int c, int ml);
 
   // Prolongate the boundaries of a component
-  void ref_bnd_prolongate (comm_state<D>& state,
-                           int tl, int rl, int c, int ml, CCTK_REAL time);
+  virtual void ref_bnd_prolongate (int tl, int rl, int c, int ml);
 
   // Restrict a multigrid level
-  void mg_restrict (comm_state<D>& state,
-                    int tl, int rl, int c, int ml, CCTK_REAL time);
+  virtual void mg_restrict (int tl, int rl, int c, int ml);
 
   // Prolongate a multigrid level
-  void mg_prolongate (comm_state<D>& state,
-                      int tl, int rl, int c, int ml, CCTK_REAL time);
+  virtual void mg_prolongate (int tl, int rl, int c, int ml);
 
   // Restrict a refinement level
-  void ref_restrict (comm_state<D>& state,
-                     int tl, int rl, int c, int ml, CCTK_REAL time);
+  virtual void ref_restrict (int tl, int rl, int c, int ml);
 
   // Prolongate a refinement level
-  void ref_prolongate (comm_state<D>& state,
-                       int tl, int rl, int c, int ml, CCTK_REAL time);
+  virtual void ref_prolongate (int tl, int rl, int c, int ml);
   
   
   
   // Access to the data
-  virtual const gdata<D>* operator() (int tl, int rl, int c, int ml) const = 0;
+  virtual const generic_data<D>* operator() (int tl, int rl, int c, int ml)
+    const = 0;
   
-  virtual gdata<D>* operator() (int tl, int rl, int c, int ml) = 0;
+  virtual generic_data<D>* operator() (int tl, int rl, int c, int ml) = 0;
   
   
   
   // Output
-  virtual ostream& output (ostream& os) const = 0;
+  friend ostream& operator<< <> (ostream& os, const generic_gf& f);
+  
+  virtual ostream& out (ostream& os) const = 0;
 };
 
 
 
-template<int D>
-inline ostream& operator<< (ostream& os, const ggf<D>& f) {
-  return f.output(os);
-}
-
-
+#if defined(TMPL_IMPLICIT)
+#  include "ggf.cc"
+#endif
 
 #endif // GGF_HH

@@ -1,70 +1,95 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.32 2004/08/19 15:38:20 schnetter Exp $
-
-#ifndef CARPET_HH
-#define CARPET_HH
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
 
 #include <vector>
 
 #include "cctk.h"
-#include "cctk_Arguments.h"
-#include "cctk_Functions.h"
+#include "cctk_Schedule.h"
 
-#include "gh.hh"
-
-#include "carpet_public.hh"
-
-
+#include "Carpet/CarpetLib/src/dh.hh"
+#include "Carpet/CarpetLib/src/ggf.hh"
+#include "Carpet/CarpetLib/src/gh.hh"
+#include "Carpet/CarpetLib/src/th.hh"
 
 namespace Carpet {
   
-  using namespace std;
   
-  // Scheduled functions
+  
+  const int dim = 3;
+  
+  
+  
+  // handle from CCTK_RegisterGHExtension
+  extern int GHExtension;
+  
+  // data for scalars
+  extern vector<vector<vector<void*> > > scdata;// [group][var][tl]
+  
+  // data for arrays
+  struct arrdesc {
+    gh<dim>* hh;
+    th<dim>* tt;
+    dh<dim>* dd;
+    vector<generic_gf<dim>* > data; // [var]
+    int size[dim];
+  };
+  extern vector<arrdesc> arrdata; // [group]
+  
+  // data for grid functions
+  
+  // the grid hierarchy
+  extern gh<dim>* hh;
+  extern th<dim>* tt;
+  extern dh<dim>* dd;
+  extern int gfsize[dim];
+  
+  struct gfdesc {
+    vector<generic_gf<dim>* > data; // [var]
+  };
+  extern vector<gfdesc> gfdata;	// [group]
+  
+  // current position on the grid hierarchy
+  extern int mglevel;
+  extern int reflevel;
+  extern int component;
+  
+  
+  
+  // scheduled functions
   extern "C" {
-    void CarpetParamCheck (CCTK_ARGUMENTS);
-    void CarpetStartup (void);
+    int CarpetStartup();
   }
   
-  // Registered functions
-  void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cgh);
+  // registered functions
+  void* SetupGH (tFleshConfig *fc, int convLevel, cGH *cgh);
   
-  int Initialise (tFleshConfig* config);
-  int Evolve (tFleshConfig* config);
-  int Shutdown (tFleshConfig* config);
-  int CallFunction (void* function, cFunctionData* attribute, void* data);
+  int Initialise (tFleshConfig *config);
+  int Evolve (tFleshConfig *config);
+  int Shutdown (tFleshConfig *config);
+  int CallFunction (void *function, cFunctionData *attribute, void *data);
   
-  // Other functions
-  bool Regrid (const cGH* cgh, const bool force_recompose, const bool do_init);
-  void CycleTimeLevels (const cGH* cgh);
-  void FlipTimeLevels (const cGH* cgh);
-  void Restrict (const cGH* cgh);
+  void reflevel_up (cGH* cgh);
+  void reflevel_down (cGH* cgh);
   
-  // Sanity checks
-  enum checktimes { currenttime,
-		    currenttimebutnotifonly,
-                    previoustime,
-		    allbutlasttime,
-		    allbutcurrenttime,
-		    alltimes };
+  int SyncGroup (cGH *cgh, const char *groupname);
+  int EnableGroupStorage (cGH *cgh, const char *groupname);
+  int DisableGroupStorage (cGH *cgh, const char *groupname); 
+  int EnableGroupComm (cGH *cgh, const char *groupname);
+  int DisableGroupComm (cGH *cgh, const char *groupname);
+  int Barrier (cGH *cgh);
+  int ParallelInit (cGH *cgh);
+  int Exit (cGH *cgh, int retval);
+  int Abort (cGH *cgh, int retval);
+  int myProc (cGH *cgh);
+  int nProcs (cGH *cgh);
+  const int* ArrayGroupSizeB (cGH *cgh, int dir, int group,
+			      const char *groupname);
+  int QueryGroupStorageB (cGH *cgh, int group, const char *groupname);
   
-  int mintl (checktimes where, int num_tl);
-  int maxtl (checktimes where, int num_tl);
   
-  void Poison (const cGH* cgh, checktimes where);
-  void PoisonGroup (const cGH* cgh, int group, checktimes where);
-  void PoisonCheck (const cGH* cgh, checktimes where);
   
-  void CalculateChecksums (const cGH* cgh, checktimes where);
-  void CheckChecksums (const cGH* cgh, checktimes where);
-  
-  // Debugging output
-  void Output (const char* fmt, ...);
-  void Waypoint (const char* fmt, ...);
-  void Checkpoint (const char* fmt, ...);
-  
-  // Error output
-  void UnsupportedVarType (int vindex);
+  // Helper functions
+  extern "C" {
+    MPI_Comm CarpetMPICommunicator();
+  }
   
 } // namespace Carpet
-
-#endif // !defined(CARPET_HH)

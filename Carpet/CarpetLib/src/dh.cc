@@ -1,91 +1,80 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.57 2004/09/17 16:37:26 schnetter Exp $
+/***************************************************************************
+                          dh.cc  -  Data Hierarchy
+                          a grid hierarchy plus ghost zones
+                             -------------------
+    begin                : Sun Jun 11 2000
+    copyright            : (C) 2000 by Erik Schnetter
+    email                : schnetter@astro.psu.edu
 
-#include <assert.h>
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
+#include <cassert>
 
 #include "defs.hh"
-#include "dist.hh"
 #include "ggf.hh"
 #include "vect.hh"
 
-#include "dh.hh"
-
-using namespace std;
+#if !defined(TMPL_IMPLICIT) || !defined(DH_HH)
+#  include "dh.hh"
+#endif
 
 
 
 // Constructors
 template<int D>
-dh<D>::dh (gh<D>& h,
-           const ivect& lghosts, const ivect& ughosts,
-	   const int prolongation_order_space, const int buffer_width)
-  : h(h),
-    lghosts(lghosts), ughosts(ughosts),
-    prolongation_order_space(prolongation_order_space),
-    buffer_width(buffer_width)
+dh<D>::dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts)
+  : h(h), lghosts(lghosts), ughosts(ughosts)
 {
   assert (all(lghosts>=0 && ughosts>=0));
-  assert (prolongation_order_space>=0);
-  assert (buffer_width>=0);
   h.add(this);
-  CHECKPOINT;
-  recompose (false);
+  recompose();
 }
 
 // Destructors
 template<int D>
-dh<D>::~dh ()
-{
-  CHECKPOINT;
+dh<D>::~dh () {
   h.remove(this);
-}
-
-// Helpers
-template<int D>
-int dh<D>::prolongation_stencil_size () const {
-  assert (prolongation_order_space>=0);
-  return prolongation_order_space/2;
 }
 
 // Modifiers
 template<int D>
-void dh<D>::recompose (const bool do_prolongate) {
-  DECLARE_CCTK_PARAMETERS;
-  
-  CHECKPOINT;
+void dh<D>::recompose () {
   
   boxes.clear();
   
   boxes.resize(h.reflevels());
   for (int rl=0; rl<h.reflevels(); ++rl) {
-    boxes.at(rl).resize(h.components(rl));
+    boxes[rl].resize(h.components(rl));
     for (int c=0; c<h.components(rl); ++c) {
-      boxes.at(rl).at(c).resize(h.mglevels(rl,c));
+      boxes[rl][c].resize(h.mglevels(rl,c));
       for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-       	const ibbox intr = h.extents.at(rl).at(c).at(ml);
-	
+       	const ibbox intr = h.extents[rl][c][ml];
+        	
        	// Interior
        	// (the interior of the grid has the extent as specified by
        	// the user)
-       	boxes.at(rl).at(c).at(ml).interior = intr;
-	
+       	boxes[rl][c][ml].interior = intr;
+        	
        	// Exterior (add ghost zones)
        	// (the content of the exterior is completely determined by
        	// the interior of this or other components; the content of
        	// the exterior is redundant)
-	ivect ldist(lghosts), udist(ughosts);
-	for (int d=0; d<D; ++d) {
-	  if (h.outer_boundaries.at(rl).at(c)[d][0]) ldist[d] = 0;
-	  if (h.outer_boundaries.at(rl).at(c)[d][1]) udist[d] = 0;
-	}
-        boxes.at(rl).at(c).at(ml).exterior = intr.expand(ldist, udist);
-	
+       	boxes[rl][c][ml].exterior = intr.expand(lghosts, ughosts);
+        	
        	// Boundaries (ghost zones only)
        	// (interior + boundaries = exterior)
-       	boxes.at(rl).at(c).at(ml).boundaries
-          = boxes.at(rl).at(c).at(ml).exterior - intr;
+       	boxes[rl][c][ml].boundaries = boxes[rl][c][ml].exterior - intr;
 	
       } // for ml
     } // for c
@@ -97,21 +86,21 @@ void dh<D>::recompose (const bool do_prolongate) {
 	
       	// Sync boxes
       	const int cs = h.components(rl);
-      	boxes.at(rl).at(c).at(ml).send_sync.resize(cs);
-      	boxes.at(rl).at(c).at(ml).recv_sync.resize(cs);
+      	boxes[rl][c][ml].send_sync.resize(cs);
+      	boxes[rl][c][ml].recv_sync.resize(cs);
       	
       	// Refinement boxes
       	if (rl>0) {
       	  const int csm1 = h.components(rl-1);
-      	  boxes.at(rl).at(c).at(ml).send_ref_coarse.resize(csm1);
-      	  boxes.at(rl).at(c).at(ml).recv_ref_coarse.resize(csm1);
-      	  boxes.at(rl).at(c).at(ml).recv_ref_bnd_coarse.resize(csm1);
+      	  boxes[rl][c][ml].send_ref_coarse.resize(csm1);
+      	  boxes[rl][c][ml].recv_ref_coarse.resize(csm1);
+      	  boxes[rl][c][ml].recv_ref_bnd_coarse.resize(csm1);
       	}
       	if (rl<h.reflevels()-1) {
       	  const int csp1 = h.components(rl+1);
-      	  boxes.at(rl).at(c).at(ml).recv_ref_fine.resize(csp1);
-      	  boxes.at(rl).at(c).at(ml).send_ref_fine.resize(csp1);
-      	  boxes.at(rl).at(c).at(ml).send_ref_bnd_fine.resize(csp1);
+      	  boxes[rl][c][ml].recv_ref_fine.resize(csp1);
+      	  boxes[rl][c][ml].send_ref_fine.resize(csp1);
+      	  boxes[rl][c][ml].send_ref_bnd_fine.resize(csp1);
       	}
 	
       } // for ml
@@ -121,50 +110,34 @@ void dh<D>::recompose (const bool do_prolongate) {
   for (int rl=0; rl<h.reflevels(); ++rl) {
     for (int c=0; c<h.components(rl); ++c) {
       for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-      	const ibset& bnds = boxes.at(rl).at(c).at(ml).boundaries;
-	
+      	const ibbox intr = boxes[rl][c][ml].interior;
+      	const ibbox extr = boxes[rl][c][ml].exterior;
+      	const ibset bnds = boxes[rl][c][ml].boundaries;
+      	
       	// Sync boxes
       	for (int cc=0; cc<h.components(rl); ++cc) {
       	  assert (ml<h.mglevels(rl,cc));
       	  // intersect boundaries with interior of that component
-          ibset ovlp = bnds & boxes.at(rl).at(cc).at(ml).interior;
-          ovlp.normalize();
-      	  for (typename ibset::const_iterator b=ovlp.begin();
-	       b!=ovlp.end(); ++b) {
-	    boxes.at(rl).at(c ).at(ml).recv_sync.at(cc).push_back(*b);
-	    boxes.at(rl).at(cc).at(ml).send_sync.at(c ).push_back(*b);
-	  }
-      	} // for cc
+      	  const ibset ovlp = bnds & boxes[rl][cc][ml].interior;
+      	  for (ibset::const_iterator b=ovlp.begin(); b!=ovlp.end(); ++b) {
+      	    boxes[rl][c ][ml].recv_sync[cc].push_back(*b);
+      	    boxes[rl][cc][ml].send_sync[c ].push_back(*b);
+      	  }
+      	}
       	
-      } // for ml
-    } // for c
-  } // for rl
-  
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    for (int c=0; c<h.components(rl); ++c) {
-      for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-      	const ibbox& intr = boxes.at(rl).at(c).at(ml).interior;
-      	const ibbox& extr = boxes.at(rl).at(c).at(ml).exterior;
-	
       	// Multigrid boxes
       	if (ml>0) {
-      	  const ibbox intrf = boxes.at(rl).at(c).at(ml-1).interior;
-      	  const ibbox extrf = boxes.at(rl).at(c).at(ml-1).exterior;
+      	  const ibbox intrf = boxes[rl][c][ml-1].interior;
+      	  const ibbox extrf = boxes[rl][c][ml-1].exterior;
       	  // Restriction (interior)
       	  {
       	    // (the restriction must fill all of the interior of the
       	    // coarse grid, and may use the exterior of the fine grid)
       	    const ibbox recv = intr;
-            assert (intr.empty() || ! recv.empty());
       	    const ibbox send = recv.expanded_for(extrf);
-            assert (intr.empty() || ! send.empty());
-            // TODO: put the check back in, taking outer boundaries
-            // into account
-#if 0
-      	    assert (send.is_contained_in(extrf));
-#endif
-      	    boxes.at(rl).at(c).at(ml-1).send_mg_coarse.push_back(send);
-      	    boxes.at(rl).at(c).at(ml  ).recv_mg_fine  .push_back(recv);
+      	    assert (send.contained_in(extrf));
+      	    boxes[rl][c][ml-1].send_mg_coarse.push_back(send);
+      	    boxes[rl][c][ml  ].recv_mg_fine  .push_back(recv);
       	  }
       	  // Prolongation (interior)
       	  {
@@ -172,146 +145,58 @@ void dh<D>::recompose (const bool do_prolongate) {
       	    // grid, and may fill only the interior of the fine grid,
       	    // and the bbox must be as large as possible)
       	    const ibbox recv = extr.contracted_for(intrf) & intrf;
-            assert (intr.empty() || ! recv.empty());
       	    const ibbox send = recv.expanded_for(extr);
-            assert (intr.empty() || ! send.empty());
-      	    boxes.at(rl).at(c).at(ml-1).recv_mg_coarse.push_back(recv);
-      	    boxes.at(rl).at(c).at(ml  ).send_mg_fine  .push_back(send);
+      	    boxes[rl][c][ml-1].recv_mg_coarse.push_back(recv);
+      	    boxes[rl][c][ml  ].send_mg_fine  .push_back(send);
       	  }
-      	} // if not finest multigrid level
-        
-      } // for ml
-    } // for c
-  } // for rl
-  
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    for (int c=0; c<h.components(rl); ++c) {
-      for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-      	const ibbox& intr = boxes.at(rl).at(c).at(ml).interior;
-      	const ibbox& extr = boxes.at(rl).at(c).at(ml).exterior;
-	
+      	}
+      	
       	// Refinement boxes
       	if (rl<h.reflevels()-1) {
       	  for (int cc=0; cc<h.components(rl+1); ++cc) {
-      	    const ibbox intrf = boxes.at(rl+1).at(cc).at(ml).interior;
+      	    const ibbox intrf = boxes[rl+1][cc][ml].interior;
+      	    const ibbox extrf = boxes[rl+1][cc][ml].exterior;
+      	    // Restriction (interior)
+      	    {
+      	      // (the restriction may fill the interior of the of the
+      	      // coarse grid, and may use the exterior of the fine
+      	      // grid, and the bbox must be as large as possible)
+      	      const ibbox recv = extrf.contracted_for(intr) & intr;
+      	      const ibbox send = recv.expanded_for(extrf);
+      	      boxes[rl+1][cc][ml].send_ref_coarse[c ].push_back(send);
+      	      boxes[rl  ][c ][ml].recv_ref_fine  [cc].push_back(recv);
+      	    }
       	    // Prolongation (interior)
-            // TODO: prefer boxes from the same processor
       	    {
       	      // (the prolongation may use the exterior of the coarse
       	      // grid, and must fill all of the interior of the fine
       	      // grid)
-              const int pss = prolongation_stencil_size();
-              ibset recvs
-                = extr.expand(-pss,-pss).contracted_for(intrf) & intrf;
-              const iblistvect& rrc
-                = boxes.at(rl+1).at(cc).at(ml).recv_ref_coarse;
-              for (typename iblistvect::const_iterator lvi=rrc.begin();
-                   lvi!=rrc.end(); ++lvi) {
-                for (typename iblist::const_iterator li=lvi->begin();
-                     li!=lvi->end(); ++li) {
-                  recvs -= *li;
-                }
-              }
-              recvs.normalize();
-              assert (recvs.setsize() <= 1);
-              if (recvs.setsize() == 1) {
-                const ibbox recv = *recvs.begin();
-                const ibbox send = recv.expanded_for(extr);
-                assert (! send.empty());
-                assert (send.is_contained_in(extr));
-                boxes.at(rl+1).at(cc).at(ml).recv_ref_coarse.at(c )
-                  .push_back(recv);
-                boxes.at(rl  ).at(c ).at(ml).send_ref_fine  .at(cc)
-                  .push_back(send);
-              }
+      	      const ibbox recv = extr.contracted_for(intrf) & intrf;
+      	      const ibbox send = recv.expanded_for(extr);
+      	      assert (send.contained_in(extr));
+      	      boxes[rl+1][cc][ml].recv_ref_coarse[c ].push_back(recv);
+      	      boxes[rl  ][c ][ml].send_ref_fine  [cc].push_back(send);
       	    }
-            
-      	  } // for cc
-      	} // if not finest refinement level
-	
-      } // for ml
-    } // for c
-  } // for rl
-  
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    for (int c=0; c<h.components(rl); ++c) {
-      for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-      	const ibbox& intr = boxes.at(rl).at(c).at(ml).interior;
-      	const ibbox& extr = boxes.at(rl).at(c).at(ml).exterior;
-	
-      	// Refinement boxes
-      	if (rl<h.reflevels()-1) {
-      	  for (int cc=0; cc<h.components(rl+1); ++cc) {
-      	    const ibbox intrf = boxes.at(rl+1).at(cc).at(ml).interior;
-            const ibbox& extrf = boxes.at(rl+1).at(cc).at(ml).exterior;
-            const ibset& bndsf = boxes.at(rl+1).at(cc).at(ml).boundaries;
       	    // Prolongation (boundaries)
-            // TODO: prefer boxes from the same processor
       	    {
-              // (the prolongation may use the exterior of the coarse
-              // grid, and must fill all of the boundary of the fine
-              // grid)
-              const int pss = prolongation_stencil_size();
-              // Prolongation boundaries
-              ibset pbndsf = bndsf;
-              {
-                // Do not count what is synced
-                const iblistvect& rs
-                  = boxes.at(rl+1).at(cc).at(ml).recv_sync;
-                for (typename iblistvect::const_iterator lvi=rs.begin();
-                     lvi!=rs.end(); ++lvi) {
-                  for (typename iblist::const_iterator li=lvi->begin();
-                       li!=lvi->end(); ++li) {
-                    pbndsf -= *li;
-                  }
-                }
-                pbndsf.normalize();
-              }
-              // Buffer zones
-              ibset buffers;
-              {
-                for (typename ibset::const_iterator pbi=pbndsf.begin();
-                     pbi!=pbndsf.end(); ++pbi) {
-                  buffers |= (*pbi).expand(buffer_width, buffer_width) & extrf;
-                }
-                buffers.normalize();
-              }
-              // Add boundaries
-              const ibbox maxrecvs
-                = extr.expand(-pss,-pss).contracted_for(extrf);
-              ibset recvs = buffers & maxrecvs;
-              recvs.normalize();
-              {
-                // Do not prolongate what is already prolongated
-                const iblistvect& rrbc
-                  = boxes.at(rl+1).at(cc).at(ml).recv_ref_bnd_coarse;
-                for (typename iblistvect::const_iterator lvi=rrbc.begin();
-                     lvi!=rrbc.end(); ++lvi) {
-                  for (typename iblist::const_iterator li=lvi->begin();
-                       li!=lvi->end(); ++li) {
-                    recvs -= *li;
-                  }
-                }
-                recvs.normalize();
-              }
-              {
-                for (typename ibset::const_iterator ri = recvs.begin();
-                     ri != recvs.end(); ++ri) {
-                  const ibbox & recv = *ri;
-                  const ibbox send = recv.expanded_for(extr);
-                  assert (! send.empty());
-                  assert (send.is_contained_in(extr));
-                  assert (send.is_contained_in(extr.expand(-pss,-pss)));
-                  boxes.at(rl+1).at(cc).at(ml).recv_ref_bnd_coarse.at(c )
-                    .push_back(recv);
-                  boxes.at(rl  ).at(c ).at(ml).send_ref_bnd_fine  .at(cc)
-                    .push_back(send);
-                }
+      	      ibset bndsf = boxes[rl+1][cc][ml].boundaries;
+      	      // coarsify boundaries of fine component
+      	      for (ibset::const_iterator bi=bndsf.begin();
+		   bi!=bndsf.end(); ++bi) {
+		const ibbox& bndf = *bi;
+		// (the prolongation may use the exterior of the
+		// coarse grid, and must fill all of the boundary of
+		// the fine grid)
+		const ibbox recv = extr.contracted_for(bndf) & bndf;
+		const ibbox send = recv.expanded_for(extr);
+		assert (send.contained_in(extr));
+		boxes[rl+1][cc][ml].recv_ref_bnd_coarse[c ].push_back(recv);
+		boxes[rl  ][c ][ml].send_ref_bnd_fine  [cc].push_back(send);
       	      }
       	    }
-            
-      	  } // for cc
-      	} // if not finest refinement level
+      	
+      	  }
+      	}
 	
       } // for ml
     } // for c
@@ -320,350 +205,41 @@ void dh<D>::recompose (const bool do_prolongate) {
   for (int rl=0; rl<h.reflevels(); ++rl) {
     for (int c=0; c<h.components(rl); ++c) {
       for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-      	const ibbox& intr = boxes.at(rl).at(c).at(ml).interior;
-      	const ibbox& extr = boxes.at(rl).at(c).at(ml).exterior;
-	
-      	// Refinement boxes
-      	if (rl<h.reflevels()-1) {
-      	  for (int cc=0; cc<h.components(rl+1); ++cc) {
-      	    const ibbox intrf = boxes.at(rl+1).at(cc).at(ml).interior;
-      	    // Restriction (interior)
-      	    {
-      	      // (the restriction may fill the interior of the of the
-      	      // coarse grid, and may use the interior of the fine
-      	      // grid, and the bbox must be as large as possible)
-              // (the restriction must not use points that are filled
-              // by boundary prolongation)
-              ibset sends = intrf & intr.expanded_for(intrf);
-              // remove what is received during boundary prolongation
-              for (int ccc=0; ccc<h.components(rl); ++ccc) {
-                const iblist& sendlist
-                  = boxes.at(rl+1).at(cc).at(ml).recv_ref_bnd_coarse.at(ccc);
-                for (typename iblist::const_iterator sli = sendlist.begin();
-                     sli != sendlist.end(); ++sli) {
-                  sends -= *sli;
-                }
-              }
-              sends.normalize();
-              for (typename ibset::const_iterator si = sends.begin();
-                   si != sends.end(); ++si) {
-                const ibbox recv = (*si).contracted_for(intr);
-                if (! recv.empty()) {
-                  const ibbox & send = recv.expanded_for(intrf);
-                  assert (! send.empty());
-                  boxes.at(rl+1).at(cc).at(ml).send_ref_coarse.at(c )
-                    .push_back(send);
-                  boxes.at(rl  ).at(c ).at(ml).recv_ref_fine  .at(cc)
-                    .push_back(recv);
-                }
-              }
-      	    }
-            
-      	  } // for cc
-      	} // if not finest refinement level
-	
-      } // for ml
-    } // for c
-  } // for rl
-  
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    for (int c=0; c<h.components(rl); ++c) {
-      for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-	
-	// Boundaries that are not synced, or are neither synced nor
-	// prolonged to from coarser grids (outer boundaries)
-        ibset& sync_not = boxes.at(rl).at(c).at(ml).sync_not;
-        ibset& recv_not = boxes.at(rl).at(c).at(ml).recv_not;
-        
-        // The whole boundary
-        sync_not = boxes.at(rl).at(c).at(ml).boundaries;
-        recv_not = boxes.at(rl).at(c).at(ml).boundaries;
-        
-        // Subtract boxes received during synchronisation
-        const iblistvect& recv_sync = boxes.at(rl).at(c).at(ml).recv_sync;
-        for (typename iblistvect::const_iterator lvi=recv_sync.begin();
-             lvi!=recv_sync.end(); ++lvi) {
-          for (typename iblist::const_iterator li=lvi->begin();
-               li!=lvi->end(); ++li) {
-            sync_not -= *li;
-            recv_not -= *li;
-          }
-        }
-        
-        // Subtract boxes received during prolongation
-        const iblistvect& recv_ref_bnd_coarse
-          = boxes.at(rl).at(c).at(ml).recv_ref_bnd_coarse;
-        for (typename iblistvect::const_iterator
-               lvi=recv_ref_bnd_coarse.begin();
-             lvi!=recv_ref_bnd_coarse.end(); ++lvi) {
-          for (typename iblist::const_iterator li=lvi->begin();
-               li!=lvi->end(); ++li) {
-            recv_not -= *li;
-          }
-        }
-	
-      } // for ml
-    } // for c
-  } // for rl
-  
-  // Calculate bases
-  bases.resize(h.reflevels());
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    if (h.components(rl)==0) {
-      bases.at(rl).resize(0);
-    } else {
-      bases.at(rl).resize(h.mglevels(rl,0));
-      for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
-	bases.at(rl).at(ml).exterior = ibbox();
-	bases.at(rl).at(ml).interior = ibbox();
-	for (int c=0; c<h.components(rl); ++c) {
-	  bases.at(rl).at(ml).exterior
-	    = (bases.at(rl).at(ml).exterior
-	       .expanded_containing(boxes.at(rl).at(c).at(ml).exterior));
-	  bases.at(rl).at(ml).interior
-	    = (bases.at(rl).at(ml).interior
-	       .expanded_containing(boxes.at(rl).at(c).at(ml).interior));
-	}
-	bases.at(rl).at(ml).boundaries
-	  = bases.at(rl).at(ml).exterior - bases.at(rl).at(ml).interior;
+      	clog << endl;
+      	clog << "dh bboxes:" << endl;
+      	clog << "rl=" << rl << " c=" << c << " ml=" << ml << endl;
+      	clog << "exterior=" << boxes[rl][c][ml].exterior << endl;
+      	clog << "interior=" << boxes[rl][c][ml].interior << endl;
+      	clog << "send_mg_fine=" << boxes[rl][c][ml].send_mg_fine << endl;
+      	clog << "send_mg_coarse=" << boxes[rl][c][ml].send_mg_coarse << endl;
+      	clog << "recv_mg_fine=" << boxes[rl][c][ml].recv_mg_fine << endl;
+      	clog << "recv_mg_coarse=" << boxes[rl][c][ml].recv_mg_coarse << endl;
+      	clog << "send_ref_fine=" << boxes[rl][c][ml].send_ref_fine << endl;
+      	clog << "send_ref_coarse=" << boxes[rl][c][ml].send_ref_coarse << endl;
+      	clog << "recv_ref_fine=" << boxes[rl][c][ml].recv_ref_fine << endl;
+      	clog << "recv_ref_coarse=" << boxes[rl][c][ml].recv_ref_coarse << endl;
+      	clog << "send_sync=" << boxes[rl][c][ml].send_sync << endl;
+      	clog << "send_ref_bnd_fine=" << boxes[rl][c][ml].send_ref_bnd_fine << endl;
+      	clog << "boundaries=" << boxes[rl][c][ml].boundaries << endl;
+      	clog << "recv_sync=" << boxes[rl][c][ml].recv_sync << endl;
+      	clog << "recv_ref_bnd_coarse=" << boxes[rl][c][ml].recv_ref_bnd_coarse << endl;
       }
     }
   }
   
-  if (output_bboxes) {
-    cout << endl << h << endl;
-    for (int rl=0; rl<h.reflevels(); ++rl) {
-      for (int c=0; c<h.components(rl); ++c) {
-	for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-	  cout << endl;
-	  cout << "dh bboxes:" << endl;
-	  cout << "rl=" << rl << " c=" << c << " ml=" << ml << endl;
-	  cout << "exterior=" << boxes.at(rl).at(c).at(ml).exterior << endl;
-	  cout << "interior=" << boxes.at(rl).at(c).at(ml).interior << endl;
-	  cout << "send_mg_fine=" << boxes.at(rl).at(c).at(ml).send_mg_fine << endl;
-	  cout << "send_mg_coarse=" << boxes.at(rl).at(c).at(ml).send_mg_coarse << endl;
-	  cout << "recv_mg_fine=" << boxes.at(rl).at(c).at(ml).recv_mg_fine << endl;
-	  cout << "recv_mg_coarse=" << boxes.at(rl).at(c).at(ml).recv_mg_coarse << endl;
-	  cout << "send_ref_fine=" << boxes.at(rl).at(c).at(ml).send_ref_fine << endl;
-	  cout << "send_ref_coarse=" << boxes.at(rl).at(c).at(ml).send_ref_coarse << endl;
-	  cout << "recv_ref_fine=" << boxes.at(rl).at(c).at(ml).recv_ref_fine << endl;
-	  cout << "recv_ref_coarse=" << boxes.at(rl).at(c).at(ml).recv_ref_coarse << endl;
-	  cout << "send_sync=" << boxes.at(rl).at(c).at(ml).send_sync << endl;
-	  cout << "send_ref_bnd_fine=" << boxes.at(rl).at(c).at(ml).send_ref_bnd_fine << endl;
-	  cout << "boundaries=" << boxes.at(rl).at(c).at(ml).boundaries << endl;
-	  cout << "recv_sync=" << boxes.at(rl).at(c).at(ml).recv_sync << endl;
-	  cout << "recv_ref_bnd_coarse=" << boxes.at(rl).at(c).at(ml).recv_ref_bnd_coarse << endl;
-	  cout << "sync_not=" << boxes.at(rl).at(c).at(ml).sync_not << endl;
-	  cout << "recv_not=" << boxes.at(rl).at(c).at(ml).recv_not << endl;
-	}
-      }
-    }
-    for (int rl=0; rl<h.reflevels(); ++rl) {
-      if (h.components(rl)>0) {
-	for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
-	  cout << endl;
-	  cout << "dh bases:" << endl;
-	  cout << "rl=" << rl << " ml=" << ml << endl;
-	  cout << "exterior=" << bases.at(rl).at(ml).exterior << endl;
-	  cout << "interior=" << bases.at(rl).at(ml).interior << endl;
-	  cout << "boundaries=" << bases.at(rl).at(ml).boundaries << endl;
-	}
-      }
-    }
-  } // if output_bboxes
-  
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    for (int c=0; c<h.components(rl); ++c) {
-      for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-	
-	// Assert that all boundaries are synced or received
-        {
-          const ibset& sync_not = boxes.at(rl).at(c).at(ml).sync_not;
-#if 0
-          const ibset& recv_not = boxes.at(rl).at(c).at(ml).recv_not;
-#endif
-          
-          // Check that no boundaries are left over
-          if (rl==0) assert (sync_not.empty());
-#if 0
-          assert (recv_not.empty());
-#endif
-        }
-	
-        // Assert that the interior is received exactly once during
-        // prolongation, and that nothing else is received
-        {
-          if (rl==0) {
-            const iblistvect& recv_ref_coarse
-              = boxes.at(rl).at(c).at(ml).recv_ref_coarse;
-            assert (recv_ref_coarse.empty());
-          } else {              // rl!=0
-            const iblistvect& recv_ref_coarse
-              = boxes.at(rl).at(c).at(ml).recv_ref_coarse;
-            ibset intr = boxes.at(rl).at(c).at(ml).interior;
-            for (typename iblistvect::const_iterator
-                   lvi=recv_ref_coarse.begin();
-                 lvi!=recv_ref_coarse.end(); ++lvi) {
-              for (typename iblist::const_iterator li=lvi->begin();
-                   li!=lvi->end(); ++li) {
-                const int old_sz = intr.size();
-                const int this_sz = li->size();
-                intr -= *li;
-                const int new_sz = intr.size();
-                // TODO
-                assert (new_sz + this_sz == old_sz);
-              }
-            }
-            // TODO
-            // This need not be empty at outer boundaries.  Check that
-            // those are indeed outer boundaries!  But what size of the
-            // boundary region should be used for that?
-#if 0
-            assert (intr.empty());
-#endif
-          }
-        }
-        
-        // Assert that the boundaries are received at most once during
-        // prolongation and synchronisation, and that nothing else is
-        // received
-        {
-          const iblistvect& recv_sync = boxes.at(rl).at(c).at(ml).recv_sync;
-          const iblistvect& recv_ref_bnd_coarse
-            = boxes.at(rl).at(c).at(ml).recv_ref_bnd_coarse;
-          ibset bnds = boxes.at(rl).at(c).at(ml).boundaries;
-          for (typename iblistvect::const_iterator lvi=recv_sync.begin();
-               lvi!=recv_sync.end(); ++lvi) {
-            for (typename iblist::const_iterator li=lvi->begin();
-                 li!=lvi->end(); ++li) {
-              const int old_sz = bnds.size();
-              const int this_sz = li->size();
-              bnds -= *li;
-              const int new_sz = bnds.size();
-              assert (new_sz + this_sz == old_sz);
-            }
-          }
-          for (typename iblistvect::const_iterator
-                 lvi=recv_ref_bnd_coarse.begin();
-               lvi!=recv_ref_bnd_coarse.end(); ++lvi) {
-            for (typename iblist::const_iterator li=lvi->begin();
-                 li!=lvi->end(); ++li) {
-              const int old_sz = bnds.size();
-              const int this_sz = li->size();
-              bnds -= *li;
-              const int new_sz = bnds.size();
-              // TODO
-              // The new size can be larger if part of the
-              // prolongation went into the buffer zone.
-//               assert (new_sz + this_sz == old_sz);
-              assert (new_sz + this_sz >= old_sz);
-            }
-          }
-          // TODO
-          // This need not be empty at outer boundaries.  Check that
-          // those are indeed outer boundaries!  But what size of the
-          // boundary region should be used for that?
-#if 0
-          assert (bnds.empty());
-#endif
-        }
-        
-      } // for ml
-    } // for c
-  } // for rl
-  
-  if (! save_memory_during_regridding) {
-    
-    for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-      (*f)->recompose_crop ();
-    }
-    for (int rl=0; rl<h.reflevels(); ++rl) {
-      for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-        (*f)->recompose_allocate (rl);
-      }
-      for (comm_state<D> state; !state.done(); state.step()) {
-        for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-          (*f)->recompose_fill (state, rl, do_prolongate);
-        }
-      }
-      for (typename list<ggf<D>*>::reverse_iterator f=gfs.rbegin(); f!=gfs.rend(); ++f) {
-        (*f)->recompose_free (rl);
-      }
-      for (comm_state<D> state; !state.done(); state.step()) {
-        for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-          (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
-        }
-      }
-      for (comm_state<D> state; !state.done(); state.step()) {
-        for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-          (*f)->recompose_sync (state, rl, do_prolongate);
-        }
-      }
-    } // for rl
-    
-  } else {                      // save memory
-    
-    ggf<D>* vectorleader = NULL;
-    for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-      
-      (*f)->recompose_crop ();
-      for (int rl=0; rl<h.reflevels(); ++rl) {
-        (*f)->recompose_allocate (rl);
-        for (comm_state<D> state; !state.done(); state.step()) {
-          (*f)->recompose_fill (state, rl, do_prolongate);
-        }
-        assert ((*f)->vectorlength >= 1);
-        if ((*f)->vectorlength == 1) {
-          assert (! vectorleader);
-          (*f)->recompose_free (rl);
-        } else {
-          // treat vector groups specially: delete the leader only
-          // after all other elements have been deleted
-          if ((*f)->vectorindex == 0) {
-            // first element: delete nothing
-            if (rl == 0) {
-              assert (! vectorleader);
-              vectorleader = *f;
-            }
-            assert (vectorleader);
-          } else {
-            assert (vectorleader);
-            (*f)->recompose_free (rl);
-            if ((*f)->vectorindex == (*f)->vectorlength-1) {
-              // this was the last element: delete the leader as well
-              vectorleader->recompose_free (rl);
-              if (rl == h.reflevels()-1) {
-                vectorleader = NULL;
-              }
-            }
-          }
-        }
-        for (comm_state<D> state; !state.done(); state.step()) {
-          (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
-        }
-        for (comm_state<D> state; !state.done(); state.step()) {
-          (*f)->recompose_sync (state, rl, do_prolongate);
-        }
-      } // for rl
-      
-    } // for gf
-    assert (! vectorleader);
-    
-  } // save memory
+  for (list<generic_gf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+    (*f)->recompose();
+  }
 }
-
-
 
 // Grid function management
 template<int D>
-void dh<D>::add (ggf<D>* f) {
-  CHECKPOINT;
+void dh<D>::add (generic_gf<D>* f) {
   gfs.push_back(f);
 }
 
 template<int D>
-void dh<D>::remove (ggf<D>* f) {
-  CHECKPOINT;
+void dh<D>::remove (generic_gf<D>* f) {
   gfs.remove(f);
 }
 
@@ -671,19 +247,29 @@ void dh<D>::remove (ggf<D>* f) {
 
 // Output
 template<int D>
-void dh<D>::output (ostream& os) const {
+ostream& operator<< (ostream& os, const dh<D>& d) {
   os << "dh<" << D << ">:"
-     << "ghosts=[" << lghosts << "," << ughosts << "],"
+     << "ghosts=[" << d.lghosts << "," << d.ughosts << "],"
      << "gfs={";
   int cnt=0;
-  for (typename list<ggf<D>*>::const_iterator f = gfs.begin();
-       f != gfs.end(); ++f) {
+  for (list<generic_gf<D>*>::const_iterator f = d.gfs.begin();
+       f != d.gfs.end(); ++f) {
     if (cnt++) os << ",";
-    (*f)->output(os);
+    os << **f;
   }
   os << "}";
+  return os;
 }
 
 
 
+#if defined(TMPL_EXPLICIT)
+template class dh<1>;
+template ostream& operator<< (ostream& os, const dh<1>& d);
+
+template class dh<2>;
+template ostream& operator<< (ostream& os, const dh<2>& d);
+
 template class dh<3>;
+template ostream& operator<< (ostream& os, const dh<3>& d);
+#endif

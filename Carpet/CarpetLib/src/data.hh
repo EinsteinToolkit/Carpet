@@ -1,130 +1,156 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.23 2004/06/08 22:57:22 schnetter Exp $
+/***************************************************************************
+                          data.hh  -  Data storage
+                             -------------------
+    begin                : Sun Jun 11 2000
+    copyright            : (C) 2000 by Erik Schnetter
+    email                : schnetter@astro.psu.edu
+
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
 
 #ifndef DATA_HH
 #define DATA_HH
 
 #include <cassert>
-#include <iostream>
 #include <string>
-#include <vector>
-
-#include "cctk.h"
 
 #include "defs.hh"
 #include "dist.hh"
 #include "bbox.hh"
+#include "bboxset.hh"
 #include "gdata.hh"
 #include "vect.hh"
 
-using namespace std;
 
 
+// Forward definition
+template<class T,int D> class data;
 
-// A distributed multi-dimensional array
+// Output
 template<class T,int D>
-class data: public gdata<D>
-{
+ostream& operator<< (ostream& os, const data<T,D>& d);
+
+
+
+// A real data storage
+template<class T,int D>
+class data: public generic_data<D> {
   
   // Types
   typedef vect<int,D> ivect;
   typedef bbox<int,D> ibbox;
+  typedef bboxset<int,D> ibset;
 
   // Fields
-  T* _storage;			// the data (if located on this processor)
-  size_t _allocated_bytes;      // number of allocated bytes
-  
-  // For vector groups with contiguous storage
-  int vectorlength;             // number of vector elements
-  int vectorindex;              // index of this vector element
-  data* vectorleader;           // if index!=0: first vector element
-  vector<bool> vectorclients;   // if index==0: registered elements
-  
-  void register_client (int index);
-  void unregister_client (int index);
-  bool has_clients ();
-  
+  T* restrict _storage;		// the data (if located on this processor)
+
 public:
   
   // Constructors
-  data (const int varindex = -1,
-        const operator_type transport_operator = op_error,
-        const int vectorlength = 1, const int vectorindex = 0,
-        data* const vectorleader = NULL);
-  data (const int varindex, const operator_type transport_operator,
-        const int vectorlength, const int vectorindex,
-        data* const vectorleader,
-        const ibbox& extent, const int proc);
+  data ();
+  data (const ibbox& extent, const int proc);
 
   // Destructors
   virtual ~data ();
 
   // Pseudo constructors
-  virtual data* make_typed (const int varindex,
-                            const operator_type transport_operator) const;
+  virtual data* make_typed (const ibbox& extent, const int proc) const;
 
   // Storage management
-private:
-  void getmem (const size_t nelems);
-  void freemem ();
-public:
-  virtual void allocate (const ibbox& extent, const int proc,
-			 void* const mem=0);
+  virtual void allocate (const ibbox& extent, const int proc);
   virtual void free ();
-  virtual void transfer_from (gdata<D>* gsrc);
-
-private:
-  T* vectordata (const int vectorindex) const;
-public:
+  virtual void transfer_from (generic_data<D>* gsrc);
 
   // Processor management
-  virtual void change_processor (comm_state<D>& state,
-                                 const int newproc, void* const mem=0);
-private:
-  virtual void change_processor_recv (const int newproc, void* const mem=0);
-  virtual void change_processor_send (const int newproc, void* const mem=0);
-  virtual void change_processor_wait (const int newproc, void* const mem=0);
-public:
+  virtual void change_processor (const int newproc);
 
   // Accessors
-  virtual const void* storage () const
-  {
-    assert (this->_has_storage);
+  virtual const T* storage () const {
+    assert (_has_storage);
     return _storage;
   }
 
-  virtual void* storage () {
-    assert (this->_has_storage);
+  virtual T* storage () {
+    assert (_has_storage);
     return _storage;
   }
   
   // Data accessors
-  const T& operator[] (const ivect& index) const
-  {
+  const T& operator[] (const ivect& index) const {
     assert (_storage);
     return _storage[offset(index)];
   }
   
-  T& operator[] (const ivect& index)
-  {
+  T& operator[] (const ivect& index) {
     assert (_storage);
     return _storage[offset(index)];
   }
   
   // Data manipulators
-  void copy_from_innerloop (const gdata<D>* gsrc,
-			    const ibbox& box);
-  void interpolate_from_innerloop (const vector<const gdata<D>*> gsrcs,
-				   const vector<CCTK_REAL> times,
-				   const ibbox& box, const CCTK_REAL time,
-				   const int order_space,
-				   const int order_time);
+  virtual void copy_from (const generic_data<D>* gsrc, const ibbox& b);
+  virtual void interpolate_from (const generic_data<D>* gsrc,
+				 const ibbox& box);
+  virtual void interpolate_from (const generic_data<D>* gsrc,
+                                 const double sfact,
+				 const generic_data<D>* gtrc,
+				 const double tfact,
+				 const ibbox& box);
   
+  // Output
+  template<int DD>
+  void write_ascii (const string name, const double time,
+                    const vect<int,DD>& dirs,
+		    const int tl, const int rl,
+                    const int c, const int ml)
+    const;
+protected:
+  virtual void write_ascii_1 (const string name, const double time,
+                              const vect<int,1>& dirs,
+			      const int tl, const int rl,
+                              const int c, const int ml) const {
+    write_ascii (name, time, dirs, tl, rl, c, ml);
+  }
+  virtual void write_ascii_2 (const string name, const double time,
+                              const vect<int,2>& dirs,
+                              const int tl, const int rl,
+                              const int c, const int ml) const {
+    write_ascii (name, time, dirs, tl, rl, c, ml);
+  }
+  virtual void write_ascii_3 (const string name, const double time,
+                              const vect<int,3>& dirs,
+                              const int tl, const int rl,
+                              const int c, const int ml) const {
+    write_ascii (name, time, dirs, tl, rl, c, ml);
+  }
+//   void write_ieee (const string name, const double time,
+// 		   const int tl, const int rl, const int c, const int ml)
+//     const;
+//   void write_hdf (const string name, const double time,
+// 		  const int tl, const int rl, const int c, const int ml)
+//     const;
+//   void write_h5 (const string name, const double time,
+// 		 const int tl, const int rl, const int c, const int ml)
+//     const;
 public:
 
   // Output
-  ostream& output (ostream& os) const;
+  ostream& out (ostream& os) const;
 };
 
 
+
+#if defined(TMPL_IMPLICIT)
+#  include "data.cc"
+#endif
 
 #endif // DATA_HH

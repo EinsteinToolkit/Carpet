@@ -1,23 +1,21 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.16 2004/04/03 12:38:12 schnetter Exp $
-
-#ifndef CARPETIOASCII_HH
-#define CARPETIOASCII_HH
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
 
 #include <vector>
 
 #include "cctk.h"
-
-#include "ioascii.h"
-
-
-
-namespace CarpetIOASCII {
-  
-  using namespace std;
   
   
+
+namespace Carpet {
   
-  // Everything is a class template, so that it can easily be
+  // scheduled functions
+  extern "C" {
+    int CarpetIOASCIIStartup();
+  }
+  
+  
+  
+  // Everything is a template class, so that it can easily be
   // instantiated for all output dimensions.
   
   template<int outdim>
@@ -34,9 +32,8 @@ namespace CarpetIOASCII {
     // Do truncate the output files for a variable
     static vector<bool> do_truncate;
     
-    // Last iteration on which a refinement level of a variable was
-    // output (INT_MIN for none)
-    static vector<vector<vector<int> > > last_output; // [ml][rl][var]
+    // Last iteration on which a variable was output (-1 for none)
+    static vector<int> last_output;
     
     
     
@@ -47,27 +44,13 @@ namespace CarpetIOASCII {
     
     // registered functions
     
-    static void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cgh);
+    static void* SetupGH (tFleshConfig *fc, int convLevel, cGH *cgh);
     
-    static int OutputGH (const cGH* cgh);
-    static int OutputVarAs (const cGH* cgh,
-			    const char* varname, const char* alias);
-    static int TimeToOutput (const cGH* cgh, int vindex);
-    static int TriggerOutput (const cGH* cgh, int vindex);
+    static int OutputGH (cGH* cgh);
+    static int OutputVarAs (cGH* cgh, const char* varname, const char* alias);
+    static int TimeToOutput (cGH* cgh, int vindex);
+    static int TriggerOutput (cGH* cgh, int vindex);
     
-    static int GetGridOffset (const cGH* cgh, int dir,
-			      const char* itempl, const char* iglobal,
-			      const char* ctempl, const char* cglobal,
-			      CCTK_REAL cfallback);
-    static int CoordToOffset (const cGH* cgh, int dir, CCTK_REAL coord,
-			      int ifallback);
-    
-    static const char* GetStringParameter (const char* parametertemplate);
-    static CCTK_INT GetIntParameter (const char* parametertemplate);
-    static CCTK_REAL GetRealParameter (const char* parametertemplate);
-    
-  };                            // struct IOASCII
+  };
   
-} // namespace CarpetIOASCII
-
-#endif // !defined(CARPETIOASCII_HH)
+} // namespace Carpet

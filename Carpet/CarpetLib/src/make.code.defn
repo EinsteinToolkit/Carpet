@@ -1,46 +1,8 @@
 # Main make.code.defn file for thorn CarpetLib   -*-Makefile-*-
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/make.code.defn,v 1.13 2004/03/03 15:30:40 hawke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/make.code.defn,v 1.1 2001/03/01 13:40:10 eschnett Exp $
 
 # Source files in this directory
-SRCS =	bbox.cc					\
-	bboxset.cc				\
-	data.cc					\
-	defs.cc					\
-	dh.cc					\
-	dist.cc					\
-	gdata.cc				\
-	gf.cc					\
-	ggf.cc					\
-	gh.cc					\
-	th.cc					\
-	vect.cc					\
-	checkindex.F77				\
-	copy_3d_complex16.F77			\
-	copy_3d_int4.F77			\
-	copy_3d_real8.F77			\
-	prolongate_3d_real8.F77			\
-	prolongate_3d_real8_rf2.F77		\
-	prolongate_3d_real8_o3.F77		\
-	prolongate_3d_real8_o3_rf2.F77		\
-	prolongate_3d_real8_o5.F77		\
-	prolongate_3d_real8_2tl.F77		\
-	prolongate_3d_real8_2tl_rf2.F77		\
-	prolongate_3d_real8_2tl_o3.F77		\
-	prolongate_3d_real8_2tl_o3_rf2.F77	\
-	prolongate_3d_real8_2tl_o5.F77		\
-	prolongate_3d_real8_3tl.F77		\
-	prolongate_3d_real8_3tl_rf2.F77		\
-	prolongate_3d_real8_3tl_o3.F77		\
-	prolongate_3d_real8_3tl_o3_rf2.F77	\
-	prolongate_3d_real8_3tl_o5.F77		\
-	prolongate_3d_real8_minmod.F77		\
-	prolongate_3d_real8_2tl_minmod.F77	\
-	prolongate_3d_real8_3tl_minmod.F77	\
-	prolongate_3d_real8_eno.F90		\
-	prolongate_3d_real8_2tl_eno.F90		\
-	prolongate_3d_real8_3tl_eno.F90		\
-	restrict_3d_real8.F77			\
-	restrict_3d_real8_rf2.F77
+SRCS = bbox.cc bboxset.cc data.cc defs.cc dh.cc dist.cc gdata.cc gf.cc ggf.cc gh.cc io.cc th.cc vect.cc
 
 # Subdirectories containing source files
 SUBDIRS = 

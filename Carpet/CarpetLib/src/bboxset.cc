@@ -1,17 +1,32 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.16 2004/06/13 22:46:48 schnetter Exp $
+/***************************************************************************
+                          bboxset.cc  -  Sets of bounding boxes
+                             -------------------
+    begin                : Sun Jun 11 2000
+    copyright            : (C) 2000 by Erik Schnetter
+    email                : schnetter@astro.psu.edu
 
-#include <assert.h>
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
 
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
+#include <cassert>
 #include <iostream>
-#include <limits>
 #include <set>
-#include <stack>
 
 #include "defs.hh"
 
-#include "bboxset.hh"
-
-using namespace std;
+#if !defined(TMPL_IMPLICIT) && !defined(BBOXSET_HH)
+#  include "bboxset.hh"
+#endif
 
 
 
@@ -23,7 +38,7 @@ bboxset<T,D>::bboxset () {
 
 template<class T, int D>
 bboxset<T,D>::bboxset (const box& b) {
-  if (!b.empty()) bs.insert(b);
+  bs.insert(b);
   assert (invariant());
 }
 
@@ -44,9 +59,11 @@ template<class T, int D>
 bool bboxset<T,D>::invariant () const {
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
     if ((*bi).empty()) return false;
-    if (! (*bi).is_aligned_with(*bs.begin())) return false;
+    if (! (*bi).aligned_with(*bs.begin())) return false;
     // check for overlap (quadratic -- expensive)
-    for (const_iterator bi2=begin(); bi2!=bi; ++bi2) {
+    int cnt=0;
+    for (const_iterator bi2=bi; bi2!=end(); ++bi2) {
+      if (!cnt++) continue;
       if (! ((*bi2) & (*bi)).empty()) return false;
     }
   }
@@ -58,67 +75,7 @@ bool bboxset<T,D>::invariant () const {
 // Normalisation
 template<class T, int D>
 void bboxset<T,D>::normalize () {
-  assert (invariant());
-  const int num_initial_boxes = bs.size();
-  int num_combined_boxes = 0;
-  stack<box> todo, done;
-  for (typename set<box>::const_iterator elt = bs.begin(); elt != bs.end(); ++elt) {
-    done.push (*elt);
-  }
-  // TODO: This will not catch all cases where bboxes can be combined.
-  for (int d=0; d<D; ++d) {
-    todo = done;
-    done = stack<box>();
-    while (! todo.empty()) {
-    restart:;
-      box item = todo.top();
-      todo.pop();
-      stack<box> work = done;
-      done = stack<box>();
-      while (! work.empty()) {
-        box comp = work.top();
-        work.pop();
-        {
-          assert (all(comp.stride() == item.stride()));
-          if (comp.upper()[d] + item.stride()[d] == item.lower()[d]) {
-            if (all((comp.lower() == item.lower()
-                     && comp.upper() == item.upper()).replace (d, true))) {
-              box newbox = box(comp.lower(), item.upper(), item.stride());
-              todo.push (newbox);
-              while (! work.empty()) {
-                done.push (work.top());
-                work.pop();
-              }
-              ++num_combined_boxes;
-              goto restart;
-            }
-          }
-          if (item.upper()[d] + item.stride()[d] == comp.lower()[d]) {
-            if (all((comp.lower() == item.lower()
-                     && comp.upper() == item.upper()).replace (d, true))) {
-              box newbox = box(item.lower(), comp.upper(), item.stride());
-              todo.push (newbox);
-              while (! work.empty()) {
-                done.push (work.top());
-                work.pop();
-              }
-              ++num_combined_boxes;
-              goto restart;
-            }
-          }
-        }
-        done.push (comp);
-      } // while work
-      done.push (item);
-    } // while todo
-  } // for d
-  bs.clear();
-  while (! done.empty()) {
-    bs.insert (done.top());
-    done.pop();
-  }
-  const int num_final_boxes = bs.size();
-  assert (num_initial_boxes - num_combined_boxes == num_final_boxes);
+  // TODO
   assert (invariant());
 }
 
@@ -129,9 +86,7 @@ template<class T, int D>
 T bboxset<T,D>::size () const {
   T s=0;
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
-    const T bs = (*bi).size();
-    assert (numeric_limits<T>::max() - bs >= s);
-    s += bs;
+    s += (*bi).size();
   }
   return s;
 }
@@ -174,16 +129,6 @@ bboxset<T,D> bboxset<T,D>::operator+ (const bboxset& s) const {
   r += s;
   assert (r.invariant());
   return r;
-}
-
-template<class T, int D>
-bboxset<T,D> bboxset<T,D>::plus (const bbox<T,D>& b1, const bbox<T,D>& b2) {
-  return bboxset(b1) + b2;
-}
-
-template<class T, int D>
-bboxset<T,D> bboxset<T,D>::plus (const bbox<T,D>& b, const bboxset<T,D>& s) {
-  return s + b;
 }
 
 
@@ -266,8 +211,8 @@ bboxset<T,D>& bboxset<T,D>::operator&= (const bboxset& s) {
 
 // Difference
 template<class T, int D>
-bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b1, const bbox<T,D>& b2) {
-  assert (b1.is_aligned_with(b2));
+bboxset<T,D> operator- (const bbox<T,D>& b1, const bbox<T,D>& b2) {
+  assert (b1.aligned_with(b2));
   if (b1.empty()) return bboxset<T,D>();
   if (b2.empty()) return bboxset<T,D>(b1);
   const vect<T,D> str = b1.stride();
@@ -337,7 +282,7 @@ bboxset<T,D> bboxset<T,D>::operator- (const bboxset& s) const {
 }
 
 template<class T, int D>
-bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b, const bboxset<T,D>& s) {
+bboxset<T,D> operator- (const bbox<T,D>& b, const bboxset<T,D>& s) {
   bboxset<T,D> r = bboxset<T,D>(b) - s;
   assert (r.invariant());
   return r;
@@ -345,49 +290,30 @@ bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b, const bboxset<T,D>& s) {
 
 
 
-// Equality
-template<class T, int D>
-bool bboxset<T,D>::operator<= (const bboxset<T,D>& s) const {
-  return (*this - s).empty();
-}
-
-template<class T, int D>
-bool bboxset<T,D>::operator< (const bboxset<T,D>& s) const {
-  return (*this - s).empty() && ! (s - *this).empty();
-}
-
-template<class T, int D>
-bool bboxset<T,D>::operator>= (const bboxset<T,D>& s) const {
-  return s <= *this;
-}
-
-template<class T, int D>
-bool bboxset<T,D>::operator> (const bboxset<T,D>& s) const {
-  return s < *this;
-}
-
-template<class T, int D>
-bool bboxset<T,D>::operator== (const bboxset<T,D>& s) const {
-  return (*this <= s) && (*this >= s);
-}
-
-template<class T, int D>
-bool bboxset<T,D>::operator!= (const bboxset<T,D>& s) const {
-  return ! (*this == s);
-}
-
-
-
 // Output
 template<class T,int D>
-void bboxset<T,D>::output (ostream& os) const {
-  T Tdummy;
-  os << "bboxset<" << typestring(Tdummy) << "," << D << ">:"
-     << "size=" << size() << ","
-     << "setsize=" << setsize() << ","
-     << "set=" << bs;
+ostream& operator<< (ostream& os, const bboxset<T,D>& s) {
+//   os << "bboxset<" STR(T) "," << D << ">:size=" << s.size() << ","
+//      << "set=" << s.bs;
+  os << s.bs;
+  return os;
 }
 
 
 
+#if defined(TMPL_EXPLICIT)
+template class bboxset<int,1>;
+template bboxset<int,1>	operator- (const bbox<int,1>& b1, const bbox<int,1>& b2);
+template bboxset<int,1>	operator- (const bbox<int,1>& b, const bboxset<int,1>& s);
+template ostream& operator<< (ostream& os, const bboxset<int,1>& b);
+
+template class bboxset<int,2>;
+template bboxset<int,2>	operator- (const bbox<int,2>& b1, const bbox<int,2>& b2);
+template bboxset<int,2>	operator- (const bbox<int,2>& b, const bboxset<int,2>& s);
+template ostream& operator<< (ostream& os, const bboxset<int,2>& b);
+
 template class bboxset<int,3>;
+template bboxset<int,3>	operator- (const bbox<int,3>& b1, const bbox<int,3>& b3);
+template bboxset<int,3>	operator- (const bbox<int,3>& b, const bboxset<int,3>& s);
+template ostream& operator<< (ostream& os, const bboxset<int,3>& b);
+#endif

@@ -1,22 +1,5 @@
 # Interface definition for thorn CarpetLib
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/interface.ccl,v 1.5 2004/05/04 22:09:54 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/interface.ccl,v 1.1 2001/03/01 13:40:10 eschnett Exp $
 
-IMPLEMENTS: CarpetLib
-
-includes header: defs.hh in defs.hh
-includes header: dist.hh in dist.hh
-
-includes header: bbox.hh in bbox.hh
-includes header: bboxset.hh in bboxset.hh
-includes header: vect.hh in vect.hh
-
-includes header: data.hh in data.hh
-includes header: gdata.hh in gdata.hh
-
-includes header: dh.hh in dh.hh
-includes header: gf.hh in gf.hh
-includes header: ggf.hh in ggf.hh
-includes header: gh.hh in gh.hh
-includes header: th.hh in th.hh
-
-includes header: operators.hh in operators.hh
+implements: CarpetLib
+inherits: FlexIO

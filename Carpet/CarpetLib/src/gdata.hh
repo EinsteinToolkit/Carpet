@@ -1,128 +1,107 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.24 2004/04/19 07:56:35 schnetter Exp $
+/***************************************************************************
+                          gdata.hh  -  description
+                             -------------------
+    begin                : Wed Jul 19 2000
+    copyright            : (C) 2000 by Erik Schnetter
+    email                : schnetter@astro.psu.edu
+
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
 
 #ifndef GDATA_HH
 #define GDATA_HH
 
-#include <assert.h>
-#include <stdlib.h>
-
+#include <cassert>
+#include <cstdlib>
 #include <iostream>
 #include <string>
-#include <vector>
-
-#include "cctk.h"
 
 #include "defs.hh"
 #include "dist.hh"
 #include "bbox.hh"
-#include "operators.hh"
+#include "bboxset.hh"
 #include "vect.hh"
 
-using namespace std;
 
 
-  
+// Forward declaration
+template<int D> class generic_data;
 
+// Output
 template<int D>
-class gdata;
-
-
-
-// State information for communications
-enum astate { state_recv, state_send, state_wait, state_done };
-
-template<int D>
-struct comm_state {
-  astate thestate;
-  comm_state ();
-  void step ();
-  bool done ();
-  ~comm_state ();
-  
-  vector<gdata<D>*> tmps;
-  size_t current;
-};
+ostream& operator<< (ostream& os, const generic_data<D>* f);
 
 
 
 // A generic data storage without type information
 template<int D>
-class gdata {
+class generic_data {
 
   // Types
   typedef vect<int,D> ivect;
   typedef bbox<int,D> ibbox;
+  typedef bboxset<int,D> ibset;
 
 protected:                      // should be readonly
 
   // Fields
-  int varindex;                 // Cactus variable index, or -1
-  operator_type transport_operator;
-  
-  double wtime_isend, wtime_isendwait;
-  double wtime_irecv, wtime_irecvwait;
-  
   bool _has_storage;		// has storage associated (on some processor)
-  bool _owns_storage;		// owns the storage
-  // (only valid if there is storage on this processor; it means that
-  // the memory is allocated and freed by this class)
+  ivect _shape, _stride;      	// shape and index order
   int _size;			// size
 
   int _proc;			// stored on processor
-  
-  ivect _shape, _stride;      	// shape and index order
-  
+
   ibbox _extent;		// bbox for all data
-  
-  bool comm_active;
-  MPI_Request request;
-  
-  int tag;                      // MPI tag for this object
-  
+
 public:
 
   // Constructors
-  gdata (const int varindex,
-         const operator_type transport_operator = op_error);
+  generic_data ();
 
   // Destructors
-  virtual ~gdata ();
+  virtual ~generic_data ();
 
   // Pseudo constructors
-  virtual gdata<D>*
-  make_typed (const int varindex,
-              const operator_type transport_operator = op_error) const = 0;
-  
-  // Processor management
-  virtual void change_processor (comm_state<D>& state,
-                                 const int newproc, void* const mem=0) = 0;
- protected:
-  virtual void change_processor_recv (const int newproc, void* const mem=0) = 0;
-  virtual void change_processor_send (const int newproc, void* const mem=0) = 0;
-  virtual void change_processor_wait (const int newproc, void* const mem=0) = 0;
- public:
-  
-  // Storage management
-  virtual void transfer_from (gdata<D>* src) = 0;
-  
-  virtual void allocate (const ibbox& extent, const int proc,
-			 void* const mem=0) = 0;
-  virtual void free () = 0;
-  
-  // Accessors
+  virtual generic_data* make_typed (const ibbox& extent, const int proc) const
+    = 0;
 
+  // Storage management
+  virtual void allocate (const ibbox& extent, const int proc) = 0;
+  virtual void free () = 0;
+  virtual void transfer_from (generic_data* src) = 0;
+
+  // Processor management
+  virtual void change_processor (const int newproc) = 0;
+
+  // Accessors
   bool has_storage () const {
     return _has_storage;
-  }
-  bool owns_storage () const {
-    assert (_has_storage);
-    return _owns_storage;
   }
   
   virtual const void* storage () const = 0;
   
   virtual void* storage () = 0;
   
+  ivect shape () const {
+    assert (_has_storage);
+    return _shape;
+  }
+
+  ivect stride () const {
+    assert (_has_storage);
+    return _stride;
+  }
+
   int size () const {
     assert (_has_storage);
     return _size;
@@ -132,18 +111,8 @@ public:
     assert (_has_storage);
     return _proc;
   }
-  
-  const ivect& shape () const {
-    assert (_has_storage);
-    return _shape;
-  }
 
-  const ivect& stride () const {
-    assert (_has_storage);
-    return _stride;
-  }
-  
-  const ibbox& extent () const {
+  ibbox extent () const {
     assert (_has_storage);
     return _extent;
   }
@@ -156,64 +125,75 @@ public:
     assert (all(ind>=0 && ind<=shape()));
     return dot(ind, stride());
   }
-  
+
   // Data manipulators
- public:
-    void copy_from (comm_state<D>& state,
-                    const gdata* src, const ibbox& box);
- private:
-  void copy_from_nocomm (const gdata* src, const ibbox& box);
-  void copy_from_recv (comm_state<D>& state,
-                       const gdata* src, const ibbox& box);
-  void copy_from_send (comm_state<D>& state,
-                       const gdata* src, const ibbox& box);
-  void copy_from_wait (comm_state<D>& state,
-                       const gdata* src, const ibbox& box);
- public:
-  void interpolate_from (comm_state<D>& state,
-                         const vector<const gdata*> srcs,
-                         const vector<CCTK_REAL> times,
-                         const ibbox& box, const CCTK_REAL time,
-                         const int order_space,
-                         const int order_time);
- private:
-  void interpolate_from_nocomm (const vector<const gdata*> srcs,
-                                const vector<CCTK_REAL> times,
-                                const ibbox& box, const CCTK_REAL time,
-                                const int order_space,
-                                const int order_time);
-  void interpolate_from_recv (comm_state<D>& state,
-                              const vector<const gdata*> srcs,
-                              const vector<CCTK_REAL> times,
-                              const ibbox& box, const CCTK_REAL time,
-                              const int order_space,
-                              const int order_time);
-  void interpolate_from_send (comm_state<D>& state,
-                              const vector<const gdata*> srcs,
-                              const vector<CCTK_REAL> times,
-                              const ibbox& box, const CCTK_REAL time,
-                              const int order_space,
-                              const int order_time);
-  void interpolate_from_wait (comm_state<D>& state,
-                              const vector<const gdata*> srcs,
-                              const vector<CCTK_REAL> times,
-                              const ibbox& box, const CCTK_REAL time,
-                              const int order_space,
-                              const int order_time);
- public:
-  
+  virtual void copy_from (const generic_data* src,
+                          const ibbox& b) = 0;
+  virtual void interpolate_from (const generic_data* src,
+				 const ibbox& box) = 0;
+  virtual void interpolate_from (const generic_data* src, const double sfact,
+				 const generic_data* trc, const double tfact,
+				 const ibbox& box) = 0;
+
+  // Output
+  template<int DD>
+  void write_ascii (const string name, const double time,
+                    const vect<int,DD>& dirs,
+		    const int tl, const int rl,
+                    const int c, const int ml)
+    const
+  {
+    switch (DD) {
+    case 1:
+      write_ascii_1 (name, time, *(const vect<int,1>*)&dirs, tl, rl, c, ml);
+      break;
+    case 2:
+      write_ascii_2 (name, time, *(const vect<int,2>*)&dirs, tl, rl, c, ml);
+      break;
+    case 3:
+      write_ascii_3 (name, time, *(const vect<int,3>*)&dirs, tl, rl, c, ml);
+      break;
+    default:
+      abort();
+    }
+  }
 protected:
-  virtual void
-  copy_from_innerloop (const gdata* src, const ibbox& box) = 0;
-  virtual void
-  interpolate_from_innerloop (const vector<const gdata*> srcs,
-			      const vector<CCTK_REAL> times,
-			      const ibbox& box, const CCTK_REAL time,
-			      const int order_space,
-			      const int order_time) = 0;
-  
+  virtual void write_ascii_1 (const string name, const double time,
+                              const vect<int,1>& dirs,
+			      const int tl, const int rl,
+                              const int c, const int ml)
+    const = 0;
+  virtual void write_ascii_2 (const string name, const double time,
+                              const vect<int,2>& dirs,
+			      const int tl, const int rl,
+                              const int c, const int ml)
+    const = 0;
+  virtual void write_ascii_3 (const string name, const double time,
+                              const vect<int,3>& dirs,
+			      const int tl, const int rl,
+                              const int c, const int ml)
+    const = 0;
+//   void write_ieee (const string name, const double time,
+// 		   const int tl, const int rl, const int c, const int ml)
+//     const;
+//   void write_hdf (const string name, const double time,
+// 		  const int tl, const int rl, const int c, const int ml)
+//     const;
+//   void write_h5 (const string name, const double time,
+// 		 const int tl, const int rl, const int c, const int ml)
+//     const;
+public:
+
+  // Output
+  friend ostream& operator<< <>(ostream& os, const generic_data* d);
+
+  virtual ostream& out (ostream& os) const = 0;
 };
 
 
+
+#if defined(TMPL_IMPLICIT)
+#  include "gdata.cc"
+#endif
 
 #endif // GDATA_HH

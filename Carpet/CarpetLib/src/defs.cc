@@ -1,105 +1,40 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.19 2004/05/21 18:13:41 schnetter Exp $
+/***************************************************************************
+                          defs.cc  -  Commonly used definitions
+                             -------------------
+    begin                : Sun Jun 11 2000
+    copyright            : (C) 2000 by Erik Schnetter
+    email                : schnetter@astro.psu.edu
 
-#include <assert.h>
-#include <ctype.h>
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
 
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+
+#include <cassert>
 #include <iostream>
 #include <list>
 #include <set>
-#include <stack>
 #include <vector>
 
-#include "cctk.h"
-
-#include "defs.hh"
-
-using namespace std;
-
-
-
-template<class T>
-T ipow (T x, int y) {
-  if (y<0) {
-    y = -y;
-    x = T(1)/x;
-  }
-  T res = T(1);
-  for (;;) {
-    if (y%2) res *= x;
-    y /= 2;
-    if (y==0) break;
-    x *= x;
-  }
-  return res;
-}
-
-
-
-void skipws (istream& is) {
-  while (is.good() && isspace(is.peek())) {
-    is.get();
-  }
-}
-
-
-
-void expect (istream& is, const char c) {
-  if (is.peek() == c) return;
-  cout << "While reading characters from a stream:" << endl
-       << "   Character '" << c << "' expected, but not found." << endl
-       << "   The next up to 100 available characters are \"";
-  for (int i=0; i<100; ++i) {
-    const int uc = is.get();
-    if (uc<0) break;
-    cout << (unsigned char)uc;
-  }
-  cout << "\"." << endl;
-  throw input_error();
-}
-
-
-
-void consume (istream& is, const char c) {
-  expect (is, c);
-  is.get();
-}
-
-
-
-// Vector input
-template<class T>
-istream& input (istream& is, vector<T>& v) {
-  v.clear();
-  try {
-    skipws (is);
-    consume (is, '[');
-    skipws (is);
-    while (is.good() && is.peek() != ']') {
-      T elem;
-      is >> elem;
-      v.push_back (elem);
-      skipws (is);
-      if (is.peek() != ',') break;
-      is.get();
-      skipws (is);
-    }
-    skipws (is);
-    consume (is, ']');
-  } catch (input_error &err) {
-    cout << "Input error while reading a vector<>" << endl
-         << "   The following elements have been read so far: " << v << endl;
-    throw err;
-  }
-  return is;
-}
+#if !defined(TMPL_IMPLICIT) || !defined(DEFS_HH)
+#  include "defs.hh"
+#endif
 
 
 
 // List output
 template<class T>
-ostream& output (ostream& os, const list<T>& l) {
+ostream& operator<< (ostream& os, const list<T>& l) {
   os << "[";
-  for (typename list<T>::const_iterator ti=l.begin(); ti!=l.end(); ++ti) {
+  for (list<T>::const_iterator ti=l.begin(); ti!=l.end(); ++ti) {
     if (ti!=l.begin()) os << ",";
     os << *ti;
   }
@@ -109,9 +44,9 @@ ostream& output (ostream& os, const list<T>& l) {
 
 // Set output
 template<class T>
-ostream& output (ostream& os, const set<T>& s) {
+ostream& operator<< (ostream& os, const set<T>& s) {
   os << "{";
-  for (typename set<T>::const_iterator ti=s.begin(); ti!=s.end(); ++ti) {
+  for (set<T>::const_iterator ti=s.begin(); ti!=s.end(); ++ti) {
     if (ti!=s.begin()) os << ",";
     os << *ti;
   }
@@ -119,24 +54,12 @@ ostream& output (ostream& os, const set<T>& s) {
   return os;
 }
 
-// Stack output
-template<class T>
-ostream& output (ostream& os, const stack<T>& s) {
-  stack<T> s2 (s);
-  list<T> l;
-  while (! s2.empty()) {
-    l.insert (l.begin(), s2.top());
-    s2.pop();
-  }
-  return output (os, l);
-}
-
 // Vector output
 template<class T>
-ostream& output (ostream& os, const vector<T>& v) {
+ostream& operator<< (ostream& os, const vector<T>& v) {
   os << "[";
   int cnt=0;
-  for (typename vector<T>::const_iterator ti=v.begin(); ti!=v.end(); ++ti) {
+  for (vector<T>::const_iterator ti=v.begin(); ti!=v.end(); ++ti) {
     if (ti!=v.begin()) os << ",";
     os << cnt++ << ":" << *ti;
   }
@@ -146,31 +69,28 @@ ostream& output (ostream& os, const vector<T>& v) {
 
 
 
+#if defined(TMPL_EXPLICIT)
 #include "bbox.hh"
 #include "bboxset.hh"
 
-template int ipow (int x, int y);
+template ostream& operator<< (ostream& os, const list<bbox<int,1> >& l);
+template ostream& operator<< (ostream& os, const set<bbox<int,1> >& s);
+template ostream& operator<< (ostream& os, const set<bboxset<int,1> >& s);
+template ostream& operator<< (ostream& os, const vector<list<bbox<int,1> > >& v);
+template ostream& operator<< (ostream& os, const vector<vector<bbox<int,1> > >& v);
+template ostream& operator<< (ostream& os, const vector<vector<vector<bbox<int,1> > > >& v);
 
-template istream& input (istream& os, vector<bbox<int,3> >& v);
-template istream& input (istream& os, vector<bbox<CCTK_REAL,3> >& v);
-template istream& input (istream& os, vector<vector<bbox<int,3> > >& v);
-template istream& input (istream& os, vector<vector<bbox<CCTK_REAL,3> > >& v);
-template istream& input (istream& os, vector<vect<vect<bool,2>,3> >& v);
-template istream& input (istream& os, vector<vector<vect<vect<bool,2>,3> > >& v);
+template ostream& operator<< (ostream& os, const list<bbox<int,2> >& l);
+template ostream& operator<< (ostream& os, const set<bbox<int,2> >& s);
+template ostream& operator<< (ostream& os, const set<bboxset<int,2> >& s);
+template ostream& operator<< (ostream& os, const vector<list<bbox<int,2> > >& v);
+template ostream& operator<< (ostream& os, const vector<vector<bbox<int,2> > >& v);
+template ostream& operator<< (ostream& os, const vector<vector<vector<bbox<int,2> > > >& v);
 
-template ostream& output (ostream& os, const list<bbox<int,3> >& l);
-template ostream& output (ostream& os, const set<bbox<int,3> >& s);
-template ostream& output (ostream& os, const set<bboxset<int,3> >& s);
-template ostream& output (ostream& os, const stack<bbox<int,3> >& s);
-template ostream& output (ostream& os, const vector<int>& v);
-template ostream& output (ostream& os, const vector<CCTK_REAL>& v);
-template ostream& output (ostream& os, const vector<bbox<int,3> >& v);
-template ostream& output (ostream& os, const vector<bbox<CCTK_REAL,3> >& v);
-template ostream& output (ostream& os, const vector<list<bbox<int,3> > >& v);
-template ostream& output (ostream& os, const vector<vector<int> >& v);
-template ostream& output (ostream& os, const vector<vector<CCTK_REAL> >& v);
-template ostream& output (ostream& os, const vector<vector<bbox<int,3> > >& v);
-template ostream& output (ostream& os, const vector<vector<bbox<CCTK_REAL,3> > >& v);
-template ostream& output (ostream& os, const vector<vector<vect<vect<bool,2>,3> > >& v);
-template ostream& output (ostream& os, const vector<vect<vect<bool,2>,3> >& v);
-template ostream& output (ostream& os, const vector<vector<vector<bbox<int,3> > > >& v);
+template ostream& operator<< (ostream& os, const list<bbox<int,3> >& l);
+template ostream& operator<< (ostream& os, const set<bbox<int,3> >& s);
+template ostream& operator<< (ostream& os, const set<bboxset<int,3> >& s);
+template ostream& operator<< (ostream& os, const vector<list<bbox<int,3> > >& v);
+template ostream& operator<< (ostream& os, const vector<vector<bbox<int,3> > >& v);
+template ostream& operator<< (ostream& os, const vector<vector<vector<bbox<int,3> > > >& v);
+#endif

@@ -1,19 +1,33 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.hh,v 1.11 2004/03/23 19:30:14 schnetter Exp $
+/***************************************************************************
+                          th.hh  -  Time Hierarchy
+                          information about time levels
+                             -------------------
+    begin                : Sun Jun 11 2000
+    copyright            : (C) 2000 by Erik Schnetter
+    email                : schnetter@astro.psu.edu
+
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
 
 #ifndef TH_HH
 #define TH_HH
 
-#include <assert.h>
-
+#include <cassert>
 #include <iostream>
 #include <vector>
 
-#include "cctk.h"
-
 #include "defs.hh"
 #include "gh.hh"
-
-using namespace std;
 
 
 
@@ -33,18 +47,18 @@ class th {
 public:				// should be readonly
   
   // Fields
-  gh<D>& h;                     // hierarchy
+  gh<D> &h;			// hierarchy
   
 private:
   
-  CCTK_REAL delta;		// time step
-  vector<vector<CCTK_REAL> > times; // current times
-  vector<vector<CCTK_REAL> > deltas; // time steps
+  int delta;			// time step
+  vector<vector<int> > times;	// current times
+  vector<vector<int> > deltas;	// time steps
   
 public:
   
   // Constructors
-  th (gh<D>& h, const CCTK_REAL basedelta);
+  th (gh<D>& h, const int basedelta);
   
   // Destructors
   ~th ();
@@ -53,52 +67,42 @@ public:
   void recompose ();
   
   // Time management
-  CCTK_REAL get_time (const int rl, const int ml) const {
+  int get_time (const int rl, const int ml) const {
     assert (rl>=0 && rl<h.reflevels());
     assert (ml>=0 && ml<h.mglevels(rl,0));
-    return times.at(rl).at(ml);
+    return times[rl][ml];
   }
   
-  void set_time (const int rl, const int ml, const CCTK_REAL t) {
+  void set_time (const int rl, const int ml, const int t) {
     assert (rl>=0 && rl<h.reflevels());
     assert (ml>=0 && ml<h.mglevels(rl,0));
-    times.at(rl).at(ml) = t;
+    times[rl][ml] = t;
   }
   
   void advance_time (const int rl, const int ml) {
     set_time(rl,ml, get_time(rl,ml) + get_delta(rl,ml));
   }
   
-  CCTK_REAL get_delta (const int rl, const int ml) const {
+  int get_delta (const int rl, const int ml) const {
     assert (rl>=0 && rl<h.reflevels());
     assert (ml>=0 && ml<h.mglevels(rl,0));
-    return deltas.at(rl).at(ml);
+    return deltas[rl][ml];
   }
   
-  void set_delta (const int rl, const int ml, const CCTK_REAL dt) {
-    assert (rl>=0 && rl<h.reflevels());
-    assert (ml>=0 && ml<h.mglevels(rl,0));
-    deltas.at(rl).at(ml) = dt;
-  }
-  
-  CCTK_REAL time (const int tl, const int rl, const int ml) const {
+  int time (const int tl, const int rl, const int ml) const {
     assert (rl>=0 && rl<h.reflevels());
     assert (ml>=0 && ml<h.mglevels(rl,0));
     return get_time(rl, ml) + tl * get_delta(rl, ml);
   }
   
   // Output
-  void output (ostream& os) const;
+  friend ostream& operator<< <> (ostream& os, const th& d);
 };
 
 
 
-template<int D>
-inline ostream& operator<< (ostream& os, const th<D>& t) {
-  t.output(os);
-  return os;
-}
-
-
+#if defined(TMPL_IMPLICIT)
+#  include "th.cc"
+#endif
 
 #endif // TH_HH

@@ -1,10 +1,29 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.18 2004/08/07 19:47:11 schnetter Exp $
+/***************************************************************************
+                          gh.hh  -  Grid Hierarchy
+  												bounding boxes for each multigrid level of each
+  												component of each refinement level
+                             -------------------
+    begin                : Sun Jun 11 2000
+    copyright            : (C) 2000 by Erik Schnetter
+    email                : schnetter@astro.psu.edu
+
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
 
 #ifndef GH_HH
 #define GH_HH
 
-#include <assert.h>
-
+#include <cassert>
 #include <iostream>
 #include <list>
 #include <vector>
@@ -14,14 +33,12 @@
 #include "dist.hh"
 #include "vect.hh"
 
-using namespace std;
-
 
 
 // Forward declaration
-template<int D> class dh;
-template<int D> class th;
 template<int D> class gh;
+template<int D> class th;
+template<int D> class dh;
 
 // Output
 template<int D>
@@ -34,23 +51,16 @@ ostream& operator<< (ostream& os, const gh<D>& h);
 template<int D>
 class gh {
   
-public:
-  
   // Types
   typedef vect<int,D> ivect;
   typedef bbox<int,D> ibbox;
   
-  typedef vect<vect<bool,2>,D> bvect;
+  typedef vector<ibbox> mexts;          // ... for each multigrid level
+  typedef vector<mexts> cexts;          // ... for each component
+  typedef vector<cexts> rexts;          // ... for each refinement level
   
-  typedef vector<ibbox> mexts;	// ... for each multigrid level
-  typedef vector<mexts> cexts;	// ... for each component
-  typedef vector<cexts> rexts;	// ... for each refinement level
-  
-  typedef vector<bvect> cbnds;	// ... for each component
-  typedef vector<cbnds> rbnds;	// ... for each refinement level
-  
-  typedef vector<int>    cprocs; // ... for each component
-  typedef vector<cprocs> rprocs; // ... for each refinement level
+  typedef vector<int>    cprocs;        // ... for each component
+  typedef vector<cprocs> rprocs;        // ... for each refinement level
   
 public:				// should be readonly
   
@@ -61,16 +71,12 @@ public:				// should be readonly
   int mgfact;			// default multigrid factor
   centering mgcent;		// default (vertex or cell centered)
   
-  list<th<D>*> ths;		// list of all time hierarchies
+  ibbox baseextent;		// bounds (inclusive) of base level
   
-  ibbox baseextent;
-  vector<vector<ibbox> > bases; // [rl][ml]
-  
-  // TODO: invent structure for this
-  rexts extents;		// extents of all grids
-  rbnds outer_boundaries;	// boundary descriptions of all grids
+  rexts extents;		// bounds of all grids
   rprocs processors;		// processor numbers of all grids
   
+  list<th<D>*> ths;		// list of all time hierarchies
   list<dh<D>*> dhs;		// list of all data hierarchies
   
 public:
@@ -78,15 +84,18 @@ public:
   // Constructors
   gh (const int reffact, const centering refcent,
       const int mgfact, const centering mgcent,
-      const ibbox baseextent);
+      const ibbox& baseextent);
   
   // Destructors
-  virtual ~gh ();
+  ~gh ();
   
   // Modifiers
-  void recompose (const rexts& exts, const rbnds& outer_bounds,
-		  const rprocs& procs,
-                  const bool do_prolongate);
+  void recompose (const rexts& exts, const rprocs& procs);
+  
+  // Helpers
+  rexts make_multigrid_boxes (const vector<vector<ibbox> >& exts,
+			      const int mglevels)
+    const;
   
   // Accessors
   int reflevels () const {
@@ -94,19 +103,20 @@ public:
   }
   
   int components (const int rl) const {
-    return (int)extents.at(rl).size();
+    assert (rl>=0 && rl<reflevels());
+    return (int)extents[rl].size();
   }
   
   int mglevels (const int rl, const int c) const {
-    return (int)extents.at(rl).at(c).size();
-  }
-  
-  bvect outer_boundary (const int rl, const int c) const {
-    return outer_boundaries.at(rl).at(c);
+    assert (rl>=0 && rl<reflevels());
+    assert (c>=0 && c<components(rl));
+    return (int)extents[rl][c].size();
   }
   
   int proc (const int rl, const int c) const {
-    return processors.at(rl).at(c);
+    assert (rl>=0 && rl<reflevels());
+    assert (c>=0 && c<components(rl));
+    return processors[rl][c];
   }
 
   bool is_local (const int rl, const int c) const {
@@ -114,9 +124,7 @@ public:
     MPI_Comm_rank (dist::comm, &rank);
     return proc(rl,c) == rank;
   }
-  
-  int local_components (const int rl) const;
-  
+
   // Time hierarchy management
   void add (th<D>* t);
   void remove (th<D>* t);
@@ -126,17 +134,13 @@ public:
   void remove (dh<D>* d);
   
   // Output
-  virtual ostream& output (ostream& os) const;
+  friend ostream& operator<< <> (ostream& os, const gh& h);
 };
 
 
 
-template<int D>
-inline ostream& operator<< (ostream& os, const gh<D>& h) {
-  h.output(os);
-  return os;
-}
-
-
+#if defined(TMPL_IMPLICIT)
+#  include "gh.cc"
+#endif
 
 #endif // GH_HH

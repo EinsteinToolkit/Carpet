@@ -1,10 +1,28 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.20 2004/08/07 19:47:11 schnetter Exp $
+/***************************************************************************
+                          dh.hh  -  Data Hierarchy
+													A grid hierarchy plus ghost zones
+                             -------------------
+    begin                : Sun Jun 11 2000
+    copyright            : (C) 2000 by Erik Schnetter
+    email                : schnetter@astro.psu.edu
+
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
 
 #ifndef DH_HH
 #define DH_HH
 
-#include <assert.h>
-
+#include <cassert>
 #include <iostream>
 #include <list>
 #include <string>
@@ -16,13 +34,11 @@
 #include "gh.hh"
 #include "vect.hh"
 
-using namespace std;
-
 
 
 // Forward declaration
-template<int D> class ggf;
 template<int D> class dh;
+template<int D> class generic_gf;
 
 // Output
 template<int D>
@@ -41,16 +57,6 @@ class dh {
   typedef list<ibbox>    iblist;
   typedef vector<iblist> iblistvect; // vector of lists
   
-public:
-  
-  // in here, the term "boundary" means both ghost zones and
-  // refinement boundaries, but does not refer to outer (physical)
-  // boundaries.
-  
-  // ghost zones, refinement boundaries, and outer boundaries are not
-  // used as sources for synchronisation.  this design choice might
-  // not be good.
-  
   struct dboxes {
     ibbox exterior;		// whole region (including boundaries)
     
@@ -64,83 +70,50 @@ public:
     iblistvect recv_ref_fine;
     iblistvect recv_ref_coarse;
     iblistvect send_sync;	// send while syncing
-    iblistvect send_ref_bnd_fine; // sent to finer grids
+    iblistvect send_ref_bnd_fine;
     
     ibset boundaries;		// boundaries
-    iblistvect recv_sync;	// received while syncing
-    iblistvect recv_ref_bnd_coarse; // received from coarser grids
-    ibset sync_not;		// not received while syncing (outer boundary of that level)
-    ibset recv_not;		// not received while syncing or prolongating (globally outer boundary)
-    
-#if 0
-    // after regridding:
-    iblistvect prev_send;       // sent from previous dh
-    iblistvect recv_prev;       // received from previous dh
-    iblistvect send_prev_fine;  // sent to finer
-    iblistvect recv_prev_coarse; // received from coarser
-#endif
-  };
-  
-private:
-  
-  struct dbases {
-    ibbox exterior;		// whole region (including boundaries)
-    ibbox interior;		// interior (without boundaries)
-    ibset boundaries;		// boundaries
+    iblistvect recv_sync;	// receive while syncing
+    iblistvect recv_ref_bnd_coarse;
   };
   
   typedef vector<dboxes> mboxes; // ... for each multigrid level
   typedef vector<mboxes> cboxes; // ... for each component
   typedef vector<cboxes> rboxes; // ... for each refinement level
   
-  typedef vector<dbases> mbases; // ... for each multigrid level
-  typedef vector<mbases> rbases; // ... for each refinement level
-  
 public:				// should be readonly
   
   // Fields
-  gh<D>& h;			// hierarchy
+  gh<D> &h;			// hierarchy
   ivect lghosts, ughosts;	// ghost zones
   
-  int prolongation_order_space;	// order of spatial prolongation operator
-  int buffer_width;             // buffer inside refined grids
-  
   rboxes boxes;
-  rbases bases;
   
-  list<ggf<D>*> gfs;            // list of all grid functions
+  list<generic_gf<D>*> gfs;
   
 public:
   
   // Constructors
-  dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts,
-      int prolongation_order_space, int buffer_width);
+  dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts);
   
   // Destructors
-  virtual ~dh ();
-  
-  // Helpers
-  int prolongation_stencil_size () const;
+  ~dh ();
   
   // Modifiers
-  void recompose (const bool do_prolongate);
+  void recompose ();
   
   // Grid function management
-  void add (ggf<D>* f);
-  void remove (ggf<D>* f);
+  void add (generic_gf<D>* f);
+  void remove (generic_gf<D>* f);
   
   // Output
-  virtual void output (ostream& os) const;
+  friend ostream& operator<< <> (ostream& os, const dh& d);
 };
 
 
 
-template<int D>
-inline ostream& operator<< (ostream& os, const dh<D>& d) {
-  d.output(os);
-  return os;
-}
-
-
+#if defined(TMPL_IMPLICIT)
+#  include "dh.cc"
+#endif
 
 #endif // DH_HH

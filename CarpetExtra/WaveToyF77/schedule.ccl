@@ -1,7 +1,7 @@
 # Schedule definitions for thorn WaveToy77
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/schedule.ccl,v 1.6 2003/11/05 16:18:40 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/schedule.ccl,v 1.1 2001/03/01 13:40:11 eschnett Exp $
 
-STORAGE: scalarevolve[3]
+STORAGE: scalarevolve
 
 schedule WaveToyF77_Startup at STARTUP
 {
@@ -11,17 +11,7 @@ schedule WaveToyF77_Startup at STARTUP
 schedule WaveToyF77_InitSymBound at BASEGRID
 {
   LANG: Fortran
-  OPTIONS: GLOBAL
 } "Schedule symmetries"
-
-
-
-schedule WaveToyF77_Boundaries as WaveToy_Boundaries at INITIAL after WaveToy_InitialData
-{
-  LANG: Fortran
-} "Boundaries of 3D wave equation"
-
-
 
 schedule WaveToyF77_Evolution as WaveToy_Evolution at EVOL
 {
@@ -29,7 +19,8 @@ schedule WaveToyF77_Evolution as WaveToy_Evolution at EVOL
   SYNC: scalarevolve
 } "Evolution of 3D wave equation"
 
-schedule WaveToyF77_Boundaries as WaveToy_Boundaries at EVOL after WaveToy_Evolution
+schedule WaveToyF77_Boundaries as WaveToy_Boundaries at EVOL AFTER WaveToy_Evolution
 {
   LANG: Fortran
 } "Boundaries of 3D wave equation"
+  
