@@ -76,7 +76,7 @@ BOOLEAN separate_components "Separate grid components in the output file by addi
 
 INT out_precision "How many digits to output floating-point numbers with" STEERABLE = ALWAYS
 {
-  1:15 :: "Number of precision digits"
+  0:* :: "Number of precision digits"
 } 15
 
 
