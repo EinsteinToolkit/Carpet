@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.26 2003/02/25 22:57:00 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.27 2003/03/18 17:30:25 schnetter Exp $
 
 #include <assert.h>
 
@@ -260,13 +260,15 @@ void dh<D>::recompose () {
 	      // (the restriction must not fill points that are used
 	      // to prolongate the boundaries)
               ibset recvs = intrf.contracted_for(intr) & intr;
-              const iblist& sendlist
-                = boxes[rl][c][ml].send_ref_bnd_fine[cc];
-              for (typename iblist::const_iterator sli = sendlist.begin();
-                   sli != sendlist.end();
-                   ++sli) {
-                recvs -= *sli;
+              for (int ccc=0; ccc<h.components(rl); ++ccc) {
+                const iblist& sendlist
+                  = boxes[rl][ccc][ml].send_ref_bnd_fine[cc];
+                for (typename iblist::const_iterator sli = sendlist.begin();
+                     sli != sendlist.end(); ++sli) {
+                  recvs -= *sli;
+                }
               }
+//               recvs.normalize();
               assert (recvs.setsize() <= 1);
               if (recvs.setsize() == 1) {
                 const ibbox recv = *recvs.begin();

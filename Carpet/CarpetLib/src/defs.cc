@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.14 2003/02/27 22:23:19 shawley Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.15 2003/03/18 17:30:25 schnetter Exp $
 
 #include <assert.h>
 #include <ctype.h>
@@ -6,6 +6,7 @@
 #include <iostream>
 #include <list>
 #include <set>
+#include <stack>
 #include <vector>
 
 #include "defs.hh"
@@ -71,6 +72,18 @@ ostream& output (ostream& os, const set<T>& s) {
   return os;
 }
 
+// Stack output
+template<class T>
+ostream& output (ostream& os, const stack<T>& s) {
+  stack<T> s2 (s);
+  list<T> l;
+  while (! s2.empty()) {
+    l.insert (l.begin(), s2.top());
+    s2.pop();
+  }
+  return output (os, l);
+}
+
 // Vector output
 template<class T>
 ostream& output (ostream& os, const vector<T>& v) {
@@ -96,6 +109,7 @@ template istream& input (istream& os, vector<vector<vect<vect<bool,2>,3> > >& v)
 template ostream& output (ostream& os, const list<bbox<int,3> >& l);
 template ostream& output (ostream& os, const set<bbox<int,3> >& s);
 template ostream& output (ostream& os, const set<bboxset<int,3> >& s);
+template ostream& output (ostream& os, const stack<bbox<int,3> >& s);
 template ostream& output (ostream& os, const vector<int>& v);
 template ostream& output (ostream& os, const vector<bbox<int,3> >& v);
 template ostream& output (ostream& os, const vector<list<bbox<int,3> > >& v);

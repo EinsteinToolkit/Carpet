@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.10 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.11 2003/03/18 17:30:25 schnetter Exp $
 
 #ifndef DEFS_HH
 #define DEFS_HH
@@ -14,6 +14,7 @@
 #include <iostream>
 #include <list>
 #include <set>
+#include <stack>
 #include <vector>
 
 using namespace std;
@@ -121,6 +122,7 @@ inline istream& operator>> (istream& is, vector<T>& v) {
 // Container output
 template<class T> ostream& output (ostream& os, const list<T>& l);
 template<class T> ostream& output (ostream& os, const set<T>& s);
+template<class T> ostream& output (ostream& os, const stack<T>& s);
 template<class T> ostream& output (ostream& os, const vector<T>& v);
 
 template<class T>
@@ -130,6 +132,11 @@ inline ostream& operator<< (ostream& os, const list<T>& l) {
 
 template<class T>
 inline ostream& operator<< (ostream& os, const set<T>& s) {
+  return output(os,s);
+}
+
+template<class T>
+inline ostream& operator<< (ostream& os, const stack<T>& s) {
   return output(os,s);
 }
 
