@@ -61,7 +61,7 @@ namespace CarpetRegrid {
       ivect const half    = (rub - rlb) / 2 / rstr * rstr;
       rlb = oldrlb + symmetric.ifthen(zero, quarter);
       rub = oldrub - symmetric.ifthen(half, quarter);
-      assert (all(rlb >= oldrlb && rub <= oldrub));
+      assert (all(rlb >= oldrlb and rub <= oldrub));
       
       ibbox const bb (rlb, rub, rstr);
       vector<ibbox> bbs (1);

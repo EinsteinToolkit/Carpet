@@ -106,7 +106,7 @@ namespace CarpetRegrid {
       
     } else {                    // if ! smart_outer_boundaries
       
-      if (strcmp(outerbounds, "") !=0 ) {
+      if (strcmp(outerbounds, "") != 0) {
         istringstream ob_str (outerbounds);
         try {
           ob_str >> newobss;
@@ -116,7 +116,7 @@ namespace CarpetRegrid {
         bool good = newobss.size() == newbbss.size();
         if (good) {
           for (size_t rl=0; rl<newobss.size(); ++rl) {
-            good = good && newobss.at(rl).size() == newbbss.at(rl).size();
+            good = good and newobss.at(rl).size() == newbbss.at(rl).size();
           }
         }
         if (! good) {

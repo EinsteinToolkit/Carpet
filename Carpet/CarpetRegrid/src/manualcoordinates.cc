@@ -30,7 +30,7 @@ namespace CarpetRegrid {
     if (refinement_levels > 4) {
       CCTK_WARN (0, "Cannot currently specify manual refinement regions for more than 4 refinement levels");
     }
-    assert (refinement_levels >= 1 && refinement_levels <= 4);
+    assert (refinement_levels >= 1 and refinement_levels <= 4);
     
     // do nothing if the levels already exist
     if (reflevel == refinement_levels) return 0;

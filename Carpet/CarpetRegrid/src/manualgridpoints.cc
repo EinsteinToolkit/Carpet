@@ -31,7 +31,7 @@ namespace CarpetRegrid {
     if (refinement_levels > 4) {
       CCTK_WARN (0, "Cannot currently specify manual refinement regions for more than 4 refinement levels");
     }
-    assert (refinement_levels >= 1 && refinement_levels <= 4);
+    assert (refinement_levels >= 1 and refinement_levels <= 4);
     
     // do nothing if the levels already exist
     if (reflevel == refinement_levels) return 0;
@@ -101,7 +101,7 @@ namespace CarpetRegrid {
     const ivect str (rstr / levfac);
     const ivect lb  (ilower);
     const ivect ub  (iupper);
-    if (! all(lb>=rlb && ub<=rub)) {
+    if (! all(lb>=rlb and ub<=rub)) {
       ostringstream buf;
       buf << "The refinement region boundaries for refinement level #" << rl << " are not within the main grid.  Allowed are the grid point boundaries " << rlb << " - " << rub << "; specified were " << lb << " - " << ub << ends;
       CCTK_WARN (0, buf.str().c_str());
@@ -111,13 +111,13 @@ namespace CarpetRegrid {
       buf << "The refinement region boundaries for refinement level #" << rl << " have the upper boundary (" << ub << ") less than the lower boundary (" << lb << ")" << ends;
       CCTK_WARN (0, buf.str().c_str());
     }
-    if (! all(lb%str==0 && ub%str==0)) {
+    if (! all(lb%str==0 and ub%str==0)) {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
 		  "The refinement region boundaries for refinement level #%d are not a multiple of the stride for that level", rl);
     }
-    assert (all(lb>=rlb && ub<=rub));
+    assert (all(lb>=rlb and ub<=rub));
     assert (all(lb<=ub));
-    assert (all(lb%str==0 && ub%str==0));
+    assert (all(lb%str==0 and ub%str==0));
     
     bbs.push_back (ibbox(lb, ub, str));
     obs.push_back (obound);

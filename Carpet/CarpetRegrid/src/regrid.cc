@@ -41,19 +41,19 @@ namespace CarpetRegrid {
 
     if (!force) {
 
-      assert (regrid_every == -1 || regrid_every == 0
-	      || regrid_every % maxmglevelfact == 0);
+      assert (regrid_every == -1 or regrid_every == 0
+	      or regrid_every % maxmglevelfact == 0);
     
       // Return if no regridding is desired
       if (regrid_every == -1) return 0;
       
       // Return if we want to regrid during initial data only, and this
       // is not the time for initial data
-      if (regrid_every == 0 && cctkGH->cctk_iteration != 0) return 0;
+      if (regrid_every == 0 and cctkGH->cctk_iteration != 0) return 0;
 
       // Return if we want to regrid regularly, but not at this time
-      if (regrid_every > 0 && cctkGH->cctk_iteration != 0
-	  && (cctkGH->cctk_iteration-1) % regrid_every != 0)
+      if (regrid_every > 0 and cctkGH->cctk_iteration != 0
+	  and (cctkGH->cctk_iteration-1) % regrid_every != 0)
       {
 	return 0;
       }
@@ -69,7 +69,7 @@ namespace CarpetRegrid {
 	if (cctkGH->cctk_iteration-1 >= activate_next) {
 	  const int newnumlevels
 	    = min(refinement_levels + num_new_levels, maxreflevels);
-	  assert (newnumlevels>0 && newnumlevels<=maxreflevels);
+	  assert (newnumlevels>0 and newnumlevels<=maxreflevels);
         
 	  *const_cast<CCTK_INT*>(&activate_next) = cctkGH->cctk_iteration;
 	  ostringstream next;
@@ -99,7 +99,7 @@ namespace CarpetRegrid {
 	}
 	const int newnumlevels
 	  = RegridLevel (cctkGH, refinement_levels, maxreflevels);
-	if (newnumlevels>0 && newnumlevels<=maxreflevels) {
+	if (newnumlevels>0 and newnumlevels<=maxreflevels) {
         
 	  *const_cast<CCTK_INT*>(&refinement_levels) = newnumlevels;
 	  ostringstream param;
@@ -131,7 +131,7 @@ namespace CarpetRegrid {
       // Return if this is not during initial data generation, and if no
       // change in the grid structure is desired
       if (cctkGH->cctk_iteration != 0) {
-	if (keep_same_grid_structure && refinement_levels == oldnumlevels) return 0;
+	if (keep_same_grid_structure and refinement_levels == oldnumlevels) return 0;
       }
     
     } else {

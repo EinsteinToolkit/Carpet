@@ -62,7 +62,7 @@ namespace CarpetRegrid {
       bool good = newobss.size() == newbbss.size();
       if (good) {
         for (size_t rl=0; rl<newobss.size(); ++rl) {
-          good = good && newobss.at(rl).size() == newbbss.at(rl).size();
+          good = good and newobss.at(rl).size() == newbbss.at(rl).size();
         }
       }
       if (! good) {

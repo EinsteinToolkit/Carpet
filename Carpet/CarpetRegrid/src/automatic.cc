@@ -40,11 +40,11 @@ namespace CarpetRegrid {
     
     
     const int vi = CCTK_VarIndex (errorvar);
-    assert (vi>=0 && vi<CCTK_NumVars());
+    assert (vi>=0 and vi<CCTK_NumVars());
     const int gi = CCTK_GroupIndexFromVarI (vi);
-    assert (gi>=0 && gi<CCTK_NumGroups());
+    assert (gi>=0 and gi<CCTK_NumGroups());
     const int v1 = CCTK_FirstVarIndexI(gi);
-    assert (v1>=0 && v1<=vi && v1<CCTK_NumVars());
+    assert (v1>=0 and v1<=vi and v1<CCTK_NumVars());
     
     assert (CCTK_GroupTypeI(gi) == CCTK_GF);
     assert (CCTK_VarTypeI(vi) == CCTK_VARIABLE_REAL);
@@ -155,7 +155,7 @@ namespace CarpetRegrid {
     // Create obs from bbs
     obs.resize (bbs.size());
     for (size_t c=0; c<bbs.size(); ++c) {
-      assert (hh.bases().size()>0 && hh.bases().at(0).size()>0);
+      assert (hh.bases().size()>0 and hh.bases().at(0).size()>0);
       obs.at(c) = zip ((vect<bool,2> (*) (bool, bool)) &vect<bool,2>::make,
                     bbs.at(c).lower() == hh.baseextent.lower(),
                     bbs.at(c).upper() == hh.baseextent.upper());
@@ -193,7 +193,7 @@ namespace CarpetRegrid {
     
     if (cnt == 0) {
       // Don't refine
-    } else if (width < 2*minwidth || fraction >= minfraction) {
+    } else if (width < 2*minwidth or fraction >= minfraction) {
       // Refine the whole region
       const ivect lo(region.lower());
       const ivect up(region.upper());
@@ -368,7 +368,7 @@ namespace CarpetRegrid {
     bbl.splice (bbl.end(), bbl1);
     bbl.splice (bbl.end(), bbl2);
     
-    assert (bbl1.empty() && bbl2.empty());
+    assert (bbl1.empty() and bbl2.empty());
     
     const int newnumboxes = bbl.size();
     assert (newnumboxes + numcombinedboxes == oldnumboxes);
