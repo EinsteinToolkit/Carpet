@@ -11,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.19 2002/09/25 19:55:05 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.20 2002/10/15 20:06:38 shawley Exp $";
 
 CCTK_FILEVERSION(Carpet_Initialise_cc)
 
@@ -139,6 +139,7 @@ namespace Carpet {
 	  //SHH: There was an error in the way I wrote it.
 	  // FlipTimeLevels should ONLY flip on levels reflevel and lower
 	  //FlipTimeLevelsOnCoarser(cgh,reflevel);
+          cout << "Flipping time levels" << endl;
 	  FlipTimeLevels(cgh);
 	  for (int rl=0; rl<hh->reflevels(); ++rl) {
 	      tt->set_time (rl, mglevel, -1*tt->get_time (rl, mglevel) );
@@ -148,18 +149,13 @@ namespace Carpet {
 	  time_dir *= -1;
 	  cgh->cctk_delta_time = time_dir * base_delta_time / reflevelfact * mglevelfact;
 	  
-	  cout << "`backward': Before CycleTimeLevels & AdvanceTime, "
+	  cout << "`post-flip': "
 	       << "time on rl=" << reflevel << ", ml=" << mglevel << ", is "
 	       << tt->get_time (reflevel, mglevel) << endl;
-	  // Evolve in the opposite time-direction
-	  // Cycle time levels
+
+	  cout << "Evolving in the opposite time-direction" << endl;
+          // Note: Since we just flipped, we don't need to cycle or advancetime
 	  // erik: what about arrays?
-//	  CycleTimeLevels (cgh);
-	  // Advance level times
-//	  tt->advance_time (reflevel, mglevel);
-	  cout << "`backward': After CycleTimeLevels & AdvanceTime, "
-	       << "time on rl=" << reflevel << ", ml=" << mglevel << ", is "
-	       << tt->get_time (reflevel, mglevel) << endl;
 	  Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
 	  CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
 	  Waypoint ("%*sScheduling EVOL", 2*reflevel, "");
@@ -170,6 +166,8 @@ namespace Carpet {
 	} END_MGLEVEL_LOOP(cgh);
       } END_REFLEVEL_LOOP(cgh);
       
+      cout << "Hourglass structure in place." << endl;
+
       //SHH:check the current time
       BEGIN_REFLEVEL_LOOP(cgh) {
         BEGIN_MGLEVEL_LOOP(cgh) {
@@ -178,8 +176,8 @@ namespace Carpet {
         } END_MGLEVEL_LOOP(cgh);
       } END_REFLEVEL_LOOP(cgh);
 
-
-      
+ 
+      cout << "Evolving backwards one extra step." << endl;
       // Make sure we're pointed backwards, in order to get 2 "previous"
       //   timelevels.  We could change the if statement to 
       //   "if (mod(MaxLevels,2) == 0)", but I prefer to check time_dir 
