@@ -29,25 +29,24 @@
 
 #include "ioascii.hh"
   
-  
-  
+extern "C" {
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.41 2002/10/24 10:40:19 schnetter Exp $";
+  CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
+}
+
+
+
 // That's a hack
 namespace Carpet {
   void UnsupportedVarType (const int vindex);
 }
 
-using namespace std;
-using namespace Carpet;
-
 
 
 namespace CarpetIOASCII {
   
-  const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.40 2002/10/15 15:30:42 schnetter Exp $";
-  
-  CCTK_FILEVERSION(CarpetIOASCII_ioascii_cc);
-  
-  
+  using namespace std;
+  using namespace Carpet;
   
   bool CheckForVariable (const cGH* const cgh,
 			 const char* const varlist, const int vindex);

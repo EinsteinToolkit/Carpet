@@ -12,9 +12,10 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.26 2002/10/14 20:41:35 schnetter Exp $";
-
-CCTK_FILEVERSION(Carpet_helpers_cc)
+extern "C" {
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.27 2002/10/24 10:39:39 schnetter Exp $";
+  CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
+}
 
 
 

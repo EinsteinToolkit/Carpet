@@ -8,19 +8,16 @@
 
 #include "carpet.hh"
   
-  
-  
-using namespace std;
+extern "C" {
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.5 2002/10/24 10:39:37 schnetter Exp $";
+  CCTK_FILEVERSION(Carpet_Carpet_CallFunction_cc);
+}
 
 
 
 namespace Carpet {
   
-  const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.4 2002/08/30 18:08:52 schnetter Exp $";
-  
-  CCTK_FILEVERSION(Carpet_CallFunction_cc);
-  
-  
+  using namespace std;
   
   int CallFunction (void* function, cFunctionData* attribute, void* data)
   {
