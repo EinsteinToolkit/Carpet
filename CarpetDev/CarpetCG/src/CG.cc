@@ -900,7 +900,7 @@ namespace CarpetCG {
       delta_0 = delta_new;
   
       /* 09. WHILE i < i_max AND delta_new > vareps^2 delta_0 DO */
-      while (iter < maxiters && epsilon / (nvars * gsize) > pow(minerror,2)) {
+      while (iter < maxiters && epsilon / (nvars * gsize) > ipow(minerror,2)) {
     
         if (verbose || veryverbose) {
           currenttime = time(0);
@@ -1082,7 +1082,7 @@ namespace CarpetCG {
       
           /* 20. WHILE j < j_max AND alpha^2 delta_d > epsilon^2 */
         } while (siter < smaxiters
-                 && pow(alpha,2) * delta_d > pow(sminerror,2)
+                 && ipow(alpha,2) * delta_d > ipow(sminerror,2)
                  && !do_abort);
     
         if (veryverbose) {

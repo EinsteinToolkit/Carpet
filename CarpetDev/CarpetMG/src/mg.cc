@@ -798,7 +798,7 @@ namespace CarpetMG {
       // TODO: correct this for solving on grid arrays instead of grid
       // functions
       dx[d] = CCTK_DELTA_SPACE(d);
-      dxinv2 += 1.0 / pow(dx[d], 2);
+      dxinv2 += 1.0 / ipow(dx[d], 2);
     }
     CCTK_REAL const mdxinv2inv = 1.0 / (-2.0 * dxinv2);
     
@@ -847,7 +847,7 @@ namespace CarpetMG {
                 varptr[ind] -= w * diff;
                 
                 ++ count;
-                error2 += pow(diff, 2);
+                error2 += ipow(diff, 2);
                 
               }
             }
@@ -928,7 +928,7 @@ namespace CarpetMG {
                 CCTK_REAL const diff = resptr[ind] - rhsptr[ind];
                 
                 ++ count;
-                error2 += pow(diff, 2);
+                error2 += ipow(diff, 2);
                 
               }
             }

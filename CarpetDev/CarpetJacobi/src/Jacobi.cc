@@ -259,7 +259,7 @@ namespace CarpetJacobi {
             CCTK_REAL levfac = 0;
             for (int d=0; d<dim; ++d) {
               levfac += 1 /
-                pow (cctkGH->cctk_delta_space[d] / cctkGH->cctk_levfac[d], 2);
+                ipow (cctkGH->cctk_delta_space[d] / cctkGH->cctk_levfac[d], 2);
             }
             levfac = 1 / levfac;
             
@@ -373,7 +373,7 @@ namespace CarpetJacobi {
                           const int ind = CCTK_GFINDEX3D(cctkGH, i, j, k);
                           ++norm_count;
                           // TODO: scale the norm by the resolution?
-                          norm_l2 += pow(fac * resptr[ind], 2);
+                          norm_l2 += ipow(fac * resptr[ind], 2);
                         }
                       }
                     }
