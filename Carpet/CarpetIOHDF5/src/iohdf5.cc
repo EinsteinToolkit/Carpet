@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.6 2004/03/09 10:26:20 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.7 2004/03/09 12:52:24 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -524,16 +524,15 @@ namespace CarpetIOHDF5 {
     assert (var>=0 && var<CCTK_NumVars());
     const int tl = 0;
 
-    herr_t herr;
-    int have_dataset = 0;
+    herr_t herr = 1;
     int want_dataset = 0;
-    int did_read_something = 0;
+    bool did_read_something = false;
     int ndatasets = 0;
     hid_t dataset = 0;
 
     char datasetname[1024];
 
-    CCTK_REAL *h5data = NULL;
+    CCTK_REAL *h5data;
 
     // Check for storage
     if (! CCTK_QueryGroupStorageI(cctkGH, group)) {
@@ -545,7 +544,7 @@ namespace CarpetIOHDF5 {
     
     const int grouptype = CCTK_GroupTypeI(group);
     const int rl = grouptype==CCTK_GF ? reflevel : 0;
-    cout << "want level " << rl << endl;
+    //cout << "want level " << rl << " reflevel " << reflevel << endl;
     
     // Find the input directory
     const char* myindir = GetStringParameter("in3D_dir", ".");
@@ -589,7 +588,7 @@ namespace CarpetIOHDF5 {
       // Read data
       if (CCTK_MyProc(cctkGH)==0) {
 	GetDatasetName(reader,datasetid,datasetname);
-// 	cout << datasetname << "\n";
+	// 	cout << datasetname << "\n";
   
 	dataset = H5Dopen (reader, datasetname);
 	assert(dataset);
@@ -604,10 +603,8 @@ namespace CarpetIOHDF5 {
 	  
        // Read data
        char * name;
-       //       cout << "reading name" << "\n";
        ReadAttribute (dataset, "name", name);
-       // cout << "done reading name" << "\n";
-//        cout << "dataset name is " << name << endl;
+       //        cout << "dataset name is " << name << endl;
        if (verbose) {
 	 if (name) {
 		CCTK_VInfo (CCTK_THORNSTRING, "Dataset name is \"%s\"", name);
@@ -635,26 +632,27 @@ namespace CarpetIOHDF5 {
 	 }
 	 const hid_t datatype = H5T_NATIVE_DOUBLE;
 	 
-         cout << "datalength: " << datalength << " rank: " << rank << "\n";
-         cout << shape[0] << " " << shape[1] << " " << shape[2] << "\n";
+         //cout << "datalength: " << datalength << " rank: " << rank << "\n";
+         //cout << shape[0] << " " << shape[1] << " " << shape[2] << "\n";
 	 
 	 h5data = (CCTK_REAL*) malloc(sizeof(double)*datalength);
 	 herr = H5Dread(dataset,datatype,H5S_ALL, H5S_ALL, H5P_DEFAULT,(void*)h5data);
 	 assert(!herr);
 	 
-         cout << datasetname << endl;
-         cout << name << endl;
-	 ReadAttribute(dataset,"level",amr_level);
-	 cout << "amr_level " << amr_level << endl
-              << " gpdim" << gpdim << "\n";
-	 ReadAttribute(dataset,"iorigin",amr_origin,dim);
-         cout << "amr_origin[0] " << amr_origin[0] << "\n";
+         //cout << datasetname << endl;
+         //cout << name << endl;
+	 herr = ReadAttribute(dataset,"level",amr_level);
+	 assert(herr>=0);
+	 //cout << "amr_level " << amr_level << " rl " << rl << endl;
+       	 ReadAttribute(dataset,"iorigin",amr_origin,dim);
+	 assert(herr>=0);
+         // cout << "amr_origin[0] " << amr_origin[0] << "\n";
 	 
 	 herr = H5Dclose(dataset);
 	 assert(!herr);
 
 	 for (int d=0; d<gpdim; ++d) {
-	   amr_dims[d] = shape[d];
+	   amr_dims[d] = shape[gpdim-1-d];
 	 }
   
        } // want_dataset
@@ -669,13 +667,13 @@ namespace CarpetIOHDF5 {
      MPI_Bcast (amr_dims, dim, MPI_INT, 0, dist::comm);
 	
      if (want_dataset && amr_level == rl) {
-       cout << "I want this" << endl;
+       // cout << "I want this" << endl;
        did_read_something = true;
 	  
        // Traverse all components on all levels
        BEGIN_MAP_LOOP(cctkGH, grouptype) {
 	 BEGIN_COMPONENT_LOOP(cctkGH, grouptype) {
-           cout << "reading map " << Carpet::map << " component " << component << endl;
+           //cout << "reading map " << Carpet::map << " component " << component << endl;
             
 	   ggf<dim>* ff = 0;
 	      
@@ -704,6 +702,10 @@ namespace CarpetIOHDF5 {
 	   // not guarantee that everything is initialised.
 	   const bbox<int,dim> overlap = tmp->extent() & data->extent();
 	   regions_read.at(Carpet::map) |= overlap;
+
+	   //cout << "overlap " << overlap << endl;
+	   //cout << "tmp->extent " << tmp->extent() << endl;
+	   //cout << "data->extent " << data->extent() << endl;
 	   
 	   // Copy into grid function
 	   for (comm_state<dim> state; !state.done(); state.step()) {
@@ -718,7 +720,7 @@ namespace CarpetIOHDF5 {
        
      } // if want_dataset && level == rl
        
-     if (CCTK_MyProc(cctkGH)==0) {
+     if (CCTK_MyProc(cctkGH)==0 && want_dataset) {
        free (h5data);
      }
   
@@ -743,17 +745,17 @@ namespace CarpetIOHDF5 {
 	  all_exterior |= thedd.boxes.at(rl).at(c).at(mglevel).exterior;
         }
 	if (regions_read.at(m) != all_exterior) {
-          cout << "read: " << regions_read.at(m) << endl
-               << "want: " << all_exterior << endl;
+          //cout << "read: " << regions_read.at(m) << endl
+          //     << "want: " << all_exterior << endl;
 	  CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
 		      "Variable \"%s\" could not be initialised from file -- the file may be missing data",
 		      varname);
 	}
       }
     } // if did_read_something
-    
+    //	CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,"stop!");    
     return did_read_something ? 0 : -1;
-//	CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,"stop!");
+
   }
 
   

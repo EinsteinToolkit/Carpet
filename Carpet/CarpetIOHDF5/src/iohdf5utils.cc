@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5utils.cc,v 1.2 2004/03/08 22:50:41 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5utils.cc,v 1.3 2004/03/09 12:52:24 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5utils_cc);
 }
 
@@ -228,6 +228,8 @@ namespace CarpetIOHDF5 {
     const hid_t dataspace = H5Aget_space (attribute);
     assert (dataspace>=0);
     
+    //    cout << "reading int attribute " << name << endl;
+
     hsize_t rank = H5Sget_simple_extent_ndims (dataspace);
     hsize_t shape[1];
     if (rank==0) {
@@ -242,7 +244,8 @@ namespace CarpetIOHDF5 {
     
     const hid_t datatype = H5Aget_type (attribute);
     assert (datatype>=0);
-    if (datatype != H5T_NATIVE_INT) return -100;
+
+    assert(H5Tequal(datatype, H5T_NATIVE_INT));
     
     vector<int> values1(length);
     
@@ -252,7 +255,7 @@ namespace CarpetIOHDF5 {
     for (int i=0; i<min(length, nvalues); ++i) {
       values[i] = values1[i];
     }
-    
+
     herr = H5Tclose (datatype);
     assert (!herr);
     
@@ -301,7 +304,7 @@ namespace CarpetIOHDF5 {
     
     const hid_t datatype = H5Aget_type (attribute);
     assert (datatype>=0);
-    if (datatype != H5T_NATIVE_DOUBLE) return -100;
+    assert(H5Tequal(datatype, H5T_NATIVE_DOUBLE));
     
     vector<double> values1(length);
     
@@ -349,7 +352,7 @@ namespace CarpetIOHDF5 {
     
     const hid_t datatype = H5Aget_type (attribute);
     assert (datatype>=0);
-    if (H5Tget_class (datatype) != H5T_STRING) return -100;
+    assert (H5Tget_class (datatype) == H5T_STRING);
     const int length = H5Tget_size (datatype);
     assert (length>=0);
     
@@ -392,7 +395,7 @@ namespace CarpetIOHDF5 {
     
     const hid_t datatype = H5Aget_type (attribute);
     assert (datatype>=0);
-    if (H5Tget_class (datatype) != H5T_STRING) return -100;
+    assert(H5Tget_class (datatype) == H5T_STRING); 
     const int length = H5Tget_size (datatype);
     assert (length>=0);
     
