@@ -10,7 +10,7 @@
 #include "mask_carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_carpet.cc,v 1.4 2004/08/04 13:03:28 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_carpet.cc,v 1.5 2004/08/05 11:15:49 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetMask_Mask_cc);
 }
 
@@ -115,32 +115,36 @@ namespace CarpetMask {
             {
               
               ibbox const & box = (*bi) & ext;
-              assert (all ((box.lower() - ext.lower()               ) >= 0));
-              assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
-              assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
-              assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
-              ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
-              ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
-              assert (all (izero <= imin));
-              assert (box.empty() || all (imin <= imax));
-              assert (all (imax <= ivect::ref(cctk_lsh)));
-              
-              if (verbose) {
-                ostringstream buf;
-                buf << "Setting prolongation boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax-ione;
-                CCTK_INFO (buf.str().c_str());
-              }
-              
-              // Set weight on the boundary to 1/2
-              assert (dim == 3);
-              for (int k=imin[2]; k<imax[2]; ++k) {
-                for (int j=imin[1]; j<imax[1]; ++j) {
-                  for (int i=imin[0]; i<imax[0]; ++i) {
-                    int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                    weight[ind] *= 0.5;
+              if (! box.empty()) {
+                
+                assert (all ((box.lower() - ext.lower()               ) >= 0));
+                assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
+                assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
+                assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
+                ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
+                ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
+                assert (all (izero <= imin));
+                assert (box.empty() || all (imin <= imax));
+                assert (all (imax <= ivect::ref(cctk_lsh)));
+                
+                if (verbose) {
+                  ostringstream buf;
+                  buf << "Setting prolongation boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax-ione;
+                  CCTK_INFO (buf.str().c_str());
+                }
+                
+                // Set weight on the boundary to 1/2
+                assert (dim == 3);
+                for (int k=imin[2]; k<imax[2]; ++k) {
+                  for (int j=imin[1]; j<imax[1]; ++j) {
+                    for (int i=imin[0]; i<imax[0]; ++i) {
+                      int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                      weight[ind] *= 0.5;
+                    }
                   }
                 }
-              }
+                
+              } // if box not empty
               
             } // for box
           } // for d
@@ -172,32 +176,36 @@ namespace CarpetMask {
           {
             
             ibbox const & box = (*bi).contracted_for(ext) & ext;
-            assert (all ((box.lower() - ext.lower()               ) >= 0));
-            assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
-            assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
-            assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
-            ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
-            ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
-            assert (all (izero <= imin));
-            assert (box.empty() || all (imin <= imax));
-            assert (all (imax <= ivect::ref(cctk_lsh)));
-            
-            if (verbose) {
-              ostringstream buf;
-              buf << "Setting restricted region on level " << reflevel << " to weight 0: " << imin << ":" << imax-ione;
-              CCTK_INFO (buf.str().c_str());
-            }
-            
-            // Set weight in the restricted region to 0
-            assert (dim == 3);
-            for (int k=imin[2]; k<imax[2]; ++k) {
-              for (int j=imin[1]; j<imax[1]; ++j) {
-                for (int i=imin[0]; i<imax[0]; ++i) {
-                  int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                  weight[ind] = 0;
+            if (! box.empty()) {
+              
+              assert (all ((box.lower() - ext.lower()               ) >= 0));
+              assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
+              assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
+              assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
+              ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
+              ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
+              assert (all (izero <= imin));
+              assert (box.empty() || all (imin <= imax));
+              assert (all (imax <= ivect::ref(cctk_lsh)));
+              
+              if (verbose) {
+                ostringstream buf;
+                buf << "Setting restricted region on level " << reflevel << " to weight 0: " << imin << ":" << imax-ione;
+                CCTK_INFO (buf.str().c_str());
+              }
+              
+              // Set weight in the restricted region to 0
+              assert (dim == 3);
+              for (int k=imin[2]; k<imax[2]; ++k) {
+                for (int j=imin[1]; j<imax[1]; ++j) {
+                  for (int i=imin[0]; i<imax[0]; ++i) {
+                    int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                    weight[ind] = 0;
+                  }
                 }
               }
-            }
+              
+            } // if box not empty
               
           } // for box
           
@@ -221,35 +229,39 @@ namespace CarpetMask {
             {
               
               ibbox const & box = (*bi).contracted_for(ext) & ext;
-              assert (all ((box.lower() - ext.lower()               ) >= 0));
-              assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
-              assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
-              assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
-              ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
-              ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
-              assert (all (izero <= imin));
-              assert (box.empty() || all (imin <= imax));
-              assert (all (imax <= ivect::ref(cctk_lsh)));
-              
-              if (verbose) {
-                ostringstream buf;
-                buf << "Setting restriction boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax-ione;
-                CCTK_INFO (buf.str().c_str());
-              }
-              
-              // Set weight on the boundary to 1/2
-              assert (dim == 3);
-              for (int k=imin[2]; k<imax[2]; ++k) {
-                for (int j=imin[1]; j<imax[1]; ++j) {
-                  for (int i=imin[0]; i<imax[0]; ++i) {
-                    int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                    if (mask[ind] == 0) {
-                      mask[ind] = 1;
+              if (! box.empty()) {
+                
+                assert (all ((box.lower() - ext.lower()               ) >= 0));
+                assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
+                assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
+                assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
+                ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
+                ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
+                assert (all (izero <= imin));
+                assert (box.empty() || all (imin <= imax));
+                assert (all (imax <= ivect::ref(cctk_lsh)));
+                
+                if (verbose) {
+                  ostringstream buf;
+                  buf << "Setting restriction boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax-ione;
+                  CCTK_INFO (buf.str().c_str());
+                }
+                
+                // Set weight on the boundary to 1/2
+                assert (dim == 3);
+                for (int k=imin[2]; k<imax[2]; ++k) {
+                  for (int j=imin[1]; j<imax[1]; ++j) {
+                    for (int i=imin[0]; i<imax[0]; ++i) {
+                      int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                      if (mask[ind] == 0) {
+                        mask[ind] = 1;
+                      }
+                      mask[ind] *= 2;
                     }
-                    mask[ind] *= 2;
                   }
                 }
-              }
+                
+              } // if box not empty
               
             } // for box
           } // for d
