@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.14 2003/03/12 09:34:44 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.15 2003/04/12 12:09:26 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -20,7 +20,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.14 2003/03/12 09:34:44 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.15 2003/04/12 12:09:26 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -253,16 +253,23 @@ namespace CarpetReduce {
   }
   
   template<class T,class OP>
-  void reduce (const int* const dims, const int* const nghostzones,
+  void reduce (const int* const lsh, const int* const bbox,
+               const int* const nghostzones,
 	       const void* const inarray, void* const outval, void* const cnt)
   {
     const T *myinarray = (const T*)inarray;
     T myoutval = *(T*)outval;
     T mycnt = *(T*)cnt;
-    for (int k=nghostzones[2]; k<dims[2]-nghostzones[2]; ++k) {
-      for (int j=nghostzones[1]; j<dims[1]-nghostzones[1]; ++j) {
-	for (int i=nghostzones[0]; i<dims[0]-nghostzones[0]; ++i) {
-	  const int index = i + dims[0] * (j + dims[1] * k);
+    int imin[dim], imax[dim];
+    for (int d=0; d<dim; ++d) {
+      imin[d] = bbox[2*d  ] ? 0      : nghostzones[d];
+      imax[d] = bbox[2*d+1] ? lsh[d] : lsh[d] - nghostzones[d];
+    }
+    assert (dim==3);
+    for (int k=imin[2]; k<imax[2]; ++k) {
+      for (int j=imin[1]; j<imax[1]; ++j) {
+        for (int i=imin[0]; i<imax[0]; ++i) {
+	  const int index = i + lsh[0] * (j + lsh[1] * k);
 	  OP::reduce (myoutval, myinarray[index]);
 	  ++mycnt;
 	}
@@ -340,7 +347,8 @@ namespace CarpetReduce {
   
   
   void Reduce (const cGH* const cgh, const int proc,
-	       const int* const mydims, const int* const mynghostzones,
+	       const int* const mylsh, const int* const mybbox,
+               const int* const mynghostzones,
 	       const int num_inarrays,
 	       const void* const* const inarrays, const int intype,
 	       const int num_outvals,
@@ -362,8 +370,8 @@ namespace CarpetReduce {
     }
     
     for (int d=0; d<dim; ++d) {
-      assert (mydims[d]>=0);
-      assert (mynghostzones[d]>=0 && 2*mynghostzones[d]<=mydims[d]);
+      assert (mylsh[d]>=0);
+      assert (mynghostzones[d]>=0 && 2*mynghostzones[d]<=mylsh[d]);
     }
     
     const int vartypesize = CCTK_VarTypeSize(outtype);
@@ -375,11 +383,11 @@ namespace CarpetReduce {
     for (int n=0; n<num_outvals; ++n) {
       
       switch (outtype) {
-#define REDUCE(OP,T)							\
-	case do_##OP:							\
-	  reduce<T,OP::op<T> > (mydims, mynghostzones, inarrays[n],	\
-				&((char*)myoutvals)[vartypesize*n],	\
-				&((char*)mycounts)[vartypesize*n]);	\
+#define REDUCE(OP,T)                                                       \
+	case do_##OP:                                                      \
+	  reduce<T,OP::op<T> > (mylsh, mybbox, mynghostzones, inarrays[n], \
+				&((char*)myoutvals)[vartypesize*n],        \
+				&((char*)mycounts)[vartypesize*n]);        \
 	  break;
 #define TYPECASE(N,T)				\
       case N: {					\
@@ -527,18 +535,22 @@ namespace CarpetReduce {
       assert (inarrays[n]);
     }
     
-    assert (num_dims>=0 && num_dims<=dim);
-    for (int d=0; d<num_dims; ++d) {
+    assert (dim>=0 && dim<=dim);
+    for (int d=0; d<dim; ++d) {
       assert (dims[d]>=0);
     }
     
-    int mydims[dim], mynghostzones[dim];
-    for (int d=0; d<num_dims; ++d) {
-      mydims[d] = dims[d];
+    int mylsh[dim], mybbox[2*dim], mynghostzones[dim];
+    for (int d=0; d<dim; ++d) {
+      mylsh[d] = dims[d];
+      mybbox[2*d  ] = 0;
+      mybbox[2*d+1] = 0;
       mynghostzones[d] = 0;
     }
-    for (int d=num_dims; d<dim; ++d) {
-      mydims[d] = 1;
+    for (int d=dim; d<dim; ++d) {
+      mylsh[d] = 1;
+      mybbox[2*d  ] = 0;
+      mybbox[2*d+1] = 0;
       mynghostzones[d] = 0;
     }
     
@@ -549,7 +561,7 @@ namespace CarpetReduce {
     char *mycounts  = new char [vartypesize * num_outvals];
     
     Initialise (cgh, proc, num_outvals, myoutvals, outtype, mycounts, red);
-    Reduce     (cgh, proc, mydims, mynghostzones,
+    Reduce     (cgh, proc, mylsh, mybbox, mynghostzones,
 		num_inarrays, inarrays, intype,
 		num_outvals, myoutvals, outtype, mycounts, red);
     Finalise   (cgh, proc, num_outvals, outvals, outtype, myoutvals, mycounts,
@@ -595,10 +607,10 @@ namespace CarpetReduce {
     const int vi = invars[0];
     assert (vi>=0 && vi<CCTK_NumVars());
     
-    const int num_dims = CCTK_GroupDimFromVarI(vi);
-    assert (num_dims>=0 && num_dims<=dim);
+    const int grpdim = CCTK_GroupDimFromVarI(vi);
+    assert (grpdim>=0 && grpdim<=dim);
     for (int n=0; n<num_invars; ++n) {
-      assert (CCTK_GroupDimFromVarI(invars[n]) == num_dims);
+      assert (CCTK_GroupDimFromVarI(invars[n]) == grpdim);
     }
     
     const int vartypesize = CCTK_VarTypeSize(outtype);
@@ -611,14 +623,16 @@ namespace CarpetReduce {
     
     BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
       
-      int dims[dim], nghostzones[dim];
-      ierr = CCTK_GrouplshVI(cgh, num_dims, dims, vi);
+      int lsh[grpdim], bbox[2*grpdim], nghostzones[grpdim];
+      ierr = CCTK_GrouplshVI(cgh, grpdim, lsh, vi);
       assert (!ierr);
-      ierr = CCTK_GroupnghostzonesVI(cgh, num_dims, nghostzones, vi);
+      ierr = CCTK_GroupbboxVI(cgh, 2*grpdim, bbox, vi);
       assert (!ierr);
-      for (int d=0; d<num_dims; ++d) {
-	assert (dims[d]>=0);
-	assert (nghostzones[d]>=0 && 2*nghostzones[d]<=dims[d]);
+      ierr = CCTK_GroupnghostzonesVI(cgh, grpdim, nghostzones, vi);
+      assert (!ierr);
+      for (int d=0; d<dim; ++d) {
+	assert (lsh[d]>=0);
+	assert (nghostzones[d]>=0 && 2*nghostzones[d]<=lsh[d]);
       }
       
       const void** inarrays = new const void * [num_invars];
@@ -632,18 +646,23 @@ namespace CarpetReduce {
 	assert (CCTK_VarTypeI(invars[n]) == intype);
       }
       
-      int mydims[dim], mynghostzones[dim];
-      for (int d=0; d<num_dims; ++d) {
-	mydims[d] = dims[d];
+      int mylsh[dim], mybbox[2*dim], mynghostzones[dim];
+      for (int d=0; d<dim; ++d) {
+	mylsh[d] = lsh[d];
+        mybbox[2*d  ] = bbox[2*d  ];
+        mybbox[2*d+1] = bbox[2*d+1];
 	mynghostzones[d] = nghostzones[d];
       }
-      for (int d=num_dims; d<dim; ++d) {
-	mydims[d] = 1;
+      for (int d=dim; d<dim; ++d) {
+	mylsh[d] = 1;
+        mybbox[2*d  ] = 0;
+        mybbox[2*d+1] = 0;
 	mynghostzones[d] = 0;
       }
       
-      Reduce (cgh, proc, mydims, mynghostzones, num_invars, inarrays, intype,
-	      num_outvals, myoutvals, outtype, mycounts, red);
+      Reduce (cgh, proc, mylsh, mybbox, mynghostzones,
+              num_invars, inarrays, intype, num_outvals, myoutvals, outtype,
+              mycounts, red);
       
       delete [] inarrays;
       
@@ -660,30 +679,30 @@ namespace CarpetReduce {
   
   
   
-#define REDUCTION(OP)							 \
-  int OP##_arrays (const cGH * const cgh, const int proc,		 \
-		   const int num_dims, const int * const dims,		 \
-		   const int num_inarrays,				 \
+#define REDUCTION(OP)                                                     \
+  int OP##_arrays (const cGH * const cgh, const int proc,                 \
+		   const int num_dims, const int * const dims,            \
+		   const int num_inarrays,                                \
 		   const void * const * const inarrays, const int intype, \
-		   const int num_outvals,				 \
-		   void * const outvals, const int outtype)		 \
-  {									 \
-    const OP red;							 \
-    return ReduceArrays							 \
-      (cgh, proc, num_dims, dims,					 \
-       num_inarrays, inarrays, intype, num_outvals, outvals, outtype,	 \
-       &red);								 \
-  }									 \
-  									 \
-  int OP##_GVs (const cGH * const cgh, const int proc,			 \
-	        const int num_outvals,					 \
-	        const int outtype, void * const outvals,		 \
-	        const int num_invars, const int * const invars)		 \
-  {									 \
-    const OP red;							 \
-    return ReduceGVs (cgh, proc,					 \
-		      num_outvals, outtype, outvals, num_invars, invars, \
-		      &red);						 \
+		   const int num_outvals,                                 \
+		   void * const outvals, const int outtype)               \
+  {                                                                       \
+    const OP red;                                                         \
+    return ReduceArrays                                                   \
+      (cgh, proc, num_dims, dims,                                         \
+       num_inarrays, inarrays, intype, num_outvals, outvals, outtype,     \
+       &red);                                                             \
+  }                                                                       \
+                                                                          \
+  int OP##_GVs (const cGH * const cgh, const int proc,                    \
+	        const int num_outvals,                                    \
+	        const int outtype, void * const outvals,                  \
+	        const int num_invars, const int * const invars)           \
+  {                                                                       \
+    const OP red;                                                         \
+    return ReduceGVs (cgh, proc,                                          \
+		      num_outvals, outtype, outvals, num_invars, invars,  \
+		      &red);                                              \
   }
   
   REDUCTION(count);
