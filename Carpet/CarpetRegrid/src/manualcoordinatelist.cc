@@ -82,7 +82,7 @@ namespace CarpetRegrid {
         for (size_t c=0; c<newobss.at(rl).size(); ++c) {
           for (int d=0; d<dim; ++d) {
             assert (mglevel==0);
-            rvect const spacing = base_spacing * pow(CCTK_REAL(mgfact), basemglevel) / ipow(reffact, rl+1);
+            rvect const spacing = base_spacing * ipow(CCTK_REAL(mgfact), basemglevel) / ipow(reffact, rl+1);
             ierr = ConvertFromPhysicalBoundary
               (dim, &physical_min[0], &physical_max[0],
                &interior_min[0], &interior_max[0],
@@ -159,7 +159,7 @@ namespace CarpetRegrid {
         // TODO:
         // assert (domain_from_coordbase);
         // TODO: why can basemglevel not be used here?
-        // rvect const spacing = base_spacing * pow(CCTK_REAL(mgfact), basemglevel) / ipow(reffact, rl);
+        // rvect const spacing = base_spacing * ipow(CCTK_REAL(mgfact), basemglevel) / ipow(reffact, rl);
         rvect const spacing = base_spacing / ipow(reffact, rl);
         if (! all(abs(ext.stride() - spacing) < spacing * 1.0e-10)) {
           assert (dim==3);
