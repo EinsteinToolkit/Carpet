@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.11 2002/12/12 12:58:24 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.12 2002/12/12 14:36:44 schnetter Exp $
 
  ***************************************************************************/
 
@@ -419,13 +419,12 @@ public:
     return r;
   }
   
-#if 0
-  vect operator?: (const vect& a, const vect& b) const {
-    vect r(*this);
-    for (int d=0; d<D; ++d) r[d]=r[d]?a[d]:b[d];
+  template<class TT>
+  vect<TT,D> ifthen (const vect<TT,D>& a, const vect<TT,D>& b) const {
+    vect<TT,D> r;
+    for (int d=0; d<D; ++d) r[d]=(*this)[d]?a[d]:b[d];
     return r;
   }
-#endif
   
   // Iterators
 #if 0
