@@ -48,7 +48,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.19 2004/01/07 16:30:49 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.20 2004/01/08 19:43:33 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
@@ -229,30 +229,33 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
 
 
   if (called_from == CP_RECOVER_DATA) {
-    if(myproc ==0){
-      AmrGridReader* amrreader = 0;    
+
+    AmrGridReader* amrreader = 0;    
+
+    if(myproc==0)
       amrreader = new AmrGridReader(*reader);
+    
+    BEGIN_REFLEVEL_LOOP(cgh) {
+      BEGIN_MGLEVEL_LOOP(cgh) {
 
-      BEGIN_REFLEVEL_LOOP(cgh) {
-	BEGIN_MGLEVEL_LOOP(cgh) {
-
-	  /* make sure we are looking at the first dataset where
-             all the good stuff ist stored! */
+	/* make sure we are looking at the first dataset where
+	   all the good stuff ist stored! */
+	if(myproc==0)
 	  reader->seek(0);
-	  
-	  /* Recover GH extentions */
-	  CCTK_INFO ("Recovering GH extensions");
-	  result += RecoverGHextensions (cgh, reader);
-	} END_MGLEVEL_LOOP;
-      } END_REFLEVEL_LOOP;	  
-
-      if (! result)
-	{
-	  /* Recover variables */
-	  CCTK_VInfo (CCTK_THORNSTRING, "Recovering data! ");
-	  result = RecoverVariables (cgh, reader,amrreader);
-	}
 	
+	/* Recover GH extentions */
+	CCTK_INFO ("Recovering GH extensions");
+	result += RecoverGHextensions (cgh, reader);
+      } END_MGLEVEL_LOOP;
+    } END_REFLEVEL_LOOP;	  
+
+    if (! result)
+      {
+	/* Recover variables */
+	CCTK_VInfo (CCTK_THORNSTRING, "Recovering data! ");
+	result = RecoverVariables (cgh, reader,amrreader);
+      }
+    if(myproc==0) {
       delete reader;
       delete amrreader;
     }
@@ -546,6 +549,7 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
 
     if (CCTK_MyProc(cgh)==0)
       {
+	fprintf(stderr,"\n verbose: %d\n",verbose);
 	if (verbose)
 	  {
 	    CCTK_VInfo (CCTK_THORNSTRING, "Creating temporary checkpoint file '%s'", cp_tempname);
@@ -757,10 +761,10 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
       {
         if (myGH->cp_filename_list[myGH->cp_filename_index])
         {
-          if (checkpoint_keep > 0)
-          {
-            remove (myGH->cp_filename_list[myGH->cp_filename_index]);
-          }
+	  //          if (checkpoint_keep > 0)
+          //{
+          //  remove (myGH->cp_filename_list[myGH->cp_filename_index]);
+          //}
           free (myGH->cp_filename_list[myGH->cp_filename_index]);
         }
         myGH->cp_filename_list[myGH->cp_filename_index] = strdup (cp_filename);
@@ -775,27 +779,39 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
   int RecoverVariables (cGH* cgh, IObase* reader, AmrGridReader* amrreader){
 
     int retval = 0;
-
+    int myproc = CCTK_MyProc (cgh);
+    int currdataset,ndatasets;
     CCTK_VInfo(CCTK_THORNSTRING,"Starting to recover data!!!");
 
-    int ndatasets = reader->nDatasets();
-    //CCTK_VInfo (CCTK_THORNSTRING, "ndatasets=%d", ndatasets);
+    if(myproc==0) {
+      ndatasets = reader->nDatasets();
+      //CCTK_VInfo (CCTK_THORNSTRING, "ndatasets=%d", ndatasets);
+      assert (ndatasets>=0);
+    }
+
+    // Broadcast number of datasets
+    MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
     assert (ndatasets>=0);
 
-    for (int currdataset=1;currdataset < ndatasets;currdataset++) {
+    //    BEGIN_REFLEVEL_LOOP(cgh) {
+    //  BEGIN_MGLEVEL_LOOP(cgh) {  
+    for (currdataset=1;currdataset < ndatasets;currdataset++) {
       //CCTK_VInfo(CCTK_THORNSTRING,"dataset: %d",currdataset);
-      reader->seek(currdataset);
-      ReadGF(cgh,reader,amrreader);
-  }
+      if(myproc==0) {
+	reader->seek(currdataset);
+      }
+	    
+      ReadGF(cgh,reader,amrreader,currdataset);
+    }
+  
+	//      } END_MGLEVEL_LOOP;
+	//} END_REFLEVEL_LOOP;	  
 
     return retval;
   }
    
 
 } // namespace CarpetCheckpointRestart
-
-
-
 
 
 

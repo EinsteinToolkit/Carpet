@@ -92,7 +92,7 @@ IObase::DataType FlexIODataType (int cctk_type){
 
 void DumpCommonAttributes (const cGH *cgh, IObase* writer, ioRequest* request)
 {
-  int dim, vdim;
+  int dim, vdim, tl;
   CCTK_INT attr_int,dimscalar;
   CCTK_REAL *attr_real;
   char coord_system_name[20];
@@ -123,7 +123,13 @@ void DumpCommonAttributes (const cGH *cgh, IObase* writer, ioRequest* request)
   attr_int = CCTK_MaxTimeLevelsVI (request->vindex);
   writer->writeAttribute("ntimelevels",FlexIODataType(CCTK_VARIABLE_INT),1,&attr_int);
 
-  writer->writeAttribute("timelevel",FlexIODataType(CCTK_VARIABLE_INT),1,&request->timelevel);
+  // lets get the correct Carpet time level (which is the (-1) * timelevel):
+  if (request->timelevel==0)
+    tl = 0;
+  else
+    tl = - request->timelevel;
+
+  writer->writeAttribute("timelevel",FlexIODataType(CCTK_VARIABLE_INT),1,&tl);
 
   /* we have to do below since cactus believes scalars have dimension 0, but
      flexio likes them to be of dimension 1 

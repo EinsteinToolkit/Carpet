@@ -45,7 +45,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.16 2004/01/07 16:30:49 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.17 2004/01/08 19:43:33 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -170,8 +170,15 @@ namespace CarpetIOFlexIO {
     assert (n0>=0 && n0<CCTK_NumVars());
     const int var = varindex - n0;
     assert (var>=0 && var<CCTK_NumVars());
-    const int tl = 0;
+    int tl = 0;
     const int grouptype = CCTK_GroupTypeI(group);
+
+    // lets get the correct Carpet time level (which is the (-1) * timelevel):
+    if (request->timelevel==0)
+      tl = 0;
+    else
+      tl = - request->timelevel;
+    
 
     assert (! ( (grouptype != CCTK_GF) && reflevel>0));
     //    if(grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY) return 0;
@@ -511,7 +518,7 @@ namespace CarpetIOFlexIO {
   
 
 
-  int ReadGF (const cGH* const cgh, IObase* reader, AmrGridReader* amrreader) {
+  int ReadGF (const cGH* const cgh, IObase* reader, AmrGridReader* amrreader,int currdataset) {
 
     /* this functions reads in a variable on the current reflevel from an already open file. At
        some point it should be called from InputVarAs */
@@ -522,7 +529,7 @@ namespace CarpetIOFlexIO {
     int tl = -1;
     int mglevel = -1;
     int rl = -1;
-
+    int myproc = CCTK_MyProc (cgh);
     int rank;
     int dims[dim];
     int nbytes;
@@ -533,71 +540,227 @@ namespace CarpetIOFlexIO {
     IObase::DataType datatype;
     int group,varindex;
     
-    // read the name of the variable
-    i = reader->readAttributeInfo ("name", datatype, asize);
-    if (i >= 0 && datatype == FLEXIO_CHAR && asize > 0)
-      {
-	varname = (char*) malloc(sizeof(char)*asize+1);
-	reader->readAttribute (i, varname);
+
+    if(myproc==0) {
+      // read the name of the variable
+      i = reader->readAttributeInfo ("name", datatype, asize);
+      if (i >= 0 && datatype == FLEXIO_CHAR && asize > 0)
+	{
+	  varname = (char*) malloc(sizeof(char)*asize+1);
+	  reader->readAttribute (i, varname);
+	}
+      else
+	{
+	  CCTK_WARN (0, "Something is wrong! Can't read dataset names!!!"); 
+	}
+      
+      varindex = CCTK_VarIndex(varname);
+
+      assert(varindex > -1);
+      
+      group = CCTK_GroupIndexFromVarI(varindex);
+      assert(group > -1);
+
+      // Check for storage
+      if (! CCTK_QueryGroupStorageI(cgh, group)) {
+	CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+		    "Cannot recover variable \"%s\" because it has no storage",
+		    varname);
+	return 0;
       }
-    else
-      {
-	CCTK_WARN (0, "Something is wrong! Can't read dataset names!!!"); 
-      }
 
-    varindex = CCTK_VarIndex(varname);
 
-    CCTK_VInfo(CCTK_THORNSTRING,"Recovering varindex: %d varname: %s",varindex,varname);
-    free(varname);
-    assert(varindex > -1);
+      // read reflevel
+      i = reader->readAttributeInfo ("reflevel", datatype, asize);
+      if (i >= 0 && datatype == FLEXIO_INT && asize > 0)
+	{
+	  reader->readAttribute (i, &rl);
+	}
+      else
+	{
+	  CCTK_WARN (0, "Something is wrong! Can't read refinement level!!!"); 
+	}
 
-    group = CCTK_GroupIndexFromVarI(varindex);
-    assert(group > -1);
+      i = reader->readAttributeInfo ("timelevel", datatype, asize);
+      if (i >= 0 && datatype == FLEXIO_INT && asize > 0)
+	{
+	  reader->readAttribute (i, &tl);
+	}
+      else
+	{
+	  CCTK_WARN (0, "Something is wrong! Can't read timelevel!!!"); 
+	}
+      
+      i = reader->readAttributeInfo ("mglevel", datatype, asize);
+      if (i >= 0 && datatype == FLEXIO_INT && asize > 0)
+	{
+	  reader->readAttribute (i, &mglevel);
+	}
+      else
+	{
+	  CCTK_WARN (0, "Something is wrong! Can't read multi group level!!!"); 
+	}
+      
 
-    // Check for storage
-    if (! CCTK_QueryGroupStorageI(cgh, group)) {
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Cannot recover variable \"%s\" because it has no storage",
-                  varname);
-      return 0;
+
+      // Read information about dataset
+      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Reading dataset info");
+      reader->readInfo (datatype, rank, dims);
+      nbytes = IObase::nBytes(datatype,rank,dims);
+      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "type=%d rank=%d dims=[%d,%d,%d] nbytes=%d", (int)datatype, rank, dims[0], dims[1], dims[2], nbytes);
+      
+      int gpdim = CCTK_GroupDimI(group);
+      const int grouptype = CCTK_GroupTypeI(group);
+
+      // need gpdim=1 if scalar (flexio wants this)
+      if(gpdim == 0)
+	if(grouptype == CCTK_SCALAR)
+	  gpdim = 1;
+      else
+	CCTK_WARN(0,"Non-scalar variable with dimension 0!!!");
+
+
+      CCTK_VInfo(CCTK_THORNSTRING,"Recovering varindex: %d grouptype: %d varname: %s tl: %d, rl: %d",varindex,grouptype,varname,tl,rl);
+
+      free(varname);	
+      
+      // Check rank
+      assert (rank==gpdim);
     }
 
 
-    // read reflevel
-    i = reader->readAttributeInfo ("reflevel", datatype, asize);
-    if (i >= 0 && datatype == FLEXIO_INT && asize > 0)
-      {
-	reader->readAttribute (i, &rl);
-      }
-    else
-      {
-	CCTK_WARN (0, "Something is wrong! Can't read refinement level!!!"); 
-      }
+    // Broadcast varindex,group,rank, dimensions, and nbytes,rl,tl,mglevel
+    MPI_Bcast (&varindex, 1, MPI_INT, 0, dist::comm);
+    assert (varindex>=0);
+    MPI_Bcast (&group, 1, MPI_INT, 0, dist::comm);
+    assert (group>=0);
+    MPI_Bcast (&rank, 1, MPI_INT, 0, dist::comm);
+    assert (rank>=1);
+    MPI_Bcast (&dims, rank, MPI_INT, 0, dist::comm);
+    for (int d=0; d<rank; ++d) assert (dims[d]>=0);
+    MPI_Bcast (&nbytes, 1, MPI_INT, 0, dist::comm);
+    assert (nbytes>=0);
 
-    i = reader->readAttributeInfo ("timelevel", datatype, asize);
-    if (i >= 0 && datatype == FLEXIO_INT && asize > 0)
-      {
-	reader->readAttribute (i, &tl);
-      }
-    else
-      {
-	CCTK_WARN (0, "Something is wrong! Can't read timelevel!!!"); 
-      }
-
-    i = reader->readAttributeInfo ("mglevel", datatype, asize);
-    if (i >= 0 && datatype == FLEXIO_INT && asize > 0)
-      {
-	reader->readAttribute (i, &mglevel);
-      }
-    else
-      {
-	CCTK_WARN (0, "Something is wrong! Can't read multi group level!!!"); 
-      }
-    
-    CCTK_VInfo(CCTK_THORNSTRING,"Recovering varindex: %d varname: %s tl: %d, rl: %d",varindex,varname,tl,rl);
-	
+    MPI_Bcast (&rl, 1, MPI_INT, 0, dist::comm);
+    MPI_Bcast (&tl, 1, MPI_INT, 0, dist::comm);
+    MPI_Bcast (&mglevel, 1, MPI_INT, 0, dist::comm);
 
 
+    int gpdim = CCTK_GroupDimI(group);
+    const int grouptype = CCTK_GroupTypeI(group);
+
+    // Read grid
+    AmrGrid* amrgrid = 0;
+    int amr_origin[dim];
+    int amr_dims[dim];
+    if (myproc==0) {
+        
+        // Read data
+        if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Reading AMR data");
+
+        amrgrid = amrreader->getGrid(currdataset);
+        assert (amrgrid!=0);
+        assert (amrgrid->data!=0);
+
+	IObase::DataType atype;
+        int alength;
+        // If iorigin attribute is absent, assume file has unigrid
+        // data.  Initialize iorigin to 0.
+        if (reader->readAttributeInfo("iorigin", atype, alength) < 0) {
+          for (int d=0; d<gpdim; ++d) {
+            amrgrid->iorigin[d] = 0;
+          }
+        }
+        for (int d=0; d<gpdim; ++d) {
+          amr_origin[d] = amrgrid->iorigin[d];
+	  //	  fprintf(stderr,"\n amr_origin[%d]=%d",d,amr_origin[d]);
+          amr_dims[d] = amrgrid->dims[d];
+	  //fprintf(stderr,"\n amr_dims[%d]=%d",d,amr_dims[d]);
+        }
+        for (int d=gpdim; d<dim; ++d) {
+          amr_origin[d] = 0;
+          amr_dims[d] = 1;
+        }
+        
+    } // MyProc == 0
+
+
+    MPI_Bcast (amr_origin, dim, MPI_INT, 0, dist::comm);
+    MPI_Bcast (amr_dims, dim, MPI_INT, 0, dist::comm);
+
+    const int n0 = CCTK_FirstVarIndexI(group);
+    assert (n0>=0 && n0<CCTK_NumVars());
+    const int var = varindex - n0;
+    assert (var>=0 && var<CCTK_NumVars());
+
+
+    // Traverse all components on this refinement and multigrid
+    // level
+
+
+    //    fprintf(stderr,"\n bogus! reflevel:%d mglevel:%d\n",reflevel,mglevel);        
+    //fprintf(stderr,"blahblah: rank: %d dims[0,1,2]: %d,%d,%d\n",rank,dims[0],dims[1],dims[2]);
+
+    //    cout << "var " << varindex << " has " << CCTK_NumTimeLevelsFromVarI(varindex) << " timelevels" << endl;
+
+    //    BEGIN_COMPONENT_LOOP(cgh, grouptype) {
+
+    //cout << "compontents " << hh->components(rl) << endl;
+    for(int c=0;c<hh->components(rl);c++) {
+
+      ggf<dim>* ff = 0;
+
+      assert (var < (int)arrdata[group].data.size());
+      ff = (ggf<dim>*)arrdata[group].data[var];
+
+      gdata<dim>* const data = (*ff) (tl, rl, c, mglevel);
+
+        
+      // Create temporary data storage on processor 0
+      const int reflevelfact_local=ipow(reffact,rl);
+      vect<int,dim> str = vect<int,dim>(maxreflevelfact/reflevelfact_local);
+
+      if(grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY)
+	str = vect<int,dim> (1);
+
+
+      const vect<int,dim> lb = vect<int,dim>(amr_origin) * str;
+      const vect<int,dim> ub = lb + (vect<int,dim>(amr_dims) - 1) * str;
+      const bbox<int,dim> ext(lb,ub,str);
+
+      //fprintf(stderr,"lb[0,1,2]= %d,%d,%d\n",lb[0],lb[1],lb[2]);
+      //fprintf(stderr,"ub[0,1,2]= %d,%d,%d\n",ub[0],ub[1],ub[2]);
+      //fprintf(stderr,"str[0,1,2]= %d,%d,%d\n",str[0],str[1],str[2]);
+
+      //fprintf(stderr,"ext,upper[1,2,3]: %d,%d,%d",ext.upper()[0],ext.upper()[1],ext.upper()[2]);
+      //fprintf(stderr,"ext,str[1,2,3]: %d,%d,%d",ext.stride()[0],ext.stride()[1],ext.stride()[2]);
+
+      gdata<dim>* const tmp = data->make_typed (varindex);
+
+
+
+      if (myproc==0) {
+	tmp->allocate (ext, 0, amrgrid->data);
+      } else {
+	tmp->allocate (ext, 0, 0);
+      }
+        
+      // Copy into grid function
+            for (comm_state<dim> state; !state.done(); state.step()) {
+      	data->copy_from (state, tmp, ext);
+      }
+        
+      // Delete temporary copy
+      delete tmp;
+        
+    } // manual component loop
+      
+    if (myproc==0) {
+        free (amrgrid->data);
+        free (amrgrid);
+        amrgrid = 0;
+    }
+  
 
     return 0;
   }
