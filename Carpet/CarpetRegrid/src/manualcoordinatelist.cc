@@ -158,7 +158,9 @@ namespace CarpetRegrid {
         bbvect const & ob = newobss.at(rl-1).at(c);
         // TODO:
         // assert (domain_from_coordbase);
-        rvect const spacing = base_spacing * pow(CCTK_REAL(mgfact), basemglevel) / ipow(reffact, rl);
+        // TODO: why can basemglevel not be used here?
+        // rvect const spacing = base_spacing * pow(CCTK_REAL(mgfact), basemglevel) / ipow(reffact, rl);
+        rvect const spacing = base_spacing / ipow(reffact, rl);
         assert (all(abs(ext.stride() - spacing) < spacing * 1.0e-10));
         ManualCoordinates_OneLevel
           (cctkGH, hh, rl, refinement_levels,
