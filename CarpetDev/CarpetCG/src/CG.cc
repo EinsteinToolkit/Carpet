@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetCG/src/CG.cc,v 1.2 2003/11/19 14:05:36 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetCG/src/CG.cc,v 1.3 2003/11/20 08:34:03 hawke Exp $ */
 
 #include <cassert>
 #include <cmath>
@@ -55,13 +55,14 @@ namespace CarpetCG {
     
     int ierr;
 
-    int * nboundaryzones;
+    vector<int> nboundaryzones(2*dim);
 
     CCTK_REAL factor;
-    CCTK_REAL * restrict factors;
+    vector<CCTK_REAL> factors;
 
-    int * fromindex; // Can't pass things through CallLocalFunction.
-    int * toindex;   // Instead assume everything is going from a GF to a GF.
+    vector<int> fromindex; // Can't pass things through CallLocalFunction.
+    vector<int> toindex;   // Instead assume everything is going from a GF to a GF.
+
     CCTK_REAL realconstant; // With only one required constant
     CCTK_REAL realoutput; // And one output
     CCTK_REAL realoutput_count; // And one _more_ output
@@ -628,45 +629,26 @@ namespace CarpetCG {
     assert (calcres);
     assert (applybounds);
 
-    if (!common::nboundaryzones)
-    {
-      common::nboundaryzones = 
-        (int*)malloc(2 * dim * sizeof *common::nboundaryzones);
-      nelems = Util_TableGetIntArray
-        (options_table, 2*dim, common::nboundaryzones, "nboundaryzones");
-      if (nelems == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-        for (d=0; d<dim; ++d) {
-          common::nboundaryzones[2*d  ] = -1;
-          common::nboundaryzones[2*d+1] = -1;
-        }
-      } else if (nelems != 2*dim) {
-        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Options table key \"nboundaryzones\" is not an integer array of length %d", 2*dim);
-        return -1;
-      }      
-      
+    nelems = Util_TableGetIntArray
+      (options_table, 2*dim, &(common::nboundaryzones[0]), "nboundaryzones");
+    if (nelems == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+      for (d=0; d<dim; ++d) {
+        common::nboundaryzones[2*d  ] = -1;
+        common::nboundaryzones[2*d+1] = -1;
+      }
+    } else if (nelems != 2*dim) {
+      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Options table key \"nboundaryzones\" is not an integer array of length %d", 2*dim);
+      return -1;      
     }
 
-  
-    if (!common::fromindex)
+    (common::fromindex).reserve(cg_maxsolvevars);
+    (common::toindex).reserve(cg_maxsolvevars);
+    (common::factors).reserve(nvars);
+    common::factor = 0.5;
+    for (int i = 0; i < nvars; i++)
     {
-      common::fromindex = (int*)malloc (nvars * sizeof *common::fromindex);
-    }
-    assert (common::fromindex);
-    if (!common::toindex)
-    {
-      common::toindex = (int*)malloc (nvars * sizeof *common::toindex);
-    }
-    assert (common::toindex);
-    
-    if (!common::factors)
-    {
-      common::factor = 0.5;
-      common::factors = (CCTK_REAL*)malloc (nvars * sizeof *common::factors);
-      for (int i = 0; i < nvars; i++)
-      {
-        common::factors[i] = 1.0;
-      }
+      common::factors[i] = 1.0;
     }
   
     maxiters = 1000;
@@ -1258,10 +1240,6 @@ namespace CarpetCG {
 //     free (prsptrs);
 //     free (dirptrs);
 
-    free (common::fromindex);
-    free (common::toindex);
-    free (common::nboundaryzones);
-  
     // Restore state
     if (reflevel!=saved_reflevel) {
       set_reflevel ((cGH *)cctkGH, saved_reflevel);
