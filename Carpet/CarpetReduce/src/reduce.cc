@@ -15,6 +15,9 @@
 
 #include "cctk.h"
 
+#include "util_ErrorCodes.h"
+#include "util_Table.h"
+
 #include "dist.hh"
 #include "vect.hh"
 
@@ -947,31 +950,62 @@ namespace CarpetReduce {
                  > 1e-12 * fabs(cgh->cctk_delta_time)));
         assert (! (! want_global_mode && need_time_interp));
         assert (! (reduce_arrays && need_time_interp));
-        int num_tl = need_time_interp ? prolongation_order_time + 1 : 1;
         
+        int num_tl;
         if (need_time_interp) {
           
-          // Are there enough time levels?
-          if (CCTK_ActiveTimeLevelsVI(cgh, vi) < num_tl) {
-            static vector<bool> have_warned;
-            if (have_warned.empty()) {
-              have_warned.resize (CCTK_NumVars(), false);
-            }
-            if (! have_warned.at(vi)) {
-              char * const fullname = CCTK_FullName(vi);
-              CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                          "Grid function \"%s\" has only %d active time levels on refinement level %d; this is not enough for time interpolation.  Using the current time level instead",
-                          fullname, CCTK_ActiveTimeLevelsVI(cgh, vi), reflevel);
-              free (fullname);
-              have_warned.at(vi) = true;
-            }
-            
-            // fall back
-            need_time_interp = false;
-            num_tl = 1;
+          int const gi = CCTK_GroupIndexFromVarI (vi);
+          assert (gi>=0);
+          int const table = CCTK_GroupTagsTableI (gi);
+          assert (table>=0);
+          CCTK_INT interp_num_time_levels;
+          int const ilen = Util_TableGetInt
+            (table, &interp_num_time_levels, "InterpNumTimelevels");
+          if (ilen == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+            num_tl = prolongation_order_time + 1;
+          } else if (ilen >= 0) {
+            assert (interp_num_time_levels>0);
+            num_tl = min (prolongation_order_time + 1, interp_num_time_levels);
+          } else {
+            assert (0);
           }
           
+          // Are there enough time levels?
+          int const max_tl = CCTK_MaxTimeLevelsVI(vi);
+          int const active_tl = CCTK_ActiveTimeLevelsVI(cgh, vi);
+          if (active_tl < num_tl) {
+            if (max_tl == 1) {
+              num_tl = 1;
+              need_time_interp = false;
+              static vector<bool> have_warned;
+              if (have_warned.empty()) {
+                have_warned.resize (CCTK_NumVars(), false);
+              }
+              if (! have_warned.at(vi)) {
+                char * const fullname = CCTK_FullName(vi);
+                CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                            "Grid function \"%s\" has only %d time levels; this is not enough for time interpolation",
+                            fullname, max_tl);
+                free (fullname);
+                have_warned.at(vi) = true;
+              }
+            } else {
+              char * const fullname = CCTK_FullName(vi);
+              CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                          "Grid function \"%s\" has only %d active time levels on refinement level %d; this is not enough for time interpolation",
+                          fullname, active_tl, reflevel);
+              free (fullname);
+            }
+          }
+          
+        } else {
+          
+          // no time interpolation
+          num_tl = 1;
+          
         }
+        
+        assert (! need_time_interp || num_tl > 1);
         
         vector<CCTK_REAL> tfacs(num_tl);
         
