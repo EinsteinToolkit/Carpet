@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/InitialData.F77,v 1.10 2002/02/27 18:54:13 shawley Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/InitialData.F77,v 1.11 2002/02/27 18:57:54 shawley Exp $
 
  /*@@
    @file      InitialData.F77
@@ -143,8 +143,8 @@ c        Use kx,ky,kz as number of modes in each direction.
                   z = cart3d_z(i,j,k)
 
                   phi(i,j,k)     = 1 / sqrt((x-cx)**2 + (y-cy)**2 + (z-cz)**2)
-                  phi_p(i,j,k)   = 1 / phi(i,j,k)
-                  phi_p_p(i,j,k) = 1 / phi(i,j,k)
+                  phi_p(i,j,k)   = phi(i,j,k)
+                  phi_p_p(i,j,k) = phi(i,j,k)
                   
                end do
             end do
