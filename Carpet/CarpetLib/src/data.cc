@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.39 2004/01/25 14:57:29 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.40 2004/02/03 14:33:02 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -740,6 +740,7 @@ void data<CCTK_REAL8,3>
   CCTK_REAL min_time = times[0];
   CCTK_REAL max_time = times[0];
   for (size_t tl=1; tl<times.size(); ++tl) {
+    assert (min(1.3, 1.4) > 1.2);
     min_time = min(min_time, times[tl]);
     max_time = max(max_time, times[tl]);
   }
