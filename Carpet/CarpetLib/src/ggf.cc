@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.43 2004/05/21 18:13:41 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.44 2004/05/29 11:36:22 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -111,8 +111,9 @@ void ggf<D>::recompose_fill (comm_state<D>& state, const int rl)
       for (int tl=tmin; tl<=tmax; ++tl) {
         
         // Find out which regions need to be prolongated
+        // (Copy the exterior because some variables are not prolongated)
         // TODO: do this once in the dh instead of for each variable here
-        ibset work (d.boxes.at(rl).at(c).at(ml).interior);
+        ibset work (d.boxes.at(rl).at(c).at(ml).exterior);
         
         // Copy from old storage, if possible
         // TODO: copy only from interior regions?
@@ -171,7 +172,7 @@ void ggf<D>::recompose_fill (comm_state<D>& state, const int rl)
         } // if rl
         
         // Note that work need not be empty here; in this case, not
-        // everything could be initialised.  This is okay on
+        // everything could be initialised.  This is okay on outer
         // boundaries.
         // TODO: check this.
         
@@ -227,6 +228,8 @@ void ggf<D>::recompose_sync (comm_state<D>& state, const int rl)
     } // for ml
   } // for c
 }
+
+
 
 // Cycle the time levels by rotating the data sets
 template<int D>
