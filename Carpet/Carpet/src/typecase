@@ -1,7 +1,7 @@
 // Instantiate type cases for all available types    -*-C++-*-
 // (C) 2001 Erik Schnetter <schnetter@uni-tuebingen.de>
 
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/typecase,v 1.6 2003/08/03 17:09:21 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/typecase,v 1.7 2004/03/01 19:49:33 schnetter Exp $
 
 // Usage:
 // Define the macro TYPECASE(N,T) to be a typecase for the type T with name N,
@@ -58,6 +58,8 @@
 #  define CARPET_INT
 #  undef CARPET_REAL
 #  define CARPET_REAL
+#  undef CARPET_COMPLEX
+#  define CARPET_COMPLEX
 #endif
 
 #ifdef CARPET_INT
