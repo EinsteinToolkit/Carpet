@@ -1,7 +1,7 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetJacobi/par/charge_te_cjac.par,v 1.3 2003/11/19 14:05:23 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetJacobi/par/charge_te_cjac.par,v 1.4 2004/03/23 11:59:20 schnetter Exp $
 # Erik Schnetter <schnetter@uni-tuebingen.de>
 
-ActiveThorns = "Boundary CartGrid3D CoordBase CarpetIOASCII IOBasic IOUtil Time Carpet CarpetLib CarpetRegrid CarpetReduce NaNCatcher IDScalarWave WaveToyC IDSWTEsimple TATelliptic CarpetJacobi"
+ActiveThorns = "Boundary CartGrid3D CoordBase SymBase CarpetIOASCII IOBasic IOUtil Time Carpet CarpetLib CarpetRegrid CarpetReduce NaNCatcher IDScalarWave WaveToyC IDSWTEsimple TATelliptic CarpetJacobi"
 
 !DESC "Charged sphere initial data, solved with TATelliptic/CarpetJacobi"
 
