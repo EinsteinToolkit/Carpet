@@ -61,10 +61,13 @@ comm_state<D>::~comm_state ()
 // Hand out the next MPI tag
 static int nexttag ()
 {
-  static int last = 100;
+  DECLARE_CCTK_PARAMETERS;
+  
+  int const min_tag = 100;
+  static int last = 0;
   ++last;
-  if (last > 30000) last = 100;
-  return last;
+  if (last >= max_mpi_tags) last = 0;
+  return min_tag + last;
 }
 
 
