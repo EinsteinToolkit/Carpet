@@ -11,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.6 2001/11/02 10:59:00 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.7 2001/11/02 17:51:15 schnetter Exp $";
 
 
 
@@ -29,14 +29,14 @@ namespace Carpet {
   
   
   
-  int Exit (const cGH* cgh, int retval)
+  int Exit (cGH* cgh, int retval)
   {
     CCTK_Barrier (cgh);
     dist::finalize();
     exit (retval);
   }
   
-  int Abort (const cGH* cgh, int retval)
+  int Abort (cGH* cgh, int retval)
   {
     MPI_Abort (dist::comm, retval);
     abort ();

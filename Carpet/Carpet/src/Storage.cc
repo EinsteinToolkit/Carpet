@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.3 2001/11/02 10:59:00 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.4 2001/11/02 17:51:15 schnetter Exp $";
 
 
 
@@ -122,7 +122,7 @@ namespace Carpet {
   
   
   
-  int QueryGroupStorageB (const cGH* cgh, int group, const char* groupname)
+  int QueryGroupStorageB (cGH* cgh, int group, const char* groupname)
   {
     if (groupname) {
       group = CCTK_GroupIndex(groupname);
@@ -140,7 +140,7 @@ namespace Carpet {
   
   
   
-  const int* ArrayGroupSizeB (const cGH* cgh, int dir, int group,
+  const int* ArrayGroupSizeB (cGH* cgh, int dir, int group,
 			      const char* groupname)
   {
     static const int zero = 0;
@@ -177,7 +177,7 @@ namespace Carpet {
   
   
   
-  int GroupDynamicData (const cGH* cgh, int group, cGroupDynamicData* data)
+  int GroupDynamicData (cGH* cgh, int group, cGroupDynamicData* data)
   {
     assert (group>=0 && group<CCTK_NumGroups());
     *data = arrdata[group].info;

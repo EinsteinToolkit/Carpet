@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.4 2001/11/02 10:58:58 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.5 2001/11/02 17:51:15 schnetter Exp $";
 
 
 
@@ -48,7 +48,7 @@ namespace Carpet {
   
   
   
-  int Evolve (const tFleshConfig* fc)
+  int Evolve (tFleshConfig* fc)
   {
     DECLARE_CCTK_PARAMETERS;
     
