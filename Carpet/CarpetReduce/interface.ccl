@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetReduce
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/interface.ccl,v 1.8 2004/06/14 07:01:21 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/interface.ccl,v 1.9 2004/06/21 12:37:07 hawke Exp $
 
 IMPLEMENTS: reduce
 
@@ -24,7 +24,4 @@ REQUIRES FUNCTION GetBoundarySpecification
 
 
 
-REAL weight TYPE=gf TAGS='prolongation="none"'
-{
-  weight
-} "Weight function"
+REAL weight TYPE=gf TAGS='prolongation="none"' "Weight function"
