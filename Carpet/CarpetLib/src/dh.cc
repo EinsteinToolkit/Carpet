@@ -425,6 +425,7 @@ void dh::assert_assert_assert( dh::dboxes & box, int rl, int c, int ml )
     } else {              // rl!=0
       const iblistvect& recv_ref_coarse = box.recv_ref_coarse;
       ibset intr = box.interior;
+      ibset received;
       for (iblistvect::const_iterator
              lvi=recv_ref_coarse.begin();
            lvi!=recv_ref_coarse.end(); ++lvi) {
@@ -436,6 +437,8 @@ void dh::assert_assert_assert( dh::dboxes & box, int rl, int c, int ml )
           const int new_sz = intr.size();
           // TODO
           assert (new_sz + this_sz == old_sz);
+          assert ((received & *li).empty());
+          received |= *li;
         }
       }
       // TODO
@@ -455,6 +458,7 @@ void dh::assert_assert_assert( dh::dboxes & box, int rl, int c, int ml )
     const iblistvect& recv_sync = box.recv_sync;
     const iblistvect& recv_ref_bnd_coarse = box.recv_ref_bnd_coarse;
     ibset bnds = box.boundaries;
+    ibset received;
     for (iblistvect::const_iterator lvi=recv_sync.begin();
          lvi!=recv_sync.end(); ++lvi) {
       for (iblist::const_iterator li=lvi->begin();
@@ -464,6 +468,8 @@ void dh::assert_assert_assert( dh::dboxes & box, int rl, int c, int ml )
         bnds -= *li;
         const int new_sz = bnds.size();
         assert (new_sz + this_sz == old_sz);
+        assert ((received & *li).empty());
+        received |= *li;
       }
     }
     for (iblistvect::const_iterator
@@ -480,6 +486,10 @@ void dh::assert_assert_assert( dh::dboxes & box, int rl, int c, int ml )
         // prolongation went into the buffer zone.
 //      assert (new_sz + this_sz == old_sz);
         assert (new_sz + this_sz >= old_sz);
+#if 0
+        assert ((received & *li).empty());
+        received |= *li;
+#endif
       }
     }
     // TODO
