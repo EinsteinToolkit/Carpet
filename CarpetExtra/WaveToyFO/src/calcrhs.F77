@@ -1,4 +1,4 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.F77,v 1.5 2004/05/06 15:07:06 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.F77,v 1.6 2004/05/06 16:35:56 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
@@ -17,8 +17,10 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.
       if (dir .eq. 0) then
          WaveToyFO_Deriv = (fp1 - fm1) / (2 * dx)
       else if (dir .eq. -1) then
+c$$$         WaveToyFO_Deriv = (f0 - fm1) / dx
          WaveToyFO_Deriv = (+ 3*f0 - 4*fm1 + fm2) / (2*dx)
       else if (dir .eq. +1) then
+c$$$         WaveToyFO_Deriv = (fp1 - f0) / dx
          WaveToyFO_Deriv = (- 3*f0 + 4*fp1 - fp2) / (2*dx)
       else
          call CCTK_WARN (0, "internal error")
@@ -73,12 +75,12 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.
       end do
       
       do k=imin(3),imax(3)
-         idir(3) = CHOOSEDIR(k,1,cctk_lsh(3))
+         idir(3) = CHOOSEDIR(k,imin(3),imax(3))
          do j=imin(2),imax(2)
-            idir(2) = CHOOSEDIR(j,1,cctk_lsh(2))
+            idir(2) = CHOOSEDIR(j,imin(2),imax(2))
             do i=imin(1),imax(1)
+               idir(1) = CHOOSEDIR(i,imin(1),imax(1))
                
-               idir(1) = CHOOSEDIR(i,1,cctk_lsh(1))
                phidot(i,j,k) =   DIFFX (psix,i,j,k)
      $                         + DIFFY (psiy,i,j,k)
      $                         + DIFFZ (psiz,i,j,k)
