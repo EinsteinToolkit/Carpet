@@ -2,7 +2,7 @@
 <!DOCTYPE html
      PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
      "DTD/xhtml1-transitional.dtd">
-<!-- $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetWeb/index.html,v 1.4 2004/03/08 13:23:22 schnetter Exp $ -->
+<!-- $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetWeb/index.html,v 1.5 2004/04/10 10:38:19 schnetter Exp $ -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15" />
@@ -60,6 +60,15 @@
     <hr />
 
     <h2>News</h2>
+
+    <p><b>April 7, 2004:</b> Up to now, all Carpet thorns have been
+    living in a single arrangement for Cactus.  This caused problems,
+    because stable thorns, development thorns, and outdated thorns
+    were sitting next to each other, confusing newcomers.  We have <a
+    href="#getting-the-code">moved the Carpet arrangement</a> to a new
+    repository and split it into four.  For some time, the old Carpet
+    arrangement will still be available from the old repository in
+    read-only mode.</p>
 
     <p><b>March 3, 2004:</b> We have recently had trouble with I/O
     throuth the <a
@@ -154,7 +163,7 @@
 
     <hr />
 
-    <h2>Getting the code</h2>
+    <h2 id="getting-the-code">Getting the code</h2>
 
     <p>Carpet is distributed under the <a
     href="http://www.gnu.org/licenses/licenses.html">GNU General
@@ -165,17 +174,24 @@
     <p>Carpet is a driver for Cactus.  It works as a part of Cactus,
     and you will need to have the developers' version of Cactus
     installed before you can use Carpet.  Please look at the <a
-    href="http://www.cactuscode.org/">Cactus web pages</a> for and
+    href="http://www.cactuscode.org/">Cactus web pages</a> for an
     introduction to Cactus and for installation instructions.</p>
 
     <p>Carpet is available via anonymous <a
     href="http://www.cvshome.org/">CVS</a>.  The CVSROOT is
-    <code>:pserver:cvs_anon@cvs.carpetcode.org:/home/cvs</code>, and
-    the module is called <code>Carpet</code>.  This module is an
-    arrangement in Cactus, which means that you should check it out
-    into your Cactus <code>arrangements</code> directory.  The
-    password for anonymous CVS access is <code>anon</code>.  We thank
-    the <a href="http://www.tat.physik.uni-tuebingen.de/">Institut für
+    <code>:pserver:cvs_anon@cvs.carpetcode.org:/home/cvs/carpet</code>,
+    and there are several modules: The arrangement <code>Carpet</code>
+    contains the basic driver part that everybody needs.  The
+    arrangement <code>CarpetExtra</code> contains useful add-ons and
+    some example code.  Development of new thorns happens in the
+    <code>CarpetDev</code> arrangement, which means that the code in
+    there is not to be trusted.  And finally, there is a graveyard
+    arrangement <code>CarpetAttic</code> of things that only used to
+    be useful and are now in a state of decay.</p>
+
+    <p>The password for anonymous CVS access is <code>anon</code>.  We
+    thank the <a
+    href="http://www.tat.physik.uni-tuebingen.de/">Institut für
     Astronomie und Astrophysik</a> of the Universität Tübingen for
     hosting the CVS server.</p>
 
@@ -238,7 +254,7 @@
 <p>
 <!-- Created: Tue Aug 12 12:12:08 CEST 2003 -->
 <!-- hhmts start -->
-Last modified: Mon Mar  8 14:22:26 CET 2004
+Last modified: Sat Apr 10 12:37:01 CEST 2004
 <!-- hhmts end -->
 </p>
 
