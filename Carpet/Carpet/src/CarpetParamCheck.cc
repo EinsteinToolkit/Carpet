@@ -8,7 +8,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CarpetParamCheck.cc,v 1.6 2002/10/24 10:39:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CarpetParamCheck.cc,v 1.7 2003/07/22 20:09:05 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_CarpetParamCheck_cc);
 }
 
@@ -18,6 +18,11 @@ namespace Carpet {
   
   using namespace std;
   
+  /** Ensure that the parameters have legal values.
+   *
+   * Note that this checking happens only after most of Carpet has
+   * already been set up.
+   */
   int CarpetParamCheck (CCTK_ARGUMENTS)
   {
     DECLARE_CCTK_ARGUMENTS;
