@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.44 2003/03/12 09:34:44 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.45 2003/03/17 10:24:49 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -741,8 +741,8 @@ namespace CarpetIOASCII {
 	for (int d=0; d<DD; ++d) org1[dirs[d]] = ext.lower()[d];
 	if (gfext.contains(org1)) {
 	  
-	  for (typename bbox<int,DD>::iterator it=ext.begin();
-	       it!=ext.end(); ++it) {
+	  for (typename bbox<int,DD>::iteratorT it=ext.beginT();
+	       it!=ext.endT(); ++it) {
 	    vect<int,dim> index(org);
 	    for (int d=0; d<DD; ++d) index[dirs[d]] = (*it)[d];
 	    os << time << "   " << tl << " " << rl << " " << c << " " << ml
@@ -767,7 +767,7 @@ namespace CarpetIOASCII {
 	      UnsupportedVarType(vi);
 	    }
 	    os << endl;
-	    for (int d=0; d<DD; ++d) {
+	    for (int d=DD-1; d>=0; --d) {
 	      if (index[dirs[d]]!=gfext.upper()[dirs[d]]) break;
 	      os << endl;
 	    }
