@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.32 2004/06/07 09:26:57 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.33 2004/06/07 09:53:06 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -137,10 +137,10 @@ namespace CarpetIOHDF5 {
        // Invent a file name
       ostringstream filenamebuf;
 
-      if(CCTK_nProcs(cctkGH) == 1)
-	filenamebuf << recover_dir << "/" << basefilename << ".h5";
-      else
-	filenamebuf << recover_dir << "/" << basefilename << ".file_0.h5";
+      //      if(CCTK_nProcs(cctkGH) == 1)
+      filenamebuf << recover_dir << "/" << basefilename << ".h5";
+      //else
+      //	filenamebuf << recover_dir << "/" << basefilename << ".file_0.h5";
 
       string filenamestr = filenamebuf.str();
       const char * const filename = filenamestr.c_str();
