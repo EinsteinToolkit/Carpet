@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.31 2004/06/27 21:17:32 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.32 2004/07/02 15:16:19 hawke Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -21,7 +21,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.31 2004/06/27 21:17:32 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.32 2004/07/02 15:16:19 hawke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -405,6 +405,13 @@ namespace CarpetInterp {
                 assert (group.stagtype == 0); // not staggered
                 
                 // TODO: emit better warning
+                if (num_tl > group.numtimelevels) {
+                  CCTK_VWarn(0, __LINE__,__FILE__,"CarpetInterp",
+                             "Tried to interpolate variable '%s' "
+                             "in time.\nIt has insufficient timelevels "
+                             "(%d are required).",
+                             CCTK_FullName(vi),num_tl);
+                }
                 assert (group.numtimelevels >= num_tl);
                 
                 input_array_type_codes.at(n) = group.vartype;
