@@ -161,6 +161,14 @@ namespace CarpetRegrid {
         // TODO: why can basemglevel not be used here?
         // rvect const spacing = base_spacing * pow(CCTK_REAL(mgfact), basemglevel) / ipow(reffact, rl);
         rvect const spacing = base_spacing / ipow(reffact, rl);
+        if (! all(abs(ext.stride() - spacing) < spacing * 1.0e-10)) {
+          assert (dim==3);
+          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "The grid spacing on refinement level %d is incorrect.  I expected [%g,%g,%g], but I found [%g,%g,%g].",
+                      int(rl),
+                      double(spacing[0]), double(spacing[1]), double(spacing[2]),
+                      double(ext.stride()[0]), double(ext.stride()[1]), double(ext.stride()[2]));
+        }
         assert (all(abs(ext.stride() - spacing) < spacing * 1.0e-10));
         
         rvect offset = rvect(0);
