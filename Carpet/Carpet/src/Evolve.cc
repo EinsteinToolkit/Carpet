@@ -18,7 +18,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.23 2003/06/18 18:28:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.24 2003/06/30 17:27:34 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -34,7 +34,8 @@ namespace Carpet {
   
   
   
-  static bool do_terminate (const cGH *cgh, CCTK_REAL time, int iteration)
+  static bool do_terminate (const cGH *cgh,
+                            const CCTK_REAL time, const int iteration)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -47,10 +48,11 @@ namespace Carpet {
       
     } else {
       
-      bool term_iter = iteration >= cctk_itlast;
-      bool term_time = (cctk_initial_time < cctk_final_time
-                        ? time >= cctk_final_time
-                        : time <= cctk_final_time);
+      const bool term_iter = iteration >= cctk_itlast;
+      const bool term_time = ((cctk_initial_time < cctk_final_time
+                              ? time >= cctk_final_time
+                              : time <= cctk_final_time)
+                              && iteration % maxreflevelfact == 0);
       double runtime;
 #ifdef HAVE_TIME_GETTIMEOFDAY
       // get the current time
@@ -60,7 +62,8 @@ namespace Carpet {
 #else
       runtime = 0;
 #endif
-      bool term_runtime = max_runtime > 0 && runtime >= 60.0 * max_runtime;
+      const bool term_runtime = (max_runtime > 0
+                                 && runtime >= 60.0 * max_runtime);
       
       if (CCTK_Equals(terminate, "never")) {
         term = false;
@@ -119,7 +122,7 @@ namespace Carpet {
     int next_global_mode_iter_loop3 = 0;
     
     // Main loop
-    while (! do_terminate(cgh, cgh->cctk_time, cgh->cctk_iteration)) {
+    while (! do_terminate(cgh, refleveltimes[0], cgh->cctk_iteration)) {
       
       // Advance time
       ++cgh->cctk_iteration;
