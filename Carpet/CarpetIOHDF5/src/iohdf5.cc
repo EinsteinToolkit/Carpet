@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.40 2004/07/08 08:38:06 tradke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.41 2004/07/09 15:38:18 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -286,8 +286,7 @@ int OutputVarAs (const cGH* const cctkGH, const char* const varname,
     }
 
     // Open the file
-    writer = H5Fopen (filename, H5F_ACC_RDWR, H5P_DEFAULT);
-    assert (writer>=0);
+    HDF5_ERROR (writer = H5Fopen (filename, H5F_ACC_RDWR, H5P_DEFAULT));
   }
 
   if (verbose)
@@ -315,8 +314,6 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer, const ioRequest* requ
 
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
-
-  herr_t herr=0;
 
   void * h5data=NULL;
 
@@ -434,7 +431,8 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer, const ioRequest* requ
               for (int d=0; d<ldim; ++d) {
                 shape[ldim-1-d] = (ext.shape() / ext.stride())[d];
               }
-              const hid_t dataspace = H5Screate_simple (ldim, &shape[0], NULL);
+              hid_t dataspace;
+              HDF5_ERROR (dataspace = H5Screate_simple (ldim, &shape[0], NULL));
               assert (dataspace>=0);
 
 
@@ -449,7 +447,8 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer, const ioRequest* requ
               string datasetnamestr = datasetnamebuf.str();
               assert (datasetnamestr.size() <= 256); // limit dataset name size
               const char * const datasetname = datasetnamestr.c_str();
-              const hid_t dataset = H5Dcreate (writer, datasetname, filedatatype, dataspace, H5P_DEFAULT);
+              hid_t dataset;
+              HDF5_ERROR (dataset = H5Dcreate (writer, datasetname, filedatatype, dataspace, H5P_DEFAULT));
 
               if (dataset>=0) {
 
@@ -457,8 +456,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer, const ioRequest* requ
                       h5data = (void*)tmp->storage();
                   }
 
-                  herr = H5Dwrite (dataset, memdatatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, h5data);
-                  assert (!herr);
+                  HDF5_ERROR (H5Dwrite (dataset, memdatatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, h5data));
 
                   // Write FlexIO attributes
                   WriteAttribute (dataset, "level", rl);
@@ -578,13 +576,10 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer, const ioRequest* requ
                   WriteAttribute (dataset, "carpet_component", component);
                   WriteAttribute (dataset, "carpet_components", vhh.at(Carpet::map)->components(reflevel));
 
-                  herr = H5Dclose (dataset);
-                  assert (!herr);
-
+                  HDF5_ERROR (H5Dclose (dataset));
               }
 
-            herr = H5Sclose (dataspace);
-            assert (!herr);
+            HDF5_ERROR (H5Sclose (dataspace));
 
           } // if on root processor
       } // if ! CCTK_DISTRIB_BLAH
@@ -755,20 +750,19 @@ int TriggerOutput (const cGH* const cctkGH, const int vindex) {
 
 
 
-int ReadVar (const cGH* const cctkGH, const char* const varname,
+int ReadVar (const cGH* const cctkGH, const int vindex,
              const hid_t dataset, vector<ibset> &regions_read,
              const int called_from_recovery)
 {
 
   DECLARE_CCTK_PARAMETERS;
 
-  const int n = CCTK_VarIndex(varname);
-  assert (n>=0 && n<CCTK_NumVars());
-  const int group = CCTK_GroupIndexFromVarI (n);
+  const int group = CCTK_GroupIndexFromVarI (vindex);
   assert (group>=0 && group<(int)Carpet::arrdata.size());
+  char *fullname = CCTK_FullName (vindex);
   const int n0 = CCTK_FirstVarIndexI(group);
   assert (n0>=0 && n0<CCTK_NumVars());
-  const int var = n - n0;
+  const int var = vindex - n0;
   assert (var>=0 && var<CCTK_NumVars());
   int tl = 0;
 
@@ -778,18 +772,25 @@ int ReadVar (const cGH* const cctkGH, const char* const varname,
 
   void *h5data = NULL;
 
+  if (verbose)
+  {
+    CCTK_VInfo (CCTK_THORNSTRING, "  reading '%s'", fullname);
+  }
+
   // Check for storage
   if (! CCTK_QueryGroupStorageI(cctkGH, group))
   {
     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                 "Cannot input variable \"%s\" because it has no storage",
-                varname);
+                fullname);
+    free (fullname);
     return 0;
   }
 
   const int grouptype = CCTK_GroupTypeI(group);
-  if ((grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY) && reflevel)
+  if ((grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY) && reflevel > 0)
   {
+    free (fullname);
     return 0;
   }
 
@@ -826,7 +827,7 @@ int ReadVar (const cGH* const cctkGH, const char* const varname,
       amr_dims[i] = shape[rank-i-1];
     }
 
-    const int cctkDataType = CCTK_VarTypeI(n);
+    const int cctkDataType = CCTK_VarTypeI(vindex);
     const hid_t datatype = h5DataType(cctkGH,cctkDataType);
 
     //cout << "datalength: " << datalength << " rank: " << rank << "\n";
@@ -849,8 +850,9 @@ int ReadVar (const cGH* const cctkGH, const char* const varname,
 
   MPI_Bcast (intbuffer, sizeof (intbuffer) / sizeof (*intbuffer), MPI_INT, 0, dist::comm);
 
-  if (verbose) cout << "amr_level: " << amr_level << " reflevel: " <<
-                       reflevel << endl;
+#ifdef CARPETIOHDF5_DEBUG
+  cout << "amr_level: " << amr_level << " reflevel: " << reflevel << endl;
+#endif
 
   if (amr_level == reflevel)
   {
@@ -880,7 +882,7 @@ int ReadVar (const cGH* const cctkGH, const char* const varname,
         vect<int,dim> ub
           = lb + (vect<int,dim>::ref(amr_dims) - 1) * str;
 
-        gdata<dim>* const tmp = data->make_typed (n);
+        gdata<dim>* const tmp = data->make_typed (vindex);
 
 
         cGroup cgdata;
@@ -889,7 +891,9 @@ int ReadVar (const cGH* const cctkGH, const char* const varname,
         //cout << "lb_before: " << lb << endl;
         //cout << "ub_before: " << ub << endl;
         if (cgdata.disttype == CCTK_DISTRIB_CONSTANT) {
-          if (verbose) cout << "CCTK_DISTRIB_CONSTANT: " << varname << endl;
+#ifdef CARPETIOHDF5_DEBUG
+          cout << "CCTK_DISTRIB_CONSTANT: " << fullname << endl;
+#endif
           assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
           if (grouptype == CCTK_SCALAR) {
             lb[0] = arrdata.at(group).at(Carpet::map).hh->processors.at(reflevel).at(component);
@@ -908,12 +912,16 @@ int ReadVar (const cGH* const cctkGH, const char* const varname,
             lb[gpdim-1] = newlb;
             ub[gpdim-1] = newub;
           }
-           if (verbose)  cout << "lb: " << lb << endl;
-           if (verbose)  cout << "ub: " << ub << endl;
+#ifdef CARPETIOHDF5_DEBUG
+          cout << "lb: " << lb << endl;
+          cout << "ub: " << ub << endl;
+#endif
         }
         const bbox<int,dim> ext(lb,ub,str);
 
-        if (verbose) cout << "ext: " << ext << endl;
+#ifdef CARPETIOHDF5_DEBUG
+        cout << "ext: " << ext << endl;
+#endif
 
         if (CCTK_MyProc(cctkGH)==0) {
           tmp->allocate (ext, 0, h5data);
@@ -926,13 +934,15 @@ int ReadVar (const cGH* const cctkGH, const char* const varname,
         const bbox<int,dim> overlap = tmp->extent() & data->extent();
         regions_read.at(Carpet::map) |= overlap;
 
-        if (verbose) {
-         cout << "working on component: " << component << endl;
-          cout << "tmp->extent " << tmp->extent() << endl;
-          cout << "data->extent " << data->extent() << endl;
-          cout << "overlap " << overlap << endl;
-          cout << "-----------------------------------------------------" << endl;
-        }
+#ifdef CARPETIOHDF5_DEBUG
+        cout << "working on component: " << component << endl;
+        cout << "tmp->extent " << tmp->extent() << endl;
+        cout << "data->extent " << data->extent() << endl;
+        cout << "overlap " << overlap << endl;
+        cout << "-----------------------------------------------------" << endl;
+#endif
+
+        // FIXME: is this barrier really necessary ??
         MPI_Barrier(MPI_COMM_WORLD);
 
         // Copy into grid function
@@ -959,27 +969,22 @@ int ReadVar (const cGH* const cctkGH, const char* const varname,
   } // if amr_level == reflevel
 
   free (h5data);
+  free (fullname);
 
   return did_read_something;
 }
 
 
 
-static int InputVarAs (const cGH* const cctkGH, const char* const varname,
+static int InputVarAs (const cGH* const cctkGH, const int vindex,
                        const char* const alias)
 {
   DECLARE_CCTK_PARAMETERS;
 
-  const int n = CCTK_VarIndex(varname);
-  assert (n>=0 && n<CCTK_NumVars());
-  const int group = CCTK_GroupIndexFromVarI (n);
+  char *fullname = CCTK_FullName (vindex);
+  const int group = CCTK_GroupIndexFromVarI (vindex);
   assert (group>=0 && group<(int)Carpet::arrdata.size());
-  const int n0 = CCTK_FirstVarIndexI(group);
-  assert (n0>=0 && n0<CCTK_NumVars());
-  const int var = n - n0;
-  assert (var>=0 && var<CCTK_NumVars());
 
-  herr_t herr = 1;
   int want_dataset = 0;
   bool did_read_something = false;
   int ndatasets = 0;
@@ -991,7 +996,8 @@ static int InputVarAs (const cGH* const cctkGH, const char* const varname,
   if (! CCTK_QueryGroupStorageI(cctkGH, group)) {
     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                 "Cannot input variable \"%s\" because it has no storage",
-                varname);
+                fullname);
+    free (fullname);
     return 0;
   }
 
@@ -1041,8 +1047,7 @@ static int InputVarAs (const cGH* const cctkGH, const char* const varname,
       GetDatasetName(reader,datasetid,datasetname);
       //         cout << datasetname << "\n";
 
-      dataset = H5Dopen (reader, datasetname);
-      assert(dataset);
+      HDF5_ERROR (dataset = H5Dopen (reader, datasetname));
     }
 
 
@@ -1061,14 +1066,14 @@ static int InputVarAs (const cGH* const cctkGH, const char* const varname,
      if (verbose && name) {
        CCTK_VInfo (CCTK_THORNSTRING, "Dataset name is \"%s\"", name);
      }
-     want_dataset = name && CCTK_EQUALS(name, varname);
+     want_dataset = name && CCTK_EQUALS(name, fullname);
      free (name);
     } // myproc == 0
 
     MPI_Bcast (&want_dataset, 1, MPI_INT, 0, dist::comm);
 
     if(want_dataset) {
-      did_read_something = ReadVar(cctkGH,varname,dataset,regions_read,0);
+      did_read_something = ReadVar(cctkGH,vindex,dataset,regions_read,0);
     } // want_dataset
 
   } // loop over datasets
@@ -1076,10 +1081,7 @@ static int InputVarAs (const cGH* const cctkGH, const char* const varname,
   // Close the file
   if (CCTK_MyProc(cctkGH)==0) {
     if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Closing file");
-    herr = H5Fclose(reader);
-    //          cout << "blah! " << reader << "\n";
-    // cout << "closing file " << herr << "\n";
-    assert(!herr);
+    HDF5_ERROR (H5Fclose(reader));
     reader=-1;
   }
 
@@ -1092,11 +1094,13 @@ static int InputVarAs (const cGH* const cctkGH, const char* const varname,
         all_exterior |= thedd.boxes.at(rl).at(c).at(mglevel).exterior;
       }
       if (regions_read.at(m) != all_exterior) {
+#ifdef CARPETIOHDF5_DEBUG
         cout << "read: " << regions_read.at(m) << endl
              << "want: " << all_exterior << endl;
+#endif
         CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Variable \"%s\" could not be initialised from file -- the file may be missing data",
-                    varname);
+                    fullname);
       }
     }
   } // if did_read_something
@@ -1127,10 +1131,7 @@ int CarpetIOHDF5ReadData (const cGH* const cctkGH)
   {
     if (flags.at (vindex))
     {
-      char *fullname = CCTK_FullName (vindex);
-      const char *varname = CCTK_VarName (vindex);
-      retval = InputVarAs (cctkGH, fullname, varname);
-      free (fullname);
+      retval = InputVarAs (cctkGH, vindex, CCTK_VarName (vindex));
       if (retval)
       {
         break;
@@ -1166,13 +1167,10 @@ int Recover (cGH* const cctkGH, const char *basefilename,
   assert (iogh->do_inVars);
   for (int n=0; n<CCTK_NumVars(); ++n) {
     if (iogh->do_inVars[n]) {
-      char * const fullname = CCTK_FullName(n);
-      assert (fullname);
-      const int ierr = InputVarAs (cctkGH, fullname, basefilename);
+      const int ierr = InputVarAs (cctkGH, vindex, basefilename);
       if (! ierr) {
         ++ num_vars_read;
       }
-      free (fullname);
     }
   }
 

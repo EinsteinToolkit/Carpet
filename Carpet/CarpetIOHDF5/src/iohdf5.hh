@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.11 2004/07/07 11:01:05 tradke Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.12 2004/07/09 15:38:18 tradke Exp $
 
 #ifndef CARPETIOHDF5_HH
 #define CARPETIOHDF5_HH
@@ -161,7 +161,7 @@ namespace CarpetIOHDF5 {
   int TriggerOutput (const cGH* const cctkGH, const int vindex);
   
   int InputGH (const cGH* const cctkGH);
-  int ReadVar (const cGH* const cctkGH, const char* const varname,
+  int ReadVar (const cGH* const cctkGH, const int vindex,
 	       const hid_t currdataset, vector<ibset> &regions_read, 
 	       const int called_from_recovery);
 
