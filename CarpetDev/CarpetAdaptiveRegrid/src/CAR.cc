@@ -44,6 +44,11 @@ namespace CarpetAdaptiveRegrid {
        const CCTK_INT& min_width, const CCTK_REAL& min_fraction,
        CCTK_INT& didit);
   }
+
+  ivect pos2int (const cGH* const cctkGH, const gh& hh,
+                 const rvect & rpos, const int rl);
+  rvect int2pos (const cGH* const cctkGH, const gh& hh,
+                 const ivect & ipos, const int rl);
   
   CCTK_INT CarpetAdaptiveRegrid_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
                                 CCTK_POINTER const bbsss_,
@@ -162,6 +167,16 @@ namespace CarpetAdaptiveRegrid {
       vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
     ivect imin = (bb.lower() - baseext.lower())/bb.stride(), 
       imax = (bb.upper() - baseext.lower())/bb.stride();
+
+    rvect physical_min, physical_max;
+    rvect interior_min, interior_max;
+    rvect exterior_min, exterior_max;
+    rvect base_spacing;
+    int ierr = GetDomainSpecification
+      (dim, &physical_min[0], &physical_max[0],
+       &interior_min[0], &interior_max[0],
+       &exterior_min[0], &exterior_max[0], &base_spacing[0]);
+    assert (!ierr);
 
     BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) 
     {
@@ -430,14 +445,104 @@ namespace CarpetAdaptiveRegrid {
       vector<bbvect> obs;
       while (! final.empty()) {
         ibbox bb = final.top(); final.pop();
-        ivect lo = bb.lower();
-        ivect hi = bb.upper();
-        ivect str = bb.stride() / reffact;
-        newbbs.push_back (ibbox(lo,hi,str));
+        ivect ilo = bb.lower();
+        ivect ihi = bb.upper();
+        rvect lo = int2pos(cctkGH, hh, ilo, reflevel);
+        rvect hi = int2pos(cctkGH, hh, ihi, reflevel);
+        rvect str = base_spacing * 
+            ipow((CCTK_REAL)mgfact, basemglevel) / ipow(reffact, reflevel);
+        rbbox newbbcoord(lo, hi, str);
         
+        if (veryverbose) {
+          ostringstream buf;
+          buf << "Dealing with boundaries. Coord box is:"
+              << endl << newbbcoord;
+          CCTK_INFO(buf.str().c_str());
+        }
+
         // FIXME: Set the correct ob here.
 
         bbvect ob(false);
+        for (int d=0; d<dim; ++d) {
+          assert (mglevel==0);
+
+          // Find the size of the physical domain
+
+          rvect const spacing = base_spacing * 
+            ipow((CCTK_REAL)mgfact, basemglevel) / ipow(reffact, reflevel+1);
+          ierr = ConvertFromPhysicalBoundary
+            (dim, &physical_min[0], &physical_max[0],
+             &interior_min[0], &interior_max[0],
+             &exterior_min[0], &exterior_max[0], &spacing[0]);
+          assert (!ierr);
+
+          // If need be clip the domain
+
+          rvect lo = newbbcoord.lower();
+          if (newbbcoord.lower()[d] < physical_min[d]) {
+            lo[d] = exterior_min[d];
+          }
+          rvect up = newbbcoord.upper();
+          if (newbbcoord.upper()[d] > physical_max[d]) {
+            up[d] = exterior_max[d];
+          }
+          rvect str = newbbcoord.stride();
+
+          // Set the ob if outside the physical domain
+
+          ob[d][0] = 
+            abs(lo[d] - exterior_min[d]) < 1.0e-6 * spacing[d];
+          ob[d][1] = 
+            abs(up[d] - exterior_max[d]) < 1.0e-6 * spacing[d];
+
+          newbbcoord = rbbox(lo, up, str);
+        }
+        if (veryverbose) {
+          ostringstream buf;
+          buf << "Done dealing with boundaries. Coord box is:"
+              << endl << newbbcoord << endl
+              << "obox is:" << endl << ob;
+          CCTK_INFO(buf.str().c_str());
+        }
+
+        // Convert back to integer coordinates
+
+        ilo = pos2int(cctkGH, hh, newbbcoord.lower(), reflevel);
+        ihi = pos2int(cctkGH, hh, newbbcoord.upper(), reflevel);
+        ivect istr = bb.stride() / reffact;
+
+        // Check that the width is sufficient
+        // This can only be too small if the domain was clipped
+        for (int d=0; d < dim; ++d) {
+          if (ihi[d] - ilo[d] < min_width * istr[d]) {
+            if (ob[d][0]) {
+              if (ob[d][1]) {
+                CCTK_WARN(0, "The domain is too small?!");
+              }
+              ihi[d] = ilo[d] + min_width * istr[d];
+            }
+            else if (ob[d][1]) {
+              if (ob[d][0]) {
+                CCTK_WARN(0, "The domain is too small?!");
+              }
+              ilo[d] = ihi[d] - min_width * istr[d];
+            }
+            else {
+              CCTK_WARN(0, "The grid is unclipped and too small?!");
+            }
+          }
+        }
+
+        ibbox newbb(ilo, ihi, istr);          
+
+        if (veryverbose) {
+          ostringstream buf;
+          buf << "After dealing with boundaries. Final box is:"
+              << endl << newbb;
+          CCTK_INFO(buf.str().c_str());
+        }
+
+        newbbs.push_back (newbb);
         obs.push_back(ob);
       }
       // FIXME: check if the newbbs is really different from the current bbs
@@ -485,6 +590,58 @@ namespace CarpetAdaptiveRegrid {
 //     cout << "pss done:" << endl << pss << endl;
     
     return do_recompose;
+  }
+  
+  ivect pos2int (const cGH* const cctkGH, const gh& hh,
+                 const rvect & rpos, const int rl)
+  {
+    rvect global_lower, global_upper;
+    for (int d=0; d<dim; ++d) {
+      const int ierr = CCTK_CoordRange
+	(cctkGH, &global_lower[d], &global_upper[d], d+1, 0, "cart3d");
+      if (ierr<0) {
+	global_lower[d] = 0;
+	global_upper[d] = 1;
+      }
+    }
+    const ivect global_extent (hh.baseextent.upper() - hh.baseextent.lower());
+    
+    const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
+    const int levfac = ipow(hh.reffact, rl);
+    assert (all (hh.baseextent.stride() % levfac == 0));
+    const ivect istride = hh.baseextent.stride() / levfac;
+    
+    const ivect ipos
+      = (ivect(floor((rpos - global_lower) * scale / rvect(istride) + 0.5))
+         * istride);
+    
+    return ipos;
+  }
+  
+  rvect int2pos (const cGH* const cctkGH, const gh& hh,
+                 const ivect & ipos, const int rl)
+  {
+    rvect global_lower, global_upper;
+    for (int d=0; d<dim; ++d) {
+      const int ierr = CCTK_CoordRange
+	(cctkGH, &global_lower[d], &global_upper[d], d+1, 0, "cart3d");
+      
+      if (ierr<0) {
+	global_lower[d] = 0;
+	global_upper[d] = 1;
+      }
+    }
+    const ivect global_extent (hh.baseextent.upper() - hh.baseextent.lower());
+    
+    const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
+    const int levfac = ipow(hh.reffact, rl);
+    assert (all (hh.baseextent.stride() % levfac == 0));
+    const ivect istride = hh.baseextent.stride() / levfac;    
+    
+    const rvect rpos
+      = rvect(ipos) / scale + global_lower;
+    
+    return rpos;
   }
   
 } // namespace CarpetAdaptiveRegrid

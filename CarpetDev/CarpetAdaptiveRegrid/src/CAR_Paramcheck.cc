@@ -26,9 +26,9 @@ namespace CarpetAdaptiveRegrid {
       = (const CCTK_INT *) CCTK_ParameterGet ("domain_from_coordbase", "Carpet", &type);
     assert (domain_from_coordbase);
     assert (type == PARAMETER_BOOLEAN);
-//     if (! *domain_from_coordbase) {
-//       CCTK_PARAMWARN ("CarpetAdaptiveRegrid requires that Carpet::domain_from_coordbase=yes");
-//     }
+    if (! *domain_from_coordbase) {
+      CCTK_PARAMWARN ("CarpetAdaptiveRegrid requires that Carpet::domain_from_coordbase=yes");
+    }
     
     return 0;
   }

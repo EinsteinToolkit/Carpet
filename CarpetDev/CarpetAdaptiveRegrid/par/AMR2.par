@@ -1,5 +1,5 @@
 
-ActiveThorns = "coordbase SymBase NaNChecker carpetReduce CartGrid3D carpet carpetlib carpetadaptiveregrid Boundary IOBasic IOUtil carpetIOASCII IDWaveMoL carpetSlab WaveMoL Time MoL"
+ActiveThorns = "coordbase SymBase NaNChecker carpetReduce CartGrid3D carpet carpetlib carpetadaptiveregrid Boundary IOBasic IOUtil carpetIOASCII IDWaveMoL carpetSlab WaveMoL Time MoL reflectionsymmetry"
 
 
 IDWaveMoL::initial_data = "gaussian"
@@ -18,7 +18,7 @@ grid::avoid_origin = "no"
 
 coordbase::xmin = -0.5
 coordbase::ymin = -0.5
-coordbase::zmin = -0.5
+coordbase::zmin =  0.0
 coordbase::xmax =  0.5
 coordbase::ymax =  0.5
 coordbase::zmax =  0.5
@@ -27,7 +27,14 @@ coordbase::dx = 0.02
 coordbase::dy = 0.02
 coordbase::dz = 0.02
 
-driver::ghost_size = 1
+reflectionsymmetry::reflection_z = yes
+reflectionsymmetry::avoid_origin_z = no
+coordbase::boundary_size_z_lower = 2
+coordbase::boundary_shiftout_z_lower = 1
+
+carpet::prolongation_order_space = 3
+carpet::prolongation_order_time = 2
+driver::ghost_size = 2
 time::dtfac = 0.5
 
 carpet::domain_from_coordbase = yes
@@ -67,7 +74,3 @@ mol::ode_method = "RK45"
 mol::mol_intermediate_steps = 6
 mol::mol_num_scratch_levels = 6
 mol::adaptive_stepsize = "no"
-
-carpet::prolongation_order_space = 3
-carpet::prolongation_order_time = 2
-driver::ghost_size = 2
