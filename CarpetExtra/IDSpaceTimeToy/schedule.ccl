@@ -1,5 +1,5 @@
 # Schedule definitions for thorn IDSpaceTimeToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/schedule.ccl,v 1.3 2001/03/20 17:27:26 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/schedule.ccl,v 1.4 2002/04/29 11:28:05 schnetter Exp $
 
 schedule IDSpaceTimeToy_Startup at STARTUP
 {
@@ -10,5 +10,5 @@ schedule IDSpaceTimeToy_InitialData as SpaceTimeToy_InitialData at INITIAL \
 	after IDHydroToy_InitialData
 {
   LANG: Fortran
-  STORAGE: spacetimetoy::spacetimeevolve
+  STORAGE: spacetimetoy::spacetimeevolve[3]
 } "Initial data for 3D wave equation"

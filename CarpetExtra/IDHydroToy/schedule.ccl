@@ -1,5 +1,5 @@
 # Schedule definitions for thorn IDHydroToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDHydroToy/schedule.ccl,v 1.1 2001/03/18 22:37:10 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDHydroToy/schedule.ccl,v 1.2 2002/04/29 11:28:02 schnetter Exp $
 
 schedule IDHydroToy_Startup at STARTUP
 {
@@ -9,5 +9,5 @@ schedule IDHydroToy_Startup at STARTUP
 schedule IDHydroToy_InitialData as HydroToy_InitialData at INITIAL
 {
   LANG: Fortran
-  STORAGE: hydrotoy::hydroevolve
+  STORAGE: hydrotoy::hydroevolve[3]
 } "Initial data for 3D wave equation"

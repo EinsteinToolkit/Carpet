@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.hh,v 1.6 2001/12/14 16:39:41 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.hh,v 1.7 2002/04/29 11:27:59 schnetter Exp $
 
  ***************************************************************************/
 
@@ -128,8 +128,10 @@ public:
   typedef typename bset::const_iterator const_iterator;
   typedef typename bset::iterator       iterator;
   
-  iterator begin () const { return bs.begin(); }
-  iterator end () const   { return bs.end(); }
+  const_iterator begin () const { return bs.begin(); }
+  const_iterator end () const   { return bs.end(); }
+//   iterator begin () const { return bs.begin(); }
+//   iterator end () const   { return bs.end(); }
   
   // Output
   void output (ostream& os) const;

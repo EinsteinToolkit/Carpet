@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.9 2002/03/11 13:17:12 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.10 2002/04/29 11:27:59 schnetter Exp $
 
  ***************************************************************************/
 
@@ -51,8 +51,9 @@ istream& input (istream& is, vector<T>& v) {
   is.get();
   skipws (is);
   while (is.good() && is.peek() != ']') {
-    v.push_back ();
-    is >> v[v.size()-1];
+    T elem;
+    is >> elem;
+    v.push_back (elem);
     skipws (is);
     if (is.peek() != ',') break;
     is.get();

@@ -1,7 +1,7 @@
 # Schedule definitions for thorn WaveToy77
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/schedule.ccl,v 1.4 2001/03/26 02:29:33 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/schedule.ccl,v 1.5 2002/04/29 11:28:07 schnetter Exp $
 
-STORAGE: scalarevolve
+STORAGE: scalarevolve[3]
 
 schedule WaveToyF77_Startup at STARTUP
 {

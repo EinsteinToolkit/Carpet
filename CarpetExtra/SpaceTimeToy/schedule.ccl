@@ -1,7 +1,7 @@
 # Schedule definitions for thorn SpaceTimeToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/schedule.ccl,v 1.4 2001/03/20 17:27:26 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/schedule.ccl,v 1.5 2002/04/29 11:28:06 schnetter Exp $
 
-STORAGE: spacetimeevolve
+STORAGE: spacetimeevolve[3]
 STORAGE: icn_state
 
 

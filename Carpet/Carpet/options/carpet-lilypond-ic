@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-ic,v 1.1 2002/03/11 13:17:54 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-ic,v 1.2 2002/04/29 11:27:52 schnetter Exp $
 
 CPP		= cpp -traditional -DTMPL_EXPLICIT -DCARPET_REAL
 CC		= icc
@@ -7,15 +7,15 @@ F77		= ifc
 F90		= ifc
 LD		= icc
 
-LIBDIRS		= /opt/intel/compiler50/ia32/lib /home/eschnett/proj/petsc-2.1.0/lib/libO/linux
-LIBS		= mpich   intrins IEPCF90 F90 imf m irc cxa cprts cxa
+LIBDIRS		= 
+LIBS		= intrins IEPCF90 F90 imf m irc cxa cprts cxa
 
 # basic
-CFLAGS		= -restrict
-CXXFLAGS	= -restrict
-F77FLAGS	= -align -w95
-F90FLAGS	= -align -w95
-LDFLAGS		= -g -restrict -Qoption,ld,-rpath,/home/eschnett/proj/petsc-2.1.0/lib/libO/linux
+CFLAGS		= -DTMPL_EXPLICIT -DCARPET_REAL -align -c99 -restrict
+CXXFLAGS	= -DTMPL_EXPLICIT -DCARPET_REAL -align -c99 -restrict
+F90FLAGS	= -DTMPL_EXPLICIT -DCARPET_REAL -align -c99 -restrict -w95
+F77FLAGS	= -DTMPL_EXPLICIT -DCARPET_REAL -align -c99 -restrict -w95
+LDFLAGS		= -DTMPL_EXPLICIT -DCARPET_REAL -align -c99 -restrict -g
 
 # debugging
 DEBUG		= yes
@@ -26,8 +26,8 @@ F90_DEBUG_FLAGS	= -g
 
 # warnings
 #WARN=yes
-C_WARN_FLAGS	= -w1 # -w2
-CXX_WARN_FLAGS	= -w1 # -w2
+C_WARN_FLAGS	= -w1
+CXX_WARN_FLAGS	= -w1
 F77_WARN_FLAGS	= 
 F90_WARN_FLAGS	= 
 

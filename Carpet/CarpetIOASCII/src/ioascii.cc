@@ -15,7 +15,7 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
-#include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
+#include "CactusBase/IOUtil/src/ioGH.h"
 
 #include "Carpet/CarpetLib/src/data.hh"
 #include "Carpet/CarpetLib/src/dist.hh"
@@ -28,7 +28,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.30 2002/03/26 13:22:28 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.31 2002/04/29 11:27:56 schnetter Exp $";
 
 CCTK_FILEVERSION(CarpetIOASCII_ioascii_cc)
 
@@ -171,6 +171,10 @@ int CarpetIOASCII<outdim>
     return 0;
   }
   
+  // Get grid hierarchy extentsion from IOUtil
+  const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cgh, "IO");
+  assert (iogh);
+  
   // Create the output directory
   const char* myoutdir = GetStringParameter("outdir%dD", outdir);
   if (CCTK_MyProc(cgh)==0) {
@@ -254,7 +258,7 @@ int CarpetIOASCII<outdim>
 	  // the root processor
 	  if (do_truncate[n]) {
 	    struct stat fileinfo;
-	    if (! IOUtil_RestartFromRecovery(cgh)
+	    if (! iogh->recovered
 		|| stat(filename, &fileinfo)!=0) {
 	      file.open (filename, ios::out | ios::trunc);
 	      assert (file.good());

@@ -1,11 +1,11 @@
 # Schedule definitions for thorn HydroToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/schedule.ccl,v 1.2 2001/08/26 13:59:40 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/schedule.ccl,v 1.3 2002/04/29 11:28:01 schnetter Exp $
 
 if (hydrotoy_active) {
 
 
 
-STORAGE: hydroevolve
+STORAGE: hydroevolve[3]
 
 
 

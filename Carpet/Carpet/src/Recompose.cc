@@ -11,7 +11,7 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
-#include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
+#include "CactusBase/IOUtil/src/ioGH.h"
 
 #include "Carpet/CarpetLib/src/bbox.hh"
 #include "Carpet/CarpetLib/src/bboxset.hh"
@@ -21,7 +21,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.23 2002/03/26 13:22:27 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.24 2002/04/29 11:27:54 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Recompose_cc)
 
@@ -329,6 +329,13 @@ namespace Carpet {
     // Output only if output is desired
     if (strcmp(grid_structure_filename, "") == 0) return;
     
+    // Get grid hierarchy extentsion from IOUtil
+    const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cgh, "IO");
+    assert (iogh);
+    
+    // Create the output directory
+    CCTK_CreateDirectory (0755, outdir);
+    
     ofstream file;
     char filename[1000];
     snprintf (filename, sizeof(filename), "%s/%s",
@@ -339,7 +346,7 @@ namespace Carpet {
     if (do_truncate) {
       do_truncate = false;
       struct stat fileinfo;
-      if (! IOUtil_RestartFromRecovery(cgh)
+      if (! iogh->recovered
 	  || stat(filename, &fileinfo)!=0) {
 	file.open (filename, ios::out | ios::trunc);
 	assert (file.good());

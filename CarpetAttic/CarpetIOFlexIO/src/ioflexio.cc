@@ -21,7 +21,7 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
-#include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
+#include "CactusBase/IOUtil/src/ioGH.h"
 
 #include "Carpet/CarpetLib/src/bbox.hh"
 #include "Carpet/CarpetLib/src/data.hh"
@@ -33,7 +33,7 @@
 
 #include "ioflexio.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.16 2002/03/26 13:22:29 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.17 2002/04/29 11:27:57 schnetter Exp $";
 
 CCTK_FILEVERSION(CarpetIOFlexIO_ioflexio_cc)
 
@@ -136,6 +136,10 @@ namespace CarpetIOFlexIO {
       return 0;
     }
     
+    // Get grid hierarchy extentsion from IOUtil
+    const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cgh, "IO");
+    assert (iogh);
+    
     // Create the output directory
     const char* myoutdir = GetStringParameter("outdir3D", outdir);
     if (CCTK_MyProc(cgh)==0) {
@@ -171,7 +175,7 @@ namespace CarpetIOFlexIO {
       // If this is the first time, then create and truncate the file
       if (do_truncate[n]) {
 	struct stat fileinfo;
-	if (! IOUtil_RestartFromRecovery(cgh)
+	if (! iogh->recovered
 	    || stat(filename, &fileinfo)!=0) {
 	  writer = 0;
 	  if (CCTK_Equals(out3D_format, "IEEE")) {
