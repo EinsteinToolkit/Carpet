@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.28 2003/05/21 14:30:24 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.29 2003/05/27 12:01:11 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -103,6 +103,8 @@ namespace Carpet {
         } else {
           // init_each_timelevel
           
+          bool const orig_do_global_mode = do_global_mode;
+          
 	  tt->set_delta
             (reflevel, mglevel, - tt->get_delta (reflevel, mglevel));
 	  tt->advance_time (reflevel, mglevel);
@@ -112,6 +114,8 @@ namespace Carpet {
             (reflevel, mglevel, - tt->get_delta (reflevel, mglevel));
           
           for (int tl=-2; tl<=0; ++tl) {
+            
+            do_global_mode = orig_do_global_mode && tl==0;
             
             // Advance level times
             tt->advance_time (reflevel, mglevel);
@@ -132,6 +136,8 @@ namespace Carpet {
             CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
             
           } // for tl
+          
+          do_global_mode = orig_do_global_mode;
           
         } // init_each_timelevel
 	

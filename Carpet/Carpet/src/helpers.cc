@@ -14,7 +14,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.34 2003/05/23 23:51:17 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.35 2003/05/27 12:01:11 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -425,10 +425,11 @@ namespace Carpet {
   
   
   
-  // This is a temporary measure to call a schedule group from a
-  // global mode function.
+  // This is a temporary measure to call a schedule group from a level
+  // mode function.
   int CallScheduleGroup (cGH * const cgh, const char * const group)
   {
+    assert (reflevel != -1);
     assert (component == -1);
     CCTK_ScheduleTraverse (group, cgh, CallFunction);
     return 0;
@@ -437,15 +438,47 @@ namespace Carpet {
   
   
   // This is a temporary measure to call a local mode function from a
-  // global mode function.  A more elegant way would be to reuse the
-  // CallFunction stuff, or function aliasing.  Is there a way for the
-  // user to get at the cFunctionData structure?
+  // global mode or level mode function.  A more elegant way would be
+  // to reuse the CallFunction stuff, or function aliasing.  Is there
+  // a way for the user to get at the cFunctionData structure?
   int CallLocalFunction (cGH * const cgh,
                          void (* const function) (cGH * const cgh))
   {
-    BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
-      function (cgh);
-    } END_LOCAL_COMPONENT_LOOP(cgh);
+    if (reflevel == -1) {
+      // we are in global mode
+      BEGIN_REFLEVEL_LOOP(cgh) {
+        BEGIN_MGLEVEL_LOOP(cgh) {
+          BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
+            function (cgh);
+          } END_LOCAL_COMPONENT_LOOP(cgh);
+        } END_MGLEVEL_LOOP(cgh);
+      } END_REFLEVEL_LOOP(cgh);
+    } else {
+      // we are in level mode
+      BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
+        function (cgh);
+      } END_LOCAL_COMPONENT_LOOP(cgh);
+    }
+    return 0;
+  }
+  
+  int CallLevelFunction (cGH * const cgh,
+                         void (* const function) (cGH * const cgh))
+  {
+    assert (reflevel == -1);
+    BEGIN_REFLEVEL_LOOP(cgh) {
+      BEGIN_MGLEVEL_LOOP(cgh) {
+        function (cgh);
+      } END_MGLEVEL_LOOP(cgh);
+    } END_REFLEVEL_LOOP(cgh);
+    return 0;
+  }
+  
+  int CallGlobalFunction (cGH * const cgh,
+                          void (* const function) (cGH * const cgh))
+  {
+    assert (reflevel == -1);
+    function (cgh);
     return 0;
   }
   

@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.8 2003/05/02 14:22:32 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.9 2003/05/27 12:01:11 schnetter Exp $ */
 
 #ifndef CARPET_PUBLIC_H
 #define CARPET_PUBLIC_H
@@ -26,6 +26,10 @@ namespace Carpet {
     /* Call a local function */
     int CallLocalFunction (cGH * const cgh,
                            void (* const function) (cGH * const cgh));
+    int CallLevelFunction (cGH * const cgh,
+                           void (* const function) (cGH * const cgh));
+    int CallGlobalFunction (cGH * const cgh,
+                            void (* const function) (cGH * const cgh));
     
     
     
