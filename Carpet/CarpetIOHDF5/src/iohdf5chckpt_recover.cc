@@ -51,9 +51,9 @@ namespace CarpetIOHDF5 {
   int Checkpoint (const cGH* const cctkGH, int called_from);
   int DumpParametersGHExtentions (const cGH *cctkGH, int all, hid_t writer);  
   
-  //  int RecoverParameters (IObase* reader);
-  //int RecoverGHextensions (cGH* cgh, IObase* reader);
-  //int RecoverVariables (cGH* cgh, IObase* reader, AmrGridReader* amrreader);
+  int RecoverParameters (hid_t reader);
+  int RecoverGHextensions (cGH* cctkGH, hid_t reader);
+  int RecoverVariables (cGH* cctkGH, hid_t reader);
 
   void CarpetIOHDF5_EvolutionCheckpoint( const cGH* const cgh){
     
@@ -92,8 +92,10 @@ namespace CarpetIOHDF5 {
 
     int result,myproc;
     CarpetIOHDF5GH *myGH;
-    char filename[1024];
+
     
+    static hid_t reader; //this thing absolutely needs to be static!!!
+
     myGH = NULL;
     result = 0;
 
@@ -101,29 +103,304 @@ namespace CarpetIOHDF5 {
     
   
     if (called_from == CP_RECOVER_PARAMETERS) {
-	CCTK_WARN (-1,"Sorry, this feature is not implemented yet.");
-      }
+      // Okay, let's see what we can do about the parameters
+    
+       // Invent a file name
+      ostringstream filenamebuf;
+
+      if(CCTK_nProcs(cctkGH) == 1)
+	filenamebuf << recover_dir << "/" << basefilename << ".h5";
+      else
+	filenamebuf << recover_dir << "/" << basefilename << ".file_0.h5";
+
+      string filenamestr = filenamebuf.str();
+      const char * const filename = filenamestr.c_str();
+ 
+      if (myproc == 0) {
+	// First, open the file
+	if (verbose) 
+	  CCTK_VInfo(CCTK_THORNSTRING, "Opening Checkpoint file %s for recovery",filename);
+	reader = H5Fopen (filename, H5F_ACC_RDONLY, H5P_DEFAULT);
+	if (reader<0) {
+	  CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+		    "Could not recover from \"%s\"", filename);
+	}
+	assert (reader>=0);
+      } // myproc == 0
+    }
     else {
 	/* This is the case for CP_RECOVER_DATA.
 	   CCTK_RECOVER_PARAMETERS must have been called before
 	   and set up the file info structure. */
 	if (myproc == 0) {
-	  CCTK_WARN (-1,"Sorry, this feature is not implemented yet.");
+	  assert(reader>=0);
 	}
     }
   
+    if (called_from == CP_RECOVER_PARAMETERS)
+      {
+	return (RecoverParameters (reader));
+      }
   
     if (called_from == CP_RECOVER_DATA) {
+      CCTK_INT4 numberofmgtimes;
+
+      if (myproc == 0) {
+
+	/* we need all the times on the individual levels */
+	// these are a bit messy to extract
+
+	hid_t group = H5Gopen (reader, PARAMETERS_GLOBAL_ATTRIBUTES_GROUP);
+	assert(group>=0);
+	hid_t dataset = H5Dopen (group, ALL_PARAMETERS);
+	assert(dataset >= 0);
+	hid_t attr = H5Aopen_name (dataset, "numberofmgtimes");
+	assert(attr >= 0);
+	hid_t atype = H5Aget_type (attr);
+	if(H5Tequal(atype, H5T_NATIVE_INT)) {
+	  herr_t herr = H5Aread(attr, atype, &numberofmgtimes);
+	  assert(!herr);
+	  herr = H5Aclose(attr);
+	  assert(numberofmgtimes==mglevels);
+	  char buffer[100];
+	  for(int lcv=0;lcv<numberofmgtimes;lcv++) {
+	    sprintf(buffer,"mgleveltimes %d",lcv);
+	    attr = H5Aopen_name(dataset, buffer);
+	    assert (attr>=0);
+	    atype = H5Aget_type (attr);
+	    assert (atype>=0);
+	    herr = H5Aread (attr, atype, &leveltimes[lcv][0]);
+	    assert(!herr);
+	    herr = H5Aclose(attr);
+	    assert(!herr);
+	  }  
+	  herr = H5Dclose(dataset);
+	  assert(!herr);
+	  herr = H5Gclose(group);
+	  assert(!herr);
+	} else {
+	  CCTK_WARN(0,"BAD BAD BAD! Can't read leveltimes!!");
+	}
+      } // myproc == 0  	
+
+      int mpierr = MPI_Bcast (&numberofmgtimes, 1, CARPET_MPI_INT4, 0,MPI_COMM_WORLD);
+      assert(!mpierr);
+
+
+      for(int i=0;i<numberofmgtimes;i++) {
+	mpierr = MPI_Bcast (&leveltimes[i][0], numberofmgtimes, CARPET_MPI_REAL, 0, MPI_COMM_WORLD);
+	assert(!mpierr);
+      }
+
+      cout << "leveltimes: " << leveltimes << endl;
+
+
+      BEGIN_MGLEVEL_LOOP(cctkGH) {
+	BEGIN_REFLEVEL_LOOP(cctkGH) {
+
+	  // set tt (ask Erik why...)
+	  //	  arrdata[0][0].tt->set_time(reflevel,mglevel,(CCTK_REAL) cctkGH->cctk_iteration/maxreflevelfact);
+	  
+	  // Now let us recover the GHextentions
+	  result += RecoverGHextensions(cctkGH,reader);
+
+	  result += RecoverVariables (cctkGH,reader);
+
+	} END_REFLEVEL_LOOP;
+
+      } END_MGLEVEL_LOOP;
+
+
       CCTK_VInfo (CCTK_THORNSTRING,
 		  "Restarting simulation at iteration %d (physical time %g)",
 		  cctkGH->cctk_iteration, (double) cctkGH->cctk_time);
-    }
+    } // called_from == CP_RECOVER_DATA
   
-    CCTK_WARN (-1,"STOPSTOPSTOP2");
+    if (myproc == 0) 	
+      H5Fclose(reader);
+
+
+    //    CCTK_WARN (-1,"Sorry, this feature is not implemented yet.");
   
     return (result);
   } // CarpetIOHDF5_Recover
   
+  int RecoverVariables (cGH* cctkGH, hid_t reader) {
+
+    int retval = 0;
+    int myproc = CCTK_MyProc (cctkGH);
+    int currdataset,ndatasets,namelength;
+    char datasetname[1024];
+    char * name;
+
+    hid_t dataset;
+    herr_t herr;
+
+    CCTK_VInfo(CCTK_THORNSTRING,"Starting to recover data!!!");
+
+    if(myproc==0) {
+      ndatasets=GetnDatasets(reader);
+      assert (ndatasets>=0);
+    }
+
+    // Broadcast number of datasets
+    MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
+    assert (ndatasets>=0);
+
+    for (currdataset=0;currdataset < ndatasets+1;currdataset++) {
+
+      if (myproc==0) {
+	GetDatasetName(reader,currdataset,datasetname);
+	dataset = H5Dopen (reader, datasetname);
+	assert(dataset);
+	// Read data
+	ReadAttribute (dataset, "name", name);
+	namelength=strlen(name)+1;
+      }
+      MPI_Bcast (&namelength, 1, MPI_INT, 0, dist::comm);
+
+
+      if(myproc!=0) {
+	name = (char *) malloc (sizeof(char)*namelength);
+      }
+      
+      MPI_Bcast (name,namelength, MPI_CHAR, 0, dist::comm);
+
+      cout << name << endl;
+      vector<ibset> regions_read(Carpet::maps);
+
+      ReadVar(cctkGH,reader,name,dataset,regions_read,0);
+
+      if(myproc==0) {
+	herr = H5Dclose(dataset);
+	assert(!herr);
+      }
+    }
+    return retval;
+  }
+   
+
+
+  
+  int RecoverGHextensions (cGH *cctkGH, hid_t reader)
+  {
+    const int myproc = CCTK_MyProc(cctkGH);
+    CCTK_INT4 int4Buffer[2];
+    CCTK_REAL realBuffer;
+    CCTK_REAL realBuffer2;
+    CCTK_INT4 intbuffer;
+
+    int mpierr = 0;
+
+    if (myproc==0)
+      {
+		
+	// First open group and dataset
+	hid_t group = H5Gopen (reader, PARAMETERS_GLOBAL_ATTRIBUTES_GROUP);
+	assert(group>=0);
+	hid_t dataset = H5Dopen (group, ALL_PARAMETERS);
+	assert(dataset >= 0);
+
+	ReadAttribute(dataset,"GH$iteration",int4Buffer[0]);
+	ReadAttribute(dataset,"main loop index",int4Buffer[1]);
+	ReadAttribute(dataset,"carpet_global_time",realBuffer);
+
+	herr_t herr = H5Dclose(dataset);
+	assert(!herr);
+	herr = H5Gclose(group);
+	assert(!herr);
+	
+      }
+  /* Broadcast the GH extensions to all processors */
+  /* NOTE: We have to use MPI_COMM_WORLD here
+     because PUGH_COMM_WORLD is not yet set up at parameter recovery time.
+     We also assume that PUGH_MPI_INT4 is a compile-time defined datatype. */
+
+    mpierr = MPI_Bcast (int4Buffer, 2, CARPET_MPI_INT4, 0,MPI_COMM_WORLD);
+    assert(!mpierr);
+    mpierr = MPI_Bcast (int4Buffer, 2, CARPET_MPI_INT4, 0,MPI_COMM_WORLD);
+    assert(!mpierr);
+    mpierr = MPI_Bcast (&realBuffer, 1, CARPET_MPI_REAL,0,MPI_COMM_WORLD);
+    assert(!mpierr);
+
+    global_time = (CCTK_REAL) realBuffer;
+    cctkGH->cctk_iteration = (int) int4Buffer[0];
+    CCTK_SetMainLoopIndex ((int) int4Buffer[1]);
+
+
+    return (0);
+
+  } // RecoverGHExtensions
+
+  int RecoverParameters(hid_t reader){
+
+    DECLARE_CCTK_PARAMETERS; 
+    
+    int myproc, retval;
+    char *parameters;
+    CCTK_INT4 parameterSize;
+
+    hid_t group,dataset;
+    herr_t herr;
+
+    int mpierr;
+
+    myproc = CCTK_MyProc (NULL);
+
+    if (myproc == 0){
+      CCTK_VInfo (CCTK_THORNSTRING, "Recovering parameters from checkpoint ");
+      
+      group = H5Gopen (reader, PARAMETERS_GLOBAL_ATTRIBUTES_GROUP);
+      assert(group >= 0);
+      dataset = H5Dopen (group, ALL_PARAMETERS);
+      assert(dataset>= 0);
+
+      parameterSize = H5Dget_storage_size (dataset);
+      parameters = (char *) malloc (parameterSize);
+      herr = H5Dread (dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
+                             H5P_DEFAULT, parameters);
+      assert(!herr);
+      herr = H5Dclose(dataset);
+      assert(!herr);
+      herr = H5Gclose(group);
+      assert(!herr);
+
+      if(verbose) 
+	CCTK_VInfo (CCTK_THORNSTRING, "\n%s\n",parameters);
+      
+      CCTK_VInfo(CCTK_THORNSTRING, "Successfully recovered parameters!");
+    } // myproc == 0
+
+    /* Broadcast the parameter buffer size to all processors */
+    /* NOTE: We have to use MPI_COMM_WORLD here
+       because CARPET_COMM_WORLD is not yet set up at parameter recovery time.
+       We also assume that CARPET_MPI_INT4 is a compile-time defined datatype. */
+    mpierr = MPI_Bcast (&parameterSize, 1, CARPET_MPI_INT4, 0,
+			MPI_COMM_WORLD);
+    assert(!mpierr);
+
+    if (parameterSize > 0) {
+      if (myproc) {
+	parameters = (char*) malloc (parameterSize + 1);
+      }
+	
+      mpierr = MPI_Bcast (parameters, parameterSize + 1, CARPET_MPI_CHAR,
+			  0,MPI_COMM_WORLD);
+      assert(!mpierr);
+      
+      IOUtil_SetAllParameters (parameters);
+    
+      free (parameters);
+    }
+  
+    /* return positive value for success otherwise negative */
+    retval = (parameterSize > 0 ? 1 : -1);
+
+    return (retval);
+
+  } // RecoverParameters
+
+
 
   int Checkpoint (const cGH* const cctkGH, int called_from)
   {
@@ -392,18 +669,21 @@ namespace CarpetIOHDF5 {
       dtmp = cctkGH->cctk_time;
       WriteAttribute(dataset,"GH$time", dtmp);
 
+      dtmp = global_time;
+      WriteAttribute(dataset,"carpet_global_time", dtmp);
+
       version = CCTK_FullVersion();
       WriteAttribute(dataset,"Cactus version", version);
 
       /* finally, we need all the times on the individual refinement levels */
-      const int numberoftimes=leveltimes[0].size();
-      WriteAttribute(dataset,"numberoftimes",numberoftimes);
-      for(int i=0;i < numberoftimes;i++) {
-	char buffer[100];
-	sprintf(buffer,"leveltime%d",i);
-	WriteAttribute(dataset,buffer,leveltimes[0][i]);
-      }
 
+      const int numberofmgtimes=mglevels;
+      WriteAttribute(dataset,"numberofmgtimes",numberofmgtimes);
+      for(int i=0;i < numberofmgtimes;i++) {
+	char buffer[100];
+	sprintf(buffer,"mgleveltimes %d",i);
+	WriteAttribute(dataset,buffer,(double *) &leveltimes[i][0], reflevels);
+      }
 
       herr = H5Dclose (dataset);
       assert(!herr);

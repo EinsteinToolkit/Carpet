@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.7 2004/03/11 10:00:16 cott Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.8 2004/03/12 00:13:25 cott Exp $
 
 #ifndef CARPETIOHDF5_HH
 #define CARPETIOHDF5_HH
@@ -12,6 +12,43 @@
 
 #include "iohdf5.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
+
+// Some MPI Datatypes we need for Recovery
+// Originally written by Thomas Radke.
+
+#ifdef  CCTK_INT4
+#define CARPET_MPI_INT4  (sizeof (CCTK_INT4) == sizeof (int) ? MPI_INT :        \
+                        sizeof (CCTK_INT4) == sizeof (short) ? MPI_SHORT :    \
+                        MPI_DATATYPE_NULL)
+#endif
+
+#define CARPET_MPI_CHAR      MPI_CHAR
+
+/* floating point types are architecture-independent,
+   ie. a float has always 4 bytes, and a double has 8 bytes
+
+   PUGH_MPI_REAL  is used for communicating reals of the generic CCTK_REAL type
+   PUGH_MPI_REALn is used to explicitely communicate n-byte reals */
+#ifdef  CCTK_REAL4
+#define CARPET_MPI_REAL4  MPI_FLOAT
+#endif
+#ifdef  CCTK_REAL8
+#define CARPET_MPI_REAL8  MPI_DOUBLE
+#endif
+#ifdef  CCTK_REAL16
+#define CARPET_MPI_REAL16  (sizeof (CCTK_REAL16) == sizeof (long double) ?      \
+                          MPI_LONG_DOUBLE : MPI_DATATYPE_NULL)
+#endif
+
+
+#ifdef  CCTK_REAL_PRECISION_16
+#define CARPET_MPI_REAL   CARPET_MPI_REAL16
+#elif   CCTK_REAL_PRECISION_8
+#define CARPET_MPI_REAL   CARPET_MPI_REAL8
+#elif   CCTK_REAL_PRECISION_4
+#define CARPET_MPI_REAL   CARPET_MPI_REAL4
+#endif
+
 
 /*** Define the different datatypes used for HDF5 I/O
      NOTE: the complex datatype SHOULD be [is] defined dynamically at runtime in Startup.c
