@@ -2,7 +2,7 @@
 #include "variables.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.20 2004/03/23 18:38:29 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.21 2004/03/24 17:44:51 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_variables_cc);
 }
 
@@ -89,9 +89,5 @@ namespace Carpet {
   
   // Data for everything
   vector<vector<arrdesc> > arrdata; // [group][map]
-  
-  // Checksums
-  // [rl][ml][group][m][c][var][tl]
-  vector<vector<vector<vector<vector<vector<vector<ckdesc> > > > > > > checksums;
   
 } // namespace Carpet

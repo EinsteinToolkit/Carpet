@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.hh,v 1.3 2004/03/23 18:38:29 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.hh,v 1.4 2004/03/24 17:44:51 schnetter Exp $
 
 // It is assumed that each group has at least one map.  All arrays
 // have exactly one map.  All maps have the same number of refinement
@@ -124,16 +124,6 @@ namespace Carpet {
     vector<ggf<dim>*> data;     // [var]
   };
   extern vector<vector<arrdesc> > arrdata; // [group][map]
-  
-  
-  
-  // Checksums
-  struct ckdesc {
-    bool valid;
-    unsigned int sum;
-  };
-  // [rl][ml][group][m][c][var][tl]
-  extern vector<vector<vector<vector<vector<vector<vector<ckdesc> > > > > > > checksums;
   
 } // namespace Carpet
 
