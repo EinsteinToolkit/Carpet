@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.6 2001/03/22 18:42:05 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.7 2001/03/24 22:38:48 eschnett Exp $
 
  ***************************************************************************/
 
@@ -20,6 +20,7 @@
  ***************************************************************************/
 
 #include <assert.h>
+#include <stdlib.h>
 
 #include <iostream>
 #include <string>
@@ -170,7 +171,7 @@ void generic_gf<D>::cycle (int rl, int c, int ml) {
 
 // Operations
 
-// Copy region for a component (between time levels)
+// Copy a region
 template<int D>
 void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
 			     const ibbox dh<D>::dboxes::* recv_list,
@@ -194,7 +195,7 @@ void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
     (storage[tl2-tmin][rl2][c2][ml2], recv);
 }
 
-// Copy regions for a component (between multigrid levels)
+// Copy regions
 template<int D>
 void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
 			     const iblist dh<D>::dboxes::* recv_list,
@@ -217,12 +218,12 @@ void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
        r!=recv.end(); ++r, ++s) {
     // (use the send boxes for communication)
     // copy the content
-    storage[tl1-tmin][rl1][c1][ml1]->interpolate_from
+    storage[tl1-tmin][rl1][c1][ml1]->copy_from
       (storage[tl2-tmin][rl2][c2][ml2], *r);
   }
 }
 
-// Copy regions for a level (between refinement levels)
+// Copy regions
 template<int D>
 void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
 			     const iblistvect dh<D>::dboxes::* recv_listvect,
@@ -246,54 +247,75 @@ void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
       	 r!=recv.end(); ++r, ++s) {
       // (use the send boxes for communication)
       // copy the content
-      storage[tl1-tmin][rl1][c1][ml1]->interpolate_from
+      storage[tl1-tmin][rl1][c1][ml1]->copy_from
       	(storage[tl2-tmin][rl2][c2][ml2], *r);
     }
   }
 }
 
-// Interpolate a component (between time levels)
+// Interpolate a region
 template<int D>
 void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
 			      const ibbox dh<D>::dboxes::* recv_list,
-			      int tl2a, int tl2b, int rl2, int ml2,
-			      const ibbox dh<D>::dboxes::* send_list)
+			      const vector<int> tl2s, int rl2, int ml2,
+			      const ibbox dh<D>::dboxes::* send_list,
+			      int order_space)
 {
   assert (tl1>=tmin && tl1<=tmax);
   assert (rl1>=0 && rl1<h.reflevels());
   assert (c1>=0 && c1<h.components(rl1));
   assert (ml1>=0 && ml1<h.mglevels(rl1,c1));
-  assert (tl2a>=tmin && tl2a<=tmax);
-  assert (tl2b>=tmin && tl2b<=tmax);
+  for (int i=0; i<(int)tl2s.size(); ++i) {
+    assert (tl2s[i]>=tmin && tl2s[i]<=tmax);
+  }
   assert (rl2>=0 && rl2<h.reflevels());
   const int c2=c1;
   assert (ml2<h.mglevels(rl2,c2));
+  
+  vector<const generic_data<D>*> gsrcs(tl2s.size());
+  vector<int> tls(tl2s.size());
+  for (int i=0; i<(int)gsrcs.size(); ++i) {
+    gsrcs[i] = storage[tl2s[i]-tmin][rl2][c2][ml2];
+    tls[i] = tl2s[i] * t.get_delta(rl2,ml2);
+  }
+  const int tl = tl1 * t.get_delta(rl1,ml1);
+  
   const ibbox recv = d.boxes[rl1][c1][ml1].*recv_list;
   const ibbox send = d.boxes[rl2][c2][ml2].*send_list;
   assert (recv.size()==send.size());
   // interpolate the content
   assert (recv==send);
   storage[tl1-tmin][rl1][c1][ml1]->interpolate_from
-    (storage[tl2a-tmin][rl2][c2][ml2], tl2a,
-     storage[tl2b-tmin][rl2][c2][ml2], tl2b, recv, tl1);
+    (gsrcs, tls, recv, tl, order_space);
 }
 
-// Interpolate a component (between multigrid levels)
+// Interpolate regions
 template<int D>
 void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
 			      const iblist dh<D>::dboxes::* recv_list,
-			      int tl2a, int tl2b, int rl2, int ml2,
-			      const iblist dh<D>::dboxes::* send_list)
+			      const vector<int> tl2s, int rl2, int ml2,
+			      const iblist dh<D>::dboxes::* send_list,
+			      int order_space)
 {
   assert (tl1>=tmin && tl1<=tmax);
   assert (rl1>=0 && rl1<h.reflevels());
   assert (c1>=0 && c1<h.components(rl1));
   assert (ml1>=0 && ml1<h.mglevels(rl1,c1));
-  assert (tl2a>=tmin && tl2a<=tmax);
-  assert (tl2b>=tmin && tl2b<=tmax);
+  for (int i=0; i<(int)tl2s.size(); ++i) {
+    assert (tl2s[i]>=tmin && tl2s[i]<=tmax);
+  }
   assert (rl2>=0 && rl2<h.reflevels());
   const int c2=c1;
   assert (ml2<h.mglevels(rl2,c2));
+  
+  vector<const generic_data<D>*> gsrcs(tl2s.size());
+  vector<int> tls(tl2s.size());
+  for (int i=0; i<(int)gsrcs.size(); ++i) {
+    gsrcs[i] = storage[tl2s[i]-tmin][rl2][c2][ml2];
+    tls[i] = tl2s[i] * t.get_delta(rl2,ml2);
+  }
+  const int tl = tl1 * t.get_delta(rl1,ml1);
+  
   const iblist recv = d.boxes[rl1][c1][ml1].*recv_list;
   const iblist send = d.boxes[rl2][c2][ml2].*send_list;
   assert (recv.size()==send.size());
@@ -303,28 +325,38 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
     // (use the send boxes for communication)
     // interpolate the content
     storage[tl1-tmin][rl1][c1][ml1]->interpolate_from
-      (storage[tl2a-tmin][rl2][c2][ml2], tl2a,
-       storage[tl2b-tmin][rl2][c2][ml2], tl2b, *r, tl1);
+      (gsrcs, tls, *r, tl, order_space);
   }
 }
 
-// Interpolate a level (between refinement levels)
+// Interpolate regions
 template<int D>
 void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
 			      const iblistvect dh<D>::dboxes::* recv_listvect,
-			      int tl2a, int tl2b, int rl2, int ml2,
-			      const iblistvect dh<D>::dboxes::* send_listvect)
+			      const vector<int> tl2s, int rl2, int ml2,
+			      const iblistvect dh<D>::dboxes::* send_listvect,
+			      int order_space)
 {
   assert (tl1>=tmin && tl1<=tmax);
   assert (rl1>=0 && rl1<h.reflevels());
   assert (c1>=0 && c1<h.components(rl1));
   assert (ml1>=0 && ml1<h.mglevels(rl1,c1));
-  assert (tl2a>=tmin && tl2a<=tmax);
-  assert (tl2b>=tmin && tl2b<=tmax);
+  for (int i=0; i<(int)tl2s.size(); ++i) {
+    assert (tl2s[i]>=tmin && tl2s[i]<=tmax);
+  }
   assert (rl2>=0 && rl2<h.reflevels());
   // walk all components
   for (int c2=0; c2<h.components(rl2); ++c2) {
     assert (ml2<h.mglevels(rl2,c2));
+    
+    vector<const generic_data<D>*> gsrcs(tl2s.size());
+    vector<int> tls(tl2s.size());
+    for (int i=0; i<(int)gsrcs.size(); ++i) {
+      gsrcs[i] = storage[tl2s[i]-tmin][rl2][c2][ml2];
+      tls[i] = tl2s[i] * t.get_delta(rl2,ml2);
+    }
+    const int tl = tl1 * t.get_delta(rl1,ml1);
+    
     const iblist recv = (d.boxes[rl1][c1][ml1].*recv_listvect)[c2];
     const iblist send = (d.boxes[rl2][c2][ml2].*send_listvect)[c1];
     assert (recv.size()==send.size());
@@ -334,8 +366,7 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
       // (use the send boxes for communication)
       // interpolate the content
       storage[tl1-tmin][rl1][c1][ml1]->interpolate_from
-      	(storage[tl2a-tmin][rl2][c2][ml2], tl2a,
-      	 storage[tl2b-tmin][rl2][c2][ml2], tl2b, *r, tl1);
+      	(gsrcs, tls, *r, tl, order_space);
     }
   }
 }
@@ -360,59 +391,75 @@ void generic_gf<D>::sync (int tl, int rl, int c, int ml) {
 
 // Prolongate the boundaries of a component
 template<int D>
-void generic_gf<D>::ref_bnd_prolongate (int tl, int rl, int c, int ml) {
+void generic_gf<D>::ref_bnd_prolongate (int tl, int rl, int c, int ml,
+					int order_space, int order_time) {
   // Interpolate
   assert (rl>=1);
-  double time =
-    (t.time(tl,rl,ml) - t.get_time(rl-1,ml)) / (double)t.get_delta(rl-1, ml);
-  const int tl2 = (int)floor(time + 1e-6);
-  assert (tl2>=tmin && tl2<=tmax);
-  if (time==tl2) {
-    copycat (tl ,rl  ,c,ml, &dh<D>::dboxes::recv_ref_bnd_coarse,
-      	     tl2,rl-1,  ml, &dh<D>::dboxes::send_ref_bnd_fine);
+  const int tmod
+    = ((t.time(tl,rl,ml) - t.get_time(rl-1,ml)) % t.get_delta(rl-1, ml)
+       + t.get_delta(rl-1, ml)) % t.get_delta(rl-1, ml);
+  vector<int> tl2s;
+  if (tmod == 0) {
+    // No interpolation in time
+    tl2s.resize(1);
+    tl2s[0] = tl;
   } else {
-    const int tl2a=tl2;
-    const int tl2b=tl2+1;
-    assert (tl2b>=tmin && tl2b<=tmax);
-    intercat (tl,rl,c,ml, &dh<D>::dboxes::recv_ref_bnd_coarse,
-      	      tl2a, tl2b, rl-1,ml, &dh<D>::dboxes::send_ref_bnd_fine);
+    // Interpolation in time
+    assert (tmax-tmin+1 >= order_time+1);
+    tl2s.resize(order_time+1);
+    for (int i=0; i<=order_time; ++i) tl2s[i] = tmax - i;
   }
+  intercat (tl  ,rl  ,c,ml, &dh<D>::dboxes::recv_ref_bnd_coarse,
+	    tl2s,rl-1,  ml, &dh<D>::dboxes::send_ref_bnd_fine,
+	    order_space);
 }
 
 // Restrict a multigrid level
 template<int D>
-void generic_gf<D>::mg_restrict (int tl, int rl, int c, int ml) {
+void generic_gf<D>::mg_restrict (int tl, int rl, int c, int ml,
+				 int order_space) {
   // Require same times
   assert (t.get_time(rl,ml) == t.get_time(rl,ml-1));
-  copycat (tl,rl,c,ml,   &dh<D>::dboxes::recv_mg_coarse,
-      	   tl,rl,  ml-1, &dh<D>::dboxes::send_mg_fine);
+  const vector<int> tl2s(1,tl);
+  intercat (tl  ,rl,c,ml,   &dh<D>::dboxes::recv_mg_coarse,
+	    tl2s,rl,  ml-1, &dh<D>::dboxes::send_mg_fine,
+	    order_space);
 }
 
 // Prolongate a multigrid level
 template<int D>
-void generic_gf<D>::mg_prolongate (int tl, int rl, int c, int ml) {
+void generic_gf<D>::mg_prolongate (int tl, int rl, int c, int ml,
+				   int order_space) {
   // Require same times
   assert (t.get_time(rl,ml) == t.get_time(rl,ml+1));
-  copycat (tl,rl,c,ml,   &dh<D>::dboxes::recv_mg_coarse,
-      	   tl,rl,  ml+1, &dh<D>::dboxes::send_mg_fine);
+  const vector<int> tl2s(1,tl);
+  intercat (tl  ,rl,c,ml,   &dh<D>::dboxes::recv_mg_coarse,
+	    tl2s,rl,  ml+1, &dh<D>::dboxes::send_mg_fine,
+	    order_space);
 }
 
 // Restrict a refinement level
 template<int D>
-void generic_gf<D>::ref_restrict (int tl, int rl, int c, int ml) {
+void generic_gf<D>::ref_restrict (int tl, int rl, int c, int ml,
+				  int order_space) {
   // Require same times
   assert (t.get_time(rl,ml) == t.get_time(rl+1,ml));
-  copycat (tl,rl  ,c,ml, &dh<D>::dboxes::recv_ref_fine,
-      	   tl,rl+1,  ml, &dh<D>::dboxes::send_ref_coarse);
+  const vector<int> tl2s(1,tl);
+  intercat (tl  ,rl  ,c,ml, &dh<D>::dboxes::recv_ref_fine,
+	    tl2s,rl+1,  ml, &dh<D>::dboxes::send_ref_coarse,
+	    order_space);
 }
 
 // Prolongate a refinement level
 template<int D>
-void generic_gf<D>::ref_prolongate (int tl, int rl, int c, int ml) {
+void generic_gf<D>::ref_prolongate (int tl, int rl, int c, int ml,
+				    int order_space) {
   // Require same times
   assert (t.get_time(rl,ml) == t.get_time(rl-1,ml));
-  copycat (tl,rl  ,c,ml, &dh<D>::dboxes::recv_ref_coarse,
-      	   tl,rl-1,  ml, &dh<D>::dboxes::send_ref_fine);
+  const vector<int> tl2s(1,tl);
+  intercat (tl  ,rl  ,c,ml, &dh<D>::dboxes::recv_ref_coarse,
+	    tl2s,rl-1,  ml, &dh<D>::dboxes::send_ref_fine,
+	    order_space);
 }
 
 

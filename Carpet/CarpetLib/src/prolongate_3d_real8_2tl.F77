@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_2tl.F77,v 1.2 2001/03/22 18:42:06 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_2tl.F77,v 1.3 2001/03/24 22:38:48 eschnett Exp $
       
 #include "cctk.h"
       
@@ -62,6 +62,12 @@ c     bbox(:,3) is stride
      $        .or. mod(regbbox(d,1), regbbox(d,3)).ne.0) then
             call CCTK_WARN (0, "Internal error: array origins are not integer multiples of the strides")
          end if
+         if (regbbox(d,1).lt.srcbbox(d,1)
+     $        .or. regbbox(d,1).lt.dstbbox(d,1)
+     $        .or. regbbox(d,2).gt.srcbbox(d,2)
+     $        .or. regbbox(d,2).gt.dstbbox(d,2)) then
+            call CCTK_WARN (0, "Internal error: region extent is not contained in array extents")
+         end if
       end do
       
       if (srciext.ne.(srcbbox(1,2)-srcbbox(1,1))/srcbbox(1,3)+1
@@ -92,6 +98,11 @@ c     bbox(:,3) is stride
       dstkoff = (regbbox(3,1) - dstbbox(3,1)) / dstbbox(3,3)
       
       
+      
+c     Linear (first order) interpolation
+      if (t1.eq.t2) then
+         call CCTK_WARN (0, "Internal error: arrays have same time")
+      end if
       
       s1fac = (t - t2) * one / (t1 - t2)
       s2fac = (t - t1) * one / (t2 - t1)

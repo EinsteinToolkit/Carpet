@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.8 2001/03/22 18:42:05 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.9 2001/03/24 22:38:48 eschnett Exp $
 
  ***************************************************************************/
 
@@ -198,31 +198,48 @@ void data<T,D>
 
 template<class T, int D>
 void data<T,D>
-::interpolate_from_innerloop (const generic_data<D>* gsrc, const ibbox& box)
+::interpolate_from_innerloop (const vector<const generic_data<D>*> gsrcs,
+			      const vector<int> tls,
+			      const ibbox& box, const int tl,
+			      const int order_space)
 {
-  const data* src = (const data*)gsrc;
-  assert (has_storage() && src->has_storage());
-  assert (all(box.lower()>=extent().lower()
-	      && box.upper()<=extent().upper()));
-  assert (all(box.lower()>=extent().lower()
-	      && box.lower()>=src->extent().lower()));
-  assert (all(box.upper()<=extent().upper()
-	      && box.upper()<=src->extent().upper()));
+  assert (has_storage());
+  assert (all(box.lower()>=extent().lower()));
+  assert (all(box.upper()<=extent().upper()));
   assert (all(box.stride()==extent().stride()));
   assert (all((box.lower()-extent().lower())%box.stride() == 0));
-  
-  assert (proc() == src->proc());
+  vector<const data*> srcs(gsrcs.size());
+  for (int t=0; t<(int)srcs.size(); ++t) srcs[t] = (const data*)gsrcs[t];
+  assert (srcs.size() == tls.size() && srcs.size()>0);
+  for (int t=0; t<(int)srcs.size(); ++t) {
+    assert (srcs[t]->has_storage());
+    assert (all(box.lower()>=srcs[t]->extent().lower()));
+    assert (all(box.upper()<=srcs[t]->extent().upper()));
+    assert (proc() == srcs[t]->proc());
+  }
   
   int rank;
   MPI_Comm_rank (dist::comm, &rank);
   assert (rank == proc());
+  
+  assert (order_space == 1);
+  
+  vector<T> src_fac(srcs.size());
+  for (int t=0; t<(int)src_fac.size(); ++t) {
+    src_fac[t] = 1;
+    for (int tt=0; tt<(int)src_fac.size(); ++tt) {
+      if (tt!=t) {
+	src_fac[t] *= (T)(t - tls[tt]) / (T)(tls[t] - tls[tt]);
+      }
+    }
+  }
   
   for (ibbox::iterator posi=box.begin(); posi!=box.end(); ++posi) {
     const ivect& pos = *posi;
     
     // get box around current position
     const ibbox frombox
-      = ibbox(pos,pos,extent().stride()).expanded_for(src->extent());
+      = ibbox(pos,pos,extent().stride()).expanded_for(srcs[0]->extent());
     
     // interpolate from box to position
     T sum = 0;
@@ -232,75 +249,13 @@ void data<T,D>
 	const ivect& frompos = *fromposi;
 	
 	// interpolation weight
-	const ivect str = src->extent().stride();
-	const T f = prod(vect<T,D>(str - abs(pos - frompos))
-			 / vect<T,D>(str));
-	sum += f * (*src)[frompos];
+	const ivect str = srcs[0]->extent().stride();
+	const T f = prod(vect<T,D>(str - abs(pos - frompos)) / vect<T,D>(str));
+	for (int t=0; t<(int)src_fac.size(); ++t) {
+	  sum += f * src_fac[t] * (*srcs[t])[frompos];
+	}
       }
     (*this)[pos] = sum;
-    
-  } // for pos
-  
-}
-
-
-
-template<class T, int D>
-void data<T,D>
-::interpolate_from_innerloop (const generic_data<D>* gsrc1, const int t1,
-			      const generic_data<D>* gsrc2, const int t2,
-			      const ibbox& box, const int t)
-{
-  const data* src1 = (const data*)gsrc1;
-  const data* src2 = (const data*)gsrc2;
-  assert (has_storage() && src1->has_storage() && src2->has_storage());
-  assert (all(box.lower()>=extent().lower()
-	      && box.upper()<=extent().upper()));
-  assert (all(box.lower()>=extent().lower()
-	      && box.lower()>=src1->extent().lower()
-	      && box.lower()>=src2->extent().lower()));
-  assert (all(box.upper()<=extent().upper()
-	      && box.upper()<=src1->extent().upper()
-	      && box.upper()<=src2->extent().upper()));
-  assert (all(box.stride()==extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0
-	      && (box.lower()-src1->extent().lower())%box.stride() == 0
-	      && (box.lower()-src2->extent().lower())%box.stride() == 0));
-  assert (src1->proc() == src2->proc());
-  
-  assert (proc() == src1->proc());
-  
-  int rank;
-  MPI_Comm_rank (dist::comm, &rank);
-  assert (rank == proc());
-  
-  const T one = 1;
-  const T src1_fac = (T)((t - t2) * one / (t1 - t2));
-  const T src2_fac = (T)((t - t1) * one / (t2 - t1));
-  
-  for (ibbox::iterator posi=box.begin(); posi!=box.end(); ++posi) {
-    const ivect& pos = *posi;
-    
-    // get box around current position
-    const ibbox frombox
-      = ibbox(pos,pos,extent().stride()).expanded_for(src1->extent());
-    
-    // interpolate from box to position
-    T src1_sum = 0;
-    T src2_sum = 0;
-    for (ibbox::iterator fromposi=frombox.begin();
-	 fromposi!=frombox.end(); ++fromposi)
-      {
-	const ivect& frompos = *fromposi;
-	
-	// interpolation weight
-	const ivect str = src1->extent().stride();
-	const T f = prod(vect<T,D>(str - abs(pos - frompos))
-			 / vect<T,D>(str));
-	src1_sum += f * (*src1)[frompos];
-	src2_sum += f * (*src2)[frompos];
-      }
-    (*this)[pos] = src1_fac * src1_sum + src2_fac * src2_sum;
     
   } // for pos
   
@@ -381,14 +336,7 @@ void data<CCTK_REAL8,3>
 
 
 extern "C" {
-  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8)
-    (const CCTK_REAL8* src,
-     const int& srciext, const int& srcjext, const int& srckext,
-     CCTK_REAL8* dst,
-     const int& dstiext, const int& dstjext, const int& dstkext,
-     const int srcbbox[3][3],
-     const int dstbbox[3][3],
-     const int regbbox[3][3]);
+  
   void CCTK_FCALL CCTK_FNAME(restrict_3d_real8)
     (const CCTK_REAL8* src,
      const int& srciext, const int& srcjext, const int& srckext,
@@ -397,77 +345,26 @@ extern "C" {
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
-}
-
-template<>
-void data<CCTK_REAL8,3>
-::interpolate_from_innerloop (const generic_data<3>* gsrc, const ibbox& box)
-{
-  const data* src = (const data*)gsrc;
-  assert (has_storage() && src->has_storage());
-  assert (all(box.lower()>=extent().lower()
-	      && box.upper()<=extent().upper()));
-  assert (all(box.lower()>=extent().lower()
-	      && box.lower()>=src->extent().lower()));
-  assert (all(box.upper()<=extent().upper()
-	      && box.upper()<=src->extent().upper()));
-  assert (all(box.stride()==extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0));
   
-  assert (proc() == src->proc());
   
-  int rank;
-  MPI_Comm_rank (dist::comm, &rank);
-  assert (rank == proc());
   
-  const ibbox& sext = src->extent();
-  const ibbox& dext = extent();
+  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8)
+    (const CCTK_REAL8* src,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
+  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_o3)
+    (const CCTK_REAL8* src,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
   
-  int srcshp[3], dstshp[3];
-  int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
-  
-  for (int d=0; d<3; ++d) {
-    srcshp[d] = (sext.shape() / sext.stride())[d];
-    dstshp[d] = (dext.shape() / dext.stride())[d];
-    
-    srcbbox[0][d] = sext.lower()[d];
-    srcbbox[1][d] = sext.upper()[d];
-    srcbbox[2][d] = sext.stride()[d];
-    
-    dstbbox[0][d] = dext.lower()[d];
-    dstbbox[1][d] = dext.upper()[d];
-    dstbbox[2][d] = dext.stride()[d];
-    
-    regbbox[0][d] = box.lower()[d];
-    regbbox[1][d] = box.upper()[d];
-    regbbox[2][d] = box.stride()[d];
-  }
-  
-  assert (all(dext.stride() == box.stride()));
-  if (all(sext.stride() > dext.stride())) {
-    CCTK_FNAME(prolongate_3d_real8) ((const CCTK_REAL8*)src->storage(),
-				     srcshp[0], srcshp[1], srcshp[2],
-				     (CCTK_REAL8*)storage(),
-				     dstshp[0], dstshp[1], dstshp[2],
-				     srcbbox,
-				     dstbbox,
-				     regbbox);
-  } else if (all(sext.stride() < dext.stride())) {
-    CCTK_FNAME(restrict_3d_real8) ((const CCTK_REAL8*)src->storage(),
-				   srcshp[0], srcshp[1], srcshp[2],
-				   (CCTK_REAL8*)storage(),
-				   dstshp[0], dstshp[1], dstshp[2],
-				   srcbbox,
-				   dstbbox,
-				   regbbox);
-  } else {
-    abort();
-  }
-}
-
-
-
-extern "C" {
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_2tl)
     (const CCTK_REAL8* src1, const int& t1,
      const CCTK_REAL8* src2, const int& t2,
@@ -477,40 +374,67 @@ extern "C" {
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
+  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_2tl_o3)
+    (const CCTK_REAL8* src1, const int& t1,
+     const CCTK_REAL8* src2, const int& t2,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst, const int& t,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
+  
+  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_3tl)
+    (const CCTK_REAL8* src1, const int& t1,
+     const CCTK_REAL8* src2, const int& t2,
+     const CCTK_REAL8* src3, const int& t3,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst, const int& t,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
+  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_3tl_o3)
+    (const CCTK_REAL8* src1, const int& t1,
+     const CCTK_REAL8* src2, const int& t2,
+     const CCTK_REAL8* src3, const int& t3,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst, const int& t,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
+  
 }
 
 template<>
 void data<CCTK_REAL8,3>
-::interpolate_from_innerloop (const generic_data<3>* gsrc1, const int t1,
-			      const generic_data<3>* gsrc2, const int t2,
-			      const ibbox& box, const int t)
+::interpolate_from_innerloop (const vector<const generic_data<3>*> gsrcs,
+			      const vector<int> tls,
+			      const ibbox& box, const int tl,
+			      const int order_space)
 {
-  const data* src1 = (const data*)gsrc1;
-  const data* src2 = (const data*)gsrc2;
-  assert (has_storage() && src1->has_storage() && src2->has_storage());
-  assert (all(box.lower()>=extent().lower()
-	      && box.upper()<=extent().upper()));
-  assert (all(box.lower()>=extent().lower()
-	      && box.lower()>=src1->extent().lower()
-	      && box.lower()>=src2->extent().lower()));
-  assert (all(box.upper()<=extent().upper()
-	      && box.upper()<=src1->extent().upper()
-	      && box.upper()<=src2->extent().upper()));
+  assert (has_storage());
+  assert (all(box.lower()>=extent().lower()));
+  assert (all(box.upper()<=extent().upper()));
   assert (all(box.stride()==extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0
-	      && (box.lower()-src1->extent().lower())%box.stride() == 0
-	      && (box.lower()-src2->extent().lower())%box.stride() == 0));
-  assert (src1->proc() == src2->proc());
+  assert (all((box.lower()-extent().lower())%box.stride() == 0));
+  vector<const data*> srcs(gsrcs.size());
+  for (int t=0; t<(int)srcs.size(); ++t) srcs[t] = (const data*)gsrcs[t];
+  assert (srcs.size() == tls.size() && srcs.size()>0);
+  for (int t=0; t<(int)srcs.size(); ++t) {
+    assert (srcs[t]->has_storage());
+    assert (all(box.lower()>=srcs[t]->extent().lower()));
+    assert (all(box.upper()<=srcs[t]->extent().upper()));
+  }
   
-  assert (proc() == src1->proc());
+  assert (proc() == srcs[0]->proc());
   
   int rank;
   MPI_Comm_rank (dist::comm, &rank);
   assert (rank == proc());
   
-  assert (src1->extent() == src2->extent());
-  
-  const ibbox& sext = src1->extent();
+  const ibbox& sext = srcs[0]->extent();
   const ibbox& dext = extent();
   
   int srcshp[3], dstshp[3];
@@ -534,16 +458,102 @@ void data<CCTK_REAL8,3>
   }
   
   assert (all(dext.stride() == box.stride()));
-  if (all(sext.stride() > dext.stride())) {
-    CCTK_FNAME(prolongate_3d_real8_2tl)
-      ((const CCTK_REAL8*)src1->storage(), t1,
-       (const CCTK_REAL8*)src2->storage(), t2,
+  if (all(sext.stride() < dext.stride())) {
+    
+    assert (srcs.size() == 1);
+    CCTK_FNAME(restrict_3d_real8)
+      ((const CCTK_REAL8*)srcs[0]->storage(),
        srcshp[0], srcshp[1], srcshp[2],
-       (CCTK_REAL8*)storage(), t,
+       (CCTK_REAL8*)storage(),
        dstshp[0], dstshp[1], dstshp[2],
-       srcbbox,
-       dstbbox,
-       regbbox);
+       srcbbox, dstbbox, regbbox);
+    
+  } else if (all(sext.stride() > dext.stride())) {
+    
+    switch (srcs.size()) {
+      
+    case 1:
+      // One timelevel
+      switch (order_space) {
+      case 1:
+	CCTK_FNAME(prolongate_3d_real8)
+	  ((const CCTK_REAL8*)srcs[0]->storage(),
+	   srcshp[0], srcshp[1], srcshp[2],
+	   (CCTK_REAL8*)storage(),
+	   dstshp[0], dstshp[1], dstshp[2],
+	   srcbbox, dstbbox, regbbox);
+	break;
+      case 3:
+	CCTK_FNAME(prolongate_3d_real8_o3)
+	  ((const CCTK_REAL8*)srcs[0]->storage(),
+	   srcshp[0], srcshp[1], srcshp[2],
+	   (CCTK_REAL8*)storage(),
+	   dstshp[0], dstshp[1], dstshp[2],
+	   srcbbox, dstbbox, regbbox);
+	break;
+      default:
+	abort();
+      }
+      break;
+      
+    case 2:
+      // Two timelevels
+      switch (order_space) {
+      case 1:
+	CCTK_FNAME(prolongate_3d_real8_2tl)
+	  ((const CCTK_REAL8*)srcs[0]->storage(), tls[0],
+	   (const CCTK_REAL8*)srcs[1]->storage(), tls[1],
+	   srcshp[0], srcshp[1], srcshp[2],
+	   (CCTK_REAL8*)storage(), tl,
+	   dstshp[0], dstshp[1], dstshp[2],
+	   srcbbox, dstbbox, regbbox);
+	break;
+      case 3:
+	CCTK_FNAME(prolongate_3d_real8_2tl_o3)
+	  ((const CCTK_REAL8*)srcs[0]->storage(), tls[0],
+	   (const CCTK_REAL8*)srcs[1]->storage(), tls[1],
+	   srcshp[0], srcshp[1], srcshp[2],
+	   (CCTK_REAL8*)storage(), tl,
+	   dstshp[0], dstshp[1], dstshp[2],
+	   srcbbox, dstbbox, regbbox);
+	break;
+      default:
+	abort();
+      }
+      break;
+      
+    case 3:
+      // Three timelevels
+      switch (order_space) {
+      case 1:
+	CCTK_FNAME(prolongate_3d_real8_3tl)
+	  ((const CCTK_REAL8*)srcs[0]->storage(), tls[0],
+	   (const CCTK_REAL8*)srcs[1]->storage(), tls[1],
+	   (const CCTK_REAL8*)srcs[2]->storage(), tls[2],
+	   srcshp[0], srcshp[1], srcshp[2],
+	   (CCTK_REAL8*)storage(), tl,
+	   dstshp[0], dstshp[1], dstshp[2],
+	   srcbbox, dstbbox, regbbox);
+	break;
+      case 3:
+	CCTK_FNAME(prolongate_3d_real8_3tl_o3)
+	  ((const CCTK_REAL8*)srcs[0]->storage(), tls[0],
+	   (const CCTK_REAL8*)srcs[1]->storage(), tls[1],
+	   (const CCTK_REAL8*)srcs[2]->storage(), tls[2],
+	   srcshp[0], srcshp[1], srcshp[2],
+	   (CCTK_REAL8*)storage(), tl,
+	   dstshp[0], dstshp[1], dstshp[2],
+	   srcbbox, dstbbox, regbbox);
+	break;
+      default:
+	abort();
+      }
+      break;
+      
+    default:
+      abort();
+    }
+    
   } else {
     abort();
   }
@@ -564,7 +574,7 @@ void data<T,D>::write_ascii_output_element (ofstream& file, const ivect& index)
 // Output
 template<class T,int D>
 ostream& data<T,D>::out (ostream& os) const {
-  os << "data<" STR(T) "," << D << ">:"
+  os << "data<T," << D << ">:"
      << "extent=" << extent() << ","
      << "stride=" << stride() << ",size=" << size();
   return os;

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.4 2001/03/22 18:42:05 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.5 2001/03/24 22:38:48 eschnett Exp $
 
  ***************************************************************************/
 
@@ -99,13 +99,12 @@ public:
   }
   
   // Data manipulators
-  void copy_from_innerloop (const generic_data<D>* src,
+  void copy_from_innerloop (const generic_data<D>* gsrc,
 			    const ibbox& box);
-  void interpolate_from_innerloop (const generic_data<D>* src,
-				   const ibbox& box);
-  void interpolate_from_innerloop (const generic_data<D>* src1, const int t1,
-				   const generic_data<D>* src2, const int t2,
-				   const ibbox& box, const int t);
+  void interpolate_from_innerloop (const vector<const generic_data<D>*> gsrcs,
+				   const vector<int> tls,
+				   const ibbox& box, const int tl,
+				   const int order_space);
   
   void write_ascii_output_element (ofstream& file, const ivect& index) const;
 //   void write_ieee (const string name, const int time,

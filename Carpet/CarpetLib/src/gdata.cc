@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.9 2001/03/22 18:42:05 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.10 2001/03/24 22:38:48 eschnett Exp $
 
  ***************************************************************************/
 
@@ -88,78 +88,38 @@ void generic_data<D>::copy_from (const generic_data* src, const ibbox& box)
 
 template<int D>
 void generic_data<D>
-::interpolate_from (const generic_data* src, const ibbox& box)
+::interpolate_from (const vector<const generic_data*> srcs,
+		    const vector<int> tls,
+		    const ibbox& box, const int tl,
+		    const int order_space)
 {
-  assert (has_storage() && src->has_storage());
-  assert (all(box.lower()>=extent().lower()
-	      && box.upper()<=extent().upper()));
-  assert (all(box.lower()>=extent().lower()
-	      && box.lower()>=src->extent().lower()));
-  assert (all(box.upper()<=extent().upper()
-	      && box.upper()<=src->extent().upper()));
+  assert (has_storage());
+  assert (all(box.lower()>=extent().lower()));
+  assert (all(box.upper()<=extent().upper()));
   assert (all(box.stride()==extent().stride()));
   assert (all((box.lower()-extent().lower())%box.stride() == 0));
-  
-  if (proc() == src->proc()) {
-    // interpolate on same processor
-    
-    int rank;
-    MPI_Comm_rank (dist::comm, &rank);
-    if (rank == proc()) {
-      interpolate_from_innerloop (src, box);
-    }
-    
-  } else {
-    // interpolate from other processor
-    
-    generic_data* const tmp = make_typed();
-    tmp->allocate (box, src->proc());
-    tmp->interpolate_from (src, box);
-    tmp->change_processor (proc());
-    copy_from (tmp, box);
-    delete tmp;
-    
+  assert (srcs.size() == tls.size() && srcs.size()>0);
+  for (int t=0; t<(int)srcs.size(); ++t) {
+    assert (srcs[t]->has_storage());
+    assert (all(box.lower()>=srcs[t]->extent().lower()));
+    assert (all(box.upper()<=srcs[t]->extent().upper()));
   }
-}
-
-
-
-template<int D>
-void generic_data<D>
-::interpolate_from (const generic_data* src1, const int t1,
-		    const generic_data* src2, const int t2,
-		    const ibbox& box, const int t)
-{
-  assert (has_storage() && src1->has_storage() && src2->has_storage());
-  assert (all(box.lower()>=extent().lower()
-	      && box.upper()<=extent().upper()));
-  assert (all(box.lower()>=extent().lower()
-	      && box.lower()>=src1->extent().lower()
-	      && box.lower()>=src2->extent().lower()));
-  assert (all(box.upper()<=extent().upper()
-	      && box.upper()<=src1->extent().upper()
-	      && box.upper()<=src2->extent().upper()));
-  assert (all(box.stride()==extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0
-	      && (box.lower()-src1->extent().lower())%box.stride() == 0
-	      && (box.lower()-src2->extent().lower())%box.stride() == 0));
-  assert (src1->proc() == src2->proc());
   
-  if (proc() == src1->proc()) {
+  if (proc() == srcs[0]->proc()) {
     // interpolate on same processor
     
     int rank;
     MPI_Comm_rank (dist::comm, &rank);
     if (rank == proc()) {
-      interpolate_from_innerloop (src1, t1, src2, t2, box, t);
+      interpolate_from_innerloop (srcs, tls, box, tl, order_space);
     }
     
   } else {
     // interpolate from other processor
     
     generic_data* const tmp = make_typed();
-    tmp->allocate (box, src1->proc());
-    tmp->interpolate_from (src1, t1, src2, t2, box, t);
+    tmp->allocate (box, srcs[0]->proc());
+    tmp->interpolate_from (srcs, tls, box, tl, order_space);
     tmp->change_processor (proc());
     copy_from (tmp, box);
     delete tmp;

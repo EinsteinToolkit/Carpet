@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.3 2001/03/22 18:42:06 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.4 2001/03/24 22:38:48 eschnett Exp $
 
  ***************************************************************************/
 
@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "defs.hh"
 #include "dh.hh"
@@ -110,41 +111,44 @@ protected:
   
 protected:
   
-  // Copy region for a component (between time levels)
+  // Copy a region
   void copycat (int tl1, int rl1, int c1, int ml1,
 		const ibbox dh<D>::dboxes::* recv_list,
 		int tl2, int rl2, int ml2,
 		const ibbox dh<D>::dboxes::* send_list);
 
-  // Copy regions for a component (between multigrid levels)
+  // Copy regions
   void copycat (int tl1, int rl1, int c1, int ml1,
 		const iblist dh<D>::dboxes::* recv_list,
 		int tl2, int rl2, int ml2,
 		const iblist dh<D>::dboxes::* send_list);
 
-  // Copy regions for a level (between refinement levels)
+  // Copy regions
   void copycat (int tl1, int rl1, int c1, int ml1,
 		const iblistvect dh<D>::dboxes::* recv_listvect,
 		int tl2, int rl2, int ml2,
 		const iblistvect dh<D>::dboxes::* send_listvect);
   
-  // Interpolate a component (between time levels)
+  // Interpolate a region
   void intercat (int tl1, int rl1, int c1, int ml1,
 		 const ibbox dh<D>::dboxes::* recv_list,
-		 int tl2a, int tl2b, int rl2, int ml2,
-		 const ibbox dh<D>::dboxes::* send_list);
+		 const vector<int> tl2s, int rl2, int ml2,
+		 const ibbox dh<D>::dboxes::* send_list,
+		 int order_space);
 
-  // Interpolate a component (between multigrid levels)
+  // Interpolate regions
   void intercat (int tl1, int rl1, int c1, int ml1,
 		 const iblist dh<D>::dboxes::* recv_list,
-		 int tl2a, int tl2b, int rl2, int ml2,
-		 const iblist dh<D>::dboxes::* send_list);
+		 const vector<int> tl2s, int rl2, int ml2,
+		 const iblist dh<D>::dboxes::* send_list,
+		 int order_space);
 
-  // Interpolate a level (between refinement levels)
+  // Interpolate regions
   void intercat (int tl1, int rl1, int c1, int ml1,
 		 const iblistvect dh<D>::dboxes::* recv_listvect,
-		 int tl2a, int tl2b, int rl2, int ml2,
-		 const iblistvect dh<D>::dboxes::* send_listvect);
+		 const vector<int> tl2s, int rl2, int ml2,
+		 const iblistvect dh<D>::dboxes::* send_listvect,
+		 int order_space);
 
 
 
@@ -163,19 +167,20 @@ public:
   void sync (int tl, int rl, int c, int ml);
 
   // Prolongate the boundaries of a component
-  void ref_bnd_prolongate (int tl, int rl, int c, int ml);
+  void ref_bnd_prolongate (int tl, int rl, int c, int ml,
+			   int order_space=1, int order_time=1);
 
   // Restrict a multigrid level
-  void mg_restrict (int tl, int rl, int c, int ml);
+  void mg_restrict (int tl, int rl, int c, int ml, int order_space=1);
 
   // Prolongate a multigrid level
-  void mg_prolongate (int tl, int rl, int c, int ml);
+  void mg_prolongate (int tl, int rl, int c, int ml, int order_space=1);
 
   // Restrict a refinement level
-  void ref_restrict (int tl, int rl, int c, int ml);
+  void ref_restrict (int tl, int rl, int c, int ml, int order_space=1);
 
   // Prolongate a refinement level
-  void ref_prolongate (int tl, int rl, int c, int ml);
+  void ref_prolongate (int tl, int rl, int c, int ml, int order_space=1);
   
   
   

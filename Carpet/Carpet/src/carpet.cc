@@ -35,7 +35,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.17 2001/03/22 18:42:05 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.18 2001/03/24 22:38:48 eschnett Exp $";
 
 
 
@@ -130,6 +130,8 @@ namespace Carpet {
   void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cgh)
   {
     DECLARE_CCTK_PARAMETERS;
+    
+    assert (cgh->cctk_dim == dim);
     
     // Not sure what to do with that
     assert (convLevel==0);
@@ -531,6 +533,8 @@ namespace Carpet {
   
   int SyncGroup (cGH* cgh, const char* groupname)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     assert (component == -1);
     
     Checkpoint ("%*sSyncGroup %s", 2*reflevel, "", groupname);
@@ -560,7 +564,8 @@ namespace Carpet {
 	if (num_tl>1 && reflevel>0) {
 	  for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
 	    arrdata[group].data[var]->ref_bnd_prolongate
-	      (tl, reflevel, c, mglevel);
+	      (tl, reflevel, c, mglevel,
+	       prolongation_order_space, prolongation_order_time);
 	  }
 	}
 	for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
@@ -575,7 +580,8 @@ namespace Carpet {
 	if (num_tl>1 && reflevel>0) {
 	  for (int c=0; c<hh->components(reflevel); ++c) {
 	    gfdata[group].data[var]->ref_bnd_prolongate
-	      (tl, reflevel, c, mglevel);
+	      (tl, reflevel, c, mglevel,
+	       prolongation_order_space, prolongation_order_time);
 	  }
 	}
 	for (int c=0; c<hh->components(reflevel); ++c) {
@@ -908,7 +914,6 @@ namespace Carpet {
       if (CCTK_QueryGroupStorageI(cgh, group)) {
 	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
 	  const int n = CCTK_FirstVarIndexI(group) + var;
-	  const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
 	  switch (CCTK_GroupTypeFromVarI(n)) {
 	  case CCTK_SCALAR: {
 	    assert (group<(int)scdata.size());

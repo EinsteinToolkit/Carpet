@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.5 2001/03/22 18:42:05 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.6 2001/03/24 22:38:48 eschnett Exp $
 
  ***************************************************************************/
 
@@ -135,19 +135,18 @@ public:
 
   // Data manipulators
   void copy_from (const generic_data* src, const ibbox& box);
-  void interpolate_from (const generic_data* src, const ibbox& box);
-  void interpolate_from (const generic_data* src1, const int t1,
-			 const generic_data* src2, const int t2,
-			 const ibbox& box, const int t);
+  void interpolate_from (const vector<const generic_data*> srcs,
+			 const vector<int> tls,
+			 const ibbox& box, const int tl,
+			 const int order_space);
 protected:
   virtual void
   copy_from_innerloop (const generic_data* src, const ibbox& box) = 0;
   virtual void
-  interpolate_from_innerloop (const generic_data* src, const ibbox& box) =0;
-  virtual void
-  interpolate_from_innerloop (const generic_data* src1, const int t1,
-			      const generic_data* src2, const int t2,
-			      const ibbox& box, const int t) = 0;
+  interpolate_from_innerloop (const vector<const generic_data*> srcs,
+			      const vector<int> tls,
+			      const ibbox& box, const int tl,
+			      const int order_space) = 0;
   
 public:
   

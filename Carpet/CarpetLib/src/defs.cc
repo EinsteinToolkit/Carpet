@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.3 2001/03/22 18:42:05 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.4 2001/03/24 22:38:48 eschnett Exp $
 
  ***************************************************************************/
 
@@ -79,6 +79,7 @@ ostream& operator<< (ostream& os, const vector<T>& v) {
 template ostream& operator<< (ostream& os, const list<bbox<int,3> >& l);
 template ostream& operator<< (ostream& os, const set<bbox<int,3> >& s);
 template ostream& operator<< (ostream& os, const set<bboxset<int,3> >& s);
+template ostream& operator<< (ostream& os, const vector<int>& v);
 template ostream& operator<< (ostream& os, const vector<list<bbox<int,3> > >& v);
 template ostream& operator<< (ostream& os, const vector<vector<bbox<int,3> > >& v);
 template ostream& operator<< (ostream& os, const vector<vector<vector<bbox<int,3> > > >& v);

@@ -7,7 +7,7 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_periodic_coarse_rl2.par,v 1.4 2001/03/17 00:36:14 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_periodic_coarse_rl2.par,v 1.5 2001/03/24 22:38:49 eschnett Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetSlab IDScalarWave WaveToyF77"
 
@@ -20,6 +20,8 @@ driver::global_ny		= 24
 driver::global_nz		= 32
 
 Carpet::max_refinement_levels	= 2
+Carpet::prolongation_order_space= 3
+Carpet::prolongation_order_time	= 2
 
 grid::type			= byrange
 grid::xmin			= -4.8
