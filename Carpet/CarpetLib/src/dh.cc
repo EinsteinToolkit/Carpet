@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.56 2004/08/07 19:47:11 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.57 2004/09/17 16:37:26 schnetter Exp $
 
 #include <assert.h>
 
@@ -612,22 +612,29 @@ void dh<D>::recompose (const bool do_prolongate) {
         for (comm_state<D> state; !state.done(); state.step()) {
           (*f)->recompose_fill (state, rl, do_prolongate);
         }
+        assert ((*f)->vectorlength >= 1);
         if ((*f)->vectorlength == 1) {
+          assert (! vectorleader);
           (*f)->recompose_free (rl);
         } else {
           // treat vector groups specially: delete the leader only
           // after all other elements have been deleted
           if ((*f)->vectorindex == 0) {
             // first element: delete nothing
-            assert (! vectorleader);
-            vectorleader = *f;
+            if (rl == 0) {
+              assert (! vectorleader);
+              vectorleader = *f;
+            }
+            assert (vectorleader);
           } else {
             assert (vectorleader);
             (*f)->recompose_free (rl);
             if ((*f)->vectorindex == (*f)->vectorlength-1) {
               // this was the last element: delete the leader as well
               vectorleader->recompose_free (rl);
-              vectorleader = NULL;
+              if (rl == h.reflevels()-1) {
+                vectorleader = NULL;
+              }
             }
           }
         }

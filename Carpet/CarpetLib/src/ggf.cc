@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.45 2004/08/07 19:47:11 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.46 2004/09/17 16:37:26 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -36,7 +36,12 @@ ggf<D>::ggf (const int varindex, const operator_type transport_operator,
     vectorleader(vectorleader)
 {
   assert (&t.h == &d.h);
-
+  
+  assert (vectorlength >= 1);
+  assert (vectorindex >= 0 && vectorindex < vectorlength);
+  assert ((vectorindex==0 && !vectorleader)
+          || (vectorindex!=0 && vectorleader));
+  
   d.add(this);
 }
 
@@ -277,9 +282,9 @@ void ggf<D>::flip (int rl, int c, int ml) {
 template<int D>
 void ggf<D>::copycat (comm_state<D>& state,
                       int tl1, int rl1, int c1, int ml1,
-                      const ibbox dh<D>::dboxes::* recv_list,
+                      const ibbox dh<D>::dboxes::* recv_box,
                       int tl2, int rl2, int ml2,
-                      const ibbox dh<D>::dboxes::* send_list)
+                      const ibbox dh<D>::dboxes::* send_box)
 {
   assert (tl1>=tmin && tl1<=tmax);
   assert (rl1>=0 && rl1<h.reflevels());
@@ -289,8 +294,8 @@ void ggf<D>::copycat (comm_state<D>& state,
   assert (rl2>=0 && rl2<h.reflevels());
   const int c2=c1;
   assert (ml2<h.mglevels(rl2,c2));
-  const ibbox recv = d.boxes.at(rl1).at(c1).at(ml1).*recv_list;
-  const ibbox send = d.boxes.at(rl2).at(c2).at(ml2).*send_list;
+  const ibbox recv = d.boxes.at(rl1).at(c1).at(ml1).*recv_box;
+  const ibbox send = d.boxes.at(rl2).at(c2).at(ml2).*send_box;
   assert (all(recv.shape()==send.shape()));
   // copy the content
   assert (recv==send);
