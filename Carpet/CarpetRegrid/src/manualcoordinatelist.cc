@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>
+#include <sstream>
 #include <vector>
 
 #include "cctk.h"
@@ -12,7 +13,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinatelist.cc,v 1.8 2004/06/27 21:18:47 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinatelist.cc,v 1.9 2004/07/02 10:14:51 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_manualcoordinatelist_cc);
 }
 

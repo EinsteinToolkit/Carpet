@@ -1,5 +1,6 @@
 #include <assert.h>
 
+#include <sstream>
 #include <vector>
 
 #include "cctk.h"
@@ -11,7 +12,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualgridpoints.cc,v 1.4 2004/04/28 15:45:25 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualgridpoints.cc,v 1.5 2004/07/02 10:14:51 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_manualgridpoints_cc);
 }
 
