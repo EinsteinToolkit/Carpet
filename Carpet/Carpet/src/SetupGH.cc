@@ -752,7 +752,7 @@ namespace Carpet {
     } catch (input_error) {
       CCTK_WARN (0, "Could not parse parameter \"base_extents\"");
     }
-    CCTK_VInfo (CCTK_THORNSTRING, "Using %d grid patches", bbs.size());
+    CCTK_VInfo (CCTK_THORNSTRING, "Using %d grid patches", (int)bbs.size());
     cout << "grid-patches-are " << bbs << endl;
     if (bbs.size()<=0) {
       CCTK_WARN (0, "Cannot evolve with 0 grid patches");
@@ -793,7 +793,6 @@ namespace Carpet {
     int ierr = CCTK_GroupData (group, &gp);
     assert (!ierr);
     
-#if 0
     if (gp.compact) {
       char * const groupname = CCTK_GroupName (group);
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -801,7 +800,6 @@ namespace Carpet {
                   groupname);
       free (groupname);
     }
-#endif
     
 #if 0
     if (gp.contiguous) {
