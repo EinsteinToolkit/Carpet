@@ -55,11 +55,11 @@ c      print '("IDScalarWave_InitialData")'
                do i=1,cctk_lsh(1)
 
                   phi(i,j,k) = amplitude
-     $                 * cos(kx*cart3d_x(i,j,k) + ky*cart3d_y(i,j,k)
-     $                 + kz*cart3d_z(i,j,k) + omega*cctk_time)
+     $                 * cos((kx*cart3d_x(i,j,k) + ky*cart3d_y(i,j,k)
+     $                 + kz*cart3d_z(i,j,k) + omega*cctk_time) * pi)
                   phi_p(i,j,k) = amplitude
-     $                 * cos(kx*cart3d_x(i,j,k) + ky*cart3d_y(i,j,k)
-     $                 + kz*cart3d_z(i,j,k) + omega*(cctk_time - dt))
+     $                 * cos((kx*cart3d_x(i,j,k) + ky*cart3d_y(i,j,k)
+     $                 + kz*cart3d_z(i,j,k) + omega*(cctk_time - dt)) * pi)
                   
                end do
             end do
@@ -122,5 +122,3 @@ c        Use kx,ky,kz as number of modes in each direction.
       end if
       
       end 
-
-

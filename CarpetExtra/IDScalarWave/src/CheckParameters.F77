@@ -34,15 +34,10 @@ c	-*-Fortran-*-
       implicit none
 
       DECLARE_CCTK_ARGUMENTS
+      DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
 
-      INTEGER CCTK_Equals
-
-      if (CCTK_Equals(initial_data,"box").eq.1) then
-
-         if (CCTK_Equals(type, "box").eq.0) then
-            call CCTK_PARAMWARN("Must have a box grid with box initial data")
-         end if
+      if (CCTK_EQUALS(initial_data,"box")) then
 
          if (kx.eq.0 .or. ky.eq.0 .or. kz.eq.0) then
             call CCTK_PARAMWARN("Cannot have zero kx,ky,kz for box initial data")
