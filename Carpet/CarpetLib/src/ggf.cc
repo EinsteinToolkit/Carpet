@@ -300,8 +300,7 @@ void ggf::flip (int rl, int c, int ml) {
 void ggf::copycat (comm_state& state,
                    int tl1, int rl1, int c1, int ml1,
                    const ibbox dh::dboxes::* recv_box,
-                   int tl2, int rl2, int ml2,
-                   const ibbox dh::dboxes::* send_box)
+                   int tl2, int rl2, int ml2)
 {
   assert (tl1>=0 and tl1<timelevels());
   assert (rl1>=0 and rl1<h.reflevels());
@@ -312,40 +311,35 @@ void ggf::copycat (comm_state& state,
   const int c2=c1;
   assert (ml2<h.mglevels());
   const ibbox recv = d.boxes.at(ml1).at(rl1).at(c1).*recv_box;
-  const ibbox send = d.boxes.at(ml2).at(rl2).at(c2).*send_box;
-  assert (all(recv.shape()==send.shape()));
   // copy the content
-  assert (recv==send);
-  storage.at(ml1).at(rl1).at(c1).at(tl1)->copy_from
-    (state, storage.at(ml2).at(rl2).at(c2).at(tl2), recv);
+  gdata* const dst = storage.at(ml1).at(rl1).at(c1).at(tl1);
+  gdata* const src = storage.at(ml2).at(rl2).at(c2).at(tl2);
+  dst->copy_from(state, src, recv);
 }
 
 // Copy regions
 void ggf::copycat (comm_state& state,
                    int tl1, int rl1, int c1, int ml1,
                    const iblist dh::dboxes::* recv_list,
-                   int tl2, int rl2, int ml2,
-                   const iblist dh::dboxes::* send_list)
+                   int tl2, int rl2, int ml2)
 {
   assert (tl1>=0 and tl1<timelevels());
   assert (rl1>=0 and rl1<h.reflevels());
   assert (c1>=0 and c1<h.components(rl1));
   assert (ml1>=0 and ml1<h.mglevels());
+  assert (           ml2<h.mglevels());
   assert (tl2>=0 and tl2<timelevels());
   assert (rl2>=0 and rl2<h.reflevels());
   const int c2=c1;
-  assert (ml2<h.mglevels());
   const iblist recv = d.boxes.at(ml1).at(rl1).at(c1).*recv_list;
-  const iblist send = d.boxes.at(ml2).at(rl2).at(c2).*send_list;
-  assert (recv.size()==send.size());
   // walk all boxes
-  for (iblist::const_iterator r=recv.begin(), s=send.begin();
-       r!=recv.end(); ++r, ++s)
+  for (iblist::const_iterator r=recv.begin(); r!=recv.end(); ++r)
   {
     // (use the send boxes for communication)
     // copy the content
-    storage.at(ml1).at(rl1).at(c1).at(tl1)->copy_from
-      (state, storage.at(ml2).at(rl2).at(c2).at(tl2), *r);
+    gdata* const dst = storage.at(ml1).at(rl1).at(c1).at(tl1);
+    gdata* const src = storage.at(ml2).at(rl2).at(c2).at(tl2);
+    dst->copy_from(state, src, *r);
   }
 }
 
@@ -353,28 +347,25 @@ void ggf::copycat (comm_state& state,
 void ggf::copycat (comm_state& state,
                    int tl1, int rl1, int c1, int ml1,
                    const iblistvect dh::dboxes::* recv_listvect,
-                   int tl2, int rl2, int ml2,
-                   const iblistvect dh::dboxes::* send_listvect)
+                   int tl2, int rl2, int ml2)
 {
   assert (tl1>=0 and tl1<timelevels());
   assert (rl1>=0 and rl1<h.reflevels());
   assert (c1>=0 and c1<h.components(rl1));
   assert (ml1>=0 and ml1<h.mglevels());
+  assert (           ml2<h.mglevels());
   assert (tl2>=0 and tl2<timelevels());
   assert (rl2>=0 and rl2<h.reflevels());
   // walk all components
   for (int c2=0; c2<h.components(rl2); ++c2) {
-    assert (ml2<h.mglevels());
     const iblist recv = (d.boxes.at(ml1).at(rl1).at(c1).*recv_listvect).at(c2);
-    const iblist send = (d.boxes.at(ml2).at(rl2).at(c2).*send_listvect).at(c1);
-    assert (recv.size()==send.size());
     // walk all boxes
-    for (iblist::const_iterator r=recv.begin(), s=send.begin();
-      	 r!=recv.end(); ++r, ++s) {
+    for (iblist::const_iterator r=recv.begin(); r!=recv.end(); ++r) {
       // (use the send boxes for communication)
       // copy the content
-      storage.at(ml1).at(rl1).at(c1).at(tl1)->copy_from
-      	(state, storage.at(ml2).at(rl2).at(c2).at(tl2), *r);
+      gdata* const dst = storage.at(ml1).at(rl1).at(c1).at(tl1);
+      gdata* const src = storage.at(ml2).at(rl2).at(c2).at(tl2);
+      dst->copy_from(state, src, *r);
     }
   }
 }
@@ -384,7 +375,6 @@ void ggf::intercat (comm_state& state,
                     int tl1, int rl1, int c1, int ml1,
                     const ibbox dh::dboxes::* recv_list,
                     const vector<int> tl2s, int rl2, int ml2,
-                    const ibbox dh::dboxes::* send_list,
                     CCTK_REAL time)
 {
   assert (tl1>=0 and tl1<timelevels());
@@ -406,10 +396,7 @@ void ggf::intercat (comm_state& state,
   }
   
   const ibbox recv = d.boxes.at(ml1).at(rl1).at(c1).*recv_list;
-  const ibbox send = d.boxes.at(ml2).at(rl2).at(c2).*send_list;
-  assert (all(recv.shape()==send.shape()));
   // interpolate the content
-  assert (recv==send);
   storage.at(ml1).at(rl1).at(c1).at(tl1)->interpolate_from
     (state, gsrcs, times, recv, time,
      d.prolongation_order_space, prolongation_order_time);
@@ -420,7 +407,6 @@ void ggf::intercat (comm_state& state,
                     int tl1, int rl1, int c1, int ml1,
                     const iblist dh::dboxes::* recv_list,
                     const vector<int> tl2s, int rl2, int ml2,
-                    const iblist dh::dboxes::* send_list,
                     const CCTK_REAL time)
 {
   assert (tl1>=0 and tl1<timelevels());
@@ -442,11 +428,8 @@ void ggf::intercat (comm_state& state,
   }
   
   const iblist recv = d.boxes.at(ml1).at(rl1).at(c1).*recv_list;
-  const iblist send = d.boxes.at(ml2).at(rl2).at(c2).*send_list;
-  assert (recv.size()==send.size());
   // walk all boxes
-  for (iblist::const_iterator r=recv.begin(), s=send.begin();
-       r!=recv.end(); ++r, ++s)
+  for (iblist::const_iterator r=recv.begin(); r!=recv.end(); ++r)
   {
     // (use the send boxes for communication)
     // interpolate the content
@@ -461,7 +444,6 @@ void ggf::intercat (comm_state& state,
                     int tl1, int rl1, int c1, int ml1,
                     const iblistvect dh::dboxes::* recv_listvect,
                     const vector<int> tl2s, int rl2, int ml2,
-                    const iblistvect dh::dboxes::* send_listvect,
                     const CCTK_REAL time)
 {
   assert (tl1>=0 and tl1<timelevels());
@@ -484,11 +466,8 @@ void ggf::intercat (comm_state& state,
     }
     
     const iblist recv = (d.boxes.at(ml1).at(rl1).at(c1).*recv_listvect).at(c2);
-    const iblist send = (d.boxes.at(ml2).at(rl2).at(c2).*send_listvect).at(c1);
-    assert (recv.size()==send.size());
     // walk all boxes
-    for (iblist::const_iterator r=recv.begin(), s=send.begin();
-      	 r!=recv.end(); ++r, ++s)
+    for (iblist::const_iterator r=recv.begin(); r!=recv.end(); ++r)
     {
       // (use the send boxes for communication)
       // interpolate the content
@@ -507,7 +486,7 @@ void ggf::copy (comm_state& state, int tl, int rl, int c, int ml)
   // Copy
   copycat (state,
            tl  ,rl,c,ml, &dh::dboxes::exterior,
-      	   tl+1,rl,  ml, &dh::dboxes::exterior);
+      	   tl+1,rl,  ml);
 }
 
 // Synchronise the boundaries a component
@@ -516,7 +495,7 @@ void ggf::sync (comm_state& state, int tl, int rl, int c, int ml)
   // Copy
   copycat (state,
            tl,rl,c,ml, &dh::dboxes::recv_sync,
-      	   tl,rl,  ml, &dh::dboxes::send_sync);
+      	   tl,rl,  ml);
 }
 
 // Prolongate the boundaries of a component
@@ -534,8 +513,7 @@ void ggf::ref_bnd_prolongate (comm_state& state,
   for (int i=0; i<=prolongation_order_time; ++i) tl2s.at(i) = i;
   intercat (state,
             tl  ,rl  ,c,ml, &dh::dboxes::recv_ref_bnd_coarse,
-	    tl2s,rl-1,  ml, &dh::dboxes::send_ref_bnd_fine,
-	    time);
+	    tl2s,rl-1,  ml, time);
 }
 
 // Restrict a multigrid level
@@ -549,8 +527,7 @@ void ggf::mg_restrict (comm_state& state,
   const vector<int> tl2s(1,tl);
   intercat (state,
             tl  ,rl,c,ml,   &dh::dboxes::recv_mg_coarse,
-	    tl2s,rl,  ml-1, &dh::dboxes::send_mg_fine,
-	    time);
+	    tl2s,rl,  ml-1, time);
 }
 
 // Prolongate a multigrid level
@@ -564,8 +541,7 @@ void ggf::mg_prolongate (comm_state& state,
   const vector<int> tl2s(1,tl);
   intercat (state,
             tl  ,rl,c,ml,   &dh::dboxes::recv_mg_coarse,
-	    tl2s,rl,  ml+1, &dh::dboxes::send_mg_fine,
-	    time);
+	    tl2s,rl,  ml+1, time);
 }
 
 // Restrict a refinement level
@@ -580,8 +556,7 @@ void ggf::ref_restrict (comm_state& state,
   const vector<int> tl2s(1,tl);
   intercat (state,
             tl  ,rl  ,c,ml, &dh::dboxes::recv_ref_fine,
-	    tl2s,rl+1,  ml, &dh::dboxes::send_ref_coarse,
-	    time);
+	    tl2s,rl+1,  ml, time);
 }
 
 // Prolongate a refinement level
@@ -598,6 +573,5 @@ void ggf::ref_prolongate (comm_state& state,
   for (int i=0; i<=prolongation_order_time; ++i) tl2s.at(i) = i;
   intercat (state,
             tl  ,rl  ,c,ml, &dh::dboxes::recv_ref_coarse,
-	    tl2s,rl-1,  ml, &dh::dboxes::send_ref_fine,
-	    time);
+	    tl2s,rl-1,  ml, time);
 }

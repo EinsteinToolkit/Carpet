@@ -122,29 +122,25 @@ protected:
   void copycat (comm_state& state,
                 int tl1, int rl1, int c1, int ml1,
 		const ibbox dh::dboxes::* recv_list,
-		int tl2, int rl2, int ml2,
-		const ibbox dh::dboxes::* send_list);
+		int tl2, int rl2, int ml2);
 
   // Copy regions
   void copycat (comm_state& state,
                 int tl1, int rl1, int c1, int ml1,
 		const iblist dh::dboxes::* recv_list,
-		int tl2, int rl2, int ml2,
-		const iblist dh::dboxes::* send_list);
+		int tl2, int rl2, int ml2);
 
   // Copy regions
   void copycat (comm_state& state,
                 int tl1, int rl1, int c1, int ml1,
 		const iblistvect dh::dboxes::* recv_listvect,
-		int tl2, int rl2, int ml2,
-		const iblistvect dh::dboxes::* send_listvect);
+		int tl2, int rl2, int ml2);
   
   // Interpolate a region
   void intercat (comm_state& state,
                  int tl1, int rl1, int c1, int ml1,
 		 const ibbox dh::dboxes::* recv_list,
 		 const vector<int> tl2s, int rl2, int ml2,
-		 const ibbox dh::dboxes::* send_list,
 		 CCTK_REAL time);
 
   // Interpolate regions
@@ -152,7 +148,6 @@ protected:
                  int tl1, int rl1, int c1, int ml1,
 		 const iblist dh::dboxes::* recv_list,
 		 const vector<int> tl2s, int rl2, int ml2,
-		 const iblist dh::dboxes::* send_list,
 		 CCTK_REAL time);
 
   // Interpolate regions
@@ -160,7 +155,6 @@ protected:
                  int tl1, int rl1, int c1, int ml1,
 		 const iblistvect dh::dboxes::* recv_listvect,
 		 const vector<int> tl2s, int rl2, int ml2,
-		 const iblistvect dh::dboxes::* send_listvect,
 		 CCTK_REAL time);
 
 
