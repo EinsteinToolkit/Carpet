@@ -18,7 +18,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.27 2002/06/06 00:23:35 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.28 2002/06/06 21:38:31 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_SetupGH_cc)
 
@@ -33,6 +33,8 @@ namespace Carpet {
   void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cgh)
   {
     DECLARE_CCTK_PARAMETERS;
+    
+    int ierr;
     
     assert (cgh->cctk_dim == dim);
     
@@ -112,7 +114,8 @@ namespace Carpet {
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       
       cGroup gp;
-      CCTK_GroupData (group, &gp);
+      ierr = CCTK_GroupData (group, &gp);
+      assert (!ierr);
       
       switch (gp.grouptype) {
 	
@@ -136,6 +139,8 @@ namespace Carpet {
 	  disttype = gp.disttype;
 	  const CCTK_INT * const * const sz  = CCTK_GroupSizesI(group);
 	  const CCTK_INT * const * const gsz = CCTK_GroupGhostsizesI(group);
+	  assert (sz);
+	  assert (gsz);
 	  for (int d=0; d<gp.dim; ++d) {
 	    if (sz) sizes[d] = *sz[d];
 	    if (gsz) ghostsizes[d] = *gsz[d];
@@ -209,7 +214,7 @@ namespace Carpet {
       }
 	
       case CCTK_GF: {
-	assert (CCTK_GroupDimI(group) == dim);
+	assert (gp.dim == dim);
 	arrdata[group].info.dim = dim;
 	arrdata[group].hh = hh;
 	arrdata[group].tt = tt;

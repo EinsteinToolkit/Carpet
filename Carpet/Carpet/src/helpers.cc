@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.21 2002/06/06 00:23:35 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.22 2002/06/06 21:38:31 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_helpers_cc)
 
@@ -248,10 +248,12 @@ namespace Carpet {
     assert (component==-1
 	    || (mglevel>=0 && mglevel<hh->mglevels(reflevel,component)));
     
+    
+    
+    // Set Cactus parameters
     if (component == -1) {
       // Global mode -- no component is active
       
-      // Set Cactus parameters to pseudo values
       for (int d=0; d<dim; ++d) {
 	cgh->cctk_lsh[d]      = 0xdeadbeef;
 	cgh->cctk_bbox[2*d  ] = 0xdeadbeef;
@@ -262,7 +264,42 @@ namespace Carpet {
 	  cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = 0xdeadbeef;
 	}
       }
-      for (int group=0; group<CCTK_NumGroups(); ++group) {
+      
+    } else {
+      // Local mode
+      
+      assert (reflevel < (int)dd->boxes.size());
+      assert (component < (int)dd->boxes[reflevel].size());
+      assert (mglevel < (int)dd->boxes[reflevel][component].size());
+      const bbox<int,dim>& ext
+	= dd->boxes[reflevel][component][mglevel].exterior;
+      for (int d=0; d<dim; ++d) {
+	cgh->cctk_lsh[d] = (ext.shape() / ext.stride())[d];
+	cgh->cctk_lbnd[d] = (ext.lower() / ext.stride())[d];
+	cgh->cctk_ubnd[d] = (ext.upper() / ext.stride())[d];
+	assert (cgh->cctk_lsh[d]>=0 && cgh->cctk_lsh[d]<=cgh->cctk_gsh[d]);
+// 	assert (cgh->cctk_lbnd[d]>=0 && cgh->cctk_ubnd[d]<cgh->cctk_gsh[d]);
+	assert (cgh->cctk_ubnd[d]-cgh->cctk_lbnd[d]+1 == cgh->cctk_lsh[d]);
+	assert (cgh->cctk_lbnd[d]<=cgh->cctk_ubnd[d]+1);
+	cgh->cctk_bbox[2*d  ] = hh->outer_boundaries[reflevel][component][d][0];
+	cgh->cctk_bbox[2*d+1] = hh->outer_boundaries[reflevel][component][d][1];
+	for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
+	  // TODO: support staggering
+	  cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
+	}
+      }
+      
+    } // if local mode
+    
+    
+    
+    // Set Cactus parameters for all groups
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
+      
+      if (CCTK_GroupTypeI(group) == CCTK_GF
+	  && component == -1) {
+	// Global mode for a grid function: not active
+	
 	for (int d=0; d<dim; ++d) {
 	  ((int*)arrdata[group].info.lsh)[d]      = 0xdeadbeef;
 	  ((int*)arrdata[group].info.bbox)[2*d  ] = 0xdeadbeef;
@@ -270,35 +307,10 @@ namespace Carpet {
 	  ((int*)arrdata[group].info.lbnd)[d]     = 0xdeadbeef;
 	  ((int*)arrdata[group].info.ubnd)[d]     = 0xdeadbeef;
 	}
-      }
-      
-    } else {
-      // Local mode -- a component is active
-      
-      // Set Cactus parameters
-      {
-	assert (reflevel < (int)dd->boxes.size());
-	assert (component < (int)dd->boxes[reflevel].size());
-	assert (mglevel < (int)dd->boxes[reflevel][component].size());
-	const bbox<int,dim>& ext
-	  = dd->boxes[reflevel][component][mglevel].exterior;
-	for (int d=0; d<dim; ++d) {
-	  cgh->cctk_lsh[d] = (ext.shape() / ext.stride())[d];
-	  cgh->cctk_lbnd[d] = (ext.lower() / ext.stride())[d];
-	  cgh->cctk_ubnd[d] = (ext.upper() / ext.stride())[d];
- 	  assert (cgh->cctk_lsh[d]>=0 && cgh->cctk_lsh[d]<=cgh->cctk_gsh[d]);
-// 	  assert (cgh->cctk_lbnd[d]>=0 && cgh->cctk_ubnd[d]<cgh->cctk_gsh[d]);
-	  assert (cgh->cctk_ubnd[d]-cgh->cctk_lbnd[d]+1 == cgh->cctk_lsh[d]);
-	  assert (cgh->cctk_lbnd[d]<=cgh->cctk_ubnd[d]+1);
-	  cgh->cctk_bbox[2*d  ] = hh->outer_boundaries[reflevel][component][d][0];
-	  cgh->cctk_bbox[2*d+1] = hh->outer_boundaries[reflevel][component][d][1];
-	  for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
-	    // TODO: support staggering
-	    cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
-	  }
-	}
-      }
-      for (int group=0; group<CCTK_NumGroups(); ++group) {
+	
+      } else {
+	// Local mode, or array or scalar: active
+	
 	int rl, c;
 	if (CCTK_GroupTypeI(group) == CCTK_GF) {
 	  rl = reflevel;
@@ -340,10 +352,11 @@ namespace Carpet {
 	    ((int*)arrdata[group].info.bbox)[2*d  ] = 0;
 	    ((int*)arrdata[group].info.bbox)[2*d+1] = 0;
 	  }
-	}
-      }
+	} // for d
+	
+      } // if local mode
       
-    } // if local mode
+    } // for group
     
     
     
