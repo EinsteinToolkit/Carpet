@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.cc,v 1.3 2004/03/23 19:30:14 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.cc,v 1.4 2004/03/23 19:56:41 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_modes_cc);
 }
 
@@ -133,21 +133,16 @@ namespace Carpet {
           assert (firstvar>=0);
           const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
           
-          assert (rl>=0 && rl<(int)arrdata.at(group).at(m).dd->boxes.size());
-          assert (c>=0 && c<(int)arrdata.at(group).at(m).dd->boxes.at(rl).size());
-          assert (ml>=0 && ml<(int)arrdata.at(group).at(m).dd->boxes.at(rl).at(c).size());
           assert (arrdata.at(group).at(m).hh->is_local(rl,c));
           
-          assert (group<(int)arrdata.size());
           for (int var=0; var<numvars; ++var) {
-            assert (var<(int)arrdata.at(group).at(m).data.size());
+            assert (firstvar+var<CCTK_NumVars());
             for (int tl=0; tl<num_tl; ++tl) {
               ggf<dim> * const ff = arrdata.at(group).at(m).data.at(var);
               if (ff) {
                 gdata<dim> * const data = (*ff) (-tl, rl, c, ml);
                 assert (data);
-                cgh->data[firstvar+var][tl]
-                  = (*ff) (-tl, rl, c, ml)->storage();
+                cgh->data[firstvar+var][tl] data->storage();
               } else {
                 cgh->data[firstvar+var][tl] = 0;
               }
@@ -209,6 +204,7 @@ namespace Carpet {
           
           assert (group<(int)arrdata.size());
           for (int var=0; var<numvars; ++var) {
+            assert (firstvar+var<CCTK_NumVars());
             assert (var<(int)arrdata.at(group).at(m).data.size());
             for (int tl=0; tl<num_tl; ++tl) {
               cgh->data[firstvar+var][tl] = 0;
@@ -414,8 +410,10 @@ namespace Carpet {
             for (int tl=0; tl<num_tl; ++tl) {
               ggf<dim> * const ff = arrdata.at(group).at(map).data.at(var);
               if (ff) {
-                cgh->data[firstvar+var][tl]
-                  = (*ff) (-tl, reflevel, component, mglevel)->storage();
+                gdata<dim> * const data
+                  = (*ff) (-tl, reflevel, component, mglevel);
+                assert (data);
+                cgh->data[firstvar+var][tl] = data->storage();
               } else {
                 cgh->data[firstvar+var][tl] = 0;
               }
