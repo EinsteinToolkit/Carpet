@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <iostream.h>
 #include <stdlib.h>
 
 #include "cctk.h"
@@ -8,7 +7,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CarpetParamCheck.cc,v 1.4 2002/03/26 13:22:26 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CarpetParamCheck.cc,v 1.5 2002/06/05 19:10:19 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_CarpetParamCheck_cc)
 
