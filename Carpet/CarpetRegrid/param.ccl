@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.20 2004/05/29 18:52:42 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.21 2004/08/02 11:40:36 schnetter Exp $
 
 
 
@@ -62,7 +62,7 @@ KEYWORD refined_regions "Regions where the grid is refined" STEERABLE=always
 
 
 
-BOOLEAN smart_outer_boundaries "Use the CoordBase interface for outer boundaries"
+BOOLEAN smart_outer_boundaries "Use the CoordBase interface for outer boundaries" STEERABLE=always
 {
 } no
 
@@ -70,13 +70,13 @@ BOOLEAN smart_outer_boundaries "Use the CoordBase interface for outer boundaries
 
 # Region specifications for centre refinement
 
-BOOLEAN symmetry_x "Refine the lower half in x-direction"
+BOOLEAN symmetry_x "Refine the lower half in x-direction" STEERABLE=always
 {
 } "no"
-BOOLEAN symmetry_y "Refine the lower half in y-direction"
+BOOLEAN symmetry_y "Refine the lower half in y-direction" STEERABLE=always
 {
 } "no"
-BOOLEAN symmetry_z "Refine the lower half in z-direction"
+BOOLEAN symmetry_z "Refine the lower half in z-direction" STEERABLE=always
 {
 } "no"
 
@@ -90,7 +90,7 @@ KEYWORD moving_trajectory "Type of trajectory" STEERABLE=always
   "circle" :: "Move in a circle"
 } "point"
 
-CCTK_REAL moving_region_radius "Radius of the moving region" STEERABLE=always
+CCTK_REAL moving_region_radius "Radius of the moving region (on the first refined level)" STEERABLE=always
 {
   (0: :: ""
 } 1.0
@@ -316,7 +316,7 @@ CCTK_STRING coordinates "List of bounding box coordinates" STEERABLE=always
 
 # Outer boundaries for manual-gridpoint-list and manual-coordinate-list
 
-CCTK_STRING outerbounds "Outer boundaries"
+CCTK_STRING outerbounds "Outer boundaries" STEERABLE=always
 {
   "^$" :: "leave empty for no outer boundaries"
   ".*" :: "[ [ [[?,?],[?,?],[?,?]], ... ], ...]"
