@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.49 2004/08/02 11:43:14 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.50 2004/08/02 12:18:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -51,6 +51,20 @@ namespace Carpet {
     
     // Initialise stuff
     CCTKi_InitGHExtensions (cgh);
+    
+    
+    
+    // Output the grid structure
+    {
+      // Loop over maps
+      for (int m=0; m<maps; ++m) {
+        // Write grid structure to file
+        OutputGridStructure
+          (cgh, m,
+           vhh.at(m)->extents, vhh.at(m)->outer_boundaries,
+           vhh.at(m)->processors);
+      } // loop over maps
+    }
     
     
     

@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.82 2004/06/26 12:56:01 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.83 2004/08/02 12:18:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -560,8 +560,11 @@ namespace Carpet {
       // Check the regions
       CheckRegions (bbsss, obss, pss);
       
+#if 0
+      // Do this later, because CactusBase/IO might not yet be initialised
       // Write grid structure to file
       OutputGridStructure (cgh, m, bbsss, obss, pss);
+#endif
       
       // Recompose grid hierarchy
       vhh.at(m)->recompose (bbsss, obss, pss);

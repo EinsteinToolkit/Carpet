@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.68 2004/06/22 13:43:03 hawke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.69 2004/08/02 12:18:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -249,17 +249,12 @@ namespace Carpet {
     // Output only if output is desired
     if (strcmp(grid_structure_filename, "") == 0) return;
     
-    // Get grid hierarchy extentsion from IOUtil
+    // Get grid hierarchy extention from IOUtil
     const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cgh, "IO");
     
     // Output only if IO exists and has been initialised
     if (! iogh) return;
     
-    // FIXME:
-    // Problems with GH setup order.
-    // FIXME: (see PR 55)
-    return;
-
     assert (iogh);
     
     // Create the output directory
