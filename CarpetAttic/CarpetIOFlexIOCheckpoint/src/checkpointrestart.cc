@@ -48,7 +48,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.12 2003/12/01 13:15:21 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.13 2003/12/03 16:02:51 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
@@ -429,14 +429,25 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
 	*/
 
 	CCTK_REAL startdata = 666.66;
-	writer->write(FLEXIO_REAL,0,0,&startdata);
+	int rank=1;
+	int dim[1]={1};
+	writer->write(FLEXIO_REAL,rank,dim,&startdata);
 	
 
 	/* now dump parameters */ 
+	if (verbose)
+	  {
+	    CCTK_VInfo (CCTK_THORNSTRING, "Dumping Parameters'");
+	  }
 	DumpParams (cgh, 1, writer);
 
 
 	/* and now dump GH extentions */
+	if (verbose)
+	  {
+	    CCTK_VInfo (CCTK_THORNSTRING, "Dumping GHExtensions");
+	  }
+
 	DumpGHExtensions(cgh,writer);
 
       }

@@ -45,7 +45,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.11 2003/12/01 13:15:21 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.12 2003/12/03 16:02:51 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -167,6 +167,7 @@ namespace CarpetIOFlexIO {
     const int grouptype = CCTK_GroupTypeI(group);
 
     assert (! ( (grouptype != CCTK_GF) && reflevel>0));
+    //    if(grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY) return 0;
 
 
     if (CCTK_MyProc(cgh)==0) {
@@ -290,6 +291,8 @@ namespace CarpetIOFlexIO {
 	  origin[d] = (ext.lower() / ext.stride())[d];
 	  dims[d]   = (ext.shape() / ext.stride())[d];
 	}
+	CCTK_VInfo (CCTK_THORNSTRING, "boguscheck");
+	CCTK_VInfo (CCTK_THORNSTRING, "boguscheck2, dim0: %d dim1: %d dim2: %d",dims[0],dims[1],dims[2]);
 	amrwriter->write (origin, dims, (void*)tmp->storage());
 
 	// dump attributes
