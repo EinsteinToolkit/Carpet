@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.31 2003/05/02 14:23:12 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.32 2003/05/07 10:04:16 schnetter Exp $
 
 #include <assert.h>
 
@@ -262,6 +262,7 @@ void dh<D>::recompose (const int initialise_upto) {
       	      // (the restriction may fill the interior of the of the
       	      // coarse grid, and may use the interior of the fine
       	      // grid, and the bbox must be as large as possible)
+#if 0
 	      // (the restriction must not fill points that are used
 	      // to prolongate the boundaries)
               ibset recvs = intrf.contracted_for(intr) & intr;
@@ -283,6 +284,12 @@ void dh<D>::recompose (const int initialise_upto) {
                 boxes[rl+1][cc][ml].send_ref_coarse[c ].push_back(send);
                 boxes[rl  ][c ][ml].recv_ref_fine  [cc].push_back(recv);
               }
+#else
+              const ibbox recv = intrf.contracted_for(intr) & intr;
+              const ibbox send = recv.expanded_for(intrf);
+              boxes[rl+1][cc][ml].send_ref_coarse[c ].push_back(send);
+              boxes[rl  ][c ][ml].recv_ref_fine  [cc].push_back(recv);
+#endif
       	    }
             
       	  } // for cc
