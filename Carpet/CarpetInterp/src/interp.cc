@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.35 2004/08/20 09:21:38 hawke Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.36 2004/09/13 14:36:13 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -24,7 +24,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.35 2004/08/20 09:21:38 hawke Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.36 2004/09/13 14:36:13 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -551,15 +551,32 @@ namespace CarpetInterp {
               
               // Interpolate in time, if necessary
               if (need_time_interp) {
-
-                for (int j=0; j<N_output_arrays; ++j) {
-
-                  int const vi = input_array_variable_indices[j];
-                  assert (vi>=0 && vi<CCTK_NumVars());
                 
+                for (int j=0; j<N_output_arrays; ++j) {
+                  
+                  // Find output variable indices
+                  vector<CCTK_INT> operand_indices (N_output_arrays);
+                  ierr = Util_TableGetIntArray
+                    (param_table_handle, N_output_arrays,
+                     &operand_indices.front(), "operand_indices");
+                  if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+                    assert (N_output_arrays == N_input_arrays);
+                    for (int m=0; m<N_output_arrays; ++m) {
+                      operand_indices.at(m) = m;
+                    }
+                  } else {
+                    assert (ierr == N_output_arrays);
+                  }
+                  
+                  // Find input array for this output array
+                  int const n = operand_indices.at(j);
+                  
+                  int const vi = input_array_variable_indices[n];
+                  assert (vi>=0 && vi<CCTK_NumVars());
+                  
                   int const gi = CCTK_GroupIndexFromVarI (vi);
                   assert (gi>=0 && gi<CCTK_NumGroups());
-                
+                  
                   int interp_ntls = GetInterpNumTimelevels(cgh, gi);
                   // If -ve then key wasn't set; use all timelevels.
                   if (interp_ntls < 0) interp_ntls = num_tl;
@@ -578,7 +595,7 @@ namespace CarpetInterp {
                       // no interpolation
                       // We have to assume that any GF with one timelevel
                       // is constant in time!!!
-                      //                      assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
+                      // assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
                       tfacs.at(0) = 1.0;
                       break;
                     case 2:
