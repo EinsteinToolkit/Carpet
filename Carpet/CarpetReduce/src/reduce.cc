@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.25 2003/06/18 18:28:07 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.26 2003/07/23 09:47:06 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -22,7 +22,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.25 2003/06/18 18:28:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.26 2003/07/23 09:47:06 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -669,16 +669,16 @@ namespace CarpetReduce {
     assert (proc == -1 || (proc>=0 && proc<CCTK_nProcs(cgh)));
     
     assert (num_outvals>=0);
+    assert (num_outvals==1);
     assert (outvals || (proc!=-1 && proc!=CCTK_MyProc(cgh)));
     
     assert (num_invars>=0);
-    assert (num_invars == num_outvals);
     assert (invars);
     for (int n=0; n<num_invars; ++n) {
       assert (invars[n]>=0 && invars[n]<CCTK_NumVars());
     }
     
-    if (num_outvals==0) return 0;
+    if (num_invars==0) return 0;
     
     assert (num_invars>0);
     const int vi = invars[0];
@@ -695,11 +695,12 @@ namespace CarpetReduce {
     
     
     
-    int const reduce_arrays = CCTK_GroupTypeFromVarI(vi) != CCTK_GF;
+    bool const reduce_arrays = CCTK_GroupTypeFromVarI(vi) != CCTK_GF;
+    cout << "reduce_arrays=" << reduce_arrays << endl;
     
     for (int n=0; n<num_invars; ++n) {
       if ((CCTK_GroupTypeFromVarI(invars[n]) != CCTK_GF) != reduce_arrays) {
-        CCTK_WARN (0, "Cannot (yet) reduce grid functions and grid arrays at the same time");
+        CCTK_WARN (0, "Cannot (yet) reduce grid functions and grid arrays/scalars at the same time");
       }
     }
     
@@ -710,17 +711,14 @@ namespace CarpetReduce {
     
     
     
-    vector<char> myoutvals (vartypesize * num_outvals);
-    vector<char> mycounts  (vartypesize * num_outvals);
+    vector<char> myoutvals (vartypesize * num_invars * num_outvals);
+    vector<char> mycounts  (vartypesize * num_invars * num_outvals);
     
-    Initialise (cgh, proc, num_outvals, &myoutvals[0], outtype, &mycounts[0],
-                red);
+    Initialise (cgh, proc, num_invars * num_outvals, &myoutvals[0], outtype,
+                &mycounts[0], red);
     
-    int const saved_component = component;
-    if (component!=-1) {
-      set_component ((cGH*)cgh, -1);
-    }
     BEGIN_LOCAL_COMPONENT_LOOP(cgh, reduce_arrays ? CCTK_ARRAY : CCTK_GF) {
+      cout << "loop: component=" << component << endl;
       
       assert (grpdim<=dim);
       int lsh[dim], bbox[2*dim], nghostzones[dim];
@@ -763,15 +761,12 @@ namespace CarpetReduce {
       
       Reduce (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
               num_invars, &inarrays[0], intype,
-              num_outvals, &myoutvals[0], outtype,
+              num_invars * num_outvals, &myoutvals[0], outtype,
               &mycounts[0], red);
       
     } END_LOCAL_COMPONENT_LOOP;
-    if (saved_component!=-1) {
-      set_component ((cGH*)cgh, saved_component);
-    }
     
-    Finalise (cgh, proc, num_outvals, outvals, outtype,
+    Finalise (cgh, proc, num_invars * num_outvals, outvals, outtype,
               &myoutvals[0], &mycounts[0],
 	      red);
     
