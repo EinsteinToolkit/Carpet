@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.25 2002/09/25 15:50:32 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.26 2002/10/14 20:41:35 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_helpers_cc)
 
@@ -224,15 +224,12 @@ namespace Carpet {
       assert (all(base.shape() % base.stride() == 0));
       assert (all((base.shape() / base.stride()) % mglevelfact == 0));
       vect<int,dim>::ref(cgh->cctk_gsh)
-	= (((base.shape() / base.stride() - 1) / mglevelfact
-	    + dd->lghosts + dd->ughosts)
-	   * reflevelfact + 1);
+	= (base.shape() / base.stride() - 1) / mglevelfact * reflevelfact + 1;
       for (int group=0; group<CCTK_NumGroups(); ++group) {
 	const bbox<int,dim>& base = arrdata[group].hh->baseextent;
 	vect<int,dim>::ref((int*)arrdata[group].info.gsh)
-	  = (((base.shape() / base.stride() - 1) / mglevelfact
-	      + arrdata[group].dd->lghosts + arrdata[group].dd->ughosts)
-	     * reflevelfact + 1);
+	  = ((base.shape() / base.stride() - 1)
+	     / mglevelfact * reflevelfact + 1);
       }
       
     } // if mglevel != -1

@@ -18,7 +18,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.32 2002/09/25 19:55:06 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.33 2002/10/14 20:41:35 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_SetupGH_cc)
 
@@ -78,8 +78,8 @@ namespace Carpet {
     }
     
     const vect<int,dim> str(stride);
-    const vect<int,dim> lb(lghosts * str);
-    const vect<int,dim> ub((npoints - ughosts - 1) * str);
+    const vect<int,dim> lb(0);
+    const vect<int,dim> ub((npoints - 1) * str);
     
     const bbox<int,dim> baseext(lb, ub, str);
     
@@ -157,8 +157,8 @@ namespace Carpet {
 	  sizes[dim-1] = (sizes[dim-1] - 2*ghostsizes[dim-1]) * CCTK_nProcs(cgh) + 2*ghostsizes[dim-1];
 	}
 	
-	const vect<int,dim> alb(ghostsizes);
-	const vect<int,dim> aub(sizes-ghostsizes-1);
+	const vect<int,dim> alb(0);
+	const vect<int,dim> aub(sizes-1);
 	const vect<int,dim> astr(1);
 	const bbox<int,dim> arrext(alb, aub, astr);
 	

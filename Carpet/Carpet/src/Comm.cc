@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.12 2002/10/12 13:02:52 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.13 2002/10/14 20:41:35 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Comm_cc)
 
@@ -23,7 +23,13 @@ namespace Carpet {
   
   int SyncGroup (cGH* cgh, const char* groupname)
   {
-    if (hh->local_components(reflevel) > 1) assert (component == -1);
+    if (hh->local_components(reflevel) != 1 && component != -1) {
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+		  "Cannot synchronise in local mode "
+		  "(Tried to synchronise group \"%s\")",
+		  groupname);
+    }
+    if (hh->local_components(reflevel) != 1) assert (component == -1);
     
     Checkpoint ("%*sSyncGroup %s", 2*reflevel, "", groupname);
     
