@@ -26,7 +26,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.26 2002/01/08 12:03:54 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.27 2002/01/08 13:49:22 schnetter Exp $";
 
 
 
@@ -346,7 +346,7 @@ int CarpetIOASCII<outdim>
 	      global_upper[d] = 0;
 	    }
 	  }
-	  const vect<double,dim> global_extent = hh->baseextent.upper() - hh->baseextent.lower() + hh->baseextent.stride() * (dd->lghosts + dd->ughosts);
+	  const vect<double,dim> global_extent (hh->baseextent.upper() - hh->baseextent.lower() + hh->baseextent.stride() * (dd->lghosts + dd->ughosts));
 	  vect<double,dim> coord_delta;
 	  for (int d=0; d<dim; ++d) {
 	    if (global_extent[d] != 0) {
@@ -357,8 +357,8 @@ int CarpetIOASCII<outdim>
 	  }
 	  // Note: don't permute the "coord_delta" and "data->extent().lower()"
 	  // (you'll pick up the integer operator* then)
- 	  const vect<double,dim> coord_lower = global_lower + coord_delta * data->extent().lower();
- 	  const vect<double,dim> coord_upper = global_lower + coord_delta * data->extent().upper();
+ 	  const vect<double,dim> coord_lower = global_lower + coord_delta * vect<double,dim>(data->extent().lower());
+ 	  const vect<double,dim> coord_upper = global_lower + coord_delta * vect<double,dim>(data->extent().upper());
 	  
 	  data->write_ascii (file, cgh->cctk_iteration, offset1, dirs,
 			     tl, reflevel, component, mglevel,
