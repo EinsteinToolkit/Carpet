@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.27 2003/05/12 16:24:25 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.28 2003/05/23 23:51:17 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -227,14 +227,14 @@ namespace Carpet {
     assert (reflevel>=0 && reflevel<hh->reflevels());                   \
     assert (mglevel>=0 && mglevel<mglevels);                            \
     assert (hh->local_components(reflevel)==1 || component==-1);        \
-    int const saved_component = component;                              \
+    int const _saved_component = component;                             \
     for (int _c=0; _c<hh->components(reflevel); ++_c) {                 \
       set_component ((cGH*)(cgh), _c);                                  \
       {
 #define END_COMPONENT_LOOP(cgh)                         \
       }                                                 \
     }                                                   \
-    set_component ((cGH*)(cgh), saved_component);       \
+    set_component ((cGH*)(cgh), _saved_component);      \
     _cl = 0;                                            \
   } while (0)
 
@@ -246,7 +246,7 @@ namespace Carpet {
     assert (reflevel>=0 && reflevel<hh->reflevels());                   \
     assert (mglevel>=0 && mglevel<mglevels);                            \
     assert (hh->local_components(reflevel)==1 || component==-1);        \
-    int const saved_component = component;                              \
+    int const _saved_component = component;                             \
     for (int _c=0; _c<hh->components(reflevel); ++_c) {                 \
       if (hh->is_local(reflevel,_c)) {                                  \
 	set_component ((cGH*)(cgh), _c);                                \
@@ -255,7 +255,7 @@ namespace Carpet {
 	}                                               \
       }                                                 \
     }                                                   \
-    set_component ((cGH*)(cgh), saved_component);       \
+    set_component ((cGH*)(cgh), _saved_component);      \
     _lcl = 0;                                           \
   } while (0)
   

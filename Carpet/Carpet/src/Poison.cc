@@ -8,7 +8,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.10 2003/05/13 16:31:47 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.11 2003/05/23 23:51:17 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Poison_cc);
 }
 
@@ -53,6 +53,7 @@ namespace Carpet {
     }
     
     const int var0 = CCTK_FirstVarIndexI(group);
+    assert (var0>=0);
     const int nvar = CCTK_NumVarsInGroupI(group);
     const int sz = CCTK_VarTypeSize(CCTK_VarTypeI(var0));
     assert (sz>0);

@@ -19,7 +19,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.44 2003/05/13 12:14:00 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.45 2003/05/23 23:51:17 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -59,6 +59,8 @@ namespace Carpet {
 #  error "Unsupported default real type"
 #endif
     
+    if (CCTK_NumVarsInGroupI(group) == 0) return true;
+    
     const int var0 = CCTK_FirstVarIndexI(group);
     const int type0 = CCTK_VarTypeI(var0);
     int type1;
@@ -89,13 +91,13 @@ namespace Carpet {
 #ifdef CCTK_REAL16
     case CCTK_VARIABLE_REAL16:
 #endif
-#ifdef CCTK_COMPLEX8
+#ifdef CCTK_REAL4 /* CCTK_COMPLEX8 */
     case CCTK_VARIABLE_COMPLEX8:
 #endif
-#ifdef CCTK_COMPLEX16
+#ifdef CCTK_REAL8 /* CCTK_COMPLEX16 */
     case CCTK_VARIABLE_COMPLEX16:
 #endif
-#ifdef CCTK_COMPLEX32
+#ifdef CCTK_REAL16 /* CCTK_COMPLEX32 */
     case CCTK_VARIABLE_COMPLEX32:
 #endif
       // This type is not supported, but could be.
@@ -118,7 +120,12 @@ namespace Carpet {
       return false;
       
     default:
-      assert (0);
+      {
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Internal error: encountered variable type %d (%s) for group %d (%s)",
+                    type1, CCTK_VarTypeName(type1),
+                    group, CCTK_GroupName(group));
+      }
     }
     
     // not reached
@@ -380,20 +387,23 @@ namespace Carpet {
           assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
         }
         
-        const int firstvar = CCTK_FirstVarIndexI (group);
         const int numvars = CCTK_NumVarsInGroupI (group);
-        const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
-        
-        assert (rl>=0 && rl<(int)arrdata[group].dd->boxes.size());
-        assert (c>=0 && c<(int)arrdata[group].dd->boxes[rl].size());
-        assert (ml>=0 && ml<(int)arrdata[group].dd->boxes[rl][c].size());
-        assert (arrdata[group].hh->is_local(rl,c));
-        
-        assert (group<(int)arrdata.size());
-        for (int var=0; var<numvars; ++var) {
-          assert (var<(int)arrdata[group].data.size());
-          for (int tl=0; tl<num_tl; ++tl) {
-            cgh->data[firstvar+var][tl] = 0;
+        if (numvars>0) {
+          const int firstvar = CCTK_FirstVarIndexI (group);
+          assert (firstvar>=0);
+          const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
+          
+          assert (rl>=0 && rl<(int)arrdata[group].dd->boxes.size());
+          assert (c>=0 && c<(int)arrdata[group].dd->boxes[rl].size());
+          assert (ml>=0 && ml<(int)arrdata[group].dd->boxes[rl][c].size());
+          assert (arrdata[group].hh->is_local(rl,c));
+          
+          assert (group<(int)arrdata.size());
+          for (int var=0; var<numvars; ++var) {
+            assert (var<(int)arrdata[group].data.size());
+            for (int tl=0; tl<num_tl; ++tl) {
+              cgh->data[firstvar+var][tl] = 0;
+            }
           }
         }
         

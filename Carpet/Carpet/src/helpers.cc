@@ -14,7 +14,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.33 2003/05/13 16:31:47 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.34 2003/05/23 23:51:17 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -279,7 +279,7 @@ namespace Carpet {
 	    || (mglevel>=0 && mglevel<hh->mglevels(reflevel,component)));
     
     // Set Cactus parameters
-    if (component == -1) {
+    if (component == -1 || ! hh->is_local(reflevel,component)) {
       // Level mode -- no component is active
       
       for (int d=0; d<dim; ++d) {
@@ -304,15 +304,18 @@ namespace Carpet {
             ((int*)arrdata[group].info.ubnd)[d]     = 0xdeadbeef;
           }
           
-          const int firstvar = CCTK_FirstVarIndexI (group);
           const int numvars = CCTK_NumVarsInGroupI (group);
-          const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
-          
-          assert (group<(int)arrdata.size());
-          for (int var=0; var<numvars; ++var) {
-            assert (var<(int)arrdata[group].data.size());
-            for (int tl=0; tl<num_tl; ++tl) {
-              cgh->data[firstvar+var][tl] = 0;
+          if (numvars>0) {
+            const int firstvar = CCTK_FirstVarIndexI (group);
+            assert (firstvar>=0);
+            const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
+            
+            assert (group<(int)arrdata.size());
+            for (int var=0; var<numvars; ++var) {
+              assert (var<(int)arrdata[group].data.size());
+              for (int tl=0; tl<num_tl; ++tl) {
+                cgh->data[firstvar+var][tl] = 0;
+              }
             }
           }
           
@@ -390,22 +393,25 @@ namespace Carpet {
             assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
           }
           
-          const int firstvar = CCTK_FirstVarIndexI (group);
           const int numvars = CCTK_NumVarsInGroupI (group);
-          const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
-          
-          assert (hh->is_local(reflevel,component));
-          
-          assert (group<(int)arrdata.size());
-          for (int var=0; var<numvars; ++var) {
-            assert (var<(int)arrdata[group].data.size());
-            for (int tl=0; tl<num_tl; ++tl) {
-              ggf<dim> * const ff = arrdata[group].data[var];
-              if (ff) {
-                cgh->data[firstvar+var][tl]
-                  = (*ff) (-tl, reflevel, component, mglevel)->storage();
-              } else {
-                cgh->data[firstvar+var][tl] = 0;
+          if (numvars>0) {
+            const int firstvar = CCTK_FirstVarIndexI (group);
+            assert (firstvar>=0);
+            const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
+            
+            assert (hh->is_local(reflevel,component));
+            
+            assert (group<(int)arrdata.size());
+            for (int var=0; var<numvars; ++var) {
+              assert (var<(int)arrdata[group].data.size());
+              for (int tl=0; tl<num_tl; ++tl) {
+                ggf<dim> * const ff = arrdata[group].data[var];
+                if (ff) {
+                  cgh->data[firstvar+var][tl]
+                    = (*ff) (-tl, reflevel, component, mglevel)->storage();
+                } else {
+                  cgh->data[firstvar+var][tl] = 0;
+                }
               }
             }
           }

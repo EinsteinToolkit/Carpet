@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.18 2003/05/21 14:30:25 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.19 2003/05/23 23:51:17 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -39,6 +39,8 @@ namespace Carpet {
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
     
+    if (CCTK_NumVarsInGroupI(group)==0) return 0;
+    
     const int grouptype = CCTK_GroupTypeI(group);
     
     // No storage change in local mode
@@ -48,11 +50,12 @@ namespace Carpet {
       // storage was enabled previously
       return 1;
     }
-
+    
     // Check whether this group has transfer operators
     if (grouptype == CCTK_GF) {
       if (! arrdata[group].do_transfer) {
         const int var = CCTK_FirstVarIndexI(group);
+        assert (var>=0);
         const int vartype = CCTK_VarTypeI(var);
         const char * vartypename = CCTK_VarTypeName(vartype);
         CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -179,6 +182,8 @@ namespace Carpet {
       group = CCTK_GroupIndex(groupname);
     }
     assert (group>=0 && group<CCTK_NumGroups());
+    
+    if (CCTK_NumVarsInGroupI(group)==0) return 0;
     
     const int n = CCTK_FirstVarIndexI(group);
     assert (n>=0 && n<CCTK_NumVars());

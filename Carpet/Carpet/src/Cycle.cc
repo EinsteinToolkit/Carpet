@@ -9,7 +9,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.12 2002/11/16 19:10:50 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.13 2003/05/23 23:51:17 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Cycle_cc);
 }
 
@@ -51,6 +51,7 @@ namespace Carpet {
       if (CCTK_QueryGroupStorageI(cgh, group)) {
 	
 	const int var0 = CCTK_FirstVarIndexI(group);
+        assert (var0>=0);
 	const int num_tl = CCTK_NumTimeLevelsFromVarI(var0);
 	switch (num_tl) {
 	case 1:
