@@ -1,5 +1,5 @@
 # Schedule definitions for thorn CarpetIOHDF5
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/schedule.ccl,v 1.8 2004/05/31 18:49:44 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/schedule.ccl,v 1.9 2004/05/31 18:58:41 schnetter Exp $
 
 storage: next_output_iteration next_output_time this_iteration
 
@@ -8,7 +8,7 @@ schedule CarpetIOHDF5Startup at STARTUP after IOUtil_Startup
   LANG: C
 } "Startup routine"
 
-schedule CarpetIOHDF5Init at INITIAL
+schedule CarpetIOHDF5Init at BASEGRID
 {
   LANG: C
   OPTIONS: global
