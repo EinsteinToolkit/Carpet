@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.12 2002/01/08 12:03:55 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.13 2002/01/09 23:42:42 schnetter Exp $
 
  ***************************************************************************/
 
@@ -113,32 +113,6 @@ protected:
 			      const int order_space,
 			      const int order_time) = 0;
   
-public:
-  
-  // Output
-  template<int DD>
-  void write_ascii (ostream& os, const int time,
-                    const vect<int,D>& org, const vect<int,DD>& dirs,
-		    const int tl, const int rl,
-                    const int c, const int ml,
-		    const double ctime,
-		    const vect<double,D>& coord_lower,
-		    const vect<double,D>& coord_upper)
-    const;
-protected:
-  virtual void write_ascii_output_element (ostream& os, const ivect& index)
-    const = 0;
-public:
-//   void write_ieee (const string name, const int time,
-// 		   const int tl, const int rl, const int c, const int ml)
-//     const;
-//   void write_hdf (const string name, const int time,
-// 		  const int tl, const int rl, const int c, const int ml)
-//     const;
-//   void write_h5 (const string name, const int time,
-// 		 const int tl, const int rl, const int c, const int ml)
-//     const;
-public:
 };
 
 

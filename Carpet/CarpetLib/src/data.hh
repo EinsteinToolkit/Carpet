@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.8 2001/12/09 16:43:09 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.9 2002/01/09 23:42:41 schnetter Exp $
 
  ***************************************************************************/
 
@@ -99,16 +99,6 @@ public:
 				   const int order_space,
 				   const int order_time);
   
-  void write_ascii_output_element (ostream& os, const ivect& index) const;
-//   void write_ieee (const string name, const int time,
-// 		   const int tl, const int rl, const int c, const int ml)
-//     const;
-//   void write_hdf (const string name, const int time,
-// 		  const int tl, const int rl, const int c, const int ml)
-//     const;
-//   void write_h5 (const string name, const int time,
-// 		 const int tl, const int rl, const int c, const int ml)
-//     const;
 public:
 
   // Output

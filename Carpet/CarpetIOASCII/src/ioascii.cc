@@ -17,6 +17,7 @@
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
 
 #include "Carpet/CarpetLib/src/data.hh"
+#include "Carpet/CarpetLib/src/dist.hh"
 #include "Carpet/CarpetLib/src/gdata.hh"
 #include "Carpet/CarpetLib/src/gf.hh"
 #include "Carpet/CarpetLib/src/ggf.hh"
@@ -26,9 +27,14 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.27 2002/01/08 13:49:22 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.28 2002/01/09 23:42:40 schnetter Exp $";
 
 
+
+// That's a hack
+namespace Carpet {
+  void UnsupportedVarType (const int vindex);
+}
 
 using namespace std;
 using namespace Carpet;
@@ -38,6 +44,22 @@ using namespace Carpet;
 static bool CheckForVariable (const cGH* const cgh,
 			      const char* const varlist, const int vindex);
 static void SetFlag (int index, const char* optstring, void* arg);
+
+template<int D,int DD>
+static void WriteASCII (ostream& os,
+			const generic_data<D>* const gfdata,
+			const bbox<int,D>& gfext,
+			const int vi,
+			const int time,
+			const vect<int,D>& org,
+			const vect<int,DD>& dirs,
+			const int tl,
+			const int rl,
+			const int c,
+			const int ml,
+			const CCTK_REAL coord_time,
+			const vect<CCTK_REAL,D>& coord_lower,
+			const vect<CCTK_REAL,D>& coord_upper);
 
 
 
@@ -332,8 +354,27 @@ int CarpetIOASCII<outdim>
 	  
 	  const generic_data<dim>* const data
 	    = (*ff) (tl, reflevel, component, mglevel);
-	  const bbox<int,dim> ext = data->extent();
-	  const vect<int,dim> offset1 = offset * ext.stride();
+	  bbox<int,dim> ext = data->extent();
+	  
+	  vect<int,dim> lo = ext.lower();
+	  vect<int,dim> hi = ext.upper();
+	  vect<int,dim> str = ext.stride();
+	  
+	  // Ignore ghost zones if desired
+	  for (int d=0; d<dim; ++d) {
+	    bool output_lower_ghosts
+	      = cgh->cctk_bbox[2*d] ? out3D_outer_ghosts : out3D_ghosts;
+	    bool output_upper_ghosts
+	      = cgh->cctk_bbox[2*d+1] ? out3D_outer_ghosts : out3D_ghosts;
+	    
+	    if (! output_lower_ghosts) {
+	      lo[d] += cgh->cctk_nghostzones[d] * str[d];
+	    }
+	    if (! output_upper_ghosts) {
+	      hi[d] -= cgh->cctk_nghostzones[d] * str[d];
+	    }
+	  }
+	  ext = bbox<int,dim>(lo,hi,str);
 	  
 	  // coordinates
 	  const double coord_time = cgh->cctk_time;
@@ -357,12 +398,14 @@ int CarpetIOASCII<outdim>
 	  }
 	  // Note: don't permute the "coord_delta" and "data->extent().lower()"
 	  // (you'll pick up the integer operator* then)
- 	  const vect<double,dim> coord_lower = global_lower + coord_delta * vect<double,dim>(data->extent().lower());
- 	  const vect<double,dim> coord_upper = global_lower + coord_delta * vect<double,dim>(data->extent().upper());
+ 	  const vect<double,dim> coord_lower = global_lower + coord_delta * vect<double,dim>(lo);
+ 	  const vect<double,dim> coord_upper = global_lower + coord_delta * vect<double,dim>(hi);
 	  
-	  data->write_ascii (file, cgh->cctk_iteration, offset1, dirs,
-			     tl, reflevel, component, mglevel,
-			     coord_time, coord_lower, coord_upper);
+	  const vect<int,dim> offset1 = offset * ext.stride();
+	  
+	  WriteASCII (file, data, ext, n, cgh->cctk_iteration, offset1, dirs,
+		      tl, reflevel, component, mglevel,
+		      coord_time, coord_lower, coord_upper);
 	  
 	  // Append EOL after every component
 	  if (CCTK_MyProc(cgh)==0) {
@@ -634,7 +677,166 @@ void SetFlag (int index, const char* optstring, void* arg)
 
 
 
+// Output
+template<int D,int DD>
+void WriteASCII (ostream& os,
+		 const generic_data<D>* const gfdata,
+		 const bbox<int,D>& gfext,
+		 const int vi,
+		 const int time,
+		 const vect<int,D>& org,
+		 const vect<int,DD>& dirs,
+		 const int tl,
+		 const int rl,
+		 const int c,
+		 const int ml,
+		 const CCTK_REAL coord_time,
+		 const vect<CCTK_REAL,D>& coord_lower,
+		 const vect<CCTK_REAL,D>& coord_upper)
+{
+  assert (DD<=D);
+  
+  if (gfdata->proc()==0) {
+    // output on processor 0
+    
+    int rank;
+    MPI_Comm_rank (dist::comm, &rank);
+    if (rank == 0) {
+      
+      assert (os.good());
+      
+      os << "# iteration " << time << endl
+	 << "# time level " << tl << "   refinement level " << rl
+	 << "   component " << c << "   multigrid level " << ml << endl
+	 << "# column format: it   tl rl c ml  ";
+      assert (D>=1 && D<=3);
+      const char* const coords = "xyz";
+      for (int d=0; d<D; ++d) os << " i" << coords[d];
+      os << "   time  ";
+      for (int d=0; d<D; ++d) os << " " << coords[d];
+      os << "   data" << endl;
+      
+      const vect<int,DD> lo = gfext.lower()[dirs];
+      const vect<int,DD> up = gfext.upper()[dirs];
+      const vect<int,DD> str = gfext.stride()[dirs];
+      const bbox<int,DD> ext(lo,up,str);
+      
+      // Check whether the output origin is contained in the extent of
+      // the data that should be output
+      vect<int,dim> org1(org);
+      for (int d=0; d<DD; ++d) org1[dirs[d]] = ext.lower()[d];
+      if (gfext.contains(org1)) {
+	
+	for (bbox<int,DD>::iterator it=ext.begin(); it!=ext.end(); ++it) {
+	  vect<int,dim> index(org);
+	  for (int d=0; d<DD; ++d) index[dirs[d]] = (*it)[d];
+	  os << time << "   " << tl << " " << rl << " " << c << " " << ml
+	     << "   ";
+	  for (int d=0; d<D; ++d) os << index[d] << " ";
+	  os << "  " << coord_time << "   ";
+	  for (int d=0; d<D; ++d) {
+	    if (gfext.upper()[d] - gfext.lower()[d] != 0) {
+	      os << (coord_lower[d] + (index[d] - gfext.lower()[d])
+		     * (coord_upper[d] - coord_lower[d])
+		     / (gfext.upper()[d] - gfext.lower()[d])) << " ";
+	    } else {
+	      os << coord_lower[d] << " ";
+	    }
+	  }
+	  os << "  ";
+	  switch (CCTK_VarTypeI(vi)) {
+#define TYPECASE(N,T)				\
+	  case N:				\
+	    os << (*(data<T,D>*)gfdata)[index];	\
+	    break;
+#include "Carpet/Carpet/src/typecase"
+#undef TYPECASE
+	  default:
+	    UnsupportedVarType(vi);
+	  }
+	  os << endl;
+	  for (int d=0; d<DD; ++d) {
+	    if (index[dirs[d]]!=gfext.upper()[dirs[d]]) break;
+	    os << endl;
+	  }
+	}
+	
+      }	else {
+	
+	os << "#" << endl;
+	
+      }	// if ! ext contains org
+      
+      assert (os.good());
+      
+    }
+    
+  } else {
+    // copy to processor 0 and output there
+    
+    generic_data<D>* const tmp = gfdata->make_typed();
+    tmp->allocate(gfdata->extent(), 0);
+    tmp->copy_from (gfdata, gfdata->extent());
+    WriteASCII (os, tmp, gfext, vi, time, org, dirs, tl, rl, c, ml,
+		coord_time, coord_lower, coord_upper);
+    delete tmp;
+    
+  }
+}
+
+
+
+
+
 // Explicit instantiation for all output dimensions
 template class CarpetIOASCII<1>;
 template class CarpetIOASCII<2>;
 template class CarpetIOASCII<3>;
+
+template
+void WriteASCII (ostream& os,
+		 const generic_data<3>* const gfdata,
+		 const bbox<int,3>& gfext,
+		 const int vi,
+		 const int time,
+		 const vect<int,3>& org,
+		 const vect<int,1>& dirs,
+		 const int tl,
+		 const int rl,
+		 const int c,
+		 const int ml,
+		 const CCTK_REAL coord_time,
+		 const vect<CCTK_REAL,3>& coord_lower,
+		 const vect<CCTK_REAL,3>& coord_upper);
+
+template
+void WriteASCII (ostream& os,
+		 const generic_data<3>* const gfdata,
+		 const bbox<int,3>& gfext,
+		 const int vi,
+		 const int time,
+		 const vect<int,3>& org,
+		 const vect<int,2>& dirs,
+		 const int tl,
+		 const int rl,
+		 const int c,
+		 const int ml,
+		 const CCTK_REAL coord_time,
+		 const vect<CCTK_REAL,3>& coord_lower,
+		 const vect<CCTK_REAL,3>& coord_upper);
+
+template
+void WriteASCII (ostream& os,
+		 const generic_data<3>* const gfdata,
+		 const bbox<int,3>& gfext,
+		 const int vi,
+		 const int time,
+		 const vect<int,3>& org,
+		 const vect<int,3>& dirs,
+		 const int tl,
+		 const int rl,
+		 const int c,
+		 const int ml,
+		 const CCTK_REAL coord_time,
+		 const vect<CCTK_REAL,3>& coord_lower,
+		 const vect<CCTK_REAL,3>& coord_upper);

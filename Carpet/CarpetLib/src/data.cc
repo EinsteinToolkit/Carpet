@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.15 2001/12/14 16:39:41 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.16 2002/01/09 23:42:41 schnetter Exp $
 
  ***************************************************************************/
 
@@ -566,16 +566,6 @@ void data<CCTK_REAL8,3>
   } else {
     abort();
   }
-}
-
-
-
-// Output
-template<class T, int D>
-void data<T,D>::write_ascii_output_element (ostream& os, const ivect& index)
-  const
-{
-  os << (*this)[index];
 }
 
 

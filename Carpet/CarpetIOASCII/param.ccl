@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOASCII
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/param.ccl,v 1.4 2001/12/17 13:34:02 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/param.ccl,v 1.5 2002/01/09 23:42:40 schnetter Exp $
 
 
 
@@ -38,6 +38,16 @@ USES CCTK_REAL out_yzplane_x
 
 
 restricted:
+
+
+
+BOOLEAN out3D_ghosts "Output ghost zones as well"
+{
+} "yes"
+
+BOOLEAN out3D_outer_ghosts "Output outer boundary ghost zones as well"
+{
+} "yes"
 
 
 
