@@ -15,6 +15,7 @@
 #include <mpi.h>
 
 #include "cctk.h"
+#include "cctk_Parameters.h"
 
 #include "bbox.hh"
 #include "defs.hh"
@@ -230,13 +231,13 @@ void data<T,D>::change_processor (comm_state<D>& state,
 {
   switch (state.thestate) {
   case state_recv:
-    change_processor_recv (newproc, mem);
+    change_processor_recv (state, newproc, mem);
     break;
   case state_send:
-    change_processor_send (newproc, mem);
+    change_processor_send (state, newproc, mem);
     break;
   case state_wait:
-    change_processor_wait (newproc, mem);
+    change_processor_wait (state, newproc, mem);
     break;
   default:
     assert(0);
@@ -246,8 +247,12 @@ void data<T,D>::change_processor (comm_state<D>& state,
 
 
 template<class T, int D>
-void data<T,D>::change_processor_recv (const int newproc, void* const mem)
+void data<T,D>::change_processor_recv (comm_state<D>& state,
+                                       const int newproc,
+                                       void* const mem)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   assert (!this->comm_active);
   this->comm_active = true;
   
@@ -276,6 +281,9 @@ void data<T,D>::change_processor_recv (const int newproc, void* const mem)
                  this->tag, dist::comm, &this->request);
       const double wtime2 = MPI_Wtime();
       this->wtime_irecv += wtime2 - wtime1;
+      if (use_waitall) {
+        state.requests.push_back (this->request);
+      }
       
     } else if (rank == this->_proc) {
       // copy to other processor
@@ -290,8 +298,12 @@ void data<T,D>::change_processor_recv (const int newproc, void* const mem)
 
 
 template<class T, int D>
-void data<T,D>::change_processor_send (const int newproc, void* const mem)
+void data<T,D>::change_processor_send (comm_state<D>& state,
+                                       const int newproc,
+                                       void* const mem)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   assert (this->comm_active);
   
   if (newproc == this->_proc) {
@@ -317,6 +329,9 @@ void data<T,D>::change_processor_send (const int newproc, void* const mem)
                  this->tag, dist::comm, &this->request);
       const double wtime2 = MPI_Wtime();
       this->wtime_isend += wtime2 - wtime1;
+      if (use_waitall) {
+        state.requests.push_back (this->request);
+      }
       
     } else {
       assert (!mem);
@@ -328,14 +343,29 @@ void data<T,D>::change_processor_send (const int newproc, void* const mem)
 
 
 template<class T, int D>
-void data<T,D>::change_processor_wait (const int newproc, void* const mem)
+void data<T,D>::change_processor_wait (comm_state<D>& state,
+                                       const int newproc,
+                                       void* const mem)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   assert (this->comm_active);
   this->comm_active = false;
   
   if (newproc == this->_proc) {
     assert (!mem);
     return;
+  }
+
+  if (use_waitall) {
+    if (! state.requests.empty()) {
+      const double wtime1 = MPI_Wtime();
+      MPI_Waitall
+        (state.requests.size(), &state.requests.front(), MPI_STATUSES_IGNORE);
+      const double wtime2 = MPI_Wtime();
+      this->wtime_irecvwait += wtime2 - wtime1;
+      state.requests.clear();
+    }
   }
   
   if (this->_has_storage) {
@@ -344,11 +374,13 @@ void data<T,D>::change_processor_wait (const int newproc, void* const mem)
     if (rank == newproc) {
       // copy from other processor
       
-      const double wtime1 = MPI_Wtime();
-      MPI_Status status;
-      MPI_Wait (&this->request, &status);
-      const double wtime2 = MPI_Wtime();
-      this->wtime_irecvwait += wtime2 - wtime1;
+      if (! use_waitall) {
+        const double wtime1 = MPI_Wtime();
+        MPI_Status status;
+        MPI_Wait (&this->request, &status);
+        const double wtime2 = MPI_Wtime();
+        this->wtime_irecvwait += wtime2 - wtime1;
+      }
       
     } else if (rank == this->_proc) {
       // copy to other processor
@@ -356,11 +388,13 @@ void data<T,D>::change_processor_wait (const int newproc, void* const mem)
       assert (!mem);
       assert (_storage);
       
-      const double wtime1 = MPI_Wtime();
-      MPI_Status status;
-      MPI_Wait (&this->request, &status);
-      const double wtime2 = MPI_Wtime();
-      this->wtime_isendwait += wtime2 - wtime1;
+      if (! use_waitall) {
+        const double wtime1 = MPI_Wtime();
+        MPI_Status status;
+        MPI_Wait (&this->request, &status);
+        const double wtime2 = MPI_Wtime();
+        this->wtime_isendwait += wtime2 - wtime1;
+      }
       
       if (this->_owns_storage) {
 	freemem ();

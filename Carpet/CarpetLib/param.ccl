@@ -22,3 +22,7 @@ BOOLEAN output_bboxes "Output bounding box information to the screen" STEERABLE=
 BOOLEAN save_memory_during_regridding "Save some memory during regridding at the expense of speed"
 {
 } "no"
+
+BOOLEAN use_waitall "Use MPI_Waitall instead many MPI_Wait statements"
+{
+} "no"

@@ -78,11 +78,18 @@ public:
 
   // Processor management
   virtual void change_processor (comm_state<D>& state,
-                                 const int newproc, void* const mem=0);
+                                 const int newproc,
+                                 void* const mem=0);
 private:
-  virtual void change_processor_recv (const int newproc, void* const mem=0);
-  virtual void change_processor_send (const int newproc, void* const mem=0);
-  virtual void change_processor_wait (const int newproc, void* const mem=0);
+  virtual void change_processor_recv (comm_state<D>& state,
+                                      const int newproc,
+                                      void* const mem=0);
+  virtual void change_processor_send (comm_state<D>& state,
+                                      const int newproc,
+                                      void* const mem=0);
+  virtual void change_processor_wait (comm_state<D>& state,
+                                      const int newproc,
+                                      void* const mem=0);
 public:
 
   // Accessors

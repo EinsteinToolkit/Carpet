@@ -53,6 +53,7 @@ comm_state<D>::~comm_state ()
   for (size_t n=0; n<tmps.size(); ++n) {
     assert (tmps.at(n) == NULL);
   }
+  assert (requests.empty());
 }
 
 
@@ -172,7 +173,7 @@ void gdata<D>::copy_from_recv (comm_state<D>& state,
     state.tmps.push_back (tmp);
     ++state.current;
     tmp->allocate (box, src->proc());
-    tmp->change_processor_recv (proc());
+    tmp->change_processor_recv (state, proc());
     
   }
 }
@@ -207,7 +208,7 @@ void gdata<D>::copy_from_send (comm_state<D>& state,
     ++state.current;
     assert (tmp);
     tmp->copy_from_nocomm (src, box);
-    tmp->change_processor_send (proc());
+    tmp->change_processor_send (state, proc());
     
   }
 }
@@ -238,7 +239,7 @@ void gdata<D>::copy_from_wait (comm_state<D>& state,
     // copy to different processor
     gdata<D>* const tmp = state.tmps.at(state.current);
     assert (tmp);
-    tmp->change_processor_wait (proc());
+    tmp->change_processor_wait (state, proc());
     copy_from_nocomm (tmp, box);
     delete tmp;
     state.tmps.at(state.current) = NULL;
@@ -351,7 +352,7 @@ void gdata<D>
     state.tmps.push_back (tmp);
     ++state.current;
     tmp->allocate (box, srcs.at(0)->proc());
-    tmp->change_processor_recv (proc());
+    tmp->change_processor_recv (state, proc());
     
   }
 }
@@ -393,7 +394,7 @@ void gdata<D>
     gdata<D>* const tmp = state.tmps.at(state.current++);
     assert (tmp);
     tmp->interpolate_from_nocomm (srcs, times, box, time, order_space, order_time);
-    tmp->change_processor_send (proc());
+    tmp->change_processor_send (state, proc());
     
   }
 }
@@ -432,7 +433,7 @@ void gdata<D>
     
     gdata<D>* const tmp = state.tmps.at(state.current);
     assert (tmp);
-    tmp->change_processor_wait (proc());
+    tmp->change_processor_wait (state, proc());
     copy_from_nocomm (tmp, box);
     delete tmp;
     state.tmps.at(state.current) = NULL;

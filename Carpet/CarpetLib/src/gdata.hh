@@ -21,7 +21,6 @@
 using namespace std;
 
 
-  
 
 template<int D>
 class gdata;
@@ -40,12 +39,13 @@ struct comm_state {
   ~comm_state ();
   
 private:
-  // Forbit copying and passing by value
+  // Forbid copying and passing by value
   comm_state (comm_state const &);
   comm_state& operator= (comm_state const &);
 public:
   
   vector<gdata<D>*> tmps;
+  vector<MPI_Request> requests; // for use_waitall
   size_t current;
 };
 
@@ -80,8 +80,8 @@ protected:                      // should be readonly
   
   ibbox _extent;		// bbox for all data
   
-  bool comm_active;
-  MPI_Request request;
+  bool comm_active;             // a communication is going on
+  MPI_Request request;          // outstanding MPI request
   
   int tag;                      // MPI tag for this object
   
@@ -101,11 +101,21 @@ public:
   
   // Processor management
   virtual void change_processor (comm_state<D>& state,
-                                 const int newproc, void* const mem=0) = 0;
+                                 const int newproc,
+                                 void* const mem=0) = 0;
  protected:
-  virtual void change_processor_recv (const int newproc, void* const mem=0) = 0;
-  virtual void change_processor_send (const int newproc, void* const mem=0) = 0;
-  virtual void change_processor_wait (const int newproc, void* const mem=0) = 0;
+  virtual void change_processor_recv (comm_state<D>& state,
+                                      const int newproc,
+                                      void* const mem=0)
+    = 0;
+  virtual void change_processor_send (comm_state<D>& state,
+                                      const int newproc,
+                                      void* const mem=0)
+    = 0;
+  virtual void change_processor_wait (comm_state<D>& state,
+                                      const int newproc,
+                                      void* const mem=0)
+    = 0;
  public:
   
   // Storage management
