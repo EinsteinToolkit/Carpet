@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.hh,v 1.1 2001/03/15 23:28:50 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.hh,v 1.2 2001/03/16 21:32:17 eschnett Exp $
 
 #include <vector>
 
@@ -10,7 +10,7 @@ namespace CarpetIOFlexIO {
   extern int GHExtension;
   extern int IOMethod;
   extern vector<bool> do_truncate;
-  extern vector<int> last_output;
+  extern vector<vector<int> > last_output;
   
   // Scheduled functions
   extern "C" {

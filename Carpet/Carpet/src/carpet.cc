@@ -1,8 +1,9 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.12 2001/03/15 09:59:36 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.13 2001/03/16 21:32:17 eschnett Exp $
 
-/* It is assumed that the number of components of all arrays is equal
-   to the number of components of the grid functions, and that their
-   distribution onto the processors is the same.  */
+// It is assumed that the number of components of all arrays is equal
+// to the number of components of the grid functions, and that their
+// distribution onto the processors is the same, and that all
+// processors own the same number of components.
 
 #include <algorithm>
 #include <cassert>
@@ -32,15 +33,11 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.12 2001/03/15 09:59:36 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.13 2001/03/16 21:32:17 eschnett Exp $";
 
 
 
 namespace Carpet {
-  
-  static void RecursiveInitialise (cGH* cgh);
-  static void RecursiveEvolve (cGH* cgh);
-  static void RecursiveShutdown (cGH* cgh);
   
   static void Recompose (cGH* cgh);
   static void CycleTimeLevels (cGH* cgh);
@@ -51,38 +48,48 @@ namespace Carpet {
   
   
   
-  // handle from CCTK_RegisterGHExtension
+  // Handle from CCTK_RegisterGHExtension
   int GHExtension;
   
-  // time step on base grid
-  CCTK_REAL base_delta_time;
+  // Maximum number of refinement levels
+  int maxreflevels;
   
-  // active time level
+  // Refinement factor on finest grid
+  int maxreflevelfact;
+  
+  // Active time level
   int activetimelevel;		// 0 for current, 1 for next
   
-  // current position on the grid hierarchy
+  // Current iteration per refinement level
+  vector<int> iteration;
+  
+  // Current position on the grid hierarchy
   int mglevel;
   int reflevel;
   int component;
   
-  // current refinement factor
-  int reflevelfactor;
+  // refinement factor of current level: pow(refinement_factor, reflevel)
+  int reflevelfact;
+  
+  // Time step on base grid
+  CCTK_REAL base_delta_time;
   
   
   
-  // data for scalars
-  vector<vector<vector<void*> > > scdata;// [group][var][ti]
+  // Data for scalars
+  vector<vector<vector<void*> > > scdata; // [group][var][ti]
   
-  // data for arrays
+  // Data for arrays
+  // TODO: have replicated arrays
   vector<arrdesc> arrdata;	// [group]
   
-  // the grid hierarchy
+  // The grid hierarchy
   gh<dim>* hh;
   th<dim>* tt;
   dh<dim>* dd;
   int gfsize[dim];
   
-  // data for grid functions
+  // Data for grid functions
   vector<gfdesc> gfdata;	// [group]
   
   
@@ -106,7 +113,7 @@ namespace Carpet {
     CCTK_OverloadBarrier (Barrier);
     CCTK_OverloadExit (Exit);
     CCTK_OverloadAbort (Abort);
-    CCTK_OverloadMyProc (myProc);
+    CCTK_OverloadMyProc (MyProc);
     CCTK_OverloadnProcs (nProcs);
     CCTK_OverloadArrayGroupSizeB (ArrayGroupSizeB);
     CCTK_OverloadQueryGroupStorageB (QueryGroupStorageB);
@@ -120,13 +127,17 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    // not sure what to do with that
+    // Not sure what to do with that
     assert (convLevel==0);
     
     dist::pseudoinit();
     Checkpoint ("starting SetupGH...");
     
-    // ghost zones
+    // Refinement information
+    maxreflevels = max_refinement_levels;
+    maxreflevelfact = (int)floor(pow(refinement_factor, maxreflevels-1) + 0.5);
+    
+    // Ghost zones
     vect<int,dim> lghosts, ughosts;
     if (ghost_size == -1) {
       lghosts = vect<int,dim>(ghost_size_x, ghost_size_y, ghost_size_z);
@@ -136,9 +147,8 @@ namespace Carpet {
       ughosts = vect<int,dim>(ghost_size, ghost_size, ghost_size);
     }
     
-    // grid size
-    const int stride
-      = (int)floor(pow(refinement_factor, max_refinement_levels-1) + 0.5);
+    // Grid size
+    const int stride = maxreflevelfact;
     vect<int,dim> npoints;
     if (global_nsize == -1) {
       npoints = vect<int,dim>(global_nx, global_ny, global_nz);
@@ -152,26 +162,26 @@ namespace Carpet {
     
     const bbox<int,dim> baseext(lb, ub, str);
     
-    // allocate grid hierarchy
+    // Allocate grid hierarchy
     hh = new gh<dim>(refinement_factor, vertex_centered,
 		     multigrid_factor, vertex_centered,
 		     baseext);
     
-    // allocate time hierarchy
-    tt = new th<dim>
-      (*hh, (int)floor(pow(refinement_factor, max_refinement_levels-1) + 0.5));
+    // Allocate time hierarchy
+    tt = new th<dim>(*hh, maxreflevelfact);
     
-    // allocate data hierarchy
+    // Allocate data hierarchy
     dd = new dh<dim>(*hh, lghosts, ughosts);
     
-    // allocate space for groups
+    // Allocate space for groups
     scdata.resize(CCTK_NumGroups());
     arrdata.resize(CCTK_NumGroups());
     gfdata.resize(CCTK_NumGroups());
     
-    // allocate space for variables in group
-    // (don't enable storage yet)
+    // Allocate space for variables in group (but don't enable storage
+    // yet)
     for (int group=0; group<CCTK_NumGroups(); ++group) {
+      
       switch (CCTK_GroupTypeI(group)) {
 	
       case CCTK_SCALAR: {
@@ -231,28 +241,38 @@ namespace Carpet {
       }
     }
     
-    // active time level
-    activetimelevel = 0;
+    // Initialise cgh
+    for (int d=0; d<dim; ++d) {
+      cgh->cctk_nghostzones[d] = dd->lghosts[d];
+    }
     
-    // current position
+    // Initialise current position
     reflevel  = 0;
     mglevel   = 0;
     component = -1;
     
-    // initialise cgh
-    cgh->cctk_convlevel = mglevel;
-    
     // Recompose grid hierarchy
     Recompose (cgh); 
     
-    // enace current position
-    enact_reflevel (cgh);
+    // Initialise time step on coarse grid
+    base_delta_time = 0;
+    
+    // Active time level
+    activetimelevel = 0;
+    
+    // Current iteration
+    iteration.resize(maxreflevels, 0);
+    
+    // Set current position (this time for real)
+    set_reflevel  (cgh, 0);
+    set_mglevel   (cgh, 0);
+    set_component (cgh, -1);
     
     Checkpoint ("done with SetupGH.");
     
     // We register only once, ergo we get only one handle, ergo there
     // is only one grid hierarchy for us.  We store that statically,
-    // so there is no need to pass it to Cactus.
+    // so there is no need to pass anything to Cactus.
     return 0;
   }
   
@@ -284,63 +304,52 @@ namespace Carpet {
     CCTK_ScheduleTraverse ("CCTK_PARAMCHECK", cgh, CallFunction);
     CCTKi_FinaliseParamWarn();
     
-    // Initialise all levels recursively
-    RecursiveInitialise (cgh);
+    BEGIN_REFLEVEL_LOOP(cgh) {
+      
+      // Set up the grid
+      CCTK_ScheduleTraverse ("CCTK_BASEGRID", cgh, CallFunction);
+      if (reflevel==0) {
+	base_delta_time = cgh->cctk_delta_time;
+      } else {
+// 	assert (abs(cgh->cctk_delta_time - base_delta_time / reflevelfactor)
+// 		< 1e-6 * base_delta_time);
+	// This fixes a bug in CactusBase/Time
+	cgh->cctk_delta_time = base_delta_time / reflevelfact;
+      }
+      
+      // Set up the initial data
+      CCTK_ScheduleTraverse ("CCTK_INITIAL", cgh, CallFunction);
+      CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
+      
+      // Recover
+      CCTK_ScheduleTraverse ("CCTK_RECOVER_VARIABLES", cgh, CallFunction);
+      CCTK_ScheduleTraverse ("CCTK_CPINITIAL", cgh, CallFunction);
+      
+    } END_REFLEVEL_LOOP(cgh);
     
-    // Output
-    CCTK_OutputGH (cgh);
+    BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
+      
+      // Restrict
+      Restrict (cgh);
+      
+    } END_REVERSE_REFLEVEL_LOOP(cgh);
+    
+    BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
+      
+      // Poststep
+      CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
+      
+      // Analysis
+      CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
+      
+      // Output
+      CCTK_OutputGH (cgh);
+      
+    } END_REVERSE_REFLEVEL_LOOP(cgh);
     
     Checkpoint ("done with Initialise.");
     
     return 0;
-  }
-  
-  static void RecursiveInitialise (cGH* cgh)
-  {
-    DECLARE_CCTK_PARAMETERS;
-    
-    Checkpoint ("%*sstarting RecursiveInitialise on level %d...",
-		2*reflevel, "", reflevel);
-    
-    // Set up the grid
-    CCTK_ScheduleTraverse ("CCTK_BASEGRID", cgh, CallFunction);
-    if (reflevel==0) {
-      base_delta_time = cgh->cctk_delta_time;
-    } else {
-//       assert (abs(cgh->cctk_delta_time - base_delta_time / reflevelfactor)
-// 	      < 1e-6 * base_delta_time);
-      // This fixes a bug in CactusBase/Time
-      cgh->cctk_delta_time = base_delta_time / reflevelfactor;
-    }
-    
-    // Set up the initial data
-    CCTK_ScheduleTraverse ("CCTK_INITIAL", cgh, CallFunction);
-    CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
-    
-    // Recover
-    CCTK_ScheduleTraverse ("CCTK_RECOVER_VARIABLES", cgh, CallFunction);
-    CCTK_ScheduleTraverse ("CCTK_CPINITIAL", cgh, CallFunction);
-    
-    // Recurse
-    if (reflevel < hh->reflevels()-1) {
-      ++reflevel;
-      enact_reflevel (cgh);
-      RecursiveInitialise (cgh);
-      --reflevel;
-      enact_reflevel (cgh);
-    }
-    
-    // Restrict
-    Restrict (cgh);
-    
-    // Poststep
-    CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
-    
-    // Analysis
-    CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
-    
-    Checkpoint ("%*sdone with RecursiveInitialise on level %d...",
-		2*reflevel, "", reflevel);
   }
   
   
@@ -364,103 +373,80 @@ namespace Carpet {
       
       Checkpoint ("Evolving iteration %d...", cgh->cctk_iteration);
       
-      RecursiveEvolve (cgh);
+      BEGIN_REFLEVEL_LOOP(cgh) {
+	if ((cgh->cctk_iteration-1) % (maxreflevelfact/reflevelfact) == 0) {
+	  
+	  // Prestep
+	  CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
+	  
+	  // Move activity to next time level
+	  assert (activetimelevel == 0);
+	  ++activetimelevel;
+	  
+	  // Evolve
+	  CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
+	  
+	  // Move activity back to current time level
+	  --activetimelevel;
+	  assert (activetimelevel == 0);
+	  
+	}
+      } END_REFLEVEL_LOOP(cgh);
       
-      // Output
-      CCTK_OutputGH (cgh);
-    }
+      // Advance time
+      cgh->cctk_time += base_delta_time / maxreflevelfact;
+      
+      BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
+	if (cgh->cctk_iteration % (maxreflevelfact/reflevelfact) == 0) {
+	  
+	  // Cycle time levels
+	  CycleTimeLevels (cgh);
+	  
+	  // Advance level times
+	  tt->advance_time (reflevel, mglevel);
+	  for (int group=0; group<CCTK_NumGroups(); ++group) {
+	    switch (CCTK_GroupTypeI(group)) {
+	    case CCTK_SCALAR:
+	      break;
+	    case CCTK_ARRAY:
+	      arrdata[group].tt->advance_time (reflevel, mglevel);
+	      break;
+	    case CCTK_GF:
+	      break;
+	    default:
+	      abort();
+	    }
+	  }
+	  
+	  // Restrict
+	  Restrict (cgh);
+	  
+	}
+      } END_REVERSE_REFLEVEL_LOOP(cgh);
+      
+      BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
+	if (cgh->cctk_iteration % (maxreflevelfact/reflevelfact) == 0) {
+	  
+	  // Poststep
+	  CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
+	  
+	  // Checkpoint
+	  CCTK_ScheduleTraverse ("CCTK_CHECKPOINT", cgh, CallFunction);
+	  
+	  // Analysis
+	  CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
+	  
+	  // Output
+	  CCTK_OutputGH (cgh);
+	  
+	}
+      } END_REVERSE_REFLEVEL_LOOP(cgh);
+      
+    } // main loop
     
     Checkpoint ("done with Evolve.");
     
     return 0;
-  }
-  
-  static void RecursiveEvolve (cGH* cgh)
-  {
-    DECLARE_CCTK_PARAMETERS;
-    
-    Checkpoint ("%*sstarting RecursiveEvolve on level %d...",
-		2*reflevel, "", reflevel);
-    
-    // Move activity to next time level
-    assert (activetimelevel == 0);
-    activetimelevel = 1;
-    
-    // Prestep
-    CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
-    
-    // Evolve
-    CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
-    
-    // Recurse
-    if (reflevel < hh->reflevels()-1) {
-      
-      const CCTK_REAL old_delta_time = cgh->cctk_delta_time;
-      const CCTK_REAL old_time = cgh->cctk_time;
-      const int oldactivetimelevel = activetimelevel;
-      
-      ++reflevel;
-      enact_reflevel (cgh);
-      activetimelevel = 0;
-      
-      for (int i=0; i<hh->reffact; ++i) {
-	RecursiveEvolve (cgh);
-	assert (abs(cgh->cctk_time - (old_time + (i+1) * cgh->cctk_delta_time))
-		< 1e-6 * old_delta_time);
-      }
-      
-      --reflevel;
-      enact_reflevel (cgh);
-      activetimelevel = oldactivetimelevel;
-      
-      assert (abs(cgh->cctk_delta_time - old_delta_time)
-	      < 1e-6 * old_delta_time);
-      assert (abs(cgh->cctk_time - (old_time + old_delta_time))
-	      < 1e-6 * old_delta_time);
-      
-    } else {
-      
-      cgh->cctk_time += cgh->cctk_delta_time;
-      
-    }
-    
-    // Advance level times
-    tt->advance_time (reflevel, mglevel);
-    for (int group=0; group<CCTK_NumGroups(); ++group) {
-      switch (CCTK_GroupTypeI(group)) {
-      case CCTK_SCALAR:
-	break;
-      case CCTK_ARRAY:
-	arrdata[group].tt->advance_time (reflevel, mglevel);
-	break;
-      case CCTK_GF:
-	break;
-      default:
-	abort();
-      }
-    }
-    
-    // Cycle time levels
-    CycleTimeLevels (cgh);
-    
-    // Move activity back to current time level
-    assert (activetimelevel == 1);
-    activetimelevel = 0;
-    
-    // Restrict
-    Restrict (cgh);
-    
-    // Poststep
-    CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
-    
-    // Checkpoint
-    CCTK_ScheduleTraverse ("CCTK_CHECKPOINT", cgh, CallFunction);
-    
-    // Analysis
-    CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
-    
-    Checkpoint ("%*sdone with RecursiveEvolve on level %d...",
-		2*reflevel, "", reflevel);
   }
   
   
@@ -474,7 +460,15 @@ namespace Carpet {
     const int convlev = 0;
     cGH* cgh = fc->GH[convlev];
     
-    RecursiveShutdown (cgh);
+    // Terminate
+    BEGIN_REFLEVEL_LOOP(cgh) {
+      CCTK_ScheduleTraverse ("CCTK_TERMINATE", cgh, CallFunction);
+    } END_REFLEVEL_LOOP(cgh);
+    
+    // Shutdown
+    BEGIN_REFLEVEL_LOOP(cgh) {
+      CCTK_ScheduleTraverse ("CCTK_SHUTDOWN", cgh, CallFunction);
+    } END_REFLEVEL_LOOP(cgh);
     
     CCTK_PRINTSEPARATOR;
     printf ("Done.\n");
@@ -487,61 +481,11 @@ namespace Carpet {
     return 0;
   }
   
-  static void RecursiveShutdown (cGH* cgh)
-  {
-    DECLARE_CCTK_PARAMETERS;
-    
-    Checkpoint ("%*sstarting RecursiveShutdown on level %d...",
-		2*reflevel, "", reflevel);
-    
-    // Recurse
-    if (reflevel < hh->reflevels()-1) {
-      ++reflevel;
-      enact_reflevel (cgh);
-      RecursiveShutdown (cgh);
-      --reflevel;
-      enact_reflevel (cgh);
-    }
-    
-    // Terminate
-    CCTK_ScheduleTraverse ("CCTK_TERMINATE", cgh, CallFunction);
-    
-    // Shutdown
-    CCTK_ScheduleTraverse ("CCTK_SHUTDOWN", cgh, CallFunction);
-    
-    Checkpoint ("%*sdone with RecursiveShutdown on level %d...",
-		2*reflevel, "", reflevel);
-  }
-  
-  
-  
-#if 0
-  int ScheduleTraverse (cGH* cgh, const char* rfrPoint)
-  {
-    // traverse all functions on all refinement levels on all
-    // multigrid levels
-    
-    abort();
-    
-    assert (mglevel==-1);
-    for (mglevel=0; mglevel<hh->mglevels(0,0); ++mglevel) {
-      assert (reflevel==-1);
-      for (reflevel=0; reflevel<hh->reflevels(); ++reflevel) {
-	CCTK_ScheduleTraverse (rfrPoint, cgh, CallFunction);
-      }
-      reflevel = -1;
-    }
-    mglevel = -1;
-    
-    return 0;
-  }
-#endif
-  
   
   
   int CallFunction (void* function, cFunctionData* attribute, void* data)
   {
-    // traverse one function on all components of one refinement level
+    // Traverse one function on all components of one refinement level
     // of one multigrid level
     
     assert (mglevel>=0);
@@ -551,227 +495,28 @@ namespace Carpet {
     
     cGH* cgh = (cGH*)data;
     
-    // set Cactus parameters
-    for (int d=0; d<dim; ++d) {
-      cgh->cctk_nghostzones[d] = dd->lghosts[d];
-    }
-    
     if (attribute->global) {
-      // global operation: call once per refinement level
+      // Global operation: call once per refinement level
       
-      assert (component==-1);
-      
-      // set Cactus parameters to pseudo values
-      for (int d=0; d<dim; ++d) {
-	cgh->cctk_lsh[d]      = 0xdeadbeef;
-// 	cgh->cctk_gsh[d]      = 0xdeadbeef;
-	cgh->cctk_bbox[2*d  ] = 0xdeadbeef;
-	cgh->cctk_bbox[2*d+1] = 0xdeadbeef;
-	cgh->cctk_lbnd[d]     = 0xdeadbeef;
-	cgh->cctk_ubnd[d]     = 0xdeadbeef;
-	for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
-	  cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = 0xdeadbeef;
-	}
-      }
-      
-      // set local grid function and array sizes
-      for (int d=0; d<dim; ++d) {
-	gfsize[d] = 0xdeadbeef;
-      }
-      for (int group=0; group<CCTK_NumGroups(); ++group) {
-	const int n0 = CCTK_FirstVarIndexI(group);
-	switch (CCTK_GroupTypeFromVarI(n0)) {
-	case CCTK_SCALAR:
-	  break;
-	case CCTK_ARRAY:
-	  for (int d=0; d<dim; ++d) {
-	    arrdata[group].size[d] = 0xdeadbeef;
-	  }
-	  break;
-	case CCTK_GF:
-	  break;
-	default:
-	  abort();
-	}
-      }
-      
-      // set Cactus pointers to data
-      for (int n=0; n<CCTK_NumVars(); ++n) {
-	for (int ti=0; ti<CCTK_NumTimeLevelsFromVarI(n); ++ti) {
-	  
-	  const int group = CCTK_GroupIndexFromVarI(n);
-	  assert (group>=0);
-	  const int var   = n - CCTK_FirstVarIndexI(group);
-	  assert (var>=0);
-	  
-	  if (CCTK_QueryGroupStorageI(cgh, group)) {
-	    // group has storage
-	    
-	    switch (CCTK_GroupTypeFromVarI(n)) {
-	      
-	    case CCTK_SCALAR:
-	      // scalar variables can be accessed
-	      assert (group<(int)scdata.size());
-	      assert (var<(int)scdata[group].size());
-	      assert (ti<(int)scdata[group][var].size());
-	      cgh->data[n][ti] = scdata[group][var][ti];
-	      break;
-	      
-	    case CCTK_ARRAY:
-	    case CCTK_GF:
-	      // arrays and grid functions cannot be accessed
-	      cgh->data[n][ti] = 0;
-	      break;
-	      
-	    default:
-	      abort();
-	    }
-	    
-	  } else {
-	    
-	    // group has no storage
-	    cgh->data[n][ti] = 0;
-	    
-	  }
-	  
-	} // for ti
-      }	// for n
-      
-      // traverse
       const int res = CCTK_CallFunction (function, attribute, data);
       assert (res==0);
       
     } else {
-      // local operation: call once per component
+      // Local operation: call once per component
       
-      assert (component==-1);
-      for (component=0; component<hh->components(reflevel); ++component) {
-	
-	// this requires that all processors have the same number of
+      BEGIN_COMPONENT_LOOP(cgh) {
+	// This requires that all processors have the same number of
 	// local components
  	if (hh->is_local(reflevel, component)) {
-	  
-	  // set Cactus parameters
-	  for (int d=0; d<dim; ++d) {
-	    const bbox<int,dim>& ext
-	      = dd->boxes[reflevel][component][mglevel].exterior;
-	    const bbox<int,dim>& base = hh->baseextent;
-	    cgh->cctk_lsh[d] = (ext.shape() / ext.stride())[d];
-// 	    cgh->cctk_gsh[d]
-// 	      = ((base.shape() / base.stride() + dd->lghosts + dd->ughosts)[d]
-// 		 * cgh->cctk_levfac[d]);
-	    cgh->cctk_lbnd[d] = (ext.lower() / ext.stride())[d];
-	    cgh->cctk_ubnd[d] = (ext.upper() / ext.stride())[d];
-	    // no outer boundaries on the finer grids
-	    cgh->cctk_bbox[2*d  ]
-	      = reflevel==0 && cgh->cctk_lbnd[d] == 0;
-	    cgh->cctk_bbox[2*d+1]
-	      = reflevel==0 && cgh->cctk_ubnd[d] == cgh->cctk_gsh[d]-1;
-#if 0
-	    // do allow outer boundaries on the finer grids
-	    // (but this is generally inconsistent -- c. f. periodicity)
- 	    cgh->cctk_bbox[2*d  ] = (ext.lower() < base.lower())[d];
- 	    cgh->cctk_bbox[2*d+1] = (ext.upper() > base.upper())[d];
-#endif
-	    for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
-	      // TODO: support staggering
-	      cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
-	    }
-	  }
-	  
-	  // set local grid function and array sizes
-	  const bbox<int,dim> ext =
-	    dd->boxes[reflevel][component][mglevel].exterior;
-	  for (int d=0; d<dim; ++d) {
-	    gfsize[d] = ext.shape()[d] / ext.stride()[d];
-	  }
-	  
-	  for (int group=0; group<CCTK_NumGroups(); ++group) {
-	    const int n0 = CCTK_FirstVarIndexI(group);
-	    switch (CCTK_GroupTypeFromVarI(n0)) {
-	    case CCTK_SCALAR:
-	      break;
-	    case CCTK_ARRAY: {
-	      const bbox<int,dim> ext =
-		arrdata[group].dd->
-		boxes[reflevel][component][mglevel].exterior;
-	      for (int d=0; d<dim; ++d) {
-		arrdata[group].size[d] = ext.shape()[d] / ext.stride()[d];
-	      }
-	      break;
-	    }
-	    case CCTK_GF:
-	      break;
-	    default:
-	      abort();
-	    }
-	  }
-	  
-	  // set Cactus pointers to data
-	  for (int n=0; n<CCTK_NumVars(); ++n) {
-	    for (int ti=0; ti<CCTK_NumTimeLevelsFromVarI(n); ++ti) {
-	      
-	      const int group = CCTK_GroupIndexFromVarI(n);
-	      assert (group>=0);
-	      const int var   = n - CCTK_FirstVarIndexI(group);
-	      assert (var>=0);
-	      const int tmin  = min(0, 2 - CCTK_NumTimeLevelsFromVarI(n));
-	      const int tl    = tmin + ti;
-	      
-	      if (CCTK_QueryGroupStorageI(cgh, group)) {
-		// group has storage
-		
-		switch (CCTK_GroupTypeFromVarI(n)) {
-		  
-		case CCTK_SCALAR:
-		  assert (group<(int)scdata.size());
-		  assert (var<(int)scdata[group].size());
-		  assert (ti<(int)scdata[group][var].size());
-		  cgh->data[n][ti] = scdata[group][var][ti];
-		  break;
-		  
-		case CCTK_ARRAY:
-		  assert (group<(int)arrdata.size());
-		  assert (var<(int)arrdata[group].data.size());
-		  cgh->data[n][ti]
-		    = ((*arrdata[group].data[var])
-		       (tl, reflevel, component, mglevel)
-		       ->storage());
-		  break;
-		  
-		case CCTK_GF:
-		  assert (group<(int)gfdata.size());
-		  assert (var<(int)gfdata[group].data.size());
-		  cgh->data[n][ti]
-		    = ((*gfdata[group].data[var])
-		       (tl, reflevel, component, mglevel)
-		       ->storage());
-		  break;
-		  
-		default:
-		  abort();
-		}
-		assert (cgh->data[n][ti]);
-		
-	      } else {
-		
-		// group has no storage
-		cgh->data[n][ti] = 0;
-		
-	      }	// if ! has storage
-	      
-	    } // for ti
-	  } // for n
 	  
 	  const int res = CCTK_CallFunction (function, attribute, data);
 	  assert (res==0);
 	  
 	} // if is_local
 	
-      }	// for component
-      component = -1;
+      }	END_COMPONENT_LOOP(cgh);
       
-    } // if local operation
+    }
     
 //     Checkpoint ("%*sdone with CallFunction.", 2*reflevel, "");
     
@@ -785,7 +530,7 @@ namespace Carpet {
   {
     assert (component == -1);
     
-    Checkpoint ("SyncGroup %s", groupname);
+    Checkpoint ("%*sSyncGroup %s", 2*reflevel, "", groupname);
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
@@ -847,7 +592,15 @@ namespace Carpet {
   
   int EnableGroupStorage (cGH* cgh, const char* groupname)
   {
-    Checkpoint ("EnableGroupStorage %s", groupname);
+    Checkpoint ("%*sEnableGroupStorage %s", 2*reflevel, "", groupname);
+    
+    // TODO: Enabling storage for one refinement level has to enable
+    // it for all other refinement levels as well.  Disabling must
+    // wait until all refinement levels have been disabled.
+    
+    // TODO: Invent a mode "reflevel==-1" that is global, i. e. has
+    // effect for all refinement levels.  This mode is used during
+    // INITIAL, and en-/disabling storage in it is also global.
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
@@ -950,7 +703,7 @@ namespace Carpet {
   
   int DisableGroupStorage (cGH* cgh, const char* groupname)
   {
-    Checkpoint ("DisableGroupStorage %s", groupname);
+    Checkpoint ("%*sDisableGroupStorage %s", 2*reflevel, "", groupname);
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
@@ -1113,6 +866,7 @@ namespace Carpet {
       }
     }
     hh->recompose(bbsss, pss);
+    // TODO: recompose arrays too
   }
   
   
@@ -1131,6 +885,7 @@ namespace Carpet {
 	    assert (var<(int)scdata[group].size());
 	    const int sz = CCTK_VarTypeSize(CCTK_VarTypeI(n));
 	    for (int ti=0; ti<CCTK_NumTimeLevelsFromVarI(n)-1; ++ti) {
+	      // TODO: Which refinement level to use?
 	      memcpy (scdata[group][var][ti], scdata[group][var][ti+1], sz);
 	    }
 	    break;
@@ -1247,7 +1002,7 @@ namespace Carpet {
   
   
   
-  int myProc (cGH* cgh)
+  int MyProc (cGH* cgh)
   {
     int rank;
     MPI_Comm_rank (dist::comm, &rank);
@@ -1371,22 +1126,237 @@ namespace Carpet {
   
   
   
-  void enact_reflevel (cGH* cgh)
+  void set_reflevel (cGH* cgh, const int rl)
   {
     // Check
-    assert (reflevel>=0 && reflevel<hh->reflevels());
-    assert (mglevel == 0);
+    assert (rl>=0 && rl<hh->reflevels());
     assert (component == -1);
     
     // Change
+    reflevel = rl;
     const bbox<int,dim>& base = hh->baseextent;
-    reflevelfactor = (int)floor(pow(hh->reffact, reflevel)+0.5);
-    cgh->cctk_delta_time = base_delta_time / reflevelfactor;
+    reflevelfact = (int)floor(pow(hh->reffact, reflevel)+0.5);
+    cgh->cctk_delta_time = base_delta_time / reflevelfact;
     for (int d=0; d<dim; ++d) {
       cgh->cctk_gsh[d]
-	= ((base.shape() / base.stride() + dd->lghosts + dd->ughosts)[d]
-	   * reflevelfactor);
-      cgh->cctk_levfac[d] = reflevelfactor;
+	= ((base.shape() / base.stride()
+	    + dd->lghosts + dd->ughosts)[d] - 1) * reflevelfact + 1;
+      cgh->cctk_levfac[d] = reflevelfact;
+    }
+  }
+  
+  
+  
+  void set_mglevel (cGH* cgh, const int ml)
+  {
+    assert (ml==0);
+    assert (component==-1);
+    mglevel = ml;
+    cgh->cctk_convlevel = mglevel;
+  }
+  
+  
+  
+  void set_component (cGH* cgh, const int c)
+  {
+    assert (c==-1 || (c>=0 && c<hh->components(reflevel)));
+    component = c;
+    
+    if (component == -1) {
+      // Global mode -- no component is active
+      
+      // Set Cactus parameters to pseudo values
+      for (int d=0; d<dim; ++d) {
+	cgh->cctk_lsh[d]      = 0xdeadbeef;
+	cgh->cctk_bbox[2*d  ] = 0xdeadbeef;
+	cgh->cctk_bbox[2*d+1] = 0xdeadbeef;
+	cgh->cctk_lbnd[d]     = 0xdeadbeef;
+	cgh->cctk_ubnd[d]     = 0xdeadbeef;
+	for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
+	  cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = 0xdeadbeef;
+	}
+      }
+      
+      // Set local grid function and array sizes
+      for (int d=0; d<dim; ++d) {
+	gfsize[d] = 0xdeadbeef;
+      }
+      for (int group=0; group<CCTK_NumGroups(); ++group) {
+	const int n0 = CCTK_FirstVarIndexI(group);
+	switch (CCTK_GroupTypeFromVarI(n0)) {
+	case CCTK_SCALAR:
+	  break;
+	case CCTK_ARRAY:
+	  for (int d=0; d<dim; ++d) {
+	    arrdata[group].size[d] = 0xdeadbeef;
+	  }
+	  break;
+	case CCTK_GF:
+	  break;
+	default:
+	  abort();
+	}
+      }
+      
+      // Set Cactus pointers to data
+      for (int n=0; n<CCTK_NumVars(); ++n) {
+	for (int ti=0; ti<CCTK_NumTimeLevelsFromVarI(n); ++ti) {
+	  
+	  const int group = CCTK_GroupIndexFromVarI(n);
+	  assert (group>=0);
+	  const int var   = n - CCTK_FirstVarIndexI(group);
+	  assert (var>=0);
+	  
+	  if (CCTK_QueryGroupStorageI(cgh, group)) {
+	    // Group has storage
+	    
+	    switch (CCTK_GroupTypeFromVarI(n)) {
+	      
+	    case CCTK_SCALAR:
+	      // Scalar variables can be accessed
+	      assert (group<(int)scdata.size());
+	      assert (var<(int)scdata[group].size());
+	      assert (ti<(int)scdata[group][var].size());
+	      cgh->data[n][ti] = scdata[group][var][ti];
+	      break;
+	      
+	    case CCTK_ARRAY:
+	    case CCTK_GF:
+	      // Arrays and grid functions cannot be accessed
+	      cgh->data[n][ti] = 0;
+	      break;
+	      
+	    default:
+	      abort();
+	    }
+	    
+	  } else {
+	    // Group has no storage
+	    
+	    cgh->data[n][ti] = 0;
+	    
+	  }
+	  
+	} // for ti
+      }	// for n
+      
+    } else {
+      // Local mode -- a component is active
+      
+      // Set Cactus parameters
+      for (int d=0; d<dim; ++d) {
+	const bbox<int,dim>& ext
+	  = dd->boxes[reflevel][component][mglevel].exterior;
+	cgh->cctk_lsh[d] = (ext.shape() / ext.stride())[d];
+	cgh->cctk_lbnd[d] = (ext.lower() / ext.stride())[d];
+	cgh->cctk_ubnd[d] = (ext.upper() / ext.stride())[d];
+	assert (cgh->cctk_lsh[d]>=0 && cgh->cctk_lsh[d]<=cgh->cctk_gsh[d]);
+	assert (cgh->cctk_lbnd[d]>=0 && cgh->cctk_ubnd[d]<cgh->cctk_gsh[d]);
+	assert (cgh->cctk_lbnd[d]<=cgh->cctk_ubnd[d]+1);
+	// No outer boundaries on the finer grids
+	cgh->cctk_bbox[2*d  ]
+	  = reflevel==0 && cgh->cctk_lbnd[d] == 0;
+	cgh->cctk_bbox[2*d+1]
+	  = reflevel==0 && cgh->cctk_ubnd[d] == cgh->cctk_gsh[d]-1;
+#if 0
+	// Do allow outer boundaries on the finer grids (but this is
+	// generally inconsistent -- c. f. periodicity)
+	const bbox<int,dim>& base = hh->baseextent;
+	cgh->cctk_bbox[2*d  ] = (ext.lower() < base.lower())[d];
+	cgh->cctk_bbox[2*d+1] = (ext.upper() > base.upper())[d];
+#endif
+	for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
+	  // TODO: support staggering
+	  cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
+	}
+      }
+      
+      // Set local grid function and array sizes
+      const bbox<int,dim> ext =
+	dd->boxes[reflevel][component][mglevel].exterior;
+      for (int d=0; d<dim; ++d) {
+	gfsize[d] = ext.shape()[d] / ext.stride()[d];
+      }
+      
+      for (int group=0; group<CCTK_NumGroups(); ++group) {
+	const int n0 = CCTK_FirstVarIndexI(group);
+	switch (CCTK_GroupTypeFromVarI(n0)) {
+	case CCTK_SCALAR:
+	  break;
+	case CCTK_ARRAY: {
+	  const bbox<int,dim> ext =
+	    arrdata[group].dd->
+	    boxes[reflevel][component][mglevel].exterior;
+	  for (int d=0; d<dim; ++d) {
+	    arrdata[group].size[d] = ext.shape()[d] / ext.stride()[d];
+	  }
+	  break;
+	}
+	case CCTK_GF:
+	  break;
+	default:
+	  abort();
+	}
+      }
+      
+      // Set Cactus pointers to data
+      for (int n=0; n<CCTK_NumVars(); ++n) {
+	for (int ti=0; ti<CCTK_NumTimeLevelsFromVarI(n); ++ti) {
+	  
+	  const int group = CCTK_GroupIndexFromVarI(n);
+	  assert (group>=0);
+	  const int var   = n - CCTK_FirstVarIndexI(group);
+	  assert (var>=0);
+	  const int tmin  = min(0, 2 - CCTK_NumTimeLevelsFromVarI(n));
+	  const int tl    = tmin + ti;
+	  
+	  if (CCTK_QueryGroupStorageI(cgh, group)) {
+	    // Group has storage
+	    
+	    switch (CCTK_GroupTypeFromVarI(n)) {
+	      
+	    case CCTK_SCALAR:
+	      assert (group<(int)scdata.size());
+	      assert (var<(int)scdata[group].size());
+	      assert (ti<(int)scdata[group][var].size());
+	      cgh->data[n][ti] = scdata[group][var][ti];
+	      break;
+	      
+	    case CCTK_ARRAY:
+	      assert (group<(int)arrdata.size());
+	      assert (var<(int)arrdata[group].data.size());
+	      cgh->data[n][ti]
+		= ((*arrdata[group].data[var])
+		   (tl, reflevel, component, mglevel)->storage());
+	      break;
+	      
+	    case CCTK_GF:
+	      assert (group<(int)gfdata.size());
+	      assert (var<(int)gfdata[group].data.size());
+	      cgh->data[n][ti]
+		= ((*gfdata[group].data[var])
+		   (tl, reflevel, component, mglevel)->storage());
+	      break;
+	      
+	    default:
+	      abort();
+	    }
+	    if (hh->is_local(reflevel,component)) {
+	      assert (cgh->data[n][ti]);
+	    } else {
+	      assert (! cgh->data[n][ti]);
+	    }
+	    
+	  } else {
+	    // Group has no storage
+	    
+	    cgh->data[n][ti] = 0;
+	    
+	  } // if ! has storage
+	  
+	} // for ti
+      } // for n
+      
     }
   }
   

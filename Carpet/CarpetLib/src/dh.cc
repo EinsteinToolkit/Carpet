@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.7 2001/03/13 17:40:38 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.8 2001/03/16 21:32:17 eschnett Exp $
 
  ***************************************************************************/
 
@@ -162,14 +162,14 @@ void dh<D>::recompose () {
       	if (rl<h.reflevels()-1) {
       	  for (int cc=0; cc<h.components(rl+1); ++cc) {
       	    const ibbox intrf = boxes[rl+1][cc][ml].interior;
-      	    const ibbox extrf = boxes[rl+1][cc][ml].exterior;
+// 	    const ibbox extrf = boxes[rl+1][cc][ml].exterior;
       	    // Restriction (interior)
       	    {
       	      // (the restriction may fill the interior of the of the
-      	      // coarse grid, and may use the exterior of the fine
+      	      // coarse grid, and may use the interior of the fine
       	      // grid, and the bbox must be as large as possible)
-      	      const ibbox recv = extrf.contracted_for(intr) & intr;
-      	      const ibbox send = recv.expanded_for(extrf);
+      	      const ibbox recv = intrf.contracted_for(intr) & intr;
+      	      const ibbox send = recv.expanded_for(intrf);
       	      boxes[rl+1][cc][ml].send_ref_coarse[c ].push_back(send);
       	      boxes[rl  ][c ][ml].recv_ref_fine  [cc].push_back(recv);
       	    }

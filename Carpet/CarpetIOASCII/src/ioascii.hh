@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.3 2001/03/15 23:28:33 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.4 2001/03/16 21:32:17 eschnett Exp $
 
 #include <vector>
 
@@ -30,8 +30,9 @@ struct CarpetIOASCII {
   // Do truncate the output files for a variable
   static vector<bool> do_truncate;
   
-  // Last iteration on which a variable was output (-1 for none)
-  static vector<int> last_output;
+  // Last iteration on which a refinement level of a variable was
+  // output (INT_MIN for none)
+  static vector<vector<int> > last_output; // [rl][var]
   
   
   

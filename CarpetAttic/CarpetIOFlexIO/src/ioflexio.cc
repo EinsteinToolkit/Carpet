@@ -1,4 +1,5 @@
 #include <cassert>
+#include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -27,7 +28,7 @@
 
 #include "ioflexio.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.1 2001/03/15 23:28:50 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.2 2001/03/16 21:32:17 eschnett Exp $";
 
 
 
@@ -41,7 +42,7 @@ namespace CarpetIOFlexIO {
   int GHExtension;
   int IOMethod;
   vector<bool> do_truncate;
-  vector<int> last_output;
+  vector<vector<int> > last_output;
   
   
   
@@ -81,10 +82,14 @@ namespace CarpetIOFlexIO {
     do_truncate.resize(CCTK_NumVars(), ! IOUtil_RestartFromRecovery(cgh));
     
     // No iterations have yet been output
-    last_output.resize(CCTK_NumVars(), -1);
+    last_output.resize(maxreflevels);
+    for (int rl=0; rl<maxreflevels; ++rl) {
+      last_output[rl].resize(CCTK_NumVars(), INT_MIN);
+    }
     
     // We register only once, ergo we get only one handle.  We store
-    // that statically, so there is no need to pass it to Cactus.
+    // that statically, so there is no need to pass anything to
+    // Cactus.
     return 0;
   }
   
@@ -194,22 +199,22 @@ namespace CarpetIOFlexIO {
 	
 	// Set datatype
 	assert (CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL8);
+	// TODO: Set datatype correctly
 	amrwriter->setType (IObase::Float64);
 	
 	// Set coordinate information
-	assert (reflevel==0);
-	double lower[dim], upper[dim];
+	CCTK_REAL lower[dim], upper[dim];
 	double origin[dim], delta[dim], timestep;
 	for (int d=0; d<dim; ++d) {
 	  const int ierr = CCTK_CoordRange
 	    (cgh, &lower[d], &upper[d], d+1, 0, "cart3d");
 	  assert (ierr==0);
 	  origin[d] = lower[d];
-	  delta[d] = cgh->cctk_delta_space[d];
+	  delta[d] = cgh->cctk_delta_space[d] / reflevelfact;
 	}
-	timestep = cgh->cctk_delta_time;
+	timestep = cgh->cctk_delta_time / reflevelfact;
 	amrwriter->setTopLevelParameters
-	  (dim, origin, delta, timestep, hh->reflevels());
+	  (dim, origin, delta, timestep, maxreflevels);
 	
 	// Set refinement information
 	int interlevel_timerefinement, interlevel_spacerefinement[dim];
@@ -219,66 +224,59 @@ namespace CarpetIOFlexIO {
 	}
 	amrwriter->setRefinement
 	  (interlevel_timerefinement, interlevel_spacerefinement);
+	
+	// Set level
+	amrwriter->setLevel(reflevel);
+	
+	// Set current time
+	amrwriter->setTime(cgh->cctk_iteration);
       }
       
-      // Traverse all components on all refinement levels
-      assert (mglevel>=0);
-      assert (reflevel==0);
-      for (reflevel=0; reflevel<hh->reflevels(); ++reflevel) {
-	enact_reflevel (cgh);
+      // Traverse all components on this refinement and multigrid
+      // level
+      BEGIN_COMPONENT_LOOP(cgh) {
 	
-	amrwriter->setLevel(reflevel);
-	amrwriter->setTime(cgh->cctk_iteration);
+	generic_gf<dim>* ff = 0;
 	
-	assert (component==-1);
-	for (component=0; component<hh->components(reflevel); ++component) {
+	switch (CCTK_GroupTypeI(group)) {
 	  
-	  generic_gf<dim>* ff = 0;
+	case CCTK_ARRAY:
+	  assert (var < (int)arrdata[group].data.size());
+	  ff = arrdata[group].data[var];
+	  break;
 	  
-	  switch (CCTK_GroupTypeI(group)) {
-	    
-	  case CCTK_ARRAY:
-	    assert (var < (int)arrdata[group].data.size());
-	    ff = arrdata[group].data[var];
-	    break;
-	    
-	  case CCTK_GF:
-	    assert (var < (int)gfdata[group].data.size());
-	    ff = gfdata[group].data[var];
-	    break;
-	    
-	  default:
-	    abort();
+	case CCTK_GF:
+	  assert (var < (int)gfdata[group].data.size());
+	  ff = gfdata[group].data[var];
+	  break;
+	  
+	default:
+	  abort();
+	}
+	
+	const generic_data<dim>* const data
+	  = (*ff) (tl, reflevel, component, mglevel);
+	
+	// Make temporary copy on processor 0
+	const bbox<int,dim> ext = data->extent();
+	generic_data<dim>* tmp = data->make_typed ();
+	tmp->allocate (ext, 0);
+	tmp->copy_from (data, ext);
+	
+	// Write data
+	if (CCTK_MyProc(cgh)==0) {
+	  int origin[dim], dims[dim];
+	  for (int d=0; d<dim; ++d) {
+	    origin[d] = (ext.lower() / ext.stride())[d];
+	    dims[d]   = ((ext.upper() - ext.lower()) / ext.stride() + 1)[d];
 	  }
-	  
-	  const generic_data<dim>* const data
-	    = (*ff) (tl, reflevel, component, mglevel);
-	  
-	  // Make temporary copy on processor 0
-	  const bbox<int,dim> ext = data->extent();
-	  generic_data<dim>* tmp = data->make_typed ();
-	  tmp->allocate (ext, 0);
-	  tmp->copy_from (data, ext);
-	  
-	  // Write data
-	  if (CCTK_MyProc(cgh)==0) {
-	    int origin[dim], dims[dim];
-	    for (int d=0; d<dim; ++d) {
-	      origin[d] = (ext.lower() / ext.stride())[d];
-	      dims[d]   = ((ext.upper() - ext.lower()) / ext.stride() + 1)[d];
-	    }
-	    amrwriter->write (origin, dims, (void*)data->storage());
-	  }
-	  
-	  // Delete temporary copy
-	  delete tmp;
-	  
-	} // Loop over components
-	component = -1;
+	  amrwriter->write (origin, dims, (void*)data->storage());
+	}
 	
-      } // Loop over refinement levels
-      reflevel = 0;
-      enact_reflevel (cgh);
+	// Delete temporary copy
+	delete tmp;
+	
+      } END_COMPONENT_LOOP(cgh);
       
       // Close the file
       if (CCTK_MyProc(cgh)==0) {
@@ -305,7 +303,7 @@ namespace CarpetIOFlexIO {
   int TimeToOutput (cGH* const cgh, const int vindex) {
     DECLARE_CCTK_PARAMETERS;
     
-    assert (vindex>=0 && vindex<(int)last_output.size());
+    assert (vindex>=0 && vindex<(int)last_output[reflevel].size());
     
     const int myoutevery = GetIntParameter("out3D_every", out_every);
     
@@ -319,12 +317,12 @@ namespace CarpetIOFlexIO {
       return 0;
     }
     
-    if (! CheckForVariable(cgh, GetStringParameter("out3D_vars", ""), vindex)) {
+    if (! CheckForVariable(cgh, GetStringParameter("out3D_vars",""), vindex)) {
       // This variable should not be output
       return 0;
     }
     
-    if (last_output[vindex] == cgh->cctk_iteration) {
+    if (last_output[reflevel][vindex] == cgh->cctk_iteration) {
       // Has already been output during this iteration
       char* varname = CCTK_FullName(vindex);
       CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -336,7 +334,7 @@ namespace CarpetIOFlexIO {
       return 0;
     }
     
-    assert (last_output[vindex] < cgh->cctk_iteration);
+    assert (last_output[reflevel][vindex] < cgh->cctk_iteration);
     
     // Should be output during this iteration
     return 1;
@@ -351,7 +349,7 @@ namespace CarpetIOFlexIO {
     const int retval = OutputVarAs (cgh, varname, CCTK_VarName(vindex));
     free (varname);
     
-    last_output[vindex] = cgh->cctk_iteration;
+    last_output[reflevel][vindex] = cgh->cctk_iteration;
     
     return retval;
   }

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.4 2001/03/12 16:54:18 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.5 2001/03/16 21:32:17 eschnett Exp $
 
 #include <vector>
 
@@ -18,29 +18,38 @@ namespace Carpet {
   
   
   
-  // handle from CCTK_RegisterGHExtension
+  // Handle from CCTK_RegisterGHExtension
   extern int GHExtension;
   
-  // time step on base grid
-  extern CCTK_REAL base_delta_time;
+  // Maximum number of refinement levels
+  extern int maxreflevels;
   
-  // active time level
+  // Refinement factor on finest grid
+  extern int maxreflevelfact;
+  
+  // Active time level
   extern int activetimelevel;	// 0 for current, 1 for next
   
-  // current position on the grid hierarchy
-  extern int mglevel;
+  // Current iteration per refinement level
+  extern vector<int> iteration;
+  
+  // Current position on the grid hierarchy
   extern int reflevel;
+  extern int mglevel;
   extern int component;
   
-  // current refinement factor
-  extern int reflevelfactor;
+  // Current refinement factor
+  extern int reflevelfact;
+  
+  // Time step on base grid
+  extern CCTK_REAL base_delta_time;
   
   
   
-  // data for scalars
-  extern vector<vector<vector<void*> > > scdata;// [group][var][tl]
+  // Data for scalars
+  extern vector<vector<vector<void*> > > scdata; // [group][var][tl]
   
-  // data for arrays
+  // Data for arrays
   struct arrdesc {
     gh<dim>* hh;
     th<dim>* tt;
@@ -50,9 +59,9 @@ namespace Carpet {
   };
   extern vector<arrdesc> arrdata; // [group]
   
-  // data for grid functions
+  // Data for grid functions
   
-  // the grid hierarchy
+  // The grid hierarchy
   extern gh<dim>* hh;
   extern th<dim>* tt;
   extern dh<dim>* dd;
@@ -65,37 +74,102 @@ namespace Carpet {
   
   
   
-  // scheduled functions
+  // Scheduled functions
   extern "C" {
     int CarpetStartup();
   }
   
-  // registered functions
-  void* SetupGH (tFleshConfig *fc, int convLevel, cGH *cgh);
+  // Registered functions
+  void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cgh);
   
-  int Initialise (tFleshConfig *config);
-  int Evolve (tFleshConfig *config);
-  int Shutdown (tFleshConfig *config);
-  int CallFunction (void *function, cFunctionData *attribute, void *data);
+  int Initialise (tFleshConfig* config);
+  int Evolve (tFleshConfig* config);
+  int Shutdown (tFleshConfig* config);
+  int CallFunction (void* function, cFunctionData* attribute, void* data);
   
-  int SyncGroup (cGH *cgh, const char *groupname);
-  int EnableGroupStorage (cGH *cgh, const char *groupname);
-  int DisableGroupStorage (cGH *cgh, const char *groupname); 
-  int EnableGroupComm (cGH *cgh, const char *groupname);
-  int DisableGroupComm (cGH *cgh, const char *groupname);
-  int Barrier (cGH *cgh);
-  int Exit (cGH *cgh, int retval);
-  int Abort (cGH *cgh, int retval);
-  int myProc (cGH *cgh);
-  int nProcs (cGH *cgh);
-  const int* ArrayGroupSizeB (cGH *cgh, int dir, int group,
-			      const char *groupname);
-  int QueryGroupStorageB (cGH *cgh, int group, const char *groupname);
+  int SyncGroup (cGH* cgh, const char* groupname);
+  int EnableGroupStorage (cGH* cgh, const char* groupname);
+  int DisableGroupStorage (cGH* cgh, const char* groupname); 
+  int EnableGroupComm (cGH* cgh, const char* groupname);
+  int DisableGroupComm (cGH* cgh, const char* groupname);
+  int Barrier (cGH* cgh);
+  int Exit (cGH* cgh, int retval);
+  int Abort (cGH* cgh, int retval);
+  int MyProc (cGH* cgh);
+  int nProcs (cGH* cgh);
+  const int* ArrayGroupSizeB (cGH* cgh, int dir, int group,
+			      const char* groupname);
+  int QueryGroupStorageB (cGH* cgh, int group, const char* groupname);
   
   
   
   // Helper functions
-  void enact_reflevel (cGH *cgh);
+  void set_reflevel (cGH* cgh, const int rl);
+  void set_mglevel (cGH* cgh, const int ml);
+  void set_component (cGH* cgh, const int c);
+  
+  
+  
+  // Refinement level iterator
+  
+#define BEGIN_REFLEVEL_LOOP(cgh)		\
+  do {						\
+    int _rl;					\
+    assert (reflevel==0);			\
+    for (;;) {					\
+      {
+#define END_REFLEVEL_LOOP(cgh)			\
+      }						\
+      if (reflevel==maxreflevels-1) break;	\
+      set_reflevel ((cgh), reflevel+1);		\
+    }						\
+    set_reflevel ((cgh), 0);			\
+    assert (reflevel==0);			\
+    _rl = 0;					\
+  } while (0)
+  
+  
+  
+  // Reverse refinement level iterator
+  
+#define BEGIN_REVERSE_REFLEVEL_LOOP(cgh)	\
+  do {						\
+    int _rrl;					\
+    assert (reflevel==0);			\
+    set_reflevel ((cgh), maxreflevels-1);	\
+    for (;;) {					\
+      {
+#define END_REVERSE_REFLEVEL_LOOP(cgh)		\
+      }						\
+      if (reflevel==0) break;			\
+      set_reflevel ((cgh), reflevel-1);		\
+    }						\
+    assert (reflevel==0);			\
+    _rrl = 0;					\
+  } while (0)
+  
+  
+  
+  // Component iterator
+  
+#define BEGIN_COMPONENT_LOOP(cgh)		\
+  do {						\
+    int _cl;					\
+    assert (component==-1);			\
+    set_component ((cgh), 0);			\
+    for (;;) {					\
+      {
+#define END_COMPONENT_LOOP(cgh)				\
+      }							\
+      if (component==hh->components(reflevel)-1) break;	\
+      set_component ((cgh), component+1);		\
+    }							\
+    set_component ((cgh), -1);				\
+    assert (component==-1);				\
+    _cl = 0;						\
+  } while (0)
+  
+  
   
   extern "C" {
     MPI_Comm CarpetMPICommunicator();

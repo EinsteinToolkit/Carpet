@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.6 2001/03/12 16:54:25 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.7 2001/03/16 21:32:17 eschnett Exp $
 
  ***************************************************************************/
 
@@ -58,7 +58,7 @@ void generic_data<D>::write_ascii (const string name, const int time,
   assert (_has_storage);
   CHECKPOINT;
   
-  if (_proc==0) {
+  if (proc()==0) {
     // output on processor 0
     
     int rank;
@@ -118,8 +118,8 @@ void generic_data<D>::write_ascii (const string name, const int time,
     // copy to processor 0 and output there
     
     generic_data* const tmp = make_typed();
-    tmp->allocate(_extent, 0);
-    tmp->copy_from (this, _extent);
+    tmp->allocate(extent(), 0);
+    tmp->copy_from (this, extent());
     tmp->write_ascii (name, time, org, dirs, tl, rl, c, ml);
     delete tmp;
     

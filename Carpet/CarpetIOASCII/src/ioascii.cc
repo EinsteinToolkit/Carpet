@@ -1,4 +1,5 @@
 #include <cassert>
+#include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -19,7 +20,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.7 2001/03/15 23:28:33 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.8 2001/03/16 21:32:17 eschnett Exp $";
 
 
 
@@ -48,7 +49,7 @@ int CarpetIOASCIIStartup()
 template<int outdim> int CarpetIOASCII<outdim>::GHExtension;
 template<int outdim> int CarpetIOASCII<outdim>::IOMethod;
 template<int outdim> vector<bool> CarpetIOASCII<outdim>::do_truncate;
-template<int outdim> vector<int> CarpetIOASCII<outdim>::last_output;
+template<int outdim> vector<vector<int> > CarpetIOASCII<outdim>::last_output;
 
 
 
@@ -78,8 +79,8 @@ int CarpetIOASCII<outdim>::Startup()
 
 
 template<int outdim>
-void* CarpetIOASCII<outdim>::SetupGH (tFleshConfig* const fc,
-				const int convLevel, cGH* const cgh)
+void* CarpetIOASCII<outdim>
+::SetupGH (tFleshConfig* const fc, const int convLevel, cGH* const cgh)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -87,17 +88,22 @@ void* CarpetIOASCII<outdim>::SetupGH (tFleshConfig* const fc,
   do_truncate.resize(CCTK_NumVars(), ! IOUtil_RestartFromRecovery(cgh));
   
   // No iterations have yet been output
-  last_output.resize(CCTK_NumVars(), -1);
+  last_output.resize(maxreflevels);
+  for (int rl=0; rl<maxreflevels; ++rl) {
+    last_output[rl].resize(CCTK_NumVars(), INT_MIN);
+  }
   
   // We register only once, ergo we get only one handle.  We store
-  // that statically, so there is no need to pass it to Cactus.
+  // that statically, so there is no need to pass anything to Cactus.
   return 0;
 }
 
 
 
 template<int outdim>
-int CarpetIOASCII<outdim>::OutputGH (cGH* const cgh) {
+int CarpetIOASCII<outdim>
+::OutputGH (cGH* const cgh)
+{
   for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
     if (TimeToOutput(cgh, vindex)) {
       TriggerOutput(cgh, vindex);
@@ -109,8 +115,10 @@ int CarpetIOASCII<outdim>::OutputGH (cGH* const cgh) {
 
 
 template<int outdim>
-int CarpetIOASCII<outdim>::OutputVarAs (cGH* const cgh, const char* const varname,
-				  const char* const alias) {
+int CarpetIOASCII<outdim>
+::OutputVarAs (cGH* const cgh,
+	       const char* const varname, const char* const alias)
+{
   DECLARE_CCTK_PARAMETERS;
   
   const int n = CCTK_VarIndex(varname);
@@ -299,59 +307,39 @@ int CarpetIOASCII<outdim>::OutputVarAs (cGH* const cgh, const char* const varnam
 	    abort();
 	  }
 	  
-	  // Traverse all components on all refinement levels
-	  assert (mglevel>=0);
-	  assert (reflevel==0);
-	  for (reflevel=0; reflevel<hh->reflevels(); ++reflevel) {
-	    enact_reflevel (cgh);
+	  // Traverse all components on this refinement and multigrid
+	  // level
+	  BEGIN_COMPONENT_LOOP(cgh) {
 	    
-	    assert (component==-1);
-	    for (component=0; component<hh->components(reflevel);
-		 ++component) {
-	      
-	      generic_gf<dim>* ff = 0;
-	      
-	      switch (CCTK_GroupTypeI(group)) {
-		
-	      case CCTK_ARRAY:
-		assert (var < (int)arrdata[group].data.size());
-		ff = arrdata[group].data[var];
-		break;
-		
-	      case CCTK_GF:
-		assert (var < (int)gfdata[group].data.size());
-		ff = gfdata[group].data[var];
-		break;
-		
-	      default:
-		abort();
-	      }
-	      
-	      const generic_data<dim>* const data
-		= (*ff) (tl, reflevel, component, mglevel);
-	      const vect<int,dim> offset1 = (offset * data->extent().stride()
-					     * vect<int,dim>(reflevelfactor));
-	      
-	      data->write_ascii (filename, cgh->cctk_iteration, offset1, dirs,
-				 tl, reflevel, component, mglevel);
-	      
-	    } // Loop over components
-	    component = -1;
+	    generic_gf<dim>* ff = 0;
 	    
-	    // Append EOL after every complete set of components
-	    if (CCTK_MyProc(cgh)==0) {
-	      ofstream file(filename, ios::app);
-	      assert (file.good());
-	      file << endl;
-	      file.close();
-	      assert (file.good());
+	    switch (CCTK_GroupTypeI(group)) {
+	      
+	    case CCTK_ARRAY:
+	      assert (var < (int)arrdata[group].data.size());
+	      ff = arrdata[group].data[var];
+	      break;
+	      
+	    case CCTK_GF:
+	      assert (var < (int)gfdata[group].data.size());
+	      ff = gfdata[group].data[var];
+	      break;
+	      
+	    default:
+	      abort();
 	    }
 	    
-	  } // Loop over refinement levels
-	  reflevel = 0;
-	  enact_reflevel (cgh);
+	    const generic_data<dim>* const data
+	      = (*ff) (tl, reflevel, component, mglevel);
+	    const bbox<int,dim> ext = data->extent();
+	    const vect<int,dim> offset1 = offset * ext.stride();
+	    
+	    data->write_ascii (filename, cgh->cctk_iteration, offset1, dirs,
+			       tl, reflevel, component, mglevel);
+	    
+	  } END_COMPONENT_LOOP(cgh);
 	  
-	  // Append EOL after every complete set of refinement levels
+	  // Append EOL after every complete set of components
 	  if (CCTK_MyProc(cgh)==0) {
 	    ofstream file(filename, ios::app);
 	    assert (file.good());
@@ -392,10 +380,12 @@ int CarpetIOASCII<outdim>::OutputVarAs (cGH* const cgh, const char* const varnam
 
 
 template<int outdim>
-int CarpetIOASCII<outdim>::TimeToOutput (cGH* const cgh, const int vindex) {
+int CarpetIOASCII<outdim>
+::TimeToOutput (cGH* const cgh, const int vindex)
+{
   DECLARE_CCTK_PARAMETERS;
   
-  assert (vindex>=0 && vindex<(int)last_output.size());
+  assert (vindex>=0 && vindex<CCTK_NumVars());
   
   const int myoutevery = GetIntParameter("out%dD_every", out_every);
   
@@ -414,7 +404,7 @@ int CarpetIOASCII<outdim>::TimeToOutput (cGH* const cgh, const int vindex) {
     return 0;
   }
   
-  if (last_output[vindex] == cgh->cctk_iteration) {
+  if (last_output[reflevel][vindex] == cgh->cctk_iteration) {
     // Has already been output during this iteration
     char* varname = CCTK_FullName(vindex);
     CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -426,7 +416,7 @@ int CarpetIOASCII<outdim>::TimeToOutput (cGH* const cgh, const int vindex) {
     return 0;
   }
   
-  assert (last_output[vindex] < cgh->cctk_iteration);
+  assert (last_output[reflevel][vindex] < cgh->cctk_iteration);
   
   // Should be output during this iteration
   return 1;
@@ -435,14 +425,16 @@ int CarpetIOASCII<outdim>::TimeToOutput (cGH* const cgh, const int vindex) {
 
 
 template<int outdim>
-int CarpetIOASCII<outdim>::TriggerOutput (cGH* const cgh, const int vindex) {
+int CarpetIOASCII<outdim>
+::TriggerOutput (cGH* const cgh, const int vindex)
+{
   assert (vindex>=0 && vindex<CCTK_NumVars());
   
   char* varname = CCTK_FullName(vindex);
   const int retval = OutputVarAs (cgh, varname, CCTK_VarName(vindex));
   free (varname);
   
-  last_output[vindex] = cgh->cctk_iteration;
+  last_output[reflevel][vindex] = cgh->cctk_iteration;
   
   return retval;
 }
@@ -450,10 +442,11 @@ int CarpetIOASCII<outdim>::TriggerOutput (cGH* const cgh, const int vindex) {
 
 
 template<int outdim>
-int CarpetIOASCII<outdim>::GetGridOffset (cGH* cgh, int dir,
-				    const char* itempl, const char* iglobal,
-				    const char* ctempl, const char* cglobal,
-				    CCTK_REAL cfallback)
+int CarpetIOASCII<outdim>
+::GetGridOffset (cGH* cgh, int dir,
+		 const char* itempl, const char* iglobal,
+		 const char* ctempl, const char* cglobal,
+		 const CCTK_REAL cfallback)
 {
   /* First choice: explicit coordinate */
   char cparam[1000];
@@ -510,7 +503,8 @@ int CarpetIOASCII<outdim>::GetGridOffset (cGH* cgh, int dir,
 
 
 template<int outdim>
-int CarpetIOASCII<outdim>::CoordToOffset (cGH* cgh, int dir, CCTK_REAL coord)
+int CarpetIOASCII<outdim>
+::CoordToOffset (cGH* cgh, int dir, CCTK_REAL coord)
 {
   CCTK_REAL lower, upper;
   CCTK_CoordRange (cgh, &lower, &upper, dir, 0, "cart3d");
@@ -527,8 +521,9 @@ int CarpetIOASCII<outdim>::CoordToOffset (cGH* cgh, int dir, CCTK_REAL coord)
 
 
 template<int outdim>
-const char* CarpetIOASCII<outdim>::GetStringParameter
-(const char* const parametertemplate, const char* const fallback)
+const char* CarpetIOASCII<outdim>
+::GetStringParameter (const char* const parametertemplate,
+		      const char* const fallback)
 {
   char parametername[1000];
   sprintf (parametername, parametertemplate, outdim);
@@ -548,8 +543,8 @@ const char* CarpetIOASCII<outdim>::GetStringParameter
 
 
 template<int outdim>
-int CarpetIOASCII<outdim>::GetIntParameter (const char* const parametertemplate,
-				      int fallback)
+int CarpetIOASCII<outdim>
+::GetIntParameter (const char* const parametertemplate, const int fallback)
 {
   char parametername[1000];
   sprintf (parametername, parametertemplate, outdim);
