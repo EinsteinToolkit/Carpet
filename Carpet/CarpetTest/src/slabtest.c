@@ -32,7 +32,7 @@ carpettest_slabtest (CCTK_ARGUMENTS)
   assert (vi >= 0);
   
   for (d=0; d<3; ++d) {
-    for (dd=0; d<3; ++dd) {
+    for (dd=0; dd<3; ++dd) {
       directions[d][dd] = d == dd;
     }
     origin[d] = cctk_lbnd[d];
