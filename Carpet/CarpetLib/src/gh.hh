@@ -127,10 +127,9 @@ public:
     return _processors.at(rl).at(c);
   }
 
-  bool is_local (const int rl, const int c) const {
-    int rank;
-    MPI_Comm_rank (dist::comm, &rank);
-    return proc(rl,c) == rank;
+  bool is_local (const int rl, const int c) const
+  {
+    return proc(rl,c) == dist::rank();
   }
   
   int local_components (const int rl) const;
