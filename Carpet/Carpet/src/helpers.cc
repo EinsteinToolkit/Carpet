@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.22 2002/06/06 21:38:31 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.23 2002/06/07 15:28:23 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_helpers_cc)
 
@@ -268,9 +268,10 @@ namespace Carpet {
     } else {
       // Local mode
       
-      assert (reflevel < (int)dd->boxes.size());
-      assert (component < (int)dd->boxes[reflevel].size());
-      assert (mglevel < (int)dd->boxes[reflevel][component].size());
+      assert (reflevel>=0 && reflevel < (int)dd->boxes.size());
+      assert (component>=0 && component < (int)dd->boxes[reflevel].size());
+      assert (mglevel>=0
+	      && mglevel < (int)dd->boxes[reflevel][component].size());
       const bbox<int,dim>& ext
 	= dd->boxes[reflevel][component][mglevel].exterior;
       for (int d=0; d<dim; ++d) {
@@ -296,8 +297,9 @@ namespace Carpet {
     // Set Cactus parameters for all groups
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       
-      if (CCTK_GroupTypeI(group) == CCTK_GF
-	  && component == -1) {
+      if (mglevel == -1
+	  || (CCTK_GroupTypeI(group) == CCTK_GF
+	      && component == -1)) {
 	// Global mode for a grid function: not active
 	
 	for (int d=0; d<dim; ++d) {
@@ -319,9 +321,9 @@ namespace Carpet {
 	  rl = 0;
 	  c = CCTK_MyProc(cgh);
 	}
-	assert (rl < (int)arrdata[group].dd->boxes.size());
-	assert (c < (int)arrdata[group].dd->boxes[rl].size());
-	assert (mglevel < (int)arrdata[group].dd->boxes[rl][c].size());
+	assert (rl>=0 && rl < (int)arrdata[group].dd->boxes.size());
+	assert (c>=0 && c < (int)arrdata[group].dd->boxes[rl].size());
+	assert (mglevel>=0 && mglevel < (int)dd->boxes[rl][c].size());
 	const bbox<int,dim>& bext = arrdata[group].hh->baseextent;
 	const bbox<int,dim>& iext = arrdata[group].hh->extents[rl][c][mglevel];
 	const bbox<int,dim>& ext
@@ -372,7 +374,8 @@ namespace Carpet {
       
       for (int tl=0; tl<num_tl; ++tl) {
 	
-	if (CCTK_QueryGroupStorageI(cgh, group)) {
+	if (mglevel != -1
+	    && CCTK_QueryGroupStorageI(cgh, group)) {
 	  // Group has storage
 	  
 	  if (CCTK_GroupTypeI(group) == CCTK_GF) {
@@ -386,6 +389,12 @@ namespace Carpet {
 	      
 	    } else {
 	      // local mode
+	      
+	      assert (reflevel>=0 && reflevel < (int)dd->boxes.size());
+	      assert (component>=0
+		      && component < (int)dd->boxes[reflevel].size());
+	      assert (mglevel>=0
+		      && mglevel < (int)dd->boxes[reflevel][component].size());
 	      
 	      assert (group<(int)arrdata.size());
 	      assert (var<(int)arrdata[group].data.size());
@@ -409,6 +418,9 @@ namespace Carpet {
 	    assert (arrdata[group].data[var]);
 	    const int rl = 0;
 	    const int c = CCTK_MyProc(cgh);
+	    assert (rl>=0 && rl<(int)arrdata[group].dd->boxes.size());
+	    assert (c>=0 && c<(int)arrdata[group].dd->boxes[rl].size());
+	    assert (mglevel>=0 && mglevel < (int)dd->boxes[rl][c].size());
 	    assert (hh->is_local(reflevel,c));
 	    cgh->data[n][tl]
 	      = ((*arrdata[group].data[var]) (-tl, rl, c, mglevel)->storage());

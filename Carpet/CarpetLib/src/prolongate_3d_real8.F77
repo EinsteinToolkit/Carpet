@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8.F77,v 1.6 2002/01/09 17:45:40 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8.F77,v 1.7 2002/06/07 15:28:24 schnetter Exp $
       
 #include "cctk.h"
       
@@ -118,19 +118,43 @@ c     Loop over fine region
                
                res = 0
                
-               do kk=1,2
-                  do jj=1,2
-                     do ii=1,2
-                        
-                        fac = ifac(ii) * jfac(jj) * kfac(kk)
-                        
-                        if (fac.ne.0) then
-                           res = res + fac * src(i0+ii, j0+jj, k0+kk)
-                        end if
-                        
-                     end do
-                  end do
-               end do
+c$$$               do kk=1,2
+c$$$                  do jj=1,2
+c$$$                     do ii=1,2
+c$$$                        
+c$$$                        fac = ifac(ii) * jfac(jj) * kfac(kk)
+c$$$                        
+c$$$                        if (fac.ne.0) then
+c$$$                           res = res + fac * src(i0+ii, j0+jj, k0+kk)
+c$$$                        end if
+c$$$                        
+c$$$                     end do
+c$$$                  end do
+c$$$               end do
+               
+               fac = ifac(1) * jfac(1) * kfac(1)
+               if (fac.ne.0) res = res + fac * src(i0+1, j0+1, k0+1)
+               
+               fac = ifac(2) * jfac(1) * kfac(1)
+               if (fac.ne.0) res = res + fac * src(i0+2, j0+1, k0+1)
+               
+               fac = ifac(1) * jfac(2) * kfac(1)
+               if (fac.ne.0) res = res + fac * src(i0+1, j0+2, k0+1)
+               
+               fac = ifac(2) * jfac(2) * kfac(1)
+               if (fac.ne.0) res = res + fac * src(i0+2, j0+2, k0+1)
+               
+               fac = ifac(1) * jfac(1) * kfac(2)
+               if (fac.ne.0) res = res + fac * src(i0+1, j0+1, k0+2)
+               
+               fac = ifac(2) * jfac(1) * kfac(2)
+               if (fac.ne.0) res = res + fac * src(i0+2, j0+1, k0+2)
+               
+               fac = ifac(1) * jfac(2) * kfac(2)
+               if (fac.ne.0) res = res + fac * src(i0+1, j0+2, k0+2)
+               
+               fac = ifac(2) * jfac(2) * kfac(2)
+               if (fac.ne.0) res = res + fac * src(i0+2, j0+2, k0+2)
                
                dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = dstdiv * res
                
