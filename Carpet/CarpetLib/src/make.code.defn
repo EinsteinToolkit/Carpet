@@ -1,8 +1,9 @@
 # Main make.code.defn file for thorn CarpetLib   -*-Makefile-*-
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/make.code.defn,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/make.code.defn,v 1.2 2001/03/17 22:37:56 eschnett Exp $
 
 # Source files in this directory
-SRCS = bbox.cc bboxset.cc data.cc defs.cc dh.cc dist.cc gdata.cc gf.cc ggf.cc gh.cc io.cc th.cc vect.cc
+SRCS = bbox.cc bboxset.cc data.cc defs.cc dh.cc dist.cc gdata.cc gf.cc ggf.cc gh.cc th.cc vect.cc
+# Note: skipping io.cc
 
 # Subdirectories containing source files
 SUBDIRS = 

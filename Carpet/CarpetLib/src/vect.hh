@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.2 2001/03/17 22:37:56 eschnett Exp $
 
  ***************************************************************************/
 
@@ -67,12 +67,16 @@ public:
     elt[0]=x; elt[1]=y; elt[2]=z;
   }
   
+  vect (const T* const x) {
+    for (int d=0; d<D; ++d) elt[d]=x[d];
+  }
+  
   template<class S>
   explicit vect (const vect<S,D>& a) {
     for (int d=0; d<D; ++d) elt[d]=(T)a[d];
   }
   
-  static vect dir (int d) {
+  static vect dir (const int d) {
     vect r=0;
     r[d]=1;
     return r;
@@ -84,13 +88,13 @@ public:
     return r;
   }
   
-  static vect seq (int n) {
+  static vect seq (const int n) {
     vect r;
     for (int d=0; d<D; ++d) r[d]=n+d;
     return r;
   }
   
-  static vect seq (int n, int s) {
+  static vect seq (const int n, const int s) {
     vect r;
     for (int d=0; d<D; ++d) r[d]=n+s*d;
     return r;
