@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.31 2003/10/15 07:14:01 hawke Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.32 2003/10/17 08:14:41 cvs_anon Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -689,6 +689,7 @@ void data<CCTK_REAL8,3>
                (CCTK_REAL8*)storage(), time,
                dstshp[0], dstshp[1], dstshp[2],
                srcbbox, dstbbox, regbbox);
+	    break;
           case 2: 
             CCTK_FNAME(prolongate_3d_real8_3tl_minmod)
               ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
