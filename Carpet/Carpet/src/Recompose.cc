@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.54 2004/03/23 15:33:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.55 2004/03/23 15:58:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -215,34 +215,22 @@ namespace Carpet {
     for (int rl=0; rl<hh.reflevels(); ++rl) {
       for (int c=0; c<hh.components(rl); ++c) {
         for (int ml=0; ml<hh.mglevels(rl,c); ++ml) {
+          const int convfact = ipow(mgfact, ml);
+          const int levfact = ipow(reffact, rl);
+          const ivect lower = hh.extents.at(rl).at(c).at(ml).lower();
+          const ivect upper = hh.extents.at(rl).at(c).at(ml).upper();
+          assert (all(lower * levfact % maxreflevelfact == 0));
+          assert (all(upper * levfact % maxreflevelfact == 0));
+          assert (all(((upper - lower) * levfact / maxreflevelfact)
+                      % convfact == 0));
           cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
-               << "   exterior extent: [";
-          for (int d=0; d<dim; ++d) {
-            const int lower = hh.extents[rl][c][ml].lower()[d];
-            const int levfact = ipow(reffact, rl);
-            assert (lower * levfact % maxreflevelfact == 0);
-            cout << (d==0 ? "" : ",")
-                 << lower * levfact / maxreflevelfact;
-          }
-          cout << "] : [";
-          for (int d=0; d<dim; ++d) {
-            const int upper = hh.extents[rl][c][ml].upper()[d];
-            const int levfact = ipow(reffact, rl);
-            assert (upper * levfact % maxreflevelfact == 0);
-            cout << (d==0 ? "" : ",")
-                 << upper * levfact / maxreflevelfact;
-          }
-          cout << "]   ([";
-          for (int d=0; d<dim; ++d) {
-            const int lower = hh.extents[rl][c][ml].lower()[d];
-            const int upper = hh.extents[rl][c][ml].upper()[d];
-            const int levfact = ipow(reffact, rl);
-            assert (lower * levfact % maxreflevelfact == 0);
-            assert (upper * levfact % maxreflevelfact == 0);
-            cout << (d==0 ? "" : ",")
-                 << (upper - lower) * levfact / maxreflevelfact + 1;
-          }
-          cout << "])" << endl;
+               << "   exterior extent: "
+               << lower * levfact / maxreflevelfact
+               << " : "
+               << upper * levfact / maxreflevelfact
+               << "   ("
+               << (upper - lower) * levfact / maxreflevelfact / convfact + 1
+               << ")" << endl;
         }
       }
     }
@@ -251,31 +239,19 @@ namespace Carpet {
     for (int rl=0; rl<hh.reflevels(); ++rl) {
       for (int c=0; c<hh.components(rl); ++c) {
         for (int ml=0; ml<hh.mglevels(rl,c); ++ml) {
+          const rvect origin = rvect::ref(cgh->cctk_origin_space);
+          const rvect delta = rvect::ref(cgh->cctk_delta_space);
+          const ivect lower = hh.extents.at(rl).at(c).at(ml).lower();
+          const ivect upper = hh.extents.at(rl).at(c).at(ml).upper();
+          const int convfact = ipow(mgfact, ml);
+          const int levfact = ipow(reffact, rl);
           cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
-               << "   exterior extent: [";
-          for (int d=0; d<dim; ++d) {
-            const CCTK_REAL origin = cgh->cctk_origin_space[d];
-            const CCTK_REAL delta = cgh->cctk_delta_space[d];
-            const int lower = hh.extents[rl][c][ml].lower()[d];
-            cout << (d==0 ? "" : ",")
-                 << origin + delta * lower / maxreflevelfact;
-          }
-          cout << "] : [";
-          for (int d=0; d<dim; ++d) {
-            const CCTK_REAL origin = cgh->cctk_origin_space[d];
-            const CCTK_REAL delta = cgh->cctk_delta_space[d];
-            const int upper = hh.extents[rl][c][ml].upper()[d];
-            cout << (d==0 ? "" : ",")
-                 << origin + delta * upper / maxreflevelfact;
-          }
-          cout << "] : [";
-          for (int d=0; d<dim; ++d) {
-            const CCTK_REAL delta = cgh->cctk_delta_space[d];
-            const int levfact = ipow(reffact, rl);
-            cout << (d==0 ? "" : ",")
-                 << delta / levfact;
-          }
-          cout << "]" << endl;
+               << "   exterior extent: "
+               << origin + delta * lower / maxreflevelfact
+               << " : "
+               << origin + delta * upper / maxreflevelfact
+               << " : "
+               << delta * convfact / levfact << endl;
         }
       }
     }
