@@ -1,10 +1,11 @@
+#include <math.h>
+
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
-#include "cctk_Functions.h"
 
 
-static const char *rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetRegridTest/src/SetupGaussian.c,v 1.1 2004/05/23 15:56:14 cott Exp $";
+static const char *rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetRegridTest/src/SetupGaussian.c,v 1.2 2004/05/27 13:22:49 schnetter Exp $";
 
 CCTK_FILEVERSION(CarpetExtra_CarpetRegridTest_SetupGaussian_c);
 
