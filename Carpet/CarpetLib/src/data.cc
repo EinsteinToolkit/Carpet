@@ -943,10 +943,8 @@ void data<CCTK_REAL8,3>
   CCTK_REAL min_time = times[0];
   CCTK_REAL max_time = times[0];
   for (size_t tl=1; tl<times.size(); ++tl) {
-    // Catch broken compilers that only know min(int) and max(int)
-    assert (min(1.3, 1.4) > 1.2);
-    min_time = min(min_time, times[tl]);
-    max_time = max(max_time, times[tl]);
+    min_time = fmin(min_time, times[tl]);
+    max_time = fmax(max_time, times[tl]);
   }
   if (time < min_time - eps || time > max_time + eps) {
     ostringstream buf;
@@ -959,9 +957,7 @@ void data<CCTK_REAL8,3>
   // Is it necessary to interpolate in time?
   if (times.size() > 1) {
     for (size_t tl=0; tl<times.size(); ++tl) {
-      // Catch broken compilers that only know abs(int)
-      assert (abs(1.5) > 1.4);
-      if (abs(times[tl] - time) < eps) {
+      if (fabs(times[tl] - time) < eps) {
         // It is not.
         vector<const gdata<3>*> my_gsrcs(1);
         vector<CCTK_REAL> my_times(1);
@@ -980,7 +976,7 @@ void data<CCTK_REAL8,3>
     // Restrict
     
     assert (times.size() == 1);
-    assert (abs(times[0] - time) < eps);
+    assert (fabs(times[0] - time) < eps);
     
     switch (transport_operator) {
       
@@ -1020,7 +1016,7 @@ void data<CCTK_REAL8,3>
         
       case 0:
         assert (times.size() == 1);
-        assert (abs(times[0] - time) < eps);
+        assert (fabs(times[0] - time) < eps);
         assert (srcs.size()>=1);
         switch (order_space) {
         case 0:
@@ -1203,7 +1199,7 @@ void data<CCTK_REAL8,3>
       switch (order_time) {
       case 0: 
         assert (times.size() == 1);
-        assert (abs(times[0] - time) < eps);
+        assert (fabs(times[0] - time) < eps);
         switch (order_space) {
         case 0:
         case 1:
@@ -1293,7 +1289,7 @@ void data<CCTK_REAL8,3>
       switch (order_time) {
       case 0: 
         assert (times.size() == 1);
-        assert (abs(times[0] - time) < eps);
+        assert (fabs(times[0] - time) < eps);
         switch (order_space) {
         case 0:
         case 1:
