@@ -145,7 +145,6 @@ public:
   }
 
   int proc () const {
-    assert (_has_storage);
     return _proc;
   }
   
@@ -219,6 +218,9 @@ public:
  public:
   
 protected:
+  bool this_processor_is (int procno);
+  bool lives_on_this_processor ();
+
   virtual void
   copy_from_innerloop (const gdata* src, const ibbox& box) = 0;
   virtual void

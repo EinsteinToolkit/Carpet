@@ -134,12 +134,11 @@ void gdata<D>::copy_from_nocomm (const gdata* src, const ibbox& box)
   
   if (box.empty()) return;
   
+  assert (has_storage() && src->has_storage());
   assert (proc() == src->proc());
   
   // copy on same processor
-  int rank;
-  MPI_Comm_rank (dist::comm, &rank);
-  if (rank == proc()) {
+  if (lives_on_this_processor()) {
     copy_from_innerloop (src, box);
   }
 }
@@ -307,9 +306,7 @@ void gdata<D>
   assert (transport_operator != op_none);
   
   // interpolate on same processor
-  int rank;
-  MPI_Comm_rank (dist::comm, &rank);
-  if (rank == proc()) {
+  if (lives_on_this_processor()) {
     interpolate_from_innerloop
       (srcs, times, box, time, order_space, order_time);
   }
@@ -442,6 +439,22 @@ void gdata<D>
   }
 }
 
+
+template<int D>
+bool gdata<D>
+::this_processor_is (int procno)
+{
+  int rank;
+  MPI_Comm_rank (dist::comm, &rank);
+  return rank == procno;
+}
+
+template<int D>
+bool gdata<D>
+::lives_on_this_processor ()
+{
+  return this_processor_is( proc() );
+}
 
 
 template class comm_state<3>;

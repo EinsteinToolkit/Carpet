@@ -170,9 +170,7 @@ void data<T,D>::allocate (const ibbox& extent_,
     this->_size *= this->_shape[d];
   }
   this->_proc = proc_;
-  int rank;
-  MPI_Comm_rank (dist::comm, &rank);
-  if (rank==this->_proc) {
+  if (lives_on_this_processor()) {
     this->_owns_storage = !mem;
     if (this->_owns_storage) {
       if (this->vectorindex == 0) {
@@ -256,15 +254,13 @@ void data<T,D>::change_processor_recv (comm_state<D>& state,
   assert (!this->comm_active);
   this->comm_active = true;
   
-  if (newproc == this->_proc) {
+  if (newproc == proc()) {
     assert (!mem);
     return;
   }
   
   if (this->_has_storage) {
-    int rank;
-    MPI_Comm_rank (dist::comm, &rank);
-    if (rank == newproc) {
+    if (this_processor_is ( newproc)) {
       // copy from other processor
       
       assert (!_storage);
@@ -277,7 +273,7 @@ void data<T,D>::change_processor_recv (comm_state<D>& state,
       
       const double wtime1 = MPI_Wtime();
       T dummy;
-      MPI_Irecv (_storage, this->_size, dist::datatype(dummy), this->_proc,
+      MPI_Irecv (_storage, this->_size, dist::datatype(dummy), proc(),
                  this->tag, dist::comm, &this->request);
       const double wtime2 = MPI_Wtime();
       this->wtime_irecv += wtime2 - wtime1;
@@ -285,7 +281,7 @@ void data<T,D>::change_processor_recv (comm_state<D>& state,
         state.requests.push_back (this->request);
       }
       
-    } else if (rank == this->_proc) {
+    } else if (lives_on_this_processor()) {
       // copy to other processor
       
     } else {
@@ -306,18 +302,16 @@ void data<T,D>::change_processor_send (comm_state<D>& state,
   
   assert (this->comm_active);
   
-  if (newproc == this->_proc) {
+  if (newproc == proc()) {
     assert (!mem);
     return;
   }
   
   if (this->_has_storage) {
-    int rank;
-    MPI_Comm_rank (dist::comm, &rank);
-    if (rank == newproc) {
+    if (this_processor_is ( newproc)) {
       // copy from other processor
       
-    } else if (rank == this->_proc) {
+    } else if (lives_on_this_processor()) {
       // copy to other processor
       
       assert (!mem);
@@ -352,7 +346,7 @@ void data<T,D>::change_processor_wait (comm_state<D>& state,
   assert (this->comm_active);
   this->comm_active = false;
   
-  if (newproc == this->_proc) {
+  if (newproc == proc()) {
     assert (!mem);
     return;
   }
@@ -369,9 +363,7 @@ void data<T,D>::change_processor_wait (comm_state<D>& state,
   }
   
   if (this->_has_storage) {
-    int rank;
-    MPI_Comm_rank (dist::comm, &rank);
-    if (rank == newproc) {
+    if (this_processor_is ( newproc )) {
       // copy from other processor
       
       if (! use_waitall) {
@@ -382,7 +374,7 @@ void data<T,D>::change_processor_wait (comm_state<D>& state,
         this->wtime_irecvwait += wtime2 - wtime1;
       }
       
-    } else if (rank == this->_proc) {
+    } else if (lives_on_this_processor()) {
       // copy to other processor
       
       assert (!mem);
@@ -418,7 +410,7 @@ void data<T,D>
 ::copy_from_innerloop (const gdata<D>* gsrc, const ibbox& box)
 {
   const data* src = (const data*)gsrc;
-  assert (this->has_storage() && src->has_storage());
+  assert (has_storage() && src->has_storage());
   assert (all(box.lower()>=this->extent().lower()
 	      && box.lower()>=src->extent().lower()));
   assert (all(box.upper()<=this->extent().upper()
@@ -428,7 +420,7 @@ void data<T,D>
   assert (all((box.lower()-this->extent().lower())%box.stride() == 0
 	      && (box.lower()-src->extent().lower())%box.stride() == 0));
   
-  assert (this->proc() == src->proc());
+  assert (proc() == src->proc());
 
   const int groupindex = CCTK_GroupIndexFromVarI(this->varindex);
   const int group_tags_table = CCTK_GroupTagsTableI(groupindex);
@@ -440,9 +432,7 @@ void data<T,D>
               "There is no copy operator available for the variable type %s, dimension %d.",
               typestring(Tdummy), D);
   
-  int rank;
-  MPI_Comm_rank (dist::comm, &rank);
-  assert (rank == this->proc());
+  assert (lives_on_this_processor());
   
   for (typename ibbox::iterator it=box.begin(); it!=box.end(); ++it) {
     const ivect index = *it;
@@ -461,7 +451,7 @@ void data<T,D>
 			      const int order_space,
 			      const int order_time)
 {
-  assert (this->has_storage());
+  assert (has_storage());
   assert (all(box.lower()>=this->extent().lower()));
   assert (all(box.upper()<=this->extent().upper()));
   assert (all(box.stride()==this->extent().stride()));
@@ -473,14 +463,12 @@ void data<T,D>
     assert (srcs[t]->has_storage());
     assert (all(box.lower()>=srcs[t]->extent().lower()));
     assert (all(box.upper()<=srcs[t]->extent().upper()));
-    assert (this->proc() == srcs[t]->proc());
+    assert (proc() == srcs[t]->proc());
   }
   assert (order_space >= 0);
   assert (order_time >= 0);
   
-  int rank;
-  MPI_Comm_rank (dist::comm, &rank);
-  assert (rank == this->proc());
+  assert (lives_on_this_processor());
   
   assert (this->varindex >= 0);
   const int groupindex = CCTK_GroupIndexFromVarI (this->varindex);
@@ -565,9 +553,7 @@ void data<CCTK_INT4,3>
   
   assert (proc() == src->proc());
   
-  int rank;
-  MPI_Comm_rank (dist::comm, &rank);
-  assert (rank == proc());
+  assert (lives_on_this_processor());
   
   const ibbox& sext = src->extent();
   const ibbox& dext = extent();
@@ -610,9 +596,7 @@ void data<CCTK_REAL8,3>
   
   assert (proc() == src->proc());
   
-  int rank;
-  MPI_Comm_rank (dist::comm, &rank);
-  assert (rank == proc());
+  assert (lives_on_this_processor());
   
   const ibbox& sext = src->extent();
   const ibbox& dext = extent();
@@ -655,9 +639,7 @@ void data<CCTK_COMPLEX16,3>
   
   assert (proc() == src->proc());
   
-  int rank;
-  MPI_Comm_rank (dist::comm, &rank);
-  assert (rank == proc());
+  assert (lives_on_this_processor());
   
   const ibbox& sext = src->extent();
   const ibbox& dext = extent();
@@ -925,9 +907,7 @@ void data<CCTK_REAL8,3>
   
   assert (proc() == srcs[0]->proc());
   
-  int rank;
-  MPI_Comm_rank (dist::comm, &rank);
-  assert (rank == proc());
+  assert (lives_on_this_processor());
   
   const ibbox& sext = srcs[0]->extent();
   const ibbox& dext = extent();
