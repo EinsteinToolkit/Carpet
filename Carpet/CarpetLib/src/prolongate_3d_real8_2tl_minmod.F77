@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_2tl_minmod.F77,v 1.3 2003/10/20 10:39:24 hawke Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_2tl_minmod.F77,v 1.4 2003/10/30 13:54:59 cott Exp $
       
 #include "cctk.h"
 
@@ -203,8 +203,8 @@ c     Loop over fine region
 
                firstloop = .true.
 
-               do kk = 1, 3, 2
-                 do jj = 1, 3, 2
+               do kk = 1, 2
+                 do jj = 1, 2
 
                    dupw = src1(i0+1 ,j0+jj,k0+kk) - src1(i0+0 ,j0+jj,k0+kk)
                    dloc = src1(i0+2 ,j0+jj,k0+kk) - src1(i0+1 ,j0+kk,k0+kk)
@@ -220,8 +220,8 @@ c     Loop over fine region
 
                firstloop = .true.
 
-               do kk = 1, 3, 2
-                 do ii = 1, 3, 2
+               do kk = 1, 2
+                 do ii = 1, 2
 
                    dupw = src1(i0+ii,j0+1 ,k0+kk) - src1(i0+ii,j0+0 ,k0+kk)
                    dloc = src1(i0+ii,j0+2 ,k0+kk) - src1(i0+ii,j0+1 ,k0+kk)
@@ -237,8 +237,8 @@ c     Loop over fine region
 
                firstloop = .true.
 
-               do jj = 1, 3, 2
-                 do ii = 1, 3, 2
+               do jj = 1, 2
+                 do ii = 1, 2
 
                    dupw = src1(i0+ii,j0+jj,k0+1 ) - src1(i0+ii,j0+jj,k0+0 )
                    dloc = src1(i0+ii,j0+jj,k0+2 ) - src1(i0+ii,j0+jj,k0+1 )
@@ -258,8 +258,8 @@ c     Loop over fine region
 
                firstloop = .true.
 
-               do kk = 1, 3, 2
-                 do jj = 1, 3, 2
+               do kk = 1, 2
+                 do jj = 1, 2
 
                    dupw = src2(i0+1 ,j0+jj,k0+kk) - src2(i0+0 ,j0+jj,k0+kk)
                    dloc = src2(i0+2 ,j0+jj,k0+kk) - src2(i0+1 ,j0+kk,k0+kk)
@@ -273,8 +273,8 @@ c     Loop over fine region
                  end do
                end do
 
-               do kk = 1, 3, 2
-                 do ii = 1, 3, 2
+               do kk = 1, 2
+                 do ii = 1, 2
 
                    dupw = src2(i0+ii,j0+1 ,k0+kk) - src2(i0+ii,j0+0 ,k0+kk)
                    dloc = src2(i0+ii,j0+2 ,k0+kk) - src2(i0+ii,j0+1 ,k0+kk)
@@ -290,8 +290,8 @@ c     Loop over fine region
 
                firstloop = .true.
 
-               do jj = 1, 3, 2
-                 do ii = 1, 3, 2
+               do jj = 1, 2
+                 do ii = 1, 2
 
                    dupw = src2(i0+ii,j0+jj,k0+1 ) - src2(i0+ii,j0+jj,k0+0 )
                    dloc = src2(i0+ii,j0+jj,k0+2 ) - src2(i0+ii,j0+jj,k0+1 )
