@@ -1,12 +1,12 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.21 2004/04/13 11:13:48 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.22 2004/04/22 14:17:13 schnetter Exp $
 
 #ifndef DATA_HH
 #define DATA_HH
 
-#include <assert.h>
-
+#include <cassert>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "cctk.h"
 
@@ -20,7 +20,7 @@ using namespace std;
 
 
 
-// A real data storage
+// A distributed multi-dimensional array
 template<class T,int D>
 class data: public gdata<D>
 {
@@ -33,9 +33,15 @@ class data: public gdata<D>
   T* _storage;			// the data (if located on this processor)
   size_t _allocated_bytes;      // number of allocated bytes
   
-  int vectorlength;
-  int vectorindex;
-  data* vectorleader;
+  // For vector groups with contiguous storage
+  int vectorlength;             // number of vector elements
+  int vectorindex;              // index of this vector element
+  data* vectorleader;           // if index==0: first vector element
+  vector<bool> vectorclients;   // if index==0: registered elements
+  
+  void register_client (int index);
+  void unregister_client (int index);
+  bool has_clients ();
   
 public:
   

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.53 2004/04/18 13:04:08 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.54 2004/04/22 14:17:13 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -44,6 +44,8 @@ data<T,D>::data (const int varindex_, const operator_type transport_operator_,
   assert (vectorindex>=0 && vectorindex<vectorlength);
   assert ((vectorindex==0 && !vectorleader)
           || (vectorindex!=0 && vectorleader));
+  if (vectorindex==0) vectorclients.resize (vectorlength);
+  if (vectorleader) vectorleader->register_client (vectorindex);
 }
 
 template<class T, int D>
@@ -60,6 +62,8 @@ data<T,D>::data (const int varindex_, const operator_type transport_operator_,
   assert (vectorindex>=0 && vectorindex<vectorlength);
   assert ((vectorindex==0 && !vectorleader)
           || (vectorindex!=0 && vectorleader));
+  if (vectorindex==0) vectorclients.resize (vectorlength);
+  if (vectorleader) vectorleader->register_client (vectorindex);
   allocate(extent_, proc_);
 }
 
@@ -67,6 +71,8 @@ data<T,D>::data (const int varindex_, const operator_type transport_operator_,
 template<class T, int D>
 data<T,D>::~data ()
 {
+  if (vectorleader) vectorleader->unregister_client (vectorindex);
+  if (vectorindex==0) assert (! has_clients());
   free();
 }
   
@@ -77,6 +83,33 @@ data<T,D>* data<T,D>::make_typed (const int varindex_,
   const
 {
   return new data(varindex_, transport_operator_);
+}
+
+
+
+// Vector mamagement
+template<class T, int D>
+void data<T,D>::register_client (const int index)
+{
+  assert (! vectorclients.at(index));
+  vectorclients.at(index) = true;
+}
+
+template<class T, int D>
+void data<T,D>::unregister_client (const int index)
+{
+  assert (vectorclients.at(index));
+  vectorclients.at(index) = false;
+}
+
+template<class T, int D>
+bool data<T,D>::has_clients ()
+{
+  bool retval = false;
+  for (size_t n=0; n<vectorlength; ++n) {
+    retval |= vectorclients.at(n);
+  }
+  return retval;
 }
 
 

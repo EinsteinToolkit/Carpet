@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.52 2004/04/19 21:38:33 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.53 2004/04/22 14:17:30 schnetter Exp $
 
 #include <assert.h>
 
@@ -584,7 +584,7 @@ void dh<D>::recompose () {
         (*f)->recompose_fill (state, rl);
       }
     }
-    for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+    for (typename list<ggf<D>*>::reverse_iterator f=gfs.rbegin(); f!=gfs.rend(); ++f) {
       (*f)->recompose_free (rl);
     }
     for (comm_state<D> state; !state.done(); state.step()) {
