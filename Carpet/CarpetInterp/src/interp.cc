@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.32 2004/07/02 15:16:19 hawke Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.33 2004/08/02 11:39:53 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -21,7 +21,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.32 2004/07/02 15:16:19 hawke Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.33 2004/08/02 11:39:53 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -214,6 +214,14 @@ namespace CarpetInterp {
       assert (N_interp_points==0 || interp_coords[d]);
     }
     
+    assert (N_output_arrays >= 0);
+    if (N_interp_points > 0) {
+      assert (output_arrays);
+      for (int j=0; j<N_output_arrays; ++j) {
+        assert (output_arrays[j]);
+      }
+    }
+    
     
     
     // Assign interpolation points to components
@@ -374,7 +382,6 @@ namespace CarpetInterp {
               lsh[d] = cgh->cctk_lsh[d];
               coord_delta[d] = cgh->cctk_delta_space[d] / cgh->cctk_levfac[d];
               coord_origin[d] = cgh->cctk_origin_space[d] + (cgh->cctk_lbnd[d] + 1.0 * cgh->cctk_levoff[d] / cgh->cctk_levoffdenom[d]) * coord_delta[d];
-              
             }
             
             
@@ -467,7 +474,7 @@ namespace CarpetInterp {
                    npoints,
                    interp_coords_type_code, &tmp_interp_coords[0],
                    N_input_arrays, &lsh[0],
-                   &input_array_type_codes.at(0), &input_arrays[0],
+                   &input_array_type_codes[0], &input_arrays[0],
                    N_output_arrays,
                    output_array_type_codes, &tmp_output_arrays.at(tl)[0]);
                 if (ierr) {
@@ -566,6 +573,8 @@ namespace CarpetInterp {
         for (int j=0; j<N_output_arrays; ++j) {
           assert (interp_coords_type_code == CCTK_VARIABLE_REAL);
           assert (alloutputs.at(ind_prc(myproc,m,rl,c)).owns_storage());
+          assert (output_arrays);
+          assert (output_arrays[j]);
           static_cast<CCTK_REAL *>(output_arrays[j])[n] = alloutputs.at(ind_prc(myproc,m,rl,c))[ivect(tmpcnts.at(ind_rc(m,rl,c)),j,0)];
         }
         ++ tmpcnts.at(ind_rc(m,rl,c));
