@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.cc,v 1.4 2004/03/23 19:56:41 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.cc,v 1.5 2004/03/23 19:57:25 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_modes_cc);
 }
 
@@ -142,7 +142,7 @@ namespace Carpet {
               if (ff) {
                 gdata<dim> * const data = (*ff) (-tl, rl, c, ml);
                 assert (data);
-                cgh->data[firstvar+var][tl] data->storage();
+                cgh->data[firstvar+var][tl] = data->storage();
               } else {
                 cgh->data[firstvar+var][tl] = 0;
               }
