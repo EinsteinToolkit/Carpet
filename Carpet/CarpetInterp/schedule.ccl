@@ -1,7 +1,2 @@
 # Schedule definitions for thorn CarpetInterp
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/schedule.ccl,v 1.3 2003/11/05 16:18:38 schnetter Exp $
-
-schedule CarpetInterpStartup at STARTUP
-{
-  LANG: C
-} "Startup routine"
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/schedule.ccl,v 1.1 2003/04/29 14:02:25 schnetter Exp $
