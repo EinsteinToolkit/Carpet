@@ -10,7 +10,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.10 2001/11/14 17:57:55 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.11 2001/11/15 16:41:32 schnetter Exp $";
 
 
 
@@ -222,7 +222,8 @@ namespace Carpet {
     }
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       for (int d=0; d<dim; ++d) {
-	cgh->cctk_nghostzones[d] = arrdata[group].dd->lghosts[d];
+	((int*)arrdata[group].info.nghostzones)[d]
+	  = arrdata[group].dd->lghosts[d];
       }
     }
     
