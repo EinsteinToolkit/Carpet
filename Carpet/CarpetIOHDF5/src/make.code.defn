@@ -2,7 +2,7 @@
 # $Header:$
 
 # Source files in this directory
-SRCS = iohdf5.cc iohdf5utils.cc Checkpoint.cc Recover.cc
+SRCS = Output.cc Utils.cc Checkpoint.cc Recover.cc
 
 # Extend CXXFLAGS if HDF5 library was built with LFS support
 ifneq ($(strip $(HDF5_LFS_FLAGS)),)

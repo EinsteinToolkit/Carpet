@@ -10,7 +10,6 @@
 
 #include "carpet.hh"
 
-#include "iohdf5.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
 
 /* some macros for HDF5 group names */
@@ -137,6 +136,44 @@
         }
 
 
+/* CarpetIOHDF5 GH extension structure */
+typedef struct
+{
+  /* default number of times to output */
+  int out_every_default;
+
+  /* number of times to output for each variable */
+  CCTK_INT *out_every;
+
+  /* the last iteration output for each variable */
+  int *out_last;
+
+  /* list of variables to output */
+  char *out_vars;
+
+  /* I/O request description list (for all variables) */
+  ioRequest **requests;
+
+  /* directory in which to output */
+  char *out_dir;
+
+  /* timer array for checkpointing/recovery */
+  // int timers[IOHDF5_NUM_TIMERS];
+
+  /* flag to indicate request for timer output */
+  // int print_timing_info;
+
+  /* ring buffer for list of successfully created cp files */
+  int    cp_filename_index;
+  char **cp_filename_list;
+
+  /* iteration number of the last checkpoint */
+  int last_checkpoint_iteration;
+
+  /* hdf5 datatype for stupid complex variables; to be set at run time */
+  hid_t HDF5_COMPLEX, HDF5_COMPLEX8, HDF5_COMPLEX16, HDF5_COMPLEX32;
+  
+} CarpetIOHDF5GH;
 
 
 namespace CarpetIOHDF5 {
@@ -148,18 +185,9 @@ namespace CarpetIOHDF5 {
   extern vector<bool> do_truncate; // [var]
   extern vector<vector<vector<int> > > last_output; // [ml][rl][var]
   
-  void* SetupGH (tFleshConfig* const fc,
-		 const int convLevel, cGH* const cctkGH);
-  
-  int OutputGH (const cGH* const cctkGH);
   int WriteVar (const cGH* const cctkGH, const hid_t writer, const ioRequest* request,
 		   const int called_from_checkpoint);
-  int OutputVarAs (const cGH* const cctkGH, const char* const varname,
-		   const char* const alias);
 
-  int TimeToOutput (const cGH* const cctkGH, const int vindex);
-  int TriggerOutput (const cGH* const cctkGH, const int vindex);
-  
   int InputGH (const cGH* const cctkGH);
   int ReadVar (const cGH* const cctkGH, const int vindex,
 	       const hid_t currdataset, vector<ibset> &regions_read, 
@@ -169,9 +197,6 @@ namespace CarpetIOHDF5 {
 
   // auxiliary functions defined in iohdf5utils.cc
 
-  bool CheckForVariable (const char* const varlist, const int vindex);
-  void SetFlag (int index, const char* optstring, void* arg);
-  
   void WriteAttribute (const hid_t dataset, const char* name, int value);
   void WriteAttribute (const hid_t dataset, const char* name, const int* values, int nvalues);
   void WriteAttribute (const hid_t dataset, const char* name, double value);
@@ -191,7 +216,25 @@ namespace CarpetIOHDF5 {
   int GetnDatasets (const hid_t reader);
   void GetDatasetName (const hid_t reader, const int _index, char* name);
 
-  hid_t h5DataType(const cGH* const cctkGH, int cctk_type);
+  hid_t h5DataType (const cGH* const cctkGH, int cctk_type,
+                    int single_precision);
+
+extern "C" {
+
+// scheduled routines
+int CarpetIOHDF5_Startup (void);
+int CarpetIOHDF5_Init (const cGH* const);
+int CarpetIOHDF5_ReadData (const cGH* const);
+int CarpetIOHDF5_CloseFile (void);
+int CarpetIOHDF5_InitialDataCheckpoint (const cGH* const);
+int CarpetIOHDF5_EvolutionCheckpoint (const cGH* const);
+int CarpetIOHDF5_TerminationCheckpoint (const cGH* const);
+
+// routines registered for recovery
+int CarpetIOHDF5_Recover (cGH* cgh, const char *basefilename, int called_from);
+int CarpetIOHDF5_RecoverParameters (void);
+
+} // extern "C"
 
 } // namespace CarpetIOHDF5
 

@@ -3,18 +3,18 @@
 
 storage: next_output_iteration next_output_time this_iteration
 
-schedule CarpetIOHDF5Startup at STARTUP after IOUtil_Startup
+schedule CarpetIOHDF5_Startup at STARTUP after IOUtil_Startup
 {
   LANG: C
 } "Startup routine"
 
-schedule CarpetIOHDF5Init at BASEGRID
+schedule CarpetIOHDF5_Init at BASEGRID
 {
   LANG: C
   OPTIONS: global
 } "Initialisation routine"
 
-schedule CarpetIOHDF5ReadData at INITIAL
+schedule CarpetIOHDF5_ReadData at INITIAL
 {
   LANG: C
   OPTIONS: level

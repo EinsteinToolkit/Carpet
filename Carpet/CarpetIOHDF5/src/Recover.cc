@@ -20,7 +20,7 @@
 
 extern "C" {
 static const char* rcsid = "$Header:$";
-CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
+CCTK_FILEVERSION(Carpet_CarpetIOHDF5_Recover_cc);
 }
 
 #include "CactusBase/IOUtil/src/ioGH.h"
@@ -34,8 +34,7 @@ CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 
 #include "carpet.hh"
 
-#include "iohdf5.hh"
-#include "iohdf5GH.h"
+#include "CarpetIOHDF5.hh"
 
 /* some macros for HDF5 group names */
 #define METADATA_GROUP "Parameters and Global Attributes"
@@ -89,6 +88,9 @@ static file_t infile = {0, 0, 0, 0, 0, 0, 0, NULL, NULL, -1, -1,
 static int OpenFile (const char *basefilename, file_t *file, int called_from);
 static int RecoverVariables (cGH* cctkGH, file_t *file);
 static herr_t ReadMetadata (hid_t group, const char *objectname, void *arg);
+
+// callback for I/O parameter parsing routine
+static void SetFlag (int vindex, const char* optstring, void* arg);
 
 
 // Register with the Cactus Recovery Interface
@@ -399,6 +401,407 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
 }
 
 
+int ReadVar (const cGH* const cctkGH, const int vindex,
+             const hid_t dataset, vector<ibset> &regions_read,
+             const int called_from_recovery)
+{
+  DECLARE_CCTK_PARAMETERS;
+
+  const int group = CCTK_GroupIndexFromVarI (vindex);
+  assert (group>=0 && group<(int)Carpet::arrdata.size());
+  char *fullname = CCTK_FullName (vindex);
+  const int n0 = CCTK_FirstVarIndexI(group);
+  assert (n0>=0 && n0<CCTK_NumVars());
+  const int var = vindex - n0;
+  assert (var>=0 && var<CCTK_NumVars());
+  int tl = 0;
+
+  bool did_read_something = false;
+
+  // Stuff needed for Recovery
+
+  void *h5data = NULL;
+
+  if (verbose)
+  {
+    CCTK_VInfo (CCTK_THORNSTRING, "  reading '%s'", fullname);
+  }
+
+  // Check for storage
+  if (! CCTK_QueryGroupStorageI(cctkGH, group))
+  {
+    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Cannot input variable \"%s\" because it has no storage",
+                fullname);
+    free (fullname);
+    return 0;
+  }
+
+  const int grouptype = CCTK_GroupTypeI(group);
+  if ((grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY) && reflevel > 0)
+  {
+    free (fullname);
+    return 0;
+  }
+
+  const int gpdim = CCTK_GroupDimI(group);
+
+
+  int intbuffer[2 + 2*dim];
+  int &group_timelevel = intbuffer[0],
+      &amr_level       = intbuffer[1];
+  int *amr_origin      = &intbuffer[2],
+      *amr_dims        = &intbuffer[2+dim];
+
+  if (CCTK_MyProc(cctkGH)==0)
+  {
+    // get dataset dimensions
+    hid_t dataspace;
+    HDF5_ERROR (dataspace = H5Dget_space (dataset));
+    int rank = (int) H5Sget_simple_extent_ndims (dataspace);
+    assert (0 < rank && rank <= dim);
+    assert ((grouptype == CCTK_SCALAR ? gpdim+1 : gpdim) == rank);
+    vector<hsize_t> shape(rank);
+    HDF5_ERROR (H5Sget_simple_extent_dims (dataspace, &shape[0], NULL));
+    HDF5_ERROR (H5Sclose (dataspace));
+
+    for (int i = 0; i < dim; i++)
+    {
+      amr_dims[i]   = 1;
+      amr_origin[i] = 0;
+    }
+    int datalength = 1;
+    for (int i = 0; i < rank; i++)
+    {
+      datalength *= shape[i];
+      amr_dims[i] = shape[rank-i-1];
+    }
+
+    const int cctkDataType = CCTK_VarTypeI(vindex);
+    const hid_t datatype = h5DataType (cctkGH, cctkDataType, 0);
+
+    //cout << "datalength: " << datalength << " rank: " << rank << "\n";
+    //cout << shape[0] << " " << shape[1] << " " << shape[2] << "\n";
+
+    // to do: read in an allocate with correct datatype
+
+    h5data = malloc (CCTK_VarTypeSize (cctkDataType) * datalength);
+    HDF5_ERROR (H5Dread (dataset, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+                         h5data));
+
+    ReadAttribute (dataset, "level", amr_level);
+    ReadAttribute (dataset, "iorigin", amr_origin, rank);
+
+    if(called_from_recovery)
+    {
+      ReadAttribute(dataset,"group_timelevel", group_timelevel);
+    }
+  } // MyProc == 0
+
+  MPI_Bcast (intbuffer, sizeof (intbuffer) / sizeof (*intbuffer), MPI_INT, 0, dist::comm);
+
+#ifdef CARPETIOHDF5_DEBUG
+  cout << "amr_level: " << amr_level << " reflevel: " << reflevel << endl;
+#endif
+
+  if (amr_level == reflevel)
+  {
+    // Traverse all components on all levels
+    BEGIN_MAP_LOOP (cctkGH, grouptype)
+    {
+      BEGIN_COMPONENT_LOOP (cctkGH, grouptype)
+      {
+        did_read_something = true;
+
+        ggf<dim>* ff = 0;
+
+        assert (var < (int)arrdata.at(group).at(Carpet::map).data.size());
+        ff = (ggf<dim>*)arrdata.at(group).at(Carpet::map).data.at(var);
+
+        if(called_from_recovery) tl = group_timelevel;
+
+        gdata<dim>* const data = (*ff) (tl, reflevel, component, mglevel);
+
+        // Create temporary data storage on processor 0
+        vect<int,dim> str = vect<int,dim>(maxreflevelfact/reflevelfact);
+
+        if(grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY)
+          str = vect<int,dim> (1);
+
+        vect<int,dim> lb = vect<int,dim>::ref(amr_origin) * str;
+        vect<int,dim> ub
+          = lb + (vect<int,dim>::ref(amr_dims) - 1) * str;
+
+        gdata<dim>* const tmp = data->make_typed (vindex);
+
+
+        cGroup cgdata;
+        int ierr = CCTK_GroupData(group,&cgdata);
+        assert(ierr==0);
+        //cout << "lb_before: " << lb << endl;
+        //cout << "ub_before: " << ub << endl;
+        if (cgdata.disttype == CCTK_DISTRIB_CONSTANT) {
+#ifdef CARPETIOHDF5_DEBUG
+          cout << "CCTK_DISTRIB_CONSTANT: " << fullname << endl;
+#endif
+          assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
+          if (grouptype == CCTK_SCALAR)
+          {
+            lb[0] = arrdata.at(group).at(Carpet::map).hh->processors.at(reflevel).at(component);
+            ub[0] = arrdata.at(group).at(Carpet::map).hh->processors.at(reflevel).at(component);
+            for(int i=1;i<dim;i++)
+            {
+              lb[i]=0;
+              ub[i]=0; 
+            }
+          }
+          else
+          {
+            const int newlb = lb[gpdim-1] + 
+              (ub[gpdim-1]-lb[gpdim-1]+1)*
+              (arrdata.at(group).at(Carpet::map).hh->processors.at(reflevel).at(component));
+            const int newub = ub[gpdim-1] +
+              (ub[gpdim-1]-lb[gpdim-1]+1)*
+              (arrdata.at(group).at(Carpet::map).hh->processors.at(reflevel).at(component));
+            lb[gpdim-1] = newlb;
+            ub[gpdim-1] = newub;
+          }
+#ifdef CARPETIOHDF5_DEBUG
+          cout << "lb: " << lb << endl;
+          cout << "ub: " << ub << endl;
+#endif
+        }
+        const bbox<int,dim> ext(lb,ub,str);
+
+#ifdef CARPETIOHDF5_DEBUG
+        cout << "ext: " << ext << endl;
+#endif
+    
+        if (CCTK_MyProc(cctkGH)==0)
+        {
+          tmp->allocate (ext, 0, h5data);
+        }
+        else
+        {
+          tmp->allocate (ext, 0);
+        }
+
+        // Initialise with what is found in the file -- this does
+        // not guarantee that everything is initialised.
+        const bbox<int,dim> overlap = tmp->extent() & data->extent();
+        regions_read.at(Carpet::map) |= overlap;
+
+#ifdef CARPETIOHDF5_DEBUG
+        cout << "working on component: " << component << endl;
+        cout << "tmp->extent " << tmp->extent() << endl;
+        cout << "data->extent " << data->extent() << endl;
+        cout << "overlap " << overlap << endl;
+        cout << "-----------------------------------------------------" << endl;
+#endif
+
+        // FIXME: is this barrier really necessary ??
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        // Copy into grid function
+        for (comm_state<dim> state; !state.done(); state.step())
+        {
+          data->copy_from (state, tmp, overlap);
+        }
+
+
+        // Delete temporary copy
+        delete tmp;
+
+
+      } END_COMPONENT_LOOP;
+
+      if (called_from_recovery)
+      {
+        arrdata.at(group).at(Carpet::map).tt->set_time(reflevel,mglevel,
+                (CCTK_REAL) ((cctkGH->cctk_time - cctk_initial_time)
+                             / (delta_time * mglevelfact)) );
+      }
+
+
+    } END_MAP_LOOP;
+
+  } // if amr_level == reflevel
+
+  free (h5data);
+  free (fullname);
+
+  return did_read_something;
+}
+
+
+static int InputVarAs (const cGH* const cctkGH, const int vindex,
+                       const char* const alias)
+{
+  DECLARE_CCTK_PARAMETERS;
+
+  char *fullname = CCTK_FullName (vindex);
+  const int group = CCTK_GroupIndexFromVarI (vindex);
+  assert (group>=0 && group<(int)Carpet::arrdata.size());
+
+  int want_dataset = 0;
+  bool did_read_something = false;
+  int ndatasets = 0;
+  hid_t dataset = 0;
+
+  char datasetname[1024];
+
+  // Check for storage
+  if (! CCTK_QueryGroupStorageI(cctkGH, group))
+  {
+    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Cannot input variable \"%s\" because it has no storage",
+                fullname);
+    free (fullname);
+    return 0;
+  }
+
+  const int grouptype = CCTK_GroupTypeI(group);
+  const int rl = grouptype==CCTK_GF ? reflevel : 0;
+  //cout << "want level " << rl << " reflevel " << reflevel << endl;
+
+  // Find the input directory
+  const char* const myindir = in3D_dir;
+
+  // Invent a file name
+  ostringstream filenamebuf;
+  filenamebuf << myindir << "/" << alias << in3D_extension;
+  string filenamestr = filenamebuf.str();
+  const char * const filename = filenamestr.c_str();
+
+  hid_t reader = -1;
+
+  // Read the file only on the root processor
+  if (CCTK_MyProc(cctkGH)==0)
+  {
+    // Open the file
+    if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Opening file \"%s\"", filename);
+    reader = H5Fopen (filename, H5F_ACC_RDONLY, H5P_DEFAULT);
+    if (reader<0)
+    {
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Could not open file \"%s\" for reading", filename);
+    }
+    assert (reader>=0);
+    // get the number of datasets in the file
+    ndatasets=GetnDatasets(reader);
+  }
+
+  vector<ibset> regions_read(Carpet::maps);
+
+  // Broadcast number of datasets
+  MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
+  assert (ndatasets>=0);
+
+
+  for (int datasetid=0; datasetid<ndatasets; ++datasetid)
+  {
+    if (verbose)
+    {
+      CCTK_VInfo (CCTK_THORNSTRING, "Handling dataset #%d", datasetid);
+    }
+
+    // Read data
+    if (CCTK_MyProc(cctkGH)==0)
+    {
+      GetDatasetName(reader,datasetid,datasetname);
+      //         cout << datasetname << "\n";
+
+      HDF5_ERROR (dataset = H5Dopen (reader, datasetname));
+    }
+
+    if (CCTK_MyProc(cctkGH)==0)
+    {
+      // Read data 
+      char * name;
+      ReadAttribute (dataset, "name", name);
+      //        cout << "dataset name is " << name << endl;
+      if (verbose && name)
+      { 
+        CCTK_VInfo (CCTK_THORNSTRING, "Dataset name is \"%s\"", name);
+      }
+      want_dataset = name && CCTK_EQUALS(name, fullname);
+      free (name);
+    } // myproc == 0
+  
+    MPI_Bcast (&want_dataset, 1, MPI_INT, 0, dist::comm);
+
+    if(want_dataset)
+    {
+      did_read_something = ReadVar(cctkGH,vindex,dataset,regions_read,0);
+    } // want_dataset
+
+  } // loop over datasets
+  
+  // Close the file
+  if (CCTK_MyProc(cctkGH)==0)
+  {
+    if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Closing file");
+    HDF5_ERROR (H5Fclose(reader));
+    reader=-1;
+  }
+  
+  // Was everything initialised?
+  if (did_read_something)
+  {
+    for (int m=0; m<Carpet::maps; ++m)
+    {
+      dh<dim>& thedd = *arrdata.at(group).at(m).dd;
+      ibset all_exterior;
+      for (size_t c=0; c<thedd.boxes.at(rl).size(); ++c)
+      {
+        all_exterior |= thedd.boxes.at(rl).at(c).at(mglevel).exterior;
+      }
+      if (regions_read.at(m) != all_exterior)
+      {
+#ifdef CARPETIOHDF5_DEBUG
+        cout << "read: " << regions_read.at(m) << endl
+             << "want: " << all_exterior << endl;
+#endif
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Variable \"%s\" could not be initialised from file -- the file may be missing data",
+                    fullname);
+      }
+    }
+  } // if did_read_something
+  //        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,"stop!");
+  
+  return did_read_something ? 0 : -1;
+}
+
+
+int CarpetIOHDF5_ReadData (const cGH* const cctkGH)
+{
+  int retval = 0;
+  DECLARE_CCTK_PARAMETERS
+
+
+  int numvars = CCTK_NumVars ();
+  vector<bool> flags (numvars);
+
+  if (CCTK_TraverseString (in3D_vars, SetFlag, &flags, CCTK_GROUP_OR_VAR) < 0)
+  {
+    CCTK_VWarn (strict_io_parameter_check ? 0 : 1,
+                __LINE__, __FILE__, CCTK_THORNSTRING,
+                "error while parsing parameter 'IOHDF5::in3D_vars'");
+  }
+
+  for (int vindex = 0; vindex < numvars && retval == 0; vindex++)
+  {
+    if (flags.at (vindex))
+    {
+      retval = InputVarAs (cctkGH, vindex, CCTK_VarName (vindex));
+    }
+  }
+
+  return (retval);
+}
+
+
 static herr_t ReadMetadata (hid_t group, const char *objectname, void *arg)
 {
   file_t *file = (file_t *) arg;
@@ -519,6 +922,21 @@ static int RecoverVariables (cGH* cctkGH, file_t *file)
 #endif
 
   return (0);
+}
+
+
+static void SetFlag (int vindex, const char* optstring, void* arg)
+{
+  if (optstring)
+  {
+    char *fullname = CCTK_FullName (vindex);
+    CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Option string '%s' will be ignored for HDF5 input of "
+                "variable '%s'", optstring, fullname);
+    free (fullname);
+  }
+  vector<bool>& flags = *(vector<bool>*)arg;
+  flags.at(vindex) = true;
 }
 
 

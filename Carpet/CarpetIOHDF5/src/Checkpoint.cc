@@ -19,7 +19,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-static const char* rcsid = "$Header: /home/cvs/carpet/Carpet/CarpetIOHDF5/src/Checkpoint.cc,v 1.4 2004/11/03 10:24:42 tradke Exp $";
+static const char* rcsid = "$Header:$";
 CCTK_FILEVERSION(Carpet_CarpetIOHDF5_Checkpoint_cc);
 }
 
@@ -34,8 +34,7 @@ CCTK_FILEVERSION(Carpet_CarpetIOHDF5_Checkpoint_cc);
 
 #include "carpet.hh"
 
-#include "iohdf5.hh"
-#include "iohdf5GH.h"
+#include "CarpetIOHDF5.hh"
 
 
 namespace CarpetIOHDF5
