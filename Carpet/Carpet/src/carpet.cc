@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.10 2001/03/14 11:00:17 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.11 2001/03/14 12:57:38 eschnett Exp $
 
 /* It is assumed that the number of components of all arrays is equal
    to the number of components of the grid functions, and that their
@@ -32,7 +32,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.10 2001/03/14 11:00:17 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.11 2001/03/14 12:57:38 eschnett Exp $";
 
 
 
@@ -426,9 +426,17 @@ namespace Carpet {
     
     // Advance level times
     tt->advance_time (reflevel, mglevel);
-    for (int array=0; array<(int)arrdata.size(); ++array) {
-      if (arrdata[array].tt) {
-	arrdata[array].tt->advance_time (reflevel, mglevel);
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
+      switch (CCTK_GroupTypeI(group)) {
+      case CCTK_SCALAR:
+	break;
+      case CCTK_ARRAY:
+	arrdata[group].tt->advance_time (reflevel, mglevel);
+	break;
+      case CCTK_GF:
+	break;
+      default:
+	abort();
       }
     }
     
