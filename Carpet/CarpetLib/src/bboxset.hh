@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.hh,v 1.8 2002/05/05 22:16:59 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.hh,v 1.9 2002/12/12 16:49:55 schnetter Exp $
 
  ***************************************************************************/
 
@@ -85,6 +85,7 @@ public:
   // Accessors
   bool empty () const { return bs.empty(); }
   T size () const;
+  int setsize () const { return bs.size(); }
   
   // Add (bboxes that don't overlap)
   bboxset& operator+= (const box& b);

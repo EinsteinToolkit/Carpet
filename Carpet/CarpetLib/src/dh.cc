@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.22 2002/10/24 11:36:34 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.23 2002/12/12 16:49:55 schnetter Exp $
 
  ***************************************************************************/
 
@@ -143,7 +143,7 @@ void dh<D>::recompose () {
 	    boxes[rl][c ][ml].recv_sync[cc].push_back(*b);
 	    boxes[rl][cc][ml].send_sync[c ].push_back(*b);
 	  }
-      	}
+      	} // for cc
       	
       	// Multigrid boxes
       	if (ml>0) {
@@ -169,23 +169,13 @@ void dh<D>::recompose () {
       	    boxes[rl][c][ml-1].recv_mg_coarse.push_back(recv);
       	    boxes[rl][c][ml  ].send_mg_fine  .push_back(send);
       	  }
-      	}
+      	} // if not finest multigrid level
       	
       	// Refinement boxes
       	if (rl<h.reflevels()-1) {
       	  for (int cc=0; cc<h.components(rl+1); ++cc) {
       	    const ibbox intrf = boxes[rl+1][cc][ml].interior;
 // 	    const ibbox extrf = boxes[rl+1][cc][ml].exterior;
-      	    // Restriction (interior)
-      	    {
-      	      // (the restriction may fill the interior of the of the
-      	      // coarse grid, and may use the interior of the fine
-      	      // grid, and the bbox must be as large as possible)
-      	      const ibbox recv = intrf.contracted_for(intr) & intr;
-      	      const ibbox send = recv.expanded_for(intrf);
-      	      boxes[rl+1][cc][ml].send_ref_coarse[c ].push_back(send);
-      	      boxes[rl  ][c ][ml].recv_ref_fine  [cc].push_back(recv);
-      	    }
       	    // Prolongation (interior)
       	    {
       	      // (the prolongation may use the exterior of the coarse
@@ -216,9 +206,32 @@ void dh<D>::recompose () {
 		boxes[rl  ][c ][ml].send_ref_bnd_fine  [cc].push_back(send);
       	      }
       	    }
+      	    // Restriction (interior)
+      	    {
+      	      // (the restriction may fill the interior of the of the
+      	      // coarse grid, and may use the interior of the fine
+      	      // grid, and the bbox must be as large as possible)
+	      // (the restriction must not fill points that are used
+	      // to prolongate the boundaries)
+      	      const ibbox recv = intrf.contracted_for(intr) & intr;
+	      
+	      const iblist& sendlist = boxes[rl][c][ml].send_ref_bnd_fine[cc];
+	      ibset recv2s (recv);
+	      for (iblist::const_iterator sli = sendlist.begin();
+		   sli != sendlist.end();
+		   ++sli) {
+		recv2s -= *sli;
+	      }
+	      assert (recv2s.setsize() == 1);
+	      const ibbox recv2 = *recv2s.begin();
+//       	      const ibbox send = recv.expanded_for(intrf);
+      	      const ibbox send = recv2.expanded_for(intrf);
+      	      boxes[rl+1][cc][ml].send_ref_coarse[c ].push_back(send);
+      	      boxes[rl  ][c ][ml].recv_ref_fine  [cc].push_back(recv);
+      	    }
       	
-      	  }
-      	}
+      	  } // for cc
+      	} // if not finest refinement level
 	
       } // for ml
     } // for c

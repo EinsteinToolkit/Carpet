@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.11 2002/10/24 10:39:38 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.12 2002/12/12 16:49:55 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Restrict_cc);
 }
 
@@ -67,6 +67,7 @@ namespace Carpet {
 	      arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);
 	    }
 	    
+#if 0
 	    for (int c=0; c<arrdata[group].hh->components(reflevel+1); ++c) {
 	      arrdata[group].data[var]->ref_bnd_prolongate
 		(tl, reflevel+1, c, mglevel, time);
@@ -75,6 +76,7 @@ namespace Carpet {
 	    for (int c=0; c<arrdata[group].hh->components(reflevel+1); ++c) {
 	      arrdata[group].data[var]->sync (tl, reflevel+1, c, mglevel);
 	    }
+#endif
 	    
 	  } // if not finest refinement level
 	  
