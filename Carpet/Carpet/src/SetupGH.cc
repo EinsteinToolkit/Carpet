@@ -423,9 +423,7 @@ namespace Carpet {
 
     leave_all_modes (cgh); 
     
-    if (verbose or veryverbose) {
-      print_some_statistics (cgh);
-    }
+    print_some_statistics (cgh);
     
     if (enable_all_storage) {
       enable_storage_for_all_groups (cgh);
