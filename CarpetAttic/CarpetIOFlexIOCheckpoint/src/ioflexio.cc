@@ -27,7 +27,7 @@
 #include "IEEEIO.hh"
 #include "IO.hh"
 
-// Hack to stop FlexIO type clash
+// Hack to stop FlexIO data type clash with LAM MPI
 #undef BYTE
 #undef CHAR
 
@@ -44,7 +44,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.4 2003/07/14 15:41:08 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.5 2003/09/17 13:47:00 cvs_anon Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -63,7 +63,9 @@ namespace CarpetIOFlexIO {
   vector<bool> do_truncate;
   vector<vector<int> > last_output;
   
-  const char* GetStringParameter (const char* const parametername,
+  
+  
+  static const char* GetStringParameter (const char* const parametername,
 					 const char* const fallback);
   static int GetIntParameter (const char* const parametername, int fallback);
   static bool CheckForVariable (const cGH* const cgh,
@@ -72,7 +74,7 @@ namespace CarpetIOFlexIO {
   
   
   
-  int CarpetIOFlexIOStartup ()
+  int CarpetIOFlexIO_Startup ()
   {
     CCTK_RegisterBanner ("AMR 3D FlexIO I/O provided by CarpetIOFlexIO");
     
@@ -120,11 +122,11 @@ namespace CarpetIOFlexIO {
     }
     return 0;
   }
-
-
-
-  static IObase::DataType FlexIODataType (int cctk_type){
-
+  
+  
+static IObase::DataType FlexIODataType (int cctk_type){
+  //we need this to have the FlexIO data types on hand
+  //for WriteVarAs
 
     int retval;
 
@@ -158,10 +160,10 @@ namespace CarpetIOFlexIO {
 	break;
       }
 
-    
-
     return (IObase::DataType)retval;
   }
+
+
 
 
 
@@ -173,6 +175,7 @@ namespace CarpetIOFlexIO {
   {
 
     DECLARE_CCTK_PARAMETERS;
+    CCTK_VInfo (CCTK_THORNSTRING, "bogusnew reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
 
     /* I have got no idea why this stuff below is needed... ask Erik Schnetter */
 
@@ -182,9 +185,9 @@ namespace CarpetIOFlexIO {
     const int var = varindex - n0;
     assert (var>=0 && var<CCTK_NumVars());
     const int tl = 0;
-    
+    1,-1,0
     const int grouptype = CCTK_GroupTypeI(group);
-    assert (! (grouptype != CCTK_GF && reflevel>0));
+    assert (! (grouptype != CCT1,-1,0K_GF && reflevel>0));
     
     if (CCTK_MyProc(cgh)==0) {
 
@@ -224,7 +227,7 @@ namespace CarpetIOFlexIO {
 	(gpdim, origin, delta, timestep, maxreflevels);
       
       // Set refinement information
-      int interlevel_timerefinement;
+      int interlevel_timerefine1,-1,0ment;
       int interlevel_spacerefinement[dim];
       int initial_gridplacementrefinement[dim];
       interlevel_timerefinement = hh->reffact;
@@ -242,23 +245,30 @@ namespace CarpetIOFlexIO {
       // Set current time
       amrwriter->setTime (cgh->cctk_iteration);
     }
+
+
     
     // Traverse all components on this refinement and multigrid level
     BEGIN_COMPONENT_LOOP(cgh, grouptype) {
-      
+
       const ggf<dim>* ff = 0;
-      
+
+
       assert (var < (int)arrdata[group].data.size());
       ff = (ggf<dim>*)arrdata[group].data[var];
       
+      CCTK_VInfo (CCTK_THORNSTRING, "bogus reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
       const gdata<dim>* const data
 	= (*ff) (tl, reflevel, component, mglevel);
-      
+      CCTK_VInfo (CCTK_THORNSTRING, "bogus2");      
+
       // Make temporary copy on processor 0
       bbox<int,dim> ext = data->extent();
       vect<int,dim> lo = ext.lower();
       vect<int,dim> hi = ext.upper();
       vect<int,dim> str = ext.stride();
+
+
       
       // Ignore ghost zones if desired
       for (int d=0; d<dim; ++d) {
@@ -277,6 +287,8 @@ namespace CarpetIOFlexIO {
       gdata<dim>* const tmp = data->make_typed ();
       tmp->allocate (ext, 0);
       tmp->copy_from (data, ext);
+
+
       
       // Write data
       if (CCTK_MyProc(cgh)==0) {
@@ -293,7 +305,6 @@ namespace CarpetIOFlexIO {
       
       // Delete temporary copy
       delete tmp;
-      
     } END_COMPONENT_LOOP;
 
 
@@ -304,7 +315,7 @@ namespace CarpetIOFlexIO {
   int OutputVarAs (const cGH* const cgh, const char* const varname,
 		   const char* const alias) {
     DECLARE_CCTK_PARAMETERS;
-    
+    CCTK_VInfo (CCTK_THORNSTRING, "bogusnewout reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
     const int n = CCTK_VarIndex(varname);
     assert (n>=0 && n<CCTK_NumVars());
     const int group = CCTK_GroupIndexFromVarI (n);
@@ -424,7 +435,7 @@ namespace CarpetIOFlexIO {
     return 0;
   }
   
-  
+    
   
   int TimeToOutput (const cGH* const cgh, const int vindex) {
     DECLARE_CCTK_PARAMETERS;
@@ -520,7 +531,7 @@ namespace CarpetIOFlexIO {
     }
     
     const int grouptype = CCTK_GroupTypeI(group);
-    if (grouptype != CCTK_GF && reflevel>0) return 0;
+    const int rl = grouptype==CCTK_GF ? reflevel : 0;
     
     // Find the input directory
     const char* myindir = GetStringParameter("indir3D", "");
@@ -671,12 +682,13 @@ namespace CarpetIOFlexIO {
         assert (var < (int)arrdata[group].data.size());
         ff = (ggf<dim>*)arrdata[group].data[var];
         
-        gdata<dim>* const data = (*ff) (tl, reflevel, component, mglevel);
+        gdata<dim>* const data = (*ff) (tl, rl, component, mglevel);
         
         // Create temporary data storage on processor 0
         const vect<int,dim> str = vect<int,dim>(reflevelfact);
         const vect<int,dim> lb = vect<int,dim>(amr_origin) * str;
-        const vect<int,dim> ub = lb + (vect<int,dim>(amr_dims) - 1) * str;
+        const vect<int,dim> ub
+          = lb + (vect<int,dim>(amr_dims) - 1) * str;
         const bbox<int,dim> ext(lb,ub,str);
         gdata<dim>* const tmp = data->make_typed ();
         
@@ -700,7 +712,7 @@ namespace CarpetIOFlexIO {
         amrgrid = 0;
       }
       
-    }	// loop over datasets
+    } // loop over datasets
     
     // Close the file
     if (CCTK_MyProc(cgh)==0) {
@@ -717,7 +729,7 @@ namespace CarpetIOFlexIO {
   
   
   
-  int CarpetIOFlexIOReadData (CCTK_ARGUMENTS)
+  int CarpetIOFlexIO_ReadData (CCTK_ARGUMENTS)
   {
     DECLARE_CCTK_ARGUMENTS;
     return InputGH(cctkGH);
@@ -782,6 +794,3 @@ namespace CarpetIOFlexIO {
   
   
 } // namespace CarpetIOFlexIO
-
-
-

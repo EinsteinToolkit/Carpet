@@ -48,9 +48,12 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.5 2003/07/14 15:41:08 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.6 2003/09/17 13:47:00 cvs_anon Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
+
+
+
 
 namespace CarpetCheckpointRestart {
 
@@ -60,9 +63,7 @@ namespace CarpetCheckpointRestart {
 
   static int Checkpoint (const cGH* const cgh, int called_from);
 
-
-
-  void CarpetChReEvolutionCheckpoint( const cGH* const cgh){
+  void CarpetIOFlexIO_EvolutionCheckpoint( const cGH* const cgh){
     
     DECLARE_CCTK_PARAMETERS
 
@@ -77,6 +78,7 @@ namespace CarpetCheckpointRestart {
 		      "iteration %d", cgh->cctk_iteration);
 	  CCTK_INFO ("---------------------------------------------------------");
 	}
+CCTK_VInfo (CCTK_THORNSTRING, "bogusbefore reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
 	Checkpoint (cgh, CP_EVOLUTION_DATA);
 
        	if (checkpoint_next)
@@ -138,15 +140,13 @@ namespace CarpetCheckpointRestart {
     writer->writeAttribute("Cactus version", FLEXIO_CHAR,
                                   strlen (version) + 1, version);
 
-
-
     return 0;
   }
 
 
   static int Checkpoint (const cGH* const cgh, int called_from)
   {
-    char filename[1024];
+    char cp_filename[1024], cp_tempname[1024];
     int myproc, first_vindex, gindex, retval;
     char *fullname;
     const char *timer_descriptions[3] = {"Time to dump parameters: ",
@@ -164,30 +164,48 @@ namespace CarpetCheckpointRestart {
     ioRequest *request;
 
     DECLARE_CCTK_PARAMETERS
-     
+   CCTK_VInfo (CCTK_THORNSTRING, "boguscheck reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
+
+  
     myproc = CCTK_MyProc (cgh);
     ioUtilGH = (const ioGH *) CCTK_GHExtension (cgh, "IO");
-    IOUtil_PrepareFilename (cgh, NULL, filename, called_from,
+    IOUtil_PrepareFilename (cgh, NULL, cp_filename, called_from,
             myproc / ioUtilGH->ioproc_every, ioUtilGH->unchunked);
-    
-    sprintf(filename, "%s.ieee",filename);
 
-    fprintf(stderr,"%s\n",filename);
+    // Invent a file name
+    const char* extension = 0;
+    if (CCTK_Equals(out3D_format, "IEEE")) {
+      extension = ".raw";
+#ifdef HDF4
+    } else if (CCTK_Equals(out3D_format, "HDF4")) {
+      extension = ".hdf";
+#endif
+#ifdef HDF5
+    } else if (CCTK_Equals(out3D_format, "HDF5")) {
+      extension = ".h5";
+#endif
+    } else {
+      assert (0);
+    }
+  
+    sprintf(cp_tempname,"%s.tmp.%s",cp_filename,extension);
+    sprintf(cp_filename,"%s.%s",cp_filename,extension);
+  
 
     if (CCTK_MyProc(cgh)==0)
       {
 	if (CCTK_Equals ("verbose", "full"))
 	  {
-	    CCTK_VInfo (CCTK_THORNSTRING, "Creating file '%s'", filename);
+	    CCTK_VInfo (CCTK_THORNSTRING, "Creating temporary checkpoint file '%s'", cp_tempname);
 	  }
 
-	writer = new IEEEIO(filename, IObase::Create);
+	writer = new IEEEIO(cp_tempname, IObase::Create);
 
 	if (! (writer->isValid()) )
 	  {
 	    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
 			"Can't open checkpoint file '%s'. Checkpointing is skipped",
-			filename);
+			cp_tempname);
 	    return (-1);
 	  }
 	amrwriter = new AMRwriter(*writer);
@@ -247,7 +265,7 @@ namespace CarpetCheckpointRestart {
 		 request->timelevel++)
 	      {
 	
-		if (CCTK_Equals (verbose, "full"))
+		if (verbose)
 		  {
 		    fullname = CCTK_FullName (request->vindex);
 		    CCTK_VInfo (CCTK_THORNSTRING, "  %s (timelevel %d)",
@@ -255,7 +273,8 @@ namespace CarpetCheckpointRestart {
 		    free (fullname);
 		  }
 		// write the var
-		retval += WriteVarAs(cgh,writer,amrwriter,request->vindex);
+
+	retval += WriteVarAs(cgh,writer,amrwriter,request->vindex);
 	      }
 	  } /* end of loop over all variables */
 

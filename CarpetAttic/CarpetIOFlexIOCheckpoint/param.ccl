@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOFlexIO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/param.ccl,v 1.1 2003/05/16 14:02:18 hawke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/param.ccl,v 1.2 2003/09/17 13:47:00 cvs_anon Exp $
 
 
 
@@ -11,7 +11,7 @@ USES CCTK_INT out_every
 
 
 
-restricted:
+private:
 
 
 
@@ -90,7 +90,6 @@ CCTK_STRING in3D_extension "File extension to use for 3D FlexIO input" STEERABLE
   .* :: "A regex which matches everything"
 } ""
 
-
 BOOLEAN checkpoint "Do checkpointing with IOFlexIO" STEERABLE = ALWAYS
 {
 } "no"
@@ -109,6 +108,3 @@ USES BOOLEAN checkpoint_on_terminate
 USES KEYWORD recover
 USES STRING  recover_file
 USES KEYWORD verbose
-
-
-
