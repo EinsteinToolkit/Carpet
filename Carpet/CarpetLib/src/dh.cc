@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.44 2003/11/05 16:18:39 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.45 2004/01/16 17:36:44 schnetter Exp $
 
 #include <assert.h>
 
@@ -153,9 +153,9 @@ void dh<D>::recompose (const int initialise_from, const bool do_prolongate) {
       	    // (the restriction must fill all of the interior of the
       	    // coarse grid, and may use the exterior of the fine grid)
       	    const ibbox recv = intr;
-            assert (! recv.empty());
+            assert (intr.empty() || ! recv.empty());
       	    const ibbox send = recv.expanded_for(extrf);
-            assert (! send.empty());
+            assert (intr.empty() || ! send.empty());
       	    assert (send.is_contained_in(extrf));
       	    boxes[rl][c][ml-1].send_mg_coarse.push_back(send);
       	    boxes[rl][c][ml  ].recv_mg_fine  .push_back(recv);
@@ -166,9 +166,9 @@ void dh<D>::recompose (const int initialise_from, const bool do_prolongate) {
       	    // grid, and may fill only the interior of the fine grid,
       	    // and the bbox must be as large as possible)
       	    const ibbox recv = extr.contracted_for(intrf) & intrf;
-            assert (! recv.empty());
+            assert (intr.empty() || ! recv.empty());
       	    const ibbox send = recv.expanded_for(extr);
-            assert (! send.empty());
+            assert (intr.empty() || ! send.empty());
       	    boxes[rl][c][ml-1].recv_mg_coarse.push_back(recv);
       	    boxes[rl][c][ml  ].send_mg_fine  .push_back(send);
       	  }
@@ -244,8 +244,7 @@ void dh<D>::recompose (const int initialise_from, const bool do_prolongate) {
                   recvs.normalize();
                 }
                 {
-                  // TODO
-                  // Take buffer zone into account
+                  // Take buffer zones into account
                   const ibset oldrecvs(recvs);
                   recvs = ibset();
                   for (typename ibset::const_iterator ori=oldrecvs.begin();
@@ -333,11 +332,17 @@ void dh<D>::recompose (const int initialise_from, const bool do_prolongate) {
                                ? 0 : buffer_width);
                 }
               }
+#if 0
+// Don't restrict the buffer zone
+// BUT: the expression below does not take ghost zones into account,
+// which are not supposed to have buffer zones!
               const ibbox recv = (intrf
                                   .expand(-buf[0], -buf[1])
                                   .contracted_for(intr)
                                   & intr);
-//               const ibbox recv = intrf.contracted_for(intr) & intr;
+#else
+              const ibbox recv = intrf.contracted_for(intr) & intr;
+#endif
               const ibbox send = recv.expanded_for(intrf);
               assert (send.empty() == recv.empty());
               if (! send.empty()) {
