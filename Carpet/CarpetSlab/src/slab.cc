@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
 #include <vector>
 
 #include "cctk.h"
@@ -32,6 +33,7 @@ extern "C" {
 
 namespace CarpetSlab {
   
+  using namespace std;
   using namespace Carpet;
   
   
@@ -132,7 +134,7 @@ namespace CarpetSlab {
     
     // Check extent
     for (int dd=0; dd<hdim; ++dd) {
-      assert (origin[dirs[dd]-1] + length[dd] <= sizes[dirs[dd]]);
+      assert (origin[dirs[dd]-1] + length[dd] <= sizes[dirs[dd]-1]);
     }
     
     // Get insider information about variable
@@ -153,6 +155,17 @@ namespace CarpetSlab {
     
     // Determine own rank
     const int rank = CCTK_MyProc(cgh);
+    
+    // Sanity check
+    // (if this fails, someone requested an insane number of grid points)
+    {
+      int max = INT_MAX;
+      for (int dd=0; dd<dim; ++dd) {
+        assert (length[dd] >= 0 && length[dd] <= max);
+        if (length[dd] > 0) max /= length[dd];
+      }
+      assert (typesize <= max);
+    }
     
     // Calculate global size
     int totalsize = 1;

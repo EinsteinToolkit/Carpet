@@ -133,9 +133,24 @@ namespace CarpetSlab {
     for (int dd=0; dd<hdim; ++dd) {
       downsample[dd] = downsample_ ? downsample_[dd] : 1;
       if (extent[dd]<0) {
+        int const oldmap = Carpet::map;
+        int const grouptype = CCTK_GroupTypeFromVarI (vindex);
+        assert (grouptype >= 0);
+        if (grouptype == CCTK_GF) {
+          assert (reflevel >= 0);
+          assert (oldmap >= 0 || maps == 1);
+          if (oldmap == -1) {
+            enter_singlemap_mode (const_cast<cGH*>(cctkGH), 0);
+          }
+        }
 	int gsh[dim];
-	int ierr = CCTK_GroupgshVI(cctkGH, dim, gsh, vindex);
+	int ierr = CCTK_GroupgshVI (cctkGH, dim, gsh, vindex);
 	assert (!ierr);
+        if (grouptype == CCTK_GF) {
+          if (oldmap == -1) {
+            leave_singlemap_mode (const_cast<cGH*>(cctkGH));
+          }
+        }
 	const int totlen = gsh[dirs[dd]-1];
 	assert (totlen>=0);
 	// Partial argument check
