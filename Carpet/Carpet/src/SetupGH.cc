@@ -10,7 +10,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.2 2001/07/09 09:00:10 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.3 2001/07/18 16:17:38 schnetter Exp $";
 
 
 
@@ -168,17 +168,19 @@ namespace Carpet {
 	  = new dh<dim>(*arrdata[group].hh, alghosts, aughosts,
 			prolongation_order_space);
 	
-	if (max_refinement_levels > 1) {
-	  const int prolongation_stencil_size
-	    = arrdata[group].dd->prolongation_stencil_size();
-	  const int min_nghosts
-	    = ((prolongation_stencil_size + refinement_factor - 2)
-	       / (refinement_factor-1));
-	  if (any(min(alghosts,aughosts) < min_nghosts)) {
-	    CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-			"There are not enough ghost zones for the desired spatial prolongation order for the grid function group \"%s\".  With Carpet::prolongation_order_space=%d, you need at least %d ghost zones.",
-			CCTK_GroupName(group),
-			prolongation_order_space, min_nghosts);
+	if (gp.disttype == CCTK_DISTRIB_DEFAULT) {
+	  if (max_refinement_levels > 1) {
+	    const int prolongation_stencil_size
+	      = arrdata[group].dd->prolongation_stencil_size();
+	    const int min_nghosts
+	      = ((prolongation_stencil_size + refinement_factor - 2)
+		 / (refinement_factor-1));
+	    if (any(min(alghosts,aughosts) < min_nghosts)) {
+	      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+			  "There are not enough ghost zones for the desired spatial prolongation order for the grid function group \"%s\".  With Carpet::prolongation_order_space=%d, you need at least %d ghost zones.",
+			  CCTK_GroupName(group),
+			  prolongation_order_space, min_nghosts);
+	    }
 	  }
 	}
 	break;
