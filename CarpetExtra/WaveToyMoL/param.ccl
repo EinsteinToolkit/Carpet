@@ -1,5 +1,5 @@
 # Parameter definitions for thorn WaveToyMoL
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/param.ccl,v 1.1 2003/06/18 18:24:30 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/param.ccl,v 1.2 2004/04/07 17:08:21 schnetter Exp $
 
 SHARES: MethodOfLines
 
@@ -18,3 +18,7 @@ STRING bound "Type of boundary condition to use"
 {
   .* :: "must be a registered boundary condition"
 } "None"
+
+BOOLEAN estimate_error "Estimate the truncation error"
+{
+} "no"

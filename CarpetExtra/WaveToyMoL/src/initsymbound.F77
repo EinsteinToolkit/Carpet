@@ -1,4 +1,4 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/src/initsymbound.F77,v 1.2 2003/10/27 15:31:41 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/src/initsymbound.F77,v 1.3 2004/04/07 17:08:21 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
@@ -19,5 +19,7 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/src/initsym
       call SetCartSymVN (ierr, cctkGH, sym, "WaveToyMoL::phi")
       if (ierr.ne.0) call CCTK_WARN (0, "internal error")
       call SetCartSymVN (ierr, cctkGH, sym, "WaveToyMoL::phidot")
+      if (ierr.ne.0) call CCTK_WARN (0, "internal error")
+      call SetCartSymVN (ierr, cctkGH, sym, "WaveToyMoL::error")
       if (ierr.ne.0) call CCTK_WARN (0, "internal error")
       end
