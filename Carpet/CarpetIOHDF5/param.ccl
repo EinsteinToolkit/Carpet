@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOHDF5
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/param.ccl,v 1.3 2004/03/12 00:13:25 cott Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/param.ccl,v 1.4 2004/03/14 15:14:00 cott Exp $
 
 
 
@@ -18,6 +18,10 @@ USES KEYWORD recover
 USES STRING  recover_file
 USES STRING  recover_dir
 
+
+shares: Cactus
+
+USES CCTK_REAL cctk_initial_time
 
 
 private:

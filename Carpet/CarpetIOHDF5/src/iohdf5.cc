@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.15 2004/03/12 14:50:17 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.16 2004/03/14 15:14:00 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -52,6 +52,8 @@ namespace CarpetIOHDF5 {
   
   int CarpetIOHDF5Startup ()
   {
+    DECLARE_CCTK_PARAMETERS;
+
     int ierr;
     
     CCTK_RegisterBanner ("AMR 3D HDF5 I/O provided by CarpetIOHDF5");
@@ -65,14 +67,19 @@ namespace CarpetIOHDF5 {
     CCTK_RegisterIOMethodTimeToOutput (IOMethod, TimeToOutput);
     CCTK_RegisterIOMethodTriggerOutput (IOMethod, TriggerOutput);
     
-    // Erik's Recovery routine
-    ierr = IOUtil_RegisterRecover ("CarpetIOHDF5", Recover);
-    assert (! ierr);
+
 
     // Christian's Recovery routine
-    ierr = IOUtil_RegisterRecover ("CarpetIOHDF5 recovery", CarpetIOHDF5_Recover);
-    assert (! ierr);
-    
+    if ( !(CCTK_Equals(recover,"no")) ) {
+      ierr = IOUtil_RegisterRecover ("CarpetIOHDF5 recovery", CarpetIOHDF5_Recover);
+      assert (! ierr);
+    } else {
+      // Erik's Recovery routine
+      ierr = IOUtil_RegisterRecover ("CarpetIOHDF5", Recover);
+      assert (! ierr);
+    }
+
+
     return 0;
   }
   
@@ -215,36 +222,6 @@ namespace CarpetIOHDF5 {
       writer = H5Fopen (filename, H5F_ACC_RDWR, H5P_DEFAULT);
       assert (writer>=0);
       
-//       const int gpdim = CCTK_GroupDimI(group);
-      
-//       // Set coordinate information
-//       double origin[dim], delta[dim], timestep;
-//       for (int d=0; d<dim; ++d) {
-// 	origin[d] = cctkGH->cctk_origin_space[d];
-// 	delta[d] = cctkGH->cctk_delta_space[d];
-//       }
-//       timestep = cctkGH->cctk_delta_time;
-//       amrwriter->setTopLevelParameters
-// 	(gpdim, origin, delta, timestep, maxreflevels);
-      
-//       // Set refinement information
-//       int interlevel_timerefinement;
-//       int interlevel_spacerefinement[dim];
-//       int initial_gridplacementrefinement[dim];
-//       interlevel_timerefinement = reffact;
-//       for (int d=0; d<dim; ++d) {
-// 	interlevel_spacerefinement[d] = reffact;
-// 	initial_gridplacementrefinement[d] = 1;
-//       }
-//       amrwriter->setRefinement
-// 	(interlevel_timerefinement, interlevel_spacerefinement,
-// 	 initial_gridplacementrefinement);
-      
-//       // Set level
-//       amrwriter->setLevel (rl);
-      
-//       // Set current time
-//       amrwriter->setTime (cctk_iteration);
     }
     
     WriteVar(cctkGH,writer,request,0);
@@ -662,8 +639,6 @@ namespace CarpetIOHDF5 {
     int recovery_rl = -1;
     int recovery_comp = -1;
 
-
-
     CCTK_REAL *h5data;
 
     // Check for storage
@@ -676,11 +651,9 @@ namespace CarpetIOHDF5 {
     
     const int grouptype = CCTK_GroupTypeI(group);
     const int rl = grouptype==CCTK_GF ? reflevel : 0;
-    cout << "want level " << rl << " reflevel " << reflevel << endl;            
-    
+
     const int gpdim = CCTK_GroupDimI(group);
        
-    //    vector<ibset> regions_read(Carpet::maps);
     
     int amr_level;
     int amr_origin[dim];
@@ -711,8 +684,7 @@ namespace CarpetIOHDF5 {
 	 
 	 for(int i=0;i<rank;i++) {
 	   datalength=datalength*shape[i];
-	   amr_dims[i]=shape[i];
-	   cout << "amr_dims[" << i << "]: "<<amr_dims[i] << endl;
+	   amr_dims[i]=shape[rank-i-1];
 	 }
 
 	 if(grouptype == CCTK_ARRAY) {
@@ -731,29 +703,22 @@ namespace CarpetIOHDF5 {
 	 herr = H5Dread(dataset,datatype,H5S_ALL, H5S_ALL, H5P_DEFAULT,(void*)h5data);
 	 assert(!herr);
 	 
-	 if ( CCTK_Equals("CARPETIOASCII::next_output_iteration",varname) ) {
 
-	   cout << "next_output_iteration read " << ((int *)h5data)[1] << endl;
-	 }
-
-	 //	 cout << h5data[100] << endl;
-         //cout << datasetname << endl;
-         //cout << name << endl;
 	 herr = ReadAttribute(dataset,"level",amr_level);
 	 assert(herr>=0);
-	 //cout << "amr_level " << amr_level << " rl " << rl << endl;
        	 ReadAttribute(dataset,"iorigin",amr_origin,dim);
 	 assert(herr>=0);
-         // cout << "amr_origin[0] " << amr_origin[0] << "\n";
 
-	 
 	 if(called_from_recovery) {
 	   recovery_rl = amr_level;
 	   ReadAttribute(dataset,"carpet_component",recovery_comp);
 	   ReadAttribute(dataset,"group_timelevel",recovery_tl);
 	   ReadAttribute(dataset,"carpet_mglevel",recovery_mglevel);
 	 }
+
      } // MyProc == 0
+
+
 
     if(called_from_recovery) {
       MPI_Bcast (&recovery_rl, 1, MPI_INT, 0, dist::comm);
@@ -766,25 +731,19 @@ namespace CarpetIOHDF5 {
     MPI_Bcast (amr_origin, dim, MPI_INT, 0, dist::comm);
     MPI_Bcast (amr_dims, dim, MPI_INT, 0, dist::comm);
 
-    cout << "amr_dims: " << amr_dims[0] << "," << 
-      amr_dims[1] << "," << amr_dims[2] << endl;
-	
     if ((grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY) && reflevel != 0) {
       return 0;
     }  
 
     cout << "amr_level: " << amr_level << " reflevel: " << reflevel << endl;
-
+    
     if (amr_level == rl) {
 	  
        // Traverse all components on all levels
        BEGIN_MAP_LOOP(cctkGH, grouptype) {
 	 BEGIN_COMPONENT_LOOP(cctkGH, grouptype) {
 
-	   // cout << "I want this" << endl;
 	   did_read_something = true;
-	   
-	   //cout << "reading map " << Carpet::map << " component " << component << endl;
 	   
 	   ggf<dim>* ff = 0;
 	     
@@ -793,7 +752,6 @@ namespace CarpetIOHDF5 {
 	   
 	   if(called_from_recovery) tl = recovery_tl;
 	     
-	   cout << "rl,tl: " << rl << "," << tl << endl;
 	     
 	   gdata<dim>* const data = (*ff) (tl, rl, component, mglevel);
 	     
@@ -808,28 +766,13 @@ namespace CarpetIOHDF5 {
 	   vect<int,dim> ub
 	     = lb + (vect<int,dim>::ref(amr_dims) - 1) * str;
 	     
-	   //	       cout << "lb: " << lb << endl;
-	   //  cout << "ub: " << ub << endl;
-	   //  cout << "str: " << str << endl;
 	   gdata<dim>* const tmp = data->make_typed (n);
 	   
-	   //cout << "overlap " << overlap << endl;
-	   //cout << "tmp->extent " << tmp->extent() << endl;
-	   //cout << "data->extent " << data->extent() << endl;
 
 	   cGroup cgdata;
 	   int ierr = CCTK_GroupData(group,&cgdata);
 	   assert(ierr==0);
 	     
-	   // cout << "trying to handle DISTRIB=const data " << endl;
-	   
-	   // handle distrib=constant vars
-	   
-	        cout << "lb: " << lb << endl;
-	        cout << "ub: " << ub << endl;
-
-
-
 	   if (cgdata.disttype == CCTK_DISTRIB_CONSTANT) {
 	     assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
 	     if (grouptype == CCTK_SCALAR) {
@@ -860,34 +803,33 @@ namespace CarpetIOHDF5 {
 	   // not guarantee that everything is initialised.
 	   const bbox<int,dim> overlap = tmp->extent() & data->extent();
 	   regions_read.at(Carpet::map) |= overlap;
+
+	   cout << "working on component: " << component << endl;
+	   cout << "tmp->extent " << tmp->extent() << endl;
+	   cout << "data->extent " << data->extent() << endl;
+	   cout << "overlap " << overlap << endl;
+	   cout << "-----------------------------------------------------" << endl;
+
+	   MPI_Barrier(MPI_COMM_WORLD);
 	   
 	   // Copy into grid function
 	   for (comm_state<dim> state; !state.done(); state.step()) {
 	     data->copy_from (state, tmp, overlap);
 	   }
 
-	   if ( CCTK_Equals("CARPETIOASCII::next_output_iteration",varname) ) {
-	     const int * testdata = (int * ) data->storage();
-	     cout << "testdata: " << testdata[1] << endl;
-	     //CCTK_WARN(0,"STOP!");
-	   }
-
-
-	   
+	 	   
 	   // Delete temporary copy
 	   delete tmp;
 	     
-	   // set tt (ask Erik why...)
-	 
+	 	 
 	 } END_COMPONENT_LOOP;
 
 	 if (called_from_recovery) {
 	   arrdata[group][Carpet::map].tt->set_time(reflevel,mglevel,
-						    (CCTK_REAL) cctkGH->cctk_iteration/maxreflevelfact);
+		   (CCTK_REAL) ((cctkGH->cctk_time - cctk_initial_time)
+	                        / (delta_time * mglevelfact)) );
 	 }
-
-	 //((cgh->cctk_time - cctk_initial_time)
-	 //                       / (delta_time * mglevelfact));
+	 
 
        } END_MAP_LOOP;
 
@@ -972,8 +914,8 @@ namespace CarpetIOHDF5 {
     MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
     assert (ndatasets>=0);
       
-    // added +1 to ndatasets since the number seems to be 1 to small 
-    for (int datasetid=0; datasetid<ndatasets+1; ++datasetid) {
+
+    for (int datasetid=0; datasetid<ndatasets; ++datasetid) {
       if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Handling dataset #%d", datasetid);
 
         
@@ -1014,117 +956,6 @@ namespace CarpetIOHDF5 {
 	 did_read_something = ReadVar(cctkGH,reader,varname,dataset,regions_read,0);
 
        } // want_dataset
-#if 0
-	 if(CCTK_MyProc(cctkGH)==0) {
-	   // get dataset dimensions
-	   const hid_t dataspace = H5Dget_space(dataset);
-	   assert (dataspace>=0);
-	   hsize_t rank=H5Sget_simple_extent_ndims(dataspace);
-	   hsize_t shape[rank];
-	   int rank2 = H5Sget_simple_extent_dims (dataspace, shape, NULL);
-	   herr = H5Sclose(dataspace);
-	   assert(!herr);
-	   assert (rank2 == rank);
-	   assert (gpdim == rank);
-	   
-	   int datalength=1;
-	   
-	   for(int i=0;i<rank;i++) {
-	     datalength=datalength*shape[i];
-	   }
-	   const hid_t datatype = H5T_NATIVE_DOUBLE;
-	 
-         //cout << "datalength: " << datalength << " rank: " << rank << "\n";
-         //cout << shape[0] << " " << shape[1] << " " << shape[2] << "\n";
-	 
-	   h5data = (CCTK_REAL*) malloc(sizeof(double)*datalength);
-	   herr = H5Dread(dataset,datatype,H5S_ALL, H5S_ALL, H5P_DEFAULT,(void*)h5data);
-	   assert(!herr);
-	 
-	 //	 cout << h5data[100] << endl;
-         //cout << datasetname << endl;
-         //cout << name << endl;
-	   herr = ReadAttribute(dataset,"level",amr_level);
-	   assert(herr>=0);
-	   //cout << "amr_level " << amr_level << " rl " << rl << endl;
-	   ReadAttribute(dataset,"iorigin",amr_origin,dim);
-	   assert(herr>=0);
-	   // cout << "amr_origin[0] " << amr_origin[0] << "\n";
-	 
-	   herr = H5Dclose(dataset);
-	   assert(!herr);
-	   
-	   for (int d=0; d<gpdim; ++d) {
-	     amr_dims[d] = shape[gpdim-1-d];
-	   }
-	 } // myproc == 0
-	 //} // want_dataset
-       
-
-     MPI_Bcast (&want_dataset, 1, MPI_INT, 0, dist::comm);
-     MPI_Bcast (&amr_level, 1, MPI_INT, 0, dist::comm);
-     MPI_Bcast (amr_origin, dim, MPI_INT, 0, dist::comm);
-     MPI_Bcast (amr_dims, dim, MPI_INT, 0, dist::comm);
-	
-     if (want_dataset && amr_level == rl) {
-       // cout << "I want this" << endl;
-       did_read_something = true;
-	  
-       // Traverse all components on all levels
-       BEGIN_MAP_LOOP(cctkGH, grouptype) {
-	 BEGIN_COMPONENT_LOOP(cctkGH, grouptype) {
-           //cout << "reading map " << Carpet::map << " component " << component << endl;
-            
-	   ggf<dim>* ff = 0;
-	      
-	   assert (var < (int)arrdata.at(group).at(Carpet::map).data.size());
-	   ff = (ggf<dim>*)arrdata.at(group).at(Carpet::map).data.at(var);
-            
-
-	   gdata<dim>* const data = (*ff) (tl, rl, component, mglevel);
-	   
-	   // Create temporary data storage on processor 0
-	   const vect<int,dim> str
-	     = vect<int,dim>(maxreflevelfact/reflevelfact);
-	   const vect<int,dim> lb = vect<int,dim>::ref(amr_origin) * str;
-	   const vect<int,dim> ub
-	     = lb + (vect<int,dim>::ref(amr_dims) - 1) * str;
-	   const bbox<int,dim> ext(lb,ub,str);
-	   
-	   gdata<dim>* const tmp = data->make_typed (n);
-	   
-	   if (CCTK_MyProc(cctkGH)==0) {
-	     tmp->allocate (ext, 0, h5data);
-	   } else {
-	     tmp->allocate (ext, 0);
-	   }
-            
-	   // Initialise with what is found in the file -- this does
-	   // not guarantee that everything is initialised.
-	   const bbox<int,dim> overlap = tmp->extent() & data->extent();
-	   regions_read.at(Carpet::map) |= overlap;
-
-	   //cout << "overlap " << overlap << endl;
-	   //cout << "tmp->extent " << tmp->extent() << endl;
-	   //cout << "data->extent " << data->extent() << endl;
-	   
-	   // Copy into grid function
-	   for (comm_state<dim> state; !state.done(); state.step()) {
-	     data->copy_from (state, tmp, overlap);
-	   }
-	   
-	   // Delete temporary copy
-	   delete tmp;
-	      
-	 } END_COMPONENT_LOOP;
-       } END_MAP_LOOP;
-       
-     } // if want_dataset && level == rl
-       
-     if (CCTK_MyProc(cctkGH)==0 && want_dataset) {
-       free (h5data);
-     }
-#endif  
 
     } // loop over datasets
       

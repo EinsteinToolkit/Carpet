@@ -189,7 +189,7 @@ namespace CarpetIOHDF5 {
 	  }
 	  // Now let us recover the GHextentions
 
-	  result += RecoverGHextensions(cctkGH,reader);
+
 	  //} // if reflevel==0
 
       } // myproc == 0  	
@@ -199,13 +199,18 @@ namespace CarpetIOHDF5 {
 
 
       for(int i=0;i<numberofmgtimes;i++) {
-	mpierr = MPI_Bcast (&leveltimes[i][0], numberofmgtimes, CARPET_MPI_REAL, 0, MPI_COMM_WORLD);
+	mpierr = MPI_Bcast (&(leveltimes[i][0]), reflevels, CARPET_MPI_REAL, 0, MPI_COMM_WORLD);
 	assert(!mpierr);
       }
 
       cout << "leveltimes: " << leveltimes << endl;
 
       cctkGH->cctk_time = leveltimes[mglevel][reflevel];
+
+      //      int ibuffer = cctkGH->cctk_time;
+      //mpierr = MPI_Bcast (&ibuffer,1,MPI_INT,MPI_COMM_WORLD);
+      
+      result += RecoverGHextensions(cctkGH,reader);
 
       // set tt (ask Erik why...)
       //	  arrdata[0][0].tt->set_time(reflevel,mglevel,(CCTK_REAL) cctkGH->cctk_iteration/maxreflevelfact);
@@ -230,16 +235,19 @@ namespace CarpetIOHDF5 {
   
   int RecoverVariables (cGH* cctkGH, hid_t reader) {
 
+    DECLARE_CCTK_PARAMETERS;
+
     int retval = 0;
     int myproc = CCTK_MyProc (cctkGH);
-    int currdataset,ndatasets,namelength;
-    char datasetname[1024];
+    int currdataset,ndatasets;
     char * name;
+
+    char datasetname[1024];
+
+    int varindex; 
 
     hid_t dataset;
     herr_t herr;
-
-
 
     if(myproc==0) {
       ndatasets=GetnDatasets(reader);
@@ -250,37 +258,38 @@ namespace CarpetIOHDF5 {
     MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
     assert (ndatasets>=0);
 
-    cout << "ndatasets: " << ndatasets << endl;
+    if (verbose) cout << "ndatasets: " << ndatasets << endl;
 
     for (currdataset=0;currdataset < ndatasets+1;currdataset++) {
-
       if (myproc==0) {
 	GetDatasetName(reader,currdataset,datasetname);
 	dataset = H5Dopen (reader, datasetname);
 	assert(dataset);
 	// Read data
 	ReadAttribute (dataset, "name", name);
-	namelength=strlen(name)+1;
+
+	varindex = CCTK_VarIndex(name);
       }
-      MPI_Bcast (&namelength, 1, MPI_INT, 0, dist::comm);
 
+      MPI_Bcast (&varindex, 1, MPI_INT, 0, dist::comm);
 
-      if(myproc!=0) {
-	name = (char *) malloc (sizeof(char)*namelength);
-      }
-      
-      MPI_Bcast (name,namelength, MPI_CHAR, 0, dist::comm);
+      name = CCTK_FullName(varindex);
 
-      cout << name << endl;
+      if (verbose) cout << name << "  rl: " << reflevel << endl;
       vector<ibset> regions_read(Carpet::maps);
 
-      ReadVar(cctkGH,reader,name,dataset,regions_read,1);
+
+      assert (varindex>=0 && varindex<CCTK_NumVars());
+      const int group = CCTK_GroupIndexFromVarI (varindex);
+      const int grouptype = CCTK_GroupTypeI(group);
+
+      bool did_read_something = ReadVar(cctkGH,reader,name,dataset,regions_read,1);
 
       if(myproc==0) {
 	herr = H5Dclose(dataset);
-	free(name);
 	assert(!herr);
       }
+      free(name);
     }
     return retval;
   }
@@ -293,6 +302,7 @@ namespace CarpetIOHDF5 {
     const int myproc = CCTK_MyProc(cctkGH);
     CCTK_INT4 int4Buffer[3];
     CCTK_REAL realBuffer;
+    CCTK_REAL realBuffer2;
     CCTK_INT4 intbuffer;
 
     int mpierr = 0;
@@ -310,6 +320,7 @@ namespace CarpetIOHDF5 {
 	ReadAttribute(dataset,"main loop index",int4Buffer[1]);
 	ReadAttribute(dataset,"carpet_global_time",realBuffer);
 	//	ReadAttribute(dataset,"carpet_reflevels",int4Buffer[2]);
+	ReadAttribute(dataset,"carpet_delta_time",realBuffer2);
 
 	herr_t herr = H5Dclose(dataset);
 	assert(!herr);
@@ -328,8 +339,11 @@ namespace CarpetIOHDF5 {
     assert(!mpierr);
     mpierr = MPI_Bcast (&realBuffer, 1, CARPET_MPI_REAL,0,MPI_COMM_WORLD);
     assert(!mpierr);
+    mpierr = MPI_Bcast (&realBuffer2, 1, CARPET_MPI_REAL,0,MPI_COMM_WORLD);
+    assert(!mpierr);
 
     global_time = (CCTK_REAL) realBuffer;
+    delta_time = (CCTK_REAL) realBuffer2;
     //    reflevels = (int) int4Buffer[2];
     cctkGH->cctk_iteration = (int) int4Buffer[0];
     CCTK_SetMainLoopIndex ((int) int4Buffer[1]);
@@ -440,8 +454,12 @@ namespace CarpetIOHDF5 {
     // Invent a filename
 
     ioUtilGH = (const ioGH *) CCTK_GHExtension (cctkGH, "IO");
+
+    // I didn't like what the flesh provides:
+    
     IOUtil_PrepareFilename (cctkGH, NULL, cp_filename, called_from,
-            myproc / ioUtilGH->ioproc_every, ioUtilGH->unchunked);
+           myproc / ioUtilGH->ioproc_every, ioUtilGH->unchunked);
+
 
     /* ... and append the extension */
     sprintf (cp_tempname, "%s.tmp.h5", cp_filename);
@@ -681,6 +699,9 @@ namespace CarpetIOHDF5 {
 
       itmp = reflevels;
       WriteAttribute(dataset,"carpet_reflevels", itmp);
+
+      dtmp = delta_time;
+      WriteAttribute(dataset,"carpet_delta_time", dtmp);
 
       version = CCTK_FullVersion();
       WriteAttribute(dataset,"Cactus version", version);
