@@ -15,7 +15,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.44 2004/02/27 16:23:34 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.45 2004/03/01 22:22:46 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -322,8 +322,8 @@ namespace CarpetIOFlexIO {
         
         const ggf<dim>* ff = 0;
         
-        assert (var < (int)arrdata[group][Carpet::map].data.size());
-        ff = (ggf<dim>*)arrdata[group][Carpet::map].data[var];
+        assert (var < (int)arrdata.at(group).at(Carpet::map).data.size());
+        ff = (ggf<dim>*)arrdata.at(group).at(Carpet::map).data.at(var);
         
         const gdata<dim>* const data
           = (*ff) (tl, rl, component, mglevel);
@@ -441,7 +441,7 @@ namespace CarpetIOFlexIO {
           WriteAttribute (writer, "carpet_map", Carpet::map);
           WriteAttribute (writer, "carpet_maps", maps);
           WriteAttribute (writer, "carpet_component", component);
-          WriteAttribute (writer, "carpet_components", vhh[Carpet::map]->components(reflevel));
+          WriteAttribute (writer, "carpet_components", vhh.at(Carpet::map)->components(reflevel));
         }
         
         // Delete temporary copy
@@ -677,6 +677,7 @@ namespace CarpetIOFlexIO {
     
     // Read some datasets
     bool did_read_something = false;
+    vector<ibset> regions_read(Carpet::maps);
     for (int dataset=0; dataset<ndatasets; ++dataset) {
       if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Handling dataset #%d", dataset);
       
@@ -746,8 +747,8 @@ namespace CarpetIOFlexIO {
             
             ggf<dim>* ff = 0;
             
-            assert (var < (int)arrdata[group][Carpet::map].data.size());
-            ff = (ggf<dim>*)arrdata[group][Carpet::map].data[var];
+            assert (var < (int)arrdata.at(group).at(Carpet::map).data.size());
+            ff = (ggf<dim>*)arrdata.at(group).at(Carpet::map).data.at(var);
             
             gdata<dim>* const data = (*ff) (tl, rl, component, mglevel);
             
@@ -770,6 +771,7 @@ namespace CarpetIOFlexIO {
             // Initialise with what is found in the file -- this does
             // not guarantee that everything is initialised.
             const bbox<int,dim> overlap = tmp->extent() & data->extent();
+            regions_read.at(Carpet::map) |= overlap;
             
             // Copy into grid function
             for (comm_state<dim> state; !state.done(); state.step()) {
@@ -802,6 +804,22 @@ namespace CarpetIOFlexIO {
       delete reader;
       reader = 0;
     }
+    
+    // Was everything initialised?
+    if (did_read_something) {
+      for (int m=0; m<Carpet::maps; ++m) {
+        dh<dim>& thedd = *arrdata.at(group).at(m).dd;
+        ibset all_exterior;
+        for (size_t c=0; c<thedd.boxes.at(rl).size(); ++c) {
+          all_exterior |= thedd.boxes.at(rl).at(c).at(mglevel).exterior;
+        }
+        if (regions_read.at(m) != all_exterior) {
+          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Variable \"%s\" could not be initialised from file -- the file may be missing data",
+                      varname);
+        }
+      }
+    } // if did_read_something
     
     return did_read_something ? 0 : -1;
   }
@@ -928,7 +946,7 @@ namespace CarpetIOFlexIO {
     if (atype != IObase::Int32) return -100;
     
     vector<CCTK_INT4> values1(alength);
-    reader->readAttribute (attrnum, &values1[0]);
+    reader->readAttribute (attrnum, &values1.at(0));
     for (int i=0; i<min(alength, nvalues); ++i) {
       values[i] = values1[i];
     }
@@ -957,7 +975,7 @@ namespace CarpetIOFlexIO {
     if (atype != IObase::Float64) return -100;
     
     vector<CCTK_REAL8> values1(alength);
-    reader->readAttribute (attrnum, &values1[0]);
+    reader->readAttribute (attrnum, &values1.at(0));
     for (int i=0; i<min(alength, nvalues); ++i) {
       values[i] = values1[i];
     }
@@ -1007,7 +1025,7 @@ namespace CarpetIOFlexIO {
     if (atype != IObase::Char8) return -100;
     
     vector<char> values1(alength);
-    reader->readAttribute (attrnum, &values1[0]);
+    reader->readAttribute (attrnum, &values1.at(0));
     for (int i=0; i<min(alength, nvalues); ++i) {
       values[i] = values1[i];
     }
@@ -1032,7 +1050,7 @@ namespace CarpetIOFlexIO {
     for (int i=0; i<nvalues; ++i) {
       values1[i] = values[i];
     }
-    writer->writeAttribute (name, IObase::Int32, nvalues, &values1[0]);
+    writer->writeAttribute (name, IObase::Int32, nvalues, &values1.at(0));
   }
   
   void WriteAttribute (IObase* writer, const char* name, CCTK_REAL value)
@@ -1050,7 +1068,7 @@ namespace CarpetIOFlexIO {
     for (int i=0; i<nvalues; ++i) {
       values1[i] = values[i];
     }
-    writer->writeAttribute (name, IObase::Float64, nvalues, &values1[0]);
+    writer->writeAttribute (name, IObase::Float64, nvalues, &values1.at(0));
   }
   
   void WriteAttribute (IObase* writer, const char* name, char value)
