@@ -19,7 +19,7 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.6 2002/01/11 17:37:13 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.7 2002/01/14 14:59:27 schnetter Exp $";
 
 
 
@@ -126,7 +126,7 @@ namespace CarpetRegrid {
       assert (vi-v1 < (int)arrdata[gi].data.size());
       assert (arrdata[gi].data[vi-v1]);
       const gf<CCTK_REAL,dim>& error
-	= *(const gf<CCTK_REAL,dim>*)arrdata[gi].data[vi-v1];
+	= *dynamic_cast<const gf<CCTK_REAL,dim>*>(arrdata[gi].data[vi-v1]);
       
       MakeRegions_Adaptively (cctkGH, minwidth, minfraction, maxerror, error,
 			      bbl);
@@ -303,8 +303,8 @@ namespace CarpetRegrid {
     
     const int rl = reflevel+1;
     
-    const vect<int,dim> ilower = map(floor, (lower[rl-1] - global_lower) / (global_upper - global_lower) * global_extent + 0.5);
-    const vect<int,dim> iupper = map(floor, (upper[rl-1] - global_lower) / (global_upper - global_lower) * global_extent + 0.5);
+    const vect<int,dim> ilower = vect<int,dim>(map((CCTK_REAL(*)(CCTK_REAL))(floor), (lower[rl-1] - global_lower) / (global_upper - global_lower) * vect<CCTK_REAL,dim>(global_extent) + 0.5));
+    const vect<int,dim> iupper = vect<int,dim>(map((CCTK_REAL(*)(CCTK_REAL))(floor), (upper[rl-1] - global_lower) / (global_upper - global_lower) * vect<CCTK_REAL,dim>(global_extent) + 0.5));
     
     MakeRegions_AsSpecified_OneLevel (cctkGH, reflevels, ilower, iupper, bbl);
   }
@@ -430,7 +430,7 @@ namespace CarpetRegrid {
 	      ibb1 = bbl1.erase(ibb1);
 	      ibb2 = bbl2.erase(ibb2);
 	      ++numcombinedboxes;
-	      cout << "MRA: Combining along " << "xyz"[dir] << " to " << bbl.back() << " size " << bbl.back().num_points() << endl;
+// 	      cout << "MRA: Combining along " << "xyz"[dir] << " to " << bbl.back() << " size " << bbl.back().num_points() << endl;
 	      goto continue_search;
 	    }
 	    
@@ -504,7 +504,7 @@ namespace CarpetRegrid {
       const vect<int,dim> up(region.upper());
       const vect<int,dim> str(region.stride());
       bbl.push_back (bbox<int,dim>(lo,up+str-str/reffact,str/reffact));
-      cout << "MRA: Refining to " << bbl.back() << " size " << bbl.back().num_points() << " fraction " << fraction << endl;
+//       cout << "MRA: Refining to " << bbl.back() << " size " << bbl.back().num_points() << " fraction " << fraction << endl;
     } else {
       // Split the region and check recursively
       const int dir = maxloc(region.shape());
@@ -557,7 +557,7 @@ namespace CarpetRegrid {
     const int tl = 0;
     const int ml = 0;
     
-    cout << endl << "MRA: Choosing regions to refine in " << hh->components(rl) << " components" << endl;
+//     cout << endl << "MRA: Choosing regions to refine in " << hh->components(rl) << " components" << endl;
     
     for (int c=0; c<hh->components(rl); ++c) {
       const bbox<int,dim> region = hh->extents[rl][c][ml];
@@ -573,7 +573,7 @@ namespace CarpetRegrid {
     for (list<bbox<int,dim> >::const_iterator ibb = bbl.begin(); ibb != bbl.end(); ++ibb) {
       numpoints += ibb->num_points();
     }
-    cout << "MRA: Chose " << bbl.size() << " regions with a total size of " << numpoints << " to refine." << endl << endl;
+//     cout << "MRA: Chose " << bbl.size() << " regions with a total size of " << numpoints << " to refine." << endl << endl;
   }
   
 } // namespace CarpetRegrid

@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.6 2002/01/11 17:19:45 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.7 2002/01/14 14:59:24 schnetter Exp $";
 
 
 
@@ -21,12 +21,17 @@ namespace Carpet {
   
   int Initialise (tFleshConfig* fc)
   {
+    cout << "zwei..." << endl;
     DECLARE_CCTK_PARAMETERS;
+    cout << "zwei..." << endl;
     
     // Initialise stuff
     const int convlev = 0;
+    cout << "zwei..." << endl;
     cGH* const cgh = CCTK_SetupGH (fc, convlev);
+    cout << "zwei..." << endl;
     CCTKi_AddGH (fc, convlev, cgh);
+    cout << "zwei..." << endl;
     
     // Delay checkpoint until MPI has been initialised
     Waypoint ("starting Initialise...");

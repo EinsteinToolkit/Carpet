@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <algorithm>
 #include <fstream>
 #include <vector>
 
@@ -32,7 +33,7 @@
 
 #include "ioflexio.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.14 2002/01/09 21:14:25 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.15 2002/01/14 14:59:26 schnetter Exp $";
 
 
 
@@ -264,17 +265,14 @@ namespace CarpetIOFlexIO {
       
       // Ignore ghost zones if desired
       for (int d=0; d<dim; ++d) {
-	bool output_lower_ghosts
-	  = cgh->cctk_bbox[2*d] ? out3D_outer_ghosts : out3D_ghosts;
-	bool output_upper_ghosts
-	  = cgh->cctk_bbox[2*d+1] ? out3D_outer_ghosts : out3D_ghosts;
+	const int max_lower_ghosts = (cgh->cctk_bbox[2*d  ] && !out3D_output_outer_boundary) ? -1 : out3D_max_num_lower_ghosts;
+	const int max_upper_ghosts = (cgh->cctk_bbox[2*d+1] && !out3D_output_outer_boundary) ? -1 : out3D_max_num_upper_ghosts;
 	
-	if (! output_lower_ghosts) {
-	  lo[d] += cgh->cctk_nghostzones[d] * str[d];
-	}
-	if (! output_upper_ghosts) {
-	  hi[d] -= cgh->cctk_nghostzones[d] * str[d];
-	}
+	const int num_lower_ghosts = max_lower_ghosts == -1 ? cgh->cctk_nghostzones[d] : min(out3D_max_num_lower_ghosts, cgh->cctk_nghostzones[d]);
+	const int num_upper_ghosts = max_upper_ghosts == -1 ? cgh->cctk_nghostzones[d] : min(out3D_max_num_upper_ghosts, cgh->cctk_nghostzones[d]);
+	
+	lo[d] += (cgh->cctk_nghostzones[d] - num_lower_ghosts) * str[d];
+	hi[d] -= (cgh->cctk_nghostzones[d] - num_upper_ghosts) * str[d];
       }
       
       ext = bbox<int,dim>(lo,hi,str);

@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.21 2002/01/11 17:19:46 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.22 2002/01/14 14:59:24 schnetter Exp $";
 
 
 
@@ -24,17 +24,22 @@ namespace Carpet {
   
   void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cgh)
   {
+    cout << "eins..." << endl;
     DECLARE_CCTK_PARAMETERS;
+    cout << "eins..." << endl;
     
     assert (cgh->cctk_dim == dim);
     
     // Not sure what to do with that
     assert (convLevel==0);
     
+    cout << "eins..." << endl;
     dist::pseudoinit();
+    cout << "eins..." << endl;
     
     CCTK_VInfo (CCTK_THORNSTRING,
 		"Carpet is running on %d processors", CCTK_nProcs(cgh));
+    cout << "eins..." << endl;
     
     Waypoint ("starting SetupGH...");
     
