@@ -1,11 +1,10 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.25 2004/03/11 12:04:13 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.26 2004/04/18 13:25:56 schnetter Exp $
 
 #ifndef VECT_HH
 #define VECT_HH
 
-#include <assert.h>
-
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <iostream>
 
@@ -21,18 +20,6 @@ template<class T,int D>
 istream& operator>> (istream& is, vect<T,D>& a);
 template<class T,int D>
 ostream& operator<< (ostream& os, const vect<T,D>& a);
-
-
-
-template<typename T>
-struct integral {
-  typedef T substitute;
-};
-
-template<>
-struct integral<double> {
-  typedef int substitute;
-};
 
 
 
@@ -257,13 +244,7 @@ public:
   }
   
   vect& operator%=(const vect& a) {
-    for (int d=0; d<D; ++d) {
-//       elt[d]%=a[d];
-      typename integral<T>::substitute se, sa;
-      se = elt[d]; sa = a[d];
-      se %= sa;
-      elt[d] = se;
-    }
+    for (int d=0; d<D; ++d) elt[d]%=a[d];
     return *this;
   }
   
@@ -760,6 +741,20 @@ template<class T,int D>
 inline ostream& operator<< (ostream& os, const vect<T,D>& a) {
   a.output(os);
   return os;
+}
+
+
+
+// Specialise for double
+
+template<>
+inline vect<double,3>& vect<double,3>::operator%=(const vect<double,3>& a) {
+  for (int d=0; d<3; ++d) {
+    elt[d]=fmod(elt[d],a[d]);
+    if (elt[d]>a[d]*double(1.0-1.0e-10)) elt[d]=double(0);
+    if (elt[d]<a[d]*double(    1.0e-10)) elt[d]=double(0);
+  }
+  return *this;
 }
 
 
