@@ -43,5 +43,6 @@ c	-*-Fortran-*-
       call Cart3dSetTensorTypeVN (ierr, cctkGH, 'wavetoy::phiy', 'SCALAR')
       call Cart3dSetTensorTypeVN (ierr, cctkGH, 'wavetoy::phiz', 'SCALAR')
       call Cart3dSetTensorTypeVN (ierr, cctkGH, 'wavetoy::phi', 'SCALAR')
+      call Cart3dSetTensorTypeVN (ierr, cctkGH, 'wavetoy::resid', 'SCALAR')
       
       end
