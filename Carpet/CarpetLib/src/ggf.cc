@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.41 2004/05/11 07:53:04 bzink Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.42 2004/05/11 12:53:26 bzink Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -523,7 +523,8 @@ void ggf<D>::mg_restrict (comm_state<D>& state,
                           CCTK_REAL time)
 {
   // Require same times
-  assert (t.get_time(rl,ml) == t.get_time(rl,ml-1));
+  assert (abs(t.get_time(rl,ml) - t.get_time(rl,ml-1))
+	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
   const vector<int> tl2s(1,tl);
   intercat (state,
             tl  ,rl,c,ml,   &dh<D>::dboxes::recv_mg_coarse,
@@ -538,7 +539,8 @@ void ggf<D>::mg_prolongate (comm_state<D>& state,
                             CCTK_REAL time)
 {
   // Require same times
-  assert (t.get_time(rl,ml) == t.get_time(rl,ml+1));
+  assert (abs(t.get_time(rl,ml) - t.get_time(rl,ml+1))
+	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
   const vector<int> tl2s(1,tl);
   intercat (state,
             tl  ,rl,c,ml,   &dh<D>::dboxes::recv_mg_coarse,
@@ -553,7 +555,8 @@ void ggf<D>::ref_restrict (comm_state<D>& state,
                            CCTK_REAL time)
 {
   // Require same times
-  // assert (t.get_time(rl,ml) == t.get_time(rl+1,ml));
+  assert (abs(t.get_time(rl,ml) - t.get_time(rl+1,ml))
+	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
   if (transport_operator == op_none) return;
   const vector<int> tl2s(1,tl);
   intercat (state,
