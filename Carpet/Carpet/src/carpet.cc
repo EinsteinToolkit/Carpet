@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.8 2001/03/13 13:06:52 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.9 2001/03/13 17:40:30 eschnett Exp $
 
 /* It is assumed that the number of components of all arrays is equal
    to the number of components of the grid functions, and that their
@@ -32,7 +32,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.8 2001/03/13 13:06:52 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.9 2001/03/13 17:40:30 eschnett Exp $";
 
 
 
@@ -241,12 +241,12 @@ namespace Carpet {
     
     // initialise cgh
     cgh->cctk_convlevel = mglevel;
-    for (int d=0; d<dim; ++d) {
-      cgh->cctk_levfac[d] = 1;
-    }
     
     // Recompose grid hierarchy
     Recompose (cgh); 
+    
+    // enace current position
+    enact_reflevel (cgh);
     
     Checkpoint ("done with SetupGH.");
     
@@ -507,6 +507,7 @@ namespace Carpet {
   
   
   
+#if 0
   int ScheduleTraverse (cGH* cgh, const char* rfrPoint)
   {
     // traverse all functions on all refinement levels on all
@@ -526,6 +527,7 @@ namespace Carpet {
     
     return 0;
   }
+#endif
   
   
   
@@ -554,7 +556,7 @@ namespace Carpet {
       // set Cactus parameters to pseudo values
       for (int d=0; d<dim; ++d) {
 	cgh->cctk_lsh[d]      = 0xdeadbeef;
-	cgh->cctk_gsh[d]      = 0xdeadbeef;
+// 	cgh->cctk_gsh[d]      = 0xdeadbeef;
 	cgh->cctk_bbox[2*d  ] = 0xdeadbeef;
 	cgh->cctk_bbox[2*d+1] = 0xdeadbeef;
 	cgh->cctk_lbnd[d]     = 0xdeadbeef;
@@ -643,21 +645,26 @@ namespace Carpet {
 	  
 	  // set Cactus parameters
 	  for (int d=0; d<dim; ++d) {
-	    typedef bbox<int,dim> ibbox;
-	    const ibbox ext = dd->boxes[reflevel][component][mglevel].exterior;
-	    const ibbox base = hh->baseextent;
+	    const bbox<int,dim>& ext
+	      = dd->boxes[reflevel][component][mglevel].exterior;
+	    const bbox<int,dim>& base = hh->baseextent;
 	    cgh->cctk_lsh[d] = (ext.shape() / ext.stride())[d];
-	    cgh->cctk_gsh[d]
-	      = ((base.shape() / base.stride() + dd->lghosts + dd->ughosts)[d]
-		 * cgh->cctk_levfac[d]);
+// 	    cgh->cctk_gsh[d]
+// 	      = ((base.shape() / base.stride() + dd->lghosts + dd->ughosts)[d]
+// 		 * cgh->cctk_levfac[d]);
 	    cgh->cctk_lbnd[d] = (ext.lower() / ext.stride())[d];
 	    cgh->cctk_ubnd[d] = (ext.upper() / ext.stride())[d];
-// 	    cgh->cctk_bbox[2*d  ]
-// 	      = reflevel==0 && cgh->cctk_lbnd[d] == 0;
-// 	    cgh->cctk_bbox[2*d+1]
-// 	      = reflevel==0 && cgh->cctk_ubnd[d] == cgh->cctk_gsh[d]-1;
-	    cgh->cctk_bbox[2*d  ] = (ext.lower() < base.lower())[d];
-	    cgh->cctk_bbox[2*d+1] = (ext.upper() > base.upper())[d];
+	    // no outer boundaries on the finer grids
+	    cgh->cctk_bbox[2*d  ]
+	      = reflevel==0 && cgh->cctk_lbnd[d] == 0;
+	    cgh->cctk_bbox[2*d+1]
+	      = reflevel==0 && cgh->cctk_ubnd[d] == cgh->cctk_gsh[d]-1;
+#if 0
+	    // do allow outer boundaries on the finer grids
+	    // (but this is generally inconsistent -- c. f. periodicity)
+ 	    cgh->cctk_bbox[2*d  ] = (ext.lower() < base.lower())[d];
+ 	    cgh->cctk_bbox[2*d+1] = (ext.upper() > base.upper())[d];
+#endif
 	    for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
 	      // TODO: support staggering
 	      cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
@@ -1049,12 +1056,25 @@ namespace Carpet {
     vect<int,dim> rub  = hh->baseextent.upper() + rstr;
     for (int rl=0; rl<reflevels; ++rl) {
       if (rl>0) {
+	// save old values
+	const vect<int,dim> oldrlb = rlb;
+	const vect<int,dim> oldrub = rub;
+	// calculate extent and centre
+	const vect<int,dim> rextent = rub - rlb + rstr;
+	const vect<int,dim> rcentre = rlb + (rextent / 2 / rstr) * rstr;
+	// calculate new extent
+	assert (all(rextent % hh->reffact == 0));
+	const vect<int,dim> newrextent = rextent / hh->reffact;
 	// refined boxes have smaller stride
 	assert (all(rstr%hh->reffact == 0));
 	rstr /= hh->reffact;
-	// refine (arbitrarily) the center only
-	rlb /= hh->reffact;
-	rub /= hh->reffact;
+	// refine (arbitrarily) around the center only
+	rlb = rcentre - (newrextent/2 / rstr) * rstr;
+	rub = rlb + newrextent - rstr;
+// 	// refine (arbitrarily) around the lower boundary only
+// 	rlb = rlb;
+// 	rub = rlb + newrextent - rstr;
+	assert (all(rlb >= oldrlb && rub <= oldrub));
       }
       vector<bbox<int,dim> > bbs(nprocs);
       for (int c=0; c<nprocs; ++c) {
@@ -1340,9 +1360,13 @@ namespace Carpet {
     assert (component == -1);
     
     // Change
+    const bbox<int,dim>& base = hh->baseextent;
     reflevelfactor = (int)floor(pow(hh->reffact, reflevel)+0.5);
     cgh->cctk_delta_time = base_delta_time / reflevelfactor;
     for (int d=0; d<dim; ++d) {
+      cgh->cctk_gsh[d]
+	= ((base.shape() / base.stride() + dd->lghosts + dd->ughosts)[d]
+	   * reflevelfactor);
       cgh->cctk_levfac[d] = reflevelfactor;
     }
   }

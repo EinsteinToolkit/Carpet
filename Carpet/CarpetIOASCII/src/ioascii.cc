@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.5 2001/03/13 13:06:59 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.6 2001/03/13 17:40:37 eschnett Exp $
 
 #include <cassert>
 #include <cstdio>
@@ -443,17 +443,17 @@ template<int outdim>
 int IOASCII<outdim>::GetGridOffset (cGH* cgh, int dir,
 				    const char* itempl, const char* iglobal,
 				    const char* ctempl, const char* cglobal,
-				    double cfallback)
+				    CCTK_REAL cfallback)
 {
   /* First choice: explicit coordinate */
   char cparam[1000];
   sprintf (cparam, ctempl, outdim);
   if (CCTK_ParameterQueryTimesSet (cparam, CCTK_THORNSTRING) > 0) {
     int ptype;
-    const double* const pcoord
-      = (double*)CCTK_ParameterGet (cparam, CCTK_THORNSTRING, &ptype);
+    const CCTK_REAL* const pcoord
+      = (CCTK_REAL*)CCTK_ParameterGet (cparam, CCTK_THORNSTRING, &ptype);
     assert (pcoord);
-    const double coord = *pcoord;
+    const CCTK_REAL coord = *pcoord;
     assert (ptype == PARAMETER_REAL);
     return CoordToOffset (cgh, dir, coord);
   }
@@ -474,10 +474,10 @@ int IOASCII<outdim>::GetGridOffset (cGH* cgh, int dir,
   /* Third choice: explicit global coordinate */
   if (CCTK_ParameterQueryTimesSet (cglobal, "IO") > 0) {
     int ptype;
-    const double* const pcoord
-      = (double*)CCTK_ParameterGet (cglobal, "IO", &ptype);
+    const CCTK_REAL* const pcoord
+      = (CCTK_REAL*)CCTK_ParameterGet (cglobal, "IO", &ptype);
     assert (pcoord);
-    const double coord = *pcoord;
+    const CCTK_REAL coord = *pcoord;
     assert (ptype == PARAMETER_REAL);
     return CoordToOffset (cgh, dir, coord);
   }
@@ -500,7 +500,7 @@ int IOASCII<outdim>::GetGridOffset (cGH* cgh, int dir,
 
 
 template<int outdim>
-int IOASCII<outdim>::CoordToOffset (cGH* cgh, int dir, double coord)
+int IOASCII<outdim>::CoordToOffset (cGH* cgh, int dir, CCTK_REAL coord)
 {
   CCTK_REAL lower, upper;
   CCTK_CoordRange (cgh, &lower, &upper, dir, 0, "cart3d");

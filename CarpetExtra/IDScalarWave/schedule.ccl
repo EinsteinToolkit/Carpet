@@ -1,12 +1,12 @@
 # Schedule definitions for thorn IDScalarWave
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/schedule.ccl,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/schedule.ccl,v 1.2 2001/03/13 17:40:38 eschnett Exp $
 
-schedule IDScalarWave_CheckParameters at CCTK_PARAMCHECK
+schedule IDScalarWave_CheckParameters at PARAMCHECK
 {
   LANG: Fortran
 } "Check parameters"
 
-schedule IDScalarWave_InitialData at CCTK_INITIAL
+schedule IDScalarWave_InitialData as WaveToy_InitialData at INITIAL
 {
   STORAGE:       wavetoy::scalarevolve
   LANG:          Fortran
