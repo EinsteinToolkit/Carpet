@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.10 2002/06/06 14:20:15 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.11 2002/06/06 19:48:29 shawley Exp $";
 
 CCTK_FILEVERSION(Carpet_Initialise_cc)
 
@@ -91,6 +91,79 @@ namespace Carpet {
       Regrid (cgh);
       
     } END_REFLEVEL_LOOP(cgh);
+
+
+    // Scott's algorithm for getting two extra timelevels of data
+    if (init_3_timelevels) {
+       int time_dir = 1; //Positive = forward (+t), Negative = backward (-t)
+       CCTK_INFO("Initializing THREE timelevels");
+       
+       BEGIN_REFLEVEL_LOOP(cgh) {
+          BEGIN_MGLEVEL_LOOP(cgh) {
+	      // Evolve "forward" (which may be backward for lev=1,3,5,7...)
+	      // Cycle time levels
+	      CycleTimeLevels (cgh);
+
+	      Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
+	      CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
+	      Waypoint ("%*sScheduling EVOL", 2*reflevel, "");
+	      CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
+	      Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
+	      CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
+
+	      FlipTimeLevels(cgh);
+              cgh->cctk_delta_time *= -1;
+              //    Keep track of which direction (in time) we're integrating
+	      time_dir *= -1;
+	
+	      // Evolve in the opposite time-direction
+	      // Cycle time levels
+	      CycleTimeLevels (cgh);
+	      Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
+	      CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
+	      Waypoint ("%*sScheduling EVOL", 2*reflevel, "");
+	      CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
+	      Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
+	      CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
+
+          } END_MGLEVEL_LOOP(cgh);
+       } END_REFLEVEL_LOOP(cgh);
+
+
+       // Make sure we're pointed backwards, in order to get 2 "previous"
+       //   timelevels.  We could change the if statement to 
+       //   "if (mod(MaxLevels,2) == 0)", but I prefer to check time_dir 
+       //   explicitly, because it's easier to follow and I don't have to
+       //   worry about having made a mistake
+       if (time_dir > 0) {
+	      FlipTimeLevels(cgh);
+              cgh->cctk_delta_time *= -1;
+	      time_dir *= -1;
+       }
+
+       // Evolve each level backwards one more timestep
+       BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
+           BEGIN_MGLEVEL_LOOP(cgh) {
+
+	      // Cycle time levels
+	      CycleTimeLevels (cgh);
+	      Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
+	      CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
+	      Waypoint ("%*sScheduling EVOL", 2*reflevel, "");
+	      CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
+	      Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
+	      CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
+
+	      // Restrict
+	      Restrict (cgh);
+
+
+           } END_MGLEVEL_LOOP(cgh);
+       } END_REVERSE_REFLEVEL_LOOP(cgh);
+
+       CCTK_INFO("Finished initializing three timelevels");
+    }  // end of init_3_timelevels
+
     
     BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
       
