@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.18 2004/01/25 14:57:29 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.19 2004/05/21 18:13:41 schnetter Exp $
 
 #include <assert.h>
 #include <ctype.h>
@@ -24,10 +24,11 @@ T ipow (T x, int y) {
     x = T(1)/x;
   }
   T res = T(1);
-  while (y>0) {
+  for (;;) {
     if (y%2) res *= x;
-    x *= x;
     y /= 2;
+    if (y==0) break;
+    x *= x;
   }
   return res;
 }

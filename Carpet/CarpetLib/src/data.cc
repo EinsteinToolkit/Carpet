@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.54 2004/04/22 14:17:13 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.55 2004/05/21 18:13:41 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -153,6 +154,11 @@ void data<T,D>::allocate (const ibbox& extent_,
 {
   assert (!this->_has_storage);
   this->_has_storage = true;
+  // prevent accidental wrap-around
+  assert (all(extent_.lower() < numeric_limits<int>::max() / 2));
+  assert (all(extent_.lower() > numeric_limits<int>::min() / 2));
+  assert (all(extent_.upper() < numeric_limits<int>::max() / 2));
+  assert (all(extent_.upper() > numeric_limits<int>::min() / 2));
   // data
   this->_extent = extent_;
   this->_shape = max(ivect(0), this->_extent.shape() / this->_extent.stride());

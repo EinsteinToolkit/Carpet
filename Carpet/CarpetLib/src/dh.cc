@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.53 2004/04/22 14:17:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.54 2004/05/21 18:13:41 schnetter Exp $
 
 #include <assert.h>
 
@@ -572,32 +572,57 @@ void dh<D>::recompose () {
     } // for c
   } // for rl
   
-  for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-    (*f)->recompose_crop ();
-  }
-  for (int rl=0; rl<h.reflevels(); ++rl) {
+  if (! save_memory_during_regridding) {
+    
     for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-      (*f)->recompose_allocate (rl);
+      (*f)->recompose_crop ();
     }
-    for (comm_state<D> state; !state.done(); state.step()) {
+    for (int rl=0; rl<h.reflevels(); ++rl) {
       for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-        (*f)->recompose_fill (state, rl);
+        (*f)->recompose_allocate (rl);
       }
-    }
-    for (typename list<ggf<D>*>::reverse_iterator f=gfs.rbegin(); f!=gfs.rend(); ++f) {
-      (*f)->recompose_free (rl);
-    }
-    for (comm_state<D> state; !state.done(); state.step()) {
-      for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-        (*f)->recompose_bnd_prolongate (state, rl);
+      for (comm_state<D> state; !state.done(); state.step()) {
+        for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+          (*f)->recompose_fill (state, rl);
+        }
       }
-    }
-    for (comm_state<D> state; !state.done(); state.step()) {
-      for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-        (*f)->recompose_sync (state, rl);
+      for (typename list<ggf<D>*>::reverse_iterator f=gfs.rbegin(); f!=gfs.rend(); ++f) {
+        (*f)->recompose_free (rl);
       }
-    }
-  } // for rl
+      for (comm_state<D> state; !state.done(); state.step()) {
+        for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+          (*f)->recompose_bnd_prolongate (state, rl);
+        }
+      }
+      for (comm_state<D> state; !state.done(); state.step()) {
+        for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+          (*f)->recompose_sync (state, rl);
+        }
+      }
+    } // for rl
+    
+  } else {                      // save memory
+    
+    for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+      
+      (*f)->recompose_crop ();
+      for (int rl=0; rl<h.reflevels(); ++rl) {
+        (*f)->recompose_allocate (rl);
+        for (comm_state<D> state; !state.done(); state.step()) {
+          (*f)->recompose_fill (state, rl);
+        }
+        (*f)->recompose_free (rl);
+        for (comm_state<D> state; !state.done(); state.step()) {
+          (*f)->recompose_bnd_prolongate (state, rl);
+        }
+        for (comm_state<D> state; !state.done(); state.step()) {
+          (*f)->recompose_sync (state, rl);
+        }
+      } // for rl
+      
+    } // for gf
+    
+  } // save memory
 }
 
 

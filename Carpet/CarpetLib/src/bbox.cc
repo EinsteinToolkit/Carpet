@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.24 2004/04/19 13:50:07 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.25 2004/05/21 18:13:41 schnetter Exp $
 
 #include <assert.h>
 
@@ -36,6 +36,13 @@ bbox<T,D>::bbox (const vect<T,D>& lower, const vect<T,D>& upper,
 {
   assert (all(_stride>T(0)));
   assert (all((_upper-_lower)%_stride == T(0)));
+  if (numeric_limits<T>::is_integer && numeric_limits<T>::is_signed) {
+    // prevent accidental wrap-around
+    assert (all(_lower < numeric_limits<T>::max() / 2));
+    assert (all(_lower > numeric_limits<T>::min() / 2));
+    assert (all(_upper < numeric_limits<T>::max() / 2));
+    assert (all(_upper > numeric_limits<T>::min() / 2));
+  }
 }
 
 // Accessors

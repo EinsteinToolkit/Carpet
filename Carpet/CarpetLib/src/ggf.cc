@@ -1,6 +1,7 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.42 2004/05/11 12:53:26 bzink Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.43 2004/05/21 18:13:41 schnetter Exp $
 
 #include <assert.h>
+#include <math.h>
 #include <stdlib.h>
 
 #include <iostream>
@@ -119,10 +120,10 @@ void ggf<D>::recompose_fill (comm_state<D>& state, const int rl)
           for (int cc=0; cc<(int)oldstorage.at(tl-tmin).at(rl).size(); ++cc) {
             if (ml<(int)oldstorage.at(tl-tmin).at(rl).at(cc).size()) {
               // TODO: prefer same processor, etc., see dh.cc
-              ibset ovlp = work & oldstorage.at(tl-tmin).at(rl).at(cc).at(ml)->extent();
+              ibset ovlp
+                = work & oldstorage.at(tl-tmin).at(rl).at(cc).at(ml)->extent();
               ovlp.normalize();
               work -= ovlp;
-              work.normalize();
               for (typename ibset::const_iterator r=ovlp.begin(); r!=ovlp.end(); ++r) {
                 storage.at(tl-tmin).at(rl).at(c).at(ml)->copy_from
                   (state, oldstorage.at(tl-tmin).at(rl).at(cc).at(ml), *r);
@@ -145,19 +146,20 @@ void ggf<D>::recompose_fill (comm_state<D>& state, const int rl)
             for (int cc=0; cc<(int)storage.at(tl-tmin).at(rl-1).size(); ++cc) {
               vector<const gdata<D>*> gsrcs(numtl);
               for (int i=0; i<numtl; ++i) {
-                gsrcs.at(i) = storage.at(tls.at(i)-tmin).at(rl-1).at(cc).at(ml);
+                gsrcs.at(i)
+                  = storage.at(tls.at(i)-tmin).at(rl-1).at(cc).at(ml);
                 assert (gsrcs.at(i)->extent() == gsrcs.at(0)->extent());
               }
               const CCTK_REAL time = t.time(tl,rl,ml);
               
               // TODO: choose larger regions first
               // TODO: prefer regions from the same processor
-              const iblist& list = d.boxes.at(rl).at(c).at(ml).recv_ref_coarse.at(cc);
+              const iblist& list
+                = d.boxes.at(rl).at(c).at(ml).recv_ref_coarse.at(cc);
               for (typename iblist::const_iterator iter=list.begin(); iter!=list.end(); ++iter) {
                 ibset ovlp = work & *iter;
                 ovlp.normalize();
                 work -= ovlp;
-                work.normalize();
                 for (typename ibset::const_iterator r=ovlp.begin(); r!=ovlp.end(); ++r) {
                   storage.at(tl-tmin).at(rl).at(c).at(ml)->interpolate_from
                     (state, gsrcs, times, *r, time,
