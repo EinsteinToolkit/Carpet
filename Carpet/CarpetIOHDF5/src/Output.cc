@@ -306,7 +306,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
       }
 
       // Don't create zero-sized components
-      if (num_elems <= 0)
+      if (num_elems == 0)
       {
         continue;
       }
@@ -837,19 +837,17 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
       Util_TableGetIntArray (coord_system_handle, vdim,
                              coord_handles, "COORDINATES") >= 0)
   {
+    const ibbox& baseext = 
+    vdd.at(Carpet::map)->bases.at(reflevel).at(mglevel).exterior;
+
+    const ivect pos = (bbox->lower() - baseext.lower()) / bbox->stride();
+
     for (int d = 0; d < vdim; d++)
     {
       Util_TableGetReal (coord_handles[d], &origin[d], "COMPMIN");
       Util_TableGetReal (coord_handles[d], &delta[d], "DELTA");
       delta[d]  /= cctk_levfac[d];
-      origin[d] += delta[d]*cctk_levoff[d]/cctk_levoffdenom[d] +
-                   cctk_lbnd[d] * delta[d];
-
-      // it's the interior bbox so we have to substract the ghostzones
-      if (! cctk_bbox[2*d])
-      {
-        origin[d] += cctk_nghostzones[d] * delta[d];
-      }
+      origin[d] += delta[d] * (cctk_levoff[d] / cctk_levoffdenom[d] + pos[d]);
     }
 
     WriteAttribute (dataset, "origin", origin, vdim);
@@ -869,9 +867,12 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
   WriteAttribute (dataset, "name", fullname);
   WriteAttribute (dataset, "group_timelevel", -request->timelevel);
 
+#if 0
+  // FIXME TR: output bbox and nghostzones again for chunked output
   // Cactus arguments
   WriteAttribute (dataset, "cctk_bbox", cctk_bbox, 2*vdim);
   WriteAttribute (dataset, "cctk_nghostzones", cctk_nghostzones, vdim);
+#endif
 
   // Carpet arguments
   WriteAttribute (dataset, "carpet_mglevel", mglevel);
