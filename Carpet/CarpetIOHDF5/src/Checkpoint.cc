@@ -19,7 +19,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-static const char* rcsid = "$Header:$";
+static const char* rcsid = "$Header: /home/cvs/carpet/Carpet/CarpetIOHDF5/src/Checkpoint.cc,v 1.4 2004/11/03 10:24:42 tradke Exp $";
 CCTK_FILEVERSION(Carpet_CarpetIOHDF5_Checkpoint_cc);
 }
 
@@ -137,16 +137,12 @@ int CarpetIOHDF5_TerminationCheckpoint (const cGH *const GH)
 
 static int Checkpoint (const cGH* const cctkGH, int called_from)
 {
-  DECLARE_CCTK_ARGUMENTS;
-  DECLARE_CCTK_PARAMETERS;
-
   int retval = 0;
+  DECLARE_CCTK_PARAMETERS
 
-  ioRequest *request;
 
   CarpetIOHDF5GH *myGH = (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH,
                                                               "CarpetIOHDF5");
-
   // check if CarpetIOHDF5 was registered as I/O method
   if (myGH == NULL)
   {
@@ -201,50 +197,27 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
           continue;
         }
 
-        const int grouptype = CCTK_GroupTypeI (group);
+        cGroup gdata;
+        CCTK_GroupData (group, &gdata);
+        assert (gdata.grouptype == CCTK_ARRAY || gdata.grouptype == CCTK_GF ||
+                gdata.grouptype == CCTK_SCALAR);
 
         // scalars and grid arrays only have one reflevel
-        if (grouptype != CCTK_GF && reflevel > 0)
+        if (gdata.grouptype != CCTK_GF && reflevel > 0)
         {
           continue;
         }
 
-        // now check if there is any memory allocated
-        // for GFs and GAs. GSs should always have
-        // memory allocated and there is at this point
-        // no CCTK function to check this :/
-        if (grouptype == CCTK_GF || grouptype == CCTK_ARRAY)
-        {
-          const int gpdim = CCTK_GroupDimI (group);
-          int gtotalsize = 1;
-          vector<int> tlsh (gpdim);
-          assert(!CCTK_GrouplshGI(cctkGH,gpdim,&tlsh[0],group));
-          for(int i=0;i<gpdim;i++)
-          {
-            gtotalsize=tlsh[i];
-          }
-          if(gtotalsize == 0)
-          {
-            if (verbose)
-            {
-              CCTK_VInfo(CCTK_THORNSTRING, "Group '%s' is zero-sized. "
-                         "No checkpoint info written", CCTK_GroupName (group));
-            }
-            continue;
-          }
-        }
-
         /* get the number of allocated timelevels */
-        cGroup gdata;
-        CCTK_GroupData (group, &gdata);
         gdata.numtimelevels = 0;
         gdata.numtimelevels = CCTK_GroupStorageIncrease (cctkGH, 1, &group,
-                                                         &gdata.numtimelevels,NULL);
+                                                         &gdata.numtimelevels,
+                                                         NULL);
 
         int first_vindex = CCTK_FirstVarIndexI (group);
 
         /* get the default I/O request for this group */
-        request = IOUtil_DefaultIORequest (cctkGH, first_vindex, 1);
+        ioRequest *request = IOUtil_DefaultIORequest (cctkGH, first_vindex, 1);
 
         /* disable checking for old data objects, disable datatype conversion
            and downsampling */
@@ -261,6 +234,7 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
              request->vindex++)
         {
           char *fullname = CCTK_FullName (request->vindex);
+          assert (fullname);
 
           /* loop over all timelevels of this variable */
           for (request->timelevel = 0;
@@ -269,37 +243,20 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
           {
             if (verbose)
             {
-              if (fullname != NULL)
-              {
-                CCTK_VInfo (CCTK_THORNSTRING, "  %s (timelevel %d)",
-                            fullname, request->timelevel);
-              }
-              else
-              {
-                CCTK_VWarn(1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                           "Invalid variable with varindex %d", request->vindex);
-              }
+              CCTK_VInfo (CCTK_THORNSTRING, "  %s (timelevel %d)",
+                          fullname, request->timelevel);
             }
-            // write the var
 
-            if (grouptype == CCTK_ARRAY || grouptype == CCTK_GF || grouptype == CCTK_SCALAR)
-            {
-              if (verbose)
-              {
-                CCTK_VInfo (CCTK_THORNSTRING,"%s: reflevel: %d map: %d component: %d grouptype: %d ",
-                            fullname,reflevel,Carpet::map,component,grouptype);
-              }
-              retval += WriteVar(cctkGH,writer,request,1);
-            }
-            else
-            {
-              CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                          "Invalid group type %d for variable '%s'", grouptype, fullname);
-              retval = -1;
-            }
+            // write the var
+            retval += WriteVar (cctkGH, writer, request, 1);
           }
-          free(fullname);
+          free (fullname);
+
         } /* end of loop over all variables */
+
+        // free I/O request structure
+        IOUtil_FreeIORequest (&request);
+
       } /* end of loop over all groups */
     } END_REFLEVEL_LOOP;
 
@@ -380,6 +337,7 @@ static int DumpParametersGHExtentions (const cGH *cctkGH, int all, hid_t writer)
                                   dspace, H5P_DEFAULT));
     HDF5_ERROR (H5Dwrite (dset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
                           H5P_DEFAULT, parameters));
+    free (parameters);
 
     // now dump the GH Extentions
 
@@ -427,8 +385,6 @@ static int DumpParametersGHExtentions (const cGH *cctkGH, int all, hid_t writer)
     HDF5_ERROR (H5Dclose (dset));
     HDF5_ERROR (H5Sclose (dspace));
     HDF5_ERROR (H5Gclose (group));
-
-    free (parameters);
   }
 
   return 0;

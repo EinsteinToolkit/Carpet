@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header:$";
+  static const char* rcsid = "$Header: /home/cvs/carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.42 2004/10/08 13:30:18 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -47,6 +47,10 @@ vector<bool> do_truncate;     // [var]
 vector<vector<vector<int> > > last_output; // [ml][rl][var]
 
 
+static void AddAttributes (const cGH *const cctkGH, const char *fullname,
+           	           int reflevel, const ibbox &extent, int tl,
+                           hid_t dataset);
+
 void CarpetIOHDF5Startup (void)
 {
   DECLARE_CCTK_PARAMETERS
@@ -74,22 +78,10 @@ void CarpetIOHDF5Startup (void)
                 "error while parsing parameter 'IOHDF5::out3D_vars'");
   }
 
-#if 0
-  // Christian's Recovery routine
-  if ( !(CCTK_Equals(recover,"no")) ) {
-    ierr = IOUtil_RegisterRecover ("CarpetIOHDF5 recovery", Recover);
-    assert (! ierr);
-  } else {
-    // Erik's Recovery routine
-    ierr = IOUtil_RegisterRecover ("CarpetIOHDF5", Recover);
-    assert (! ierr);
-  }
-#else
   if (IOUtil_RegisterRecover ("CarpetIOHDF5 recovery", Recover) < 0)
   {
-    CCTK_WARN (1, "Failed to register IOFlexIO recovery routine");
+    CCTK_WARN (1, "Failed to register " CCTK_THORNSTRING " recovery routine");
   }
-#endif
 }
 
 
@@ -190,15 +182,18 @@ void* SetupGH (tFleshConfig* const fc,
   return (myGH);
 }
 
-int OutputGH (const cGH* const cctkGH) {
-  for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
-    if (TimeToOutput(cctkGH, vindex)) {
+
+int OutputGH (const cGH* const cctkGH)
+{
+  for (int vindex=0; vindex<CCTK_NumVars(); ++vindex)
+  {
+    if (TimeToOutput(cctkGH, vindex))
+    {
       TriggerOutput(cctkGH, vindex);
     }
   }
   return 0;
 }
-
 
 
 int OutputVarAs (const cGH* const cctkGH, const char* const varname,
@@ -243,6 +238,8 @@ int OutputVarAs (const cGH* const cctkGH, const char* const varname,
     assert (do_global_mode);
   }
 
+  const int myproc = CCTK_MyProc (cctkGH);
+
   /* get the default I/O request for this variable */
   ioRequest* request = IOUtil_DefaultIORequest (cctkGH, vindex, 1);
 
@@ -251,11 +248,9 @@ int OutputVarAs (const cGH* const cctkGH, const char* const varname,
   assert (iogh);
 
   // Create the output directory
-  const char* myoutdir = out3D_dir;
-  if (CCTK_EQUALS(myoutdir, "")) {
-    myoutdir = out_dir;
-  }
-  if (CCTK_MyProc(cctkGH)==0) {
+  const char* myoutdir = *out3D_dir ? out3D_dir : out_dir;
+  if (myproc == 0)
+  {
     CCTK_CreateDirectory (0755, myoutdir);
   }
 
@@ -268,9 +263,8 @@ int OutputVarAs (const cGH* const cctkGH, const char* const varname,
   hid_t writer = -1;
 
   // Write the file only on the root processor
-  if (CCTK_MyProc (cctkGH) == 0)
+  if (myproc == 0)
   {
-
     // If this is the first time, then create and truncate the file
     if (do_truncate.at(vindex))
     {
@@ -309,295 +303,285 @@ int OutputVarAs (const cGH* const cctkGH, const char* const varname,
   return (0);
 }
 
-int WriteVar (const cGH* const cctkGH, const hid_t writer, const ioRequest* request,
-                 const int called_from_checkpoint) {
 
+int WriteVar (const cGH* const cctkGH, const hid_t writer,
+	      const ioRequest* request, const int called_from_checkpoint)
+{
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
-  void * h5data=NULL;
+  const int group = CCTK_GroupIndexFromVarI (request->vindex);
+  assert (group >= 0 && group < (int) Carpet::arrdata.size ());
+  const int var = request->vindex - CCTK_FirstVarIndexI (group);
+  assert (var >= 0 && var < CCTK_NumVars ());
+  char *fullname = CCTK_FullName(request->vindex);
 
-  const int n = request->vindex;
-  assert (n>=0 && n<CCTK_NumVars());
-  char * varname = CCTK_FullName(n);
-  assert (varname);
-  const int group = CCTK_GroupIndexFromVarI (n);
-  assert (group>=0 && group<(int)Carpet::arrdata.size());
-  const int n0 = CCTK_FirstVarIndexI(group);
-  assert (n0>=0 && n0<CCTK_NumVars());
-  const int var = n - n0;
-  assert (var>=0 && var<CCTK_NumVars());
-  int tl = 0;
-
-  const int gpdim = CCTK_GroupDimI(group);
 
   // Check for storage
-  if (! CCTK_QueryGroupStorageI(cctkGH, group)) {
+  if (! CCTK_QueryGroupStorageI (cctkGH, group))
+  {
     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "Cannot output variable \"%s\" because it has no storage",
-                varname);
-    free (varname);
+                "Cannot output variable '%s' because it has no storage",
+                fullname);
+    free (fullname); 
     return 0;
   }
 
-  const int grouptype = CCTK_GroupTypeI(group);
-  switch (grouptype) {
-  case CCTK_SCALAR:
-  case CCTK_ARRAY:
-    assert (do_global_mode);
-    break;
-  case CCTK_GF:
-    /* do nothing */
-    break;
-  default:
-    assert (0);
-  }
-  const int rl = grouptype==CCTK_GF ? reflevel : 0;
-
   cGroup cgdata;
-  int ierr = CCTK_GroupData(group,&cgdata);
-  assert(ierr==0);
+  CCTK_GroupData (group, &cgdata);
+
+  if (cgdata.grouptype == CCTK_SCALAR || cgdata.grouptype == CCTK_ARRAY)
+  {
+    assert (do_global_mode);
+  }
+  const int rl = cgdata.grouptype == CCTK_GF ? reflevel : 0;
 
   // Select memory (source) and file (destination) datatypes
-  int cctkDataType = CCTK_VarTypeI(n);
-  const hid_t memdatatype = h5DataType(cctkGH, cctkDataType);
-  assert(memdatatype >= 0);
+  int cctk_datatype = cgdata.vartype;
   if (out_single_precision && ! called_from_checkpoint)
   {
-    if (cctkDataType == CCTK_VARIABLE_REAL)
+    if (cgdata.vartype == CCTK_VARIABLE_REAL)
     {
-      cctkDataType = CCTK_VARIABLE_REAL4;
+      cctk_datatype = CCTK_VARIABLE_REAL4;
     }
-    else if (cctkDataType == CCTK_VARIABLE_COMPLEX)
+    else if (cgdata.vartype == CCTK_VARIABLE_COMPLEX)
     {
-      cctkDataType = CCTK_VARIABLE_COMPLEX8;
+      cctk_datatype = CCTK_VARIABLE_COMPLEX8;
     }
 #ifdef CCTK_INT2
-    else if (cctkDataType == CCTK_VARIABLE_INT)
+    else if (cgdata.vartype == CCTK_VARIABLE_INT)
     {
-      cctkDataType = CCTK_VARIABLE_INT2;
+      cctk_datatype = CCTK_VARIABLE_INT2;
     }
 #endif
   }
-  const hid_t filedatatype = h5DataType(cctkGH, cctkDataType);
-  assert(filedatatype >= 0);
+  hid_t memdatatype, filedatatype;
+  HDF5_ERROR (memdatatype = h5DataType (cctkGH, cgdata.vartype));
+  HDF5_ERROR (filedatatype = h5DataType (cctkGH, cctk_datatype));
 
-  // let's get the correct Carpet time level (which is the (-1) * Cactus timelevel):
-  tl = - request->timelevel;
+  // let's get the correct Carpet time level
+  // (which is the (-1) * Cactus timelevel)
+  int tl = - request->timelevel;
+
+  const int myproc = CCTK_MyProc (cctkGH);
 
   // Traverse all components
-  BEGIN_MAP_LOOP(cctkGH, grouptype) {
-    BEGIN_COMPONENT_LOOP(cctkGH, grouptype) {
+  BEGIN_MAP_LOOP(cctkGH, cgdata.grouptype)
+  {
+    BEGIN_COMPONENT_LOOP(cctkGH, cgdata.grouptype)
+    {
+      if (cgdata.disttype == CCTK_DISTRIB_CONSTANT &&
+          (component != 0 ||
+           arrdata.at(group).at(Carpet::map).hh->processors.at(reflevel).at(component) != 0))
+      {
+        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "skipping variable '%s'", fullname);
+        continue;
+      }
 
-      const ggf<dim>* ff = 0;
-
-      ff = (ggf<dim>*)arrdata.at(group).at(Carpet::map).data.at(var);
-
+      const ggf<dim>* ff = arrdata.at(group).at(Carpet::map).data.at(var);
       const gdata<dim>* const data = (*ff) (tl, rl, component, mglevel);
+      const ibbox extent = data->extent();
 
-      // Make temporary copy on processor 0
-      const ibbox ext = data->extent();
-//         vect<int,dim> lo = ext.lower();
-//         vect<int,dim> hi = ext.upper();
-//         vect<int,dim> str = ext.stride();
+      int ldim = cgdata.grouptype == CCTK_SCALAR ? 1 : cgdata.dim;
+      hsize_t num_elems = 1;
+      vector<hsize_t> shape(ldim);
 
-      gdata<dim>* const tmp = data->make_typed (n);
-      tmp->allocate (ext, 0);
+      // set the shape of the output data, count total number of elements
+      for (int d=0; d<ldim; ++d)
+      {
+        shape[ldim-1-d] = (extent.shape() / extent.stride())[d];
+        num_elems *= shape[ldim-1-d];
+      }
 
-      if ( !((cgdata.disttype == CCTK_DISTRIB_CONSTANT) &&
-             (arrdata.at(group).at(Carpet::map).hh->processors.at(reflevel).at(component)!=0))) {
+      // check for zero-sized components
+      if (num_elems == 0)
+      {
+        continue;
+      }
 
-        if (cgdata.disttype == CCTK_DISTRIB_CONSTANT) {
-          assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
-          if(component!=0) goto skip;
-          h5data = CCTK_VarDataPtrI(cctkGH,tl,n);
-        } else {
-          for (comm_state<dim> state; !state.done(); state.step()) {
-            tmp->copy_from (state, data, ext);
-          }
+      gdata<dim>* const tmp = data->make_typed (request->vindex);
+      void *h5data = NULL;
+      if (cgdata.disttype == CCTK_DISTRIB_CONSTANT)
+      {
+        assert (cgdata.grouptype == CCTK_ARRAY ||
+		cgdata.grouptype == CCTK_SCALAR);
+        h5data = CCTK_VarDataPtrI (cctkGH, tl, request->vindex);
+      }
+      else
+      {
+        tmp->allocate (extent, 0);
+        for (comm_state<dim> state; !state.done(); state.step())
+        {
+          tmp->copy_from (state, data, extent);
         }
-          // Write data
-          if (CCTK_MyProc(cctkGH)==0) {
+        h5data = (void *) tmp->storage();
+      }
 
-            int ldim=0;
-            if ( grouptype==CCTK_SCALAR ) {
-              ldim = 1;
-            } else {
-              ldim = gpdim;
-            }
+      // Write data
+      if (myproc == 0)
+      {
+        ostringstream datasetname;
+        datasetname << fullname
+                    << " it=" << cctk_iteration
+                    << " tl=" << tl
+                    << " ml=" << mglevel
+                    << " rl=" << rl
+                    << " m=" << Carpet::map
+                    << " c=" << component;
+        assert (datasetname.str().size() <= 256); // limit dataset name size
 
-              //              hsize_t shape[ldim];
+        hid_t dataspace, dataset;
+        HDF5_ERROR (dataspace = H5Screate_simple (ldim, &shape[0], NULL));
+        HDF5_ERROR (dataset = H5Dcreate (writer, datasetname.str().c_str(),
+                                         filedatatype, dataspace, H5P_DEFAULT));
+        HDF5_ERROR (H5Dwrite (dataset, memdatatype, H5S_ALL, H5S_ALL,
+                              H5P_DEFAULT, h5data));
+	  
+        AddAttributes (cctkGH, fullname, rl, extent, tl, dataset);
 
-              vector<hsize_t> shape(ldim);
+        HDF5_ERROR (H5Dclose (dataset));
+        HDF5_ERROR (H5Sclose (dataspace));
+      }
 
-              for (int d=0; d<ldim; ++d) {
-                shape[ldim-1-d] = (ext.shape() / ext.stride())[d];
-              }
-              hid_t dataspace;
-              HDF5_ERROR (dataspace = H5Screate_simple (ldim, &shape[0], NULL));
-              assert (dataspace>=0);
-
-
-              ostringstream datasetnamebuf;
-              datasetnamebuf << varname
-                             << " it=" << cctk_iteration
-                             << " tl=" << tl
-                             << " ml=" << mglevel
-                             << " rl=" << rl
-                             << " m=" << Carpet::map
-                             << " c=" << component;
-              string datasetnamestr = datasetnamebuf.str();
-              assert (datasetnamestr.size() <= 256); // limit dataset name size
-              const char * const datasetname = datasetnamestr.c_str();
-              hid_t dataset;
-              HDF5_ERROR (dataset = H5Dcreate (writer, datasetname, filedatatype, dataspace, H5P_DEFAULT));
-
-              if (dataset>=0) {
-
-                  if (cgdata.disttype != CCTK_DISTRIB_CONSTANT) {
-                      h5data = (void*)tmp->storage();
-                  }
-
-                  HDF5_ERROR (H5Dwrite (dataset, memdatatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, h5data));
-
-                  // Write FlexIO attributes
-                  WriteAttribute (dataset, "level", rl);
-                  {
-                      CCTK_REAL origin[dim], delta[dim];
-                      CCTK_REAL min_ext[dim], max_ext[dim];
-                      for (int d=0; d<dim; ++d) {
-                          origin[d] = CCTK_ORIGIN_SPACE(d);
-                          delta[d] = CCTK_DELTA_SPACE(d);
-                          min_ext[d] = origin[d] + cctk_lbnd[d] * delta[d];
-                          max_ext[d] = origin[d] + cctk_ubnd[d] * delta[d];
-                      }
-                      WriteAttribute (dataset, "origin", min_ext, dim);
-                      WriteAttribute (dataset, "delta", delta, dim);
-                      WriteAttribute (dataset, "min_ext", min_ext, dim);
-                      WriteAttribute (dataset, "max_ext", max_ext, dim);
-                  }
-                  WriteAttribute (dataset, "time", cctk_time);
-                  WriteAttribute (dataset, "timestep", cctk_iteration);
-                  WriteAttribute (dataset, "level_timestep", cctk_iteration / reflevelfact);
-                  WriteAttribute (dataset, "persistence", maxreflevelfact / reflevelfact);
-                  {
-                      int time_refinement=0;
-                      int spatial_refinement[dim];
-                      int grid_placement_refinement[dim];
-                      time_refinement = reflevelfact;
-                      for (int d=0; d<dim; ++d) {
-                          spatial_refinement[d] = reflevelfact;
-                          grid_placement_refinement[d] = reflevelfact;
-                      }
-                      WriteAttribute (dataset, "time_refinement", time_refinement);
-                      WriteAttribute (dataset, "spatial_refinement", spatial_refinement, dim);
-                      WriteAttribute (dataset, "grid_placement_refinement", grid_placement_refinement, dim);
-                  }
-                  {
-                      int iorigin[dim];
-                      for (int d=0; d<dim; ++d) {
-                          iorigin[d] = (ext.lower() / ext.stride())[d];
-                      }
-                      WriteAttribute (dataset, "iorigin", iorigin, dim);
-                  }
-
-                  // Write some additional attributes
-
-                  // Legacy arguments
-                  {
-                      char * fullname = CCTK_FullName(n);
-                      assert (fullname);
-                      WriteAttribute (dataset, "name", fullname);
-                      free (fullname);
-                  }
-
-                  // Group arguments
-                  WriteAttribute (dataset, "group_version", 1);
-                  {
-                      char * fullname = CCTK_FullName(n);
-                      assert (fullname);
-                      WriteAttribute (dataset, "group_fullname", fullname);
-                      free (fullname);
-                  }
-                  WriteAttribute (dataset, "group_varname", CCTK_VarName(n));
-                  {
-                      char * groupname = CCTK_GroupName(group);
-                      assert (groupname);
-                      WriteAttribute (dataset, "group_groupname", groupname);
-                      free (groupname);
-                  }
-                  switch (grouptype) {
-                      case CCTK_GF:
-                          WriteAttribute (dataset, "group_grouptype", "CCTK_GF");
-                          break;
-                      case CCTK_ARRAY:
-                          WriteAttribute (dataset, "group_grouptype", "CCTK_ARRAY");
-                          break;
-                      case CCTK_SCALAR:
-                          WriteAttribute (dataset, "group_grouptype", "CCTK_SCALAR");
-                          break;
-                      default:
-                          assert (0);
-                  }
-                  WriteAttribute (dataset, "group_dim", CCTK_GroupDimI(group));
-                  WriteAttribute (dataset, "group_timelevel", tl);
-                  WriteAttribute (dataset, "group_numtimelevels", CCTK_NumTimeLevelsI(group));
-
-                  // Cactus arguments
-                  WriteAttribute (dataset, "cctk_version", 1);
-                  WriteAttribute (dataset, "cctk_dim", cctk_dim);
-                  WriteAttribute (dataset, "cctk_iteration", cctk_iteration);
-                  WriteAttribute (dataset, "cctk_gsh", cctk_gsh, dim);
-                  WriteAttribute (dataset, "cctk_lsh", cctk_lsh, dim);
-                  WriteAttribute (dataset, "cctk_lbnd", cctk_lbnd, dim);
-                  WriteAttribute (dataset, "cctk_delta_time", cctk_delta_time);
-                  WriteAttribute (dataset, "cctk_delta_space", cctk_delta_space, dim);
-                  WriteAttribute (dataset, "cctk_origin_space", cctk_origin_space, dim);
-                  WriteAttribute (dataset, "cctk_bbox", cctk_bbox, 2*dim);
-                  WriteAttribute (dataset, "cctk_levfac", cctk_levfac, dim);
-                  WriteAttribute (dataset, "cctk_levoff", cctk_levoff, dim);
-                  WriteAttribute (dataset, "cctk_levoffdenom", cctk_levoffdenom, dim);
-                  WriteAttribute (dataset, "cctk_timefac", cctk_timefac);
-                  WriteAttribute (dataset, "cctk_convlevel", cctk_convlevel);
-                  WriteAttribute (dataset, "cctk_convfac", cctk_convfac);
-                  WriteAttribute (dataset, "cctk_nghostzones", cctk_nghostzones, dim);
-                  WriteAttribute (dataset, "cctk_time", cctk_time);
-
-                  // Carpet arguments
-                  WriteAttribute (dataset, "carpet_version", 1);
-                  WriteAttribute (dataset, "carpet_dim", dim);
-                  WriteAttribute (dataset, "carpet_basemglevel", basemglevel);
-                  WriteAttribute (dataset, "carpet_mglevel", mglevel);
-                  WriteAttribute (dataset, "carpet_mglevels", mglevels);
-                  WriteAttribute (dataset, "carpet_mgface", mgfact);
-                  WriteAttribute (dataset, "carpet_reflevel", reflevel);
-                  WriteAttribute (dataset, "carpet_reflevels", reflevels);
-                  WriteAttribute (dataset, "carpet_reffact", reffact);
-                  WriteAttribute (dataset, "carpet_map", Carpet::map);
-                  WriteAttribute (dataset, "carpet_maps", maps);
-                  WriteAttribute (dataset, "carpet_component", component);
-                  WriteAttribute (dataset, "carpet_components", vhh.at(Carpet::map)->components(reflevel));
-
-                  HDF5_ERROR (H5Dclose (dataset));
-              }
-
-            HDF5_ERROR (H5Sclose (dataspace));
-
-          } // if on root processor
-      } // if ! CCTK_DISTRIB_BLAH
-
-    skip:
       // Delete temporary copy
       delete tmp;
 
     } END_COMPONENT_LOOP;
   } END_MAP_LOOP;
-  
-  free (varname);
-  
+
+  free (fullname); 
+
   return 0;
 }
 
+
+static void AddAttributes (const cGH *const cctkGH, const char *fullname,
+           	           int reflevel, const ibbox &extent, int tl,
+                           hid_t dataset)
+{
+  DECLARE_CCTK_ARGUMENTS
+
+
+  // Write FlexIO attributes
+  WriteAttribute (dataset, "level", reflevel);
+
+  CCTK_REAL origin[dim], delta[dim];
+  CCTK_REAL min_ext[dim], max_ext[dim];
+  for (int d=0; d<dim; ++d)
+  {
+    origin[d] = CCTK_ORIGIN_SPACE(d);
+    delta[d] = CCTK_DELTA_SPACE(d);
+    min_ext[d] = origin[d] + cctk_lbnd[d] * delta[d];
+    max_ext[d] = origin[d] + cctk_ubnd[d] * delta[d];
+  }
+  WriteAttribute (dataset, "origin", min_ext, dim);
+  WriteAttribute (dataset, "delta", delta, dim);
+  WriteAttribute (dataset, "min_ext", min_ext, dim);
+  WriteAttribute (dataset, "max_ext", max_ext, dim);
+#if 1
+  WriteAttribute (dataset, "level_timestep", cctk_iteration / reflevelfact);
+  WriteAttribute (dataset, "persistence", maxreflevelfact / reflevelfact);
+#endif
+
+  WriteAttribute (dataset, "time", cctk_time);
+  WriteAttribute (dataset, "timestep", cctk_iteration);
+
+  int time_refinement=0;
+  int spatial_refinement[dim];
+  int grid_placement_refinement[dim];
+  time_refinement = reflevelfact;
+  for (int d=0; d<dim; ++d)
+  {
+    spatial_refinement[d] = reflevelfact;
+    grid_placement_refinement[d] = reflevelfact;
+  }
+#if 1
+  WriteAttribute (dataset, "time_refinement", time_refinement);
+  WriteAttribute (dataset, "grid_placement_refinement", grid_placement_refinement, dim);
+#endif
+  WriteAttribute (dataset, "spatial_refinement", spatial_refinement, dim);
+
+  int iorigin[dim];
+  for (int d=0; d<dim; ++d)
+  {
+    iorigin[d] = (extent.lower() / extent.stride())[d];
+  }
+  WriteAttribute (dataset, "iorigin", iorigin, dim);
+
+  // Legacy arguments
+  WriteAttribute (dataset, "name", fullname);
+
+#if 1
+  // Group arguments
+  const int gindex = CCTK_GroupIndexFromVar (fullname);
+
+  WriteAttribute (dataset, "group_version", 1);
+  {
+    WriteAttribute (dataset, "group_fullname", fullname);
+  }
+  WriteAttribute (dataset, "group_varname",
+                  CCTK_VarName (CCTK_VarIndex (fullname)));
+  {
+    char * groupname = CCTK_GroupName (gindex);
+    assert (groupname);
+    WriteAttribute (dataset, "group_groupname", groupname);
+    free (groupname);
+  }
+  switch (CCTK_GroupTypeI (gindex))
+  {
+    case CCTK_GF:
+      WriteAttribute (dataset, "group_grouptype", "CCTK_GF");
+      break;
+    case CCTK_ARRAY:
+      WriteAttribute (dataset, "group_grouptype", "CCTK_ARRAY");
+      break;
+    case CCTK_SCALAR:
+      WriteAttribute (dataset, "group_grouptype", "CCTK_SCALAR");
+      break;
+    default:
+      assert (0);
+  }
+  WriteAttribute (dataset, "group_dim", CCTK_GroupDimI (gindex));
+  WriteAttribute (dataset, "group_timelevel", tl);
+  WriteAttribute (dataset, "group_numtimelevels", CCTK_NumTimeLevelsI(gindex));
+
+  // Cactus arguments
+  WriteAttribute (dataset, "cctk_version", 1);
+  WriteAttribute (dataset, "cctk_dim", cctk_dim);
+  WriteAttribute (dataset, "cctk_iteration", cctk_iteration);
+  WriteAttribute (dataset, "cctk_gsh", cctk_gsh, dim);
+  WriteAttribute (dataset, "cctk_lsh", cctk_lsh, dim);
+  WriteAttribute (dataset, "cctk_lbnd", cctk_lbnd, dim);
+  WriteAttribute (dataset, "cctk_delta_time", cctk_delta_time);
+  WriteAttribute (dataset, "cctk_delta_space", cctk_delta_space, dim);
+  WriteAttribute (dataset, "cctk_origin_space", cctk_origin_space, dim);
+  WriteAttribute (dataset, "cctk_bbox", cctk_bbox, 2*dim);
+  WriteAttribute (dataset, "cctk_levfac", cctk_levfac, dim);
+  WriteAttribute (dataset, "cctk_levoff", cctk_levoff, dim);
+  WriteAttribute (dataset, "cctk_levoffdenom", cctk_levoffdenom, dim);
+  WriteAttribute (dataset, "cctk_timefac", cctk_timefac);
+  WriteAttribute (dataset, "cctk_convlevel", cctk_convlevel);
+  WriteAttribute (dataset, "cctk_convfac", cctk_convfac);
+  WriteAttribute (dataset, "cctk_nghostzones", cctk_nghostzones, dim);
+  WriteAttribute (dataset, "cctk_time", cctk_time);
+
+  // Carpet arguments
+  WriteAttribute (dataset, "carpet_version", 1);
+  WriteAttribute (dataset, "carpet_dim", dim);
+  WriteAttribute (dataset, "carpet_basemglevel", basemglevel);
+  WriteAttribute (dataset, "carpet_mglevels", mglevels);
+  WriteAttribute (dataset, "carpet_mgface", mgfact);
+  WriteAttribute (dataset, "carpet_reflevels", reflevels);
+  WriteAttribute (dataset, "carpet_reffact", reffact);
+  WriteAttribute (dataset, "carpet_map", Carpet::map);
+  WriteAttribute (dataset, "carpet_maps", maps);
+  WriteAttribute (dataset, "carpet_component", component);
+  WriteAttribute (dataset, "carpet_components", vhh.at(Carpet::map)->components(reflevel));
+#endif
+  WriteAttribute (dataset, "carpet_mglevel", mglevel);
+  WriteAttribute (dataset, "carpet_reflevel", reflevel);
+}
 
 
 int TimeToOutput (const cGH* const cctkGH, const int vindex)
@@ -607,119 +591,143 @@ int TimeToOutput (const cGH* const cctkGH, const int vindex)
 
   assert (vindex>=0 && vindex<CCTK_NumVars());
 
-
-
-  const int grouptype = CCTK_GroupTypeFromVarI(vindex);
-  switch (grouptype) {
-  case CCTK_SCALAR:
-  case CCTK_ARRAY:
-    if (! do_global_mode) return 0;
-    break;
-  case CCTK_GF:
-    // do nothing
-    break;
-  default:
-    assert (0);
+  switch (CCTK_GroupTypeFromVarI (vindex))
+  {
+    case CCTK_SCALAR:
+    case CCTK_ARRAY:
+      if (! do_global_mode)
+      {
+        return 0;
+      }
+      break;
+    case CCTK_GF:
+      // do nothing
+      break;
+    default:
+      assert (0);
   }
-
-
 
   // check whether to output at this iteration
   bool output_this_iteration;
 
-  const char* myoutcriterion = out3D_criterion;
-  if (CCTK_EQUALS(myoutcriterion, "default")) {
+  const char *myoutcriterion = out3D_criterion;
+  if (CCTK_EQUALS(myoutcriterion, "default"))
+  {
     myoutcriterion = out_criterion;
   }
 
-  if (CCTK_EQUALS (myoutcriterion, "never")) {
-
+  if (CCTK_EQUALS (myoutcriterion, "never"))
+  {
     // Never output
     output_this_iteration = false;
-
-  } else if (CCTK_EQUALS (myoutcriterion, "iteration")) {
-
+  }
+  else if (CCTK_EQUALS (myoutcriterion, "iteration"))
+  {
     int myoutevery = out3D_every;
-    if (myoutevery == -2) {
+    if (myoutevery == -2)
+    {
       myoutevery = out_every;
     }
-    if (myoutevery <= 0) {
+    if (myoutevery <= 0)
+    {
       // output is disabled
       output_this_iteration = false;
-    } else if (cctk_iteration == *this_iteration) {
+    }
+    else if (cctk_iteration == *this_iteration)
+    {
       // we already decided to output this iteration
       output_this_iteration = true;
-    } else if (cctk_iteration >= *next_output_iteration) {
+    }
+    else if (cctk_iteration >= *next_output_iteration)
+    {
       // it is time for the next output
       output_this_iteration = true;
       *next_output_iteration = cctk_iteration + myoutevery;
       *this_iteration = cctk_iteration;
-    } else {
+    }
+    else
+    {
       // we want no output at this iteration
       output_this_iteration = false;
     }
-
-  } else if (CCTK_EQUALS (myoutcriterion, "divisor")) {
-
+  }
+  else if (CCTK_EQUALS (myoutcriterion, "divisor"))
+  {
     int myoutevery = out3D_every;
-    if (myoutevery == -2) {
+    if (myoutevery == -2)
+    {
       myoutevery = out_every;
     }
-    if (myoutevery <= 0) {
+    if (myoutevery <= 0)
+    {
       // output is disabled
       output_this_iteration = false;
-    } else if ((cctk_iteration % myoutevery) == 0) {
+    }
+    else if ((cctk_iteration % myoutevery) == 0)
+    {
       // we already decided to output this iteration
       output_this_iteration = true;
-    } else {
+    }
+    else
+    {
       // we want no output at this iteration
       output_this_iteration = false;
     }
-
-  } else if (CCTK_EQUALS (myoutcriterion, "time")) {
-
+  }
+  else if (CCTK_EQUALS (myoutcriterion, "time"))
+  {
     CCTK_REAL myoutdt = out3D_dt;
-    if (myoutdt == -2) {
+    if (myoutdt == -2)
+    {
       myoutdt = out_dt;
     }
-    if (myoutdt < 0) {
+    if (myoutdt < 0)
+    {
       // output is disabled
       output_this_iteration = false;
-    } else if (myoutdt == 0) {
+    }
+    else if (myoutdt == 0)
+    {
       // output all iterations
       output_this_iteration = true;
-    } else if (cctk_iteration == *this_iteration) {
+    }
+    else if (cctk_iteration == *this_iteration)
+    {
       // we already decided to output this iteration
       output_this_iteration = true;
-    } else if (cctk_time / cctk_delta_time
-               >= *next_output_time / cctk_delta_time - 1.0e-12) {
+    }
+    else if (cctk_time / cctk_delta_time
+               >= *next_output_time / cctk_delta_time - 1.0e-12)
+    {
       // it is time for the next output
       output_this_iteration = true;
       *next_output_time = cctk_time + myoutdt;
       *this_iteration = cctk_iteration;
-    } else {
+    }
+    else
+    {
       // we want no output at this iteration
       output_this_iteration = false;
     }
-
-  } else {
-
+  }
+  else
+  {
     assert (0);
-
   } // select output criterion
 
-  if (! output_this_iteration) return 0;
+  if (! output_this_iteration)
+  {
+    return 0;
+  }
 
-
-
-  if (! CheckForVariable(out3D_vars, vindex)) {
+  if (! CheckForVariable(out3D_vars, vindex))
+  {
     // This variable should not be output
     return 0;
   }
 
-
-
-  if (last_output.at(mglevel).at(reflevel).at(vindex) == cctk_iteration) {
+  if (last_output.at(mglevel).at(reflevel).at(vindex) == cctk_iteration)
+  {
     // Has already been output during this iteration
     char* varname = CCTK_FullName(vindex);
     CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -738,13 +746,14 @@ int TimeToOutput (const cGH* const cctkGH, const int vindex)
 }
 
 
-
-int TriggerOutput (const cGH* const cctkGH, const int vindex) {
+int TriggerOutput (const cGH* const cctkGH, const int vindex)
+{
   assert (vindex>=0 && vindex<CCTK_NumVars());
 
-  char* varname = CCTK_FullName(vindex);
-  const int retval = OutputVarAs (cctkGH, varname, CCTK_VarName(vindex));
-  free (varname);
+  char *fullname = CCTK_FullName (vindex);
+  const char *varname = CCTK_VarName (vindex);
+  const int retval = OutputVarAs (cctkGH, fullname, varname);
+  free (fullname);
 
   last_output.at(mglevel).at(reflevel).at(vindex) = cctkGH->cctk_iteration;
 
@@ -752,13 +761,10 @@ int TriggerOutput (const cGH* const cctkGH, const int vindex) {
 }
 
 
-
-
 int ReadVar (const cGH* const cctkGH, const int vindex,
              const hid_t dataset, vector<ibset> &regions_read,
              const int called_from_recovery)
 {
-
   DECLARE_CCTK_PARAMETERS;
 
   const int group = CCTK_GroupIndexFromVarI (vindex);
@@ -899,14 +905,18 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
           cout << "CCTK_DISTRIB_CONSTANT: " << fullname << endl;
 #endif
           assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
-          if (grouptype == CCTK_SCALAR) {
+          if (grouptype == CCTK_SCALAR)
+          {
             lb[0] = arrdata.at(group).at(Carpet::map).hh->processors.at(reflevel).at(component);
             ub[0] = arrdata.at(group).at(Carpet::map).hh->processors.at(reflevel).at(component);
-            for(int i=1;i<dim;i++) {
+            for(int i=1;i<dim;i++)
+            {
               lb[i]=0;
               ub[i]=0;
             }
-          } else {
+          }
+          else
+          {
             const int newlb = lb[gpdim-1] +
               (ub[gpdim-1]-lb[gpdim-1]+1)*
               (arrdata.at(group).at(Carpet::map).hh->processors.at(reflevel).at(component));
@@ -927,9 +937,12 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
         cout << "ext: " << ext << endl;
 #endif
 
-        if (CCTK_MyProc(cctkGH)==0) {
+        if (CCTK_MyProc(cctkGH)==0)
+        {
           tmp->allocate (ext, 0, h5data);
-        } else {
+        }
+        else
+        {
           tmp->allocate (ext, 0);
         }
 
@@ -950,7 +963,8 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
         MPI_Barrier(MPI_COMM_WORLD);
 
         // Copy into grid function
-        for (comm_state<dim> state; !state.done(); state.step()) {
+        for (comm_state<dim> state; !state.done(); state.step())
+        {
           data->copy_from (state, tmp, overlap);
         }
 
@@ -961,7 +975,8 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
 
       } END_COMPONENT_LOOP;
 
-      if (called_from_recovery) {
+      if (called_from_recovery)
+      {
         arrdata.at(group).at(Carpet::map).tt->set_time(reflevel,mglevel,
                 (CCTK_REAL) ((cctkGH->cctk_time - cctk_initial_time)
                              / (delta_time * mglevelfact)) );
@@ -977,7 +992,6 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
 
   return did_read_something;
 }
-
 
 
 static int InputVarAs (const cGH* const cctkGH, const int vindex,
@@ -997,7 +1011,8 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
   char datasetname[1024];
 
   // Check for storage
-  if (! CCTK_QueryGroupStorageI(cctkGH, group)) {
+  if (! CCTK_QueryGroupStorageI(cctkGH, group))
+  {
     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                 "Cannot input variable \"%s\" because it has no storage",
                 fullname);
@@ -1021,12 +1036,13 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
   hid_t reader = -1;
 
   // Read the file only on the root processor
-  if (CCTK_MyProc(cctkGH)==0) {
-
+  if (CCTK_MyProc(cctkGH)==0)
+  {
     // Open the file
     if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Opening file \"%s\"", filename);
     reader = H5Fopen (filename, H5F_ACC_RDONLY, H5P_DEFAULT);
-    if (reader<0) {
+    if (reader<0)
+    {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Could not open file \"%s\" for reading", filename);
     }
@@ -1042,12 +1058,16 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
   assert (ndatasets>=0);
 
 
-  for (int datasetid=0; datasetid<ndatasets; ++datasetid) {
-    if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Handling dataset #%d", datasetid);
-
+  for (int datasetid=0; datasetid<ndatasets; ++datasetid)
+  {
+    if (verbose)
+    {
+      CCTK_VInfo (CCTK_THORNSTRING, "Handling dataset #%d", datasetid);
+    }
 
     // Read data
-    if (CCTK_MyProc(cctkGH)==0) {
+    if (CCTK_MyProc(cctkGH)==0)
+    {
       GetDatasetName(reader,datasetid,datasetname);
       //         cout << datasetname << "\n";
 
@@ -1061,43 +1081,50 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
     int amr_dims[dim];
 #endif
 
-    if (CCTK_MyProc(cctkGH)==0) {
-
-     // Read data
-     char * name;
-     ReadAttribute (dataset, "name", name);
-     //        cout << "dataset name is " << name << endl;
-     if (verbose && name) {
-       CCTK_VInfo (CCTK_THORNSTRING, "Dataset name is \"%s\"", name);
-     }
-     want_dataset = name && CCTK_EQUALS(name, fullname);
-     free (name);
+    if (CCTK_MyProc(cctkGH)==0)
+    {
+      // Read data
+      char * name;
+      ReadAttribute (dataset, "name", name);
+      //        cout << "dataset name is " << name << endl;
+      if (verbose && name)
+      {
+        CCTK_VInfo (CCTK_THORNSTRING, "Dataset name is \"%s\"", name);
+      }
+      want_dataset = name && CCTK_EQUALS(name, fullname);
+      free (name);
     } // myproc == 0
 
     MPI_Bcast (&want_dataset, 1, MPI_INT, 0, dist::comm);
 
-    if(want_dataset) {
+    if(want_dataset)
+    {
       did_read_something = ReadVar(cctkGH,vindex,dataset,regions_read,0);
     } // want_dataset
 
   } // loop over datasets
 
   // Close the file
-  if (CCTK_MyProc(cctkGH)==0) {
+  if (CCTK_MyProc(cctkGH)==0)
+  {
     if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Closing file");
     HDF5_ERROR (H5Fclose(reader));
     reader=-1;
   }
 
   // Was everything initialised?
-  if (did_read_something) {
-    for (int m=0; m<Carpet::maps; ++m) {
+  if (did_read_something)
+  {
+    for (int m=0; m<Carpet::maps; ++m)
+    {
       dh<dim>& thedd = *arrdata.at(group).at(m).dd;
       ibset all_exterior;
-      for (size_t c=0; c<thedd.boxes.at(rl).size(); ++c) {
+      for (size_t c=0; c<thedd.boxes.at(rl).size(); ++c)
+      {
         all_exterior |= thedd.boxes.at(rl).at(c).at(mglevel).exterior;
       }
-      if (regions_read.at(m) != all_exterior) {
+      if (regions_read.at(m) != all_exterior)
+      {
 #ifdef CARPETIOHDF5_DEBUG
         cout << "read: " << regions_read.at(m) << endl
              << "want: " << all_exterior << endl;
@@ -1111,7 +1138,6 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
   //        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,"stop!");
 
   return did_read_something ? 0 : -1;
-
 }
 
 
@@ -1131,15 +1157,11 @@ int CarpetIOHDF5ReadData (const cGH* const cctkGH)
                 "error while parsing parameter 'IOHDF5::in3D_vars'");
   }
 
-  for (int vindex = 0; vindex < numvars; vindex++)
+  for (int vindex = 0; vindex < numvars && retval == 0; vindex++)
   {
     if (flags.at (vindex))
     {
       retval = InputVarAs (cctkGH, vindex, CCTK_VarName (vindex));
-      if (retval)
-      {
-        break;
-      }
     }
   }
 
