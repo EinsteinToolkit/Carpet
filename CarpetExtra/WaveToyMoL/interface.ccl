@@ -1,9 +1,9 @@
 # Interface definition for thorn WaveToyMoL
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/interface.ccl,v 1.3 2004/04/07 17:08:21 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/interface.ccl,v 1.4 2004/05/21 17:43:57 schnetter Exp $
 
 IMPLEMENTS: WaveToyMoL
 
-INHERITS: boundary grid MethodOfLines
+INHERITS: grid
 
 
 
@@ -11,14 +11,14 @@ CCTK_INT FUNCTION Boundary_SelectGroupForBC(CCTK_POINTER_TO_CONST IN GH, \
   CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, \
   CCTK_STRING IN group_name, CCTK_STRING IN bc_name)
 
-USES FUNCTION Boundary_SelectGroupForBC
+REQUIRES FUNCTION Boundary_SelectGroupForBC
 
 
 
 CCTK_INT FUNCTION MoLRegisterEvolvedGroup(CCTK_INT IN EvolvedIndex, \
                                           CCTK_INT IN RHSIndex)
 
-USES FUNCTION MoLRegisterEvolvedGroup
+REQUIRES FUNCTION MoLRegisterEvolvedGroup
 
 
 
