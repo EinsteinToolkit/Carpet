@@ -15,7 +15,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.42 2004/02/09 15:02:32 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.43 2004/02/10 11:14:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -70,6 +70,21 @@ namespace CarpetIOFlexIO {
   static bool CheckForVariable (const cGH* const cgh,
 				const char* const varlist, const int vindex);
   static void SetFlag (int index, const char* optstring, void* arg);
+  
+  static int ReadAttribute  (IObase* reader, const char* name,
+                             int& value);
+  static int ReadAttribute  (IObase* reader, const char* name,
+                             int* values, int nvalues);
+  static int ReadAttribute  (IObase* reader, const char* name,
+                             CCTK_REAL& value);
+  static int ReadAttribute  (IObase* reader, const char* name,
+                             CCTK_REAL* values, int nvalues);
+  static int ReadAttribute  (IObase* reader, const char* name,
+                             char& value);
+  static int ReadAttribute  (IObase* reader, const char* name,
+                             char*& values);
+  static int ReadAttribute  (IObase* reader, const char* name,
+                             char* values, int nvalues);
   
   static void WriteAttribute (IObase* writer, const char* name,
                               int value);
@@ -275,9 +290,9 @@ namespace CarpetIOFlexIO {
       int interlevel_timerefinement;
       int interlevel_spacerefinement[dim];
       int initial_gridplacementrefinement[dim];
-      interlevel_timerefinement = vhh[0]->reffact;
+      interlevel_timerefinement = reffact;
       for (int d=0; d<dim; ++d) {
-	interlevel_spacerefinement[d] = vhh[0]->reffact;
+	interlevel_spacerefinement[d] = reffact;
 	initial_gridplacementrefinement[d] = 1;
       }
       amrwriter->setRefinement
@@ -339,6 +354,16 @@ namespace CarpetIOFlexIO {
           amrwriter->write (origin, dims, (void*)tmp->storage());
           
           // Write some additional attributes
+          
+          // Legacy arguments
+          {
+            char * fullname = CCTK_FullName(n);
+            assert (fullname);
+            WriteAttribute (writer, "name", fullname);
+            free (fullname);
+          }
+          
+          // Group arguments
           WriteAttribute (writer, "group_version", 1);
           {
             char * fullname = CCTK_FullName(n);
@@ -370,6 +395,7 @@ namespace CarpetIOFlexIO {
           WriteAttribute (writer, "group_timelevel", tl);
           WriteAttribute (writer, "group_numtimelevels", CCTK_NumTimeLevelsI(group));
           
+          // Cactus arguments
           WriteAttribute (writer, "cctk_version", 1);
           WriteAttribute (writer, "cctk_dim", cgh->cctk_dim);
           WriteAttribute (writer, "cctk_iteration", cgh->cctk_iteration);
@@ -392,6 +418,7 @@ namespace CarpetIOFlexIO {
           WriteAttribute (writer, "cctk_nghostzones", cgh->cctk_nghostzones, dim);
           WriteAttribute (writer, "cctk_time", cgh->cctk_time);
           
+          // Carpet arguments
           WriteAttribute (writer, "carpet_version", 1);
           WriteAttribute (writer, "carpet_dim", dim);
           WriteAttribute (writer, "carpet_basemglevel", basemglevel);
@@ -624,13 +651,14 @@ namespace CarpetIOFlexIO {
     MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
     assert (ndatasets>=0);
     
-    // Read all datasets
-    // TODO: read only some datasets
+    // Read some datasets
+    bool did_read_something = false;
     for (int dataset=0; dataset<ndatasets; ++dataset) {
       if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Handling dataset #%d", dataset);
       
       // Read grid
       AmrGrid* amrgrid = 0;
+      int want_dataset;
       int amr_level;
       int amr_origin[dim];
       int amr_dims[dim];
@@ -643,14 +671,28 @@ namespace CarpetIOFlexIO {
         assert (amrgrid!=0);
         assert (amrgrid->data!=0);
         
+        {
+          char * name;
+          ReadAttribute (reader, "name", name);
+          if (verbose) {
+            if (name) {
+              CCTK_VInfo (CCTK_THORNSTRING, "Dataset name is \"%s\"", name);
+            }
+          }
+          want_dataset = name && CCTK_EQUALS(name, varname);
+          free (name);
+        }
+        
         // If iorigin attribute is absent, assume file has unigrid
         // data.
-        IObase::DataType atype;
-        int alength;
-        if (reader->readAttributeInfo("iorigin", atype, alength) < 0) {
-          amrgrid->level = 0;
-          for (int d=0; d<gpdim; ++d) {
-            amrgrid->iorigin[d] = 0;
+        {
+          IObase::DataType atype;
+          int alength;
+          if (reader->readAttributeInfo("iorigin", atype, alength) < 0) {
+            amrgrid->level = 0;
+            for (int d=0; d<gpdim; ++d) {
+              amrgrid->iorigin[d] = 0;
+            }
           }
         }
         
@@ -665,11 +707,14 @@ namespace CarpetIOFlexIO {
         }
         
       } // MyProc == 0
+      
+      MPI_Bcast (&want_dataset, 1, MPI_INT, 0, dist::comm);
       MPI_Bcast (&amr_level, 1, MPI_INT, 0, dist::comm);
       MPI_Bcast (amr_origin, dim, MPI_INT, 0, dist::comm);
       MPI_Bcast (amr_dims, dim, MPI_INT, 0, dist::comm);
       
-      if (amr_level == reflevel) {
+      if (want_dataset && amr_level == reflevel) {
+        did_read_something = true;
         
         // Traverse all components on all levels
         BEGIN_MAP_LOOP(cgh, grouptype) {
@@ -713,7 +758,7 @@ namespace CarpetIOFlexIO {
           } END_COMPONENT_LOOP;
         } END_MAP_LOOP;
         
-      } // if level == reflevel
+      } // if want_dataset && level == reflevel
       
       if (CCTK_MyProc(cgh)==0) {
         free (amrgrid->data);
@@ -734,7 +779,7 @@ namespace CarpetIOFlexIO {
       reader = 0;
     }
     
-    return 0;
+    return did_read_something ? 0 : -1;
   }
   
   
@@ -761,20 +806,13 @@ namespace CarpetIOFlexIO {
     assert (iogh->do_inVars);
     for (int n=0; n<CCTK_NumVars(); ++n) {
       if (iogh->do_inVars[n]) {
-        const char * p = strrchr (basefilename, '/');
-        if (p) {
-          ++ p;
-        } else {
-          p = basefilename;
-        }
-        if (strcmp (p, CCTK_VarName(n)) == 0) {
-          char * const fullname = CCTK_FullName(n);
-          assert (fullname);
-          const int ierr = InputVarAs (cgh, fullname, basefilename);
-          assert (! ierr);
-          free (fullname);
+        char * const fullname = CCTK_FullName(n);
+        assert (fullname);
+        const int ierr = InputVarAs (cgh, fullname, basefilename);
+        if (! ierr) {
           ++ num_vars_read;
         }
+        free (fullname);
       }
     }
     
@@ -847,6 +885,114 @@ namespace CarpetIOFlexIO {
   
   
   
+  int ReadAttribute  (IObase* reader, const char* name, int& value)
+  {
+    return ReadAttribute (reader, name, &value, 1);
+  }
+  
+  int ReadAttribute  (IObase* reader, const char* name,
+                      int* values, int nvalues)
+  {
+    assert (reader);
+    assert (name);
+    assert (values);
+    
+    IObase::DataType atype;
+    int alength;
+    const int attrnum = reader->readAttributeInfo (name, atype, alength);
+    if (attrnum<0) return attrnum;
+    if (atype != IObase::Int32) return -100;
+    
+    vector<CCTK_INT4> values1(alength);
+    reader->readAttribute (attrnum, &values1[0]);
+    for (int i=0; i<min(alength, nvalues); ++i) {
+      values[i] = values1[i];
+    }
+    
+    return alength;
+  }
+  
+  
+  
+  int ReadAttribute  (IObase* reader, const char* name, CCTK_REAL& value)
+  {
+    return ReadAttribute (reader, name, &value, 1);
+  }
+  
+  int ReadAttribute  (IObase* reader, const char* name,
+                      CCTK_REAL* values, int nvalues)
+  {
+    assert (reader);
+    assert (name);
+    assert (values);
+    
+    IObase::DataType atype;
+    int alength;
+    const int attrnum = reader->readAttributeInfo (name, atype, alength);
+    if (attrnum<0) return attrnum;
+    if (atype != IObase::Float64) return -100;
+    
+    vector<CCTK_REAL8> values1(alength);
+    reader->readAttribute (attrnum, &values1[0]);
+    for (int i=0; i<min(alength, nvalues); ++i) {
+      values[i] = values1[i];
+    }
+    
+    return alength;
+  }
+  
+  
+  
+  int ReadAttribute  (IObase* reader, const char* name, char& value)
+  {
+    return ReadAttribute (reader, name, &value, 1);
+  }
+  
+  int ReadAttribute  (IObase* reader, const char* name, char*& values)
+  {
+    assert (reader);
+    assert (name);
+    
+    values = NULL;
+    
+    IObase::DataType atype;
+    int alength;
+    const int attrnum = reader->readAttributeInfo (name, atype, alength);
+    if (attrnum<0) return attrnum;
+    if (atype != IObase::Char8) return -100;
+    
+    values = (char *) malloc (alength+1);
+    if (!values) return -101;
+    
+    reader->readAttribute (attrnum, values);
+    
+    return alength;
+  }
+  
+  int ReadAttribute  (IObase* reader, const char* name,
+                      char* values, int nvalues)
+  {
+    assert (reader);
+    assert (name);
+    assert (values);
+    
+    IObase::DataType atype;
+    int alength;
+    const int attrnum = reader->readAttributeInfo (name, atype, alength);
+    if (attrnum<0) return attrnum;
+    if (atype != IObase::Char8) return -100;
+    
+    vector<char> values1(alength);
+    reader->readAttribute (attrnum, &values1[0]);
+    for (int i=0; i<min(alength, nvalues); ++i) {
+      values[i] = values1[i];
+    }
+    
+    return alength;
+  }
+  
+  
+  
   void WriteAttribute (IObase* writer, const char* name, int value)
   {
     WriteAttribute (writer, name, &value, 1);
@@ -899,11 +1045,7 @@ namespace CarpetIOFlexIO {
     assert (writer);
     assert (name);
     assert (values);
-    vector<char> values1(nvalues);
-    for (int i=0; i<nvalues; ++i) {
-      values1[i] = values[i];
-    }
-    writer->writeAttribute (name, IObase::Char8, nvalues, &values1[0]);
+    writer->writeAttribute (name, IObase::Char8, nvalues, values);
   }
   
   
