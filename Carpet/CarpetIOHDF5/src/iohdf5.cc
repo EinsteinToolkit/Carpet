@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.20 2004/03/16 14:40:04 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.21 2004/03/22 11:54:02 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -355,6 +355,7 @@ namespace CarpetIOHDF5 {
 			     << " m=" << Carpet::map
 			     << " c=" << component;
 	      string datasetnamestr = datasetnamebuf.str();
+	      assert (datasetnamestr.size() <= 256); // limit dataset name size
 	      const char * const datasetname = datasetnamestr.c_str();
 	      const hid_t dataset = H5Dcreate (writer, datasetname, datatype, dataspace, H5P_DEFAULT);
 	      assert (dataset>=0);

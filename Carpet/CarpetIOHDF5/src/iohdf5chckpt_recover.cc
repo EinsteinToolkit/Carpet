@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.13 2004/03/20 16:17:49 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.14 2004/03/22 11:54:02 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -46,6 +46,10 @@ namespace CarpetIOHDF5 {
   
   using namespace std;
   using namespace Carpet;
+
+  // linked list for reading in the checkpoint file
+
+  list<string> datasetnamelist;
   
   
   int Checkpoint (const cGH* const cctkGH, int called_from);
@@ -233,6 +237,7 @@ namespace CarpetIOHDF5 {
 
     return (result);
   } // CarpetIOHDF5_Recover
+
   
   int RecoverVariables (cGH* cctkGH, hid_t reader) {
 
@@ -240,45 +245,66 @@ namespace CarpetIOHDF5 {
 
     int retval = 0;
     int myproc = CCTK_MyProc (cctkGH);
-    int currdataset,ndatasets;
     char * name;
 
-    char datasetname[256];
+    int ndatasets;
 
     int varindex; 
+
+    double datasettime;
+    double leveltime;
+    static double totaltime;
 
     hid_t dataset;
     herr_t herr;
 
-    if(myproc==0) {
+    if (reflevel==0) {
+      totaltime = 0;
+    }
+
+    leveltime = MPI_Wtime();
+
+
+    if(myproc==0 && reflevel==0) {
       ndatasets=GetnDatasets(reader);
       assert (ndatasets>=0);
     }
 
     // Broadcast number of datasets
     MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
-    assert (ndatasets>=0);
-
-    char datasetnames[ndatasets+1][256];
-
-    for (currdataset=0;currdataset<ndatasets+1;currdataset++){
-      if (myproc==0) {
-	GetDatasetName(reader,currdataset,datasetnames[currdataset]);
-      } //myproc = 0
-    }
-
+    assert ((ndatasets)>=0);
     
-    if (h5verbose) cout << "ndatasets: " << ndatasets << endl;
+    //if (h5verbose && reflevel==0) cout << "ndatasets: " << ndatasets << endl;
+    if ( reflevel == 0) cout << "ndatasets: " << ndatasets << endl;
 
-     for (currdataset=0;currdataset < ndatasets+1;currdataset++) {
+    if (reflevel==0) {
+      for (int currdataset=0;currdataset<ndatasets+1;currdataset++){
+	char datasetname[256];
+	if (myproc==0) {
+	  GetDatasetName(reader,currdataset,datasetname);
+	  datasetnamelist.push_back(datasetname);
+	} //myproc = 0
+	else {
+	  datasetnamelist.push_back("blah");
+	}
+      }
+    }
+      
+    cout << "I have " << datasetnamelist.size() << endl;
+
+    list<string>::iterator currdataset;
+
+      currdataset=datasetnamelist.begin();
+ 
+      while(currdataset!=datasetnamelist.end()) {
+
+	//	cout << "name: " << (*currdataset).c_str() << endl;
+
       if (myproc==0) {
-	//GetDatasetName(reader,currdataset,datasetname);
-       	dataset = H5Dopen (reader, datasetnames[currdataset]);
-	//dataset = H5Dopen (reader, datasetname);
+	dataset = H5Dopen (reader, (*currdataset).c_str());
 	assert(dataset);
 	// Read data
 	ReadAttribute (dataset, "name", name);
-
 	varindex = CCTK_VarIndex(name);
       }
 
@@ -289,19 +315,32 @@ namespace CarpetIOHDF5 {
       if (h5verbose) cout << name << "  rl: " << reflevel << endl;
       vector<ibset> regions_read(Carpet::maps);
 
-
       assert (varindex>=0 && varindex<CCTK_NumVars());
       const int group = CCTK_GroupIndexFromVarI (varindex);
       const int grouptype = CCTK_GroupTypeI(group);
 
-      bool did_read_something = ReadVar(cctkGH,reader,name,dataset,regions_read,1);
+      int did_read_something = ReadVar(cctkGH,reader,name,dataset,regions_read,1);
+
+      MPI_Bcast (&did_read_something, 1, MPI_INT, 0, dist::comm);
+
+      if (did_read_something) {
+      	currdataset = datasetnamelist.erase(currdataset);
+      } else {
+	++currdataset;
+      }
 
       if(myproc==0) {
 	herr = H5Dclose(dataset);
 	assert(!herr);
       }
       free(name);
-    }
+
+    }  // for (currdataset ... )
+    leveltime = MPI_Wtime() - leveltime;
+    totaltime = totaltime + leveltime;
+
+    cout << "Timers: leveltime: " << leveltime << " totaltime: " << totaltime << endl; 
+
     return retval;
   }
    
