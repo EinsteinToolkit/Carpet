@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.25 2003/02/11 10:54:16 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.26 2003/06/24 14:00:58 schnetter Exp $
 
 #include <assert.h>
 
@@ -314,6 +314,14 @@ extern "C" {
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
+  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_o5)
+    (const CCTK_REAL8* src,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
   
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_2tl)
     (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
@@ -325,6 +333,15 @@ extern "C" {
      const int dstbbox[3][3],
      const int regbbox[3][3]);
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_2tl_o3)
+    (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
+     const CCTK_REAL8* src2, const CCTK_REAL8& t2,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst, const CCTK_REAL8& t,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
+  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_2tl_o5)
     (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
      const CCTK_REAL8* src2, const CCTK_REAL8& t2,
      const int& srciext, const int& srcjext, const int& srckext,
@@ -345,6 +362,16 @@ extern "C" {
      const int dstbbox[3][3],
      const int regbbox[3][3]);
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_3tl_o3)
+    (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
+     const CCTK_REAL8* src2, const CCTK_REAL8& t2,
+     const CCTK_REAL8* src3, const CCTK_REAL8& t3,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst, const CCTK_REAL8& t,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
+  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_3tl_o5)
     (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
      const CCTK_REAL8* src2, const CCTK_REAL8& t2,
      const CCTK_REAL8* src3, const CCTK_REAL8& t3,
@@ -444,6 +471,15 @@ void data<CCTK_REAL8,3>
 	   dstshp[0], dstshp[1], dstshp[2],
 	   srcbbox, dstbbox, regbbox);
 	break;
+      case 4:
+      case 5:
+	CCTK_FNAME(prolongate_3d_real8_o5)
+	  ((const CCTK_REAL8*)srcs[0]->storage(),
+	   srcshp[0], srcshp[1], srcshp[2],
+	   (CCTK_REAL8*)storage(),
+	   dstshp[0], dstshp[1], dstshp[2],
+	   srcbbox, dstbbox, regbbox);
+	break;
       default:
 	assert (0);
       }
@@ -465,6 +501,16 @@ void data<CCTK_REAL8,3>
       case 2:
       case 3:
 	CCTK_FNAME(prolongate_3d_real8_2tl_o3)
+	  ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+	   (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+	   srcshp[0], srcshp[1], srcshp[2],
+	   (CCTK_REAL8*)storage(), time,
+	   dstshp[0], dstshp[1], dstshp[2],
+	   srcbbox, dstbbox, regbbox);
+	break;
+      case 4:
+      case 5:
+	CCTK_FNAME(prolongate_3d_real8_2tl_o5)
 	  ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
 	   (const CCTK_REAL8*)srcs[1]->storage(), times[1],
 	   srcshp[0], srcshp[1], srcshp[2],
@@ -494,6 +540,17 @@ void data<CCTK_REAL8,3>
       case 2:
       case 3:
 	CCTK_FNAME(prolongate_3d_real8_3tl_o3)
+	  ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+	   (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+	   (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+	   srcshp[0], srcshp[1], srcshp[2],
+	   (CCTK_REAL8*)storage(), time,
+	   dstshp[0], dstshp[1], dstshp[2],
+	   srcbbox, dstbbox, regbbox);
+	break;
+      case 4:
+      case 5:
+	CCTK_FNAME(prolongate_3d_real8_3tl_o5)
 	  ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
 	   (const CCTK_REAL8*)srcs[1]->storage(), times[1],
 	   (const CCTK_REAL8*)srcs[2]->storage(), times[2],

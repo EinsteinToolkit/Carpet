@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_o5.F77,v 1.2 2004/03/11 12:03:09 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_o5.F77,v 1.1 2003/06/24 14:00:58 schnetter Exp $
       
 #include "cctk.h"
 
@@ -81,11 +81,6 @@ c     bbox(:,3) is stride
          if (regbbox(d,1).gt.regbbox(d,2)) then
 c     This could be handled, but is likely to point to an error elsewhere
             call CCTK_WARN (0, "Internal error: region extent is empty")
-         end if
-         if (mod(srcbbox(d,2) - srcbbox(d,1), srcbbox(d,3)).ne.0
-     $        .or. mod(dstbbox(d,2) - dstbbox(d,1), dstbbox(d,3)).ne.0
-     $        .or. mod(regbbox(d,2) - regbbox(d,1), regbbox(d,3)).ne.0) then
-            call CCTK_WARN (0, "Internal error: array extents are not integer multiples of the strides")
          end if
          regkext = (regbbox(d,2) - regbbox(d,1)) / regbbox(d,3) + 1
          dstkfac = srcbbox(d,3) / dstbbox(d,3)
