@@ -2,7 +2,7 @@
 
 !DESC "Check array sizes"
 
-ActiveThorns = "Carpet CarpetLib CarpetSlab Cart3d IOUtil CarpetIOASCII CarpetTest"
+ActiveThorns = "Carpet CarpetLib CarpetSlab CoordBase CartGrid3D IOUtil CarpetIOASCII CarpetTest"
 
 Cactus::cctk_itlast	= 0
 
