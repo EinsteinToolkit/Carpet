@@ -1,7 +1,7 @@
 // Instantiate templates for all available types    -*-C++-*-
 // (C) 2001 Erik Schnetter <schnetter@uni-tuebingen.de>
 
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/instantiate,v 1.6 2003/01/07 22:17:32 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/instantiate,v 1.7 2003/08/03 16:26:21 schnetter Exp $
 
 // Usage:
 // Define the macro INSTANTIATE(T) to instantiate for the type T,
@@ -56,7 +56,7 @@
 #  define CARPET_COMPLEX32
 #endif
 
-#if !defined(CARPET_BYTE) && !defined(CARPET_INT1) && !defined(CARPET_INT2) && !defined(CARPET_INT4) && !defined(CARPET_INT8) && !defined(CARPET_REAL4) && !defined(CARPET_REAL8) && !defined(CARPET_REAL16) && !defined(CARPET_COMPLEX8) && !defined(CARPET_COMPLEX16) && !defined(CARPET_COMPLEX32)
+#if !defined(CARPET_BYTE) && !defined(CARPET_INT) && !defined(CARPET_INT1) && !defined(CARPET_INT2) && !defined(CARPET_INT4) && !defined(CARPET_INT8) && !defined(CARPET_REAL) && !defined(CARPET_REAL4) && !defined(CARPET_REAL8) && !defined(CARPET_REAL16) && !defined(CARPET_COMPLEX) && !defined(CARPET_COMPLEX8) && !defined(CARPET_COMPLEX16) && !defined(CARPET_COMPLEX32)
 // Assume the user just wants INT and REAL
 #  undef CARPET_INT
 #  define CARPET_INT
