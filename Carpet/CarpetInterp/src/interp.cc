@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.25 2004/03/31 12:50:58 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.26 2004/03/31 16:38:32 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -21,7 +21,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.25 2004/03/31 12:50:58 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.26 2004/03/31 16:38:32 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -301,7 +301,7 @@ namespace CarpetInterp {
     int overall_ierr = 0;
     BEGIN_GLOBAL_MODE(cgh) {
       for (int rl=minrl; rl<maxrl; ++rl) {
-        enter_level_mode(cgh, rl);
+        enter_level_mode (const_cast<cGH*>(cgh), rl);
         
         // Number of necessary time levels
         CCTK_REAL const time1 = vtt.at(m)->time (0, reflevel, mglevel);
@@ -477,7 +477,7 @@ namespace CarpetInterp {
           } END_LOCAL_COMPONENT_LOOP;
         } END_MAP_LOOP;
           
-        leave_level_mode (cgh);
+        leave_level_mode (const_cast<cGH*>(cgh));
       } // for rl
       
     } END_GLOBAL_MODE;

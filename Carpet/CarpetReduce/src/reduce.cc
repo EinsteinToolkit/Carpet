@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.35 2004/03/31 12:51:17 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.36 2004/03/31 16:38:21 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -23,7 +23,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.35 2004/03/31 12:51:17 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.36 2004/03/31 16:38:21 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -901,7 +901,7 @@ namespace CarpetReduce {
     
     BEGIN_GLOBAL_MODE(cgh) {
       for (int rl=minrl; rl<maxrl; ++rl) {
-        enter_level_mode(cgh, rl);
+        enter_level_mode (const_cast<cGH*>(cgh), rl);
         BEGIN_MAP_LOOP(cgh, reduce_arrays ? CCTK_ARRAY : CCTK_GF) {
           BEGIN_LOCAL_COMPONENT_LOOP(cgh, reduce_arrays ? CCTK_ARRAY : CCTK_GF) {
               
@@ -951,7 +951,7 @@ namespace CarpetReduce {
               
           } END_LOCAL_COMPONENT_LOOP;
         } END_MAP_LOOP;
-        leave_level_mode (cgh);
+        leave_level_mode (const_cast<cGH*>(cgh));
       } // for rl
     } END_GLOBAL_MODE;
     
