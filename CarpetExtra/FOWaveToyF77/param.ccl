@@ -1,17 +1,12 @@
 # Parameter definitions for thorn WaveToyF77
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/param.ccl,v 1.3 2003/06/27 15:29:53 shawley Exp $
-
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/param.ccl,v 1.4 2003/06/27 15:54:58 schnetter Exp $
 
 private:
  
-KEYWORD bound "Type of boundary condition to use"
+STRING bound "Type of boundary condition to use"
 {
-  "none"      :: "No boundary condition"
-  "flat"      :: "Flat boundary condition"
-  "zero"      :: "Zero boundary condition"
-  "radiation"      :: "Radiation boundary condition"
-  "static"      :: "Static boundary condition - copy from previous time level"
-} "zero"
+  ".*" :: "Must be a registered boundary condition"
+} "Zero"
 
 KEYWORD excision_bound "Type of excision boundary condition to use"
 {
@@ -23,4 +18,3 @@ REAL excision_radius "Radius of excision region"
 {
   0:* :: "must be nonnegative"
 } 1.0
-

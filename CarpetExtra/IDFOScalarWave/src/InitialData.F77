@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/InitialData.F77,v 1.5 2003/06/26 20:07:21 shawley Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/InitialData.F77,v 1.6 2003/06/27 15:54:58 schnetter Exp $
 
  /*@@
    @file      InitialData.F77
@@ -40,9 +40,8 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/Ini
 
       INTEGER    i,j,k
       CCTK_REAL  dt,omega, cpi
-      CCTK_REAL  r, ri3
+      CCTK_REAL  ri3
       CCTK_REAL  dxi,dyi,dzi
-      CCTK_REAL  tmp
       
 c     call CCTK_INFO ("IDFOScalarWave_InitialData")
       
@@ -92,7 +91,6 @@ c     call CCTK_INFO ("IDFOScalarWave_InitialData")
      $              / sigma**2
                   phiz(i,j,k) = phi(i,j,k)*  (-2) * (z(i,j,k) - radius) 
      $              / sigma**2
-c                  resid(i,j,k) = 0.0
 
                   pi_p(i,j,k) = amplitude *
      &                    exp( -(x(i,j,k) - radius - dt)**2 / sigma**2 )* 
@@ -204,9 +202,6 @@ c                  resid(i,j,k) = 0.0
      &                    exp( -(y(i,j,k) - radius + 2*dt)**2 / sigma**2 )*
      &                    exp( -(z(i,j,k) - radius + 2*dt)**2 / sigma**2 )
 
-c                  resid_p(i,j,k) = 0.0
-c                  resid_p_p(i,j,k) = 0.0
-
                end do
             end do
          end do
@@ -253,7 +248,6 @@ c        Use kx,ky,kz as number of modes in each direction.
                   phix(i,j,k) = - x(i,j,k) * ri3
                   phiy(i,j,k) = - y(i,j,k) * ri3
                   phiz(i,j,k) = - z(i,j,k) * ri3
-c                  resid(i,j,k) = 0.0
 
                   pi_p(i,j,k)     = pi(i,j,k)
                   pi_p_p(i,j,k)   = pi(i,j,k)
@@ -265,8 +259,6 @@ c                  resid(i,j,k) = 0.0
                   phiz_p_p(i,j,k) = phiz(i,j,k)
                   phi_p(i,j,k)    = phi(i,j,k)
                   phi_p_p(i,j,k)  = phi(i,j,k)
-c                  resid_p(i,j,k)  = resid(i,j,k)
-c                  resid_p_p(i,j,k)= resid(i,j,k)
                   
                end do
             end do

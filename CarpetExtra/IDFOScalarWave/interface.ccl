@@ -1,7 +1,6 @@
 # Interface definition for thorn IDScalarWave
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/interface.ccl,v 1.3 2003/06/18 18:24:28 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/interface.ccl,v 1.4 2003/06/27 15:54:58 schnetter Exp $
 
-implements: idFOscalarwave
-inherits: FOwavetoy grid
-friend: FOwavetoy
+implements: idfoscalarwave
+inherits: fowavetoy grid
 

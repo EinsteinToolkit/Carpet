@@ -16,7 +16,7 @@ c	-*-Fortran-*-
  /*@@
    @routine    FOWaveToyF77_InitSymBound
    @date      
-   @author     Gabrielle Allen, Erik Schnetter
+   @author     Erik Schnetter
    @desc 
                Sets the symmetries for Wave Toy
    @enddesc 
@@ -36,19 +36,17 @@ c	-*-Fortran-*-
       DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
 
-      INTEGER one
-      PARAMETER (one = 1)
+      INTEGER sym(3), symx(3), symy(3), symz(3)
+      DATA sym  /+1, +1, +1/
+      DATA symx /-1, +1, +1/
+      DATA symy /+1, -1, +1/
+      DATA symz /+1, +1, -1/
       INTEGER ierr
-      INTEGER sym(3)
 
-      sym(1) = one
-      sym(2) = one
-      sym(3) = one
-
-      call SetCartSymVN(ierr, cctkGH, sym,'wavetoy::pi')
-      call SetCartSymVN(ierr, cctkGH, sym,'wavetoy::phi')
-      call SetCartSymVN(ierr, cctkGH, sym,'wavetoy::phix')
-      call SetCartSymVN(ierr, cctkGH, sym,'wavetoy::phiy')
-      call SetCartSymVN(ierr, cctkGH, sym,'wavetoy::phiz')
+      call SetCartSymVN(ierr, cctkGH, sym ,'fowavetoy::pi')
+      call SetCartSymVN(ierr, cctkGH, sym ,'fowavetoy::phi')
+      call SetCartSymVN(ierr, cctkGH, symx,'fowavetoy::phix')
+      call SetCartSymVN(ierr, cctkGH, symy,'fowavetoy::phiy')
+      call SetCartSymVN(ierr, cctkGH, symz,'fowavetoy::phiz')
       
       end

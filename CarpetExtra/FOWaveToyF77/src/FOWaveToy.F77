@@ -120,16 +120,16 @@ c     ----------------
       DECLARE_CCTK_ARGUMENTS
       DECLARE_CCTK_PARAMETERS
       DECLARE_CCTK_FUNCTIONS
+      
+      external Boundary_SelectVarForBC 
       CCTK_INT Boundary_SelectVarForBC 
       
 c     Local declarations
       CCTK_REAL zero, one
       parameter (zero=0, one=1)
       
-      CCTK_REAL finf
-      integer npow
-      parameter (finf = 1)
-      parameter (npow = 1)
+      character fbound*100
+      CCTK_INT  fboundlen
       
       integer i,j,k
       CCTK_REAL  spher3d_r
@@ -172,69 +172,27 @@ c     do nothing
 
 c     Apply the symmetry boundary conditions on any coordinate axes
 c     -------------------------------------------------------------
-      call CartSymGN(ierr,cctkGH,"wavetoy::scalarevolve")
-      call CartSymGN(ierr,cctkGH,"wavetoy::scalarevolve_derivs")
-
+      call CartSymGN(ierr,cctkGH,"fowavetoy::scalarevolve")
+      if (ierr.ne.0) call CCTK_WARN (0, "internal error")
+      call CartSymGN(ierr,cctkGH,"fowavetoy::scalarevolve_derivs")
+      if (ierr.ne.0) call CCTK_WARN (0, "internal error")
       
 c     Apply the outer boundary conditions
-c     Only "flat" and "zero" and "none" are currently supported
 c     -----------------------------------
-      write(0,*) ' FOWaveToyF77: bound = ', bound
-
-        call CCTK_PrintString(bound)
-      if (CCTK_EQUALS(bound, "flat")) then
-         write(0,*) ' FOWavetoy: bound is flat'
-         call BndFlatVN (ierr, cctkGH, sw, "wavetoy::pi")
-         call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phix")
-         call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phiy")
-         call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phiz")
-         call BndFlatVN (ierr, cctkGH, sw, "wavetoy::phi")
-      else if (CCTK_EQUALS(bound, "zero")) then
-         write(0,*) ' FOWavetoy: bound is zero'
-         call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::pi")
-         call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phix")
-         call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phiy")
-         call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phiz")
-         call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phi")
-      else if (CCTK_EQUALS(bound, "static")) then
-         write(0,*) ' FOWavetoy: bound is static'
-         ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-     $        "wavetoy::phi", "Static");
-         ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-     $        "wavetoy::pi", "Static");
-         ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-     $        "wavetoy::phix", "Static");
-         ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-     $        "wavetoy::phiy", "Static");
-         ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-     $        "wavetoy::phiz", "Static");
-      else if (CCTK_EQUALS(bound, "radiation")) then
-         write(0,*) ' FOWavetoy: bound is radiation'
-         ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-     $        "wavetoy::phi", "Radiation");
-      else if (CCTK_EQUALS(bound, "robin")) then
-         write(0,*) ' FOWavetoy: bound is robin'
-         ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
-     $        "wavetoy::phi", "Robin");
-      else if (CCTK_EQUALS(bound, "none")) then
-         ierr = 0
-      else
-         call CCTK_WARN (0, "internal error")
-      end if
-      if (ierr .lt. 0)  then
-        write(0,*) ' ierr = ',ierr
-        call CCTK_WARN (0, "Boundary conditions not applied - giving up!")
-      end if
       
-c  SHH: Taking these out on June 26, 2003.  Presumably symmetry BCs are
-c       now handled by some other thorn?
-c     Apply the symmetry boundary conditions on any coordinate axes
-c     -------------------------------------------------------------
-c      call Cart3dSymGN (ierr, cctkGH, "wavetoy::scalarevolve")
-c      call Cart3dSymGN (ierr, cctkGH, "wavetoy::scalarevolve_derivs")
-c      
-c      if (ierr .lt. 0)  then
-c        call CCTK_WARN (0, "Symmetry conditions not applied - giving up!")
-c      end if
+      call CCTK_FortranString (fboundlen, bound, fbound)
+      if (fboundlen.lt.0) call CCTK_WARN (0, "internal error")
+      
+      ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
+     $     "fowavetoy::phi", fbound)
+      ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
+     $     "fowavetoy::pi", fbound)
+      ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
+     $     "fowavetoy::phix", fbound)
+      ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
+     $     "fowavetoy::phiy", fbound)
+      ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
+     $     "fowavetoy::phiz", fbound)
+      if (ierr.ne.0) call CCTK_WARN (0, "internal error")
       
       end
