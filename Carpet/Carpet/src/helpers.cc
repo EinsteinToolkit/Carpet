@@ -15,7 +15,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.42 2003/11/05 16:18:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.43 2003/11/19 09:49:38 hawke Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -229,7 +229,7 @@ namespace Carpet {
   {
     // Check
     assert (ml==-1 || (ml>=0 && ml<mglevels));
-    assert (reflevel>=0 && reflevel<hh->reflevels());
+    assert (ml==-1 || (reflevel>=0 && reflevel<hh->reflevels()));
     assert (component == -1);
     
     // Change
