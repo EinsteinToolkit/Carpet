@@ -5,14 +5,11 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
-#include "dist.hh"
+#include "Carpet/CarpetLib/src/dist.hh"
 
 #include "carpet.hh"
 
-extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.13 2004/01/25 14:57:27 schnetter Exp $";
-  CCTK_FILEVERSION(Carpet_Carpet_Shutdown_cc);
-}
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.1 2001/07/04 12:29:47 schnetter Exp $";
 
 
 
@@ -26,45 +23,28 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    Waypoint ("Starting shutdown");
+    Checkpoint ("starting Shutdown...");
     
     const int convlev = 0;
     cGH* cgh = fc->GH[convlev];
     
-    for (int rl=reflevels-1; rl>=0; --rl) {
-      BEGIN_REVERSE_MGLEVEL_LOOP(cgh) {
-        enter_level_mode (cgh, rl);
-        do_global_mode = reflevel==0;
-        do_meta_mode = do_global_mode && mglevel==mglevels-1;
-        
-        Checkpoint ("Shutdown at iteration %d time %g%s%s",
-                    cgh->cctk_iteration, (double)cgh->cctk_time,
-                    (do_global_mode ? " (global)" : ""),
-                    (do_meta_mode ? " (meta)" : ""));
-        
-        // Terminate
-        Checkpoint ("Scheduling TERMINATE");
-        CCTK_ScheduleTraverse ("CCTK_TERMINATE", cgh, CallFunction);
-        
-        leave_level_mode (cgh);
-      } END_REVERSE_MGLEVEL_LOOP;
-    } // for rl
+    // Terminate
+    BEGIN_REFLEVEL_LOOP(cgh) {
+      Checkpoint ("%*sScheduling TERMINATE", 2*reflevel, "");
+      CCTK_ScheduleTraverse ("CCTK_TERMINATE", cgh, CallFunction);
+    } END_REFLEVEL_LOOP(cgh);
     
-    BEGIN_REVERSE_MGLEVEL_LOOP(cgh) {
-      do_global_mode = true;
-      do_meta_mode = mglevel==mglevels-1;
-      
-      // Shutdown
-      Checkpoint ("Scheduling SHUTDOWN");
+    // Shutdown
+    BEGIN_REFLEVEL_LOOP(cgh) {
+      Checkpoint ("%*sScheduling SHUTDOWN", 2*reflevel, "");
       CCTK_ScheduleTraverse ("CCTK_SHUTDOWN", cgh, CallFunction);
-      
-    } END_REVERSE_MGLEVEL_LOOP;
+    } END_REFLEVEL_LOOP(cgh);
     
     CCTK_PRINTSEPARATOR;
     printf ("Done.\n");
     
-    // earlier checkpoint before finalising MPI
-    Waypoint ("Done with shutdown");
+    // earlier checkpoint before calling finalising MPI
+    Checkpoint ("done with Shutdown.");
     
     dist::finalize();
     

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.12 2001/07/02 13:22:12 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.13 2001/07/04 12:29:51 schnetter Exp $
 
  ***************************************************************************/
 
@@ -586,8 +586,6 @@ ostream& data<T,D>::output (ostream& os) const {
 #if defined(TMPL_EXPLICIT)
 
 #define INSTANTIATE(T)				\
-template class data<T,1>;			\
-template class data<T,2>;			\
 template class data<T,3>;
 
 #include "instantiate"

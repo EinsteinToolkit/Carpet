@@ -1,19 +1,14 @@
 #include <assert.h>
-#include <math.h>
 #include <stdlib.h>
 
 #include "cctk.h"
-#include "cctk_Parameters.h"
 
-#include "ggf.hh"
-#include "gh.hh"
+#include "Carpet/CarpetLib/src/ggf.hh"
+#include "Carpet/CarpetLib/src/gh.hh"
 
 #include "carpet.hh"
 
-extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.27 2004/05/21 18:16:23 schnetter Exp $";
-  CCTK_FILEVERSION(Carpet_Carpet_Restrict_cc);
-}
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.1 2001/07/04 12:29:47 schnetter Exp $";
 
 
 
@@ -23,84 +18,57 @@ namespace Carpet {
   
   
   
-  void Restrict (const cGH* cgh)
+  void Restrict (cGH* cgh)
   {
-    DECLARE_CCTK_PARAMETERS;
+    assert (component == -1);
     
-    assert (is_level_mode());
+    Checkpoint ("%*sRestrict", 2*reflevel, "");
     
-    if (suppress_restriction) {
-      Checkpoint ("Restriction suppressed");
-      return;
-    }
+    if (reflevel == hh->reflevels()-1) return;
     
-    Checkpoint ("Restrict");
-    
-    // Restrict
-    if (reflevel < reflevels-1) {
-      for (comm_state<dim> state; !state.done(); state.step()) {
-        for (int group=0; group<CCTK_NumGroups(); ++group) {
-          if (CCTK_GroupTypeI(group) == CCTK_GF) {
-            if (CCTK_QueryGroupStorageI(cgh, group)) {
-              
-              const int tl = 0;
-              
-              for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-                assert (m<(int)arrdata.at(group).size());
-                
-                // use background time here (which may not be modified
-                // by the user)
-                const CCTK_REAL time = vtt.at(m)->time (tl, reflevel, mglevel);
-                
-                const CCTK_REAL time1 = vtt.at(m)->time (0, reflevel, mglevel);
-                const CCTK_REAL time2
-                  = (cgh->cctk_time - cctk_initial_time) / delta_time;
-                assert (fabs(time1 - time2) / (fabs(time1) + fabs(time2) + fabs(cgh->cctk_delta_time)) < 1e-12);
-                
-                for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-                  assert (var<(int)arrdata.at(group).at(m).data.size());
-                  for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
-                    arrdata.at(group).at(m).data.at(var)->ref_restrict
-                      (state, tl, reflevel, c, mglevel, time);
-                  }
-                }
-              }
-              
-            } // if group has storage
-          } // if grouptype == CCTK_GF
-        } // loop over groups
-      } // for state
-    } // if not finest refinement level
-    
-    
-    
-    // Sync
-    if (reflevel < reflevels-1) {
-      for (comm_state<dim> state; !state.done(); state.step()) {
-        for (int group=0; group<CCTK_NumGroups(); ++group) {
-          if (CCTK_GroupTypeI(group) == CCTK_GF) {
-            if (CCTK_QueryGroupStorageI(cgh, group)) {
-              
-              const int tl = 0;
-              
-              for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-                assert (m<(int)arrdata.at(group).size());
-                for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-                  assert (var<(int)arrdata.at(group).at(m).data.size());
-                  for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
-                    arrdata.at(group).at(m).data.at(var)->sync
-                      (state, tl, reflevel, c, mglevel);
-                  }
-                }
-              }
-              
-            } // if group has storage
-          } // if grouptype == CCTK_GF
-        } // loop over groups
-      } // for state
-    } // if not finest refinement level
-    
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
+      
+      // Restrict only groups with storage
+      if (CCTK_QueryGroupStorageI(cgh, group)) {
+	
+	const int tl = 0;
+	
+	switch (CCTK_GroupTypeI(group)) {
+	  
+	case CCTK_SCALAR:
+	  break;
+	  
+	case CCTK_ARRAY:
+	  for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
+	    for (int c=0; c<hh->components(reflevel); ++c) {
+	      arrdata[group].data[var]->ref_restrict
+		(tl, reflevel, c, mglevel);
+	    }
+	    for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
+	      arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);
+	    }
+	  }
+	  break;
+	  
+	case CCTK_GF:
+	  for (int var=0; var<(int)gfdata[group].data.size(); ++var) {
+	    for (int c=0; c<hh->components(reflevel); ++c) {
+	      gfdata[group].data[var]->ref_restrict
+		(tl, reflevel, c, mglevel);
+	    }
+	    for (int c=0; c<hh->components(reflevel); ++c) {
+	      gfdata[group].data[var]->sync (tl, reflevel, c, mglevel);
+	    }
+	  }
+	  break;
+	  
+	default:
+	  abort();
+	}
+	
+      }	// if group has storage
+      
+    } // loop over groups
   }
   
 } // namespace Carpet
-

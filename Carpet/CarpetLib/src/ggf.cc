@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.11 2001/07/02 13:22:14 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.12 2001/07/04 12:29:52 schnetter Exp $
 
  ***************************************************************************/
 
@@ -465,7 +465,5 @@ void generic_gf<D>::ref_prolongate (int tl, int rl, int c, int ml,
 
 
 #if defined(TMPL_EXPLICIT)
-template class generic_gf<1>;
-template class generic_gf<2>;
 template class generic_gf<3>;
 #endif

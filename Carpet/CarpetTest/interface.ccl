@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetTest
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/interface.ccl,v 1.2 2001/07/09 09:00:26 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/interface.ccl,v 1.1 2001/07/04 12:29:53 schnetter Exp $
 
 implements: CarpetTest
 
@@ -22,8 +22,3 @@ CCTK_REAL arrg1 type=ARRAY dim=1 size=i8
 {
   arr1
 } "1D array"
-
-CCTK_REAL scg type=SCALAR
-{
-  sc
-} "scalar"

@@ -1,13 +1,17 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.10 2001/07/02 13:22:10 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.11 2001/07/04 12:29:48 schnetter Exp $
+
+// It is assumed that the number of components of all arrays is equal
+// to the number of components of the grid functions, and that their
+// distribution onto the processors is the same, and that all
+// processors own the same number of components.
+
+// TODO: treat scalars as arrays with a dimension of zero
 
 #include <vector>
 
 #include "cctk.h"
 #include "cctk_Schedule.h"
 
-#include "Carpet/CarpetLib/src/dgdh.hh"
-#include "Carpet/CarpetLib/src/dggf.hh"
-#include "Carpet/CarpetLib/src/dggh.hh"
 #include "Carpet/CarpetLib/src/dh.hh"
 #include "Carpet/CarpetLib/src/ggf.hh"
 #include "Carpet/CarpetLib/src/gh.hh"
@@ -17,8 +21,7 @@ namespace Carpet {
   
   
   
-  const int maxdim = 3;
-  const int gfdim = 3;
+  const int dim = 3;
   
   
   
@@ -55,25 +58,24 @@ namespace Carpet {
   
   // Data for arrays
   struct arrdesc {
-    int dim;
-    dimgeneric_gh* hh;
+    gh<dim>* hh;
     th* tt;
-    dimgeneric_dh* dd;
-    vector<dimgeneric_gf* > data; // [var]
-    int size[maxdim];
+    dh<dim>* dd;
+    vector<generic_gf<dim>* > data; // [var]
+    int size[dim];
   };
   extern vector<arrdesc> arrdata; // [group]
   
   // Data for grid functions
   
   // The grid hierarchy
-  extern gh<gfdim>* hh;
+  extern gh<dim>* hh;
   extern th* tt;
-  extern dh<gfdim>* dd;
-  extern int gfsize[gfdim];
+  extern dh<dim>* dd;
+  extern int gfsize[dim];
   
   struct gfdesc {
-    vector<dimgeneric_gf* > data; // [var]
+    vector<generic_gf<dim>*> data; // [var]
   };
   extern vector<gfdesc> gfdata;	// [group]
   
@@ -186,5 +188,35 @@ namespace Carpet {
   extern "C" {
     MPI_Comm CarpetMPICommunicator();
   }
+  
+  
+  
+  // These are private; don't use these from the outside
+  
+  void Recompose (cGH* cgh);
+  void CycleTimeLevels (cGH* cgh);
+  void Restrict (cGH* cgh);
+  
+  enum checktimes { currenttime,
+		    currenttimebutnotifonly,
+		    allbutlasttime,
+		    allbutcurrenttime,
+		    alltimes };
+  
+  int mintl (checktimes where, int num_tl);
+  int maxtl (checktimes where, int num_tl);
+  
+  void Poison (cGH* cgh, checktimes where);
+  void PoisonGroup (cGH* cgh, int group, checktimes where);
+  void PoisonCheck (cGH* cgh, checktimes where);
+  
+  void CalculateChecksums (cGH* cgh, checktimes where);
+  void CheckChecksums (cGH* cgh, checktimes where);
+  
+  // Debugging output
+  void Checkpoint (const char* fmt, ...);
+  
+  // Error output
+  void UnsupportedVarType (int vindex);
   
 } // namespace Carpet

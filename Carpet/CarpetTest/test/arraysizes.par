@@ -1,28 +1,5 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/test/arraysizes.par,v 1.5 2004/03/23 12:01:59 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/test/arraysizes.par,v 1.1 2001/07/04 12:29:55 schnetter Exp $
 
 !DESC "Check array sizes"
 
-ActiveThorns = "Carpet CarpetLib CarpetSlab Cart3d IOUtil CarpetIOASCII CarpetTest"
-
-Cactus::cctk_itlast	= 0
-
-IO::out_dir		= "arraysizes"
-
-IOASCII::out1D_every	= 1
-IOASCII::out2D_every	= 1
-IOASCII::out3D_every	= 1
-
-IOASCII::out1D_xline_yi	= 0
-IOASCII::out1D_xline_zi	= 0
-IOASCII::out1D_yline_xi	= 0
-IOASCII::out1D_yline_zi	= 0
-IOASCII::out1D_zline_xi	= 0
-IOASCII::out1D_zline_yi	= 0
-
-IOASCII::out2D_xyplane_zi	= 0
-IOASCII::out2D_xzplane_yi	= 0
-IOASCII::out2D_yzplane_xi	= 0
-
-IOASCII::out1D_vars	= "CarpetTest::gfg CarpetTest::arrg3 CarpetTest::arrg2 CarpetTest::arrg1 CarpetTest::scg"
-IOASCII::out2D_vars	= "CarpetTest::gfg CarpetTest::arrg3 CarpetTest::arrg2 CarpetTest::arrg1 CarpetTest::scg"
-IOASCII::out3D_vars	= "CarpetTest::gfg CarpetTest::arrg3 CarpetTest::arrg2 CarpetTest::arrg1 CarpetTest::scg"
+ActiveThorns = "Carpet CarpetLib CarpetTest"

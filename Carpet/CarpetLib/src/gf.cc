@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.6 2001/07/02 13:22:14 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.7 2001/07/04 12:29:52 schnetter Exp $
 
  ***************************************************************************/
 
@@ -80,8 +80,6 @@ ostream& gf<T,D>::output (ostream& os) const {
 #if defined(TMPL_EXPLICIT)
 
 #define INSTANTIATE(T)				\
-template class gf<T,1>;				\
-template class gf<T,2>;				\
 template class gf<T,3>;
 
 #include "instantiate"

@@ -1,8 +1,22 @@
 # Main make.code.defn file for thorn Carpet   -*-Makefile-*-
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/make.code.defn,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/make.code.defn,v 1.2 2001/07/04 12:29:48 schnetter Exp $
 
 # Source files in this directory
-SRCS = carpet.cc
+SRCS =	CallFunction.cc				\
+	CarpetStartup.cc			\
+	Checksum.cc				\
+	Comm.cc					\
+	Cycle.cc				\
+	Evolve.cc				\
+	Initialise.cc				\
+	Poison.cc				\
+	Recompose.cc				\
+	Restrict.cc				\
+	SetupGH.cc				\
+	Shutdown.cc				\
+	Storage.cc				\
+	helpers.cc				\
+	variables.cc
 
 # Subdirectories containing source files
 SUBDIRS = 
