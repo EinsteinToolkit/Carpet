@@ -1,11 +1,12 @@
 # Parameter definitions for thorn IDScalarWaveFO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveFO/param.ccl,v 1.2 2004/01/11 12:20:39 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveFO/param.ccl,v 1.3 2004/05/07 22:51:08 schnetter Exp $
 
 RESTRICTED:
 
 KEYWORD initial_data "Type of initial data"
 {
   "plane" :: "Plane wave"
+  "noise" :: "Noise"
 } "plane"
 
 PRIVATE:
