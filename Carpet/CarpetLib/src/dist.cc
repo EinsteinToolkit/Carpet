@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.cc,v 1.6 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.cc,v 1.7 2004/03/01 19:43:51 schnetter Exp $
 
 #include <assert.h>
 
@@ -19,9 +19,15 @@ namespace dist {
   
   MPI_Comm comm;
   
+#if 0
   MPI_Datatype mpi_complex_float;
   MPI_Datatype mpi_complex_double;
   MPI_Datatype mpi_complex_long_double;
+#else
+  MPI_Datatype mpi_complex8;
+  MPI_Datatype mpi_complex16;
+  MPI_Datatype mpi_complex32;
+#endif
   
   void init (int& argc, char**& argv) {
     MPI_Init (&argc, &argv);
@@ -31,12 +37,30 @@ namespace dist {
   void pseudoinit () {
     comm = MPI_COMM_WORLD;
     
+#if 0
     MPI_Type_contiguous (2, MPI_FLOAT, &mpi_complex_float);
     MPI_Type_commit (&mpi_complex_float);
     MPI_Type_contiguous (2, MPI_DOUBLE, &mpi_complex_double);
     MPI_Type_commit (&mpi_complex_double);
     MPI_Type_contiguous (2, MPI_LONG_DOUBLE, &mpi_complex_long_double);
     MPI_Type_commit (&mpi_complex_long_double);
+#else
+#  ifdef CCTK_REAL4
+    CCTK_REAL4 dummy4;
+    MPI_Type_contiguous (2, datatype(dummy4), &mpi_complex8);
+    MPI_Type_commit (&mpi_complex8);
+#  endif
+#  ifdef CCTK_REAL8
+    CCTK_REAL8 dummy8;
+    MPI_Type_contiguous (2, datatype(dummy8), &mpi_complex16);
+    MPI_Type_commit (&mpi_complex16);
+#  endif
+#  ifdef CCTK_REAL16
+    CCTK_REAL16 dummy16;
+    MPI_Type_contiguous (2, datatype(dummy16), &mpi_complex32);
+    MPI_Type_commit (&mpi_complex32);
+#  endif
+#endif
   }
   
   void finalize () {
