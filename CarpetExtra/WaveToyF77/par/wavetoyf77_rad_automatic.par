@@ -7,9 +7,9 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_rad_automatic.par,v 1.6 2004/03/23 12:00:37 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_rad_automatic.par,v 1.1 2001/12/17 13:35:57 schnetter Exp $
 
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO FlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
 
 Cactus::cctk_itlast		= 240
  
@@ -23,18 +23,17 @@ grid::type			= byspacing
 grid::mode			= none
 grid::dxyz			= 0.6
 
-Carpet::verbose			= yes
 Carpet::max_refinement_levels	= 3
 
 CarpetRegrid::refined_regions	= automatic
 CarpetRegrid::refinement_levels	= 3
 CarpetRegrid::regrid_every	= 40
-CarpetRegrid::minwidth		= 8
+CarpetRegrid::minwidth		= 4
 CarpetRegrid::minfraction	= 0.75
 CarpetRegrid::errorvar		= "wavetoy::phi"
 CarpetRegrid::maxerror		= 0.1
 
-IO::out_dir			= "wavetoyf77_rad_automatic"
+IO::outdir			= "wavetoyf77_rad_automatic"
 
 IOBasic::outinfo_every		= 40
 IOBasic::outinfo_vars		= "wavetoy::phi"
@@ -50,7 +49,7 @@ IOASCII::separate_components	= yes
 IOFlexIO::out3D_every		= 40
 IOFlexIO::out3D_vars		= "wavetoy::phi"
 IOFlexIO::out3D_format		= IEEE
-IOFlexIO::out3D_extension	= ".vcamr"
+IOFlexIO::out3D_extension	= ".amr"
 
 WaveToyF77::bound		= radiation
 
