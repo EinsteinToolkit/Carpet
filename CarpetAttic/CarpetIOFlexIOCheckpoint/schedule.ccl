@@ -1,27 +1,19 @@
 # Schedule definitions for thorn CarpetIOFlexIO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/schedule.ccl,v 1.3 2003/12/01 13:15:52 cott Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/schedule.ccl,v 1.1 2003/05/16 14:02:18 hawke Exp $
 
-schedule CarpetIOFlexIO_Startup at STARTUP after IOUtil_Startup
+schedule CarpetIOFlexIOStartup at STARTUP after IOUtil_Startup
 {
   LANG: C
 } "Startup routine"
 
-schedule CarpetIOFlexIO_ReadData at INITIAL
+schedule CarpetIOFlexIOReadData at INITIAL
 {
   LANG: C
   OPTIONS: global
 } "Read initial data from file"
 
-schedule CarpetIOFlexIO_EvolutionCheckpoint at CHECKPOINT
+schedule CarpetChReEvolutionCheckpoint at CHECKPOINT
 {
   LANG: C
   OPTIONS: global
 } "Do checkpointing"
-
-if (! CCTK_Equals (recover, "no") && *recover_file)
-{
-  schedule CarpetIOFlexIO_RecoverParameters at RECOVER_PARAMETERS
-  {
-    LANG:C
-  } "Parameter recovery routine"
-}

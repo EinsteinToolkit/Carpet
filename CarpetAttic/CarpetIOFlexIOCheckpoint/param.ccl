@@ -1,19 +1,24 @@
 # Parameter definitions for thorn CarpetIOFlexIO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/param.ccl,v 1.3 2003/10/02 11:34:03 cvs_anon Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/param.ccl,v 1.1 2003/05/16 14:02:18 hawke Exp $
 
 
 
-#shares: IO 
-#shares: Carpet
+shares: IO
+
+USES STRING out_dir
+
+USES CCTK_INT out_every
 
 
 
+restricted:
 
-private:
 
-BOOLEAN verbose "verbose info output"
-{
-} "no"
+
+#BOOLEAN verbose "Produce log output"
+#{
+#} "no"
+
 
 
 CCTK_STRING out3D_dir "Name of 3D FlexIO output directory, overrides out_dir" STEERABLE = ALWAYS
@@ -85,6 +90,7 @@ CCTK_STRING in3D_extension "File extension to use for 3D FlexIO input" STEERABLE
   .* :: "A regex which matches everything"
 } ""
 
+
 BOOLEAN checkpoint "Do checkpointing with IOFlexIO" STEERABLE = ALWAYS
 {
 } "no"
@@ -102,7 +108,7 @@ USES BOOLEAN recover_and_remove
 USES BOOLEAN checkpoint_on_terminate
 USES KEYWORD recover
 USES STRING  recover_file
-USES STRING out_dir
-USES CCTK_INT out_every
+USES KEYWORD verbose
+
 
 
