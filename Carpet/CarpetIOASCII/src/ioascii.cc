@@ -978,6 +978,15 @@ namespace CarpetIOASCII {
 
 
 
+  static CCTK_REAL
+  nicelooking (CCTK_REAL const val,
+               CCTK_REAL const base)
+  {
+    return floor(val / base + 0.5) * base;
+  }
+
+
+
   // Output
   template<int D,int DD>
   void WriteASCII (ostream& os,
@@ -1047,9 +1056,11 @@ namespace CarpetIOASCII {
 	      if (gfext.upper()[d] - gfext.lower()[d] == 0) {
                 os << coord_lower[d];
               } else {
-                os << (coord_lower[d] + (index[d] - gfext.lower()[d])
-                              * (coord_upper[d] - coord_lower[d])
-                              / (gfext.upper()[d] - gfext.lower()[d]));
+                CCTK_REAL const dx = ((coord_upper[d] - coord_lower[d])
+                                      / (gfext.upper()[d] - gfext.lower()[d]));
+                os << (nicelooking
+                       (coord_lower[d] + (index[d] - gfext.lower()[d]) * dx,
+                        dx * 1.0e-8));
               }
               if (d != D-1) os << " ";
 	    }
