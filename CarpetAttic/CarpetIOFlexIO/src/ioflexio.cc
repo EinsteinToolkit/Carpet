@@ -1,4 +1,3 @@
-#include <alloca.h>
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
@@ -9,6 +8,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <sstream>
 #include <vector>
 
 #include <AMRwriter.hh>
@@ -34,7 +34,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.21 2003/01/03 15:49:36 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.22 2003/02/28 10:09:47 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -162,10 +162,10 @@ namespace CarpetIOFlexIO {
     }
     extension = GetStringParameter ("out3D_extension", extension);
     
-    char* const filename = (char*)alloca(strlen(myoutdir)
-					 +strlen(alias)
-					 +strlen(extension)+100);
-    sprintf (filename, "%s/%s%s", myoutdir, alias, extension);
+    ostringstream filenamebuf;
+    filenamebuf << myoutdir << "/" << alias << extension;
+    string filenamestr = filenamebuf.str();
+    const char * const filename = filenamestr.c_str();
     
     IObase* writer = 0;
     AMRwriter* amrwriter = 0;
@@ -443,10 +443,10 @@ namespace CarpetIOFlexIO {
       }
       extension = GetStringParameter ("in3D_extension", extension);
       
-      char* const filename = (char*)alloca(strlen(myindir)
-					   +strlen(alias)
-					   +strlen(extension)+100);
-      sprintf (filename, "%s/%s%s", myindir, alias, extension);
+      ostringstream filenamebuf;
+      filenamebuf << myindir << "/" << alias << extension;
+      string filenamestr = filenamebuf.str();
+      const char * const filename = filenamestr.c_str();
       
       IObase* reader = 0;
       AmrGridReader* amrreader = 0;
@@ -674,20 +674,17 @@ namespace CarpetIOFlexIO {
     const int numvars = CCTK_NumVars();
     assert (vindex>=0 && vindex<numvars);
     
-    bool* const flags = (bool*)alloca(numvars * sizeof(bool));
+    vector<bool> flags;
     
-    for (int i=0; i<numvars; ++i) {
-      flags[i] = false;
-    }
-    
-    CCTK_TraverseString (varlist, SetFlag, flags, CCTK_GROUP_OR_VAR);
+    CCTK_TraverseString (varlist, SetFlag, &flags, CCTK_GROUP_OR_VAR);
     
     return flags[vindex];
   }
   
   void SetFlag (int index, const char* optstring, void* arg)
   {
-    ((bool*)arg)[index] = true;
+    vector<bool>& flags = *(vector<bool>*)arg;
+    flags[index] = true;
   }
   
   
