@@ -523,7 +523,36 @@ namespace CarpetAdaptiveRegrid {
             abs(lo[d] - exterior_min[d]) < 1.0e-6 * spacing[d];
           ob[d][1] = 
             abs(up[d] - exterior_max[d]) < 1.0e-6 * spacing[d];
+
+          if (veryverbose) {
+            ostringstream buf;
+            buf << "Done clipping domain:"
+                << endl << lo << endl << up << endl << str;
+            CCTK_INFO(buf.str().c_str());
+          } 
           
+          // Check that the striding is correct.
+          
+          rvect remainder = (up - lo) / str - floor( (up - lo) / str );
+
+          for (int d=0; d < dim; ++d) {
+            if ( abs(remainder[d]) > 1.e-6 ) {
+              if (ob[d][0]) {
+                up[d] += str[d] * (1 - remainder[d]);
+              }
+              else if (ob[d][1]) {
+                lo[d] -= str[d] * remainder[d];
+              }
+            }
+          }
+          
+          if (veryverbose) {
+            ostringstream buf;
+            buf << "Corrected coords for striding:"
+                << endl << lo << endl << up << endl << str;
+            CCTK_INFO(buf.str().c_str());
+          } 
+
           newbbcoord = rbbox(lo, up, str);
         }
         if (verbose) {
@@ -564,6 +593,13 @@ namespace CarpetAdaptiveRegrid {
             }
           }
         }
+
+        if (veryverbose) {
+          ostringstream buf;
+          buf << "Corrected integer coords for min_width:"
+              << endl << ilo << endl << ihi << endl << istr;
+          CCTK_INFO(buf.str().c_str());
+        } 
         
         ibbox newbb(ilo, ihi, istr);          
         
