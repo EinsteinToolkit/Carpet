@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.35 2004/01/25 14:57:27 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.36 2004/03/23 11:56:17 schnetter Exp $
 
 shares: Cactus
 
@@ -126,14 +126,14 @@ CCTK_INT num_maps "Number of maps"
 
 
 
-CCTK_INT prolongation_order_space "Order of prolongation operator in space"
+CCTK_INT prolongation_order_space "Order of prolongation operator in space" STEERABLE=recover
 {
   1 :: "first order (linear)"
   3 :: "third order (cubic)"
   5 :: "fifth order"
 } 1
 
-CCTK_INT prolongation_order_time "Order of prolongation operator in time"
+CCTK_INT prolongation_order_time "Order of prolongation operator in time" STEERABLE=recover
 {
   0 :: "zeroth order (constant)"
   1 :: "first order (linear)"
@@ -142,7 +142,7 @@ CCTK_INT prolongation_order_time "Order of prolongation operator in time"
 
 
 
-CCTK_INT buffer_width "Width of the buffer zone inside the fine grid"
+CCTK_INT buffer_width "Width of the buffer zone inside the fine grid" STEERABLE=recover
 {
   0:* :: "Should be the radius of the numerical domain of dependence of the time integrator, minus the number of ghost zones"
 } 0
@@ -183,26 +183,26 @@ CCTK_STRING base_outerbounds "Outer boundaries of base grid components"
 
 
 
-BOOLEAN enable_all_storage "Enable storage for all grid functions"
+BOOLEAN enable_all_storage "Enable storage for all grid functions" STEERABLE=recover
 {
 } "no"
 
 
 
-BOOLEAN poison_new_timelevels "Try to catch uninitialised grid elements by setting new timelevels to values that will catch your attention"
+BOOLEAN poison_new_timelevels "Try to catch uninitialised grid elements by setting new timelevels to values that will catch your attention" STEERABLE=always
 {
 } "no"
 
-BOOLEAN check_for_poison "Explicitely check for the poison value after every time step"
+BOOLEAN check_for_poison "Explicitely check for the poison value after every time step" STEERABLE=always
 {
 } "no"
 
-CCTK_INT poison_value "Integer value (0..255) used to poison new timelevels (with memset)"
+CCTK_INT poison_value "Integer value (0..255) used to poison new timelevels (with memset)" STEERABLE=always
 {
   0:255 :: "Must fit into a byte.  Use 0 for zero, 255 for nan, and e.g. 113 for a large value."
 } 255
 
-CCTK_INT max_poison_locations "Maximum number of poison locations that are printed to the screen"
+CCTK_INT max_poison_locations "Maximum number of poison locations that are printed to the screen" STEERABLE=always
 {
   -1  :: "print all locations"
   0:* :: "print only that many locations"
@@ -210,33 +210,33 @@ CCTK_INT max_poison_locations "Maximum number of poison locations that are print
 
 
 
-BOOLEAN checksum_timelevels "Try to catch unintentionally changed timelevels by taking checksums and comparing against these"
+BOOLEAN checksum_timelevels "Try to catch unintentionally changed timelevels by taking checksums and comparing against these" STEERABLE=always
 {
 } "no"
 
 
 
-BOOLEAN suppress_restriction "Suppress the restriction operations.  This makes the coarser refinement levels independent of the finer ones."
+BOOLEAN suppress_restriction "Suppress the restriction operations.  This makes the coarser refinement levels independent of the finer ones." STEERABLE=always
 {
 } "no"
 
 
 
-BOOLEAN verbose "Display info on the screen"
+BOOLEAN verbose "Display info on the screen" STEERABLE=always
 {
 } "no"
 
-BOOLEAN veryverbose "Display a lot of info on the screen"
+BOOLEAN veryverbose "Display a lot of info on the screen" STEERABLE=always
 {
 } "no"
 
-BOOLEAN barriers "Insert barriers at strategic places for debugging purposes (slows down execution)"
+BOOLEAN barriers "Insert barriers at strategic places for debugging purposes (slows down execution)" STEERABLE=always
 {
 } "no"
 
 
 
-KEYWORD processor_topology "How to determine the processor topology"
+KEYWORD processor_topology "How to determine the processor topology" STEERABLE=recover
 {
   "manual"    :: "Specified by processor_topology_*"
   "along-z"   :: "Split the region along the z direction only"
@@ -244,29 +244,29 @@ KEYWORD processor_topology "How to determine the processor topology"
   "automatic" :: "Choose the topology automatically"
 } "automatic"
 
-CCTK_INT processor_topology_3d_x "Number of processors in x-direction"
+CCTK_INT processor_topology_3d_x "Number of processors in x-direction" STEERABLE=recover
 {
   1:* :: "must be positive"
 } 1
 
-CCTK_INT processor_topology_3d_y "Number of processors in y-direction"
+CCTK_INT processor_topology_3d_y "Number of processors in y-direction" STEERABLE=recover
 {
   1:* :: "must be positive"
 } 1
 
-CCTK_INT processor_topology_3d_z "Number of processors in z-direction"
+CCTK_INT processor_topology_3d_z "Number of processors in z-direction" STEERABLE=recover
 {
   1:* :: "must be positive"
 } 1
 
-CCTK_INT split_direction "Direction in which the domain should be split"
+CCTK_INT split_direction "Direction in which the domain should be split" STEERABLE=recover
 {
   0:* :: "0 for x, 1 for y, 2 for z, etc."
 } 2
 
 
 
-STRING grid_structure_filename "File name to output grid structure to (empty = no output)"
+STRING grid_structure_filename "File name to output grid structure to (empty = no output)" STEERABLE=recover
 {
   ".*" :: "must be a legal file name"
 } ""
@@ -275,16 +275,16 @@ STRING grid_structure_filename "File name to output grid structure to (empty = n
 
 private:
 
-BOOLEAN init_each_timelevel "Call initial data routines once for each timelevel"
+BOOLEAN init_each_timelevel "Call initial data routines once for each timelevel" STEERABLE=always
 {
 } "no"
 
-BOOLEAN prolongate_initial_data "Prolongate the refined regions during initial data generation"
+BOOLEAN prolongate_initial_data "Prolongate the refined regions during initial data generation" STEERABLE=always
 {
 } "no"
 
 
 
-BOOLEAN init_3_timelevels "Set up 3 timelevels of initial data"
+BOOLEAN init_3_timelevels "Set up 3 timelevels of initial data" STEERABLE=always
 {
 } "no"
