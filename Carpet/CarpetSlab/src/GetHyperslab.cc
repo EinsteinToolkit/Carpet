@@ -1,31 +1,31 @@
-// $Header:$
+// $Header$
 
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
 
 #include <vector>
 
 #include "cctk.h"
 
-#include "util_Table.h"
-
 #include "bbox.hh"
 #include "bboxset.hh"
 #include "dh.hh"
 #include "gdata.hh"
-#include "gh.hh"
 #include "ggf.hh"
+#include "gh.hh"
 #include "vect.hh"
 
 #include "carpet.hh"
 
-#include "mapping.hh"
 #include "slab.hh"
+#include "GetHyperslab.hh"
+
+
 
 extern "C" {
-  static const char* rcsid = "$Header:$";
-  CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
+  static const char* rcsid = "$Header$";
+  CCTK_FILEVERSION(Carpet_CarpetSlab_GetHyperslab_cc);
 }
 
 
@@ -36,20 +36,17 @@ namespace CarpetSlab {
   
   
   
-  void
-  FillSlab (const cGH* const cgh,
-            const int dest_proc,
-            const int n,
-            const int ti,
-            const int hdim,
-            const int origin[/*vdim*/],
-            const int dirs[/*hdim*/],
-            const int stride[/*hdim*/],
-            const int length[/*hdim*/],
-            void* const hdata)
+  void *
+  GetSlab (const cGH* const cgh,
+           const int dest_proc,
+           const int n,
+           const int ti,
+           const int hdim,
+           const int origin[/*vdim*/],
+           const int dirs[/*hdim*/],
+           const int stride[/*hdim*/],
+           const int length[/*hdim*/])
   {
-    int ierr;
-    
     // Check Cactus grid hierarchy
     assert (cgh);
     
@@ -69,38 +66,24 @@ namespace CarpetSlab {
     
     // Get info about group
     cGroup gp;
-    ierr = CCTK_GroupData (group, &gp);
-    assert (! ierr);
+    CCTK_GroupData (group, &gp);
     assert (gp.dim<=dim);
     assert (CCTK_QueryGroupStorageI(cgh, group));
     const int typesize = CCTK_VarTypeSize(gp.vartype);
     assert (typesize>0);
     
     if (gp.grouptype==CCTK_GF && reflevel==-1) {
-      CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in meta mode or global mode (use singlemap mode instead)");
+      CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in global mode (use singlemap mode instead)");
     }
     const int rl = gp.grouptype==CCTK_GF ? reflevel : 0;
     
-    if (gp.grouptype==CCTK_GF && Carpet::map==-1 && maps>1) {
-      CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in level mode when there are multiple maps (use singlemap mode instead, or make sure that there is only one map)");
+    if (gp.grouptype==CCTK_GF && Carpet::map==-1) {
+      CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in level mode (use singlemap mode instead)");
     }
     const int m = gp.grouptype==CCTK_GF ? Carpet::map : 0;
-    const int oldmap = Carpet::map;
-    if (gp.grouptype==CCTK_GF  && oldmap==-1) {
-      enter_singlemap_mode(const_cast<cGH*>(cgh), m);
-    }
     
     // Check dimension
     assert (hdim>=0 && hdim<=gp.dim);
-    
-    // Get more info about group
-    cGroupDynamicData gd;
-    ierr = CCTK_GroupDynamicData (cgh, group, &gd);
-    assert (! ierr);
-    const vect<int,dim> sizes = vect<int,dim>::ref(gd.gsh);
-    for (int d=0; d<dim; ++d) {
-      assert (sizes[d] >= 0);
-    }
     
     // Check timelevel
     const int num_tl = gp.numtimelevels;
@@ -108,9 +91,9 @@ namespace CarpetSlab {
     const int tl = -ti;
     
     // Check origin
-    for (int d=0; d<dim; ++d) {
-      assert (origin[d]>=0 && origin[d]<=sizes[d]);
-    }
+//     for (int d=0; d<dim; ++d) {
+//       assert (origin[d]>=0 && origin[d]<=sizes[d]);
+//     }
     
     // Check directions
     for (int dd=0; dd<hdim; ++dd) {
@@ -128,9 +111,9 @@ namespace CarpetSlab {
     }
     
     // Check extent
-    for (int dd=0; dd<hdim; ++dd) {
-      assert (origin[dirs[dd]-1] + length[dd] <= sizes[dirs[dd]]);
-    }
+//     for (int dd=0; dd<hdim; ++dd) {
+//       assert (origin[dirs[dd]-1] + length[dd] <= sizes[dirs[dd]]);
+//     }
     
     // Get insider information about variable
     const gh<dim>* myhh;
@@ -158,8 +141,11 @@ namespace CarpetSlab {
     }
     
     // Allocate memory
-    assert (hdata);
+    void* hdata = 0;
     if (dest_proc==-1 || rank==dest_proc) {
+      assert (0);
+      hdata = malloc(totalsize * typesize);
+      assert (hdata);
       memset (hdata, 0, totalsize * typesize);
     }
     
@@ -257,11 +243,132 @@ namespace CarpetSlab {
       
     } // Copy result
     
-    if (gp.grouptype==CCTK_GF  && oldmap==-1) {
-      leave_singlemap_mode(const_cast<cGH*>(cgh));
+    delete alldata;
+    
+    // Success
+    return hdata;
+  }
+  
+  
+  
+  int
+  Hyperslab_GetHyperslab (const cGH* const GH,
+                          const int target_proc,
+                          const int vindex,
+                          const int vtimelvl,
+                          const int hdim,
+                          const int global_startpoint [/*vdim*/],
+                          const int directions [/*vdim*/],
+                          const int lengths [/*hdim*/],
+                          const int downsample_ [/*hdim*/],
+                          void** const hdata,
+                          int hsize [/*hdim*/])
+  {
+    const int vdim = CCTK_GroupDimFromVarI(vindex);
+    assert (vdim>=1 && vdim<=dim);
+    
+    // Check some arguments
+    assert (hdim>=0 && hdim<=dim);
+    
+    // Check output arguments
+    assert (hdata);
+    assert (hsize);
+    
+    // Calculate more convenient representation of the direction
+    int dirs[dim];              // should really be dirs[hdim]
+    // The following if statement is written according to the
+    // definition of "dir".
+    if (hdim==1) {
+      // 1-dimensional hyperslab
+      int mydir = 0;
+      for (int d=0; d<vdim; ++d) {
+	if (directions[d]!=0) {
+	  mydir = d+1;
+	  break;
+	}
+      }
+      assert (mydir>0);
+      for (int d=0; d<vdim; ++d) {
+	if (d == mydir-1) {
+	  assert (directions[d]!=0);
+	} else {
+	  assert (directions[d]==0);
+	}
+      }
+      dirs[0] = mydir;
+    } else if (hdim==vdim) {
+      // vdim-dimensional hyperslab
+      for (int d=0; d<vdim; ++d) {
+	dirs[d] = d+1;
+      }
+    } else if (hdim==2) {
+      // 2-dimensional hyperslab with vdim==3
+      assert (vdim==3);
+      int mydir = 0;
+      for (int d=0; d<vdim; ++d) {
+	if (directions[d]==0) {
+	  mydir = d+1;
+	  break;
+	}
+      }
+      assert (mydir>0);
+      for (int d=0; d<vdim; ++d) {
+	if (d == mydir-1) {
+	  assert (directions[d]==0);
+	} else {
+	  assert (directions[d]!=0);
+	}
+      }
+      int dd=0;
+      for (int d=0; d<vdim; ++d) {
+	if (d != mydir-1) {
+	  dirs[dd] = d+1;
+	  ++dd;
+	}
+      }
+      assert (dd==hdim);
+    } else {
+      assert (0);
+    }
+    // Fill remaining length
+    for (int d=vdim; d<dim; ++d) {
+      dirs[d] = d+1;
     }
     
-    delete alldata;
+    // Calculate lengths
+    vector<int> downsample(hdim);
+    for (int dd=0; dd<hdim; ++dd) {
+      if (lengths[dd]<0) {
+	int gsh[dim];
+	int ierr = CCTK_GroupgshVI(GH, dim, gsh, vindex);
+	assert (!ierr);
+	const int totlen = gsh[dirs[dd]-1];
+	assert (totlen>=0);
+	// Partial argument check
+	assert (global_startpoint[dirs[dd]-1]>=0);
+	assert (global_startpoint[dirs[dd]-1]<=totlen);
+        downsample[dd] = downsample_ ? downsample_[dd] : 1;
+	assert (downsample[dd]>0);
+	hsize[dd] = (totlen - global_startpoint[dirs[dd]-1]) / downsample[dd];
+      } else {
+	hsize[dd] = lengths[dd];
+      }
+      assert (hsize[dd]>=0);
+    }
+    
+    // Get the slab
+    *hdata = GetSlab (GH,
+		      target_proc,
+		      vindex,
+		      vtimelvl,
+		      hdim,
+		      global_startpoint,
+		      dirs,
+		      &downsample[0],
+		      hsize);
+    
+    // Return with success
+    return 1;
   }
   
   
