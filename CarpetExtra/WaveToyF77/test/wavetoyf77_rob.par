@@ -1,4 +1,4 @@
-# $Id: wavetoyf77_rob.par,v 1.3 2002/10/24 21:11:29 schnetter Exp $
+# $Id: wavetoyf77_rob.par,v 1.4 2003/04/09 18:33:01 schnetter Exp $
 #
 # /*@@
 #   @file      test_rad.par
@@ -11,7 +11,7 @@
 
 !DESC "Octant evolution with robin boundaries"
 
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetSlab IDScalarWave WaveToyF77"
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Slab Carpet CarpetIOASCII CarpetLib CarpetSlab IDScalarWave WaveToyF77"
 
 Cactus::cctk_itlast		= 4
  

@@ -7,11 +7,11 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77.par,v 1.4 2002/10/24 21:11:28 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77.par,v 1.5 2003/04/09 18:33:01 schnetter Exp $
 
 !DESC "Octant evolution with no boundary condition"
 
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetSlab IDScalarWave WaveToyF77"
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Slab Carpet CarpetIOASCII CarpetLib CarpetSlab IDScalarWave WaveToyF77"
 
 Time::dtfac			= 0.5
 
