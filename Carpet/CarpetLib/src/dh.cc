@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.33 2003/05/08 15:35:49 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.34 2003/05/13 12:14:00 schnetter Exp $
 
 #include <assert.h>
 
@@ -76,11 +76,7 @@ void dh<D>::recompose (const int initialise_upto) {
 	  if (h.outer_boundaries[rl][c][d][0]) ldist[d] = 0;
 	  if (h.outer_boundaries[rl][c][d][1]) udist[d] = 0;
 	}
-        if (! intr.empty()) {
-          // If a processor has zero grid points, then it gets an
-          // empty bbox, i.e. no ghost zones are added
-          boxes[rl][c][ml].exterior = intr.expand(ldist, udist);
-        }
+        boxes[rl][c][ml].exterior = intr.expand(ldist, udist);
 	
        	// Boundaries (ghost zones only)
        	// (interior + boundaries = exterior)

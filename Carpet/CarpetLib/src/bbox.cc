@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.14 2003/03/17 10:24:18 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.15 2003/05/13 12:14:00 schnetter Exp $
 
 #include <assert.h>
 
@@ -131,7 +131,8 @@ bool bbox<T,D>::is_aligned_with (const bbox& b) const {
 // Expand the bbox a little by multiples of the stride
 template<class T, int D>
 bbox<T,D> bbox<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi) const {
-  assert (! empty());
+  // Allow expansion only into directions where the extent is not negative
+  assert (all(lower()<=upper() || (lo==0 && hi==0)));
   const vect<T,D> str = stride();
   const vect<T,D> lb = lower() - lo * str;
   const vect<T,D> ub = upper() + hi * str;

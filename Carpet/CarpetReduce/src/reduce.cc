@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.19 2003/05/12 16:25:28 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.20 2003/05/13 12:14:00 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -22,7 +22,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.19 2003/05/12 16:25:28 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.20 2003/05/13 12:14:00 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -667,7 +667,7 @@ namespace CarpetReduce {
     // TODO: allow all modes for grid scalars and grid arrays, and
     // restrict usage only for grid functions.
     for (int n=0; n<num_invars; ++n) {
-      if (CCTK_GroupTypeFromVarI(invars[n])) {
+      if (CCTK_GroupTypeFromVarI(invars[n]) != CCTK_GF) {
         CCTK_WARN (0, "Reduction operators for grid scalars and grid arrays are not yet implemented");
       }
     }
@@ -676,10 +676,6 @@ namespace CarpetReduce {
     if (reflevel == -1) {
       CCTK_WARN (0, "Reduction operators in global mode are not yet implemented");
     }
-    if (hh->local_components(reflevel) != 1 && component != -1) {
-      CCTK_WARN (0, "It is not possible to use a grid variable reduction operator in local mode");
-    }
-    if (hh->local_components(reflevel) != 1) assert (component == -1);
     
     assert (cgh);
     
@@ -715,6 +711,10 @@ namespace CarpetReduce {
     Initialise (cgh, proc, num_outvals, &myoutvals[0], outtype, &mycounts[0],
                 red);
     
+    int const saved_component = component;
+    if (component!=-1) {
+      set_component (cgh, -1);
+    }
     BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
       
       int lsh[grpdim], bbox[2*grpdim], nghostzones[grpdim];
@@ -761,6 +761,9 @@ namespace CarpetReduce {
               &mycounts[0], red);
       
     } END_LOCAL_COMPONENT_LOOP(cgh);
+    if (saved_component!=-1) {
+      set_component (cgh, saved_component);
+    }
     
     Finalise (cgh, proc, num_outvals, outvals, outtype,
               &myoutvals[0], &mycounts[0],

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.5 2003/05/12 16:25:11 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.6 2003/05/13 12:14:00 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -21,7 +21,7 @@
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.5 2003/05/12 16:25:11 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.6 2003/05/13 12:14:00 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 
@@ -53,7 +53,9 @@ namespace CarpetSlab {
     
     // Save global state
     int saved_component = component;
-    component = -1;
+    if (component!=-1) {
+      set_component (cgh, -1);
+    }
     
     // Check Cactus grid hierarchy
     assert (cgh);
@@ -235,7 +237,9 @@ namespace CarpetSlab {
     } // if components>0
     
     // Restore global state
-    component = saved_component;
+    if (saved_component!=-1) {
+      set_component (cgh, saved_component);
+    }
     
     // Success
     return hdata;

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.4 2003/05/12 16:25:40 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.5 2003/05/13 12:14:00 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -19,7 +19,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.4 2003/05/12 16:25:40 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.5 2003/05/13 12:14:00 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -66,14 +66,6 @@ namespace CarpetInterp {
     
     
     
-    // We want to be in global or in level mode
-    if (hh->local_components(reflevel) != 1 && component != -1) {
-      CCTK_WARN (0, "Cannot interpolate in local mode");
-    }
-    if (hh->local_components(reflevel) != 1) assert (component == -1);
-    
-    
-    
     // Find out about the coordinates
     const char * coord_system_name
       = CCTK_CoordSystemName (coord_system_handle);
@@ -99,8 +91,8 @@ namespace CarpetInterp {
     int const nprocs = CCTK_nProcs (cgh);
     assert (myproc>=0 && myproc<nprocs);
     
-    int const minrl = reflevel==-1 ? 0 : reflevel;
-    int const maxrl = reflevel==-1 ? hh->reflevels()-1 : reflevel;
+    int const minrl = reflevel==-1 ? 0               : reflevel;
+    int const maxrl = reflevel==-1 ? hh->reflevels() : reflevel+1;
     int maxncomps = 0;
     for (int rl=minrl; rl<maxrl; ++rl) {
       maxncomps = max(maxncomps, hh->components(rl));
@@ -140,15 +132,14 @@ namespace CarpetInterp {
           if (hh->extents[reflevel][c][mglevel].contains(ipos)) {
             rlev[n] = rl;
             home[n] = c;
-            break;
+            goto found;
           }
         }
       }
-      if (! (rlev[n]>=minrl && rlev[n]<maxrl && home[n]>=0 && home[n]<hh->components(rlev[n]))) {
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Interpolation point #%d at [%g,%g,%g] is not on any grid patch",
-                    n, pos[0], pos[1], pos[2]);
-      }
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Interpolation point #%d at [%g,%g,%g] is not on any grid patch",
+                  n, pos[0], pos[1], pos[2]);
+    found:
       assert (rlev[n]>=minrl && rlev[n]<maxrl);
       assert (home[n]>=0 && home[n]<hh->components(rlev[n]));
       ++ homecnts [home[n] + (rlev[n]-minrl) * maxncomps];
@@ -236,9 +227,15 @@ namespace CarpetInterp {
     //
     int const saved_reflevel = reflevel;
     int const saved_mglevel = mglevel;
+    int const saved_component = component;
+    if (component!=-1) {
+      set_component (cgh, -1);
+    }
+    if (mglevel!=-1) {
+      set_mglevel (cgh, -1);
+    }
     if (reflevel!=-1) {
-      set_mglevel ((cGH*)(cgh), -1);
-      set_reflevel ((cGH*)(cgh), -1);
+      set_reflevel (cgh, -1);
     }
     BEGIN_REFLEVEL_LOOP(cgh) {
       if (reflevel>=minrl && reflevel<maxrl) {
@@ -334,8 +331,13 @@ namespace CarpetInterp {
       }
     } END_REFLEVEL_LOOP(cgh);
     if (saved_reflevel!=-1) {
-      set_reflevel ((cGH*)(cgh), saved_reflevel);
-      set_mglevel ((cGH*)(cgh), saved_mglevel);
+      set_reflevel (cgh, saved_reflevel);
+    }
+    if (saved_mglevel!=-1) {
+      set_mglevel (cgh, saved_mglevel);
+    }
+    if (saved_component!=-1) {
+      set_component (cgh, saved_component);
     }
     
     

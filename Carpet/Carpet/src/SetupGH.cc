@@ -19,7 +19,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.43 2003/05/12 16:24:25 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.44 2003/05/13 12:14:00 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -370,12 +370,13 @@ namespace Carpet {
             ((int*)arrdata[group].info.bbox)[2*d+f] = obnds[d][f];
           }
           
-          assert (arrdata[group].info.lsh[d]>=0
-                  && arrdata[group].info.lsh[d]<=arrdata[group].info.gsh[d]);
-          assert (arrdata[group].info.lbnd[d]>=0
-                  && arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]
-                  && arrdata[group].info.ubnd[d]<arrdata[group].info.gsh[d]);
-          assert (arrdata[group].info.ubnd[d]-arrdata[group].info.lbnd[d]+1 == arrdata[group].info.lsh[d]);
+          assert (arrdata[group].info.lsh[d]>=0);
+          assert (arrdata[group].info.lsh[d]<=arrdata[group].info.gsh[d]);
+          assert (arrdata[group].info.lbnd[d]>=0);
+          assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
+          assert (arrdata[group].info.ubnd[d]<arrdata[group].info.gsh[d]);
+          assert (arrdata[group].info.lbnd[d] + arrdata[group].info.lsh[d] - 1
+                  == arrdata[group].info.ubnd[d]);
           assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
         }
         
