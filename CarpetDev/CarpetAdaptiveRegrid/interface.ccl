@@ -1,7 +1,7 @@
 # Interface definition for thorn CarpetAdaptiveRegrid
 # $Header$
 
-implements: CarpetRegrid
+implements: CarpetAdaptiveRegrid
 
 uses include header: carpet.hh
 
