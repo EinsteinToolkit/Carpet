@@ -27,6 +27,8 @@ namespace CarpetAdaptiveRegrid {
 
 
   static gh::mexts local_bbsss;
+  static gh::rbnds local_obss;
+  
   static CCTK_INT last_iteration = -1;  
   
   using namespace std;
@@ -75,10 +77,23 @@ namespace CarpetAdaptiveRegrid {
     if (local_bbsss.empty()) { // It's the first call
       // Is this really the right thing to do on 
       // multiprocessors?
-      local_bbsss = bbsss;
+      //      local_bbsss = bbsss;
+      const ibbox& baseext = 
+        vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
+      vector<ibbox> tmp_bbs;
+      tmp_bbs.push_back (baseext);
+      vector<bbvect> tmp_obs;
+      tmp_obs.push_back (bbvect(true));
+      vector<vector<ibbox> > tmp_bbss(1);
+      vector<vector<bbvect> > tmp_obss(1);
+      tmp_bbss.at(0) = tmp_bbs;
+      tmp_obss.at(0) = tmp_obs;
+      MakeMultigridBoxes(cctkGH, tmp_bbss, tmp_obss, local_bbsss);
+      local_obss = tmp_obss;
       last_iteration = cctkGH->cctk_iteration;
       CCTK_INT do_recompose = 
-        ManualCoordinateList (cctkGH, hh, bbsss, obss, pss, local_bbsss);
+        ManualCoordinateList (cctkGH, hh, bbsss, obss, pss, 
+                              local_bbsss, local_obss);
 
       if (verbose) {
         ostringstream buf;
@@ -148,6 +163,8 @@ namespace CarpetAdaptiveRegrid {
     CCTK_INT do_recompose;
     do_recompose = 1;
 
+    CCTK_INT sum_handle = CCTK_ReductionArrayHandle("sum");
+
     CCTK_INT called_on_ml = mglevel;
     CCTK_INT called_on_rl = reflevel;
     CCTK_INT called_on_map = carpetGH.map;
@@ -165,7 +182,8 @@ namespace CarpetAdaptiveRegrid {
 
       if (verbose) {
         ostringstream buf;
-        buf << "Entering level " << rl << " map " << called_on_map;
+        buf << "Entering level " << rl << " (of " << finest_current_rl 
+            << "), map " << called_on_map;
         CCTK_INFO(buf.str().c_str());
       }
       
@@ -193,7 +211,8 @@ namespace CarpetAdaptiveRegrid {
       
       stack<ibbox> final;
       
-      vector<vector<ibbox> > bbss = local_bbsss.at(0);
+      vector<vector<ibbox> > bbss = bbsss.at(0);
+      vector<vector<ibbox> > local_bbss = local_bbsss.at(0);
       
       bool did_regrid = false;
             
@@ -225,7 +244,8 @@ namespace CarpetAdaptiveRegrid {
           CCTK_INFO(buf.str().c_str());
         }
         
-        vector<CCTK_INT> mask(prod(bb.shape()/bb.stride()), 0);
+        vector<CCTK_INT> local_mask(prod(bb.shape()/bb.stride()), 0),
+          mask(prod(bb.shape()/bb.stride()), 0);
         
         if (veryverbose) {
           ostringstream buf;
@@ -292,7 +312,7 @@ namespace CarpetAdaptiveRegrid {
                     CCTK_INT mindex = ii + 
                       (imax[0] - imin[0] + 1)*
                       (jj + (imax[1] - imin[1] + 1) * kk);
-                    mask[mindex] = 1;
+                    local_mask[mindex] = 1;
                     if (veryverbose) {
                       CCTK_VInfo(CCTK_THORNSTRING, "In error at point"
                                  "\n(%g,%g,%g) [%d,%d,%d] [[%d,%d,%d]]",
@@ -311,7 +331,7 @@ namespace CarpetAdaptiveRegrid {
         // Instead check the error on child level, if exists
         // This should fix the "orphaned grandchild" problem
         
-        if (bbss.size() > reflevel+1) {
+        if (local_bbss.size() > reflevel+1) {
                 
           CCTK_INT currentml = mglevel;
           CCTK_INT currentrl = reflevel;
@@ -376,7 +396,7 @@ namespace CarpetAdaptiveRegrid {
                       CCTK_INT mindex = ii + 
                         (imax[0] - imin[0] + 1)*
                         (jj + (imax[1] - imin[1] + 1) * kk);
-                      mask[mindex] = 1;
+                      local_mask[mindex] = 1;
                       if (veryverbose) {
                         CCTK_VInfo(CCTK_THORNSTRING, "In error at point"
                                    "\n(%g,%g,%g) [%d,%d,%d] [[%d,%d,%d]]",
@@ -400,10 +420,37 @@ namespace CarpetAdaptiveRegrid {
 
         }
         
-        // FIXME
-        
         // Reduce errors (MPI sum)
+
+        CCTK_INT ierr = 
+          CCTK_ReduceLocArrayToArray1D (cctkGH,
+                                        -1,
+                                        sum_handle,
+                                        &local_mask.front(),
+                                        &mask.front(),
+                                        local_mask.size(),
+                                        CCTK_VARIABLE_INT );
+        
+        if (ierr) {
+          ostringstream buf;
+          buf << "The reduction on level " << reflevel << " failed "
+              << "with error " << ierr;
+          CCTK_WARN(0, buf.str().c_str());
+        }
+
         // Set errors to 0/1
+        
+        for (CCTK_INT k = 0; k < imax[2] - imin[2] + 1; k++) {
+          for (CCTK_INT j = 0; j < imax[1] - imin[1] + 1; j++) {
+            for (CCTK_INT i = 0; i < imax[0] - imin[0] + 1; i++) {
+              CCTK_INT index =  i + 
+                (imax[0] - imin[0] + 1)*(j + (imax[1] - imin[1] + 1) * k);
+              if (mask[index]) {
+                mask[index] = 1;
+              }
+            }
+          }
+        }
         
         // Pad the errors: stage 1 - buffer points marked as 2.
         
@@ -792,13 +839,15 @@ namespace CarpetAdaptiveRegrid {
           if (verbose) {
             CCTK_INFO("Adding new refinement level");
           }
+          local_bbss.resize(reflevel+2);
           bbss.resize(reflevel+2);
+          local_obss.resize(reflevel+2);
           obss.resize(reflevel+2);
           pss.resize(reflevel+2);
         }
-        bbss.at(reflevel+1) = bbs;
-        obss.at(reflevel+1) = obs;
-        MakeMultigridBoxes (cctkGH, bbss, obss, local_bbsss);
+        local_bbss.at(reflevel+1) = bbs;
+        local_obss.at(reflevel+1) = obs;
+        MakeMultigridBoxes (cctkGH, local_bbss, local_obss, local_bbsss);
         
         // make multiprocessor aware
         gh::cprocs ps;
@@ -811,15 +860,17 @@ namespace CarpetAdaptiveRegrid {
       } // did_regrid?
       else
       {
-        if (bbss.size() > reflevel+1) {
+        if (local_bbss.size() > reflevel+1) {
           if (verbose) {
             CCTK_INFO("Removing refinement level");
           }
         }
+        local_bbss.resize(reflevel+1);
         bbss.resize(reflevel+1);
+        local_obss.resize(reflevel+1);
         obss.resize(reflevel+1);
         // Set local bbsss
-        MakeMultigridBoxes (cctkGH, bbss, obss, local_bbsss);
+        MakeMultigridBoxes (cctkGH, local_bbss, local_obss, local_bbsss);
         
         pss.resize(reflevel+1);
         

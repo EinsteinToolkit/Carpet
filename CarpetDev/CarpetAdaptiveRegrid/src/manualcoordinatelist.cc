@@ -26,7 +26,8 @@ namespace CarpetAdaptiveRegrid {
                             gh::mexts  & bbsss,
                             gh::rbnds  & obss,
                             gh::rprocs & pss,
-                            gh::mexts  & local_bbsss)
+                            gh::mexts  & local_bbsss,
+                            gh::rbnds  & local_obss)
   {
     DECLARE_CCTK_PARAMETERS;
     int ierr;
@@ -38,6 +39,7 @@ namespace CarpetAdaptiveRegrid {
     
     assert (bbsss.size() >= 1);
     vector<vector<ibbox> > bbss = bbsss.at(0);
+    vector<vector<ibbox> > local_bbss = local_bbsss.at(0);
     
     jjvect nboundaryzones, is_internal, is_staggered, shiftout;
     ierr = GetBoundarySpecification
@@ -55,7 +57,9 @@ namespace CarpetAdaptiveRegrid {
     assert (!ierr);
     
     bbss.resize (refinement_levels);
+    local_bbss.resize (refinement_levels);
     obss.resize (refinement_levels);
+    local_obss.resize (refinement_levels);
     pss.resize (refinement_levels);
     
     vector<vector<rbbox> > newbbss;
@@ -136,17 +140,26 @@ namespace CarpetAdaptiveRegrid {
            ext.lower(), ext.upper(), ob, bbs, obs);
       }
 
-      bbss.at(rl) = bbs;
-      obss.at(rl) = obs;
+      local_bbss.at(rl) = bbs;
+      local_obss.at(rl) = obs;
+
+      if (verbose) {
+        ostringstream buf;
+        buf << "About to make multigrid aware for first time whilst doing " 
+            << "manual coordinate list, level " << rl 
+            << ". Total list is:"
+            << endl << bbss << endl << "with obss being "<< local_obss;
+        CCTK_INFO(buf.str().c_str());
+      }      
       
       // make multigrid aware
-      MakeMultigridBoxes (cctkGH, bbss, obss, local_bbsss);
+      MakeMultigridBoxes (cctkGH, local_bbss, local_obss, local_bbsss);
 
       if (verbose) {
         ostringstream buf;
         buf << "Doing manual coordinate list, level " << rl 
             << ". Total list is:"
-            << endl << local_bbsss;
+            << endl << local_bbsss << endl << "with obss being "<< local_obss;
         CCTK_INFO(buf.str().c_str());
       }      
       
@@ -157,9 +170,27 @@ namespace CarpetAdaptiveRegrid {
       bbss.at(rl) = bbs;
       obss.at(rl) = obs;
       pss.at(rl) = ps;
+
+      if (verbose) {
+        ostringstream buf;
+        buf << "Doing manual coordinate list, multiprocs, level " << rl 
+            << "." << endl << "Total list is:"
+            << endl << bbss << endl << "with obss being " << obss 
+            << endl << "Sizes are (bb) " << bbss.at(rl).size() 
+            << " and (ob) " << obss.at(rl).size();
+        CCTK_INFO(buf.str().c_str());
+      }      
               
       // make multigrid aware
       MakeMultigridBoxes (cctkGH, bbss, obss, bbsss);
+
+      if (verbose) {
+        ostringstream buf;
+        buf << "Did manual coordinate list, multiprocs, level " << rl 
+            << "." << endl << "Total list is:"
+            << endl << bbsss;
+        CCTK_INFO(buf.str().c_str());
+      }      
 
     } // for rl
     

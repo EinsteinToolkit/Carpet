@@ -45,7 +45,9 @@ namespace CarpetAdaptiveRegrid {
                             gh::mexts  & bbsss,
                             gh::rbnds  & obss,
                             gh::rprocs & pss,
-                            gh::mexts  & local_bbsss);
+                            gh::mexts  & local_bbsss,
+                            gh::rbnds  & local_obss);
+
     
   void ManualCoordinates_OneLevel (const cGH * const cctkGH,
                                    const gh & hh,
