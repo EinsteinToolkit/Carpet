@@ -1,10 +1,36 @@
-c     -*-Fortran-*-
+/**
+ * @file copy_3d_real8.F77
+ * @brief Copy a region of a CCTK_REAL8 array
+ *
+ * copy, bla, bla
+ */
+
+/* -*-Fortran-*- */
       
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
 
       
+/** Copy a region of a CCTK_REAL8 array
+ *
+ * copy, bla, bla, long description.
+ */
+#ifdef FOR_DOXYGEN_ONLY
+subroutine copy_3d_real8 (CCTK_REAL8 src(srciext,srcjext,srckext),
+                          integer srciext,
+                          integer srcjext,
+                          integer srckext,
+                          CCTK_REAL8 dst(dstiext,dstjext,dstkext),
+                          integer dstiext,
+                          integer dstjext,
+                          integer dstkext,
+                          integer srcbbox,
+                          integer dstbbox,
+                          integer regbbox)
+{
+}
+#else
       subroutine copy_3d_real8 (
      $     src, srciext, srcjext, srckext,
      $     dst, dstiext, dstjext, dstkext,
@@ -109,3 +135,4 @@ c     Loop over region
       end do
       
       end
+#endif
