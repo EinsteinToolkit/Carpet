@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.2 2001/03/05 14:31:03 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.3 2001/03/05 21:48:38 eschnett Exp $
 
  ***************************************************************************/
 
@@ -29,6 +29,8 @@
 #if !defined(TMPL_IMPLICIT) || !defined(GDATA_HH)
 #  include "gdata.hh"
 #endif
+
+#define DEBUG_DIST DIST_NODEBUG
 
 
 
@@ -55,6 +57,7 @@ void generic_data<D>::write_ascii (const string name, const int time,
   const
 {
   assert (_has_storage);
+  DEBUG_DIST;
   
   if (_proc==0) {
     // output on processor 0
@@ -66,7 +69,8 @@ void generic_data<D>::write_ascii (const string name, const int time,
       ofstream file(name.c_str(), ios::app);
       assert (file.good());
       
-      file << "# iteration " << time << endl
+      file << "#" << endl
+	   << "# iteration " << time << endl
 	   << "# time level " << tl << "   refinement level " << rl
 	   << "   component " << c << "   multigrid level " << ml << endl
 	   << "# column format: it tl rl c ml";
@@ -79,17 +83,27 @@ void generic_data<D>::write_ascii (const string name, const int time,
       const vect<int,DD> str = extent().stride()[dirs];
       const bbox<int,DD> ext(lo,up,str);
       
-      for (bbox<int,DD>::iterator it=ext.begin(); it!=ext.end(); ++it) {
-        ivect index(org);
-        for (int d=0; d<DD; ++d) index[dirs[d]] = (*it)[d];
-        file << time << " " << tl << " " << rl << " " << c << " " << ml << " ";
-        for (int d=0; d<D; ++d) file << index[d] << " ";
-	write_ascii_output_element (file, index);
-        for (int d=0; d<D; ++d) {
-          if (index[d]!=extent().upper()[d]) break;
-          file << endl;
-        }
-      }
+      // Check whether the output origin is contained in the extent of
+      // the data
+      ivect org1(org);
+      for (int d=0; d<DD; ++d) org1[dirs[d]] = ext.lower()[d];
+      if (extent().contains(org1)) {
+	
+	for (bbox<int,DD>::iterator it=ext.begin(); it!=ext.end(); ++it) {
+	  ivect index(org);
+	  for (int d=0; d<DD; ++d) index[dirs[d]] = (*it)[d];
+	  file << time << " " << tl << " " << rl << " " << c << " " << ml
+	       << " ";
+	  for (int d=0; d<D; ++d) file << index[d] << " ";
+	  write_ascii_output_element (file, index);
+	  file << endl;
+	  for (int d=0; d<DD; ++d) {
+	    if (index[dirs[d]]!=extent().upper()[dirs[d]]) break;
+	    file << endl;
+	  }
+	}
+	
+      }	// if ext contains org
       
       file.close();
       assert (file.good());

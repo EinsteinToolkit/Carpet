@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.cc,v 1.2 2001/03/05 21:48:38 eschnett Exp $
 
  ***************************************************************************/
 
@@ -36,7 +36,7 @@ MPI_Comm dist::comm;
 
 void dist::init (int& argc, char**& argv) {
   MPI_Init (&argc, &argv);
-  comm = MPI_COMM_WORLD;
+  pseudoinit();
 }
 
 void dist::pseudoinit () {

@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.2 2001/03/05 21:48:38 eschnett Exp $
 
  ***************************************************************************/
 
@@ -22,12 +22,16 @@
 #include <cassert>
 
 #include "defs.hh"
+#include "dist.hh"
 #include "ggf.hh"
 #include "vect.hh"
 
 #if !defined(TMPL_IMPLICIT) || !defined(DH_HH)
 #  include "dh.hh"
 #endif
+
+#define DEBUG_DIST DIST_NODEBUG
+#undef DEBUG_OUTPUT
 
 
 
@@ -37,6 +41,7 @@ dh<D>::dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts)
   : h(h), lghosts(lghosts), ughosts(ughosts)
 {
   assert (all(lghosts>=0 && ughosts>=0));
+  DEBUG_DIST;
   h.add(this);
   recompose();
 }
@@ -44,12 +49,14 @@ dh<D>::dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts)
 // Destructors
 template<int D>
 dh<D>::~dh () {
+  DEBUG_DIST;
   h.remove(this);
 }
 
 // Modifiers
 template<int D>
 void dh<D>::recompose () {
+  DEBUG_DIST;
   
   boxes.clear();
   
@@ -202,30 +209,32 @@ void dh<D>::recompose () {
     } // for c
   } // for rl
   
+#ifdef DEBUG_OUTPUT
   for (int rl=0; rl<h.reflevels(); ++rl) {
     for (int c=0; c<h.components(rl); ++c) {
       for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-      	clog << endl;
-      	clog << "dh bboxes:" << endl;
-      	clog << "rl=" << rl << " c=" << c << " ml=" << ml << endl;
-      	clog << "exterior=" << boxes[rl][c][ml].exterior << endl;
-      	clog << "interior=" << boxes[rl][c][ml].interior << endl;
-      	clog << "send_mg_fine=" << boxes[rl][c][ml].send_mg_fine << endl;
-      	clog << "send_mg_coarse=" << boxes[rl][c][ml].send_mg_coarse << endl;
-      	clog << "recv_mg_fine=" << boxes[rl][c][ml].recv_mg_fine << endl;
-      	clog << "recv_mg_coarse=" << boxes[rl][c][ml].recv_mg_coarse << endl;
-      	clog << "send_ref_fine=" << boxes[rl][c][ml].send_ref_fine << endl;
-      	clog << "send_ref_coarse=" << boxes[rl][c][ml].send_ref_coarse << endl;
-      	clog << "recv_ref_fine=" << boxes[rl][c][ml].recv_ref_fine << endl;
-      	clog << "recv_ref_coarse=" << boxes[rl][c][ml].recv_ref_coarse << endl;
-      	clog << "send_sync=" << boxes[rl][c][ml].send_sync << endl;
-      	clog << "send_ref_bnd_fine=" << boxes[rl][c][ml].send_ref_bnd_fine << endl;
-      	clog << "boundaries=" << boxes[rl][c][ml].boundaries << endl;
-      	clog << "recv_sync=" << boxes[rl][c][ml].recv_sync << endl;
-      	clog << "recv_ref_bnd_coarse=" << boxes[rl][c][ml].recv_ref_bnd_coarse << endl;
+      	cout << endl;
+      	cout << "dh bboxes:" << endl;
+      	cout << "rl=" << rl << " c=" << c << " ml=" << ml << endl;
+      	cout << "exterior=" << boxes[rl][c][ml].exterior << endl;
+      	cout << "interior=" << boxes[rl][c][ml].interior << endl;
+      	cout << "send_mg_fine=" << boxes[rl][c][ml].send_mg_fine << endl;
+      	cout << "send_mg_coarse=" << boxes[rl][c][ml].send_mg_coarse << endl;
+      	cout << "recv_mg_fine=" << boxes[rl][c][ml].recv_mg_fine << endl;
+      	cout << "recv_mg_coarse=" << boxes[rl][c][ml].recv_mg_coarse << endl;
+      	cout << "send_ref_fine=" << boxes[rl][c][ml].send_ref_fine << endl;
+      	cout << "send_ref_coarse=" << boxes[rl][c][ml].send_ref_coarse << endl;
+      	cout << "recv_ref_fine=" << boxes[rl][c][ml].recv_ref_fine << endl;
+      	cout << "recv_ref_coarse=" << boxes[rl][c][ml].recv_ref_coarse << endl;
+      	cout << "send_sync=" << boxes[rl][c][ml].send_sync << endl;
+      	cout << "send_ref_bnd_fine=" << boxes[rl][c][ml].send_ref_bnd_fine << endl;
+      	cout << "boundaries=" << boxes[rl][c][ml].boundaries << endl;
+      	cout << "recv_sync=" << boxes[rl][c][ml].recv_sync << endl;
+      	cout << "recv_ref_bnd_coarse=" << boxes[rl][c][ml].recv_ref_bnd_coarse << endl;
       }
     }
   }
+#endif
   
   for (list<generic_gf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
     (*f)->recompose();
@@ -235,11 +244,13 @@ void dh<D>::recompose () {
 // Grid function management
 template<int D>
 void dh<D>::add (generic_gf<D>* f) {
+  DEBUG_DIST;
   gfs.push_back(f);
 }
 
 template<int D>
 void dh<D>::remove (generic_gf<D>* f) {
+  DEBUG_DIST;
   gfs.remove(f);
 }
 

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.2 2001/03/05 21:48:38 eschnett Exp $
 
  ***************************************************************************/
 
@@ -72,6 +72,9 @@ public:
     if (empty()) return 0;
     return prod((shape()+stride()-1)/stride());
   }
+  
+  // Queries
+  bool contains (const vect<T,D>& x) const;
   
   // Operators
   bool operator== (const bbox& b) const;

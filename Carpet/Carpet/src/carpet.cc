@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.2 2001/03/05 14:30:03 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.3 2001/03/05 21:48:28 eschnett Exp $
 
 /* It is assumed that the number of components of all arrays is equal
    to the number of components of the grid functions, and that their
@@ -30,6 +30,12 @@
 #include "Carpet/CarpetLib/src/vect.hh"
 
 #include "carpet.hh"
+
+
+
+#define DEBUG_DIST DIST_NODEBUG
+
+
 
 namespace Carpet {
   
@@ -106,6 +112,7 @@ namespace Carpet {
     assert (convLevel==0);
     
     dist::pseudoinit();
+    DEBUG_DIST;
     
     // ghost zones
     const vect<int,dim> lghosts(ghost_size_x, ghost_size_y, ghost_size_z);
@@ -234,6 +241,8 @@ namespace Carpet {
     cGH* const cgh = CCTK_SetupGH (fc, convlev);
     CCTKi_AddGH (fc, convlev, cgh);
     
+    DEBUG_DIST;
+    
     // Initialise stuff
     cgh->cctk_iteration = 0;
     cgh->cctk_time = cctk_initial_time;
@@ -271,6 +280,8 @@ namespace Carpet {
 	       msg, reflevel);
       CCTK_INFO (msg);
     }
+    
+    DEBUG_DIST;
     
     // Set up the grid
     CCTK_ScheduleTraverse ("CCTK_BASEGRID", cgh, CallFunction);
@@ -314,6 +325,8 @@ namespace Carpet {
     
     CCTK_INFO ("starting Evolve...");
     
+    DEBUG_DIST;
+    
     const int convlev = 0;
     cGH* cgh = fc->GH[convlev];
     
@@ -354,6 +367,8 @@ namespace Carpet {
 	       msg, reflevel);
       CCTK_INFO (msg);
     }
+    
+    DEBUG_DIST;
     
     // Prestep
     CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
@@ -405,19 +420,21 @@ namespace Carpet {
     
     CCTK_INFO ("starting Shutdown...");
     
+    DEBUG_DIST;
+    
     const int convlev = 0;
     cGH* cgh = fc->GH[convlev];
     
     RecursiveShutdown (cgh);
     
-    if (CCTK_MyProc(cgh)==0) {
-      printf ("--------------------------------------------------------------------------------\n"
-	      "Done.\n");
-    }
+    CCTK_Barrier (cgh);
     
-    dist::finalize();
+    fprintf (stdout, "--------------------------------------------------------------------------------\n"
+	     "Done.\n");
     
     CCTK_INFO ("done with Shutdown.");
+    
+    dist::finalize();
     
     return 0;
   }
@@ -434,6 +451,8 @@ namespace Carpet {
 	       msg, reflevel);
       CCTK_INFO (msg);
     }
+    
+    DEBUG_DIST;
     
     // Recurse
     if (reflevel < hh->reflevels()-1) {
@@ -489,6 +508,8 @@ namespace Carpet {
     
     assert (mglevel>=0);
     assert (reflevel>=0);
+    
+    DEBUG_DIST;
     
     cGH* cgh = (cGH*)data;
     
@@ -592,126 +613,134 @@ namespace Carpet {
 	// maybe: traverse only if the component is local to the processor
 	// maybe not, because arrays might have different distribution
 	// than grid functions
-// 	if (hh->is_local(reflevel, component))
-	
-	// set Cactus parameters to pseudo values
-	for (int d=0; d<dim; ++d) {
-	  typedef bbox<int,dim> ibbox;
-	  const ibbox ext  = dd->boxes[reflevel][component][mglevel].exterior;
-	  const ibbox base = hh->baseextent;
-	  cgh->cctk_lsh[d]
-	    = (ext.shape() / ext.stride())[d];
-	  cgh->cctk_gsh[d]
-	    = ((base.shape() / base.stride() + dd->lghosts + dd->ughosts)[d]
-	       * cgh->cctk_levfac[d]);
-	  // TODO: set boundary information correctly
-	  cgh->cctk_bbox[2*d  ] = 1;
-	  cgh->cctk_bbox[2*d+1] = 1;
-	  cgh->cctk_lbnd[d]     = (ext.lower() / ext.stride())[d];
-	  cgh->cctk_ubnd[d]     = (ext.upper() / ext.stride())[d];
-	  for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
-	    // TODO: support staggering
-	    cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
-	  }
-	}
-	
-	// set local grid function and array sizes
-	if (hh->is_local(reflevel, component)) {
-	  const bbox<int,dim> ext =
-	    dd->boxes[reflevel][component][mglevel].exterior;
+ 	if (hh->is_local(reflevel, component)) {
+	  
+	  // set Cactus parameters to pseudo values
 	  for (int d=0; d<dim; ++d) {
-	    gfsize[d] = ext.shape()[d] / ext.stride()[d];
-	  }
-	} else {
-	  for (int d=0; d<dim; ++d) {
-	    gfsize[d] = 0;
-	  }
-	}
-	for (int group=0; group<CCTK_NumGroups(); ++group) {
-	  const int n0 = CCTK_FirstVarIndexI(group);
-	  switch (CCTK_GroupTypeFromVarI(n0)) {
-	  case CCTK_SCALAR:
-	    break;
-	  case CCTK_ARRAY:
-	    if (arrdata[group].hh->is_local(reflevel, component)) {
-	      const bbox<int,dim> ext =
-		arrdata[group].dd->
-		boxes[reflevel][component][mglevel].exterior;
-	      for (int d=0; d<dim; ++d) {
-		arrdata[group].size[d] = ext.shape()[d] / ext.stride()[d];
-	      }
-	    } else {
-	      for (int d=0; d<dim; ++d) {
-		arrdata[group].size[d] = 0;
-	      }
+	    typedef bbox<int,dim> ibbox;
+	    const ibbox ext = dd->boxes[reflevel][component][mglevel].exterior;
+	    const ibbox base = hh->baseextent;
+	    cgh->cctk_lsh[d] = (ext.shape() / ext.stride())[d];
+	    cgh->cctk_gsh[d]
+	      = ((base.shape() / base.stride() + dd->lghosts + dd->ughosts)[d]
+		 * cgh->cctk_levfac[d]);
+	    // TODO: set boundary information correctly
+	    cgh->cctk_bbox[2*d  ] = 1;
+	    cgh->cctk_bbox[2*d+1] = 1;
+	    cgh->cctk_lbnd[d]     = (ext.lower() / ext.stride())[d];
+	    cgh->cctk_ubnd[d]     = (ext.upper() / ext.stride())[d];
+	    for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
+	      // TODO: support staggering
+	      cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
 	    }
-	    break;
-	  case CCTK_GF:
-	    break;
-	  default:
-	    abort();
 	  }
-	}
-	
-	// set Cactus pointers to data
-	for (int n=0; n<CCTK_NumVars(); ++n) {
-	  for (int tl=0; tl<CCTK_NumTimeLevelsFromVarI(n); ++tl) {
-	    
-	    const int group = CCTK_GroupIndexFromVarI(n);
-	    assert (group>=0);
-	    const int var   = n - CCTK_FirstVarIndexI(group);
-	    assert (var>=0);
-	    
-	    if (CCTK_QueryGroupStorageI(cgh, group)) {
-	      // group has storage
-	      
-	      switch (CCTK_GroupTypeFromVarI(n)) {
-		
-	      case CCTK_SCALAR:
-		assert (group<(int)scdata.size());
-		assert (var<(int)scdata[group].size());
-		assert (tl<(int)scdata[group][var].size());
-		cgh->data[n][tl] = scdata[group][var][tl];
-		break;
-		
-	      case CCTK_ARRAY:
-		assert (group<(int)arrdata.size());
-		assert (var<(int)arrdata[group].data.size());
-		cgh->data[n][tl] =
-		  ((*arrdata[group].data[var])(tl,reflevel,component,mglevel)
-		   ->storage());
-		break;
-		
-	      case CCTK_GF:
-		assert (group<(int)gfdata.size());
-		assert (var<(int)gfdata[group].data.size());
-		cgh->data[n][tl] =
-		  ((*gfdata[group].data[var])(tl,reflevel,component,mglevel)
-		   ->storage());
-		break;
-		
-	      default:
-		abort();
-	      }
-	      assert (cgh->data[n][tl]);
-	      
-	    } else {
-	      
-	      // group has no storage
-	      cgh->data[n][tl] = 0;
-	      
+	  
+	  // set local grid function and array sizes
+#if 0
+	  if (hh->is_local(reflevel, component)) {
+#endif
+	    const bbox<int,dim> ext =
+	      dd->boxes[reflevel][component][mglevel].exterior;
+	    for (int d=0; d<dim; ++d) {
+	      gfsize[d] = ext.shape()[d] / ext.stride()[d];
 	    }
-	    
-	  } // for tl
-	} // for n
-	
-	const int res = CCTK_CallFunction (function, attribute, data);
-	assert (res==0);
+#if 0
+	  } else {
+	    for (int d=0; d<dim; ++d) {
+	      gfsize[d] = 0;
+	    }
+	  }
+#endif
+	  
+	  for (int group=0; group<CCTK_NumGroups(); ++group) {
+	    const int n0 = CCTK_FirstVarIndexI(group);
+	    switch (CCTK_GroupTypeFromVarI(n0)) {
+	    case CCTK_SCALAR:
+	      break;
+	    case CCTK_ARRAY:
+	      if (arrdata[group].hh->is_local(reflevel, component)) {
+		const bbox<int,dim> ext =
+		  arrdata[group].dd->
+		  boxes[reflevel][component][mglevel].exterior;
+		for (int d=0; d<dim; ++d) {
+		  arrdata[group].size[d] = ext.shape()[d] / ext.stride()[d];
+		}
+	      } else {
+		for (int d=0; d<dim; ++d) {
+		  arrdata[group].size[d] = 0;
+		}
+	      }
+	      break;
+	    case CCTK_GF:
+	      break;
+	    default:
+	      abort();
+	    }
+	  }
+	  
+	  // set Cactus pointers to data
+	  for (int n=0; n<CCTK_NumVars(); ++n) {
+	    for (int tl=0; tl<CCTK_NumTimeLevelsFromVarI(n); ++tl) {
+	      
+	      const int group = CCTK_GroupIndexFromVarI(n);
+	      assert (group>=0);
+	      const int var   = n - CCTK_FirstVarIndexI(group);
+	      assert (var>=0);
+	      
+	      if (CCTK_QueryGroupStorageI(cgh, group)) {
+		// group has storage
+		
+		switch (CCTK_GroupTypeFromVarI(n)) {
+		  
+		case CCTK_SCALAR:
+		  assert (group<(int)scdata.size());
+		  assert (var<(int)scdata[group].size());
+		  assert (tl<(int)scdata[group][var].size());
+		  cgh->data[n][tl] = scdata[group][var][tl];
+		  break;
+		  
+		case CCTK_ARRAY:
+		  assert (group<(int)arrdata.size());
+		  assert (var<(int)arrdata[group].data.size());
+		  cgh->data[n][tl] =
+		    ((*arrdata[group].data[var])(tl,reflevel,component,mglevel)
+		     ->storage());
+		  break;
+		  
+		case CCTK_GF:
+		  assert (group<(int)gfdata.size());
+		  assert (var<(int)gfdata[group].data.size());
+		  cgh->data[n][tl] =
+		    ((*gfdata[group].data[var])(tl,reflevel,component,mglevel)
+		     ->storage());
+		  break;
+		  
+		default:
+		  abort();
+		}
+// 		cerr << CCTK_MyProc(cgh) << " trcm " << tl << " " << reflevel << " " << component << " " << mglevel << endl;
+// 		cerr << CCTK_MyProc(cgh) << " gvn " << group << " " << var << " " << n << endl;
+		assert (cgh->data[n][tl]);
+		
+	      } else {
+		
+		// group has no storage
+		cgh->data[n][tl] = 0;
+		
+	      }	// if ! has storage
+	      
+	    } // for tl
+	  } // for n
+	  
+	  const int res = CCTK_CallFunction (function, attribute, data);
+	  assert (res==0);
+	  
+	} // if is_local
 	
       }	// for component
-      component=-1;
+      component = -1;
       
-    }
+    } // if local operation
     
     // let the flesh do the synchronisation, if necessary
     return 0;
@@ -745,9 +774,10 @@ namespace Carpet {
   
   int SyncGroup (cGH* cgh, const char* groupname)
   {
-    clog << "SyncGroup " << groupname << endl;
-    
     assert (component == -1);
+    
+    CCTK_VInfo (CCTK_THORNSTRING, "SyncGroup %s", groupname);
+    DEBUG_DIST;
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
@@ -808,7 +838,8 @@ namespace Carpet {
   
   int EnableGroupStorage (cGH* cgh, const char* groupname)
   {
-    clog << "EnableGroupStorage " << groupname << endl;
+    CCTK_VInfo (CCTK_THORNSTRING, "EnableGroupStorage %s", groupname);
+    DEBUG_DIST;
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
@@ -901,7 +932,8 @@ namespace Carpet {
   
   int DisableGroupStorage (cGH* cgh, const char* groupname)
   {
-    clog << "DisableGroupStorage " << groupname << endl;
+    CCTK_VInfo (CCTK_THORNSTRING, "DisableGroupStorage %s", groupname);
+    DEBUG_DIST;
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
@@ -1004,6 +1036,8 @@ namespace Carpet {
     
     assert (component == -1);
     
+    DEBUG_DIST;
+    
     const int nprocs    = CCTK_nProcs(cgh);
     const int reflevels = max_refinement_levels; // arbitrary value
     const int mglevels  = 1;	// arbitrary value
@@ -1050,6 +1084,8 @@ namespace Carpet {
   
   static void CycleTimeLevels (cGH* cgh)
   {
+    DEBUG_DIST;
+    
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cgh, group)) {
 	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
@@ -1097,6 +1133,8 @@ namespace Carpet {
   static void Restrict (cGH* cgh)
   {
     assert (component == -1);
+    
+    DEBUG_DIST;
     
     if (reflevel == hh->reflevels()-1) return;
     
@@ -1152,6 +1190,7 @@ namespace Carpet {
   
   int Exit (cGH* cgh, int retval)
   {
+    CCTK_Barrier (cgh);
     dist::finalize();
     exit (retval);
   }
@@ -1194,7 +1233,7 @@ namespace Carpet {
     
     assert (dir>=0 && dir<dim);
     
-//     clog << "ArrayGroupSizeB group=" << CCTK_GroupName(group) << " dir=" << dir << endl;
+//     cout << "ArrayGroupSizeB group=" << CCTK_GroupName(group) << " dir=" << dir << endl;
     if (CCTK_QueryGroupStorageI(cgh, group)) {
       
       const int var = CCTK_FirstVarIndexI(group);
@@ -1204,17 +1243,17 @@ namespace Carpet {
 	
       case CCTK_SCALAR:
 	assert (group<(int)scdata.size());
-// 	clog << "   SCALAR" << endl;
+// 	cout << "   SCALAR" << endl;
 	return &one;
 	
       case CCTK_ARRAY:
 	assert (group<(int)arrdata.size());
-// 	clog << "   ARRAY " << arrdata[group].size[dir] << endl;
+// 	cout << "   ARRAY " << arrdata[group].size[dir] << endl;
 	return &arrdata[group].size[dir];
 	
       case CCTK_GF:
 	assert (group<(int)gfdata.size());
-// 	clog << "   GF " << gfsize[dir] << endl;
+// 	cout << "   GF " << gfsize[dir] << endl;
 	return &gfsize[dir];
 	
       default:
@@ -1238,7 +1277,7 @@ namespace Carpet {
     }
     assert (group>=0 && group<CCTK_NumGroups());
     
-//     clog << "QueryGroupStorageB " << CCTK_GroupName(group) << endl;
+//     cout << "QueryGroupStorageB " << CCTK_GroupName(group) << endl;
     
     const int n = CCTK_FirstVarIndexI(group);
     assert (n>=0 && n<CCTK_NumVars());

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.2 2001/03/05 21:48:38 eschnett Exp $
 
  ***************************************************************************/
 
@@ -52,6 +52,12 @@ bbox<T,D>::bbox (const vect<T,D>& lower, const vect<T,D>& upper,
 {
   assert (all(stride>=1));
   assert (all((upper-lower)%stride==0));
+}
+
+// Queries
+template<class T, int D>
+bool bbox<T,D>::contains (const vect<T,D>& x) const {
+  return all(x>=lower() && x<=upper());
 }
 
 // Operators

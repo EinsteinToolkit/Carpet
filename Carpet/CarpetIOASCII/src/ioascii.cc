@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.2 2001/03/05 14:30:27 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.3 2001/03/05 21:48:33 eschnett Exp $
 
 #include <cassert>
 #include <cstdio>
@@ -136,7 +136,9 @@ int IOASCII<outdim>::OutputVarAs (cGH* const cgh, const char* const varname,
     
     // Create the output directory
     const char* myoutdir = GetStringParameter("outdir%dD", outdir);
-    CCTK_CreateDirectory (0755, myoutdir);
+    if (CCTK_MyProc(cgh)==0) {
+      CCTK_CreateDirectory (0755, myoutdir);
+    }
     
     // Loop over all direction combinations
     vect<int,outdim> dirs;
@@ -204,18 +206,21 @@ int IOASCII<outdim>::OutputVarAs (cGH* const cgh, const char* const varname,
 	  }
 	  sprintf (filename, "%s%c", filename, "lpv"[outdim-1]);
 	  
-	  // If this is the first time, then write a nice header
+	  // If this is the first time, then write a nice header on
+	  // the root processor
 	  if (do_truncate[n]) {
-	    ofstream file(filename, ios::trunc);
-	    assert (file.good());
-	    file << "# " << varname;
-	    for (int d=0; d<outdim; ++d) {
-	      file << " " << "xyz"[dirs[d]];
+	    if (CCTK_MyProc(cgh)==0) {
+	      ofstream file(filename, ios::trunc);
+	      assert (file.good());
+	      file << "# " << varname;
+	      for (int d=0; d<outdim; ++d) {
+		file << " " << "xyz"[dirs[d]];
+	      }
+	      file << " (" << alias << ")" << endl;
+	      file << "#" << endl;
+	      file.close();
+	      assert (file.good());
 	    }
-	    file << " (" << alias << ")" << endl;
-	    file << "#" << endl;
-	    file.close();
-	    assert (file.good());
 	  }
 	  
 	  // Find the output offset

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.hh,v 1.2 2001/03/05 21:48:38 eschnett Exp $
 
  ***************************************************************************/
 
@@ -22,11 +22,39 @@
 #define DIST_HH
 
 #include <cassert>
+#include <cstdio>
 #include <cstdlib>
 
 #include <mpi.h>
 
 #include "defs.hh"
+
+
+
+// A checkpoint for debugging purposes
+#define DIST_VERBOSE						\
+do {								\
+  int rank;							\
+  MPI_Comm_rank (dist::comm, &rank);				\
+  printf ("CHECKPOINT: processor %d, file %s, line %d\n",	\
+	  rank, __FILE__, __LINE__);				\
+} while(0)
+
+// A barrier for debugging purposes
+#define DIST_BARRIER				\
+do {						\
+  MPI_Barrier(dist::comm);			\
+} while(0)
+
+// Both of the above
+#define DIST_VERBOSE_BARRIER			\
+do {						\
+  DIST_VERBOSE;					\
+  DIST_BARRIER;					\
+} while(0)
+
+// Do nothing
+#define DIST_NODEBUG do {} while(0)
 
 
 
