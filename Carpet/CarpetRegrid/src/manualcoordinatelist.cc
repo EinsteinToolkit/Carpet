@@ -12,7 +12,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinatelist.cc,v 1.4 2004/04/28 15:44:59 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinatelist.cc,v 1.5 2004/05/13 13:18:35 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_manualcoordinatelist_cc);
 }
 
@@ -80,7 +80,7 @@ namespace CarpetRegrid {
         newobss.at(rl).resize(newbbss.at(rl).size());
         for (size_t c=0; c<newobss.at(rl).size(); ++c) {
           for (int d=0; d<dim; ++d) {
-            rvect spacing = base_spacing / ipow(reffact, rl);
+            rvect spacing = base_spacing / ipow(reffact, rl+1);
             ierr = ConvertFromPhysicalBoundary
               (dim, &physical_min[0], &physical_max[0],
                &interior_min[0], &interior_max[0],
