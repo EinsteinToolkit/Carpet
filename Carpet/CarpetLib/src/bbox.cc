@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.11 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.12 2003/02/24 17:11:29 schnetter Exp $
 
 #include <assert.h>
 
@@ -130,6 +130,7 @@ bool bbox<T,D>::is_aligned_with (const bbox& b) const {
 // Expand the bbox a little by multiples of the stride
 template<class T, int D>
 bbox<T,D> bbox<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi) const {
+  assert (! empty());
   const vect<T,D> str = stride();
   const vect<T,D> lb = lower() - lo * str;
   const vect<T,D> ub = upper() + hi * str;
@@ -139,6 +140,7 @@ bbox<T,D> bbox<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi) const {
 // Find the smallest b-compatible box around *this
 template<class T, int D>
 bbox<T,D> bbox<T,D>::expanded_for (const bbox& b) const {
+  assert (! empty());
   const vect<T,D> str = b.stride();
   const vect<T,D> loff = ((lower() - b.lower()) % str + str) % str;
   const vect<T,D> uoff = ((upper() - b.lower()) % str + str) % str;
@@ -150,6 +152,7 @@ bbox<T,D> bbox<T,D>::expanded_for (const bbox& b) const {
 // Find the largest b-compatible box inside *this
 template<class T, int D>
 bbox<T,D> bbox<T,D>::contracted_for (const bbox& b) const {
+  assert (! empty());
   const vect<T,D> str = b.stride();
   const vect<T,D> loff = ((lower() - b.lower()) % str + str) % str;
   const vect<T,D> uoff = ((upper() - b.lower()) % str + str) % str;
