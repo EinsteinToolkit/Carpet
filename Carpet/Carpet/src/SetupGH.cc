@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.66 2004/03/23 14:40:46 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.67 2004/03/23 14:45:08 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -621,22 +621,22 @@ namespace Carpet {
           
         } // if there is a group tags table
         
-        CCTK_REAL (* const ripow) (CCTK_REAL const, int const) = pow;
-        CCTK_REAL (* const rfloor) (CCTK_REAL const) = floor;
-        const rvect real_sizes
+        rvect real_sizes
           = ((sizes - convoffsets)
-             / ::zip(ripow, rvect(convergence_factor),
-                     convpowers * basemglevel)
+             / pow(rvect(convergence_factor), convpowers * basemglevel)
              + convoffsets);
-        sizes = ::map(rfloor, (real_sizes + 0.5));
-        if (any (sizes < 0)) {
+        for (int d=gp.dim; d<dim; ++d) {
+          real_sizes[d] = sizes[d];
+        }
+        sizes = floor(real_sizes + 0.5);
+        if (any(sizes < 0)) {
           char * const groupname = CCTK_GroupName(group);
           CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "The shape of group \"%s\" scaled for convergence level %d with convergence factor %d is negative",
                       groupname, basemglevel, convergence_factor);
           free (groupname);
         }
-        if (any (sizes - real_sizes > 0.001)) {
+        if (any(abs(sizes - real_sizes) > 0.001)) {
           char * const groupname = CCTK_GroupName(group);
           CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "The shape of group \"%s\" scaled for convergence level %d with convergence factor %d is not integer",
