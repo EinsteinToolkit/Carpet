@@ -129,6 +129,7 @@ public:
 				   const int order_space,
 				   const int order_time);
   
+  
 public:
 
   // Output
@@ -151,6 +152,17 @@ private:
                               const CCTK_REAL time );
 
 };
+
+
+
+// Declare a specialisation
+template<>
+void data<CCTK_REAL8,3>
+::interpolate_from_innerloop (const vector<const gdata<3>*> gsrcs,
+                              const vector<CCTK_REAL> times,
+                              const ibbox& box, const CCTK_REAL time,
+                              const int order_space,
+                              const int order_time);
 
 
 

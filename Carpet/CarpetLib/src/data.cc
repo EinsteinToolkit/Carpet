@@ -35,12 +35,12 @@ static const CCTK_REAL eps = 1.0e-10;
 // Constructors
 template<class T, int D>
 data<T,D>::data (const int varindex_, const operator_type transport_operator_,
-                 const int vectorlength, const int vectorindex,
-                 data* const vectorleader)
+                 const int vectorlength_, const int vectorindex_,
+                 data* const vectorleader_)
   : gdata<D>(varindex_, transport_operator_),
     _storage(NULL), _allocated_bytes(0),
-    vectorlength(vectorlength), vectorindex(vectorindex),
-    vectorleader(vectorleader)
+    vectorlength(vectorlength_), vectorindex(vectorindex_),
+    vectorleader(vectorleader_)
 {
   assert (vectorlength>=1);
   assert (vectorindex>=0 && vectorindex<vectorlength);
@@ -52,13 +52,13 @@ data<T,D>::data (const int varindex_, const operator_type transport_operator_,
 
 template<class T, int D>
 data<T,D>::data (const int varindex_, const operator_type transport_operator_,
-                 const int vectorlength, const int vectorindex,
-                 data* const vectorleader,
+                 const int vectorlength_, const int vectorindex_,
+                 data* const vectorleader_,
                  const ibbox& extent_, const int proc_)
   : gdata<D>(varindex_, transport_operator_),
     _storage(NULL), _allocated_bytes(0),
-    vectorlength(vectorlength), vectorindex(vectorindex),
-    vectorleader(vectorleader)
+    vectorlength(vectorlength_), vectorindex(vectorindex_),
+    vectorleader(vectorleader_)
 {
   assert (vectorlength>=1);
   assert (vectorindex>=0 && vectorindex<vectorlength);
@@ -108,7 +108,7 @@ template<class T, int D>
 bool data<T,D>::has_clients ()
 {
   bool retval = false;
-  for (size_t n=0; n<vectorlength; ++n) {
+  for (int n=0; n<vectorlength; ++n) {
     retval |= vectorclients.at(n);
   }
   return retval;
@@ -170,7 +170,7 @@ void data<T,D>::allocate (const ibbox& extent_,
     this->_size *= this->_shape[d];
   }
   this->_proc = proc_;
-  if (lives_on_this_processor()) {
+  if (this->lives_on_this_processor()) {
     this->_owns_storage = !mem;
     if (this->_owns_storage) {
       if (this->vectorindex == 0) {
@@ -210,13 +210,13 @@ void data<T,D>::transfer_from (gdata<D>* gsrc)
 }
 
 template<class T, int D>
-T* data<T,D>::vectordata (const int vectorindex) const
+T* data<T,D>::vectordata (const int vectorindex_) const
 {
   assert (this->vectorindex==0);
   assert (! this->vectorleader);
-  assert (vectorindex>=0 && vectorindex<this->vectorlength);
+  assert (vectorindex_>=0 && vectorindex_<this->vectorlength);
   assert (this->_storage && this->_owns_storage);
-  return this->_storage + vectorindex * this->_size;
+  return this->_storage + vectorindex_ * this->_size;
 }
 
 
@@ -232,13 +232,13 @@ void data<T,D>::change_processor_recv (comm_state<D>& state,
   assert (!this->comm_active);
   this->comm_active = true;
   
-  if (newproc == proc()) {
+  if (newproc == this->proc()) {
     assert (!mem);
     return;
   }
   
   if (this->_has_storage) {
-    if (this_processor_is ( newproc)) {
+    if (this->this_processor_is ( newproc)) {
       // copy from other processor
       
       assert (!_storage);
@@ -251,7 +251,7 @@ void data<T,D>::change_processor_recv (comm_state<D>& state,
       
       const double wtime1 = MPI_Wtime();
       T dummy;
-      MPI_Irecv (_storage, this->_size, dist::datatype(dummy), proc(),
+      MPI_Irecv (_storage, this->_size, dist::datatype(dummy), this->proc(),
                  this->tag, dist::comm, &this->request);
       const double wtime2 = MPI_Wtime();
       this->wtime_irecv += wtime2 - wtime1;
@@ -259,7 +259,7 @@ void data<T,D>::change_processor_recv (comm_state<D>& state,
         state.requests.push_back (this->request);
       }
       
-    } else if (lives_on_this_processor()) {
+    } else if (this->lives_on_this_processor()) {
       // copy to other processor
       
     } else {
@@ -280,16 +280,16 @@ void data<T,D>::change_processor_send (comm_state<D>& state,
   
   assert (this->comm_active);
   
-  if (newproc == proc()) {
+  if (newproc == this->proc()) {
     assert (!mem);
     return;
   }
   
   if (this->_has_storage) {
-    if (this_processor_is ( newproc)) {
+    if (this->this_processor_is ( newproc)) {
       // copy from other processor
       
-    } else if (lives_on_this_processor()) {
+    } else if (this->lives_on_this_processor()) {
       // copy to other processor
       
       assert (!mem);
@@ -324,7 +324,7 @@ void data<T,D>::change_processor_wait (comm_state<D>& state,
   assert (this->comm_active);
   this->comm_active = false;
   
-  if (newproc == proc()) {
+  if (newproc == this->proc()) {
     assert (!mem);
     return;
   }
@@ -342,7 +342,7 @@ void data<T,D>::change_processor_wait (comm_state<D>& state,
   }
   
   if (this->_has_storage) {
-    if (this_processor_is ( newproc )) {
+    if (this->this_processor_is ( newproc )) {
       // copy from other processor
       
       if (! use_waitall) {
@@ -353,7 +353,7 @@ void data<T,D>::change_processor_wait (comm_state<D>& state,
         this->wtime_irecvwait += wtime2 - wtime1;
       }
       
-    } else if (lives_on_this_processor()) {
+    } else if (this->lives_on_this_processor()) {
       // copy to other processor
       
       assert (!mem);
@@ -389,7 +389,7 @@ void data<T,D>
 ::copy_from_innerloop (const gdata<D>* gsrc, const ibbox& box)
 {
   const data* src = (const data*)gsrc;
-  assert (has_storage() && src->has_storage());
+  assert (this->has_storage() && src->has_storage());
   assert (all(box.lower()>=this->extent().lower()
 	      && box.lower()>=src->extent().lower()));
   assert (all(box.upper()<=this->extent().upper()
@@ -399,7 +399,7 @@ void data<T,D>
   assert (all((box.lower()-this->extent().lower())%box.stride() == 0
 	      && (box.lower()-src->extent().lower())%box.stride() == 0));
   
-  assert (proc() == src->proc());
+  assert (this->proc() == src->proc());
 
   const int groupindex = CCTK_GroupIndexFromVarI(this->varindex);
   const int group_tags_table = CCTK_GroupTagsTableI(groupindex);
@@ -411,7 +411,7 @@ void data<T,D>
               "There is no copy operator available for the variable type %s, dimension %d.",
               typestring(Tdummy), D);
   
-  assert (lives_on_this_processor());
+  assert (this->lives_on_this_processor());
   
   for (typename ibbox::iterator it=box.begin(); it!=box.end(); ++it) {
     const ivect index = *it;
@@ -430,7 +430,7 @@ void data<T,D>
 			      const int order_space,
 			      const int order_time)
 {
-  assert (has_storage());
+  assert (this->has_storage());
   assert (all(box.lower()>=this->extent().lower()));
   assert (all(box.upper()<=this->extent().upper()));
   assert (all(box.stride()==this->extent().stride()));
@@ -442,12 +442,12 @@ void data<T,D>
     assert (srcs[t]->has_storage());
     assert (all(box.lower()>=srcs[t]->extent().lower()));
     assert (all(box.upper()<=srcs[t]->extent().upper()));
-    assert (proc() == srcs[t]->proc());
+    assert (this->proc() == srcs[t]->proc());
   }
   assert (order_space >= 0);
   assert (order_time >= 0);
   
-  assert (lives_on_this_processor());
+  assert (this->lives_on_this_processor());
   
   assert (this->varindex >= 0);
   const int groupindex = CCTK_GroupIndexFromVarI (this->varindex);
@@ -889,7 +889,7 @@ void data<T,D>
 			      const ibbox& box)
 {
   const ibbox& sext = srcs[0]->extent();
-  const ibbox& dext = extent();
+  const ibbox& dext = this->extent();
   
   int srcshp[3], dstshp[3];
   int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
@@ -897,7 +897,7 @@ void data<T,D>
   fill_bbox_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
 	box, sext, dext );
   
-  switch (transport_operator) {
+  switch (this->transport_operator) {
       
   case op_Lagrange:
   case op_TVD:
@@ -934,14 +934,14 @@ void data<T,D>
                               const int order_time)
 {
   const ibbox& sext = srcs[0]->extent();
-  const ibbox& dext = extent();
+  const ibbox& dext = this->extent();
   
   int srcshp[3], dstshp[3];
   int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
   
   fill_bbox_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
 	box, sext, dext );
-  switch (transport_operator) {
+  switch (this->transport_operator) {
       
   case op_Lagrange:
     switch (order_time) {
