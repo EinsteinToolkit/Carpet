@@ -1,13 +1,15 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/src/carpettest_check_arguments.F77,v 1.4 2001/11/02 10:59:02 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/src/carpettest_check_arguments.F77,v 1.5 2004/01/25 14:57:31 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
+#include "cctk_Functions.h"
 #include "cctk_Parameters.h"
       
       subroutine carpettest_check_arguments (CCTK_ARGUMENTS)
       implicit none
       DECLARE_CCTK_ARGUMENTS
+      DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
       integer i,j,k
       print *, "Xgfg ", Xgfg0, Xgfg1, Xgfg2
@@ -16,16 +18,16 @@ c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/src/carpettest_c
       print *, "Xarrg1 ", Xarrg10
       print *, "Xscg"
       print *
-      do k=1,XGfg2
-         do j=1,XGfg1
-            do i=1,XGfg0
+      do k=1,Xgfg2
+         do j=1,Xgfg1
+            do i=1,Xgfg0
                gf(i,j,k) = i*10000 + j*100 + k
             end do
          end do
       end do
-      do k=1,XArrg32
-         do j=1,XArrg31
-            do i=1,XArrg30
+      do k=1,Xarrg32
+         do j=1,Xarrg31
+            do i=1,Xarrg30
                arr3(i,j,k) = i*10000 + j*100 + k
             end do
          end do

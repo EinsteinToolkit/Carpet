@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetCG/src/CG.cc,v 1.3 2003/11/20 08:34:03 hawke Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetCG/src/CG.cc,v 1.4 2004/01/25 14:57:28 schnetter Exp $ */
 
 #include <cassert>
 #include <cmath>
@@ -680,292 +680,147 @@ namespace CarpetCG {
     assert (minerror >= 0);
     assert (sminerror >= 0);
     assert (stepsize > 0);
-        
-    // Fill common block
-    common::var = var;
-    common::res = res;
-    common::nvars = nvars;
-    common::options_table = options_table;
-    common::calcres = calcres;
-    common::applybnds = applybounds;
-    common::userdata = userdata;
 
-    // Check state
-    // (want global mode, or at least level mode)
-    assert (reflevel==-1 || component==-1);
-    const int saved_reflevel = reflevel;
-    const int saved_mglevel = mglevel;
-    if (reflevel!=-1) {
-      set_mglevel ((cGH *)cctkGH, -1);
-      set_reflevel ((cGH *)cctkGH, -1);
-    }
-  
-  
-    if (verbose || veryverbose) {
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "Solving through nonlinear conjugate gradient iterations");
-    }
-  
-  
-  
-    /*
-     * Literature:
-     *
-     * Jonathan Richard Shewchuk, "An Introduction to the Conjugate
-     * Gradient Method Without the Agonizing Pain", Technical Report
-     * CMU-CS-94-125, Aug. 1994
-     *
-     * Available from http://www-2.cs.cmu.edu/~jrs/jrspapers.html
-     */
+    // Switch to global mode
+    BEGIN_GLOBAL_MODE(cctkGH) {
       
-    /*
-     * Notation:
-     *
-     *    here        there   meaning
-     *                
-     *    iter        i       current cg iteration
-     *    siter       j       current secant iteration
-     *    iter2       k       current cg iteration since last restart
-     *    maxiters2   n       PARA cg iterations before restart
-     *                alpha   secant step size
-     *                beta    cg step size
-     *                delta   cg distance
-     *                epsilon PARA secant error tolerance (straight epsilon)
-     *    minerror    vareps  PARA cg error tolerance (curved epsilon)
-     *                eta     secant distance
-     *    stepsize    sigma   PARA secand method step parameter
-     *                
-     *    dir         d       cg direction
-     *   -calcres     f'      PARA nonlinear operator
-     *    res         r       cg residual
-     *    prs         s       preconditioned cg residual
-     *    var         x       INIT unknown variable
-     *                
-     *   -wgt         M       preconditioning matrix (not in this version)
-     */
+      // Fill common block
+      common::var = var;
+      common::res = res;
+      common::nvars = nvars;
+      common::options_table = options_table;
+      common::calcres = calcres;
+      common::applybnds = applybounds;
+      common::userdata = userdata;
       
-    /* 
-     * Algorithm:
-     * (Preconditioned nonlinear conjugate gradients with secant and
-     * Polak-Ribière)
-     *
-     *    01. i <= 0
-     *    02. k <= 0
-     *    03. r <= - f'(x)
-     *    04. calculate M \approx f''(x)
-     *    05. s <= M^-1 r
-     *    06. d <= s
-     *    07. delta_new <= r^T d
-     *    08. delta_0 <= delta_new
-     *    09. WHILE i < i_max AND delta_new > vareps^2 delta_0 DO
-     *    10.    j <= 0
-     *    11.    delta_d <= d^T d
-     *    12.    alpha <= - sigma_0
-     *    13.    eta_prev <= [f'(x + sigma_0 d)]^T d
-     *    14.    DO
-     *    15.       eta <= [f'(x)]^T d
-     *    16.       alpha <= alpha   (eta) / (eta_prev - eta)
-     *    17.       x <= x + alpha d
-     *    18.       eta_prev <= eta
-     *    19.       j <= j + 1
-     *    20.    WHILE j < j_max AND alpha^2 delta_d > epsilon^2
-     *    21.    r <= - f'(x)
-     *    22.    delta_old <= delta_new
-     *    23.    delta_mid <= r^T s
-     *    24.    calculate M \approx f''(x)
-     *    25.    s <= M^-1 r
-     *    26.    delta_new <= r^T s
-     *    27.    beta <= (delta_new - delta_mid) / (delta_old)
-     *    28.    k <= k + 1
-     *    29.    IF k = n OR beta <= 0 THEN
-     *    30.       d <= s
-     *    31.       k <= 0
-     *    32.    ELSE
-     *    33.       d <= s + beta d
-     *    34.    i <= i + 1
-     */
-      
-
-    // Pointers to grid variables and temporary storage 
-    int varptrs[nvars];
-    int resptrs[nvars];
-    //    CCTK_REAL * restrict * restrict prsptrs;
-    //    CCTK_REAL * restrict * restrict dirptrs;  
-      
-    // Get storage pointers
-    for (n=0; n<nvars; ++n) {
-      varptrs[n] = var[n];
-      resptrs[n] = res[n];
-    }
-  
-    // Allocate temporary memory
-    //    prsptrs = malloc (nvars * sizeof *prsptrs);
-    //    dirptrs = malloc (nvars * sizeof *prsptrs);
-    assert (cg_maxsolvevars >= nvars);
-    int prsptrs[cg_maxsolvevars];
-    int dirptrs[cg_maxsolvevars];
-    assert (prsptrs);
-    assert (dirptrs);
-    for (n=0; n<nvars; ++n) {
-      char varname[1000];
-      sprintf(varname,"CarpetCG::prsvars[%d]",n);
-      prsptrs[n] = CCTK_VarIndex(varname);
-      assert ((prsptrs[n] >= 0)&&(prsptrs[n] < CCTK_NumVars()));
-      sprintf(varname,"CarpetCG::dirvars[%d]",n);
-      dirptrs[n] = CCTK_VarIndex(varname);
-      assert ((dirptrs[n] >= 0)&&(dirptrs[n] < CCTK_NumVars()));
-    }
-  
-  
-  
-    nexttime = time(0);
-  
-    /* 01. i <= 0 */
-    iter = 0;
-  
-    /* 02. k <= 0 */
-    iter2 = 0;
-  
-    /* 03. r <= - f'(x) */
-    /* 04. calculate M \approx f''(x) */
-    common::ierr = 0;
-    CallLocalFunction((cGH *)cctkGH, common::call_calcres);
-    ierr = common::ierr;
-    assert (! ierr);
-
-    for (int n = 0; n < nvars; n++) {
-      common::fromindex[n] = resptrs[n];
-    }
-    for (int n = nvars; n < cg_maxsolvevars; n++) {
-      common::fromindex[n] = -1;
-    }
-    CallLocalFunction((cGH *)cctkGH, common::call_correct_residual_sign);
-    
-    /* 05. s <= M^-1 r */
-    // No preconditioning
-    for (int n = 0; n < nvars; n++) {
-      common::fromindex[n] = resptrs[n];
-      common::toindex[n] = prsptrs[n];
-    }
-    for (int n = nvars; n < cg_maxsolvevars; n++) {
-      common::fromindex[n] = -1;
-      common::toindex[n] = -1;
-    }
-    
-    //    cout << "dirptrs " << dirptrs[0] << endl;
-    
-    CallLocalFunction((cGH *)cctkGH, common::call_apply_preconditioner);
-    
-    //    cout << "dirptrs " << dirptrs[0] << endl;
-      
-    /* 06. d <= s */
-    for (int n = 0; n < nvars; n++) {
-      common::fromindex[n] = prsptrs[n];
-      common::toindex[n] = dirptrs[n];
-    }
-    for (int n = nvars; n < cg_maxsolvevars; n++) {
-      common::fromindex[n] = -1;
-      common::toindex[n] = -1;
-    }
-    
-    //    cout << "dirptrs " << dirptrs[0] << endl;
-    
-    CallLocalFunction((cGH *)cctkGH, common::call_copy);
-  
-    //    cout << "dirptrs " << dirptrs[0] << endl;
-    
-    /* 07. delta_new <= r^T d */
-    //    output (cctkGH, var, res, wgt, nvars, iter);
-    common::realoutput_count = 0;
-    for (int n = 0; n < nvars; n++) {
-      common::fromindex[n] = prsptrs[n];
-      common::toindex[n] = resptrs[n];
-    }
-    for (int n = nvars; n < cg_maxsolvevars; n++) {
-      common::fromindex[n] = -1;
-      common::toindex[n] = -1;
-    }
-    
-    //    cout << "dirptrs " << dirptrs[0] << endl;
-    
-    CallLocalFunction((cGH *)cctkGH, common::call_dot_product);
-    delta_new = common::realoutput;
-    gsize = common::realoutput_count;
-    //    cout << "delta_new " << delta_new << " gsize " << gsize << endl;
-    
-    for (int n = 0; n < nvars; n++) {
-      common::fromindex[n] = resptrs[n];
-      common::toindex[n] = resptrs[n];
-    }
-    for (int n = nvars; n < cg_maxsolvevars; n++) {
-      common::fromindex[n] = -1;
-      common::toindex[n] = -1;
-    }
-    
-    CallLocalFunction((cGH *)cctkGH, common::call_dot_product);
-    epsilon = common::realoutput;
-//     cout << "epsilon " << epsilon << endl;
-    
-    /* 08. delta_0 <= delta_new */
-    delta_0 = delta_new;
-  
-    /* 09. WHILE i < i_max AND delta_new > vareps^2 delta_0 DO */
-    while (iter < maxiters && epsilon / (nvars * gsize) > pow(minerror,2)) {
-    
       if (verbose || veryverbose) {
-        currenttime = time(0);
-        if (veryverbose || (iter % outevery == 0 && currenttime >= nexttime)) {
-          CCTK_VInfo (CCTK_THORNSTRING,
-                      "Iteration %d (%d since restart): residual is %g (%g,%d,%g)",
-                      iter, iter2, (double)sqrt(epsilon / (nvars * gsize)),epsilon,nvars,gsize);
-          if (outeveryseconds > 0) {
-            while (nexttime <= currenttime) nexttime += outeveryseconds;
-          }
-        }
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "Solving through nonlinear conjugate gradient iterations");
       }
-    
-      /* 10. j <= 0 */
-      siter = 0;
+      
+      
+      
+      /*
+       * Literature:
+       *
+       * Jonathan Richard Shewchuk, "An Introduction to the Conjugate
+       * Gradient Method Without the Agonizing Pain", Technical Report
+       * CMU-CS-94-125, Aug. 1994
+       *
+       * Available from http://www-2.cs.cmu.edu/~jrs/jrspapers.html
+       */
+      
+      /*
+       * Notation:
+       *
+       *    here        there   meaning
+       *                
+       *    iter        i       current cg iteration
+       *    siter       j       current secant iteration
+       *    iter2       k       current cg iteration since last restart
+       *    maxiters2   n       PARA cg iterations before restart
+       *                alpha   secant step size
+       *                beta    cg step size
+       *                delta   cg distance
+       *                epsilon PARA secant error tolerance (straight epsilon)
+       *    minerror    vareps  PARA cg error tolerance (curved epsilon)
+       *                eta     secant distance
+       *    stepsize    sigma   PARA secand method step parameter
+       *                
+       *    dir         d       cg direction
+       *   -calcres     f'      PARA nonlinear operator
+       *    res         r       cg residual
+       *    prs         s       preconditioned cg residual
+       *    var         x       INIT unknown variable
+       *                
+       *   -wgt         M       preconditioning matrix (not in this version)
+       */
+      
+      /* 
+       * Algorithm:
+       * (Preconditioned nonlinear conjugate gradients with secant and
+       * Polak-Ribière)
+       *
+       *    01. i <= 0
+       *    02. k <= 0
+       *    03. r <= - f'(x)
+       *    04. calculate M \approx f''(x)
+       *    05. s <= M^-1 r
+       *    06. d <= s
+       *    07. delta_new <= r^T d
+       *    08. delta_0 <= delta_new
+       *    09. WHILE i < i_max AND delta_new > vareps^2 delta_0 DO
+       *    10.    j <= 0
+       *    11.    delta_d <= d^T d
+       *    12.    alpha <= - sigma_0
+       *    13.    eta_prev <= [f'(x + sigma_0 d)]^T d
+       *    14.    DO
+       *    15.       eta <= [f'(x)]^T d
+       *    16.       alpha <= alpha   (eta) / (eta_prev - eta)
+       *    17.       x <= x + alpha d
+       *    18.       eta_prev <= eta
+       *    19.       j <= j + 1
+       *    20.    WHILE j < j_max AND alpha^2 delta_d > epsilon^2
+       *    21.    r <= - f'(x)
+       *    22.    delta_old <= delta_new
+       *    23.    delta_mid <= r^T s
+       *    24.    calculate M \approx f''(x)
+       *    25.    s <= M^-1 r
+       *    26.    delta_new <= r^T s
+       *    27.    beta <= (delta_new - delta_mid) / (delta_old)
+       *    28.    k <= k + 1
+       *    29.    IF k = n OR beta <= 0 THEN
+       *    30.       d <= s
+       *    31.       k <= 0
+       *    32.    ELSE
+       *    33.       d <= s + beta d
+       *    34.    i <= i + 1
+       */
+      
 
-      /* 11. delta_d <= d^T d */
-      for (int n = 0; n < nvars; n++) {
-        common::fromindex[n] = dirptrs[n];
-        common::toindex[n] = dirptrs[n];
+      // Pointers to grid variables and temporary storage 
+      vector<int> varptrs(nvars);
+      vector<int> resptrs(nvars);
+      //    CCTK_REAL * restrict * restrict prsptrs;
+      //    CCTK_REAL * restrict * restrict dirptrs;  
+      
+      // Get storage pointers
+      for (n=0; n<nvars; ++n) {
+        varptrs[n] = var[n];
+        resptrs[n] = res[n];
       }
-      for (int n = nvars; n < cg_maxsolvevars; n++) {
-        common::fromindex[n] = -1;
-        common::toindex[n] = -1;
+  
+      // Allocate temporary memory
+      //    prsptrs = malloc (nvars * sizeof *prsptrs);
+      //    dirptrs = malloc (nvars * sizeof *prsptrs);
+      assert (cg_maxsolvevars >= nvars);
+      vector<int> prsptrs(cg_maxsolvevars);
+      vector<int> dirptrs(cg_maxsolvevars);
+      for (n=0; n<nvars; ++n) {
+        char varname[1000];
+        sprintf(varname,"CarpetCG::prsvars[%d]",n);
+        prsptrs[n] = CCTK_VarIndex(varname);
+        assert ((prsptrs[n] >= 0)&&(prsptrs[n] < CCTK_NumVars()));
+        sprintf(varname,"CarpetCG::dirvars[%d]",n);
+        dirptrs[n] = CCTK_VarIndex(varname);
+        assert ((dirptrs[n] >= 0)&&(dirptrs[n] < CCTK_NumVars()));
       }
-
-      CallLocalFunction((cGH *)cctkGH, common::call_dot_product);
-      delta_d = common::realoutput;
-
-//       cout << "delta_d " << delta_d << endl;
-    
-      /* 12. alpha <= - sigma_0 */
-      alpha = - stepsize;
-      sum_alpha = alpha;
-      do_abort = 0;
-    
-      /* 13. eta_prev <= [f'(x + sigma_0 d)]^T d */
-      for (int n = 0; n < nvars; n++) {
-        common::fromindex[n] = dirptrs[n];
-        common::toindex[n] = varptrs[n];
-      }
-      for (int n = nvars; n < cg_maxsolvevars; n++) {
-        common::fromindex[n] = -1;
-        common::toindex[n] = -1;
-      }
-      common::realconstant = -alpha;
-//       cout << "Add scaled, const " << -alpha << endl;
-
-      CallLocalFunction((cGH *)cctkGH, common::call_add_scaled);
+  
+  
+  
+      nexttime = time(0);
+  
+      /* 01. i <= 0 */
+      iter = 0;
+  
+      /* 02. k <= 0 */
+      iter2 = 0;
+  
+      /* 03. r <= - f'(x) */
+      /* 04. calculate M \approx f''(x) */
       common::ierr = 0;
-      CallLocalFunction((cGH *)cctkGH, common::call_applybnds);
-      assert (! ierr);
-    
-      ierr = 0;
       CallLocalFunction((cGH *)cctkGH, common::call_calcres);
+      ierr = common::ierr;
       assert (! ierr);
 
       for (int n = 0; n < nvars; n++) {
@@ -976,49 +831,129 @@ namespace CarpetCG {
       }
       CallLocalFunction((cGH *)cctkGH, common::call_correct_residual_sign);
     
+      /* 05. s <= M^-1 r */
+      // No preconditioning
       for (int n = 0; n < nvars; n++) {
-        common::fromindex[n] = dirptrs[n];
+        common::fromindex[n] = resptrs[n];
+        common::toindex[n] = prsptrs[n];
+      }
+      for (int n = nvars; n < cg_maxsolvevars; n++) {
+        common::fromindex[n] = -1;
+        common::toindex[n] = -1;
+      }
+    
+      //    cout << "dirptrs " << dirptrs[0] << endl;
+    
+      CallLocalFunction((cGH *)cctkGH, common::call_apply_preconditioner);
+    
+      //    cout << "dirptrs " << dirptrs[0] << endl;
+      
+      /* 06. d <= s */
+      for (int n = 0; n < nvars; n++) {
+        common::fromindex[n] = prsptrs[n];
+        common::toindex[n] = dirptrs[n];
+      }
+      for (int n = nvars; n < cg_maxsolvevars; n++) {
+        common::fromindex[n] = -1;
+        common::toindex[n] = -1;
+      }
+    
+      //    cout << "dirptrs " << dirptrs[0] << endl;
+    
+      CallLocalFunction((cGH *)cctkGH, common::call_copy);
+  
+      //    cout << "dirptrs " << dirptrs[0] << endl;
+    
+      /* 07. delta_new <= r^T d */
+      //    output (cctkGH, var, res, wgt, nvars, iter);
+      common::realoutput_count = 0;
+      for (int n = 0; n < nvars; n++) {
+        common::fromindex[n] = prsptrs[n];
         common::toindex[n] = resptrs[n];
       }
       for (int n = nvars; n < cg_maxsolvevars; n++) {
         common::fromindex[n] = -1;
         common::toindex[n] = -1;
       }
+    
+      //    cout << "dirptrs " << dirptrs[0] << endl;
+    
       CallLocalFunction((cGH *)cctkGH, common::call_dot_product);
-      eta = - common::realoutput;
-
-//       cout << "eta " << eta << endl;
-
+      delta_new = common::realoutput;
+      gsize = common::realoutput_count;
+      //    cout << "delta_new " << delta_new << " gsize " << gsize << endl;
+    
       for (int n = 0; n < nvars; n++) {
-        common::fromindex[n] = dirptrs[n];
-        common::toindex[n] = varptrs[n];
+        common::fromindex[n] = resptrs[n];
+        common::toindex[n] = resptrs[n];
       }
       for (int n = nvars; n < cg_maxsolvevars; n++) {
         common::fromindex[n] = -1;
         common::toindex[n] = -1;
       }
-      common::realconstant = alpha;
-//       cout << "Add scaled, const " << alpha << endl;
-
-      CallLocalFunction((cGH *)cctkGH, common::call_add_scaled);
-      ierr = 0;
-      CallLocalFunction((cGH *)cctkGH, common::call_applybnds);
-      assert (! ierr);
     
-      eta_prev = eta;
+      CallLocalFunction((cGH *)cctkGH, common::call_dot_product);
+      epsilon = common::realoutput;
+      //     cout << "epsilon " << epsilon << endl;
     
-      /* 14. DO */
-      do {
+      /* 08. delta_0 <= delta_new */
+      delta_0 = delta_new;
+  
+      /* 09. WHILE i < i_max AND delta_new > vareps^2 delta_0 DO */
+      while (iter < maxiters && epsilon / (nvars * gsize) > pow(minerror,2)) {
     
-        if (veryverbose) {
-          CCTK_VInfo
-            (CCTK_THORNSTRING,
-             "   Secant iteration %d: step size is %g, orthogonality is %g",
-             siter,
-             (double)alpha, (double)sqrt(fabs(eta_prev) / (nvars * gsize)));
+        if (verbose || veryverbose) {
+          currenttime = time(0);
+          if (veryverbose || (iter % outevery == 0 && currenttime >= nexttime)) {
+            CCTK_VInfo (CCTK_THORNSTRING,
+                        "Iteration %d (%d since restart): residual is %g (%g,%d,%g)",
+                        iter, iter2, (double)sqrt(epsilon / (nvars * gsize)),epsilon,nvars,gsize);
+            if (outeveryseconds > 0) {
+              while (nexttime <= currenttime) nexttime += outeveryseconds;
+            }
+          }
         }
-      
-        /* 15. eta <= [f'(x)]^T d */
+    
+        /* 10. j <= 0 */
+        siter = 0;
+
+        /* 11. delta_d <= d^T d */
+        for (int n = 0; n < nvars; n++) {
+          common::fromindex[n] = dirptrs[n];
+          common::toindex[n] = dirptrs[n];
+        }
+        for (int n = nvars; n < cg_maxsolvevars; n++) {
+          common::fromindex[n] = -1;
+          common::toindex[n] = -1;
+        }
+
+        CallLocalFunction((cGH *)cctkGH, common::call_dot_product);
+        delta_d = common::realoutput;
+
+        //       cout << "delta_d " << delta_d << endl;
+    
+        /* 12. alpha <= - sigma_0 */
+        alpha = - stepsize;
+        sum_alpha = alpha;
+        do_abort = 0;
+    
+        /* 13. eta_prev <= [f'(x + sigma_0 d)]^T d */
+        for (int n = 0; n < nvars; n++) {
+          common::fromindex[n] = dirptrs[n];
+          common::toindex[n] = varptrs[n];
+        }
+        for (int n = nvars; n < cg_maxsolvevars; n++) {
+          common::fromindex[n] = -1;
+          common::toindex[n] = -1;
+        }
+        common::realconstant = -alpha;
+        //       cout << "Add scaled, const " << -alpha << endl;
+
+        CallLocalFunction((cGH *)cctkGH, common::call_add_scaled);
+        common::ierr = 0;
+        CallLocalFunction((cGH *)cctkGH, common::call_applybnds);
+        assert (! ierr);
+    
         ierr = 0;
         CallLocalFunction((cGH *)cctkGH, common::call_calcres);
         assert (! ierr);
@@ -1030,7 +965,7 @@ namespace CarpetCG {
           common::fromindex[n] = -1;
         }
         CallLocalFunction((cGH *)cctkGH, common::call_correct_residual_sign);
-
+    
         for (int n = 0; n < nvars; n++) {
           common::fromindex[n] = dirptrs[n];
           common::toindex[n] = resptrs[n];
@@ -1039,34 +974,10 @@ namespace CarpetCG {
           common::fromindex[n] = -1;
           common::toindex[n] = -1;
         }
-
         CallLocalFunction((cGH *)cctkGH, common::call_dot_product);
         eta = - common::realoutput;
 
-//         cout << "eta " << eta << endl;
-      
-        /* 16. alpha <= alpha   (eta) / (eta_prev - eta) */
-        alpha_old = alpha;
-        alpha *= eta / (eta_prev - eta);
-        sum_alpha += alpha;
-        if (veryverbose) {
-          CCTK_VInfo
-            (CCTK_THORNSTRING,
-             "   Changing step size, iteration %d: was %g, now %g (%g, %g)", 
-             siter, alpha_old, alpha, eta, eta_prev);
-        }
-        assert (sum_alpha > - maxstepsize);
-        if (sum_alpha > maxstepsize) {
-          alpha = maxstepsize - alpha_old;
-          do_abort = 1;
-          if (verbose) {
-            CCTK_VInfo
-              (CCTK_THORNSTRING,
-               "   Secant iteration %d: limiting total step size", siter);
-          }
-        }
-      
-        /* 17. x <= x + alpha d */
+        //       cout << "eta " << eta << endl;
 
         for (int n = 0; n < nvars; n++) {
           common::fromindex[n] = dirptrs[n];
@@ -1077,174 +988,249 @@ namespace CarpetCG {
           common::toindex[n] = -1;
         }
         common::realconstant = alpha;
-//         cout << "Add scaled, const " << alpha << endl;
+        //       cout << "Add scaled, const " << alpha << endl;
 
         CallLocalFunction((cGH *)cctkGH, common::call_add_scaled);
         ierr = 0;
         CallLocalFunction((cGH *)cctkGH, common::call_applybnds);
         assert (! ierr);
-      
-        /* 18. eta_prev <= eta */
+    
         eta_prev = eta;
+    
+        /* 14. DO */
+        do {
+    
+          if (veryverbose) {
+            CCTK_VInfo
+              (CCTK_THORNSTRING,
+               "   Secant iteration %d: step size is %g, orthogonality is %g",
+               siter,
+               (double)alpha, (double)sqrt(fabs(eta_prev) / (nvars * gsize)));
+          }
       
-        /* 19. j <= j + 1 */
-        ++ siter;
+          /* 15. eta <= [f'(x)]^T d */
+          ierr = 0;
+          CallLocalFunction((cGH *)cctkGH, common::call_calcres);
+          assert (! ierr);
+
+          for (int n = 0; n < nvars; n++) {
+            common::fromindex[n] = resptrs[n];
+          }
+          for (int n = nvars; n < cg_maxsolvevars; n++) {
+            common::fromindex[n] = -1;
+          }
+          CallLocalFunction((cGH *)cctkGH, common::call_correct_residual_sign);
+
+          for (int n = 0; n < nvars; n++) {
+            common::fromindex[n] = dirptrs[n];
+            common::toindex[n] = resptrs[n];
+          }
+          for (int n = nvars; n < cg_maxsolvevars; n++) {
+            common::fromindex[n] = -1;
+            common::toindex[n] = -1;
+          }
+
+          CallLocalFunction((cGH *)cctkGH, common::call_dot_product);
+          eta = - common::realoutput;
+
+          //         cout << "eta " << eta << endl;
       
-        /* 20. WHILE j < j_max AND alpha^2 delta_d > epsilon^2 */
-      } while (siter < smaxiters
-               && pow(alpha,2) * delta_d > pow(sminerror,2)
-               && !do_abort);
-    
-      if (veryverbose) {
-        CCTK_VInfo
-          (CCTK_THORNSTRING,
-           "   Secant iteration %d: step size is %g, orthogonality is %g",
-           siter,
-           (double)alpha, (double)sqrt(fabs(eta_prev) / (nvars * gsize)));
-      }
-    
-      /* 21. r <= - f'(x) */
-      /* 24. calculate M \approx f''(x) */
-      ierr = 0;
-      CallLocalFunction((cGH *)cctkGH, common::call_calcres);
-      assert (! ierr);
-
-      for (int n = 0; n < nvars; n++) {
-        common::fromindex[n] = resptrs[n];
-      }
-      for (int n = nvars; n < cg_maxsolvevars; n++) {
-        common::fromindex[n] = -1;
-      }
-      CallLocalFunction((cGH *)cctkGH, common::call_correct_residual_sign);
-    
-      /* 23. delta_mid <= r^T s */
-      for (int n = 0; n < nvars; n++) {
-        common::fromindex[n] = prsptrs[n];
-        common::toindex[n] = resptrs[n];
-      }
-      for (int n = nvars; n < cg_maxsolvevars; n++) {
-        common::fromindex[n] = -1;
-        common::toindex[n] = -1;
-      }
-
-      CallLocalFunction((cGH *)cctkGH, common::call_dot_product);
-      delta_mid = common::realoutput;
-//       cout << "delta_mid " << delta_mid << endl;
+          /* 16. alpha <= alpha   (eta) / (eta_prev - eta) */
+          alpha_old = alpha;
+          alpha *= eta / (eta_prev - eta);
+          sum_alpha += alpha;
+          if (veryverbose) {
+            CCTK_VInfo
+              (CCTK_THORNSTRING,
+               "   Changing step size, iteration %d: was %g, now %g (%g, %g)", 
+               siter, alpha_old, alpha, eta, eta_prev);
+          }
+          assert (sum_alpha > - maxstepsize);
+          if (sum_alpha > maxstepsize) {
+            alpha = maxstepsize - alpha_old;
+            do_abort = 1;
+            if (verbose) {
+              CCTK_VInfo
+                (CCTK_THORNSTRING,
+                 "   Secant iteration %d: limiting total step size", siter);
+            }
+          }
       
-      /* 25. s <= M^-1 r */
-      for (int n = 0; n < nvars; n++) {
-        common::fromindex[n] = resptrs[n];
-        common::toindex[n] = prsptrs[n];
-      }
-      for (int n = nvars; n < cg_maxsolvevars; n++) {
-        common::fromindex[n] = -1;
-        common::toindex[n] = -1;
-      }
+          /* 17. x <= x + alpha d */
+
+          for (int n = 0; n < nvars; n++) {
+            common::fromindex[n] = dirptrs[n];
+            common::toindex[n] = varptrs[n];
+          }
+          for (int n = nvars; n < cg_maxsolvevars; n++) {
+            common::fromindex[n] = -1;
+            common::toindex[n] = -1;
+          }
+          common::realconstant = alpha;
+          //         cout << "Add scaled, const " << alpha << endl;
+
+          CallLocalFunction((cGH *)cctkGH, common::call_add_scaled);
+          ierr = 0;
+          CallLocalFunction((cGH *)cctkGH, common::call_applybnds);
+          assert (! ierr);
       
-      CallLocalFunction((cGH *)cctkGH, common::call_apply_preconditioner);
-
-      /* 22. delta_old <= delta_new */
-      delta_old = delta_new;
-    
-      /* 26. delta_new <= r^T s */
-//       output (cctkGH, var, res, wgt, nvars, iter+1);
-      for (int n = 0; n < nvars; n++) {
-        common::fromindex[n] = prsptrs[n];
-        common::toindex[n] = resptrs[n];
-      }
-      for (int n = nvars; n < cg_maxsolvevars; n++) {
-        common::fromindex[n] = -1;
-        common::toindex[n] = -1;
-      }
-
-      CallLocalFunction((cGH *)cctkGH, common::call_dot_product);
-      delta_new = common::realoutput;
-//       cout << "delta_new " << delta_new << endl;
-
-      for (int n = 0; n < nvars; n++) {
-        common::fromindex[n] = resptrs[n];
-        common::toindex[n] = resptrs[n];
-      }
-      for (int n = nvars; n < cg_maxsolvevars; n++) {
-        common::fromindex[n] = -1;
-        common::toindex[n] = -1;
-      }
-
-      CallLocalFunction((cGH *)cctkGH, common::call_dot_product);
-      epsilon = common::realoutput;
-//       cout << "epsilon " << epsilon << endl;
-    
-      /* 27. beta <= (delta_new - delta_mid) / (delta_old) */
-      beta = (delta_new - delta_mid) / delta_old;
-    
-      /* 28. k <= k + 1 */
-      ++ iter2;
-    
-      /* 29. IF k = n OR beta <= 0 THEN */
-      if (iter2 >= maxiters2 || beta <= 0 || do_abort) {
-        /* Restart */
+          /* 18. eta_prev <= eta */
+          eta_prev = eta;
       
-        /* 30. d <= s */
+          /* 19. j <= j + 1 */
+          ++ siter;
+      
+          /* 20. WHILE j < j_max AND alpha^2 delta_d > epsilon^2 */
+        } while (siter < smaxiters
+                 && pow(alpha,2) * delta_d > pow(sminerror,2)
+                 && !do_abort);
+    
+        if (veryverbose) {
+          CCTK_VInfo
+            (CCTK_THORNSTRING,
+             "   Secant iteration %d: step size is %g, orthogonality is %g",
+             siter,
+             (double)alpha, (double)sqrt(fabs(eta_prev) / (nvars * gsize)));
+        }
+    
+        /* 21. r <= - f'(x) */
+        /* 24. calculate M \approx f''(x) */
+        ierr = 0;
+        CallLocalFunction((cGH *)cctkGH, common::call_calcres);
+        assert (! ierr);
+
+        for (int n = 0; n < nvars; n++) {
+          common::fromindex[n] = resptrs[n];
+        }
+        for (int n = nvars; n < cg_maxsolvevars; n++) {
+          common::fromindex[n] = -1;
+        }
+        CallLocalFunction((cGH *)cctkGH, common::call_correct_residual_sign);
+    
+        /* 23. delta_mid <= r^T s */
         for (int n = 0; n < nvars; n++) {
           common::fromindex[n] = prsptrs[n];
-          common::toindex[n] = dirptrs[n];
+          common::toindex[n] = resptrs[n];
         }
         for (int n = nvars; n < cg_maxsolvevars; n++) {
           common::fromindex[n] = -1;
           common::toindex[n] = -1;
         }
-        CallLocalFunction((cGH *)cctkGH, common::call_copy);
+
+        CallLocalFunction((cGH *)cctkGH, common::call_dot_product);
+        delta_mid = common::realoutput;
+        //       cout << "delta_mid " << delta_mid << endl;
       
-        /* 31. k <= 0 */
-        iter2 = 0;
-      
-        /* 32. ELSE */
-      } else {
-        /* Continue with CG iterations */
-      
-        /* 33. d <= s + beta d */
+        /* 25. s <= M^-1 r */
         for (int n = 0; n < nvars; n++) {
-          common::fromindex[n] = prsptrs[n];
-          common::toindex[n] = dirptrs[n];
+          common::fromindex[n] = resptrs[n];
+          common::toindex[n] = prsptrs[n];
         }
         for (int n = nvars; n < cg_maxsolvevars; n++) {
           common::fromindex[n] = -1;
           common::toindex[n] = -1;
         }
-        common::realconstant = beta;
-        //        cout << "beta " << beta << endl;
+      
+        CallLocalFunction((cGH *)cctkGH, common::call_apply_preconditioner);
+
+        /* 22. delta_old <= delta_new */
+        delta_old = delta_new;
+    
+        /* 26. delta_new <= r^T s */
+        //       output (cctkGH, var, res, wgt, nvars, iter+1);
+        for (int n = 0; n < nvars; n++) {
+          common::fromindex[n] = prsptrs[n];
+          common::toindex[n] = resptrs[n];
+        }
+        for (int n = nvars; n < cg_maxsolvevars; n++) {
+          common::fromindex[n] = -1;
+          common::toindex[n] = -1;
+        }
+
+        CallLocalFunction((cGH *)cctkGH, common::call_dot_product);
+        delta_new = common::realoutput;
+        //       cout << "delta_new " << delta_new << endl;
+
+        for (int n = 0; n < nvars; n++) {
+          common::fromindex[n] = resptrs[n];
+          common::toindex[n] = resptrs[n];
+        }
+        for (int n = nvars; n < cg_maxsolvevars; n++) {
+          common::fromindex[n] = -1;
+          common::toindex[n] = -1;
+        }
+
+        CallLocalFunction((cGH *)cctkGH, common::call_dot_product);
+        epsilon = common::realoutput;
+        //       cout << "epsilon " << epsilon << endl;
+    
+        /* 27. beta <= (delta_new - delta_mid) / (delta_old) */
+        beta = (delta_new - delta_mid) / delta_old;
+    
+        /* 28. k <= k + 1 */
+        ++ iter2;
+    
+        /* 29. IF k = n OR beta <= 0 THEN */
+        if (iter2 >= maxiters2 || beta <= 0 || do_abort) {
+          /* Restart */
+      
+          /* 30. d <= s */
+          for (int n = 0; n < nvars; n++) {
+            common::fromindex[n] = prsptrs[n];
+            common::toindex[n] = dirptrs[n];
+          }
+          for (int n = nvars; n < cg_maxsolvevars; n++) {
+            common::fromindex[n] = -1;
+            common::toindex[n] = -1;
+          }
+          CallLocalFunction((cGH *)cctkGH, common::call_copy);
+      
+          /* 31. k <= 0 */
+          iter2 = 0;
+      
+          /* 32. ELSE */
+        } else {
+          /* Continue with CG iterations */
+      
+          /* 33. d <= s + beta d */
+          for (int n = 0; n < nvars; n++) {
+            common::fromindex[n] = prsptrs[n];
+            common::toindex[n] = dirptrs[n];
+          }
+          for (int n = nvars; n < cg_maxsolvevars; n++) {
+            common::fromindex[n] = -1;
+            common::toindex[n] = -1;
+          }
+          common::realconstant = beta;
+          //        cout << "beta " << beta << endl;
         
-        CallLocalFunction((cGH *)cctkGH, common::call_scale_and_add);
+          CallLocalFunction((cGH *)cctkGH, common::call_scale_and_add);
       
-      } /* if iter2 */
+        } /* if iter2 */
     
         /* 34. i <= i + 1 */
-      ++ iter;
+        ++ iter;
     
-    } /* for iter */
+      } /* for iter */
   
-    if (verbose || veryverbose) {
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "Iteration %d (%d since restart): residual is %g",
-                  iter, iter2, (double)sqrt(epsilon / (nvars * gsize)));
-    }
+      if (verbose || veryverbose) {
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "Iteration %d (%d since restart): residual is %g",
+                    iter, iter2, (double)sqrt(epsilon / (nvars * gsize)));
+      }
   
     /* Free temporary memory */
-//     for (n=0; n<nvars; ++n) {
-//       free (prsptrs[n]);
-//       free (dirptrs[n]);
-//     }
-  
-//     free (varptrs);
-//     free (resptrs);
-//     free (prsptrs);
-//     free (dirptrs);
-
-    // Restore state
-    if (reflevel!=saved_reflevel) {
-      set_reflevel ((cGH *)cctkGH, saved_reflevel);
-      set_mglevel ((cGH *)cctkGH, saved_mglevel);
-    }
+      //     for (n=0; n<nvars; ++n) {
+      //       free (prsptrs[n]);
+      //       free (dirptrs[n]);
+      //     }
+      
+      //     free (varptrs);
+      //     free (resptrs);
+      //     free (prsptrs);
+      //     free (dirptrs);
+      
+    } END_GLOBAL_MODE;
     
     return 0;
   }
