@@ -11,7 +11,7 @@
 #include "carpet.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.17 2004/03/23 11:50:56 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.18 2004/03/23 12:07:04 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_CallFunction_cc);
 }
 
@@ -63,9 +63,7 @@ namespace Carpet {
       const int res = CCTK_CallFunction (function, attribute, data);
       assert (res==0);
       
-// TODO: disable temporarily
-//    } else if (attribute->singlemap) {
-    } else if (false) {
+    } else if (attribute->singlemap) {
       // Single map operation: call once per refinement level and map
       
       BEGIN_MAP_LOOP(cgh, CCTK_GF) {
