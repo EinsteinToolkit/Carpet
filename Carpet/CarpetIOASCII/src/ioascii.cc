@@ -43,7 +43,7 @@ using namespace Carpet;
 
 namespace CarpetIOASCII {
   
-  const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.36 2002/08/30 18:08:52 schnetter Exp $";
+  const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.37 2002/09/01 09:44:34 schnetter Exp $";
   
   CCTK_FILEVERSION(CarpetIOASCII_ioascii_cc);
   
@@ -669,7 +669,7 @@ namespace CarpetIOASCII {
     const int numvars = CCTK_NumVars();
     assert (vindex>=0 && vindex<numvars);
     
-    bool* const flags = new bool [numvars];
+    bool flags[numvars];
     
     for (int i=0; i<numvars; ++i) {
       flags[i] = false;
@@ -677,10 +677,7 @@ namespace CarpetIOASCII {
     
     CCTK_TraverseString (varlist, SetFlag, flags, CCTK_GROUP_OR_VAR);
     
-    const bool flag = flags[vindex];
-    delete [] flags;
-    
-    return flag;
+    return flags[vindex];
   }
   
   void SetFlag (int index, const char* optstring, void* arg)
