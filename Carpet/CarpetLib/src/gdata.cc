@@ -456,6 +456,12 @@ bool gdata<D>
   return this_processor_is( proc() );
 }
 
+template<int D>
+gdata<D>& gdata<D>
+::operator = ( const gdata & ) // canonical copy
+{
+	return *this; // does nothing
+}
 
 template class comm_state<3>;
 template class gdata<3>;

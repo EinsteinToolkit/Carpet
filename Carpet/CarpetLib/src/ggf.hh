@@ -51,23 +51,23 @@ class ggf {
 public:				// should be readonly
   
   // Fields
-  int varindex;                 // Cactus variable index
-  operator_type transport_operator;
+  const int varindex;                 // Cactus variable index
+  const operator_type transport_operator;
   
-  th<D> &t;			// time hierarchy
-  int tmin, tmax;		// timelevels
-  int prolongation_order_time;	// order of temporal prolongation operator
+  const th<D> &t;			// time hierarchy
+  const int tmin, tmax;		// timelevels
+  const int prolongation_order_time;	// order of temporal prolongation operator
   
-  gh<D> &h;			// grid hierarchy
+  const gh<D> &h;			// grid hierarchy
   dh<D> &d;			// data hierarchy
 
 protected:
   fdata storage;		// storage
   
 public:
-  int vectorlength;             // vector length
-  int vectorindex;              // index of *this
-  ggf* vectorleader;            // first vector element
+  const int vectorlength;             // vector length
+  const int vectorindex;              // index of *this
+  const ggf* vectorleader;            // first vector element
   
 private:
   fdata oldstorage;
@@ -211,6 +211,12 @@ public:
   
   // Output
   virtual ostream& output (ostream& os) const = 0;
+
+private:
+  ggf (); // canonical default construtor
+  ggf ( const ggf & ); // canonical copy construtor
+  ggf & operator =( const ggf & ); // canonical copy
+
 };
 
 

@@ -62,7 +62,7 @@ class gdata {
 protected:                      // should be readonly
 
   // Fields
-  int varindex;                 // Cactus variable index, or -1
+  const int varindex;                 // Cactus variable index, or -1
   operator_type transport_operator;
   
   double wtime_isend, wtime_isendwait;
@@ -229,7 +229,7 @@ protected:
 			      const ibbox& box, const CCTK_REAL time,
 			      const int order_space,
 			      const int order_time) = 0;
-  
+   gdata & operator =( const gdata & ); // canonical copy
 };
 
 

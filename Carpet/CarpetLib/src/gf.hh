@@ -80,6 +80,11 @@ public:
   
   // Output
   virtual ostream& output (ostream& os) const;
+private:
+  gf (); // canonical default construtor
+  gf ( const gf & ); // canonical copy construtor
+  gf & operator =( const gf & ); // canonical copy
+
 };
 
 
