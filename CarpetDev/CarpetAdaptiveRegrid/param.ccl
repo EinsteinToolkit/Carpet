@@ -35,3 +35,10 @@ CCTK_INT pad "Number of cells that the error should be padded" STEERABLE=always
   0:* :: "Non negative"
 } 2
 
+CCTK_BOOLEAN verbose "Should we be verbose"
+{
+} "no"
+
+CCTK_BOOLEAN veryverbose "Should we be very verbose"
+{
+} "no"

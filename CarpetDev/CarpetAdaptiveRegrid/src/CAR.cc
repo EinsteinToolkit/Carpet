@@ -94,7 +94,11 @@ namespace CarpetAdaptiveRegrid {
 
     if (reflevel == maxreflevels - 1) return 0;
 
-    int do_recompose;
+    cout << "bbsss at start" << endl << bbsss << endl;
+    cout << "obss at start" << endl << obss << endl;
+    cout << "pss at start" << endl << pss << endl;
+
+    CCTK_INT do_recompose;
     do_recompose = 1;
 
     // We assume that we are called in fine->coarse order
@@ -136,8 +140,22 @@ namespace CarpetAdaptiveRegrid {
 
     ibbox bb(low, upp, bbs.at(0).stride());
     
+    if (verbose) {
+      ostringstream buf;
+      buf << "Found the local size of the box: " << endl << bb;
+      CCTK_INFO(buf.str().c_str());
+    }
+
     vector<CCTK_INT> mask(prod(bb.shape()/bb.stride()), 0);
     
+    if (veryverbose) {
+      ostringstream buf;
+      buf << "Allocated mask size: " << bb.shape()/bb.stride() 
+          << " (points: " << prod(bb.shape()/bb.stride()) << ")";
+      CCTK_INFO(buf.str().c_str());
+    }
+
+
     // Setup the mask.
       
     const ibbox& baseext = 
@@ -149,6 +167,12 @@ namespace CarpetAdaptiveRegrid {
     {
       const CCTK_REAL *error_var_ptr = 
         static_cast<const CCTK_REAL*>(CCTK_VarDataPtr(cctkGH, 0, error_var));
+      const CCTK_REAL *x_var_ptr = 
+        static_cast<const CCTK_REAL*>(CCTK_VarDataPtr(cctkGH, 0, "Grid::x"));
+      const CCTK_REAL *y_var_ptr = 
+        static_cast<const CCTK_REAL*>(CCTK_VarDataPtr(cctkGH, 0, "Grid::y"));
+      const CCTK_REAL *z_var_ptr = 
+        static_cast<const CCTK_REAL*>(CCTK_VarDataPtr(cctkGH, 0, "Grid::z"));
      
       assert(all(imin >= 0));
       assert(all(imax >= 0));
@@ -171,8 +195,16 @@ namespace CarpetAdaptiveRegrid {
               assert (jj < imax[1] - imin[1]);
               assert (kk < imax[2] - imin[2]);
               CCTK_INT mindex = ii + 
-                (imax[0]-imin[0])*(jj + (imax[1] - imin[1]) * kk);
+                (imax[0] - imin[0] + 1)*(jj + (imax[1] - imin[1] + 1) * kk);
               mask[mindex] = 1;
+              if (veryverbose) {
+                CCTK_VInfo(CCTK_THORNSTRING, "In error at point"
+                           "\n(%g,%g,%g) [%d,%d,%d] [[%d,%d,%d]]",
+                           x_var_ptr[index],
+                           y_var_ptr[index],
+                           z_var_ptr[index],
+                           ii, jj, kk, i,j,k);
+              }
             }
           }
         }
@@ -190,22 +222,23 @@ namespace CarpetAdaptiveRegrid {
       for (CCTK_INT j = 0; j < imax[1] - imin[1]; j++) {
         for (CCTK_INT i = 0; i < imax[0] - imin[0]; i++) {
           CCTK_INT index =  i + 
-                (imax[0]-imin[0])*(j + (imax[1] - imin[1]) * k);
+                (imax[0] - imin[0] + 1)*(j + (imax[1] - imin[1] + 1) * k);
           if (mask[index] == 1) {
             for (CCTK_INT kk = max(k-pad, 0); 
-                 kk < min(k+pad, imax[2] - imin[2]);
+                 kk < min(k+pad+1, imax[2] - imin[2]);
                  ++kk)
             {
               for (CCTK_INT jj = max(j-pad, 0); 
-                   jj < min(j+pad, imax[1] - imin[1]);
+                   jj < min(j+pad+1, imax[1] - imin[1]);
                    ++jj)
               {
                 for (CCTK_INT ii = max(i-pad, 0); 
-                     ii < min(i+pad, imax[0] - imin[0]);
+                     ii < min(i+pad+1, imax[0] - imin[0]);
                      ++ii)
                 {
                   CCTK_INT mindex = ii + 
-                    (imax[0]-imin[0])*(jj + (imax[1] - imin[1]) * kk);
+                    (imax[0] - imin[0] + 1)*
+                    (jj + (imax[1] - imin[1] + 1) * kk);
                   if (!mask[mindex]) mask[mindex] = 2;
                 }
               }
@@ -221,8 +254,13 @@ namespace CarpetAdaptiveRegrid {
       for (CCTK_INT j = 0; j < imax[1] - imin[1]; j++) {
         for (CCTK_INT i = 0; i < imax[0] - imin[0]; i++) {
           CCTK_INT index =  i + 
-                (imax[0]-imin[0])*(j + (imax[1] - imin[1]) * k);
+                (imax[0]-imin[0] + 1)*(j + (imax[1] - imin[1] + 1) * k);
           if (mask[index] > 1) mask[index] = 1;
+          if ((veryverbose) and (mask[index])) {
+            CCTK_VInfo(CCTK_THORNSTRING, "Mask set at point"
+                       "\n[%d,%d,%d]",
+                       i,j,k);
+          } 
           should_regrid |= (mask[index]);
         }
       }
@@ -265,6 +303,12 @@ namespace CarpetAdaptiveRegrid {
         CCTK_INT ny = bb.shape()[1]/bb.stride()[1];
         CCTK_INT nz = bb.shape()[2]/bb.stride()[2];
         
+        if (verbose) {
+          ostringstream buf;
+          buf << "todo loop. Box: " << endl << bb;
+          CCTK_INFO(buf.str().c_str());
+        }
+
         vector<CCTK_INT> sum_x(nx, 0);
         vector<CCTK_INT> sig_x(nx, 0);
         vector<CCTK_INT> sum_y(ny, 0);
@@ -272,7 +316,7 @@ namespace CarpetAdaptiveRegrid {
         vector<CCTK_INT> sum_z(nz, 0);
         vector<CCTK_INT> sig_z(nz, 0);
         
-        int fbbox[3][3], fbbox1[3][3], fbbox2[3][3];
+        CCTK_INT fbbox[3][3], fbbox1[3][3], fbbox2[3][3];
         
         for (CCTK_INT d = 0; d < 3; ++d) {
           fbbox[0][d] = bb.lower()[d];
@@ -281,7 +325,7 @@ namespace CarpetAdaptiveRegrid {
         }
         
         CCTK_INT didit;
-        
+
         CCTK_FNAME(check_box)(nx, ny, nz,
                               &mask.front(),
                               &sum_x.front(), &sum_y.front(), &sum_z.front(),
@@ -293,8 +337,14 @@ namespace CarpetAdaptiveRegrid {
         
         if (didit == 0) {
           
-          final.push(bb);
-          
+          final.push(bb);          
+
+          if (verbose) {
+            ostringstream buf;
+            buf << "todo loop. Box pushed to final: " 
+                << endl << bb;
+            CCTK_INFO(buf.str().c_str());
+          }
         }
         else if (didit == 1) {
           
@@ -307,7 +357,7 @@ namespace CarpetAdaptiveRegrid {
           CCTK_INT dny = newbbox1.shape()[1]/newbbox1.stride()[1];
           CCTK_INT dnz = newbbox1.shape()[2]/newbbox1.stride()[2];
           
-          vector<CCTK_INT >  
+          vector<CCTK_INT>  
             newmask1(prod(newbbox1.shape()/newbbox1.stride()), 0);
           
           CCTK_FNAME(copy_mask)(nx, ny, nz,
@@ -315,6 +365,13 @@ namespace CarpetAdaptiveRegrid {
                                 dnx, dny, dnz,
                                 &newmask1.front(), fbbox1);
           masklist.push(newmask1);
+
+          if (verbose) {
+            ostringstream buf;
+            buf << "todo loop. New (single) box created: " 
+                << endl << newbbox1;
+            CCTK_INFO(buf.str().c_str());
+          }
         }
         else if (didit == 2) {
           
@@ -331,7 +388,7 @@ namespace CarpetAdaptiveRegrid {
           CCTK_INT dny = newbbox1.shape()[1]/newbbox1.stride()[1];
           CCTK_INT dnz = newbbox1.shape()[2]/newbbox1.stride()[2];
           
-          vector<CCTK_INT >  
+          vector<CCTK_INT>  
             newmask1(prod(newbbox1.shape()/newbbox1.stride()), 0);
           
           CCTK_FNAME(copy_mask)(nx, ny, nz,
@@ -344,7 +401,7 @@ namespace CarpetAdaptiveRegrid {
           dny = newbbox2.shape()[1]/newbbox2.stride()[1];
           dnz = newbbox2.shape()[2]/newbbox2.stride()[2];
           
-          vector<CCTK_INT >  
+          vector<CCTK_INT>  
             newmask2(prod(newbbox2.shape()/newbbox2.stride()), 0);
           
           CCTK_FNAME(copy_mask)(nx, ny, nz,
@@ -352,6 +409,15 @@ namespace CarpetAdaptiveRegrid {
                                 dnx, dny, dnz,
                                 &newmask2.front(), fbbox2);
           masklist.push(newmask2);
+
+          if (verbose) {
+            ostringstream buf;
+            buf << "todo loop. New (double) box created. Box 1: " 
+                << endl << newbbox1
+                << "                                     Box 2: "
+                << endl << newbbox2;
+            CCTK_INFO(buf.str().c_str());
+          }
         }
         else {
           CCTK_WARN(0, "The fortran routine must be confused.");
@@ -376,14 +442,15 @@ namespace CarpetAdaptiveRegrid {
       //        if not, set do_recompose = 0
       bbs = newbbs;
 
-      cout << bbs << endl;
-      
       // make multiprocessor aware
       gh::cprocs ps;
       SplitRegions (cctkGH, bbs, obs, ps);
     
 
       if (bbss.size() < reflevel+2) {
+        if (verbose) {
+          CCTK_INFO("Adding new refinement level");
+        }
         bbss.resize(reflevel+2);
         obss.resize(reflevel+2);
         pss.resize(reflevel+2);
@@ -397,62 +464,21 @@ namespace CarpetAdaptiveRegrid {
     else
     {
       if (bbss.size() > reflevel+1) {
-        bbss.resize(reflevel+1);
-        obss.resize(reflevel+1);
-        pss.resize(reflevel+1);
+        if (verbose) {
+          CCTK_INFO("Removing refinement level");
+        }
       }
+      bbss.resize(reflevel+1);
+      obss.resize(reflevel+1);
+      pss.resize(reflevel+1);
     }
     
     // make multigrid aware
     MakeMultigridBoxes (cctkGH, bbss, obss, bbsss);
 
-
-    // Make a cboxlist (or set) from the boxes on the level.
-
-    // cboxlist is list of cbox's.
-
-    // cbox is a bbox 
-    // plus a dim-D array of booleans mask(i,j,k)
-    // plus 3 sum arrays (sigma_i = sum_{j,k} mask(i,:,:) etc)
-    // plus 3 signature arrays (1D laplacian of sigma arrays)
-
-    // First thing to do; make a cbox containing all active boxes
-    // on this level.
-    // cbox list contains this cbox.
-    // Create the mask for this cbox by looking at the error GF.
-
-    // Then recursively for every cbox in the list until no changes:
-
-    //   Prune the cbox (remove all zeros from the ends)
-
-    //   Split the cbox (find zero in sigma_:, split along that line)
-
-    //   if fraction too low then find zero crossings of signature and
-    //   split there
-
-    // if none of these steps are taken the cbox is finished.
-
-    // Most of the actual work is done by the utility functions in
-    // CAR_utils.F77.
-    // What we have to do is
-
-    // loop over every box in the list
-    //   for each box call check_box
-    //   if it returns zero the box is done
-    //   if it returns one then the box needs shrinking
-    //   if it returns two then the box needs splitting
-
-    // so, the method will be:
-
-    // Create a cboxlist with one member
-
-    // loop over the list:
-    //   call check_box
-    //   if the return is two then create a new box from newbbox2 and add it
-    //     to the end of the list
-    //   if the return value is one or two shrink the current box to the
-    //     values given in newbbox1
-    //   if the return value is one or two go redo this loop again.
+    cout << "bbsss done:" << endl << bbsss << endl;
+    cout << "obss done:" << endl << obss << endl;
+    cout << "pss done:" << endl << pss << endl;
     
     return do_recompose;
   }

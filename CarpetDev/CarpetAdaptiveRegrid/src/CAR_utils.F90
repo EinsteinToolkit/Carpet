@@ -39,6 +39,10 @@ subroutine count_points(nx, ny, nz, mask, sum_x, sum_y, sum_z)
         sum_x(i) = sum_x(i) + mask(i, j, k)
         sum_y(j) = sum_y(j) + mask(i, j, k)
         sum_z(k) = sum_z(k) + mask(i, j, k)
+
+!!$        if (mask(i,j,k) > 0) then
+!!$          write(*,*) "count",i,j,k,mask(i,j,k)
+!!$        end if
         
       end do
     end do
@@ -591,15 +595,28 @@ subroutine check_box(nx, ny, nz, mask, sum_x, sum_y, sum_z, &
   CCTK_REAL :: min_density
   CCTK_INT :: didit
   
-  CCTK_INT :: i
+  CCTK_INT :: i, j, k
 
   CCTK_REAL :: density
 
-!!$  write(*,*) nx, ny, nz
-
+!!$  write(*,*) "sizes:", nx, ny, nz
+!!$  write(*,*) "mask size", shape(mask)
+!!$  do k = 1, nz
+!!$    do j = 1, ny
+!!$      do i = 1, nx
+!!$        if (mask(i,j,k) == 1) write(*,*) 'fmask set at',i,j,k
+!!$      end do
+!!$    end do
+!!$  end do
+  
 !!$  First set up the sums
 
   call count_points(nx, ny, nz, mask, sum_x, sum_y, sum_z)
+
+!!$  write(*,*) "sums:"
+!!$  write(*,*) "x",sum_x
+!!$  write(*,*) "y",sum_y
+!!$  write(*,*) "z",sum_z
 
 !!$  Then prune the box
 

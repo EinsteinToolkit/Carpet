@@ -25,10 +25,14 @@ time::dtfac = 0.5
 carpet::max_refinement_levels = 2
 carpet::init_3_timelevels = yes
 carpetadaptiveregrid::max_error = 1.e-6
+carpetadaptiveregrid::pad = 2
+carpetadaptiveregrid::min_width = 6
 carpetadaptiveregrid::error_var = "mol::errorestimate[0]"
 #carpetadaptiveregrid::error_var = "wavemol::phi"
 carpetadaptiveregrid::regrid_every = 1
 
+#carpetadaptiveregrid::verbose = yes
+#carpetadaptiveregrid::veryverbose = yes
 
 cactus::terminate = "time"
 cactus::cctk_final_time = 0.5
