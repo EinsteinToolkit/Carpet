@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -24,7 +25,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.35 2003/01/20 13:49:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.36 2003/03/26 17:37:19 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -36,10 +37,14 @@ namespace Carpet {
   
   
   
+  typedef vect<bool,dim> bvect;
+  
   typedef vect<int,dim> ivect;
   typedef bbox<int,dim> ibbox;
   
-  typedef vect<vect<bool,2>,dim> bvect;
+  typedef vect<double,dim> dvect;
+  
+  typedef vect<vect<bool,2>,dim> bbvect;
   
   
   
@@ -66,10 +71,20 @@ namespace Carpet {
   
   void SplitRegions_AlongZ              (const cGH* cgh,
 					 vector<ibbox>& bbs,
-					 vector<bvect>& obs);
+					 vector<bbvect>& obs);
+  static void SplitRegions_Automatic_Recursively (bvect const & dims,
+                                                  int const nprocs,
+                                                  dvect const dshape,
+                                                  ibbox const & bb,
+                                                  bbvect const & ob,
+                                                  vector<ibbox> & bbs,
+                                                  vector<bbvect> & obs);
+  static void SplitRegions_Automatic    (const cGH* cgh,
+					 vector<ibbox>& bbs,
+					 vector<bbvect>& obs);
   static void SplitRegions_AsSpecified  (const cGH* cgh,
 					 vector<ibbox>& bbs,
-					 vector<bvect>& obs);
+					 vector<bbvect>& obs);
   
   static void MakeProcessors_RoundRobin (const cGH* cgh,
 					 const gh<dim>::rexts& bbss,
@@ -239,10 +254,10 @@ namespace Carpet {
       = hh->make_multigrid_boxes(bbss, mglevels);
     
     vector<vector<int> > pss(bbss.size());
-    vector<vector<bvect> > obss(bbss.size());
+    vector<vector<bbvect> > obss(bbss.size());
     for (int rl=0; rl<reflevels; ++rl) {
       pss[rl] = vector<int>(bbss[rl].size());
-      obss[rl] = vector<bvect>(bbss[rl].size());
+      obss[rl] = vector<bbvect>(bbss[rl].size());
       // make sure all processors have the same number of components
       assert (bbss[rl].size() % nprocs == 0);
       for (int c=0; c<(int)bbss[rl].size(); ++c) {
@@ -360,12 +375,14 @@ namespace Carpet {
   
   
   
-  void SplitRegions (const cGH* cgh, vector<ibbox>& bbs, vector<bvect>& obs)
+  void SplitRegions (const cGH* cgh, vector<ibbox>& bbs, vector<bbvect>& obs)
   {
     DECLARE_CCTK_PARAMETERS;
     
-    if (CCTK_EQUALS (processor_topology, "automatic")) {
+    if (CCTK_EQUALS (processor_topology, "along-z")) {
       SplitRegions_AlongZ (cgh, bbs, obs);
+    } else if (CCTK_EQUALS (processor_topology, "automatic")) {
+      SplitRegions_Automatic (cgh, bbs, obs);
     } else if (CCTK_EQUALS (processor_topology, "manual")) {
       SplitRegions_AsSpecified (cgh, bbs, obs);
     } else {
@@ -376,7 +393,7 @@ namespace Carpet {
   
   
   void SplitRegions_AlongZ (const cGH* cgh, vector<ibbox>& bbs,
-			    vector<bvect>& obs)
+			    vector<bbvect>& obs)
   {
     // Something to do?
     if (bbs.size() == 0) return;
@@ -390,7 +407,7 @@ namespace Carpet {
     const ivect rstr = bbs[0].stride();
     const ivect rlb  = bbs[0].lower();
     const ivect rub  = bbs[0].upper() + rstr;
-    const bvect obnd = obs[0];
+    const bbvect obnd = obs[0];
     
     bbs.resize(nprocs);
     obs.resize(nprocs);
@@ -416,8 +433,167 @@ namespace Carpet {
   
   
   
+  void SplitRegions_Automatic_Recursively (bvect const & dims,
+                                           int const nprocs,
+                                           dvect const dshape,
+                                           ibbox const & bb,
+                                           bbvect const & ob,
+                                           vector<ibbox> & bbs,
+                                           vector<bbvect> & obs)
+  {
+    cout << "srar dims=" << dims << " nprocs=" << nprocs << endl
+         << "   bb=" << bb << " ob=" << ob << endl;
+    // check preconditions
+    assert (nprocs >= 1);
+    
+    // are we done?
+    if (all(dims)) {
+      
+      // check precondition
+      assert (nprocs == 1);
+      
+      // return arguments
+      bbs.assign (1, bb);
+      obs.assign (1, ob);
+      
+      // return
+      return;
+    }
+    
+    // choose a direction
+    int mydim = -1;
+    double mysize = 0;
+    for (int d=0; d<dim; ++d) {
+      if (! dims[d]) {
+        if (dshape[d] > mysize) {
+          mydim = d;
+          mysize = dshape[d];
+        }
+      }
+    }
+    assert (mydim>=0 && mydim<dim);
+    assert (mysize>0);
+    
+    // mark this direction as done
+    assert (! dims[mydim]);
+    bvect const newdims = dims.replace(mydim, true);
+    
+    // choose a number of slices for this direction
+    int nslices;
+    if (all(newdims)) {
+      nslices = nprocs;
+    } else {
+      nslices = floor(mysize + 0.5);
+    }
+    cout << "   nslices=" << nslices << endl;
+    
+    // split the remaining processors
+    vector<int> mynprocs(nslices);
+    int const mynprocs_base = nprocs / nslices;
+    int const mynprocs_left = nprocs - nslices * mynprocs_base;
+    for (int n=0; n<nslices; ++n) {
+      mynprocs[n] = n < mynprocs_left ? mynprocs_base+1 : mynprocs_base;
+    }
+    int sum_mynprocs = 0;
+    for (int n=0; n<nslices; ++n) {
+      sum_mynprocs += mynprocs[n];
+    }
+    assert (sum_mynprocs == nprocs);
+    
+    // split the region
+    vector<int> myslice(nslices);
+    int slice_left = ((bb.upper() - bb.lower()) / bb.stride())[mydim] + 1;
+    int nprocs_left = nprocs;
+    for (int n=0; n<nslices; ++n) {
+      if (n == nslices-1) {
+        myslice[n] = slice_left;
+      } else {
+        myslice[n] = floor(1.0 * slice_left * mynprocs[n] / nprocs_left + 0.5);
+      }
+      slice_left -= myslice[n];
+      nprocs_left -= mynprocs[n];
+    }
+    assert (slice_left == 0);
+    assert (nprocs_left == 0);
+    
+    // create the bboxes and recurse
+    bbs.clear();
+    obs.clear();
+    bbs.reserve(nprocs);
+    obs.reserve(nprocs);
+    for (int n=0; n<nslices; ++n) {
+      
+      // create a new bbox
+      ivect lo = bb.lower();
+      ivect up = bb.upper();
+      ivect str = bb.stride();
+      bbvect newob = ob;
+      if (n > 0) {
+        lo = lo.replace(mydim, bbs[n-1].upper()[mydim] + str[mydim]);
+        newob[mydim][0] = false;
+      }
+      if (n < nslices-1) {
+        up = up.replace(mydim, lo[mydim] + (myslice[n]-1) * str[mydim]);
+        newob[mydim][1] = false;
+      }
+      ibbox newbb(lo, up, str);
+      
+      // recurse
+      vector<ibbox> newbbs;
+      vector<bbvect> newobs;
+      SplitRegions_Automatic_Recursively
+        (newdims, mynprocs[n], dshape, newbb, newob, newbbs, newobs);
+      
+      // store
+      assert (newbbs.size() == mynprocs[n]);
+      assert (newobs.size() == mynprocs[n]);
+      bbs.insert (bbs.end(), newbbs.begin(), newbbs.end());
+      obs.insert (obs.end(), newobs.begin(), newobs.end());
+    }
+    
+    // check postconditions
+    assert (bbs.size() == nprocs);
+    assert (obs.size() == nprocs);
+  }
+  
+  void SplitRegions_Automatic (const cGH* cgh, vector<ibbox>& bbs,
+                               vector<bbvect>& obs)
+  {
+    // Something to do?
+    if (bbs.size() == 0) return;
+    
+    const int nprocs = CCTK_nProcs(cgh);
+    
+//     if (nprocs==1) return;
+    
+    assert (bbs.size() == 1);
+    
+    const ibbox bb = bbs[0];
+    const bbvect ob = obs[0];
+    
+    const ivect rstr = bb.stride();
+    const ivect rlb  = bb.lower();
+    const ivect rub  = bb.upper() + rstr;
+    
+    // calculate real shape factors
+    dvect dshape;
+    for (int d=0; d<dim; ++d) {
+      dshape[d] = (double)(rub[d]-rlb[d]) / (rub[0]-rlb[0]);
+    }
+    const double dfact = pow(nprocs / prod(dshape), 1.0/dim);
+    dshape *= dfact;
+    assert (abs(prod(dshape) - nprocs) < 1e-6);
+    
+    bvect const dims = false;
+    
+    SplitRegions_Automatic_Recursively
+      (dims, nprocs, dshape, bb, ob, bbs, obs);
+  }
+  
+  
+  
   void SplitRegions_AsSpecified (const cGH* cgh, vector<ibbox>& bbs,
-				 vector<bvect>& obs)
+				 vector<bbvect>& obs)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -433,7 +609,7 @@ namespace Carpet {
     const ivect rstr = bbs[0].stride();
     const ivect rlb  = bbs[0].lower();
     const ivect rub  = bbs[0].upper() + rstr;
-    const bvect obnd = obs[0];
+    const bbvect obnd = obs[0];
     
     const ivect nprocs_dir
       (processor_topology_3d_x, processor_topology_3d_y,
