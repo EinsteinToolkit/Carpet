@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOASCII
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/param.ccl,v 1.13 2004/04/03 12:38:12 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/param.ccl,v 1.14 2004/06/03 10:03:47 bzink Exp $
 
 
 
@@ -126,6 +126,7 @@ KEYWORD out0D_criterion "Criterion to select 0D ASCII output intervals, override
   "default"   :: "Use IO::out_criterion"
   "never"     :: "Never output"
   "iteration" :: "Output every so many iterations"
+  "divisor"   :: "Output if iteration mod divisor == 0."
   "time"      :: "Output every that much coordinate time"
 } "default"
 
@@ -134,6 +135,7 @@ KEYWORD out1D_criterion "Criterion to select 1D ASCII output intervals, override
   "default"   :: "Use IO::out_criterion"
   "never"     :: "Never output"
   "iteration" :: "Output every so many iterations"
+  "divisor"   :: "Output if (iteration % out_every) == 0."
   "time"      :: "Output every that much coordinate time"
 } "default"
 
@@ -142,6 +144,7 @@ KEYWORD out2D_criterion "Criterion to select 2D ASCII output intervals, override
   "default"   :: "Use IO::out_criterion"
   "never"     :: "Never output"
   "iteration" :: "Output every so many iterations"
+  "divisor"   :: "Output if (iteration % out_every) == 0."
   "time"      :: "Output every that much coordinate time"
 } "default"
 
@@ -150,6 +153,7 @@ KEYWORD out3D_criterion "Criterion to select 3D ASCII output intervals, override
   "default"   :: "Use IO::out_criterion"
   "never"     :: "Never output"
   "iteration" :: "Output every so many iterations"
+  "divisor"   :: "Output if (iteration % out_every) == 0."
   "time"      :: "Output every that much coordinate time"
 } "default"
 

@@ -31,7 +31,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.71 2004/05/27 12:23:03 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.72 2004/06/03 10:03:47 bzink Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -680,6 +680,23 @@ namespace CarpetIOASCII {
         output_this_iteration = false;
       }
       
+    } else if (CCTK_EQUALS (myoutcriterion, "divisor")) {
+      
+      int myoutevery = GetIntParameter("out%dD_every");
+      if (myoutevery == -2) {
+        myoutevery = out_every;
+      }
+      if (myoutevery <= 0) {
+        // output is disabled
+        output_this_iteration = false;
+      } else if ((cctk_iteration % myoutevery) == 0) {
+        // we already decided to output this iteration
+        output_this_iteration = true;
+      } else {
+        // we want no output at this iteration
+        output_this_iteration = false;
+      }  
+
     } else if (CCTK_EQUALS (myoutcriterion, "time")) {
       
       CCTK_REAL myoutdt = GetRealParameter("out%dD_dt");
