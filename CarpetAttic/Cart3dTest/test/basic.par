@@ -1,10 +1,10 @@
 # Check Cartesian coordinates and symmetries
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/test/basic.par,v 1.5 2004/03/23 11:59:46 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/test/basic.par,v 1.1 2001/03/01 15:49:46 eschnett Exp $
 
-ActiveThorns = "CarpetIOASCII IOBasic IOUtil Carpet CarpetLib CarpetSlab Cart3d Cart3dTest"
+ActiveThorns = "IOASCII IOBasic IOUtil PUGH PUGHSlab Cart3d"
 
 cactus::cctk_itlast = 0
 
-IO::out_dir = "basic"
+IO::outdir = "basic"
 IOASCII::out1D_vars = "grid::coordinates"
 IOASCII::out1D_every = 1

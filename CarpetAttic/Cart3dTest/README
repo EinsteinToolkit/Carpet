@@ -1,8 +1,7 @@
 Cactus Code Thorn Cart3dTest
-Authors    : Erik Schnetter <schnetter@uni-tuebingen.de>
-CVS info   : $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/README,v 1.2 2002/04/29 11:28:00 schnetter Exp $
+Authors    : ...
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/README,v 1.1 2001/03/01 15:49:27 eschnett Exp $
 --------------------------------------------------------------------------
 
 Purpose of the thorn:
 
-Test certain internals of Carpet.

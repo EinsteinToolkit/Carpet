@@ -1,7 +1,7 @@
 # Check Cartesian coordinates and symmetries
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/test/axial.par,v 1.4 2004/03/23 11:59:46 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/test/axial.par,v 1.1 2001/03/01 15:49:46 eschnett Exp $
 
-ActiveThorns = "CarpetIOASCII IOBasic IOUtil Carpet CarpetLib CarpetSlab Cart3d Cart3dTest"
+ActiveThorns = "IOASCII IOBasic IOUtil PUGH PUGHSlab Cart3d Cart3dTest"
 
 cactus::cctk_itlast = 1
 
@@ -12,6 +12,6 @@ driver::ghost_size_x = 1
 driver::ghost_size_y = 1
 driver::ghost_size_z = 1
 
-IO::out_dir = "axial"
+IO::outdir = "axial"
 IOASCII::out1D_vars = "grid::coordinates Cart3dTest::quantities"
 IOASCII::out1D_every = 1

@@ -11,27 +11,29 @@
 
 --------------------------------------------------------------------------------
 Activating thorn Cactus...Success -> active implementation Cactus
-Activating thorn CarpetIOASCII...Success -> active implementation IOASCII
+Activating thorn IOASCII...Success -> active implementation IOASCII
 Activating thorn IOBasic...Success -> active implementation IOBasic
 Activating thorn IOUtil...Success -> active implementation IO
-Activating thorn Carpet...Success -> active implementation driver
-Activating thorn CarpetLib...Success -> active implementation CarpetLib
-Activating thorn CarpetSlab...Success -> active implementation Hyperslab
+Activating thorn PUGH...Success -> active implementation driver
+Activating thorn PUGHSlab...Success -> active implementation Hyperslab
 Activating thorn Cart3d...Success -> active implementation grid
 Activating thorn Cart3dTest...Success -> active implementation Cart3dTest
 --------------------------------------------------------------------------------
   Startup routines
-    Carpet: Startup routine
-    CarpetIOASCII: Startup routine
-    Cart3d: Register GH extension for Cartesian coordinates
+    PUGH: Startup routine.
     IOUtil: Startup routine
     IOBasic: Startup routine
+    IOASCII: Startup routine
+    Cart3d: Register GH extension for Cartesian coordinates
 
   Parameter checking routines
     Cart3d: Check coordinate and symmetry parameters
 
   Initialisation
     Cart3d: Set up 3d Cartesian coordinates
+    IOASCII: Choose 1D output lines
+    IOASCII: Choose 2D output planes
+    PUGH: Report on PUGH set up
     Cart3dTest: Create some interesting initial data
 
   do loop over timesteps
@@ -41,41 +43,14 @@ Activating thorn Cart3dTest...Success -> active implementation Cart3dTest
     endif
   enddo
   Termination routines
+    PUGH: Termination routine
   Shutdown routines
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
-AMR driver provided by Carpet
+Driver provided by PUGH
 --------------------------------------------------------------------------------
-AMR 1D ASCII I/O provided by CarpetIOASCII
---------------------------------------------------------------------------------
-AMR 2D ASCII I/O provided by CarpetIOASCII
---------------------------------------------------------------------------------
-AMR 3D ASCII I/O provided by CarpetIOASCII
---------------------------------------------------------------------------------
-
-dh bboxes:
-rl=0 c=0 ml=0
-exterior=([0,0,0]:[9,9,9]:[1,1,1])
-interior=([0,1,2]:[9,8,7]:[1,1,1])
-send_mg_fine=[]
-send_mg_coarse=[]
-recv_mg_fine=[]
-recv_mg_coarse=[]
-send_ref_fine=[]
-send_ref_coarse=[]
-recv_ref_fine=[]
-recv_ref_coarse=[]
-send_sync=[0:[]]
-send_ref_bnd_fine=[]
-boundaries={([0,0,0]:[9,0,9]:[1,1,1]),([0,1,0]:[9,8,1]:[1,1,1]),([0,9,0]:[9,9,9]:[1,1,1]),([0,1,8]:[9,8,9]:[1,1,1])}
-recv_sync=[0:[]]
-recv_ref_bnd_coarse=[]
-sync_not={([0,0,0]:[9,0,9]:[1,1,1]),([0,1,0]:[9,8,1]:[1,1,1]),([0,9,0]:[9,9,9]:[1,1,1]),([0,1,8]:[9,8,9]:[1,1,1])}
-
-dh bases:
-rl=0 ml=0
-exterior=([0,0,0]:[9,9,9]:[1,1,1])
-interior=([0,1,2]:[9,8,7]:[1,1,1])
-boundaries={([0,0,0]:[9,0,9]:[1,1,1]),([0,1,0]:[9,8,1]:[1,1,1]),([0,9,0]:[9,9,9]:[1,1,1]),([0,1,8]:[9,8,9]:[1,1,1])}
+INFO (PUGH): Single processor evolution
+INFO (PUGH): 3-dimensional grid functions
+INFO (PUGH):   Size: 10 10 10
 --------------------------------------------------------------------------------
 Done.
