@@ -10,7 +10,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.11 2001/11/15 16:41:32 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.12 2001/12/05 03:31:56 schnetter Exp $";
 
 
 
@@ -38,8 +38,7 @@ namespace Carpet {
     
     // Refinement information
     maxreflevels = max_refinement_levels;
-    maxreflevelfact
-      = (int)floor(pow((double)refinement_factor, maxreflevels-1) + 0.5);
+    maxreflevelfact = floor(pow(refinement_factor, maxreflevels-1) + 0.5);
     
     // Ghost zones
     vect<int,dim> lghosts, ughosts;
@@ -235,7 +234,16 @@ namespace Carpet {
     // Invent a refinement structure
     gh<dim>::rexts bbsss;
     gh<dim>::rprocs pss;
-    MakeRegions_RefineCentre (cgh, maxreflevels, bbsss, pss);
+//     MakeRegions_RefineCentre (cgh, maxreflevels, bbsss);
+    MakeRegions_AsSpecified (cgh, maxreflevels, bbsss);
+    if (CCTK_EQUALS (processor_topology, "automatic")) {
+      SplitRegions_AlongZ (cgh, bbsss);
+    } else if (CCTK_EQUALS (processor_topology, "manual")) {
+      SplitRegions_AsSpecified (cgh, bbsss);
+    } else {
+      abort();
+    }
+    MakeProcessors_RoundRobin (cgh, bbsss, pss);
     RegisterRecomposeRegions (bbsss, pss);
     
     // Recompose grid hierarchy

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.6 2001/11/05 17:53:02 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.7 2001/12/05 03:31:57 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -119,8 +119,14 @@ namespace Carpet {
   void RegisterRecomposeRegions (const gh<dim>::rexts& bbsss,
 				 const gh<dim>::rprocs& pss);
   
-  void MakeRegions_RefineCentre (const cGH* cgh, int reflevels,
-				 gh<dim>::rexts& bbsss, gh<dim>::rprocs& pss);
+  void MakeRegions_RefineCentre  (const cGH* cgh, int reflevels,
+				  gh<dim>::rexts& bbsss);
+  void MakeRegions_AsSpecified   (const cGH* cgh, int reflevels,
+				  gh<dim>::rexts& bbsss);
+  void SplitRegions_AlongZ       (const cGH* cgh, gh<dim>::rexts& bbsss);
+  void SplitRegions_AsSpecified  (const cGH* cgh, gh<dim>::rexts& bbsss);
+  void MakeProcessors_RoundRobin (const cGH* cgh, const gh<dim>::rexts& bbsss,
+				  gh<dim>::rprocs& pss);
   
   
   

@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include <stdlib.h>
 
 #include <vector>
@@ -12,7 +13,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.8 2001/11/14 17:57:55 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.9 2001/12/05 03:31:56 schnetter Exp $";
 
 
 
@@ -156,12 +157,11 @@ namespace Carpet {
   // how the hierarchy should be refined. But the result of this
   // routine is rather arbitrary.
   void MakeRegions_RefineCentre (const cGH* cgh, const int reflevels,
-				 gh<dim>::rexts& bbsss, gh<dim>::rprocs& pss)
+				 gh<dim>::rexts& bbsss)
   {
     DECLARE_CCTK_PARAMETERS;
     
-    const int nprocs    = CCTK_nProcs(cgh);
-    const int mglevels  = 1;	// arbitrary value
+    const int mglevels = 1;	// arbitrary value
     
     vector<vector<bbox<int,dim> > > bbss(reflevels);
     // note: what this routine calls "ub" is "ub+str" elsewhere
@@ -191,6 +191,81 @@ namespace Carpet {
 	// require rub<oldrub because we really want rub-rstr<=oldrub-oldstr
 	assert (all(rlb >= oldrlb && rub < oldrub));
       }
+      vector<bbox<int,dim> > bbs(1);
+      bbs[0] = bbox<int,dim>(rlb, rub-rstr, rstr);
+      bbss[rl] = bbs;
+    }
+    bbsss = hh->make_multigrid_boxes(bbss, mglevels);
+  }
+  
+  
+  
+  void MakeRegions_AsSpecified (const cGH* cgh, const int reflevels,
+				gh<dim>::rexts& bbsss)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    const int mglevels = 1;	// arbitrary value
+    
+    // note: what this routine calls "ub" is "ub+str" elsewhere
+    const vect<int,dim> rstr = hh->baseextent.stride();
+    const vect<int,dim> rlb  = hh->baseextent.lower();
+    const vect<int,dim> rub  = hh->baseextent.upper() + rstr;
+    
+    if (reflevels>3) {
+      CCTK_WARN (0, "Cannot currently specify refinement regions for more than 3 refinement levels");
+    }
+    
+    assert (reflevels<4);
+    vector<vect<int,dim> > lower(4), upper(4);
+    lower[0] = rlb;
+    upper[0] = rub;
+    lower[1] = rstr * vect<int,dim> (l1xmin, l1ymin, l1zmin);
+    upper[1] = rstr * vect<int,dim> (l1xmax, l1ymax, l1zmax);
+    lower[2] = rstr * vect<int,dim> (l2xmin, l2ymin, l2zmin);
+    upper[2] = rstr * vect<int,dim> (l2xmax, l2ymax, l2zmax);
+    lower[3] = rstr * vect<int,dim> (l3xmin, l3ymin, l3zmin);
+    upper[3] = rstr * vect<int,dim> (l3xmax, l3ymax, l3zmax);
+    
+    vector<vector<bbox<int,dim> > > bbss(reflevels);
+    
+    for (int rl=0; rl<reflevels; ++rl) {
+      const int fact = floor(pow(hh->reffact, rl) + 0.5);
+      assert (all (rstr % fact == 0));
+      const vect<int,dim> str (rstr / fact);
+      const vect<int,dim> lb  (lower[rl]);
+      const vect<int,dim> ub  (upper[rl]);
+      assert (all(lb<=ub && lb>=rlb && ub-str<=rub-rstr
+		  && lb%str==0 && ub%str==0));
+      vector<bbox<int,dim> > bbs(1);
+      bbs[0] = bbox<int,dim>(lb, ub-str, str);
+      bbss[rl] = bbs;
+    }
+    bbsss = hh->make_multigrid_boxes(bbss, mglevels);
+  }
+  
+  
+  
+  // This is a helpful helper routine. The user can use it to define
+  // how the hierarchy should be refined. But the result of this
+  // routine is rather arbitrary.
+  void SplitRegions_AlongZ (const cGH* cgh, gh<dim>::rexts& bbsss)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    const int nprocs    = CCTK_nProcs(cgh);
+    const int mglevels  = 1;	// arbitrary value
+    
+    vector<vector<bbox<int,dim> > > bbss(bbsss.size());
+    
+    for (int rl=0; rl<(int)bbsss.size(); ++rl) {
+      assert (bbsss[rl].size() == 1);
+      assert (bbsss[rl][0].size() == 1);
+      
+      const vect<int,dim> rstr = bbsss[rl][0][0].stride();
+      const vect<int,dim> rlb  = bbsss[rl][0][0].lower();
+      const vect<int,dim> rub  = bbsss[rl][0][0].upper() + rstr;
+      
       vector<bbox<int,dim> > bbs(nprocs);
       for (int c=0; c<nprocs; ++c) {
 	vect<int,dim> cstr = rstr;
@@ -210,13 +285,83 @@ namespace Carpet {
       bbss[rl] = bbs;
     }
     bbsss = hh->make_multigrid_boxes(bbss, mglevels);
+  }
+  
+  
+  
+  void SplitRegions_AsSpecified (const cGH* cgh, gh<dim>::rexts& bbsss)
+  {
+    DECLARE_CCTK_PARAMETERS;
     
-    pss.resize(bbss.size());
-    for (int rl=0; rl<reflevels; ++rl) {
-      pss[rl] = vector<int>(bbss[rl].size());
+    const int nprocs    = CCTK_nProcs(cgh);
+    const int mglevels  = 1;	// arbitrary value
+    
+    vector<vector<bbox<int,dim> > > bbss(bbsss.size());
+    
+    for (int rl=0; rl<(int)bbsss.size(); ++rl) {
+      assert (bbsss[rl].size() == 1);
+      assert (bbsss[rl][0].size() == 1);
+      
+      const vect<int,dim> rstr = bbsss[rl][0][0].stride();
+      const vect<int,dim> rlb  = bbsss[rl][0][0].lower();
+      const vect<int,dim> rub  = bbsss[rl][0][0].upper() + rstr;
+      
+      const vect<int,dim> nprocs_dir
+	(processor_topology_3d_x, processor_topology_3d_y,
+	 processor_topology_3d_z);
+      assert (all (nprocs_dir > 0));
+      if (prod(nprocs_dir) != nprocs) {
+	CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+		    "The specified processor topology [%d,%d,%d] does not fit the number of processors, which is %d", nprocs_dir[0], nprocs_dir[1], nprocs_dir[2], nprocs);
+      }
+      assert (prod(nprocs_dir) == nprocs);
+      
+      vector<bbox<int,dim> > bbs(nprocs);
+      assert (dim==3);
+      for (int k=0; k<nprocs_dir[2]; ++k) {
+	for (int j=0; j<nprocs_dir[1]; ++j) {
+	  for (int i=0; i<nprocs_dir[0]; ++i) {
+	    const int c = i + nprocs_dir[0] * (j + nprocs_dir[1] * k);
+	    const vect<int,dim> ipos (i, j, k);
+	    vect<int,dim> cstr = rstr;
+	    vect<int,dim> clb = rlb;
+	    vect<int,dim> cub = rub;
+	    const vect<int,dim> glonp = (rub - rlb) / cstr;
+	    const vect<int,dim> locnp = (glonp + nprocs_dir - 1) / nprocs_dir;
+	    const vect<int,dim> step = locnp * cstr;
+	    clb = rlb + step *  ipos;
+	    cub = rlb + step * (ipos+1);
+	    clb = min (clb, rub);
+	    cub = min (cub, rub);
+	    assert (all (clb <= cub));
+	    assert (all (cub <= rub));
+	    bbs[c] = bbox<int,dim>(clb, cub-cstr, cstr);
+	  }
+	}
+      }
+      bbss[rl] = bbs;
+    }
+    bbsss = hh->make_multigrid_boxes(bbss, mglevels);
+  }
+  
+  
+  
+  // This is a helpful helper routine. The user can use it to define
+  // how the hierarchy should be refined. But the result of this
+  // routine is rather arbitrary.
+  void MakeProcessors_RoundRobin (const cGH* cgh, const gh<dim>::rexts& bbsss,
+				  gh<dim>::rprocs& pss)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    const int nprocs    = CCTK_nProcs(cgh);
+    
+    pss.resize(bbsss.size());
+    for (int rl=0; rl<(int)bbsss.size(); ++rl) {
+      pss[rl] = vector<int>(bbsss[rl].size());
       // make sure all processors have the same number of components
-      assert (bbss[rl].size() % nprocs == 0);
-      for (int c=0; c<(int)bbss[rl].size(); ++c) {
+      assert (bbsss[rl].size() % nprocs == 0);
+      for (int c=0; c<(int)bbsss[rl].size(); ++c) {
 	pss[rl][c] = c % nprocs; // distribute among processors
       }
     }

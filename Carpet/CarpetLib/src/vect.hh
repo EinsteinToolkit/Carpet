@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.4 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.5 2001/12/05 03:31:57 schnetter Exp $
 
  ***************************************************************************/
 
@@ -68,6 +68,11 @@ public:
   vect (const T x, const T y, const T z) {
     assert (D==3);
     elt[0]=x; elt[1]=y; elt[2]=z;
+  }
+  
+  vect (const T x, const T y, const T z, const T t) {
+    assert (D==4);
+    elt[0]=x; elt[1]=y; elt[2]=z; elt[3]=t;
   }
   
   vect (const T* const x) {
@@ -405,6 +410,36 @@ public:
   };
 #endif
   
+  // Higher order functions
+  vect map (T (* const func)(T x)) const {
+    vect r;
+    for (int d=0; d<D; ++d) r[d] = func(elt[d]);
+    return r;
+  }
+  
+  T fold (T (* const func)(T val, T x), T val) const {
+    for (int d=0; d<D; ++d) val = func(val, elt[d]);
+    return val;
+  }
+  
+  vect scan0 (T (* const func)(T val, T x), T val) const {
+    vect r;
+    for (int d=0; d<D; ++d) {
+      r[d] = val;
+      val = func(val, elt[d]);
+    }
+    return r;
+  }
+  
+  vect scan1 (T (* const func)(T val, T x), T val) const {
+    vect r;
+    for (int d=0; d<D; ++d) {
+      val = func(val, elt[d]);
+      r[d] = val;
+    }
+    return r;
+  }
+  
   void output (ostream& os) const;
 };
 
@@ -500,6 +535,47 @@ inline T sum (const vect<T,D>& a) {
   for (int d=0; d<D; ++d) r+=a[d];
   return r;
 }
+
+// Higher order functions
+template<class T,class TT,int D>
+inline vect<TT,D> map (TT (* const func)(T x), const vect<T,D>& a) {
+  vect<TT,D> r;
+  for (int d=0; d<D; ++d) r[d] = func(a[d]);
+  return r;
+}
+
+template<class T,class TT,int D>
+inline vect<TT,D> fold (TT (* const func)(TT val, T x), TT val,
+			const vect<T,D>& a)
+{
+  for (int d=0; d<D; ++d) val = func(val, a[d]);
+  return val;
+}
+
+template<class T,class TT,int D>
+inline vect<TT,D> scan0 (TT (* const func)(TT val, T x), TT val,
+			 const vect<T,D>& a)
+{
+  vect<TT,D> r;
+  for (int d=0; d<D; ++d) {
+    r[d] = val;
+    val = func(val, a[d]);
+  }
+  return r;
+}
+
+template<class T,class TT,int D>
+inline vect<TT,D> scan1 (TT (* const func)(TT val, T x), TT val,
+			 const vect<T,D>& a)
+{
+  vect<TT,D> r;
+  for (int d=0; d<D; ++d) {
+    val = func(val, a[d]);
+    r[d] = val;
+  }
+  return r;
+}
+
 
 
 template<class T,int D>
