@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.33 2004/03/23 19:54:16 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.34 2004/04/18 11:48:35 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -214,7 +214,7 @@ namespace Carpet {
 			      const char* groupname)
   {
     static const int zero = 0;
-    static const int error = -1;
+    static const int error = 0;
     
     if (groupname) {
       group = CCTK_GroupIndex(groupname);
@@ -222,12 +222,12 @@ namespace Carpet {
     assert (group>=0 && group<CCTK_NumGroups());
     
     if (mglevel == -1) {
-      return &error;
+      return &error;            // meta mode
     }
     
     const int gptype = CCTK_GroupTypeI (group);
     if (gptype == CCTK_GF && map == -1) {
-      return &error;
+      return &error;            // global or level mode for a GF
     }
     
     const int gpdim = groupdata.at(group).info.dim;
