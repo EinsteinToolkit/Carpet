@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.20 2004/03/26 15:51:12 bzink Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.21 2004/04/03 15:42:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -135,7 +135,7 @@ namespace CarpetIOHDF5 {
 
       if (myproc == 0) {
 	// First, open the file
-	if (h5verbose) 
+	if (verbose) 
 	  CCTK_VInfo(CCTK_THORNSTRING, "Opening Checkpoint file %s for recovery",filename);
 	reader = H5Fopen (filename, H5F_ACC_RDONLY, H5P_DEFAULT);
 	if (reader<0) {
@@ -216,7 +216,7 @@ namespace CarpetIOHDF5 {
 	assert(!mpierr);
       }
 
-      if (h5verbose) {
+      if (verbose) {
 	cout << "leveltimes: " << leveltimes << endl;
       }
 
@@ -225,7 +225,7 @@ namespace CarpetIOHDF5 {
       result += RecoverGHextensions(cctkGH,reader);
 
 	  
-      if (h5verbose) {
+      if (verbose) {
 	cout << "reflevel: " << reflevel << endl;
       }
 
@@ -283,7 +283,7 @@ namespace CarpetIOHDF5 {
 
     assert ((ndatasets)>=0);
     
-    //if (h5verbose && reflevel==0) cout << "ndatasets: " << ndatasets << endl;
+    //if (verbose && reflevel==0) cout << "ndatasets: " << ndatasets << endl;
     if ( reflevel == 0) {
       cout << "ndatasets: " << ndatasets << endl;
     }
@@ -367,7 +367,7 @@ namespace CarpetIOHDF5 {
 
       name = CCTK_FullName(varindex);
 
-      if (h5verbose) {
+      if (verbose) {
 	cout << name << "  rl: " << reflevel << endl;
       }
       vector<ibset> regions_read(Carpet::maps);
@@ -491,7 +491,7 @@ namespace CarpetIOHDF5 {
       herr = H5Gclose(group);
       assert(!herr);
 
-      if(h5verbose) {
+      if(verbose) {
 	CCTK_VInfo (CCTK_THORNSTRING, "\n%s\n",parameters);
       }
 
@@ -575,7 +575,7 @@ namespace CarpetIOHDF5 {
 
     if (myproc == 0) {
 
-      if (h5verbose) {
+      if (verbose) {
 	CCTK_VInfo (CCTK_THORNSTRING, "Creating temporary checkpoint file '%s'", cp_tempname);
       }
       writer = H5Fcreate (cp_tempname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -601,7 +601,7 @@ namespace CarpetIOHDF5 {
 
       BEGIN_REFLEVEL_LOOP(cctkGH) {
 
-	if (h5verbose)
+	if (verbose)
 	  {
 	    CCTK_INFO ("Dumping Grid Variables ...");
 	  }
@@ -635,7 +635,7 @@ namespace CarpetIOHDF5 {
 		gtotalsize=tlsh[i];		  
 	      }
 	      if(gtotalsize == 0){
-		if (h5verbose) CCTK_VInfo(CCTK_THORNSTRING, 
+		if (verbose) CCTK_VInfo(CCTK_THORNSTRING, 
 		    "Group %s is zero-sized. No checkpoint info written",CCTK_GroupName(group));
 		continue;
 	      }
@@ -671,7 +671,7 @@ namespace CarpetIOHDF5 {
 		     request->timelevel < gdata.numtimelevels;
 		     request->timelevel++)
 		  {
-		    if (h5verbose)
+		    if (verbose)
 		      {
 			fullname = CCTK_FullName (request->vindex);
 			if (fullname != NULL) {
@@ -689,7 +689,7 @@ namespace CarpetIOHDF5 {
 		    if (grouptype == CCTK_ARRAY || grouptype == CCTK_GF || grouptype == CCTK_SCALAR)
 		      {
 			char* fullname = CCTK_FullName (request->vindex);
-			if (h5verbose)
+			if (verbose)
 			  CCTK_VInfo (CCTK_THORNSTRING,"%s: reflevel: %d map: %d component: %d grouptype: %d ",
 				      fullname,reflevel,Carpet::map,component,grouptype);
 			free(fullname);
@@ -760,7 +760,7 @@ namespace CarpetIOHDF5 {
     const char *version;
     ioGH *ioUtilGH;
   
-    if (h5verbose) {
+    if (verbose) {
       CCTK_INFO ("Dumping Parameters and GH Extentions...");
     }
   

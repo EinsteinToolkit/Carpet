@@ -40,7 +40,7 @@ IDScalarWave::radius		= 0.0
 
 iohdf5::checkpoint = "yes"
 io::checkpoint_every = 12
-iohdf5::h5verbose = "yes"
+iohdf5::verbose = "yes"
 io::checkpoint_keep = 2
 
 #io::recover = "auto"
