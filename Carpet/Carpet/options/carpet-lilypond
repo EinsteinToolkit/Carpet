@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond,v 1.1 2001/03/17 19:54:57 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond,v 1.2 2001/03/17 20:11:11 eschnett Exp $
 
 F77			= g77
 F90			= g77
@@ -17,7 +17,7 @@ F77_WARN_FLAGS		= -Wall
 
 SYS_INC_DIRS		= /home/eschnett/proj/FlexIO
 LIBDIRS			= /home/eschnett/proj/FlexIO
-LIBS			= AMR h5io hdfio hlio ieeeio  crypt  g2c m
+LIBS			= AMR h5io hdfio hlio ieeeio  hdf5 mfhdf df jpeg z  crypt  g2c m
 
 HDF5			= yes
 MPI			= MPICH
