@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.22 2004/04/19 13:17:24 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.23 2004/04/20 14:49:58 bzink Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -535,6 +535,7 @@ namespace CarpetIOHDF5 {
     DECLARE_CCTK_PARAMETERS;
 
     char cp_filename[1024], cp_tempname[1024];
+    char cp_tempname_copy[1024];
     char *fullname;
     
     herr_t herr;
@@ -568,8 +569,13 @@ namespace CarpetIOHDF5 {
 
 
     /* ... and append the extension */
-    sprintf (cp_tempname, "tmp_%s.h5", cp_filename);
-    sprintf (cp_filename, "%s.h5",     cp_filename);
+    sprintf (cp_tempname, "%s.h5", cp_filename);
+    sprintf (cp_filename, "%s.h5", cp_filename);
+
+    /* For temp filenames, some post-processing is necessary */
+    strcat(cp_tempname_copy,cp_tempname);
+    strcpy(&rindex(cp_tempname,'/')[1],"tmp_");
+    strcpy(&rindex(cp_tempname,'/')[5],&rindex(cp_tempname_copy,'/')[1]);
 
     hid_t writer = -1;
 
@@ -578,6 +584,11 @@ namespace CarpetIOHDF5 {
       if (verbose) {
 	CCTK_VInfo (CCTK_THORNSTRING, "Creating temporary checkpoint file '%s'", cp_tempname);
       }
+
+      CCTK_VInfo (CCTK_THORNSTRING, "Creating temporary checkpoint file '%s'", cp_tempname);
+      
+      CCTK_VInfo (CCTK_THORNSTRING, "Verbose = %d", verbose);
+
       writer = H5Fcreate (cp_tempname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
       assert (writer>=0);
       herr = H5Fclose (writer);
