@@ -1,17 +1,26 @@
 # Interface definition for thorn WaveToyF77
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/interface.ccl,v 1.1 2002/02/18 11:25:34 shawley Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/interface.ccl,v 1.2 2002/02/18 14:36:02 shawley Exp $
 
 implements: wavetoy
-inherits: boundary grid
+inherits: boundary grid idscalarwave
 
 public:
 
 CCTK_REAL scalarevolve type=GF timelevels=3
 {
+  phi
+} "The evolved scalar field phi" 
+
+
+# Maybe these should be protected, but we could manage to get both
+# scalarevolve and scalarevolve_derivs passed to IDFOScalarWave
+public:
+
+CCTK_REAL scalarevolve_derivs type=GF timelevels=3
+{
   pi,
   phix,
   phiy,
   phiz,
-  phi
-} "The evolved scalar field phi, and time and space derivatives of phi"
+} "Time and space derivatives of phi"
 
