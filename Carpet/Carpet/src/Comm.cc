@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.14 2002/10/24 10:39:38 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.15 2003/01/03 14:11:56 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Comm_cc);
 }
 
@@ -53,21 +53,26 @@ namespace Carpet {
     assert (group<(int)arrdata.size());
     for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
       if (CCTK_GroupTypeI(group) == CCTK_GF) {
-	if (reflevel>0) {
-	  for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
-	    // use the current time here (which may be modified by the
-	    // user)
- 	    const CCTK_REAL time = cgh->cctk_time / base_delta_time;
-	    if (false) {
-	      const CCTK_REAL time1 = tt->time (tl, reflevel, mglevel);
-	      const CCTK_REAL time2 = cgh->cctk_time / base_delta_time;
-	      assert (fabs(time1 - time2) < 1e-10);
-	    }
-	    
-	    arrdata[group].data[var]->ref_bnd_prolongate
-	      (tl, reflevel, c, mglevel, time);
-	  }
-	}
+        if (arrdata[group].do_transfer) {
+          if (reflevel>0) {
+            for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
+              // use the current time here (which may be modified by the
+              // user)
+              const CCTK_REAL time = cgh->cctk_time / base_delta_time;
+              if (false) {
+                const CCTK_REAL time1 = tt->time (tl, reflevel, mglevel);
+                const CCTK_REAL time2 = cgh->cctk_time / base_delta_time;
+                assert (fabs(time1 - time2) < 1e-10);
+              }
+              
+              arrdata[group].data[var]->ref_bnd_prolongate
+                (tl, reflevel, c, mglevel, time);
+            }
+          }
+        } else {
+          Checkpoint ("%*s(no prolongating for group %s)",
+                      2*reflevel, "", groupname);
+        }
       }
       for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
 	arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);

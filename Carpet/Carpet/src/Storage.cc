@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.12 2003/01/03 13:19:58 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.13 2003/01/03 14:11:56 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -19,93 +19,6 @@ extern "C" {
 namespace Carpet {
   
   using namespace std;
-  
-  
-  
-  static void CheckVariableType (cGH* cgh, const int group)
-  {
-    // Find out which types correspond to the default types
-#if CCTK_INTEGER_PRECISION_1
-#  define CCTK_DEFAULT_INTEGER_TYPE CCTK_VARIABLE_INT1
-#elif CCTK_INTEGER_PRECISION_2
-#  define CCTK_DEFAULT_INTEGER_TYPE CCTK_VARIABLE_INT2
-#elif CCTK_INTEGER_PRECISION_4
-#  define CCTK_DEFAULT_INTEGER_TYPE CCTK_VARIABLE_INT4
-#elif CCTK_INTEGER_PRECISION_8
-#  define CCTK_DEFAULT_INTEGER_TYPE CCTK_VARIABLE_INT8
-#else "Unsupported default integer type"
-#  error
-#endif
-    
-#if CCTK_REAL_PRECISION_4
-#  define CCTK_DEFAULT_REAL_TYPE CCTK_VARIABLE_REAL4
-#  define CCTK_DEFAULT_COMPLEX_TYPE CCTK_VARIABLE_COMPLEX8
-#elif CCTK_REAL_PRECISION_8
-#  define CCTK_DEFAULT_REAL_TYPE CCTK_VARIABLE_REAL8
-#  define CCTK_DEFAULT_COMPLEX_TYPE CCTK_VARIABLE_COMPLEX16
-#elif CCTK_REAL_PRECISION_16
-#  define CCTK_DEFAULT_REAL_TYPE CCTK_VARIABLE_REAL16
-#  define CCTK_DEFAULT_COMPLEX_TYPE CCTK_VARIABLE_COMPLEX32
-#else
-#  error "Unsupported default real type"
-#endif
-    
-    const int var0 = CCTK_FirstVarIndexI(group);
-    const int type0 = CCTK_VarTypeI(var0);
-    int type1;
-    switch (type0) {
-    case CCTK_VARIABLE_INT:
-      type1 = CCTK_DEFAULT_INTEGER_TYPE;
-      break;
-    case CCTK_VARIABLE_REAL:
-      type1 = CCTK_DEFAULT_REAL_TYPE;
-      break;
-    case CCTK_VARIABLE_COMPLEX:
-      type1 = CCTK_DEFAULT_COMPLEX_TYPE;
-      break;
-    default:
-      type1 = type0;
-    }
-    switch (type1) {
-      
-    case CCTK_VARIABLE_REAL8:
-      // This type is supported.  Do nothing.
-      break;
-      
-    case CCTK_VARIABLE_REAL4:
-    case CCTK_VARIABLE_REAL16:
-    case CCTK_VARIABLE_COMPLEX8:
-    case CCTK_VARIABLE_COMPLEX16:
-    case CCTK_VARIABLE_COMPLEX32:
-      // This type is not supported, but could be.  Complain.
-      {
-        char * groupname = CCTK_GroupName(group);
-        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "There are no transfer operators available for the Cactus variable type %s, which is used by the Cactus group \"%s\".  This group will not be prolongated nor be restricted.",
-                    CCTK_VarTypeName(type0), groupname);
-        free (groupname);
-        break;
-      }
-      
-    case CCTK_VARIABLE_BYTE:
-    case CCTK_VARIABLE_INT1:
-    case CCTK_VARIABLE_INT2:
-    case CCTK_VARIABLE_INT4:
-    case CCTK_VARIABLE_INT8:
-      // This type is not supported, and cannot be.  Complain.
-      {
-        char * groupname = CCTK_GroupName(group);
-        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "It does not make sense to automatically transfer the Cactus variable type %s, which is used by the Cactus group \"%s\".  This group will not be prolongated nor be restricted.",
-                    CCTK_VarTypeName(type0), groupname);
-        free (groupname);
-        break;
-      }
-      
-    default:
-      assert (0);
-    }
-  }
   
   
   
@@ -131,8 +44,15 @@ namespace Carpet {
       return 1;
     }
     
-    // Check whether this group's variable type has transfer operators
-    CheckVariableType (cgh, group);
+    // Check whether this group has transfer operators
+    if (! arrdata[group].do_transfer) {
+      const int var = CCTK_FirstVarIndexI(group);
+      const int vartype = CCTK_VarTypeI(var);
+      const char * vartypename = CCTK_VarTypeName(vartype);
+      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "(Allocating storage for Cactus group \"%s\".)  Note: This group (which has the variable type %s) will be neither prolongated nor restricted.",
+                  groupname, vartypename);
+    }
     
     // There is a difference between the Cactus time levels and the
     // Carpet time levels.  If there are n time levels, then the

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.21 2002/09/25 19:55:06 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.22 2003/01/03 14:11:56 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -91,6 +91,7 @@ namespace Carpet {
     th* tt;
     dh<dim>* dd;
     vector<generic_gf<dim>*> data; // [var]
+    bool do_transfer;           // prolongate and restrict
   };
   extern vector<arrdesc> arrdata; // [group]
   

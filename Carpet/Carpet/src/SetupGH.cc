@@ -19,7 +19,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.34 2002/10/24 10:39:39 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.35 2003/01/03 14:11:56 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -28,6 +28,79 @@ extern "C" {
 namespace Carpet {
   
   using namespace std;
+  
+  
+  
+  static bool CanTransferVariableType (cGH* cgh, const int group)
+  {
+    // Find out which types correspond to the default types
+#if CCTK_INTEGER_PRECISION_1
+#  define CCTK_DEFAULT_INTEGER_TYPE CCTK_VARIABLE_INT1
+#elif CCTK_INTEGER_PRECISION_2
+#  define CCTK_DEFAULT_INTEGER_TYPE CCTK_VARIABLE_INT2
+#elif CCTK_INTEGER_PRECISION_4
+#  define CCTK_DEFAULT_INTEGER_TYPE CCTK_VARIABLE_INT4
+#elif CCTK_INTEGER_PRECISION_8
+#  define CCTK_DEFAULT_INTEGER_TYPE CCTK_VARIABLE_INT8
+#else "Unsupported default integer type"
+#  error
+#endif
+    
+#if CCTK_REAL_PRECISION_4
+#  define CCTK_DEFAULT_REAL_TYPE CCTK_VARIABLE_REAL4
+#  define CCTK_DEFAULT_COMPLEX_TYPE CCTK_VARIABLE_COMPLEX8
+#elif CCTK_REAL_PRECISION_8
+#  define CCTK_DEFAULT_REAL_TYPE CCTK_VARIABLE_REAL8
+#  define CCTK_DEFAULT_COMPLEX_TYPE CCTK_VARIABLE_COMPLEX16
+#elif CCTK_REAL_PRECISION_16
+#  define CCTK_DEFAULT_REAL_TYPE CCTK_VARIABLE_REAL16
+#  define CCTK_DEFAULT_COMPLEX_TYPE CCTK_VARIABLE_COMPLEX32
+#else
+#  error "Unsupported default real type"
+#endif
+    
+    const int var0 = CCTK_FirstVarIndexI(group);
+    const int type0 = CCTK_VarTypeI(var0);
+    int type1;
+    switch (type0) {
+    case CCTK_VARIABLE_INT:
+      type1 = CCTK_DEFAULT_INTEGER_TYPE;
+      break;
+    case CCTK_VARIABLE_REAL:
+      type1 = CCTK_DEFAULT_REAL_TYPE;
+      break;
+    case CCTK_VARIABLE_COMPLEX:
+      type1 = CCTK_DEFAULT_COMPLEX_TYPE;
+      break;
+    default:
+      type1 = type0;
+    }
+    switch (type1) {
+      
+    case CCTK_VARIABLE_REAL8:
+      // This type is supported.
+      return true;
+      
+    case CCTK_VARIABLE_REAL4:
+    case CCTK_VARIABLE_REAL16:
+    case CCTK_VARIABLE_COMPLEX8:
+    case CCTK_VARIABLE_COMPLEX16:
+    case CCTK_VARIABLE_COMPLEX32:
+      // This type is not supported, but could be.
+      return false;
+      
+    case CCTK_VARIABLE_BYTE:
+    case CCTK_VARIABLE_INT1:
+    case CCTK_VARIABLE_INT2:
+    case CCTK_VARIABLE_INT4:
+    case CCTK_VARIABLE_INT8:
+      // This type is not supported, and cannot be.
+      return false;
+      
+    default:
+      assert (0);
+    }
+  }
   
   
   
@@ -233,7 +306,10 @@ namespace Carpet {
       for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
 	arrdata[group].data[var] = 0;
       }
-    }
+      
+      arrdata[group].do_transfer = CanTransferVariableType (cgh, group);
+      
+    } // for group
     
     
     
