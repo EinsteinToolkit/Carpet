@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.28 2003/10/14 16:39:16 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.29 2004/01/16 10:57:04 hawke Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -51,7 +51,11 @@ namespace Carpet {
     
     if (CCTK_QueryGroupStorageI(cgh, group)) {
       // storage was enabled previously
-      return 1;
+      const int n0 = CCTK_FirstVarIndexI(group);
+      assert (n0>=0);
+      const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
+      assert (num_tl>0);
+      return num_tl;
     }
     
     // Check whether this group has transfer operators
