@@ -19,7 +19,7 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.9 2002/03/11 13:17:15 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.10 2002/03/11 15:09:41 schnetter Exp $";
 
 
 
@@ -339,8 +339,8 @@ namespace CarpetRegrid {
     const vect<CCTK_REAL,dim> scale = vect<CCTK_REAL,dim>(global_extent) / (global_upper - global_lower);
     const vect<CCTK_REAL,dim> rlower = (lower[rl-1] - global_lower) * scale;
     const vect<CCTK_REAL,dim> rupper = (upper[rl-1] - global_lower) * scale;
-    const ivect ilower = ivect(map(floor, vect<double,dim>(rlower) + 0.5));
-    const ivect iupper = ivect(map(floor, vect<double,dim>(rupper) + 0.5));
+    const ivect ilower = ivect(map((CCTK_REAL(*)(CCTK_REAL))floor, rlower + 0.5));
+    const ivect iupper = ivect(map((CCTK_REAL(*)(CCTK_REAL))floor, rupper + 0.5));
     
     MakeRegions_AsSpecified_OneLevel (cctkGH, reflevels, ilower, iupper, bbl);
   }
