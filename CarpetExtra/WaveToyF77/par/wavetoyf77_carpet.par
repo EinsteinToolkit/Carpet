@@ -12,7 +12,7 @@ grid::type			= byspacing
 grid::mode			= octant
 grid::dxyz			= 0.3
  
-IO::outdir			= "wavetoyf77_carpet"
+IO::out_dir			= "wavetoyf77_carpet"
 
 IOBasic::outinfo_every		= 10
 #IOBasic::outinfo_vars		= "wavetoy::phi"

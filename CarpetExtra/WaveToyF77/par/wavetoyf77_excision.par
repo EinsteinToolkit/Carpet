@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_excision.par,v 1.2 2002/01/08 15:30:01 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_excision.par,v 1.3 2002/10/24 21:11:25 schnetter Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
 
@@ -19,7 +19,7 @@ grid::type			= byspacing
 grid::dxyz			= 0.0625
 grid::avoid_origin		= no
 
-IO::outdir			= "wavetoyf77_excision"
+IO::out_dir			= "wavetoyf77_excision"
 
 IOBasic::outinfo_every		= 8
 IOBasic::outinfo_vars		= "wavetoy::phi"

@@ -7,7 +7,7 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_periodic_coarse_rl3.par,v 1.10 2002/01/30 16:07:30 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_periodic_coarse_rl3.par,v 1.11 2002/10/24 21:11:25 schnetter Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
 
@@ -40,7 +40,7 @@ grid::ymax			=  7.8
 grid::zmax			= 10.2
 grid::mode			= periodic
 
-IO::outdir			= "wavetoyf77_periodic_coarse_rl3"
+IO::out_dir			= "wavetoyf77_periodic_coarse_rl3"
 
 IOBasic::outinfo_every		= 1 # 10
 IOBasic::outinfo_vars		= "wavetoy::phi"

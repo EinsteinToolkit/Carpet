@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/test/hydrotoy_periodic_coarse_rl3.par,v 1.2 2001/12/14 17:59:59 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/test/hydrotoy_periodic_coarse_rl3.par,v 1.3 2002/10/24 21:10:46 schnetter Exp $
 
 !DESC "WaveToy with periodic boundaries, 2 refinement levels"
 
@@ -33,7 +33,7 @@ grid::ymax			=  7.8
 grid::zmax			= 10.2
 grid::mode			= periodic
 
-IO::outdir			= "hydrotoy_periodic_coarse_rl3"
+IO::out_dir			= "hydrotoy_periodic_coarse_rl3"
 
 IOBasic::outinfo_every		= 1 # 10
 IOBasic::outinfo_vars		= "hydrotoy::hydroevolve"

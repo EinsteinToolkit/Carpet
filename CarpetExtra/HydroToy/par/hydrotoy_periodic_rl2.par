@@ -7,7 +7,7 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/par/hydrotoy_periodic_rl2.par,v 1.6 2002/03/06 17:47:59 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/par/hydrotoy_periodic_rl2.par,v 1.7 2002/10/24 21:10:45 schnetter Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduc CarpetRegrid CarpetSlab IDHydroToy HydroToy"
 
@@ -40,7 +40,7 @@ grid::ymax			=  7.2
 grid::zmax			=  9.6
 grid::mode			= periodic
 
-IO::outdir			= "hydrotoy_periodic_rl2"
+IO::out_dir			= "hydrotoy_periodic_rl2"
 
 IOBasic::outinfo_every		= 1 # 10
 IOBasic::outinfo_vars		= "hydrotoy::hydroevolve"

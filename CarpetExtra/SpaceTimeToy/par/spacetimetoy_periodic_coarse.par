@@ -7,7 +7,7 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/spacetimetoy_periodic_coarse.par,v 1.8 2002/03/06 17:48:01 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/spacetimetoy_periodic_coarse.par,v 1.9 2002/10/24 21:11:06 schnetter Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDSpaceTimeToy SpaceTimeToy Hydrotoy"
 
@@ -34,7 +34,7 @@ grid::ymax			=  7.8
 grid::zmax			= 10.2
 grid::mode			= periodic
 
-IO::outdir			= "spacetimetoy_periodic_coarse"
+IO::out_dir			= "spacetimetoy_periodic_coarse"
 
 IOBasic::outinfo_every		= 1 # 10
 IOBasic::outinfo_vars		= "spacetimetoy::spacetimeevolve"

@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77_periodic_coarse.par,v 1.4 2001/12/14 18:00:08 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77_periodic_coarse.par,v 1.5 2002/10/24 21:11:28 schnetter Exp $
 
 !DESC "WaveToy with periodic boundaries, no refinement"
 
@@ -27,7 +27,7 @@ grid::ymax			=  7.8
 grid::zmax			= 10.2
 grid::mode			= periodic
 
-IO::outdir			= "wavetoyf77_periodic_coarse"
+IO::out_dir			= "wavetoyf77_periodic_coarse"
 
 IOBasic::outinfo_every		= 1 # 10
 IOBasic::outinfo_vars		= "wavetoy::phi"

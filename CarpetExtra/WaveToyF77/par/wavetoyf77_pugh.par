@@ -32,4 +32,4 @@ IOBasic::outinfo_vars = "wavetoy::phi"
 IOFlexIO::out3D_every = 1
 IOFlexIO::out3D_vars = "wavetoy::phi"
  
-IO::outdir = "wavetoyf77_pugh"
+IO::out_dir = "wavetoyf77_pugh"
