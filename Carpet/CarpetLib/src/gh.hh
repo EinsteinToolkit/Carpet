@@ -62,14 +62,15 @@ public:				// should be readonly
   const centering mgcent;	// default (vertex or cell centered)
   
   const ibbox baseextent;
-  vector<vector<ibbox> > bases; // [rl][ml]
   
-  // TODO: invent structure for this
-  rexts extents;		// extents of all grids
-  rbnds outer_boundaries;	// boundary descriptions of all grids
-  rprocs processors;		// processor numbers of all grids
   
 private:
+  vector<vector<ibbox> > _bases; // [rl][ml]
+  // TODO: invent structure for this
+  rexts _extents;		// extents of all grids
+  rbnds _outer_boundaries;	// boundary descriptions of all grids
+  rprocs _processors;		// processor numbers of all grids
+
   list<th<D>*> ths;		// list of all time hierarchies
   list<dh<D>*> dhs;		// list of all data hierarchies
   
@@ -87,26 +88,42 @@ public:
   void recompose (const rexts& exts, const rbnds& outer_bounds,
 		  const rprocs& procs,
                   const bool do_prolongate);
+
+  const rexts & extents() const {
+    return _extents;
+  }
+
+  const rbnds & outer_boundaries() const {
+    return _outer_boundaries;
+  }
+
+  const rprocs & processors() const {
+    return _processors;
+  }
+
+  const vector<vector<ibbox> > & bases() const {
+    return _bases;
+  }
   
   // Accessors
   int reflevels () const {
-    return (int)extents.size();
+    return (int)_extents.size();
   }
   
   int components (const int rl) const {
-    return (int)extents.at(rl).size();
+    return (int)_extents.at(rl).size();
   }
   
   int mglevels (const int rl, const int c) const {
-    return (int)extents.at(rl).at(c).size();
+    return (int)_extents.at(rl).at(c).size();
   }
   
   bvect outer_boundary (const int rl, const int c) const {
-    return outer_boundaries.at(rl).at(c);
+    return _outer_boundaries.at(rl).at(c);
   }
   
   int proc (const int rl, const int c) const {
-    return processors.at(rl).at(c);
+    return _processors.at(rl).at(c);
   }
 
   bool is_local (const int rl, const int c) const {
@@ -137,6 +154,7 @@ private:
   void calculate_base_extents_of_all_levels ();
   void do_output_bboxes (ostream& os) const;
   void do_output_bases (ostream& os) const;
+
 };
 
 

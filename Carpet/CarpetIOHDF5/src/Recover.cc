@@ -553,8 +553,8 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
           assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
           if (grouptype == CCTK_SCALAR)
           {
-            lb[0] = arrdata.at(group).at(Carpet::map).hh->processors.at(reflevel).at(component);
-            ub[0] = arrdata.at(group).at(Carpet::map).hh->processors.at(reflevel).at(component);
+            lb[0] = arrdata.at(group).at(Carpet::map).hh->processors().at(reflevel).at(component);
+            ub[0] = arrdata.at(group).at(Carpet::map).hh->processors().at(reflevel).at(component);
             for(int i=1;i<dim;i++)
             {
               lb[i]=0;
@@ -565,10 +565,10 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
           {
             const int newlb = lb[gpdim-1] + 
               (ub[gpdim-1]-lb[gpdim-1]+1)*
-              (arrdata.at(group).at(Carpet::map).hh->processors.at(reflevel).at(component));
+              (arrdata.at(group).at(Carpet::map).hh->processors().at(reflevel).at(component));
             const int newub = ub[gpdim-1] +
               (ub[gpdim-1]-lb[gpdim-1]+1)*
-              (arrdata.at(group).at(Carpet::map).hh->processors.at(reflevel).at(component));
+              (arrdata.at(group).at(Carpet::map).hh->processors().at(reflevel).at(component));
             lb[gpdim-1] = newlb;
             ub[gpdim-1] = newub;
           }

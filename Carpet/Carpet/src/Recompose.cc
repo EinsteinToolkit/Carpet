@@ -133,9 +133,9 @@ namespace Carpet {
     bool did_change = false;
     BEGIN_MAP_LOOP(cgh, CCTK_GF) {
       
-      gh<dim>::rexts  bbsss = vhh.at(map)->extents;
-      gh<dim>::rbnds  obss  = vhh.at(map)->outer_boundaries;
-      gh<dim>::rprocs pss   = vhh.at(map)->processors;
+      gh<dim>::rexts  bbsss = vhh.at(map)->extents();
+      gh<dim>::rbnds  obss  = vhh.at(map)->outer_boundaries();
+      gh<dim>::rprocs pss   = vhh.at(map)->processors();
       
       // Check whether to recompose
       CCTK_INT const do_recompose
@@ -187,8 +187,8 @@ namespace Carpet {
         for (int ml=0; ml<hh.mglevels(rl,c); ++ml) {
           const int convfact = ipow(mgfact, ml);
           const int levfact = ipow(reffact, rl);
-          const ivect lower = hh.extents.at(rl).at(c).at(ml).lower();
-          const ivect upper = hh.extents.at(rl).at(c).at(ml).upper();
+          const ivect lower = hh.extents().at(rl).at(c).at(ml).lower();
+          const ivect upper = hh.extents().at(rl).at(c).at(ml).upper();
           assert (all(lower * levfact % maxreflevelfact == 0));
           assert (all(upper * levfact % maxreflevelfact == 0));
           assert (all(((upper - lower) * levfact / maxreflevelfact)
@@ -196,7 +196,7 @@ namespace Carpet {
           cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
                << "   exterior: "
                << "proc "
-               << hh.processors.at(rl).at(c)
+               << hh.processors().at(rl).at(c)
                << "   "
                << lower * levfact / maxreflevelfact
                << " : "
@@ -215,8 +215,8 @@ namespace Carpet {
         for (int ml=0; ml<hh.mglevels(rl,c); ++ml) {
           const rvect origin = origin_space.at(0);
           const rvect delta = delta_space;
-          const ivect lower = hh.extents.at(rl).at(c).at(ml).lower();
-          const ivect upper = hh.extents.at(rl).at(c).at(ml).upper();
+          const ivect lower = hh.extents().at(rl).at(c).at(ml).lower();
+          const ivect upper = hh.extents().at(rl).at(c).at(ml).upper();
           const int convfact = ipow(mgfact, ml);
           const int levfact = ipow(reffact, rl);
           cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"

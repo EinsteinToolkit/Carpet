@@ -50,22 +50,22 @@ namespace CarpetMask {
       gh<dim> const & hh = *vhh.at(Carpet::map);
       dh<dim> const & dd = *vdd.at(Carpet::map);
       
-      ibbox const & base = hh.bases.at(reflevel).at(mglevel);
+      ibbox const & base = hh.bases().at(reflevel).at(mglevel);
       
       
       
       // Calculate the union of all refined regions
       ibset refined;
       for (int c=0; c<hh.components(reflevel); ++c) {
-        refined |= hh.extents.at(reflevel).at(c).at(mglevel);
+        refined |= hh.extents().at(reflevel).at(c).at(mglevel);
       }
       refined.normalize();
       
       // Calculate the union of all coarse regions
       ibset parent;
       for (int c=0; c<hh.components(reflevel-1); ++c) {
-//         parent |= hh.extents.at(reflevel-1).at(c).at(mglevel).expanded_for(base);
-        parent |= hh.extents.at(reflevel-1).at(c).at(mglevel).expand(ivect(reffact-1),ivect(reffact-1)).contracted_for(base);
+//         parent |= hh.extents().at(reflevel-1).at(c).at(mglevel).expanded_for(base);
+        parent |= hh.extents().at(reflevel-1).at(c).at(mglevel).expand(ivect(reffact-1),ivect(reffact-1)).contracted_for(base);
       }
       parent.normalize();
       

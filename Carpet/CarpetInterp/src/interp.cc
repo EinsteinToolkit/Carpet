@@ -279,11 +279,11 @@ namespace CarpetInterp {
           
           int const fact = maxreflevelfact / ipow(reffact, rl) * ipow(mgfact, mglevel);
           ivect const ipos = ivect(floor((pos - lower) / (delta * fact) + 0.5)) * fact;
-          assert (all(ipos % vhh.at(m)->bases.at(rl).at(ml).stride() == 0));
+          assert (all(ipos % vhh.at(m)->bases().at(rl).at(ml).stride() == 0));
           
           // TODO: use something faster than a linear search
           for (int c=0; c<vhh.at(m)->components(rl); ++c) {
-            if (vhh.at(m)->extents.at(rl).at(c).at(ml).contains(ipos)) {
+            if (vhh.at(m)->extents().at(rl).at(c).at(ml).contains(ipos)) {
               rlev.at(n) = rl;
               home.at(n) = c;
               goto found;
@@ -360,7 +360,7 @@ namespace CarpetInterp {
         for (int rl=minrl; rl<maxrl; ++rl) {
           for (int c=0; c<vhh.at(m)->components(rl); ++c) {
             allcoords.at(ind_prc(p,m,rl,c)).change_processor
-              (state, vhh.at(m)->processors.at(rl).at(c));
+              (state, vhh.at(m)->processors().at(rl).at(c));
           }
         }
       }
@@ -383,7 +383,7 @@ namespace CarpetInterp {
           ivect const str (1);
           ibbox const extent (lo, up-str, str);
           alloutputs.at(ind_prc(p,m,rl,c)).allocate
-            (extent, vhh.at(m)->processors.at(rl).at(c));
+            (extent, vhh.at(m)->processors().at(rl).at(c));
           
           ivect const slo (0);
           ivect sup (1);
@@ -391,7 +391,7 @@ namespace CarpetInterp {
           ivect const sstr (1);
           ibbox const sextent (lo, up-str, str);
           allstatuses.at(ind_prc(p,m,rl,c)).allocate
-            (sextent, vhh.at(m)->processors.at(rl).at(c));
+            (sextent, vhh.at(m)->processors().at(rl).at(c));
         }
       }
     }

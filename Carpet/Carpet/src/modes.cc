@@ -95,8 +95,8 @@ namespace Carpet {
         const int m = 0;
         const int c = CCTK_MyProc(cgh);
         
-        const ibbox& base = arrdata.at(group).at(m).hh->bases.at(rl).at(ml);
-        const bbvect& obnds = arrdata.at(group).at(m).hh->outer_boundaries.at(rl).at(c);
+        const ibbox& base = arrdata.at(group).at(m).hh->bases().at(rl).at(ml);
+        const bbvect& obnds = arrdata.at(group).at(m).hh->outer_boundaries().at(rl).at(c);
 	const ibbox& ext = arrdata.at(group).at(m).dd->boxes.at(rl).at(c).at(ml).exterior;
         
         ivect::ref(const_cast<int*>(groupdata.at(group).info.nghostzones))
@@ -349,7 +349,7 @@ namespace Carpet {
     
     // Set cGH fields
     const ibbox& baseext = vdd.at(map)->bases.at(reflevel).at(mglevel).exterior;
-    const bbvect& obnds = vhh.at(map)->outer_boundaries.at(reflevel).at(component);
+    const bbvect& obnds = vhh.at(map)->outer_boundaries().at(reflevel).at(component);
     const ibbox& ext = vdd.at(map)->boxes.at(reflevel).at(component).at(mglevel).exterior;
     
     ivect::ref(cgh->cctk_lsh) = ext.shape() / ext.stride();

@@ -125,7 +125,7 @@ namespace CarpetRegrid {
     
     list<ibbox> bbl;
     for (int c=0; c<hh.components(rl); ++c) {
-      const ibbox region = hh.extents.at(rl).at(c).at(ml);
+      const ibbox region = hh.extents().at(rl).at(c).at(ml);
       assert (! region.empty());
       
       const data<CCTK_REAL,dim>& errordata = *errorgf(tl,rl,c,ml);
@@ -162,7 +162,7 @@ namespace CarpetRegrid {
     // Create obs from bbs
     obs.resize (bbs.size());
     for (size_t c=0; c<bbs.size(); ++c) {
-      assert (hh.bases.size()>0 && hh.bases.at(0).size()>0);
+      assert (hh.bases().size()>0 && hh.bases().at(0).size()>0);
       obs.at(c) = zip ((vect<bool,2> (*) (bool, bool)) &vect<bool,2>::make,
                     bbs.at(c).lower() == hh.baseextent.lower(),
                     bbs.at(c).upper() == hh.baseextent.upper());

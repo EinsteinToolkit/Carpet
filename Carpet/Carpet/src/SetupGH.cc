@@ -774,8 +774,8 @@ namespace Carpet {
     const int rl = 0;
     for (int c=0; c<vhh.at(m)->components(rl); ++c) {
       for (int ml=0; ml<vhh.at(m)->mglevels(rl,c); ++ml) {
-        const ivect lower = vhh.at(m)->extents.at(rl).at(c).at(ml).lower();
-        const ivect upper = vhh.at(m)->extents.at(rl).at(c).at(ml).upper();
+        const ivect lower = vhh.at(m)->extents().at(rl).at(c).at(ml).lower();
+        const ivect upper = vhh.at(m)->extents().at(rl).at(c).at(ml).upper();
         const int convfact = ipow(mgfact, ml);
         assert (all(lower % maxreflevelfact == 0));
         assert (all(upper % maxreflevelfact == 0));

@@ -111,8 +111,8 @@ namespace Carpet {
       // Write grid structure to file
       OutputGridStructure
         (cgh, m,
-         vhh.at(m)->extents, vhh.at(m)->outer_boundaries,
-         vhh.at(m)->processors);
+         vhh.at(m)->extents(), vhh.at(m)->outer_boundaries(),
+         vhh.at(m)->processors());
     } // loop over maps
   }
 

@@ -93,7 +93,7 @@ void dh<D>::allocate_bboxes() {
     for (int c=0; c<h.components(rl); ++c) {
       boxes.at(rl).at(c).resize(h.mglevels(rl,c));
       for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-        const ibbox intr = h.extents.at(rl).at(c).at(ml);
+        const ibbox intr = h.extents().at(rl).at(c).at(ml);
         dboxes & b = boxes.at(rl).at(c).at(ml);
 
         // Interior
@@ -107,8 +107,8 @@ void dh<D>::allocate_bboxes() {
         // the exterior is redundant)
         ivect ldist(lghosts), udist(ughosts);
         for (int d=0; d<D; ++d) {
-          if (h.outer_boundaries.at(rl).at(c)[d][0]) ldist[d] = 0;
-          if (h.outer_boundaries.at(rl).at(c)[d][1]) udist[d] = 0;
+          if (h.outer_boundaries().at(rl).at(c)[d][0]) ldist[d] = 0;
+          if (h.outer_boundaries().at(rl).at(c)[d][1]) udist[d] = 0;
         }
         b.exterior = intr.expand(ldist, udist);
 
