@@ -1,23 +1,4 @@
-/***************************************************************************
-                          dh.cc  -  Data Hierarchy
-                          A grid hierarchy plus ghost zones
-                             -------------------
-    begin                : Sun Jun 11 2000
-    copyright            : (C) 2000 by Erik Schnetter
-    email                : schnetter@astro.psu.edu
-
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.23 2002/12/12 16:49:55 schnetter Exp $
-
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.24 2003/01/03 15:49:36 schnetter Exp $
 
 #include <assert.h>
 
@@ -39,9 +20,9 @@ using namespace std;
 template<int D>
 dh<D>::dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts,
 	   int prolongation_order_space)
-  : dimgeneric_dh(prolongation_order_space),
-    h(h),
-    lghosts(lghosts), ughosts(ughosts)
+  : h(h),
+    lghosts(lghosts), ughosts(ughosts),
+    prolongation_order_space(prolongation_order_space)
 {
   assert (all(lghosts>=0 && ughosts>=0));
   h.add(this);
@@ -55,6 +36,13 @@ dh<D>::~dh ()
 {
   CHECKPOINT;
   h.remove(this);
+}
+
+// Helpers
+template<int D>
+int dh<D>::prolongation_stencil_size () const {
+  assert (prolongation_order_space>=0);
+  return prolongation_order_space/2;
 }
 
 // Modifiers
@@ -346,7 +334,7 @@ void dh<D>::recompose () {
     }
   } // if output_bboxes
   
-  for (typename list<generic_gf<D>*>::iterator f=gfs.begin();
+  for (typename list<ggf<D>*>::iterator f=gfs.begin();
        f!=gfs.end(); ++f) {
     (*f)->recompose();
   }
@@ -356,13 +344,13 @@ void dh<D>::recompose () {
 
 // Grid function management
 template<int D>
-void dh<D>::add (generic_gf<D>* f) {
+void dh<D>::add (ggf<D>* f) {
   CHECKPOINT;
   gfs.push_back(f);
 }
 
 template<int D>
-void dh<D>::remove (generic_gf<D>* f) {
+void dh<D>::remove (ggf<D>* f) {
   CHECKPOINT;
   gfs.remove(f);
 }
@@ -376,7 +364,7 @@ void dh<D>::output (ostream& os) const {
      << "ghosts=[" << lghosts << "," << ughosts << "],"
      << "gfs={";
   int cnt=0;
-  for (typename list<generic_gf<D>*>::const_iterator f = gfs.begin();
+  for (typename list<ggf<D>*>::const_iterator f = gfs.begin();
        f != gfs.end(); ++f) {
     if (cnt++) os << ",";
     (*f)->output(os);

@@ -1,23 +1,4 @@
-/***************************************************************************
-                          th.cc  -  Time Hierarchy
-                          information about time levels
-                             -------------------
-    begin                : Sun Jun 11 2000
-    copyright            : (C) 2000 by Erik Schnetter
-    email                : schnetter@astro.psu.edu
-
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.9 2002/09/25 19:54:08 schnetter Exp $
-
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.10 2003/01/03 15:49:36 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -27,7 +8,7 @@
 #include "cctk.h"
 
 #include "defs.hh"
-#include "dggh.hh"
+#include "gh.hh"
 
 #include "th.hh"
 
@@ -36,18 +17,21 @@ using namespace std;
 
 
 // Constructors
-th::th (dimgeneric_gh* h, const CCTK_REAL basedelta)
+template<int D>
+th<D>::th (gh<D>* h, const CCTK_REAL basedelta)
   : h(h), delta(basedelta) {
   h->add(this);
 }
 
 // Destructors
-th::~th () {
+template<int D>
+th<D>::~th () {
   h->remove(this);
 }
 
 // Modifiers
-void th::recompose () {
+template<int D>
+void th<D>::recompose () {
   times.resize(h->reflevels());
   deltas.resize(h->reflevels());
   for (int rl=0; rl<h->reflevels(); ++rl) {
@@ -78,8 +62,9 @@ void th::recompose () {
 
 
 // Output
-void th::output (ostream& os) const {
-  os << "th:"
+template<int D>
+void th<D>::output (ostream& os) const {
+  os << "th<" << D << ">:"
      << "times={";
   for (int rl=0; rl<h->reflevels(); ++rl) {
     for (int ml=0; ml<h->mglevels(rl,0); ++ml) {
@@ -90,3 +75,7 @@ void th::output (ostream& os) const {
   }
   os << "}";
 }
+
+
+
+template class th<3>;

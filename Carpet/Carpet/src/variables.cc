@@ -6,7 +6,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.11 2002/10/24 10:39:39 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.12 2003/01/03 15:49:36 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_variables_cc);
 }
 
@@ -62,7 +62,7 @@ namespace Carpet {
   
   // The grid hierarchy
   gh<dim>* hh;
-  th* tt;
+  th<dim>* tt;
   dh<dim>* dd;
 
   // Data for everything

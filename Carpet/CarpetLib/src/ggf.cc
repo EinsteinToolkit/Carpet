@@ -1,23 +1,4 @@
-/***************************************************************************
-                          ggf.cc  -  Generic Grid Function
-                          grid function without type information
-                             -------------------
-    begin                : Sun Jun 11 2000
-    copyright            : (C) 2000 by Erik Schnetter
-    email                : schnetter@astro.psu.edu
-
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.19 2002/09/25 15:49:16 schnetter Exp $
-
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.20 2003/01/03 15:49:36 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -39,10 +20,12 @@ using namespace std;
 
 // Constructors
 template<int D>
-generic_gf<D>::generic_gf (const string name, th& t, dh<D>& d,
-                           const int tmin, const int tmax,
-			   const int prolongation_order_time)
-  : dimgeneric_gf(name, t, tmin, tmax, prolongation_order_time),
+ggf<D>::ggf (const string name, th<D>& t, dh<D>& d,
+             const int tmin, const int tmax,
+             const int prolongation_order_time)
+  : name(name), t(t),
+    tmin(tmin), tmax(tmax),
+    prolongation_order_time(prolongation_order_time),
     h(d.h), d(d),
     storage(tmax-tmin+1)
 {
@@ -55,13 +38,13 @@ generic_gf<D>::generic_gf (const string name, th& t, dh<D>& d,
 
 // Destructors
 template<int D>
-generic_gf<D>::~generic_gf () {
+ggf<D>::~ggf () {
   d.remove(this);
 }
 
 // Comparison
 template<int D>
-bool generic_gf<D>::operator== (const generic_gf<D>& f) const {
+bool ggf<D>::operator== (const ggf<D>& f) const {
   return this == &f;
 }
 
@@ -69,7 +52,7 @@ bool generic_gf<D>::operator== (const generic_gf<D>& f) const {
 
 // Modifiers
 template<int D>
-void generic_gf<D>::recompose () {
+void ggf<D>::recompose () {
   
   // Retain storage that might be needed
   fdata oldstorage = storage;
@@ -159,11 +142,11 @@ void generic_gf<D>::recompose () {
 
 // Cycle the time levels by rotating the data sets
 template<int D>
-void generic_gf<D>::cycle (int rl, int c, int ml) {
+void ggf<D>::cycle (int rl, int c, int ml) {
   assert (rl>=0 && rl<h.reflevels());
   assert (c>=0 && c<h.components(rl));
   assert (ml>=0 && ml<h.mglevels(rl,c));
-  generic_data<D>* tmpdata = storage[tmin-tmin][rl][c][ml];
+  gdata<D>* tmpdata = storage[tmin-tmin][rl][c][ml];
   for (int tl=tmin; tl<=tmax-1; ++tl) {
     storage[tl-tmin][rl][c][ml] = storage[tl+1-tmin][rl][c][ml];
   }
@@ -172,7 +155,7 @@ void generic_gf<D>::cycle (int rl, int c, int ml) {
 
 // Flip the time levels by exchanging the data sets
 template<int D>
-void generic_gf<D>::flip (int rl, int c, int ml) {
+void ggf<D>::flip (int rl, int c, int ml) {
   assert (rl>=0 && rl<h.reflevels());
   assert (c>=0 && c<h.components(rl));
   assert (ml>=0 && ml<h.mglevels(rl,c));
@@ -180,7 +163,7 @@ void generic_gf<D>::flip (int rl, int c, int ml) {
     const int tl1 = tmin + t;
     const int tl2 = tmax - t;
     assert (tl1 < tl2);
-    generic_data<D>* tmpdata = storage[tl1-tmin][rl][c][ml];
+    gdata<D>* tmpdata = storage[tl1-tmin][rl][c][ml];
     storage[tl1-tmin][rl][c][ml] = storage[tl2-tmin][rl][c][ml];
     storage[tl2-tmin][rl][c][ml] = tmpdata;
   }
@@ -188,7 +171,7 @@ void generic_gf<D>::flip (int rl, int c, int ml) {
 
 // Copy data from current time level to all previous levels
 template<int D>
-void generic_gf<D>::copytoprevs (int rl, int c, int ml) {
+void ggf<D>::copytoprevs (int rl, int c, int ml) {
   assert (rl>=0 && rl<h.reflevels());
   assert (c>=0 && c<h.components(rl));
   assert (ml>=0 && ml<h.mglevels(rl,c));
@@ -206,10 +189,10 @@ void generic_gf<D>::copytoprevs (int rl, int c, int ml) {
 
 // Copy a region
 template<int D>
-void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
-			     const ibbox dh<D>::dboxes::* recv_list,
-			     int tl2, int rl2, int ml2,
-			     const ibbox dh<D>::dboxes::* send_list)
+void ggf<D>::copycat (int tl1, int rl1, int c1, int ml1,
+                      const ibbox dh<D>::dboxes::* recv_list,
+                      int tl2, int rl2, int ml2,
+                      const ibbox dh<D>::dboxes::* send_list)
 {
   assert (tl1>=tmin && tl1<=tmax);
   assert (rl1>=0 && rl1<h.reflevels());
@@ -230,10 +213,10 @@ void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
 
 // Copy regions
 template<int D>
-void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
-			     const iblist dh<D>::dboxes::* recv_list,
-			     int tl2, int rl2, int ml2,
-			     const iblist dh<D>::dboxes::* send_list)
+void ggf<D>::copycat (int tl1, int rl1, int c1, int ml1,
+                      const iblist dh<D>::dboxes::* recv_list,
+                      int tl2, int rl2, int ml2,
+                      const iblist dh<D>::dboxes::* send_list)
 {
   assert (tl1>=tmin && tl1<=tmax);
   assert (rl1>=0 && rl1<h.reflevels());
@@ -258,10 +241,10 @@ void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
 
 // Copy regions
 template<int D>
-void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
-			     const iblistvect dh<D>::dboxes::* recv_listvect,
-			     int tl2, int rl2, int ml2,
-			     const iblistvect dh<D>::dboxes::* send_listvect)
+void ggf<D>::copycat (int tl1, int rl1, int c1, int ml1,
+                      const iblistvect dh<D>::dboxes::* recv_listvect,
+                      int tl2, int rl2, int ml2,
+                      const iblistvect dh<D>::dboxes::* send_listvect)
 {
   assert (tl1>=tmin && tl1<=tmax);
   assert (rl1>=0 && rl1<h.reflevels());
@@ -288,11 +271,11 @@ void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
 
 // Interpolate a region
 template<int D>
-void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
-			      const ibbox dh<D>::dboxes::* recv_list,
-			      const vector<int> tl2s, int rl2, int ml2,
-			      const ibbox dh<D>::dboxes::* send_list,
-			      CCTK_REAL time)
+void ggf<D>::intercat (int tl1, int rl1, int c1, int ml1,
+                       const ibbox dh<D>::dboxes::* recv_list,
+                       const vector<int> tl2s, int rl2, int ml2,
+                       const ibbox dh<D>::dboxes::* send_list,
+                       CCTK_REAL time)
 {
   assert (tl1>=tmin && tl1<=tmax);
   assert (rl1>=0 && rl1<h.reflevels());
@@ -305,7 +288,7 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
   const int c2=c1;
   assert (ml2>=0 && ml2<h.mglevels(rl2,c2));
   
-  vector<const generic_data<D>*> gsrcs(tl2s.size());
+  vector<const gdata<D>*> gsrcs(tl2s.size());
   vector<CCTK_REAL> times(tl2s.size());
   for (int i=0; i<(int)gsrcs.size(); ++i) {
     assert (rl2<(int)storage[tl2s[i]-tmin].size());
@@ -328,11 +311,11 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
 
 // Interpolate regions
 template<int D>
-void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
-			      const iblist dh<D>::dboxes::* recv_list,
-			      const vector<int> tl2s, int rl2, int ml2,
-			      const iblist dh<D>::dboxes::* send_list,
-			      const CCTK_REAL time)
+void ggf<D>::intercat (int tl1, int rl1, int c1, int ml1,
+                       const iblist dh<D>::dboxes::* recv_list,
+                       const vector<int> tl2s, int rl2, int ml2,
+                       const iblist dh<D>::dboxes::* send_list,
+                       const CCTK_REAL time)
 {
   assert (tl1>=tmin && tl1<=tmax);
   assert (rl1>=0 && rl1<h.reflevels());
@@ -345,7 +328,7 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
   const int c2=c1;
   assert (ml2>=0 && ml2<h.mglevels(rl2,c2));
   
-  vector<const generic_data<D>*> gsrcs(tl2s.size());
+  vector<const gdata<D>*> gsrcs(tl2s.size());
   vector<CCTK_REAL> times(tl2s.size());
   for (int i=0; i<(int)gsrcs.size(); ++i) {
     assert (rl2<(int)storage[tl2s[i]-tmin].size());
@@ -372,11 +355,11 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
 
 // Interpolate regions
 template<int D>
-void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
-			      const iblistvect dh<D>::dboxes::* recv_listvect,
-			      const vector<int> tl2s, int rl2, int ml2,
-			      const iblistvect dh<D>::dboxes::* send_listvect,
-			      const CCTK_REAL time)
+void ggf<D>::intercat (int tl1, int rl1, int c1, int ml1,
+                       const iblistvect dh<D>::dboxes::* recv_listvect,
+                       const vector<int> tl2s, int rl2, int ml2,
+                       const iblistvect dh<D>::dboxes::* send_listvect,
+                       const CCTK_REAL time)
 {
   assert (tl1>=tmin && tl1<=tmax);
   assert (rl1>=0 && rl1<h.reflevels());
@@ -390,7 +373,7 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
   for (int c2=0; c2<h.components(rl2); ++c2) {
     assert (ml2>=0 && ml2<h.mglevels(rl2,c2));
     
-    vector<const generic_data<D>*> gsrcs(tl2s.size());
+    vector<const gdata<D>*> gsrcs(tl2s.size());
     vector<CCTK_REAL> times(tl2s.size());
     for (int i=0; i<(int)gsrcs.size(); ++i) {
       assert (rl2<(int)storage[tl2s[i]-tmin].size());
@@ -420,7 +403,7 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
 
 // Copy a component from the next time level
 template<int D>
-void generic_gf<D>::copy (int tl, int rl, int c, int ml)
+void ggf<D>::copy (int tl, int rl, int c, int ml)
 {
   // Copy
   copycat (tl  ,rl,c,ml, &dh<D>::dboxes::exterior,
@@ -429,7 +412,7 @@ void generic_gf<D>::copy (int tl, int rl, int c, int ml)
 
 // Synchronise the boundaries a component
 template<int D>
-void generic_gf<D>::sync (int tl, int rl, int c, int ml)
+void ggf<D>::sync (int tl, int rl, int c, int ml)
 {
   // Copy
   copycat (tl,rl,c,ml, &dh<D>::dboxes::recv_sync,
@@ -438,8 +421,8 @@ void generic_gf<D>::sync (int tl, int rl, int c, int ml)
 
 // Prolongate the boundaries of a component
 template<int D>
-void generic_gf<D>::ref_bnd_prolongate (int tl, int rl, int c, int ml,
-					CCTK_REAL time)
+void ggf<D>::ref_bnd_prolongate (int tl, int rl, int c, int ml,
+                                 CCTK_REAL time)
 {
   // Interpolate
   assert (rl>=1);
@@ -455,8 +438,8 @@ void generic_gf<D>::ref_bnd_prolongate (int tl, int rl, int c, int ml,
 
 // Restrict a multigrid level
 template<int D>
-void generic_gf<D>::mg_restrict (int tl, int rl, int c, int ml,
-				 CCTK_REAL time)
+void ggf<D>::mg_restrict (int tl, int rl, int c, int ml,
+                          CCTK_REAL time)
 {
   // Require same times
   assert (t.get_time(rl,ml) == t.get_time(rl,ml-1));
@@ -468,8 +451,8 @@ void generic_gf<D>::mg_restrict (int tl, int rl, int c, int ml,
 
 // Prolongate a multigrid level
 template<int D>
-void generic_gf<D>::mg_prolongate (int tl, int rl, int c, int ml,
-				   CCTK_REAL time)
+void ggf<D>::mg_prolongate (int tl, int rl, int c, int ml,
+                            CCTK_REAL time)
 {
   // Require same times
   assert (t.get_time(rl,ml) == t.get_time(rl,ml+1));
@@ -481,8 +464,8 @@ void generic_gf<D>::mg_prolongate (int tl, int rl, int c, int ml,
 
 // Restrict a refinement level
 template<int D>
-void generic_gf<D>::ref_restrict (int tl, int rl, int c, int ml,
-				  CCTK_REAL time)
+void ggf<D>::ref_restrict (int tl, int rl, int c, int ml,
+                           CCTK_REAL time)
 {
   // Require same times
   // SHH: removed assert and added warning
@@ -498,8 +481,8 @@ void generic_gf<D>::ref_restrict (int tl, int rl, int c, int ml,
 
 // Prolongate a refinement level
 template<int D>
-void generic_gf<D>::ref_prolongate (int tl, int rl, int c, int ml,
-				    CCTK_REAL time)
+void ggf<D>::ref_prolongate (int tl, int rl, int c, int ml,
+                             CCTK_REAL time)
 {
   assert (rl>=1);
   vector<int> tl2s;
@@ -514,4 +497,4 @@ void generic_gf<D>::ref_prolongate (int tl, int rl, int c, int ml,
 
 
 
-template class generic_gf<3>;
+template class ggf<3>;

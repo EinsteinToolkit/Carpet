@@ -19,7 +19,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.35 2003/01/03 14:11:56 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.36 2003/01/03 15:49:36 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -163,7 +163,7 @@ namespace Carpet {
 		     baseext);
     
     // Allocate time hierarchy
-    tt = new th(hh, 1.0);
+    tt = new th<dim>(hh, 1.0);
     
     // Allocate data hierarchy
     dd = new dh<dim>(*hh, lghosts, ughosts, prolongation_order_space);
@@ -240,7 +240,7 @@ namespace Carpet {
 					multigrid_factor, vertex_centered,
 					arrext);
 	
-	arrdata[group].tt = new th(arrdata[group].hh, 1.0);
+	arrdata[group].tt = new th<dim>(arrdata[group].hh, 1.0);
 	
 	vect<int,dim> alghosts(0), aughosts(0);
 	for (int d=0; d<gp.dim; ++d) {

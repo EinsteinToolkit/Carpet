@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.42 2002/10/24 12:00:35 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.43 2003/01/03 15:49:36 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -54,7 +54,7 @@ namespace CarpetIOASCII {
   
   template<int D,int DD>
   void WriteASCII (ostream& os,
-		   const generic_data<D>* const gfdata,
+		   const gdata<D>* const gfdata,
 		   const bbox<int,D>& gfext,
 		   const int vi,
 		   const int time,
@@ -361,13 +361,13 @@ namespace CarpetIOASCII {
 	  // level
 	  BEGIN_COMPONENT_LOOP(cgh) {
 	    
-	    const generic_gf<dim>* ff = 0;
+	    const ggf<dim>* ff = 0;
 	    
 	    assert (var < (int)arrdata[group].data.size());
-	    ff = (generic_gf<dim>*)arrdata[group].data[var];
+	    ff = (ggf<dim>*)arrdata[group].data[var];
 	    
-	    const generic_data<dim>* const data
-	      = (*ff) (tl, reflevel, component, mglevel);
+	    const gdata<dim>* const data
+              = (*ff) (tl, reflevel, component, mglevel);
 	    bbox<int,dim> ext = data->extent();
 	    
 	    vect<int,dim> lo = ext.lower();
@@ -694,7 +694,7 @@ namespace CarpetIOASCII {
   // Output
   template<int D,int DD>
   void WriteASCII (ostream& os,
-		   const generic_data<D>* const gfdata,
+		   const gdata<D>* const gfdata,
 		   const bbox<int,D>& gfext,
 		   const int vi,
 		   const int time,
@@ -786,7 +786,7 @@ namespace CarpetIOASCII {
     } else {
       // copy to processor 0 and output there
       
-      generic_data<D>* const tmp = gfdata->make_typed();
+      gdata<D>* const tmp = gfdata->make_typed();
       tmp->allocate(gfdata->extent(), 0);
       tmp->copy_from (gfdata, gfdata->extent());
       WriteASCII (os, tmp, gfext, vi, time, org, dirs, tl, rl, c, ml,
@@ -807,7 +807,7 @@ namespace CarpetIOASCII {
   
   template
   void WriteASCII (ostream& os,
-		   const generic_data<3>* const gfdata,
+		   const gdata<3>* const gfdata,
 		   const bbox<int,3>& gfext,
 		   const int vi,
 		   const int time,
@@ -823,7 +823,7 @@ namespace CarpetIOASCII {
   
   template
   void WriteASCII (ostream& os,
-		   const generic_data<3>* const gfdata,
+		   const gdata<3>* const gfdata,
 		   const bbox<int,3>& gfext,
 		   const int vi,
 		   const int time,
@@ -839,7 +839,7 @@ namespace CarpetIOASCII {
 
   template
   void WriteASCII (ostream& os,
-		   const generic_data<3>* const gfdata,
+		   const gdata<3>* const gfdata,
 		   const bbox<int,3>& gfext,
 		   const int vi,
 		   const int time,

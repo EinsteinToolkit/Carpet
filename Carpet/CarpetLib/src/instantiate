@@ -1,7 +1,7 @@
 // Instantiate templates for all available types    -*-C++-*-
 // (C) 2001 Erik Schnetter <schnetter@uni-tuebingen.de>
 
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/instantiate,v 1.4 2002/01/04 18:21:58 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/instantiate,v 1.5 2003/01/03 15:49:36 schnetter Exp $
 
 // Usage:
 // Define the macro INSTANTIATE(T) to instantiate for the type T,
@@ -28,9 +28,11 @@
 #endif
 
 #ifdef CARPET_ALL_INT
+#  undef CARPET_INT1
 #  undef CARPET_INT2
 #  undef CARPET_INT4
 #  undef CARPET_INT8
+#  define CARPET_INT1
 #  define CARPET_INT2
 #  define CARPET_INT4
 #  define CARPET_INT8
@@ -63,6 +65,10 @@
 #endif
 
 #ifdef CARPET_INT
+#  ifdef CCTK_INTEGER_PRECISION_1
+#    undef CARPET_INT1
+#    define CARPET_INT1
+#  endif
 #  ifdef CCTK_INTEGER_PRECISION_2
 #    undef CARPET_INT2
 #    define CARPET_INT2
@@ -120,6 +126,11 @@
 INSTANTIATE(CCTK_BYTE)
 #endif
 
+#ifdef CARPET_INT1
+#  ifdef CCTK_INT1
+INSTANTIATE(CCTK_INT1)
+#  endif
+#endif
 #ifdef CARPET_INT2
 #  ifdef CCTK_INT2
 INSTANTIATE(CCTK_INT2)

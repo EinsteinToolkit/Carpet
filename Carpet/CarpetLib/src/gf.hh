@@ -1,23 +1,4 @@
-/***************************************************************************
-                          gf.hh  -  Grid Function
-                          data for every element of a data hierarchy
-                             -------------------
-    begin                : Sun Jun 11 2000
-    copyright            : (C) 2000 by Erik Schnetter
-    email                : schnetter@astro.psu.edu
-
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.hh,v 1.6 2002/05/05 22:17:02 schnetter Exp $
-
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.hh,v 1.7 2003/01/03 15:49:36 schnetter Exp $
 
 #ifndef GF_HH
 #define GF_HH
@@ -43,7 +24,7 @@ using namespace std;
 
 // A real grid function
 template<class T,int D>
-class gf: public generic_gf<D> {
+class gf: public ggf<D> {
   
   // Types
   typedef vect<int,D>    ivect;
@@ -61,7 +42,7 @@ class gf: public generic_gf<D> {
 public:
   
   // Constructors
-  gf (const string name, th& t, dh<D>& d,
+  gf (const string name, th<D>& t, dh<D>& d,
       const int tmin, const int tmax, const int prolongation_order_time);
   
   // Destructors
@@ -73,7 +54,7 @@ public:
   
 protected:
   
-  virtual generic_data<D>* typed_data() { return new data<T,D>; }
+  virtual gdata<D>* typed_data() { return new data<T,D>; }
   
   
   

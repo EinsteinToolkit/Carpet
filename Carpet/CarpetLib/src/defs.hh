@@ -1,22 +1,4 @@
-/***************************************************************************
-                          defs.hh  -  Commonly used definitions
-                             -------------------
-    begin                : Sun Jun 11 2000
-    copyright            : (C) 2000 by Erik Schnetter
-    email                : schnetter@astro.psu.edu
-
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.9 2002/12/31 13:29:07 schnetter Exp $
-
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.10 2003/01/03 15:49:36 schnetter Exp $
 
 #ifndef DEFS_HH
 #define DEFS_HH
@@ -51,16 +33,18 @@ inline T square (const T& x) { return x*x; }
 
 // Another useful helper
 template<class T>
-inline T ipow (const T& x, const int y) {
+inline T ipow (T x, int y) {
   if (y<0) {
-    return T(1)/ipow(x,-y);
-  } else if (y==0) {
-    return T(1);
-  } else if (y%2) {
-    return x * ipow(x*x,y/2);
-  } else {
-    return ipow(x*x,y/2);
+    y = -y;
+    x = T(1)/x;
   }
+  T res = T(1);
+  while (y>0) {
+    if (y%2) res *= x;
+    x *= x;
+    y /= 2;
+  }
+  return res;
 }
 
 

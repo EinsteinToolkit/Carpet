@@ -1,22 +1,4 @@
-/***************************************************************************
-                          gdata.hh  -  description
-                             -------------------
-    begin                : Wed Jul 19 2000
-    copyright            : (C) 2000 by Erik Schnetter
-    email                : schnetter@astro.psu.edu
-
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.15 2002/09/25 15:49:16 schnetter Exp $
-
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.16 2003/01/03 15:49:36 schnetter Exp $
 
 #ifndef GDATA_HH
 #define GDATA_HH
@@ -30,7 +12,6 @@
 #include "cctk.h"
 
 #include "defs.hh"
-#include "dgdata.hh"
 #include "dist.hh"
 #include "bbox.hh"
 #include "vect.hh"
@@ -41,7 +22,7 @@ using namespace std;
 
 // A generic data storage without type information
 template<int D>
-class generic_data: public dimgeneric_data {
+class gdata {
 
   // Types
   typedef vect<int,D> ivect;
@@ -50,6 +31,12 @@ class generic_data: public dimgeneric_data {
 protected:                      // should be readonly
 
   // Fields
+  bool _has_storage;		// has storage associated (on some processor)
+  bool _owns_storage;		// owns the storage
+  int _size;			// size
+
+  int _proc;			// stored on processor
+  
   ivect _shape, _stride;      	// shape and index order
   
   ibbox _extent;		// bbox for all data
@@ -57,22 +44,47 @@ protected:                      // should be readonly
 public:
 
   // Constructors
-  generic_data ();
+  gdata ();
 
   // Destructors
-  virtual ~generic_data ();
+  virtual ~gdata ();
 
   // Pseudo constructors
-  virtual generic_data<D>* make_typed () const = 0;
-
+  virtual gdata<D>* make_typed () const = 0;
+  
+  // Processor management
+  virtual void change_processor (const int newproc, void* const mem=0) = 0;
+  
   // Storage management
-  virtual void transfer_from (generic_data<D>* src) = 0;
+  virtual void transfer_from (gdata<D>* src) = 0;
   
   virtual void allocate (const ibbox& extent, const int proc,
 			 void* const mem=0) = 0;
   virtual void free () = 0;
   
   // Accessors
+  
+  bool has_storage () const {
+    return _has_storage;
+  }
+  bool owns_storage () const {
+    assert (_has_storage);
+    return _owns_storage;
+  }
+  
+  virtual const void* storage () const = 0;
+  
+  virtual void* storage () = 0;
+  
+  int size () const {
+    assert (_has_storage);
+    return _size;
+  }
+
+  int proc () const {
+    assert (_has_storage);
+    return _proc;
+  }
   
   const ivect& shape () const {
     assert (_has_storage);
@@ -99,17 +111,17 @@ public:
   }
 
   // Data manipulators
-  void copy_from (const generic_data* src, const ibbox& box);
-  void interpolate_from (const vector<const generic_data*> srcs,
+  void copy_from (const gdata* src, const ibbox& box);
+  void interpolate_from (const vector<const gdata*> srcs,
 			 const vector<CCTK_REAL> times,
 			 const ibbox& box, const CCTK_REAL time,
 			 const int order_space,
 			 const int order_time);
 protected:
   virtual void
-  copy_from_innerloop (const generic_data* src, const ibbox& box) = 0;
+  copy_from_innerloop (const gdata* src, const ibbox& box) = 0;
   virtual void
-  interpolate_from_innerloop (const vector<const generic_data*> srcs,
+  interpolate_from_innerloop (const vector<const gdata*> srcs,
 			      const vector<CCTK_REAL> times,
 			      const ibbox& box, const CCTK_REAL time,
 			      const int order_space,

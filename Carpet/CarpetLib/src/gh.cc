@@ -1,24 +1,4 @@
-/***************************************************************************
-                          gh.cc  -  Grid Hierarchy
-                          bounding boxes for each multigrid level of each
-                          component of each refinement level
-                             -------------------
-    begin                : Sun Jun 11 2000
-    copyright            : (C) 2000 by Erik Schnetter
-    email                : schnetter@astro.psu.edu
-
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.17 2002/10/12 13:02:25 schnetter Exp $
-
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.18 2003/01/03 15:49:36 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -39,7 +19,8 @@ template<int D>
 gh<D>::gh (const int reffact, const centering refcent,
 	   const int mgfact, const centering mgcent,
 	   const ibbox& baseextent)
-  : dimgeneric_gh (reffact, refcent, mgfact, mgcent),
+  : reffact(reffact), refcent(refcent),
+    mgfact(mgfact), mgcent(mgcent),
     baseextent(baseextent)
 {
 }
@@ -142,7 +123,7 @@ void gh<D>::recompose (const rexts& exts, const rbnds& outer_bounds,
   
   // Recompose the other hierarchies
   
-  for (typename list<th*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
+  for (typename list<th<D>*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
     (*t)->recompose();
   }
   
@@ -224,6 +205,19 @@ int gh<D>::local_components (const int rl) const {
     if (is_local(rl,c)) ++lc;
   }
   return lc;
+}
+
+
+
+// Time hierarchy management
+template<int D>
+void gh<D>::add (th<D>* t) {
+  ths.push_back(t);
+}
+
+template<int D>
+void gh<D>::remove (th<D>* t) {
+  ths.remove(t);
 }
 
 

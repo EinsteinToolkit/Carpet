@@ -1,24 +1,4 @@
-/***************************************************************************
-                          gh.hh  -  Grid Hierarchy
-		bounding boxes for each multigrid level of each
-		component of each refinement level
-                             -------------------
-    begin                : Sun Jun 11 2000
-    copyright            : (C) 2000 by Erik Schnetter
-    email                : schnetter@astro.psu.edu
-
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.11 2002/10/12 13:02:25 schnetter Exp $
-
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.12 2003/01/03 15:49:36 schnetter Exp $
 
 #ifndef GH_HH
 #define GH_HH
@@ -31,7 +11,6 @@
 
 #include "bbox.hh"
 #include "defs.hh"
-#include "dggh.hh"
 #include "dist.hh"
 #include "vect.hh"
 
@@ -41,14 +20,19 @@ using namespace std;
 
 // Forward declaration
 template<int D> class dh;
+template<int D> class th;
 template<int D> class gh;
+
+// Output
+template<int D>
+ostream& operator<< (ostream& os, const gh<D>& h);
 
 
 
 // A refinement hierarchy, where higher levels are finer than the base
 // level.  The extents do not include ghost zones.
 template<int D>
-class gh: public dimgeneric_gh {
+class gh {
   
 public:
   
@@ -69,6 +53,15 @@ public:
   typedef vector<cprocs> rprocs; // ... for each refinement level
   
 public:				// should be readonly
+  
+  // Fields
+  int reffact;			// refinement factor
+  centering refcent;		// vertex or cell centered
+  
+  int mgfact;			// default multigrid factor
+  centering mgcent;		// default (vertex or cell centered)
+  
+  list<th<D>*> ths;		// list of all time hierarchies
   
   ibbox baseextent;		// bounds (inclusive) of base level
   vector<vector<ibbox> > bases; // [rl][ml]
@@ -138,6 +131,10 @@ public:
   
   int local_components (const int rl) const;
   
+  // Time hierarchy management
+  void add (th<D>* t);
+  void remove (th<D>* t);
+  
   // Data hierarchy management
   void add (dh<D>* d);
   void remove (dh<D>* d);
@@ -145,6 +142,14 @@ public:
   // Output
   virtual ostream& output (ostream& os) const;
 };
+
+
+
+template<int D>
+inline ostream& operator<< (ostream& os, const gh<D>& h) {
+  h.output(os);
+  return os;
+}
 
 
 

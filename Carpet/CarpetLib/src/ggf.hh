@@ -1,23 +1,4 @@
-/***************************************************************************
-                          ggf.hh  -  Generic Grid Function
-                          grid function without type information
-                             -------------------
-    begin                : Sun Jun 11 2000
-    copyright            : (C) 2000 by Erik Schnetter
-    email                : schnetter@astro.psu.edu
-
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.12 2002/09/25 15:49:16 schnetter Exp $
-
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.13 2003/01/03 15:49:36 schnetter Exp $
 
 #ifndef GGF_HH
 #define GGF_HH
@@ -31,7 +12,6 @@
 #include "cctk.h"
 
 #include "defs.hh"
-#include "dggf.hh"
 #include "dh.hh"
 #include "gdata.hh"
 #include "gh.hh"
@@ -42,17 +22,17 @@ using namespace std;
 
 
 // Forward declaration
-template<int D> class generic_gf;
+template<int D> class ggf;
 
 // Output
 template<int D>
-ostream& operator<< (ostream& os, const generic_gf<D>& f);
+ostream& operator<< (ostream& os, const ggf<D>& f);
 
 
 
 // A generic grid function without type information
 template<int D>
-class generic_gf: public dimgeneric_gf {
+class ggf {
 
   // Types
 
@@ -62,16 +42,21 @@ class generic_gf: public dimgeneric_gf {
   typedef list<ibbox>    iblist;
   typedef vector<iblist> iblistvect;
 
-  typedef generic_data<D>* tdata; // data ...
-  typedef vector<tdata>    mdata; // ... for each multigrid level
-  typedef vector<mdata>    cdata; // ... for each component
-  typedef vector<cdata>    rdata; // ... for each refinement level
-  typedef vector<rdata>    fdata; // ... for each time level
+  typedef gdata<D>*     tdata;  // data ...
+  typedef vector<tdata> mdata;  // ... for each multigrid level
+  typedef vector<mdata> cdata;  // ... for each component
+  typedef vector<cdata> rdata;  // ... for each refinement level
+  typedef vector<rdata> fdata;  // ... for each time level
 
 public:				// should be readonly
 
   // Fields
+  string name;
 
+  th<D> &t;			// time hierarchy
+  int tmin, tmax;		// timelevels
+  int prolongation_order_time;	// order of temporal prolongation operator
+  
   gh<D> &h;			// grid hierarchy
   dh<D> &d;			// data hierarchy
 
@@ -81,15 +66,15 @@ protected:
 public:
 
   // Constructors
-  generic_gf (const string name, th& t, dh<D>& d,
-              const int tmin, const int tmax,
-	      const int prolongation_order_time);
+  ggf (const string name, th<D>& t, dh<D>& d,
+       const int tmin, const int tmax,
+       const int prolongation_order_time);
 
   // Destructors
-  virtual ~generic_gf ();
+  virtual ~ggf ();
 
   // Comparison
-  bool operator== (const generic_gf<D>& f) const;
+  bool operator== (const ggf<D>& f) const;
 
 
 
@@ -110,7 +95,7 @@ public:
   
 protected:
   
-  virtual generic_data<D>* typed_data() = 0;
+  virtual gdata<D>* typed_data() = 0;
   
   
   
@@ -191,10 +176,9 @@ public:
   
   
   // Access to the data
-  virtual const generic_data<D>* operator() (int tl, int rl, int c, int ml)
-    const = 0;
+  virtual const gdata<D>* operator() (int tl, int rl, int c, int ml) const = 0;
   
-  virtual generic_data<D>* operator() (int tl, int rl, int c, int ml) = 0;
+  virtual gdata<D>* operator() (int tl, int rl, int c, int ml) = 0;
   
   
   
@@ -205,7 +189,7 @@ public:
 
 
 template<int D>
-inline ostream& operator<< (ostream& os, const generic_gf<D>& f) {
+inline ostream& operator<< (ostream& os, const ggf<D>& f) {
   return f.output(os);
 }
 

@@ -34,7 +34,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.20 2002/10/24 12:00:32 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.21 2003/01/03 15:49:36 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -256,12 +256,12 @@ namespace CarpetIOFlexIO {
     // Traverse all components on this refinement and multigrid level
     BEGIN_COMPONENT_LOOP(cgh) {
       
-      const generic_gf<dim>* ff = 0;
+      const ggf<dim>* ff = 0;
       
       assert (var < (int)arrdata[group].data.size());
-      ff = (generic_gf<dim>*)arrdata[group].data[var];
+      ff = (ggf<dim>*)arrdata[group].data[var];
       
-      const generic_data<dim>* const data
+      const gdata<dim>* const data
 	= (*ff) (tl, reflevel, component, mglevel);
       
       // Make temporary copy on processor 0
@@ -284,7 +284,7 @@ namespace CarpetIOFlexIO {
       
       ext = bbox<int,dim>(lo,hi,str);
       
-      generic_data<dim>* const tmp = data->make_typed ();
+      gdata<dim>* const tmp = data->make_typed ();
       tmp->allocate (ext, 0);
       tmp->copy_from (data, ext);
       
@@ -565,12 +565,12 @@ namespace CarpetIOFlexIO {
 	// level
 	BEGIN_COMPONENT_LOOP(cgh) {
 	  
-	  generic_gf<dim>* ff = 0;
+	  ggf<dim>* ff = 0;
 	  
 	  assert (var < (int)arrdata[group].data.size());
-	  ff = (generic_gf<dim>*)arrdata[group].data[var];
+	  ff = (ggf<dim>*)arrdata[group].data[var];
 	  
-	  generic_data<dim>* const data
+	  gdata<dim>* const data
 	    = (*ff) (tl, reflevel, component, mglevel);
 	  
 	  // Create temporary data storage on processor 0
@@ -579,7 +579,7 @@ namespace CarpetIOFlexIO {
 	  const vect<int,dim> ub
 	    = lb + (vect<int,dim>(amr_dims) - 1) * str;
 	  const bbox<int,dim> ext(lb,ub,str);
-	  generic_data<dim>* const tmp = data->make_typed ();
+	  gdata<dim>* const tmp = data->make_typed ();
 	  
 	  if (CCTK_MyProc(cgh)==0) {
 	    tmp->allocate (ext, 0, amrgrid->data);

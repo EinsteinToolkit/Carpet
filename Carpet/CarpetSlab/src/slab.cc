@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.1 2002/10/24 10:53:48 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.2 2003/01/03 15:49:36 schnetter Exp $
 
 #include <alloca.h>
 #include <assert.h>
@@ -20,7 +20,7 @@
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.1 2002/10/24 10:53:48 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.2 2003/01/03 15:49:36 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 
@@ -111,7 +111,7 @@ namespace CarpetSlab {
     // Get insider information about variable
     const gh<dim>* myhh;
     const dh<dim>* mydd;
-    const generic_gf<dim>* myff;
+    const ggf<dim>* myff;
     assert (group < (int)arrdata.size());
     myhh = arrdata[group].hh;
     assert (myhh);
@@ -147,7 +147,7 @@ namespace CarpetSlab {
       component = 0;
       
       // Get sample data
-      const generic_data<dim>* mydata;
+      const gdata<dim>* mydata;
       mydata = (*myff)(tl, reflevel, component, mglevel);
       
       // Stride of data in memory
@@ -177,7 +177,7 @@ namespace CarpetSlab {
       
       // Create collector data object
       void* myhdata = rank==collect_proc ? hdata : 0;
-      generic_data<dim>* const alldata = mydata->make_typed();
+      gdata<dim>* const alldata = mydata->make_typed();
       alldata->allocate (hextent, collect_proc, myhdata);
       
       // Done with the temporary stuff
@@ -216,7 +216,7 @@ namespace CarpetSlab {
 	  if (proc != collect_proc) {
 	    
 	    void* myhdata = rank==proc ? hdata : 0;
-	    generic_data<dim>* const tmpdata = mydata->make_typed();
+	    gdata<dim>* const tmpdata = mydata->make_typed();
 	    tmpdata->allocate (alldata->extent(), proc, myhdata);
 	    tmpdata->copy_from (alldata, alldata->extent());
 	    delete tmpdata;

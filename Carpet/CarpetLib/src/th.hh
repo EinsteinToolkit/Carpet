@@ -1,23 +1,4 @@
-/***************************************************************************
-                          th.hh  -  Time Hierarchy
-                          information about time levels
-                             -------------------
-    begin                : Sun Jun 11 2000
-    copyright            : (C) 2000 by Erik Schnetter
-    email                : schnetter@astro.psu.edu
-
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.hh,v 1.8 2002/09/25 15:49:17 schnetter Exp $
-
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.hh,v 1.9 2003/01/03 15:49:36 schnetter Exp $
 
 #ifndef TH_HH
 #define TH_HH
@@ -30,27 +11,29 @@
 #include "cctk.h"
 
 #include "defs.hh"
-#include "dggh.hh"
+#include "gh.hh"
 
 using namespace std;
 
 
 
 // Forward declaration
-class th;
+template<int D> class th;
 
 // Output
-ostream& operator<< (ostream& os, const th& t);
+template<int D>
+ostream& operator<< (ostream& os, const th<D>& t);
 
 
 
 // The time hierarchy (information about the current time)
+template<int D>
 class th {
   
 public:				// should be readonly
   
   // Fields
-  dimgeneric_gh *h;		// hierarchy
+  gh<D> *h;                     // hierarchy
   
 private:
   
@@ -61,7 +44,7 @@ private:
 public:
   
   // Constructors
-  th (dimgeneric_gh* h, const CCTK_REAL basedelta);
+  th (gh<D>* h, const CCTK_REAL basedelta);
   
   // Destructors
   ~th ();
@@ -110,7 +93,8 @@ public:
 
 
 
-inline ostream& operator<< (ostream& os, const th& t) {
+template<int D>
+inline ostream& operator<< (ostream& os, const th<D>& t) {
   t.output(os);
   return os;
 }

@@ -1,22 +1,4 @@
-/***************************************************************************
-                          data.cc  -  Data storage
-                             -------------------
-    begin                : Sun Jun 11 2000
-    copyright            : (C) 2000 by Erik Schnetter
-    email                : schnetter@astro.psu.edu
-
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.23 2003/01/03 13:19:58 schnetter Exp $
-
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.24 2003/01/03 15:49:36 schnetter Exp $
 
 #include <assert.h>
 
@@ -102,7 +84,7 @@ void data<T,D>::free () {
 }
 
 template<class T, int D>
-void data<T,D>::transfer_from (generic_data<D>* gsrc) {
+void data<T,D>::transfer_from (gdata<D>* gsrc) {
   data* src = (data*)gsrc;
   assert (!_storage);
   *this = *src;
@@ -166,7 +148,7 @@ void data<T,D>::change_processor (const int newproc, void* const mem) {
 // Data manipulators
 template<class T, int D>
 void data<T,D>
-::copy_from_innerloop (const generic_data<D>* gsrc, const ibbox& box)
+::copy_from_innerloop (const gdata<D>* gsrc, const ibbox& box)
 {
   const data* src = (const data*)gsrc;
   assert (has_storage() && src->has_storage());
@@ -196,7 +178,7 @@ void data<T,D>
 
 template<class T, int D>
 void data<T,D>
-::interpolate_from_innerloop (const vector<const generic_data<D>*> gsrcs,
+::interpolate_from_innerloop (const vector<const gdata<D>*> gsrcs,
 			      const vector<CCTK_REAL> times,
 			      const ibbox& box, const CCTK_REAL time,
 			      const int order_space,
@@ -244,7 +226,7 @@ extern "C" {
 
 template<>
 void data<CCTK_REAL8,3>
-::copy_from_innerloop (const generic_data<3>* gsrc, const ibbox& box)
+::copy_from_innerloop (const gdata<3>* gsrc, const ibbox& box)
 {
   const data* src = (const data*)gsrc;
   assert (has_storage() && src->has_storage());
@@ -377,7 +359,7 @@ extern "C" {
 
 template<>
 void data<CCTK_REAL8,3>
-::interpolate_from_innerloop (const vector<const generic_data<3>*> gsrcs,
+::interpolate_from_innerloop (const vector<const gdata<3>*> gsrcs,
 			      const vector<CCTK_REAL> times,
 			      const ibbox& box, const CCTK_REAL time,
 			      const int order_space,
@@ -539,7 +521,8 @@ void data<CCTK_REAL8,3>
 // Output
 template<class T,int D>
 ostream& data<T,D>::output (ostream& os) const {
-  os << "data<T," << D << ">:"
+  T Tdummy;
+  os << "data<" << typestring(Tdummy) << "," << D << ">:"
      << "extent=" << extent() << ","
      << "stride=" << stride() << ",size=" << size();
   return os;

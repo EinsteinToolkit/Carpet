@@ -1,23 +1,4 @@
-/***************************************************************************
-                          dh.hh  -  Data Hierarchy
-			  A grid hierarchy plus ghost zones
-                             -------------------
-    begin                : Sun Jun 11 2000
-    copyright            : (C) 2000 by Erik Schnetter
-    email                : schnetter@astro.psu.edu
-
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.11 2002/10/14 20:40:39 schnetter Exp $
-
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.12 2003/01/03 15:49:36 schnetter Exp $
 
 #ifndef DH_HH
 #define DH_HH
@@ -32,7 +13,6 @@
 #include "bbox.hh"
 #include "bboxset.hh"
 #include "defs.hh"
-#include "dgdh.hh"
 #include "gh.hh"
 #include "vect.hh"
 
@@ -41,13 +21,18 @@ using namespace std;
 
 
 // Forward declaration
-template<int D> class generic_gf;
+template<int D> class ggf;
+template<int D> class dh;
+
+// Output
+template<int D>
+ostream& operator<< (ostream& os, const dh<D>& d);
 
 
 
 // A data hierarchy (grid hierarchy plus ghost zones)
 template<int D>
-class dh: public dimgeneric_dh {
+class dh {
   
   // Types
   typedef vect<int,D>    ivect;
@@ -105,10 +90,12 @@ public:				// should be readonly
   gh<D>& h;			// hierarchy
   ivect lghosts, ughosts;	// ghost zones
   
+  int prolongation_order_space;	// order of spatial prolongation operator
+  
   rboxes boxes;
   rbases bases;
   
-  list<generic_gf<D>*> gfs;	// list of all grid functions
+  list<ggf<D>*> gfs;	// list of all grid functions
   
 public:
   
@@ -119,16 +106,27 @@ public:
   // Destructors
   virtual ~dh ();
   
+  // Helpers
+  int prolongation_stencil_size () const;
+  
   // Modifiers
   void recompose ();
   
   // Grid function management
-  void add (generic_gf<D>* f);
-  void remove (generic_gf<D>* f);
+  void add (ggf<D>* f);
+  void remove (ggf<D>* f);
   
   // Output
   virtual void output (ostream& os) const;
 };
+
+
+
+template<int D>
+inline ostream& operator<< (ostream& os, const dh<D>& d) {
+  d.output(os);
+  return os;
+}
 
 
 

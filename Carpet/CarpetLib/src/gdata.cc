@@ -1,22 +1,4 @@
-/***************************************************************************
-                          gdata.cc  -  description
-                             -------------------
-    begin                : Wed Jul 19 2000
-    copyright            : (C) 2000 by Erik Schnetter
-    email                : schnetter@astro.psu.edu
-
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.20 2002/09/25 15:49:16 schnetter Exp $
-
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.21 2003/01/03 15:49:36 schnetter Exp $
 
 #include <assert.h>
 
@@ -37,18 +19,19 @@ using namespace std;
 
 // Constructors
 template<int D>
-generic_data<D>::generic_data ()
+gdata<D>::gdata ()
+  : _has_storage(false)
 { }
 
 // Destructors
 template<int D>
-generic_data<D>::~generic_data () { }
+gdata<D>::~gdata () { }
 
 
 
 // Data manipulators
 template<int D>
-void generic_data<D>::copy_from (const generic_data* src, const ibbox& box)
+void gdata<D>::copy_from (const gdata* src, const ibbox& box)
 {
   assert (has_storage() && src->has_storage());
   assert (all(box.lower()>=extent().lower()
@@ -72,7 +55,7 @@ void generic_data<D>::copy_from (const generic_data* src, const ibbox& box)
   } else {
     
     // copy to different processor
-    generic_data* const tmp = make_typed();
+    gdata* const tmp = make_typed();
     tmp->allocate (box, src->proc());
     tmp->copy_from (src, box);
     tmp->change_processor (proc());
@@ -85,8 +68,8 @@ void generic_data<D>::copy_from (const generic_data* src, const ibbox& box)
 
 
 template<int D>
-void generic_data<D>
-::interpolate_from (const vector<const generic_data*> srcs,
+void gdata<D>
+::interpolate_from (const vector<const gdata*> srcs,
 		    const vector<CCTK_REAL> times,
 		    const ibbox& box, const CCTK_REAL time,
 		    const int order_space,
@@ -117,7 +100,7 @@ void generic_data<D>
   } else {
     // interpolate from other processor
     
-    generic_data* const tmp = make_typed();
+    gdata* const tmp = make_typed();
     tmp->allocate (box, srcs[0]->proc());
     tmp->interpolate_from (srcs, times, box, time, order_space, order_time);
     tmp->change_processor (proc());
@@ -129,4 +112,4 @@ void generic_data<D>
 
 
 
-template class generic_data<3>;
+template class gdata<3>;

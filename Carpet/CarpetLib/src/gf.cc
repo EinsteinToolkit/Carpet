@@ -1,23 +1,4 @@
-/***************************************************************************
-                          gf.cc  -  Grid Function
-                          data for every element of a data hierarchy
-                             -------------------
-    begin                : Sun Jun 11 2000
-    copyright            : (C) 2000 by Erik Schnetter
-    email                : schnetter@astro.psu.edu
-
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.9 2002/05/05 22:17:02 schnetter Exp $
-
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.10 2003/01/03 15:49:36 schnetter Exp $
 
 #include <assert.h>
 
@@ -31,9 +12,9 @@ using namespace std;
 
 // Constructors
 template<class T,int D>
-gf<T,D>::gf (const string name, th& t, dh<D>& d,
+gf<T,D>::gf (const string name, th<D>& t, dh<D>& d,
 	     const int tmin, const int tmax, const int prolongation_order_time)
-  : generic_gf<D>(name, t, d, tmin, tmax, prolongation_order_time)
+  : ggf<D>(name, t, d, tmin, tmax, prolongation_order_time)
 {
   recompose();
 }
@@ -68,7 +49,8 @@ data<T,D>* gf<T,D>::operator() (int tl, int rl, int c, int ml) {
 // Output
 template<class T,int D>
 ostream& gf<T,D>::output (ostream& os) const {
-  os << "gf<T," << D << ">:\"" << name << "\","
+  T Tdummy;
+  os << "gf<" << typestring(Tdummy) << "," << D << ">:\"" << name << "\","
      << "dt=[" << tmin << ":" << tmax<< "]";
   return os;
 }

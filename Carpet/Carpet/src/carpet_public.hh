@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.22 2003/01/03 14:11:56 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.23 2003/01/03 15:49:36 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -80,7 +80,7 @@ namespace Carpet {
   
   // The grid hierarchy
   extern gh<dim>* hh;
-  extern th* tt;
+  extern th<dim>* tt;
   extern dh<dim>* dd;
   
   // Data for everything
@@ -88,9 +88,9 @@ namespace Carpet {
     // points to hh etc. for GF, and is unique for SCALAR and ARRAY
     cGroupDynamicData info;
     gh<dim>* hh;
-    th* tt;
+    th<dim>* tt;
     dh<dim>* dd;
-    vector<generic_gf<dim>*> data; // [var]
+    vector<ggf<dim>*> data;     // [var]
     bool do_transfer;           // prolongate and restrict
   };
   extern vector<arrdesc> arrdata; // [group]
