@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.hh,v 1.1 2004/01/25 14:57:28 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.hh,v 1.2 2004/06/14 09:42:53 schnetter Exp $
 
 #ifndef MODES_HH
 #define MODES_HH
@@ -146,21 +146,21 @@ namespace Carpet {
 #define BEGIN_MGLEVEL_LOOP(cgh)                 \
   do {                                          \
     bool mglevel_loop_ = true;                  \
-    for (mglevel_iterator iter_(cgh);           \
-         !iter_.done();                         \
-         iter_.step()) {
+    for (mglevel_iterator mg_iter_(cgh);        \
+         !mg_iter_.done();                      \
+         mg_iter_.step()) {
 #define END_MGLEVEL_LOOP                        \
     }                                           \
     assert (mglevel_loop_);                     \
     mglevel_loop_ = false;                      \
   } while (false)
   
-#define BEGIN_REVERSE_MGLEVEL_LOOP(cgh)         \
-  do {                                          \
-    bool reverse_mglevel_loop_ = true;          \
-    for (reverse_mglevel_iterator iter_(cgh);   \
-         !iter_.done();                         \
-         iter_.step()) {
+#define BEGIN_REVERSE_MGLEVEL_LOOP(cgh)                 \
+  do {                                                  \
+    bool reverse_mglevel_loop_ = true;                  \
+    for (reverse_mglevel_iterator mg_iter_(cgh);        \
+         !mg_iter_.done();                              \
+         mg_iter_.step()) {
 #define END_REVERSE_MGLEVEL_LOOP                \
     }                                           \
     assert (reverse_mglevel_loop_);             \
@@ -170,33 +170,33 @@ namespace Carpet {
 #define BEGIN_REFLEVEL_LOOP(cgh)                \
   do {                                          \
     bool reflevel_loop_ = true;                 \
-    for (reflevel_iterator iter_(cgh);          \
-         !iter_.done();                         \
-         iter_.step()) {
+    for (reflevel_iterator ref_iter_(cgh);      \
+         !ref_iter_.done();                     \
+         ref_iter_.step()) {
 #define END_REFLEVEL_LOOP                       \
     }                                           \
     assert (reflevel_loop_);                    \
     reflevel_loop_ = false;                     \
   } while (false)
 
-#define BEGIN_REVERSE_REFLEVEL_LOOP(cgh)        \
-  do {                                          \
-    bool reverse_reflevel_loop_ = true;         \
-    for (reverse_reflevel_iterator iter_(cgh);  \
-         !iter_.done();                         \
-         iter_.step()) {
+#define BEGIN_REVERSE_REFLEVEL_LOOP(cgh)                \
+  do {                                                  \
+    bool reverse_reflevel_loop_ = true;                 \
+    for (reverse_reflevel_iterator ref_iter_(cgh);      \
+         !ref_iter_.done();                             \
+         ref_iter_.step()) {
 #define END_REVERSE_REFLEVEL_LOOP               \
     }                                           \
     assert (reverse_reflevel_loop_);            \
     reverse_reflevel_loop_ = false;             \
   } while (false)
 
-#define BEGIN_MAP_LOOP(cgh, grouptype)          \
-  do {                                          \
-    bool map_loop_ = true;                      \
-    for (map_iterator iter_(cgh, grouptype);    \
-         !iter_.done();                         \
-         iter_.step()) {
+#define BEGIN_MAP_LOOP(cgh, grouptype)                  \
+  do {                                                  \
+    bool map_loop_ = true;                              \
+    for (map_iterator map_iter_(cgh, grouptype);        \
+         !map_iter_.done();                             \
+         map_iter_.step()) {
 #define END_MAP_LOOP                            \
     }                                           \
     assert (map_loop_);                         \
@@ -206,9 +206,9 @@ namespace Carpet {
 #define BEGIN_COMPONENT_LOOP(cgh, grouptype)            \
   do {                                                  \
     bool component_loop_ = true;                        \
-    for (component_iterator iter_(cgh, grouptype);      \
-         !iter_.done();                                 \
-         iter_.step()) {
+    for (component_iterator comp_iter_(cgh, grouptype); \
+         !comp_iter_.done();                            \
+         comp_iter_.step()) {
 #define END_COMPONENT_LOOP                      \
     }                                           \
     assert (component_loop_);                   \
@@ -218,9 +218,9 @@ namespace Carpet {
 #define BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype)              \
   do {                                                          \
     bool local_component_loop_ = true;                          \
-    for (local_component_iterator iter_(cgh, grouptype);        \
-         !iter_.done();                                         \
-         iter_.step()) {
+    for (local_component_iterator comp_iter_(cgh, grouptype);   \
+         !comp_iter_.done();                                    \
+         comp_iter_.step()) {
 #define END_LOCAL_COMPONENT_LOOP                \
     }                                           \
     assert (local_component_loop_);             \
