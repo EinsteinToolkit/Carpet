@@ -16,7 +16,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/automatic.cc,v 1.4 2004/04/28 15:45:25 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/automatic.cc,v 1.5 2004/08/04 16:25:58 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_automatic_cc);
 }
 
@@ -188,8 +188,12 @@ namespace CarpetRegrid {
     // (this doesn't work yet on multiple processors)
     assert (CCTK_nProcs(cctkGH)==1);
     int cnt = 0;
-    for (ibbox::iterator it=region.begin(); it!=region.end(); ++it) {
-      if (errordata[*it] > maxerror) ++cnt;
+    {
+      ibbox::iterator it=region.begin();
+      do {
+        if (errordata[*it] > maxerror) ++cnt;
+        ++it;
+      } while (it!=region.end());
     }
     const CCTK_REAL fraction = (CCTK_REAL)cnt / region.size();
     const int width = maxval(region.shape() / region.stride());
