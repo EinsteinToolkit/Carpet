@@ -5,6 +5,7 @@
 #include <cstring>
 #include <iostream>
 #include <sstream>
+#include <stack>
 #include <vector>
 
 #include "cctk.h"
@@ -305,7 +306,8 @@ namespace Carpet {
                       CCTK_INT ghost_size_x, CCTK_INT ghost_size_y,
                       CCTK_INT ghost_size_z);
   static ivect make_global_number_of_grid_points (CCTK_INT global_nsize,
-                   CCTK_INT global_nx, CCTK_INT global_ny, CCTK_INT global_nz);
+                   CCTK_INT global_nx, CCTK_INT global_ny, CCTK_INT global_nz,
+                   CCTK_INT constant_load_per_processor);
   static void check_time_hierarchy (const vector<dh*> &vdd, int m,
                       CCTK_INT max_refinement_levels,
                       CCTK_INT refinement_factor,
@@ -388,7 +390,8 @@ namespace Carpet {
                                 ghost_size_x, ghost_size_y, ghost_size_z);
       ivect ughosts = lghosts;
       ivect npoints = make_global_number_of_grid_points (global_nsize,
-                                global_nx, global_ny, global_nz);
+                                global_nx, global_ny, global_nz,
+                                constant_load_per_processor);
 
       allocate_map (cgh, m, domain_from_coordbase,
                convergence_factor, refinement_factor,
@@ -623,13 +626,42 @@ namespace Carpet {
     
   }
 
-  ivect make_global_number_of_grid_points (CCTK_INT global_nsize,
-            CCTK_INT global_nx, CCTK_INT global_ny, CCTK_INT global_nz) {
+  ivect
+  make_global_number_of_grid_points (CCTK_INT const global_nsize,
+                                     CCTK_INT const global_nx,
+                                     CCTK_INT const global_ny,
+                                     CCTK_INT const global_nz,
+                                     CCTK_INT const constant_load_per_processor)
+  {
+    ivect npoints;
     if (global_nsize == -1) {
-      return ivect (global_nx, global_ny, global_nz);
+      npoints = ivect (global_nx, global_ny, global_nz);
     } else {
-      return ivect (global_nsize, global_nsize, global_nsize);
+      npoints = ivect (global_nsize, global_nsize, global_nsize);
     }
+    if (constant_load_per_processor) {
+      // Enlarge the domain so that each processor has the specified
+      // number of grid points
+      int const nprocs = dist::size();
+      // Factorise the number of processors
+      stack<int> factors;
+      for (int procsleft = nprocs; procsleft > 1;) {
+        for (int divisor = 2; divisor <= procsleft; ++divisor) {
+          if (procsleft % divisor == 0) {
+            factors.push (divisor);
+            procsleft /= divisor;
+          }
+        }
+      }
+      // Distribute the factors greedily onto the directions
+      while (! factors.empty()) {
+        int const mindir = minloc (npoints);
+        int const factor = factors.top();
+        factors.pop();
+        npoints[mindir] *= factor;
+      }
+    }
+    return npoints;
   }
 
   ivect make_ghost_zone_vect (CCTK_INT ghost_size,
