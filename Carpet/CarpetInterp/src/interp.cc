@@ -225,6 +225,21 @@ namespace CarpetInterp {
     
     CCTK_REAL const current_time = cgh->cctk_time / cgh->cctk_delta_time;
     
+    vector<CCTK_REAL> interpolation_times (N_interp_points);
+    bool interpolation_times_differ;
+    ierr = Util_TableGetRealArray
+      (param_table_handle, N_interp_points,
+       &interpolation_times.front(), "interpolation_times");
+    if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+      for (int n=0; n<N_output_arrays; ++n) {
+        interpolation_times.at(n) = current_time;
+      }
+      interpolation_times_differ = false;
+    } else {
+      assert (ierr == N_interp_points);
+      interpolation_times_differ = true;
+    }
+    
     
     
     // Find out about the coordinates: origin and delta for the Carpet
@@ -406,10 +421,12 @@ namespace CarpetInterp {
         // Number of necessary time levels
         CCTK_REAL const level_time = cgh->cctk_time / cgh->cctk_delta_time;
         bool const need_time_interp
-          = (fabs(current_time - level_time)
-             > 1e-12 * (fabs(level_time) + fabs(current_time)
-                        + fabs(cgh->cctk_delta_time)));
-        assert (! (! want_global_mode && need_time_interp));
+          = (interpolation_times_differ
+             || (fabs(current_time - level_time)
+                 > 1e-12 * (fabs(level_time) + fabs(current_time)
+                            + fabs(cgh->cctk_delta_time))));
+        assert (! (! want_global_mode && ! interpolation_times_differ
+                   && need_time_interp));
         int const num_tl = need_time_interp ? prolongation_order_time + 1 : 1;
         
         BEGIN_MAP_LOOP(cgh, CCTK_GF) {
@@ -581,16 +598,18 @@ namespace CarpetInterp {
                   // If -ve then key wasn't set; use all timelevels.
                   if (interp_ntls < 0) interp_ntls = num_tl;
                   
-                  // Get interpolation times
-                  CCTK_REAL const time = current_time;
-                  vector<CCTK_REAL> times(interp_ntls);
-                  for (int tl=0; tl<interp_ntls; ++tl) {
-                    times.at(tl) = vtt.at(m)->time (-tl, reflevel, mglevel);
-                  }
-                  
-                  // Calculate interpolation weights
-                  vector<CCTK_REAL> tfacs(interp_ntls);
-                  switch (interp_ntls) {
+                  if (! interpolation_times_differ) {
+                    
+                    // Get interpolation times
+                    CCTK_REAL const time = current_time;
+                    vector<CCTK_REAL> times(interp_ntls);
+                    for (int tl=0; tl<interp_ntls; ++tl) {
+                      times.at(tl) = vtt.at(m)->time (-tl, reflevel, mglevel);
+                    }
+                    
+                    // Calculate interpolation weights
+                    vector<CCTK_REAL> tfacs(interp_ntls);
+                    switch (interp_ntls) {
                     case 1:
                       // no interpolation
                       // We have to assume that any GF with one timelevel
@@ -611,19 +630,68 @@ namespace CarpetInterp {
                       break;
                     default:
                       assert (0);
-                  }
-                  
-                  // Interpolate
-                  assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
-                  for (int k=0; k<npoints; ++k) {
-                    CCTK_REAL & dest = alloutputs.at(ind_prc(p,m,reflevel,component))[ivect(k,j,0)];
-                    dest = 0;
-                    for (int tl=0; tl<interp_ntls; ++tl) {
-                      CCTK_REAL const src = ((CCTK_REAL const *)tmp_output_arrays.at(tl).at(j))[k];
-                      dest += tfacs[tl] * src;
                     }
-                  }
-                }
+                    
+                    // Interpolate
+                    assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
+                    for (int k=0; k<npoints; ++k) {
+                      CCTK_REAL & dest = alloutputs.at(ind_prc(p,m,reflevel,component))[ivect(k,j,0)];
+                      dest = 0;
+                      for (int tl=0; tl<interp_ntls; ++tl) {
+                        CCTK_REAL const src = ((CCTK_REAL const *)tmp_output_arrays.at(tl).at(j))[k];
+                        dest += tfacs[tl] * src;
+                      }
+                    }
+                    
+                  } else {
+                    
+                    // Interpolate
+                    assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
+                    for (int k=0; k<npoints; ++k) {
+                      
+                      // Get interpolation times
+                      CCTK_REAL const time = interpolation_times.at(k);
+                      vector<CCTK_REAL> times(interp_ntls);
+                      for (int tl=0; tl<interp_ntls; ++tl) {
+                        times.at(tl) = vtt.at(m)->time (-tl, reflevel, mglevel);
+                      }
+                      
+                      // Calculate interpolation weights
+                      vector<CCTK_REAL> tfacs(interp_ntls);
+                      switch (interp_ntls) {
+                      case 1:
+                        // no interpolation
+                        // We have to assume that any GF with one timelevel
+                        // is constant in time!!!
+                        // assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
+                        tfacs.at(0) = 1.0;
+                        break;
+                      case 2:
+                        // linear (2-point) interpolation
+                        tfacs.at(0) = (time - times.at(1)) / (times.at(0) - times.at(1));
+                        tfacs.at(1) = (time - times.at(0)) / (times.at(1) - times.at(0));
+                        break;
+                      case 3:
+                        // quadratic (3-point) interpolation
+                        tfacs.at(0) = (time - times.at(1)) * (time - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
+                        tfacs.at(1) = (time - times.at(0)) * (time - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
+                        tfacs.at(2) = (time - times.at(0)) * (time - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
+                        break;
+                      default:
+                        assert (0);
+                      }
+                      
+                      CCTK_REAL & dest = alloutputs.at(ind_prc(p,m,reflevel,component))[ivect(k,j,0)];
+                      dest = 0;
+                      for (int tl=0; tl<interp_ntls; ++tl) {
+                        CCTK_REAL const src = ((CCTK_REAL const *)tmp_output_arrays.at(tl).at(j))[k];
+                        dest += tfacs[tl] * src;
+                      }
+                    }
+                    
+                  } // if interpolation_times_differ
+                  
+                } // for j
                   
                 for (int tl=0; tl<num_tl; ++tl) {
                   for (int j=0; j<N_output_arrays; ++j) {
