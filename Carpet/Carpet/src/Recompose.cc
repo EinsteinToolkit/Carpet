@@ -179,7 +179,6 @@ namespace Carpet {
   void OutputGrids (const cGH* cgh, const int m, const gh& hh)
   {
     CCTK_INFO ("New grid structure (grid points):");
-    cout << "   Refinement level " << reflevel << ", map " << map << endl;
     for (int ml=0; ml<hh.mglevels(); ++ml) {
       for (int rl=0; rl<hh.reflevels(); ++rl) {
         for (int c=0; c<hh.components(rl); ++c) {
@@ -187,6 +186,7 @@ namespace Carpet {
           const int levfact = ipow(reffact, rl);
           const ivect lower = hh.extents().at(ml).at(rl).at(c).lower();
           const ivect upper = hh.extents().at(ml).at(rl).at(c).upper();
+          const ivect stride = hh.extents().at(ml).at(rl).at(c).stride();
           assert (all(lower * levfact % maxreflevelfact == 0));
           assert (all(upper * levfact % maxreflevelfact == 0));
           assert (all(((upper - lower) * levfact / maxreflevelfact)
@@ -196,11 +196,14 @@ namespace Carpet {
                << "proc "
                << hh.processors().at(rl).at(c)
                << "   "
-               << lower * levfact / maxreflevelfact
+//                << lower * levfact / maxreflevelfact
+               << lower / stride
                << " : "
-               << upper * levfact / maxreflevelfact
+//                << upper * levfact / maxreflevelfact
+               << upper / stride
                << "   ("
-               << (upper - lower) * levfact / maxreflevelfact / convfact + 1
+//                << (upper - lower) * levfact / maxreflevelfact / convfact + 1
+               << (upper - lower) / stride + 1
                << ")"
                << endl;
         }
@@ -227,6 +230,98 @@ namespace Carpet {
         }
       }
     }
+    
+    CCTK_INFO ("New grid statistics:");
+    cout.setf (ios::fixed);
+    const int oldprecision = cout.precision();
+    for (int ml=0; ml<hh.mglevels(); ++ml) {
+      CCTK_REAL coarsevolume = 0;
+      for (int rl=0; rl<hh.reflevels(); ++rl) {
+        
+        const CCTK_REAL basevolume
+          = prod (rvect (hh.baseextent.shape()) / hh.baseextent.stride());
+        CCTK_REAL countvolume = 0;
+        CCTK_REAL totalvolume = 0;
+        CCTK_REAL totalvolume2 = 0;
+        
+        for (int c=0; c<hh.components(rl); ++c) {
+          const ivect shape = hh.extents().at(ml).at(rl).at(c).shape();
+          const ivect stride = hh.extents().at(ml).at(rl).at(c).stride();
+          const CCTK_REAL volume = prod (rvect (shape) / stride);
+          ++ countvolume;
+          totalvolume += volume;
+          totalvolume2 += ipow(volume, 2);
+        }
+        
+        const CCTK_REAL avgvolume = totalvolume / countvolume;
+        const CCTK_REAL stddevvolume
+          = sqrt (max ((CCTK_REAL) 0.0,
+                       totalvolume2 / countvolume - ipow (avgvolume, 2)));
+        
+        for (int c=0; c<hh.components(rl); ++c) {
+          const ivect shape = hh.extents().at(ml).at(rl).at(c).shape();
+          const ivect stride = hh.extents().at(ml).at(rl).at(c).stride();
+          const CCTK_REAL volume = prod(rvect (shape) / stride);
+          cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
+               << "   volume: " << setprecision(0) << volume
+               << "   of parent: " << setprecision(1) << 100 * volume / totalvolume << "%"
+               << "   of domain: " << setprecision(1) << 100 * volume / basevolume << "%"
+               << endl;
+        }
+        
+        cout << "   [" << ml << "][" << rl << "][" << m << "]"
+             << "   average volume: " << setprecision(0) << avgvolume
+             << "   of parent: " << setprecision(1) << 100 * avgvolume / totalvolume << "%"
+             << "   of domain: " << setprecision(1) << 100 * avgvolume / basevolume << "%"
+             << endl;
+        cout << "   [" << ml << "][" << rl << "][" << m << "]"
+             << "   standard deviation: " << setprecision(0) << stddevvolume
+             << "   of parent: " << setprecision(1) << 100 * stddevvolume / totalvolume << "%"
+             << "   of domain: " << setprecision(1) << 100 * stddevvolume / basevolume << "%"
+             << endl;
+        
+        // TODO: ghost points vs. interior points (and boundary
+        // points)
+        
+        CCTK_REAL countquadrupole = 0;
+        CCTK_REAL minquadrupole = 1;
+        CCTK_REAL totalquadrupole = 0;
+        CCTK_REAL totalquadrupole2 = 0;
+        
+        for (int c=0; c<hh.components(rl); ++c) {
+          const ivect shape = hh.extents().at(ml).at(rl).at(c).shape();
+          const ivect stride = hh.extents().at(ml).at(rl).at(c).stride();
+          const CCTK_REAL minlength = minval (rvect (shape) / stride);
+          const CCTK_REAL maxlength = maxval (rvect (shape) / stride);
+          const CCTK_REAL quadrupole = minlength / maxlength;
+          ++ countquadrupole;
+          minquadrupole = min (minquadrupole, quadrupole);
+          totalquadrupole += quadrupole;
+          totalquadrupole2 += ipow (quadrupole, 2);
+          cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
+               << "   length ratio: " << setprecision(3) << quadrupole
+               << endl;
+        }
+        
+        const CCTK_REAL avgquadrupole = totalquadrupole / countquadrupole;
+        const CCTK_REAL stddevquadrupole
+          = sqrt (max ((CCTK_REAL) 0.0,
+                       (totalquadrupole2 / countquadrupole
+                        - ipow (avgquadrupole, 2))));
+        
+        cout << "   [" << ml << "][" << rl << "][" << m << "]"
+             << "   average length ratio: " << setprecision(3) << avgquadrupole
+             << "   standard deviation: " << setprecision(3) << stddevquadrupole
+             << endl;
+        
+        // TODO: processor distribution, average load, std deviation
+        
+        coarsevolume = totalvolume * ipow (reflevelfact, dim);
+      }
+    }
+    cout.precision (oldprecision);
+    cout.unsetf (ios::fixed);
+    
   }
   
   
