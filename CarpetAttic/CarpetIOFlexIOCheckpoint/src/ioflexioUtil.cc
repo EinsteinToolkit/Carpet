@@ -93,7 +93,7 @@ IObase::DataType FlexIODataType (int cctk_type){
 void DumpCommonAttributes (const cGH *cgh, IObase* writer, ioRequest* request)
 {
   int dim, vdim;
-  CCTK_INT attr_int;
+  CCTK_INT attr_int,dimscalar;
   CCTK_REAL *attr_real;
   char coord_system_name[20];
   DECLARE_CCTK_PARAMETERS
@@ -107,7 +107,7 @@ void DumpCommonAttributes (const cGH *cgh, IObase* writer, ioRequest* request)
   writer->writeAttribute("name",IObase::Char,strlen(name)+1,name);
   free(name); 
   
-  //CCTK_VInfo (CCTK_THORNSTRING, "DUMPATTRIB");
+
   //fprintf(stderr,"\nattrib %s\n",groupname);
   writer->writeAttribute("groupname",IObase::String,strlen(groupname)+1,groupname);
   free (groupname);
@@ -119,12 +119,24 @@ void DumpCommonAttributes (const cGH *cgh, IObase* writer, ioRequest* request)
   writer->writeAttribute("component",FlexIODataType(CCTK_VARIABLE_INT),1,&component);
   writer->writeAttribute("mglevel",FlexIODataType(CCTK_VARIABLE_INT),1,&mglevel);
 
+
   attr_int = CCTK_MaxTimeLevelsVI (request->vindex);
   writer->writeAttribute("ntimelevels",FlexIODataType(CCTK_VARIABLE_INT),1,&attr_int);
 
   writer->writeAttribute("timelevel",FlexIODataType(CCTK_VARIABLE_INT),1,&request->timelevel);
 
-  writer->writeAttribute("global_size",FlexIODataType(CCTK_VARIABLE_INT),request->hdim,request->hsize);
+  /* we have to do below since cactus believes scalars have dimension 0, but
+     flexio likes them to be of dimension 1 
+  */
+
+  if(CCTK_GroupTypeFromVarI(request->vindex) == CCTK_SCALAR) {
+    dimscalar=1;
+    writer->writeAttribute("global_size",FlexIODataType(CCTK_VARIABLE_INT),1,&dimscalar);
+  }
+  else
+    writer->writeAttribute("global_size",FlexIODataType(CCTK_VARIABLE_INT),request->hdim,request->hsize);
+
+
 
 
 #if 0
