@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.26 2004/03/31 16:38:32 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.27 2004/04/16 20:57:56 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -21,7 +21,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.26 2004/03/31 16:38:32 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.27 2004/04/16 20:57:56 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -202,9 +202,13 @@ namespace CarpetInterp {
           }
         }
       }
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VWarn (3, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Interpolation point #%d at [%g,%g,%g] is not on any grid patch",
                   n, pos[0], pos[1], pos[2]);
+      // Map the point (arbitrarily) to the first component of the
+      // coarsest grid
+      rlev.at(n) = minrl;
+      home.at(n) = 0;
     found:
       assert (rlev.at(n)>=minrl && rlev.at(n)<maxrl);
       assert (home.at(n)>=0 && home.at(n)<vhh.at(m)->components(rlev.at(n)));
