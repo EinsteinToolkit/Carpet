@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.19 2004/04/19 21:38:33 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.20 2004/04/24 20:42:34 schnetter Exp $
 
 #include <assert.h>
 
@@ -25,7 +25,7 @@ gf<T,D>::gf (const int varindex, const operator_type transport_operator,
 {
   // this->recompose ();
   this->recompose_crop ();
-  for (int rl=0; rl<h.reflevels(); ++rl) {
+  for (int rl=0; rl<this->h.reflevels(); ++rl) {
     this->recompose_allocate (rl);
     for (comm_state<D> state; !state.done(); state.step()) {
       this->recompose_fill (state, rl);
