@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.h,v 1.6 2004/07/07 11:01:05 tradke Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.h,v 1.7 2004/08/18 16:02:56 tradke Exp $ */
 
 #ifndef CARPETIOHDF5_H
 #define CARPETIOHDF5_H
@@ -23,8 +23,9 @@ void CarpetIOHDF5_InitialDataCheckpoint (const cGH*);
 void CarpetIOHDF5Startup (void);
 int CarpetIOHDF5Init (const cGH* const);
 int CarpetIOHDF5ReadData (const cGH* const);
-int CarpetIOHDF5_EvolutionCheckpoint (const cGH* const);
 int CarpetIOHDF5_InitialDataCheckpoint (const cGH* const);
+int CarpetIOHDF5_EvolutionCheckpoint (const cGH* const);
+int CarpetIOHDF5_TerminationCheckpoint (const cGH* const);
 void CarpetIOHDF5EvolutionCheckpoint (const cGH* const);
 void CarpetIOHDF5InitialDataCheckpoint (const cGH* const);
     

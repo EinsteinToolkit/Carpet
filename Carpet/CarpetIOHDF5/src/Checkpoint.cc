@@ -19,7 +19,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/Checkpoint.cc,v 1.1 2004/07/07 11:01:05 tradke Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/Checkpoint.cc,v 1.2 2004/08/18 16:02:56 tradke Exp $";
 CCTK_FILEVERSION(Carpet_CarpetIOHDF5_Checkpoint_cc);
 }
 
@@ -43,6 +43,9 @@ namespace CarpetIOHDF5
 
 using namespace std;
 using namespace Carpet;
+
+// when was the last checkpoint written ?
+static int last_checkpoint_iteration = -1;
 
 
 static int Checkpoint (const cGH* const cctkGH, int called_from);
@@ -94,6 +97,37 @@ int CarpetIOHDF5_EvolutionCheckpoint (const cGH* const cctkGH)
     if (checkpoint_next)
     {
       CCTK_ParameterSet ("checkpoint_next", CCTK_THORNSTRING, "no");
+    }
+  }
+
+  return (retval);
+}
+
+
+int CarpetIOHDF5_TerminationCheckpoint (const cGH *const GH)
+{
+  int retval = 0;
+  DECLARE_CCTK_PARAMETERS
+
+
+  if (checkpoint && checkpoint_on_terminate)
+  {
+    if (last_checkpoint_iteration < GH->cctk_iteration)
+    {
+      CCTK_INFO ("---------------------------------------------------------");
+      CCTK_VInfo (CCTK_THORNSTRING, "Dumping termination checkpoint at "
+                  "iteration %d", GH->cctk_iteration);
+      CCTK_INFO ("---------------------------------------------------------");
+
+      retval = Checkpoint (GH, CP_EVOLUTION_DATA);
+    }
+    else if (verbose)
+    {
+      CCTK_INFO ("---------------------------------------------------------");
+      CCTK_VInfo (CCTK_THORNSTRING, "Termination checkpoint already dumped "
+                  "as last evolution checkpoint at iteration %d",
+                  last_checkpoint_iteration);
+      CCTK_INFO ("---------------------------------------------------------");
     }
   }
 
@@ -301,6 +335,9 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
       myGH->cp_filename_index = (myGH->cp_filename_index+1) % abs (checkpoint_keep);
     }
   }
+
+  // save the iteration number of this checkpoint
+  last_checkpoint_iteration = cctkGH->cctk_iteration;
 
   // free allocated resources
   free (tempname);
