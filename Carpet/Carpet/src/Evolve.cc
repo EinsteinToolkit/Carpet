@@ -31,7 +31,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.35 2004/02/09 12:58:00 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.36 2004/02/15 11:27:51 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -136,7 +136,8 @@ namespace Carpet {
       
       // Advance time
       ++cgh->cctk_iteration;
-      global_time += delta_time / maxreflevelfact;
+      global_time = cctk_initial_time
+        + cgh->cctk_iteration * delta_time / maxreflevelfact;
       cgh->cctk_time = global_time;
       if ((cgh->cctk_iteration-1) % (maxreflevelfact / ipow(reffact, reflevels-1)) == 0) {
         Waypoint ("Evolving iteration %d at t=%g",
@@ -145,8 +146,11 @@ namespace Carpet {
       
       
       
-      bool have_done_global_mode = false;
-      bool have_done_anything = false;
+      bool have_done_global_mode;
+      bool have_done_anything;
+      
+      have_done_global_mode = false;
+      have_done_anything = false;
       
       for (int rl=0; rl<reflevels; ++rl) {
         for (int ml=mglevels-1; ml>=0; --ml) {
@@ -155,18 +159,11 @@ namespace Carpet {
             enter_global_mode (cgh, ml);
             enter_level_mode (cgh, rl);
             
-            {
-              int coarsest_reflevel = maxreflevels;
-              while (coarsest_reflevel > 0
-                     && (cgh->cctk_iteration-1) % (mglevelfact * (maxreflevelfact / ipow(reffact, coarsest_reflevel-1))) == 0) {
-                --coarsest_reflevel;
-              }
-              do_global_mode = reflevel==coarsest_reflevel;
-              do_meta_mode = do_global_mode && mglevel==mglevels-1;
-              if (do_global_mode) assert (! have_done_global_mode);
-              have_done_global_mode = have_done_global_mode || do_global_mode;
-              have_done_anything = true;
-            }
+            do_global_mode = ! have_done_global_mode;
+            do_meta_mode = do_global_mode && mglevel==mglevels-1;
+            assert (! (have_done_global_mode && do_global_mode));
+            have_done_global_mode = have_done_global_mode || do_global_mode;
+            have_done_anything = true;
             
             // Advance times
             for (int m=0; m<maps; ++m) {
@@ -233,18 +230,21 @@ namespace Carpet {
             enter_global_mode (cgh, ml);
             enter_level_mode (cgh, rl);
             
+            int finest_active_reflevel = -1;
             {
-              int coarsest_reflevel = maxreflevels;
-              while (coarsest_reflevel > 0
-                     && cgh->cctk_iteration % (mglevelfact * (maxreflevelfact / ipow(reffact, coarsest_reflevel-1))) == 0) {
-                --coarsest_reflevel;
+              for (int rl=0; rl<reflevels; ++rl) {
+                const int do_every = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl));
+                if (cgh->cctk_iteration % do_every == 0) {
+                  finest_active_reflevel = rl;
+                }
               }
-              do_global_mode = reflevel==coarsest_reflevel;
-              do_meta_mode = do_global_mode && mglevel==mglevels-1;
-              if (do_global_mode) assert (! have_done_global_mode);
-              have_done_global_mode = have_done_global_mode || do_global_mode;
-              have_done_anything = true;
+              assert (finest_active_reflevel >= 0);
             }
+            do_global_mode = rl == finest_active_reflevel;
+            do_meta_mode = do_global_mode && mglevel==mglevels-1;
+            assert (! (have_done_global_mode && do_global_mode));
+            have_done_global_mode = have_done_global_mode || do_global_mode;
+            have_done_anything = true;
             
             Waypoint ("Evolution II at iteration %d time %g%s%s",
                       cgh->cctk_iteration, (double)cgh->cctk_time,
