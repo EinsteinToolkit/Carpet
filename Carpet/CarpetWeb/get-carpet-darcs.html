@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="ISO-8859-15"?>
+<!DOCTYPE html
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "DTD/xhtml1-transitional.dtd">
+<!-- $Header:$ -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15" />
+    <title>Getting the Development Version of Carpet</title>
+  </head>
+
+  <body>
+    <h1>Getting the Development Version of Carpet</h1>
+
+
+
+    <h2>About Darcs</h2>
+
+    <p>The development version of Carpet is now managed in a
+    <a href="http://abridgegame.org/darcs/">darcs</a> repository.  Darcs
+    has a number of advantages for us developers, such as:</p>
+
+    <ul>
+      <li>You have a local copy of the repository, and can therefore
+          work offline</li>
+      <li>You can decide which changes you want to import and export,
+          so that you can omit dangerous changes, or keep changes to
+          yourself until you are ready to publish them</li>
+      <li>You can undo most changes</li>
+      <li>You can easily rename files and directories</li>
+      <li>Darcs does not need its own server, which makes it both more
+          convenient and more secure</li>
+    </ul>
+
+    <p>and them some more, as described in the <a
+    href="http://abridgegame.org/darcs/manual/">darcs manual</a>.</p>
+
+
+
+    <h2>Getting Carpet</h2>
+
+    <p>In order to get the <a
+    href="http://www.carpetcode.org/~darcs/carpet/">development
+    version of Carpet</a>, you first need to install <tt>darcs</tt> on
+    your system.  This is described on the <a
+    href="http://abridgegame.org/darcs/">darcs home page</a>, and some
+    links to binaries are given in the darcs wiki.  If you have
+    problems installing or using darcs in general, then you should ask
+    on the darcs mailing list, which I (Erik Schnetter) also read
+    regularly.</p>
+
+    <p>After having installed <tt>darcs</tt>, take the following steps
+    to get Carpet:</p>
+
+    <ol>
+      <li>Move your old version of <tt>Carpet</tt> to a secure place:
+<pre>cd Cactus
+mkdir oldcarpet
+mv arrangements/Carpet* oldcarpet</pre></li>
+
+      <li>Get the development version of Carpet.  Carpet consists of
+          four arrangements that live in a single repository.  This
+          structure is not what Cactus expects, and we will therefore
+          put it outside the <tt>arrangements</tt> directory:
+<pre>cd Cactus
+darcs get http://www.carpetcode.org/~darcs/carpet</pre>
+          This copies the whole Carpet repository, and it will take some
+          time.</li>
+
+      <li>Create some symbolic links in the arrangements directory:
+<pre>cd Cactus/arrangements
+ln -s ../carpet/Carpet* .</pre>
+          (don't forget the dot at the end of the last line).</li>
+    </ol>
+
+    <p>That's it; you can now recompile your Cactus/Carpet
+    configurations.</p>
+
+
+
+    <h2>Updating Carpet</h2>
+
+    <p>At some time you will want to update your version of Carpet and
+    incorporate some changes from the main Carpet repository.</p>
+
+    <ol>
+      <li>You do this with the command
+<pre>cd Cactus/carpet
+darcs pull</pre>
+      which will look for new changes, and then ask you which of these
+      you want to obtain.  Normally, you will want all changes.</li>
+    </ol>
+
+
+
+    <h2>Working with Darcs</h2>
+
+    <p>We also have some instructions on how to <a
+    href="work-with-darcs.html">develop Carpet with darcs</a>.</p>
+
+
+
+
+    <hr />
+
+    <p>
+      <a href="http://validator.w3.org/check?uri=referer"><img
+          src="http://www.w3.org/Icons/valid-xhtml10"
+          alt="Valid XHTML 1.0!" height="31" width="88" /></a>
+    </p>
+
+    <hr />
+    <address><a href="mailto:schnetter@uni-tuebingen.de"></a></address>
+<!-- Created: Tue Sep 28 16:52:20 CEST 2004 -->
+<!-- hhmts start -->
+Last modified: Tue Sep 28 19:35:11 CEST 2004
+<!-- hhmts end -->
+  </body>
+</html>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="ISO-8859-15"?>
+<!DOCTYPE html
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "DTD/xhtml1-transitional.dtd">
+<!-- $Header:$ -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15" />
+    <title>Using Darcs</title>
+  </head>
+
+  <body>
+    <h1>Using Darcs</h1>
+
+
+
+    <p>This text assumes that you have already installed <a
+    href="http://abridgegame.org/darcs/">darcs</a> and <a
+    href="get-carpet-darcs.html">obtained</a> the development version
+    of Carpet, but are possibly too scared or lazy to actually read
+    the <a href="http://abridgegame.org/darcs/manual/">darcs
+    manual</a>.</p>
+
+
+
+    <h2>Editing</h2>
+
+    <p>You edit the Carpet source code as usual.  At certain times you
+    can say</p>
+
+<pre>darcs whatsnew</pre>
+
+    <p>to find out what you changed.  As you have a copy of the Carpet
+    repository stored locally, this will not require an internet
+    connection and will be very fast.  One other difference from CVS
+    is that darcs always considers all changes in the repository, and
+    not just changes to a certain file or directory.</p>
+
+    <p>If you add or remove files or directories to the repository,
+    say</p>
+
+<pre>darcs add FILENAME</pre>
+
+    <p>or</p>
+
+<pre>darcs remove FILENAME</pre>
+
+    <p>This does not actually create or delete files; you have to do
+    that yourself.  If you move a file or directory, say</p>
+
+<pre>darcs mv FROM TO</pre>
+
+    <p>to tell darcs about that.  This does actually perform the move,
+    as indicated by the darcs command <tt>mv</tt>, which is spelled
+    the same way as the corresponding Unix command.</p>
+
+
+
+    <h2>Recording Changes</h2>
+
+    <p>If you have implemented a certain feature, corrected a certain
+    error, or fixed a typo, then it is time to record that change as a
+    patch.  The command</p>
+
+<pre>darcs record</pre>
+
+    <p>walks you through all your local changes and asks you whether
+    they should be part of the patch.  Please put only related changes
+    into a single patch; it is very easy to create multiple
+    patches.</p>
+
+    <p>Each patch needs a one-line description.  This description
+    should be somewhat descriptive, because other people will decide
+    from this description whether they want this patch or not.
+    "<i>Correct error</i>" will probably not be very helpful, as won't
+    "<i>Use cout instead of printf</i>", because these descriptions do
+    not describe what part of Carpet is actually changed.  On the
+    other hand, "<i>Fix typo in comment</i>" is probably good enough.
+    If you feel like it, you can also add a detailed description of
+    the patch.  Note that this description should describe the patch,
+    and should not describe how to use a certain feature; this should
+    go into a comment or a README or the documentation.</p>
+
+    <p>If you later discover that your patch is incomplete, missing a
+    file, or contains an error, then you can use</p>
+
+<pre>darcs rerecord</pre>
+
+    <p>to correct it.  It is often better to correct an erroneous
+    patch than to pile a second patch on top of it.  If you think that
+    things are very wrong, then</p>
+
+<pre>darcs unrecord</pre>
+
+    <p>deletes the patch entirely.  None of the above commands change
+    your working directory.</p>
+
+
+
+    <h2>Contributing Patches</h2>
+
+    <p>When you have one or a few patches that you would like to
+    contribute back to the community, then you can use</p>
+
+<pre>darcs send</pre>
+
+    <p>to send these to the Carpet mailing list.  The Carpet
+    maintainers can then apply this patch to the Carpet repository, so
+    that the next <tt>darcs pull</tt> will list this patch for all
+    people.  <tt>darcs send</tt> is the first command described on
+    this page that actually needs network access.</p>
+
+
+
+    <h2>Correcting Errors</h2>
+
+    <p>Darcs offers a host of commands to undo various actions.</p>
+
+<pre>darcs unrecord</pre>
+
+     <p>was already described above.</p>
+
+<pre>darcs unpull</pre>
+
+     <p>undoes the effect of pulling a patch from a remote repository.
+     This is useful if you suspect that this patch introduced an
+     error.  And</p>
+
+<pre>darcs revert</pre>
+
+     <p>undoes changes to your working directory that have not yet
+     been recorded.</p>
+
+
+
+     <h2>Further Information</h2>
+
+     <p>As usual, the authoritative source of information is the <a
+     href="http://abridgegame.org/darcs/manual/">darcs manual</a>,
+     which also ships with your darcs installation.</p>
+
+
+
+    <hr />
+
+    <p>
+      <a href="http://validator.w3.org/check?uri=referer"><img
+          src="http://www.w3.org/Icons/valid-xhtml10"
+          alt="Valid XHTML 1.0!" height="31" width="88" /></a>
+    </p>
+
+    <hr />
+    <address><a href="mailto:schnetter@uni-tuebingen.de"></a></address>
+<!-- Created: Tue Sep 28 16:52:20 CEST 2004 -->
+<!-- hhmts start -->
+Last modified: Tue Sep 28 19:43:36 CEST 2004
+<!-- hhmts end -->
+  </body>
+</html>
