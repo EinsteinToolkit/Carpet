@@ -13,7 +13,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.40 2004/04/19 18:48:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.41 2004/05/21 18:14:28 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -55,7 +55,7 @@ namespace CarpetRegrid {
 
     // Return if we want to regrid regularly, but not at this time
     if (regrid_every > 0 && cctkGH->cctk_iteration != 0
-	&& cctkGH->cctk_iteration % regrid_every != 0) {
+	&& (cctkGH->cctk_iteration-1) % regrid_every != 0) {
       return 0;
     }
     
