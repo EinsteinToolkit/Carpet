@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.10 2002/06/06 14:20:16 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.11 2002/08/02 14:57:26 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -19,7 +19,7 @@
 
 #include "reduce.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.10 2002/06/06 14:20:16 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.11 2002/08/02 14:57:26 schnetter Exp $";
 
 CCTK_FILEVERSION(CarpetReduce_reduce_cc)
 
@@ -41,7 +41,7 @@ namespace CarpetReduce {
   
   
   // Poor man's RTTI
-  enum ared { do_count, do_minimum, do_maximum, do_sum, do_sum_abs,
+  enum ared { do_count, do_minimum, do_maximum, do_product, do_sum, do_sum_abs,
 	      do_sum_squared, do_average, do_norm1, do_norm2, do_norm_inf };
   
   
@@ -138,6 +138,18 @@ namespace CarpetReduce {
 #ifdef LDBL_MAX
   template<> inline void maximum::op<complex<long double> >  ::reduce (complex<long double>& accum, const complex<long double>& val) { accum = complex<long double>(max(accum.real(), val.real()), max(accum.imag(), val.imag())); }
 #endif
+  
+  struct product : reduction {
+    ared thered () const { return do_product; }
+    bool uses_cnt () const { return false; }
+    template<class T>
+    struct op {
+      static inline void initialise (T& accum) { accum = 1; }
+      static inline void reduce (T& accum, const T& val) { accum *= val; }
+      static inline void finalise (T& accum, const T& cnt) { }
+    };
+    MPI_Op mpi_op () const { return MPI_PROD; }
+  };
   
   struct sum : reduction {
     ared thered () const { return do_sum; }
@@ -301,6 +313,7 @@ namespace CarpetReduce {
 	  INITIALISE(count,T);			\
 	  INITIALISE(minimum,T);		\
 	  INITIALISE(maximum,T);		\
+	  INITIALISE(product,T);		\
 	  INITIALISE(sum,T);			\
 	  INITIALISE(sum_abs,T);		\
 	  INITIALISE(sum_squared,T);		\
@@ -373,6 +386,7 @@ namespace CarpetReduce {
 	  REDUCE(count,T);			\
 	  REDUCE(minimum,T);			\
 	  REDUCE(maximum,T);			\
+	  REDUCE(product,T);			\
 	  REDUCE(sum,T);			\
 	  REDUCE(sum_abs,T);			\
 	  REDUCE(sum_squared,T);		\
@@ -461,6 +475,7 @@ namespace CarpetReduce {
 	    FINALISE(count,T);			\
 	    FINALISE(minimum,T);		\
 	    FINALISE(maximum,T);		\
+	    FINALISE(product,T);		\
 	    FINALISE(sum,T);			\
 	    FINALISE(sum_abs,T);		\
 	    FINALISE(sum_squared,T);		\
@@ -673,6 +688,7 @@ namespace CarpetReduce {
   REDUCTION(count);
   REDUCTION(minimum);
   REDUCTION(maximum);
+  REDUCTION(product);
   REDUCTION(sum);
   REDUCTION(sum_abs);
   REDUCTION(sum_squared);
@@ -690,6 +706,7 @@ namespace CarpetReduce {
     CCTK_RegisterReductionOperator (count_GVs,       "count");
     CCTK_RegisterReductionOperator (minimum_GVs,     "minimum");
     CCTK_RegisterReductionOperator (maximum_GVs,     "maximum");
+    CCTK_RegisterReductionOperator (product_GVs,     "product");
     CCTK_RegisterReductionOperator (sum_GVs,         "sum");
     CCTK_RegisterReductionOperator (sum_abs_GVs,     "sum_abs");
     CCTK_RegisterReductionOperator (sum_squared_GVs, "sum_squared");
@@ -701,6 +718,7 @@ namespace CarpetReduce {
     CCTK_RegisterReductionArrayOperator (count_arrays,       "count");
     CCTK_RegisterReductionArrayOperator (minimum_arrays,     "minimum");
     CCTK_RegisterReductionArrayOperator (maximum_arrays,     "maximum");
+    CCTK_RegisterReductionArrayOperator (product_arrays,     "product");
     CCTK_RegisterReductionArrayOperator (sum_arrays,         "sum");
     CCTK_RegisterReductionArrayOperator (sum_abs_arrays,     "sum_abs");
     CCTK_RegisterReductionArrayOperator (sum_squared_arrays, "sum_squared");
