@@ -382,7 +382,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
 
         // Copy the overlap to the local processor
         const ggf* ff = arrdata.at(gindex).at(Carpet::map).data.at(var);
-        const gdata* const data = (*ff) (-request->timelevel,
+        const gdata* const data = (*ff) (request->timelevel,
                                          refinementlevel,
                                          component, mglevel);
         gdata* const processor_component = data->make_typed (request->vindex);
@@ -870,7 +870,7 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
 
   // Legacy arguments
   WriteAttribute (dataset, "name", fullname);
-  WriteAttribute (dataset, "group_timelevel", -request->timelevel);
+  WriteAttribute (dataset, "group_timelevel", request->timelevel);
 
 #if 0
   // FIXME TR: output bbox and nghostzones again for chunked output
