@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.15 2004/03/23 09:41:11 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.16 2004/03/23 09:47:16 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -307,7 +307,7 @@ namespace CarpetIOHDF5 {
     } // if(myproc==0)
 
     cout << "I have " << datasetnamelist.size() << endl;
-    cout << "I have for this reflevel " << refleveldatasetnamelist.size() << endl;
+
 
     long reflevelnamenum;
     if(myproc==0) reflevelnamenum=refleveldatasetnamelist.size();
@@ -320,6 +320,7 @@ namespace CarpetIOHDF5 {
 	refleveldatasetnamelist.push_back("blah");
       }
     }
+    cout << "I have for this reflevel " << refleveldatasetnamelist.size() << endl;
 
     list<string>::iterator currdataset;
 
