@@ -31,7 +31,7 @@
 
 #include "ioflexio.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.5 2001/03/18 05:20:24 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.6 2001/03/19 21:30:09 eschnett Exp $";
 
 
 
@@ -234,13 +234,18 @@ namespace CarpetIOFlexIO {
 	  (dim, origin, delta, timestep, maxreflevels);
 	
 	// Set refinement information
-	int interlevel_timerefinement, interlevel_spacerefinement[dim];
+	int interlevel_timerefinement;
+	int interlevel_spacerefinement[dim];
+	int initial_gridplacementrefinement[dim];
 	interlevel_timerefinement = hh->reffact;
 	for (int d=0; d<dim; ++d) {
 	  interlevel_spacerefinement[d] = hh->reffact;
+// 	  initial_gridplacementrefinement[d] = 2;
+ 	  initial_gridplacementrefinement[d] = 1;
 	}
 	amrwriter->setRefinement
-	  (interlevel_timerefinement, interlevel_spacerefinement);
+	  (interlevel_timerefinement, interlevel_spacerefinement,
+	   initial_gridplacementrefinement);
 	
 	// Set level
 	amrwriter->setLevel (reflevel);
@@ -253,7 +258,7 @@ namespace CarpetIOFlexIO {
       // level
       BEGIN_COMPONENT_LOOP(cgh) {
 	
-	generic_gf<dim>* ff = 0;
+	const generic_gf<dim>* ff = 0;
 	
 	switch (CCTK_GroupTypeI(group)) {
 	  
@@ -284,6 +289,7 @@ namespace CarpetIOFlexIO {
 	if (CCTK_MyProc(cgh)==0) {
 	  int origin[dim], dims[dim];
 	  for (int d=0; d<dim; ++d) {
+//  	    origin[d] = 2 * (ext.lower() / ext.stride())[d] + 1;
  	    origin[d] = (ext.lower() / ext.stride())[d];
  	    dims[d]   = (ext.shape() / ext.stride())[d];
 	  }
