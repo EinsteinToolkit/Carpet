@@ -2,6 +2,8 @@
 #include <iostream>
 #include <limits>
 
+#include "cctk.h"
+
 #include "defs.hh"
 #include "vect.hh"
 
@@ -264,4 +266,4 @@ template class bbox<int,0>;
 template class bbox<int,1>;
 template class bbox<int,2>;
 template class bbox<int,3>;
-template class bbox<double,3>;
+template class bbox<CCTK_REAL,3>;

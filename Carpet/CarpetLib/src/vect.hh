@@ -6,6 +6,8 @@
 #include <cmath>
 #include <iostream>
 
+#include "cctk.h"
+
 using namespace std;
 
 
@@ -786,14 +788,14 @@ vect (const T x, const T y, const T z, const T t) {
 
 
 
-// Specialise for double
+// Specialise for CCTK_REAL
 
 template<>
-inline vect<double,3>& vect<double,3>::operator%=(const vect<double,3>& a) {
+inline vect<CCTK_REAL,3>& vect<CCTK_REAL,3>::operator%=(const vect<CCTK_REAL,3>& a) {
   for (int d=0; d<3; ++d) {
     elt[d]=fmod(elt[d],a[d]);
-    if (elt[d]>a[d]*double(1.0-1.0e-10)) elt[d]=double(0);
-    if (elt[d]<a[d]*double(    1.0e-10)) elt[d]=double(0);
+    if (elt[d]>a[d]*(CCTK_REAL)(1.0-1.0e-10)) elt[d]=(CCTK_REAL)0;
+    if (elt[d]<a[d]*(CCTK_REAL)(    1.0e-10)) elt[d]=(CCTK_REAL)0;
   }
   return *this;
 }
