@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.57 2004/02/07 16:21:11 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.58 2004/02/09 14:53:02 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -912,9 +912,13 @@ namespace CarpetIOASCII {
 	    os << "   " << coord_time << "  ";
 	    for (int d=0; d<D; ++d) {
 	      assert (gfext.upper()[d] - gfext.lower()[d] >= 0);
-	      os << " " << (coord_lower[d] + (index[d] - gfext.lower()[d])
-                            * (coord_upper[d] - coord_lower[d])
-                            / (gfext.upper()[d] - gfext.lower()[d]));
+	      if (gfext.upper()[d] - gfext.lower()[d] == 0) {
+                os << " " << coord_lower[d];
+              } else {
+                os << " " << (coord_lower[d] + (index[d] - gfext.lower()[d])
+                              * (coord_upper[d] - coord_lower[d])
+                              / (gfext.upper()[d] - gfext.lower()[d]));
+              }
 	    }
 	    os << "   ";
 	    switch (CCTK_VarTypeI(vi)) {
