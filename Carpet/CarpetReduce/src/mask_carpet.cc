@@ -10,7 +10,7 @@
 #include "mask_carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_carpet.cc,v 1.1 2004/06/14 07:01:21 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_carpet.cc,v 1.2 2004/06/15 16:45:29 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetMask_Mask_cc);
 }
 
@@ -111,7 +111,7 @@ namespace CarpetMask {
               ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
               ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
               assert (all (izero <= imin));
-              assert (all (imin <= imax));
+              assert (box.empty() || all (imin <= imax));
               assert (all (imax <= ivect::ref(cctk_lsh)));
               
               if (verbose) {
@@ -164,7 +164,7 @@ namespace CarpetMask {
             ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
             ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
             assert (all (izero <= imin));
-            assert (all (imin <= imax));
+            assert (box.empty() || all (imin <= imax));
             assert (all (imax <= ivect::ref(cctk_lsh)));
             
             if (verbose) {
@@ -196,7 +196,7 @@ namespace CarpetMask {
               ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
               ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
               assert (all (izero <= imin));
-              assert (all (imin <= imax));
+              assert (box.empty() || all (imin <= imax));
               assert (all (imax <= ivect::ref(cctk_lsh)));
               
               if (verbose) {
