@@ -24,7 +24,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.26 2003/08/14 22:13:06 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.27 2003/09/11 16:04:15 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -140,6 +140,17 @@ namespace CarpetRegrid {
       if (strcmp(outerbounds, "") !=0 ) {
 	istringstream ob_str (outerbounds);
 	ob_str >> obss;
+        bool good = obss.size() == bbss.size();
+        if (good) {
+          for (int rl=0; rl<(int)obss.size(); ++rl) {
+            good = good && obss[rl].size() == bbss[rl].size();
+          }
+        }
+        if (! good) {
+          cout << "gridpoints: " << bbss << endl;
+          cout << "outerbounds: " << obss << endl;
+          CCTK_WARN (0, "The parameters \"outerbounds\" and \"gridpoints\" must have the same structure");
+        }
       } else {
 	obss.resize(bbss.size());
 	for (int rl=0; rl<(int)obss.size(); ++rl) {
@@ -421,8 +432,11 @@ namespace CarpetRegrid {
     if (reflevel+1 >= reflevels) return;
     
     const int rl = reflevel+1;
+    assert (rl-1 < (int)bbss.size());
+    assert (obss.size() == bbss.size());
     
     for (int c=0; c<(int)bbss[rl-1].size(); ++c) {
+      assert (obss[rl-1].size() == bbss[rl-1].size());
       
       const ivect ilower = bbss[rl-1][c].lower();
       const ivect iupper = bbss[rl-1][c].upper();
