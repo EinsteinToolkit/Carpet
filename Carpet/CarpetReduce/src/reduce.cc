@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.18 2003/05/02 14:23:44 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.19 2003/05/12 16:25:28 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -22,7 +22,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.18 2003/05/02 14:23:44 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.19 2003/05/12 16:25:28 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -664,7 +664,18 @@ namespace CarpetReduce {
   {
     int ierr;
     
+    // TODO: allow all modes for grid scalars and grid arrays, and
+    // restrict usage only for grid functions.
+    for (int n=0; n<num_invars; ++n) {
+      if (CCTK_GroupTypeFromVarI(invars[n])) {
+        CCTK_WARN (0, "Reduction operators for grid scalars and grid arrays are not yet implemented");
+      }
+    }
+    
     // global mode
+    if (reflevel == -1) {
+      CCTK_WARN (0, "Reduction operators in global mode are not yet implemented");
+    }
     if (hh->local_components(reflevel) != 1 && component != -1) {
       CCTK_WARN (0, "It is not possible to use a grid variable reduction operator in local mode");
     }
