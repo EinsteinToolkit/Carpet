@@ -18,7 +18,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.29 2002/06/06 22:12:57 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.30 2002/06/06 22:44:39 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_SetupGH_cc)
 
@@ -79,7 +79,7 @@ namespace Carpet {
     
     const vect<int,dim> str(stride);
     const vect<int,dim> lb(lghosts * str);
-    const vect<int,dim> ub = (npoints - ughosts - 1) * str;
+    const vect<int,dim> ub((npoints - ughosts - 1) * str);
     
     const bbox<int,dim> baseext(lb, ub, str);
     
@@ -153,16 +153,13 @@ namespace Carpet {
 	assert (disttype==CCTK_DISTRIB_CONSTANT
 		|| disttype==CCTK_DISTRIB_DEFAULT);
 	
-	vect<int,dim> alb(0), aub(stride), astr(stride);
-	for (int d=0; d<gp.dim; ++d) {
-	  if (gp.disttype==CCTK_DISTRIB_CONSTANT && d==gp.dim-1) {
-	    // multiply the group in the z direction
-	    aub[d] = astr[d] * ((CCTK_nProcs(cgh) * sizes[d]
-				 - (CCTK_nProcs(cgh)-1) * ghostsizes[d]) - 1);
-	  } else {
-	    aub[d] = astr[d] * (sizes[d]-1);
-	  }
+	if (gp.disttype==CCTK_DISTRIB_CONSTANT) {
+	  sizes[dim-1] = (sizes[dim-1] - 2*ghostsizes[dim-1]) * CCTK_nProcs(cgh) + 2*ghostsizes[dim-1];
 	}
+	
+	const vect<int,dim> alb(ghostsizes);
+	const vect<int,dim> aub(sizes-ghostsizes-1);
+	const vect<int,dim> astr(1);
 	const bbox<int,dim> arrext(alb, aub, astr);
 	
 	arrdata[group].hh = new gh<dim>(refinement_factor, vertex_centered,
