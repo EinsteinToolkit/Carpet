@@ -31,7 +31,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.74 2004/06/14 09:34:10 tradke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.75 2004/06/21 12:28:19 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -1074,8 +1074,8 @@ namespace CarpetIOASCII {
           } while (it!=ext.end());
           
 	} else {
-	  
-	  os << "#" << endl;
+          
+          os << "#" << endl;
 	  
 	} // if ! ext contains org
 	
