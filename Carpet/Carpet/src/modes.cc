@@ -225,6 +225,8 @@ namespace Carpet {
   
   void enter_level_mode (cGH * const cgh, int const rl)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     assert (is_global_mode());
     assert (rl>=0 && rl<reflevels);
     Checkpoint ("Entering level mode");
@@ -237,7 +239,11 @@ namespace Carpet {
     // Set current time
     assert (mglevel>=0 && mglevel<(int)leveltimes.size());
     assert (reflevel>=0 && reflevel<(int)leveltimes.at(mglevel).size());
-    cgh->cctk_time = leveltimes.at(mglevel).at(reflevel);
+    if (! adaptive_stepsize) {
+      cgh->cctk_time = leveltimes.at(mglevel).at(reflevel);
+    } else {
+      leveltimes.at(mglevel).at(reflevel) = cgh->cctk_time;
+    }
     
     assert (is_level_mode());
   }
@@ -255,7 +261,11 @@ namespace Carpet {
     assert (mglevel>=0 && mglevel<(int)leveltimes.size());
     assert (reflevel>=0 && reflevel<(int)leveltimes.at(mglevel).size());
     leveltimes.at(mglevel).at(reflevel) = cgh->cctk_time;
-    cgh->cctk_time = global_time;
+    if (! adaptive_stepsize) {
+      cgh->cctk_time = global_time;
+    } else {
+      global_time = cgh->cctk_time;
+    }
     
     reflevel = -1;
     reflevelfact = -deadbeef;

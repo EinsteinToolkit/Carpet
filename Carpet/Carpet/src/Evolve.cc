@@ -161,10 +161,17 @@ namespace Carpet {
 
   void AdvanceTime( cGH* cgh, CCTK_REAL initial_time )
   {
-      ++cgh->cctk_iteration;
+    DECLARE_CCTK_PARAMETERS;
+    
+    ++cgh->cctk_iteration;
+    if (! adaptive_stepsize) {
       global_time = initial_time
         + cgh->cctk_iteration * delta_time / maxreflevelfact;
       cgh->cctk_time = global_time;
+    } else {
+      cgh->cctk_time += delta_time;
+      global_time = cgh->cctk_time;
+    }
   }
 
   bool Regrid( cGH* cgh )
