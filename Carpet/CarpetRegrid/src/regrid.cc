@@ -24,7 +24,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.21 2003/04/30 12:37:56 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.22 2003/05/05 06:59:31 hawke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -437,7 +437,7 @@ namespace CarpetRegrid {
     
     const int rl = reflevel+1;
     
-    for (int c=0; c<(int)bbss.size(); ++c) {
+    for (int c=0; c<(int)bbss[rl-1].size(); ++c) {
       
       const ivect ilower = bbss[rl-1][c].lower();
       const ivect iupper = bbss[rl-1][c].upper();
