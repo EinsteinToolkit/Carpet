@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.hh,v 1.4 2001/03/22 18:42:05 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.hh,v 1.5 2001/03/27 22:26:31 eschnett Exp $
 
  ***************************************************************************/
 
@@ -34,7 +34,7 @@ using namespace std;
 
 
 
-// Forward definition
+// Forward declaration
 template<class T, int D> class bboxset;
 
 template<class T,int D>
@@ -101,11 +101,13 @@ public:
   
   // Difference
   // friend bboxset operator- <T,D>(const box& b1, const box& b2);
+  static bboxset minus (const box& b1, const box& b2);
   bboxset operator- (const box& b) const;
   bboxset& operator-= (const box& b);
   bboxset& operator-= (const bboxset& s);
   bboxset operator- (const bboxset& s) const;
   // friend bboxset operator- <T,D>(const box& b, const bboxset& s);
+  static bboxset minus (const box& b, const bboxset& s);
   
   // Iterators
   typedef typename bset::const_iterator const_iterator;
@@ -115,8 +117,27 @@ public:
   iterator end () const   { return bs.end(); }
   
   // Output
-  friend ostream& operator<< <>(ostream& os, const bboxset& s);
+  void output (ostream& os) const;
 };
+
+
+
+template<class T,int D>
+inline bboxset<T,D> operator- (const bbox<T,D>& b1, const bbox<T,D>& b2) {
+  return bboxset<T,D>::minus(b1,b2);
+}
+
+template<class T,int D>
+inline bboxset<T,D> operator- (const bbox<T,D>& b, const bboxset<T,D>& s) {
+  return bboxset<T,D>::minus(b,s);
+}
+
+// Output
+template<class T,int D>
+inline ostream& operator<< (ostream& os, const bboxset<T,D>& s) {
+  s.output(os);
+  return os;
+}
 
 
 

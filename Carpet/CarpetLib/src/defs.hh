@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.4 2001/03/22 18:42:05 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.5 2001/03/27 22:26:31 eschnett Exp $
 
  ***************************************************************************/
 
@@ -39,9 +39,6 @@ using namespace std;
 // Fortranification
 #define FORTRAN_NAME(x) x##_
 
-// Fortran style function arguments
-#define restrict __restrict__
-
 // A general type
 enum centering { vertex_centered, cell_centered };
 
@@ -50,9 +47,24 @@ template<class T>
 inline T square (const T& x) { return x*x; }
 
 // Container output
-template<class T> ostream& operator<< (ostream& os, const list<T>& l);
-template<class T> ostream& operator<< (ostream& os, const set<T>& s);
-template<class T> ostream& operator<< (ostream& os, const vector<T>& v);
+template<class T> ostream& output (ostream& os, const list<T>& l);
+template<class T> ostream& output (ostream& os, const set<T>& s);
+template<class T> ostream& output (ostream& os, const vector<T>& v);
+
+template<class T>
+inline ostream& operator<< (ostream& os, const list<T>& l) {
+  return output(os,l);
+}
+
+template<class T>
+inline ostream& operator<< (ostream& os, const set<T>& s) {
+  return output(os,s);
+}
+
+template<class T>
+inline ostream& operator<< (ostream& os, const vector<T>& v) {
+  return output(os,v);
+}
 
 
 

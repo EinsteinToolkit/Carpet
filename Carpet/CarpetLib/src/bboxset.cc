@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.5 2001/03/22 18:42:05 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.6 2001/03/27 22:26:31 eschnett Exp $
 
  ***************************************************************************/
 
@@ -213,10 +213,8 @@ bboxset<T,D>& bboxset<T,D>::operator&= (const bboxset& s) {
 
 
 // Difference
-#ifndef SGI
-// This doesn't work on SGIs.  Is this legal C++?
 template<class T, int D>
-bboxset<T,D> operator- (const bbox<T,D>& b1, const bbox<T,D>& b2) {
+bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b1, const bbox<T,D>& b2) {
   assert (b1.is_aligned_with(b2));
   if (b1.empty()) return bboxset<T,D>();
   if (b2.empty()) return bboxset<T,D>(b1);
@@ -248,104 +246,6 @@ bboxset<T,D> operator- (const bbox<T,D>& b1, const bbox<T,D>& b2) {
   assert (r.invariant());
   return r;
 }
-#else
-bboxset<int,1> operator- (const bbox<int,1>& b1, const bbox<int,1>& b2) {
-  assert (b1.is_aligned_with(b2));
-  if (b1.empty()) return bboxset<int,1>();
-  if (b2.empty()) return bboxset<int,1>(b1);
-  const vect<int,1> str = b1.stride();
-  bboxset<int,1> r;
-  for (int d=0; d<1; ++d) {
-    // make resulting bboxes as large as possible in x-direction (for
-    // better consumption by Fortranly ordered arrays)
-    vect<int,1> lb, ub;
-    bbox<int,1> b;
-    for (int dd=0; dd<1; ++dd) {
-      if (dd<d) {
-	lb[dd] = b2.lower()[dd];
-	ub[dd] = b2.upper()[dd];
-      } else if (dd>d) {
-	lb[dd] = b1.lower()[dd];
-	ub[dd] = b1.upper()[dd];
-      }
-    }
-    lb[d] = b1.lower()[d];
-    ub[d] = b2.lower()[d] - str[d];
-    b = bbox<int,1>(lb,ub,str) & b1;
-    r += b;
-    lb[d] = b2.upper()[d] + str[d];
-    ub[d] = b1.upper()[d];
-    b = bbox<int,1>(lb,ub,str) & b1;
-    r += b;
-  }
-  assert (r.invariant());
-  return r;
-}
-bboxset<int,2> operator- (const bbox<int,2>& b1, const bbox<int,2>& b2) {
-  assert (b1.is_aligned_with(b2));
-  if (b1.empty()) return bboxset<int,2>();
-  if (b2.empty()) return bboxset<int,2>(b1);
-  const vect<int,2> str = b1.stride();
-  bboxset<int,2> r;
-  for (int d=0; d<2; ++d) {
-    // make resulting bboxes as large as possible in x-direction (for
-    // better consumption by Fortranly ordered arrays)
-    vect<int,2> lb, ub;
-    bbox<int,2> b;
-    for (int dd=0; dd<2; ++dd) {
-      if (dd<d) {
-	lb[dd] = b2.lower()[dd];
-	ub[dd] = b2.upper()[dd];
-      } else if (dd>d) {
-	lb[dd] = b1.lower()[dd];
-	ub[dd] = b1.upper()[dd];
-      }
-    }
-    lb[d] = b1.lower()[d];
-    ub[d] = b2.lower()[d] - str[d];
-    b = bbox<int,2>(lb,ub,str) & b1;
-    r += b;
-    lb[d] = b2.upper()[d] + str[d];
-    ub[d] = b1.upper()[d];
-    b = bbox<int,2>(lb,ub,str) & b1;
-    r += b;
-  }
-  assert (r.invariant());
-  return r;
-}
-bboxset<int,3> operator- (const bbox<int,3>& b1, const bbox<int,3>& b2) {
-  assert (b1.is_aligned_with(b2));
-  if (b1.empty()) return bboxset<int,3>();
-  if (b2.empty()) return bboxset<int,3>(b1);
-  const vect<int,3> str = b1.stride();
-  bboxset<int,3> r;
-  for (int d=0; d<3; ++d) {
-    // make resulting bboxes as large as possible in x-direction (for
-    // better consumption by Fortranly ordered arrays)
-    vect<int,3> lb, ub;
-    bbox<int,3> b;
-    for (int dd=0; dd<3; ++dd) {
-      if (dd<d) {
-	lb[dd] = b2.lower()[dd];
-	ub[dd] = b2.upper()[dd];
-      } else if (dd>d) {
-	lb[dd] = b1.lower()[dd];
-	ub[dd] = b1.upper()[dd];
-      }
-    }
-    lb[d] = b1.lower()[d];
-    ub[d] = b2.lower()[d] - str[d];
-    b = bbox<int,3>(lb,ub,str) & b1;
-    r += b;
-    lb[d] = b2.upper()[d] + str[d];
-    ub[d] = b1.upper()[d];
-    b = bbox<int,3>(lb,ub,str) & b1;
-    r += b;
-  }
-  assert (r.invariant());
-  return r;
-}
-#endif
 
 template<class T, int D>
 bboxset<T,D> bboxset<T,D>::operator- (const box& b) const {
@@ -384,50 +284,23 @@ bboxset<T,D> bboxset<T,D>::operator- (const bboxset& s) const {
   return r;
 }
 
-#ifndef SGI
-// This doesn't work on SGIs.  Is this legal C++?
 template<class T, int D>
-bboxset<T,D> operator- (const bbox<T,D>& b, const bboxset<T,D>& s) {
+bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b, const bboxset<T,D>& s) {
   bboxset<T,D> r = bboxset<T,D>(b) - s;
   assert (r.invariant());
   return r;
 }
-#else
-bboxset<int,1> operator- (const bbox<int,1>& b, const bboxset<int,1>& s) {
-  bboxset<int,1> r = bboxset<int,1>(b) - s;
-  assert (r.invariant());
-  return r;
-}
-bboxset<int,2> operator- (const bbox<int,2>& b, const bboxset<int,2>& s) {
-  bboxset<int,2> r = bboxset<int,2>(b) - s;
-  assert (r.invariant());
-  return r;
-}
-bboxset<int,3> operator- (const bbox<int,3>& b, const bboxset<int,3>& s) {
-  bboxset<int,3> r = bboxset<int,3>(b) - s;
-  assert (r.invariant());
-  return r;
-}
-#endif
 
 
 
 // Output
 template<class T,int D>
-ostream& operator<< (ostream& os, const bboxset<T,D>& s) {
-  os << "bboxset<T," << D << ">:size=" << s.size() << "," << "set=" << s.bs;
-  return os;
+void bboxset<T,D>::output (ostream& os) const {
+  os << "bboxset<T," << D << ">:size=" << size() << "," << "set=" << bs;
 }
 
 
 
 #if defined(TMPL_EXPLICIT)
 template class bboxset<int,3>;
-
-template
-bboxset<int,3> operator- (const bbox<int,3>& b1, const bbox<int,3>& b3);
-template
-bboxset<int,3> operator- (const bbox<int,3>& b, const bboxset<int,3>& s);
-template
-ostream& operator<< (ostream& os, const bboxset<int,3>& b);
 #endif

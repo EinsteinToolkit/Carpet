@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.4 2001/03/22 18:42:05 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.5 2001/03/27 22:26:31 eschnett Exp $
 
  ***************************************************************************/
 
@@ -123,8 +123,14 @@ public:
   void remove (generic_gf<D>* f);
   
   // Output
-  friend ostream& operator<< <> (ostream& os, const dh& d);
+  void output (ostream& os) const;
 };
+
+template<int D>
+inline ostream& operator<< (ostream& os, const dh<D>& d) {
+  d.output(os);
+  return os;
+}
 
 
 

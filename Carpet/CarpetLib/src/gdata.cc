@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.10 2001/03/24 22:38:48 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.11 2001/03/27 22:26:31 eschnett Exp $
 
  ***************************************************************************/
 
@@ -213,16 +213,8 @@ void generic_data<D>::write_ascii (const string name, const int time,
 
 
 
-template<int D>
-ostream& operator<< (ostream& os, const generic_data<D>& f) {
-  return f.out(os);
-}
-
-
-
 #if defined(TMPL_EXPLICIT)
 template class generic_data<3>;
-template ostream& operator<< (ostream& os, const generic_data<3>& d);
 
 template void generic_data<3>
 ::write_ascii (const string name, const int time,

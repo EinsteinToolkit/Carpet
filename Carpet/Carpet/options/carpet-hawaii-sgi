@@ -1,8 +1,8 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-hawaii-sgi,v 1.2 2002/05/05 22:16:56 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-hawaii-sgi,v 1.1 2001/03/27 22:26:31 eschnett Exp $
 
-CPP			= /lib/cpp -DMPIPP_H
+CPP			= /lib/cpp -DTMPL_EXPLICIT -DMPIPP_H
 
-CXXFLAGS		= -LANG:std -LANG:vla=ON -FE:eliminate_duplicate_inline_copies -FE:template_in_elf_section -64 -mips4 -r12000 -no_auto_include -ptused -DMPIPP_H
+CXXFLAGS		= -LANG:std -LANG:vla=ON -FE:eliminate_duplicate_inline_copies -FE:template_in_elf_section -64 -mips4 -r12000 -no_auto_include -ptused -DTMPL_EXPLICIT -DMPIPP_H
 LDFLAGS			= -LANG:std -LANG:vla=ON -64 -mips4 -r12000 -Wl,"-woff 84","-woff 85"
 
 C_OPTIMISE_FLAGS	= -O3 -INLINE -LNO -OPT:Olimit=100000

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.6 2001/03/24 22:38:48 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.7 2001/03/27 22:26:31 eschnett Exp $
 
  ***************************************************************************/
 
@@ -42,7 +42,7 @@ template<int D> class generic_data;
 
 // Output
 template<int D>
-ostream& operator<< (ostream& os, const generic_data<D>* f);
+ostream& operator<< (ostream& os, const generic_data<D>& d);
 
 
 
@@ -173,10 +173,15 @@ public:
 public:
 
   // Output
-  friend ostream& operator<< <>(ostream& os, const generic_data* d);
-
-  virtual ostream& out (ostream& os) const = 0;
+  virtual ostream& output (ostream& os) const = 0;
 };
+
+
+
+template<int D>
+inline ostream& operator<< (ostream& os, const generic_data<D>& d) {
+  return d.output(os);
+}
 
 
 

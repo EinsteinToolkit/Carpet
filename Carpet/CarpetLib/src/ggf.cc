@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.7 2001/03/24 22:38:48 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.8 2001/03/27 22:26:31 eschnett Exp $
 
  ***************************************************************************/
 
@@ -464,15 +464,6 @@ void generic_gf<D>::ref_prolongate (int tl, int rl, int c, int ml,
 
 
 
-// Output
-template<int D>
-ostream& operator<< (ostream& os, const generic_gf<D>& f) {
-  return f.out(os);
-}
-
-
-
 #if defined(TMPL_EXPLICIT)
 template class generic_gf<3>;
-template ostream& operator<< (ostream& os, const generic_gf<3>& f);
 #endif

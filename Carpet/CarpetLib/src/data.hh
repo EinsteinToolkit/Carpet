@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.5 2001/03/24 22:38:48 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.6 2001/03/27 22:26:31 eschnett Exp $
 
  ***************************************************************************/
 
@@ -32,15 +32,6 @@
 #include "vect.hh"
 
 using namespace std;
-
-
-
-// Forward definition
-template<class T,int D> class data;
-
-// Output
-template<class T,int D>
-ostream& operator<< (ostream& os, const data<T,D>& d);
 
 
 
@@ -119,7 +110,7 @@ public:
 public:
 
   // Output
-  ostream& out (ostream& os) const;
+  ostream& output (ostream& os) const;
 };
 
 

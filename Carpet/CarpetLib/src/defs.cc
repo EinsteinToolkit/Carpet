@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.4 2001/03/24 22:38:48 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.5 2001/03/27 22:26:31 eschnett Exp $
 
  ***************************************************************************/
 
@@ -35,7 +35,7 @@ using namespace std;
 
 // List output
 template<class T>
-ostream& operator<< (ostream& os, const list<T>& l) {
+ostream& output (ostream& os, const list<T>& l) {
   os << "[";
   for (list<T>::const_iterator ti=l.begin(); ti!=l.end(); ++ti) {
     if (ti!=l.begin()) os << ",";
@@ -47,7 +47,7 @@ ostream& operator<< (ostream& os, const list<T>& l) {
 
 // Set output
 template<class T>
-ostream& operator<< (ostream& os, const set<T>& s) {
+ostream& output (ostream& os, const set<T>& s) {
   os << "{";
   for (set<T>::const_iterator ti=s.begin(); ti!=s.end(); ++ti) {
     if (ti!=s.begin()) os << ",";
@@ -59,7 +59,7 @@ ostream& operator<< (ostream& os, const set<T>& s) {
 
 // Vector output
 template<class T>
-ostream& operator<< (ostream& os, const vector<T>& v) {
+ostream& output (ostream& os, const vector<T>& v) {
   os << "[";
   int cnt=0;
   for (vector<T>::const_iterator ti=v.begin(); ti!=v.end(); ++ti) {
@@ -76,11 +76,10 @@ ostream& operator<< (ostream& os, const vector<T>& v) {
 #include "bbox.hh"
 #include "bboxset.hh"
 
-template ostream& operator<< (ostream& os, const list<bbox<int,3> >& l);
-template ostream& operator<< (ostream& os, const set<bbox<int,3> >& s);
-template ostream& operator<< (ostream& os, const set<bboxset<int,3> >& s);
-template ostream& operator<< (ostream& os, const vector<int>& v);
-template ostream& operator<< (ostream& os, const vector<list<bbox<int,3> > >& v);
-template ostream& operator<< (ostream& os, const vector<vector<bbox<int,3> > >& v);
-template ostream& operator<< (ostream& os, const vector<vector<vector<bbox<int,3> > > >& v);
+template ostream& output (ostream& os, const list<bbox<int,3> >& l);
+template ostream& output (ostream& os, const set<bbox<int,3> >& s);
+template ostream& output (ostream& os, const set<bboxset<int,3> >& s);
+template ostream& output (ostream& os, const vector<list<bbox<int,3> > >& v);
+template ostream& output (ostream& os, const vector<vector<bbox<int,3> > >& v);
+template ostream& output (ostream& os, const vector<vector<vector<bbox<int,3> > > >& v);
 #endif

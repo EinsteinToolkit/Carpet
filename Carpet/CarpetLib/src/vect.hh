@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.3 2001/03/22 18:42:06 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.4 2001/03/27 22:26:31 eschnett Exp $
 
  ***************************************************************************/
 
@@ -405,6 +405,7 @@ public:
   };
 #endif
   
+  void output (ostream& os) const;
 };
 
 
@@ -498,6 +499,13 @@ inline T sum (const vect<T,D>& a) {
   T r(0);
   for (int d=0; d<D; ++d) r+=a[d];
   return r;
+}
+
+
+template<class T,int D>
+inline ostream& operator<< (ostream& os, const vect<T,D>& a) {
+  a.output(os);
+  return os;
 }
 
 

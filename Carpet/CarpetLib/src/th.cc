@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.3 2001/03/22 18:42:06 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.4 2001/03/27 22:26:31 eschnett Exp $
 
  ***************************************************************************/
 
@@ -81,23 +81,21 @@ void th<D>::recompose () {
 
 // Output
 template<int D>
-ostream& operator<< (ostream& os, const th<D>& t) {
+void th<D>::output (ostream& os) const {
   os << "th<" << D << ">:"
      << "times={";
-  for (int rl=0; rl<t.h.reflevels(); ++rl) {
-    for (int ml=0; ml<t.h.mglevels(rl,0); ++ml) {
+  for (int rl=0; rl<h.reflevels(); ++rl) {
+    for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
       if (!(rl==0 && ml==0)) os << ",";
       os << rl << ":" << ml << ":"
-	 << t.times[rl][ml] << "(" << t.deltas[rl][ml] << ")";
+	 << times[rl][ml] << "(" << deltas[rl][ml] << ")";
     }
   }
   os << "}";
-  return os;
 }
 
 
 
 #if defined(TMPL_EXPLICIT)
 template class th<3>;
-template ostream& operator<< (ostream& os, const th<3>& t);
 #endif

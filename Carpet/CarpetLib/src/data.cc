@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.9 2001/03/24 22:38:48 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.10 2001/03/27 22:26:31 eschnett Exp $
 
  ***************************************************************************/
 
@@ -573,7 +573,7 @@ void data<T,D>::write_ascii_output_element (ofstream& file, const ivect& index)
 
 // Output
 template<class T,int D>
-ostream& data<T,D>::out (ostream& os) const {
+ostream& data<T,D>::output (ostream& os) const {
   os << "data<T," << D << ">:"
      << "extent=" << extent() << ","
      << "stride=" << stride() << ",size=" << size();

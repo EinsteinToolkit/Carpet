@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.5 2001/03/22 18:42:06 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.6 2001/03/27 22:26:31 eschnett Exp $
 
  ***************************************************************************/
 
@@ -229,26 +229,24 @@ void gh<D>::remove (dh<D>* d) {
 
 
 template<int D>
-ostream& operator<< (ostream& os, const gh<D>& h) {
+void gh<D>::output (ostream& os) const {
   os << "gh<" << D << ">:"
-     << "reffactor=" << h.reffact << ",refcentering=" << h.refcent << ","
-     << "mgfactor=" << h.mgfact << ",mgcentering=" << h.mgcent << ","
-     << "baseextent=" << h.baseextent << ","
-     << "extents=" << h.extents << ","
+     << "reffactor=" << reffact << ",refcentering=" << refcent << ","
+     << "mgfactor=" << mgfact << ",mgcentering=" << mgcent << ","
+     << "baseextent=" << baseextent << ","
+     << "extents=" << extents << ","
      << "dhs={";
   int cnt=0;
-  for (list<dh<D>*>::const_iterator d = h.dhs.begin();
-       d != h.dhs.end(); ++d) {
+  for (list<dh<D>*>::const_iterator d = dhs.begin();
+       d != dhs.end(); ++d) {
     if (cnt++) os << ",";
-    os << **d;
+    (*d)->output(os);
   }
   os << "}";
-  return os;
 }
 
 
 
 #if defined(TMPL_EXPLICIT)
 template class gh<3>;
-template ostream& operator<< (ostream& os, const gh<3>& h);
 #endif

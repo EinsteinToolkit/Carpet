@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.10 2001/03/22 18:42:05 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.11 2001/03/27 22:26:31 eschnett Exp $
 
  ***************************************************************************/
 
@@ -321,23 +321,21 @@ void dh<D>::remove (generic_gf<D>* f) {
 
 // Output
 template<int D>
-ostream& operator<< (ostream& os, const dh<D>& d) {
+void dh<D>::output (ostream& os) const {
   os << "dh<" << D << ">:"
-     << "ghosts=[" << d.lghosts << "," << d.ughosts << "],"
+     << "ghosts=[" << lghosts << "," << ughosts << "],"
      << "gfs={";
   int cnt=0;
-  for (list<generic_gf<D>*>::const_iterator f = d.gfs.begin();
-       f != d.gfs.end(); ++f) {
+  for (list<generic_gf<D>*>::const_iterator f = gfs.begin();
+       f != gfs.end(); ++f) {
     if (cnt++) os << ",";
-    os << **f;
+    (*f)->output(os);
   }
   os << "}";
-  return os;
 }
 
 
 
 #if defined(TMPL_EXPLICIT)
 template class dh<3>;
-template ostream& operator<< (ostream& os, const dh<3>& d);
 #endif

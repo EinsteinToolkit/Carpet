@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.4 2001/03/24 22:38:48 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.5 2001/03/27 22:26:31 eschnett Exp $
 
  ***************************************************************************/
 
@@ -52,6 +52,7 @@ template<int D>
 class generic_gf {
 
   // Types
+
   typedef vect<int,D>    ivect;
   typedef bbox<int,D>    ibbox;
   typedef bboxset<int,D> ibset;
@@ -193,10 +194,15 @@ public:
   
   
   // Output
-  friend ostream& operator<< <> (ostream& os, const generic_gf& f);
-  
-  virtual ostream& out (ostream& os) const = 0;
+  virtual ostream& output (ostream& os) const = 0;
 };
+
+
+
+template<int D>
+inline ostream& operator<< (ostream& os, const generic_gf<D>& f) {
+  return f.output(os);
+}
 
 
 
