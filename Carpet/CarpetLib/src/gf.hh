@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.hh,v 1.9 2003/10/14 16:39:16 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.hh,v 1.10 2003/11/21 13:55:46 schnetter Exp $
 
 #ifndef GF_HH
 #define GF_HH
@@ -55,7 +55,7 @@ public:
   
 protected:
   
-  virtual gdata<D>* typed_data() { return new data<T,D>(varindex); }
+  virtual gdata<D>* typed_data() { return new data<T,D>(this->varindex); }
   
   
   

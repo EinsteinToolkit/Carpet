@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.35 2003/11/20 08:28:51 hawke Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.36 2003/11/21 13:55:46 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -107,7 +107,7 @@ void data<T,D>::transfer_from (gdata<D>* gsrc) {
   data* src = (data*)gsrc;
   assert (!_storage);
   *this = *src;
-  *src = data(varindex);
+  *src = data(this->varindex);
 }
 
 
@@ -273,7 +273,7 @@ void data<T,D>
   
   assert (this->proc() == src->proc());
 
-  const int groupindex = CCTK_GroupIndexFromVarI(varindex);
+  const int groupindex = CCTK_GroupIndexFromVarI(this->varindex);
   const int group_tags_table = CCTK_GroupTagsTableI(groupindex);
   assert (group_tags_table >= 0);
   
@@ -322,8 +322,8 @@ void data<T,D>
   MPI_Comm_rank (dist::comm, &rank);
   assert (rank == this->proc());
   
-  assert (varindex >= 0);
-  const int groupindex = CCTK_GroupIndexFromVarI (varindex);
+  assert (this->varindex >= 0);
+  const int groupindex = CCTK_GroupIndexFromVarI (this->varindex);
   assert (groupindex >= 0);
   char* groupname = CCTK_GroupName(groupindex);
   T Tdummy;

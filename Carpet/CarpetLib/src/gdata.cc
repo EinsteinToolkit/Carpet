@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.24 2003/11/05 16:18:39 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.25 2003/11/21 13:55:46 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -68,7 +68,9 @@ gdata<D>::~gdata () { }
 
 // Transport operator types
 template<int D>
-gdata<D>::operator_type gdata<D>::find_transport_operator (const int varindex) {
+typename gdata<D>::operator_type
+gdata<D>::find_transport_operator (const int varindex)
+{
   const operator_type default_operator = op_Lagrange;
   if (varindex == -1) return op_error;
   assert (varindex >= 0);

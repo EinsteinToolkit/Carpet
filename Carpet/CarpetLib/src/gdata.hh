@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.20 2003/11/05 16:18:39 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.21 2003/11/21 13:55:46 schnetter Exp $
 
 #ifndef GDATA_HH
 #define GDATA_HH
@@ -150,7 +150,7 @@ public:
   // readonly
   operator_type transport_operator;
  private:
-  static operator_type find_transport_operator (const int varindex_);
+  static operator_type find_transport_operator (const int varindex);
   
   // Data manipulators
  public:
