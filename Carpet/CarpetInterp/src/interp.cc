@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.6 2003/05/13 12:19:42 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.7 2003/05/13 15:20:46 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -19,7 +19,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.6 2003/05/13 12:19:42 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.7 2003/05/13 15:20:46 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -323,6 +323,7 @@ namespace CarpetInterp {
                                               N_output_arrays,
                                               output_array_type_codes,
                                               &tmp_output_arrays[0]);
+              assert (!ierr);
               
             } // for processors
             
