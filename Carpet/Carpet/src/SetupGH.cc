@@ -10,7 +10,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.12 2001/12/05 03:31:56 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.13 2001/12/05 19:34:30 schnetter Exp $";
 
 
 
@@ -234,8 +234,11 @@ namespace Carpet {
     // Invent a refinement structure
     gh<dim>::rexts bbsss;
     gh<dim>::rprocs pss;
-//     MakeRegions_RefineCentre (cgh, maxreflevels, bbsss);
-    MakeRegions_AsSpecified (cgh, maxreflevels, bbsss);
+    if (CCTK_EQUALS (refined_regions, "centre")) {
+      MakeRegions_RefineCentre (cgh, maxreflevels, bbsss);
+    } else if (CCTK_EQUALS (refined_regions, "manual")) {
+      MakeRegions_AsSpecified (cgh, maxreflevels, bbsss);
+    }
     if (CCTK_EQUALS (processor_topology, "automatic")) {
       SplitRegions_AlongZ (cgh, bbsss);
     } else if (CCTK_EQUALS (processor_topology, "manual")) {
