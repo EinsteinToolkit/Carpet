@@ -35,7 +35,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.22 2001/04/06 10:37:35 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.23 2001/04/17 17:07:09 schnetter Exp $";
 
 
 
@@ -580,6 +580,8 @@ namespace Carpet {
     
 //     Checkpoint ("%*sdone with CallFunction.", 2*reflevel, "");
     
+    // The return value indicates whether the grid functions have been
+    // synchronised.
     // return 0: let the flesh do the synchronisation, if necessary
     return 0;
   }
@@ -669,8 +671,7 @@ namespace Carpet {
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
     
-    // The return values seems to be whether storage was enabled
-    // previously.
+    // The return indicates whether storage was enabled previously.
     const int retval = CCTK_QueryGroupStorageI (cgh, group);
     
     // There is a difference between the Cactus time levels and the
@@ -765,8 +766,6 @@ namespace Carpet {
     set_component (cgh, component);
     PoisonGroup (cgh, group, 2);
     
-    // The return values seems to be whether storage was enabled
-    // previously, and not whether storage is enabled now.
     return retval;
   }
   
@@ -775,11 +774,16 @@ namespace Carpet {
   int DisableGroupStorage (cGH* cgh, const char* groupname)
   {
     Checkpoint ("%*sDisableGroupStorage %s", 2*reflevel, "", groupname);
-    // XXX
-    return 1;
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
+    
+    // The return indicates whether storage was enabled previously.
+    const int retval = CCTK_QueryGroupStorageI (cgh, group);
+    
+    // XXX
+    return retval;
+    
     const int n0 = CCTK_FirstVarIndexI(group);
     
     switch (CCTK_GroupTypeI(group)) {
@@ -861,9 +865,7 @@ namespace Carpet {
     
     set_component (cgh, component);
     
-    // The return value seems to be 1 (success) no matter whether
-    // storage has actually been disabled.
-    return 1;
+    return retval;
   }
   
   
