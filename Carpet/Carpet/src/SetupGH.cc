@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,7 +20,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.51 2003/07/20 21:03:43 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.52 2003/08/15 09:34:36 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -179,6 +180,16 @@ namespace Carpet {
       npoints = vect<int,dim>(global_nx, global_ny, global_nz);
     } else {
       npoints = vect<int,dim>(global_nsize, global_nsize, global_nsize);
+    }
+    // Sanity check
+    // (if this fails, someone requested an insane amount of memory)
+    assert (all(npoints <= INT_MAX / maxreflevelfact));
+    {
+      int max = INT_MAX;
+      for (int d=0; d<dim; ++d) {
+        assert (npoints[d] * maxreflevelfact <= max);
+        max /= npoints[d] * maxreflevelfact;
+      }
     }
     
     const vect<int,dim> str(stride);
