@@ -1,30 +1,53 @@
-% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/internals.tex,v 1.3 2003/05/03 11:19:51 hawke Exp $
+% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/internals.tex,v 1.4 2003/05/03 13:29:23 schnetter Exp $
 
 \documentclass{article}
+
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[english] {babel}
+\usepackage{exscale}
+\usepackage[final]{graphicx}
+\usepackage[backref,draft=false]{hyperref}
+%\usepackage{concrete}
+\usepackage{mathpple}
+%\usepackage{pslatex}
+
+\newcommand{\todo}[1]{\rule{1em}{1ex}~{\small [{#1}]}}
+
+\sloppypar
+
 \begin{document}
 
 \title{Carpet under the hood}
 \author{Erik Schnetter \textless schnetter@uni-tuebingen.de\textgreater}
-\date{$ $Date: 2003/05/03 11:19:51 $ $}
+\date{$ $Date: 2003/05/03 13:29:23 $ $}
 \maketitle
+
+\begin{abstract}
+   This document describes the internal workings of the Carpet
+   arrangement.  Its intended readership are people who extend Carpet,
+   or who use Carpet more thant the average user.  This document is
+   supposed to be read in conjuction with and guiding through the
+   source code.
+\end{abstract}
 
 \tableofcontents
 
 \section{Overview}
 
-The Carpet driver, which lives in the Carpet arrangement, is divided
-into several parts.  The thorn \texttt{Carpet} is the main driver
-piece; it provides all the routines and structures that Cactus expects
-from it.  The thorn \texttt{CarpetLib} is the workhorse that does all
-the bookkeeping and data shuffling.  Those two alone form a valid
-Cactus driver; the other thorns provide additional functionality.  The
-thorns \texttt{CarpetInterp}, \texttt{CarpetReduce}, and
-\texttt{CarpetSlab} provide the corresponding interpolation,
-reduction, and slabbing interfaces.  The thorns \texttt{CarpetIOASCII}
-and \texttt{CarpetIOFlexIO} provide I/O methods.  Finally, thorn
-\texttt{CarpetRegrid} provides a user interface to select where and
-what to refine.  (The actual refinement is handled in
-\texttt{CarpetLib}.)
+   The Carpet driver, which lives in the Carpet arrangement, is
+   divided into several parts.  The thorn \texttt{Carpet} is the main
+   driver piece; it provides all the routines and structures that
+   Cactus expects from it.  The thorn \texttt{CarpetLib} is the
+   workhorse that does all the bookkeeping and data shuffling.  Those
+   two alone form a valid Cactus driver; the other thorns provide
+   additional functionality.  The thorns \texttt{CarpetInterp},
+   \texttt{CarpetReduce}, and \texttt{CarpetSlab} provide the
+   corresponding interpolation, reduction, and slabbing interfaces.
+   The thorns \texttt{CarpetIOASCII} and \texttt{CarpetIOFlexIO}
+   provide I/O methods.  Finally, thorn \texttt{CarpetRegrid} provides
+   a user interface to select where and what to refine.  (The actual
+   refinement is handled in \texttt{CarpetLib}.)
 
 
 
