@@ -20,7 +20,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.55 2003/11/06 13:50:23 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.56 2003/11/11 14:23:41 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -426,6 +426,11 @@ namespace Carpet {
           
           const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
           // We don't know when to cycle arrays or scalars
+          if (num_tl!=1) {
+            CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "Carpet does not allow grid array groups with multiple time levels.  The grid array group \"%s\" has %d time levels.",
+                        CCTK_GroupName(group), num_tl);
+          }
           assert (num_tl==1);
           
           assert (rl>=0 && rl<(int)arrdata[group].dd->boxes.size());
