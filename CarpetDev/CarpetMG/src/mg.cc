@@ -1004,7 +1004,7 @@ namespace CarpetMG {
   {
     assert (reflevel < reflevels - 1);
     int const tl = 0;
-    for (comm_state<dim> state; !state.done(); state.step()) {
+    for (comm_state state; !state.done(); state.step()) {
       for (int m=0; m<maps; ++m) {
         const CCTK_REAL time = vtt.at(m)->time (tl, reflevel, mglevel);
         for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
@@ -1033,7 +1033,7 @@ namespace CarpetMG {
   {
     assert (reflevel > 0);
     int const tl = 0;
-    for (comm_state<dim> state; !state.done(); state.step()) {
+    for (comm_state state; !state.done(); state.step()) {
       for (int m=0; m<maps; ++m) {
         const CCTK_REAL time = vtt.at(m)->time (tl, reflevel, mglevel);
         for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
