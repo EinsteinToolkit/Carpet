@@ -15,7 +15,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.39 2004/01/25 14:57:29 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.40 2004/02/07 16:21:56 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -35,6 +35,7 @@ extern "C" {
 #undef CHAR
 
 #include "CactusBase/IOUtil/src/ioGH.h"
+#include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
 
 #include "bbox.hh"
 #include "data.hh"
@@ -78,21 +79,32 @@ namespace CarpetIOFlexIO {
                               CCTK_REAL value);
   static void WriteAttribute (IObase* writer, const char* name,
                               const CCTK_REAL* values, int nvalues);
+  static void WriteAttribute (IObase* writer, const char* name,
+                              char value);
+  static void WriteAttribute (IObase* writer, const char* name,
+                              const char* values);
+  static void WriteAttribute (IObase* writer, const char* name,
+                              const char* values, int nvalues);
 
   
   
   int CarpetIOFlexIOStartup ()
   {
+    int ierr;
+    
     CCTK_RegisterBanner ("AMR 3D FlexIO I/O provided by CarpetIOFlexIO");
     
-    GHExtension = CCTK_RegisterGHExtension("CarpetIOFlexIO");
+    GHExtension = CCTK_RegisterGHExtension ("CarpetIOFlexIO");
     CCTK_RegisterGHExtensionSetupGH (GHExtension, SetupGH);
     
-    IOMethod = CCTK_RegisterIOMethod ("IOFlexIO");
+    IOMethod = CCTK_RegisterIOMethod ("CarpetIOFlexIO");
     CCTK_RegisterIOMethodOutputGH (IOMethod, OutputGH);
     CCTK_RegisterIOMethodOutputVarAs (IOMethod, OutputVarAs);
     CCTK_RegisterIOMethodTimeToOutput (IOMethod, TimeToOutput);
     CCTK_RegisterIOMethodTriggerOutput (IOMethod, TriggerOutput);
+    
+    ierr = IOUtil_RegisterRecover ("CarpetIOFlexIO", Recover);
+    assert (! ierr);
     
     return 0;
   }
@@ -279,7 +291,7 @@ namespace CarpetIOFlexIO {
       amrwriter->setTime (cgh->cctk_iteration);
     }
     
-    // Traverse all components on this refinement and multigrid level
+    // Traverse all components
     BEGIN_MAP_LOOP(cgh, grouptype) {
       BEGIN_COMPONENT_LOOP(cgh, grouptype) {
         
@@ -327,6 +339,25 @@ namespace CarpetIOFlexIO {
           amrwriter->write (origin, dims, (void*)tmp->storage());
           
           // Write some additional attributes
+          WriteAttribute (writer, "group_version", 1);
+          {
+            char * fullname = CCTK_FullName(n);
+            assert (fullname);
+            WriteAttribute (writer, "group_fullname", fullname);
+            free (fullname);
+          }
+          WriteAttribute (writer, "group_varname", CCTK_VarName(n));
+          {
+            char * groupname = CCTK_GroupName(group);
+            assert (groupname);
+            WriteAttribute (writer, "group_groupname", groupname);
+            free (groupname);
+          }
+          WriteAttribute (writer, "group_grouptype", grouptype);
+          WriteAttribute (writer, "group_dim", CCTK_GroupDimI(group));
+          WriteAttribute (writer, "group_timelevel", tl);
+          WriteAttribute (writer, "group_numtimelevels", CCTK_NumTimeLevelsI(group));
+          
           WriteAttribute (writer, "cctk_version", 1);
           WriteAttribute (writer, "cctk_dim", cgh->cctk_dim);
           WriteAttribute (writer, "cctk_iteration", cgh->cctk_iteration);
@@ -345,10 +376,10 @@ namespace CarpetIOFlexIO {
           WriteAttribute (writer, "cctk_levoffdenom", cgh->cctk_levoffdenom, dim);
           WriteAttribute (writer, "cctk_timefac", cgh->cctk_timefac);
           WriteAttribute (writer, "cctk_convlevel", cgh->cctk_convlevel);
-// TODO: disable temporarily
-//           WriteAttribute (writer, "cctk_convfac", cgh->cctk_convfac);
+          WriteAttribute (writer, "cctk_convfac", cgh->cctk_convfac);
           WriteAttribute (writer, "cctk_nghostzones", cgh->cctk_nghostzones, dim);
           WriteAttribute (writer, "cctk_time", cgh->cctk_time);
+          
           WriteAttribute (writer, "carpet_version", 1);
           WriteAttribute (writer, "carpet_dim", dim);
           WriteAttribute (writer, "carpet_basemglevel", basemglevel);
@@ -483,7 +514,7 @@ namespace CarpetIOFlexIO {
     const int rl = grouptype==CCTK_GF ? reflevel : 0;
     
     // Find the input directory
-    const char* myindir = GetStringParameter("indir3D", "");
+    const char* myindir = GetStringParameter("in3D_dir", ".");
     
     // Invent a file name
     const char* extension = 0;
@@ -622,8 +653,7 @@ namespace CarpetIOFlexIO {
       MPI_Bcast (amr_origin, dim, MPI_INT, 0, dist::comm);
       MPI_Bcast (amr_dims, dim, MPI_INT, 0, dist::comm);
       
-      // Traverse all components on this refinement and multigrid
-      // level
+      // Traverse all components on all levels
       BEGIN_MAP_LOOP(cgh, grouptype) {
         BEGIN_COMPONENT_LOOP(cgh, grouptype) {
           
@@ -641,12 +671,17 @@ namespace CarpetIOFlexIO {
           const vect<int,dim> ub
             = lb + (vect<int,dim>::ref(amr_dims) - 1) * str;
           const bbox<int,dim> ext(lb,ub,str);
+          
+          if (data->extent() != ext) {
+            CCTK_WARN (0, "The stored data have a different extent than the grid function in memory.  This is not yet supported.");
+          }
+          
           gdata<dim>* const tmp = data->make_typed (n);
           
           if (CCTK_MyProc(cgh)==0) {
             tmp->allocate (ext, 0, amrgrid->data);
           } else {
-            tmp->allocate (ext, 0, 0);
+            tmp->allocate (ext, 0);
           }
           
           // Copy into grid function
@@ -672,6 +707,7 @@ namespace CarpetIOFlexIO {
     if (CCTK_MyProc(cgh)==0) {
       if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Deleting AMR info");
       delete amrreader;
+
       amrreader = 0;
       if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Closing file");
       delete reader;
@@ -679,6 +715,51 @@ namespace CarpetIOFlexIO {
     }
     
     return 0;
+  }
+  
+  
+  
+  /** returns the number of recovered variables */
+  int Recover (cGH* const cgh, const char *basefilename,
+               const int called_from)
+  {
+    assert (cgh);
+    assert (basefilename);
+    assert (called_from == CP_INITIAL_DATA
+            || called_from == CP_EVOLUTION_DATA
+            || called_from == CP_RECOVER_PARAMETERS
+            || called_from == CP_RECOVER_DATA
+            || called_from == FILEREADER_DATA);
+    
+    // the other modes are not supported yet
+    assert (called_from == FILEREADER_DATA);
+    
+    const ioGH * const iogh = (const ioGH *) CCTK_GHExtension (cgh, "IO");
+    assert (iogh);
+    
+    int num_vars_read = 0;
+    assert (iogh->do_inVars);
+    for (int n=0; n<CCTK_NumVars(); ++n) {
+      if (iogh->do_inVars[n]) {
+        const char * p = strrchr (basefilename, '/');
+        if (p) {
+          ++ p;
+        } else {
+          p = basefilename;
+        }
+        if (strcmp (p, CCTK_VarName(n)) == 0) {
+          char * const fullname = CCTK_FullName(n);
+          assert (fullname);
+          cout << "Recover: Reading variable \"" << fullname << "\" from file \"" << basefilename << "\"" << endl;
+          const int ierr = InputVarAs (cgh, fullname, basefilename);
+          assert (! ierr);
+          free (fullname);
+          ++ num_vars_read;
+        }
+      }
+    }
+    
+    return num_vars_read;
   }
   
   
@@ -781,6 +862,29 @@ namespace CarpetIOFlexIO {
       values1[i] = values[i];
     }
     writer->writeAttribute (name, IObase::Float64, nvalues, &values1[0]);
+  }
+  
+  void WriteAttribute (IObase* writer, const char* name, char value)
+  {
+    WriteAttribute (writer, name, &value, 1);
+  }
+  
+  void WriteAttribute (IObase* writer, const char* name, const char * values)
+  {
+    WriteAttribute (writer, name, values, strlen(values));
+  }
+  
+  void WriteAttribute (IObase* writer, const char* name,
+                       const char * values, int nvalues)
+  {
+    assert (writer);
+    assert (name);
+    assert (values);
+    vector<char> values1(nvalues);
+    for (int i=0; i<nvalues; ++i) {
+      values1[i] = values[i];
+    }
+    writer->writeAttribute (name, IObase::Char8, nvalues, &values1[0]);
   }
   
   

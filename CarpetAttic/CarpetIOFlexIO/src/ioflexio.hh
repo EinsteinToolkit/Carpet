@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.hh,v 1.6 2003/03/12 09:34:44 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.hh,v 1.7 2004/02/07 16:21:56 schnetter Exp $
 
 #ifndef CARPETIOFLEXIO_HH
 #define CARPETIOFLEXIO_HH
@@ -30,6 +30,9 @@ namespace CarpetIOFlexIO {
   int InputGH (const cGH* const cgh);
   int InputVarAs (const cGH* const cgh, const char* const varname,
 		  const char* const alias);
+  
+  int Recover (cGH* const cgh, const char *basefilename,
+               const int called_from);
   
 } // namespace CarpetIOFlexIO
 
