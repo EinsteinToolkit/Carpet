@@ -1,4 +1,4 @@
 # Configuration definitions for thorn CarpetIOASCII
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/configuration.ccl,v 1.1 2003/09/04 16:23:21 tradke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/configuration.ccl,v 1.2 2003/11/19 17:12:03 schnetter Exp $
 
-Requires Thorns: Carpet CarpetLib
+Requires Thorns: Carpet CarpetLib IOUtil
