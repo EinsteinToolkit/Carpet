@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.40 2004/06/27 21:18:08 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.41 2004/07/02 17:47:38 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -23,7 +23,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.40 2004/06/27 21:18:08 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.41 2004/07/02 17:47:38 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -320,7 +320,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { accum += weight*val; }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight>0) accum += weight*val; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -333,7 +333,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { accum += weight*abs(val); }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight>0) accum += weight*abs(val); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -346,7 +346,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { accum += weight*val*val; }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight>0) accum += weight*val*val; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -359,7 +359,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { accum += weight*val; }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight>0) accum += weight*val; }
       static inline void finalise (T& accum, const T& cnt) { accum /= cnt; }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -372,7 +372,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { accum += weight*abs(val); }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight>0) accum += weight*abs(val); }
       static inline void finalise (T& accum, const T& cnt) { accum /= cnt; }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -385,7 +385,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { accum += weight*abs(val)*abs(val); }
+      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight>0) accum += weight*abs(val)*abs(val); }
       static inline void finalise (T& accum, const T& cnt) { accum = mysqrt(accum / cnt); }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
