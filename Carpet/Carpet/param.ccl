@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.38 2004/04/18 13:29:43 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.39 2004/06/26 12:56:01 schnetter Exp $
 
 shares: Cactus
 
@@ -189,7 +189,7 @@ CCTK_STRING base_outerbounds "Outer boundaries of base grid components"
 
 BOOLEAN enable_all_storage "Enable storage for all grid functions" STEERABLE=recover
 {
-} "no"
+} "yes"
 
 
 

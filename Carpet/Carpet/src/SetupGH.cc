@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.81 2004/06/26 11:34:02 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.82 2004/06/26 12:56:01 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -936,7 +936,7 @@ namespace Carpet {
     
     
     // Enable storage for all groups if desired
-    if (true || enable_all_storage) {
+    if (enable_all_storage) {
       BEGIN_MGLEVEL_LOOP(cgh) {
         BEGIN_REFLEVEL_LOOP(cgh) {
 	  for (int group=0; group<CCTK_NumGroups(); ++group) {
