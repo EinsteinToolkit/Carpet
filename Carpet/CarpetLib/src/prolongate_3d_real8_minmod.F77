@@ -1,8 +1,28 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_minmod.F77,v 1.2 2003/10/15 11:51:55 hawke Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_minmod.F77,v 1.3 2003/10/20 10:39:24 hawke Exp $
       
 #include "cctk.h"
 
+
+c$$$ This routine performs "TVD" prolongation. It is intended to be used 
+c$$$ with GFs that are not expected to be smooth, particularly those
+c$$$ that must also obey certain constraints. The obvious example is the 
+c$$$ density in hydrodynamics, which may be discontinuous yet must be
+c$$$ strictly positive.
+c$$$
+c$$$ To ensure that this prolongation method is used you should add the
+c$$$ tag
+c$$$
+c$$$      tags='Prolongation="TVD"'
+c$$$
+c$$$ to the interface.ccl on the appropriate group.
+c$$$
+c$$$ This applies minmod type limiting to the slope, checking over the
+c$$$ entire coarse grid cell for the minimum modulus in each direction.
+c$$$
+c$$$ The actual minmod function is defined in the routine
+c$$$
+c$$$      prolongate_3d_real8_minmod.F77
 
 
 #define CHKIDX(i,j,k, imax,jmax,kmax, where)                                  \
@@ -175,68 +195,56 @@ c     Loop over fine region
                slopey = zero
                slopez = zero
 
-c$$$               firstloop = .true.
-c$$$
-c$$$               do kk = 1, 2
-c$$$                 do jj = 1, 2
-c$$$
-c$$$                   dupw = src(i0+1 ,j0+jj,k0+kk) - src(i0+0 ,j0+jj,k0+kk)
-c$$$                   dloc = src(i0+2 ,j0+jj,k0+kk) - src(i0+1 ,j0+kk,k0+kk)
-c$$$                   if (firstloop) then
-c$$$                     slopex = half * dble(fi) * minmod(dupw,dloc)
-c$$$                     firstloop = .false.
-c$$$                   else
-c$$$                     slopex = 
-c$$$     $                    minmod(slopex, half * dble(fi) * minmod(dupw,dloc))
-c$$$                   end if
-c$$$                 end do
-c$$$               end do
+               firstloop = .true.
 
-               dupw = src(i0+1,j0+1,k0+1) - src(i0  ,j0+1,k0+1)
-               dloc = src(i0+2,j0+1,k0+1) - src(i0+1,j0+1,k0+1)
-               slopex = half * dble(fi) * minmod(dupw,dloc)
+               do kk = 1, 2
+                 do jj = 1, 2
+
+                   dupw = src(i0+1 ,j0+jj,k0+kk) - src(i0+0 ,j0+jj,k0+kk)
+                   dloc = src(i0+2 ,j0+jj,k0+kk) - src(i0+1 ,j0+kk,k0+kk)
+                   if (firstloop) then
+                     slopex = half * dble(fi) * minmod(dupw,dloc)
+                     firstloop = .false.
+                   else
+                     slopex = 
+     $                    minmod(slopex, half * dble(fi) * minmod(dupw,dloc))
+                   end if
+                 end do
+               end do
                
-c$$$               firstloop = .true.
-c$$$
-c$$$               do kk = 1, 2
-c$$$                 do ii = 1, 2
-c$$$
-c$$$                   dupw = src(i0+ii,j0+1 ,k0+kk) - src(i0+ii,j0+0 ,k0+kk)
-c$$$                   dloc = src(i0+ii,j0+2 ,k0+kk) - src(i0+ii,j0+1 ,k0+kk)
-c$$$                   if (firstloop) then
-c$$$                     slopey = half * dble(fj) * minmod(dupw,dloc)
-c$$$                     firstloop = .false.
-c$$$                   else
-c$$$                     slopey = 
-c$$$     $                    minmod(slopey, half * dble(fj) * minmod(dupw,dloc))
-c$$$                   end if
-c$$$                 end do
-c$$$               end do
+               firstloop = .true.
 
-               dupw = src(i0+1,j0+1,k0+1) - src(i0+1,j0  ,k0+1)
-               dloc = src(i0+1,j0+2,k0+1) - src(i0+1,j0+1,k0+1)
-               slopey = half * dble(fj) * minmod(dupw,dloc)
+               do kk = 1, 2
+                 do ii = 1, 2
 
-c$$$               firstloop = .true.
-c$$$
-c$$$               do jj = 1, 2
-c$$$                 do ii = 1, 2
-c$$$
-c$$$                   dupw = src(i0+ii,j0+jj,k0+1 ) - src(i0+ii,j0+jj,k0+0 )
-c$$$                   dloc = src(i0+ii,j0+jj,k0+2 ) - src(i0+ii,j0+jj,k0+1 )
-c$$$                   if (firstloop) then
-c$$$                     slopez = half * dble(fk) * minmod(dupw,dloc)
-c$$$                     firstloop = .false.
-c$$$                   else
-c$$$                     slopez = 
-c$$$     $                    minmod(slopez, half * dble(fk) * minmod(dupw,dloc))
-c$$$                   end if
-c$$$                 end do
-c$$$               end do
+                   dupw = src(i0+ii,j0+1 ,k0+kk) - src(i0+ii,j0+0 ,k0+kk)
+                   dloc = src(i0+ii,j0+2 ,k0+kk) - src(i0+ii,j0+1 ,k0+kk)
+                   if (firstloop) then
+                     slopey = half * dble(fj) * minmod(dupw,dloc)
+                     firstloop = .false.
+                   else
+                     slopey = 
+     $                    minmod(slopey, half * dble(fj) * minmod(dupw,dloc))
+                   end if
+                 end do
+               end do
 
-               dupw = src(i0+1,j0+1,k0+1) - src(i0+1,j0+1,k0  )
-               dloc = src(i0+1,j0+1,k0+2) - src(i0+1,j0+1,k0+1)
-               slopez = half * dble(fk) * minmod(dupw,dloc)
+               firstloop = .true.
+
+               do jj = 1, 2
+                 do ii = 1, 2
+
+                   dupw = src(i0+ii,j0+jj,k0+1 ) - src(i0+ii,j0+jj,k0+0 )
+                   dloc = src(i0+ii,j0+jj,k0+2 ) - src(i0+ii,j0+jj,k0+1 )
+                   if (firstloop) then
+                     slopez = half * dble(fk) * minmod(dupw,dloc)
+                     firstloop = .false.
+                   else
+                     slopez = 
+     $                    minmod(slopez, half * dble(fk) * minmod(dupw,dloc))
+                   end if
+                 end do
+               end do
 
                CHKIDX (dstioff+i+1, dstjoff+j+1, dstkoff+k+1, \
                        dstiext,dstjext,dstkext, "destination")
