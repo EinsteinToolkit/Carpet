@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include <stdarg.h>
 #include <stdlib.h>
 
@@ -6,7 +7,6 @@
 #include <vector>
 
 #include "cctk.h"
-#include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
 
 #include "Carpet/CarpetLib/src/bbox.hh"
@@ -19,14 +19,9 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.4 2002/01/09 17:45:42 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.5 2002/01/11 17:19:48 schnetter Exp $";
 
 
-
-// That's a hack
-namespace Carpet {
-  void Waypoint (const char* fmt, ...);
-}
 
 namespace CarpetRegrid {
   
@@ -35,32 +30,44 @@ namespace CarpetRegrid {
   
   
   
-  int CarpetRegridRegrid (CCTK_ARGUMENTS)
+  int CarpetRegridStartup ()
   {
-    DECLARE_CCTK_ARGUMENTS;
+    RegisterRegridRoutine (CarpetRegridRegrid);
+    return 0;
+  }
+  
+  
+  
+  int CarpetRegridRegrid (const cGH * const cctkGH,
+			  gh<dim>::rexts& bbsss,
+			  gh<dim>::rprocs& pss)
+  {
     DECLARE_CCTK_PARAMETERS;
+    
+    assert (regrid_every == -1 || regrid_every == 0
+	    || regrid_every % maxmglevelfact == 0);
     
     // Return if no regridding is desired
     if (regrid_every == -1) return 0;
     
+#if 0
     // Return if this is not the main hierarchy
     if (mglevel != 0) return 0;
+#endif
+    assert (mglevel == -1);
     
     // Return if this is the finest possible level
     if (reflevel == maxreflevels-1) return 0;
     
     // Return if we want to regrid during initial data only, and this
     // is not the time for initial data
-    if (regrid_every == 0 && cctk_iteration != 0) return 0;
+    if (regrid_every == 0 && cctkGH->cctk_iteration != 0) return 0;
     
     // Return if we want to regrid regularly, but not at this time
-    const int invfact = maxreflevelfact / reflevelfact;
-    if (regrid_every > 0 && cctk_iteration != 0
-	&& (cctk_iteration + invfact - 1) % regrid_every != 0) {
+    if (regrid_every > 0 && cctkGH->cctk_iteration != 0
+	&& cctkGH->cctk_iteration % regrid_every != 0) {
       return 0;
     }
-    
-    Waypoint ("%*sRegrid", 2*reflevel, "");
     
     list<bbox<int,dim> > bbl;
     
@@ -77,14 +84,14 @@ namespace CarpetRegrid {
       if (refinement_levels > 4) {
 	CCTK_WARN (0, "Cannot currently specify manual refinement regions for more than 4 refinement levels");
       }
-      assert (refinement_levels<4);
-      vector<vect<int,dim> > lower(3), upper(3);
-      lower[0] = vect<int,dim> (l1xmin, l1ymin, l1zmin);
-      upper[0] = vect<int,dim> (l1xmax, l1ymax, l1zmax);
-      lower[1] = vect<int,dim> (l2xmin, l2ymin, l2zmin);
-      upper[1] = vect<int,dim> (l2xmax, l2ymax, l2zmax);
-      lower[2] = vect<int,dim> (l3xmin, l3ymin, l3zmin);
-      upper[2] = vect<int,dim> (l3xmax, l3ymax, l3zmax);
+      assert (refinement_levels<=4);
+      vector<vect<CCTK_REAL,dim> > lower(3), upper(3);
+      lower[0] = vect<CCTK_REAL,dim> (l1xmin, l1ymin, l1zmin);
+      upper[0] = vect<CCTK_REAL,dim> (l1xmax, l1ymax, l1zmax);
+      lower[1] = vect<CCTK_REAL,dim> (l2xmin, l2ymin, l2zmin);
+      upper[1] = vect<CCTK_REAL,dim> (l2xmax, l2ymax, l2zmax);
+      lower[2] = vect<CCTK_REAL,dim> (l3xmin, l3ymin, l3zmin);
+      upper[2] = vect<CCTK_REAL,dim> (l3xmax, l3ymax, l3zmax);
       MakeRegions_AsSpecified (cctkGH, refinement_levels, lower, upper, bbl);
       
     } else if (CCTK_EQUALS(refined_regions, "automatic")) {
@@ -128,7 +135,7 @@ namespace CarpetRegrid {
     gh<dim>::cexts bbss;
     bbss = hh->make_reflevel_multigrid_boxes(bbs, mglevels);
     
-    gh<dim>::rexts bbsss = hh->extents;
+    bbsss = hh->extents;
     if (bbss.size() == 0) {
       // TODO: this might not work
       bbsss.resize(reflevel+1);
@@ -141,12 +148,9 @@ namespace CarpetRegrid {
       }
     }
     
-    gh<dim>::rprocs pss;
     MakeProcessors (cctkGH, bbsss, pss);
     
-    RegisterRecomposeRegions (bbsss, pss);
-    
-    return 0;
+    return 1;			// do recompose
   }
   
   
@@ -206,13 +210,24 @@ namespace CarpetRegrid {
   
   
   void MakeRegions_AsSpecified (const cGH* cctkGH, const int reflevels,
-				const vector<vect<int,dim> > lower,
-				const vector<vect<int,dim> > upper,
+				const vector<vect<CCTK_REAL,dim> > lower,
+				const vector<vect<CCTK_REAL,dim> > upper,
 				list<bbox<int,dim> >& bbl)
   {
     assert (bbl.empty());
     
     if (reflevel+1 >= reflevels) return;
+    
+    vect<CCTK_REAL,dim> global_lower, global_upper;
+    for (int d=0; d<dim; ++d) {
+      const int ierr = CCTK_CoordRange
+	(cctkGH, &global_lower[d], &global_upper[d], d+1, 0, "cart3d");
+      if (ierr<0) {
+	global_lower[d] = 0;
+	global_upper[d] = 1;
+      }
+    }
+    const vect<int,dim> global_extent (hh->baseextent.upper() - hh->baseextent.lower() + hh->baseextent.stride() * (dd->lghosts + dd->ughosts));
     
     const vect<int,dim> rstr = hh->baseextent.stride();
     const vect<int,dim> rlb  = hh->baseextent.lower();
@@ -220,11 +235,14 @@ namespace CarpetRegrid {
     
     const int rl = reflevel+1;
     
+    const vect<int,dim> ilower = map(floor, (lower[rl-1] - global_lower) / (global_upper - global_lower) * global_extent + 0.5);
+    const vect<int,dim> iupper = map(floor, (upper[rl-1] - global_lower) / (global_upper - global_lower) * global_extent + 0.5);
+    
     const int levfac = ipow(hh->reffact, rl);
     assert (all (rstr % levfac == 0));
     const vect<int,dim> str (rstr / levfac);
-    const vect<int,dim> lb  (lower[rl-1]);
-    const vect<int,dim> ub  (upper[rl-1]);
+    const vect<int,dim> lb  (ilower);
+    const vect<int,dim> ub  (iupper);
     if (! all(lb>=rlb && ub<=rub)) {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
 		  "The refinement region boundaries for refinement level #%d are not within the main grid", rl);
@@ -250,8 +268,26 @@ namespace CarpetRegrid {
   MakeRegions_Adaptively_Recombine (list<bbox<int,dim> >& bbl1,
 				    list<bbox<int,dim> >& bbl2,
 				    list<bbox<int,dim> >& bbl,
-				    const bbox<int,dim>& iface)
+				    const bbox<int,dim>& iface,
+				    const int dir)
   {
+    assert (!iface.empty());
+    assert (iface.lower()[dir] == iface.upper()[dir]);
+    
+    const int oldnumboxes = bbl.size() + bbl1.size() + bbl2.size();
+    int numcombinedboxes = 0;
+    
+    int oldnumpoints = 0;
+    for (list<bbox<int,dim> >::const_iterator ibb = bbl.begin(); ibb != bbl.end(); ++ibb) {
+      oldnumpoints += ibb->num_points();
+    }
+    for (list<bbox<int,dim> >::const_iterator ibb1 = bbl1.begin(); ibb1 != bbl1.end(); ++ibb1) {
+      oldnumpoints += ibb1->num_points();
+    }
+    for (list<bbox<int,dim> >::const_iterator ibb2 = bbl2.begin(); ibb2 != bbl2.end(); ++ibb2) {
+      oldnumpoints += ibb2->num_points();
+    }
+    
 #if 0
     // remember old bounding boxes
     bboxset<int,dim> oldboxes;
@@ -272,14 +308,21 @@ namespace CarpetRegrid {
     cout << bbl2 << endl;
 #endif
     
+    const vect<int,dim> lo = iface.lower();
+    const vect<int,dim> up = iface.upper();
+    const vect<int,dim> str = iface.stride();
+    
     {
       // prune boxes on the left
       list<bbox<int,dim> >::iterator ibb1 = bbl1.begin();
       while (ibb1 != bbl1.end()) {
 	// is this bbox just to the left of the interface?
-	const bbox<int,dim> iface1 (ibb1->upper()+ibb1->stride(), ibb1->upper()+ibb1->stride(), ibb1->stride());
-	assert (!iface1.empty());
-	if (!iface1.is_contained_in(iface)) {
+// 	const vect<int,dim> lo1 = ibb1->lower();
+	const vect<int,dim> up1 = ibb1->upper();
+	const vect<int,dim> str1 = ibb1->stride();
+	assert (up1[dir]+str1[dir] <= lo[dir]);
+	assert (all(str1 == str));
+	if (up1[dir]+str1[dir] < lo[dir]) {
 	  // no: forget it
 	  bbl.push_back (*ibb1);
 	  ibb1 = bbl1.erase(ibb1);
@@ -294,9 +337,12 @@ namespace CarpetRegrid {
       list<bbox<int,dim> >::iterator ibb2 = bbl2.begin();
       while (ibb2 != bbl2.end()) {
 	// is this bbox just to the right of the interface?
-	const bbox<int,dim> iface2 (ibb2->lower(), ibb2->lower(), ibb2->stride());
-	assert (!iface2.empty());
-	if (! iface2.is_contained_in(iface)) {
+	const vect<int,dim> lo2 = ibb2->lower();
+// 	const vect<int,dim> up2 = ibb2->upper();
+	const vect<int,dim> str2 = ibb2->stride();
+	assert (up[dir] <= lo2[dir]);
+	assert (all(str2 == str));
+	if (up[dir] < lo2[dir]) {
 	  // no: forget it
 	  bbl.push_back (*ibb2);
 	  ibb2 = bbl2.erase(ibb2);
@@ -310,23 +356,34 @@ namespace CarpetRegrid {
       // walk all boxes on the left
       list<bbox<int,dim> >::iterator ibb1 = bbl1.begin();
       while (ibb1 != bbl1.end()) {
-	const bbox<int,dim> iface1 (ibb1->upper()+ibb1->stride(), ibb1->upper()+ibb1->stride(), ibb1->stride());
-	assert (iface1.is_contained_in(iface));
+	vect<int,dim> lo1 = ibb1->lower();
+	vect<int,dim> up1 = ibb1->upper();
+	vect<int,dim> str1 = ibb1->stride();
+	assert (up1[dir]+str1[dir] == lo[dir]);
+	lo1[dir] = lo[dir];
+	up1[dir] = up[dir];
+	const bbox<int,dim> iface1 (lo1,up1,str1);
 	
 	{
 	  // walk all boxes on the right
 	  list<bbox<int,dim> >::iterator ibb2 = bbl2.begin();
 	  while (ibb2 != bbl2.end()) {
-	    const bbox<int,dim> iface2 (ibb2->lower(), ibb2->lower(), ibb2->stride());
-	    assert (iface2.is_contained_in(iface));
+	    vect<int,dim> lo2 = ibb2->lower();
+	    vect<int,dim> up2 = ibb2->upper();
+	    vect<int,dim> str2 = ibb2->stride();
+	    assert (lo2[dir] == up[dir]);
+	    lo2[dir] = lo[dir];
+	    up2[dir] = up[dir];
+	    const bbox<int,dim> iface2 (lo2,up2,str2);
 	    
 	    // check for a match
 	    if (iface1 == iface2) {
-	      assert (all(ibb1->stride() == ibb2->stride()));
-	      const bbox<int,dim> combined (ibb1->lower(), ibb2->upper(), ibb1->stride());
+	      const bbox<int,dim> combined (ibb1->lower(), ibb2->upper(), str);
 	      bbl.push_back (combined);
 	      ibb1 = bbl1.erase(ibb1);
 	      ibb2 = bbl2.erase(ibb2);
+	      ++numcombinedboxes;
+	      cout << "MRA: Combining along " << "xyz"[dir] << " to " << bbl.back() << " size " << bbl.back().num_points() << endl;
 	      goto continue_search;
 	    }
 	    
@@ -341,6 +398,17 @@ namespace CarpetRegrid {
     
     bbl.splice (bbl.end(), bbl1);
     bbl.splice (bbl.end(), bbl2);
+    
+    assert (bbl1.empty() && bbl2.empty());
+    
+    const int newnumboxes = bbl.size();
+    assert (newnumboxes + numcombinedboxes == oldnumboxes);
+    
+    int newnumpoints = 0;
+    for (list<bbox<int,dim> >::const_iterator ibb = bbl.begin(); ibb != bbl.end(); ++ibb) {
+      newnumpoints += ibb->num_points();
+    }
+    assert (newnumpoints == oldnumpoints);
     
 #if 0
     // find new bounding boxes
@@ -363,7 +431,8 @@ namespace CarpetRegrid {
   
   static void
   MakeRegions_Adaptively (const cGH* const cctkGH,
-			  const int minwidth, const double minfraction,
+			  const int minwidth,
+			  const CCTK_REAL minfraction,
 			  const CCTK_REAL maxerror,
 			  const data<CCTK_REAL,dim>& error,
 			  list<bbox<int,dim> >& bbl,
@@ -378,7 +447,7 @@ namespace CarpetRegrid {
       if (error[*it] > maxerror) ++cnt;
     }
     const CCTK_REAL fraction = (CCTK_REAL)cnt / region.num_points();
-    const int width = minval(region.shape() / region.stride());
+    const int width = maxval(region.shape() / region.stride());
     
     if (cnt == 0) {
       // Don't refine
@@ -388,17 +457,19 @@ namespace CarpetRegrid {
       const vect<int,dim> up(region.upper());
       const vect<int,dim> str(region.stride());
       bbl.push_back (bbox<int,dim>(lo,up+str-str/reffact,str/reffact));
+      cout << "MRA: Refining to " << bbl.back() << " size " << bbl.back().num_points() << " fraction " << fraction << endl;
     } else {
       // Split the region and check recursively
-      const int d = maxloc(region.shape());
+      const int dir = maxloc(region.shape());
       const vect<int,dim> lo(region.lower());
       const vect<int,dim> up(region.upper());
       const vect<int,dim> str(region.stride());
       vect<int,dim> lo1(lo), lo2(lo);
       vect<int,dim> up1(up), up2(up);
       const int mgstr = ipow(hh->mgfact, mglevels); // honour multigrid factors
-      up1[d] = ((up[d]+lo[d])/2/str[d]/mgstr)*str[d]*mgstr;
-      lo2[d] = up1[d]+str[d];
+      const int step = str[dir]*mgstr;
+      lo2[dir] = ((up[dir]+lo[dir])/2/step)*step;
+      up1[dir] = lo2[dir]-str[dir];
       const bbox<int,dim> region1(lo1,up1,str);
       const bbox<int,dim> region2(lo2,up2,str);
       assert (region1.is_contained_in(region));
@@ -411,15 +482,18 @@ namespace CarpetRegrid {
       MakeRegions_Adaptively (cctkGH, minwidth, minfraction, maxerror,
 			      error, bbl2, region2);
       // Combine regions if possible
-      const bbox<int,dim> iface(lo2,lo2,str);
-      MakeRegions_Adaptively_Recombine (bbl1, bbl2, bbl, iface);
+      up2 += str-str/reffact;
+      up2[dir] = lo2[dir];
+      const bbox<int,dim> iface(lo2,up2,str/reffact);
+      MakeRegions_Adaptively_Recombine (bbl1, bbl2, bbl, iface, dir);
     }
     
   }
   
   void
   MakeRegions_Adaptively (const cGH* const cctkGH,
-			  const int minwidth, const double minfraction,
+			  const int minwidth,
+			  const CCTK_REAL minfraction,
 			  const CCTK_REAL maxerror,
 			  const gf<CCTK_REAL,dim>& error,
 			  list<bbox<int,dim> >& bbl)
@@ -436,6 +510,8 @@ namespace CarpetRegrid {
     const int tl = 0;
     const int ml = 0;
     
+    cout << endl << "MRA: Choosing regions to refine in " << hh->components(rl) << " components" << endl;
+    
     for (int c=0; c<hh->components(rl); ++c) {
       const bbox<int,dim> region = hh->extents[rl][c][ml];
       assert (! region.empty());
@@ -445,6 +521,12 @@ namespace CarpetRegrid {
       MakeRegions_Adaptively (cctkGH, minwidth, minfraction, maxerror,
 			      errdata, bbl, region);
     }
+    
+    int numpoints = 0;
+    for (list<bbox<int,dim> >::const_iterator ibb = bbl.begin(); ibb != bbl.end(); ++ibb) {
+      numpoints += ibb->num_points();
+    }
+    cout << "MRA: Chose " << bbl.size() << " regions with a total size of " << numpoints << " to refine." << endl << endl;
   }
   
 } // namespace CarpetRegrid

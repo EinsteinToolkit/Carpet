@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.20 2002/01/09 21:15:10 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.21 2002/01/11 17:19:46 schnetter Exp $";
 
 
 
@@ -261,10 +261,8 @@ namespace Carpet {
     gh<dim>::rprocs pss;
     MakeProcessors (cgh, bbsss, pss);
     
-    RegisterRecomposeRegions (bbsss, pss);
-    
     // Recompose grid hierarchy
-    Recompose (cgh); 
+    Recompose (cgh, bbsss, pss);
     
     // Initialise time step on coarse grid
     base_delta_time = 0;

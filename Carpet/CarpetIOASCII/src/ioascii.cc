@@ -27,7 +27,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.28 2002/01/09 23:42:40 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.29 2002/01/11 17:19:46 schnetter Exp $";
 
 
 
@@ -377,29 +377,27 @@ int CarpetIOASCII<outdim>
 	  ext = bbox<int,dim>(lo,hi,str);
 	  
 	  // coordinates
-	  const double coord_time = cgh->cctk_time;
-	  vect<double,dim> global_lower, global_upper;
+	  const CCTK_REAL coord_time = cgh->cctk_time;
+	  vect<CCTK_REAL,dim> global_lower, global_upper;
 	  for (int d=0; d<dim; ++d) {
 	    const int ierr = CCTK_CoordRange
 	      (cgh, &global_lower[d], &global_upper[d], d+1, 0, "cart3d");
 	    if (ierr<0) {
 	      global_lower[d] = 0;
-	      global_upper[d] = 0;
+	      global_upper[d] = 1;
 	    }
 	  }
-	  const vect<double,dim> global_extent (hh->baseextent.upper() - hh->baseextent.lower() + hh->baseextent.stride() * (dd->lghosts + dd->ughosts));
-	  vect<double,dim> coord_delta;
+	  const vect<int,dim> global_extent (hh->baseextent.upper() - hh->baseextent.lower() + hh->baseextent.stride() * (dd->lghosts + dd->ughosts));
+	  vect<CCTK_REAL,dim> coord_delta;
 	  for (int d=0; d<dim; ++d) {
-	    if (global_extent[d] != 0) {
-	      coord_delta[d] = (global_upper[d] - global_lower[d]) / global_extent[d];
-	    } else {
-	      coord_delta[d] = 0;
-	    }
+	    assert (global_extent[d] != 0);
+	    coord_delta[d] = (global_upper[d] - global_lower[d]) / global_extent[d];
 	  }
 	  // Note: don't permute the "coord_delta" and "data->extent().lower()"
-	  // (you'll pick up the integer operator* then)
- 	  const vect<double,dim> coord_lower = global_lower + coord_delta * vect<double,dim>(lo);
- 	  const vect<double,dim> coord_upper = global_lower + coord_delta * vect<double,dim>(hi);
+	  // (it seems that for gcc 2.95 you'll then pick up the
+	  // integer operator*)
+ 	  const vect<CCTK_REAL,dim> coord_lower = global_lower + coord_delta * vect<CCTK_REAL,dim>(lo);
+ 	  const vect<CCTK_REAL,dim> coord_upper = global_lower + coord_delta * vect<CCTK_REAL,dim>(hi);
 	  
 	  const vect<int,dim> offset1 = offset * ext.stride();
 	  
@@ -735,13 +733,10 @@ void WriteASCII (ostream& os,
 	  for (int d=0; d<D; ++d) os << index[d] << " ";
 	  os << "  " << coord_time << "   ";
 	  for (int d=0; d<D; ++d) {
-	    if (gfext.upper()[d] - gfext.lower()[d] != 0) {
-	      os << (coord_lower[d] + (index[d] - gfext.lower()[d])
-		     * (coord_upper[d] - coord_lower[d])
-		     / (gfext.upper()[d] - gfext.lower()[d])) << " ";
-	    } else {
-	      os << coord_lower[d] << " ";
-	    }
+	    assert (gfext.upper()[d] - gfext.lower()[d] != 0);
+	    os << (coord_lower[d] + (index[d] - gfext.lower()[d])
+		   * (coord_upper[d] - coord_lower[d])
+		   / (gfext.upper()[d] - gfext.lower()[d])) << " ";
 	  }
 	  os << "  ";
 	  switch (CCTK_VarTypeI(vi)) {

@@ -15,7 +15,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.17 2002/01/09 21:15:10 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.18 2002/01/11 17:19:45 schnetter Exp $";
 
 
 
@@ -25,9 +25,9 @@ namespace Carpet {
   
   
   
-  static bool do_recompose = false;
-  static gh<dim>::rexts next_bbsss;
-  static gh<dim>::rprocs next_pss;
+  static int (*regrid_routine) (const cGH * cckgGH,
+				gh<dim>::rexts& bbsss,
+				gh<dim>::rprocs& pss) = 0;
   
   
   
@@ -80,38 +80,45 @@ namespace Carpet {
   
   
   
-  void RegisterRecomposeRegions (const gh<dim>::rexts& bbsss,
-				 const gh<dim>::rprocs& pss)
+  void RegisterRegridRoutine (int (*routine)(const cGH * cckgGH,
+					     gh<dim>::rexts& bbsss,
+					     gh<dim>::rprocs& pss))
   {
-    // Check the regions
-    CheckRegions (bbsss, pss);
-    // Save the region information for the next regridding
-    next_bbsss = bbsss;
-    next_pss = pss;
-    do_recompose = true;
+    assert (!regrid_routine);
+    regrid_routine = routine;
   }
   
   
   
-  void Recompose (const cGH* cgh)
+  void Regrid (const cGH* cgh)
   {
     assert (mglevel == -1);
     assert (component == -1);
     
-    Waypoint ("%*sRecompose", 2*reflevel, "");
-    
     // Check whether to recompose
-    if (!do_recompose) return;
+    gh<dim>::rexts bbsss;
+    gh<dim>::rprocs pss;
+    int do_recompose = (*regrid_routine) (cgh, bbsss, pss);
+    assert (do_recompose >= 0);
+    if (do_recompose == 0) return;
+    Recompose (cgh, bbsss, pss);
+  }
+  
+  
+  
+  void Recompose (const cGH* const cgh,
+		  const gh<dim>::rexts& bbsss,
+		  const gh<dim>::rprocs& pss)
+  {
+    assert (mglevel == -1);
+    assert (component == -1);
     
     // Check the regions
-    CheckRegions (next_bbsss, next_pss);
+    CheckRegions (bbsss, pss);
     
     // Recompose
-    hh->recompose (next_bbsss, next_pss);
+    hh->recompose (bbsss, pss);
     Output (cgh, hh, 0);
-    
-    // Don't recompose to these regions any more
-    do_recompose = false;
     
     // Adapt grid scalars
     Adapt (cgh, hh->reflevels(), hh0);

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.15 2002/01/09 21:15:11 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.16 2002/01/11 17:19:46 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -137,8 +137,9 @@ namespace Carpet {
   
   
   // Functions for recomposing the grid hierarchy
-  void RegisterRecomposeRegions (const gh<dim>::rexts& bbsss,
-				 const gh<dim>::rprocs& pss);
+  void RegisterRegridRoutine (int (*routine)(const cGH * cckgGH,
+					     gh<dim>::rexts& bbsss,
+					     gh<dim>::rprocs& pss));
   
   void SplitRegions (const cGH* cgh, vector<bbox<int,dim> >& bbs);
   

@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.8 2002/01/09 21:15:10 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.9 2002/01/11 17:19:45 schnetter Exp $";
 
 
 
@@ -114,15 +114,16 @@ namespace Carpet {
 	    }
 	  } END_MGLEVEL_LOOP(cgh);
 	  
-	  // Recompose grid hierarchy
-	  Recompose (cgh);
-	  
 	}
       } END_REFLEVEL_LOOP(cgh);
       
       BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
 	const int do_every = maxreflevelfact/reflevelfact;
 	if (cgh->cctk_iteration % do_every == 0) {
+	  
+	  // Regrid
+	  Waypoint ("%*sRegrid", 2*reflevel, "");
+	  Regrid (cgh);
 	  
 	  BEGIN_MGLEVEL_LOOP(cgh) {
 	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;

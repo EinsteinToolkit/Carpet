@@ -1,12 +1,18 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.14 2001/12/14 16:39:09 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.15 2002/01/11 17:19:46 schnetter Exp $
+
+#include "Carpet/CarpetLib/src/gh.hh"
 
 #include "carpet_public.hh"
 
 namespace Carpet {
   
-  void Recompose (const cGH* cgh);
+  void Regrid (const cGH* cgh);
   void CycleTimeLevels (const cGH* cgh);
   void Restrict (const cGH* cgh);
+  
+  void Recompose (const cGH* cgh,
+		  const gh<dim>::rexts& bbsss,
+		  const gh<dim>::rprocs& pss);
   
   enum checktimes { currenttime,
 		    currenttimebutnotifonly,

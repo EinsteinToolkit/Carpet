@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.5 2002/01/09 21:15:10 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.6 2002/01/11 17:19:45 schnetter Exp $";
 
 
 
@@ -84,8 +84,9 @@ namespace Carpet {
 	
       } END_MGLEVEL_LOOP(cgh);
       
-      // Recompose grid hierarchy
-      Recompose (cgh);
+      // Regrid
+      Waypoint ("%*sRegrid", 2*reflevel, "");
+      Regrid (cgh);
       
     } END_REFLEVEL_LOOP(cgh);
     

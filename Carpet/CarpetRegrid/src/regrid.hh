@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.1 2001/12/14 16:34:39 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.2 2002/01/11 17:19:49 schnetter Exp $
 
 #ifndef REGRID_HH
 #define REGRID_HH
@@ -6,9 +6,9 @@
 #include <list>
 
 #include "cctk.h"
-#include "cctk_Arguments.h"
 
 #include "Carpet/CarpetLib/src/gf.hh"
+#include "Carpet/CarpetLib/src/gh.hh"
 
 #include "carpet.hh"
 
@@ -21,8 +21,14 @@ namespace CarpetRegrid {
   
   // scheduled functions
   extern "C" {
-    int CarpetRegridRegrid (CCTK_ARGUMENTS);
+    int CarpetRegridStartup ();
   }
+  
+  
+  
+  int CarpetRegridRegrid (const cGH * const cctkGH,
+			  gh<dim>::rexts& bbsss,
+			  gh<dim>::rprocs& pss);
   
   
   
@@ -33,12 +39,13 @@ namespace CarpetRegrid {
 				 list<bbox<int,dim> >& bbl);
   
   void MakeRegions_AsSpecified  (const cGH* cctkGH, const int reflevels,
-				 const vector<vect<int,dim> > lower,
-				 const vector<vect<int,dim> > upper,
+				 const vector<vect<CCTK_REAL,dim> > lower,
+				 const vector<vect<CCTK_REAL,dim> > upper,
 				 list<bbox<int,dim> >& bbl);
   
   void MakeRegions_Adaptively   (const cGH* cctkGH,
-				 const int minwidth, const double minfraction,
+				 const int minwidth,
+				 const CCTK_REAL minfraction,
 				 const CCTK_REAL maxerror,
 				 const gf<CCTK_REAL,dim>& error,
 				 list<bbox<int,dim> >& bbl);
