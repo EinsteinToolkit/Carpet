@@ -13,7 +13,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.46 2004/06/01 09:39:44 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.47 2004/06/02 07:08:52 bzink Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -27,7 +27,8 @@ namespace CarpetRegrid {
   CCTK_INT CarpetRegrid_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
                                 CCTK_POINTER const bbsss_,
                                 CCTK_POINTER const obss_,
-                                CCTK_POINTER const pss_)
+                                CCTK_POINTER const pss_,
+				CCTK_INT force)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -41,104 +42,116 @@ namespace CarpetRegrid {
     
     assert (is_singlemap_mode());
     
-    
-    
-    assert (regrid_every == -1 || regrid_every == 0
-	    || regrid_every % maxmglevelfact == 0);
-    
-    // Return if no regridding is desired
-    if (regrid_every == -1) return 0;
-    
-    // Return if we want to regrid during initial data only, and this
-    // is not the time for initial data
-    if (regrid_every == 0 && cctkGH->cctk_iteration != 0) return 0;
+    // In force mode (force == true) we do not check the
+    // CarpetRegrid parameters
 
-    // Return if we want to regrid regularly, but not at this time
-    if (regrid_every > 0 && cctkGH->cctk_iteration != 0
-	&& (cctkGH->cctk_iteration-1) % regrid_every != 0)
-    {
-      return 0;
-    }
+    if (!force) {
+
+      assert (regrid_every == -1 || regrid_every == 0
+	      || regrid_every % maxmglevelfact == 0);
     
-    
-    
-    // Steer parameters
-    const int oldnumlevels = refinement_levels;
-    if (CCTK_EQUALS(activate_levels_on_regrid, "none")) {
+      // Return if no regridding is desired
+      if (regrid_every == -1) return 0;
       
-      // do nothing
-      
-    } else if (CCTK_EQUALS(activate_levels_on_regrid, "fixed")) {
-      
-      if (cctkGH->cctk_iteration-1 >= activate_next) {
-        const int newnumlevels
-          = min(refinement_levels + num_new_levels, maxreflevels);
-        assert (newnumlevels>0 && newnumlevels<=maxreflevels);
-        
-        *const_cast<CCTK_INT*>(&activate_next) = cctkGH->cctk_iteration;
-        ostringstream next;
-        next << activate_next;
-        CCTK_ParameterSet
-          ("activate_next", "CarpetRegrid", next.str().c_str());
-        
-        *const_cast<CCTK_INT*>(&refinement_levels) = newnumlevels;
-        ostringstream param;
-        param << refinement_levels;
-        CCTK_ParameterSet
-          ("refinement_levels", "CarpetRegrid", param.str().c_str());
-        
-        if (verbose) {
-          ostringstream buf1, buf2;
-          buf1 << "Activating " << newnumlevels - oldnumlevels << " new refinement levels";
-          buf2 << "There are now " << newnumlevels << " refinement levels";
-          CCTK_INFO (buf1.str().c_str());
-          CCTK_INFO (buf2.str().c_str());
-        }
+      // Return if we want to regrid during initial data only, and this
+      // is not the time for initial data
+      if (regrid_every == 0 && cctkGH->cctk_iteration != 0) return 0;
+
+      CCTK_VInfo(CCTK_THORNSTRING,"regrid_every = %i\n", regrid_every);
+
+      // Return if we want to regrid regularly, but not at this time
+      if (regrid_every > 0 && cctkGH->cctk_iteration != 0
+	  && (cctkGH->cctk_iteration-1) % regrid_every != 0)
+      {
+	return 0;
       }
+          
+      // Steer parameters
+      const int oldnumlevels = refinement_levels;
+      if (CCTK_EQUALS(activate_levels_on_regrid, "none")) {
       
-    } else if (CCTK_EQUALS(activate_levels_on_regrid, "function")) {
+	// do nothing
       
-      if (! CCTK_IsFunctionAliased("RegridLevel")) {
-        CCTK_WARN (0, "No thorn has provided the function \"RegridLevel\"");
-      }
-      const int newnumlevels
-        = RegridLevel (cctkGH, refinement_levels, maxreflevels);
-      if (newnumlevels>0 && newnumlevels<=maxreflevels) {
+      } else if (CCTK_EQUALS(activate_levels_on_regrid, "fixed")) {
+      
+	if (cctkGH->cctk_iteration-1 >= activate_next) {
+	  const int newnumlevels
+	    = min(refinement_levels + num_new_levels, maxreflevels);
+	  assert (newnumlevels>0 && newnumlevels<=maxreflevels);
         
-        *const_cast<CCTK_INT*>(&refinement_levels) = newnumlevels;
-        ostringstream param;
-        param << refinement_levels;
-        CCTK_ParameterSet
-          ("refinement_levels", "CarpetRegrid", param.str().c_str());
+	  *const_cast<CCTK_INT*>(&activate_next) = cctkGH->cctk_iteration;
+	  ostringstream next;
+	  next << activate_next;
+	  CCTK_ParameterSet
+	    ("activate_next", "CarpetRegrid", next.str().c_str());
         
-        if (verbose) {
-          ostringstream buf1, buf2;
-          buf1 << "Activating " << newnumlevels - oldnumlevels << " new refinement levels";
-          buf2 << "There are now " << newnumlevels << " refinement levels";
-          CCTK_INFO (buf1.str().c_str());
-          CCTK_INFO (buf2.str().c_str());
-        }
+	  *const_cast<CCTK_INT*>(&refinement_levels) = newnumlevels;
+	  ostringstream param;
+	  param << refinement_levels;
+	  CCTK_ParameterSet
+	    ("refinement_levels", "CarpetRegrid", param.str().c_str());
         
+	  if (verbose) {
+	    ostringstream buf1, buf2;
+	    buf1 << "Activating " << newnumlevels - oldnumlevels << " new refinement levels";
+	    buf2 << "There are now " << newnumlevels << " refinement levels";
+	    CCTK_INFO (buf1.str().c_str());
+	    CCTK_INFO (buf2.str().c_str());
+	  }
+	}
+      
+      } else if (CCTK_EQUALS(activate_levels_on_regrid, "function")) {
+      
+	if (! CCTK_IsFunctionAliased("RegridLevel")) {
+	  CCTK_WARN (0, "No thorn has provided the function \"RegridLevel\"");
+	}
+	const int newnumlevels
+	  = RegridLevel (cctkGH, refinement_levels, maxreflevels);
+	if (newnumlevels>0 && newnumlevels<=maxreflevels) {
+        
+	  *const_cast<CCTK_INT*>(&refinement_levels) = newnumlevels;
+	  ostringstream param;
+	  param << refinement_levels;
+	  CCTK_ParameterSet
+	    ("refinement_levels", "CarpetRegrid", param.str().c_str());
+        
+	  if (verbose) {
+	    ostringstream buf1, buf2;
+	    buf1 << "Activating " << newnumlevels - oldnumlevels << " new refinement levels";
+	    buf2 << "There are now " << newnumlevels << " refinement levels";
+	    CCTK_INFO (buf1.str().c_str());
+	    CCTK_INFO (buf2.str().c_str());
+	  }
+        
+	} else {
+	  CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+		      "The aliased function \"RegridLevel\" returned an illegal number of refinement levels (%d).  No levels will be activated or deactivated.", newnumlevels);
+	}
+      
       } else {
-        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "The aliased function \"RegridLevel\" returned an illegal number of refinement levels (%d).  No levels will be activated or deactivated.", newnumlevels);
+      
+	assert (0);
+      
       }
-      
+    
+    
+    
+      // Return if this is not during initial data generation, and if no
+      // change in the grid structure is desired
+      if (cctkGH->cctk_iteration != 0) {
+	if (keep_same_grid_structure && refinement_levels == oldnumlevels) return 0;
+      }
+    
     } else {
-      
-      assert (0);
-      
-    }
-    
-    
-    
-    // Return if this is not during initial data generation, and if no
-    // change in the grid structure is desired
-    if (cctkGH->cctk_iteration != 0) {
-      if (keep_same_grid_structure && refinement_levels == oldnumlevels) return 0;
-    }
-    
-    
+
+      // If force is active, steer activate_next to current iteration
+
+      ostringstream next;
+      next << cctkGH->cctk_iteration;
+      CCTK_ParameterSet
+	("activate_next", "CarpetRegrid", next.str().c_str());      
+
+    } // if (!force)    
     
     int do_recompose;
     

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.13 2004/04/18 13:29:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.14 2004/06/02 07:08:52 bzink Exp $
 
 #ifndef CARPETREGRID_HH
 #define CARPETREGRID_HH
@@ -37,7 +37,8 @@ namespace CarpetRegrid {
     CCTK_INT CarpetRegrid_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
                                   CCTK_POINTER const bbsss_,
                                   CCTK_POINTER const obss_,
-                                  CCTK_POINTER const pss_);
+                                  CCTK_POINTER const pss_,
+				  CCTK_INT force);
   }
   
   
