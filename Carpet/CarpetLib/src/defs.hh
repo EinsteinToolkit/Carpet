@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.8 2002/05/05 22:17:00 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.9 2002/12/31 13:29:07 schnetter Exp $
 
  ***************************************************************************/
 
@@ -28,6 +28,7 @@
 #include <assert.h>
 
 #include <algorithm>
+#include <complex>
 #include <iostream>
 #include <list>
 #include <set>
@@ -66,6 +67,60 @@ inline T ipow (const T& x, const int y) {
 
 // Skip whitespace
 void skipws (istream& is);
+
+
+
+// Names for types
+inline const char * typestring (const char& dummy)
+{ return "char"; }
+
+inline const char * typestring (const signed char& dummy)
+{ return "signed char"; }
+
+inline const char * typestring (const unsigned char& dummy)
+{ return "unsigned char"; }
+
+inline const char * typestring (const short& dummy)
+{ return "short"; }
+
+inline const char * typestring (const unsigned short& dummy)
+{ return "unsigned short"; }
+
+inline const char * typestring (const int& dummy)
+{ return "int"; }
+
+inline const char * typestring (const unsigned int& dummy)
+{ return "unsigned int"; }
+
+inline const char * typestring (const long& dummy)
+{ return "long"; }
+
+inline const char * typestring (const unsigned long& dummy)
+{ return "unsigned long"; }
+
+inline const char * typestring (const long long& dummy)
+{ return "long long"; }
+
+inline const char * typestring (const unsigned long long& dummy)
+{ return "unsigned long long"; }
+
+inline const char * typestring (const float& dummy)
+{ return "float"; }
+
+inline const char * typestring (const double& dummy)
+{ return "double"; }
+
+inline const char * typestring (const long double& dummy)
+{ return "long double"; }
+
+inline const char * typestring (const complex<float>& dummy)
+{ return "complex<float>"; }
+
+inline const char * typestring (const complex<double>& dummy)
+{ return "complex<double>"; }
+
+inline const char * typestring (const complex<long double>& dummy)
+{ return "complex<long double>"; }
 
 
 

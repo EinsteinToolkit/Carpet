@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.21 2002/10/01 13:45:12 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.22 2002/12/31 13:29:07 schnetter Exp $
 
  ***************************************************************************/
 
@@ -223,48 +223,15 @@ void data<T,D>
   MPI_Comm_rank (dist::comm, &rank);
   assert (rank == proc());
   
-  CCTK_WARN (1, "You are using a fallback interpolation routine.  This routine is very slow.");
-  if (order_space != 1) {
-    CCTK_WARN (0, "This interpolator supports only linear spatial interpolation.");
-  }
-  assert (order_space == 1);
-  
-  assert ((int)srcs.size() > order_time);
-  vector<T> src_fac(order_time+1);
-  for (int t=0; t<(int)src_fac.size(); ++t) {
-    src_fac[t] = 1;
-    for (int tt=0; tt<(int)src_fac.size(); ++tt) {
-      if (tt!=t) {
-	src_fac[t] *= (T)(time - times[tt]) / (T)(times[t] - times[tt]);
-      }
-    }
-  }
+  T Tdummy;
+  CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+	      "There is no interpolator available for variable type %s, dimension %d, spatial interpolation order %d, temporal interpolation order %d.  The result will be set to -1 instead.",
+	      typestring(Tdummy), D, order_space, order_time);
   
   for (typename ibbox::iterator posi=box.begin(); posi!=box.end(); ++posi) {
     const ivect& pos = *posi;
-    
-    // get box around current position
-    const ibbox frombox
-      = ibbox(pos,pos,extent().stride()).expanded_for(srcs[0]->extent());
-    
-    // interpolate from box to position
-    T sum = 0;
-    for (typename ibbox::iterator fromposi=frombox.begin();
-	 fromposi!=frombox.end(); ++fromposi)
-      {
-	const ivect& frompos = *fromposi;
-	
-	// interpolation weight
-	const ivect str = srcs[0]->extent().stride();
-	const T f = prod(vect<T,D>(str - abs(pos - frompos)) / vect<T,D>(str));
-	for (int t=0; t<(int)src_fac.size(); ++t) {
-	  sum += f * src_fac[t] * (*srcs[t])[frompos];
-	}
-      }
-    (*this)[pos] = sum;
-    
-  } // for pos
-  
+    (*this)[pos] = -1;
+  }
 }
 
 
