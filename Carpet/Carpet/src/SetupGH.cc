@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.61 2004/02/09 13:06:05 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.62 2004/02/09 13:10:33 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -621,6 +621,13 @@ namespace Carpet {
                 || gp.disttype==CCTK_DISTRIB_DEFAULT);
         
         if (gp.disttype==CCTK_DISTRIB_CONSTANT) {
+          if (! all (ghostsizes == 0)) {
+            char * const groupname = CCTK_GroupName(group);
+            CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "The group \"%s\" has DISTRIB=constant, but its ghostsize is not 0",
+                        groupname);
+            free (groupname);
+          }
           assert (all (ghostsizes == 0));
           const int d = gp.dim==0 ? 0 : gp.dim-1;
           sizes[d] = (sizes[d] - 2*ghostsizes[d]) * CCTK_nProcs(cgh) + 2*ghostsizes[d];
