@@ -45,7 +45,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.13 2003/12/10 14:49:10 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.14 2004/01/07 12:57:56 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -56,7 +56,7 @@ namespace CarpetIOFlexIO {
   using namespace std;
   using namespace Carpet;
   using namespace CarpetIOFlexIOUtil;  
-  
+  using namespace CarpetCheckpointRestart;
   
   // Variable definitions
   //  int GHExtension;
@@ -87,7 +87,14 @@ namespace CarpetIOFlexIO {
     CCTK_RegisterIOMethodOutputVarAs (IOMethod, OutputVarAs);
     CCTK_RegisterIOMethodTimeToOutput (IOMethod, TimeToOutput);
     CCTK_RegisterIOMethodTriggerOutput (IOMethod, TriggerOutput);
+  
+    /* register the CarpetIOFlexIO recovery routine to thorn IOUtil */
+    if (IOUtil_RegisterRecover ("CarpetIOFlexIO recovery", CarpetIOFlexIO_Recover) < 0)
+      {
+	CCTK_WARN (1, "Failed to register IOFlexIO recovery routine");
+      }
     
+  
     return 0;
   }
   

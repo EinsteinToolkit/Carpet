@@ -48,7 +48,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.16 2004/01/06 08:56:39 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.17 2004/01/07 12:57:56 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
@@ -63,7 +63,8 @@ namespace CarpetCheckpointRestart {
   int Checkpoint (const cGH* const cgh, int called_from);
 
   int RecoverParameters (IObase* reader);
-
+  int RecoverGHextensions (cGH* cgh, IObase* reader);
+  int RecoverVariables (cGH* cgh, IObase* reader);
 
   void CarpetIOFlexIO_EvolutionCheckpoint( const cGH* const cgh){
     
@@ -177,8 +178,9 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
   int result,myproc;
   CarpetIOFlexIOGH *myGH;
   char filename[1024];
-  static IObase* reader;
-
+  
+  static IObase* reader = NULL;
+  
   DECLARE_CCTK_PARAMETERS
 
   /* to make the compiler happy */
@@ -187,15 +189,15 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
 
   myproc = CCTK_MyProc (cgh);
 
+  fprintf(stderr,"\n reflevel: %d\n",reflevel);
 
-  CCTK_VInfo (CCTK_THORNSTRING, "got this far... '%s'", basefilename);  
 
-  if (called_from == CP_RECOVER_PARAMETERS ||
-      called_from == FILEREADER_DATA ||
-      (cgh && (cgh->cctk_levfac[0] > 1 || cgh->cctk_convlevel > 0)))
+  if (called_from == CP_RECOVER_PARAMETERS)
   {
+    CCTK_VInfo (CCTK_THORNSTRING, "got this far... '%s'", basefilename);  
     if (myproc == 0){
       reader = new H5IO(basefilename,IObase::Read);
+      CCTK_VInfo (CCTK_THORNSTRING, "blah '%s'", basefilename);  
       if ( ! reader->isValid() )
 	{
 	  CCTK_VInfo(CCTK_THORNSTRING,"file is not open");
@@ -218,17 +220,49 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
     }
   }
 
+  /* Recover parameters */
+
   if (called_from == CP_RECOVER_PARAMETERS)
   {
-       CCTK_VInfo(CCTK_THORNSTRING,"called from recover parameters");
-   return (RecoverParameters (reader));
+    CCTK_VInfo(CCTK_THORNSTRING,"called from recover parameters");
+    return (RecoverParameters (reader));
   }
 
-  if (myproc == 0)
-    delete reader;
+  if (called_from == CP_RECOVER_DATA) {
 
-  CCTK_WARN (-1,"STOPSTOPSTOP2");
+    BEGIN_REFLEVEL_LOOP(cgh) {
+      BEGIN_MGLEVEL_LOOP(cgh) {
+	
+	/* Recover GH extentions */
+	CCTK_INFO ("Recovering GH extensions");
+	result = RecoverGHextensions (cgh, reader);
+	
+	if (! result)
+	  {
+	    /* Recover variables */
+	    CCTK_VInfo (CCTK_THORNSTRING, "Recovering data! ");
+	    result = RecoverVariables (cgh, reader);
+	  }
 
+      } END_MGLEVEL_LOOP;
+    } END_REFLEVEL_LOOP;
+
+    if (myproc == 0)
+      delete reader;
+
+  }
+
+
+  
+  if (called_from == CP_RECOVER_DATA)
+    {
+	  CCTK_VInfo (CCTK_THORNSTRING,
+		      "Restarting simulation at iteration %d (physical time %g)",
+		      cgh->cctk_iteration, (double) cgh->cctk_time);
+    }
+  
+  //  CCTK_WARN (-1,"STOPSTOPSTOP2");
+  
   return (result);
 }
 
@@ -283,7 +317,6 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
 		     "Is this really a Cactus IEEEIO checkpoint file ?");
 	}
       CCTK_VInfo (CCTK_THORNSTRING, "\n%s\n",parameters);
-      delete reader;
     }
 
 #ifdef CCTK_MPI
@@ -318,10 +351,78 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
     return (retval);
 
 
-    CCTK_WARN (-1,"STOPSTOPSTOP");
+    //    CCTK_WARN (-1,"STOPSTOPSTOP");
 
-    return 0;
+
   }
+
+
+  static int RecoverGHextensions (cGH *GH, IObase* reader)
+  {
+    int i, type,dim;
+    CCTK_REAL realBuffer;
+    CCTK_INT4 int4Buffer[2];
+
+    IObase::DataType datatype;
+    
+    if (CCTK_MyProc (GH) == 0)
+      {
+		
+	/* get the iteration number */
+	i = reader->readAttributeInfo ("GH$iteration", datatype, dim);
+
+
+	if (i >= 0 && datatype == FLEXIO_INT4 && dim == 1)
+	  {
+	    reader->readAttribute (i, &int4Buffer[0]);
+	  }
+	else
+	  {
+	    CCTK_WARN (1, "Unable to restore GH->cctk_iteration, defaulting to 0");
+	    int4Buffer[0] = 0;
+	  }
+
+	/* get the main loop index */
+	i = reader->readAttributeInfo ( "main loop index", datatype, dim);
+	if (i >= 0 && datatype == FLEXIO_INT4 && dim == 1)
+	  {
+	    reader->readAttribute (i, &int4Buffer[1]);
+	  }
+	else
+	  {
+	    CCTK_WARN (1, "Unable to restore main loop index, defaulting to 0");
+	    int4Buffer[1] = 0;
+	  }
+	
+	/* get cctk_time */
+	i = reader->readAttributeInfo ("GH$time", datatype, dim);
+	if (i >= 0 && datatype == FLEXIO_REAL && dim == 1)
+	  {
+	    reader->readAttribute (i, &realBuffer);
+	  }
+	else
+	  {
+	    CCTK_WARN (1, "Unable to restore GH->cctk_time, defaulting to 0.0");
+	    realBuffer = 0.0;
+	  }
+      }
+    
+#ifdef CCTK_MPI
+  /* Broadcast the GH extensions to all processors */
+  /* NOTE: We have to use MPI_COMM_WORLD here
+     because PUGH_COMM_WORLD is not yet set up at parameter recovery time.
+     We also assume that PUGH_MPI_INT4 is a compile-time defined datatype. */
+    CACTUS_MPI_ERROR (MPI_Bcast (int4Buffer, 2, CARPET_MPI_INT4, 0,MPI_COMM_WORLD));
+    CACTUS_MPI_ERROR (MPI_Bcast (&realBuffer, 1, CARPET_MPI_REAL,0,MPI_COMM_WORLD));
+#endif
+
+    GH->cctk_time = realBuffer;
+    GH->cctk_iteration = (int) int4Buffer[0];
+    CCTK_SetMainLoopIndex ((int) int4Buffer[1]);
+
+    return (0);
+}
+
 
 
 
@@ -661,6 +762,14 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
       }
     }
     
+
+    return 0;
+  }
+
+  int RecoverVariables (cGH* cgh, IObase* reader){
+
+    CCTK_VInfo(CCTK_THORNSTRING,"Starting to recover data for refinement level %d",reflevel);
+
 
     return 0;
   }

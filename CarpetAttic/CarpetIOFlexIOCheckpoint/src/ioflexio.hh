@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.8 2004/01/06 08:56:39 cott Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.9 2004/01/07 12:57:56 cott Exp $
 
 #ifndef CARPETIOFLEXIO_HH
 #define CARPETIOFLEXIO_HH
@@ -84,6 +84,32 @@
 
 #define CARPET_MPI_CHAR      MPI_CHAR
 
+/* floating point types are architecture-independent,
+   ie. a float has always 4 bytes, and a double has 8 bytes
+
+   PUGH_MPI_REAL  is used for communicating reals of the generic CCTK_REAL type
+   PUGH_MPI_REALn is used to explicitely communicate n-byte reals */
+#ifdef  CCTK_REAL4
+#define CARPET_MPI_REAL4  MPI_FLOAT
+#endif
+#ifdef  CCTK_REAL8
+#define CARPET_MPI_REAL8  MPI_DOUBLE
+#endif
+#ifdef  CCTK_REAL16
+#define CARPET_MPI_REAL16  (sizeof (CCTK_REAL16) == sizeof (long double) ?      \
+                          MPI_LONG_DOUBLE : MPI_DATATYPE_NULL)
+#endif
+
+
+#ifdef  CCTK_REAL_PRECISION_16
+#define CARPET_MPI_REAL   CARPET_MPI_REAL16
+#elif   CCTK_REAL_PRECISION_8
+#define CARPET_MPI_REAL   CARPET_MPI_REAL8
+#elif   CCTK_REAL_PRECISION_4
+#define CARPET_MPI_REAL   CARPET_MPI_REAL4
+#endif
+
+
 #endif
 
 namespace CarpetIOFlexIO {
@@ -121,6 +147,14 @@ namespace CarpetIOFlexIOUtil {
   void DumpCommonAttributes (const cGH *cgh, IObase* writer, ioRequest* request);
 
 }
+
+namespace CarpetCheckpointRestart {
+
+  int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from);
+
+}
+
+
 #endif // !defined(CARPETIOFLEXIO_HH)
 
 /* structure holding necessary information about a recovery file */
