@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/InitialData.F77,v 1.8 2001/12/14 18:00:01 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/InitialData.F77,v 1.9 2002/01/08 14:20:57 schnetter Exp $
 
  /*@@
    @file      InitialData.F77
@@ -132,6 +132,20 @@ c        Use kx,ky,kz as number of modes in each direction.
             end do
          end do
 
+      else if (CCTK_EQUALS(initial_data, "1/r")) then
+         
+         do k=1,cctk_lsh(3)
+            do j=1,cctk_lsh(2)
+               do i=1,cctk_lsh(1)
+                  
+                  phi(i,j,k)     = 1 / spher3d_r(i,j,k)
+                  phi_p(i,j,k)   = 1 / spher3d_r(i,j,k)
+                  phi_p_p(i,j,k) = 1 / spher3d_r(i,j,k)
+                  
+               end do
+            end do
+         end do 
+         
       else
 
          do k=1,cctk_lsh(3)

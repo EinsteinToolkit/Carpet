@@ -1,6 +1,6 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_excision_rl3.par,v 1.6 2004/03/23 12:00:37 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_excision_rl3.par,v 1.1 2002/01/08 14:21:13 schnetter Exp $
 
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Slab Carpet CarpetIOASCII CarpetIOFlexIO FlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
 
 Carpet::poison_new_timelevels	= yes
 Carpet::check_for_poison	= yes
@@ -11,7 +11,9 @@ Cactus::cctk_final_time		= 10.0
  
 Time::dtfac			= 0.5
 
-driver::global_nsize		= 35
+driver::global_nx		= 35
+driver::global_ny		= 35
+driver::global_nz		= 35
 
 Carpet::max_refinement_levels	= 4
 
@@ -21,7 +23,7 @@ grid::type			= byspacing
 grid::dxyz			= 0.0625
 grid::avoid_origin		= no
 
-IO::out_dir			= "wavetoyf77_excision_rl3"
+IO::outdir			= "wavetoyf77_excision_rl3"
 
 IOBasic::outinfo_every		= 8
 IOBasic::outinfo_vars		= "wavetoy::phi"

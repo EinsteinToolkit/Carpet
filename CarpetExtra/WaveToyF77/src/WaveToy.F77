@@ -122,19 +122,39 @@ c     Local declarations
       
       CCTK_REAL finf
       integer npow
+      parameter (finf = 1)
+      parameter (npow = 1)
+      
+      integer i,j,k
+      
       integer ierr
       integer sw(3)
       
 c     call CCTK_INFO ("WaveToyF77_Boundaries")
-      
-      npow = 1
-      finf = 1
       
 c     Set the stencil width
 c     ---------------------
       sw(1) = cctk_nghostzones(1)
       sw(2) = cctk_nghostzones(2)
       sw(3) = cctk_nghostzones(3)
+      
+c     Apply the excision boundary condition
+c     -------------------------------------
+      if (CCTK_EQUALS(excision_bound, "none")) then
+c     do nothing
+      else if (CCTK_EQUALS(excision_bound, "1/r")) then
+         do k=1,cctk_lsh(3)
+            do j=1,cctk_lsh(2)
+               do i=1,cctk_lsh(1)
+                  if (spher3d_r(i,j,k) .le. excision_radius) then
+                     phi(i,j,k) = 1 / spher3d_r(i,j,k)
+                  end if
+               end do
+            end do
+         end do 
+      else
+         call CCTK_WARN (0, "internal error")
+      end if
       
 c     Apply the outer boundary conditions
 c     -----------------------------------
