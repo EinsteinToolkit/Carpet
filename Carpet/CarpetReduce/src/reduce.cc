@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.38 2004/06/14 07:01:21 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.39 2004/06/21 12:27:53 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -23,7 +23,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.38 2004/06/14 07:01:21 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.39 2004/06/21 12:27:53 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -686,22 +686,24 @@ namespace CarpetReduce {
       counts.resize(vartypesize * num_outvals);
     }
     
+    const MPI_Datatype mpitype = CarpetSimpleMPIDatatype(outtype);
+    const int mpilength = CarpetSimpleMPIDatatypeLength(outtype);
     if (proc == -1) {
-      MPI_Allreduce ((void*)myoutvals, outvals, num_outvals,
-		     CarpetMPIDatatype(outtype), red->mpi_op(),
+      MPI_Allreduce ((void*)myoutvals, outvals, mpilength*num_outvals,
+		     mpitype, red->mpi_op(),
 		     CarpetMPIComm());
       if (red->uses_cnt()) {
-	MPI_Allreduce ((void*)mycounts, &counts[0], num_outvals,
-		       CarpetMPIDatatype(outtype), MPI_SUM,
+	MPI_Allreduce ((void*)mycounts, &counts[0], num_outvals*mpilength,
+		       mpitype, MPI_SUM,
 		       CarpetMPIComm());
       }
     } else {
-      MPI_Reduce ((void*)myoutvals, outvals, num_outvals,
-		  CarpetMPIDatatype(outtype), red->mpi_op(),
+      MPI_Reduce ((void*)myoutvals, outvals, num_outvals*mpilength,
+		  mpitype, red->mpi_op(),
 		  proc, CarpetMPIComm());
       if (red->uses_cnt()) {
-	MPI_Reduce ((void*)mycounts, &counts[0], num_outvals,
-		    CarpetMPIDatatype(outtype), MPI_SUM,
+	MPI_Reduce ((void*)mycounts, &counts[0], num_outvals*mpilength,
+		    mpitype, MPI_SUM,
 		    proc, CarpetMPIComm());
       }
     }
