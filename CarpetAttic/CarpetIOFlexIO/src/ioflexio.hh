@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.hh,v 1.7 2004/02/07 16:21:56 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.hh,v 1.8 2004/02/27 16:23:34 schnetter Exp $
 
 #ifndef CARPETIOFLEXIO_HH
 #define CARPETIOFLEXIO_HH
@@ -16,7 +16,7 @@ namespace CarpetIOFlexIO {
   extern int GHExtension;
   extern int IOMethod;
   extern vector<bool> do_truncate;
-  extern vector<vector<int> > last_output;
+  extern vector<vector<vector<int> > > last_output; // [ml][rl][var]
   
   void* SetupGH (tFleshConfig* const fc,
 		 const int convLevel, cGH* const cgh);
