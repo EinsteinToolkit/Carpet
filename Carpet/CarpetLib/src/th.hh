@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.hh,v 1.3 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.hh,v 1.4 2001/06/12 14:57:00 schnetter Exp $
 
  ***************************************************************************/
 
@@ -28,29 +28,27 @@
 #include <vector>
 
 #include "defs.hh"
-#include "gh.hh"
+#include "dggh.hh"
 
 using namespace std;
 
 
 
 // Forward declaration
-template<int D> class th;
+class th;
 
 // Output
-template<int D>
-ostream& operator<< (ostream& os, const th<D>& t);
+ostream& operator<< (ostream& os, const th& t);
 
 
 
 // The time hierarchy (information about the current time)
-template<int D>
 class th {
   
 public:				// should be readonly
   
   // Fields
-  gh<D> &h;			// hierarchy
+  dimgeneric_gh *h;		// hierarchy
   
 private:
   
@@ -61,7 +59,7 @@ private:
 public:
   
   // Constructors
-  th (gh<D>& h, const int basedelta);
+  th (dimgeneric_gh* h, const int basedelta);
   
   // Destructors
   ~th ();
@@ -71,14 +69,14 @@ public:
   
   // Time management
   int get_time (const int rl, const int ml) const {
-    assert (rl>=0 && rl<h.reflevels());
-    assert (ml>=0 && ml<h.mglevels(rl,0));
+    assert (rl>=0 && rl<h->reflevels());
+    assert (ml>=0 && ml<h->mglevels(rl,0));
     return times[rl][ml];
   }
   
   void set_time (const int rl, const int ml, const int t) {
-    assert (rl>=0 && rl<h.reflevels());
-    assert (ml>=0 && ml<h.mglevels(rl,0));
+    assert (rl>=0 && rl<h->reflevels());
+    assert (ml>=0 && ml<h->mglevels(rl,0));
     times[rl][ml] = t;
   }
   
@@ -87,14 +85,14 @@ public:
   }
   
   int get_delta (const int rl, const int ml) const {
-    assert (rl>=0 && rl<h.reflevels());
-    assert (ml>=0 && ml<h.mglevels(rl,0));
+    assert (rl>=0 && rl<h->reflevels());
+    assert (ml>=0 && ml<h->mglevels(rl,0));
     return deltas[rl][ml];
   }
   
   int time (const int tl, const int rl, const int ml) const {
-    assert (rl>=0 && rl<h.reflevels());
-    assert (ml>=0 && ml<h.mglevels(rl,0));
+    assert (rl>=0 && rl<h->reflevels());
+    assert (ml>=0 && ml<h->mglevels(rl,0));
     return get_time(rl, ml) + tl * get_delta(rl, ml);
   }
   
@@ -104,8 +102,7 @@ public:
 
 
 
-template<int D>
-ostream& operator<< (ostream& os, const th<D>& t) {
+inline ostream& operator<< (ostream& os, const th& t) {
   t.output(os);
   return os;
 }

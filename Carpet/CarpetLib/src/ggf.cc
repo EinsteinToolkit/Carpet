@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.9 2001/04/23 08:10:15 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.10 2001/06/12 14:56:59 schnetter Exp $
 
  ***************************************************************************/
 
@@ -39,12 +39,12 @@ using namespace std;
 
 // Constructors
 template<int D>
-generic_gf<D>::generic_gf (const string name, th<D>& t, dh<D>& d,
+generic_gf<D>::generic_gf (const string name, th& t, dh<D>& d,
                            const int tmin, const int tmax)
   : name(name), h(d.h), t(t), d(d), tmin(tmin), tmax(tmax),
     storage(tmax-tmin+1)
 {
-  assert (&t.h == &d.h);
+  assert (t.h == &d.h);
   assert (tmin<=tmax+1);
 
   d.add(this);

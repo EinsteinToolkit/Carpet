@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.7 2001/04/23 08:10:15 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.8 2001/06/12 14:56:59 schnetter Exp $
 
  ***************************************************************************/
 
@@ -32,6 +32,7 @@
 #include "bbox.hh"
 #include "bboxset.hh"
 #include "defs.hh"
+#include "dgdh.hh"
 #include "gh.hh"
 #include "vect.hh"
 
@@ -40,18 +41,13 @@ using namespace std;
 
 
 // Forward declaration
-template<int D> class dh;
 template<int D> class generic_gf;
-
-// Output
-template<int D>
-ostream& operator<< (ostream& os, const dh<D>& d);
 
 
 
 // A data hierarchy (grid hierarchy plus ghost zones)
 template<int D>
-class dh {
+class dh: public dimgeneric_dh {
   
   // Types
   typedef vect<int,D>    ivect;
@@ -82,6 +78,7 @@ public:
     ibset sync_not;		// not received while syncing (outer boundary of that level)
     ibset recv_not;		// not received while syncing or prolongating (globally outer boundary)
   };
+  
 private:
   
   struct dbases {
@@ -100,14 +97,13 @@ private:
 public:				// should be readonly
   
   // Fields
-  gh<D> &h;			// hierarchy
+  gh<D>& h;			// hierarchy
   ivect lghosts, ughosts;	// ghost zones
-  int prolongation_order;	// order of spatial prolongation operator
   
   rboxes boxes;
   rbases bases;
   
-  list<generic_gf<D>*> gfs;
+  list<generic_gf<D>*> gfs;	// list of all grid functions
   
 public:
   
@@ -116,10 +112,7 @@ public:
       int prolongation_order);
   
   // Destructors
-  ~dh ();
-  
-  // Helpers
-  int prolongation_stencil_size () const;
+  virtual ~dh ();
   
   // Modifiers
   void recompose ();
@@ -129,14 +122,8 @@ public:
   void remove (generic_gf<D>* f);
   
   // Output
-  void output (ostream& os) const;
+  virtual void output (ostream& os) const;
 };
-
-template<int D>
-inline ostream& operator<< (ostream& os, const dh<D>& d) {
-  d.output(os);
-  return os;
-}
 
 
 

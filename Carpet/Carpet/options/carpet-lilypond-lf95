@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-lf95,v 1.1 2001/04/06 10:37:35 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-lf95,v 1.2 2001/06/12 14:56:55 schnetter Exp $
 
 LAHEY			= /usr/local/lf9560
 
@@ -29,7 +29,7 @@ F90_WARN_FLAGS		= --warn
 F77_WARN_FLAGS		= --warn
 
 SYS_INC_DIRS		= /home/eschnett/proj/FlexIO
-LIBDIRS			= /home/eschnett/proj/FlexIO
+LIBDIRS			= /home/eschnett/proj/FlexIO /usr/local/lf9560/lib
 LIBS			= AMR h5io hdfio hlio ieeeio  hdf5 mfhdf df jpeg z  crypt  fj9i6 fj9f6 fj9e6 fccx86_6a  m
 
 HDF5			= yes

@@ -3,9 +3,6 @@
 // distribution onto the processors is the same, and that all
 // processors own the same number of components.
 
-// Scalar variables currently exist in one single incarnation for all
-// components.
-
 #include <assert.h>
 #include <math.h>
 #include <stdarg.h>
@@ -35,7 +32,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.25 2001/05/16 14:29:45 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.26 2001/06/12 14:56:56 schnetter Exp $";
 
 
 
@@ -105,7 +102,7 @@ namespace Carpet {
   
   // The grid hierarchy
   gh<dim>* hh;
-  th<dim>* tt;
+  th* tt;
   dh<dim>* dd;
   int gfsize[dim];
   
@@ -194,7 +191,7 @@ namespace Carpet {
 		     baseext);
     
     // Allocate time hierarchy
-    tt = new th<dim>(*hh, maxreflevelfact);
+    tt = new th(hh, maxreflevelfact);
     
     // Allocate data hierarchy
     dd = new dh<dim>(*hh, lghosts, ughosts, prolongation_order_space);
@@ -236,6 +233,15 @@ namespace Carpet {
       }
 	
       case CCTK_ARRAY: {
+	cGroup gp;
+	CCTK_GroupData (group, &gp);
+	
+	// TODO
+	assert (CCTK_GroupDimI(group) == dim);
+	
+	// TODO
+// 	assert (gp.disttype == CCTK_DISTRIB_CONSTANT);
+	assert (gp.disttype == CCTK_DISTRIB_DEFAULT);
 	vect<int,dim> alb, aub;
 	for (int d=0; d<dim; ++d) {
 	  alb[d] = 0;
@@ -248,7 +254,7 @@ namespace Carpet {
 	   multigrid_factor, vertex_centered,
 	   arrext);
 	
-	arrdata[group].tt = new th<dim> (*arrdata[group].hh, maxreflevelfact);
+	arrdata[group].tt = new th (arrdata[group].hh, maxreflevelfact);
 	
 	vect<int,dim> alghosts, aughosts;
 	for (int d=0; d<dim; ++d) {
@@ -279,6 +285,9 @@ namespace Carpet {
       }
 	
       case CCTK_GF: {
+	/* TODO */
+	assert (CCTK_GroupDimI(group) == dim);
+	
 	gfdata[group].data.resize(CCTK_NumVarsInGroupI(group));
 	for (int var=0; var<(int)scdata[group].data.size(); ++var) {
 	  gfdata[group].data[var] = 0;

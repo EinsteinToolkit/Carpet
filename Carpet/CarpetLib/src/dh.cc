@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.13 2001/04/23 08:10:15 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.14 2001/06/12 14:56:59 schnetter Exp $
 
  ***************************************************************************/
 
@@ -40,28 +40,22 @@ using namespace std;
 template<int D>
 dh<D>::dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts,
 	   int prolongation_order)
-  : h(h), lghosts(lghosts), ughosts(ughosts),
-    prolongation_order(prolongation_order)
+  : dimgeneric_dh(prolongation_order),
+    h(h),
+    lghosts(lghosts), ughosts(ughosts)
 {
   assert (all(lghosts>=0 && ughosts>=0));
-  assert (prolongation_order>=0);
-  CHECKPOINT;
   h.add(this);
+  CHECKPOINT;
   recompose();
 }
 
 // Destructors
 template<int D>
-dh<D>::~dh () {
+dh<D>::~dh ()
+{
   CHECKPOINT;
   h.remove(this);
-}
-
-// Helpers
-template<int D>
-int dh<D>::prolongation_stencil_size () const {
-  assert (prolongation_order>=0);
-  return prolongation_order/2;
 }
 
 // Modifiers
@@ -330,6 +324,8 @@ void dh<D>::recompose () {
     (*f)->recompose();
   }
 }
+
+
 
 // Grid function management
 template<int D>

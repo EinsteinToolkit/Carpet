@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.8 2001/03/30 00:50:21 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.9 2001/06/12 14:56:59 schnetter Exp $
 
  ***************************************************************************/
 
@@ -29,6 +29,7 @@
 #include <string>
 
 #include "defs.hh"
+#include "dgdata.hh"
 #include "dist.hh"
 #include "bbox.hh"
 #include "vect.hh"
@@ -37,18 +38,9 @@ using namespace std;
 
 
 
-// Forward declaration
-template<int D> class generic_data;
-
-// Output
-template<int D>
-ostream& operator<< (ostream& os, const generic_data<D>& d);
-
-
-
 // A generic data storage without type information
 template<int D>
-class generic_data {
+class generic_data: public dimgeneric_data {
 
   // Types
   typedef vect<int,D> ivect;
@@ -57,13 +49,8 @@ class generic_data {
 protected:                      // should be readonly
 
   // Fields
-  bool _has_storage;		// has storage associated (on some processor)
-  bool _owns_storage;		// owns the storage
   ivect _shape, _stride;      	// shape and index order
-  int _size;			// size
-
-  int _proc;			// stored on processor
-
+  
   ibbox _extent;		// bbox for all data
 
 public:
@@ -75,29 +62,16 @@ public:
   virtual ~generic_data ();
 
   // Pseudo constructors
-  virtual generic_data* make_typed () const = 0;
+  virtual generic_data<D>* make_typed () const = 0;
 
   // Storage management
+  virtual void transfer_from (generic_data<D>* src) = 0;
+  
   virtual void allocate (const ibbox& extent, const int proc,
 			 void* const mem=0) = 0;
   virtual void free () = 0;
-  virtual void transfer_from (generic_data* src) = 0;
-
-  // Processor management
-  virtual void change_processor (const int newproc, void* const mem=0) = 0;
-
+  
   // Accessors
-  bool has_storage () const {
-    return _has_storage;
-  }
-  bool owns_storage () const {
-    assert (_has_storage);
-    return _owns_storage;
-  }
-  
-  virtual const void* storage () const = 0;
-  
-  virtual void* storage () = 0;
   
   const ivect& shape () const {
     assert (_has_storage);
@@ -108,17 +82,7 @@ public:
     assert (_has_storage);
     return _stride;
   }
-
-  int size () const {
-    assert (_has_storage);
-    return _size;
-  }
-
-  int proc () const {
-    assert (_has_storage);
-    return _proc;
-  }
-
+  
   const ibbox& extent () const {
     assert (_has_storage);
     return _extent;
@@ -171,17 +135,7 @@ public:
 // 		 const int tl, const int rl, const int c, const int ml)
 //     const;
 public:
-
-  // Output
-  virtual ostream& output (ostream& os) const = 0;
 };
-
-
-
-template<int D>
-inline ostream& operator<< (ostream& os, const generic_data<D>& d) {
-  return d.output(os);
-}
 
 
 

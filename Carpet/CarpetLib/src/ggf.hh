@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.5 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.6 2001/06/12 14:56:59 schnetter Exp $
 
  ***************************************************************************/
 
@@ -71,7 +71,7 @@ public:				// should be readonly
   string name;
 
   gh<D> &h;			// grid hierarchy
-  th<D> &t;			// time hierarchy
+  th &t;			// time hierarchy
   dh<D> &d;			// data hierarchy
   int tmin, tmax;		// timelevels
 
@@ -81,7 +81,7 @@ protected:
 public:
 
   // Constructors
-  generic_gf (const string name, th<D>& t, dh<D>& d,
+  generic_gf (const string name, th& t, dh<D>& d,
               const int tmin, const int tmax);
 
   // Destructors

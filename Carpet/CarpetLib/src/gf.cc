@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.4 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.5 2001/06/12 14:56:59 schnetter Exp $
 
  ***************************************************************************/
 
@@ -33,7 +33,7 @@ using namespace std;
 
 // Constructors
 template<class T,int D>
-gf<T,D>::gf (const string name, th<D>& t, dh<D>& d,
+gf<T,D>::gf (const string name, th& t, dh<D>& d,
 	     const int tmin, const int tmax)
   : generic_gf<D>(name, t, d, tmin, tmax)
 {

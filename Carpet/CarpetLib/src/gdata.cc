@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.11 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.12 2001/06/12 14:56:59 schnetter Exp $
 
  ***************************************************************************/
 
@@ -39,7 +39,6 @@ using namespace std;
 // Constructors
 template<int D>
 generic_data<D>::generic_data ()
-  : _has_storage(false)
 { }
 
 // Destructors

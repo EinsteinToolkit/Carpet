@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.5 2001/04/06 10:37:36 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.6 2001/06/12 14:57:00 schnetter Exp $
 
  ***************************************************************************/
 
@@ -31,6 +31,7 @@
 
 #include "bbox.hh"
 #include "defs.hh"
+#include "dggh.hh"
 #include "dist.hh"
 #include "vect.hh"
 
@@ -39,20 +40,15 @@ using namespace std;
 
 
 // Forward declaration
-template<int D> class gh;
-template<int D> class th;
 template<int D> class dh;
-
-// Output
-template<int D>
-ostream& operator<< (ostream& os, const gh<D>& h);
+template<int D> class gh;
 
 
 
 // A refinement hierarchy, where higher levels are finer than the base
 // level.  The extents do not include ghost zones.
 template<int D>
-class gh {
+class gh: public dimgeneric_gh {
   
   // Types
   typedef vect<int,D> ivect;
@@ -67,20 +63,12 @@ class gh {
   
 public:				// should be readonly
   
-  // Fields
-  int reffact;			// refinement factor
-  centering refcent;		// vertex or cell centered
-  
-  int mgfact;			// default multigrid factor
-  centering mgcent;		// default (vertex or cell centered)
-  
   ibbox baseextent;		// bounds (inclusive) of base level
   vector<vector<ibbox> > bases; // [rl][ml]
   
   rexts extents;		// bounds of all grids
   rprocs processors;		// processor numbers of all grids
   
-  list<th<D>*> ths;		// list of all time hierarchies
   list<dh<D>*> dhs;		// list of all data hierarchies
   
 public:
@@ -91,7 +79,7 @@ public:
       const ibbox& baseextent);
   
   // Destructors
-  ~gh ();
+  virtual ~gh ();
   
   // Modifiers
   void recompose (const rexts& exts, const rprocs& procs);
@@ -128,26 +116,14 @@ public:
     MPI_Comm_rank (dist::comm, &rank);
     return proc(rl,c) == rank;
   }
-
-  // Time hierarchy management
-  void add (th<D>* t);
-  void remove (th<D>* t);
   
   // Data hierarchy management
   void add (dh<D>* d);
   void remove (dh<D>* d);
   
   // Output
-  void output (ostream& os) const;
+  virtual ostream& output (ostream& os) const;
 };
-
-
-
-template<int D>
-inline ostream& operator<< (ostream& os, gh<D>& h) {
-  h.output(os);
-  return os;
-}
 
 
 

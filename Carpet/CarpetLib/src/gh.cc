@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.6 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.7 2001/06/12 14:57:00 schnetter Exp $
 
  ***************************************************************************/
 
@@ -41,14 +41,9 @@ template<int D>
 gh<D>::gh (const int reffact, const centering refcent,
 	   const int mgfact, const centering mgcent,
 	   const ibbox& baseextent)
-  : reffact(reffact), refcent(refcent),
-    mgfact(mgfact), mgcent(mgcent),
+  : dimgeneric_gh (reffact, refcent, mgfact, mgcent),
     baseextent(baseextent)
 {
-  assert (reffact>=1);
-  assert (mgfact>=1);
-  assert (refcent==vertex_centered || refcent==cell_centered);
-  assert (mgcent==vertex_centered || mgcent==cell_centered);
 }
 
 // Destructors
@@ -145,7 +140,7 @@ void gh<D>::recompose (const rexts& exts, const rprocs& procs) {
   
   // Recompose the other hierarchies
   
-  for (list<th<D>*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
+  for (list<th*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
     (*t)->recompose();
   }
   
@@ -204,16 +199,7 @@ gh<D>::rexts gh<D>::make_multigrid_boxes (const vector<vector<ibbox> >& exts,
   return mexts;
 }
 
-// Time hierarchy management
-template<int D>
-void gh<D>::add (th<D>* t) {
-  ths.push_back(t);
-}
 
-template<int D>
-void gh<D>::remove (th<D>* t) {
-  ths.remove(t);
-}
 
 // Data hierarchy management
 template<int D>
@@ -229,7 +215,7 @@ void gh<D>::remove (dh<D>* d) {
 
 
 template<int D>
-void gh<D>::output (ostream& os) const {
+ostream& gh<D>::output (ostream& os) const {
   os << "gh<" << D << ">:"
      << "reffactor=" << reffact << ",refcentering=" << refcent << ","
      << "mgfactor=" << mgfact << ",mgcentering=" << mgcent << ","
@@ -243,6 +229,7 @@ void gh<D>::output (ostream& os) const {
     (*d)->output(os);
   }
   os << "}";
+  return os;
 }
 
 

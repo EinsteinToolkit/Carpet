@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.8 2001/04/23 08:10:13 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.9 2001/06/12 14:56:56 schnetter Exp $
 
 #include <vector>
 
@@ -52,7 +52,7 @@ namespace Carpet {
   // Data for arrays
   struct arrdesc {
     gh<dim>* hh;
-    th<dim>* tt;
+    th* tt;
     dh<dim>* dd;
     vector<generic_gf<dim>* > data; // [var]
     int size[dim];
@@ -63,7 +63,7 @@ namespace Carpet {
   
   // The grid hierarchy
   extern gh<dim>* hh;
-  extern th<dim>* tt;
+  extern th* tt;
   extern dh<dim>* dd;
   extern int gfsize[dim];
   
