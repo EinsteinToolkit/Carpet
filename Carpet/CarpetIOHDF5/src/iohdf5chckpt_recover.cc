@@ -145,42 +145,53 @@ namespace CarpetIOHDF5 {
     if (called_from == CP_RECOVER_DATA) {
       CCTK_INT4 numberofmgtimes;
 
+      CCTK_VInfo(CCTK_THORNSTRING,"Starting to recover data on reflevel %d!!!",reflevel);
+
       if (myproc == 0) {
 
 	/* we need all the times on the individual levels */
 	// these are a bit messy to extract
 
-	hid_t group = H5Gopen (reader, PARAMETERS_GLOBAL_ATTRIBUTES_GROUP);
-	assert(group>=0);
-	hid_t dataset = H5Dopen (group, ALL_PARAMETERS);
-	assert(dataset >= 0);
-	hid_t attr = H5Aopen_name (dataset, "numberofmgtimes");
-	assert(attr >= 0);
-	hid_t atype = H5Aget_type (attr);
-	if(H5Tequal(atype, H5T_NATIVE_INT)) {
-	  herr_t herr = H5Aread(attr, atype, &numberofmgtimes);
-	  assert(!herr);
-	  herr = H5Aclose(attr);
-	  assert(numberofmgtimes==mglevels);
-	  char buffer[100];
-	  for(int lcv=0;lcv<numberofmgtimes;lcv++) {
-	    sprintf(buffer,"mgleveltimes %d",lcv);
-	    attr = H5Aopen_name(dataset, buffer);
-	    assert (attr>=0);
-	    atype = H5Aget_type (attr);
-	    assert (atype>=0);
-	    herr = H5Aread (attr, atype, &leveltimes[lcv][0]);
+	// Actually, we do have to do this only once
+
+	//	if(reflevel==0){
+	  
+	  hid_t group = H5Gopen (reader, PARAMETERS_GLOBAL_ATTRIBUTES_GROUP);
+	  assert(group>=0);
+	  hid_t dataset = H5Dopen (group, ALL_PARAMETERS);
+	  assert(dataset >= 0);
+	  hid_t attr = H5Aopen_name (dataset, "numberofmgtimes");
+	  assert(attr >= 0);
+	  hid_t atype = H5Aget_type (attr);
+	  if(H5Tequal(atype, H5T_NATIVE_INT)) {
+	    herr_t herr = H5Aread(attr, atype, &numberofmgtimes);
 	    assert(!herr);
 	    herr = H5Aclose(attr);
+	    assert(numberofmgtimes==mglevels);
+	    char buffer[100];
+	    for(int lcv=0;lcv<numberofmgtimes;lcv++) {
+	      sprintf(buffer,"mgleveltimes %d",lcv);
+	      attr = H5Aopen_name(dataset, buffer);
+	      assert (attr>=0);
+	      atype = H5Aget_type (attr);
+	      assert (atype>=0);
+	      herr = H5Aread (attr, atype, &leveltimes[lcv][0]);
+	      assert(!herr);
+	      herr = H5Aclose(attr);
+	      assert(!herr);
+	    }  
+	    herr = H5Dclose(dataset);
 	    assert(!herr);
-	  }  
-	  herr = H5Dclose(dataset);
-	  assert(!herr);
-	  herr = H5Gclose(group);
-	  assert(!herr);
-	} else {
-	  CCTK_WARN(0,"BAD BAD BAD! Can't read leveltimes!!");
-	}
+	    herr = H5Gclose(group);
+	    assert(!herr);
+	  } else {
+	    CCTK_WARN(0,"BAD BAD BAD! Can't read leveltimes!!");
+	  }
+	  // Now let us recover the GHextentions
+
+	  result += RecoverGHextensions(cctkGH,reader);
+	  //} // if reflevel==0
+
       } // myproc == 0  	
 
       int mpierr = MPI_Bcast (&numberofmgtimes, 1, CARPET_MPI_INT4, 0,MPI_COMM_WORLD);
@@ -194,21 +205,13 @@ namespace CarpetIOHDF5 {
 
       cout << "leveltimes: " << leveltimes << endl;
 
+      cctkGH->cctk_time = leveltimes[mglevel][reflevel];
 
-      BEGIN_MGLEVEL_LOOP(cctkGH) {
-	BEGIN_REFLEVEL_LOOP(cctkGH) {
-
-	  // set tt (ask Erik why...)
-	  //	  arrdata[0][0].tt->set_time(reflevel,mglevel,(CCTK_REAL) cctkGH->cctk_iteration/maxreflevelfact);
+      // set tt (ask Erik why...)
+      //	  arrdata[0][0].tt->set_time(reflevel,mglevel,(CCTK_REAL) cctkGH->cctk_iteration/maxreflevelfact);
 	  
-	  // Now let us recover the GHextentions
-	  result += RecoverGHextensions(cctkGH,reader);
-
-	  result += RecoverVariables (cctkGH,reader);
-
-	} END_REFLEVEL_LOOP;
-
-      } END_MGLEVEL_LOOP;
+      cout << "reflevel: " << reflevel << endl;
+      result += RecoverVariables (cctkGH,reader);
 
 
       CCTK_VInfo (CCTK_THORNSTRING,
@@ -216,7 +219,7 @@ namespace CarpetIOHDF5 {
 		  cctkGH->cctk_iteration, (double) cctkGH->cctk_time);
     } // called_from == CP_RECOVER_DATA
   
-    if (myproc == 0) 	
+    if (myproc == 0 && reflevel==maxreflevels) 	
       H5Fclose(reader);
 
 
@@ -236,7 +239,7 @@ namespace CarpetIOHDF5 {
     hid_t dataset;
     herr_t herr;
 
-    CCTK_VInfo(CCTK_THORNSTRING,"Starting to recover data!!!");
+
 
     if(myproc==0) {
       ndatasets=GetnDatasets(reader);
@@ -246,6 +249,8 @@ namespace CarpetIOHDF5 {
     // Broadcast number of datasets
     MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
     assert (ndatasets>=0);
+
+    cout << "ndatasets: " << ndatasets << endl;
 
     for (currdataset=0;currdataset < ndatasets+1;currdataset++) {
 
@@ -269,10 +274,11 @@ namespace CarpetIOHDF5 {
       cout << name << endl;
       vector<ibset> regions_read(Carpet::maps);
 
-      ReadVar(cctkGH,reader,name,dataset,regions_read,0);
+      ReadVar(cctkGH,reader,name,dataset,regions_read,1);
 
       if(myproc==0) {
 	herr = H5Dclose(dataset);
+	free(name);
 	assert(!herr);
       }
     }
@@ -285,9 +291,8 @@ namespace CarpetIOHDF5 {
   int RecoverGHextensions (cGH *cctkGH, hid_t reader)
   {
     const int myproc = CCTK_MyProc(cctkGH);
-    CCTK_INT4 int4Buffer[2];
+    CCTK_INT4 int4Buffer[3];
     CCTK_REAL realBuffer;
-    CCTK_REAL realBuffer2;
     CCTK_INT4 intbuffer;
 
     int mpierr = 0;
@@ -304,6 +309,7 @@ namespace CarpetIOHDF5 {
 	ReadAttribute(dataset,"GH$iteration",int4Buffer[0]);
 	ReadAttribute(dataset,"main loop index",int4Buffer[1]);
 	ReadAttribute(dataset,"carpet_global_time",realBuffer);
+	//	ReadAttribute(dataset,"carpet_reflevels",int4Buffer[2]);
 
 	herr_t herr = H5Dclose(dataset);
 	assert(!herr);
@@ -316,14 +322,15 @@ namespace CarpetIOHDF5 {
      because PUGH_COMM_WORLD is not yet set up at parameter recovery time.
      We also assume that PUGH_MPI_INT4 is a compile-time defined datatype. */
 
-    mpierr = MPI_Bcast (int4Buffer, 2, CARPET_MPI_INT4, 0,MPI_COMM_WORLD);
+    mpierr = MPI_Bcast (int4Buffer, 3, CARPET_MPI_INT4, 0,MPI_COMM_WORLD);
     assert(!mpierr);
-    mpierr = MPI_Bcast (int4Buffer, 2, CARPET_MPI_INT4, 0,MPI_COMM_WORLD);
+    mpierr = MPI_Bcast (int4Buffer, 3, CARPET_MPI_INT4, 0,MPI_COMM_WORLD);
     assert(!mpierr);
     mpierr = MPI_Bcast (&realBuffer, 1, CARPET_MPI_REAL,0,MPI_COMM_WORLD);
     assert(!mpierr);
 
     global_time = (CCTK_REAL) realBuffer;
+    //    reflevels = (int) int4Buffer[2];
     cctkGH->cctk_iteration = (int) int4Buffer[0];
     CCTK_SetMainLoopIndex ((int) int4Buffer[1]);
 
@@ -671,6 +678,9 @@ namespace CarpetIOHDF5 {
 
       dtmp = global_time;
       WriteAttribute(dataset,"carpet_global_time", dtmp);
+
+      itmp = reflevels;
+      WriteAttribute(dataset,"carpet_reflevels", itmp);
 
       version = CCTK_FullVersion();
       WriteAttribute(dataset,"Cactus version", version);

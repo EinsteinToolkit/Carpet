@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.14 2004/03/12 00:13:25 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.15 2004/03/12 14:50:17 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -270,6 +270,8 @@ namespace CarpetIOHDF5 {
     
     herr_t herr;
     
+    void * h5data;
+
     const int n = request->vindex;
     assert (n>=0 && n<CCTK_NumVars());
     const char * varname = CCTK_FullName(n);
@@ -340,6 +342,7 @@ namespace CarpetIOHDF5 {
 	  if (cgdata.disttype == CCTK_DISTRIB_CONSTANT) {
 	    assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
 	    if(component!=0) continue;
+	    h5data = CCTK_VarDataPtrI(cctkGH,tl,n);
 	  } else {
 	    for (comm_state<dim> state; !state.done(); state.step()) {
 	      tmp->copy_from (state, data, ext);
@@ -361,7 +364,14 @@ namespace CarpetIOHDF5 {
 	      }
 	      const hid_t dataspace = H5Screate_simple (ldim, shape, NULL);
 	      assert (dataspace>=0);
-	    
+
+	      //cout << varname << endl;
+
+	      //	      if ( CCTK_Equals("CARPETIOASCII::next_output_iteration",varname) ) {
+	      //	const int * testdata = (int * ) tmp->storage();
+	      //		cout << "testdata: " << ((int *)h5data)[0] << endl;
+	      //}
+	      
 //         hsize_t shape[dim];
 //          for (int d=0; d<dim; ++d) {
 //            shape[dim-1-d] = (ext.shape() / ext.stride())[d];
@@ -394,8 +404,11 @@ namespace CarpetIOHDF5 {
 	      const hid_t dataset = H5Dcreate (writer, datasetname, datatype, dataspace, H5P_DEFAULT);
 	      assert (dataset>=0);
           
-	      const void * const data = (void*)tmp->storage();
-	      herr = H5Dwrite (dataset, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+	      if (cgdata.disttype != CCTK_DISTRIB_CONSTANT) {
+		h5data = (void*)tmp->storage();
+	      }
+
+	      herr = H5Dwrite (dataset, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, h5data);
 	      assert (!herr);
           
 	      // Write FlexIO attributes
@@ -649,6 +662,8 @@ namespace CarpetIOHDF5 {
     int recovery_rl = -1;
     int recovery_comp = -1;
 
+
+
     CCTK_REAL *h5data;
 
     // Check for storage
@@ -661,7 +676,7 @@ namespace CarpetIOHDF5 {
     
     const int grouptype = CCTK_GroupTypeI(group);
     const int rl = grouptype==CCTK_GF ? reflevel : 0;
-    //cout << "want level " << rl << " reflevel " << reflevel << endl;
+    cout << "want level " << rl << " reflevel " << reflevel << endl;            
     
     const int gpdim = CCTK_GroupDimI(group);
        
@@ -697,7 +712,15 @@ namespace CarpetIOHDF5 {
 	 for(int i=0;i<rank;i++) {
 	   datalength=datalength*shape[i];
 	   amr_dims[i]=shape[i];
-	   // cout << "amr_dims[" << i << "]: "<<amr_dims[i] << endl;
+	   cout << "amr_dims[" << i << "]: "<<amr_dims[i] << endl;
+	 }
+
+	 if(grouptype == CCTK_ARRAY) {
+
+	   for(int i=rank;i<dim;i++) {
+	     amr_dims[i]=1;
+	   }
+
 	 }
 	 const hid_t datatype = H5T_NATIVE_DOUBLE;
 	 
@@ -708,6 +731,10 @@ namespace CarpetIOHDF5 {
 	 herr = H5Dread(dataset,datatype,H5S_ALL, H5S_ALL, H5P_DEFAULT,(void*)h5data);
 	 assert(!herr);
 	 
+	 if ( CCTK_Equals("CARPETIOASCII::next_output_iteration",varname) ) {
+
+	   cout << "next_output_iteration read " << ((int *)h5data)[1] << endl;
+	 }
 
 	 //	 cout << h5data[100] << endl;
          //cout << datasetname << endl;
@@ -738,32 +765,49 @@ namespace CarpetIOHDF5 {
     MPI_Bcast (&amr_level, 1, MPI_INT, 0, dist::comm);
     MPI_Bcast (amr_origin, dim, MPI_INT, 0, dist::comm);
     MPI_Bcast (amr_dims, dim, MPI_INT, 0, dist::comm);
+
+    cout << "amr_dims: " << amr_dims[0] << "," << 
+      amr_dims[1] << "," << amr_dims[2] << endl;
 	
-     if (amr_level == rl) {
-       // cout << "I want this" << endl;
-       did_read_something = true;
+    if ((grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY) && reflevel != 0) {
+      return 0;
+    }  
+
+    cout << "amr_level: " << amr_level << " reflevel: " << reflevel << endl;
+
+    if (amr_level == rl) {
 	  
        // Traverse all components on all levels
        BEGIN_MAP_LOOP(cctkGH, grouptype) {
 	 BEGIN_COMPONENT_LOOP(cctkGH, grouptype) {
-           //cout << "reading map " << Carpet::map << " component " << component << endl;
-            
+
+	   // cout << "I want this" << endl;
+	   did_read_something = true;
+	   
+	   //cout << "reading map " << Carpet::map << " component " << component << endl;
+	   
 	   ggf<dim>* ff = 0;
-	      
+	     
 	   assert (var < (int)arrdata.at(group).at(Carpet::map).data.size());
 	   ff = (ggf<dim>*)arrdata.at(group).at(Carpet::map).data.at(var);
-
-	   if(called_from_recovery) tl = recovery_tl;
-
-	   gdata<dim>* const data = (*ff) (tl, rl, component, mglevel);
 	   
+	   if(called_from_recovery) tl = recovery_tl;
+	     
+	   cout << "rl,tl: " << rl << "," << tl << endl;
+	     
+	   gdata<dim>* const data = (*ff) (tl, rl, component, mglevel);
+	     
 	   // Create temporary data storage on processor 0
 	   vect<int,dim> str
 	     = vect<int,dim>(maxreflevelfact/reflevelfact);
+
+	   if(grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY)
+	     str = vect<int,dim> (1);
+
 	   vect<int,dim> lb = vect<int,dim>::ref(amr_origin) * str;
 	   vect<int,dim> ub
 	     = lb + (vect<int,dim>::ref(amr_dims) - 1) * str;
-
+	     
 	   //	       cout << "lb: " << lb << endl;
 	   //  cout << "ub: " << ub << endl;
 	   //  cout << "str: " << str << endl;
@@ -776,13 +820,15 @@ namespace CarpetIOHDF5 {
 	   cGroup cgdata;
 	   int ierr = CCTK_GroupData(group,&cgdata);
 	   assert(ierr==0);
-
+	     
 	   // cout << "trying to handle DISTRIB=const data " << endl;
-
+	   
 	   // handle distrib=constant vars
 	   
-	   if(grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY)
-	     str = vect<int,dim> (1);
+	        cout << "lb: " << lb << endl;
+	        cout << "ub: " << ub << endl;
+
+
 
 	   if (cgdata.disttype == CCTK_DISTRIB_CONSTANT) {
 	     assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
@@ -801,9 +847,9 @@ namespace CarpetIOHDF5 {
 	     }
 	   }
 	   const bbox<int,dim> ext(lb,ub,str);
-
+	   
 	   //	   cout << ext << endl;
-
+	     
 	   if (CCTK_MyProc(cctkGH)==0) {
 	     tmp->allocate (ext, 0, h5data);
 	   } else {
@@ -814,28 +860,38 @@ namespace CarpetIOHDF5 {
 	   // not guarantee that everything is initialised.
 	   const bbox<int,dim> overlap = tmp->extent() & data->extent();
 	   regions_read.at(Carpet::map) |= overlap;
-
-
-
+	   
 	   // Copy into grid function
 	   for (comm_state<dim> state; !state.done(); state.step()) {
 	     data->copy_from (state, tmp, overlap);
 	   }
+
+	   if ( CCTK_Equals("CARPETIOASCII::next_output_iteration",varname) ) {
+	     const int * testdata = (int * ) data->storage();
+	     cout << "testdata: " << testdata[1] << endl;
+	     //CCTK_WARN(0,"STOP!");
+	   }
+
+
 	   
 	   // Delete temporary copy
 	   delete tmp;
 	     
 	   // set tt (ask Erik why...)
-	   if (called_from_recovery) {
-	     arrdata[group][Carpet::map].tt->set_time(reflevel,mglevel,
-		     (CCTK_REAL) cctkGH->cctk_iteration/maxreflevelfact);
-	   }
- 
+	 
 	 } END_COMPONENT_LOOP;
+
+	 if (called_from_recovery) {
+	   arrdata[group][Carpet::map].tt->set_time(reflevel,mglevel,
+						    (CCTK_REAL) cctkGH->cctk_iteration/maxreflevelfact);
+	 }
+
+	 //((cgh->cctk_time - cctk_initial_time)
+	 //                       / (delta_time * mglevelfact));
+
        } END_MAP_LOOP;
-       
-     } // if want_dataset && level == rl
-       
+
+    } // if amr_level == rl       
      if (CCTK_MyProc(cctkGH)==0) {
        free (h5data);
      }
@@ -1024,6 +1080,7 @@ namespace CarpetIOHDF5 {
 	   assert (var < (int)arrdata.at(group).at(Carpet::map).data.size());
 	   ff = (ggf<dim>*)arrdata.at(group).at(Carpet::map).data.at(var);
             
+
 	   gdata<dim>* const data = (*ff) (tl, rl, component, mglevel);
 	   
 	   // Create temporary data storage on processor 0
