@@ -233,7 +233,7 @@ namespace CarpetInterp {
       (param_table_handle, N_interp_points,
        &interpolation_times.front(), "interpolation_times");
     if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-      for (int n=0; n<N_output_arrays; ++n) {
+      for (int n=0; n<N_interp_points; ++n) {
         interpolation_times.at(n) = current_time;
       }
       interpolation_times_differ = false;
@@ -248,7 +248,7 @@ namespace CarpetInterp {
       (param_table_handle, N_interp_points,
        &time_deriv_order.front(), "time_deriv_order");
     if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-      for (int n=0; n<N_output_arrays; ++n) {
+      for (int n=0; n<N_interp_points; ++n) {
         time_deriv_order.at(n) = 0;
       }
       have_time_derivs = false;
