@@ -13,7 +13,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.47 2004/06/02 07:08:52 bzink Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.48 2004/06/02 07:36:19 bzink Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -56,8 +56,6 @@ namespace CarpetRegrid {
       // Return if we want to regrid during initial data only, and this
       // is not the time for initial data
       if (regrid_every == 0 && cctkGH->cctk_iteration != 0) return 0;
-
-      CCTK_VInfo(CCTK_THORNSTRING,"regrid_every = %i\n", regrid_every);
 
       // Return if we want to regrid regularly, but not at this time
       if (regrid_every > 0 && cctkGH->cctk_iteration != 0
