@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.15 2002/10/24 10:39:38 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.16 2002/12/12 12:55:45 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -92,50 +92,11 @@ namespace Carpet {
 	      CalculateChecksums (cgh, allbutcurrenttime);
 	      Poison (cgh, currenttimebutnotifonly);
 	      
-	      // Evolve, part 1
+	      // Evolve
 	      Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
 	      CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
 	      Waypoint ("%*sScheduling EVOL", 2*reflevel, "");
 	      CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
-	      
-	      cgh->cctk_time = saved_time;
-	      
-	    }
-	  } END_MGLEVEL_LOOP(cgh);
-	  
-	}
-      } END_REFLEVEL_LOOP(cgh);
-      
-      cgh->cctk_time += base_delta_time / maxreflevelfact;
-      
-      BEGIN_REFLEVEL_LOOP(cgh) {
-	const int do_every = maxreflevelfact/reflevelfact;
-	if (cgh->cctk_iteration % do_every == 0) {
-	  
-	  Waypoint ("%*sCurrent time is %g", 2*reflevel, "", cgh->cctk_time);
-
-	  // Regrid
-	  Waypoint ("%*sRegrid", 2*reflevel, "");
-	  Regrid (cgh);
-	  
-	}
-      } END_REFLEVEL_LOOP(cgh);
-      
-      BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
-	const int do_every = maxreflevelfact/reflevelfact;
-	if (cgh->cctk_iteration % do_every == 0) {
-	  
-	  BEGIN_MGLEVEL_LOOP(cgh) {
-	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
-	    if (cgh->cctk_iteration % do_every == 0) {
-	      
-	      Waypoint ("%*sCurrent time is %g", 2*reflevel, "",
-			cgh->cctk_time);
-	      
-	      // Restrict
-	      Restrict (cgh);
-	      
-	      // Evolve, part 2
 	      Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
 	      CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
 	      
@@ -145,7 +106,52 @@ namespace Carpet {
 	      // Checking
 	      CalculateChecksums (cgh, currenttime);
 	      
-	      // Waypoint
+	      cgh->cctk_time = saved_time;
+	      
+	    }
+	  } END_MGLEVEL_LOOP(cgh);
+	  
+	  // Regrid
+	  Waypoint ("%*sRegrid", 2*reflevel, "");
+	  Regrid (cgh);
+	  
+	}
+      } END_REFLEVEL_LOOP(cgh);
+      
+      cgh->cctk_time += base_delta_time / maxreflevelfact;
+      
+      
+      
+      BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
+	const int do_every = maxreflevelfact/reflevelfact;
+	if (cgh->cctk_iteration % do_every == 0) {
+	  
+	  BEGIN_MGLEVEL_LOOP(cgh) {
+	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
+	    if (cgh->cctk_iteration % do_every == 0) {
+	      
+	      // Restrict
+	      Waypoint ("%*sCurrent time is %g", 2*reflevel, "",
+			cgh->cctk_time);
+	      Restrict (cgh);
+	      
+	    }
+	  } END_MGLEVEL_LOOP(cgh);
+	  
+	}
+      } END_REVERSE_REFLEVEL_LOOP(cgh);
+      
+      
+      
+      BEGIN_REFLEVEL_LOOP(cgh) {
+	const int do_every = maxreflevelfact/reflevelfact;
+	if (cgh->cctk_iteration % do_every == 0) {
+	  
+	  BEGIN_MGLEVEL_LOOP(cgh) {
+	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
+	    if (cgh->cctk_iteration % do_every == 0) {
+	      
+	      // Checkpoint
 	      Waypoint ("%*sScheduling CHECKPOINT", 2*reflevel, "");
 	      CCTK_ScheduleTraverse ("CCTK_CHECKPOINT", cgh, CallFunction);
 	      
@@ -164,7 +170,7 @@ namespace Carpet {
 	  } END_MGLEVEL_LOOP(cgh);
 	  
 	}
-      } END_REVERSE_REFLEVEL_LOOP(cgh);
+      } END_REFLEVEL_LOOP(cgh);
       
     } // main loop
     

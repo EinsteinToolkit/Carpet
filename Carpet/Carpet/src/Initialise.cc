@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.23 2002/11/16 19:10:50 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.24 2002/12/12 12:55:45 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -60,6 +60,8 @@ namespace Carpet {
     
     Waypoint ("Initialising iteration %d...", cgh->cctk_iteration);
     
+    
+    
     BEGIN_REFLEVEL_LOOP(cgh) {
       
       BEGIN_MGLEVEL_LOOP(cgh) {
@@ -87,6 +89,15 @@ namespace Carpet {
 	// Set up the initial data
 	Waypoint ("%*sScheduling INITIAL", 2*reflevel, "");
 	CCTK_ScheduleTraverse ("CCTK_INITIAL", cgh, CallFunction);
+	Waypoint ("%*sScheduling POSTINITIAL", 2*reflevel, "");
+	CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
+	
+	// Poststep
+	Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
+	CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
+	
+	// Checking
+	PoisonCheck (cgh, alltimes);
 	
       } END_MGLEVEL_LOOP(cgh);
       
@@ -102,19 +113,9 @@ namespace Carpet {
       
       BEGIN_MGLEVEL_LOOP(cgh) {
 	
-	Waypoint ("%*sCurrent time is %g", 2*reflevel, "", cgh->cctk_time);
-	
 	// Restrict
+	Waypoint ("%*sCurrent time is %g", 2*reflevel, "", cgh->cctk_time);
 	Restrict (cgh);
-	
-	// Poststep
-	Waypoint ("%*sScheduling POSTINITIAL", 2*reflevel, "");
-	CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
-	Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
-	CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
-	
-	// Checking
-	PoisonCheck (cgh, alltimes);
 	
       } END_MGLEVEL_LOOP(cgh);
       
@@ -129,7 +130,7 @@ namespace Carpet {
     
     
     
-    BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
+    BEGIN_REFLEVEL_LOOP(cgh) {
       
       BEGIN_MGLEVEL_LOOP(cgh) {
 	
@@ -155,7 +156,7 @@ namespace Carpet {
 	
       } END_MGLEVEL_LOOP(cgh);
       
-    } END_REVERSE_REFLEVEL_LOOP(cgh);
+    } END_REFLEVEL_LOOP(cgh);
     
     Waypoint ("done with Initialise.");
     
