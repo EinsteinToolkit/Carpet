@@ -7,9 +7,9 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_rad_full_realcoarse_rl3.par,v 1.4 2004/03/23 12:00:37 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_rad_full_realcoarse_rl3.par,v 1.1 2001/03/14 13:39:46 eschnett Exp $
 
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetSlab IDScalarWave WaveToyF77"
 
 Cactus::cctk_itlast		= 30
  
@@ -25,7 +25,7 @@ grid::type			= byspacing
 grid::dxyz			= 1.2
 grid::avoid_origin		= no
 
-IO::out_dir			= "wavetoyf77_rad_full_realcoarse_rl3"
+IO::outdir			= "wavetoyf77_rad_full_realcoarse_rl3"
 
 IOBasic::outinfo_every		= 1 # 10
 #IOBasic::outinfo_vars		= "wavetoy::phi"
