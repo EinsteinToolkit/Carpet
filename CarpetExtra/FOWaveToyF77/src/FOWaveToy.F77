@@ -134,9 +134,6 @@ c     ----------------
       CCTK_INT Boundary_SelectGroupForBC 
       
 c     Local declarations
-      CCTK_REAL zero, one
-      parameter (zero=0, one=1)
-      
       INTEGER   bndwidth
       PARAMETER (bndwidth=1)
 
@@ -151,16 +148,9 @@ c     Local declarations
       CCTK_REAL  spher3d_r
       
       integer ierr
-      integer sw(3)
       CCTK_REAL ri3
       
 c     call CCTK_INFO ("FOWaveToyF77_Boundaries")
-      
-c     Set the stencil width
-c     ---------------------
-      sw(1) = cctk_nghostzones(1)
-      sw(2) = cctk_nghostzones(2)
-      sw(3) = cctk_nghostzones(3)
       
 c     Apply the excision boundary condition
 c     -------------------------------------
