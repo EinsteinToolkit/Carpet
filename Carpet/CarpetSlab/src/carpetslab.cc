@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.2 2001/03/05 21:48:56 eschnett Exp $
 
 #include <cassert>
 #include <cstdlib>
@@ -22,9 +22,9 @@
 namespace Carpet {
   
   int Hyperslab_GetLocalHyperslab (cGH* cgh,
-				   int n,
-				   int tl,
-				   int hdim,
+				   const int n,
+				   const int tl,
+				   const int hdim,
 				   const int origin [/*vdim*/],
 				   const int dir [/*vdim*/],
 				   const int len [/*hdim*/],
@@ -138,18 +138,15 @@ namespace Carpet {
     
     // calculate more convenient representation of the direction
     vect<int,dim> stride[hdim];
-    // the following switch statement is written according to the definition
-    // of "dir".  do not interchange the order of the case labels.
-    switch (hdim) {
-    case 1:
+    // the following if statement is written according to the
+    // definition of "dir".
+    if (hdim==1) {
       for (int d=0; d<dim; ++d) stride[0][d] = dir[d] * downsample[0];
-      break;
-    case dim:
+    } else if (hdim==dim) {
       for (int dd=0; dd<hdim; ++dd) {
 	for (int d=0; d<dim; ++d) stride[dd][d] = d==dd ? downsample[dd] : 0;
       }
-      break;
-    case 2:
+    } else if (hdim==2) {
       assert (dim==3);
       if (dir[0]==0) {
 	assert (dir[1]!=0 && dir[2]!=0);
@@ -167,8 +164,7 @@ namespace Carpet {
 	abort();
       }
       for (int dd=0; dd<hdim; ++dd) stride[dd] *= downsample[dd];
-      break;
-    default:
+    } else {
       abort();
     }
     for (int dd=0; dd<hdim; ++dd) stride[dd] *= intbox.stride();
@@ -183,6 +179,7 @@ namespace Carpet {
     vect<int,dim> ubound = lbound;
     for (int dd=0; dd<hdim; ++dd) {
       if (len[dd]<0) {
+	assert (any(stride[dd]>0));
 	while (all(ubound < intbox.upper())) ubound += stride[dd];
       } else {
 	ubound += stride[dd] * len[dd];
@@ -197,7 +194,9 @@ namespace Carpet {
     int total_hsize = 1;
     for (int dd=0; dd<hdim; ++dd) {
       hsize[dd] = 0;
-      while (all(lbound + stride[dd] * hsize[dd] <= ubound)) ++hsize[dd];
+      assert (any(stride[dd]>0));
+//       while (all(lbound + stride[dd] * hsize[dd] <= ubound)) ++hsize[dd];
+      while (all(lbound + stride[dd] * hsize[dd] < ubound)) ++hsize[dd];
       total_hsize *= hsize[dd];
     }
     
@@ -220,6 +219,7 @@ namespace Carpet {
     vect<int,dim> gubound = glbound;
     for (int dd=0; dd<hdim; ++dd) {
       if (len[dd]<0) {
+	assert (any(stride[dd]>0));
 	while (all(gubound < extbox.upper())) gubound += stride[dd];
       } else {
 	gubound += stride[dd] * len[dd];
@@ -230,7 +230,8 @@ namespace Carpet {
     // global size
     for (int dd=0; dd<hdim; ++dd) {
       ghsize[dd] = 0;
-      while (all(glbound + stride[dd] * ghsize[dd] <= gubound)) ++ghsize[dd];
+      assert (any(stride[dd]>0));
+      while (all(glbound + stride[dd] * ghsize[dd] < gubound)) ++ghsize[dd];
     }
     
     // sanity check
@@ -245,6 +246,7 @@ namespace Carpet {
     // local to global offset
     for (int dd=0; dd<hdim; ++dd) {
       hoffset[dd] = 0;
+      assert (any(stride[dd]>0));
       while (all(glbound + stride[dd] * hoffset[dd] < lbound)) ++hoffset[dd];
     }
     
@@ -444,7 +446,8 @@ namespace Carpet {
     }
     
     if (target_proc<0) {
-      MPI_Bcast (hdata, totalhsize*sz, MPI_BYTE, collect_proc, CarpetMPICommunicator());
+      MPI_Bcast (hdata, totalhsize*sz, MPI_BYTE,
+		 collect_proc, CarpetMPICommunicator());
     }
     
     component = saved_component;
