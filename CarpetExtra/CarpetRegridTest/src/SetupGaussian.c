@@ -29,11 +29,7 @@ void CarpetRegrid_SetupGaussian(CCTK_ARGUMENTS)
 	    {
 	      index =  CCTK_GFINDEX3D(cctkGH,i,j,k);
 
-	      X = x[index];
-	      Y = y[index];
-	      Z = z[index];
-
-	      R = sqrt(X*X + Y*Y + Z*Z);
+	      R = r[index];
 
 	      phi[index] = amplitude*exp( - pow( (R - radius) / sigma, 2.0 ) );
 
