@@ -22,7 +22,7 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.15 2002/07/12 09:09:52 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.16 2002/08/02 15:11:17 schnetter Exp $";
 
 CCTK_FILEVERSION(CarpetRegrid_regrid_cc)
 
@@ -153,7 +153,7 @@ namespace CarpetRegrid {
       
     } else if (CCTK_EQUALS(refined_regions, "manual-coordinate-list")) {
       
-      abort ();
+      assert (0);
       
     } else if (CCTK_EQUALS(refined_regions, "automatic")) {
       
@@ -178,7 +178,7 @@ namespace CarpetRegrid {
 			      bbl, obl);
       
     } else {
-      abort();
+      assert (0);
     }
     
 #ifdef AUTOMATIC_BOUNDARIES

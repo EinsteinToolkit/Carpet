@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.11 2002/08/02 14:57:26 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.12 2002/08/02 15:11:16 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -19,7 +19,7 @@
 
 #include "reduce.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.11 2002/08/02 14:57:26 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.12 2002/08/02 15:11:16 schnetter Exp $";
 
 CCTK_FILEVERSION(CarpetReduce_reduce_cc)
 
@@ -72,7 +72,7 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { abort(); }
+      static inline void initialise (T& accum) { assert (0); }
       static inline void reduce (T& accum, const T& val) { accum = min(accum, val); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -108,7 +108,7 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { abort(); }
+      static inline void initialise (T& accum) { assert (0); }
       static inline void reduce (T& accum, const T& val) { accum = max(accum, val); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -322,7 +322,7 @@ namespace CarpetReduce {
 	  INITIALISE(norm2,T);			\
 	  INITIALISE(norm_inf,T);		\
 	default:				\
-	  abort();				\
+	  assert (0);				\
 	}					\
 	break;					\
       }
@@ -330,7 +330,7 @@ namespace CarpetReduce {
 #undef TYPECASE
 #undef INITIALISE
       default:
-	abort();
+	assert (0);
       }
       
     } // for n
@@ -395,7 +395,7 @@ namespace CarpetReduce {
 	  REDUCE(norm2,T);			\
 	  REDUCE(norm_inf,T);			\
 	default:				\
-	  abort();				\
+	  assert (0);				\
 	}					\
 	break;					\
       }
@@ -403,7 +403,7 @@ namespace CarpetReduce {
 #undef TYPECASE
 #undef REDUCE
       default:
-	abort();
+	assert (0);
       }
       
     } // for n
@@ -484,7 +484,7 @@ namespace CarpetReduce {
 	    FINALISE(norm2,T);			\
 	    FINALISE(norm_inf,T);		\
 	  default:				\
-	    abort();				\
+	    assert (0);				\
 	  }					\
 	  break;				\
 	}
@@ -492,7 +492,7 @@ namespace CarpetReduce {
 #undef TYPECASE
 #undef FINALISE
 	default:
-	  abort();
+	  assert (0);
 	}
 	
       } // for n

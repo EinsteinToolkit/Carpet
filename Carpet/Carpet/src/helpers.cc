@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.23 2002/06/07 15:28:23 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.24 2002/08/02 15:11:13 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_helpers_cc)
 
@@ -111,7 +111,7 @@ namespace Carpet {
     case alltimes:
       return 0;
     default:
-      abort();
+      assert (0);
     }
   }
   
@@ -130,7 +130,7 @@ namespace Carpet {
     case alltimes:
       return num_tl-1;
     default:
-      abort();
+      assert (0);
     }
   }
   

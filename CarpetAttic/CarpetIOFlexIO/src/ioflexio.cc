@@ -33,7 +33,7 @@
 
 #include "ioflexio.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.17 2002/04/29 11:27:57 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.18 2002/08/02 15:11:14 schnetter Exp $";
 
 CCTK_FILEVERSION(CarpetIOFlexIO_ioflexio_cc)
 
@@ -157,7 +157,7 @@ namespace CarpetIOFlexIO {
       extension = ".h5";
 #endif
     } else {
-      abort();
+      assert (0);
     }
     extension = GetStringParameter ("out3D_extension", extension);
     
@@ -187,7 +187,7 @@ namespace CarpetIOFlexIO {
 	    writer = new H5IO(filename, IObase::Create);
 #endif
 	  } else {
-	    abort();
+	    assert (0);
 	  }
 	  delete writer;
 	  writer = 0;
@@ -204,7 +204,7 @@ namespace CarpetIOFlexIO {
 	writer = new H5IO(filename, IObase::Append);
 #endif
       } else {
-	abort();
+	assert (0);
       }
       assert (writer->isValid());
       amrwriter = new AMRwriter(*writer);
@@ -438,7 +438,7 @@ namespace CarpetIOFlexIO {
 	extension = ".h5";
 #endif
       } else {
-	abort();
+	assert (0);
       }
       extension = GetStringParameter ("in3D_extension", extension);
       
@@ -471,7 +471,7 @@ namespace CarpetIOFlexIO {
 	  reader = new H5IO(filename, IObase::Read);
 #endif
 	} else {
-	  abort();
+	  assert (0);
 	}
 	if (!reader->isValid()) {
 	  CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -616,7 +616,7 @@ namespace CarpetIOFlexIO {
     } // ARRAY or GROUP
       
     default:
-      abort();
+      assert (0);
     }
     
     return 0;

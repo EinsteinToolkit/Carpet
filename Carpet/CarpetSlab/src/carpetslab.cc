@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.13 2002/03/26 13:22:32 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.14 2002/08/02 15:11:18 schnetter Exp $
 
 #include <alloca.h>
 #include <assert.h>
@@ -19,7 +19,7 @@
 
 #include "carpetslab.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.13 2002/03/26 13:22:32 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.14 2002/08/02 15:11:18 schnetter Exp $";
 
 CCTK_FILEVERSION(CarpetSlab_carpetslab_cc)
 
@@ -313,7 +313,7 @@ namespace CarpetSlab {
       }
       assert (dd==hdim);
     } else {
-      abort();
+      assert (0);
     }
     
     // Calculate lengths

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.hh,v 1.5 2002/05/05 22:17:01 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.hh,v 1.6 2002/08/02 15:11:16 schnetter Exp $
 
  ***************************************************************************/
 
@@ -65,7 +65,7 @@ namespace dist {
   
   template<class T>
   inline MPI_Datatype datatype (const T& dummy)
-  { abort(); return -1; }
+  { assert(0); return -1; }
   
   template<>
   inline MPI_Datatype datatype (const char& dummy)

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.17 2002/05/05 22:16:59 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.18 2002/08/02 15:11:15 schnetter Exp $
 
  ***************************************************************************/
 
@@ -329,7 +329,7 @@ void data<CCTK_REAL8,3>
 			       regbbox);
     
   } else {
-    abort();
+    assert (0);
   }
 }
 
@@ -495,7 +495,7 @@ void data<CCTK_REAL8,3>
 	   srcbbox, dstbbox, regbbox);
 	break;
       default:
-	abort();
+	assert (0);
       }
       break;
       
@@ -523,7 +523,7 @@ void data<CCTK_REAL8,3>
 	   srcbbox, dstbbox, regbbox);
 	break;
       default:
-	abort();
+	assert (0);
       }
       break;
       
@@ -553,16 +553,16 @@ void data<CCTK_REAL8,3>
 	   srcbbox, dstbbox, regbbox);
 	break;
       default:
-	abort();
+	assert (0);
       }
       break;
       
     default:
-      abort();
+      assert (0);
     }
     
   } else {
-    abort();
+    assert (0);
   }
 }
 

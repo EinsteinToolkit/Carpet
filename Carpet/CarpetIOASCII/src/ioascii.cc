@@ -28,7 +28,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.33 2002/06/26 16:02:16 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.34 2002/08/02 15:11:13 schnetter Exp $";
 
 CCTK_FILEVERSION(CarpetIOASCII_ioascii_cc)
 
@@ -214,7 +214,7 @@ int CarpetIOASCII<outdim>
 	  desired = out1D_z;
 	  break;
 	default:
-	  abort();
+	  assert (0);
 	}
 	break;
       case 2:
@@ -225,7 +225,7 @@ int CarpetIOASCII<outdim>
 	} else if (dirs[0]==1 && dirs[1]==2) {
 	  desired = out2D_yz;
 	} else {
-	  abort();
+	  assert (0);
 	}
 	break;
       case 3:
@@ -233,7 +233,7 @@ int CarpetIOASCII<outdim>
 	desired = true;
 	break;
       default:
-	abort();
+	assert (0);
       }
       
       // Skip output if not desired
@@ -317,7 +317,7 @@ int CarpetIOASCII<outdim>
 				       out_zline_y);
 	    break;
 	  default:
-	    abort();
+	    assert (0);
 	  }
 	  break;
 	case 2:
@@ -340,14 +340,14 @@ int CarpetIOASCII<outdim>
 	       "out%dD_yzplane_x",  "out_yzplane_x",
 	       out_yzplane_x);
 	  } else {
-	    abort();
+	    assert (0);
 	  }
 	  break;
 	case 3:
 	  // The offset doesn't matter in this case
 	  break;
 	default:
-	  abort();
+	  assert (0);
 	}
 	
 	// Traverse all components on this refinement and multigrid

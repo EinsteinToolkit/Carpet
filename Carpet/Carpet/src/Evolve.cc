@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.12 2002/06/06 00:23:34 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.13 2002/08/02 15:11:12 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Evolve_cc)
 
@@ -44,7 +44,7 @@ namespace Carpet {
     } else if (CCTK_Equals(terminate, "both")) {
       return term_iter && term_time;
     } else {
-      abort();
+      assert (0);
     }
   }
   

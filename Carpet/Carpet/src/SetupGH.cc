@@ -18,7 +18,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.30 2002/06/06 22:44:39 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.31 2002/08/02 15:11:13 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_SetupGH_cc)
 
@@ -147,7 +147,7 @@ namespace Carpet {
 	}
 	  
 	default:
-	  abort();
+	  assert (0);
 	}
 	
 	assert (disttype==CCTK_DISTRIB_CONSTANT
@@ -218,7 +218,7 @@ namespace Carpet {
       }
 	
       default:
-	abort();
+	assert (0);
       }
       
       arrdata[group].info.gsh         = (int*)malloc(  dim * sizeof(int));

@@ -21,7 +21,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.27 2002/06/06 22:12:57 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.28 2002/08/02 15:11:12 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Recompose_cc)
 
@@ -351,7 +351,7 @@ namespace Carpet {
     } else if (CCTK_EQUALS (processor_topology, "manual")) {
       SplitRegions_AsSpecified (cgh, bbs, obs);
     } else {
-      abort();
+      assert (0);
     }
   }
   
