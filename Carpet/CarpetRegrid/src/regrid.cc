@@ -22,9 +22,13 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.12 2002/03/23 20:20:57 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.13 2002/03/26 13:22:31 schnetter Exp $";
 
-CCTK_FILEVERSION(Carpet_regrid_cc)
+CCTK_FILEVERSION(CarpetRegrid_regrid_cc)
+
+
+
+#undef AUTOMATIC_BOUNDARIES
 
 
 
@@ -170,7 +174,11 @@ namespace CarpetRegrid {
       abort();
     }
     
+#ifdef AUTOMATIC_BOUNDARIES
+    assert (obl.size() == 0);
+#else
     assert (bbl.size() == obl.size());
+#endif
     
     // transform bbox list into bbox vector
     vector<ibbox> bbs;
@@ -180,6 +188,23 @@ namespace CarpetRegrid {
 	 ++it) {
       bbs.push_back (*it);
     }
+#ifdef AUTOMATIC_BOUNDARIES
+    vector<bvect> obs;
+    obs.resize (bbs.size());
+    for (int c=0; c<(int)bbs.size(); ++c) {
+      ivect extlo = hh->baseextent.lower();
+      ivect extup = hh->baseextent.upper();
+      ivect str = bbs[c].stride();
+      for (int d=0; d<dim; ++d) {
+	// Decide what is an outer boundary.
+	// Allow it to be one grid point to the interior.
+	assert (bbs[c].lower()[d] >= extlo[d]);
+	obs[c][d][0] = bbs[c].lower()[d] <= extlo[d] + str[d];
+	assert (bbs[c].upper()[d] <= extup[d]);
+	obs[c][d][1] = bbs[c].upper()[d] >= extup[d] - str[d];
+      }
+    }
+#else
     vector<bvect> obs;
     obs.reserve (obl.size());
     for (list<bvect>::const_iterator it = obl.begin();
@@ -187,6 +212,9 @@ namespace CarpetRegrid {
 	 ++it) {
       obs.push_back (*it);
     }
+#endif
+    
+    
     
     // TODO: ensure nesting properties
     

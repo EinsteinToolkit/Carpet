@@ -9,7 +9,9 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.5 2002/01/09 21:15:10 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.6 2002/03/26 13:22:27 schnetter Exp $";
+
+CCTK_FILEVERSION(Carpet_Shutdown_cc)
 
 
 

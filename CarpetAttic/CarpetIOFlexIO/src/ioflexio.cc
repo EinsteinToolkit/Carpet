@@ -33,7 +33,9 @@
 
 #include "ioflexio.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.15 2002/01/14 14:59:26 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.16 2002/03/26 13:22:29 schnetter Exp $";
+
+CCTK_FILEVERSION(CarpetIOFlexIO_ioflexio_cc)
 
 
 

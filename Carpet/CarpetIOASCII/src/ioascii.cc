@@ -1,6 +1,7 @@
 #include <alloca.h>
 #include <assert.h>
 #include <limits.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,7 +28,9 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.29 2002/01/11 17:19:46 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.30 2002/03/26 13:22:28 schnetter Exp $";
+
+CCTK_FILEVERSION(CarpetIOASCII_ioascii_cc)
 
 
 

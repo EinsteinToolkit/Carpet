@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.12 2002/03/23 20:20:58 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.13 2002/03/26 13:22:32 schnetter Exp $
 
 #include <alloca.h>
 #include <assert.h>
@@ -19,7 +19,9 @@
 
 #include "carpetslab.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.12 2002/03/23 20:20:58 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.13 2002/03/26 13:22:32 schnetter Exp $";
+
+CCTK_FILEVERSION(CarpetSlab_carpetslab_cc)
 
 
 
