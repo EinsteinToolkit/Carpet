@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.59 2004/02/06 00:59:36 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.60 2004/02/09 12:43:16 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -166,7 +166,7 @@ namespace Carpet {
           char * const groupname = CCTK_GroupName (group);
           const char * const vartypename = CCTK_VarTypeName(gp.vartype);
           CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "Group %s has only one time level; therefore it will not be prolongated or restricted",
+                      "Group \"%s\" has only one time level; therefore it will not be prolongated or restricted",
                       groupname);
           free (groupname);
           return op_none;
@@ -179,7 +179,7 @@ namespace Carpet {
           char * const groupname = CCTK_GroupName (group);
           const char * const vartypename = CCTK_VarTypeName(gp.vartype);
           CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "Group %s has the variable type %s which cannot be prolongated or restricted",
+                      "Group \"%s\" has the variable type %s which cannot be prolongated or restricted",
                       groupname, vartypename);
           free (groupname);
           return op_none;

@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.25 2004/02/03 14:34:34 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.26 2004/02/09 12:43:16 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Comm_cc);
 }
 
@@ -30,7 +30,7 @@ namespace Carpet {
     assert (group>=0 && group<CCTK_NumGroups());
     assert (group<(int)arrdata.size());
     
-    Checkpoint ("SyncGroup %s time=%g", groupname, (double)cgh->cctk_time);
+    Checkpoint ("SyncGroup \"%s\" time=%g", groupname, (double)cgh->cctk_time);
     
     const int grouptype = CCTK_GroupTypeI(group);
     
