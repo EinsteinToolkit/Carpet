@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.5 2004/03/08 22:50:41 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.6 2004/03/09 10:26:20 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -65,10 +65,8 @@ namespace CarpetIOHDF5 {
     CCTK_RegisterIOMethodTimeToOutput (IOMethod, TimeToOutput);
     CCTK_RegisterIOMethodTriggerOutput (IOMethod, TriggerOutput);
     
-#if 0
     ierr = IOUtil_RegisterRecover ("CarpetIOHDF5", Recover);
     assert (! ierr);
-#endif
     
     return 0;
   }
@@ -547,6 +545,7 @@ namespace CarpetIOHDF5 {
     
     const int grouptype = CCTK_GroupTypeI(group);
     const int rl = grouptype==CCTK_GF ? reflevel : 0;
+    cout << "want level " << rl << endl;
     
     // Find the input directory
     const char* myindir = GetStringParameter("in3D_dir", ".");
@@ -590,7 +589,7 @@ namespace CarpetIOHDF5 {
       // Read data
       if (CCTK_MyProc(cctkGH)==0) {
 	GetDatasetName(reader,datasetid,datasetname);
-	cout << datasetname << "\n";
+// 	cout << datasetname << "\n";
   
 	dataset = H5Dopen (reader, datasetname);
 	assert(dataset);
@@ -608,13 +607,13 @@ namespace CarpetIOHDF5 {
        //       cout << "reading name" << "\n";
        ReadAttribute (dataset, "name", name);
        // cout << "done reading name" << "\n";
+//        cout << "dataset name is " << name << endl;
        if (verbose) {
 	 if (name) {
 		CCTK_VInfo (CCTK_THORNSTRING, "Dataset name is \"%s\"", name);
 	 }
        }
        want_dataset = name && CCTK_EQUALS(name, varname);
-       free (name);
      
        if(want_dataset) {
 	 
@@ -636,17 +635,20 @@ namespace CarpetIOHDF5 {
 	 }
 	 const hid_t datatype = H5T_NATIVE_DOUBLE;
 	 
-	 //	 cout << "datalength: " << datalength << " rank: " << rank << "\n";
-	 // cout << shape[0] << " " << shape[1] << " " << shape[2] << "\n";
+         cout << "datalength: " << datalength << " rank: " << rank << "\n";
+         cout << shape[0] << " " << shape[1] << " " << shape[2] << "\n";
 	 
 	 h5data = (CCTK_REAL*) malloc(sizeof(double)*datalength);
 	 herr = H5Dread(dataset,datatype,H5S_ALL, H5S_ALL, H5P_DEFAULT,(void*)h5data);
 	 assert(!herr);
 	 
+         cout << datasetname << endl;
+         cout << name << endl;
 	 ReadAttribute(dataset,"level",amr_level);
-	 //cout << amr_level << "," << gpdim << "\n";
+	 cout << "amr_level " << amr_level << endl
+              << " gpdim" << gpdim << "\n";
 	 ReadAttribute(dataset,"iorigin",amr_origin,dim);
-	 //    cout << amr_origin[0] << "\n";
+         cout << "amr_origin[0] " << amr_origin[0] << "\n";
 	 
 	 herr = H5Dclose(dataset);
 	 assert(!herr);
@@ -656,6 +658,9 @@ namespace CarpetIOHDF5 {
 	 }
   
        } // want_dataset
+       
+       free (name);
+       
      } // MyProc == 0
 	
      MPI_Bcast (&want_dataset, 1, MPI_INT, 0, dist::comm);
@@ -663,12 +668,14 @@ namespace CarpetIOHDF5 {
      MPI_Bcast (amr_origin, dim, MPI_INT, 0, dist::comm);
      MPI_Bcast (amr_dims, dim, MPI_INT, 0, dist::comm);
 	
-     if (want_dataset && amr_level == reflevel) {
+     if (want_dataset && amr_level == rl) {
+       cout << "I want this" << endl;
        did_read_something = true;
 	  
        // Traverse all components on all levels
        BEGIN_MAP_LOOP(cctkGH, grouptype) {
 	 BEGIN_COMPONENT_LOOP(cctkGH, grouptype) {
+           cout << "reading map " << Carpet::map << " component " << component << endl;
             
 	   ggf<dim>* ff = 0;
 	      
@@ -709,7 +716,7 @@ namespace CarpetIOHDF5 {
 	 } END_COMPONENT_LOOP;
        } END_MAP_LOOP;
        
-     } // if want_dataset && level == reflevel
+     } // if want_dataset && level == rl
        
      if (CCTK_MyProc(cctkGH)==0) {
        free (h5data);
@@ -734,8 +741,10 @@ namespace CarpetIOHDF5 {
 	ibset all_exterior;
 	for (size_t c=0; c<thedd.boxes.at(rl).size(); ++c) {
 	  all_exterior |= thedd.boxes.at(rl).at(c).at(mglevel).exterior;
-	    }
+        }
 	if (regions_read.at(m) != all_exterior) {
+          cout << "read: " << regions_read.at(m) << endl
+               << "want: " << all_exterior << endl;
 	  CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
 		      "Variable \"%s\" could not be initialised from file -- the file may be missing data",
 		      varname);
