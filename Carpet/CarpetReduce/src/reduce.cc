@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.41 2004/07/02 17:47:38 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.42 2004/07/06 14:44:32 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -23,7 +23,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.41 2004/07/02 17:47:38 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.42 2004/07/06 14:44:32 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -896,6 +896,7 @@ namespace CarpetReduce {
     
     bool const reduce_arrays = CCTK_GroupTypeFromVarI(vi) != CCTK_GF;
     bool const want_global_mode = is_global_mode() && ! reduce_arrays;
+    bool const want_level_mode = is_level_mode() && ! reduce_arrays;
     
     for (int n=0; n<num_invars; ++n) {
       if ((CCTK_GroupTypeFromVarI(invars[n]) != CCTK_GF) != reduce_arrays) {
@@ -903,17 +904,14 @@ namespace CarpetReduce {
       }
     }
     
-    // Multiple maps are not supported
-    // (because we don't know how to select a map)
-    assert (maps == 1);
-    const int m = 0;
-    
     // Ensure that all maps have the same number of refinement levels
     for (int m=0; m<(int)vhh.size(); ++m) {
       assert (vhh.at(m)->reflevels() == vhh.at(0)->reflevels());
     }
     int const minrl = reduce_arrays ? 0 : want_global_mode ? 0                      : reflevel;
     int const maxrl = reduce_arrays ? 1 : want_global_mode ? vhh.at(0)->reflevels() : reflevel+1;
+    int const minm = reduce_arrays ? 0 : want_global_mode || want_level_mode ? 0    : Carpet::map;
+    int const maxm = reduce_arrays ? 1 : want_global_mode || want_level_mode ? maps : Carpet::map+1;
     
     
     
@@ -978,7 +976,7 @@ namespace CarpetReduce {
           CCTK_REAL const time = current_time;
           vector<CCTK_REAL> times(num_tl);
           for (int tl=0; tl<num_tl; ++tl) {
-            times.at(tl) = vtt.at(m)->time (-tl, reflevel, mglevel);
+            times.at(tl) = vtt.at(0)->time (-tl, reflevel, mglevel);
           }
           
           // Calculate interpolation weights
@@ -1012,7 +1010,8 @@ namespace CarpetReduce {
         
         
         
-        BEGIN_MAP_LOOP(cgh, reduce_arrays ? CCTK_ARRAY : CCTK_GF) {
+        for (int m=minm; m<maxm; ++m) {
+          enter_singlemap_mode (const_cast<cGH*>(cgh), m);
           BEGIN_LOCAL_COMPONENT_LOOP(cgh, reduce_arrays ? CCTK_ARRAY : CCTK_GF) {
             
             
@@ -1081,7 +1080,9 @@ namespace CarpetReduce {
             
             
           } END_LOCAL_COMPONENT_LOOP;
-        } END_MAP_LOOP;
+          leave_singlemap_mode (const_cast<cGH*>(cgh));
+        } // for m
+        
         leave_level_mode (const_cast<cGH*>(cgh));
       } // for rl
     } END_GLOBAL_MODE;
