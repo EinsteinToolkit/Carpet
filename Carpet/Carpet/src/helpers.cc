@@ -13,7 +13,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.28 2003/04/30 12:43:21 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.29 2003/05/02 14:21:23 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -38,12 +38,14 @@ namespace Carpet {
     CCTK_Barrier (cgh);
     dist::finalize();
     exit (retval);
+    return -999;
   }
   
   int Abort (cGH* cgh, int retval)
   {
     MPI_Abort (dist::comm, retval);
     abort ();
+    return -999;
   }
   
   
@@ -114,6 +116,7 @@ namespace Carpet {
     default:
       assert (0);
     }
+    return -999;
   }
   
   int maxtl (const checktimes where, const int num_tl)
@@ -133,6 +136,7 @@ namespace Carpet {
     default:
       assert (0);
     }
+    return -999;
   }
   
   
@@ -430,8 +434,19 @@ namespace Carpet {
   
   
   
-  // This is a temporary measure to call a local function from a
-  // global one.  A more elegant way would be to reuse the
+  // This is a temporary measure to call a schedule group from a
+  // global mode function.
+  int CallScheduleGroup (cGH * const cgh, const char * const group)
+  {
+    assert (component == -1);
+    CCTK_ScheduleTraverse (group, cgh, CallFunction);
+    return 0;
+  }
+  
+  
+  
+  // This is a temporary measure to call a local mode function from a
+  // global mode function.  A more elegant way would be to reuse the
   // CallFunction stuff, or function aliasing.  Is there a way for the
   // user to get at the cFunctionData structure?
   int CallLocalFunction (cGH * const cgh,
@@ -445,8 +460,3 @@ namespace Carpet {
   }
   
 } // namespace Carpet
-
-
-
-
-
