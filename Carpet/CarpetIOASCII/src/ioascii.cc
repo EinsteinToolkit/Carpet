@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.60 2004/02/18 15:18:38 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.61 2004/02/27 15:40:18 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -500,8 +500,8 @@ namespace CarpetIOASCII {
                 rvect coord_delta;
                 if (grouptype == CCTK_GF) {
                   for (int d=0; d<dim; ++d) {
-                    global_lower[d] = cgh->cctk_origin_space[d];
-                    coord_delta[d] = cgh->cctk_delta_space[d] / maxreflevelfact;
+                    global_lower[d] = origin_space.at(0)[d];
+                    coord_delta[d] = delta_space[d] / maxreflevelfact;
                   }
                 } else {
                   for (int d=0; d<dim; ++d) {
@@ -608,6 +608,7 @@ namespace CarpetIOASCII {
     
     
     
+    // check whether to output at this iteration
     bool output_this_iteration;
     
     const char * const myoutcriterion
@@ -626,7 +627,7 @@ namespace CarpetIOASCII {
         output_this_iteration
           = (cctk_iteration == this_iteration[outdim]
              || cctk_iteration >= next_output_iteration[outdim]);
-        if (output_this_iteration) {
+        if (output_this_iteration && cctk_iteration > this_iteration[outdim]) {
           next_output_iteration[outdim] += myoutevery;
           this_iteration[outdim] = cctk_iteration;
         }
@@ -644,7 +645,7 @@ namespace CarpetIOASCII {
           = (cctk_iteration == this_iteration[outdim]
              || cctk_time >= (next_output_time[outdim]
                               - 1.0e-12 * cctk_delta_time));
-        if (output_this_iteration) {
+        if (output_this_iteration && cctk_iteration > this_iteration[outdim]) {
           next_output_time[outdim] += myoutdt;
           this_iteration[outdim] = cctk_iteration;
         }
@@ -665,13 +666,13 @@ namespace CarpetIOASCII {
     static int output_variables_iteration = -1;
     
     if (cctk_iteration > output_variables_iteration) {
+      output_variables_iteration = cctk_iteration;
+      
       output_variables.resize (CCTK_NumVars());
       
       const char * const varlist = GetStringParameter("out%dD_vars", "");
       CCTK_TraverseString
         (varlist, SetFlag, &output_variables, CCTK_GROUP_OR_VAR);
-      
-      output_variables_iteration = cctk_iteration;
     }
     
     if (! output_variables.at(vindex)) return 0;
@@ -1011,12 +1012,14 @@ namespace CarpetIOASCII {
 	      UnsupportedVarType(vi);
 	    }
 	    os << endl;
+            
+            ++it;
+            
 	    for (int d=DD-1; d>=0; --d) {
-	      if (index[dirs[d]]!=gfext.upper()[dirs[d]]) break;
+	      if ((*it)[d]!=(*ext.endT())[d]) break;
 	      os << endl;
 	    }
             
-            ++it;
           } while (it!=ext.endT());
           
 	} else {
