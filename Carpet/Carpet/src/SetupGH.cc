@@ -19,7 +19,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.38 2003/01/10 18:05:32 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.39 2003/02/24 17:05:46 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -247,7 +247,7 @@ namespace Carpet {
 	assert (disttype==CCTK_DISTRIB_CONSTANT
 		|| disttype==CCTK_DISTRIB_DEFAULT);
 	
-	if (gp.disttype==CCTK_DISTRIB_CONSTANT) {
+	if (disttype==CCTK_DISTRIB_CONSTANT) {
 	  sizes[dim-1] = (sizes[dim-1] - 2*ghostsizes[dim-1]) * CCTK_nProcs(cgh) + 2*ghostsizes[dim-1];
 	}
 	
@@ -315,12 +315,12 @@ namespace Carpet {
 	assert (0);
       }
       
-      arrdata[group].info.gsh         = (int*)malloc(  dim * sizeof(int));
-      arrdata[group].info.lsh         = (int*)malloc(  dim * sizeof(int));
-      arrdata[group].info.lbnd        = (int*)malloc(  dim * sizeof(int));
-      arrdata[group].info.ubnd        = (int*)malloc(  dim * sizeof(int));
-      arrdata[group].info.bbox        = (int*)malloc(2*dim * sizeof(int));
-      arrdata[group].info.nghostzones = (int*)malloc(  dim * sizeof(int));
+      arrdata[group].info.gsh         = new int [dim];
+      arrdata[group].info.lsh         = new int [dim];
+      arrdata[group].info.lbnd        = new int [dim];
+      arrdata[group].info.ubnd        = new int [dim];
+      arrdata[group].info.bbox        = new int [2*dim];
+      arrdata[group].info.nghostzones = new int [dim];
       
       arrdata[group].data.resize(CCTK_NumVarsInGroupI(group));
       for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
