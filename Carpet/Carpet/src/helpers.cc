@@ -15,7 +15,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.38 2003/07/08 23:01:29 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.39 2003/07/09 21:59:08 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -191,19 +191,30 @@ namespace Carpet {
   
   void set_reflevel (cGH* cgh, const int rl)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     // Check
     assert (rl==-1 || (rl>=0 && rl<maxreflevels && rl<maxreflevels));
     assert (mglevel == -1);
     assert (component == -1);
     
+    // Save
+    if (reflevel != -1) {
+      refleveltimes[reflevel] = cgh->cctk_time;
+      delta_time = cgh->cctk_delta_time;
+    }
+    
     // Change
     reflevel = rl;
     if (reflevel == -1) {
       // global mode
-      reflevelfact = 0xdead;
+      reflevelfact = 0;
+      cgh->cctk_time = (cctk_initial_time
+                        + cgh->cctk_iteration * delta_time / maxreflevelfact);
     } else {
       // level mode or local mode
       reflevelfact = ipow(reffact, reflevel);
+      cgh->cctk_time = refleveltimes[reflevel];
     }
     vect<int,dim>::ref(cgh->cctk_levfac) = reflevelfact;
   }
@@ -216,15 +227,6 @@ namespace Carpet {
     assert (ml==-1 || (ml>=0 && ml<mglevels));
     assert (reflevel>=0 && reflevel<hh->reflevels());
     assert (component == -1);
-    
-    // Save
-    if (mglevel == -1) {
-      assert (cgh->cctk_time == 0xdead);
-      assert (cgh->cctk_delta_time == 0xdead);
-    } else {
-      refleveltimes[reflevel] = cgh->cctk_time;
-      delta_time = cgh->cctk_delta_time;
-    }
     
     // Change
     mglevel = ml;
@@ -242,8 +244,6 @@ namespace Carpet {
         cgh->cctk_levoff[d] = 0xdead;
         cgh->cctk_levoffdenom[d] = 0xdead;
       }
-      cgh->cctk_time = 0xdead;
-      cgh->cctk_delta_time = 0xdead;
       
       vect<int,dim>::ref(cgh->cctk_gsh) = 0xdead;
       for (int group=0; group<CCTK_NumGroups(); ++group) {
@@ -261,8 +261,6 @@ namespace Carpet {
       
       assert (mglevelfact==1);
       cgh->cctk_timefac = reflevelfact / mglevelfact;
-      cgh->cctk_time = refleveltimes[reflevel];
-      cgh->cctk_delta_time = delta_time;
       for (int d=0; d<dim; ++d) {
         assert (baseext.lower()[d] * reflevelfact % maxreflevelfact == 0);
         cgh->cctk_levoff[d] = baseext.lower()[d] * reflevelfact / maxreflevelfact;

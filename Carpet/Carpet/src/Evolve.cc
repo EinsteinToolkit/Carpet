@@ -18,7 +18,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.24 2003/06/30 17:27:34 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.25 2003/07/09 21:59:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -137,12 +137,15 @@ namespace Carpet {
 	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
 	    if ((cgh->cctk_iteration-1) % do_every == 0) {
 	      
-              do_global_mode = cgh->cctk_iteration >= next_global_mode_iter_loop1;
+              do_global_mode
+                = cgh->cctk_iteration >= next_global_mode_iter_loop1;
               next_global_mode_iter_loop1 = cgh->cctk_iteration + 1;
               
 	      // Advance level times
 	      tt->advance_time (reflevel, mglevel);
-              cgh->cctk_time = cctk_initial_time + tt->time (0, reflevel, mglevel) * cgh->cctk_delta_time;
+              cgh->cctk_time = (cctk_initial_time
+                                + (tt->time (0, reflevel, mglevel)
+                                   * cgh->cctk_delta_time));
 	      
 	      Waypoint ("%*sCurrent time is %g, delta is %g%s", 2*reflevel, "",
 			cgh->cctk_time,
@@ -190,7 +193,8 @@ namespace Carpet {
 	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
 	    if (cgh->cctk_iteration % do_every == 0) {
 	      
-              do_global_mode = cgh->cctk_iteration >= next_global_mode_iter_loop2;
+              do_global_mode
+                = cgh->cctk_iteration >= next_global_mode_iter_loop2;
               next_global_mode_iter_loop2 = cgh->cctk_iteration + 1;
               
 	      // Restrict
@@ -219,7 +223,8 @@ namespace Carpet {
 	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
 	    if (cgh->cctk_iteration % do_every == 0) {
 	      
-              do_global_mode = cgh->cctk_iteration >= next_global_mode_iter_loop3;
+              do_global_mode
+                = cgh->cctk_iteration >= next_global_mode_iter_loop3;
               next_global_mode_iter_loop3 = cgh->cctk_iteration + 1;
 	      
 	      Waypoint ("%*sCurrent time is %g, delta is %g%s", 2*reflevel, "",
