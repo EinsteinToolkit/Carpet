@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.68 2004/03/23 14:46:35 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.69 2004/03/23 18:38:29 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -777,6 +777,7 @@ namespace Carpet {
     for (int ml=0; ml<mglevels; ++ml) {
       leveltimes[ml].resize (maxreflevels);
     }
+    origin_space.resize (mglevels);
     
     // Enable prolongating
     do_prolongate = true;
@@ -787,6 +788,10 @@ namespace Carpet {
     mglevelfact = 1;
     cgh->cctk_time = 0;
     cgh->cctk_delta_time = 1.0;
+    for (int d=0; d<dim; ++d) {
+      cgh->cctk_origin_space[d] = 0.0;
+      cgh->cctk_delta_space[d] = 1.0;
+    }
     
     mglevel   = 0;
     reflevel  = 0;

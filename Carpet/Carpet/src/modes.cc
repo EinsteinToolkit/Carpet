@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.cc,v 1.1 2004/01/25 14:57:28 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.cc,v 1.2 2004/03/23 18:38:29 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_modes_cc);
 }
 
@@ -78,8 +78,12 @@ namespace Carpet {
     mglevelfact = ipow(mgfact, mglevel);
     cgh->cctk_convlevel = basemglevel + mglevel;
     
-    // Set time delta
+    // Set time and space delta
     cgh->cctk_delta_time = delta_time * mglevelfact;
+    for (int d=0; d<dim; ++d) {
+      cgh->cctk_origin_space[d] = origin_space.at(mglevel)[d];
+      cgh->cctk_delta_space[d] = delta_space[d] * mglevelfact;
+    }
     
     // Set array information
     for (int group=0; group<CCTK_NumGroups(); ++group) {
@@ -164,8 +168,15 @@ namespace Carpet {
     
     if (mglevel == -1) return;  // early return
     
-    // Save and unset time delta
+    // Save and unset time and space delta
     delta_time = cgh->cctk_delta_time / mglevelfact;
+    cgh->cctk_delta_time = 0.0;
+    for (int d=0; d<dim; ++d) {
+      origin_space.at(mglevel)[d] = cgh->cctk_origin_space[d];
+      delta_space[d] = cgh->cctk_delta_space[d] / mglevelfact;
+      cgh->cctk_origin_space[d] = -424242.0;
+      cgh->cctk_delta_space[d] = 0.0;
+    }
    
     // Set array information
     for (int group=0; group<CCTK_NumGroups(); ++group) {
@@ -275,9 +286,11 @@ namespace Carpet {
     assert (map==0);
     
     // Set grid shape
-    const ibbox& baseext = vdd[map]->bases[reflevel][mglevel].exterior;
+    const ibbox& coarseext = vdd[map]->bases[0       ][mglevel].exterior;
+    const ibbox& baseext   = vdd[map]->bases[reflevel][mglevel].exterior;
     assert (all (baseext.lower() % baseext.stride() == 0));
-    ivect::ref(cgh->cctk_levoff) = baseext.lower() / baseext.stride();
+    assert (all ((baseext.lower() - coarseext.lower()) % baseext.stride() == 0));
+    ivect::ref(cgh->cctk_levoff) = (baseext.lower() - coarseext.lower()) / baseext.stride();
     ivect::ref(cgh->cctk_levoffdenom) = 1;
     ivect::ref(cgh->cctk_gsh) = baseext.shape() / baseext.stride();
     assert (all (vdd[map]->lghosts == vdd[map]->ughosts));

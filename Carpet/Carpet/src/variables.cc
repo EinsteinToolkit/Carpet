@@ -2,7 +2,7 @@
 #include "variables.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.19 2004/01/25 14:57:28 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.20 2004/03/23 18:38:29 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_variables_cc);
 }
 
@@ -58,10 +58,13 @@ namespace Carpet {
   
   
   
-  // Current times on the refinement levels
-  vector<vector<CCTK_REAL> > leveltimes; // [mglevel][reflevel]
+  // Times and spaces on the refinement levels
   CCTK_REAL global_time;
+  vector<vector<CCTK_REAL> > leveltimes; // [mglevel][reflevel]
   CCTK_REAL delta_time;
+  
+  vector<vect<CCTK_REAL,dim> > origin_space; // [mglevel]
+  vect<CCTK_REAL,dim> delta_space;
   
   
   

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.hh,v 1.2 2004/03/23 12:40:27 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.hh,v 1.3 2004/03/23 18:38:29 schnetter Exp $
 
 // It is assumed that each group has at least one map.  All arrays
 // have exactly one map.  All maps have the same number of refinement
@@ -24,6 +24,7 @@
 #include "gh.hh"
 #include "operators.hh"
 #include "th.hh"
+#include "vect.hh"
 
 #include "defines.hh"
 
@@ -81,10 +82,13 @@ namespace Carpet {
   
   
   
-  // Current times on the refinement levels
-  extern vector<vector<CCTK_REAL> > leveltimes; // [mglevel][reflevel]
+  // Times and spaces on the refinement levels
   extern CCTK_REAL global_time;
+  extern vector<vector<CCTK_REAL> > leveltimes; // [mglevel][reflevel]
   extern CCTK_REAL delta_time;
+  
+  extern vector<vect<CCTK_REAL,dim> > origin_space; // [mglevel]
+  extern vect<CCTK_REAL,dim> delta_space;
   
   
   

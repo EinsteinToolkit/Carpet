@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.55 2004/03/23 15:58:43 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.56 2004/03/23 18:38:29 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -239,8 +239,8 @@ namespace Carpet {
     for (int rl=0; rl<hh.reflevels(); ++rl) {
       for (int c=0; c<hh.components(rl); ++c) {
         for (int ml=0; ml<hh.mglevels(rl,c); ++ml) {
-          const rvect origin = rvect::ref(cgh->cctk_origin_space);
-          const rvect delta = rvect::ref(cgh->cctk_delta_space);
+          const rvect origin = origin_space.at(0);
+          const rvect delta = delta_space;
           const ivect lower = hh.extents.at(rl).at(c).at(ml).lower();
           const ivect upper = hh.extents.at(rl).at(c).at(ml).upper();
           const int convfact = ipow(mgfact, ml);
