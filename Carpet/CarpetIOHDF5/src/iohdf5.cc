@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.31 2004/05/31 18:59:20 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.32 2004/06/04 10:17:56 bzink Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -616,6 +616,23 @@ namespace CarpetIOHDF5 {
         // we want no output at this iteration
         output_this_iteration = false;
       }
+
+    } else if (CCTK_EQUALS (myoutcriterion, "divisor")) {
+      
+      int myoutevery = out3D_every;
+      if (myoutevery == -2) {
+        myoutevery = out_every;
+      }
+      if (myoutevery <= 0) {
+        // output is disabled
+        output_this_iteration = false;
+      } else if ((cctk_iteration % myoutevery) == 0) {
+        // we already decided to output this iteration
+        output_this_iteration = true;
+      } else {
+        // we want no output at this iteration
+        output_this_iteration = false;
+      }  
       
     } else if (CCTK_EQUALS (myoutcriterion, "time")) {
       

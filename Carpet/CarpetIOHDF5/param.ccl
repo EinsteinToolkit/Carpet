@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOHDF5
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/param.ccl,v 1.11 2004/06/02 14:06:08 bzink Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/param.ccl,v 1.12 2004/06/04 10:17:56 bzink Exp $
 
 
 
@@ -57,6 +57,7 @@ KEYWORD out3D_criterion "Criterion to select 3D CarpetIOHDF5 output intervals, o
   "default"   :: "Use IO::out_criterion"
   "never"     :: "Never output"
   "iteration" :: "Output every so many iterations"
+  "divisor"   :: "Output if (iteration % out_every) == 0."
   "time"      :: "Output every that much coordinate time"
 } "default"
 
