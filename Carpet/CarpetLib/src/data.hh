@@ -150,11 +150,11 @@ public:
   // Output
   ostream& output (ostream& os) const;
 private:
-  bool interpolate_in_time (const vector<const gdata*> & gsrcs,
-                                   const vector<CCTK_REAL> & times,
-                                   const ibbox& box, const CCTK_REAL time,
-                                   const int order_space,
-                                   const int order_time);
+  bool try_without_time_interpolation (const vector<const gdata*> & gsrcs,
+                                       const vector<CCTK_REAL> & times,
+                                       const ibbox& box, const CCTK_REAL time,
+                                       const int order_space,
+                                       const int order_time);
   void interpolate_restrict (const vector<const data<T>*> & gsrcs,
                               const vector<CCTK_REAL> & times,
                               const ibbox& box);

@@ -1050,28 +1050,6 @@ extern "C" {
      const int regbbox[3][3]);
 }
 
-template<>
-bool data<CCTK_REAL8>
-::interpolate_in_time (const vector<const gdata*> & gsrcs,
-                       const vector<CCTK_REAL> & times,
-                       const ibbox& box, const CCTK_REAL time,
-                       const int order_space,
-                       const int order_time) {
-  for (size_t tl=0; tl<times.size(); ++tl) {
-    if (abs(times[tl] - time) < eps) {
-      vector<const gdata*> my_gsrcs(1);
-      vector<CCTK_REAL> my_times(1);
-      my_gsrcs[0] = gsrcs[tl];
-      my_times[0] = times[tl];
-      const int my_order_time = 0;
-      interpolate_from_innerloop
-        (my_gsrcs, my_times, box, time, order_space, my_order_time);
-      return true;
-    }
-  }
-  return false;
-}
-
 template<typename T>
 void data<T>
 ::interpolate_restrict (const vector<const data<T>*> & srcs,
@@ -1503,6 +1481,29 @@ void data<CCTK_REAL8>
 }
 
 template<>
+bool data<CCTK_REAL8>
+::try_without_time_interpolation (const vector<const gdata*> & gsrcs,
+                                  const vector<CCTK_REAL> & times,
+                                  const ibbox& box, const CCTK_REAL time,
+                                  const int order_space,
+                                  const int order_time)
+{
+  for (size_t tl=0; tl<times.size(); ++tl) {
+    if (abs(times[tl] - time) < eps) {
+      vector<const gdata*> my_gsrcs(1);
+      vector<CCTK_REAL> my_times(1);
+      my_gsrcs[0] = gsrcs[tl];
+      my_times[0] = times[tl];
+      const int my_order_time = 0;
+      interpolate_from_innerloop
+        (my_gsrcs, my_times, box, time, order_space, my_order_time);
+      return true;
+    }
+  }
+  return false;
+}
+
+template<>
 void data<CCTK_REAL8>
 ::interpolate_from_innerloop (const vector<const gdata*> gsrcs,
 			      const vector<CCTK_REAL> times,
@@ -1538,8 +1539,10 @@ void data<CCTK_REAL8>
   bool did_time_interpolation = false;
 
   if (times.size() > 1) {
+    // try to avoid time interpolation if possible
     did_time_interpolation = 
-      interpolate_in_time (gsrcs, times, box, time, order_space, order_time);
+      try_without_time_interpolation
+      (gsrcs, times, box, time, order_space, order_time);
   }
   
   if (!did_time_interpolation) {
