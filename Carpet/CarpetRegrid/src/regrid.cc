@@ -24,7 +24,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.32 2004/01/13 13:49:38 hawke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.33 2004/01/15 09:45:58 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -104,7 +104,7 @@ namespace CarpetRegrid {
           newnumlevels = 0;
           BEGIN_MGLEVEL_LOOP(cctkGH) {
             tempnewnumlevels = 
-              RegridLevel(cctkGH, reflevel, refinement_levels);
+              RegridLevel(cctkGH, reflevel, refinement_levels,maxreflevels);
             newnumlevels = max(tempnewnumlevels, newnumlevels);
           } END_MGLEVEL_LOOP;
         } else {
