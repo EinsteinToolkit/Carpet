@@ -48,7 +48,7 @@ vector<vector<vector<int> > > last_output; // [ml][rl][var]
 
 
 static void AddAttributes (const cGH *const cctkGH, const char *fullname,
-           	           int reflevel, const ibbox &extent, int tl,
+           	           int reflevel, const ibbox &extent, int timelevel,
                            hid_t dataset);
 
 void CarpetIOHDF5Startup (void)
@@ -361,7 +361,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
 
   // let's get the correct Carpet time level
   // (which is the (-1) * Cactus timelevel)
-  int tl = - request->timelevel;
+  int timelevel = - request->timelevel;
 
   const int myproc = CCTK_MyProc (cctkGH);
 
@@ -380,7 +380,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
       }
 
       const ggf<dim>* ff = arrdata.at(group).at(Carpet::map).data.at(var);
-      const gdata<dim>* const data = (*ff) (tl, rl, component, mglevel);
+      const gdata<dim>* const data = (*ff) (timelevel, rl, component, mglevel);
       const ibbox extent = data->extent();
 
       int ldim = cgdata.grouptype == CCTK_SCALAR ? 1 : cgdata.dim;
@@ -406,7 +406,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
       {
         assert (cgdata.grouptype == CCTK_ARRAY ||
 		cgdata.grouptype == CCTK_SCALAR);
-        h5data = CCTK_VarDataPtrI (cctkGH, tl, request->vindex);
+        h5data = CCTK_VarDataPtrI (cctkGH, timelevel, request->vindex);
       }
       else
       {
@@ -424,7 +424,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
         ostringstream datasetname;
         datasetname << fullname
                     << " it=" << cctk_iteration
-                    << " tl=" << tl
+                    << " tl=" << timelevel
                     << " ml=" << mglevel
                     << " rl=" << rl
                     << " m=" << Carpet::map
@@ -438,7 +438,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
         HDF5_ERROR (H5Dwrite (dataset, memdatatype, H5S_ALL, H5S_ALL,
                               H5P_DEFAULT, h5data));
 	  
-        AddAttributes (cctkGH, fullname, rl, extent, tl, dataset);
+        AddAttributes (cctkGH, fullname, rl, extent, timelevel, dataset);
 
         HDF5_ERROR (H5Dclose (dataset));
         HDF5_ERROR (H5Sclose (dataspace));
@@ -457,7 +457,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
 
 
 static void AddAttributes (const cGH *const cctkGH, const char *fullname,
-           	           int reflevel, const ibbox &extent, int tl,
+           	           int reflevel, const ibbox &extent, int timelevel,
                            hid_t dataset)
 {
   DECLARE_CCTK_ARGUMENTS
@@ -477,9 +477,11 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
   }
   WriteAttribute (dataset, "origin", min_ext, dim);
   WriteAttribute (dataset, "delta", delta, dim);
+#ifdef WRITE_ADDITIONAL_ATTRIBUTES
   WriteAttribute (dataset, "min_ext", min_ext, dim);
   WriteAttribute (dataset, "max_ext", max_ext, dim);
-#if 1
+#endif
+#ifdef WRITE_ADDITIONAL_ATTRIBUTES
   WriteAttribute (dataset, "level_timestep", cctk_iteration / reflevelfact);
   WriteAttribute (dataset, "persistence", maxreflevelfact / reflevelfact);
 #endif
@@ -487,6 +489,7 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
   WriteAttribute (dataset, "time", cctk_time);
   WriteAttribute (dataset, "timestep", cctk_iteration);
 
+#ifdef WRITE_ADDITIONAL_ATTRIBUTES
   int time_refinement=0;
   int spatial_refinement[dim];
   int grid_placement_refinement[dim];
@@ -496,11 +499,10 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
     spatial_refinement[d] = reflevelfact;
     grid_placement_refinement[d] = reflevelfact;
   }
-#if 1
   WriteAttribute (dataset, "time_refinement", time_refinement);
   WriteAttribute (dataset, "grid_placement_refinement", grid_placement_refinement, dim);
-#endif
   WriteAttribute (dataset, "spatial_refinement", spatial_refinement, dim);
+#endif
 
   int iorigin[dim];
   for (int d=0; d<dim; ++d)
@@ -512,7 +514,7 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
   // Legacy arguments
   WriteAttribute (dataset, "name", fullname);
 
-#if 1
+#ifdef WRITE_ADDITIONAL_ATTRIBUTES
   // Group arguments
   const int gindex = CCTK_GroupIndexFromVar (fullname);
 
@@ -528,22 +530,19 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
     WriteAttribute (dataset, "group_groupname", groupname);
     free (groupname);
   }
+  const char *group_grouptype = NULL;
   switch (CCTK_GroupTypeI (gindex))
   {
-    case CCTK_GF:
-      WriteAttribute (dataset, "group_grouptype", "CCTK_GF");
-      break;
-    case CCTK_ARRAY:
-      WriteAttribute (dataset, "group_grouptype", "CCTK_ARRAY");
-      break;
-    case CCTK_SCALAR:
-      WriteAttribute (dataset, "group_grouptype", "CCTK_SCALAR");
-      break;
-    default:
-      assert (0);
+    case CCTK_GF:     group_grouptype = "CCTK_GF"; break;
+    case CCTK_ARRAY:  group_grouptype = "CCTK_ARRAY"; break;
+    case CCTK_SCALAR: group_grouptype = "CCTK_SCALAR"; break;
   }
+  assert (group_grouptype);
+  WriteAttribute (dataset, "group_grouptype", group_grouptype);
   WriteAttribute (dataset, "group_dim", CCTK_GroupDimI (gindex));
-  WriteAttribute (dataset, "group_timelevel", tl);
+#endif
+  WriteAttribute (dataset, "group_timelevel", timelevel);
+#ifdef WRITE_ADDITIONAL_ATTRIBUTES
   WriteAttribute (dataset, "group_numtimelevels", CCTK_NumTimeLevelsI(gindex));
 
   // Cactus arguments
@@ -556,17 +555,19 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
   WriteAttribute (dataset, "cctk_delta_time", cctk_delta_time);
   WriteAttribute (dataset, "cctk_delta_space", cctk_delta_space, dim);
   WriteAttribute (dataset, "cctk_origin_space", cctk_origin_space, dim);
-  WriteAttribute (dataset, "cctk_bbox", cctk_bbox, 2*dim);
   WriteAttribute (dataset, "cctk_levfac", cctk_levfac, dim);
   WriteAttribute (dataset, "cctk_levoff", cctk_levoff, dim);
   WriteAttribute (dataset, "cctk_levoffdenom", cctk_levoffdenom, dim);
   WriteAttribute (dataset, "cctk_timefac", cctk_timefac);
   WriteAttribute (dataset, "cctk_convlevel", cctk_convlevel);
   WriteAttribute (dataset, "cctk_convfac", cctk_convfac);
-  WriteAttribute (dataset, "cctk_nghostzones", cctk_nghostzones, dim);
   WriteAttribute (dataset, "cctk_time", cctk_time);
+#endif
+  WriteAttribute (dataset, "cctk_bbox", cctk_bbox, 2*dim);
+  WriteAttribute (dataset, "cctk_nghostzones", cctk_nghostzones, dim);
 
   // Carpet arguments
+#ifdef WRITE_ADDITIONAL_ATTRIBUTES
   WriteAttribute (dataset, "carpet_version", 1);
   WriteAttribute (dataset, "carpet_dim", dim);
   WriteAttribute (dataset, "carpet_basemglevel", basemglevel);
@@ -577,7 +578,8 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
   WriteAttribute (dataset, "carpet_map", Carpet::map);
   WriteAttribute (dataset, "carpet_maps", maps);
   WriteAttribute (dataset, "carpet_component", component);
-  WriteAttribute (dataset, "carpet_components", vhh.at(Carpet::map)->components(reflevel));
+  WriteAttribute (dataset, "carpet_components",
+                  vhh.at(Carpet::map)->components(reflevel));
 #endif
   WriteAttribute (dataset, "carpet_mglevel", mglevel);
   WriteAttribute (dataset, "carpet_reflevel", reflevel);
