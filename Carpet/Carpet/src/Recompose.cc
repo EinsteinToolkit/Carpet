@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.5 2001/08/26 13:58:51 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.6 2001/10/29 08:36:45 schnetter Exp $";
 
 
 
@@ -141,7 +141,7 @@ namespace Carpet {
 	const int zstep = locnpz * cstr[dim-1];
 	clb[dim-1] = rlb[dim-1] + zstep *  c;
 	cub[dim-1] = rlb[dim-1] + zstep * (c+1);
-	if (c == nprocs-1) cub[dim-1] = rub[dim-1];
+	if (cub[dim-1] > rub[dim-1]) cub[dim-1] = rub[dim-1];
 	assert (cub[dim-1] <= rub[dim-1]);
 	bbs[c] = bbox<int,dim>(clb, cub-cstr, cstr);
       }
