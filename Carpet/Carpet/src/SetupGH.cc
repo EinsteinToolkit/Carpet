@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.74 2004/03/23 19:53:12 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.75 2004/04/07 16:53:39 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -164,7 +164,6 @@ namespace Carpet {
         if (gp.numtimelevels == 1) {
           // Only one time level: do not prolongate
           char * const groupname = CCTK_GroupName (group);
-          const char * const vartypename = CCTK_VarTypeName(gp.vartype);
           CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "Group \"%s\" has only one time level; therefore it will not be prolongated or restricted",
                       groupname);
@@ -177,10 +176,9 @@ namespace Carpet {
       } else {
         if (gp.grouptype == CCTK_GF) {
           char * const groupname = CCTK_GroupName (group);
-          const char * const vartypename = CCTK_VarTypeName(gp.vartype);
           CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "Group \"%s\" has the variable type %s which cannot be prolongated or restricted",
-                      groupname, vartypename);
+                      groupname, CCTK_VarTypeName(gp.vartype));
           free (groupname);
           return op_none;
         } else {
@@ -812,8 +810,15 @@ namespace Carpet {
     
     // Some statistics
     if (verbose || veryverbose) {
-      int num_gf_groups, num_gf_vars;
-      vector<int> num_array_groups(4), num_array_vars(4);
+      
+      int num_gf_groups = 0;
+      int num_gf_vars = 0;
+      vector<int> num_array_groups(dim+1), num_array_vars(dim+1);
+      for (int d=0; d<=dim; ++d) {
+        num_array_groups.at(d) = 0;
+        num_array_vars.at(d) = 0;
+      }
+      
       for (int group=0; group<CCTK_NumGroups(); ++group) {
         
         cGroup data;
@@ -827,6 +832,7 @@ namespace Carpet {
           break;
         case CCTK_SCALAR:
         case CCTK_ARRAY:
+          assert (data.dim<=dim);
           num_array_groups.at(data.dim) += 1;
           num_array_vars.at(data.dim) += data.numvars * data.numtimelevels;
           break;
