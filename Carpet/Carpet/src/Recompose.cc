@@ -21,7 +21,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.25 2002/05/17 01:07:03 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.26 2002/06/06 00:23:34 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Recompose_cc)
 
@@ -52,7 +52,7 @@ namespace Carpet {
 			    const gh<dim>::rprocs& pss);
   static void Adapt (const cGH* cgh, int reflevels, gh<dim>* hh);
   
-  static void Output (const cGH* cgh, const gh<dim>* hh, const char* descr);
+  static void Output (const cGH* cgh, const gh<dim>* hh);
   
   static void OutputGridStructure (const cGH *cgh,
 				   const gh<dim>::rexts& bbsss,
@@ -61,7 +61,7 @@ namespace Carpet {
   
   
   
-  static void SplitRegions_AlongZ       (const cGH* cgh,
+  void SplitRegions_AlongZ              (const cGH* cgh,
 					 vector<ibbox>& bbs,
 					 vector<bvect>& obs);
   static void SplitRegions_AsSpecified  (const cGH* cgh,
@@ -163,27 +163,7 @@ namespace Carpet {
     
     // Recompose
     hh->recompose (bbsss, obss, pss);
-    Output (cgh, hh, 0);
-    
-    // Adapt grid scalars
-    Adapt (cgh, hh->reflevels(), hh0);
-    Output (cgh, hh0, "");
-    
-    // Adapt grid arrays
-    for (int group=0; group<CCTK_NumGroups(); ++group) {
-      switch (CCTK_GroupTypeI(group)) {
-      case CCTK_SCALAR:
-	break;
-      case CCTK_ARRAY:
-	Adapt (cgh, hh->reflevels(), arrdata[group].hh);
-	Output (cgh, arrdata[group].hh, CCTK_GroupName(group));
-	break;
-      case CCTK_GF:
-	break;
-      default:
-	abort();
-      }	// switch
-    } // for
+    Output (cgh, hh);
   }
   
   
@@ -269,23 +249,13 @@ namespace Carpet {
   
   
   
-  static void Output (const cGH* cgh, const gh<dim>* hh, const char* descr)
+  static void Output (const cGH* cgh, const gh<dim>* hh)
   {
     DECLARE_CCTK_PARAMETERS;
     
     if (verbose) {
       cout << endl;
-      cout << "New bounding boxes";
-      if (!descr) {
-	cout << " for grid functions";
-      } else {
-	if (strlen(descr)) {
-	  cout << " for group " << descr;
-	} else {
-	  cout << " for scalars";
-	}
-      }
-      cout  << ":" << endl;
+      cout << "New bounding boxes:" << endl;
       for (int rl=0; rl<hh->reflevels(); ++rl) {
 	for (int c=0; c<hh->components(rl); ++c) {
 	  for (int ml=0; ml<hh->mglevels(rl,c); ++ml) {
@@ -295,17 +265,7 @@ namespace Carpet {
 	}
       }
       cout << endl;
-      cout << "New processor distribution";
-      if (!descr) {
-	cout << " for grid functions";
-      } else {
-	if (strlen(descr)) {
-	  cout << " for group " << descr;
-	} else {
-	  cout << " for scalars";
-	}
-      }
-      cout  << ":" << endl;
+      cout << "New processor distribution:" << endl;
       for (int rl=0; rl<hh->reflevels(); ++rl) {
 	for (int c=0; c<hh->components(rl); ++c) {
 	  cout << "   rl " << rl << "   c " << c

@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.8 2002/03/26 13:22:26 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.9 2002/06/06 00:23:34 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Comm_cc)
 
@@ -45,10 +45,12 @@ namespace Carpet {
     
     assert (group<(int)arrdata.size());
     for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-      if (reflevel>0) {
-	for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
-	  arrdata[group].data[var]->ref_bnd_prolongate
-	    (tl, reflevel, c, mglevel);
+      if (CCTK_GroupTypeI(group) == CCTK_GF) {
+	if (reflevel>0) {
+	  for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
+	    arrdata[group].data[var]->ref_bnd_prolongate
+	      (tl, reflevel, c, mglevel);
+	  }
 	}
       }
       for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {

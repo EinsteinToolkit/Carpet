@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.17 2002/03/11 13:17:11 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.18 2002/06/06 00:23:35 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -76,15 +76,9 @@ namespace Carpet {
   extern th* tt;
   extern dh<dim>* dd;
   
-  // Data for scalars
-  extern gh<dim>* hh0;
-  extern th* tt0;
-  extern dh<dim>* dd0;
-  
   // Data for everything
   struct arrdesc {
-    // points to hh etc. for GF, and to hh0 etc. for SCALAR
-    // is unique for ARRAY
+    // points to hh etc. for GF, and is unique for SCALAR and ARRAY
     cGroupDynamicData info;
     gh<dim>* hh;
     th* tt;
@@ -144,6 +138,8 @@ namespace Carpet {
   
   void SplitRegions (const cGH* cgh, vector<bbox<int,dim> >& bbs,
 		     vector<vect<vect<bool,2>,dim> >& obs);
+  void SplitRegions_AlongZ (const cGH* cgh, vector<bbox<int,dim> >& bbs,
+			    vector<vect<vect<bool,2>,dim> >& obs);
   
   void MakeProcessors (const cGH* cgh, const gh<dim>::rexts& bbsss,
 		       gh<dim>::rprocs& pss);

@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.7 2002/03/26 13:22:27 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.8 2002/06/06 00:23:34 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Restrict_cc)
 
@@ -26,9 +26,10 @@ namespace Carpet {
     
     Checkpoint ("%*sRestrict", 2*reflevel, "");
     
-    // Loop over variables with storage
+    // Loop over grid functions with storage
     for (int group=0; group<CCTK_NumGroups(); ++group) {
-      if (CCTK_QueryGroupStorageI(cgh, group)) {
+      if (CCTK_GroupTypeI(group) == CCTK_GF
+	  && CCTK_QueryGroupStorageI(cgh, group)) {
 	for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
 	  
 	  const int tl = 0;

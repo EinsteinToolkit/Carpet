@@ -4,18 +4,21 @@
 
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
+#include "Carpet/CarpetLib/src/bbox.hh"
 #include "Carpet/CarpetLib/src/defs.hh"
 #include "Carpet/CarpetLib/src/dist.hh"
 #include "Carpet/CarpetLib/src/ggf.hh"
+#include "Carpet/CarpetLib/src/gh.hh"
 #include "Carpet/CarpetLib/src/vect.hh"
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.26 2002/03/26 13:22:27 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.27 2002/06/06 00:23:35 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_SetupGH_cc)
 
@@ -101,22 +104,6 @@ namespace Carpet {
       }
     }
     
-    // Allocate grid hierarchy for scalars
-    const vect<int,dim> lb0(0);
-    const vect<int,dim> ub0(0);
-    const bbox<int,dim> baseext0(lb0, ub0, str);
-    hh0 = new gh<dim>(refinement_factor, vertex_centered,
-		      multigrid_factor, vertex_centered,
-		      baseext0);
-    
-    // Allocate time hierarchy for scalars
-    tt0 = new th(hh0, maxreflevelfact);
-    
-    // Allocate data hierarchy for scalars
-    const vect<int,dim> lghosts0(0);
-    const vect<int,dim> ughosts0(0);
-    dd0 = new dh<dim>(*hh0, lghosts0, ughosts0, 0);
-    
     // Allocate space for groups
     arrdata.resize(CCTK_NumGroups());
     
@@ -124,42 +111,49 @@ namespace Carpet {
     // yet)
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       
-      switch (CCTK_GroupTypeI(group)) {
+      cGroup gp;
+      CCTK_GroupData (group, &gp);
+      
+      switch (gp.grouptype) {
 	
-      case CCTK_SCALAR: {
-	arrdata[group].info.dim = 0;
-	arrdata[group].hh = hh0;
-	arrdata[group].tt = tt0;
-	arrdata[group].dd = dd0;
-	break;
-      }
-	
+      case CCTK_SCALAR:
       case CCTK_ARRAY: {
-	cGroup gp;
-	CCTK_GroupData (group, &gp);
 	
-	assert (gp.dim>=1 || gp.dim<=dim);
-	arrdata[group].info.dim = gp.dim;
+	int disttype;
+	vect<int,dim> sizes(1), ghostsizes(0);
 	
-	switch (gp.disttype) {
-	case CCTK_DISTRIB_CONSTANT:
-	case CCTK_DISTRIB_DEFAULT:
+	switch (gp.grouptype) {
+	  
+	case CCTK_SCALAR:
+	  // treat scalars as DIM=0, DISTRIB=const arrays
+	  arrdata[group].info.dim = 0;
+	  disttype = CCTK_DISTRIB_CONSTANT;
 	  break;
+	  
+	case CCTK_ARRAY: {
+	  assert (gp.dim>=1 || gp.dim<=dim);
+	  arrdata[group].info.dim = gp.dim;
+	  disttype = gp.disttype;
+	  const CCTK_INT * const * const sz  = CCTK_GroupSizesI(group);
+	  const CCTK_INT * const * const gsz = CCTK_GroupGhostsizesI(group);
+	  for (int d=0; d<gp.dim; ++d) {
+	    if (sz) sizes[d] = *sz[d];
+	    if (gsz) ghostsizes[d] = *gsz[d];
+	  }
+	  break;
+	}
+	  
 	default:
 	  abort();
 	}
 	
-	const CCTK_INT * const * const sz  = CCTK_GroupSizesI(group);
-	const CCTK_INT * const * const gsz = CCTK_GroupGhostsizesI(group);
-	vect<int,dim> sizes(1), ghostsizes(0);
-	for (int d=0; d<gp.dim; ++d) {
-	  if (sz) sizes[d] = *sz[d];
-	  if (gsz) ghostsizes[d] = *gsz[d];
-	}
+	assert (disttype==CCTK_DISTRIB_CONSTANT
+		|| disttype==CCTK_DISTRIB_DEFAULT);
 	
 	vect<int,dim> alb(0), aub(stride), astr(stride);
 	for (int d=0; d<gp.dim; ++d) {
 	  if (gp.disttype==CCTK_DISTRIB_CONSTANT && d==gp.dim-1) {
+	    // multiply the group in the z direction
 	    aub[d] = astr[d] * ((CCTK_nProcs(cgh) * sizes[d]
 				 - (CCTK_nProcs(cgh)-1) * ghostsizes[d]) - 1);
 	  } else {
@@ -172,7 +166,7 @@ namespace Carpet {
 					multigrid_factor, vertex_centered,
 					arrext);
 	
-	arrdata[group].tt = new th(arrdata[group].hh, maxreflevelfact);
+	arrdata[group].tt = new th(arrdata[group].hh, 1);
 	
 	vect<int,dim> alghosts(0), aughosts(0);
 	for (int d=0; d<gp.dim; ++d) {
@@ -180,32 +174,37 @@ namespace Carpet {
 	  aughosts[d] = ghostsizes[d];
 	}
 	
-	const int my_prolongation_order_space
-	  = maxval(max(alghosts,aughosts))==0 ? 0 : prolongation_order_space;
-	
 	arrdata[group].dd
-	  = new dh<dim>(*arrdata[group].hh, alghosts, aughosts,
-			my_prolongation_order_space);
+	  = new dh<dim>(*arrdata[group].hh, alghosts, aughosts, 0);
 	
-	// TODO: think about this
-	if (true || gp.disttype == CCTK_DISTRIB_DEFAULT) {
-	  if (max_refinement_levels > 1) {
-	    const int actual_min_nghosts = minval(min(alghosts,aughosts));
-	    if (actual_min_nghosts > 0) {
-	      const int prolongation_stencil_size
-		= arrdata[group].dd->prolongation_stencil_size();
-	      const int needed_min_nghosts
-		= ((prolongation_stencil_size + refinement_factor - 2)
-		   / (refinement_factor-1));
-	      if (actual_min_nghosts < needed_min_nghosts) {
-		CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-			    "There are not enough ghost zones for the desired spatial prolongation order for the grid function group \"%s\".  With Carpet::prolongation_order_space=%d, you need at least %d ghost zones.",
-			    CCTK_GroupName(group),
-			    prolongation_order_space, needed_min_nghosts);
-	      }
-	    }
-	  }
-	}
+	// Set refinement structure for scalars and arrays:
+	
+	// Set the basic extent
+	vector<bbox<int,dim> >          bbs;
+	vector<vect<vect<bool,2>,dim> > obs;
+	bbs.push_back (arrdata[group].hh->baseextent);
+	obs.push_back (vect<vect<bool,2>,dim>(vect<bool,2>(true)));
+	
+	// Split it into components, one for each processor
+	SplitRegions_AlongZ (cgh, bbs, obs);
+	
+	// For all refinement levels (but there is only one)
+	vector<vector<bbox<int,dim> > >          bbss(1);
+	vector<vector<vect<vect<bool,2>,dim> > > obss(1);
+	bbss[0] = bbs;
+	obss[0] = obs;
+	
+	// For all multigrid levels
+	gh<dim>::rexts bbsss;
+	bbsss = hh->make_multigrid_boxes(bbss, mglevels);
+	
+	// Distribute onto processors
+	vector<vector<int> > pss;
+	MakeProcessors (cgh, bbsss, pss);
+	
+	// And recompose.  Done.
+	arrdata[group].hh->recompose (bbsss, obss, pss);
+	
 	break;
       }
 	
@@ -235,6 +234,8 @@ namespace Carpet {
       }
     }
     
+    
+    
     // Initialise cgh
     for (int d=0; d<dim; ++d) {
       cgh->cctk_nghostzones[d] = dd->lghosts[d];
@@ -250,6 +251,8 @@ namespace Carpet {
     reflevel  = 0;
     mglevel   = -1;
     component = -1;
+    
+    
     
     // Set initial refinement structure
     vector<bbox<int,dim> > bbs;
@@ -288,6 +291,8 @@ namespace Carpet {
     
     // Recompose grid hierarchy
     Recompose (cgh, bbsss, obss, pss);
+    
+    
     
     // Initialise time step on coarse grid
     base_delta_time = 0;

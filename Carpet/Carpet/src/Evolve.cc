@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.11 2002/05/22 18:26:27 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.12 2002/06/06 00:23:34 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Evolve_cc)
 
@@ -83,20 +83,6 @@ namespace Carpet {
 	      
 	      // Advance level times
 	      tt->advance_time (reflevel, mglevel);
-	      tt0->advance_time (reflevel, mglevel);
-	      for (int group=0; group<CCTK_NumGroups(); ++group) {
-		switch (CCTK_GroupTypeI(group)) {
-		case CCTK_SCALAR:
-		  break;
-		case CCTK_ARRAY:
-		  arrdata[group].tt->advance_time (reflevel, mglevel);
-		  break;
-		case CCTK_GF:
-		  break;
-		default:
-		  abort();
-		}
-	      }
 	      
 	      // Checking
 	      CalculateChecksums (cgh, allbutcurrenttime);

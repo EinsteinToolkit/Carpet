@@ -5,7 +5,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.7 2002/03/26 13:22:28 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.8 2002/06/06 00:23:35 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_variables_cc)
 
@@ -63,13 +63,8 @@ namespace Carpet {
   gh<dim>* hh;
   th* tt;
   dh<dim>* dd;
-  
-  // Data for scalars
-  gh<dim>* hh0;
-  th* tt0;
-  dh<dim>* dd0;
 
-    // Data for everything
+  // Data for everything
   vector<arrdesc> arrdata;	// [group]
   
   // Checksums

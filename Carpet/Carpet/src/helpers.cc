@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.20 2002/03/26 13:22:28 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.21 2002/06/06 00:23:35 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_helpers_cc)
 
@@ -102,7 +102,7 @@ namespace Carpet {
       return 0;
     case currenttimebutnotifonly:
       // don't include current time if there is only one time level
-      return num_tl>1 ? 0: 1;
+      return num_tl>1 ? 0 : 1;
     case allbutlasttime:
       // do include current time if there is only one time level
       return 0;
@@ -272,48 +272,6 @@ namespace Carpet {
 	}
       }
       
-      // Set Cactus pointers to data
-      for (int n=0; n<CCTK_NumVars(); ++n) {
-	for (int tl=0; tl<CCTK_NumTimeLevelsFromVarI(n); ++tl) {
-	  
-	  const int group = CCTK_GroupIndexFromVarI(n);
-	  assert (group>=0);
-	  const int var   = n - CCTK_FirstVarIndexI(group);
-	  assert (var>=0);
-	  
-	  if (CCTK_GroupTypeI(group) != CCTK_SCALAR) {
-	    // Arrays and grid functions cannot be accessed
-	    
-	    cgh->data[n][tl] = 0;
-	    
-	  } else {
-	    // Scalars can be accessed
-	    
-	    if (CCTK_QueryGroupStorageI(cgh, group)) {
-	      // Group has storage
-	      
-	      assert (group<(int)arrdata.size());
-	      assert (var<(int)arrdata[group].data.size());
-	      assert (arrdata[group].data[var]);
-	      const int c = CCTK_MyProc(cgh);
-	      assert (hh->is_local(reflevel,c));
-	      cgh->data[n][tl]
-		= ((*arrdata[group].data[var])
-		   (-tl, reflevel, c, mglevel)->storage());
-	      assert (cgh->data[n][tl]);
-	      
-	    } else {
-	      // Group has no storage
-	      
-	      cgh->data[n][tl] = 0;
-	      
-	    } // if ! has storage
-	    
-	  } // if group type is SCALAR
-	  
-	} // for tl
-      }	// for n
-      
     } else {
       // Local mode -- a component is active
       
@@ -341,14 +299,21 @@ namespace Carpet {
 	}
       }
       for (int group=0; group<CCTK_NumGroups(); ++group) {
-	assert (reflevel < (int)arrdata[group].dd->boxes.size());
-	assert (component < (int)arrdata[group].dd->boxes[reflevel].size());
-	assert (mglevel < (int)arrdata[group].dd->boxes[reflevel][component].size());
+	int rl, c;
+	if (CCTK_GroupTypeI(group) == CCTK_GF) {
+	  rl = reflevel;
+	  c = component;
+	} else {
+	  rl = 0;
+	  c = CCTK_MyProc(cgh);
+	}
+	assert (rl < (int)arrdata[group].dd->boxes.size());
+	assert (c < (int)arrdata[group].dd->boxes[rl].size());
+	assert (mglevel < (int)arrdata[group].dd->boxes[rl][c].size());
 	const bbox<int,dim>& bext = arrdata[group].hh->baseextent;
-	const bbox<int,dim>& iext
-	  = arrdata[group].hh->extents[reflevel][component][mglevel];
+	const bbox<int,dim>& iext = arrdata[group].hh->extents[rl][c][mglevel];
 	const bbox<int,dim>& ext
-	  = arrdata[group].dd->boxes[reflevel][component][mglevel].exterior;
+	  = arrdata[group].dd->boxes[rl][c][mglevel].exterior;
 	for (int d=0; d<dim; ++d) {
 	  ((int*)arrdata[group].info.lsh)[d]
 	    = (ext.shape() / ext.stride())[d];
@@ -364,7 +329,7 @@ namespace Carpet {
 		  == arrdata[group].info.lsh[d]);
 	  assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
 	  // Do not allow outer boundaries on the finer grids
-	  if (reflevel==0) {
+	  if (rl==0) {
 	    assert (iext.lower()[d] >= bext.lower()[d]);
 	    assert (iext.upper()[d] <= bext.upper()[d]);
 	    ((int*)arrdata[group].info.bbox)[2*d  ]
@@ -378,44 +343,76 @@ namespace Carpet {
 	}
       }
       
-      // Set Cactus pointers to data
-      for (int n=0; n<CCTK_NumVars(); ++n) {
+    } // if local mode
+    
+    
+    
+    // Set Cactus pointers to data
+    for (int n=0; n<CCTK_NumVars(); ++n) {
+      
+      const int group = CCTK_GroupIndexFromVarI(n);
+      assert (group>=0);
+      const int var = n - CCTK_FirstVarIndexI(group);
+      assert (var>=0);
+      const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
+      assert (num_tl>0);
+      
+      for (int tl=0; tl<num_tl; ++tl) {
 	
-	const int group = CCTK_GroupIndexFromVarI(n);
-	assert (group>=0);
-	const int var = n - CCTK_FirstVarIndexI(group);
-	assert (var>=0);
-	const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
-	assert (num_tl>0);
-	
-	for (int tl=0; tl<num_tl; ++tl) {
+	if (CCTK_QueryGroupStorageI(cgh, group)) {
+	  // Group has storage
 	  
-	  if (CCTK_QueryGroupStorageI(cgh, group)) {
-	    // Group has storage
+	  if (CCTK_GroupTypeI(group) == CCTK_GF) {
+	    // It is a grid function
+	    
+	    if (component == -1) {
+	      // Global mode
+	      
+	      // Grid functions cannot be accessed in global mode
+	      cgh->data[n][tl] = 0;
+	      
+	    } else {
+	      // local mode
+	      
+	      assert (group<(int)arrdata.size());
+	      assert (var<(int)arrdata[group].data.size());
+	      assert (arrdata[group].data[var]);
+	      cgh->data[n][tl]
+		= ((*arrdata[group].data[var])
+		   (-tl, reflevel, component, mglevel)->storage());
+	      if (hh->is_local(reflevel,component)) {
+		assert (cgh->data[n][tl]);
+	      } else {
+		assert (! cgh->data[n][tl]);
+	      }
+	      
+	    } // if global mode
+	    
+	  } else {
+	    // Scalars and arrays can always be accessed
 	    
 	    assert (group<(int)arrdata.size());
 	    assert (var<(int)arrdata[group].data.size());
 	    assert (arrdata[group].data[var]);
+	    const int rl = 0;
+	    const int c = CCTK_MyProc(cgh);
+	    assert (hh->is_local(reflevel,c));
 	    cgh->data[n][tl]
-	      = ((*arrdata[group].data[var])
-		 (-tl, reflevel, component, mglevel)->storage());
-	    if (hh->is_local(reflevel,component)) {
-	      assert (cgh->data[n][tl]);
-	    } else {
-	      assert (! cgh->data[n][tl]);
-	    }
+	      = ((*arrdata[group].data[var]) (-tl, rl, c, mglevel)->storage());
+	    assert (cgh->data[n][tl]);
 	    
-	  } else {
-	    // Group has no storage
-	    
-	    cgh->data[n][tl] = 0;
-	    
-	  } // if ! has storage
+	  } // if scalar or array
 	  
-	} // for tl
-      } // for n
-      
-    }
+	} else {
+	  // Group has no storage
+	  
+	  cgh->data[n][tl] = 0;
+	  
+	} // if has no storage
+	
+      } // for tl
+    } // for n
+    
   }
   
 } // namespace Carpet
