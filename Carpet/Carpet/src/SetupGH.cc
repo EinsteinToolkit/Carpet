@@ -1019,7 +1019,9 @@ namespace Carpet {
     groupdata.at(group).info.nghostzones = new int [dim];
       
     groupdata.at(group).transport_operator = GetTransportOperator (cgh, group);
-      
+    
+    groupdata.at(group).activetimelevels = 0;
+    
     // Initialise group variables
     for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
       

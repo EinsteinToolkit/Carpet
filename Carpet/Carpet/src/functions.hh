@@ -19,10 +19,14 @@ namespace Carpet {
   using namespace std;
   
   int SyncGroup (const cGH* cgh, const char* groupname);
-  int EnableGroupStorage (const cGH* cgh, const char* groupname);
-  int DisableGroupStorage (const cGH* cgh, const char* groupname); 
   int EnableGroupComm (const cGH* cgh, const char* groupname);
   int DisableGroupComm (const cGH* cgh, const char* groupname);
+  int EnableGroupStorage (const cGH* cgh, const char* groupname);
+  int DisableGroupStorage (const cGH* cgh, const char* groupname); 
+  int GroupStorageIncrease (const cGH* cgh, int n_groups, const int* groups,
+                            const int* timelevels, int* status);
+  int GroupStorageDecrease (const cGH* cgh, int n_groups, const int* groups,
+                            const int* timelevels, int* status);
   int Barrier (const cGH* cgh);
   int Exit (cGH* cgh, int retval);
   int Abort (cGH* cgh, int retval);

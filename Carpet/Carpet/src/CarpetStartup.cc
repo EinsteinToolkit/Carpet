@@ -25,6 +25,8 @@ namespace Carpet {
     CCTK_OverloadSyncGroup (SyncGroup);
     CCTK_OverloadEnableGroupStorage (EnableGroupStorage);
     CCTK_OverloadDisableGroupStorage (DisableGroupStorage); 
+    CCTK_OverloadGroupStorageIncrease (GroupStorageIncrease);
+    CCTK_OverloadGroupStorageDecrease (GroupStorageDecrease); 
     CCTK_OverloadEnableGroupComm (EnableGroupComm);
     CCTK_OverloadDisableGroupComm (DisableGroupComm);
     CCTK_OverloadBarrier (Barrier);
