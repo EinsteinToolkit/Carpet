@@ -1,4 +1,4 @@
 # Configuration definitions for thorn CarpetSlab
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/configuration.ccl,v 1.3 2004/04/01 09:05:46 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/configuration.ccl,v 1.4 2004/04/18 14:09:59 schnetter Exp $
 
-Requires Thorns: Carpet CarpetLib
+REQUIRES Carpet CarpetLib

@@ -1,4 +1,4 @@
 # Configuration definitions for thorn CarpetIOSer
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIOSer/configuration.ccl,v 1.1 2003/09/04 16:23:22 tradke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIOSer/configuration.ccl,v 1.2 2004/04/18 14:10:30 schnetter Exp $
 
-Requires Thorns: Carpet CarpetLib
+REQUIRES Carpet CarpetLib

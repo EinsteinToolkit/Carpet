@@ -1,4 +1,4 @@
 # Configuration definitions for thorn CarpetReduce
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/configuration.ccl,v 1.1 2003/09/04 16:23:22 tradke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/configuration.ccl,v 1.2 2004/04/18 14:09:59 schnetter Exp $
 
-Requires Thorns: Carpet CarpetLib
+REQUIRES Carpet CarpetLib
