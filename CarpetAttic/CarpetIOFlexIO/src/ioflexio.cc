@@ -72,6 +72,15 @@ namespace CarpetIOFlexIO {
 				const char* const varlist, const int vindex);
   static void SetFlag (int index, const char* optstring, void* arg);
   
+  static void WriteAttribute (IObase* writer, const char* name,
+                              int value);
+  static void WriteAttribute (IObase* writer, const char* name,
+                              const int* values, int nvalues);
+  static void WriteAttribute (IObase* writer, const char* name,
+                              CCTK_REAL value);
+  static void WriteAttribute (IObase* writer, const char* name,
+                              const CCTK_REAL* values, int nvalues);
+
   
   
   int CarpetIOFlexIOStartup ()
@@ -317,6 +326,25 @@ namespace CarpetIOFlexIO {
 	  dims[d]   = (ext.shape() / ext.stride())[d];
 	}
 	amrwriter->write (origin, dims, (void*)tmp->storage());
+        
+        // Write some additional attributes
+        WriteAttribute (writer, "carpet_flexio_version", 1);
+        WriteAttribute (writer, "cctk_dim", cgh->cctk_dim);
+        WriteAttribute (writer, "cctk_iteration", cgh->cctk_iteration);
+        WriteAttribute (writer, "cctk_gsh", cgh->cctk_gsh, dim);
+        WriteAttribute (writer, "cctk_lsh", cgh->cctk_lsh, dim);
+        WriteAttribute (writer, "cctk_lbnd", cgh->cctk_lbnd, dim);
+        WriteAttribute (writer, "cctk_delta_time", cgh->cctk_delta_time);
+        WriteAttribute (writer, "cctk_delta_space", cgh->cctk_delta_space, dim);
+        WriteAttribute (writer, "cctk_origin_space", cgh->cctk_origin_space, dim);
+        WriteAttribute (writer, "cctk_bbox", cgh->cctk_bbox, 2*dim);
+        WriteAttribute (writer, "cctk_levfac", cgh->cctk_levfac, dim);
+        WriteAttribute (writer, "cctk_levoff", cgh->cctk_levoff, dim);
+        WriteAttribute (writer, "cctk_levoffdenom", cgh->cctk_levoffdenom, dim);
+        WriteAttribute (writer, "cctk_timefac", cgh->cctk_timefac);
+        WriteAttribute (writer, "cctk_convlevel", cgh->cctk_convlevel);
+        WriteAttribute (writer, "cctk_nghostzones", cgh->cctk_nghostzones, dim);
+        WriteAttribute (writer, "cctk_time", cgh->cctk_time);
       }
       
       // Delete temporary copy
@@ -694,6 +722,44 @@ namespace CarpetIOFlexIO {
   {
     vector<bool>& flags = *(vector<bool>*)arg;
     flags[index] = true;
+  }
+  
+  
+  
+  void WriteAttribute (IObase* writer, const char* name, int value)
+  {
+    WriteAttribute (writer, name, &value, 1);
+  }
+  
+  void WriteAttribute (IObase* writer, const char* name,
+                       const int* values, int nvalues)
+  {
+    assert (writer);
+    assert (name);
+    assert (values);
+    vector<CCTK_INT4> values1(nvalues);
+    for (int i=0; i<nvalues; ++i) {
+      values1[i] = values[i];
+    }
+    writer->writeAttribute (name, IObase::Int32, nvalues, &values1[0]);
+  }
+  
+  void WriteAttribute (IObase* writer, const char* name, CCTK_REAL value)
+  {
+    WriteAttribute (writer, name, &value, 1);
+  }
+  
+  void WriteAttribute (IObase* writer, const char* name,
+                       const CCTK_REAL* values, int nvalues)
+  {
+    assert (writer);
+    assert (name);
+    assert (values);
+    vector<CCTK_REAL8> values1(nvalues);
+    for (int i=0; i<nvalues; ++i) {
+      values1[i] = values[i];
+    }
+    writer->writeAttribute (name, IObase::Float64, nvalues, &values1[0]);
   }
   
   
