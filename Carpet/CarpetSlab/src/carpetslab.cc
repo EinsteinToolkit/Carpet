@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.4 2001/03/10 20:55:09 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.5 2001/03/17 16:14:52 eschnett Exp $
 
 #include <cassert>
 #include <cstdlib>
@@ -17,7 +17,7 @@
 
 #include "carpetslab.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.4 2001/03/10 20:55:09 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.5 2001/03/17 16:14:52 eschnett Exp $";
 
 
 
@@ -30,7 +30,7 @@ namespace CarpetSlab {
   void* GetSlab (cGH* const cgh,
 		 const int dest_proc,
 		 const int n,
-		 const int tl,
+		 const int ti,
 		 const int hdim,
 		 const int origin[/*vdim*/],
 		 const int dirs[/*hdim*/],
@@ -74,7 +74,10 @@ namespace CarpetSlab {
     assert (typesize>0);
     
     // Check timelevel
-    assert (tl>=0 && tl<gp.numtimelevels);
+    const int num_tl = gp.numtimelevels;
+    assert (ti>=0 && ti<num_tl);
+    const int tmin = min(0, 2 - num_tl);
+    const int tl = tmin + ti;
     
     // Check origin
 //     for (int d=0; d<dim; ++d) {
