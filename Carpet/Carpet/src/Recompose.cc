@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.62 2004/03/23 19:47:21 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.63 2004/03/23 19:50:26 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -821,6 +821,7 @@ namespace Carpet {
                                   jjvect const & is_internal,
                                   jjvect const & is_staggered,
                                   jjvect const & shiftout,
+                                  ibbox const & base,
                                   ibbox const & bb,
                                   bbvect const & ob,
                                   vector<ibbox>& bbs)
@@ -838,17 +839,31 @@ namespace Carpet {
                         + shiftout[d][f]);
       }
     }
+    vector<ibbox> bases(mglevels);
+    bases.at(0) = base;
     for (int ml=1; ml<mglevels; ++ml) {
+      // next finer base
+      ivect const fbaselo = bases.at(ml-1).lower();
+      ivect const fbasehi = bases.at(ml-1).upper();
+      ivect const fbasestr = bases.at(ml-1).stride();
+      // this base
+      ivect const basestr = fbasestr * mgfact;
+      ivect const baselo = fbaselo + (xpose(offset)[0] - ivect(mgfact) * xpose(offset)[0]) * fbasestr;
+      ivect const basehi = fbasehi + (xpose(offset)[1] - ivect(mgfact) * xpose(offset)[1]) * fbasestr;
+      ivect const baselo1 = baselo;
+      ivect const basehi1 = baselo1 + (basehi - baselo1) / basestr * basestr;
+      bases.at(ml) = ibbox(baselo1, basehi1, basestr);
       // next finer grid
       ivect const flo = bbs.at(ml-1).lower();
       ivect const fhi = bbs.at(ml-1).upper();
       ivect const fstr = bbs.at(ml-1).stride();
       // this grid
       ivect const str = fstr * mgfact;
-      ivect const modoffset = (xpose(offset)[0] - ivect(mgfact) * xpose(offset)[0] + ivect(mgfact) * xpose(offset)[0] * str) % str;
-      ivect const lo = flo + xpose(ob)[0].ifthen (    xpose(offset)[0] - ivect(mgfact) * xpose(offset)[0] , modoffset);
-      ivect const hi = fhi + xpose(ob)[1].ifthen ( - (xpose(offset)[1] - ivect(mgfact) * xpose(offset)[1]), modoffset + fstr - str);
-      bbs[ml] = ibbox(lo,hi,str);
+      ivect const lo = flo + xpose(ob)[0].ifthen (  (xpose(offset)[0] - ivect(mgfact) * xpose(offset)[0]) * fstr, ivect(0));
+      ivect const hi = fhi + xpose(ob)[1].ifthen (- (xpose(offset)[1] - ivect(mgfact) * xpose(offset)[1]) * fstr, ivect(0));
+      ivect const lo1 = baselo1 + (lo - baselo1 + str - 1) / str * str;
+      ivect const hi1 = lo1 + (hi - lo1) / str * str;
+      bbs.at(ml) = ibbox(lo1, hi1, str);
     }
   }
   
@@ -863,12 +878,16 @@ namespace Carpet {
                            vector<vector<ibbox> >& bbss)
   {
     assert (bbs.size() == obs.size());
+    ibbox base;
+    for (size_t c=0; c<bbs.size(); ++c) {
+      base = base.expanded_containing(bbs.at(c));
+    }
     bbss.resize(bbs.size());
     for (size_t c=0; c<bbs.size(); ++c) {
       MakeMultigridBoxes
         (cgh,
          size, nboundaryzones, is_internal, is_staggered, shiftout,
-         bbs.at(c), obs.at(c), bbss.at(c));
+         base, bbs.at(c), obs.at(c), bbss.at(c));
     }
   }
   

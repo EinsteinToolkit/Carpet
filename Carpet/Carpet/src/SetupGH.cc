@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.71 2004/03/23 19:33:40 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.72 2004/03/23 19:51:38 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -713,16 +713,20 @@ namespace Carpet {
           bbss.at(c).resize (mglevels);
           bbss.at(c).at(0) = bbs.at(c);
           for (int ml=1; ml<mglevels; ++ml) {
+            // this base
+            ivect const baselo = ivect(0);
+            ivect const baselo1 = baselo;
             // next finer grid
             ivect const flo = bbss.at(c).at(ml-1).lower();
             ivect const fhi = bbss.at(c).at(ml-1).upper();
             ivect const fstr = bbss.at(c).at(ml-1).stride();
             // this grid
             ivect const str = fstr * amgfact;
-            ivect const modoffset = (xpose(aoffset)[0] - amgfact * xpose(aoffset)[0] + amgfact * xpose(aoffset)[0] * str) % str;
-            ivect const lo = flo + xpose(obs.at(c))[0].ifthen (    xpose(aoffset)[0] - amgfact * xpose(aoffset)[0] , modoffset);
-            ivect const hi = fhi + xpose(obs.at(c))[1].ifthen ( - (xpose(aoffset)[1] - amgfact * xpose(aoffset)[1]), modoffset + fstr - str);
-            bbss.at(c).at(ml) = ibbox(lo,hi,str);
+            ivect const lo = flo + xpose(obs.at(c))[0].ifthen (   (xpose(aoffset)[0] - amgfact * xpose(aoffset)[0]) * fstr, ivect(0));
+            ivect const hi = fhi + xpose(obs.at(c))[1].ifthen ( - (xpose(aoffset)[1] - amgfact * xpose(aoffset)[1]) * fstr, ivect(0));
+            ivect const lo1 = baselo1 + (lo - baselo1 + str - 1) / str * str;
+            ivect const hi1 = lo1 + (hi - lo1) / str * str;
+            bbss.at(c).at(ml) = ibbox(lo1, hi1, str);
           }
         }
         
