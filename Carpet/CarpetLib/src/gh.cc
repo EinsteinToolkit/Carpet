@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.16 2002/08/30 18:08:53 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.17 2002/10/12 13:02:25 schnetter Exp $
 
  ***************************************************************************/
 
@@ -212,6 +212,18 @@ gh<D>::make_multigrid_boxes (const vector<vector<ibbox> >& exts,
   }
   
   return mexts;
+}
+
+
+
+// Accessors
+template<int D>
+int gh<D>::local_components (const int rl) const {
+  int lc = 0;
+  for (int c=0; c<components(rl); ++c) {
+    if (is_local(rl,c)) ++lc;
+  }
+  return lc;
 }
 
 

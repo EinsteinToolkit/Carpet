@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.10 2002/05/05 22:17:02 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.11 2002/10/12 13:02:25 schnetter Exp $
 
  ***************************************************************************/
 
@@ -135,6 +135,8 @@ public:
     MPI_Comm_rank (dist::comm, &rank);
     return proc(rl,c) == rank;
   }
+  
+  int local_components (const int rl) const;
   
   // Data hierarchy management
   void add (dh<D>* d);
