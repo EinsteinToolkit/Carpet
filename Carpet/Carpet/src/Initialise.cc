@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.37 2004/02/09 13:02:31 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.38 2004/02/15 11:27:18 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -194,7 +194,7 @@ namespace Carpet {
       for (int rl=0; rl<reflevels; ++rl) {
         BEGIN_MGLEVEL_LOOP(cgh) {
           enter_level_mode (cgh, rl);
-          do_global_mode = reflevel==0;
+          do_global_mode = reflevel==reflevels-1;
           do_meta_mode = do_global_mode && mglevel==mglevels-1;
           
           Waypoint ("Initialisation II at iteration %d time %g%s%s",
