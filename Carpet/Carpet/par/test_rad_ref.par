@@ -1,6 +1,6 @@
 !DESC "Octant evolution with radiation boundaries"
 
-# $Id: test_rad_ref.par,v 1.2 2002/10/24 21:11:53 schnetter Exp $
+# $Id: test_rad_ref.par,v 1.1 2002/03/26 13:27:19 schnetter Exp $
 #
 # /*@@
 #   @file      test_rad.par
@@ -49,5 +49,5 @@ IOASCII::out1D_y = "no"
 IOASCII::out1D_d = "no"
 IOASCII::out1D_vars = "wavetoy::phi "
 
-IO::out_dir       = "test_rad_ref"
+IO::outdir       = "test_rad_ref"
 IO::out_fileinfo = "none"
