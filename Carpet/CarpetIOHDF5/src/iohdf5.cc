@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.27 2004/04/12 22:59:04 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.28 2004/04/18 13:02:49 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -326,10 +326,7 @@ namespace CarpetIOHDF5 {
     assert(ierr==0);
 
     // let's get the correct Carpet time level (which is the (-1) * Cactus timelevel):
-    if (request->timelevel==0)
-      tl = 0;
-    else
-      tl = - request->timelevel;
+    tl = - request->timelevel;
     
     // Traverse all components
     BEGIN_MAP_LOOP(cctkGH, grouptype) {
@@ -539,7 +536,7 @@ namespace CarpetIOHDF5 {
 	    
 	    // Delete temporary copy
 	    delete tmp;
-	} //if( !((CCTK_DISTRIB_BLAH)
+	} // if ! CCTK_DISTRIB_BLAH
       } END_COMPONENT_LOOP;
     } END_MAP_LOOP;
     
