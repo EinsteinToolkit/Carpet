@@ -1,5 +1,5 @@
 # Schedule definitions for thorn IDScalarWave
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/schedule.ccl,v 1.1 2002/02/18 11:26:34 shawley Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/schedule.ccl,v 1.2 2002/02/18 14:58:21 shawley Exp $
 
 schedule IDFOScalarWave_CheckParameters at PARAMCHECK
 {
@@ -8,6 +8,6 @@ schedule IDFOScalarWave_CheckParameters at PARAMCHECK
 
 schedule IDFOScalarWave_InitialData as WaveToy_InitialData at INITIAL
 {
-  STORAGE:       wavetoy::scalarevolve
+  STORAGE:       wavetoy::scalarevolve wavetoy::scalarevolve_derivs
   LANG:          Fortran
 } "Initial data for 3D wave equation"
