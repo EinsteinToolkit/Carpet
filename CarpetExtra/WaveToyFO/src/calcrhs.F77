@@ -1,4 +1,4 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.F77,v 1.6 2004/05/06 16:35:56 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.F77,v 1.7 2004/05/07 22:06:08 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
@@ -17,11 +17,14 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.
       if (dir .eq. 0) then
          WaveToyFO_Deriv = (fp1 - fm1) / (2 * dx)
       else if (dir .eq. -1) then
-c$$$         WaveToyFO_Deriv = (f0 - fm1) / dx
-         WaveToyFO_Deriv = (+ 3*f0 - 4*fm1 + fm2) / (2*dx)
+c     Use first order one-sided derivatives here.
+c     These are less dissipative than second order one-sided derivatives.
+c     (Sic.)
+         WaveToyFO_Deriv = (f0 - fm1) / dx
+c$$$         WaveToyFO_Deriv = (+ 3*f0 - 4*fm1 + fm2) / (2*dx)
       else if (dir .eq. +1) then
-c$$$         WaveToyFO_Deriv = (fp1 - f0) / dx
-         WaveToyFO_Deriv = (- 3*f0 + 4*fp1 - fp2) / (2*dx)
+         WaveToyFO_Deriv = (fp1 - f0) / dx
+c$$$         WaveToyFO_Deriv = (- 3*f0 + 4*fp1 - fp2) / (2*dx)
       else
          call CCTK_WARN (0, "internal error")
       end if
