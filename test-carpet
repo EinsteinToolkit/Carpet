@@ -2,6 +2,11 @@
 
 set -e
 
+mkdir test-Cactus
+pushd test-Cactus
+
+
+
 # Get Cactus
 cvs -z6 -d :pserver:cvs_anon@cvs.cactuscode.org:/cactusdevcvs checkout Cactus
 pushd Cactus
@@ -11,7 +16,7 @@ pushd Cactus
 pushd arrangements
 
 # Link to Carpet thorns
-ln -sf ../../Carpet* .
+ln -sf ../../../Carpet* .
 
 # Get arrangements
 for arr in CactusBase CactusBench CactusConnect CactusEinstein CactusElliptic CactusExamples CactusExternal CactusIO CactusPUGH CactusPUGHIO CactusTest CactusUtils CactusWave AlphaThorns BetaThorns; do
@@ -24,7 +29,9 @@ for arr in AEIThorns Excision; do
     cvs -z6 -d :pserver:cvs_anon@cvs.aei.mpg.de:/numrelcvs checkout $arr
 done
 for thorn in AEIThorns/AHFinderDirect; do
-    (cd $thorn && cvs -z6 update -dPr Erik)
+    pushd $thorn
+    cvs -z6 update -dPr Erik
+    popd
 done
 popd
 
@@ -32,11 +39,12 @@ popd
 
 # Create a configuration
 cat > options <<EOF
-OPTIMISE=no
-DEBUG=yes
-WARN=yes
-MPI=MPICH
-HDF5=yes
+OPTIMISE = no
+DEBUG    = yes
+WARN     = yes
+
+MPI  = MPICH
+HDF5 = yes
 EOF
 echo yes | make einstein-config options=options
 cat > configs/einstein/ThornList <<EOF
@@ -271,7 +279,6 @@ make -k einstein-utils
 
 
 # Run all test suites
-echo "Running the test suites on one processor"
 {
     echo
     echo 1
@@ -281,4 +288,5 @@ echo "Running the test suites on one processor"
 } | make einstein-testsuite
 
 # Done
+popd
 popd
