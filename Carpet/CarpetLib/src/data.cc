@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.5 2001/03/14 11:00:26 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.6 2001/03/17 00:35:52 eschnett Exp $
 
  ***************************************************************************/
 
@@ -193,7 +193,7 @@ void data<T,D>::copy_from (const generic_data<D>* gsrc, const ibbox& box) {
     // copy to different processor
     data* const tmp = new data(box, src->proc());
     tmp->copy_from (src, box);
-    tmp->change_processor (_proc);
+    tmp->change_processor (proc());
     copy_from (tmp, box);
     delete tmp;
     
