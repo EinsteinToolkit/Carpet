@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.27 2004/05/04 22:12:07 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.28 2004/05/27 12:26:09 schnetter Exp $
 
 #ifndef VECT_HH
 #define VECT_HH
@@ -112,6 +112,11 @@ public:
   static vect make (const T x, const T y, const T z, const T t) {
     assert (D==4);
     return vect(x, y, z, t);
+  }
+  
+  /** Treat a constant pointer as a reference to a constant vector.  */
+  static const vect& ref (const T* const x) {
+    return *(const vect*)x;
   }
   
   /** Treat a pointer as a reference to a vector.  */
