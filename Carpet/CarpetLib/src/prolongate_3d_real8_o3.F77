@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_o3.F77,v 1.5 2002/01/01 16:48:31 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_o3.F77,v 1.6 2002/01/08 21:29:03 schnetter Exp $
       
 #include "cctk.h"
       
@@ -105,7 +105,7 @@ c     bbox(:,3) is stride
       
       
 c     Loop over fine region
-      dstdiv = one / (6*dstifac * 6*dstjfac * 6*dstkfac)
+      dstdiv = one / (6*dstifac**3 * 6*dstjfac**3 * 6*dstkfac**3)
       
       do k = 0, regkext-1
          k0 = (srckoff + k) / dstkfac
