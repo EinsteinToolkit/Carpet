@@ -45,7 +45,7 @@ c$$$      prolongate_3d_real8_minmod.F77
 
       if (a * b .lt. zero) then
         minmod = zero
-      else if (abs(a) < abs(b)) then
+      else if (abs(a) .lt. abs(b)) then
         minmod = a
       else
         minmod = b
