@@ -18,7 +18,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/src/ioscalar.cc,v 1.3 2004/06/14 10:50:06 tradke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/src/ioscalar.cc,v 1.4 2004/06/21 12:27:09 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOScalar_ioscalar_cc);
 }
 
@@ -274,30 +274,31 @@ namespace CarpetIOScalar {
         
         int const handle = ireduction->handle;
         
-        if (CCTK_MyProc(cctkGH)==0) {
-          file << cctk_iteration << " " << cctk_time << " ";
-        }
-        
-        switch (vartype) {
-#define TYPECASE(N,T)                                                   \
-        case N: {                                                       \
-          T result;                                                     \
-          int const ierr                                                \
-            = CCTK_Reduce (cctkGH, 0, handle, 1, vartype, &result, 1, n); \
-          assert (! ierr);                                              \
-                                                                        \
-          if (CCTK_MyProc(cctkGH)==0) {                                 \
-            file << result;                                             \
-          }                                                             \
-          break;                                                        \
-        }
+        union {
+#define TYPECASE(N,T) T var_##T;
 #include "Carpet/Carpet/src/typecase"
 #undef TYPECASE
-        default:
-          UnsupportedVarType (n);
-        }
+        } result;
+        
+        int const ierr
+          = CCTK_Reduce (cctkGH, 0, handle, 1, vartype, &result, 1, n);
+        assert (! ierr);
         
         if (CCTK_MyProc(cctkGH)==0) {
+          
+          file << cctk_iteration << " " << cctk_time << " ";
+          
+          switch (vartype) {
+#define TYPECASE(N,T)                           \
+          case N:                               \
+            file << result.var_##T;             \
+            break;
+#include "Carpet/Carpet/src/typecase"
+#undef TYPECASE
+          default:
+            UnsupportedVarType (n);
+          }
+          
           file << endl;
           assert (file.good());
         }
