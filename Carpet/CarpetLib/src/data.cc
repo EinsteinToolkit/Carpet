@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.52 2004/04/13 11:13:49 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.53 2004/04/18 13:04:08 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -93,7 +93,7 @@ void data<T,D>::getmem (const size_t nelems)
   } catch (...) {
     T Tdummy;
     CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "Failed to allocate %f bytes (%.3f MB) of memory for type %s.  %f bytes (%.3f MB) are currently allocated.",
+                "Failed to allocate %.0f bytes (%.3f MB) of memory for type %s.  %.0f bytes (%.3f MB) are currently allocated.",
                 (double)nbytes, nbytes/1.0e6,
                 typestring(Tdummy),
                 (double)total_allocated_bytes, total_allocated_bytes/1.0e6);
