@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.57 2004/01/25 14:57:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.58 2004/02/03 16:46:13 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -143,6 +143,11 @@ namespace Carpet {
                                              const int group)
   {
     assert (group>=0 && group<CCTK_NumGroups());
+    
+    if (CCTK_GroupTypeI(group) != CCTK_GF) {
+      // Ignore everything but true grid functions
+      return op_error;
+    }
     
     const bool can_transfer = CanTransferVariableType (cgh, group);
     
