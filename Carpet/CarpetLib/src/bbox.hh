@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.11 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.12 2003/03/17 10:24:18 schnetter Exp $
 
 #ifndef BBOX_HH
 #define BBOX_HH
@@ -99,6 +99,20 @@ public:
   
   iterator begin () const;
   iterator end () const;
+  
+  class iteratorT {
+  protected:
+    const bbox& box;
+    vect<T,D> pos;
+  public:
+    iteratorT (const bbox& box, const vect<T,D>& pos);
+    const vect<T,D>& operator* () const { return pos; }
+    bool operator!= (const iteratorT& i) const;
+    iteratorT& operator++ ();
+  };
+  
+  iteratorT beginT () const;
+  iteratorT endT () const;
   
   // Input/Output
   void input (istream& is);

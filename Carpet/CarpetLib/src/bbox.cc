@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.13 2003/02/25 22:57:00 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.14 2003/03/17 10:24:18 schnetter Exp $
 
 #include <assert.h>
 
@@ -205,6 +205,38 @@ typename bbox<T,D>::iterator bbox<T,D>::begin () const {
 template<class T, int D>
 typename bbox<T,D>::iterator bbox<T,D>::end () const {
   return iterator(*this, upper()+stride());
+}
+
+template<class T, int D>
+bbox<T,D>::iteratorT::iteratorT (const bbox& box, const vect<T,D>& pos)
+  : box(box), pos(pos) {
+  if (box.empty()) this->pos=box.upper()+box.stride();
+}
+
+template<class T, int D>
+bool bbox<T,D>::iteratorT::operator!= (const iteratorT& i) const {
+  return any(pos!=i.pos);
+}
+
+template<class T, int D>
+typename bbox<T,D>::iteratorT& bbox<T,D>::iteratorT::operator++ () {
+  for (int d=D-1; d>=0; --d) {
+    pos[d]+=box.stride()[d];
+    if (pos[d]<=box.upper()[d]) return *this;
+    pos[d]=box.lower()[d];
+  }
+  pos=box.endT().pos;
+  return *this;
+}
+
+template<class T, int D>
+typename bbox<T,D>::iteratorT bbox<T,D>::beginT () const {
+  return iteratorT(*this, lower());
+}
+
+template<class T, int D>
+typename bbox<T,D>::iteratorT bbox<T,D>::endT () const {
+  return iteratorT(*this, upper()+stride());
 }
 
 
