@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.4 2001/11/02 17:51:15 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.5 2001/11/05 17:53:01 schnetter Exp $";
 
 
 
@@ -30,7 +30,7 @@ namespace Carpet {
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
     
-    if (! CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
+    if (! CCTK_QueryGroupStorageI(cgh, group)) {
       CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
 		  "Cannot synchronise group \"%s\" because it has no storage",
 		  groupname);

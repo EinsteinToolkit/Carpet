@@ -11,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.7 2001/11/02 17:51:15 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.8 2001/11/05 17:53:02 schnetter Exp $";
 
 
 
@@ -229,7 +229,7 @@ namespace Carpet {
 	  } else {
 	    // Scalars can be accessed
 	    
-	    if (CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
+	    if (CCTK_QueryGroupStorageI(cgh, group)) {
 	      // Group has storage
 	      
 	      assert (group<(int)arrdata.size());
@@ -329,7 +329,7 @@ namespace Carpet {
 	
 	for (int tl=0; tl<num_tl; ++tl) {
 	  
-	  if (CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
+	  if (CCTK_QueryGroupStorageI(cgh, group)) {
 	    // Group has storage
 	    
 	    assert (group<(int)arrdata.size());

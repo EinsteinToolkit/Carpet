@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.hh,v 1.3 2001/03/17 22:37:28 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.hh,v 1.4 2001/11/05 17:53:04 schnetter Exp $
 
 #include <vector>
 
@@ -22,11 +22,11 @@ namespace CarpetIOFlexIO {
   void* SetupGH (tFleshConfig* const fc,
 		 const int convLevel, cGH* const cgh);
   
-  int OutputGH (cGH* const cgh);
-  int OutputVarAs (cGH* const cgh, const char* const varname,
+  int OutputGH (const cGH* const cgh);
+  int OutputVarAs (const cGH* const cgh, const char* const varname,
 		   const char* const alias);
-  int TimeToOutput (cGH* const cgh, const int vindex);
-  int TriggerOutput (cGH* const cgh, const int vindex);
+  int TimeToOutput (const cGH* const cgh, const int vindex);
+  int TriggerOutput (const cGH* const cgh, const int vindex);
   
   int InputGH (cGH* const cgh);
   int InputVarAs (cGH* const cgh, const char* const varname,

@@ -32,7 +32,7 @@
 
 #include "ioflexio.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.11 2001/07/09 09:00:22 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.12 2001/11/05 17:53:03 schnetter Exp $";
 
 
 
@@ -54,7 +54,7 @@ namespace CarpetIOFlexIO {
   static const char* GetStringParameter (const char* const parametername,
 					 const char* const fallback);
   static int GetIntParameter (const char* const parametername, int fallback);
-  static bool CheckForVariable (cGH* const cgh,
+  static bool CheckForVariable (const cGH* const cgh,
 				const char* const varlist, const int vindex);
   static void SetFlag (int index, const char* optstring, void* arg);
   
@@ -100,7 +100,7 @@ namespace CarpetIOFlexIO {
   
   
   
-  int OutputGH (cGH* const cgh) {
+  int OutputGH (const cGH* const cgh) {
     for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
       if (TimeToOutput(cgh, vindex)) {
 	TriggerOutput(cgh, vindex);
@@ -111,7 +111,7 @@ namespace CarpetIOFlexIO {
   
   
   
-  int OutputVarAs (cGH* const cgh, const char* const varname,
+  int OutputVarAs (const cGH* const cgh, const char* const varname,
 		   const char* const alias) {
     DECLARE_CCTK_PARAMETERS;
     
@@ -293,7 +293,7 @@ namespace CarpetIOFlexIO {
   
   
   
-  int TimeToOutput (cGH* const cgh, const int vindex) {
+  int TimeToOutput (const cGH* const cgh, const int vindex) {
     DECLARE_CCTK_PARAMETERS;
     
     assert (vindex>=0 && vindex<(int)last_output[reflevel].size());
@@ -335,7 +335,7 @@ namespace CarpetIOFlexIO {
   
   
   
-  int TriggerOutput (cGH* const cgh, const int vindex) {
+  int TriggerOutput (const cGH* const cgh, const int vindex) {
     assert (vindex>=0 && vindex<CCTK_NumVars());
     
     char* varname = CCTK_FullName(vindex);
@@ -613,7 +613,7 @@ namespace CarpetIOFlexIO {
   
   
   
-  bool CheckForVariable (cGH* const cgh,
+  bool CheckForVariable (const cGH* const cgh,
 			 const char* const varlist, const int vindex)
   {
     const int numvars = CCTK_NumVars();

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.5 2001/11/02 17:51:15 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.6 2001/11/05 17:53:02 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -108,10 +108,10 @@ namespace Carpet {
   int Abort (cGH* cgh, int retval);
   int MyProc (const cGH* cgh);
   int nProcs (const cGH* cgh);
-  const int* ArrayGroupSizeB (cGH* cgh, int dir, int group,
+  const int* ArrayGroupSizeB (const cGH* cgh, int dir, int group,
 			      const char* groupname);
-  int QueryGroupStorageB (cGH* cgh, int group, const char* groupname);
-  int GroupDynamicData (cGH* cgh, int group, cGroupDynamicData* data);
+  int QueryGroupStorageB (const cGH* cgh, int group, const char* groupname);
+  int GroupDynamicData (const cGH* cgh, int group, cGroupDynamicData* data);
   
   
   
@@ -142,9 +142,9 @@ namespace Carpet {
 #define END_REFLEVEL_LOOP(cgh)			\
       }						\
       if (reflevel==maxreflevels-1) break;	\
-      set_reflevel ((cgh), reflevel+1);		\
+      set_reflevel ((cGH*)(cgh), reflevel+1);	\
     }						\
-    set_reflevel ((cgh), 0);			\
+    set_reflevel ((cGH*)(cgh), 0);		\
     assert (reflevel==0);			\
     _rl = 0;					\
   } while (0)
@@ -157,13 +157,13 @@ namespace Carpet {
   do {						\
     int _rrl;					\
     assert (reflevel==0);			\
-    set_reflevel ((cgh), maxreflevels-1);	\
+    set_reflevel ((cGH*)(cgh), maxreflevels-1);	\
     for (;;) {					\
       {
 #define END_REVERSE_REFLEVEL_LOOP(cgh)		\
       }						\
       if (reflevel==0) break;			\
-      set_reflevel ((cgh), reflevel-1);		\
+      set_reflevel ((cGH*)(cgh), reflevel-1);	\
     }						\
     assert (reflevel==0);			\
     _rrl = 0;					\
@@ -178,15 +178,15 @@ namespace Carpet {
     int _cl;						\
     assert (reflevel>=0 && reflevel<hh->reflevels());	\
     assert (component==-1);				\
-    set_component ((cgh), 0);				\
+    set_component ((cGH*)(cgh), 0);			\
     for (;;) {						\
       {
 #define END_COMPONENT_LOOP(cgh)				\
       }							\
       if (component==hh->components(reflevel)-1) break;	\
-      set_component ((cgh), component+1);		\
+      set_component ((cGH*)(cgh), component+1);		\
     }							\
-    set_component ((cgh), -1);				\
+    set_component ((cGH*)(cgh), -1);			\
     assert (component==-1);				\
     _cl = 0;						\
   } while (0)

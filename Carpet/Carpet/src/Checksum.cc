@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Checksum.cc,v 1.3 2001/11/02 10:58:57 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Checksum.cc,v 1.4 2001/11/05 17:53:01 schnetter Exp $";
 
 
 
@@ -48,7 +48,7 @@ namespace Carpet {
     }
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
-      if (CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
+      if (CCTK_QueryGroupStorageI(cgh, group)) {
 	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
 	  
 	  const int n = CCTK_FirstVarIndexI(group) + var;
@@ -65,7 +65,7 @@ namespace Carpet {
 		const int gpdim = arrdata[group].info.dim;
 		int np = 1;
 		for (int d=0; d<gpdim; ++d) {
-		  np *= *CCTK_ArrayGroupSizeI((cGH*)cgh, d, group);
+		  np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
 		}
 		const void* data = cgh->data[n][tl];
 		int chk = 0;
@@ -94,7 +94,7 @@ namespace Carpet {
     
     assert ((int)checksums.size()==CCTK_NumVars());
     for (int group=0; group<CCTK_NumGroups(); ++group) {
-      if (CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
+      if (CCTK_QueryGroupStorageI(cgh, group)) {
 	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
 	  
 	  const int n = CCTK_FirstVarIndexI(group) + var;
@@ -120,7 +120,7 @@ namespace Carpet {
 		  const int gpdim = arrdata[group].info.dim;
 		  int np = 1;
 		  for (int d=0; d<gpdim; ++d) {
-		    np *= *CCTK_ArrayGroupSizeI((cGH*)cgh, d, group);
+		    np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
 		  }
 		  const void* data = cgh->data[n][tl];
 		  int chk = 0;

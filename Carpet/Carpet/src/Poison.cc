@@ -7,7 +7,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.3 2001/11/02 10:58:58 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.4 2001/11/05 17:53:01 schnetter Exp $";
 
 
 
@@ -24,7 +24,7 @@ namespace Carpet {
     if (! poison_new_timelevels) return;
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
-      if (CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
+      if (CCTK_QueryGroupStorageI(cgh, group)) {
 	PoisonGroup (cgh, group, where);
       } // if has storage
     } // for group
@@ -42,7 +42,7 @@ namespace Carpet {
     
     Checkpoint ("%*sPoisonGroup %s", 2*reflevel, "", CCTK_GroupName(group));
     
-    if (! CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
+    if (! CCTK_QueryGroupStorageI(cgh, group)) {
       CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
 		  "Cannot poison group \"%s\" because it has no storage",
 		  CCTK_GroupName(group));
@@ -67,7 +67,7 @@ namespace Carpet {
 	    int np = 1;
 	    const int gpdim = arrdata[group].info.dim;
 	    for (int d=0; d<gpdim; ++d) {
-	      np *= *CCTK_ArrayGroupSizeI((cGH*)cgh, d, group);
+	      np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
 	    }
 	    memset (cgh->data[n][tl], poison_value, np*sz);
 	  }
@@ -89,7 +89,7 @@ namespace Carpet {
     Checkpoint ("%*sPoisonCheck", 2*reflevel, "");
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
-      if (CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
+      if (CCTK_QueryGroupStorageI(cgh, group)) {
 	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
 	  
 	  const int n = CCTK_FirstVarIndexI(group) + var;
@@ -106,7 +106,7 @@ namespace Carpet {
 		vect<int,dim> size(1);
 		const int gpdim = arrdata[group].info.dim;
 		for (int d=0; d<gpdim; ++d) {
-		  size[d] = *CCTK_ArrayGroupSizeI((cGH*)cgh, d, group);
+		  size[d] = *CCTK_ArrayGroupSizeI(cgh, d, group);
 		}
 		const int tp = CCTK_VarTypeI(n);
 		const void* const data = cgh->data[n][tl];

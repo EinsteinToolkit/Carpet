@@ -24,7 +24,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.19 2001/11/02 17:09:18 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.20 2001/11/05 17:53:02 schnetter Exp $";
 
 
 
@@ -107,7 +107,7 @@ void* CarpetIOASCII<outdim>
 
 template<int outdim>
 int CarpetIOASCII<outdim>
-::OutputGH (cGH* const cgh)
+::OutputGH (const cGH* const cgh)
 {
   for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
     if (TimeToOutput(cgh, vindex)) {
@@ -121,7 +121,7 @@ int CarpetIOASCII<outdim>
 
 template<int outdim>
 int CarpetIOASCII<outdim>
-::OutputVarAs (cGH* const cgh,
+::OutputVarAs (const cGH* const cgh,
 	       const char* const varname, const char* const alias)
 {
   DECLARE_CCTK_PARAMETERS;
@@ -137,7 +137,7 @@ int CarpetIOASCII<outdim>
   const int tl = 0;
   
   // Check for storage
-  if (! CCTK_QueryGroupStorageI((cGH*)cgh, group)) {
+  if (! CCTK_QueryGroupStorageI(cgh, group)) {
     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
 		"Cannot output variable \"%s\" because it has no storage",
 		varname);
@@ -367,7 +367,7 @@ int CarpetIOASCII<outdim>
 
 template<int outdim>
 int CarpetIOASCII<outdim>
-::TimeToOutput (cGH* const cgh, const int vindex)
+::TimeToOutput (const cGH* const cgh, const int vindex)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -412,7 +412,7 @@ int CarpetIOASCII<outdim>
 
 template<int outdim>
 int CarpetIOASCII<outdim>
-::TriggerOutput (cGH* const cgh, const int vindex)
+::TriggerOutput (const cGH* const cgh, const int vindex)
 {
   assert (vindex>=0 && vindex<CCTK_NumVars());
   
