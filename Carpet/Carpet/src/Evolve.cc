@@ -31,7 +31,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.31 2004/01/25 14:57:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.32 2004/01/30 10:40:52 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -145,7 +145,12 @@ namespace Carpet {
           enter_level_mode (cgh, rl);
           const int do_every = mglevelfact * (maxreflevelfact/reflevelfact);
           if ((cgh->cctk_iteration-1) % do_every == 0) {
-            do_global_mode = reflevel==0;
+            const int coarsest_reflevel = rl;
+            while (coarsest_reflevel > 0
+                   && (cgh->cctk_iteration-1) % (mglevelfact * (maxreflevelfact / ipow(reffact, coarsest_reflevel-1))) == 0) {
+              --coarsest_reflevel;
+            }
+            do_global_mode = reflevel==coarsest_reflevel;
             do_meta_mode = do_global_mode && mglevel==mglevels-1;
             
             // Advance times
@@ -187,7 +192,12 @@ namespace Carpet {
           enter_level_mode (cgh, rl);
           const int do_every = mglevelfact * (maxreflevelfact/reflevelfact);
           if (cgh->cctk_iteration % do_every == 0) {
-            do_global_mode = reflevel==0;
+            const int coarsest_reflevel = rl;
+            while (coarsest_reflevel > 0
+                   && (cgh->cctk_iteration-1) % (mglevelfact * (maxreflevelfact / ipow(reffact, coarsest_reflevel-1))) == 0) {
+              --coarsest_reflevel;
+            }
+            do_global_mode = reflevel==coarsest_reflevel;
             do_meta_mode = do_global_mode && mglevel==mglevels-1;
             
             Checkpoint ("Evolution II at iteration %d time %g%s%s",
