@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.32 2004/03/23 12:40:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.33 2004/03/23 19:54:16 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -41,8 +41,9 @@ namespace Carpet {
     
     // No storage change in local mode
     if (grouptype == CCTK_GF) {
-      assert ((reflevel == -1 && map == -1 && mglevel == -1 && component == -1)
-              || (maps == 1 && vhh.at(0)->local_components(reflevel) == 1));
+      assert ((map == -1 || maps == 1)
+              && (component == -1
+                  || vhh.at(0)->local_components(reflevel) == 1));
     }
     
     if (CCTK_QueryGroupStorageI(cgh, group)) {
