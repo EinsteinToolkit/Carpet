@@ -6,6 +6,7 @@
 
 #include "dh.hh"
 #include "gf.hh"
+#include "operators.hh"
 
 #include "carpet.hh"
 
@@ -44,9 +45,6 @@ namespace Carpet {
     bool const all_ml = is_meta_mode();
     int const min_ml = all_ml ? 0        : mglevel;
     int const max_ml = all_ml ? mglevels : mglevel+1;
-    bool const all_rl = is_meta_mode() or is_global_mode();
-    int const min_rl = all_rl ? 0         : reflevel;
-    int const max_rl = all_rl ? reflevels : reflevel+1;
     
     int total_num_timelevels = 0;
     
@@ -56,6 +54,11 @@ namespace Carpet {
       cGroup gp;
       const int ierr = CCTK_GroupData (group, &gp);
       assert (! ierr);
+      
+      bool const all_rl = is_meta_mode() or is_global_mode();
+      bool const is_array = gp.grouptype != CCTK_GF;
+      int const min_rl = is_array ? 0 : all_rl ? 0         : reflevel;
+      int const max_rl = is_array ? 1 : all_rl ? reflevels : reflevel+1;
       
       int const firstvarindex = CCTK_FirstVarIndexI (group);
       assert (gp.numvars == 0
@@ -108,7 +111,8 @@ namespace Carpet {
         for (int ml=min_ml; ml<max_ml; ++ml) {
           for (int rl=min_rl; rl<max_rl; ++rl) {
             for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-              for (int var=0; var<gp.numvars; ++var) {
+              for (int var0=0; var0<gp.numvars; ++var0) {
+                int const var = do_increase ? var0 : gp.numvars - var0 - 1;
                 const int vectorindex
                   = gp.vectorgroup ? var % gp.vectorlength : 0;
                 const int vectorlength
@@ -163,14 +167,13 @@ namespace Carpet {
         
       } // if really change the number of active time levels
       
-#if 0
       // Complain if there are not enough active time levels
       if (gp.grouptype == CCTK_GF) {
         if (max_refinement_levels > 1) {
           if (groupdata.at(group).transport_operator != op_none) {
             if (groupdata.at(group).info.activetimelevels != 0
                 and (groupdata.at(group).info.activetimelevels
-                     <= prolongation_order_time))
+                     < prolongation_order_time+1))
             {
               char * const groupname = CCTK_GroupName (group);
               CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -182,7 +185,6 @@ namespace Carpet {
           }
         }
       }
-#endif
       
       // Record current number of time levels
       total_num_timelevels += groupdata.at(group).info.activetimelevels;
