@@ -9,6 +9,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include <ostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -30,7 +31,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.62 2004/02/27 17:09:59 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.63 2004/03/01 20:15:21 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -49,6 +50,33 @@ namespace CarpetIOASCII {
   using namespace Carpet;
   
   void SetFlag (int index, const char* optstring, void* arg);
+  
+  
+  
+  // Special output routines for complex numbers
+  
+#ifdef CCTK_REAL4
+  ostream& operator<< (ostream& os, const CCTK_COMPLEX8& val)
+  {
+    return os << CCTK_Cmplx8Real(val) << " " << CCTK_Cmplx8Imag(val);
+  }
+#endif
+  
+#ifdef CCTK_REAL8
+  ostream& operator<< (ostream& os, const CCTK_COMPLEX16& val)
+  {
+    return os << CCTK_Cmplx16Real(val) << " " << CCTK_Cmplx16Imag(val);
+  }
+#endif
+  
+#ifdef CCTK_REAL16
+  ostream& operator<< (ostream& os, const CCTK_COMPLEX32& val)
+  {
+    return os << CCTK_Cmplx32Real(val) << " " << CCTK_Cmplx32Imag(val);
+  }
+#endif
+  
+  
   
   template<int D,int DD>
   void WriteASCII (ostream& os,
@@ -989,25 +1017,12 @@ namespace CarpetIOASCII {
 	    }
 	    os << "   ";
 	    switch (CCTK_VarTypeI(vi)) {
-#define WANT_NO_COMPLEX
 #define TYPECASE(N,T)					\
 	    case N:					\
 	      os << (*(const data<T,D>*)gfdata)[index];	\
 	      break;
 #include "Carpet/Carpet/src/typecase"
 #undef TYPECASE
-#undef WANT_NO_COMPLEX
-#define WANT_NO_INT
-#define WANT_NO_REAL
-#define TYPECASE(N,T)					                \
-	    case N:					                \
-	      os << (*(const data<T,D>*)gfdata)[index].real() << " "    \
-                 << (*(const data<T,D>*)gfdata)[index].imag();	        \
-	      break;
-#include "Carpet/Carpet/src/typecase"
-#undef TYPECASE
-#undef WANT_NO_INT
-#undef WANT_NO_REAL
 	    default:
 	      UnsupportedVarType(vi);
 	    }
