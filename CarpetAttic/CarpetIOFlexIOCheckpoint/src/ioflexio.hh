@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.3 2003/09/17 13:47:00 cvs_anon Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.4 2003/09/23 12:34:43 cvs_anon Exp $
 
 #ifndef CARPETIOFLEXIO_HH
 #define CARPETIOFLEXIO_HH
@@ -7,6 +7,10 @@
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
+
+#include "CactusBase/IOUtil/src/ioGH.h"
+#include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
+#include "CactusBase/IOUtil/src/ioutil_Utils.h"
 
 #include "ioflexio.h"
 
@@ -73,9 +77,16 @@ namespace CarpetIOFlexIO {
   static const char* GetStringParameter (const char* const parametername,
 					 const char* const fallback);
 
-  int WriteVarAs (const cGH* const cgh, IObase* writer,AMRwriter* amrwriter, int varindex);
+  int WriteGF (const cGH* const cgh, IObase* writer,AMRwriter* amrwriter, ioRequest* request);
+  int WriteGS (const cGH* const cgh, IObase* writer, ioRequest* request);
 
 } // namespace CarpetIOFlexIO
 
+namespace CarpetIOFlexIOUtil {
+
+  IObase::DataType FlexIODataType (int cctk_type);
+  void DumpCommonAttributes (const cGH *cgh, IObase* writer, ioRequest* request);
+
+}
 #endif // !defined(CARPETIOFLEXIO_HH)
 

@@ -32,9 +32,9 @@
 #undef BYTE
 #undef CHAR
 
-#include "CactusBase/IOUtil/src/ioGH.h"
-#include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
-#include "CactusBase/IOUtil/src/ioutil_Utils.h"
+//#include "CactusBase/IOUtil/src/ioGH.h"
+//#include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
+//#include "CactusBase/IOUtil/src/ioutil_Utils.h"
 
 #include "bbox.hh"
 #include "data.hh"
@@ -48,7 +48,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.6 2003/09/17 13:47:00 cvs_anon Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.7 2003/09/23 12:34:43 cvs_anon Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
@@ -60,13 +60,18 @@ namespace CarpetCheckpointRestart {
   using namespace std;
   using namespace Carpet;
   using namespace CarpetIOFlexIO;
+  using namespace CarpetIOFlexIOUtil;
 
   static int Checkpoint (const cGH* const cgh, int called_from);
+
+
+
 
   void CarpetIOFlexIO_EvolutionCheckpoint( const cGH* const cgh){
     
     DECLARE_CCTK_PARAMETERS
 
+      CCTK_VInfo (CCTK_THORNSTRING, "CHECKPOINT? cgh->cctk_iteration %d, cgh->cctk_iteration mod checkpoint_every = %d, checkpoint = %d, checkpoint_next = %d", cgh->cctk_iteration, cgh->cctk_iteration % checkpoint_every,checkpoint,checkpoint_next);
       if (checkpoint &&
       ((checkpoint_every > 0 && cgh->cctk_iteration % checkpoint_every == 0) ||
        checkpoint_next))
@@ -78,7 +83,7 @@ namespace CarpetCheckpointRestart {
 		      "iteration %d", cgh->cctk_iteration);
 	  CCTK_INFO ("---------------------------------------------------------");
 	}
-CCTK_VInfo (CCTK_THORNSTRING, "bogusbefore reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
+
 	Checkpoint (cgh, CP_EVOLUTION_DATA);
 
        	if (checkpoint_next)
@@ -164,7 +169,7 @@ CCTK_VInfo (CCTK_THORNSTRING, "bogusbefore reflevel,component,mglevel %d,%d,%d",
     ioRequest *request;
 
     DECLARE_CCTK_PARAMETERS
-   CCTK_VInfo (CCTK_THORNSTRING, "boguscheck reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
+      //   CCTK_VInfo (CCTK_THORNSTRING, "boguscheck reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
 
   
     myproc = CCTK_MyProc (cgh);
@@ -210,7 +215,6 @@ CCTK_VInfo (CCTK_THORNSTRING, "bogusbefore reflevel,component,mglevel %d,%d,%d",
 	  }
 	amrwriter = new AMRwriter(*writer);
 
-
 	// dump parameters 
 	DumpParams (cgh, 1, writer);
 	// dump GH extentions
@@ -219,66 +223,106 @@ CCTK_VInfo (CCTK_THORNSTRING, "bogusbefore reflevel,component,mglevel %d,%d,%d",
       }
 
     
-    // now dump the grid varibles, sorted by groups
+    // now dump the grid varibles for all reflevels and components, sorted by groups
+    //   CCTK_VInfo (CCTK_THORNSTRING, "maxreflevelfact,reflevelfact,it %d,%d,%d",maxreflevelfact,reflevelfact,cgh->cctk_iteration);
+    BEGIN_REFLEVEL_LOOP(cgh) {
 
-    if (CCTK_Equals ("verbose", "full"))
-      {
-	CCTK_INFO ("Dumping Grid Variables ...");
-      }
-    for (group = CCTK_NumGroups () - 1; group >= 0; group--)
-      {
-	/* only dump groups which have storage assigned */
-	if (CCTK_QueryGroupStorageI (cgh, group) <= 0)
-	  {
-	    continue;
-	  }
-
-	/* dump all timelevels except the oldest (for multi-level groups) */
-	CCTK_GroupData (group, &gdata);
-	if (gdata.numtimelevels > 1)
-	  {
-	    gdata.numtimelevels--;
-	  }
-
-	int first_vindex = CCTK_FirstVarIndexI (group);
-
-	/* get the default I/O request for this group */
-	request = IOUtil_DefaultIORequest (cgh, first_vindex, 1);
-
-	/* disable checking for old data objects, disable datatype conversion
-	   and downsampling */
-	request->check_exist = 0;
-	request->hdatatype = gdata.vartype;
-	for (request->hdim = 0; request->hdim < request->vdim; request->hdim++)
-	  {
-	    request->downsample[request->hdim] = 1;
-	  }
-
-	/* loop over all variables in this group */
-	for (request->vindex = first_vindex;
-	     request->vindex < first_vindex + gdata.numvars;
-	     request->vindex++)
-	  {
-	    /* loop over all timelevels of this variable */
-	    for (request->timelevel = 0;
-		 request->timelevel < gdata.numtimelevels;
-		 request->timelevel++)
-	      {
+     const int do_every = maxreflevelfact/reflevelfact;
+      if (cgh->cctk_iteration % do_every == 0) {
 	
-		if (verbose)
+	BEGIN_MGLEVEL_LOOP(cgh) {
+	  const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
+          CCTK_VInfo (CCTK_THORNSTRING, "do_every %d",do_every);	 	  
+
+	  if (cgh->cctk_iteration % do_every == 0) {
+	      
+	    if (CCTK_Equals ("verbose", "full"))
+	    {
+	      CCTK_INFO ("Dumping Grid Variables ...");
+	    }
+	    for (group = CCTK_NumGroups () - 1; group >= 0; group--)
+	    {
+	      /* only dump groups which have storage assigned */
+	      if (CCTK_QueryGroupStorageI (cgh, group) <= 0)
+	      {
+		continue;
+	      }
+	       
+	      /* get the number of allocated timelevels */
+	      CCTK_GroupData (gindex, &gdata);
+	      gdata.numtimelevels = 0;
+	      gdata.numtimelevels = CCTK_GroupStorageIncrease (cgh, 1, &group,
+							       &gdata.numtimelevels,NULL);
+	      
+	      /* dump all timelevels except the oldest (for multi-level groups) */
+	      CCTK_GroupData (group, &gdata);
+	      if (gdata.numtimelevels > 1)
+	      {
+		gdata.numtimelevels--;
+	      }
+	      
+	      int first_vindex = CCTK_FirstVarIndexI (group);
+
+	      const int grouptype = CCTK_GroupTypeI(group);
+
+	      /* get the default I/O request for this group */
+	      request = IOUtil_DefaultIORequest (cgh, first_vindex, 1);
+
+	      /* disable checking for old data objects, disable datatype conversion
+		 and downsampling */
+	      request->check_exist = 0;
+	      request->hdatatype = gdata.vartype;
+	      for (request->hdim = 0; request->hdim < request->vdim; request->hdim++)
+	      {
+		request->downsample[request->hdim] = 1;
+	      }
+
+	      /* loop over all variables in this group */
+	      for (request->vindex = first_vindex;
+		   request->vindex < first_vindex + gdata.numvars;
+		   request->vindex++)
+	      {
+		/* loop over all timelevels of this variable */
+		for (request->timelevel = 0;
+		     request->timelevel < gdata.numtimelevels;
+		     request->timelevel++)
+		{
+		  
+		  if (verbose)
 		  {
 		    fullname = CCTK_FullName (request->vindex);
 		    CCTK_VInfo (CCTK_THORNSTRING, "  %s (timelevel %d)",
 				fullname, request->timelevel);
 		    free (fullname);
 		  }
-		// write the var
+		  // write the var
+	    
+		  if (grouptype == CCTK_SCALAR)
+		  {
+		    retval += WriteGS(cgh,writer,request);
+		  }
+		  //		  else if (grouptype == CCTK_ARRAY || grouptype == CCTK_GF)
+		  else if (grouptype == CCTK_GF)
+		  {
+		    retval += WriteGF(cgh,writer,amrwriter,request);
+		  }
+		  else
+		  {
+		    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+				"Invalid group type %d for variable '%s'", grouptype, fullname);
+		    retval = -1;
+		  }
 
-	retval += WriteVarAs(cgh,writer,amrwriter,request->vindex);
-	      }
-	  } /* end of loop over all variables */
+		}
+	      } /* end of loop over all variables */
+	
+	    } /* end of loop over all groups */
+	  }
+	} END_MGLEVEL_LOOP;
+      }
+    } END_REFLEVEL_LOOP;
 
-      } /* end of loop over all groups */
+
 
 
     // Close the file

@@ -44,7 +44,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.5 2003/09/17 13:47:00 cvs_anon Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.6 2003/09/23 12:34:43 cvs_anon Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -54,7 +54,7 @@ namespace CarpetIOFlexIO {
   
   using namespace std;
   using namespace Carpet;
-  
+  using namespace CarpetIOFlexIOUtil;  
   
   
   // Variable definitions
@@ -92,8 +92,7 @@ namespace CarpetIOFlexIO {
   
   
   
-  void* SetupGH (tFleshConfig* const fc,
-		 const int convLevel, cGH* const cgh)
+  void* SetupGH (tFleshConfig* const fc, const int convLevel, cGH* const cgh)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -124,60 +123,16 @@ namespace CarpetIOFlexIO {
   }
   
   
-static IObase::DataType FlexIODataType (int cctk_type){
-  //we need this to have the FlexIO data types on hand
-  //for WriteVarAs
 
-    int retval;
-
-    switch (cctk_type)
-      {
-      case CCTK_VARIABLE_CHAR:   retval = FLEXIO_CHAR; break;
-      case CCTK_VARIABLE_INT:    retval = FLEXIO_INT; break;
-      case CCTK_VARIABLE_REAL:   retval = FLEXIO_REAL; break;
-#ifdef CCTK_INT2
-      case CCTK_VARIABLE_INT2:   retval = FLEXIO_INT2; break;
-#endif
-#ifdef CCTK_INT4
-      case CCTK_VARIABLE_INT4:   retval = FLEXIO_INT4; break;
-#endif
-#ifdef CCTK_INT8
-      case CCTK_VARIABLE_INT8:   retval = FLEXIO_INT8; break;
-#endif
-#ifdef CCTK_REAL4
-      case CCTK_VARIABLE_REAL4:  retval = FLEXIO_REAL4; break;
-#endif
-#ifdef CCTK_REAL8
-      case CCTK_VARIABLE_REAL8:  retval = FLEXIO_REAL8; break;
-#endif
-#ifdef CCTK_REAL16
-      case CCTK_VARIABLE_REAL16: retval = FLEXIO_REAL16; break;
-#endif
-	
-      default: CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-			   "Unsupported CCTK variable datatype %d", cctk_type);
-	retval = -1;
-	break;
-      }
-
-    return (IObase::DataType)retval;
-  }
-
-
-
-
-
-
-
-  
-
-  int WriteVarAs (const cGH* const cgh, IObase* writer, AMRwriter* amrwriter, int varindex)
+  int WriteGF (const cGH* const cgh, IObase* writer, AMRwriter* amrwriter, ioRequest* request)
   {
 
     DECLARE_CCTK_PARAMETERS;
-    CCTK_VInfo (CCTK_THORNSTRING, "bogusnew reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
+
 
     /* I have got no idea why this stuff below is needed... ask Erik Schnetter */
+    
+    const int varindex  = request->vindex;
 
     const int group = CCTK_GroupIndexFromVarI (varindex);
     const int n0 = CCTK_FirstVarIndexI(group);
@@ -185,9 +140,9 @@ static IObase::DataType FlexIODataType (int cctk_type){
     const int var = varindex - n0;
     assert (var>=0 && var<CCTK_NumVars());
     const int tl = 0;
-    1,-1,0
     const int grouptype = CCTK_GroupTypeI(group);
-    assert (! (grouptype != CCT1,-1,0K_GF && reflevel>0));
+
+    assert (! ( (grouptype != CCTK_GF && grouptype != CCTK_ARRAY) && reflevel>0));
     
     if (CCTK_MyProc(cgh)==0) {
 
@@ -227,7 +182,7 @@ static IObase::DataType FlexIODataType (int cctk_type){
 	(gpdim, origin, delta, timestep, maxreflevels);
       
       // Set refinement information
-      int interlevel_timerefine1,-1,0ment;
+      int interlevel_timerefinement;
       int interlevel_spacerefinement[dim];
       int initial_gridplacementrefinement[dim];
       interlevel_timerefinement = hh->reffact;
@@ -254,13 +209,20 @@ static IObase::DataType FlexIODataType (int cctk_type){
       const ggf<dim>* ff = 0;
 
 
+    if (grouptype == CCTK_ARRAY)
+      CCTK_VInfo (CCTK_THORNSTRING, "ARRAY reflevel: %d component: %d grouptype: %d ",reflevel,component,grouptype);
+    else
+      CCTK_VInfo (CCTK_THORNSTRING, "GF reflevel: %d component: %d grouptype: %d",reflevel,component,grouptype);
+
+
+
+
+
       assert (var < (int)arrdata[group].data.size());
       ff = (ggf<dim>*)arrdata[group].data[var];
       
-      CCTK_VInfo (CCTK_THORNSTRING, "bogus reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
-      const gdata<dim>* const data
-	= (*ff) (tl, reflevel, component, mglevel);
-      CCTK_VInfo (CCTK_THORNSTRING, "bogus2");      
+      //      CCTK_VInfo (CCTK_THORNSTRING, "bogus reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
+      const gdata<dim>* const data = (*ff) (tl, reflevel, component, mglevel);
 
       // Make temporary copy on processor 0
       bbox<int,dim> ext = data->extent();
@@ -268,8 +230,6 @@ static IObase::DataType FlexIODataType (int cctk_type){
       vect<int,dim> hi = ext.upper();
       vect<int,dim> str = ext.stride();
 
-
-      
       // Ignore ghost zones if desired
       for (int d=0; d<dim; ++d) {
 	const int max_lower_ghosts = (cgh->cctk_bbox[2*d  ] && !out3D_output_outer_boundary) ? -1 : out3D_max_num_lower_ghosts;
@@ -298,9 +258,15 @@ static IObase::DataType FlexIODataType (int cctk_type){
 	  dims[d]   = (ext.shape() / ext.stride())[d];
 	}
 	amrwriter->write (origin, dims, (void*)tmp->storage());
-	char *name = CCTK_FullName (varindex);
-	writer->writeAttribute("name",IObase::Char,strlen(name)+1,name);
-	free(name); 
+
+
+	// dump attributes
+	DumpCommonAttributes(cgh,writer,request);
+
+
+	//	char *name = CCTK_FullName (varindex);
+	//	writer->writeAttribute("name",IObase::Char,strlen(name)+1,name);
+	//free(name); 
       }
       
       // Delete temporary copy
@@ -311,11 +277,99 @@ static IObase::DataType FlexIODataType (int cctk_type){
   return 0;
   }
   
-  
+  int WriteGS (const cGH* const cgh, IObase* writer, ioRequest* request)
+  {
+
+    // writes out a grid scalar 
+
+    DECLARE_CCTK_PARAMETERS;
+
+    const int timelevel = request->timelevel;
+    const int varindex  = request->vindex;
+
+    const int group = CCTK_GroupIndexFromVarI (varindex);
+    const int n0 = CCTK_FirstVarIndexI(group);
+    assert (n0>=0 && n0<CCTK_NumVars());
+    const int var = varindex - n0;
+    assert (var>=0 && var<CCTK_NumVars());
+    const int tl = 0;
+    const int grouptype = CCTK_GroupTypeI(group);
+    assert (! (grouptype != CCTK_SCALAR && reflevel>0));
+
+
+    int myproc = CCTK_MyProc (cgh);
+    int nprocs = CCTK_nProcs (cgh);
+    char* fullname = CCTK_FullName (varindex);
+    
+    int datatype = CCTK_VarTypeI(varindex);
+    int datatypesize = CCTK_VarTypeSize(datatype);
+
+    char* buffer = (char*) calloc (nprocs, datatypesize);
+    memcpy (buffer + myproc*datatypesize,
+                 CCTK_VarDataPtrI (cgh,timelevel,varindex),
+                 datatypesize);
+
+    if (nprocs > 1) {
+      int i = CCTK_ReductionHandle ("sum");
+      if (i >= 0)
+      {
+      i = CCTK_ReduceArray (cgh, -1, i, nprocs, datatype, buffer, 1, 1, datatype, nprocs, buffer);
+      }
+    if (i < 0)
+    {
+      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+      "WriteGS: Cannot check whether values on differentprocessors are the same for grid scalar '%s'", fullname);
+      // copy this processor's value to the start of buffer 
+      memcpy (buffer, buffer + myproc*datatypesize, datatypesize);
+    }
+  else
+    {
+      int retval = 0;
+      for (i = 1; i < nprocs; i++)
+      {
+        retval |= memcmp (buffer, buffer + i*datatypesize, datatypesize);
+      }
+      if (retval)
+      {
+        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "WriteGS: value of grid scalar variable '%s' (timelevel %d)"
+                    " differs between processors, only value from processor 0 "
+                    "will be written", fullname, timelevel);
+      }
+    }
+  }
+    
+    if (myproc==0) 
+    {
+      int dim = 1;
+
+    // Traverse all components on this refinement and multigrid level
+     BEGIN_COMPONENT_LOOP(cgh, grouptype) {
+
+       // actually, looping makes no sense here, since a scalar must be the
+       // same on all components. in fact, the loop is not being
+       // executed for scalars; see macro definition.
+
+
+       //      CCTK_VInfo (CCTK_THORNSTRING, "SCALAR reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
+      writer->write(FlexIODataType(CCTK_VarTypeI(varindex)),1,&dim,buffer);
+      /* scalars have size 0 */
+      request->hsize[0] = 0;
+      DumpCommonAttributes (cgh,writer,request);
+
+    } END_COMPONENT_LOOP;
+    
+   }
+
+  return 0;
+  }
+
+
+
   int OutputVarAs (const cGH* const cgh, const char* const varname,
 		   const char* const alias) {
     DECLARE_CCTK_PARAMETERS;
-    CCTK_VInfo (CCTK_THORNSTRING, "bogusnewout reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
+    //    CCTK_VInfo (CCTK_THORNSTRING, "bogusnewout reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
     const int n = CCTK_VarIndex(varname);
     assert (n>=0 && n<CCTK_NumVars());
     const int group = CCTK_GroupIndexFromVarI (n);
@@ -336,7 +390,11 @@ static IObase::DataType FlexIODataType (int cctk_type){
     
     const int grouptype = CCTK_GroupTypeI(group);
     if (grouptype != CCTK_GF && reflevel>0) return 0;
-    
+
+    int first_vindex = CCTK_FirstVarIndexI (group);
+    /* get the default I/O request for this group */
+    ioRequest* request = IOUtil_DefaultIORequest (cgh, first_vindex, 1);
+
     // Get grid hierarchy extentsion from IOUtil
     const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cgh, "IO");
     assert (iogh);
@@ -419,7 +477,7 @@ static IObase::DataType FlexIODataType (int cctk_type){
       amrwriter = new AMRwriter(*writer);
     }
 
-      WriteVarAs(cgh,writer,amrwriter,n);
+      WriteGF(cgh,writer,amrwriter,request);
     
     // Close the file
     if (CCTK_MyProc(cgh)==0) {
