@@ -293,13 +293,22 @@ namespace CarpetJacobi {
                     }
                   } // for n
                   
+#if 1
                   // Apply boundary conditions
                   ierr = applybnds (cctkGH, options_table, userdata);
+#endif
                   
                 }
               } END_LOCAL_COMPONENT_LOOP;
             } END_MAP_LOOP;
             
+#if 0
+            // Apply boundary conditions
+            ierr = applybnds (cctkGH, options_table, userdata);
+            int const ierr2 = CallScheduleGroup (cctkGH, "ApplyBCs");
+            
+#endif
+
           }
         } END_REFLEVEL_LOOP;
         

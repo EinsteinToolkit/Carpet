@@ -1236,5 +1236,3 @@ namespace CarpetCG {
   }
     
 } // namespace CarpetCG
-  
-  
