@@ -3,8 +3,7 @@
 #ifndef TH_HH
 #define TH_HH
 
-#include <assert.h>
-
+#include <cassert>
 #include <iostream>
 #include <vector>
 

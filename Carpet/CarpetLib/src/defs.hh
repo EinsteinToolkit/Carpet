@@ -7,9 +7,8 @@
 #include <config.h>
 #endif
 
-#include <assert.h>
-
 #include <algorithm>
+#include <cassert>
 #include <complex>
 #include <iostream>
 #include <list>

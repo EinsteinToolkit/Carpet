@@ -1,8 +1,7 @@
 // $Header:$
 
-#include <assert.h>
-#include <ctype.h>
-
+#include <cassert>
+#include <cctype>
 #include <iostream>
 #include <list>
 #include <set>

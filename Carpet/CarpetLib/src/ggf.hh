@@ -3,8 +3,7 @@
 #ifndef GGF_HH
 #define GGF_HH
 
-#include <assert.h>
-
+#include <cassert>
 #include <iostream>
 #include <string>
 #include <vector>

@@ -3,8 +3,7 @@
 #ifndef BBOXSET_HH
 #define BBOXSET_HH
 
-#include <assert.h>
-
+#include <cassert>
 #include <iostream>
 #include <set>
 

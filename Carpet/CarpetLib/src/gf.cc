@@ -1,6 +1,6 @@
 // $Header:$
 
-#include <assert.h>
+#include <cassert>
 
 #include "cctk.h"
 

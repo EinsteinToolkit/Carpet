@@ -1,6 +1,6 @@
 // $Header: /home/cvs/carpet/Carpet/CarpetLib/src/dh.cc,v 1.57 2004/09/17 16:37:26 schnetter Exp $
 
-#include <assert.h>
+#include <cassert>
 
 #include "cctk.h"
 #include "cctk_Parameters.h"

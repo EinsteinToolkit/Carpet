@@ -3,9 +3,8 @@
 #ifndef GDATA_HH
 #define GDATA_HH
 
-#include <assert.h>
-#include <stdlib.h>
-
+#include <cassert>
+#include <cstdlib>
 #include <queue>
 #include <iostream>
 #include <string>

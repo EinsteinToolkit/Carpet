@@ -1,11 +1,10 @@
 // $Header:$
 
-#include <assert.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <math.h>
-
 #include <algorithm>
+#include <cassert>
+#include <climits>
+#include <cstdlib>
+#include <cmath>
 #include <iostream>
 #include <limits>
 #include <sstream>

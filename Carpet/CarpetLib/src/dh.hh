@@ -3,8 +3,7 @@
 #ifndef DH_HH
 #define DH_HH
 
-#include <assert.h>
-
+#include <cassert>
 #include <iostream>
 #include <list>
 #include <string>

@@ -3,9 +3,8 @@
 #ifndef GF_HH
 #define GF_HH
 
-#include <assert.h>
-#include <math.h>
-
+#include <cassert>
+#include <cmath>
 #include <iostream>
 #include <string>
 

@@ -3,8 +3,7 @@
 #ifndef GH_HH
 #define GH_HH
 
-#include <assert.h>
-
+#include <cassert>
 #include <iostream>
 #include <list>
 #include <vector>

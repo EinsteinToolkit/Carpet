@@ -1,8 +1,7 @@
 // $Header:$
 
-#include <assert.h>
-#include <math.h>
-
+#include <cassert>
+#include <cmath>
 #include <iostream>
 
 #include "cctk.h"
