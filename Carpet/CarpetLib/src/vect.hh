@@ -1,11 +1,12 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.22 2004/01/25 14:57:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.23 2004/02/18 15:10:45 schnetter Exp $
 
 #ifndef VECT_HH
 #define VECT_HH
 
 #include <assert.h>
-#include <math.h>
 
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 
 using namespace std;
@@ -531,6 +532,22 @@ inline vect<T,D> abs (const vect<T,D>& a) {
   return r;
 }
 
+/** Return the element-wise ceiling.  */
+template<class T,int D>
+inline vect<T,D> ceil (const vect<T,D>& a) {
+  vect<T,D> r;
+  for (int d=0; d<D; ++d) r[d]=ceil(a[d]);
+  return r;
+}
+
+/** Return the element-wise floor.  */
+template<class T,int D>
+inline vect<T,D> floor (const vect<T,D>& a) {
+  vect<T,D> r;
+  for (int d=0; d<D; ++d) r[d]=floor(a[d]);
+  return r;
+}
+
 /** Return the element-wise maximum of two vectors.  */
 template<class T,int D>
 inline vect<T,D> max (const vect<T,D>& a, const vect<T,D>& b) {
@@ -544,6 +561,14 @@ template<class T,int D>
 inline vect<T,D> min (const vect<T,D>& a, const vect<T,D>& b) {
   vect<T,D> r;
   for (int d=0; d<D; ++d) r[d]=min(a[d],b[d]);
+  return r;
+}
+
+/** Return the element-wise power of two vectors.  */
+template<class T,class U,int D>
+inline vect<T,D> pow (const vect<T,D>& a, const vect<U,D>& b) {
+  vect<T,D> r;
+  for (int d=0; d<D; ++d) r[d]=pow(a[d],b[d]);
   return r;
 }
 
