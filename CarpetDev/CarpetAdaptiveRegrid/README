@@ -1,0 +1,13 @@
+CVS info   : $Header$
+
+Cactus Code Thorn CarpetAdaptiveRegrid
+Thorn Author(s)     : Ian Hawke <hawke@aei.mpg.de>
+Thorn Maintainer(s) : Ian Hawke <hawke@aei.mpg.de>
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+This is a Berger-Rigoutsos style clusterer for Carpet.
+
+Given a GF containing an error estimate it will return to Carpet a
+list of boxes for regridding purposes.

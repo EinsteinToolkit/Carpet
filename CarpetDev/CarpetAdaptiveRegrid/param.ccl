@@ -1,0 +1,30 @@
+# Parameter definitions for thorn CarpetAdaptiveRegrid
+# $Header$
+
+# Refinement criteria for automatic refining
+
+CCTK_INT minwidth "Minimum width of refined region" STEERABLE=always
+{
+  1:* :: "must be positive"
+} 8
+
+CCTK_REAL minfraction "Minimum fraction of points in need of refinement in a refined region" STEERABLE=always
+{
+  0:1 :: "must be positive and less than one"
+} 0.75
+
+CCTK_REAL maxerror "Maximum allowed error for non-refined grid points" STEERABLE=always
+{
+  *:* :: "everything goes"
+} 1.0
+
+CCTK_STRING errorvar "Name of grid function that contains the error" STEERABLE=always
+{
+  ".*" :: "must be the name of a grid function"
+} ""
+
+shares: driver
+
+USES INT ghost_size ""
+{
+}

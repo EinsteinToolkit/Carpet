@@ -1,0 +1,8 @@
+# Schedule definitions for thorn CarpetAdaptiveRegrid
+# $Header$
+
+schedule CarpetAdaptiveRegridParamcheck at PARAMCHECK
+{
+  LANG: C
+  OPTIONS: global
+} "Check Parameters"

@@ -1,0 +1,36 @@
+#include <assert.h>
+
+#include "cctk.h"
+#include "cctk_Arguments.h"
+#include "cctk_Parameters.h"
+
+#include "carpet.hh"
+#include "CAR.hh"
+
+static const char* rcsid = "$Header:$";
+
+CCTK_FILEVERSION(CAR_Paramcheck_cc)
+
+namespace CarpetAdaptiveRegrid {
+  
+  using namespace std;
+  using namespace Carpet;
+  
+  int CarpetAdaptiveRegridParamcheck (CCTK_ARGUMENTS)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    DECLARE_CCTK_PARAMETERS;
+    
+    int type;
+    const CCTK_INT * const domain_from_coordbase
+      = (const CCTK_INT *) CCTK_ParameterGet ("domain_from_coordbase", "Carpet", &type);
+    assert (domain_from_coordbase);
+    assert (type == PARAMETER_BOOLEAN);
+    if (! *domain_from_coordbase) {
+      CCTK_PARAMWARN ("CarpetAdaptiveRegrid requires that Carpet::domain_from_coordbase=yes");
+    }
+    
+    return 0;
+  }
+  
+}
