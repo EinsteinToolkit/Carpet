@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.31 2004/01/25 14:57:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.32 2004/01/27 16:43:40 swhite Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -23,7 +23,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.31 2004/01/25 14:57:30 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.32 2004/01/27 16:43:40 swhite Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -36,40 +36,77 @@ namespace CarpetReduce {
   
   
   // Helper functions
-  template<class T> inline T mymin (const T x, const T y) { return min(x, y); }
-  template<> inline complex<float> mymin (const complex<float> x, const complex<float> y) { return complex<float> (min(x.real(), y.real()), min(x.imag(), y.imag())); }
-  template<> inline complex<double> mymin (const complex<double> x, const complex<double> y) { return complex<double> (min(x.real(), y.real()), min(x.imag(), y.imag())); }
+  template<class T> inline T
+  mymin (const T x, const T y)
+  {
+    return std::min(x, y);
+  }
+
+  template<> inline std::complex<float>
+  mymin (const std::complex<float> x, const std::complex<float> y)
+  {
+    return std::complex<float> (std::min(x.real(), y.real()),
+                                std::min(x.imag(), y.imag()));
+  }
+
+  template<> inline std::complex<double>
+  mymin (const std::complex<double> x, const std::complex<double> y)
+  {
+    return std::complex<double> (min(x.real(), y.real()),
+                                 min(x.imag(), y.imag()));
+  }
 #ifdef LDBL_MAX
-  template<> inline complex<long double> mymin (const complex<long double> x, const complex<long double> y) { return complex<long double> (min(x.real(), y.real()), min(x.imag(), y.imag())); }
+  template<> inline std::complex<long double>
+  mymin (const std::complex<long double> x, const std::complex<long double> y)
+  {
+    return std::complex<long double> (min(x.real(), y.real()),
+                                      min(x.imag(), y.imag()));
+  }
 #endif
   
-  template<class T> inline T mymax (const T x, const T y) { return max(x, y); }
-  template<> inline complex<float> mymax (const complex<float> x, const complex<float> y) { return complex<float> (max(x.real(), y.real()), max(x.imag(), y.imag())); }
-  template<> inline complex<double> mymax (const complex<double> x, const complex<double> y) { return complex<double> (max(x.real(), y.real()), max(x.imag(), y.imag())); }
+  template<class T> inline T
+  mymax (const T x, const T y)
+  {
+    return max(x, y);
+  }
+
+  template<> inline std::complex<float>
+  mymax (const std::complex<float> x, const std::complex<float> y)
+  {
+    return std::complex<float> (max(x.real(), y.real()),
+                                max(x.imag(), y.imag()));
+  }
+
+  template<> inline std::complex<double>
+  mymax (const std::complex<double> x, const std::complex<double> y)
+  {
+    return std::complex<double> (max(x.real(), y.real()),
+                                 max(x.imag(), y.imag()));
+  }
 #ifdef LDBL_MAX
-  template<> inline complex<long double> mymax (const complex<long double> x, const complex<long double> y) { return complex<long double> (max(x.real(), y.real()), max(x.imag(), y.imag())); }
+  template<> inline std::complex<long double>
+  mymax (const std::complex<long double> x, const std::complex<long double> y)
+  {
+    return std::complex<long double> (max(x.real(), y.real()),
+                                      max(x.imag(), y.imag()));
+  }
 #endif
+  template<class T> inline T
+  mymin ()
+  {
+    return mymin(numeric_limits<T>::min(),-numeric_limits<T>::max());
+  }
   
-  template<class T> inline T mymin (const T& dummy) { return mymin(numeric_limits<T>::min(),-numeric_limits<T>::max()); }
-  template<> inline complex<float> mymin (const complex<float>& dummy) { return complex<float> (mymin<float>(dummy.real()),mymin<float>(dummy.imag())); }
-  template<> inline complex<double> mymin (const complex<double>& dummy) { return complex<double> (mymin<double>(dummy.real()),mymin<double>(dummy.imag())); }
-#ifdef LDBL_MAX
-  template<> inline complex<long double> mymin (const complex<long double>& dummy) { return complex<long double> (mymin<long double>(dummy.real()),mymin<long double>(dummy.imag())); }
-#endif
-  
-  template<class T> inline T mymax (const T& dummy) { return mymax(numeric_limits<T>::max(),-numeric_limits<T>::min()); }
-  template<> inline complex<float> mymax (const complex<float>& dummy) { return complex<float> (mymax<float>(dummy.real()),mymax<float>(dummy.imag())); }
-  template<> inline complex<double> mymax (const complex<double>& dummy) { return complex<double> (mymax<double>(dummy.real()),mymax<double>(dummy.imag())); }
-#ifdef LDBL_MAX
-  template<> inline complex<long double> mymax (const complex<long double>& dummy) { return complex<long double> (mymax<long double>(dummy.real()),mymax<long double>(dummy.imag())); }
-#endif
-  
-  
+  template<class T> inline T
+  mymax ()
+  {
+    return mymax(numeric_limits<T>::max(),-numeric_limits<T>::min());
+  }
+
   
   // Poor man's RTTI
-  enum ared { do_count, do_origin, do_minimum, do_maximum, do_product, do_sum,
-              do_sum_abs, do_sum_squared, do_average, do_norm1, do_norm2,
-              do_norm_inf };
+  enum ared { do_count, do_minimum, do_maximum, do_product, do_sum, do_sum_abs,
+	      do_sum_squared, do_average, do_norm1, do_norm2, do_norm_inf };
   
   
   
@@ -95,26 +132,13 @@ namespace CarpetReduce {
     MPI_Op mpi_op () const { return MPI_SUM; }
   };
   
-  struct origin : reduction {
-    origin () { }
-    ared thered () const { return do_origin; }
-    bool uses_cnt () const { return false; }
-    template<class T>
-    struct op {
-      static inline void initialise (T& accum) { accum = 0; }
-      static inline void reduce (T& accum, const T& val) { assert(0); }
-      static inline void finalise (T& accum, const T& cnt) { }
-    };
-    MPI_Op mpi_op () const { return MPI_SUM; }
-  };
-  
   struct minimum : reduction {
     minimum () { }
     ared thered () const { return do_minimum; }
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = mymax(accum); }
+      static inline void initialise (T& accum) { accum = mymax<T>(); }
       static inline void reduce (T& accum, const T& val) { accum = mymin(accum, val); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -127,7 +151,7 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = mymin(accum); }
+      static inline void initialise (T& accum) { accum = mymin<T>(); }
       static inline void reduce (T& accum, const T& val) { accum = mymax(accum, val); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -224,13 +248,45 @@ namespace CarpetReduce {
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
   };
-  template<> inline void norm2::op<char>         ::finalise (char         & accum, const char         & cnt) { accum = (char         )sqrt((double)accum / cnt); }
-  template<> inline void norm2::op<signed char>  ::finalise (signed char  & accum, const signed char  & cnt) { accum = (signed char  )sqrt((double)accum / cnt); }
-  template<> inline void norm2::op<unsigned char>::finalise (unsigned char& accum, const unsigned char& cnt) { accum = (unsigned char)sqrt((double)accum / cnt); }
-  template<> inline void norm2::op<short>        ::finalise (short        & accum, const short        & cnt) { accum = (short        )sqrt((double)accum / cnt); }
-  template<> inline void norm2::op<int>          ::finalise (int          & accum, const int          & cnt) { accum = (int          )sqrt((double)accum / cnt); }
-  template<> inline void norm2::op<long>         ::finalise (long         & accum, const long         & cnt) { accum = (long         )sqrt((double)accum / cnt); }
-  template<> inline void norm2::op<long long>    ::finalise (long long    & accum, const long long    & cnt) { accum = (long long    )sqrt((double)accum / cnt); }
+typedef unsigned char uchar;
+typedef signed char schar;
+typedef long long llong;
+
+template<> inline void
+norm2::op<char>  ::finalise (char & accum, const char  & cnt)
+{
+  accum = (char   )sqrt((double)accum / cnt);
+}
+template<> inline void
+norm2::op<schar> ::finalise (schar& accum, const schar & cnt)
+{
+  accum = (schar  )sqrt((double)accum / cnt);
+}
+template<> inline void
+norm2::op<uchar> ::finalise (uchar& accum, const uchar & cnt)
+{
+  accum = (uchar)sqrt((double)accum / cnt);
+}
+template<> inline void
+norm2::op<short> ::finalise (short& accum, const short & cnt)
+{
+  accum = (short  )sqrt((double)accum / cnt);
+}
+template<> inline void
+norm2::op<int>   ::finalise (int  & accum, const int   & cnt)
+{
+  accum = (int    )sqrt((double)accum / cnt);
+}
+template<> inline void
+norm2::op<long>  ::finalise (long & accum, const long  & cnt)
+{
+  accum = (long   )sqrt((double)accum / cnt);
+}
+template<> inline void
+norm2::op<llong> ::finalise (llong& accum, const llong & cnt)
+{
+  accum = (llong  )sqrt((double)accum / cnt);
+}
   
   struct norm_inf : reduction {
     norm_inf () { }
@@ -321,7 +377,6 @@ namespace CarpetReduce {
       case N: {					\
 	switch (red->thered()) {		\
 	  INITIALISE(count,T);			\
-	  INITIALISE(origin,T);			\
 	  INITIALISE(minimum,T);		\
 	  INITIALISE(maximum,T);		\
 	  INITIALISE(product,T);		\
@@ -450,7 +505,6 @@ namespace CarpetReduce {
       case N: {					\
 	switch (red->thered()) {		\
 	  REDUCE(count,T);			\
-	  REDUCE(origin,T);			\
 	  REDUCE(minimum,T);			\
 	  REDUCE(maximum,T);			\
 	  REDUCE(product,T);			\
@@ -540,7 +594,6 @@ namespace CarpetReduce {
 	case N: {				\
 	  switch (red->thered()) {		\
 	    FINALISE(count,T);			\
-	    FINALISE(origin,T);			\
 	    FINALISE(minimum,T);		\
 	    FINALISE(maximum,T);		\
 	    FINALISE(product,T);		\
@@ -695,10 +748,7 @@ namespace CarpetReduce {
     }
     
     // global mode
-    if (! reduce_arrays && is_meta_mode()) {
-      CCTK_WARN (0, "Grid function reductions are not possible in meta mode");
-    }
-    if (! reduce_arrays && is_global_mode()) {
+    if (! reduce_arrays && reflevel == -1) {
       CCTK_WARN (0, "Grid function reduction operators in global mode are not yet implemented");
     }
     
@@ -710,68 +760,53 @@ namespace CarpetReduce {
     Initialise (cgh, proc, num_invars * num_outvals, &myoutvals[0], outtype,
                 &mycounts[0], red);
     
-    int const saved_reflevel = reflevel;
-    int const saved_map = Carpet::map;
-    int const saved_component = component;
-    
-    BEGIN_GLOBAL_MODE(cgh) {
-      BEGIN_REFLEVEL_LOOP(cgh) {
-        BEGIN_MAP_LOOP(cgh, reduce_arrays ? CCTK_ARRAY : CCTK_GF) {
-          BEGIN_LOCAL_COMPONENT_LOOP(cgh, reduce_arrays ? CCTK_ARRAY : CCTK_GF) {
-            if (reduce_arrays
-                || ((saved_reflevel==-1 || reflevel==saved_reflevel)
-                    && (saved_map==-1 || Carpet::map==saved_map)
-                    && (saved_component==-1 || component==saved_component))) {
-              
-              assert (grpdim<=dim);
-              int lsh[dim], bbox[2*dim], nghostzones[dim];
-              ierr = CCTK_GrouplshVI(cgh, grpdim, lsh, vi);
-              assert (!ierr);
-              ierr = CCTK_GroupbboxVI(cgh, 2*grpdim, bbox, vi);
-              assert (!ierr);
-              ierr = CCTK_GroupnghostzonesVI(cgh, grpdim, nghostzones, vi);
-              assert (!ierr);
-              for (int d=0; d<grpdim; ++d) {
-                assert (lsh[d]>=0);
-                assert (nghostzones[d]>=0 && 2*nghostzones[d]<=lsh[d]);
-              }
-              
-              vector<const void*> inarrays (num_invars);
-              for (int n=0; n<num_invars; ++n) {
-                inarrays[n] = CCTK_VarDataPtrI(cgh, 0, invars[n]);
-                assert (inarrays[n]);
-              }
-              
-              const int intype = CCTK_VarTypeI(vi);
-              for (int n=0; n<num_invars; ++n) {
-                assert (CCTK_VarTypeI(invars[n]) == intype);
-              }
-              
-              vect<int,dim> mylsh, mynghostzones;
-              vect<vect<int,2>,dim> mybbox;
-              for (int d=0; d<grpdim; ++d) {
-                mylsh[d] = lsh[d];
-                mybbox[d][0] = bbox[2*d  ];
-                mybbox[d][1] = bbox[2*d+1];
-                mynghostzones[d] = nghostzones[d];
-              }
-              for (int d=grpdim; d<dim; ++d) {
-                mylsh[d] = 1;
-                mybbox[d][0] = 0;
-                mybbox[d][1] = 0;
-                mynghostzones[d] = 0;
-              }
-              
-              Reduce (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
-                      num_invars, &inarrays[0], intype,
-                      num_invars * num_outvals, &myoutvals[0], outtype,
-                      &mycounts[0], red);
-              
-            }
-          } END_LOCAL_COMPONENT_LOOP;
-        } END_MAP_LOOP;
-      } END_REFLEVEL_LOOP;
-    } END_GLOBAL_MODE;
+    BEGIN_LOCAL_COMPONENT_LOOP(cgh, reduce_arrays ? CCTK_ARRAY : CCTK_GF) {
+      
+      assert (grpdim<=dim);
+      int lsh[dim], bbox[2*dim], nghostzones[dim];
+      ierr = CCTK_GrouplshVI(cgh, grpdim, lsh, vi);
+      assert (!ierr);
+      ierr = CCTK_GroupbboxVI(cgh, 2*grpdim, bbox, vi);
+      assert (!ierr);
+      ierr = CCTK_GroupnghostzonesVI(cgh, grpdim, nghostzones, vi);
+      assert (!ierr);
+      for (int d=0; d<grpdim; ++d) {
+        assert (lsh[d]>=0);
+        assert (nghostzones[d]>=0 && 2*nghostzones[d]<=lsh[d]);
+      }
+      
+      vector<const void*> inarrays (num_invars);
+      for (int n=0; n<num_invars; ++n) {
+        inarrays[n] = CCTK_VarDataPtrI(cgh, 0, invars[n]);
+        assert (inarrays[n]);
+      }
+      
+      const int intype = CCTK_VarTypeI(vi);
+      for (int n=0; n<num_invars; ++n) {
+        assert (CCTK_VarTypeI(invars[n]) == intype);
+      }
+      
+      vect<int,dim> mylsh, mynghostzones;
+      vect<vect<int,2>,dim> mybbox;
+      for (int d=0; d<grpdim; ++d) {
+        mylsh[d] = lsh[d];
+        mybbox[d][0] = bbox[2*d  ];
+        mybbox[d][1] = bbox[2*d+1];
+        mynghostzones[d] = nghostzones[d];
+      }
+      for (int d=grpdim; d<dim; ++d) {
+        mylsh[d] = 1;
+        mybbox[d][0] = 0;
+        mybbox[d][1] = 0;
+        mynghostzones[d] = 0;
+      }
+      
+      Reduce (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
+              num_invars, &inarrays[0], intype,
+              num_invars * num_outvals, &myoutvals[0], outtype,
+              &mycounts[0], red);
+      
+    } END_LOCAL_COMPONENT_LOOP;
     
     Finalise (cgh, proc, num_invars * num_outvals, outvals, outtype,
               &myoutvals[0], &mycounts[0], red);
@@ -808,7 +843,6 @@ namespace CarpetReduce {
   }
   
   REDUCTION(count);
-  REDUCTION(origin);
   REDUCTION(minimum);
   REDUCTION(maximum);
   REDUCTION(product);
@@ -827,7 +861,6 @@ namespace CarpetReduce {
   void CarpetReduceStartup ()
   {
     CCTK_RegisterReductionOperator (count_GVs,       "count");
-    CCTK_RegisterReductionOperator (origin_GVs,      "origin");
     CCTK_RegisterReductionOperator (minimum_GVs,     "minimum");
     CCTK_RegisterReductionOperator (maximum_GVs,     "maximum");
     CCTK_RegisterReductionOperator (product_GVs,     "product");
@@ -840,7 +873,6 @@ namespace CarpetReduce {
     CCTK_RegisterReductionOperator (norm_inf_GVs,    "norm_inf");
     
     CCTK_RegisterReductionArrayOperator (count_arrays,       "count");
-    CCTK_RegisterReductionArrayOperator (origin_arrays,      "origin");
     CCTK_RegisterReductionArrayOperator (minimum_arrays,     "minimum");
     CCTK_RegisterReductionArrayOperator (maximum_arrays,     "maximum");
     CCTK_RegisterReductionArrayOperator (product_arrays,     "product");
