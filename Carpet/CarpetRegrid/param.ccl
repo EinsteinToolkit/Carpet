@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.6 2002/05/22 15:03:40 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.7 2002/05/22 16:22:01 shawley Exp $
 
 
 
@@ -17,7 +17,12 @@ CCTK_INT regrid_every "Regrid every n time steps" STEERABLE=always
    1:* :: "regrid every n time steps"
 } 0
 
-
+CCTK_INT activate_newlevels_on_regrid "When regridding, activate this many new levels (if possible)"
+# Note that this feature will STEER the parameter refinement_levels!!!
+#   It does this by adding activate_newlevels_on_regrid to refinement levels
+{
+   : :: "Number of new levels to activate.  Negative numbers mean to de-activate"
+} 0
 
 KEYWORD refined_regions "Regions where the grid is refined" STEERABLE=always
 {
