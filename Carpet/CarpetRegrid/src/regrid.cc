@@ -24,7 +24,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.30 2003/11/14 12:50:47 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.31 2003/11/21 12:51:56 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -414,7 +414,37 @@ namespace CarpetRegrid {
   
   
   
-  static ivect real2int (const cGH* cctkGH, const rvect & rpos, const int rl)
+  static ivect delta2int (const cGH* cctkGH, const rvect & rpos, const int rl)
+  {
+    rvect global_lower, global_upper;
+    for (int d=0; d<dim; ++d) {
+      const int ierr = CCTK_CoordRange
+	(cctkGH, &global_lower[d], &global_upper[d], d+1, 0, "cart3d");
+      if (ierr<0) {
+	global_lower[d] = 0;
+	global_upper[d] = 1;
+      }
+    }
+    const ivect global_extent (hh->baseextent.upper() - hh->baseextent.lower());
+    
+    CCTK_REAL (* const rfloor) (CCTK_REAL const) = floor;
+    
+    const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
+    const int levfac = ipow(hh->reffact, rl);
+    assert (all (hh->baseextent.stride() % levfac == 0));
+    const ivect istride = hh->baseextent.stride() / levfac;
+    
+    const ivect ipos = ivect(map(rfloor, rpos * scale / rvect(istride) + 0.5)) * istride;
+    
+    const rvect apos = rpos * scale;
+    assert (all(abs(apos - rvect(ipos)) < rvect(istride)*0.01));
+    
+    return ipos;
+  }
+  
+  
+  
+  static ivect pos2int (const cGH* cctkGH, const rvect & rpos, const int rl)
   {
     rvect global_lower, global_upper;
     for (int d=0; d<dim; ++d) {
@@ -435,9 +465,6 @@ namespace CarpetRegrid {
     const ivect istride = hh->baseextent.stride() / levfac;
     
     const ivect ipos = ivect(map(rfloor, (rpos - global_lower) * scale / rvect(istride) + 0.5)) * istride;
-    
-    const rvect apos = (rpos - global_lower) * scale;
-    assert (all(abs(apos - rvect(ipos)) < rvect(istride)*0.01));
     
     return ipos;
   }
@@ -498,8 +525,8 @@ namespace CarpetRegrid {
     ilower.resize (lower.size());
     iupper.resize (upper.size());
     for (int rl=1; rl<lower.size()+1; ++rl) {
-      ilower[rl-1] = real2int (cctkGH, lower[rl-1], rl);
-      iupper[rl-1] = real2int (cctkGH, upper[rl-1], rl);
+      ilower[rl-1] = pos2int (cctkGH, lower[rl-1], rl);
+      iupper[rl-1] = pos2int (cctkGH, upper[rl-1], rl);
     }
     MakeRegions_AsSpecified (cctkGH, reflevels, ilower, iupper, bbl, obl);
   }
@@ -543,9 +570,9 @@ namespace CarpetRegrid {
     for (int rl=1; rl<bbss.size()+1; ++rl) {
       ibbss[rl-1].resize (bbss[rl-1].size());
       for (int c=0; c<bbss[rl-1].size(); ++c) {
-        const ivect ilower = real2int (cctkGH, bbss[rl-1][c].lower(), rl);
-        const ivect iupper = real2int (cctkGH, bbss[rl-1][c].upper(), rl);
-        const ivect istride = real2int (cctkGH, bbss[rl-1][c].upper() + bbss[rl-1][c].stride(), rl) - iupper;
+        const ivect ilower = pos2int (cctkGH, bbss[rl-1][c].lower(), rl);
+        const ivect iupper = pos2int (cctkGH, bbss[rl-1][c].upper(), rl);
+        const ivect istride = delta2int (cctkGH, bbss[rl-1][c].stride(), rl);
         ibbss[rl-1][c] = ibbox (ilower, iupper, istride);
       }
     }
