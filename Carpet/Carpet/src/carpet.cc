@@ -35,7 +35,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.21 2001/03/30 00:21:24 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.22 2001/04/06 10:37:35 schnetter Exp $";
 
 
 
@@ -49,9 +49,11 @@ namespace Carpet {
   
   // where=0: all time levels but next time level
   // where=1: only next time level
-  // but never if there is only one time level
+  //    but never if there is only one time level
+  // where=2: all time levels
   
   static void Poison (cGH* cgh, int where);
+  static void PoisonGroup (cGH* cgh, int group, int where);
   static void PoisonCheck (cGH* cgh, int where);
   
   static void CalculateChecksums (cGH* cgh, int where);
@@ -110,7 +112,7 @@ namespace Carpet {
   vector<gfdesc> gfdata;	// [group]
   
   // Checksums
-  vector<vector<vector<vector<int> > > > checksums; // [var][rl][tl][c]
+  vector<vector<vector<vector<ckdesc> > > > checksums; // [n][rl][tl][c]
   
   
   
@@ -588,7 +590,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    assert (component == -1);
+    if (hh->components(reflevel) > 1) assert (component == -1);
     
     Checkpoint ("%*sSyncGroup %s", 2*reflevel, "", groupname);
     
@@ -604,7 +606,7 @@ namespace Carpet {
     
     const int n0 = CCTK_FirstVarIndexI(group);
     const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
-    const int tl = activetimelevel;
+    const int tl = min(activetimelevel, num_tl-1);
     
     switch (CCTK_GroupTypeI(group)) {
       
@@ -685,7 +687,8 @@ namespace Carpet {
     switch (CCTK_GroupTypeI(group)) {
       
     case CCTK_SCALAR:
-      if (scdata[group].data.size()==0 || scdata[group].data[0].size()==0
+      if (scdata[group].data.size()==0
+	  || scdata[group].data[0].size()==0
 	  || scdata[group].data[0][0].size()==0
 	  || scdata[group].data[0][0][0] != 0) {
 	// group already has storage
@@ -759,6 +762,9 @@ namespace Carpet {
       abort();
     }
     
+    set_component (cgh, component);
+    PoisonGroup (cgh, group, 2);
+    
     // The return values seems to be whether storage was enabled
     // previously, and not whether storage is enabled now.
     return retval;
@@ -774,18 +780,20 @@ namespace Carpet {
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
+    const int n0 = CCTK_FirstVarIndexI(group);
     
     switch (CCTK_GroupTypeI(group)) {
       
     case CCTK_SCALAR:
-      if (scdata[group].data.size()==0 || scdata[group].data[0].size()==0
+      if (scdata[group].data.size()==0
+	  || scdata[group].data[0].size()==0
 	  || scdata[group].data[0][0].size()==0
 	  || scdata[group].data[0][0][0] == 0) {
 	// group already has no storage
 	break;
       }
       for (int var=0; var<(int)scdata[group].data.size(); ++var) {
-	const int n = CCTK_FirstVarIndexI(group) + var;
+	const int n = n0 + var;
 	for (int rl=0; rl<(int)scdata[group].data[var].size(); ++rl) {
 	  for (int ti=0; ti<(int)scdata[group].data[var][rl].size(); ++ti) {
 	    switch (CCTK_VarTypeI(n)) {
@@ -850,6 +858,8 @@ namespace Carpet {
     default:
       abort();
     }
+    
+    set_component (cgh, component);
     
     // The return value seems to be 1 (success) no matter whether
     // storage has actually been disabled.
@@ -1178,52 +1188,93 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
+    assert (where>=0 && where<=2);
+    
     if (! poison_new_timelevels) return;
     
     Checkpoint ("%*sPoison", 2*reflevel, "");
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cgh, group)) {
-	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-	  
-	  const int n = CCTK_FirstVarIndexI(group) + var;
-	  const int sz = CCTK_VarTypeSize(CCTK_VarTypeI(n));
-	  assert (sz>0);
-	  
-	  const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
-	  const int min_tl = where ? max(num_tl-1,1) : 0;
-	  const int max_tl = where ? num_tl-1        : num_tl-2;
-	  for (int tl=min_tl; tl<=max_tl; ++tl) {
-	    
-	    switch (CCTK_GroupTypeFromVarI(n)) {
-	    case CCTK_SCALAR: {
-	      assert (group<(int)scdata.size());
-	      assert (var<(int)scdata[group].data.size());
-	      memset (cgh->data[n][tl], poison_value, sz);
-	      break;
-	    }
-	    case CCTK_ARRAY:
-	    case CCTK_GF: {
-	      BEGIN_COMPONENT_LOOP(cgh) {
-		if (hh->is_local(reflevel,component)) {
-		  int np = 1;
-		  for (int d=0; d<dim; ++d) {
-		    np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
-		  }
-		  memset (cgh->data[n][tl], poison_value, np*sz);
-		}
-	      } END_COMPONENT_LOOP(cgh);
-	      break;
-	    }
-	    default:
-	      abort();
-	    }
-	    
-	  } // for tl
-	  
-	} // for var
+	PoisonGroup (cgh, group, where);
       } // if has storage
     } // for group
+  }
+  
+  
+  
+  void PoisonGroup (cGH* cgh, const int group, const int where)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    assert (group>=0 && group<CCTK_NumGroups());
+    assert (where>=0 && where<=2);
+    
+    if (! poison_new_timelevels) return;
+    
+    Checkpoint ("%*sPoisonGroup %s", 2*reflevel, "", CCTK_GroupName(group));
+    
+    if (! CCTK_QueryGroupStorageI(cgh, group)) {
+      CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+		  "Cannot poison group \"%s\" because it has no storage",
+		  CCTK_GroupName(group));
+      return;
+    }
+    
+    for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+      
+      const int n = CCTK_FirstVarIndexI(group) + var;
+      const int sz = CCTK_VarTypeSize(CCTK_VarTypeI(n));
+      assert (sz>0);
+      
+      const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
+      int min_tl, max_tl;
+      switch (where) {
+      case 0:
+	min_tl = 0;
+	max_tl = num_tl-2;
+	break;
+      case 1:
+	min_tl = max(num_tl-1,1);
+	max_tl = num_tl-1;
+	break;
+      case 2:
+	min_tl = 0;
+	max_tl = num_tl-1;
+	break;
+      default:
+	abort();
+      }
+      
+      for (int tl=min_tl; tl<=max_tl; ++tl) {
+	
+	switch (CCTK_GroupTypeFromVarI(n)) {
+	case CCTK_SCALAR: {
+	  assert (group<(int)scdata.size());
+	  assert (var<(int)scdata[group].data.size());
+	  memset (cgh->data[n][tl], poison_value, sz);
+	  break;
+	}
+	case CCTK_ARRAY:
+	case CCTK_GF: {
+	  BEGIN_COMPONENT_LOOP(cgh) {
+	    if (hh->is_local(reflevel,component)) {
+	      int np = 1;
+	      for (int d=0; d<dim; ++d) {
+		np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
+	      }
+	      memset (cgh->data[n][tl], poison_value, np*sz);
+	    }
+	  } END_COMPONENT_LOOP(cgh);
+	  break;
+	}
+	default:
+	  abort();
+	}
+	
+      } // for tl
+      
+    } // for var
   }
   
   
@@ -1319,7 +1370,7 @@ namespace Carpet {
 		  if (numpoison>10) {
 		    char* fullname = CCTK_FullName(n);
 		    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-				"The variable \"%s\" contains poison at alltogether %d locations",
+				"The variable \"%s\" contains poison at %d locations; not all were printed.",
 				fullname, numpoison);
 		    free (fullname);
 		  }
@@ -1351,6 +1402,40 @@ namespace Carpet {
     
     checksums.resize(CCTK_NumVars());
     for (int group=0; group<CCTK_NumGroups(); ++group) {
+      for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+	const int n = CCTK_FirstVarIndexI(group) + var;
+	const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
+	const int min_tl = where ? max(num_tl-1,1) : 0;
+	const int max_tl = where ? num_tl-1        : num_tl-2;
+	checksums[n].resize(maxreflevels);
+	checksums[n][reflevel].resize(num_tl);
+	for (int tl=min_tl; tl<=max_tl; ++tl) {
+	  switch (CCTK_GroupTypeFromVarI(n)) {
+	    
+	  case CCTK_SCALAR: {
+	    checksums[n][reflevel][tl].resize(1);
+	    const int c=0;
+	    checksums[n][reflevel][tl][c].valid = false;
+	    break;
+	  }
+	      
+	  case CCTK_ARRAY:
+	  case CCTK_GF: {
+	    checksums[n][reflevel][tl].resize(hh->components(reflevel));
+	    BEGIN_COMPONENT_LOOP(cgh) {
+	      checksums[n][reflevel][tl][component].valid = false;
+	    } END_COMPONENT_LOOP(cgh);
+	    break;
+	  }
+	    
+	  default:
+	    abort();
+	  }
+	}
+      }
+    }
+    
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cgh, group)) {
 	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
 	  
@@ -1360,26 +1445,23 @@ namespace Carpet {
 	  const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
 	  const int min_tl = where ? max(num_tl-1,1) : 0;
 	  const int max_tl = where ? num_tl-1        : num_tl-2;
-	  checksums[n].resize(maxreflevels);
-	  checksums[n][reflevel].resize(num_tl);
 	  for (int tl=min_tl; tl<=max_tl; ++tl) {
 	    switch (CCTK_GroupTypeFromVarI(n)) {
 	      
 	    case CCTK_SCALAR: {
-	      checksums[n][reflevel][tl].resize(1);
 	      const int c=0;
 	      int chk = 0;
 	      const void* data = cgh->data[n][tl];
 	      for (int i=0; i<sz/(int)sizeof(chk); ++i) {
 		chk += ((const int*)data)[i];
 	      }
-	      checksums[n][reflevel][tl][c] = chk;
+	      checksums[n][reflevel][tl][c].sum = chk;
+	      checksums[n][reflevel][tl][c].valid = true;
 	      break;
 	    }
 	      
 	    case CCTK_ARRAY:
 	    case CCTK_GF: {
-	      checksums[n][reflevel][tl].resize(hh->components(reflevel));
 	      BEGIN_COMPONENT_LOOP(cgh) {
 		if (hh->is_local(reflevel,component)) {
 		  int np = 1;
@@ -1391,7 +1473,8 @@ namespace Carpet {
 		  for (int i=0; i<np*sz/(int)sizeof(chk); ++i) {
 		    chk += ((const int*)data)[i];
 		  }
-		  checksums[n][reflevel][tl][component] = chk;
+		  checksums[n][reflevel][tl][component].sum = chk;
+		  checksums[n][reflevel][tl][component].valid = true;
 		}
 	      } END_COMPONENT_LOOP(cgh);
 	      break;
@@ -1440,13 +1523,16 @@ namespace Carpet {
 	    case CCTK_SCALAR: {
 	      assert ((int)checksums[n][reflevel][tl].size()==1);
 	      const int c=0;
-	      int chk = 0;
-	      const void* data = cgh->data[n][tl];
-	      for (int i=0; i<sz/(int)sizeof(chk); ++i) {
-		chk += ((const int*)data)[i];
+	      if (checksums[n][reflevel][tl][c].valid) {
+		int chk = 0;
+		const void* data = cgh->data[n][tl];
+		for (int i=0; i<sz/(int)sizeof(chk); ++i) {
+		  chk += ((const int*)data)[i];
+		}
+		unexpected_change
+		  = (unexpected_change
+		     || chk != checksums[n][reflevel][tl][c].sum);
 	      }
-	      unexpected_change = (unexpected_change
-				   || chk != checksums[n][reflevel][tl][c]);
 	      break;
 	    }
 	      
@@ -1455,21 +1541,20 @@ namespace Carpet {
 	      assert ((int)checksums[n][reflevel][tl].size()
 		      ==hh->components(reflevel));
 	      BEGIN_COMPONENT_LOOP(cgh) {
-		if (hh->is_local(reflevel,component)) {
-		  int np = 1;
-		  for (int d=0; d<dim; ++d) {
-		    np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
-		  }
-		  const void* data = cgh->data[n][tl];
-		  int chk = 0;
-		  for (int i=0; i<np*sz/(int)sizeof(chk); ++i) {
-		    chk += ((const int*)data)[i];
-		  }
-		  unexpected_change
-		    = (unexpected_change
-		       || chk != checksums[n][reflevel][tl][component]);
-		  if (chk != checksums[n][reflevel][tl][component]) {
-		    cout << "n tl rl c " << n << " " << tl << " " << reflevel << " " << component << endl;
+		if (checksums[n][reflevel][tl][component].valid) {
+		  if (hh->is_local(reflevel,component)) {
+		    int np = 1;
+		    for (int d=0; d<dim; ++d) {
+		      np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
+		    }
+		    const void* data = cgh->data[n][tl];
+		    int chk = 0;
+		    for (int i=0; i<np*sz/(int)sizeof(chk); ++i) {
+		      chk += ((const int*)data)[i];
+		    }
+		    unexpected_change
+		      = (unexpected_change
+			 || chk != checksums[n][reflevel][tl][component].sum);
 		  }
 		}
 	      } END_COMPONENT_LOOP(cgh);

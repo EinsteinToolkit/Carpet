@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.6 2001/03/30 00:21:24 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.7 2001/04/06 10:37:36 schnetter Exp $
 
 #include <vector>
 
@@ -76,7 +76,11 @@ namespace Carpet {
   extern vector<gfdesc> gfdata;	// [group]
   
   // Checksums
-  extern vector<vector<vector<vector<int> > > > checksums; // [n][rl][tl][c]
+  struct ckdesc {
+    bool valid;
+    int sum;
+  };
+  extern vector<vector<vector<vector<ckdesc> > > > checksums; // [n][rl][tl][c]
   
   
   

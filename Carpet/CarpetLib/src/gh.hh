@@ -1,13 +1,13 @@
 /***************************************************************************
                           gh.hh  -  Grid Hierarchy
-  												bounding boxes for each multigrid level of each
-  												component of each refinement level
+		bounding boxes for each multigrid level of each
+		component of each refinement level
                              -------------------
     begin                : Sun Jun 11 2000
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.4 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.5 2001/04/06 10:37:36 schnetter Exp $
 
  ***************************************************************************/
 
