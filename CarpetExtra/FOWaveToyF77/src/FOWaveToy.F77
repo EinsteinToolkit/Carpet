@@ -181,6 +181,14 @@ c     -----------------------------------
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phiy")
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phiz")
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phi")
+      else if (CCTK_EQUALS(bound, "static")) then
+         ierr = 0 
+         call CCTK_WARN (2, "Static boundary conditions chosen")
+         call BndCopyTLVN (ierr, cctkGH, sw, 1, 0, "wavetoy::phi")
+         call BndCopyTLVN (ierr, cctkGH, sw, 1, 0, "wavetoy::pi")
+         call BndCopyTLVN (ierr, cctkGH, sw, 1, 0, "wavetoy::phix")
+         call BndCopyTLVN (ierr, cctkGH, sw, 1, 0, "wavetoy::phiy")
+         call BndCopyTLVN (ierr, cctkGH, sw, 1, 0, "wavetoy::phiz")
       else if (CCTK_EQUALS(bound, "radiation")) then
          call BndRadiativeVN (ierr, cctkGH, sw, zero, one,
      $        "wavetoy::phi", "wavetoy::phi")
@@ -198,6 +206,7 @@ c     -----------------------------------
 c     Apply the symmetry boundary conditions on any coordinate axes
 c     -------------------------------------------------------------
       call Cart3dSymGN (ierr, cctkGH, "wavetoy::scalarevolve")
+      call Cart3dSymGN (ierr, cctkGH, "wavetoy::scalarevolve_derivs")
       
       if (ierr .lt. 0)  then
         call CCTK_WARN (0, "Symmetry conditions not applied - giving up!")
