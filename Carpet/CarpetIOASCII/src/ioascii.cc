@@ -24,7 +24,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.22 2001/12/05 16:30:29 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.23 2001/12/07 18:23:29 schnetter Exp $";
 
 
 
@@ -429,9 +429,9 @@ int CarpetIOASCII<outdim>
 
 template<int outdim>
 int CarpetIOASCII<outdim>
-::GetGridOffset (const cGH* cgh, int dir,
-		 const char* itempl, const char* iglobal,
-		 const char* ctempl, const char* cglobal,
+::GetGridOffset (const cGH* const cgh, const int dir,
+		 const char* const itempl, const char* const iglobal,
+		 const char* const ctempl, const char* const cglobal,
 		 const CCTK_REAL cfallback)
 {
   // First choice: explicit coordinate
@@ -501,7 +501,8 @@ int CarpetIOASCII<outdim>
   const int npoints = cgh->cctk_gsh[dir-1];
   
   const CCTK_REAL rindex = (coord - lower) / (upper - lower) * (npoints-1);
-  int cindex = (int)floor(rindex + 0.5 + 1e-6);
+  const int levfac = cgh->cctk_levfac[dir-1];
+  int cindex = (int)floor(rindex / levfac + 0.5 + 1e-6) * levfac;
   
   if (cindex<0 || cindex>=npoints) {
     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
