@@ -25,7 +25,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.37 2003/03/26 20:50:43 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.38 2003/05/02 10:38:13 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -148,7 +148,7 @@ namespace Carpet {
   
   
   
-  void Regrid (const cGH* cgh)
+  void Regrid (const cGH* cgh, const int initialise_upto)
   {
     assert (mglevel == -1);
     assert (component == -1);
@@ -169,7 +169,7 @@ namespace Carpet {
     int do_recompose = (*regrid_routine) (cgh, bbsss, obss, pss);
     assert (do_recompose >= 0);
     if (do_recompose == 0) return;
-    Recompose (cgh, bbsss, obss, pss);
+    Recompose (cgh, bbsss, obss, pss, initialise_upto);
   }
   
   
@@ -177,7 +177,8 @@ namespace Carpet {
   void Recompose (const cGH* const cgh,
 		  const gh<dim>::rexts& bbsss,
 		  const gh<dim>::rbnds& obss,
-		  const gh<dim>::rprocs& pss)
+		  const gh<dim>::rprocs& pss,
+                  const int initialise_upto)
   {
     assert (mglevel == -1);
     assert (component == -1);
@@ -189,7 +190,7 @@ namespace Carpet {
     OutputGridStructure (cgh, bbsss, obss, pss);
     
     // Recompose
-    hh->recompose (bbsss, obss, pss);
+    hh->recompose (bbsss, obss, pss, initialise_upto);
     Output (cgh, hh);
   }
   
@@ -481,7 +482,7 @@ namespace Carpet {
     if (all(newdims)) {
       nslices = nprocs;
     } else {
-      nslices = floor(mysize + 0.5);
+      nslices = (int)floor(mysize + 0.5);
     }
     
     // split the remaining processors
@@ -505,7 +506,7 @@ namespace Carpet {
       if (n == nslices-1) {
         myslice[n] = slice_left;
       } else {
-        myslice[n] = floor(1.0 * slice_left * mynprocs[n] / nprocs_left + 0.5);
+        myslice[n] = (int)floor(1.0 * slice_left * mynprocs[n] / nprocs_left + 0.5);
       }
       slice_left -= myslice[n];
       nprocs_left -= mynprocs[n];
