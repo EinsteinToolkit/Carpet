@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.38 2003/07/17 12:24:05 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.39 2003/07/17 15:40:28 schnetter Exp $
 
 #include <assert.h>
 
@@ -283,9 +283,9 @@ void dh<D>::recompose (const int initialise_upto) {
               }
 #else
               ivect buf[2];
-              for (int d=0; d<D; ++d) {
-                for (int f=0; f<2; ++f) {
-                  buf[f][d] = (h.outer_boundaries[rl+1][c][d][f]
+              for (int f=0; f<2; ++f) {
+                for (int d=0; d<D; ++d) {
+                  buf[f][d] = (h.outer_boundaries[rl+1][cc][d][f]
                                ? 0 : buffer_width);
                 }
               }

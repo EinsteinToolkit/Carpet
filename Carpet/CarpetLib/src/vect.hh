@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.15 2003/03/26 17:34:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.16 2003/07/17 15:40:28 schnetter Exp $
 
 #ifndef VECT_HH
 #define VECT_HH
@@ -122,7 +122,8 @@ public:
   }
   
   // Accessors
-  const T& operator[] (const int d) const {
+  // Don't return a reference; *this might be a temporary
+  const T operator[] (const int d) const {
     assert(d>=0 && d<D);
     return elt[d];
   }
@@ -135,88 +136,89 @@ public:
   template<class TT, int DD>
   vect<T,DD> operator[] (const vect<TT,DD>& a) const {
     vect<T,DD> r;
+    // (*this)[] performs index checking
     for (int d=0; d<DD; ++d) r[d] = (*this)[a[d]];
     return r;
   }
   
   // Modifying operators
   vect& operator+=(const T x) {
-    for (int d=0; d<D; ++d) (*this)[d]+=x;
+    for (int d=0; d<D; ++d) elt[d]+=x;
     return *this;
   }
   
   vect& operator-=(const T x) {
-    for (int d=0; d<D; ++d) (*this)[d]-=x;
+    for (int d=0; d<D; ++d) elt[d]-=x;
     return *this;
   }
   
   vect& operator*=(const T x) {
-    for (int d=0; d<D; ++d) (*this)[d]*=x;
+    for (int d=0; d<D; ++d) elt[d]*=x;
     return *this;
   }
   
   vect& operator/=(const T x) {
-    for (int d=0; d<D; ++d) (*this)[d]/=x;
+    for (int d=0; d<D; ++d) elt[d]/=x;
     return *this;
   }
   
   vect& operator%=(const T x) {
-    for (int d=0; d<D; ++d) (*this)[d]%=x;
+    for (int d=0; d<D; ++d) elt[d]%=x;
     return *this;
   }
   
   vect& operator&=(const T x) {
-    for (int d=0; d<D; ++d) (*this)[d]&=x;
+    for (int d=0; d<D; ++d) elt[d]&=x;
     return *this;
   }
   
   vect& operator|=(const T x) {
-    for (int d=0; d<D; ++d) (*this)[d]|=x;
+    for (int d=0; d<D; ++d) elt[d]|=x;
     return *this;
   }
   
   vect& operator^=(const T x) {
-    for (int d=0; d<D; ++d) (*this)[d]^=x;
+    for (int d=0; d<D; ++d) elt[d]^=x;
     return *this;
   }
   
   vect& operator+=(const vect& a) {
-    for (int d=0; d<D; ++d) (*this)[d]+=a[d];
+    for (int d=0; d<D; ++d) elt[d]+=a[d];
     return *this;
   }
   
   vect& operator-=(const vect& a) {
-    for (int d=0; d<D; ++d) (*this)[d]-=a[d];
+    for (int d=0; d<D; ++d) elt[d]-=a[d];
     return *this;
   }
   
   vect& operator*=(const vect& a) {
-    for (int d=0; d<D; ++d) (*this)[d]*=a[d];
+    for (int d=0; d<D; ++d) elt[d]*=a[d];
     return *this;
   }
   
   vect& operator/=(const vect& a) {
-    for (int d=0; d<D; ++d) (*this)[d]/=a[d];
+    for (int d=0; d<D; ++d) elt[d]/=a[d];
     return *this;
   }
   
   vect& operator%=(const vect& a) {
-    for (int d=0; d<D; ++d) (*this)[d]%=a[d];
+    for (int d=0; d<D; ++d) elt[d]%=a[d];
     return *this;
   }
   
   vect& operator&=(const vect& a) {
-    for (int d=0; d<D; ++d) (*this)[d]&=a[d];
+    for (int d=0; d<D; ++d) elt[d]&=a[d];
     return *this;
   }
   
   vect& operator|=(const vect& a) {
-    for (int d=0; d<D; ++d) (*this)[d]|=a[d];
+    for (int d=0; d<D; ++d) elt[d]|=a[d];
     return *this;
   }
   
   vect& operator^=(const vect& a) {
-    for (int d=0; d<D; ++d) (*this)[d]^=a[d];
+    for (int d=0; d<D; ++d) elt[d]^=a[d];
     return *this;
   }
   
@@ -224,31 +226,31 @@ public:
   vect replace (const int d, const T x) const {
     assert (d>=0 && d<D);
     vect r;
-    for (int dd=0; dd<D; ++dd) r[dd]=dd==d?x:(*this)[dd];
+    for (int dd=0; dd<D; ++dd) r[dd]=dd==d?x:elt[dd];
     return r;
   }
   
   vect operator+ () const {
     vect r;
-    for (int d=0; d<D; ++d) r[d]=+r[d];
+    for (int d=0; d<D; ++d) r[d]=+elt[d];
     return r;
   }
   
   vect operator- () const {
     vect r;
-    for (int d=0; d<D; ++d) r[d]=-r[d];
+    for (int d=0; d<D; ++d) r[d]=-elt[d];
     return r;
   }
   
   vect<bool,D> operator! () const {
     vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=!r[d];
+    for (int d=0; d<D; ++d) r[d]=!elt[d];
     return r;
   }
   
   vect operator~ () const {
     vect r;
-    for (int d=0; d<D; ++d) r[d]=~r[d];
+    for (int d=0; d<D; ++d) r[d]=~elt[d];
     return r;
   }
   
@@ -302,13 +304,13 @@ public:
   
   vect<bool,D> operator&& (const T x) const {
     vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=(*this)[d]&&x;
+    for (int d=0; d<D; ++d) r[d]=elt[d]&&x;
     return r;
   }
   
   vect<bool,D> operator|| (const T x) const {
     vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=(*this)[d]||x;
+    for (int d=0; d<D; ++d) r[d]=elt[d]||x;
     return r;
   }
   
@@ -362,56 +364,56 @@ public:
   
   vect<bool,D> operator&& (const vect& a) const {
     vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=(*this)[d]&&a[d];
+    for (int d=0; d<D; ++d) r[d]=elt[d]&&a[d];
     return r;
   }
   
   vect<bool,D> operator|| (const vect& a) const {
     vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=(*this)[d]||a[d];
+    for (int d=0; d<D; ++d) r[d]=elt[d]||a[d];
     return r;
   }
   
   vect<bool,D> operator== (const vect& a) const {
     vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=(*this)[d]==a[d];
+    for (int d=0; d<D; ++d) r[d]=elt[d]==a[d];
     return r;
   }
   
   vect<bool,D> operator!= (const vect& a) const {
     vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=(*this)[d]!=a[d];
+    for (int d=0; d<D; ++d) r[d]=elt[d]!=a[d];
     return r;
   }
   
   vect<bool,D> operator< (const vect& a) const {
     vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=(*this)[d]<a[d];
+    for (int d=0; d<D; ++d) r[d]=elt[d]<a[d];
     return r;
   }
   
   vect<bool,D> operator<= (const vect& a) const {
     vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=(*this)[d]<=a[d];
+    for (int d=0; d<D; ++d) r[d]=elt[d]<=a[d];
     return r;
   }
   
   vect<bool,D> operator> (const vect& a) const {
     vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=(*this)[d]>a[d];
+    for (int d=0; d<D; ++d) r[d]=elt[d]>a[d];
     return r;
   }
   
   vect<bool,D> operator>= (const vect& a) const {
     vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=(*this)[d]>=a[d];
+    for (int d=0; d<D; ++d) r[d]=elt[d]>=a[d];
     return r;
   }
   
   template<class TT>
   vect<TT,D> ifthen (const vect<TT,D>& a, const vect<TT,D>& b) const {
     vect<TT,D> r;
-    for (int d=0; d<D; ++d) r[d]=(*this)[d]?a[d]:b[d];
+    for (int d=0; d<D; ++d) r[d]=elt[d]?a[d]:b[d];
     return r;
   }
   
