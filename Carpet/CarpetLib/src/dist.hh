@@ -4,9 +4,12 @@
 #define DIST_HH
 
 #include <cassert>
-#include <complex>
 #include <cstdio>
 #include <cstdlib>
+
+#if 0
+#include <complex>
+#endif
 
 #include <mpi.h>
 
