@@ -6,7 +6,7 @@ omega=sqrt(kx**2 + ky**2 + kz**2)
 
 
 
-# compare to uncoubled systems
+# compare to uncoupled systems
 
 # coarse solutions
 p "spacetimetoy_periodic_coarse/phi.zl" u (2*$8):(2*$1==time&&$3==0?$9:0/0) w lp, "hydrotoy_periodic_coarse/u.zl" u (2*$8):(2*$1==time&&$3==0?$9:0/0) w lp, "doubletoy_periodic_coarse/phi.zl" u (2*$8):(2*$1==time&&$3==0?$9:0/0) w lp, "doubletoy_periodic_coarse/u.zl" u (2*$8):(2*$1==time&&$3==0?$9:0/0) w lp, cos((kz*(0.3*x-9) + omega*(0.15*time))*pi) w l
