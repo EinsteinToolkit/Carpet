@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.23 2003/11/05 16:18:39 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.24 2004/01/25 14:57:30 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -21,7 +21,7 @@ using namespace std;
 template<int D>
 gh<D>::gh (const int reffact, const centering refcent,
 	   const int mgfact, const centering mgcent,
-	   const ibbox& baseextent)
+           const ibbox baseextent)
   : reffact(reffact), refcent(refcent),
     mgfact(mgfact), mgcent(mgcent),
     baseextent(baseextent)
@@ -169,69 +169,6 @@ void gh<D>::recompose (const rexts& exts,
   }
 }
 
-// Helpers
-template<int D>
-typename gh<D>::cexts
-gh<D>::make_reflevel_multigrid_boxes (const vector<ibbox>& exts,
-				      const int mglevels)
-  const
-{
-  assert (mglevels>0);
-  
-  cexts mexts (exts.size());
-  for (int c=0; c<(int)exts.size(); ++c) {
-    
-    mexts[c].resize(mglevels);
-    
-    ibbox ext = exts[c];
-    for (int ml=0; ml<mglevels; ++ml) {
-      
-      mexts[c][ml] = ext;
-      
-      if (ml == mglevels-1) break;
-      
-      // This level's characteristics
-      ivect str = ext.stride();
-      ivect lo = ext.lower();
-      ivect up = ext.upper();
-      
-      // Transform to next (coarser) level
-      switch (mgcent) {
-      case vertex_centered:
-	break;
-      case cell_centered:
-	for (int d=0; d<D; ++d) assert (str[d]%2 == 0);
-	lo += str/2;
-	break;
-      default:
-	assert (0);
-      }
-      str *= mgfact;
-      up = up - (up - lo) % str;
-      
-      ext = ibbox(lo,up,str);
-    } // for ml
-  } // for c
-  
-  return mexts;
-}
-
-template<int D>
-typename gh<D>::rexts
-gh<D>::make_multigrid_boxes (const vector<vector<ibbox> >& exts,
-			     const int mglevels)
-  const
-{
-  assert (mglevels>0);
-  
-  rexts mexts (exts.size());
-  for (int rl=0; rl<(int)exts.size(); ++rl) {
-    mexts[rl] = make_reflevel_multigrid_boxes (exts[rl], mglevels);
-  }
-  
-  return mexts;
-}
-
 
 
 // Accessors
@@ -277,7 +214,6 @@ ostream& gh<D>::output (ostream& os) const {
   os << "gh<" << D << ">:"
      << "reffactor=" << reffact << ",refcentering=" << refcent << ","
      << "mgfactor=" << mgfact << ",mgcentering=" << mgcent << ","
-     << "baseextent=" << baseextent << ","
      << "extents=" << extents << ","
      << "outer_boundaries=" << outer_boundaries << ","
      << "processors=" << processors << ","

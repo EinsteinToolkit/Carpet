@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.hh,v 1.9 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.hh,v 1.10 2004/01/25 14:57:30 schnetter Exp $
 
 #ifndef TH_HH
 #define TH_HH
@@ -33,7 +33,7 @@ class th {
 public:				// should be readonly
   
   // Fields
-  gh<D> *h;                     // hierarchy
+  gh<D>& h;                     // hierarchy
   
 private:
   
@@ -44,7 +44,7 @@ private:
 public:
   
   // Constructors
-  th (gh<D>* h, const CCTK_REAL basedelta);
+  th (gh<D>& h, const CCTK_REAL basedelta);
   
   // Destructors
   ~th ();
@@ -54,14 +54,14 @@ public:
   
   // Time management
   CCTK_REAL get_time (const int rl, const int ml) const {
-    assert (rl>=0 && rl<h->reflevels());
-    assert (ml>=0 && ml<h->mglevels(rl,0));
+    assert (rl>=0 && rl<h.reflevels());
+    assert (ml>=0 && ml<h.mglevels(rl,0));
     return times[rl][ml];
   }
   
   void set_time (const int rl, const int ml, const CCTK_REAL t) {
-    assert (rl>=0 && rl<h->reflevels());
-    assert (ml>=0 && ml<h->mglevels(rl,0));
+    assert (rl>=0 && rl<h.reflevels());
+    assert (ml>=0 && ml<h.mglevels(rl,0));
     times[rl][ml] = t;
   }
   
@@ -70,20 +70,20 @@ public:
   }
   
   CCTK_REAL get_delta (const int rl, const int ml) const {
-    assert (rl>=0 && rl<h->reflevels());
-    assert (ml>=0 && ml<h->mglevels(rl,0));
+    assert (rl>=0 && rl<h.reflevels());
+    assert (ml>=0 && ml<h.mglevels(rl,0));
     return deltas[rl][ml];
   }
   
   void set_delta (const int rl, const int ml, const CCTK_REAL dt) {
-    assert (rl>=0 && rl<h->reflevels());
-    assert (ml>=0 && ml<h->mglevels(rl,0));
+    assert (rl>=0 && rl<h.reflevels());
+    assert (ml>=0 && ml<h.mglevels(rl,0));
     deltas[rl][ml] = dt;
   }
   
   CCTK_REAL time (const int tl, const int rl, const int ml) const {
-    assert (rl>=0 && rl<h->reflevels());
-    assert (ml>=0 && ml<h->mglevels(rl,0));
+    assert (rl>=0 && rl<h.reflevels());
+    assert (ml>=0 && ml<h.mglevels(rl,0));
     return get_time(rl, ml) + tl * get_delta(rl, ml);
   }
   

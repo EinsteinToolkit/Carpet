@@ -1,7 +1,13 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.26 2003/11/05 16:18:37 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.27 2004/01/25 14:57:27 schnetter Exp $
 
 #ifndef CARPET_HH
 #define CARPET_HH
+
+#include <vector>
+
+#include "cctk.h"
+#include "cctk_Arguments.h"
+#include "cctk_Functions.h"
 
 #include "gh.hh"
 
@@ -11,19 +17,30 @@
 
 namespace Carpet {
   
-  void Regrid (const cGH* cgh,
+  using namespace std;
+  
+  // Scheduled functions
+  extern "C" {
+    void CarpetParamCheck (CCTK_ARGUMENTS);
+    void CarpetStartup (void);
+  }
+  
+  // Registered functions
+  void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cgh);
+  
+  int Initialise (tFleshConfig* config);
+  int Evolve (tFleshConfig* config);
+  int Shutdown (tFleshConfig* config);
+  int CallFunction (void* function, cFunctionData* attribute, void* data);
+  
+  // Other functions
+  void Regrid (const cGH* cgh, const int rl,
                const int initialise_from, const bool do_prolongate);
   void CycleTimeLevels (const cGH* cgh);
   void FlipTimeLevels (const cGH* cgh);
   void Restrict (const cGH* cgh);
   
-  void Recompose (const cGH* cgh,
-		  const gh<dim>::rexts& bbsss,
-		  const gh<dim>::rbnds& obss,
-		  const gh<dim>::rprocs& pss,
-                  const int initialise_from,
-                  const bool do_prolongate);
-  
+  // Sanity checks
   enum checktimes { currenttime,
 		    currenttimebutnotifonly,
                     previoustime,
@@ -42,6 +59,7 @@ namespace Carpet {
   void CheckChecksums (const cGH* cgh, checktimes where);
   
   // Debugging output
+  void Output (const char* fmt, ...);
   void Waypoint (const char* fmt, ...);
   void Checkpoint (const char* fmt, ...);
   

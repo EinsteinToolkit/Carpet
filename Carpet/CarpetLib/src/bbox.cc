@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.18 2003/11/13 16:03:58 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.19 2004/01/25 14:57:29 schnetter Exp $
 
 #include <assert.h>
 
@@ -249,20 +249,16 @@ typename bbox<T,D>::iteratorT bbox<T,D>::endT () const {
 template<class T,int D>
 void bbox<T,D>::input (istream& is) {
   skipws (is);
-  assert (is.peek() == '(');
-  is.get();
+  consume (is, '(');
   is >> _lower;
   skipws (is);
-  assert (is.peek() == ':');
-  is.get();
+  consume (is, ':');
   is >> _upper;
   skipws (is);
-  assert (is.peek() == ':');
-  is.get();
+  consume (is, ':');
   is >> _stride;
   skipws (is);
-  assert (is.peek() == ')');
-  is.get();
+  consume (is, ')');
 }
 
 

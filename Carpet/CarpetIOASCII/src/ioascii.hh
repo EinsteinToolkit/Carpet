@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.13 2002/09/01 14:52:25 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.14 2004/01/25 14:57:29 schnetter Exp $
 
 #ifndef CARPETIOASCII_HH
 #define CARPETIOASCII_HH
@@ -64,9 +64,12 @@ namespace CarpetIOASCII {
     
     static const char* GetStringParameter
     (const char* parametertemplate, const char* fallback);
-    static int GetIntParameter (const char* parametertemplate, int fallback);
+    static CCTK_INT GetIntParameter
+    (const char* parametertemplate, CCTK_INT fallback);
+    static CCTK_REAL GetRealParameter
+    (const char* parametertemplate, CCTK_REAL fallback);
     
-  };				// struct IOASCII
+  };                            // struct IOASCII
   
 } // namespace CarpetIOASCII
 

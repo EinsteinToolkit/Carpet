@@ -11,7 +11,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinates.cc,v 1.5 2004/04/28 15:45:25 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinates.cc,v 1.1 2004/01/25 14:57:30 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_manualcoordinates_cc);
 }
 
@@ -26,11 +26,21 @@ namespace CarpetRegrid {
   
   int ManualCoordinates (cGH const * const cctkGH,
                          gh<dim> const & hh,
+                         int const reflevel,
+                         int const map,
+                         int const size,
+                         jjvect const & nboundaryzones,
+                         jjvect const & is_internal,
+                         jjvect const & is_staggered,
+                         jjvect const & shiftout,
                          gh<dim>::rexts  & bbsss,
                          gh<dim>::rbnds  & obss,
                          gh<dim>::rprocs & pss)
   {
     DECLARE_CCTK_PARAMETERS;
+    
+    assert (reflevel>=0 && reflevel<maxreflevels);
+    assert (map>=0 && map<maps);
     
     if (refinement_levels > 4) {
       CCTK_WARN (0, "Cannot currently specify manual refinement regions for more than 4 refinement levels");
@@ -38,7 +48,7 @@ namespace CarpetRegrid {
     assert (refinement_levels >= 1 && refinement_levels <= 4);
     
     // do nothing if the levels already exist
-    if (reflevel == refinement_levels) return 0;
+    if (bbsss.size() == refinement_levels) return 0;
     
     assert (bbsss.size() >= 1);
     
@@ -53,8 +63,6 @@ namespace CarpetRegrid {
     upper.at(1) = rvect (l2xmax, l2ymax, l2zmax);
     lower.at(2) = rvect (l3xmin, l3ymin, l3zmin);
     upper.at(2) = rvect (l3xmax, l3ymax, l3zmax);
-    
-    assert (! smart_outer_boundaries);
     
     for (size_t rl=1; rl<bbsss.size(); ++rl) {
       
@@ -73,7 +81,10 @@ namespace CarpetRegrid {
       
       // make multigrid aware
       vector<vector<ibbox> > bbss;
-      MakeMultigridBoxes (cctkGH, bbs, obs, bbss);
+      MakeMultigridBoxes
+        (cctkGH,
+         size, nboundaryzones, is_internal, is_staggered, shiftout,
+         bbs, obs, bbss);
       
       bbsss.at(rl) = bbss;
       obss.at(rl) = obs;
@@ -88,27 +99,27 @@ namespace CarpetRegrid {
   
   void ManualCoordinates_OneLevel (const cGH * const cctkGH,
                                    const gh<dim> & hh,
-                                   const int rl,
-                                   const int numrl,
+                                   const int reflevel,
+                                   const int reflevels,
                                    const rvect lower,
                                    const rvect upper,
                                    const bbvect obound,
                                    vector<ibbox> & bbs,
                                    vector<bbvect> & obs)
   {
-    if (rl >= numrl) return;
+    if (reflevel >= reflevels) return;
     
-    jvect const ilower = pos2int (cctkGH, hh, lower, rl);
-    jvect const iupper = pos2int (cctkGH, hh, upper, rl);
+    jvect const ilower = pos2int (cctkGH, hh, lower, reflevel);
+    jvect const iupper = pos2int (cctkGH, hh, upper, reflevel);
     
     ManualGridpoints_OneLevel
-      (cctkGH, hh, rl, numrl, ilower, iupper, obound, bbs, obs);
+      (cctkGH, hh, reflevel, reflevels, ilower, iupper, obound, bbs, obs);
   }
   
   
   
   ivect delta2int (const cGH * const cctkGH, const gh<dim>& hh,
-                   const rvect & rpos, const int rl)
+                   const rvect & rpos, const int reflevel)
   {
     rvect global_lower, global_upper;
     for (int d=0; d<dim; ++d) {
@@ -121,13 +132,15 @@ namespace CarpetRegrid {
     }
     const ivect global_extent (hh.baseextent.upper() - hh.baseextent.lower());
     
+    CCTK_REAL (* const rfloor) (CCTK_REAL const) = floor;
+    
     const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
-    const int levfac = ipow(hh.reffact, rl);
+    const int levfac = ipow(hh.reffact, reflevel);
     assert (all (hh.baseextent.stride() % levfac == 0));
     const ivect istride = hh.baseextent.stride() / levfac;
     
     const ivect ipos
-      = ivect(floor(rpos * scale / rvect(istride) + 0.5)) * istride;
+      = ivect(::map(rfloor, rpos * scale / rvect(istride) + 0.5)) * istride;
     
     const rvect apos = rpos * scale;
     assert (all(abs(apos - rvect(ipos)) < rvect(istride)*0.01));
@@ -138,7 +151,7 @@ namespace CarpetRegrid {
   
   
   ivect pos2int (const cGH* const cctkGH, const gh<dim>& hh,
-                 const rvect & rpos, const int rl)
+                 const rvect & rpos, const int reflevel)
   {
     rvect global_lower, global_upper;
     for (int d=0; d<dim; ++d) {
@@ -151,14 +164,16 @@ namespace CarpetRegrid {
     }
     const ivect global_extent (hh.baseextent.upper() - hh.baseextent.lower());
     
+    CCTK_REAL (* const rfloor) (CCTK_REAL const) = floor;
+    
     const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
-    const int levfac = ipow(hh.reffact, rl);
+    const int levfac = ipow(hh.reffact, reflevel);
     assert (all (hh.baseextent.stride() % levfac == 0));
     const ivect istride = hh.baseextent.stride() / levfac;
     
     const ivect ipos
-      = (ivect(floor((rpos - global_lower) * scale / rvect(istride) + 0.5))
-         * istride);
+      = ivect(::map(rfloor, (rpos - global_lower) * scale / rvect(istride)
+                    + 0.5)) * istride;
     
     return ipos;
   }

@@ -1,7 +1,7 @@
 # Interface definition for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/interface.ccl,v 1.6 2003/09/04 16:23:21 tradke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/interface.ccl,v 1.7 2004/01/25 14:57:27 schnetter Exp $
 
-implements: driver
+implements: Driver
 
 include header: carpet_public.hh in carpet.hh
 include header: carpet_public.h in carpet.h
@@ -18,3 +18,71 @@ uses include header: gf.hh
 uses include header: ggf.hh
 uses include header: gh.hh
 uses include header: th.hh
+
+uses include header: operators.hh
+
+
+
+# The location of the boundary points
+CCTK_INT FUNCTION GetBoundarySpecification \
+  (CCTK_INT IN size, \
+   CCTK_INT OUT ARRAY nboundaryzones, \
+   CCTK_INT OUT ARRAY is_internal, \
+   CCTK_INT OUT ARRAY is_staggered, \
+   CCTK_INT OUT ARRAY shiftout)
+USES FUNCTION GetBoundarySpecification
+
+# The overall size of the domain
+CCTK_INT FUNCTION GetDomainSpecification \
+  (CCTK_INT IN size, \
+   CCTK_REAL OUT ARRAY physical_min, \
+   CCTK_REAL OUT ARRAY physical_max, \
+   CCTK_REAL OUT ARRAY interior_min, \
+   CCTK_REAL OUT ARRAY interior_max, \
+   CCTK_REAL OUT ARRAY exterior_min, \
+   CCTK_REAL OUT ARRAY exterior_max, \
+   CCTK_REAL OUT ARRAY spacing)
+USES FUNCTION GetDomainSpecification
+
+# Conversion between boundary types
+CCTK_INT FUNCTION ConvertFromPhysicalBoundary \
+  (CCTK_INT INT size, \
+   CCTK_REAL IN  ARRAY physical_min, \
+   CCTK_REAL IN  ARRAY physical_max, \
+   CCTK_REAL OUT ARRAY interior_min, \
+   CCTK_REAL OUT ARRAY interior_max, \
+   CCTK_REAL OUT ARRAY exterior_min, \
+   CCTK_REAL OUT ARRAY exterior_max, \
+   CCTK_REAL IN  ARRAY spacing)
+USES FUNCTION ConvertFromPhysicalBoundary
+
+CCTK_INT FUNCTION ConvertFromExteriorBoundary \
+  (CCTK_INT INT size, \
+   CCTK_REAL OUT ARRAY physical_min, \
+   CCTK_REAL OUT ARRAY physical_max, \
+   CCTK_REAL OUT ARRAY interior_min, \
+   CCTK_REAL OUT ARRAY interior_max, \
+   CCTK_REAL IN  ARRAY exterior_min, \
+   CCTK_REAL IN  ARRAY exterior_max, \
+   CCTK_REAL IN  ARRAY spacing)
+USES FUNCTION ConvertFromExteriorBoundary
+
+
+
+# The true prototype of the routine below:
+#   int Carpet_Regrid (const cGH * cctkGH,
+#                      gh<dim>::rexts  * bbsss,
+#                      gh<dim>::rbnds  * obss,
+#                      gh<dim>::rprocs * pss);
+CCTK_INT FUNCTION Carpet_Regrid (CCTK_POINTER_TO_CONST IN cctkGH,  \
+                                 CCTK_INT IN reflevel,             \
+                                 CCTK_INT IN map,                  \
+                                 CCTK_INT IN size,                 \
+                                 CCTK_INT IN ARRAY nboundaryzones, \
+                                 CCTK_INT IN ARRAY is_internal,    \
+                                 CCTK_INT IN ARRAY is_staggered,   \
+                                 CCTK_INT IN ARRAY shiftout,       \
+                                 CCTK_POINTER IN bsss,             \
+                                 CCTK_POINTER IN obss,             \
+                                 CCTK_POINTER IN pss)
+USES FUNCTION Carpet_Regrid

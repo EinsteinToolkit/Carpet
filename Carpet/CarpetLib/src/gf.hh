@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.hh,v 1.10 2003/11/21 13:55:46 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.hh,v 1.11 2004/01/25 14:57:30 schnetter Exp $
 
 #ifndef GF_HH
 #define GF_HH
@@ -43,7 +43,8 @@ public:
   
   // Constructors
   // VGF
-  gf (const int varindex, th<D>& t, dh<D>& d,
+  gf (const int varindex, const operator_type transport_operator,
+      th<D>& t, dh<D>& d,
       const int tmin, const int tmax, const int prolongation_order_time);
   
   // Destructors
@@ -55,7 +56,8 @@ public:
   
 protected:
   
-  virtual gdata<D>* typed_data() { return new data<T,D>(this->varindex); }
+  virtual gdata<D>* typed_data()
+  { return new data<T,D>(this->varindex, this->transport_operator); }
   
   
   

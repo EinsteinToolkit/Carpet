@@ -1,7 +1,8 @@
 Cactus Code Thorn CarpetReduce
 Authors    : Erik Schnetter <schnetter@uni-tuebingen.de>
-CVS info   : $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/README,v 1.1 2001/12/11 13:08:56 schnetter Exp $
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/README,v 1.2 2004/01/25 14:57:30 schnetter Exp $
 --------------------------------------------------------------------------
 
 Purpose of the thorn:
 
+This thorn provides parallel reduction operators for Carpet.

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.29 2003/11/05 16:18:39 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.30 2004/01/25 14:57:30 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -20,16 +20,17 @@ using namespace std;
 
 // Constructors
 template<int D>
-ggf<D>::ggf (const int varindex, th<D>& t, dh<D>& d,
+ggf<D>::ggf (const int varindex, const operator_type transport_operator,
+             th<D>& t, dh<D>& d,
              const int tmin, const int tmax,
              const int prolongation_order_time)
-  : varindex(varindex), t(t),
+  : varindex(varindex), transport_operator(transport_operator), t(t),
     tmin(tmin), tmax(tmax),
     prolongation_order_time(prolongation_order_time),
     h(d.h), d(d),
     storage(tmax-tmin+1)
 {
-  assert (t.h == &d.h);
+  assert (&t.h == &d.h);
 
   d.add(this);
 }
@@ -140,13 +141,16 @@ void ggf<D>::recompose (const int initialise_from, const bool do_prolongate) {
           for (comm_state<D> state; !state.done(); state.step()) {
             sync (state,tl,rl,c,ml);
           }
-          // TODO: assert that reflevel 0 boundaries are copied
-          if (rl>0) {
-            for (comm_state<D> state; !state.done(); state.step()) {
-              const CCTK_REAL time = t.time(tl,rl,ml);
-              ref_bnd_prolongate (state,tl,rl,c,ml,time);
-            }
-          } // if rl
+          
+          if (do_prolongate) {
+            // TODO: assert that reflevel 0 boundaries are copied
+            if (rl>0) {
+              for (comm_state<D> state; !state.done(); state.step()) {
+                const CCTK_REAL time = t.time(tl,rl,ml);
+                ref_bnd_prolongate (state,tl,rl,c,ml,time);
+              }
+            } // if rl
+          }
           
       	} // for ml
       } // for c
@@ -318,7 +322,6 @@ void ggf<D>::intercat (comm_state<D>& state,
     gsrcs[i] = storage[tl2s[i]-tmin][rl2][c2][ml2];
     times[i] = t.time(tl2s[i],rl2,ml2);
   }
-//   const CCTK_REAL time = t.time(tl1,rl1,ml1);
   
   const ibbox recv = d.boxes[rl1][c1][ml1].*recv_list;
   const ibbox send = d.boxes[rl2][c2][ml2].*send_list;
@@ -359,7 +362,6 @@ void ggf<D>::intercat (comm_state<D>& state,
     gsrcs[i] = storage[tl2s[i]-tmin][rl2][c2][ml2];
     times[i] = t.time(tl2s[i],rl2,ml2);
   }
-//   const CCTK_REAL time = t.time(tl1,rl1,ml1);
   
   const iblist recv = d.boxes[rl1][c1][ml1].*recv_list;
   const iblist send = d.boxes[rl2][c2][ml2].*send_list;
@@ -405,7 +407,6 @@ void ggf<D>::intercat (comm_state<D>& state,
       gsrcs[i] = storage[tl2s[i]-tmin][rl2][c2][ml2];
       times[i] = t.time(tl2s[i],rl2,ml2);
     }
-//     const CCTK_REAL time = t.time(tl1,rl1,ml1);
     
     const iblist recv = (d.boxes[rl1][c1][ml1].*recv_listvect)[c2];
     const iblist send = (d.boxes[rl2][c2][ml2].*send_listvect)[c1];

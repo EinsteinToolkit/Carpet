@@ -1,7 +1,9 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.h,v 1.5 2003/11/05 16:18:37 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.h,v 1.6 2004/01/25 14:57:29 schnetter Exp $ */
 
 #ifndef CARPETIOASCII_H
 #define CARPETIOASCII_H
+
+#include "cctk_Arguments.h"
 
 #ifdef __cplusplus
 namespace CarpetIOASCII {
@@ -9,7 +11,8 @@ namespace CarpetIOASCII {
 #endif
     
     /* Scheduled functions */
-    int CarpetIOASCIIStartup (void);
+    void CarpetIOASCIIStartup (void);
+    void CarpetIOASCIIInit (CCTK_ARGUMENTS);
     
 #ifdef __cplusplus
   } /* extern "C" */

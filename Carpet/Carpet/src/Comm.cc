@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.23 2003/11/05 16:18:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.24 2004/01/25 14:57:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Comm_cc);
 }
 
@@ -28,26 +28,43 @@ namespace Carpet {
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
+    assert (group<(int)arrdata.size());
     
-    Checkpoint ("%*sSyncGroup %s time=%g", 2*reflevel, "",
-                groupname, cgh->cctk_time);
+    Checkpoint ("SyncGroup %s time=%g", groupname, (double)cgh->cctk_time);
     
     const int grouptype = CCTK_GroupTypeI(group);
     
     if (grouptype == CCTK_GF) {
       if (reflevel == -1) {
         CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Cannot synchronise grid functions in global mode "
+                    "Cannot synchronise in global mode "
                     "(Tried to synchronise group \"%s\")",
                     groupname);
       }
-      if (hh->local_components(reflevel) != 1 && component != -1) {
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Cannot synchronise grid functions in local mode "
-                    "(Tried to synchronise group \"%s\")",
-                    groupname);
+      if (map != -1) {
+        if (maps == 1) {
+          CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Synchronising group \"%s\" in singlemap mode",
+                      groupname);
+        } else {
+          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Cannot synchronise in singlemap mode "
+                      "(Tried to synchronise group \"%s\")",
+                      groupname);
+        }
       }
-      if (hh->local_components(reflevel) != 1) assert (component == -1);
+      if (component != -1) {
+        if (maps == 1 && vhh.at(map)->local_components(reflevel) == 1) {
+          CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Synchronising group \"%s\" in local mode",
+                      groupname);
+        } else {
+          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Cannot synchronise in local mode "
+                      "(Tried to synchronise group \"%s\")",
+                      groupname);
+        }
+      }
     }
     
     if (! CCTK_QueryGroupStorageI(cgh, group)) {
@@ -57,7 +74,7 @@ namespace Carpet {
       return -1;
     }
     
-    if (CCTK_NumVarsInGroupI(group)==0) return 0;
+    if (CCTK_NumVarsInGroupI(group) == 0) return 0;
     
     const int n0 = CCTK_FirstVarIndexI(group);
     assert (n0>=0);
@@ -66,47 +83,70 @@ namespace Carpet {
     const int tl = 0;
     
     // Prolongate the boundaries
-    if (reflevel>0) {
-      if (grouptype == CCTK_GF) {
-        if (do_prolongate) {
-          if (arrdata[group].do_transfer) {
+    if (do_prolongate) {
+      switch (grouptype) {
+        
+      case CCTK_GF:
+        assert (reflevel>=0 && reflevel<reflevels);
+        if (reflevel > 0) {
+          if (groupdata.at(group).transport_operator != op_none) {
+            
+            // use the current time here (which may be modified by the
+            // user)
+            const CCTK_REAL time = ((cgh->cctk_time - cctk_initial_time)
+                                    / (delta_time * mglevelfact));
+            
             for (comm_state<dim> state; !state.done(); state.step()) {
-              assert (group<(int)arrdata.size());
-              for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-                // use the current time here (which may be modified by
-                // the user)
-                const CCTK_REAL time = (cgh->cctk_time - cctk_initial_time) / delta_time;
-#if 0
-                const CCTK_REAL time1 = tt->time (tl, reflevel, mglevel);
-                const CCTK_REAL time2 = (cgh->cctk_time - cctk_initial_time) / delta_time;
-                assert (fabs((time1 - time2) / (fabs(time1) + fabs(time2) + fabs(cgh->cctk_delta_time))) < 1e-12);
-#endif
-                for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
-                  arrdata[group].data[var]->ref_bnd_prolongate
-                    (state, tl, reflevel, c, mglevel, time);
+              for (int m=0; m<maps; ++m) {
+                for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+                  for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
+                    arrdata.at(group).at(m).data.at(var)->ref_bnd_prolongate
+                      (state, tl, reflevel, c, mglevel, time);
+                  }
                 }
-              } // for var
+              }
             } // for state
           } else {
-            Checkpoint ("%*s(no prolongating for group %s)",
-                        2*reflevel, "", groupname);
+            Checkpoint ("(no prolongating for group %s)", groupname);
           } // if ! do_transfer
-        } // if do_prolongate
-      } // if grouptype == CCTK_GF
-    } // if reflevel>0
+        } // if reflevel>0
+        break;
+        
+      case CCTK_SCALAR:
+      case CCTK_ARRAY:
+        // do nothing
+        break;
+        
+      default:
+        assert (0);
+      } // switch grouptype
+    } // if do_prolongate
     
     // Sync
     for (comm_state<dim> state; !state.done(); state.step()) {
-      assert (group<(int)arrdata.size());
-      for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-        if (grouptype == CCTK_GF) {
-          for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
-            arrdata[group].data[var]->sync (state, tl, reflevel, c, mglevel);
+      switch (CCTK_GroupTypeI(group)) {
+        
+      case CCTK_GF:
+        for (int m=0; m<maps; ++m) {
+          for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+            for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
+              arrdata.at(group).at(m).data.at(var)->sync
+                (state, tl, reflevel, c, mglevel);
+            }
           }
-        } else {                // grouptype != CCTK_GF
-          arrdata[group].data[var]->sync (state, 0, 0, 0, 0);
-        } // grouptype != CCTK_GF
-      } // for var
+        }
+        break;
+        
+      case CCTK_SCALAR:
+      case CCTK_ARRAY:
+        for (int var=0; var<(int)arrdata.at(group).at(0).data.size(); ++var) {
+          arrdata.at(group).at(0).data.at(var)->sync (state, 0, 0, 0, 0);
+        }
+        break;
+        
+      default:
+        assert (0);
+      } // switch grouptype
     } // for state
     
     return 0;

@@ -9,7 +9,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/centre.cc,v 1.4 2004/04/28 15:45:25 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/centre.cc,v 1.1 2004/01/25 14:57:30 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_centre_cc);
 }
 
@@ -24,16 +24,26 @@ namespace CarpetRegrid {
   
   int Centre (cGH const * const cctkGH,
               gh<dim> const & hh,
+              int const reflevel,
+              int const map,
+              int const size,
+              jjvect const & nboundaryzones,
+              jjvect const & is_internal,
+              jjvect const & is_staggered,
+              jjvect const & shiftout,
               gh<dim>::rexts  & bbsss,
               gh<dim>::rbnds  & obss,
               gh<dim>::rprocs & pss)
   {
     DECLARE_CCTK_PARAMETERS;
     
+    assert (reflevel>=0 && reflevel<maxreflevels);
+    assert (map>=0 && map<maps);
+    
     assert (refinement_levels >= 1);
     
     // do nothing if the levels already exist
-    if (reflevel == refinement_levels) return 0;
+    if (bbsss.size() == refinement_levels) return 0;
     
     assert (bbsss.size() >= 1);
     
@@ -47,8 +57,6 @@ namespace CarpetRegrid {
     ivect rstr = hh.baseextent.stride();
     ivect rlb  = hh.baseextent.lower();
     ivect rub  = hh.baseextent.upper();
-    
-    assert (! smart_outer_boundaries);
     
     for (size_t rl=1; rl<bbsss.size(); ++rl) {
       
@@ -81,7 +89,10 @@ namespace CarpetRegrid {
       
       // make multigrid aware
       vector<vector<ibbox> > bbss;
-      MakeMultigridBoxes (cctkGH, bbs, obs, bbss);
+      MakeMultigridBoxes
+        (cctkGH,
+         size, nboundaryzones, is_internal, is_staggered, shiftout,
+         bbs, obs, bbss);
       
       bbsss.at(rl) = bbss;
       obss.at(rl) = obs;

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.21 2003/11/21 13:55:46 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.22 2004/01/25 14:57:30 schnetter Exp $
 
 #ifndef GDATA_HH
 #define GDATA_HH
@@ -15,6 +15,7 @@
 #include "defs.hh"
 #include "dist.hh"
 #include "bbox.hh"
+#include "operators.hh"
 #include "vect.hh"
 
 using namespace std;
@@ -56,6 +57,10 @@ protected:                      // should be readonly
 
   // Fields
   int varindex;                 // Cactus variable index, or -1
+  operator_type transport_operator;
+  
+  double wtime_isend, wtime_isendwait;
+  double wtime_irecv, wtime_irecvwait;
   
   bool _has_storage;		// has storage associated (on some processor)
   bool _owns_storage;		// owns the storage
@@ -72,13 +77,16 @@ protected:                      // should be readonly
 public:
 
   // Constructors
-  gdata (const int varindex);
+  gdata (const int varindex,
+         const operator_type transport_operator = op_error);
 
   // Destructors
   virtual ~gdata ();
 
   // Pseudo constructors
-  virtual gdata<D>* make_typed (const int varindex) const = 0;
+  virtual gdata<D>*
+  make_typed (const int varindex,
+              const operator_type transport_operator = op_error) const = 0;
   
   // Processor management
   virtual void change_processor (comm_state<D>& state,
@@ -143,14 +151,6 @@ public:
     assert (all(ind>=0 && ind<=shape()));
     return dot(ind, stride());
   }
-  
-  // Transport operator types
- protected:
-  enum operator_type { op_error, op_none, op_Lagrange, op_TVD };
-  // readonly
-  operator_type transport_operator;
- private:
-  static operator_type find_transport_operator (const int varindex);
   
   // Data manipulators
  public:

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.14 2003/11/05 16:18:39 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.15 2004/01/25 14:57:30 schnetter Exp $
 
 #ifndef GH_HH
 #define GH_HH
@@ -63,7 +63,7 @@ public:				// should be readonly
   
   list<th<D>*> ths;		// list of all time hierarchies
   
-  ibbox baseextent;		// bounds (inclusive) of base level
+  ibbox baseextent;
   vector<vector<ibbox> > bases; // [rl][ml]
   
   // TODO: invent structure for this
@@ -78,7 +78,7 @@ public:
   // Constructors
   gh (const int reffact, const centering refcent,
       const int mgfact, const centering mgcent,
-      const ibbox& baseextent);
+      const ibbox baseextent);
   
   // Destructors
   virtual ~gh ();
@@ -88,14 +88,6 @@ public:
 		  const rprocs& procs,
                   const int initialise_from,
                   const bool do_prolongate);
-  
-  // Helpers
-  cexts make_reflevel_multigrid_boxes (const vector<ibbox>& exts,
-				       const int mglevels)
-    const;
-  rexts make_multigrid_boxes (const vector<vector<ibbox> >& exts,
-			      const int mglevels)
-    const;
   
   // Accessors
   int reflevels () const {

@@ -31,7 +31,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.30 2004/01/13 13:51:19 hawke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.31 2004/01/25 14:57:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -40,10 +40,6 @@ extern "C" {
 namespace Carpet {
   
   using namespace std;
-  
-  
-  
-  static double initial_time;
   
   
   
@@ -66,17 +62,25 @@ namespace Carpet {
                               ? time >= cctk_final_time
                               : time <= cctk_final_time)
                               && iteration % maxreflevelfact == 0);
-      double runtime;
 #ifdef HAVE_TIME_GETTIMEOFDAY
       // get the current time
       struct timeval tv;
       gettimeofday (&tv, 0);
-      runtime = (tv.tv_sec + tv.tv_usec / 1e6) - initial_time;
-#else
-      runtime = 0;
-#endif
+      const double thetime = tv.tv_sec + tv.tv_usec / 1e6;
+      
+      static bool firsttime = true;
+      static double initial_runtime;
+      if (firsttime) {
+        firsttime = false;
+        initial_runtime = thetime;
+      }
+      
+      const double runtime = thetime - initial_runtime;
       const bool term_runtime = (max_runtime > 0
                                  && runtime >= 60.0 * max_runtime);
+#else
+      const bool term_runtime = false;
+#endif
       
       if (CCTK_Equals(terminate, "never")) {
         term = false;
@@ -116,159 +120,116 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    Waypoint ("starting Evolve...");
+    Waypoint ("Starting evolution loop");
     
     const int convlev = 0;
     cGH* cgh = fc->GH[convlev];
     
-#ifdef HAVE_TIME_GETTIMEOFDAY
-    // get the starting time
-    struct timeval tv;
-    gettimeofday (&tv, 0);
-    initial_time = tv.tv_sec + tv.tv_usec / 1e6;
-#else
-    initial_time = 0;
-#endif
-    
-    int next_global_mode_iter_loop1 = 0;
-    int next_global_mode_iter_loop2 = 0;
-    int next_global_mode_iter_loop3 = 0;
-    
     // Main loop
-    while (! do_terminate(cgh, refleveltimes[0], cgh->cctk_iteration)) {
+    while (! do_terminate(cgh, cgh->cctk_time, cgh->cctk_iteration)) {
       
       // Advance time
       ++cgh->cctk_iteration;
+      global_time += delta_time / maxreflevelfact;
+      cgh->cctk_time = global_time;
+      Waypoint ("Evolving iteration %d at t=%g",
+                cgh->cctk_iteration, (double)cgh->cctk_time);
       
-      Waypoint ("Evolving iteration %d...", cgh->cctk_iteration);
-      
-      BEGIN_REFLEVEL_LOOP(cgh) {
-	const int do_every = maxreflevelfact/reflevelfact;
-	if ((cgh->cctk_iteration-1) % do_every == 0) {
-	  
-	  BEGIN_MGLEVEL_LOOP(cgh) {
-	    const int do_every = mglevelfact * (maxreflevelfact/reflevelfact);
-	    if ((cgh->cctk_iteration-1) % do_every == 0) {
-	      
-              do_global_mode
-                = cgh->cctk_iteration >= next_global_mode_iter_loop1;
-              next_global_mode_iter_loop1 = cgh->cctk_iteration + 1;
-              
-	      // Advance level times
-	      tt->advance_time (reflevel, mglevel);
-              cgh->cctk_time = (cctk_initial_time
-                                + (tt->time (0, reflevel, mglevel)
-                                   * cgh->cctk_delta_time));
-	      
-	      Waypoint ("%*sCurrent time is %g, delta is %g%s", 2*reflevel, "",
-			cgh->cctk_time,
-                        cgh->cctk_delta_time / cgh->cctk_timefac,
-                        do_global_mode ? "   (global time)" : "");
-	      
-	      // Cycle time levels
-	      CycleTimeLevels (cgh);
-	      
-	      // Checking
-	      CalculateChecksums (cgh, allbutcurrenttime);
-	      Poison (cgh, currenttimebutnotifonly);
-	      
-	      // Evolve
-	      Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
-	      CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
-	      Waypoint ("%*sScheduling EVOL", 2*reflevel, "");
-	      CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
-	      Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
-	      CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
-              
-	      // Checking
-	      PoisonCheck (cgh, currenttime);
-	      
-	    }
-	  } END_MGLEVEL_LOOP;
-          
-	}
-      } END_REFLEVEL_LOOP;
-      
-      
-      
-      BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
-	const int do_every = maxreflevelfact/reflevelfact;
-	if (cgh->cctk_iteration % do_every == 0) {
-	  
-	  BEGIN_MGLEVEL_LOOP(cgh) {
-	    const int do_every = mglevelfact * (maxreflevelfact/reflevelfact);
-	    if (cgh->cctk_iteration % do_every == 0) {
-	      
-              do_global_mode
-                = cgh->cctk_iteration >= next_global_mode_iter_loop2;
-              next_global_mode_iter_loop2 = cgh->cctk_iteration + 1;
-              
-	      // Restrict
-	      Waypoint ("%*sCurrent time is %g, delta is %g%s", 2*reflevel, "",
-			cgh->cctk_time,
-                        cgh->cctk_delta_time / cgh->cctk_timefac,
-                        do_global_mode ? "   (global time)" : "");
-	      Restrict (cgh);
-              
-	      Waypoint ("%*sScheduling POSTRESTRICT", 2*reflevel, "");
-	      CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cgh, CallFunction);
-	      
-	      // Checking
-	      CalculateChecksums (cgh, currenttime);
-	      
-	    }
-	  } END_MGLEVEL_LOOP;
-	  
-	}
-      } END_REVERSE_REFLEVEL_LOOP;
+      for (int rl=0; rl<reflevels; ++rl) {
+        
+        // Regrid
+        Checkpoint ("Regrid");
+        Regrid (cgh, rl, rl+1, true);
+        
+        BEGIN_MGLEVEL_LOOP(cgh) {
+          enter_level_mode (cgh, rl);
+          const int do_every = mglevelfact * (maxreflevelfact/reflevelfact);
+          if ((cgh->cctk_iteration-1) % do_every == 0) {
+            do_global_mode = reflevel==0;
+            do_meta_mode = do_global_mode && mglevel==mglevels-1;
+            
+            // Advance times
+            for (int m=0; m<maps; ++m) {
+              vtt[m]->advance_time (reflevel, mglevel);
+            }
+            cgh->cctk_time = (global_time
+                              - delta_time * mglevelfact / maxreflevelfact
+                              + delta_time * mglevelfact / reflevelfact);
+            CycleTimeLevels (cgh);
+	    
+            Checkpoint ("Evolution I at iteration %d time %g%s%s",
+                        cgh->cctk_iteration, (double)cgh->cctk_time,
+                        (do_global_mode ? " (global)" : ""),
+                        (do_meta_mode ? " (meta)" : ""));
+            
+            // Checking
+            CalculateChecksums (cgh, allbutcurrenttime);
+            Poison (cgh, currenttimebutnotifonly);
+	    
+            // Evolve
+            Checkpoint ("Scheduling PRESTEP");
+            CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
+            Checkpoint ("Scheduling EVOL");
+            CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
+            
+            // Checking
+            PoisonCheck (cgh, currenttime);
+            
+          } // if do_every
+          leave_level_mode (cgh);
+        } END_MGLEVEL_LOOP;
+      } // for rl
       
       
       
-      BEGIN_REFLEVEL_LOOP(cgh) {
-	const int do_every = maxreflevelfact/reflevelfact;
-	if (cgh->cctk_iteration % do_every == 0) {
-	  
-	  // Regrid
-	  Waypoint ("%*sRegrid", 2*reflevel, "");
-	  Regrid (cgh, reflevel+1, true);
-	  
-	  BEGIN_MGLEVEL_LOOP(cgh) {
-	    const int do_every = mglevelfact * (maxreflevelfact/reflevelfact);
-	    if (cgh->cctk_iteration % do_every == 0) {
-	      
-              do_global_mode
-                = cgh->cctk_iteration >= next_global_mode_iter_loop3;
-              next_global_mode_iter_loop3 = cgh->cctk_iteration + 1;
-	      
-	      Waypoint ("%*sCurrent time is %g, delta is %g%s", 2*reflevel, "",
-			cgh->cctk_time,
-                        cgh->cctk_delta_time / cgh->cctk_timefac,
-                        do_global_mode ? "   (global time)" : "");
-              
-	      // Checkpoint
-	      Waypoint ("%*sScheduling CHECKPOINT", 2*reflevel, "");
-	      CCTK_ScheduleTraverse ("CCTK_CHECKPOINT", cgh, CallFunction);
-	      
-	      // Analysis
-	      Waypoint ("%*sScheduling ANALYSIS", 2*reflevel, "");
-	      CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
-	      
-	      // Output
-	      Waypoint ("%*sOutputGH", 2*reflevel, "");
-	      CCTK_OutputGH (cgh);
-	      
-	      // Checking
-	      CheckChecksums (cgh, alltimes);
-	      
-	    }
-	  } END_MGLEVEL_LOOP;
-	  
-	}
-      } END_REFLEVEL_LOOP;
+      for (int rl=reflevels-1; rl>=0; --rl) {
+        BEGIN_REVERSE_MGLEVEL_LOOP(cgh) {
+          enter_level_mode (cgh, rl);
+          const int do_every = mglevelfact * (maxreflevelfact/reflevelfact);
+          if (cgh->cctk_iteration % do_every == 0) {
+            do_global_mode = reflevel==0;
+            do_meta_mode = do_global_mode && mglevel==mglevels-1;
+            
+            Checkpoint ("Evolution II at iteration %d time %g%s%s",
+                        cgh->cctk_iteration, (double)cgh->cctk_time,
+                        (do_global_mode ? " (global)" : ""),
+                        (do_meta_mode ? " (meta)" : ""));
+            
+            // Restrict
+            Restrict (cgh);
+            
+            Checkpoint ("Scheduling POSTRESTRICT");
+            CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cgh, CallFunction);
+            Checkpoint ("Scheduling POSTSTEP");
+            CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
+	    
+            // Checking
+            PoisonCheck (cgh, currenttime);
+            CalculateChecksums (cgh, currenttime);
+            
+            // Checkpoint
+            Checkpoint ("Scheduling CHECKPOINT");
+            CCTK_ScheduleTraverse ("CCTK_CHECKPOINT", cgh, CallFunction);
+	    
+            // Analysis
+            Checkpoint ("Scheduling ANALYSIS");
+            CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
+	    
+            // Output
+            Checkpoint ("OutputGH");
+            CCTK_OutputGH (cgh);
+	    
+            // Checking
+            CheckChecksums (cgh, alltimes);
+	    
+          } // if do_every
+          leave_level_mode (cgh);
+        } END_REVERSE_MGLEVEL_LOOP;
+      } // for rl
       
     } // main loop
     
-    Waypoint ("done with Evolve.");
+    Waypoint ("Done with evolution loop");
     
     return 0;
   }

@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.29 2004/01/16 10:57:04 hawke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.30 2004/01/25 14:57:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -26,15 +26,11 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    Checkpoint ("%*sEnableGroupStorage %s", 2*reflevel, "", groupname);
+    Checkpoint ("EnableGroupStorage %s", groupname);
     
     // TODO: Enabling storage for one refinement level has to enable
     // it for all other refinement levels as well.  Disabling must
     // wait until all refinement levels have been disabled.
-    
-    // TODO: Invent a mode "reflevel==-1" that is global, i.e. has
-    // effect for all refinement levels.  This mode is used during
-    // INITIAL, and en-/disabling storage in it is also global.
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
@@ -45,8 +41,8 @@ namespace Carpet {
     
     // No storage change in local mode
     if (grouptype == CCTK_GF) {
-      assert (reflevel == -1
-              || hh->local_components(reflevel) == 1 || component == -1);
+      assert ((reflevel == -1 && map == -1 && mglevel == -1 && component == -1)
+              || (maps == 1 && vhh.at(0)->local_components(reflevel) == 1));
     }
     
     if (CCTK_QueryGroupStorageI(cgh, group)) {
@@ -56,19 +52,6 @@ namespace Carpet {
       const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
       assert (num_tl>0);
       return num_tl;
-    }
-    
-    // Check whether this group has transfer operators
-    if (grouptype == CCTK_GF) {
-      if (! arrdata[group].do_transfer) {
-        const int var = CCTK_FirstVarIndexI(group);
-        assert (var>=0);
-        const int vartype = CCTK_VarTypeI(var);
-        const char * vartypename = CCTK_VarTypeName(vartype);
-        CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "(Allocating storage for Cactus group \"%s\".)  Note: This group (which has the variable type %s) will be neither prolongated nor restricted.",
-                    groupname, vartypename);
-      }
     }
     
     // There is a difference between the Cactus time levels and the
@@ -82,49 +65,52 @@ namespace Carpet {
     assert (num_tl>0);
     const int tmin = 1 - num_tl;
     const int tmax = 0;
-    const int my_prolongation_order_time
-      = num_tl==1 ? 0 : prolongation_order_time;
     
     if (grouptype == CCTK_GF) {
       if (max_refinement_levels > 1) {
-        if (num_tl <= my_prolongation_order_time) {
-          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "There are not enough time levels for the desired temporal prolongation order in the grid function group \"%s\".  With Carpet::prolongation_order_time=%d, you need at least %d time levels.",
-                      CCTK_GroupName(group),
-                      prolongation_order_time, prolongation_order_time+1);
+        if (groupdata.at(group).transport_operator != op_none) {
+          if (num_tl <= prolongation_order_time) {
+            CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "There are not enough time levels for the desired temporal prolongation order in the grid function group \"%s\".  With Carpet::prolongation_order_time=%d, you need at least %d time levels.",
+                        CCTK_GroupName(group),
+                        prolongation_order_time, prolongation_order_time+1);
+          }
         }
       }
     }
     
     // VGF: allocate
     
-    assert (arrdata[group].data.size()==0
-	    || arrdata[group].data[0] == 0);
-    assert ((int)arrdata[group].data.size() == CCTK_NumVarsInGroupI(group));
-    for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-      const int n = n0 + var;
-      switch (CCTK_VarTypeI(n)) {
-#define TYPECASE(N,T)                                   \
-      case N:                                           \
-        assert (! arrdata[group].data[var]);            \
-        /* VGF */                                       \
-	arrdata[group].data[var] = new gf<T,dim>        \
-	  (n, *arrdata[group].tt, *arrdata[group].dd,   \
-	   tmin, tmax, my_prolongation_order_time);     \
-	break;
+    assert (arrdata.at(group).at(0).data.size()==0
+	    || arrdata.at(group).at(0).data.at(0) == 0);
+    for (int m=0; m<maps; ++m) {
+      for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+        const int n = n0 + var;
+        switch (CCTK_VarTypeI(n)) {
+#define TYPECASE(N,T)                                                   \
+        case N:                                                         \
+          /* VGF */                                                     \
+          arrdata.at(group).at(m).data.at(var) = new gf<T,dim>          \
+            (n, groupdata.at(group).transport_operator,                 \
+             *arrdata.at(group).at(m).tt, *arrdata.at(group).at(m).dd,  \
+             tmin, tmax, prolongation_order_time);                      \
+          break;
 #include "typecase"
 #undef TYPECASE
-      default:
-	UnsupportedVarType(n);
-      } // switch
-      
-      if (grouptype != CCTK_GF) {
-        for (int tl=0; tl<num_tl; ++tl) {
-          int const c = CCTK_MyProc(cgh);
-          cgh->data[n][tl] = ((*arrdata[group].data[var]) (-tl, 0, c, 0)->storage());
+        default:
+          UnsupportedVarType(n);
+        } // switch
+        
+        if (grouptype != CCTK_GF) {
+          for (int tl=0; tl<num_tl; ++tl) {
+            assert (m == 0);
+            int const c = CCTK_MyProc(cgh);
+            cgh->data[n][tl] = ((*arrdata.at(group).at(m).data.at(var))
+                                (-tl, 0, c, 0)->storage());
+          }
         }
-      }
-      
+        
+      } // for
     } // for
     
 //     PoisonGroup (cgh, group, alltimes);
@@ -137,7 +123,7 @@ namespace Carpet {
   
   int DisableGroupStorage (const cGH* cgh, const char* groupname)
   {
-    Checkpoint ("%*sDisableGroupStorage %s", 2*reflevel, "", groupname);
+    Checkpoint ("DisableGroupStorage %s", groupname);
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
@@ -159,34 +145,39 @@ namespace Carpet {
     const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
     assert (num_tl>0);
     
-    assert (arrdata[group].data.size());
-    assert (arrdata[group].data[0]);
-    for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-      const int n = n0 + var;
-      switch (CCTK_VarTypeI(n)) {
-#define TYPECASE(N,T)                                   \
-      case N:                                           \
-        assert (arrdata[group].data[var]);              \
-	delete (gf<T,dim>*)arrdata[group].data[var];    \
-        arrdata[group].data[var] = 0;                   \
-	break;
+    assert (arrdata.at(group).at(0).data.size());
+    assert (arrdata.at(group).at(0).data.at(0));
+    for (int m=0; m<maps; ++m) {
+      assert (m<(int)arrdata.at(group).size());
+      for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+        assert (var<(int)arrdata.at(group).at(m).data.size());
+        const int n = n0 + var;
+        switch (CCTK_VarTypeI(n)) {
+#define TYPECASE(N,T)                                                   \
+        case N:                                                         \
+          assert (arrdata.at(group).at(m).data.at(var));                \
+          delete (gf<T,dim>*)arrdata.at(group).at(m).data.at(var);      \
+          arrdata.at(group).at(m).data.at(var) = 0;                     \
+          break;
 #include "typecase"
 #undef TYPECASE
-      default:
-	UnsupportedVarType(n);
-      } // switch
-      arrdata[group].data[var] = 0;
-      
-      if (CCTK_GroupTypeI(group) != CCTK_GF) {
-        for (int tl=0; tl<num_tl; ++tl) {
-          cgh->data[n][tl] = 0;
+        default:
+          UnsupportedVarType(n);
+        } // switch
+        arrdata.at(group).at(m).data.at(var) = 0;
+        
+        if (CCTK_GroupTypeI(group) != CCTK_GF) {
+          for (int tl=0; tl<num_tl; ++tl) {
+            cgh->data[n][tl] = 0;
+          }
         }
-      }
+        
+      } // for
     } // for
     
     // VGF: free
     
-    // storage was not disabled previously
+    // storage was enabled previously
     return 1;
   }
   
@@ -206,8 +197,8 @@ namespace Carpet {
     const int var = 0;
     
     assert (group<(int)arrdata.size());
-    assert (var<(int)arrdata[group].data.size());
-    return arrdata[group].data[var] != 0;
+    assert (var<(int)arrdata.at(group).at(0).data.size());
+    return arrdata.at(group).at(0).data.at(var) != 0;
   }
   
   
@@ -216,22 +207,29 @@ namespace Carpet {
 			      const char* groupname)
   {
     static const int zero = 0;
+    static const int error = -1;
     
     if (groupname) {
       group = CCTK_GroupIndex(groupname);
     }
     assert (group>=0 && group<CCTK_NumGroups());
     
-    const int gpdim = arrdata[group].info.dim;
+    if (mglevel == -1) {
+      return &error;
+    }
+    
+    const int gptype = CCTK_GroupTypeI (group);
+    if (gptype == CCTK_GF && map == -1) {
+      return &error;
+    }
+    
+    const int gpdim = groupdata.at(group).info.dim;
     assert (dir>=0 && dir<gpdim);
     
     if (CCTK_QueryGroupStorageI(cgh, group)) {
       
-      const int var = CCTK_FirstVarIndexI(group);
-      assert (var>=0 && var<CCTK_NumVars());
-      
-      assert (group<(int)arrdata.size());
-      return &arrdata[group].info.lsh[dir];
+      assert (group>=0 && group<(int)arrdata.size());
+      return &groupdata.at(group).info.lsh[dir];
       
     } else {
       
@@ -246,7 +244,8 @@ namespace Carpet {
   int GroupDynamicData (const cGH* cgh, int group, cGroupDynamicData* data)
   {
     assert (group>=0 && group<CCTK_NumGroups());
-    *data = arrdata[group].info;
+    assert (group>=0 && group<(int)arrdata.size());
+    *data = groupdata.at(group).info;
     return 0;
   }
   

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/functions.hh,v 1.4 2004/04/18 13:29:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/functions.hh,v 1.1 2004/01/25 14:57:28 schnetter Exp $
 
 #ifndef FUNCTIONS_HH
 #define FUNCTIONS_HH
@@ -34,21 +34,6 @@ namespace Carpet {
 			      const char* groupname);
   int QueryGroupStorageB (const cGH* cgh, int group, const char* groupname);
   int GroupDynamicData (const cGH* cgh, int group, cGroupDynamicData* data);
-   
-   
-   
-  // Helpers for recomposing the grid hierarchy
-  void CheckRegions (const gh<dim>::rexts & bbsss,
-                     const gh<dim>::rbnds & obss,
-                     const gh<dim>::rprocs& pss);
-  
-  void OutputGrids (const cGH* cgh, const int m, const gh<dim>& hh);
-  
-  void OutputGridStructure (const cGH *cgh,
-                            const int m,
-                            const gh<dim>::rexts & bbsss,
-                            const gh<dim>::rbnds & obss,
-                            const gh<dim>::rprocs& pss);
   
   
   
@@ -64,6 +49,11 @@ namespace Carpet {
                                vector<bbvect>& obs, vector<int>& ps);
   
   void MakeMultigridBoxes (const cGH* cgh,
+                           int const size,
+                           jjvect const & nboundaryzones,
+                           jjvect const & is_internal,
+                           jjvect const & is_staggered,
+                           jjvect const & shiftout,
                            vector<ibbox> const & bbs,
                            vector<bbvect> const & obs,
                            vector<vector<ibbox> > & bbss);

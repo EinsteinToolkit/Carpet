@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.hh,v 1.5 2004/05/21 18:16:23 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.hh,v 1.1 2004/01/25 14:57:28 schnetter Exp $
 
 // It is assumed that each group has at least one map.  All arrays
 // have exactly one map.  All maps have the same number of refinement
@@ -24,9 +24,7 @@
 #include "gh.hh"
 #include "operators.hh"
 #include "th.hh"
-#include "vect.hh"
 
-#include "carpet_public.h"
 #include "defines.hh"
 
 
@@ -49,7 +47,7 @@ namespace Carpet {
   // Refinement factor
   extern int reffact;
   
-  // Refinement factor on finest possible grid
+  // Refinement factor on finest grid
   extern int maxreflevelfact;
   
   // Base multigrid level
@@ -83,18 +81,10 @@ namespace Carpet {
   
   
   
-  // Carpet's GH
-  extern CarpetGH carpetGH;
-  
-  
-  
-  // Times and spaces on the refinement levels
-  extern CCTK_REAL global_time;
+  // Current times on the refinement levels
   extern vector<vector<CCTK_REAL> > leveltimes; // [mglevel][reflevel]
+  extern CCTK_REAL global_time;
   extern CCTK_REAL delta_time;
-  
-  extern vector<vect<CCTK_REAL,dim> > origin_space; // [mglevel]
-  extern vect<CCTK_REAL,dim> delta_space;
   
   
   
@@ -128,8 +118,19 @@ namespace Carpet {
     dh<dim>* dd;
     th<dim>* tt;
     vector<ggf<dim>*> data;     // [var]
+    // VGF
   };
   extern vector<vector<arrdesc> > arrdata; // [group][map]
+  
+  
+  
+  // Checksums
+  struct ckdesc {
+    bool valid;
+    unsigned int sum;
+  };
+  // [rl][ml][group][m][c][var][tl]
+  extern vector<vector<vector<vector<vector<vector<vector<ckdesc> > > > > > > checksums;
   
 } // namespace Carpet
 

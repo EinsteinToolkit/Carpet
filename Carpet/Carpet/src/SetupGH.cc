@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <limits.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -9,6 +10,9 @@
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
+
+#include "util_ErrorCodes.h"
+#include "util_Table.h"
 
 #include "bbox.hh"
 #include "defs.hh"
@@ -20,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.56 2003/11/11 14:23:41 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.57 2004/01/25 14:57:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -32,7 +36,7 @@ namespace Carpet {
   
   
   
-  static bool CanTransferVariableType (cGH* cgh, const int group)
+  static bool CanTransferVariableType (const cGH * const cgh, const int group)
   {
     // Find out which types correspond to the default types
 #if CCTK_INTEGER_PRECISION_1
@@ -135,6 +139,67 @@ namespace Carpet {
   
   
   
+  static operator_type GetTransportOperator (const cGH * const cgh,
+                                             const int group)
+  {
+    assert (group>=0 && group<CCTK_NumGroups());
+    
+    const bool can_transfer = CanTransferVariableType (cgh, group);
+    
+    cGroup gp;
+    const int ierr = CCTK_GroupData (group, &gp);
+    assert (!ierr);
+    const int tagstable = CCTK_GroupTagsTableI (group);
+    assert (tagstable >= 0);
+    
+    char prolong_string[1000];
+    const int length = Util_TableGetString
+      (tagstable, sizeof prolong_string, prolong_string, "Prolongation");
+    if (length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+      if (can_transfer) {
+        // Use the default
+        if (gp.numtimelevels == 1) {
+          // Only one time level: do not prolongate
+          char * const groupname = CCTK_GroupName (group);
+          const char * const vartypename = CCTK_VarTypeName(gp.vartype);
+          CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Group %s has only one time level; therefore it will not be prolongated or restricted",
+                      groupname);
+          free (groupname);
+          return op_none;
+        } else {
+          // Several time levels: use the default
+          return op_Lagrange;
+        }
+      } else {
+        if (gp.grouptype == CCTK_GF) {
+          char * const groupname = CCTK_GroupName (group);
+          const char * const vartypename = CCTK_VarTypeName(gp.vartype);
+          CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Group %s has the variable type %s which cannot be prolongated or restricted",
+                      groupname, vartypename);
+          free (groupname);
+          return op_none;
+        } else {
+          return op_error;
+        }
+      }
+    }
+    assert (length >= 0);
+    if (CCTK_Equals(prolong_string, "None")) {
+      return op_none;
+    } else if (CCTK_Equals(prolong_string, "Lagrange")) {
+      return op_Lagrange;
+    } else if (CCTK_Equals(prolong_string, "TVD")) {
+      return op_TVD;
+    } else {
+      assert (0);
+    }
+    return op_error;
+  }
+  
+  
+  
   void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cgh)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -148,82 +213,280 @@ namespace Carpet {
     
     dist::pseudoinit();
     
-    CCTK_VInfo (CCTK_THORNSTRING,
-		"Carpet is running on %d processors", CCTK_nProcs(cgh));
+    // Initialise current position
+    mglevel   = -1;
+    reflevel  = -1;
+    map       = -1;
+    component = -1;
     
-    Waypoint ("starting SetupGH...");
+    
+    
+    Waypoint ("Setting up the grid hierarchy");
+    
+    // Processor information
+    Waypoint ("Carpet is running on %d processors", CCTK_nProcs(cgh));
+    
+    // Multigrid information
+    basemglevel = convergence_level;
+    mglevels = num_convergence_levels;
+    mgfact = convergence_factor;
+    maxmglevelfact = ipow(mgfact, mglevels-1);
+// TODO: disable temporarily
+//     cgh->cctk_convfac = mgfact;
+    assert (mgfact == 2);
     
     // Refinement information
     maxreflevels = max_refinement_levels;
     reffact = refinement_factor;
     maxreflevelfact = ipow(reffact, maxreflevels-1);
     
-    // Multigrid information
-    mglevels = multigrid_levels;
-    mgfact = multigrid_factor;
-    maxmglevelfact = ipow(mgfact, mglevels-1);
+    // Map information
+    maps = num_maps;
+// TODO: disable temporarily
+//     cgh->cctk_nmaps = maps;
+    assert (maps == 1);
     
-    // Ghost zones
-    vect<int,dim> lghosts, ughosts;
-    if (ghost_size == -1) {
-      lghosts = vect<int,dim>(ghost_size_x, ghost_size_y, ghost_size_z);
-      ughosts = vect<int,dim>(ghost_size_x, ghost_size_y, ghost_size_z);
-    } else {
-      lghosts = vect<int,dim>(ghost_size, ghost_size, ghost_size);
-      ughosts = vect<int,dim>(ghost_size, ghost_size, ghost_size);
-    }
     
-    // Grid size
-    const int stride = maxreflevelfact;
-    vect<int,dim> npoints;
-    if (global_nsize == -1) {
-      npoints = vect<int,dim>(global_nx, global_ny, global_nz);
-    } else {
-      npoints = vect<int,dim>(global_nsize, global_nsize, global_nsize);
-    }
-    // Sanity check
-    // (if this fails, someone requested an insane amount of memory)
-    assert (all(npoints <= INT_MAX));
-    {
-      int max = INT_MAX;
-      for (int d=0; d<dim; ++d) {
-        assert (npoints[d] <= max);
-        max /= npoints[d];
-      }
-    }
-    
-    const vect<int,dim> str(stride);
-    const vect<int,dim> lb(0);
-    const vect<int,dim> ub((npoints - 1) * str);
-    
-    const bbox<int,dim> baseext(lb, ub, str);
-    
-    // Allocate grid hierarchy
-    hh = new gh<dim>(refinement_factor, vertex_centered,
-		     multigrid_factor, vertex_centered,
-		     baseext);
-    
-    // Allocate time hierarchy
-    tt = new th<dim>(hh, 1.0);
-    
-    // Allocate data hierarchy
-    dd = new dh<dim>(*hh, lghosts, ughosts,
-                     prolongation_order_space, buffer_width);
-    
-    if (max_refinement_levels > 1) {
-      const int prolongation_stencil_size = dd->prolongation_stencil_size();
-      const int min_nghosts
-	= ((prolongation_stencil_size + refinement_factor - 1)
-	   / (refinement_factor-1));
-      if (any(min(lghosts,ughosts) < min_nghosts)) {
-	CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-		    "There are not enough ghost zones for the desired spatial prolongation order.  With Carpet::prolongation_order_space=%d, you need at least %d ghost zones.",
-		    prolongation_order_space, min_nghosts);
-      }
-    }
     
     // Allocate space for groups
+    groupdata.resize(CCTK_NumGroups());
     arrdata.resize(CCTK_NumGroups());
+    
+    vhh.resize(maps);
+    vdd.resize(maps);
+    vtt.resize(maps);
+    
+    // Loop over maps
+    for (int m=0; m<maps; ++m) {
+      
+      // Get boundary description
+      jjvect nboundaryzones, is_internal, is_staggered, shiftout;
+      ierr = GetBoundarySpecification
+        (2*dim, &nboundaryzones[0][0], &is_internal[0][0],
+         &is_staggered[0][0], &shiftout[0][0]);
+      assert (!ierr);
+      
+      {
+        ostringstream buf;
+        buf << "CoordBase boundary specification for map " << m << ":" << endl
+            << "   nboundaryzones: " << nboundaryzones << endl
+            << "   is_internal   : " << is_internal    << endl
+            << "   is_staggered  : " << is_staggered   << endl
+            << "   shiftout      : " << shiftout;
+        Output (buf.str().c_str());
+      }
+      
+      // Ghost zones
+      ivect lghosts, ughosts;
+      if (ghost_size == -1) {
+        lghosts = ivect(ghost_size_x, ghost_size_y, ghost_size_z);
+        ughosts = ivect(ghost_size_x, ghost_size_y, ghost_size_z);
+      } else {
+        lghosts = ivect(ghost_size, ghost_size, ghost_size);
+        ughosts = ivect(ghost_size, ghost_size, ghost_size);
+      }
+      
+      // Grid size
+      rvect physical_min, physical_max;
+      rvect interior_min, interior_max;
+      rvect exterior_min, exterior_max;
+      rvect base_spacing;
+      
+      if (domain_from_coordbase) {
+        
+        ierr = GetDomainSpecification
+          (dim, &physical_min[0], &physical_max[0],
+           &interior_min[0], &interior_max[0],
+           &exterior_min[0], &exterior_max[0], &base_spacing[0]);
+        assert (!ierr);
+        
+      } else {
+        // Legacy code
+        
+        // specify global number of grid points
+        ivect npoints;
+        if (global_nsize == -1) {
+          npoints = ivect(global_nx, global_ny, global_nz);
+        } else {
+          npoints = ivect(global_nsize, global_nsize, global_nsize);
+        }
+        ostringstream buf;
+        buf << "Standard grid specification for map " << m << ":" << endl
+            << "   number of grid points: " << npoints;
+        Output (buf.str().c_str());
+        
+        // reduce to physical domain
+        exterior_min = 0.0;
+        exterior_max = rvect(npoints - 1);
+        base_spacing = 1.0;
+        ierr = ConvertFromExteriorBoundary
+          (dim, &physical_min[0], &physical_max[0],
+           &interior_min[0], &interior_max[0],
+           &exterior_min[0], &exterior_max[0], &base_spacing[0]);
+        assert (!ierr);
+        
+      }
+      
+      {
+        ostringstream buf;
+        buf << "CoordBase domain specification for map " << m << ":" << endl
+            << "   physical extent: " << physical_min << " : " << physical_max << endl
+            << "   interior extent: " << interior_min << " : " << interior_max << endl
+            << "   exterior extent: " << exterior_min << " : " << exterior_max << endl
+            << "   base_spacing   : " << base_spacing;
+        Output (buf.str().c_str());
+      }
+      
+      // Adapt for convergence level
+      rvect const spacing
+        = base_spacing * pow ((CCTK_REAL)convergence_factor, basemglevel);
+      
+      {
+        ostringstream buf;
+        buf << "Adapted domain specification for map " << m << ":" << endl
+            << "   convergence factor: " << convergence_factor << endl
+            << "   convergence level : " << basemglevel << endl
+            << "   spacing           : " << spacing;
+        Output (buf.str().c_str());
+      }
+      
+      // Calculate global number of grid points
+      ierr = ConvertFromPhysicalBoundary
+        (dim, &physical_min[0], &physical_max[0],
+         &interior_min[0], &interior_max[0],
+         &exterior_min[0], &exterior_max[0], &spacing[0]);
+      assert (!ierr);
+      rvect const real_npoints = (exterior_max - exterior_min) / spacing + 1;
+      
+      {
+        ostringstream buf;
+        buf << "Base grid specification for map " << m << ":" << endl
+            << "   number of grid points : " << real_npoints << endl
+            << "   number of ghost points: " << lghosts;
+        Output (buf.str().c_str());
+      }
+      
+      CCTK_REAL (* const rfloor) (CCTK_REAL const) = floor;
+      const ivect npoints = ::map(rfloor, real_npoints + 0.5);
+      if (any(abs(npoints - real_npoints) > 0.001)) {
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "The domain size for map %d scaled for convergence level %d with convergence factor %d is not integer",
+                    m, basemglevel, convergence_factor);
+      }
+      
+      // Sanity check
+      // (if this fails, someone requested an insane amount of memory)
+      assert (all(npoints <= INT_MAX));
+      {
+        int max = INT_MAX;
+        for (int d=0; d<dim; ++d) {
+          assert (npoints[d] <= max);
+          max /= npoints[d];
+        }
+      }
+      
+      
+      
+      // Base grid extent
+      const int stride = maxreflevelfact;
+      const ivect str(stride);
+      const ivect lb(0);
+      const ivect ub((npoints - 1) * str);
+      const ibbox baseext(lb, ub, str);
+      
+      // Allocate grid hierarchy
+      vhh[m] = new gh<dim>(refinement_factor, vertex_centered,
+                           convergence_factor, vertex_centered, baseext);
+      
+      // Allocate data hierarchy
+      vdd[m] = new dh<dim>(*vhh[m], lghosts, ughosts,
+                           prolongation_order_space, buffer_width);
+      
+      // Allocate time hierarchy
+      vtt[m] = new th<dim>(*vhh[m], 1.0);
+      
+      if (max_refinement_levels > 1) {
+        const int prolongation_stencil_size
+          = vdd[m]->prolongation_stencil_size();
+        const int min_nghosts
+          = ((prolongation_stencil_size + refinement_factor - 1)
+             / (refinement_factor-1));
+        if (any(min(lghosts,ughosts) < min_nghosts)) {
+          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "There are not enough ghost zones for the desired spatial prolongation order on map %d.  With Carpet::prolongation_order_space=%d, you need at least %d ghost zones.",
+                      m, prolongation_order_space, min_nghosts);
+        }
+        
+      }
+      
+      
+      
+      // Set initial refinement structure
+      
+      vector<ibbox> bbs;
+      vector<bbvect> obs;
+      if (strcmp(base_extents, "") == 0) {
+        
+        // default: one grid component covering everything
+        bbs.push_back (vhh[m]->baseextent);
+        obs.push_back (bbvect(true));
+        
+      } else {
+        
+        // explicit grid components
+        // TODO: invent something for the other convergence levels
+        istringstream ext_str(base_extents);
+        try {
+          ext_str >> bbs;
+        } catch (input_error) {
+          CCTK_WARN (0, "Could not parse parameter \"base_extents\"");
+        }
+        CCTK_VInfo (CCTK_THORNSTRING, "Using %d grid patches", bbs.size());
+        cout << "grid-patches-are " << bbs << endl;
+        if (bbs.size()<=0) {
+          CCTK_WARN (0, "Cannot evolve with 0 grid patches");
+        }
+        istringstream ob_str (base_outerbounds);
+        try {
+          ob_str >> obs;
+        } catch (input_error) {
+          CCTK_WARN (0, "Could not parse parameter \"base_outerbounds\"");
+        }
+        assert (obs.size() == bbs.size());
+        
+      }
+      
+      // Distribute onto the processors
+      // (TODO: this should be done globally for all maps)
+      vector<int> ps;
+      SplitRegions (cgh, bbs, obs, ps);
+      
+      // Create all multigrid levels
+      vector<vector<ibbox> > bbss;
+      MakeMultigridBoxes
+        (cgh,
+         2*dim, nboundaryzones, is_internal, is_staggered, shiftout,
+         bbs, obs, bbss);
+      
+      // Only one refinement level
+      vector<vector<vector<ibbox> > > bbsss(1);
+      vector<vector<bbvect> > obss(1);
+      vector<vector<int> > pss(1);
+      bbsss[0] = bbss;
+      obss[0] = obs;
+      pss[0] = ps;
+      
+      // Recompose grid hierarchy
+      vhh[m]->recompose (bbsss, obss, pss, maxreflevels, false);
+      
+    } // loop over maps
+    
+    reflevels = 1;
+    for (int m=0; m<maps; ++m) {
+      assert (vhh[m]->reflevels() == reflevels);
+    }
+    
+    
     
     // Allocate space for variables in group (but don't enable storage
     // yet)
@@ -232,28 +495,39 @@ namespace Carpet {
       cGroup gp;
       ierr = CCTK_GroupData (group, &gp);
       assert (!ierr);
+      const int tagstable = CCTK_GroupTagsTableI (group);
+      assert (tagstable >= 0);
       
       switch (gp.grouptype) {
 	
+      case CCTK_GF: {
+	assert (gp.dim == dim);
+        arrdata[group].resize(maps);
+        for (int m=0; m<maps; ++m) {
+          arrdata[group][m].hh = vhh[m];
+          arrdata[group][m].dd = vdd[m];
+          arrdata[group][m].tt = vtt[m];
+        }
+	break;
+      }
+        
       case CCTK_SCALAR:
       case CCTK_ARRAY: {
-	
-	int disttype;
-	vect<int,dim> sizes(1), ghostsizes(0);
+        
+        arrdata[group].resize(1);
+        
+	ivect sizes(1), ghostsizes(0);
 	
 	switch (gp.grouptype) {
 	  
 	case CCTK_SCALAR:
 	  // treat scalars as DIM=0, DISTRIB=const arrays
 	  assert (gp.dim==0);
-	  arrdata[group].info.dim = gp.dim;
-	  disttype = CCTK_DISTRIB_CONSTANT;
+	  assert (gp.disttype == CCTK_DISTRIB_CONSTANT);
 	  break;
 	  
 	case CCTK_ARRAY: {
 	  assert (gp.dim>=1 || gp.dim<=dim);
-	  arrdata[group].info.dim = gp.dim;
-	  disttype = gp.disttype;
 	  const CCTK_INT * const * const sz  = CCTK_GroupSizesI(group);
 	  const CCTK_INT * const * const gsz = CCTK_GroupGhostsizesI(group);
 	  for (int d=0; d<gp.dim; ++d) {
@@ -262,88 +536,172 @@ namespace Carpet {
 	  }
 	  break;
 	}
-	  
+          
 	default:
 	  assert (0);
 	}
-	
-	assert (disttype==CCTK_DISTRIB_CONSTANT
-		|| disttype==CCTK_DISTRIB_DEFAULT);
-	
-	if (disttype==CCTK_DISTRIB_CONSTANT) {
-          for (int d=0; d<dim; ++d) {
-            ghostsizes[d] = 0;
-          }
-          const int d = gp.dim==0 ? 0 : gp.dim-1;
-	  sizes[d] = (sizes[d] - 2*ghostsizes[d]) * CCTK_nProcs(cgh) + 2*ghostsizes[d];
-          assert (sizes[d] >= 0);
-	}
-	
-	const vect<int,dim> alb(0);
-	const vect<int,dim> aub(sizes-1);
-	const vect<int,dim> astr(1);
-	const bbox<int,dim> arrext(alb, aub, astr);
-	
-	arrdata[group].hh = new gh<dim>(refinement_factor, vertex_centered,
-					multigrid_factor, vertex_centered,
-					arrext);
-	
-	arrdata[group].tt = new th<dim>(arrdata[group].hh, 1.0);
-	
-	vect<int,dim> alghosts(0), aughosts(0);
-	for (int d=0; d<gp.dim; ++d) {
-	  alghosts[d] = ghostsizes[d];
-	  aughosts[d] = ghostsizes[d];
-	}
-	
-	arrdata[group].dd
-	  = new dh<dim>(*arrdata[group].hh, alghosts, aughosts, 0, 0);
-	
-	// Set refinement structure for scalars and arrays:
-	
-	// Set the basic extent
-	vector<bbox<int,dim> >          bbs;
-	vector<vect<vect<bool,2>,dim> > obs;
-	bbs.push_back (arrdata[group].hh->baseextent);
-	obs.push_back (vect<vect<bool,2>,dim>(vect<bool,2>(true)));
-	
-	// Split it into components, one for each processor
-        if (disttype==CCTK_DISTRIB_CONSTANT) {
-          SplitRegions_AlongDir (cgh, bbs, obs, gp.dim==0 ? 0 : gp.dim-1);
-        } else {
-          SplitRegions_Automatic (cgh, bbs, obs);
+        
+        ivect alghosts(0), aughosts(0);
+        for (int d=0; d<gp.dim; ++d) {
+          alghosts[d] = ghostsizes[d];
+          aughosts[d] = ghostsizes[d];
         }
+        
+        
+        
+        // Adapt array sizes for convergence level
+        jvect convpowers (0);
+        jvect convoffsets (0);
+        
+        if (tagstable >= 0) {
+          int status;
+          
+          status = Util_TableGetIntArray
+            (tagstable, gp.dim, &convpowers[0], "convergence_power");
+          if (status == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+            // keep default: independent of convergence level
+          } else if (status == 1) {
+            // a scalar was given
+            convpowers = convpowers[0];
+          } else if (status == gp.dim) {
+            // do nothing
+          } else {
+            char * const groupname = CCTK_GroupName(group);
+            CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "The key \"convergence_power\" in the tags table of group \"%s\" is wrong",
+                        groupname);
+            free (groupname);
+          }
+          assert (all (convpowers >= 0));
+          
+          status = Util_TableGetIntArray
+            (tagstable, gp.dim, &convoffsets[0], "convergence_offset");
+          if (status == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+            // keep default: offset is 0
+          } else if (status == 1) {
+            // a scalar was given
+            convoffsets = convoffsets[0];
+          } else if (status == gp.dim) {
+            // do nothing
+          } else {
+            char * const groupname = CCTK_GroupName(group);
+            CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "The key \"convergence_offset\" in the tags table of group \"%s\" is wrong",
+                        groupname);
+            free (groupname);
+          }
+          
+        } // if there is a group tags table
+        
+        CCTK_REAL (* const ripow) (CCTK_REAL const, int const) = pow;
+        CCTK_REAL (* const rfloor) (CCTK_REAL const) = floor;
+        const rvect real_sizes
+          = ((sizes - convoffsets)
+             / ::zip(ripow, rvect(convergence_factor),
+                     convpowers * basemglevel)
+             + convoffsets);
+        sizes = ::map(rfloor, (real_sizes + 0.5));
+        if (any (sizes < 0)) {
+          char * const groupname = CCTK_GroupName(group);
+          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "The shape of group \"%s\" scaled for convergence level %d with convergence factor %d is negative",
+                      groupname, basemglevel, convergence_factor);
+          free (groupname);
+        }
+        if (any (sizes - real_sizes > 0.001)) {
+          char * const groupname = CCTK_GroupName(group);
+          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "The shape of group \"%s\" scaled for convergence level %d with convergence factor %d is not integer",
+                      groupname, basemglevel, convergence_factor);
+          free (groupname);
+        }
+        
+        
+        
+        assert (gp.disttype==CCTK_DISTRIB_CONSTANT
+                || gp.disttype==CCTK_DISTRIB_DEFAULT);
+        
+        if (gp.disttype==CCTK_DISTRIB_CONSTANT) {
+          assert (all (ghostsizes == 0));
+          const int d = gp.dim==0 ? 0 : gp.dim-1;
+          sizes[d] = (sizes[d] - 2*ghostsizes[d]) * CCTK_nProcs(cgh) + 2*ghostsizes[d];
+          assert (sizes[d] >= 0);
+        }
+        
+        
+        
+        const ivect alb(0);
+        const ivect aub(sizes-1);
+        const ivect astr(1);
+        const ibbox abaseext(alb, aub, astr);
+        
+        arrdata[group][0].hh
+          = new gh<dim>(refinement_factor, vertex_centered,
+                        convergence_factor, vertex_centered,
+                        abaseext);
+        
+        arrdata[group][0].dd
+          = new dh<dim>(*arrdata[group][0].hh, alghosts, aughosts, 0, 0);
+        
+        arrdata[group][0].tt = new th<dim>(*arrdata[group][0].hh, 1.0);
 	
-	// For all refinement levels (but there is only one)
-	vector<vector<bbox<int,dim> > >          bbss(1);
-	vector<vector<vect<vect<bool,2>,dim> > > obss(1);
-	bbss[0] = bbs;
+        
+        
+        // Set refinement structure for scalars and arrays
+        vector<ibbox> bbs;
+        vector<bbvect> obs;
+        bbs.push_back (abaseext);
+        obs.push_back (bbvect(true));
+        
+        // Split it into components, one for each processor
+        vector<int> ps;
+        if (gp.disttype==CCTK_DISTRIB_CONSTANT) {
+          SplitRegions_AlongDir (cgh, bbs, obs, ps, gp.dim==0 ? 0 : gp.dim-1);
+        } else {
+          SplitRegions_Automatic (cgh, bbs, obs, ps);
+        }
+        
+        // Create all multigrid levels
+        vector<vector<ibbox> > bbss (bbs.size());
+        ivect amgfact;
+        iivect aoffset;
+        for (int d=0; d<dim; ++d) {
+          amgfact[d] = ipow(mgfact, convpowers[d]);
+          aoffset[d][0] = 0;
+          aoffset[d][1] = convoffsets[d];
+        }
+        for (size_t c=0; c<bbs.size(); ++c) {
+          bbss[c].resize (mglevels);
+          bbss[c][0] = bbs[c];
+          for (int ml=1; ml<mglevels; ++ml) {
+            // next finer grid
+            ivect const flo = bbss[c][ml-1].lower();
+            ivect const fhi = bbss[c][ml-1].upper();
+            ivect const fstr = bbss[c][ml-1].stride();
+            // this grid
+            ivect const str = fstr * amgfact;
+            ivect const modoffset = (xpose(aoffset)[0] - amgfact * xpose(aoffset)[0] + amgfact * xpose(aoffset)[0] * str) % str;
+            ivect const lo = flo + xpose(obs[c])[0].ifthen (    xpose(aoffset)[0] - amgfact * xpose(aoffset)[0] , modoffset);
+            ivect const hi = fhi + xpose(obs[c])[1].ifthen ( - (xpose(aoffset)[1] - amgfact * xpose(aoffset)[1]), modoffset + fstr - str);
+            bbss[c][ml] = ibbox(lo,hi,str);
+          }
+        }
+        
+	// Only one refinement level
+	vector<vector<vector<ibbox> > > bbsss(1);
+	vector<vector<bbvect> > obss(1);
+        vector<vector<int> > pss(1);
+	bbsss[0] = bbss;
 	obss[0] = obs;
+        pss[0] = ps;
 	
-	// For all multigrid levels
-	gh<dim>::rexts bbsss;
-	bbsss = hh->make_multigrid_boxes(bbss, mglevels);
-	
-	// Distribute onto processors
-	vector<vector<int> > pss;
-	MakeProcessors (cgh, bbsss, pss);
-	
-	// And recompose.  Done.
-        char * groupname = CCTK_GroupName (group);
+	// Recompose for this map
+        char * const groupname = CCTK_GroupName (group);
         assert (groupname);
         Checkpoint ("Recomposing grid array group %s", groupname);
         free (groupname);
-	arrdata[group].hh->recompose (bbsss, obss, pss, 1, false);
+	arrdata[group][0].hh->recompose (bbsss, obss, pss, 1, false);
 	
-	break;
-      }
-	
-      case CCTK_GF: {
-	assert (gp.dim == dim);
-	arrdata[group].info.dim = dim;
-	arrdata[group].hh = hh;
-	arrdata[group].tt = tt;
-	arrdata[group].dd = dd;
 	break;
       }
 	
@@ -351,186 +709,73 @@ namespace Carpet {
 	assert (0);
       }
       
-      arrdata[group].info.gsh         = new int [dim];
-      arrdata[group].info.lsh         = new int [dim];
-      arrdata[group].info.lbnd        = new int [dim];
-      arrdata[group].info.ubnd        = new int [dim];
-      arrdata[group].info.bbox        = new int [2*dim];
-      arrdata[group].info.nghostzones = new int [dim];
+      // Initialise group information
+      groupdata[group].info.dim         = gp.dim;
+      groupdata[group].info.gsh         = new int [dim];
+      groupdata[group].info.lsh         = new int [dim];
+      groupdata[group].info.lbnd        = new int [dim];
+      groupdata[group].info.ubnd        = new int [dim];
+      groupdata[group].info.bbox        = new int [2*dim];
+      groupdata[group].info.nghostzones = new int [dim];
       
-      arrdata[group].data.resize(CCTK_NumVarsInGroupI(group));
-      for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-	arrdata[group].data[var] = 0;
+      groupdata[group].transport_operator = GetTransportOperator (cgh, group);
+      
+      // Initialise group variables
+      for (int m=0; m<arrdata[group].size(); ++m) {
+        
+        arrdata[group][m].data.resize(CCTK_NumVarsInGroupI(group));
+        for (int var=0; var<(int)arrdata[group][m].data.size(); ++var) {
+          arrdata[group][m].data[var] = 0;
+        }
+        
       }
-      
-      arrdata[group].do_transfer = CanTransferVariableType (cgh, group);
       
     } // for group
     
     
     
-    // Initialise cgh
-    for (int d=0; d<dim; ++d) {
-      cgh->cctk_nghostzones[d] = dd->lghosts[d];
+    // Allocate level times
+    leveltimes.resize (mglevels);
+    for (int ml=0; ml<mglevels; ++ml) {
+      leveltimes[ml].resize (maxreflevels);
     }
-    for (int group=0; group<CCTK_NumGroups(); ++group) {
-      for (int d=0; d<dim; ++d) {
-        ((int*)arrdata[group].info.nghostzones)[d] = arrdata[group].dd->lghosts[d];
-      }
-    }
-    
-    for (int group=0; group<CCTK_NumGroups(); ++group) {
-      if (CCTK_GroupTypeI(group) != CCTK_GF) {
-        
-        const int rl = 0;
-        const int ml = 0;
-        const int c = CCTK_MyProc(cgh);
-        
-        const bbox<int,dim>& base = arrdata[group].hh->baseextent;
-        const vect<vect<bool,2>,dim>& obnds = arrdata[group].hh->outer_boundaries[rl][c];
-	const bbox<int,dim>& ext  = arrdata[group].dd->boxes[rl][c][ml].exterior;
-        
-        for (int d=0; d<dim; ++d) {
-          ((int*)arrdata[group].info.gsh )[d] = (base.shape() / base.stride())[d];
-          ((int*)arrdata[group].info.lsh )[d] = (ext.shape() / ext.stride())[d];
-          ((int*)arrdata[group].info.lbnd)[d] = ((ext.lower() - baseext.lower()) / ext.stride())[d];
-          ((int*)arrdata[group].info.ubnd)[d] = ((ext.upper() - baseext.lower()) / ext.stride())[d];
-          ((int*)arrdata[group].info.bbox)[2*d  ] = obnds[d][0];
-          ((int*)arrdata[group].info.bbox)[2*d+1] = obnds[d][1];
-          
-          assert (arrdata[group].info.lsh[d]>=0);
-          assert (arrdata[group].info.lsh[d]<=arrdata[group].info.gsh[d]);
-          if (d>=arrdata[group].info.dim)
-            if (! (arrdata[group].info.lsh[d]==1)) {
-              cout << "group " << group << " " << CCTK_GroupName(group) << " "
-                   << "dim " << arrdata[group].info.dim << " "
-                   << "d " << d << endl;
-              cout << "gsh " << arrdata[group].info.gsh[0] << " " << arrdata[group].info.gsh[1] << " " << arrdata[group].info.gsh[2] << endl;
-              cout << "lsh " << arrdata[group].info.lsh[0] << " " << arrdata[group].info.lsh[1] << " " << arrdata[group].info.lsh[2] << endl;
-              cout << "lbnd " << arrdata[group].info.lbnd[0] << " " << arrdata[group].info.lbnd[1] << " " << arrdata[group].info.lbnd[2] << endl;
-            }
-          if (d>=arrdata[group].info.dim)
-            assert (arrdata[group].info.lsh[d]==1);
-          assert (arrdata[group].info.lbnd[d]>=0);
-          assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
-          assert (arrdata[group].info.ubnd[d]<arrdata[group].info.gsh[d]);
-          assert (arrdata[group].info.lbnd[d] + arrdata[group].info.lsh[d] - 1
-                  == arrdata[group].info.ubnd[d]);
-          assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
-        }
-        
-        const int numvars = CCTK_NumVarsInGroupI (group);
-        if (numvars>0) {
-          const int firstvar = CCTK_FirstVarIndexI (group);
-          assert (firstvar>=0);
-          
-          const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
-          // We don't know when to cycle arrays or scalars
-          if (num_tl!=1) {
-            CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                        "Carpet does not allow grid array groups with multiple time levels.  The grid array group \"%s\" has %d time levels.",
-                        CCTK_GroupName(group), num_tl);
-          }
-          assert (num_tl==1);
-          
-          assert (rl>=0 && rl<(int)arrdata[group].dd->boxes.size());
-          assert (c>=0 && c<(int)arrdata[group].dd->boxes[rl].size());
-          assert (ml>=0 && ml<(int)arrdata[group].dd->boxes[rl][c].size());
-          assert (arrdata[group].hh->is_local(rl,c));
-          
-          assert (group<(int)arrdata.size());
-          for (int var=0; var<numvars; ++var) {
-            assert (var<(int)arrdata[group].data.size());
-            for (int tl=0; tl<num_tl; ++tl) {
-              cgh->data[firstvar+var][tl] = 0;
-            }
-          }
-        }
-        
-      } // if grouptype
-    } // for group
-    
-    
-    
-    // Initialise current position
-    reflevel  = -1;
-    mglevel   = -1;
-    component = -1;
     
     // Enable prolongating
     do_prolongate = true;
     
     
     
-    // Set initial refinement structure
-    vector<bbox<int,dim> > bbs;
-    vector<vect<vect<bool,2>,dim> > obs;
-    if (strcmp(base_extents, "") == 0) {
-      // default: one grid component covering everything
-      bbs.push_back (hh->baseextent);
-      obs.push_back (vect<vect<bool,2>,dim>(vect<bool,2>(true)));
-    } else {
-      // explicit grid components
-      istringstream ext_str(base_extents);
-      ext_str >> bbs;
-      CCTK_VInfo (CCTK_THORNSTRING, "Using %d grid patches", bbs.size());
-      cout << "grid-patches-are " << bbs << endl;
-      if (bbs.size()<=0) {
-	CCTK_WARN (0, "Cannot evolve with 0 grid patches");
-      }
-      istringstream ob_str (base_outerbounds);
-      ob_str >> obs;
-      cout << "outer-boundaries-are " << obs << endl;
-      assert (obs.size() == bbs.size());
-    }
-    
-    SplitRegions (cgh, bbs, obs);
-    
-    vector<vector<bbox<int,dim> > > bbss(1);
-    vector<vector<vect<vect<bool,2>,dim> > > obss(1);
-    bbss[0] = bbs;
-    obss[0] = obs;
-    
-    gh<dim>::rexts bbsss;
-    bbsss = hh->make_multigrid_boxes(bbss, mglevels);
-    
-    gh<dim>::rprocs pss;
-    MakeProcessors (cgh, bbsss, pss);
-    
-    // Recompose grid hierarchy
-    Checkpoint ("Recomposing grid functions");
-    Recompose (cgh, bbsss, obss, pss, maxreflevels, false);
-    
-    
-    
-    // Initialise time step on coarse grid
-    cgh->cctk_timefac = 1;
-    for (int d=0; d<dim; ++d) {
-      cgh->cctk_levoff[d] = 0;
-      cgh->cctk_levoffdenom[d] = 1;
-    }
-    
-    refleveltimes.resize (maxreflevels);
-    cgh->cctk_time = 0.0;
-    delta_time = 1.0;
+    // Finish initialisation
+    mglevelfact = 1;
+    cgh->cctk_time = 0;
     cgh->cctk_delta_time = 1.0;
+    
+    mglevel   = 0;
+    reflevel  = 0;
+    map       = 0;
+    component = 0;
+    
+    leave_local_mode     (cgh);
+    leave_singlemap_mode (cgh);
+    leave_level_mode     (cgh);
+    leave_global_mode    (cgh);
     
     
     
     // Enable storage for all groups if desired
     if (true || enable_all_storage) {
-      BEGIN_REFLEVEL_LOOP(cgh) {
-	BEGIN_MGLEVEL_LOOP(cgh) {
+      BEGIN_MGLEVEL_LOOP(cgh) {
+        BEGIN_REFLEVEL_LOOP(cgh) {
 	  for (int group=0; group<CCTK_NumGroups(); ++group) {
-            char * groupname = CCTK_GroupName(group);
+            char * const groupname = CCTK_GroupName(group);
 	    EnableGroupStorage (cgh, groupname);
             free (groupname);
 	  }
-	} END_MGLEVEL_LOOP;
-      } END_REFLEVEL_LOOP;
+        } END_REFLEVEL_LOOP;
+      } END_MGLEVEL_LOOP;
     }
     
-    Waypoint ("done with SetupGH.");
+    Waypoint ("Done with setting up the grid hierarchy");
     
     // We register only once, ergo we get only one handle, ergo there
     // is only one grid hierarchy for us.  We store that statically,

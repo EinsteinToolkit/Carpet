@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.12 2003/08/10 21:58:45 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.13 2004/01/25 14:57:30 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -18,23 +18,23 @@ using namespace std;
 
 // Constructors
 template<int D>
-th<D>::th (gh<D>* h, const CCTK_REAL basedelta)
+th<D>::th (gh<D>& h, const CCTK_REAL basedelta)
   : h(h), delta(basedelta) {
-  h->add(this);
+  h.add(this);
 }
 
 // Destructors
 template<int D>
 th<D>::~th () {
-  h->remove(this);
+  h.remove(this);
 }
 
 // Modifiers
 template<int D>
 void th<D>::recompose () {
-  times.resize(h->reflevels());
-  deltas.resize(h->reflevels());
-  for (int rl=0; rl<h->reflevels(); ++rl) {
+  times.resize(h.reflevels());
+  deltas.resize(h.reflevels());
+  for (int rl=0; rl<h.reflevels(); ++rl) {
     const int old_mglevels = times[rl].size();
     CCTK_REAL mgtime;
     // Select default time
@@ -45,15 +45,15 @@ void th<D>::recompose () {
     } else {
       mgtime = times[rl][old_mglevels-1];
     }
-    times[rl].resize(h->mglevels(rl,0), mgtime);
-    deltas[rl].resize(h->mglevels(rl,0));
-    for (int ml=0; ml<h->mglevels(rl,0); ++ml) {
+    times[rl].resize(h.mglevels(rl,0), mgtime);
+    deltas[rl].resize(h.mglevels(rl,0));
+    for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
       if (rl==0 && ml==0) {
 	deltas[rl][ml] = delta;
       } else if (ml==0) {
-	deltas[rl][ml] = deltas[rl-1][ml] / h->reffact;
+	deltas[rl][ml] = deltas[rl-1][ml] / h.reffact;
       } else {
-	deltas[rl][ml] = deltas[rl][ml-1] * h->mgfact;
+	deltas[rl][ml] = deltas[rl][ml-1] * h.mgfact;
       }
     }
   }
@@ -66,8 +66,8 @@ template<int D>
 void th<D>::output (ostream& os) const {
   os << "th<" << D << ">:"
      << "times={";
-  for (int rl=0; rl<h->reflevels(); ++rl) {
-    for (int ml=0; ml<h->mglevels(rl,0); ++ml) {
+  for (int rl=0; rl<h.reflevels(); ++rl) {
+    for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
       if (!(rl==0 && ml==0)) os << ",";
       os << rl << ":" << ml << ":"
 	 << times[rl][ml] << "(" << deltas[rl][ml] << ")";

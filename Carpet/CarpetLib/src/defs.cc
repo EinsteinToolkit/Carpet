@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.17 2003/11/13 16:03:58 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.18 2004/01/25 14:57:29 schnetter Exp $
 
 #include <assert.h>
 #include <ctype.h>
@@ -9,9 +9,28 @@
 #include <stack>
 #include <vector>
 
+#include "cctk.h"
+
 #include "defs.hh"
 
 using namespace std;
+
+
+
+template<class T>
+T ipow (T x, int y) {
+  if (y<0) {
+    y = -y;
+    x = T(1)/x;
+  }
+  T res = T(1);
+  while (y>0) {
+    if (y%2) res *= x;
+    x *= x;
+    y /= 2;
+  }
+  return res;
+}
 
 
 
@@ -23,26 +42,53 @@ void skipws (istream& is) {
 
 
 
+void expect (istream& is, const char c) {
+  if (is.peek() == c) return;
+  cout << "While reading characters from a stream:" << endl
+       << "   Character '" << c << "' expected, but not found." << endl
+       << "   The next up to 100 available characters are \"";
+  for (int i=0; i<100; ++i) {
+    const int uc = is.get();
+    if (uc<0) break;
+    cout << (unsigned char)uc;
+  }
+  cout << "\"." << endl;
+  throw input_error();
+}
+
+
+
+void consume (istream& is, const char c) {
+  expect (is, c);
+  is.get();
+}
+
+
+
 // Vector input
 template<class T>
 istream& input (istream& is, vector<T>& v) {
   v.clear();
-  skipws (is);
-  assert (is.peek() == '[');
-  is.get();
-  skipws (is);
-  while (is.good() && is.peek() != ']') {
-    T elem;
-    is >> elem;
-    v.push_back (elem);
+  try {
     skipws (is);
-    if (is.peek() != ',') break;
-    is.get();
+    consume (is, '[');
     skipws (is);
+    while (is.good() && is.peek() != ']') {
+      T elem;
+      is >> elem;
+      v.push_back (elem);
+      skipws (is);
+      if (is.peek() != ',') break;
+      is.get();
+      skipws (is);
+    }
+    skipws (is);
+    consume (is, ']');
+  } catch (input_error &err) {
+    cout << "Input error while reading a vector<>" << endl
+         << "   The following elements have been read so far: " << v << endl;
+    throw err;
   }
-  skipws (is);
-  assert (is.peek() == ']');
-  is.get();
   return is;
 }
 
@@ -102,10 +148,12 @@ ostream& output (ostream& os, const vector<T>& v) {
 #include "bbox.hh"
 #include "bboxset.hh"
 
+template int ipow (int x, int y);
+
 template istream& input (istream& os, vector<bbox<int,3> >& v);
-template istream& input (istream& os, vector<bbox<double,3> >& v);
+template istream& input (istream& os, vector<bbox<CCTK_REAL,3> >& v);
 template istream& input (istream& os, vector<vector<bbox<int,3> > >& v);
-template istream& input (istream& os, vector<vector<bbox<double,3> > >& v);
+template istream& input (istream& os, vector<vector<bbox<CCTK_REAL,3> > >& v);
 template istream& input (istream& os, vector<vect<vect<bool,2>,3> >& v);
 template istream& input (istream& os, vector<vector<vect<vect<bool,2>,3> > >& v);
 
@@ -114,12 +162,14 @@ template ostream& output (ostream& os, const set<bbox<int,3> >& s);
 template ostream& output (ostream& os, const set<bboxset<int,3> >& s);
 template ostream& output (ostream& os, const stack<bbox<int,3> >& s);
 template ostream& output (ostream& os, const vector<int>& v);
+template ostream& output (ostream& os, const vector<CCTK_REAL>& v);
 template ostream& output (ostream& os, const vector<bbox<int,3> >& v);
-template ostream& output (ostream& os, const vector<bbox<double,3> >& v);
+template ostream& output (ostream& os, const vector<bbox<CCTK_REAL,3> >& v);
 template ostream& output (ostream& os, const vector<list<bbox<int,3> > >& v);
 template ostream& output (ostream& os, const vector<vector<int> >& v);
+template ostream& output (ostream& os, const vector<vector<CCTK_REAL> >& v);
 template ostream& output (ostream& os, const vector<vector<bbox<int,3> > >& v);
-template ostream& output (ostream& os, const vector<vector<bbox<double,3> > >& v);
+template ostream& output (ostream& os, const vector<vector<bbox<CCTK_REAL,3> > >& v);
 template ostream& output (ostream& os, const vector<vector<vect<vect<bool,2>,3> > >& v);
 template ostream& output (ostream& os, const vector<vect<vect<bool,2>,3> >& v);
 template ostream& output (ostream& os, const vector<vector<vector<bbox<int,3> > > >& v);

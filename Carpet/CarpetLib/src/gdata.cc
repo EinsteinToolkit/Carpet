@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.25 2003/11/21 13:55:46 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.26 2004/01/25 14:57:30 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -54,52 +54,16 @@ comm_state<D>::~comm_state ()
 
 // Constructors
 template<int D>
-gdata<D>::gdata (const int varindex_)
-  : varindex(varindex_),
-    _has_storage(false),
-    transport_operator (find_transport_operator(varindex_))
+gdata<D>::gdata (const int varindex_, const operator_type transport_operator_)
+  : varindex(varindex_), transport_operator(transport_operator_),
+    wtime_isend(0.0), wtime_isendwait(0.0),
+    wtime_irecv(0.0), wtime_irecvwait(0.0),
+    _has_storage(false)
 { }
 
 // Destructors
 template<int D>
 gdata<D>::~gdata () { }
-
-
-
-// Transport operator types
-template<int D>
-typename gdata<D>::operator_type
-gdata<D>::find_transport_operator (const int varindex)
-{
-  const operator_type default_operator = op_Lagrange;
-  if (varindex == -1) return op_error;
-  assert (varindex >= 0);
-  const int groupindex = CCTK_GroupIndexFromVarI (varindex);
-  assert (groupindex >= 0);
-  const int group_tags_table = CCTK_GroupTagsTableI(groupindex);
-  assert (group_tags_table >= 0);
-  char prolong_string[100];
-  const int ierr = Util_TableGetString
-    (group_tags_table, sizeof prolong_string, prolong_string, "Prolongation");
-  if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-    char* groupname = CCTK_GroupName(groupindex);
-    CCTK_VWarn (4, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "Tags table for group \"%s\" does not contain \"Prolongation\" tag", groupname);
-    ::free (groupname);
-    return default_operator;
-  }
-  assert (ierr >= 0);
-  if (CCTK_Equals(prolong_string, "None")) {
-    return op_none;
-  } else if (CCTK_Equals(prolong_string, "Lagrange")) {
-    return op_Lagrange;
-  } else if (CCTK_Equals(prolong_string, "TVD")) {
-    return op_TVD;
-  } else {
-    assert (0);
-  }
-  return op_error;
-}
 
 
 
@@ -174,7 +138,7 @@ void gdata<D>::copy_from_recv (comm_state<D>& state,
   } else {
     
     // copy to different processor
-    gdata<D>* const tmp = make_typed(varindex);
+    gdata<D>* const tmp = make_typed(varindex, transport_operator);
     // TODO: is this efficient?
     state.tmps.push_back (tmp);
     ++state.current;
@@ -350,7 +314,7 @@ void gdata<D>
   } else {
     // interpolate from other processor
     
-    gdata<D>* const tmp = make_typed(varindex);
+    gdata<D>* const tmp = make_typed(varindex, transport_operator);
     // TODO: is this efficient?
     state.tmps.push_back (tmp);
     ++state.current;

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.15 2003/11/05 16:18:39 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.16 2004/01/25 14:57:29 schnetter Exp $
 
 #ifndef DATA_HH
 #define DATA_HH
@@ -39,14 +39,17 @@ class data: public gdata<D> {
 public:
   
   // Constructors
-  data (const int varindex);
-  data (const int varindex, const ibbox& extent, const int proc);
+  data (const int varindex = -1,
+        const operator_type transport_operator = op_error);
+  data (const int varindex, const operator_type transport_operator,
+        const ibbox& extent, const int proc);
 
   // Destructors
   virtual ~data ();
 
   // Pseudo constructors
-  virtual data* make_typed (const int varindex) const;
+  virtual data* make_typed (const int varindex,
+                            const operator_type transport_operator) const;
 
   // Storage management
   virtual void allocate (const ibbox& extent, const int proc,

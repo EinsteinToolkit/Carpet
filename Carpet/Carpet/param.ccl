@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.34 2003/11/05 16:18:37 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.35 2004/01/25 14:57:27 schnetter Exp $
 
 shares: Cactus
 
@@ -17,6 +17,12 @@ shares: IO
 USES STRING out_dir
 
 
+
+private:
+
+BOOLEAN domain_from_coordbase "Use the domain description from CoordBase"
+{
+} "no"
 
 restricted:
 
@@ -64,6 +70,22 @@ CCTK_INT ghost_size "Ghost zones in each spatial direction"
   -1  :: "use the per-dimension parameters"
 } -1
 
+BOOLEAN periodic "do not use this parameter"
+{
+} "no"
+
+BOOLEAN periodic_x "do not use this parameter"
+{
+} "no"
+
+BOOLEAN periodic_y "do not use this parameter"
+{
+} "no"
+
+BOOLEAN periodic_z "do not use this parameter"
+{
+} "no"
+
 
 
 private:
@@ -78,15 +100,31 @@ CCTK_INT refinement_factor "Refinement factor"
   1:* :: "must be positive"
 } 2
 
-CCTK_INT multigrid_levels "Number of multigrid levels (including the base level)"
+
+
+CCTK_INT convergence_level "Convergence level"
+{
+  *:* :: "negative for finer, positive for coarser resolutions"
+} 0
+
+CCTK_INT num_convergence_levels "Number of convergence levels (including the base level)"
 {
   1:* :: "must be positive"
 } 1
 
-CCTK_INT multigrid_factor "Multigrid factor"
+CCTK_INT convergence_factor "Multigrid factor"
 {
   1:* :: "must be positive"
 } 2
+
+
+
+CCTK_INT num_maps "Number of maps"
+{
+  1:* :: ""
+} 1
+
+
 
 CCTK_INT prolongation_order_space "Order of prolongation operator in space"
 {
@@ -101,6 +139,8 @@ CCTK_INT prolongation_order_time "Order of prolongation operator in time"
   1 :: "first order (linear)"
   2 :: "second order (quadratic)"
 } 1
+
+
 
 CCTK_INT buffer_width "Width of the buffer zone inside the fine grid"
 {
@@ -176,6 +216,12 @@ BOOLEAN checksum_timelevels "Try to catch unintentionally changed timelevels by 
 
 
 
+BOOLEAN suppress_restriction "Suppress the restriction operations.  This makes the coarser refinement levels independent of the finer ones."
+{
+} "no"
+
+
+
 BOOLEAN verbose "Display info on the screen"
 {
 } "no"
@@ -227,36 +273,18 @@ STRING grid_structure_filename "File name to output grid structure to (empty = n
 
 
 
-# These parameters are here for historic reasons only.
-# They will go away in the future.  Do not use them.
-
-restricted:
-
-BOOLEAN periodic "do not use this parameter"
-{
-} "no"
-BOOLEAN periodic_x "do not use this parameter"
-{
-} "yes"
-BOOLEAN periodic_y "do not use this parameter"
-{
-} "yes"
-BOOLEAN periodic_z "do not use this parameter"
-{
-} "yes"
-
-
-
 private:
 
 BOOLEAN init_each_timelevel "Call initial data routines once for each timelevel"
 {
 } "no"
 
-BOOLEAN init_3_timelevels "Set up 3 timelevels of initial data"
+BOOLEAN prolongate_initial_data "Prolongate the refined regions during initial data generation"
 {
 } "no"
 
-BOOLEAN prolongate_initial_data "Prolongate the refined regions during initial data generation"
+
+
+BOOLEAN init_3_timelevels "Set up 3 timelevels of initial data"
 {
 } "no"

@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.13 2004/01/13 13:50:05 hawke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.14 2004/01/25 14:57:30 schnetter Exp $
 
 
 
@@ -17,16 +17,19 @@ CCTK_INT regrid_every "Regrid every n time steps" STEERABLE=always
    1:* :: "regrid every n time steps"
 } 0
 
-CCTK_INT activate_newlevels_on_regrid "When regridding, activate this many new levels (if possible)"
-# Note that this feature will STEER the parameter refinement_levels!!!
-#   It does this by adding activate_newlevels_on_regrid to refinement levels
+
+
+CCTK_INT activate_newlevels_on_regrid "When regridding, activate this many new levels (if possible).  Note that this will steer the parameter refinement_levels." STEERABLE=always
 {
-  : :: "Number of new levels to activate.  Negative numbers mean to de-activate"
+  : :: "Number of new levels to activate (negative numbers deactivate)"
 } 0
 
+CCTK_INT activate_next "The next iteration at which new levels should be activated" STEERABLE=always
+{
+  0: :: "Note that this parameter is steered when new levels are activated"
+} 1
 
-
-BOOLEAN outside_boundary_points[3] "On finer grids, where the upper grid boundary is adjacent to the outer boundary, put points outside the outer boundary (needed e.g. for periodicity)"
+BOOLEAN regrid_from_function "Regridding criteria from the aliased function?"
 {
 } "no"
 
@@ -42,6 +45,20 @@ KEYWORD refined_regions "Regions where the grid is refined" STEERABLE=always
   "manual-coordinate-list" :: "Refine the regions specified by coordinates in the parameter 'coordinates'"
   "automatic"              :: "Refine automatically"
 } "centre"
+
+
+
+# Region specifications for centre refinement
+
+BOOLEAN symmetry_x "Refine the lower half in x-direction"
+{
+} "no"
+BOOLEAN symmetry_y "Refine the lower half in y-direction"
+{
+} "no"
+BOOLEAN symmetry_z "Refine the lower half in z-direction"
+{
+} "no"
 
 
 
@@ -268,10 +285,3 @@ CCTK_STRING errorvar "Name of grid function that contains the error" STEERABLE=a
 {
   ".*" :: "must be the name of a grid function"
 } ""
-
-
-# Should we set the regridding criteria from an aliased function?
-
-BOOLEAN regrid_from_function "Regridding criteria from the aliased function?"
-{
-} "no"

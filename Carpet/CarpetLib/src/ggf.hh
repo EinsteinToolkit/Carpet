@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.17 2003/11/05 16:18:39 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.18 2004/01/25 14:57:30 schnetter Exp $
 
 #ifndef GGF_HH
 #define GGF_HH
@@ -52,6 +52,7 @@ public:				// should be readonly
 
   // Fields
   int varindex;                 // Cactus variable index
+  operator_type transport_operator;
   
   th<D> &t;			// time hierarchy
   int tmin, tmax;		// timelevels
@@ -66,7 +67,8 @@ protected:
 public:
 
   // Constructors
-  ggf (const int varindex, th<D>& t, dh<D>& d,
+  ggf (const int varindex, const operator_type transport_operator,
+       th<D>& t, dh<D>& d,
        const int tmin, const int tmax,
        const int prolongation_order_time);
 

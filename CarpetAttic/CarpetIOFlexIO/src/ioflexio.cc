@@ -11,10 +11,13 @@
 #include <sstream>
 #include <vector>
 
-
-
 #include "cctk.h"
 #include "cctk_Parameters.h"
+
+extern "C" {
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.39 2004/01/25 14:57:29 schnetter Exp $";
+  CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
+}
 
 #include "AMRwriter.hh"
 #include "AmrGridReader.hh"
@@ -42,11 +45,6 @@
 #include "carpet.hh"
 
 #include "ioflexio.hh"
-
-extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.37 2003/12/10 18:13:16 schnetter Exp $";
-  CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
-}
 
 
 
@@ -164,7 +162,7 @@ namespace CarpetIOFlexIO {
     assert (iogh);
     
     // Create the output directory
-    const char* myoutdir = GetStringParameter("out3D_dir", out_dir);
+    const char* const myoutdir = GetStringParameter("out3D_dir", out_dir);
     if (CCTK_MyProc(cgh)==0) {
       CCTK_CreateDirectory (0755, myoutdir);
     }
@@ -265,9 +263,9 @@ namespace CarpetIOFlexIO {
       int interlevel_timerefinement;
       int interlevel_spacerefinement[dim];
       int initial_gridplacementrefinement[dim];
-      interlevel_timerefinement = hh->reffact;
+      interlevel_timerefinement = vhh[0]->reffact;
       for (int d=0; d<dim; ++d) {
-	interlevel_spacerefinement[d] = hh->reffact;
+	interlevel_spacerefinement[d] = vhh[0]->reffact;
 	initial_gridplacementrefinement[d] = 1;
       }
       amrwriter->setRefinement
@@ -282,75 +280,95 @@ namespace CarpetIOFlexIO {
     }
     
     // Traverse all components on this refinement and multigrid level
-    BEGIN_COMPONENT_LOOP(cgh, grouptype) {
-      
-      const ggf<dim>* ff = 0;
-      
-      assert (var < (int)arrdata[group].data.size());
-      ff = (ggf<dim>*)arrdata[group].data[var];
-      
-      const gdata<dim>* const data
-	= (*ff) (tl, rl, component, mglevel);
-      
-      // Make temporary copy on processor 0
-      bbox<int,dim> ext = data->extent();
-      vect<int,dim> lo = ext.lower();
-      vect<int,dim> hi = ext.upper();
-      vect<int,dim> str = ext.stride();
-      
-      // Ignore ghost zones if desired
-      for (int d=0; d<dim; ++d) {
-	const int max_lower_ghosts = (cgh->cctk_bbox[2*d  ] && !out3D_output_outer_boundary) ? -1 : out3D_max_num_lower_ghosts;
-	const int max_upper_ghosts = (cgh->cctk_bbox[2*d+1] && !out3D_output_outer_boundary) ? -1 : out3D_max_num_upper_ghosts;
-	
-	const int num_lower_ghosts = max_lower_ghosts == -1 ? cgh->cctk_nghostzones[d] : min(out3D_max_num_lower_ghosts, cgh->cctk_nghostzones[d]);
-	const int num_upper_ghosts = max_upper_ghosts == -1 ? cgh->cctk_nghostzones[d] : min(out3D_max_num_upper_ghosts, cgh->cctk_nghostzones[d]);
-	
-	lo[d] += (cgh->cctk_nghostzones[d] - num_lower_ghosts) * str[d];
-	hi[d] -= (cgh->cctk_nghostzones[d] - num_upper_ghosts) * str[d];
-      }
-      
-      ext = bbox<int,dim>(lo,hi,str);
-      
-      gdata<dim>* const tmp = data->make_typed (n);
-      tmp->allocate (ext, 0);
-      for (comm_state<dim> state; !state.done(); state.step()) {
-        tmp->copy_from (state, data, ext);
-      }
-      
-      // Write data
-      if (CCTK_MyProc(cgh)==0) {
-	int origin[dim], dims[dim];
-	for (int d=0; d<dim; ++d) {
-	  origin[d] = (ext.lower() / ext.stride())[d];
-	  dims[d]   = (ext.shape() / ext.stride())[d];
-	}
-	amrwriter->write (origin, dims, (void*)tmp->storage());
+    BEGIN_MAP_LOOP(cgh, grouptype) {
+      BEGIN_COMPONENT_LOOP(cgh, grouptype) {
         
-        // Write some additional attributes
-        WriteAttribute (writer, "carpet_flexio_version", 1);
-        WriteAttribute (writer, "cctk_dim", cgh->cctk_dim);
-        WriteAttribute (writer, "cctk_iteration", cgh->cctk_iteration);
-        WriteAttribute (writer, "cctk_gsh", cgh->cctk_gsh, dim);
-        WriteAttribute (writer, "cctk_lsh", cgh->cctk_lsh, dim);
-        WriteAttribute (writer, "cctk_lbnd", cgh->cctk_lbnd, dim);
-        WriteAttribute (writer, "cctk_delta_time", cgh->cctk_delta_time);
-        WriteAttribute (writer, "cctk_delta_space", cgh->cctk_delta_space, dim);
-        WriteAttribute (writer, "cctk_origin_space", cgh->cctk_origin_space, dim);
-        WriteAttribute (writer, "cctk_bbox", cgh->cctk_bbox, 2*dim);
-        WriteAttribute (writer, "cctk_levfac", cgh->cctk_levfac, dim);
-        WriteAttribute (writer, "cctk_levoff", cgh->cctk_levoff, dim);
-        WriteAttribute (writer, "cctk_levoffdenom", cgh->cctk_levoffdenom, dim);
-        WriteAttribute (writer, "cctk_timefac", cgh->cctk_timefac);
-        WriteAttribute (writer, "cctk_convlevel", cgh->cctk_convlevel);
-        WriteAttribute (writer, "cctk_nghostzones", cgh->cctk_nghostzones, dim);
-        WriteAttribute (writer, "cctk_time", cgh->cctk_time);
-      }
-      
-      // Delete temporary copy
-      delete tmp;
-      
-    } END_COMPONENT_LOOP;
+        const ggf<dim>* ff = 0;
+        
+        assert (var < (int)arrdata[group][Carpet::map].data.size());
+        ff = (ggf<dim>*)arrdata[group][Carpet::map].data[var];
+        
+        const gdata<dim>* const data
+          = (*ff) (tl, rl, component, mglevel);
+        
+        // Make temporary copy on processor 0
+        bbox<int,dim> ext = data->extent();
+        vect<int,dim> lo = ext.lower();
+        vect<int,dim> hi = ext.upper();
+        vect<int,dim> str = ext.stride();
+        
+        // Ignore ghost zones if desired
+        for (int d=0; d<dim; ++d) {
+          const int max_lower_ghosts = (cgh->cctk_bbox[2*d  ] && out3D_output_outer_boundary) ? -1 : out3D_max_num_lower_ghosts;
+          const int max_upper_ghosts = (cgh->cctk_bbox[2*d+1] && out3D_output_outer_boundary) ? -1 : out3D_max_num_upper_ghosts;
+          
+          const int num_lower_ghosts = max_lower_ghosts == -1 ? cgh->cctk_nghostzones[d] : min(out3D_max_num_lower_ghosts, cgh->cctk_nghostzones[d]);
+          const int num_upper_ghosts = max_upper_ghosts == -1 ? cgh->cctk_nghostzones[d] : min(out3D_max_num_upper_ghosts, cgh->cctk_nghostzones[d]);
+          
+          lo[d] += (cgh->cctk_nghostzones[d] - num_lower_ghosts) * str[d];
+          hi[d] -= (cgh->cctk_nghostzones[d] - num_upper_ghosts) * str[d];
+        }
+        
+        ext = bbox<int,dim>(lo,hi,str);
+        
+        gdata<dim>* const tmp = data->make_typed (n);
+        tmp->allocate (ext, 0);
+        for (comm_state<dim> state; !state.done(); state.step()) {
+          tmp->copy_from (state, data, ext);
+        }
+        
+        // Write data
+        if (CCTK_MyProc(cgh)==0) {
+          int origin[dim], dims[dim];
+          for (int d=0; d<dim; ++d) {
+            origin[d] = (ext.lower() / ext.stride())[d];
+            dims[d]   = (ext.shape() / ext.stride())[d];
+          }
+          amrwriter->write (origin, dims, (void*)tmp->storage());
+          
+          // Write some additional attributes
+          WriteAttribute (writer, "cctk_version", 1);
+          WriteAttribute (writer, "cctk_dim", cgh->cctk_dim);
+          WriteAttribute (writer, "cctk_iteration", cgh->cctk_iteration);
+// TODO: disable temporarily
+//           WriteAttribute (writer, "cctk_nmaps", cgh->cctk_nmaps);
+//           WriteAttribute (writer, "cctk_map", cgh->cctk_map);
+          WriteAttribute (writer, "cctk_gsh", cgh->cctk_gsh, dim);
+          WriteAttribute (writer, "cctk_lsh", cgh->cctk_lsh, dim);
+          WriteAttribute (writer, "cctk_lbnd", cgh->cctk_lbnd, dim);
+          WriteAttribute (writer, "cctk_delta_time", cgh->cctk_delta_time);
+          WriteAttribute (writer, "cctk_delta_space", cgh->cctk_delta_space, dim);
+          WriteAttribute (writer, "cctk_origin_space", cgh->cctk_origin_space, dim);
+          WriteAttribute (writer, "cctk_bbox", cgh->cctk_bbox, 2*dim);
+          WriteAttribute (writer, "cctk_levfac", cgh->cctk_levfac, dim);
+          WriteAttribute (writer, "cctk_levoff", cgh->cctk_levoff, dim);
+          WriteAttribute (writer, "cctk_levoffdenom", cgh->cctk_levoffdenom, dim);
+          WriteAttribute (writer, "cctk_timefac", cgh->cctk_timefac);
+          WriteAttribute (writer, "cctk_convlevel", cgh->cctk_convlevel);
+// TODO: disable temporarily
+//           WriteAttribute (writer, "cctk_convfac", cgh->cctk_convfac);
+          WriteAttribute (writer, "cctk_nghostzones", cgh->cctk_nghostzones, dim);
+          WriteAttribute (writer, "cctk_time", cgh->cctk_time);
+          WriteAttribute (writer, "carpet_version", 1);
+          WriteAttribute (writer, "carpet_dim", dim);
+          WriteAttribute (writer, "carpet_basemglevel", basemglevel);
+          WriteAttribute (writer, "carpet_mglevel", mglevel);
+          WriteAttribute (writer, "carpet_mglevels", mglevels);
+          WriteAttribute (writer, "carpet_mgface", mgfact);
+          WriteAttribute (writer, "carpet_reflevel", reflevel);
+          WriteAttribute (writer, "carpet_reflevels", reflevels);
+          WriteAttribute (writer, "carpet_reffact", reffact);
+          WriteAttribute (writer, "carpet_map", Carpet::map);
+          WriteAttribute (writer, "carpet_maps", maps);
+          WriteAttribute (writer, "carpet_component", component);
+          WriteAttribute (writer, "carpet_components", vhh[Carpet::map]->components(reflevel));
+        }
+        
+        // Delete temporary copy
+        delete tmp;
+        
+      } END_COMPONENT_LOOP;
+    } END_MAP_LOOP;
     
     // Close the file
     if (CCTK_MyProc(cgh)==0) {
@@ -606,38 +624,41 @@ namespace CarpetIOFlexIO {
       
       // Traverse all components on this refinement and multigrid
       // level
-      BEGIN_COMPONENT_LOOP(cgh, grouptype) {
-        
-        ggf<dim>* ff = 0;
-        
-        assert (var < (int)arrdata[group].data.size());
-        ff = (ggf<dim>*)arrdata[group].data[var];
-        
-        gdata<dim>* const data = (*ff) (tl, rl, component, mglevel);
-        
-        // Create temporary data storage on processor 0
-        const vect<int,dim> str = vect<int,dim>(reflevelfact);
-        const vect<int,dim> lb = vect<int,dim>(amr_origin) * str;
-        const vect<int,dim> ub
-          = lb + (vect<int,dim>(amr_dims) - 1) * str;
-        const bbox<int,dim> ext(lb,ub,str);
-        gdata<dim>* const tmp = data->make_typed (n);
-        
-        if (CCTK_MyProc(cgh)==0) {
-          tmp->allocate (ext, 0, amrgrid->data);
-        } else {
-          tmp->allocate (ext, 0, 0);
-        }
-        
-        // Copy into grid function
-        for (comm_state<dim> state; !state.done(); state.step()) {
-          data->copy_from (state, tmp, ext);
-        }
-        
-        // Delete temporary copy
-        delete tmp;
-        
-      } END_COMPONENT_LOOP;
+      BEGIN_MAP_LOOP(cgh, grouptype) {
+        BEGIN_COMPONENT_LOOP(cgh, grouptype) {
+          
+          ggf<dim>* ff = 0;
+          
+          assert (var < (int)arrdata[group][Carpet::map].data.size());
+          ff = (ggf<dim>*)arrdata[group][Carpet::map].data[var];
+          
+          gdata<dim>* const data = (*ff) (tl, rl, component, mglevel);
+          
+          // Create temporary data storage on processor 0
+          const vect<int,dim> str
+            = vect<int,dim>(maxreflevelfact/reflevelfact);
+          const vect<int,dim> lb = vect<int,dim>::ref(amr_origin) * str;
+          const vect<int,dim> ub
+            = lb + (vect<int,dim>::ref(amr_dims) - 1) * str;
+          const bbox<int,dim> ext(lb,ub,str);
+          gdata<dim>* const tmp = data->make_typed (n);
+          
+          if (CCTK_MyProc(cgh)==0) {
+            tmp->allocate (ext, 0, amrgrid->data);
+          } else {
+            tmp->allocate (ext, 0, 0);
+          }
+          
+          // Copy into grid function
+          for (comm_state<dim> state; !state.done(); state.step()) {
+            data->copy_from (state, tmp, ext);
+          }
+          
+          // Delete temporary copy
+          delete tmp;
+          
+        } END_COMPONENT_LOOP;
+      } END_MAP_LOOP;
       
       if (CCTK_MyProc(cgh)==0) {
         free (amrgrid->data);

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.21 2003/11/13 16:03:58 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.22 2004/01/25 14:57:30 schnetter Exp $
 
 #ifndef VECT_HH
 #define VECT_HH
@@ -82,14 +82,17 @@ public:
     elt[0]=x; elt[1]=y; elt[2]=z; elt[3]=t;
   }
   
+#if 0
+  // This creates confusion
   /** Constructor from a pointer, i.e.\ a C array.  */
-  vect (const T* const x) {
+  explicit vect (const T* const x) {
     for (int d=0; d<D; ++d) elt[d]=x[d];
   }
+#endif
   
   /** Constructor from a vector with a different type.  */
   template<class S>
-  explicit vect (const vect<S,D>& a) {
+  /*explicit*/ vect (const vect<S,D>& a) {
     for (int d=0; d<D; ++d) elt[d]=(T)a[d];
   }
   
@@ -160,8 +163,9 @@ public:
   // Accessors
   
   /** Return a non-writable element of a vector.  */
-  // Don't return a reference; *this might be a temporary
-  T operator[] (const int d) const {
+  // (Don't return a reference; *this might be a temporary)
+  // Do return a reference, so that a vector can be accessed as array
+  const T& operator[] (const int d) const {
     assert(d>=0 && d<D);
     return elt[d];
   }
@@ -171,6 +175,14 @@ public:
     assert(d>=0 && d<D);
     return elt[d];
   }
+  
+#if 0
+  // This creates confusion
+  /** Return a pointer to a vector.  */
+  operator const T* () const {
+    return this;
+  }
+#endif
   
   /** Return a combination of the vector elements e[a[i]].  The
       element combination is selected by another vector.  */
@@ -491,6 +503,25 @@ public:
 
 
 // Operators
+
+/** This corresponds to the ?: operator.  Return a vector with the
+    elements set to either b[i] or c[i], depending on whether a[i] is
+    true or not.  */
+template<class T,int D>
+inline vect<T,D> either (const vect<bool,D>& a,
+                         const vect<T,D>& b, const vect<T,D>& c) {
+  vect<T,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]?b[d]:c[d];
+  return r;
+}
+
+/** Transpose a vector of a vector */
+template<class T, int D, int DD>
+inline vect<vect<T,D>,DD> xpose (vect<vect<T,DD>,D> const & a) {
+  vect<vect<T,D>,DD> r;
+  for (int dd=0; dd<DD; ++dd) for (int d=0; d<D; ++d) r[dd][d] = a[d][dd];
+  return r;
+}
 
 /** Return the element-wise absolute value.  */
 template<class T,int D>

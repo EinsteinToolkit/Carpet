@@ -11,7 +11,7 @@
 #include "carpet.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.13 2003/08/10 21:59:51 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.14 2004/01/25 14:57:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_CallFunction_cc);
 }
 
@@ -27,51 +27,74 @@ namespace Carpet {
                     cFunctionData* attribute, ///< attributes of the function
                     void* data) ///< ???
   {
-//     Checkpoint ("%*sStarting CallFunction...", 2*reflevel, "");
+//     Checkpoint ("Starting CallFunction...");
     
     cGH* cgh = (cGH*)data;
     
-    if (attribute->global || reflevel==-1) {
-      // Global operation: call once
+// TODO: disable temporarily
+//    if (attribute->meta || is_meta_mode()) {
+    if (is_meta_mode()) {
+      // Convtest operation
       
-      if (do_global_mode) {
-        assert (component == -1);
-        const int saved_mglevel = mglevel;
-        if (mglevel!=-1) set_mglevel (cgh, -1);
-        const int saved_reflevel = reflevel;
-        if (reflevel!=-1) set_reflevel (cgh, -1);
-        Checkpoint ("Global mode call at %s to %s::%s",
+      if (do_meta_mode) {
+        assert (is_meta_mode());
+        Checkpoint ("Meta mode call at %s to %s::%s",
                     attribute->where, attribute->thorn, attribute->routine);
         const int res = CCTK_CallFunction (function, attribute, data);
         assert (res==0);
-        if (reflevel!=saved_reflevel) set_reflevel (cgh, saved_reflevel);
-        if (mglevel!=saved_mglevel) set_mglevel (cgh, saved_mglevel);
+      }
+      
+    } else if (attribute->global || is_global_mode()) {
+      // Global operation: call once
+      
+      if (do_global_mode) {
+        Checkpoint ("Global mode call at %s to %s::%s",
+                    attribute->where, attribute->thorn, attribute->routine);
+        BEGIN_GLOBAL_MODE(cgh) {
+          const int res = CCTK_CallFunction (function, attribute, data);
+          assert (res==0);
+        } END_GLOBAL_MODE;
       }
       
     } else if (attribute->level) {
       // Level operation: call once per refinement level
       
-      Checkpoint ("%*sLevel mode call at %s to %s::%s", 2*reflevel, "",
+      Checkpoint ("Level mode call at %s to %s::%s",
                   attribute->where, attribute->thorn, attribute->routine);
       const int res = CCTK_CallFunction (function, attribute, data);
       assert (res==0);
       
+// TODO: disable temporarily
+//    } else if (attribute->singlemap) {
+    } else if (false) {
+      // Single map operation: call once per refinement level and map
+      
+      BEGIN_MAP_LOOP(cgh, CCTK_GF) {
+        
+        Checkpoint ("Singlemap mode call at %s to %s::%s",
+                    attribute->where, attribute->thorn, attribute->routine);
+        const int res = CCTK_CallFunction (function, attribute, data);
+        assert (res==0);
+        
+      }	END_MAP_LOOP;
+      
     } else {
       // Local operation: call once per component
       
-      BEGIN_LOCAL_COMPONENT_LOOP(cgh, CCTK_GF) {
-	
-	Checkpoint ("%*sLocal mode call on component %d at %s to %s::%s",
-                    2*reflevel, "", component,
-                    attribute->where, attribute->thorn, attribute->routine);
-	const int res = CCTK_CallFunction (function, attribute, data);
-	assert (res==0);
-	
-      }	END_LOCAL_COMPONENT_LOOP;
+      BEGIN_MAP_LOOP(cgh, CCTK_GF) {
+        BEGIN_LOCAL_COMPONENT_LOOP(cgh, CCTK_GF) {
+          
+          Checkpoint ("Local mode call at %s to %s::%s",
+                      attribute->where, attribute->thorn, attribute->routine);
+          const int res = CCTK_CallFunction (function, attribute, data);
+          assert (res==0);
+          
+        } END_LOCAL_COMPONENT_LOOP;
+      }	END_MAP_LOOP;
       
     }
     
-//     Checkpoint ("%*sdone with CallFunction.", 2*reflevel, "");
+//     Checkpoint ("done with CallFunction.");
     
     // The return value indicates whether the grid functions have been
     // synchronised.

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.11 2003/03/18 17:30:25 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.12 2004/01/25 14:57:29 schnetter Exp $
 
 #ifndef DEFS_HH
 #define DEFS_HH
@@ -34,24 +34,15 @@ inline T square (const T& x) { return x*x; }
 
 // Another useful helper
 template<class T>
-inline T ipow (T x, int y) {
-  if (y<0) {
-    y = -y;
-    x = T(1)/x;
-  }
-  T res = T(1);
-  while (y>0) {
-    if (y%2) res *= x;
-    x *= x;
-    y /= 2;
-  }
-  return res;
-}
+T ipow (T x, int y);
 
 
 
-// Skip whitespace
+// Input streams
+struct input_error { };
 void skipws (istream& is);
+void expect (istream& is, const char c);
+void consume (istream& is, const char c);
 
 
 

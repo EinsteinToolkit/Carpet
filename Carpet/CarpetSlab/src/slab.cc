@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.14 2004/01/22 13:31:07 tradke Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.15 2004/01/25 14:57:31 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -23,7 +23,7 @@
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.14 2004/01/22 13:31:07 tradke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.15 2004/01/25 14:57:31 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 
@@ -110,9 +110,14 @@ namespace CarpetSlab {
     assert (typesize>0);
     
     if (gp.grouptype==CCTK_GF && reflevel==-1) {
-      CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in global mode");
+      CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in global mode (use singlemap mode instead)");
     }
     const int rl = gp.grouptype==CCTK_GF ? reflevel : 0;
+    
+    if (gp.grouptype==CCTK_GF && Carpet::map==-1) {
+      CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in level mode (use singlemap mode instead)");
+    }
+    const int m = gp.grouptype==CCTK_GF ? Carpet::map : 0;
     
     // Check dimension
     assert (hdim>=0 && hdim<=gp.dim);
@@ -152,12 +157,12 @@ namespace CarpetSlab {
     const dh<dim>* mydd;
     const ggf<dim>* myff;
     assert (group < (int)arrdata.size());
-    myhh = arrdata[group].hh;
+    myhh = arrdata[group][m].hh;
     assert (myhh);
-    mydd = arrdata[group].dd;
+    mydd = arrdata[group][m].dd;
     assert (mydd);
-    assert (var < (int)arrdata[group].data.size());
-    myff = arrdata[group].data[var];
+    assert (var < (int)arrdata[group][m].data.size());
+    myff = arrdata[group][m].data[var];
     assert (myff);
     
     // Detemine collecting processor
@@ -313,9 +318,14 @@ namespace CarpetSlab {
     assert (typesize>0);
     
     if (gp.grouptype==CCTK_GF && reflevel==-1) {
-      CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in global mode");
+      CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in global mode (use singlemap mode instead)");
     }
     const int rl = gp.grouptype==CCTK_GF ? reflevel : 0;
+    
+    if (gp.grouptype==CCTK_GF && Carpet::map==-1) {
+      CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in level mode (use singlemap mode instead)");
+    }
+    const int m = gp.grouptype==CCTK_GF ? Carpet::map : 0;
     
     // Check dimension
     assert (hdim>=0 && hdim<=gp.dim);
@@ -355,12 +365,12 @@ namespace CarpetSlab {
     const dh<dim>* mydd;
     const ggf<dim>* myff;
     assert (group < (int)arrdata.size());
-    myhh = arrdata[group].hh;
+    myhh = arrdata[group][m].hh;
     assert (myhh);
-    mydd = arrdata[group].dd;
+    mydd = arrdata[group][m].dd;
     assert (mydd);
-    assert (var < (int)arrdata[group].data.size());
-    myff = arrdata[group].data[var];
+    assert (var < (int)arrdata[group][m].data.size());
+    myff = arrdata[group][m].data[var];
     assert (myff);
     
     // Detemine collecting processor
@@ -486,7 +496,7 @@ namespace CarpetSlab {
   
   
   
-  CCTK_INT CarpetSlab_Get (cGH const * const cctkGH,
+  CCTK_INT CarpetSlab_Get (CCTK_POINTER_TO_CONST const cctkGH_,
                            CCTK_INT const mapping_handle,
                            CCTK_INT const proc,
                            CCTK_INT const vindex,
@@ -494,6 +504,8 @@ namespace CarpetSlab {
                            CCTK_INT const hdatatype,
                            void * const hdata)
   {
+    cGH const * const cctkGH = (cGH const *) cctkGH_;
+    
     // Check arguments
     assert (cctkGH);
     assert (mapping_handle>=0);
@@ -526,7 +538,7 @@ namespace CarpetSlab {
   
   
   
-  CCTK_INT CarpetSlab_GetList (cGH const * const cctkGH,
+  CCTK_INT CarpetSlab_GetList (CCTK_POINTER_TO_CONST const cctkGH_,
                                CCTK_INT const mapping_handle,
                                CCTK_INT const num_arrays,
                                CCTK_INT const * const procs,
@@ -536,6 +548,8 @@ namespace CarpetSlab {
                                void * const * const hdata,
                                CCTK_INT * const retvals)
   {
+    cGH const * const cctkGH = (cGH const *) cctkGH_;
+    
     // Check arguments
     assert (cctkGH);
     assert (mapping_handle>=0);
@@ -564,7 +578,7 @@ namespace CarpetSlab {
   
   
   
-  CCTK_INT CarpetSlab_LocalMappingByIndex (cGH const * const cctkGH,
+  CCTK_INT CarpetSlab_LocalMappingByIndex (CCTK_POINTER_TO_CONST const cctkGH_,
                                            CCTK_INT const vindex,
                                            CCTK_INT const hdim,
                                            CCTK_INT const * const direction,
@@ -589,7 +603,7 @@ namespace CarpetSlab {
   
   
   
-  CCTK_INT CarpetSlab_GlobalMappingByIndex (cGH const * const cctkGH,
+  CCTK_INT CarpetSlab_GlobalMappingByIndex (CCTK_POINTER_TO_CONST const cctkGH_,
                                             CCTK_INT const vindex,
                                             CCTK_INT const hdim,
                                             CCTK_INT const * const direction,
@@ -606,6 +620,8 @@ namespace CarpetSlab {
                                                                               void * const to),
                                             CCTK_INT * const hsize)
   {
+    cGH const * const cctkGH = (cGH const *) cctkGH_;
+    
     // Check arguments
     assert (cctkGH);
     assert (vindex>=0 && vindex<CCTK_NumVars());
@@ -751,7 +767,7 @@ namespace CarpetSlab {
   
   
   
-  int Hyperslab_GetHyperslab (cGH* const GH,
+  int Hyperslab_GetHyperslab (const cGH* const GH,
 			      const int target_proc,
 			      const int vindex,
 			      const int vtimelvl,

@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOFlexIO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/param.ccl,v 1.7 2003/09/02 12:37:51 tradke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/param.ccl,v 1.8 2004/01/25 14:57:29 schnetter Exp $
 
 
 
@@ -50,19 +50,19 @@ CCTK_INT out3D_every "How often to do 3D FlexIO output, overrides out_every" STE
 
 
 
-CCTK_INT out3D_max_num_lower_ghosts "Maximum number of lower ghost zones that are output"
+CCTK_INT out3D_max_num_lower_ghosts "Maximum number of lower ghost zones that are output" STEERABLE = ALWAYS
 {
   -1  :: "output all ghost zones"
   0:* :: "output that many ghost zones"
 } -1
 
-CCTK_INT out3D_max_num_upper_ghosts "Maximum number of upper ghost zones that are output"
+CCTK_INT out3D_max_num_upper_ghosts "Maximum number of upper ghost zones that are output" STEERABLE = ALWAYS
 {
   -1  :: "output all ghost zones"
   0:* :: "output that many ghost zones"
 } -1
 
-BOOLEAN out3D_output_outer_boundary "Output all of the outer boundary ghost zones even if not all ghost zones are output"
+BOOLEAN out3D_output_outer_boundary "Output all of the outer boundary ghost zones even if not all ghost zones are output" STEERABLE = ALWAYS
 {
 } "yes"
 

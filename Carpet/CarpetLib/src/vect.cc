@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.12 2003/11/13 16:03:58 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.13 2004/01/25 14:57:30 schnetter Exp $
 
 #include <assert.h>
 
@@ -16,19 +16,16 @@ using namespace std;
 template<class T,int D>
 void vect<T,D>::input (istream& is) {
   skipws (is);
-  assert (is.peek() == '[');
-  is.get();
+  consume (is, '[');
   for (int d=0; d<D; ++d) {
     is >> (*this)[d];
     if (d<D-1) {
       skipws (is);
-      assert (is.peek() == ',');
-      is.get();
+      consume (is, ',');
     }
   }
   skipws (is);
-  assert (is.peek() == ']');
-  is.get();
+  consume (is, ']');
 }
 
 

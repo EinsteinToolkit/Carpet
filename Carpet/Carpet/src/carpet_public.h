@@ -1,11 +1,11 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.11 2003/09/19 16:04:31 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.12 2004/01/25 14:57:27 schnetter Exp $ */
 
 #ifndef CARPET_PUBLIC_H
 #define CARPET_PUBLIC_H
 
 #include <mpi.h>
 
-#include "cctk_Arguments.h"
+#include "cctk.h"
 
 
 
@@ -19,12 +19,6 @@ namespace Carpet {
   extern "C" {
 #endif
     
-    /* Scheduled functions */
-    void CarpetParamCheck (CCTK_ARGUMENTS);
-    void CarpetStartup (void);
-    
-    
-    
     /* Prolongation management */
     int CarpetEnableProlongating (const int flag);
     
@@ -36,10 +30,14 @@ namespace Carpet {
     /* Call a local function */
     int CallLocalFunction (cGH * const cgh,
                            void (* const function) (cGH * const cgh));
+    int CallSinglemapFunction (cGH * const cgh,
+                               void (* const function) (cGH * const cgh));
     int CallLevelFunction (cGH * const cgh,
                            void (* const function) (cGH * const cgh));
     int CallGlobalFunction (cGH * const cgh,
                             void (* const function) (cGH * const cgh));
+    int CallMetaFunction (cGH * const cgh,
+                          void (* const function) (cGH * const cgh));
     
     
     

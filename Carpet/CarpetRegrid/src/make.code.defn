@@ -1,8 +1,16 @@
 # Main make.code.defn file for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/make.code.defn,v 1.2 2002/05/16 23:25:54 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/make.code.defn,v 1.3 2004/01/25 14:57:30 schnetter Exp $
 
 # Source files in this directory
-SRCS = regrid.cc paramcheck.cc
+SRCS =  automatic.cc            \
+        baselevel.cc            \
+        centre.cc               \
+        manualcoordinatelist.cc \
+        manualcoordinates.cc    \
+        manualgridpointlist.cc  \
+        manualgridpoints.cc     \
+        regrid.cc               \
+        paramcheck.cc
 
 # Subdirectories containing source files
 SUBDIRS = 

@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetIOASCII
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/interface.ccl,v 1.7 2003/09/04 16:23:21 tradke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/interface.ccl,v 1.8 2004/01/25 14:57:28 schnetter Exp $
 
 implements: IOASCII
 
@@ -14,3 +14,11 @@ uses include header: gdata.hh
 
 uses include header: gf.hh
 uses include header: ggf.hh
+
+
+
+# Vector groups don't work yet in Carpet
+#CCTK_INT next_output_iteration[3] TYPE=scalar
+#CCTK_REAL next_output_time[3] TYPE=scalar
+CCTK_INT next_output_iteration TYPE=array DISTRIB=constant DIM=1 SIZE=3
+CCTK_REAL next_output_time TYPE=array DISTRIB=constant DIM=1 SIZE=3

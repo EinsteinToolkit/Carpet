@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.47 2004/01/21 14:25:35 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.48 2004/01/25 14:57:29 schnetter Exp $
 
 #include <assert.h>
 
@@ -127,7 +127,8 @@ void dh<D>::recompose (const int initialise_from, const bool do_prolongate) {
       	for (int cc=0; cc<h.components(rl); ++cc) {
       	  assert (ml<h.mglevels(rl,cc));
       	  // intersect boundaries with interior of that component
-      	  const ibset ovlp = bnds & boxes.at(rl).at(cc).at(ml).interior;
+          ibset ovlp = bnds & boxes.at(rl).at(cc).at(ml).interior;
+          ovlp.normalize();
       	  for (typename ibset::const_iterator b=ovlp.begin();
 	       b!=ovlp.end(); ++b) {
 	    boxes.at(rl).at(c ).at(ml).recv_sync.at(cc).push_back(*b);
@@ -179,7 +180,6 @@ void dh<D>::recompose (const int initialise_from, const bool do_prolongate) {
     } // for c
   } // for rl
   
-  // TODO: prefer boxes from the same processor
   for (int rl=0; rl<h.reflevels(); ++rl) {
     for (int c=0; c<h.components(rl); ++c) {
       for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
@@ -191,6 +191,7 @@ void dh<D>::recompose (const int initialise_from, const bool do_prolongate) {
       	  for (int cc=0; cc<h.components(rl+1); ++cc) {
       	    const ibbox intrf = boxes.at(rl+1).at(cc).at(ml).interior;
       	    // Prolongation (interior)
+            // TODO: prefer boxes from the same processor
       	    {
       	      // (the prolongation may use the exterior of the coarse
       	      // grid, and must fill all of the interior of the fine
@@ -214,8 +215,10 @@ void dh<D>::recompose (const int initialise_from, const bool do_prolongate) {
                 const ibbox send = recv.expanded_for(extr);
                 assert (! send.empty());
                 assert (send.is_contained_in(extr));
-                boxes.at(rl+1).at(cc).at(ml).recv_ref_coarse.at(c ).push_back(recv);
-                boxes.at(rl  ).at(c ).at(ml).send_ref_fine  .at(cc).push_back(send);
+                boxes.at(rl+1).at(cc).at(ml).recv_ref_coarse.at(c )
+                  .push_back(recv);
+                boxes.at(rl  ).at(c ).at(ml).send_ref_fine  .at(cc)
+                  .push_back(send);
               }
       	    }
             
@@ -239,6 +242,7 @@ void dh<D>::recompose (const int initialise_from, const bool do_prolongate) {
             const ibbox& extrf = boxes.at(rl+1).at(cc).at(ml).exterior;
             const ibset& bndsf = boxes.at(rl+1).at(cc).at(ml).boundaries;
       	    // Prolongation (boundaries)
+            // TODO: prefer boxes from the same processor
       	    {
               // (the prolongation may use the exterior of the coarse
               // grid, and must fill all of the boundary of the fine
@@ -264,14 +268,14 @@ void dh<D>::recompose (const int initialise_from, const bool do_prolongate) {
               {
                 for (typename ibset::const_iterator pbi=pbndsf.begin();
                      pbi!=pbndsf.end(); ++pbi) {
-                  buffers |= (*pbi).expand(buffer_width, buffer_width) & intrf;
+                  buffers |= (*pbi).expand(buffer_width, buffer_width) & extrf;
                 }
                 buffers.normalize();
               }
               // Add boundaries
               const ibbox maxrecvs
                 = extr.expand(-pss,-pss).contracted_for(extrf);
-              ibset recvs = (bndsf | buffers) & maxrecvs;
+              ibset recvs = buffers & maxrecvs;
               recvs.normalize();
               {
                 // Do not prolongate what is already prolongated
@@ -342,8 +346,10 @@ void dh<D>::recompose (const int initialise_from, const bool do_prolongate) {
                 if (! recv.empty()) {
                   const ibbox & send = recv.expanded_for(intrf);
                   assert (! send.empty());
-                  boxes.at(rl+1).at(cc).at(ml).send_ref_coarse.at(c ).push_back(send);
-                  boxes.at(rl  ).at(c ).at(ml).recv_ref_fine  .at(cc).push_back(recv);
+                  boxes.at(rl+1).at(cc).at(ml).send_ref_coarse.at(c )
+                    .push_back(send);
+                  boxes.at(rl  ).at(c ).at(ml).recv_ref_fine  .at(cc)
+                    .push_back(recv);
                 }
               }
       	    }
