@@ -1,9 +1,11 @@
 # Interface definition for thorn CarpetIOFlexIO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/interface.ccl,v 1.2 2003/06/18 18:28:07 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/interface.ccl,v 1.3 2003/07/14 15:41:08 schnetter Exp $
 
 implements: IOFlexIO
 
-inherits: CarpetLib driver Hyperslab
+inherits: CarpetLib driver Hyperslab FlexIO
+
+
 
 uses include header: carpet.hh
 
@@ -14,3 +16,11 @@ uses include header: data.hh
 uses include header: gdata.hh
 
 uses include header: ggf.hh
+
+# FlexIO header files
+uses include header: IO.hh
+uses include header: IEEEIO.hh
+uses include header: HDFIO.hh
+uses include header: H5IO.hh
+uses include header: AMRwriter.hh
+uses include header: AmrGridReader.hh

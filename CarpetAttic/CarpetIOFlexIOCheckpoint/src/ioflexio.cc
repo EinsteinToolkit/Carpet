@@ -13,22 +13,23 @@
 
 
 
-#include <AMRwriter.hh>
-#include <AmrGridReader.hh>
-#include <H5IO.hh>
-#include <HDFIO.hh>
-#include <IEEEIO.hh>
-#include <IO.hh>
-
-
-// Hack to stop FlexIO type clash
-
-#undef BYTE
-#undef CHAR
-
-
 #include "cctk.h"
 #include "cctk_Parameters.h"
+
+#include "AMRwriter.hh"
+#include "AmrGridReader.hh"
+#ifdef HDF4
+#  include "HDFIO.hh"
+#endif
+#ifdef HDF5
+#  include "H5IO.hh"
+#endif
+#include "IEEEIO.hh"
+#include "IO.hh"
+
+// Hack to stop FlexIO type clash
+#undef BYTE
+#undef CHAR
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 
@@ -43,7 +44,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.3 2003/06/18 18:28:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.4 2003/07/14 15:41:08 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -339,9 +340,11 @@ namespace CarpetIOFlexIO {
     const char* extension = 0;
     if (CCTK_Equals(out3D_format, "IEEE")) {
       extension = ".raw";
-#ifdef HDF5
+#ifdef HDF4
     } else if (CCTK_Equals(out3D_format, "HDF4")) {
       extension = ".hdf";
+#endif
+#ifdef HDF5
     } else if (CCTK_Equals(out3D_format, "HDF5")) {
       extension = ".h5";
 #endif
@@ -369,9 +372,11 @@ namespace CarpetIOFlexIO {
 	  writer = 0;
 	  if (CCTK_Equals(out3D_format, "IEEE")) {
 	    writer = new IEEEIO(filename, IObase::Create);
-#ifdef HDF5
+#ifdef HDF4
 	  } else if (CCTK_Equals(out3D_format, "HDF4")) {
 	    writer = new HDFIO(filename, IObase::Create);
+#endif
+#ifdef HDF5
 	  } else if (CCTK_Equals(out3D_format, "HDF5")) {
 	    writer = new H5IO(filename, IObase::Create);
 #endif
@@ -386,9 +391,11 @@ namespace CarpetIOFlexIO {
       // Open the file 
       if (CCTK_Equals(out3D_format, "IEEE")) {
 	writer = new IEEEIO(filename, IObase::Append);
-#ifdef HDF5
+#ifdef HDF4
       } else if (CCTK_Equals(out3D_format, "HDF4")) {
 	writer = new HDFIO(filename, IObase::Append);
+#endif
+#ifdef HDF5
       } else if (CCTK_Equals(out3D_format, "HDF5")) {
 	writer = new H5IO(filename, IObase::Append);
 #endif
@@ -522,9 +529,11 @@ namespace CarpetIOFlexIO {
     const char* extension = 0;
     if (CCTK_Equals(in3D_format, "IEEE")) {
       extension = ".raw";
-#ifdef HDF5
+#ifdef HDF4
     } else if (CCTK_Equals(in3D_format, "HDF4")) {
       extension = ".hdf";
+#endif
+#ifdef HDF5
     } else if (CCTK_Equals(in3D_format, "HDF5")) {
       extension = ".h5";
 #endif
@@ -555,9 +564,11 @@ namespace CarpetIOFlexIO {
       if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Opening file \"%s\"", filename);
       if (CCTK_Equals(in3D_format, "IEEE")) {
         reader = new IEEEIO(filename, IObase::Read);
-#ifdef HDF5
+#ifdef HDF4
       } else if (CCTK_Equals(in3D_format, "HDF4")) {
         reader = new HDFIO(filename, IObase::Read);
+#endif
+#ifdef HDF5
       } else if (CCTK_Equals(in3D_format, "HDF5")) {
         reader = new H5IO(filename, IObase::Read);
 #endif

@@ -13,23 +13,24 @@
 
 
 
-#include <AMRwriter.hh>
-#include <AmrGridReader.hh>
-#include <H5IO.hh>
-#include <HDFIO.hh>
-#include <IEEEIO.hh>
-#include <IO.hh>
-
-// Hack to stop FlexIO type clash
-
-#undef BYTE
-#undef CHAR
-
-
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Version.h"
 
+#include "AMRwriter.hh"
+#include "AmrGridReader.hh"
+#ifdef HDF4
+#  include "HDFIO.hh"
+#endif
+#ifdef HDF5
+#  include "H5IO.hh"
+#endif
+#include "IEEEIO.hh"
+#include "IO.hh"
+
+// Hack to stop FlexIO type clash
+#undef BYTE
+#undef CHAR
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
@@ -47,7 +48,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.4 2003/06/18 18:28:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.5 2003/07/14 15:41:08 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
