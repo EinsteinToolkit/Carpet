@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.14 2004/01/25 14:57:29 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.15 2004/02/18 15:12:29 schnetter Exp $
 
 #ifndef CARPETIOASCII_HH
 #define CARPETIOASCII_HH
@@ -36,7 +36,7 @@ namespace CarpetIOASCII {
     
     // Last iteration on which a refinement level of a variable was
     // output (INT_MIN for none)
-    static vector<vector<int> > last_output; // [rl][var]
+    static vector<vector<vector<int> > > last_output; // [ml][rl][var]
     
     
     

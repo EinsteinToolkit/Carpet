@@ -1,7 +1,7 @@
 # Schedule definitions for thorn CarpetIOASCII
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/schedule.ccl,v 1.5 2004/01/25 14:57:28 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/schedule.ccl,v 1.6 2004/02/18 15:12:29 schnetter Exp $
 
-storage: next_output_iteration next_output_time
+storage: next_output_iteration next_output_time this_iteration
 
 schedule CarpetIOASCIIStartup at STARTUP after IOUtil_Startup
 {

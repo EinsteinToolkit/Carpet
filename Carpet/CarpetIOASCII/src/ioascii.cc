@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.58 2004/02/09 14:53:02 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.59 2004/02/18 15:12:29 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -71,6 +71,7 @@ namespace CarpetIOASCII {
   
   void CarpetIOASCIIStartup()
   {
+    IOASCII<0>::Startup();
     IOASCII<1>::Startup();
     IOASCII<2>::Startup();
     IOASCII<3>::Startup();
@@ -82,7 +83,8 @@ namespace CarpetIOASCII {
   {
     DECLARE_CCTK_ARGUMENTS;
     
-    for (int d=0; d<3; ++d) {
+    for (int d=0; d<4; ++d) {
+      this_iteration[d] = -1;
       next_output_iteration[d] = 0;
       next_output_time[d] = cctkGH->cctk_time;
     }
@@ -94,7 +96,8 @@ namespace CarpetIOASCII {
   template<int outdim> int IOASCII<outdim>::GHExtension;
   template<int outdim> int IOASCII<outdim>::IOMethod;
   template<int outdim> vector<bool> IOASCII<outdim>::do_truncate;
-  template<int outdim> vector<vector<int> > IOASCII<outdim>::last_output;
+  template<int outdim>
+  vector<vector<vector<int> > > IOASCII<outdim>::last_output;
   
   
   
@@ -133,9 +136,12 @@ namespace CarpetIOASCII {
     do_truncate.resize(CCTK_NumVars(), true);
     
     // No iterations have yet been output
-    last_output.resize(maxreflevels);
-    for (int rl=0; rl<maxreflevels; ++rl) {
-      last_output[rl].resize(CCTK_NumVars(), INT_MIN);
+    last_output.resize(mglevels);
+    for (int ml=0; ml<mglevels; ++ml) {
+      last_output.at(ml).resize(maxreflevels);
+      for (int rl=0; rl<maxreflevels; ++rl) {
+        last_output.at(ml).at(rl).resize(CCTK_NumVars(), -1);
+      }
     }
     
     // We register only once, ergo we get only one handle.  We store
@@ -194,7 +200,22 @@ namespace CarpetIOASCII {
     }
     
     const int grouptype = CCTK_GroupTypeI(group);
+#if 0
     if (grouptype != CCTK_GF) assert (reflevel==0);
+#else
+    switch (grouptype) {
+    case CCTK_SCALAR:
+    case CCTK_ARRAY:
+      assert (do_global_mode);
+      break;
+    case CCTK_GF:
+      /* do nothing */
+      break;
+    default:
+      assert (0);
+    }
+#endif
+    const int rl = grouptype == CCTK_GF ? reflevel : 0;
     
     const int groupdim = CCTK_GroupDimI(group);
     assert (outdim <= groupdim);
@@ -229,6 +250,10 @@ namespace CarpetIOASCII {
 	// If this output is desired at all
 	bool desired;
 	switch (outdim) {
+        case 0:
+	  // Output is always desired (if switched on)
+          desired = true;
+          break;
 	case 1:
 	  switch (dirs[0]) {
 	  case 0:
@@ -273,6 +298,23 @@ namespace CarpetIOASCII {
             ivect offset(0);
             if (grouptype == CCTK_GF) {
               switch (outdim) {
+              case 0:
+                offset[0] = GetGridOffset
+                  (cgh, 1,
+                   "out%dD_point_xi", /*"out_point_xi"*/ NULL,
+                   "out%dD_point_x",  /*"out_point_x"*/  NULL,
+                   /*out_point_x*/ 0.0);
+                offset[1] = GetGridOffset
+                  (cgh, 2,
+                   "out%dD_point_yi", /*"out_point_yi"*/ NULL,
+                   "out%dD_point_y",  /*"out_point_y"*/  NULL,
+                   /*out_point_y*/ 0.0);
+                offset[2] = GetGridOffset
+                  (cgh, 3,
+                   "out%dD_point_zi", /*"out_point_zi"*/ NULL,
+                   "out%dD_point_z",  /*"out_point_z"*/  NULL,
+                   /*out_point_z*/ 0.0);
+                break;
               case 1:
                 switch (dirs[0]) {
                 case 0:
@@ -348,7 +390,7 @@ namespace CarpetIOASCII {
               if (new_filename_scheme) {
                 filenamebuf << myoutdir << "/" << alias << ".";
                 if (maps > 1) {
-                  cout << Carpet::map << "-";
+                  filenamebuf << Carpet::map << "-";
                 }
                 for (int d=0; d<outdim; ++d) {
                   const char* const coords = "xyz";
@@ -368,22 +410,22 @@ namespace CarpetIOASCII {
               } else {
                 filenamebuf << myoutdir << "/" << alias << ".";
                 if (maps > 1) {
-                  cout << Carpet::map << "-";
+                  filenamebuf << Carpet::map << "-";
                 }
                 for (int d=0; d<outdim; ++d) {
                   assert (dirs[d]>=0 && dirs[d]<3);
                   const char* const coords = "xyz";
                   filenamebuf << coords[dirs[d]];
                 }
-                const char* const suffixes = "lpv";
-                filenamebuf << suffixes[outdim-1];
+                const char* const suffixes = "plpv";
+                filenamebuf << suffixes[outdim];
               }
               // we need a persistent temporary here
               string filenamestr = filenamebuf.str();
               const char* const filename = filenamestr.c_str();
               
               // If this is the first time, then write a nice header
-              if (do_truncate[n]) {
+              if (do_truncate.at(n)) {
                 struct stat fileinfo;
                 if (! iogh->recovered
                     || stat(filename, &fileinfo)!=0) {
@@ -429,7 +471,7 @@ namespace CarpetIOASCII {
               for (int tl=mintl; tl<=maxtl; ++tl) {
                 
                 const gdata<dim>* const data
-                  = (*ff) (tl, reflevel, component, mglevel);
+                  = (*ff) (tl, rl, component, mglevel);
                 ibbox ext = data->extent();
                 
                 ivect lo = ext.lower();
@@ -458,13 +500,13 @@ namespace CarpetIOASCII {
                 rvect coord_delta;
                 if (grouptype == CCTK_GF) {
                   for (int d=0; d<dim; ++d) {
-                    global_lower[d] = cgh->cctk_origin_space[d];
-                    coord_delta[d] = cgh->cctk_delta_space[d] / maxreflevelfact;
+                    global_lower[d] = origin_space.at(0)[d];
+                    coord_delta[d] = delta_space[d] / maxreflevelfact;
                   }
                 } else {
                   for (int d=0; d<dim; ++d) {
                     global_lower[d] = 0.0;
-                    coord_delta[d] = 1.0 / (cgh->cctk_gsh[d] - 1);
+                    coord_delta[d] = 1.0;
                   }
                 }
                 const rvect coord_lower
@@ -473,9 +515,11 @@ namespace CarpetIOASCII {
                   = global_lower + coord_delta * rvect(hi);
                 
                 ivect offset1;
-                for (int d=0; d<dim; ++d) {
-                  assert (cgh->cctk_levoffdenom[d]==1);
-                  offset1[d] = (cgh->cctk_levoff[d] + offset[d]) * ext.stride()[d];
+                if (grouptype == CCTK_GF) {
+                  const ibbox& baseext = vdd.at(Carpet::map)->bases.at(0).at(mglevel).exterior;
+                  offset1 = baseext.lower() + offset * ext.stride();
+                } else {
+                  offset1 = offset * ext.stride();
                 }
                 for (int d=0; d<outdim; ++d) {
                   offset1[dirs[d]] = ext.lower()[dirs[d]];
@@ -483,7 +527,7 @@ namespace CarpetIOASCII {
                 
                 WriteASCII (file, data, ext, n, cgh->cctk_iteration,
                             offset1, dirs,
-                            reflevel, mglevel, Carpet::map, component, tl,
+                            rl, mglevel, Carpet::map, component, tl,
                             coord_time, coord_lower, coord_upper);
                 
                 // Append EOL after every component
@@ -531,7 +575,7 @@ namespace CarpetIOASCII {
     } while (! done);		// all directions
     
     // Don't truncate again
-    do_truncate[n] = false;
+    do_truncate.at(n) = false;
     
     return 0;
   }
@@ -547,79 +591,99 @@ namespace CarpetIOASCII {
     
     assert (vindex>=0 && vindex<CCTK_NumVars());
     
-    static int output_iteration = -1;
-    static bool output_this_iteration;
-    static vector<bool> output_variables;
     
-    assert (cctk_iteration >= output_iteration);
-    if (cctk_iteration > output_iteration) {
-      // A new iteration; check whether output should happen
+    
+#warning "TODO: check this change"
+    const int grouptype = CCTK_GroupTypeFromVarI(vindex);
+#if 0
+    if (grouptype != CCTK_GF && reflevel > 0) return 0;
+#else
+    switch (grouptype) {
+    case CCTK_SCALAR:
+    case CCTK_ARRAY:
+      if (! do_global_mode) return 0;
+      break;
+    case CCTK_GF:
+      /* do nothing */
+      break;
+    default:
+      assert (0);
+    }
+#endif
+    
+    
+    
+    bool output_this_iteration;
+    
+    const char * const myoutcriterion
+      = GetStringParameter("out%dD_criterion", out_criterion);
+    if (CCTK_EQUALS (myoutcriterion, "never")) {
       
-      output_iteration = cctk_iteration;
+      // Never output
+      output_this_iteration = false;
       
-      const char * const myoutcriterion
-        = GetStringParameter("out%dD_criterion", out_criterion);
-      if (CCTK_EQUALS (myoutcriterion, "never")) {
-        
-        // Never output
+    } else if (CCTK_EQUALS (myoutcriterion, "iteration")) {
+      
+      const int myoutevery = GetIntParameter("out%dD_every", out_every);
+      if (myoutevery <= 0) {
         output_this_iteration = false;
-        
-      } else if (CCTK_EQUALS (myoutcriterion, "iteration")) {
-        
-        const int myoutevery = GetIntParameter("out%dD_every", out_every);
-        if (myoutevery <= 0) {
-          output_this_iteration = false;
-        } else {
-          output_this_iteration
-            = cctk_iteration >= next_output_iteration[outdim-1];
-          if (output_this_iteration) {
-            next_output_iteration[outdim-1] += myoutevery;
-          }
-        }
-        
-      } else if (CCTK_EQUALS (myoutcriterion, "time")) {
-        
-        const CCTK_REAL myoutdt = GetRealParameter("out%dD_dt", out_dt);
-        if (myoutdt < 0) {
-          output_this_iteration = false;
-        } else if (myoutdt == 0) {
-          output_this_iteration = true;
-        } else {
-          output_this_iteration = cctk_time >= (next_output_time[outdim-1]
-                                                - 1.0e-12 * cctk_delta_time);
-          if (output_this_iteration) {
-            next_output_time[outdim-1] += myoutdt;
-          }
-        }
-        
       } else {
-        
-        assert (0);
-        
-      } // select output criterion
+        output_this_iteration
+          = (cctk_iteration == this_iteration[outdim]
+             || cctk_iteration >= next_output_iteration[outdim]);
+        if (output_this_iteration) {
+          next_output_iteration[outdim] += myoutevery;
+          this_iteration[outdim] = cctk_iteration;
+        }
+      }
       
+    } else if (CCTK_EQUALS (myoutcriterion, "time")) {
       
+      const CCTK_REAL myoutdt = GetRealParameter("out%dD_dt", out_dt);
+      if (myoutdt < 0) {
+        output_this_iteration = false;
+      } else if (myoutdt == 0) {
+        output_this_iteration = true;
+      } else {
+        output_this_iteration
+          = (cctk_iteration == this_iteration[outdim]
+             || cctk_time >= (next_output_time[outdim]
+                              - 1.0e-12 * cctk_delta_time));
+        if (output_this_iteration) {
+          next_output_time[outdim] += myoutdt;
+          this_iteration[outdim] = cctk_iteration;
+        }
+      }
       
-      // check which variables to output
-      const int numvars = CCTK_NumVars();
-      assert (vindex>=0 && vindex<numvars);
-      output_variables.resize (numvars);
+    } else {
+      
+      assert (0);
+      
+    } // select output criterion
+    
+    if (! output_this_iteration) return 0;
+    
+    
+    
+    // check which variables to output
+    static vector<bool> output_variables;
+    static int output_variables_iteration = -1;
+    
+    if (cctk_iteration > output_variables_iteration) {
+      output_variables.resize (CCTK_NumVars());
       
       const char * const varlist = GetStringParameter("out%dD_vars", "");
       CCTK_TraverseString
         (varlist, SetFlag, &output_variables, CCTK_GROUP_OR_VAR);
       
-    } // check whether output should happen
+      output_variables_iteration = cctk_iteration;
+    }
     
-    if (! output_this_iteration) return 0;
-    if (! output_variables[vindex]) return 0;
-    
-    const int grouptype = CCTK_GroupTypeFromVarI(vindex);
-    if (grouptype != CCTK_GF && reflevel > 0) return 0;
+    if (! output_variables.at(vindex)) return 0;
     
     
     
-    if (last_output[reflevel][vindex] == cctk_iteration) {
+    if (last_output.at(mglevel).at(reflevel).at(vindex) == cctk_iteration) {
       // Has already been output during this iteration
       char* varname = CCTK_FullName(vindex);
       CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -631,7 +695,7 @@ namespace CarpetIOASCII {
       return 0;
     }
     
-    assert (last_output[reflevel][vindex] < cctk_iteration);
+    assert (last_output.at(mglevel).at(reflevel).at(vindex) < cctk_iteration);
     
     // Should be output during this iteration
     return 1;
@@ -649,7 +713,7 @@ namespace CarpetIOASCII {
     const int retval = OutputVarAs (cgh, varname, CCTK_VarName(vindex));
     free (varname);
     
-    last_output[reflevel][vindex] = cgh->cctk_iteration;
+    last_output.at(mglevel).at(reflevel).at(vindex) = cgh->cctk_iteration;
     
     return retval;
   }
@@ -697,29 +761,33 @@ namespace CarpetIOASCII {
     // Third choice: explicit global coordinate
     const char* iothorn = CCTK_ImplementationThorn ("IO");
     assert (iothorn);
-    const int ncglobal = CCTK_ParameterQueryTimesSet (cglobal, iothorn);
-    assert (ncglobal >= 0);
-    if (ncglobal > 0) {
-      int ptype;
-      const CCTK_REAL* const pcoord
-	= (const CCTK_REAL*)CCTK_ParameterGet (cglobal, iothorn, &ptype);
-      assert (pcoord);
-      const CCTK_REAL coord = *pcoord;
-      assert (ptype == PARAMETER_REAL);
-      return CoordToOffset (cgh, dir, coord, 0);
+    if (cglobal) {
+      const int ncglobal = CCTK_ParameterQueryTimesSet (cglobal, iothorn);
+      assert (ncglobal >= 0);
+      if (ncglobal > 0) {
+        int ptype;
+        const CCTK_REAL* const pcoord
+          = (const CCTK_REAL*)CCTK_ParameterGet (cglobal, iothorn, &ptype);
+        assert (pcoord);
+        const CCTK_REAL coord = *pcoord;
+        assert (ptype == PARAMETER_REAL);
+        return CoordToOffset (cgh, dir, coord, 0);
+      }
     }
     
     // Fourth choice: explicit global index
-    const int niglobal = CCTK_ParameterQueryTimesSet (iglobal, iothorn);
-    assert (niglobal >= 0);
-    if (niglobal > 0) {
-      int ptype;
-      const int* const pindex
-	= (const int*)CCTK_ParameterGet (iglobal, iothorn, &ptype);
-      assert (pindex);
-      const int index = *pindex;
-      assert (ptype == PARAMETER_INT);
-      return index;
+    if (iglobal) {
+      const int niglobal = CCTK_ParameterQueryTimesSet (iglobal, iothorn);
+      assert (niglobal >= 0);
+      if (niglobal > 0) {
+        int ptype;
+        const int* const pindex
+          = (const int*)CCTK_ParameterGet (iglobal, iothorn, &ptype);
+        assert (pindex);
+        const int index = *pindex;
+        assert (ptype == PARAMETER_INT);
+        return index;
+      }
     }
     
     // Fifth choice: default coordinate
@@ -739,23 +807,25 @@ namespace CarpetIOASCII {
     
     const int npoints = cgh->cctk_gsh[dir-1];
     const CCTK_REAL delta = cgh->cctk_delta_space[dir-1] / cgh->cctk_levfac[dir-1];
-    const CCTK_REAL lower = cgh->cctk_origin_space[dir-1] + delta * cgh->cctk_levoff[dir-1] / cgh->cctk_levoffdenom[dir-1];
+    const CCTK_REAL lower = cgh->cctk_origin_space[dir-1];
     const CCTK_REAL upper = lower + (npoints-1) * delta;
     
     const CCTK_REAL rindex = (coord - lower) / delta;
     int cindex = (int)floor(rindex + 0.75);
     
+#if 0
     if (cindex<0 || cindex>=npoints) {
       cindex = ifallback;
       
       assert (dir>=1 && dir<=3);
       CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The specified coordinate value %g for the %c-direction is not within the grid range [%g,%g] on convergence level %d, level %d, map %d; using %g instead",
+                  "The specified coordinate value %g for the %c-direction is not within the grid range [%g,%g] on convergence level %d, refinement level %d, map %d; using %g instead",
                   coord, "xyz"[dir-1], lower, upper,
                   mglevel, reflevel, Carpet::map, lower + delta * cindex);
     }
     
     assert (cindex>=0 && cindex<npoints);
+#endif
     
     return cindex;
   }
@@ -901,9 +971,10 @@ namespace CarpetIOASCII {
 	ivect org1(org);
 	for (int d=0; d<DD; ++d) org1[dirs[d]] = ext.lower()[d];
 	if (gfext.contains(org1)) {
-	  
-	  for (typename bbox<int,DD>::iteratorT it=ext.beginT();
-	       it!=ext.endT(); ++it) {
+          
+          typename bbox<int,DD>::iteratorT it=ext.beginT();
+          do {
+            
 	    ivect index(org);
 	    for (int d=0; d<DD; ++d) index[dirs[d]] = (*it)[d];
 	    os << time << "   " << tl << " " << rl << " " << c << " " << ml
@@ -949,8 +1020,10 @@ namespace CarpetIOASCII {
 	      if (index[dirs[d]]!=gfext.upper()[dirs[d]]) break;
 	      os << endl;
 	    }
-	  }
-	  
+            
+            ++it;
+          } while (it!=ext.endT());
+          
 	} else {
 	  
 	  os << "#" << endl;
@@ -981,9 +1054,27 @@ namespace CarpetIOASCII {
   
   
   // Explicit instantiation for all output dimensions
+  template class IOASCII<0>;
   template class IOASCII<1>;
   template class IOASCII<2>;
   template class IOASCII<3>;
+  
+  template
+  void WriteASCII (ostream& os,
+		   const gdata<3>* const gfdata,
+		   const bbox<int,3>& gfext,
+		   const int vi,
+		   const int time,
+		   const vect<int,3>& org,
+		   const vect<int,0>& dirs,
+		   const int rl,
+		   const int ml,
+		   const int m,
+		   const int c,
+		   const int tl,
+		   const CCTK_REAL coord_time,
+		   const vect<CCTK_REAL,3>& coord_lower,
+		   const vect<CCTK_REAL,3>& coord_upper);
   
   template
   void WriteASCII (ostream& os,
