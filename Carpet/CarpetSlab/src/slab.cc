@@ -160,7 +160,7 @@ namespace CarpetSlab {
     // (if this fails, someone requested an insane number of grid points)
     {
       int max = INT_MAX;
-      for (int dd=0; dd<dim; ++dd) {
+      for (int dd=0; dd<hdim; ++dd) {
         assert (length[dd] >= 0 && length[dd] <= max);
         if (length[dd] > 0) max /= length[dd];
       }
