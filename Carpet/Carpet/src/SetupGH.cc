@@ -20,7 +20,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.52 2003/08/15 09:34:36 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.53 2003/09/19 16:08:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -183,12 +183,12 @@ namespace Carpet {
     }
     // Sanity check
     // (if this fails, someone requested an insane amount of memory)
-    assert (all(npoints <= INT_MAX / maxreflevelfact));
+    assert (all(npoints <= INT_MAX));
     {
       int max = INT_MAX;
       for (int d=0; d<dim; ++d) {
-        assert (npoints[d] * maxreflevelfact <= max);
-        max /= npoints[d] * maxreflevelfact;
+        assert (npoints[d] <= max);
+        max /= npoints[d];
       }
     }
     

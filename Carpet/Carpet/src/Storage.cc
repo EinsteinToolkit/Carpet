@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.26 2003/08/10 21:59:51 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.27 2003/09/19 16:08:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -92,6 +92,8 @@ namespace Carpet {
       }
     }
     
+    // VGF: allocate
+    
     assert (arrdata[group].data.size()==0
 	    || arrdata[group].data[0] == 0);
     assert ((int)arrdata[group].data.size() == CCTK_NumVarsInGroupI(group));
@@ -101,6 +103,7 @@ namespace Carpet {
 #define TYPECASE(N,T)                                                   \
       case N:                                                           \
         assert (! arrdata[group].data[var]);                            \
+        /* VGF */                                                       \
 	arrdata[group].data[var] = new gf<T,dim>                        \
 	  (CCTK_VarName(n), *arrdata[group].tt, *arrdata[group].dd,     \
 	   tmin, tmax, my_prolongation_order_time);                     \
@@ -176,6 +179,8 @@ namespace Carpet {
         }
       }
     } // for
+    
+    // VGF: free
     
     // storage was not disabled previously
     return 1;
