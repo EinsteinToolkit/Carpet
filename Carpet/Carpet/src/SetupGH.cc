@@ -1,9 +1,8 @@
-#include <assert.h>
-#include <limits.h>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <cassert>
+#include <climits>
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <vector>

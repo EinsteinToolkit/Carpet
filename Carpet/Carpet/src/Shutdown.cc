@@ -1,6 +1,6 @@
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
 
 #include "cctk.h"
 #include "cctk_Parameters.h"

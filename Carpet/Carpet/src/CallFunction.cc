@@ -1,7 +1,6 @@
-#include <assert.h>
-#include <stdlib.h>
-
 #include <algorithm>
+#include <cassert>
+#include <cstdlib>
 
 #include "cctk.h"
 #include "cctki_GHExtensions.h"
