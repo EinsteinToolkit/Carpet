@@ -388,7 +388,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
         gdata* const processor_component = data->make_typed (request->vindex);
 
         processor_component->allocate (overlap, 0);
-        for (comm_state state; !state.done(); state.step())
+        for (comm_state state(group.vartype); !state.done(); state.step())
         {
           processor_component->copy_from (state, data, overlap);
         }

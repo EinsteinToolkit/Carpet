@@ -434,7 +434,7 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
   }
 
   const int gpdim = CCTK_GroupDimI(group);
-
+  const int vartype = CCTK_VarTypeI(vindex);
 
   int intbuffer[2 + 2*dim];
   int &group_timelevel = intbuffer[0],
@@ -466,15 +466,14 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
       amr_dims[i] = shape[rank-i-1];
     }
 
-    const int cctkDataType = CCTK_VarTypeI(vindex);
-    const hid_t datatype = h5DataType (cctkGH, cctkDataType, 0);
+    const hid_t datatype = h5DataType (cctkGH, vartype, 0);
 
     //cout << "datalength: " << datalength << " rank: " << rank << "\n";
     //cout << shape[0] << " " << shape[1] << " " << shape[2] << "\n";
 
     // to do: read in an allocate with correct datatype
 
-    h5data = malloc (CCTK_VarTypeSize (cctkDataType) * datalength);
+    h5data = malloc (CCTK_VarTypeSize (vartype) * datalength);
     HDF5_ERROR (H5Dread (dataset, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT,
                          h5data));
 
@@ -595,7 +594,7 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
         MPI_Barrier(MPI_COMM_WORLD);
 
         // Copy into grid function
-        for (comm_state state; !state.done(); state.step())
+        for (comm_state state(vartype); !state.done(); state.step())
         {
           data->copy_from (state, tmp, overlap);
         }
