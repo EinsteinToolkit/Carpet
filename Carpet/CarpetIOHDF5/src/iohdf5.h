@@ -1,41 +1,19 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.h,v 1.7 2004/08/18 16:02:56 tradke Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.h,v 1.1 2004/03/03 09:44:26 schnetter Exp $ */
 
 #ifndef CARPETIOHDF5_H
 #define CARPETIOHDF5_H
+
+#include "cctk_Arguments.h"
 
 #ifdef __cplusplus
 namespace CarpetIOHDF5 {
   extern "C" {
 #endif
     
-#ifdef USE_CHRISTIANS_ROUTINES
-#include "cctk_Arguments.h"
-
-int CarpetIOHDF5Startup (void);
-void CarpetIOHDF5Init (CCTK_ARGUMENTS);
-void CarpetIOHDF5ReadData (CCTK_ARGUMENTS);
-void CarpetIOHDF5_EvolutionCheckpoint (const cGH*);
-void CarpetIOHDF5_InitialDataCheckpoint (const cGH*);
-
-#else
-
-/* Scheduled functions */
-void CarpetIOHDF5Startup (void);
-int CarpetIOHDF5Init (const cGH* const);
-int CarpetIOHDF5ReadData (const cGH* const);
-int CarpetIOHDF5_InitialDataCheckpoint (const cGH* const);
-int CarpetIOHDF5_EvolutionCheckpoint (const cGH* const);
-int CarpetIOHDF5_TerminationCheckpoint (const cGH* const);
-void CarpetIOHDF5EvolutionCheckpoint (const cGH* const);
-void CarpetIOHDF5InitialDataCheckpoint (const cGH* const);
+    /* Scheduled functions */
+    int CarpetIOHDF5Startup (void);
+    int CarpetIOHDF5ReadData (CCTK_ARGUMENTS);
     
-#endif
-
-int CarpetIOHDF5_Recover (cGH* cgh, const char *basefilename, int called_from);
-
-int CarpetIOHDF5_RecoverParameters (void);
-int CarpetIOHDF5_CloseFile (void);
-
 #ifdef __cplusplus
   } /* extern "C" */
 } /* namespace CarpetIOHDF5 */

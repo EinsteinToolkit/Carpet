@@ -1,113 +1,59 @@
 # Parameter definitions for thorn CarpetIOHDF5
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/param.ccl,v 1.15 2004/06/25 12:54:30 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/param.ccl,v 1.1 2004/03/03 09:44:59 schnetter Exp $
 
 
 
 shares: IO
 
 USES STRING out_dir
-USES BOOLEAN out_single_precision
 
-USES KEYWORD out_criterion
 USES CCTK_INT out_every
-USES CCTK_REAL out_dt
 
-USES INT     checkpoint_every
-USES INT     checkpoint_keep
-USES BOOLEAN checkpoint_ID
-USES BOOLEAN recover_and_remove
-USES BOOLEAN checkpoint_on_terminate
-USES BOOLEAN strict_io_parameter_check
-USES KEYWORD recover
-USES STRING  checkpoint_dir
-USES STRING  checkpoint_ID_file
-USES STRING  checkpoint_file
-USES STRING  recover_dir
-USES STRING  recover_file
-
-
-shares: Cactus
-
-USES CCTK_REAL cctk_initial_time
 
 
 private:
 
 
 
-BOOLEAN verbose "Produce log output" STEERABLE = ALWAYS
+BOOLEAN verbose "Produce log output"
 {
 } "no"
 
 
 
-CCTK_STRING out3D_dir "Name of 3D CarpetIOHDF5 output directory, overrides IO::out_dir" STEERABLE = ALWAYS
+CCTK_STRING out3D_dir "Name of 3D FlexIO output directory, overrides out_dir" STEERABLE = ALWAYS
 {
-  "^$" :: "Empty: use IO::out_dir"
-  ".+" :: "Not empty: directory name"
-} ""
-
-CCTK_STRING out3D_vars "Variables to output in 3D CarpetIOHDF5 file format" STEERABLE = ALWAYS
-{
-  .* :: "List of group and variable names"
-} ""
-
-CCTK_STRING out3D_extension "File extension to use for 3D CarpetIOHDF5 output" STEERABLE = ALWAYS
-{
-  ".*" :: "File extension (including a leading dot, if desired)"
-} ".h5"
-
-KEYWORD out3D_criterion "Criterion to select 3D CarpetIOHDF5 output intervals, overrides out_every" STEERABLE = ALWAYS
-{
-  "default"   :: "Use IO::out_criterion"
-  "never"     :: "Never output"
-  "iteration" :: "Output every so many iterations"
-  "divisor"   :: "Output if (iteration % out_every) == 0."
-  "time"      :: "Output every that much coordinate time"
-} "default"
-
-CCTK_INT out3D_every "How often to do 3D CarpetIOHDF5 output, overrides out_every" STEERABLE = ALWAYS
-{
-  1:*  :: "Output every so many time steps"
-  -1:0 :: "No output"
-  -2   :: "Use IO::out_every"
-} -2
-
-REAL out3D_dt "How often to do 3D CarpetIOHDF5 output, overrides IO::out_dt" STEERABLE = ALWAYS
-{
-  (0:* :: "In intervals of that much coordinate time"
-   0   :: "As often as possible"
-  -1   :: "Disable output"
-  -2   :: "Default to IO::out_dt"
-} -2
-
-
-
-CCTK_STRING in3D_dir "Name of 3D CarpetIOHDF5 input directory" STEERABLE = ALWAYS
-{
-  ".+" :: "Directory name"
+  .* :: "A regex which matches everything"
 } "."
 
-CCTK_STRING in3D_vars "Variables to input in 3D CarpetIOHDF5 file format" STEERABLE = ALWAYS
+CCTK_STRING out3D_vars "Variables to output in 3D FlexIO file format" STEERABLE = ALWAYS
 {
-  .* :: "List of group and variable names"
+  .* :: "A regex which matches everything"
 } ""
 
-CCTK_STRING in3D_extension "File extension to use for 3D CarpetIOHDF5 input" STEERABLE = ALWAYS
+CCTK_STRING out3D_extension "File extension to use for 3D FlexIO output" STEERABLE = ALWAYS
 {
-  ".*" :: "File extension (including a leading dot, if desired)"
+  .* :: "A regex which matches everything"
 } ".h5"
 
-
-BOOLEAN checkpoint "Do checkpointing with CarpetIOHDF5" STEERABLE = ALWAYS
+CCTK_INT out3D_every "How often to do 3D FlexIO output, overrides out_every" STEERABLE = ALWAYS
 {
-} "no"
+  -1:* :: "Values <= 0 disable 3D output"
+} -1
 
-BOOLEAN checkpoint_next "Checkpoint at next iteration" STEERABLE = ALWAYS
+
+
+CCTK_STRING in3D_dir "Name of 3D FlexIO input directory" STEERABLE = ALWAYS
 {
-} "no"
+  .* :: "A regex which matches everything"
+} "."
 
-
-BOOLEAN use_reflevels_from_checkpoint "Use CarpetRegrid::refinement_levels from the checkpoint file rather than from the parameter file." STEERABLE = ALWAYS
+CCTK_STRING in3D_vars "Variables to input in 3D FlexIO file format" STEERABLE = ALWAYS
 {
-} "no"
+  .* :: "A regex which matches everything"
+} ""
+
+CCTK_STRING in3D_extension "File extension to use for 3D FlexIO input" STEERABLE = ALWAYS
+{
+  .* :: "A regex which matches everything"
+} ".h5"
