@@ -1,4 +1,4 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveMoL/src/initialdata.F77,v 1.1 2003/06/18 18:24:29 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveMoL/src/initialdata.F77,v 1.2 2003/08/14 17:22:09 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
@@ -12,22 +12,37 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveMoL/src/in
       CCTK_REAL pi
       parameter (pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117068d0)
       CCTK_REAL omega
+      CCTK_REAL tmp
       integer i, j, k
-      omega = sqrt(wave_number(1)**2 + wave_number(2)**2 + wave_number(3)**2)
-      do k=1,cctk_lsh(3)
-         do j=1,cctk_lsh(2)
-            do i=1,cctk_lsh(1)
-               phi(i,j,k) = amplitude * cos (2*pi *
-     $              ( wave_number(1)*(x(i,j,k)-phase_offset(1))
-     $              + wave_number(2)*(y(i,j,k)-phase_offset(2))
-     $              + wave_number(3)*(z(i,j,k)-phase_offset(3))
-     $              + omega*(cctk_time-time_offset)))
-               psi(i,j,k) = - amplitude * 2*pi * omega * sin (2*pi *
-     $              ( wave_number(1)*(x(i,j,k)-phase_offset(1))
-     $              + wave_number(2)*(y(i,j,k)-phase_offset(2))
-     $              + wave_number(3)*(z(i,j,k)-phase_offset(3))
-     $              + omega*(cctk_time-time_offset)))
+      if (CCTK_EQUALS(initial_data, "plane wave")) then
+         omega = sqrt(wave_number(1)**2 + wave_number(2)**2
+     $        + wave_number(3)**2)
+         do k=1,cctk_lsh(3)
+            do j=1,cctk_lsh(2)
+               do i=1,cctk_lsh(1)
+                  tmp =  wave_number(1)*(x(i,j,k)-phase_offset(1))
+     $                 + wave_number(2)*(y(i,j,k)-phase_offset(2))
+     $                 + wave_number(3)*(z(i,j,k)-phase_offset(3))
+     $                 + omega*(cctk_time-time_offset)
+                  phi(i,j,k) = amplitude * cos (2*pi * tmp)
+                  psi(i,j,k) = - amplitude * 2*pi * omega * sin (2*pi * tmp)
+               end do
             end do
          end do
-      end do
+      else if (CCTK_EQUALS(initial_data, "Gaussian pulse")) then
+         omega = sqrt(pulse_direction(1)**2 + pulse_direction(2)**2
+     $        + pulse_direction(3)**2)
+         do k=1,cctk_lsh(3)
+            do j=1,cctk_lsh(2)
+               do i=1,cctk_lsh(1)
+                  tmp =  pulse_direction(1)*(x(i,j,k)-pulse_offset(1))
+     $                 + pulse_direction(2)*(y(i,j,k)-pulse_offset(2))
+     $                 + pulse_direction(3)*(z(i,j,k)-pulse_offset(3))
+     $                 + omega*(cctk_time-time_offset)
+                  phi(i,j,k) = amplitude * exp (-0.5d0 * tmp**2)
+                  psi(i,j,k) = - tmp * omega * phi(i,j,k)
+               end do
+            end do
+         end do
+      end if
       end
