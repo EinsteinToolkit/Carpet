@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.2 2001/03/07 13:00:57 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.3 2001/03/18 05:20:24 eschnett Exp $
 
  ***************************************************************************/
 
@@ -26,6 +26,7 @@
 #endif
 
 #include <algorithm>
+#include <iostream>
 #include <list>
 #include <set>
 #include <vector>

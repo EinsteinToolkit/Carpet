@@ -1,9 +1,12 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.14 2001/03/17 22:26:52 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.15 2001/03/18 05:20:20 eschnett Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
 // distribution onto the processors is the same, and that all
 // processors own the same number of components.
+
+// Scalar variables currently exist in one single incarnation for all
+// refinement levels and all components.
 
 #include <algorithm>
 #include <cassert>
@@ -33,7 +36,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.14 2001/03/17 22:26:52 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.15 2001/03/18 05:20:20 eschnett Exp $";
 
 
 
@@ -1343,7 +1346,8 @@ namespace Carpet {
 	    default:
 	      abort();
 	    }
-	    if (hh->is_local(reflevel,component)) {
+	    if (CCTK_GroupTypeFromVarI(n)==CCTK_SCALAR
+		|| hh->is_local(reflevel,component)) {
 	      assert (cgh->data[n][ti]);
 	    } else {
 	      assert (! cgh->data[n][ti]);

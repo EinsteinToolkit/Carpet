@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <vector>
 
 #include <AMRwriter.hh>
@@ -29,7 +31,7 @@
 
 #include "ioflexio.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.4 2001/03/17 22:37:28 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.5 2001/03/18 05:20:24 eschnett Exp $";
 
 
 
@@ -80,7 +82,7 @@ namespace CarpetIOFlexIO {
     DECLARE_CCTK_PARAMETERS;
     
     // Truncate all files if this is not a restart
-    do_truncate.resize(CCTK_NumVars(), ! IOUtil_RestartFromRecovery(cgh));
+    do_truncate.resize(CCTK_NumVars(), true);
     
     // No iterations have yet been output
     last_output.resize(maxreflevels);
@@ -175,20 +177,24 @@ namespace CarpetIOFlexIO {
 	// If this is the first time, then create and truncate the
 	// file
 	if (do_truncate[n]) {
-	  writer = 0;
-	  if (CCTK_Equals(out3D_format, "IEEE")) {
-	    writer = new IEEEIO(filename, IObase::Create);
+	  struct stat fileinfo;
+	  if (! IOUtil_RestartFromRecovery(cgh)
+	      || stat(filename, &fileinfo)!=0) {
+	    writer = 0;
+	    if (CCTK_Equals(out3D_format, "IEEE")) {
+	      writer = new IEEEIO(filename, IObase::Create);
 #ifdef HDF5
-	  } else if (CCTK_Equals(out3D_format, "HDF4")) {
-	    writer = new HDFIO(filename, IObase::Create);
-	  } else if (CCTK_Equals(out3D_format, "HDF5")) {
-	    writer = new H5IO(filename, IObase::Create);
+	    } else if (CCTK_Equals(out3D_format, "HDF4")) {
+	      writer = new HDFIO(filename, IObase::Create);
+	    } else if (CCTK_Equals(out3D_format, "HDF5")) {
+	      writer = new H5IO(filename, IObase::Create);
 #endif
-	  } else {
-	    abort();
+	    } else {
+	      abort();
+	    }
+	    delete writer;
+	    writer = 0;
 	  }
-	  delete writer;
-	  writer = 0;
 	}
 	
 	// Open the file 

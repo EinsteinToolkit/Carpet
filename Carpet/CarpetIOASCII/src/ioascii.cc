@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <vector>
 
 #include "cctk.h"
@@ -20,7 +22,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.8 2001/03/16 21:32:17 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.9 2001/03/18 05:20:24 eschnett Exp $";
 
 
 
@@ -85,7 +87,7 @@ void* CarpetIOASCII<outdim>
   DECLARE_CCTK_PARAMETERS;
   
   // Truncate all files if this is not a restart
-  do_truncate.resize(CCTK_NumVars(), ! IOUtil_RestartFromRecovery(cgh));
+  do_truncate.resize(CCTK_NumVars(), true);
   
   // No iterations have yet been output
   last_output.resize(maxreflevels);
@@ -228,16 +230,20 @@ int CarpetIOASCII<outdim>
 	  // the root processor
 	  if (do_truncate[n]) {
 	    if (CCTK_MyProc(cgh)==0) {
-	      ofstream file(filename, ios::trunc);
-	      assert (file.good());
-	      file << "# " << varname;
-	      for (int d=0; d<outdim; ++d) {
-		file << " " << "xyz"[dirs[d]];
+	      struct stat fileinfo;
+	      if (! IOUtil_RestartFromRecovery(cgh)
+		  || stat(filename, &fileinfo)!=0) {
+		ofstream file(filename, ios::trunc);
+		assert (file.good());
+		file << "# " << varname;
+		for (int d=0; d<outdim; ++d) {
+		  file << " " << "xyz"[dirs[d]];
+		}
+		file << " (" << alias << ")" << endl;
+		file << "#" << endl;
+		file.close();
+		assert (file.good());
 	      }
-	      file << " (" << alias << ")" << endl;
-	      file << "#" << endl;
-	      file.close();
-	      assert (file.good());
 	    }
 	  }
 	  
