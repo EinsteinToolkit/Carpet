@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.12 2004/01/08 19:43:33 cott Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.13 2004/01/12 10:50:31 cott Exp $
 
 #ifndef CARPETIOFLEXIO_HH
 #define CARPETIOFLEXIO_HH
@@ -136,7 +136,7 @@ namespace CarpetIOFlexIO {
   static const char* GetStringParameter (const char* const parametername,
 					 const char* const fallback);
 
-  int WriteGF (const cGH* const cgh, IObase* writer, AMRwriter* amrwriter, ioRequest* request);
+  int WriteGF (const cGH* const cgh, IObase* writer, AMRwriter* amrwriter, ioRequest* request, const int called_from_checkpoint);
   int ReadGF (const cGH* const cgh, IObase* reader, AmrGridReader* amrreader, int currdataset);
 
 } // namespace CarpetIOFlexIO
@@ -144,8 +144,19 @@ namespace CarpetIOFlexIO {
 namespace CarpetIOFlexIOUtil {
 
   IObase::DataType FlexIODataType (int cctk_type);
-  void DumpCommonAttributes (const cGH *cgh, IObase* writer, ioRequest* request);
 
+  void WriteAttribute (IObase* writer, const char* name,
+                              int value);
+  void WriteAttribute (IObase* writer, const char* name,
+                              const int* values, int nvalues);
+  void WriteAttribute (IObase* writer, const char* name,
+                              CCTK_REAL value);
+  void WriteAttribute (IObase* writer, const char* name,
+                              const CCTK_REAL* values, int nvalues);
+  void WriteAttribute (IObase* writer, const char* name,
+                              const char* valuestring);
+
+  void DumpCommonAttributes (const cGH *cgh, IObase* writer, ioRequest* request);
 }
 
 namespace CarpetCheckpointRestart {
@@ -157,6 +168,6 @@ namespace CarpetCheckpointRestart {
 
 #endif // !defined(CARPETIOFLEXIO_HH)
 
-/* structure holding necessary information about a recovery file */
+
 
 
