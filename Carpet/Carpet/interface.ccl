@@ -1,9 +1,7 @@
 # Interface definition for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/interface.ccl,v 1.5 2003/06/18 18:28:07 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/interface.ccl,v 1.6 2003/09/04 16:23:21 tradke Exp $
 
 implements: driver
-
-inherits: CarpetLib
 
 include header: carpet_public.hh in carpet.hh
 include header: carpet_public.h in carpet.h

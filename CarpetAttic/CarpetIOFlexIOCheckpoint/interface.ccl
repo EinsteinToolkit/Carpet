@@ -1,11 +1,7 @@
 # Interface definition for thorn CarpetIOFlexIO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/interface.ccl,v 1.4 2003/08/14 17:22:54 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/interface.ccl,v 1.5 2003/09/04 16:23:22 tradke Exp $
 
 implements: IOFlexIO
-
-inherits: CarpetLib driver FlexIO
-
-
 
 uses include header: carpet.hh
 

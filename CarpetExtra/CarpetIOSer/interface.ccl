@@ -1,8 +1,8 @@
 # Interface definition for thorn CarpetIOSer
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIOSer/interface.ccl,v 1.2 2003/08/14 17:22:54 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIOSer/interface.ccl,v 1.3 2003/09/04 16:23:22 tradke Exp $
 
 implements: IOSer
 
-inherits: CarpetLib driver Hyperslab
+inherits: Hyperslab
 
 uses include header: carpet.hh
