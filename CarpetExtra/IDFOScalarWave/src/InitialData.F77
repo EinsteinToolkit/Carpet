@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/InitialData.F77,v 1.1 2002/02/18 11:26:34 shawley Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/InitialData.F77,v 1.2 2002/02/26 14:14:07 shawley Exp $
 
  /*@@
    @file      InitialData.F77
@@ -41,6 +41,7 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/Ini
       INTEGER    i,j,k
       CCTK_REAL  dt,omega, cpi
       CCTK_REAL  x,y,z, r, ri3
+      CCTK_REAL  dxi,dyi,dzi
       
 c     call CCTK_INFO ("IDFOScalarWave_InitialData")
       
@@ -133,7 +134,11 @@ c        Use kx,ky,kz as number of modes in each direction.
          end do
 
       else if (CCTK_EQUALS(initial_data, "1/r")) then
-         
+  
+         dxi = 1/CCTK_DELTA_SPACE(1)
+         dyi = 1/CCTK_DELTA_SPACE(2)
+         dzi = 1/CCTK_DELTA_SPACE(3)
+
          do k=1,cctk_lsh(3)
             do j=1,cctk_lsh(2)
                do i=1,cctk_lsh(1)
@@ -144,6 +149,7 @@ c        Use kx,ky,kz as number of modes in each direction.
                   phix(i,j,k) = - cart3d_x(i,j,k) * ri3
                   phiy(i,j,k) = - cart3d_y(i,j,k) * ri3
                   phiz(i,j,k) = - cart3d_z(i,j,k) * ri3
+                  resid(i,j,k) = 0.0
 
                   pi_p(i,j,k)     = pi(i,j,k)
                   pi_p_p(i,j,k)   = pi(i,j,k)
@@ -155,6 +161,8 @@ c        Use kx,ky,kz as number of modes in each direction.
                   phiz_p_p(i,j,k) = phiz(i,j,k)
                   phi_p(i,j,k)    = phi(i,j,k)
                   phi_p_p(i,j,k)  = phi(i,j,k)
+                  resid_p(i,j,k)  = resid(i,j,k)
+                  resid_p_p(i,j,k)= resid(i,j,k)
                   
                end do
             end do
