@@ -24,7 +24,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.28 2003/09/20 13:53:18 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.29 2003/11/13 16:04:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -131,7 +131,7 @@ namespace CarpetRegrid {
     } else if (CCTK_EQUALS(refined_regions, "manual-gridpoint-list")) {
       
       vector<vector<ibbox> > bbss;
-      if (strcmp(gridpoints, "") !=0 ) {
+      if (strcmp(gridpoints, "") != 0) {
 	istringstream gp_str(gridpoints);
 	gp_str >> bbss;
       }
@@ -166,7 +166,39 @@ namespace CarpetRegrid {
       
     } else if (CCTK_EQUALS(refined_regions, "manual-coordinate-list")) {
       
-      assert (0);
+      vector<vector<rbbox> > bbss;
+      if (strcmp(coordinates, "") != 0) {
+        istringstream co_str(coordinates);
+        co_str >> bbss;
+      }
+      
+      vector<vector<vect<vect<bool,2>,dim> > > obss;
+      if (strcmp(outerbounds, "") !=0 ) {
+	istringstream ob_str (outerbounds);
+	ob_str >> obss;
+        bool good = obss.size() == bbss.size();
+        if (good) {
+          for (int rl=0; rl<(int)obss.size(); ++rl) {
+            good = good && obss[rl].size() == bbss[rl].size();
+          }
+        }
+        if (! good) {
+          cout << "coordinates: " << bbss << endl;
+          cout << "outerbounds: " << obss << endl;
+          CCTK_WARN (0, "The parameters \"outerbounds\" and \"coordinates\" must have the same structure");
+        }
+      } else {
+	obss.resize(bbss.size());
+	for (int rl=0; rl<(int)obss.size(); ++rl) {
+	  obss[rl].resize(bbss[rl].size());
+	  for (int c=0; c<(int)obss[rl].size(); ++c) {
+	    obss[rl][c] = vect<vect<bool,2>,dim>(vect<bool,2>(false));
+	  }
+	}
+      }
+      
+      MakeRegions_AsSpecified (cctkGH, refinement_levels, bbss, obss,
+			       bbl, obl);
       
     } else if (CCTK_EQUALS(refined_regions, "automatic")) {
       
@@ -382,6 +414,32 @@ namespace CarpetRegrid {
   
   
   
+  static ivect real2int (const cGH* cctkGH, const rvect & rpos, const int rl)
+  {
+    rvect global_lower, global_upper;
+    for (int d=0; d<dim; ++d) {
+      const int ierr = CCTK_CoordRange
+	(cctkGH, &global_lower[d], &global_upper[d], d+1, 0, "cart3d");
+      if (ierr<0) {
+	global_lower[d] = 0;
+	global_upper[d] = 1;
+      }
+    }
+    const ivect global_extent (hh->baseextent.upper() - hh->baseextent.lower());
+    
+    CCTK_REAL (* const rfloor) (CCTK_REAL const) = floor;
+    
+    const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
+    const int levfac = ipow(hh->reffact, rl);
+    assert (all (hh->baseextent.stride() % levfac == 0));
+    const ivect istride = hh->baseextent.stride() / levfac;
+    
+    return ivect(map(rfloor, (rpos - global_lower) * scale / rvect(istride) + 0.5)) * istride;
+  }
+  
+  
+  
+#if 0
   void MakeRegions_AsSpecified (const cGH* cctkGH, const int reflevels,
 				const vector<rvect> lower,
 				const vector<rvect> upper,
@@ -421,6 +479,25 @@ namespace CarpetRegrid {
 				      ilower, iupper, obound,
 				      bbl, obl);
   }
+#endif
+  
+  
+  
+  void MakeRegions_AsSpecified (const cGH* cctkGH, const int reflevels,
+				const vector<rvect> lower,
+				const vector<rvect> upper,
+				list<ibbox>& bbl, list<bvect>& obl)
+  {
+    assert (lower.size() == upper.size());
+    vector<ivect> ilower, iupper;
+    ilower.resize (lower.size());
+    iupper.resize (upper.size());
+    for (int rl=1; rl<lower.size()+1; ++rl) {
+      ilower[rl-1] = real2int (cctkGH, lower[rl-1], rl);
+      iupper[rl-1] = real2int (cctkGH, upper[rl-1], rl);
+    }
+    MakeRegions_AsSpecified (cctkGH, reflevels, ilower, iupper, bbl, obl);
+  }
   
   
   
@@ -447,6 +524,27 @@ namespace CarpetRegrid {
 					bbl, obl);
       
     }
+  }
+  
+  
+  
+  void MakeRegions_AsSpecified (const cGH* cctkGH, const int reflevels,
+				const vector<vector<rbbox> > bbss,
+				const vector<vector<bvect> > obss,
+				list<ibbox>& bbl, list<bvect>& obl)
+  {
+    vector<vector<ibbox> > ibbss;
+    ibbss.resize (bbss.size());
+    for (int rl=1; rl<bbss.size()+1; ++rl) {
+      ibbss[rl-1].resize (bbss[rl-1].size());
+      for (int c=0; c<bbss[rl-1].size(); ++c) {
+        const ivect ilower = real2int (cctkGH, bbss[rl-1][c].lower(), rl);
+        const ivect iupper = real2int (cctkGH, bbss[rl-1][c].upper(), rl);
+        const ivect istride = real2int (cctkGH, bbss[rl-1][c].upper() + bbss[rl-1][c].stride(), rl) - iupper;
+        ibbss[rl-1][c] = ibbox (ilower, iupper, istride);
+      }
+    }
+    MakeRegions_AsSpecified (cctkGH, reflevels, ibbss, obss, bbl, obl);
   }
   
   
