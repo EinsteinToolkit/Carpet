@@ -13,7 +13,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.39 2004/04/18 13:29:43 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.40 2004/04/19 18:48:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -93,7 +93,7 @@ namespace CarpetRegrid {
         CCTK_WARN (0, "No thorn has provided the function \"RegridLevel\"");
       }
       const int newnumlevels
-        = RegridLevel (cctkGH, reflevel, refinement_levels, maxreflevels);
+        = RegridLevel (cctkGH, refinement_levels, maxreflevels);
       if (newnumlevels>0 && newnumlevels<=maxreflevels) {
         
         *const_cast<CCTK_INT*>(&refinement_levels) = newnumlevels;
