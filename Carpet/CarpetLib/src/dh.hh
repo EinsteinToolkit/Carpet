@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.16 2003/11/05 16:18:39 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.17 2004/03/03 16:20:19 schnetter Exp $
 
 #ifndef DH_HH
 #define DH_HH
@@ -64,7 +64,7 @@ public:
     iblistvect recv_ref_fine;
     iblistvect recv_ref_coarse;
     iblistvect send_sync;	// send while syncing
-    iblistvect send_ref_bnd_fine;
+    iblistvect send_ref_bnd_fine; // sent to finer grids
     
     ibset boundaries;		// boundaries
     iblistvect recv_sync;	// received while syncing
