@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.33 2004/02/01 14:54:56 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.34 2004/03/01 21:36:39 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -23,7 +23,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.33 2004/02/01 14:54:56 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.34 2004/03/01 21:36:39 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -31,123 +31,215 @@ extern "C" {
 
 namespace CarpetReduce {
   
+  using namespace std;
   using namespace Carpet;
   
   
   
-  // Helper functions
-  template<class T> inline T
+  // Helper functions and types
+  
+  // The minimum of two values
+  template<typename T> inline T
   mymin (const T x, const T y)
   {
-    return std::min(x, y);
+    return min(x, y);
   }
   
-  template<> inline std::complex<float>
-  mymin (const std::complex<float> x, const std::complex<float> y)
-  {
-    return std::complex<float> (std::min(x.real(), y.real()),
-                                std::min(x.imag(), y.imag()));
-  }
-  
-  template<> inline std::complex<double>
-  mymin (const std::complex<double> x, const std::complex<double> y)
-  {
-    return std::complex<double> (min(x.real(), y.real()),
-                                 min(x.imag(), y.imag()));
-  }
-  
-#ifdef LDBL_MAX
-  template<> inline std::complex<long double>
-  mymin (const std::complex<long double> x, const std::complex<long double> y)
-  {
-    return std::complex<long double> (min(x.real(), y.real()),
-                                      min(x.imag(), y.imag()));
-  }
-#endif
-  
-  template<class T> inline T
+  // The maximum of two values
+  template<typename T> inline T
   mymax (const T x, const T y)
   {
     return max(x, y);
   }
   
-  template<> inline std::complex<float>
-  mymax (const std::complex<float> x, const std::complex<float> y)
+  // Square root
+  template<typename T> inline T
+  mysqrt (const T x)
   {
-    return std::complex<float> (max(x.real(), y.real()),
-                                max(x.imag(), y.imag()));
+    return sqrt(x);
   }
   
-  template<> inline std::complex<double>
-  mymax (const std::complex<double> x, const std::complex<double> y)
+  
+  
+  // Properties of numeric types
+  template<typename T>
+  struct my_numeric_limits {
+    
+    // The smallest possible value
+    static T min ()
+    {
+      return mymin (numeric_limits<T>::min(), -numeric_limits<T>::max());
+    }
+    
+    // The largest possible value
+    static T max ()
+    {
+      return mymax (numeric_limits<T>::max(), -numeric_limits<T>::min());
+    }
+    
+  };
+  
+  
+  
+  // Provide for each Cactus type a "good" type, translating between
+  // CCTK_COMPLEX* and complex<CCTK_REAL*>
+  template<typename T>
+  struct typeconv {
+    typedef T goodtype;
+    typedef T badtype;
+  };
+  
+  
+  
+  // Overload the above helper functions and types for complex values
+  
+#ifdef CCTK_REAL4
+  
+  template<> inline complex<CCTK_REAL4>
+  mymin (const complex<CCTK_REAL4> x, const complex<CCTK_REAL4> y)
   {
-    return std::complex<double> (max(x.real(), y.real()),
-                                 max(x.imag(), y.imag()));
+    return complex<CCTK_REAL4> (mymin(x.real(), y.real()),
+                                mymin(x.imag(), y.imag()));
   }
   
-#ifdef LDBL_MAX
-  template<> inline std::complex<long double>
-  mymax (const std::complex<long double> x, const std::complex<long double> y)
+  template<> inline complex<CCTK_REAL4>
+  mymax (const complex<CCTK_REAL4> x, const complex<CCTK_REAL4> y)
   {
-    return std::complex<long double> (max(x.real(), y.real()),
-                                      max(x.imag(), y.imag()));
+    return complex<CCTK_REAL4> (mymax(x.real(), y.real()),
+                                mymax(x.imag(), y.imag()));
+  }
+  
+  template<>
+  struct my_numeric_limits<complex<CCTK_REAL4> > {
+    static complex<CCTK_REAL4> min ()
+    {
+      return complex<CCTK_REAL4> (my_numeric_limits<CCTK_REAL4>::min(),
+                                  my_numeric_limits<CCTK_REAL4>::min());
+    }
+    static complex<CCTK_REAL4> max ()
+    {
+      return complex<CCTK_REAL4> (my_numeric_limits<CCTK_REAL4>::max(),
+                                  my_numeric_limits<CCTK_REAL4>::max());
+    }
+  };
+
+  template<>
+  struct typeconv<CCTK_COMPLEX8> {
+    typedef complex<CCTK_REAL4> goodtype;
+    typedef CCTK_COMPLEX8 badtype;
+  };
+  
+#endif
+  
+#ifdef CCTK_REAL8
+  
+  template<> inline complex<CCTK_REAL8>
+  mymin (const complex<CCTK_REAL8> x, const complex<CCTK_REAL8> y)
+  {
+    return complex<CCTK_REAL8> (mymin(x.real(), y.real()),
+                                mymin(x.imag(), y.imag()));
+  }
+  
+  template<> inline complex<CCTK_REAL8>
+  mymax (const complex<CCTK_REAL8> x, const complex<CCTK_REAL8> y)
+  {
+    return complex<CCTK_REAL8> (mymax(x.real(), y.real()),
+                                mymax(x.imag(), y.imag()));
+  }
+  
+  template<>
+  struct my_numeric_limits<complex<CCTK_REAL8> > {
+    static complex<CCTK_REAL8> min ()
+    {
+      return complex<CCTK_REAL8> (my_numeric_limits<CCTK_REAL8>::min(),
+                                  my_numeric_limits<CCTK_REAL8>::min());
+    }
+    static complex<CCTK_REAL8> max ()
+    {
+      return complex<CCTK_REAL8> (my_numeric_limits<CCTK_REAL8>::max(),
+                                  my_numeric_limits<CCTK_REAL8>::max());
+    }
+  };
+
+  template<>
+  struct typeconv<CCTK_COMPLEX16> {
+    typedef complex<CCTK_REAL8> goodtype;
+    typedef CCTK_COMPLEX16 badtype;
+  };
+  
+#endif
+  
+#ifdef CCTK_REAL16
+  
+  template<> inline complex<CCTK_REAL16>
+  mymin (const complex<CCTK_REAL16> x, const complex<CCTK_REAL16> y)
+  {
+    return complex<CCTK_REAL16> (mymin(x.real(), y.real()),
+                                 mymin(x.imag(), y.imag()));
+  }
+  
+  template<> inline complex<CCTK_REAL16>
+  mymax (const complex<CCTK_REAL16> x, const complex<CCTK_REAL16> y)
+  {
+    return complex<CCTK_REAL16> (mymax(x.real(), y.real()),
+                                 mymax(x.imag(), y.imag()));
+  }
+  
+  template<>
+  struct my_numeric_limits<complex<CCTK_REAL16> > {
+    static complex<CCTK_REAL16> min ()
+    {
+      return complex<CCTK_REAL16> (my_numeric_limits<CCTK_REAL16>::min(),
+                                   my_numeric_limits<CCTK_REAL16>::min());
+    }
+    static complex<CCTK_REAL16> max ()
+    {
+      return complex<CCTK_REAL16> (my_numeric_limits<CCTK_REAL16>::max(),
+                                   my_numeric_limits<CCTK_REAL16>::max());
+    }
+  };
+
+  template<>
+  struct typeconv<CCTK_COMPLEX32> {
+    typedef complex<CCTK_REAL16> goodtype;
+    typedef CCTK_COMPLEX32 badtype;
+  };
+  
+#endif
+  
+  
+  
+  // Provide a square root function for integer values
+  
+#ifdef CCTK_INT1
+  template<> inline CCTK_INT1
+  mysqrt (const CCTK_INT1 x)
+  {
+    return sqrt((CCTK_REAL)x);
   }
 #endif
   
-  template<class T> inline T
-  mymin (const T& dummy)
+#ifdef CCTK_INT2
+  template<> inline CCTK_INT2
+  mysqrt (const CCTK_INT2 x)
   {
-    return mymin (numeric_limits<T>::min(), -numeric_limits<T>::max());
-  }
-  
-  template<> inline complex<float>
-  mymin (const complex<float>& dummy)
-  {
-    return complex<float> (mymin<float>(dummy.real()),
-                           mymin<float>(dummy.imag()));
-  }
-  
-  template<> inline complex<double>
-  mymin (const complex<double>& dummy)
-  {
-    return complex<double> (mymin<double>(dummy.real()),
-                            mymin<double>(dummy.imag()));
-  }
-  
-#ifdef LDBL_MAX
-  template<> inline complex<long double>
-  mymin (const complex<long double>& dummy)
-  {
-    return complex<long double> (mymin<long double>(dummy.real()),
-                                 mymin<long double>(dummy.imag()));
+    return sqrt((CCTK_REAL)x);
   }
 #endif
   
-  template<class T> inline T mymax (const T& dummy)
+#ifdef CCTK_INT4
+  template<> inline CCTK_INT4
+  mysqrt (const CCTK_INT4 x)
   {
-    return mymax(numeric_limits<T>::max(), -numeric_limits<T>::min());
+    return sqrt((CCTK_REAL)x);
   }
+#endif
   
-  template<> inline complex<float>
-  mymax (const complex<float>& dummy)
+#ifdef CCTK_INT8
+  template<> inline CCTK_INT8
+  mysqrt (const CCTK_INT8 x)
   {
-    return complex<float> (mymax<float>(dummy.real()),
-                           mymax<float>(dummy.imag()));
-  }
-  
-  template<> inline complex<double>
-  mymax (const complex<double>& dummy)
-  {
-    return complex<double> (mymax<double>(dummy.real()),
-                            mymax<double>(dummy.imag()));
-  }
-  
-#ifdef LDBL_MAX
-  template<> inline complex<long double>
-  mymax (const complex<long double>& dummy)
-  {
-    return complex<long double> (mymax<long double>(dummy.real()),
-                                 mymax<long double>(dummy.imag()));
+    return sqrt((CCTK_REAL)x);
   }
 #endif
   
@@ -175,8 +267,8 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = 0; }
-      static inline void reduce (T& accum, const T& val) { accum += 1; }
+      static inline void initialise (T& accum) { accum = T(0); }
+      static inline void reduce (T& accum, const T& val) { accum += T(1); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -188,7 +280,7 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = 0; }
+      static inline void initialise (T& accum) { accum = T(0); }
       static inline void reduce (T& accum, const T& val) { assert(0); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -201,7 +293,7 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = mymax(accum); }
+      static inline void initialise (T& accum) { accum = my_numeric_limits<T>::max(); }
       static inline void reduce (T& accum, const T& val) { accum = mymin(accum, val); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -214,7 +306,7 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = mymin(accum); }
+      static inline void initialise (T& accum) { accum = my_numeric_limits<T>::min(); }
       static inline void reduce (T& accum, const T& val) { accum = mymax(accum, val); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -227,7 +319,7 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = 1; }
+      static inline void initialise (T& accum) { accum = T(1); }
       static inline void reduce (T& accum, const T& val) { accum *= val; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -240,7 +332,7 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = 0; }
+      static inline void initialise (T& accum) { accum = T(0); }
       static inline void reduce (T& accum, const T& val) { accum += val; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -253,7 +345,7 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = 0; }
+      static inline void initialise (T& accum) { accum = T(0); }
       static inline void reduce (T& accum, const T& val) { accum += abs(val); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -266,7 +358,7 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = 0; }
+      static inline void initialise (T& accum) { accum = T(0); }
       static inline void reduce (T& accum, const T& val) { accum += val*val; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -279,7 +371,7 @@ namespace CarpetReduce {
     bool uses_cnt () const { return true; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = 0; }
+      static inline void initialise (T& accum) { accum = T(0); }
       static inline void reduce (T& accum, const T& val) { accum += val; }
       static inline void finalise (T& accum, const T& cnt) { accum /= cnt; }
     };
@@ -292,7 +384,7 @@ namespace CarpetReduce {
     bool uses_cnt () const { return true; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = 0; }
+      static inline void initialise (T& accum) { accum = T(0); }
       static inline void reduce (T& accum, const T& val) { accum += abs(val); }
       static inline void finalise (T& accum, const T& cnt) { accum /= cnt; }
     };
@@ -305,51 +397,12 @@ namespace CarpetReduce {
     bool uses_cnt () const { return true; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = 0; }
+      static inline void initialise (T& accum) { accum = T(0); }
       static inline void reduce (T& accum, const T& val) { accum += abs(val)*abs(val); }
-      static inline void finalise (T& accum, const T& cnt) { accum = sqrt(accum / cnt); }
+      static inline void finalise (T& accum, const T& cnt) { accum = mysqrt(accum / cnt); }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
   };
-typedef unsigned char uchar;
-typedef signed char schar;
-typedef long long llong;
-
-template<> inline void
-norm2::op<char>  ::finalise (char & accum, const char  & cnt)
-{
-  accum = (char   )sqrt((double)accum / cnt);
-}
-template<> inline void
-norm2::op<schar> ::finalise (schar& accum, const schar & cnt)
-{
-  accum = (schar  )sqrt((double)accum / cnt);
-}
-template<> inline void
-norm2::op<uchar> ::finalise (uchar& accum, const uchar & cnt)
-{
-  accum = (uchar)sqrt((double)accum / cnt);
-}
-template<> inline void
-norm2::op<short> ::finalise (short& accum, const short & cnt)
-{
-  accum = (short  )sqrt((double)accum / cnt);
-}
-template<> inline void
-norm2::op<int>   ::finalise (int  & accum, const int   & cnt)
-{
-  accum = (int    )sqrt((double)accum / cnt);
-}
-template<> inline void
-norm2::op<long>  ::finalise (long & accum, const long  & cnt)
-{
-  accum = (long   )sqrt((double)accum / cnt);
-}
-template<> inline void
-norm2::op<llong> ::finalise (llong& accum, const llong & cnt)
-{
-  accum = (llong  )sqrt((double)accum / cnt);
-}
   
   struct norm_inf : reduction {
     norm_inf () { }
@@ -357,7 +410,7 @@ norm2::op<llong> ::finalise (llong& accum, const llong & cnt)
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = 0; }
+      static inline void initialise (T& accum) { accum = T(0); }
       static inline void reduce (T& accum, const T& val) { accum = mymax(accum, (T)abs(val)); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -370,7 +423,7 @@ norm2::op<llong> ::finalise (llong& accum, const llong & cnt)
   void initialise (void* const outval, void* const cnt)
   {
     OP::initialise (*(T*)outval);
-    *(T*)cnt = 0;
+    *(T*)cnt = T(0);
   }
   
   template<class T,class OP>
@@ -431,11 +484,13 @@ norm2::op<llong> ::finalise (llong& accum, const llong & cnt)
     for (int n=0; n<num_outvals; ++n) {
       
       switch (outtype) {
-#define INITIALISE(OP,T)                                                \
-      case do_##OP:                                                     \
+#define INITIALISE(OP,S)                                                \
+      case do_##OP: {                                                   \
+        typedef typeconv<S>::goodtype T;                                \
 	initialise<T,OP::op<T> > (&((char*)myoutvals)[vartypesize*n],   \
 				  &((char*)mycounts )[vartypesize*n]);  \
-	break;
+	break;                                                          \
+      }
 #define TYPECASE(N,T)				\
       case N: {					\
 	switch (red->thered()) {		\
@@ -499,9 +554,12 @@ norm2::op<llong> ::finalise (llong& accum, const llong & cnt)
       for (int n=0; n<lsize; ++n) {
         
         switch (outtype) {
-#define COPY(T)                                                         \
+#define COPY(S)                                                         \
+        {                                                               \
+          typedef typeconv<S>::goodtype T;                              \
           ((T*)myoutvals)[n+lsize*m] = ((const T*)inarrays[m])[n];      \
-          ((T*)mycounts )[n+lsize*m] = (T)1;
+          ((T*)mycounts )[n+lsize*m] = T(1);                            \
+        }
 #define TYPECASE(N,T)                           \
         case N: {                               \
           COPY(T);                              \
@@ -559,12 +617,14 @@ norm2::op<llong> ::finalise (llong& accum, const llong & cnt)
     for (int n=0; n<num_outvals; ++n) {
       
       switch (outtype) {
-#define REDUCE(OP,T)                                                    \
-	case do_##OP:                                                   \
-	  reduce<T,OP::op<T> > (mylsh, mybbox, mynghostzones, inarrays[n], \
-				&((char*)myoutvals)[vartypesize*n],     \
-				&((char*)mycounts )[vartypesize*n]);    \
-	  break;
+#define REDUCE(OP,S)                                                    \
+      case do_##OP: {                                                   \
+        typedef typeconv<S>::goodtype T;                                \
+        reduce<T,OP::op<T> > (mylsh, mybbox, mynghostzones, inarrays[n], \
+                              &((char*)myoutvals)[vartypesize*n],       \
+                              &((char*)mycounts )[vartypesize*n]);      \
+        break;                                                          \
+      }
 #define TYPECASE(N,T)				\
       case N: {					\
 	switch (red->thered()) {		\
@@ -650,11 +710,13 @@ norm2::op<llong> ::finalise (llong& accum, const llong & cnt)
 	assert ((int)counts.size() == vartypesize * num_outvals);
 	
 	switch (outtype) {
-#define FINALISE(OP,T)                                                  \
-	case do_##OP:                                                   \
+#define FINALISE(OP,S)                                                  \
+	case do_##OP: {                                                 \
+          typedef typeconv<S>::goodtype T;                              \
 	  finalise<T,OP::op<T> > (&((char*)outvals)[vartypesize*n],     \
                                   &        counts  [vartypesize*n]);    \
-	  break;
+	  break;                                                        \
+        }
 #define TYPECASE(N,T)				\
 	case N: {				\
 	  switch (red->thered()) {		\
