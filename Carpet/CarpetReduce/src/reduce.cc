@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.26 2003/07/23 09:47:06 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.27 2003/07/23 14:30:44 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -22,7 +22,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.26 2003/07/23 09:47:06 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.27 2003/07/23 14:30:44 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -696,7 +696,6 @@ namespace CarpetReduce {
     
     
     bool const reduce_arrays = CCTK_GroupTypeFromVarI(vi) != CCTK_GF;
-    cout << "reduce_arrays=" << reduce_arrays << endl;
     
     for (int n=0; n<num_invars; ++n) {
       if ((CCTK_GroupTypeFromVarI(invars[n]) != CCTK_GF) != reduce_arrays) {
@@ -718,7 +717,6 @@ namespace CarpetReduce {
                 &mycounts[0], red);
     
     BEGIN_LOCAL_COMPONENT_LOOP(cgh, reduce_arrays ? CCTK_ARRAY : CCTK_GF) {
-      cout << "loop: component=" << component << endl;
       
       assert (grpdim<=dim);
       int lsh[dim], bbox[2*dim], nghostzones[dim];
