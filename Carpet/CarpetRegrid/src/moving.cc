@@ -1,4 +1,5 @@
-#include <assert.h>
+#include <cassert>
+#include <cmath>
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
@@ -9,7 +10,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/moving.cc,v 1.4 2004/04/28 15:45:25 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/moving.cc,v 1.5 2004/08/02 11:42:20 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_moving_cc);
 }
 
@@ -33,9 +34,6 @@ namespace CarpetRegrid {
     
     assert (refinement_levels >= 1);
     
-    // do nothing if the levels already exist
-    if (reflevel == refinement_levels) return 0;
-    
     assert (bbsss.size() >= 1);
     
     bbsss.resize (refinement_levels);
@@ -43,23 +41,11 @@ namespace CarpetRegrid {
     pss.resize (refinement_levels);
     
     bvect const symmetric (symmetry_x, symmetry_y, symmetry_z);
-    ivect const zero(0);
-    
-    ivect rstr = hh.baseextent.stride();
-    ivect rlb  = hh.baseextent.lower();
-    ivect rub  = hh.baseextent.upper();
+    bbvect const ob (false);
     
     assert (! smart_outer_boundaries);
     
     for (size_t rl=1; rl<bbsss.size(); ++rl) {
-      
-      // save old values
-      ivect const oldrlb = rlb;
-      ivect const oldrub = rub;
-      
-      // refined boxes have smaller stride
-      assert (all(rstr%hh.reffact == 0));
-      rstr /= hh.reffact;
       
       // calculate new extent
       CCTK_REAL const argument = 2*M_PI * moving_circle_frequency * cctk_time;
@@ -67,19 +53,16 @@ namespace CarpetRegrid {
         (moving_centre_x + moving_circle_radius * cos(argument),
          moving_centre_y + moving_circle_radius * sin(argument),
          moving_centre_z);
-      ivect const centre = floor(rvect(rub - rlb) * pos / rstr + 0.5) * rstr;
-      ivect const radius = floor(rvect(rub - rlb) * moving_region_radius / rstr + 0.5) * rstr;
-      rlb = oldrlb + symmetric.ifthen(zero  , centre - radius);
-      rub = oldrlb + symmetric.ifthen(radius, centre + radius);
-      assert (all(rlb >= oldrlb && rub <= oldrub));
+      CCTK_REAL const radius = moving_region_radius / ipow(reffact, rl-1);
       
-      ibbox const bb (rlb, rub, rstr);
-      vector<ibbox> bbs (1);
-      bbs.at(0) = bb;
+      rvect const rlb (symmetric.ifthen (rvect(0),      pos - rvect(radius)));
+      rvect const rub (symmetric.ifthen (rvect(radius), pos + rvect(radius)));
       
-      bbvect const ob (false);
-      gh<dim>::cbnds obs (1);
-      obs.at(0) = ob;
+      vector<ibbox> bbs;
+      gh<dim>::cbnds obs;
+      
+      ManualCoordinates_OneLevel
+        (cctkGH, hh, rl, refinement_levels, rlb, rub, ob, bbs, obs);
       
       // make multiprocessor aware
       gh<dim>::cprocs ps;
