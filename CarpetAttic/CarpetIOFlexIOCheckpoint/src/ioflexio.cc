@@ -45,7 +45,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.12 2003/12/03 16:02:51 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.13 2003/12/10 14:49:10 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -189,8 +189,16 @@ namespace CarpetIOFlexIO {
       //IOwriteAttribute(amrwriter->file,"name",IObase::Char,strlen(name)+1,name);
       //free(name);
 
-      const int gpdim = CCTK_GroupDimI(group);
-    
+      int gpdim = CCTK_GroupDimI(group);
+
+      // need gpdim=1 if scalar (flexio wants this)
+      if(gpdim == 0)
+	if(grouptype == CCTK_SCALAR)
+	  gpdim = 1;
+        else
+	  CCTK_WARN(0,"Non-scalar variable with dimension 0!!!");
+	
+
       // Set coordinate information
       CCTK_REAL lower[dim], upper[dim];
       double origin[dim], delta[dim], timestep;
@@ -241,7 +249,7 @@ namespace CarpetIOFlexIO {
     else
 #endif
       
-      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "GF reflevel: %d component: %d grouptype: %d",reflevel,component,grouptype);
+      //if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "GF reflevel: %d component: %d grouptype: %d",reflevel,component,grouptype);
       
 
       assert (var < (int)arrdata[group].data.size());
@@ -280,6 +288,7 @@ namespace CarpetIOFlexIO {
       tmp->allocate (ext, 0);
 
       
+
       for (comm_state<dim> state; !state.done(); state.step()) {
 	tmp->copy_from (state, data, ext);
       }
@@ -291,10 +300,8 @@ namespace CarpetIOFlexIO {
 	  origin[d] = (ext.lower() / ext.stride())[d];
 	  dims[d]   = (ext.shape() / ext.stride())[d];
 	}
-	CCTK_VInfo (CCTK_THORNSTRING, "boguscheck");
-	CCTK_VInfo (CCTK_THORNSTRING, "boguscheck2, dim0: %d dim1: %d dim2: %d",dims[0],dims[1],dims[2]);
-	amrwriter->write (origin, dims, (void*)tmp->storage());
 
+	amrwriter->write (origin, dims, (void*)tmp->storage());
 	// dump attributes
 	DumpCommonAttributes(cgh,writer,request);
 
