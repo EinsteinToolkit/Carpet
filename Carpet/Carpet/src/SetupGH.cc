@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.80 2004/06/16 16:34:42 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.81 2004/06/26 11:34:02 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -155,17 +155,93 @@ namespace Carpet {
     const int ierr = CCTK_GroupData (group, &gp);
     assert (!ierr);
     
+    // Get prolongation method
     char prolong_string[1000];
-    const int length = Util_TableGetString
-      (gp.tagstable, sizeof prolong_string, prolong_string, "Prolongation");
-    if (length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+    bool have_prolong_string = false;
+    {
+      const int prolong_length = Util_TableGetString
+        (gp.tagstable, sizeof prolong_string, prolong_string, "Prolongation");
+      if (prolong_length >= 0) {
+        have_prolong_string = true;
+      } else if (prolong_length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+        // do nothing
+      } else {
+        assert (0);
+      }
+    }
+    
+    // Get prolongation parameter name
+    char prolong_param_string[1000];
+    bool have_prolong_param_string = false;
+    {
+      const int prolong_param_length = Util_TableGetString
+        (gp.tagstable, sizeof prolong_param_string, prolong_param_string,
+         "ProlongationParameter");
+      if (prolong_param_length >= 0) {
+        have_prolong_param_string = true;
+      } else if (prolong_param_length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+        // do nothing
+      } else {
+        assert (0);
+      }
+    }
+    
+    // Complain if both are given
+    if (have_prolong_string && have_prolong_param_string) {
+      char * const groupname = CCTK_GroupName (group);
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Group \"%s\" has both the tags \"Prolongation\" and \"ProlongationParameter\".  This is not possible.",
+                  groupname);
+      free (groupname);
+    }
+    
+    // Map the parameter name
+    if (have_prolong_param_string) {
+      char * thorn;
+      char * name;
+      int const ierr
+        = CCTK_DecomposeName (prolong_param_string, &thorn, &name);
+      if (ierr < 0) {
+        char * const groupname = CCTK_GroupName (group);
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\".  This is not a valid parameter name.",
+                    groupname, prolong_param_string);
+        free (groupname);
+      }
+      int type;
+      char const * const * const value
+        = (static_cast<char const * const *>
+           (CCTK_ParameterGet (name, thorn, &type)));
+      if (! value || ! *value) {
+        char * const groupname = CCTK_GroupName (group);
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\".  This parameter does not exist.",
+                    groupname, prolong_param_string);
+        free (groupname);
+      }
+      if (type != PARAMETER_KEYWORD && type != PARAMETER_STRING) {
+        char * const groupname = CCTK_GroupName (group);
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\".  This parameter has the wrong type; it must be either KEYWORD or STRING.",
+                    groupname, prolong_param_string);
+        free (groupname);
+      }
+      free (thorn);
+      free (name);
+      assert (strlen(*value) < sizeof prolong_string);
+      strcpy (prolong_string, *value);
+      have_prolong_string = true;
+    }
+    
+    // Select a default, if necessary
+    if (! have_prolong_string) {
       if (can_transfer) {
         // Use the default
         if (gp.numtimelevels == 1) {
           // Only one time level: do not prolongate
           char * const groupname = CCTK_GroupName (group);
           CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "Group \"%s\" has only one time level; therefore it will not be prolongated or restricted",
+                      "Group \"%s\" has only one time level; therefore it will not be prolongated or restricted.",
                       groupname);
           free (groupname);
           return op_none;
@@ -177,7 +253,7 @@ namespace Carpet {
         if (gp.grouptype == CCTK_GF) {
           char * const groupname = CCTK_GroupName (group);
           CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "Group \"%s\" has the variable type %s which cannot be prolongated or restricted",
+                      "Group \"%s\" has the variable type \"%s\" which cannot be prolongated or restricted.",
                       groupname, CCTK_VarTypeName(gp.vartype));
           free (groupname);
           return op_none;
@@ -186,8 +262,10 @@ namespace Carpet {
         }
       }
     }
-    assert (length >= 0);
-    if (CCTK_Equals(prolong_string, "None")) {
+    
+    // Select the prolongation method
+    assert (have_prolong_string);
+    if (CCTK_Equals(prolong_string, "none")) {
       return op_none;
     } else if (CCTK_Equals(prolong_string, "Lagrange")) {
       return op_Lagrange;
@@ -196,7 +274,12 @@ namespace Carpet {
     } else if (CCTK_Equals(prolong_string, "ENO")) {
       return op_ENO;
     } else {
-      assert (0);
+      char * const groupname = CCTK_GroupName (group);
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Group \"%s\" has the unknown prolongation method \"%s\".",
+                  groupname, prolong_string);
+      free (groupname);
+      return op_error;
     }
     return op_error;
   }
