@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.22 2004/03/23 19:30:14 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.23 2004/03/26 14:43:55 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -222,6 +222,11 @@ namespace CarpetIOHDF5 {
       assert (writer>=0);
       
     }
+
+    if(h5verbose) {
+      CCTK_VInfo (CCTK_THORNSTRING, 
+		  "Writing variable %s on refinement level %d",varname,reflevel);
+    }
     
     WriteVar(cctkGH,writer,request,0);
 
@@ -244,9 +249,9 @@ namespace CarpetIOHDF5 {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    herr_t herr;
+    herr_t herr=0;
     
-    void * h5data;
+    void * h5data=NULL;
 
     const int n = request->vindex;
     assert (n>=0 && n<CCTK_NumVars());
@@ -327,18 +332,21 @@ namespace CarpetIOHDF5 {
 	    // Write data
 	    if (CCTK_MyProc(cctkGH)==0) {
           
-	      int ldim;
+	      int ldim=0;
 	      if ( grouptype==CCTK_SCALAR ) {
 		ldim = 1;
 	      } else {
 		ldim = gpdim;
 	      }
 	      
-	      hsize_t shape[ldim];
+	      //	      hsize_t shape[ldim];
+
+	      vector<hsize_t> shape(ldim);
+
 	      for (int d=0; d<ldim; ++d) {
 		shape[ldim-1-d] = (ext.shape() / ext.stride())[d];
 	      }
-	      const hid_t dataspace = H5Screate_simple (ldim, shape, NULL);
+	      const hid_t dataspace = H5Screate_simple (ldim, &shape[0], NULL);
 	      assert (dataspace>=0);
 
 
@@ -388,7 +396,7 @@ namespace CarpetIOHDF5 {
 	      WriteAttribute (dataset, "level_timestep", cctk_iteration / reflevelfact);
 	      WriteAttribute (dataset, "persistence", maxreflevelfact / reflevelfact);
 	      {
-		int time_refinement;
+		int time_refinement=0;
 		int spatial_refinement[dim];
 		int grid_placement_refinement[dim];
 		time_refinement = reflevelfact;
@@ -647,8 +655,8 @@ namespace CarpetIOHDF5 {
 	 const hid_t dataspace = H5Dget_space(dataset);
 	 assert (dataspace>=0);
 	 hsize_t rank = H5Sget_simple_extent_ndims(dataspace);
-	 hsize_t shape[rank];
-	 int rank2 = H5Sget_simple_extent_dims (dataspace, shape, NULL);
+	 vector<hsize_t> shape(rank);
+	 int rank2 = H5Sget_simple_extent_dims (dataspace, &shape[0], NULL);
 	 herr = H5Sclose(dataspace);
 	 assert(!herr);
 	 assert (rank2 == rank);

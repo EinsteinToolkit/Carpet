@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.18 2004/03/23 19:30:14 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.19 2004/03/26 14:43:55 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -106,14 +106,15 @@ namespace CarpetIOHDF5 {
     
     DECLARE_CCTK_PARAMETERS;
 
-    int result,myproc;
+    int result=0;
+    int myproc=-1;
+
     CarpetIOHDF5GH *myGH;
 
     
-    static hid_t reader; //this thing absolutely needs to be static!!!
+    static hid_t reader=0; //this thing absolutely needs to be static!!!
 
     myGH = NULL;
-    result = 0;
 
     myproc = CCTK_MyProc (cctkGH);
     
@@ -131,7 +132,7 @@ namespace CarpetIOHDF5 {
 
       string filenamestr = filenamebuf.str();
       const char * const filename = filenamestr.c_str();
- 
+
       if (myproc == 0) {
 	// First, open the file
 	if (h5verbose) 
@@ -141,7 +142,6 @@ namespace CarpetIOHDF5 {
 	  CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
 		    "Could not recover from \"%s\"", filename);
 	}
-	assert (reader>=0);
       } // myproc == 0
     }
     else {
@@ -159,7 +159,7 @@ namespace CarpetIOHDF5 {
       }
   
     if (called_from == CP_RECOVER_DATA) {
-      CCTK_INT4 numberofmgtimes;
+      CCTK_INT4 numberofmgtimes=0;
 
       CCTK_VInfo(CCTK_THORNSTRING,"Starting to recover data on reflevel %d!!!",reflevel);
 
@@ -216,14 +216,19 @@ namespace CarpetIOHDF5 {
 	assert(!mpierr);
       }
 
-      if (h5verbose) cout << "leveltimes: " << leveltimes << endl;
+      if (h5verbose) {
+	cout << "leveltimes: " << leveltimes << endl;
+      }
 
       cctkGH->cctk_time = leveltimes.at(mglevel).at(reflevel);
 
       result += RecoverGHextensions(cctkGH,reader);
 
 	  
-      if (h5verbose) cout << "reflevel: " << reflevel << endl;
+      if (h5verbose) {
+	cout << "reflevel: " << reflevel << endl;
+      }
+
       result += RecoverVariables (cctkGH,reader);
 
 
@@ -232,8 +237,9 @@ namespace CarpetIOHDF5 {
 		  cctkGH->cctk_iteration, (double) cctkGH->cctk_time);
     } // called_from == CP_RECOVER_DATA
   
-    if (myproc == 0 && reflevel==maxreflevels) 	
+    if (myproc == 0 && reflevel==maxreflevels) {	
       H5Fclose(reader);
+    }
 
     return (result);
   } // CarpetIOHDF5_Recover
@@ -278,7 +284,9 @@ namespace CarpetIOHDF5 {
     assert ((ndatasets)>=0);
     
     //if (h5verbose && reflevel==0) cout << "ndatasets: " << ndatasets << endl;
-    if ( reflevel == 0) cout << "ndatasets: " << ndatasets << endl;
+    if ( reflevel == 0) {
+      cout << "ndatasets: " << ndatasets << endl;
+    }
 
     if (reflevel==0) {
       for (int currdataset=0;currdataset<ndatasets+1;currdataset++){
@@ -318,9 +326,13 @@ namespace CarpetIOHDF5 {
 
 
 
+   
+    static long reflevelnamenum; // static keeps this thing local
 
-    long reflevelnamenum;
-    if(myproc==0) reflevelnamenum=refleveldatasetnamelist.size();
+    if(myproc==0) {
+	reflevelnamenum=refleveldatasetnamelist.size();
+      }
+
     MPI_Bcast (&reflevelnamenum, 1, MPI_LONG, 0, dist::comm);
     assert ((reflevelnamenum)>=0);
     
@@ -355,7 +367,9 @@ namespace CarpetIOHDF5 {
 
       name = CCTK_FullName(varindex);
 
-      if (h5verbose) cout << name << "  rl: " << reflevel << endl;
+      if (h5verbose) {
+	cout << name << "  rl: " << reflevel << endl;
+      }
       vector<ibset> regions_read(Carpet::maps);
 
       assert (varindex>=0 && varindex<CCTK_NumVars());
@@ -387,8 +401,6 @@ namespace CarpetIOHDF5 {
     return retval;
   }
    
-
-
   
   int RecoverGHextensions (cGH *cctkGH, hid_t reader)
   {
@@ -479,9 +491,10 @@ namespace CarpetIOHDF5 {
       herr = H5Gclose(group);
       assert(!herr);
 
-      if(h5verbose) 
+      if(h5verbose) {
 	CCTK_VInfo (CCTK_THORNSTRING, "\n%s\n",parameters);
-      
+      }
+
       CCTK_VInfo(CCTK_THORNSTRING, "Successfully recovered parameters!");
     } // myproc == 0
 
@@ -604,9 +617,9 @@ namespace CarpetIOHDF5 {
 	    const int grouptype = CCTK_GroupTypeI(group);
 
 	    /* scalars and grid arrays only have 1 reflevel: */
-	    if ( (grouptype != CCTK_GF) && (reflevel != 0) )
+	    if ( (grouptype != CCTK_GF) && (reflevel != 0) ) {
 	      continue;
-	    
+	    }
 	    /* now check if there is any memory allocated
 	       for GFs and GAs. GSs should always have 
 	       memory allocated and there is at this point
@@ -633,8 +646,6 @@ namespace CarpetIOHDF5 {
 	    gdata.numtimelevels = 0;
 	    gdata.numtimelevels = CCTK_GroupStorageIncrease (cctkGH, 1, &group,
 							     &gdata.numtimelevels,NULL);
-	    
-	    
 	    
 	    int first_vindex = CCTK_FirstVarIndexI (group);
 
@@ -663,9 +674,15 @@ namespace CarpetIOHDF5 {
 		    if (h5verbose)
 		      {
 			fullname = CCTK_FullName (request->vindex);
-			CCTK_VInfo (CCTK_THORNSTRING, "  %s (timelevel %d)",
-				    fullname, request->timelevel);
-			free (fullname);
+			if (fullname != NULL) {
+			    CCTK_VInfo (CCTK_THORNSTRING, "  %s (timelevel %d)",
+					fullname, request->timelevel);
+			    free (fullname);
+			}
+			else {
+			  CCTK_VWarn(1, __LINE__, __FILE__, CCTK_THORNSTRING,
+				     "Invalid variable with varindex %d", request->vindex);
+			}
 		      }
 		    // write the var
 		    
