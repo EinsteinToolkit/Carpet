@@ -1,13 +1,15 @@
 # Check Cartesian coordinates and symmetries
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/test/byspacing-eleven.par,v 1.1 2001/03/01 15:49:46 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/test/byspacing-eleven.par,v 1.2 2001/03/08 09:48:59 eschnett Exp $
 
-ActiveThorns = "IOASCII IOBasic IOUtil PUGH PUGHSlab Cart3d"
+ActiveThorns = "CarpetIOASCII IOBasic IOUtil Carpet CarpetLib CarpetSlab Cart3d Cart3dTest"
 
 cactus::cctk_itlast = 0
 
 grid::type = "byspacing"
 
-driver::global_nsize = 11
+driver::global_nx = 11
+driver::global_ny = 11
+driver::global_nz = 11
 
 driver::ghost_size_x = 0
 driver::ghost_size_y = 1

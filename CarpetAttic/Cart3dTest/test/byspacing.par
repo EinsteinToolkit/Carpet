@@ -1,7 +1,7 @@
 # Check Cartesian coordinates and symmetries
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/test/byspacing.par,v 1.1 2001/03/01 15:49:46 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/test/byspacing.par,v 1.2 2001/03/08 09:48:59 eschnett Exp $
 
-ActiveThorns = "IOASCII IOBasic IOUtil PUGH PUGHSlab Cart3d"
+ActiveThorns = "CarpetIOASCII IOBasic IOUtil Carpet CarpetLib CarpetSlab Cart3d Cart3dTest"
 
 cactus::cctk_itlast = 0
 
