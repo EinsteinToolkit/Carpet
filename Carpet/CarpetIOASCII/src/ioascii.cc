@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.59 2004/02/18 15:12:29 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.60 2004/02/18 15:18:38 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -500,8 +500,8 @@ namespace CarpetIOASCII {
                 rvect coord_delta;
                 if (grouptype == CCTK_GF) {
                   for (int d=0; d<dim; ++d) {
-                    global_lower[d] = origin_space.at(0)[d];
-                    coord_delta[d] = delta_space[d] / maxreflevelfact;
+                    global_lower[d] = cgh->cctk_origin_space[d];
+                    coord_delta[d] = cgh->cctk_delta_space[d] / maxreflevelfact;
                   }
                 } else {
                   for (int d=0; d<dim; ++d) {
@@ -593,11 +593,7 @@ namespace CarpetIOASCII {
     
     
     
-#warning "TODO: check this change"
     const int grouptype = CCTK_GroupTypeFromVarI(vindex);
-#if 0
-    if (grouptype != CCTK_GF && reflevel > 0) return 0;
-#else
     switch (grouptype) {
     case CCTK_SCALAR:
     case CCTK_ARRAY:
@@ -609,7 +605,6 @@ namespace CarpetIOASCII {
     default:
       assert (0);
     }
-#endif
     
     
     
