@@ -15,7 +15,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.40 2004/02/07 16:21:56 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.41 2004/02/07 16:34:17 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -353,7 +353,19 @@ namespace CarpetIOFlexIO {
             WriteAttribute (writer, "group_groupname", groupname);
             free (groupname);
           }
-          WriteAttribute (writer, "group_grouptype", grouptype);
+          switch (grouptype) {
+          case CCTK_GF:
+            WriteAttribute (writer, "group_grouptype", "GF");
+            break;
+          case CCTK_ARRAY:
+            WriteAttribute (writer, "group_grouptype", "ARRAY");
+            break;
+          case CCTK_SCALAR:
+            WriteAttribute (writer, "group_grouptype", "SCALAR");
+            break;
+          default:
+            assert (0);
+          }
           WriteAttribute (writer, "group_dim", CCTK_GroupDimI(group));
           WriteAttribute (writer, "group_timelevel", tl);
           WriteAttribute (writer, "group_numtimelevels", CCTK_NumTimeLevelsI(group));
@@ -871,7 +883,7 @@ namespace CarpetIOFlexIO {
   
   void WriteAttribute (IObase* writer, const char* name, const char * values)
   {
-    WriteAttribute (writer, name, values, strlen(values));
+    WriteAttribute (writer, name, values, strlen(values) + 1);
   }
   
   void WriteAttribute (IObase* writer, const char* name,
