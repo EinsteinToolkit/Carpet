@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.18 2003/10/14 16:39:16 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.19 2003/10/15 07:14:01 hawke Exp $
 
 #ifndef GDATA_HH
 #define GDATA_HH
@@ -67,6 +67,10 @@ public:
   virtual void free () = 0;
   
   // Accessors
+
+  int var_index () const {
+    return varindex;
+  }
   
   bool has_storage () const {
     return _has_storage;
