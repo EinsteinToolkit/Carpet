@@ -10,6 +10,7 @@ USES KEYWORD out_criterion
 USES CCTK_INT out_every
 USES CCTK_REAL out_dt
 
+USES KEYWORD verbose
 USES BOOLEAN strict_io_parameter_check
 
 

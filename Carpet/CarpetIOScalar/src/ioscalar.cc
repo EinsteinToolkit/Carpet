@@ -10,8 +10,10 @@
 #include "cctk.h"
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
+#include "util_String.h"
 
 #include "CactusBase/IOUtil/src/ioGH.h"
+#include "CactusBase/IOUtil/src/ioutil_Utils.h"
 
 #include "carpet.hh"
 
@@ -25,94 +27,104 @@ namespace Carpet {
 
 
 namespace CarpetIOScalar {
-  
+
   using namespace std;
   using namespace Carpet;
-  
-  
-  
+
+
+
   // Definition of local types
   struct info {
     string reduction;
     int handle;
   };
-  
-  
-  
+
+
   // Registered functions
-  void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cctkGH);
-  int OutputGH (const cGH* cctkGH);
-  int OutputVarAs (const cGH* cctkGH, const char* varname, const char* alias);
-  int TimeToOutput (const cGH* cctkGH, int vindex);
-  int TriggerOutput (const cGH* cctkGH, int vindex);
-  
+  static void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cctkGH);
+  static int OutputGH (const cGH* cctkGH);
+  static int OutputVarAs (const cGH* cctkGH, const char* varname, const char* alias);
+  static int TimeToOutput (const cGH* cctkGH, int vindex);
+  static int TriggerOutput (const cGH* cctkGH, int vindex);
+
   // Internal functions
-  void SetFlag (int index, const char* optstring, void* arg);
-  
-  
-  
+  static void SetFlag (int index, const char* optstring, void* arg);
+  static void CheckSteerableParameters (const cGH *const cctkGH);
+
+
+
   // Definition of static members
-  int GHExtension;
-  int IOMethod;
   vector<bool> do_truncate;
   vector<int> last_output;
-  
-  
-  
+
+  /* CarpetScalar GH extension structure */
+  struct
+  {
+    /* list of variables to output */
+    char *out_vars;
+
+    /* stop on I/O parameter parsing errors ? */
+    int stop_on_parse_errors;
+
+    /* I/O request description list (for all variables) */
+    ioRequest **requests;
+  } IOparameters;
+
+
   // Special output routines for complex numbers
-  
+
 #ifdef CCTK_REAL4
   ostream& operator<< (ostream& os, const CCTK_COMPLEX8& val)
   {
     return os << CCTK_Cmplx8Real(val) << " " << CCTK_Cmplx8Imag(val);
   }
 #endif
-  
+
 #ifdef CCTK_REAL8
   ostream& operator<< (ostream& os, const CCTK_COMPLEX16& val)
   {
     return os << CCTK_Cmplx16Real(val) << " " << CCTK_Cmplx16Imag(val);
   }
 #endif
-  
+
 #ifdef CCTK_REAL16
   ostream& operator<< (ostream& os, const CCTK_COMPLEX32& val)
   {
     return os << CCTK_Cmplx32Real(val) << " " << CCTK_Cmplx32Imag(val);
   }
 #endif
-  
-  
-  
+
+
+
   extern "C" void
   CarpetIOScalarStartup ()
   {
     CCTK_RegisterBanner ("AMR scalar I/O provided by CarpetIOScalar");
-    
-    GHExtension = CCTK_RegisterGHExtension("CarpetIOScalar");
+
+    int GHExtension = CCTK_RegisterGHExtension("CarpetIOScalar");
     CCTK_RegisterGHExtensionSetupGH (GHExtension, SetupGH);
-    
-    IOMethod = CCTK_RegisterIOMethod ("CarpetIOScalar");
+
+    int IOMethod = CCTK_RegisterIOMethod ("CarpetIOScalar");
     CCTK_RegisterIOMethodOutputGH (IOMethod, OutputGH);
     CCTK_RegisterIOMethodOutputVarAs (IOMethod, OutputVarAs);
     CCTK_RegisterIOMethodTimeToOutput (IOMethod, TimeToOutput);
     CCTK_RegisterIOMethodTriggerOutput (IOMethod, TriggerOutput);
   }
-  
-  
-  
+
+
+
   extern "C" void
   CarpetIOScalarInit (CCTK_ARGUMENTS)
   {
     DECLARE_CCTK_ARGUMENTS;
-    
+
     *this_iteration = 0;
     *last_output_iteration = 0;
     *last_output_time = cctkGH->cctk_time;
   }
-  
-  
-  
+
+
+
   void*
   SetupGH (tFleshConfig* const fc, int const convLevel, cGH* const cctkGH)
   {
@@ -123,21 +135,30 @@ namespace CarpetIOScalar {
     dummy = &convLevel;
     dummy = &cctkGH;
     dummy = &dummy;
-    
+
     // Truncate all files if this is not a restart
-    do_truncate.resize (CCTK_NumVars(), true);
-    
+    const int numvars = CCTK_NumVars ();
+    do_truncate.resize (numvars, true);
+
     // No iterations have yet been output
-    last_output.resize (CCTK_NumVars(), -1);
-    
+    last_output.resize (numvars, -1);
+
+    IOparameters.requests = (ioRequest **) calloc (numvars, sizeof(ioRequest*));
+    IOparameters.out_vars = strdup ("");
+
+    // initial I/O parameter check
+    IOparameters.stop_on_parse_errors = strict_io_parameter_check;
+    CheckSteerableParameters (cctkGH);
+    IOparameters.stop_on_parse_errors = 0;
+
     // We register only once, ergo we get only one handle.  We store
     // that statically, so there is no need to pass anything to
     // Cactus.
     return NULL;
   }
-  
-  
-  
+
+
+
   int
   OutputGH (const cGH * const cctkGH)
   {
@@ -148,18 +169,18 @@ namespace CarpetIOScalar {
     }
     return 0;
   }
-  
-  
-  
+
+
+
   int
   OutputVarAs (const cGH * const cctkGH,
                const char* const varname, const char* const alias)
   {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
-    
+
     assert (is_level_mode());
-    
+
     const int n = CCTK_VarIndex(varname);
     if (n<0) {
       CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -175,7 +196,7 @@ namespace CarpetIOScalar {
     assert (var>=0 && var<CCTK_NumVarsInGroupI(group));
     const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
     assert (num_tl>=1);
-    
+
     // Check for storage
     if (! CCTK_QueryGroupStorageI(cctkGH, group)) {
       CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -183,16 +204,16 @@ namespace CarpetIOScalar {
 		  varname);
       return 0;
     }
-    
+
     assert (do_global_mode);
-    
+
     const int vartype = CCTK_VarTypeI(n);
     assert (vartype >= 0);
-    
+
     // Get grid hierarchy extentsion from IOUtil
     const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cctkGH, "IO");
     assert (iogh);
-    
+
     // Create the output directory
     const char* myoutdir = outScalar_dir;
     if (CCTK_EQUALS(myoutdir, "")) {
@@ -201,7 +222,7 @@ namespace CarpetIOScalar {
     if (CCTK_MyProc(cctkGH)==0) {
       CCTK_CreateDirectory (0755, myoutdir);
     }
-    
+
     // Find the set of desired reductions
     list<info> reductions;
     string const redlist (outScalar_reductions);
@@ -225,19 +246,19 @@ namespace CarpetIOScalar {
         reductions.push_back (i);
       }
     }
-    
+
     // Output in global mode
     BEGIN_GLOBAL_MODE(cctkGH) {
-      
+
       for (list<info>::const_iterator ireduction = reductions.begin();
            ireduction != reductions.end();
            ++ireduction)
       {
         string const reduction = ireduction->reduction;
-        
+
         ofstream file;
         if (CCTK_MyProc(cctkGH)==0) {
-          
+
           // Invent a file name
           ostringstream filenamebuf;
           filenamebuf << myoutdir << "/" << alias << "." << reduction
@@ -245,7 +266,7 @@ namespace CarpetIOScalar {
           // we need a persistent temporary here
           string filenamestr = filenamebuf.str();
           const char* const filename = filenamestr.c_str();
-          
+
           // If this is the first time, then write a nice header
           if (do_truncate.at(n) && IO_TruncateOutputFiles (cctkGH)) {
             file.open (filename, ios::out | ios::trunc);
@@ -259,30 +280,30 @@ namespace CarpetIOScalar {
                         "Could not open output file \"%s\" for variable \"%s\"",
                         filename, varname);
           }
-          
+
           assert (file.is_open());
-          
+
           file << setprecision(15);
           assert (file.good());
-          
+
         } // if on the root processor
-        
+
         int const handle = ireduction->handle;
-        
+
         union {
 #define TYPECASE(N,T) T var_##T;
 #include "carpet_typecase.hh"
 #undef TYPECASE
         } result;
-        
+
         int const ierr
           = CCTK_Reduce (cctkGH, 0, handle, 1, vartype, &result, 1, n);
         assert (! ierr);
-        
+
         if (CCTK_MyProc(cctkGH)==0) {
-          
+
           file << cctk_iteration << " " << cctk_time << " ";
-          
+
           switch (vartype) {
 #define TYPECASE(N,T)                           \
           case N:                               \
@@ -293,59 +314,63 @@ namespace CarpetIOScalar {
           default:
             UnsupportedVarType (n);
           }
-          
+
           file << endl;
           assert (file.good());
         }
-        
+
         if (CCTK_MyProc(cctkGH)==0) {
           file.close();
           assert (file.good());
         }
-        
+
         assert (! file.is_open());
-        
+
       } // for reductions
-      
+
     } END_GLOBAL_MODE;
-    
+
     // Don't truncate again
     do_truncate.at(n) = false;
-    
+
     return 0;
   }
-  
-  
-  
+
+
+
   int
   TimeToOutput (const cGH * const cctkGH, int const vindex)
   {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
-    
+
     assert (vindex>=0 && vindex<CCTK_NumVars());
-    
-    
-    
+
     if (! do_global_mode) return 0;
-    
-    
-    
+
+    CheckSteerableParameters (cctkGH);
+
+    // check if output for this variable was requested
+    if (! IOparameters.requests[vindex])
+    {
+      return (0);
+    }
+
     // check whether to output at this iteration
     bool output_this_iteration;
-    
+
     const char* myoutcriterion = outScalar_criterion;
     if (CCTK_EQUALS(myoutcriterion, "default")) {
       myoutcriterion = out_criterion;
     }
-    
+
     if (CCTK_EQUALS (myoutcriterion, "never")) {
-      
+
       // Never output
       output_this_iteration = false;
-      
+
     } else if (CCTK_EQUALS (myoutcriterion, "iteration")) {
-      
+
       int myoutevery = outScalar_every;
       if (myoutevery == -2) {
         myoutevery = out_every;
@@ -365,9 +390,9 @@ namespace CarpetIOScalar {
         // we want no output at this iteration
         output_this_iteration = false;
       }
-      
+
     } else if (CCTK_EQUALS (myoutcriterion, "time")) {
-      
+
       CCTK_REAL myoutdt = outScalar_dt;
       if (myoutdt == -2) {
         myoutdt = out_dt;
@@ -391,24 +416,25 @@ namespace CarpetIOScalar {
         // we want no output at this iteration
         output_this_iteration = false;
       }
-      
+
     } else {
-      
+
       assert (0);
-      
+
     } // select output criterion
-    
+
     if (! output_this_iteration) return 0;
-    
-    
-    
+
+
+
+#if 0
     // check which variables to output
     static vector<bool> output_variables;
     static int output_variables_iteration = -1;
-    
+
     if (cctk_iteration > output_variables_iteration) {
       output_variables.resize (CCTK_NumVars());
-      
+
       const char* const varlist = outScalar_vars;
       if (CCTK_TraverseString (varlist, SetFlag, &output_variables,
                                CCTK_GROUP_OR_VAR) < 0)
@@ -420,11 +446,11 @@ namespace CarpetIOScalar {
 
       output_variables_iteration = cctk_iteration;
     }
-    
+
     if (! output_variables.at(vindex)) return 0;
-    
-    
-    
+#endif
+
+
     if (last_output.at(vindex) == cctk_iteration) {
       // Has already been output during this iteration
       char* const varname = CCTK_FullName(vindex);
@@ -436,33 +462,79 @@ namespace CarpetIOScalar {
       free (varname);
       return 0;
     }
-    
+
     assert (last_output.at(vindex) < cctk_iteration);
-    
+
     // Should be output during this iteration
     return 1;
   }
-  
-  
-  
+
+
+
   int
   TriggerOutput (const cGH * const cctkGH, int const vindex)
   {
     DECLARE_CCTK_ARGUMENTS;
-    
+
     assert (vindex>=0 && vindex<CCTK_NumVars());
-    
+
     char* const varname = CCTK_FullName(vindex);
     const int retval = OutputVarAs (cctkGH, varname, CCTK_VarName(vindex));
     free (varname);
-    
+
     last_output.at(vindex) = cctk_iteration;
-    
+
     return retval;
   }
-  
-  
-  
+
+
+  static void CheckSteerableParameters (const cGH *const cctkGH)
+  {
+    DECLARE_CCTK_PARAMETERS;
+
+    // re-parse the 'IOScalar::outScalar_vars' parameter if it has changed
+    if (strcmp (outScalar_vars, IOparameters.out_vars))
+    {
+      IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING,
+                                 "IOScalar::outScalar_vars",
+                                 IOparameters.stop_on_parse_errors,
+                                 outScalar_vars, -1, IOparameters.requests);
+
+      // notify the user about the new setting
+      if (! CCTK_Equals (verbose, "none"))
+      {
+        char *msg = NULL;
+        for (int i = CCTK_NumVars () - 1; i >= 0; i--)
+        {
+          if (IOparameters.requests[i])
+          {
+            char *fullname = CCTK_FullName (i);
+            if (! msg)
+            {
+              Util_asprintf (&msg, "Periodic scalar output requested for '%s'",
+                             fullname);
+            }
+            else
+            {
+              Util_asprintf (&msg, "%s, '%s'", msg, fullname);
+            }
+            free (fullname);
+          }
+        }
+        if (msg)
+        {
+          CCTK_INFO (msg);
+          free (msg);
+        }
+      }
+
+      // save the last setting of 'IOScalar::outScalar_vars' parameter
+      free (IOparameters.out_vars);
+      IOparameters.out_vars = strdup (outScalar_vars);
+    }
+  }
+
+
   void
   SetFlag (int const index, const char * const optstring, void * const arg)
   {
@@ -474,7 +546,7 @@ namespace CarpetIOScalar {
     vector<bool>& flags = *(vector<bool>*)arg;
     flags.at(index) = true;
   }
-  
-  
-  
+
+
+
 } // namespace CarpetIOScalar
