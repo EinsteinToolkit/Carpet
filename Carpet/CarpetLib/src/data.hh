@@ -90,6 +90,9 @@ private:
   virtual void change_processor_wait (comm_state<D>& state,
                                       const int newproc,
                                       void* const mem=0);
+  virtual void fill_box_arrays( int *srcshp, int *dstshp,
+        int srcbbox[3][D], int dstbbox[3][D], int regbbox[3][D],
+        const ibbox & box, const ibbox & sext, const ibbox & dext );
 public:
 
   // Accessors

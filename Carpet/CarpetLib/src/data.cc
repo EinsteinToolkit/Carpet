@@ -522,6 +522,32 @@ extern "C" {
      const int regbbox[3][3]);
 }
 
+template<class T,int D>
+void data<T,D>
+::fill_box_arrays( int *srcshp, int *dstshp,
+	int srcbbox[3][D], int dstbbox[3][D], int regbbox[3][D],
+	const data<T,D>::ibbox & box,
+	const data<T,D>::ibbox & sext,
+	const data<T,D>::ibbox & dext )
+{
+  for (int d=0; d<D; ++d) {
+    srcshp[d] = (sext.shape() / sext.stride())[d];
+    dstshp[d] = (dext.shape() / dext.stride())[d];
+    
+    srcbbox[0][d] = sext.lower()[d];
+    srcbbox[1][d] = sext.upper()[d];
+    srcbbox[2][d] = sext.stride()[d];
+    
+    dstbbox[0][d] = dext.lower()[d];
+    dstbbox[1][d] = dext.upper()[d];
+    dstbbox[2][d] = dext.stride()[d];
+    
+    regbbox[0][d] = box.lower()[d];
+    regbbox[1][d] = box.upper()[d];
+    regbbox[2][d] = box.stride()[d];
+  }
+}
+
 template<>
 void data<CCTK_INT4,3>
 ::copy_from_innerloop (const gdata<3>* gsrc, const ibbox& box)
@@ -549,22 +575,8 @@ void data<CCTK_INT4,3>
   int srcshp[3], dstshp[3];
   int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
   
-  for (int d=0; d<3; ++d) {
-    srcshp[d] = (sext.shape() / sext.stride())[d];
-    dstshp[d] = (dext.shape() / dext.stride())[d];
-    
-    srcbbox[0][d] = sext.lower()[d];
-    srcbbox[1][d] = sext.upper()[d];
-    srcbbox[2][d] = sext.stride()[d];
-    
-    dstbbox[0][d] = dext.lower()[d];
-    dstbbox[1][d] = dext.upper()[d];
-    dstbbox[2][d] = dext.stride()[d];
-    
-    regbbox[0][d] = box.lower()[d];
-    regbbox[1][d] = box.upper()[d];
-    regbbox[2][d] = box.stride()[d];
-  }
+  fill_box_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
+	box, sext, dext );
   
   assert (all(dext.stride() == box.stride()));
   if (all(sext.stride() == dext.stride())) {
@@ -608,22 +620,8 @@ void data<CCTK_REAL8,3>
   int srcshp[3], dstshp[3];
   int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
   
-  for (int d=0; d<3; ++d) {
-    srcshp[d] = (sext.shape() / sext.stride())[d];
-    dstshp[d] = (dext.shape() / dext.stride())[d];
-    
-    srcbbox[0][d] = sext.lower()[d];
-    srcbbox[1][d] = sext.upper()[d];
-    srcbbox[2][d] = sext.stride()[d];
-    
-    dstbbox[0][d] = dext.lower()[d];
-    dstbbox[1][d] = dext.upper()[d];
-    dstbbox[2][d] = dext.stride()[d];
-    
-    regbbox[0][d] = box.lower()[d];
-    regbbox[1][d] = box.upper()[d];
-    regbbox[2][d] = box.stride()[d];
-  }
+  fill_box_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
+	box, sext, dext );
   
   assert (all(dext.stride() == box.stride()));
   if (all(sext.stride() == dext.stride())) {
@@ -667,22 +665,8 @@ void data<CCTK_COMPLEX16,3>
   int srcshp[3], dstshp[3];
   int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
   
-  for (int d=0; d<3; ++d) {
-    srcshp[d] = (sext.shape() / sext.stride())[d];
-    dstshp[d] = (dext.shape() / dext.stride())[d];
-    
-    srcbbox[0][d] = sext.lower()[d];
-    srcbbox[1][d] = sext.upper()[d];
-    srcbbox[2][d] = sext.stride()[d];
-    
-    dstbbox[0][d] = dext.lower()[d];
-    dstbbox[1][d] = dext.upper()[d];
-    dstbbox[2][d] = dext.stride()[d];
-    
-    regbbox[0][d] = box.lower()[d];
-    regbbox[1][d] = box.upper()[d];
-    regbbox[2][d] = box.stride()[d];
-  }
+  fill_box_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
+	box, sext, dext );
   
   assert (all(dext.stride() == box.stride()));
   if (all(sext.stride() == dext.stride())) {
@@ -951,22 +935,8 @@ void data<CCTK_REAL8,3>
   int srcshp[3], dstshp[3];
   int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
   
-  for (int d=0; d<3; ++d) {
-    srcshp[d] = (sext.shape() / sext.stride())[d];
-    dstshp[d] = (dext.shape() / dext.stride())[d];
-    
-    srcbbox[0][d] = sext.lower()[d];
-    srcbbox[1][d] = sext.upper()[d];
-    srcbbox[2][d] = sext.stride()[d];
-    
-    dstbbox[0][d] = dext.lower()[d];
-    dstbbox[1][d] = dext.upper()[d];
-    dstbbox[2][d] = dext.stride()[d];
-    
-    regbbox[0][d] = box.lower()[d];
-    regbbox[1][d] = box.upper()[d];
-    regbbox[2][d] = box.stride()[d];
-  }
+  fill_box_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
+	box, sext, dext );
   
   // Check that the times are consistent
   assert (times.size() > 0);
