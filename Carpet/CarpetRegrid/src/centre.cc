@@ -9,7 +9,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/centre.cc,v 1.2 2004/04/18 13:29:43 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/centre.cc,v 1.3 2004/04/22 11:58:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_centre_cc);
 }
 
@@ -33,7 +33,7 @@ namespace CarpetRegrid {
     assert (refinement_levels >= 1);
     
     // do nothing if the levels already exist
-    if (bbsss.size() == refinement_levels) return 0;
+    if (reflevel == refinement_levels) return 0;
     
     assert (bbsss.size() >= 1);
     
