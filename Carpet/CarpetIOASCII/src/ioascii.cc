@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.50 2003/06/18 18:28:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.51 2003/08/01 13:45:19 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -555,10 +555,13 @@ namespace CarpetIOASCII {
     // First choice: explicit coordinate
     char cparam[1000];
     sprintf (cparam, ctempl, outdim);
-    if (CCTK_ParameterQueryTimesSet (cparam, CCTK_THORNSTRING) > 0) {
+    const int ncparam = CCTK_ParameterQueryTimesSet (cparam, CCTK_THORNSTRING);
+    assert (ncparam >= 0);
+    if (ncparam > 0) {
       int ptype;
       const CCTK_REAL* const pcoord
-	= (const CCTK_REAL*)CCTK_ParameterGet (cparam, CCTK_THORNSTRING, &ptype);
+	= ((const CCTK_REAL*)CCTK_ParameterGet
+           (cparam, CCTK_THORNSTRING, &ptype));
       assert (pcoord);
       const CCTK_REAL coord = *pcoord;
       assert (ptype == PARAMETER_REAL);
@@ -568,7 +571,9 @@ namespace CarpetIOASCII {
     // Second choice: explicit index
     char iparam[1000];
     sprintf (iparam, itempl, outdim);
-    if (CCTK_ParameterQueryTimesSet (iparam, CCTK_THORNSTRING) > 0) {
+    const int niparam = CCTK_ParameterQueryTimesSet (iparam, CCTK_THORNSTRING);
+    assert (niparam >= 0);
+    if (niparam > 0) {
       int ptype;
       const int* const pindex
 	= (const int*)CCTK_ParameterGet (iparam, CCTK_THORNSTRING, &ptype);
@@ -579,10 +584,14 @@ namespace CarpetIOASCII {
     }
     
     // Third choice: explicit global coordinate
-    if (CCTK_ParameterQueryTimesSet (cglobal, "IO") > 0) {
+    const char* iothorn = CCTK_ImplementationThorn ("IO");
+    assert (iothorn);
+    const int ncglobal = CCTK_ParameterQueryTimesSet (cglobal, iothorn);
+    assert (ncglobal >= 0);
+    if (ncglobal > 0) {
       int ptype;
       const CCTK_REAL* const pcoord
-	= (const CCTK_REAL*)CCTK_ParameterGet (cglobal, "IO", &ptype);
+	= (const CCTK_REAL*)CCTK_ParameterGet (cglobal, iothorn, &ptype);
       assert (pcoord);
       const CCTK_REAL coord = *pcoord;
       assert (ptype == PARAMETER_REAL);
@@ -590,10 +599,12 @@ namespace CarpetIOASCII {
     }
     
     // Fourth choice: explicit global index
-    if (CCTK_ParameterQueryTimesSet (iglobal, "IO") > 0) {
+    const int niglobal = CCTK_ParameterQueryTimesSet (iglobal, iothorn);
+    assert (niglobal >= 0);
+    if (niglobal > 0) {
       int ptype;
       const int* const pindex
-	= (const int*)CCTK_ParameterGet (iglobal, "IO", &ptype);
+	= (const int*)CCTK_ParameterGet (iglobal, iothorn, &ptype);
       assert (pindex);
       const int index = *pindex;
       assert (ptype == PARAMETER_INT);
@@ -644,7 +655,10 @@ namespace CarpetIOASCII {
   {
     char parametername[1000];
     sprintf (parametername, parametertemplate, outdim);
-    if (CCTK_ParameterQueryTimesSet (parametername, CCTK_THORNSTRING) > 0) {
+    const int ntimes =
+      CCTK_ParameterQueryTimesSet (parametername, CCTK_THORNSTRING);
+    assert (ntimes >= 0);
+    if (ntimes > 0) {
       int ptype;
       const char* const* const ppval = (const char* const*)CCTK_ParameterGet
 	(parametername, CCTK_THORNSTRING, &ptype);
@@ -665,11 +679,14 @@ namespace CarpetIOASCII {
   {
     char parametername[1000];
     sprintf (parametername, parametertemplate, outdim);
-    if (CCTK_ParameterQueryTimesSet (parametername, CCTK_THORNSTRING) > 0) {
+    const int ntimes =
+      CCTK_ParameterQueryTimesSet (parametername, CCTK_THORNSTRING);
+    assert (ntimes >= 0);
+    if (ntimes > 0) {
       int ptype;
       const int* const ppval
 	= (const int*)CCTK_ParameterGet
-	(parametername, CCTK_THORNSTRING, &ptype);
+        (parametername, CCTK_THORNSTRING, &ptype);
       assert (ppval);
       const int pval = *ppval;
       assert (ptype == PARAMETER_INT);
@@ -768,12 +785,25 @@ namespace CarpetIOASCII {
 	    }
 	    os << "  ";
 	    switch (CCTK_VarTypeI(vi)) {
+#define WANT_NO_COMPLEX
 #define TYPECASE(N,T)					\
 	    case N:					\
 	      os << (*(const data<T,D>*)gfdata)[index];	\
 	      break;
 #include "Carpet/Carpet/src/typecase"
 #undef TYPECASE
+#undef WANT_NO_COMPLEX
+#define WANT_NO_INT
+#define WANT_NO_REAL
+#define TYPECASE(N,T)					                \
+	    case N:					                \
+	      os << (*(const data<T,D>*)gfdata)[index].real() << " "    \
+                 << (*(const data<T,D>*)gfdata)[index].imag();	        \
+	      break;
+#include "Carpet/Carpet/src/typecase"
+#undef TYPECASE
+#undef WANT_NO_INT
+#undef WANT_NO_REAL
 	    default:
 	      UnsupportedVarType(vi);
 	    }
