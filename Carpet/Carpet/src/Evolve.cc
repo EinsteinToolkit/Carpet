@@ -31,7 +31,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.48 2004/06/26 11:37:33 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.49 2004/06/27 10:02:42 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -157,7 +157,7 @@ namespace Carpet {
             Checkpoint ("Regrid");
             const bool did_change = Regrid (cgh);
             
-            if (true || did_change) {
+            if (did_change) {
               // Postregrid
               Checkpoint ("Scheduling POSTREGRID");
               CCTK_ScheduleTraverse ("CCTK_POSTREGRID", cgh, CallFunction);
