@@ -1,9 +1,5 @@
 # Parameter definitions for thorn IDScalarWave
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/param.ccl,v 1.4 2002/02/27 18:53:11 shawley Exp $
-
-shares: grid
-
-USES KEYWORD type 
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/param.ccl,v 1.5 2002/03/23 20:21:00 schnetter Exp $
 
 restricted:
 

@@ -1,9 +1,5 @@
 # Parameter definitions for thorn IDSpaceTimeToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/param.ccl,v 1.2 2001/08/26 13:59:41 schnetter Exp $
-
-shares: grid
-
-USES KEYWORD type 
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/param.ccl,v 1.3 2002/03/23 20:21:00 schnetter Exp $
 
 shares: hydrotoy
 
