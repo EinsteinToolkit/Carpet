@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.58 2004/02/03 16:46:13 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.59 2004/02/06 00:59:36 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -154,12 +154,10 @@ namespace Carpet {
     cGroup gp;
     const int ierr = CCTK_GroupData (group, &gp);
     assert (!ierr);
-    const int tagstable = CCTK_GroupTagsTableI (group);
-    assert (tagstable >= 0);
     
     char prolong_string[1000];
     const int length = Util_TableGetString
-      (tagstable, sizeof prolong_string, prolong_string, "Prolongation");
+      (gp.tagstable, sizeof prolong_string, prolong_string, "Prolongation");
     if (length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
       if (can_transfer) {
         // Use the default
@@ -236,9 +234,7 @@ namespace Carpet {
     mglevels = num_convergence_levels;
     mgfact = convergence_factor;
     maxmglevelfact = ipow(mgfact, mglevels-1);
-// TODO: disable temporarily
-//     cgh->cctk_convfac = mgfact;
-    assert (mgfact == 2);
+    cgh->cctk_convfac = mgfact;
     
     // Refinement information
     maxreflevels = max_refinement_levels;
@@ -500,8 +496,6 @@ namespace Carpet {
       cGroup gp;
       ierr = CCTK_GroupData (group, &gp);
       assert (!ierr);
-      const int tagstable = CCTK_GroupTagsTableI (group);
-      assert (tagstable >= 0);
       
       switch (gp.grouptype) {
 	
@@ -558,11 +552,11 @@ namespace Carpet {
         jvect convpowers (0);
         jvect convoffsets (0);
         
-        if (tagstable >= 0) {
+        if (gp.tagstable >= 0) {
           int status;
           
           status = Util_TableGetIntArray
-            (tagstable, gp.dim, &convpowers[0], "convergence_power");
+            (gp.tagstable, gp.dim, &convpowers[0], "convergence_power");
           if (status == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
             // keep default: independent of convergence level
           } else if (status == 1) {
@@ -580,7 +574,7 @@ namespace Carpet {
           assert (all (convpowers >= 0));
           
           status = Util_TableGetIntArray
-            (tagstable, gp.dim, &convoffsets[0], "convergence_offset");
+            (gp.tagstable, gp.dim, &convoffsets[0], "convergence_offset");
           if (status == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
             // keep default: offset is 0
           } else if (status == 1) {
