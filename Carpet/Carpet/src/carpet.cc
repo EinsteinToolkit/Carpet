@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.2 2001/03/05 14:30:03 eschnett Exp $
 
 /* It is assumed that the number of components of all arrays is equal
    to the number of components of the grid functions, and that their
@@ -85,7 +85,7 @@ namespace Carpet {
     CCTK_OverloadEnableGroupComm (EnableGroupComm);
     CCTK_OverloadDisableGroupComm (DisableGroupComm);
     CCTK_OverloadBarrier (Barrier);
-    CCTK_OverloadParallelInit (ParallelInit);
+//     CCTK_OverloadParallelInit (ParallelInit);
     CCTK_OverloadExit (Exit);
     CCTK_OverloadAbort (Abort);
     CCTK_OverloadMyProc (myProc);
@@ -107,13 +107,19 @@ namespace Carpet {
     
     dist::pseudoinit();
     
+    // ghost zones
+    const vect<int,dim> lghosts(ghost_size_x, ghost_size_y, ghost_size_z);
+    const vect<int,dim> ughosts(ghost_size_x, ghost_size_y, ghost_size_z);
+    
     // grid size
-    const vect<int,dim> str
-      ((int)floor(pow(refinement_factor, max_refinement_levels) + 0.5));
-    const vect<int,dim> lb
-      (0);
-    const vect<int,dim> ub
-      (vect<int,dim>(global_nx-1, global_ny-1, global_nz-1) * str);
+    const int stride
+      = (int)floor(pow(refinement_factor, max_refinement_levels) + 0.5);
+    const vect<int,dim> npoints(global_nx, global_ny, global_nz);
+    
+    const vect<int,dim> str(stride);
+    const vect<int,dim> lb(lghosts * str);
+    const vect<int,dim> ub = (npoints - ughosts - 1) * str;
+    
     const bbox<int,dim> baseext(lb, ub, str);
     
     // allocate grid hierarchy
@@ -124,10 +130,6 @@ namespace Carpet {
     // allocate time hierarchy
     tt = new th<dim>
       (*hh, (int)floor(pow(refinement_factor, max_refinement_levels) + 0.5));
-    
-    // ghost zones
-    const vect<int,dim> lghosts(ghost_size_x, ghost_size_y, ghost_size_z);
-    const vect<int,dim> ughosts(ghost_size_x, ghost_size_y, ghost_size_z);
     
     // allocate data hierarchy
     dd = new dh<dim>(*hh, lghosts, ughosts);
@@ -597,9 +599,11 @@ namespace Carpet {
 	  typedef bbox<int,dim> ibbox;
 	  const ibbox ext  = dd->boxes[reflevel][component][mglevel].exterior;
 	  const ibbox base = hh->baseextent;
-	  cgh->cctk_lsh[d]      = (ext.shape() / ext.stride())[d];
-	  cgh->cctk_gsh[d]      = (base.shape() / base.stride())[d]
-				   * cgh->cctk_levfac[d];
+	  cgh->cctk_lsh[d]
+	    = (ext.shape() / ext.stride())[d];
+	  cgh->cctk_gsh[d]
+	    = ((base.shape() / base.stride() + dd->lghosts + dd->ughosts)[d]
+	       * cgh->cctk_levfac[d]);
 	  // TODO: set boundary information correctly
 	  cgh->cctk_bbox[2*d  ] = 1;
 	  cgh->cctk_bbox[2*d+1] = 1;
@@ -752,7 +756,7 @@ namespace Carpet {
       CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
 		  "Cannot synchronise group \"%s\" because it has no storage",
 		  groupname);
-      return 0;
+      return -1;
     }
     
     const int n0 = CCTK_FirstVarIndexI(group);
@@ -797,8 +801,10 @@ namespace Carpet {
       abort();
     }
     
-    return 1;
+    return 0;
   }
+  
+  
   
   int EnableGroupStorage (cGH* cgh, const char* groupname)
   {
@@ -806,6 +812,10 @@ namespace Carpet {
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
+    
+    // The return values seems to be whether storage was enabled
+    // previously.
+    const int retval = CCTK_QueryGroupStorageI (cgh, group);
     
     switch (CCTK_GroupTypeI(group)) {
       
@@ -882,8 +892,12 @@ namespace Carpet {
       abort();
     }
     
+    // The return value seems to be 1 (success) no matter whether
+    // storage has actually been disabled.
     return 1;
   }
+  
+  
   
   int DisableGroupStorage (cGH* cgh, const char* groupname)
   {
@@ -913,13 +927,13 @@ namespace Carpet {
 	  default:
 	    abort();
 	  }
+	  scdata[group][var][tl] = 0;
 	}
       }
       break;
       
     case CCTK_ARRAY:
-      if (arrdata[group].data.size()==0
-	  || arrdata[group].data[0] == 0) {
+      if (arrdata[group].data.size()==0 || arrdata[group].data[0] == 0) {
 	// group already has no storage
 	break;
       }
@@ -935,6 +949,7 @@ namespace Carpet {
 	default:
 	  abort();
 	}
+	arrdata[group].data[var] = 0;
       }
       break;
       
@@ -956,6 +971,7 @@ namespace Carpet {
 	default:
 	  abort();
 	}
+	gfdata[group].data[var] = 0;
       }
       break;
       
@@ -963,19 +979,21 @@ namespace Carpet {
       abort();
     }
     
-    return 1;
+    return 0;
   }
+  
+  
   
   int EnableGroupComm (cGH* cgh, const char* groupname)
   {
     // Communication is always enabled
-    return 1;
+    return 0;
   }
   
   int DisableGroupComm (cGH* cgh, const char* groupname)
   {
     // Communication is always enabled
-    return 0;
+    return -1;
   }
   
   
@@ -1125,10 +1143,12 @@ namespace Carpet {
   
   
   
-  int ParallelInit (cGH* cgh)
-  {
-    return 0;
-  }
+//   int ParallelInit (cGH* cgh)
+//   {
+//     return 0;
+//   }
+  
+  
   
   int Exit (cGH* cgh, int retval)
   {
@@ -1174,7 +1194,7 @@ namespace Carpet {
     
     assert (dir>=0 && dir<dim);
     
-    clog << "ArrayGroupSizeB group=" << CCTK_GroupName(group) << " dir=" << dir << endl;
+//     clog << "ArrayGroupSizeB group=" << CCTK_GroupName(group) << " dir=" << dir << endl;
     if (CCTK_QueryGroupStorageI(cgh, group)) {
       
       const int var = CCTK_FirstVarIndexI(group);
@@ -1184,17 +1204,17 @@ namespace Carpet {
 	
       case CCTK_SCALAR:
 	assert (group<(int)scdata.size());
-	clog << "   SCALAR" << endl;
+// 	clog << "   SCALAR" << endl;
 	return &one;
 	
       case CCTK_ARRAY:
 	assert (group<(int)arrdata.size());
-	clog << "   ARRAY " << arrdata[group].size[dir] << endl;
+// 	clog << "   ARRAY " << arrdata[group].size[dir] << endl;
 	return &arrdata[group].size[dir];
 	
       case CCTK_GF:
 	assert (group<(int)gfdata.size());
-	clog << "   GF " << gfsize[dir] << endl;
+// 	clog << "   GF " << gfsize[dir] << endl;
 	return &gfsize[dir];
 	
       default:
@@ -1217,6 +1237,8 @@ namespace Carpet {
       group = CCTK_GroupIndex(groupname);
     }
     assert (group>=0 && group<CCTK_NumGroups());
+    
+//     clog << "QueryGroupStorageB " << CCTK_GroupName(group) << endl;
     
     const int n = CCTK_FirstVarIndexI(group);
     assert (n>=0 && n<CCTK_NumVars());

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.2 2001/03/05 14:30:03 eschnett Exp $
 
 #include <vector>
 
@@ -76,7 +76,7 @@ namespace Carpet {
   int EnableGroupComm (cGH *cgh, const char *groupname);
   int DisableGroupComm (cGH *cgh, const char *groupname);
   int Barrier (cGH *cgh);
-  int ParallelInit (cGH *cgh);
+//   int ParallelInit (cGH *cgh);
   int Exit (cGH *cgh, int retval);
   int Abort (cGH *cgh, int retval);
   int myProc (cGH *cgh);
