@@ -13,7 +13,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.34 2004/01/25 14:57:30 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.35 2004/02/05 09:53:15 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -78,11 +78,15 @@ namespace CarpetRegrid {
     
     
     // Steer parameters
-    if (activate_newlevels_on_regrid != 0) {
+    if (CCTK_EQUALS(activate_levels_on_regrid, "none")) {
+      
+      // do nothing
+      
+    } else if (CCTK_EQUALS(activate_levels_on_regrid, "fixed")) {
+      
       if (cctkGH->cctk_iteration >= activate_next) {
         const int newnumlevels
-          = min(refinement_levels + activate_newlevels_on_regrid,
-                maxreflevels);
+          = min(refinement_levels + num_new_levels, maxreflevels);
         assert (newnumlevels>0 && newnumlevels<=maxreflevels);
         
         *const_cast<CCTK_INT*>(&activate_next) = cctkGH->cctk_iteration + 1;
@@ -98,9 +102,9 @@ namespace CarpetRegrid {
           ("refinement_levels", "CarpetRegrid", param.str().c_str());
         
       }
-    }
-    
-    if (regrid_from_function) {
+      
+    } else if (CCTK_EQUALS(activate_levels_on_regrid, "activate or deactivate a variable number of levels, determined by a user-specified function.  When this parameter is used, the parameters num_new_levels and activate_next must not be set.")) {
+      
       if (! CCTK_IsFunctionAliased("RegridLevel")) {
         CCTK_WARN (0, "No thorn has provided the function \"RegridLevel\"");
       }
@@ -113,6 +117,11 @@ namespace CarpetRegrid {
       param << refinement_levels;
       CCTK_ParameterSet
         ("refinement_levels", "CarpetRegrid", param.str().c_str());
+      
+    } else {
+      
+      assert (0);
+      
     }
     
     
