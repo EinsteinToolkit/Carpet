@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-lf95-debug,v 1.4 2002/05/05 22:16:57 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-lf95-debug,v 1.5 2002/10/16 17:33:52 schnetter Exp $
 
 LAHEY			= /usr/local/lf9560
 
@@ -35,3 +35,6 @@ LIBS			= AMR h5io hdfio hlio ieeeio  hdf5 mfhdf df jpeg z  crypt  fj9i6 fj9f6 fj
 
 HDF5			= yes
 MPI			= MPICH
+
+# PTHREADS
+PTHREADS	= yes

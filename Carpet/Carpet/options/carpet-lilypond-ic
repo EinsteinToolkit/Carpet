@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-ic,v 1.6 2002/09/25 15:50:30 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-ic,v 1.7 2002/10/16 17:33:51 schnetter Exp $
 
 CPP		= cpp -traditional -DCARPET_REAL
 CC		= icc
@@ -45,3 +45,6 @@ HDF5_DIR	= /usr/local
 # MPI
 MPI		= MPICH
 MPICH_DIR	= /usr/lib/mpich
+
+# PTHREADS
+PTHREADS	= yes

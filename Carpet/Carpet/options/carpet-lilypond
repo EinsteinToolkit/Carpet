@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond,v 1.8 2002/05/05 22:16:57 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond,v 1.9 2002/10/16 17:33:51 schnetter Exp $
 
 CPP			= cpp -traditional -DCARPET_REAL
 F77			= g77
@@ -24,3 +24,6 @@ HDF5			= yes
 MPI			= MPICH
 
 DEBUG			= yes
+
+# PTHREADS
+PTHREADS	= yes
