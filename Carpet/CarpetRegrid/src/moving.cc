@@ -9,7 +9,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/moving.cc,v 1.1 2004/04/14 22:19:44 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/moving.cc,v 1.2 2004/04/16 18:41:33 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_moving_cc);
 }
 
@@ -52,6 +52,9 @@ namespace CarpetRegrid {
     obss.resize (refinement_levels);
     pss.resize (refinement_levels);
     
+    bvect const symmetric (symmetry_x, symmetry_y, symmetry_z);
+    ivect const zero(0);
+    
     ivect rstr = hh.baseextent.stride();
     ivect rlb  = hh.baseextent.lower();
     ivect rub  = hh.baseextent.upper();
@@ -67,14 +70,15 @@ namespace CarpetRegrid {
       rstr /= hh.reffact;
       
       // calculate new extent
-      rvect pos;
-      pos[0] = moving_centre_x + moving_circle_radius * cos(2*M_PI * moving_circle_frequency * cctk_time);
-      pos[1] = moving_centre_y + moving_circle_radius * sin(2*M_PI * moving_circle_frequency * cctk_time);
-      pos[2] = moving_centre_z;
+      CCTK_REAL const argument = 2*M_PI * moving_circle_frequency * cctk_time;
+      rvect const pos
+        (moving_centre_x + moving_circle_radius * cos(argument),
+         moving_centre_y + moving_circle_radius * sin(argument),
+         moving_centre_z);
       ivect const centre = floor(rvect(rub - rlb) * pos / rstr + 0.5) * rstr;
       ivect const radius = floor(rvect(rub - rlb) * moving_region_radius / rstr + 0.5) * rstr;
-      rlb = oldrlb + centre - radius;
-      rub = oldrlb + centre + radius;
+      rlb = oldrlb + symmetric.ifthen(zero  , centre - radius);
+      rub = oldrlb + symmetric.ifthen(radius, centre + radius);
       assert (all(rlb >= oldrlb && rub <= oldrub));
       
       ibbox const bb (rlb, rub, rstr);
