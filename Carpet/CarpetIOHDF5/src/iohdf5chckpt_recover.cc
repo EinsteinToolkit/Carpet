@@ -19,7 +19,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.34 2004/06/25 12:44:02 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.35 2004/06/26 12:39:09 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -628,8 +628,10 @@ namespace CarpetIOHDF5 {
       break;
     }
     
-    char const * const cp_tempname = cp_tempname_buf.str().c_str();
-    char const * const cp_filename = cp_filename_buf.str().c_str();
+    string const cp_tempname_str = cp_tempname_buf.str();
+    string const cp_filename_str = cp_filename_buf.str();
+    char const * const cp_tempname = cp_tempname_str.c_str();
+    char const * const cp_filename = cp_filename_str.c_str();
     
     
     
