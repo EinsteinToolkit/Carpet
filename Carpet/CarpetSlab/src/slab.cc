@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.19 2004/05/27 12:26:33 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.20 2004/08/19 06:35:36 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -23,7 +23,7 @@
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.19 2004/05/27 12:26:33 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.20 2004/08/19 06:35:36 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 
@@ -48,7 +48,8 @@ namespace CarpetSlab {
   
   
   
-  int StoreMapping (mapping * const mp)
+  int
+  StoreMapping (mapping * const mp)
   {
     int const table = Util_TableCreate (UTIL_TABLE_FLAGS_DEFAULT);
     assert (table>=0);
@@ -57,7 +58,8 @@ namespace CarpetSlab {
     return table;
   }
   
-  mapping * RetrieveMapping (int const table)
+  mapping *
+  RetrieveMapping (int const table)
   {
     CCTK_POINTER mp;
     int const ierr = Util_TableGetPointer (table, &mp, "mapping");
@@ -65,7 +67,8 @@ namespace CarpetSlab {
     return (mapping *)mp;
   }
   
-  void DeleteMapping (int const table)
+  void
+  DeleteMapping (int const table)
   {
     int const ierr = Util_TableDestroy (table);
     assert (ierr>=0);
@@ -73,16 +76,17 @@ namespace CarpetSlab {
   
   
   
-  void FillSlab (const cGH* const cgh,
-		 const int dest_proc,
-		 const int n,
-		 const int ti,
-		 const int hdim,
-		 const int origin[/*vdim*/],
-		 const int dirs[/*hdim*/],
-		 const int stride[/*hdim*/],
-		 const int length[/*hdim*/],
-                 void* const hdata)
+  void
+  FillSlab (const cGH* const cgh,
+            const int dest_proc,
+            const int n,
+            const int ti,
+            const int hdim,
+            const int origin[/*vdim*/],
+            const int dirs[/*hdim*/],
+            const int stride[/*hdim*/],
+            const int length[/*hdim*/],
+            void* const hdata)
   {
     int ierr;
     
@@ -302,15 +306,16 @@ namespace CarpetSlab {
   
   
   
-  void* GetSlab (const cGH* const cgh,
-		 const int dest_proc,
-		 const int n,
-		 const int ti,
-		 const int hdim,
-		 const int origin[/*vdim*/],
-		 const int dirs[/*hdim*/],
-		 const int stride[/*hdim*/],
-		 const int length[/*hdim*/])
+  void *
+  GetSlab (const cGH* const cgh,
+           const int dest_proc,
+           const int n,
+           const int ti,
+           const int hdim,
+           const int origin[/*vdim*/],
+           const int dirs[/*hdim*/],
+           const int stride[/*hdim*/],
+           const int length[/*hdim*/])
   {
     // Check Cactus grid hierarchy
     assert (cgh);
@@ -516,13 +521,14 @@ namespace CarpetSlab {
   
   
   
-  CCTK_INT CarpetSlab_Get (CCTK_POINTER_TO_CONST const cctkGH_,
-                           CCTK_INT const mapping_handle,
-                           CCTK_INT const proc,
-                           CCTK_INT const vindex,
-                           CCTK_INT const timelevel,
-                           CCTK_INT const hdatatype,
-                           void * const hdata)
+  CCTK_INT
+  CarpetSlab_Get (CCTK_POINTER_TO_CONST const cctkGH_,
+                  CCTK_INT const mapping_handle,
+                  CCTK_INT const proc,
+                  CCTK_INT const vindex,
+                  CCTK_INT const timelevel,
+                  CCTK_INT const hdatatype,
+                  CCTK_POINTER const hdata)
   {
     cGH const * const cctkGH = (cGH const *) cctkGH_;
     
@@ -560,15 +566,16 @@ namespace CarpetSlab {
   
   
   
-  CCTK_INT CarpetSlab_GetList (CCTK_POINTER_TO_CONST const cctkGH_,
-                               CCTK_INT const mapping_handle,
-                               CCTK_INT const num_arrays,
-                               CCTK_INT const * const procs,
-                               CCTK_INT const * const vindices,
-                               CCTK_INT const * const timelevels,
-                               CCTK_INT const * const hdatatypes,
-                               void * const * const hdata,
-                               CCTK_INT * const retvals)
+  CCTK_INT
+  CarpetSlab_GetList (CCTK_POINTER_TO_CONST const cctkGH_,
+                      CCTK_INT const mapping_handle,
+                      CCTK_INT const num_arrays,
+                      CCTK_INT const * const procs,
+                      CCTK_INT const * const vindices,
+                      CCTK_INT const * const timelevels,
+                      CCTK_INT const * const hdatatypes,
+                      CCTK_POINTER const * const hdata,
+                      CCTK_INT * const retvals)
   {
     cGH const * const cctkGH = (cGH const *) cctkGH_;
     
@@ -600,24 +607,30 @@ namespace CarpetSlab {
   
   
   
-  CCTK_INT CarpetSlab_LocalMappingByIndex (CCTK_POINTER_TO_CONST const cctkGH_,
-                                           CCTK_INT const vindex,
-                                           CCTK_INT const hdim,
-                                           CCTK_INT const * const direction,
-                                           CCTK_INT const * const origin,
-                                           CCTK_INT const * const extent,
-                                           CCTK_INT const * const downsample_,
-                                           CCTK_INT const table_handle,
-                                           CCTK_INT (* const conversion_fn) (CCTK_INT const nelems,
-                                                                             CCTK_INT const src_stride,
-                                                                             CCTK_INT const dst_stride,
-                                                                             CCTK_INT const src_type,
-                                                                             CCTK_INT const dst_type,
-                                                                             void const * const from,
-                                                                             void * const to),
-                                           CCTK_INT * const hsize_local,
-                                           CCTK_INT * const hsize_global,
-                                           CCTK_INT * const hoffset_global)
+  typedef CCTK_INT
+  (* conversion_fn_ptr) (CCTK_INT const nelems,
+                         CCTK_INT const src_stride,
+                         CCTK_INT const dst_stride,
+                         CCTK_INT const src_type,
+                         CCTK_INT const dst_type,
+                         CCTK_POINTER_TO_CONST const from,
+                         CCTK_POINTER const to);
+  
+  
+  
+  CCTK_INT
+  CarpetSlab_LocalMappingByIndex (CCTK_POINTER_TO_CONST const cctkGH_,
+                                  CCTK_INT const vindex,
+                                  CCTK_INT const hdim,
+                                  CCTK_INT const * const direction,
+                                  CCTK_INT const * const origin,
+                                  CCTK_INT const * const extent,
+                                  CCTK_INT const * const downsample_,
+                                  CCTK_INT const table_handle,
+                                  conversion_fn_ptr const conversion_fn,
+                                  CCTK_INT * const hsize_local,
+                                  CCTK_INT * const hsize_global,
+                                  CCTK_INT * const hoffset_global)
   {
     CCTK_WARN (0, "not implemented");
     return 0;
@@ -625,22 +638,17 @@ namespace CarpetSlab {
   
   
   
-  CCTK_INT CarpetSlab_GlobalMappingByIndex (CCTK_POINTER_TO_CONST const cctkGH_,
-                                            CCTK_INT const vindex,
-                                            CCTK_INT const hdim,
-                                            CCTK_INT const * const direction,
-                                            CCTK_INT const * const origin,
-                                            CCTK_INT const * const extent,
-                                            CCTK_INT const * const downsample_,
-                                            CCTK_INT const table_handle,
-                                            CCTK_INT (* const conversion_fn) (CCTK_INT const nelems,
-                                                                              CCTK_INT const src_stride,
-                                                                              CCTK_INT const dst_stride,
-                                                                              CCTK_INT const src_type,
-                                                                              CCTK_INT const dst_type,
-                                                                              void const * const from,
-                                                                              void * const to),
-                                            CCTK_INT * const hsize)
+  CCTK_INT
+  CarpetSlab_GlobalMappingByIndex (CCTK_POINTER_TO_CONST const cctkGH_,
+                                   CCTK_INT const vindex,
+                                   CCTK_INT const hdim,
+                                   CCTK_INT const * const direction,
+                                   CCTK_INT const * const origin,
+                                   CCTK_INT const * const extent,
+                                   CCTK_INT const * const downsample_,
+                                   CCTK_INT const table_handle,
+                                   conversion_fn_ptr const conversion_fn,
+                                   CCTK_INT * const hsize)
   {
     cGH const * const cctkGH = (cGH const *) cctkGH_;
     
@@ -727,7 +735,8 @@ namespace CarpetSlab {
   
   
   
-  CCTK_INT CarpetSlab_FreeMapping (CCTK_INT const mapping_handle)
+  CCTK_INT
+  CarpetSlab_FreeMapping (CCTK_INT const mapping_handle)
   {
     // Check arguments
     assert (mapping_handle>=0);
@@ -746,17 +755,18 @@ namespace CarpetSlab {
   
   
   
-  int Hyperslab_GetHyperslab (const cGH* const GH,
-			      const int target_proc,
-			      const int vindex,
-			      const int vtimelvl,
-			      const int hdim,
-			      const int global_startpoint [/*vdim*/],
-			      const int directions [/*vdim*/],
-			      const int lengths [/*hdim*/],
-			      const int downsample_ [/*hdim*/],
-			      void** const hdata,
-			      int hsize [/*hdim*/])
+  int
+  Hyperslab_GetHyperslab (const cGH* const GH,
+                          const int target_proc,
+                          const int vindex,
+                          const int vtimelvl,
+                          const int hdim,
+                          const int global_startpoint [/*vdim*/],
+                          const int directions [/*vdim*/],
+                          const int lengths [/*hdim*/],
+                          const int downsample_ [/*hdim*/],
+                          void** const hdata,
+                          int hsize [/*hdim*/])
   {
     const int vdim = CCTK_GroupDimFromVarI(vindex);
     assert (vdim>=1 && vdim<=dim);
