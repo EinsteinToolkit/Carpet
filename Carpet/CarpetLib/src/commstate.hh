@@ -30,10 +30,25 @@ private:
   // Forbid copying and passing by value
   comm_state (comm_state const &);
   comm_state& operator= (comm_state const &);
+  
 public:
   
+  // Lists of temporary data objects
   queue<gdata*> tmps1, tmps2;
-  vector<MPI_Request> requests; // for use_waitall
+  
+  // List of MPI requests for use_waitall
+  vector<MPI_Request> requests;
+  
+  // Lists of communication buffers for use_lightweight_buffers
+  struct gcommbuf {
+    bool am_receiver, am_sender;
+    MPI_Request request;
+  };
+  template<typename T>
+  struct commbuf : gcommbuf {
+    vector<T> data;
+  };
+  queue<gcommbuf*> recvbufs, sendbufs;
 };
 
 

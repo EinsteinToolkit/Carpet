@@ -151,6 +151,28 @@ public:
                        const gdata* src, const ibbox& box);
   void copy_from_wait (comm_state& state,
                        const gdata* src, const ibbox& box);
+ protected:
+  virtual void
+  copy_from_recv_inner (comm_state& state,
+                        const gdata* src,
+                        const ibbox& box)
+    = 0;
+  virtual void
+  copy_from_send_inner (comm_state& state,
+                        const gdata* src,
+                        const ibbox& box)
+    = 0;
+  virtual void
+  copy_from_recv_wait_inner (comm_state& state,
+                             const gdata* src,
+                             const ibbox& box)
+    = 0;
+  virtual void
+  copy_from_send_wait_inner (comm_state& state,
+                             const gdata* src,
+                             const ibbox& box)
+    = 0;
+  
  public:
   void interpolate_from (comm_state& state,
                          const vector<const gdata*> srcs,

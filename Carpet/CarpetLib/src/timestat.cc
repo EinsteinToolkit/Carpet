@@ -74,6 +74,17 @@ timestat wtime_copyfrom_wait_changeproc_wait;
 timestat wtime_copyfrom_wait_copyfrom_nocomm;
 timestat wtime_copyfrom_wait_delete;
 
+timestat wtime_copyfrom_recvinner_allocate;
+timestat wtime_copyfrom_recvinner_recv;
+timestat wtime_copyfrom_sendinner_allocate;
+timestat wtime_copyfrom_sendinner_copy;
+timestat wtime_copyfrom_sendinner_send;
+timestat wtime_copyfrom_recvwaitinner_wait;
+timestat wtime_copyfrom_recvwaitinner_copy;
+timestat wtime_copyfrom_recvwaitinner_delete;
+timestat wtime_copyfrom_sendwaitinner_wait;
+timestat wtime_copyfrom_sendwaitinner_delete;
+
 timestat wtime_changeproc_recv;
 timestat wtime_changeproc_send;
 timestat wtime_changeproc_wait;
@@ -106,6 +117,17 @@ void CarpetLib_printtimestats (CCTK_ARGUMENTS)
          << "   wtime_copyfrom_wait_changeproc_wait:  " << wtime_copyfrom_wait_changeproc_wait  << endl
          << "   wtime_copyfrom_wait_copyfrom_nocomm2: " << wtime_copyfrom_wait_copyfrom_nocomm  << endl
          << "   wtime_copyfrom_wait_delete:           " << wtime_copyfrom_wait_delete           << endl
+         << endl
+         << "   wtime_copyfrom_recvinner_allocate:    " << wtime_copyfrom_recvinner_allocate    << endl
+         << "   wtime_copyfrom_recvinner_recv:        " << wtime_copyfrom_recvinner_recv        << endl
+         << "   wtime_copyfrom_sendinner_allocate:    " << wtime_copyfrom_sendinner_allocate    << endl
+         << "   wtime_copyfrom_sendinner_copy:        " << wtime_copyfrom_sendinner_copy        << endl
+         << "   wtime_copyfrom_sendinner_send:        " << wtime_copyfrom_sendinner_send        << endl
+         << "   wtime_copyfrom_recvwaitinner_wait:    " << wtime_copyfrom_recvwaitinner_wait    << endl
+         << "   wtime_copyfrom_recvwaitinner_copy:    " << wtime_copyfrom_recvwaitinner_copy    << endl
+         << "   wtime_copyfrom_recvwaitinner_delete:  " << wtime_copyfrom_recvwaitinner_delete  << endl
+         << "   wtime_copyfrom_sendwaitinner_wait:    " << wtime_copyfrom_sendwaitinner_wait    << endl
+         << "   wtime_copyfrom_sendwaitinner_delete:  " << wtime_copyfrom_sendwaitinner_delete  << endl
          << endl
          << "   wtime_changeproc_recv:                " << wtime_changeproc_recv                << endl
          << "   wtime_changeproc_send:                " << wtime_changeproc_send                << endl

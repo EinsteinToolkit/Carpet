@@ -157,6 +157,8 @@ void gdata::copy_from_nocomm (const gdata* src, const ibbox& box)
 void gdata::copy_from_recv (comm_state& state,
                             const gdata* src, const ibbox& box)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   assert (has_storage() && src->has_storage());
   assert (all(box.lower()>=extent().lower()
 	      && box.lower()>=src->extent().lower()));
@@ -177,16 +179,27 @@ void gdata::copy_from_recv (comm_state& state,
   } else {
     
     // copy to different processor
-    wtime_copyfrom_recv_maketyped.start();
-    gdata* const tmp = make_typed(varindex, transport_operator);
-    wtime_copyfrom_recv_maketyped.stop();
-    state.tmps1.push (tmp);
-    wtime_copyfrom_recv_allocate.start();
-    tmp->allocate (box, src->proc());
-    wtime_copyfrom_recv_allocate.stop();
-    wtime_copyfrom_recv_changeproc_recv.start();
-    tmp->change_processor_recv (state, proc());
-    wtime_copyfrom_recv_changeproc_recv.stop();
+    if (! use_lightweight_buffers) {
+      
+      wtime_copyfrom_recv_maketyped.start();
+      gdata* const tmp = make_typed(varindex, transport_operator);
+      wtime_copyfrom_recv_maketyped.stop();
+      state.tmps1.push (tmp);
+      wtime_copyfrom_recv_allocate.start();
+      tmp->allocate (box, src->proc());
+      wtime_copyfrom_recv_allocate.stop();
+      wtime_copyfrom_recv_changeproc_recv.start();
+      tmp->change_processor_recv (state, proc());
+      wtime_copyfrom_recv_changeproc_recv.stop();
+      
+    } else {
+      
+      if (dist::rank() == proc()) {
+        // this processor receives data
+        copy_from_recv_inner (state, src, box);
+      }
+      
+    }
     
   }
   
@@ -198,6 +211,8 @@ void gdata::copy_from_recv (comm_state& state,
 void gdata::copy_from_send (comm_state& state,
                             const gdata* src, const ibbox& box)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   assert (has_storage() && src->has_storage());
   assert (all(box.lower()>=extent().lower()
 	      && box.lower()>=src->extent().lower()));
@@ -222,16 +237,26 @@ void gdata::copy_from_send (comm_state& state,
   } else {
     
     // copy to different processor
-    gdata* const tmp = state.tmps1.front();
-    state.tmps1.pop();
-    state.tmps2.push (tmp);
-    assert (tmp);
-    wtime_copyfrom_send_copyfrom_nocomm2.start();
-    tmp->copy_from_nocomm (src, box);
-    wtime_copyfrom_send_copyfrom_nocomm2.stop();
-    wtime_copyfrom_send_changeproc_send.start();
-    tmp->change_processor_send (state, proc());
-    wtime_copyfrom_send_changeproc_send.stop();
+    if (! use_lightweight_buffers) {
+      
+      gdata* const tmp = state.tmps1.front();
+      state.tmps1.pop();
+      state.tmps2.push (tmp);
+      assert (tmp);
+      wtime_copyfrom_send_copyfrom_nocomm2.start();
+      tmp->copy_from_nocomm (src, box);
+      wtime_copyfrom_send_copyfrom_nocomm2.stop();
+      wtime_copyfrom_send_changeproc_send.start();
+      tmp->change_processor_send (state, proc());
+      wtime_copyfrom_send_changeproc_send.stop();
+      
+    } else {
+      
+      if (dist::rank() == src->proc()) {
+        // this processor sends data
+        copy_from_send_inner (state, src, box);
+      }
+    }
     
   }
   
@@ -243,6 +268,8 @@ void gdata::copy_from_send (comm_state& state,
 void gdata::copy_from_wait (comm_state& state,
                             const gdata* src, const ibbox& box)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   assert (has_storage() && src->has_storage());
   assert (all(box.lower()>=extent().lower()
 	      && box.lower()>=src->extent().lower()));
@@ -263,18 +290,33 @@ void gdata::copy_from_wait (comm_state& state,
   } else {
     
     // copy to different processor
-    gdata* const tmp = state.tmps2.front();
-    state.tmps2.pop();
-    assert (tmp);
-    wtime_copyfrom_wait_changeproc_wait.start();
-    tmp->change_processor_wait (state, proc());
-    wtime_copyfrom_wait_changeproc_wait.stop();
-    wtime_copyfrom_wait_copyfrom_nocomm.start();
-    copy_from_nocomm (tmp, box);
-    wtime_copyfrom_wait_copyfrom_nocomm.stop();
-    wtime_copyfrom_wait_delete.start();
-    delete tmp;
-    wtime_copyfrom_wait_delete.stop();
+    if (! use_lightweight_buffers) {
+      
+      gdata* const tmp = state.tmps2.front();
+      state.tmps2.pop();
+      assert (tmp);
+      wtime_copyfrom_wait_changeproc_wait.start();
+      tmp->change_processor_wait (state, proc());
+      wtime_copyfrom_wait_changeproc_wait.stop();
+      wtime_copyfrom_wait_copyfrom_nocomm.start();
+      copy_from_nocomm (tmp, box);
+      wtime_copyfrom_wait_copyfrom_nocomm.stop();
+      wtime_copyfrom_wait_delete.start();
+      delete tmp;
+      wtime_copyfrom_wait_delete.stop();
+      
+    } else {
+      
+      if (dist::rank() == proc()) {
+        // this processor receives data
+        copy_from_recv_wait_inner (state, src, box);
+      }
+      if (dist::rank() == src->proc()) {
+        // this processor sends data
+        copy_from_send_wait_inner (state, src, box);
+      }
+      
+    }
     
   }
   

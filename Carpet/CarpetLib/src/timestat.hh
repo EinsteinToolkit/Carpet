@@ -48,6 +48,17 @@ extern timestat wtime_copyfrom_wait_changeproc_wait;
 extern timestat wtime_copyfrom_wait_copyfrom_nocomm;
 extern timestat wtime_copyfrom_wait_delete;
 
+extern timestat wtime_copyfrom_recvinner_allocate;
+extern timestat wtime_copyfrom_recvinner_recv;
+extern timestat wtime_copyfrom_sendinner_allocate;
+extern timestat wtime_copyfrom_sendinner_copy;
+extern timestat wtime_copyfrom_sendinner_send;
+extern timestat wtime_copyfrom_recvwaitinner_wait;
+extern timestat wtime_copyfrom_recvwaitinner_copy;
+extern timestat wtime_copyfrom_recvwaitinner_delete;
+extern timestat wtime_copyfrom_sendwaitinner_wait;
+extern timestat wtime_copyfrom_sendwaitinner_delete;
+
 extern timestat wtime_changeproc_recv;
 extern timestat wtime_changeproc_send;
 extern timestat wtime_changeproc_wait;

@@ -398,6 +398,178 @@ void data<T>::change_processor_wait (comm_state& state,
 
 
 
+template<typename T>
+void
+data<T>::copy_from_recv_inner (comm_state& state,
+                               const gdata* gsrc, const ibbox& box)
+{
+  DECLARE_CCTK_PARAMETERS;
+  
+  wtime_copyfrom_recvinner_allocate.start();
+  comm_state::commbuf<T> * b = new comm_state::commbuf<T>;
+  b->am_receiver = true;
+  b->am_sender = false;
+  b->data.resize (prod (box.shape() / box.stride()));
+  wtime_copyfrom_recvinner_allocate.stop();
+  
+  wtime_copyfrom_recvinner_recv.start();
+  assert (dist::rank() == proc());
+  T dummy;
+  MPI_Irecv (&b->data.front(), b->data.size(),
+             dist::datatype(dummy), gsrc->proc(),
+             tag, dist::comm, &b->request);
+  wtime_copyfrom_recvinner_recv.stop();
+  if (use_waitall) {
+    state.requests.push_back (b->request);
+  }
+  state.recvbufs.push (b);
+}
+
+
+
+template<typename T>
+void
+data<T>::copy_from_send_inner (comm_state& state,
+                               const gdata* gsrc, const ibbox& box)
+{
+  DECLARE_CCTK_PARAMETERS;
+  
+  wtime_copyfrom_sendinner_allocate.start();
+  comm_state::commbuf<T> * b = new comm_state::commbuf<T>;
+  b->am_receiver = false;
+  b->am_sender = true;
+  b->data.resize (prod (box.shape() / box.stride()));
+  wtime_copyfrom_sendinner_allocate.stop();
+  
+  wtime_copyfrom_sendinner_copy.start();
+  const data<T> * src = dynamic_cast<const data<T> *> (gsrc);
+  assert (src->_has_storage);
+  assert (src->_owns_storage);
+  // copy src to b
+  {
+    T * restrict p = & b->data.front();
+    T const * restrict const q = src->_storage;
+    ivect const imin = box.lower() / box.stride();
+    ivect const imax = (box.upper() + box.stride()) / box.stride();
+    ivect const lbnd = src->extent().lower() / src->extent().stride();
+    ivect const lsh = src->extent().shape() / src->extent().stride();
+    for (int k=imin[2]; k<imax[2]; ++k) {
+      for (int j=imin[1]; j<imax[1]; ++j) {
+        for (int i=imin[0]; i<imax[0]; ++i) {
+          * p ++ = q [i - lbnd[0] + lsh[0] * (j - lbnd[1] + lsh[1] * (k - lbnd[2]))];
+        }
+      }
+    }
+  }
+  wtime_copyfrom_sendinner_copy.stop();
+  
+  wtime_copyfrom_sendinner_send.start();
+  assert (dist::rank() == src->proc());
+  T dummy;
+  MPI_Isend (&b->data.front(), b->data.size(), dist::datatype(dummy), proc(),
+             tag, dist::comm, &b->request);
+  wtime_copyfrom_sendinner_send.stop();
+  if (use_waitall) {
+    state.requests.push_back (b->request);
+  }
+  state.sendbufs.push (b);
+}
+
+
+
+template<typename T>
+void
+data<T>::copy_from_recv_wait_inner (comm_state& state,
+                                    const gdata* gsrc, const ibbox& box)
+{
+  DECLARE_CCTK_PARAMETERS;
+  
+  comm_state::commbuf<T> * b
+    = (comm_state::commbuf<T> *) state.recvbufs.front();
+  state.recvbufs.pop();
+  assert (b->am_receiver);
+  assert (! b->am_sender);
+  
+  wtime_copyfrom_recvwaitinner_wait.start();
+  if (use_waitall) {
+    if (! state.requests.empty()) {
+      // wait for all requests at once
+      MPI_Waitall
+        (state.requests.size(), &state.requests.front(), MPI_STATUSES_IGNORE);
+      state.requests.clear();
+    }
+  }
+  
+  if (! use_waitall) {
+    MPI_Status status;
+    MPI_Wait (&b->request, &status);
+  }
+  wtime_copyfrom_recvwaitinner_wait.stop();
+  
+  wtime_copyfrom_recvwaitinner_copy.start();
+  assert (_has_storage);
+  assert (_owns_storage);
+  // copy b to this
+  {
+    T * restrict const p = _storage;
+    T const * restrict q = & b->data.front();
+    ivect const imin = box.lower() / box.stride();
+    ivect const imax = (box.upper() + box.stride()) / box.stride();
+    ivect const lbnd = extent().lower() / extent().stride();
+    ivect const lsh = extent().shape() / extent().stride();
+    for (int k=imin[2]; k<imax[2]; ++k) {
+      for (int j=imin[1]; j<imax[1]; ++j) {
+        for (int i=imin[0]; i<imax[0]; ++i) {
+          p [i - lbnd[0] + lsh[0] * (j - lbnd[1] + lsh[1] * (k - lbnd[2]))] = * q ++;
+        }
+      }
+    }
+  }
+  wtime_copyfrom_recvwaitinner_copy.stop();
+  
+  wtime_copyfrom_recvwaitinner_delete.start();
+  delete b;
+  wtime_copyfrom_recvwaitinner_delete.stop();
+}
+
+
+
+template<typename T>
+void
+data<T>::copy_from_send_wait_inner (comm_state& state,
+                                    const gdata* gsrc, const ibbox& box)
+{
+  DECLARE_CCTK_PARAMETERS;
+  
+  comm_state::commbuf<T> * b
+    = (comm_state::commbuf<T> *) state.sendbufs.front();
+  state.sendbufs.pop();
+  assert (! b->am_receiver);
+  assert (b->am_sender);
+  
+  wtime_copyfrom_sendwaitinner_wait.start();
+  if (use_waitall) {
+    if (! state.requests.empty()) {
+      // wait for all requests at once
+      MPI_Waitall
+        (state.requests.size(), &state.requests.front(), MPI_STATUSES_IGNORE);
+      state.requests.clear();
+    }
+  }
+  
+  if (! use_waitall) {
+    MPI_Status status;
+    MPI_Wait (&b->request, &status);
+  }
+  wtime_copyfrom_sendwaitinner_wait.stop();
+  
+  wtime_copyfrom_sendwaitinner_delete.start();
+  delete b;
+  wtime_copyfrom_sendwaitinner_delete.stop();
+}
+
+
+
 // Data manipulators
 template<typename T>
 void data<T>
