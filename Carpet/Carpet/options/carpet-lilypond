@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond,v 1.5 2001/07/12 06:11:05 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond,v 1.6 2001/08/23 17:52:57 schnetter Exp $
 
 CPP			= gcc -E -DTMPL_EXPLICIT -DCARPET_REAL
 F77			= g77
@@ -6,10 +6,10 @@ F90			= g77
 
 CXXFLAGS		= -DTMPL_EXPLICIT -DCARPET_REAL -ftemplate-depth-30
 
-C_OPTIMISE_FLAGS	= -O3 -funroll-loops -march=pentiumpro
-CXX_OPTIMISE_FLAGS	= -O3 -funroll-loops -march=pentiumpro
-F90_OPTIMISE_FLAGS	= -O3 -funroll-loops -march=pentiumpro -malign-double
-F77_OPTIMISE_FLAGS	= -O3 -funroll-loops -march=pentiumpro -malign-double
+C_OPTIMISE_FLAGS	= -O2 -funroll-loops -march=pentiumpro
+CXX_OPTIMISE_FLAGS	= -O2 -funroll-loops -march=pentiumpro
+F90_OPTIMISE_FLAGS	= -O2 -funroll-loops -march=pentiumpro -malign-double
+F77_OPTIMISE_FLAGS	= -O2 -funroll-loops -march=pentiumpro -malign-double
 
 C_WARN_FLAGS		= -Wall -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wstrict-prototypes -Wmissing-declarations
 CXX_WARN_FLAGS		= -Wall -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wstrict-prototypes -Wmissing-declarations
