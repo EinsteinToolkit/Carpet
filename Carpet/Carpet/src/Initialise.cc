@@ -373,8 +373,8 @@ namespace Carpet {
     }
   }
 
-  // Use Scott Hawley's algorithm for getting two extra
-  // timelevels of data
+  // Use Scott Hawley's algorithm for getting two extra timelevels of
+  // data
   void get_two_extra_timelevels_of_data (cGH* cgh)
   {
         Waypoint ("Initialising three timelevels");
