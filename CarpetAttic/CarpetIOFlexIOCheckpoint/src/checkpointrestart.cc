@@ -48,7 +48,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.15 2004/01/05 22:54:16 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.16 2004/01/06 08:56:39 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
@@ -224,7 +224,6 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
    return (RecoverParameters (reader));
   }
 
-
   if (myproc == 0)
     delete reader;
 
@@ -286,6 +285,37 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
       CCTK_VInfo (CCTK_THORNSTRING, "\n%s\n",parameters);
       delete reader;
     }
+
+#ifdef CCTK_MPI
+  /* Broadcast the parameter buffer size to all processors */
+  /* NOTE: We have to use MPI_COMM_WORLD here
+     because CARPET_COMM_WORLD is not yet set up at parameter recovery time.
+     We also assume that CARPET_MPI_INT4 is a compile-time defined datatype. */
+    CACTUS_MPI_ERROR (MPI_Bcast (&parameterSize, 1, CARPET_MPI_INT4, 0,
+				 MPI_COMM_WORLD));
+#endif
+
+    if (parameterSize > 0)
+      {
+#ifdef CCTK_MPI
+	if (myproc)
+	  {
+	    parameters = (char*) malloc (parameterSize + 1);
+	  }
+	
+    CACTUS_MPI_ERROR (MPI_Bcast (parameters, parameterSize + 1, CARPET_MPI_CHAR,
+				 0, MPI_COMM_WORLD));
+#endif
+
+    IOUtil_SetAllParameters (parameters);
+
+    free (parameters);
+  }
+
+    /* return positive value for success otherwise negative */
+    retval = (parameterSize > 0 ? 1 : -1);
+
+    return (retval);
 
 
     CCTK_WARN (-1,"STOPSTOPSTOP");

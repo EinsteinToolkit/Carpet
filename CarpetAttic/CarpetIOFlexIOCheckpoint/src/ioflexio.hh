@@ -1,7 +1,8 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.7 2003/12/01 13:15:21 cott Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.8 2004/01/06 08:56:39 cott Exp $
 
 #ifndef CARPETIOFLEXIO_HH
 #define CARPETIOFLEXIO_HH
+
 
 #include <vector>
 
@@ -54,6 +55,37 @@
 #elif   CCTK_REAL_PRECISION_16
 #define FLEXIO_REAL    FLEXIO_REAL16
 #endif
+
+/* some macros needed for recovery */
+#ifdef CCTK_MPI
+
+#define CACTUS_MPI_ERROR(fn_call)                                             \
+          do {                                                                \
+            int errcode;                                                      \
+                                                                              \
+            if ((errcode = fn_call) != MPI_SUCCESS)                           \
+            {                                                                 \
+              char mpi_error_string[MPI_MAX_ERROR_STRING+1];                  \
+              int resultlen;                                                  \
+                                                                              \
+              MPI_Error_string (errcode, mpi_error_string, &resultlen);       \
+              fprintf (stderr, "MPI call '%s' returned error code %d (%s)\n", \
+                               #fn_call, errcode, mpi_error_string);          \
+              fprintf(stderr, "At line %d of file %s\n", __LINE__, __FILE__); \
+            }                                                                 \
+          } while (0)
+
+
+#ifdef  CCTK_INT4
+#define CARPET_MPI_INT4  (sizeof (CCTK_INT4) == sizeof (int) ? MPI_INT :        \
+                        sizeof (CCTK_INT4) == sizeof (short) ? MPI_SHORT :    \
+                        MPI_DATATYPE_NULL)
+#endif
+
+#define CARPET_MPI_CHAR      MPI_CHAR
+
+#endif
+
 namespace CarpetIOFlexIO {
   
   // Variable definitions
