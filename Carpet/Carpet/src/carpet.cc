@@ -35,7 +35,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.24 2001/04/23 08:10:12 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.25 2001/05/16 14:29:45 schnetter Exp $";
 
 
 
@@ -985,11 +985,11 @@ namespace Carpet {
 	    const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
 	    assert (num_tl>0);
 	    void* tmpdata = scdata[group].data[var][reflevel][0];
-	    for (int tl=0; tl<num_tl-1; ++tl) {
+	    for (int tl=1; tl<num_tl; ++tl) {
 	      scdata[group].data[var][reflevel][tl]
-		= scdata[group].data[var][reflevel][tl+1];
+		= scdata[group].data[var][reflevel][tl-1];
 	    }
-	    scdata[group].data[var][reflevel][num_tl-1] = tmpdata;
+	    scdata[group].data[var][reflevel][0] = tmpdata;
 	    tmpdata = 0;
 	    break;
 	  }
@@ -1597,15 +1597,15 @@ namespace Carpet {
     assert (num_tl>0);
     switch (where) {
     case currenttime:
-      return num_tl-1;
+      return 0;
     case currenttimebutnotifonly:
       // don't include current time if there is only one time level
-      return max(1,num_tl-1);
+      return num_tl>1 ? 0: 1;
     case allbutlasttime:
       // do include current time if there is only one time level
-      return min(1,num_tl-1);
-    case allbutcurrenttime:
       return 0;
+    case allbutcurrenttime:
+      return 1;
     case alltimes:
       return 0;
     default:
@@ -1618,13 +1618,13 @@ namespace Carpet {
     assert (num_tl>0);
     switch (where) {
     case currenttime:
-      return num_tl-1;
+      return 0;
     case currenttimebutnotifonly:
-      return num_tl-1;
+      return 0;
     case allbutlasttime:
-      return num_tl-1;
-    case allbutcurrenttime:
       return num_tl-2;
+    case allbutcurrenttime:
+      return num_tl-1;
     case alltimes:
       return num_tl-1;
     default:
@@ -1840,14 +1840,15 @@ namespace Carpet {
       
       // Set Cactus pointers to data
       for (int n=0; n<CCTK_NumVars(); ++n) {
-	for (int tl=0; tl<CCTK_NumTimeLevelsFromVarI(n); ++tl) {
-	  
-	  const int group = CCTK_GroupIndexFromVarI(n);
-	  assert (group>=0);
-	  const int var   = n - CCTK_FirstVarIndexI(group);
-	  assert (var>=0);
-	  const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
-	  assert (num_tl>0);
+	
+	const int group = CCTK_GroupIndexFromVarI(n);
+	assert (group>=0);
+	const int var   = n - CCTK_FirstVarIndexI(group);
+	assert (var>=0);
+	const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
+	assert (num_tl>0);
+	
+	for (int tl=0; tl<num_tl; ++tl) {
 	  
 	  if (CCTK_QueryGroupStorageI(cgh, group)) {
 	    // Group has storage
@@ -1867,7 +1868,7 @@ namespace Carpet {
 	      assert (var<(int)arrdata[group].data.size());
 	      cgh->data[n][tl]
 		= ((*arrdata[group].data[var])
-		   (tl-num_tl+1, reflevel, component, mglevel)->storage());
+		   (-tl, reflevel, component, mglevel)->storage());
 	      break;
 	      
 	    case CCTK_GF:
@@ -1875,7 +1876,7 @@ namespace Carpet {
 	      assert (var<(int)gfdata[group].data.size());
 	      cgh->data[n][tl]
 		= ((*gfdata[group].data[var])
-		   (tl-num_tl+1, reflevel, component, mglevel)->storage());
+		   (-tl, reflevel, component, mglevel)->storage());
 	      break;
 	      
 	    default:

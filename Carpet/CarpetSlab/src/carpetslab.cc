@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.7 2001/04/23 08:10:16 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.8 2001/05/16 14:29:47 schnetter Exp $
 
 #include <alloca.h>
 #include <assert.h>
@@ -18,7 +18,7 @@
 
 #include "carpetslab.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.7 2001/04/23 08:10:16 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.8 2001/05/16 14:29:47 schnetter Exp $";
 
 
 
@@ -77,8 +77,7 @@ namespace CarpetSlab {
     // Check timelevel
     const int num_tl = gp.numtimelevels;
     assert (ti>=0 && ti<num_tl);
-    const int tmin = 1 - num_tl;
-    const int tl = tmin + ti;
+    const int tl = -ti;
     
     // Check origin
 //     for (int d=0; d<dim; ++d) {
