@@ -66,7 +66,9 @@
     <p>walks you through all your local changes and asks you whether
     they should be part of the patch.  Please put only related changes
     into a single patch; it is very easy to create multiple
-    patches.</p>
+    patches.  Can also be applied to a specific file.
+    To skip the process of verifying each "hunk", use
+    the <code>-a</code> option.</p>
 
     <p>Each patch needs a one-line description.  This description
     should be somewhat descriptive, because other people will decide
@@ -110,6 +112,15 @@
     this page that actually needs network access.</p>
 
 
+    <h2>Viewing changes</h2>
+   
+    <p>To view the last <var>n</var> patches applied:</p>
+
+<pre>darcs changes --last=<var>n</var></pre>
+
+    <p>To see how two patches <var>a</var> and <var>b</var> differ</p>
+
+<pre>darcs diff --from-patch=<var>a</var> --to-patch=<var>b</var></pre>
 
     <h2>Correcting Errors</h2>
 
@@ -121,15 +132,14 @@
 
 <pre>darcs unpull</pre>
 
-     <p>undoes the effect of pulling a patch from a remote repository.
+     <p>Undoes the effect of pulling a patch from a remote repository.
      This is useful if you suspect that this patch introduced an
      error.  And</p>
 
 <pre>darcs revert</pre>
 
-     <p>undoes changes to your working directory that have not yet
-     been recorded.</p>
-
+     <p>Undoes changes to your working directory that have not yet
+     been recorded.  Can also be applied to a specific file.</p>
 
 
      <h2>Further Information</h2>
