@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOFlexIO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/param.ccl,v 1.6 2002/10/24 12:00:32 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/param.ccl,v 1.7 2003/09/02 12:37:51 tradke Exp $
 
 
 
@@ -11,7 +11,7 @@ USES CCTK_INT out_every
 
 
 
-restricted:
+private:
 
 
 
