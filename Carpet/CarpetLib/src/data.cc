@@ -868,7 +868,7 @@ bool data<CCTK_REAL8,3>
 			      const int order_space,
 			      const int order_time) {
   for (size_t tl=0; tl<times.size(); ++tl) {
-    if (fabs(times[tl] - time) < eps) {
+    if (abs(times[tl] - time) < eps) {
       vector<const gdata<3>*> my_gsrcs(1);
       vector<CCTK_REAL> my_times(1);
       my_gsrcs[0] = gsrcs[tl];
@@ -948,7 +948,7 @@ void data<T,D>
       
     case 0:
       assert (times.size() == 1);
-      assert (fabs(times[0] - time) < eps);
+      assert (abs(times[0] - time) < eps);
       assert (srcs.size()>=1);
       switch (order_space) {
       case 0:
@@ -1131,7 +1131,7 @@ void data<T,D>
     switch (order_time) {
     case 0: 
       assert (times.size() == 1);
-      assert (fabs(times[0] - time) < eps);
+      assert (abs(times[0] - time) < eps);
       switch (order_space) {
       case 0:
       case 1:
@@ -1221,7 +1221,7 @@ void data<T,D>
     switch (order_time) {
     case 0: 
       assert (times.size() == 1);
-      assert (fabs(times[0] - time) < eps);
+      assert (abs(times[0] - time) < eps);
       switch (order_space) {
       case 0:
       case 1:
@@ -1361,7 +1361,7 @@ void data<CCTK_REAL8,3>
     if (all(sext.stride() < dext.stride())) {
     
       assert (times.size() == 1);
-      assert (fabs(times[0] - time) < eps);
+      assert (abs(times[0] - time) < eps);
 
       interpolate_restrict (srcs, times, box);
     
