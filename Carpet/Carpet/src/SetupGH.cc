@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.72 2004/03/23 19:51:38 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.73 2004/03/23 19:52:23 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -807,6 +807,48 @@ namespace Carpet {
     leave_singlemap_mode (cgh);
     leave_level_mode     (cgh);
     leave_global_mode    (cgh);
+    
+    
+    
+    // Some statistics
+    if (verbose || veryverbose) {
+      int num_gf_groups, num_gf_vars;
+      vector<int> num_array_groups(4), num_array_vars(4);
+      for (int group=0; group<CCTK_NumGroups(); ++group) {
+        
+        cGroup data;
+        const int ierr = CCTK_GroupData (group, &data);
+        assert (!ierr);
+        
+        switch (data.grouptype) {
+        case CCTK_GF:
+          num_gf_groups += 1;
+          num_gf_vars += data.numvars * data.numtimelevels;
+          break;
+        case CCTK_SCALAR:
+        case CCTK_ARRAY:
+          num_array_groups.at(data.dim) += 1;
+          num_array_vars.at(data.dim) += data.numvars * data.numtimelevels;
+          break;
+        default:
+          assert (0);
+        }
+      }
+      CCTK_INFO ("Group and variable statistics:");
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "   There are %d grid functions in %d groups",
+                  num_gf_vars, num_gf_groups);
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "   There are %d grid scalars in %d groups",
+                  num_array_vars.at(0), num_array_groups.at(0));
+      for (int dim=1; dim<=3; ++dim) {
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "   There are %d %d-dimensional grid arrays in %d groups",
+                    num_array_vars.at(dim), dim, num_array_groups.at(dim));
+      }
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "   (The number of variables counts all time levels)");
+    }
     
     
     
