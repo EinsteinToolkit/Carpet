@@ -52,7 +52,8 @@ public:
 
   // Constructors
   gdata (const int varindex,
-         const operator_type transport_operator = op_error);
+         const operator_type transport_operator = op_error,
+         const int tag = -1);
 
   // Destructors
   virtual ~gdata ();
@@ -60,7 +61,8 @@ public:
   // Pseudo constructors
   virtual gdata*
   make_typed (const int varindex,
-              const operator_type transport_operator = op_error) const = 0;
+              const operator_type transport_operator = op_error,
+              const int tag = -1) const = 0;
   
   // Assignment
   gdata & operator= (gdata const & from);
@@ -140,6 +142,11 @@ public:
   }
   
   // Data manipulators
+private:
+  virtual comm_state::gcommbuf *
+  make_typed_commbuf (const ibbox & box)
+    const = 0;
+  
  public:
     void copy_from (comm_state& state,
                     const gdata* src, const ibbox& box);
@@ -151,6 +158,7 @@ public:
                        const gdata* src, const ibbox& box);
   void copy_from_wait (comm_state& state,
                        const gdata* src, const ibbox& box);
+#if 0
  protected:
   virtual void
   copy_from_recv_inner (comm_state& state,
@@ -172,6 +180,7 @@ public:
                              const gdata* src,
                              const ibbox& box)
     = 0;
+#endif
   
  public:
   void interpolate_from (comm_state& state,

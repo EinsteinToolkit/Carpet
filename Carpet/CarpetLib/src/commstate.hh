@@ -41,11 +41,22 @@ public:
   
   // Lists of communication buffers for use_lightweight_buffers
   struct gcommbuf {
-    bool am_receiver, am_sender;
+    gcommbuf ();
+    virtual ~gcommbuf ();
     MPI_Request request;
+    virtual void const * pointer () const = 0;
+    virtual void * pointer () = 0;
+    virtual int size () const = 0;
+    virtual MPI_Datatype datatype () const = 0;
   };
   template<typename T>
   struct commbuf : gcommbuf {
+    commbuf (ibbox const & box);
+    virtual ~commbuf ();
+    virtual void const * pointer () const;
+    virtual void * pointer ();
+    virtual int size () const;
+    virtual MPI_Datatype datatype () const;
     vector<T> data;
   };
   queue<gcommbuf*> recvbufs, sendbufs;

@@ -43,7 +43,8 @@ public:
   data (const int varindex = -1,
         const operator_type transport_operator = op_error,
         const int vectorlength = 1, const int vectorindex = 0,
-        data* const vectorleader = NULL);
+        data* const vectorleader = NULL,
+        const int tag = -1);
   data (const int varindex, const operator_type transport_operator,
         const int vectorlength, const int vectorindex,
         data* const vectorleader,
@@ -54,7 +55,8 @@ public:
 
   // Pseudo constructors
   virtual data* make_typed (const int varindex,
-                            const operator_type transport_operator) const;
+                            const operator_type transport_operator,
+                            const int tag) const;
 
   // Storage management
 private:
@@ -108,6 +110,7 @@ public:
     return _storage[offset(index)];
   }
 
+#if 0
 protected:
   virtual void
   copy_from_recv_inner (comm_state& state,
@@ -125,9 +128,14 @@ protected:
   copy_from_send_wait_inner (comm_state& state,
                              const gdata* src,
                              const ibbox& box);
+#endif
   
   // Data manipulators
 private:
+  virtual comm_state::gcommbuf *
+  make_typed_commbuf (const ibbox & box)
+    const;
+  
   static void
   fill_bbox_arrays (int srcshp[dim],
                     int dstshp[dim],

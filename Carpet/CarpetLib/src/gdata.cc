@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <iostream>
 
+#include <mpi.h>
+
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
@@ -35,11 +37,12 @@ static int nexttag ()
 
 
 // Constructors
-gdata::gdata (const int varindex_, const operator_type transport_operator_)
+gdata::gdata (const int varindex_, const operator_type transport_operator_,
+              const int tag_)
   : varindex(varindex_), transport_operator(transport_operator_),
     _has_storage(false),
     comm_active(false),
-    tag(nexttag())
+    tag(tag_ >= 0 ? tag_ : nexttag())
 {
   DECLARE_CCTK_PARAMETERS;
   if (barriers) {
@@ -177,8 +180,8 @@ void gdata::copy_from_recv (comm_state& state,
     // copy on same processor
     
   } else {
-    
     // copy to different processor
+    
     if (! use_lightweight_buffers) {
       
       wtime_copyfrom_recv_maketyped.start();
@@ -196,7 +199,21 @@ void gdata::copy_from_recv (comm_state& state,
       
       if (dist::rank() == proc()) {
         // this processor receives data
-        copy_from_recv_inner (state, src, box);
+        
+        wtime_copyfrom_recvinner_allocate.start();
+        comm_state::gcommbuf * b = make_typed_commbuf (box);
+        wtime_copyfrom_recvinner_allocate.stop();
+        
+        wtime_copyfrom_recvinner_recv.start();
+        assert (dist::rank() == proc());
+        MPI_Irecv (b->pointer(), b->size(), b->datatype(), src->proc(),
+                   tag, dist::comm, &b->request);
+        wtime_copyfrom_recvinner_recv.stop();
+        if (use_waitall) {
+          state.requests.push_back (b->request);
+        }
+        state.recvbufs.push (b);
+        
       }
       
     }
@@ -235,8 +252,8 @@ void gdata::copy_from_send (comm_state& state,
     wtime_copyfrom_send_copyfrom_nocomm1.stop();
     
   } else {
-    
     // copy to different processor
+    
     if (! use_lightweight_buffers) {
       
       gdata* const tmp = state.tmps1.front();
@@ -254,7 +271,30 @@ void gdata::copy_from_send (comm_state& state,
       
       if (dist::rank() == src->proc()) {
         // this processor sends data
-        copy_from_send_inner (state, src, box);
+        
+        wtime_copyfrom_sendinner_allocate.start();
+        comm_state::gcommbuf * b = src->make_typed_commbuf (box);
+        wtime_copyfrom_sendinner_allocate.stop();
+        
+        wtime_copyfrom_sendinner_copy.start();
+        assert (src->_has_storage);
+        assert (src->_owns_storage);
+        gdata * tmp = src->make_typed (varindex, transport_operator, tag);
+        tmp->allocate (box, src->proc(), b->pointer());
+        tmp->copy_from_innerloop (src, box);
+        delete tmp;
+        wtime_copyfrom_sendinner_copy.stop();
+        
+        wtime_copyfrom_sendinner_send.start();
+        assert (dist::rank() == src->proc());
+        MPI_Isend (b->pointer(), b->size(), b->datatype(), proc(),
+                   tag, dist::comm, &b->request);
+        wtime_copyfrom_sendinner_send.stop();
+        if (use_waitall) {
+          state.requests.push_back (b->request);
+        }
+        state.sendbufs.push (b);
+        
       }
     }
     
@@ -288,8 +328,8 @@ void gdata::copy_from_wait (comm_state& state,
     // copy on same processor
     
   } else {
-    
     // copy to different processor
+    
     if (! use_lightweight_buffers) {
       
       gdata* const tmp = state.tmps2.front();
@@ -309,11 +349,67 @@ void gdata::copy_from_wait (comm_state& state,
       
       if (dist::rank() == proc()) {
         // this processor receives data
-        copy_from_recv_wait_inner (state, src, box);
+        
+        comm_state::gcommbuf * b = state.recvbufs.front();
+        state.recvbufs.pop();
+        
+        wtime_copyfrom_recvwaitinner_wait.start();
+        if (use_waitall) {
+          if (! state.requests.empty()) {
+            // wait for all requests at once
+            MPI_Waitall (state.requests.size(), &state.requests.front(),
+                         MPI_STATUSES_IGNORE);
+            state.requests.clear();
+          }
+        }
+        
+        if (! use_waitall) {
+          MPI_Status status;
+          MPI_Wait (&b->request, &status);
+        }
+        wtime_copyfrom_recvwaitinner_wait.stop();
+        
+        wtime_copyfrom_recvwaitinner_copy.start();
+        assert (_has_storage);
+        assert (_owns_storage);
+        gdata * tmp = make_typed (varindex, transport_operator, tag);
+        tmp->allocate (box, proc(), b->pointer());
+        copy_from_innerloop (tmp, box);
+        delete tmp;
+        wtime_copyfrom_recvwaitinner_copy.stop();
+        
+        wtime_copyfrom_recvwaitinner_delete.start();
+        delete b;
+        wtime_copyfrom_recvwaitinner_delete.stop();
+        
       }
+      
       if (dist::rank() == src->proc()) {
         // this processor sends data
-        copy_from_send_wait_inner (state, src, box);
+        
+        comm_state::gcommbuf * b = state.sendbufs.front();
+        state.sendbufs.pop();
+        
+        wtime_copyfrom_sendwaitinner_wait.start();
+        if (use_waitall) {
+          if (! state.requests.empty()) {
+            // wait for all requests at once
+            MPI_Waitall (state.requests.size(), &state.requests.front(),
+                         MPI_STATUSES_IGNORE);
+            state.requests.clear();
+          }
+        }
+        
+        if (! use_waitall) {
+          MPI_Status status;
+          MPI_Wait (&b->request, &status);
+        }
+        wtime_copyfrom_sendwaitinner_wait.stop();
+        
+        wtime_copyfrom_sendwaitinner_delete.start();
+        delete b;
+        wtime_copyfrom_sendwaitinner_delete.stop();
+        
       }
       
     }
@@ -407,6 +503,8 @@ void gdata
                          const int order_space,
                          const int order_time)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   assert (has_storage());
   assert (all(box.lower()>=extent().lower()));
   assert (all(box.upper()<=extent().upper()));
@@ -428,10 +526,31 @@ void gdata
   } else {
     // interpolate from other processor
     
-    gdata* const tmp = make_typed(varindex, transport_operator);
-    state.tmps1.push (tmp);
-    tmp->allocate (box, srcs.at(0)->proc());
-    tmp->change_processor_recv (state, proc());
+    if (! use_lightweight_buffers) {
+      
+      gdata* const tmp = make_typed(varindex, transport_operator);
+      state.tmps1.push (tmp);
+      tmp->allocate (box, srcs.at(0)->proc());
+      tmp->change_processor_recv (state, proc());
+      
+    } else {
+      
+      if (dist::rank() == proc()) {
+        // this processor receives data
+        
+        comm_state::gcommbuf * b = make_typed_commbuf (box);
+        
+        assert (dist::rank() == proc());
+        MPI_Irecv (b->pointer(), b->size(), b->datatype(), srcs.at(0)->proc(),
+                   tag, dist::comm, &b->request);
+        if (use_waitall) {
+          state.requests.push_back (b->request);
+        }
+        state.recvbufs.push (b);
+        
+      }
+      
+    }
     
   }
 }
@@ -446,6 +565,8 @@ void gdata
                          const int order_space,
                          const int order_time)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   assert (has_storage());
   assert (all(box.lower()>=extent().lower()));
   assert (all(box.upper()<=extent().upper()));
@@ -469,12 +590,43 @@ void gdata
   } else {
     // interpolate from other processor
     
-    gdata* const tmp = state.tmps1.front();
-    state.tmps1.pop();
-    state.tmps2.push (tmp);
-    assert (tmp);
-    tmp->interpolate_from_nocomm (srcs, times, box, time, order_space, order_time);
-    tmp->change_processor_send (state, proc());
+    if (! use_lightweight_buffers) {
+      
+      gdata* const tmp = state.tmps1.front();
+      state.tmps1.pop();
+      state.tmps2.push (tmp);
+      assert (tmp);
+      tmp->interpolate_from_nocomm
+        (srcs, times, box, time, order_space, order_time);
+      tmp->change_processor_send (state, proc());
+      
+    } else {
+      
+      if (dist::rank() == srcs.at(0)->proc()) {
+        // this processor sends data
+        
+        comm_state::gcommbuf * b = srcs.at(0)->make_typed_commbuf (box);
+        
+        assert (srcs.at(0)->_has_storage);
+        assert (srcs.at(0)->_owns_storage);
+        gdata * tmp
+          = srcs.at(0)->make_typed (varindex, transport_operator, tag);
+        tmp->allocate (box, srcs.at(0)->proc(), b->pointer());
+        tmp->interpolate_from_innerloop
+          (srcs, times, box, time, order_space, order_time);
+        delete tmp;
+        
+        assert (dist::rank() == srcs.at(0)->proc());
+        MPI_Isend (b->pointer(), b->size(), b->datatype(), proc(),
+                   tag, dist::comm, &b->request);
+        if (use_waitall) {
+          state.requests.push_back (b->request);
+        }
+        state.sendbufs.push (b);
+
+      }
+      
+    }
     
   }
 }
@@ -489,6 +641,8 @@ void gdata
                          const int order_space,
                          const int order_time)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   assert (has_storage());
   assert (all(box.lower()>=extent().lower()));
   assert (all(box.upper()<=extent().upper()));
@@ -510,12 +664,73 @@ void gdata
   } else {
     // interpolate from other processor
     
-    gdata* const tmp = state.tmps2.front();
-    state.tmps2.pop();
-    assert (tmp);
-    tmp->change_processor_wait (state, proc());
-    copy_from_nocomm (tmp, box);
-    delete tmp;
+    if (! use_lightweight_buffers) {
+      
+      gdata* const tmp = state.tmps2.front();
+      state.tmps2.pop();
+      assert (tmp);
+      tmp->change_processor_wait (state, proc());
+      copy_from_nocomm (tmp, box);
+      delete tmp;
+      
+    } else {
+      
+      if (dist::rank() == proc()) {
+        // this processor receives data
+        
+        comm_state::gcommbuf * b = state.recvbufs.front();
+        state.recvbufs.pop();
+        
+        if (use_waitall) {
+          if (! state.requests.empty()) {
+            // wait for all requests at once
+            MPI_Waitall (state.requests.size(), &state.requests.front(),
+                         MPI_STATUSES_IGNORE);
+            state.requests.clear();
+          }
+        }
+        
+        if (! use_waitall) {
+          MPI_Status status;
+          MPI_Wait (&b->request, &status);
+        }
+        
+        assert (_has_storage);
+        assert (_owns_storage);
+        gdata * tmp = make_typed (varindex, transport_operator, tag);
+        tmp->allocate (box, proc(), b->pointer());
+        copy_from_innerloop (tmp, box);
+        delete tmp;
+        
+        delete b;
+        
+      }
+      
+      if (dist::rank() == srcs.at(0)->proc()) {
+        // this processor sends data
+        
+        comm_state::gcommbuf * b = state.sendbufs.front();
+        state.sendbufs.pop();
+        
+        if (use_waitall) {
+          if (! state.requests.empty()) {
+            // wait for all requests at once
+            MPI_Waitall (state.requests.size(), &state.requests.front(),
+                         MPI_STATUSES_IGNORE);
+            state.requests.clear();
+          }
+        }
+        
+        if (! use_waitall) {
+          MPI_Status status;
+          MPI_Wait (&b->request, &status);
+        }
+        
+        delete b;
+        
+      }
+      
+    }
     
   }
 }

@@ -1,6 +1,11 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
+#include "bbox.hh"
+#include "defs.hh"
+#include "dist.hh"
+#include "vect.hh"
+
 #include "commstate.hh"
 
 
@@ -69,3 +74,68 @@ comm_state::~comm_state ()
   assert (tmps2.empty());
   assert (requests.empty());
 }
+
+
+
+comm_state::gcommbuf::gcommbuf ()
+{
+}
+
+comm_state::gcommbuf::~gcommbuf ()
+{
+}
+
+
+
+
+template<typename T>
+comm_state::commbuf<T>::commbuf (ibbox const & box)
+{
+  data.resize (prod (box.shape() / box.stride()));
+}
+
+template<typename T>
+comm_state::commbuf<T>::~commbuf ()
+{
+}
+
+template<typename T>
+void const *
+comm_state::commbuf<T>::pointer ()
+  const
+{
+  return &data.front();
+}
+
+template<typename T>
+void *
+comm_state::commbuf<T>::pointer ()
+{
+  return &data.front();
+}
+
+template<typename T>
+int
+comm_state::commbuf<T>::size ()
+  const
+{
+  return data.size();
+}
+
+template<typename T>
+MPI_Datatype
+comm_state::commbuf<T>::datatype ()
+  const
+{
+  T dummy;
+  return dist::datatype (dummy);
+}
+
+
+
+#define INSTANTIATE(T)                          \
+  template class comm_state::commbuf<T>;
+
+#include "instantiate"
+
+#undef INSTANTIATE

@@ -38,8 +38,9 @@ static const CCTK_REAL eps = 1.0e-10;
 template<typename T>
 data<T>::data (const int varindex_, const operator_type transport_operator_,
                const int vectorlength_, const int vectorindex_,
-               data* const vectorleader_)
-  : gdata(varindex_, transport_operator_),
+               data* const vectorleader_,
+               const int tag_)
+  : gdata(varindex_, transport_operator_, tag_),
     _storage(NULL), _allocated_bytes(0),
     vectorlength(vectorlength_), vectorindex(vectorindex_),
     vectorleader(vectorleader_)
@@ -83,10 +84,11 @@ data<T>::~data ()
 // Pseudo constructors
 template<typename T>
 data<T>* data<T>::make_typed (const int varindex_,
-                              const operator_type transport_operator_)
+                              const operator_type transport_operator_,
+                              const int tag_)
   const
 {
-  return new data(varindex_, transport_operator_);
+  return new data(varindex_, transport_operator_, 1, 0, NULL, tag_);
 }
 
 
@@ -398,6 +400,7 @@ void data<T>::change_processor_wait (comm_state& state,
 
 
 
+#if 0
 template<typename T>
 void
 data<T>::copy_from_recv_inner (comm_state& state,
@@ -424,9 +427,10 @@ data<T>::copy_from_recv_inner (comm_state& state,
   }
   state.recvbufs.push (b);
 }
+#endif
 
 
-
+#if 0
 template<typename T>
 void
 data<T>::copy_from_send_inner (comm_state& state,
@@ -435,10 +439,9 @@ data<T>::copy_from_send_inner (comm_state& state,
   DECLARE_CCTK_PARAMETERS;
   
   wtime_copyfrom_sendinner_allocate.start();
-  comm_state::commbuf<T> * b = new comm_state::commbuf<T>;
+  comm_state::gcommbuf * b = gsrc->make_typed_commbuf (box);
   b->am_receiver = false;
   b->am_sender = true;
-  b->data.resize (prod (box.shape() / box.stride()));
   wtime_copyfrom_sendinner_allocate.stop();
   
   wtime_copyfrom_sendinner_copy.start();
@@ -446,6 +449,7 @@ data<T>::copy_from_send_inner (comm_state& state,
   assert (src->_has_storage);
   assert (src->_owns_storage);
   // copy src to b
+#if 0
   {
     T * restrict p = & b->data.front();
     T const * restrict const q = src->_storage;
@@ -461,12 +465,19 @@ data<T>::copy_from_send_inner (comm_state& state,
       }
     }
   }
+#endif
+  {
+    data<T> * tmp = src->make_typed (varindex, transport_operator, tag);
+    tmp->allocate (box, src->proc(), &b->data.front());
+    tmp->copy_from_innerloop (src, box);
+    delete tmp;
+  }
   wtime_copyfrom_sendinner_copy.stop();
   
   wtime_copyfrom_sendinner_send.start();
   assert (dist::rank() == src->proc());
   T dummy;
-  MPI_Isend (&b->data.front(), b->data.size(), dist::datatype(dummy), proc(),
+  MPI_Isend (b->pointer(), b->size(), b->datatype(), proc(),
              tag, dist::comm, &b->request);
   wtime_copyfrom_sendinner_send.stop();
   if (use_waitall) {
@@ -474,9 +485,11 @@ data<T>::copy_from_send_inner (comm_state& state,
   }
   state.sendbufs.push (b);
 }
+#endif
 
 
 
+#if 0
 template<typename T>
 void
 data<T>::copy_from_recv_wait_inner (comm_state& state,
@@ -531,9 +544,11 @@ data<T>::copy_from_recv_wait_inner (comm_state& state,
   delete b;
   wtime_copyfrom_recvwaitinner_delete.stop();
 }
+#endif
 
 
 
+#if 0
 template<typename T>
 void
 data<T>::copy_from_send_wait_inner (comm_state& state,
@@ -567,10 +582,22 @@ data<T>::copy_from_send_wait_inner (comm_state& state,
   delete b;
   wtime_copyfrom_sendwaitinner_delete.stop();
 }
+#endif
 
 
 
 // Data manipulators
+template<typename T>
+comm_state::gcommbuf *
+data<T>::
+make_typed_commbuf (const ibbox & box)
+  const
+{
+  return new comm_state::commbuf<T> (box);
+}
+
+
+
 template<typename T>
 void data<T>
 ::copy_from_innerloop (const gdata* gsrc, const ibbox& box)
@@ -608,6 +635,35 @@ void data<T>
 }
 
 
+
+template<class T>
+void data<T>
+::fill_bbox_arrays (int srcshp[dim],
+                    int dstshp[dim],
+                    int srcbbox[dim][dim],
+                    int dstbbox[dim][dim],
+                    int regbbox[dim][dim],
+                    const ibbox & box,
+                    const ibbox & sext,
+                    const ibbox & dext)
+{
+  for (int d=0; d<dim; ++d) {
+    srcshp[d] = (sext.shape() / sext.stride())[d];
+    dstshp[d] = (dext.shape() / dext.stride())[d];
+    
+    srcbbox[0][d] = sext.lower()[d];
+    srcbbox[1][d] = sext.upper()[d];
+    srcbbox[2][d] = sext.stride()[d];
+    
+    dstbbox[0][d] = dext.lower()[d];
+    dstbbox[1][d] = dext.upper()[d];
+    dstbbox[2][d] = dext.stride()[d];
+    
+    regbbox[0][d] = box.lower()[d];
+    regbbox[1][d] = box.upper()[d];
+    regbbox[2][d] = box.stride()[d];
+  }
+}
 
 template<typename T>
 void data<T>
@@ -674,35 +730,6 @@ extern "C" {
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
-}
-
-template<class T>
-void data<T>
-::fill_bbox_arrays (int srcshp[dim],
-                    int dstshp[dim],
-                    int srcbbox[dim][dim],
-                    int dstbbox[dim][dim],
-                    int regbbox[dim][dim],
-                    const ibbox & box,
-                    const ibbox & sext,
-                    const ibbox & dext)
-{
-  for (int d=0; d<dim; ++d) {
-    srcshp[d] = (sext.shape() / sext.stride())[d];
-    dstshp[d] = (dext.shape() / dext.stride())[d];
-    
-    srcbbox[0][d] = sext.lower()[d];
-    srcbbox[1][d] = sext.upper()[d];
-    srcbbox[2][d] = sext.stride()[d];
-    
-    dstbbox[0][d] = dext.lower()[d];
-    dstbbox[1][d] = dext.upper()[d];
-    dstbbox[2][d] = dext.stride()[d];
-    
-    regbbox[0][d] = box.lower()[d];
-    regbbox[1][d] = box.upper()[d];
-    regbbox[2][d] = box.stride()[d];
-  }
 }
 
 template<>
