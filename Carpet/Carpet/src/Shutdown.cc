@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.11 2003/06/18 18:28:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.12 2003/08/03 17:09:02 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Shutdown_cc);
 }
 
@@ -58,7 +58,7 @@ namespace Carpet {
     CCTK_PRINTSEPARATOR;
     printf ("Done.\n");
     
-    // earlier checkpoint before calling finalising MPI
+    // earlier checkpoint before finalising MPI
     Waypoint ("done with Shutdown.");
     
     dist::finalize();
