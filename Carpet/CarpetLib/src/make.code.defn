@@ -3,6 +3,7 @@
 # Source files in this directory
 SRCS =	bbox.cc					\
 	bboxset.cc				\
+	commstate.cc				\
 	data.cc					\
 	defs.cc					\
 	dh.cc					\
