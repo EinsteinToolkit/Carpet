@@ -8,7 +8,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.16 2004/02/09 13:06:05 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.17 2004/03/23 19:30:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Poison_cc);
 }
 
@@ -77,9 +77,9 @@ namespace Carpet {
         BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype) {
           
           ivect size(1);
-          const int gpdim = groupdata[group].info.dim;
+          const int gpdim = groupdata.at(group).info.dim;
           for (int d=0; d<gpdim; ++d) {
-            size[d] = groupdata[group].info.lsh[d];
+            size[d] = groupdata.at(group).info.lsh[d];
           }
           const int np = prod(size);
           
@@ -114,7 +114,7 @@ namespace Carpet {
         assert (n0>=0);
         const int nvar = CCTK_NumVarsInGroupI(group);
         const int tp = CCTK_VarTypeI(n0);
-        const int gpdim = groupdata[group].info.dim;
+        const int gpdim = groupdata.at(group).info.dim;
         
         const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
         assert (num_tl>0);
@@ -126,7 +126,7 @@ namespace Carpet {
             
             ivect size(1);
             for (int d=0; d<gpdim; ++d) {
-              size[d] = groupdata[group].info.lsh[d];
+              size[d] = groupdata.at(group).info.lsh[d];
             }
             const int np = prod(size);
             

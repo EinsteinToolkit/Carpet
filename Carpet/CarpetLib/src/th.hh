@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.hh,v 1.10 2004/01/25 14:57:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.hh,v 1.11 2004/03/23 19:30:14 schnetter Exp $
 
 #ifndef TH_HH
 #define TH_HH
@@ -56,13 +56,13 @@ public:
   CCTK_REAL get_time (const int rl, const int ml) const {
     assert (rl>=0 && rl<h.reflevels());
     assert (ml>=0 && ml<h.mglevels(rl,0));
-    return times[rl][ml];
+    return times.at(rl).at(ml);
   }
   
   void set_time (const int rl, const int ml, const CCTK_REAL t) {
     assert (rl>=0 && rl<h.reflevels());
     assert (ml>=0 && ml<h.mglevels(rl,0));
-    times[rl][ml] = t;
+    times.at(rl).at(ml) = t;
   }
   
   void advance_time (const int rl, const int ml) {
@@ -72,13 +72,13 @@ public:
   CCTK_REAL get_delta (const int rl, const int ml) const {
     assert (rl>=0 && rl<h.reflevels());
     assert (ml>=0 && ml<h.mglevels(rl,0));
-    return deltas[rl][ml];
+    return deltas.at(rl).at(ml);
   }
   
   void set_delta (const int rl, const int ml, const CCTK_REAL dt) {
     assert (rl>=0 && rl<h.reflevels());
     assert (ml>=0 && ml<h.mglevels(rl,0));
-    deltas[rl][ml] = dt;
+    deltas.at(rl).at(ml) = dt;
   }
   
   CCTK_REAL time (const int tl, const int rl, const int ml) const {

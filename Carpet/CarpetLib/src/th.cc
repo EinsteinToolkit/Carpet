@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.13 2004/01/25 14:57:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.14 2004/03/23 19:30:14 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -35,25 +35,25 @@ void th<D>::recompose () {
   times.resize(h.reflevels());
   deltas.resize(h.reflevels());
   for (int rl=0; rl<h.reflevels(); ++rl) {
-    const int old_mglevels = times[rl].size();
+    const int old_mglevels = times.at(rl).size();
     CCTK_REAL mgtime;
     // Select default time
     if (old_mglevels==0 && rl==0) {
       mgtime = 0;
     } else if (old_mglevels==0) {
-      mgtime = times[rl-1][0];
+      mgtime = times.at(rl-1).at(0);
     } else {
-      mgtime = times[rl][old_mglevels-1];
+      mgtime = times.at(rl).at(old_mglevels-1);
     }
-    times[rl].resize(h.mglevels(rl,0), mgtime);
-    deltas[rl].resize(h.mglevels(rl,0));
+    times.at(rl).resize(h.mglevels(rl,0), mgtime);
+    deltas.at(rl).resize(h.mglevels(rl,0));
     for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
       if (rl==0 && ml==0) {
-	deltas[rl][ml] = delta;
+	deltas.at(rl).at(ml) = delta;
       } else if (ml==0) {
-	deltas[rl][ml] = deltas[rl-1][ml] / h.reffact;
+	deltas.at(rl).at(ml) = deltas.at(rl-1).at(ml) / h.reffact;
       } else {
-	deltas[rl][ml] = deltas[rl][ml-1] * h.mgfact;
+	deltas.at(rl).at(ml) = deltas.at(rl).at(ml-1) * h.mgfact;
       }
     }
   }
@@ -70,7 +70,7 @@ void th<D>::output (ostream& os) const {
     for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
       if (!(rl==0 && ml==0)) os << ",";
       os << rl << ":" << ml << ":"
-	 << times[rl][ml] << "(" << deltas[rl][ml] << ")";
+	 << times.at(rl).at(ml) << "(" << deltas.at(rl).at(ml) << ")";
     }
   }
   os << "}";
