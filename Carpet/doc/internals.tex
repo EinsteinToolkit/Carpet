@@ -1,30 +1,30 @@
-% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/internals.tex,v 1.2 2003/05/02 14:24:14 schnetter Exp $
+% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/internals.tex,v 1.3 2003/05/03 11:19:51 hawke Exp $
 
 \documentclass{article}
 \begin{document}
 
 \title{Carpet under the hood}
 \author{Erik Schnetter \textless schnetter@uni-tuebingen.de\textgreater}
-\date{$ $Date: 2003/05/02 14:24:14 $ $}
+\date{$ $Date: 2003/05/03 11:19:51 $ $}
 \maketitle
 
 \tableofcontents
 
 \section{Overview}
 
-   The Carpet driver, which lives in the Carpet arrangement, is
-   divided into several parts.  The thorn \texttt{Carpet} is the main
-   driver piece; it provides all the routines and structures that
-   Cactus expects from it.  The thorn \texttt{CarpetLib} is the
-   workhorse that does all the bookkeeping and data shuffling.  Those
-   two alone form a valid Cactus driver; the other thorns provide
-   additional functionality.  The thorns \texttt{CarpetInterp},
-   \texttt{CarpetReduce}, and \texttt{CarpetSlab} provide the
-   corresponding interpolation, reduction, and slabbing interfaces.
-   The thorns \texttt{CarpetIOASCII} and \texttt{CarpetIOFlexIO}
-   provide I/O methods.  Finally, thorn \texttt{CarpetRegrid} provides
-   a user interface to selecting where and what to refine.  (The
-   actual refinement is handled in \texttt{CarpetLib}.)
+The Carpet driver, which lives in the Carpet arrangement, is divided
+into several parts.  The thorn \texttt{Carpet} is the main driver
+piece; it provides all the routines and structures that Cactus expects
+from it.  The thorn \texttt{CarpetLib} is the workhorse that does all
+the bookkeeping and data shuffling.  Those two alone form a valid
+Cactus driver; the other thorns provide additional functionality.  The
+thorns \texttt{CarpetInterp}, \texttt{CarpetReduce}, and
+\texttt{CarpetSlab} provide the corresponding interpolation,
+reduction, and slabbing interfaces.  The thorns \texttt{CarpetIOASCII}
+and \texttt{CarpetIOFlexIO} provide I/O methods.  Finally, thorn
+\texttt{CarpetRegrid} provides a user interface to select where and
+what to refine.  (The actual refinement is handled in
+\texttt{CarpetLib}.)
 
 
 
@@ -73,7 +73,7 @@
    (interpolation) from the next coarser level.  Both the ghost zones
    and the prolongation boundary are filled by \emph{synchronising}.
 
-   Grid patches that are on the same refinement level do never overlap
+   Grid patches that are on the same refinement level never overlap
    except with their ghost zones.  Conversly, all ghost zones must
    overlap with a non-ghost zone of another grid patch of the same
    level.  All refinement boundaries must overlap with a grid patch on
@@ -90,7 +90,7 @@
    (abbreviated bbox, see \texttt{CarpetLib/src/bbox.*}.).  This is a
    triplet of \emph{vectors} (see \texttt{CarpetLib/src/vect.*}),
    where each triplet specifies \emph{lower bound}, \emph{upper
-   bound}, and \emph{stride}, much as is convention in Fortran.
+   bound}, and \emph{stride}, much as is conventional in Fortran.
    Triplets are enclosed in round parentheses $(\cdot:\cdot:\cdot)$,
    and vectors are enclosed in square brackets $[\cdot,\cdot,\cdots]$.
    A typical grid patch might have a bounding box which is denoted by
@@ -112,8 +112,8 @@
 \section{The driver}
 
    The driver consists of the two thorns \texttt{Carpet} and
-   \texttt{CarpetLib}.  \texttt{Carpet} is the front end towards
-   Cactus, while \texttt{CarpetLib} is the back end facing to the
+   \texttt{CarpetLib}.  \texttt{Carpet} is the front end to
+   Cactus, while \texttt{CarpetLib} is the back end to the
    machine.  \texttt{Carpet} specifies the grid shape, decides when to
    allocate and deallocate storage, cycles through thes schedule bins,
    and passes all internal information in the \texttt{cGH} structure
@@ -158,7 +158,7 @@
    boundaries are to be treated as outer boundaries, i.e.\ for which
    of those \texttt{cctk\_bbox} should be set to 1.
 
-   Carpet currently ignored \texttt{enable\_all\_storage} and always
+   Carpet currently ignores \texttt{enable\_all\_storage} and always
    enables all storage.  This is because it is not yet clear how
    individual grid function can be allocated and deallocated while
    still keeping enough data for the boundary prolongation.
@@ -266,7 +266,7 @@
    performs the main time evolution loop.  This is further complicated
    by the fact that finer grids need to take more and smaller time
    steps than coarser grids.  In Carpet's time step counting scheme,
-   which is bases on finest grid time steps, this means that the
+   which is based on the finest grid time steps, this means that the
    coarser grids are skipped in the remaining time steps.  Thus the
    elegant recursive scheme is flattened out.  The scheduling bins in
    the main time evolution loop are traversed in the following order:
@@ -333,7 +333,7 @@
    In the function \texttt{CallFunction}, all the arguments that are
    passed to the scheduled routines have to be set up.  Additionally,
    the \texttt{cGH} structure has to be filled in.  Some fields in the
-   \texttt{cGH} structure are always kept uptodate during the
+   \texttt{cGH} structure are always kept up-to-date during the
    refinement level loops, such as the time step size and the grid
    spacing.  The file \texttt{Carpet/src/helper.cc} contains helper
    routines that allow easy looping over refinement levels and over
@@ -384,7 +384,9 @@
    single level only and is never changed at run time.  Grid arrays
    with less than 3 dimension are extended to have an extent of 1 (and
    no ghost zones) in the remaining dimensions, so that all quantities
-   in Carpet have 3 dimensions.  \texttt{DISTRIB=CONSTANT} grid arrays
+   in Carpet have 3 dimensions\footnote{This is set by a compile-time
+   constant and could be changed to allow for grid functions and
+   arrays with more than 3 dimensions.}.  \texttt{DISTRIB=CONSTANT} grid arrays
    are implemented by internally enlarging the grid array in the $z$
    direction, and then distributing this array onto the processors.
 
@@ -468,9 +470,9 @@
    a grid point location.  The class \texttt{bbox<T,D>} provides
    \texttt{D}-dimensional bounding boxes using type \texttt{T} as
    indices.  A \texttt{bbox} defines the location and shape of a grid
-   patch.  Finally, \texttt{bboxset<T,D>} is a collection of bboxes.
-   bboxsets are a useful extension of the algebra of bboxes, as it
-   closes the bbox algebra under the union operation.
+   patch.  Finally, \texttt{bboxset<T,D>} is a collection of \texttt{bbox}es.
+   \texttt{bboxsets} are a useful extension of the algebra of bboxes, as it
+   closes the \texttt{bbox} algebra under the union operation.
 
    The files \texttt{CarpetLib/src/defs.*} defines useful small
    helpers and instantiates the STL templates.
@@ -489,7 +491,7 @@
 \subsection{The grid hierarchy}
 
    The grid hierarchy is described by a set of classes.  Except for
-   thehe actual data, all structures and all information is replicated
+   the actual data, all structures and all information is replicated
    on all processors.
 \begin{description}
 \item[\texttt{gh}]
@@ -528,7 +530,7 @@
    are virtual functions themselves, or they call virtual functions
    that are declared in \texttt{gf}.
 \item[\texttt{data}]
-   is a container for a grid patchof a certain variable type.  This is
+   is a container for a grid patch of a certain variable type.  This is
    a glorified multi-dimensional array that knows how to move between
    processors.  \texttt{data} is not only used to store the grid
    patches that make up a \texttt{gf}, it is also used to move parts
@@ -595,7 +597,7 @@ subroutine restrict_3d_real8
    The three bboxes describe the location and shape of the two arrays
    and of the region that should be prolongated in the global grid
    point index system.  That is, while the two arrays \texttt{src} and
-   \texttt{dst} are stored as dense array, they correspond to grid
+   \texttt{dst} are stored as dense arrays, they correspond to grid
    patches which in general have non-unit strides in the global index
    system.  As prolongation is an operation that is performed between
    overlapping grids, the prolongation region is the same for both the
@@ -651,7 +653,7 @@ subroutine restrict_3d_real8
    \texttt{RegisterRegridRoutine} where one can register a regridding
    routine.  Such a regridding routine does not have to actually
    regrid anything, it only has to return the new desired grid
-   hierarchy, i.e.\ basically a descriptions of a \texttt{gh}.
+   hierarchy, i.e.\ basically a description of a \texttt{gh}.
 
    Thorn \texttt{CarpetRegrid} provides a user interface to the
    regridding routines in Carpet.  All it does is take a regridding
