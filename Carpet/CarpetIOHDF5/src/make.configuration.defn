@@ -1,7 +1,7 @@
 # Main make.configuration.defn file for thorn CarpetIOHDF5   -*-Makefile-*-
 # $Header:$
 
-# Ensure that MPI is available
+# Ensure that HDF5 is available
 ifeq ($(strip $(HAVE_HDF5)), )
     $(error Configuration error: The CarpetIOHDF5 thorn requires HDF5.  Please configure with HDF5, or remove the CarpetIOHDF5 thorn from the ThornList.)
 endif
