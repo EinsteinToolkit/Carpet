@@ -534,7 +534,7 @@ namespace Carpet {
       
     // Adapt for convergence level
     rvect const spacing
-      = base_spacing * pow (CCTK_REAL (convergence_factor), basemglevel);
+      = base_spacing * ipow (CCTK_REAL (convergence_factor), basemglevel);
     
     // Calculate global number of grid points
     // SW note this and other examples break the encapsulation of vect class
@@ -857,7 +857,7 @@ namespace Carpet {
         
       rvect real_sizes
         = ((sizes - convoffsets)
-           / pow (rvect (convergence_factor), convpowers * basemglevel)
+           / ipow (rvect (convergence_factor), convpowers * basemglevel)
            + convoffsets);
       for (int d=gp.dim; d<dim; ++d) {
         real_sizes[d] = sizes[d];
