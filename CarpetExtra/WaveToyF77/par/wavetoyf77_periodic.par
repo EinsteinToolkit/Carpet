@@ -7,9 +7,9 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_periodic.par,v 1.6 2001/03/30 00:53:26 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_periodic.par,v 1.7 2002/01/07 15:43:23 schnetter Exp $
 
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetSlab IDScalarWave WaveToyF77"
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
 
 Carpet::poison_new_timelevels	= yes
 Carpet::check_for_poison	= yes
@@ -37,10 +37,10 @@ grid::mode			= periodic
 IO::outdir			= "wavetoyf77_periodic"
 
 IOBasic::outinfo_every		= 1 # 10
-#IOBasic::outinfo_vars		= "wavetoy::phi"
+IOBasic::outinfo_vars		= "wavetoy::phi"
 
-#IOBasic::outScalar_every	= 2
-#IOBasic::outScalar_vars		= "wavetoy::phi"
+IOBasic::outScalar_every	= 1 # 2
+IOBasic::outScalar_vars		= "wavetoy::phi"
 
 IOASCII::out1D_every		= 1 # 2
 IOASCII::out1D_vars		= "wavetoy::phi grid::coordinates"
