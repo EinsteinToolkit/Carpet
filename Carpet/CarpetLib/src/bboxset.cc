@@ -39,6 +39,8 @@ bboxset<T,D>::bboxset (const bset& bs_): bs(bs_) {
 // Invariant
 template<class T, int D>
 bool bboxset<T,D>::invariant () const {
+// This is very slow when there are many bboxes
+#if 0
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
     if ((*bi).empty()) return false;
     if (! (*bi).is_aligned_with(*bs.begin())) return false;
@@ -47,6 +49,7 @@ bool bboxset<T,D>::invariant () const {
       if (! ((*bi2) & (*bi)).empty()) return false;
     }
   }
+#endif
   return true;
 }
 
