@@ -21,18 +21,48 @@ extern "C" {
   CCTK_FILEVERSION(Carpet_CarpetAdaptiveregrid_regrid_cc);
 }
 
-
+//
+// For the moment this is going to live as one large file with one
+// large routine. However, it should be broken up into pieces later
+// when possible.
+//
 
 namespace CarpetAdaptiveRegrid {
 
+  //
+  // The following "local_" variables contain copies of the list of
+  // boxes and the outer boundaries. However, these should be
+  // PROCESSOR INDEPENDENT; that is, these are never used in calls to
+  // SplitRegions. All box computation is done with respect to these
+  // local variables, so should always be independent of the number of
+  // processors. The results are split across processors and put into
+  // the "standard" variables before being passed back to Carpet.
+  //
 
   static gh::mexts local_bbsss;
   static gh::rbnds local_obss;
   
+  //
+  // Keep track of the last iteration on which we were called. This
+  // means that we can return if we've been called on this timestep
+  // (because we want to ensure proper nesting we regrid all levels
+  // finer than the one on which we are called. Therefore if we're
+  // called on the same iteration, as long as we're called in
+  // coarse->fine order, we only need to regrid once.) 
+  //
+  // FIXME: Note that this may well cause problems with checkpoint /
+  // restart; should this be moved to a grid scalar?
+  //
+
   static CCTK_INT last_iteration = -1;  
   
   using namespace std;
   using namespace Carpet;
+
+  //
+  // The following Fortran helper routines are defined in
+  // CAR_utils.F90.
+  //
 
   extern "C" {
     void CCTK_FCALL CCTK_FNAME(copy_mask)
@@ -51,11 +81,23 @@ namespace CarpetAdaptiveRegrid {
        CCTK_INT& didit);
   }
 
+  //
+  // The following helper routines translate between real coordinates
+  // and integer (Carpet bbox) coordinates on a given refinement
+  // level. Basically copied from CarpetRegrid, "pos" <-> "position"
+  // and "int" <-> "integer". Actually defined at the bottom of this
+  // file.
+  //
+
   ivect pos2int (const cGH* const cctkGH, const gh& hh,
                  const rvect & rpos, const int rl);
   rvect int2pos (const cGH* const cctkGH, const gh& hh,
                  const ivect & ipos, const int rl);
   
+  //
+  // The real routine that does all the work
+  //
+
   CCTK_INT CarpetAdaptiveRegrid_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
                                 CCTK_POINTER const bbsss_,
                                 CCTK_POINTER const obss_,
@@ -65,7 +107,19 @@ namespace CarpetAdaptiveRegrid {
     DECLARE_CCTK_PARAMETERS;
     
     const cGH * const cctkGH = (const cGH *) cctkGH_;
-    
+
+    //
+    // The following variables are the important ones that Carpet uses
+    // to set up the grids. They contain the bounding boxes (bb), the
+    // outer boundary specifications (ob) and the processor numbers
+    // (p). I believe the "s" stands for "set"; so the "obss" is a set
+    // of sets of outer boundary specifications. However, each "s" is
+    // implemented as a vector, not a set. For the ob and p the
+    // indices on the vectors are the refinement levels and the maps;
+    // for the bounding boxes the order is multigrid levels,
+    // refinement levels, maps.
+    //
+
     gh::mexts  & bbsss = * (gh::mexts  *) bbsss_;
     gh::rbnds  & obss  = * (gh::rbnds  *) obss_;
     gh::rprocs & pss   = * (gh::rprocs *) pss_;
@@ -75,9 +129,15 @@ namespace CarpetAdaptiveRegrid {
     assert (is_singlemap_mode());
 
     if (local_bbsss.empty()) { // It's the first call
-      // Is this really the right thing to do on 
-      // multiprocessors?
-      //      local_bbsss = bbsss;
+      //
+      // We set up the "local_" variables using just the base grid
+      // which we get from looking at the base extent; of course, the
+      // outer boundary set up is trivial.
+      //
+      // Note that this will need improving (in fact the whole
+      // regridding mechanism need minor changes) in order to do mesh
+      // refinement with multiple maps.
+      //
       const ibbox& baseext = 
         vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
       vector<ibbox> tmp_bbs;
@@ -91,6 +151,11 @@ namespace CarpetAdaptiveRegrid {
       MakeMultigridBoxes(cctkGH, tmp_bbss, tmp_obss, local_bbsss);
       local_obss = tmp_obss;
       last_iteration = cctkGH->cctk_iteration;
+      //
+      // Having set up the base grid we then set any finer grids
+      // according to the coordinate parameters, as if we were the
+      // standard CarpetRegrid.
+      //
       CCTK_INT do_recompose = 
         ManualCoordinateList (cctkGH, hh, bbsss, obss, pss, 
                               local_bbsss, local_obss);
@@ -129,15 +194,13 @@ namespace CarpetAdaptiveRegrid {
       {
 	return 0;
       }
-
-      // Return if it's initial data as we can't handle that yet.
-      // Actually don't as initial data should now be handled
-      // by the manualcoordinatelist above.
-      //       if (cctkGH->cctk_iteration == 0) {
-      //         return 0;
-      //       }
       
     }
+
+    //
+    // Even if force is set, there are times that I'm not going to do
+    // any regridding, so be told.
+    //
 
     if (reflevel == maxreflevels - 1) return 0;
 
@@ -156,9 +219,11 @@ namespace CarpetAdaptiveRegrid {
       last_iteration = cctkGH->cctk_iteration;
     }
 
-//     cout << "bbsss at start" << endl << bbsss << endl;
-//     cout << "obss at start" << endl << obss << endl;
-//     cout << "pss at start" << endl << pss << endl;
+    //
+    // Set up a few local variables for later use. In particular we
+    // need to keep track of the level and map on which we were
+    // called. 
+    //
 
     CCTK_INT do_recompose;
     do_recompose = 1;
@@ -172,8 +237,10 @@ namespace CarpetAdaptiveRegrid {
     CCTK_INT finest_current_rl = local_bbsss.at(0).size();
     finest_current_rl = min(finest_current_rl, maxreflevels - 1);
 
+    //
     // Loop over all levels finer than this one.
-    
+    //
+
     leave_singlemap_mode(const_cast<cGH *> (cctkGH));
     leave_level_mode(const_cast<cGH *> (cctkGH));
     for (CCTK_INT rl = called_on_rl; rl < finest_current_rl; ++rl) {
@@ -187,26 +254,6 @@ namespace CarpetAdaptiveRegrid {
         CCTK_INFO(buf.str().c_str());
       }
       
-      // So the full algorithm should look something like:
-      
-      // Find how big the first bounding box should be on this level
-      //   Do this by finding min lower and max upper bounds of all bboxes
-      // Allocate box
-      // Fill errors from local arrays
-      // If grandchildren exist use their bboxes (expanded) to add to errors
-      // Reduce errors (MPI sum)
-      // Set errors to 0/1
-      // Define vectors of bboxes final (empty) and todo (contains bbox)
-      // Define vector of masks (contains error mask)
-      // Loop over all entries in todo:
-      //   Setup appropriate 1d array memory
-      //   Call fortran routine
-      //   If return is:
-      //     zero: add bbox to final
-      //     one:  add new bbox to todo and assoc mask to masklist
-      //     two:  add both new bboxs to todo and assoc masks to masklist
-      //   
-      
       vector<ibbox> bbs = local_bbsss.at(mglevel).at(reflevel);
       
       stack<ibbox> final;
@@ -216,6 +263,11 @@ namespace CarpetAdaptiveRegrid {
       
       bool did_regrid = false;
             
+      //
+      // For later use get the physical domain specification in real
+      // coordinates.
+      //
+
       rvect physical_min, physical_max;
       rvect interior_min, interior_max;
       rvect exterior_min, exterior_max;
@@ -225,6 +277,10 @@ namespace CarpetAdaptiveRegrid {
          &interior_min[0], &interior_max[0],
          &exterior_min[0], &exterior_max[0], &base_spacing[0]);
       assert (!ierr);
+
+      //
+      // Loop over all boxes on this level.
+      //
       
       for ( vector<ibbox>::const_iterator bbi = bbs.begin(); 
             bbi != bbs.end();
@@ -253,9 +309,13 @@ namespace CarpetAdaptiveRegrid {
               << " (points: " << prod(bb.shape()/bb.stride()) << ")";
           CCTK_INFO(buf.str().c_str());
         }
-        
+
+        //        
         // Setup the mask.
-        
+        // That is, for any errors that we can locally see that exceed
+        // the threshold, set the mask to 1.
+        //
+
         const ibbox& baseext = 
           vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
         ivect imin = (bb.lower() - baseext.lower())/bb.stride(), 
@@ -328,9 +388,11 @@ namespace CarpetAdaptiveRegrid {
           }
         } END_LOCAL_COMPONENT_LOOP;
         
-        // Instead check the error on child level, if exists
+        //
+        // Check the error on child level, if such a level exists
         // This should fix the "orphaned grandchild" problem
-        
+        //
+
         if (local_bbss.size() > reflevel+1) {
                 
           CCTK_INT currentml = mglevel;
@@ -419,8 +481,13 @@ namespace CarpetAdaptiveRegrid {
           enter_singlemap_mode(const_cast<cGH *> (cctkGH), currentmap);
 
         }
-        
-        // Reduce errors (MPI sum)
+
+        //        
+        // Reduce errors (MPI sum).
+        // This sets up the mask globally, although the mask is now
+        // non-zero where in error instead of just being 1. It's still
+        // 0 at points not in error.
+        //
 
         CCTK_INT ierr = 
           CCTK_ReduceLocArrayToArray1D (cctkGH,
@@ -438,8 +505,11 @@ namespace CarpetAdaptiveRegrid {
           CCTK_WARN(0, buf.str().c_str());
         }
 
-        // Set errors to 0/1
-        
+        //
+        // Set errors to 0/1; so, where the mask indicates that a
+        // point is in error, set it precisely to 1.
+        //
+
         for (CCTK_INT k = 0; k < imax[2] - imin[2] + 1; k++) {
           for (CCTK_INT j = 0; j < imax[1] - imin[1] + 1; j++) {
             for (CCTK_INT i = 0; i < imax[0] - imin[0] + 1; i++) {
@@ -452,8 +522,10 @@ namespace CarpetAdaptiveRegrid {
           }
         }
         
+        //
         // Pad the errors: stage 1 - buffer points marked as 2.
-        
+        //
+
         for (CCTK_INT k = 0; k < imax[2] - imin[2] + 1; k++) {
           for (CCTK_INT j = 0; j < imax[1] - imin[1] + 1; j++) {
             for (CCTK_INT i = 0; i < imax[0] - imin[0] + 1; i++) {
@@ -483,8 +555,10 @@ namespace CarpetAdaptiveRegrid {
             }
           }
         }
+        //
         // stage 2: all buffer points marked truly in error.
         // Also mark if there are any errors.
+        //
         bool should_regrid = false;
         for (CCTK_INT k = 0; k < imax[2] - imin[2] + 1; k++) {
           for (CCTK_INT j = 0; j < imax[1] - imin[1] + 1; j++) {
@@ -511,8 +585,16 @@ namespace CarpetAdaptiveRegrid {
           CCTK_INFO(buf.str().c_str());
         }
         
-        // Define vectors of bboxes final (empty) and todo (contains bbox)
-        
+        //
+        // For this box on this level we now have the marked
+        // points. If there are any errors then we should actually
+        // create the new boxes. Starting from the actual bbox, placed
+        // in the "todo" stack, we iterate over the "todo" stack
+        // creating new boxes which are either accepted (and hence
+        // placed on the "final" stack) or still need work done to
+        // them (hence placed on the "todo" stack).
+        //
+
         if (should_regrid) {
           
           stack<ibbox> todo;
@@ -524,15 +606,18 @@ namespace CarpetAdaptiveRegrid {
           stack<vector<CCTK_INT> > masklist;
           
           masklist.push(mask);
-          
+
+          //          
           // Loop over all entries in todo:
           //   Setup appropriate 1d array memory
           //   Call fortran routine
           //   If return is:
           //     zero: add bbox to final
           //     one:  add new bbox to todo and assoc mask to masklist
-          //     two:  add both new bboxs to todo and assoc masks to masklist
-          
+          //     two:  add both new bboxs to todo and assoc masks to
+          //           masklist 
+          //
+
           while (!todo.empty())
           {
             
@@ -565,6 +650,11 @@ namespace CarpetAdaptiveRegrid {
             }
               
             CCTK_INT didit;
+
+            //
+            // This is the actual Fortran routine that does the work
+            // of the Berger-Rigoutsos algorithm.
+            //
               
             CCTK_FNAME(check_box)(nx, ny, nz,
                                   &mask.front(),
@@ -577,7 +667,7 @@ namespace CarpetAdaptiveRegrid {
                                   min_width, min_fraction,
                                   didit);
             
-            if (didit == 0) {
+            if (didit == 0) { // Box was accepted
               
               final.push(bb);          
               
@@ -588,8 +678,8 @@ namespace CarpetAdaptiveRegrid {
                 CCTK_INFO(buf.str().c_str());
               }
             }
-            else if (didit == 1) {
-              
+            else if (didit == 1) { // Box was replaced by a new single
+                                   // box
               ibbox newbbox1(ivect::ref(&fbbox1[0][0]),
                              ivect::ref(&fbbox1[1][0]),
                              ivect::ref(&fbbox1[2][0]));
@@ -615,7 +705,7 @@ namespace CarpetAdaptiveRegrid {
                 CCTK_INFO(buf.str().c_str());
               }
             }
-            else if (didit == 2) {
+            else if (didit == 2) { // Box was replaced with two boxes
               
               ibbox newbbox1(ivect::ref(&fbbox1[0][0]),
                              ivect::ref(&fbbox1[1][0]),
@@ -669,8 +759,9 @@ namespace CarpetAdaptiveRegrid {
         } // should regrid.
       } // Loop over boxes on the parent grid.
       
-      if (did_regrid) {
-          
+      if (did_regrid) { // If we actually did something, reconvert the
+                        // boxes to correct Carpet style, plus correct
+                        // the boundaries.
         // Fixup the stride
         vector<ibbox> newbbs;
         vector<bbvect> obs;
@@ -772,12 +863,15 @@ namespace CarpetAdaptiveRegrid {
                 << "obox is:" << endl << ob;
             CCTK_INFO(buf.str().c_str());
           }
-          
+
+          //          
           // Convert back to integer coordinates
           // We have to do this on the fine grid to ensure that
           // it is correct for an outer boundary with odd numbers
-          // of ghost zones where the bbox does not align with the parent.
-          
+          // of ghost zones where the bbox does not align with the
+          // parent. 
+          //
+
           ilo = pos2int(cctkGH, hh, newbbcoord.lower(), reflevel+1);
           ihi = pos2int(cctkGH, hh, newbbcoord.upper(), reflevel+1);
           ivect istr = bb.stride() / reffact;
@@ -834,6 +928,14 @@ namespace CarpetAdaptiveRegrid {
         bbs = newbbs;
         
         // Set local bbss
+
+        //
+        // This mess ensures that the local bbsss is correctly set for
+        // multigrid levels, then splits over regions (remember that
+        // the local_bbsss is processor independent), then goes
+        // through the whole multigrid procedure with the processor
+        // dependent bbsss.
+        //
         
         if (bbss.size() < reflevel+2) {
           if (verbose) {
