@@ -788,6 +788,25 @@ vect (const T x, const T y, const T z, const T t) {
 
 
 
+// Specialise some constructors for lower dimensions
+// These functions are declared, but never defined, so that using them
+// will result in a linker error
+
+template<> vect<int,0>::vect (const int x, const int y);
+template<> vect<int,1>::vect (const int x, const int y);
+
+template<> vect<int,0>::vect (const int x, const int y, const int z);
+template<> vect<int,1>::vect (const int x, const int y, const int z);
+template<> vect<int,2>::vect (const int x, const int y, const int z);
+
+template<> vect<int,0>::vect (const int x, const int y, const int z, const int t);
+template<> vect<int,1>::vect (const int x, const int y, const int z, const int t);
+template<> vect<int,2>::vect (const int x, const int y, const int z, const int t);
+template<> vect<int,3>::vect (const int x, const int y, const int z, const int t);
+
+
+
+
 // Specialise for CCTK_REAL
 
 template<>
