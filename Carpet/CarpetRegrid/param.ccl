@@ -1,16 +1,16 @@
 # Parameter definitions for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.5 2002/03/23 20:20:56 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.6 2002/05/22 15:03:40 schnetter Exp $
 
 
 
-CCTK_INT refinement_levels "Number of refinement levels (including the base level)"
+CCTK_INT refinement_levels "Number of refinement levels (including the base level)" STEERABLE=always
 {
   1:* :: "must be positive"
 } 1
 
 
 
-CCTK_INT regrid_every "Regrid every n time steps"
+CCTK_INT regrid_every "Regrid every n time steps" STEERABLE=always
 {
   -1   :: "regrid never"
    0   :: "regrid during initial data calculation only"
@@ -19,7 +19,7 @@ CCTK_INT regrid_every "Regrid every n time steps"
 
 
 
-KEYWORD refined_regions "Regions where the grid is refined"
+KEYWORD refined_regions "Regions where the grid is refined" STEERABLE=always
 {
   "none"                   :: "Don't refine"
   "centre"                 :: "Refine around the centre of the grid only"
@@ -34,84 +34,84 @@ KEYWORD refined_regions "Regions where the grid is refined"
 
 # Region specifications for manual gridpoint refinement
 
-CCTK_INT l1ixmin "Lower boundary of level 1 box in x-direction"
+CCTK_INT l1ixmin "Lower boundary of level 1 box in x-direction" STEERABLE=always
 {
   : :: ""
 } 0
-CCTK_INT l1iymin "Lower boundary of level 1 box in y-direction"
+CCTK_INT l1iymin "Lower boundary of level 1 box in y-direction" STEERABLE=always
 {
   : :: ""
 } 0
-CCTK_INT l1izmin "Lower boundary of level 1 box in z-direction"
-{
-  : :: ""
-} 0
-
-CCTK_INT l1ixmax "Upper boundary of level 1 box in x-direction"
-{
-  : :: ""
-} -1
-CCTK_INT l1iymax "Upper boundary of level 1 box in y-direction"
-{
-  : :: ""
-} -1
-CCTK_INT l1izmax "Upper boundary of level 1 box in z-direction"
-{
-  : :: ""
-} -1
-
-
-
-CCTK_INT l2ixmin "Lower boundary of level 2 box in x-direction"
-{
-  : :: ""
-} 0
-CCTK_INT l2iymin "Lower boundary of level 2 box in y-direction"
-{
-  : :: ""
-} 0
-CCTK_INT l2izmin "Lower boundary of level 2 box in z-direction"
+CCTK_INT l1izmin "Lower boundary of level 1 box in z-direction" STEERABLE=always
 {
   : :: ""
 } 0
 
-CCTK_INT l2ixmax "Upper boundary of level 2 box in x-direction"
+CCTK_INT l1ixmax "Upper boundary of level 1 box in x-direction" STEERABLE=always
 {
   : :: ""
 } -1
-CCTK_INT l2iymax "Upper boundary of level 2 box in y-direction"
+CCTK_INT l1iymax "Upper boundary of level 1 box in y-direction" STEERABLE=always
 {
   : :: ""
 } -1
-CCTK_INT l2izmax "Upper boundary of level 2 box in z-direction"
+CCTK_INT l1izmax "Upper boundary of level 1 box in z-direction" STEERABLE=always
 {
   : :: ""
 } -1
 
 
 
-CCTK_INT l3ixmin "Lower boundary of level 3 box in x-direction"
+CCTK_INT l2ixmin "Lower boundary of level 2 box in x-direction" STEERABLE=always
 {
   : :: ""
 } 0
-CCTK_INT l3iymin "Lower boundary of level 3 box in y-direction"
+CCTK_INT l2iymin "Lower boundary of level 2 box in y-direction" STEERABLE=always
 {
   : :: ""
 } 0
-CCTK_INT l3izmin "Lower boundary of level 3 box in z-direction"
+CCTK_INT l2izmin "Lower boundary of level 2 box in z-direction" STEERABLE=always
 {
   : :: ""
 } 0
 
-CCTK_INT l3ixmax "Upper boundary of level 3 box in x-direction"
+CCTK_INT l2ixmax "Upper boundary of level 2 box in x-direction" STEERABLE=always
 {
   : :: ""
 } -1
-CCTK_INT l3iymax "Upper boundary of level 3 box in y-direction"
+CCTK_INT l2iymax "Upper boundary of level 2 box in y-direction" STEERABLE=always
 {
   : :: ""
 } -1
-CCTK_INT l3izmax "Upper boundary of level 3 box in z-direction"
+CCTK_INT l2izmax "Upper boundary of level 2 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+
+
+
+CCTK_INT l3ixmin "Lower boundary of level 3 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_INT l3iymin "Lower boundary of level 3 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_INT l3izmin "Lower boundary of level 3 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+
+CCTK_INT l3ixmax "Upper boundary of level 3 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_INT l3iymax "Upper boundary of level 3 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_INT l3izmax "Upper boundary of level 3 box in z-direction" STEERABLE=always
 {
   : :: ""
 } -1
@@ -120,84 +120,84 @@ CCTK_INT l3izmax "Upper boundary of level 3 box in z-direction"
 
 # Region specifications for manual coordinate refinement
 
-CCTK_REAL l1xmin "Lower boundary of level 1 box in x-direction"
+CCTK_REAL l1xmin "Lower boundary of level 1 box in x-direction" STEERABLE=always
 {
   : :: ""
 } 0
-CCTK_REAL l1ymin "Lower boundary of level 1 box in y-direction"
+CCTK_REAL l1ymin "Lower boundary of level 1 box in y-direction" STEERABLE=always
 {
   : :: ""
 } 0
-CCTK_REAL l1zmin "Lower boundary of level 1 box in z-direction"
-{
-  : :: ""
-} 0
-
-CCTK_REAL l1xmax "Upper boundary of level 1 box in x-direction"
-{
-  : :: ""
-} -1
-CCTK_REAL l1ymax "Upper boundary of level 1 box in y-direction"
-{
-  : :: ""
-} -1
-CCTK_REAL l1zmax "Upper boundary of level 1 box in z-direction"
-{
-  : :: ""
-} -1
-
-
-
-CCTK_REAL l2xmin "Lower boundary of level 2 box in x-direction"
-{
-  : :: ""
-} 0
-CCTK_REAL l2ymin "Lower boundary of level 2 box in y-direction"
-{
-  : :: ""
-} 0
-CCTK_REAL l2zmin "Lower boundary of level 2 box in z-direction"
+CCTK_REAL l1zmin "Lower boundary of level 1 box in z-direction" STEERABLE=always
 {
   : :: ""
 } 0
 
-CCTK_REAL l2xmax "Upper boundary of level 2 box in x-direction"
+CCTK_REAL l1xmax "Upper boundary of level 1 box in x-direction" STEERABLE=always
 {
   : :: ""
 } -1
-CCTK_REAL l2ymax "Upper boundary of level 2 box in y-direction"
+CCTK_REAL l1ymax "Upper boundary of level 1 box in y-direction" STEERABLE=always
 {
   : :: ""
 } -1
-CCTK_REAL l2zmax "Upper boundary of level 2 box in z-direction"
+CCTK_REAL l1zmax "Upper boundary of level 1 box in z-direction" STEERABLE=always
 {
   : :: ""
 } -1
 
 
 
-CCTK_REAL l3xmin "Lower boundary of level 3 box in x-direction"
+CCTK_REAL l2xmin "Lower boundary of level 2 box in x-direction" STEERABLE=always
 {
   : :: ""
 } 0
-CCTK_REAL l3ymin "Lower boundary of level 3 box in y-direction"
+CCTK_REAL l2ymin "Lower boundary of level 2 box in y-direction" STEERABLE=always
 {
   : :: ""
 } 0
-CCTK_REAL l3zmin "Lower boundary of level 3 box in z-direction"
+CCTK_REAL l2zmin "Lower boundary of level 2 box in z-direction" STEERABLE=always
 {
   : :: ""
 } 0
 
-CCTK_REAL l3xmax "Upper boundary of level 3 box in x-direction"
+CCTK_REAL l2xmax "Upper boundary of level 2 box in x-direction" STEERABLE=always
 {
   : :: ""
 } -1
-CCTK_REAL l3ymax "Upper boundary of level 3 box in y-direction"
+CCTK_REAL l2ymax "Upper boundary of level 2 box in y-direction" STEERABLE=always
 {
   : :: ""
 } -1
-CCTK_REAL l3zmax "Upper boundary of level 3 box in z-direction"
+CCTK_REAL l2zmax "Upper boundary of level 2 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+
+
+
+CCTK_REAL l3xmin "Lower boundary of level 3 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_REAL l3ymin "Lower boundary of level 3 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+CCTK_REAL l3zmin "Lower boundary of level 3 box in z-direction" STEERABLE=always
+{
+  : :: ""
+} 0
+
+CCTK_REAL l3xmax "Upper boundary of level 3 box in x-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_REAL l3ymax "Upper boundary of level 3 box in y-direction" STEERABLE=always
+{
+  : :: ""
+} -1
+CCTK_REAL l3zmax "Upper boundary of level 3 box in z-direction" STEERABLE=always
 {
   : :: ""
 } -1
@@ -206,7 +206,7 @@ CCTK_REAL l3zmax "Upper boundary of level 3 box in z-direction"
 
 # Refinement criteria for manual-gridpoint-list
 
-CCTK_STRING gridpoints "List of bounding box gridpoints"
+CCTK_STRING gridpoints "List of bounding box gridpoints" STEERABLE=always
 {
   "^$" :: "leave empty for no refinement"
   ".*" :: "[ [ ([<imin>,<jmin>,<kmin>]:[<imax>,<jmax>,<kmax>]:[<istride>,<jstride>,<kstride>]), ... ], ... ]"
@@ -216,7 +216,7 @@ CCTK_STRING gridpoints "List of bounding box gridpoints"
 
 # Refinement criteria for manual-coordinate-list
 
-CCTK_STRING coordinates "List of bounding box coordinates"
+CCTK_STRING coordinates "List of bounding box coordinates" STEERABLE=always
 {
   "^$" :: "leave empty for no refinement"
   ".*" :: "[ [ ([<xmin>,<ymin>,<zmin>]:[<xmax>,<ymax>,<zmax>]:[<xstride>,<ystride>,<zstride>]), ... ], ... ]"
@@ -236,22 +236,22 @@ CCTK_STRING outerbounds "Outer boundaries"
 
 # Refinement criteria for automatic refining
 
-CCTK_INT minwidth "Minimum width of refined region"
+CCTK_INT minwidth "Minimum width of refined region" STEERABLE=always
 {
   1:* :: "must be positive"
 } 8
 
-CCTK_REAL minfraction "Minimum fraction of points in need of refinement in a refined region"
+CCTK_REAL minfraction "Minimum fraction of points in need of refinement in a refined region" STEERABLE=always
 {
   0:1 :: "must be positive and less than one"
 } 0.75
 
-CCTK_REAL maxerror "Maximum allowed error for non-refined grid points"
+CCTK_REAL maxerror "Maximum allowed error for non-refined grid points" STEERABLE=always
 {
   *:* :: "everything goes"
 } 1.0
 
-STRING errorvar "Name of grid function that contains the error"
+STRING errorvar "Name of grid function that contains the error" STEERABLE=always
 {
   ".*" :: "must be the name of a grid function"
 } ""
