@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.28 2004/06/02 07:12:56 bzink Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.29 2004/06/02 12:56:30 bzink Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -75,7 +75,20 @@ namespace CarpetIOHDF5 {
 
   void CarpetIOHDF5_EvolutionCheckpoint( const cGH* const cgh){
     
-    DECLARE_CCTK_PARAMETERS
+    DECLARE_CCTK_PARAMETERS;
+
+    // Test checkpoint_every, and adjust it. This is necessary until 
+    // recovery is more flexible.
+    int every_full = pow(2.0,maxreflevels-1);
+    if ((checkpoint_every % every_full) != 0) {
+      int every = (checkpoint_every / every_full + 1) * every_full;
+      ostringstream outevery;
+      outevery << every;
+      CCTK_ParameterSet("checkpoint_every","IOUtil",
+			outevery.str().c_str());
+      CCTK_VInfo (CCTK_THORNSTRING,"I have adjusted your checkpoint_every to %i.",every);
+      
+    }
 
       if (checkpoint &&
       ((checkpoint_every > 0 && cgh->cctk_iteration % checkpoint_every == 0) ||
