@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.73 2004/03/23 19:52:23 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.74 2004/03/23 19:53:12 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -746,11 +746,11 @@ namespace Carpet {
 	arrdata.at(group).at(0).hh->recompose (bbsss, obss, pss, 1, false);
 	
 	break;
-      }
+      } // case of scalar or array
 	
       default:
 	assert (0);
-      }
+      } // switch on group type
       
       // Initialise group information
       groupdata.at(group).info.dim         = gp.dim;
