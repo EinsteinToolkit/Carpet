@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.10 2003/06/18 18:28:08 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.11 2003/09/20 13:53:18 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -21,7 +21,7 @@
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.10 2003/06/18 18:28:08 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.11 2003/09/20 13:53:18 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 
@@ -166,7 +166,7 @@ namespace CarpetSlab {
     
     // Calculate extent to collect
     const bbox<int,dim> hextent (hlb, hub, hstr);
-    assert (hextent.num_points() == totalsize);
+    assert (hextent.size() == totalsize);
     
     // Create collector data object
     void* myhdata = rank==collect_proc ? hdata : 0;

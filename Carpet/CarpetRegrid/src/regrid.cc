@@ -24,7 +24,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.27 2003/09/11 16:04:15 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.28 2003/09/20 13:53:18 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -466,13 +466,13 @@ namespace CarpetRegrid {
     
     int oldnumpoints = 0;
     for (list<ibbox>::const_iterator ibb = bbl.begin(); ibb != bbl.end(); ++ibb) {
-      oldnumpoints += ibb->num_points();
+      oldnumpoints += ibb->size();
     }
     for (list<ibbox>::const_iterator ibb1 = bbl1.begin(); ibb1 != bbl1.end(); ++ibb1) {
-      oldnumpoints += ibb1->num_points();
+      oldnumpoints += ibb1->size();
     }
     for (list<ibbox>::const_iterator ibb2 = bbl2.begin(); ibb2 != bbl2.end(); ++ibb2) {
-      oldnumpoints += ibb2->num_points();
+      oldnumpoints += ibb2->size();
     }
     
 #if 0
@@ -570,7 +570,7 @@ namespace CarpetRegrid {
 	      ibb1 = bbl1.erase(ibb1);
 	      ibb2 = bbl2.erase(ibb2);
 	      ++numcombinedboxes;
-// 	      cout << "MRA: Combining along " << "xyz"[dir] << " to " << bbl.back() << " size " << bbl.back().num_points() << endl;
+// 	      cout << "MRA: Combining along " << "xyz"[dir] << " to " << bbl.back() << " size " << bbl.back().size() << endl;
 	      goto continue_search;
 	    }
 	    
@@ -593,7 +593,7 @@ namespace CarpetRegrid {
     
     int newnumpoints = 0;
     for (list<ibbox>::const_iterator ibb = bbl.begin(); ibb != bbl.end(); ++ibb) {
-      newnumpoints += ibb->num_points();
+      newnumpoints += ibb->size();
     }
     assert (newnumpoints == oldnumpoints);
     
@@ -635,7 +635,7 @@ namespace CarpetRegrid {
     for (ibbox::iterator it=region.begin(); it!=region.end(); ++it) {
       if (error[*it] > maxerror) ++cnt;
     }
-    const CCTK_REAL fraction = (CCTK_REAL)cnt / region.num_points();
+    const CCTK_REAL fraction = (CCTK_REAL)cnt / region.size();
     const int width = maxval(region.shape() / region.stride());
     
     if (cnt == 0) {
@@ -646,7 +646,7 @@ namespace CarpetRegrid {
       const ivect up(region.upper());
       const ivect str(region.stride());
       bbl.push_back (ibbox(lo,up+str-str/reffact,str/reffact));
-//       cout << "MRA: Refining to " << bbl.back() << " size " << bbl.back().num_points() << " fraction " << fraction << endl;
+//       cout << "MRA: Refining to " << bbl.back() << " size " << bbl.back().size() << " fraction " << fraction << endl;
     } else {
       // Split the region and check recursively
       const int dir = maxloc(region.shape());
@@ -713,7 +713,7 @@ namespace CarpetRegrid {
     
 //     int numpoints = 0;
 //     for (list<ibbox>::const_iterator ibb = bbl.begin(); ibb != bbl.end(); ++ibb) {
-//       numpoints += ibb->num_points();
+//       numpoints += ibb->size();
 //     }
 //     cout << "MRA: Chose " << bbl.size() << " regions with a total size of " << numpoints << " to refine." << endl << endl;
     
