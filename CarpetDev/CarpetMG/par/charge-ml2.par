@@ -1,0 +1,134 @@
+!DESC "Charged sphere initial data, solved with CarpetMG"
+
+Cactus::cctk_full_warnings = yes
+Cactus::cctk_timer_output  = full
+
+Cactus::cctk_itlast = 5120
+
+
+
+ActiveThorns = "NaNCatcher"
+
+
+
+ActiveThorns = "IOUtil"
+
+IO::out_dir = $parfile
+
+
+
+ActiveThorns = "Carpet CarpetLib CarpetInterp CarpetReduce CarpetSlab"
+
+Carpet::domain_from_coordbase = yes
+Carpet::max_refinement_levels = 11
+
+Carpet::ghost_size   = 2
+Carpet::buffer_width = 4
+
+Carpet::prolongation_order_space = 3
+Carpet::prolongation_order_time  = 2
+
+Carpet::convergence_level = 0
+
+Carpet::init_3_timelevels = yes
+
+
+
+ActiveThorns = "TATelliptic CarpetMG"
+
+CarpetMG::verbose = yes
+#CarpetMG::veryverbose = yes
+
+
+
+ActiveThorns = "Boundary CartGrid3D CoordBase ReflectionSymmetry SymBase"
+
+CoordBase::domainsize = minmax
+CoordBase::spacing    = numcells
+
+CoordBase::xmin =  0.0
+CoordBase::ymin =  0.0
+CoordBase::zmin =  0.0
+CoordBase::xmax = 20.0
+CoordBase::ymax = 20.0
+CoordBase::zmax = 20.0
+
+CoordBase::ncells_x = 20
+CoordBase::ncells_y = 20
+CoordBase::ncells_z = 20
+
+CoordBase::boundary_size_x_lower = 2
+CoordBase::boundary_size_y_lower = 2
+CoordBase::boundary_size_z_lower = 2
+
+CoordBase::boundary_shiftout_x_lower = 1
+CoordBase::boundary_shiftout_y_lower = 1
+CoordBase::boundary_shiftout_z_lower = 1
+
+CartGrid3D::type         = coordbase
+CartGrid3D::avoid_origin = no
+
+ReflectionSymmetry::reflection_x = yes
+ReflectionSymmetry::reflection_y = yes
+ReflectionSymmetry::reflection_z = yes
+
+ReflectionSymmetry::avoid_origin_x = no
+ReflectionSymmetry::avoid_origin_y = no
+ReflectionSymmetry::avoid_origin_z = no
+
+
+
+ActiveThorns = "CarpetRegrid"
+
+CarpetRegrid::refinement_levels        = 2
+CarpetRegrid::smart_outer_boundaries   = yes
+
+CarpetRegrid::keep_same_grid_structure = yes
+CarpetRegrid::refined_regions          = manual-coordinate-list
+CarpetRegrid::coordinates = "
+        [ [ ([0.0,0.0,0.0]:[20.0,20.0,20.0]:[0.5,0.5,0.5]) ] ]
+"
+
+
+
+ActiveThorns = "WaveToyC"
+
+WaveToyC::bound	= radiation
+
+
+
+ActiveThorns = "IDScalarWave IDSWTEcarpet"
+
+IDScalarWave::initial_data = charge-TATelliptic-carpet
+
+IDSWTEcarpet::solver  = CarpetMG
+IDSWTEcarpet::options = ""
+IDSWTEcarpet::radius  = 5.5
+IDSWTEcarpet::charge  = 1.0
+
+
+
+ActiveThorns = "Time"
+ 
+Time::dtfac = 0.5
+
+
+
+ActiveThorns = "IOBasic"
+
+IOBasic::outInfo_every = 1
+IOBasic::outInfo_vars  = "wavetoy::phi"
+
+
+
+ActiveThorns = "CarpetIOScalar"
+
+IOScalar::outScalar_every = 1
+IOScalar::outScalar_vars  = "wavetoy::phi IDSWTEcarpet::residuals"
+
+
+
+ActiveThorns = "CarpetIOASCII"
+
+IOASCII::out1D_every = 1
+IOASCII::out1D_vars  = "wavetoy::phi IDSWTEcarpet::residuals"

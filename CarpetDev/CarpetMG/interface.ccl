@@ -1,0 +1,14 @@
+# Interface definition for thorn CarpetMG
+
+IMPLEMENTS: CarpetMG
+
+INHERITS: TATelliptic
+
+USES INCLUDE HEADER: TATelliptic.h
+USES INCLUDE HEADER: carpet.hh
+
+
+
+CCTK_INT FUNCTION \
+    SymmetryTableHandleForGrid (CCTK_POINTER_TO_CONST IN cctkGH)
+REQUIRES FUNCTION SymmetryTableHandleForGrid

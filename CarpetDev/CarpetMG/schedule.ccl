@@ -1,0 +1,11 @@
+# Schedule definitions for thorn CarpetMG
+
+SCHEDULE CarpetMG_register AT startup
+{
+  LANG: C
+} "Register the elliptic solver"
+
+SCHEDULE CarpetMG_paramcheck AT paramcheck
+{
+  LANG: C
+} "Check parameters"

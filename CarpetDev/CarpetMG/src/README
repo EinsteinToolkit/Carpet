@@ -1,0 +1,38 @@
+equation: L(varc) = rhsc
+
+
+
+resf <- L(varf)
+resf <- resf - rhsf
+
+varc <- varc // R(varf)
+savc <- varc
+resc <- 0
+resc <- resc // R(resf)
+rhsc <- resc
+resc <- L(varc)
+rhsc <- rhsc - resc
+
+varc <- L(varc) = rhsc
+
+resc <- varc
+resc <- resc - savc
+resf <- 0
+resf <- P(resc)
+varf <- varf + resf
+
+
+
+rhsc <- R(L(varf) - rhsf) - L(R(varf))
+varc <- L(varc) = R(L(varf) - rhsf) - L(R(varf))
+varf <- varf + P(varc - R(varf))
+
+delc <- L(R(varf) + delc) = R(L(varf) - rhsf) - L(R(varf))
+delf = P(delc)
+
+
+
+L(varf       ) - rhcf = resf
+
+
+L(varf + delf) - rhcf = 0
