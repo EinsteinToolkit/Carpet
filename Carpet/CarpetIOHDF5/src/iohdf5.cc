@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.28 2004/04/18 13:02:49 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.29 2004/05/17 14:40:12 bzink Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -396,138 +396,141 @@ namespace CarpetIOHDF5 {
 	      assert (datasetnamestr.size() <= 256); // limit dataset name size
 	      const char * const datasetname = datasetnamestr.c_str();
 	      const hid_t dataset = H5Dcreate (writer, datasetname, datatype, dataspace, H5P_DEFAULT);
-	      assert (dataset>=0);
+	      
+	      if (dataset>=0) {
           
-	      if (cgdata.disttype != CCTK_DISTRIB_CONSTANT) {
-		h5data = (void*)tmp->storage();
-	      }
+		  if (cgdata.disttype != CCTK_DISTRIB_CONSTANT) {
+		      h5data = (void*)tmp->storage();
+		  }
 
-	      herr = H5Dwrite (dataset, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, h5data);
-	      assert (!herr);
+		  herr = H5Dwrite (dataset, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, h5data);
+		  assert (!herr);
           
-	      // Write FlexIO attributes
-	      WriteAttribute (dataset, "level", rl);
-	      {
-		CCTK_REAL origin[dim], delta[dim];
-		CCTK_REAL min_ext[dim], max_ext[dim];
-		for (int d=0; d<dim; ++d) {
-		  origin[d] = CCTK_ORIGIN_SPACE(d) + cctk_lbnd[d] * delta[d];
-		  delta[d] = CCTK_DELTA_SPACE(d);
-		  min_ext[d] = origin[d];
-		  max_ext[d] = origin[d] + cctk_lsh[d] * delta[d];
-		}
-		WriteAttribute (dataset, "origin", origin, dim);
-		WriteAttribute (dataset, "delta", delta, dim);
-		WriteAttribute (dataset, "min_ext", min_ext, dim);
-		WriteAttribute (dataset, "max_ext", max_ext, dim);
-	      }
-	      WriteAttribute (dataset, "time", cctk_time);
-	      WriteAttribute (dataset, "timestep", cctk_iteration);
-	      WriteAttribute (dataset, "level_timestep", cctk_iteration / reflevelfact);
-	      WriteAttribute (dataset, "persistence", maxreflevelfact / reflevelfact);
-	      {
-		int time_refinement=0;
-		int spatial_refinement[dim];
-		int grid_placement_refinement[dim];
-		time_refinement = reflevelfact;
-		for (int d=0; d<dim; ++d) {
-		  spatial_refinement[d] = reflevelfact;
-		  grid_placement_refinement[d] = reflevelfact;
-		}
-		WriteAttribute (dataset, "time_refinement", time_refinement);
-		WriteAttribute (dataset, "spatial_refinement", spatial_refinement, dim);
-		WriteAttribute (dataset, "grid_placement_refinement", grid_placement_refinement, dim);
-	      }
-	      {
-		int iorigin[dim];
-		for (int d=0; d<dim; ++d) {
-		  iorigin[d] = (ext.lower() / ext.stride())[d];
-		}
-		WriteAttribute (dataset, "iorigin", iorigin, dim);
-	      }
+		  // Write FlexIO attributes
+		  WriteAttribute (dataset, "level", rl);
+		  {
+		      CCTK_REAL origin[dim], delta[dim];
+		      CCTK_REAL min_ext[dim], max_ext[dim];
+		      for (int d=0; d<dim; ++d) {
+			  origin[d] = CCTK_ORIGIN_SPACE(d) + cctk_lbnd[d] * delta[d];
+			  delta[d] = CCTK_DELTA_SPACE(d);
+			  min_ext[d] = origin[d];
+			  max_ext[d] = origin[d] + cctk_lsh[d] * delta[d];
+		      }
+		      WriteAttribute (dataset, "origin", origin, dim);
+		      WriteAttribute (dataset, "delta", delta, dim);
+		      WriteAttribute (dataset, "min_ext", min_ext, dim);
+		      WriteAttribute (dataset, "max_ext", max_ext, dim);
+		  }
+		  WriteAttribute (dataset, "time", cctk_time);
+		  WriteAttribute (dataset, "timestep", cctk_iteration);
+		  WriteAttribute (dataset, "level_timestep", cctk_iteration / reflevelfact);
+		  WriteAttribute (dataset, "persistence", maxreflevelfact / reflevelfact);
+		  {
+		      int time_refinement=0;
+		      int spatial_refinement[dim];
+		      int grid_placement_refinement[dim];
+		      time_refinement = reflevelfact;
+		      for (int d=0; d<dim; ++d) {
+			  spatial_refinement[d] = reflevelfact;
+			  grid_placement_refinement[d] = reflevelfact;
+		      }
+		      WriteAttribute (dataset, "time_refinement", time_refinement);
+		      WriteAttribute (dataset, "spatial_refinement", spatial_refinement, dim);
+		      WriteAttribute (dataset, "grid_placement_refinement", grid_placement_refinement, dim);
+		  }
+		  {
+		      int iorigin[dim];
+		      for (int d=0; d<dim; ++d) {
+			  iorigin[d] = (ext.lower() / ext.stride())[d];
+		      }
+		      WriteAttribute (dataset, "iorigin", iorigin, dim);
+		  }
 	      
-	      // Write some additional attributes
+		  // Write some additional attributes
 	      
-	      // Legacy arguments
-	      {
-		char * fullname = CCTK_FullName(n);
-		assert (fullname);
-		WriteAttribute (dataset, "name", fullname);
-		free (fullname);
+		  // Legacy arguments
+		  {
+		      char * fullname = CCTK_FullName(n);
+		      assert (fullname);
+		      WriteAttribute (dataset, "name", fullname);
+		      free (fullname);
+		  }
+	      
+		  // Group arguments
+		  WriteAttribute (dataset, "group_version", 1);
+		  {
+		      char * fullname = CCTK_FullName(n);
+		      assert (fullname);
+		      WriteAttribute (dataset, "group_fullname", fullname);
+		      free (fullname);
+		  }
+		  WriteAttribute (dataset, "group_varname", CCTK_VarName(n));
+		  {
+		      char * groupname = CCTK_GroupName(group);
+		      assert (groupname);
+		      WriteAttribute (dataset, "group_groupname", groupname);
+		      free (groupname);
+		  }
+		  switch (grouptype) {
+		      case CCTK_GF:
+			  WriteAttribute (dataset, "group_grouptype", "CCTK_GF");
+			  break;
+		      case CCTK_ARRAY:
+			  WriteAttribute (dataset, "group_grouptype", "CCTK_ARRAY");
+			  break;
+		      case CCTK_SCALAR:
+			  WriteAttribute (dataset, "group_grouptype", "CCTK_SCALAR");
+			  break;
+		      default:
+			  assert (0);
+		  }
+		  WriteAttribute (dataset, "group_dim", CCTK_GroupDimI(group));
+		  WriteAttribute (dataset, "group_timelevel", tl);
+		  WriteAttribute (dataset, "group_numtimelevels", CCTK_NumTimeLevelsI(group));
+	      
+		  // Cactus arguments
+		  WriteAttribute (dataset, "cctk_version", 1);
+		  WriteAttribute (dataset, "cctk_dim", cctk_dim);
+		  WriteAttribute (dataset, "cctk_iteration", cctk_iteration);
+		  // TODO: disable temporarily
+		  //           WriteAttribute (dataset, "cctk_nmaps", cctk_nmaps);
+		  //           WriteAttribute (dataset, "cctk_map", cctk_map);
+		  WriteAttribute (dataset, "cctk_gsh", cctk_gsh, dim);
+		  WriteAttribute (dataset, "cctk_lsh", cctk_lsh, dim);
+		  WriteAttribute (dataset, "cctk_lbnd", cctk_lbnd, dim);
+		  WriteAttribute (dataset, "cctk_delta_time", cctk_delta_time);
+		  WriteAttribute (dataset, "cctk_delta_space", cctk_delta_space, dim);
+		  WriteAttribute (dataset, "cctk_origin_space", cctk_origin_space, dim);
+		  WriteAttribute (dataset, "cctk_bbox", cctk_bbox, 2*dim);
+		  WriteAttribute (dataset, "cctk_levfac", cctk_levfac, dim);
+		  WriteAttribute (dataset, "cctk_levoff", cctk_levoff, dim);
+		  WriteAttribute (dataset, "cctk_levoffdenom", cctk_levoffdenom, dim);
+		  WriteAttribute (dataset, "cctk_timefac", cctk_timefac);
+		  WriteAttribute (dataset, "cctk_convlevel", cctk_convlevel);
+		  WriteAttribute (dataset, "cctk_convfac", cctk_convfac);
+		  WriteAttribute (dataset, "cctk_nghostzones", cctk_nghostzones, dim);
+		  WriteAttribute (dataset, "cctk_time", cctk_time);
+	      
+		  // Carpet arguments
+		  WriteAttribute (dataset, "carpet_version", 1);
+		  WriteAttribute (dataset, "carpet_dim", dim);
+		  WriteAttribute (dataset, "carpet_basemglevel", basemglevel);
+		  WriteAttribute (dataset, "carpet_mglevel", mglevel);
+		  WriteAttribute (dataset, "carpet_mglevels", mglevels);
+		  WriteAttribute (dataset, "carpet_mgface", mgfact);
+		  WriteAttribute (dataset, "carpet_reflevel", reflevel);
+		  WriteAttribute (dataset, "carpet_reflevels", reflevels);
+		  WriteAttribute (dataset, "carpet_reffact", reffact);
+		  WriteAttribute (dataset, "carpet_map", Carpet::map);
+		  WriteAttribute (dataset, "carpet_maps", maps);
+		  WriteAttribute (dataset, "carpet_component", component);
+		  WriteAttribute (dataset, "carpet_components", vhh.at(Carpet::map)->components(reflevel));
+	      	    
+		  herr = H5Dclose (dataset);
+		  assert (!herr);
+
 	      }
-	      
-	      // Group arguments
-	      WriteAttribute (dataset, "group_version", 1);
-	      {
-		char * fullname = CCTK_FullName(n);
-		assert (fullname);
-		WriteAttribute (dataset, "group_fullname", fullname);
-		free (fullname);
-	      }
-	      WriteAttribute (dataset, "group_varname", CCTK_VarName(n));
-	      {
-		char * groupname = CCTK_GroupName(group);
-		assert (groupname);
-		WriteAttribute (dataset, "group_groupname", groupname);
-		free (groupname);
-	      }
-	      switch (grouptype) {
-	      case CCTK_GF:
-		WriteAttribute (dataset, "group_grouptype", "CCTK_GF");
-		break;
-	      case CCTK_ARRAY:
-		WriteAttribute (dataset, "group_grouptype", "CCTK_ARRAY");
-		break;
-	      case CCTK_SCALAR:
-		WriteAttribute (dataset, "group_grouptype", "CCTK_SCALAR");
-		break;
-	      default:
-		assert (0);
-	      }
-	      WriteAttribute (dataset, "group_dim", CCTK_GroupDimI(group));
-	      WriteAttribute (dataset, "group_timelevel", tl);
-	      WriteAttribute (dataset, "group_numtimelevels", CCTK_NumTimeLevelsI(group));
-	      
-	      // Cactus arguments
-	      WriteAttribute (dataset, "cctk_version", 1);
-	      WriteAttribute (dataset, "cctk_dim", cctk_dim);
-	      WriteAttribute (dataset, "cctk_iteration", cctk_iteration);
-	      // TODO: disable temporarily
-	      //           WriteAttribute (dataset, "cctk_nmaps", cctk_nmaps);
-	    //           WriteAttribute (dataset, "cctk_map", cctk_map);
-	      WriteAttribute (dataset, "cctk_gsh", cctk_gsh, dim);
-	      WriteAttribute (dataset, "cctk_lsh", cctk_lsh, dim);
-	      WriteAttribute (dataset, "cctk_lbnd", cctk_lbnd, dim);
-	      WriteAttribute (dataset, "cctk_delta_time", cctk_delta_time);
-	      WriteAttribute (dataset, "cctk_delta_space", cctk_delta_space, dim);
-	      WriteAttribute (dataset, "cctk_origin_space", cctk_origin_space, dim);
-	      WriteAttribute (dataset, "cctk_bbox", cctk_bbox, 2*dim);
-	      WriteAttribute (dataset, "cctk_levfac", cctk_levfac, dim);
-	      WriteAttribute (dataset, "cctk_levoff", cctk_levoff, dim);
-	      WriteAttribute (dataset, "cctk_levoffdenom", cctk_levoffdenom, dim);
-	      WriteAttribute (dataset, "cctk_timefac", cctk_timefac);
-	      WriteAttribute (dataset, "cctk_convlevel", cctk_convlevel);
-	      WriteAttribute (dataset, "cctk_convfac", cctk_convfac);
-	      WriteAttribute (dataset, "cctk_nghostzones", cctk_nghostzones, dim);
-	      WriteAttribute (dataset, "cctk_time", cctk_time);
-	      
-	      // Carpet arguments
-	      WriteAttribute (dataset, "carpet_version", 1);
-	      WriteAttribute (dataset, "carpet_dim", dim);
-	      WriteAttribute (dataset, "carpet_basemglevel", basemglevel);
-	      WriteAttribute (dataset, "carpet_mglevel", mglevel);
-	      WriteAttribute (dataset, "carpet_mglevels", mglevels);
-	      WriteAttribute (dataset, "carpet_mgface", mgfact);
-	      WriteAttribute (dataset, "carpet_reflevel", reflevel);
-	      WriteAttribute (dataset, "carpet_reflevels", reflevels);
-	      WriteAttribute (dataset, "carpet_reffact", reffact);
-	      WriteAttribute (dataset, "carpet_map", Carpet::map);
-	      WriteAttribute (dataset, "carpet_maps", maps);
-	      WriteAttribute (dataset, "carpet_component", component);
-	      WriteAttribute (dataset, "carpet_components", vhh.at(Carpet::map)->components(reflevel));
-	      
-	      herr = H5Dclose (dataset);
-	      assert (!herr);
 	      
 	      herr = H5Sclose (dataspace);
 	      assert (!herr);
