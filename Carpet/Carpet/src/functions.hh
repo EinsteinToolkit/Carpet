@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/functions.hh,v 1.2 2004/03/23 14:40:46 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/functions.hh,v 1.3 2004/03/23 17:58:40 schnetter Exp $
 
 #ifndef FUNCTIONS_HH
 #define FUNCTIONS_HH
@@ -49,9 +49,6 @@ namespace Carpet {
                             const gh<dim>::rexts & bbsss,
                             const gh<dim>::rbnds & obss,
                             const gh<dim>::rprocs& pss);
-  
-  
-  
   
   
   
