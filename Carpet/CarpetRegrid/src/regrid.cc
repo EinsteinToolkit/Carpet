@@ -13,7 +13,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.35 2004/02/05 09:53:15 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.36 2004/02/05 16:11:20 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -103,7 +103,7 @@ namespace CarpetRegrid {
         
       }
       
-    } else if (CCTK_EQUALS(activate_levels_on_regrid, "activate or deactivate a variable number of levels, determined by a user-specified function.  When this parameter is used, the parameters num_new_levels and activate_next must not be set.")) {
+    } else if (CCTK_EQUALS(activate_levels_on_regrid, "function")) {
       
       if (! CCTK_IsFunctionAliased("RegridLevel")) {
         CCTK_WARN (0, "No thorn has provided the function \"RegridLevel\"");
