@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <queue>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -44,9 +45,8 @@ private:
   comm_state& operator= (comm_state const &);
 public:
   
-  vector<gdata<D>*> tmps;
+  queue<gdata<D>*> tmps1, tmps2;
   vector<MPI_Request> requests; // for use_waitall
-  size_t current;
 };
 
 
@@ -100,9 +100,9 @@ public:
               const operator_type transport_operator = op_error) const = 0;
   
   // Processor management
-  virtual void change_processor (comm_state<D>& state,
-                                 const int newproc,
-                                 void* const mem=0) = 0;
+  void change_processor (comm_state<D>& state,
+                         const int newproc,
+                         void* const mem=0);
  protected:
   virtual void change_processor_recv (comm_state<D>& state,
                                       const int newproc,

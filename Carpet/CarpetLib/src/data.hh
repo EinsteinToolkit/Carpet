@@ -77,9 +77,6 @@ private:
 public:
 
   // Processor management
-  virtual void change_processor (comm_state<D>& state,
-                                 const int newproc,
-                                 void* const mem=0);
 private:
   virtual void change_processor_recv (comm_state<D>& state,
                                       const int newproc,

@@ -25,18 +25,55 @@ using namespace std;
 // Communication state control
 template<int D>
 comm_state<D>::comm_state ()
-  : thestate(state_recv),
-    current(0)
+  : thestate(state_recv)
 {
 }
 
 template<int D>
 void comm_state<D>::step ()
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   assert (thestate!=state_done);
-  assert (current==tmps.size());
-  thestate=astate(size_t(thestate)+1);
-  current=0;
+  if (combine_recv_send) {
+    switch (thestate) {
+    case state_recv:
+      assert (tmps1.empty());
+      thestate = state_wait;
+      break;
+    case state_send:
+      assert (0);
+    case state_wait:
+      assert (tmps1.empty());
+      assert (tmps2.empty());
+      thestate = state_done;
+      break;
+    case state_done:
+      assert (0);
+    default:
+      assert (0);
+    }
+  } else {
+    switch (thestate) {
+    case state_recv:
+      assert (tmps2.empty());
+      thestate = state_send;
+      break;
+    case state_send:
+      assert (tmps1.empty());
+      thestate = state_wait;
+      break;
+    case state_wait:
+      assert (tmps1.empty());
+      assert (tmps2.empty());
+      thestate = state_done;
+      break;
+    case state_done:
+      assert (0);
+    default:
+      assert (0);
+    }
+  }
 }
 
 template<int D>
@@ -49,10 +86,8 @@ template<int D>
 comm_state<D>::~comm_state ()
 {
   assert (thestate==state_recv || thestate==state_done);
-  assert (current == 0);
-  for (size_t n=0; n<tmps.size(); ++n) {
-    assert (tmps.at(n) == NULL);
-  }
+  assert (tmps1.empty());
+  assert (tmps2.empty());
   assert (requests.empty());
 }
 
@@ -100,17 +135,62 @@ gdata<D>::~gdata ()
 
 
 
+// Processor management
+template<int D>
+void gdata<D>::change_processor (comm_state<D>& state,
+                                 const int newproc,
+                                 void* const mem)
+{
+  DECLARE_CCTK_PARAMETERS;
+  
+  switch (state.thestate) {
+  case state_recv:
+    if (combine_recv_send) {
+      change_processor_recv (state, newproc, mem);
+      change_processor_send (state, newproc, mem);
+    } else {
+      change_processor_recv (state, newproc, mem);
+    }
+    break;
+  case state_send:
+    if (combine_recv_send) {
+      // do nothing
+    } else {
+      change_processor_send (state, newproc, mem);
+    }
+    break;
+  case state_wait:
+    change_processor_wait (state, newproc, mem);
+    break;
+  default:
+    assert(0);
+  }
+}
+
+
+
 // Data manipulators
 template<int D>
 void gdata<D>::copy_from (comm_state<D>& state,
                           const gdata* src, const ibbox& box)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   switch (state.thestate) {
   case state_recv:
-    copy_from_recv (state, src, box);
+    if (combine_recv_send) {
+      copy_from_recv (state, src, box);
+      copy_from_send (state, src, box);
+    } else {
+      copy_from_recv (state, src, box);
+    }
     break;
   case state_send:
-    copy_from_send (state, src, box);
+    if (combine_recv_send) {
+      // do nothing
+    } else {
+      copy_from_send (state, src, box);
+    }
     break;
   case state_wait:
     copy_from_wait (state, src, box);
@@ -171,9 +251,7 @@ void gdata<D>::copy_from_recv (comm_state<D>& state,
     
     // copy to different processor
     gdata<D>* const tmp = make_typed(varindex, transport_operator);
-    // TODO: is this efficient?
-    state.tmps.push_back (tmp);
-    ++state.current;
+    state.tmps1.push (tmp);
     tmp->allocate (box, src->proc());
     tmp->change_processor_recv (state, proc());
     
@@ -206,8 +284,9 @@ void gdata<D>::copy_from_send (comm_state<D>& state,
   } else {
     
     // copy to different processor
-    gdata<D>* const tmp = state.tmps.at(state.current);
-    ++state.current;
+    gdata<D>* const tmp = state.tmps1.front();
+    state.tmps1.pop();
+    state.tmps2.push (tmp);
     assert (tmp);
     tmp->copy_from_nocomm (src, box);
     tmp->change_processor_send (state, proc());
@@ -239,13 +318,12 @@ void gdata<D>::copy_from_wait (comm_state<D>& state,
   } else {
     
     // copy to different processor
-    gdata<D>* const tmp = state.tmps.at(state.current);
+    gdata<D>* const tmp = state.tmps2.front();
+    state.tmps2.pop();
     assert (tmp);
     tmp->change_processor_wait (state, proc());
     copy_from_nocomm (tmp, box);
     delete tmp;
-    state.tmps.at(state.current) = NULL;
-    ++state.current;
     
   }
 }
@@ -261,14 +339,25 @@ void gdata<D>
                     const int order_space,
                     const int order_time)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   assert (transport_operator != op_error);
   if (transport_operator == op_none) return;
   switch (state.thestate) {
   case state_recv:
-    interpolate_from_recv (state, srcs, times, box, time, order_space, order_time);
+    if (combine_recv_send) {
+      interpolate_from_recv (state, srcs, times, box, time, order_space, order_time);
+      interpolate_from_send (state, srcs, times, box, time, order_space, order_time);
+    } else {
+      interpolate_from_recv (state, srcs, times, box, time, order_space, order_time);
+    }
     break;
   case state_send:
-    interpolate_from_send (state, srcs, times, box, time, order_space, order_time);
+    if (combine_recv_send) {
+      // do nothing
+    } else {
+      interpolate_from_send (state, srcs, times, box, time, order_space, order_time);
+    }
     break;
   case state_wait:
     interpolate_from_wait (state, srcs, times, box, time, order_space, order_time);
@@ -348,9 +437,7 @@ void gdata<D>
     // interpolate from other processor
     
     gdata<D>* const tmp = make_typed(varindex, transport_operator);
-    // TODO: is this efficient?
-    state.tmps.push_back (tmp);
-    ++state.current;
+    state.tmps1.push (tmp);
     tmp->allocate (box, srcs.at(0)->proc());
     tmp->change_processor_recv (state, proc());
     
@@ -391,7 +478,9 @@ void gdata<D>
   } else {
     // interpolate from other processor
     
-    gdata<D>* const tmp = state.tmps.at(state.current++);
+    gdata<D>* const tmp = state.tmps1.front();
+    state.tmps1.pop();
+    state.tmps2.push (tmp);
     assert (tmp);
     tmp->interpolate_from_nocomm (srcs, times, box, time, order_space, order_time);
     tmp->change_processor_send (state, proc());
@@ -431,13 +520,12 @@ void gdata<D>
   } else {
     // interpolate from other processor
     
-    gdata<D>* const tmp = state.tmps.at(state.current);
+    gdata<D>* const tmp = state.tmps2.front();
+    state.tmps2.pop();
     assert (tmp);
     tmp->change_processor_wait (state, proc());
     copy_from_nocomm (tmp, box);
     delete tmp;
-    state.tmps.at(state.current) = NULL;
-    ++state.current;
     
   }
 }

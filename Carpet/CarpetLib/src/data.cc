@@ -224,28 +224,6 @@ T* data<T,D>::vectordata (const int vectorindex) const
 
 // Processor management
 template<class T, int D>
-void data<T,D>::change_processor (comm_state<D>& state,
-                                  const int newproc,
-                                  void* const mem)
-{
-  switch (state.thestate) {
-  case state_recv:
-    change_processor_recv (state, newproc, mem);
-    break;
-  case state_send:
-    change_processor_send (state, newproc, mem);
-    break;
-  case state_wait:
-    change_processor_wait (state, newproc, mem);
-    break;
-  default:
-    assert(0);
-  }
-}
-
-
-
-template<class T, int D>
 void data<T,D>::change_processor_recv (comm_state<D>& state,
                                        const int newproc,
                                        void* const mem)
@@ -354,6 +332,7 @@ void data<T,D>::change_processor_wait (comm_state<D>& state,
 
   if (use_waitall) {
     if (! state.requests.empty()) {
+      // wait for all requests at once
       const double wtime1 = MPI_Wtime();
       MPI_Waitall
         (state.requests.size(), &state.requests.front(), MPI_STATUSES_IGNORE);

@@ -33,3 +33,7 @@ INT max_mpi_tags "Maximum number of MPI tags to use"
 BOOLEAN use_waitall "Use MPI_Waitall instead many MPI_Wait statements"
 {
 } "no"
+
+BOOLEAN combine_recv_send "Combine MPI_Irecv and MPI_Isend calls"
+{
+} "no"
