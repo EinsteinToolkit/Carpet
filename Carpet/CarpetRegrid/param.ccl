@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.19 2004/05/27 12:27:16 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.20 2004/05/29 18:52:42 schnetter Exp $
 
 
 
@@ -41,6 +41,10 @@ CCTK_INT activate_next "The next iteration at which new levels should be activat
 {
   0: :: "Note that this parameter is steered when new levels are activated"
 } 1
+
+BOOLEAN keep_same_grid_structure "Do not allow the grid structure to change; only allow levels to be switched on or off" STEERABLE=always
+{
+} "no"
 
 
 

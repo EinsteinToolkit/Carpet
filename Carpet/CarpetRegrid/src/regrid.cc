@@ -13,7 +13,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.42 2004/05/27 12:27:16 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.43 2004/05/29 18:52:42 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -62,6 +62,7 @@ namespace CarpetRegrid {
     
     
     // Steer parameters
+    const int oldnumlevels = refinement_levels;
     if (CCTK_EQUALS(activate_levels_on_regrid, "none")) {
       
       // do nothing
@@ -69,7 +70,6 @@ namespace CarpetRegrid {
     } else if (CCTK_EQUALS(activate_levels_on_regrid, "fixed")) {
       
       if (cctkGH->cctk_iteration-1 >= activate_next) {
-        const int oldnumlevels = refinement_levels;
         const int newnumlevels
           = min(refinement_levels + num_new_levels, maxreflevels);
         assert (newnumlevels>0 && newnumlevels<=maxreflevels);
@@ -100,7 +100,6 @@ namespace CarpetRegrid {
       if (! CCTK_IsFunctionAliased("RegridLevel")) {
         CCTK_WARN (0, "No thorn has provided the function \"RegridLevel\"");
       }
-      const int oldnumlevels = refinement_levels;
       const int newnumlevels
         = RegridLevel (cctkGH, refinement_levels, maxreflevels);
       if (newnumlevels>0 && newnumlevels<=maxreflevels) {
@@ -128,6 +127,13 @@ namespace CarpetRegrid {
       
       assert (0);
       
+    }
+    
+    
+    
+    // Return if no change in the grid structure is desired
+    if (keep_same_grid_structure) {
+      return refinement_levels != oldnumlevels;
     }
     
     
