@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.23 2003/03/28 10:11:54 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.24 2003/05/02 14:23:12 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -50,7 +50,7 @@ bool ggf<D>::operator== (const ggf<D>& f) const {
 
 // Modifiers
 template<int D>
-void ggf<D>::recompose () {
+void ggf<D>::recompose (const int initialise_upto) {
   
   // Retain storage that might be needed
   fdata oldstorage = storage;
@@ -82,26 +82,31 @@ void ggf<D>::recompose () {
       	  storage[tl-tmin][rl][c][ml]->allocate
       	    (d.boxes[rl][c][ml].exterior, h.proc(rl,c));
 	  
-      	  // Initialise from coarser level, if possible
-          // TODO: init only un-copied regions
-      	  if (rl>0) {
-	    const CCTK_REAL time = t.time(tl,rl,ml);
-      	    ref_prolongate (tl,rl,c,ml,time);
-      	  } // if rl
-	  
-      	  // Copy from old storage, if possible
-      	  if (rl<(int)oldstorage[tl-tmin].size()) {
-      	    for (int cc=0; cc<(int)oldstorage[tl-tmin][rl].size(); ++cc) {
-      	      if (ml<(int)oldstorage[tl-tmin][rl][cc].size()) {
-      		const ibbox ovlp =
-      		  (d.boxes[rl][c][ml].exterior
-      		   & oldstorage[tl-tmin][rl][cc][ml]->extent());
-      		storage[tl-tmin][rl][c][ml]->copy_from
-      		  (oldstorage[tl-tmin][rl][cc][ml], ovlp);
-	      } // if ml
-	    } // for cc
-	  } // if rl
-	  
+          // Initialise only if desired
+          if (initialise_upto >= 0 && rl <= initialise_upto) {
+            
+            // Initialise from coarser level, if possible
+            // TODO: init only un-copied regions
+            if (rl>0) {
+              const CCTK_REAL time = t.time(tl,rl,ml);
+              ref_prolongate (tl,rl,c,ml,time);
+            } // if rl
+            
+            // Copy from old storage, if possible
+            if (rl<(int)oldstorage[tl-tmin].size()) {
+              for (int cc=0; cc<(int)oldstorage[tl-tmin][rl].size(); ++cc) {
+                if (ml<(int)oldstorage[tl-tmin][rl][cc].size()) {
+                  const ibbox ovlp =
+                    (d.boxes[rl][c][ml].exterior
+                     & oldstorage[tl-tmin][rl][cc][ml]->extent());
+                  storage[tl-tmin][rl][c][ml]->copy_from
+                    (oldstorage[tl-tmin][rl][cc][ml], ovlp);
+                } // if ml
+              } // for cc
+            } // if rl
+            
+          } // if initialise
+          
 	} // for ml
       } // for c
       
@@ -125,12 +130,19 @@ void ggf<D>::recompose () {
       // Set boundaries
       for (int c=0; c<h.components(rl); ++c) {
       	for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-      	  sync (tl,rl,c,ml);
-      	  // TODO: assert that reflevel 0 boundaries are copied
-      	  if (rl>0) {
-	    const CCTK_REAL time = t.time(tl,rl,ml);
-      	    ref_bnd_prolongate (tl,rl,c,ml,time);
-      	  } // if rl
+          
+          // Initialise only if desired
+          if (initialise_upto >= 0 && rl <= initialise_upto) {
+            
+            sync (tl,rl,c,ml);
+            // TODO: assert that reflevel 0 boundaries are copied
+            if (rl>0) {
+              const CCTK_REAL time = t.time(tl,rl,ml);
+              ref_bnd_prolongate (tl,rl,c,ml,time);
+            } // if rl
+            
+          } // if initialise
+            
       	} // for ml
       } // for c
       

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.13 2003/03/26 17:34:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.14 2003/05/02 14:23:12 schnetter Exp $
 
 #ifndef DH_HH
 #define DH_HH
@@ -114,7 +114,7 @@ public:
   int prolongation_stencil_size () const;
   
   // Modifiers
-  void recompose ();
+  void recompose (const int initialise_upto);
   
   // Grid function management
   void add (ggf<D>* f);

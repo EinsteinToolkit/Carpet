@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.12 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.13 2003/05/02 14:23:12 schnetter Exp $
 
 #ifndef GH_HH
 #define GH_HH
@@ -85,7 +85,8 @@ public:
   
   // Modifiers
   void recompose (const rexts& exts, const rbnds& outer_bounds,
-		  const rprocs& procs);
+		  const rprocs& procs,
+                  const int initialise_upto = -1);
   
   // Helpers
   cexts make_reflevel_multigrid_boxes (const vector<ibbox>& exts,

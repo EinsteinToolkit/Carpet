@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.30 2003/04/30 12:39:39 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.31 2003/05/02 14:23:12 schnetter Exp $
 
 #include <assert.h>
 
@@ -27,7 +27,7 @@ dh<D>::dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts,
   assert (all(lghosts>=0 && ughosts>=0));
   h.add(this);
   CHECKPOINT;
-  recompose();
+  recompose(false);
 }
 
 // Destructors
@@ -47,7 +47,7 @@ int dh<D>::prolongation_stencil_size () const {
 
 // Modifiers
 template<int D>
-void dh<D>::recompose () {
+void dh<D>::recompose (const int initialise_upto) {
   DECLARE_CCTK_PARAMETERS;
   
   CHECKPOINT;
@@ -478,7 +478,7 @@ void dh<D>::recompose () {
   
   for (typename list<ggf<D>*>::iterator f=gfs.begin();
        f!=gfs.end(); ++f) {
-    (*f)->recompose();
+    (*f)->recompose(initialise_upto);
   }
 }
 
