@@ -28,7 +28,7 @@ namespace Carpet {
     // wait until all refinement levels have been disabled.
     
     const int group = CCTK_GroupIndex(groupname);
-    assert (group>=0 && group<CCTK_NumGroups());
+    assert (group>=0 and group<CCTK_NumGroups());
     
     if (CCTK_NumVarsInGroupI(group)==0) return 0;
     
@@ -36,9 +36,9 @@ namespace Carpet {
     
     // No storage change in local mode
     if (grouptype == CCTK_GF) {
-      assert ((map == -1 || maps == 1)
-              && (component == -1
-                  || vhh.at(0)->local_components(reflevel) == 1));
+      assert ((map == -1 or maps == 1)
+              and (component == -1
+                   or vhh.at(0)->local_components(reflevel) == 1));
     }
     
     if (CCTK_QueryGroupStorageI(cgh, group)) {
@@ -81,7 +81,7 @@ namespace Carpet {
     const int vectorlength = gp.vectorgroup ? gp.vectorlength : 1;
     
     assert (arrdata.at(group).at(0).data.size()==0
-	    || arrdata.at(group).at(0).data.at(0) == 0);
+	    or arrdata.at(group).at(0).data.at(0) == 0);
     for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
       for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
         const int vectorindex = gp.vectorgroup ? var % vectorlength : 0;
@@ -130,10 +130,10 @@ namespace Carpet {
     Checkpoint ("DisableGroupStorage \"%s\"", groupname);
     
     const int group = CCTK_GroupIndex(groupname);
-    assert (group>=0 && group<CCTK_NumGroups());
+    assert (group>=0 and group<CCTK_NumGroups());
     
     // No storage change in local mode
-    assert (! (component!=-1 && CCTK_GroupTypeI(group)==CCTK_GF));
+    assert (! (component!=-1 and CCTK_GroupTypeI(group)==CCTK_GF));
     
     if (! CCTK_QueryGroupStorageI(cgh, group)) {
       // storage was disabled previously
@@ -186,12 +186,12 @@ namespace Carpet {
     if (groupname) {
       group = CCTK_GroupIndex(groupname);
     }
-    assert (group>=0 && group<CCTK_NumGroups());
+    assert (group>=0 and group<CCTK_NumGroups());
     
     if (CCTK_NumVarsInGroupI(group)==0) return 0;
     
     const int n = CCTK_FirstVarIndexI(group);
-    assert (n>=0 && n<CCTK_NumVars());
+    assert (n>=0 and n<CCTK_NumVars());
     const int var = 0;
     
     return arrdata.at(group).at(0).data.at(var) != NULL;
@@ -208,19 +208,19 @@ namespace Carpet {
     if (groupname) {
       group = CCTK_GroupIndex(groupname);
     }
-    assert (group>=0 && group<CCTK_NumGroups());
+    assert (group>=0 and group<CCTK_NumGroups());
     
     if (mglevel == -1) {
       return &error;            // meta mode
     }
     
     const int gptype = CCTK_GroupTypeI (group);
-    if (gptype == CCTK_GF && map == -1) {
+    if (gptype == CCTK_GF and map == -1) {
       return &error;            // global or level mode for a GF
     }
     
     const int gpdim = groupdata.at(group).info.dim;
-    assert (dir>=0 && dir<gpdim);
+    assert (dir>=0 and dir<gpdim);
     
     if (CCTK_QueryGroupStorageI(cgh, group)) {
       
@@ -238,7 +238,7 @@ namespace Carpet {
   
   int GroupDynamicData (const cGH* cgh, int group, cGroupDynamicData* data)
   {
-    assert (group>=0 && group<CCTK_NumGroups());
+    assert (group>=0 and group<CCTK_NumGroups());
     *data = groupdata.at(group).info;
     return 0;
   }
