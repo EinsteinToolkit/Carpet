@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.8 2004/03/12 00:13:25 cott Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.9 2004/04/03 12:40:21 schnetter Exp $
 
 #ifndef CARPETIOHDF5_HH
 #define CARPETIOHDF5_HH
@@ -157,10 +157,6 @@ namespace CarpetIOHDF5 {
 
   // auxiliary functions defined in iohdf5utils.cc
 
-  const char* GetStringParameter (const char* const parametername,
-                                  const char* const fallback);
-  int GetIntParameter (const char* const parametername, int fallback);
-  
   bool CheckForVariable (const cGH* const cctkGH,
                          const char* const varlist, const int vindex);
   void SetFlag (int index, const char* optstring, void* arg);

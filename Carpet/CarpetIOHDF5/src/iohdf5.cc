@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.23 2004/03/26 14:43:55 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.24 2004/04/03 12:40:21 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -189,7 +189,7 @@ namespace CarpetIOHDF5 {
     assert (iogh);
     
     // Create the output directory
-    const char* const myoutdir = GetStringParameter("out3D_dir", out_dir);
+    const char* const myoutdir = out3D_dir;
     if (CCTK_MyProc(cctkGH)==0) {
       CCTK_CreateDirectory (0755, myoutdir);
     }
@@ -534,7 +534,7 @@ namespace CarpetIOHDF5 {
       assert (0);
     }
     
-    const int myoutevery = GetIntParameter("out3D_every", out_every);
+    const int myoutevery = out3D_every == -2 ? out_every : out3D_every;
     
     if (myoutevery < 0) {
       // Nothing should be output at all
@@ -546,7 +546,7 @@ namespace CarpetIOHDF5 {
       return 0;
     }
     
-    if (! CheckForVariable(cctkGH, GetStringParameter("out3D_vars",""), vindex)) {
+    if (! CheckForVariable(cctkGH, out3D_vars, vindex)) {
       // This variable should not be output
       return 0;
     }
@@ -587,9 +587,10 @@ namespace CarpetIOHDF5 {
   
 
   int InputGH (const cGH* const cctkGH) {
+    DECLARE_CCTK_PARAMETERS;
     int retval = 0;
     for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
-      if (CheckForVariable(cctkGH, GetStringParameter("in3D_vars",""), vindex)) {
+      if (CheckForVariable(cctkGH, in3D_vars, vindex)) {
 	char* varname = CCTK_FullName(vindex);
 	retval = InputVarAs (cctkGH, varname, CCTK_VarName(vindex));
 	free (varname);
@@ -877,7 +878,7 @@ namespace CarpetIOHDF5 {
     //cout << "want level " << rl << " reflevel " << reflevel << endl;
     
     // Find the input directory
-    const char* myindir = GetStringParameter("in3D_dir", ".");
+    const char* const myindir = in3D_dir;
     
     // Invent a file name
     ostringstream filenamebuf;

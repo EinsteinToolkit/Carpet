@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5utils.cc,v 1.4 2004/03/11 10:00:16 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5utils.cc,v 1.5 2004/04/03 12:40:21 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5utils_cc);
 }
 
@@ -40,39 +40,6 @@ namespace CarpetIOHDF5 {
   
   using namespace std;
   using namespace Carpet;
-  
-  const char* GetStringParameter (const char* const parametername,
-				  const char* const fallback)
-  {
-    if (CCTK_ParameterQueryTimesSet (parametername, CCTK_THORNSTRING) > 0) {
-      int ptype;
-      const char* const* const ppval = (const char* const*)CCTK_ParameterGet
-	(parametername, CCTK_THORNSTRING, &ptype);
-      assert (ppval);
-      const char* const pval = *ppval;
-      assert (ptype == PARAMETER_STRING);
-      return pval;
-    }
-    
-    return fallback;
-  }
-  
-  
-  
-  int GetIntParameter (const char* const parametername, int fallback)
-  {
-    if (CCTK_ParameterQueryTimesSet (parametername, CCTK_THORNSTRING) > 0) {
-      int ptype;
-      const int* const ppval = (const int*)CCTK_ParameterGet
-	(parametername, CCTK_THORNSTRING, &ptype);
-      assert (ppval);
-      const int pval = *ppval;
-      assert (ptype == PARAMETER_INT);
-      return pval;
-    }
-    
-    return fallback;
-  }
   
   
   
