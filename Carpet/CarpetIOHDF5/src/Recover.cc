@@ -264,6 +264,7 @@ static int OpenFile (const char *basefilename, file_t *file, int called_from)
         dataset.shape[j]   = *intbuffer++;
         dataset.iorigin[j] = *intbuffer++;
       }
+      dataset.datasetname = NULL;
 
       file->datasets.push_back (dataset);
     }
