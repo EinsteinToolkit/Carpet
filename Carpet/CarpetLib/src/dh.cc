@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.24 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.25 2003/01/10 23:07:16 schnetter Exp $
 
 #include <assert.h>
 
@@ -205,7 +205,7 @@ void dh<D>::recompose () {
 	      
 	      const iblist& sendlist = boxes[rl][c][ml].send_ref_bnd_fine[cc];
 	      ibset recv2s (recv);
-	      for (iblist::const_iterator sli = sendlist.begin();
+	      for (typename iblist::const_iterator sli = sendlist.begin();
 		   sli != sendlist.end();
 		   ++sli) {
 		recv2s -= *sli;
