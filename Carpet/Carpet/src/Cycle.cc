@@ -9,7 +9,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.16 2004/01/25 14:57:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.17 2004/03/23 19:30:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Cycle_cc);
 }
 
@@ -35,10 +35,10 @@ namespace Carpet {
           assert (reflevel>=0 && reflevel<reflevels);
           for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
             for (int m=0; m<maps; ++m) {
-              assert (m<(int)arrdata[group].size());
-              assert (var<(int)arrdata[group][m].data.size());
-              for (int c=0; c<arrdata[group][m].hh->components(reflevel); ++c) {
-                arrdata[group][m].data[var]->cycle (reflevel, c, mglevel);
+              assert (m<(int)arrdata.at(group).size());
+              assert (var<(int)arrdata.at(group).at(m).data.size());
+              for (int c=0; c<arrdata.at(group).at(m).hh->components(reflevel); ++c) {
+                arrdata.at(group).at(m).data.at(var)->cycle (reflevel, c, mglevel);
               }
             }
           }
@@ -48,9 +48,9 @@ namespace Carpet {
         case CCTK_ARRAY:
           if (do_global_mode) {
             for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-              assert (var<(int)arrdata[group][0].data.size());
-              for (int c=0; c<arrdata[group][0].hh->components(0); ++c) {
-                arrdata[group][0].data[var]->cycle (0, c, mglevel);
+              assert (var<(int)arrdata.at(group).at(0).data.size());
+              for (int c=0; c<arrdata.at(group).at(0).hh->components(0); ++c) {
+                arrdata.at(group).at(0).data.at(var)->cycle (0, c, mglevel);
               }
             }
           }
@@ -87,11 +87,11 @@ namespace Carpet {
             switch (CCTK_GroupTypeI(group)) {
               
             case CCTK_GF:
-              for (int m=0; m<(int)arrdata[group].size(); ++m) {
+              for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
                 for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-                  assert (var<(int)arrdata[group][m].data.size());
-                  for (int c=0; c<arrdata[group][m].hh->components(reflevel); ++c) {
-                    arrdata[group][m].data[var]->flip (reflevel, c, mglevel);
+                  assert (var<(int)arrdata.at(group).at(m).data.size());
+                  for (int c=0; c<arrdata.at(group).at(m).hh->components(reflevel); ++c) {
+                    arrdata.at(group).at(m).data.at(var)->flip (reflevel, c, mglevel);
                   }
                 }
               }
@@ -101,9 +101,9 @@ namespace Carpet {
             case CCTK_ARRAY:
               if (do_global_mode) {
                 for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-                  assert (var<(int)arrdata[group][0].data.size());
-                  for (int c=0; c<arrdata[group][0].hh->components(0); ++c) {
-                    arrdata[group][0].data[var]->flip (0, c, mglevel);
+                  assert (var<(int)arrdata.at(group).at(0).data.size());
+                  for (int c=0; c<arrdata.at(group).at(0).hh->components(0); ++c) {
+                    arrdata.at(group).at(0).data.at(var)->flip (0, c, mglevel);
                   }
                 }
               }

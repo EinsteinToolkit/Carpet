@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.17 2004/03/23 10:13:30 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.18 2004/03/23 19:30:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -189,7 +189,7 @@ namespace CarpetIOHDF5 {
 	      assert (attr>=0);
 	      atype = H5Aget_type (attr);
 	      assert (atype>=0);
-	      herr = H5Aread (attr, atype, &leveltimes[lcv][0]);
+	      herr = H5Aread (attr, atype, &leveltimes.at(lcv).at(0));
 	      assert(!herr);
 	      herr = H5Aclose(attr);
 	      assert(!herr);
@@ -212,13 +212,13 @@ namespace CarpetIOHDF5 {
 
 
       for(int i=0;i<numberofmgtimes;i++) {
-	mpierr = MPI_Bcast (&(leveltimes[i][0]), reflevels, CARPET_MPI_REAL, 0, MPI_COMM_WORLD);
+	mpierr = MPI_Bcast (&(leveltimes.at(i).at(0)), reflevels, CARPET_MPI_REAL, 0, MPI_COMM_WORLD);
 	assert(!mpierr);
       }
 
       if (h5verbose) cout << "leveltimes: " << leveltimes << endl;
 
-      cctkGH->cctk_time = leveltimes[mglevel][reflevel];
+      cctkGH->cctk_time = leveltimes.at(mglevel).at(reflevel);
 
       result += RecoverGHextensions(cctkGH,reader);
 
@@ -803,7 +803,7 @@ namespace CarpetIOHDF5 {
       for(int i=0;i < numberofmgtimes;i++) {
 	char buffer[100];
 	sprintf(buffer,"mgleveltimes %d",i);
-	WriteAttribute(dataset,buffer,(double *) &leveltimes[i][0], reflevels);
+	WriteAttribute(dataset,buffer,(double *) &leveltimes.at(i).at(0), reflevels);
       }
 
       herr = H5Dclose (dataset);

@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.56 2004/03/23 18:38:29 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.57 2004/03/23 19:30:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -90,20 +90,20 @@ namespace Carpet {
     assert ((int)bbsss.size() <= maxreflevels);
     for (int rl=0; rl<(int)bbsss.size(); ++rl) {
       // No empty levels
-      assert (bbsss[rl].size() > 0);
-      for (int c=0; c<(int)bbsss[rl].size(); ++c) {
+      assert (bbsss.at(rl).size() > 0);
+      for (int c=0; c<(int)bbsss.at(rl).size(); ++c) {
         // At least one multigrid level
-        assert (bbsss[rl][c].size() > 0);
-        for (int ml=0; ml<(int)bbsss[rl][c].size(); ++ml) {
+        assert (bbsss.at(rl).at(c).size() > 0);
+        for (int ml=0; ml<(int)bbsss.at(rl).at(c).size(); ++ml) {
           // Check sizes
           // Do allow processors with zero grid points
-//           assert (all(bbsss[rl][c][ml].lower() <= bbsssi[rl][c][ml].upper()));
+//           assert (all(bbsss.at(rl).at(c).at(ml).lower() <= bbsssi.at(rl).at(c).at(ml).upper()));
           // Check strides
           const int str = ipow(reffact, maxreflevels-rl-1) * ipow(mgfact, ml);
-          assert (all(bbsss[rl][c][ml].stride() == str));
+          assert (all(bbsss.at(rl).at(c).at(ml).stride() == str));
           // Check alignments
-          assert (all(bbsss[rl][c][ml].lower() % str == 0));
-          assert (all(bbsss[rl][c][ml].upper() % str == 0));
+          assert (all(bbsss.at(rl).at(c).at(ml).lower() % str == 0));
+          assert (all(bbsss.at(rl).at(c).at(ml).upper() % str == 0));
         }
       }
     }
@@ -111,8 +111,8 @@ namespace Carpet {
     assert (pss.size() == bbsss.size());
     assert (obss.size() == bbsss.size());
     for (int rl=0; rl<(int)bbsss.size(); ++rl) {
-      assert (obss[rl].size() == bbsss[rl].size());
-      assert (pss[rl].size() == bbsss[rl].size());
+      assert (obss.at(rl).size() == bbsss.at(rl).size());
+      assert (pss.at(rl).size() == bbsss.at(rl).size());
     }
     
   }
@@ -141,9 +141,9 @@ namespace Carpet {
          &is_staggered[0][0], &shiftout[0][0]);
       assert (!ierr);
       
-      gh<dim>::rexts  bbsss = vhh[m]->extents;
-      gh<dim>::rbnds  obss  = vhh[m]->outer_boundaries;
-      gh<dim>::rprocs pss   = vhh[m]->processors;
+      gh<dim>::rexts  bbsss = vhh.at(m)->extents;
+      gh<dim>::rbnds  obss  = vhh.at(m)->outer_boundaries;
+      gh<dim>::rprocs pss   = vhh.at(m)->processors;
       
       // Check whether to recompose
       CCTK_INT const do_recompose = Carpet_Regrid
@@ -164,19 +164,19 @@ namespace Carpet {
         OutputGridStructure (cgh, m, bbsss, obss, pss);
         
         // Recompose
-        vhh[m]->recompose (bbsss, obss, pss,
+        vhh.at(m)->recompose (bbsss, obss, pss,
                            initialise_from, do_prolongate);
         
-        OutputGrids (cgh, m, *vhh[m]);
+        OutputGrids (cgh, m, *vhh.at(m));
         
       }
       
     } // for m
     
     // Calculate new number of levels
-    reflevels = vhh[0]->reflevels();
+    reflevels = vhh.at(0)->reflevels();
     for (int m=0; m<maps; ++m) {
-      assert (vhh[0]->reflevels() == reflevels);
+      assert (vhh.at(0)->reflevels() == reflevels);
     }
     
     // One cannot switch off the current level
@@ -196,7 +196,7 @@ namespace Carpet {
           for (int ml=0; ml<hh.mglevels(rl,c); ++ml) {
             cout << "   m " << m << "   rl " << rl << "   c " << c
                  << "   ml " << ml
-                 << "   bbox " << hh.extents[rl][c][ml]
+                 << "   bbox " << hh.extents.at(rl).at(c).at(ml)
                  << endl;
           }
 	}
@@ -205,7 +205,7 @@ namespace Carpet {
       for (int rl=0; rl<hh.reflevels(); ++rl) {
         for (int c=0; c<hh.components(rl); ++c) {
           cout << "   m " << m << "   rl " << rl << "   c " << c
-               << "   processor " << hh.processors[rl][c] << endl;
+               << "   processor " << hh.processors.at(rl).at(c) << endl;
 	}
       }
       cout << endl;
@@ -315,11 +315,11 @@ namespace Carpet {
     file << "maps " << maps << endl;
     file << m << " reflevels " << bbsss.size() << endl;
     for (size_t rl=0; rl<bbsss.size(); ++rl) {
-      file << m << " " << rl << " components " << bbsss[rl].size() << endl;
-      for (size_t c=0; c<bbsss[rl].size(); ++c) {
-        file << m << " " << rl << " " << c << " mglevels " << bbsss[rl][c].size() << endl;
-        for (size_t ml=0; ml<bbsss[rl][c].size(); ++ml) {
-          file << m << " " << rl << " " << c << " " << ml << "   " << pss[rl][c] << " " << bbsss[rl][c][ml] << obss[rl][c] << endl;
+      file << m << " " << rl << " components " << bbsss.at(rl).size() << endl;
+      for (size_t c=0; c<bbsss.at(rl).size(); ++c) {
+        file << m << " " << rl << " " << c << " mglevels " << bbsss.at(rl).at(c).size() << endl;
+        for (size_t ml=0; ml<bbsss.at(rl).at(c).size(); ++ml) {
+          file << m << " " << rl << " " << c << " " << ml << "   " << pss.at(rl).at(c) << " " << bbsss.at(rl).at(c).at(ml) << obss.at(rl).at(c) << endl;
         }
       }
     }
@@ -375,7 +375,7 @@ namespace Carpet {
     
     if (nprocs==1) {
       ps.resize(1);
-      ps[0] = 0;
+      ps.at(0) = 0;
       return;
     }
     
@@ -383,10 +383,10 @@ namespace Carpet {
     
     assert (dir>=0 && dir<dim);
     
-    const ivect rstr = bbs[0].stride();
-    const ivect rlb  = bbs[0].lower();
-    const ivect rub  = bbs[0].upper() + rstr;
-    const bbvect obnd = obs[0];
+    const ivect rstr = bbs.at(0).stride();
+    const ivect rlb  = bbs.at(0).lower();
+    const ivect rub  = bbs.at(0).upper() + rstr;
+    const bbvect obnd = obs.at(0);
     
     bbs.resize(nprocs);
     obs.resize(nprocs);
@@ -404,15 +404,15 @@ namespace Carpet {
       if (cub[dir] > rub[dir]) cub[dir] = rub[dir];
       assert (clb[dir] <= cub[dir]);
       assert (cub[dir] <= rub[dir]);
-      bbs[c] = ibbox(clb, cub-cstr, cstr);
-      obs[c] = obnd;
-      ps[c] = c;
-      if (c>0)        obs[c][dir][0] = false;
-      if (c<nprocs-1) obs[c][dir][1] = false;
+      bbs.at(c) = ibbox(clb, cub-cstr, cstr);
+      obs.at(c) = obnd;
+      ps.at(c) = c;
+      if (c>0)        obs.at(c)[dir][0] = false;
+      if (c<nprocs-1) obs.at(c)[dir][1] = false;
     }
     
     for (size_t n=0; n<ps.size(); ++n) {
-      assert (ps[n] == n);
+      assert (ps.at(n) == n);
     }
   }
   
@@ -518,11 +518,11 @@ namespace Carpet {
     int const mynprocs_base = nprocs / nslices;
     int const mynprocs_left = nprocs - nslices * mynprocs_base;
     for (int n=0; n<nslices; ++n) {
-      mynprocs[n] = n < mynprocs_left ? mynprocs_base+1 : mynprocs_base;
+      mynprocs.at(n) = n < mynprocs_left ? mynprocs_base+1 : mynprocs_base;
     }
     int sum_mynprocs = 0;
     for (int n=0; n<nslices; ++n) {
-      sum_mynprocs += mynprocs[n];
+      sum_mynprocs += mynprocs.at(n);
     }
     assert (sum_mynprocs == nprocs);
     if (DEBUG) cout << "SRAR " << mydim << " mynprocs " << mynprocs << endl;
@@ -533,13 +533,13 @@ namespace Carpet {
     int nprocs_left = nprocs;
     for (int n=0; n<nslices; ++n) {
       if (n == nslices-1) {
-        myslice[n] = slice_left;
+        myslice.at(n) = slice_left;
       } else {
-        myslice[n] = (int)floor(1.0 * slice_left * mynprocs[n] / nprocs_left + 0.5);
+        myslice.at(n) = (int)floor(1.0 * slice_left * mynprocs.at(n) / nprocs_left + 0.5);
       }
-      assert (myslice[n] >= 0);
-      slice_left -= myslice[n];
-      nprocs_left -= mynprocs[n];
+      assert (myslice.at(n) >= 0);
+      slice_left -= myslice.at(n);
+      nprocs_left -= mynprocs.at(n);
     }
     assert (slice_left == 0);
     assert (nprocs_left == 0);
@@ -567,7 +567,7 @@ namespace Carpet {
         newob[mydim][0] = false;
       }
       if (n < nslices-1) {
-        up[mydim] = lo[mydim] + (myslice[n]-1) * str[mydim];
+        up[mydim] = lo[mydim] + (myslice.at(n)-1) * str[mydim];
         newob[mydim][1] = false;
         last_up = up;
       }
@@ -582,16 +582,16 @@ namespace Carpet {
       vector<bbvect> newobs;
       vector<int> newps;
       SplitRegions_Automatic_Recursively
-        (newdims, mynprocs[n], rshape,
+        (newdims, mynprocs.at(n), rshape,
          newbb, newob, newp, newbbs, newobs, newps);
       if (DEBUG) cout << "SRAR " << mydim << " newbbs " << newbbs << endl;
       if (DEBUG) cout << "SRAR " << mydim << " newobs " << newobs << endl;
       if (DEBUG) cout << "SRAR " << mydim << " newps " << newps << endl;
       
       // store
-      assert (newbbs.size() == mynprocs[n]);
-      assert (newobs.size() == mynprocs[n]);
-      assert (newps.size() == mynprocs[n]);
+      assert (newbbs.size() == mynprocs.at(n));
+      assert (newobs.size() == mynprocs.at(n));
+      assert (newps.size() == mynprocs.at(n));
       bbs.insert (bbs.end(), newbbs.begin(), newbbs.end());
       obs.insert (obs.end(), newobs.begin(), newobs.end());
       ps.insert (ps.end(), newps.begin(), newps.end());
@@ -602,7 +602,7 @@ namespace Carpet {
     assert (obs.size() == nprocs);
     assert (ps.size() == nprocs);
     for (size_t n=0; n<ps.size(); ++n) {
-      assert (ps[n] == p+n);
+      assert (ps.at(n) == p+n);
     }
     if (DEBUG) cout << "SRAR exit" << endl;
   }
@@ -634,14 +634,14 @@ namespace Carpet {
     assert (ncomps > 0);
     vector<int> mysize(nslices);
     for (int c=0; c<nslices; ++c) {
-      mysize[c] = bbs[c].size();
+      mysize[c] = bbs.at(c).size();
     }
     vector<int> mynprocs(nslices);
     {
       if (DEBUG) cout << "SRA: distributing processors to slices" << endl;
       int ncomps_left = nprocs * ncomps;
       for (int c=0; c<nslices; ++c) {
-        mynprocs[c] = 1;
+        mynprocs.at(c) = 1;
         -- ncomps_left;
       }
       while (ncomps_left > 0) {
@@ -649,13 +649,13 @@ namespace Carpet {
         int maxc = -1;
         CCTK_REAL maxratio = -1;
         for (int c=0; c<nslices; ++c) {
-          CCTK_REAL const ratio = (CCTK_REAL)mysize[c] / mynprocs[c];
+          CCTK_REAL const ratio = (CCTK_REAL)mysize.at(c) / mynprocs.at(c);
           if (ratio > maxratio) { maxc=c; maxratio=ratio; }
         }
         assert (maxc>=0 && maxc<nslices);
-        ++ mynprocs[maxc];
+        ++ mynprocs.at(maxc);
         if (DEBUG) cout << "SRA maxc " << maxc << endl;
-        if (DEBUG) cout << "SRA mynprocs[maxc] " << mynprocs[maxc] << endl;
+        if (DEBUG) cout << "SRA mynprocs[maxc] " << mynprocs.at(maxc) << endl;
         -- ncomps_left;
       }
       assert (ncomps_left == 0);
@@ -669,11 +669,11 @@ namespace Carpet {
     if (DEBUG) cout << "SRA: splitting regions" << endl;
     for (int c=0; c<nslices; ++c) {
       
-      const ibbox bb = bbs[c];
-      const bbvect ob = obs[c];
+      const ibbox bb = bbs.at(c);
+      const bbvect ob = obs.at(c);
       int p = 0;
       for (int cc=0; cc<c; ++cc) {
-        p += mynprocs[cc];
+        p += mynprocs.at(cc);
       }
       assert (p>=0 && p<=nprocs);
       if (DEBUG) cout << "SRA c " << c << endl;
@@ -706,7 +706,7 @@ namespace Carpet {
       vector<int> theps;
       
       SplitRegions_Automatic_Recursively
-        (dims, mynprocs[c], rshape, bb, ob, p, thebbs, theobs, theps);
+        (dims, mynprocs.at(c), rshape, bb, ob, p, thebbs, theobs, theps);
       if (DEBUG) cout << "SRA thebbs " << thebbs << endl;
       if (DEBUG) cout << "SRA theobs " << theobs << endl;
       if (DEBUG) cout << "SRA theps " << theps << endl;
@@ -721,7 +721,7 @@ namespace Carpet {
     obs = allobs;
     ps = allps;
     for (size_t n=0; n<ps.size(); ++n) {
-      assert (ps[n] == n);
+      assert (ps.at(n) == n);
     }
     
     if (DEBUG) cout << "SRA exit" << endl;
@@ -746,10 +746,10 @@ namespace Carpet {
     
     assert (bbs.size() == 1);
     
-    const ivect rstr = bbs[0].stride();
-    const ivect rlb  = bbs[0].lower();
-    const ivect rub  = bbs[0].upper() + rstr;
-    const bbvect obnd = obs[0];
+    const ivect rstr = bbs.at(0).stride();
+    const ivect rlb  = bbs.at(0).lower();
+    const ivect rub  = bbs.at(0).upper() + rstr;
+    const bbvect obnd = obs.at(0);
     
     const ivect nprocs_dir
       (processor_topology_3d_x, processor_topology_3d_y,
@@ -794,21 +794,21 @@ namespace Carpet {
 	  assert (all (cub <= rub));
           assert (all (! (ipos==0) || clb==rlb));
           assert (all (! (ipos==nprocs_dir-1) || cub==rub));
-	  bbs[c] = ibbox(clb, cub-cstr, cstr);
-	  obs[c] = obnd;
-          ps[c] = c;
-	  if (i>0) obs[c][0][0] = false;
-	  if (j>0) obs[c][1][0] = false;
-	  if (k>0) obs[c][2][0] = false;
-	  if (i<nprocs_dir[0]-1) obs[c][0][1] = false;
-	  if (j<nprocs_dir[1]-1) obs[c][1][1] = false;
-	  if (k<nprocs_dir[2]-1) obs[c][2][1] = false;
+	  bbs.at(c) = ibbox(clb, cub-cstr, cstr);
+	  obs.at(c) = obnd;
+          ps.at(c) = c;
+	  if (i>0) obs.at(c)[0][0] = false;
+	  if (j>0) obs.at(c)[1][0] = false;
+	  if (k>0) obs.at(c)[2][0] = false;
+	  if (i<nprocs_dir[0]-1) obs.at(c)[0][1] = false;
+	  if (j<nprocs_dir[1]-1) obs.at(c)[1][1] = false;
+	  if (k<nprocs_dir[2]-1) obs.at(c)[2][1] = false;
 	}
       }
     }
     
     for (size_t n=0; n<ps.size(); ++n) {
-      assert (ps[n] == n);
+      assert (ps.at(n) == n);
     }
   }
   
@@ -825,7 +825,7 @@ namespace Carpet {
                                   vector<ibbox>& bbs)
   {
     bbs.resize (mglevels);
-    bbs[0] = bb;
+    bbs.at(0) = bb;
     // boundary offsets
     assert (size==2*dim);
     // (distance in grid points between the exterior and the physical boundary)
@@ -839,9 +839,9 @@ namespace Carpet {
     }
     for (int ml=1; ml<mglevels; ++ml) {
       // next finer grid
-      ivect const flo = bbs[ml-1].lower();
-      ivect const fhi = bbs[ml-1].upper();
-      ivect const fstr = bbs[ml-1].stride();
+      ivect const flo = bbs.at(ml-1).lower();
+      ivect const fhi = bbs.at(ml-1).upper();
+      ivect const fstr = bbs.at(ml-1).stride();
       // this grid
       ivect const str = fstr * mgfact;
       ivect const modoffset = (xpose(offset)[0] - ivect(mgfact) * xpose(offset)[0] + ivect(mgfact) * xpose(offset)[0] * str) % str;
@@ -867,7 +867,7 @@ namespace Carpet {
       MakeMultigridBoxes
         (cgh,
          size, nboundaryzones, is_internal, is_staggered, shiftout,
-         bbs[c], obs[c], bbss[c]);
+         bbs.at(c), obs.at(c), bbss.at(c));
     }
   }
   

@@ -31,7 +31,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.65 2004/03/23 16:13:03 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.66 2004/03/23 19:30:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -491,8 +491,8 @@ namespace CarpetIOASCII {
               
               const ggf<dim>* ff = 0;
               
-              assert (var < (int)arrdata[group][Carpet::map].data.size());
-              ff = (ggf<dim>*)arrdata[group][Carpet::map].data[var];
+              assert (var < (int)arrdata.at(group).at(Carpet::map).data.size());
+              ff = (ggf<dim>*)arrdata.at(group).at(Carpet::map).data.at(var);
               
               const int mintl = output_all_timelevels ? 1-num_tl : 0;
               const int maxtl = 0;
@@ -936,7 +936,7 @@ namespace CarpetIOASCII {
   void SetFlag (int index, const char* optstring, void* arg)
   {
     vector<bool>& flags = *(vector<bool>*)arg;
-    flags[index] = true;
+    flags.at(index) = true;
   }
   
   

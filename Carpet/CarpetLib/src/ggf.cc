@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.35 2004/03/23 12:40:27 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.36 2004/03/23 19:30:14 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -65,13 +65,13 @@ void ggf<D>::recompose (const int initialise_from, const bool do_prolongate) {
   // Resize structure
   storage.resize(tmax-tmin+1);
   for (int tl=tmin; tl<=tmax; ++tl) {
-    storage[tl-tmin].resize(h.reflevels());
+    storage.at(tl-tmin).resize(h.reflevels());
     for (int rl=initialise_from; rl<h.reflevels(); ++rl) {
-      storage[tl-tmin][rl].resize(h.components(rl));
+      storage.at(tl-tmin).at(rl).resize(h.components(rl));
       for (int c=0; c<h.components(rl); ++c) {
-      	storage[tl-tmin][rl][c].resize(h.mglevels(rl,c));
+      	storage.at(tl-tmin).at(rl).at(c).resize(h.mglevels(rl,c));
 	for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-          storage[tl-tmin][rl][c][ml] = NULL;
+          storage.at(tl-tmin).at(rl).at(c).at(ml) = NULL;
 	} // for ml
       } // for c
     } // for rl
@@ -83,11 +83,11 @@ void ggf<D>::recompose (const int initialise_from, const bool do_prolongate) {
       for (int c=0; c<h.components(rl); ++c) {
       	for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
 	  
-	  storage[tl-tmin][rl][c][ml] = typed_data(tl,rl,c,ml);
+	  storage.at(tl-tmin).at(rl).at(c).at(ml) = typed_data(tl,rl,c,ml);
 	  
       	  // Allocate storage
-      	  storage[tl-tmin][rl][c][ml]->allocate
-      	    (d.boxes[rl][c][ml].exterior, h.proc(rl,c));
+      	  storage.at(tl-tmin).at(rl).at(c).at(ml)->allocate
+      	    (d.boxes.at(rl).at(c).at(ml).exterior, h.proc(rl,c));
 	  
           if (do_prolongate) {
             // Initialise from coarser level, if possible
@@ -102,15 +102,15 @@ void ggf<D>::recompose (const int initialise_from, const bool do_prolongate) {
           
           // Copy from old storage, if possible
           // todo: copy only from interior regions?
-          if (rl<(int)oldstorage[tl-tmin].size()) {
+          if (rl<(int)oldstorage.at(tl-tmin).size()) {
             for (comm_state<D> state; !state.done(); state.step()) {
-              for (int cc=0; cc<(int)oldstorage[tl-tmin][rl].size(); ++cc) {
-                if (ml<(int)oldstorage[tl-tmin][rl][cc].size()) {
+              for (int cc=0; cc<(int)oldstorage.at(tl-tmin).at(rl).size(); ++cc) {
+                if (ml<(int)oldstorage.at(tl-tmin).at(rl).at(cc).size()) {
                   const ibbox ovlp =
-                    (d.boxes[rl][c][ml].exterior
-                     & oldstorage[tl-tmin][rl][cc][ml]->extent());
-                  storage[tl-tmin][rl][c][ml]->copy_from
-                    (state, oldstorage[tl-tmin][rl][cc][ml], ovlp);
+                    (d.boxes.at(rl).at(c).at(ml).exterior
+                     & oldstorage.at(tl-tmin).at(rl).at(cc).at(ml)->extent());
+                  storage.at(tl-tmin).at(rl).at(c).at(ml)->copy_from
+                    (state, oldstorage.at(tl-tmin).at(rl).at(cc).at(ml), ovlp);
                 } // if ml
               } // for cc
             } // for step
@@ -124,10 +124,10 @@ void ggf<D>::recompose (const int initialise_from, const bool do_prolongate) {
   
   // Delete old storage
   for (int tl=tmin; tl<=tmax; ++tl) {
-    for (int rl=initialise_from; rl<(int)oldstorage[tl-tmin].size(); ++rl) {
-      for (int c=0; c<(int)oldstorage[tl-tmin][rl].size(); ++c) {
-        for (int ml=0; ml<(int)oldstorage[tl-tmin][rl][c].size(); ++ml) {
-	  delete oldstorage[tl-tmin][rl][c][ml];
+    for (int rl=initialise_from; rl<(int)oldstorage.at(tl-tmin).size(); ++rl) {
+      for (int c=0; c<(int)oldstorage.at(tl-tmin).at(rl).size(); ++c) {
+        for (int ml=0; ml<(int)oldstorage.at(tl-tmin).at(rl).at(c).size(); ++ml) {
+	  delete oldstorage.at(tl-tmin).at(rl).at(c).at(ml);
         } // for ml
       } // for c
     } // for rl
@@ -167,11 +167,11 @@ void ggf<D>::cycle (int rl, int c, int ml) {
   assert (rl>=0 && rl<h.reflevels());
   assert (c>=0 && c<h.components(rl));
   assert (ml>=0 && ml<h.mglevels(rl,c));
-  gdata<D>* tmpdata = storage[tmin-tmin][rl][c][ml];
+  gdata<D>* tmpdata = storage.at(tmin-tmin).at(rl).at(c).at(ml);
   for (int tl=tmin; tl<=tmax-1; ++tl) {
-    storage[tl-tmin][rl][c][ml] = storage[tl+1-tmin][rl][c][ml];
+    storage.at(tl-tmin).at(rl).at(c).at(ml) = storage.at(tl+1-tmin).at(rl).at(c).at(ml);
   }
-  storage[tmax-tmin][rl][c][ml] = tmpdata;
+  storage.at(tmax-tmin).at(rl).at(c).at(ml) = tmpdata;
 }
 
 // Flip the time levels by exchanging the data sets
@@ -184,9 +184,9 @@ void ggf<D>::flip (int rl, int c, int ml) {
     const int tl1 = tmin + t;
     const int tl2 = tmax - t;
     assert (tl1 < tl2);
-    gdata<D>* tmpdata = storage[tl1-tmin][rl][c][ml];
-    storage[tl1-tmin][rl][c][ml] = storage[tl2-tmin][rl][c][ml];
-    storage[tl2-tmin][rl][c][ml] = tmpdata;
+    gdata<D>* tmpdata = storage.at(tl1-tmin).at(rl).at(c).at(ml);
+    storage.at(tl1-tmin).at(rl).at(c).at(ml) = storage.at(tl2-tmin).at(rl).at(c).at(ml);
+    storage.at(tl2-tmin).at(rl).at(c).at(ml) = tmpdata;
   }
 }
 
@@ -210,13 +210,13 @@ void ggf<D>::copycat (comm_state<D>& state,
   assert (rl2>=0 && rl2<h.reflevels());
   const int c2=c1;
   assert (ml2<h.mglevels(rl2,c2));
-  const ibbox recv = d.boxes[rl1][c1][ml1].*recv_list;
-  const ibbox send = d.boxes[rl2][c2][ml2].*send_list;
+  const ibbox recv = d.boxes.at(rl1).at(c1).at(ml1).*recv_list;
+  const ibbox send = d.boxes.at(rl2).at(c2).at(ml2).*send_list;
   assert (all(recv.shape()==send.shape()));
   // copy the content
   assert (recv==send);
-  storage[tl1-tmin][rl1][c1][ml1]->copy_from
-    (state, storage[tl2-tmin][rl2][c2][ml2], recv);
+  storage.at(tl1-tmin).at(rl1).at(c1).at(ml1)->copy_from
+    (state, storage.at(tl2-tmin).at(rl2).at(c2).at(ml2), recv);
 }
 
 // Copy regions
@@ -235,16 +235,16 @@ void ggf<D>::copycat (comm_state<D>& state,
   assert (rl2>=0 && rl2<h.reflevels());
   const int c2=c1;
   assert (ml2<h.mglevels(rl2,c2));
-  const iblist recv = d.boxes[rl1][c1][ml1].*recv_list;
-  const iblist send = d.boxes[rl2][c2][ml2].*send_list;
+  const iblist recv = d.boxes.at(rl1).at(c1).at(ml1).*recv_list;
+  const iblist send = d.boxes.at(rl2).at(c2).at(ml2).*send_list;
   assert (recv.size()==send.size());
   // walk all boxes
   for (typename iblist::const_iterator r=recv.begin(), s=send.begin();
        r!=recv.end(); ++r, ++s) {
     // (use the send boxes for communication)
     // copy the content
-    storage[tl1-tmin][rl1][c1][ml1]->copy_from
-      (state, storage[tl2-tmin][rl2][c2][ml2], *r);
+    storage.at(tl1-tmin).at(rl1).at(c1).at(ml1)->copy_from
+      (state, storage.at(tl2-tmin).at(rl2).at(c2).at(ml2), *r);
   }
 }
 
@@ -265,16 +265,16 @@ void ggf<D>::copycat (comm_state<D>& state,
   // walk all components
   for (int c2=0; c2<h.components(rl2); ++c2) {
     assert (ml2<h.mglevels(rl2,c2));
-    const iblist recv = (d.boxes[rl1][c1][ml1].*recv_listvect)[c2];
-    const iblist send = (d.boxes[rl2][c2][ml2].*send_listvect)[c1];
+    const iblist recv = (d.boxes.at(rl1).at(c1).at(ml1).*recv_listvect).at(c2);
+    const iblist send = (d.boxes.at(rl2).at(c2).at(ml2).*send_listvect).at(c1);
     assert (recv.size()==send.size());
     // walk all boxes
     for (typename iblist::const_iterator r=recv.begin(), s=send.begin();
       	 r!=recv.end(); ++r, ++s) {
       // (use the send boxes for communication)
       // copy the content
-      storage[tl1-tmin][rl1][c1][ml1]->copy_from
-      	(state, storage[tl2-tmin][rl2][c2][ml2], *r);
+      storage.at(tl1-tmin).at(rl1).at(c1).at(ml1)->copy_from
+      	(state, storage.at(tl2-tmin).at(rl2).at(c2).at(ml2), *r);
     }
   }
 }
@@ -293,7 +293,7 @@ void ggf<D>::intercat (comm_state<D>& state,
   assert (c1>=0 && c1<h.components(rl1));
   assert (ml1>=0 && ml1<h.mglevels(rl1,c1));
   for (int i=0; i<(int)tl2s.size(); ++i) {
-    assert (tl2s[i]>=tmin && tl2s[i]<=tmax);
+    assert (tl2s.at(i)>=tmin && tl2s.at(i)<=tmax);
   }
   assert (rl2>=0 && rl2<h.reflevels());
   const int c2=c1;
@@ -302,19 +302,19 @@ void ggf<D>::intercat (comm_state<D>& state,
   vector<const gdata<D>*> gsrcs(tl2s.size());
   vector<CCTK_REAL> times(tl2s.size());
   for (int i=0; i<(int)gsrcs.size(); ++i) {
-    assert (rl2<(int)storage[tl2s[i]-tmin].size());
-    assert (c2<(int)storage[tl2s[i]-tmin][rl2].size());
-    assert (ml2<(int)storage[tl2s[i]-tmin][rl2][c2].size());
-    gsrcs[i] = storage[tl2s[i]-tmin][rl2][c2][ml2];
-    times[i] = t.time(tl2s[i],rl2,ml2);
+    assert (rl2<(int)storage.at(tl2s.at(i)-tmin).size());
+    assert (c2<(int)storage.at(tl2s.at(i)-tmin).at(rl2).size());
+    assert (ml2<(int)storage.at(tl2s.at(i)-tmin).at(rl2).at(c2).size());
+    gsrcs.at(i) = storage.at(tl2s.at(i)-tmin).at(rl2).at(c2).at(ml2);
+    times.at(i) = t.time(tl2s.at(i),rl2,ml2);
   }
   
-  const ibbox recv = d.boxes[rl1][c1][ml1].*recv_list;
-  const ibbox send = d.boxes[rl2][c2][ml2].*send_list;
+  const ibbox recv = d.boxes.at(rl1).at(c1).at(ml1).*recv_list;
+  const ibbox send = d.boxes.at(rl2).at(c2).at(ml2).*send_list;
   assert (all(recv.shape()==send.shape()));
   // interpolate the content
   assert (recv==send);
-  storage[tl1-tmin][rl1][c1][ml1]->interpolate_from
+  storage.at(tl1-tmin).at(rl1).at(c1).at(ml1)->interpolate_from
     (state, gsrcs, times, recv, time,
      d.prolongation_order_space, prolongation_order_time);
 }
@@ -333,7 +333,7 @@ void ggf<D>::intercat (comm_state<D>& state,
   assert (c1>=0 && c1<h.components(rl1));
   assert (ml1>=0 && ml1<h.mglevels(rl1,c1));
   for (int i=0; i<(int)tl2s.size(); ++i) {
-    assert (tl2s[i]>=tmin && tl2s[i]<=tmax);
+    assert (tl2s.at(i)>=tmin && tl2s.at(i)<=tmax);
   }
   assert (rl2>=0 && rl2<h.reflevels());
   const int c2=c1;
@@ -342,22 +342,22 @@ void ggf<D>::intercat (comm_state<D>& state,
   vector<const gdata<D>*> gsrcs(tl2s.size());
   vector<CCTK_REAL> times(tl2s.size());
   for (int i=0; i<(int)gsrcs.size(); ++i) {
-    assert (rl2<(int)storage[tl2s[i]-tmin].size());
-    assert (c2<(int)storage[tl2s[i]-tmin][rl2].size());
-    assert (ml2<(int)storage[tl2s[i]-tmin][rl2][c2].size());
-    gsrcs[i] = storage[tl2s[i]-tmin][rl2][c2][ml2];
-    times[i] = t.time(tl2s[i],rl2,ml2);
+    assert (rl2<(int)storage.at(tl2s.at(i)-tmin).size());
+    assert (c2<(int)storage.at(tl2s.at(i)-tmin).at(rl2).size());
+    assert (ml2<(int)storage.at(tl2s.at(i)-tmin).at(rl2).at(c2).size());
+    gsrcs.at(i) = storage.at(tl2s.at(i)-tmin).at(rl2).at(c2).at(ml2);
+    times.at(i) = t.time(tl2s.at(i),rl2,ml2);
   }
   
-  const iblist recv = d.boxes[rl1][c1][ml1].*recv_list;
-  const iblist send = d.boxes[rl2][c2][ml2].*send_list;
+  const iblist recv = d.boxes.at(rl1).at(c1).at(ml1).*recv_list;
+  const iblist send = d.boxes.at(rl2).at(c2).at(ml2).*send_list;
   assert (recv.size()==send.size());
   // walk all boxes
   for (typename iblist::const_iterator r=recv.begin(), s=send.begin();
        r!=recv.end(); ++r, ++s) {
     // (use the send boxes for communication)
     // interpolate the content
-    storage[tl1-tmin][rl1][c1][ml1]->interpolate_from
+    storage.at(tl1-tmin).at(rl1).at(c1).at(ml1)->interpolate_from
       (state, gsrcs, times, *r, time,
        d.prolongation_order_space, prolongation_order_time);
   }
@@ -377,7 +377,7 @@ void ggf<D>::intercat (comm_state<D>& state,
   assert (c1>=0 && c1<h.components(rl1));
   assert (ml1>=0 && ml1<h.mglevels(rl1,c1));
   for (int i=0; i<(int)tl2s.size(); ++i) {
-    assert (tl2s[i]>=tmin && tl2s[i]<=tmax);
+    assert (tl2s.at(i)>=tmin && tl2s.at(i)<=tmax);
   }
   assert (rl2>=0 && rl2<h.reflevels());
   // walk all components
@@ -387,22 +387,22 @@ void ggf<D>::intercat (comm_state<D>& state,
     vector<const gdata<D>*> gsrcs(tl2s.size());
     vector<CCTK_REAL> times(tl2s.size());
     for (int i=0; i<(int)gsrcs.size(); ++i) {
-      assert (rl2<(int)storage[tl2s[i]-tmin].size());
-      assert (c2<(int)storage[tl2s[i]-tmin][rl2].size());
-      assert (ml2<(int)storage[tl2s[i]-tmin][rl2][c2].size());
-      gsrcs[i] = storage[tl2s[i]-tmin][rl2][c2][ml2];
-      times[i] = t.time(tl2s[i],rl2,ml2);
+      assert (rl2<(int)storage.at(tl2s.at(i)-tmin).size());
+      assert (c2<(int)storage.at(tl2s.at(i)-tmin).at(rl2).size());
+      assert (ml2<(int)storage.at(tl2s.at(i)-tmin).at(rl2).at(c2).size());
+      gsrcs.at(i) = storage.at(tl2s.at(i)-tmin).at(rl2).at(c2).at(ml2);
+      times.at(i) = t.time(tl2s.at(i),rl2,ml2);
     }
     
-    const iblist recv = (d.boxes[rl1][c1][ml1].*recv_listvect)[c2];
-    const iblist send = (d.boxes[rl2][c2][ml2].*send_listvect)[c1];
+    const iblist recv = (d.boxes.at(rl1).at(c1).at(ml1).*recv_listvect).at(c2);
+    const iblist send = (d.boxes.at(rl2).at(c2).at(ml2).*send_listvect).at(c1);
     assert (recv.size()==send.size());
     // walk all boxes
     for (typename iblist::const_iterator r=recv.begin(), s=send.begin();
       	 r!=recv.end(); ++r, ++s) {
       // (use the send boxes for communication)
       // interpolate the content
-      storage[tl1-tmin][rl1][c1][ml1]->interpolate_from
+      storage.at(tl1-tmin).at(rl1).at(c1).at(ml1)->interpolate_from
       	(state, gsrcs, times, *r, time,
 	 d.prolongation_order_space, prolongation_order_time);
     }
@@ -444,7 +444,7 @@ void ggf<D>::ref_bnd_prolongate (comm_state<D>& state,
   // Interpolation in time
   assert (tmax-tmin+1 >= prolongation_order_time+1);
   tl2s.resize(prolongation_order_time+1);
-  for (int i=0; i<=prolongation_order_time; ++i) tl2s[i] = tmax - i;
+  for (int i=0; i<=prolongation_order_time; ++i) tl2s.at(i) = tmax - i;
   intercat (state,
             tl  ,rl  ,c,ml, &dh<D>::dboxes::recv_ref_bnd_coarse,
 	    tl2s,rl-1,  ml, &dh<D>::dboxes::send_ref_bnd_fine,
@@ -509,7 +509,7 @@ void ggf<D>::ref_prolongate (comm_state<D>& state,
   // Interpolation in time
   assert (tmax-tmin+1 >= prolongation_order_time+1);
   tl2s.resize(prolongation_order_time+1);
-  for (int i=0; i<=prolongation_order_time; ++i) tl2s[i] = tmax - i;
+  for (int i=0; i<=prolongation_order_time; ++i) tl2s.at(i) = tmax - i;
   intercat (state,
             tl  ,rl  ,c,ml, &dh<D>::dboxes::recv_ref_coarse,
 	    tl2s,rl-1,  ml, &dh<D>::dboxes::send_ref_fine,

@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.41 2004/03/23 14:10:05 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.42 2004/03/23 19:30:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -162,15 +162,15 @@ namespace Carpet {
           
           // Rewind
           for (int m=0; m<maps; ++m) {
-            vtt[m]->set_delta
-              (reflevel, mglevel, - vtt[m]->get_delta (reflevel, mglevel));
+            vtt.at(m)->set_delta
+              (reflevel, mglevel, - vtt.at(m)->get_delta (reflevel, mglevel));
             FlipTimeLevels (cgh);
             for (int tl=0; tl<num_tl; ++tl) {
-              vtt[m]->advance_time (reflevel, mglevel);
+              vtt.at(m)->advance_time (reflevel, mglevel);
               CycleTimeLevels (cgh);
             }
-            vtt[m]->set_delta
-              (reflevel, mglevel, - vtt[m]->get_delta (reflevel, mglevel));
+            vtt.at(m)->set_delta
+              (reflevel, mglevel, - vtt.at(m)->get_delta (reflevel, mglevel));
             FlipTimeLevels (cgh);
           }
           
@@ -180,7 +180,7 @@ namespace Carpet {
             
             // Advance times
             for (int m=0; m<maps; ++m) {
-              vtt[m]->advance_time (reflevel, mglevel);
+              vtt.at(m)->advance_time (reflevel, mglevel);
             }
             cgh->cctk_time
               = global_time - tl * delta_time * mglevelfact / reflevelfact;
@@ -266,7 +266,7 @@ namespace Carpet {
           
             // Advance times
             for (int m=0; m<maps; ++m) {
-              vtt[m]->advance_time (reflevel, mglevel);
+              vtt.at(m)->advance_time (reflevel, mglevel);
             }
             cgh->cctk_time
               = global_time + delta_time * mglevelfact / reflevelfact;
@@ -370,7 +370,7 @@ namespace Carpet {
           
             // Advance times
             for (int m=0; m<maps; ++m) {
-              vtt[m]->advance_time (reflevel, mglevel);
+              vtt.at(m)->advance_time (reflevel, mglevel);
             }
             cgh->cctk_time
               = global_time + 2 * delta_time * mglevelfact / reflevelfact;
@@ -413,12 +413,12 @@ namespace Carpet {
           
             // Invert level times back
             for (int m=0; m<maps; ++m) {
-              vtt[m]->set_delta
-                (reflevel, mglevel, - vtt[m]->get_delta (reflevel, mglevel));
-              vtt[m]->advance_time (reflevel, mglevel);
-              vtt[m]->advance_time (reflevel, mglevel);
-              vtt[m]->set_delta
-                (reflevel, mglevel, - vtt[m]->get_delta (reflevel, mglevel));
+              vtt.at(m)->set_delta
+                (reflevel, mglevel, - vtt.at(m)->get_delta (reflevel, mglevel));
+              vtt.at(m)->advance_time (reflevel, mglevel);
+              vtt.at(m)->advance_time (reflevel, mglevel);
+              vtt.at(m)->set_delta
+                (reflevel, mglevel, - vtt.at(m)->get_delta (reflevel, mglevel));
             }
             cgh->cctk_time = global_time;
           

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.15 2004/01/25 14:57:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.16 2004/03/23 19:30:14 schnetter Exp $
 
 #ifndef GH_HH
 #define GH_HH
@@ -95,26 +95,19 @@ public:
   }
   
   int components (const int rl) const {
-    assert (rl>=0 && rl<reflevels());
-    return (int)extents[rl].size();
+    return (int)extents.at(rl).size();
   }
   
   int mglevels (const int rl, const int c) const {
-    assert (rl>=0 && rl<reflevels());
-    assert (c>=0 && c<components(rl));
-    return (int)extents[rl][c].size();
+    return (int)extents.at(rl).at(c).size();
   }
   
   bvect outer_boundary (const int rl, const int c) const {
-    assert (rl>=0 && rl<reflevels());
-    assert (c>=0 && c<components(rl));
-    return outer_boundaries[rl][c];
+    return outer_boundaries.at(rl).at(c);
   }
   
   int proc (const int rl, const int c) const {
-    assert (rl>=0 && rl<reflevels());
-    assert (c>=0 && c<components(rl));
-    return processors[rl][c];
+    return processors.at(rl).at(c);
   }
 
   bool is_local (const int rl, const int c) const {

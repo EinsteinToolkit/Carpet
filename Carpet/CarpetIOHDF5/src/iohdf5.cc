@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.21 2004/03/22 11:54:02 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.22 2004/03/23 19:30:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -313,7 +313,7 @@ namespace CarpetIOHDF5 {
         tmp->allocate (ext, 0);
 
 	if ( !((cgdata.disttype == CCTK_DISTRIB_CONSTANT) && 
-	       (arrdata[group][Carpet::map].hh->processors[reflevel][component]!=0))) {
+	       (arrdata.at(group).at(Carpet::map).hh->processors.at(reflevel).at(component)!=0))) {
 
 	  if (cgdata.disttype == CCTK_DISTRIB_CONSTANT) {
 	    assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
@@ -757,8 +757,8 @@ namespace CarpetIOHDF5 {
 	     if (h5verbose) cout << "CCTK_DISTRIB_CONSTANT: " << varname << endl;
 	     assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
 	     if (grouptype == CCTK_SCALAR) {
-	       lb[0] = arrdata[group][Carpet::map].hh->processors.at(rl).at(component);
-	       ub[0] = arrdata[group][Carpet::map].hh->processors.at(rl).at(component);
+	       lb[0] = arrdata.at(group).at(Carpet::map).hh->processors.at(rl).at(component);
+	       ub[0] = arrdata.at(group).at(Carpet::map).hh->processors.at(rl).at(component);
 	       for(int i=1;i<dim;i++) {
 		 lb[i]=0;
 		 ub[i]=0;
@@ -766,10 +766,10 @@ namespace CarpetIOHDF5 {
 	     } else {
 	       const int newlb = lb[gpdim-1] + 
 		 (ub[gpdim-1]-lb[gpdim-1]+1)*
-		 (arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
+		 (arrdata.at(group).at(Carpet::map).hh->processors.at(rl).at(component));
 	       const int newub = ub[gpdim-1] + 
 		 (ub[gpdim-1]-lb[gpdim-1]+1)*
-		 (arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
+		 (arrdata.at(group).at(Carpet::map).hh->processors.at(rl).at(component));
 	       lb[gpdim-1] = newlb;
 	       ub[gpdim-1] = newub;
 	     }
@@ -813,7 +813,7 @@ namespace CarpetIOHDF5 {
 	 } END_COMPONENT_LOOP;
 
 	 if (called_from_recovery) {
-	   arrdata[group][Carpet::map].tt->set_time(reflevel,mglevel,
+	   arrdata.at(group).at(Carpet::map).tt->set_time(reflevel,mglevel,
 		   (CCTK_REAL) ((cctkGH->cctk_time - cctk_initial_time)
 	                        / (delta_time * mglevelfact)) );
 	 }

@@ -31,7 +31,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.40 2004/03/23 14:10:05 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.41 2004/03/23 19:30:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -176,7 +176,7 @@ namespace Carpet {
             
             // Advance times
             for (int m=0; m<maps; ++m) {
-              vtt[m]->advance_time (reflevel, mglevel);
+              vtt.at(m)->advance_time (reflevel, mglevel);
             }
             cgh->cctk_time = (global_time
                               - delta_time / maxreflevelfact

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.24 2004/01/25 14:57:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.25 2004/03/23 19:30:14 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -55,8 +55,8 @@ void gh<D>::recompose (const rexts& exts,
     assert (processors.size() == extents.size());
     assert (outer_boundaries.size() == extents.size());
     for (int c=0; c<components(rl); ++c) {
-      assert (processors[rl].size() == extents[rl].size());
-      assert (outer_boundaries[rl].size() == extents[rl].size());
+      assert (processors.at(rl).size() == extents.at(rl).size());
+      assert (outer_boundaries.at(rl).size() == extents.at(rl).size());
     }
   }
   
@@ -65,11 +65,11 @@ void gh<D>::recompose (const rexts& exts,
     for (int c=0; c<components(rl); ++c) {
       assert (mglevels(rl,c)>0);
       for (int ml=1; ml<mglevels(rl,c); ++ml) {
-	assert (all(extents[rl][c][ml].stride()
-		    == ivect(mgfact) * extents[rl][c][ml-1].stride()));
-	assert (extents[rl][c][ml]
-		.contracted_for(extents[rl][c][ml-1])
-		.is_contained_in(extents[rl][c][ml-1]));
+	assert (all(extents.at(rl).at(c).at(ml).stride()
+		    == ivect(mgfact) * extents.at(rl).at(c).at(ml-1).stride()));
+	assert (extents.at(rl).at(c).at(ml)
+		.contracted_for(extents.at(rl).at(c).at(ml-1))
+		.is_contained_in(extents.at(rl).at(c).at(ml-1)));
       }
     }
   }
@@ -79,11 +79,11 @@ void gh<D>::recompose (const rexts& exts,
     assert (components(rl)>0);
     for (int c=0; c<components(rl); ++c) {
       for (int ml=0; ml<mglevels(rl,c); ++ml) {
-	assert (all(extents[rl][c][ml].stride()
-		    == extents[rl][0][ml].stride()));
-	assert (extents[rl][c][ml].is_aligned_with(extents[rl][0][ml]));
+	assert (all(extents.at(rl).at(c).at(ml).stride()
+		    == extents.at(rl).at(0).at(ml).stride()));
+	assert (extents.at(rl).at(c).at(ml).is_aligned_with(extents.at(rl).at(0).at(ml)));
         for (int cc=c+1; cc<components(rl); ++cc) {
-          assert ((extents[rl][c][ml] & extents[rl][cc][ml]).empty());
+          assert ((extents.at(rl).at(c).at(ml) & extents.at(rl).at(cc).at(ml)).empty());
         }
       }
     }
@@ -92,25 +92,25 @@ void gh<D>::recompose (const rexts& exts,
   // Check base grid extent
   if (reflevels()>0) {
     for (int c=0; c<components(0); ++c) {
-      assert (extents[0][c][0].is_contained_in(baseextent));
+      assert (extents.at(0).at(c).at(0).is_contained_in(baseextent));
     }
   }
   
   // Check refinement levels
   for (int rl=1; rl<reflevels(); ++rl) {
-    assert (all(extents[rl-1][0][0].stride()
-		== ivect(reffact) * extents[rl][0][0].stride()));
+    assert (all(extents.at(rl-1).at(0).at(0).stride()
+		== ivect(reffact) * extents.at(rl).at(0).at(0).stride()));
     // Check contained-ness:
     // first take all coarse grids ...
     bboxset<int,D> all;
     for (int c=0; c<components(rl-1); ++c) {
-      all |= extents[rl-1][c][0];
+      all |= extents.at(rl-1).at(c).at(0);
     }
     // ... remember their size ...
     const int sz = all.size();
     // ... then add the coarsified fine grids ...
     for (int c=0; c<components(rl); ++c) {
-      all |= extents[rl][c][0].contracted_for(extents[rl-1][0][0]);
+      all |= extents.at(rl).at(c).at(0).contracted_for(extents.at(rl-1).at(0).at(0));
     }
     // ... and then check the sizes:
     assert (all.size() == sz);
@@ -120,14 +120,14 @@ void gh<D>::recompose (const rexts& exts,
   bases.resize(reflevels());
   for (int rl=0; rl<reflevels(); ++rl) {
     if (components(rl)==0) {
-      bases[rl].resize(0);
+      bases.at(rl).resize(0);
     } else {
-      bases[rl].resize(mglevels(rl,0));
+      bases.at(rl).resize(mglevels(rl,0));
       for (int ml=0; ml<mglevels(rl,0); ++ml) {
-	bases[rl][ml] = ibbox();
+	bases.at(rl).at(ml) = ibbox();
 	for (int c=0; c<components(rl); ++c) {
-	  bases[rl][ml]
-	    = bases[rl][ml].expanded_containing(extents[rl][c][ml]);
+	  bases.at(rl).at(ml)
+	    = bases.at(rl).at(ml).expanded_containing(extents.at(rl).at(c).at(ml));
 	}
       }
     }
@@ -140,9 +140,9 @@ void gh<D>::recompose (const rexts& exts,
 	  cout << endl;
           cout << "gh bboxes:" << endl;
 	  cout << "rl=" << rl << " c=" << c << " ml=" << ml << endl;
-          cout << "extent=" << extents[rl][c][ml] << endl;
-          cout << "outer_boundary=" << outer_boundaries[rl][c] << endl;
-          cout << "processor=" << processors[rl][c] << endl;
+          cout << "extent=" << extents.at(rl).at(c).at(ml) << endl;
+          cout << "outer_boundary=" << outer_boundaries.at(rl).at(c) << endl;
+          cout << "processor=" << processors.at(rl).at(c) << endl;
         }
       }
     }
@@ -152,7 +152,7 @@ void gh<D>::recompose (const rexts& exts,
 	  cout << endl;
           cout << "gh bases:" << endl;
 	  cout << "rl=" << rl << " ml=" << ml << endl;
-          cout << "base=" << bases[rl][ml] << endl;
+          cout << "base=" << bases.at(rl).at(ml) << endl;
         }
       }
     }

@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.69 2004/03/23 18:38:29 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.70 2004/03/23 19:30:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -401,19 +401,19 @@ namespace Carpet {
       const ibbox baseext(lb, ub, str);
       
       // Allocate grid hierarchy
-      vhh[m] = new gh<dim>(refinement_factor, vertex_centered,
+      vhh.at(m) = new gh<dim>(refinement_factor, vertex_centered,
                            convergence_factor, vertex_centered, baseext);
       
       // Allocate data hierarchy
-      vdd[m] = new dh<dim>(*vhh[m], lghosts, ughosts,
+      vdd.at(m) = new dh<dim>(*vhh.at(m), lghosts, ughosts,
                            prolongation_order_space, buffer_width);
       
       // Allocate time hierarchy
-      vtt[m] = new th<dim>(*vhh[m], 1.0);
+      vtt.at(m) = new th<dim>(*vhh.at(m), 1.0);
       
       if (max_refinement_levels > 1) {
         const int prolongation_stencil_size
-          = vdd[m]->prolongation_stencil_size();
+          = vdd.at(m)->prolongation_stencil_size();
         const int min_nghosts
           = ((prolongation_stencil_size + refinement_factor - 1)
              / (refinement_factor-1));
@@ -434,7 +434,7 @@ namespace Carpet {
       if (strcmp(base_extents, "") == 0) {
         
         // default: one grid component covering everything
-        bbs.push_back (vhh[m]->baseextent);
+        bbs.push_back (vhh.at(m)->baseextent);
         obs.push_back (bbvect(true));
         
       } else {
@@ -478,9 +478,9 @@ namespace Carpet {
       vector<vector<vector<ibbox> > > bbsss(1);
       vector<vector<bbvect> > obss(1);
       vector<vector<int> > pss(1);
-      bbsss[0] = bbss;
-      obss[0] = obs;
-      pss[0] = ps;
+      bbsss.at(0) = bbss;
+      obss.at(0) = obs;
+      pss.at(0) = ps;
       
       // Check the regions
       CheckRegions (bbsss, obss, pss);
@@ -489,7 +489,7 @@ namespace Carpet {
       OutputGridStructure (cgh, m, bbsss, obss, pss);
       
       // Recompose grid hierarchy
-      vhh[m]->recompose (bbsss, obss, pss, maxreflevels, false);
+      vhh.at(m)->recompose (bbsss, obss, pss, maxreflevels, false);
       
       CCTK_INFO ("Grid structure (grid points):");
       const int rl = 0;
@@ -513,7 +513,7 @@ namespace Carpet {
     
     reflevels = 1;
     for (int m=0; m<maps; ++m) {
-      assert (vhh[m]->reflevels() == reflevels);
+      assert (vhh.at(m)->reflevels() == reflevels);
     }
     
     
@@ -530,11 +530,11 @@ namespace Carpet {
 	
       case CCTK_GF: {
 	assert (gp.dim == dim);
-        arrdata[group].resize(maps);
+        arrdata.at(group).resize(maps);
         for (int m=0; m<maps; ++m) {
-          arrdata[group][m].hh = vhh[m];
-          arrdata[group][m].dd = vdd[m];
-          arrdata[group][m].tt = vtt[m];
+          arrdata.at(group).at(m).hh = vhh.at(m);
+          arrdata.at(group).at(m).dd = vdd.at(m);
+          arrdata.at(group).at(m).tt = vtt.at(m);
         }
 	break;
       }
@@ -542,7 +542,7 @@ namespace Carpet {
       case CCTK_SCALAR:
       case CCTK_ARRAY: {
         
-        arrdata[group].resize(1);
+        arrdata.at(group).resize(1);
         
 	ivect sizes(1), ghostsizes(0);
 	
@@ -673,15 +673,15 @@ namespace Carpet {
         assert (all(convpowers == convpowers[0]));
         const int amgfact1 = ipow(mgfact, convpowers[0]);
         
-        arrdata[group][0].hh
+        arrdata.at(group).at(0).hh
           = new gh<dim>(refinement_factor, vertex_centered,
                         amgfact1, vertex_centered,
                         abaseext);
         
-        arrdata[group][0].dd
-          = new dh<dim>(*arrdata[group][0].hh, alghosts, aughosts, 0, 0);
+        arrdata.at(group).at(0).dd
+          = new dh<dim>(*arrdata.at(group).at(0).hh, alghosts, aughosts, 0, 0);
         
-        arrdata[group][0].tt = new th<dim>(*arrdata[group][0].hh, 1.0);
+        arrdata.at(group).at(0).tt = new th<dim>(*arrdata.at(group).at(0).hh, 1.0);
 	
         
         
@@ -709,19 +709,19 @@ namespace Carpet {
           aoffset[d][1] = convoffsets[d];
         }
         for (size_t c=0; c<bbs.size(); ++c) {
-          bbss[c].resize (mglevels);
-          bbss[c][0] = bbs[c];
+          bbss.at(c).resize (mglevels);
+          bbss.at(c).at(0) = bbs.at(c);
           for (int ml=1; ml<mglevels; ++ml) {
             // next finer grid
-            ivect const flo = bbss[c][ml-1].lower();
-            ivect const fhi = bbss[c][ml-1].upper();
-            ivect const fstr = bbss[c][ml-1].stride();
+            ivect const flo = bbss.at(c).at(ml-1).lower();
+            ivect const fhi = bbss.at(c).at(ml-1).upper();
+            ivect const fstr = bbss.at(c).at(ml-1).stride();
             // this grid
             ivect const str = fstr * amgfact;
             ivect const modoffset = (xpose(aoffset)[0] - amgfact * xpose(aoffset)[0] + amgfact * xpose(aoffset)[0] * str) % str;
-            ivect const lo = flo + xpose(obs[c])[0].ifthen (    xpose(aoffset)[0] - amgfact * xpose(aoffset)[0] , modoffset);
-            ivect const hi = fhi + xpose(obs[c])[1].ifthen ( - (xpose(aoffset)[1] - amgfact * xpose(aoffset)[1]), modoffset + fstr - str);
-            bbss[c][ml] = ibbox(lo,hi,str);
+            ivect const lo = flo + xpose(obs.at(c))[0].ifthen (    xpose(aoffset)[0] - amgfact * xpose(aoffset)[0] , modoffset);
+            ivect const hi = fhi + xpose(obs.at(c))[1].ifthen ( - (xpose(aoffset)[1] - amgfact * xpose(aoffset)[1]), modoffset + fstr - str);
+            bbss.at(c).at(ml) = ibbox(lo,hi,str);
           }
         }
         
@@ -729,16 +729,16 @@ namespace Carpet {
 	vector<vector<vector<ibbox> > > bbsss(1);
 	vector<vector<bbvect> > obss(1);
         vector<vector<int> > pss(1);
-	bbsss[0] = bbss;
-	obss[0] = obs;
-        pss[0] = ps;
+	bbsss.at(0) = bbss;
+	obss.at(0) = obs;
+        pss.at(0) = ps;
 	
 	// Recompose for this map
         char * const groupname = CCTK_GroupName (group);
         assert (groupname);
         Checkpoint ("Recomposing grid array group \"%s\"", groupname);
         free (groupname);
-	arrdata[group][0].hh->recompose (bbsss, obss, pss, 1, false);
+	arrdata.at(group).at(0).hh->recompose (bbsss, obss, pss, 1, false);
 	
 	break;
       }
@@ -748,22 +748,22 @@ namespace Carpet {
       }
       
       // Initialise group information
-      groupdata[group].info.dim         = gp.dim;
-      groupdata[group].info.gsh         = new int [dim];
-      groupdata[group].info.lsh         = new int [dim];
-      groupdata[group].info.lbnd        = new int [dim];
-      groupdata[group].info.ubnd        = new int [dim];
-      groupdata[group].info.bbox        = new int [2*dim];
-      groupdata[group].info.nghostzones = new int [dim];
+      groupdata.at(group).info.dim         = gp.dim;
+      groupdata.at(group).info.gsh         = new int [dim];
+      groupdata.at(group).info.lsh         = new int [dim];
+      groupdata.at(group).info.lbnd        = new int [dim];
+      groupdata.at(group).info.ubnd        = new int [dim];
+      groupdata.at(group).info.bbox        = new int [2*dim];
+      groupdata.at(group).info.nghostzones = new int [dim];
       
-      groupdata[group].transport_operator = GetTransportOperator (cgh, group);
+      groupdata.at(group).transport_operator = GetTransportOperator (cgh, group);
       
       // Initialise group variables
-      for (int m=0; m<arrdata[group].size(); ++m) {
+      for (int m=0; m<arrdata.at(group).size(); ++m) {
         
-        arrdata[group][m].data.resize(CCTK_NumVarsInGroupI(group));
-        for (int var=0; var<(int)arrdata[group][m].data.size(); ++var) {
-          arrdata[group][m].data[var] = 0;
+        arrdata.at(group).at(m).data.resize(CCTK_NumVarsInGroupI(group));
+        for (int var=0; var<(int)arrdata.at(group).at(m).data.size(); ++var) {
+          arrdata.at(group).at(m).data.at(var) = 0;
         }
         
       }
@@ -775,7 +775,7 @@ namespace Carpet {
     // Allocate level times
     leveltimes.resize (mglevels);
     for (int ml=0; ml<mglevels; ++ml) {
-      leveltimes[ml].resize (maxreflevels);
+      leveltimes.at(ml).resize (maxreflevels);
     }
     origin_space.resize (mglevels);
     

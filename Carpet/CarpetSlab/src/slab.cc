@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.15 2004/01/25 14:57:31 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.16 2004/03/23 19:30:14 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -23,7 +23,7 @@
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.15 2004/01/25 14:57:31 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.16 2004/03/23 19:30:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 
@@ -157,12 +157,12 @@ namespace CarpetSlab {
     const dh<dim>* mydd;
     const ggf<dim>* myff;
     assert (group < (int)arrdata.size());
-    myhh = arrdata[group][m].hh;
+    myhh = arrdata.at(group).at(m).hh;
     assert (myhh);
-    mydd = arrdata[group][m].dd;
+    mydd = arrdata.at(group).at(m).dd;
     assert (mydd);
-    assert (var < (int)arrdata[group][m].data.size());
-    myff = arrdata[group][m].data[var];
+    assert (var < (int)arrdata.at(group).at(m).data.size());
+    myff = arrdata.at(group).at(m).data.at(var);
     assert (myff);
     
     // Detemine collecting processor
@@ -230,8 +230,8 @@ namespace CarpetSlab {
         
         // Calculate overlapping extents
         const bboxset<int,dim> myextents
-          = ((mydd->boxes[rl][component][mglevel].sync_not
-              | mydd->boxes[rl][component][mglevel].interior)
+          = ((mydd->boxes.at(rl).at(component).at(mglevel).sync_not
+              | mydd->boxes.at(rl).at(component).at(mglevel).interior)
              & hextent);
         
         // Loop over overlapping extents
@@ -256,22 +256,22 @@ namespace CarpetSlab {
       for (int proc=0; proc<CCTK_nProcs(cgh); ++proc) {
         if (proc != collect_proc) {
           void* myhdata = rank==proc ? hdata : 0;
-          tmpdata[proc] = mydata->make_typed(-1);
-          tmpdata[proc]->allocate (alldata->extent(), proc, myhdata);
-          tmpdata[proc]->copy_from (state[proc], alldata, alldata->extent());
+          tmpdata.at(proc) = mydata->make_typed(-1);
+          tmpdata.at(proc)->allocate (alldata->extent(), proc, myhdata);
+          tmpdata.at(proc)->copy_from (state.at(proc), alldata, alldata->extent());
         }
       }
       
       for (int proc=0; proc<CCTK_nProcs(cgh); ++proc) {
         if (proc != collect_proc) {
-          tmpdata[proc]->copy_from (state[proc], alldata, alldata->extent());
+          tmpdata.at(proc)->copy_from (state.at(proc), alldata, alldata->extent());
         }
       }
       
       for (int proc=0; proc<CCTK_nProcs(cgh); ++proc) {
         if (proc != collect_proc) {
-          tmpdata[proc]->copy_from (state[proc], alldata, alldata->extent());
-          delete tmpdata[proc];
+          tmpdata.at(proc)->copy_from (state.at(proc), alldata, alldata->extent());
+          delete tmpdata.at(proc);
         }
       }
       
@@ -365,12 +365,12 @@ namespace CarpetSlab {
     const dh<dim>* mydd;
     const ggf<dim>* myff;
     assert (group < (int)arrdata.size());
-    myhh = arrdata[group][m].hh;
+    myhh = arrdata.at(group).at(m).hh;
     assert (myhh);
-    mydd = arrdata[group][m].dd;
+    mydd = arrdata.at(group).at(m).dd;
     assert (mydd);
-    assert (var < (int)arrdata[group][m].data.size());
-    myff = arrdata[group][m].data[var];
+    assert (var < (int)arrdata.at(group).at(m).data.size());
+    myff = arrdata.at(group).at(m).data.at(var);
     assert (myff);
     
     // Detemine collecting processor
@@ -441,8 +441,8 @@ namespace CarpetSlab {
         
         // Calculate overlapping extents
         const bboxset<int,dim> myextents
-          = ((mydd->boxes[rl][component][mglevel].sync_not
-              | mydd->boxes[rl][component][mglevel].interior)
+          = ((mydd->boxes.at(rl).at(component).at(mglevel).sync_not
+              | mydd->boxes.at(rl).at(component).at(mglevel).interior)
              & hextent);
         
         // Loop over overlapping extents
@@ -467,22 +467,22 @@ namespace CarpetSlab {
       for (int proc=0; proc<CCTK_nProcs(cgh); ++proc) {
         if (proc != collect_proc) {
           void* myhdata = rank==proc ? hdata : 0;
-          tmpdata[proc] = mydata->make_typed(-1);
-          tmpdata[proc]->allocate (alldata->extent(), proc, myhdata);
-          tmpdata[proc]->copy_from (state[proc], alldata, alldata->extent());
+          tmpdata.at(proc) = mydata->make_typed(-1);
+          tmpdata.at(proc)->allocate (alldata->extent(), proc, myhdata);
+          tmpdata.at(proc)->copy_from (state.at(proc), alldata, alldata->extent());
         }
       }
       
       for (int proc=0; proc<CCTK_nProcs(cgh); ++proc) {
         if (proc != collect_proc) {
-          tmpdata[proc]->copy_from (state[proc], alldata, alldata->extent());
+          tmpdata.at(proc)->copy_from (state.at(proc), alldata, alldata->extent());
         }
       }
       
       for (int proc=0; proc<CCTK_nProcs(cgh); ++proc) {
         if (proc != collect_proc) {
-          tmpdata[proc]->copy_from (state[proc], alldata, alldata->extent());
-          delete tmpdata[proc];
+          tmpdata.at(proc)->copy_from (state.at(proc), alldata, alldata->extent());
+          delete tmpdata.at(proc);
         }
       }
       

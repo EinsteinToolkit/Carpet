@@ -11,7 +11,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.25 2004/03/23 13:54:59 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.26 2004/03/23 19:30:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Restrict_cc);
 }
 
@@ -46,21 +46,21 @@ namespace Carpet {
               const int tl = 0;
               
               for (int m=0; m<maps; ++m) {
-                assert (m<(int)arrdata[group].size());
+                assert (m<(int)arrdata.at(group).size());
                 
                 // use background time here (which may not be modified
                 // by the user)
-                const CCTK_REAL time = vtt[m]->time (tl, reflevel, mglevel);
+                const CCTK_REAL time = vtt.at(m)->time (tl, reflevel, mglevel);
                 
-                const CCTK_REAL time1 = vtt[m]->time (0, reflevel, mglevel);
+                const CCTK_REAL time1 = vtt.at(m)->time (0, reflevel, mglevel);
                 const CCTK_REAL time2
                   = (cgh->cctk_time - cctk_initial_time) / delta_time;
                 assert (fabs(time1 - time2) / (fabs(time1) + fabs(time2) + fabs(cgh->cctk_delta_time)) < 1e-12);
                 
                 for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-                  assert (var<(int)arrdata[group][m].data.size());
-                  for (int c=0; c<vhh[m]->components(reflevel); ++c) {
-                    arrdata[group][m].data[var]->ref_restrict
+                  assert (var<(int)arrdata.at(group).at(m).data.size());
+                  for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
+                    arrdata.at(group).at(m).data.at(var)->ref_restrict
                       (state, tl, reflevel, c, mglevel, time);
                   }
                 }
@@ -84,11 +84,11 @@ namespace Carpet {
               const int tl = 0;
               
               for (int m=0; m<maps; ++m) {
-                assert (m<(int)arrdata[group].size());
+                assert (m<(int)arrdata.at(group).size());
                 for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-                  assert (var<(int)arrdata[group][m].data.size());
-                  for (int c=0; c<vhh[m]->components(reflevel); ++c) {
-                    arrdata[group][m].data[var]->sync
+                  assert (var<(int)arrdata.at(group).at(m).data.size());
+                  for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
+                    arrdata.at(group).at(m).data.at(var)->sync
                       (state, tl, reflevel, c, mglevel);
                   }
                 }

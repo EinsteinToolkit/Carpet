@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.27 2004/03/23 12:14:29 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.28 2004/03/23 19:30:14 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -273,15 +273,15 @@ void gdata<D>
   assert (all((box.lower()-extent().lower())%box.stride() == 0));
   assert (srcs.size() == times.size() && srcs.size()>0);
   for (int t=0; t<(int)srcs.size(); ++t) {
-    assert (srcs[t]->has_storage());
-    assert (all(box.lower()>=srcs[t]->extent().lower()));
-    assert (all(box.upper()<=srcs[t]->extent().upper()));
+    assert (srcs.at(t)->has_storage());
+    assert (all(box.lower()>=srcs.at(t)->extent().lower()));
+    assert (all(box.upper()<=srcs.at(t)->extent().upper()));
   }
   
   assert (! box.empty());
   if (box.empty()) return;
   
-  assert (proc() == srcs[0]->proc());
+  assert (proc() == srcs.at(0)->proc());
   
   assert (transport_operator != op_error);
   assert (transport_operator != op_none);
@@ -313,15 +313,15 @@ void gdata<D>
   assert (all((box.lower()-extent().lower())%box.stride() == 0));
   assert (srcs.size() == times.size() && srcs.size()>0);
   for (int t=0; t<(int)srcs.size(); ++t) {
-    assert (srcs[t]->has_storage());
-    assert (all(box.lower()>=srcs[t]->extent().lower()));
-    assert (all(box.upper()<=srcs[t]->extent().upper()));
+    assert (srcs.at(t)->has_storage());
+    assert (all(box.lower()>=srcs.at(t)->extent().lower()));
+    assert (all(box.upper()<=srcs.at(t)->extent().upper()));
   }
   
   assert (! box.empty());
   if (box.empty()) return;
   
-  if (proc() == srcs[0]->proc()) {
+  if (proc() == srcs.at(0)->proc()) {
     // interpolate on same processor
     
   } else {
@@ -331,7 +331,7 @@ void gdata<D>
     // TODO: is this efficient?
     state.tmps.push_back (tmp);
     ++state.current;
-    tmp->allocate (box, srcs[0]->proc());
+    tmp->allocate (box, srcs.at(0)->proc());
     tmp->change_processor_recv (proc());
     
   }
@@ -355,15 +355,15 @@ void gdata<D>
   assert (all((box.lower()-extent().lower())%box.stride() == 0));
   assert (srcs.size() == times.size() && srcs.size()>0);
   for (int t=0; t<(int)srcs.size(); ++t) {
-    assert (srcs[t]->has_storage());
-    assert (all(box.lower()>=srcs[t]->extent().lower()));
-    assert (all(box.upper()<=srcs[t]->extent().upper()));
+    assert (srcs.at(t)->has_storage());
+    assert (all(box.lower()>=srcs.at(t)->extent().lower()));
+    assert (all(box.upper()<=srcs.at(t)->extent().upper()));
   }
   
   assert (! box.empty());
   if (box.empty()) return;
   
-  if (proc() == srcs[0]->proc()) {
+  if (proc() == srcs.at(0)->proc()) {
     // interpolate on same processor
     
     interpolate_from_nocomm (srcs, times, box, time, order_space, order_time);
@@ -397,15 +397,15 @@ void gdata<D>
   assert (all((box.lower()-extent().lower())%box.stride() == 0));
   assert (srcs.size() == times.size() && srcs.size()>0);
   for (int t=0; t<(int)srcs.size(); ++t) {
-    assert (srcs[t]->has_storage());
-    assert (all(box.lower()>=srcs[t]->extent().lower()));
-    assert (all(box.upper()<=srcs[t]->extent().upper()));
+    assert (srcs.at(t)->has_storage());
+    assert (all(box.lower()>=srcs.at(t)->extent().lower()));
+    assert (all(box.upper()<=srcs.at(t)->extent().upper()));
   }
   
   assert (! box.empty());
   if (box.empty()) return;
   
-  if (proc() == srcs[0]->proc()) {
+  if (proc() == srcs.at(0)->proc()) {
     // interpolate on same processor
     
   } else {

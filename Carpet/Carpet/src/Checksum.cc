@@ -9,7 +9,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Checksum.cc,v 1.13 2004/01/25 14:57:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Checksum.cc,v 1.14 2004/03/23 19:30:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Checksum_cc);
 }
 
@@ -30,18 +30,18 @@ namespace Carpet {
     Checkpoint ("CalculateChecksums");
     
     checksums.resize(maxreflevels);
-    checksums[reflevel].resize(mglevels);
-    checksums[reflevel][mglevel].resize(CCTK_NumGroups());
+    checksums.at(reflevel).resize(mglevels);
+    checksums.at(reflevel).at(mglevel).resize(CCTK_NumGroups());
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cgh, group)) {
         const int grouptype = CCTK_GroupTypeI(group);
         if (reflevel == 0 || grouptype == CCTK_GF) {
-          checksums[reflevel][mglevel][group].resize(arrdata[group].size());
+          checksums.at(reflevel).at(mglevel).at(group).resize(arrdata.at(group).size());
           BEGIN_MAP_LOOP(cgh, grouptype) {
-            checksums[reflevel][mglevel][group][map].resize(arrdata[group][map].hh->components(reflevel));
+            checksums.at(reflevel).at(mglevel).at(group).at(map).resize(arrdata.at(group).at(map).hh->components(reflevel));
             BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype) {
               const int nvars = CCTK_NumVarsInGroupI(group);
-              checksums[reflevel][mglevel][group][map][component].resize(nvars);
+              checksums.at(reflevel).at(mglevel).at(group).at(map).at(component).resize(nvars);
               if (nvars > 0) {
                 
                 const int n0 = CCTK_FirstVarIndexI(group);
@@ -49,9 +49,9 @@ namespace Carpet {
                 assert (sz>0);
                 
                 ivect size(1);
-                const int gpdim = groupdata[group].info.dim;
+                const int gpdim = groupdata.at(group).info.dim;
                 for (int d=0; d<gpdim; ++d) {
-                  size[d] = groupdata[group].info.lsh[d];
+                  size[d] = groupdata.at(group).info.lsh[d];
                 }
                 const int np = prod(size);
                 
@@ -61,7 +61,7 @@ namespace Carpet {
                 const int max_tl = maxtl(where, num_tl);
                 
                 for (int var=0; var<nvars; ++var) {
-                  checksums[reflevel][mglevel][group][map][component][var].resize(num_tl);
+                  checksums.at(reflevel).at(mglevel).at(group).at(map).at(component).at(var).resize(num_tl);
                   for (int tl=min_tl; tl<=max_tl; ++tl) {
                     
                     const int n = n0 + var;
@@ -71,8 +71,8 @@ namespace Carpet {
                       chk += ((const unsigned int*)data)[i];
                     }
                     
-                    checksums[reflevel][mglevel][group][map][component][var][tl].sum = chk;
-                    checksums[reflevel][mglevel][group][map][component][var][tl].valid = true;
+                    checksums.at(reflevel).at(mglevel).at(group).at(map).at(component).at(var).at(tl).sum = chk;
+                    checksums.at(reflevel).at(mglevel).at(group).at(map).at(component).at(var).at(tl).valid = true;
                     
                   } // for tl
                 } // for var
@@ -96,18 +96,18 @@ namespace Carpet {
     Checkpoint ("CheckChecksums");
     
     assert ((int)checksums.size()==maxreflevels);
-    assert ((int)checksums[reflevel].size()==mglevels);
-    assert ((int)checksums[reflevel][mglevel].size()==CCTK_NumGroups());
+    assert ((int)checksums.at(reflevel).size()==mglevels);
+    assert ((int)checksums.at(reflevel).at(mglevel).size()==CCTK_NumGroups());
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cgh, group)) {
         const int grouptype = CCTK_GroupTypeI(group);
         if (reflevel == 0 || grouptype == CCTK_GF) {
-          assert (checksums[reflevel][mglevel][group].size()==arrdata[group].size());
+          assert (checksums.at(reflevel).at(mglevel).at(group).size()==arrdata.at(group).size());
           BEGIN_MAP_LOOP(cgh, grouptype) {
-            assert ((int)checksums[reflevel][mglevel][group][map].size()==arrdata[group][map].hh->components(reflevel));
+            assert ((int)checksums.at(reflevel).at(mglevel).at(group).at(map).size()==arrdata.at(group).at(map).hh->components(reflevel));
             BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype) {
               const int nvars = CCTK_NumVarsInGroupI(group);
-              assert ((int)checksums[reflevel][mglevel][group][map][component].size()==nvars);
+              assert ((int)checksums.at(reflevel).at(mglevel).at(group).at(map).at(component).size()==nvars);
               if (nvars > 0) {
                 
                 const int n0 = CCTK_FirstVarIndexI(group);
@@ -115,9 +115,9 @@ namespace Carpet {
                 assert (sz>0);
                 
                 ivect size(1);
-                const int gpdim = groupdata[group].info.dim;
+                const int gpdim = groupdata.at(group).info.dim;
                 for (int d=0; d<gpdim; ++d) {
-                  size[d] = groupdata[group].info.lsh[d];
+                  size[d] = groupdata.at(group).info.lsh[d];
                 }
                 const int np = prod(size);
                 
@@ -127,9 +127,9 @@ namespace Carpet {
                 const int max_tl = maxtl(where, num_tl);
                 
                 for (int var=0; var<nvars; ++var) {
-                  assert ((int)checksums[reflevel][mglevel][group][map][component][var].size()==num_tl);
+                  assert ((int)checksums.at(reflevel).at(mglevel).at(group).at(map).at(component).at(var).size()==num_tl);
                   for (int tl=min_tl; tl<=max_tl; ++tl) {
-                    if (checksums[reflevel][mglevel][group][map][component][var][tl].valid) {
+                    if (checksums.at(reflevel).at(mglevel).at(group).at(map).at(component).at(var).at(tl).valid) {
                       
                       const int n = n0 + var;
                       const void* data = cgh->data[n][tl];
@@ -138,7 +138,7 @@ namespace Carpet {
                         chk += ((const unsigned int*)data)[i];
                       }
                       const bool unexpected_change =
-                        chk != checksums[reflevel][mglevel][group][map][component][var][tl].sum;
+                        chk != checksums.at(reflevel).at(mglevel).at(group).at(map).at(component).at(var).at(tl).sum;
                       
                       if (unexpected_change) {
                         char* fullname = CCTK_FullName(n);

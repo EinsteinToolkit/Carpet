@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.16 2004/03/23 12:40:27 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.17 2004/03/23 19:30:14 schnetter Exp $
 
 #include <assert.h>
 
@@ -39,7 +39,7 @@ const data<T,D>* gf<T,D>::operator() (int tl, int rl, int c, int ml) const {
   assert (rl>=0 && rl<this->h.reflevels());
   assert (c>=0 && c<this->h.components(rl));
   assert (ml>=0 && ml<this->h.mglevels(rl,c));
-  return (const data<T,D>*)this->storage[tl-this->tmin][rl][c][ml];
+  return (const data<T,D>*)this->storage.at(tl-this->tmin).at(rl).at(c).at(ml);
 }
 
 template<class T,int D>
@@ -48,7 +48,7 @@ data<T,D>* gf<T,D>::operator() (int tl, int rl, int c, int ml) {
   assert (rl>=0 && rl<this->h.reflevels());
   assert (c>=0 && c<this->h.components(rl));
   assert (ml>=0 && ml<this->h.mglevels(rl,c));
-  return (data<T,D>*)this->storage[tl-this->tmin][rl][c][ml];
+  return (data<T,D>*)this->storage.at(tl-this->tmin).at(rl).at(c).at(ml);
 }
 
 
