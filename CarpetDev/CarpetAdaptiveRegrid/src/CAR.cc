@@ -683,16 +683,14 @@ namespace CarpetAdaptiveRegrid {
             
             // Check that the striding is correct.
             
-            rvect remainder = (up - lo) / str - floor( (up - lo) / str );
+            CCTK_REAL remainder = fmod((up[d] - lo[d]), str[d])/str[d];
             
-            for (int d=0; d < dim; ++d) {
-              if ( abs(remainder[d]) > 1.e-6 ) {
-                if (ob[d][0]) {
-                  up[d] += str[d] * (1 - remainder[d]);
-                }
-                else if (ob[d][1]) {
-                  lo[d] -= str[d] * remainder[d];
-                }
+            if ( abs(remainder) > 1.e-6 ) {
+              if (ob[d][0]) {
+                up[d] += str[d] * (1 - remainder);
+              }
+              else if (ob[d][1]) {
+                lo[d] -= str[d] * remainder;
               }
             }
             
