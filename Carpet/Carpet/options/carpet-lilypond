@@ -1,9 +1,10 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond,v 1.2 2001/03/17 20:11:11 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond,v 1.3 2001/03/19 21:29:45 eschnett Exp $
 
 F77			= g77
 F90			= g77
 
-CXXFLAGS		= -DTMPL_EXPLICIT -ftemplate-depth-30
+CPPFLAGS		= -DTMPL_EXPLICIT -DCARPET_REAL
+CXXFLAGS		= -DTMPL_EXPLICIT -DCARPET_REAL -ftemplate-depth-30
 
 C_OPTIMISE_FLAGS	= -O3 -funroll-loops -march=pentiumpro
 CXX_OPTIMISE_FLAGS	= -O3 -funroll-loops -march=pentiumpro
