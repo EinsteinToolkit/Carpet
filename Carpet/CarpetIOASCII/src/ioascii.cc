@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.45 2003/03/17 10:24:49 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.46 2003/03/27 17:11:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -670,23 +670,17 @@ namespace CarpetIOASCII {
     const int numvars = CCTK_NumVars();
     assert (vindex>=0 && vindex<numvars);
     
-    bool* flags = new bool[numvars];
+    vector<bool> flags(numvars);
     
-    for (int i=0; i<numvars; ++i) {
-      flags[i] = false;
-    }
+    CCTK_TraverseString (varlist, SetFlag, &flags, CCTK_GROUP_OR_VAR);
     
-    CCTK_TraverseString (varlist, SetFlag, flags, CCTK_GROUP_OR_VAR);
-    
-    bool flag = flags[vindex];
-    delete [] flags;
-    
-    return flag;
+    return flags[vindex];
   }
   
   void SetFlag (int index, const char* optstring, void* arg)
   {
-    ((bool*)arg)[index] = true;
+    vector<bool>& flags = *(vector<bool>*)arg;
+    flags[index] = true;
   }
   
   
