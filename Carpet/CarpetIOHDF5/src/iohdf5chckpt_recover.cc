@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.10 2004/03/16 14:40:04 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.11 2004/03/18 15:12:45 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -54,6 +54,21 @@ namespace CarpetIOHDF5 {
   int RecoverParameters (hid_t reader);
   int RecoverGHextensions (cGH* cctkGH, hid_t reader);
   int RecoverVariables (cGH* cctkGH, hid_t reader);
+
+  void CarpetIOHDF5_InitialDataCheckpoint( const cGH* const cgh){
+    
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (checkpoint && checkpoint_ID)
+      {
+	CCTK_INFO ("---------------------------------------------------------");
+	CCTK_INFO ("Dumping initial data checkpoint");
+	CCTK_INFO ("---------------------------------------------------------");
+	
+	Checkpoint (cgh, CP_INITIAL_DATA);
+      }
+  } // CarpetIOHDF5_InitialDataCheckpoint
+
 
   void CarpetIOHDF5_EvolutionCheckpoint( const cGH* const cgh){
     

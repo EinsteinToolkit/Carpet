@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.h,v 1.3 2004/03/11 09:33:23 cott Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.h,v 1.4 2004/03/18 15:12:45 cott Exp $ */
 
 #ifndef CARPETIOHDF5_H
 #define CARPETIOHDF5_H
@@ -14,6 +14,7 @@ namespace CarpetIOHDF5 {
     int CarpetIOHDF5Startup (void);
     int CarpetIOHDF5ReadData (CCTK_ARGUMENTS);
     void CarpetIOHDF5_EvolutionCheckpoint (const cGH*);
+    void CarpetIOHDF5_InitialDataCheckpoint (const cGH*);
     
     int CarpetIOHDF5_Recover (cGH* cgh, const char *basefilename, 
 			      int called_from);
