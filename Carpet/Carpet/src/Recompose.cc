@@ -26,7 +26,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.47 2003/11/05 16:18:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.48 2003/11/13 10:49:17 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -572,7 +572,7 @@ namespace Carpet {
       } else {
         myslice[n] = (int)floor(1.0 * slice_left * mynprocs[n] / nprocs_left + 0.5);
       }
-      assert (myslice[n] > 0);
+      assert (myslice[n] >= 0);
       slice_left -= myslice[n];
       nprocs_left -= mynprocs[n];
     }
