@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.77 2004/04/18 14:17:30 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.78 2004/04/22 14:16:24 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -331,9 +331,9 @@ namespace Carpet {
       {
         ostringstream buf;
         buf << "CoordBase domain specification for map " << m << ":" << endl
-            << "   physical extent: " << physical_min << " : " << physical_max << endl
-            << "   interior extent: " << interior_min << " : " << interior_max << endl
-            << "   exterior extent: " << exterior_min << " : " << exterior_max << endl
+            << "   physical extent: " << physical_min << " : " << physical_max << "   (" << physical_max - physical_min << ")" << endl
+            << "   interior extent: " << interior_min << " : " << interior_max << "   (" << interior_max - interior_min << ")" << endl
+            << "   exterior extent: " << exterior_min << " : " << exterior_max << "   (" << exterior_max - exterior_min << ")" << endl
             << "   base_spacing   : " << base_spacing;
         Output (buf.str().c_str());
       }
@@ -354,9 +354,9 @@ namespace Carpet {
         buf << "Adapted domain specification for map " << m << ":" << endl
             << "   convergence factor: " << convergence_factor << endl
             << "   convergence level : " << basemglevel << endl
-            << "   physical extent   : " << physical_min << " : " << physical_max << endl
-            << "   interior extent   : " << interior_min << " : " << interior_max << endl
-            << "   exterior extent   : " << exterior_min << " : " << exterior_max << endl
+            << "   physical extent   : " << physical_min << " : " << physical_max << "   (" << physical_max - physical_min << ")" << endl
+            << "   interior extent   : " << interior_min << " : " << interior_max << "   (" << interior_max - interior_min << ")" << endl
+            << "   exterior extent   : " << exterior_min << " : " << exterior_max << "   (" << exterior_max - exterior_min << ")" << endl
             << "   spacing           : " << spacing;
         Output (buf.str().c_str());
       }
