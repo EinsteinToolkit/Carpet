@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.13 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.14 2003/02/27 22:23:19 shawley Exp $
 
 #include <assert.h>
 #include <ctype.h>
@@ -102,4 +102,5 @@ template ostream& output (ostream& os, const vector<list<bbox<int,3> > >& v);
 template ostream& output (ostream& os, const vector<vector<int> >& v);
 template ostream& output (ostream& os, const vector<vector<bbox<int,3> > >& v);
 template ostream& output (ostream& os, const vector<vector<vect<vect<bool,2>,3> > >& v);
+template ostream& output (ostream& os, const vector<vect<vect<bool,2>,3> >& v);
 template ostream& output (ostream& os, const vector<vector<vector<bbox<int,3> > > >& v);
