@@ -7,46 +7,36 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/par/hydrotoy_periodic_rl3.par,v 1.8 2004/03/23 12:00:04 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/par/hydrotoy_periodic_rl3.par,v 1.1 2001/03/19 21:27:39 eschnett Exp $
 
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDHydroToy HydroToy"
-
-Carpet::poison_new_timelevels	= yes
-Carpet::check_for_poison	= yes
-Carpet::checksum_timelevels	= yes
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetSlab IDHydroToy HydroToy"
 
 Cactus::cctk_itlast		= 480
 
 Time::dtfac			= 0.5
 
-driver::global_nx		= 34
-driver::global_ny		= 48
-driver::global_nz		= 64
-
-driver::ghost_size		= 2
+driver::global_nx		= 32
+driver::global_ny		= 46
+driver::global_nz		= 62
 
 Carpet::max_refinement_levels	= 3
-Carpet::prolongation_order_space= 3
-Carpet::prolongation_order_time	= 2
-
-CarpetRegrid::refinement_levels	= 2
 
 grid::type			= byrange
-grid::xmin			= -5.1
-grid::ymin			= -6.9
-grid::zmin			= -9.3
-grid::xmax			=  4.8
-grid::ymax			=  7.2
-grid::zmax			=  9.6
+grid::xmin			= -4.8
+grid::ymin			= -6.6
+grid::zmin			= -9.0
+grid::xmax			=  4.5
+grid::ymax			=  6.9
+grid::zmax			=  9.3
 grid::mode			= periodic
 
-IO::out_dir			= "hydrotoy_periodic_rl3"
+IO::outdir			= "hydrotoy_periodic_rl3"
 
 IOBasic::outinfo_every		= 1 # 10
-IOBasic::outinfo_vars		= "hydrotoy::hydroevolve"
+#IOBasic::outinfo_vars		= "hydrotoy::hydroevolve"
 
-IOBasic::outScalar_every	= 1 # 2
-IOBasic::outScalar_vars		= "hydrotoy::hydroevolve"
+#IOBasic::outScalar_every	= 2
+#IOBasic::outScalar_vars		= "hydrotoy::hydroevolve"
 
 IOASCII::out1D_every		= 1 # 2
 IOASCII::out1D_vars		= "hydrotoy::hydroevolve grid::coordinates"
@@ -54,7 +44,6 @@ IOASCII::out1D_vars		= "hydrotoy::hydroevolve grid::coordinates"
 IOFlexIO::out3D_every		= 96
 IOFlexIO::out3D_vars		= "hydrotoy::hydroevolve"
 IOFlexIO::out3D_format		= IEEE
-IOFlexIO::out3D_extension	= ".vcamr"
 
 HydroToy::bound			= radiation
 
