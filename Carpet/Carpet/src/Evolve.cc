@@ -3,18 +3,48 @@
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
+#include "cctk_Termination.h"
 
 #include "Carpet/CarpetLib/src/th.hh"
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.2 2001/07/09 09:00:08 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.3 2001/07/11 17:41:13 schnetter Exp $";
 
 
 
 namespace Carpet {
   
   using namespace std;
+  
+  
+  
+  static bool do_terminate (cGH *cgh, CCTK_REAL time, int iteration)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    // Early shortcut
+    if (terminate_next || CCTK_TerminationReached(cgh)) return false;
+    
+    bool term_iter = iteration >= cctk_itlast;
+    bool term_time = (cctk_initial_time < cctk_final_time
+		     ? time >= cctk_final_time
+		     : time <= cctk_final_time);
+    
+    if (CCTK_Equals(terminate, "never")) {
+      return true;
+    } else if (CCTK_Equals(terminate, "iteration")) {
+      return term_iter;
+    } else if (CCTK_Equals(terminate, "time")) {
+      return term_time;
+    } else if (CCTK_Equals(terminate, "either")) {
+      return term_iter || term_time;
+    } else if (CCTK_Equals(terminate, "both")) {
+      return term_iter && term_time;
+    } else {
+      abort();
+    }
+  }
   
   
   
@@ -28,9 +58,7 @@ namespace Carpet {
     cGH* cgh = fc->GH[convlev];
     
     // Main loop
-    while (cgh->cctk_iteration < cctk_itlast
-	   || (cctk_final_time >= cctk_initial_time
-	       && cgh->cctk_time < cctk_final_time)) {
+    while (! do_terminate(cgh, cgh->cctk_time, cgh->cctk_iteration)) {
       
       // Advance time
       ++cgh->cctk_iteration;
