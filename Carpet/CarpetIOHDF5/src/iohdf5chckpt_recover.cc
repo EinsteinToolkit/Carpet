@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.26 2004/05/29 18:36:47 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.27 2004/05/29 22:25:29 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -53,6 +53,7 @@ namespace CarpetIOHDF5 {
   
   // variable to store the original value of CarpetRegrid::regrid_every
   char* temp_regrid_every;
+  char* temp_keep_same_grid_structure;
   
   int Checkpoint (const cGH* const cctkGH, int called_from);
   int DumpParametersGHExtentions (const cGH *cctkGH, int all, hid_t writer);  
@@ -241,10 +242,16 @@ namespace CarpetIOHDF5 {
       // Set regrid_every to recompose the grid hierarchy
       if (reflevel==0) {
         temp_regrid_every = CCTK_ParameterValString("regrid_every","CarpetRegrid");
+	temp_keep_same_grid_structure = 
+	  CCTK_ParameterValString("keep_same_grid_structure","CarpetRegrid");
 	ostringstream regrid_every;
+	ostringstream keep_same_grid_structure;
 	regrid_every << cctkGH->cctk_iteration-1;
+	keep_same_grid_structure << "no";
 	int error = CCTK_ParameterSet("regrid_every","CarpetRegrid",
 				      regrid_every.str().c_str());
+	error += CCTK_ParameterSet("keep_same_grid_structure","CarpetRegrid",
+				      keep_same_grid_structure.str().c_str());
 	if(error) {
 	  CCTK_VInfo(CCTK_THORNSTRING,"Setting CarpetRegrid::regrid_every didn't work.");
 	}
@@ -257,6 +264,9 @@ namespace CarpetIOHDF5 {
       }
       CCTK_ParameterSet("regrid_every","CarpetRegrid",temp_regrid_every);
       free(temp_regrid_every);
+      CCTK_ParameterSet("keep_same_grid_structure",
+			"CarpetRegrid",temp_keep_same_grid_structure);
+      free(temp_keep_same_grid_structure);
     }
 
     return (result);
