@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.42 2003/09/19 16:06:41 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.43 2003/10/16 17:00:04 schnetter Exp $
 
 #include <assert.h>
 
@@ -205,6 +205,7 @@ void dh<D>::recompose (const int initialise_upto) {
                   recvs -= *li;
                 }
               }
+              recvs.normalize();
               assert (recvs.setsize() <= 1);
               if (recvs.setsize() == 1) {
                 const ibbox recv = *recvs.begin();

@@ -26,7 +26,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.45 2003/09/19 16:08:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.46 2003/10/16 17:00:04 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -472,7 +472,7 @@ namespace Carpet {
       if (! dims[d]) {
         ++ alldims;
         allsizes *= dshape[d];
-        if (dshape[d] > mysize) {
+        if (dshape[d] >= mysize) {
           mydim = d;
           mysize = dshape[d];
         }
@@ -523,6 +523,7 @@ namespace Carpet {
     obs.clear();
     bbs.reserve(nprocs);
     obs.reserve(nprocs);
+    ivect last_up;
     for (int n=0; n<nslices; ++n) {
       
       // create a new bbox
@@ -531,12 +532,13 @@ namespace Carpet {
       ivect str = bb.stride();
       bbvect newob = ob;
       if (n > 0) {
-        lo = lo.replace(mydim, bbs[n-1].upper()[mydim] + str[mydim]);
+        lo[mydim] = last_up[mydim] + str[mydim];
         newob[mydim][0] = false;
       }
       if (n < nslices-1) {
-        up = up.replace(mydim, lo[mydim] + (myslice[n]-1) * str[mydim]);
+        up[mydim] = lo[mydim] + (myslice[n]-1) * str[mydim];
         newob[mydim][1] = false;
+        last_up = up;
       }
       ibbox newbb(lo, up, str);
       
