@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.27 2004/02/09 12:59:53 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.28 2004/03/23 13:05:25 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Comm_cc);
 }
 
@@ -92,8 +92,8 @@ namespace Carpet {
           
           // use the current time here (which may be modified by the
           // user)
-          const CCTK_REAL time = ((cgh->cctk_time - cctk_initial_time)
-                                  / (delta_time * mglevelfact));
+          const CCTK_REAL time
+            = (cgh->cctk_time - cctk_initial_time) / delta_time;
           
           for (comm_state<dim> state; !state.done(); state.step()) {
             for (int m=0; m<maps; ++m) {
