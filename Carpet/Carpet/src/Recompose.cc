@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.51 2004/02/15 14:58:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.52 2004/03/05 17:46:04 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -793,8 +793,6 @@ namespace Carpet {
 		  "The specified processor topology [%d,%d,%d] requires %d processors, but there are %d processors", nprocs_dir[0], nprocs_dir[1], nprocs_dir[2], prod(nprocs_dir), nprocs);
     }
     assert (prod(nprocs_dir) == nprocs);
-    
-    if (nprocs==1) return;
     
     bbs.resize(nprocs);
     obs.resize(nprocs);
