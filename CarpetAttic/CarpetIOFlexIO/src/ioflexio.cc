@@ -34,7 +34,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.24 2003/03/27 17:11:55 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.25 2003/05/08 15:35:49 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -224,7 +224,7 @@ namespace CarpetIOFlexIO {
       double origin[dim], delta[dim], timestep;
       for (int d=0; d<dim; ++d) {
 	const int ierr = CCTK_CoordRange
-	  (cgh, &lower[d], &upper[d], d+1, 0, "cart3d");
+          (cgh, &lower[d], &upper[d], d+1, 0, "cart3d");
 	assert (ierr==0);
 	origin[d] = lower[d];
 	delta[d] = cgh->cctk_delta_space[d];

@@ -19,7 +19,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.40 2003/04/30 12:43:21 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.41 2003/05/08 15:35:49 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -346,13 +346,60 @@ namespace Carpet {
     }
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       for (int d=0; d<dim; ++d) {
-	((int*)arrdata[group].info.nghostzones)[d]
-	  = arrdata[group].dd->lghosts[d];
+        ((int*)arrdata[group].info.nghostzones)[d] = arrdata[group].dd->lghosts[d];
       }
     }
     
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
+      if (CCTK_GroupTypeI(group) != CCTK_GF) {
+        
+        const int rl = 0;
+        const int ml = 0;
+        const int c = CCTK_MyProc(cgh);
+        
+        const bbox<int,dim>& base = arrdata[group].hh->baseextent;
+        const vect<vect<bool,2>,dim>& obnds = arrdata[group].hh->outer_boundaries[rl][c];
+	const bbox<int,dim>& ext  = arrdata[group].dd->boxes[rl][c][ml].exterior;
+        
+        for (int d=0; d<dim; ++d) {
+          ((int*)arrdata[group].info.gsh )[d] = (base.shape() / base.stride())[d];
+          ((int*)arrdata[group].info.lsh )[d] = (ext.shape() / ext.stride())[d];
+          ((int*)arrdata[group].info.lbnd)[d] = (ext.lower() / ext.stride())[d];
+          ((int*)arrdata[group].info.ubnd)[d] = (ext.upper() / ext.stride())[d];
+          for (int f=0; f<2; ++f) {
+            ((int*)arrdata[group].info.bbox)[2*d+f] = obnds[d][f];
+          }
+          
+          assert (arrdata[group].info.lsh[d]>=0 && arrdata[group].info.lsh[d]<=arrdata[group].info.gsh[d]);
+          assert (arrdata[group].info.lbnd[d]>=0 && arrdata[group].info.ubnd[d]<arrdata[group].info.gsh[d]);
+          assert (arrdata[group].info.ubnd[d]-arrdata[group].info.lbnd[d]+1 == arrdata[group].info.lsh[d]);
+          assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
+        }
+        
+        const int firstvar = CCTK_FirstVarIndexI (group);
+        const int numvars = CCTK_NumVarsInGroupI (group);
+        const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
+        
+        assert (rl>=0 && rl<(int)arrdata[group].dd->boxes.size());
+        assert (c>=0 && c<(int)arrdata[group].dd->boxes[rl].size());
+        assert (ml>=0 && ml<(int)arrdata[group].dd->boxes[rl][c].size());
+        assert (arrdata[group].hh->is_local(rl,c));
+        
+        assert (group<(int)arrdata.size());
+        for (int var=0; var<numvars; ++var) {
+          assert (var<(int)arrdata[group].data.size());
+          for (int tl=0; tl<num_tl; ++tl) {
+            cgh->data[firstvar+var][tl] = 0;
+          }
+        }
+        
+      } // if grouptype
+    } // for group
+    
+    
+    
     // Initialise current position
-    reflevel  = 0;
+    reflevel  = -1;
     mglevel   = -1;
     component = -1;
     
@@ -401,17 +448,12 @@ namespace Carpet {
     
     // Initialise time step on coarse grid
     base_delta_time = 1.0;
+    base_origin_space = vect<CCTK_REAL,dim>((CCTK_REAL)0);
     
     // Current iteration
     iteration.resize(maxreflevels, 0);
     
-    // Set current position (this time for real)
-    set_reflevel  (cgh, 0);
-    set_mglevel   (cgh, -1);
-    set_component (cgh, -1);
-    
     // Enable storage for all groups if desired
-    // XXX
     if (true || enable_all_storage) {
       BEGIN_REFLEVEL_LOOP(cgh) {
 	BEGIN_MGLEVEL_LOOP(cgh) {

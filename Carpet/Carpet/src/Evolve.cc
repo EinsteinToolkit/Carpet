@@ -18,7 +18,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.20 2003/05/07 10:03:21 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.21 2003/05/08 15:35:49 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -114,6 +114,10 @@ namespace Carpet {
     initial_time = 0;
 #endif
     
+    int next_global_mode_iter_loop1 = 0;
+    int next_global_mode_iter_loop2 = 0;
+    int next_global_mode_iter_loop3 = 0;
+    
     // Main loop
     while (! do_terminate(cgh, cgh->cctk_time, cgh->cctk_iteration)) {
       
@@ -130,14 +134,19 @@ namespace Carpet {
 	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
 	    if ((cgh->cctk_iteration-1) % do_every == 0) {
 	      
+              do_global_mode = cgh->cctk_iteration >= next_global_mode_iter_loop1;
+              next_global_mode_iter_loop1 = cgh->cctk_iteration + 1;
+              
 	      // Advance level times
 	      tt->advance_time (reflevel, mglevel);
               
+              // TODO: set cctk_time in set_mglevel
               cgh->cctk_time
                 = tt->time (0, reflevel, mglevel) * base_delta_time;
 	      
-	      Waypoint ("%*sCurrent time is %g", 2*reflevel, "",
-			cgh->cctk_time);
+	      Waypoint ("%*sCurrent time is %g%s", 2*reflevel, "",
+			cgh->cctk_time,
+                        do_global_mode ? "   (global time)" : "");
 	      
 	      // Cycle time levels
 	      CycleTimeLevels (cgh);
@@ -180,16 +189,20 @@ namespace Carpet {
 	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
 	    if (cgh->cctk_iteration % do_every == 0) {
 	      
+              do_global_mode = cgh->cctk_iteration >= next_global_mode_iter_loop2;
+              next_global_mode_iter_loop2 = cgh->cctk_iteration + 1;
+	      
               cgh->cctk_time
                 = tt->time (0, reflevel, mglevel) * base_delta_time;
               
 	      // Restrict
-	      Waypoint ("%*sCurrent time is %g", 2*reflevel, "",
-			cgh->cctk_time);
+	      Waypoint ("%*sCurrent time is %g%s", 2*reflevel, "",
+			cgh->cctk_time,
+                        do_global_mode ? "   (global time)" : "");
 	      Restrict (cgh);
               
 	      Waypoint ("%*sScheduling POSTRESTRICT", 2*reflevel, "");
-	      CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cgh, CallFunction);
+	      CCTK_ScheduleTraverse ("POSTRESTRICT", cgh, CallFunction);
 	      
 	    }
 	  } END_MGLEVEL_LOOP(cgh);
@@ -207,8 +220,15 @@ namespace Carpet {
 	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
 	    if (cgh->cctk_iteration % do_every == 0) {
 	      
+              do_global_mode = cgh->cctk_iteration >= next_global_mode_iter_loop3;
+              next_global_mode_iter_loop3 = cgh->cctk_iteration + 1;
+	      
               cgh->cctk_time
                 = tt->time (0, reflevel, mglevel) * base_delta_time;
+	      
+	      Waypoint ("%*sCurrent time is %g%s", 2*reflevel, "",
+			cgh->cctk_time,
+                        do_global_mode ? "   (global time)" : "");
               
 	      // Checkpoint
 	      Waypoint ("%*sScheduling CHECKPOINT", 2*reflevel, "");

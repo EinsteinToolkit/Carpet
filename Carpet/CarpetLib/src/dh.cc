@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.32 2003/05/07 10:04:16 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.33 2003/05/08 15:35:49 schnetter Exp $
 
 #include <assert.h>
 
@@ -416,7 +416,9 @@ void dh<D>::recompose (const int initialise_upto) {
           
           // Check that no boundaries are left over
           if (rl==0) assert (sync_not.empty());
+#if 0
           assert (recv_not.empty());
+#endif
         }
 	
         // Assert that the interior is received exactly once during
@@ -442,7 +444,9 @@ void dh<D>::recompose (const int initialise_upto) {
                 assert (new_sz + this_sz == old_sz);
               }
             }
+#if 0
             assert (intr.empty());
+#endif
           }
         }
         

@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.15 2003/05/02 14:20:26 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.16 2003/05/08 15:35:49 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -38,6 +38,9 @@ namespace Carpet {
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
+    
+    // No storage change in local mode
+    assert (! (component!=-1 && CCTK_GroupTypeI(group)==CCTK_GF));
     
     if (CCTK_QueryGroupStorageI(cgh, group)) {
       // storage was enabled previously
@@ -96,10 +99,15 @@ namespace Carpet {
       default:
 	UnsupportedVarType(n);
       } // switch
+      
+      if (CCTK_GroupTypeI(group) != CCTK_GF) {
+        for (int tl=0; tl<num_tl; ++tl) {
+          cgh->data[n][tl] = ((*arrdata[group].data[var]) (-tl, 0, 0, 0)->storage());
+        }
+      }
+      
     } // for
     
-    // Reinitialise Cactus variables
-    if (component!=-1) set_component (cgh, component);
     PoisonGroup (cgh, group, alltimes);
     
     // storage was not enabled previously
@@ -115,6 +123,9 @@ namespace Carpet {
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
     
+    // No storage change in local mode
+    assert (! (component!=-1 && CCTK_GroupTypeI(group)==CCTK_GF));
+    
     if (! CCTK_QueryGroupStorageI(cgh, group)) {
       // storage was disabled previously
       return 0;
@@ -125,6 +136,9 @@ namespace Carpet {
     return 1;
     
     const int n0 = CCTK_FirstVarIndexI(group);
+    assert (n0>=0);
+    const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
+    assert (num_tl>0);
     
     assert (arrdata[group].data.size());
     assert (arrdata[group].data[0]);
@@ -141,10 +155,13 @@ namespace Carpet {
 	UnsupportedVarType(n);
       } // switch
       arrdata[group].data[var] = 0;
+      
+      if (CCTK_GroupTypeI(group) != CCTK_GF) {
+        for (int tl=0; tl<num_tl; ++tl) {
+          cgh->data[n][tl] = 0;
+        }
+      }
     } // for
-    
-    // Reinitialise Cactus variables
-    set_component (cgh, component);
     
     // storage was not disabled previously
     return 1;

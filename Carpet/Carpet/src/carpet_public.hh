@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.25 2003/05/05 14:57:28 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.26 2003/05/08 15:35:49 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -71,8 +71,14 @@ namespace Carpet {
   // Current multigrid factor
   extern int mglevelfact;
   
+  // Is this the time for a global mode call?
+  extern bool do_global_mode;
+  
   // Time step on base grid
   extern CCTK_REAL base_delta_time;
+  
+  // Spatial origin on base grid
+  extern vect<CCTK_REAL,dim> base_origin_space;
   
   
   
@@ -159,15 +165,15 @@ namespace Carpet {
 #define BEGIN_REFLEVEL_LOOP(cgh)			\
   do {							\
     int _rll;						\
-    assert (reflevel==0);				\
+    assert (reflevel==-1);				\
     for (int _rl=0; _rl<hh->reflevels(); ++_rl) {	\
       set_reflevel ((cGH*)(cgh), _rl);			\
       {
 #define END_REFLEVEL_LOOP(cgh)			\
       }						\
     }						\
-    set_reflevel ((cGH*)(cgh), 0);		\
-    assert (reflevel==0);			\
+    set_reflevel ((cGH*)(cgh), -1);		\
+    assert (reflevel==-1);			\
     _rll = 0;					\
   } while (0)
   
@@ -178,14 +184,15 @@ namespace Carpet {
 #define BEGIN_REVERSE_REFLEVEL_LOOP(cgh)		\
   do {							\
     int _rrll;						\
-    assert (reflevel==0);				\
+    assert (reflevel==-1);				\
     for (int _rl=hh->reflevels()-1; _rl>=0; --_rl) {	\
       set_reflevel ((cGH*)(cgh), _rl);			\
       {
 #define END_REVERSE_REFLEVEL_LOOP(cgh)		\
       }						\
     }						\
-    assert (reflevel==0);			\
+    set_reflevel ((cGH*)(cgh), -1);		\
+    assert (reflevel==-1);			\
     _rrll = 0;					\
   } while (0)
   

@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.8 2002/10/24 10:39:39 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.9 2003/05/08 15:35:49 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Shutdown_cc);
 }
 
@@ -31,19 +31,31 @@ namespace Carpet {
     const int convlev = 0;
     cGH* cgh = fc->GH[convlev];
     
-    set_mglevel (cgh, 0);
-    
     Waypoint ("Current time is %g", cgh->cctk_time);
     
-    // Terminate
-    Waypoint ("%*sScheduling TERMINATE", 2*reflevel, "");
-    CCTK_ScheduleTraverse ("CCTK_TERMINATE", cgh, CallFunction);
+    BEGIN_REFLEVEL_LOOP(cgh) {
+      
+      BEGIN_MGLEVEL_LOOP(cgh) {
+	
+        do_global_mode = reflevel == 0;
+        
+	Waypoint ("%*sCurrent time is %g%s", 2*reflevel, "",
+                  cgh->cctk_time,
+                  do_global_mode ? "   (global time)" : "");
+        
+        // Terminate
+        Waypoint ("%*sScheduling TERMINATE", 2*reflevel, "");
+        CCTK_ScheduleTraverse ("CCTK_TERMINATE", cgh, CallFunction);
+	
+      } END_MGLEVEL_LOOP(cgh);
+      
+    } END_REFLEVEL_LOOP(cgh);
+    
+    do_global_mode = true;
     
     // Shutdown
     Waypoint ("%*sScheduling SHUTDOWN", 2*reflevel, "");
     CCTK_ScheduleTraverse ("CCTK_SHUTDOWN", cgh, CallFunction);
-    
-    set_mglevel (cgh, -1);
     
     CCTK_PRINTSEPARATOR;
     printf ("Done.\n");

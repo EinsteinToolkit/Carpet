@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.46 2003/03/27 17:11:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.47 2003/05/08 15:35:49 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -393,20 +393,21 @@ namespace CarpetIOASCII {
 	    // coordinates
 	    const CCTK_REAL coord_time = cgh->cctk_time;
 	    vect<CCTK_REAL,dim> global_lower, global_upper;
-	    for (int d=0; d<dim; ++d) {
-	      const int ierr = CCTK_CoordRange
-		(cgh, &global_lower[d], &global_upper[d], d+1, 0, "cart3d");
-	      if (ierr<0) {
+	    vect<CCTK_REAL,dim> coord_delta;
+            if (CCTK_GroupTypeI(group) == CCTK_GF) {
+              for (int d=0; d<dim; ++d) {
+                const int ierr = CCTK_CoordRange
+                  (cgh, &global_lower[d], &global_upper[d], d+1, 0, "cart3d");
+                assert (!ierr);
+                coord_delta[d] = cgh->cctk_delta_space[d] / maxreflevelfact;
+              }
+            } else {
+              for (int d=0; d<dim; ++d) {
 		global_lower[d] = 0;
 		global_upper[d] = 1;
-	      }
-	    }
-	    const vect<int,dim> global_extent (hh->baseextent.upper() - hh->baseextent.lower());
-	    vect<CCTK_REAL,dim> coord_delta;
-	    for (int d=0; d<dim; ++d) {
-	      assert (global_extent[d] != 0);
-	      coord_delta[d] = (global_upper[d] - global_lower[d]) / global_extent[d];
-	    }
+                coord_delta[d] = 1.0 / (cgh->cctk_gsh[d] - 1);
+              }
+            }
 	    // Note: don't permute the "coord_delta" and "data->extent().lower()"
 	    // (it seems that for gcc 2.95 you'll then pick up the
 	    // integer operator*)
@@ -600,11 +601,11 @@ namespace CarpetIOASCII {
     CCTK_REAL lower, upper;
     CCTK_CoordRange (cgh, &lower, &upper, dir, 0, "cart3d");
     
-    const int npoints = cgh->cctk_gsh[dir-1];
+    assert (reflevel!=-1 && mglevel!=-1);
+    const int npoints = (hh->baseextent.shape()[dir-1] - hh->baseextent.stride()[dir-1]) / hh->bases[reflevel][mglevel].stride()[dir-1] + 1;
     
     const CCTK_REAL rindex = (coord - lower) / (upper - lower) * (npoints-1);
-    const int levfac = cgh->cctk_levfac[dir-1];
-    int cindex = (int)floor(rindex / levfac + 0.5 + 1e-6) * levfac;
+    int cindex = (int)floor(rindex + 0.5 + 1e-6);
     
     if (cindex<0 || cindex>=npoints) {
       CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -712,7 +713,7 @@ namespace CarpetIOASCII {
       if (rank == 0) {
 	
 	assert (os.good());
-	
+        
 	os << "# iteration " << time << endl
 	   << "# time level " << tl << "   refinement level " << rl
 	   << "   component " << c << "   multigrid level " << ml << endl

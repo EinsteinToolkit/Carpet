@@ -13,7 +13,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.29 2003/05/02 14:21:23 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.30 2003/05/08 15:35:49 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -190,13 +190,19 @@ namespace Carpet {
   void set_reflevel (cGH* cgh, const int rl)
   {
     // Check
-    assert (rl>=0 && rl<maxreflevels && rl<hh->reflevels());
+    assert (rl==-1 || (rl>=0 && rl<maxreflevels && rl<maxreflevels));
     assert (mglevel == -1);
     assert (component == -1);
     
     // Change
     reflevel = rl;
-    reflevelfact = ipow(reffact, reflevel);
+    if (reflevel == -1) {
+      // global mode
+      reflevelfact = 0xdeadbeef;
+    } else {
+      // level mode or local mode
+      reflevelfact = ipow(reffact, reflevel);
+    }
     vect<int,dim>::ref(cgh->cctk_levfac) = reflevelfact;
   }
   
@@ -206,6 +212,7 @@ namespace Carpet {
   {
     // Check
     assert (ml==-1 || (ml>=0 && ml<mglevels));
+    assert (reflevel>=0 && reflevel<hh->reflevels());
     assert (component == -1);
     
     // Change
@@ -216,25 +223,45 @@ namespace Carpet {
     // Set gsh
     if (mglevel == -1) {
       
+      mglevelfact = 0xdeadbeef;
+      cgh->cctk_convlevel = 0xdeadbeef;
+      
       cgh->cctk_delta_time = 0xdeadbeef;
+      for (int d=0; d<dim; ++d) {
+        cgh->cctk_origin_space[d] = 0xdeadbeef;
+      }
+      
       vect<int,dim>::ref(cgh->cctk_gsh) = 0xdeadbeef;
       for (int group=0; group<CCTK_NumGroups(); ++group) {
-	vect<int,dim>::ref((int*)arrdata[group].info.gsh) = 0xdeadbeef;
+        if (CCTK_GroupTypeI(group) == CCTK_GF) {
+          vect<int,dim>::ref((int*)arrdata[group].info.gsh) = 0xdeadbeef;
+        }
       }
       
     } else {
       
-      const bbox<int,dim>& base = hh->baseextent;
+      mglevelfact = ipow(mgfact, mglevel);
+      cgh->cctk_convlevel = mglevel;
+      
+      // TODO: set cctk_time here as well
       cgh->cctk_delta_time = base_delta_time / reflevelfact * mglevelfact;
-      assert (all(base.shape() % base.stride() == 0));
-      assert (all((base.shape() / base.stride()) % mglevelfact == 0));
-      vect<int,dim>::ref(cgh->cctk_gsh)
-	= (base.shape() / base.stride() - 1) / mglevelfact * reflevelfact + 1;
+      
+      {
+        const bbox<int,dim>& baseext = dd->bases[reflevel][mglevel].exterior;
+        for (int d=0; d<dim; ++d) {
+          cgh->cctk_origin_space[d] = base_origin_space[d] + cgh->cctk_delta_space[d] / cgh->cctk_levfac[d] * baseext.lower()[d] / baseext.stride()[d];
+        }
+      }
+      
+      const bbox<int,dim>& baseext = dd->bases[reflevel][mglevel].exterior;
+      vect<int,dim>::ref(cgh->cctk_gsh)	= baseext.shape() / baseext.stride();
       for (int group=0; group<CCTK_NumGroups(); ++group) {
-	const bbox<int,dim>& base = arrdata[group].hh->baseextent;
-	vect<int,dim>::ref((int*)arrdata[group].info.gsh)
-	  = ((base.shape() / base.stride() - 1)
-	     / mglevelfact * reflevelfact + 1);
+        if (CCTK_GroupTypeI(group) == CCTK_GF) {
+          const bbox<int,dim>& baseext = arrdata[group].dd->bases[reflevel][mglevel].exterior;
+          for (int d=0; d<dim; ++d) {
+            ((int*)arrdata[group].info.gsh)[d] = (baseext.shape() / baseext.stride())[d];
+          }
+        }
       }
       
     } // if mglevel != -1
@@ -250,11 +277,9 @@ namespace Carpet {
     assert (component==-1
 	    || (mglevel>=0 && mglevel<hh->mglevels(reflevel,component)));
     
-    
-    
     // Set Cactus parameters
     if (component == -1) {
-      // Global mode -- no component is active
+      // Level mode -- no component is active
       
       for (int d=0; d<dim; ++d) {
 	cgh->cctk_lsh[d]      = 0xdeadbeef;
@@ -267,168 +292,105 @@ namespace Carpet {
 	}
       }
       
+      for (int group=0; group<CCTK_NumGroups(); ++group) {
+        if (CCTK_GroupTypeI(group) == CCTK_GF) {
+          
+          for (int d=0; d<dim; ++d) {
+            ((int*)arrdata[group].info.lsh)[d]      = 0xdeadbeef;
+            ((int*)arrdata[group].info.bbox)[2*d  ] = 0xdeadbeef;
+            ((int*)arrdata[group].info.bbox)[2*d+1] = 0xdeadbeef;
+            ((int*)arrdata[group].info.lbnd)[d]     = 0xdeadbeef;
+            ((int*)arrdata[group].info.ubnd)[d]     = 0xdeadbeef;
+          }
+          
+          const int firstvar = CCTK_FirstVarIndexI (group);
+          const int numvars = CCTK_NumVarsInGroupI (group);
+          const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
+          
+          assert (group<(int)arrdata.size());
+          for (int var=0; var<numvars; ++var) {
+            assert (var<(int)arrdata[group].data.size());
+            for (int tl=0; tl<num_tl; ++tl) {
+              cgh->data[firstvar+var][tl] = 0;
+            }
+          }
+          
+        } // if grouptype
+      } // for var
+      
     } else {
       // Local mode
       
       assert (reflevel>=0 && reflevel < (int)dd->boxes.size());
       assert (component>=0 && component < (int)dd->boxes[reflevel].size());
-      assert (mglevel>=0
-	      && mglevel < (int)dd->boxes[reflevel][component].size());
-      const bbox<int,dim>& ext
-	= dd->boxes[reflevel][component][mglevel].exterior;
+      assert (mglevel>=0 && mglevel < (int)dd->boxes[reflevel][component].size());
+      
+      const bbox<int,dim>& baseext = dd->bases[reflevel][mglevel].exterior;
+      const vect<vect<bool,2>,dim>& obnds = hh->outer_boundaries[reflevel][component];
+      const bbox<int,dim>& ext = dd->boxes[reflevel][component][mglevel].exterior;
+      
       for (int d=0; d<dim; ++d) {
+        
 	cgh->cctk_lsh[d] = (ext.shape() / ext.stride())[d];
-	cgh->cctk_lbnd[d] = (ext.lower() / ext.stride())[d];
-	cgh->cctk_ubnd[d] = (ext.upper() / ext.stride())[d];
-	assert (cgh->cctk_lsh[d]>=0 && cgh->cctk_lsh[d]<=cgh->cctk_gsh[d]);
-// 	assert (cgh->cctk_lbnd[d]>=0 && cgh->cctk_ubnd[d]<cgh->cctk_gsh[d]);
-	assert (cgh->cctk_ubnd[d]-cgh->cctk_lbnd[d]+1 == cgh->cctk_lsh[d]);
-	assert (cgh->cctk_lbnd[d]<=cgh->cctk_ubnd[d]+1);
-	cgh->cctk_bbox[2*d  ] = hh->outer_boundaries[reflevel][component][d][0];
-	cgh->cctk_bbox[2*d+1] = hh->outer_boundaries[reflevel][component][d][1];
+	cgh->cctk_lbnd[d] = ((ext.lower() - baseext.lower()) / ext.stride())[d];
+	cgh->cctk_ubnd[d] = ((ext.upper() - baseext.lower()) / ext.stride())[d];
+	cgh->cctk_bbox[2*d  ] = obnds[d][0];
+	cgh->cctk_bbox[2*d+1] = obnds[d][1];
 	for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
 	  // TODO: support staggering
 	  cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
 	}
+        
+	assert (cgh->cctk_lsh[d]>=0 && cgh->cctk_lsh[d]<=cgh->cctk_gsh[d]);
+ 	assert (cgh->cctk_lbnd[d]>=0 && cgh->cctk_ubnd[d]<cgh->cctk_gsh[d]);
+	assert (cgh->cctk_ubnd[d]-cgh->cctk_lbnd[d]+1 == cgh->cctk_lsh[d]);
+	assert (cgh->cctk_lbnd[d]<=cgh->cctk_ubnd[d]+1);
+        
       }
       
+      for (int group=0; group<CCTK_NumGroups(); ++group) {
+        if (CCTK_GroupTypeI(group) == CCTK_GF) {
+          
+          assert (reflevel>=0 && reflevel < (int)arrdata[group].dd->boxes.size());
+          assert (component>=0 && component < (int)arrdata[group].dd->boxes[reflevel].size());
+          assert (mglevel>=0 && mglevel < (int)arrdata[group].dd->boxes[reflevel][component].size());
+          
+          const bbox<int,dim>& baseext = arrdata[group].dd->bases[reflevel][mglevel].exterior;
+          const vect<vect<bool,2>,dim>& obnds = arrdata[group].hh->outer_boundaries[reflevel][component];
+          const bbox<int,dim>& ext = arrdata[group].dd->boxes[reflevel][component][mglevel].exterior;
+          
+          for (int d=0; d<dim; ++d) {
+            
+            ((int*)arrdata[group].info.lsh)[d]  = (ext.shape() / ext.stride())[d];
+            ((int*)arrdata[group].info.lbnd)[d] = ((ext.lower() - baseext.lower()) / ext.stride())[d];
+            ((int*)arrdata[group].info.ubnd)[d] = ((ext.upper() - baseext.lower()) / ext.stride())[d];
+            ((int*)arrdata[group].info.bbox)[2*d  ] = obnds[d][0];
+            ((int*)arrdata[group].info.bbox)[2*d+1] = obnds[d][1];
+            
+            assert (arrdata[group].info.lsh[d]>=0 && arrdata[group].info.lsh[d]<=arrdata[group].info.gsh[d]);
+            assert (arrdata[group].info.lbnd[d]>=0 && arrdata[group].info.ubnd[d]<arrdata[group].info.gsh[d]);
+            assert (arrdata[group].info.ubnd[d]-arrdata[group].info.lbnd[d]+1 == arrdata[group].info.lsh[d]);
+            assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
+          }
+          
+          const int firstvar = CCTK_FirstVarIndexI (group);
+          const int numvars = CCTK_NumVarsInGroupI (group);
+          const int num_tl = CCTK_NumTimeLevelsFromVarI (firstvar);
+          
+          assert (hh->is_local(reflevel,component));
+          
+          assert (group<(int)arrdata.size());
+          for (int var=0; var<numvars; ++var) {
+            assert (var<(int)arrdata[group].data.size());
+            for (int tl=0; tl<num_tl; ++tl) {
+              cgh->data[firstvar+var][tl] = ((*arrdata[group].data[var]) (-tl, reflevel, component, mglevel)->storage());
+            }
+          }
+          
+        } // if grouptype
+      } // for group
+      
     } // if local mode
-    
-    
-    
-    // Set Cactus parameters for all groups
-    for (int group=0; group<CCTK_NumGroups(); ++group) {
-      
-      if (mglevel == -1
-	  || (CCTK_GroupTypeI(group) == CCTK_GF
-	      && component == -1)) {
-	// Global mode for a grid function: not active
-	
-	for (int d=0; d<dim; ++d) {
-	  ((int*)arrdata[group].info.lsh)[d]      = 0xdeadbeef;
-	  ((int*)arrdata[group].info.bbox)[2*d  ] = 0xdeadbeef;
-	  ((int*)arrdata[group].info.bbox)[2*d+1] = 0xdeadbeef;
-	  ((int*)arrdata[group].info.lbnd)[d]     = 0xdeadbeef;
-	  ((int*)arrdata[group].info.ubnd)[d]     = 0xdeadbeef;
-	}
-	
-      } else {
-	// Local mode, or array or scalar: active
-	
-	int rl, c;
-	if (CCTK_GroupTypeI(group) == CCTK_GF) {
-	  rl = reflevel;
-	  c = component;
-	} else {
-	  rl = 0;
-	  c = CCTK_MyProc(cgh);
-	}
-	assert (rl>=0 && rl < (int)arrdata[group].dd->boxes.size());
-	assert (c>=0 && c < (int)arrdata[group].dd->boxes[rl].size());
-	assert (mglevel>=0 && mglevel < (int)dd->boxes[rl][c].size());
-	const bbox<int,dim>& bext = arrdata[group].hh->baseextent;
-	const bbox<int,dim>& iext = arrdata[group].hh->extents[rl][c][mglevel];
-	const bbox<int,dim>& ext
-	  = arrdata[group].dd->boxes[rl][c][mglevel].exterior;
-	for (int d=0; d<dim; ++d) {
-	  ((int*)arrdata[group].info.lsh)[d]
-	    = (ext.shape() / ext.stride())[d];
-	  ((int*)arrdata[group].info.lbnd)[d]
-	    = (ext.lower() / ext.stride())[d];
-	  ((int*)arrdata[group].info.ubnd)[d]
-	    = (ext.upper() / ext.stride())[d];
-	  assert (arrdata[group].info.lsh[d]>=0
-		  && arrdata[group].info.lsh[d]<=arrdata[group].info.gsh[d]);
-// 	  assert (arrdata[group].info.lbnd[d]>=0
-// 		  && arrdata[group].info.ubnd[d]<arrdata[group].info.gsh[d]);
-	  assert (arrdata[group].info.ubnd[d]-arrdata[group].info.lbnd[d]+1
-		  == arrdata[group].info.lsh[d]);
-	  assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
-          ((int*)arrdata[group].info.bbox)[2*d  ] = hh->outer_boundaries[rl][c][d][0];
-          ((int*)arrdata[group].info.bbox)[2*d+1] = hh->outer_boundaries[rl][c][d][1];
-	} // for d
-	
-      } // if local mode
-      
-    } // for group
-    
-    
-    
-    // Set Cactus pointers to data
-    for (int n=0; n<CCTK_NumVars(); ++n) {
-      
-      const int group = CCTK_GroupIndexFromVarI(n);
-      assert (group>=0);
-      const int var = n - CCTK_FirstVarIndexI(group);
-      assert (var>=0);
-      const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
-      assert (num_tl>0);
-      
-      for (int tl=0; tl<num_tl; ++tl) {
-	
-	if (mglevel != -1
-	    && CCTK_QueryGroupStorageI(cgh, group)) {
-	  // Group has storage
-	  
-	  if (CCTK_GroupTypeI(group) == CCTK_GF) {
-	    // It is a grid function
-	    
-	    if (component == -1) {
-	      // Global mode
-	      
-	      // Grid functions cannot be accessed in global mode
-	      cgh->data[n][tl] = 0;
-	      
-	    } else {
-	      // local mode
-	      
-	      assert (reflevel>=0 && reflevel < (int)dd->boxes.size());
-	      assert (component>=0
-		      && component < (int)dd->boxes[reflevel].size());
-	      assert (mglevel>=0
-		      && mglevel < (int)dd->boxes[reflevel][component].size());
-	      
-	      assert (group<(int)arrdata.size());
-	      assert (var<(int)arrdata[group].data.size());
-	      assert (arrdata[group].data[var]);
-	      cgh->data[n][tl]
-		= ((*arrdata[group].data[var])
-		   (-tl, reflevel, component, mglevel)->storage());
-	      if (hh->is_local(reflevel,component)) {
-		assert (cgh->data[n][tl]);
-	      } else {
-		assert (! cgh->data[n][tl]);
-	      }
-	      
-	    } // if global mode
-	    
-	  } else {
-	    // Scalars and arrays can always be accessed
-	    
-	    assert (group<(int)arrdata.size());
-	    assert (var<(int)arrdata[group].data.size());
-	    assert (arrdata[group].data[var]);
-	    const int rl = 0;
-	    const int c = CCTK_MyProc(cgh);
-	    assert (rl>=0 && rl<(int)arrdata[group].dd->boxes.size());
-	    assert (c>=0 && c<(int)arrdata[group].dd->boxes[rl].size());
-	    assert (mglevel>=0 && mglevel < (int)dd->boxes[rl][c].size());
-	    assert (hh->is_local(reflevel,c));
-	    cgh->data[n][tl]
-	      = ((*arrdata[group].data[var]) (-tl, rl, c, mglevel)->storage());
-	    assert (cgh->data[n][tl]);
-	    
-	  } // if scalar or array
-	  
-	} else {
-	  // Group has no storage
-	  
-	  cgh->data[n][tl] = 0;
-	  
-	} // if has no storage
-	
-      } // for tl
-    } // for n
     
   }
   
@@ -452,7 +414,6 @@ namespace Carpet {
   int CallLocalFunction (cGH * const cgh,
                          void (* const function) (cGH * const cgh))
   {
-    assert (component == -1);
     BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
       function (cgh);
     } END_LOCAL_COMPONENT_LOOP(cgh);

@@ -9,7 +9,7 @@
 #include "carpet.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.7 2003/05/07 10:03:21 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.8 2003/05/08 15:35:49 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_CallFunction_cc);
 }
 
@@ -24,17 +24,14 @@ namespace Carpet {
     // Traverse one function on all components of one refinement level
     // of one multigrid level
     
-    assert (mglevel>=0);
-    assert (reflevel>=0);
-    
 //     Checkpoint ("%*sStarting CallFunction...", 2*reflevel, "");
     
     cGH* cgh = (cGH*)data;
     
-    if (attribute->global) {
+    if (attribute->global || reflevel==-1) {
       // Global operation: call once
       
-      if (reflevel==0) {
+      if (do_global_mode) {
         Waypoint ("%*sGlobal mode call at %s to %s::%s", 2*reflevel, "",
                   attribute->where, attribute->thorn, attribute->routine);
         const int res = CCTK_CallFunction (function, attribute, data);

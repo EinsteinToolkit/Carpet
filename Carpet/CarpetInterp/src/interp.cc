@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.2 2003/05/02 15:59:37 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.3 2003/05/08 15:35:49 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -18,7 +18,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.2 2003/05/02 15:59:37 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.3 2003/05/08 15:35:49 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -77,7 +77,8 @@ namespace CarpetInterp {
     
     
     
-    // We want to be in global mode
+    // We want to be in level mode
+    assert (reflevel != -1);
     if (hh->local_components(reflevel) != 1 && component != -1) {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
 		  "Cannot interpolate in local mode");
@@ -92,9 +93,11 @@ namespace CarpetInterp {
     assert (coord_system_name);
     rvect lower, upper;
     for (int d=0; d<dim; ++d) {
-      ierr = CCTK_CoordRange
-        (cgh, &lower[d], &upper[d], d+1, 0, coord_system_name);
-      assert (!ierr);
+//       ierr = CCTK_CoordRange
+//         (cgh, &lower[d], &upper[d], d+1, 0, coord_system_name);
+//       assert (!ierr);
+      lower[d] = cgh->cctk_origin_space[d];
+      upper[d] = cgh->cctk_origin_space[d] + (cgh->cctk_gsh[d] - 1) * cgh->cctk_delta_space[d] / cgh->cctk_levfac[d];
     }
     
     const ivect gsh   (cgh->cctk_gsh );
