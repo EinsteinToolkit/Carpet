@@ -1,0 +1,18 @@
+# Interface definition for thorn CartGrid3D
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CartGrid3D/Attic/interface.ccl,v 1.1 2002/04/03 16:33:26 schnetter Exp $
+
+implements: grid
+
+INCLUDE HEADER: Symmetry.h in Symmetry.h
+
+public:
+
+REAL gridspacings type=SCALAR
+{
+  coarse_dx, coarse_dy, coarse_dz
+} "3D Cartesian grid spacings"
+
+REAL coordinates type=GF
+{
+  x, y, z, r
+} "3D Cartesian grid coordinates"

@@ -1,0 +1,23 @@
+Thorn CartGrid3D
+Authors    : Gabrielle Allen, Gerd Lanfermann, Joan Masso
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CartGrid3D/Attic/README,v 1.1 2002/04/03 16:33:26 schnetter Exp $
+--------------------------------------------------------------------------
+
+1. Purpose of the thorn
+
+This thorn sets up a Cartesian grid, for a given domain. It also
+provides a method for registering symmetries of Grid Functions
+across the grid axes, and a call for applying symmetry boundary
+conditions.
+
+2. Additional information
+
+This thorn currently only works in 3D
+
+
+
+NOTE.  This thorn is almost a copy of CactusBase/CartGrid3D.  It
+contains modifications by Erik Schnetter <schnetter@uni-tuebingen.de>
+to make it work with mesh refinement.  These modifications are meant
+to be folded back into that very thorn.  This thorn here is only a
+temporary replacement.
