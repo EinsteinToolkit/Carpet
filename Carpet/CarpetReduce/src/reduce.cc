@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.27 2003/07/23 14:30:44 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.28 2003/07/23 14:46:10 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -22,7 +22,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.27 2003/07/23 14:30:44 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.28 2003/07/23 14:46:10 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -604,18 +604,16 @@ namespace CarpetReduce {
       assert (dims[d]>=0);
     }
     
-    const bool do_local_reduction = num_inarrays == num_outvals;
-    
     int lsize = 1;
-    if (do_local_reduction) {
-      assert (num_inarrays == num_outvals);
-    } else {
-      for (int d=0; d<num_dims; ++d) {
-        lsize *= dims[d];
-      }
-      assert (num_inarrays * lsize == num_outvals);
+    for (int d=0; d<num_dims; ++d) {
+      lsize *= dims[d];
     }
-    assert (num_inarrays * lsize == num_outvals);
+    
+    const bool do_local_reduction = num_outvals == 1;
+    
+    if (! do_local_reduction) {
+      assert (num_outvals == lsize);
+    }
     
     vect<int,dim> mylsh, mynghostzones;
     vect<vect<int,2>,dim> mybbox;
@@ -635,22 +633,23 @@ namespace CarpetReduce {
     const int vartypesize = CCTK_VarTypeSize(outtype);
     assert (vartypesize>=0);
     
-    vector<char> myoutvals (vartypesize * num_outvals);
-    vector<char> mycounts  (vartypesize * num_outvals);
+    vector<char> myoutvals (vartypesize * num_inarrays * num_outvals);
+    vector<char> mycounts  (vartypesize * num_inarrays * num_outvals);
     
-    Initialise (cgh, proc, num_outvals, &myoutvals[0], outtype, &mycounts[0],
-                red);
+    Initialise (cgh, proc, num_inarrays * num_outvals, &myoutvals[0], outtype,
+                &mycounts[0], red);
     if (do_local_reduction) {
       Reduce   (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
                 num_inarrays, inarrays, intype,
-                num_outvals, &myoutvals[0], outtype, &mycounts[0], red);
+                num_inarrays * num_outvals, &myoutvals[0], outtype,
+                &mycounts[0], red);
     } else {
       Copy     (cgh, proc, lsize, num_inarrays, inarrays, intype,
-                num_outvals, &myoutvals[0], outtype, &mycounts[0]);
+                num_inarrays * num_outvals, &myoutvals[0], outtype,
+                &mycounts[0]);
     }
-    Finalise   (cgh, proc, num_outvals, outvals, outtype,
-                &myoutvals[0], &mycounts[0],
-		red);
+    Finalise   (cgh, proc, num_inarrays * num_outvals, outvals, outtype,
+                &myoutvals[0], &mycounts[0], red);
     
     return 0;
   }
@@ -765,8 +764,7 @@ namespace CarpetReduce {
     } END_LOCAL_COMPONENT_LOOP;
     
     Finalise (cgh, proc, num_invars * num_outvals, outvals, outtype,
-              &myoutvals[0], &mycounts[0],
-	      red);
+              &myoutvals[0], &mycounts[0], red);
     
     return 0;
   }
