@@ -44,7 +44,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.31 2003/09/08 14:41:48 tradke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.32 2003/09/23 12:32:12 cvs_anon Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -279,7 +279,7 @@ namespace CarpetIOFlexIO {
       
       assert (var < (int)arrdata[group].data.size());
       ff = (ggf<dim>*)arrdata[group].data[var];
-      
+      CCTK_VInfo (CCTK_THORNSTRING, "bogus reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
       const gdata<dim>* const data
 	= (*ff) (tl, rl, component, mglevel);
       
