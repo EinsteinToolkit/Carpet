@@ -1,5 +1,5 @@
 # Interface definition for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/interface.ccl,v 1.10 2004/03/29 16:14:14 hawke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/interface.ccl,v 1.11 2004/04/18 13:29:43 schnetter Exp $
 
 implements: Driver
 
@@ -79,13 +79,6 @@ USES FUNCTION ConvertFromExteriorBoundary
 #                      gh<dim>::rbnds  * obss,
 #                      gh<dim>::rprocs * pss);
 CCTK_INT FUNCTION Carpet_Regrid (CCTK_POINTER_TO_CONST IN cctkGH,  \
-                                 CCTK_INT IN reflevel,             \
-                                 CCTK_INT IN map,                  \
-                                 CCTK_INT IN size,                 \
-                                 CCTK_INT IN ARRAY nboundaryzones, \
-                                 CCTK_INT IN ARRAY is_internal,    \
-                                 CCTK_INT IN ARRAY is_staggered,   \
-                                 CCTK_INT IN ARRAY shiftout,       \
                                  CCTK_POINTER IN bsss,             \
                                  CCTK_POINTER IN obss,             \
                                  CCTK_POINTER IN pss)

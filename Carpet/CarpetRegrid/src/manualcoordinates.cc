@@ -11,7 +11,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinates.cc,v 1.2 2004/02/27 16:24:06 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinates.cc,v 1.3 2004/04/18 13:29:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_manualcoordinates_cc);
 }
 
@@ -26,21 +26,11 @@ namespace CarpetRegrid {
   
   int ManualCoordinates (cGH const * const cctkGH,
                          gh<dim> const & hh,
-                         int const reflevel,
-                         int const map,
-                         int const size,
-                         jjvect const & nboundaryzones,
-                         jjvect const & is_internal,
-                         jjvect const & is_staggered,
-                         jjvect const & shiftout,
                          gh<dim>::rexts  & bbsss,
                          gh<dim>::rbnds  & obss,
                          gh<dim>::rprocs & pss)
   {
     DECLARE_CCTK_PARAMETERS;
-    
-    assert (reflevel>=0 && reflevel<maxreflevels);
-    assert (map>=0 && map<maps);
     
     if (refinement_levels > 4) {
       CCTK_WARN (0, "Cannot currently specify manual refinement regions for more than 4 refinement levels");
@@ -81,10 +71,7 @@ namespace CarpetRegrid {
       
       // make multigrid aware
       vector<vector<ibbox> > bbss;
-      MakeMultigridBoxes
-        (cctkGH,
-         size, nboundaryzones, is_internal, is_staggered, shiftout,
-         bbs, obs, bbss);
+      MakeMultigridBoxes (cctkGH, bbs, obs, bbss);
       
       bbsss.at(rl) = bbss;
       obss.at(rl) = obs;
@@ -99,27 +86,27 @@ namespace CarpetRegrid {
   
   void ManualCoordinates_OneLevel (const cGH * const cctkGH,
                                    const gh<dim> & hh,
-                                   const int reflevel,
-                                   const int reflevels,
+                                   const int rl,
+                                   const int numrl,
                                    const rvect lower,
                                    const rvect upper,
                                    const bbvect obound,
                                    vector<ibbox> & bbs,
                                    vector<bbvect> & obs)
   {
-    if (reflevel >= reflevels) return;
+    if (rl >= numrl) return;
     
-    jvect const ilower = pos2int (cctkGH, hh, lower, reflevel);
-    jvect const iupper = pos2int (cctkGH, hh, upper, reflevel);
+    jvect const ilower = pos2int (cctkGH, hh, lower, rl);
+    jvect const iupper = pos2int (cctkGH, hh, upper, rl);
     
     ManualGridpoints_OneLevel
-      (cctkGH, hh, reflevel, reflevels, ilower, iupper, obound, bbs, obs);
+      (cctkGH, hh, rl, numrl, ilower, iupper, obound, bbs, obs);
   }
   
   
   
   ivect delta2int (const cGH * const cctkGH, const gh<dim>& hh,
-                   const rvect & rpos, const int reflevel)
+                   const rvect & rpos, const int rl)
   {
     rvect global_lower, global_upper;
     for (int d=0; d<dim; ++d) {
@@ -133,7 +120,7 @@ namespace CarpetRegrid {
     const ivect global_extent (hh.baseextent.upper() - hh.baseextent.lower());
     
     const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
-    const int levfac = ipow(hh.reffact, reflevel);
+    const int levfac = ipow(hh.reffact, rl);
     assert (all (hh.baseextent.stride() % levfac == 0));
     const ivect istride = hh.baseextent.stride() / levfac;
     
@@ -149,7 +136,7 @@ namespace CarpetRegrid {
   
   
   ivect pos2int (const cGH* const cctkGH, const gh<dim>& hh,
-                 const rvect & rpos, const int reflevel)
+                 const rvect & rpos, const int rl)
   {
     rvect global_lower, global_upper;
     for (int d=0; d<dim; ++d) {
@@ -163,7 +150,7 @@ namespace CarpetRegrid {
     const ivect global_extent (hh.baseextent.upper() - hh.baseextent.lower());
     
     const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
-    const int levfac = ipow(hh.reffact, reflevel);
+    const int levfac = ipow(hh.reffact, rl);
     assert (all (hh.baseextent.stride() % levfac == 0));
     const ivect istride = hh.baseextent.stride() / levfac;
     

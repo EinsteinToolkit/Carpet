@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.36 2004/03/23 19:30:14 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.37 2004/04/18 13:28:25 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -55,7 +55,7 @@ bool ggf<D>::operator== (const ggf<D>& f) const {
 
 // Modifiers
 template<int D>
-void ggf<D>::recompose (const int initialise_from, const bool do_prolongate) {
+void ggf<D>::recompose () {
   
   // TODO: restructure storage only when needed
   
@@ -66,7 +66,7 @@ void ggf<D>::recompose (const int initialise_from, const bool do_prolongate) {
   storage.resize(tmax-tmin+1);
   for (int tl=tmin; tl<=tmax; ++tl) {
     storage.at(tl-tmin).resize(h.reflevels());
-    for (int rl=initialise_from; rl<h.reflevels(); ++rl) {
+    for (int rl=0; rl<h.reflevels(); ++rl) {
       storage.at(tl-tmin).at(rl).resize(h.components(rl));
       for (int c=0; c<h.components(rl); ++c) {
       	storage.at(tl-tmin).at(rl).at(c).resize(h.mglevels(rl,c));
@@ -78,53 +78,73 @@ void ggf<D>::recompose (const int initialise_from, const bool do_prolongate) {
   } // for tl
   
   // Initialise the new storage
-  for (int rl=initialise_from; rl<h.reflevels(); ++rl) {
-    for (int tl=tmin; tl<=tmax; ++tl) {
-      for (int c=0; c<h.components(rl); ++c) {
-      	for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-	  
-	  storage.at(tl-tmin).at(rl).at(c).at(ml) = typed_data(tl,rl,c,ml);
-	  
-      	  // Allocate storage
-      	  storage.at(tl-tmin).at(rl).at(c).at(ml)->allocate
-      	    (d.boxes.at(rl).at(c).at(ml).exterior, h.proc(rl,c));
-	  
-          if (do_prolongate) {
-            // Initialise from coarser level, if possible
-            // TODO: init only un-copied regions
-            if (rl>0) {
-              for (comm_state<D> state; !state.done(); state.step()) {
-                const CCTK_REAL time = t.time(tl,rl,ml);
-                ref_prolongate (state,tl,rl,c,ml,time);
-              }
-            } // if rl
-          } // if do_prolongate
-          
-          // Copy from old storage, if possible
-          // todo: copy only from interior regions?
-          if (rl<(int)oldstorage.at(tl-tmin).size()) {
-            for (comm_state<D> state; !state.done(); state.step()) {
+  // TODO: overlap this initialisation for all variables
+  for (int rl=0; rl<h.reflevels(); ++rl) {
+    bool firsttime=true;
+    for (comm_state<D> state; !state.done(); state.step(), firsttime=false) {
+      for (int tl=tmin; tl<=tmax; ++tl) {
+        for (int c=0; c<h.components(rl); ++c) {
+          for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
+            
+            if (firsttime) {
+              storage.at(tl-tmin).at(rl).at(c).at(ml) = typed_data(tl,rl,c,ml);
+              
+              // Allocate storage
+              storage.at(tl-tmin).at(rl).at(c).at(ml)->allocate
+                (d.boxes.at(rl).at(c).at(ml).exterior, h.proc(rl,c));
+            }
+            
+            // Find out which regions need to be prolongated
+            // TODO: do this once in the dh instead of for each variable here
+            ibset work (d.boxes.at(rl).at(c).at(ml).exterior);
+            
+            // Copy from old storage, if possible
+            // TODO: copy only from interior regions?
+            if (rl<(int)oldstorage.at(tl-tmin).size()) {
               for (int cc=0; cc<(int)oldstorage.at(tl-tmin).at(rl).size(); ++cc) {
                 if (ml<(int)oldstorage.at(tl-tmin).at(rl).at(cc).size()) {
-                  const ibbox ovlp =
-                    (d.boxes.at(rl).at(c).at(ml).exterior
-                     & oldstorage.at(tl-tmin).at(rl).at(cc).at(ml)->extent());
-                  storage.at(tl-tmin).at(rl).at(c).at(ml)->copy_from
-                    (state, oldstorage.at(tl-tmin).at(rl).at(cc).at(ml), ovlp);
+                  // TODO: prefer same processor, etc., see dh.cc
+                  ibset ovlp = work & oldstorage.at(tl-tmin).at(rl).at(cc).at(ml)->extent();
+                  ovlp.normalize();
+                  work -= ovlp;
+                  for (typename ibset::const_iterator r=ovlp.begin(); r!=ovlp.end(); ++r) {
+                    storage.at(tl-tmin).at(rl).at(c).at(ml)->copy_from (state, oldstorage.at(tl-tmin).at(rl).at(cc).at(ml), *r);
+                  }
                 } // if ml
               } // for cc
-            } // for step
-          } // if rl
-          
-	} // for ml
-      } // for c
-      
-    } // for tl
+            } // if rl
+            work.normalize();
+            
+            // Initialise from coarser level, if possible
+            if (rl>0) {
+              if (transport_operator != op_none) {
+                assert (tmax-tmin+1 >= prolongation_order_time+1);
+                vector<int> tls(prolongation_order_time+1);
+                for (int i=0; i<=prolongation_order_time; ++i) {
+                  tls.at(i) = tmax - i;
+                }
+                vector<const gdata<D>*> gsrcs(tls.size());
+                vector<CCTK_REAL> times(tls.size());
+                for (int i=0; i<(int)gsrcs.size(); ++i) {
+                  gsrcs.at(i) = storage.at(tls.at(i)-tmin).at(rl-1).at(c).at(ml);
+                  times.at(i) = t.time(tls.at(i),rl-1,ml);
+                }
+                const CCTK_REAL time = t.time(tl,rl,ml);
+                for (typename ibset::const_iterator r=work.begin(); r!=work.end(); ++r) {
+                  storage.at(tl-tmin).at(rl).at(c).at(ml)->interpolate_from (state, gsrcs, times, *r, time, d.prolongation_order_space, prolongation_order_time);
+                }
+              } // if transport_operator
+            } // if rl
+            
+          } // for ml
+        } // for c
+      } // for tl
+    } // for step
   } // for rl
   
   // Delete old storage
   for (int tl=tmin; tl<=tmax; ++tl) {
-    for (int rl=initialise_from; rl<(int)oldstorage.at(tl-tmin).size(); ++rl) {
+    for (int rl=0; rl<(int)oldstorage.at(tl-tmin).size(); ++rl) {
       for (int c=0; c<(int)oldstorage.at(tl-tmin).at(rl).size(); ++c) {
         for (int ml=0; ml<(int)oldstorage.at(tl-tmin).at(rl).at(c).size(); ++ml) {
 	  delete oldstorage.at(tl-tmin).at(rl).at(c).at(ml);
@@ -134,21 +154,19 @@ void ggf<D>::recompose (const int initialise_from, const bool do_prolongate) {
   } // for tl
   
   for (int tl=tmin; tl<=tmax; ++tl) {
-    for (int rl=initialise_from; rl<h.reflevels(); ++rl) {
+    for (int rl=0; rl<h.reflevels(); ++rl) {
       
       // Set boundaries
       for (int c=0; c<h.components(rl); ++c) {
       	for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
           
-          if (do_prolongate) {
-            // TODO: assert that reflevel 0 boundaries are copied
-            if (rl>0) {
-              for (comm_state<D> state; !state.done(); state.step()) {
-                const CCTK_REAL time = t.time(tl,rl,ml);
-                ref_bnd_prolongate (state,tl,rl,c,ml,time);
-              }
-            } // if rl
-          }
+          // TODO: assert that reflevel 0 boundaries are copied
+          if (rl>0) {
+            for (comm_state<D> state; !state.done(); state.step()) {
+              const CCTK_REAL time = t.time(tl,rl,ml);
+              ref_bnd_prolongate (state,tl,rl,c,ml,time);
+            }
+          } // if rl
           
           for (comm_state<D> state; !state.done(); state.step()) {
             sync (state,tl,rl,c,ml);

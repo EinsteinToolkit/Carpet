@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.37 2004/03/24 08:38:07 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.38 2004/04/18 13:29:43 schnetter Exp $
 
 shares: Cactus
 
@@ -283,7 +283,10 @@ BOOLEAN init_each_timelevel "Call initial data routines once for each timelevel"
 {
 } "no"
 
-BOOLEAN prolongate_initial_data "Prolongate the refined regions during initial data generation" STEERABLE=always
+#BOOLEAN prolongate_initial_data "Prolongate the refined regions during initial data generation" STEERABLE=always
+#{
+#} "no"
+BOOLEAN prolongate_initial_data "unused" STEERABLE=always
 {
 } "no"
 

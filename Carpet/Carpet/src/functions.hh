@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/functions.hh,v 1.3 2004/03/23 17:58:40 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/functions.hh,v 1.4 2004/04/18 13:29:43 schnetter Exp $
 
 #ifndef FUNCTIONS_HH
 #define FUNCTIONS_HH
@@ -64,11 +64,6 @@ namespace Carpet {
                                vector<bbvect>& obs, vector<int>& ps);
   
   void MakeMultigridBoxes (const cGH* cgh,
-                           int const size,
-                           jjvect const & nboundaryzones,
-                           jjvect const & is_internal,
-                           jjvect const & is_staggered,
-                           jjvect const & shiftout,
                            vector<ibbox> const & bbs,
                            vector<bbvect> const & obs,
                            vector<vector<ibbox> > & bbss);

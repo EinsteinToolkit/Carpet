@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.26 2004/04/07 16:59:47 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.28 2004/04/18 13:29:43 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -36,9 +36,7 @@ gh<D>::~gh () { }
 template<int D>
 void gh<D>::recompose (const rexts& exts,
                        const rbnds& outer_bounds,
-		       const rprocs& procs,
-                       const int initialise_from,
-                       const bool do_prolongate)
+		       const rprocs& procs)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -96,7 +94,11 @@ void gh<D>::recompose (const rexts& exts,
   // Check base grid extent
   if (reflevels()>0) {
     for (int c=0; c<components(0); ++c) {
+      // TODO: put the check back in, taking outer boundaries into
+      // account
+#if 0
       assert (extents.at(0).at(c).at(0).is_contained_in(baseextent));
+#endif
     }
   }
   
@@ -169,7 +171,7 @@ void gh<D>::recompose (const rexts& exts,
   }
   
   for (typename list<dh<D>*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
-    (*d)->recompose (initialise_from, do_prolongate);
+    (*d)->recompose ();
   }
 }
 

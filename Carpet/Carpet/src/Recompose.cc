@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.63 2004/03/23 19:50:26 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.64 2004/04/18 13:29:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -119,10 +119,9 @@ namespace Carpet {
   
   
   
-  void Regrid (const cGH* cgh, const int rl,
-               const int initialise_from, const bool do_prolongate)
+  void Regrid (const cGH* cgh)
   {
-    assert (is_meta_mode());
+    assert (is_level_mode());
     
     if (! CCTK_IsFunctionAliased ("Carpet_Regrid")) {
       static bool didtell = false;
@@ -133,27 +132,19 @@ namespace Carpet {
       return;
     }
     
-    for (int m=0; m<maps; ++m) {
+    BEGIN_MAP_LOOP(cgh, CCTK_GF) {
       
-      jjvect nboundaryzones, is_internal, is_staggered, shiftout;
-      CCTK_INT const ierr = GetBoundarySpecification
-        (2*dim, &nboundaryzones[0][0], &is_internal[0][0],
-         &is_staggered[0][0], &shiftout[0][0]);
-      assert (!ierr);
-      
-      gh<dim>::rexts  bbsss = vhh.at(m)->extents;
-      gh<dim>::rbnds  obss  = vhh.at(m)->outer_boundaries;
-      gh<dim>::rprocs pss   = vhh.at(m)->processors;
+      gh<dim>::rexts  bbsss = vhh.at(map)->extents;
+      gh<dim>::rbnds  obss  = vhh.at(map)->outer_boundaries;
+      gh<dim>::rprocs pss   = vhh.at(map)->processors;
       
       // Check whether to recompose
-      CCTK_INT const do_recompose = Carpet_Regrid
-        (cgh, rl, m,
-         2*dim, &nboundaryzones[0][0], &is_internal[0][0],
-         &is_staggered[0][0], &shiftout[0][0],
-         &bbsss, &obss, &pss);
+      CCTK_INT const do_recompose = Carpet_Regrid (cgh, &bbsss, &obss, &pss);
       assert (do_recompose >= 0);
       
       if (do_recompose) {
+        
+        CCTK_INFO ("Recomposing the grid hierarchy");
         
         // Check the regions
         CheckRegions (bbsss, obss, pss);
@@ -161,17 +152,16 @@ namespace Carpet {
         // did not change
         
         // Write grid structure to file
-        OutputGridStructure (cgh, m, bbsss, obss, pss);
+        OutputGridStructure (cgh, map, bbsss, obss, pss);
         
         // Recompose
-        vhh.at(m)->recompose (bbsss, obss, pss,
-                              initialise_from, do_prolongate);
+        vhh.at(map)->recompose (bbsss, obss, pss);
         
-        OutputGrids (cgh, m, *vhh.at(m));
+        OutputGrids (cgh, map, *vhh.at(map));
         
       }
-      
-    } // for m
+
+    } END_MAP_LOOP;
     
     // Calculate new number of levels
     reflevels = vhh.at(0)->reflevels();
@@ -180,37 +170,13 @@ namespace Carpet {
     }
     
     // One cannot switch off the current level
-    assert (reflevels>rl);
+    assert (reflevels > reflevel);
   }
   
   
   
   void OutputGrids (const cGH* cgh, const int m, const gh<dim>& hh)
   {
-    DECLARE_CCTK_PARAMETERS;
-    
-    if (verbose) {
-      CCTK_INFO ("New bounding boxes:");
-      for (int rl=0; rl<hh.reflevels(); ++rl) {
-        for (int c=0; c<hh.components(rl); ++c) {
-          for (int ml=0; ml<hh.mglevels(rl,c); ++ml) {
-            cout << "   m " << m << "   rl " << rl << "   c " << c
-                 << "   ml " << ml
-                 << "   bbox " << hh.extents.at(rl).at(c).at(ml)
-                 << endl;
-          }
-	}
-      }
-      CCTK_INFO ("New processor distribution:");
-      for (int rl=0; rl<hh.reflevels(); ++rl) {
-        for (int c=0; c<hh.components(rl); ++c) {
-          cout << "   m " << m << "   rl " << rl << "   c " << c
-               << "   processor " << hh.processors.at(rl).at(c) << endl;
-	}
-      }
-      cout << endl;
-    }
-    
     CCTK_INFO ("New grid structure (grid points):");
     for (int rl=0; rl<hh.reflevels(); ++rl) {
       for (int c=0; c<hh.components(rl); ++c) {
@@ -224,13 +190,17 @@ namespace Carpet {
           assert (all(((upper - lower) * levfact / maxreflevelfact)
                       % convfact == 0));
           cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
-               << "   exterior extent: "
+               << "   exterior: "
+               << "proc "
+               << hh.processors.at(rl).at(c)
+               << "   "
                << lower * levfact / maxreflevelfact
                << " : "
                << upper * levfact / maxreflevelfact
                << "   ("
                << (upper - lower) * levfact / maxreflevelfact / convfact + 1
-               << ")" << endl;
+               << ")"
+               << endl;
         }
       }
     }
@@ -246,7 +216,7 @@ namespace Carpet {
           const int convfact = ipow(mgfact, ml);
           const int levfact = ipow(reffact, rl);
           cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
-               << "   exterior extent: "
+               << "   exterior: "
                << origin + delta * lower / maxreflevelfact
                << " : "
                << origin + delta * upper / maxreflevelfact
@@ -816,11 +786,6 @@ namespace Carpet {
   
   
   static void MakeMultigridBoxes (const cGH* cgh,
-                                  int const size,
-                                  jjvect const & nboundaryzones,
-                                  jjvect const & is_internal,
-                                  jjvect const & is_staggered,
-                                  jjvect const & shiftout,
                                   ibbox const & base,
                                   ibbox const & bb,
                                   bbvect const & ob,
@@ -829,7 +794,11 @@ namespace Carpet {
     bbs.resize (mglevels);
     bbs.at(0) = bb;
     // boundary offsets
-    assert (size==2*dim);
+    jjvect nboundaryzones, is_internal, is_staggered, shiftout;
+    const int ierr = GetBoundarySpecification
+      (2*dim, &nboundaryzones[0][0], &is_internal[0][0],
+       &is_staggered[0][0], &shiftout[0][0]);
+    assert (!ierr);
     // (distance in grid points between the exterior and the physical boundary)
     iivect offset;
     for (int d=0; d<dim; ++d) {
@@ -868,11 +837,6 @@ namespace Carpet {
   }
   
   void MakeMultigridBoxes (const cGH* cgh,
-                           int const size,
-                           jjvect const & nboundaryzones,
-                           jjvect const & is_internal,
-                           jjvect const & is_staggered,
-                           jjvect const & shiftout,
                            vector<ibbox> const & bbs,
                            vector<bbvect> const & obs,
                            vector<vector<ibbox> >& bbss)
@@ -884,10 +848,7 @@ namespace Carpet {
     }
     bbss.resize(bbs.size());
     for (size_t c=0; c<bbs.size(); ++c) {
-      MakeMultigridBoxes
-        (cgh,
-         size, nboundaryzones, is_internal, is_staggered, shiftout,
-         base, bbs.at(c), obs.at(c), bbss.at(c));
+      MakeMultigridBoxes (cgh, base, bbs.at(c), obs.at(c), bbss.at(c));
     }
   }
   

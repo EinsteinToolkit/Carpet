@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.20 2004/03/23 12:40:27 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.21 2004/04/18 13:29:43 schnetter Exp $
 
 #ifndef GGF_HH
 #define GGF_HH
@@ -87,7 +87,7 @@ public:
 
 
   // Modifiers
-  void recompose (const int initialise_from, const bool do_prolongate);
+  void recompose ();
 
   // Cycle the time levels by rotating the data sets
   void cycle (int rl, int c, int ml);

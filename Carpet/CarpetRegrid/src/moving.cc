@@ -9,7 +9,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/moving.cc,v 1.2 2004/04/16 18:41:33 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/moving.cc,v 1.3 2004/04/18 13:29:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_moving_cc);
 }
 
@@ -24,22 +24,12 @@ namespace CarpetRegrid {
   
   int Moving (cGH const * const cctkGH,
               gh<dim> const & hh,
-              int const reflevel,
-              int const map,
-              int const size,
-              jjvect const & nboundaryzones,
-              jjvect const & is_internal,
-              jjvect const & is_staggered,
-              jjvect const & shiftout,
               gh<dim>::rexts  & bbsss,
               gh<dim>::rbnds  & obss,
               gh<dim>::rprocs & pss)
   {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
-    
-    assert (reflevel>=0 && reflevel<maxreflevels);
-    assert (map>=0 && map<maps);
     
     assert (refinement_levels >= 1);
     
@@ -95,10 +85,7 @@ namespace CarpetRegrid {
       
       // make multigrid aware
       vector<vector<ibbox> > bbss;
-      MakeMultigridBoxes
-        (cctkGH,
-         size, nboundaryzones, is_internal, is_staggered, shiftout,
-         bbs, obs, bbss);
+      MakeMultigridBoxes (cctkGH, bbs, obs, bbss);
       
       bbsss.at(rl) = bbss;
       obss.at(rl) = obs;

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.17 2004/03/23 19:30:14 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.18 2004/04/18 13:29:43 schnetter Exp $
 
 #include <assert.h>
 
@@ -23,7 +23,7 @@ gf<T,D>::gf (const int varindex, const operator_type transport_operator,
            t, d, tmin, tmax, prolongation_order_time,
            vectorlength, vectorindex, vectorleader)
 {
-  this->recompose (0, true);
+  this->recompose ();
 }
 
 // Destructors

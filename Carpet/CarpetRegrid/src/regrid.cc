@@ -13,7 +13,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.38 2004/04/14 22:19:44 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.39 2004/04/18 13:29:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -25,13 +25,6 @@ namespace CarpetRegrid {
   using namespace Carpet;
   
   CCTK_INT CarpetRegrid_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
-                                CCTK_INT const reflevel,
-                                CCTK_INT const map,
-                                CCTK_INT const size,
-                                CCTK_INT const * const nboundaryzones_,
-                                CCTK_INT const * const is_internal_,
-                                CCTK_INT const * const is_staggered_,
-                                CCTK_INT const * const shiftout_,
                                 CCTK_POINTER const bbsss_,
                                 CCTK_POINTER const obss_,
                                 CCTK_POINTER const pss_)
@@ -40,22 +33,13 @@ namespace CarpetRegrid {
     
     const cGH * const cctkGH = (const cGH *) cctkGH_;
     
-    assert (reflevel>=0 && reflevel<maxreflevels);
-    assert (map>=0 && map<maps);
-    
-    assert (size == 2*dim);
-    jjvect const nboundaryzones (* (jjvect const *) nboundaryzones_);
-    jjvect const is_internal    (* (jjvect const *) is_internal_);
-    jjvect const is_staggered   (* (jjvect const *) is_staggered_);
-    jjvect const shiftout       (* (jjvect const *) shiftout_);
-    
     gh<dim>::rexts  & bbsss = * (gh<dim>::rexts  *) bbsss_;
     gh<dim>::rbnds  & obss  = * (gh<dim>::rbnds  *) obss_;
     gh<dim>::rprocs & pss   = * (gh<dim>::rprocs *) pss_;
     
-    gh<dim> const & hh = *vhh.at(map);
+    gh<dim> const & hh = *vhh.at(Carpet::map);
     
-    assert (is_meta_mode());
+    assert (is_singlemap_mode());
     
     
     
@@ -135,59 +119,39 @@ namespace CarpetRegrid {
     
     if (CCTK_EQUALS(refined_regions, "none")) {
       
-      do_recompose = BaseLevel
-        (cctkGH, hh, reflevel, map,
-         size, nboundaryzones, is_internal, is_staggered, shiftout,
-         bbsss, obss, pss);
+      do_recompose = BaseLevel (cctkGH, hh, bbsss, obss, pss);
                  
     } else if (CCTK_EQUALS(refined_regions, "centre")) {
       
-      do_recompose = Centre
-        (cctkGH, hh, reflevel, map,
-         size, nboundaryzones, is_internal, is_staggered, shiftout,
-         bbsss, obss, pss);
+      do_recompose = Centre (cctkGH, hh, bbsss, obss, pss);
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-gridpoints")) {
       
-      do_recompose = ManualGridpoints
-        (cctkGH, hh, reflevel, map,
-         size, nboundaryzones, is_internal, is_staggered, shiftout,
-         bbsss, obss, pss);
+      do_recompose
+        = ManualGridpoints (cctkGH, hh, bbsss, obss, pss);
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-coordinates")) {
       
-      do_recompose = ManualCoordinates
-        (cctkGH, hh, reflevel, map,
-         size, nboundaryzones, is_internal, is_staggered, shiftout,
-         bbsss, obss, pss);
+      do_recompose
+        = ManualCoordinates (cctkGH, hh, bbsss, obss, pss);
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-gridpoint-list")) {
       
-      do_recompose = ManualGridpointList
-        (cctkGH, hh, reflevel, map,
-         size, nboundaryzones, is_internal, is_staggered, shiftout,
-         bbsss, obss, pss);
+      do_recompose
+        = ManualGridpointList (cctkGH, hh, bbsss, obss, pss);
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-coordinate-list")) {
       
-      do_recompose = ManualCoordinateList
-        (cctkGH, hh, reflevel, map,
-         size, nboundaryzones, is_internal, is_staggered, shiftout,
-         bbsss, obss, pss);
+      do_recompose
+        = ManualCoordinateList (cctkGH, hh, bbsss, obss, pss);
                  
     } else if (CCTK_EQUALS(refined_regions, "moving")) {
       
-      do_recompose = Moving
-        (cctkGH, hh, reflevel, map,
-         size, nboundaryzones, is_internal, is_staggered, shiftout,
-         bbsss, obss, pss);
+      do_recompose = Moving (cctkGH, hh, bbsss, obss, pss);
                  
     } else if (CCTK_EQUALS(refined_regions, "automatic")) {
       
-      do_recompose = Automatic
-        (cctkGH, hh, reflevel, map,
-         size, nboundaryzones, is_internal, is_staggered, shiftout,
-         bbsss, obss, pss);
+      do_recompose = Automatic (cctkGH, hh, bbsss, obss, pss);
                  
     } else {
       assert (0);

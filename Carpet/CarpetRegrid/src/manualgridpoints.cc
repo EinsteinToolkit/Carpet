@@ -11,7 +11,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualgridpoints.cc,v 1.1 2004/01/25 14:57:30 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualgridpoints.cc,v 1.2 2004/04/18 13:29:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_manualgridpoints_cc);
 }
 
@@ -26,21 +26,11 @@ namespace CarpetRegrid {
   
   int ManualGridpoints (cGH const * const cctkGH,
                         gh<dim> const & hh,
-                        int const reflevel,
-                        int const map,
-                        int const size,
-                        jjvect const & nboundaryzones,
-                        jjvect const & is_internal,
-                        jjvect const & is_staggered,
-                        jjvect const & shiftout,
                         gh<dim>::rexts  & bbsss,
                         gh<dim>::rbnds  & obss,
                         gh<dim>::rprocs & pss)
   {
     DECLARE_CCTK_PARAMETERS;
-    
-    assert (reflevel>=0 && reflevel<maxreflevels);
-    assert (map>=0 && map<maps);
     
     if (refinement_levels > 4) {
       CCTK_WARN (0, "Cannot currently specify manual refinement regions for more than 4 refinement levels");
@@ -72,7 +62,7 @@ namespace CarpetRegrid {
       gh<dim>::cbnds obs;
       
       ManualGridpoints_OneLevel
-        (cctkGH, hh, rl, refinement_levels,
+        (cctkGH, hh, rl,refinement_levels,
          ilower.at(rl-1), iupper.at(rl-1), ob, bbs, obs);
       
       // make multiprocessor aware
@@ -81,10 +71,7 @@ namespace CarpetRegrid {
       
       // make multigrid aware
       vector<vector<ibbox> > bbss;
-      MakeMultigridBoxes
-        (cctkGH,
-         size, nboundaryzones, is_internal, is_staggered, shiftout,
-         bbs, obs, bbss);
+      MakeMultigridBoxes (cctkGH, bbs, obs, bbss);
       
       bbsss.at(rl) = bbss;
       obss.at(rl) = obs;
@@ -99,38 +86,36 @@ namespace CarpetRegrid {
   
   void ManualGridpoints_OneLevel (const cGH * const cctkGH,
                                   const gh<dim> & hh,
-                                  const int reflevel,
-                                  const int reflevels,
+                                  const int rl,
+                                  const int numrl,
                                   const ivect ilower,
                                   const ivect iupper,
                                   const bbvect obound,
                                   vector<ibbox> & bbs,
                                   vector<bbvect> & obs)
   {
-    if (reflevel >= reflevels) return;
-    
     const ivect rstr = hh.baseextent.stride();
     const ivect rlb  = hh.baseextent.lower();
     const ivect rub  = hh.baseextent.upper();
     
-    const int levfac = ipow(hh.reffact, reflevel);
+    const int levfac = ipow(hh.reffact, rl);
     assert (all (rstr % levfac == 0));
     const ivect str (rstr / levfac);
     const ivect lb  (ilower);
     const ivect ub  (iupper);
     if (! all(lb>=rlb && ub<=rub)) {
       ostringstream buf;
-      buf << "The refinement region boundaries for refinement level #" << reflevel << " are not within the main grid.  Allowed are the grid point boundaries " << rlb << " - " << rub << "; specified were " << lb << " - " << ub << ends;
+      buf << "The refinement region boundaries for refinement level #" << rl << " are not within the main grid.  Allowed are the grid point boundaries " << rlb << " - " << rub << "; specified were " << lb << " - " << ub << ends;
       CCTK_WARN (0, buf.str().c_str());
     }
     if (! all(lb<=ub)) {
       ostringstream buf;
-      buf << "The refinement region boundaries for refinement level #" << reflevel << " have the upper boundary (" << ub << ") less than the lower boundary (" << lb << ")" << ends;
+      buf << "The refinement region boundaries for refinement level #" << rl << " have the upper boundary (" << ub << ") less than the lower boundary (" << lb << ")" << ends;
       CCTK_WARN (0, buf.str().c_str());
     }
     if (! all(lb%str==0 && ub%str==0)) {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-		  "The refinement region boundaries for refinement level #%d are not a multiple of the stride for that level", reflevel);
+		  "The refinement region boundaries for refinement level #%d are not a multiple of the stride for that level", rl);
     }
     assert (all(lb>=rlb && ub<=rub));
     assert (all(lb<=ub));

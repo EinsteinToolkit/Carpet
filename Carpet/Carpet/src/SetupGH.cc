@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.75 2004/04/07 16:53:39 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.76 2004/04/18 13:29:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -467,10 +467,7 @@ namespace Carpet {
       
       // Create all multigrid levels
       vector<vector<ibbox> > bbss;
-      MakeMultigridBoxes
-        (cgh,
-         2*dim, nboundaryzones, is_internal, is_staggered, shiftout,
-         bbs, obs, bbss);
+      MakeMultigridBoxes (cgh, bbs, obs, bbss);
       
       // Only one refinement level
       vector<vector<vector<ibbox> > > bbsss(1);

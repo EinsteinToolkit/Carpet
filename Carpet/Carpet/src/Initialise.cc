@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.43 2004/03/23 19:43:59 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.44 2004/04/18 13:29:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -98,10 +98,19 @@ namespace Carpet {
           
           leave_level_mode (cgh);
         } END_MGLEVEL_LOOP;
-        
-        // Regrid
-        Checkpoint ("Regrid");
-        Regrid (cgh, rl, rl+1, false);
+
+        {
+          const int ml=0;
+          enter_global_mode (cgh, ml);
+          enter_level_mode (cgh, rl);
+          
+          // Regrid
+          Checkpoint ("Regrid");
+          Regrid (cgh);
+          
+          leave_level_mode (cgh);
+          leave_global_mode (cgh);
+        } // ml
         
       } // for rl
       
@@ -200,8 +209,18 @@ namespace Carpet {
         } END_MGLEVEL_LOOP;
         
         // Regrid
-        Checkpoint ("Regrid");
-        Regrid (cgh, rl, rl+1, prolongate_initial_data);
+        {
+          const int ml=0;
+          enter_global_mode (cgh, ml);
+          enter_level_mode (cgh, rl);
+          
+          // Regrid
+          Checkpoint ("Regrid");
+          Regrid (cgh);
+          
+          leave_level_mode (cgh);
+          leave_global_mode (cgh);
+        } // ml
         
       } // for rl
       

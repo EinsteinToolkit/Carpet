@@ -16,7 +16,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/automatic.cc,v 1.1 2004/01/25 14:57:30 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/automatic.cc,v 1.2 2004/04/18 13:29:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_automatic_cc);
 }
 
@@ -31,21 +31,11 @@ namespace CarpetRegrid {
   
   int Automatic (cGH const * const cctkGH,
                  gh<dim> const & hh,
-                 int const reflevel,
-                 int const map,
-                 int const size,
-                 jjvect const & nboundaryzones,
-                 jjvect const & is_internal,
-                 jjvect const & is_staggered,
-                 jjvect const & shiftout,
                  gh<dim>::rexts  & bbsss,
                  gh<dim>::rbnds  & obss,
                  gh<dim>::rprocs & pss)
   {
     DECLARE_CCTK_PARAMETERS;
-    
-    assert (reflevel>=0 && reflevel<maxreflevels);
-    assert (map>=0 && map<maps);
     
     assert (refinement_levels >= 1);
     
@@ -64,15 +54,17 @@ namespace CarpetRegrid {
     assert (CCTK_VarTypeI(vi) == CCTK_VARIABLE_REAL);
     assert (CCTK_GroupDimI(gi) == dim);
     
-    assert (arrdata.at(gi).at(map).data.at(vi-v1));
+    assert (arrdata.at(gi).at(Carpet::map).data.at(vi-v1));
     const gf<CCTK_REAL,dim>& errorvar
       = (*dynamic_cast<const gf<CCTK_REAL,dim>*>
-         (arrdata.at(gi).at(map).data.at(vi-v1)));
-    
+         (arrdata.at(gi).at(Carpet::map).data.at(vi-v1)));
+
     vector<ibbox> bbs;
     gh<dim>::cbnds obs;
     Automatic_OneLevel
-      (cctkGH, hh, reflevel, minwidth, minfraction, maxerror, errorvar,
+      (cctkGH, hh,
+       reflevel, min(reflevels+1, maxreflevels),
+       minwidth, minfraction, maxerror, errorvar,
        bbs, obs);
     
     // make multiprocessor aware
@@ -81,10 +73,7 @@ namespace CarpetRegrid {
     
     // make multigrid aware
     vector<vector<ibbox> > bbss;
-    MakeMultigridBoxes
-      (cctkGH,
-       size, nboundaryzones, is_internal, is_staggered, shiftout,
-       bbs, obs, bbss);
+    MakeMultigridBoxes (cctkGH, bbs, obs, bbss);
     
     
     
@@ -115,7 +104,8 @@ namespace CarpetRegrid {
   
   void Automatic_OneLevel (const cGH * const cctkGH,
                            const gh<dim> & hh,
-                           const int reflevel,
+                           const int rl,
+                           const int numrl,
                            const int minwidth,
                            const CCTK_REAL minfraction,
                            const CCTK_REAL maxerror,
@@ -123,20 +113,20 @@ namespace CarpetRegrid {
                            vector<ibbox> & bbs,
                            vector<bbvect> & obs)
   {
-    if (reflevel+1 >= maxreflevels) return;
+    if (rl+1 >= numrl) return;
     
     // Arbitrary
     const int tl = 0;
     const int ml = 0;
     
-//     cout << endl << "MRA: Choosing regions to refine in " << hh.components(reflevel) << " components" << endl;
+//     cout << endl << "MRA: Choosing regions to refine in " << hh.components(rl) << " components" << endl;
     
     list<ibbox> bbl;
-    for (int c=0; c<hh.components(reflevel); ++c) {
-      const ibbox region = hh.extents.at(reflevel).at(c).at(ml);
+    for (int c=0; c<hh.components(rl); ++c) {
+      const ibbox region = hh.extents.at(rl).at(c).at(ml);
       assert (! region.empty());
       
-      const data<CCTK_REAL,dim>& errdata = *errorvar(tl,reflevel,c,ml);
+      const data<CCTK_REAL,dim>& errdata = *errorvar(tl,rl,c,ml);
       
       Automatic_Recursive (cctkGH, hh, minwidth, minfraction, maxerror,
                            errdata, bbl, region);
