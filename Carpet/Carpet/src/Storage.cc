@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.35 2004/05/21 18:16:23 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.36 2004/06/02 09:04:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -154,12 +154,8 @@ namespace Carpet {
     const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
     assert (num_tl>0);
     
-    assert (arrdata.at(group).at(0).data.size());
-    assert (arrdata.at(group).at(0).data.at(0));
     for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-      assert (m<(int)arrdata.at(group).size());
       for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-        assert (var<(int)arrdata.at(group).at(m).data.size());
         const int n = n0 + var;
         switch (CCTK_VarTypeI(n)) {
 #define TYPECASE(N,T)                                                   \
@@ -203,8 +199,6 @@ namespace Carpet {
     assert (n>=0 && n<CCTK_NumVars());
     const int var = 0;
     
-    assert (group<(int)arrdata.size());
-    assert (var<(int)arrdata.at(group).at(0).data.size());
     return arrdata.at(group).at(0).data.at(var) != NULL;
   }
   
@@ -235,7 +229,6 @@ namespace Carpet {
     
     if (CCTK_QueryGroupStorageI(cgh, group)) {
       
-      assert (group>=0 && group<(int)arrdata.size());
       return &groupdata.at(group).info.lsh[dir];
       
     } else {
@@ -251,7 +244,6 @@ namespace Carpet {
   int GroupDynamicData (const cGH* cgh, int group, cGroupDynamicData* data)
   {
     assert (group>=0 && group<CCTK_NumGroups());
-    assert (group>=0 && group<(int)arrdata.size());
     *data = groupdata.at(group).info;
     return 0;
   }
