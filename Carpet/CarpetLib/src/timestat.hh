@@ -1,6 +1,10 @@
 #ifndef TIMESTAT_HH
 #define TIMESTAT_HH
 
+#include <iostream>
+
+using namespace std;
+
 
 
 // Time (in seconds) spend during various operations
@@ -55,4 +59,4 @@ extern timestat wtime_isendwait;
 
 
 
-#endif TIMESTAT_HH
+#endif  // TIMESTAT_HH
