@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.36 2004/06/02 09:04:43 schnetter Exp $";
+  static const char* rcsid = "$Header:$";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 

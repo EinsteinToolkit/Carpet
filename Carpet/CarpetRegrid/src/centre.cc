@@ -9,7 +9,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/centre.cc,v 1.4 2004/04/28 15:45:25 schnetter Exp $";
+  static const char* rcsid = "$Header:$";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_centre_cc);
 }
 

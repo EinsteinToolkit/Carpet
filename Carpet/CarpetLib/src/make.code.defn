@@ -1,5 +1,5 @@
 # Main make.code.defn file for thorn CarpetLib   -*-Makefile-*-
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/make.code.defn,v 1.13 2004/03/03 15:30:40 hawke Exp $
+# $Header:$
 
 # Source files in this directory
 SRCS =	bbox.cc					\

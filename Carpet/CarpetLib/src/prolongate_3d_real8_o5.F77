@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_o5.F77,v 1.2 2004/03/11 12:03:09 schnetter Exp $
+c     $Header:$
       
 #include "cctk.h"
 

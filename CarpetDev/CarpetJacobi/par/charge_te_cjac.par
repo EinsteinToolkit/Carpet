@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetJacobi/par/charge_te_cjac.par,v 1.4 2004/03/23 11:59:20 schnetter Exp $
+# $Header:$
 # Erik Schnetter <schnetter@uni-tuebingen.de>
 
 ActiveThorns = "Boundary CartGrid3D CoordBase SymBase CarpetIOASCII IOBasic IOUtil Time Carpet CarpetLib CarpetRegrid CarpetReduce NaNCatcher IDScalarWave WaveToyC IDSWTEsimple TATelliptic CarpetJacobi"

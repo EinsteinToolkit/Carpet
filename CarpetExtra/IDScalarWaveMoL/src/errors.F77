@@ -1,4 +1,4 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveMoL/src/errors.F77,v 1.2 2003/11/05 16:18:40 schnetter Exp $
+c     $Header:$
 
 #include "cctk.h"
 #include "cctk_Arguments.h"

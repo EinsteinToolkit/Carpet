@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyExpl/par/ew1d.gnu,v 1.1 2003/06/18 18:24:30 schnetter Exp $
+# $Header:$
 
 set grid
 

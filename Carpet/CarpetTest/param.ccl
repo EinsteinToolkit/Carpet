@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetTest
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/param.ccl,v 1.1 2001/07/04 12:29:54 schnetter Exp $
+# $Header:$
 
 CCTK_INT i3 "three"
 {

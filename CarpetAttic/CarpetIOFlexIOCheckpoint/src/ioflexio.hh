@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.13 2004/01/12 10:50:31 cott Exp $
+// $Header:$
 
 #ifndef CARPETIOFLEXIO_HH
 #define CARPETIOFLEXIO_HH

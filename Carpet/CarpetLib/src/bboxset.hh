@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.hh,v 1.11 2003/09/19 16:06:41 schnetter Exp $
+// $Header:$
 
 #ifndef BBOXSET_HH
 #define BBOXSET_HH

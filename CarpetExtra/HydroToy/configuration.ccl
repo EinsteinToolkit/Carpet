@@ -1,4 +1,4 @@
 # Configuration definition for thorn Carpet/HydroToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/configuration.ccl,v 1.2 2004/04/18 14:10:30 schnetter Exp $
+# $Header:$
 
 REQUIRES Boundary Cart3d

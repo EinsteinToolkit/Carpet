@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/InitialData.F77,v 1.14 2003/11/05 16:18:40 schnetter Exp $
+c     $Header:$
 
  /*@@
    @file      InitialData.F77

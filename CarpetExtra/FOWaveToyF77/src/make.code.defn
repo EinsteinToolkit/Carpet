@@ -1,5 +1,5 @@
 # Main make.code.defn file for thorn WaveToyF77   -*-Makefile-*-
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/src/make.code.defn,v 1.1 2002/02/18 11:25:34 shawley Exp $
+# $Header:$
 
 # Source files in this directory
 SRCS = InitSymBound.F77 FOWaveToy.F77 Startup.F77

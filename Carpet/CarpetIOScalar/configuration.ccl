@@ -1,5 +1,5 @@
 # Configuration definitions for thorn CarpetIOASCII
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/configuration.ccl,v 1.1 2004/06/11 17:41:51 schnetter Exp $
+# $Header:$
 
 REQUIRES Carpet CarpetLib IOUtil
 

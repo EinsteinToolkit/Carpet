@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/src/carpettest_check_arguments.F77,v 1.5 2004/01/25 14:57:31 schnetter Exp $
+c     $Header:$
 
 #include "cctk.h"
 #include "cctk_Arguments.h"

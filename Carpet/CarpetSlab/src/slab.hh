@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.hh,v 1.2 2003/11/05 16:18:39 schnetter Exp $
+// $Header:$
 
 #ifndef CARPETSLAB_HH
 #define CARPETSLAB_HH

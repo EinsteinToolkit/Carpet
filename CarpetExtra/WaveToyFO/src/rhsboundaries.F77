@@ -1,4 +1,4 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/rhsboundaries.F77,v 1.1 2004/05/06 14:21:18 schnetter Exp $
+c     $Header:$
 
 #include "cctk.h"
 #include "cctk_Arguments.h"

@@ -17,7 +17,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.49 2004/07/08 12:43:34 tradke Exp $";
+  static const char* rcsid = "$Header:$";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 

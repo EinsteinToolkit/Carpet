@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/functions.hh,v 1.4 2004/04/18 13:29:43 schnetter Exp $
+// $Header:$
 
 #ifndef FUNCTIONS_HH
 #define FUNCTIONS_HH

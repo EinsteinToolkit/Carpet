@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.cc,v 1.9 2004/08/07 20:07:27 schnetter Exp $";
+  static const char* rcsid = "$Header:$";
   CCTK_FILEVERSION(Carpet_Carpet_modes_cc);
 }
 

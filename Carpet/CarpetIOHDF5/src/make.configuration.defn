@@ -1,5 +1,5 @@
 # Main make.configuration.defn file for thorn CarpetIOHDF5   -*-Makefile-*-
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/make.configuration.defn,v 1.1 2004/05/04 22:08:37 schnetter Exp $
+# $Header:$
 
 # Ensure that MPI is available
 ifeq ($(strip $(HAVE_HDF5)), )

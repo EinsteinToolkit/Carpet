@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/test/output_initial_data.parfile,v 1.1 2004/08/23 13:44:41 tradke Exp $
+# $Header:$
 
 ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce CarpetSlab Boundary CoordBase SymBase CartGrid3D Periodic LocalInterp NaNChecker Slab Time MoL IDScalarWaveMoL WaveToyMoL IOUtil IOBasic CarpetIOHDF5"
 

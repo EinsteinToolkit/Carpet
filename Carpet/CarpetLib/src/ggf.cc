@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.46 2004/09/17 16:37:26 schnetter Exp $
+// $Header:$
 
 #include <assert.h>
 #include <math.h>

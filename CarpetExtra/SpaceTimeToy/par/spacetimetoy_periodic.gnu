@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/spacetimetoy_periodic.gnu,v 1.1 2003/06/18 18:24:29 schnetter Exp $
+# $Header:$
 
 set grid
 set style data linespoints

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.hh,v 1.11 2004/03/23 19:30:14 schnetter Exp $
+// $Header:$
 
 #ifndef TH_HH
 #define TH_HH

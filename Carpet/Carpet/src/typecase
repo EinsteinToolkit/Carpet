@@ -1,7 +1,7 @@
 // Instantiate type cases for all available types    -*-C++-*-
 // (C) 2001 Erik Schnetter <schnetter@uni-tuebingen.de>
 
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/typecase,v 1.9 2004/03/01 21:34:52 schnetter Exp $
+// $Header:$
 
 // Usage:
 // Define the macro TYPECASE(N,T) to be a typecase for the type T with name N,

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.16 2004/06/13 22:46:48 schnetter Exp $
+// $Header:$
 
 #include <assert.h>
 

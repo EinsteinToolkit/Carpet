@@ -11,7 +11,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinates.cc,v 1.5 2004/04/28 15:45:25 schnetter Exp $";
+  static const char* rcsid = "$Header:$";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_manualcoordinates_cc);
 }
 

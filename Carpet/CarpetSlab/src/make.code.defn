@@ -1,5 +1,5 @@
 # Main make.code.defn file for thorn CarpetSlab   -*-Makefile-*-
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/make.code.defn,v 1.2 2002/10/24 10:53:48 schnetter Exp $
+# $Header:$
 
 # Source files in this directory
 SRCS = slab.cc

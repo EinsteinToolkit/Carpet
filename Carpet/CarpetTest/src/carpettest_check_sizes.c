@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/src/carpettest_check_sizes.c,v 1.2 2001/07/09 09:00:27 schnetter Exp $ */
+/* $Header:$ */
 
 #include <assert.h>
 #include <stdio.h>

@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.h,v 1.3 2003/04/30 12:41:02 schnetter Exp $ */
+/* $Header:$ */
 
 #ifndef CARPETREDUCE_H
 #define CARPETREDUCE_H

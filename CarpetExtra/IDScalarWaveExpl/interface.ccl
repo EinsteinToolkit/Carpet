@@ -1,5 +1,5 @@
 # Interface definition for thorn IDScalarWaveExpl
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveExpl/interface.ccl,v 1.1 2003/06/18 18:24:29 schnetter Exp $
+# $Header:$
 
 IMPLEMENTS: IDScalarWaveExpl
 

@@ -19,7 +19,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/Checkpoint.cc,v 1.2 2004/08/18 16:02:56 tradke Exp $";
+static const char* rcsid = "$Header:$";
 CCTK_FILEVERSION(Carpet_CarpetIOHDF5_Checkpoint_cc);
 }
 

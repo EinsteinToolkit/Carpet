@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-because,v 1.1 2003/04/30 12:46:15 schnetter Exp $
+# $Header:$
 
 CPP			= cpp -traditional -DCARPET_REAL
 F77			= g77

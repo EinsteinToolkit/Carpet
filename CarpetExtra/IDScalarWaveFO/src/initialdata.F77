@@ -1,4 +1,4 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveFO/src/initialdata.F77,v 1.5 2004/05/07 22:51:08 schnetter Exp $
+c     $Header:$
 
 #include "cctk.h"
 #include "cctk_Arguments.h"

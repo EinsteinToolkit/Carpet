@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.12 2003/11/05 16:18:40 schnetter Exp $
+c     $Header:$
       
 #include "cctk.h"
 #include "cctk_Arguments.h"

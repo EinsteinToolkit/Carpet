@@ -7,7 +7,7 @@ c	-*-Fortran-*-
    @desc 
               Register banner 
    @enddesc 
-   @version $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/src/Startup.F77,v 1.1 2001/03/01 13:40:11 eschnett Exp $
+   @version $Header:$
  @@*/
 
 #include "cctk.h"

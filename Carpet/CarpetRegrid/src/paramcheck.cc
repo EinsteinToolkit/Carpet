@@ -7,7 +7,7 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/paramcheck.cc,v 1.3 2004/08/02 11:42:36 schnetter Exp $";
+static const char* rcsid = "$Header:$";
 
 CCTK_FILEVERSION(CarpetRegrid_paramcheck_cc)
 

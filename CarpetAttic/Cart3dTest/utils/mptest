@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/utils/mptest,v 1.5 2001/12/17 13:34:48 schnetter Exp $
+# $Header:$
 
 # Call this script from the Cactus directory.  It compares a Carpet
 # ASCII testsuite outputs from runs with different numbers of

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.20 2004/08/19 06:35:36 schnetter Exp $
+// $Header:$
 
 #include <assert.h>
 #include <stdlib.h>
@@ -23,7 +23,7 @@
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.20 2004/08/19 06:35:36 schnetter Exp $";
+  static const char* rcsid = "$Header:$";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 

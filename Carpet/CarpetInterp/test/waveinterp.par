@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/test/waveinterp.par,v 1.1 2004/08/05 11:22:32 schnetter Exp $
+# $Header:$
 
 Cactus::cctk_run_title     = "WaveToy Interpolation Test"
 Cactus::cctk_full_warnings = yes

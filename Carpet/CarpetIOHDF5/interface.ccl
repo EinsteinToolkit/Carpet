@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetIOHDF5
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/interface.ccl,v 1.5 2004/06/08 21:09:25 schnetter Exp $
+# $Header:$
 
 IMPLEMENTS: IOHDF5
 

@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_init.c,v 1.2 2004/08/02 11:43:35 schnetter Exp $ */
+/* $Header:$ */
 
 #include "cctk.h"
 #include "cctk_Arguments.h"

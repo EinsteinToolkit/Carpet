@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetJacobi/src/Jacobi.cc,v 1.3 2004/01/25 14:57:29 schnetter Exp $
+// $Header:$
 
 #include <cassert>
 #include <cmath>

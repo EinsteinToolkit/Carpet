@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-gcc32,v 1.4 2002/10/16 17:33:51 schnetter Exp $
+# $Header:$
 
 CPP			= /home/eschnett/gcc32/bin/cpp -traditional -DCARPET_REAL
 CC			= /home/eschnett/gcc32/bin/gcc

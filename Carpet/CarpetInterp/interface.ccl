@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetInterp
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/interface.ccl,v 1.8 2004/06/08 21:09:25 schnetter Exp $
+# $Header:$
 
 IMPLEMENTS: interp
 

@@ -1,5 +1,5 @@
 # Main make.code.defn file for thorn CarpetIOASCII
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/make.code.defn,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+# $Header:$
 
 # Source files in this directory
 SRCS = ioascii.cc

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.hh,v 1.10 2004/03/01 19:43:39 schnetter Exp $
+// $Header:$
 
 #ifndef DIST_HH
 #define DIST_HH

@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetCG/src/CG.cc,v 1.4 2004/01/25 14:57:28 schnetter Exp $ */
+/* $Header:$ */
 
 #include <cassert>
 #include <cmath>

@@ -1,5 +1,5 @@
 # Interface definition for thorn WaveToyFO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/interface.ccl,v 1.4 2004/09/04 18:15:15 schnetter Exp $
+# $Header:$
 
 IMPLEMENTS: WaveToyFO
 

@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/st1d.gnu,v 1.2 2003/06/30 17:28:51 schnetter Exp $
+# $Header:$
 
 set grid
 

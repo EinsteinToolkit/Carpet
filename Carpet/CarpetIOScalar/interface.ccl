@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetIOScalar
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/interface.ccl,v 1.2 2004/06/21 16:07:41 schnetter Exp $
+# $Header:$
 
 IMPLEMENTS: IOScalar
 

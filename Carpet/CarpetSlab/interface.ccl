@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetSlab
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/interface.ccl,v 1.12 2004/06/08 21:09:25 schnetter Exp $
+# $Header:$
 
 IMPLEMENTS: Hyperslab
 

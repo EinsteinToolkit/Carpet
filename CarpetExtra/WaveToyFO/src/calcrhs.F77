@@ -1,4 +1,4 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/calcrhs.F77,v 1.8 2004/08/28 19:10:33 schnetter Exp $
+c     $Header:$
 
 #include "cctk.h"
 #include "cctk_Arguments.h"

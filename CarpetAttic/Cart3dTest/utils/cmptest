@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/utils/cmptest,v 1.5 2001/12/17 13:34:48 schnetter Exp $
+# $Header:$
 
 # Call this script from the Cactus directory.  It compares a Carpet
 # ASCII testsuite output to PUGH ASCII testsuite output.

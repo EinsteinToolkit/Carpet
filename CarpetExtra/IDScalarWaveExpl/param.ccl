@@ -1,5 +1,5 @@
 # Parameter definitions for thorn IDScalarWaveExpl
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveExpl/param.ccl,v 1.1 2003/06/18 18:24:29 schnetter Exp $
+# $Header:$
 
 CCTK_REAL wave_number[3] "Wave number"
 {

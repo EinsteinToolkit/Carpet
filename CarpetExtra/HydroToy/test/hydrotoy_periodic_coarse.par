@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/test/hydrotoy_periodic_coarse.par,v 1.4 2004/03/23 12:00:04 schnetter Exp $
+# $Header:$
 
 !DESC "HydroToy with periodic boundaries, no refinement"
 

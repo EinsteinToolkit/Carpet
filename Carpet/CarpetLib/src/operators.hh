@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/operators.hh,v 1.2 2004/03/03 15:30:40 hawke Exp $
+// $Header:$
 
 #ifndef OPERATORS_HH
 #define OPERATORS_HH

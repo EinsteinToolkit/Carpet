@@ -5,7 +5,7 @@
 #include "cctk_Arguments.h"
 
 
-static const char *rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetRegridTest/src/SetupGaussian.c,v 1.2 2004/05/27 13:22:49 schnetter Exp $";
+static const char *rcsid = "$Header:$";
 
 CCTK_FILEVERSION(CarpetExtra_CarpetRegridTest_SetupGaussian_c);
 

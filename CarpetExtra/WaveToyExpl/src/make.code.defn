@@ -1,5 +1,5 @@
 # Main make.code.defn file for thorn WaveToyExpl
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyExpl/src/make.code.defn,v 1.1 2003/06/18 18:24:30 schnetter Exp $
+# $Header:$
 
 # Source files in this directory
 SRCS = finalboundaries.F77 finalstep.F77 initsymbound.F77 intboundaries.F77 intinit.F77 intstep.F77 startup.F77

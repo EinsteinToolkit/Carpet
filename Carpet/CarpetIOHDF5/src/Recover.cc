@@ -19,7 +19,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/Recover.cc,v 1.2 2004/07/09 15:38:18 tradke Exp $";
+static const char* rcsid = "$Header:$";
 CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 

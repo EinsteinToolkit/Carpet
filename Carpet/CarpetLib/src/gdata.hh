@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.24 2004/04/19 07:56:35 schnetter Exp $
+// $Header:$
 
 #ifndef GDATA_HH
 #define GDATA_HH

@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/copy_3d_complex16.F77,v 1.2 2004/03/11 12:01:34 schnetter Exp $
+c     $Header:$
       
 #include "cctk.h"
 #include "cctk_Parameters.h"

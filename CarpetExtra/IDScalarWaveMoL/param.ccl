@@ -1,5 +1,5 @@
 # Parameter definitions for thorn IDScalarWaveMoL
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveMoL/param.ccl,v 1.2 2003/08/14 17:22:09 schnetter Exp $
+# $Header:$
 
 KEYWORD initial_data "Initial data"
 {

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.14 2004/06/02 07:08:52 bzink Exp $
+// $Header:$
 
 #ifndef CARPETREGRID_HH
 #define CARPETREGRID_HH

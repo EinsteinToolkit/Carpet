@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetCG
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetCG/interface.ccl,v 1.1 2003/11/19 10:40:47 hawke Exp $
+# $Header:$
 
 implements: CarpetCG
 inherits: TATelliptic

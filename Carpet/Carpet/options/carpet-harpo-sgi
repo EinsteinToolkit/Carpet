@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-harpo-sgi,v 1.5 2002/06/07 20:44:03 schnetter Exp $
+# $Header:$
 
 CPP			= /lib/cpp -DMPIPP_H
 

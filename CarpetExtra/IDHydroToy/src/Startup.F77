@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDHydroToy/src/Startup.F77,v 1.1 2001/03/18 22:37:10 eschnett Exp $
+c     $Header:$
       
 #include "cctk.h"
       

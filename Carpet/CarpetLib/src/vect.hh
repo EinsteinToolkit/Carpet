@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.29 2004/08/14 07:41:25 schnetter Exp $
+// $Header:$
 
 #ifndef VECT_HH
 #define VECT_HH

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.40 2004/01/25 14:57:27 schnetter Exp $
+// $Header:$
 
 #ifndef CARPET_PUBLIC_HH
 #define CARPET_PUBLIC_HH

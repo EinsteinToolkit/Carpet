@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.14 2004/02/18 15:10:17 schnetter Exp $
+// $Header:$
 
 #include <assert.h>
 

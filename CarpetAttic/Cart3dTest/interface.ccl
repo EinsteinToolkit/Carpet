@@ -1,5 +1,5 @@
 # Interface definition for thorn Cart3dTest
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/interface.ccl,v 1.1 2001/03/01 15:49:27 eschnett Exp $
+# $Header:$
 
 implements: Cart3dTest
 inherits: grid

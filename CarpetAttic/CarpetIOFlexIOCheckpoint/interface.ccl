@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetIOFlexIO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/interface.ccl,v 1.6 2003/09/17 13:47:00 cvs_anon Exp $
+# $Header:$
 
 implements: IOFlexIO
 

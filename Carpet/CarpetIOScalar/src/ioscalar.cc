@@ -18,7 +18,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/src/ioscalar.cc,v 1.6 2004/08/05 10:28:25 schnetter Exp $";
+  static const char* rcsid = "$Header:$";
   CCTK_FILEVERSION(Carpet_CarpetIOScalar_ioscalar_cc);
 }
 

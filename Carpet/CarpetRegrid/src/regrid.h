@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.h,v 1.1 2002/09/01 14:52:29 schnetter Exp $ */
+/* $Header:$ */
 
 #ifndef CARPETREGRID_H
 #define CARPETREGRID_H

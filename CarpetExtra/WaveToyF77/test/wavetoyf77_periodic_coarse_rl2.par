@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77_periodic_coarse_rl2.par,v 1.7 2004/03/23 12:00:37 schnetter Exp $
+# $Header:$
 
 !DESC "WaveToy with periodic boundaries, 1 refinement level"
 

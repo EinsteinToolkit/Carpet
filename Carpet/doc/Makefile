@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/Makefile,v 1.2 2002/11/29 16:48:35 schnetter Exp $
+# $Header:$
 
 NAME=documentation
 

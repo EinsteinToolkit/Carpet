@@ -1,5 +1,5 @@
 # Schedule definitions for thorn CarpetJacobi
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetJacobi/schedule.ccl,v 1.1 2003/09/02 14:35:57 schnetter Exp $
+# $Header:$
 
 SCHEDULE CarpetJacobi_register AT startup
 {

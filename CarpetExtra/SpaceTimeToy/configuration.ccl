@@ -1,4 +1,4 @@
 # Configuration definition for thorn Carpet/SpaceTimeToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/configuration.ccl,v 1.2 2004/04/18 14:10:29 schnetter Exp $
+# $Header:$
 
 REQUIRES Boundary Cart3d

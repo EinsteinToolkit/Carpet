@@ -1,5 +1,5 @@
 # Schedule definitions for thorn CarpetIOFlexIO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/schedule.ccl,v 1.3 2003/12/01 13:15:52 cott Exp $
+# $Header:$
 
 schedule CarpetIOFlexIO_Startup at STARTUP after IOUtil_Startup
 {

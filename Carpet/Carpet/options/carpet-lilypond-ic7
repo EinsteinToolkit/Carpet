@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-ic7,v 1.5 2002/11/16 19:10:50 schnetter Exp $
+# $Header:$
 
 CPP		= cpp -traditional -DCARPET_REAL
 CC		= /opt/intel/compiler70/ia32/bin/icc

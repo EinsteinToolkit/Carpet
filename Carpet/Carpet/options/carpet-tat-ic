@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-tat-ic,v 1.1 2002/11/03 12:22:24 schnetter Exp $
+# $Header:$
 
 CPP		= /home/schnette/gcc/bin/cpp -traditional -DCARPET_REAL
 CC		= icc

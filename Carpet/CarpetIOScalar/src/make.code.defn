@@ -1,5 +1,5 @@
 # Main make.code.defn file for thorn CarpetIOScalar
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/src/make.code.defn,v 1.1 2004/06/11 17:41:51 schnetter Exp $
+# $Header:$
 
 # Source files in this directory
 SRCS = ioscalar.cc

@@ -1,5 +1,5 @@
 # Configuration definitions for thorn CarpetSlab
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/configuration.ccl,v 1.5 2004/06/08 21:09:25 schnetter Exp $
+# $Header:$
 
 REQUIRES Carpet CarpetLib
 

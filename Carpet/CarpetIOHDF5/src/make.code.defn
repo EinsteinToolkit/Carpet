@@ -1,5 +1,5 @@
 # Main make.code.defn file for thorn CarpetIOHDF5
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/make.code.defn,v 1.5 2004/07/09 15:38:18 tradke Exp $
+# $Header:$
 
 # Source files in this directory
 SRCS = iohdf5.cc iohdf5utils.cc Checkpoint.cc Recover.cc

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.hh,v 1.8 2004/02/27 16:23:34 schnetter Exp $
+// $Header:$
 
 #ifndef CARPETIOFLEXIO_HH
 #define CARPETIOFLEXIO_HH

@@ -1,5 +1,5 @@
 # Main make.code.defn file for thorn CarpetJacobi
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetJacobi/src/make.code.defn,v 1.1 2003/09/02 14:35:58 schnetter Exp $
+# $Header:$
 
 # Source files in this directory
 SRCS = Jacobi.cc

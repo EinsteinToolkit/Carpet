@@ -10,7 +10,7 @@
 #include "mask_carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_carpet.cc,v 1.5 2004/08/05 11:15:49 schnetter Exp $";
+  static const char* rcsid = "$Header:$";
   CCTK_FILEVERSION(Carpet_CarpetMask_Mask_cc);
 }
 

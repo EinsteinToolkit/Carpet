@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/checkindex.F77,v 1.1 2003/11/05 16:18:39 schnetter Exp $
+c     $Header:$
       
 #include "cctk.h"
 

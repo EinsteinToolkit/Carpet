@@ -12,7 +12,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualgridpoints.cc,v 1.5 2004/07/02 10:14:51 tradke Exp $";
+  static const char* rcsid = "$Header:$";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_manualgridpoints_cc);
 }
 

@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetJacobi
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetJacobi/interface.ccl,v 1.1 2003/09/02 14:35:57 schnetter Exp $
+# $Header:$
 
 IMPLEMENTS: CarpetJacobi
 

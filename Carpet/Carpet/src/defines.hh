@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/defines.hh,v 1.2 2004/03/02 10:29:54 schnetter Exp $
+// $Header:$
 
 #ifndef DEFINES_HH
 #define DEFINES_HH

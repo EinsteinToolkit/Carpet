@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.hh,v 1.5 2004/05/21 18:16:23 schnetter Exp $
+// $Header:$
 
 // It is assumed that each group has at least one map.  All arrays
 // have exactly one map.  All maps have the same number of refinement

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIntegrateTest/src/Local.cc,v 1.1 2004/09/01 17:47:53 schnetter Exp $
+// $Header:$
 
 #include "cctk.h"
 #include "cctk_Parameters.h"

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.36 2004/09/13 14:36:13 schnetter Exp $
+// $Header:$
 
 #include <assert.h>
 #include <math.h>
@@ -24,7 +24,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.36 2004/09/13 14:36:13 schnetter Exp $";
+  static char const * const rcsid = "$Header:$";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 

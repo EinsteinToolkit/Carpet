@@ -1,7 +1,7 @@
 // Instantiate templates for all available types    -*-C++-*-
 // (C) 2001 Erik Schnetter <schnetter@uni-tuebingen.de>
 
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/instantiate,v 1.10 2004/03/01 21:35:13 schnetter Exp $
+// $Header:$
 
 // Usage:
 // Define the macro INSTANTIATE(T) to instantiate for the type T,

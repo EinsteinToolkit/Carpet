@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.hh,v 1.2 2004/06/14 09:42:53 schnetter Exp $
+// $Header:$
 
 #ifndef MODES_HH
 #define MODES_HH

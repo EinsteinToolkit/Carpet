@@ -1,5 +1,5 @@
 # Parameter definitions for thorn WaveToyMoL
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/param.ccl,v 1.2 2004/04/07 17:08:21 schnetter Exp $
+# $Header:$
 
 SHARES: MethodOfLines
 

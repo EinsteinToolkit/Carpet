@@ -1,4 +1,4 @@
-!!$     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_3tl_eno.F90,v 1.1 2004/03/03 15:30:40 hawke Exp $
+!!$     $Header:$
 
 #include "cctk.h"
 

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.12 2004/07/09 15:38:18 tradke Exp $
+// $Header:$
 
 #ifndef CARPETIOHDF5_HH
 #define CARPETIOHDF5_HH

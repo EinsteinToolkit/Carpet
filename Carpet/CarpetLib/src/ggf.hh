@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.25 2004/08/07 19:47:11 schnetter Exp $
+// $Header:$
 
 #ifndef GGF_HH
 #define GGF_HH

@@ -1,5 +1,5 @@
 # Interface definition for thorn IDHydroToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDHydroToy/interface.ccl,v 1.1 2001/03/18 22:37:10 eschnett Exp $
+# $Header:$
 
 implements: idhydrotoy
 inherits: hydrotoy grid

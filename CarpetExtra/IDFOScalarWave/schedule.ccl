@@ -1,5 +1,5 @@
 # Schedule definitions for thorn IDScalarWave
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/schedule.ccl,v 1.7 2003/11/05 16:18:40 schnetter Exp $
+# $Header:$
 
 schedule IDFOScalarWave_InitialData as FOWaveToy_InitialData at INITIAL
 {

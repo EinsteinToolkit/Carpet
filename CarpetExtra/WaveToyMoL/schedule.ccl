@@ -1,5 +1,5 @@
 # Schedule definitions for thorn WaveToyMoL
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/schedule.ccl,v 1.5 2004/04/07 17:08:21 schnetter Exp $
+# $Header:$
 
 STORAGE: scalarevolve[3]
 STORAGE: scalarevolvedot

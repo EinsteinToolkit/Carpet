@@ -1,5 +1,5 @@
 # Schedule definitions for thorn CarpetIOASCII
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/schedule.ccl,v 1.8 2004/06/21 16:07:19 schnetter Exp $
+# $Header:$
 
 storage: last_output_iteration last_output_time this_iteration
 

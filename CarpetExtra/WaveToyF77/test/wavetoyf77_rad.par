@@ -7,7 +7,7 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77_rad.par,v 1.5 2004/03/23 12:00:37 schnetter Exp $
+# $Header:$
 
 !DESC "Octant evolution with radiation boundaries"
 

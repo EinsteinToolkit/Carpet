@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetLib
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/interface.ccl,v 1.5 2004/05/04 22:09:54 schnetter Exp $
+# $Header:$
 
 IMPLEMENTS: CarpetLib
 

@@ -1,4 +1,4 @@
-$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/README,v 1.1 2001/04/06 10:37:35 schnetter Exp $
+$Header:$
 
 This directory contains sample options files for various architectures
 and compilers.  The syntax of the file names is
