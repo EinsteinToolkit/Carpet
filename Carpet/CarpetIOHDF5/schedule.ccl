@@ -1,5 +1,5 @@
 # Schedule definitions for thorn CarpetIOHDF5
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/schedule.ccl,v 1.2 2004/03/08 22:50:54 cott Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/schedule.ccl,v 1.3 2004/03/10 21:55:06 cott Exp $
 
 schedule CarpetIOHDF5Startup at STARTUP after IOUtil_Startup
 {
@@ -11,3 +11,17 @@ schedule CarpetIOHDF5ReadData at INITIAL
   LANG: C
   OPTIONS: global
 } "Read initial data from file"
+
+schedule CarpetIOHDF5_EvolutionCheckpoint at CHECKPOINT
+{
+  LANG: C
+  OPTIONS: global
+} "Do checkpointing"
+
+#if (! CCTK_Equals (recover, "no") && *recover_file)
+#{
+#  schedule CarpetIOHDF5_RecoverParameters at RECOVER_PARAMETERS
+#  {
+#    LANG:C
+#  } "Parameter recovery routine"
+#}
