@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.29 2003/05/21 14:30:23 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.30 2003/06/24 15:18:51 schnetter Exp $
 
 shares: Cactus
 
@@ -90,6 +90,7 @@ CCTK_INT prolongation_order_space "Order of prolongation operator in space"
 {
   1 :: "first order (linear)"
   3 :: "third order (cubic)"
+  5 :: "fifth order"
 } 1
 
 CCTK_INT prolongation_order_time "Order of prolongation operator in time"
