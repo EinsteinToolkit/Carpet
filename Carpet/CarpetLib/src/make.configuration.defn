@@ -1,7 +1,13 @@
 # Main make.configuration.defn file for thorn CarpetLib   -*-Makefile-*-
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/make.configuration.defn,v 1.5 2004/04/29 22:15:06 tradke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/make.configuration.defn,v 1.1 2002/09/01 15:12:29 schnetter Exp $
 
 # Ensure that MPI is available
-ifeq ($(strip $(HAVE_MPI)), )
-    $(error Configuration error: The Carpet thorns require MPI.  Please configure with MPI, or remove the Carpet thorns from the ThornList.)
+ifndef MPI_LIBS
+$(NAME): MissingMPI
+.PSEUDO: MissingMPI
+MissingMPI:
+	@echo "Configuration error:"
+	@echo "Thorn CarpetLib requires MPI"
+	@echo "Please configure with MPI, or remove CarpetLib from ThornList"
+	exit 2
 endif
