@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5utils.cc,v 1.1 2004/03/08 09:43:41 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5utils.cc,v 1.2 2004/03/08 22:50:41 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5utils_cc);
 }
 
@@ -234,7 +234,7 @@ namespace CarpetIOHDF5 {
       shape[0] = 1;
     } else if (rank==1) {
       herr = H5Sget_simple_extent_dims (dataspace, shape, NULL);
-      assert (!herr);
+      assert (herr >= 0);
     } else {
       assert (0);
     }
@@ -416,7 +416,82 @@ namespace CarpetIOHDF5 {
     
     return length;
   }
+
+  herr_t DatasetCounter(hid_t group_id, const char *member_name, void *operator_data)
+    /* Counts datasets. Used by GetnDatasets; straight from John Shalf's FlexIO library */
+  {
+    int *count = (int*)operator_data;
+    H5G_stat_t objinfo;
+    // request info about the type of objects in root group
+    if(H5Gget_objinfo(group_id,member_name,1 /* follow links */,&objinfo)<0) {
+      return 0; 
+    }
+    // only count objects that are datasets (not subgroups)
+    if(objinfo.type==H5G_DATASET) {
+      (*count)++;
+    }
+  return 0;
+  }
+
   
+  int GetnDatasets(const hid_t reader)
+  {
+    //this is straight from John Shalf's FlexIO library
+
+    int count=0;
+    int idx=0;
+    while(H5Giterate(reader, /* hid_t loc_id, */
+		     "/", /*const char *name, */
+		     &idx, /* int *idx, */
+		     DatasetCounter,
+		     &count)<0){}
+    return count;
+  }
+
+  struct H5IO_getname_t {
+    //this is straight from John Shalf's FlexIO library
+    int index,count;
+    char *name;
+  };
+
+
+  herr_t GetName(hid_t group_id, const char *member_name, void *operator_data)
+  {
+    //this is straight from John Shalf's FlexIO library
+    H5IO_getname_t *getn = (H5IO_getname_t*)operator_data;
+    // check type first (only respond if it is a dataset)
+    H5G_stat_t objinfo;
+    // request info about the type of objects in root group
+    if(H5Gget_objinfo(group_id,
+		      member_name,
+		    1 /* follow links */,
+		      &objinfo)<0) return 0; // error (probably bad symlink)
+    // only count objects that are datasets (not subgroups)
+    if(objinfo.type!=H5G_DATASET)
+      return 0; // do not increment count if it isn't a dataset.
+    if(getn->index==getn->count){
+      strcpy(getn->name,member_name);
+      return 1; // success
+    }
+    getn->count++;
+    return 0;
+  }
+
+
+  void GetDatasetName(const hid_t reader, const int _index,  char *name)
+  {
+    //this is straight from John Shalf's FlexIO library
+    H5IO_getname_t getn;
+    int idx=_index;
+    getn.index=_index; getn.name=name; getn.count=_index;
+    while(H5Giterate(reader, /* hid_t loc_id, */
+		     "/", /*const char *name, */
+		     &idx, /* int *idx, */
+		     GetName,
+		     &getn)<0){}
+  }
+
+
   
   
 } // namespace CarpetIOHDF5

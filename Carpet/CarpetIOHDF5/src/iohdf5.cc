@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.4 2004/03/08 09:43:41 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.5 2004/03/08 22:50:41 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -496,7 +496,7 @@ namespace CarpetIOHDF5 {
   
   
   
-#if 0
+
   int InputGH (const cGH* const cctkGH) {
     int retval = 0;
     for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
@@ -512,7 +512,7 @@ namespace CarpetIOHDF5 {
   
   
   
-  int InputVarAs (const cGH* const cctkGH, const char* const varname,
+  int InputVarAs (const cGH* const cctkGH, const char* const varname, 
 		  const char* const alias) {
     DECLARE_CCTK_PARAMETERS;
     
@@ -525,7 +525,18 @@ namespace CarpetIOHDF5 {
     const int var = n - n0;
     assert (var>=0 && var<CCTK_NumVars());
     const int tl = 0;
-    
+
+    herr_t herr;
+    int have_dataset = 0;
+    int want_dataset = 0;
+    int did_read_something = 0;
+    int ndatasets = 0;
+    hid_t dataset = 0;
+
+    char datasetname[1024];
+
+    CCTK_REAL *h5data = NULL;
+
     // Check for storage
     if (! CCTK_QueryGroupStorageI(cctkGH, group)) {
       CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -548,13 +559,7 @@ namespace CarpetIOHDF5 {
     
     hid_t reader = -1;
     
-//     const int gpdim = CCTK_GroupDimI(group);
-    
-//     int have_dataset;
-    
-//     int rank;
-//     int dims[dim];
-//     int nbytes;
+    const int gpdim = CCTK_GroupDimI(group);
     
     // Read the file only on the root processor
     if (CCTK_MyProc(cctkGH)==0) {
@@ -567,204 +572,181 @@ namespace CarpetIOHDF5 {
                     "Could not open file \"%s\" for reading", filename);
       }
       assert (reader>=0);
-      
+      // get the number of datasets in the file 
+      ndatasets=GetnDatasets(reader);
     }
     
     vector<ibset> regions_read(Carpet::maps);
     
-    // Traverse all components on all levels
-    BEGIN_MAP_LOOP(cctkGH, grouptype) {
-      BEGIN_COMPONENT_LOOP(cctkGH, grouptype) {
-        
-        // Read data
-        if (CCTK_MyProc(cctkGH)==0) {
-          
-          ostringstream datasetnamebuf;
-          datasetnamebuf << varname
-                         << " it=" << cctk_iteration
-                         << " ml=" << mglevel
-                         << " rl=" << rl
-                         << " m=" << Carpet::map
-                         << " c=" << component;
-          string datasetnamestr = datasetnamebufs.str();
-          const char * const datasetname = datasetnamestr.c_str();
-          const hid_t dataset = H5Dopen (reader, datasetname);
-          have_dataset = dataset>=0;
-          
-//       // Check rank
-//       assert (rank==gpdim);
+    // Broadcast number of datasets
+    MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
+    assert (ndatasets>=0);
       
-//       // Check datatype
-//           assert (true
-//                   || (CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL8
-//                       && sizeof(CCTK_REAL8) == sizeof(double))
-//                   || (CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL
-//                       && sizeof(CCTK_REAL) == sizeof(double)));
-//       // TODO: Check datatype correctly
-//       assert (CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL8
-//               || (sizeof(CCTK_REAL) == sizeof(double)
-//                   && CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL));
+    
+    for (int datasetid=0; datasetid<ndatasets; ++datasetid) {
+      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Handling dataset #%d", datasetid);
+
+        
+      // Read data
+      if (CCTK_MyProc(cctkGH)==0) {
+	GetDatasetName(reader,datasetid,datasetname);
+	cout << datasetname << "\n";
+  
+	dataset = H5Dopen (reader, datasetname);
+	assert(dataset);
+      }
+    
       
-//       // TODO: check grid spacing
-        }
-    
-//     // Broadcast rank, dimensions, and nbytes
-//     MPI_Bcast (&rank, 1, MPI_INT, 0, dist::comm);
-//     assert (rank>=1);
-//     MPI_Bcast (&dims, rank, MPI_INT, 0, dist::comm);
-//     for (int d=0; d<rank; ++d) assert (dims[d]>=0);
-//     MPI_Bcast (&nbytes, 1, MPI_INT, 0, dist::comm);
-//     assert (nbytes>=0);
-    
-//     // Broadcast number of datasets
-//     MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
-//     assert (ndatasets>=0);
-        
-        // Broadcast dataset
-        MPI_Bcast (&have_dataset, 1, MPI_INT, 0, dist::comm);
-        
-        if (have_dataset) {
-          
-          ###
-      // Read grid
       int amr_level;
       int amr_origin[dim];
       int amr_dims[dim];
-      
+	
       if (CCTK_MyProc(cctkGH)==0) {
-        
-        // Read data
-        const hid_t dataset
-        
-        {
-          char * name;
-          ReadAttribute (reader, "name", name);
-          if (verbose) {
-            if (name) {
-              CCTK_VInfo (CCTK_THORNSTRING, "Dataset name is \"%s\"", name);
-            }
-          }
-          want_dataset = name && CCTK_EQUALS(name, varname);
-          free (name);
-        }
-        
-        // If iorigin attribute is absent, assume file has unigrid
-        // data.
-        {
-          IObase::DataType atype;
-          int alength;
-          if (reader->readAttributeInfo("iorigin", atype, alength) < 0) {
-            amrgrid->level = 0;
-            for (int d=0; d<gpdim; ++d) {
-              amrgrid->iorigin[d] = 0;
-            }
-          }
-        }
-        
-        amr_level = amrgrid->level;
-        for (int d=0; d<gpdim; ++d) {
-          amr_origin[d] = amrgrid->iorigin[d];
-          amr_dims[d] = amrgrid->dims[d];
-        }
-        for (int d=gpdim; d<dim; ++d) {
-          amr_origin[d] = 0;
-          amr_dims[d] = 1;
-        }
-        
-      } // MyProc == 0
-      
-      MPI_Bcast (&want_dataset, 1, MPI_INT, 0, dist::comm);
-      MPI_Bcast (&amr_level, 1, MPI_INT, 0, dist::comm);
-      MPI_Bcast (amr_origin, dim, MPI_INT, 0, dist::comm);
-      MPI_Bcast (amr_dims, dim, MPI_INT, 0, dist::comm);
-      
-      if (want_dataset && amr_level == reflevel) {
-        did_read_something = true;
-        
-        // Traverse all components on all levels
-        BEGIN_MAP_LOOP(cctkGH, grouptype) {
-          BEGIN_COMPONENT_LOOP(cctkGH, grouptype) {
+	  
+       // Read data
+       char * name;
+       //       cout << "reading name" << "\n";
+       ReadAttribute (dataset, "name", name);
+       // cout << "done reading name" << "\n";
+       if (verbose) {
+	 if (name) {
+		CCTK_VInfo (CCTK_THORNSTRING, "Dataset name is \"%s\"", name);
+	 }
+       }
+       want_dataset = name && CCTK_EQUALS(name, varname);
+       free (name);
+     
+       if(want_dataset) {
+	 
+	 // get dataset dimensions
+	 const hid_t dataspace = H5Dget_space(dataset);
+	 assert (dataspace>=0);
+	 hsize_t rank=H5Sget_simple_extent_ndims(dataspace);
+	 hsize_t shape[rank];
+	 int rank2 = H5Sget_simple_extent_dims (dataspace, shape, NULL);
+	 herr = H5Sclose(dataspace);
+	 assert(!herr);
+	 assert (rank2 == rank);
+	 assert (gpdim == rank);
+	    
+	 int datalength=1;
+	 
+	 for(int i=0;i<rank;i++) {
+	   datalength=datalength*shape[i];
+	 }
+	 const hid_t datatype = H5T_NATIVE_DOUBLE;
+	 
+	 //	 cout << "datalength: " << datalength << " rank: " << rank << "\n";
+	 // cout << shape[0] << " " << shape[1] << " " << shape[2] << "\n";
+	 
+	 h5data = (CCTK_REAL*) malloc(sizeof(double)*datalength);
+	 herr = H5Dread(dataset,datatype,H5S_ALL, H5S_ALL, H5P_DEFAULT,(void*)h5data);
+	 assert(!herr);
+	 
+	 ReadAttribute(dataset,"level",amr_level);
+	 //cout << amr_level << "," << gpdim << "\n";
+	 ReadAttribute(dataset,"iorigin",amr_origin,dim);
+	 //    cout << amr_origin[0] << "\n";
+	 
+	 herr = H5Dclose(dataset);
+	 assert(!herr);
+
+	 for (int d=0; d<gpdim; ++d) {
+	   amr_dims[d] = shape[d];
+	 }
+  
+       } // want_dataset
+     } // MyProc == 0
+	
+     MPI_Bcast (&want_dataset, 1, MPI_INT, 0, dist::comm);
+     MPI_Bcast (&amr_level, 1, MPI_INT, 0, dist::comm);
+     MPI_Bcast (amr_origin, dim, MPI_INT, 0, dist::comm);
+     MPI_Bcast (amr_dims, dim, MPI_INT, 0, dist::comm);
+	
+     if (want_dataset && amr_level == reflevel) {
+       did_read_something = true;
+	  
+       // Traverse all components on all levels
+       BEGIN_MAP_LOOP(cctkGH, grouptype) {
+	 BEGIN_COMPONENT_LOOP(cctkGH, grouptype) {
             
-            ggf<dim>* ff = 0;
+	   ggf<dim>* ff = 0;
+	      
+	   assert (var < (int)arrdata.at(group).at(Carpet::map).data.size());
+	   ff = (ggf<dim>*)arrdata.at(group).at(Carpet::map).data.at(var);
             
-            assert (var < (int)arrdata.at(group).at(Carpet::map).data.size());
-            ff = (ggf<dim>*)arrdata.at(group).at(Carpet::map).data.at(var);
+	   gdata<dim>* const data = (*ff) (tl, rl, component, mglevel);
+	   
+	   // Create temporary data storage on processor 0
+	   const vect<int,dim> str
+	     = vect<int,dim>(maxreflevelfact/reflevelfact);
+	   const vect<int,dim> lb = vect<int,dim>::ref(amr_origin) * str;
+	   const vect<int,dim> ub
+	     = lb + (vect<int,dim>::ref(amr_dims) - 1) * str;
+	   const bbox<int,dim> ext(lb,ub,str);
+	   
+	   gdata<dim>* const tmp = data->make_typed (n);
+	   
+	   if (CCTK_MyProc(cctkGH)==0) {
+	     tmp->allocate (ext, 0, h5data);
+	   } else {
+	     tmp->allocate (ext, 0);
+	   }
             
-            gdata<dim>* const data = (*ff) (tl, rl, component, mglevel);
-            
-            // Create temporary data storage on processor 0
-            const vect<int,dim> str
-              = vect<int,dim>(maxreflevelfact/reflevelfact);
-            const vect<int,dim> lb = vect<int,dim>::ref(amr_origin) * str;
-            const vect<int,dim> ub
-              = lb + (vect<int,dim>::ref(amr_dims) - 1) * str;
-            const bbox<int,dim> ext(lb,ub,str);
-            
-            gdata<dim>* const tmp = data->make_typed (n);
-            
-            if (CCTK_MyProc(cctkGH)==0) {
-              tmp->allocate (ext, 0, amrgrid->data);
-            } else {
-              tmp->allocate (ext, 0);
-            }
-            
-            // Initialise with what is found in the file -- this does
-            // not guarantee that everything is initialised.
-            const bbox<int,dim> overlap = tmp->extent() & data->extent();
-            regions_read.at(Carpet::map) |= overlap;
-            
-            // Copy into grid function
-            for (comm_state<dim> state; !state.done(); state.step()) {
-              data->copy_from (state, tmp, overlap);
-            }
-            
-            // Delete temporary copy
-            delete tmp;
-            
-          } END_COMPONENT_LOOP;
-        } END_MAP_LOOP;
-        
-      } // if want_dataset && level == reflevel
-      
-      if (CCTK_MyProc(cctkGH)==0) {
-        free (amrgrid->data);
-        free (amrgrid);
-        amrgrid = 0;
-      }
-      
+	   // Initialise with what is found in the file -- this does
+	   // not guarantee that everything is initialised.
+	   const bbox<int,dim> overlap = tmp->extent() & data->extent();
+	   regions_read.at(Carpet::map) |= overlap;
+	   
+	   // Copy into grid function
+	   for (comm_state<dim> state; !state.done(); state.step()) {
+	     data->copy_from (state, tmp, overlap);
+	   }
+	   
+	   // Delete temporary copy
+	   delete tmp;
+	      
+	 } END_COMPONENT_LOOP;
+       } END_MAP_LOOP;
+       
+     } // if want_dataset && level == reflevel
+       
+     if (CCTK_MyProc(cctkGH)==0) {
+       free (h5data);
+     }
+  
     } // loop over datasets
-    
+      
     // Close the file
     if (CCTK_MyProc(cctkGH)==0) {
-      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Deleting AMR info");
-      delete amrreader;
-
-      amrreader = 0;
       if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Closing file");
-      delete reader;
-      reader = 0;
+      herr = H5Fclose(reader);
+      //	  cout << "blah! " << reader << "\n";
+      // cout << "closing file " << herr << "\n";
+      assert(!herr);
+      reader=-1;
     }
-    
+  
     // Was everything initialised?
     if (did_read_something) {
       for (int m=0; m<Carpet::maps; ++m) {
-        dh<dim>& thedd = *arrdata.at(group).at(m).dd;
-        ibset all_exterior;
-        for (size_t c=0; c<thedd.boxes.at(rl).size(); ++c) {
-          all_exterior |= thedd.boxes.at(rl).at(c).at(mglevel).exterior;
-        }
-        if (regions_read.at(m) != all_exterior) {
-          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "Variable \"%s\" could not be initialised from file -- the file may be missing data",
-                      varname);
-        }
+	dh<dim>& thedd = *arrdata.at(group).at(m).dd;
+	ibset all_exterior;
+	for (size_t c=0; c<thedd.boxes.at(rl).size(); ++c) {
+	  all_exterior |= thedd.boxes.at(rl).at(c).at(mglevel).exterior;
+	    }
+	if (regions_read.at(m) != all_exterior) {
+	  CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+		      "Variable \"%s\" could not be initialised from file -- the file may be missing data",
+		      varname);
+	}
       }
     } // if did_read_something
     
     return did_read_something ? 0 : -1;
+//	CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,"stop!");
   }
-  
-  
+
   
   /** returns the number of recovered variables */
   int Recover (cGH* const cctkGH, const char *basefilename,
@@ -800,7 +782,7 @@ namespace CarpetIOHDF5 {
     
     return num_vars_read;
   }
-  
+
   
   
   int CarpetIOHDF5ReadData (CCTK_ARGUMENTS)
@@ -808,7 +790,7 @@ namespace CarpetIOHDF5 {
     DECLARE_CCTK_ARGUMENTS;
     return InputGH(cctkGH);
   }
-#endif
+
   
   
 } // namespace CarpetIOHDF5

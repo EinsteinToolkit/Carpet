@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.2 2004/03/08 09:43:41 cott Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.3 2004/03/08 22:50:41 cott Exp $
 
 #ifndef CARPETIOHDF5_HH
 #define CARPETIOHDF5_HH
@@ -61,6 +61,8 @@ namespace CarpetIOHDF5 {
   int ReadAttribute (const hid_t dataset, const char* name, char*& values);
   int ReadAttribute (const hid_t dataset, const char* name, char* values, int nvalues);
   
+  int GetnDatasets (const hid_t reader);
+  void GetDatasetName (const hid_t reader, const int _index, char* name);
 
 } // namespace CarpetIOHDF5
 
