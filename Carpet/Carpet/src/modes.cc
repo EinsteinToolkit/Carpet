@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.cc,v 1.7 2004/05/21 18:16:23 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/modes.cc,v 1.8 2004/08/03 19:39:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_modes_cc);
 }
 
@@ -76,6 +76,7 @@ namespace Carpet {
     
     mglevel = ml;
     mglevelfact = ipow(mgfact, mglevel);
+    // TODO: this could also just be "mglevel" instead
     cgh->cctk_convlevel = basemglevel + mglevel;
     
     // Set time and space delta
