@@ -11,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.20 2002/10/15 20:06:38 shawley Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.21 2002/10/16 18:13:25 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Initialise_cc)
 
@@ -95,13 +95,15 @@ namespace Carpet {
     
     // Scott's algorithm for getting two extra timelevels of data
     if (init_3_timelevels) {
+      
       int time_dir = 1; //Positive = forward (+t), Negative = backward (-t)
       CCTK_INFO("Initializing THREE timelevels");
       //SHH:check the current time
       BEGIN_REFLEVEL_LOOP(cgh) {
         BEGIN_MGLEVEL_LOOP(cgh) {
 	  cout << "Time at rl=" << reflevel << ", ml=" << mglevel << ", is "
-	       << tt->get_time (reflevel, mglevel) << endl;
+	       << tt->get_time (reflevel, mglevel) << " and "
+	       << cgh->cctk_time / base_delta_time << endl;
         } END_MGLEVEL_LOOP(cgh);
       } END_REFLEVEL_LOOP(cgh);
 
@@ -118,16 +120,19 @@ namespace Carpet {
 
 	  cout << "`forward': Before CycleTimeLevels & AdvanceTime, "
 	       << "time on rl=" << reflevel << ", ml=" << mglevel << ", is "
-	       << tt->get_time (reflevel, mglevel) << endl;
+	       << tt->get_time (reflevel, mglevel) << " and "
+	       << cgh->cctk_time / base_delta_time << endl;
 	  // Cycle time levels
 	  // erik: what about arrays?
 	  CycleTimeLevels (cgh);
-	   
+	  
 	  // Advance level times
 	  tt->advance_time (reflevel, mglevel);
+	  cgh->cctk_time = cctk_initial_time + base_delta_time * tt->get_time (reflevel, mglevel);
 	  cout << "`forward': After CycleTimeLevels & AdvanceTime, "
 	       << "time on rl=" << reflevel << ", ml=" << mglevel << ", is "
-	       << tt->get_time (reflevel, mglevel) << endl;
+	       << tt->get_time (reflevel, mglevel) << " and "
+	       << cgh->cctk_time / base_delta_time << endl;
 	  Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
 	  CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
 	  Waypoint ("%*sScheduling EVOL", 2*reflevel, "");
@@ -145,14 +150,16 @@ namespace Carpet {
 	      tt->set_time (rl, mglevel, -1*tt->get_time (rl, mglevel) );
 	      tt->set_delta (rl, mglevel,-1*tt->get_delta (rl, mglevel));
 	  }
+	  cgh->cctk_time = cctk_initial_time + base_delta_time * tt->get_time (reflevel, mglevel);
 	  // Keep track of which direction (in time) we're integrating
 	  time_dir *= -1;
 	  cgh->cctk_delta_time = time_dir * base_delta_time / reflevelfact * mglevelfact;
 	  
 	  cout << "`post-flip': "
 	       << "time on rl=" << reflevel << ", ml=" << mglevel << ", is "
-	       << tt->get_time (reflevel, mglevel) << endl;
-
+	       << tt->get_time (reflevel, mglevel) << " and "
+	       << cgh->cctk_time / base_delta_time << endl;
+	  
 	  cout << "Evolving in the opposite time-direction" << endl;
           // Note: Since we just flipped, we don't need to cycle or advancetime
 	  // erik: what about arrays?
@@ -171,12 +178,13 @@ namespace Carpet {
       //SHH:check the current time
       BEGIN_REFLEVEL_LOOP(cgh) {
         BEGIN_MGLEVEL_LOOP(cgh) {
+	  cgh->cctk_time = cctk_initial_time + base_delta_time * tt->get_time (reflevel, mglevel);
 	  cout << "Time at rl=" << reflevel << ", ml=" << mglevel << ", is "
-	       << tt->get_time (reflevel, mglevel) << endl;
+	       << tt->get_time (reflevel, mglevel) << " and "
+	       << cgh->cctk_time / base_delta_time << endl;
         } END_MGLEVEL_LOOP(cgh);
       } END_REFLEVEL_LOOP(cgh);
 
- 
       cout << "Evolving backwards one extra step." << endl;
       // Make sure we're pointed backwards, in order to get 2 "previous"
       //   timelevels.  We could change the if statement to 
@@ -185,15 +193,15 @@ namespace Carpet {
       //   worry about having made a mistake
       if (time_dir > 0) {
 	// erik: what about arrays?
-      BEGIN_REFLEVEL_LOOP(cgh) {
-	BEGIN_MGLEVEL_LOOP(cgh) {
-	  FlipTimeLevels(cgh);
-	  for (int rl=0; rl<hh->reflevels(); ++rl) {
-	    tt->set_time (rl, mglevel, -1*tt->get_time (rl, mglevel) );
-	    tt->set_delta (rl, mglevel,-1*tt->get_delta (rl, mglevel));
-	  }
-	} END_MGLEVEL_LOOP(cgh);
-      } END_REFLEVEL_LOOP(cgh);
+	BEGIN_REFLEVEL_LOOP(cgh) {
+	  BEGIN_MGLEVEL_LOOP(cgh) {
+	    FlipTimeLevels(cgh);
+	    for (int rl=0; rl<hh->reflevels(); ++rl) {
+	      tt->set_time (rl, mglevel, -1*tt->get_time (rl, mglevel) );
+	      tt->set_delta (rl, mglevel,-1*tt->get_delta (rl, mglevel));
+	    }
+	  } END_MGLEVEL_LOOP(cgh);
+	} END_REFLEVEL_LOOP(cgh);
 	time_dir *= -1;
 	cgh->cctk_delta_time = time_dir * base_delta_time / reflevelfact * mglevelfact;
       }
@@ -205,8 +213,10 @@ namespace Carpet {
 
           // Restrict from reflevel+1 to reflevel
           // (it checks and does nothing if reflevel is the finest level
+	  cgh->cctk_time = cctk_initial_time + base_delta_time * tt->get_time (reflevel, mglevel);
           cout << "Calling Restrict for revlevel = " << reflevel
-	       << " at time = " << tt->get_time (reflevel, mglevel) << endl;
+	       << " at time = " << tt->get_time (reflevel, mglevel) << " and "
+	       << cgh->cctk_time / base_delta_time << endl;
 	  Restrict (cgh);
 	  
 	  // Cycle time levels
@@ -214,6 +224,7 @@ namespace Carpet {
 	  CycleTimeLevels (cgh);
 	  // Advance level times
 	  tt->advance_time (reflevel, mglevel);
+	  cgh->cctk_time = cctk_initial_time + base_delta_time * tt->get_time (reflevel, mglevel);
 	  // SHH: What's with this "2*" stuff?
 	  Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
 	  CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
@@ -221,7 +232,6 @@ namespace Carpet {
 	  CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
 	  Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
 	  CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
-	  
 	  
 	} END_MGLEVEL_LOOP(cgh);
       } END_REVERSE_REFLEVEL_LOOP(cgh);
@@ -242,13 +252,19 @@ namespace Carpet {
       // At this point all "current times" should be the same
       BEGIN_REFLEVEL_LOOP(cgh) {
         BEGIN_MGLEVEL_LOOP(cgh) {
+	  cgh->cctk_time = cctk_initial_time + base_delta_time * tt->get_time (reflevel, mglevel);
 	  cout << "Time at rl=" << reflevel << ", ml=" << mglevel << ", is "
-	       << tt->get_time(reflevel, mglevel) << endl;
+	       << tt->get_time(reflevel, mglevel) << " and "
+	       << cgh->cctk_time / base_delta_time << endl;
         } END_MGLEVEL_LOOP(cgh);
       } END_REFLEVEL_LOOP(cgh);
-
+      
+      cgh->cctk_time = cctk_initial_time;
+      
       CCTK_INFO("Finished initializing three timelevels");
+      
     } // end of init_3_timelevels
+    // end of Scott's algorithm for getting two extra timelevels of data
     
     
     
