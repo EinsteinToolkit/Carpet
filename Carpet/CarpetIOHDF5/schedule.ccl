@@ -1,5 +1,5 @@
 # Schedule definitions for thorn CarpetIOHDF5
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/schedule.ccl,v 1.10 2004/07/07 11:01:05 tradke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/schedule.ccl,v 1.11 2004/07/07 15:36:56 tradke Exp $
 
 storage: next_output_iteration next_output_time this_iteration
 
@@ -17,7 +17,7 @@ schedule CarpetIOHDF5Init at BASEGRID
 schedule CarpetIOHDF5ReadData at INITIAL
 {
   LANG: C
-  OPTIONS: global
+  OPTIONS: level
 } "Read initial data from file"
 
 if (checkpoint && checkpoint_ID)
