@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.23 2004/02/18 15:10:45 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.24 2004/02/27 10:25:23 schnetter Exp $
 
 #ifndef VECT_HH
 #define VECT_HH
@@ -45,7 +45,7 @@ class vect {
   // Fields
   
   /** Vector elements.  */
-  T elt[D];
+  T elt[D==0 ? 1 : D];
   
 public:
   
