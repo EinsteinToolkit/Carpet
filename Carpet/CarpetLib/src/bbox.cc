@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.20 2004/02/18 15:10:01 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.21 2004/02/27 15:40:40 schnetter Exp $
 
 #include <assert.h>
 
@@ -182,7 +182,7 @@ bbox<T,D> bbox<T,D>::expanded_containing (const bbox& b) const {
 template<class T, int D>
 bbox<T,D>::iterator::iterator (const bbox& box, const vect<T,D>& pos)
   : box(box), pos(pos) {
-  if (box.empty()) this->pos=box.upper()+box.stride();
+  if (box.empty()) this->pos=box.upper();
 }
 
 template<class T, int D>
@@ -197,7 +197,6 @@ typename bbox<T,D>::iterator& bbox<T,D>::iterator::operator++ () {
     if (pos[d]<=box.upper()[d]) return *this;
     pos[d]=box.lower()[d];
   }
-  pos=box.end().pos;
   return *this;
 }
 
@@ -208,13 +207,13 @@ typename bbox<T,D>::iterator bbox<T,D>::begin () const {
 
 template<class T, int D>
 typename bbox<T,D>::iterator bbox<T,D>::end () const {
-  return iterator(*this, upper()+stride());
+  return iterator(*this, upper());
 }
 
 template<class T, int D>
 bbox<T,D>::iteratorT::iteratorT (const bbox& box, const vect<T,D>& pos)
   : box(box), pos(pos) {
-  if (box.empty()) this->pos=box.upper()+box.stride();
+  if (box.empty()) this->pos=box.upper();
 }
 
 template<class T, int D>
