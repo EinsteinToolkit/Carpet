@@ -1,14 +1,14 @@
 # Schedule definitions for thorn CarpetTest
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/schedule.ccl,v 1.1 2001/07/04 12:29:54 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/schedule.ccl,v 1.2 2001/07/04 13:55:24 schnetter Exp $
+
+STORAGE: gfg arrg1 arrg2 arrg3
 
 schedule carpettest_check_sizes AT initial
 {
   LANG: C
-  STORAGE: gfg arrg1 arrg2 arrg3
 } "Check grid function and grid array sizes"
 
 schedule carpettest_check_arguments AT initial
 {
   LANG: Fortran
-  STORAGE: gfg arrg1 arrg2 arrg3
 } "Check grid function and grid array arguments"

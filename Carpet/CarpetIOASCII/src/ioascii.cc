@@ -24,7 +24,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.14 2001/07/04 12:29:49 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.15 2001/07/04 13:55:23 schnetter Exp $";
 
 
 
@@ -167,7 +167,8 @@ int CarpetIOASCII<outdim>
     vect<int,outdim> dirs;
     for (int d=0; d<outdim; ++d) dirs[d] = 0;
     
-    for (;;) {
+    bool done;
+    do {
       
       // Output each combination only once
       bool ascending = true;
@@ -324,8 +325,8 @@ int CarpetIOASCII<outdim>
 	    abort();
 	  }
 	  
-	  // Traverse all components on this refinement and
-	  // multigrid level
+	  // Traverse all components on this refinement and multigrid
+	  // level
 	  BEGIN_COMPONENT_LOOP(cgh) {
 	    
 	    generic_gf<dim>* ff = 0;
@@ -355,7 +356,6 @@ int CarpetIOASCII<outdim>
 			       tl, reflevel, component, mglevel);
 	    
 	  } END_COMPONENT_LOOP(cgh);
-	  break;
 	  
 	  // Append EOL after every complete set of components
 	  if (CCTK_MyProc(cgh)==0) {
@@ -371,16 +371,17 @@ int CarpetIOASCII<outdim>
       } // if (ascending)
       
       // Next direction combination
+      done = true;
       for (int d=0; d<outdim; ++d) {
 	++dirs[d];
-	if (dirs[d]<CCTK_GroupDimI(group)) goto notyetdone;
+	if (dirs[d]<CCTK_GroupDimI(group)) {
+	  done = false;
+	  break;
+	}
 	dirs[d] = 0;
       }
-      break;
       
-    notyetdone: ;
-      
-    } // all directions
+    } while (! done);		// all directions
     
     break;
   }
@@ -466,7 +467,7 @@ int CarpetIOASCII<outdim>
 		 const char* ctempl, const char* cglobal,
 		 const CCTK_REAL cfallback)
 {
-  /* First choice: explicit coordinate */
+  // First choice: explicit coordinate
   char cparam[1000];
   sprintf (cparam, ctempl, outdim);
   if (CCTK_ParameterQueryTimesSet (cparam, CCTK_THORNSTRING) > 0) {
@@ -479,7 +480,7 @@ int CarpetIOASCII<outdim>
     return CoordToOffset (cgh, dir, coord);
   }
   
-  /* Second choice: explicit index */
+  // Second choice: explicit index
   char iparam[1000];
   sprintf (iparam, itempl, outdim);
   if (CCTK_ParameterQueryTimesSet (iparam, CCTK_THORNSTRING) > 0) {
@@ -492,7 +493,7 @@ int CarpetIOASCII<outdim>
     return index;
   }
   
-  /* Third choice: explicit global coordinate */
+  // Third choice: explicit global coordinate
   if (CCTK_ParameterQueryTimesSet (cglobal, "IO") > 0) {
     int ptype;
     const CCTK_REAL* const pcoord
@@ -503,7 +504,7 @@ int CarpetIOASCII<outdim>
     return CoordToOffset (cgh, dir, coord);
   }
   
-  /* Fourth choice: explicit global index */
+  // Fourth choice: explicit global index
   if (CCTK_ParameterQueryTimesSet (iglobal, "IO") > 0) {
     int ptype;
     const int* const pindex
@@ -514,7 +515,7 @@ int CarpetIOASCII<outdim>
     return index;
   }
   
-  /* Fifth choice: default coordinate */
+  // Fifth choice: default coordinate
   return CoordToOffset (cgh, dir, cfallback);
 }
 
