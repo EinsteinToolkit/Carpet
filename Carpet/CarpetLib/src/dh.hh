@@ -44,9 +44,9 @@ public:
   // not be good.
   
   struct dboxes {
-    ibbox exterior;              // whole region (including boundaries)
+    ibbox exterior;             // whole region (including boundaries)
     
-    ibbox interior;              // interior (without boundaries)
+    ibbox interior;             // interior (without boundaries)
     iblist send_mg_fine;
     iblist send_mg_coarse;
     iblist recv_mg_fine;

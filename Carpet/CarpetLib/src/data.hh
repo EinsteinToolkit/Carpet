@@ -24,8 +24,8 @@ class data: public gdata
 {
   
   // Fields
-  T* _storage;			// the data (if located on this processor)
-  size_t _allocated_bytes;      // number of allocated bytes
+  T * _storage;                 // the data (if located on this processor)
+  size_t _allocated_bytes;
   
   // For vector groups with contiguous storage
   int vectorlength;             // number of vector elements
