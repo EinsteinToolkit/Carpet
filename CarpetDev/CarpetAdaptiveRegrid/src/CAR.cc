@@ -191,9 +191,9 @@ namespace CarpetAdaptiveRegrid {
               assert (ii >= 0);
               assert (jj >= 0);
               assert (kk >= 0);
-              assert (ii < imax[0] - imin[0]);
-              assert (jj < imax[1] - imin[1]);
-              assert (kk < imax[2] - imin[2]);
+              assert (ii <= imax[0] - imin[0]);
+              assert (jj <= imax[1] - imin[1]);
+              assert (kk <= imax[2] - imin[2]);
               CCTK_INT mindex = ii + 
                 (imax[0] - imin[0] + 1)*(jj + (imax[1] - imin[1] + 1) * kk);
               mask[mindex] = 1;
@@ -435,6 +435,8 @@ namespace CarpetAdaptiveRegrid {
         ivect str = bb.stride() / reffact;
         newbbs.push_back (ibbox(lo,hi,str));
         
+        // FIXME: Set the correct ob here.
+
         bbvect ob(false);
         obs.push_back(ob);
       }
