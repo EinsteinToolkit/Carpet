@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.28 2004/05/04 22:12:54 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.29 2004/05/21 18:12:23 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -21,7 +21,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.28 2004/05/04 22:12:54 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.29 2004/05/21 18:12:23 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -100,6 +100,41 @@ namespace CarpetInterp {
                         CCTK_INT const output_array_type_codes [],
                         void * const output_arrays [])
   {
+    if (CCTK_IsFunctionAliased ("SymmetryInterpolate")) {
+      return SymmetryInterpolate
+        (cgh, N_dims,
+         local_interp_handle, param_table_handle, coord_system_handle,
+         N_interp_points, interp_coords_type_code, interp_coords,
+         N_input_arrays, input_array_variable_indices,
+         N_output_arrays, output_array_type_codes, output_arrays);
+    } else {
+      return Carpet_DriverInterpolate
+        (cgh, N_dims,
+         local_interp_handle, param_table_handle, coord_system_handle,
+         N_interp_points, interp_coords_type_code, interp_coords,
+         N_input_arrays, input_array_variable_indices,
+         N_output_arrays, output_array_type_codes, output_arrays);
+    }
+  }
+  
+  
+  
+  extern "C" CCTK_INT
+  Carpet_DriverInterpolate (CCTK_POINTER_TO_CONST const cgh_,
+                            CCTK_INT const N_dims,
+                            CCTK_INT const local_interp_handle,
+                            CCTK_INT const param_table_handle,
+                            CCTK_INT const coord_system_handle,
+                            CCTK_INT const N_interp_points,
+                            CCTK_INT const interp_coords_type_code,
+                            CCTK_POINTER_TO_CONST const interp_coords [],
+                            CCTK_INT const N_input_arrays,
+                            CCTK_INT const input_array_variable_indices [],
+                            CCTK_INT const N_output_arrays,
+                            CCTK_INT const output_array_type_codes [],
+                            CCTK_POINTER const output_arrays [])
+  {
+    cGH const * restrict const cgh = static_cast<cGH const *> (cgh_);
     int ierr;
     
     assert (cgh);
@@ -148,7 +183,8 @@ namespace CarpetInterp {
     
     
     
-    // Find out about the coordinates
+    // Find out about the coordinates: origin and delta for the Carpet
+    // grid indices
 #if 0
     const char * coord_system_name
       = CCTK_CoordSystemName (coord_system_handle);
@@ -164,8 +200,8 @@ namespace CarpetInterp {
     }
 #else
     rvect const lower = rvect::ref(cgh->cctk_origin_space);
-    rvect const delta = rvect::ref(cgh->cctk_delta_space);
-    rvect const upper = lower + delta * ivect::ref(cgh->cctk_gsh);
+    rvect const delta = rvect::ref(cgh->cctk_delta_space) / maxreflevelfact;
+    rvect const upper = lower + delta * (vhh.at(m)->baseextent.upper() - vhh.at(m)->baseextent.lower());
 #endif
     
     assert (N_interp_points >= 0);
@@ -193,18 +229,20 @@ namespace CarpetInterp {
       // Find the component that this grid point belongs to
       rlev.at(n) = -1;
       home.at(n) = -1;
-      for (int rl=maxrl-1; rl>=minrl; --rl) {
-        
-        const int fact = maxreflevelfact * ipow(mgfact, basemglevel + mglevel) / ipow(reffact, rl);
-        ivect const ipos = ivect(floor((pos - lower) / (delta * fact) + 0.5)) * fact;
-        assert (all(ipos % vhh.at(m)->bases.at(rl).at(ml).stride() == 0));
-        
-        // TODO: use something faster than a linear search
-        for (int c=0; c<vhh.at(m)->components(rl); ++c) {
-          if (vhh.at(m)->extents.at(rl).at(c).at(ml).contains(ipos)) {
-            rlev.at(n) = rl;
-            home.at(n) = c;
-            goto found;
+      if (all(pos>=lower && pos<=upper)) {
+        for (int rl=maxrl-1; rl>=minrl; --rl) {
+          
+          const int fact = maxreflevelfact / ipow(reffact, rl) * ipow(mgfact, basemglevel + mglevel);
+          ivect const ipos = ivect(floor((pos - lower) / (delta * fact) + 0.5)) * fact;
+          assert (all(ipos % vhh.at(m)->bases.at(rl).at(ml).stride() == 0));
+          
+          // TODO: use something faster than a linear search
+          for (int c=0; c<vhh.at(m)->components(rl); ++c) {
+            if (vhh.at(m)->extents.at(rl).at(c).at(ml).contains(ipos)) {
+              rlev.at(n) = rl;
+              home.at(n) = c;
+              goto found;
+            }
           }
         }
       }
