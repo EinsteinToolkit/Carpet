@@ -21,22 +21,22 @@ gf<T>::gf (const int varindex, const operator_type transport_operator,
         t, d, tmin, tmax, prolongation_order_time,
         vectorlength, vectorindex, vectorleader)
 {
-  // this->recompose ();
-  this->recompose_crop ();
-  for (int rl=0; rl<this->h.reflevels(); ++rl) {
-    this->recompose_allocate (rl);
+  // recompose ();
+  recompose_crop ();
+  for (int rl=0; rl<h.reflevels(); ++rl) {
+    recompose_allocate (rl);
 #if 0
     for (comm_state state; !state.done(); state.step()) {
-      this->recompose_fill (state, rl, false);
+      recompose_fill (state, rl, false);
     }
 #endif
-    this->recompose_free (rl);
+    recompose_free (rl);
 #if 0
     for (comm_state state; !state.done(); state.step()) {
-      this->recompose_bnd_prolongate (state, rl, false);
+      recompose_bnd_prolongate (state, rl, false);
     }
     for (comm_state state; !state.done(); state.step()) {
-      this->recompose_sync (state, rl, false);
+      recompose_sync (state, rl, false);
     }
 #endif
   } // for rl
@@ -51,20 +51,20 @@ gf<T>::~gf () { }
 // Access to the data
 template<typename T>
 const data<T>* gf<T>::operator() (int tl, int rl, int c, int ml) const {
-  assert (tl>=this->tmin && tl<=this->tmax);
-  assert (rl>=0 && rl<this->h.reflevels());
-  assert (c>=0 && c<this->h.components(rl));
-  assert (ml>=0 && ml<this->h.mglevels(rl,c));
-  return (const data<T>*)this->storage.at(tl-this->tmin).at(rl).at(c).at(ml);
+  assert (tl>=tmin && tl<=tmax);
+  assert (rl>=0 && rl<h.reflevels());
+  assert (c>=0 && c<h.components(rl));
+  assert (ml>=0 && ml<h.mglevels(rl,c));
+  return (const data<T>*)storage.at(tl-tmin).at(rl).at(c).at(ml);
 }
 
 template<typename T>
 data<T>* gf<T>::operator() (int tl, int rl, int c, int ml) {
-  assert (tl>=this->tmin && tl<=this->tmax);
-  assert (rl>=0 && rl<this->h.reflevels());
-  assert (c>=0 && c<this->h.components(rl));
-  assert (ml>=0 && ml<this->h.mglevels(rl,c));
-  return (data<T>*)this->storage.at(tl-this->tmin).at(rl).at(c).at(ml);
+  assert (tl>=tmin && tl<=tmax);
+  assert (rl>=0 && rl<h.reflevels());
+  assert (c>=0 && c<h.components(rl));
+  assert (ml>=0 && ml<h.mglevels(rl,c));
+  return (data<T>*)storage.at(tl-tmin).at(rl).at(c).at(ml);
 }
 
 
@@ -74,8 +74,8 @@ template<typename T>
 ostream& gf<T>::output (ostream& os) const {
   T Tdummy;
   os << "gf<" << typestring(Tdummy) << ">:"
-     << this->varindex << "[" << CCTK_VarName(this->varindex) << "],"
-     << "dt=[" << this->tmin << ":" << this->tmax<< "]";
+     << varindex << "[" << CCTK_VarName(varindex) << "],"
+     << "dt=[" << tmin << ":" << tmax<< "]";
   return os;
 }
 
