@@ -1,5 +1,5 @@
 # Interface definition for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/interface.ccl,v 1.9 2004/03/29 14:27:28 hawke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/interface.ccl,v 1.10 2004/03/29 16:14:14 hawke Exp $
 
 implements: Driver
 
@@ -23,7 +23,7 @@ uses include header: th.hh
 uses include header: operators.hh
 
 # Provide the function to en/dis able prolongation
-SUBROUTINE EnableProlongating(CCTK_INT IN flag)
+CCTK_INT FUNCTION EnableProlongating(CCTK_INT IN flag)
 PROVIDES FUNCTION EnableProlongating WITH CarpetEnableProlongating \
   LANGUAGE C
 
