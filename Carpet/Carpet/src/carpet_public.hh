@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.34 2003/07/23 09:46:41 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.35 2003/08/10 21:59:51 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -106,9 +106,10 @@ namespace Carpet {
   // Checksums
   struct ckdesc {
     bool valid;
-    int sum;
+    unsigned int sum;
   };
-  extern vector<vector<vector<vector<ckdesc> > > > checksums; // [n][rl][tl][c]
+  // [rl][c][group][var][tl]
+  extern vector<vector<vector<vector<vector<ckdesc> > > > > checksums;
   
   
   

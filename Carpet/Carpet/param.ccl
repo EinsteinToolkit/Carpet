@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.31 2003/07/20 21:03:43 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.32 2003/08/10 21:59:51 schnetter Exp $
 
 shares: Cactus
 
@@ -161,6 +161,12 @@ CCTK_INT poison_value "Integer value (0..255) used to poison new timelevels (wit
 {
   0:255 :: "Must fit into a byte.  Use 0 for zero, 255 for nan, and e.g. 113 for a large value."
 } 255
+
+CCTK_INT max_poison_locations "Maximum number of poison locations that are printed to the screen"
+{
+  -1  :: "print all locations"
+  0:* :: "print only that many locations"
+} 10
 
 
 

@@ -6,7 +6,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.17 2003/07/20 21:03:43 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.18 2003/08/10 21:59:51 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_variables_cc);
 }
 
@@ -75,6 +75,7 @@ namespace Carpet {
   vector<arrdesc> arrdata;	// [group]
   
   // Checksums
-  vector<vector<vector<vector<ckdesc> > > > checksums; // [n][rl][tl][c]
+  // [rl][c][group][var][tl]
+  vector<vector<vector<vector<vector<ckdesc> > > > > checksums;
   
 } // namespace Carpet

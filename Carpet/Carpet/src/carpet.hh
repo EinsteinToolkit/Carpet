@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.24 2003/07/14 15:41:34 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.25 2003/08/10 21:59:51 schnetter Exp $
 
 #ifndef CARPET_HH
 #define CARPET_HH
@@ -24,6 +24,7 @@ namespace Carpet {
   
   enum checktimes { currenttime,
 		    currenttimebutnotifonly,
+                    previoustime,
 		    allbutlasttime,
 		    allbutcurrenttime,
 		    alltimes };

@@ -11,7 +11,7 @@
 #include "carpet.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.12 2003/08/03 17:08:33 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.13 2003/08/10 21:59:51 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_CallFunction_cc);
 }
 
@@ -40,8 +40,8 @@ namespace Carpet {
         if (mglevel!=-1) set_mglevel (cgh, -1);
         const int saved_reflevel = reflevel;
         if (reflevel!=-1) set_reflevel (cgh, -1);
-        Waypoint ("Global mode call at %s to %s::%s",
-                  attribute->where, attribute->thorn, attribute->routine);
+        Checkpoint ("Global mode call at %s to %s::%s",
+                    attribute->where, attribute->thorn, attribute->routine);
         const int res = CCTK_CallFunction (function, attribute, data);
         assert (res==0);
         if (reflevel!=saved_reflevel) set_reflevel (cgh, saved_reflevel);
@@ -51,8 +51,8 @@ namespace Carpet {
     } else if (attribute->level) {
       // Level operation: call once per refinement level
       
-      Waypoint ("%*sLevel mode call at %s to %s::%s", 2*reflevel, "",
-		attribute->where, attribute->thorn, attribute->routine);
+      Checkpoint ("%*sLevel mode call at %s to %s::%s", 2*reflevel, "",
+                  attribute->where, attribute->thorn, attribute->routine);
       const int res = CCTK_CallFunction (function, attribute, data);
       assert (res==0);
       
@@ -61,9 +61,9 @@ namespace Carpet {
       
       BEGIN_LOCAL_COMPONENT_LOOP(cgh, CCTK_GF) {
 	
-	Waypoint ("%*sLocal mode call on component %d at %s to %s::%s",
-		  2*reflevel, "", component,
-		  attribute->where, attribute->thorn, attribute->routine);
+	Checkpoint ("%*sLocal mode call on component %d at %s to %s::%s",
+                    2*reflevel, "", component,
+                    attribute->where, attribute->thorn, attribute->routine);
 	const int res = CCTK_CallFunction (function, attribute, data);
 	assert (res==0);
 	

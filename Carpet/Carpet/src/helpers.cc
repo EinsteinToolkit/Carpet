@@ -15,7 +15,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.40 2003/07/20 21:03:43 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.41 2003/08/10 21:59:51 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -108,6 +108,8 @@ namespace Carpet {
     case currenttimebutnotifonly:
       // don't include current time if there is only one time level
       return num_tl>1 ? 0 : 1;
+    case previoustime:
+      return 1;
     case allbutlasttime:
       // do include current time if there is only one time level
       return 0;
@@ -129,6 +131,8 @@ namespace Carpet {
       return 0;
     case currenttimebutnotifonly:
       return 0;
+    case previoustime:
+      return num_tl>1 ? 1 : 0;
     case allbutlasttime:
       return num_tl-2;
     case allbutcurrenttime:

@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.25 2003/07/20 21:03:43 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.26 2003/08/10 21:59:51 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -94,7 +94,7 @@ namespace Carpet {
     
     assert (arrdata[group].data.size()==0
 	    || arrdata[group].data[0] == 0);
-    assert (arrdata[group].data.size() == CCTK_NumVarsInGroupI(group));
+    assert ((int)arrdata[group].data.size() == CCTK_NumVarsInGroupI(group));
     for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
       const int n = n0 + var;
       switch (CCTK_VarTypeI(n)) {

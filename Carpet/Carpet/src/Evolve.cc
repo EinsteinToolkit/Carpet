@@ -18,7 +18,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.27 2003/07/20 21:03:43 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.28 2003/08/10 21:59:51 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -168,7 +168,7 @@ namespace Carpet {
 	      CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
               
 	      // Checking
-	      PoisonCheck (cgh, currenttimebutnotifonly);
+	      PoisonCheck (cgh, currenttime);
 	      
 	    }
 	  } END_MGLEVEL_LOOP;
