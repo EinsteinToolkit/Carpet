@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.20 2002/09/25 15:49:15 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.21 2002/10/01 13:45:12 schnetter Exp $
 
  ***************************************************************************/
 
@@ -216,12 +216,18 @@ void data<T,D>
     assert (all(box.upper()<=srcs[t]->extent().upper()));
     assert (proc() == srcs[t]->proc());
   }
+  assert (order_space >= 0);
+  assert (order_time >= 0);
   
   int rank;
   MPI_Comm_rank (dist::comm, &rank);
   assert (rank == proc());
   
-  assert (order_space <= 1);
+  CCTK_WARN (1, "You are using a fallback interpolation routine.  This routine is very slow.");
+  if (order_space != 1) {
+    CCTK_WARN (0, "This interpolator supports only linear spatial interpolation.");
+  }
+  assert (order_space == 1);
   
   assert ((int)srcs.size() > order_time);
   vector<T> src_fac(order_time+1);
