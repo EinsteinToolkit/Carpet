@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.11 2001/03/14 12:57:38 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.12 2001/03/15 09:59:36 eschnett Exp $
 
 /* It is assumed that the number of components of all arrays is equal
    to the number of components of the grid functions, and that their
@@ -32,7 +32,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.11 2001/03/14 12:57:38 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.12 2001/03/15 09:59:36 eschnett Exp $";
 
 
 
@@ -797,6 +797,8 @@ namespace Carpet {
       return -1;
     }
     
+    const int n0 = CCTK_FirstVarIndexI(group);
+    const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
     const int tl = activetimelevel;
     
     switch (CCTK_GroupTypeI(group)) {
@@ -807,7 +809,7 @@ namespace Carpet {
     case CCTK_ARRAY:
       assert (group<(int)arrdata.size());
       for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-	if (reflevel>0) {
+	if (num_tl>1 && reflevel>0) {
 	  for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
 	    arrdata[group].data[var]->ref_bnd_prolongate
 	      (tl, reflevel, c, mglevel);
@@ -822,7 +824,7 @@ namespace Carpet {
     case CCTK_GF:
       assert (group<(int)gfdata.size());
       for (int var=0; var<(int)gfdata[group].data.size(); ++var) {
-	if (reflevel>0) {
+	if (num_tl>1 && reflevel>0) {
 	  for (int c=0; c<hh->components(reflevel); ++c) {
 	    gfdata[group].data[var]->ref_bnd_prolongate
 	      (tl, reflevel, c, mglevel);
@@ -1177,36 +1179,45 @@ namespace Carpet {
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       
-      const int tl = activetimelevel;
-      
-      switch (CCTK_GroupTypeI(group)) {
+      // Restrict only groups with storage
+      if (CCTK_QueryGroupStorageI(cgh, group)) {
 	
-      case CCTK_SCALAR:
-	break;
+	const int tl = activetimelevel;
 	
-      case CCTK_ARRAY:
-	for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-	  for (int c=0; c<hh->components(reflevel); ++c) {
-	    arrdata[group].data[var]->ref_restrict
-	      (tl, reflevel, c, mglevel);
+	switch (CCTK_GroupTypeI(group)) {
+	  
+	case CCTK_SCALAR:
+	  break;
+	  
+	case CCTK_ARRAY:
+	  for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
+	    for (int c=0; c<hh->components(reflevel); ++c) {
+	      arrdata[group].data[var]->ref_restrict
+		(tl, reflevel, c, mglevel);
+	    }
+	    for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
+	      arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);
+	    }
 	  }
-	}
-	break;
-	
-      case CCTK_GF:
-	for (int var=0; var<(int)gfdata[group].data.size(); ++var) {
-	  for (int c=0; c<hh->components(reflevel); ++c) {
-	    gfdata[group].data[var]->ref_restrict
-	      (tl, reflevel, c, mglevel);
+	  break;
+	  
+	case CCTK_GF:
+	  for (int var=0; var<(int)gfdata[group].data.size(); ++var) {
+	    for (int c=0; c<hh->components(reflevel); ++c) {
+	      gfdata[group].data[var]->ref_restrict
+		(tl, reflevel, c, mglevel);
+	    }
+	    for (int c=0; c<hh->components(reflevel); ++c) {
+	      gfdata[group].data[var]->sync (tl, reflevel, c, mglevel);
+	    }
 	  }
+	  break;
+	  
+	default:
+	  abort();
 	}
-	break;
 	
-      default:
-	abort();
-      }
-      
-      SyncGroup (cgh, CCTK_GroupName(group));
+      }	// if group has storage
       
     } // loop over groups
   }

@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.2 2001/03/15 09:59:43 eschnett Exp $
 
  ***************************************************************************/
 
@@ -152,6 +152,9 @@ public:
 
   // The grid boundaries have to be updated after calling mg_restrict,
   // mg_prolongate, ref_restrict, or ref_prolongate.
+
+  // "Updating" means here that the boundaries have to be
+  // synchronised.  They don't need to be prolongated.
 
   // Copy a component from the next time level
   virtual void copy (int tl, int rl, int c, int ml);
