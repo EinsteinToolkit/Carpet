@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/src/InitialData.F77,v 1.2 2001/03/19 21:30:42 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/src/InitialData.F77,v 1.3 2001/03/20 17:27:26 eschnett Exp $
       
 #include "cctk.h"
 #include "cctk_Parameters.h"
@@ -93,5 +93,15 @@ c     Use kx,ky,kz as number of modes in each direction.
          end do 
          
       end if
+      
+      do k=1,cctk_lsh(3)
+         do j=1,cctk_lsh(2)
+            do i=1,cctk_lsh(1)
+               
+               psi(i,j,k) = psi(i,j,k) - u(i,j,k)
+               
+            end do
+         end do
+      end do 
       
       end 

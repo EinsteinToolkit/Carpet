@@ -7,46 +7,36 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/doubletoy_periodic_coarse_rl3.par,v 1.8 2004/03/23 12:00:15 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/doubletoy_periodic_coarse_rl3.par,v 1.1 2001/03/20 17:27:26 eschnett Exp $
 
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDSpaceTimeToy SpaceTimeToy IDHydroToy HydroToy"
-
-Carpet::poison_new_timelevels	= yes
-Carpet::check_for_poison	= yes
-Carpet::checksum_timelevels	= yes
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetSlab IDSpaceTimeToy SpaceTimeToy IDHydroToy HydroToy"
 
 Cactus::cctk_itlast		= 240
 
 Time::dtfac			= 0.5
 
-driver::global_nx		= 19
-driver::global_ny		= 26
-driver::global_nz		= 34
-
-driver::ghost_size		= 2
+driver::global_nx		= 17
+driver::global_ny		= 24
+driver::global_nz		= 32
 
 Carpet::max_refinement_levels	= 3
-Carpet::prolongation_order_space= 3
-Carpet::prolongation_order_time	= 2
-
-CarpetRegrid::refinement_levels	= 3
 
 grid::type			= byrange
-grid::xmin			= -5.4
-grid::ymin			= -7.2
-grid::zmin			= -9.6
-grid::xmax			=  5.4
-grid::ymax			=  7.8
-grid::zmax			= 10.2
+grid::xmin			= -4.8
+grid::ymin			= -6.6
+grid::zmin			= -9.0
+grid::xmax			=  4.8
+grid::ymax			=  7.2
+grid::zmax			=  9.6
 grid::mode			= periodic
 
-IO::out_dir			= "doubletoy_periodic_coarse_rl3"
+IO::outdir			= "doubletoy_periodic_coarse_rl3"
 
 IOBasic::outinfo_every		= 1 # 10
-IOBasic::outinfo_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve"
+#IOBasic::outinfo_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve"
 
-IOBasic::outScalar_every	= 1 # 2
-IOBasic::outScalar_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve"
+#IOBasic::outScalar_every	= 2
+#IOBasic::outScalar_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve"
 
 IOASCII::out1D_every		= 1 # 2
 IOASCII::out1D_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve grid::coordinates"
@@ -54,7 +44,6 @@ IOASCII::out1D_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve grid
 IOFlexIO::out3D_every		= 48
 IOFlexIO::out3D_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve"
 IOFlexIO::out3D_format		= IEEE
-IOFlexIO::out3D_extension	= ".vcamr"
 
 SpaceTimeToy::icn_iterations	= 2
 SpaceTimeToy::bound		= radiation

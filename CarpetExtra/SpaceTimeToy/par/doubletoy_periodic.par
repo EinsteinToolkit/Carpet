@@ -7,40 +7,34 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/doubletoy_periodic.par,v 1.7 2004/03/23 12:00:15 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/doubletoy_periodic.par,v 1.1 2001/03/20 17:27:26 eschnett Exp $
 
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDSpaceTimeToy SpaceTimeToy IDHydroToy HydroToy"
-
-Carpet::poison_new_timelevels	= yes
-Carpet::check_for_poison	= yes
-Carpet::checksum_timelevels	= yes
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetSlab IDSpaceTimeToy SpaceTimeToy IDHydroToy HydroToy"
 
 Cactus::cctk_itlast		= 120
 
 Time::dtfac			= 0.5
 
-driver::global_nx		= 34
-driver::global_ny		= 48
-driver::global_nz		= 64
-
-driver::ghost_size		= 2
+driver::global_nx		= 32
+driver::global_ny		= 46
+driver::global_nz		= 62
 
 grid::type			= byrange
-grid::xmin			= -5.1
-grid::ymin			= -6.9
-grid::zmin			= -9.3
-grid::xmax			=  4.8
-grid::ymax			=  7.2
-grid::zmax			=  9.6
+grid::xmin			= -4.8
+grid::ymin			= -6.6
+grid::zmin			= -9.0
+grid::xmax			=  4.5
+grid::ymax			=  6.9
+grid::zmax			=  9.3
 grid::mode			= periodic
 
-IO::out_dir			= "doubletoy_periodic"
+IO::outdir			= "doubletoy_periodic"
 
 IOBasic::outinfo_every		= 1 # 10
-IOBasic::outinfo_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve"
+#IOBasic::outinfo_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve"
 
-IOBasic::outScalar_every	= 1 # 2
-IOBasic::outScalar_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve"
+#IOBasic::outScalar_every	= 2
+#IOBasic::outScalar_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve"
 
 IOASCII::out1D_every		= 1 # 2
 IOASCII::out1D_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve grid::coordinates"
@@ -48,7 +42,6 @@ IOASCII::out1D_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve grid
 IOFlexIO::out3D_every		= 24
 IOFlexIO::out3D_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve"
 IOFlexIO::out3D_format		= IEEE
-IOFlexIO::out3D_extension	= ".vcamr"
 
 SpaceTimeToy::icn_iterations	= 2
 SpaceTimeToy::bound		= radiation
