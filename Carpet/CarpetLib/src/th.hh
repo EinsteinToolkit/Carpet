@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.hh,v 1.6 2002/06/07 17:17:19 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.hh,v 1.7 2002/06/07 20:20:43 schnetter Exp $
 
  ***************************************************************************/
 
@@ -90,7 +90,7 @@ public:
     return deltas[rl][ml];
   }
   
-  int set_delta (const int rl, const int ml, const int dt) {
+  void set_delta (const int rl, const int ml, const int dt) {
     assert (rl>=0 && rl<h->reflevels());
     assert (ml>=0 && ml<h->mglevels(rl,0));
     deltas[rl][ml] = dt;
