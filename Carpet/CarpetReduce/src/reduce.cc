@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.42 2004/07/06 14:44:32 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.43 2004/08/02 11:43:35 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -23,7 +23,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.42 2004/07/06 14:44:32 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.43 2004/08/02 11:43:35 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -954,11 +954,18 @@ namespace CarpetReduce {
         if (need_time_interp) {
           
           if (CCTK_ActiveTimeLevelsVI(cgh, vi) < num_tl) {
-            char * const fullname = CCTK_FullName(vi);
-            CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                        "Grid function \"%s\" has only %d active time levels on refinement level %d; this is not enough for time interpolation.  Using the current time level instead",
-                        fullname, CCTK_ActiveTimeLevelsVI(cgh, vi), reflevel);
-            free (fullname);
+            static vector<bool> have_warned;
+            if (have_warned.empty()) {
+              have_warned.resize (CCTK_NumVars(), false);
+            }
+            if (! have_warned.at(vi)) {
+              char * const fullname = CCTK_FullName(vi);
+              CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                          "Grid function \"%s\" has only %d active time levels on refinement level %d; this is not enough for time interpolation.  Using the current time level instead",
+                          fullname, CCTK_ActiveTimeLevelsVI(cgh, vi), reflevel);
+              free (fullname);
+              have_warned.at(vi) = true;
+            }
             
             // fall back
             need_time_interp = false;
@@ -1052,7 +1059,7 @@ namespace CarpetReduce {
               weight = (static_cast<CCTK_REAL const *>
                         (CCTK_VarDataPtr (cgh, 0, "CarpetReduce::weight")));
               assert (weight);
-              levfac = pow(1.0*reflevelfact, -grpdim);
+              levfac = pow(CCTK_REAL(reflevelfact), -grpdim);
             } else {
               weight = NULL;
               levfac = 1.0;

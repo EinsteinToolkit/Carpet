@@ -10,7 +10,7 @@
 #include "mask_carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_carpet.cc,v 1.2 2004/06/15 16:45:29 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_carpet.cc,v 1.3 2004/08/02 11:43:35 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetMask_Mask_cc);
 }
 
@@ -45,6 +45,7 @@ namespace CarpetMask {
     if (reflevel > 0) {
       
       ivect const izero = ivect(0);
+      ivect const ione  = ivect(1);
       
       gh<dim> const & hh = *vhh.at(Carpet::map);
       dh<dim> const & dd = *vdd.at(Carpet::map);
@@ -90,6 +91,12 @@ namespace CarpetMask {
         boundaries[d].normalize();
       }
       
+      // Subtract the boundaries from the refined region
+      for (int d=0; d<dim; ++d) {
+        refined -= boundaries[d];
+      }
+      refined.normalize();
+      
       
       
       // Set prolongation boundaries of this level
@@ -116,8 +123,8 @@ namespace CarpetMask {
               
               if (verbose) {
                 ostringstream buf;
-                buf << "Setting prolongation boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax;
-                CCTK_VInfo (CCTK_THORNSTRING, buf.str().c_str());
+                buf << "Setting prolongation boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax-ione;
+                CCTK_INFO (buf.str().c_str());
               }
               
               // Set weight on the boundary to 1/2
@@ -169,8 +176,8 @@ namespace CarpetMask {
             
             if (verbose) {
               ostringstream buf;
-              buf << "Setting restricted region on level " << reflevel << " to weight 0: " << imin << ":" << imax;
-              CCTK_VInfo (CCTK_THORNSTRING, buf.str().c_str());
+              buf << "Setting restricted region on level " << reflevel << " to weight 0: " << imin << ":" << imax-ione;
+              CCTK_INFO (buf.str().c_str());
             }
             
             // Set weight in the restricted region to 0
@@ -201,8 +208,8 @@ namespace CarpetMask {
               
               if (verbose) {
                 ostringstream buf;
-                buf << "Setting restriction boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax;
-                CCTK_VInfo (CCTK_THORNSTRING, buf.str().c_str());
+                buf << "Setting restriction boundary on level " << reflevel << " direction " << d << " to weight 1/2: " << imin << ":" << imax-ione;
+                CCTK_INFO (buf.str().c_str());
               }
               
               // Set weight on the boundary to 1/2

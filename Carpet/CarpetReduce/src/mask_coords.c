@@ -1,7 +1,8 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_coords.c,v 1.1 2004/06/14 07:01:21 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_coords.c,v 1.2 2004/08/02 11:43:35 schnetter Exp $ */
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
+#include "cctk_Parameters.h"
 
 
 
@@ -9,6 +10,7 @@ void
 CoordBase_SetupMask (CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_PARAMETERS;
   
   CCTK_INT nboundaryzones[6];
   CCTK_INT is_internal[6];
@@ -69,6 +71,10 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
           }
           
           /* Loop over the boundary */
+          if (verbose) {
+            CCTK_VInfo (CCTK_THORNSTRING,
+                        "Setting symmetry boundary in direction %d face %d to weight 0", d, f);
+          }
           for (k=imin[2]; k<imax[2]; ++k) {
             for (j=imin[1]; j<imax[1]; ++j) {
               for (i=imin[0]; i<imax[0]; ++i) {
@@ -95,17 +101,21 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
               imin[d] = imax[d] - 1;
             }
           
-          /* Loop over the points next to boundary */
-          for (k=imin[2]; k<imax[2]; ++k) {
-            for (j=imin[1]; j<imax[1]; ++j) {
-              for (i=imin[0]; i<imax[0]; ++i) {
-                
-                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                weight[ind] *= 0.5;
-                
+            /* Loop over the points next to boundary */
+            if (verbose) {
+              CCTK_VInfo (CCTK_THORNSTRING,
+                          "Setting symmetry axis in direction %d face %d to weight 1/2", d, f);
+            }
+            for (k=imin[2]; k<imax[2]; ++k) {
+              for (j=imin[1]; j<imax[1]; ++j) {
+                for (i=imin[0]; i<imax[0]; ++i) {
+                  
+                  int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                  weight[ind] *= 0.5;
+                  
+                }
               }
             }
-          }
             
           } /* if the boundary is not staggered */
           

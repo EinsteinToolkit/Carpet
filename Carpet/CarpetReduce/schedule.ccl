@@ -1,5 +1,5 @@
 # Schedule definitions for thorn CarpetReduce
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/schedule.ccl,v 1.3 2004/06/14 07:01:21 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/schedule.ccl,v 1.4 2004/08/02 11:43:35 schnetter Exp $
 
 schedule CarpetReduceStartup at STARTUP
 {
@@ -22,6 +22,7 @@ SCHEDULE GROUP MaskBase_SetupMask AT postregrid
 SCHEDULE MaskBase_InitMask IN MaskBase_SetupMask
 {
   LANG: C
+  OPTIONS: global loop-local
 } "Initialise the weight function"
 
 SCHEDULE GROUP SetupMask IN MaskBase_SetupMask AFTER MaskBase_InitMask
@@ -32,11 +33,12 @@ SCHEDULE GROUP SetupMask IN MaskBase_SetupMask AFTER MaskBase_InitMask
 SCHEDULE CoordBase_SetupMask IN SetupMask
 {
   LANG: C
+  OPTIONS: global loop-local
 } "Set up the outer boundaries of the weight function"
 
 # This might move to CarpetMask
 SCHEDULE CarpetMaskSetup IN SetupMask
 {
   LANG: C
-  OPTIONS: singlemap
+  OPTIONS: global loop-singlemap
 } "Set up the weight function for the restriction regions"
