@@ -1,5 +1,5 @@
 # Interface definition for thorn WaveToyFO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/interface.ccl,v 1.1 2003/06/18 18:24:30 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/interface.ccl,v 1.2 2004/05/07 20:55:47 schnetter Exp $
 
 IMPLEMENTS: WaveToyFO
 
@@ -19,6 +19,35 @@ CCTK_INT FUNCTION MoLRegisterEvolvedGroup(CCTK_INT IN EvolvedIndex, \
                                           CCTK_INT IN RHSIndex)
 
 USES FUNCTION MoLRegisterEvolvedGroup
+
+
+
+CCTK_INT FUNCTION                         \
+    MultiPatch_Prim2Char                  \
+        (CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_INT ARRAY IN normal,        \
+         CCTK_INT ARRAY IN lbnd,          \
+         CCTK_INT ARRAY IN lsh,           \
+         CCTK_INT IN rhs_flag,            \
+         CCTK_INT IN num_modes,           \
+         CCTK_POINTER ARRAY IN modes,     \
+         CCTK_REAL ARRAY OUT speeds)
+PROVIDES FUNCTION MultiPatch_Prim2Char  \
+    WITH WaveToyFO_MultiPatch_Prim2Char \
+    LANGUAGE C
+
+CCTK_INT FUNCTION                              \
+    MultiPatch_Char2Prim                       \
+        (CCTK_POINTER_TO_CONST IN cctkGH,      \
+         CCTK_INT ARRAY IN normal,             \
+         CCTK_INT ARRAY IN lbnd,               \
+         CCTK_INT ARRAY IN lsh,                \
+         CCTK_INT IN rhs_flag,                 \
+         CCTK_INT IN num_modes,                \
+         CCTK_POINTER_TO_CONST ARRAY IN modes)
+PROVIDES FUNCTION MultiPatch_Char2Prim  \
+    WITH WaveToyFO_MultiPatch_Char2Prim \
+    LANGUAGE C
 
 
 
