@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.49 2004/04/07 16:55:22 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.50 2004/04/08 11:16:35 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -26,13 +26,18 @@ using namespace std;
 
 
 
+// Track all allocated storage
+static size_t allocated_bytes = 0;
+
+
+
 // Constructors
 template<class T, int D>
 data<T,D>::data (const int varindex_, const operator_type transport_operator_,
                  const int vectorlength, const int vectorindex,
                  data* const vectorleader)
   : gdata<D>(varindex_, transport_operator_),
-    _storage(0),
+    _storage(0), _allocated_bytes(0),
     vectorlength(vectorlength), vectorindex(vectorindex),
     vectorleader(vectorleader)
 {
@@ -48,7 +53,7 @@ data<T,D>::data (const int varindex_, const operator_type transport_operator_,
                  data* const vectorleader,
                  const ibbox& extent_, const int proc_)
   : gdata<D>(varindex_, transport_operator_),
-    _storage(0),
+    _storage(0), _allocated_bytes(0),
     vectorlength(vectorlength), vectorindex(vectorindex),
     vectorleader(vectorleader)
 {
@@ -79,6 +84,37 @@ data<T,D>* data<T,D>::make_typed (const int varindex_,
 
 // Storage management
 template<class T, int D>
+void data<T,D>::getmem (const size_t nelems)
+{
+  const size_t nbytes = nelems * sizeof(T);
+  try {
+    assert (this->_allocated_bytes == 0);
+    this->_storage = new T[nelems];
+    this->_allocated_bytes = nbytes;
+  } catch (...) {
+    T Tdummy;
+    CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Failed to allocate %z bytes (%.3f MB) of memory for type %s.  %z bytes (%.3f MB) are currently allocated.",
+                nbytes, nbytes/1.0e6,
+                typestring(Tdummy),
+                allocated_bytes, allocated_bytes/1.0e6);
+  }
+  allocated_bytes += nbytes;
+}
+
+
+
+template<class T, int D>
+void data<T,D>::freemem ()
+{
+  delete [] _storage;
+  allocated_bytes -= this->_allocated_bytes;
+  this->_allocated_bytes = 0;
+}
+
+
+
+template<class T, int D>
 void data<T,D>::allocate (const ibbox& extent_,
                           const int proc_,
 			  void* const mem)
@@ -102,7 +138,7 @@ void data<T,D>::allocate (const ibbox& extent_,
     if (this->_owns_storage) {
       if (this->vectorindex == 0) {
         assert (! this->vectorleader);
-        this->_storage = new T[this->vectorlength * this->_size];
+        getmem (this->vectorlength * this->_size);
       } else {
         assert (this->vectorleader);
         this->_storage = this->vectorleader->vectordata (this->vectorindex);
@@ -119,7 +155,7 @@ template<class T, int D>
 void data<T,D>::free ()
 {
   if (this->_storage && this->_owns_storage && this->vectorindex==0) {
-    delete [] _storage;
+    freemem ();
   }
   _storage = 0;
   this->_has_storage = false;
@@ -191,7 +227,7 @@ void data<T,D>::change_processor_recv (const int newproc, void* const mem)
       assert (!_storage);
       this->_owns_storage = !mem;
       if (this->_owns_storage) {
-	_storage = new T[this->_size];
+        getmem (this->_size);
       } else {
 	_storage = (T*)mem;
       }
@@ -289,7 +325,7 @@ void data<T,D>::change_processor_wait (const int newproc, void* const mem)
       this->wtime_isendwait += wtime2 - wtime1;
       
       if (this->_owns_storage) {
-	delete [] _storage;
+	freemem ();
       }
       _storage = 0;
       

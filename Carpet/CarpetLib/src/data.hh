@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.19 2004/03/23 15:37:21 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.20 2004/04/08 11:16:35 schnetter Exp $
 
 #ifndef DATA_HH
 #define DATA_HH
@@ -31,7 +31,8 @@ class data: public gdata<D>
 
   // Fields
   T* _storage;			// the data (if located on this processor)
-   
+  size_t _allocated_bytes;
+  
   int vectorlength;
   int vectorindex;
   data* vectorleader;
@@ -56,6 +57,10 @@ public:
                             const operator_type transport_operator) const;
 
   // Storage management
+private:
+  void getmem (const size_t nelems);
+  void freemem ();
+public:
   virtual void allocate (const ibbox& extent, const int proc,
 			 void* const mem=0);
   virtual void free ();
