@@ -185,7 +185,7 @@ namespace CarpetRegrid {
         = region.shape() / region.stride();
       ivect const lsh
         = errordata.extent().shape() / region.stride();
-      CCTK_REAL const * restrict const errorptr
+      CCTK_REAL const * const errorptr
         = (CCTK_REAL const *) errordata.storage();
       for (int k=0; k<len[2]; ++k) {
         for (int j=0; j<len[1]; ++j) {
