@@ -7,9 +7,13 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_periodic.par,v 1.4 2001/03/28 18:56:09 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_periodic.par,v 1.5 2001/03/30 00:50:49 eschnett Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetSlab IDScalarWave WaveToyF77"
+
+Carpet::poison_new_timelevels	= yes
+Carpet::check_for_poison	= yes
+Carpet::checksum_timelevels	= yes
 
 Cactus::cctk_itlast		= 120
 
@@ -40,6 +44,10 @@ IOBasic::outinfo_every		= 1 # 10
 
 IOASCII::out1D_every		= 1 # 2
 IOASCII::out1D_vars		= "wavetoy::phi grid::coordinates"
+
+IOFlexIO::out3D_every		= 24
+IOFlexIO::out3D_vars		= "wavetoy::phi"
+IOFlexIO::out3D_format		= IEEE
 
 WaveToyF77::bound		= radiation
 
