@@ -1,9 +1,11 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.3 2002/01/02 17:14:08 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.4 2002/03/06 17:46:15 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
 #include <math.h>
 #include <stdlib.h>
+
+#include <complex>
 
 #include <mpi.h>
 
@@ -15,7 +17,19 @@
 
 #include "reduce.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.3 2002/01/02 17:14:08 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.4 2002/03/06 17:46:15 schnetter Exp $";
+
+
+
+#ifndef LLONG_MAX
+#  warning "no long long int support"
+#endif
+#ifndef HUGE_VALF
+#  warning "no float support"
+#endif
+#ifndef HUGE_VALL
+#  warning "no long double support"
+#endif
 
 
 
@@ -27,7 +41,7 @@ namespace CarpetReduce {
   
   // Poor man's RTTI
   enum ared { do_count, do_minimum, do_maximum, do_sum, do_sum_abs,
-	      do_mean, do_norm1, do_norm2, do_norm_inf };
+	      do_average, do_norm1, do_norm2, do_norm_inf };
   
   
   
@@ -79,6 +93,20 @@ namespace CarpetReduce {
 #ifdef HUGE_VALL
   template<> inline void minimum::op<long double>  ::initialise (long double  & accum) { accum = HUGE_VALL; }
 #endif
+#ifdef HUGE_VALF
+  template<> inline void minimum::op<float_complex>        ::initialise (float_complex        & accum) { accum = float_complex(HUGE_VALF,HUGE_VALF); }
+#endif
+  template<> inline void minimum::op<double_complex>       ::initialise (double_complex       & accum) { accum = double_complex(HUGE_VAL,HUGE_VAL); }
+#ifdef HUGE_VALL
+  template<> inline void minimum::op<long_double_complex>  ::initialise (long_double_complex  & accum) { accum = long_double_complex(HUGE_VALL,HUGE_VALL); }
+#endif
+#ifdef HUGE_VALF
+  template<> inline void minimum::op<float_complex>        ::reduce (float_complex& accum, const float_complex& val) { accum = float_complex(min(accum.real(), val.real()), min(accum.imag(), val.imag())); }
+#endif
+  template<> inline void minimum::op<double_complex>       ::reduce (double_complex& accum, const double_complex& val) { accum = double_complex(min(accum.real(), val.real()), min(accum.imag(), val.imag())); }
+#ifdef HUGE_VALL
+  template<> inline void minimum::op<long_double_complex>  ::reduce (long_double_complex& accum, const long_double_complex& val) { accum = long_double_complex(min(accum.real(), val.real()), min(accum.imag(), val.imag())); }
+#endif
   
   struct maximum : reduction {
     ared thered () const { return do_maximum; }
@@ -107,6 +135,20 @@ namespace CarpetReduce {
 #ifdef HUGE_VALL
   template<> inline void maximum::op<long double>  ::initialise (long double  & accum) { accum = -HUGE_VALL; }
 #endif
+#ifdef HUGE_VALF
+  template<> inline void maximum::op<float_complex>        ::initialise (float_complex        & accum) { accum = float_complex(-HUGE_VALF,-HUGE_VALF); }
+#endif
+  template<> inline void maximum::op<double_complex>       ::initialise (double_complex       & accum) { accum = double_complex(-HUGE_VAL,-HUGE_VAL); }
+#ifdef HUGE_VALL
+  template<> inline void maximum::op<long_double_complex>  ::initialise (long_double_complex  & accum) { accum = long_double_complex(-HUGE_VALL,-HUGE_VALL); }
+#endif
+#ifdef HUGE_VALF
+  template<> inline void maximum::op<float_complex>        ::reduce (float_complex& accum, const float_complex& val) { accum = float_complex(max(accum.real(), val.real()), max(accum.imag(), val.imag())); }
+#endif
+  template<> inline void maximum::op<double_complex>       ::reduce (double_complex& accum, const double_complex& val) { accum = double_complex(max(accum.real(), val.real()), max(accum.imag(), val.imag())); }
+#ifdef HUGE_VALL
+  template<> inline void maximum::op<long_double_complex>  ::reduce (long_double_complex& accum, const long_double_complex& val) { accum = long_double_complex(max(accum.real(), val.real()), max(accum.imag(), val.imag())); }
+#endif
   
   struct sum : reduction {
     ared thered () const { return do_sum; }
@@ -132,8 +174,8 @@ namespace CarpetReduce {
     MPI_Op mpi_op () const { return MPI_SUM; }
   };
   
-  struct mean : reduction {
-    ared thered () const { return do_mean; }
+  struct average : reduction {
+    ared thered () const { return do_average; }
     bool uses_cnt () const { return true; }
     template<class T>
     struct op {
@@ -260,7 +302,7 @@ namespace CarpetReduce {
 	  INITIALISE(maximum,T);		\
 	  INITIALISE(sum,T);			\
 	  INITIALISE(sum_abs,T);		\
-	  INITIALISE(mean,T);			\
+	  INITIALISE(average,T);		\
 	  INITIALISE(norm1,T);			\
 	  INITIALISE(norm2,T);			\
 	  INITIALISE(norm_inf,T);		\
@@ -331,7 +373,7 @@ namespace CarpetReduce {
 	  REDUCE(maximum,T);			\
 	  REDUCE(sum,T);			\
 	  REDUCE(sum_abs,T);			\
-	  REDUCE(mean,T);			\
+	  REDUCE(average,T);			\
 	  REDUCE(norm1,T);			\
 	  REDUCE(norm2,T);			\
 	  REDUCE(norm_inf,T);			\
@@ -418,7 +460,7 @@ namespace CarpetReduce {
 	    FINALISE(maximum,T);		\
 	    FINALISE(sum,T);			\
 	    FINALISE(sum_abs,T);		\
-	    FINALISE(mean,T);			\
+	    FINALISE(average,T);		\
 	    FINALISE(norm1,T);			\
 	    FINALISE(norm2,T);			\
 	    FINALISE(norm_inf,T);		\
@@ -629,7 +671,7 @@ namespace CarpetReduce {
   REDUCTION(maximum);
   REDUCTION(sum);
   REDUCTION(sum_abs);
-  REDUCTION(mean);
+  REDUCTION(average);
   REDUCTION(norm1);
   REDUCTION(norm2);
   REDUCTION(norm_inf);
@@ -645,7 +687,7 @@ namespace CarpetReduce {
     CCTK_RegisterReductionOperator (maximum_GVs,  "maximum");
     CCTK_RegisterReductionOperator (sum_GVs,      "sum");
     CCTK_RegisterReductionOperator (sum_abs_GVs,  "sum_abs");
-    CCTK_RegisterReductionOperator (mean_GVs,     "mean");
+    CCTK_RegisterReductionOperator (average_GVs,  "average");
     CCTK_RegisterReductionOperator (norm1_GVs,    "norm1");
     CCTK_RegisterReductionOperator (norm2_GVs,    "norm2");
     CCTK_RegisterReductionOperator (norm_inf_GVs, "norm_inf");
@@ -655,7 +697,7 @@ namespace CarpetReduce {
     CCTK_RegisterReductionArrayOperator (maximum_arrays,  "maximum");
     CCTK_RegisterReductionArrayOperator (sum_arrays,      "sum");
     CCTK_RegisterReductionArrayOperator (sum_abs_arrays,  "sum_abs");
-    CCTK_RegisterReductionArrayOperator (mean_arrays,     "mean");
+    CCTK_RegisterReductionArrayOperator (average_arrays,  "average");
     CCTK_RegisterReductionArrayOperator (norm1_arrays,    "norm1");
     CCTK_RegisterReductionArrayOperator (norm2_arrays,    "norm2");
     CCTK_RegisterReductionArrayOperator (norm_inf_arrays, "norm_inf");
