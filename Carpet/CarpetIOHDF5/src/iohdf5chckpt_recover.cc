@@ -181,11 +181,122 @@ namespace CarpetIOHDF5 {
       writer = H5Fopen (cp_tempname, H5F_ACC_RDWR, H5P_DEFAULT);
       assert (writer>=0);
 
+      // Dump all parameters and GHExtentions
+      retval += DumpParametersGHExtentions (cctkGH, 1, writer);
+      assert(!retval);
+
     } // myproc == 0 
 
-    // Dump all parameters and GHExtentions
-    retval += DumpParametersGHExtentions (cctkGH, 1, writer);
-    assert(!retval);
+
+    // now dump the grid variables on all mglevels, reflevels, maps and components
+    BEGIN_MGLEVEL_LOOP(cctkGH) {
+
+      BEGIN_REFLEVEL_LOOP(cctkGH) {
+
+	if (verbose)
+	  {
+	    CCTK_INFO ("Dumping Grid Variables ...");
+	  }
+	for (int group = CCTK_NumGroups () - 1; group >= 0; group--)
+	  {
+	    /* only dump groups which have storage assigned */
+
+	    if (CCTK_QueryGroupStorageI (cctkGH, group) <= 0)
+	      {
+		continue;
+	      }
+
+	    const int grouptype = CCTK_GroupTypeI(group);
+
+	    /* scalars and grid arrays only have 1 reflevel: */
+	    if ( (grouptype != CCTK_GF) && (reflevel != 0) )
+	      continue;
+	    
+	    /* now check if there is any memory allocated
+	       for GFs and GAs. GSs should always have 
+	       memory allocated and there is at this point
+	       no CCTK function to check this :/
+	    */
+
+	    if ( (grouptype == CCTK_GF) || (grouptype == CCTK_ARRAY)){
+	      const int gpdim = CCTK_GroupDimI(group);
+	      int gtotalsize=1;
+	      int tlsh[gpdim];
+	      assert(!CCTK_GrouplshGI(cctkGH,gpdim,tlsh,group));
+	      for(int i=0;i<gpdim;i++) {
+		gtotalsize=tlsh[i];		  
+	      }
+	      if(gtotalsize == 0){
+		if (verbose) CCTK_VInfo(CCTK_THORNSTRING, 
+		    "Group %s is zero-sized. No checkpoint info written",CCTK_GroupName(group));
+		continue;
+	      }
+	    }
+	    
+	    /* get the number of allocated timelevels */
+	    CCTK_GroupData (group, &gdata);
+	    gdata.numtimelevels = 0;
+	    gdata.numtimelevels = CCTK_GroupStorageIncrease (cctkGH, 1, &group,
+							     &gdata.numtimelevels,NULL);
+	    
+	    
+	    
+	    int first_vindex = CCTK_FirstVarIndexI (group);
+
+	    /* get the default I/O request for this group */
+	    request = IOUtil_DefaultIORequest (cctkGH, first_vindex, 1);
+	    
+	    /* disable checking for old data objects, disable datatype conversion
+	       and downsampling */
+	    request->check_exist = 0;
+	    request->hdatatype = gdata.vartype;
+	    for (request->hdim = 0; request->hdim < request->vdim; request->hdim++)
+	      {
+		request->downsample[request->hdim] = 1;
+	      }
+	    
+	    /* loop over all variables in this group */
+	    for (request->vindex = first_vindex;
+		 request->vindex < first_vindex + gdata.numvars;
+		 request->vindex++)
+	      {
+		/* loop over all timelevels of this variable */
+		for (request->timelevel = 0;
+		     request->timelevel < gdata.numtimelevels;
+		     request->timelevel++)
+		  {
+		    if (verbose)
+		      {
+			fullname = CCTK_FullName (request->vindex);
+			CCTK_VInfo (CCTK_THORNSTRING, "  %s (timelevel %d)",
+				    fullname, request->timelevel);
+			free (fullname);
+		      }
+		    // write the var
+		    
+		    if (grouptype == CCTK_ARRAY || grouptype == CCTK_GF || grouptype == CCTK_SCALAR)
+		      {
+			char* fullname = CCTK_FullName (request->vindex);
+			if (verbose)
+			  CCTK_VInfo (CCTK_THORNSTRING,"%s: reflevel: %d map: %d component: %d grouptype: %d ",
+				      fullname,reflevel,Carpet::map,component,grouptype);
+			free(fullname);
+		    retval += WriteVar(cctkGH,writer,request,1);
+		      }
+		    else
+		      {
+			CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+				    "Invalid group type %d for variable '%s'", grouptype, fullname);
+			retval = -1;
+		      }
+		    
+		  }
+	      } /* end of loop over all variables */
+	  } /* end of loop over all groups */
+      } END_REFLEVEL_LOOP;
+      
+    } END_MGLEVEL_LOOP;
+  
 
     if (myproc==0) {
       // Close the file
@@ -216,7 +327,7 @@ namespace CarpetIOHDF5 {
     } // retval == 0
 
     
-    CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,"This feature is not working yet. Sorry!");
+    //    CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,"This feature is not working yet. Sorry!");
 
     return retval;
 
