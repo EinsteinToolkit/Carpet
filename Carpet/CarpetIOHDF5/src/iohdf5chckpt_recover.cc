@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.27 2004/05/29 22:25:29 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.28 2004/06/02 07:12:56 bzink Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -50,10 +50,6 @@ namespace CarpetIOHDF5 {
   // linked list for reading in the checkpoint file
 
   list<string> datasetnamelist;
-  
-  // variable to store the original value of CarpetRegrid::regrid_every
-  char* temp_regrid_every;
-  char* temp_keep_same_grid_structure;
   
   int Checkpoint (const cGH* const cctkGH, int called_from);
   int DumpParametersGHExtentions (const cGH *cctkGH, int all, hid_t writer);  
@@ -239,34 +235,12 @@ namespace CarpetIOHDF5 {
 		  "Restarting simulation at iteration %d (physical time %g)",
 		  cctkGH->cctk_iteration, (double) cctkGH->cctk_time);
 
-      // Set regrid_every to recompose the grid hierarchy
-      if (reflevel==0) {
-        temp_regrid_every = CCTK_ParameterValString("regrid_every","CarpetRegrid");
-	temp_keep_same_grid_structure = 
-	  CCTK_ParameterValString("keep_same_grid_structure","CarpetRegrid");
-	ostringstream regrid_every;
-	ostringstream keep_same_grid_structure;
-	regrid_every << cctkGH->cctk_iteration-1;
-	keep_same_grid_structure << "no";
-	int error = CCTK_ParameterSet("regrid_every","CarpetRegrid",
-				      regrid_every.str().c_str());
-	error += CCTK_ParameterSet("keep_same_grid_structure","CarpetRegrid",
-				      keep_same_grid_structure.str().c_str());
-	if(error) {
-	  CCTK_VInfo(CCTK_THORNSTRING,"Setting CarpetRegrid::regrid_every didn't work.");
-	}
-      }
     } // called_from == CP_RECOVER_DATA
   
     if (reflevel==maxreflevels) {	
       if(myproc == 0) {
 	H5Fclose(reader);
       }
-      CCTK_ParameterSet("regrid_every","CarpetRegrid",temp_regrid_every);
-      free(temp_regrid_every);
-      CCTK_ParameterSet("keep_same_grid_structure",
-			"CarpetRegrid",temp_keep_same_grid_structure);
-      free(temp_keep_same_grid_structure);
     }
 
     return (result);
