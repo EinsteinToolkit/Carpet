@@ -285,9 +285,9 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
 
     // Normalise the set, i.e., try to represent the set with fewer bboxes.
     //
-    // According to Cactus conventions, DISTRIB=CONSTANT arrays (including
-    // grid scalars) are assumed to be the same on all processors and therefor
-    // stored only by processor 0.
+    // According to Cactus conventions, DISTRIB=CONSTANT arrays
+    // (including grid scalars) are assumed to be the same on all
+    // processors and are therefore stored only by processor 0.
     if (group.disttype != CCTK_DISTRIB_CONSTANT)
     {
       bboxes.normalize();
@@ -402,9 +402,10 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
         {
           const void *data = (const void *) processor_component->storage();
 
-          // As per Cactus convention, DISTRIB=CONSTANT arrays (including
-          // grid scalars) are assumed to be the same on all processors
-          // and therefor are stored only by processor 0.
+          // As per Cactus convention, DISTRIB=CONSTANT arrays
+          // (including grid scalars) are assumed to be the same on
+          // all processors and are therefore stored only by processor
+          // 0.
           //
           // Warn the user if this convention is violated.
           if (bbox_id > 0 && group.disttype == CCTK_DISTRIB_CONSTANT)
