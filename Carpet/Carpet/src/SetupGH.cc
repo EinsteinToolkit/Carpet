@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.67 2004/03/23 14:45:08 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.68 2004/03/23 14:46:35 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -670,9 +670,12 @@ namespace Carpet {
         const ivect astr(1);
         const ibbox abaseext(alb, aub, astr);
         
+        assert (all(convpowers == convpowers[0]));
+        const int amgfact1 = ipow(mgfact, convpowers[0]);
+        
         arrdata[group][0].hh
           = new gh<dim>(refinement_factor, vertex_centered,
-                        convergence_factor, vertex_centered,
+                        amgfact1, vertex_centered,
                         abaseext);
         
         arrdata[group][0].dd
