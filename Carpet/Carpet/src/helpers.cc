@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.17 2002/01/09 21:15:11 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.18 2002/01/14 15:56:02 schnetter Exp $";
 
 
 
@@ -47,15 +47,19 @@ namespace Carpet {
   
   int MyProc (const cGH* cgh)
   {
+    // if there is no cgh yet, assume nothing has been initialised
+    // yet, and don't use dist::comm
     int rank;
-    MPI_Comm_rank (dist::comm, &rank);
+    MPI_Comm_rank (cgh ? dist::comm : MPI_COMM_WORLD, &rank);
     return rank;
   }
   
   int nProcs (const cGH* cgh)
   {
+    // if there is no cgh yet, assume nothing has been initialised
+    // yet, and don't use dist::comm
     int size;
-    MPI_Comm_size (dist::comm, &size);
+    MPI_Comm_size (cgh ? dist::comm : MPI_COMM_WORLD, &size);
     return size;
   }
   
