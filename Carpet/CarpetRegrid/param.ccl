@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.16 2004/02/05 16:11:20 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.17 2004/04/14 22:19:44 schnetter Exp $
 
 
 
@@ -46,6 +46,7 @@ KEYWORD refined_regions "Regions where the grid is refined" STEERABLE=always
   "manual-coordinates"     :: "Refine the regions specified by coordinates l[123][xyz]{min,max}"
   "manual-gridpoint-list"  :: "Refine the regions specified by integer grid points in the parameter 'gridpoints'"
   "manual-coordinate-list" :: "Refine the regions specified by coordinates in the parameter 'coordinates'"
+  "moving"                 :: "Refine a moving region"
   "automatic"              :: "Refine automatically"
 } "centre"
 
@@ -62,6 +63,46 @@ BOOLEAN symmetry_y "Refine the lower half in y-direction"
 BOOLEAN symmetry_z "Refine the lower half in z-direction"
 {
 } "no"
+
+
+
+# Region specifications for moving boxes
+
+KEYWORD moving_trajectory "Type of trajectory" STEERABLE=always
+{
+  "point"  :: "Do not move"
+  "circle" :: "Move in a circle"
+} "point"
+
+CCTK_REAL moving_region_radius "Radius of the moving region" STEERABLE=always
+{
+  (0: :: ""
+} 1.0
+
+CCTK_REAL moving_centre_x "x-coordinate of the centre" STEERABLE=always
+{
+  : :: ""
+} 0.0
+
+CCTK_REAL moving_centre_y "y-coordinate of the centre" STEERABLE=always
+{
+  : :: ""
+} 0.0
+
+CCTK_REAL moving_centre_z "z-coordinate of the centre" STEERABLE=always
+{
+  : :: ""
+} 0.0
+
+CCTK_REAL moving_circle_radius "Radius of the circle" STEERABLE=always
+{
+  0: :: ""
+} 1.0
+
+CCTK_REAL moving_circle_frequency "Angular frequency on the circle" STEERABLE=always
+{
+  0: :: ""
+} 1.0
 
 
 

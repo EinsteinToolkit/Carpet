@@ -13,7 +13,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.37 2004/02/09 16:48:43 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.38 2004/04/14 22:19:44 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -171,6 +171,13 @@ namespace CarpetRegrid {
     } else if (CCTK_EQUALS(refined_regions, "manual-coordinate-list")) {
       
       do_recompose = ManualCoordinateList
+        (cctkGH, hh, reflevel, map,
+         size, nboundaryzones, is_internal, is_staggered, shiftout,
+         bbsss, obss, pss);
+                 
+    } else if (CCTK_EQUALS(refined_regions, "moving")) {
+      
+      do_recompose = Moving
         (cctkGH, hh, reflevel, map,
          size, nboundaryzones, is_internal, is_staggered, shiftout,
          bbsss, obss, pss);

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.11 2004/01/25 14:57:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.12 2004/04/14 22:19:44 schnetter Exp $
 
 #ifndef CARPETREGRID_HH
 #define CARPETREGRID_HH
@@ -151,6 +151,19 @@ namespace CarpetRegrid {
                             gh<dim>::rexts  & bbsss,
                             gh<dim>::rbnds  & obss,
                             gh<dim>::rprocs & pss);
+
+  int Moving (cGH const * const cctkGH,
+              gh<dim> const & hh,
+              int const reflevel,
+              int const map,
+              int const size,
+              jjvect const & nboundaryzones,
+              jjvect const & is_internal,
+              jjvect const & is_staggered,
+              jjvect const & shiftout,
+              gh<dim>::rexts  & bbsss,
+              gh<dim>::rbnds  & obss,
+              gh<dim>::rprocs & pss);
   
   int Automatic (cGH const * const cctkGH,
                  gh<dim> const & hh,
