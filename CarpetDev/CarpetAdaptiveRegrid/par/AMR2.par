@@ -1,5 +1,5 @@
 
-ActiveThorns = "coordbase SymBase NaNChecker carpetReduce CartGrid3D carpet carpetlib carpetadaptiveregrid Boundary IOBasic IOUtil carpetIOASCII IDWaveMoL carpetSlab WaveMoL Time MoL reflectionsymmetry"
+ActiveThorns = "coordbase SymBase NaNChecker carpetReduce CartGrid3D carpet carpetlib carpetadaptiveregrid Boundary IOBasic IOUtil carpetIOScalar carpetIOASCII IDWaveMoL carpetSlab WaveMoL Time MoL reflectionsymmetry"
 
 
 IDWaveMoL::initial_data = "gaussian"
@@ -56,16 +56,16 @@ carpetadaptiveregrid::regrid_every = 1
 cactus::terminate = "time"
 cactus::cctk_final_time = 0.5
 
-iobasic::outScalar_every = 1
-iobasic::outScalar_vars = "wavemol::phi mol::errorestimate"
-
 iobasic::outInfo_every = 1
 iobasic::outInfo_vars = "wavemol::phi mol::errorestimate[0]"
+
+ioscalar::outScalar_every = 1
+ioscalar::outScalar_vars = "wavemol::phi mol::errorestimate"
 
 ioascii::out1D_every = 1
 ioascii::out1D_vars = "wavemol::scalarevolvemol_scalar mol::errorestimate"
 
-IO::out_dir = $.
+IO::out_dir = $parfile
 
 #mol::ode_method = "Generic"
 #mol::mol_intermediate_steps = 4
