@@ -1,14 +1,13 @@
 # Schedule definitions for thorn IDSpaceTimeToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/schedule.ccl,v 1.5 2003/11/05 16:18:40 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/schedule.ccl,v 1.1 2001/03/17 16:05:50 eschnett Exp $
 
 schedule IDSpaceTimeToy_Startup at STARTUP
 {
   LANG: Fortran
 } "Register banner"
 
-schedule IDSpaceTimeToy_InitialData as SpaceTimeToy_InitialData at INITIAL \
-	after IDHydroToy_InitialData
+schedule IDSpaceTimeToy_InitialData as SpaceTimeToy_InitialData at INITIAL
 {
   LANG: Fortran
-  STORAGE: spacetimetoy::spacetimeevolve[3]
+  STORAGE: spacetimetoy::scalarevolve
 } "Initial data for 3D wave equation"

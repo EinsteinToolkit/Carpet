@@ -1,7 +1,7 @@
 # Schedule definitions for thorn SpaceTimeToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/schedule.ccl,v 1.8 2003/11/05 16:18:40 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/schedule.ccl,v 1.1 2001/03/17 16:05:56 eschnett Exp $
 
-STORAGE: spacetimeevolve[3]
+STORAGE: scalarevolve
 STORAGE: icn_state
 
 
@@ -21,64 +21,20 @@ schedule SpaceTimeToy_InitSymBound at BASEGRID
 
 
 
-# Iterative Crank-Nicholson integration
+# ICN integration
 
-schedule SpaceTimeToy_EulerStep at EVOL \
-	after HydroToy_EulerPredictor
+schedule SpaceTimeToy_EulerStep at EVOL
 {
   LANG: Fortran
-  STORAGE: spacetimetemps hydrotemps
+  STORAGE: scalartemps
+  SYNC: scalarevolve
 } "Initial Euler step"
-
-schedule SpaceTimeToy_Boundaries at EVOL \
-	after SpaceTimeToy_EulerStep
-{
-  LANG: Fortran
-  SYNC: spacetimeevolve
-} "Select boundary conditions after initial Euler step"
-
-schedule GROUP ApplyBCs at EVOL \
-	after SpaceTimeToy_Boundaries
-{
-} "Apply boundary conditions after initial Euler step"
-
-
-
-schedule GROUP SpaceTimeToy_ICNLoop at EVOL \
+  
+schedule SpaceTimeToy_ICNStep at EVOL \
 	after SpaceTimeToy_EulerStep \
-	after HydroToy_EulerPredictor \
-	before HydroToy_EulerCorrector \
 	while SpaceTimeToy::do_iterate
 {
-} "All ICN steps"
-
-schedule SpaceTimeToy_ICNStep in SpaceTimeToy_ICNLoop
-{
   LANG: Fortran
-  STORAGE: spacetimetemps hydrotemps
+  STORAGE: scalartemps
+  SYNC: scalarevolve
 } "One ICN step"
-
-schedule SpaceTimeToy_Boundaries in SpaceTimeToy_ICNLoop \
-	after SpaceTimeToy_ICNStep
-{
-  LANG: Fortran
-  SYNC: spacetimeevolve
-} "Select boundary conditions after ICN step"
-
-schedule GROUP ApplyBCs in SpaceTimeToy_ICNLoop \
-	after SpaceTimeToy_Boundaries
-{
-} "Apply boundary conditions after ICN step"
-
-
-
-schedule SpaceTimeToy_Boundaries at POSTRESTRICT
-{
-  LANG: Fortran
-  SYNC: spacetimeevolve
-} "Select boundary conditions after restricting"
-
-schedule GROUP ApplyBCs at POSTRESTRICT \
-	after SpaceTimeToy_Boundaries
-{
-} "Apply boundary conditions after restricting"

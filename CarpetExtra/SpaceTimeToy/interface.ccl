@@ -1,36 +1,24 @@
 # Interface definition for thorn SpaceTimeToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/interface.ccl,v 1.8 2004/05/21 17:43:57 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/interface.ccl,v 1.1 2001/03/17 16:05:56 eschnett Exp $
 
 implements: spacetimetoy
-inherits: hydrotoy grid
-
-
-
-CCTK_INT FUNCTION Boundary_SelectGroupForBC(CCTK_POINTER_TO_CONST IN GH, \
-  CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, \
-  CCTK_STRING IN group_name, CCTK_STRING IN bc_name)
-REQUIRES FUNCTION Boundary_SelectGroupForBC
+inherits: grid
 
 
 
 public:
 
-CCTK_REAL spacetimeevolve type=GF timelevels=3
+CCTK_REAL scalarevolve type=GF timelevels=2
 {
   phi psi
-} "The evolved spacetime fields"
+} "The evolved scalar fields"
 
 private:
 
-CCTK_REAL spacetimetemps type=GF
+CCTK_REAL scalartemps type=GF
 {
   phi_i psi_i
 } "Intermediate values for the integrator"
-
-CCTK_REAL hydrotemps type=GF
-{
-  u_i vx_i vy_i vz_i
-} "Intermediate vales for the integrator"
 
 
 
