@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.51 2004/04/13 11:01:44 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.52 2004/04/13 11:13:49 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -26,8 +26,7 @@ using namespace std;
 
 
 
-// Track all allocated storage
-static size_t allocated_bytes = 0;
+static size_t total_allocated_bytes; // total number of allocated bytes
 
 
 
@@ -37,7 +36,7 @@ data<T,D>::data (const int varindex_, const operator_type transport_operator_,
                  const int vectorlength, const int vectorindex,
                  data* const vectorleader)
   : gdata<D>(varindex_, transport_operator_),
-    _storage(0), _allocated_bytes(0),
+    _storage(NULL), _allocated_bytes(0),
     vectorlength(vectorlength), vectorindex(vectorindex),
     vectorleader(vectorleader)
 {
@@ -53,7 +52,7 @@ data<T,D>::data (const int varindex_, const operator_type transport_operator_,
                  data* const vectorleader,
                  const ibbox& extent_, const int proc_)
   : gdata<D>(varindex_, transport_operator_),
-    _storage(0), _allocated_bytes(0),
+    _storage(NULL), _allocated_bytes(0),
     vectorlength(vectorlength), vectorindex(vectorindex),
     vectorleader(vectorleader)
 {
@@ -97,9 +96,9 @@ void data<T,D>::getmem (const size_t nelems)
                 "Failed to allocate %f bytes (%.3f MB) of memory for type %s.  %f bytes (%.3f MB) are currently allocated.",
                 (double)nbytes, nbytes/1.0e6,
                 typestring(Tdummy),
-                (double)allocated_bytes, allocated_bytes/1.0e6);
+                (double)total_allocated_bytes, total_allocated_bytes/1.0e6);
   }
-  allocated_bytes += nbytes;
+  total_allocated_bytes += nbytes;
 }
 
 
@@ -108,7 +107,7 @@ template<class T, int D>
 void data<T,D>::freemem ()
 {
   delete [] _storage;
-  allocated_bytes -= this->_allocated_bytes;
+  total_allocated_bytes -= this->_allocated_bytes;
   this->_allocated_bytes = 0;
 }
 

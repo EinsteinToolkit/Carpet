@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.20 2004/04/08 11:16:35 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.21 2004/04/13 11:13:48 schnetter Exp $
 
 #ifndef DATA_HH
 #define DATA_HH
@@ -31,7 +31,7 @@ class data: public gdata<D>
 
   // Fields
   T* _storage;			// the data (if located on this processor)
-  size_t _allocated_bytes;
+  size_t _allocated_bytes;      // number of allocated bytes
   
   int vectorlength;
   int vectorindex;
