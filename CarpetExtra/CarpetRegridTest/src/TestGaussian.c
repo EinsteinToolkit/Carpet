@@ -1,11 +1,10 @@
-#include <math.h>
-
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
+#include "cctk_Functions.h"
 
 
-static const char *rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetRegridTest/src/TestGaussian.c,v 1.3 2004/05/27 13:22:49 schnetter Exp $";
+static const char *rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetRegridTest/src/TestGaussian.c,v 1.1 2004/05/23 15:56:14 cott Exp $";
 
 CCTK_FILEVERSION(CarpetExtra_CarpetRegridTest_TestGaussian_c);
 
@@ -35,7 +34,7 @@ void CarpetRegrid_TestGaussian(CCTK_ARGUMENTS)
 	      R = sqrt(X*X + Y*Y + Z*Z);
 
 	      phi_error[index] = phi[index] - amplitude*exp( - pow( (R - radius) / sigma, 2.0 ) );
-	      phi_relerror[index] = phi_error[index]  / (amplitude*exp( - pow( (R - radius) / sigma, 2.0 ) ) );
+
 	    }
 	}
     }
