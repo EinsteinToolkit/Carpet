@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.15 2003/11/06 14:33:19 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.16 2003/11/07 13:21:06 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -21,7 +21,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.15 2003/11/06 14:33:19 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.16 2003/11/07 13:21:06 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -426,11 +426,11 @@ namespace CarpetInterp {
               // Interpolate in time, if necessary
               if (need_time_interp) {
                 CCTK_REAL const time = cgh->cctk_time / cgh->cctk_delta_time;
-                CCTK_REAL times[num_tl];
+                vector<CCTK_REAL> times(num_tl);
                 for (int tl=0; tl<num_tl; ++tl) {
                   times[tl] = tt->time (tl, reflevel, mglevel);
                 }
-                CCTK_REAL tfacs[num_tl];
+                vector<CCTK_REAL> tfacs(num_tl);
                 switch (num_tl) {
                 case 1:
                   // no interpolation
