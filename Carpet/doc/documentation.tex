@@ -2,7 +2,7 @@
 %  Cactus Thorn template for ThornGuide documentation
 %  Author: Ian Kelley
 %  Date: Sun Jun 02, 2002
-%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.6 2003/05/02 14:24:14 schnetter Exp $                                                             
+%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.7 2003/05/02 14:47:46 hawke Exp $                                                             
 %
 %  Thorn documentation in the latex file doc/documentation.tex 
 %  will be included in ThornGuides built with the Cactus make system.
@@ -43,11 +43,11 @@
 % 
 % Example of including a graphic image:
 %    \begin{figure}[ht]
-% 	\begin{center}
-%    	   \includegraphics[width=6cm]{MyArrangement_MyThorn_MyFigure}
-% 	\end{center}
-% 	\caption{Illustration of this and that}
-% 	\label{MyArrangement_MyThorn_MyLabel}
+%       \begin{center}
+%          \includegraphics[width=6cm]{MyArrangement_MyThorn_MyFigure}
+%       \end{center}
+%       \caption{Illustration of this and that}
+%       \label{MyArrangement_MyThorn_MyLabel}
 %    \end{figure}
 %
 % Example of using a label:
@@ -64,7 +64,7 @@
 % *======================================================================* 
 
 % If you are using CVS use this line to give version information
-% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.6 2003/05/02 14:24:14 schnetter Exp $
+% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.7 2003/05/02 14:47:46 hawke Exp $
 
 \documentclass{article}
 
@@ -85,7 +85,7 @@
 
 % the date your document was last changed, if your document is in CVS, 
 % please use:
-\date{$ $Date: 2003/05/02 14:24:14 $ $}
+\date{$ $Date: 2003/05/02 14:47:46 $ $}
 
 \maketitle
 
@@ -747,6 +747,89 @@ arrangement's doc directory, and a document
 directory.
 
 
+\section{Frequently Asked Questions}
+\label{sec:faq}
+
+Here are a few of the more frequently asked questions with some
+answers.
+\begin{enumerate}
+\item \textbf{If I run without any refined grids, why don't I get the
+    same results as with PUGH?}
+  
+  There are two possible reasons. The most common is that the you are
+  not comparing exactly the same output. It used to be the case that
+  norms would disagree (this is no longer the case). If it is the
+  ASCII output that disagress, then you should note that the default
+  output format for CarpetIOASCII gives more digits than
+  CactusBase/IOASCII. If you want to get ``identical'' results for
+  this output, try setting \texttt{IOASCII::out\_format = ".14f"}).
+
+  The second reason is subtle differences are bugs in the
+  implementation. Good luck finding these...
+\item \textbf{I switch on a refined grid. Why do I not see it output?
+    Why is the output strange?} 
+
+\begin{figure}[htbp]
+  \begin{center}
+    \includegraphics[scale=0.5]{Grid1.eps}
+    \caption{How the grids are indexed in Carpet. This is an
+      artificial three level example using C-style numbering (0
+      origin). Note that the numbering is with respect to the finest
+      grid.}
+    \label{fig:Grid1}
+  \end{center}
+\end{figure}
+  As soon as you switch on refinement the way the grids are numbered
+  by index changes. The numbering is done with respect to the
+  \textit{finest} grid but covers the entire domain. An example of how
+  the numbering works is given in figure~\ref{fig:Grid1}. It is
+  important to note that this also applies to the numbering in
+  time. So with the grid structure of figure~\ref{fig:Grid1} output
+  for the coarsest grid only occurs on iterations $0,4,8,\dots$, for
+  the medium grid only on iterations $0,2,4,\dots$, and for the finest
+  grid on iterations $0,1,2,\dots$. Note that here the finest grid is
+  not the finest \textit{existing} grid, but the finest
+  \textit{possible} grid. This is controlled by the
+  \texttt{Carpet::max\_refinement\_levels} parameter.
+
+  So, there are plenty of reasons why the output might be strange:
+  \begin{itemize}
+  \item You are requesting output on iterations when not all grids are
+    output. For example, requesting output every $5^{\text{}th}$
+    iteration with the above grid structure would only output the
+    coarse grid every 20 iterations.
+  \item You are requesting output along an index that does not
+    intersect with any grid points. For example, the line defined by
+    $j = 6$ in the example above corresponds to the center of the box,
+    but does not intersect the coarse grid at all!
+  \item Requesting output along a line defined by a coordinate value
+    will give you the index closest to it. This may not agree on the
+    different refinement levels. In the example above the coordinate
+    value $y=5.1$ is closest to $j=5$ on the fine grid, $j=6$ on the
+    medium grid, and $j=4$ on the coarse grid. All the different lines
+    will be output but you should not expect points that appear to
+    overlap in the output to agree as they're actually not at the same
+    point. 
+  \item CarpetRegrid (which sets up the refined boxes) knows nothing
+    about symmetries. So if you have a simulation in, for example,
+    octant mode with $x,y,z\in[0,10]$ and you leave all the parameters
+    to be the defaults, the following will happen:
+    \begin{itemize}
+    \item CarpetRegrid creates a refined box at the center of the
+      \textit{index space}. This might cover something like
+      $x,y,z\in[3,7]$. 
+    \item When the IO thorn requests the output lines and planes it
+      does know the symmetries, so tries to put the lines and planes
+      as close to the origin $x=y=z=0$ as possible.
+    \item When output occurs the lines and planes don't intersect the
+      fine grid and so you get no output.
+    \end{itemize}
+  \end{itemize}
+  
+  Morals: Comparing 1D output on different refinement levels can be
+  very frustrating. 2D output is usually much more informative. Using
+  symmetry conditions with Carpet is tricky.
+\end{enumerate}
 
 %% \bibliographystyle{amsalpha}      % initials + year
 %% \bibliography{carpet}
