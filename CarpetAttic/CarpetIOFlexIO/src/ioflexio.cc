@@ -32,7 +32,7 @@
 
 #include "ioflexio.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.12 2001/11/05 17:53:03 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.13 2001/12/05 01:06:31 schnetter Exp $";
 
 
 
@@ -365,7 +365,7 @@ namespace CarpetIOFlexIO {
   
   
   int InputVarAs (cGH* const cgh, const char* const varname,
-		   const char* const alias) {
+		  const char* const alias) {
     DECLARE_CCTK_PARAMETERS;
     
     const int n = CCTK_VarIndex(varname);
@@ -420,7 +420,7 @@ namespace CarpetIOFlexIO {
       char* const filename = (char*)alloca(strlen(myindir)
 					   +strlen(alias)
 					   +strlen(extension)+100);
-      sprintf (filename, "%s/%s.%s", myindir, alias, extension);
+      sprintf (filename, "%s/%s%s", myindir, alias, extension);
       
       IObase* reader = 0;
       AmrGridReader* amrreader = 0;
@@ -428,11 +428,16 @@ namespace CarpetIOFlexIO {
       
       const int gpdim = CCTK_GroupDimI(group);
       
+      int rank;
+      int dims[dim];
+      int nbytes;
+      
       // Read the file only on the root processor
       if (CCTK_MyProc(cgh)==0) {
 	
 	// Open the file 
-	if (CCTK_Equals(in3D_format, "IEEE")) {
+	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Opening file \"%s\"", filename);
+ 	if (CCTK_Equals(in3D_format, "IEEE")) {
 	  reader = new IEEEIO(filename, IObase::Read);
 #ifdef HDF5
 	} else if (CCTK_Equals(in3D_format, "HDF4")) {
@@ -443,14 +448,21 @@ namespace CarpetIOFlexIO {
 	} else {
 	  abort();
 	}
+	if (!reader->isValid()) {
+	  CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+		      "Could not open file \"%s\" for reading", filename);
+	}
 	assert (reader->isValid());
+	
+	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Reading AMR info");
 	amrreader = new AmrGridReader(*reader);
 	
 	// Read information about dataset
+	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Reading dataset info");
 	IObase::DataType numbertype;
-	int rank;
-	int dims[dim];
 	reader->readInfo (numbertype, rank, dims);
+	nbytes = IObase::nBytes(numbertype,rank,dims);
+	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "type=%d rank=%d dims=[%d,%d,%d] nbytes=%d", (int)numbertype, rank, dims[0], dims[1], dims[2], nbytes);
 	
 	// Check rank
 	assert (rank==gpdim);
@@ -464,16 +476,28 @@ namespace CarpetIOFlexIO {
 	// TODO: check grid spacing
 	
 	// Number of datasets
+	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Reading number of datasets");
 	ndatasets = reader->nDatasets();
+	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "ndatasets=%d", ndatasets);
 	assert (ndatasets>=0);
       }
+      
+      // Broadcast rank, dimensions, and nbytes
+      MPI_Bcast (&rank, 1, MPI_INT, 0, dist::comm);
+      assert (rank>=1);
+      MPI_Bcast (&dims, rank, MPI_INT, 0, dist::comm);
+      for (int d=0; d<rank; ++d) assert (dims[d]>=0);
+      MPI_Bcast (&nbytes, 1, MPI_INT, 0, dist::comm);
+      assert (nbytes>=0);
       
       // Broadcast number of datasets
       MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
       assert (ndatasets>=0);
       
       // Read all datasets
+      // TODO: read only some datasets
       for (int dataset=0; dataset<ndatasets; ++dataset) {
+	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Handling dataset #%d", dataset);
 	
 	// Read grid
 	AmrGrid* amrgrid = 0;
@@ -483,6 +507,7 @@ namespace CarpetIOFlexIO {
 	if (CCTK_MyProc(cgh)==0) {
 	  
 	  // Read data
+	  if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Reading AMR data");
 	  amrgrid = amrreader->getGrid(dataset);
 	  assert (amrgrid!=0);
 	  assert (amrgrid->data!=0);
@@ -505,7 +530,8 @@ namespace CarpetIOFlexIO {
 	    amr_origin[d] = 0;
 	    amr_dims[d] = 1;
 	  }
-	}
+	  
+	} // MyProc == 0
 	MPI_Bcast (amr_origin, dim, MPI_INT, 0, dist::comm);
 	MPI_Bcast (amr_dims, dim, MPI_INT, 0, dist::comm);
 	
@@ -546,14 +572,17 @@ namespace CarpetIOFlexIO {
 	if (CCTK_MyProc(cgh)==0) {
 	  free (amrgrid->data);
 	  free (amrgrid);
+	  amrgrid = 0;
 	}
 	
       }	// loop over datasets
       
       // Close the file
       if (CCTK_MyProc(cgh)==0) {
+	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Deleting AMR info");
 	delete amrreader;
 	amrreader = 0;
+	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Closing file");
 	delete reader;
 	reader = 0;
       }

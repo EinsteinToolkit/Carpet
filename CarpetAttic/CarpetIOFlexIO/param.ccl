@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOFlexIO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/param.ccl,v 1.2 2001/03/17 22:37:21 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/param.ccl,v 1.3 2001/12/05 01:06:30 schnetter Exp $
 
 
 
@@ -12,6 +12,12 @@ USES CCTK_INT out_every
 
 
 restricted:
+
+
+
+BOOLEAN verbose "Produce log output"
+{
+} "no"
 
 
 
