@@ -16,7 +16,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/automatic.cc,v 1.3 2004/04/24 07:40:16 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/automatic.cc,v 1.4 2004/04/28 15:45:25 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_automatic_cc);
 }
 
@@ -58,7 +58,9 @@ namespace CarpetRegrid {
     const gf<CCTK_REAL,dim>& errorgf
       = (*dynamic_cast<const gf<CCTK_REAL,dim>*>
          (arrdata.at(gi).at(Carpet::map).data.at(vi-v1)));
-
+    
+    assert (! smart_outer_boundaries);
+    
     vector<ibbox> bbs;
     gh<dim>::cbnds obs;
     Automatic_OneLevel

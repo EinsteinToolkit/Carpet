@@ -11,7 +11,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinates.cc,v 1.4 2004/04/22 11:58:42 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinates.cc,v 1.5 2004/04/28 15:45:25 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_manualcoordinates_cc);
 }
 
@@ -53,6 +53,8 @@ namespace CarpetRegrid {
     upper.at(1) = rvect (l2xmax, l2ymax, l2zmax);
     lower.at(2) = rvect (l3xmin, l3ymin, l3zmin);
     upper.at(2) = rvect (l3xmax, l3ymax, l3zmax);
+    
+    assert (! smart_outer_boundaries);
     
     for (size_t rl=1; rl<bbsss.size(); ++rl) {
       

@@ -9,7 +9,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/centre.cc,v 1.3 2004/04/22 11:58:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/centre.cc,v 1.4 2004/04/28 15:45:25 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_centre_cc);
 }
 
@@ -47,6 +47,8 @@ namespace CarpetRegrid {
     ivect rstr = hh.baseextent.stride();
     ivect rlb  = hh.baseextent.lower();
     ivect rub  = hh.baseextent.upper();
+    
+    assert (! smart_outer_boundaries);
     
     for (size_t rl=1; rl<bbsss.size(); ++rl) {
       
