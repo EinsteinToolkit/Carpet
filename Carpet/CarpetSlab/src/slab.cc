@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.18 2004/04/16 14:02:26 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.19 2004/05/27 12:26:33 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -23,7 +23,7 @@
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.18 2004/04/16 14:02:26 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.19 2004/05/27 12:26:33 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 
@@ -84,6 +84,8 @@ namespace CarpetSlab {
 		 const int length[/*hdim*/],
                  void* const hdata)
   {
+    int ierr;
+    
     // Check Cactus grid hierarchy
     assert (cgh);
     
@@ -103,7 +105,8 @@ namespace CarpetSlab {
     
     // Get info about group
     cGroup gp;
-    CCTK_GroupData (group, &gp);
+    ierr = CCTK_GroupData (group, &gp);
+    assert (! ierr);
     assert (gp.dim<=dim);
     assert (CCTK_QueryGroupStorageI(cgh, group));
     const int typesize = CCTK_VarTypeSize(gp.vartype);
@@ -117,11 +120,23 @@ namespace CarpetSlab {
     if (gp.grouptype==CCTK_GF && Carpet::map==-1 && maps>1) {
       CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in level mode when there are multiple maps (use singlemap mode instead, or make sure that there is only one map)");
     }
-    // const int m = gp.grouptype==CCTK_GF ? Carpet::map : 0;
-    const int m = 0;
+    const int m = gp.grouptype==CCTK_GF ? Carpet::map : 0;
+    const int oldmap = Carpet::map;
+    if (gp.grouptype==CCTK_GF  && oldmap==-1) {
+      enter_singlemap_mode(const_cast<cGH*>(cgh), m);
+    }
     
     // Check dimension
     assert (hdim>=0 && hdim<=gp.dim);
+    
+    // Get more info about group
+    cGroupDynamicData gd;
+    ierr = CCTK_GroupDynamicData (cgh, group, &gd);
+    assert (! ierr);
+    const vect<int,dim> sizes = vect<int,dim>::ref(gd.gsh);
+    for (int d=0; d<dim; ++d) {
+      assert (sizes[d] >= 0);
+    }
     
     // Check timelevel
     const int num_tl = gp.numtimelevels;
@@ -129,9 +144,9 @@ namespace CarpetSlab {
     const int tl = -ti;
     
     // Check origin
-//     for (int d=0; d<dim; ++d) {
-//       assert (origin[d]>=0 && origin[d]<=sizes[d]);
-//     }
+    for (int d=0; d<dim; ++d) {
+      assert (origin[d]>=0 && origin[d]<=sizes[d]);
+    }
     
     // Check directions
     for (int dd=0; dd<hdim; ++dd) {
@@ -149,9 +164,9 @@ namespace CarpetSlab {
     }
     
     // Check extent
-//     for (int dd=0; dd<hdim; ++dd) {
-//       assert (origin[dirs[dd]-1] + length[dd] <= sizes[dirs[dd]]);
-//     }
+    for (int dd=0; dd<hdim; ++dd) {
+      assert (origin[dirs[dd]-1] + length[dd] <= sizes[dirs[dd]]);
+    }
     
     // Get insider information about variable
     const gh<dim>* myhh;
@@ -277,6 +292,10 @@ namespace CarpetSlab {
       }
       
     } // Copy result
+    
+    if (gp.grouptype==CCTK_GF  && oldmap==-1) {
+      leave_singlemap_mode(const_cast<cGH*>(cgh));
+    }
     
     delete alldata;
   }
