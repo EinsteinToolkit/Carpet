@@ -274,18 +274,6 @@ static int OpenFile (const char *basefilename, file_t *file, int called_from)
     return (0);
   }
 
-  // Use refinement levels parameter from checkpointing file ?
-  if (use_reflevels_from_checkpoint)
-  {
-    char buffer[32];
-
-    snprintf (buffer, sizeof (buffer), "%d", file->num_reflevels);
-    CCTK_ParameterSet ("refinement_levels", "CarpetRegrid", buffer);
-
-    CCTK_VInfo (CCTK_THORNSTRING, "Using %i reflevels read from checkpoint "
-                "file. Ignoring value in parameter file.", file->num_reflevels);
-  }
-
   // leave space at the end for global_time and delta_time
   // so that all double variables can be broadcasted in one go
   int num_times = file->num_mglevels*file->num_reflevels + 2;
@@ -867,6 +855,18 @@ static int RecoverVariables (cGH* cctkGH, file_t *file)
   int myproc = CCTK_MyProc (cctkGH);
   hid_t dset = -1;
 
+
+  // Use refinement levels parameter from checkpointing file ?
+  if (use_reflevels_from_checkpoint)
+  {
+    char buffer[32];
+
+    snprintf (buffer, sizeof (buffer), "%d", file->num_reflevels);
+    CCTK_ParameterSet ("refinement_levels", "CarpetRegrid", buffer);
+
+    CCTK_VInfo (CCTK_THORNSTRING, "Using %i reflevels read from checkpoint "
+                "file. Ignoring value in parameter file.", file->num_reflevels);
+  }
 
 #if 0
   double leveltime = MPI_Wtime();
