@@ -64,70 +64,70 @@ namespace dist {
   
   
   // Datatype helpers
-  inline MPI_Datatype datatype (const char& dummy)
+  inline MPI_Datatype datatype (const char&)
   { return MPI_CHAR; }
   
-  inline MPI_Datatype datatype (const signed char& dummy)
+  inline MPI_Datatype datatype (const signed char&)
   { return MPI_UNSIGNED_CHAR; }
   
-  inline MPI_Datatype datatype (const unsigned char& dummy)
+  inline MPI_Datatype datatype (const unsigned char&)
   { return MPI_BYTE; }
   
-  inline MPI_Datatype datatype (const short& dummy)
+  inline MPI_Datatype datatype (const short&)
   { return MPI_SHORT; }
   
-  inline MPI_Datatype datatype (const unsigned short& dummy)
+  inline MPI_Datatype datatype (const unsigned short&)
   { return MPI_UNSIGNED_SHORT; }
   
-  inline MPI_Datatype datatype (const int& dummy)
+  inline MPI_Datatype datatype (const int&)
   { return MPI_INT; }
   
-  inline MPI_Datatype datatype (const unsigned int& dummy)
+  inline MPI_Datatype datatype (const unsigned int&)
   { return MPI_UNSIGNED; }
   
-  inline MPI_Datatype datatype (const long& dummy)
+  inline MPI_Datatype datatype (const long&)
   { return MPI_LONG; }
   
-  inline MPI_Datatype datatype (const unsigned long& dummy)
+  inline MPI_Datatype datatype (const unsigned long&)
   { return MPI_UNSIGNED_LONG; }
   
-  inline MPI_Datatype datatype (const long long& dummy)
+  inline MPI_Datatype datatype (const long long&)
   { return MPI_LONG_LONG_INT; }
   
-  inline MPI_Datatype datatype (const float& dummy)
+  inline MPI_Datatype datatype (const float&)
   { return MPI_FLOAT; }
   
-  inline MPI_Datatype datatype (const double& dummy)
+  inline MPI_Datatype datatype (const double&)
   { return MPI_DOUBLE; }
   
-  inline MPI_Datatype datatype (const long double& dummy)
+  inline MPI_Datatype datatype (const long double&)
   { return MPI_LONG_DOUBLE; }
   
 #if 0
   
-  inline MPI_Datatype datatype (const complex<float>& dummy)
+  inline MPI_Datatype datatype (const complex<float>&)
   { return mpi_complex_float; }
   
-  inline MPI_Datatype datatype (const complex<double>& dummy)
+  inline MPI_Datatype datatype (const complex<double>&)
   { return mpi_complex_double; }
   
-  inline MPI_Datatype datatype (const complex<long double>& dummy)
+  inline MPI_Datatype datatype (const complex<long double>&)
   { return mpi_complex_long_double; }
   
 #else
   
 #  ifdef CCTK_REAL4
-  inline MPI_Datatype datatype (const CCTK_COMPLEX8& dummy)
+  inline MPI_Datatype datatype (const CCTK_COMPLEX8&)
   { return mpi_complex8; }
 #  endif
   
 #  ifdef CCTK_REAL8
-  inline MPI_Datatype datatype (const CCTK_COMPLEX16& dummy)
+  inline MPI_Datatype datatype (const CCTK_COMPLEX16&)
   { return mpi_complex16; }
 #  endif
   
 #  ifdef CCTK_REAL16
-  inline MPI_Datatype datatype (const CCTK_COMPLEX32& dummy)
+  inline MPI_Datatype datatype (const CCTK_COMPLEX32&)
   { return mpi_complex32; }
 #  endif
   
