@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.7 2001/03/30 00:50:21 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.8 2001/12/09 16:43:09 schnetter Exp $
 
  ***************************************************************************/
 
@@ -96,7 +96,8 @@ public:
   void interpolate_from_innerloop (const vector<const generic_data<D>*> gsrcs,
 				   const vector<int> tls,
 				   const ibbox& box, const int tl,
-				   const int order_space);
+				   const int order_space,
+				   const int order_time);
   
   void write_ascii_output_element (ostream& os, const ivect& index) const;
 //   void write_ieee (const string name, const int time,

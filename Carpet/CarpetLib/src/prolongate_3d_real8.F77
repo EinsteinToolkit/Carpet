@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8.F77,v 1.4 2001/03/26 02:27:46 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8.F77,v 1.5 2001/12/09 16:43:10 schnetter Exp $
       
 #include "cctk.h"
       
@@ -29,12 +29,13 @@ c     bbox(:,3) is stride
       integer srcioff, srcjoff, srckoff
       integer dstioff, dstjoff, dstkoff
       
+      CCTK_REAL8 dstdiv
       integer i, j, k
       integer i0, j0, k0
-      CCTK_REAL8 fi, fj, fk
-      CCTK_REAL8 ifac(2), jfac(2), kfac(2)
+      integer fi, fj, fk
+      integer ifac(2), jfac(2), kfac(2)
       integer ii, jj, kk
-      CCTK_REAL8 fac
+      integer fac
       CCTK_REAL8 res
       integer d
       
@@ -53,7 +54,7 @@ c     bbox(:,3) is stride
             call CCTK_WARN (0, "Internal error: destination strides are not integer multiples of the source strides")
          end if
          if (mod(srcbbox(d,1), srcbbox(d,3)).ne.0
-     $     .or. mod(dstbbox(d,1), dstbbox(d,3)).ne.0
+     $        .or. mod(dstbbox(d,1), dstbbox(d,3)).ne.0
      $        .or. mod(regbbox(d,1), regbbox(d,3)).ne.0) then
             call CCTK_WARN (0, "Internal error: array origins are not integer multiples of the strides")
          end if
@@ -61,7 +62,7 @@ c     bbox(:,3) is stride
      $        .or. regbbox(d,1).lt.dstbbox(d,1)
      $        .or. regbbox(d,2).gt.srcbbox(d,2)
      $        .or. regbbox(d,2).gt.dstbbox(d,2)) then
-            call CCTK_WARN (0, "Internal error: region extent is not contained in array extents")
+            call CCTK_WARN (0, "Internal error: region extent is not contained in array extent")
          end if
       end do
       
@@ -95,26 +96,25 @@ c     bbox(:,3) is stride
       
       
 c     Loop over fine region
+      dstdiv = one / (dstifac * dstjfac * dstkfac)
+      
       do k = 0, regkext-1
+         k0 = (srckoff + k) / dstkfac
+         fk = mod(srckoff + k, dstkfac)
+         kfac(1) = (fk-dstkfac) * (-1)
+         kfac(2) = (fk        ) * 1
+         
          do j = 0, regjext-1
+            j0 = (srcjoff + j) / dstjfac
+            fj = mod(srcjoff + j, dstjfac)
+            jfac(1) = (fj-dstjfac) * (-1)
+            jfac(2) = (fj        ) * 1
+            
             do i = 0, regiext-1
-               
                i0 = (srcioff + i) / dstifac
-               j0 = (srcjoff + j) / dstjfac
-               k0 = (srckoff + k) / dstkfac
-               
-               fi = mod(srcioff + i, dstifac) * one / dstifac
-               fj = mod(srcjoff + j, dstjfac) * one / dstjfac
-               fk = mod(srckoff + k, dstkfac) * one / dstkfac
-               
-               ifac(1) = (fi-1) / (-1)
-               ifac(2) = (fi  ) / 1
-               
-               jfac(1) = (fj-1) / (-1)
-               jfac(2) = (fj  ) / 1
-               
-               kfac(1) = (fk-1) / (-1)
-               kfac(2) = (fk  ) / 1
+               fi = mod(srcioff + i, dstifac)
+               ifac(1) = (fi-dstifac) * (-1)
+               ifac(2) = (fi        ) * 1
                
                res = 0
                
@@ -132,7 +132,7 @@ c     Loop over fine region
                   end do
                end do
                
-               dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = res
+               dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = dstdiv * res
                
             end do
          end do

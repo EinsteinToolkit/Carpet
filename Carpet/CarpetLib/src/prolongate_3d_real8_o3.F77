@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_o3.F77,v 1.3 2001/03/28 18:56:09 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_o3.F77,v 1.4 2001/12/09 16:43:11 schnetter Exp $
       
 #include "cctk.h"
       
@@ -29,12 +29,13 @@ c     bbox(:,3) is stride
       integer srcioff, srcjoff, srckoff
       integer dstioff, dstjoff, dstkoff
       
+      CCTK_REAL8 dstdiv
       integer i, j, k
       integer i0, j0, k0
-      CCTK_REAL8 fi, fj, fk
-      CCTK_REAL8 ifac(4), jfac(4), kfac(4)
+      integer fi, fj, fk
+      integer ifac(4), jfac(4), kfac(4)
       integer ii, jj, kk
-      CCTK_REAL8 fac
+      integer fac
       CCTK_REAL8 res
       integer d
       
@@ -53,7 +54,7 @@ c     bbox(:,3) is stride
             call CCTK_WARN (0, "Internal error: destination strides are not integer multiples of the source strides")
          end if
          if (mod(srcbbox(d,1), srcbbox(d,3)).ne.0
-     $     .or. mod(dstbbox(d,1), dstbbox(d,3)).ne.0
+     $        .or. mod(dstbbox(d,1), dstbbox(d,3)).ne.0
      $        .or. mod(regbbox(d,1), regbbox(d,3)).ne.0) then
             call CCTK_WARN (0, "Internal error: array origins are not integer multiples of the strides")
          end if
@@ -61,7 +62,7 @@ c     bbox(:,3) is stride
      $        .or. regbbox(d,2)+regbbox(d,3).gt.srcbbox(d,2)
      $        .or. regbbox(d,1).lt.dstbbox(d,1)
      $        .or. regbbox(d,2).gt.dstbbox(d,2)) then
-            call CCTK_WARN (0, "Internal error: region extent is not contained in array extents")
+            call CCTK_WARN (0, "Internal error: region extent is not contained in array extent")
          end if
       end do
       
@@ -95,32 +96,31 @@ c     bbox(:,3) is stride
       
       
 c     Loop over fine region
+      dstdiv = one / (6*dstifac * 6*dstjfac * 6*dstkfac)
+      
       do k = 0, regkext-1
+         k0 = (srckoff + k) / dstkfac
+         fk = mod(srckoff + k, dstkfac)
+         kfac(1) = (fk        ) * (fk-dstkfac) * (fk-2*dstkfac) * (-1)
+         kfac(2) = (fk+dstkfac) * (fk-dstkfac) * (fk-2*dstkfac) * 3
+         kfac(3) = (fk+dstkfac) * (fk        ) * (fk-2*dstkfac) * (-3)
+         kfac(4) = (fk+dstkfac) * (fk        ) * (fk-  dstkfac) * 1
+         
          do j = 0, regjext-1
+            j0 = (srcjoff + j) / dstjfac
+            fj = mod(srcjoff + j, dstjfac)
+            jfac(1) = (fj        ) * (fj-dstjfac) * (fj-2*dstjfac) * (-1)
+            jfac(2) = (fj+dstjfac) * (fj-dstjfac) * (fj-2*dstjfac) * 3
+            jfac(3) = (fj+dstjfac) * (fj        ) * (fj-2*dstjfac) * (-3)
+            jfac(4) = (fj+dstjfac) * (fj        ) * (fj-  dstjfac) * 1
+            
             do i = 0, regiext-1
-               
                i0 = (srcioff + i) / dstifac
-               j0 = (srcjoff + j) / dstjfac
-               k0 = (srckoff + k) / dstkfac
-               
-               fi = mod(srcioff + i, dstifac) * one / dstifac
-               fj = mod(srcjoff + j, dstjfac) * one / dstjfac
-               fk = mod(srckoff + k, dstkfac) * one / dstkfac
-               
-               ifac(1) = (fi  ) * (fi-1) * (fi-2) / (-6)
-               ifac(2) = (fi+1) * (fi-1) * (fi-2) / 2
-               ifac(3) = (fi+1) * (fi  ) * (fi-2) / (-2)
-               ifac(4) = (fi+1) * (fi  ) * (fi-1) / 6
-               
-               jfac(1) = (fj  ) * (fj-1) * (fj-2) / (-6)
-               jfac(2) = (fj+1) * (fj-1) * (fj-2) / 2
-               jfac(3) = (fj+1) * (fj  ) * (fj-2) / (-2)
-               jfac(4) = (fj+1) * (fj  ) * (fj-1) / 6
-               
-               kfac(1) = (fk  ) * (fk-1) * (fk-2) / (-6)
-               kfac(2) = (fk+1) * (fk-1) * (fk-2) / 2
-               kfac(3) = (fk+1) * (fk  ) * (fk-2) / (-2)
-               kfac(4) = (fk+1) * (fk  ) * (fk-1) / 6
+               fi = mod(srcioff + i, dstifac)
+               ifac(1) = (fi        ) * (fi-dstifac) * (fi-2*dstifac) * (-1)
+               ifac(2) = (fi+dstifac) * (fi-dstifac) * (fi-2*dstifac) * 3
+               ifac(3) = (fi+dstifac) * (fi        ) * (fi-2*dstifac) * (-3)
+               ifac(4) = (fi+dstifac) * (fi        ) * (fi-  dstifac) * 1
                
                res = 0
                
@@ -138,7 +138,7 @@ c     Loop over fine region
                   end do
                end do
                
-               dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = res
+               dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = dstdiv * res
                
             end do
          end do

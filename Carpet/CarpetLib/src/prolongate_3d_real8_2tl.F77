@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_2tl.F77,v 1.3 2001/03/24 22:38:48 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_2tl.F77,v 1.4 2001/12/09 16:43:11 schnetter Exp $
       
 #include "cctk.h"
       
@@ -35,9 +35,11 @@ c     bbox(:,3) is stride
       
       CCTK_REAL8 s1fac, s2fac
       
+      CCTK_REAL8 dstdiv
       integer i, j, k
       integer i0, j0, k0
       integer fi, fj, fk
+      integer ifac(2), jfac(2), kfac(2)
       integer ii, jj, kk
       integer fac
       CCTK_REAL8 res
@@ -58,7 +60,7 @@ c     bbox(:,3) is stride
             call CCTK_WARN (0, "Internal error: destination strides are not integer multiples of the source strides")
          end if
          if (mod(srcbbox(d,1), srcbbox(d,3)).ne.0
-     $     .or. mod(dstbbox(d,1), dstbbox(d,3)).ne.0
+     $        .or. mod(dstbbox(d,1), dstbbox(d,3)).ne.0
      $        .or. mod(regbbox(d,1), regbbox(d,3)).ne.0) then
             call CCTK_WARN (0, "Internal error: array origins are not integer multiples of the strides")
          end if
@@ -66,7 +68,7 @@ c     bbox(:,3) is stride
      $        .or. regbbox(d,1).lt.dstbbox(d,1)
      $        .or. regbbox(d,2).gt.srcbbox(d,2)
      $        .or. regbbox(d,2).gt.dstbbox(d,2)) then
-            call CCTK_WARN (0, "Internal error: region extent is not contained in array extents")
+            call CCTK_WARN (0, "Internal error: region extent is not contained in array extent")
          end if
       end do
       
@@ -110,41 +112,33 @@ c     Linear (first order) interpolation
       
       
 c     Loop over fine region
+      dstdiv = one / (dstifac * dstjfac * dstkfac)
+      
       do k = 0, regkext-1
+         k0 = (srckoff + k) / dstkfac
+         fk = mod(srckoff + k, dstkfac)
+         kfac(1) = (fk-dstkfac) * (-1)
+         kfac(2) = (fk        ) * 1
+         
          do j = 0, regjext-1
+            j0 = (srcjoff + j) / dstjfac
+            fj = mod(srcjoff + j, dstjfac)
+            jfac(1) = (fj-dstjfac) * (-1)
+            jfac(2) = (fj        ) * 1
+            
             do i = 0, regiext-1
-               
-               i0 = (srcioff + i) / dstifac + 1
-               j0 = (srcjoff + j) / dstjfac + 1
-               k0 = (srckoff + k) / dstkfac + 1
-               
+               i0 = (srcioff + i) / dstifac
                fi = mod(srcioff + i, dstifac)
-               fj = mod(srcjoff + j, dstjfac)
-               fk = mod(srckoff + k, dstkfac)
+               ifac(1) = (fi-dstifac) * (-1)
+               ifac(2) = (fi        ) * 1
                
                res = 0
                
-               do kk=0,1
-                  do jj=0,1
-                     do ii=0,1
+               do kk=1,2
+                  do jj=1,2
+                     do ii=1,2
                         
-                        fac = 1
-                        
-                        if (ii.eq.0) then
-                           fac = fac * (dstifac - fi)
-                        else
-                           fac = fac *            fi
-                        end if
-                        if (jj.eq.0) then
-                           fac = fac * (dstjfac - fj)
-                        else
-                           fac = fac *            fj
-                        end if
-                        if (kk.eq.0) then
-                           fac = fac * (dstkfac - fk)
-                        else
-                           fac = fac *            fk
-                        end if
+                        fac = ifac(ii) * jfac(jj) * kfac(kk)
                         
                         if (fac.ne.0) then
                            res = res
@@ -156,8 +150,7 @@ c     Loop over fine region
                   end do
                end do
                
-               dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1)
-     $              = res / (dstifac * dstjfac * dstkfac)
+               dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = dstdiv * res
                
             end do
          end do

@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.5 2001/06/12 14:57:00 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.6 2001/12/09 16:43:11 schnetter Exp $
 
  ***************************************************************************/
 
@@ -35,7 +35,8 @@ using namespace std;
 
 
 // Constructors
-th::th (dimgeneric_gh* h, const int basedelta) : h(h), delta(basedelta) {
+th::th (dimgeneric_gh* h, const int basedelta)
+  : h(h), delta(basedelta) {
   h->add(this);
 }
 

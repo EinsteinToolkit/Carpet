@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.7 2001/07/02 13:22:14 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.8 2001/12/09 16:43:10 schnetter Exp $
 
  ***************************************************************************/
 
@@ -80,7 +80,8 @@ public:
 
   // Constructors
   generic_gf (const string name, th& t, dh<D>& d,
-              const int tmin, const int tmax);
+              const int tmin, const int tmax,
+	      const int prolongation_order_time);
 
   // Destructors
   virtual ~generic_gf ();
@@ -132,22 +133,19 @@ protected:
   void intercat (int tl1, int rl1, int c1, int ml1,
 		 const ibbox dh<D>::dboxes::* recv_list,
 		 const vector<int> tl2s, int rl2, int ml2,
-		 const ibbox dh<D>::dboxes::* send_list,
-		 int order_space);
+		 const ibbox dh<D>::dboxes::* send_list);
 
   // Interpolate regions
   void intercat (int tl1, int rl1, int c1, int ml1,
 		 const iblist dh<D>::dboxes::* recv_list,
 		 const vector<int> tl2s, int rl2, int ml2,
-		 const iblist dh<D>::dboxes::* send_list,
-		 int order_space);
+		 const iblist dh<D>::dboxes::* send_list);
 
   // Interpolate regions
   void intercat (int tl1, int rl1, int c1, int ml1,
 		 const iblistvect dh<D>::dboxes::* recv_listvect,
 		 const vector<int> tl2s, int rl2, int ml2,
-		 const iblistvect dh<D>::dboxes::* send_listvect,
-		 int order_space);
+		 const iblistvect dh<D>::dboxes::* send_listvect);
 
 
 
@@ -166,20 +164,19 @@ public:
   void sync (int tl, int rl, int c, int ml);
 
   // Prolongate the boundaries of a component
-  void ref_bnd_prolongate (int tl, int rl, int c, int ml,
-			   int order_space=1, int order_time=1);
+  void ref_bnd_prolongate (int tl, int rl, int c, int ml);
 
   // Restrict a multigrid level
-  void mg_restrict (int tl, int rl, int c, int ml, int order_space=1);
+  void mg_restrict (int tl, int rl, int c, int ml);
 
   // Prolongate a multigrid level
-  void mg_prolongate (int tl, int rl, int c, int ml, int order_space=1);
+  void mg_prolongate (int tl, int rl, int c, int ml);
 
   // Restrict a refinement level
-  void ref_restrict (int tl, int rl, int c, int ml, int order_space=1);
+  void ref_restrict (int tl, int rl, int c, int ml);
 
   // Prolongate a refinement level
-  void ref_prolongate (int tl, int rl, int c, int ml, int order_space=1);
+  void ref_prolongate (int tl, int rl, int c, int ml);
   
   
   

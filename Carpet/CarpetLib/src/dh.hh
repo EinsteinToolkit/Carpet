@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.8 2001/06/12 14:56:59 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.9 2001/12/09 16:43:09 schnetter Exp $
 
  ***************************************************************************/
 
@@ -109,7 +109,7 @@ public:
   
   // Constructors
   dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts,
-      int prolongation_order);
+      int prolongation_order_space);
   
   // Destructors
   virtual ~dh ();

@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.16 2001/07/04 12:29:51 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.17 2001/12/09 16:43:09 schnetter Exp $
 
  ***************************************************************************/
 
@@ -39,8 +39,8 @@ using namespace std;
 // Constructors
 template<int D>
 dh<D>::dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts,
-	   int prolongation_order)
-  : dimgeneric_dh(prolongation_order),
+	   int prolongation_order_space)
+  : dimgeneric_dh(prolongation_order_space),
     h(h),
     lghosts(lghosts), ughosts(ughosts)
 {

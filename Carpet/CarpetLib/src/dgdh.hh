@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dgdh.hh,v 1.1 2001/06/12 14:56:58 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dgdh.hh,v 1.2 2001/12/09 16:43:09 schnetter Exp $
 
  ***************************************************************************/
 
@@ -48,12 +48,12 @@ class dimgeneric_dh {
 public:				// should be readonly
   
   // Fields
-  int prolongation_order;	// order of spatial prolongation operator
+  int prolongation_order_space;	// order of spatial prolongation operator
   
 public:
   
   // Constructors
-  dimgeneric_dh (int prolongation_order);
+  dimgeneric_dh (int prolongation_order_space);
   
   // Destructors
   virtual ~dimgeneric_dh ();

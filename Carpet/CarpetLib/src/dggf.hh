@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dggf.hh,v 1.2 2001/07/02 13:22:13 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dggf.hh,v 1.3 2001/12/09 16:43:09 schnetter Exp $
 
  ***************************************************************************/
 
@@ -53,12 +53,14 @@ public:				// should be readonly
 
   th &t;			// time hierarchy
   int tmin, tmax;		// timelevels
+  int prolongation_order_time;	// order of temporal prolongation operator
 
 public:
 
   // Constructors
   dimgeneric_gf (const string name, th& t, 
-		 const int tmin, const int tmax);
+		 const int tmin, const int tmax,
+		 const int prolongation_order_time);
   
   // Destructors
   virtual ~dimgeneric_gf ();
@@ -99,24 +101,19 @@ public:
   virtual void sync (int tl, int rl, int c, int ml) = 0;
 
   // Prolongate the boundaries of a component
-  virtual void ref_bnd_prolongate (int tl, int rl, int c, int ml,
-				   int order_space=1, int order_time=1) = 0;
+  virtual void ref_bnd_prolongate (int tl, int rl, int c, int ml) = 0;
   
   // Restrict a multigrid level
-  virtual void mg_restrict (int tl, int rl, int c, int ml, int order_space=1)
-    = 0;
+  virtual void mg_restrict (int tl, int rl, int c, int ml) = 0;
 
   // Prolongate a multigrid level
-  virtual void mg_prolongate (int tl, int rl, int c, int ml, int order_space=1)
-    = 0;
+  virtual void mg_prolongate (int tl, int rl, int c, int ml) = 0;
 
   // Restrict a refinement level
-  virtual void ref_restrict (int tl, int rl, int c, int ml, int order_space=1)
-    = 0;
+  virtual void ref_restrict (int tl, int rl, int c, int ml) = 0;
 
   // Prolongate a refinement level
-  virtual void ref_prolongate (int tl, int rl, int c, int ml,
-			       int order_space=1) = 0;
+  virtual void ref_prolongate (int tl, int rl, int c, int ml) = 0;
   
   
   

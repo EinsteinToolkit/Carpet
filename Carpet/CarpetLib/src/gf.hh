@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.hh,v 1.4 2001/06/12 14:56:59 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.hh,v 1.5 2001/12/09 16:43:10 schnetter Exp $
 
  ***************************************************************************/
 
@@ -61,7 +61,8 @@ class gf: public generic_gf<D> {
 public:
   
   // Constructors
-  gf (const string name, th& t, dh<D>& d, const int tmin, const int tmax);
+  gf (const string name, th& t, dh<D>& d,
+      const int tmin, const int tmax, const int prolongation_order_time);
   
   // Destructors
   virtual ~gf ();

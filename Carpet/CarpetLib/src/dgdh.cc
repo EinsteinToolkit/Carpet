@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dgdh.cc,v 1.1 2001/06/12 14:56:57 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dgdh.cc,v 1.2 2001/12/09 16:43:09 schnetter Exp $
 
  ***************************************************************************/
 
@@ -36,10 +36,10 @@ using namespace std;
 
 
 // Constructors
-dimgeneric_dh::dimgeneric_dh (int prolongation_order)
-  : prolongation_order(prolongation_order)
+dimgeneric_dh::dimgeneric_dh (int prolongation_order_space)
+  : prolongation_order_space(prolongation_order_space)
 {
-  assert (prolongation_order>=0);
+  assert (prolongation_order_space>=0);
 }
 
 // Destructors
@@ -49,8 +49,8 @@ dimgeneric_dh::~dimgeneric_dh ()
 
 // Helpers
 int dimgeneric_dh::prolongation_stencil_size () const {
-  assert (prolongation_order>=0);
-  return prolongation_order/2;
+  assert (prolongation_order_space>=0);
+  return prolongation_order_space/2;
 }
 
 

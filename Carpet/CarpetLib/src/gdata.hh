@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.9 2001/06/12 14:56:59 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.10 2001/12/09 16:43:10 schnetter Exp $
 
  ***************************************************************************/
 
@@ -102,7 +102,8 @@ public:
   void interpolate_from (const vector<const generic_data*> srcs,
 			 const vector<int> tls,
 			 const ibbox& box, const int tl,
-			 const int order_space);
+			 const int order_space,
+			 const int order_time);
 protected:
   virtual void
   copy_from_innerloop (const generic_data* src, const ibbox& box) = 0;
@@ -110,7 +111,8 @@ protected:
   interpolate_from_innerloop (const vector<const generic_data*> srcs,
 			      const vector<int> tls,
 			      const ibbox& box, const int tl,
-			      const int order_space) = 0;
+			      const int order_space,
+			      const int order_time) = 0;
   
 public:
   

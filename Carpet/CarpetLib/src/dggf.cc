@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dggf.cc,v 1.1 2001/06/12 14:56:58 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dggf.cc,v 1.2 2001/12/09 16:43:09 schnetter Exp $
 
  ***************************************************************************/
 
@@ -39,8 +39,10 @@ using namespace std;
 
 // Constructors
 dimgeneric_gf::dimgeneric_gf (const string name, th& t,
-			      const int tmin, const int tmax)
-  : name(name), t(t), tmin(tmin), tmax(tmax)
+			      const int tmin, const int tmax,
+			      const int prolongation_order_time)
+  : name(name), t(t),
+    tmin(tmin), tmax(tmax), prolongation_order_time(prolongation_order_time)
 {
   assert (tmin<=tmax+1);
 }

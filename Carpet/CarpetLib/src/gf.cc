@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.7 2001/07/04 12:29:52 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.8 2001/12/09 16:43:10 schnetter Exp $
 
  ***************************************************************************/
 
@@ -34,8 +34,8 @@ using namespace std;
 // Constructors
 template<class T,int D>
 gf<T,D>::gf (const string name, th& t, dh<D>& d,
-	     const int tmin, const int tmax)
-  : generic_gf<D>(name, t, d, tmin, tmax)
+	     const int tmin, const int tmax, const int prolongation_order_time)
+  : generic_gf<D>(name, t, d, tmin, tmax, prolongation_order_time)
 {
   recompose();
 }

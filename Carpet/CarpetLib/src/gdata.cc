@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.14 2001/07/04 12:29:52 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.15 2001/12/09 16:43:10 schnetter Exp $
 
  ***************************************************************************/
 
@@ -90,7 +90,8 @@ void generic_data<D>
 ::interpolate_from (const vector<const generic_data*> srcs,
 		    const vector<int> tls,
 		    const ibbox& box, const int tl,
-		    const int order_space)
+		    const int order_space,
+		    const int order_time)
 {
   assert (has_storage());
   assert (all(box.lower()>=extent().lower()));
@@ -110,7 +111,7 @@ void generic_data<D>
     int rank;
     MPI_Comm_rank (dist::comm, &rank);
     if (rank == proc()) {
-      interpolate_from_innerloop (srcs, tls, box, tl, order_space);
+      interpolate_from_innerloop (srcs, tls, box, tl, order_space, order_time);
     }
     
   } else {
@@ -118,7 +119,7 @@ void generic_data<D>
     
     generic_data* const tmp = make_typed();
     tmp->allocate (box, srcs[0]->proc());
-    tmp->interpolate_from (srcs, tls, box, tl, order_space);
+    tmp->interpolate_from (srcs, tls, box, tl, order_space, order_time);
     tmp->change_processor (proc());
     copy_from (tmp, box);
     delete tmp;

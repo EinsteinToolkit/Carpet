@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.13 2001/07/04 12:29:51 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.14 2001/12/09 16:43:09 schnetter Exp $
 
  ***************************************************************************/
 
@@ -202,7 +202,8 @@ void data<T,D>
 ::interpolate_from_innerloop (const vector<const generic_data<D>*> gsrcs,
 			      const vector<int> tls,
 			      const ibbox& box, const int tl,
-			      const int order_space)
+			      const int order_space,
+			      const int order_time)
 {
   assert (has_storage());
   assert (all(box.lower()>=extent().lower()));
@@ -223,14 +224,15 @@ void data<T,D>
   MPI_Comm_rank (dist::comm, &rank);
   assert (rank == proc());
   
-  assert (order_space == 1);
+  assert (order_space <= 1);
   
-  vector<T> src_fac(srcs.size());
+  assert (srcs.size() > order_time);
+  vector<T> src_fac(order_time+1);
   for (int t=0; t<(int)src_fac.size(); ++t) {
     src_fac[t] = 1;
     for (int tt=0; tt<(int)src_fac.size(); ++tt) {
       if (tt!=t) {
-	src_fac[t] *= (T)(t - tls[tt]) / (T)(tls[t] - tls[tt]);
+	src_fac[t] *= (T)(tl - tls[tt]) / (T)(tls[t] - tls[tt]);
       }
     }
   }
@@ -413,7 +415,8 @@ void data<CCTK_REAL8,3>
 ::interpolate_from_innerloop (const vector<const generic_data<3>*> gsrcs,
 			      const vector<int> tls,
 			      const ibbox& box, const int tl,
-			      const int order_space)
+			      const int order_space,
+			      const int order_time)
 {
   assert (has_storage());
   assert (all(box.lower()>=extent().lower()));
@@ -471,11 +474,12 @@ void data<CCTK_REAL8,3>
     
   } else if (all(sext.stride() > dext.stride())) {
     
-    switch (srcs.size()) {
+    switch (order_time) {
       
-    case 1:
-      // One timelevel
+    case 0:
+      assert (srcs.size()>=1);
       switch (order_space) {
+      case 0:
       case 1:
 	CCTK_FNAME(prolongate_3d_real8)
 	  ((const CCTK_REAL8*)srcs[0]->storage(),
@@ -484,6 +488,7 @@ void data<CCTK_REAL8,3>
 	   dstshp[0], dstshp[1], dstshp[2],
 	   srcbbox, dstbbox, regbbox);
 	break;
+      case 2:
       case 3:
 	CCTK_FNAME(prolongate_3d_real8_o3)
 	  ((const CCTK_REAL8*)srcs[0]->storage(),
@@ -497,9 +502,10 @@ void data<CCTK_REAL8,3>
       }
       break;
       
-    case 2:
-      // Two timelevels
+    case 1:
+      assert (srcs.size()>=2);
       switch (order_space) {
+      case 0:
       case 1:
 	CCTK_FNAME(prolongate_3d_real8_2tl)
 	  ((const CCTK_REAL8*)srcs[0]->storage(), tls[0],
@@ -509,6 +515,7 @@ void data<CCTK_REAL8,3>
 	   dstshp[0], dstshp[1], dstshp[2],
 	   srcbbox, dstbbox, regbbox);
 	break;
+      case 2:
       case 3:
 	CCTK_FNAME(prolongate_3d_real8_2tl_o3)
 	  ((const CCTK_REAL8*)srcs[0]->storage(), tls[0],
@@ -523,9 +530,10 @@ void data<CCTK_REAL8,3>
       }
       break;
       
-    case 3:
-      // Three timelevels
+    case 2:
+      assert (srcs.size()>=3);
       switch (order_space) {
+      case 0:
       case 1:
 	CCTK_FNAME(prolongate_3d_real8_3tl)
 	  ((const CCTK_REAL8*)srcs[0]->storage(), tls[0],
@@ -536,6 +544,7 @@ void data<CCTK_REAL8,3>
 	   dstshp[0], dstshp[1], dstshp[2],
 	   srcbbox, dstbbox, regbbox);
 	break;
+      case 2:
       case 3:
 	CCTK_FNAME(prolongate_3d_real8_3tl_o3)
 	  ((const CCTK_REAL8*)srcs[0]->storage(), tls[0],
