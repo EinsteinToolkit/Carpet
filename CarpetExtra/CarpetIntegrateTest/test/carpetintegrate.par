@@ -9,7 +9,7 @@
 # Thorn activation
 #==============================================================================
 
-ActiveThorns = "time carpet carpetlib carpetregrid carpetreduce carpetslab carpetinterp cartgrid3d coordbase symbase boundary iobasic carpetioascii carpetioscalar ioutil carpetiohdf5 carpetintegratetest"
+ActiveThorns = "time carpet carpetlib carpetregrid carpetreduce carpetslab carpetinterp cartgrid3d coordbase symbase boundary iobasic carpetioascii carpetioscalar ioutil carpetintegratetest"
 
 #==============================================================================
 # Directories and recovery
@@ -22,7 +22,7 @@ io::out_dir				=	$parfile
 #==============================================================================
 
 # cactus::terminate			=	"never"
-cactus::cctk_itlast			=	0
+cactus::cctk_itlast			=	10000
 
 time::dtfac              		= 	0.375             
 
@@ -69,8 +69,6 @@ carpetregrid::outerbounds     = "[ [ [[0,0],[0,0],[1,0]] ], [ [[0,0],[0,0],[1,0]
 carpet::init_3_timelevels                = 	yes
 Carpet::prolongation_order_space	 =	3
 Carpet::prolongation_order_time		 =	2
-carpetlib::save_memory_during_regridding = 	yes
-iohdf5::use_reflevels_from_checkpoint	 =	no
 
 #==============================================================================
 # Output: Scalar and 1D
@@ -83,8 +81,8 @@ carpetioscalar::outscalar_every		=	1
 ioascii::out1d_every			=	1
 ioascii::out1d_criterion		=	"divisor"
 
-iobasic::outinfo_vars = "carpetreduce::weight carpetintegrate::integrand"
+iobasic::outinfo_vars = "carpetreduce::weight carpetintegratetest::integrand"
 
-carpetioscalar::outscalar_vars	= "carpetreduce::weight carpetintegrate::integrand"
+carpetioscalar::outscalar_vars= "carpetreduce::weight carpetintegratetest::integrand"
 
-ioascii::out1d_vars = "carpetreduce::weight carpetintegrate::integrand"
+ioascii::out1d_vars = "carpetreduce::weight carpetintegratetest::integrand"
