@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.36 2004/02/03 16:45:01 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.37 2004/02/09 13:02:31 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -84,16 +84,34 @@ namespace Carpet {
           // Recover
           Checkpoint ("Scheduling RECOVER_VARIABLES");
           CCTK_ScheduleTraverse ("CCTK_RECOVER_VARIABLES", cgh, CallFunction);
+          
+          // Post recover
           Checkpoint ("Scheduling POST_RECOVER_VARIABLES");
           CCTK_ScheduleTraverse
             ("CCTK_POST_RECOVER_VARIABLES", cgh, CallFunction);
+          
+          // Checkpoint
+          Checkpoint ("Scheduling CPINITIAL");
+          CCTK_ScheduleTraverse ("CCTK_CPINITIAL", cgh, CallFunction);
+          
+          // Analysis
+          Checkpoint ("Scheduling ANALYSIS");
+          CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
+          
+          // Output
+          Checkpoint ("OutputGH");
+          CCTK_OutputGH (cgh);
+          
+          // Checking
+          PoisonCheck (cgh, alltimes);
+          CheckChecksums (cgh, allbutcurrenttime);
           
           leave_level_mode (cgh);
         } END_MGLEVEL_LOOP;
       } // for rl
       
     } else {
-      // if not reconvering
+      // if not recovering
       
       for (int rl=0; rl<reflevels; ++rl) {
         BEGIN_MGLEVEL_LOOP(cgh) {
@@ -163,28 +181,57 @@ namespace Carpet {
       } // for rl
       
       for (int rl=reflevels-1; rl>=0; --rl) {
-        BEGIN_REVERSE_MGLEVEL_LOOP(cgh) {
+        BEGIN_MGLEVEL_LOOP(cgh) {
           enter_level_mode (cgh, rl);
           
           // Restrict
           Restrict (cgh);
           
+          leave_level_mode (cgh);
+        } END_MGLEVEL_LOOP;
+      } // for rl
+      
+      for (int rl=0; rl<reflevels; ++rl) {
+        BEGIN_MGLEVEL_LOOP(cgh) {
+          enter_level_mode (cgh, rl);
+          do_global_mode = reflevel==0;
+          do_meta_mode = do_global_mode && mglevel==mglevels-1;
+          
+          Waypoint ("Initialisation II at iteration %d time %g%s%s",
+                    cgh->cctk_iteration, (double)cgh->cctk_time,
+                    (do_global_mode ? " (global)" : ""),
+                    (do_meta_mode ? " (meta)" : ""));
+          
           Checkpoint ("Scheduling POSTRESTRICTINITIAL");
           CCTK_ScheduleTraverse
             ("CCTK_POSTRESTRICTINITIAL", cgh, CallFunction);
           
-          // Poststep
+          // Postinitial
           Checkpoint ("Scheduling POSTINITIAL");
           CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
+          
+          // Poststep
           Checkpoint ("Scheduling POSTSTEP");
           CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
           
+          // Checkpoint
+          Checkpoint ("Scheduling CPINITIAL");
+          CCTK_ScheduleTraverse ("CCTK_CPINITIAL", cgh, CallFunction);
+          
+          // Analysis
+          Checkpoint ("Scheduling ANALYSIS");
+          CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
+          
+          // Output
+          Checkpoint ("OutputGH");
+          CCTK_OutputGH (cgh);
+          
           // Checking
           PoisonCheck (cgh, alltimes);
-          CalculateChecksums (cgh, allbutcurrenttime);
+          CheckChecksums (cgh, allbutcurrenttime);
           
           leave_level_mode (cgh);
-        } END_REVERSE_MGLEVEL_LOOP;
+        } END_MGLEVEL_LOOP;
       } // for rl
       
     
@@ -281,21 +328,23 @@ namespace Carpet {
         // Evolve each level "backwards" one more timestep
         // Starting with the finest level and proceeding to the coarsest
         for (int rl=reflevels-1; rl>=0; --rl) {
-          BEGIN_REVERSE_MGLEVEL_LOOP(cgh) {
+          BEGIN_MGLEVEL_LOOP(cgh) {
             enter_level_mode (cgh, rl);
             do_global_mode = reflevel==0;
             do_meta_mode = do_global_mode && mglevel==mglevels-1;
-          
+            
             Waypoint ("Initialisation 3TL evolution II (b) (backwards) at iteration %d time %g%s%s",
                       cgh->cctk_iteration, (double)cgh->cctk_time,
                       (do_global_mode ? " (global)" : ""),
                       (do_meta_mode ? " (meta)" : ""));
-          
+            
             // Restrict
             Restrict (cgh);
-          
+            
             Checkpoint ("Scheduling POSTRESTRICT");
             CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cgh, CallFunction);
+            
+            // Poststep
             Checkpoint ("Scheduling POSTSTEP");
             CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
           
@@ -331,7 +380,7 @@ namespace Carpet {
             PoisonCheck (cgh, alltimes);
           
             leave_level_mode (cgh);
-          } END_REVERSE_MGLEVEL_LOOP;
+          } END_MGLEVEL_LOOP;
         } // for rl
       
         delta_time *= -1;
@@ -365,39 +414,6 @@ namespace Carpet {
       } // if init_3_timelevels
     
     } // if not recovering
-
-
-    
-    for (int rl=reflevels-1; rl>=0; --rl) {
-      BEGIN_REVERSE_MGLEVEL_LOOP(cgh) {
-        enter_level_mode (cgh, rl);
-        do_global_mode = reflevel==0;
-        do_meta_mode = do_global_mode && mglevel==mglevels-1;
-        
-        Waypoint ("Initialisation II at iteration %d time %g%s%s",
-                  cgh->cctk_iteration, (double)cgh->cctk_time,
-                  (do_global_mode ? " (global)" : ""),
-                  (do_meta_mode ? " (meta)" : ""));
-        
-        // Checkpoint
-	Checkpoint ("Scheduling CPINITIAL");
-	CCTK_ScheduleTraverse ("CCTK_CPINITIAL", cgh, CallFunction);
-	
-	// Analysis
-	Checkpoint ("Scheduling ANALYSIS");
-	CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
-	
-	// Output
-	Checkpoint ("OutputGH");
-	CCTK_OutputGH (cgh);
-        
-	// Checking
-        PoisonCheck (cgh, alltimes);
-	CheckChecksums (cgh, allbutcurrenttime);
-        
-        leave_level_mode (cgh);
-      } END_REVERSE_MGLEVEL_LOOP;
-    } // for rl
     
     Waypoint ("Done with initialisation");
     
