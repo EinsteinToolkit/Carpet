@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <list>
 #include <sstream>
@@ -21,7 +22,9 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.11 2002/03/21 15:40:34 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.12 2002/03/23 20:20:57 schnetter Exp $";
+
+CCTK_FILEVERSION(Carpet_regrid_cc)
 
 
 
@@ -29,13 +32,6 @@ namespace CarpetRegrid {
   
   using namespace std;
   using namespace Carpet;
-  
-  
-  
-  typedef vect<int,dim> ivect;
-  typedef bbox<int,dim> ibbox;
-  
-  typedef vect<vect<bool,2>,dim> bvect;
   
   
   
@@ -77,14 +73,15 @@ namespace CarpetRegrid {
     }
     
     list<ibbox> bbl;
+    list<bvect> obl;
     
     if (CCTK_EQUALS(refined_regions, "none")) {
       
-      MakeRegions_BaseLevel (cctkGH, bbl);
+      MakeRegions_BaseLevel (cctkGH, bbl, obl);
       
     } else if (CCTK_EQUALS(refined_regions, "centre")) {
       
-      MakeRegions_RefineCentre (cctkGH, refinement_levels, bbl);
+      MakeRegions_RefineCentre (cctkGH, refinement_levels, bbl, obl);
       
     } else if (CCTK_EQUALS(refined_regions, "manual-gridpoints")) {
       
@@ -99,7 +96,8 @@ namespace CarpetRegrid {
       upper[1] = ivect (l2ixmax, l2iymax, l2izmax);
       lower[2] = ivect (l3ixmin, l3iymin, l3izmin);
       upper[2] = ivect (l3ixmax, l3iymax, l3izmax);
-      MakeRegions_AsSpecified (cctkGH, refinement_levels, lower, upper, bbl);
+      MakeRegions_AsSpecified (cctkGH, refinement_levels, lower, upper,
+			       bbl, obl);
       
     } else if (CCTK_EQUALS(refined_regions, "manual-coordinates")) {
       
@@ -114,11 +112,33 @@ namespace CarpetRegrid {
       upper[1] = vect<CCTK_REAL,dim> (l2xmax, l2ymax, l2zmax);
       lower[2] = vect<CCTK_REAL,dim> (l3xmin, l3ymin, l3zmin);
       upper[2] = vect<CCTK_REAL,dim> (l3xmax, l3ymax, l3zmax);
-      MakeRegions_AsSpecified (cctkGH, refinement_levels, lower, upper, bbl);
+      MakeRegions_AsSpecified (cctkGH, refinement_levels, lower, upper,
+			       bbl, obl);
       
     } else if (CCTK_EQUALS(refined_regions, "manual-gridpoint-list")) {
       
-      abort ();
+      vector<vector<ibbox> > bbss;
+      if (strcmp(gridpoints, "") !=0 ) {
+	istringstream gp_str(gridpoints);
+	gp_str >> bbss;
+      }
+      
+      vector<vector<vect<vect<bool,2>,dim> > > obss;
+      if (strcmp(outerbounds, "") !=0 ) {
+	istringstream ob_str (outerbounds);
+	ob_str >> obss;
+      } else {
+	obss.resize(bbss.size());
+	for (int rl=0; rl<(int)obss.size(); ++rl) {
+	  obss[rl].resize(bbss[rl].size());
+	  for (int c=0; c<(int)obss[rl].size(); ++c) {
+	    obss[rl][c] = vect<vect<bool,2>,dim>(vect<bool,2>(false));
+	  }
+	}
+      }
+      
+      MakeRegions_AsSpecified (cctkGH, refinement_levels, bbss, obss,
+			       bbl, obl);
       
     } else if (CCTK_EQUALS(refined_regions, "manual-coordinate-list")) {
       
@@ -144,11 +164,13 @@ namespace CarpetRegrid {
 	= *dynamic_cast<const gf<CCTK_REAL,dim>*>(arrdata[gi].data[vi-v1]);
       
       MakeRegions_Adaptively (cctkGH, minwidth, minfraction, maxerror, error,
-			      bbl);
+			      bbl, obl);
       
     } else {
       abort();
     }
+    
+    assert (bbl.size() == obl.size());
     
     // transform bbox list into bbox vector
     vector<ibbox> bbs;
@@ -158,17 +180,15 @@ namespace CarpetRegrid {
 	 ++it) {
       bbs.push_back (*it);
     }
+    vector<bvect> obs;
+    obs.reserve (obl.size());
+    for (list<bvect>::const_iterator it = obl.begin();
+	 it != obl.end();
+	 ++it) {
+      obs.push_back (*it);
+    }
     
     // TODO: ensure nesting properties
-    
-    // TODO: set outer boundaries correctly
-    vector<bvect> obs;
-    obs.resize (bbs.size());
-    for (vector<bvect>::iterator it = obs.begin();
-	 it != obs.end();
-	 ++it) {
-      *it = bvect(vect<bool,2>(false));
-    }
     
     // make multiprocessor aware
     SplitRegions (cctkGH, bbs, obs);
@@ -205,9 +225,11 @@ namespace CarpetRegrid {
   
   
   
-  void MakeRegions_BaseLevel (const cGH* cctkGH, list<ibbox>& bbl)
+  void MakeRegions_BaseLevel (const cGH* cctkGH,
+			      list<ibbox>& bbl, list<bvect>& obl)
   {
     assert (bbl.empty());
+    assert (obl.empty());
   }
   
   
@@ -216,9 +238,10 @@ namespace CarpetRegrid {
   // how the hierarchy should be refined. But the result of this
   // routine is rather arbitrary.
   void MakeRegions_RefineCentre (const cGH* cctkGH, const int reflevels,
-				 list<ibbox>& bbl)
+				 list<ibbox>& bbl, list<bvect>& obl)
   {
     assert (bbl.empty());
+    assert (obl.empty());
     
     if (reflevel+1 >= reflevels) return;
       
@@ -255,6 +278,7 @@ namespace CarpetRegrid {
     }
     
     bbl.push_back (ibbox(rlb, rub-rstr, rstr));
+    obl.push_back (bvect(vect<bool,2>(false)));
   }
   
   
@@ -263,10 +287,9 @@ namespace CarpetRegrid {
   MakeRegions_AsSpecified_OneLevel (const cGH* cctkGH, const int reflevels,
 				    const ivect ilower,
 				    const ivect iupper,
-				    list<ibbox>& bbl)
+				    const bvect obound,
+				    list<ibbox>& bbl, list<bvect>& obl)
   {
-    assert (bbl.empty());
-    
     if (reflevel+1 >= reflevels) return;
     
     const ivect rstr = hh->baseextent.stride();
@@ -298,6 +321,7 @@ namespace CarpetRegrid {
     assert (all(lb%str==0 && ub%str==0));
     
     bbl.push_back (ibbox(lb, ub, str));
+    obl.push_back (obound);
   }
   
   
@@ -305,16 +329,21 @@ namespace CarpetRegrid {
   void MakeRegions_AsSpecified (const cGH* cctkGH, const int reflevels,
 				const vector<ivect> lower,
 				const vector<ivect> upper,
-				list<ibbox>& bbl)
+				list<ibbox>& bbl, list<bvect>& obl)
   {
+    assert (lower.size() == upper.size());
+    
     if (reflevel+1 >= reflevels) return;
     
     const int rl = reflevel+1;
     
     const ivect ilower = lower[rl-1];
     const ivect iupper = upper[rl-1];
+    const bvect obound = bvect(vect<bool,2>(false));
     
-    MakeRegions_AsSpecified_OneLevel (cctkGH, reflevels, ilower, iupper, bbl);
+    MakeRegions_AsSpecified_OneLevel (cctkGH, reflevels,
+				      ilower, iupper, obound,
+				      bbl, obl);
   }
   
   
@@ -322,8 +351,10 @@ namespace CarpetRegrid {
   void MakeRegions_AsSpecified (const cGH* cctkGH, const int reflevels,
 				const vector<vect<CCTK_REAL,dim> > lower,
 				const vector<vect<CCTK_REAL,dim> > upper,
-				list<ibbox>& bbl)
+				list<ibbox>& bbl, list<bvect>& obl)
   {
+    assert (lower.size() == upper.size());
+    
     if (reflevel+1 >= reflevels) return;
     
     vect<CCTK_REAL,dim> global_lower, global_upper;
@@ -344,8 +375,35 @@ namespace CarpetRegrid {
     const vect<CCTK_REAL,dim> rupper = (upper[rl-1] - global_lower) * scale;
     const ivect ilower = ivect(map((CCTK_REAL(*)(CCTK_REAL))floor, rlower + 0.5));
     const ivect iupper = ivect(map((CCTK_REAL(*)(CCTK_REAL))floor, rupper + 0.5));
+    const bvect obound = bvect(vect<bool,2>(false));
     
-    MakeRegions_AsSpecified_OneLevel (cctkGH, reflevels, ilower, iupper, bbl);
+    MakeRegions_AsSpecified_OneLevel (cctkGH, reflevels,
+				      ilower, iupper, obound,
+				      bbl, obl);
+  }
+  
+  
+  
+  void MakeRegions_AsSpecified (const cGH* cctkGH, const int reflevels,
+				const vector<vector<ibbox> > bbss,
+				const vector<vector<bvect> > obss,
+				list<ibbox>& bbl, list<bvect>& obl)
+  {
+    if (reflevel+1 >= reflevels) return;
+    
+    const int rl = reflevel+1;
+    
+    for (int c=0; c<(int)bbss.size(); ++c) {
+      
+      const ivect ilower = bbss[rl-1][c].lower();
+      const ivect iupper = bbss[rl-1][c].upper();
+      const bvect obound = obss[rl-1][c];
+      
+      MakeRegions_AsSpecified_OneLevel (cctkGH, reflevels,
+					ilower, iupper, obound,
+					bbl, obl);
+      
+    }
   }
   
   
@@ -584,7 +642,7 @@ namespace CarpetRegrid {
 			  const CCTK_REAL minfraction,
 			  const CCTK_REAL maxerror,
 			  const gf<CCTK_REAL,dim>& error,
-			  list<ibbox>& bbl)
+			  list<ibbox>& bbl, list<bvect>& obl)
   {
     assert (bbl.empty());
     
@@ -615,6 +673,12 @@ namespace CarpetRegrid {
 //       numpoints += ibb->num_points();
 //     }
 //     cout << "MRA: Chose " << bbl.size() << " regions with a total size of " << numpoints << " to refine." << endl << endl;
+    
+    // TODO: remove grid points outside the outer boundary
+    
+    // TODO: create obl depending on the boundary position
+    // (at or close to the boundary)
+    
   }
   
 } // namespace CarpetRegrid

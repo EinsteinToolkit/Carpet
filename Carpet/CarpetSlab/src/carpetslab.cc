@@ -1,8 +1,9 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.11 2001/07/09 09:00:24 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.12 2002/03/23 20:20:58 schnetter Exp $
 
 #include <alloca.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "cctk.h"
 
@@ -18,7 +19,7 @@
 
 #include "carpetslab.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.11 2001/07/09 09:00:24 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.12 2002/03/23 20:20:58 schnetter Exp $";
 
 
 
@@ -134,6 +135,7 @@ namespace CarpetSlab {
     if (dest_proc==-1 || rank==dest_proc) {
       hdata = malloc(totalsize * typesize);
       assert (hdata);
+      memset (hdata, 0, totalsize * typesize);
     }
     
     if (hh->components(reflevel) > 0) {
@@ -312,21 +314,13 @@ namespace CarpetSlab {
       abort();
     }
     
-#if 0
-    // Invert directions
-    int invdir[dim];
-    for (int d=0; d<dim; ++d) {
-      invdir[d] = 0;
-    }
-    for (int dd=0; dd<hdim; ++dd) {
-      invdir[dirs[dd]-1] = dd+1;
-    }
-#endif
-    
     // Calculate lengths
     for (int dd=0; dd<hdim; ++dd) {
       if (lengths[dd]<0) {
-	const int totlen = *CCTK_ArrayGroupSizeI(GH, dirs[dd]-1, vindex);
+	int gsh[dim];
+	int ierr = CCTK_GroupgshVI(GH, dim, gsh, vindex);
+	assert (!ierr);
+	const int totlen = gsh[dirs[dd]-1];
 	assert (totlen>=0);
 	// Partial argument check
 	assert (global_startpoint[dirs[dd]-1]>=0);

@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.4 2002/03/11 13:17:15 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.5 2002/03/23 20:20:56 schnetter Exp $
 
 
 
@@ -21,13 +21,13 @@ CCTK_INT regrid_every "Regrid every n time steps"
 
 KEYWORD refined_regions "Regions where the grid is refined"
 {
-  "none"               :: "Don't refine"
-  "centre"             :: "Refine around the centre of the grid only"
-  "manual-gridpoints"  :: "Refine the regions specified by integer grid points l[123]i[xyz]{min,max}"
-  "manual-coordinates" :: "Refine the regions specified by coordinates l[123][xyz]{min,max}"
-  "manual-gridpoint-list"  :: ""
-  "manual-coordinate-list" :: ""
-  "automatic"          :: "Refine automatically"
+  "none"                   :: "Don't refine"
+  "centre"                 :: "Refine around the centre of the grid only"
+  "manual-gridpoints"      :: "Refine the regions specified by integer grid points l[123]i[xyz]{min,max}"
+  "manual-coordinates"     :: "Refine the regions specified by coordinates l[123][xyz]{min,max}"
+  "manual-gridpoint-list"  :: "Refine the regions specified by integer grid points in the parameter 'gridpoints'"
+  "manual-coordinate-list" :: "[not yet implemented]"
+  "automatic"              :: "Refine automatically"
 } "centre"
 
 
@@ -208,7 +208,8 @@ CCTK_REAL l3zmax "Upper boundary of level 3 box in z-direction"
 
 CCTK_STRING gridpoints "List of bounding box gridpoints"
 {
-  .* :: "[ [ ([<imin>,<jmin>,<kmin>]:[<imax>,<jmax>,<kmax>]:[<istride>,<jstride>,<kstride>]), ... ], ... ]"
+  "^$" :: "leave empty for no refinement"
+  ".*" :: "[ [ ([<imin>,<jmin>,<kmin>]:[<imax>,<jmax>,<kmax>]:[<istride>,<jstride>,<kstride>]), ... ], ... ]"
 } ""
 
 
@@ -217,7 +218,18 @@ CCTK_STRING gridpoints "List of bounding box gridpoints"
 
 CCTK_STRING coordinates "List of bounding box coordinates"
 {
-  .* :: "[ [ ([<xmin>,<ymin>,<zmin>]:[<xmax>,<ymax>,<zmax>]:[<xstride>,<ystride>,<zstride>]), ... ], ... ]"
+  "^$" :: "leave empty for no refinement"
+  ".*" :: "[ [ ([<xmin>,<ymin>,<zmin>]:[<xmax>,<ymax>,<zmax>]:[<xstride>,<ystride>,<zstride>]), ... ], ... ]"
+} ""
+
+
+
+# Outer boundaries for manual-gridpoint-list and manual-coordinate-list
+
+CCTK_STRING outerbounds "Outer boundaries"
+{
+  "^$" :: "leave empty for no outer boundaries"
+  ".*" :: "[ [ [[?,?],[?,?],[?,?]], ... ], ...]"
 } ""
 
 

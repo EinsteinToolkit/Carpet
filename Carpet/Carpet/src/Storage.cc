@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.8 2002/01/09 21:15:10 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.9 2002/03/23 20:20:55 schnetter Exp $";
 
 
 
@@ -159,15 +159,15 @@ namespace Carpet {
   {
     static const int zero = 0;
     
-    if (component == -1) {
-      // global routine
-      return &zero;
-    }
-    
     if (groupname) {
       group = CCTK_GroupIndex(groupname);
     }
     assert (group>=0 && group<CCTK_NumGroups());
+    
+    if (component == -1) {
+      // global routine
+      return &zero;
+    }
     
     const int gpdim = arrdata[group].info.dim;
     

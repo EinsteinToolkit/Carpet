@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOASCII
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/param.ccl,v 1.5 2002/01/09 23:42:40 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/param.ccl,v 1.6 2002/03/23 20:20:56 schnetter Exp $
 
 
 
@@ -217,3 +217,12 @@ CCTK_REAL out2D_yzplane_x "x coordinate for 2D planes in yz-direction" STEERABLE
 {
   *:* :: ""
 } 0
+
+
+
+# These parameters are here for historic reasons only.
+# They might go away in the future.  Do not use them.
+
+BOOLEAN out1D_d "do not use this parameter" STEERABLE = ALWAYS
+{
+} "yes"

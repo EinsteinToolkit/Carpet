@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CarpetParamCheck.cc,v 1.2 2001/12/09 16:41:52 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CarpetParamCheck.cc,v 1.3 2002/03/23 20:20:54 schnetter Exp $";
 
 
 
@@ -20,6 +20,13 @@ namespace Carpet {
   {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
+    
+    if (CCTK_ParameterQueryTimesSet ("periodic", "Carpet")
+	|| CCTK_ParameterQueryTimesSet ("periodic_x", "Carpet")
+	|| CCTK_ParameterQueryTimesSet ("periodic_y", "Carpet")
+	|| CCTK_ParameterQueryTimesSet ("periodic_z", "Carpet")) {
+      CCTK_PARAMWARN ("Some of the parameters \"Carpet::periodic*\" have been set.  These parameters are there for compatibility reasons only and must not be used.");
+    }
     
     return 0;
   }

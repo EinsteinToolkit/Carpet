@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.4 2002/03/11 13:17:16 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.5 2002/03/23 20:20:57 schnetter Exp $
 
 #ifndef REGRID_HH
 #define REGRID_HH
@@ -26,6 +26,13 @@ namespace CarpetRegrid {
   
   
   
+  typedef vect<int,dim> ivect;
+  typedef bbox<int,dim> ibbox;
+  
+  typedef vect<vect<bool,2>,dim> bvect;
+  
+  
+  
   int CarpetRegridRegrid (const cGH * const cctkGH,
 			  gh<dim>::rexts& bbsss,
 			  gh<dim>::rbnds& obss,
@@ -34,26 +41,31 @@ namespace CarpetRegrid {
   
   
   void MakeRegions_BaseLevel    (const cGH* cctkGH,
-				 list<bbox<int,dim> >& bbl);
+				 list<ibbox>& bbl, list<bvect>& obl);
   
   void MakeRegions_RefineCentre (const cGH* cctkGH, const int reflevels,
-				 list<bbox<int,dim> >& bbl);
+				 list<ibbox>& bbl, list<bvect>& obl);
   
   void MakeRegions_AsSpecified  (const cGH* cctkGH, const int reflevels,
-				 const vector<vect<int,dim> > lower,
-				 const vector<vect<int,dim> > upper,
-				 list<bbox<int,dim> >& bbl);
+				 const vector<ivect> lower,
+				 const vector<ivect> upper,
+				 list<ibbox>& bbl, list<bvect>& obl);
   void MakeRegions_AsSpecified  (const cGH* cctkGH, const int reflevels,
 				 const vector<vect<CCTK_REAL,dim> > lower,
 				 const vector<vect<CCTK_REAL,dim> > upper,
-				 list<bbox<int,dim> >& bbl);
+				 list<ibbox>& bbl, list<bvect>& obl);
+  
+  void MakeRegions_AsSpecified  (const cGH* cctkGH, const int reflevels,
+				 const vector<vector<ibbox> > bbss,
+				 const vector<vector<bvect> > obss,
+				 list<ibbox>& bbl, list<bvect>& obl);
   
   void MakeRegions_Adaptively   (const cGH* cctkGH,
 				 const int minwidth,
 				 const CCTK_REAL minfraction,
 				 const CCTK_REAL maxerror,
 				 const gf<CCTK_REAL,dim>& error,
-				 list<bbox<int,dim> >& bbl);
+				 list<ibbox>& bbl, list<bvect>& obl);
   
 } // namespace CarpetRegrid
 

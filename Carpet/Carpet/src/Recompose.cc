@@ -21,7 +21,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.21 2002/03/11 13:17:10 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.22 2002/03/23 20:20:54 schnetter Exp $";
 
 
 
@@ -123,7 +123,11 @@ namespace Carpet {
     assert (component == -1);
     
     if (!regrid_routine) {
-      CCTK_WARN (1, "No regridding routine has been registered.  There will be no regridding.  (Maybe you forgot to activate the regridding thorn?)");
+      static bool didtell = false;
+      if (!didtell) {
+	CCTK_WARN (1, "No regridding routine has been registered.  There will be no regridding.  (Maybe you forgot to activate the regridding thorn?)");
+	didtell = true;
+      }
       return;
     }
     
