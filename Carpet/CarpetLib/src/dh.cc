@@ -39,13 +39,15 @@ dh::~dh ()
 }
 
 // Helpers
-int dh::prolongation_stencil_size () const {
+int dh::prolongation_stencil_size () const
+{
   assert (prolongation_order_space>=0);
   return prolongation_order_space/2;
 }
 
 // Modifiers
-void dh::recompose (const bool do_prolongate) {
+void dh::recompose (const bool do_prolongate)
+{
   DECLARE_CCTK_PARAMETERS;
   
   CHECKPOINT;
@@ -54,28 +56,28 @@ void dh::recompose (const bool do_prolongate) {
 
   allocate_bboxes();
   
-  foreach_reflevel_component_mglevel (&dh::setup_sync_and_refine_boxes );
-  foreach_reflevel_component_mglevel (&dh::intersect_sync_with_interior );
-  foreach_reflevel_component_mglevel (&dh::setup_multigrid_boxes );
-  foreach_reflevel_component_mglevel (&dh::setup_refinement_interior_boxes );
-  foreach_reflevel_component_mglevel (&dh::setup_refinement_exterior_boxes );
-  foreach_reflevel_component_mglevel (&dh::setup_restrict_interior_boxes );
-  foreach_reflevel_component_mglevel (&dh::trim_unsynced_boundaries );
+  foreach_reflevel_component_mglevel (&dh::setup_sync_and_refine_boxes);
+  foreach_reflevel_component_mglevel (&dh::intersect_sync_with_interior);
+  foreach_reflevel_component_mglevel (&dh::setup_multigrid_boxes);
+  foreach_reflevel_component_mglevel (&dh::setup_refinement_interior_boxes);
+  foreach_reflevel_component_mglevel (&dh::setup_refinement_exterior_boxes);
+  foreach_reflevel_component_mglevel (&dh::setup_restrict_interior_boxes);
+  foreach_reflevel_component_mglevel (&dh::trim_unsynced_boundaries);
 
   calculate_bases();
 
   if (output_bboxes) {
     cout << endl << h << endl;
-    foreach_reflevel_component_mglevel (&dh::do_output_bboxes );
+    foreach_reflevel_component_mglevel (&dh::do_output_bboxes);
     output_bases();
   }
   
-  foreach_reflevel_component_mglevel (&dh::assert_assert_assert );
+  foreach_reflevel_component_mglevel (&dh::assert_assert_assert);
 
   if (! save_memory_during_regridding) {
-    save_time( do_prolongate);
+    save_time(do_prolongate);
   } else {
-    save_memory( do_prolongate);
+    save_memory(do_prolongate);
   }
 }
 
@@ -130,7 +132,7 @@ void dh::foreach_reflevel_component_mglevel (dh::boxesop op)
   }
 }
 
-void dh::setup_sync_and_refine_boxes( dh::dboxes & b, int rl, int c, int ml )
+void dh::setup_sync_and_refine_boxes (dh::dboxes & b, int rl, int c, int ml)
 {
   // Sync boxes
   const int cs = h.components(rl);
@@ -152,7 +154,7 @@ void dh::setup_sync_and_refine_boxes( dh::dboxes & b, int rl, int c, int ml )
   }
 }
 
-void dh::intersect_sync_with_interior( dh::dboxes & box, int rl, int c, int ml )
+void dh::intersect_sync_with_interior (dh::dboxes & box, int rl, int c, int ml)
 {
   const ibset& bnds = box.boundaries;
 
@@ -164,12 +166,12 @@ void dh::intersect_sync_with_interior( dh::dboxes & box, int rl, int c, int ml )
     ovlp.normalize();
     for (ibset::const_iterator b=ovlp.begin();b!=ovlp.end(); ++b) {
       box .recv_sync.at(cc).push_back(*b);
-      box1.send_sync.at(c ).push_back(*b);
+      box1.send_sync.at(c).push_back(*b);
     }
   }
 }
 
-void dh::setup_multigrid_boxes( dh::dboxes & box, int rl, int c, int ml )
+void dh::setup_multigrid_boxes (dh::dboxes & box, int rl, int c, int ml)
 {
   const ibbox& intr = box.interior;
   const ibbox& extr = box.exterior;
@@ -210,7 +212,7 @@ void dh::setup_multigrid_boxes( dh::dboxes & box, int rl, int c, int ml )
   } // if not finest multigrid level
 }
 
-void dh::setup_refinement_interior_boxes( dh::dboxes & box, int rl, int c, int ml )
+void dh::setup_refinement_interior_boxes (dh::dboxes & box, int rl, int c, int ml)
 {
   const ibbox& extr = box.exterior;
 
@@ -229,9 +231,11 @@ void dh::setup_refinement_interior_boxes( dh::dboxes & box, int rl, int c, int m
         ibset recvs = extr.expand(-pss,-pss).contracted_for(intrf) & intrf;
         const iblistvect& rrc = box1.recv_ref_coarse;
         for (iblistvect::const_iterator lvi=rrc.begin();
-             lvi!=rrc.end(); ++lvi) {
+             lvi!=rrc.end(); ++lvi)
+        {
           for (iblist::const_iterator li=lvi->begin();
-               li!=lvi->end(); ++li) {
+               li!=lvi->end(); ++li)
+          {
             recvs -= *li;
           }
         }
@@ -242,7 +246,7 @@ void dh::setup_refinement_interior_boxes( dh::dboxes & box, int rl, int c, int m
           const ibbox send = recv.expanded_for(extr);
           assert (! send.empty());
           assert (send.is_contained_in(extr));
-          box1.recv_ref_coarse.at(c ).push_back(recv);
+          box1.recv_ref_coarse.at(c).push_back(recv);
           box. send_ref_fine  .at(cc).push_back(send);
         }
       }
@@ -250,7 +254,7 @@ void dh::setup_refinement_interior_boxes( dh::dboxes & box, int rl, int c, int m
   } // if not finest refinement level
 }
 
-void dh::setup_refinement_exterior_boxes( dh::dboxes & box, int rl, int c, int ml )
+void dh::setup_refinement_exterior_boxes (dh::dboxes & box, int rl, int c, int ml)
 {
   const ibbox& extr = box.exterior;
 
@@ -274,9 +278,11 @@ void dh::setup_refinement_exterior_boxes( dh::dboxes & box, int rl, int c, int m
           // Do not count what is synced
           const iblistvect& rs = box1.recv_sync;
           for (iblistvect::const_iterator lvi=rs.begin();
-               lvi!=rs.end(); ++lvi) {
+               lvi!=rs.end(); ++lvi)
+          {
             for (iblist::const_iterator li=lvi->begin();
-                 li!=lvi->end(); ++li) {
+                 li!=lvi->end(); ++li)
+            {
               pbndsf -= *li;
             }
           }
@@ -286,7 +292,8 @@ void dh::setup_refinement_exterior_boxes( dh::dboxes & box, int rl, int c, int m
         ibset buffers;
         {
           for (ibset::const_iterator pbi=pbndsf.begin();
-               pbi!=pbndsf.end(); ++pbi) {
+               pbi!=pbndsf.end(); ++pbi)
+          {
             buffers |= (*pbi).expand(buffer_width, buffer_width) & extrf;
           }
           buffers.normalize();
@@ -299,9 +306,11 @@ void dh::setup_refinement_exterior_boxes( dh::dboxes & box, int rl, int c, int m
           // Do not prolongate what is already prolongated
           const iblistvect& rrbc = box1.recv_ref_bnd_coarse;
           for (iblistvect::const_iterator lvi=rrbc.begin();
-               lvi!=rrbc.end(); ++lvi) {
+               lvi!=rrbc.end(); ++lvi)
+          {
             for (iblist::const_iterator li=lvi->begin();
-                 li!=lvi->end(); ++li) {
+                 li!=lvi->end(); ++li)
+            {
               recvs -= *li;
             }
           }
@@ -309,13 +318,14 @@ void dh::setup_refinement_exterior_boxes( dh::dboxes & box, int rl, int c, int m
         }
         {
           for (ibset::const_iterator ri = recvs.begin();
-               ri != recvs.end(); ++ri) {
+               ri != recvs.end(); ++ri)
+          {
             const ibbox & recv = *ri;
             const ibbox send = recv.expanded_for(extr);
             assert (! send.empty());
             assert (send.is_contained_in(extr));
             assert (send.is_contained_in(extr.expand(-pss,-pss)));
-            box1.recv_ref_bnd_coarse.at(c ).push_back(recv);
+            box1.recv_ref_bnd_coarse.at(c).push_back(recv);
             box .send_ref_bnd_fine  .at(cc).push_back(send);
           }
         }
@@ -325,7 +335,7 @@ void dh::setup_refinement_exterior_boxes( dh::dboxes & box, int rl, int c, int m
   } // if not finest refinement level
 }
 
-void dh::setup_restrict_interior_boxes( dh::dboxes & box, int rl, int c, int ml )
+void dh::setup_restrict_interior_boxes (dh::dboxes & box, int rl, int c, int ml)
 {
   const ibbox& intr = box.interior;
 
@@ -346,18 +356,20 @@ void dh::setup_restrict_interior_boxes( dh::dboxes & box, int rl, int c, int ml 
         for (int ccc=0; ccc<h.components(rl); ++ccc) {
           const iblist& sendlist = box1.recv_ref_bnd_coarse.at(ccc);
           for (iblist::const_iterator sli = sendlist.begin();
-               sli != sendlist.end(); ++sli) {
+               sli != sendlist.end(); ++sli)
+          {
             sends -= *sli;
           }
         }
         sends.normalize();
         for (ibset::const_iterator si = sends.begin();
-             si != sends.end(); ++si) {
+             si != sends.end(); ++si)
+        {
           const ibbox recv = (*si).contracted_for(intr);
           if (! recv.empty()) {
             const ibbox & send = recv.expanded_for(intrf);
             assert (! send.empty());
-            box1.send_ref_coarse.at(c ).push_back(send);
+            box1.send_ref_coarse.at(c).push_back(send);
             box .recv_ref_fine  .at(cc).push_back(recv);
           }
         }
@@ -367,7 +379,7 @@ void dh::setup_restrict_interior_boxes( dh::dboxes & box, int rl, int c, int ml 
   } // if not finest refinement level
 }
 
-void dh::trim_unsynced_boundaries( dh::dboxes & box, int rl, int c, int ml )
+void dh::trim_unsynced_boundaries (dh::dboxes & box, int rl, int c, int ml)
 {
   // Boundaries that are not synced, or are neither synced nor
   // prolonged to from coarser grids (outer boundaries)
@@ -381,9 +393,11 @@ void dh::trim_unsynced_boundaries( dh::dboxes & box, int rl, int c, int ml )
   // Subtract boxes received during synchronisation
   const iblistvect& recv_sync = box.recv_sync;
   for (iblistvect::const_iterator lvi=recv_sync.begin();
-       lvi!=recv_sync.end(); ++lvi) {
+       lvi!=recv_sync.end(); ++lvi)
+  {
     for (iblist::const_iterator li=lvi->begin();
-         li!=lvi->end(); ++li) {
+         li!=lvi->end(); ++li)
+    {
       sync_not -= *li;
       recv_not -= *li;
     }
@@ -392,15 +406,17 @@ void dh::trim_unsynced_boundaries( dh::dboxes & box, int rl, int c, int ml )
   // Subtract boxes received during prolongation
   const iblistvect& recv_ref_bnd_coarse = box.recv_ref_bnd_coarse;
   for (iblistvect::const_iterator lvi=recv_ref_bnd_coarse.begin();
-       lvi!=recv_ref_bnd_coarse.end(); ++lvi) {
+       lvi!=recv_ref_bnd_coarse.end(); ++lvi)
+  {
     for (iblist::const_iterator li=lvi->begin();
-         li!=lvi->end(); ++li) {
+         li!=lvi->end(); ++li)
+    {
       recv_not -= *li;
     }
   }
 }
 
-void dh::assert_assert_assert( dh::dboxes & box, int rl, int c, int ml )
+void dh::assert_assert_assert (dh::dboxes & box, int rl, int c, int ml)
 {
 // Assert that all boundaries are synced or received
   {
@@ -426,11 +442,10 @@ void dh::assert_assert_assert( dh::dboxes & box, int rl, int c, int ml )
       const iblistvect& recv_ref_coarse = box.recv_ref_coarse;
       ibset intr = box.interior;
       ibset received;
-      for (iblistvect::const_iterator
-             lvi=recv_ref_coarse.begin();
-           lvi!=recv_ref_coarse.end(); ++lvi) {
-        for (iblist::const_iterator li=lvi->begin();
-             li!=lvi->end(); ++li) {
+      for (iblistvect::const_iterator lvi=recv_ref_coarse.begin();
+           lvi!=recv_ref_coarse.end(); ++lvi)
+      {
+        for (iblist::const_iterator li=lvi->begin(); li!=lvi->end(); ++li) {
           const int old_sz = intr.size();
           const int this_sz = li->size();
           intr -= *li;
@@ -460,9 +475,11 @@ void dh::assert_assert_assert( dh::dboxes & box, int rl, int c, int ml )
     ibset bnds = box.boundaries;
     ibset received;
     for (iblistvect::const_iterator lvi=recv_sync.begin();
-         lvi!=recv_sync.end(); ++lvi) {
+         lvi!=recv_sync.end(); ++lvi)
+    {
       for (iblist::const_iterator li=lvi->begin();
-           li!=lvi->end(); ++li) {
+           li!=lvi->end(); ++li)
+      {
         const int old_sz = bnds.size();
         const int this_sz = li->size();
         bnds -= *li;
@@ -472,11 +489,10 @@ void dh::assert_assert_assert( dh::dboxes & box, int rl, int c, int ml )
         received |= *li;
       }
     }
-    for (iblistvect::const_iterator
-           lvi=recv_ref_bnd_coarse.begin();
-         lvi!=recv_ref_bnd_coarse.end(); ++lvi) {
-      for (iblist::const_iterator li=lvi->begin();
-           li!=lvi->end(); ++li) {
+    for (iblistvect::const_iterator lvi=recv_ref_bnd_coarse.begin();
+         lvi!=recv_ref_bnd_coarse.end(); ++lvi)
+    {
+      for (iblist::const_iterator li=lvi->begin(); li!=lvi->end(); ++li) {
         const int old_sz = bnds.size();
         const int this_sz = li->size();
         bnds -= *li;
@@ -502,7 +518,8 @@ void dh::assert_assert_assert( dh::dboxes & box, int rl, int c, int ml )
   }
 }
 
-void dh::calculate_bases () {
+void dh::calculate_bases ()
+{
   // Calculate bases
   bases.resize(h.mglevels());
   for (int ml=0; ml<h.mglevels(); ++ml) {
@@ -521,7 +538,8 @@ void dh::calculate_bases () {
   }
 }
 
-void dh::save_time ( bool do_prolongate ) {
+void dh::save_time (bool do_prolongate)
+{
   for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
     (*f)->recompose_crop ();
   }
@@ -550,7 +568,7 @@ void dh::save_time ( bool do_prolongate ) {
   } // for rl
 }
 
-void dh::save_memory ( bool do_prolongate ) {
+void dh::save_memory (bool do_prolongate) {
   ggf* vectorleader = NULL;
   for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
     
@@ -599,19 +617,22 @@ void dh::save_memory ( bool do_prolongate ) {
 }
 
 // Grid function management
-void dh::add (ggf* f) {
+void dh::add (ggf* f)
+{
   CHECKPOINT;
   gfs.push_back(f);
 }
 
-void dh::remove (ggf* f) {
+void dh::remove (ggf* f)
+{
   CHECKPOINT;
   gfs.remove(f);
 }
 
 
 // Output
-void dh::output (ostream& os) const {
+void dh::output (ostream& os) const
+{
   os << "dh:"
      << "ghosts=[" << lghosts << "," << ughosts << "],"
      << "gfs={";
@@ -624,7 +645,7 @@ void dh::output (ostream& os) const {
   os << "}";
 }
 
-void dh::do_output_bboxes( dh::dboxes & box, int rl, int c, int ml )
+void dh::do_output_bboxes(dh::dboxes & box, int rl, int c, int ml)
 {
   cout << endl;
   cout << "dh bboxes:" << endl;

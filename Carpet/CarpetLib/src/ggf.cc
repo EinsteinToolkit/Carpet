@@ -99,7 +99,7 @@ void ggf::recompose_crop ()
       } // for c
     } // for rl
     storage.at(ml).resize(h.reflevels());
-  } // for mrl
+  } // for ml
 }
 
 void ggf::recompose_allocate (const int rl)
@@ -340,7 +340,8 @@ void ggf::copycat (comm_state& state,
   assert (recv.size()==send.size());
   // walk all boxes
   for (iblist::const_iterator r=recv.begin(), s=send.begin();
-       r!=recv.end(); ++r, ++s) {
+       r!=recv.end(); ++r, ++s)
+  {
     // (use the send boxes for communication)
     // copy the content
     storage.at(ml1).at(rl1).at(c1).at(tl1)->copy_from
@@ -445,7 +446,8 @@ void ggf::intercat (comm_state& state,
   assert (recv.size()==send.size());
   // walk all boxes
   for (iblist::const_iterator r=recv.begin(), s=send.begin();
-       r!=recv.end(); ++r, ++s) {
+       r!=recv.end(); ++r, ++s)
+  {
     // (use the send boxes for communication)
     // interpolate the content
     storage.at(ml1).at(rl1).at(c1).at(tl1)->interpolate_from
@@ -486,7 +488,8 @@ void ggf::intercat (comm_state& state,
     assert (recv.size()==send.size());
     // walk all boxes
     for (iblist::const_iterator r=recv.begin(), s=send.begin();
-      	 r!=recv.end(); ++r, ++s) {
+      	 r!=recv.end(); ++r, ++s)
+    {
       // (use the send boxes for communication)
       // interpolate the content
       storage.at(ml1).at(rl1).at(c1).at(tl1)->interpolate_from

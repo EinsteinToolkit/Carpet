@@ -85,15 +85,18 @@ public:
     return _extents;
   }
 
-  const rbnds & outer_boundaries() const {
+  const rbnds & outer_boundaries() const
+  {
     return _outer_boundaries;
   }
 
-  const rprocs & processors() const {
+  const rprocs & processors() const
+  {
     return _processors;
   }
 
-  const vector<vector<ibbox> > & bases() const {
+  const vector<vector<ibbox> > & bases() const
+  {
     return _bases;
   }
   
@@ -114,11 +117,13 @@ public:
     return (int)_extents.at(0).at(rl).size();
   }
   
-  bbvect outer_boundary (const int rl, const int c) const {
+  bbvect outer_boundary (const int rl, const int c) const
+  {
     return _outer_boundaries.at(rl).at(c);
   }
   
-  int proc (const int rl, const int c) const {
+  int proc (const int rl, const int c) const
+  {
     return _processors.at(rl).at(c);
   }
 

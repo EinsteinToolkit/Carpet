@@ -44,7 +44,9 @@ gf<T>::gf (const int varindex_, const operator_type transport_operator_,
 
 // Destructors
 template<typename T>
-gf<T>::~gf () { }
+gf<T>::~gf ()
+{
+}
 
 
 
@@ -73,7 +75,8 @@ data<T>* gf<T>::operator() (int tl, int rl, int c, int ml)
 
 // Output
 template<typename T>
-ostream& gf<T>::output (ostream& os) const {
+ostream& gf<T>::output (ostream& os) const
+{
   T Tdummy;
   os << "gf<" << typestring(Tdummy) << ">:"
      << varindex << "[" << CCTK_VarName(varindex) << "],"

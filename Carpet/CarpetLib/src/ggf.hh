@@ -212,16 +212,17 @@ public:
   virtual ostream& output (ostream& os) const = 0;
 
 private:
-  ggf (); // canonical default construtor
-  ggf ( const ggf & ); // canonical copy construtor
-  ggf & operator =( const ggf & ); // canonical copy
+  ggf ();                       // canonical default construtor
+  ggf (const ggf &);            // canonical copy construtor
+  ggf & operator= (const ggf &); // canonical copy
 
 };
 
 
 
 template<int D>
-inline ostream& operator<< (ostream& os, const ggf& f) {
+inline ostream& operator<< (ostream& os, const ggf& f)
+{
   return f.output(os);
 }
 

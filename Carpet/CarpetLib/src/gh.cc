@@ -53,8 +53,8 @@ void gh::recompose (const mexts& exts,
   calculate_base_extents_of_all_levels ();
   
   if (output_bboxes) {
-    do_output_bboxes ( cout);
-    do_output_bases ( cout);
+    do_output_bboxes (cout);
+    do_output_bases (cout);
   }
   
   // Recompose the other hierarchies
@@ -68,7 +68,8 @@ void gh::recompose (const mexts& exts,
   }
 }
 
-void gh::check_processor_number_consistency () {
+void gh::check_processor_number_consistency ()
+{
   for (int rl=0; rl<reflevels(); ++rl) {
     assert (processors().size() == extents().at(0).size());
     assert (outer_boundaries().size() == extents().at(0).size());
@@ -117,7 +118,8 @@ void gh::check_component_consistency ()
   }
 }
 
-void gh::check_base_grid_extent () {
+void gh::check_base_grid_extent ()
+{
   if (reflevels()>0) {
     for (int c=0; c<components(0); ++c) {
       // TODO: put the check back in, taking outer boundaries into
@@ -169,7 +171,8 @@ void gh::calculate_base_extents_of_all_levels ()
 }
 
 // Accessors
-int gh::local_components (const int rl) const {
+int gh::local_components (const int rl) const
+{
   int lc = 0;
   for (int c=0; c<components(rl); ++c) {
     if (is_local(rl,c)) ++lc;
@@ -180,22 +183,26 @@ int gh::local_components (const int rl) const {
 
 
 // Time hierarchy management
-void gh::add (th* t) {
+void gh::add (th* t)
+{
   ths.push_back(t);
 }
 
-void gh::remove (th* t) {
+void gh::remove (th* t)
+{
   ths.remove(t);
 }
 
 
 
 // Data hierarchy management
-void gh::add (dh* d) {
+void gh::add (dh* d)
+{
   dhs.push_back(d);
 }
 
-void gh::remove (dh* d) {
+void gh::remove (dh* d)
+{
   dhs.remove(d);
 }
 
@@ -230,7 +237,8 @@ void gh::do_output_bases (ostream& os) const
   }
 }
 
-ostream& gh::output (ostream& os) const {
+ostream& gh::output (ostream& os) const
+{
   os << "gh:"
      << "reffactor=" << reffact << ",refcentering=" << refcent << ","
      << "mgfactor=" << mgfact << ",mgcentering=" << mgcent << ","

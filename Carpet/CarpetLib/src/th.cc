@@ -15,12 +15,14 @@ using namespace std;
 
 // Constructors
 th::th (gh& h_, const CCTK_REAL basedelta)
-  : h(h_), delta(basedelta) {
+  : h(h_), delta(basedelta)
+{
   h.add(this);
 }
 
 // Destructors
-th::~th () {
+th::~th ()
+{
   h.remove(this);
 }
 
@@ -56,7 +58,8 @@ void th::recompose ()
 
 
 // Output
-void th::output (ostream& os) const {
+void th::output (ostream& os) const
+{
   os << "th:"
      << "times={";
   const char * sep = "";

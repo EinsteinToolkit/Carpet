@@ -87,21 +87,21 @@ private:
   typedef void (dh::*boxesop) (dboxes &, int rl, int c, int ml); 
   void foreach_reflevel_component_mglevel (boxesop op);
 
-                                 // these all of form 'boxesop'
-  void setup_sync_and_refine_boxes( dboxes & b, int rl, int c, int ml );
-  void intersect_sync_with_interior( dboxes & b, int rl, int c, int ml );
-  void setup_multigrid_boxes( dboxes & b, int rl, int c, int ml );
-  void setup_refinement_interior_boxes( dboxes & b, int rl, int c, int ml );
-  void setup_refinement_exterior_boxes( dboxes & b, int rl, int c, int ml );
-  void setup_restrict_interior_boxes( dboxes & b, int rl, int c, int ml );
-  void trim_unsynced_boundaries( dboxes & b, int rl, int c, int ml );
-  void do_output_bboxes( dboxes & b, int rl, int c, int ml );
-  void assert_assert_assert( dboxes & b, int rl, int c, int ml );
+  // these all of form 'boxesop'
+  void setup_sync_and_refine_boxes (dboxes & b, int rl, int c, int ml);
+  void intersect_sync_with_interior (dboxes & b, int rl, int c, int ml);
+  void setup_multigrid_boxes (dboxes & b, int rl, int c, int ml);
+  void setup_refinement_interior_boxes (dboxes & b, int rl, int c, int ml);
+  void setup_refinement_exterior_boxes (dboxes & b, int rl, int c, int ml);
+  void setup_restrict_interior_boxes (dboxes & b, int rl, int c, int ml);
+  void trim_unsynced_boundaries (dboxes & b, int rl, int c, int ml);
+  void do_output_bboxes (dboxes & b, int rl, int c, int ml);
+  void assert_assert_assert (dboxes & b, int rl, int c, int ml);
 
-  void calculate_bases(); 
-  void output_bases(); 
-  void save_time( bool do_prolongate); 
-  void save_memory( bool do_prolongate); 
+  void calculate_bases (); 
+  void output_bases (); 
+  void save_time (bool do_prolongate); 
+  void save_memory (bool do_prolongate); 
 
 public:                         // should be readonly
   
@@ -142,8 +142,9 @@ public:
 
 
 
-inline ostream& operator<< (ostream& os, const dh& d) {
-  d.output(os);
+inline ostream& operator<< (ostream& os, const dh& d)
+{
+  d.output (os);
   return os;
 }
 
