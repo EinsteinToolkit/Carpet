@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.h,v 1.3 2002/09/01 14:52:26 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.h,v 1.4 2002/12/12 12:57:07 schnetter Exp $ */
 
 #ifndef CARPETIOFLEXIO_H
 #define CARPETIOFLEXIO_H
@@ -16,7 +16,7 @@ namespace CarpetIOFlexIO {
     
 #ifdef __cplusplus
   } /* extern "C" */
-} /* namespace CarpetIOASCII */
+} /* namespace CarpetIOFlexIO */
 #endif
 
 #endif /* !defined(CARPETIOFLEXIO_H) */
