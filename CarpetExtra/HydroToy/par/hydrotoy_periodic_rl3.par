@@ -7,7 +7,7 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/par/hydrotoy_periodic_rl3.par,v 1.5 2001/12/14 17:59:58 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/par/hydrotoy_periodic_rl3.par,v 1.6 2002/03/06 17:47:59 schnetter Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDHydroToy HydroToy"
 
@@ -54,7 +54,7 @@ IOASCII::out1D_vars		= "hydrotoy::hydroevolve grid::coordinates"
 IOFlexIO::out3D_every		= 96
 IOFlexIO::out3D_vars		= "hydrotoy::hydroevolve"
 IOFlexIO::out3D_format		= IEEE
-IOFlexIO::out3D_extension	= ".amr"
+IOFlexIO::out3D_extension	= ".vcamr"
 
 HydroToy::bound			= radiation
 

@@ -7,7 +7,7 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/doubletoy_periodic_coarse_rl2.par,v 1.5 2001/12/14 18:00:03 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/doubletoy_periodic_coarse_rl2.par,v 1.6 2002/03/06 17:48:00 schnetter Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDSpaceTimeToy SpaceTimeToy IDHydroToy HydroToy"
 
@@ -54,7 +54,7 @@ IOASCII::out1D_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve grid
 IOFlexIO::out3D_every		= 24
 IOFlexIO::out3D_vars		= "spacetimetoy::spacetimeevolve hydrotoy::hydroevolve"
 IOFlexIO::out3D_format		= IEEE
-IOFlexIO::out3D_extension	= ".amr"
+IOFlexIO::out3D_extension	= ".vcamr"
 
 SpaceTimeToy::icn_iterations	= 2
 SpaceTimeToy::bound		= radiation

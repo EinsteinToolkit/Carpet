@@ -19,7 +19,7 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.7 2002/01/14 14:59:27 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.8 2002/03/06 17:47:58 schnetter Exp $";
 
 
 
@@ -489,6 +489,8 @@ namespace CarpetRegrid {
     assert (! region.empty());
     
     // Count grid points that need to be refined
+    // (this doesn't work yet on multiple processors)
+    assert (CCTK_nProcs(cctkGH)==1);
     int cnt = 0;
     for (bbox<int,dim>::iterator it=region.begin(); it!=region.end(); ++it) {
       if (error[*it] > maxerror) ++cnt;
