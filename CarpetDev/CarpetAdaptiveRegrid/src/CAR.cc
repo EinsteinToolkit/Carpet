@@ -219,7 +219,8 @@ namespace CarpetAdaptiveRegrid {
           for (CCTK_INT j = 0; j < cctkGH->cctk_lsh[1]; ++j) {
             for (CCTK_INT i = 0; i < cctkGH->cctk_lsh[0]; ++i) {
               CCTK_INT index = CCTK_GFINDEX3D(cctkGH, i, j, k);
-              if (abs(error_var_ptr[index]) > max_error) {
+              CCTK_REAL local_error = abs(error_var_ptr[index]);
+              if (local_error > max_error) {
                 CCTK_INT ii = i + cctkGH->cctk_lbnd[0] - imin[0];
                 CCTK_INT jj = j + cctkGH->cctk_lbnd[1] - imin[1];
                 CCTK_INT kk = k + cctkGH->cctk_lbnd[2] - imin[2];
@@ -262,22 +263,22 @@ namespace CarpetAdaptiveRegrid {
 
       // Pad the errors: stage 1 - buffer points marked as 2.
 
-      for (CCTK_INT k = 0; k < imax[2] - imin[2]; k++) {
-        for (CCTK_INT j = 0; j < imax[1] - imin[1]; j++) {
-          for (CCTK_INT i = 0; i < imax[0] - imin[0]; i++) {
+      for (CCTK_INT k = 0; k < imax[2] - imin[2] + 1; k++) {
+        for (CCTK_INT j = 0; j < imax[1] - imin[1] + 1; j++) {
+          for (CCTK_INT i = 0; i < imax[0] - imin[0] + 1; i++) {
             CCTK_INT index =  i + 
               (imax[0] - imin[0] + 1)*(j + (imax[1] - imin[1] + 1) * k);
             if (mask[index] == 1) {
-              for (CCTK_INT kk = max(k-pad, 0); 
-                   kk < min(k+pad+1, imax[2] - imin[2]);
+              for (CCTK_INT kk = max(k - pad, 0); 
+                   kk < min(k + pad + 1, imax[2] - imin[2] + 1);
                    ++kk)
               {
-                for (CCTK_INT jj = max(j-pad, 0); 
-                     jj < min(j+pad+1, imax[1] - imin[1]);
+                for (CCTK_INT jj = max(j - pad, 0); 
+                     jj < min(j + pad + 1, imax[1] - imin[1] + 1);
                      ++jj)
                 {
-                  for (CCTK_INT ii = max(i-pad, 0); 
-                       ii < min(i+pad+1, imax[0] - imin[0]);
+                  for (CCTK_INT ii = max(i - pad, 0); 
+                       ii < min(i + pad + 1, imax[0] - imin[0] + 1);
                        ++ii)
                   {
                     CCTK_INT mindex = ii + 
@@ -294,9 +295,9 @@ namespace CarpetAdaptiveRegrid {
       // stage 2: all buffer points marked truly in error.
       // Also mark if there are any errors.
       bool should_regrid = false;
-      for (CCTK_INT k = 0; k < imax[2] - imin[2]; k++) {
-        for (CCTK_INT j = 0; j < imax[1] - imin[1]; j++) {
-          for (CCTK_INT i = 0; i < imax[0] - imin[0]; i++) {
+      for (CCTK_INT k = 0; k < imax[2] - imin[2] + 1; k++) {
+        for (CCTK_INT j = 0; j < imax[1] - imin[1] + 1; j++) {
+          for (CCTK_INT i = 0; i < imax[0] - imin[0] + 1; i++) {
             CCTK_INT index =  i + 
               (imax[0]-imin[0] + 1)*(j + (imax[1] - imin[1] + 1) * k);
             if (mask[index] > 1) mask[index] = 1;
@@ -474,6 +475,14 @@ namespace CarpetAdaptiveRegrid {
       vector<bbvect> obs;
       while (! final.empty()) {
         ibbox bb = final.top(); final.pop();
+        
+        if (veryverbose) {
+          ostringstream buf;
+          buf << "Looping over the final list. Box is:"
+              << endl << bb;
+          CCTK_INFO(buf.str().c_str());
+        }
+
         ivect ilo = bb.lower();
         ivect ihi = bb.upper();
         rvect lo = int2pos(cctkGH, hh, ilo, reflevel);

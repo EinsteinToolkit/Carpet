@@ -188,9 +188,10 @@ subroutine find_hole(nx, lsum, min_width, ihole)
   
   implicit none
   
-  CCTK_INT :: nx
-  CCTK_INT :: lsum(nx)
-  CCTK_INT :: min_width, ihole
+  CCTK_INT, intent(in) :: nx
+  CCTK_INT, intent(in) :: lsum(nx)
+  CCTK_INT, intent(in) :: min_width
+  CCTK_INT, intent(out) ::  ihole
   
   CCTK_INT :: i
   
@@ -225,11 +226,11 @@ subroutine split_box_at_hole(nx, ny, nz, sum_x, sum_y, sum_z, &
 
   implicit none
 
-  CCTK_INT :: nx, ny, nz
-  CCTK_INT :: sum_x(nx), sum_y(ny), sum_z(nz)
+  CCTK_INT, intent(in) :: nx, ny, nz
+  CCTK_INT, intent(in) :: sum_x(nx), sum_y(ny), sum_z(nz)
   CCTK_INT :: bbox(3,3), newbbox1(3,3), newbbox2(3,3)
-  CCTK_INT :: min_width
-  CCTK_INT :: didit
+  CCTK_INT, intent(in) :: min_width
+  CCTK_INT, intent(out) :: didit
   
   CCTK_INT :: ihole
   
