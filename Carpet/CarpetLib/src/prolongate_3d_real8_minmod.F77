@@ -1,28 +1,8 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_minmod.F77,v 1.4 2004/03/11 12:03:09 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_minmod.F77,v 1.1 2003/10/14 14:53:46 hawke Exp $
       
 #include "cctk.h"
 
-
-c$$$ This routine performs "TVD" prolongation. It is intended to be used 
-c$$$ with GFs that are not expected to be smooth, particularly those
-c$$$ that must also obey certain constraints. The obvious example is the 
-c$$$ density in hydrodynamics, which may be discontinuous yet must be
-c$$$ strictly positive.
-c$$$
-c$$$ To ensure that this prolongation method is used you should add the
-c$$$ tag
-c$$$
-c$$$      tags='Prolongation="TVD"'
-c$$$
-c$$$ to the interface.ccl on the appropriate group.
-c$$$
-c$$$ This applies minmod type limiting to the slope, checking over the
-c$$$ entire coarse grid cell for the minimum modulus in each direction.
-c$$$
-c$$$ The actual minmod function is defined in the routine
-c$$$
-c$$$      prolongate_3d_real8_minmod.F77
 
 
 #define CHKIDX(i,j,k, imax,jmax,kmax, where)                                  \
@@ -123,11 +103,6 @@ c     bbox(:,3) is stride
 c     This could be handled, but is likely to point to an error elsewhere
             call CCTK_WARN (0, "Internal error: region extent is empty")
          end if
-         if (mod(srcbbox(d,2) - srcbbox(d,1), srcbbox(d,3)).ne.0
-     $        .or. mod(dstbbox(d,2) - dstbbox(d,1), dstbbox(d,3)).ne.0
-     $        .or. mod(regbbox(d,2) - regbbox(d,1), regbbox(d,3)).ne.0) then
-            call CCTK_WARN (0, "Internal error: array extents are not integer multiples of the strides")
-         end if
          regkext = (regbbox(d,2) - regbbox(d,1)) / regbbox(d,3) + 1
          dstkfac = srcbbox(d,3) / dstbbox(d,3)
          srckoff = (regbbox(d,1) - srcbbox(d,1)) / dstbbox(d,3)
@@ -202,8 +177,8 @@ c     Loop over fine region
 
                firstloop = .true.
 
-               do kk = 1, 2
-                 do jj = 1, 2
+               do kk = 1, 3, 2
+                 do jj = 1, 3, 2
 
                    dupw = src(i0+1 ,j0+jj,k0+kk) - src(i0+0 ,j0+jj,k0+kk)
                    dloc = src(i0+2 ,j0+jj,k0+kk) - src(i0+1 ,j0+kk,k0+kk)
@@ -216,11 +191,11 @@ c     Loop over fine region
                    end if
                  end do
                end do
-               
+
                firstloop = .true.
 
-               do kk = 1, 2
-                 do ii = 1, 2
+               do kk = 1, 3, 2
+                 do ii = 1, 3, 2
 
                    dupw = src(i0+ii,j0+1 ,k0+kk) - src(i0+ii,j0+0 ,k0+kk)
                    dloc = src(i0+ii,j0+2 ,k0+kk) - src(i0+ii,j0+1 ,k0+kk)
@@ -236,8 +211,8 @@ c     Loop over fine region
 
                firstloop = .true.
 
-               do jj = 1, 2
-                 do ii = 1, 2
+               do jj = 1, 3, 2
+                 do ii = 1, 3, 2
 
                    dupw = src(i0+ii,j0+jj,k0+1 ) - src(i0+ii,j0+jj,k0+0 )
                    dloc = src(i0+ii,j0+jj,k0+2 ) - src(i0+ii,j0+jj,k0+1 )

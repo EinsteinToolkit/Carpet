@@ -1,5 +1,5 @@
 # Main make.code.defn file for thorn CarpetLib   -*-Makefile-*-
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/make.code.defn,v 1.8 2003/06/24 14:00:58 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/make.code.defn,v 1.9 2003/10/14 14:53:46 hawke Exp $
 
 # Source files in this directory
 SRCS =	bbox.cc					\
@@ -24,6 +24,9 @@ SRCS =	bbox.cc					\
 	prolongate_3d_real8_3tl.F77		\
 	prolongate_3d_real8_3tl_o3.F77		\
 	prolongate_3d_real8_3tl_o5.F77		\
+	prolongate_3d_real8_minmod.F77		\
+	prolongate_3d_real8_2tl_minmod.F77	\
+	prolongate_3d_real8_3tl_minmod.F77	\
 	restrict_3d_real8.F77
 
 # Subdirectories containing source files

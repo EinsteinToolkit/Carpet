@@ -1,28 +1,8 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_3tl_minmod.F77,v 1.6 2004/03/11 12:03:09 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_3tl_minmod.F77,v 1.1 2003/10/14 14:53:46 hawke Exp $
       
 #include "cctk.h"
 
-
-c$$$ This routine performs "TVD" prolongation. It is intended to be used 
-c$$$ with GFs that are not expected to be smooth, particularly those
-c$$$ that must also obey certain constraints. The obvious example is the 
-c$$$ density in hydrodynamics, which may be discontinuous yet must be
-c$$$ strictly positive.
-c$$$
-c$$$ To ensure that this prolongation method is used you should add the
-c$$$ tag
-c$$$
-c$$$      tags='Prolongation="TVD"'
-c$$$
-c$$$ to the interface.ccl on the appropriate group.
-c$$$
-c$$$ This applies minmod type limiting to the slope, checking over the
-c$$$ entire coarse grid cell for the minimum modulus in each direction.
-c$$$
-c$$$ The actual minmod function is defined in the routine
-c$$$
-c$$$      prolongate_3d_real8_minmod.F77
 
 
 #define CHKIDX(i,j,k, imax,jmax,kmax, where)                                  \
@@ -118,11 +98,6 @@ c     bbox(:,3) is stride
 c     This could be handled, but is likely to point to an error elsewhere
             call CCTK_WARN (0, "Internal error: region extent is empty")
          end if
-         if (mod(srcbbox(d,2) - srcbbox(d,1), srcbbox(d,3)).ne.0
-     $        .or. mod(dstbbox(d,2) - dstbbox(d,1), dstbbox(d,3)).ne.0
-     $        .or. mod(regbbox(d,2) - regbbox(d,1), regbbox(d,3)).ne.0) then
-            call CCTK_WARN (0, "Internal error: array extents are not integer multiples of the strides")
-         end if
          regkext = (regbbox(d,2) - regbbox(d,1)) / regbbox(d,3) + 1
          dstkfac = srcbbox(d,3) / dstbbox(d,3)
          srckoff = (regbbox(d,1) - srcbbox(d,1)) / dstbbox(d,3)
@@ -182,7 +157,7 @@ c     Quadratic (second order) interpolation
          call CCTK_WARN (0, "Internal error: arrays have same time")
       end if
       if (t.lt.min(t1,t2,t3)-eps .or. t.gt.max(t1,t2,t3)+eps) then
-         call CCTK_WARN (0, "Internal error: extrapolation in time")
+         call CCTK_WARN (0, "Internal error: extrapolation")
       end if
       
       s1fac = (t - t2) * (t - t3) / ((t1 - t2) * (t1 - t3))
@@ -212,8 +187,8 @@ c     Loop over fine region
 
                firstloop = .true.
 
-               do kk = 1, 2
-                 do jj = 1, 2
+               do kk = 1, 3, 2
+                 do jj = 1, 3, 2
 
                    dupw = src1(i0+1 ,j0+jj,k0+kk) - src1(i0+0 ,j0+jj,k0+kk)
                    dloc = src1(i0+2 ,j0+jj,k0+kk) - src1(i0+1 ,j0+kk,k0+kk)
@@ -229,8 +204,8 @@ c     Loop over fine region
 
                firstloop = .true.
 
-               do kk = 1, 2
-                 do ii = 1, 2
+               do kk = 1, 3, 2
+                 do ii = 1, 3, 2
 
                    dupw = src1(i0+ii,j0+1 ,k0+kk) - src1(i0+ii,j0+0 ,k0+kk)
                    dloc = src1(i0+ii,j0+2 ,k0+kk) - src1(i0+ii,j0+1 ,k0+kk)
@@ -246,8 +221,9 @@ c     Loop over fine region
 
                firstloop = .true.
 
-               do jj = 1,  2
-                 do ii = 1, 2
+               do jj = 1, 3, 2
+                 do ii = 1, 3, 2
+
                    dupw = src1(i0+ii,j0+jj,k0+1 ) - src1(i0+ii,j0+jj,k0+0 )
                    dloc = src1(i0+ii,j0+jj,k0+2 ) - src1(i0+ii,j0+jj,k0+1 )
                    if (firstloop) then
@@ -267,8 +243,8 @@ c     Loop over fine region
 
                firstloop = .true.
 
-               do kk = 1, 2
-                 do jj = 1, 2
+               do kk = 1, 3, 2
+                 do jj = 1, 3, 2
 
                    dupw = src2(i0+1 ,j0+jj,k0+kk) - src2(i0+0 ,j0+jj,k0+kk)
                    dloc = src2(i0+2 ,j0+jj,k0+kk) - src2(i0+1 ,j0+kk,k0+kk)
@@ -284,8 +260,8 @@ c     Loop over fine region
 
                firstloop = .true.
 
-               do kk = 1, 2
-                 do ii = 1, 2
+               do kk = 1, 3, 2
+                 do ii = 1, 3, 2
 
                    dupw = src2(i0+ii,j0+1 ,k0+kk) - src2(i0+ii,j0+0 ,k0+kk)
                    dloc = src2(i0+ii,j0+2 ,k0+kk) - src2(i0+ii,j0+1 ,k0+kk)
@@ -301,8 +277,8 @@ c     Loop over fine region
 
                firstloop = .true.
 
-               do jj = 1, 2
-                 do ii = 1, 2
+               do jj = 1, 3, 2
+                 do ii = 1, 3, 2
 
                    dupw = src2(i0+ii,j0+jj,k0+1 ) - src2(i0+ii,j0+jj,k0+0 )
                    dloc = src2(i0+ii,j0+jj,k0+2 ) - src2(i0+ii,j0+jj,k0+1 )
@@ -322,8 +298,8 @@ c     Loop over fine region
                slopey(3) = zero
                slopez(3) = zero
 
-               do kk = 1, 2
-                 do jj = 1, 2
+               do kk = 1, 3, 2
+                 do jj = 1, 3, 2
 
                    dupw = src3(i0+1 ,j0+jj,k0+kk) - src3(i0+0 ,j0+jj,k0+kk)
                    dloc = src3(i0+2 ,j0+jj,k0+kk) - src3(i0+1 ,j0+kk,k0+kk)
@@ -339,8 +315,8 @@ c     Loop over fine region
 
                firstloop = .true.
 
-               do kk = 1, 2
-                 do ii = 1, 2
+               do kk = 1, 3, 2
+                 do ii = 1, 3, 2
 
                    dupw = src3(i0+ii,j0+1 ,k0+kk) - src3(i0+ii,j0+0 ,k0+kk)
                    dloc = src3(i0+ii,j0+2 ,k0+kk) - src3(i0+ii,j0+1 ,k0+kk)
@@ -356,8 +332,8 @@ c     Loop over fine region
 
                firstloop = .true.
 
-               do jj = 1, 2
-                 do ii = 1, 2
+               do jj = 1, 3, 2
+                 do ii = 1, 3, 2
 
                    dupw = src3(i0+ii,j0+jj,k0+1 ) - src3(i0+ii,j0+jj,k0+0 )
                    dloc = src3(i0+ii,j0+jj,k0+2 ) - src3(i0+ii,j0+jj,k0+1 )
