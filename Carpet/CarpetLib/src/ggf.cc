@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.37 2004/04/18 13:28:25 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.38 2004/04/19 15:00:15 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -118,21 +118,24 @@ void ggf<D>::recompose () {
             // Initialise from coarser level, if possible
             if (rl>0) {
               if (transport_operator != op_none) {
-                assert (tmax-tmin+1 >= prolongation_order_time+1);
-                vector<int> tls(prolongation_order_time+1);
-                for (int i=0; i<=prolongation_order_time; ++i) {
+                const int numtl = prolongation_order_time+1;
+                assert (tmax-tmin+1 >= numtl);
+                vector<int> tls(numtl);
+                vector<CCTK_REAL> times(numtl);
+                for (int i=0; i<numtl; ++i) {
                   tls.at(i) = tmax - i;
-                }
-                vector<const gdata<D>*> gsrcs(tls.size());
-                vector<CCTK_REAL> times(tls.size());
-                for (int i=0; i<(int)gsrcs.size(); ++i) {
-                  gsrcs.at(i) = storage.at(tls.at(i)-tmin).at(rl-1).at(c).at(ml);
                   times.at(i) = t.time(tls.at(i),rl-1,ml);
                 }
-                const CCTK_REAL time = t.time(tl,rl,ml);
-                for (typename ibset::const_iterator r=work.begin(); r!=work.end(); ++r) {
-                  storage.at(tl-tmin).at(rl).at(c).at(ml)->interpolate_from (state, gsrcs, times, *r, time, d.prolongation_order_space, prolongation_order_time);
-                }
+                for (int cc=0; cc<(int)storage.at(tl-tmin).at(rl-1).size(); ++cc) {
+                  vector<const gdata<D>*> gsrcs(numtl);
+                  for (int i=0; i<numtl; ++i) {
+                    gsrcs.at(i) = storage.at(tls.at(i)-tmin).at(rl-1).at(cc).at(ml);
+                  }
+                  const CCTK_REAL time = t.time(tl,rl,ml);
+                  for (typename ibset::const_iterator r=work.begin(); r!=work.end(); ++r) {
+                    storage.at(tl-tmin).at(rl).at(c).at(ml)->interpolate_from (state, gsrcs, times, *r, time, d.prolongation_order_space, prolongation_order_time);
+                  }
+                } // for cc
               } // if transport_operator
             } // if rl
             
