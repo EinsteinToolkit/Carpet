@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.16 2004/03/23 19:30:14 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.17 2004/04/16 11:52:18 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -23,7 +23,7 @@
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.16 2004/03/23 19:30:14 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.17 2004/04/16 11:52:18 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 
@@ -584,7 +584,7 @@ namespace CarpetSlab {
                                            CCTK_INT const * const direction,
                                            CCTK_INT const * const origin,
                                            CCTK_INT const * const extent,
-                                           CCTK_INT const * const downsample,
+                                           CCTK_INT const * const downsample_,
                                            CCTK_INT const table_handle,
                                            CCTK_INT (* const conversion_fn) (CCTK_INT const nelems,
                                                                              CCTK_INT const src_stride,
@@ -609,7 +609,7 @@ namespace CarpetSlab {
                                             CCTK_INT const * const direction,
                                             CCTK_INT const * const origin,
                                             CCTK_INT const * const extent,
-                                            CCTK_INT const * const downsample,
+                                            CCTK_INT const * const downsample_,
                                             CCTK_INT const table_handle,
                                             CCTK_INT (* const conversion_fn) (CCTK_INT const nelems,
                                                                               CCTK_INT const src_stride,
@@ -629,7 +629,6 @@ namespace CarpetSlab {
     assert (direction);
     assert (origin);
     assert (extent);
-    assert (downsample);
     assert (table_handle>=0);
     assert (hsize);
     
@@ -710,6 +709,7 @@ namespace CarpetSlab {
     }
     
     // Calculate lengths
+    vector<CCTK_INT> downsample(hdim);
     for (int dd=0; dd<hdim; ++dd) {
       if (extent[dd]<0) {
 	int gsh[dim];
@@ -720,6 +720,7 @@ namespace CarpetSlab {
 	// Partial argument check
 	assert (origin[dirs[dd]-1]>=0);
 	assert (origin[dirs[dd]-1]<=totlen);
+        downsample[dd] = downsample_ ? downsample_[dd] : 1;
 	assert (downsample[dd]>0);
 	hsize[dd] = (totlen - origin[dirs[dd]-1]) / downsample[dd];
       } else {
@@ -775,7 +776,7 @@ namespace CarpetSlab {
 			      const int global_startpoint [/*vdim*/],
 			      const int directions [/*vdim*/],
 			      const int lengths [/*hdim*/],
-			      const int downsample [/*hdim*/],
+			      const int downsample_ [/*hdim*/],
 			      void** const hdata,
 			      int hsize [/*hdim*/])
   {
@@ -851,6 +852,7 @@ namespace CarpetSlab {
     }
     
     // Calculate lengths
+    vector<int> downsample(hdim);
     for (int dd=0; dd<hdim; ++dd) {
       if (lengths[dd]<0) {
 	int gsh[dim];
@@ -861,6 +863,7 @@ namespace CarpetSlab {
 	// Partial argument check
 	assert (global_startpoint[dirs[dd]-1]>=0);
 	assert (global_startpoint[dirs[dd]-1]<=totlen);
+        downsample[dd] = downsample_ ? downsample_[dd] : 1;
 	assert (downsample[dd]>0);
 	hsize[dd] = (totlen - global_startpoint[dirs[dd]-1]) / downsample[dd];
       } else {
@@ -877,7 +880,7 @@ namespace CarpetSlab {
 		      hdim,
 		      global_startpoint,
 		      dirs,
-		      downsample,
+		      &downsample[0],
 		      hsize);
     
     // Return with success
