@@ -2,7 +2,7 @@
 %  Cactus Thorn template for ThornGuide documentation
 %  Author: Ian Kelley
 %  Date: Sun Jun 02, 2002
-%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.7 2003/05/02 14:47:46 hawke Exp $                                                             
+%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.8 2003/07/16 10:49:09 hawke Exp $                                                             
 %
 %  Thorn documentation in the latex file doc/documentation.tex 
 %  will be included in ThornGuides built with the Cactus make system.
@@ -64,7 +64,7 @@
 % *======================================================================* 
 
 % If you are using CVS use this line to give version information
-% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.7 2003/05/02 14:47:46 hawke Exp $
+% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.8 2003/07/16 10:49:09 hawke Exp $
 
 \documentclass{article}
 
@@ -85,7 +85,7 @@
 
 % the date your document was last changed, if your document is in CVS, 
 % please use:
-\date{$ $Date: 2003/05/02 14:47:46 $ $}
+\date{$ $Date: 2003/07/16 10:49:09 $ $}
 
 \maketitle
 
@@ -829,6 +829,84 @@ answers.
   Morals: Comparing 1D output on different refinement levels can be
   very frustrating. 2D output is usually much more informative. Using
   symmetry conditions with Carpet is tricky.
+
+\item {\bf I want to run with periodic boundaries. Why aren't things
+    working correctly?}
+
+  You thought symmetry boundaries were bad? Periodic boundaries are
+  even worse.
+
+  Firstly, Carpet does not itself implement periodic boundaries. The
+  thorn {\tt TAT/Periodic} is ``more or less'' driver independent and
+  does. This should be used to implement the actual boundary
+  conditions. You should not need to change your code - just activate
+  the thorn with the appropriate parameters.
+
+  Secondly, periodic boundaries do {\bf not} work the same way as
+  symmetry boundaries. This is because you cannot specify a point in
+  coordinate space where the boundary actually lies; it really lies in
+  the index space. The following example will hopefully help.
+  
+  Take a 1D slice through the grid. There are 7 points with 2 boundary
+  (ghost) zones (0,2 and 10,12), so only 3 points are actually being
+  evolved (4, 6, 8). Periodic boundaries means that the boundary points
+  are identified with certain evolved points. For example, point 2 is
+  to the left of the first evolved point and so must be identified
+  with the \textit{last} evolved point (8). The identifications are
+  shown in figure~\ref{fig:Periodic1}.
+  \begin{figure}[htbp]
+    \begin{center}
+      \includegraphics[scale=0.5]{Periodic1.eps}
+      \caption{Periodic grids identify boundary points and interior
+        points. The interior points are given by circles and the
+        boundary points by squares. The identifications are shown by the
+        arrows.}
+      \label{fig:Periodic1}
+    \end{center}
+  \end{figure}
+
+  We then want to place a refined region across the entire width of
+  the domain but also have the correct periodic boundaries. The
+  crucial point is to ensure that points that are identified on the
+  coarse grid are identified in the same way on the fine grid. For
+  example, point 2 must still be identified with point 8. Therefore
+  point 2 must remain a boundary point and point 8 an interior
+  point. Point 4 must also be identified with point 10. There are
+  therefore 2 possibilities:
+  \begin{itemize}
+  \item Point 3 is the first interior point on the refined grid and
+    point 8 the last. Therefore the point to the ``left'' of point 3,
+    point 2, is still identified with point 8.
+  \item Point 4 is the first interior point on the refined grid and
+    point 9 the last. This possibility is illustrated in
+    figure~\ref{fig:Periodic2}.
+  \end{itemize}
+  \begin{figure}[htbp]
+    \begin{center}
+      \includegraphics[scale=0.5]{Periodic2.eps}
+      \caption{A periodic refined grid. The boundary zones are blue
+        plus signs, the interior blue crosses. Note that the interior
+        points on the refined grid extend \textit{outside} the
+        interior on the base grid. However, equivalent points on both
+        grids coincide.}
+      \label{fig:Periodic2}
+    \end{center}
+  \end{figure}
+  
+  So to specify the particular refined grid shown in
+  figure~\ref{fig:Periodic2} you would specify a lower bound of 2, an
+  upper bound of 11, and that both boundaries are outer boundaries. An
+  example for a $44 \times 7 \times 7$ grid where the ``centre half''
+  of the grid in the $x$ direction is refined and the refined region
+  covers the entirety of the $y$ and $z$ directions, you could use
+\begin{verbatim}
+carpet::max_refinement_levels   = 2
+carpetregrid::refinement_levels = 2
+carpetregrid::refined_regions   = "manual-gridpoint-list"
+carpetregrid::gridpoints        = "[ [ ([22,2,2]:[62,11,11]:[1,1,1]) ] ]"
+carpetregrid::outerbounds       = "[ [ [[0,0],[1,1],[1,1]] ] ]"
+\end{verbatim}
+
 \end{enumerate}
 
 %% \bibliographystyle{amsalpha}      % initials + year
