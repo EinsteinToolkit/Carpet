@@ -2,7 +2,7 @@
 # $Header:$
 
 # Source files in this directory
-SRCS = carpettest_check_sizes.c carpettest_check_arguments.F77
+SRCS = carpettest_check_sizes.c carpettest_check_arguments.F77 slabtest.c
 
 # Subdirectories containing source files
 SUBDIRS = 

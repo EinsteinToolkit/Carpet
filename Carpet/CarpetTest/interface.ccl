@@ -3,6 +3,8 @@
 
 implements: CarpetTest
 
+
+
 CCTK_REAL gfg type=GF
 {
   gf
@@ -27,3 +29,42 @@ CCTK_REAL scg type=SCALAR
 {
   sc
 } "scalar"
+
+
+
+CCTK_INT FUNCTION \
+  Hyperslab_GlobalMappingByIndex (CCTK_POINTER_TO_CONST IN cctkGH, \
+                                  CCTK_INT IN vindex, \
+                                  CCTK_INT IN hdim, \
+                                  CCTK_INT ARRAY IN direction, \
+                                  CCTK_INT ARRAY IN origin, \
+                                  CCTK_INT ARRAY IN extent, \
+                                  CCTK_INT ARRAY IN downsample, \
+                                  CCTK_INT IN table_handle, \
+                                  CCTK_INT CCTK_FPOINTER IN \
+                                    conversion_fn (CCTK_INT IN nelems, \
+                                                   CCTK_INT IN src_stride, \
+                                                   CCTK_INT IN dst_stride, \
+                                                   CCTK_INT IN src_type, \
+                                                   CCTK_INT IN dst_type, \
+                                                   CCTK_POINTER_TO_CONST IN from, \
+                                                   CCTK_POINTER IN to), \
+                                  CCTK_INT ARRAY OUT hsize)
+REQUIRES FUNCTION Hyperslab_GlobalMappingByIndex
+
+CCTK_INT FUNCTION Hyperslab_FreeMapping (CCTK_INT IN mapping_handle)
+REQUIRES FUNCTION Hyperslab_FreeMapping
+
+CCTK_INT FUNCTION \
+  Hyperslab_Get (CCTK_POINTER_TO_CONST IN cctkGH, \
+                 CCTK_INT IN mapping_handle, \
+                 CCTK_INT IN proc, \
+                 CCTK_INT IN vindex, \
+                 CCTK_INT IN timelevel, \
+                 CCTK_INT IN hdatatype, \
+                 CCTK_POINTER IN hdata)
+REQUIRES FUNCTION Hyperslab_Get
+
+
+
+CCTK_REAL yy TYPE=gf "A copy of y"
