@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/InitialData.F77,v 1.6 2003/06/27 15:54:58 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/InitialData.F77,v 1.7 2003/07/08 23:02:19 schnetter Exp $
 
  /*@@
    @file      InitialData.F77
@@ -41,7 +41,6 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/Ini
       INTEGER    i,j,k
       CCTK_REAL  dt,omega, cpi
       CCTK_REAL  ri3
-      CCTK_REAL  dxi,dyi,dzi
       
 c     call CCTK_INFO ("IDFOScalarWave_InitialData")
       
@@ -233,10 +232,6 @@ c        Use kx,ky,kz as number of modes in each direction.
 
       else if (CCTK_EQUALS(initial_data, "1/r")) then
   
-         dxi = 1/CCTK_DELTA_SPACE(1)
-         dyi = 1/CCTK_DELTA_SPACE(2)
-         dzi = 1/CCTK_DELTA_SPACE(3)
-
          do k=1,cctk_lsh(3)
             do j=1,cctk_lsh(2)
                do i=1,cctk_lsh(1)
