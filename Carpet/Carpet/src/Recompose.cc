@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.3 2001/08/17 19:15:58 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.4 2001/08/17 19:24:03 schnetter Exp $";
 
 
 
@@ -118,7 +118,6 @@ namespace Carpet {
       }
     }
     hh->recompose(bbsss, pss);
-    cout << "new extents: " << hh->extents << endl;
   }
   
   
@@ -186,7 +185,6 @@ namespace Carpet {
       }
     }
     hh->recompose(bbsss, pss);
-    cout << "new extents: " << hh->extents << endl;
   }
   
 } // namespace Carpet
