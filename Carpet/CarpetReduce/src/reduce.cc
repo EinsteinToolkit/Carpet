@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.13 2002/10/24 10:51:13 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.14 2003/03/12 09:34:44 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -20,7 +20,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.13 2002/10/24 10:51:13 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.14 2003/03/12 09:34:44 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -275,7 +275,7 @@ namespace CarpetReduce {
   template<class T,class OP>
   void finalise (void* const outval, const void* const cnt)
   {
-    OP::finalise (*(T*)outval, *(T*)cnt);
+    OP::finalise (*(T*)outval, *(const T*)cnt);
   }
   
   
@@ -661,10 +661,10 @@ namespace CarpetReduce {
   
   
 #define REDUCTION(OP)							 \
-  int OP##_arrays (cGH * const cgh, const int proc,			 \
-		   const int num_dims, int * const dims,		 \
+  int OP##_arrays (const cGH * const cgh, const int proc,		 \
+		   const int num_dims, const int * const dims,		 \
 		   const int num_inarrays,				 \
-		   void ** const inarrays, const int intype,		 \
+		   const void * const * const inarrays, const int intype, \
 		   const int num_outvals,				 \
 		   void * const outvals, const int outtype)		 \
   {									 \
@@ -675,10 +675,10 @@ namespace CarpetReduce {
        &red);								 \
   }									 \
   									 \
-  int OP##_GVs (cGH * const cgh, const int proc,			 \
+  int OP##_GVs (const cGH * const cgh, const int proc,			 \
 	        const int num_outvals,					 \
 	        const int outtype, void * const outvals,		 \
-	        const int num_invars, int * const invars)		 \
+	        const int num_invars, const int * const invars)		 \
   {									 \
     const OP red;							 \
     return ReduceGVs (cgh, proc,					 \

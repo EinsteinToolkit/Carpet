@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.43 2003/01/03 15:49:36 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.44 2003/03/12 09:34:44 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -759,7 +759,7 @@ namespace CarpetIOASCII {
 	    switch (CCTK_VarTypeI(vi)) {
 #define TYPECASE(N,T)					\
 	    case N:					\
-	      os << (*(data<T,D>*)gfdata)[index];	\
+	      os << (*(const data<T,D>*)gfdata)[index];	\
 	      break;
 #include "Carpet/Carpet/src/typecase"
 #undef TYPECASE

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.hh,v 1.5 2002/09/01 14:52:26 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.hh,v 1.6 2003/03/12 09:34:44 schnetter Exp $
 
 #ifndef CARPETIOFLEXIO_HH
 #define CARPETIOFLEXIO_HH
@@ -27,8 +27,8 @@ namespace CarpetIOFlexIO {
   int TimeToOutput (const cGH* const cgh, const int vindex);
   int TriggerOutput (const cGH* const cgh, const int vindex);
   
-  int InputGH (cGH* const cgh);
-  int InputVarAs (cGH* const cgh, const char* const varname,
+  int InputGH (const cGH* const cgh);
+  int InputVarAs (const cGH* const cgh, const char* const varname,
 		  const char* const alias);
   
 } // namespace CarpetIOFlexIO

@@ -34,7 +34,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.22 2003/02/28 10:09:47 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.23 2003/03/12 09:34:44 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -375,7 +375,7 @@ namespace CarpetIOFlexIO {
   
   
   
-  int InputGH (cGH* const cgh) {
+  int InputGH (const cGH* const cgh) {
     int retval = 0;
     for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
       if (CheckForVariable(cgh, GetStringParameter("in3D_vars",""), vindex)) {
@@ -390,7 +390,7 @@ namespace CarpetIOFlexIO {
   
   
   
-  int InputVarAs (cGH* const cgh, const char* const varname,
+  int InputVarAs (const cGH* const cgh, const char* const varname,
 		  const char* const alias) {
     DECLARE_CCTK_PARAMETERS;
     
