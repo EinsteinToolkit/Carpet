@@ -24,7 +24,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.22 2003/05/05 06:59:31 hawke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.23 2003/05/23 23:52:47 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -164,7 +164,7 @@ namespace CarpetRegrid {
       const int gi = CCTK_GroupIndexFromVarI (vi);
       assert (gi>=0 && gi<CCTK_NumGroups());
       const int v1 = CCTK_FirstVarIndexI(gi);
-      assert (v1<=vi && v1<CCTK_NumVars());
+      assert (v1>=0 && v1<=vi && v1<CCTK_NumVars());
       
       assert (CCTK_GroupTypeI(gi) == CCTK_GF);
       assert (CCTK_VarTypeI(vi) == CCTK_VARIABLE_REAL);
