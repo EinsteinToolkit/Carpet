@@ -597,6 +597,12 @@ static int TimeToOutput (const cGH* const cctkGH, const int vindex)
     return (0);
   }
 
+  // check whether this refinement level should be output
+  if (! (myGH->requests[vindex]->refinement_levels & (1 << reflevel)))
+  {
+    return (0);
+  }
+
   // check if output for this variable was requested individually
   // by a "<varname>{ out_every = <number> }" option string
   // this will overwrite the output criterion setting
