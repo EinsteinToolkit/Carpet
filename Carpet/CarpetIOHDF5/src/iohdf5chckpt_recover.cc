@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.14 2004/03/22 11:54:02 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.15 2004/03/23 09:41:11 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -258,6 +258,8 @@ namespace CarpetIOHDF5 {
     hid_t dataset;
     herr_t herr;
 
+    list<string> refleveldatasetnamelist;
+
     if (reflevel==0) {
       totaltime = 0;
     }
@@ -265,13 +267,14 @@ namespace CarpetIOHDF5 {
     leveltime = MPI_Wtime();
 
 
-    if(myproc==0 && reflevel==0) {
+    if(myproc==0) {
       ndatasets=GetnDatasets(reader);
       assert (ndatasets>=0);
     }
 
     // Broadcast number of datasets
     MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
+
     assert ((ndatasets)>=0);
     
     //if (h5verbose && reflevel==0) cout << "ndatasets: " << ndatasets << endl;
@@ -288,15 +291,41 @@ namespace CarpetIOHDF5 {
 	  datasetnamelist.push_back("blah");
 	}
       }
-    }
+    } 
       
+    if(myproc==0) {
+      list<string>::iterator currdataset;
+      for(currdataset=datasetnamelist.begin();
+	  currdataset!=datasetnamelist.end();
+	  ++currdataset) {
+	char tempstr[10];
+	sprintf(tempstr,"rl=%d m=",reflevel);
+	if ( (*currdataset).find(tempstr) < (*currdataset).size() ) {
+	  refleveldatasetnamelist.push_back((*currdataset).c_str());
+	}
+      }
+    } // if(myproc==0)
+
     cout << "I have " << datasetnamelist.size() << endl;
+    cout << "I have for this reflevel " << refleveldatasetnamelist.size() << endl;
+
+    long reflevelnamenum;
+    if(myproc==0) reflevelnamenum=refleveldatasetnamelist.size();
+    MPI_Bcast (&reflevelnamenum, 1, MPI_LONG, 0, dist::comm);
+    assert ((reflevelnamenum)>=0);
+    
+    // fill bogus namelist for non-IO cpus
+    if(myproc !=0) {
+      for(long i=0;i < reflevelnamenum;i++) {
+	refleveldatasetnamelist.push_back("blah");
+      }
+    }
 
     list<string>::iterator currdataset;
 
-      currdataset=datasetnamelist.begin();
+      currdataset=refleveldatasetnamelist.begin();
  
-      while(currdataset!=datasetnamelist.end()) {
+      while(currdataset!=refleveldatasetnamelist.end()) {
 
 	//	cout << "name: " << (*currdataset).c_str() << endl;
 
@@ -324,7 +353,7 @@ namespace CarpetIOHDF5 {
       MPI_Bcast (&did_read_something, 1, MPI_INT, 0, dist::comm);
 
       if (did_read_something) {
-      	currdataset = datasetnamelist.erase(currdataset);
+      	currdataset = refleveldatasetnamelist.erase(currdataset);
       } else {
 	++currdataset;
       }
