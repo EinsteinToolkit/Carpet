@@ -2,7 +2,7 @@
 %  Cactus Thorn template for ThornGuide documentation
 %  Author: Ian Kelley
 %  Date: Sun Jun 02, 2002
-%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/doc/documentation.tex,v 1.1 2004/03/03 09:44:26 schnetter Exp $                                                             
+%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/doc/documentation.tex,v 1.2 2004/03/18 18:17:21 cott Exp $                                                             
 %
 %  Thorn documentation in the latex file doc/documentation.tex 
 %  will be included in ThornGuides built with the Cactus make system.
@@ -64,7 +64,7 @@
 % *======================================================================* 
 
 % If you are using CVS use this line to give version information
-% $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/doc/documentation.tex,v 1.1 2004/03/03 09:44:26 schnetter Exp $
+% $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/doc/documentation.tex,v 1.2 2004/03/18 18:17:21 cott Exp $
 
 \documentclass{article}
 
@@ -77,15 +77,15 @@
 \begin{document}
 
 % The author of the documentation
-\author{Erik Schnetter $<$schnetter@uni-tuebingen.de$>$}
+\author{Erik Schnetter $<$schnetter@uni-tuebingen.de$>$, Christian D. Ott $<$cott@aei.mpg.de$>$}
 
 % The title of the document (not necessarily the name of the Thorn)
-\title{}
+\title{CarpetIOHDF5}
 
 % the date your document was last changed, if your document is in CVS, 
 % please use:
-%    \date{$ $Date: 2004/03/03 09:44:26 $ $}
-\date{November 11 2002}
+%    \date{$ $Date: 2004/03/18 18:17:21 $ $}
+\date{March 18, 2004}
 
 \maketitle
 
@@ -97,7 +97,9 @@
 
 % Add an abstract for this thorn's documentation
 \begin{abstract}
-
+CarpetIOHDF5 provides HDF5 based 3-D output to the Cactus mesh refinement driver Carpet.
+This document explains CarpetIOHDF5's usage and contains a specification of the
+CarpetIOHDF5 file format that was adapted from John Shalf's FlexIO library.
 \end{abstract}
 
 % The following sections are suggestive only.
@@ -105,35 +107,105 @@
 
 \section{Introduction}
 
-\section{Physical System}
+Having encountered various problems with CarpetIOFlexIO and the underlying FlexIO library,
+Erik Schnetter decided to create CarpetIOHDF5. CarpetIOHDF5 provides 3-D output for the
+Carpet Mesh Refinement driver within the Cactus Code. Christian D. Ott added  
+file reader (analogous to Erik Schnetter's implementation present in CarpetIOFlexIO) 
+and checkpoint/recovery features to CarpetIOHDF5.
 
-\section{Numerical Implementation}
+Right now, CarpetIOHDF5 only uses serial I/O - all data are copied to processor 0 for I/O.
+
+This document aims at giving the user a first handle on how to use
+CarpetIOHDF5. It also documents the HDF5 file layout used.
+
 
 \section{Using This Thorn}
 
+
 \subsection{Obtaining This Thorn}
+
+You can get a checkout from 
+
+{\tt cvs.carpetcode.org:/home/cvs Carpet/CarpetIOHDF5}
 
 \subsection{Basic Usage}
 
+First, you have to activate the thorn in your Cactus parameter file:
+
+{\tt ActiveThorns = "CarpetIOHDF5"}
+
+\subsubsection{3-D Output}
+
+\begin{itemize}
+  \item {\tt iohdf5::out3D\_vars = "your list of Cactus grid functions to output"}
+  \item {\tt iohdf5::out3D\_every = n} : Output every {\tt n} time steps
+  \item {\tt iohdf5::out3D\_dir = "your preferred 3-D output directory"}
+\end{itemize}
+
+\subsubsection{Checkpointing}
+
+CarpetIOHDF5 uses the Cactus checkpoint/recovery infrastructure provided by
+CactusBase/IOUtil.
+
+\begin{itemize}
+  \item {\tt iohdf5::checkpoint = "yes"} : Turns on checkpointing
+  \item {\tt iohdf5::checkpoint\_every = n} : Checkpointing every {\tt n} time steps
+  \item {\tt iohdf5::checkpoint\_ID = "yes"} : Turns on checkpointing after initial data
+  \item {\tt io::checkpoint\_dir = "your preferred checkpoint directory"} 
+  \item  {\tt iohdf5::checkpoint\_keep = n} : Keep {\tt n} checkpoint files around
+\end{itemize}
+
+
+\subsubsection{Recover}
+
+CarpetIOHDF5 uses the Cactus checkpoint/recovery infrastructure provided by
+CactusBase/IOUtil. Currently all the checkpoint information is copied onto processor 0 and
+ written into a single file whose name is invented by IOUtil. Unfortunately, single cpu
+checkpoint files have a different name (a missing \_file\_0 tag) than checkpoint
+files from multi-cpu runs. Somebody should tweek IOBase... 
+
+In principle, CarpetIOHDF5 is able to restart on any number
+of cpus  from a checkpoint file of a run using any (other or same) number of cpus.
+
+\begin{itemize}
+  \item {\tt iohdf5::recover = "auto"} : Recover from the most recent Checkpoint file. This bombs,
+    if no checkpoint file is found.
+  \item {\tt iohdf5::recover = "autoprobe"} : Recover from the most recent Checkpoint file. This continues
+    without recovering if no checkpoint file is found.
+  \item {\tt iohdf5::recover\_dir = "directory containing the checkpoint file"} 
+  \item {\tt iohdf5::recover = "manual"} : Recover from a file specified by {\tt iohdf5::recover\_file}. This
+     bombs if the file is not found.
+  \item {\tt iohdf5::recover\_file = "file you want to recover from"} : Only needs to be set if
+    {\tt iohdf5::recover = "manual"}.
+
+\end{itemize}
+
+
+
 \subsection{Special Behaviour}
 
-\subsection{Interaction With Other Thorns}
-
-\subsection{Support and Feedback}
-
-\section{History}
-
-\subsection{Thorn Source Code}
-
-\subsection{Thorn Documentation}
-
-\subsection{Acknowledgements}
+\begin{itemize}
+  \item {\tt iohdf5::h5verbose = "yes"} : Makes CarpetIOHDF5 very talkative.
+\end{itemize}
 
 
-\begin{thebibliography}{9}
-
-\end{thebibliography}
-
+%\subsection{Interaction With Other Thorns}
+%
+%\subsection{Support and Feedback}
+%
+%\section{History}
+%
+%\subsection{Thorn Source Code}
+%
+%\subsection{Thorn Documentation}
+%
+%\subsection{Acknowledgements}
+%
+%
+%\begin{thebibliography}{9}
+%
+%\end{thebibliography}
+%
 % Do not delete next line
 % END CACTUS THORNGUIDE
 
