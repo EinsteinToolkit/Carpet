@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.2 2002/01/11 17:19:47 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/param.ccl,v 1.3 2002/01/11 17:37:13 schnetter Exp $
 
 
 
@@ -21,15 +21,102 @@ CCTK_INT regrid_every "Regrid every n time steps"
 
 KEYWORD refined_regions "Regions where the grid is refined"
 {
-  "none"      :: "Don't refine"
-  "centre"    :: "Refine (arbitrarily) the centre of the grid only"
-  "manual"    :: "Refine the regions specified by l[123][xyz]{min,max}"
-  "automatic" :: "Refine automatically"
+  "none"               :: "Don't refine"
+  "centre"             :: "Refine around the centre of the grid only"
+  "manual-gridpoints"  :: "Refine the regions specified by integer grid points l[123]i[xyz]{min,max}"
+  "manual-coordinates" :: "Refine the regions specified by coordinates l[123][xyz]{min,max}"
+  "automatic"          :: "Refine automatically"
 } "centre"
 
 
 
-# Region specifications for manual refinement
+# Region specifications for manual gridpoint refinement
+
+CCTK_INT l1ixmin "Lower boundary of level 1 box in x-direction"
+{
+  : :: ""
+} 0
+CCTK_INT l1iymin "Lower boundary of level 1 box in y-direction"
+{
+  : :: ""
+} 0
+CCTK_INT l1izmin "Lower boundary of level 1 box in z-direction"
+{
+  : :: ""
+} 0
+
+CCTK_INT l1ixmax "Upper boundary of level 1 box in x-direction"
+{
+  : :: ""
+} -1
+CCTK_INT l1iymax "Upper boundary of level 1 box in y-direction"
+{
+  : :: ""
+} -1
+CCTK_INT l1izmax "Upper boundary of level 1 box in z-direction"
+{
+  : :: ""
+} -1
+
+
+
+CCTK_INT l2ixmin "Lower boundary of level 2 box in x-direction"
+{
+  : :: ""
+} 0
+CCTK_INT l2iymin "Lower boundary of level 2 box in y-direction"
+{
+  : :: ""
+} 0
+CCTK_INT l2izmin "Lower boundary of level 2 box in z-direction"
+{
+  : :: ""
+} 0
+
+CCTK_INT l2ixmax "Upper boundary of level 2 box in x-direction"
+{
+  : :: ""
+} -1
+CCTK_INT l2iymax "Upper boundary of level 2 box in y-direction"
+{
+  : :: ""
+} -1
+CCTK_INT l2izmax "Upper boundary of level 2 box in z-direction"
+{
+  : :: ""
+} -1
+
+
+
+CCTK_INT l3ixmin "Lower boundary of level 3 box in x-direction"
+{
+  : :: ""
+} 0
+CCTK_INT l3iymin "Lower boundary of level 3 box in y-direction"
+{
+  : :: ""
+} 0
+CCTK_INT l3izmin "Lower boundary of level 3 box in z-direction"
+{
+  : :: ""
+} 0
+
+CCTK_INT l3ixmax "Upper boundary of level 3 box in x-direction"
+{
+  : :: ""
+} -1
+CCTK_INT l3iymax "Upper boundary of level 3 box in y-direction"
+{
+  : :: ""
+} -1
+CCTK_INT l3izmax "Upper boundary of level 3 box in z-direction"
+{
+  : :: ""
+} -1
+
+
+
+# Region specifications for manual coordinate refinement
 
 CCTK_REAL l1xmin "Lower boundary of level 1 box in x-direction"
 {

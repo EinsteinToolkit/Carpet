@@ -19,7 +19,7 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.5 2002/01/11 17:19:48 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.6 2002/01/11 17:37:13 schnetter Exp $";
 
 
 
@@ -79,7 +79,22 @@ namespace CarpetRegrid {
       
       MakeRegions_RefineCentre (cctkGH, refinement_levels, bbl);
       
-    } else if (CCTK_EQUALS(refined_regions, "manual")) {
+    } else if (CCTK_EQUALS(refined_regions, "manual-gridpoints")) {
+      
+      if (refinement_levels > 4) {
+	CCTK_WARN (0, "Cannot currently specify manual refinement regions for more than 4 refinement levels");
+      }
+      assert (refinement_levels<=4);
+      vector<vect<int,dim> > lower(3), upper(3);
+      lower[0] = vect<int,dim> (l1ixmin, l1iymin, l1izmin);
+      upper[0] = vect<int,dim> (l1ixmax, l1iymax, l1izmax);
+      lower[1] = vect<int,dim> (l2ixmin, l2iymin, l2izmin);
+      upper[1] = vect<int,dim> (l2ixmax, l2iymax, l2izmax);
+      lower[2] = vect<int,dim> (l3ixmin, l3iymin, l3izmin);
+      upper[2] = vect<int,dim> (l3ixmax, l3iymax, l3izmax);
+      MakeRegions_AsSpecified (cctkGH, refinement_levels, lower, upper, bbl);
+      
+    } else if (CCTK_EQUALS(refined_regions, "manual-coordinates")) {
       
       if (refinement_levels > 4) {
 	CCTK_WARN (0, "Cannot currently specify manual refinement regions for more than 4 refinement levels");
@@ -209,34 +224,21 @@ namespace CarpetRegrid {
   
   
   
-  void MakeRegions_AsSpecified (const cGH* cctkGH, const int reflevels,
-				const vector<vect<CCTK_REAL,dim> > lower,
-				const vector<vect<CCTK_REAL,dim> > upper,
-				list<bbox<int,dim> >& bbl)
+  static void
+  MakeRegions_AsSpecified_OneLevel (const cGH* cctkGH, const int reflevels,
+				    const vect<int,dim> ilower,
+				    const vect<int,dim> iupper,
+				    list<bbox<int,dim> >& bbl)
   {
     assert (bbl.empty());
     
     if (reflevel+1 >= reflevels) return;
-    
-    vect<CCTK_REAL,dim> global_lower, global_upper;
-    for (int d=0; d<dim; ++d) {
-      const int ierr = CCTK_CoordRange
-	(cctkGH, &global_lower[d], &global_upper[d], d+1, 0, "cart3d");
-      if (ierr<0) {
-	global_lower[d] = 0;
-	global_upper[d] = 1;
-      }
-    }
-    const vect<int,dim> global_extent (hh->baseextent.upper() - hh->baseextent.lower() + hh->baseextent.stride() * (dd->lghosts + dd->ughosts));
     
     const vect<int,dim> rstr = hh->baseextent.stride();
     const vect<int,dim> rlb  = hh->baseextent.lower();
     const vect<int,dim> rub  = hh->baseextent.upper();
     
     const int rl = reflevel+1;
-    
-    const vect<int,dim> ilower = map(floor, (lower[rl-1] - global_lower) / (global_upper - global_lower) * global_extent + 0.5);
-    const vect<int,dim> iupper = map(floor, (upper[rl-1] - global_lower) / (global_upper - global_lower) * global_extent + 0.5);
     
     const int levfac = ipow(hh->reffact, rl);
     assert (all (rstr % levfac == 0));
@@ -260,6 +262,51 @@ namespace CarpetRegrid {
     assert (all(lb%str==0 && ub%str==0));
     
     bbl.push_back (bbox<int,dim>(lb, ub, str));
+  }
+  
+  
+  
+  void MakeRegions_AsSpecified (const cGH* cctkGH, const int reflevels,
+				const vector<vect<int,dim> > lower,
+				const vector<vect<int,dim> > upper,
+				list<bbox<int,dim> >& bbl)
+  {
+    if (reflevel+1 >= reflevels) return;
+    
+    const int rl = reflevel+1;
+    
+    const vect<int,dim> ilower = lower[rl-1];
+    const vect<int,dim> iupper = upper[rl-1];
+    
+    MakeRegions_AsSpecified_OneLevel (cctkGH, reflevels, ilower, iupper, bbl);
+  }
+  
+  
+  
+  void MakeRegions_AsSpecified (const cGH* cctkGH, const int reflevels,
+				const vector<vect<CCTK_REAL,dim> > lower,
+				const vector<vect<CCTK_REAL,dim> > upper,
+				list<bbox<int,dim> >& bbl)
+  {
+    if (reflevel+1 >= reflevels) return;
+    
+    vect<CCTK_REAL,dim> global_lower, global_upper;
+    for (int d=0; d<dim; ++d) {
+      const int ierr = CCTK_CoordRange
+	(cctkGH, &global_lower[d], &global_upper[d], d+1, 0, "cart3d");
+      if (ierr<0) {
+	global_lower[d] = 0;
+	global_upper[d] = 1;
+      }
+    }
+    const vect<int,dim> global_extent (hh->baseextent.upper() - hh->baseextent.lower() + hh->baseextent.stride() * (dd->lghosts + dd->ughosts));
+    
+    const int rl = reflevel+1;
+    
+    const vect<int,dim> ilower = map(floor, (lower[rl-1] - global_lower) / (global_upper - global_lower) * global_extent + 0.5);
+    const vect<int,dim> iupper = map(floor, (upper[rl-1] - global_lower) / (global_upper - global_lower) * global_extent + 0.5);
+    
+    MakeRegions_AsSpecified_OneLevel (cctkGH, reflevels, ilower, iupper, bbl);
   }
   
   
