@@ -1,9 +1,10 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDHydroToy/src/InitialData.F77,v 1.4 2001/12/14 18:00:00 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDHydroToy/src/InitialData.F77,v 1.5 2003/10/27 15:31:40 schnetter Exp $
       
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
+#include "cctk_Functions.h"
       
       subroutine IDHydroToy_InitialData (CCTK_ARGUMENTS)
       

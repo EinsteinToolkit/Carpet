@@ -1,9 +1,10 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/InitSymBound.F77,v 1.2 2001/03/18 22:37:10 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/InitSymBound.F77,v 1.3 2003/10/27 15:31:40 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
+#include "cctk_Functions.h"
       
       subroutine SpaceTimeToy_InitSymBound (CCTK_ARGUMENTS)
       

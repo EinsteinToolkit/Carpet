@@ -1,9 +1,10 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/src/InitialData.F77,v 1.6 2001/12/14 18:00:02 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/src/InitialData.F77,v 1.7 2003/10/27 15:31:40 schnetter Exp $
       
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
+#include "cctk_Functions.h"
       
       subroutine IDSpaceTimeToy_InitialData (CCTK_ARGUMENTS)
       

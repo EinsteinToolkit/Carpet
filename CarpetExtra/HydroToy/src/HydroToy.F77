@@ -1,9 +1,10 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/src/HydroToy.F77,v 1.5 2001/04/23 08:10:19 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/src/HydroToy.F77,v 1.6 2003/10/27 15:31:40 schnetter Exp $
       
 #include "cctk.h" 
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
+#include "cctk_Functions.h"
       
       
       

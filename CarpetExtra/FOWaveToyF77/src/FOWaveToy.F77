@@ -13,9 +13,9 @@ c     -*-Fortran-*-
  @@*/
   
 #include "cctk.h" 
-#include "cctk_Faces.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
+#include "cctk_Functions.h"
 
 
 
@@ -126,9 +126,6 @@ c     ----------------
       DECLARE_CCTK_ARGUMENTS
       DECLARE_CCTK_PARAMETERS
       DECLARE_CCTK_FUNCTIONS
-      
-      external Boundary_SelectGroupForBC 
-      CCTK_INT Boundary_SelectGroupForBC 
       
 c     Local declarations
       integer table

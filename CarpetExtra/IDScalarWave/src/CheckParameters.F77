@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/CheckParameters.F77,v 1.3 2001/12/14 18:00:01 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/CheckParameters.F77,v 1.4 2003/10/27 15:31:40 schnetter Exp $
 
  /*@@
    @file      CheckParameters.F77
@@ -13,6 +13,7 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/Check
 #include "cctk.h" 
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
+#include "cctk_Functions.h"
 
 
  /*@@

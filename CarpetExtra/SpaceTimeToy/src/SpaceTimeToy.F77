@@ -1,10 +1,10 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.10 2003/06/18 18:24:30 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.11 2003/10/27 15:31:40 schnetter Exp $
       
 #include "cctk.h"
-#include "cctk_Faces.h"
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
+#include "cctk_Functions.h"
       
       
       
@@ -205,9 +205,6 @@ c     Evolve
       
       integer d
       integer ierr
-      
-      external Boundary_SelectGroupForBC
-      CCTK_INT Boundary_SelectGroupForBC
       
       boundary_width = cctk_nghostzones(1)
       do d=1,3
