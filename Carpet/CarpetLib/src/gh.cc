@@ -251,11 +251,13 @@ ostream& gh<D>::output (ostream& os) const {
      << "outer_boundaries=" << outer_boundaries() << ","
      << "processors=" << processors() << ","
      << "dhs={";
-  int cnt=0;
+  const char * sep = "";
   for (typename list<dh<D>*>::const_iterator d = dhs.begin();
-       d != dhs.end(); ++d) {
-    if (cnt++) os << ",";
+       d != dhs.end(); ++d)
+  {
+    os << sep;
     (*d)->output(os);
+    sep = ",";
   }
   os << "}";
   return os;
