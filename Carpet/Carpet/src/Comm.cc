@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.24 2004/01/25 14:57:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.25 2004/02/03 14:34:34 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Comm_cc);
 }
 
@@ -89,26 +89,22 @@ namespace Carpet {
       case CCTK_GF:
         assert (reflevel>=0 && reflevel<reflevels);
         if (reflevel > 0) {
-          if (groupdata.at(group).transport_operator != op_none) {
-            
-            // use the current time here (which may be modified by the
-            // user)
-            const CCTK_REAL time = ((cgh->cctk_time - cctk_initial_time)
-                                    / (delta_time * mglevelfact));
-            
-            for (comm_state<dim> state; !state.done(); state.step()) {
-              for (int m=0; m<maps; ++m) {
-                for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-                  for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
-                    arrdata.at(group).at(m).data.at(var)->ref_bnd_prolongate
-                      (state, tl, reflevel, c, mglevel, time);
-                  }
+          
+          // use the current time here (which may be modified by the
+          // user)
+          const CCTK_REAL time = ((cgh->cctk_time - cctk_initial_time)
+                                  / (delta_time * mglevelfact));
+          
+          for (comm_state<dim> state; !state.done(); state.step()) {
+            for (int m=0; m<maps; ++m) {
+              for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+                for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
+                  arrdata.at(group).at(m).data.at(var)->ref_bnd_prolongate
+                    (state, tl, reflevel, c, mglevel, time);
                 }
               }
-            } // for state
-          } else {
-            Checkpoint ("(no prolongating for group %s)", groupname);
-          } // if ! do_transfer
+            }
+          } // for state
         } // if reflevel>0
         break;
         
