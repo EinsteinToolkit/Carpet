@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.16 2002/06/06 14:20:15 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.17 2002/07/18 14:34:18 shawley Exp $
 
  ***************************************************************************/
 
@@ -181,6 +181,21 @@ void generic_gf<D>::flip (int rl, int c, int ml) {
     storage[tl2-tmin][rl][c][ml] = tmpdata;
   }
 }
+
+// Copy data from current time level to all previous levels
+template<int D>
+void generic_gf<D>::copytoprevs (int rl, int c, int ml) {
+  assert (rl>=0 && rl<h.reflevels());
+  assert (c>=0 && c<h.components(rl));
+  assert (ml>=0 && ml<h.mglevels(rl,c));
+  for (int tl=tmin; tl<=tmax-1; ++tl) {
+     storage[tl-tmin][rl][c][ml]->copy_from 
+(storage[tmax-tmin][rl][c][ml], storage[tmax-tmin][rl][c][ml]->extent 
+());
+  }
+}
+
+
 
 
 
@@ -454,7 +469,11 @@ template<int D>
 void generic_gf<D>::ref_restrict (int tl, int rl, int c, int ml)
 {
   // Require same times
-  assert (t.get_time(rl,ml) == t.get_time(rl+1,ml));
+  // SHH: removed assert and added warning
+  if (t.get_time(rl,ml) != t.get_time(rl+1,ml)) {
+    printf("WARNING: Time on rl %d is %d, time on rl %d is %d\n",rl,t.get_time(rl,ml),rl+1,t.get_time(rl+1,ml));
+  }
+  //assert (t.get_time(rl,ml) == t.get_time(rl+1,ml));
   const vector<int> tl2s(1,tl);
   intercat (tl  ,rl  ,c,ml, &dh<D>::dboxes::recv_ref_fine,
 	    tl2s,rl+1,  ml, &dh<D>::dboxes::send_ref_coarse);
