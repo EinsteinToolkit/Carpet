@@ -1,4 +1,4 @@
-% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/first-steps.tex,v 1.3 2004/08/05 14:43:52 schnetter Exp $
+% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/first-steps.tex,v 1.1 2004/08/05 14:38:25 schnetter Exp $
 
 \documentclass[11pt]{article}
 
@@ -27,8 +27,8 @@
 
 
 \title{A user's perspective on getting started with Carpet}
-\author{Ulrich Sperhake, Erik Schnetter}
-\date{$ $Date: 2004/08/05 14:43:52 $ $}
+\author{Author: Ulrich Sperhake}
+\date{Date: 23 Apr 2004}
 \maketitle
 
 
@@ -120,6 +120,9 @@ if you find some the tools in there not to be fully functional.
 Packages not required to run {\tt Carpet}, but probably useful for
 various purposes, such as scalar wave examples,
 are located in {\tt CarpetExtra}.
+%% Finally {\tt CarpetAttic} contains more or
+%% less obsolete Thorns you should no longer need. There is nothing wrong, though
+%% in checking out all 4 arrangements.
 % Detailed instructions can be found on the
 % web page
 %
@@ -139,6 +142,8 @@ the password being once more {\tt anon}. Next checkout Carpet by typing\\
 \hspace{1cm}{\tt cvs -d :pserver:cvs\_anon@cvs.carpetcode.org:/home/cvs/carpet checkout CarpetExtra}
 
 \hspace{1cm}{\tt cvs -d :pserver:cvs\_anon@cvs.carpetcode.org:/home/cvs/carpet checkout CarpetDev}\\
+
+%% \hspace{1cm}{\tt cvs -d :pserver:cvs\_anon@cvs.carpetcode.org:/home/cvs/carpet checkout CarpetAttic}
 
 
 
@@ -289,9 +294,9 @@ cannot be exhaustive and rather focus on our experience. Feel free,
 as before, to add to our list.
 
 %=============================================================================
-\subsection{HDF library}
+\subsection{HDF and related libraries}
 
-The HDF5 library is required for handling in/output in
+The HDF4 and HDF5 libraries are required for handling in/output in
 a particular binary data
 format. The use of these libraries in Cactus/Carpet is entirely optional,
 but in the end I found it easier to install the libraries than to
@@ -299,7 +304,54 @@ convince my system that I do not want to use them. They should be useful
 in the long run anyway, so I recommend their installation unless
 they are already part of your system.
 
-Let us start with the hdf5 libraries. The binary version can be obtained from
+Let us start with HDF4. You can download the libraries from
+%
+\begin{center}
+  {\tt http://hdf.ncsa.uiuc.edu/release4/obtain.html}
+\end{center}
+%
+or, if you prefer compiling the source code yourself, you get that from
+%
+\begin{center}
+  {\tt ftp://ftp.ncsa.uiuc.edu/HDF/HDF/HDF\_Current/src}
+\end{center}
+%
+Choosing the latter option, I downloaded the gzipped tar archive and unpacked
+it locally. The {\tt README} or {\tt INSTALL} file
+will tell you that zlib and libjpeg are required for the
+use of HDF4. Rather likely you will have them installed already as I did.
+Otherwise the instructions for their installation appeared to be
+rather straightforward.
+Optionally you might also want to install szip. I would recommend you do so
+as it is required by FlexIO below. You can get szip, for example, from
+%
+\begin{center}
+  {\tt ftp://ftp.ncsa.uiuc.edu/HDF/lib-external/szip/src}
+\end{center}
+%
+The installation was straightforward for me. Just to make certain
+about compatibility I compiled
+these libraries with the Intel compiler icc, by setting\\
+
+\hspace{1cm}{\tt export CC='icc'}\\
+
+That may not be necessary, but I wasn't in the mood to figure out
+the details. In general
+I'd recommend compiling all these libraries with the Intel compilers
+and therefore exported\\
+
+\hspace{1cm}{\tt export CXX='icc'}
+
+\hspace{1cm}{\tt export F77='ifc'}
+
+\hspace{1cm}{\tt export F90='ifc'}\\
+
+(use {\tt setenv} instead of {\tt export} and omit the $=$ sign
+if you are using {\tt tcsh}).
+The ensuing compilation of HDF4 worked fine in accordance with the
+instructions of the {\tt INSTALL} file.
+
+Next we install the hdf5 libraries. The binary version can be obtained from
 %
 \begin{center}
   {\tt ftp://ftp.ncsa.uiuc.edu/HDF/HDF5/hdf5-1.6.1/bin}
@@ -321,8 +373,63 @@ szip libraries were found (see {\tt INSTALL} file). The Fortran interface
 did not work for me, so I did not enable that. In future versions of
 this document this issued may be readdressed. Finally you may need to point
 the environment variable {\tt LD\_LIBRARY\_PATH} in your {\tt .bashrc}
-or {\tt .cshrc} to the directory containing the hdf5 library.\\
+or {\tt .cshrc} to the directories containing the hdf4 and hdf5 libraries.\\
 
+
+%=============================================================================
+\subsection{libieeeio}
+
+You will also need the library {\tt libieeeio}. I doubt the
+following is the best way
+to obtain it, but it worked for me and I do currently not know an alternative,
+so we stick with this method. Change into some build directory (preferably
+outside the
+Cactus directory) and check out the Cactus {\tt FlexIO} package\\
+
+\hspace{1cm} {\tt cvs -d :pserver:cvs\_anon@cvs.cactuscode.org:/packages checkout FlexIO}\\
+
+Go to the {\tt FlexIO} directory and type\\
+
+\hspace{1cm}{\tt ./configure --with-hdf4 --with-hdf5}\\
+
+The {\tt Makefile} still needs plenty of manual modification, though.
+First I had to change {\tt HDFROOT} to \\
+
+\hspace{1cm}{\tt HDFROOT = /usr/local/hdf4}\\
+
+and had to add to {\tt HDFLIBS}\\
+
+\hspace{1cm}{\tt -L/usr/local/szip/lib -lsz}\\
+
+For some reason the specification of the include paths for {\tt hdf5}
+is also screwed, so I had to add to {\tt HDFROOT} \\
+
+\hspace{1cm}{\tt -I/usr/local/hdf5/include}\\
+
+The variable {\tt H5ROOT} is also wrong and should be set to\\
+
+\hspace{1cm}{\tt /usr/local/hdf5}\\
+
+Replace the {\tt /usr/local/...} in all these arguments
+with whatever is the correct path to
+the {\tt hdf} and {\tt szip} libraries on your system.
+Finally I wanted to use the Intel compiler and thus set\\
+
+\hspace{1cm}{\tt CC = icc}
+
+\hspace{1cm}{\tt C++ = icc}\\
+
+All these things should somewhat have been set correctly by the command
+{\tt ./configure} but they were not on my machine.
+Anyway, typing\\
+
+\hspace{1cm}{\tt make}\\
+
+did compile successfully for me.
+I did not find a {\tt make install} option, so I merely copied
+the file {\tt libieeeio.a} to a directory where it would be found.
+This is a big hassle for getting {\tt libieeeio.a} and please replace this
+mess with an easier way if you know one.
 
 %=============================================================================
 \subsection{Parallelization}
@@ -498,8 +605,6 @@ way except for the following\\
 
 \hspace{1cm}{\tt CactusBase/Boundary}
 
-\hspace{1cm}{\tt CactusBase/CartGrid3D}
-
 \hspace{1cm}{\tt CactusBase/CoordBase}
 
 \hspace{1cm}{\tt CactusBase/IOBasic}
@@ -512,11 +617,15 @@ way except for the following\\
 
 \hspace{1cm}{\tt CactusBase/Time}
 
+\hspace{1cm}{\tt CactusExternal/FlexIO}
+
+\hspace{1cm}{\tt CactusExternal/jpeg6b}
+
+\hspace{1cm}{\tt CactusIO/IOJpeg}
+
 \hspace{1cm}{\tt Carpet/Carpet}
 
 \hspace{1cm}{\tt Carpet/CarpetIOASCII}
-
-\hspace{1cm}{\tt Carpet/CarpetIOHDF5}
 
 \hspace{1cm}{\tt Carpet/CarpetInterp}
 
@@ -528,9 +637,15 @@ way except for the following\\
 
 \hspace{1cm}{\tt Carpet/CarpetSlab}
 
+\hspace{1cm}{\tt CarpetAttic/CarpetIOFlexIO}
+
 \hspace{1cm}{\tt CarpetExtra/IDScalarWave}
 
-\hspace{1cm}{\tt CarpetExtra/WaveToyF77}\\
+\hspace{1cm}{\tt CarpetExtra/WaveToyF77}
+
+\hspace{1cm}{\tt TAT/Cart3d}
+
+\hspace{1cm}{\tt TAT/Slab}\\
 
 Before you compile, you need to apply one modification to the file\\
 
