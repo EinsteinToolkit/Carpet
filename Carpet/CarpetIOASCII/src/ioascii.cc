@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.54 2003/11/05 16:18:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.55 2003/11/13 16:03:38 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -272,6 +272,11 @@ namespace CarpetIOASCII {
 	      if (! iogh->recovered
 		  || stat(filename, &fileinfo)!=0) {
 		file.open (filename, ios::out | ios::trunc);
+                if (! file.good()) {
+                  CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                              "Could not open output file \"%s\" for variable \"%s\"",
+                              filename, varname);
+                }
 		assert (file.good());
 		file << "# " << varname;
 		for (int d=0; d<outdim; ++d) {
