@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.10 2002/05/05 22:17:03 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.11 2002/12/12 12:58:24 schnetter Exp $
 
  ***************************************************************************/
 
@@ -57,7 +57,7 @@ public:
     for (int d=0; d<D; ++d) elt[d]=a.elt[d];
   }
   
-  // this constructor might be confusing, but is so convenient
+  // this constructor might be confusing, but it is so convenient
   vect (const T x) {
     for (int d=0; d<D; ++d) elt[d]=x;
   }
@@ -84,6 +84,31 @@ public:
   template<class S>
   explicit vect (const vect<S,D>& a) {
     for (int d=0; d<D; ++d) elt[d]=(T)a[d];
+  }
+  
+  static vect make () {
+    assert (D==0);
+    return vect();
+  }
+  
+  static vect make (const T x) {
+    assert (D==1);
+    return vect(x);
+  }
+  
+  static vect make (const T x, const T y) {
+    assert (D==2);
+    return vect(x, y);
+  }
+  
+  static vect make (const T x, const T y, const T z) {
+    assert (D==3);
+    return vect(x, y, z);
+  }
+  
+  static vect make (const T x, const T y, const T z, const T t) {
+    assert (D==4);
+    return vect(x, y, z, t);
   }
   
   static vect& ref (T* const x) {
@@ -423,6 +448,13 @@ public:
     return r;
   }
   
+  template<class S>
+  vect zip (T (* const func)(T x, S y), const vect<S,D>& a) const {
+    vect r;
+    for (int d=0; d<D; ++d) r[d] = func(elt[d], a[d]);
+    return r;
+  }
+  
   T fold (T (* const func)(T val, T x), T val) const {
     for (int d=0; d<D; ++d) val = func(val, elt[d]);
     return val;
@@ -565,6 +597,15 @@ template<class T,class TT,int D>
 inline vect<TT,D> map (TT (* const func)(T x), const vect<T,D>& a) {
   vect<TT,D> r;
   for (int d=0; d<D; ++d) r[d] = func(a[d]);
+  return r;
+}
+  
+template<class T1,class T2,class TT,int D>
+inline vect<TT,D> zip (TT (* const func)(T1 x, T2 y),
+		       const vect<T1,D>& a, const vect<T2,D>& b)
+{
+  vect<TT,D> r;
+  for (int d=0; d<D; ++d) r[d] = func(a[d], b[d]);
   return r;
 }
 
