@@ -17,27 +17,27 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.48 2004/06/16 16:36:02 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.49 2004/07/08 12:43:34 tradke Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
 
 
 namespace Carpet {
-  
+
   using namespace std;
-  
-  
-  
+
+
+
   // Get Carpet's GH extension
   CarpetGH const * GetCarpetGH (const cGH * const cgh)
   {
     assert (cgh);
     return &carpetGH;
   }
-  
-  
-  
+
+
+
   // Enable or disable prolongating
   CCTK_INT CarpetEnableProlongating (const CCTK_INT flag)
   {
@@ -50,19 +50,22 @@ namespace Carpet {
     }
     return 0;
   }
-  
-  
-  
+
+
+
   // Communication
-  
+
   int Barrier (const cGH* cgh)
   {
+    void *dummy = &dummy;
+    dummy = &cgh;
+
     MPI_Barrier (dist::comm);
     return 0;
   }
-  
-  
-  
+
+
+
   int Exit (cGH* cgh, int retval)
   {
     CCTK_Barrier (cgh);
@@ -70,16 +73,24 @@ namespace Carpet {
     exit (retval);
     return -999;
   }
-  
+
   int Abort (cGH* cgh, int retval)
   {
-    MPI_Abort (dist::comm, retval);
+    void *dummy = &dummy;
+    dummy = &cgh;
+
+    MPI_Comm comm = dist::comm;
+    if (comm == MPI_COMM_NULL)
+    {
+      comm = MPI_COMM_WORLD;
+    }
+    MPI_Abort (comm, retval);
     abort ();
     return -999;
   }
-  
-  
-  
+
+
+
   int MyProc (const cGH* cgh)
   {
     // if there is no cgh yet, assume nothing has been initialised
@@ -88,7 +99,7 @@ namespace Carpet {
     MPI_Comm_rank (cgh ? dist::comm : MPI_COMM_WORLD, &rank);
     return rank;
   }
-  
+
   int nProcs (const cGH* cgh)
   {
     // if there is no cgh yet, assume nothing has been initialised
@@ -97,18 +108,18 @@ namespace Carpet {
     MPI_Comm_size (cgh ? dist::comm : MPI_COMM_WORLD, &size);
     return size;
   }
-  
-  
-  
+
+
+
   MPI_Comm CarpetMPIComm ()
   {
     return dist::comm;
   }
-  
-  
-  
+
+
+
   // Datatypes
-  
+
   MPI_Datatype CarpetMPIDatatype (const int vartype)
   {
     switch (vartype) {
@@ -126,7 +137,7 @@ namespace Carpet {
     // notreached
     return MPI_CHAR;
   }
-  
+
   MPI_Datatype CarpetSimpleMPIDatatype (const int vartype)
   {
     switch (vartype) {
@@ -158,7 +169,7 @@ namespace Carpet {
     // notreached
     return MPI_CHAR;
   }
-  
+
   int CarpetSimpleMPIDatatypeLength (const int vartype)
   {
     switch (vartype) {
@@ -187,11 +198,11 @@ namespace Carpet {
     // notreached
     return 0;
   }
-  
-  
-  
+
+
+
   // Timelevels
-  
+
   int mintl (const checktimes where, const int num_tl)
   {
     assert (num_tl>0);
@@ -215,7 +226,7 @@ namespace Carpet {
     }
     return -999;
   }
-  
+
   int maxtl (const checktimes where, const int num_tl)
   {
     assert (num_tl>0);
@@ -237,11 +248,11 @@ namespace Carpet {
     }
     return -999;
   }
-  
-  
-  
+
+
+
   // Diagnostic output
-  
+
   static void prepend_id (char* const msg, size_t const msglen)
   {
     if (mglevel!=-1) {
@@ -258,13 +269,13 @@ namespace Carpet {
       snprintf (msg+strlen(msg), msglen-strlen(msg), " ");
     }
   }
-  
+
   void Output (const char* fmt, ...)
   {
     DECLARE_CCTK_PARAMETERS;
     va_list args;
     char msg[1000];
-    snprintf (msg, sizeof msg, "");
+    snprintf (msg, sizeof msg, "%s", "");
     prepend_id (msg + strlen(msg), sizeof msg - strlen(msg));
     va_start (args, fmt);
     vsnprintf (msg + strlen(msg), sizeof msg - strlen(msg), fmt, args);
@@ -274,14 +285,14 @@ namespace Carpet {
       MPI_Barrier (dist::comm);
     }
   }
-  
+
   void Waypoint (const char* fmt, ...)
   {
     DECLARE_CCTK_PARAMETERS;
     if (verbose || veryverbose) {
       va_list args;
       char msg[1000];
-      snprintf (msg, sizeof msg, "");
+      snprintf (msg, sizeof msg, "%s", "");
       prepend_id (msg + strlen(msg), sizeof msg - strlen(msg));
       va_start (args, fmt);
       vsnprintf (msg + strlen(msg), sizeof msg - strlen(msg), fmt, args);
@@ -292,14 +303,14 @@ namespace Carpet {
       MPI_Barrier (dist::comm);
     }
   }
-  
+
   void Checkpoint (const char* fmt, ...)
   {
     DECLARE_CCTK_PARAMETERS;
     if (veryverbose) {
       va_list args;
       char msg[1000];
-      snprintf (msg, sizeof msg, "");
+      snprintf (msg, sizeof msg, "%s", "");
       prepend_id (msg + strlen(msg), sizeof msg - strlen(msg));
       va_start (args, fmt);
       vsnprintf (msg + strlen(msg), sizeof msg - strlen(msg), fmt, args);
@@ -310,9 +321,9 @@ namespace Carpet {
       MPI_Barrier (dist::comm);
     }
   }
-  
-  
-  
+
+
+
   void UnsupportedVarType (const int vindex)
   {
     assert (vindex>=0 && vindex<CCTK_NumVars());
@@ -322,5 +333,5 @@ namespace Carpet {
        "Either enable support for this type, "
        "or change the type of this variable.", CCTK_FullName(vindex));
   }
-  
+
 } // namespace Carpet
