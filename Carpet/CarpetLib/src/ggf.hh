@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.22 2004/04/19 07:56:35 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.23 2004/04/19 21:38:33 schnetter Exp $
 
 #ifndef GGF_HH
 #define GGF_HH
@@ -68,6 +68,9 @@ protected:
   int vectorindex;              // index of *this
   ggf* vectorleader;            // first vector element
   
+private:
+  fdata oldstorage;
+  
 public:
 
   // Constructors
@@ -87,7 +90,13 @@ public:
 
 
   // Modifiers
-  void recompose ();
+  // void recompose ();
+  void recompose_crop ();
+  void recompose_allocate (int rl);
+  void recompose_fill (comm_state<D>& state, int rl);
+  void recompose_free (int rl);
+  void recompose_bnd_prolongate (comm_state<D>& state, int rl);
+  void recompose_sync (comm_state<D>& state, int rl);
 
   // Cycle the time levels by rotating the data sets
   void cycle (int rl, int c, int ml);

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.51 2004/04/18 13:29:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.52 2004/04/19 21:38:33 schnetter Exp $
 
 #include <assert.h>
 
@@ -572,10 +572,32 @@ void dh<D>::recompose () {
     } // for c
   } // for rl
   
-  for (typename list<ggf<D>*>::iterator f=gfs.begin();
-       f!=gfs.end(); ++f) {
-    (*f)->recompose ();
+  for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+    (*f)->recompose_crop ();
   }
+  for (int rl=0; rl<h.reflevels(); ++rl) {
+    for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+      (*f)->recompose_allocate (rl);
+    }
+    for (comm_state<D> state; !state.done(); state.step()) {
+      for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+        (*f)->recompose_fill (state, rl);
+      }
+    }
+    for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+      (*f)->recompose_free (rl);
+    }
+    for (comm_state<D> state; !state.done(); state.step()) {
+      for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+        (*f)->recompose_bnd_prolongate (state, rl);
+      }
+    }
+    for (comm_state<D> state; !state.done(); state.step()) {
+      for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+        (*f)->recompose_sync (state, rl);
+      }
+    }
+  } // for rl
 }
 
 
