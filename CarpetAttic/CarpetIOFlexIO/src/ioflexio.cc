@@ -35,7 +35,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.28 2003/07/03 10:02:03 tradke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.29 2003/07/03 10:51:05 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -155,9 +155,11 @@ namespace CarpetIOFlexIO {
     const char* extension = 0;
     if (CCTK_Equals(out3D_format, "IEEE")) {
       extension = ".raw";
-#ifdef HDF5
+#ifdef HDF4
     } else if (CCTK_Equals(out3D_format, "HDF4")) {
       extension = ".hdf";
+#endif
+#ifdef HDF5
     } else if (CCTK_Equals(out3D_format, "HDF5")) {
       extension = ".h5";
 #endif
@@ -430,9 +432,11 @@ namespace CarpetIOFlexIO {
     const char* extension = 0;
     if (CCTK_Equals(in3D_format, "IEEE")) {
       extension = ".raw";
-#ifdef HDF5
+#ifdef HDF4
     } else if (CCTK_Equals(in3D_format, "HDF4")) {
       extension = ".hdf";
+#endif
+#ifdef HDF5
     } else if (CCTK_Equals(in3D_format, "HDF5")) {
       extension = ".h5";
 #endif
