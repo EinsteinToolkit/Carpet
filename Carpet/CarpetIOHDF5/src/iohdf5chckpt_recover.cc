@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.16 2004/03/23 09:47:16 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.17 2004/03/23 10:13:30 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -292,21 +292,31 @@ namespace CarpetIOHDF5 {
 	}
       }
     } 
+
+    cout << "I have " << datasetnamelist.size() << endl;
+
+    double comparetime = MPI_Wtime();
       
     if(myproc==0) {
+      //      for(currdataset=datasetnamelist.begin();
+      //	  currdataset!=datasetnamelist.end();
+      //	  ++currdataset) {
+
       list<string>::iterator currdataset;
-      for(currdataset=datasetnamelist.begin();
-	  currdataset!=datasetnamelist.end();
-	  ++currdataset) {
+      currdataset=datasetnamelist.begin();
+       while(currdataset!=datasetnamelist.end()) {
 	char tempstr[10];
 	sprintf(tempstr,"rl=%d m=",reflevel);
 	if ( (*currdataset).find(tempstr) < (*currdataset).size() ) {
 	  refleveldatasetnamelist.push_back((*currdataset).c_str());
-	}
-      }
+	  currdataset = datasetnamelist.erase(currdataset);
+	} else {
+	  ++currdataset;
+	} // if ...
+      } // while ...
     } // if(myproc==0)
 
-    cout << "I have " << datasetnamelist.size() << endl;
+
 
 
     long reflevelnamenum;
@@ -320,6 +330,9 @@ namespace CarpetIOHDF5 {
 	refleveldatasetnamelist.push_back("blah");
       }
     }
+
+    comparetime = MPI_Wtime() - comparetime;
+    cout << "Time for string comparison: " << comparetime << endl;
     cout << "I have for this reflevel " << refleveldatasetnamelist.size() << endl;
 
     list<string>::iterator currdataset;
