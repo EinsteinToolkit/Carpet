@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.7 2002/09/01 14:52:29 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.8 2003/04/30 12:37:56 schnetter Exp $
 
 #ifndef CARPETREGRID_HH
 #define CARPETREGRID_HH
@@ -28,6 +28,8 @@ namespace CarpetRegrid {
   
   typedef vect<vect<bool,2>,dim> bvect;
   
+  typedef vect<CCTK_REAL,dim> rvect;
+  
   
   
   int CarpetRegridRegrid (const cGH * const cctkGH,
@@ -48,8 +50,8 @@ namespace CarpetRegrid {
 				 const vector<ivect> upper,
 				 list<ibbox>& bbl, list<bvect>& obl);
   void MakeRegions_AsSpecified  (const cGH* cctkGH, const int reflevels,
-				 const vector<vect<CCTK_REAL,dim> > lower,
-				 const vector<vect<CCTK_REAL,dim> > upper,
+				 const vector<rvect> lower,
+				 const vector<rvect> upper,
 				 list<ibbox>& bbl, list<bvect>& obl);
   
   void MakeRegions_AsSpecified  (const cGH* cctkGH, const int reflevels,

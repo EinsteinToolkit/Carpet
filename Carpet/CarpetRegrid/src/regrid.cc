@@ -24,7 +24,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.20 2002/12/12 14:36:06 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.21 2003/04/30 12:37:56 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -118,13 +118,13 @@ namespace CarpetRegrid {
 	CCTK_WARN (0, "Cannot currently specify manual refinement regions for more than 4 refinement levels");
       }
       assert (refinement_levels<=4);
-      vector<vect<CCTK_REAL,dim> > lower(3), upper(3);
-      lower[0] = vect<CCTK_REAL,dim> (l1xmin, l1ymin, l1zmin);
-      upper[0] = vect<CCTK_REAL,dim> (l1xmax, l1ymax, l1zmax);
-      lower[1] = vect<CCTK_REAL,dim> (l2xmin, l2ymin, l2zmin);
-      upper[1] = vect<CCTK_REAL,dim> (l2xmax, l2ymax, l2zmax);
-      lower[2] = vect<CCTK_REAL,dim> (l3xmin, l3ymin, l3zmin);
-      upper[2] = vect<CCTK_REAL,dim> (l3xmax, l3ymax, l3zmax);
+      vector<rvect> lower(3), upper(3);
+      lower[0] = rvect (l1xmin, l1ymin, l1zmin);
+      upper[0] = rvect (l1xmax, l1ymax, l1zmax);
+      lower[1] = rvect (l2xmin, l2ymin, l2zmin);
+      upper[1] = rvect (l2xmax, l2ymax, l2zmax);
+      lower[2] = rvect (l3xmin, l3ymin, l3zmin);
+      upper[2] = rvect (l3xmax, l3ymax, l3zmax);
       MakeRegions_AsSpecified (cctkGH, refinement_levels, lower, upper,
 			       bbl, obl);
       
@@ -387,15 +387,15 @@ namespace CarpetRegrid {
   
   
   void MakeRegions_AsSpecified (const cGH* cctkGH, const int reflevels,
-				const vector<vect<CCTK_REAL,dim> > lower,
-				const vector<vect<CCTK_REAL,dim> > upper,
+				const vector<rvect> lower,
+				const vector<rvect> upper,
 				list<ibbox>& bbl, list<bvect>& obl)
   {
     assert (lower.size() == upper.size());
     
     if (reflevel+1 >= reflevels) return;
     
-    vect<CCTK_REAL,dim> global_lower, global_upper;
+    rvect global_lower, global_upper;
     for (int d=0; d<dim; ++d) {
       const int ierr = CCTK_CoordRange
 	(cctkGH, &global_lower[d], &global_upper[d], d+1, 0, "cart3d");
@@ -408,12 +408,18 @@ namespace CarpetRegrid {
     
     const int rl = reflevel+1;
     
-    const vect<CCTK_REAL,dim> scale = vect<CCTK_REAL,dim>(global_extent) / (global_upper - global_lower);
-    const vect<CCTK_REAL,dim> rlower = (lower[rl-1] - global_lower) * scale;
-    const vect<CCTK_REAL,dim> rupper = (upper[rl-1] - global_lower) * scale;
-    const ivect ilower = ivect(map((CCTK_REAL(*)(CCTK_REAL))floor, rlower + 0.5));
-    const ivect iupper = ivect(map((CCTK_REAL(*)(CCTK_REAL))floor, rupper + 0.5));
-    const bvect obound = bvect(vect<bool,2>(false));
+    const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
+    const rvect rlower = (lower[rl-1] - global_lower) * scale;
+    const rvect rupper = (upper[rl-1] - global_lower) * scale;
+//     const ivect ilower = ivect(map((CCTK_REAL(*)(CCTK_REAL))floor, rlower + 0.5));
+//     const ivect iupper = ivect(map((CCTK_REAL(*)(CCTK_REAL))floor, rupper + 0.5));
+    CCTK_REAL (* const rfloor) (CCTK_REAL const) = floor;
+    const int levfac = ipow(hh->reffact, rl);
+    assert (all (hh->baseextent.stride() % levfac == 0));
+    const ivect istride = hh->baseextent.stride() / levfac;
+    const ivect ilower  = ivect(map(rfloor, rlower / rvect(istride) + 0.5)) * istride;
+    const ivect iupper  = ivect(map(rfloor, rupper / rvect(istride) + 0.5)) * istride;
+    const bvect obound  = bvect(vect<bool,2>(false));
     
     MakeRegions_AsSpecified_OneLevel (cctkGH, reflevels,
 				      ilower, iupper, obound,
