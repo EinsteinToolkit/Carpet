@@ -31,7 +31,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.66 2004/03/23 19:30:14 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.67 2004/04/03 12:38:12 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -253,7 +253,10 @@ namespace CarpetIOASCII {
     assert (iogh);
     
     // Create the output directory
-    const char* const myoutdir = GetStringParameter("out%dD_dir", out_dir);
+    const char* myoutdir = GetStringParameter("out%dD_dir");
+    if (CCTK_EQUALS(myoutdir, "")) {
+      myoutdir = out_dir;
+    }
     if (CCTK_MyProc(cgh)==0) {
       CCTK_CreateDirectory (0755, myoutdir);
     }
@@ -639,8 +642,11 @@ namespace CarpetIOASCII {
     // check whether to output at this iteration
     bool output_this_iteration;
     
-    const char * const myoutcriterion
-      = GetStringParameter("out%dD_criterion", out_criterion);
+    const char* myoutcriterion = GetStringParameter("out%dD_criterion");
+    if (CCTK_EQUALS(myoutcriterion, "default")) {
+      myoutcriterion = out_criterion;
+    }
+    
     if (CCTK_EQUALS (myoutcriterion, "never")) {
       
       // Never output
@@ -648,7 +654,10 @@ namespace CarpetIOASCII {
       
     } else if (CCTK_EQUALS (myoutcriterion, "iteration")) {
       
-      const int myoutevery = GetIntParameter("out%dD_every", out_every);
+      int myoutevery = GetIntParameter("out%dD_every");
+      if (myoutevery == -2) {
+        myoutevery = out_every;
+      }
       if (myoutevery <= 0) {
         output_this_iteration = false;
       } else {
@@ -663,7 +672,10 @@ namespace CarpetIOASCII {
       
     } else if (CCTK_EQUALS (myoutcriterion, "time")) {
       
-      const CCTK_REAL myoutdt = GetRealParameter("out%dD_dt", out_dt);
+      CCTK_REAL myoutdt = GetRealParameter("out%dD_dt");
+      if (myoutdt == -2) {
+        myoutdt = out_dt;
+      }
       if (myoutdt < 0) {
         output_this_iteration = false;
       } else if (myoutdt == 0) {
@@ -698,7 +710,7 @@ namespace CarpetIOASCII {
       
       output_variables.resize (CCTK_NumVars());
       
-      const char * const varlist = GetStringParameter("out%dD_vars", "");
+      const char* const varlist = GetStringParameter("out%dD_vars");
       CCTK_TraverseString
         (varlist, SetFlag, &output_variables, CCTK_GROUP_OR_VAR);
     }
@@ -858,77 +870,53 @@ namespace CarpetIOASCII {
   
   template<int outdim>
   const char* IOASCII<outdim>
-  ::GetStringParameter (const char* const parametertemplate,
-			const char* const fallback)
+  ::GetStringParameter (const char* const parametertemplate)
   {
     char parametername[1000];
     snprintf (parametername, sizeof parametername, parametertemplate, outdim);
-    const int ntimes =
-      CCTK_ParameterQueryTimesSet (parametername, CCTK_THORNSTRING);
-    assert (ntimes >= 0);
-    if (ntimes > 0) {
-      int ptype;
-      const char* const* const ppval = (const char* const*)CCTK_ParameterGet
-	(parametername, CCTK_THORNSTRING, &ptype);
-      assert (ppval);
-      const char* const pval = *ppval;
-      assert (ptype == PARAMETER_STRING || ptype == PARAMETER_KEYWORD);
-      return pval;
-    }
-    
-    return fallback;
+    int ptype;
+    const char* const* const ppval = (const char* const*)CCTK_ParameterGet
+      (parametername, CCTK_THORNSTRING, &ptype);
+    assert (ppval);
+    const char* const pval = *ppval;
+    assert (ptype == PARAMETER_STRING || ptype == PARAMETER_KEYWORD);
+    return pval;
   }
   
   
   
   template<int outdim>
   CCTK_INT IOASCII<outdim>
-  ::GetIntParameter (const char* const parametertemplate,
-                     const CCTK_INT fallback)
+  ::GetIntParameter (const char* const parametertemplate)
   {
     char parametername[1000];
     snprintf (parametername, sizeof parametername, parametertemplate, outdim);
-    const int ntimes =
-      CCTK_ParameterQueryTimesSet (parametername, CCTK_THORNSTRING);
-    assert (ntimes >= 0);
-    if (ntimes > 0) {
-      int ptype;
-      const CCTK_INT* const ppval
-	= (const CCTK_INT*)CCTK_ParameterGet
-        (parametername, CCTK_THORNSTRING, &ptype);
-      assert (ppval);
-      assert (ptype == PARAMETER_INT || ptype == PARAMETER_BOOLEAN);
-      const CCTK_INT pval = *ppval;
-      return pval;
-    }
-    
-    return fallback;
+    int ptype;
+    const CCTK_INT* const ppval
+      = (const CCTK_INT*)CCTK_ParameterGet
+      (parametername, CCTK_THORNSTRING, &ptype);
+    assert (ppval);
+    assert (ptype == PARAMETER_INT || ptype == PARAMETER_BOOLEAN);
+    const CCTK_INT pval = *ppval;
+    return pval;
   }
   
   
   
   template<int outdim>
   CCTK_REAL IOASCII<outdim>
-  ::GetRealParameter (const char* const parametertemplate,
-                      const CCTK_REAL fallback)
+  ::GetRealParameter (const char* const parametertemplate)
   {
     char parametername[1000];
     snprintf (parametername, sizeof parametername, parametertemplate, outdim);
-    const int ntimes =
-      CCTK_ParameterQueryTimesSet (parametername, CCTK_THORNSTRING);
-    assert (ntimes >= 0);
-    if (ntimes > 0) {
-      int ptype;
-      const CCTK_REAL* const ppval
-	= (const CCTK_REAL*)CCTK_ParameterGet
-        (parametername, CCTK_THORNSTRING, &ptype);
-      assert (ppval);
-      assert (ptype == PARAMETER_REAL);
-      const CCTK_REAL pval = *ppval;
-      return pval;
-    }
-    
-    return fallback;
+    int ptype;
+    const CCTK_REAL* const ppval
+      = (const CCTK_REAL*)CCTK_ParameterGet
+      (parametername, CCTK_THORNSTRING, &ptype);
+    assert (ppval);
+    assert (ptype == PARAMETER_REAL);
+    const CCTK_REAL pval = *ppval;
+    return pval;
   }
   
   

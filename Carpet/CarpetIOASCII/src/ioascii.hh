@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.15 2004/02/18 15:12:29 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.16 2004/04/03 12:38:12 schnetter Exp $
 
 #ifndef CARPETIOASCII_HH
 #define CARPETIOASCII_HH
@@ -62,12 +62,9 @@ namespace CarpetIOASCII {
     static int CoordToOffset (const cGH* cgh, int dir, CCTK_REAL coord,
 			      int ifallback);
     
-    static const char* GetStringParameter
-    (const char* parametertemplate, const char* fallback);
-    static CCTK_INT GetIntParameter
-    (const char* parametertemplate, CCTK_INT fallback);
-    static CCTK_REAL GetRealParameter
-    (const char* parametertemplate, CCTK_REAL fallback);
+    static const char* GetStringParameter (const char* parametertemplate);
+    static CCTK_INT GetIntParameter (const char* parametertemplate);
+    static CCTK_REAL GetRealParameter (const char* parametertemplate);
     
   };                            // struct IOASCII
   
