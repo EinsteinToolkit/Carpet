@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.cc,v 1.7 2004/03/01 19:43:51 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.cc,v 1.8 2004/07/08 12:36:01 tradke Exp $
 
 #include <assert.h>
 
@@ -17,7 +17,7 @@ using namespace std;
 
 namespace dist {
   
-  MPI_Comm comm;
+  MPI_Comm comm = MPI_COMM_NULL;
   
 #if 0
   MPI_Datatype mpi_complex_float;
