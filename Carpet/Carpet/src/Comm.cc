@@ -28,7 +28,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     int retval = 0;
     const int group = CCTK_GroupIndex(groupname);
-    assert (group>=0 && group<CCTK_NumGroups());
+    assert (group>=0 and group<CCTK_NumGroups());
     assert (group<(int)arrdata.size());
     
     Checkpoint ("SyncGroup \"%s\" time=%g", groupname, (double)cgh->cctk_time);
@@ -37,7 +37,7 @@ namespace Carpet {
     retval = CheckSyncGroupConsistency ( cgh, groupname);
     
     if( retval == 0
-    && CCTK_NumVarsInGroupI(group) != 0 )
+    and CCTK_NumVarsInGroupI(group) != 0 )
     {
       const int n0 = CCTK_FirstVarIndexI(group);
       assert (n0>=0);
@@ -49,7 +49,7 @@ namespace Carpet {
         switch (grouptype) {
           
         case CCTK_GF:
-          assert (reflevel>=0 && reflevel<reflevels);
+          assert (reflevel>=0 and reflevel<reflevels);
           if (reflevel > 0) {
             ProlongateGroupBoundaries ( cgh, cctk_initial_time, group );
           }
@@ -138,7 +138,7 @@ namespace Carpet {
                     "(Tried to synchronise group \"%s\")",
                     groupname);
       }
-      if (map != -1 && component == -1) {
+      if (map != -1 and component == -1) {
         if (maps == 1) {
           CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "Synchronising group \"%s\" in singlemap mode",
@@ -151,7 +151,7 @@ namespace Carpet {
         }
       }
       if (component != -1) {
-        if (maps == 1 && vhh.at(map)->local_components(reflevel) == 1) {
+        if (maps == 1 and vhh.at(map)->local_components(reflevel) == 1) {
           CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "Synchronising group \"%s\" in local mode",
                       groupname);

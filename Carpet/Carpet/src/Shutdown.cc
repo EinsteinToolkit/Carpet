@@ -30,7 +30,7 @@ namespace Carpet {
       BEGIN_REVERSE_MGLEVEL_LOOP(cgh) {
         enter_level_mode (cgh, rl);
         do_global_mode = reflevel==0;
-        do_meta_mode = do_global_mode && mglevel==mglevels-1;
+        do_meta_mode = do_global_mode and mglevel==mglevels-1;
         
         Checkpoint ("Shutdown at iteration %d time %g%s%s",
                     cgh->cctk_iteration, (double)cgh->cctk_time,

@@ -132,7 +132,7 @@ namespace Carpet {
     BEGIN_MGLEVEL_LOOP(cgh) {
       enter_level_mode (cgh, rl);
       do_global_mode = reflevel==0;
-      do_meta_mode = do_global_mode && mglevel==mglevels-1;
+      do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
       cgh->cctk_time = global_time;
 
@@ -173,7 +173,7 @@ namespace Carpet {
       BEGIN_MGLEVEL_LOOP(cgh) {
         enter_level_mode (cgh, rl);
         do_global_mode = true;
-        do_meta_mode = do_global_mode && mglevel==mglevels-1;
+        do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
         Waypoint ("Postregrid at iteration %d time %g%s%s",
                   cgh->cctk_iteration, (double)cgh->cctk_time,
@@ -195,7 +195,7 @@ namespace Carpet {
       BEGIN_MGLEVEL_LOOP(cgh) {
         enter_level_mode (cgh, rl);
         do_global_mode = reflevel==reflevels-1;
-        do_meta_mode = do_global_mode && mglevel==mglevels-1;
+        do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
         Waypoint ("Recovering II at iteration %d time %g%s%s",
                   cgh->cctk_iteration, (double)cgh->cctk_time,
@@ -221,7 +221,7 @@ namespace Carpet {
     BEGIN_MGLEVEL_LOOP(cgh) {
       enter_level_mode (cgh, rl);
       do_global_mode = reflevel==0;
-      do_meta_mode = do_global_mode && mglevel==mglevels-1;
+      do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
       cgh->cctk_time = global_time;
 
@@ -270,7 +270,7 @@ namespace Carpet {
   {
     const bool outer_do_global_mode = do_global_mode;
     for (int tl=num_tl-1; tl>=0; --tl) {
-      do_global_mode = outer_do_global_mode && tl==0;
+      do_global_mode = outer_do_global_mode and tl==0;
 
       // Advance times
       for (int m=0; m<maps; ++m) {
@@ -308,7 +308,7 @@ namespace Carpet {
       BEGIN_MGLEVEL_LOOP(cgh) {
         enter_level_mode (cgh, rl);
         do_global_mode = true;
-        do_meta_mode = do_global_mode && mglevel==mglevels-1;
+        do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
         Waypoint ("Postregrid at iteration %d time %g%s%s",
                   cgh->cctk_iteration, (double)cgh->cctk_time,
@@ -346,7 +346,7 @@ namespace Carpet {
       BEGIN_MGLEVEL_LOOP(cgh) {
         enter_level_mode (cgh, rl);
         do_global_mode = reflevel==reflevels-1;
-        do_meta_mode = do_global_mode && mglevel==mglevels-1;
+        do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
         Waypoint ("Initialisation II at iteration %d time %g%s%s",
                   cgh->cctk_iteration, (double)cgh->cctk_time,
@@ -402,7 +402,7 @@ namespace Carpet {
       BEGIN_MGLEVEL_LOOP(cgh) {
         enter_level_mode (cgh, rl);
         do_global_mode = reflevel==0;
-        do_meta_mode = do_global_mode && mglevel==mglevels-1;
+        do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
         // Advance times
         for (int m=0; m<maps; ++m) {
@@ -440,7 +440,7 @@ namespace Carpet {
       BEGIN_MGLEVEL_LOOP(cgh) {
         enter_level_mode (cgh, rl);
         do_global_mode = reflevel==0;
-        do_meta_mode = do_global_mode && mglevel==mglevels-1;
+        do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
         // Flip time levels
         Waypoint ("Flipping timelevels");
@@ -460,7 +460,7 @@ namespace Carpet {
       BEGIN_MGLEVEL_LOOP(cgh) {
         enter_level_mode (cgh, rl);
         do_global_mode = reflevel==0;
-        do_meta_mode = do_global_mode && mglevel==mglevels-1;
+        do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
         Waypoint ("Initialisation 3TL evolution I (b) (backwards) at iteration"
                   " %d time %g%s%s",
@@ -494,7 +494,7 @@ namespace Carpet {
       BEGIN_MGLEVEL_LOOP(cgh) {
         enter_level_mode (cgh, rl);
         do_global_mode = reflevel==0;
-        do_meta_mode = do_global_mode && mglevel==mglevels-1;
+        do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
         Waypoint ("Initialisation 3TL evolution II (b) (backwards) at iteration"
                   " %d time %g%s%s",
@@ -552,7 +552,7 @@ namespace Carpet {
       BEGIN_MGLEVEL_LOOP(cgh) {
         enter_level_mode (cgh, rl);
         do_global_mode = reflevel==0;
-        do_meta_mode = do_global_mode && mglevel==mglevels-1;
+        do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
         // Flip time levels back
         Waypoint ("Flipping timelevels back");
@@ -580,7 +580,7 @@ namespace Carpet {
       BEGIN_MGLEVEL_LOOP(cgh) {
         enter_level_mode (cgh, rl);
         do_global_mode = reflevel==reflevels-1;
-        do_meta_mode = do_global_mode && mglevel==mglevels-1;
+        do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
         Waypoint ("Initialisation III at iteration %d time %g%s%s",
                   cgh->cctk_iteration, (double)cgh->cctk_time,

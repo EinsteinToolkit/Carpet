@@ -50,7 +50,7 @@ namespace Carpet {
 
       return false;
 
-    } else if (terminate_next || CCTK_TerminationReached(cgh)) {
+    } else if (terminate_next or CCTK_TerminationReached(cgh)) {
 
       // Terminate if someone or something said so
       term = true;
@@ -77,7 +77,7 @@ namespace Carpet {
 
       const double runtime = thetime - initial_runtime;
       const bool term_runtime = (max_runtime > 0
-                                 && runtime >= 60.0 * max_runtime);
+                                 and runtime >= 60.0 * max_runtime);
 #else
       const bool term_runtime = false;
 #endif
@@ -91,13 +91,13 @@ namespace Carpet {
       } else if (CCTK_Equals(terminate, "runtime")) {
         term = term_runtime;
       } else if (CCTK_Equals(terminate, "any")) {
-        term = term_iter || term_time || term_runtime;
+        term = term_iter or term_time or term_runtime;
       } else if (CCTK_Equals(terminate, "all")) {
-        term = term_iter && term_time && term_runtime;
+        term = term_iter and term_time and term_runtime;
       } else if (CCTK_Equals(terminate, "either")) {
-        term = term_iter || term_time;
+        term = term_iter or term_time;
       } else if (CCTK_Equals(terminate, "both")) {
-        term = term_iter && term_time;
+        term = term_iter and term_time;
       } else if (CCTK_Equals(terminate, "immediately")) {
         term = true;
       } else {
@@ -203,7 +203,7 @@ namespace Carpet {
         enter_level_mode (cgh, rl);
 
         do_global_mode = reflevel==0;
-        do_meta_mode = do_global_mode && mglevel==mglevels-1;
+        do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
         Waypoint ("Postregrid at iteration %d time %g%s%s",
                   cgh->cctk_iteration, (double)cgh->cctk_time,
@@ -234,8 +234,8 @@ namespace Carpet {
           enter_level_mode (cgh, rl);
 
           do_global_mode = ! have_done_global_mode;
-          do_meta_mode = do_global_mode && mglevel==mglevels-1;
-          assert (! (have_done_global_mode && do_global_mode));
+          do_meta_mode = do_global_mode and mglevel==mglevels-1;
+          assert (! (have_done_global_mode and do_global_mode));
           have_done_global_mode |= do_global_mode;
           have_done_anything = true;
 
@@ -325,8 +325,8 @@ namespace Carpet {
             assert (finest_active_reflevel >= 0);
           }
           do_global_mode = rl == finest_active_reflevel;
-          do_meta_mode = do_global_mode && mglevel==mglevels-1;
-          assert (! (have_done_global_mode && do_global_mode));
+          do_meta_mode = do_global_mode and mglevel==mglevels-1;
+          assert (! (have_done_global_mode and do_global_mode));
           have_done_global_mode |= do_global_mode;
           have_done_anything = true;
 

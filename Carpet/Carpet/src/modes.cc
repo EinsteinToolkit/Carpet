@@ -26,34 +26,34 @@ namespace Carpet {
   
   bool is_meta_mode ()
   {
-    if (mglevel==-1) assert (reflevel==-1 && map==-1 && component==-1);
+    if (mglevel==-1) assert (reflevel==-1 and map==-1 and component==-1);
     return mglevel==-1;
   }
   
   bool is_global_mode ()
   {
-    if (mglevel==-1 && reflevel!=-1) assert (map==-1 && component==-1);
-    return mglevel!=-1 && reflevel==-1;
+    if (mglevel==-1 and reflevel!=-1) assert (map==-1 and component==-1);
+    return mglevel!=-1 and reflevel==-1;
   }
   
   bool is_level_mode ()
   {
-    if (mglevel!=-1 && reflevel!=-1 && map==-1) assert (component==-1);
-    return mglevel!=-1 && reflevel!=-1 && map==-1;
+    if (mglevel!=-1 and reflevel!=-1 and map==-1) assert (component==-1);
+    return mglevel!=-1 and reflevel!=-1 and map==-1;
   }
   
   bool is_singlemap_mode ()
   {
-    return mglevel!=-1 && reflevel!=-1 && map!=-1 && component==-1;
+    return mglevel!=-1 and reflevel!=-1 and map!=-1 and component==-1;
   }
   
   bool is_local_mode ()
   {
-    return mglevel!=-1 && reflevel!=-1 && map!=-1 && component!=-1;
-//       assert (mglevel>=0 && mglevel<mglevels);
-//       assert (reflevel>=0 && reflevel<reflevels);
-//       assert (map>=0 && map<maps);
-//       assert (vhh.at(map)->local_components(reflevel)==1 || component==-1);
+    return mglevel!=-1 and reflevel!=-1 and map!=-1 and component!=-1;
+//       assert (mglevel>=0 and mglevel<mglevels);
+//       assert (reflevel>=0 and reflevel<reflevels);
+//       assert (map>=0 and map<maps);
+//       assert (vhh.at(map)->local_components(reflevel)==1 or component==-1);
   }
   
   
@@ -67,7 +67,7 @@ namespace Carpet {
   void enter_global_mode (cGH * const cgh, int const ml)
   {
     assert (is_meta_mode());
-    assert (ml>=0 && ml<mglevels);
+    assert (ml>=0 and ml<mglevels);
     Checkpoint ("Entering global mode");
     
     mglevel = ml;
@@ -156,7 +156,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    assert (is_global_mode() || is_meta_mode());
+    assert (is_global_mode() or is_meta_mode());
     Checkpoint ("Leaving global mode");
     
     if (mglevel == -1) return;  // early return
@@ -228,7 +228,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     assert (is_global_mode());
-    assert (rl>=0 && rl<reflevels);
+    assert (rl>=0 and rl<reflevels);
     Checkpoint ("Entering level mode");
     
     reflevel = rl;
@@ -237,8 +237,8 @@ namespace Carpet {
     cgh->cctk_timefac = reflevelfact;
     
     // Set current time
-    assert (mglevel>=0 && mglevel<(int)leveltimes.size());
-    assert (reflevel>=0 && reflevel<(int)leveltimes.at(mglevel).size());
+    assert (mglevel>=0 and mglevel<(int)leveltimes.size());
+    assert (reflevel>=0 and reflevel<(int)leveltimes.at(mglevel).size());
     if (! adaptive_stepsize) {
       cgh->cctk_time = leveltimes.at(mglevel).at(reflevel);
     } else {
@@ -252,14 +252,14 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    assert (is_level_mode() || is_global_mode());
+    assert (is_level_mode() or is_global_mode());
     Checkpoint ("Leaving level mode");
     
     if (reflevel == -1) return; // early return
     
     // Save and unset current time
-    assert (mglevel>=0 && mglevel<(int)leveltimes.size());
-    assert (reflevel>=0 && reflevel<(int)leveltimes.at(mglevel).size());
+    assert (mglevel>=0 and mglevel<(int)leveltimes.size());
+    assert (reflevel>=0 and reflevel<(int)leveltimes.at(mglevel).size());
     leveltimes.at(mglevel).at(reflevel) = cgh->cctk_time;
     if (! adaptive_stepsize) {
       cgh->cctk_time = global_time;
@@ -282,7 +282,7 @@ namespace Carpet {
   void enter_singlemap_mode (cGH * const cgh, int const m)
   {
     assert (is_level_mode());
-    assert (m>=0 && m<maps);
+    assert (m>=0 and m<maps);
     Checkpoint ("Entering singlemap mode");
     
     carpetGH.map = map = m;
@@ -314,7 +314,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    assert (is_singlemap_mode() || is_level_mode());
+    assert (is_singlemap_mode() or is_level_mode());
     Checkpoint ("Leaving singlemap mode");
     
     if (map == -1) return;      // early return
@@ -347,7 +347,7 @@ namespace Carpet {
   void enter_local_mode (cGH * const cgh, int const c)
   {
     assert (is_singlemap_mode());
-    assert (c>=0 && c<vhh.at(map)->components(reflevel));
+    assert (c>=0 and c<vhh.at(map)->components(reflevel));
     Checkpoint ("Entering local mode");
     
     component = c;
@@ -437,7 +437,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    assert (is_local_mode() || is_singlemap_mode());
+    assert (is_local_mode() or is_singlemap_mode());
     Checkpoint ("Leaving local mode");
     
     if (component == -1) return; // early return
@@ -628,7 +628,7 @@ namespace Carpet {
     : cgh(const_cast<cGH*>(cgh_)), grouptype(grouptype_), m(0)
   {
     assert (grouptype == CCTK_GF
-            || grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
+            or grouptype == CCTK_ARRAY or grouptype == CCTK_SCALAR);
     enter_singlemap_mode (cgh, m);
   }
   
@@ -660,7 +660,7 @@ namespace Carpet {
     : cgh(const_cast<cGH*>(cgh_)), grouptype(grouptype_), c(0)
   {
     assert (grouptype == CCTK_GF
-            || grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
+            or grouptype == CCTK_ARRAY or grouptype == CCTK_SCALAR);
     enter_local_mode (cgh, c);
   }
   
@@ -694,7 +694,7 @@ namespace Carpet {
     : cgh(const_cast<cGH*>(cgh_)), grouptype(grouptype_), c(-1)
   {
     assert (grouptype == CCTK_GF
-            || grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
+            or grouptype == CCTK_ARRAY or grouptype == CCTK_SCALAR);
     assert (is_singlemap_mode());
     step ();
   }
@@ -715,9 +715,9 @@ namespace Carpet {
   {
     do {
       ++ c;
-    } while (! done() && ! (grouptype == CCTK_GF
-                            ? vhh.at(map)->is_local(reflevel, c)
-                            : c == CCTK_MyProc(cgh)));
+    } while (! done() and ! (grouptype == CCTK_GF
+                             ? vhh.at(map)->is_local(reflevel, c)
+                             : c == CCTK_MyProc(cgh)));
     if (! done()) {
       leave_local_mode (cgh);
       enter_local_mode (cgh, c);

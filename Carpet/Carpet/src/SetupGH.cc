@@ -137,7 +137,7 @@ namespace Carpet {
   static operator_type GetTransportOperator (const cGH* const cgh,
                                              const int group)
   {
-    assert (group>=0 && group<CCTK_NumGroups());
+    assert (group>=0 and group<CCTK_NumGroups());
     
     int ierr;
     
@@ -184,7 +184,7 @@ namespace Carpet {
     }
     
     // Complain if both are given
-    if (have_prolong_string && have_prolong_param_string) {
+    if (have_prolong_string and have_prolong_param_string) {
       char * const groupname = CCTK_GroupName (group);
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Group \"%s\" has both the tags \"Prolongation\" and "
@@ -210,7 +210,7 @@ namespace Carpet {
       char const * const * const value
         = (static_cast<char const * const *>
            (CCTK_ParameterGet (name, thorn, &type)));
-      if (! value || ! *value) {
+      if (! value or ! *value) {
         char * const groupname = CCTK_GroupName (group);
         CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\"."
@@ -218,7 +218,7 @@ namespace Carpet {
                     groupname, prolong_param_string);
         free (groupname);
       }
-      if (type != PARAMETER_KEYWORD && type != PARAMETER_STRING) {
+      if (type != PARAMETER_KEYWORD and type != PARAMETER_STRING) {
         char * const groupname = CCTK_GroupName (group);
         CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\"."                    "  This parameter has the wrong type; "
@@ -423,7 +423,7 @@ namespace Carpet {
 
     leave_all_modes (cgh); 
     
-    if (verbose || veryverbose) {
+    if (verbose or veryverbose) {
       print_some_statistics (cgh);
     }
     
@@ -842,7 +842,7 @@ namespace Carpet {
         break;
 	  
       case CCTK_ARRAY: {
-        assert (gp.dim>=1 || gp.dim<=dim);
+        assert (gp.dim>=1 or gp.dim<=dim);
         const CCTK_INT * const * const sz  = CCTK_GroupSizesI (group);
         const CCTK_INT * const * const gsz = CCTK_GroupGhostsizesI (group);
         for (int d=0; d<gp.dim; ++d) {
@@ -898,7 +898,7 @@ namespace Carpet {
       }
 
       assert (gp.disttype==CCTK_DISTRIB_CONSTANT
-                || gp.disttype==CCTK_DISTRIB_DEFAULT);
+              or gp.disttype==CCTK_DISTRIB_DEFAULT);
         
       if (gp.disttype==CCTK_DISTRIB_CONSTANT) {
         if (! all (ghostsizes == 0)) {

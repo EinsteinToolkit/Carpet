@@ -36,7 +36,7 @@ namespace Carpet {
   // Enable or disable prolongating
   CCTK_INT CarpetEnableProlongating (const CCTK_INT flag)
   {
-    assert (flag==0 || flag==1);
+    assert (flag==0 or flag==1);
     do_prolongate = flag;
     if (do_prolongate) {
       Checkpoint ("Prolongating enabled");
@@ -284,7 +284,7 @@ namespace Carpet {
   void Waypoint (const char* fmt, ...)
   {
     DECLARE_CCTK_PARAMETERS;
-    if (verbose || veryverbose) {
+    if (verbose or veryverbose) {
       va_list args;
       char msg[1000];
       snprintf (msg, sizeof msg, "%s", "");
@@ -321,7 +321,7 @@ namespace Carpet {
 
   void UnsupportedVarType (const int vindex)
   {
-    assert (vindex>=0 && vindex<CCTK_NumVars());
+    assert (vindex>=0 and vindex<CCTK_NumVars());
     CCTK_VWarn
       (0, __LINE__, __FILE__, CCTK_THORNSTRING,
        "Carpet does not support the type of the variable \"%s\".\n"

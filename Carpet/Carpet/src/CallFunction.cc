@@ -37,7 +37,7 @@ namespace Carpet {
             + !! attribute->loop_singlemap
             + !! attribute->loop_local <= 1);
     
-    if (attribute->meta || is_meta_mode()) {
+    if (attribute->meta or is_meta_mode()) {
       // Convtest operation
       
       if (do_meta_mode) {
@@ -104,7 +104,7 @@ namespace Carpet {
         }
       }
       
-    } else if (attribute->global || is_global_mode()) {
+    } else if (attribute->global or is_global_mode()) {
       // Global operation: call once
       
       assert (! attribute->loop_meta);

@@ -34,7 +34,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    assert (group>=0 && group<CCTK_NumGroups());
+    assert (group>=0 and group<CCTK_NumGroups());
     
     if (! poison_new_timelevels) return;
     
@@ -154,7 +154,7 @@ namespace Carpet {
                       if (poisoned) {
                         ++numpoison;
                         if (max_poison_locations==-1
-                            || numpoison<=max_poison_locations) {
+                            or numpoison<=max_poison_locations) {
                           char* fullname = CCTK_FullName(n);
                           CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                                       "Timelevel %d, component %d, map %d, refinement level %d of the variable \"%s\" contains poison at [%d,%d,%d]",
@@ -165,7 +165,7 @@ namespace Carpet {
                     } // for i
                   } // for j
                 } // for k
-                if (max_poison_locations!=-1 && numpoison>max_poison_locations) {
+                if (max_poison_locations!=-1 and numpoison>max_poison_locations) {
                   char* fullname = CCTK_FullName(n);
                   CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                               "Timelevel %d, component %d, map %d, refinement level %d of the variable \"%s\" contains poison at %d of %d locations; not all locations were printed",

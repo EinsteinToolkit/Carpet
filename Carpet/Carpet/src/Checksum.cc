@@ -47,7 +47,7 @@ namespace Carpet {
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cgh, group)) {
         const int grouptype = CCTK_GroupTypeI(group);
-        if (reflevel == 0 || grouptype == CCTK_GF) {
+        if (reflevel == 0 or grouptype == CCTK_GF) {
           checksums.at(reflevel).at(mglevel).at(group).a.resize(arrdata.at(group).size());
           BEGIN_MAP_LOOP(cgh, grouptype) {
             checksums.at(reflevel).at(mglevel).at(group).a.at(map).resize(arrdata.at(group).at(map).hh->components(reflevel));
@@ -113,7 +113,7 @@ namespace Carpet {
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cgh, group)) {
         const int grouptype = CCTK_GroupTypeI(group);
-        if (reflevel == 0 || grouptype == CCTK_GF) {
+        if (reflevel == 0 or grouptype == CCTK_GF) {
           assert (checksums.at(reflevel).at(mglevel).at(group).a.size()==arrdata.at(group).size());
           BEGIN_MAP_LOOP(cgh, grouptype) {
             assert ((int)checksums.at(reflevel).at(mglevel).at(group).a.at(map).size()==arrdata.at(group).at(map).hh->components(reflevel));

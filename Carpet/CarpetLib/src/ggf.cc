@@ -376,7 +376,7 @@ void ggf<D>::intercat (comm_state<D>& state,
   for (int i=0; i<(int)tl2s.size(); ++i) {
     assert (tl2s.at(i)>=tmin && tl2s.at(i)<=tmax);
   }
-  assert (rl2>=0 && rl2<h.reflevels());
+  assert (rl2>=0 and rl2<h.reflevels());
   const int c2=c1;
   assert (ml2>=0 && ml2<h.mglevels(rl2,c2));
   
@@ -416,7 +416,7 @@ void ggf<D>::intercat (comm_state<D>& state,
   for (int i=0; i<(int)tl2s.size(); ++i) {
     assert (tl2s.at(i)>=tmin && tl2s.at(i)<=tmax);
   }
-  assert (rl2>=0 && rl2<h.reflevels());
+  assert (rl2>=0 and rl2<h.reflevels());
   const int c2=c1;
   assert (ml2>=0 && ml2<h.mglevels(rl2,c2));
   
@@ -460,7 +460,7 @@ void ggf<D>::intercat (comm_state<D>& state,
   for (int i=0; i<(int)tl2s.size(); ++i) {
     assert (tl2s.at(i)>=tmin && tl2s.at(i)<=tmax);
   }
-  assert (rl2>=0 && rl2<h.reflevels());
+  assert (rl2>=0 and rl2<h.reflevels());
   // walk all components
   for (int c2=0; c2<h.components(rl2); ++c2) {
     assert (ml2>=0 && ml2<h.mglevels(rl2,c2));

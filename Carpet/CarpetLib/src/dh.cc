@@ -24,7 +24,7 @@ dh<D>::dh (gh<D>& h,
     prolongation_order_space(prolongation_order_space),
     buffer_width(buffer_width)
 {
-  assert (all(lghosts>=0 && ughosts>=0));
+  assert (all(lghosts>=0 and ughosts>=0));
   assert (prolongation_order_space>=0);
   assert (buffer_width>=0);
   h.add(this);
@@ -193,9 +193,9 @@ void dh<D>::setup_multigrid_boxes( dh<D>::dboxes & box, int rl, int c, int ml )
       // (the restriction must fill all of the interior of the
       // coarse grid, and may use the exterior of the fine grid)
       const ibbox recv = intr;
-            assert (intr.empty() || ! recv.empty());
+      assert (intr.empty() or ! recv.empty());
       const ibbox send = recv.expanded_for(extrf);
-            assert (intr.empty() || ! send.empty());
+      assert (intr.empty() or ! send.empty());
       // TODO: put the check back in, taking outer boundaries
       // into account
 #if 0
@@ -210,9 +210,9 @@ void dh<D>::setup_multigrid_boxes( dh<D>::dboxes & box, int rl, int c, int ml )
       // grid, and may fill only the interior of the fine grid,
       // and the bbox must be as large as possible)
       const ibbox recv = extr.contracted_for(intrf) & intrf;
-            assert (intr.empty() || ! recv.empty());
+            assert (intr.empty() or ! recv.empty());
       const ibbox send = recv.expanded_for(extr);
-            assert (intr.empty() || ! send.empty());
+            assert (intr.empty() or ! send.empty());
       bbox.recv_mg_coarse.push_back(recv);
       box .send_mg_fine  .push_back(send);
     }

@@ -136,7 +136,7 @@ namespace Carpet {
       CCTK_INT const do_recompose
         = Carpet_Regrid (cgh, &bbsss, &obss, &pss, force_recompose);
       assert (do_recompose >= 0);
-      did_change = did_change || do_recompose;
+      did_change = did_change or do_recompose;
       
       if (do_recompose) {
         
@@ -259,7 +259,7 @@ namespace Carpet {
       do_truncate = false;
       struct stat fileinfo;
       if (IO_TruncateOutputFiles (cgh)
-	  || stat(filename, &fileinfo)!=0) {
+	  or stat(filename, &fileinfo)!=0) {
 	file.open (filename, ios::out | ios::trunc);
 	assert (file.good());
 	file << "# grid structure" << endl
@@ -342,7 +342,7 @@ namespace Carpet {
     
     assert (bbs.size() == 1);
     
-    assert (dir>=0 && dir<dim);
+    assert (dir>=0 and dir<dim);
     
     const ivect rstr = bbs.at(0).stride();
     const ivect rlb  = bbs.at(0).lower();
@@ -425,7 +425,7 @@ namespace Carpet {
         }
       }
     }
-    assert (mydim>=0 && mydim<dim);
+    assert (mydim>=0 and mydim<dim);
     assert (mysize>=0);
     if (DEBUG) cout << "SRAR mydim " << mydim << endl;
     if (DEBUG) cout << "SRAR mysize " << mysize << endl;
@@ -613,7 +613,7 @@ namespace Carpet {
           CCTK_REAL const ratio = (CCTK_REAL)mysize.at(c) / mynprocs.at(c);
           if (ratio > maxratio) { maxc=c; maxratio=ratio; }
         }
-        assert (maxc>=0 && maxc<nslices);
+        assert (maxc>=0 and maxc<nslices);
         ++ mynprocs.at(maxc);
         if (DEBUG) cout << "SRA maxc " << maxc << endl;
         if (DEBUG) cout << "SRA mynprocs[maxc] " << mynprocs.at(maxc) << endl;
@@ -684,7 +684,7 @@ namespace Carpet {
     ps = allps;
     for (int n=0; n<(int)ps.size(); ++n) {
       ps.at(n) /= ncomps;
-      assert (ps.at(n) >= 0 && ps.at(n) < nprocs);
+      assert (ps.at(n) >= 0 and ps.at(n) < nprocs);
     }
     
     if (DEBUG) cout << "SRA exit" << endl;
@@ -755,8 +755,8 @@ namespace Carpet {
 	  assert (all (clb >= 0));
 	  assert (all (clb <= cub));
 	  assert (all (cub <= rub));
-          assert (all (! (ipos==0) || clb==rlb));
-          assert (all (! (ipos==nprocs_dir-1) || cub==rub));
+          assert (all (! (ipos==0) or clb==rlb));
+          assert (all (! (ipos==nprocs_dir-1) or cub==rub));
 	  bbs.at(c) = ibbox(clb, cub-cstr, cstr);
 	  obs.at(c) = obnd;
           ps.at(c) = c;

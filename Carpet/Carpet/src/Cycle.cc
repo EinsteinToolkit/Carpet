@@ -27,7 +27,7 @@ namespace Carpet {
         switch (CCTK_GroupTypeI(group)) {
           
         case CCTK_GF:
-          assert (reflevel>=0 && reflevel<reflevels);
+          assert (reflevel>=0 and reflevel<reflevels);
           for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
             for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
               assert (m<(int)arrdata.at(group).size());
