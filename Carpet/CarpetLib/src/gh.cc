@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.20 2003/05/02 14:23:12 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.21 2003/07/25 16:19:59 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -137,7 +137,7 @@ void gh<D>::recompose (const rexts& exts,
           cout << "gh bboxes:" << endl;
 	  cout << "rl=" << rl << " c=" << c << " ml=" << ml << endl;
           cout << "extent=" << extents[rl][c][ml] << endl;
-          cout << "outer_boundary=" << outer_boundaries[rl][c][ml] << endl;
+          cout << "outer_boundary=" << outer_boundaries[rl][c] << endl;
           cout << "processor=" << processors[rl][c] << endl;
         }
       }
