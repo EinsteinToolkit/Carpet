@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.4 2001/03/14 11:00:26 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.5 2001/03/19 21:30:19 eschnett Exp $
 
  ***************************************************************************/
 
@@ -139,7 +139,7 @@ void generic_gf<D>::recompose () {
       for (int c=0; c<h.components(rl); ++c) {
       	for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
       	  sync (tl,rl,c,ml);
-      	  // TODO: assert than reflevel 0 boundaries are copied
+      	  // TODO: assert that reflevel 0 boundaries are copied
       	  if (rl>0) {
       	    ref_bnd_prolongate (tl,rl,c,ml);
       	  } // if rl
@@ -418,12 +418,6 @@ ostream& operator<< (ostream& os, const generic_gf<D>& f) {
 
 
 #if defined(TMPL_EXPLICIT)
-template class generic_gf<1>;
-template ostream& operator<< (ostream& os, const generic_gf<1>& f);
-
-template class generic_gf<2>;
-template ostream& operator<< (ostream& os, const generic_gf<2>& f);
-
 template class generic_gf<3>;
 template ostream& operator<< (ostream& os, const generic_gf<3>& f);
 #endif

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.3 2001/03/12 16:54:25 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.4 2001/03/19 21:30:19 eschnett Exp $
 
  ***************************************************************************/
 
@@ -302,16 +302,6 @@ ostream& operator<< (ostream& os, const bboxset<T,D>& s) {
 
 
 #if defined(TMPL_EXPLICIT)
-template class bboxset<int,1>;
-template bboxset<int,1>	operator- (const bbox<int,1>& b1, const bbox<int,1>& b2);
-template bboxset<int,1>	operator- (const bbox<int,1>& b, const bboxset<int,1>& s);
-template ostream& operator<< (ostream& os, const bboxset<int,1>& b);
-
-template class bboxset<int,2>;
-template bboxset<int,2>	operator- (const bbox<int,2>& b1, const bbox<int,2>& b2);
-template bboxset<int,2>	operator- (const bbox<int,2>& b, const bboxset<int,2>& s);
-template ostream& operator<< (ostream& os, const bboxset<int,2>& b);
-
 template class bboxset<int,3>;
 template bboxset<int,3>	operator- (const bbox<int,3>& b1, const bbox<int,3>& b3);
 template bboxset<int,3>	operator- (const bbox<int,3>& b, const bboxset<int,3>& s);

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.2 2001/03/19 21:30:19 eschnett Exp $
 
  ***************************************************************************/
 
@@ -45,17 +45,11 @@ ostream& operator<< (ostream& os, const vect<T,D>& a) {
 
 #if defined(TMPL_EXPLICIT)
 template class vect<int,1>;
-// template class vect<double,1>;
 template ostream& operator<< (ostream& os, const vect<int,1>& a);
-// template ostream& operator<< (ostream& os, const vect<double,1>& a);
 
 template class vect<int,2>;
-// template class vect<double,2>;
 template ostream& operator<< (ostream& os, const vect<int,2>& a);
-// template ostream& operator<< (ostream& os, const vect<double,2>& a);
 
 template class vect<int,3>;
-// template class vect<double,3>;
 template ostream& operator<< (ostream& os, const vect<int,3>& a);
-// template ostream& operator<< (ostream& os, const vect<double,3>& a);
 #endif

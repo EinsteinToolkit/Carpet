@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.8 2001/03/16 21:32:17 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.9 2001/03/19 21:30:19 eschnett Exp $
 
  ***************************************************************************/
 
@@ -336,12 +336,6 @@ ostream& operator<< (ostream& os, const dh<D>& d) {
 
 
 #if defined(TMPL_EXPLICIT)
-template class dh<1>;
-template ostream& operator<< (ostream& os, const dh<1>& d);
-
-template class dh<2>;
-template ostream& operator<< (ostream& os, const dh<2>& d);
-
 template class dh<3>;
 template ostream& operator<< (ostream& os, const dh<3>& d);
 #endif
