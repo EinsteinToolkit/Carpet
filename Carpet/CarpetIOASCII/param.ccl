@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOASCII
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/param.ccl,v 1.14 2004/06/03 10:03:47 bzink Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/param.ccl,v 1.15 2004/06/14 09:33:05 tradke Exp $
 
 
 
@@ -40,6 +40,7 @@ USES CCTK_REAL out_yzplane_x
 
 
 USES BOOLEAN new_filename_scheme
+USES BOOLEAN strict_io_parameter_check
 
 
 
