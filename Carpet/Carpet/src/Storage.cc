@@ -111,8 +111,7 @@ namespace Carpet {
         for (int ml=min_ml; ml<max_ml; ++ml) {
           for (int rl=min_rl; rl<max_rl; ++rl) {
             for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-              for (int var0=0; var0<gp.numvars; ++var0) {
-                int const var = do_increase ? var0 : gp.numvars - var0 - 1;
+              for (int var=0; var<gp.numvars; ++var) {
                 const int vectorindex
                   = gp.vectorgroup ? var % gp.vectorlength : 0;
                 const int vectorlength
