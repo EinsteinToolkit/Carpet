@@ -21,7 +21,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.24 2002/04/29 11:27:54 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.25 2002/05/17 01:07:03 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Recompose_cc)
 
@@ -79,6 +79,8 @@ namespace Carpet {
   {
     // At least one level
     assert (bbsss.size() > 0);
+    // At most maxreflevels levels
+    assert (bbsss.size() <= maxreflevels);
     for (int rl=0; rl<(int)bbsss.size(); ++rl) {
       // No empty levels
       assert (bbsss[rl].size() > 0);
