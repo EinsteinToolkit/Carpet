@@ -45,7 +45,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.17 2004/01/08 19:43:33 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.18 2004/01/09 15:43:46 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -286,8 +286,8 @@ namespace CarpetIOFlexIO {
       // Ignore ghost zones if desired
 #warning "need to check size of gdyndata.bbox"
       for (int d=0; d<dim; ++d) {
-	const int max_lower_ghosts = (gdyndata.bbox[2*d  ] && !out3D_output_outer_boundary) ? -1 : out3D_max_num_lower_ghosts;
-	const int max_upper_ghosts = (gdyndata.bbox[2*d+1] && !out3D_output_outer_boundary) ? -1 : out3D_max_num_upper_ghosts;
+	const int max_lower_ghosts = (gdyndata.bbox[2*d  ] && out3D_output_outer_boundary) ? -1 : out3D_max_num_lower_ghosts;
+	const int max_upper_ghosts = (gdyndata.bbox[2*d+1] && out3D_output_outer_boundary) ? -1 : out3D_max_num_upper_ghosts;
 	
 	const int num_lower_ghosts = max_lower_ghosts == -1 ? gdyndata.nghostzones[d] : min(out3D_max_num_lower_ghosts, gdyndata.nghostzones[d]);
 	const int num_upper_ghosts = max_upper_ghosts == -1 ? gdyndata.nghostzones[d] : min(out3D_max_num_upper_ghosts, gdyndata.nghostzones[d]);
@@ -539,7 +539,7 @@ namespace CarpetIOFlexIO {
     int asize,i;
     IObase::DataType datatype;
     int group,varindex;
-    
+    CCTK_REAL cctk_time;
 
     if(myproc==0) {
       // read the name of the variable
@@ -599,6 +599,16 @@ namespace CarpetIOFlexIO {
       else
 	{
 	  CCTK_WARN (0, "Something is wrong! Can't read multi group level!!!"); 
+	}
+
+      i = reader->readAttributeInfo ("cctk_time", datatype, asize);
+      if (i >= 0 && datatype == FLEXIO_REAL && asize > 0)
+	{
+	  reader->readAttribute (i, &cctk_time);
+	}
+      else
+	{
+	  CCTK_WARN (0, "Something is wrong! Can't read coordinate time!!!"); 
 	}
       
 

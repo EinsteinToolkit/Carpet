@@ -42,13 +42,14 @@
 #include "ggf.hh"
 #include "vect.hh"
 
+
 //#include "StoreNamedData.h"
 #include "carpet.hh"
 
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.20 2004/01/08 19:43:33 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.21 2004/01/09 15:43:46 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
@@ -234,9 +235,45 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
 
     if(myproc==0)
       amrreader = new AmrGridReader(*reader);
+
+
+    CCTK_INT4 numberoftimes;
+    IObase::DataType datatype;
+    int i,dim;
+    if (myproc == 0) {
+
+      /* we need all the times on the individual levels */
+      i = reader->readAttributeInfo ("numberoftimes", datatype, dim);
+      if(i >=0 && datatype == FLEXIO_INT && dim == 1) {
+	char buffer[100];
+	reader->readAttribute (i, &numberoftimes);
+	assert(numberoftimes==refleveltimes.size());
+	for(int lcv=0;lcv<numberoftimes;lcv++) {
+	  sprintf(buffer,"refleveltime%d",lcv);
+	  i = reader->readAttributeInfo (buffer, datatype, dim);
+	  if(i >=0 && datatype == FLEXIO_REAL && dim == 1) {
+	    reader->readAttribute (i, &refleveltimes[lcv]);
+	  }
+	  else {
+	    CCTK_WARN(0,"BAD BAD BAD! Can't read refleveltime!!");
+	  }
+	}
+      }
+      else
+	{
+	  CCTK_WARN (0, "Unable to restore reflevel times!");
+	}
+    }
+
+    CACTUS_MPI_ERROR (MPI_Bcast (&numberoftimes, 1, CARPET_MPI_INT4, 0,MPI_COMM_WORLD));
+    CACTUS_MPI_ERROR (MPI_Bcast (&refleveltimes[0], numberoftimes, CARPET_MPI_REAL, 0, MPI_COMM_WORLD));
+
+
+
     
     BEGIN_REFLEVEL_LOOP(cgh) {
       BEGIN_MGLEVEL_LOOP(cgh) {
+
 
 	/* make sure we are looking at the first dataset where
 	   all the good stuff ist stored! */
@@ -246,6 +283,11 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
 	/* Recover GH extentions */
 	CCTK_INFO ("Recovering GH extensions");
 	result += RecoverGHextensions (cgh, reader);
+
+	cout << refleveltimes[reflevel]<<endl;
+	tt->set_time(reflevel,mglevel,(CCTK_REAL) cgh->cctk_iteration/maxreflevelfact);
+	cout << "tt " << tt->time(0,reflevel,mglevel) << endl;
+
       } END_MGLEVEL_LOOP;
     } END_REFLEVEL_LOOP;	  
 
@@ -259,6 +301,8 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
       delete reader;
       delete amrreader;
     }
+
+
   }
 
 
@@ -371,7 +415,8 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
     int i, type,dim;
     CCTK_REAL realBuffer;
     CCTK_INT4 int4Buffer[2];
-
+    CCTK_INT4 intbuffer,numberoftimes;
+    
     IObase::DataType datatype;
     
     if (CCTK_MyProc (GH) == 0)
@@ -414,6 +459,29 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
 	    CCTK_WARN (1, "Unable to restore GH->cctk_time, defaulting to 0.0");
 	    realBuffer = 0.0;
 	  }
+
+	/* finally, we need all the times on the individual levels */
+	i = reader->readAttributeInfo ("numberoftimes", datatype, dim);
+	if(i >=0 && datatype == FLEXIO_INT && dim == 1) {
+	    char buffer[100];
+	    reader->readAttribute (i, &numberoftimes);
+	    assert(numberoftimes==refleveltimes.size());
+	    for(int lcv=0;lcv<numberoftimes;lcv++) {
+	      sprintf(buffer,"refleveltime%d",lcv);
+	      i = reader->readAttributeInfo (buffer, datatype, dim);
+	      if(i >=0 && datatype == FLEXIO_REAL && dim == 1) {
+		reader->readAttribute (i, &refleveltimes[lcv]);
+		  }
+	      else {
+		CCTK_WARN(0,"BAD BAD BAD! Can't read refleveltime!!");
+		  }
+	    }
+	}
+	else
+	  {
+	    CCTK_WARN (0, "Unable to restore reflevel times!");
+	  }
+
       }
     
 #ifdef CCTK_MPI
@@ -421,13 +489,21 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
   /* NOTE: We have to use MPI_COMM_WORLD here
      because PUGH_COMM_WORLD is not yet set up at parameter recovery time.
      We also assume that PUGH_MPI_INT4 is a compile-time defined datatype. */
+    CACTUS_MPI_ERROR (MPI_Bcast (&numberoftimes, 1, CARPET_MPI_INT4, 0,MPI_COMM_WORLD));
+    CACTUS_MPI_ERROR (MPI_Bcast (&refleveltimes[0], numberoftimes, CARPET_MPI_REAL, 0, MPI_COMM_WORLD));
+    CACTUS_MPI_ERROR (MPI_Bcast (int4Buffer, 2, CARPET_MPI_INT4, 0,MPI_COMM_WORLD));
     CACTUS_MPI_ERROR (MPI_Bcast (int4Buffer, 2, CARPET_MPI_INT4, 0,MPI_COMM_WORLD));
     CACTUS_MPI_ERROR (MPI_Bcast (&realBuffer, 1, CARPET_MPI_REAL,0,MPI_COMM_WORLD));
 #endif
 
-    GH->cctk_time = realBuffer;
+    GH->cctk_time = refleveltimes[reflevel];
+
+    cout << "cctk_time " << realBuffer << endl;
+
     GH->cctk_iteration = (int) int4Buffer[0];
     CCTK_SetMainLoopIndex ((int) int4Buffer[1]);
+
+    cout << "refleveltimes" << refleveltimes[0] << " " << refleveltimes[1] << " " << refleveltimes[2] << endl;
 
     return (0);
 }
@@ -607,9 +683,17 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
 
 	DumpGHExtensions(cgh,writer);
 
+	/* finally, we need all the times on the individual levels */
+	const int numberoftimes=refleveltimes.size();
+	writer->writeAttribute("numberoftimes",FlexIODataType(CCTK_VARIABLE_INT),1,&numberoftimes);
+	for(int i=0;i < numberoftimes;i++) {
+	  char buffer[100];
+	  sprintf(buffer,"refleveltime%d",i);
+	  writer->writeAttribute(buffer,FlexIODataType(CCTK_VARIABLE_REAL),1,&refleveltimes[i]);
+	  }
       }
 
-    
+    //    cout << "refleveltimes: " << refleveltimes[0] << "," << refleveltimes[1] << endl;
     // now dump the grid varibles for all reflevels and components, sorted by groups
     BEGIN_REFLEVEL_LOOP(cgh) {
 
@@ -661,13 +745,22 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
 	      gdata.numtimelevels = CCTK_GroupStorageIncrease (cgh, 1, &group,
 							       &gdata.numtimelevels,NULL);
 	      
-	      /* dump all timelevels except the oldest (for multi-level groups) */
+
+
+
+
+
 	      CCTK_GroupData (group, &gdata);
+
+	      /* dump all timelevels except the oldest (for multi-level groups) */
+	      /* COMMENTED OUT!! We _need_ all timelevels!!!
 	      if (gdata.numtimelevels > 1)
 	      {
 		gdata.numtimelevels--;
 	      }
 	      
+	      */
+
 	      int first_vindex = CCTK_FirstVarIndexI (group);
 
 
@@ -761,10 +854,10 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
       {
         if (myGH->cp_filename_list[myGH->cp_filename_index])
         {
-	  //          if (checkpoint_keep > 0)
-          //{
-          //  remove (myGH->cp_filename_list[myGH->cp_filename_index]);
-          //}
+	  if (checkpoint_keep > 0)
+	    {
+	      remove (myGH->cp_filename_list[myGH->cp_filename_index]);
+	    }
           free (myGH->cp_filename_list[myGH->cp_filename_index]);
         }
         myGH->cp_filename_list[myGH->cp_filename_index] = strdup (cp_filename);
@@ -781,7 +874,9 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
     int retval = 0;
     int myproc = CCTK_MyProc (cgh);
     int currdataset,ndatasets;
+
     CCTK_VInfo(CCTK_THORNSTRING,"Starting to recover data!!!");
+
 
     if(myproc==0) {
       ndatasets = reader->nDatasets();

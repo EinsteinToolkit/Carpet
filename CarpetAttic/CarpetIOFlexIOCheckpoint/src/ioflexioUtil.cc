@@ -145,12 +145,10 @@ void DumpCommonAttributes (const cGH *cgh, IObase* writer, ioRequest* request)
 
 
 
-#if 0
-  // already dumped by amrwriter if we are dealing with a grid function or a grid array:
 
-  if (CCTK_GroupTypeFromVarI (request->vindex) == CCTK_SCALAR)
-    writer->writeAttribute("time",FlexIODataType(CCTK_VARIABLE_REAL),1,&cgh->cctk_time);
-#endif
+  // already dumped by amrwriter (obsolete!)
+  writer->writeAttribute("cctk_time",FlexIODataType(CCTK_VARIABLE_REAL),1,&cgh->cctk_time);
+
 
   /* attributes describing the underlying grid
      These are only stored for CCTK_GF variables if they are associated
