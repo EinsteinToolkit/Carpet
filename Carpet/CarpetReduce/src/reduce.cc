@@ -1,6 +1,7 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.7 2002/03/26 13:22:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.8 2002/04/11 15:43:15 schnetter Exp $
 
 #include <assert.h>
+#include <float.h>
 #include <limits.h>
 #include <math.h>
 #include <stdlib.h>
@@ -17,7 +18,7 @@
 
 #include "reduce.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.7 2002/03/26 13:22:30 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.8 2002/04/11 15:43:15 schnetter Exp $";
 
 CCTK_FILEVERSION(CarpetReduce_reduce_cc)
 
@@ -26,10 +27,7 @@ CCTK_FILEVERSION(CarpetReduce_reduce_cc)
 #ifndef LLONG_MAX
 #  warning "no long long int support"
 #endif
-#ifndef HUGE_VALF
-#  warning "no float support"
-#endif
-#ifndef HUGE_VALL
+#ifndef LDBL_MAX
 #  warning "no long double support"
 #endif
 
@@ -88,25 +86,19 @@ namespace CarpetReduce {
 #ifdef LLONG_MAX
   template<> inline void minimum::op<long long>    ::initialise (long long    & accum) { accum = LLONG_MAX; }
 #endif
-#ifdef HUGE_VALF
-  template<> inline void minimum::op<float>        ::initialise (float        & accum) { accum = HUGE_VALF; }
+  template<> inline void minimum::op<float>        ::initialise (float        & accum) { accum = FLT_MAX; }
+  template<> inline void minimum::op<double>       ::initialise (double       & accum) { accum = DBL_MAX; }
+#ifdef LDBL_MAX
+  template<> inline void minimum::op<long double>  ::initialise (long double  & accum) { accum = LDBL_MAX; }
 #endif
-  template<> inline void minimum::op<double>       ::initialise (double       & accum) { accum = HUGE_VAL; }
-#ifdef HUGE_VALL
-  template<> inline void minimum::op<long double>  ::initialise (long double  & accum) { accum = HUGE_VALL; }
+  template<> inline void minimum::op<complex<float> >        ::initialise (complex<float>        & accum) { accum = complex<float>(FLT_MAX,FLT_MAX); }
+  template<> inline void minimum::op<complex<double> >       ::initialise (complex<double>       & accum) { accum = complex<double>(DBL_MAX,DBL_MAX); }
+#ifdef LDBL_MAX
+  template<> inline void minimum::op<complex<long double> >  ::initialise (complex<long double>  & accum) { accum = complex<long double>(LDBL_MAX,LDBL_MAX); }
 #endif
-#ifdef HUGE_VALF
-  template<> inline void minimum::op<complex<float> >        ::initialise (complex<float>        & accum) { accum = complex<float>(HUGE_VALF,HUGE_VALF); }
-#endif
-  template<> inline void minimum::op<complex<double> >       ::initialise (complex<double>       & accum) { accum = complex<double>(HUGE_VAL,HUGE_VAL); }
-#ifdef HUGE_VALL
-  template<> inline void minimum::op<complex<long double> >  ::initialise (complex<long double>  & accum) { accum = complex<long double>(HUGE_VALL,HUGE_VALL); }
-#endif
-#ifdef HUGE_VALF
   template<> inline void minimum::op<complex<float> >        ::reduce (complex<float>& accum, const complex<float>& val) { accum = complex<float>(min(accum.real(), val.real()), min(accum.imag(), val.imag())); }
-#endif
   template<> inline void minimum::op<complex<double> >       ::reduce (complex<double>& accum, const complex<double>& val) { accum = complex<double>(min(accum.real(), val.real()), min(accum.imag(), val.imag())); }
-#ifdef HUGE_VALL
+#ifdef LDBL_MAX
   template<> inline void minimum::op<complex<long double> >  ::reduce (complex<long double>& accum, const complex<long double>& val) { accum = complex<long double>(min(accum.real(), val.real()), min(accum.imag(), val.imag())); }
 #endif
   
@@ -130,25 +122,19 @@ namespace CarpetReduce {
 #ifdef LLONG_MIN
   template<> inline void maximum::op<long long>    ::initialise (long long    & accum) { accum = LLONG_MIN; }
 #endif
-#ifdef HUGE_VALF
-  template<> inline void maximum::op<float>        ::initialise (float        & accum) { accum = -HUGE_VALF; }
+  template<> inline void maximum::op<float>        ::initialise (float        & accum) { accum = -FLT_MAX; }
+  template<> inline void maximum::op<double>       ::initialise (double       & accum) { accum = -DBL_MAX; }
+#ifdef LDBL_MAX
+  template<> inline void maximum::op<long double>  ::initialise (long double  & accum) { accum = -LDBL_MAX; }
 #endif
-  template<> inline void maximum::op<double>       ::initialise (double       & accum) { accum = -HUGE_VAL; }
-#ifdef HUGE_VALL
-  template<> inline void maximum::op<long double>  ::initialise (long double  & accum) { accum = -HUGE_VALL; }
+  template<> inline void maximum::op<complex<float> >        ::initialise (complex<float>        & accum) { accum = complex<float>(-FLT_MAX,-FLT_MAX); }
+  template<> inline void maximum::op<complex<double> >       ::initialise (complex<double>       & accum) { accum = complex<double>(-DBL_MAX,-DBL_MAX); }
+#ifdef LDBL_MAX
+  template<> inline void maximum::op<complex<long double> >  ::initialise (complex<long double>  & accum) { accum = complex<long double>(-LDBL_MAX,-LDBL_MAX); }
 #endif
-#ifdef HUGE_VALF
-  template<> inline void maximum::op<complex<float> >        ::initialise (complex<float>        & accum) { accum = complex<float>(-HUGE_VALF,-HUGE_VALF); }
-#endif
-  template<> inline void maximum::op<complex<double> >       ::initialise (complex<double>       & accum) { accum = complex<double>(-HUGE_VAL,-HUGE_VAL); }
-#ifdef HUGE_VALL
-  template<> inline void maximum::op<complex<long double> >  ::initialise (complex<long double>  & accum) { accum = complex<long double>(-HUGE_VALL,-HUGE_VALL); }
-#endif
-#ifdef HUGE_VALF
   template<> inline void maximum::op<complex<float> >        ::reduce (complex<float>& accum, const complex<float>& val) { accum = complex<float>(max(accum.real(), val.real()), max(accum.imag(), val.imag())); }
-#endif
   template<> inline void maximum::op<complex<double> >       ::reduce (complex<double>& accum, const complex<double>& val) { accum = complex<double>(max(accum.real(), val.real()), max(accum.imag(), val.imag())); }
-#ifdef HUGE_VALL
+#ifdef LDBL_MAX
   template<> inline void maximum::op<complex<long double> >  ::reduce (complex<long double>& accum, const complex<long double>& val) { accum = complex<long double>(max(accum.real(), val.real()), max(accum.imag(), val.imag())); }
 #endif
   
