@@ -31,7 +31,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.72 2004/06/03 10:03:47 bzink Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.73 2004/06/14 06:58:51 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -216,7 +216,7 @@ namespace CarpetIOASCII {
     const int n0 = CCTK_FirstVarIndexI(group);
     assert (n0>=0 && n0<CCTK_NumVars());
     const int var = n - n0;
-    assert (var>=0 && var<CCTK_NumVars());
+    assert (var>=0 && var<CCTK_NumVarsInGroupI(group));
     const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
     assert (num_tl>=1);
     
@@ -229,9 +229,6 @@ namespace CarpetIOASCII {
     }
     
     const int grouptype = CCTK_GroupTypeI(group);
-#if 0
-    if (grouptype != CCTK_GF) assert (reflevel==0);
-#else
     switch (grouptype) {
     case CCTK_SCALAR:
     case CCTK_ARRAY:
@@ -243,7 +240,6 @@ namespace CarpetIOASCII {
     default:
       assert (0);
     }
-#endif
     const int rl = grouptype == CCTK_GF ? reflevel : 0;
     
     const int groupdim = CCTK_GroupDimI(group);
@@ -689,7 +685,7 @@ namespace CarpetIOASCII {
       if (myoutevery <= 0) {
         // output is disabled
         output_this_iteration = false;
-      } else if ((cctk_iteration % myoutevery) == 0) {
+      } else if (cctk_iteration % myoutevery == 0) {
         // we already decided to output this iteration
         output_this_iteration = true;
       } else {
