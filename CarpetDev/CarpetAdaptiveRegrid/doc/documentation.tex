@@ -45,11 +45,11 @@
 %
 % Example of including a graphic image:
 %    \begin{figure}[ht]
-% 	\begin{center}
-%    	   \includegraphics[width=6cm]{MyArrangement_MyThorn_MyFigure}
-% 	\end{center}
-% 	\caption{Illustration of this and that}
-% 	\label{MyArrangement_MyThorn_MyLabel}
+%       \begin{center}
+%          \includegraphics[width=6cm]{MyArrangement_MyThorn_MyFigure}
+%       \end{center}
+%       \caption{Illustration of this and that}
+%       \label{MyArrangement_MyThorn_MyLabel}
 %    \end{figure}
 %
 % Example of using a label:
@@ -82,7 +82,7 @@
 \author{Ian Hawke \textless hawke@aei.mpg.de\textgreater}
 
 % The title of the document (not necessarily the name of the Thorn)
-\title{}
+\title{Adaptive Mesh Refinement}
 
 % the date your document was last changed, if your document is in CVS,
 % please use:
@@ -99,7 +99,7 @@
 
 % Add an abstract for this thorn's documentation
 \begin{abstract}
-
+  A brief description of how to use AMR.
 \end{abstract}
 
 % The following sections are suggestive only.
@@ -107,34 +107,171 @@
 
 \section{Introduction}
 
-\section{Physical System}
+This thorn is a regridding thorn to work with {\tt Carpet}. It is
+meant to directly replace the standard {\tt CarpetRegrid} thorn and
+many of the parameters are based directly on standard parameters that
+people already use. However, this thorn is meant to provide full {\em
+  Adaptive} Mesh Refinement (AMR). The thorn is not complete by
+itself; as described below, an error indicator needs to be given.
 
-\section{Numerical Implementation}
+As those that use mesh refinement will know, the question of where to
+put the refined grids is as much art as science. The crucial points
+are the following:
+\begin{enumerate}
+\item We wish to refine as few points as possible. The reason for this
+  is to reduce memory overhead and to reduce runtime. The latter is
+  particularly important as the runtime is essentially dominated by
+  the finest level(s).
+\item We wish to create as few new grids as possible. The reason for
+  this is that the ghost zones required for the boundaries of the
+  grids are, in a sense, a waste of computational time. Therefore the
+  larger the boundaries the more time the code will spend filling
+  zones that have no benefit for the evolution. The more grids, the
+  larger the boundary for any given benefit.
+\item We wish to place the refined grid(s) where they will do the most
+  good; that is, where the error is highest. This allows us to get a
+  (more) uniform error over the whole domain.
+\end{enumerate}
+Therefore the problem to be solved is to balance requirements (1) and
+(2) in a sensible way whilst ensuring that the error is minimized as
+required by point (3).
+
+The process by which this is achieved is twofold:
+\begin{enumerate}
+\item An approximation to the error is found. For ``true'' AMR this is
+  usually meant to be an approximation to the truncation error found
+  using Richardson extrapolation and a shadow heirachy. However, this
+  can be expensive and may not work well at low resolutions
+  (particularly in the {\tt Carpet} case when a large number of buffer
+  zones are in use). Instead a separate approximation can be used
+  (often called an {\em error indicator} instead of a true {\em error
+    estimate}) based on certain physical properties of the solution,
+  such as a curvature based method (such as is used in {\tt Paramesh}).
+\item The points marked in error are then ``clustered'' into Cartesian
+  boxes. The Cartesian boxes can either be pre-determined (as in {\tt
+    Paramesh}) or computed on-the-fly, as done here. It might be that
+  a box is refined only if a certain fraction of its points are marked
+  in error (I believe this is the {\tt Paramesh} approach) or that
+  every point marked in error is contained in a refined box, which is
+  the approach taken here.
+\end{enumerate}
+Essentially, this thorn requires somebody else to compute the
+approximation to the error and to store it in a grid function. It will
+then cluster the points in error, providing {\tt Carpet} with a new
+grid structure.
+
+For those that want the real details, this is basically an
+implementation of the clustering algorithm of Berger and
+Rigoutsos~\cite{CAR_Berger91}.
 
 \section{Using This Thorn}
 
-\subsection{Obtaining This Thorn}
+As a user you should just replace {\tt CarpetRegrid} with {\tt
+  CarpetAdaptiveRegrid} in your parameter file and set the appropriate
+parameters correctly:
+\begin{itemize}
+\item {\tt Carpet::domain\_from\_coordbase}. This {\bf must} be set to
+  {\tt "yes"}. It follows that you must set your domain using the
+  coordbase parameters. Some examples can be found in the {\tt par/}
+  directory of this thorn.
+\item {\tt min\_width}. This describes the minimum width of a grid in
+  any direction. Note that if the entire {\em global} domain is
+  smaller than this in a given direction then it will be ignored for
+  that direction (local domain sizes will be treated in the correct,
+  processor independent manner). The value of this should be set
+  dependent on the number of Carpet {\tt ghost\_zone}s and {\tt
+    buffer\_zone}s you are using; for example, with 3 {\tt
+    ghost\_zone}s and 6 {\tt buffer\_zone}s I would set this to be at
+  least 20 ($> 2 \times (3+6)$).
+\item {\tt min\_fraction}. This describes the minimum fraction of
+  points marked in error that a candidate refined box should have
+  before it is accepted. Note that this may be ignored if the result
+  would be to produce a box that is too small. This should not be set
+  too high or the algorithm will produce large numbers of small boxes;
+  I would recommend a value between 0.5 and 0.8.
+\item {\tt max\_error}. If the absolute value of the grid function
+  being used as an approximation to the error is above this the point
+  is marked in error; if not, the point is marked as fine. Sensible
+  values depend entirely on the method used to compute the error
+  approximation and you'll almost certainly need to experiment.
+\item {\tt error\_var}. The name of the grid function containing the
+  approximation to the error. Should have the form {\tt
+    Thorn::Var}. Should be a real grid function with storage, probably
+  with only one timelevel, and almost certainly should have the tags
+  table entry {\tt tags='Prolongation="None"'} (otherwise the error
+  function will be the same on different refinement levels, which is
+  not what you want).
+\item {\tt regrid\_every}. How often the regridding algorithm is
+  called; semantically it's identical to the parameter in {\tt
+    CarpetRegrid}. Again, the value of this parameter probably
+  requires some experimentation. Note, however, that successively
+  refining a region many times at short notice often does not give
+  good results, as it is similar to repeatedly interpolating the grid
+  functions in that region.
+\item {\tt pad}. When the error is computed and points are marked in
+  error or not, the result is ``padded'' by a certain number of
+  points. This ensures that it doesn't try to regrid a single point -
+  this will always be padded out to something larger. It also ensures
+  that if the computation of the error estimate was non-local (i.e.,
+  required taking derivatives) then inter-processor boundaries don't
+  cause problems. It also ensures that if a feature is near the
+  threshold of being refined the error doesn't have ``gaps'' where
+  points fall just below the threshold. Finally, it ensures that the
+  refined grid is big enough to allow the interesting feature to move
+  within it. The value for this should be set with these
+  considerations in mind; typically I would choose 4-8 points but if
+  {\tt regrid\_every} is large, or the features are moving rapidly on
+  the grid, or you have a large number of {\tt ghost\_zone}s, then you
+  may wish to increase it to 12 or more.
+\item {\tt verbose} and {\tt veryverbose}. Prints large amounts of
+  debugging information about the grid locations. I wouldn't use these
+  unless you want to debug.
+\item {\tt refinement\_levels}. The number of refinement levels to be
+  set up initially, including the base grid. Again this follows the
+  semantics of {\tt CarpetRegrid}. At the initial time the grid
+  structure is determined not from the error function (as it may not
+  have been computed as yet) but instead from this parameter and the
+  {\tt coordinates} parameter:
+\item {\tt coordinates}. The bounding box coordinates for the initial
+  grid structure. Again this follows precisely the semantics of {\tt
+    CarpetRegrid} {\bf with the assumption equivalent to}
 
-\subsection{Basic Usage}
+ {\tt CarpetRegrid::smart\_outer\_boundaries = "yes"}.
+ 
+ As noted above it can be very bad for a large number of refined grids
+ to be switched on very rapidly, so judicious use of this parameter to
+ set up the initial grid structure can be very helpful.
+\end{itemize}
 
-\subsection{Special Behaviour}
+{\tt CarpetAdaptiveRegrid} should give identical results on varying
+numbers of processors.
 
-\subsection{Interaction With Other Thorns}
+{\tt CarpetAdaptiveRegrid} will be default produce as many refinement
+levels as allowed by the
 
-\subsection{Examples}
+ {\tt Carpet::max\_refinement\_levels}
+ 
+ parameter, so be careful!
 
-\subsection{Support and Feedback}
+{\tt CarpetAdaptiveRegrid} will {\bf not} necessarily give a
+symmetrical grid structure on symmetrical problems. This may mean that
+any symmetry in the problem that is not explicitly imposed (say by the
+boundary conditions) could be lost when using this thorn. This is a
+feature, not a bug. If you don't like it, you're welcome to try and
+fix it.
 
-\section{History}
-
-\subsection{Thorn Source Code}
-
-\subsection{Thorn Documentation}
-
-\subsection{Acknowledgements}
-
+{\tt CarpetAdaptiveRegrid} is in the development directory of the
+development version of {\tt Carpet} for good reason; use at your own
+risk.
 
 \begin{thebibliography}{9}
+
+\bibitem{CAR_Berger91}
+{M. Berger and I. Rigoutsos. 
+\newblock An {A}lgorithm for {P}oint {C}lustering and {G}rid
+{G}eneration. 
+\newblock {\em IEEE Trans. on Systems, Man.\ and Cybernetics}, {\bf
+  21}:\penalty0 1278--1286, 1991.}
 
 \end{thebibliography}
 

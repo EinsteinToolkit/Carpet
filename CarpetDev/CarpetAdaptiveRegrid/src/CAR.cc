@@ -890,7 +890,8 @@ namespace CarpetAdaptiveRegrid {
 
     if (verbose) {
       ostringstream buf;
-      buf << "Done with it all. Total list is:"
+      buf << "Done with it all. Iteration " << cctkGH->cctk_iteration
+          << " level " << reflevel << endl << "Total list is:"
           << endl << local_bbsss;
       CCTK_INFO(buf.str().c_str());
     }      
