@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.58 2004/03/23 19:31:44 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.59 2004/03/23 19:32:21 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -634,7 +634,7 @@ namespace Carpet {
     assert (ncomps > 0);
     vector<int> mysize(nslices);
     for (int c=0; c<nslices; ++c) {
-      mysize[c] = bbs.at(c).size();
+      mysize.at(c) = bbs.at(c).size();
     }
     vector<int> mynprocs(nslices);
     {
