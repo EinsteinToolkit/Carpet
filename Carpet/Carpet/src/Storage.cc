@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.17 2003/05/15 16:31:46 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.18 2003/05/21 14:30:25 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -39,18 +39,19 @@ namespace Carpet {
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
     
+    const int grouptype = CCTK_GroupTypeI(group);
+    
     // No storage change in local mode
-    assert (! (component!=-1 && CCTK_GroupTypeI(group)==CCTK_GF));
+    assert (! (component!=-1 && grouptype==CCTK_GF));
     
     if (CCTK_QueryGroupStorageI(cgh, group)) {
       // storage was enabled previously
       return 1;
     }
-    
+
     // Check whether this group has transfer operators
-    if (! arrdata[group].do_transfer) {
-      const int grouptype = CCTK_GroupTypeI(group);
-      if (grouptype == CCTK_GF) {
+    if (grouptype == CCTK_GF) {
+      if (! arrdata[group].do_transfer) {
         const int var = CCTK_FirstVarIndexI(group);
         const int vartype = CCTK_VarTypeI(var);
         const char * vartypename = CCTK_VarTypeName(vartype);
@@ -74,12 +75,14 @@ namespace Carpet {
     const int my_prolongation_order_time
       = num_tl==1 ? 0 : prolongation_order_time;
     
-    if (max_refinement_levels > 1) {
-      if (num_tl <= my_prolongation_order_time) {
-	CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-		    "There are not enough time levels for the desired temporal prolongation order in the grid function group \"%s\".  With Carpet::prolongation_order_time=%d, you need at least %d time levels.",
-		    CCTK_GroupName(group),
-		    prolongation_order_time, prolongation_order_time+1);
+    if (grouptype == CCTK_GF) {
+      if (max_refinement_levels > 1) {
+        if (num_tl <= my_prolongation_order_time) {
+          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "There are not enough time levels for the desired temporal prolongation order in the grid function group \"%s\".  With Carpet::prolongation_order_time=%d, you need at least %d time levels.",
+                      CCTK_GroupName(group),
+                      prolongation_order_time, prolongation_order_time+1);
+        }
       }
     }
     
@@ -100,7 +103,7 @@ namespace Carpet {
 	UnsupportedVarType(n);
       } // switch
       
-      if (CCTK_GroupTypeI(group) != CCTK_GF) {
+      if (grouptype != CCTK_GF) {
         for (int tl=0; tl<num_tl; ++tl) {
           int const c = CCTK_MyProc(cgh);
           cgh->data[n][tl] = ((*arrdata[group].data[var]) (-tl, 0, c, 0)->storage());

@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.27 2003/05/13 16:31:47 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.28 2003/05/21 14:30:24 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -92,11 +92,48 @@ namespace Carpet {
 	  cgh->cctk_delta_time = base_delta_time / reflevelfact * mglevelfact;
 	}
 	
-	// Set up the initial data
-	Waypoint ("%*sScheduling INITIAL", 2*reflevel, "");
-	CCTK_ScheduleTraverse ("CCTK_INITIAL", cgh, CallFunction);
-	Waypoint ("%*sScheduling POSTINITIAL", 2*reflevel, "");
-	CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
+        if (! init_each_timelevel) {
+          
+          // Set up the initial data
+          Waypoint ("%*sScheduling INITIAL", 2*reflevel, "");
+          CCTK_ScheduleTraverse ("CCTK_INITIAL", cgh, CallFunction);
+          Waypoint ("%*sScheduling POSTINITIAL", 2*reflevel, "");
+          CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
+          
+        } else {
+          // init_each_timelevel
+          
+	  tt->set_delta
+            (reflevel, mglevel, - tt->get_delta (reflevel, mglevel));
+	  tt->advance_time (reflevel, mglevel);
+	  tt->advance_time (reflevel, mglevel);
+	  tt->advance_time (reflevel, mglevel);
+	  tt->set_delta
+            (reflevel, mglevel, - tt->get_delta (reflevel, mglevel));
+          
+          for (int tl=-2; tl<=0; ++tl) {
+            
+            // Advance level times
+            tt->advance_time (reflevel, mglevel);
+            cgh->cctk_time
+              = tt->time (0, reflevel, mglevel) * base_delta_time;
+            
+            // Cycle time levels
+            CycleTimeLevels (cgh);
+            
+            Waypoint ("%*sCurrent time is %g%s", 2*reflevel, "",
+                      cgh->cctk_time,
+                      do_global_mode ? "   (global time)" : "");
+            
+            // Set up the initial data
+            Waypoint ("%*sScheduling INITIAL", 2*reflevel, "");
+            CCTK_ScheduleTraverse ("CCTK_INITIAL", cgh, CallFunction);
+            Waypoint ("%*sScheduling POSTINITIAL", 2*reflevel, "");
+            CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
+            
+          } // for tl
+          
+        } // init_each_timelevel
 	
 	// Poststep
 	Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
