@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.24 2004/03/08 09:12:44 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.25 2004/03/31 12:50:58 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -21,7 +21,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.24 2004/03/08 09:12:44 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.25 2004/03/31 12:50:58 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -300,186 +300,185 @@ namespace CarpetInterp {
     //
     int overall_ierr = 0;
     BEGIN_GLOBAL_MODE(cgh) {
-      
-      BEGIN_REFLEVEL_LOOP(cgh) {
-        if (reflevel>=minrl && reflevel<maxrl) {
-          
-          // Number of necessary time levels
-          CCTK_REAL const time1 = vtt.at(m)->time (0, reflevel, mglevel);
-          CCTK_REAL const time2 = cgh->cctk_time / cgh->cctk_delta_time;
-          bool const need_time_interp
-            = fabs((time1 - time2) / (fabs(time1) + fabs(time2)
-                                      + fabs(cgh->cctk_delta_time))) > 1e-12;
-          int const num_tl
-            = need_time_interp ? prolongation_order_time + 1 : 1;
+      for (int rl=minrl; rl<maxrl; ++rl) {
+        enter_level_mode(cgh, rl);
+        
+        // Number of necessary time levels
+        CCTK_REAL const time1 = vtt.at(m)->time (0, reflevel, mglevel);
+        CCTK_REAL const time2 = cgh->cctk_time / cgh->cctk_delta_time;
+        bool const need_time_interp
+          = fabs((time1 - time2) / (fabs(time1) + fabs(time2)
+                                    + fabs(cgh->cctk_delta_time))) > 1e-12;
+        int const num_tl
+          = need_time_interp ? prolongation_order_time + 1 : 1;
+        
+        BEGIN_MAP_LOOP(cgh, CCTK_GF) {
+          BEGIN_LOCAL_COMPONENT_LOOP(cgh, CCTK_GF) {
             
-          BEGIN_MAP_LOOP(cgh, CCTK_GF) {
-            BEGIN_LOCAL_COMPONENT_LOOP(cgh, CCTK_GF) {
+            // Find out about the local geometry
+            ivect lsh;
+            rvect coord_origin, coord_delta;
+            for (int d=0; d<dim; ++d) {
+              lsh[d] = cgh->cctk_lsh[d];
+              coord_delta[d] = cgh->cctk_delta_space[d] / cgh->cctk_levfac[d];
+              coord_origin[d] = cgh->cctk_origin_space[d] + (cgh->cctk_lbnd[d] + 1.0 * cgh->cctk_levoff[d] / cgh->cctk_levoffdenom[d]) * coord_delta[d];
               
-              // Find out about the local geometry
-              ivect lsh;
-              rvect coord_origin, coord_delta;
-              for (int d=0; d<dim; ++d) {
-                lsh[d] = cgh->cctk_lsh[d];
-                coord_delta[d] = cgh->cctk_delta_space[d] / cgh->cctk_levfac[d];
-                coord_origin[d] = cgh->cctk_origin_space[d] + (cgh->cctk_lbnd[d] + 1.0 * cgh->cctk_levoff[d] / cgh->cctk_levoffdenom[d]) * coord_delta[d];
+            }
+            
+            
+            
+            // Find out about the grid functions
+            vector<CCTK_INT> input_array_type_codes(N_input_arrays);
+            vector<const void *> input_arrays(N_input_arrays);
+            for (int n=0; n<N_input_arrays; ++n) {
+              if (input_array_variable_indices[n] == -1) {
+                
+                // Ignore this entry
+                input_array_type_codes.at(n) = -1;
+                
+              } else {
+                
+                int const vi = input_array_variable_indices[n];
+                assert (vi>=0 && vi<CCTK_NumVars());
+                
+                int const gi = CCTK_GroupIndexFromVarI (vi);
+                assert (gi>=0 && gi<CCTK_NumGroups());
+                
+                cGroup group;
+                ierr = CCTK_GroupData (gi, &group);
+                assert (!ierr);
+                assert (group.grouptype == CCTK_GF);
+                assert (group.dim == dim);
+                assert (group.disttype == CCTK_DISTRIB_DEFAULT);
+                assert (group.stagtype == 0); // not staggered
+                
+                assert (group.numtimelevels >= num_tl);
+                
+                input_array_type_codes.at(n) = group.vartype;
                 
               }
-                
-                
-              
-              // Find out about the grid functions
-              vector<CCTK_INT> input_array_type_codes(N_input_arrays);
-              vector<const void *> input_arrays(N_input_arrays);
-              for (int n=0; n<N_input_arrays; ++n) {
-                if (input_array_variable_indices[n] == -1) {
-                  
-                  // Ignore this entry
-                  input_array_type_codes.at(n) = -1;
-                  
-                } else {
-                  
-                  int const vi = input_array_variable_indices[n];
-                  assert (vi>=0 && vi<CCTK_NumVars());
-                  
-                  int const gi = CCTK_GroupIndexFromVarI (vi);
-                  assert (gi>=0 && gi<CCTK_NumGroups());
-                  
-                  cGroup group;
-                  ierr = CCTK_GroupData (gi, &group);
-                  assert (!ierr);
-                  assert (group.grouptype == CCTK_GF);
-                  assert (group.dim == dim);
-                  assert (group.disttype == CCTK_DISTRIB_DEFAULT);
-                  assert (group.stagtype == 0); // not staggered
-                  
-                  assert (group.numtimelevels >= num_tl);
-                  
-                  input_array_type_codes.at(n) = group.vartype;
-                  
-                }
-              } // for input arrays
-              
-              
-              
+            } // for input arrays
+            
+            
+            
               // Work on the data from all processors
-              for (int p=0; p<nprocs; ++p) {
-                assert (allcoords.at(ind_prc(p,m,reflevel,component)).owns_storage());
-                assert (allhomecnts.at(ind_prc(p,m,reflevel,component)) == allcoords.at(ind_prc(p,m,reflevel,component)).shape()[0]);
-                assert (allhomecnts.at(ind_prc(p,m,reflevel,component)) == alloutputs.at(ind_prc(p,m,reflevel,component)).shape()[0]);
+            for (int p=0; p<nprocs; ++p) {
+              assert (allcoords.at(ind_prc(p,m,reflevel,component)).owns_storage());
+              assert (allhomecnts.at(ind_prc(p,m,reflevel,component)) == allcoords.at(ind_prc(p,m,reflevel,component)).shape()[0]);
+              assert (allhomecnts.at(ind_prc(p,m,reflevel,component)) == alloutputs.at(ind_prc(p,m,reflevel,component)).shape()[0]);
+              
+              int const npoints = allhomecnts.at(ind_prc(p,m,reflevel,component));
+              
+              // Do the processor-local interpolation
+              vector<const void *> tmp_interp_coords (dim);
+              for (int d=0; d<dim; ++d) {
+                tmp_interp_coords.at(d) = &allcoords.at(ind_prc(p,m,reflevel,component))[ivect(0,d,0)];
+              }
+              
+              
+              
+              vector<vector<void *> > tmp_output_arrays (num_tl);
+              
+              for (int tl=0; tl<num_tl; ++tl) {
                 
-                int const npoints = allhomecnts.at(ind_prc(p,m,reflevel,component));
+                for (int n=0; n<N_input_arrays; ++n) {
+                  if (input_array_variable_indices[n] == -1) {
+                    input_arrays.at(n) = 0;
+                  } else {
+                    int const vi = input_array_variable_indices[n];
+                    assert (vi>=0 && vi<CCTK_NumVars());
+                    input_arrays.at(n) = CCTK_VarDataPtrI (cgh, tl, vi);
+                  }
+                } // for input arrays
                 
-                // Do the processor-local interpolation
-                vector<const void *> tmp_interp_coords (dim);
-                for (int d=0; d<dim; ++d) {
-                  tmp_interp_coords.at(d) = &allcoords.at(ind_prc(p,m,reflevel,component))[ivect(0,d,0)];
+                tmp_output_arrays.at(tl).resize (N_output_arrays);
+                for (int j=0; j<N_output_arrays; ++j) {
+                  assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
+                  if (need_time_interp) {
+                    tmp_output_arrays.at(tl).at(j) = new CCTK_REAL [npoints];
+                  } else {
+                    tmp_output_arrays.at(tl).at(j) = &alloutputs.at(ind_prc(p,m,reflevel,component))[ivect(0,j,0)];
+                  }
                 }
-                
-                
-                
-                vector<vector<void *> > tmp_output_arrays (num_tl);
-                
-                for (int tl=0; tl<num_tl; ++tl) {
                   
-                  for (int n=0; n<N_input_arrays; ++n) {
-                    if (input_array_variable_indices[n] == -1) {
-                      input_arrays.at(n) = 0;
-                    } else {
-                      int const vi = input_array_variable_indices[n];
-                      assert (vi>=0 && vi<CCTK_NumVars());
-                      input_arrays.at(n) = CCTK_VarDataPtrI (cgh, tl, vi);
-                    }
-                  } // for input arrays
-                  
-                  tmp_output_arrays.at(tl).resize (N_output_arrays);
-                  for (int j=0; j<N_output_arrays; ++j) {
-                    assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
-                    if (need_time_interp) {
-                      tmp_output_arrays.at(tl).at(j) = new CCTK_REAL [npoints];
-                    } else {
-                      tmp_output_arrays.at(tl).at(j) = &alloutputs.at(ind_prc(p,m,reflevel,component))[ivect(0,j,0)];
-                    }
-                  }
-                  
-                  ierr = CCTK_InterpLocalUniform
-                    (N_dims, local_interp_handle, param_table_handle,
-                     &coord_origin[0], &coord_delta[0],
-                     npoints,
-                     interp_coords_type_code, &tmp_interp_coords[0],
-                     N_input_arrays, &lsh[0],
-                     &input_array_type_codes.at(0), &input_arrays[0],
-                     N_output_arrays,
-                     output_array_type_codes, &tmp_output_arrays.at(tl)[0]);
-                  if (ierr) {
-                    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                                "The local interpolator returned the error code %d", ierr);
-                  }
-                  overall_ierr = min(overall_ierr, ierr);
+                ierr = CCTK_InterpLocalUniform
+                  (N_dims, local_interp_handle, param_table_handle,
+                   &coord_origin[0], &coord_delta[0],
+                   npoints,
+                   interp_coords_type_code, &tmp_interp_coords[0],
+                   N_input_arrays, &lsh[0],
+                   &input_array_type_codes.at(0), &input_arrays[0],
+                   N_output_arrays,
+                   output_array_type_codes, &tmp_output_arrays.at(tl)[0]);
+                if (ierr) {
+                  CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                              "The local interpolator returned the error code %d", ierr);
+                }
+                overall_ierr = min(overall_ierr, ierr);
                 
-                } // for tl
+              } // for tl
                 
                 // Interpolate in time, if necessary
-                if (need_time_interp) {
+              if (need_time_interp) {
                   
-                  // Get interpolation times
-                  CCTK_REAL const time = cgh->cctk_time / cgh->cctk_delta_time;
-                  vector<CCTK_REAL> times(num_tl);
-                  for (int tl=0; tl<num_tl; ++tl) {
-                    times.at(tl) = vtt.at(m)->time (tl, reflevel, mglevel);
+                // Get interpolation times
+                CCTK_REAL const time = cgh->cctk_time / cgh->cctk_delta_time;
+                vector<CCTK_REAL> times(num_tl);
+                for (int tl=0; tl<num_tl; ++tl) {
+                  times.at(tl) = vtt.at(m)->time (tl, reflevel, mglevel);
+                }
+                  
+                // Calculate interpolation weights
+                vector<CCTK_REAL> tfacs(num_tl);
+                switch (num_tl) {
+                case 1:
+                  // no interpolation
+                  assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
+                  tfacs.at(0) = 1.0;
+                  break;
+                case 2:
+                  // linear (2-point) interpolation
+                  tfacs.at(0) = (time - times.at(1)) / (times.at(0) - times.at(1));
+                  tfacs.at(1) = (time - times.at(0)) / (times.at(1) - times.at(0));
+                  break;
+                case 3:
+                  // quadratic (3-point) interpolation
+                  tfacs.at(0) = (time - times.at(1)) * (time - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
+                  tfacs.at(1) = (time - times.at(0)) * (time - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
+                  tfacs.at(2) = (time - times.at(0)) * (time - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
+                  break;
+                default:
+                  assert (0);
+                }
+                  
+                // Interpolate
+                for (int j=0; j<N_output_arrays; ++j) {
+                  assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
+                  for (int k=0; k<npoints; ++k) {
+                    CCTK_REAL & dest = alloutputs.at(ind_prc(p,m,reflevel,component))[ivect(k,j,0)];
+                    dest = 0;
+                    for (int tl=0; tl<num_tl; ++tl) {
+                      CCTK_REAL const src = ((CCTK_REAL const *)tmp_output_arrays.at(tl).at(j))[k];
+                      dest += tfacs[tl] * src;
+                    }
                   }
+                }
                   
-                  // Calculate interpolation weights
-                  vector<CCTK_REAL> tfacs(num_tl);
-                  switch (num_tl) {
-                  case 1:
-                    // no interpolation
-                    assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
-                    tfacs.at(0) = 1.0;
-                    break;
-                  case 2:
-                    // linear (2-point) interpolation
-                    tfacs.at(0) = (time - times.at(1)) / (times.at(0) - times.at(1));
-                    tfacs.at(1) = (time - times.at(0)) / (times.at(1) - times.at(0));
-                    break;
-                  case 3:
-                    // quadratic (3-point) interpolation
-                    tfacs.at(0) = (time - times.at(1)) * (time - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
-                    tfacs.at(1) = (time - times.at(0)) * (time - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
-                    tfacs.at(2) = (time - times.at(0)) * (time - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
-                    break;
-                  default:
-                    assert (0);
-                  }
-                  
-                  // Interpolate
+                for (int tl=0; tl<num_tl; ++tl) {
                   for (int j=0; j<N_output_arrays; ++j) {
-                    assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
-                    for (int k=0; k<npoints; ++k) {
-                      CCTK_REAL & dest = alloutputs.at(ind_prc(p,m,reflevel,component))[ivect(k,j,0)];
-                      dest = 0;
-                      for (int tl=0; tl<num_tl; ++tl) {
-                        CCTK_REAL const src = ((CCTK_REAL const *)tmp_output_arrays.at(tl).at(j))[k];
-                        dest += tfacs[tl] * src;
-                      }
-                    }
+                    delete [] (CCTK_REAL *)tmp_output_arrays.at(tl).at(j);
                   }
+                }
                   
-                  for (int tl=0; tl<num_tl; ++tl) {
-                    for (int j=0; j<N_output_arrays; ++j) {
-                      delete [] (CCTK_REAL *)tmp_output_arrays.at(tl).at(j);
-                    }
-                  }
-                  
-                } // if need_time_interp
+              } // if need_time_interp
                 
-              } // for processors
+            } // for processors
               
-            } END_LOCAL_COMPONENT_LOOP;
-          } END_MAP_LOOP;
+          } END_LOCAL_COMPONENT_LOOP;
+        } END_MAP_LOOP;
           
-        } // if reflevel active
-      } END_REFLEVEL_LOOP;
+        leave_level_mode (cgh);
+      } // for rl
       
     } END_GLOBAL_MODE;
     
