@@ -31,6 +31,7 @@ using namespace std;
 static size_t total_allocated_bytes; // total number of allocated bytes
 
 
+static const CCTK_REAL eps = 1.0e-10;
 
 // Constructors
 template<class T, int D>
@@ -882,33 +883,34 @@ extern "C" {
 }
 
 template<>
-void data<CCTK_REAL8,3>
-::interpolate_from_innerloop (const vector<const gdata<3>*> gsrcs,
-			      const vector<CCTK_REAL> times,
+bool data<CCTK_REAL8,3>
+::interpolate_in_time (const vector<const gdata<3>*> & gsrcs,
+			      const vector<CCTK_REAL> & times,
 			      const ibbox& box, const CCTK_REAL time,
 			      const int order_space,
-			      const int order_time)
-{
-  const CCTK_REAL eps = 1.0e-10;
-  
-  assert (has_storage());
-  assert (all(box.lower()>=extent().lower()));
-  assert (all(box.upper()<=extent().upper()));
-  assert (all(box.stride()==extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0));
-  vector<const data*> srcs(gsrcs.size());
-  for (int t=0; t<(int)srcs.size(); ++t) srcs[t] = (const data*)gsrcs[t];
-  assert (srcs.size() == times.size() && srcs.size()>0);
-  for (int t=0; t<(int)srcs.size(); ++t) {
-    assert (srcs[t]->has_storage());
-    assert (all(box.lower()>=srcs[t]->extent().lower()));
-    assert (all(box.upper()<=srcs[t]->extent().upper()));
+			      const int order_time) {
+  for (size_t tl=0; tl<times.size(); ++tl) {
+    if (fabs(times[tl] - time) < eps) {
+      // It is not.
+      vector<const gdata<3>*> my_gsrcs(1);
+      vector<CCTK_REAL> my_times(1);
+      my_gsrcs[0] = gsrcs[tl];
+      my_times[0] = times[tl];
+      const int my_order_time = 0;
+      this->interpolate_from_innerloop
+        (my_gsrcs, my_times, box, time, order_space, my_order_time);
+      return true;
+    }
   }
-  
-  assert (proc() == srcs[0]->proc());
-  
-  assert (lives_on_this_processor());
-  
+  return false;
+}
+
+template<class T, int D>
+void data<T,D>
+::interpolate_restrict (const vector<const data<T,D>*> & srcs,
+			      const vector<CCTK_REAL> & times,
+			      const ibbox& box)
+{
   const ibbox& sext = srcs[0]->extent();
   const ibbox& dext = extent();
   
@@ -918,7 +920,405 @@ void data<CCTK_REAL8,3>
   fill_box_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
 	box, sext, dext );
   
-  // Check that the times are consistent
+  switch (transport_operator) {
+      
+  case op_Lagrange:
+  case op_TVD:
+  case op_ENO:
+    assert (srcs.size() == 1);
+    if (all (dext.stride() == sext.stride() * 2)) {
+      CCTK_FNAME(restrict_3d_real8_rf2)
+        ((const CCTK_REAL8*)srcs[0]->storage(),
+         srcshp[0], srcshp[1], srcshp[2],
+         (CCTK_REAL8*)storage(),
+         dstshp[0], dstshp[1], dstshp[2],
+         srcbbox, dstbbox, regbbox);
+    } else {
+      CCTK_FNAME(restrict_3d_real8)
+        ((const CCTK_REAL8*)srcs[0]->storage(),
+         srcshp[0], srcshp[1], srcshp[2],
+         (CCTK_REAL8*)storage(),
+         dstshp[0], dstshp[1], dstshp[2],
+         srcbbox, dstbbox, regbbox);
+    }
+    break;
+    
+  default:
+    assert (0);
+  }
+}
+
+template<class T, int D>
+void data<T,D>
+::interpolate_prolongate (const vector<const data<T,D>*> & srcs,
+			      const vector<CCTK_REAL> & times,
+			      const ibbox& box, const CCTK_REAL time,
+                              const int order_space,
+                              const int order_time)
+{
+  const ibbox& sext = srcs[0]->extent();
+  const ibbox& dext = extent();
+  
+  int srcshp[3], dstshp[3];
+  int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
+  
+  fill_box_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
+	box, sext, dext );
+  switch (transport_operator) {
+      
+  case op_Lagrange:
+    switch (order_time) {
+      
+    case 0:
+      assert (times.size() == 1);
+      assert (fabs(times[0] - time) < eps);
+      assert (srcs.size()>=1);
+      switch (order_space) {
+      case 0:
+      case 1:
+        if (all (sext.stride() == dext.stride() * 2)) {
+          CCTK_FNAME(prolongate_3d_real8_rf2)
+            ((const CCTK_REAL8*)srcs[0]->storage(),
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(),
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+        } else {
+          CCTK_FNAME(prolongate_3d_real8)
+            ((const CCTK_REAL8*)srcs[0]->storage(),
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(),
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+        }
+        break;
+      case 2:
+      case 3:
+        if (all (sext.stride() == dext.stride() * 2)) {
+          CCTK_FNAME(prolongate_3d_real8_o3_rf2)
+            ((const CCTK_REAL8*)srcs[0]->storage(),
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(),
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+        } else {
+          CCTK_FNAME(prolongate_3d_real8_o3)
+            ((const CCTK_REAL8*)srcs[0]->storage(),
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(),
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+        }
+        break;
+      case 4:
+      case 5:
+        CCTK_FNAME(prolongate_3d_real8_o5)
+          ((const CCTK_REAL8*)srcs[0]->storage(),
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(),
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+        break;
+      default:
+        assert (0);
+      }
+      break;
+      
+    case 1:
+      assert (srcs.size()>=2);
+      switch (order_space) {
+      case 0:
+      case 1:
+        if (all (sext.stride() == dext.stride() * 2)) {
+          CCTK_FNAME(prolongate_3d_real8_2tl_rf2)
+            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(), time,
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+        } else {
+          CCTK_FNAME(prolongate_3d_real8_2tl)
+            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(), time,
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+        }
+        break;
+      case 2:
+      case 3:
+        if (all (sext.stride() == dext.stride() * 2)) {
+          CCTK_FNAME(prolongate_3d_real8_2tl_o3_rf2)
+            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(), time,
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+        } else {
+          CCTK_FNAME(prolongate_3d_real8_2tl_o3)
+            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(), time,
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+        }
+        break;
+      case 4:
+      case 5:
+        CCTK_FNAME(prolongate_3d_real8_2tl_o5)
+          ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+           (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(), time,
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+        break;
+      default:
+        assert (0);
+      }
+      break;
+      
+    case 2:
+      assert (srcs.size()>=3);
+      switch (order_space) {
+      case 0:
+      case 1:
+        if (all (sext.stride() == dext.stride() * 2)) {
+          CCTK_FNAME(prolongate_3d_real8_3tl_rf2)
+            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+             (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(), time,
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+        } else {
+          CCTK_FNAME(prolongate_3d_real8_3tl)
+            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+             (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(), time,
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+        }
+        break;
+      case 2:
+      case 3:
+        if (all (sext.stride() == dext.stride() * 2)) {
+          CCTK_FNAME(prolongate_3d_real8_3tl_o3_rf2)
+            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+             (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(), time,
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+        } else {
+          CCTK_FNAME(prolongate_3d_real8_3tl_o3)
+            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+             (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+             srcshp[0], srcshp[1], srcshp[2],
+             (CCTK_REAL8*)storage(), time,
+             dstshp[0], dstshp[1], dstshp[2],
+             srcbbox, dstbbox, regbbox);
+        }
+        break;
+      case 4:
+      case 5:
+        CCTK_FNAME(prolongate_3d_real8_3tl_o5)
+          ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+           (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+           (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(), time,
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+        break;
+      default:
+        assert (0);
+      }
+      break;
+      
+    default:
+      assert (0);
+    } // switch (order_time)
+    break;
+    
+  case op_TVD:
+    switch (order_time) {
+    case 0: 
+      assert (times.size() == 1);
+      assert (fabs(times[0] - time) < eps);
+      switch (order_space) {
+      case 0:
+      case 1:
+        CCTK_WARN (0, "There is no stencil for op=\"TVD\" with order_space=1");
+        break;
+      case 2:
+      case 3:
+        CCTK_FNAME(prolongate_3d_real8_rf2)
+          ((const CCTK_REAL8*)srcs[0]->storage(),
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(),
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+//            CCTK_FNAME(prolongate_3d_real8_minmod)
+//              ((const CCTK_REAL8*)srcs[0]->storage(),
+//               srcshp[0], srcshp[1], srcshp[2],
+//               (CCTK_REAL8*)storage(),
+//               dstshp[0], dstshp[1], dstshp[2],
+//               srcbbox, dstbbox, regbbox);
+        break;
+      default:
+        assert (0);
+      }
+      break;
+    case 1:
+      switch (order_space) {
+      case 0:
+      case 1:
+        CCTK_WARN (0, "There is no stencil for op=\"TVD\" with order_space=1");
+        break;
+      case 2:
+      case 3:
+        CCTK_FNAME(prolongate_3d_real8_2tl_rf2)
+          ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+           (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(), time,
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+//            CCTK_FNAME(prolongate_3d_real8_2tl_minmod)
+//              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+//               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+//               srcshp[0], srcshp[1], srcshp[2],
+//               (CCTK_REAL8*)storage(), time,
+//               dstshp[0], dstshp[1], dstshp[2],
+//               srcbbox, dstbbox, regbbox);
+        break;
+      default:
+        assert (0);
+      }
+      break;
+    case 2: 
+      switch (order_space) {
+      case 0:
+      case 1:
+        CCTK_WARN (0, "There is no stencil for op=\"TVD\" with order_space=1");
+        break;
+      case 2:
+      case 3:
+        CCTK_FNAME(prolongate_3d_real8_3tl_rf2)
+          ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+           (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+           (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(), time,
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+//            CCTK_FNAME(prolongate_3d_real8_3tl_minmod)
+//              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+//               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+//               (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+//               srcshp[0], srcshp[1], srcshp[2],
+//               (CCTK_REAL8*)storage(), time,
+//               dstshp[0], dstshp[1], dstshp[2],
+//               srcbbox, dstbbox, regbbox);
+        break;
+      default:
+        assert (0);
+      }
+      break;
+    default:
+      assert (0);
+    } // switch (order_time)
+    break;
+    
+  case op_ENO:
+    switch (order_time) {
+    case 0: 
+      assert (times.size() == 1);
+      assert (fabs(times[0] - time) < eps);
+      switch (order_space) {
+      case 0:
+      case 1:
+        CCTK_WARN (0, "There is no stencil for op=\"ENO\" with order_space=1");
+        break;
+      case 2:
+      case 3:
+        CCTK_FNAME(prolongate_3d_real8_eno)
+          ((const CCTK_REAL8*)srcs[0]->storage(),
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(),
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+        break;
+      default:
+        assert (0);
+      }
+      break;
+    case 1:
+      switch (order_space) {
+      case 0:
+      case 1:
+        CCTK_WARN (0, "There is no stencil for op=\"ENO\" with order_space=1");
+        break;
+      case 2:
+      case 3:
+        CCTK_FNAME(prolongate_3d_real8_2tl_eno)
+          ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+           (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(), time,
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+        break;
+      default:
+        assert (0);
+      }
+      break;
+    case 2: 
+      switch (order_space) {
+      case 0:
+      case 1:
+        CCTK_WARN (0, "There is no stencil for op=\"ENO\" with order_space=1");
+        break;
+      case 2:
+      case 3:
+        CCTK_FNAME(prolongate_3d_real8_3tl_eno)
+          ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+           (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+           (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(), time,
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+        break;
+      default:
+        assert (0);
+      }
+      break;
+    default:
+      assert (0);
+    } // switch (order_time)
+    break;
+    
+  default:
+    assert(0);
+  } // switch (transport_operator)
+}
+
+template<>
+void data<CCTK_REAL8,3>
+::Check_that_the_times_are_consistent (const vector<CCTK_REAL> & times,
+                                       const CCTK_REAL time)
+{
   assert (times.size() > 0);
   CCTK_REAL min_time = times[0];
   CCTK_REAL max_time = times[0];
@@ -933,419 +1333,70 @@ void data<CCTK_REAL8,3>
         << "  times=" << times;
     CCTK_WARN (0, buf.str().c_str());
   }
-  
-  // Is it necessary to interpolate in time?
-  if (times.size() > 1) {
-    for (size_t tl=0; tl<times.size(); ++tl) {
-      if (fabs(times[tl] - time) < eps) {
-        // It is not.
-        vector<const gdata<3>*> my_gsrcs(1);
-        vector<CCTK_REAL> my_times(1);
-        my_gsrcs[0] = gsrcs[tl];
-        my_times[0] = times[tl];
-        const int my_order_time = 0;
-        this->interpolate_from_innerloop
-          (my_gsrcs, my_times, box, time, order_space, my_order_time);
-        return;
-      }
-    }
-  }
-  
-  assert (all(dext.stride() == box.stride()));
-  if (all(sext.stride() < dext.stride())) {
-    // Restrict
-    
-    assert (times.size() == 1);
-    assert (fabs(times[0] - time) < eps);
-    
-    switch (transport_operator) {
-      
-    case op_Lagrange:
-    case op_TVD:
-    case op_ENO:
-      assert (srcs.size() == 1);
-      if (all (dext.stride() == sext.stride() * 2)) {
-        CCTK_FNAME(restrict_3d_real8_rf2)
-          ((const CCTK_REAL8*)srcs[0]->storage(),
-           srcshp[0], srcshp[1], srcshp[2],
-           (CCTK_REAL8*)storage(),
-           dstshp[0], dstshp[1], dstshp[2],
-           srcbbox, dstbbox, regbbox);
-      } else {
-        CCTK_FNAME(restrict_3d_real8)
-          ((const CCTK_REAL8*)srcs[0]->storage(),
-           srcshp[0], srcshp[1], srcshp[2],
-           (CCTK_REAL8*)storage(),
-           dstshp[0], dstshp[1], dstshp[2],
-           srcbbox, dstbbox, regbbox);
-      }
-      break;
-      
-    default:
-      assert (0);
-      
-    } // switch (transport_operator)
-    
-  } else if (all(sext.stride() > dext.stride())) {
-    // Prolongate
-    
-    switch (transport_operator) {
-      
-    case op_Lagrange:
-      switch (order_time) {
-        
-      case 0:
-        assert (times.size() == 1);
-        assert (fabs(times[0] - time) < eps);
-        assert (srcs.size()>=1);
-        switch (order_space) {
-        case 0:
-        case 1:
-          if (all (sext.stride() == dext.stride() * 2)) {
-            CCTK_FNAME(prolongate_3d_real8_rf2)
-              ((const CCTK_REAL8*)srcs[0]->storage(),
-               srcshp[0], srcshp[1], srcshp[2],
-               (CCTK_REAL8*)storage(),
-               dstshp[0], dstshp[1], dstshp[2],
-               srcbbox, dstbbox, regbbox);
-          } else {
-            CCTK_FNAME(prolongate_3d_real8)
-              ((const CCTK_REAL8*)srcs[0]->storage(),
-               srcshp[0], srcshp[1], srcshp[2],
-               (CCTK_REAL8*)storage(),
-               dstshp[0], dstshp[1], dstshp[2],
-               srcbbox, dstbbox, regbbox);
-          }
-          break;
-        case 2:
-        case 3:
-          if (all (sext.stride() == dext.stride() * 2)) {
-            CCTK_FNAME(prolongate_3d_real8_o3_rf2)
-              ((const CCTK_REAL8*)srcs[0]->storage(),
-               srcshp[0], srcshp[1], srcshp[2],
-               (CCTK_REAL8*)storage(),
-               dstshp[0], dstshp[1], dstshp[2],
-               srcbbox, dstbbox, regbbox);
-          } else {
-            CCTK_FNAME(prolongate_3d_real8_o3)
-              ((const CCTK_REAL8*)srcs[0]->storage(),
-               srcshp[0], srcshp[1], srcshp[2],
-               (CCTK_REAL8*)storage(),
-               dstshp[0], dstshp[1], dstshp[2],
-               srcbbox, dstbbox, regbbox);
-          }
-          break;
-        case 4:
-        case 5:
-          CCTK_FNAME(prolongate_3d_real8_o5)
-            ((const CCTK_REAL8*)srcs[0]->storage(),
-             srcshp[0], srcshp[1], srcshp[2],
-             (CCTK_REAL8*)storage(),
-             dstshp[0], dstshp[1], dstshp[2],
-             srcbbox, dstbbox, regbbox);
-          break;
-        default:
-          assert (0);
-        }
-        break;
-        
-      case 1:
-        assert (srcs.size()>=2);
-        switch (order_space) {
-        case 0:
-        case 1:
-          if (all (sext.stride() == dext.stride() * 2)) {
-            CCTK_FNAME(prolongate_3d_real8_2tl_rf2)
-              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-               srcshp[0], srcshp[1], srcshp[2],
-               (CCTK_REAL8*)storage(), time,
-               dstshp[0], dstshp[1], dstshp[2],
-               srcbbox, dstbbox, regbbox);
-          } else {
-            CCTK_FNAME(prolongate_3d_real8_2tl)
-              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-               srcshp[0], srcshp[1], srcshp[2],
-               (CCTK_REAL8*)storage(), time,
-               dstshp[0], dstshp[1], dstshp[2],
-               srcbbox, dstbbox, regbbox);
-          }
-          break;
-        case 2:
-        case 3:
-          if (all (sext.stride() == dext.stride() * 2)) {
-            CCTK_FNAME(prolongate_3d_real8_2tl_o3_rf2)
-              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-               srcshp[0], srcshp[1], srcshp[2],
-               (CCTK_REAL8*)storage(), time,
-               dstshp[0], dstshp[1], dstshp[2],
-               srcbbox, dstbbox, regbbox);
-          } else {
-            CCTK_FNAME(prolongate_3d_real8_2tl_o3)
-              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-               srcshp[0], srcshp[1], srcshp[2],
-               (CCTK_REAL8*)storage(), time,
-               dstshp[0], dstshp[1], dstshp[2],
-               srcbbox, dstbbox, regbbox);
-          }
-          break;
-        case 4:
-        case 5:
-          CCTK_FNAME(prolongate_3d_real8_2tl_o5)
-            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-             srcshp[0], srcshp[1], srcshp[2],
-             (CCTK_REAL8*)storage(), time,
-             dstshp[0], dstshp[1], dstshp[2],
-             srcbbox, dstbbox, regbbox);
-          break;
-        default:
-          assert (0);
-        }
-        break;
-        
-      case 2:
-        assert (srcs.size()>=3);
-        switch (order_space) {
-        case 0:
-        case 1:
-          if (all (sext.stride() == dext.stride() * 2)) {
-            CCTK_FNAME(prolongate_3d_real8_3tl_rf2)
-              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-               (const CCTK_REAL8*)srcs[2]->storage(), times[2],
-               srcshp[0], srcshp[1], srcshp[2],
-               (CCTK_REAL8*)storage(), time,
-               dstshp[0], dstshp[1], dstshp[2],
-               srcbbox, dstbbox, regbbox);
-          } else {
-            CCTK_FNAME(prolongate_3d_real8_3tl)
-              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-               (const CCTK_REAL8*)srcs[2]->storage(), times[2],
-               srcshp[0], srcshp[1], srcshp[2],
-               (CCTK_REAL8*)storage(), time,
-               dstshp[0], dstshp[1], dstshp[2],
-               srcbbox, dstbbox, regbbox);
-          }
-          break;
-        case 2:
-        case 3:
-          if (all (sext.stride() == dext.stride() * 2)) {
-            CCTK_FNAME(prolongate_3d_real8_3tl_o3_rf2)
-              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-               (const CCTK_REAL8*)srcs[2]->storage(), times[2],
-               srcshp[0], srcshp[1], srcshp[2],
-               (CCTK_REAL8*)storage(), time,
-               dstshp[0], dstshp[1], dstshp[2],
-               srcbbox, dstbbox, regbbox);
-          } else {
-            CCTK_FNAME(prolongate_3d_real8_3tl_o3)
-              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-               (const CCTK_REAL8*)srcs[2]->storage(), times[2],
-               srcshp[0], srcshp[1], srcshp[2],
-               (CCTK_REAL8*)storage(), time,
-               dstshp[0], dstshp[1], dstshp[2],
-               srcbbox, dstbbox, regbbox);
-          }
-          break;
-        case 4:
-        case 5:
-          CCTK_FNAME(prolongate_3d_real8_3tl_o5)
-            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-             (const CCTK_REAL8*)srcs[2]->storage(), times[2],
-             srcshp[0], srcshp[1], srcshp[2],
-             (CCTK_REAL8*)storage(), time,
-             dstshp[0], dstshp[1], dstshp[2],
-             srcbbox, dstbbox, regbbox);
-          break;
-        default:
-          assert (0);
-        }
-        break;
-        
-      default:
-        assert (0);
-      } // switch (order_time)
-      break;
-      
-    case op_TVD:
-      switch (order_time) {
-      case 0: 
-        assert (times.size() == 1);
-        assert (fabs(times[0] - time) < eps);
-        switch (order_space) {
-        case 0:
-        case 1:
-          CCTK_WARN (0, "There is no stencil for op=\"TVD\" with order_space=1");
-          break;
-        case 2:
-        case 3:
-          CCTK_FNAME(prolongate_3d_real8_rf2)
-            ((const CCTK_REAL8*)srcs[0]->storage(),
-             srcshp[0], srcshp[1], srcshp[2],
-             (CCTK_REAL8*)storage(),
-             dstshp[0], dstshp[1], dstshp[2],
-             srcbbox, dstbbox, regbbox);
-//            CCTK_FNAME(prolongate_3d_real8_minmod)
-//              ((const CCTK_REAL8*)srcs[0]->storage(),
-//               srcshp[0], srcshp[1], srcshp[2],
-//               (CCTK_REAL8*)storage(),
-//               dstshp[0], dstshp[1], dstshp[2],
-//               srcbbox, dstbbox, regbbox);
-          break;
-        default:
-          assert (0);
-        }
-        break;
-      case 1:
-        switch (order_space) {
-        case 0:
-        case 1:
-          CCTK_WARN (0, "There is no stencil for op=\"TVD\" with order_space=1");
-          break;
-        case 2:
-        case 3:
-          CCTK_FNAME(prolongate_3d_real8_2tl_rf2)
-            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-             srcshp[0], srcshp[1], srcshp[2],
-             (CCTK_REAL8*)storage(), time,
-             dstshp[0], dstshp[1], dstshp[2],
-             srcbbox, dstbbox, regbbox);
-//            CCTK_FNAME(prolongate_3d_real8_2tl_minmod)
-//              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-//               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-//               srcshp[0], srcshp[1], srcshp[2],
-//               (CCTK_REAL8*)storage(), time,
-//               dstshp[0], dstshp[1], dstshp[2],
-//               srcbbox, dstbbox, regbbox);
-          break;
-        default:
-          assert (0);
-        }
-        break;
-      case 2: 
-        switch (order_space) {
-        case 0:
-        case 1:
-          CCTK_WARN (0, "There is no stencil for op=\"TVD\" with order_space=1");
-          break;
-        case 2:
-        case 3:
-          CCTK_FNAME(prolongate_3d_real8_3tl_rf2)
-            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-             (const CCTK_REAL8*)srcs[2]->storage(), times[2],
-             srcshp[0], srcshp[1], srcshp[2],
-             (CCTK_REAL8*)storage(), time,
-             dstshp[0], dstshp[1], dstshp[2],
-             srcbbox, dstbbox, regbbox);
-//            CCTK_FNAME(prolongate_3d_real8_3tl_minmod)
-//              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-//               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-//               (const CCTK_REAL8*)srcs[2]->storage(), times[2],
-//               srcshp[0], srcshp[1], srcshp[2],
-//               (CCTK_REAL8*)storage(), time,
-//               dstshp[0], dstshp[1], dstshp[2],
-//               srcbbox, dstbbox, regbbox);
-          break;
-        default:
-          assert (0);
-        }
-        break;
-      default:
-        assert (0);
-      } // switch (order_time)
-      break;
-      
-    case op_ENO:
-      switch (order_time) {
-      case 0: 
-        assert (times.size() == 1);
-        assert (fabs(times[0] - time) < eps);
-        switch (order_space) {
-        case 0:
-        case 1:
-          CCTK_WARN (0, "There is no stencil for op=\"ENO\" with order_space=1");
-          break;
-        case 2:
-        case 3:
-          CCTK_FNAME(prolongate_3d_real8_eno)
-            ((const CCTK_REAL8*)srcs[0]->storage(),
-             srcshp[0], srcshp[1], srcshp[2],
-             (CCTK_REAL8*)storage(),
-             dstshp[0], dstshp[1], dstshp[2],
-             srcbbox, dstbbox, regbbox);
-          break;
-        default:
-          assert (0);
-        }
-        break;
-      case 1:
-        switch (order_space) {
-        case 0:
-        case 1:
-          CCTK_WARN (0, "There is no stencil for op=\"ENO\" with order_space=1");
-          break;
-        case 2:
-        case 3:
-          CCTK_FNAME(prolongate_3d_real8_2tl_eno)
-            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-             srcshp[0], srcshp[1], srcshp[2],
-             (CCTK_REAL8*)storage(), time,
-             dstshp[0], dstshp[1], dstshp[2],
-             srcbbox, dstbbox, regbbox);
-          break;
-        default:
-          assert (0);
-        }
-        break;
-      case 2: 
-        switch (order_space) {
-        case 0:
-        case 1:
-          CCTK_WARN (0, "There is no stencil for op=\"ENO\" with order_space=1");
-          break;
-        case 2:
-        case 3:
-          CCTK_FNAME(prolongate_3d_real8_3tl_eno)
-            ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
-             (const CCTK_REAL8*)srcs[1]->storage(), times[1],
-             (const CCTK_REAL8*)srcs[2]->storage(), times[2],
-             srcshp[0], srcshp[1], srcshp[2],
-             (CCTK_REAL8*)storage(), time,
-             dstshp[0], dstshp[1], dstshp[2],
-             srcbbox, dstbbox, regbbox);
-          break;
-        default:
-          assert (0);
-        }
-        break;
-      default:
-        assert (0);
-      } // switch (order_time)
-      break;
-      
-    default:
-      assert(0);
-    } // switch (transport_operator)
-    
-  } else {
-    assert (0);
-  }
 }
 
+template<>
+void data<CCTK_REAL8,3>
+::interpolate_from_innerloop (const vector<const gdata<3>*> gsrcs,
+			      const vector<CCTK_REAL> times,
+			      const ibbox& box, const CCTK_REAL time,
+			      const int order_space,
+			      const int order_time)
+{
+  assert (has_storage());
+  assert (all(box.lower()>=extent().lower()));
+  assert (all(box.upper()<=extent().upper()));
+  assert (all(box.stride()==extent().stride()));
+  assert (all((box.lower()-extent().lower())%box.stride() == 0));
+
+  vector<const data*> srcs(gsrcs.size());
+
+  for (int t=0; t<(int)srcs.size(); ++t)
+    srcs[t] = (const data*)gsrcs[t];
+
+  assert (srcs.size() == times.size() && srcs.size()>0);
+
+  for (int t=0; t<(int)srcs.size(); ++t) {
+    assert (srcs[t]->has_storage());
+    assert (all(box.lower()>=srcs[t]->extent().lower()));
+    assert (all(box.upper()<=srcs[t]->extent().upper()));
+  }
   
+  assert (proc() == srcs[0]->proc());
+  
+  assert (lives_on_this_processor());
+  
+  Check_that_the_times_are_consistent (times, time);
 
+  bool did_time_interpolation = false;
 
+  if (times.size() > 1) {
+    did_time_interpolation = 
+      interpolate_in_time (gsrcs, times, box, time, order_space, order_time);
+  }
+  
+  if (!did_time_interpolation) {
+    const ibbox& sext = srcs[0]->extent();
+    const ibbox& dext = extent();
+  
+    assert (all(dext.stride() == box.stride()));
+
+    if (all(sext.stride() < dext.stride())) {
+    
+      assert (times.size() == 1);
+      assert (fabs(times[0] - time) < eps);
+
+      interpolate_restrict (srcs, times, box);
+    
+    } else if (all(sext.stride() > dext.stride())) {
+    
+      interpolate_prolongate (srcs, times, box, time, order_space, order_time);
+    
+    } else {
+      assert (0);
+    }
+  }
+}
 
 // Output
 template<class T,int D>

@@ -133,6 +133,23 @@ public:
 
   // Output
   ostream& output (ostream& os) const;
+private:
+  bool interpolate_in_time (const vector<const gdata<D>*> & gsrcs,
+                                   const vector<CCTK_REAL> & times,
+                                   const ibbox& box, const CCTK_REAL time,
+                                   const int order_space,
+                                   const int order_time);
+  void interpolate_restrict (const vector<const data<T,D>*> & gsrcs,
+                              const vector<CCTK_REAL> & times,
+                              const ibbox& box);
+  void interpolate_prolongate (const vector<const data<T,D>*> & gsrcs,
+                              const vector<CCTK_REAL> & times,
+                              const ibbox& box, const CCTK_REAL time,
+                              const int order_space,
+                              const int order_time);
+  void Check_that_the_times_are_consistent ( const vector<CCTK_REAL> & times,
+                              const CCTK_REAL time );
+
 };
 
 
