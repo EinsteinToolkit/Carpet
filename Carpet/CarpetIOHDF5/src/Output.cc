@@ -17,6 +17,7 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "util_String.h"
+#include "util_Table.h"
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
@@ -57,7 +58,8 @@ static int TriggerOutput (const cGH* const cctkGH, const int vindex);
 
 // add attributes to an HDF5 dataset
 static void AddAttributes (const cGH *const cctkGH, const char *fullname,
-                           int vdim, int refinementlevel, int timelevel,
+                           int vdim, int refinementlevel,
+                           const ioRequest* request,
                            ibset::const_iterator bbox, hid_t dataset);
 
 // callback for I/O parameter parsing routine
@@ -447,7 +449,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
             if (first_time)
             {
               AddAttributes (cctkGH, fullname, group.dim, refinementlevel,
-                             request->timelevel, bbox, dataset);
+                             request, bbox, dataset);
               first_time = false;
             }
           }
@@ -817,28 +819,45 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
 
 
 static void AddAttributes (const cGH *const cctkGH, const char *fullname,
-                           int vdim, int refinementlevel, int timelevel,
+                           int vdim, int refinementlevel,
+                           const ioRequest* request,
                            ibset::const_iterator bbox, hid_t dataset)
 {
   DECLARE_CCTK_ARGUMENTS;
 
+
+  // write bbox attributes if we have coordinate system info
+  CCTK_REAL origin[dim], delta[dim];
+  char *groupname = CCTK_GroupNameFromVarI (request->vindex);
+  int coord_system_handle = Coord_GroupSystem (cctkGH, groupname);
+  free (groupname);
+
+  CCTK_INT coord_handles[dim];
+  if (coord_system_handle >= 0 &&
+      Util_TableGetIntArray (coord_system_handle, vdim,
+                             coord_handles, "COORDINATES") >= 0)
+  {
+    for (int d = 0; d < vdim; d++)
+    {
+      Util_TableGetReal (coord_handles[d], &origin[d], "COMPMIN");
+      Util_TableGetReal (coord_handles[d], &delta[d], "DELTA");
+      delta[d]  /= cctk_levfac[d];
+      origin[d] += delta[d]*cctk_levoff[d]/cctk_levoffdenom[d] +
+                   cctk_lbnd[d] * delta[d];
+
+      // it's the interior bbox so we have to substract the ghostzones
+      if (! cctk_bbox[2*d])
+      {
+        origin[d] += cctk_nghostzones[d] * delta[d];
+      }
+    }
+
+    WriteAttribute (dataset, "origin", origin, vdim);
+    WriteAttribute (dataset, "delta", delta, vdim);
+  }
+
   // Write FlexIO attributes
   WriteAttribute (dataset, "level", refinementlevel);
-
-  CCTK_REAL origin[dim], delta[dim];
-  for (int d = 0; d < vdim; ++d)
-  {
-    delta[d]  = CCTK_DELTA_SPACE(d);
-    origin[d] = CCTK_ORIGIN_SPACE(d) + cctk_lbnd[d] * delta[d];
-
-    // it's the interior bbox so we have to substract the ghostzones
-    if (! cctk_bbox[2*d])
-    {
-      origin[d] += cctk_nghostzones[d] * delta[d];
-    }
-  }
-  WriteAttribute (dataset, "origin", origin, vdim);
-  WriteAttribute (dataset, "delta", delta, vdim);
 
   vect<int, dim> iorigin = bbox->lower() / bbox->stride();
   WriteAttribute (dataset, "iorigin", &iorigin[0], vdim);
@@ -848,7 +867,7 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
 
   // Legacy arguments
   WriteAttribute (dataset, "name", fullname);
-  WriteAttribute (dataset, "group_timelevel", -timelevel);
+  WriteAttribute (dataset, "group_timelevel", -request->timelevel);
 
   // Cactus arguments
   WriteAttribute (dataset, "cctk_bbox", cctk_bbox, 2*vdim);
