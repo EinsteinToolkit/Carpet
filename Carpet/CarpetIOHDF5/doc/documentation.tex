@@ -150,7 +150,10 @@ First, you have to activate the thorn in your Cactus parameter file:
         list of full names of Cactus grid variables to output;
         Each variable name can have an option string attached in which you
         can specify a different output frequency for that individual variable
-        (e.g. {\tt IOHDF5::out\_vars = "wavetoy::phi\{ out\_every = 4 \}"})
+	or a set of individual refinement levels to be output, e.g.
+\begin{verbatim}
+  IOHDF5::out_vars = "wavetoy::phi{ out_every = 4 refinement_levels = { 1 2 } }"
+\end{verbatim}
   \item {\tt IOHDF5::out\_criterion = "$<$keyword choice$>$"}\\
         criterion to select output intervals (overwrites {\tt IO::out\_criterion})
   \item {\tt IOHDF5::out\_every = $<$integer$>$}\\
