@@ -5,11 +5,11 @@
 
 shares: IO
 
-USES STRING out_dir
+USES STRING  out_dir
 USES BOOLEAN out_single_precision
 
-USES KEYWORD out_criterion
-USES CCTK_INT out_every
+USES KEYWORD   out_criterion
+USES CCTK_INT  out_every
 USES CCTK_REAL out_dt
 
 USES INT     checkpoint_every
