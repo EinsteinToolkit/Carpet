@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.34 2004/08/02 18:39:27 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.35 2004/08/20 09:21:38 hawke Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -9,6 +9,9 @@
 #include <mpi.h>
 
 #include "cctk.h"
+
+#include "util_ErrorCodes.h"
+#include "util_Table.h"
 
 #include "bbox.hh"
 #include "data.hh"
@@ -21,7 +24,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.34 2004/08/02 18:39:27 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.35 2004/08/20 09:21:38 hawke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -77,6 +80,43 @@ namespace CarpetInterp {
     return ind;
   }
   
+
+  static int GetInterpNumTimelevels(const cGH * const cgh,
+                                    const int group)
+  {
+    assert (group>=0 && group<CCTK_NumGroups());
+    
+    int ierr;
+    
+    cGroup gp;
+    ierr = CCTK_GroupData (group, &gp);
+    assert (!ierr);
+    
+    int interp_ntl = -1;
+
+    const int length = Util_TableGetInt
+      (gp.tagstable, &interp_ntl, "InterpNumTimelevels");
+    if (length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+      interp_ntl = -1;
+    } else if (length >= 0) {
+      // all is well - just check they're not asking too much
+      if (interp_ntl > CCTK_ActiveTimeLevelsGI(cgh, group)) {
+        char * const groupname = CCTK_GroupName (group);
+        CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                   "The tags table entry \"InterpNumTimelevels\" "
+                   "for group \"%s\" says that %d timelevels should "
+                   "be used for time interpolation.\n However, only %d "
+                   "are active.", 
+                   groupname, interp_ntl, 
+                   CCTK_ActiveTimeLevelsGI(cgh, group));
+      }             
+    } else {
+      assert(0);
+    }
+
+    return interp_ntl;
+    
+  }
   
   
   void CarpetInterpStartup ()
@@ -411,15 +451,21 @@ namespace CarpetInterp {
                 assert (group.disttype == CCTK_DISTRIB_DEFAULT);
                 assert (group.stagtype == 0); // not staggered
                 
+                int interp_ntls = GetInterpNumTimelevels(cgh, gi);
+                // If -ve then key wasn't set; use all timelevels.
+                if (interp_ntls < 0) interp_ntls = group.numtimelevels;
+
                 // TODO: emit better warning
-                if (num_tl > group.numtimelevels) {
+                if ((num_tl > group.numtimelevels)&&
+                    (interp_ntls > group.numtimelevels)) {
                   CCTK_VWarn(0, __LINE__,__FILE__,"CarpetInterp",
                              "Tried to interpolate variable '%s' "
                              "in time.\nIt has insufficient timelevels "
                              "(%d are required).",
-                             CCTK_FullName(vi),num_tl);
+                             CCTK_FullName(vi),
+                             min(num_tl,interp_ntls));
                 }
-                assert (group.numtimelevels >= num_tl);
+                assert (group.numtimelevels >= min(num_tl,interp_ntls));
                 
                 input_array_type_codes.at(n) = group.vartype;
                 
@@ -449,8 +495,26 @@ namespace CarpetInterp {
               for (int tl=0; tl<num_tl; ++tl) {
                 
                 for (int n=0; n<N_input_arrays; ++n) {
+
+                  int const vi = input_array_variable_indices[n];
+                  assert (vi>=0 && vi<CCTK_NumVars());
+                
+                  int const gi = CCTK_GroupIndexFromVarI (vi);
+                  assert (gi>=0 && gi<CCTK_NumGroups());
+                
+                  int interp_ntls = GetInterpNumTimelevels(cgh, gi);
+                  // If -ve then key wasn't set; use all timelevels.
+                  if (interp_ntls < 0) interp_ntls = num_tl;
+
                   if (input_array_variable_indices[n] == -1) {
                     input_arrays.at(n) = 0;
+                  } else if (tl > interp_ntls-1) {
+                    // Do the interpolation anyway, just from 
+                    // an earlier timelevel.
+                    int const vi = input_array_variable_indices[n];
+                    assert (vi>=0 && vi<CCTK_NumVars());
+                    input_arrays.at(n) = 
+                      CCTK_VarDataPtrI (cgh, interp_ntls-1, vi);
                   } else {
                     int const vi = input_array_variable_indices[n];
                     assert (vi>=0 && vi<CCTK_NumVars());
@@ -487,44 +551,57 @@ namespace CarpetInterp {
               
               // Interpolate in time, if necessary
               if (need_time_interp) {
-                  
-                // Get interpolation times
-                CCTK_REAL const time = current_time;
-                vector<CCTK_REAL> times(num_tl);
-                for (int tl=0; tl<num_tl; ++tl) {
-                  times.at(tl) = vtt.at(m)->time (-tl, reflevel, mglevel);
-                }
-                  
-                // Calculate interpolation weights
-                vector<CCTK_REAL> tfacs(num_tl);
-                switch (num_tl) {
-                case 1:
-                  // no interpolation
-                  assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
-                  tfacs.at(0) = 1.0;
-                  break;
-                case 2:
-                  // linear (2-point) interpolation
-                  tfacs.at(0) = (time - times.at(1)) / (times.at(0) - times.at(1));
-                  tfacs.at(1) = (time - times.at(0)) / (times.at(1) - times.at(0));
-                  break;
-                case 3:
-                  // quadratic (3-point) interpolation
-                  tfacs.at(0) = (time - times.at(1)) * (time - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
-                  tfacs.at(1) = (time - times.at(0)) * (time - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
-                  tfacs.at(2) = (time - times.at(0)) * (time - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
-                  break;
-                default:
-                  assert (0);
-                }
-                  
-                // Interpolate
+
                 for (int j=0; j<N_output_arrays; ++j) {
+
+                  int const vi = input_array_variable_indices[j];
+                  assert (vi>=0 && vi<CCTK_NumVars());
+                
+                  int const gi = CCTK_GroupIndexFromVarI (vi);
+                  assert (gi>=0 && gi<CCTK_NumGroups());
+                
+                  int interp_ntls = GetInterpNumTimelevels(cgh, gi);
+                  // If -ve then key wasn't set; use all timelevels.
+                  if (interp_ntls < 0) interp_ntls = num_tl;
+                  
+                  // Get interpolation times
+                  CCTK_REAL const time = current_time;
+                  vector<CCTK_REAL> times(interp_ntls);
+                  for (int tl=0; tl<interp_ntls; ++tl) {
+                    times.at(tl) = vtt.at(m)->time (-tl, reflevel, mglevel);
+                  }
+                  
+                  // Calculate interpolation weights
+                  vector<CCTK_REAL> tfacs(interp_ntls);
+                  switch (interp_ntls) {
+                    case 1:
+                      // no interpolation
+                      // We have to assume that any GF with one timelevel
+                      // is constant in time!!!
+                      //                      assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
+                      tfacs.at(0) = 1.0;
+                      break;
+                    case 2:
+                      // linear (2-point) interpolation
+                      tfacs.at(0) = (time - times.at(1)) / (times.at(0) - times.at(1));
+                      tfacs.at(1) = (time - times.at(0)) / (times.at(1) - times.at(0));
+                      break;
+                    case 3:
+                      // quadratic (3-point) interpolation
+                      tfacs.at(0) = (time - times.at(1)) * (time - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
+                      tfacs.at(1) = (time - times.at(0)) * (time - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
+                      tfacs.at(2) = (time - times.at(0)) * (time - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
+                      break;
+                    default:
+                      assert (0);
+                  }
+                  
+                  // Interpolate
                   assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
                   for (int k=0; k<npoints; ++k) {
                     CCTK_REAL & dest = alloutputs.at(ind_prc(p,m,reflevel,component))[ivect(k,j,0)];
                     dest = 0;
-                    for (int tl=0; tl<num_tl; ++tl) {
+                    for (int tl=0; tl<interp_ntls; ++tl) {
                       CCTK_REAL const src = ((CCTK_REAL const *)tmp_output_arrays.at(tl).at(j))[k];
                       dest += tfacs[tl] * src;
                     }
