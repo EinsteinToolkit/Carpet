@@ -870,7 +870,6 @@ bool data<CCTK_REAL8,3>
 			      const int order_time) {
   for (size_t tl=0; tl<times.size(); ++tl) {
     if (fabs(times[tl] - time) < eps) {
-      // It is not.
       vector<const gdata<3>*> my_gsrcs(1);
       vector<CCTK_REAL> my_times(1);
       my_gsrcs[0] = gsrcs[tl];
