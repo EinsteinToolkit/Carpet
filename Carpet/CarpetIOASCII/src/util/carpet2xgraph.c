@@ -117,12 +117,20 @@ int main(int argc, char **argv)
     * Parse command-line arguments
     */
    if (argc <= 1) {
-      fprintf(stderr,"usage: carpet2xgraph <infile> [ref_lev] [clip_data_at]\n");
+      fprintf(stderr," input from stdin...  invoke carpet2xgraph -h for help\n");
+   } else if (strcmp(argv[1],"-h")==0) {
+      fprintf(stderr,"usage: cat file | carpet2xgraph [name_tag] [ref_lev] [clip_data_at]\n");
       exit(1);
+   }
+
+   if (argc >= 2) {
+     infilename = argv[1];
+   } else {
+     infilename = "stdin";
    }
    if (argc >= 3) {
       sscanf(argv[2],"%d",&rlev);
-   }
+   } 
    if (argc >= 4) {
       sscanf(argv[3],"%lf",&clip_val);
       clip_data = 1;
@@ -131,12 +139,15 @@ int main(int argc, char **argv)
    /*
     * Open the input file
     */
-   infilename = argv[1];
+   infile = stdin;
+
+   /*
    infile = fopen(infilename,"r");
    if (infile == NULL) {
       fprintf(stderr,"Error opening file '%s'.\n",infilename);
       exit(1);
    }
+   */
 
 
    time = 0;
@@ -146,6 +157,7 @@ int main(int argc, char **argv)
 
    printf("\"x-label x\n");
    printf("\"y-label %s\n\n\n",infilename);
+   printf("\"label = %s\n\n\n",infilename);
 
    /*
     * Main loop for reading from input file and writing to output file
@@ -157,7 +169,7 @@ int main(int argc, char **argv)
 	 /* xgraph format */
 	 printf("\"Time = %g\n",time);
 	 for (i=0; i<numelems_in_set; i++) {
-		 printf("%g  %g\n",coord[i],data[i]);
+		 printf("%g  %17.14g\n",coord[i],data[i]);
 	 }
 	 printf("\n\n");
 
