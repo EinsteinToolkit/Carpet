@@ -138,48 +138,6 @@ void dh<D>::foreach_reflevel_component_mglevel (dh<D>::boxesop op) {
 }
 
 template<int D>
-void dh<D>::setup_multigrid_boxes( dh<D>::dboxes & box, int rl, int c, int ml )
-{
-  const ibbox& intr = box.interior;
-  const ibbox& extr = box.exterior;
-
-  // Multigrid boxes
-  if (ml>0) {
-    dboxes & bbox = boxes.at(rl).at(c).at(ml-1);
-    const ibbox intrf = bbox.interior;
-    const ibbox extrf = bbox.exterior;
-    // Restriction (interior)
-    {
-      // (the restriction must fill all of the interior of the
-      // coarse grid, and may use the exterior of the fine grid)
-      const ibbox recv = intr;
-            assert (intr.empty() || ! recv.empty());
-      const ibbox send = recv.expanded_for(extrf);
-            assert (intr.empty() || ! send.empty());
-      // TODO: put the check back in, taking outer boundaries
-      // into account
-#if 0
-      assert (send.is_contained_in(extrf));
-#endif
-      bbox.send_mg_coarse.push_back(send);
-      box .recv_mg_fine  .push_back(recv);
-    }
-    // Prolongation (interior)
-    {
-      // (the prolongation may use the exterior of the coarse
-      // grid, and may fill only the interior of the fine grid,
-      // and the bbox must be as large as possible)
-      const ibbox recv = extr.contracted_for(intrf) & intrf;
-            assert (intr.empty() || ! recv.empty());
-      const ibbox send = recv.expanded_for(extr);
-            assert (intr.empty() || ! send.empty());
-      bbox.recv_mg_coarse.push_back(recv);
-      box .send_mg_fine  .push_back(send);
-    }
-  } // if not finest multigrid level
-}
-
-template<int D>
 void dh<D>::setup_sync_and_refine_boxes( dh<D>::dboxes & b, int rl, int c, int ml )
 {
   // Sync boxes
@@ -219,6 +177,48 @@ void dh<D>::intersect_sync_with_interior( dh<D>::dboxes & box, int rl, int c, in
       box1.send_sync.at(c ).push_back(*b);
     }
   }
+}
+
+template<int D>
+void dh<D>::setup_multigrid_boxes( dh<D>::dboxes & box, int rl, int c, int ml )
+{
+  const ibbox& intr = box.interior;
+  const ibbox& extr = box.exterior;
+
+  // Multigrid boxes
+  if (ml>0) {
+    dboxes & bbox = boxes.at(rl).at(c).at(ml-1);
+    const ibbox intrf = bbox.interior;
+    const ibbox extrf = bbox.exterior;
+    // Restriction (interior)
+    {
+      // (the restriction must fill all of the interior of the
+      // coarse grid, and may use the exterior of the fine grid)
+      const ibbox recv = intr;
+            assert (intr.empty() || ! recv.empty());
+      const ibbox send = recv.expanded_for(extrf);
+            assert (intr.empty() || ! send.empty());
+      // TODO: put the check back in, taking outer boundaries
+      // into account
+#if 0
+      assert (send.is_contained_in(extrf));
+#endif
+      bbox.send_mg_coarse.push_back(send);
+      box .recv_mg_fine  .push_back(recv);
+    }
+    // Prolongation (interior)
+    {
+      // (the prolongation may use the exterior of the coarse
+      // grid, and may fill only the interior of the fine grid,
+      // and the bbox must be as large as possible)
+      const ibbox recv = extr.contracted_for(intrf) & intrf;
+            assert (intr.empty() || ! recv.empty());
+      const ibbox send = recv.expanded_for(extr);
+            assert (intr.empty() || ! send.empty());
+      bbox.recv_mg_coarse.push_back(recv);
+      box .send_mg_fine  .push_back(send);
+    }
+  } // if not finest multigrid level
 }
 
 template<int D>
@@ -274,8 +274,8 @@ void dh<D>::setup_refinement_exterior_boxes( dh<D>::dboxes & box, int rl, int c,
     for (int cc=0; cc<h.components(rl+1); ++cc) {
       dboxes & box1 = boxes.at(rl+1).at(cc).at(ml);
       const ibbox intrf = box1.interior;
-            const ibbox& extrf = box1.exterior;
-            const ibset& bndsf = box1.boundaries;
+      const ibbox& extrf = box1.exterior;
+      const ibset& bndsf = box1.boundaries;
       // Prolongation (boundaries)
             // TODO: prefer boxes from the same processor
       {
@@ -425,7 +425,7 @@ void dh<D>::assert_assert_assert( dh<D>::dboxes & box, int rl, int c, int ml )
   {
     const ibset& sync_not = box.sync_not;
 #if 0
-    const ibset& recv_not = boxes.at(rl).at(c).at(ml).recv_not;
+    const ibset& recv_not = box.recv_not;
 #endif
           
     // Check that no boundaries are left over
@@ -626,7 +626,6 @@ void dh<D>::remove (ggf<D>* f) {
   CHECKPOINT;
   gfs.remove(f);
 }
-
 
 
 // Output
