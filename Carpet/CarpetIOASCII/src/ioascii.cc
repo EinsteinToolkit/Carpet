@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.47 2003/05/08 15:35:49 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.48 2003/05/13 16:32:10 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -414,7 +414,10 @@ namespace CarpetIOASCII {
 	    const vect<CCTK_REAL,dim> coord_lower = global_lower + coord_delta * vect<CCTK_REAL,dim>(lo);
 	    const vect<CCTK_REAL,dim> coord_upper = global_lower + coord_delta * vect<CCTK_REAL,dim>(hi);
 	    
-	    const vect<int,dim> offset1 = offset * ext.stride();
+	    const vect<int,dim> offset1 = ext.lower() + offset * ext.stride();
+#if 0
+            cout << "IOA reflevel=" << reflevel << " global=" << global_lower << " coord=" << coord_lower << " offset=" << offset << endl;
+#endif
 	    
 	    WriteASCII (file, data, ext, n, cgh->cctk_iteration, offset1, dirs,
 			tl, reflevel, component, mglevel,
@@ -598,6 +601,7 @@ namespace CarpetIOASCII {
   {
     assert (dir>=1 && dir<=dim);
     
+#if 0
     CCTK_REAL lower, upper;
     CCTK_CoordRange (cgh, &lower, &upper, dir, 0, "cart3d");
     
@@ -606,6 +610,20 @@ namespace CarpetIOASCII {
     
     const CCTK_REAL rindex = (coord - lower) / (upper - lower) * (npoints-1);
     int cindex = (int)floor(rindex + 0.5 + 1e-6);
+#endif
+    
+    assert (reflevel!=-1 && mglevel!=-1);
+    
+    const int npoints = cgh->cctk_gsh[dir-1];
+    const CCTK_REAL lower = cgh->cctk_origin_space[dir-1];
+    const CCTK_REAL delta = cgh->cctk_delta_space[dir-1] / cgh->cctk_levfac[dir-1];
+    const CCTK_REAL upper = lower + (npoints-1) * delta;
+    
+    const CCTK_REAL rindex = (coord - lower) / delta;
+    int cindex = (int)floor(rindex + 0.5 + 1e-6);
+#if 0
+    cout << "CTO rl=" << reflevel << " gsh=" << npoints << " l,u,d=" << lower << "," << upper << "," << delta << " coord=" << coord << " cindex=" << cindex << endl;
+#endif
     
     if (cindex<0 || cindex>=npoints) {
       CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
