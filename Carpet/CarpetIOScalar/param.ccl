@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOScalar
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/param.ccl,v 1.3 2004/06/14 10:49:41 tradke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/param.ccl,v 1.1 2004/06/11 17:41:51 schnetter Exp $
 
 
 
@@ -11,7 +11,6 @@ USES KEYWORD out_criterion
 USES CCTK_INT out_every
 USES CCTK_REAL out_dt
 
-USES BOOLEAN strict_io_parameter_check
 
 
 private:
@@ -20,9 +19,8 @@ private:
 
 CCTK_STRING outScalar_dir "Name of scalar output directory, overrides out_dir" STEERABLE = ALWAYS
 {
-  "^$" :: "Empty: use IO::out_dir"
-  ".+" :: "Not empty: directory name"
-} ""
+  ".*" :: "A regex which matches everything"
+} "."
 
 CCTK_STRING outScalar_vars "Variables to output in scalar form" STEERABLE = ALWAYS
 {
@@ -32,7 +30,7 @@ CCTK_STRING outScalar_vars "Variables to output in scalar form" STEERABLE = ALWA
 CCTK_STRING outScalar_reductions "List of reductions to output in scalar form" STEERABLE = ALWAYS
 {
   ".*" :: "A regex which matches everything"
-} "count minimum maximum sum average norm1 norm2 norm_inf"
+} ""
 
 
 
