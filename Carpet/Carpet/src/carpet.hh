@@ -1,8 +1,13 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.18 2002/07/18 14:32:47 shawley Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.19 2002/08/30 18:08:52 schnetter Exp $
+
+#ifndef CARPET_HH
+#define CARPET_HH
 
 #include "Carpet/CarpetLib/src/gh.hh"
 
 #include "carpet_public.hh"
+
+
 
 namespace Carpet {
   
@@ -42,3 +47,5 @@ namespace Carpet {
   void UnsupportedVarType (int vindex);
   
 } // namespace Carpet
+
+#endif // ! defined(CARPET_HH)

@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.15 2002/08/30 16:03:20 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.16 2002/08/30 18:08:53 schnetter Exp $
 
  ***************************************************************************/
 
@@ -142,7 +142,7 @@ void gh<D>::recompose (const rexts& exts, const rbnds& outer_bounds,
   
   // Recompose the other hierarchies
   
-  for (list<th*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
+  for (typename list<th*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
     (*t)->recompose();
   }
   
