@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.27 2004/04/16 20:57:56 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.28 2004/05/04 22:12:54 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -21,7 +21,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.27 2004/04/16 20:57:56 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.28 2004/05/04 22:12:54 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -149,6 +149,7 @@ namespace CarpetInterp {
     
     
     // Find out about the coordinates
+#if 0
     const char * coord_system_name
       = CCTK_CoordSystemName (coord_system_handle);
     assert (coord_system_name);
@@ -161,6 +162,11 @@ namespace CarpetInterp {
       delta[d]
         = (upper[d] - lower[d]) / (baseext.upper()[d] - baseext.lower()[d]);
     }
+#else
+    rvect const lower = rvect::ref(cgh->cctk_origin_space);
+    rvect const delta = rvect::ref(cgh->cctk_delta_space);
+    rvect const upper = lower + delta * ivect::ref(cgh->cctk_gsh);
+#endif
     
     assert (N_interp_points >= 0);
     assert (interp_coords);
