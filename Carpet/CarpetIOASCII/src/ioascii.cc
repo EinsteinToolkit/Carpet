@@ -24,7 +24,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.21 2001/12/05 16:27:26 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.22 2001/12/05 16:30:29 schnetter Exp $";
 
 
 
@@ -504,6 +504,9 @@ int CarpetIOASCII<outdim>
   int cindex = (int)floor(rindex + 0.5 + 1e-6);
   
   if (cindex<0 || cindex>=npoints) {
+    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+		"The specified coordinate value %g is not within the grid range [%g,%g]",
+		coord, lower, upper);
     cindex = ifallback;
   }
   
