@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.48 2004/01/25 14:57:29 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.49 2004/03/23 17:56:00 schnetter Exp $
 
 #include <assert.h>
 
@@ -331,9 +331,10 @@ void dh<D>::recompose (const int initialise_from, const bool do_prolongate) {
               // (the restriction must not use points that are filled
               // by boundary prolongation)
               ibset sends = intrf & intr.expanded_for(intrf);
+              // remove what is received during boundary prolongation
               for (int ccc=0; ccc<h.components(rl); ++ccc) {
                 const iblist& sendlist
-                  = boxes.at(rl+1).at(ccc).at(ml).recv_ref_bnd_coarse.at(cc);
+                  = boxes.at(rl+1).at(cc).at(ml).recv_ref_bnd_coarse.at(ccc);
                 for (typename iblist::const_iterator sli = sendlist.begin();
                      sli != sendlist.end(); ++sli) {
                   sends -= *sli;
