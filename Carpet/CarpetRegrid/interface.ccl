@@ -1,72 +1,8 @@
 # Interface definition for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/interface.ccl,v 1.17 2004/08/07 19:44:59 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/interface.ccl,v 1.1 2001/12/14 16:34:38 schnetter Exp $
 
-IMPLEMENTS: CarpetRegrid
+implements: CarpetRegrid
+
+inherits: CarpetLib driver
 
 uses include header: carpet.hh
-
-uses include header: defs.hh
-
-uses include header: bbox.hh
-uses include header: bboxset.hh
-uses include header: vect.hh
-
-uses include header: gf.hh
-uses include header: gh.hh
-
-
-
-# The location of the boundary points
-CCTK_INT FUNCTION GetBoundarySpecification \
-  (CCTK_INT IN size, \
-   CCTK_INT OUT ARRAY nboundaryzones, \
-   CCTK_INT OUT ARRAY is_internal, \
-   CCTK_INT OUT ARRAY is_staggered, \
-   CCTK_INT OUT ARRAY shiftout)
-USES FUNCTION GetBoundarySpecification
-
-# The overall size of the domain
-CCTK_INT FUNCTION GetDomainSpecification \
-  (CCTK_INT IN size, \
-   CCTK_REAL OUT ARRAY physical_min, \
-   CCTK_REAL OUT ARRAY physical_max, \
-   CCTK_REAL OUT ARRAY interior_min, \
-   CCTK_REAL OUT ARRAY interior_max, \
-   CCTK_REAL OUT ARRAY exterior_min, \
-   CCTK_REAL OUT ARRAY exterior_max, \
-   CCTK_REAL OUT ARRAY spacing)
-USES FUNCTION GetDomainSpecification
-
-# Convert between boundaries types
-CCTK_INT FUNCTION ConvertFromPhysicalBoundary \
-  (CCTK_INT IN size, \
-   CCTK_REAL IN  ARRAY physical_min, \
-   CCTK_REAL IN  ARRAY physical_max, \
-   CCTK_REAL OUT ARRAY interior_min, \
-   CCTK_REAL OUT ARRAY interior_max, \
-   CCTK_REAL OUT ARRAY exterior_min, \
-   CCTK_REAL OUT ARRAY exterior_max, \
-   CCTK_REAL IN  ARRAY spacing)
-USES FUNCTION ConvertFromPhysicalBoundary
-
-
-
-# The true prototype of the routine below:
-#   int Carpet_Regrid (const cGH * cctkGH,
-#                      gh<dim>::rexts  * bbsss,
-#                      gh<dim>::rbnds  * obss,
-#                      gh<dim>::rprocs * pss);
-CCTK_INT FUNCTION Carpet_Regrid (CCTK_POINTER_TO_CONST IN cctkGH,  \
-                                 CCTK_POINTER IN bbsss,            \
-                                 CCTK_POINTER IN obss,             \
-                                 CCTK_POINTER IN pss,		   \
-				 CCTK_INT IN force)
-PROVIDES FUNCTION Carpet_Regrid WITH CarpetRegrid_Regrid LANGUAGE C
-
-
-
-
-CCTK_INT FUNCTION RegridLevel (CCTK_POINTER_TO_CONST IN cctkGH,  \
-			       CCTK_INT IN current_max_reflevel, \
-			       CCTK_INT IN max_reflevels)
-USES FUNCTION RegridLevel

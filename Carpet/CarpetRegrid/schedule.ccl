@@ -1,8 +1,7 @@
 # Schedule definitions for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/schedule.ccl,v 1.6 2004/01/25 14:57:30 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/schedule.ccl,v 1.1 2001/12/14 16:34:38 schnetter Exp $
 
-schedule CarpetRegridParamcheck at PARAMCHECK
+schedule CarpetRegridRegrid at POSTSTEP as Driver_Regrid
 {
   LANG: C
-  OPTIONS: global
-} "Check Parameters"
+} "Recompose the grid hierarchy (if desired)"
