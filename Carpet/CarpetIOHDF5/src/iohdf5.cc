@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.38 2004/07/07 11:01:05 tradke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.39 2004/07/07 17:10:13 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -1102,17 +1102,36 @@ static int InputVarAs (const cGH* const cctkGH, const char* const varname,
 
 int CarpetIOHDF5ReadData (const cGH* const cctkGH)
 {
-  DECLARE_CCTK_PARAMETERS;
   int retval = 0;
-  for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
-    if (CheckForVariable(in3D_vars, vindex)) {
-      char* varname = CCTK_FullName(vindex);
-      retval = InputVarAs (cctkGH, varname, CCTK_VarName(vindex));
-      free (varname);
-      if (retval != 0) return retval;
+  DECLARE_CCTK_PARAMETERS
+
+
+  int numvars = CCTK_NumVars ();
+  vector<bool> flags (numvars);
+
+  if (CCTK_TraverseString (in3D_vars, SetFlag, &flags, CCTK_GROUP_OR_VAR) < 0)
+  {
+    CCTK_VWarn (strict_io_parameter_check ? 0 : 1,
+                __LINE__, __FILE__, CCTK_THORNSTRING,
+                "error while parsing parameter 'IOHDF5::in3D_vars'");
+  }
+
+  for (int vindex = 0; vindex < numvars; vindex++)
+  {
+    if (flags.at (vindex))
+    {
+      char *fullname = CCTK_FullName (vindex);
+      const char *varname = CCTK_VarName (vindex);
+      retval = InputVarAs (cctkGH, fullname, varname);
+      free (fullname);
+      if (retval)
+      {
+        break;
+      }
     }
   }
-  return retval;
+
+  return (retval);
 }
 
 
