@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.10 2004/01/07 13:14:04 cott Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.11 2004/01/07 16:30:49 cott Exp $
 
 #ifndef CARPETIOFLEXIO_HH
 #define CARPETIOFLEXIO_HH
@@ -137,6 +137,7 @@ namespace CarpetIOFlexIO {
 					 const char* const fallback);
 
   int WriteGF (const cGH* const cgh, IObase* writer, AMRwriter* amrwriter, ioRequest* request);
+  int ReadGF (const cGH* const cgh, IObase* reader, AmrGridReader* amrreader);
 
 } // namespace CarpetIOFlexIO
 

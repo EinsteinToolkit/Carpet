@@ -48,7 +48,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.18 2004/01/07 13:14:04 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.19 2004/01/07 16:30:49 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
@@ -63,7 +63,7 @@ namespace CarpetCheckpointRestart {
   int Checkpoint (const cGH* const cgh, int called_from);
 
   int RecoverParameters (IObase* reader);
-  int RecoverGHextensions (cGH* cgh, IObase* reader);
+  static int RecoverGHextensions (cGH* cgh, IObase* reader);
   int RecoverVariables (cGH* cgh, IObase* reader, AmrGridReader* amrreader);
 
   void CarpetIOFlexIO_EvolutionCheckpoint( const cGH* const cgh){
@@ -224,7 +224,6 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
 
   if (called_from == CP_RECOVER_PARAMETERS)
   {
-    CCTK_VInfo(CCTK_THORNSTRING,"called from recover parameters");
     return (RecoverParameters (reader));
   }
 
@@ -236,21 +235,24 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
 
       BEGIN_REFLEVEL_LOOP(cgh) {
 	BEGIN_MGLEVEL_LOOP(cgh) {
-	  
-	/* Recover GH extentions */
-	  CCTK_INFO ("Recovering GH extensions");
-	  result = RecoverGHextensions (cgh, reader);
-	  
-	if (! result)
-	  {
-	    /* Recover variables */
-	    CCTK_VInfo (CCTK_THORNSTRING, "Recovering data! ");
-	    result = RecoverVariables (cgh, reader,amrreader);
-	  }
-	
-	} END_MGLEVEL_LOOP;
-      } END_REFLEVEL_LOOP;
 
+	  /* make sure we are looking at the first dataset where
+             all the good stuff ist stored! */
+	  reader->seek(0);
+	  
+	  /* Recover GH extentions */
+	  CCTK_INFO ("Recovering GH extensions");
+	  result += RecoverGHextensions (cgh, reader);
+	} END_MGLEVEL_LOOP;
+      } END_REFLEVEL_LOOP;	  
+
+      if (! result)
+	{
+	  /* Recover variables */
+	  CCTK_VInfo (CCTK_THORNSTRING, "Recovering data! ");
+	  result = RecoverVariables (cgh, reader,amrreader);
+	}
+	
       delete reader;
       delete amrreader;
     }
@@ -772,14 +774,23 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
 
   int RecoverVariables (cGH* cgh, IObase* reader, AmrGridReader* amrreader){
 
-    CCTK_VInfo(CCTK_THORNSTRING,"Starting to recover data for refinement level %d",reflevel);
+    int retval = 0;
 
+    CCTK_VInfo(CCTK_THORNSTRING,"Starting to recover data!!!");
 
+    int ndatasets = reader->nDatasets();
+    //CCTK_VInfo (CCTK_THORNSTRING, "ndatasets=%d", ndatasets);
+    assert (ndatasets>=0);
 
-
-    return 0;
+    for (int currdataset=1;currdataset < ndatasets;currdataset++) {
+      //CCTK_VInfo(CCTK_THORNSTRING,"dataset: %d",currdataset);
+      reader->seek(currdataset);
+      ReadGF(cgh,reader,amrreader);
   }
 
+    return retval;
+  }
+   
 
 } // namespace CarpetCheckpointRestart
 

@@ -45,7 +45,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.15 2004/01/07 13:14:04 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.16 2004/01/07 16:30:49 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -507,6 +507,99 @@ namespace CarpetIOFlexIO {
     last_output[reflevel][vindex] = cgh->cctk_iteration;
     
     return retval;
+  }
+  
+
+
+  int ReadGF (const cGH* const cgh, IObase* reader, AmrGridReader* amrreader) {
+
+    /* this functions reads in a variable on the current reflevel from an already open file. At
+       some point it should be called from InputVarAs */
+
+
+    DECLARE_CCTK_PARAMETERS;
+    
+    int tl = -1;
+    int mglevel = -1;
+    int rl = -1;
+
+    int rank;
+    int dims[dim];
+    int nbytes;
+    
+    char* varname;
+    char warnstring[256];
+    int asize,i;
+    IObase::DataType datatype;
+    int group,varindex;
+    
+    // read the name of the variable
+    i = reader->readAttributeInfo ("name", datatype, asize);
+    if (i >= 0 && datatype == FLEXIO_CHAR && asize > 0)
+      {
+	varname = (char*) malloc(sizeof(char)*asize+1);
+	reader->readAttribute (i, varname);
+      }
+    else
+      {
+	CCTK_WARN (0, "Something is wrong! Can't read dataset names!!!"); 
+      }
+
+    varindex = CCTK_VarIndex(varname);
+
+    CCTK_VInfo(CCTK_THORNSTRING,"Recovering varindex: %d varname: %s",varindex,varname);
+    free(varname);
+    assert(varindex > -1);
+
+    group = CCTK_GroupIndexFromVarI(varindex);
+    assert(group > -1);
+
+    // Check for storage
+    if (! CCTK_QueryGroupStorageI(cgh, group)) {
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Cannot recover variable \"%s\" because it has no storage",
+                  varname);
+      return 0;
+    }
+
+
+    // read reflevel
+    i = reader->readAttributeInfo ("reflevel", datatype, asize);
+    if (i >= 0 && datatype == FLEXIO_INT && asize > 0)
+      {
+	reader->readAttribute (i, &rl);
+      }
+    else
+      {
+	CCTK_WARN (0, "Something is wrong! Can't read refinement level!!!"); 
+      }
+
+    i = reader->readAttributeInfo ("timelevel", datatype, asize);
+    if (i >= 0 && datatype == FLEXIO_INT && asize > 0)
+      {
+	reader->readAttribute (i, &tl);
+      }
+    else
+      {
+	CCTK_WARN (0, "Something is wrong! Can't read timelevel!!!"); 
+      }
+
+    i = reader->readAttributeInfo ("mglevel", datatype, asize);
+    if (i >= 0 && datatype == FLEXIO_INT && asize > 0)
+      {
+	reader->readAttribute (i, &mglevel);
+      }
+    else
+      {
+	CCTK_WARN (0, "Something is wrong! Can't read multi group level!!!"); 
+      }
+    
+    CCTK_VInfo(CCTK_THORNSTRING,"Recovering varindex: %d varname: %s tl: %d, rl: %d",varindex,varname,tl,rl);
+	
+
+
+
+    return 0;
   }
   
   
