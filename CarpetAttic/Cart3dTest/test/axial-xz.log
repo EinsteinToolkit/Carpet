@@ -1,5 +1,4 @@
 --------------------------------------------------------------------------------
-
        10                                  
   1   0101       ************************  
   01  1010 10      The Cactus Code V4.0    
@@ -11,36 +10,22 @@
       0101                                 
 
 --------------------------------------------------------------------------------
-
-Cactus version: 4.0.b11
-Compile date:   Dec 14 2001 (21:50:34)
-Run date:       Dec 14 2001 (21:51:05)
-Run host:       lilypond.tat.physik.uni-tuebingen.de
-Parameter file: /home/eschnett/Calpha/Cactus/arrangements/Carpet/Cart3dTest/test/axial-xz.par
---------------------------------------------------------------------------------
-
 Activating thorn Cactus...Success -> active implementation Cactus
-Activation requested for 
---->CarpetIOASCII IOBasic IOUtil Carpet CarpetLib CarpetSlab Cart3d Cart3dTest<---
-Activating thorn Carpet...Success -> active implementation driver
 Activating thorn CarpetIOASCII...Success -> active implementation IOASCII
+Activating thorn IOBasic...Success -> active implementation IOBasic
+Activating thorn IOUtil...Success -> active implementation IO
+Activating thorn Carpet...Success -> active implementation driver
 Activating thorn CarpetLib...Success -> active implementation CarpetLib
 Activating thorn CarpetSlab...Success -> active implementation Hyperslab
 Activating thorn Cart3d...Success -> active implementation grid
 Activating thorn Cart3dTest...Success -> active implementation Cart3dTest
-Activating thorn IOBasic...Success -> active implementation IOBasic
-Activating thorn IOUtil...Success -> active implementation IO
 --------------------------------------------------------------------------------
-  if (recover)
-    Recover parameters
-  endif
-
   Startup routines
     Carpet: Startup routine
-    IOUtil: Startup routine
-    Cart3d: Register GH extension for Cartesian coordinates
-    IOBasic: Startup routine
     CarpetIOASCII: Startup routine
+    Cart3d: Register GH extension for Cartesian coordinates
+    IOUtil: Startup routine
+    IOBasic: Startup routine
 
   Parameter checking routines
     Cart3d: Check coordinate and symmetry parameters
@@ -48,20 +33,10 @@ Activating thorn IOUtil...Success -> active implementation IO
   Initialisation
     Cart3d: Set up 3d Cartesian coordinates
     Cart3dTest: Create some interesting initial data
-    if (recover)
-    endif
-    if (checkpoint initial data)
-    endif
-    if (analysis)
-    endif
 
   do loop over timesteps
-    Rotate timelevels
-    iteration = iteration + 1
-    t = t+dt
     Cart3dTest: Apply symmetry boundary conditions
-    if (checkpoint)
-    endif
+    t = t+dt
     if (analysis)
     endif
   enddo
@@ -77,21 +52,5 @@ AMR 2D ASCII I/O provided by CarpetIOASCII
 --------------------------------------------------------------------------------
 AMR 3D ASCII I/O provided by CarpetIOASCII
 --------------------------------------------------------------------------------
-
-INFO (Carpet): Carpet is running on 1 processors
-INFO (IOBasic): I/O Method 'Scalar' registered
-INFO (IOBasic): Scalar: Output of scalar quantities (grid scalars, reductions) to ASCII files
-INFO (IOBasic): I/O Method 'Info' registered
-INFO (IOBasic): Info: Output of scalar quantities (grid scalars, reductions) to screen
-INFO (Cart3d): Cartesian coordinates:
-INFO (Cart3d):    Whole grid: lower bound [0.15, -1.35, -0.45]
-INFO (Cart3d):    Whole grid: upper bound [2.85, 1.65, 2.85]
-INFO (Cart3d):    Whole grid:      extent [3, 3.3, 3.6]
-INFO (Cart3d):    Interior:   lower bound [0.15, -1.05, 0.15]
-INFO (Cart3d):    Interior:   upper bound [2.85, 1.35, 2.25]
-INFO (Cart3d):    Interior:        extent [3, 2.7, 2.4]
-INFO (Cart3d):    Grid spacing:           [0.3, 0.3, 0.3]
-INFO (IOBasic): Scalar: Output every -1 iterations
-INFO (IOBasic): Info: Output every -1 iterations
 --------------------------------------------------------------------------------
 Done.
