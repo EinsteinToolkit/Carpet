@@ -107,6 +107,7 @@ namespace Carpet {
     if (reflevel < reflevels-1) {
       for (int group=0; group<CCTK_NumGroups(); ++group) {
         if (CCTK_GroupTypeI(group) == CCTK_GF
+            && CCTK_NumVarsInGroupI(group) > 0
             && CCTK_QueryGroupStorageI(cgh, group)) {
           SyncGVGroup(cgh, group);
         }
