@@ -240,6 +240,21 @@ namespace CarpetInterp {
       interpolation_times_differ = true;
     }
     
+    vector<CCTK_INT> time_deriv_order (N_interp_points);
+    bool have_time_derivs;
+    ierr = Util_TableGetIntArray
+      (param_table_handle, N_interp_points,
+       &time_deriv_order.front(), "time_deriv_order");
+    if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+      for (int n=0; n<N_output_arrays; ++n) {
+        time_deriv_order.at(n) = 0;
+      }
+      have_time_derivs = false;
+    } else {
+      assert (ierr == N_interp_points);
+      have_time_derivs = true;
+    }
+    
     
     
     // Find out about the coordinates: origin and delta for the Carpet
@@ -421,11 +436,12 @@ namespace CarpetInterp {
         // Number of necessary time levels
         CCTK_REAL const level_time = cgh->cctk_time / cgh->cctk_delta_time;
         bool const need_time_interp
-          = (interpolation_times_differ
+          = (interpolation_times_differ || have_time_derivs
              || (fabs(current_time - level_time)
                  > 1e-12 * (fabs(level_time) + fabs(current_time)
                             + fabs(cgh->cctk_delta_time))));
-        assert (! (! want_global_mode && ! interpolation_times_differ
+        assert (! (! want_global_mode
+                   && ! interpolation_times_differ && ! have_time_derivs
                    && need_time_interp));
         int const num_tl = need_time_interp ? prolongation_order_time + 1 : 1;
         
@@ -598,7 +614,7 @@ namespace CarpetInterp {
                   // If -ve then key wasn't set; use all timelevels.
                   if (interp_ntls < 0) interp_ntls = num_tl;
                   
-                  if (! interpolation_times_differ) {
+                  if (! interpolation_times_differ && ! have_time_derivs) {
                     
                     // Get interpolation times
                     CCTK_REAL const time = current_time;
@@ -649,8 +665,10 @@ namespace CarpetInterp {
                     assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
                     for (int k=0; k<npoints; ++k) {
                       
-                      // Get interpolation times
                       CCTK_REAL const time = interpolation_times.at(k);
+                      CCTK_INT const deriv_order = time_deriv_order.at(k);
+                      
+                      // Get interpolation times
                       vector<CCTK_REAL> times(interp_ntls);
                       for (int tl=0; tl<interp_ntls; ++tl) {
                         times.at(tl) = vtt.at(m)->time (-tl, reflevel, mglevel);
@@ -658,28 +676,69 @@ namespace CarpetInterp {
                       
                       // Calculate interpolation weights
                       vector<CCTK_REAL> tfacs(interp_ntls);
-                      switch (interp_ntls) {
+                      switch (deriv_order) {
+                      case 0:
+                        switch (interp_ntls) {
+                        case 1:
+                          // no interpolation
+                          // We have to assume that any GF with one timelevel
+                          // is constant in time!!!
+                          // assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
+                          tfacs.at(0) = 1.0;
+                          break;
+                        case 2:
+                          // linear (2-point) interpolation
+                          tfacs.at(0) = (time - times.at(1)) / (times.at(0) - times.at(1));
+                          tfacs.at(1) = (time - times.at(0)) / (times.at(1) - times.at(0));
+                          break;
+                        case 3:
+                          // quadratic (3-point) interpolation
+                          tfacs.at(0) = (time - times.at(1)) * (time - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
+                          tfacs.at(1) = (time - times.at(0)) * (time - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
+                          tfacs.at(2) = (time - times.at(0)) * (time - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
+                          break;
+                        default:
+                          assert (0);
+                        }
+                        break;
+                        
                       case 1:
-                        // no interpolation
-                        // We have to assume that any GF with one timelevel
-                        // is constant in time!!!
-                        // assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
-                        tfacs.at(0) = 1.0;
+                        switch (interp_ntls) {
+                        case 2:
+                          // linear (2-point) interpolation
+                          // first order accurate
+                          tfacs.at(0) = (1 - times.at(1)) / (times.at(0) - times.at(1));
+                          tfacs.at(1) = (1 - times.at(0)) / (times.at(1) - times.at(0));
+                          break;
+                        case 3:
+                          // quadratic (3-point) interpolation
+                          // second order accurate
+                          tfacs.at(0) = ((1 - times.at(1)) * (time - times.at(2)) + (time - times.at(1)) * (1 - times.at(2))) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
+                          tfacs.at(1) = ((1 - times.at(0)) * (time - times.at(2)) + (time - times.at(0)) * (1 - times.at(2))) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
+                          tfacs.at(2) = ((1 - times.at(0)) * (time - times.at(1)) + (time - times.at(0)) * (1 - times.at(1))) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
+                          break;
+                        default:
+                          assert (0);
+                        }
                         break;
+                        
                       case 2:
-                        // linear (2-point) interpolation
-                        tfacs.at(0) = (time - times.at(1)) / (times.at(0) - times.at(1));
-                        tfacs.at(1) = (time - times.at(0)) / (times.at(1) - times.at(0));
+                        switch (interp_ntls) {
+                        case 3:
+                          // quadratic (3-point) interpolation
+                          // second order accurate
+                          tfacs.at(0) = 2 * (1 - times.at(1)) * (1 - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
+                          tfacs.at(1) = 2 * (1 - times.at(0)) * (1 - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
+                          tfacs.at(2) = 2 * (1 - times.at(0)) * (1 - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
+                          break;
+                        default:
+                          assert (0);
+                        }
                         break;
-                      case 3:
-                        // quadratic (3-point) interpolation
-                        tfacs.at(0) = (time - times.at(1)) * (time - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
-                        tfacs.at(1) = (time - times.at(0)) * (time - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
-                        tfacs.at(2) = (time - times.at(0)) * (time - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
-                        break;
+                        
                       default:
                         assert (0);
-                      }
+                      } // switch time_deriv_order
                       
                       CCTK_REAL & dest = alloutputs.at(ind_prc(p,m,reflevel,component))[ivect(k,j,0)];
                       dest = 0;
