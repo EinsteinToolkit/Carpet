@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.3 2001/03/10 20:55:06 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.4 2001/03/14 11:00:26 eschnett Exp $
 
  ***************************************************************************/
 
@@ -96,12 +96,12 @@ public:
   
   virtual void* storage () = 0;
   
-  ivect shape () const {
+  const ivect& shape () const {
     assert (_has_storage);
     return _shape;
   }
 
-  ivect stride () const {
+  const ivect& stride () const {
     assert (_has_storage);
     return _stride;
   }
@@ -116,7 +116,7 @@ public:
     return _proc;
   }
 
-  ibbox extent () const {
+  const ibbox& extent () const {
     assert (_has_storage);
     return _extent;
   }
@@ -138,7 +138,7 @@ public:
   virtual void interpolate_from (const generic_data* src, const double sfact,
 				 const generic_data* trc, const double tfact,
 				 const ibbox& box) = 0;
-
+  
   // Output
   template<int DD>
   void write_ascii (const string name, const int time,

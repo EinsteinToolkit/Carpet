@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.4 2001/03/10 20:55:06 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.5 2001/03/14 11:00:26 eschnett Exp $
 
  ***************************************************************************/
 
@@ -60,6 +60,8 @@ data<T,D>* data<T,D>::make_typed () const {
   return new data();
 }
 
+
+
 // Storage management
 template<class T, int D>
 void data<T,D>::allocate (const ibbox& extent, const int proc,
@@ -68,7 +70,7 @@ void data<T,D>::allocate (const ibbox& extent, const int proc,
   _has_storage = true;
   // data
   _extent = extent;
-  _shape = _extent.shape() / _extent.stride();
+  _shape = max(ivect(0), _extent.shape() / _extent.stride());
   _size = 1;
   for (int d=0; d<D; ++d) {
     _stride[d] = _size;
@@ -79,7 +81,7 @@ void data<T,D>::allocate (const ibbox& extent, const int proc,
   MPI_Comm_rank (dist::comm, &rank);
   if (rank==_proc) {
     _owns_storage = !mem;
-    if (!mem) {
+    if (_owns_storage) {
       _storage = new T[_size];
     } else {
       _storage = (T*)mem;
@@ -104,8 +106,9 @@ void data<T,D>::transfer_from (generic_data<D>* gsrc) {
   *src = data();
 }
 
-// Processor management
 
+
+// Processor management
 template<class T, int D>
 void data<T,D>::change_processor (const int newproc, void* const mem=0) {
   if (newproc == _proc) {
@@ -121,7 +124,7 @@ void data<T,D>::change_processor (const int newproc, void* const mem=0) {
       
       assert (!_storage);
       _owns_storage = !mem;
-      if (!mem) {
+      if (_owns_storage) {
 	_storage = new T[_size];
       } else {
 	_storage = (T*)mem;
@@ -155,11 +158,13 @@ void data<T,D>::change_processor (const int newproc, void* const mem=0) {
   _proc = newproc;
 }
 
+
+
 // Data manipulators
 template<class T, int D>
 void data<T,D>::copy_from (const generic_data<D>* gsrc, const ibbox& box) {
   const data* src = (const data*)gsrc;
-  assert (_has_storage && src->_has_storage);
+  assert (has_storage() && src->has_storage());
   assert (all(box.lower()>=extent().lower()
 	      && box.lower()>=src->extent().lower()));
   assert (all(box.upper()<=extent().upper()
@@ -168,14 +173,14 @@ void data<T,D>::copy_from (const generic_data<D>* gsrc, const ibbox& box) {
 	      && box.stride()==src->extent().stride()));
   assert (all((box.lower()-extent().lower())%box.stride() == 0
 	      && (box.lower()-src->extent().lower())%box.stride() == 0));
-
-  if (_proc == src->_proc) {
+  
+  if (proc() == src->proc()) {
     // copy on same processor
-
+    
     int rank;
     MPI_Comm_rank (dist::comm, &rank);
-    if (rank == _proc) {
-
+    if (rank == proc()) {
+      
       for (ibbox::iterator it=box.begin(); it!=box.end(); ++it) {
         const ivect index = *it;
         (*this)[index] = (*src)[index];
@@ -186,7 +191,7 @@ void data<T,D>::copy_from (const generic_data<D>* gsrc, const ibbox& box) {
   } else {
     
     // copy to different processor
-    data* const tmp = new data(box, src->_proc);
+    data* const tmp = new data(box, src->proc());
     tmp->copy_from (src, box);
     tmp->change_processor (_proc);
     copy_from (tmp, box);
@@ -200,7 +205,7 @@ void data<T,D>::interpolate_from (const generic_data<D>* gsrc,
                                   const ibbox& box)
 {
   const data* src = (const data*)gsrc;
-  assert (_has_storage && src->_has_storage);
+  assert (has_storage() && src->has_storage());
   assert (all(box.lower()>=extent().lower()
 	      && box.upper()<=extent().upper()));
   assert (all(box.lower()>=extent().lower()
@@ -211,14 +216,14 @@ void data<T,D>::interpolate_from (const generic_data<D>* gsrc,
 	      /* && box.stride()<=src->extent().stride() */ ));
   assert (all((box.lower()-extent().lower())%box.stride() == 0
 	      /* && (box.lower()-src->extent().lower())%box.stride() == 0 */ ));
-
-  if (_proc == src->_proc) {
+  
+  if (proc() == src->proc()) {
     // interpolate on same processor
     
     int rank;
     MPI_Comm_rank (dist::comm, &rank);
-    if (rank == _proc) {
-
+    if (rank == proc()) {
+      
       for (ibbox::iterator posi=box.begin(); posi!=box.end(); ++posi) {
         const ivect& pos = *posi;
 	
@@ -248,9 +253,9 @@ void data<T,D>::interpolate_from (const generic_data<D>* gsrc,
   } else {
     // interpolate from other processor
     
-    data* const tmp = new data(box, src->_proc);
+    data* const tmp = new data(box, src->proc());
     tmp->interpolate_from (src, box);
-    tmp->change_processor (_proc);
+    tmp->change_processor (proc());
     copy_from (tmp, box);
     delete tmp;
     
@@ -266,7 +271,7 @@ void data<T,D>::interpolate_from (const generic_data<D>* gsrc,
 {
   const data* src = (const data*)gsrc;
   const data* trc = (const data*)gtrc;
-  assert (_has_storage && src->_has_storage && trc->_has_storage);
+  assert (has_storage() && src->has_storage() && trc->has_storage());
   assert (all(box.lower()>=extent().lower()
 	      && box.upper()<=extent().upper()));
   assert (all(box.lower()>=extent().lower()
@@ -281,21 +286,22 @@ void data<T,D>::interpolate_from (const generic_data<D>* gsrc,
   assert (all((box.lower()-extent().lower())%box.stride() == 0
 	      && (box.lower()-src->extent().lower())%box.stride() == 0
 	      && (box.lower()-trc->extent().lower())%box.stride() == 0));
-
-  if (_proc == src->_proc && _proc == trc->_proc) {
+  assert (src->proc() == trc->proc());
+  
+  if (proc() == src->proc()) {
     // interpolate on same processor
     
     int rank;
     MPI_Comm_rank (dist::comm, &rank);
-    if (rank == _proc) {
-
+    if (rank == proc()) {
+      
       for (ibbox::iterator posi=box.begin(); posi!=box.end(); ++posi) {
         const ivect& pos = *posi;
-
+	
         // get box around current position
         const ibbox frombox
 	  = ibbox(pos,pos,extent().stride()).expanded_for(src->extent());
-
+	
         // interpolate from box to position
         T src_sum = 0;
         T trc_sum = 0;
@@ -314,18 +320,16 @@ void data<T,D>::interpolate_from (const generic_data<D>* gsrc,
         (*this)[pos] = (T)sfact * src_sum + (T)tfact * trc_sum;
 	
       } // for pos
-
+      
     }
     
   } else {
-    // interpolate from other processors
-
-    data* const smp = new data(box, src->_proc);
-    smp->copy_from (src, box);
-    data* const tmp = new data(box, trc->_proc);
-    tmp->copy_from (trc, box);
-    interpolate_from (smp, sfact, tmp, tfact, box);
-    delete smp;
+    // interpolate from other processor
+    
+    data* const tmp = new data(box, src->proc());
+    tmp->interpolate_from (src, sfact, trc, tfact, box);
+    tmp->change_processor (proc());
+    copy_from (tmp, box);
     delete tmp;
     
   }

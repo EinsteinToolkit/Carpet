@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.9 2001/03/13 17:40:30 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.10 2001/03/14 11:00:17 eschnett Exp $
 
 /* It is assumed that the number of components of all arrays is equal
    to the number of components of the grid functions, and that their
@@ -32,7 +32,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.9 2001/03/13 17:40:30 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.10 2001/03/14 11:00:17 eschnett Exp $";
 
 
 
@@ -931,8 +931,8 @@ namespace Carpet {
       abort();
     }
     
-    // The return value seems to be 1 (success) no matter whether
-    // storage has actually been disabled.
+    // The return values seems to be whether storage was enabled
+    // previously, and not whether storage is enabled now.
     return retval;
   }
   

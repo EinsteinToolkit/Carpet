@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.5 2001/03/12 16:54:25 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.6 2001/03/14 11:00:26 eschnett Exp $
 
  ***************************************************************************/
 
@@ -54,9 +54,10 @@ public:
 	const vect<T,D>& stride);
   
   // Accessors
-  const vect<T,D>& lower () const { return _lower; }
-  const vect<T,D>& upper () const { return _upper; }
-  const vect<T,D>& stride () const { return _stride; }
+  // (Don't return references; *this might be a temporary)
+  vect<T,D> lower () const { return _lower; }
+  vect<T,D> upper () const { return _upper; }
+  vect<T,D> stride () const { return _stride; }
   vect<T,D> shape () const { return _upper - _lower + _stride; }
   
   bool empty() const {

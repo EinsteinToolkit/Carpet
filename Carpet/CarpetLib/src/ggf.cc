@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.3 2001/03/12 16:54:25 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.4 2001/03/14 11:00:26 eschnett Exp $
 
  ***************************************************************************/
 
@@ -165,9 +165,6 @@ void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
   assert (rl1>=0 && rl1<h.reflevels());
   assert (c1>=0 && c1<h.components(rl1));
   assert (ml1>=0 && ml1<h.mglevels(rl1,c1));
-#if 0
-  cout << "copycat tmin " << tmin << " tmax " << tmax << endl;
-#endif
   assert (tl2>=tmin && tl2<=tmax);
   assert (rl2>=0 && rl2<h.reflevels());
   const int c2=c1;
@@ -358,7 +355,7 @@ void generic_gf<D>::ref_bnd_prolongate (int tl, int rl, int c, int ml) {
   assert (rl>=1);
   double time =
     (t.time(tl,rl,ml) - t.get_time(rl-1,ml)) / (double)t.get_delta(rl-1, ml);
-  const int tl2 = (int)floor(time);
+  const int tl2 = (int)floor(time + 1e-6);
   assert (tl2>=tmin && tl2<=tmax);
   if (time==tl2) {
     copycat (tl ,rl  ,c,ml, &dh<D>::dboxes::recv_ref_bnd_coarse,
