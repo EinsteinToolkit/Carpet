@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.13 2001/03/16 21:32:17 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.14 2001/03/17 22:26:52 eschnett Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -33,7 +33,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.13 2001/03/16 21:32:17 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.14 2001/03/17 22:26:52 eschnett Exp $";
 
 
 
@@ -704,6 +704,8 @@ namespace Carpet {
   int DisableGroupStorage (cGH* cgh, const char* groupname)
   {
     Checkpoint ("%*sDisableGroupStorage %s", 2*reflevel, "", groupname);
+    // XXX
+    return 1;
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
