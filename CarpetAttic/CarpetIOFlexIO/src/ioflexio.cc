@@ -15,7 +15,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.43 2004/02/10 11:14:14 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.44 2004/02/27 16:23:34 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -60,7 +60,7 @@ namespace CarpetIOFlexIO {
   int GHExtension;
   int IOMethod;
   vector<bool> do_truncate;
-  vector<vector<int> > last_output;
+  vector<vector<vector<int> > > last_output; // [ml][rl][var]
   
   
   
@@ -135,9 +135,12 @@ namespace CarpetIOFlexIO {
     do_truncate.resize(CCTK_NumVars(), true);
     
     // No iterations have yet been output
-    last_output.resize(maxreflevels);
-    for (int rl=0; rl<maxreflevels; ++rl) {
-      last_output[rl].resize(CCTK_NumVars(), INT_MIN);
+    last_output.resize(mglevels);
+    for (int ml=0; ml<mglevels; ++ml) {
+      last_output.at(ml).resize(maxreflevels);
+      for (int rl=0; rl<maxreflevels; ++rl) {
+        last_output.at(ml).at(rl).resize(CCTK_NumVars(), INT_MIN);
+      }
     }
     
     // We register only once, ergo we get only one handle.  We store
@@ -182,6 +185,17 @@ namespace CarpetIOFlexIO {
     }
     
     const int grouptype = CCTK_GroupTypeI(group);
+    switch (grouptype) {
+    case CCTK_SCALAR:
+    case CCTK_ARRAY:
+      assert (do_global_mode);
+      break;
+    case CCTK_GF:
+      /* do nothing */
+      break;
+    default:
+      assert (0);
+    }
     const int rl = grouptype==CCTK_GF ? reflevel : 0;
     
     // Get grid hierarchy extentsion from IOUtil
@@ -223,7 +237,7 @@ namespace CarpetIOFlexIO {
     if (CCTK_MyProc(cgh)==0) {
       
       // If this is the first time, then create and truncate the file
-      if (do_truncate[n]) {
+      if (do_truncate.at(n)) {
 	struct stat fileinfo;
 	if (! iogh->recovered
 	    || stat(filename, &fileinfo)!=0) {
@@ -273,13 +287,9 @@ namespace CarpetIOFlexIO {
       const int gpdim = CCTK_GroupDimI(group);
       
       // Set coordinate information
-      CCTK_REAL lower[dim], upper[dim];
       double origin[dim], delta[dim], timestep;
       for (int d=0; d<dim; ++d) {
-	const int ierr = CCTK_CoordRange
-          (cgh, &lower[d], &upper[d], d+1, 0, "cart3d");
-	assert (ierr==0);
-	origin[d] = lower[d];
+	origin[d] = cgh->cctk_origin_space[d];
 	delta[d] = cgh->cctk_delta_space[d];
       }
       timestep = cgh->cctk_delta_time;
@@ -300,7 +310,7 @@ namespace CarpetIOFlexIO {
 	 initial_gridplacementrefinement);
       
       // Set level
-      amrwriter->setLevel (reflevel);
+      amrwriter->setLevel (rl);
       
       // Set current time
       amrwriter->setTime (cgh->cctk_iteration);
@@ -380,13 +390,13 @@ namespace CarpetIOFlexIO {
           }
           switch (grouptype) {
           case CCTK_GF:
-            WriteAttribute (writer, "group_grouptype", "GF");
+            WriteAttribute (writer, "group_grouptype", "CCTK_GF");
             break;
           case CCTK_ARRAY:
-            WriteAttribute (writer, "group_grouptype", "ARRAY");
+            WriteAttribute (writer, "group_grouptype", "CCTK_ARRAY");
             break;
           case CCTK_SCALAR:
-            WriteAttribute (writer, "group_grouptype", "SCALAR");
+            WriteAttribute (writer, "group_grouptype", "CCTK_SCALAR");
             break;
           default:
             assert (0);
@@ -449,17 +459,31 @@ namespace CarpetIOFlexIO {
     }
     
     // Don't truncate again
-    do_truncate[n] = false;
+    do_truncate.at(n) = false;
     
     return 0;
   }
   
   
   
-  int TimeToOutput (const cGH* const cgh, const int vindex) {
+  int TimeToOutput (const cGH* const cctkGH, const int vindex) {
+    DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    assert (vindex>=0 && vindex<(int)last_output[reflevel].size());
+    assert (vindex>=0 && vindex<CCTK_NumVars());
+
+    const int grouptype = CCTK_GroupTypeFromVarI(vindex);
+    switch (grouptype) {
+    case CCTK_SCALAR:
+    case CCTK_ARRAY:
+      if (! do_global_mode) return 0;
+      break;
+    case CCTK_GF:
+      /* do nothing */
+      break;
+    default:
+      assert (0);
+    }
     
     const int myoutevery = GetIntParameter("out3D_every", out_every);
     
@@ -468,17 +492,17 @@ namespace CarpetIOFlexIO {
       return 0;
     }
     
-    if (cgh->cctk_iteration % myoutevery != 0) {
+    if (cctk_iteration % myoutevery != 0) {
       // Nothing should be output during this iteration
       return 0;
     }
     
-    if (! CheckForVariable(cgh, GetStringParameter("out3D_vars",""), vindex)) {
+    if (! CheckForVariable(cctkGH, GetStringParameter("out3D_vars",""), vindex)) {
       // This variable should not be output
       return 0;
     }
     
-    if (last_output[reflevel][vindex] == cgh->cctk_iteration) {
+    if (last_output.at(mglevel).at(reflevel).at(vindex) == cctk_iteration) {
       // Has already been output during this iteration
       char* varname = CCTK_FullName(vindex);
       CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -490,7 +514,7 @@ namespace CarpetIOFlexIO {
       return 0;
     }
     
-    assert (last_output[reflevel][vindex] < cgh->cctk_iteration);
+    assert (last_output.at(mglevel).at(reflevel).at(vindex) < cctk_iteration);
     
     // Should be output during this iteration
     return 1;
@@ -505,7 +529,7 @@ namespace CarpetIOFlexIO {
     const int retval = OutputVarAs (cgh, varname, CCTK_VarName(vindex));
     free (varname);
     
-    last_output[reflevel][vindex] = cgh->cctk_iteration;
+    last_output.at(mglevel).at(reflevel).at(vindex) = cgh->cctk_iteration;
     
     return retval;
   }
@@ -874,13 +898,13 @@ namespace CarpetIOFlexIO {
     
     CCTK_TraverseString (varlist, SetFlag, &flags, CCTK_GROUP_OR_VAR);
     
-    return flags[vindex];
+    return flags.at(vindex);
   }
   
   void SetFlag (int index, const char* optstring, void* arg)
   {
     vector<bool>& flags = *(vector<bool>*)arg;
-    flags[index] = true;
+    flags.at(index) = true;
   }
   
   
