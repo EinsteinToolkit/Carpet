@@ -24,10 +24,14 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     if (CCTK_ParameterQueryTimesSet ("periodic", "Carpet")
-	|| CCTK_ParameterQueryTimesSet ("periodic_x", "Carpet")
-	|| CCTK_ParameterQueryTimesSet ("periodic_y", "Carpet")
-	|| CCTK_ParameterQueryTimesSet ("periodic_z", "Carpet")) {
+	or CCTK_ParameterQueryTimesSet ("periodic_x", "Carpet")
+	or CCTK_ParameterQueryTimesSet ("periodic_y", "Carpet")
+	or CCTK_ParameterQueryTimesSet ("periodic_z", "Carpet")) {
       CCTK_PARAMWARN ("Some of the parameters \"Carpet::periodic*\" have been set.  These parameters are there for compatibility reasons only and must not be used.");
+    }
+    
+    if (adaptive_stepsize and max_refinement_levels > 1) {
+      CCTK_PARAMWARN ("Adaptive time step sizes do not work with mesh refinement yet.  Please use only a single level, and set max_refinement_levels=1.");
     }
   }
   

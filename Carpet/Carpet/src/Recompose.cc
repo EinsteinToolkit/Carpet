@@ -471,7 +471,8 @@ namespace Carpet {
     // choose a number of slices for this direction
     int const nslices
       = min(nprocs,
-            (int)floor(mysize * pow(nprocs/allsizes, 1.0/alldims) + 0.5));
+            (int)floor(mysize * pow(nprocs/allsizes, (CCTK_REAL)1/alldims)
+                       + 0.5));
     assert (nslices <= nprocs);
     if (DEBUG) cout << "SRAR " << mydim << " nprocs " << nprocs << endl;
     if (DEBUG) cout << "SRAR " << mydim << " nslices " << nslices << endl;
@@ -654,7 +655,7 @@ namespace Carpet {
         for (int d=0; d<dim; ++d) {
           rshape[d] = (CCTK_REAL)(rub[d]-rlb[d]) / (rub[0]-rlb[0]);
         }
-        const CCTK_REAL rfact = pow(nprocs / prod(rshape), 1.0/dim);
+        const CCTK_REAL rfact = pow(nprocs / prod(rshape), (CCTK_REAL)1/dim);
         rshape *= rfact;
         assert (abs(prod(rshape) - nprocs) < 1e-6);
       }
