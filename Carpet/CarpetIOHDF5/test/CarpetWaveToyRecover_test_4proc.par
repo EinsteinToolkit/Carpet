@@ -1,52 +1,14 @@
-ActiveThorns = "Boundary CartGrid3D Time CARPET CARPETReduce CARPETSlab carpetioascii carpetlib carpetregrid carpetIOASCII IOBasic IOUtil nanchecker carpetiohdf5 coordbase IDScalarWave WaveToyF77 SymBase Boundary"
+ActiveThorns = "Boundary CartGrid3D Time CoordBase SymBase Carpet CarpetLib CarpetRegrid CarpetReduce CarpetSlab IOUtil IOBasic CarpetIOASCII CarpetIOHDF5 IDScalarWaveC WaveToyC"
 
 
-Cactus::cctk_itlast		= 128
+Cactus::cctk_itlast = 128
 
-Time::dtfac			= 0.5  
+# Output
+IO::out_dir = $parfile
 
-driver::global_nsize		= 10
-driver::ghost_size		= 2
-grid::type			= byrange
-grid::dxyz			= 1
-cartgrid3d::avoid_origin = "no"
-
-Carpet::prolongation_order_space = 3
-Carpet::prolongation_order_time = 2
-
-Carpet::init_each_timelevel = yes
-Carpet::buffer_width = 6
-Carpet::max_refinement_levels   = 4
-CarpetRegrid::refinement_levels = 4
-
-
-
-
-IO::out_dir			= $parfile
-
-
+# Recovery
 IO::recover_dir  = "../../../arrangements/Carpet/CarpetIOHDF5/test"
-IO::recover = "manual"
-IO::recover_file  = "CarpetWaveToyCheckpoint_test.it_64"
+IO::recover      = "manual"
+IO::recover_file = "CarpetWaveToyCheckpoint_test.it_64"
 
-carpetiohdf5::checkpoint = "no"
-
-
-IOBasic::outinfo_every		= 1
-IOBasic::outinfo_vars		= "wavetoy::phi"
-
-io::out_fileinfo = "none"
-
-carpetioascii::out1D_every = 32
-carpetioascii::out1D_vars = "wavetoy::phi"
-carpetioascii::out1D_dir  = $parfile
-
-iobasic::outScalar_vars = "wavetoy::phi"
-iobasic::outScalar_every = 32
-
-
-
-cactus::cctk_timer_output               =       "FULL"
-io::print_timing_info                   =       "yes"
-cactus::info_format                     =       "FULL TIME STAMP"
-
+IOHDF5::checkpoint = "no"
