@@ -49,9 +49,9 @@ template<int D>
 comm_state<D>::~comm_state ()
 {
   assert (thestate==state_recv || thestate==state_done);
-  assert (this->current == this->tmps.size());
-  for (size_t n=0; n<this->current; ++n) {
-    assert (this->tmps.at(n) == NULL);
+  assert (current == 0);
+  for (size_t n=0; n<tmps.size(); ++n) {
+    assert (tmps.at(n) == NULL);
   }
 }
 
@@ -430,11 +430,13 @@ void gdata<D>
   } else {
     // interpolate from other processor
     
-    gdata<D>* const tmp = state.tmps.at(state.current++);
+    gdata<D>* const tmp = state.tmps.at(state.current);
     assert (tmp);
     tmp->change_processor_wait (proc());
     copy_from_nocomm (tmp, box);
     delete tmp;
+    state.tmps.at(state.current) = NULL;
+    ++state.current;
     
   }
 }

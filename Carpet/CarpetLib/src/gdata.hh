@@ -39,6 +39,12 @@ struct comm_state {
   bool done ();
   ~comm_state ();
   
+private:
+  // Forbit copying and passing by value
+  comm_state (comm_state const &);
+  comm_state& operator= (comm_state const &);
+public:
+  
   vector<gdata<D>*> tmps;
   size_t current;
 };
