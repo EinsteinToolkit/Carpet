@@ -31,7 +31,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.37 2004/03/23 13:06:14 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.38 2004/03/23 13:31:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -128,11 +128,20 @@ namespace Carpet {
     // Main loop
     while (! do_terminate(cgh, cgh->cctk_time, cgh->cctk_iteration)) {
       
+      
+      
       // Regrid
       for (int rl=0; rl<reflevels; ++rl) {
-        Checkpoint ("Regrid");
-        Regrid (cgh, rl, rl+1, true);
-      }
+        const int do_every = maxreflevelfact / ipow(reffact, rl);
+        if (cgh->cctk_iteration % do_every == 0) {
+          
+          Checkpoint ("Regrid");
+          Regrid (cgh, rl, rl+1, true);
+          
+        }
+      } // for rl
+      
+      
       
       // Advance time
       ++cgh->cctk_iteration;
