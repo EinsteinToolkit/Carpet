@@ -2,7 +2,7 @@
 %  Cactus Thorn template for ThornGuide documentation
 %  Author: Ian Kelley
 %  Date: Sun Jun 02, 2002
-%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.9 2003/07/18 23:22:19 schnetter Exp $                                                             
+%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.10 2003/07/21 18:48:08 schnetter Exp $                                                             
 %
 %  Thorn documentation in the latex file doc/documentation.tex 
 %  will be included in ThornGuides built with the Cactus make system.
@@ -64,7 +64,7 @@
 % *======================================================================* 
 
 % If you are using CVS use this line to give version information
-% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.9 2003/07/18 23:22:19 schnetter Exp $
+% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.10 2003/07/21 18:48:08 schnetter Exp $
 
 \documentclass{article}
 
@@ -85,7 +85,7 @@
 
 % the date your document was last changed, if your document is in CVS, 
 % please use:
-\date{$ $Date: 2003/07/18 23:22:19 $ $}
+\date{$ $Date: 2003/07/21 18:48:08 $ $}
 
 \maketitle
 
@@ -281,78 +281,19 @@ Cactus it was rather easy to write these in \textsc{Fortran 77}, which
 makes them both fast and portable.
 
 Carpet is an arrangement in Cactus.  It can theoretically be compiled
-without any other external library, if you don't include the binary
-I/O support which requires FlexIO.  I do recommend using FlexIO, so
-you should install the FlexIO library first.  Although FlexIO is
-already part of Cactus in the thorn called CactusExternal/FlexIO, this
-seems to be a version that has FMR support disabled and is hence not
-usable.  You will have to install a complete copy of FlexIO by hand.
+without any external library, if you omit the binary I/O support which
+requires the FlexIO library.  FlexIO is already part of Cactus in the
+thorn CactusExternal/FlexIO.  I suggest that you enable support for
+the HDF format in the FlexIO library, although this is not necessary.
+For that, you have to install the HDF5 libraries first.
 
-\subsection{Hurdle 1: FlexIO}
-
-I suggest that you enable support for the HDF format in the FlexIO
-library, although this is not necessary.  If you don't want to do
-this, then you don't have to install the HDF libraries in the
-following.
-
-\begin{enumerate}
-
-\item
-Install the HDF4 and HDF5 libraries.  They are available from the HDF
-web pages \cite{Carpet__HDF}, and they can be installed with the usual
-\texttt{./configure; make; make install} triplet.  They should already
-be installed by default on most machines.  The conversion utilities
-between HDF4 and HDF5 are installed automatically when you install
-HDF5 while HDF4 is already installed.  (That means that you should
-install HDF4 first, and then HDF5.)
-
-\item
-Get the FlexIO library from the Cactus CVS server:\\ \texttt{cvs -d
-:pserver:\textit{yourlogin}@cvs.cactuscode.org:/packages checkout
-FlexIO}.  If you do not have a login, then use the login
-\texttt{cvs\_anon} for anonymous access.  The Cactus web pages
-describe how to do this.
-
-\item
-Configure FlexIO while providing the paths to the HDF4 and HDF5
-libraries: \texttt{./configure --with-hdf4=/usr --with-hdf5=/usr},
-assuming that HDF4 and HDF5 are installed under \texttt{/usr}.  You
-can also configure without HDF support, but then you will not be able
-to read or write HDF files.  FlexIO will then support only the
-built-in \texttt{IEEEIO} format.
-
-\item
-Edit the top of the file \texttt{FlexIO/Makefile} to match your actual
-configuration.  The \texttt{./configure} script of FlexIO is a bit
-simplistic, so don't spend too much effort trying to convince it to do
-the right thing.
-
-On my machine, I had to change the settings \texttt{CC = mpicc},
-\texttt{C++ = mpiCC -DMPICH\_SKIP\_MPICXX}, and \texttt{HDFINCLUDES =
--I\$(HDFROOT)/include/hdf} by hand.  I am using Debian Linux on an
-IA32 with gcc 2.95.4 and MPICH 1.2.4, and I have an HDF5 library where
-support for parallel I/O was enabled.
-
-\item
-Compile the library with \texttt{make}.
-
-\item
-The library cannot be installed automatically.  You usually use the
-include and library files where they are.  If you want to install the
-library, copy all the header files (\texttt{*.h *.hh *.H}) and the
-library files (\texttt{*.a}).
-
-\end{enumerate}
-
-Yes, I also think that this is way too complicated.
-
-\subsection{Hurdle 2: STL}
+\subsection{Hurdle 1: STL}
 
 Some operating systems do not have a compliant STL (Standard Template
 Library) installed.  If not, then you are in trouble.  Carpet does
 make use of the STL, and there is no way around that.
 
-\subsection{Hurdle 3: Templates}
+\subsection{Hurdle 2: Templates}
 
 Some compilers contain switches to instantiate some or all templates
 automatically.  This usually does not work when files are put into
@@ -398,7 +339,7 @@ CactusBase/Time                    # time ( ) [ ] { }
 CactusConnect/HTTPD                # HTTPD (Socket) [ ] {Cactus}
 CactusConnect/HTTPDExtra           # http_utils (httpd,IO) [ ] { }
 CactusConnect/Socket               # Socket ( ) [ ] { }
-#CactusExternal/FlexIO              # FlexIO ( ) [ ] { }
+CactusExternal/FlexIO              # FlexIO ( ) [ ] { }
 CactusExternal/jpeg6b              # jpeg6b ( ) [ ] { }
 CactusIO/IOJpeg                    # IOJpeg (IO,Hyperslab,jpeg6b) [ ] {IO}
 CactusUtils/NaNChecker             # NaNChecker ( ) [ ] { }
@@ -414,7 +355,7 @@ CactusWave/WaveToyF77              # wavetoy (Grid,Boundary) [ ] { }
 #CactusWave/WaveToyFreeF90          # wavetoy (Grid,Boundary) [ ] { }
 Carpet/Carpet                      # driver (CarpetLib) [ ] {Cactus,IO}
 Carpet/CarpetIOASCII               # IOASCII (CarpetLib,driver,Hyperslab) [ ] {IO}
-Carpet/CarpetIOFlexIO              # IOFlexIO (CarpetLib,driver,Hyperslab) [ ] {IO}
+Carpet/CarpetIOFlexIO              # IOFlexIO (CarpetLib,driver,Hyperslab,FlexIO) [ ] {IO}
 #Carpet/CarpetIOHDF5                # IOHDF5 (CarpetLib,driver,Hyperslab) [ ] {IO}
 #Carpet/CarpetIOSer                 # IOSer (CarpetLib,driver,Hyperslab) [ ] {IO}
 Carpet/CarpetLib                   # CarpetLib ( ) [ ] { }
@@ -424,16 +365,14 @@ Carpet/CarpetSlab                  # Hyperslab (CarpetLib,driver) [ ] { }
 \end{verbatim}
 
 The thorns prefixed with \texttt{\#} are disabled.  IOASCII conflicts
-with CarpetIOASCII, and FlexIO conflicts with the external FlexIO
-library that CarpetIOFlexIO uses.  I disabled IDScalarWaveElliptic
-because there is no elliptic solver for mesh refinement, and I
-disabled WaveToyF90 and WaveToyFreeF90 because gcc does not contain a
-Fortran 90 compiler.  CarpetIOHDF5 is not yet finished, and
-CarpetIOSer needs the Ser library which is not publically available.
+with CarpetIOASCII.  I disabled IDScalarWaveElliptic because there is
+no elliptic solver for mesh refinement, and I disabled WaveToyF90 and
+WaveToyFreeF90 because gcc does not yet contain a Fortran 90 compiler.
+CarpetIOHDF5 is not yet finished, and CarpetIOSer needs the Ser
+library which is not publically available.
 
-The CactusConnect, CactusExternal, CactusIO, and CactusUtils thorns
-are not necessary, but are nice to have around.  You can safely omit
-these.
+The CactusConnect, CactusIO, and CactusUtils thorns are not necessary,
+but are nice to have around.  You can safely omit these.
 
 
 
