@@ -143,7 +143,7 @@ namespace Carpet {
                 assert (data);
                 cgh->data[firstvar+var][tl] = data->storage();
               } else {
-                cgh->data[firstvar+var][tl] = 0;
+                cgh->data[firstvar+var][tl] = NULL;
               }
             }
           }
@@ -427,7 +427,7 @@ namespace Carpet {
                 assert (data);
                 cgh->data[firstvar+var][tl] = data->storage();
               } else {
-                cgh->data[firstvar+var][tl] = 0;
+                cgh->data[firstvar+var][tl] = NULL;
               }
             }
           }
