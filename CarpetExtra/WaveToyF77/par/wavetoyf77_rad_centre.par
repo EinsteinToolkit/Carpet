@@ -7,7 +7,7 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_rad_centre.par,v 1.2 2002/01/30 16:07:31 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_rad_centre.par,v 1.3 2002/07/15 17:12:01 schnetter Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
 
@@ -23,6 +23,7 @@ grid::type			= byspacing
 grid::mode			= none
 grid::dxyz			= 0.6
 
+Carpet::verbose			= yes
 Carpet::max_refinement_levels	= 3
 
 CarpetRegrid::refined_regions	= centre
