@@ -28,6 +28,8 @@
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
+#include "cctk_Version.h"
+
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 
@@ -46,7 +48,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.1 2003/05/16 14:02:18 hawke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.2 2003/05/16 15:17:13 hawke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
@@ -106,6 +108,40 @@ namespace CarpetCheckpointRestart {
     return 0;
   }
 
+  static int DumpGHExtensions (const cGH* const cgh, IObase* writer){
+
+    CCTK_INT4 itmp;
+    CCTK_REAL dtmp;
+    const char *version;
+    ioGH *ioUtilGH;
+
+
+    /* get the handle for IOUtil extensions */
+    ioUtilGH = (ioGH *) CCTK_GHExtension (cgh, "IO");
+
+    itmp = CCTK_MainLoopIndex ();
+    writer->writeAttribute("main loop index",FLEXIO_INT4,1,&itmp);
+
+    itmp = cgh->cctk_iteration;
+    writer->writeAttribute("GH$iteration",FLEXIO_INT4, 1, &itmp);
+
+    itmp = ioUtilGH->ioproc_every;
+    writer->writeAttribute("GH$ioproc_every",FLEXIO_INT4,1,&itmp);
+
+    itmp = CCTK_nProcs (cgh);
+    writer->writeAttribute("GH$nprocs",FLEXIO_INT4, 1, &itmp);
+
+    dtmp = cgh->cctk_time;
+    writer->writeAttribute("GH$time", FLEXIO_REAL, 1, &dtmp);
+
+    version = CCTK_FullVersion ();
+    writer->writeAttribute("Cactus version", FLEXIO_CHAR,
+                                  strlen (version) + 1, version);
+
+
+
+    return 0;
+  }
 
 
   static int Checkpoint (const cGH* const cgh, int called_from)
@@ -159,6 +195,8 @@ namespace CarpetCheckpointRestart {
 
 	// dump parameters 
 	DumpParams (cgh, 1, writer);
+	// dump GH extentions
+	DumpGHExtensions(cgh,writer);
 
       }
 
