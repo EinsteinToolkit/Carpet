@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.23 2004/04/20 14:49:58 bzink Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.24 2004/05/12 10:13:21 bzink Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -235,6 +235,16 @@ namespace CarpetIOHDF5 {
       CCTK_VInfo (CCTK_THORNSTRING,
 		  "Restarting simulation at iteration %d (physical time %g)",
 		  cctkGH->cctk_iteration, (double) cctkGH->cctk_time);
+
+      // Set regrid_every to recompose the grid hierarchy
+      ostringstream regrid_every;
+      regrid_every << cctkGH->cctk_iteration;
+      int error = CCTK_ParameterSet("regrid_every","CarpetRegrid",
+                                    regrid_every.str().c_str());
+      if(error) {
+        CCTK_VInfo(CCTK_THORNSTRING,"Setting CarpetRegrid::regrid_every didn't work.");
+      }
+
     } // called_from == CP_RECOVER_DATA
   
     if (myproc == 0 && reflevel==maxreflevels) {	
