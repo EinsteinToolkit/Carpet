@@ -2,7 +2,7 @@
 <!DOCTYPE html
      PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
      "DTD/xhtml1-transitional.dtd">
-<!-- $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetWeb/index.html,v 1.2 2004/01/18 11:29:30 schnetter Exp $ -->
+<!-- $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetWeb/index.html,v 1.3 2004/03/08 13:21:21 schnetter Exp $ -->
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15" />
@@ -60,6 +60,17 @@
     <hr />
 
     <h2>News</h2>
+
+    <p>March 3, 2004:</b> We have recently had trouble with I/O
+    throuth the <a
+    href="http://zeus.ncsa.uiuc.edu/~jshalf/FlexIO/">FlexIO</a>
+    library.  We suspect that it might have a bug that causes HDF5
+    output to fail under certain, random conditions.  We have written
+    a new thorn CarpetIOHDF5 which uses the <a
+    href="http://hdf.ncsa.uiuc.edu/HDF5/">HDF5</a> library directly,
+    while remaining compatible to the FlexIO file format.  Please test
+    this thorn, and report any problems or incompatibilities you
+    find.</p>
 
     <p>In <b>January 2004</b>, <a
     href="http://www.tat.physik.uni-tuebingen.de/~kobras/">Daniel
@@ -227,7 +238,7 @@
 <p>
 <!-- Created: Tue Aug 12 12:12:08 CEST 2003 -->
 <!-- hhmts start -->
-Last modified: Sun Jan 18 12:29:18 CET 2004
+Last modified: Mon Mar  8 14:18:02 CET 2004
 <!-- hhmts end -->
 </p>
 
