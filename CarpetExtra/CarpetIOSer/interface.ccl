@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetIOSer
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIOSer/interface.ccl,v 1.1 2002/02/08 14:55:30 shawley Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIOSer/interface.ccl,v 1.2 2003/08/14 17:22:54 schnetter Exp $
 
 implements: IOSer
 
