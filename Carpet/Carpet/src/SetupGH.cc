@@ -10,7 +10,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.6 2001/08/26 13:59:00 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.7 2001/08/26 14:43:25 schnetter Exp $";
 
 
 
@@ -248,9 +248,9 @@ namespace Carpet {
     set_component (cgh, -1);
     
     // Enable storage for all groups if desired
-    for (int group=0; group<CCTK_NumGroups(); ++group) {
-      // XXX
-      if (true || enable_all_storage || CCTK_GroupTypeI(group)==CCTK_SCALAR) {
+    // XXX
+    if (true || enable_all_storage) {
+      for (int group=0; group<CCTK_NumGroups(); ++group) {
 	EnableGroupStorage (cgh, CCTK_GroupName(group));
       }
     }
