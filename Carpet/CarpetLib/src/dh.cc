@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.28 2003/03/26 17:34:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.29 2003/03/28 10:11:54 schnetter Exp $
 
 #include <assert.h>
 
@@ -76,7 +76,7 @@ void dh<D>::recompose () {
 	  if (h.outer_boundaries[rl][c][d][0]) ldist[d] = 0;
 	  if (h.outer_boundaries[rl][c][d][1]) udist[d] = 0;
 	}
-#warning "This can happen on multiple processors"
+        // TODO: This can happen on multiple processors
         assert (! intr.empty());
        	boxes[rl][c][ml].exterior = intr.expand(ldist, udist);
 	
@@ -176,7 +176,7 @@ void dh<D>::recompose () {
     } // for c
   } // for rl
   
-#warning "TODO: prefer boxes from the same processor"
+  // TODO: prefer boxes from the same processor
   for (int rl=0; rl<h.reflevels(); ++rl) {
     for (int c=0; c<h.components(rl); ++c) {
       for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
@@ -272,9 +272,6 @@ void dh<D>::recompose () {
                 }
               }
               recvs.normalize();
-              // This is just an assumption: the restriction should
-              // always be a single (convex) bbox.
-              assert (recvs.setsize() <= 1);
               for (typename ibset::const_iterator si = recvs.begin();
                    si != recvs.end(); ++si) {
                 const ibbox & recv = *si;

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.22 2003/03/26 17:34:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.23 2003/03/28 10:11:54 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -83,7 +83,7 @@ void ggf<D>::recompose () {
       	    (d.boxes[rl][c][ml].exterior, h.proc(rl,c));
 	  
       	  // Initialise from coarser level, if possible
-#warning "TODO: init only un-copied regions"
+          // TODO: init only un-copied regions
       	  if (rl>0) {
 	    const CCTK_REAL time = t.time(tl,rl,ml);
       	    ref_prolongate (tl,rl,c,ml,time);
