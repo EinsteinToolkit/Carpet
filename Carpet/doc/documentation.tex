@@ -2,7 +2,7 @@
 %  Cactus Thorn template for ThornGuide documentation
 %  Author: Ian Kelley
 %  Date: Sun Jun 02, 2002
-%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.2 2002/11/29 10:43:43 schnetter Exp $                                                             
+%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.3 2002/11/29 16:48:35 schnetter Exp $                                                             
 %
 %  Thorn documentation in the latex file doc/documentation.tex 
 %  will be included in ThornGuides built with the Cactus make system.
@@ -64,7 +64,7 @@
 % *======================================================================* 
 
 % If you are using CVS use this line to give version information
-% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.2 2002/11/29 10:43:43 schnetter Exp $
+% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/documentation.tex,v 1.3 2002/11/29 16:48:35 schnetter Exp $
 
 \documentclass{article}
 
@@ -85,7 +85,7 @@
 
 % the date your document was last changed, if your document is in CVS, 
 % please use:
-\date{$ $Date: 2002/11/29 10:43:43 $ $}
+\date{$ $Date: 2002/11/29 16:48:35 $ $}
 
 \maketitle
 
@@ -290,34 +290,182 @@ usable.  You will have to install a complete copy of FlexIO by hand.
 
 \subsection{Hurdle 1: FlexIO}
 
-DESCRIBE INSTALLING FLEXIO HERE.  MENTION INSTALLING HDF4 FIRST, THEN
-HDF5, THEN FLEXIO.
+I suggest that you enable support for the HDF format in the FlexIO
+library, although this is not necessary.  If you don't want to do
+this, then you don't have to install the HDF libraries in the
+following.
+
+\begin{enumerate}
+
+\item
+Install the HDF4 and HDF5 libraries.  They are available from the HDF
+web pages \cite{Carpet__HDF}, and they can be installed with the usual
+\texttt{./configure; make; make install} triplet.  They should already
+be installed by default on most machines.  The conversion utilities
+between HDF4 and HDF5 are installed automatically when you install
+HDF5 while HDF4 is already installed.  (That means that you should
+install HDF4 first, and then HDF5.)
+
+\item
+Get the FlexIO library from the Cactus CVS server:\\ \texttt{cvs -d
+:pserver:\textit{yourlogin}@cvs.cactuscode.org:/packages checkout
+FlexIO}.  If you do not have a login, then use the login
+\texttt{cvs\_anon} for anonymous access.  The Cactus web pages
+describe how to do this.
+
+\item
+Configure FlexIO while providing the paths to the HDF4 and HDF5
+libraries: \texttt{./configure --with-hdf4=/usr --with-hdf5=/usr},
+assuming that HDF4 and HDF5 are installed under \texttt{/usr}.  You
+can also configure without HDF support, but then you will not be able
+to read or write HDF files.  FlexIO will then support only the
+built-in \texttt{IEEEIO} format.
+
+\item
+Edit the top of the file \texttt{FlexIO/Makefile} to match your actual
+configuration.  The \texttt{./configure} script of FlexIO is a bit
+simplistic, so don't spend too much effort trying to convince it to do
+the right thing.
+
+On my machine, I had to change the settings \texttt{CC = mpicc},
+\texttt{C++ = mpiCC -DMPICH\_SKIP\_MPICXX}, and \texttt{HDFINCLUDES =
+-I\$(HDFROOT)/include/hdf} by hand.  I am using Debian Linux on an
+IA32 with gcc 2.95.4 and MPICH 1.2.4, and I have an HDF5 library where
+support for parallel I/O was enabled.
+
+\item
+Compile the library with \texttt{make}.
+
+\item
+The library cannot be installed automatically.  You usually use the
+include and library files where they are.  If you want to install the
+library, copy all the header files (\texttt{*.h *.hh *.H}) and the
+library files (\texttt{*.a}).
+
+\end{enumerate}
+
+Yes, I also think that this is way too complicated.
 
 \subsection{Hurdle 2: STL}
 
-DESCRIBE HOW TO GET/INSTALL AN STL, OR HOW TO MAKE THE SYSTEM'S C++
-COMPILER WORK WITH THE STL.
+Some operating systems do not have a compliant STL (Standard Template
+Library) installed.  If not, then you are in trouble.  Carpet does
+make use of the STL, and there is no way around that.
 
 \subsection{Hurdle 3: Templates}
 
-DESCRIBE HOW TO INSTANTIATE, AND NOT-INSTANTIATE, THE TEMPLATES AS
-NEEDED.
+Some compilers contain switches to instantiate some or all templates
+automatically.  This usually does not work when files are put into
+libraries, which is what Cactus does.  The scheme that I found working
+on all machines is to instantiate most templates by hand, and have the
+compiler instantiate the missing templates for every object file.
+This is the default for gcc.  On SGIs, you have to pass the options
+\texttt{-no\_auto\_include -ptused} to the C++ compiler.
+
+The C++ standard specifies a limit when using templates as template
+parameters.  Carpet's use of the GNU STL exceeds this limit.  Gcc
+requires the option \texttt{-ftemplate-depth-30} to enable this.
 
 \subsection{WaveToy}
 
-CONFIGURING, THORNS, COMPILING.
+Unfortunately, PUGH and Carpet cannot yet be both compiled into a
+single application.  (This will be fixed soon.)  That means that you
+will have separate executables for unigrid and for mesh refinement
+applications.
 
-To be continued\ldots
+Configuring Carpet is not quite trivial, because Cactus provides
+currently no way to autodetect the settings for Carpet.  Hence you
+will have to set the settings manually.  I propose that you start with
+on of the pre-made options files in the directory
+\texttt{Carpet/Carpet/options}.  Try e.g.\ \texttt{carpet-harpo-sgi}
+for an SGI, or \texttt{carpet-lilypond} for Linux with gcc, or
+\texttt{carpet-lilypond-ic} for Linux with the Intel compilers.  Once
+you have a working options file for your machine, send it to me, so
+that I can include it.
+
+As for the thorn list: Carpet has its own ASCII output thorn, which
+outputs more information than CactusBase/IOASCII.  The thorn list that
+I use is
+
+\begin{verbatim}
+CactusBase/Boundary                # boundary (grid) [ ] { }
+CactusBase/CartGrid3D              # grid ( ) [ ] {driver}
+#CactusBase/IOASCII                 # IOASCII (IO,Hyperslab) [ ] {IO}
+CactusBase/IOBasic                 # IOBasic (IO) [ ] {IO}
+CactusBase/IOUtil                  # IO ( ) [ ] { }
+CactusBase/LocalInterp             # LocalInterp ( ) [ ] { }
+CactusBase/Time                    # time ( ) [ ] { }
+CactusConnect/HTTPD                # HTTPD (Socket) [ ] {Cactus}
+CactusConnect/HTTPDExtra           # http_utils (httpd,IO) [ ] { }
+CactusConnect/Socket               # Socket ( ) [ ] { }
+#CactusExternal/FlexIO              # FlexIO ( ) [ ] { }
+CactusExternal/jpeg6b              # jpeg6b ( ) [ ] { }
+CactusIO/IOJpeg                    # IOJpeg (IO,Hyperslab,jpeg6b) [ ] {IO}
+CactusUtils/NaNChecker             # NaNChecker ( ) [ ] { }
+CactusWave/IDScalarWave            # idscalarwave (wavetoy,grid) [ ] {grid}
+CactusWave/IDScalarWaveC           # idscalarwave (wavetoy,grid) [ ] {grid}
+CactusWave/IDScalarWaveCXX         # idscalarwave (wavetoy,grid) [ ] {grid}
+#CactusWave/IDScalarWaveElliptic    # idscalarwaveelliptic (grid,wavetoy,ellbase) [ ] {idscalarwave}
+CactusWave/WaveBinarySource        # binarysource (wavetoy,grid,idscalarwave) [ ] { }
+CactusWave/WaveToyC                # wavetoy (Grid,Boundary) [ ] { }
+CactusWave/WaveToyCXX              # wavetoy (Grid,Boundary) [ ] { }
+CactusWave/WaveToyF77              # wavetoy (Grid,Boundary) [ ] { }
+#CactusWave/WaveToyF90              # wavetoy (Grid,Boundary) [ ] { }
+#CactusWave/WaveToyFreeF90          # wavetoy (Grid,Boundary) [ ] { }
+Carpet/Carpet                      # driver (CarpetLib) [ ] {Cactus,IO}
+Carpet/CarpetIOASCII               # IOASCII (CarpetLib,driver,Hyperslab) [ ] {IO}
+Carpet/CarpetIOFlexIO              # IOFlexIO (CarpetLib,driver,Hyperslab) [ ] {IO}
+#Carpet/CarpetIOHDF5                # IOHDF5 (CarpetLib,driver,Hyperslab) [ ] {IO}
+#Carpet/CarpetIOSer                 # IOSer (CarpetLib,driver,Hyperslab) [ ] {IO}
+Carpet/CarpetLib                   # CarpetLib ( ) [ ] { }
+Carpet/CarpetReduce                # reduce (CarpetLib,driver) [ ] { }
+Carpet/CarpetRegrid                # CarpetRegrid (CarpetLib,driver) [ ] { }
+Carpet/CarpetSlab                  # Hyperslab (CarpetLib,driver) [ ] { }
+\end{verbatim}
+
+The thorns prefixed with \texttt{\#} are disabled.  IOASCII conflicts
+with CarpetIOASCII, and FlexIO conflicts with the external FlexIO
+library that CarpetIOFlexIO uses.  I disabled IDScalarWaveElliptic
+because there is no elliptic solver for mesh refinement, and I
+disabled WaveToyF90 and WaveToyFreeF90 because gcc does not contain a
+Fortran 90 compiler.  CarpetIOHDF5 is not yet finished, and
+CarpetIOSer needs the Ser library which is not publically available.
+
+The CactusConnect, CactusExternal, CactusIO, and CactusUtils thorns
+are not necessary, but are nice to have around.  You can safely omit
+these.
 
 
 
 \section{Running The Example Applications}
 
-SAMPLE FILES
+Although Carpet works fine with the standard WaveToy thorns, all the
+example parameter files in the CactusWave arrangement use PUGH, and
+can therefore not be directly used.
 
-CARPET'S OPTIONS
+The coordinate thorn CactusBase/CartGrid3D does not provide periodic
+boundary conditions.  These are normally provided by the driver PUGH.
+However, Carpet does not contain any boundary conditions.  If you want
+to apply periodic boundaries, you will therefore have to use the
+AlphaThorns/Cart3d coordinate thorn instead, which does provide
+periodicity.  Unfortunately, AlphaThorns/Cart3d is incompatible with
+CactusBase/CartGrid3D.  There is a version of WaveToy in the Carpet
+arrangement that has been adapted to AlphaThorns/Cart3d.  I suggest
+that you use this version of WaveToy instead of CactusWave to run test
+problems, because periodicity makes for nice testing setups.
 
-To be continued\ldots
+You can find quite a few example parameter files in the directory
+\texttt{Carpet/WaveToyF77/par}.  I especially recommend the
+\texttt{wavetoyf77\_periodic\_*} set, which comes in two sizes
+(\texttt{coarse} and \texttt{fine}, corresponding to a small and a
+large simulation domain) and three different refinement hierarchies
+(with one, two, and three level altogether, respectively).  This set
+thus forms a convergence test, which you can run and test yourself.
+The set \texttt{wavetoyf77\_rad\_full\_*} uses radiative instead of
+periodic boundaries and should also be nice to look at.  The file
+\texttt{wavetoyf77\_rad\_automatic.par} is an attempt at adaptive mesh
+refinement, which may or may not work, depending on the current status
+of Carpet.
 
 Second order convergence requires second order interpolation in time,
 which requires that at least three time levels are present.
