@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.26 2003/05/08 15:35:49 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.27 2003/05/13 16:31:47 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -89,7 +89,7 @@ namespace Carpet {
 // 	assert (abs(cgh->cctk_delta_time - base_delta_time / reflevelfactor)
 // 		< 1e-6 * base_delta_time);
 	  // This circumvents a bug in CactusBase/Time
-	  cgh->cctk_delta_time = base_delta_time / reflevelfact;
+	  cgh->cctk_delta_time = base_delta_time / reflevelfact * mglevelfact;
 	}
 	
 	// Set up the initial data
@@ -125,7 +125,7 @@ namespace Carpet {
 	Waypoint ("%*sCurrent time is %g%s", 2*reflevel, "",
                   cgh->cctk_time,
                   do_global_mode ? "   (global time)" : "");
-	Restrict (cgh);
+ 	Restrict (cgh);
         
         Waypoint ("%*sScheduling POSTRESTRICT", 2*reflevel, "");
         CCTK_ScheduleTraverse ("POSTRESTRICT", cgh, CallFunction);

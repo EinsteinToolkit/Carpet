@@ -9,11 +9,12 @@
 
 #include "Carpet/CarpetLib/src/defs.hh"
 #include "Carpet/CarpetLib/src/dist.hh"
+#include "Carpet/CarpetLib/src/ggf.hh"
 
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.32 2003/05/12 16:24:25 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.33 2003/05/13 16:31:47 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -341,12 +342,24 @@ namespace Carpet {
 	  cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
 	}
         
-	assert (cgh->cctk_lsh[d]>=0 && cgh->cctk_lsh[d]<=cgh->cctk_gsh[d]);
- 	assert (cgh->cctk_lbnd[d]>=0 && cgh->cctk_ubnd[d]<cgh->cctk_gsh[d]);
-	assert (cgh->cctk_ubnd[d]-cgh->cctk_lbnd[d]+1 == cgh->cctk_lsh[d]);
-	assert (cgh->cctk_lbnd[d]<=cgh->cctk_ubnd[d]+1);
-        
+        assert (cgh->cctk_lsh[d] >= 0);
+        assert (cgh->cctk_lsh[d] <= cgh->cctk_gsh[d]);
+        assert (cgh->cctk_lbnd[d] >= 0);
+        assert (cgh->cctk_lbnd[d] <= cgh->cctk_ubnd[d] + 1);
+        assert (cgh->cctk_ubnd[d] < cgh->cctk_gsh[d]);
+        assert (cgh->cctk_lbnd[d] + cgh->cctk_lsh[d] - 1 == cgh->cctk_ubnd[d]);
+        assert (cgh->cctk_lbnd[d] <= cgh->cctk_ubnd[d]+1);
+      
       }
+        
+#if 0
+      cout << "set_component: reflevel=" << reflevel << endl;
+      cout << "set_component: gsh=[" << cgh->cctk_gsh[0] << "," << cgh->cctk_gsh[1] << "," << cgh->cctk_gsh[2] << "]" << endl;
+      cout << "set_component: lsh=[" << cgh->cctk_lsh[0] << "," << cgh->cctk_lsh[1] << "," << cgh->cctk_lsh[2] << "]" << endl;
+      cout << "set_component: lbnd=[" << cgh->cctk_lbnd[0] << "," << cgh->cctk_lbnd[1] << "," << cgh->cctk_lbnd[2] << "]" << endl;
+      cout << "set_component: origin_space=[" << cgh->cctk_origin_space[0] << "," << cgh->cctk_origin_space[1] << "," << cgh->cctk_origin_space[2] << "]" << endl;
+      cout << "set_component: delta_space=[" << cgh->cctk_delta_space[0] << "," << cgh->cctk_delta_space[1] << "," << cgh->cctk_delta_space[2] << "]" << endl;
+#endif
       
       for (int group=0; group<CCTK_NumGroups(); ++group) {
         if (CCTK_GroupTypeI(group) == CCTK_GF) {
@@ -367,9 +380,13 @@ namespace Carpet {
             ((int*)arrdata[group].info.bbox)[2*d  ] = obnds[d][0];
             ((int*)arrdata[group].info.bbox)[2*d+1] = obnds[d][1];
             
-            assert (arrdata[group].info.lsh[d]>=0 && arrdata[group].info.lsh[d]<=arrdata[group].info.gsh[d]);
-            assert (arrdata[group].info.lbnd[d]>=0 && arrdata[group].info.ubnd[d]<arrdata[group].info.gsh[d]);
-            assert (arrdata[group].info.ubnd[d]-arrdata[group].info.lbnd[d]+1 == arrdata[group].info.lsh[d]);
+            assert (arrdata[group].info.lsh[d]>=0);
+            assert (arrdata[group].info.lsh[d]<=arrdata[group].info.gsh[d]);
+            assert (arrdata[group].info.lbnd[d]>=0);
+            assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
+            assert (arrdata[group].info.ubnd[d]<arrdata[group].info.gsh[d]);
+            assert (arrdata[group].info.lbnd[d] + arrdata[group].info.lsh[d] - 1
+                    == arrdata[group].info.ubnd[d]);
             assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
           }
           
@@ -383,7 +400,13 @@ namespace Carpet {
           for (int var=0; var<numvars; ++var) {
             assert (var<(int)arrdata[group].data.size());
             for (int tl=0; tl<num_tl; ++tl) {
-              cgh->data[firstvar+var][tl] = ((*arrdata[group].data[var]) (-tl, reflevel, component, mglevel)->storage());
+              ggf<dim> * const ff = arrdata[group].data[var];
+              if (ff) {
+                cgh->data[firstvar+var][tl]
+                  = (*ff) (-tl, reflevel, component, mglevel)->storage();
+              } else {
+                cgh->data[firstvar+var][tl] = 0;
+              }
             }
           }
           
