@@ -7,7 +7,7 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/par/hydrotoy_periodic_coarse_rl3.par,v 1.1 2001/03/18 22:37:09 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/par/hydrotoy_periodic_coarse_rl3.par,v 1.2 2001/03/26 02:28:25 eschnett Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetSlab IDHydroToy HydroToy"
 
@@ -20,6 +20,8 @@ driver::global_ny		= 24
 driver::global_nz		= 32
 
 Carpet::max_refinement_levels	= 3
+Carpet::prolongation_order_space= 3
+Carpet::prolongation_order_time	= 2
 
 grid::type			= byrange
 grid::xmin			= -4.8
