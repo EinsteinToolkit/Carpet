@@ -3,9 +3,6 @@
 # iteration 0
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-0 0 2 0 0 27 48 64 0
-0 0 2 0 0 28 48 64 0
-0 0 2 0 0 29 48 64 0
 0 0 2 0 0 30 48 64 0
 0 0 2 0 0 31 48 64 0
 0 0 2 0 0 32 48 64 0
@@ -22,12 +19,14 @@
 0 0 2 0 0 43 48 64 0
 0 0 2 0 0 44 48 64 0
 0 0 2 0 0 45 48 64 0
+0 0 2 0 0 46 48 64 0
+0 0 2 0 0 47 48 64 0
+0 0 2 0 0 48 48 64 0
 
 
 # iteration 0
 # time level 0   refinement level 1   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-0 0 1 0 0 18 48 64 0
 0 0 1 0 0 20 48 64 0
 0 0 1 0 0 22 48 64 0
 0 0 1 0 0 24 48 64 0
@@ -46,6 +45,7 @@
 0 0 1 0 0 50 48 64 0
 0 0 1 0 0 52 48 64 0
 0 0 1 0 0 54 48 64 0
+0 0 1 0 0 56 48 64 0
 
 
 # iteration 0
@@ -75,9 +75,6 @@
 # iteration 1
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-1 0 2 0 0 27 48 64 0
-1 0 2 0 0 28 48 64 0
-1 0 2 0 0 29 48 64 0
 1 0 2 0 0 30 48 64 0
 1 0 2 0 0 31 48 64 0
 1 0 2 0 0 32 48 64 0
@@ -94,14 +91,14 @@
 1 0 2 0 0 43 48 64 0
 1 0 2 0 0 44 48 64 0
 1 0 2 0 0 45 48 64 0
+1 0 2 0 0 46 48 64 0
+1 0 2 0 0 47 48 64 0
+1 0 2 0 0 48 48 64 0
 
 
 # iteration 2
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-2 0 2 0 0 27 48 64 0
-2 0 2 0 0 28 48 64 0
-2 0 2 0 0 29 48 64 0
 2 0 2 0 0 30 48 64 0
 2 0 2 0 0 31 48 64 0
 2 0 2 0 0 32 48 64 0
@@ -118,12 +115,14 @@
 2 0 2 0 0 43 48 64 0
 2 0 2 0 0 44 48 64 0
 2 0 2 0 0 45 48 64 0
+2 0 2 0 0 46 48 64 0
+2 0 2 0 0 47 48 64 0
+2 0 2 0 0 48 48 64 0
 
 
 # iteration 2
 # time level 0   refinement level 1   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-2 0 1 0 0 18 48 64 0
 2 0 1 0 0 20 48 64 0
 2 0 1 0 0 22 48 64 0
 2 0 1 0 0 24 48 64 0
@@ -142,14 +141,12 @@
 2 0 1 0 0 50 48 64 0
 2 0 1 0 0 52 48 64 0
 2 0 1 0 0 54 48 64 0
+2 0 1 0 0 56 48 64 0
 
 
 # iteration 3
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-3 0 2 0 0 27 48 64 0
-3 0 2 0 0 28 48 64 0
-3 0 2 0 0 29 48 64 0
 3 0 2 0 0 30 48 64 0
 3 0 2 0 0 31 48 64 0
 3 0 2 0 0 32 48 64 0
@@ -166,14 +163,14 @@
 3 0 2 0 0 43 48 64 0
 3 0 2 0 0 44 48 64 0
 3 0 2 0 0 45 48 64 0
+3 0 2 0 0 46 48 64 0
+3 0 2 0 0 47 48 64 0
+3 0 2 0 0 48 48 64 0
 
 
 # iteration 4
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-4 0 2 0 0 27 48 64 0
-4 0 2 0 0 28 48 64 0
-4 0 2 0 0 29 48 64 0
 4 0 2 0 0 30 48 64 0
 4 0 2 0 0 31 48 64 0
 4 0 2 0 0 32 48 64 0
@@ -190,12 +187,14 @@
 4 0 2 0 0 43 48 64 0
 4 0 2 0 0 44 48 64 0
 4 0 2 0 0 45 48 64 0
+4 0 2 0 0 46 48 64 0
+4 0 2 0 0 47 48 64 0
+4 0 2 0 0 48 48 64 0
 
 
 # iteration 4
 # time level 0   refinement level 1   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-4 0 1 0 0 18 48 64 0
 4 0 1 0 0 20 48 64 0
 4 0 1 0 0 22 48 64 0
 4 0 1 0 0 24 48 64 0
@@ -214,6 +213,7 @@
 4 0 1 0 0 50 48 64 0
 4 0 1 0 0 52 48 64 0
 4 0 1 0 0 54 48 64 0
+4 0 1 0 0 56 48 64 0
 
 
 # iteration 4
@@ -243,9 +243,6 @@
 # iteration 5
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-5 0 2 0 0 27 48 64 0
-5 0 2 0 0 28 48 64 0
-5 0 2 0 0 29 48 64 0
 5 0 2 0 0 30 48 64 0
 5 0 2 0 0 31 48 64 0
 5 0 2 0 0 32 48 64 0
@@ -262,14 +259,14 @@
 5 0 2 0 0 43 48 64 0
 5 0 2 0 0 44 48 64 0
 5 0 2 0 0 45 48 64 0
+5 0 2 0 0 46 48 64 0
+5 0 2 0 0 47 48 64 0
+5 0 2 0 0 48 48 64 0
 
 
 # iteration 6
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-6 0 2 0 0 27 48 64 0
-6 0 2 0 0 28 48 64 0
-6 0 2 0 0 29 48 64 0
 6 0 2 0 0 30 48 64 0
 6 0 2 0 0 31 48 64 0
 6 0 2 0 0 32 48 64 0
@@ -286,12 +283,14 @@
 6 0 2 0 0 43 48 64 0
 6 0 2 0 0 44 48 64 0
 6 0 2 0 0 45 48 64 0
+6 0 2 0 0 46 48 64 0
+6 0 2 0 0 47 48 64 0
+6 0 2 0 0 48 48 64 0
 
 
 # iteration 6
 # time level 0   refinement level 1   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-6 0 1 0 0 18 48 64 0
 6 0 1 0 0 20 48 64 0
 6 0 1 0 0 22 48 64 0
 6 0 1 0 0 24 48 64 0
@@ -310,14 +309,12 @@
 6 0 1 0 0 50 48 64 0
 6 0 1 0 0 52 48 64 0
 6 0 1 0 0 54 48 64 0
+6 0 1 0 0 56 48 64 0
 
 
 # iteration 7
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-7 0 2 0 0 27 48 64 0
-7 0 2 0 0 28 48 64 0
-7 0 2 0 0 29 48 64 0
 7 0 2 0 0 30 48 64 0
 7 0 2 0 0 31 48 64 0
 7 0 2 0 0 32 48 64 0
@@ -334,14 +331,14 @@
 7 0 2 0 0 43 48 64 0
 7 0 2 0 0 44 48 64 0
 7 0 2 0 0 45 48 64 0
+7 0 2 0 0 46 48 64 0
+7 0 2 0 0 47 48 64 0
+7 0 2 0 0 48 48 64 0
 
 
 # iteration 8
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-8 0 2 0 0 27 48 64 0
-8 0 2 0 0 28 48 64 0
-8 0 2 0 0 29 48 64 0
 8 0 2 0 0 30 48 64 0
 8 0 2 0 0 31 48 64 0
 8 0 2 0 0 32 48 64 0
@@ -358,12 +355,14 @@
 8 0 2 0 0 43 48 64 0
 8 0 2 0 0 44 48 64 0
 8 0 2 0 0 45 48 64 0
+8 0 2 0 0 46 48 64 0
+8 0 2 0 0 47 48 64 0
+8 0 2 0 0 48 48 64 0
 
 
 # iteration 8
 # time level 0   refinement level 1   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-8 0 1 0 0 18 48 64 0
 8 0 1 0 0 20 48 64 0
 8 0 1 0 0 22 48 64 0
 8 0 1 0 0 24 48 64 0
@@ -382,6 +381,7 @@
 8 0 1 0 0 50 48 64 0
 8 0 1 0 0 52 48 64 0
 8 0 1 0 0 54 48 64 0
+8 0 1 0 0 56 48 64 0
 
 
 # iteration 8
@@ -411,9 +411,6 @@
 # iteration 9
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-9 0 2 0 0 27 48 64 0
-9 0 2 0 0 28 48 64 0
-9 0 2 0 0 29 48 64 0
 9 0 2 0 0 30 48 64 0
 9 0 2 0 0 31 48 64 0
 9 0 2 0 0 32 48 64 0
@@ -430,14 +427,14 @@
 9 0 2 0 0 43 48 64 0
 9 0 2 0 0 44 48 64 0
 9 0 2 0 0 45 48 64 0
+9 0 2 0 0 46 48 64 0
+9 0 2 0 0 47 48 64 0
+9 0 2 0 0 48 48 64 0
 
 
 # iteration 10
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-10 0 2 0 0 27 48 64 0
-10 0 2 0 0 28 48 64 0
-10 0 2 0 0 29 48 64 0
 10 0 2 0 0 30 48 64 0
 10 0 2 0 0 31 48 64 0
 10 0 2 0 0 32 48 64 0
@@ -454,12 +451,14 @@
 10 0 2 0 0 43 48 64 0
 10 0 2 0 0 44 48 64 0
 10 0 2 0 0 45 48 64 0
+10 0 2 0 0 46 48 64 0
+10 0 2 0 0 47 48 64 0
+10 0 2 0 0 48 48 64 0
 
 
 # iteration 10
 # time level 0   refinement level 1   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-10 0 1 0 0 18 48 64 0
 10 0 1 0 0 20 48 64 0
 10 0 1 0 0 22 48 64 0
 10 0 1 0 0 24 48 64 0
@@ -478,14 +477,12 @@
 10 0 1 0 0 50 48 64 0
 10 0 1 0 0 52 48 64 0
 10 0 1 0 0 54 48 64 0
+10 0 1 0 0 56 48 64 0
 
 
 # iteration 11
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-11 0 2 0 0 27 48 64 0
-11 0 2 0 0 28 48 64 0
-11 0 2 0 0 29 48 64 0
 11 0 2 0 0 30 48 64 0
 11 0 2 0 0 31 48 64 0
 11 0 2 0 0 32 48 64 0
@@ -502,14 +499,14 @@
 11 0 2 0 0 43 48 64 0
 11 0 2 0 0 44 48 64 0
 11 0 2 0 0 45 48 64 0
+11 0 2 0 0 46 48 64 0
+11 0 2 0 0 47 48 64 0
+11 0 2 0 0 48 48 64 0
 
 
 # iteration 12
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-12 0 2 0 0 27 48 64 0
-12 0 2 0 0 28 48 64 0
-12 0 2 0 0 29 48 64 0
 12 0 2 0 0 30 48 64 0
 12 0 2 0 0 31 48 64 0
 12 0 2 0 0 32 48 64 0
@@ -526,12 +523,14 @@
 12 0 2 0 0 43 48 64 0
 12 0 2 0 0 44 48 64 0
 12 0 2 0 0 45 48 64 0
+12 0 2 0 0 46 48 64 0
+12 0 2 0 0 47 48 64 0
+12 0 2 0 0 48 48 64 0
 
 
 # iteration 12
 # time level 0   refinement level 1   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-12 0 1 0 0 18 48 64 0
 12 0 1 0 0 20 48 64 0
 12 0 1 0 0 22 48 64 0
 12 0 1 0 0 24 48 64 0
@@ -550,6 +549,7 @@
 12 0 1 0 0 50 48 64 0
 12 0 1 0 0 52 48 64 0
 12 0 1 0 0 54 48 64 0
+12 0 1 0 0 56 48 64 0
 
 
 # iteration 12
@@ -579,9 +579,6 @@
 # iteration 13
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-13 0 2 0 0 27 48 64 0
-13 0 2 0 0 28 48 64 0
-13 0 2 0 0 29 48 64 0
 13 0 2 0 0 30 48 64 0
 13 0 2 0 0 31 48 64 0
 13 0 2 0 0 32 48 64 0
@@ -598,14 +595,14 @@
 13 0 2 0 0 43 48 64 0
 13 0 2 0 0 44 48 64 0
 13 0 2 0 0 45 48 64 0
+13 0 2 0 0 46 48 64 0
+13 0 2 0 0 47 48 64 0
+13 0 2 0 0 48 48 64 0
 
 
 # iteration 14
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-14 0 2 0 0 27 48 64 0
-14 0 2 0 0 28 48 64 0
-14 0 2 0 0 29 48 64 0
 14 0 2 0 0 30 48 64 0
 14 0 2 0 0 31 48 64 0
 14 0 2 0 0 32 48 64 0
@@ -622,12 +619,14 @@
 14 0 2 0 0 43 48 64 0
 14 0 2 0 0 44 48 64 0
 14 0 2 0 0 45 48 64 0
+14 0 2 0 0 46 48 64 0
+14 0 2 0 0 47 48 64 0
+14 0 2 0 0 48 48 64 0
 
 
 # iteration 14
 # time level 0   refinement level 1   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-14 0 1 0 0 18 48 64 0
 14 0 1 0 0 20 48 64 0
 14 0 1 0 0 22 48 64 0
 14 0 1 0 0 24 48 64 0
@@ -646,14 +645,12 @@
 14 0 1 0 0 50 48 64 0
 14 0 1 0 0 52 48 64 0
 14 0 1 0 0 54 48 64 0
+14 0 1 0 0 56 48 64 0
 
 
 # iteration 15
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-15 0 2 0 0 27 48 64 0
-15 0 2 0 0 28 48 64 0
-15 0 2 0 0 29 48 64 0
 15 0 2 0 0 30 48 64 0
 15 0 2 0 0 31 48 64 0
 15 0 2 0 0 32 48 64 0
@@ -670,14 +667,14 @@
 15 0 2 0 0 43 48 64 0
 15 0 2 0 0 44 48 64 0
 15 0 2 0 0 45 48 64 0
+15 0 2 0 0 46 48 64 0
+15 0 2 0 0 47 48 64 0
+15 0 2 0 0 48 48 64 0
 
 
 # iteration 16
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-16 0 2 0 0 27 48 64 0
-16 0 2 0 0 28 48 64 0
-16 0 2 0 0 29 48 64 0
 16 0 2 0 0 30 48 64 0
 16 0 2 0 0 31 48 64 0
 16 0 2 0 0 32 48 64 0
@@ -694,12 +691,14 @@
 16 0 2 0 0 43 48 64 0
 16 0 2 0 0 44 48 64 0
 16 0 2 0 0 45 48 64 0
+16 0 2 0 0 46 48 64 0
+16 0 2 0 0 47 48 64 0
+16 0 2 0 0 48 48 64 0
 
 
 # iteration 16
 # time level 0   refinement level 1   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-16 0 1 0 0 18 48 64 0
 16 0 1 0 0 20 48 64 0
 16 0 1 0 0 22 48 64 0
 16 0 1 0 0 24 48 64 0
@@ -718,6 +717,7 @@
 16 0 1 0 0 50 48 64 0
 16 0 1 0 0 52 48 64 0
 16 0 1 0 0 54 48 64 0
+16 0 1 0 0 56 48 64 0
 
 
 # iteration 16
@@ -747,9 +747,6 @@
 # iteration 17
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-17 0 2 0 0 27 48 64 0
-17 0 2 0 0 28 48 64 0
-17 0 2 0 0 29 48 64 0
 17 0 2 0 0 30 48 64 0
 17 0 2 0 0 31 48 64 0
 17 0 2 0 0 32 48 64 0
@@ -766,14 +763,14 @@
 17 0 2 0 0 43 48 64 0
 17 0 2 0 0 44 48 64 0
 17 0 2 0 0 45 48 64 0
+17 0 2 0 0 46 48 64 0
+17 0 2 0 0 47 48 64 0
+17 0 2 0 0 48 48 64 0
 
 
 # iteration 18
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-18 0 2 0 0 27 48 64 0
-18 0 2 0 0 28 48 64 0
-18 0 2 0 0 29 48 64 0
 18 0 2 0 0 30 48 64 0
 18 0 2 0 0 31 48 64 0
 18 0 2 0 0 32 48 64 0
@@ -790,12 +787,14 @@
 18 0 2 0 0 43 48 64 0
 18 0 2 0 0 44 48 64 0
 18 0 2 0 0 45 48 64 0
+18 0 2 0 0 46 48 64 0
+18 0 2 0 0 47 48 64 0
+18 0 2 0 0 48 48 64 0
 
 
 # iteration 18
 # time level 0   refinement level 1   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-18 0 1 0 0 18 48 64 0
 18 0 1 0 0 20 48 64 0
 18 0 1 0 0 22 48 64 0
 18 0 1 0 0 24 48 64 0
@@ -814,14 +813,12 @@
 18 0 1 0 0 50 48 64 0
 18 0 1 0 0 52 48 64 0
 18 0 1 0 0 54 48 64 0
+18 0 1 0 0 56 48 64 0
 
 
 # iteration 19
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-19 0 2 0 0 27 48 64 0
-19 0 2 0 0 28 48 64 0
-19 0 2 0 0 29 48 64 0
 19 0 2 0 0 30 48 64 0
 19 0 2 0 0 31 48 64 0
 19 0 2 0 0 32 48 64 0
@@ -838,14 +835,14 @@
 19 0 2 0 0 43 48 64 0
 19 0 2 0 0 44 48 64 0
 19 0 2 0 0 45 48 64 0
+19 0 2 0 0 46 48 64 0
+19 0 2 0 0 47 48 64 0
+19 0 2 0 0 48 48 64 0
 
 
 # iteration 20
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-20 0 2 0 0 27 48 64 0
-20 0 2 0 0 28 48 64 0
-20 0 2 0 0 29 48 64 0
 20 0 2 0 0 30 48 64 0
 20 0 2 0 0 31 48 64 0
 20 0 2 0 0 32 48 64 0
@@ -862,12 +859,14 @@
 20 0 2 0 0 43 48 64 0
 20 0 2 0 0 44 48 64 0
 20 0 2 0 0 45 48 64 0
+20 0 2 0 0 46 48 64 0
+20 0 2 0 0 47 48 64 0
+20 0 2 0 0 48 48 64 0
 
 
 # iteration 20
 # time level 0   refinement level 1   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-20 0 1 0 0 18 48 64 0
 20 0 1 0 0 20 48 64 0
 20 0 1 0 0 22 48 64 0
 20 0 1 0 0 24 48 64 0
@@ -886,6 +885,7 @@
 20 0 1 0 0 50 48 64 0
 20 0 1 0 0 52 48 64 0
 20 0 1 0 0 54 48 64 0
+20 0 1 0 0 56 48 64 0
 
 
 # iteration 20
@@ -915,9 +915,6 @@
 # iteration 21
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-21 0 2 0 0 27 48 64 0
-21 0 2 0 0 28 48 64 0
-21 0 2 0 0 29 48 64 0
 21 0 2 0 0 30 48 64 0
 21 0 2 0 0 31 48 64 0
 21 0 2 0 0 32 48 64 0
@@ -934,14 +931,14 @@
 21 0 2 0 0 43 48 64 0
 21 0 2 0 0 44 48 64 0
 21 0 2 0 0 45 48 64 0
+21 0 2 0 0 46 48 64 0
+21 0 2 0 0 47 48 64 0
+21 0 2 0 0 48 48 64 0
 
 
 # iteration 22
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-22 0 2 0 0 27 48 64 0
-22 0 2 0 0 28 48 64 0
-22 0 2 0 0 29 48 64 0
 22 0 2 0 0 30 48 64 0
 22 0 2 0 0 31 48 64 0
 22 0 2 0 0 32 48 64 0
@@ -958,12 +955,14 @@
 22 0 2 0 0 43 48 64 0
 22 0 2 0 0 44 48 64 0
 22 0 2 0 0 45 48 64 0
+22 0 2 0 0 46 48 64 0
+22 0 2 0 0 47 48 64 0
+22 0 2 0 0 48 48 64 0
 
 
 # iteration 22
 # time level 0   refinement level 1   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-22 0 1 0 0 18 48 64 0
 22 0 1 0 0 20 48 64 0
 22 0 1 0 0 22 48 64 0
 22 0 1 0 0 24 48 64 0
@@ -982,14 +981,12 @@
 22 0 1 0 0 50 48 64 0
 22 0 1 0 0 52 48 64 0
 22 0 1 0 0 54 48 64 0
+22 0 1 0 0 56 48 64 0
 
 
 # iteration 23
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-23 0 2 0 0 27 48 64 0
-23 0 2 0 0 28 48 64 0
-23 0 2 0 0 29 48 64 0
 23 0 2 0 0 30 48 64 0
 23 0 2 0 0 31 48 64 0
 23 0 2 0 0 32 48 64 0
@@ -1006,14 +1003,14 @@
 23 0 2 0 0 43 48 64 0
 23 0 2 0 0 44 48 64 0
 23 0 2 0 0 45 48 64 0
+23 0 2 0 0 46 48 64 0
+23 0 2 0 0 47 48 64 0
+23 0 2 0 0 48 48 64 0
 
 
 # iteration 24
 # time level 0   refinement level 2   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-24 0 2 0 0 27 48 64 0
-24 0 2 0 0 28 48 64 0
-24 0 2 0 0 29 48 64 0
 24 0 2 0 0 30 48 64 0
 24 0 2 0 0 31 48 64 0
 24 0 2 0 0 32 48 64 0
@@ -1030,12 +1027,14 @@
 24 0 2 0 0 43 48 64 0
 24 0 2 0 0 44 48 64 0
 24 0 2 0 0 45 48 64 0
+24 0 2 0 0 46 48 64 0
+24 0 2 0 0 47 48 64 0
+24 0 2 0 0 48 48 64 0
 
 
 # iteration 24
 # time level 0   refinement level 1   component 0   multigrid level 0
 # column format: it tl rl c ml x y z data
-24 0 1 0 0 18 48 64 0
 24 0 1 0 0 20 48 64 0
 24 0 1 0 0 22 48 64 0
 24 0 1 0 0 24 48 64 0
@@ -1054,6 +1053,7 @@
 24 0 1 0 0 50 48 64 0
 24 0 1 0 0 52 48 64 0
 24 0 1 0 0 54 48 64 0
+24 0 1 0 0 56 48 64 0
 
 
 # iteration 24

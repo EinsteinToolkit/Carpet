@@ -1,8 +1,15 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77_periodic_coarse_rl2.par,v 1.7 2004/03/23 12:00:37 schnetter Exp $
+# /*@@
+#   @file      wavetoyf77_rad.par
+#   @date      2001-03-06
+#   @author    Erik Schnetter
+#   @desc
+#   Wavetoy parameter file demonstrating radiation boundaries in octant mode
+#   @enddesc
+# @@*/
+#
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77_periodic_coarse_rl2.par,v 1.1 2001/03/30 15:37:13 eschnett Exp $
 
-!DESC "WaveToy with periodic boundaries, 1 refinement level"
-
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Slab Carpet CarpetIOASCII CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetSlab IDScalarWave WaveToyF77"
 
 Carpet::poison_new_timelevels	= yes
 Carpet::check_for_poison	= yes
@@ -22,8 +29,6 @@ Carpet::max_refinement_levels	= 2
 Carpet::prolongation_order_space= 3
 Carpet::prolongation_order_time	= 2
 
-CarpetRegrid::refinement_levels	= 2
-
 grid::type			= byrange
 grid::xmin			= -5.4
 grid::ymin			= -7.2
@@ -33,13 +38,13 @@ grid::ymax			=  7.8
 grid::zmax			= 10.2
 grid::mode			= periodic
 
-IO::out_dir			= "wavetoyf77_periodic_coarse_rl2"
+IO::outdir			= "wavetoyf77_periodic_coarse_rl2"
 
 IOBasic::outinfo_every		= 1 # 10
-IOBasic::outinfo_vars		= "wavetoy::phi"
+#IOBasic::outinfo_vars		= "wavetoy::phi"
 
-IOBasic::outScalar_every	= 1 # 2
-IOBasic::outScalar_vars		= "wavetoy::phi"
+#IOBasic::outScalar_every	= 2
+#IOBasic::outScalar_vars		= "wavetoy::phi"
 
 IOASCII::out1D_every		= 1 # 2
 IOASCII::out1D_vars		= "wavetoy::phi grid::coordinates"
