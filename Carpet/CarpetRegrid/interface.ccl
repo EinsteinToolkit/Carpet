@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetRegrid
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/interface.ccl,v 1.8 2004/04/19 18:48:07 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/interface.ccl,v 1.9 2004/04/28 15:44:59 schnetter Exp $
 
 implements: CarpetRegrid
 
@@ -36,6 +36,18 @@ CCTK_INT FUNCTION GetDomainSpecification \
    CCTK_REAL OUT ARRAY exterior_max, \
    CCTK_REAL OUT ARRAY spacing)
 USES FUNCTION GetDomainSpecification
+
+# Convert between boundaries types
+CCTK_INT FUNCTION ConvertFromPhysicalBoundary \
+  (CCTK_INT INT size, \
+   CCTK_REAL IN  ARRAY physical_min, \
+   CCTK_REAL IN  ARRAY physical_max, \
+   CCTK_REAL OUT ARRAY interior_min, \
+   CCTK_REAL OUT ARRAY interior_max, \
+   CCTK_REAL OUT ARRAY exterior_min, \
+   CCTK_REAL OUT ARRAY exterior_max, \
+   CCTK_REAL IN  ARRAY spacing)
+USES FUNCTION ConvertFromPhysicalBoundary
 
 
 

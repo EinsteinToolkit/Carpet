@@ -12,7 +12,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinatelist.cc,v 1.3 2004/04/22 11:58:42 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinatelist.cc,v 1.4 2004/04/28 15:44:59 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_manualcoordinatelist_cc);
 }
 
@@ -80,7 +80,13 @@ namespace CarpetRegrid {
         newobss.at(rl).resize(newbbss.at(rl).size());
         for (size_t c=0; c<newobss.at(rl).size(); ++c) {
           for (int d=0; d<dim; ++d) {
-            newobss.at(rl).at(c)[d][0] = abs(newbbss.at(rl).at(c).lower()[d] - physical_min[d]) < 1.0e-6 * base_spacing[d] / ipow(reffact, rl);
+            rvect spacing = base_spacing / ipow(reffact, rl);
+            ierr = ConvertFromPhysicalBoundary
+              (dim, &physical_min[0], &physical_max[0],
+               &interior_min[0], &interior_max[0],
+               &exterior_min[0], &exterior_max[0], &spacing[0]);
+            assert (!ierr);
+            newobss.at(rl).at(c)[d][0] = abs(newbbss.at(rl).at(c).lower()[d] - physical_min[d]) < 1.0e-6 * spacing[d];
             if (newobss.at(rl).at(c)[d][0]) {
               rvect lo = newbbss.at(rl).at(c).lower();
               rvect up = newbbss.at(rl).at(c).upper();
