@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.49 2004/03/23 17:56:00 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.50 2004/04/07 16:56:42 schnetter Exp $
 
 #include <assert.h>
 
@@ -158,7 +158,11 @@ void dh<D>::recompose (const int initialise_from, const bool do_prolongate) {
             assert (intr.empty() || ! recv.empty());
       	    const ibbox send = recv.expanded_for(extrf);
             assert (intr.empty() || ! send.empty());
+            // TODO: put the check back in, taking outer boundaries
+            // into account
+#if 0
       	    assert (send.is_contained_in(extrf));
+#endif
       	    boxes.at(rl).at(c).at(ml-1).send_mg_coarse.push_back(send);
       	    boxes.at(rl).at(c).at(ml  ).recv_mg_fine  .push_back(recv);
       	  }
