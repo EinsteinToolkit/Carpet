@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.2 2001/03/18 22:37:10 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.3 2001/03/19 21:30:45 eschnett Exp $
       
 #include "cctk.h" 
 #include "cctk_Parameters.h"
@@ -141,9 +141,9 @@ c     Apply boundary condition
       else
          call CCTK_WARN (0, "Internal error")
       end if
-c$$$      if (ierr .lt. 0)  then
-c$$$         call CCTK_WARN (0, "Error while applying boundary condition")
-c$$$      end if
+      if (ierr .lt. 0)  then
+         call CCTK_WARN (0, "Error while applying boundary condition")
+      end if
       
       call Cart3dSymGN (ierr, cctkGH, "spacetimetoy::spacetimeevolve")
       if (ierr .lt. 0)  then

@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/src/InitialData.F77,v 1.1 2001/03/17 16:05:56 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/src/InitialData.F77,v 1.2 2001/03/19 21:30:42 eschnett Exp $
       
 #include "cctk.h"
 #include "cctk_Parameters.h"
@@ -45,12 +45,10 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/src/Ini
             do j=1,cctk_lsh(2)
                do i=1,cctk_lsh(1)
                   
-                  phi(i,j,k) = amplitude
-     $                 * exp(- (spher3d_r(i,j,k) - radius + cctk_time)**2
-     $                 / sigma**2)
-                  psi(i,j,k) = - phi(i,j,k)
-     $                 * 2 * (spher3d_r(i,j,k) - radius + cctk_time)
-     $                 / sigma**2
+                  phi(i,j,k) = amplitude / spher3d_r(i,j,k)
+     $                 * exp(- (spher3d_r(i,j,k) - radius - cctk_time)**2 / sigma**2)
+                  psi(i,j,k) = phi(i,j,k)
+     $                 * 2 * (spher3d_r(i,j,k) - radius - cctk_time) / sigma**2
                   
                end do
             end do

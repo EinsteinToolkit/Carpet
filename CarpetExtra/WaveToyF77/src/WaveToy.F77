@@ -150,10 +150,9 @@ c     -----------------------------------
       else
          call CCTK_WARN (0, "No boundary condition selected")
       end if
-      
-c$$$      if (ierr .lt. 0)  then
-c$$$        call CCTK_WARN (0, "Boundary conditions not applied - giving up!")
-c$$$      end if
+      if (ierr .lt. 0)  then
+        call CCTK_WARN (0, "Boundary conditions not applied - giving up!")
+      end if
       
 c     Apply the symmetry boundary conditions on any coordinate axes
 c     -------------------------------------------------------------

@@ -71,10 +71,10 @@ c     call CCTK_INFO ("IDScalarWave_InitialData")
             do j=1, cctk_lsh(2)
                do i=1, cctk_lsh(1)
 
-                  phi(i,j,k) = amplitude
-     $                 * exp(- (spher3d_r(i,j,k) - radius)**2 / sigma**2)
-                  phi_p(i,j,k) = amplitude
-     $                 * exp(- (spher3d_r(i,j,k)**2 - radius - dt)**2 / sigma**2)
+                  phi(i,j,k) = amplitude / spher3d_r(i,j,k)
+     $                 * exp(- (spher3d_r(i,j,k) - radius - cctk_time)**2 / sigma**2)
+                  phi_p(i,j,k) = amplitude / spher3d_r(i,j,k)
+     $                 * exp(- (spher3d_r(i,j,k) - radius - (cctk_time - dt))**2 / sigma**2)
 
                end do
             end do
