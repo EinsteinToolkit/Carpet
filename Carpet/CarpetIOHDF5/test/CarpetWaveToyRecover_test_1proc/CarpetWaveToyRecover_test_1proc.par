@@ -30,6 +30,7 @@ IO::recover = "manual"
 IO::recover_file  = "CarpetWaveToyCheckpoint_test.it_64"
 CarpetIOHDF5::checkpoint = "no"
 
+
 IOBasic::outinfo_every		= 1
 IOBasic::outinfo_vars		= "wavetoy::phi"
 
