@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.7 2003/05/13 15:20:46 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.8 2003/05/21 14:30:50 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -19,7 +19,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.7 2003/05/13 15:20:46 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.8 2003/05/21 14:30:50 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -35,6 +35,40 @@ namespace CarpetInterp {
   typedef vect<CCTK_REAL,dim> rvect;
   
   typedef bbox<int,dim> ibbox;
+  
+  
+  
+#define ind_rc(rl,c) ind_rc_(rl,minrl,maxrl,c,maxncomps,hh)
+  static inline int ind_rc_(int const rl, int const minrl, int const maxrl,
+                            int const c, int const maxncomps,
+                            gh<dim> const * restrict const hh)
+  {
+    assert (rl>=minrl && rl<maxrl);
+    assert (minrl>=0 && maxrl<=hh->reflevels());
+    assert (c>=0 && c<maxncomps);
+    assert (maxncomps>=0 && maxncomps<=hh->components(rl));
+    int const ind = rl * maxncomps + c;
+    assert (ind>=0 && ind < (maxrl-minrl) * maxncomps);
+    return ind;
+  }
+  
+#define ind_prc(p,rl,c) ind_prc_(p,nprocs,rl,minrl,maxrl,c,maxncomps,cgh,hh)
+  static inline int ind_prc_(int const p, int const nprocs,
+                             int const rl, int const minrl, int const maxrl,
+                             int const c, int const maxncomps,
+                             cGH const * restrict const cgh,
+                             gh<dim> const * restrict const hh)
+  {
+    assert (p>=0 && p<nprocs);
+    assert (nprocs==CCTK_nProcs(cgh));
+    assert (rl>=minrl && rl<maxrl);
+    assert (minrl>=0 && maxrl<=hh->reflevels());
+    assert (c>=0 && c<maxncomps);
+    assert (maxncomps>=0 && maxncomps<=hh->components(rl));
+    int const ind = (p * (maxrl-minrl) + rl) * maxncomps + c;
+    assert (ind>=0 && ind < nprocs * (maxrl-minrl) * maxncomps);
+    return ind;
+  }
   
   
   
@@ -100,6 +134,18 @@ namespace CarpetInterp {
     
     
     
+    // Assert that all refinement levels have the same time
+    // TODO: interpolate in time
+    for (int rl=minrl; rl<maxrl; ++rl) {
+      int const tl = 0;
+      int const ml = 0;
+      CCTK_REAL const time1 = tt->time (tl, rl, ml);
+      CCTK_REAL const time2 = cgh->cctk_time / base_delta_time;
+      assert (fabs((time1 - time2) / (fabs(time1) + fabs(time2) + fabs(base_delta_time))) < 1e-12);
+    }
+    
+    
+    
     // Assign interpolation points to components
     vector<int> rlev (N_interp_points); // refinement level of point n
     vector<int> home (N_interp_points); // component of point n
@@ -142,7 +188,7 @@ namespace CarpetInterp {
     found:
       assert (rlev[n]>=minrl && rlev[n]<maxrl);
       assert (home[n]>=0 && home[n]<hh->components(rlev[n]));
-      ++ homecnts [home[n] + (rlev[n]-minrl) * maxncomps];
+      ++ homecnts [ind_rc(rlev[n], home[n])];
       
     } // for n
     
@@ -160,11 +206,11 @@ namespace CarpetInterp {
         for (int c=0; c<hh->components(rl); ++c) {
           ivect lo (0);
           ivect up (1);
-          up[0] = allhomecnts[c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p];
+          up[0] = allhomecnts[ind_prc(p,rl,c)];
           up[1] = dim;
           ivect str (1);
           ibbox extent (lo, up-str, str);
-          allcoords [c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p].allocate (extent, p);
+          allcoords [ind_prc(p,rl,c)].allocate (extent, p);
         }
       }
     }
@@ -177,18 +223,18 @@ namespace CarpetInterp {
         int const c = home[n];
         assert (rl>=minrl && rl<maxrl);
         assert (c>=0 && c<hh->components(rl));
-        assert (tmpcnts[c + (rl-minrl)*maxncomps] >= 0
-                && tmpcnts[c + (rl-minrl)*maxncomps] < homecnts[c + (rl-minrl)*maxncomps]);
+        assert (tmpcnts[ind_rc(rl,c)] >= 0);
+        assert (tmpcnts[ind_rc(rl,c)] < homecnts[ind_rc(rl,c)]);
         assert (dim==3);
         for (int d=0; d<dim; ++d) {
-          allcoords[c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*myproc][ivect(tmpcnts[c + (rl-minrl)*maxncomps],d,0)]
+          allcoords[ind_prc(myproc,rl,c)][ivect(tmpcnts[ind_rc(rl,c)],d,0)]
             = ((CCTK_REAL const *)interp_coords[d])[n];
         }
         ++ tmpcnts[c + (rl-minrl)*maxncomps];
       }
       for (int rl=minrl; rl<maxrl; ++rl) {
         for (int c=0; c<hh->components(rl); ++c) {
-          assert (tmpcnts[c + (rl-minrl)*maxncomps] == homecnts[c + (rl-minrl)*maxncomps]);
+          assert (tmpcnts[ind_rc(rl,c)] == homecnts[ind_rc(rl,c)]);
         }
       }
     }
@@ -197,7 +243,7 @@ namespace CarpetInterp {
     for (int p=0; p<nprocs; ++p) {
       for (int rl=minrl; rl<maxrl; ++rl) {
         for (int c=0; c<hh->components(rl); ++c) {
-          allcoords[c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p].change_processor (hh->processors[rl][c]);
+          allcoords[ind_prc(p,rl,c)].change_processor (hh->processors[rl][c]);
         }
       }
     }
@@ -211,11 +257,11 @@ namespace CarpetInterp {
         for (int c=0; c<hh->components(rl); ++c) {
           ivect lo (0);
           ivect up (1);
-          up[0] = allhomecnts[c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p];
+          up[0] = allhomecnts[ind_prc(p,rl,c)];
           up[1] = N_output_arrays;
           ivect str (1);
           ibbox extent (lo, up-str, str);
-          alloutputs[c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p].allocate (extent, hh->processors[rl][c]);
+          alloutputs[ind_prc(p,rl,c)].allocate (extent, hh->processors[rl][c]);
         }
       }
     }
@@ -290,30 +336,30 @@ namespace CarpetInterp {
             
             // Work on the data from all processors
             for (int p=0; p<nprocs; ++p) {
-              assert (allcoords[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p].owns_storage());
-              assert (allhomecnts[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p]
-                      == allcoords[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p].shape()[0]);
-              assert (allhomecnts[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p]
-                      == alloutputs[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p].shape()[0]);
+              assert (allcoords[ind_prc(p,reflevel,component)].owns_storage());
+              assert (allhomecnts[ind_prc(p,reflevel,component)]
+                      == allcoords[ind_prc(p,reflevel,component)].shape()[0]);
+              assert (allhomecnts[ind_prc(p,reflevel,component)]
+                      == alloutputs[ind_prc(p,reflevel,component)].shape()[0]);
               
               // Do the processor-local interpolation
               vector<const void *> tmp_interp_coords (dim);
               for (int d=0; d<dim; ++d) {
                 tmp_interp_coords[d]
-                  = &allcoords[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p][ivect(0,d,0)];
+                  = &allcoords[ind_prc(p,reflevel,component)][ivect(0,d,0)];
               }
               vector<void *> tmp_output_arrays (N_output_arrays);
               for (int m=0; m<N_output_arrays; ++m) {
                 assert (output_array_type_codes[m] == CCTK_VARIABLE_REAL);
                 tmp_output_arrays[m]
-                  = &alloutputs[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p][ivect(0,m,0)];
+                  = &alloutputs[ind_prc(p,reflevel,component)][ivect(0,m,0)];
               }
               ierr = CCTK_InterpLocalUniform (N_dims,
                                               local_interp_handle,
                                               param_table_handle,
                                               &coord_origin[0],
                                               &coord_delta[0],
-                                              allhomecnts[component + (reflevel-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p],
+                                              allhomecnts[ind_prc(p,reflevel,component)],
                                               interp_coords_type_code,
                                               &tmp_interp_coords[0],
                                               N_input_arrays,
@@ -347,7 +393,7 @@ namespace CarpetInterp {
     for (int p=0; p<nprocs; ++p) {
       for (int rl=0; rl<minrl; ++rl) {
         for (int c=0; c<hh->components(rl); ++c) {
-          alloutputs[c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*p].change_processor (p);
+          alloutputs[ind_prc(p,rl,c)].change_processor (p);
         }
       }
     }
@@ -362,13 +408,13 @@ namespace CarpetInterp {
           assert (interp_coords_type_code == CCTK_VARIABLE_REAL);
           assert (dim==3);
           ((CCTK_REAL *)output_arrays[m])[n] =
-            alloutputs[c + (rl-minrl)*maxncomps + (maxrl-minrl)*maxncomps*myproc][ivect(tmpcnts[c + (rl-minrl)*maxncomps],m,0)];
+            alloutputs[ind_prc(myproc,rl,c)][ivect(tmpcnts[ind_rc(rl,c)],m,0)];
         }
-        ++ tmpcnts[c + (rl-minrl)*maxncomps];
+        ++ tmpcnts[ind_rc(rl,c)];
       }
       for (int rl=minrl; rl<maxrl; ++rl) {
         for (int c=0; c<hh->components(rl); ++c) {
-          assert (tmpcnts[c + (rl-minrl)*maxncomps] == homecnts[c + (rl-minrl)*maxncomps]);
+          assert (tmpcnts[ind_rc(rl,c)] == homecnts[ind_rc(rl,c)]);
         }
       }
     }
