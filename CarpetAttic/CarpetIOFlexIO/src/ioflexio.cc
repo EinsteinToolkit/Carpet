@@ -15,7 +15,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.41 2004/02/07 16:34:17 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.42 2004/02/09 15:02:32 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -631,6 +631,7 @@ namespace CarpetIOFlexIO {
       
       // Read grid
       AmrGrid* amrgrid = 0;
+      int amr_level;
       int amr_origin[dim];
       int amr_dims[dim];
       
@@ -643,15 +644,17 @@ namespace CarpetIOFlexIO {
         assert (amrgrid->data!=0);
         
         // If iorigin attribute is absent, assume file has unigrid
-        // data.  Initialize iorigin to 0.
+        // data.
         IObase::DataType atype;
         int alength;
         if (reader->readAttributeInfo("iorigin", atype, alength) < 0) {
+          amrgrid->level = 0;
           for (int d=0; d<gpdim; ++d) {
             amrgrid->iorigin[d] = 0;
           }
         }
         
+        amr_level = amrgrid->level;
         for (int d=0; d<gpdim; ++d) {
           amr_origin[d] = amrgrid->iorigin[d];
           amr_dims[d] = amrgrid->dims[d];
@@ -662,50 +665,55 @@ namespace CarpetIOFlexIO {
         }
         
       } // MyProc == 0
+      MPI_Bcast (&amr_level, 1, MPI_INT, 0, dist::comm);
       MPI_Bcast (amr_origin, dim, MPI_INT, 0, dist::comm);
       MPI_Bcast (amr_dims, dim, MPI_INT, 0, dist::comm);
       
-      // Traverse all components on all levels
-      BEGIN_MAP_LOOP(cgh, grouptype) {
-        BEGIN_COMPONENT_LOOP(cgh, grouptype) {
-          
-          ggf<dim>* ff = 0;
-          
-          assert (var < (int)arrdata[group][Carpet::map].data.size());
-          ff = (ggf<dim>*)arrdata[group][Carpet::map].data[var];
-          
-          gdata<dim>* const data = (*ff) (tl, rl, component, mglevel);
-          
-          // Create temporary data storage on processor 0
-          const vect<int,dim> str
-            = vect<int,dim>(maxreflevelfact/reflevelfact);
-          const vect<int,dim> lb = vect<int,dim>::ref(amr_origin) * str;
-          const vect<int,dim> ub
-            = lb + (vect<int,dim>::ref(amr_dims) - 1) * str;
-          const bbox<int,dim> ext(lb,ub,str);
-          
-          if (data->extent() != ext) {
-            CCTK_WARN (0, "The stored data have a different extent than the grid function in memory.  This is not yet supported.");
-          }
-          
-          gdata<dim>* const tmp = data->make_typed (n);
-          
-          if (CCTK_MyProc(cgh)==0) {
-            tmp->allocate (ext, 0, amrgrid->data);
-          } else {
-            tmp->allocate (ext, 0);
-          }
-          
-          // Copy into grid function
-          for (comm_state<dim> state; !state.done(); state.step()) {
-            data->copy_from (state, tmp, ext);
-          }
-          
-          // Delete temporary copy
-          delete tmp;
-          
-        } END_COMPONENT_LOOP;
-      } END_MAP_LOOP;
+      if (amr_level == reflevel) {
+        
+        // Traverse all components on all levels
+        BEGIN_MAP_LOOP(cgh, grouptype) {
+          BEGIN_COMPONENT_LOOP(cgh, grouptype) {
+            
+            ggf<dim>* ff = 0;
+            
+            assert (var < (int)arrdata[group][Carpet::map].data.size());
+            ff = (ggf<dim>*)arrdata[group][Carpet::map].data[var];
+            
+            gdata<dim>* const data = (*ff) (tl, rl, component, mglevel);
+            
+            // Create temporary data storage on processor 0
+            const vect<int,dim> str
+              = vect<int,dim>(maxreflevelfact/reflevelfact);
+            const vect<int,dim> lb = vect<int,dim>::ref(amr_origin) * str;
+            const vect<int,dim> ub
+              = lb + (vect<int,dim>::ref(amr_dims) - 1) * str;
+            const bbox<int,dim> ext(lb,ub,str);
+            
+            gdata<dim>* const tmp = data->make_typed (n);
+            
+            if (CCTK_MyProc(cgh)==0) {
+              tmp->allocate (ext, 0, amrgrid->data);
+            } else {
+              tmp->allocate (ext, 0);
+            }
+            
+            // Initialise with what is found in the file -- this does
+            // not guarantee that everything is initialised.
+            const bbox<int,dim> overlap = tmp->extent() & data->extent();
+            
+            // Copy into grid function
+            for (comm_state<dim> state; !state.done(); state.step()) {
+              data->copy_from (state, tmp, overlap);
+            }
+            
+            // Delete temporary copy
+            delete tmp;
+            
+          } END_COMPONENT_LOOP;
+        } END_MAP_LOOP;
+        
+      } // if level == reflevel
       
       if (CCTK_MyProc(cgh)==0) {
         free (amrgrid->data);
@@ -762,7 +770,6 @@ namespace CarpetIOFlexIO {
         if (strcmp (p, CCTK_VarName(n)) == 0) {
           char * const fullname = CCTK_FullName(n);
           assert (fullname);
-          cout << "Recover: Reading variable \"" << fullname << "\" from file \"" << basefilename << "\"" << endl;
           const int ierr = InputVarAs (cgh, fullname, basefilename);
           assert (! ierr);
           free (fullname);
