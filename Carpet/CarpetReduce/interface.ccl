@@ -1,5 +1,5 @@
 # Interface definition for thorn CarpetReduce
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/interface.ccl,v 1.5 2004/05/04 22:52:39 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/interface.ccl,v 1.6 2004/05/21 18:13:53 schnetter Exp $
 
 IMPLEMENTS: reduce
 
