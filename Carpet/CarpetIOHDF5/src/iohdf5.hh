@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.6 2004/03/11 09:33:23 cott Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.7 2004/03/11 10:00:16 cott Exp $
 
 #ifndef CARPETIOHDF5_HH
 #define CARPETIOHDF5_HH
@@ -12,6 +12,75 @@
 
 #include "iohdf5.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
+
+/*** Define the different datatypes used for HDF5 I/O
+     NOTE: the complex datatype SHOULD be [is] defined dynamically at runtime in Startup.c
+
+     100% of the definitions below were taken from Thomas Radke's IOHDF5Util thorn for PUGH
+ ***/
+/* char type is easy */
+#define HDF5_CHAR   H5T_NATIVE_CHAR
+
+/* floating point types are architecture-independent,
+   ie. a float has always 4 bytes, and a double has 8 bytes
+     HDF5_REAL  is used for storing reals of the generic CCTK_REAL type
+     HDF5_REALn is used to explicitely store n-byte reals */
+#ifdef  CCTK_REAL4
+#define HDF5_REAL4  H5T_NATIVE_FLOAT
+#endif
+#ifdef  CCTK_REAL8
+#define HDF5_REAL8  H5T_NATIVE_DOUBLE
+#endif
+#ifdef  CCTK_REAL16
+#define HDF5_REAL16 (sizeof (CCTK_REAL16) == sizeof (long double) ?           \
+                     H5T_NATIVE_LDOUBLE : -1)
+#endif
+
+
+#ifdef  CCTK_REAL_PRECISION_16
+#define HDF5_REAL   HDF5_REAL16
+#elif   CCTK_REAL_PRECISION_8
+#define HDF5_REAL   HDF5_REAL8
+#elif   CCTK_REAL_PRECISION_4
+#define HDF5_REAL   HDF5_REAL4
+#endif
+
+
+/* integer types are architecture-dependent:
+     HDF5_INT  is used for communicating integers of the generic CCTK_INT type
+     HDF5_INTn is used to explicitely communicate n-byte integers */
+#ifdef  CCTK_INT8
+#define HDF5_INT8   (sizeof (CCTK_INT8) == sizeof (int) ? H5T_NATIVE_INT :    \
+                     sizeof (CCTK_INT8) == sizeof (long) ? H5T_NATIVE_LONG :  \
+                     sizeof (CCTK_INT8) == sizeof (long long) ?               \
+                     H5T_NATIVE_LLONG : -1)
+#endif
+
+#ifdef  CCTK_INT4
+#define HDF5_INT4   (sizeof (CCTK_INT4) == sizeof (int) ? H5T_NATIVE_INT :    \
+                     sizeof (CCTK_INT4) == sizeof (short) ?                   \
+                     H5T_NATIVE_SHORT : -1)
+#endif
+
+#ifdef  CCTK_INT2
+#define HDF5_INT2   (sizeof (CCTK_INT2) == sizeof (short) ?                   \
+                     H5T_NATIVE_SHORT : -1)
+#endif
+
+#ifdef  CCTK_INT1
+#define HDF5_INT1   H5T_NATIVE_CHAR
+#endif
+
+#ifdef  CCTK_INTEGER_PRECISION_8
+#define HDF5_INT    HDF5_INT8
+#elif   CCTK_INTEGER_PRECISION_4
+#define HDF5_INT    HDF5_INT4
+#elif   CCTK_INTEGER_PRECISION_2
+#define HDF5_INT    HDF5_INT2
+#elif   CCTK_INTEGER_PRECISION_1
+#define HDF5_INT    HDF5_INT1
+#endif
+
 
 namespace CarpetIOHDF5 {
   
@@ -77,6 +146,8 @@ namespace CarpetIOHDF5 {
   
   int GetnDatasets (const hid_t reader);
   void GetDatasetName (const hid_t reader, const int _index, char* name);
+
+  hid_t h5DataType(int cctk_type);
 
 } // namespace CarpetIOHDF5
 

@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.11 2004/03/11 09:33:23 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.12 2004/03/11 10:00:16 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -336,13 +336,16 @@ namespace CarpetIOHDF5 {
           assert (dataspace>=0);
           
           // Select datatype
+#if 0
           assert (true
                   || (CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL8
                       && sizeof(CCTK_REAL8) == sizeof(double))
                   || (CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL
                       && sizeof(CCTK_REAL) == sizeof(double)));
           // TODO: Set datatype correctly
-          const hid_t datatype = H5T_NATIVE_DOUBLE;
+#endif 
+
+	  const hid_t datatype = h5DataType(CCTK_VarTypeI(n));
           
           ostringstream datasetnamebuf;
           datasetnamebuf << varname
