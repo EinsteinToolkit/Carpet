@@ -162,8 +162,8 @@ c     -----------------------------------
          call BndFlatVN (ierr, cctkGH, sw, "wavetoy::phi")
       else if (CCTK_EQUALS(bound, "zero")) then
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phi")
-c$$$      else if (CCTK_EQUALS(bound, "static")) then
-c$$$         call BndCopyTLVN (ierr, cctkGH, sw, 1, 0, "wavetoy::phi")
+      else if (CCTK_EQUALS(bound, "static")) then
+         call BndStaticVN (ierr, cctkGH, sw, 1, 0, "wavetoy::phi")
       else if (CCTK_EQUALS(bound, "radiation")) then
          call BndRadiativeVN (ierr, cctkGH, sw, zero, one,
      $        "wavetoy::phi", "wavetoy::phi")
