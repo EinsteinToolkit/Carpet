@@ -24,7 +24,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.25 2003/08/14 21:56:34 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.26 2003/08/14 22:13:06 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -271,8 +271,8 @@ namespace CarpetRegrid {
   
   
   
-  // This is a helpful helper routine. The user can use it to define
-  // how the hierarchy should be refined. But the result of this
+  // This is a helpful helper routine.  The user can use it to define
+  // how the hierarchy should be refined.  But the result of this
   // routine is rather arbitrary.
   void MakeRegions_RefineCentre (const cGH* cctkGH, const int reflevels,
 				 list<ibbox>& bbl, list<bvect>& obl)
@@ -282,40 +282,25 @@ namespace CarpetRegrid {
     
     if (reflevel+1 >= reflevels) return;
       
-    // note: what this routine calls "ub" is "ub+str" elsewhere
     ivect rstr = hh->baseextent.stride();
     ivect rlb  = hh->baseextent.lower();
-    ivect rub  = hh->baseextent.upper() + rstr;
+    ivect rub  = hh->baseextent.upper();
     
     for (int rl=0; rl<reflevel+1; ++rl) {
       // save old values
       const ivect oldrlb = rlb;
       const ivect oldrub = rub;
-      // calculate extent and centre
-      const ivect rextent = rub - rlb;
-      const ivect rcentre = rlb + (rextent / 2 / rstr) * rstr;
-      // calculate new extent
-      assert (all(rextent % hh->reffact == 0));
-      const ivect newrextent = rextent / hh->reffact;
       // refined boxes have smaller stride
       assert (all(rstr%hh->reffact == 0));
       rstr /= hh->reffact;
-#if 1
-      // refine (arbitrarily) around the center only
-      rlb = rcentre - (newrextent/2 / rstr) * rstr;
-#else
-      // refine (arbitrarily) around the lower boundary only
-      rlb = rlb;
-#endif
-      // honour multigrid factors
-      const int mgstr = ipow(hh->mgfact, mglevels);
-      rlb = (rlb / mgstr) * mgstr;
-      rub = rlb + newrextent;
-      // require rub<oldrub because we really want rub-rstr<=oldrub-oldstr
-      assert (all(rlb >= oldrlb && rub < oldrub));
+      // calculate new extent
+      const ivect quarter = (rub - rlb) / 4 / rstr * rstr;
+      rlb = oldrlb + quarter;
+      rub = oldrub - quarter;
+      assert (all(rlb >= oldrlb && rub <= oldrub));
     }
     
-    bbl.push_back (ibbox(rlb, rub-rstr, rstr));
+    bbl.push_back (ibbox(rlb, rub, rstr));
     obl.push_back (bvect(vect<bool,2>(false)));
   }
   
