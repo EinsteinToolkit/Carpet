@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.36 2003/09/19 16:08:37 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.37 2003/09/30 11:58:42 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -222,6 +222,12 @@ namespace Carpet {
   
   // Component iterator
   
+  // Loop over all components.  If grouptype is CCTK_GF, then loop
+  // over grid function components.  If grouptype is CCTK_ARRAY (or
+  // CCTK_SCALAR), then loop over grid array (or grid scalar)
+  // components.  In the latter case, component denotes the current
+  // grid array component, i.e. it cannot be used to index grid
+  // functions.
 #define BEGIN_COMPONENT_LOOP(cgh, grouptype)            \
   do {                                                  \
     int _cl;                                            \
@@ -236,8 +242,8 @@ namespace Carpet {
       _minc=0;                                          \
       _maxc=hh->components(reflevel);                   \
     } else {                                            \
-      _minc=component;                                  \
-      _maxc=component+1;                                \
+      _minc=0;                                          \
+      _maxc=CCTK_nProcs(_cgh);                          \
     }                                                   \
     for (int _c=_minc; _c<_maxc; ++_c) {                \
       if (component!=_c) set_component (_cgh, _c);      \
@@ -251,12 +257,18 @@ namespace Carpet {
 
 
   
+  // Loop over all processor-local components.  If grouptype is
+  // CCTK_GF, then loop over grid function components.  If grouptype
+  // is CCTK_ARRAY (or CCTK_SCALAR), then loop over grid array (or
+  // grid scalar) components, i.e. execute the loop just once.  In the
+  // latter case, component denotes the current grid array component,
+  // i.e. it cannot be used to index grid functions.
 #define BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype)                      \
   do {                                                                  \
     int _lcl;                                                           \
     cGH * const _cgh = const_cast<cGH*>(cgh);                           \
     int const _grouptype = (grouptype);                                 \
-    int const _savec = (component);                                     \
+    int const _savec = component;                                       \
     int _minc, _maxc;                                                   \
     if (_grouptype == CCTK_GF) {                                        \
       assert (reflevel>=0 && reflevel<hh->reflevels());                 \
@@ -265,8 +277,8 @@ namespace Carpet {
       _minc=0;                                                          \
       _maxc=hh->components(reflevel);                                   \
     } else {                                                            \
-      _minc=component;                                                  \
-      _maxc=component+1;                                                \
+      _minc=CCTK_MyProc(_cgh);                                          \
+      _maxc=_minc+1;                                                    \
     }                                                                   \
     for (int _c=_minc; _c<_maxc; ++_c) {                                \
       if (_grouptype!=CCTK_GF || hh->is_local(reflevel,_c)) {           \
