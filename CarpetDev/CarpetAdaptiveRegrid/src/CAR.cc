@@ -24,12 +24,13 @@ extern "C" {
 
 
 namespace CarpetAdaptiveRegrid {
+
+
+  static gh::mexts local_bbsss;
+  static CCTK_INT last_iteration = -1;  
   
   using namespace std;
   using namespace Carpet;
-
-  static gh::mexts local_bbsss;
-  static CCTK_INT last_iteration = -1;
 
   extern "C" {
     void CCTK_FCALL CCTK_FNAME(copy_mask)
@@ -75,6 +76,18 @@ namespace CarpetAdaptiveRegrid {
       // Is this really the right thing to do on 
       // multiprocessors?
       local_bbsss = bbsss;
+      last_iteration = cctkGH->cctk_iteration;
+      CCTK_INT do_recompose = 
+        ManualCoordinateList (cctkGH, hh, bbsss, obss, pss, local_bbsss);
+
+      if (verbose) {
+        ostringstream buf;
+        buf << "Done with manual coordinate list. Total list is:"
+            << endl << local_bbsss;
+        CCTK_INFO(buf.str().c_str());
+      }      
+
+      return do_recompose;
     }
 
     // FIXME: We should check that the local reflevel "agrees"
@@ -103,9 +116,11 @@ namespace CarpetAdaptiveRegrid {
       }
 
       // Return if it's initial data as we can't handle that yet.
-      if (cctkGH->cctk_iteration ==0) {
-        return 0;
-      }
+      // Actually don't as initial data should now be handled
+      // by the manualcoordinatelist above.
+      //       if (cctkGH->cctk_iteration == 0) {
+      //         return 0;
+      //       }
       
     }
 

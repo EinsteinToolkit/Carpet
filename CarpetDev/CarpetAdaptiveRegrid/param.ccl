@@ -42,3 +42,14 @@ CCTK_BOOLEAN verbose "Should we be verbose"
 CCTK_BOOLEAN veryverbose "Should we be very verbose"
 {
 } "no"
+
+CCTK_INT refinement_levels "Number of initial refinement levels (including the base level)" STEERABLE=always
+{
+  1:* :: "must be positive, and must not be larger than Carpet::max_refinement_levels"
+} 1
+
+CCTK_STRING coordinates "List of bounding box coordinates for the initial data" STEERABLE=always
+{
+  "^$" :: "leave empty for no refinement"
+  ".*" :: "[ [ ([<xmin>,<ymin>,<zmin>]:[<xmax>,<ymax>,<zmax>]:[<xstride>,<ystride>,<zstride>]), ... ], ... ]"
+} ""
