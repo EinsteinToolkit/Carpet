@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.28 2003/07/23 14:46:10 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.29 2003/07/30 15:33:11 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include <complex>
+#include <limits>
 #include <vector>
 
 #include <mpi.h>
@@ -22,24 +23,46 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.28 2003/07/23 14:46:10 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.29 2003/07/30 15:33:11 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
-
-
-
-#ifndef LLONG_MAX
-// #  warning "no long long int support"
-#endif
-#ifndef LDBL_MAX
-// #  warning "no long double support"
-#endif
 
 
 
 namespace CarpetReduce {
   
   using namespace Carpet;
+  
+  
+  
+  // Helper functions
+  template<class T> inline T mymin () { return numeric_limits<T>::min(); }
+  template<> inline complex<float> mymin () { return complex<float> (numeric_limits<float>::min(), numeric_limits<float>::min()); }
+  template<> inline complex<double> mymin () { return complex<double> (numeric_limits<double>::min(), numeric_limits<double>::min()); }
+#ifdef LDBL_MAX
+  template<> inline complex<long double> mymin () { return complex<long double> (numeric_limits<long double>::min(), numeric_limits<long double>::min()); }
+#endif
+  
+  template<class T> inline T mymax () { return numeric_limits<T>::max(); }
+  template<> inline complex<float> mymax () { return complex<float> (numeric_limits<float>::max(), numeric_limits<float>::max()); }
+  template<> inline complex<double> mymax () { return complex<double> (numeric_limits<double>::max(), numeric_limits<double>::max()); }
+#ifdef LDBL_MAX
+  template<> inline complex<long double> mymax () { return complex<long double> (numeric_limits<long double>::max(), numeric_limits<long double>::max()); }
+#endif
+  
+  template<class T> inline T mymin (const T x, const T y) { return min(x, y); }
+  template<> inline complex<float> mymin (const complex<float> x, const complex<float> y) { return complex<float> (min(x.real(), y.real()), min(x.imag(), y.imag())); }
+  template<> inline complex<double> mymin (const complex<double> x, const complex<double> y) { return complex<double> (min(x.real(), y.real()), min(x.imag(), y.imag())); }
+#ifdef LDBL_MAX
+  template<> inline complex<long double> mymin (const complex<long double> x, const complex<long double> y) { return complex<long double> (min(x.real(), y.real()), min(x.imag(), y.imag())); }
+#endif
+  
+  template<class T> inline T mymax (const T x, const T y) { return max(x, y); }
+  template<> inline complex<float> mymax (const complex<float> x, const complex<float> y) { return complex<float> (max(x.real(), y.real()), max(x.imag(), y.imag())); }
+  template<> inline complex<double> mymax (const complex<double> x, const complex<double> y) { return complex<double> (max(x.real(), y.real()), max(x.imag(), y.imag())); }
+#ifdef LDBL_MAX
+  template<> inline complex<long double> mymax (const complex<long double> x, const complex<long double> y) { return complex<long double> (max(x.real(), y.real()), max(x.imag(), y.imag())); }
+#endif
   
   
   
@@ -65,7 +88,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = 0; }
-      static inline void reduce (T& accum, const T& val) { ++accum; }
+      static inline void reduce (T& accum, const T& val) { accum += 1; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -77,36 +100,12 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { assert (0); }
-      static inline void reduce (T& accum, const T& val) { accum = min(accum, val); }
+      static inline void initialise (T& accum) { accum = mymax<T>(); }
+      static inline void reduce (T& accum, const T& val) { accum = mymin(accum, val); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_MIN; }
   };
-  template<> inline void minimum::op<char>         ::initialise (char         & accum) { accum = CHAR_MAX; }
-  template<> inline void minimum::op<signed char>  ::initialise (signed char  & accum) { accum = SCHAR_MAX; }
-  template<> inline void minimum::op<unsigned char>::initialise (unsigned char& accum) { accum = UCHAR_MAX; }
-  template<> inline void minimum::op<short>        ::initialise (short        & accum) { accum = SHRT_MAX; }
-  template<> inline void minimum::op<int>          ::initialise (int          & accum) { accum = INT_MAX; }
-  template<> inline void minimum::op<long>         ::initialise (long         & accum) { accum = LONG_MAX; }
-#ifdef LLONG_MAX
-  template<> inline void minimum::op<long long>    ::initialise (long long    & accum) { accum = LLONG_MAX; }
-#endif
-  template<> inline void minimum::op<float>        ::initialise (float        & accum) { accum = FLT_MAX; }
-  template<> inline void minimum::op<double>       ::initialise (double       & accum) { accum = DBL_MAX; }
-#ifdef LDBL_MAX
-  template<> inline void minimum::op<long double>  ::initialise (long double  & accum) { accum = LDBL_MAX; }
-#endif
-  template<> inline void minimum::op<complex<float> >        ::initialise (complex<float>        & accum) { accum = complex<float>(FLT_MAX,FLT_MAX); }
-  template<> inline void minimum::op<complex<double> >       ::initialise (complex<double>       & accum) { accum = complex<double>(DBL_MAX,DBL_MAX); }
-#ifdef LDBL_MAX
-  template<> inline void minimum::op<complex<long double> >  ::initialise (complex<long double>  & accum) { accum = complex<long double>(LDBL_MAX,LDBL_MAX); }
-#endif
-  template<> inline void minimum::op<complex<float> >        ::reduce (complex<float>& accum, const complex<float>& val) { accum = complex<float>(min(accum.real(), val.real()), min(accum.imag(), val.imag())); }
-  template<> inline void minimum::op<complex<double> >       ::reduce (complex<double>& accum, const complex<double>& val) { accum = complex<double>(min(accum.real(), val.real()), min(accum.imag(), val.imag())); }
-#ifdef LDBL_MAX
-  template<> inline void minimum::op<complex<long double> >  ::reduce (complex<long double>& accum, const complex<long double>& val) { accum = complex<long double>(min(accum.real(), val.real()), min(accum.imag(), val.imag())); }
-#endif
   
   struct maximum : reduction {
     maximum () { }
@@ -114,36 +113,12 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { assert (0); }
-      static inline void reduce (T& accum, const T& val) { accum = max(accum, val); }
+      static inline void initialise (T& accum) { accum = mymin<T>(); }
+      static inline void reduce (T& accum, const T& val) { accum = mymax(accum, val); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_MAX; }
   };
-  template<> inline void maximum::op<char>         ::initialise (char         & accum) { accum = CHAR_MIN; }
-  template<> inline void maximum::op<signed char>  ::initialise (signed char  & accum) { accum = SCHAR_MIN; }
-  template<> inline void maximum::op<unsigned char>::initialise (unsigned char& accum) { accum = 0; }
-  template<> inline void maximum::op<short>        ::initialise (short        & accum) { accum = SHRT_MIN; }
-  template<> inline void maximum::op<int>          ::initialise (int          & accum) { accum = INT_MIN; }
-  template<> inline void maximum::op<long>         ::initialise (long         & accum) { accum = LONG_MIN; }
-#ifdef LLONG_MIN
-  template<> inline void maximum::op<long long>    ::initialise (long long    & accum) { accum = LLONG_MIN; }
-#endif
-  template<> inline void maximum::op<float>        ::initialise (float        & accum) { accum = -FLT_MAX; }
-  template<> inline void maximum::op<double>       ::initialise (double       & accum) { accum = -DBL_MAX; }
-#ifdef LDBL_MAX
-  template<> inline void maximum::op<long double>  ::initialise (long double  & accum) { accum = -LDBL_MAX; }
-#endif
-  template<> inline void maximum::op<complex<float> >        ::initialise (complex<float>        & accum) { accum = complex<float>(-FLT_MAX,-FLT_MAX); }
-  template<> inline void maximum::op<complex<double> >       ::initialise (complex<double>       & accum) { accum = complex<double>(-DBL_MAX,-DBL_MAX); }
-#ifdef LDBL_MAX
-  template<> inline void maximum::op<complex<long double> >  ::initialise (complex<long double>  & accum) { accum = complex<long double>(-LDBL_MAX,-LDBL_MAX); }
-#endif
-  template<> inline void maximum::op<complex<float> >        ::reduce (complex<float>& accum, const complex<float>& val) { accum = complex<float>(max(accum.real(), val.real()), max(accum.imag(), val.imag())); }
-  template<> inline void maximum::op<complex<double> >       ::reduce (complex<double>& accum, const complex<double>& val) { accum = complex<double>(max(accum.real(), val.real()), max(accum.imag(), val.imag())); }
-#ifdef LDBL_MAX
-  template<> inline void maximum::op<complex<long double> >  ::reduce (complex<long double>& accum, const complex<long double>& val) { accum = complex<long double>(max(accum.real(), val.real()), max(accum.imag(), val.imag())); }
-#endif
   
   struct product : reduction {
     product () { }
@@ -235,13 +210,13 @@ namespace CarpetReduce {
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
   };
-  template<> inline void norm2::op<char>         ::finalise (char         & accum, const char         & cnt) { accum = sqrt((double)accum / cnt); }
-  template<> inline void norm2::op<signed char>  ::finalise (signed char  & accum, const signed char  & cnt) { accum = sqrt((double)accum / cnt); }
-  template<> inline void norm2::op<unsigned char>::finalise (unsigned char& accum, const unsigned char& cnt) { accum = sqrt((double)accum / cnt); }
-  template<> inline void norm2::op<short>        ::finalise (short        & accum, const short        & cnt) { accum = sqrt((double)accum / cnt); }
-  template<> inline void norm2::op<int>          ::finalise (int          & accum, const int          & cnt) { accum = sqrt((double)accum / cnt); }
-  template<> inline void norm2::op<long>         ::finalise (long         & accum, const long         & cnt) { accum = sqrt((double)accum / cnt); }
-  template<> inline void norm2::op<long long>    ::finalise (long long    & accum, const long long    & cnt) { accum = sqrt((double)accum / cnt); }
+  template<> inline void norm2::op<char>         ::finalise (char         & accum, const char         & cnt) { accum = (char         )sqrt((double)accum / cnt); }
+  template<> inline void norm2::op<signed char>  ::finalise (signed char  & accum, const signed char  & cnt) { accum = (signed char  )sqrt((double)accum / cnt); }
+  template<> inline void norm2::op<unsigned char>::finalise (unsigned char& accum, const unsigned char& cnt) { accum = (unsigned char)sqrt((double)accum / cnt); }
+  template<> inline void norm2::op<short>        ::finalise (short        & accum, const short        & cnt) { accum = (short        )sqrt((double)accum / cnt); }
+  template<> inline void norm2::op<int>          ::finalise (int          & accum, const int          & cnt) { accum = (int          )sqrt((double)accum / cnt); }
+  template<> inline void norm2::op<long>         ::finalise (long         & accum, const long         & cnt) { accum = (long         )sqrt((double)accum / cnt); }
+  template<> inline void norm2::op<long long>    ::finalise (long long    & accum, const long long    & cnt) { accum = (long long    )sqrt((double)accum / cnt); }
   
   struct norm_inf : reduction {
     norm_inf () { }
@@ -250,7 +225,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum) { accum = 0; }
-      static inline void reduce (T& accum, const T& val) { accum = max(accum, abs(val)); }
+      static inline void reduce (T& accum, const T& val) { accum = mymax(accum, (T)abs(val)); }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -284,7 +259,7 @@ namespace CarpetReduce {
         for (int i=imin[0]; i<imax[0]; ++i) {
 	  const int index = i + lsh[0] * (j + lsh[1] * k);
 	  OP::reduce (myoutval, myinarray[index]);
-	  ++mycnt;
+	  mycnt += 1;
 	}
       }
     }
@@ -537,7 +512,7 @@ namespace CarpetReduce {
       for (int n=0; n<num_outvals; ++n) {
 	
 	assert (outvals);
-	assert (counts.size() == vartypesize * num_outvals);
+	assert ((int)counts.size() == vartypesize * num_outvals);
 	
 	switch (outtype) {
 #define FINALISE(OP,T)							\
