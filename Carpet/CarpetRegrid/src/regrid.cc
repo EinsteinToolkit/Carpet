@@ -19,7 +19,7 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.1 2001/12/14 16:34:39 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.2 2001/12/17 13:32:43 schnetter Exp $";
 
 
 
@@ -51,7 +51,11 @@ namespace CarpetRegrid {
     if (regrid_every == 0 && cctk_iteration != 0) return 0;
     
     // Return if we want to regrid regularly, but not at this time
-    if (regrid_every > 0 && cctk_iteration % regrid_every != 0) return 0;
+    const int invfact = maxreflevelfact / reflevelfact;
+    if (regrid_every > 0 && cctk_iteration != 0
+	&& (cctk_iteration + invfact - 1) % regrid_every != 0) {
+      return 0;
+    }
     
     Waypoint ("%*sRegrid", 2*reflevel, "");
     
@@ -86,11 +90,18 @@ namespace CarpetRegrid {
       assert (vi>=0 && vi<CCTK_NumVars());
       const int gi = CCTK_GroupIndexFromVarI (vi);
       assert (gi>=0 && gi<CCTK_NumGroups());
+      const int v1 = CCTK_FirstVarIndexI(gi);
+      assert (v1<=vi && v1<CCTK_NumVars());
       
+      assert (CCTK_GroupTypeI(gi) == CCTK_GF);
       assert (CCTK_VarTypeI(vi) == CCTK_VARIABLE_REAL);
+      assert (CCTK_GroupDimI(gi) == dim);
       
+      assert (gi < (int)arrdata.size());
+      assert (vi-v1 < (int)arrdata[gi].data.size());
+      assert (arrdata[gi].data[vi-v1]);
       const gf<CCTK_REAL,dim>& error
-	= *(const gf<CCTK_REAL,dim>*)arrdata[gi].data[vi];
+	= *(const gf<CCTK_REAL,dim>*)arrdata[gi].data[vi-v1];
       
       MakeRegions_Adaptively (cctkGH, minwidth, minfraction, maxerror, error,
 			      bbl);
@@ -105,13 +116,13 @@ namespace CarpetRegrid {
       bbs.push_back (*it);
     }
     
+    // TODO: ensure nesting properties
+    
+    SplitRegions (cctkGH, bbs);
+    
     gh<dim>::cexts bbss;
     const int mglevels = 1;	// arbitrary value
     bbss = hh->make_reflevel_multigrid_boxes(bbs, mglevels);
-    
-    // TODO: ensure nesting properties
-    
-    SplitRegions (cctkGH, bbss);
     
     gh<dim>::rexts bbsss = hh->extents;
     if (bbss.size() == 0) {
@@ -230,7 +241,7 @@ namespace CarpetRegrid {
   MakeRegions_Adaptively (const cGH* const cctkGH,
 			  const int minwidth, const double minfraction,
 			  const CCTK_REAL maxerror,
-			  const data<CCTK_REAL,dim>* const error,
+			  const data<CCTK_REAL,dim>& error,
 			  list<bbox<int,dim> >& bbl,
 			  const bbox<int,dim> region)
   {
@@ -239,17 +250,22 @@ namespace CarpetRegrid {
     
     // Count grid points that need to be refined
     int cnt = 0;
+    CCTK_REAL me=-999;
     for (bbox<int,dim>::iterator it=region.begin(); it!=region.end(); ++it) {
-      if ((*error)[*it] > maxerror) ++cnt;
+      if (error[*it] > maxerror) ++cnt;
+      me=max(me,error[*it]);
     }
     const CCTK_REAL fraction = (CCTK_REAL)cnt / region.num_points();
-    const int width = minval(region.shape());
+    const int width = minval(region.shape() / region.stride());
     
     if (cnt == 0) {
       // Don't refine
     } else if (width < 2*minwidth || fraction >= minfraction) {
       // Refine the whole region
-      bbl.push_back (region);
+      const vect<int,dim> lo(region.lower());
+      const vect<int,dim> up(region.upper());
+      const vect<int,dim> str(region.stride());
+      bbl.push_back (bbox<int,dim>(lo,up+str-str/reffact,str/reffact));
     } else {
       // Split the region and check recursively
       const int d = maxloc(region.shape());
@@ -258,12 +274,12 @@ namespace CarpetRegrid {
       const vect<int,dim> str(region.stride());
       vect<int,dim> lo1(lo), lo2(lo);
       vect<int,dim> up1(up), up2(up);
-      up1[d] = (((up[d]-lo[d])/str[d]+1)/2-1)*str[d];
+      up1[d] = (up[d]+lo[d])/2/str[d]*str[d];
       lo2[d] = up1[d]+str[d];
       const bbox<int,dim> region1(lo1,up1,str);
       const bbox<int,dim> region2(lo2,up2,str);
-      assert (region1 <= region);
-      assert (region2 <= region);
+      assert (region1.is_contained_in(region));
+      assert (region2.is_contained_in(region));
       assert ((region1 & region2).empty());
       assert (region1 + region2 == region);
       MakeRegions_Adaptively (cctkGH, minwidth, minfraction, maxerror,
@@ -297,7 +313,7 @@ namespace CarpetRegrid {
       const bbox<int,dim> region = hh->extents[rl][c][ml];
       assert (! region.empty());
       
-      const data<CCTK_REAL,dim>* errdata = error(tl,rl,c,ml);
+      const data<CCTK_REAL,dim>& errdata = *error(tl,rl,c,ml);
       
       MakeRegions_Adaptively (cctkGH, minwidth, minfraction, maxerror,
 			      errdata, bbl, region);
