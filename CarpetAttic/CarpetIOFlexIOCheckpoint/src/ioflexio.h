@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.h,v 1.2 2003/09/17 13:47:00 cvs_anon Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.h,v 1.3 2003/12/01 13:15:21 cott Exp $ */
 
 #ifndef CARPETIOFLEXIO_H
 #define CARPETIOFLEXIO_H
@@ -27,6 +27,8 @@ namespace CarpetCheckpointRestart {
     
     /* Scheduled functions */
     void CarpetIOFlexIO_EvolutionCheckpoint (const cGH*);
+    int CarpetIOFlexIO_RecoverParameters (void);
+    int CarpetIOFlexIO_Recover (cGH *GH, const char *basefilename, int called_from);
 #ifdef __cplusplus
   } /* extern "C" */
 } /* namespace CarpetIOFlexIO */
