@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.39 2004/07/07 17:10:13 tradke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.40 2004/07/08 08:38:06 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -202,44 +202,49 @@ int OutputGH (const cGH* const cctkGH) {
 
 
 int OutputVarAs (const cGH* const cctkGH, const char* const varname,
-                 const char* const alias) {
-  DECLARE_CCTK_ARGUMENTS;
-  DECLARE_CCTK_PARAMETERS;
+                 const char* const alias)
+{
+  DECLARE_CCTK_ARGUMENTS
+  DECLARE_CCTK_PARAMETERS
 
-  herr_t herr;
+  int numvars = CCTK_NumVars ();
+  vector<bool> flags (numvars);
 
-  const int n = CCTK_VarIndex(varname);
-  assert (n>=0 && n<CCTK_NumVars());
-  const int group = CCTK_GroupIndexFromVarI (n);
+  if (CCTK_TraverseString (varname, SetFlag, &flags, CCTK_VAR) < 0)
+  {
+    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "error while parsing variable name '%s' (alias name '%s')",
+                varname, alias);
+    return (-1);
+  }
+
+  int vindex = 0;
+  while (! flags.at (vindex) && vindex < numvars) vindex++;
+  if (vindex >= numvars)
+  {
+    return (-1);
+  }
+
+  const int group = CCTK_GroupIndexFromVarI (vindex);
   assert (group>=0 && group<(int)Carpet::arrdata.size());
-  const int n0 = CCTK_FirstVarIndexI(group);
-  assert (n0>=0 && n0<CCTK_NumVars());
-  const int var = n - n0;
-  assert (var>=0 && var<CCTK_NumVars());
 
   // Check for storage
-  if (! CCTK_QueryGroupStorageI(cctkGH, group)) {
+  if (! CCTK_QueryGroupStorageI(cctkGH, group))
+  {
     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "Cannot output variable \"%s\" because it has no storage",
+                "Cannot output variable '%s' because it has no storage",
                 varname);
-    return 0;
+    return (0);
   }
 
   const int grouptype = CCTK_GroupTypeI(group);
-  switch (grouptype) {
-  case CCTK_SCALAR:
-  case CCTK_ARRAY:
+  if (grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY)
+  {
     assert (do_global_mode);
-    break;
-  case CCTK_GF:
-    /* do nothing */
-    break;
-  default:
-    assert (0);
   }
 
   /* get the default I/O request for this variable */
-  ioRequest* request = IOUtil_DefaultIORequest (cctkGH, n, 1);
+  ioRequest* request = IOUtil_DefaultIORequest (cctkGH, vindex, 1);
 
   // Get grid hierarchy extentsion from IOUtil
   const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cctkGH, "IO");
@@ -263,16 +268,19 @@ int OutputVarAs (const cGH* const cctkGH, const char* const varname,
   hid_t writer = -1;
 
   // Write the file only on the root processor
-  if (CCTK_MyProc(cctkGH)==0) {
+  if (CCTK_MyProc (cctkGH) == 0)
+  {
 
     // If this is the first time, then create and truncate the file
-    if (do_truncate.at(n)) {
+    if (do_truncate.at(vindex))
+    {
       struct stat fileinfo;
-      if (! iogh->recovered || stat(filename, &fileinfo)!=0) {
-        writer = H5Fcreate (filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+      if (! iogh->recovered || stat(filename, &fileinfo)!=0)
+      {
+        HDF5_ERROR (writer = H5Fcreate (filename, H5F_ACC_TRUNC, H5P_DEFAULT,
+                                        H5P_DEFAULT));
         assert (writer>=0);
-        herr = H5Fclose (writer);
-        assert (!herr);
+        HDF5_ERROR (H5Fclose (writer));
         writer = -1;
       }
     }
@@ -280,27 +288,26 @@ int OutputVarAs (const cGH* const cctkGH, const char* const varname,
     // Open the file
     writer = H5Fopen (filename, H5F_ACC_RDWR, H5P_DEFAULT);
     assert (writer>=0);
-
   }
 
-  if(verbose) {
+  if (verbose)
+  {
     CCTK_VInfo (CCTK_THORNSTRING,
-                "Writing variable %s on refinement level %d",varname,reflevel);
+                "Writing variable '%s' on mglevel %d reflevel %d",
+                varname, mglevel, reflevel);
   }
-
-  WriteVar(cctkGH,writer,request,0);
+  WriteVar (cctkGH, writer, request, 0);
 
   // Close the file
-  if (CCTK_MyProc(cctkGH)==0) {
-    herr = H5Fclose (writer);
-    assert (!herr);
-    writer = -1;
+  if (writer >= 0)
+  {
+    HDF5_ERROR (H5Fclose (writer));
   }
 
   // Don't truncate again
-  do_truncate.at(n) = false;
+  do_truncate.at(vindex) = false;
 
-  return 0;
+  return (0);
 }
 
 int WriteVar (const cGH* const cctkGH, const hid_t writer, const ioRequest* request,
