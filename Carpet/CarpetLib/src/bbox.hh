@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.9 2002/03/11 13:17:12 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.10 2002/05/05 22:16:58 schnetter Exp $
 
  ***************************************************************************/
 
@@ -142,9 +142,5 @@ inline ostream& operator<< (ostream& os, const bbox<T,D>& b) {
 }
 
 
-
-#if defined(TMPL_IMPLICIT)
-#  include "bbox.cc"
-#endif
 
 #endif // BBOX_HH

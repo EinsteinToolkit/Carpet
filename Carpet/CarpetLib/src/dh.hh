@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.9 2001/12/09 16:43:09 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.10 2002/05/05 22:17:01 schnetter Exp $
 
  ***************************************************************************/
 
@@ -126,9 +126,5 @@ public:
 };
 
 
-
-#if defined(TMPL_IMPLICIT)
-#  include "dh.cc"
-#endif
 
 #endif // DH_HH

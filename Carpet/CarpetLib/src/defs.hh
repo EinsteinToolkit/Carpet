@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.7 2002/03/11 13:17:13 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.8 2002/05/05 22:17:00 schnetter Exp $
 
  ***************************************************************************/
 
@@ -100,9 +100,5 @@ inline ostream& operator<< (ostream& os, const vector<T>& v) {
 }
 
 
-
-#if defined(TMPL_IMPLICIT)
-#  include "defs.cc"
-#endif
 
 #endif // DEFS_HH

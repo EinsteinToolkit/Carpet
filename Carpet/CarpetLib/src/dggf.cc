@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dggf.cc,v 1.2 2001/12/09 16:43:09 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dggf.cc,v 1.3 2002/05/05 22:17:00 schnetter Exp $
 
  ***************************************************************************/
 
@@ -29,9 +29,7 @@
 // #include "dh.hh"
 // #include "th.hh"
 
-#if !defined(TMPL_IMPLICIT) || !defined(GGF_HH)
-#  include "dggf.hh"
-#endif
+#include "dggf.hh"
 
 using namespace std;
 
@@ -56,8 +54,3 @@ dimgeneric_gf::~dimgeneric_gf ()
 bool dimgeneric_gf::operator== (const dimgeneric_gf& f) const {
   return this == &f;
 }
-
-
-
-#if defined(TMPL_EXPLICIT)
-#endif

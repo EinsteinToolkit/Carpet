@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dgdata.cc,v 1.1 2001/06/12 14:56:57 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dgdata.cc,v 1.2 2002/05/05 22:17:00 schnetter Exp $
 
  ***************************************************************************/
 
@@ -20,9 +20,7 @@
 
 #include <assert.h>
 
-#if !defined(TMPL_IMPLICIT) || !defined(GDATA_HH)
-#  include "dgdata.hh"
-#endif
+#include "dgdata.hh"
 
 using namespace std;
 
@@ -35,8 +33,3 @@ dimgeneric_data::dimgeneric_data ()
 
 // Destructors
 dimgeneric_data::~dimgeneric_data () { }
-
-
-
-#if defined(TMPL_EXPLICIT)
-#endif

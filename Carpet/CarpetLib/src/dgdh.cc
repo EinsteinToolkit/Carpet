@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dgdh.cc,v 1.2 2001/12/09 16:43:09 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dgdh.cc,v 1.3 2002/05/05 22:17:00 schnetter Exp $
 
  ***************************************************************************/
 
@@ -25,9 +25,7 @@
 #include "dist.hh"
 #include "ggf.hh"
 
-#if !defined(TMPL_IMPLICIT) || !defined(DH_HH)
-#  include "dgdh.hh"
-#endif
+#include "dgdh.hh"
 
 #undef DEBUG_OUTPUT
 
@@ -52,8 +50,3 @@ int dimgeneric_dh::prolongation_stencil_size () const {
   assert (prolongation_order_space>=0);
   return prolongation_order_space/2;
 }
-
-
-
-#if defined(TMPL_EXPLICIT)
-#endif

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.9 2001/12/14 16:39:41 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.10 2002/05/05 22:16:58 schnetter Exp $
 
  ***************************************************************************/
 
@@ -25,9 +25,7 @@
 
 #include "defs.hh"
 
-#if !defined(TMPL_IMPLICIT) && !defined(BBOXSET_HH)
-#  include "bboxset.hh"
-#endif
+#include "bboxset.hh"
 
 using namespace std;
 
@@ -343,8 +341,4 @@ void bboxset<T,D>::output (ostream& os) const {
 
 
 
-#if defined(TMPL_EXPLICIT)
-
 template class bboxset<int,3>;
-
-#endif

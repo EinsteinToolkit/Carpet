@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dgdh.hh,v 1.2 2001/12/09 16:43:09 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dgdh.hh,v 1.3 2002/05/05 22:17:00 schnetter Exp $
 
  ***************************************************************************/
 
@@ -74,9 +74,5 @@ inline ostream& operator<< (ostream& os, const dimgeneric_dh& d) {
 }
 
 
-
-#if defined(TMPL_IMPLICIT)
-#  include "dgdh.cc"
-#endif
 
 #endif // DGDH_HH

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.18 2002/01/09 23:42:42 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.19 2002/05/05 22:17:01 schnetter Exp $
 
  ***************************************************************************/
 
@@ -27,9 +27,7 @@
 #include "dist.hh"
 #include "vect.hh"
 
-#if !defined(TMPL_IMPLICIT) || !defined(GDATA_HH)
-#  include "gdata.hh"
-#endif
+#include "gdata.hh"
 
 using namespace std;
 
@@ -128,8 +126,4 @@ void generic_data<D>
 
 
 
-#if defined(TMPL_EXPLICIT)
-
 template class generic_data<3>;
-
-#endif

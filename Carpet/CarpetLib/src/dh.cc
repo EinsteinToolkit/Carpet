@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.18 2002/01/09 13:56:27 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.19 2002/05/05 22:17:01 schnetter Exp $
 
  ***************************************************************************/
 
@@ -26,9 +26,7 @@
 #include "ggf.hh"
 #include "vect.hh"
 
-#if !defined(TMPL_IMPLICIT) || !defined(DH_HH)
-#  include "dh.hh"
-#endif
+#include "dh.hh"
 
 #undef DEBUG_OUTPUT
 
@@ -360,6 +358,4 @@ void dh<D>::output (ostream& os) const {
 
 
 
-#if defined(TMPL_EXPLICIT)
 template class dh<3>;
-#endif

@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dggf.hh,v 1.3 2001/12/09 16:43:09 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dggf.hh,v 1.4 2002/05/05 22:17:01 schnetter Exp $
 
  ***************************************************************************/
 
@@ -136,9 +136,5 @@ inline ostream& operator<< (ostream& os, const dimgeneric_gf& f) {
 }
 
 
-
-#if defined(TMPL_IMPLICIT)
-#  include "dggf.cc"
-#endif
 
 #endif // DGGF_HH

@@ -1,10 +1,10 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-mintaka,v 1.1 2001/11/14 17:57:55 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-mintaka,v 1.2 2002/05/05 22:16:57 schnetter Exp $
 
-CPP			= cpp -traditional -DTMPL_EXPLICIT -DCARPET_REAL
+CPP			= cpp -traditional -DCARPET_REAL
 F77			= g77
 F90			= g77
 
-CXXFLAGS		= -DTMPL_EXPLICIT -DCARPET_REAL -ftemplate-depth-30
+CXXFLAGS		= -DCARPET_REAL -ftemplate-depth-30
 LDFLAGS			= -Wl,-rpath,/home/schnette/lib
 
 C_OPTIMISE_FLAGS	= -O2 -funroll-loops -march=pentiumpro

@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.hh,v 1.5 2001/12/09 16:43:10 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.hh,v 1.6 2002/05/05 22:17:02 schnetter Exp $
 
  ***************************************************************************/
 
@@ -92,9 +92,5 @@ public:
 };
 
 
-
-#if defined(TMPL_IMPLICIT)
-#  include "gf.cc"
-#endif
 
 #endif // GF_HH

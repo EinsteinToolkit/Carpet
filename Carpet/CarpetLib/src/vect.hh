@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.9 2002/03/11 13:17:13 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.10 2002/05/05 22:17:03 schnetter Exp $
 
  ***************************************************************************/
 
@@ -619,9 +619,5 @@ inline ostream& operator<< (ostream& os, const vect<T,D>& a) {
 }
 
 
-
-#if defined(TMPL_IMPLICIT)
-#  include "vect.cc"
-#endif
 
 #endif // VECT_HH

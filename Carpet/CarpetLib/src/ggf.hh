@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.8 2001/12/09 16:43:10 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.9 2002/05/05 22:17:02 schnetter Exp $
 
  ***************************************************************************/
 
@@ -200,9 +200,5 @@ inline ostream& operator<< (ostream& os, const generic_gf<D>& f) {
 }
 
 
-
-#if defined(TMPL_IMPLICIT)
-#  include "ggf.cc"
-#endif
 
 #endif // GGF_HH

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.13 2002/01/09 23:42:42 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.14 2002/05/05 22:17:02 schnetter Exp $
 
  ***************************************************************************/
 
@@ -116,9 +116,5 @@ protected:
 };
 
 
-
-#if defined(TMPL_IMPLICIT)
-#  include "gdata.cc"
-#endif
 
 #endif // GDATA_HH

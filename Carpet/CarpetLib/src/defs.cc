@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.10 2002/04/29 11:27:59 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.11 2002/05/05 22:16:59 schnetter Exp $
 
  ***************************************************************************/
 
@@ -26,9 +26,7 @@
 #include <set>
 #include <vector>
 
-#if !defined(TMPL_IMPLICIT) || !defined(DEFS_HH)
-#  include "defs.hh"
-#endif
+#include "defs.hh"
 
 using namespace std;
 
@@ -106,7 +104,6 @@ ostream& output (ostream& os, const vector<T>& v) {
 
 
 
-#if defined(TMPL_EXPLICIT)
 #include "bbox.hh"
 #include "bboxset.hh"
 
@@ -124,4 +121,3 @@ template ostream& output (ostream& os, const vector<vector<int> >& v);
 template ostream& output (ostream& os, const vector<vector<bbox<int,3> > >& v);
 template ostream& output (ostream& os, const vector<vector<vect<vect<bool,2>,3> > >& v);
 template ostream& output (ostream& os, const vector<vector<vector<bbox<int,3> > > >& v);
-#endif

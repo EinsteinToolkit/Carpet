@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/io.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/io.hh,v 1.2 2002/05/05 22:17:03 schnetter Exp $
 
  ***************************************************************************/
 
@@ -53,9 +53,5 @@ class io {
 };
 
 
-
-#if defined(TMPL_IMPLICIT)
-#  include "io.cc"
-#endif
 
 #endif // IO_HH

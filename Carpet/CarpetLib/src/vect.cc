@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.7 2002/03/11 13:17:13 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.8 2002/05/05 22:17:03 schnetter Exp $
 
  ***************************************************************************/
 
@@ -24,9 +24,7 @@
 
 #include "defs.hh"
 
-#if !defined(TMPL_IMPLICIT) || !defined(VECT_HH)
-#  include "vect.hh"
-#endif
+#include "vect.hh"
 
 using namespace std;
 
@@ -66,8 +64,6 @@ void vect<T,D>::output (ostream& os) const {
 
 
 
-#if defined(TMPL_EXPLICIT)
-
 // Note: We need all dimensions all the time.
 template class vect<int,1>;
 template class vect<int,2>;
@@ -77,5 +73,3 @@ template void vect<double,3>::input (istream& is);
 template void vect<vect<bool,2>,3>::input (istream& is);
 template void vect<double,3>::output (ostream& os) const;
 template void vect<vect<bool,2>,3>::output (ostream& os) const;
-
-#endif

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.16 2002/01/09 23:42:41 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.17 2002/05/05 22:16:59 schnetter Exp $
 
  ***************************************************************************/
 
@@ -32,9 +32,7 @@
 #include "dist.hh"
 #include "vect.hh"
 
-#if !defined(TMPL_IMPLICIT) || !defined(DATA_HH)
-#  include "data.hh"
-#endif
+#include "data.hh"
 
 using namespace std;
 
@@ -581,13 +579,9 @@ ostream& data<T,D>::output (ostream& os) const {
 
 
 
-#if defined(TMPL_EXPLICIT)
-
 #define INSTANTIATE(T)				\
 template class data<T,3>;
 
 #include "instantiate"
 
 #undef INSTANTIATE
-
-#endif

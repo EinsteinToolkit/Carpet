@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.cc,v 1.4 2001/03/22 18:42:05 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.cc,v 1.5 2002/05/05 22:17:01 schnetter Exp $
 
  ***************************************************************************/
 
@@ -27,9 +27,7 @@
 
 #include "defs.hh"
 
-#if !defined(TMPL_IMPLICIT) || !defined(DIST_HH)
-#  include "dist.hh"
-#endif
+#include "dist.hh"
 
 using namespace std;
 
@@ -77,8 +75,3 @@ namespace dist {
   }
   
 } // namespace dist
-
-
-
-#if defined(TMPL_EXPLICIT)
-#endif

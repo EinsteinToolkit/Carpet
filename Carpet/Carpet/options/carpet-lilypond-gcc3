@@ -1,13 +1,13 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/Attic/carpet-lilypond-gcc3,v 1.4 2002/03/06 17:47:57 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/Attic/carpet-lilypond-gcc3,v 1.5 2002/05/05 22:16:57 schnetter Exp $
 
-CPP			= /home/eschnett/gcc/bin/cpp -traditional -DTMPL_EXPLICIT -DCARPET_REAL
+CPP			= /home/eschnett/gcc/bin/cpp -traditional -DCARPET_REAL
 CC			= /home/eschnett/gcc/bin/gcc
 CXX			= /home/eschnett/gcc/bin/g++
 F77			= /home/eschnett/gcc/bin/g77
 F90			= /home/eschnett/gcc/bin/g77
 
 CFLAGS			= -fmessage-length=0
-CXXFLAGS		= -fmessage-length=0 -DTMPL_EXPLICIT -DCARPET_REAL -ftemplate-depth-30
+CXXFLAGS		= -fmessage-length=0 -DCARPET_REAL -ftemplate-depth-30
 F77FLAGS		= -fmessage-length=0
 F90FLAGS		= -fmessage-length=0
 LDFLAGS			= -Wl,-rpath,/home/eschnett/gcc/lib

@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.6 2001/12/09 16:43:11 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/th.cc,v 1.7 2002/05/05 22:17:03 schnetter Exp $
 
  ***************************************************************************/
 
@@ -26,9 +26,7 @@
 #include "defs.hh"
 #include "dggh.hh"
 
-#if !defined(TMPL_IMPLICIT) || !defined(TH_HH)
-#  include "th.hh"
-#endif
+#include "th.hh"
 
 using namespace std;
 
@@ -90,8 +88,3 @@ void th::output (ostream& os) const {
   }
   os << "}";
 }
-
-
-
-#if defined(TMPL_EXPLICIT)
-#endif

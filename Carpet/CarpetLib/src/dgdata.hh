@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dgdata.hh,v 1.1 2001/06/12 14:56:57 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dgdata.hh,v 1.2 2002/05/05 22:17:00 schnetter Exp $
 
  ***************************************************************************/
 
@@ -96,9 +96,5 @@ inline ostream& operator<< (ostream& os, const dimgeneric_data& d) {
 }
 
 
-
-#if defined(TMPL_IMPLICIT)
-#  include "dgdata.cc"
-#endif
 
 #endif // DGDATA_HH

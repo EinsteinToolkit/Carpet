@@ -1,11 +1,11 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-prof,v 1.1 2002/01/10 10:56:29 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-prof,v 1.2 2002/05/05 22:16:57 schnetter Exp $
 
-CPP			= cpp -traditional -DTMPL_EXPLICIT -DCARPET_REAL
+CPP			= cpp -traditional -DCARPET_REAL
 F77			= g77
 F90			= g77
 
 CFLAGS			= -pg
-CXXFLAGS		= -pg -DTMPL_EXPLICIT -DCARPET_REAL -ftemplate-depth-30
+CXXFLAGS		= -pg -DCARPET_REAL -ftemplate-depth-30
 F77FLAGS		= -pg
 F90FLAGS		= -pg
 LDFLAGS			= -pg

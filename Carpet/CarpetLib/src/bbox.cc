@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.8 2002/03/11 13:17:12 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.9 2002/05/05 22:16:58 schnetter Exp $
 
  ***************************************************************************/
 
@@ -25,9 +25,7 @@
 #include "defs.hh"
 #include "vect.hh"
 
-#if !defined(TMPL_IMPLICIT) || !defined(BBOX_HH)
-#  include "bbox.hh"
-#endif
+#include "bbox.hh"
 
 using namespace std;
 
@@ -255,11 +253,7 @@ void bbox<T,D>::output (ostream& os) const {
 
 
 
-#if defined(TMPL_EXPLICIT)
-
 // Note: We need all dimensions all the time.
 template class bbox<int,1>;
 template class bbox<int,2>;
 template class bbox<int,3>;
-
-#endif
