@@ -179,19 +179,25 @@ c     -------------------------------------------------------------
 c     Apply the outer boundary conditions
 c     Only "flat" and "zero" and "none" are currently supported
 c     -----------------------------------
+      write(0,*) ' FOWaveToyF77: bound = ', bound
+
+        call CCTK_PrintString(bound)
       if (CCTK_EQUALS(bound, "flat")) then
+         write(0,*) ' FOWavetoy: bound is flat'
          call BndFlatVN (ierr, cctkGH, sw, "wavetoy::pi")
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phix")
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phiy")
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phiz")
          call BndFlatVN (ierr, cctkGH, sw, "wavetoy::phi")
       else if (CCTK_EQUALS(bound, "zero")) then
+         write(0,*) ' FOWavetoy: bound is zero'
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::pi")
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phix")
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phiy")
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phiz")
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phi")
       else if (CCTK_EQUALS(bound, "static")) then
+         write(0,*) ' FOWavetoy: bound is static'
          ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
      $        "wavetoy::phi", "Static");
          ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
@@ -203,16 +209,20 @@ c     -----------------------------------
          ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
      $        "wavetoy::phiz", "Static");
       else if (CCTK_EQUALS(bound, "radiation")) then
-         call BndRadiativeVN (ierr, cctkGH, sw, zero, one,
-     $        "wavetoy::phi", "wavetoy::phi")
+         write(0,*) ' FOWavetoy: bound is radiation'
+         ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
+     $        "wavetoy::phi", "Radiation");
       else if (CCTK_EQUALS(bound, "robin")) then
-         call BndRobinVN (ierr, cctkGH, sw, finf, npow, "wavetoy::phi")
+         write(0,*) ' FOWavetoy: bound is robin'
+         ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
+     $        "wavetoy::phi", "Robin");
       else if (CCTK_EQUALS(bound, "none")) then
          ierr = 0
       else
          call CCTK_WARN (0, "internal error")
       end if
       if (ierr .lt. 0)  then
+        write(0,*) ' ierr = ',ierr
         call CCTK_WARN (0, "Boundary conditions not applied - giving up!")
       end if
       
