@@ -48,7 +48,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.13 2003/12/03 16:02:51 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.14 2003/12/10 14:49:30 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
@@ -476,6 +476,27 @@ int CarpetIOFlexIO_Recover (cGH* cgh, const char *basefilename, int called_from)
 	      /* scalars and grid arrays only have 1 reflevel: */
 	      if ( (grouptype != CCTK_GF) && (reflevel != 0) )
 		continue;
+
+	      /* now check if there is any memory allocated
+                 for GFs and GAs. GSs should always have 
+		 memory allocated and there is at this point
+                 no CCTK function to check this :/
+	      */
+
+	      if ( (grouptype == CCTK_GF) || (grouptype == CCTK_ARRAY)){
+		const int gpdim = CCTK_GroupDimI(group);
+		int gtotalsize=1;
+		for(int d=0;d<gpdim;d++){
+		  const int* gpsize= CCTK_ArrayGroupSizeI(cgh,d,group);
+		  assert(gpsize != NULL);		  
+		  gtotalsize*=gpsize[d];		  
+		}
+		if(gtotalsize == 0){
+		  if (verbose) CCTK_VInfo(CCTK_THORNSTRING, "Group %s is zero-sized. No checkpoint info written",CCTK_GroupName(group));
+		  continue;
+		}
+	      }
+
 
 	      /* get the number of allocated timelevels */
 	      CCTK_GroupData (gindex, &gdata);
