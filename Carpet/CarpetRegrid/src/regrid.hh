@@ -2,6 +2,7 @@
 #define CARPETREGRID_HH
 
 #include <list>
+#include <vector>
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
