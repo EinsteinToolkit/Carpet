@@ -880,6 +880,7 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
 #endif
 
   // Carpet arguments
+  WriteAttribute (dataset, "carpet_version", CARPET_VERSION);
   WriteAttribute (dataset, "carpet_mglevel", mglevel);
   WriteAttribute (dataset, "carpet_reflevel", refinementlevel);
 }

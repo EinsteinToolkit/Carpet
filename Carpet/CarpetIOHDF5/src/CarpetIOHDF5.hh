@@ -14,6 +14,9 @@
 #define METADATA_GROUP "Parameters and Global Attributes"
 #define ALL_PARAMETERS "All Parameters"
 
+// Carpet version ID to tag data output and checkpoint files
+#define CARPET_VERSION	1
+
 // Some MPI Datatypes we need for Recovery
 // Originally written by Thomas Radke.
 
