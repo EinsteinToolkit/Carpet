@@ -94,9 +94,9 @@ namespace CarpetAdaptiveRegrid {
 
     if (reflevel == maxreflevels - 1) return 0;
 
-    cout << "bbsss at start" << endl << bbsss << endl;
-    cout << "obss at start" << endl << obss << endl;
-    cout << "pss at start" << endl << pss << endl;
+//     cout << "bbsss at start" << endl << bbsss << endl;
+//     cout << "obss at start" << endl << obss << endl;
+//     cout << "pss at start" << endl << pss << endl;
 
     CCTK_INT do_recompose;
     do_recompose = 1;
@@ -471,14 +471,16 @@ namespace CarpetAdaptiveRegrid {
       bbss.resize(reflevel+1);
       obss.resize(reflevel+1);
       pss.resize(reflevel+1);
+
+      do_recompose = 1;
     }
     
     // make multigrid aware
     MakeMultigridBoxes (cctkGH, bbss, obss, bbsss);
 
-    cout << "bbsss done:" << endl << bbsss << endl;
-    cout << "obss done:" << endl << obss << endl;
-    cout << "pss done:" << endl << pss << endl;
+//     cout << "bbsss done:" << endl << bbsss << endl;
+//     cout << "obss done:" << endl << obss << endl;
+//     cout << "pss done:" << endl << pss << endl;
     
     return do_recompose;
   }
