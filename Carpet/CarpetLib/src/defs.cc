@@ -16,20 +16,25 @@ using namespace std;
 
 
 
-template<class T>
-T ipow (T x, int y) {
-  if (y<0) {
-    y = -y;
-    x = T(1)/x;
-  }
-  T res = T(1);
-  for (;;) {
-    if (y%2) res *= x;
-    y /= 2;
-    if (y==0) break;
+template <typename T>
+inline T ipow_helper (T x, unsigned int y)
+{
+  T z = y&1 ? x : 1;
+  while (y >>= 1)
+  {
     x *= x;
+    if (y & 1) z *= x;
   }
-  return res;
+  return z;
+}
+
+template<class T>
+T ipow (T x, int y)
+{
+  if (y < 0)
+    return T(1) / ipow_helper(x, -y);
+  else
+    return ipow_helper(x, y);
 }
 
 
