@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.34 2002/12/12 12:54:43 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.35 2003/01/20 13:49:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -312,10 +312,10 @@ namespace Carpet {
     assert (iogh);
     
     // Create the output directory
-    CCTK_CreateDirectory (0755, outdir);
+    CCTK_CreateDirectory (0755, out_dir);
     
     ostringstream filenamebuf;
-    filenamebuf << outdir << "/" << grid_structure_filename;
+    filenamebuf << out_dir << "/" << grid_structure_filename;
     // we need a persistent temporary here
     string filenamestr = filenamebuf.str();
     const char * filename = filenamestr.c_str();

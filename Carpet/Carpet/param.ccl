@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.24 2003/01/12 13:57:40 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.25 2003/01/20 13:49:07 schnetter Exp $
 
 shares: Cactus
 
@@ -14,7 +14,7 @@ USES CCTK_REAL max_runtime
 
 shares: IO
 
-USES STRING outdir
+USES STRING out_dir
 
 
 
