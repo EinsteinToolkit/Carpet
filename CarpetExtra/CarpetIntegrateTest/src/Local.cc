@@ -1,16 +1,8 @@
 // $Header:$
 
-#include <math.h>
-
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
-
-#include "carpet.hh"
-#include "defs.hh"
-#include "vect.hh"
-
-#include "util_Table.h"
 
 
 
@@ -22,9 +14,6 @@ CCTK_INT CarpetIntegrate_Local(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
-  using namespace std;
-  using namespace Carpet;
-
   int nx = cctk_lsh[0];
   int ny = cctk_lsh[1];
   int nz = cctk_lsh[2];
@@ -34,7 +23,7 @@ CCTK_INT CarpetIntegrate_Local(CCTK_ARGUMENTS)
       for (int i=0;i<nx;i++) {
 	int index = CCTK_GFINDEX3D(cctkGH,i,j,k);
         
-	integrand[index] = 1;
+	integrand[index] = constant + timefact * cctk_time;
       }
     }
   }
