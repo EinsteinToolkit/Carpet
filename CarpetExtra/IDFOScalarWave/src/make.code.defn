@@ -1,8 +1,8 @@
 # Main make.code.defn file for thorn IDScalarWave   -*-Makefile-*-
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/make.code.defn,v 1.2 2003/06/27 16:26:11 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/make.code.defn,v 1.1 2002/02/18 11:26:34 shawley Exp $
 
 # Source files in this directory
-SRCS = InitialData.F77
+SRCS = InitialData.F77 CheckParameters.F77
 
 # Subdirectories containing source files
 SUBDIRS = 
