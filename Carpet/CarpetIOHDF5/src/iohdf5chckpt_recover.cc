@@ -15,6 +15,7 @@
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
+#include "cctk_Version.h"
 
 extern "C" {
   static const char* rcsid = "$ $";
@@ -35,6 +36,11 @@ extern "C" {
 #include "iohdf5.hh"
 #include "iohdf5GH.h"
 
+/* some macros for HDF5 group names */
+#define PARAMETERS_GLOBAL_ATTRIBUTES_GROUP "Parameters and Global Attributes"
+#define ALL_PARAMETERS "All Parameters"
+
+
 
 namespace CarpetIOHDF5 {
   
@@ -43,7 +49,8 @@ namespace CarpetIOHDF5 {
   
   
   int Checkpoint (const cGH* const cctkGH, int called_from);
-
+  int DumpParametersGHExtentions (const cGH *cctkGH, int all, hid_t writer);  
+  
   //  int RecoverParameters (IObase* reader);
   //int RecoverGHextensions (cGH* cgh, IObase* reader);
   //int RecoverVariables (cGH* cgh, IObase* reader, AmrGridReader* amrreader);
@@ -133,7 +140,8 @@ namespace CarpetIOHDF5 {
 
     } // myproc == 0 
 
-    
+    // Dump all parameters and GHExtentions
+    DumpParametersGHExtentions (cctkGH, 1, writer);
 
 
     CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,"This feature is not working yet. Sorry!");
@@ -147,5 +155,91 @@ namespace CarpetIOHDF5 {
   } // Checkpoint
 
   
+  int DumpParametersGHExtentions (const cGH *cctkGH, int all, hid_t writer)
+  {
+    // large parts of this routine were taken from
+    // Thomas Radke's IOHDF5Util. Thanks Thomas!
+
+    DECLARE_CCTK_PARAMETERS;
+
+    char *parameters;
+    hid_t group, dataspace, dataset;
+    hsize_t size;
+    herr_t herr;
+    
+    CCTK_INT4 itmp;
+    CCTK_REAL dtmp;
+    const char *version;
+    ioGH *ioUtilGH;
+  
+    if (verbose) {
+      CCTK_INFO ("Dumping Parameters and GH Extentions...");
+    }
+  
+    /* get the parameter string buffer */
+    parameters = IOUtil_GetAllParameters (cctkGH, all);
+  
+    if (parameters)
+    {
+      size = strlen (parameters) + 1;
+      group = H5Gcreate (writer, PARAMETERS_GLOBAL_ATTRIBUTES_GROUP, 0);
+      assert(group>=0);
+      dataspace = H5Screate_simple (1, &size, NULL);
+      assert(dataspace>=0);
+      dataset = H5Dcreate (group, ALL_PARAMETERS, H5T_NATIVE_UCHAR,
+                                       dataspace, H5P_DEFAULT);
+      assert(dataset>=0);
+      herr = H5Dwrite (dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
+                            H5P_DEFAULT, parameters);
+      assert(!herr);
+
+      // now dump the GH Extentions
+
+      /* get the handle for IOUtil extensions */
+      ioUtilGH = (ioGH *) CCTK_GHExtension (cctkGH, "IO");
+      
+      itmp = CCTK_MainLoopIndex ();
+      WriteAttribute(dataset,"main loop index",itmp);
+      
+      itmp = cctkGH->cctk_iteration;
+      WriteAttribute(dataset,"GH$iteration",itmp);
+      
+      itmp = ioUtilGH->ioproc_every;
+      WriteAttribute(dataset,"GH$ioproc_every",itmp);
+      
+      itmp = CCTK_nProcs (cctkGH);
+      WriteAttribute(dataset,"GH$nprocs",itmp);
+      
+      dtmp = cctkGH->cctk_time;
+      WriteAttribute(dataset,"GH$time", dtmp);
+
+      version = CCTK_FullVersion();
+      WriteAttribute(dataset,"Cactus version", version);
+
+      /* finally, we need all the times on the individual refinement levels */
+      const int numberoftimes=leveltimes[0].size();
+      WriteAttribute(dataset,"numberoftimes",numberoftimes);
+      for(int i=0;i < numberoftimes;i++) {
+	char buffer[100];
+	sprintf(buffer,"leveltime%d",i);
+	WriteAttribute(dataset,buffer,leveltimes[0][i]);
+      }
+
+
+      herr = H5Dclose (dataset);
+      assert(!herr);
+      herr = H5Sclose (dataspace);
+      assert(!herr);
+      herr = H5Gclose (group);
+      assert(!herr);
+  
+      free (parameters);
+    }
+
+    return 0;
+  } // DumpParametersGHExtentions
+  
+
+    
   
 } // namespace CarpetIOHDF5
