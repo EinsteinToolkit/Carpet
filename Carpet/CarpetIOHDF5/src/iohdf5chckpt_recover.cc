@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.29 2004/06/02 12:56:30 bzink Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.30 2004/06/02 14:06:08 bzink Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -176,7 +176,34 @@ namespace CarpetIOHDF5 {
       CCTK_VInfo(CCTK_THORNSTRING,"Starting to recover data on reflevel %d!!!",reflevel);
 
       if (myproc == 0) {
-
+	
+	// Use refinement levels parameter from checkpointing file?
+	if (use_reflevels_from_checkpoint && reflevel==0) {
+	  
+	  herr_t herr;
+	  
+	  hid_t group = H5Gopen (reader, PARAMETERS_GLOBAL_ATTRIBUTES_GROUP);
+	  assert(group >= 0);
+	  hid_t dataset = H5Dopen (group, ALL_PARAMETERS);
+	  assert(dataset>= 0);
+	  
+	  int reflevels_chkpt;
+	
+	  ReadAttribute (dataset, "carpet_reflevels", reflevels_chkpt);
+      
+	  herr = H5Dclose(dataset);
+	  assert(!herr);
+	  herr = H5Gclose(group);
+	  assert(!herr);
+      
+	  ostringstream reflevels_str;
+	  reflevels_str << reflevels_chkpt;
+	  CCTK_ParameterSet ("refinement_levels","CarpetRegrid",reflevels_str.str().c_str());
+	  	 
+	  CCTK_VInfo (CCTK_THORNSTRING, "Using %i reflevels read from checkpoint file. Ignoring value in parameter file.", reflevels_chkpt);
+	  
+	}     
+	
 	/* we need all the times on the individual levels */
 	// these are a bit messy to extract
 
@@ -509,7 +536,7 @@ namespace CarpetIOHDF5 {
       if(verbose) {
 	CCTK_VInfo (CCTK_THORNSTRING, "\n%s\n",parameters);
       }
-
+      
       CCTK_VInfo(CCTK_THORNSTRING, "Successfully recovered parameters!");
     } // myproc == 0
 

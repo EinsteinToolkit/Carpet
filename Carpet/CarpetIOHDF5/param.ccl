@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOHDF5
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/param.ccl,v 1.10 2004/05/21 18:11:34 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/param.ccl,v 1.11 2004/06/02 14:06:08 bzink Exp $
 
 
 
@@ -101,3 +101,7 @@ BOOLEAN checkpoint_next "Checkpoint at next iteration" STEERABLE = ALWAYS
 {
 } "no"
 
+
+BOOLEAN use_reflevels_from_checkpoint "Use CarpetRegrid::refinement_levels from the checkpoint file rather than from the parameter file." STEERABLE = ALWAYS
+{
+} "no"
