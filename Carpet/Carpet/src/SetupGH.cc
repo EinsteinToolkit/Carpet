@@ -245,7 +245,7 @@ namespace Carpet {
         if (gp.numtimelevels == 1) {
           // Only one time level: do not prolongate
           char * const groupname = CCTK_GroupName (group);
-          CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+          CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "Group \"%s\" has only one time level; therefore it "
                       "will not be prolongated or restricted.",
                       groupname);
@@ -258,7 +258,7 @@ namespace Carpet {
       } else {
         if (gp.grouptype == CCTK_GF) {
           char * const groupname = CCTK_GroupName (group);
-          CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+          CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "Group \"%s\" has the variable type \"%s\" which cannot "
                       "be prolongated or restricted.",
                       groupname, CCTK_VarTypeName(gp.vartype));
