@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_3tl.F77,v 1.5 2002/09/25 19:54:08 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_3tl.F77,v 1.6 2003/02/24 17:43:10 schnetter Exp $
       
 #include "cctk.h"
       
@@ -74,6 +74,10 @@ c     bbox(:,3) is stride
      $        .or. regbbox(d,2).gt.srcbbox(d,2)
      $        .or. regbbox(d,2).gt.dstbbox(d,2)) then
             call CCTK_WARN (0, "Internal error: region extent is not contained in array extent")
+         end if
+         if (regbbox(d,1).gt.regbbox(d,2)) then
+c     This could be handled, but is likely to point to an error elsewhere
+            call CCTK_WARN (0, "Internal error: region extent is empty")
          end if
       end do
       
