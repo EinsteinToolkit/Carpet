@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.29 2004/05/17 14:40:12 bzink Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.30 2004/05/21 18:11:34 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -80,6 +80,17 @@ namespace CarpetIOHDF5 {
 
 
     return 0;
+  }
+  
+  
+  
+  void CarpetIOHDF5Init (CCTK_ARGUMENTS)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    
+    *this_iteration = -1;
+    *next_output_iteration = 0;
+    *next_output_time = cctk_time;
   }
   
   
@@ -493,9 +504,6 @@ namespace CarpetIOHDF5 {
 		  WriteAttribute (dataset, "cctk_version", 1);
 		  WriteAttribute (dataset, "cctk_dim", cctk_dim);
 		  WriteAttribute (dataset, "cctk_iteration", cctk_iteration);
-		  // TODO: disable temporarily
-		  //           WriteAttribute (dataset, "cctk_nmaps", cctk_nmaps);
-		  //           WriteAttribute (dataset, "cctk_map", cctk_map);
 		  WriteAttribute (dataset, "cctk_gsh", cctk_gsh, dim);
 		  WriteAttribute (dataset, "cctk_lsh", cctk_lsh, dim);
 		  WriteAttribute (dataset, "cctk_lbnd", cctk_lbnd, dim);
@@ -548,12 +556,15 @@ namespace CarpetIOHDF5 {
   
   
   
-  int TimeToOutput (const cGH* const cctkGH, const int vindex) {
+  int TimeToOutput (const cGH* const cctkGH, const int vindex)
+  {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
     assert (vindex>=0 && vindex<CCTK_NumVars());
-
+    
+    
+    
     const int grouptype = CCTK_GroupTypeFromVarI(vindex);
     switch (grouptype) {
     case CCTK_SCALAR:
@@ -561,28 +572,91 @@ namespace CarpetIOHDF5 {
       if (! do_global_mode) return 0;
       break;
     case CCTK_GF:
-      /* do nothing */
+      // do nothing
       break;
     default:
       assert (0);
     }
     
-    const int myoutevery = out3D_every == -2 ? out_every : out3D_every;
     
-    if (myoutevery < 0) {
-      // Nothing should be output at all
-      return 0;
+    
+    // check whether to output at this iteration
+    bool output_this_iteration;
+    
+    const char* myoutcriterion = out3D_criterion;
+    if (CCTK_EQUALS(myoutcriterion, "default")) {
+      myoutcriterion = out_criterion;
     }
     
-    if (cctk_iteration % myoutevery != 0) {
-      // Nothing should be output during this iteration
-      return 0;
-    }
+    if (CCTK_EQUALS (myoutcriterion, "never")) {
+      
+      // Never output
+      output_this_iteration = false;
+      
+    } else if (CCTK_EQUALS (myoutcriterion, "iteration")) {
+      
+      int myoutevery = out3D_every;
+      if (myoutevery == -2) {
+        myoutevery = out_every;
+      }
+      if (myoutevery <= 0) {
+        // output is disabled
+        output_this_iteration = false;
+      } else if (cctk_iteration == *this_iteration) {
+        // we already decided to output this iteration
+        output_this_iteration = true;
+      } else if (cctk_iteration >= *next_output_iteration) {
+        // it is time for the next output
+        output_this_iteration = true;
+        *next_output_iteration = cctk_iteration + myoutevery;
+        *this_iteration = cctk_iteration;
+      } else {
+        // we want no output at this iteration
+        output_this_iteration = false;
+      }
+      
+    } else if (CCTK_EQUALS (myoutcriterion, "time")) {
+      
+      CCTK_REAL myoutdt = out3D_dt;
+      if (myoutdt == -2) {
+        myoutdt = out_dt;
+      }
+      if (myoutdt < 0) {
+        // output is disabled
+        output_this_iteration = false;
+      } else if (myoutdt == 0) {
+        // output all iterations
+        output_this_iteration = true;
+      } else if (cctk_iteration == *this_iteration) {
+        // we already decided to output this iteration
+        output_this_iteration = true;
+      } else if (cctk_time / cctk_delta_time
+                 >= *next_output_time / cctk_delta_time - 1.0e-12) {
+        // it is time for the next output
+        output_this_iteration = true;
+        *next_output_time = cctk_time + myoutdt;
+        *this_iteration = cctk_iteration;
+      } else {
+        // we want no output at this iteration
+        output_this_iteration = false;
+      }
+      
+    } else {
+      
+      assert (0);
+      
+    } // select output criterion
+    
+    if (! output_this_iteration) return 0;
+    
+    
     
     if (! CheckForVariable(cctkGH, out3D_vars, vindex)) {
       // This variable should not be output
       return 0;
     }
+    
+    
     
     if (last_output.at(mglevel).at(reflevel).at(vindex) == cctk_iteration) {
       // Has already been output during this iteration
@@ -1064,10 +1138,9 @@ namespace CarpetIOHDF5 {
 
   
   
-  int CarpetIOHDF5ReadData (CCTK_ARGUMENTS)
+  void CarpetIOHDF5ReadData (CCTK_ARGUMENTS)
   {
-    DECLARE_CCTK_ARGUMENTS;
-    return InputGH(cctkGH);
+    InputGH (cctkGH);
   }
 
   

@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetIOHDF5
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/param.ccl,v 1.9 2004/04/09 18:32:14 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/param.ccl,v 1.10 2004/05/21 18:11:34 schnetter Exp $
 
 
 
@@ -7,7 +7,9 @@ shares: IO
 
 USES STRING out_dir
 
+USES KEYWORD out_criterion
 USES CCTK_INT out_every
+USES CCTK_REAL out_dt
 
 USES INT     checkpoint_every
 USES INT     checkpoint_keep
@@ -50,11 +52,27 @@ CCTK_STRING out3D_extension "File extension to use for 3D CarpetIOHDF5 output" S
   ".*" :: "File extension (including a leading dot, if desired)"
 } ".h5"
 
+KEYWORD out3D_criterion "Criterion to select 3D CarpetIOHDF5 output intervals, overrides out_every" STEERABLE = ALWAYS
+{
+  "default"   :: "Use IO::out_criterion"
+  "never"     :: "Never output"
+  "iteration" :: "Output every so many iterations"
+  "time"      :: "Output every that much coordinate time"
+} "default"
+
 CCTK_INT out3D_every "How often to do 3D CarpetIOHDF5 output, overrides out_every" STEERABLE = ALWAYS
 {
   1:*  :: "Output every so many time steps"
   -1:0 :: "No output"
   -2   :: "Use IO::out_every"
+} -2
+
+REAL out3D_dt "How often to do 3D CarpetIOHDF5 output, overrides IO::out_dt" STEERABLE = ALWAYS
+{
+  (0:* :: "In intervals of that much coordinate time"
+   0   :: "As often as possible"
+  -1   :: "Disable output"
+  -2   :: "Default to IO::out_dt"
 } -2
 
 

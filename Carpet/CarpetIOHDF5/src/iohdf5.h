@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.h,v 1.4 2004/03/18 15:12:45 cott Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.h,v 1.5 2004/05/21 18:11:34 schnetter Exp $ */
 
 #ifndef CARPETIOHDF5_H
 #define CARPETIOHDF5_H
@@ -12,7 +12,8 @@ namespace CarpetIOHDF5 {
     
     /* Scheduled functions */
     int CarpetIOHDF5Startup (void);
-    int CarpetIOHDF5ReadData (CCTK_ARGUMENTS);
+    void CarpetIOHDF5Init (CCTK_ARGUMENTS);
+    void CarpetIOHDF5ReadData (CCTK_ARGUMENTS);
     void CarpetIOHDF5_EvolutionCheckpoint (const cGH*);
     void CarpetIOHDF5_InitialDataCheckpoint (const cGH*);
     
