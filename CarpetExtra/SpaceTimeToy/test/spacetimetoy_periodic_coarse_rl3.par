@@ -1,8 +1,8 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/test/spacetimetoy_periodic_coarse_rl3.par,v 1.5 2004/03/23 12:00:15 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/test/spacetimetoy_periodic_coarse_rl3.par,v 1.1 2001/12/03 17:38:44 schnetter Exp $
 
 !DESC "WaveToy with periodic boundaries, 2 refinement levels"
 
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Slab Carpet CarpetIOASCII CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDSpaceTimeToy SpaceTimeToy Hydrotoy"
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetSlab IDSpaceTimeToy SpaceTimeToy Hydrotoy"
 
 Carpet::poison_new_timelevels	= yes
 #Carpet::check_for_poison	= yes
@@ -22,8 +22,6 @@ Carpet::max_refinement_levels	= 3
 Carpet::prolongation_order_space= 3
 Carpet::prolongation_order_time	= 2
 
-CarpetRegrid::refinement_levels	= 2
-
 grid::type			= byrange
 grid::xmin			= -5.4
 grid::ymin			= -7.2
@@ -33,13 +31,13 @@ grid::ymax			=  7.8
 grid::zmax			= 10.2
 grid::mode			= periodic
 
-IO::out_dir			= "spacetimetoy_periodic_coarse_rl3"
+IO::outdir			= "spacetimetoy_periodic_coarse_rl3"
 
 IOBasic::outinfo_every		= 1 # 10
-IOBasic::outinfo_vars		= "spacetimetoy::spacetimeevolve"
+#IOBasic::outinfo_vars		= "spacetimetoy::spacetimeevolve"
 
-IOBasic::outScalar_every	= 1 # 2
-IOBasic::outScalar_vars		= "spacetimetoy::spacetimeevolve"
+#IOBasic::outScalar_every	= 2
+#IOBasic::outScalar_vars		= "spacetimetoy::spacetimeevolve"
 
 IOASCII::out1D_every		= 1 # 2
 IOASCII::out1D_vars		= "spacetimetoy::spacetimeevolve grid::coordinates"
