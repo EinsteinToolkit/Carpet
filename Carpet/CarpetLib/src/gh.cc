@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.25 2004/03/23 19:30:14 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.26 2004/04/07 16:59:47 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -67,9 +67,13 @@ void gh<D>::recompose (const rexts& exts,
       for (int ml=1; ml<mglevels(rl,c); ++ml) {
 	assert (all(extents.at(rl).at(c).at(ml).stride()
 		    == ivect(mgfact) * extents.at(rl).at(c).at(ml-1).stride()));
+        // TODO: put the check back in, taking outer boundaries into
+        // account
+#if 0
 	assert (extents.at(rl).at(c).at(ml)
 		.contracted_for(extents.at(rl).at(c).at(ml-1))
 		.is_contained_in(extents.at(rl).at(c).at(ml-1)));
+#endif
       }
     }
   }
