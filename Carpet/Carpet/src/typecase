@@ -1,7 +1,7 @@
 // Instantiate type cases for all available types    -*-C++-*-
 // (C) 2001 Erik Schnetter <schnetter@uni-tuebingen.de>
 
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/typecase,v 1.8 2004/03/01 19:56:35 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/typecase,v 1.9 2004/03/01 21:34:52 schnetter Exp $
 
 // Usage:
 // Define the macro TYPECASE(N,T) to be a typecase for the type T with name N,
@@ -53,7 +53,7 @@
 #endif
 
 #if !defined(CARPET_BYTE) && !defined(CARPET_INT) && !defined(CARPET_INT1) && !defined(CARPET_INT2) && !defined(CARPET_INT4) && !defined(CARPET_INT8) && !defined(CARPET_REAL) && !defined(CARPET_REAL4) && !defined(CARPET_REAL8) && !defined(CARPET_REAL16) && !defined(CARPET_COMPLEX) && !defined(CARPET_COMPLEX8) && !defined(CARPET_COMPLEX16) && !defined(CARPET_COMPLEX32)
-// Assume the user just wants INT and REAL
+// Assume the user just wants INT, REAL, and COMPLEX
 #  undef CARPET_INT
 #  define CARPET_INT
 #  undef CARPET_REAL
@@ -120,8 +120,6 @@
 
 // Typecase the desired types
 
-#ifndef WANT_NO_INT
-
 #ifdef CARPET_BYTE
 TYPECASE(CCTK_VARIABLE_BYTE, CCTK_BYTE)
 #endif
@@ -150,9 +148,6 @@ TYPECASE(CCTK_VARIABLE_INT8, CCTK_INT8)
 #  endif
 #endif
 
-#endif
-#ifndef WANT_NO_REAL
-
 #ifdef CARPET_REAL
 TYPECASE(CCTK_VARIABLE_REAL, CCTK_REAL)
 #endif
@@ -172,30 +167,21 @@ TYPECASE(CCTK_VARIABLE_REAL16, CCTK_REAL16)
 #  endif
 #endif
 
-#endif
-#ifndef WANT_NO_COMPLEX
-
 #ifdef CARPET_COMPLEX
-// TYPECASE(CCTK_VARIABLE_COMPLEX, complex<CCTK_REAL>)
 TYPECASE(CCTK_VARIABLE_COMPLEX, CCTK_COMPLEX)
 #endif
 #ifdef CARPET_COMPLEX8
 #  ifdef CCTK_REAL4
-// TYPECASE(CCTK_VARIABLE_COMPLEX8, complex<CCTK_REAL4>)
 TYPECASE(CCTK_VARIABLE_COMPLEX8, CCTK_COMPLEX8)
 #  endif
 #endif
 #ifdef CARPET_COMPLEX16
 #  ifdef CCTK_REAL8
-// TYPECASE(CCTK_VARIABLE_COMPLEX16, complex<CCTK_REAL8>)
 TYPECASE(CCTK_VARIABLE_COMPLEX16, CCTK_COMPLEX16)
 #  endif
 #endif
 #ifdef CARPET_COMPLEX32
 #  ifdef CCTK_REAL16
-// TYPECASE(CCTK_VARIABLE_COMPLEX32, complex<CCTK_REAL8>)
 TYPECASE(CCTK_VARIABLE_COMPLEX32, CCTK_COMPLEX32)
 #  endif
-#endif
-
 #endif
