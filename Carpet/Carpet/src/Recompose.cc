@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.49 2004/01/25 14:57:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.50 2004/02/09 13:08:35 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -203,8 +203,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     if (verbose) {
-      cout << endl;
-      cout << "New bounding boxes:" << endl;
+      CCTK_INFO ("New bounding boxes:");
       for (int rl=0; rl<hh.reflevels(); ++rl) {
         for (int c=0; c<hh.components(rl); ++c) {
           for (int ml=0; ml<hh.mglevels(rl,c); ++ml) {
@@ -215,8 +214,7 @@ namespace Carpet {
           }
 	}
       }
-      cout << endl;
-      cout << "New processor distribution:" << endl;
+      CCTK_INFO ("New processor distribution:");
       for (int rl=0; rl<hh.reflevels(); ++rl) {
         for (int c=0; c<hh.components(rl); ++c) {
           cout << "   m " << m << "   rl " << rl << "   c " << c
@@ -224,6 +222,34 @@ namespace Carpet {
 	}
       }
       cout << endl;
+    }
+    
+    CCTK_INFO ("New grid structure:");
+    for (int rl=0; rl<hh.reflevels(); ++rl) {
+      for (int c=0; c<hh.components(rl); ++c) {
+        for (int ml=0; ml<hh.mglevels(rl,c); ++ml) {
+          cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
+               << "   exterior extent: [";
+          for (int d=0; d<dim; ++d) {
+            const CCTK_REAL origin = cgh->cctk_origin_space[d];
+            const CCTK_REAL delta = cgh->cctk_delta_space[d];
+            const CCTK_REAL lower = hh.extents[rl][c][ml].lower()[d];
+            const CCTK_REAL levfac = ipow(reffact, rl);
+            cout << (d==0 ? "" : ",")
+                 << origin + delta * lower / maxreflevelfact;
+          }
+          cout << "] : [";
+          for (int d=0; d<dim; ++d) {
+            const CCTK_REAL origin = cgh->cctk_origin_space[d];
+            const CCTK_REAL delta = cgh->cctk_delta_space[d];
+            const CCTK_REAL upper = hh.extents[rl][c][ml].upper()[d];
+            const CCTK_REAL levfac = ipow(reffact, rl);
+            cout << (d==0 ? "" : ",")
+                 << origin + delta * upper / maxreflevelfact;
+          }
+          cout << "]" << endl;
+        }
+      }
     }
   }
   
