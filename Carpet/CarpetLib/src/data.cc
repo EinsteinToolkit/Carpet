@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.43 2004/02/09 14:58:07 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.44 2004/03/03 09:22:30 hawke Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -1075,12 +1075,18 @@ void data<CCTK_REAL8,3>
           break;
         case 2:
         case 3:
-          CCTK_FNAME(prolongate_3d_real8_minmod)
+          CCTK_FNAME(prolongate_3d_real8_rf2)
             ((const CCTK_REAL8*)srcs[0]->storage(),
              srcshp[0], srcshp[1], srcshp[2],
              (CCTK_REAL8*)storage(),
              dstshp[0], dstshp[1], dstshp[2],
              srcbbox, dstbbox, regbbox);
+//            CCTK_FNAME(prolongate_3d_real8_minmod)
+//              ((const CCTK_REAL8*)srcs[0]->storage(),
+//               srcshp[0], srcshp[1], srcshp[2],
+//               (CCTK_REAL8*)storage(),
+//               dstshp[0], dstshp[1], dstshp[2],
+//               srcbbox, dstbbox, regbbox);
           break;
         default:
           assert (0);
@@ -1094,13 +1100,20 @@ void data<CCTK_REAL8,3>
           break;
         case 2:
         case 3:
-          CCTK_FNAME(prolongate_3d_real8_2tl_minmod)
+          CCTK_FNAME(prolongate_3d_real8_2tl_rf2)
             ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
              (const CCTK_REAL8*)srcs[1]->storage(), times[1],
              srcshp[0], srcshp[1], srcshp[2],
              (CCTK_REAL8*)storage(), time,
              dstshp[0], dstshp[1], dstshp[2],
              srcbbox, dstbbox, regbbox);
+//            CCTK_FNAME(prolongate_3d_real8_2tl_minmod)
+//              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+//               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+//               srcshp[0], srcshp[1], srcshp[2],
+//               (CCTK_REAL8*)storage(), time,
+//               dstshp[0], dstshp[1], dstshp[2],
+//               srcbbox, dstbbox, regbbox);
           break;
         default:
           assert (0);
@@ -1114,7 +1127,7 @@ void data<CCTK_REAL8,3>
           break;
         case 2:
         case 3:
-          CCTK_FNAME(prolongate_3d_real8_3tl_minmod)
+          CCTK_FNAME(prolongate_3d_real8_3tl_rf2)
             ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
              (const CCTK_REAL8*)srcs[1]->storage(), times[1],
              (const CCTK_REAL8*)srcs[2]->storage(), times[2],
@@ -1122,6 +1135,14 @@ void data<CCTK_REAL8,3>
              (CCTK_REAL8*)storage(), time,
              dstshp[0], dstshp[1], dstshp[2],
              srcbbox, dstbbox, regbbox);
+//            CCTK_FNAME(prolongate_3d_real8_3tl_minmod)
+//              ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+//               (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+//               (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+//               srcshp[0], srcshp[1], srcshp[2],
+//               (CCTK_REAL8*)storage(), time,
+//               dstshp[0], dstshp[1], dstshp[2],
+//               srcbbox, dstbbox, regbbox);
           break;
         default:
           assert (0);
