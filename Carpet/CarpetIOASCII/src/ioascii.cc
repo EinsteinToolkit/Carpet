@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.51 2003/08/01 13:45:19 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.52 2003/08/08 14:35:48 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -493,7 +493,7 @@ namespace CarpetIOASCII {
     
     const int myoutevery = GetIntParameter("out%dD_every", out_every);
     
-    if (myoutevery < 0) {
+    if (myoutevery <= 0) {
       // Nothing should be output at all
       return 0;
     }
