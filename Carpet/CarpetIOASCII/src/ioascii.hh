@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.6 2001/11/02 10:59:02 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.hh,v 1.7 2001/11/02 16:05:04 schnetter Exp $
 
 #include <vector>
 
@@ -45,11 +45,11 @@ struct CarpetIOASCII {
   
   // registered functions
   
-  static void* SetupGH (const tFleshConfig* fc, int convLevel, const cGH* cgh);
+  static void* SetupGH (tFleshConfig* fc, int convLevel, const cGH* cgh);
   
   static int OutputGH (cGH* cgh);
   static int OutputVarAs (cGH* cgh, const char* varname, const char* alias);
-  static int TimeToOutput (const cGH* cgh, int vindex);
+  static int TimeToOutput (cGH* cgh, int vindex);
   static int TriggerOutput (cGH* cgh, int vindex);
   
   static int GetGridOffset (const cGH* cgh, int dir,

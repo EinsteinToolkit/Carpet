@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.3 2001/11/02 10:59:00 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.4 2001/11/02 16:05:03 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -91,7 +91,7 @@ namespace Carpet {
   
   
   // Registered functions
-  void* SetupGH (const tFleshConfig* fc, int convLevel, cGH* cgh);
+  void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cgh);
   
   int Initialise (tFleshConfig* config);
   int Evolve (const tFleshConfig* config);

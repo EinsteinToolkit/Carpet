@@ -10,7 +10,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.8 2001/11/02 10:58:59 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.9 2001/11/02 16:05:03 schnetter Exp $";
 
 
 
@@ -20,7 +20,7 @@ namespace Carpet {
   
   
   
-  void* SetupGH (const tFleshConfig* fc, int convLevel, cGH* cgh)
+  void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cgh)
   {
     DECLARE_CCTK_PARAMETERS;
     
