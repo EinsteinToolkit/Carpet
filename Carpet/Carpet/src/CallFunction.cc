@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.1 2001/07/04 12:29:46 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.2 2002/01/02 17:14:08 schnetter Exp $";
 
 
 
@@ -37,17 +37,12 @@ namespace Carpet {
     } else {
       // Local operation: call once per component
       
-      BEGIN_COMPONENT_LOOP(cgh) {
-	// This requires that all processors have the same number of
-	// local components
- 	if (hh->is_local(reflevel, component)) {
-	  
-	  const int res = CCTK_CallFunction (function, attribute, data);
-	  assert (res==0);
-	  
-	} // if is_local
+      BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
 	
-      }	END_COMPONENT_LOOP(cgh);
+	const int res = CCTK_CallFunction (function, attribute, data);
+	assert (res==0);
+	
+      }	END_LOCAL_COMPONENT_LOOP(cgh);
       
     }
     

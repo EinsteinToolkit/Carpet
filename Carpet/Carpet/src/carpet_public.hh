@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.11 2002/01/01 16:48:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.12 2002/01/02 17:14:08 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -144,20 +144,19 @@ namespace Carpet {
   
   // Refinement level iterator
   
-#define BEGIN_REFLEVEL_LOOP(cgh)		\
-  do {						\
-    int _rl;					\
-    assert (reflevel==0);			\
-    for (;;) {					\
+#define BEGIN_REFLEVEL_LOOP(cgh)			\
+  do {							\
+    int _rll;						\
+    assert (reflevel==0);				\
+    for (int _rl=0; _rl<hh->reflevels(); ++_rl) {	\
+      set_reflevel ((cGH*)(cgh), _rl);			\
       {
 #define END_REFLEVEL_LOOP(cgh)			\
       }						\
-      if (reflevel==hh->reflevels()-1) break;	\
-      set_reflevel ((cGH*)(cgh), reflevel+1);	\
     }						\
     set_reflevel ((cGH*)(cgh), 0);		\
     assert (reflevel==0);			\
-    _rl = 0;					\
+    _rll = 0;					\
   } while (0)
   
   
@@ -166,18 +165,16 @@ namespace Carpet {
   
 #define BEGIN_REVERSE_REFLEVEL_LOOP(cgh)		\
   do {							\
-    int _rrl;						\
+    int _rrll;						\
     assert (reflevel==0);				\
-    set_reflevel ((cGH*)(cgh), hh->reflevels()-1);	\
-    for (;;) {						\
+    for (int _rl=hh->reflevels()-1; _rl>=0; --_rl) {	\
+      set_reflevel ((cGH*)(cgh), _rl);			\
       {
 #define END_REVERSE_REFLEVEL_LOOP(cgh)		\
       }						\
-      if (reflevel==0) break;			\
-      set_reflevel ((cGH*)(cgh), reflevel-1);	\
     }						\
     assert (reflevel==0);			\
-    _rrl = 0;					\
+    _rrll = 0;					\
   } while (0)
   
   
@@ -189,17 +186,15 @@ namespace Carpet {
     int _cl;						\
     assert (reflevel>=0 && reflevel<hh->reflevels());	\
     assert (component==-1);				\
-    set_component ((cGH*)(cgh), 0);			\
-    for (;;) {						\
+    for (int _c=0; _c<hh->components(reflevel); ++_c) {	\
+      set_component ((cGH*)(cgh), _c);			\
       {
-#define END_COMPONENT_LOOP(cgh)				\
-      }							\
-      if (component==hh->components(reflevel)-1) break;	\
-      set_component ((cGH*)(cgh), component+1);		\
-    }							\
-    set_component ((cGH*)(cgh), -1);			\
-    assert (component==-1);				\
-    _cl = 0;						\
+#define END_COMPONENT_LOOP(cgh)			\
+      }						\
+    }						\
+    set_component ((cGH*)(cgh), -1);		\
+    assert (component==-1);			\
+    _cl = 0;					\
   } while (0)
 
 
@@ -209,17 +204,17 @@ namespace Carpet {
     int _lcl;						\
     assert (reflevel>=0 && reflevel<hh->reflevels());	\
     assert (component==-1);				\
-    set_component ((cGH*)(cgh), 0);			\
-    for (;;) {						\
-      if (hh->is_local(reflevel,component)) {
-#define END_LOCAL_COMPONENT_LOOP(cgh)			\
-      }							\
-      if (component==hh->components(reflevel)-1) break;	\
-      set_component ((cGH*)(cgh), component+1);		\
-    }							\
-    set_component ((cGH*)(cgh), -1);			\
-    assert (component==-1);				\
-    _lcl = 0;						\
+    for (int _c=0; _c<hh->components(reflevel); ++_c) {	\
+      if (hh->is_local(reflevel,_c)) {			\
+	set_component ((cGH*)(cgh), _c);		\
+	{
+#define END_LOCAL_COMPONENT_LOOP(cgh)		\
+	}					\
+      }						\
+    }						\
+    set_component ((cGH*)(cgh), -1);		\
+    assert (component==-1);			\
+    _lcl = 0;					\
   } while (0)
   
 } // namespace Carpet

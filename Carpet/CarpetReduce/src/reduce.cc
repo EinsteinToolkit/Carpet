@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.2 2002/01/01 16:48:32 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.3 2002/01/02 17:14:08 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -15,7 +15,7 @@
 
 #include "reduce.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.2 2002/01/01 16:48:32 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.3 2002/01/02 17:14:08 schnetter Exp $";
 
 
 
@@ -547,47 +547,45 @@ namespace CarpetReduce {
     
     Initialise (cgh, proc, num_outvals, myoutvals, outtype, mycounts, red);
     
-    BEGIN_COMPONENT_LOOP(cgh) {
-      if (hh->is_local(reflevel,component)) {
-	
-	int dims[dim], nghostzones[dim];
-	ierr = CCTK_GrouplshVI(cgh, num_dims, dims, vi);
-	assert (!ierr);
-	ierr = CCTK_GroupnghostzonesVI(cgh, num_dims, nghostzones, vi);
-	assert (!ierr);
-	for (int d=0; d<num_dims; ++d) {
-	  assert (dims[d]>=0);
-	  assert (nghostzones[d]>=0 && 2*nghostzones[d]<=dims[d]);
-	}
-	
-	const void** const inarrays = new (const void*) [num_invars];
-	for (int n=0; n<num_invars; ++n) {
-	  inarrays[n] = CCTK_VarDataPtrI(cgh, 0, invars[n]);
-	  assert (inarrays[n]);
-	}
-	
-	const int intype = CCTK_VarTypeI(vi);
-	for (int n=0; n<num_invars; ++n) {
-	  assert (CCTK_VarTypeI(invars[n]) == intype);
-	}
-	
-	int mydims[dim], mynghostzones[dim];
-	for (int d=0; d<num_dims; ++d) {
-	  mydims[d] = dims[d];
-	  mynghostzones[d] = nghostzones[d];
-	}
-	for (int d=num_dims; d<dim; ++d) {
-	  mydims[d] = 1;
-	  mynghostzones[d] = 0;
-	}
-	
-	Reduce (cgh, proc, mydims, mynghostzones, num_invars, inarrays, intype,
-		num_outvals, myoutvals, outtype, mycounts, red);
-	
-	delete [] inarrays;
-	
+    BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
+      
+      int dims[dim], nghostzones[dim];
+      ierr = CCTK_GrouplshVI(cgh, num_dims, dims, vi);
+      assert (!ierr);
+      ierr = CCTK_GroupnghostzonesVI(cgh, num_dims, nghostzones, vi);
+      assert (!ierr);
+      for (int d=0; d<num_dims; ++d) {
+	assert (dims[d]>=0);
+	assert (nghostzones[d]>=0 && 2*nghostzones[d]<=dims[d]);
       }
-    } END_COMPONENT_LOOP(cgh);
+      
+      const void** const inarrays = new (const void*) [num_invars];
+      for (int n=0; n<num_invars; ++n) {
+	inarrays[n] = CCTK_VarDataPtrI(cgh, 0, invars[n]);
+	assert (inarrays[n]);
+      }
+      
+      const int intype = CCTK_VarTypeI(vi);
+      for (int n=0; n<num_invars; ++n) {
+	assert (CCTK_VarTypeI(invars[n]) == intype);
+      }
+      
+      int mydims[dim], mynghostzones[dim];
+      for (int d=0; d<num_dims; ++d) {
+	mydims[d] = dims[d];
+	mynghostzones[d] = nghostzones[d];
+      }
+      for (int d=num_dims; d<dim; ++d) {
+	mydims[d] = 1;
+	mynghostzones[d] = 0;
+      }
+      
+      Reduce (cgh, proc, mydims, mynghostzones, num_invars, inarrays, intype,
+	      num_outvals, myoutvals, outtype, mycounts, red);
+      
+      delete [] inarrays;
+      
+    } END_LOCAL_COMPONENT_LOOP(cgh);
     
     Finalise (cgh, proc, num_outvals, outvals, outtype, myoutvals, mycounts,
 	      red);

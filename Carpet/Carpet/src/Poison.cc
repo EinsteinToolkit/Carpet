@@ -7,7 +7,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.4 2001/11/05 17:53:01 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.5 2002/01/02 17:14:08 schnetter Exp $";
 
 
 
@@ -62,16 +62,14 @@ namespace Carpet {
       
       for (int tl=min_tl; tl<=max_tl; ++tl) {
 	
-	BEGIN_COMPONENT_LOOP(cgh) {
-	  if (hh->is_local(reflevel,component)) {
-	    int np = 1;
-	    const int gpdim = arrdata[group].info.dim;
-	    for (int d=0; d<gpdim; ++d) {
-	      np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
-	    }
-	    memset (cgh->data[n][tl], poison_value, np*sz);
+	BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
+	  int np = 1;
+	  const int gpdim = arrdata[group].info.dim;
+	  for (int d=0; d<gpdim; ++d) {
+	    np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
 	  }
-	} END_COMPONENT_LOOP(cgh);
+	  memset (cgh->data[n][tl], poison_value, np*sz);
+	} END_LOCAL_COMPONENT_LOOP(cgh);
 	
       } // for tl
       
@@ -101,56 +99,54 @@ namespace Carpet {
 	  
 	  for (int tl=min_tl; tl<=max_tl; ++tl) {
 	    
-	    BEGIN_COMPONENT_LOOP(cgh) {
-	      if (hh->is_local(reflevel,component)) {
-		vect<int,dim> size(1);
-		const int gpdim = arrdata[group].info.dim;
-		for (int d=0; d<gpdim; ++d) {
-		  size[d] = *CCTK_ArrayGroupSizeI(cgh, d, group);
-		}
-		const int tp = CCTK_VarTypeI(n);
-		const void* const data = cgh->data[n][tl];
-		int numpoison=0;
-		for (int k=0; k<size[2]; ++k) {
-		  for (int j=0; j<size[1]; ++j) {
-		    for (int i=0; i<size[0]; ++i) {
-		      const int idx = CCTK_GFINDEX3D(cgh,i,j,k);
-		      bool poisoned=false;
-		      switch (tp) {
+	    BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
+	      vect<int,dim> size(1);
+	      const int gpdim = arrdata[group].info.dim;
+	      for (int d=0; d<gpdim; ++d) {
+		size[d] = *CCTK_ArrayGroupSizeI(cgh, d, group);
+	      }
+	      const int tp = CCTK_VarTypeI(n);
+	      const void* const data = cgh->data[n][tl];
+	      int numpoison=0;
+	      for (int k=0; k<size[2]; ++k) {
+		for (int j=0; j<size[1]; ++j) {
+		  for (int i=0; i<size[0]; ++i) {
+		    const int idx = CCTK_GFINDEX3D(cgh,i,j,k);
+		    bool poisoned=false;
+		    switch (tp) {
 #define TYPECASE(N,T)							\
-		      case N: {						\
-			T worm;						\
-			memset (&worm, poison_value, sizeof(worm));	\
-			poisoned = ((const T*)data)[idx] == worm;	\
-			break;						\
-		      }
+		    case N: {						\
+		      T worm;						\
+		      memset (&worm, poison_value, sizeof(worm));	\
+		      poisoned = ((const T*)data)[idx] == worm;		\
+		      break;						\
+		    }
 #include "typecase"
 #undef TYPECASE
-		      default:
-			UnsupportedVarType(n);
+		    default:
+		      UnsupportedVarType(n);
+		    }
+		    if (poisoned) {
+		      ++numpoison;
+		      if (numpoison<=10) {
+			char* fullname = CCTK_FullName(n);
+			CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+				    "The variable \"%s\" contains poison at [%d,%d,%d] in timelevel %d",
+				    fullname, i,j,k, tl);
+			free (fullname);
 		      }
-		      if (poisoned) {
-			++numpoison;
-			if (numpoison<=10) {
-			  char* fullname = CCTK_FullName(n);
-			  CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-				      "The variable \"%s\" contains poison at [%d,%d,%d] in timelevel %d",
-				      fullname, i,j,k, tl);
-			  free (fullname);
-			}
-		      } // if poisoned
-		    } // for i
-		  } // for j
-		} // for k
-		if (numpoison>10) {
-		  char* fullname = CCTK_FullName(n);
-		  CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-			      "The variable \"%s\" contains poison at %d locations in timelevel %d; not all locations were printed.",
-			      fullname, numpoison, tl);
-		  free (fullname);
-		}
-	      } // if is local
-	    } END_COMPONENT_LOOP(cgh);
+		    } // if poisoned
+		  } // for i
+		} // for j
+	      } // for k
+	      if (numpoison>10) {
+		char* fullname = CCTK_FullName(n);
+		CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+			    "The variable \"%s\" contains poison at %d locations in timelevel %d; not all locations were printed.",
+			    fullname, numpoison, tl);
+		free (fullname);
+	      }
+	    } END_LOCAL_COMPONENT_LOOP(cgh);
 	    
 	  } // for tl
 	  

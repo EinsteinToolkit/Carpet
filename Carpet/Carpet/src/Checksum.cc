@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Checksum.cc,v 1.4 2001/11/05 17:53:01 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Checksum.cc,v 1.5 2002/01/02 17:14:08 schnetter Exp $";
 
 
 
@@ -60,22 +60,20 @@ namespace Carpet {
 	  const int max_tl = maxtl(where, num_tl);
 	  
 	  for (int tl=min_tl; tl<=max_tl; ++tl) {
-	    BEGIN_COMPONENT_LOOP(cgh) {
-	      if (hh->is_local(reflevel,component)) {
-		const int gpdim = arrdata[group].info.dim;
-		int np = 1;
-		for (int d=0; d<gpdim; ++d) {
-		  np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
-		}
-		const void* data = cgh->data[n][tl];
-		int chk = 0;
-		for (int i=0; i<np*sz/(int)sizeof(chk); ++i) {
-		  chk += ((const int*)data)[i];
-		}
-		checksums[n][reflevel][tl][component].sum = chk;
-		checksums[n][reflevel][tl][component].valid = true;
+	    BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
+	      const int gpdim = arrdata[group].info.dim;
+	      int np = 1;
+	      for (int d=0; d<gpdim; ++d) {
+		np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
 	      }
-	    } END_COMPONENT_LOOP(cgh);
+	      const void* data = cgh->data[n][tl];
+	      int chk = 0;
+	      for (int i=0; i<np*sz/(int)sizeof(chk); ++i) {
+		chk += ((const int*)data)[i];
+	      }
+	      checksums[n][reflevel][tl][component].sum = chk;
+	      checksums[n][reflevel][tl][component].valid = true;
+	    } END_LOCAL_COMPONENT_LOOP(cgh);
 	  } // for tl
 	} // for var
       }	// if has storage
@@ -114,25 +112,23 @@ namespace Carpet {
 	    
 	    assert ((int)checksums[n][reflevel][tl].size()
 		    == hh->components(reflevel));
-	    BEGIN_COMPONENT_LOOP(cgh) {
+	    BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
 	      if (checksums[n][reflevel][tl][component].valid) {
-		if (hh->is_local(reflevel,component)) {
-		  const int gpdim = arrdata[group].info.dim;
-		  int np = 1;
-		  for (int d=0; d<gpdim; ++d) {
-		    np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
-		  }
-		  const void* data = cgh->data[n][tl];
-		  int chk = 0;
-		  for (int i=0; i<np*sz/(int)sizeof(chk); ++i) {
-		    chk += ((const int*)data)[i];
-		  }
-		  unexpected_change
-		    = (unexpected_change
-		       || chk != checksums[n][reflevel][tl][component].sum);
+		const int gpdim = arrdata[group].info.dim;
+		int np = 1;
+		for (int d=0; d<gpdim; ++d) {
+		  np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
 		}
+		const void* data = cgh->data[n][tl];
+		int chk = 0;
+		for (int i=0; i<np*sz/(int)sizeof(chk); ++i) {
+		  chk += ((const int*)data)[i];
+		}
+		unexpected_change
+		  = (unexpected_change
+		     || chk != checksums[n][reflevel][tl][component].sum);
 	      }
-	    } END_COMPONENT_LOOP(cgh);
+	    } END_LOCAL_COMPONENT_LOOP(cgh);
 	    
 	    if (unexpected_change) {
 	      char* fullname = CCTK_FullName(n);
