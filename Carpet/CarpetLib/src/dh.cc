@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.2 2001/03/05 21:48:38 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.3 2001/03/07 13:00:57 eschnett Exp $
 
  ***************************************************************************/
 
@@ -30,7 +30,6 @@
 #  include "dh.hh"
 #endif
 
-#define DEBUG_DIST DIST_NODEBUG
 #undef DEBUG_OUTPUT
 
 
@@ -41,7 +40,7 @@ dh<D>::dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts)
   : h(h), lghosts(lghosts), ughosts(ughosts)
 {
   assert (all(lghosts>=0 && ughosts>=0));
-  DEBUG_DIST;
+  CHECKPOINT;
   h.add(this);
   recompose();
 }
@@ -49,14 +48,14 @@ dh<D>::dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts)
 // Destructors
 template<int D>
 dh<D>::~dh () {
-  DEBUG_DIST;
+  CHECKPOINT;
   h.remove(this);
 }
 
 // Modifiers
 template<int D>
 void dh<D>::recompose () {
-  DEBUG_DIST;
+  CHECKPOINT;
   
   boxes.clear();
   
@@ -209,6 +208,23 @@ void dh<D>::recompose () {
     } // for c
   } // for rl
   
+  bases.resize(h.reflevels());
+  for (int rl=0; rl<h.reflevels(); ++rl) {
+    if (h.components(rl)==0) {
+      bases[rl].resize(0);
+    } else {
+      bases[rl].resize(h.mglevels(rl,0));
+      for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
+	bases[rl][ml].exterior = ibbox();
+	bases[rl][ml].interior = ibbox();
+	for (int c=0; c<h.components(rl); ++c) {
+	  bases[rl][ml].exterior *= boxes[rl][c][ml].exterior;
+	  bases[rl][ml].interior *= boxes[rl][c][ml].interior;
+	}
+      }
+    }
+  }
+  
 #ifdef DEBUG_OUTPUT
   for (int rl=0; rl<h.reflevels(); ++rl) {
     for (int c=0; c<h.components(rl); ++c) {
@@ -234,6 +250,17 @@ void dh<D>::recompose () {
       }
     }
   }
+  for (int rl=0; rl<h.reflevels(); ++rl) {
+    if (h.components(rl)>0) {
+      for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
+      	cout << endl;
+      	cout << "dh bases:" << endl;
+      	cout << "rl=" << rl << " ml=" << ml << endl;
+      	cout << "exterior=" << bases[rl][ml].exterior << endl;
+      	cout << "interior=" << bases[rl][ml].interior << endl;
+      }
+    }
+  }
 #endif
   
   for (list<generic_gf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
@@ -244,13 +271,13 @@ void dh<D>::recompose () {
 // Grid function management
 template<int D>
 void dh<D>::add (generic_gf<D>* f) {
-  DEBUG_DIST;
+  CHECKPOINT;
   gfs.push_back(f);
 }
 
 template<int D>
 void dh<D>::remove (generic_gf<D>* f) {
-  DEBUG_DIST;
+  CHECKPOINT;
   gfs.remove(f);
 }
 

@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.2 2001/03/07 13:00:57 eschnett Exp $
 
  ***************************************************************************/
 
@@ -72,6 +72,7 @@ public:				// should be readonly
   centering mgcent;		// default (vertex or cell centered)
   
   ibbox baseextent;		// bounds (inclusive) of base level
+  vector<vector<ibbox> > bases; // [rl][ml]
   
   rexts extents;		// bounds of all grids
   rprocs processors;		// processor numbers of all grids

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.3 2001/03/05 21:48:38 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.4 2001/03/07 13:00:57 eschnett Exp $
 
  ***************************************************************************/
 
@@ -29,8 +29,6 @@
 #if !defined(TMPL_IMPLICIT) || !defined(GDATA_HH)
 #  include "gdata.hh"
 #endif
-
-#define DEBUG_DIST DIST_NODEBUG
 
 
 
@@ -57,7 +55,7 @@ void generic_data<D>::write_ascii (const string name, const int time,
   const
 {
   assert (_has_storage);
-  DEBUG_DIST;
+  CHECKPOINT;
   
   if (_proc==0) {
     // output on processor 0

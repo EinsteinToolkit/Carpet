@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.2 2001/03/05 21:48:38 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.3 2001/03/07 13:00:57 eschnett Exp $
 
  ***************************************************************************/
 
@@ -52,6 +52,19 @@ bbox<T,D>::bbox (const vect<T,D>& lower, const vect<T,D>& upper,
 {
   assert (all(stride>=1));
   assert (all((upper-lower)%stride==0));
+}
+
+// Accessors
+template<class T, int D>
+T bbox<T,D>::size () const {
+  if (empty()) return 0;
+  return prod(shape());
+}
+
+template<class T, int D>
+T bbox<T,D>::num_points () const {
+  if (empty()) return 0;
+  return prod((shape()+stride()-1)/stride());
 }
 
 // Queries
@@ -160,6 +173,42 @@ bbox<T,D> bbox<T,D>::contracted_for (const bbox& b) const {
   const vect<T,D> lo = lower() + (str - loff) % str; // go inwards
   const vect<T,D> up = upper() - uoff;
   return bbox(lo,up,str);
+}
+
+// Set operations
+// Smallest bbox containing both boxes
+template<class T, int D>
+bbox<T,D> bbox<T,D>::operator* (const bbox& b) const {
+  if (empty()) return b;
+  if (b.empty()) return *this;
+  assert (aligned_with(b));
+  const vect<T,D> lo = min(lower(), b.lower());
+  const vect<T,D> up = max(upper(), b.upper());
+  const vect<T,D> str = min(stride(), b.stride());
+  return bbox(lo,up,str);
+}
+
+template<class T, int D>
+bbox<T,D>& bbox<T,D>::operator*= (const bbox& b) {
+  *this = *this * b;
+  return *this;
+}
+
+// Largest bbox inside both boxes
+template<class T, int D>
+bbox<T,D> bbox<T,D>::operator+ (const bbox& b) const {
+  if (empty() || b.empty()) return bbox();
+  assert (aligned_with(b));
+  const vect<T,D> lo = max(lower(), b.lower());
+  const vect<T,D> up = min(upper(), b.upper());
+  const vect<T,D> str = min(stride(), b.stride());
+  return bbox(lo,up,str);
+}
+
+template<class T, int D>
+bbox<T,D>& bbox<T,D>::operator+= (const bbox& b) {
+  *this = *this + b;
+  return *this;
 }
 
 // Iterators

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.hh,v 1.2 2001/03/07 13:00:57 eschnett Exp $
 
  ***************************************************************************/
 
@@ -42,6 +42,7 @@
 // A general type
 enum centering { vertex_centered, cell_centered };
 
+// Useful helper
 template<class T>
 inline T square (const T& x) { return x*x; }
 

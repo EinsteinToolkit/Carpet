@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.2 2001/03/05 21:48:38 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.3 2001/03/07 13:00:57 eschnett Exp $
 
  ***************************************************************************/
 
@@ -42,7 +42,7 @@ template<class T, int D>
 class bbox {
   
   // Fields
-  vect<T,D> _lower, _upper, _stride;// bounds are inclusive
+  vect<T,D> _lower, _upper, _stride; // bounds are inclusive
   
 public:
   
@@ -63,15 +63,8 @@ public:
     return any(lower()>upper());
   }
   
-  T size () const {
-    if (empty()) return 0;
-    return prod(shape());
-  }
-  
-  T num_points () const {
-    if (empty()) return 0;
-    return prod((shape()+stride()-1)/stride());
-  }
+  T size () const;
+  T num_points () const;
   
   // Queries
   bool contains (const vect<T,D>& x) const;
@@ -101,6 +94,14 @@ public:
   
   // Find the largest b-compatible box inside *this
   bbox contracted_for (const bbox& b) const;
+  
+  // Set operations
+  // Smallest bbox containing both boxes
+  bbox operator* (const bbox& b) const;
+  bbox& operator*= (const bbox& b);
+  // Largest bbox inside both boxes
+  bbox operator+ (const bbox& b) const;
+  bbox& operator+= (const bbox& b);
   
   // Iterators
   class iterator {

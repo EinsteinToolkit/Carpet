@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.hh,v 1.2 2001/03/05 21:48:38 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dist.hh,v 1.3 2001/03/07 13:00:57 eschnett Exp $
 
  ***************************************************************************/
 
@@ -25,111 +25,111 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include <complex>
+
 #include <mpi.h>
 
 #include "defs.hh"
 
 
 
-// A checkpoint for debugging purposes
-#define DIST_VERBOSE						\
-do {								\
-  int rank;							\
-  MPI_Comm_rank (dist::comm, &rank);				\
-  printf ("CHECKPOINT: processor %d, file %s, line %d\n",	\
-	  rank, __FILE__, __LINE__);				\
-} while(0)
-
-// A barrier for debugging purposes
-#define DIST_BARRIER				\
-do {						\
-  MPI_Barrier(dist::comm);			\
-} while(0)
-
-// Both of the above
-#define DIST_VERBOSE_BARRIER			\
-do {						\
-  DIST_VERBOSE;					\
-  DIST_BARRIER;					\
-} while(0)
-
-// Do nothing
-#define DIST_NODEBUG do {} while(0)
-
-
-
-struct dist {
+namespace dist {
   
-  static const int tag = 1;
+  const int tag = 1;
   
-  static MPI_Comm comm;
+  extern MPI_Comm comm;
   
-  static void init (int& argc, char**& argv);
-  static void pseudoinit ();
-  static void finalize ();
+  extern MPI_Datatype mpi_complex_float;
+  extern MPI_Datatype mpi_complex_double;
+  extern MPI_Datatype mpi_complex_long_double;
+  
+  void init (int& argc, char**& argv);
+  void pseudoinit ();
+  void finalize ();
+  
+  // Debugging output
+#define CHECKPOINT dist::checkpoint(__FILE__, __LINE__)
+  void checkpoint (const char* file, int line);
+  
+  
+  
+  // Datatype helpers
+  
+  // This generic routine is only declared and not defined.  Only
+  // specialised versions have definitions.  Type errors will be
+  // caught by the compiler.
+  template<class T>
+  MPI_Datatype datatype (const T& dummy);
   
   template<class T>
-  static MPI_Datatype datatype (const T& dummy);
+  inline MPI_Datatype datatype (const T& dummy)
+  { abort(); return -1; }
   
-};
-
-
-
-template<class T>
-inline MPI_Datatype dist::datatype (const T& dummy)
-{ abort(); return -1; }
-
-template<>
-inline MPI_Datatype dist::datatype (const char& dummy)
-{ return MPI_CHAR; }
-
-template<>
-inline MPI_Datatype dist::datatype (const signed char& dummy)
-{ return MPI_UNSIGNED_CHAR; }
+  template<>
+  inline MPI_Datatype datatype (const char& dummy)
+  { return MPI_CHAR; }
   
-template<>
-inline MPI_Datatype dist::datatype (const unsigned char& dummy)
-{ return MPI_BYTE; }
-
-template<>
-inline MPI_Datatype dist::datatype (const short& dummy)
-{ return MPI_SHORT; }
-
-template<>
-inline MPI_Datatype dist::datatype (const unsigned short& dummy)
-{ return MPI_UNSIGNED_SHORT; }
-
-template<>
-inline MPI_Datatype dist::datatype (const int& dummy)
-{ return MPI_INT; }
-
-template<>
-inline MPI_Datatype dist::datatype (const unsigned int& dummy)
-{ return MPI_UNSIGNED; }
-
-template<>
-inline MPI_Datatype dist::datatype (const long& dummy)
-{ return MPI_LONG; }
-
-template<>
-inline MPI_Datatype dist::datatype (const unsigned long& dummy)
-{ return MPI_UNSIGNED_LONG; }
+  template<>
+  inline MPI_Datatype datatype (const signed char& dummy)
+  { return MPI_UNSIGNED_CHAR; }
   
-template<>
-inline MPI_Datatype dist::datatype (const long long& dummy)
-{ return MPI_LONG_LONG_INT; }
-
-template<>
-inline MPI_Datatype dist::datatype (const float& dummy)
-{ return MPI_FLOAT; }
-
-template<>
-inline MPI_Datatype dist::datatype (const double& dummy)
-{ return MPI_DOUBLE; }
-
-template<>
-inline MPI_Datatype dist::datatype (const long double& dummy)
-{ return MPI_LONG_DOUBLE; }
+  template<>
+  inline MPI_Datatype datatype (const unsigned char& dummy)
+  { return MPI_BYTE; }
+  
+  template<>
+  inline MPI_Datatype datatype (const short& dummy)
+  { return MPI_SHORT; }
+  
+  template<>
+  inline MPI_Datatype datatype (const unsigned short& dummy)
+  { return MPI_UNSIGNED_SHORT; }
+  
+  template<>
+  inline MPI_Datatype datatype (const int& dummy)
+  { return MPI_INT; }
+  
+  template<>
+  inline MPI_Datatype datatype (const unsigned int& dummy)
+  { return MPI_UNSIGNED; }
+  
+  template<>
+  inline MPI_Datatype datatype (const long& dummy)
+  { return MPI_LONG; }
+  
+  template<>
+  inline MPI_Datatype datatype (const unsigned long& dummy)
+  { return MPI_UNSIGNED_LONG; }
+  
+  template<>
+  inline MPI_Datatype datatype (const long long& dummy)
+  { return MPI_LONG_LONG_INT; }
+  
+  template<>
+  inline MPI_Datatype datatype (const float& dummy)
+  { return MPI_FLOAT; }
+  
+  template<>
+  inline MPI_Datatype datatype (const double& dummy)
+  { return MPI_DOUBLE; }
+  
+  template<>
+  inline MPI_Datatype datatype (const long double& dummy)
+  { return MPI_LONG_DOUBLE; }
+  
+  template<>
+  inline MPI_Datatype datatype (const complex<float>& dummy)
+  { return mpi_complex_float; }
+  
+  template<>
+  inline MPI_Datatype datatype (const complex<double>& dummy)
+  { return mpi_complex_double; }
+  
+  template<>
+  inline MPI_Datatype datatype (const complex<long double>& dummy)
+  { return mpi_complex_long_double; }
+  
+} // namespace dist
 
 
 

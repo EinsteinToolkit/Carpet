@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.2 2001/03/07 13:00:57 eschnett Exp $
 
  ***************************************************************************/
 
@@ -77,9 +77,17 @@ class dh {
     iblistvect recv_ref_bnd_coarse;
   };
   
+  struct dbases {
+    ibbox exterior;		// whole region (including boundaries)
+    ibbox interior;		// interior (without boundaries)
+  };
+  
   typedef vector<dboxes> mboxes; // ... for each multigrid level
   typedef vector<mboxes> cboxes; // ... for each component
   typedef vector<cboxes> rboxes; // ... for each refinement level
+  
+  typedef vector<dbases> mbases; // ... for each multigrid level
+  typedef vector<mbases> rbases; // ... for each refinement level
   
 public:				// should be readonly
   
@@ -88,6 +96,7 @@ public:				// should be readonly
   ivect lghosts, ughosts;	// ghost zones
   
   rboxes boxes;
+  rbases bases;
   
   list<generic_gf<D>*> gfs;
   

@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.2 2001/03/07 13:00:57 eschnett Exp $
 
  ***************************************************************************/
 
@@ -122,6 +122,22 @@ void gh<D>::recompose (const rexts& exts, const rprocs& procs) {
     }
     // ... and then check the sizes:
     assert (all.size() == s);
+  }
+  
+  // Calculate base extents of all levels
+  bases.resize(reflevels());
+  for (int rl=0; rl<reflevels(); ++rl) {
+    if (components(rl)==0) {
+      bases[rl].resize(0);
+    } else {
+      bases[rl].resize(mglevels(rl,0));
+      for (int ml=0; ml<mglevels(rl,0); ++ml) {
+	bases[rl][ml] = ibbox();
+	for (int c=0; c<components(rl); ++c) {
+	  bases[rl][ml] *= extents[rl][c][ml];
+	}
+      }
+    }
   }
   
   // Recompose the other hierarchies
