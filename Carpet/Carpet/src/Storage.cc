@@ -67,13 +67,6 @@ namespace Carpet {
       // Check an assumption
       if (! gp.vectorgroup) assert (gp.vectorlength == 1);
       
-      // No storage change in local mode
-      if (gp.grouptype == CCTK_GF) {
-        assert ((map == -1 or maps == 1)
-                and (component == -1
-                     or vhh.at(0)->local_components(reflevel) == 1));
-      }
-      
       // Record previous number of allocated time levels
       if (status) {
         status[n] = groupdata.at(group).info.activetimelevels;
@@ -87,6 +80,13 @@ namespace Carpet {
       const bool do_decrease
         = ! inc and timelevels[n] < groupdata.at(group).info.activetimelevels;
       if (do_increase or do_decrease) {
+        
+        // No storage change in local mode
+        if (gp.grouptype == CCTK_GF) {
+          assert ((map == -1 or maps == 1)
+                  and (component == -1
+                       or vhh.at(0)->local_components(reflevel) == 1));
+        }
         
         if (! can_do) {
           char * const groupname = CCTK_GroupName (group);
