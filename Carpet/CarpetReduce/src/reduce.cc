@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.12 2002/08/02 15:11:16 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.13 2002/10/24 10:51:13 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -19,9 +19,10 @@
 
 #include "reduce.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.12 2002/08/02 15:11:16 schnetter Exp $";
-
-CCTK_FILEVERSION(CarpetReduce_reduce_cc)
+extern "C" {
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.13 2002/10/24 10:51:13 schnetter Exp $";
+  CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
+}
 
 
 
