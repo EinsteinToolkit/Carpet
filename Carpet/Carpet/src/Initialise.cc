@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.32 2003/08/10 21:59:51 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.33 2003/09/02 13:11:16 tradke Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -45,7 +45,11 @@ namespace Carpet {
     
     // Initialise stuff
     CCTKi_InitGHExtensions (cgh);
-    
+
+    // Register coordinates
+    Waypoint ("CCTK_WRAGH");
+    CCTK_ScheduleTraverse ("CCTK_WRAGH", cgh, CallFunction);
+
     // Check parameters
     Waypoint ("Current time is %g", cgh->cctk_time);
     Waypoint ("PARAMCHECK");
