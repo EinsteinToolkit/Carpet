@@ -27,6 +27,10 @@
 #include "IEEEIO.hh"
 #include "IO.hh"
 
+// Hack to stop FlexIO data type clash with LAM MPI
+#undef BYTE
+#undef CHAR
+
 #include "CactusBase/IOUtil/src/ioGH.h"
 
 #include "bbox.hh"
@@ -40,7 +44,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.30 2003/07/14 15:41:34 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.31 2003/09/08 14:41:48 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
