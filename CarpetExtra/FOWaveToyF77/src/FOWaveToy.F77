@@ -121,14 +121,14 @@ c     ----------------
       DECLARE_CCTK_PARAMETERS
       DECLARE_CCTK_FUNCTIONS
       
-      external Boundary_SelectVarForBC 
-      CCTK_INT Boundary_SelectVarForBC 
+      external Boundary_SelectGroupForBC 
+      CCTK_INT Boundary_SelectGroupForBC 
       
 c     Local declarations
       CCTK_REAL zero, one
       parameter (zero=0, one=1)
       
-      integer table, table_derivs
+      integer table
       
       character fbound*100
       CCTK_INT  fboundlen
@@ -185,27 +185,17 @@ c     -----------------------------------
       call CCTK_FortranString (fboundlen, bound, fbound)
       if (fboundlen.lt.0) call CCTK_WARN (0, "internal error")
       
-      
-      call Util_TableCreateFromString (table, "LIMIT=1.0 SPEED=1.0")
+      call Util_TableCreateFromString (table, "LIMIT=0.0 SPEED=1.0")
       if (table.lt.0) call CCTK_WARN (0, "internal error")
-      call Util_TableCreateFromString (table_derivs, "LIMIT=0.0 SPEED=1.0")
-      if (table_derivs.lt.0) call CCTK_WARN (0, "internal error")
       
-      ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, table,
-     $     "fowavetoy::phi", fbound)
-      ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, table_derivs,
-     $     "fowavetoy::pi", fbound)
-      ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, table_derivs,
-     $     "fowavetoy::phix", fbound)
-      ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, table_derivs,
-     $     "fowavetoy::phiy", fbound)
-      ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, table_derivs,
-     $     "fowavetoy::phiz", fbound)
+      ierr = Boundary_SelectGroupForBC (cctkGH, CCTK_ALL_FACES, 1, table,
+     $     "fowavetoy::scalarevolve", fbound)
+      if (ierr.ne.0) call CCTK_WARN (0, "internal error")
+      ierr = Boundary_SelectGroupForBC (cctkGH, CCTK_ALL_FACES, 1, table,
+     $     "fowavetoy::scalarevolve_derivs", fbound)
       if (ierr.ne.0) call CCTK_WARN (0, "internal error")
       
       call Util_TableDestroy (ierr, table)
-      if (ierr.ne.0) call CCTK_WARN (0, "internal error")
-      call Util_TableDestroy (ierr, table_derivs)
       if (ierr.ne.0) call CCTK_WARN (0, "internal error")
       
       end
