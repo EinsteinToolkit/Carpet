@@ -31,7 +31,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.36 2004/02/15 11:27:51 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.37 2004/03/23 13:06:14 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -59,7 +59,7 @@ namespace Carpet {
       
       const bool term_iter = iteration >= cctk_itlast;
       const bool term_time
-        = (cctk_initial_time < cctk_final_time
+        = (delta_time > 0
            ? time >= cctk_final_time - 1.0e-8 * cgh->cctk_delta_time
            : time <= cctk_final_time - 1.0e-8 * cgh->cctk_delta_time);
 #ifdef HAVE_TIME_GETTIMEOFDAY
