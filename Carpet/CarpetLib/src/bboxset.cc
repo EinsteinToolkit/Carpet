@@ -62,59 +62,64 @@ void bboxset<T,D>::normalize () {
   for (typename set<box>::const_iterator elt = bs.begin(); elt != bs.end(); ++elt) {
     done.push (*elt);
   }
-  // TODO: This will not catch all cases where bboxes can be combined.
-  for (int d=0; d<D; ++d) {
-    todo = done;
-    done = stack<box>();
-    while (! todo.empty()) {
-    restart:;
-      box item = todo.top();
-      todo.pop();
-      stack<box> work = done;
+  int old_num_combined_boxes;
+  do {
+    old_num_combined_boxes = num_combined_boxes;
+    // TODO: This will not catch all cases where bboxes can be combined.
+    for (int d=0; d<D; ++d) {
+      todo = done;
       done = stack<box>();
-      while (! work.empty()) {
-        box comp = work.top();
-        work.pop();
-        {
-          assert (all(comp.stride() == item.stride()));
-          if (comp.upper()[d] + item.stride()[d] == item.lower()[d]) {
-            if (all((comp.lower() == item.lower()
-                     && comp.upper() == item.upper()).replace (d, true))) {
-              box newbox = box(comp.lower(), item.upper(), item.stride());
-              todo.push (newbox);
-              while (! work.empty()) {
-                done.push (work.top());
-                work.pop();
+      while (! todo.empty()) {
+      restart:;
+        box item = todo.top();
+        todo.pop();
+        stack<box> work = done;
+        done = stack<box>();
+        while (! work.empty()) {
+          box comp = work.top();
+          work.pop();
+          {
+            assert (all(comp.stride() == item.stride()));
+            if (comp.upper()[d] + item.stride()[d] == item.lower()[d]) {
+              if (all((comp.lower() == item.lower()
+                       && comp.upper() == item.upper()).replace (d, true))) {
+                box newbox = box(comp.lower(), item.upper(), item.stride());
+                todo.push (newbox);
+                while (! work.empty()) {
+                  done.push (work.top());
+                  work.pop();
+                }
+                ++num_combined_boxes;
+                goto restart;
               }
-              ++num_combined_boxes;
-              goto restart;
+            }
+            if (item.upper()[d] + item.stride()[d] == comp.lower()[d]) {
+              if (all((comp.lower() == item.lower()
+                       && comp.upper() == item.upper()).replace (d, true))) {
+                box newbox = box(item.lower(), comp.upper(), item.stride());
+                todo.push (newbox);
+                while (! work.empty()) {
+                  done.push (work.top());
+                  work.pop();
+                }
+                ++num_combined_boxes;
+                goto restart;
+              }
             }
           }
-          if (item.upper()[d] + item.stride()[d] == comp.lower()[d]) {
-            if (all((comp.lower() == item.lower()
-                     && comp.upper() == item.upper()).replace (d, true))) {
-              box newbox = box(item.lower(), comp.upper(), item.stride());
-              todo.push (newbox);
-              while (! work.empty()) {
-                done.push (work.top());
-                work.pop();
-              }
-              ++num_combined_boxes;
-              goto restart;
-            }
-          }
-        }
-        done.push (comp);
-      } // while work
-      done.push (item);
-    } // while todo
-  } // for d
+          done.push (comp);
+        } // while work
+        done.push (item);
+      } // while todo
+    } // for d
+  } while (num_combined_boxes > old_num_combined_boxes);
   bs.clear();
   while (! done.empty()) {
     bs.insert (done.top());
     done.pop();
   }
   const int num_final_boxes = bs.size();
+  assert (num_final_boxes <= num_initial_boxes);
   assert (num_initial_boxes - num_combined_boxes == num_final_boxes);
   assert (invariant());
 }
