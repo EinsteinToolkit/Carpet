@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.53 2004/03/23 14:40:46 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.54 2004/03/23 15:33:07 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -61,6 +61,7 @@ namespace Carpet {
                                                   rvect const rshape,
                                                   ibbox const & bb,
                                                   bbvect const & ob,
+                                                  int const & p,
                                                   vector<ibbox> & bbs,
                                                   vector<bbvect> & obs,
                                                   vector<int> & ps);
@@ -441,15 +442,15 @@ namespace Carpet {
   
   
   
-  void SplitRegions_Automatic_Recursively (bvect const & dims,
-                                           int const nprocs,
-                                           rvect const rshape,
-                                           ibbox const & bb,
-                                           bbvect const & ob,
-                                           int const & p,
-                                           vector<ibbox> & bbs,
-                                           vector<bbvect> & obs,
-                                           vector<int> & ps)
+  static void SplitRegions_Automatic_Recursively (bvect const & dims,
+                                                  int const nprocs,
+                                                  rvect const rshape,
+                                                  ibbox const & bb,
+                                                  bbvect const & ob,
+                                                  int const & p,
+                                                  vector<ibbox> & bbs,
+                                                  vector<bbvect> & obs,
+                                                  vector<int> & ps)
   {
     if (DEBUG) cout << "SRAR enter" << endl;
     // check preconditions
@@ -630,6 +631,8 @@ namespace Carpet {
     if (DEBUG) cout << "SRAR exit" << endl;
   }
   
+  
+  
   void SplitRegions_Automatic (const cGH* cgh, vector<ibbox>& bbs,
                                vector<bbvect>& obs, vector<int>& ps)
   {
@@ -750,8 +753,10 @@ namespace Carpet {
   
   
   
-  void SplitRegions_AsSpecified (const cGH* cgh, vector<ibbox>& bbs,
-				 vector<bbvect>& obs, vector<int>& ps)
+  static void SplitRegions_AsSpecified (const cGH* cgh,
+                                        vector<ibbox>& bbs,
+                                        vector<bbvect>& obs,
+                                        vector<int>& ps)
   {
     DECLARE_CCTK_PARAMETERS;
     
