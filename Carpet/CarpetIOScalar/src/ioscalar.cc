@@ -18,7 +18,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/src/ioscalar.cc,v 1.4 2004/06/21 12:27:09 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/src/ioscalar.cc,v 1.5 2004/06/21 16:07:41 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOScalar_ioscalar_cc);
 }
 
@@ -113,8 +113,9 @@ namespace CarpetIOScalar {
   {
     DECLARE_CCTK_ARGUMENTS;
     
-    *next_output_iteration = 0;
-    *next_output_time = cctkGH->cctk_time;
+    *this_iteration = 0;
+    *last_output_iteration = 0;
+    *last_output_time = cctkGH->cctk_time;
   }
   
   
@@ -139,7 +140,7 @@ namespace CarpetIOScalar {
     // We register only once, ergo we get only one handle.  We store
     // that statically, so there is no need to pass anything to
     // Cactus.
-    return 0;
+    return NULL;
   }
   
   
@@ -361,33 +362,16 @@ namespace CarpetIOScalar {
       } else if (cctk_iteration == *this_iteration) {
         // we already decided to output this iteration
         output_this_iteration = true;
-      } else if (cctk_iteration >= *next_output_iteration) {
+      } else if (cctk_iteration >= *last_output_iteration + myoutevery) {
         // it is time for the next output
         output_this_iteration = true;
-        *next_output_iteration = cctk_iteration + myoutevery;
+        *last_output_iteration = cctk_iteration;
         *this_iteration = cctk_iteration;
       } else {
         // we want no output at this iteration
         output_this_iteration = false;
       }
       
-    } else if (CCTK_EQUALS (myoutcriterion, "divisor")) {
-      
-      int myoutevery = outScalar_every;
-      if (myoutevery == -2) {
-        myoutevery = out_every;
-      }
-      if (myoutevery <= 0) {
-        // output is disabled
-        output_this_iteration = false;
-      } else if (cctk_iteration % myoutevery == 0) {
-        // we already decided to output this iteration
-        output_this_iteration = true;
-      } else {
-        // we want no output at this iteration
-        output_this_iteration = false;
-      }  
-
     } else if (CCTK_EQUALS (myoutcriterion, "time")) {
       
       CCTK_REAL myoutdt = outScalar_dt;
@@ -404,10 +388,10 @@ namespace CarpetIOScalar {
         // we already decided to output this iteration
         output_this_iteration = true;
       } else if (cctk_time / cctk_delta_time
-                 >= *next_output_time / cctk_delta_time - 1.0e-12) {
+                 >= (*last_output_time + myoutdt) / cctk_delta_time - 1.0e-12) {
         // it is time for the next output
         output_this_iteration = true;
-        *next_output_time = cctk_time + myoutdt;
+        *last_output_time = cctk_time;
         *this_iteration = cctk_iteration;
       } else {
         // we want no output at this iteration

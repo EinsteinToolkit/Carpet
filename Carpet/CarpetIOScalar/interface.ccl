@@ -1,8 +1,8 @@
 # Interface definition for thorn CarpetIOScalar
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/interface.ccl,v 1.1 2004/06/11 17:41:51 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/interface.ccl,v 1.2 2004/06/21 16:07:41 schnetter Exp $
 
 IMPLEMENTS: IOScalar
 
-CCTK_INT next_output_iteration TYPE=scalar
-CCTK_REAL next_output_time TYPE=scalar
+CCTK_INT last_output_iteration TYPE=scalar
+CCTK_REAL last_output_time TYPE=scalar
 CCTK_INT this_iteration TYPE=scalar
