@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.17 2003/04/30 12:41:02 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.18 2003/05/02 14:23:44 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -22,7 +22,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.17 2003/04/30 12:41:02 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.18 2003/05/02 14:23:44 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -669,8 +669,6 @@ namespace CarpetReduce {
       CCTK_WARN (0, "It is not possible to use a grid variable reduction operator in local mode");
     }
     if (hh->local_components(reflevel) != 1) assert (component == -1);
-    int const saved_component = component;
-    component = -1;
     
     assert (cgh);
     
@@ -756,8 +754,6 @@ namespace CarpetReduce {
     Finalise (cgh, proc, num_outvals, outvals, outtype,
               &myoutvals[0], &mycounts[0],
 	      red);
-    
-    component = saved_component;
     
     return 0;
   }
