@@ -51,8 +51,16 @@ namespace Carpet {
     bool term;
     
     // Early shortcut
-    if (terminate_next || CCTK_TerminationReached(cgh)) {
+    if (iteration % maxreflevelfact != 0) {
       
+      // Terminate only after complete coarse grid steps
+      // TODO: once checkpointing works correctly, change this to
+      // "after complete time steps"
+      return false;
+      
+    } else if (terminate_next || CCTK_TerminationReached(cgh)) {
+      
+      // Terminate if someone or something said so
       term = true;
       
     } else {
