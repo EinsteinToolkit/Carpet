@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8.F77,v 1.3 2001/03/24 22:38:48 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8.F77,v 1.4 2001/03/26 02:27:46 eschnett Exp $
       
 #include "cctk.h"
       
@@ -9,6 +9,9 @@ c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d
      $     srcbbox, dstbbox, regbbox)
       
       implicit none
+      
+      CCTK_REAL8 one
+      parameter (one = 1)
       
       integer srciext, srcjext, srckext
       CCTK_REAL8 src(srciext,srcjext,srckext)
@@ -28,9 +31,10 @@ c     bbox(:,3) is stride
       
       integer i, j, k
       integer i0, j0, k0
-      integer fi, fj, fk
+      CCTK_REAL8 fi, fj, fk
+      CCTK_REAL8 ifac(2), jfac(2), kfac(2)
       integer ii, jj, kk
-      integer fac
+      CCTK_REAL8 fac
       CCTK_REAL8 res
       integer d
       
@@ -95,48 +99,40 @@ c     Loop over fine region
          do j = 0, regjext-1
             do i = 0, regiext-1
                
-               i0 = (srcioff + i) / dstifac + 1
-               j0 = (srcjoff + j) / dstjfac + 1
-               k0 = (srckoff + k) / dstkfac + 1
+               i0 = (srcioff + i) / dstifac
+               j0 = (srcjoff + j) / dstjfac
+               k0 = (srckoff + k) / dstkfac
                
-               fi = mod(srcioff + i, dstifac)
-               fj = mod(srcjoff + j, dstjfac)
-               fk = mod(srckoff + k, dstkfac)
+               fi = mod(srcioff + i, dstifac) * one / dstifac
+               fj = mod(srcjoff + j, dstjfac) * one / dstjfac
+               fk = mod(srckoff + k, dstkfac) * one / dstkfac
+               
+               ifac(1) = (fi-1) / (-1)
+               ifac(2) = (fi  ) / 1
+               
+               jfac(1) = (fj-1) / (-1)
+               jfac(2) = (fj  ) / 1
+               
+               kfac(1) = (fk-1) / (-1)
+               kfac(2) = (fk  ) / 1
                
                res = 0
                
-               do kk=0,1
-                  do jj=0,1
-                     do ii=0,1
+               do kk=1,2
+                  do jj=1,2
+                     do ii=1,2
                         
-                        fac = 1
-                        
-                        if (ii.eq.0) then
-                           fac = fac * (dstifac - fi)
-                        else
-                           fac = fac *            fi
-                        end if
-                        if (jj.eq.0) then
-                           fac = fac * (dstjfac - fj)
-                        else
-                           fac = fac *            fj
-                        end if
-                        if (kk.eq.0) then
-                           fac = fac * (dstkfac - fk)
-                        else
-                           fac = fac *            fk
-                        end if
+                        fac = ifac(ii) * jfac(jj) * kfac(kk)
                         
                         if (fac.ne.0) then
-                           res = res + fac * src(i0+ii,j0+jj,k0+kk)
+                           res = res + fac * src(i0+ii ,j0+jj ,k0+kk)
                         end if
                         
                      end do
                   end do
                end do
                
-               dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1)
-     $              = res / (dstifac * dstjfac * dstkfac)
+               dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = res
                
             end do
          end do

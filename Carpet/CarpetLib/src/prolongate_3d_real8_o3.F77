@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_o3.F77,v 1.1 2001/03/24 22:38:48 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_o3.F77,v 1.2 2001/03/26 02:27:47 eschnett Exp $
       
 #include "cctk.h"
       
@@ -31,8 +31,9 @@ c     bbox(:,3) is stride
       
       integer i, j, k
       integer i0, j0, k0
-      integer ii, jj, kk
       CCTK_REAL8 fi, fj, fk
+      CCTK_REAL8 ifac(4), jfac(4), kfac(4)
+      integer ii, jj, kk
       CCTK_REAL8 fac
       CCTK_REAL8 res
       integer d
@@ -57,9 +58,9 @@ c     bbox(:,3) is stride
             call CCTK_WARN (0, "Internal error: array origins are not integer multiples of the strides")
          end if
          if (regbbox(d,1)-1.lt.srcbbox(d,1)
-     $        .or. regbbox(d,1)-1.lt.dstbbox(d,1)
      $        .or. regbbox(d,2)+1.gt.srcbbox(d,2)
-     $        .or. regbbox(d,2)+1.gt.dstbbox(d,2)) then
+     $        .or. regbbox(d,1).lt.dstbbox(d,1)
+     $        .or. regbbox(d,2).gt.dstbbox(d,2)) then
             call CCTK_WARN (0, "Internal error: region extent is not contained in array extents")
          end if
       end do
@@ -98,54 +99,39 @@ c     Loop over fine region
          do j = 0, regjext-1
             do i = 0, regiext-1
                
-               i0 = (srcioff + i) / dstifac + 1
-               j0 = (srcjoff + j) / dstjfac + 1
-               k0 = (srckoff + k) / dstkfac + 1
+               i0 = (srcioff + i) / dstifac
+               j0 = (srcjoff + j) / dstjfac
+               k0 = (srckoff + k) / dstkfac
                
                fi = mod(srcioff + i, dstifac) * one / dstifac
                fj = mod(srcjoff + j, dstjfac) * one / dstjfac
                fk = mod(srckoff + k, dstkfac) * one / dstkfac
                
+               ifac(1) = (fi  ) * (fi-1) * (fi-2) / (-6)
+               ifac(2) = (fi+1) * (fi-1) * (fi-2) / 2
+               ifac(3) = (fi+1) * (fi  ) * (fi-2) / (-2)
+               ifac(4) = (fi+1) * (fi  ) * (fi-1) / 6
+               
+               jfac(1) = (fj  ) * (fj-1) * (fj-2) / (-6)
+               jfac(2) = (fj+1) * (fj-1) * (fj-2) / 2
+               jfac(3) = (fj+1) * (fj  ) * (fj-2) / (-2)
+               jfac(4) = (fj+1) * (fj  ) * (fj-1) / 6
+               
+               kfac(1) = (fk  ) * (fk-1) * (fk-2) / (-6)
+               kfac(2) = (fk+1) * (fk-1) * (fk-2) / 2
+               kfac(3) = (fk+1) * (fk  ) * (fk-2) / (-2)
+               kfac(4) = (fk+1) * (fk  ) * (fk-1) / 6
+               
                res = 0
                
-               do kk=-1,2
-                  do jj=-1,2
-                     do ii=-1,2
+               do kk=1,4
+                  do jj=1,4
+                     do ii=1,4
                         
-                        fac = 1
-                        
-                        if (ii.eq.-1) then
-                           fac = fac * (fi  ) * (fi-1) * (fi-2) / (-6)
-                        else if (ii.eq.0) then
-                           fac = fac * (fi+1) * (fi-1) * (fi-2) / 2
-                        else if (ii.eq.1) then
-                           fac = fac * (fi+1) * (fi  ) * (fi-2) / (-2)
-                        else
-                           fac = fac * (fi+1) * (fi  ) * (fi-1) / 6
-                        end if
-                        
-                        if (jj.eq.-1) then
-                           fac = fac * (fj  ) * (fj-1) * (fj-2) / (-6)
-                        else if (jj.eq.0) then
-                           fac = fac * (fj+1) * (fj-1) * (fj-2) / 2
-                        else if (jj.eq.1) then
-                           fac = fac * (fj+1) * (fj  ) * (fj-2) / (-2)
-                        else
-                           fac = fac * (fj+1) * (fj  ) * (fj-1) / 6
-                        end if
-                        
-                        if (kk.eq.-1) then
-                           fac = fac * (fk  ) * (fk-1) * (fk-2) / (-6)
-                        else if (kk.eq.0) then
-                           fac = fac * (fk+1) * (fk-1) * (fk-2) / 2
-                        else if (kk.eq.1) then
-                           fac = fac * (fk+1) * (fk  ) * (fk-2) / (-2)
-                        else
-                           fac = fac * (fk+1) * (fk  ) * (fk-1) / 6
-                        end if
+                        fac = ifac(ii) * jfac(jj) * kfac(kk)
                         
                         if (fac.ne.0) then
-                           res = res + fac * src(i0+ii,j0+jj,k0+kk)
+                           res = res + fac * src(i0+ii-1, j0+jj-1, k0+kk-1)
                         end if
                         
                      end do

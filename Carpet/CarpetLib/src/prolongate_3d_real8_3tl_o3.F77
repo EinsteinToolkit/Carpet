@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_3tl_o3.F77,v 1.1 2001/03/24 22:38:48 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_3tl_o3.F77,v 1.2 2001/03/26 02:27:47 eschnett Exp $
       
 #include "cctk.h"
       
@@ -65,9 +65,9 @@ c     bbox(:,3) is stride
             call CCTK_WARN (0, "Internal error: array origins are not integer multiples of the strides")
          end if
          if (regbbox(d,1)-1.lt.srcbbox(d,1)
-     $        .or. regbbox(d,1)-1.lt.dstbbox(d,1)
      $        .or. regbbox(d,2)+1.gt.srcbbox(d,2)
-     $        .or. regbbox(d,2)+1.gt.dstbbox(d,2)) then
+     $        .or. regbbox(d,1).lt.dstbbox(d,1)
+     $        .or. regbbox(d,2).gt.dstbbox(d,2)) then
             call CCTK_WARN (0, "Internal error: region extent is not contained in array extents")
          end if
       end do
