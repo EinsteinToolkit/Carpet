@@ -45,22 +45,22 @@ namespace CarpetMask {
       gh const & hh = *vhh.at(Carpet::map);
       dh const & dd = *vdd.at(Carpet::map);
       
-      ibbox const & base = hh.bases().at(reflevel).at(mglevel);
+      ibbox const & base = hh.bases().at(mglevel).at(reflevel);
       
       
       
       // Calculate the union of all refined regions
       ibset refined;
       for (int c=0; c<hh.components(reflevel); ++c) {
-        refined |= hh.extents().at(reflevel).at(c).at(mglevel);
+        refined |= hh.extents().at(mglevel).at(reflevel).at(c);
       }
       refined.normalize();
       
       // Calculate the union of all coarse regions
       ibset parent;
       for (int c=0; c<hh.components(reflevel-1); ++c) {
-//         parent |= hh.extents().at(reflevel-1).at(c).at(mglevel).expanded_for(base);
-        parent |= hh.extents().at(reflevel-1).at(c).at(mglevel).expand(ivect(reffact-1),ivect(reffact-1)).contracted_for(base);
+//         parent |= hh.extents().at(mglevel).at(reflevel-1).at(c).expanded_for(base);
+        parent |= hh.extents().at(mglevel).at(reflevel-1).at(c).expand(ivect(reffact-1),ivect(reffact-1)).contracted_for(base);
       }
       parent.normalize();
       
@@ -102,7 +102,7 @@ namespace CarpetMask {
           DECLARE_CCTK_ARGUMENTS;
           
           ibbox const & ext
-            = dd.boxes.at(reflevel).at(component).at(mglevel).exterior;
+            = dd.boxes.at(mglevel).at(reflevel).at(component).exterior;
           
           for (int d=0; d<dim; ++d) {
             for (ibset::const_iterator bi = boundaries[d].begin();
@@ -164,7 +164,7 @@ namespace CarpetMask {
           DECLARE_CCTK_ARGUMENTS;
           
           ibbox const & ext
-            = dd.boxes.at(reflevel).at(component).at(mglevel).exterior;
+            = dd.boxes.at(mglevel).at(reflevel).at(component).exterior;
           
           for (ibset::const_iterator bi = refined.begin();
                bi != refined.end();

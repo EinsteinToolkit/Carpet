@@ -79,15 +79,16 @@ void dh::recompose (const bool do_prolongate) {
   }
 }
 
-void dh::allocate_bboxes() {
-  boxes.resize(h.reflevels());
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    boxes.at(rl).resize(h.components(rl));
-    for (int c=0; c<h.components(rl); ++c) {
-      boxes.at(rl).at(c).resize(h.mglevels(rl,c));
-      for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-        const ibbox intr = h.extents().at(rl).at(c).at(ml);
-        dboxes & b = boxes.at(rl).at(c).at(ml);
+void dh::allocate_bboxes ()
+{
+  boxes.resize(h.mglevels());
+  for (int ml=0; ml<h.mglevels(); ++ml) {
+    boxes.at(ml).resize(h.reflevels());
+    for (int rl=0; rl<h.reflevels(); ++rl) {
+      boxes.at(ml).at(rl).resize(h.components(rl));
+      for (int c=0; c<h.components(rl); ++c) {
+        const ibbox intr = h.extents().at(ml).at(rl).at(c);
+        dboxes & b = boxes.at(ml).at(rl).at(c);
 
         // Interior
         // (the interior of the grid has the extent as specified by
@@ -109,21 +110,21 @@ void dh::allocate_bboxes() {
         // (interior + boundaries = exterior)
         b.boundaries = b.exterior - intr;
 
-      } // for ml
-    } // for c
-  } // for rl
+      } // for c
+    } // for rl
+  } // for ml
 }
 
-// Loops over each refinement level, each component, and each multigrid
-// level, executing the "boxesop" member function argument on the corresponding
-// element of the "boxes" member 
-void dh::foreach_reflevel_component_mglevel (dh::boxesop op) {
-
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    for (int c=0; c<h.components(rl); ++c) {
-      for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-        dboxes & box = boxes.at(rl).at(c).at(ml);
-        (this->*op)( box, rl, c, ml ); // evaluate member function
+// Loops over each multigrid level, each refinement level, and each
+// component, executing the "boxesop" member function argument on the
+// corresponding element of the "boxes" member
+void dh::foreach_reflevel_component_mglevel (dh::boxesop op)
+{
+  for (int ml=0; ml<h.mglevels(); ++ml) {
+    for (int rl=0; rl<h.reflevels(); ++rl) {
+      for (int c=0; c<h.components(rl); ++c) {
+        dboxes & box = boxes.at(ml).at(rl).at(c);
+        (this->*op)(box, rl, c, ml); // evaluate member function
       }
     }
   }
@@ -157,8 +158,7 @@ void dh::intersect_sync_with_interior( dh::dboxes & box, int rl, int c, int ml )
 
   // Sync boxes
   for (int cc=0; cc<h.components(rl); ++cc) {
-    dboxes & box1 = boxes.at(rl).at(cc).at(ml);
-    assert (ml<h.mglevels(rl,cc));
+    dboxes & box1 = boxes.at(ml).at(rl).at(cc);
     // intersect boundaries with interior of that component
     ibset ovlp = bnds & box1.interior;
     ovlp.normalize();
@@ -176,7 +176,7 @@ void dh::setup_multigrid_boxes( dh::dboxes & box, int rl, int c, int ml )
 
   // Multigrid boxes
   if (ml>0) {
-    dboxes & bbox = boxes.at(rl).at(c).at(ml-1);
+    dboxes & bbox = boxes.at(ml-1).at(rl).at(c);
     const ibbox intrf = bbox.interior;
     const ibbox extrf = bbox.exterior;
     // Restriction (interior)
@@ -217,7 +217,7 @@ void dh::setup_refinement_interior_boxes( dh::dboxes & box, int rl, int c, int m
   // Refinement boxes
   if (rl<h.reflevels()-1) {
     for (int cc=0; cc<h.components(rl+1); ++cc) {
-      dboxes & box1 = boxes.at(rl+1).at(cc).at(ml);
+      dboxes & box1 = boxes.at(ml).at(rl+1).at(cc);
       const ibbox intrf = box1.interior;
       // Prolongation (interior)
       // TODO: prefer boxes from the same processor
@@ -257,7 +257,7 @@ void dh::setup_refinement_exterior_boxes( dh::dboxes & box, int rl, int c, int m
   // Refinement boxes
   if (rl<h.reflevels()-1) {
     for (int cc=0; cc<h.components(rl+1); ++cc) {
-      dboxes & box1 = boxes.at(rl+1).at(cc).at(ml);
+      dboxes & box1 = boxes.at(ml).at(rl+1).at(cc);
       const ibbox intrf = box1.interior;
       const ibbox& extrf = box1.exterior;
       const ibset& bndsf = box1.boundaries;
@@ -332,7 +332,7 @@ void dh::setup_restrict_interior_boxes( dh::dboxes & box, int rl, int c, int ml 
   // Refinement boxes
   if (rl<h.reflevels()-1) {
     for (int cc=0; cc<h.components(rl+1); ++cc) {
-      dboxes & box1 = boxes.at(rl+1).at(cc).at(ml);
+      dboxes & box1 = boxes.at(ml).at(rl+1).at(cc);
       const ibbox intrf = box1.interior;
       // Restriction (interior)
       {
@@ -422,7 +422,7 @@ void dh::assert_assert_assert( dh::dboxes & box, int rl, int c, int ml )
     if (rl==0) {
       const iblistvect& recv_ref_coarse = box.recv_ref_coarse;
       assert (recv_ref_coarse.empty());
-    } else {              // rl!=0
+    } else {                    // rl!=0
       const iblistvect& recv_ref_coarse = box.recv_ref_coarse;
       ibset intr = box.interior;
       ibset received;
@@ -504,23 +504,19 @@ void dh::assert_assert_assert( dh::dboxes & box, int rl, int c, int ml )
 
 void dh::calculate_bases () {
   // Calculate bases
-  bases.resize(h.reflevels());
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    if (h.components(rl)==0) {
-      bases.at(rl).resize(0);
-    } else {
-      bases.at(rl).resize(h.mglevels(rl,0));
-      for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
-        dbases & base = bases.at(rl).at(ml);
-        base.exterior = ibbox();
-        base.interior = ibbox();
-        for (int c=0; c<h.components(rl); ++c) {
-          dboxes & box = boxes.at(rl).at(c).at(ml);
-          base.exterior = (base.exterior.expanded_containing(box.exterior));
-          base.interior = (base.interior.expanded_containing(box.interior));
-        }
-        base.boundaries = base.exterior - base.interior;
+  bases.resize(h.mglevels());
+  for (int ml=0; ml<h.mglevels(); ++ml) {
+    bases.at(ml).resize(h.reflevels());
+    for (int rl=0; rl<h.reflevels(); ++rl) {
+      dbases & base = bases.at(ml).at(rl);
+      base.exterior = ibbox();
+      base.interior = ibbox();
+      for (int c=0; c<h.components(rl); ++c) {
+        dboxes & box = boxes.at(ml).at(rl).at(c);
+        base.exterior = (base.exterior.expanded_containing(box.exterior));
+        base.interior = (base.interior.expanded_containing(box.interior));
       }
+      base.boundaries = base.exterior - base.interior;
     }
   }
 }
@@ -569,8 +565,8 @@ void dh::save_memory ( bool do_prolongate ) {
         assert (! vectorleader);
         (*f)->recompose_free (rl);
       } else {
-        // treat vector groups specially: delete the leader only
-        // after all other elements have been deleted
+        // treat vector groups specially: delete the leader only after
+        // all other elements have been deleted
         if ((*f)->vectorindex == 0) {
           // first element: delete nothing
           if (rl == 0) {
@@ -632,7 +628,7 @@ void dh::do_output_bboxes( dh::dboxes & box, int rl, int c, int ml )
 {
   cout << endl;
   cout << "dh bboxes:" << endl;
-  cout << "rl=" << rl << " c=" << c << " ml=" << ml << endl;
+  cout << "ml=" << ml << " rl=" << rl << " c=" << c << endl;
   cout << "exterior=" << box.exterior << endl;
   cout << "interior=" << box.interior << endl;
   cout << "send_mg_fine=" << box.send_mg_fine << endl;
@@ -652,14 +648,15 @@ void dh::do_output_bboxes( dh::dboxes & box, int rl, int c, int ml )
   cout << "recv_not=" << box.recv_not << endl;
 }
 
-void dh::output_bases () {
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    if (h.components(rl)>0) {
-      for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
-        dbases & base = bases.at(rl).at(ml);
+void dh::output_bases ()
+{
+  for (int ml=0; ml<h.mglevels(); ++ml) {
+    for (int rl=0; rl<h.reflevels(); ++rl) {
+      if (h.components(rl)>0) {
+        dbases & base = bases.at(ml).at(rl);
         cout << endl;
         cout << "dh bases:" << endl;
-        cout << "rl=" << rl << " ml=" << ml << endl;
+        cout << "ml=" << ml << " rl=" << rl << endl;
         cout << "exterior=" << base.exterior << endl;
         cout << "interior=" << base.interior << endl;
         cout << "boundaries=" << base.boundaries << endl;

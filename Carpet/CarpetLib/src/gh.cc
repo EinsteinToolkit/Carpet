@@ -29,7 +29,7 @@ gh::gh (const int reffact_, const centering refcent_,
 gh::~gh () { }
 
 // Modifiers
-void gh::recompose (const rexts& exts,
+void gh::recompose (const mexts& exts,
                     const rbnds& outer_bounds,
                     const rprocs& procs,
                     const bool do_prolongate)
@@ -70,45 +70,47 @@ void gh::recompose (const rexts& exts,
 
 void gh::check_processor_number_consistency () {
   for (int rl=0; rl<reflevels(); ++rl) {
-    assert (processors().size() == extents().size());
-    assert (outer_boundaries().size() == extents().size());
+    assert (processors().size() == extents().at(0).size());
+    assert (outer_boundaries().size() == extents().at(0).size());
     for (int c=0; c<components(rl); ++c) {
-      assert (processors().at(rl).size() == extents().at(rl).size());
-      assert (outer_boundaries().at(rl).size() == extents().at(rl).size());
+      assert (processors().at(rl).size() == extents().at(0).at(rl).size());
+      assert (outer_boundaries().at(rl).size() == extents().at(0).at(rl).size());
     }
   }
 }
   
-void gh::check_multigrid_consistency () {
-  for (int rl=0; rl<reflevels(); ++rl) {
-    for (int c=0; c<components(rl); ++c) {
-      assert (mglevels(rl,c)>0);
-      for (int ml=1; ml<mglevels(rl,c); ++ml) {
-	assert (all(extents().at(rl).at(c).at(ml).stride()
-		    == ivect(mgfact) * extents().at(rl).at(c).at(ml-1).stride()));
+void gh::check_multigrid_consistency ()
+{
+  assert (mglevels()>0);
+  for (int ml=1; ml<mglevels(); ++ml) {
+    for (int rl=0; rl<reflevels(); ++rl) {
+      for (int c=0; c<components(rl); ++c) {
+	assert (all(extents().at(ml).at(rl).at(c).stride()
+		    == ivect(mgfact) * extents().at(ml-1).at(rl).at(c).stride()));
         // TODO: put the check back in, taking outer boundaries into
         // account
 #if 0
-	assert (extents().at(rl).at(c).at(ml)
-		.contracted_for(extents().at(rl).at(c).at(ml-1))
-		.is_contained_in(extents().at(rl).at(c).at(ml-1)));
+	assert (extents().at(ml).at(rl).at(c)
+		.contracted_for(extents().at(ml-1).at(rl).at(c))
+		.is_contained_in(extents().at(ml-1).at(rl).at(c)));
 #endif
       }
     }
   }
 }
   
-void gh::check_component_consistency () {
-  for (int rl=0; rl<reflevels(); ++rl) {
-    assert (components(rl)>0);
-    for (int c=0; c<components(rl); ++c) {
-      for (int ml=0; ml<mglevels(rl,c); ++ml) {
-        const ibbox &b  = extents().at(rl).at(c).at(ml);
-        const ibbox &b0 = extents().at(rl).at(0).at(ml);
+void gh::check_component_consistency ()
+{
+  for (int ml=0; ml<mglevels(); ++ml) {
+    for (int rl=0; rl<reflevels(); ++rl) {
+      assert (components(rl)>0);
+      for (int c=0; c<components(rl); ++c) {
+        const ibbox &b  = extents().at(ml).at(rl).at(c);
+        const ibbox &b0 = extents().at(ml).at(rl).at(0);
 	assert (all(b.stride() == b0.stride()));
 	assert (b.is_aligned_with(b0));
         for (int cc=c+1; cc<components(rl); ++cc) {
-          assert ((b & extents().at(rl).at(cc).at(ml)).empty());
+          assert ((b & extents().at(ml).at(rl).at(cc)).empty());
         }
       }
     }
@@ -127,40 +129,40 @@ void gh::check_base_grid_extent () {
   }
 }
   
-void gh::check_refinement_levels () {
-  for (int rl=1; rl<reflevels(); ++rl) {
-    assert (all(extents().at(rl-1).at(0).at(0).stride()
-		== ivect(reffact) * extents().at(rl).at(0).at(0).stride()));
-    // Check contained-ness:
-    // first take all coarse grids ...
-    ibset all;
-    for (int c=0; c<components(rl-1); ++c) {
-      all |= extents().at(rl-1).at(c).at(0);
+void gh::check_refinement_levels ()
+{
+  for (int ml=0; ml<mglevels(); ++ml) {
+    for (int rl=1; rl<reflevels(); ++rl) {
+      assert (all(extents().at(ml).at(rl-1).at(0).stride()
+                  == ivect(reffact) * extents().at(ml).at(rl).at(0).stride()));
+      // Check contained-ness:
+      // first take all coarse grids ...
+      ibset all;
+      for (int c=0; c<components(rl-1); ++c) {
+        all |= extents().at(ml).at(rl-1).at(c);
+      }
+      // ... remember their size ...
+      const int sz = all.size();
+      // ... then add the coarsified fine grids ...
+      for (int c=0; c<components(rl); ++c) {
+        all |= extents().at(ml).at(rl).at(c).contracted_for(extents().at(ml).at(rl-1).at(0));
+      }
+      // ... and then check the sizes:
+      assert (all.size() == sz);
     }
-    // ... remember their size ...
-    const int sz = all.size();
-    // ... then add the coarsified fine grids ...
-    for (int c=0; c<components(rl); ++c) {
-      all |= extents().at(rl).at(c).at(0).contracted_for(extents().at(rl-1).at(0).at(0));
-    }
-    // ... and then check the sizes:
-    assert (all.size() == sz);
   }
 }
 
-void gh::calculate_base_extents_of_all_levels () {
-  _bases.resize(reflevels());
-  for (int rl=0; rl<reflevels(); ++rl) {
-    if (components(rl)==0) {
-      _bases.at(rl).resize(0);
-    } else {
-      _bases.at(rl).resize(mglevels(rl,0));
-      for (int ml=0; ml<mglevels(rl,0); ++ml) {
-        _bases.at(rl).at(ml) = ibbox();
-        ibbox &bb = _bases.at(rl).at(ml);
-	for (int c=0; c<components(rl); ++c) {
-	  bb = bb.expanded_containing(extents().at(rl).at(c).at(ml));
-	}
+void gh::calculate_base_extents_of_all_levels ()
+{
+  _bases.resize(mglevels());
+  for (int ml=0; ml<mglevels(); ++ml) {
+    _bases.at(ml).resize(reflevels());
+    for (int rl=0; rl<reflevels(); ++rl) {
+      _bases.at(ml).at(rl) = ibbox();
+      ibbox &bb = _bases.at(ml).at(rl);
+      for (int c=0; c<components(rl); ++c) {
+        bb = bb.expanded_containing(extents().at(ml).at(rl).at(c));
       }
     }
   }
@@ -198,14 +200,15 @@ void gh::remove (dh* d) {
 }
 
 
-void gh::do_output_bboxes (ostream& os) const {
-  for (int rl=0; rl<reflevels(); ++rl) {
-    for (int c=0; c<components(rl); ++c) {
-      for (int ml=0; ml<mglevels(rl,c); ++ml) {
+void gh::do_output_bboxes (ostream& os) const
+{
+  for (int ml=0; ml<mglevels(); ++ml) {
+    for (int rl=0; rl<reflevels(); ++rl) {
+      for (int c=0; c<components(rl); ++c) {
         os << endl;
         os << "gh bboxes:" << endl;
-        os << "rl=" << rl << " c=" << c << " ml=" << ml << endl;
-        os << "extent=" << extents().at(rl).at(c).at(ml) << endl;
+        os << "ml=" << ml << " rl=" << rl << " c=" << c << endl;
+        os << "extent=" << extents().at(ml).at(rl).at(c) << endl;
         os << "outer_boundary=" << outer_boundaries().at(rl).at(c) << endl;
         os << "processor=" << processors().at(rl).at(c) << endl;
       }
@@ -213,14 +216,15 @@ void gh::do_output_bboxes (ostream& os) const {
   }
 }
 
-void gh::do_output_bases (ostream& os) const {
-  for (int rl=0; rl<reflevels(); ++rl) {
-    if (components(rl)>0) {
-      for (int ml=0; ml<mglevels(rl,0); ++ml) {
+void gh::do_output_bases (ostream& os) const
+{
+  for (int ml=0; ml<mglevels(); ++ml) {
+    for (int rl=0; rl<reflevels(); ++rl) {
+      if (components(rl)>0) {
         os << endl;
         os << "gh bases:" << endl;
-        os << "rl=" << rl << " ml=" << ml << endl;
-        os << "base=" << bases().at(rl).at(ml) << endl;
+        os << "ml=" << ml << " rl=" << rl << endl;
+        os << "base=" << bases().at(ml).at(rl) << endl;
       }
     }
   }

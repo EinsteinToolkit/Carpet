@@ -21,7 +21,7 @@ namespace CarpetRegrid {
   
   int ManualCoordinates (cGH const * const cctkGH,
                          gh const & hh,
-                         gh::rexts  & bbsss,
+                         gh::mexts  & bbsss,
                          gh::rbnds  & obss,
                          gh::rprocs & pss)
   {
@@ -36,8 +36,9 @@ namespace CarpetRegrid {
     if (reflevel == refinement_levels) return 0;
     
     assert (bbsss.size() >= 1);
+    vector<vector<ibbox> > bbss = bbsss.at(0);
     
-    bbsss.resize (refinement_levels);
+    bbss.resize (refinement_levels);
     obss.resize (refinement_levels);
     pss.resize (refinement_levels);
     
@@ -51,7 +52,7 @@ namespace CarpetRegrid {
     
     assert (! smart_outer_boundaries);
     
-    for (size_t rl=1; rl<bbsss.size(); ++rl) {
+    for (size_t rl=1; rl<bbss.size(); ++rl) {
       
       bbvect const ob (false);
       
@@ -66,13 +67,12 @@ namespace CarpetRegrid {
       gh::cprocs ps;
       SplitRegions (cctkGH, bbs, obs, ps);
       
-      // make multigrid aware
-      vector<vector<ibbox> > bbss;
-      MakeMultigridBoxes (cctkGH, bbs, obs, bbss);
-      
-      bbsss.at(rl) = bbss;
+      bbss.at(rl) = bbs;
       obss.at(rl) = obs;
       pss.at(rl) = ps;
+      
+      // make multigrid aware
+      MakeMultigridBoxes (cctkGH, bbss, obss, bbsss);
       
     } // for rl
     

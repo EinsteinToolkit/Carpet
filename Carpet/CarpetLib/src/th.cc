@@ -25,29 +25,29 @@ th::~th () {
 }
 
 // Modifiers
-void th::recompose () {
-  times.resize(h.reflevels());
-  deltas.resize(h.reflevels());
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    const int old_mglevels = times.at(rl).size();
-    CCTK_REAL mgtime;
-    // Select default time
-    if (old_mglevels==0 && rl==0) {
-      mgtime = 0;
-    } else if (old_mglevels==0) {
-      mgtime = times.at(rl-1).at(0);
-    } else {
-      mgtime = times.at(rl).at(old_mglevels-1);
-    }
-    times.at(rl).resize(h.mglevels(rl,0), mgtime);
-    deltas.at(rl).resize(h.mglevels(rl,0));
-    for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
-      if (rl==0 && ml==0) {
-	deltas.at(rl).at(ml) = delta;
-      } else if (ml==0) {
-	deltas.at(rl).at(ml) = deltas.at(rl-1).at(ml) / h.reffact;
+void th::recompose ()
+{
+  const int old_mglevels = times.size();
+  times.resize(h.mglevels());
+  deltas.resize(h.mglevels());
+  for (int ml=0; ml<h.mglevels(); ++ml) {
+    const int old_reflevels = times.at(ml).size();
+    times.at(ml).resize(h.reflevels());
+    deltas.at(ml).resize(h.reflevels());
+    for (int rl=0; rl<h.reflevels(); ++rl) {
+      if (old_mglevels==0) {
+        times.at(ml).at(rl) = 0;
+      } else if (rl < old_reflevels) {
+        // do nothing
       } else {
-	deltas.at(rl).at(ml) = deltas.at(rl).at(ml-1) * h.mgfact;
+        times.at(ml).at(rl) = times.at(ml).at(rl-1);
+      }
+      if (ml==0 and rl==0) {
+	deltas.at(ml).at(rl) = delta;
+      } else if (ml==0) {
+	deltas.at(ml).at(rl) = deltas.at(ml).at(rl-1) / h.reffact;
+      } else {
+	deltas.at(ml).at(rl) = deltas.at(ml-1).at(rl) * h.mgfact;
       }
     }
   }
@@ -59,11 +59,13 @@ void th::recompose () {
 void th::output (ostream& os) const {
   os << "th:"
      << "times={";
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
-      if (!(rl==0 && ml==0)) os << ",";
-      os << rl << ":" << ml << ":"
-	 << times.at(rl).at(ml) << "(" << deltas.at(rl).at(ml) << ")";
+  const char * sep = "";
+  for (int ml=0; ml<h.mglevels(); ++ml) {
+    for (int rl=0; rl<h.reflevels(); ++rl) {
+      os << sep
+         << ml << ":" << rl << ":"
+	 << times.at(ml).at(rl) << "(" << deltas.at(ml).at(rl) << ")";
+      sep = ",";
     }
   }
   os << "}";

@@ -55,7 +55,7 @@ public:
     iblistvect send_ref_coarse;
     iblistvect recv_ref_fine;
     iblistvect recv_ref_coarse;
-    iblistvect send_sync;        // send while syncing
+    iblistvect send_sync;       // send while syncing
     iblistvect send_ref_bnd_fine; // sent to finer grids
     
     ibset boundaries;           // boundaries
@@ -63,14 +63,6 @@ public:
     iblistvect recv_ref_bnd_coarse; // received from coarser grids
     ibset sync_not;             // not received while syncing (outer boundary of that level)
     ibset recv_not;             // not received while syncing or prolongating (globally outer boundary)
-    
-#if 0
-    // after regridding:
-    iblistvect prev_send;       // sent from previous dh
-    iblistvect recv_prev;       // received from previous dh
-    iblistvect send_prev_fine;  // sent to finer
-    iblistvect recv_prev_coarse; // received from coarser
-#endif
   };
   
 private:
@@ -81,19 +73,19 @@ private:
     ibset boundaries;           // boundaries
   };
   
-  typedef vector<dboxes> mboxes; // ... for each multigrid level
-  typedef vector<mboxes> cboxes; // ... for each component
+  typedef vector<dboxes> cboxes; // ... for each component
   typedef vector<cboxes> rboxes; // ... for each refinement level
+  typedef vector<rboxes> mboxes; // ... for each multigrid level
   
-  typedef vector<dbases> mbases; // ... for each multigrid level
-  typedef vector<mbases> rbases; // ... for each refinement level
+  typedef vector<dbases> rbases; // ... for each refinement level
+  typedef vector<rbases> mbases; // ... for each multigrid level
  
-  void allocate_bboxes();
-                                 // generic member function taking a dboxes,
-                                 // a refinement level, a component, and a 
-                                 // multigrid level
-  typedef void    (dh::*boxesop)( dboxes &, int rl, int c, int ml ); 
-  void foreach_reflevel_component_mglevel ( boxesop op );
+  void allocate_bboxes ();
+
+  // generic member function taking a dboxes, a refinement level, a
+  // component, and a multigrid level
+  typedef void (dh::*boxesop) (dboxes &, int rl, int c, int ml); 
+  void foreach_reflevel_component_mglevel (boxesop op);
 
                                  // these all of form 'boxesop'
   void setup_sync_and_refine_boxes( dboxes & b, int rl, int c, int ml );
@@ -120,8 +112,8 @@ public:                         // should be readonly
   int prolongation_order_space; // order of spatial prolongation operator
   int buffer_width;             // buffer inside refined grids
   
-  rboxes boxes;
-  rbases bases;
+  mboxes boxes;
+  mbases bases;
   
   list<ggf*> gfs;               // list of all grid functions
   

@@ -35,7 +35,7 @@ public:
   // Constructors
   gf (const int varindex, const operator_type transport_operator,
       th& t, dh& d,
-      const int tmin, const int tmax, const int prolongation_order_time,
+      const int prolongation_order_time,
       const int vectorlength, const int vectorindex,
       gf* const vectorleader);
   

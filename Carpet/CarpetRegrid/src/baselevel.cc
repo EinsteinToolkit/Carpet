@@ -19,7 +19,7 @@ namespace CarpetRegrid {
   
   int BaseLevel (cGH const * const cctkGH,
                  gh const & hh,
-                 gh::rexts  & bbsss,
+                 gh::mexts  & bbsss,
                  gh::rbnds  & obss,
                  gh::rprocs & pss)
   {

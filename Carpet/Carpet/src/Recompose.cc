@@ -65,47 +65,50 @@ namespace Carpet {
   
   
   
-  void CheckRegions (const gh::rexts & bbsss,
+  void CheckRegions (const gh::mexts & bbsss,
                      const gh::rbnds & obss,
                      const gh::rprocs& pss)
   {
-    // At least one level
+    // At least one multigrid level
     if (bbsss.size() == 0) {
-      CCTK_WARN (0, "I cannot set up a grid hierarchy with zero refinement levels.");
+      CCTK_WARN (0, "I cannot set up a grid hierarchy with zero multigrid levels.");
     }
     assert (bbsss.size() > 0);
+    // At least one refinement level
+    if (bbsss.at(0).size() == 0) {
+      CCTK_WARN (0, "I cannot set up a grid hierarchy with zero refinement levels.");
+    }
+    assert (bbsss.at(0).size() > 0);
     // At most maxreflevels levels
-    if ((int)bbsss.size() > maxreflevels) {
+    if ((int)bbsss.at(0).size() > maxreflevels) {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "I cannot set up a grid hierarchy with more than Carpet::max_refinement_levels refinement levels.  I found Carpet::max_refinement_levels=%d, while %d levels were requested.",
-                  (int)maxreflevels, (int)bbsss.size());
+                  (int)maxreflevels, (int)bbsss.at(0).size());
     }
-    assert ((int)bbsss.size() <= maxreflevels);
-    for (int rl=0; rl<(int)bbsss.size(); ++rl) {
-      // No empty levels
-      assert (bbsss.at(rl).size() > 0);
-      for (int c=0; c<(int)bbsss.at(rl).size(); ++c) {
-        // At least one multigrid level
-        assert (bbsss.at(rl).at(c).size() > 0);
-        for (int ml=0; ml<(int)bbsss.at(rl).at(c).size(); ++ml) {
+    assert ((int)bbsss.at(0).size() <= maxreflevels);
+    for (int ml=0; ml<(int)bbsss.size(); ++ml) {
+      for (int rl=0; rl<(int)bbsss.at(0).size(); ++rl) {
+        // No empty levels
+        assert (bbsss.at(ml).at(rl).size() > 0);
+        for (int c=0; c<(int)bbsss.at(ml).at(rl).size(); ++c) {
           // Check sizes
           // Do allow processors with zero grid points
 //           assert (all(bbsss.at(rl).at(c).at(ml).lower() <= bbsssi.at(rl).at(c).at(ml).upper()));
           // Check strides
           const int str = ipow(reffact, maxreflevels-rl-1) * ipow(mgfact, ml);
-          assert (all(bbsss.at(rl).at(c).at(ml).stride() == str));
+          assert (all(bbsss.at(ml).at(rl).at(c).stride() == str));
           // Check alignments
-          assert (all(bbsss.at(rl).at(c).at(ml).lower() % str == 0));
-          assert (all(bbsss.at(rl).at(c).at(ml).upper() % str == 0));
+          assert (all(bbsss.at(ml).at(rl).at(c).lower() % str == 0));
+          assert (all(bbsss.at(ml).at(rl).at(c).upper() % str == 0));
         }
       }
     }
     
-    assert (pss.size() == bbsss.size());
-    assert (obss.size() == bbsss.size());
-    for (int rl=0; rl<(int)bbsss.size(); ++rl) {
-      assert (obss.at(rl).size() == bbsss.at(rl).size());
-      assert (pss.at(rl).size() == bbsss.at(rl).size());
+    assert (pss.size() == bbsss.at(0).size());
+    assert (obss.size() == bbsss.at(0).size());
+    for (int rl=0; rl<(int)bbsss.at(0).size(); ++rl) {
+      assert (obss.at(rl).size() == bbsss.at(0).at(rl).size());
+      assert (pss.at(rl).size() == bbsss.at(0).at(rl).size());
     }
     
   }
@@ -128,7 +131,7 @@ namespace Carpet {
     bool did_change = false;
     BEGIN_MAP_LOOP(cgh, CCTK_GF) {
       
-      gh::rexts  bbsss = vhh.at(map)->extents();
+      gh::mexts  bbsss = vhh.at(map)->extents();
       gh::rbnds  obss  = vhh.at(map)->outer_boundaries();
       gh::rprocs pss   = vhh.at(map)->processors();
       
@@ -177,13 +180,13 @@ namespace Carpet {
   {
     CCTK_INFO ("New grid structure (grid points):");
     cout << "   Refinement level " << reflevel << ", map " << map << endl;
-    for (int rl=0; rl<hh.reflevels(); ++rl) {
-      for (int c=0; c<hh.components(rl); ++c) {
-        for (int ml=0; ml<hh.mglevels(rl,c); ++ml) {
+    for (int ml=0; ml<hh.mglevels(); ++ml) {
+      for (int rl=0; rl<hh.reflevels(); ++rl) {
+        for (int c=0; c<hh.components(rl); ++c) {
           const int convfact = ipow(mgfact, ml);
           const int levfact = ipow(reffact, rl);
-          const ivect lower = hh.extents().at(rl).at(c).at(ml).lower();
-          const ivect upper = hh.extents().at(rl).at(c).at(ml).upper();
+          const ivect lower = hh.extents().at(ml).at(rl).at(c).lower();
+          const ivect upper = hh.extents().at(ml).at(rl).at(c).upper();
           assert (all(lower * levfact % maxreflevelfact == 0));
           assert (all(upper * levfact % maxreflevelfact == 0));
           assert (all(((upper - lower) * levfact / maxreflevelfact)
@@ -205,13 +208,13 @@ namespace Carpet {
     }
     
     CCTK_INFO ("New grid structure (coordinates):");
-    for (int rl=0; rl<hh.reflevels(); ++rl) {
-      for (int c=0; c<hh.components(rl); ++c) {
-        for (int ml=0; ml<hh.mglevels(rl,c); ++ml) {
+    for (int ml=0; ml<hh.mglevels(); ++ml) {
+      for (int rl=0; rl<hh.reflevels(); ++rl) {
+        for (int c=0; c<hh.components(rl); ++c) {
           const rvect origin = origin_space.at(0);
           const rvect delta = delta_space;
-          const ivect lower = hh.extents().at(rl).at(c).at(ml).lower();
-          const ivect upper = hh.extents().at(rl).at(c).at(ml).upper();
+          const ivect lower = hh.extents().at(ml).at(rl).at(c).lower();
+          const ivect upper = hh.extents().at(ml).at(rl).at(c).upper();
           const int convfact = ipow(mgfact, ml);
           const int levfact = ipow(reffact, rl);
           cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
@@ -230,7 +233,7 @@ namespace Carpet {
   
   void OutputGridStructure (const cGH * const cgh,
                             const int m,
-                            const gh::rexts & bbsss,
+                            const gh::mexts & bbsss,
                             const gh::rbnds & obss,
                             const gh::rprocs& pss)
   {
@@ -274,13 +277,13 @@ namespace Carpet {
     
     file << "iteration " << cgh->cctk_iteration << endl;
     file << "maps " << maps << endl;
-    file << m << " reflevels " << bbsss.size() << endl;
-    for (int rl=0; rl<(int)bbsss.size(); ++rl) {
-      file << m << " " << rl << " components " << bbsss.at(rl).size() << endl;
-      for (int c=0; c<(int)bbsss.at(rl).size(); ++c) {
-        file << m << " " << rl << " " << c << " mglevels " << bbsss.at(rl).at(c).size() << endl;
-        for (int ml=0; ml<(int)bbsss.at(rl).at(c).size(); ++ml) {
-          file << m << " " << rl << " " << c << " " << ml << "   " << pss.at(rl).at(c) << " " << bbsss.at(rl).at(c).at(ml) << obss.at(rl).at(c) << endl;
+    file << m << " mglevels " << bbsss.size() << endl;
+    for (int ml=0; ml<(int)bbsss.size(); ++ml) {
+      file << m << " " << ml << " reflevels " << bbsss.at(ml).size() << endl;
+      for (int rl=0; rl<(int)bbsss.at(ml).size(); ++rl) {
+        file << m << " " << ml << " " << rl << " components " << bbsss.at(ml).at(rl).size() << endl;
+        for (int c=0; c<(int)bbsss.at(ml).at(rl).size(); ++c) {
+          file << m << " " << ml << " " << rl << " " << c << "   " << pss.at(rl).at(c) << " " << bbsss.at(ml).at(rl).at(c) << obss.at(rl).at(c) << endl;
         }
       }
     }
@@ -829,19 +832,42 @@ namespace Carpet {
   }
   
   void MakeMultigridBoxes (const cGH* cgh,
-                           vector<ibbox> const & bbs,
-                           vector<bbvect> const & obs,
-                           vector<vector<ibbox> >& bbss)
+                           vector<vector<ibbox> > const & bbss,
+                           vector<vector<bbvect> > const & obss,
+                           vector<vector<vector<ibbox> > > & bbsss)
   {
-    assert (bbs.size() == obs.size());
-    ibbox base;
-    for (int c=0; c<(int)bbs.size(); ++c) {
-      base = base.expanded_containing(bbs.at(c));
+    assert (bbss.size() == obss.size());
+    for (int rl=0; rl<(int)bbss.size(); ++rl) {
+      assert (bbss.at(rl).size() == obss.at(rl).size());
     }
-    bbss.resize(bbs.size());
-    for (int c=0; c<(int)bbs.size(); ++c) {
-      MakeMultigridBoxes (cgh, base, bbs.at(c), obs.at(c), bbss.at(c));
+    
+    bbsss.resize (mglevels);
+    for (int ml=0; ml<mglevels; ++ml) {
+      bbsss.at(ml).resize (bbss.size());
+      for (int rl=0; rl<(int)bbss.size(); ++rl) {
+        bbsss.at(ml).at(rl).resize (bbss.at(rl).size());
+      }
     }
+    
+    for (int rl=0; rl<(int)bbss.size(); ++rl) {
+      
+      ibbox base;
+      for (int c=0; c<(int)bbss.at(rl).size(); ++c) {
+        base = base.expanded_containing(bbss.at(rl).at(c));
+      }
+      
+      for (int c=0; c<(int)bbss.at(rl).size(); ++c) {
+        vector<ibbox> mg_bbs;
+        MakeMultigridBoxes
+          (cgh, base, bbss.at(rl).at(c), obss.at(rl).at(c), mg_bbs);
+        assert ((int)mg_bbs.size() == mglevels);
+        for (int ml=0; ml<mglevels; ++ml) {
+          bbsss.at(ml).at(rl).at(c) = mg_bbs.at(ml);
+        }
+        
+      } // for c
+      
+    } // for rl
   }
   
 } // namespace Carpet

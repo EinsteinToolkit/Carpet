@@ -596,17 +596,17 @@ namespace Carpet {
     vector<int> ps;
     SplitRegions (cgh, bbs, obs, ps);
     
-    // Create all multigrid levels
-    vector<vector<ibbox> > bbss;
-    MakeMultigridBoxes (cgh, bbs, obs, bbss);
-    
     // Only one refinement level
-    vector<vector<vector<ibbox> > > bbsss(1);
+    vector<vector<ibbox> > bbss(1);
     vector<vector<bbvect> > obss(1);
     vector<vector<int> > pss(1);
-    bbsss.at(0) = bbss;
+    bbss.at(0) = bbs;
     obss.at(0) = obs;
     pss.at(0) = ps;
+    
+    // Create all multigrid levels
+    vector<vector<vector<ibbox> > > bbsss;
+    MakeMultigridBoxes (cgh, bbss, obss, bbsss);
     
     // Check the regions
     CheckRegions (bbsss, obss, pss);
@@ -769,11 +769,11 @@ namespace Carpet {
   }
 
   void print_grid_structure (vector<gh*> & vhh, int m) {
-    const int rl = 0;
-    for (int c=0; c<vhh.at(m)->components(rl); ++c) {
-      for (int ml=0; ml<vhh.at(m)->mglevels(rl,c); ++ml) {
-        const ivect lower = vhh.at(m)->extents().at(rl).at(c).at(ml).lower();
-        const ivect upper = vhh.at(m)->extents().at(rl).at(c).at(ml).upper();
+    for (int ml=0; ml<vhh.at(m)->mglevels(); ++ml) {
+      const int rl = 0;
+      for (int c=0; c<vhh.at(m)->components(rl); ++c) {
+        const ivect lower = vhh.at(m)->extents().at(ml).at(rl).at(c).lower();
+        const ivect upper = vhh.at(m)->extents().at(ml).at(rl).at(c).upper();
         const int convfact = ipow(mgfact, ml);
         assert (all(lower % maxreflevelfact == 0));
         assert (all(upper % maxreflevelfact == 0));
@@ -952,9 +952,17 @@ namespace Carpet {
       } else {
         SplitRegions_Automatic (cgh, bbs, obs, ps);
       }
+        
+      // Only one refinement level
+      vector<vector<ibbox> > bbss(1);
+      vector<vector<bbvect> > obss(1);
+      vector<vector<int> > pss(1);
+      bbss.at(0) = bbs;
+      obss.at(0) = obs;
+      pss.at(0) = ps;
       
       // Create all multigrid levels
-      vector<vector<ibbox> > bbss (bbs.size());
+      vector<vector<vector<ibbox> > > bbsss (mglevels);
       ivect amgfact;
       iivect aoffset;
       for (int d=0; d<dim; ++d) {
@@ -962,17 +970,17 @@ namespace Carpet {
         aoffset[d][0] = 0;
         aoffset[d][1] = convoffsets[d];
       }
-      for (size_t c=0; c<bbs.size(); ++c) {
-        bbss.at(c).resize (mglevels);
-        bbss.at(c).at(0) = bbs.at(c);
-        for (int ml=1; ml<mglevels; ++ml) {
+      bbsss.at(0) = bbss;
+      for (int ml=1; ml<mglevels; ++ml) {
+        const int rl = 0;
+        for (int c=0; c<(int)bbss.at(rl).size(); ++c) {
           // this base
           ivect const baselo = ivect(0);
           ivect const baselo1 = baselo;
           // next finer grid
-          ivect const flo = bbss.at(c).at(ml-1).lower();
-          ivect const fhi = bbss.at(c).at(ml-1).upper();
-          ivect const fstr = bbss.at(c).at(ml-1).stride();
+          ivect const flo = bbsss.at(ml-1).at(rl).at(c).lower();
+          ivect const fhi = bbsss.at(ml-1).at(rl).at(c).upper();
+          ivect const fstr = bbsss.at(ml-1).at(rl).at(c).stride();
           // this grid
           ivect const str = fstr * amgfact;
           ivect const lo = flo + xpose(obs.at(c))[0].ifthen
@@ -983,17 +991,9 @@ namespace Carpet {
                 ivect(0));
           ivect const lo1 = baselo1 + (lo - baselo1 + str - 1) / str * str;
           ivect const hi1 = lo1 + (hi - lo1) / str * str;
-          bbss.at(c).at(ml) = ibbox(lo1, hi1, str);
+          bbsss.at(ml).at(rl).at(c) = ibbox(lo1, hi1, str);
         }
       }
-        
-      // Only one refinement level
-      vector<vector<vector<ibbox> > > bbsss(1);
-      vector<vector<bbvect> > obss(1);
-      vector<vector<int> > pss(1);
-      bbsss.at(0) = bbss;
-      obss.at(0) = obs;
-      pss.at(0) = ps;
 	
       // Recompose for this map
       char * const groupname = CCTK_GroupName (group);
@@ -1027,7 +1027,7 @@ namespace Carpet {
       
       arrdata.at(group).at(m).data.resize(CCTK_NumVarsInGroupI(group));
       for (int var=0; var<(int)arrdata.at(group).at(m).data.size(); ++var) {
-        arrdata.at(group).at(m).data.at(var) = 0;
+        arrdata.at(group).at(m).data.at(var) = NULL;
       }
       
     }

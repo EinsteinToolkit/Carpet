@@ -277,7 +277,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
     {
       // Using "interior" removes ghost zones and refinement boundaries.
       bboxes += arrdata.at(gindex).at(Carpet::map).dd->
-                boxes.at(refinementlevel).at(component).at(mglevel).interior;
+                boxes.at(mglevel).at(refinementlevel).at(component).interior;
     } END_COMPONENT_LOOP;
 
     // Normalise the set, i.e., try to represent the set with fewer bboxes.
@@ -372,7 +372,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
         // (use either the interior or exterior here, as we did above)
         ibbox const overlap = *bbox &
           arrdata.at(gindex).at(Carpet::map).dd->
-          boxes.at(refinementlevel).at(component).at(mglevel).interior;
+          boxes.at(mglevel).at(refinementlevel).at(component).interior;
 
         // Continue if this component is not part of this combination
         if (overlap.empty())
@@ -837,7 +837,7 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
                              coord_handles, "COORDINATES") >= 0)
   {
     const ibbox& baseext = 
-    vdd.at(Carpet::map)->bases.at(reflevel).at(mglevel).exterior;
+    vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
 
     const ivect pos = (bbox->lower() - baseext.lower()) / bbox->stride();
 

@@ -33,8 +33,8 @@ public:				// should be readonly
 private:
   
   CCTK_REAL delta;		// time step
-  vector<vector<CCTK_REAL> > times; // current times
-  vector<vector<CCTK_REAL> > deltas; // time steps
+  vector<vector<CCTK_REAL> > times; // current times [ml][rl]
+  vector<vector<CCTK_REAL> > deltas; // time steps [ml][rl]
   
 public:
   
@@ -48,38 +48,44 @@ public:
   void recompose ();
   
   // Time management
-  CCTK_REAL get_time (const int rl, const int ml) const {
-    assert (rl>=0 && rl<h.reflevels());
-    assert (ml>=0 && ml<h.mglevels(rl,0));
-    return times.at(rl).at(ml);
+  CCTK_REAL get_time (const int rl, const int ml) const
+  {
+    assert (rl>=0 and rl<h.reflevels());
+    assert (ml>=0 and ml<h.mglevels());
+    return times.at(ml).at(rl);
   }
   
-  void set_time (const int rl, const int ml, const CCTK_REAL t) {
-    assert (rl>=0 && rl<h.reflevels());
-    assert (ml>=0 && ml<h.mglevels(rl,0));
-    times.at(rl).at(ml) = t;
+  void set_time (const int rl, const int ml, const CCTK_REAL t)
+  {
+    assert (rl>=0 and rl<h.reflevels());
+    assert (ml>=0 and ml<h.mglevels());
+    times.at(ml).at(rl) = t;
   }
   
-  void advance_time (const int rl, const int ml) {
+  void advance_time (const int rl, const int ml)
+  {
     set_time(rl,ml, get_time(rl,ml) + get_delta(rl,ml));
   }
   
-  CCTK_REAL get_delta (const int rl, const int ml) const {
-    assert (rl>=0 && rl<h.reflevels());
-    assert (ml>=0 && ml<h.mglevels(rl,0));
-    return deltas.at(rl).at(ml);
+  CCTK_REAL get_delta (const int rl, const int ml) const
+  {
+    assert (rl>=0 and rl<h.reflevels());
+    assert (ml>=0 and ml<h.mglevels());
+    return deltas.at(ml).at(rl);
   }
   
-  void set_delta (const int rl, const int ml, const CCTK_REAL dt) {
-    assert (rl>=0 && rl<h.reflevels());
-    assert (ml>=0 && ml<h.mglevels(rl,0));
-    deltas.at(rl).at(ml) = dt;
+  void set_delta (const int rl, const int ml, const CCTK_REAL dt)
+  {
+    assert (rl>=0 and rl<h.reflevels());
+    assert (ml>=0 and ml<h.mglevels());
+    deltas.at(ml).at(rl) = dt;
   }
   
-  CCTK_REAL time (const int tl, const int rl, const int ml) const {
-    assert (rl>=0 && rl<h.reflevels());
-    assert (ml>=0 && ml<h.mglevels(rl,0));
-    return get_time(rl, ml) + tl * get_delta(rl, ml);
+  CCTK_REAL time (const int tl, const int rl, const int ml) const
+  {
+    assert (rl>=0 and rl<h.reflevels());
+    assert (ml>=0 and ml<h.mglevels());
+    return get_time(rl, ml) - tl * get_delta(rl, ml);
   }
   
   // Output

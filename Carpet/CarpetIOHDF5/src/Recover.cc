@@ -761,7 +761,7 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
       ibset all_exterior;
       for (size_t c=0; c<thedd.boxes.at(rl).size(); ++c)
       {
-        all_exterior |= thedd.boxes.at(rl).at(c).at(mglevel).exterior;
+        all_exterior |= thedd.boxes.at(mglevel).at(rl).at(c).exterior;
       }
       if (regions_read.at(m) != all_exterior)
       {

@@ -34,10 +34,10 @@ class ggf {
   typedef vector<iblist> iblistvect;
   
   typedef gdata*        tdata;  // data ...
-  typedef vector<tdata> mdata;  // ... for each multigrid level
-  typedef vector<mdata> cdata;  // ... for each component
+  typedef vector<tdata> fdata;  // ... for each time level
+  typedef vector<fdata> cdata;  // ... for each component
   typedef vector<cdata> rdata;  // ... for each refinement level
-  typedef vector<rdata> fdata;  // ... for each time level
+  typedef vector<rdata> mdata;  // ... for each multigrid level
   
 public:				// should be readonly
   
@@ -45,15 +45,17 @@ public:				// should be readonly
   const int varindex;           // Cactus variable index
   const operator_type transport_operator;
   
-  const th &t;               // time hierarchy
-  const int tmin, tmax;		// timelevels
+  const th &t;                  // time hierarchy
   const int prolongation_order_time; // order of temporal prolongation operator
   
-  const gh &h;               // grid hierarchy
+  const gh &h;                  // grid hierarchy
   dh &d;			// data hierarchy
 
+private:
+  int timelevels_;              // time levels
+
 protected:
-  fdata storage;		// storage
+  mdata storage;		// storage
   
 public:
   const int vectorlength;       // vector length
@@ -61,14 +63,13 @@ public:
   const ggf* vectorleader;      // first vector element
   
 private:
-  fdata oldstorage;
+  mdata oldstorage;            // temporary storage
   
 public:
 
   // Constructors
   ggf (const int varindex, const operator_type transport_operator,
        th& t, dh& d,
-       const int tmin, const int tmax,
        const int prolongation_order_time,
        const int vectorlength, const int vectorindex,
        ggf* const vectorleader);
@@ -78,11 +79,18 @@ public:
 
   // Comparison
   bool operator== (const ggf& f) const;
-
-
-
+  
+  // Querying
+  int timelevels () const
+  {
+    return timelevels_;
+  }
+  
+  
+  
   // Modifiers
-  // void recompose ();
+  void set_timelevels (int ml, int rl, int new_timelevels);
+
   void recompose_crop ();
   void recompose_allocate (int rl);
   void recompose_fill (comm_state& state, int rl, bool do_prolongate);

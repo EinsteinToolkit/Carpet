@@ -33,9 +33,9 @@ class gh {
 public:
   
   // Types
-  typedef vector<ibbox> mexts;	// ... for each multigrid level
-  typedef vector<mexts> cexts;	// ... for each component
+  typedef vector<ibbox> cexts;	// ... for each component
   typedef vector<cexts> rexts;	// ... for each refinement level
+  typedef vector<rexts> mexts;	// ... for each multigrid level
   
   typedef vector<bbvect> cbnds;	// ... for each component
   typedef vector<cbnds> rbnds;	// ... for each refinement level
@@ -56,9 +56,9 @@ public:				// should be readonly
   
   
 private:
-  vector<vector<ibbox> > _bases; // [rl][ml]
+  vector<vector<ibbox> > _bases; // [ml][rl]
   // TODO: invent structure for this
-  rexts _extents;		// extents of all grids
+  mexts _extents;		// extents of all grids
   rbnds _outer_boundaries;	// boundary descriptions of all grids
   rprocs _processors;		// processor numbers of all grids
 
@@ -76,11 +76,12 @@ public:
   virtual ~gh ();
   
   // Modifiers
-  void recompose (const rexts& exts, const rbnds& outer_bounds,
+  void recompose (const mexts& exts, const rbnds& outer_bounds,
 		  const rprocs& procs,
                   const bool do_prolongate);
 
-  const rexts & extents() const {
+  const mexts & extents() const
+  {
     return _extents;
   }
 
@@ -97,16 +98,20 @@ public:
   }
   
   // Accessors
-  int reflevels () const {
+  int mglevels () const
+  {
     return (int)_extents.size();
   }
   
-  int components (const int rl) const {
-    return (int)_extents.at(rl).size();
+  int reflevels () const
+  {
+    if (mglevels() == 0) return 0;
+    return (int)_extents.at(0).size();
   }
   
-  int mglevels (const int rl, const int c) const {
-    return (int)_extents.at(rl).at(c).size();
+  int components (const int rl) const
+  {
+    return (int)_extents.at(0).at(rl).size();
   }
   
   bbvect outer_boundary (const int rl, const int c) const {

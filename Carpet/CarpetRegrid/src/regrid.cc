@@ -28,7 +28,7 @@ namespace CarpetRegrid {
     
     const cGH * const cctkGH = (const cGH *) cctkGH_;
     
-    gh::rexts  & bbsss = * (gh::rexts  *) bbsss_;
+    gh::mexts  & bbsss = * (gh::mexts  *) bbsss_;
     gh::rbnds  & obss  = * (gh::rbnds  *) obss_;
     gh::rprocs & pss   = * (gh::rprocs *) pss_;
     

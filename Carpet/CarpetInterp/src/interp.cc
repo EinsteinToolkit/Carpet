@@ -272,11 +272,11 @@ namespace CarpetInterp {
           
           int const fact = maxreflevelfact / ipow(reffact, rl) * ipow(mgfact, mglevel);
           ivect const ipos = ivect(floor((pos - lower) / (delta * fact) + 0.5)) * fact;
-          assert (all(ipos % vhh.at(m)->bases().at(rl).at(ml).stride() == 0));
+          assert (all(ipos % vhh.at(m)->bases().at(ml).at(rl).stride() == 0));
           
           // TODO: use something faster than a linear search
           for (int c=0; c<vhh.at(m)->components(rl); ++c) {
-            if (vhh.at(m)->extents().at(rl).at(c).at(ml).contains(ipos)) {
+            if (vhh.at(m)->extents().at(ml).at(rl).at(c).contains(ipos)) {
               rlev.at(n) = rl;
               home.at(n) = c;
               goto found;

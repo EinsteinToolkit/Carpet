@@ -14,12 +14,11 @@ using namespace std;
 template<typename T>
 gf<T>::gf (const int varindex_, const operator_type transport_operator_,
            th& t_, dh& d_,
-           const int tmin_, const int tmax_,
            const int prolongation_order_time_,
            const int vectorlength_, const int vectorindex_,
            gf* const vectorleader_)
   : ggf(varindex_, transport_operator_,
-        t_, d_, tmin_, tmax_, prolongation_order_time_,
+        t_, d_, prolongation_order_time_,
         vectorlength_, vectorindex_, vectorleader_)
 {
   // recompose ();
@@ -51,21 +50,23 @@ gf<T>::~gf () { }
 
 // Access to the data
 template<typename T>
-const data<T>* gf<T>::operator() (int tl, int rl, int c, int ml) const {
-  assert (tl>=tmin && tl<=tmax);
-  assert (rl>=0 && rl<h.reflevels());
-  assert (c>=0 && c<h.components(rl));
-  assert (ml>=0 && ml<h.mglevels(rl,c));
-  return (const data<T>*)storage.at(tl-tmin).at(rl).at(c).at(ml);
+const data<T>* gf<T>::operator() (int tl, int rl, int c, int ml) const
+{
+  assert (tl>=0 and tl<timelevels());
+  assert (rl>=0 and rl<h.reflevels());
+  assert (c>=0 and c<h.components(rl));
+  assert (ml>=0 and ml<h.mglevels());
+  return (const data<T>*)storage.at(ml).at(rl).at(c).at(tl);
 }
 
 template<typename T>
-data<T>* gf<T>::operator() (int tl, int rl, int c, int ml) {
-  assert (tl>=tmin && tl<=tmax);
-  assert (rl>=0 && rl<h.reflevels());
-  assert (c>=0 && c<h.components(rl));
-  assert (ml>=0 && ml<h.mglevels(rl,c));
-  return (data<T>*)storage.at(tl-tmin).at(rl).at(c).at(ml);
+data<T>* gf<T>::operator() (int tl, int rl, int c, int ml)
+{
+  assert (tl>=0 and tl<timelevels());
+  assert (rl>=0 and rl<h.reflevels());
+  assert (c>=0 and c<h.components(rl));
+  assert (ml>=0 and ml<h.mglevels());
+  return (data<T>*)storage.at(ml).at(rl).at(c).at(tl);
 }
 
 
@@ -76,7 +77,7 @@ ostream& gf<T>::output (ostream& os) const {
   T Tdummy;
   os << "gf<" << typestring(Tdummy) << ">:"
      << varindex << "[" << CCTK_VarName(varindex) << "],"
-     << "dt=[" << tmin << ":" << tmax<< "]";
+     << "tls=" << timelevels();
   return os;
 }
 

@@ -40,7 +40,7 @@ namespace Carpet {
    
    
   // Helpers for recomposing the grid hierarchy
-  void CheckRegions (const gh::rexts & bbsss,
+  void CheckRegions (const gh::mexts & bbsss,
                      const gh::rbnds & obss,
                      const gh::rprocs& pss);
   
@@ -48,7 +48,7 @@ namespace Carpet {
   
   void OutputGridStructure (const cGH *cgh,
                             const int m,
-                            const gh::rexts & bbsss,
+                            const gh::mexts & bbsss,
                             const gh::rbnds & obss,
                             const gh::rprocs& pss);
   
@@ -66,9 +66,9 @@ namespace Carpet {
                                vector<bbvect>& obs, vector<int>& ps);
   
   void MakeMultigridBoxes (const cGH* cgh,
-                           vector<ibbox> const & bbs,
-                           vector<bbvect> const & obs,
-                           vector<vector<ibbox> > & bbss);
+                           gh::rexts const & bbss,
+                           gh::rbnds const & obss,
+                           gh::mexts & bbsss);
   
 } // namespace Carpet
 

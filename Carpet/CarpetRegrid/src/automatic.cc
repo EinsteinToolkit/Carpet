@@ -26,7 +26,7 @@ namespace CarpetRegrid {
   
   int Automatic (cGH const * const cctkGH,
                  gh const & hh,
-                 gh::rexts  & bbsss,
+                 gh::mexts  & bbsss,
                  gh::rbnds  & obss,
                  gh::rprocs & pss)
   {
@@ -35,6 +35,7 @@ namespace CarpetRegrid {
     assert (refinement_levels >= 1);
     
     assert (bbsss.size() >= 1);
+    vector<vector<ibbox> > bbss = bbsss.at(0);
     
     
     
@@ -68,31 +69,28 @@ namespace CarpetRegrid {
     gh::cprocs ps;
     SplitRegions (cctkGH, bbs, obs, ps);
     
-    // make multigrid aware
-    vector<vector<ibbox> > bbss;
-    MakeMultigridBoxes (cctkGH, bbs, obs, bbss);
-    
-    
-    
     if (bbss.size() == 0) {
       // remove all finer levels
-      bbsss.resize(reflevel+1);
+      bbss.resize(reflevel+1);
       obss.resize(reflevel+1);
       pss.resize(reflevel+1);
     } else {
-      assert (reflevel < (int)bbsss.size());
-      if (reflevel+1 == (int)bbsss.size()) {
+      assert (reflevel < (int)bbss.size());
+      if (reflevel+1 == (int)bbss.size()) {
 	// add a finer level
-	bbsss.push_back (bbss);
+	bbss.push_back (bbs);
 	obss.push_back (obs);
 	pss.push_back (ps);
       } else {
 	// change a finer level
-	bbsss.at(reflevel+1) = bbss;
+	bbss.at(reflevel+1) = bbs;
 	obss.at(reflevel+1) = obs;
 	pss.at(reflevel+1) = ps;
       }
     }
+    
+    // make multigrid aware
+    MakeMultigridBoxes (cctkGH, bbss, obss, bbsss);
     
     return 1;
   }

@@ -219,8 +219,8 @@ namespace CarpetSlab {
         
         // Calculate overlapping extents
         const bboxset<int,dim> myextents
-          = ((mydd->boxes.at(rl).at(component).at(mglevel).sync_not
-              | mydd->boxes.at(rl).at(component).at(mglevel).interior)
+          = ((mydd->boxes.at(mglevel).at(rl).at(component).sync_not
+              | mydd->boxes.at(mglevel).at(rl).at(component).interior)
              & hextent);
         
         // Loop over overlapping extents

@@ -90,9 +90,9 @@ namespace Carpet {
         const int m = 0;
         const int c = CCTK_MyProc(cgh);
         
-        const ibbox& base = arrdata.at(group).at(m).hh->bases().at(rl).at(ml);
+        const ibbox& base = arrdata.at(group).at(m).hh->bases().at(ml).at(rl);
         const bbvect& obnds = arrdata.at(group).at(m).hh->outer_boundaries().at(rl).at(c);
-	const ibbox& ext = arrdata.at(group).at(m).dd->boxes.at(rl).at(c).at(ml).exterior;
+	const ibbox& ext = arrdata.at(group).at(m).dd->boxes.at(ml).at(rl).at(c).exterior;
         
         ivect::ref(const_cast<int*>(groupdata.at(group).info.nghostzones))
           = arrdata.at(group).at(m).dd->lghosts;
@@ -136,7 +136,7 @@ namespace Carpet {
             for (int tl=0; tl<num_tl; ++tl) {
               ggf * const ff = arrdata.at(group).at(m).data.at(var);
               if (ff) {
-                gdata * const data = (*ff) (-tl, rl, c, ml);
+                gdata * const data = (*ff) (tl, rl, c, ml);
                 assert (data);
                 cgh->data[firstvar+var][tl] = data->storage();
               } else {
@@ -288,8 +288,8 @@ namespace Carpet {
     carpetGH.map = map = m;
     
     // Set grid shape
-    const ibbox& coarseext = vdd.at(map)->bases.at(0       ).at(mglevel).exterior;
-    const ibbox& baseext   = vdd.at(map)->bases.at(reflevel).at(mglevel).exterior;
+    const ibbox& coarseext = vdd.at(map)->bases.at(mglevel).at(0       ).exterior;
+    const ibbox& baseext   = vdd.at(map)->bases.at(mglevel).at(reflevel).exterior;
     assert (all (baseext.lower() % baseext.stride() == 0));
     assert (all ((baseext.lower() - coarseext.lower()) % baseext.stride() == 0));
     ivect::ref(cgh->cctk_levoff) = (baseext.lower() - coarseext.lower()) / baseext.stride();
@@ -353,9 +353,9 @@ namespace Carpet {
     component = c;
     
     // Set cGH fields
-    const ibbox& baseext = vdd.at(map)->bases.at(reflevel).at(mglevel).exterior;
+    const ibbox& baseext = vdd.at(map)->bases.at(mglevel).at(reflevel).exterior;
     const bbvect& obnds = vhh.at(map)->outer_boundaries().at(reflevel).at(component);
-    const ibbox& ext = vdd.at(map)->boxes.at(reflevel).at(component).at(mglevel).exterior;
+    const ibbox& ext = vdd.at(map)->boxes.at(mglevel).at(reflevel).at(component).exterior;
     
     ivect::ref(cgh->cctk_lsh) = ext.shape() / ext.stride();
     ivect::ref(cgh->cctk_lbnd)
@@ -416,7 +416,7 @@ namespace Carpet {
             for (int tl=0; tl<num_tl; ++tl) {
               ggf * const ff = arrdata.at(group).at(map).data.at(var);
               if (ff) {
-                gdata * const data = (*ff) (-tl, reflevel, component, mglevel);
+                gdata * const data = (*ff) (tl, reflevel, component, mglevel);
                 assert (data);
                 cgh->data[firstvar+var][tl] = data->storage();
               } else {

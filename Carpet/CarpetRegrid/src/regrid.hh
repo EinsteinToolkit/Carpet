@@ -30,7 +30,7 @@ namespace CarpetRegrid {
     
     /* Aliased functions */
 //     CCTK_INT CarpetRegrid_Regrid (const cGH * const cctkGH,
-//                                   gh<dim>::rexts  * bbsss,
+//                                   gh<dim>::mexts  * bbsss,
 //                                   gh<dim>::rbnds  * obss,
 //                                   gh<dim>::rprocs * pss);
     CCTK_INT CarpetRegrid_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
@@ -44,19 +44,19 @@ namespace CarpetRegrid {
   
   int BaseLevel (cGH const * const cctkGH,
                  gh const & hh,
-                 gh::rexts  & bbsss,
+                 gh::mexts  & bbsss,
                  gh::rbnds  & obss,
                  gh::rprocs & pss);
 
   int Centre (cGH const * const cctkGH,
               gh const & hh,
-              gh::rexts  & bbsss,
+              gh::mexts  & bbsss,
               gh::rbnds  & obss,
               gh::rprocs & pss);
 
   int ManualGridpoints (cGH const * const cctkGH,
                         gh const & hh,
-                        gh::rexts  & bbsss,
+                        gh::mexts  & bbsss,
                         gh::rbnds  & obss,
                         gh::rprocs & pss);
   
@@ -72,7 +72,7 @@ namespace CarpetRegrid {
 
   int ManualCoordinates (cGH const * const cctkGH,
                          gh const & hh,
-                         gh::rexts  & bbsss,
+                         gh::mexts  & bbsss,
                          gh::rbnds  & obss,
                          gh::rprocs & pss);
   
@@ -97,25 +97,25 @@ namespace CarpetRegrid {
 
   int ManualGridpointList (cGH const * const cctkGH,
                            gh const & hh,
-                           gh::rexts  & bbsss,
+                           gh::mexts  & bbsss,
                            gh::rbnds  & obss,
                            gh::rprocs & pss);
   
   int ManualCoordinateList (cGH const * const cctkGH,
                             gh const & hh,
-                            gh::rexts  & bbsss,
+                            gh::mexts  & bbsss,
                             gh::rbnds  & obss,
                             gh::rprocs & pss);
 
   int Moving (cGH const * const cctkGH,
               gh const & hh,
-              gh::rexts  & bbsss,
+              gh::mexts  & bbsss,
               gh::rbnds  & obss,
               gh::rprocs & pss);
   
   int Automatic (cGH const * const cctkGH,
                  gh const & hh,
-                 gh::rexts  & bbsss,
+                 gh::mexts  & bbsss,
                  gh::rbnds  & obss,
                  gh::rprocs & pss);
   
