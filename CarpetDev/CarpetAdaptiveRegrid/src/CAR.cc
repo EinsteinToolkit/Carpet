@@ -390,10 +390,11 @@ namespace CarpetAdaptiveRegrid {
         
         //
         // Check the error on child level, if such a level exists
+        // Also only worry if there's a grandchild level.
         // This should fix the "orphaned grandchild" problem
         //
 
-        if (local_bbss.size() > reflevel+1) {
+        if (local_bbss.size() > reflevel+2) {
                 
           CCTK_INT currentml = mglevel;
           CCTK_INT currentrl = reflevel;
@@ -438,9 +439,13 @@ namespace CarpetAdaptiveRegrid {
                   CCTK_INT index = CCTK_GFINDEX3D(cctkGH, i, j, k);
                   CCTK_REAL local_error = abs(error_var_ptr[index]);
                   if (local_error > max_error) {
-                    CCTK_INT ii = i + cctkGH->cctk_lbnd[0] - imin[0];
-                    CCTK_INT jj = j + cctkGH->cctk_lbnd[1] - imin[1];
-                    CCTK_INT kk = k + cctkGH->cctk_lbnd[2] - imin[2];
+                    // Correct for the change in level !
+                    CCTK_INT ii = (i + cctkGH->cctk_lbnd[0]) / reffact - 
+                      imin[0];
+                    CCTK_INT jj = (j + cctkGH->cctk_lbnd[1]) / reffact - 
+                      imin[1];
+                    CCTK_INT kk = (k + cctkGH->cctk_lbnd[2]) / reffact - 
+                      imin[2];
                     // Check that this point actually intersects with 
                     // this box (if this component was actually a
                     // different grid on the same processor, it need not)
