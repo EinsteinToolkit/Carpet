@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.17 2004/03/15 19:49:15 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.18 2004/03/15 20:19:44 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -772,8 +772,8 @@ namespace CarpetIOHDF5 {
 	   cGroup cgdata;
 	   int ierr = CCTK_GroupData(group,&cgdata);
 	   assert(ierr==0);
-	   // cout << "lb_before: " << lb << endl;
-	   // cout << "ub_before: " << ub << endl;
+	   cout << "lb_before: " << lb << endl;
+	   cout << "ub_before: " << ub << endl;
 	   if (cgdata.disttype == CCTK_DISTRIB_CONSTANT) {
 	     if (verbose) cout << "CCTK_DISTRIB_CONSTANT: " << varname << endl;
 	     assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
@@ -787,9 +787,11 @@ namespace CarpetIOHDF5 {
 	     } else {
 	       //	       lb[dim-1] = lb[dim-1] + (ub[dim-1]-lb[dim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
 	       //ub[dim-1] = ub[dim-1] + (ub[dim-1]-lb[dim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
-	       lb[gpdim-1] = lb[gpdim-1] + (ub[gpdim-1]-lb[gpdim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
-	       ub[gpdim-1] = lb[gpdim-1] + ub[gpdim-1] + (ub[gpdim-1]-lb[gpdim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
-	       //	       cout << (ub[gpdim-1]-lb[gpdim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component)) << endl;
+	       const int newlb = lb[gpdim-1] + (ub[gpdim-1]-lb[gpdim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
+	       const int newub = ub[gpdim-1] + (ub[gpdim-1]-lb[gpdim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
+	       cout << (ub[gpdim-1]-lb[gpdim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component)) << endl;
+	       lb[gpdim-1] = newlb;
+	       ub[gpdim-1] = newub;
 	     }
 	      if (verbose)  cout << "lb: " << lb << endl;
 	      if (verbose)  cout << "ub: " << ub << endl;
