@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.17 2002/07/18 14:34:18 shawley Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.18 2002/08/30 16:03:20 schnetter Exp $
 
  ***************************************************************************/
 
@@ -244,7 +244,7 @@ void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
   const iblist send = d.boxes[rl2][c2][ml2].*send_list;
   assert (recv.size()==send.size());
   // walk all boxes
-  for (iblist::const_iterator r=recv.begin(), s=send.begin();
+  for (typename iblist::const_iterator r=recv.begin(), s=send.begin();
        r!=recv.end(); ++r, ++s) {
     // (use the send boxes for communication)
     // copy the content
@@ -273,7 +273,7 @@ void generic_gf<D>::copycat (int tl1, int rl1, int c1, int ml1,
     const iblist send = (d.boxes[rl2][c2][ml2].*send_listvect)[c1];
     assert (recv.size()==send.size());
     // walk all boxes
-    for (iblist::const_iterator r=recv.begin(), s=send.begin();
+    for (typename iblist::const_iterator r=recv.begin(), s=send.begin();
       	 r!=recv.end(); ++r, ++s) {
       // (use the send boxes for communication)
       // copy the content
@@ -355,7 +355,7 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
   const iblist send = d.boxes[rl2][c2][ml2].*send_list;
   assert (recv.size()==send.size());
   // walk all boxes
-  for (iblist::const_iterator r=recv.begin(), s=send.begin();
+  for (typename iblist::const_iterator r=recv.begin(), s=send.begin();
        r!=recv.end(); ++r, ++s) {
     // (use the send boxes for communication)
     // interpolate the content
@@ -399,7 +399,7 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
     const iblist send = (d.boxes[rl2][c2][ml2].*send_listvect)[c1];
     assert (recv.size()==send.size());
     // walk all boxes
-    for (iblist::const_iterator r=recv.begin(), s=send.begin();
+    for (typename iblist::const_iterator r=recv.begin(), s=send.begin();
       	 r!=recv.end(); ++r, ++s) {
       // (use the send boxes for communication)
       // interpolate the content

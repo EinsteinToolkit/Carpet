@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.11 2002/05/05 22:16:59 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.12 2002/08/30 16:03:20 schnetter Exp $
 
  ***************************************************************************/
 
@@ -69,7 +69,7 @@ istream& input (istream& is, vector<T>& v) {
 template<class T>
 ostream& output (ostream& os, const list<T>& l) {
   os << "[";
-  for (list<T>::const_iterator ti=l.begin(); ti!=l.end(); ++ti) {
+  for (typename list<T>::const_iterator ti=l.begin(); ti!=l.end(); ++ti) {
     if (ti!=l.begin()) os << ",";
     os << *ti;
   }
@@ -81,7 +81,7 @@ ostream& output (ostream& os, const list<T>& l) {
 template<class T>
 ostream& output (ostream& os, const set<T>& s) {
   os << "{";
-  for (set<T>::const_iterator ti=s.begin(); ti!=s.end(); ++ti) {
+  for (typename set<T>::const_iterator ti=s.begin(); ti!=s.end(); ++ti) {
     if (ti!=s.begin()) os << ",";
     os << *ti;
   }
@@ -94,7 +94,7 @@ template<class T>
 ostream& output (ostream& os, const vector<T>& v) {
   os << "[";
   int cnt=0;
-  for (vector<T>::const_iterator ti=v.begin(); ti!=v.end(); ++ti) {
+  for (typename vector<T>::const_iterator ti=v.begin(); ti!=v.end(); ++ti) {
     if (ti!=v.begin()) os << ",";
     os << cnt++ << ":" << *ti;
   }

@@ -28,7 +28,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.34 2002/08/02 15:11:13 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.35 2002/08/30 16:03:18 schnetter Exp $";
 
 CCTK_FILEVERSION(CarpetIOASCII_ioascii_cc)
 
@@ -732,7 +732,8 @@ void WriteASCII (ostream& os,
       for (int d=0; d<DD; ++d) org1[dirs[d]] = ext.lower()[d];
       if (gfext.contains(org1)) {
 	
-	for (bbox<int,DD>::iterator it=ext.begin(); it!=ext.end(); ++it) {
+	for (typename bbox<int,DD>::iterator it=ext.begin();
+	     it!=ext.end(); ++it) {
 	  vect<int,dim> index(org);
 	  for (int d=0; d<DD; ++d) index[dirs[d]] = (*it)[d];
 	  os << time << "   " << tl << " " << rl << " " << c << " " << ml

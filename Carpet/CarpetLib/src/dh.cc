@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.19 2002/05/05 22:17:01 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.20 2002/08/30 16:03:20 schnetter Exp $
 
  ***************************************************************************/
 
@@ -130,10 +130,11 @@ void dh<D>::recompose () {
       	  assert (ml<h.mglevels(rl,cc));
       	  // intersect boundaries with interior of that component
       	  const ibset ovlp = bnds & boxes[rl][cc][ml].interior;
-      	  for (ibset::const_iterator b=ovlp.begin(); b!=ovlp.end(); ++b) {
-      	    boxes[rl][c ][ml].recv_sync[cc].push_back(*b);
-      	    boxes[rl][cc][ml].send_sync[c ].push_back(*b);
-      	  }
+      	  for (typename ibset::const_iterator b=ovlp.begin();
+	       b!=ovlp.end(); ++b) {
+	    boxes[rl][c ][ml].recv_sync[cc].push_back(*b);
+	    boxes[rl][cc][ml].send_sync[c ].push_back(*b);
+	  }
       	}
       	
       	// Multigrid boxes
@@ -192,7 +193,7 @@ void dh<D>::recompose () {
       	    {
       	      ibset bndsf = boxes[rl+1][cc][ml].boundaries;
       	      // coarsify boundaries of fine component
-      	      for (ibset::const_iterator bi=bndsf.begin();
+      	      for (typename ibset::const_iterator bi=bndsf.begin();
 		   bi!=bndsf.end(); ++bi) {
 		const ibbox& bndf = *bi;
 		// (the prolongation may use the exterior of the
@@ -230,9 +231,9 @@ void dh<D>::recompose () {
 	
 	// Subtract boxes received during synchronisation
 	const iblistvect& recv_sync = boxes[rl][c][ml].recv_sync;
-	for (iblistvect::const_iterator lvi=recv_sync.begin();
+	for (typename iblistvect::const_iterator lvi=recv_sync.begin();
 	     lvi!=recv_sync.end(); ++lvi) {
-	  for (iblist::const_iterator li=lvi->begin();
+	  for (typename iblist::const_iterator li=lvi->begin();
 	       li!=lvi->end(); ++li) {
 	    sync_not -= *li;
 	    recv_not -= *li;
@@ -242,9 +243,10 @@ void dh<D>::recompose () {
 	// Subtract all boxes received
 	const iblistvect& recv_ref_bnd_coarse
 	  = boxes[rl][c][ml].recv_ref_bnd_coarse;
-	for (iblistvect::const_iterator lvi=recv_ref_bnd_coarse.begin();
+	for (typename iblistvect::const_iterator
+	       lvi=recv_ref_bnd_coarse.begin();
 	     lvi!=recv_ref_bnd_coarse.end(); ++lvi) {
-	  for (iblist::const_iterator li=lvi->begin();
+	  for (typename iblist::const_iterator li=lvi->begin();
 	       li!=lvi->end(); ++li) {
 	    recv_not -= *li;
 	  }
@@ -319,7 +321,8 @@ void dh<D>::recompose () {
   }
 #endif
   
-  for (list<generic_gf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+  for (typename list<generic_gf<D>*>::iterator f=gfs.begin();
+       f!=gfs.end(); ++f) {
     (*f)->recompose();
   }
 }
@@ -348,7 +351,7 @@ void dh<D>::output (ostream& os) const {
      << "ghosts=[" << lghosts << "," << ughosts << "],"
      << "gfs={";
   int cnt=0;
-  for (list<generic_gf<D>*>::const_iterator f = gfs.begin();
+  for (typename list<generic_gf<D>*>::const_iterator f = gfs.begin();
        f != gfs.end(); ++f) {
     if (cnt++) os << ",";
     (*f)->output(os);

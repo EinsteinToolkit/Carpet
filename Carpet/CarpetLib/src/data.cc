@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.18 2002/08/02 15:11:15 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.19 2002/08/30 16:03:19 schnetter Exp $
 
  ***************************************************************************/
 
@@ -185,7 +185,7 @@ void data<T,D>
   MPI_Comm_rank (dist::comm, &rank);
   assert (rank == proc());
   
-  for (ibbox::iterator it=box.begin(); it!=box.end(); ++it) {
+  for (typename ibbox::iterator it=box.begin(); it!=box.end(); ++it) {
     const ivect index = *it;
     (*this)[index] = (*src)[index];
   }
@@ -234,7 +234,7 @@ void data<T,D>
     }
   }
   
-  for (ibbox::iterator posi=box.begin(); posi!=box.end(); ++posi) {
+  for (typename ibbox::iterator posi=box.begin(); posi!=box.end(); ++posi) {
     const ivect& pos = *posi;
     
     // get box around current position
@@ -243,7 +243,7 @@ void data<T,D>
     
     // interpolate from box to position
     T sum = 0;
-    for (ibbox::iterator fromposi=frombox.begin();
+    for (typename ibbox::iterator fromposi=frombox.begin();
 	 fromposi!=frombox.end(); ++fromposi)
       {
 	const ivect& frompos = *fromposi;

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.9 2002/05/05 22:16:58 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.10 2002/08/30 16:03:19 schnetter Exp $
 
  ***************************************************************************/
 
@@ -201,7 +201,7 @@ bool bbox<T,D>::iterator::operator!= (const iterator& i) const {
 }
 
 template<class T, int D>
-bbox<T,D>::iterator& bbox<T,D>::iterator::operator++ () {
+typename bbox<T,D>::iterator& bbox<T,D>::iterator::operator++ () {
   for (int d=0; d<D; ++d) {
     pos[d]+=box.stride()[d];
     if (pos[d]<=box.upper()[d]) return *this;
@@ -212,12 +212,12 @@ bbox<T,D>::iterator& bbox<T,D>::iterator::operator++ () {
 }
 
 template<class T, int D>
-bbox<T,D>::iterator bbox<T,D>::begin () const {
+typename bbox<T,D>::iterator bbox<T,D>::begin () const {
   return iterator(*this, lower());
 }
 
 template<class T, int D>
-bbox<T,D>::iterator bbox<T,D>::end () const {
+typename bbox<T,D>::iterator bbox<T,D>::end () const {
   return iterator(*this, upper()+stride());
 }
 

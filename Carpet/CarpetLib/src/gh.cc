@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.14 2002/08/02 15:11:16 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.15 2002/08/30 16:03:20 schnetter Exp $
 
  ***************************************************************************/
 
@@ -146,15 +146,16 @@ void gh<D>::recompose (const rexts& exts, const rbnds& outer_bounds,
     (*t)->recompose();
   }
   
-  for (list<dh<D>*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
+  for (typename list<dh<D>*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
     (*d)->recompose();
   }
 }
 
 // Helpers
 template<int D>
-gh<D>::cexts gh<D>::make_reflevel_multigrid_boxes (const vector<ibbox>& exts,
-						   const int mglevels)
+typename gh<D>::cexts
+gh<D>::make_reflevel_multigrid_boxes (const vector<ibbox>& exts,
+				      const int mglevels)
   const
 {
   assert (mglevels>0);
@@ -198,8 +199,9 @@ gh<D>::cexts gh<D>::make_reflevel_multigrid_boxes (const vector<ibbox>& exts,
 }
 
 template<int D>
-gh<D>::rexts gh<D>::make_multigrid_boxes (const vector<vector<ibbox> >& exts,
-					  const int mglevels)
+typename gh<D>::rexts
+gh<D>::make_multigrid_boxes (const vector<vector<ibbox> >& exts,
+			     const int mglevels)
   const
 {
   assert (mglevels>0);
@@ -236,7 +238,7 @@ ostream& gh<D>::output (ostream& os) const {
      << "extents=" << extents << ","
      << "dhs={";
   int cnt=0;
-  for (list<dh<D>*>::const_iterator d = dhs.begin();
+  for (typename list<dh<D>*>::const_iterator d = dhs.begin();
        d != dhs.end(); ++d) {
     if (cnt++) os << ",";
     (*d)->output(os);

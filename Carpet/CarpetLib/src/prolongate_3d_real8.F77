@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8.F77,v 1.7 2002/06/07 15:28:24 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8.F77,v 1.8 2002/08/30 16:03:21 schnetter Exp $
       
 #include "cctk.h"
       
@@ -34,7 +34,7 @@ c     bbox(:,3) is stride
       integer i0, j0, k0
       integer fi, fj, fk
       integer ifac(2), jfac(2), kfac(2)
-      integer ii, jj, kk
+c$$$      integer ii, jj, kk
       integer fac
       CCTK_REAL8 res
       integer d

@@ -21,7 +21,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.29 2002/08/28 10:03:11 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.30 2002/08/30 16:03:18 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Recompose_cc)
 
@@ -83,12 +83,12 @@ namespace Carpet {
     }
     assert (bbsss.size() > 0);
     // At most maxreflevels levels
-    if (bbsss.size() > maxreflevels) {
+    if ((int)bbsss.size() > maxreflevels) {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
 		  "I cannot set up a grid hierarchy with more than Carpet::max_refinement_levels refinement levels.  I found Carpet::max_refinement_levels=%d, while %d levels were requested.",
 		  (int)maxreflevels, (int)bbsss.size());
     }
-    assert (bbsss.size() <= maxreflevels);
+    assert ((int)bbsss.size() <= maxreflevels);
     for (int rl=0; rl<(int)bbsss.size(); ++rl) {
       // No empty levels
       assert (bbsss[rl].size() > 0);
