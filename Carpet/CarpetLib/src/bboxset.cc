@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.15 2003/09/19 16:06:41 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.16 2004/06/13 22:46:48 schnetter Exp $
 
 #include <assert.h>
 
@@ -46,9 +46,7 @@ bool bboxset<T,D>::invariant () const {
     if ((*bi).empty()) return false;
     if (! (*bi).is_aligned_with(*bs.begin())) return false;
     // check for overlap (quadratic -- expensive)
-    int cnt=0;
-    for (const_iterator bi2=bi; bi2!=end(); ++bi2) {
-      if (!cnt++) continue;
+    for (const_iterator bi2=begin(); bi2!=bi; ++bi2) {
       if (! ((*bi2) & (*bi)).empty()) return false;
     }
   }
@@ -121,6 +119,7 @@ void bboxset<T,D>::normalize () {
   }
   const int num_final_boxes = bs.size();
   assert (num_initial_boxes - num_combined_boxes == num_final_boxes);
+  assert (invariant());
 }
 
 
