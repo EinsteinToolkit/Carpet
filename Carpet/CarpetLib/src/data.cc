@@ -130,7 +130,7 @@ void data<T>::getmem (const size_t nelems)
   } catch (...) {
     T Tdummy;
     CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "Failed to allocate %.0f bytes (%.3f MB) of memory for type %s.  %.0f bytes (%.3f MB) are currently allocated in %d objects.",
+                "Failed to allocate %.0f bytes (%.3f MB) of memory for type %s.  %.0f bytes (%.3f MB) are currently allocated in %d objects",
                 double(nbytes), double(nbytes/1.0e6),
                 typestring(Tdummy),
                 double(total_allocated_bytes),
@@ -595,7 +595,7 @@ void data<T>
   // Disallow this.
   T Tdummy;
   CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-              "There is no copy operator available for the variable type %s.",
+              "There is no copy operator available for the variable type %s",
               typestring(Tdummy));
   
   assert (dist::rank() == proc());
@@ -642,7 +642,7 @@ void data<T>
   char* groupname = CCTK_GroupName(groupindex);
   T Tdummy;
   CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-	      "There is no interpolator available for the group \"%s\" with variable type %s, spatial interpolation order %d, temporal interpolation order %d.",
+	      "There is no interpolator available for the group \"%s\" with variable type %s, spatial interpolation order %d, temporal interpolation order %d",
 	      groupname, typestring(Tdummy), order_space, order_time);
   ::free (groupname);
 }
