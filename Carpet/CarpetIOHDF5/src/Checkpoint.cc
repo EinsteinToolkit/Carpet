@@ -89,7 +89,12 @@ int CarpetIOHDF5_EvolutionCheckpoint (const cGH* const cctkGH)
 
   if (checkpoint &&
     ((checkpoint_every > 0 && cctkGH->cctk_iteration % checkpoint_every == 0) ||
+#if 0
      checkpoint_next))
+#else
+     // currently we can only checkpoint after complete coarse grid timesteps
+     (checkpoint_next && cctkGH->cctk_iteration % maxreflevelfact)))
+#endif
   {
     if (! CCTK_Equals (verbose, "none"))
     {
