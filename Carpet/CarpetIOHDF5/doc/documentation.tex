@@ -2,7 +2,7 @@
 %  Cactus Thorn template for ThornGuide documentation
 %  Author: Ian Kelley
 %  Date: Sun Jun 02, 2002
-%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/doc/documentation.tex,v 1.3 2004/03/18 19:52:17 cott Exp $                                                             
+%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/doc/documentation.tex,v 1.4 2004/06/22 11:56:20 tradke Exp $                                                             
 %
 %  Thorn documentation in the latex file doc/documentation.tex 
 %  will be included in ThornGuides built with the Cactus make system.
@@ -64,7 +64,7 @@
 % *======================================================================* 
 
 % If you are using CVS use this line to give version information
-% $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/doc/documentation.tex,v 1.3 2004/03/18 19:52:17 cott Exp $
+% $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/doc/documentation.tex,v 1.4 2004/06/22 11:56:20 tradke Exp $
 
 \documentclass{article}
 
@@ -84,7 +84,7 @@
 
 % the date your document was last changed, if your document is in CVS, 
 % please use:
-%    \date{$ $Date: 2004/03/18 19:52:17 $ $}
+%    \date{$ $Date: 2004/06/22 11:56:20 $ $}
 \date{March 18, 2004}
 
 \maketitle
@@ -140,6 +140,7 @@ First, you have to activate the thorn in your Cactus parameter file:
   \item {\tt iohdf5::out3D\_vars = "your list of Cactus grid functions to output"}
   \item {\tt iohdf5::out3D\_every = n} : Output every {\tt n} time steps
   \item {\tt iohdf5::out3D\_dir = "your preferred 3-D output directory"}
+  \item {\tt IO::out\_single\_precision = "yes/no (output double-precision data in single precision)"}
 \end{itemize}
 
 \subsubsection{3-D Input}
