@@ -353,9 +353,11 @@ namespace Carpet {
                   (do_global_mode ? " (global)" : ""),
                   (do_meta_mode ? " (meta)" : ""));
 
-        Checkpoint ("Scheduling POSTRESTRICTINITIAL");
-        CCTK_ScheduleTraverse
-          ("CCTK_POSTRESTRICTINITIAL", cgh, CallFunction);
+        if (rl < reflevels-1) {
+          Checkpoint ("Scheduling POSTRESTRICTINITIAL");
+          CCTK_ScheduleTraverse
+            ("CCTK_POSTRESTRICTINITIAL", cgh, CallFunction);
+        }
 
         Checkpoint ("Scheduling POSTINITIAL");
         CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
@@ -502,8 +504,10 @@ namespace Carpet {
 
         Restrict (cgh);
 
-        Checkpoint ("Scheduling POSTRESTRICT");
-        CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cgh, CallFunction);
+        if (rl < reflevels-1) {
+          Checkpoint ("Scheduling POSTRESTRICT");
+          CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cgh, CallFunction);
+        }
 
         Checkpoint ("Scheduling POSTSTEP");
         CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
