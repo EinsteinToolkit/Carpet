@@ -31,7 +31,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.47 2004/06/21 12:28:59 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.48 2004/06/26 11:37:33 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -98,8 +98,10 @@ namespace Carpet {
         term = term_iter || term_time;
       } else if (CCTK_Equals(terminate, "both")) {
         term = term_iter && term_time;
+      } else if (CCTK_Equals(terminate, "immediately")) {
+        term = true;
       } else {
-        assert (0);
+        CCTK_WARN (0, "Unsupported termination condition");
       }
       
     }
