@@ -18,7 +18,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/src/ioscalar.cc,v 1.5 2004/06/21 16:07:41 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/src/ioscalar.cc,v 1.6 2004/08/05 10:28:25 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOScalar_ioscalar_cc);
 }
 
@@ -211,13 +211,14 @@ namespace CarpetIOScalar {
     
     // Find the set of desired reductions
     list<info> reductions;
-    char const * p = outScalar_reductions;
-    while (*p) {
-      while (*p && isspace(*p)) ++p;
-      if (!*p) break;
-      char const * const start = p;
-      while (*p && !isspace(*p)) ++p;
-      char const * const end = p;
+    string const redlist (outScalar_reductions);
+    string::const_iterator p = redlist.begin();
+    while (p!=redlist.end()) {
+      while (p!=redlist.end() && isspace(*p)) ++p;
+      if (p==redlist.end()) break;
+      string::const_iterator const start = p;
+      while (p!=redlist.end() && !isspace(*p)) ++p;
+      string::const_iterator const end = p;
       string const reduction (start, end);
       int const handle = CCTK_ReductionHandle (reduction.c_str());
       if (handle < 0) {
