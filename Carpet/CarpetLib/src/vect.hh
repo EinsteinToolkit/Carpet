@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.18 2003/08/15 09:32:54 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.19 2003/08/28 21:07:27 schnetter Exp $
 
 #ifndef VECT_HH
 #define VECT_HH
@@ -465,70 +465,6 @@ public:
   };
 #endif
   
-  // Higher order functions
-  
-  /** Return a new vector where the function func() has been applied
-      to all elements.  */
-  template<class U>
-  vect<U,D> map (U (* const func)(T x)) const {
-    vect<U,D> r;
-    for (int d=0; d<D; ++d) r[d] = func(elt[d]);
-    return r;
-  }
-  
-  /** Return a new vector where the function func() has been used
-      element-wise to combine *this and a.  */
-  template<class S, class U>
-  vect<U,D> zip (U (* const func)(T x, S y), const vect<S,D>& a) const {
-    vect r;
-    for (int d=0; d<D; ++d) r[d] = func(elt[d], a[d]);
-    return r;
-  }
-  
-  /** Return a scalar where the function func() has been used to
-      reduce the vector, starting with the scalar value val.  */
-  template<class U>
-  U fold (U (* const func)(U val, T x), U val) const {
-    for (int d=0; d<D; ++d) val = func(val, elt[d]);
-    return val;
-  }
-  
-  /** Return a scalar where the function func() has been used to
-      reduce the vector, starting with element 0.  */
-  template<class U>
-  U fold1 (U (* const func)(U val, T x)) const {
-    assert (D>=1);
-    U val = elt[0];
-    for (int d=1; d<D; ++d) val = func(val, elt[d]);
-    return val;
-  }
-  
-  /** Return a vector where the function func() has been used to scan
-      the vector, starting with the scalar value val.  */
-  template<class U>
-  vect<U,D> scan0 (U (* const func)(U val, T x), U val) const {
-    vect r;
-    for (int d=0; d<D; ++d) {
-      r[d] = val;
-      val = func(val, elt[d]);
-    }
-    return r;
-  }
-  
-  /** Return a vector where the function func() has been used to scan
-      the vector, starting with element 0.  */
-  template<class U>
-  vect<U,D> scan1 (U (* const func)(U val, T x)) const {
-    vect r;
-    assert (D>=1);
-    U val = elt[0];
-    for (int d=1; d<D; ++d) {
-      val = func(val, elt[d]);
-      r[d] = val;
-    }
-    return r;
-  }
-  
   // Input/Output
   void input (istream& is);
   void output (ostream& os) const;
@@ -694,11 +630,11 @@ inline U fold (U (* const func)(U val, T x), U val, const vect<T,D>& a)
 /** Return a scalar where the function func() has been used to reduce
     the vector a, starting with element 0.  */
 template<class T, class U, int D>
-inline U fold1 (U (* const func)(U val, T x))
+inline U fold1 (U (* const func)(U val, T x), const vect<T,D>& a)
 {
   assert (D>=1);
-  U val = elt[0];
-  for (int d=1; d<D; ++d) val = func(val, elt[d]);
+  U val = a[0];
+  for (int d=1; d<D; ++d) val = func(val, a[d]);
   return val;
 }
 
