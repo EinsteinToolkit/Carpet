@@ -1,3 +1,0 @@
-
-LIBS := AMR h5io hdfio hlio ieeeio mfhdf df jpeg $(LIBS)
-
