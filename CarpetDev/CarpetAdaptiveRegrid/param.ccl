@@ -43,6 +43,10 @@ CCTK_BOOLEAN veryverbose "Should we be very verbose"
 {
 } "no"
 
+CCTK_BOOLEAN maskpicture "Should we print a picture of the mask"
+{
+} "no"
+
 CCTK_INT refinement_levels "Number of initial refinement levels (including the base level)" STEERABLE=always
 {
   1:* :: "must be positive, and must not be larger than Carpet::max_refinement_levels"

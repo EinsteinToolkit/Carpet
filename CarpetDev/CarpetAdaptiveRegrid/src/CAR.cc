@@ -561,7 +561,13 @@ namespace CarpetAdaptiveRegrid {
         //
         bool should_regrid = false;
         for (CCTK_INT k = 0; k < imax[2] - imin[2] + 1; k++) {
+          if (maskpicture) {
+            cout << endl << "k = " << k << endl;
+          }
           for (CCTK_INT j = 0; j < imax[1] - imin[1] + 1; j++) {
+            if (maskpicture) {
+              cout << endl;
+            }
             for (CCTK_INT i = 0; i < imax[0] - imin[0] + 1; i++) {
               CCTK_INT index =  i + 
                 (imax[0]-imin[0] + 1)*(j + (imax[1] - imin[1] + 1) * k);
@@ -571,6 +577,14 @@ namespace CarpetAdaptiveRegrid {
                            "\n[%d,%d,%d]",
                            i,j,k);
               } 
+              if (maskpicture) {
+                if (mask[index]) {
+                  cout << "x";
+                }
+                else {
+                  cout << " ";
+                }
+              }
               should_regrid |= (mask[index]);
               did_regrid |= should_regrid;
             }
