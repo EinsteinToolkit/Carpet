@@ -182,8 +182,6 @@ c     -----------------------------------
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phiz")
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phi")
       else if (CCTK_EQUALS(bound, "static")) then
-         ierr = 0 
-         call CCTK_WARN (2, "Static boundary conditions chosen")
          call BndCopyTLVN (ierr, cctkGH, sw, 1, 0, "wavetoy::phi")
          call BndCopyTLVN (ierr, cctkGH, sw, 1, 0, "wavetoy::pi")
          call BndCopyTLVN (ierr, cctkGH, sw, 1, 0, "wavetoy::phix")
