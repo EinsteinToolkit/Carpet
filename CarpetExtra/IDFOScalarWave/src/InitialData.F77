@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/InitialData.F77,v 1.4 2002/02/26 19:43:32 shawley Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/InitialData.F77,v 1.5 2003/06/26 20:07:21 shawley Exp $
 
  /*@@
    @file      InitialData.F77
@@ -40,7 +40,7 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/Ini
 
       INTEGER    i,j,k
       CCTK_REAL  dt,omega, cpi
-      CCTK_REAL  x,y,z, r, ri3
+      CCTK_REAL  r, ri3
       CCTK_REAL  dxi,dyi,dzi
       CCTK_REAL  tmp
       
@@ -58,18 +58,17 @@ c     call CCTK_INFO ("IDFOScalarWave_InitialData")
             do j=1,cctk_lsh(2)
                do i=1,cctk_lsh(1)
 
-                  x = cart3d_x(i,j,k)
-                  y = cart3d_y(i,j,k)
-                  z = cart3d_z(i,j,k)
-                  
                   phi(i,j,k) = amplitude
-     $                 * cos((kx*x + ky*y + kz*z + omega*cctk_time) * cpi)
+     $                 * cos((kx*x(i,j,k) + ky*y(i,j,k) + kz*z(i,j,k) 
+     $                 + omega*cctk_time) * cpi)
 
                   phi_p(i,j,k) = amplitude
-     $              * cos((kx*x + ky*y + kz*z + omega*(cctk_time - dt)) * cpi)
+     $              * cos((kx*x(i,j,k) + ky*y(i,j,k) + kz*z(i,j,k) 
+     $              + omega*(cctk_time - dt)) * cpi)
 
                   phi_p_p(i,j,k) = amplitude
-     $             * cos((kx*x + ky*y + kz*z + omega*(cctk_time - 2*dt)) * cpi)
+     $             * cos((kx*x(i,j,k) + ky*y(i,j,k) + kz*z(i,j,k) 
+     $              + omega*(cctk_time - 2*dt)) * cpi)
                   
                end do
             end do
@@ -81,117 +80,132 @@ c     call CCTK_INFO ("IDFOScalarWave_InitialData")
             do j=1, cctk_lsh(2)
                do i=1, cctk_lsh(1)
 
-                  x = cart3d_x(i,j,k)
-                  y = cart3d_y(i,j,k)
-                  z = cart3d_z(i,j,k)
-
                   phi(i,j,k) = amplitude 
-     $                 * exp(- (x - radius)**2 / sigma**2)
-     $                 * exp(- (y - radius)**2 / sigma**2)
-     $                 * exp(- (z - radius)**2 / sigma**2)
+     $                 * exp(- (x(i,j,k) - radius)**2 / sigma**2)
+     $                 * exp(- (y(i,j,k) - radius)**2 / sigma**2)
+     $                 * exp(- (z(i,j,k) - radius)**2 / sigma**2)
 
                   pi(i,j,k) = 0.0
-                  phix(i,j,k) = phi(i,j,k)*  (-2) * (x - radius) / sigma**2
-                  phiy(i,j,k) = phi(i,j,k)*  (-2) * (y - radius) / sigma**2
-                  phiz(i,j,k) = phi(i,j,k)*  (-2) * (z - radius) / sigma**2
-                  resid(i,j,k) = 0.0
+                  phix(i,j,k) = phi(i,j,k)*  (-2) * (x(i,j,k) - radius) 
+     $              / sigma**2
+                  phiy(i,j,k) = phi(i,j,k)*  (-2) * (y(i,j,k) - radius) 
+     $              / sigma**2
+                  phiz(i,j,k) = phi(i,j,k)*  (-2) * (z(i,j,k) - radius) 
+     $              / sigma**2
+c                  resid(i,j,k) = 0.0
 
                   pi_p(i,j,k) = amplitude *
-     &                    exp( -(x - radius - dt)**2 / sigma**2 )* 
-     &                    exp( -(y - radius - dt)**2 / sigma**2 )* 
-     &                    exp( -(z - radius - dt)**2 / sigma**2 )* 
-     &               ((x-radius-dt) + (y-radius-dt) + (z-radius-dt))/sigma**2
+     &                    exp( -(x(i,j,k) - radius - dt)**2 / sigma**2 )* 
+     &                    exp( -(y(i,j,k) - radius - dt)**2 / sigma**2 )* 
+     &                    exp( -(z(i,j,k) - radius - dt)**2 / sigma**2 )* 
+     &               ((x(i,j,k)-radius-dt) + (y(i,j,k)-radius-dt) 
+     $              + (z(i,j,k)-radius-dt))/sigma**2
      &                        - amplitude * 
-     &                    exp( -(x - radius + dt)**2 / sigma**2 )* 
-     &                    exp( -(y - radius + dt)**2 / sigma**2 )* 
-     &                    exp( -(z - radius + dt)**2 / sigma**2 )* 
-     &               ((x-radius+dt) + (y-radius+dt) + (z-radius+dt))/sigma**2
+     &                    exp( -(x(i,j,k) - radius + dt)**2 / sigma**2 )* 
+     &                    exp( -(y(i,j,k) - radius + dt)**2 / sigma**2 )* 
+     &                    exp( -(z(i,j,k) - radius + dt)**2 / sigma**2 )* 
+     &               ((x(i,j,k)-radius+dt) + (y(i,j,k)-radius+dt) 
+     &              + (z(i,j,k)-radius+dt))/sigma**2
 
                   pi_p_p(i,j,k) = amplitude * 
-     &                    exp( -(x - radius - 2*dt)**2 / sigma**2 )* 
-     &                    exp( -(y - radius - 2*dt)**2 / sigma**2 )* 
-     &                    exp( -(z - radius - 2*dt)**2 / sigma**2 )* 
-     &          ((x-radius-2*dt) + (y-radius-2*dt) + (z-radius-2*dt))/sigma**2
+     &                    exp( -(x(i,j,k) - radius - 2*dt)**2 / sigma**2 )* 
+     &                    exp( -(y(i,j,k) - radius - 2*dt)**2 / sigma**2 )* 
+     &                    exp( -(z(i,j,k) - radius - 2*dt)**2 / sigma**2 )* 
+     &          ((x(i,j,k)-radius-2*dt) + (y(i,j,k)-radius-2*dt) 
+     &              + (z(i,j,k)-radius-2*dt))/sigma**2
      &                        - amplitude * 
-     &                    exp( -(x - radius + 2*dt)**2 / sigma**2 )* 
-     &                    exp( -(y - radius + 2*dt)**2 / sigma**2 )* 
-     &                    exp( -(z - radius + 2*dt)**2 / sigma**2 )* 
-     &          ((x-radius+2*dt) + (y-radius+2*dt) + (z-radius+2*dt))/sigma**2
+     &                    exp( -(x(i,j,k) - radius + 2*dt)**2 / sigma**2 )* 
+     &                    exp( -(y(i,j,k) - radius + 2*dt)**2 / sigma**2 )* 
+     &                    exp( -(z(i,j,k) - radius + 2*dt)**2 / sigma**2 )* 
+     &          ((x(i,j,k)-radius+2*dt) + (y(i,j,k)-radius+2*dt) 
+     &              + (z(i,j,k)-radius+2*dt))/sigma**2
 
-                  phix_p(i,j,k) = - amplitude * (x - radius - dt) / sigma**2 
-     &                 *  exp( -(x - radius - dt)**2 / sigma**2 )* 
-     &                    exp( -(y - radius - dt)**2 / sigma**2 )* 
-     &                    exp( -(z - radius - dt)**2 / sigma**2 )
-     &                            - amplitude * (x - radius + dt) / sigma**2
-     &                 *  exp( -(x - radius + dt)**2 / sigma**2 )* 
-     &                    exp( -(y - radius + dt)**2 / sigma**2 )*
-     &                    exp( -(z - radius + dt)**2 / sigma**2 )
+                  phix_p(i,j,k) = - amplitude * (x(i,j,k) - radius - dt) 
+     &              / sigma**2 
+     &                 *  exp( -(x(i,j,k) - radius - dt)**2 / sigma**2 )* 
+     &                    exp( -(y(i,j,k) - radius - dt)**2 / sigma**2 )* 
+     &                    exp( -(z(i,j,k) - radius - dt)**2 / sigma**2 )
+     &                            - amplitude * (x(i,j,k) - radius + dt) 
+     &              / sigma**2
+     &                 *  exp( -(x(i,j,k) - radius + dt)**2 / sigma**2 )* 
+     &                    exp( -(y(i,j,k) - radius + dt)**2 / sigma**2 )*
+     &                    exp( -(z(i,j,k) - radius + dt)**2 / sigma**2 )
      
-                  phix_p_p(i,j,k) = - amplitude * (x - radius - 2*dt) / sigma**2
-     &                 *  exp( -(x - radius - 2*dt)**2 / sigma**2 )* 
-     &                    exp( -(y - radius - 2*dt)**2 / sigma**2 )* 
-     &                    exp( -(z - radius - 2*dt)**2 / sigma**2 )
-     &                            - amplitude * (x - radius + 2*dt) / sigma**2
-     &                 *  exp( -(x - radius + 2*dt)**2 / sigma**2 )* 
-     &                    exp( -(y - radius + 2*dt)**2 / sigma**2 )*
-     &                    exp( -(z - radius + 2*dt)**2 / sigma**2 )
+                  phix_p_p(i,j,k) = - amplitude * (x(i,j,k) - radius - 2*dt) 
+     &              / sigma**2
+     &                 *  exp( -(x(i,j,k) - radius - 2*dt)**2 / sigma**2 )* 
+     &                    exp( -(y(i,j,k) - radius - 2*dt)**2 / sigma**2 )* 
+     &                    exp( -(z(i,j,k) - radius - 2*dt)**2 / sigma**2 )
+     &                            - amplitude * (x(i,j,k) - radius + 2*dt) 
+     &              / sigma**2
+     &                 *  exp( -(x(i,j,k) - radius + 2*dt)**2 / sigma**2 )* 
+     &                    exp( -(y(i,j,k) - radius + 2*dt)**2 / sigma**2 )*
+     &                    exp( -(z(i,j,k) - radius + 2*dt)**2 / sigma**2 )
 
-                  phiy_p(i,j,k) = - amplitude * (y - radius - dt) / sigma**2
-     &                 *  exp( -(x - radius - dt)**2 / sigma**2 )*
-     &                    exp( -(y - radius - dt)**2 / sigma**2 )*
-     &                    exp( -(z - radius - dt)**2 / sigma**2 ) 
-     &                            - amplitude * (y - radius + dt) / sigma**2
-     &                 *  exp( -(x - radius + dt)**2 / sigma**2 )*
-     &                    exp( -(y - radius + dt)**2 / sigma**2 )*
-     &                    exp( -(z - radius + dt)**2 / sigma**2 ) 
+                  phiy_p(i,j,k) = - amplitude * (y(i,j,k) - radius - dt) 
+     &              / sigma**2
+     &                 *  exp( -(x(i,j,k) - radius - dt)**2 / sigma**2 )*
+     &                    exp( -(y(i,j,k) - radius - dt)**2 / sigma**2 )*
+     &                    exp( -(z(i,j,k) - radius - dt)**2 / sigma**2 ) 
+     &                            - amplitude * (y(i,j,k) - radius + dt) 
+     &              / sigma**2
+     &                 *  exp( -(x(i,j,k) - radius + dt)**2 / sigma**2 )*
+     &                    exp( -(y(i,j,k) - radius + dt)**2 / sigma**2 )*
+     &                    exp( -(z(i,j,k) - radius + dt)**2 / sigma**2 ) 
     
-                  phiy_p_p(i,j,k) = - amplitude * (y - radius - 2*dt) / sigma**2
-     &                 *  exp( -(x - radius - 2*dt)**2 / sigma**2 )*
-     &                    exp( -(y - radius - 2*dt)**2 / sigma**2 )*
-     &                    exp( -(z - radius - 2*dt)**2 / sigma**2 )
-     &                            - amplitude * (y - radius + 2*dt) / sigma**2
-     &                 *  exp( -(x - radius + 2*dt)**2 / sigma**2 )*
-     &                    exp( -(y - radius + 2*dt)**2 / sigma**2 )*
-     &                    exp( -(z - radius + 2*dt)**2 / sigma**2 )
+                  phiy_p_p(i,j,k) = - amplitude * (y(i,j,k) - radius - 2*dt) 
+     &              / sigma**2
+     &                 *  exp( -(x(i,j,k) - radius - 2*dt)**2 / sigma**2 )*
+     &                    exp( -(y(i,j,k) - radius - 2*dt)**2 / sigma**2 )*
+     &                    exp( -(z(i,j,k) - radius - 2*dt)**2 / sigma**2 )
+     &                            - amplitude * (y(i,j,k) - radius + 2*dt) 
+     &              / sigma**2
+     &                 *  exp( -(x(i,j,k) - radius + 2*dt)**2 / sigma**2 )*
+     &                    exp( -(y(i,j,k) - radius + 2*dt)**2 / sigma**2 )*
+     &                    exp( -(z(i,j,k) - radius + 2*dt)**2 / sigma**2 )
 
-                  phiz_p(i,j,k) = - amplitude * (z - radius - dt) / sigma**2
-     &                 *  exp( -(x - radius - dt)**2 / sigma**2 )*
-     &                    exp( -(y - radius - dt)**2 / sigma**2 )*
-     &                    exp( -(z - radius - dt)**2 / sigma**2 ) 
-     &                            - amplitude * (z - radius + dt) / sigma**2
-     &                 *  exp( -(x - radius + dt)**2 / sigma**2 )*
-     &                    exp( -(y - radius + dt)**2 / sigma**2 )*
-     &                    exp( -(z - radius + dt)**2 / sigma**2 ) 
+                  phiz_p(i,j,k) = - amplitude * (z(i,j,k) - radius - dt) 
+     &              / sigma**2
+     &                 *  exp( -(x(i,j,k) - radius - dt)**2 / sigma**2 )*
+     &                    exp( -(y(i,j,k) - radius - dt)**2 / sigma**2 )*
+     &                    exp( -(z(i,j,k) - radius - dt)**2 / sigma**2 ) 
+     &                            - amplitude * (z(i,j,k) - radius + dt) 
+     &              / sigma**2
+     &                 *  exp( -(x(i,j,k) - radius + dt)**2 / sigma**2 )*
+     &                    exp( -(y(i,j,k) - radius + dt)**2 / sigma**2 )*
+     &                    exp( -(z(i,j,k) - radius + dt)**2 / sigma**2 ) 
     
-                  phiz_p_p(i,j,k) = - amplitude * (z - radius - 2*dt) / sigma**2
-     &                 *  exp( -(x - radius - 2*dt)**2 / sigma**2 )*
-     &                    exp( -(y - radius - 2*dt)**2 / sigma**2 )*
-     &                    exp( -(z - radius - 2*dt)**2 / sigma**2 )
-     &                            - amplitude * (z - radius + 2*dt) / sigma**2
-     &                 *  exp( -(x - radius + 2*dt)**2 / sigma**2 )*
-     &                    exp( -(y - radius + 2*dt)**2 / sigma**2 )*
-     &                    exp( -(z - radius + 2*dt)**2 / sigma**2 )
+                  phiz_p_p(i,j,k) = - amplitude * (z(i,j,k) - radius - 2*dt) 
+     &              / sigma**2
+     &                 *  exp( -(x(i,j,k) - radius - 2*dt)**2 / sigma**2 )*
+     &                    exp( -(y(i,j,k) - radius - 2*dt)**2 / sigma**2 )*
+     &                    exp( -(z(i,j,k) - radius - 2*dt)**2 / sigma**2 )
+     &                            - amplitude * (z(i,j,k) - radius + 2*dt) 
+     &              / sigma**2
+     &                 *  exp( -(x(i,j,k) - radius + 2*dt)**2 / sigma**2 )*
+     &                    exp( -(y(i,j,k) - radius + 2*dt)**2 / sigma**2 )*
+     &                    exp( -(z(i,j,k) - radius + 2*dt)**2 / sigma**2 )
 
                   phi_p(i,j,k) = amplitude / 2 *
-     &                    exp( -(x - radius - dt)**2 / sigma**2 )*
-     &                    exp( -(y - radius - dt)**2 / sigma**2 )*
-     &                    exp( -(z - radius - dt)**2 / sigma**2 )
+     &                    exp( -(x(i,j,k) - radius - dt)**2 / sigma**2 )*
+     &                    exp( -(y(i,j,k) - radius - dt)**2 / sigma**2 )*
+     &                    exp( -(z(i,j,k) - radius - dt)**2 / sigma**2 )
      &                          + amplitude / 2 *
-     &                    exp( -(x - radius + dt)**2 / sigma**2 )*
-     &                    exp( -(y - radius + dt)**2 / sigma**2 )*
-     &                    exp( -(z - radius + dt)**2 / sigma**2 )
+     &                    exp( -(x(i,j,k) - radius + dt)**2 / sigma**2 )*
+     &                    exp( -(y(i,j,k) - radius + dt)**2 / sigma**2 )*
+     &                    exp( -(z(i,j,k) - radius + dt)**2 / sigma**2 )
 
                   phi_p_p(i,j,k) = amplitude / 2 *
-     &                    exp( -(x - radius - 2*dt)**2 / sigma**2 )*
-     &                    exp( -(y - radius - 2*dt)**2 / sigma**2 )*
-     &                    exp( -(z - radius - 2*dt)**2 / sigma**2 )
+     &                    exp( -(x(i,j,k) - radius - 2*dt)**2 / sigma**2 )*
+     &                    exp( -(y(i,j,k) - radius - 2*dt)**2 / sigma**2 )*
+     &                    exp( -(z(i,j,k) - radius - 2*dt)**2 / sigma**2 )
      &                          + amplitude / 2 *
-     &                    exp( -(x - radius + 2*dt)**2 / sigma**2 )*
-     &                    exp( -(y - radius + 2*dt)**2 / sigma**2 )*
-     &                    exp( -(z - radius + 2*dt)**2 / sigma**2 )
+     &                    exp( -(x(i,j,k) - radius + 2*dt)**2 / sigma**2 )*
+     &                    exp( -(y(i,j,k) - radius + 2*dt)**2 / sigma**2 )*
+     &                    exp( -(z(i,j,k) - radius + 2*dt)**2 / sigma**2 )
 
-                  resid_p(i,j,k) = 0.0
-                  resid_p_p(i,j,k) = 0.0
+c                  resid_p(i,j,k) = 0.0
+c                  resid_p_p(i,j,k) = 0.0
 
                end do
             end do
@@ -205,14 +219,10 @@ c        Use kx,ky,kz as number of modes in each direction.
             do j=1,cctk_lsh(2)
                do i=1,cctk_lsh(1)
 
-                  x = cart3d_x(i,j,k)
-                  y = cart3d_y(i,j,k)
-                  z = cart3d_z(i,j,k)
-
                   phi(i,j,k) = amplitude
-     $                 * sin(kx * (x - 0.5d0) * cpi)
-     $                 * sin(ky * (y - 0.5d0) * cpi)
-     $                 * sin(kz * (z - 0.5d0) * cpi)
+     $                 * sin(kx * (x(i,j,k) - 0.5d0) * cpi)
+     $                 * sin(ky * (y(i,j,k) - 0.5d0) * cpi)
+     $                 * sin(kz * (z(i,j,k) - 0.5d0) * cpi)
                   
                   phi_p(i,j,k) = phi(i,j,k)
      $                 * cos(omega * (cctk_time - dt) * cpi)
@@ -237,12 +247,13 @@ c        Use kx,ky,kz as number of modes in each direction.
                do i=1,cctk_lsh(1)
                   
                   pi(i,j,k)  = 0.0
-                  phi(i,j,k) = 1 / spher3d_r(i,j,k)
+                  phi(i,j,k) = 1 / sqrt(x(i,j,k)**2 + y(i,j,k)**2 
+     &                     + z(i,j,k)**2)
                   ri3 = phi(i,j,k)**3
-                  phix(i,j,k) = - cart3d_x(i,j,k) * ri3
-                  phiy(i,j,k) = - cart3d_y(i,j,k) * ri3
-                  phiz(i,j,k) = - cart3d_z(i,j,k) * ri3
-                  resid(i,j,k) = 0.0
+                  phix(i,j,k) = - x(i,j,k) * ri3
+                  phiy(i,j,k) = - y(i,j,k) * ri3
+                  phiz(i,j,k) = - z(i,j,k) * ri3
+c                  resid(i,j,k) = 0.0
 
                   pi_p(i,j,k)     = pi(i,j,k)
                   pi_p_p(i,j,k)   = pi(i,j,k)
@@ -254,8 +265,8 @@ c        Use kx,ky,kz as number of modes in each direction.
                   phiz_p_p(i,j,k) = phiz(i,j,k)
                   phi_p(i,j,k)    = phi(i,j,k)
                   phi_p_p(i,j,k)  = phi(i,j,k)
-                  resid_p(i,j,k)  = resid(i,j,k)
-                  resid_p_p(i,j,k)= resid(i,j,k)
+c                  resid_p(i,j,k)  = resid(i,j,k)
+c                  resid_p_p(i,j,k)= resid(i,j,k)
                   
                end do
             end do
