@@ -49,7 +49,32 @@ void gh<D>::recompose (const rexts& exts,
   
   // nota bene: there might be 0 refinement levels.
   
-  // Check processor number consistency
+  check_processor_number_consistency ();
+  check_multigrid_consistency ();
+  check_component_consistency ();
+  check_base_grid_extent ();
+  check_refinement_levels ();
+  
+  calculate_base_extents_of_all_levels ();
+  
+  if (output_bboxes) {
+    do_output_bboxes ( cout);
+    do_output_bases ( cout);
+  }
+  
+  // Recompose the other hierarchies
+  
+  for (typename list<th<D>*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
+    (*t)->recompose();
+  }
+  
+  for (typename list<dh<D>*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
+    (*d)->recompose (do_prolongate);
+  }
+}
+
+template<int D>
+void gh<D>::check_processor_number_consistency () {
   for (int rl=0; rl<reflevels(); ++rl) {
     assert (processors.size() == extents.size());
     assert (outer_boundaries.size() == extents.size());
@@ -58,8 +83,10 @@ void gh<D>::recompose (const rexts& exts,
       assert (outer_boundaries.at(rl).size() == extents.at(rl).size());
     }
   }
+}
   
-  // Check multigrid consistency
+template<int D>
+void gh<D>::check_multigrid_consistency () {
   for (int rl=0; rl<reflevels(); ++rl) {
     for (int c=0; c<components(rl); ++c) {
       assert (mglevels(rl,c)>0);
@@ -76,23 +103,28 @@ void gh<D>::recompose (const rexts& exts,
       }
     }
   }
+}
   
-  // Check component consistency
+template<int D>
+void gh<D>::check_component_consistency () {
   for (int rl=0; rl<reflevels(); ++rl) {
     assert (components(rl)>0);
     for (int c=0; c<components(rl); ++c) {
       for (int ml=0; ml<mglevels(rl,c); ++ml) {
-	assert (all(extents.at(rl).at(c).at(ml).stride()
-		    == extents.at(rl).at(0).at(ml).stride()));
-	assert (extents.at(rl).at(c).at(ml).is_aligned_with(extents.at(rl).at(0).at(ml)));
+        ibbox &b  = extents.at(rl).at(c).at(ml);
+        ibbox &b0 = extents.at(rl).at(0).at(ml);
+	assert (all(b.stride() == b0.stride()));
+	assert (b.is_aligned_with(b0));
         for (int cc=c+1; cc<components(rl); ++cc) {
-          assert ((extents.at(rl).at(c).at(ml) & extents.at(rl).at(cc).at(ml)).empty());
+          assert ((b & extents.at(rl).at(cc).at(ml)).empty());
         }
       }
     }
   }
-  
-  // Check base grid extent
+}
+
+template<int D>
+void gh<D>::check_base_grid_extent () {
   if (reflevels()>0) {
     for (int c=0; c<components(0); ++c) {
       // TODO: put the check back in, taking outer boundaries into
@@ -102,8 +134,10 @@ void gh<D>::recompose (const rexts& exts,
 #endif
     }
   }
+}
   
-  // Check refinement levels
+template<int D>
+void gh<D>::check_refinement_levels () {
   for (int rl=1; rl<reflevels(); ++rl) {
     assert (all(extents.at(rl-1).at(0).at(0).stride()
 		== ivect(reffact) * extents.at(rl).at(0).at(0).stride()));
@@ -122,8 +156,10 @@ void gh<D>::recompose (const rexts& exts,
     // ... and then check the sizes:
     assert (all.size() == sz);
   }
-  
-  // Calculate base extents of all levels
+}
+
+template<int D>
+void gh<D>::calculate_base_extents_of_all_levels () {
   bases.resize(reflevels());
   for (int rl=0; rl<reflevels(); ++rl) {
     if (components(rl)==0) {
@@ -131,52 +167,15 @@ void gh<D>::recompose (const rexts& exts,
     } else {
       bases.at(rl).resize(mglevels(rl,0));
       for (int ml=0; ml<mglevels(rl,0); ++ml) {
-	bases.at(rl).at(ml) = ibbox();
+        bases.at(rl).at(ml) = ibbox();
+        ibbox &bb = bases.at(rl).at(ml);
 	for (int c=0; c<components(rl); ++c) {
-	  bases.at(rl).at(ml)
-	    = bases.at(rl).at(ml).expanded_containing(extents.at(rl).at(c).at(ml));
+	  bb = bb.expanded_containing(extents.at(rl).at(c).at(ml));
 	}
       }
     }
   }
-  
-  if (output_bboxes) {
-    for (int rl=0; rl<reflevels(); ++rl) {
-      for (int c=0; c<components(rl); ++c) {
-	for (int ml=0; ml<mglevels(rl,c); ++ml) {
-	  cout << endl;
-          cout << "gh bboxes:" << endl;
-	  cout << "rl=" << rl << " c=" << c << " ml=" << ml << endl;
-          cout << "extent=" << extents.at(rl).at(c).at(ml) << endl;
-          cout << "outer_boundary=" << outer_boundaries.at(rl).at(c) << endl;
-          cout << "processor=" << processors.at(rl).at(c) << endl;
-        }
-      }
-    }
-    for (int rl=0; rl<reflevels(); ++rl) {
-      if (components(rl)>0) {
-	for (int ml=0; ml<mglevels(rl,0); ++ml) {
-	  cout << endl;
-          cout << "gh bases:" << endl;
-	  cout << "rl=" << rl << " ml=" << ml << endl;
-          cout << "base=" << bases.at(rl).at(ml) << endl;
-        }
-      }
-    }
-  }
-  
-  // Recompose the other hierarchies
-  
-  for (typename list<th<D>*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
-    (*t)->recompose();
-  }
-  
-  for (typename list<dh<D>*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
-    (*d)->recompose (do_prolongate);
-  }
 }
-
-
 
 // Accessors
 template<int D>
@@ -215,6 +214,35 @@ void gh<D>::remove (dh<D>* d) {
 }
 
 
+template<int D>
+void gh<D>::do_output_bboxes (ostream& os) const {
+  for (int rl=0; rl<reflevels(); ++rl) {
+    for (int c=0; c<components(rl); ++c) {
+      for (int ml=0; ml<mglevels(rl,c); ++ml) {
+        os << endl;
+        os << "gh bboxes:" << endl;
+        os << "rl=" << rl << " c=" << c << " ml=" << ml << endl;
+        os << "extent=" << extents.at(rl).at(c).at(ml) << endl;
+        os << "outer_boundary=" << outer_boundaries.at(rl).at(c) << endl;
+        os << "processor=" << processors.at(rl).at(c) << endl;
+      }
+    }
+  }
+}
+
+template<int D>
+void gh<D>::do_output_bases (ostream& os) const {
+  for (int rl=0; rl<reflevels(); ++rl) {
+    if (components(rl)>0) {
+      for (int ml=0; ml<mglevels(rl,0); ++ml) {
+        os << endl;
+        os << "gh bases:" << endl;
+        os << "rl=" << rl << " ml=" << ml << endl;
+        os << "base=" << bases.at(rl).at(ml) << endl;
+      }
+    }
+  }
+}
 
 template<int D>
 ostream& gh<D>::output (ostream& os) const {

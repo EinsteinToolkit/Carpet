@@ -127,6 +127,16 @@ public:
   
   // Output
   virtual ostream& output (ostream& os) const;
+
+private:
+  void check_processor_number_consistency ();
+  void check_multigrid_consistency ();
+  void check_component_consistency ();
+  void check_base_grid_extent ();
+  void check_refinement_levels ();
+  void calculate_base_extents_of_all_levels ();
+  void do_output_bboxes (ostream& os) const;
+  void do_output_bases (ostream& os) const;
 };
 
 
