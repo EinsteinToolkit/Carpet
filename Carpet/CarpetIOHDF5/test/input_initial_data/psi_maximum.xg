@@ -1,7 +1,3 @@
-"Parameter file output_initial_data.par
-"Created Jul 07 2004 17:08:37
-"x-label time
-"y-label WAVETOYMOL::psi
 "psi v time
 0.0000000000000	6.2831853071796
 0.0125000000000	6.2746430577991
