@@ -45,7 +45,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.18 2004/01/09 15:43:46 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.19 2004/01/12 10:50:31 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -156,13 +156,11 @@ namespace CarpetIOFlexIO {
   
   
 
-  int WriteGF (const cGH* const cgh, IObase* writer, AMRwriter* amrwriter, ioRequest* request)
+  int WriteGF (const cGH* const cgh, IObase* writer, AMRwriter* amrwriter, ioRequest* request, const int called_from_checkpoint)
   {
 
     DECLARE_CCTK_PARAMETERS;
 
-    /* I have got no idea why this stuff below is needed... ask Erik Schnetter */
-#warning "this should work now also for scalars - try it!"    
     const int varindex  = request->vindex;
 
     const int group = CCTK_GroupIndexFromVarI (varindex);
@@ -173,36 +171,18 @@ namespace CarpetIOFlexIO {
     int tl = 0;
     const int grouptype = CCTK_GroupTypeI(group);
 
-    // lets get the correct Carpet time level (which is the (-1) * timelevel):
+    // let's get the correct Carpet time level (which is the (-1) * Cactus timelevel):
     if (request->timelevel==0)
       tl = 0;
     else
       tl = - request->timelevel;
-    
 
     assert (! ( (grouptype != CCTK_GF) && reflevel>0));
-    //    if(grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY) return 0;
-
 
     if (CCTK_MyProc(cgh)==0) {
 
-      // Set datatype
-      //fprintf(stderr,"%d\n",CCTK_VarTypeI(varindex));
-      /* should be obsolete now
-          assert (CCTK_VarTypeI(varindex) == CCTK_VARIABLE_REAL8
-	      || (sizeof(CCTK_REAL) == sizeof(CCTK_REAL8)
-		  && CCTK_VarTypeI(varindex) == CCTK_VARIABLE_REAL));
-      */
       amrwriter->setType (FlexIODataType(CCTK_VarTypeI(varindex)));
       
-
-
-      // Set name information
-
-      //      char *name = CCTK_FullName (varindex);
-      //IOwriteAttribute(amrwriter->file,"name",IObase::Char,strlen(name)+1,name);
-      //free(name);
-
       int gpdim = CCTK_GroupDimI(group);
 
       // need gpdim=1 if scalar (flexio wants this)
@@ -253,23 +233,10 @@ namespace CarpetIOFlexIO {
     BEGIN_COMPONENT_LOOP(cgh, grouptype) {
 
       const ggf<dim>* ff = 0;
-#if 0
-    if (grouptype == CCTK_ARRAY){
-      // this is a DIRTY hack to fix problems caused by the fact that I am to lazy to write a more
-      //   general output routine...
-      if(reflevel !=0)
-	return 0;
-    }
-    else
-#endif
-      
-      //if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "GF reflevel: %d component: %d grouptype: %d",reflevel,component,grouptype);
-      
 
       assert (var < (int)arrdata[group].data.size());
       ff = (ggf<dim>*)arrdata[group].data[var];
       
-      //      CCTK_VInfo (CCTK_THORNSTRING, "bogus reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
       const gdata<dim>* const data = (*ff) (tl, reflevel, component, mglevel);
 
       // get some more group information
@@ -284,13 +251,18 @@ namespace CarpetIOFlexIO {
       vect<int,dim> str = ext.stride();
 
       // Ignore ghost zones if desired
-#warning "need to check size of gdyndata.bbox"
+
+      const int out3D_output_outer_boundary_var = (called_from_checkpoint) ? 1 : out3D_output_outer_boundary;
+      const int out3D_max_num_lower_ghosts_var = (called_from_checkpoint) ? 0 : out3D_max_num_lower_ghosts;
+      const int out3D_max_num_upper_ghosts_var = (called_from_checkpoint) ? 0 : out3D_max_num_upper_ghosts;
+      
+
       for (int d=0; d<dim; ++d) {
-	const int max_lower_ghosts = (gdyndata.bbox[2*d  ] && out3D_output_outer_boundary) ? -1 : out3D_max_num_lower_ghosts;
-	const int max_upper_ghosts = (gdyndata.bbox[2*d+1] && out3D_output_outer_boundary) ? -1 : out3D_max_num_upper_ghosts;
+	const int max_lower_ghosts = (gdyndata.bbox[2*d  ] && out3D_output_outer_boundary_var) ? -1 : out3D_max_num_lower_ghosts_var;
+	const int max_upper_ghosts = (gdyndata.bbox[2*d+1] && out3D_output_outer_boundary_var) ? -1 : out3D_max_num_upper_ghosts_var;
 	
-	const int num_lower_ghosts = max_lower_ghosts == -1 ? gdyndata.nghostzones[d] : min(out3D_max_num_lower_ghosts, gdyndata.nghostzones[d]);
-	const int num_upper_ghosts = max_upper_ghosts == -1 ? gdyndata.nghostzones[d] : min(out3D_max_num_upper_ghosts, gdyndata.nghostzones[d]);
+	const int num_lower_ghosts = max_lower_ghosts == -1 ? gdyndata.nghostzones[d] : min(out3D_max_num_lower_ghosts_var, gdyndata.nghostzones[d]);
+	const int num_upper_ghosts = max_upper_ghosts == -1 ? gdyndata.nghostzones[d] : min(out3D_max_num_upper_ghosts_var, gdyndata.nghostzones[d]);
 	
 	lo[d] += (gdyndata.nghostzones[d] - num_lower_ghosts) * str[d];
 	hi[d] -= (gdyndata.nghostzones[d] - num_upper_ghosts) * str[d];
@@ -319,12 +291,7 @@ namespace CarpetIOFlexIO {
 	// dump attributes
 	DumpCommonAttributes(cgh,writer,request);
 
-
-	//	char *name = CCTK_FullName (varindex);
-	//	writer->writeAttribute("name",IObase::Char,strlen(name)+1,name);
-	//free(name); 
       }
-      
       // Delete temporary copy
       delete tmp;
     } END_COMPONENT_LOOP;
@@ -444,7 +411,7 @@ namespace CarpetIOFlexIO {
       amrwriter = new AMRwriter(*writer);
     }
 
-      WriteGF(cgh,writer,amrwriter,request);
+      WriteGF(cgh,writer,amrwriter,request,0);
     
     // Close the file
     if (CCTK_MyProc(cgh)==0) {
@@ -738,12 +705,6 @@ namespace CarpetIOFlexIO {
       const vect<int,dim> ub = lb + (vect<int,dim>(amr_dims) - 1) * str;
       const bbox<int,dim> ext(lb,ub,str);
 
-      //fprintf(stderr,"lb[0,1,2]= %d,%d,%d\n",lb[0],lb[1],lb[2]);
-      //fprintf(stderr,"ub[0,1,2]= %d,%d,%d\n",ub[0],ub[1],ub[2]);
-      //fprintf(stderr,"str[0,1,2]= %d,%d,%d\n",str[0],str[1],str[2]);
-
-      //fprintf(stderr,"ext,upper[1,2,3]: %d,%d,%d",ext.upper()[0],ext.upper()[1],ext.upper()[2]);
-      //fprintf(stderr,"ext,str[1,2,3]: %d,%d,%d",ext.stride()[0],ext.stride()[1],ext.stride()[2]);
 
       gdata<dim>* const tmp = data->make_typed (varindex);
 
