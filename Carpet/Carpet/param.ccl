@@ -291,7 +291,7 @@ BOOLEAN init_each_timelevel "Call initial data routines once for each timelevel"
 
 BOOLEAN prolongate_initial_data "Prolongate the refined regions during initial data generation" STEERABLE=always
 {
-} "yes"
+} "no"
 
 
 
