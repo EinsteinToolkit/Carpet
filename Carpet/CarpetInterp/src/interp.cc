@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.33 2004/08/02 11:39:53 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.34 2004/08/02 18:39:27 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -21,7 +21,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.33 2004/08/02 11:39:53 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.34 2004/08/02 18:39:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -244,7 +244,7 @@ namespace CarpetInterp {
       if (all(pos>=lower && pos<=upper)) {
         for (int rl=maxrl-1; rl>=minrl; --rl) {
           
-          const int fact = maxreflevelfact / ipow(reffact, rl) * ipow(mgfact, basemglevel + mglevel);
+          const int fact = maxreflevelfact / ipow(reffact, rl) * ipow(mgfact, mglevel);
           ivect const ipos = ivect(floor((pos - lower) / (delta * fact) + 0.5)) * fact;
           assert (all(ipos % vhh.at(m)->bases.at(rl).at(ml).stride() == 0));
           
