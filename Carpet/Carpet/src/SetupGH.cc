@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.70 2004/03/23 19:30:14 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.71 2004/03/23 19:33:40 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -402,11 +402,11 @@ namespace Carpet {
       
       // Allocate grid hierarchy
       vhh.at(m) = new gh<dim>(refinement_factor, vertex_centered,
-                           convergence_factor, vertex_centered, baseext);
+                              convergence_factor, vertex_centered, baseext);
       
       // Allocate data hierarchy
       vdd.at(m) = new dh<dim>(*vhh.at(m), lghosts, ughosts,
-                           prolongation_order_space, buffer_width);
+                              prolongation_order_space, buffer_width);
       
       // Allocate time hierarchy
       vtt.at(m) = new th<dim>(*vhh.at(m), 1.0);
@@ -681,7 +681,8 @@ namespace Carpet {
         arrdata.at(group).at(0).dd
           = new dh<dim>(*arrdata.at(group).at(0).hh, alghosts, aughosts, 0, 0);
         
-        arrdata.at(group).at(0).tt = new th<dim>(*arrdata.at(group).at(0).hh, 1.0);
+        arrdata.at(group).at(0).tt
+          = new th<dim>(*arrdata.at(group).at(0).hh, 1.0);
 	
         
         

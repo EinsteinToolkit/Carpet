@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.59 2004/03/23 19:32:21 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.60 2004/03/23 19:32:59 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -165,7 +165,7 @@ namespace Carpet {
         
         // Recompose
         vhh.at(m)->recompose (bbsss, obss, pss,
-                           initialise_from, do_prolongate);
+                              initialise_from, do_prolongate);
         
         OutputGrids (cgh, m, *vhh.at(m));
         
