@@ -18,7 +18,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.18 2003/04/07 16:08:31 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.19 2003/04/30 12:43:21 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -132,10 +132,9 @@ namespace Carpet {
 	      
 	      // Advance level times
 	      tt->advance_time (reflevel, mglevel);
-	      const CCTK_REAL saved_time = cgh->cctk_time;
+              
               cgh->cctk_time
                 = tt->time (0, reflevel, mglevel) * base_delta_time;
-              assert (fabs(saved_time + cgh->cctk_delta_time - cgh->cctk_time) < 1e-12);
 	      
 	      Waypoint ("%*sCurrent time is %g", 2*reflevel, "",
 			cgh->cctk_time);
@@ -161,8 +160,6 @@ namespace Carpet {
 	      // Checking
 	      CalculateChecksums (cgh, currenttime);
 	      
-	      cgh->cctk_time = saved_time;
-	      
 	    }
 	  } END_MGLEVEL_LOOP(cgh);
 	  
@@ -172,12 +169,6 @@ namespace Carpet {
 	  
 	}
       } END_REFLEVEL_LOOP(cgh);
-      
-      {
-        const CCTK_REAL saved_time = cgh->cctk_time;
-        cgh->cctk_time = cctk_initial_time + cgh->cctk_iteration * base_delta_time / maxreflevelfact;
-        assert (fabs(saved_time + base_delta_time / maxreflevelfact - cgh->cctk_time) < 1e12);
-      }
       
       
       
@@ -189,6 +180,9 @@ namespace Carpet {
 	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
 	    if (cgh->cctk_iteration % do_every == 0) {
 	      
+              cgh->cctk_time
+                = tt->time (0, reflevel, mglevel) * base_delta_time;
+              
 	      // Restrict
 	      Waypoint ("%*sCurrent time is %g", 2*reflevel, "",
 			cgh->cctk_time);
@@ -210,6 +204,9 @@ namespace Carpet {
 	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
 	    if (cgh->cctk_iteration % do_every == 0) {
 	      
+              cgh->cctk_time
+                = tt->time (0, reflevel, mglevel) * base_delta_time;
+              
 	      // Checkpoint
 	      Waypoint ("%*sScheduling CHECKPOINT", 2*reflevel, "");
 	      CCTK_ScheduleTraverse ("CCTK_CHECKPOINT", cgh, CallFunction);

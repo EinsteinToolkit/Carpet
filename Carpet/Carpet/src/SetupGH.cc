@@ -19,7 +19,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.39 2003/02/24 17:05:46 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.40 2003/04/30 12:43:21 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -120,6 +120,9 @@ namespace Carpet {
     default:
       assert (0);
     }
+    
+    // not reached
+    return false;
   }
   
   
@@ -297,6 +300,10 @@ namespace Carpet {
 	MakeProcessors (cgh, bbsss, pss);
 	
 	// And recompose.  Done.
+        char * groupname = CCTK_GroupName (group);
+        assert (groupname);
+        Checkpoint ("Recomposing grid array group %s", groupname);
+        free (groupname);
 	arrdata[group].hh->recompose (bbsss, obss, pss);
 	
 	break;
@@ -387,6 +394,7 @@ namespace Carpet {
     MakeProcessors (cgh, bbsss, pss);
     
     // Recompose grid hierarchy
+    Checkpoint ("Recomposing grid functions");
     Recompose (cgh, bbsss, obss, pss);
     
     

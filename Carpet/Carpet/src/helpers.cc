@@ -13,7 +13,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.27 2002/10/24 10:39:39 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.28 2003/04/30 12:43:21 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -340,18 +340,8 @@ namespace Carpet {
 	  assert (arrdata[group].info.ubnd[d]-arrdata[group].info.lbnd[d]+1
 		  == arrdata[group].info.lsh[d]);
 	  assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
-	  // Do not allow outer boundaries on the finer grids
-	  if (rl==0) {
-	    assert (iext.lower()[d] >= bext.lower()[d]);
-	    assert (iext.upper()[d] <= bext.upper()[d]);
-	    ((int*)arrdata[group].info.bbox)[2*d  ]
-	      = iext.lower()[d] == bext.lower()[d];
-	    ((int*)arrdata[group].info.bbox)[2*d+1]
-	      = iext.upper()[d] == bext.upper()[d];
-	  } else {
-	    ((int*)arrdata[group].info.bbox)[2*d  ] = 0;
-	    ((int*)arrdata[group].info.bbox)[2*d+1] = 0;
-	  }
+          ((int*)arrdata[group].info.bbox)[2*d  ] = hh->outer_boundaries[rl][c][d][0];
+          ((int*)arrdata[group].info.bbox)[2*d+1] = hh->outer_boundaries[rl][c][d][1];
 	} // for d
 	
       } // if local mode
@@ -438,4 +428,25 @@ namespace Carpet {
     
   }
   
+  
+  
+  // This is a temporary measure to call a local function from a
+  // global one.  A more elegant way would be to reuse the
+  // CallFunction stuff, or function aliasing.  Is there a way for the
+  // user to get at the cFunctionData structure?
+  int CallLocalFunction (cGH * const cgh,
+                         void (* const function) (cGH * const cgh))
+  {
+    assert (component == -1);
+    BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
+      function (cgh);
+    } END_LOCAL_COMPONENT_LOOP(cgh);
+    return 0;
+  }
+  
 } // namespace Carpet
+
+
+
+
+

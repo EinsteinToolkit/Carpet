@@ -1,4 +1,4 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.6 2002/09/01 14:52:24 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.h,v 1.7 2003/04/30 12:43:21 schnetter Exp $ */
 
 #ifndef CARPET_PUBLIC_H
 #define CARPET_PUBLIC_H
@@ -17,6 +17,10 @@ namespace Carpet {
     /* Scheduled functions */
     int CarpetParamCheck (CCTK_ARGUMENTS);
     int CarpetStartup (void);
+
+    /* Call a local function */
+    int CallLocalFunction (cGH * const cgh,
+                           void (* const function) (cGH * const cgh));
     
     /* Helper functions */
     MPI_Comm CarpetMPIComm (void);

@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.13 2003/01/03 14:11:56 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.14 2003/04/30 12:43:21 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -32,7 +32,7 @@ namespace Carpet {
     // it for all other refinement levels as well.  Disabling must
     // wait until all refinement levels have been disabled.
     
-    // TODO: Invent a mode "reflevel==-1" that is global, i. e. has
+    // TODO: Invent a mode "reflevel==-1" that is global, i.e. has
     // effect for all refinement levels.  This mode is used during
     // INITIAL, and en-/disabling storage in it is also global.
     
