@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef CARPET_HH
 #define CARPET_HH
 

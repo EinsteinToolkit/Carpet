@@ -8,11 +8,6 @@
 #include "gh.hh"
 
 #include "carpet.hh"
-  
-extern "C" {
-  static const char* rcsid = "$Header:$";
-  CCTK_FILEVERSION(Carpet_Carpet_CallFunction_cc);
-}
 
 
 

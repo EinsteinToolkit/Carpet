@@ -1,5 +1,3 @@
-$Header$
-
 mapping:        handle mappings
 Get:            new style interface, uses function aliasing
 slab:           internal routine that actually performs the slabbing

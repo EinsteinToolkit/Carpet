@@ -1,5 +1,3 @@
-# $Header:$
-
 CPP			= /lib/cpp -DMPIPP_H
 
 CXXFLAGS		= -LANG:std -LANG:vla=ON -FE:eliminate_duplicate_inline_copies -FE:template_in_elf_section -64 -mips4 -r12000 -no_auto_include -ptused -DMPIPP_H

@@ -9,11 +9,6 @@
 
 #include "mask_carpet.hh"
 
-extern "C" {
-  static const char* rcsid = "$Header:$";
-  CCTK_FILEVERSION(Carpet_CarpetMask_Mask_cc);
-}
-
 
 
 namespace CarpetMask {

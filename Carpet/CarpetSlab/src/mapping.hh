@@ -1,5 +1,3 @@
-// $Header$
-
 #ifndef CARPETSLAB_MAPPING_HH
 #define CARPETSLAB_MAPPING_HH
 

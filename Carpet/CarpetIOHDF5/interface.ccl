@@ -1,5 +1,4 @@
 # Interface definition for thorn CarpetIOHDF5
-# $Header:$
 
 IMPLEMENTS: IOHDF5
 

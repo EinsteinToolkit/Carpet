@@ -1,5 +1,4 @@
 # Main make.configuration.defn file for thorn CarpetIOHDF5   -*-Makefile-*-
-# $Header:$
 
 # Ensure that HDF5 is available
 ifeq ($(strip $(HAVE_HDF5)), )

@@ -1,5 +1,4 @@
 # Main make.configuration.defn file for thorn CarpetLib   -*-Makefile-*-
-# $Header:$
 
 # Ensure that MPI is available
 ifeq ($(strip $(HAVE_MPI)), )

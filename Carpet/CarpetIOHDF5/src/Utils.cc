@@ -16,11 +16,6 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
-extern "C" {
-static const char* rcsid = "$Header:$";
-CCTK_FILEVERSION(Carpet_CarpetIOHDF5_Utils_cc);
-}
-
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
 

@@ -1,5 +1,3 @@
-# $Header:$
-
 CC			= gcc
 CXX			= g++
 F77			= g77

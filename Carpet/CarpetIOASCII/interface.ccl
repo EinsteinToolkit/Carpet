@@ -1,5 +1,4 @@
 # Interface definition for thorn CarpetIOASCII
-# $Header:$
 
 IMPLEMENTS: IOASCII
 

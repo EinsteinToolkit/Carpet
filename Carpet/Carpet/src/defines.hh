@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef DEFINES_HH
 #define DEFINES_HH
 

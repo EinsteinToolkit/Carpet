@@ -1,5 +1,4 @@
 # Schedule definitions for thorn CarpetInterp
-# $Header:$
 
 schedule CarpetInterpStartup at STARTUP
 {

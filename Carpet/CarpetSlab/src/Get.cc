@@ -1,5 +1,3 @@
-// $Header:$
-
 #include <cassert>
 
 #include "cctk.h"
@@ -9,13 +7,6 @@
 #include "mapping.hh"
 #include "slab.hh"
 #include "Get.hh"
-
-
-
-extern "C" {
-  static const char* rcsid = "$Header$";
-  CCTK_FILEVERSION(Carpet_CarpetSlab_Get_cc);
-}
 
 
 

@@ -1,5 +1,4 @@
 # Configuration definitions for thorn CarpetReduce
-# $Header:$
 
 REQUIRES Carpet CarpetLib
 

@@ -1,5 +1,4 @@
 # Interface definition for thorn Carpet
-# $Header:$
 
 IMPLEMENTS: Driver
 

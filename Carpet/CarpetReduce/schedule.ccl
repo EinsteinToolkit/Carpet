@@ -1,5 +1,4 @@
 # Schedule definitions for thorn CarpetReduce
-# $Header:$
 
 schedule CarpetReduceStartup at STARTUP
 {

@@ -1,5 +1,3 @@
-# $Header:$
-
 CPP			= cpp -traditional -DCARPET_REAL
 F77			= g77
 F90			= g77

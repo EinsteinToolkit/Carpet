@@ -1,5 +1,3 @@
-# $Header:$
-
 CPP		= /home/schnette/gcc/bin/cpp -traditional -DCARPET_REAL
 CC		= icc
 CXX		= icc

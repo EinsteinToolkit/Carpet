@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef CARPETREDUCE_HH
 #define CARPETREDUCE_HH
 

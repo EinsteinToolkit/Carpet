@@ -1,5 +1,4 @@
 # Configuration definitions for thorn CarpetRegrid
-# $Header:$
 
 REQUIRES Carpet CarpetLib
 

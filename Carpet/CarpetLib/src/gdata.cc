@@ -1,5 +1,3 @@
-// $Header:$
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>

@@ -1,5 +1,4 @@
 # Configuration definitions for thorn CarpetIOHDF5
-# $Header:$
 
 REQUIRES Carpet CarpetLib IOUtil
 

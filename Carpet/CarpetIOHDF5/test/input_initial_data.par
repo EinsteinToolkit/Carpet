@@ -1,5 +1,3 @@
-# $Header:$
-
 # deactivate the IDScalarWaveMoL thorn
 # initial data is read from files using the filereader
 ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce CarpetSlab Boundary CoordBase SymBase CartGrid3D Periodic LocalInterp NaNChecker Slab Time MoL WaveToyMoL IOUtil IOBasic CarpetIOHDF5"

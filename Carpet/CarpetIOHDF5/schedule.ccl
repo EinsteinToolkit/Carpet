@@ -1,5 +1,4 @@
 # Schedule definitions for thorn CarpetIOHDF5
-# $Header:$
 
 storage: next_output_iteration next_output_time this_iteration
 

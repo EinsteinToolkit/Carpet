@@ -1,5 +1,3 @@
-# $Header:$
-
 !DESC "Check array sizes"
 
 ActiveThorns = "Carpet CarpetLib CarpetSlab CoordBase CartGrid3D IOUtil CarpetIOASCII CarpetTest"

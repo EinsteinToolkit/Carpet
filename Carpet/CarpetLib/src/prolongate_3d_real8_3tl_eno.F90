@@ -1,5 +1,3 @@
-!!$     $Header:$
-
 #include "cctk.h"
 
 

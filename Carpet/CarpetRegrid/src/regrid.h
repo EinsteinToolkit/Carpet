@@ -1,5 +1,3 @@
-/* $Header:$ */
-
 #ifndef CARPETREGRID_H
 #define CARPETREGRID_H
 

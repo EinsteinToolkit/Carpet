@@ -1,5 +1,4 @@
 # Configuration definitions for thorn CarpetLib
-# $Header:$
 
 PROVIDES CarpetLib
 {

@@ -1,8 +1,6 @@
 // Instantiate type cases for all available types    -*-C++-*-
 // (C) 2001 Erik Schnetter <schnetter@uni-tuebingen.de>
 
-// $Header:$
-
 // Usage:
 // Define the macro TYPECASE(N,T) to be a typecase for the type T with name N,
 // then include this file,

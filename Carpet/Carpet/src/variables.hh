@@ -1,5 +1,3 @@
-// $Header:$
-
 // It is assumed that each group has at least one map.  All arrays
 // have exactly one map.  All maps have the same number of refinement
 // levels.

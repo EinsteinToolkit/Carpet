@@ -1,5 +1,4 @@
 # Schedule definitions for thorn Carpet
-# $Header:$
 
 schedule CarpetStartup at STARTUP as Driver_Startup
 {

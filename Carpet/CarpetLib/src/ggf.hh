@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef GGF_HH
 #define GGF_HH
 

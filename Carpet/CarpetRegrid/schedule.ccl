@@ -1,5 +1,4 @@
 # Schedule definitions for thorn CarpetRegrid
-# $Header:$
 
 schedule CarpetRegridParamcheck at PARAMCHECK
 {

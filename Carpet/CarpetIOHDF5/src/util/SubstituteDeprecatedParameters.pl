@@ -7,7 +7,6 @@
 #             Perl script to automatically substitute deprecated parameter
 #             names in a parfile
 #  @enddesc
-#  @version   $Header: $
 #@@*/
 
 # Parse the command line

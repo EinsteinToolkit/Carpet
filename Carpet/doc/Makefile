@@ -1,5 +1,3 @@
-# $Header:$
-
 NAME=documentation
 
 all: ${NAME}.dvi ${NAME}.ps ${NAME}.ps.gz ${NAME}.pdf

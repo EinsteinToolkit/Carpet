@@ -1,5 +1,4 @@
 # Configuration definitions for thorn CarpetSlab
-# $Header:$
 
 REQUIRES Carpet CarpetLib
 

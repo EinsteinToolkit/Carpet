@@ -1,5 +1,4 @@
 # Schedule definitions for thorn CarpetIOASCII
-# $Header:$
 
 storage: last_output_iteration last_output_time this_iteration
 

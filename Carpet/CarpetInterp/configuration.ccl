@@ -1,5 +1,4 @@
 # Configuration definitions for thorn CarpetInterp
-# $Header:$
 
 REQUIRES Carpet CarpetLib
 

@@ -1,5 +1,4 @@
 # Parameter definitions for thorn CarpetReduce
-# $Header:$
 
 BOOLEAN verbose "Produce screen output while running"
 {

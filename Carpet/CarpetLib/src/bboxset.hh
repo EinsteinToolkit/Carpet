@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef BBOXSET_HH
 #define BBOXSET_HH
 

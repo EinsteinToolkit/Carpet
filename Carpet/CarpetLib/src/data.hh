@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef DATA_HH
 #define DATA_HH
 

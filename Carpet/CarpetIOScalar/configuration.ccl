@@ -1,5 +1,4 @@
 # Configuration definitions for thorn CarpetIOASCII
-# $Header:$
 
 REQUIRES Carpet CarpetLib IOUtil
 

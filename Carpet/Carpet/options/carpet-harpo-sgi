@@ -1,5 +1,3 @@
-# $Header:$
-
 CPP			= /lib/cpp -DMPIPP_H
 
 CFLAGS			= -mips4 -r12000 -64 -LANG:restrict=ON

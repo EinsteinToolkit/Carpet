@@ -9,11 +9,6 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-extern "C" {
-  static const char* rcsid = "$Header:$";
-  CCTK_FILEVERSION(Carpet_CarpetRegrid_moving_cc);
-}
-
 
 
 namespace CarpetRegrid {

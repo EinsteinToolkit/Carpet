@@ -1,8 +1,6 @@
 // Instantiate templates for all available types    -*-C++-*-
 // (C) 2001 Erik Schnetter <schnetter@uni-tuebingen.de>
 
-// $Header:$
-
 // Usage:
 // Define the macro INSTANTIATE(T) to instantiate for the type T,
 // then include this file,

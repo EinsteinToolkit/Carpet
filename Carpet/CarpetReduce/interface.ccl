@@ -1,5 +1,4 @@
 # Interface definition for thorn CarpetReduce
-# $Header:$
 
 IMPLEMENTS: reduce
 

@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef DIST_HH
 #define DIST_HH
 

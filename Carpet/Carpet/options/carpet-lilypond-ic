@@ -1,5 +1,3 @@
-# $Header:$
-
 CPP		= cpp -traditional -DCARPET_REAL
 CC		= icc
 CXX		= icc

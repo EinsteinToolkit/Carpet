@@ -1,5 +1,3 @@
-// $Header$
-
 #ifndef CARPETSLAB_GET_HH
 #define CARPETSLAB_GET_HH
 

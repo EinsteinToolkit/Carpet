@@ -1,5 +1,4 @@
 !!$     -*-Fortran-*-
-!!$     $Header:$
 
 #include "cctk.h"
 

@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef OPERATORS_HH
 #define OPERATORS_HH
 

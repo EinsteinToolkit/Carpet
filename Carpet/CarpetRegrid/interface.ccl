@@ -1,5 +1,4 @@
 # Interface definition for thorn CarpetRegrid
-# $Header:$
 
 IMPLEMENTS: CarpetRegrid
 

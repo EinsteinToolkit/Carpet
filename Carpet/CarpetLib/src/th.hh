@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef TH_HH
 #define TH_HH
 

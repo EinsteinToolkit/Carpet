@@ -1,5 +1,3 @@
-// $Header:$
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -21,11 +19,6 @@
 #include "carpet.hh"
 
 #include "interp.hh"
-
-extern "C" {
-  static char const * const rcsid = "$Header:$";
-  CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
-}
 
 
 

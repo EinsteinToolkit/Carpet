@@ -1,5 +1,3 @@
-/* $Header:$ */
-
 #ifndef CARPETINTERP_H
 #define CARPETINTERP_H
 

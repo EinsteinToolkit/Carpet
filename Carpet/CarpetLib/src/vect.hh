@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef VECT_HH
 #define VECT_HH
 

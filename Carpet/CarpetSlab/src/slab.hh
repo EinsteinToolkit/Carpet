@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef CARPETSLAB_SLAB_HH
 #define CARPETSLAB_SLAB_HH
 

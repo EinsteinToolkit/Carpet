@@ -1,5 +1,3 @@
-/* $Header$ */
-
 #ifndef CARPETSLAB_GETHYPERSLAB_H
 #define CARPETSLAB_GETHYPERSLAB_H
 

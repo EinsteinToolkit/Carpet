@@ -1,5 +1,3 @@
-// $Header:$
-
 #include <assert.h>
 #include <float.h>
 #include <limits.h>
@@ -24,11 +22,6 @@
 #include "carpet.hh"
 
 #include "reduce.hh"
-
-extern "C" {
-  static const char* rcsid = "$Header:$";
-  CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
-}
 
 
 

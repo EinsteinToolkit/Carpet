@@ -1,5 +1,3 @@
-# $Header:$
-
 Cactus::cctk_itlast = 20
 
 ActiveThorns = "Slab"

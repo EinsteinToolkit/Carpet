@@ -24,11 +24,6 @@
 #include "carpet.hh"
 #include "modes.hh"
 
-extern "C" {
-  static const char* rcsid = "$Header:$";
-  CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
-}
-
 #define DEBUG false             // false or true
 
 

@@ -1,5 +1,4 @@
 # Interface definition for thorn CarpetInterp
-# $Header:$
 
 IMPLEMENTS: interp
 

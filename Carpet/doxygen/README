@@ -1,5 +1,3 @@
-$Header:$
-
 This directory contains, in CVS, the Doxygen configuration file.  The
 generated documentation will also be placed here, but should not go
 into CVS.

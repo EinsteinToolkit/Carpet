@@ -30,11 +30,6 @@
 
 #include "ioascii.hh"
 
-extern "C" {
-  static const char* rcsid = "$Header:$";
-  CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
-}
-
 
 
 // That's a hack

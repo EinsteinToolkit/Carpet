@@ -1,5 +1,4 @@
 # Schedule definitions for thorn MultiPatchWaveToy
-# $Header: /numrelcvs/AEIDevelopment/MultiPatchWaveToy/schedule.ccl,v 1.14 2004/12/08 21:20:47 schnetter Exp $
 
 # Evolved variables
 STORAGE: scalar[3] density[3] velocity[3]

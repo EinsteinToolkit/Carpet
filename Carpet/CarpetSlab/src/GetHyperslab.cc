@@ -1,5 +1,3 @@
-// $Header$
-
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -20,13 +18,6 @@
 
 #include "slab.hh"
 #include "GetHyperslab.hh"
-
-
-
-extern "C" {
-  static const char* rcsid = "$Header$";
-  CCTK_FILEVERSION(Carpet_CarpetSlab_GetHyperslab_cc);
-}
 
 
 

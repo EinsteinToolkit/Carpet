@@ -1,5 +1,3 @@
-/* $Header:$ */
-
 #ifndef CARPET_PUBLIC_H
 #define CARPET_PUBLIC_H
 

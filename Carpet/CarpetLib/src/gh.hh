@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef GH_HH
 #define GH_HH
 

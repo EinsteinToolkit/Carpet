@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef CARPETIOHDF5_HH
 #define CARPETIOHDF5_HH
 

@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef CARPETIOASCII_HH
 #define CARPETIOASCII_HH
 

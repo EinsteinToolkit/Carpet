@@ -1,5 +1,4 @@
 # Interface definition for thorn CarpetTest
-# $Header:$
 
 implements: CarpetTest
 

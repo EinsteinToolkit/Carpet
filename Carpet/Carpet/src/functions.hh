@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef FUNCTIONS_HH
 #define FUNCTIONS_HH
 

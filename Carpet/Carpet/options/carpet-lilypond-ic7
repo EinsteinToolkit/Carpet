@@ -1,5 +1,3 @@
-# $Header:$
-
 CPP		= cpp -traditional -DCARPET_REAL
 CC		= /opt/intel/compiler70/ia32/bin/icc
 CXX		= /opt/intel/compiler70/ia32/bin/icc

@@ -9,11 +9,6 @@
 
 #include "carpet.hh"
 
-extern "C" {
-  static const char* rcsid = "$Header:$";
-  CCTK_FILEVERSION(Carpet_Carpet_Checksum_cc);
-}
-
 
 
 namespace Carpet {

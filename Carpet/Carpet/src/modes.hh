@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef MODES_HH
 #define MODES_HH
 
