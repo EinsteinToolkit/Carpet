@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5utils.cc,v 1.6 2004/04/12 22:59:04 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5utils.cc,v 1.7 2004/07/07 11:01:05 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5utils_cc);
 }
 
@@ -44,8 +44,7 @@ namespace CarpetIOHDF5 {
   
   
   
-  bool CheckForVariable (const cGH* const cctkGH,
-			 const char* const varlist, const int vindex)
+  bool CheckForVariable (const char* const varlist, const int vindex)
   {
     const int numvars = CCTK_NumVars();
     assert (vindex>=0 && vindex<numvars);
@@ -59,6 +58,7 @@ namespace CarpetIOHDF5 {
   
   void SetFlag (int index, const char* optstring, void* arg)
   {
+    optstring = optstring;
     vector<bool>& flags = *(vector<bool>*)arg;
     flags.at(index) = true;
   }
@@ -263,8 +263,8 @@ namespace CarpetIOHDF5 {
     if (rank==0) {
       shape[0] = 1;
     } else if (rank==1) {
-      herr = H5Sget_simple_extent_dims (dataspace, shape, NULL);
-      assert (!herr);
+      rank = H5Sget_simple_extent_dims (dataspace, shape, NULL);
+      assert (rank == 1);
     } else {
       assert (0);
     }

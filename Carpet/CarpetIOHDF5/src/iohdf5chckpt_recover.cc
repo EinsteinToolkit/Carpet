@@ -19,7 +19,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.35 2004/06/26 12:39:09 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.36 2004/07/07 11:01:05 tradke Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -59,7 +59,7 @@ namespace CarpetIOHDF5 {
   int RecoverGHextensions (cGH* cctkGH, hid_t reader);
   int RecoverVariables (cGH* cctkGH, hid_t reader);
 
-  void CarpetIOHDF5_InitialDataCheckpoint( const cGH* const cgh){
+  void CarpetIOHDF5InitialDataCheckpoint( const cGH* const cgh){
     
     DECLARE_CCTK_PARAMETERS;
     
@@ -74,7 +74,7 @@ namespace CarpetIOHDF5 {
   } // CarpetIOHDF5_InitialDataCheckpoint
 
 
-  void CarpetIOHDF5_EvolutionCheckpoint( const cGH* const cgh){
+  void CarpetIOHDF5EvolutionCheckpoint( const cGH* const cgh){
     
     DECLARE_CCTK_PARAMETERS;
 
@@ -110,7 +110,7 @@ namespace CarpetIOHDF5 {
   } // CarpetIOHDF5_EvolutionCheckpoint
 
 
-  int CarpetIOHDF5_RecoverParameters(void){
+  int CarpetIOHDF5RecoverParameters(void){
     // Register with the Cactus Recovery Interface
     return (IOUtil_RecoverParameters (CarpetIOHDF5_Recover, ".h5", "HDF5"));
   }
@@ -419,7 +419,7 @@ namespace CarpetIOHDF5 {
       const int group = CCTK_GroupIndexFromVarI (varindex);
       const int grouptype = CCTK_GroupTypeI(group);
 
-      int did_read_something = ReadVar(cctkGH,reader,name,dataset,regions_read,1);
+      int did_read_something = ReadVar(cctkGH,name,dataset,regions_read,1);
 
       MPI_Bcast (&did_read_something, 1, MPI_INT, 0, dist::comm);
 

@@ -1,5 +1,5 @@
 # Schedule definitions for thorn CarpetIOHDF5
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/schedule.ccl,v 1.9 2004/05/31 18:58:41 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/schedule.ccl,v 1.10 2004/07/07 11:01:05 tradke Exp $
 
 storage: next_output_iteration next_output_time this_iteration
 
@@ -20,17 +20,26 @@ schedule CarpetIOHDF5ReadData at INITIAL
   OPTIONS: global
 } "Read initial data from file"
 
-schedule CarpetIOHDF5_InitialDataCheckpoint at CPINITIAL
+if (checkpoint && checkpoint_ID)
 {
-  LANG:C
-  OPTIONS: meta
-} "Initial data checkpoint routine"
+  schedule CarpetIOHDF5_InitialDataCheckpoint at CPINITIAL
+  {
+    LANG:C
+    OPTIONS: meta
+  } "Initial data checkpoint routine"
+}
 
 schedule CarpetIOHDF5_EvolutionCheckpoint at CHECKPOINT
 {
   LANG: C
   OPTIONS: meta
 } "Do checkpointing"
+
+schedule CarpetIOHDF5_CloseFile at POSTINITIAL
+{
+  LANG: C
+  OPTIONS: global
+} "Close an input file opened by the filereader"
 
 if (! CCTK_Equals (recover, "no") && *recover_file)
 {
@@ -39,4 +48,10 @@ if (! CCTK_Equals (recover, "no") && *recover_file)
     LANG:C
     OPTIONS: meta
   } "Parameter recovery routine"
+
+  schedule CarpetIOHDF5_CloseFile at POST_RECOVER_VARIABLES
+  {
+    LANG: C
+    OPTIONS: global
+  } "Close an initial data checkpoint file"
 }

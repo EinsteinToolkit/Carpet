@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.10 2004/04/12 22:59:04 cott Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.hh,v 1.11 2004/07/07 11:01:05 tradke Exp $
 
 #ifndef CARPETIOHDF5_HH
 #define CARPETIOHDF5_HH
@@ -12,6 +12,10 @@
 
 #include "iohdf5.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
+
+/* some macros for HDF5 group names */
+#define METADATA_GROUP "Parameters and Global Attributes"
+#define ALL_PARAMETERS "All Parameters"
 
 // Some MPI Datatypes we need for Recovery
 // Originally written by Thomas Radke.
@@ -141,8 +145,6 @@ namespace CarpetIOHDF5 {
   using namespace Carpet;
   
   // Variable definitions
-  extern int GHExtension;
-  extern int IOMethod;
   extern vector<bool> do_truncate; // [var]
   extern vector<vector<vector<int> > > last_output; // [ml][rl][var]
   
@@ -159,22 +161,15 @@ namespace CarpetIOHDF5 {
   int TriggerOutput (const cGH* const cctkGH, const int vindex);
   
   int InputGH (const cGH* const cctkGH);
-  int ReadVar (const cGH* const cctkGH, const hid_t reader, const char* const varname,
+  int ReadVar (const cGH* const cctkGH, const char* const varname,
 	       const hid_t currdataset, vector<ibset> &regions_read, 
 	       const int called_from_recovery);
 
-  int InputVarAs (const cGH* const cctkGH, const char* const varname,
-		  const char* const alias);
-  
-  int Recover (cGH* const cctkGH, const char *basefilename,
-               const int called_from);
-  
-  int CarpetIOHDF5_Recover (cGH* cgh, const char *basefilename, int called_from);
+  int Recover (cGH* cgh, const char *basefilename, int called_from);
 
   // auxiliary functions defined in iohdf5utils.cc
 
-  bool CheckForVariable (const cGH* const cctkGH,
-                         const char* const varlist, const int vindex);
+  bool CheckForVariable (const char* const varlist, const int vindex);
   void SetFlag (int index, const char* optstring, void* arg);
   
   void WriteAttribute (const hid_t dataset, const char* name, int value);
