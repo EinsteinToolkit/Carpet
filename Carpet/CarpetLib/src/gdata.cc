@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.28 2004/03/23 19:30:14 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.29 2004/04/07 16:58:07 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "cctk.h"
+#include "cctk_Parameters.h"
 
 #include "util_ErrorCodes.h"
 #include "util_Table.h"
@@ -72,11 +73,22 @@ gdata<D>::gdata (const int varindex_, const operator_type transport_operator_)
     _has_storage(false),
     comm_active(false),
     tag(nexttag())
-{ }
+{
+  DECLARE_CCTK_PARAMETERS;
+  if (barriers) {
+    MPI_Barrier (dist::comm);
+  }
+}
 
 // Destructors
 template<int D>
-gdata<D>::~gdata () { }
+gdata<D>::~gdata ()
+{
+  DECLARE_CCTK_PARAMETERS;
+  if (barriers) {
+    MPI_Barrier (dist::comm);
+  }
+}
 
 
 
