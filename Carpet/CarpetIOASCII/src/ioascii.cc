@@ -31,7 +31,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.75 2004/06/21 12:28:19 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.76 2004/06/21 16:07:19 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -113,9 +113,9 @@ namespace CarpetIOASCII {
     DECLARE_CCTK_ARGUMENTS;
     
     for (int d=0; d<4; ++d) {
-      this_iteration[d] = -1;
-      next_output_iteration[d] = 0;
-      next_output_time[d] = cctk_time;
+      this_iteration[d] = 0;
+      last_output_iteration[d] = 0;
+      last_output_time[d] = cctk_time;
     }
   }
   
@@ -672,10 +672,11 @@ namespace CarpetIOASCII {
       } else if (cctk_iteration == this_iteration[outdim]) {
         // we already decided to output this iteration
         output_this_iteration = true;
-      } else if (cctk_iteration >= next_output_iteration[outdim]) {
+      } else if (cctk_iteration
+                 >= last_output_iteration[outdim] + myoutevery) {
         // it is time for the next output
         output_this_iteration = true;
-        next_output_iteration[outdim] = cctk_iteration + myoutevery;
+        last_output_iteration[outdim] = cctk_iteration;
         this_iteration[outdim] = cctk_iteration;
       } else {
         // we want no output at this iteration
@@ -715,10 +716,10 @@ namespace CarpetIOASCII {
         // we already decided to output this iteration
         output_this_iteration = true;
       } else if (cctk_time / cctk_delta_time
-                 >= next_output_time[outdim] / cctk_delta_time - 1.0e-12) {
+                 >= (last_output_time[outdim] + myoutdt) / cctk_delta_time - 1.0e-12) {
         // it is time for the next output
         output_this_iteration = true;
-        next_output_time[outdim] = cctk_time + myoutdt;
+        last_output_time[outdim] = cctk_time;
         this_iteration[outdim] = cctk_iteration;
       } else {
         // we want no output at this iteration
