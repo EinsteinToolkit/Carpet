@@ -1302,8 +1302,8 @@ void data<CCTK_REAL8,3>
   CCTK_REAL min_time = times[0];
   CCTK_REAL max_time = times[0];
   for (size_t tl=1; tl<times.size(); ++tl) {
-    min_time = fmin(min_time, times[tl]);
-    max_time = fmax(max_time, times[tl]);
+    min_time = min(min_time, times[tl]);
+    max_time = max(max_time, times[tl]);
   }
   if (time < min_time - eps || time > max_time + eps) {
     ostringstream buf;
