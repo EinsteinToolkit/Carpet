@@ -130,6 +130,7 @@ int CarpetIOHDF5_CloseFile (void)
        dataset != infile.datasets.end ();
        dataset++)
   {
+    free (dataset->datasetname);
     delete[] dataset->shape;
     delete[] dataset->iorigin;
   }
@@ -414,13 +415,12 @@ static herr_t ReadMetadata (hid_t group, const char *objectname, void *arg)
 
   dataset.datasetname = strdup (objectname);
   assert (dataset.datasetname);
-
+  
   HDF5_ERROR (dset = H5Dopen (group, objectname));
   char *varname = NULL;
   ReadAttribute (dset, "name", varname);
   dataset.vindex = CCTK_VarIndex (varname);
   free (varname);
-  ReadAttribute (dset, "name", varname);
   ReadAttribute (dset, "level", dataset.timelevel);
   ReadAttribute (dset, "carpet_mglevel", dataset.mglevel);
   ReadAttribute (dset, "carpet_reflevel", dataset.reflevel);
@@ -435,6 +435,7 @@ static herr_t ReadMetadata (hid_t group, const char *objectname, void *arg)
   {
     dataset.shape[i] = shape[i];
   }
+  delete[] shape;
   HDF5_ERROR (H5Sclose (dspace));
   HDF5_ERROR (H5Dclose (dset));
 
