@@ -130,6 +130,7 @@ c     Local declarations
       parameter (npow = 1)
       
       integer i,j,k
+      CCTK_REAL  spher3d_r
       
       integer ierr
       integer sw(3)
@@ -151,13 +152,14 @@ c     do nothing
          do k=1,cctk_lsh(3)
             do j=1,cctk_lsh(2)
                do i=1,cctk_lsh(1)
-                  if (spher3d_r(i,j,k) .le. excision_radius) then
+                  spher3d_r = sqrt(x(i,j,k)**2 + y(i,j,k)**2 + z(i,j,k)**2)
+                  if (spher3d_r .le. excision_radius) then
                      pi(i,j,k)  = 0.0
-                     phi(i,j,k) = 1 / spher3d_r(i,j,k)
+                     phi(i,j,k) = 1.0 / spher3d_r
                      ri3 = phi(i,j,k)**3
-                     phix(i,j,k) = - cart3d_x(i,j,k) * ri3
-                     phiy(i,j,k) = - cart3d_y(i,j,k) * ri3
-                     phiz(i,j,k) = - cart3d_z(i,j,k) * ri3
+                     phix(i,j,k) = - x(i,j,k) * ri3
+                     phiy(i,j,k) = - y(i,j,k) * ri3
+                     phiz(i,j,k) = - z(i,j,k) * ri3
                   end if
                end do
             end do
