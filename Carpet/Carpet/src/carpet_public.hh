@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.26 2003/05/08 15:35:49 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.27 2003/05/12 16:24:25 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -57,8 +57,7 @@ namespace Carpet {
   // Multigrid factor on coarsest grid
   extern int maxmglevelfact;
   
-  // Current iteration per refinement level
-  extern vector<int> iteration;
+  
   
   // Current position on the grid hierarchy
   extern int reflevel;
@@ -73,6 +72,8 @@ namespace Carpet {
   
   // Is this the time for a global mode call?
   extern bool do_global_mode;
+  
+  
   
   // Time step on base grid
   extern CCTK_REAL base_delta_time;

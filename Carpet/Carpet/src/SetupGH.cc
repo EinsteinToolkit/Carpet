@@ -19,7 +19,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.42 2003/05/12 13:48:05 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.43 2003/05/12 16:24:25 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -361,7 +361,7 @@ namespace Carpet {
         const vect<vect<bool,2>,dim>& obnds = arrdata[group].hh->outer_boundaries[rl][c];
 	const bbox<int,dim>& ext  = arrdata[group].dd->boxes[rl][c][ml].exterior;
         
-        for (int d=0; d<arrdata[group].info.dim; ++d) {
+        for (int d=0; d<dim; ++d) {
           ((int*)arrdata[group].info.gsh )[d] = (base.shape() / base.stride())[d];
           ((int*)arrdata[group].info.lsh )[d] = (ext.shape() / ext.stride())[d];
           ((int*)arrdata[group].info.lbnd)[d] = (ext.lower() / ext.stride())[d];
@@ -453,8 +453,7 @@ namespace Carpet {
     base_delta_time = 1.0;
     base_origin_space = vect<CCTK_REAL,dim>((CCTK_REAL)0);
     
-    // Current iteration
-    iteration.resize(maxreflevels, 0);
+    
     
     // Enable storage for all groups if desired
     if (true || enable_all_storage) {

@@ -6,7 +6,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.13 2003/05/08 15:35:49 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.14 2003/05/12 16:24:25 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_variables_cc);
 }
 
@@ -39,8 +39,7 @@ namespace Carpet {
   // Multigrid factor on coarsest grid
   int maxmglevelfact;
   
-  // Current iteration per refinement level
-  vector<int> iteration;
+  
   
   // Current position on the grid hierarchy
   int reflevel;
@@ -55,6 +54,8 @@ namespace Carpet {
   
   // Is this the time for a global mode call?
   bool do_global_mode;
+  
+  
   
   // Time step on base grid
   CCTK_REAL base_delta_time;

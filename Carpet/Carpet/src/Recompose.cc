@@ -26,7 +26,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.39 2003/05/07 10:03:21 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.40 2003/05/12 16:24:25 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -192,6 +192,7 @@ namespace Carpet {
     
     // Recompose
     hh->recompose (bbsss, obss, pss, initialise_upto);
+    
     Output (cgh, hh);
   }
   
