@@ -11,7 +11,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinates.cc,v 1.1 2004/01/25 14:57:30 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinates.cc,v 1.2 2004/02/27 16:24:06 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_manualcoordinates_cc);
 }
 
@@ -132,15 +132,13 @@ namespace CarpetRegrid {
     }
     const ivect global_extent (hh.baseextent.upper() - hh.baseextent.lower());
     
-    CCTK_REAL (* const rfloor) (CCTK_REAL const) = floor;
-    
     const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
     const int levfac = ipow(hh.reffact, reflevel);
     assert (all (hh.baseextent.stride() % levfac == 0));
     const ivect istride = hh.baseextent.stride() / levfac;
     
     const ivect ipos
-      = ivect(::map(rfloor, rpos * scale / rvect(istride) + 0.5)) * istride;
+      = ivect(floor(rpos * scale / rvect(istride) + 0.5)) * istride;
     
     const rvect apos = rpos * scale;
     assert (all(abs(apos - rvect(ipos)) < rvect(istride)*0.01));
@@ -164,16 +162,14 @@ namespace CarpetRegrid {
     }
     const ivect global_extent (hh.baseextent.upper() - hh.baseextent.lower());
     
-    CCTK_REAL (* const rfloor) (CCTK_REAL const) = floor;
-    
     const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
     const int levfac = ipow(hh.reffact, reflevel);
     assert (all (hh.baseextent.stride() % levfac == 0));
     const ivect istride = hh.baseextent.stride() / levfac;
     
     const ivect ipos
-      = ivect(::map(rfloor, (rpos - global_lower) * scale / rvect(istride)
-                    + 0.5)) * istride;
+      = (ivect(floor((rpos - global_lower) * scale / rvect(istride) + 0.5))
+         * istride);
     
     return ipos;
   }
