@@ -1,6 +1,7 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.27 2003/07/20 21:03:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.28 2003/08/15 09:32:54 schnetter Exp $
 
 #include <assert.h>
+#include <limits.h>
 
 #include <iostream>
 #include <string>
@@ -59,6 +60,7 @@ void data<T,D>::allocate (const ibbox& extent, const int proc,
   _size = 1;
   for (int d=0; d<D; ++d) {
     _stride[d] = _size;
+    assert (_shape[d]==0 || _size <= INT_MAX / _shape[d]);
     _size *= _shape[d];
   }
   _proc = proc;
