@@ -45,7 +45,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.19 2004/01/12 10:50:31 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.20 2004/01/13 15:46:52 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -241,8 +241,39 @@ namespace CarpetIOFlexIO {
 
       // get some more group information
       cGroupDynamicData gdyndata;
+
       int ierr = CCTK_GroupDynamicData(cgh,group,&gdyndata);
       assert(ierr==0);
+
+      cGroup cgdata;
+      ierr = CCTK_GroupData(group,&cgdata);
+      assert(ierr==0);
+
+      /* handle CCTK_DISTRIB_CONSTANT scalar and arrays */
+#if 0
+      if (cgdata.disttype == CCTK_DISTRIB_CONSTANT) {
+	assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
+	if (hh->processors[reflevel][component] == 0) {
+	  if (grouptype == CCTK_SCALAR) {
+	    CCTK_VInfo (CCTK_THORNSTRING, "dumping SCALAR distrib const");
+	    int rank=1;
+	    int dim[1]={1};
+	    writer -> write(FlexIODataType(CCTK_VarTypeI(varindex)),rank,dim,CCTK_VarDataPtrI(cgh,tl,varindex));
+	    DumpCommonAttributes(cgh,writer,request);
+	    continue;
+	  }
+	  else {
+	    writer -> write(FlexIODataType(CCTK_VarTypeI(varindex)),cgdata.dim,gdyndata.lsh,CCTK_VarDataPtrI(cgh,tl,varindex));
+	    DumpCommonAttributes(cgh,writer,request);
+	    continue;
+	  }
+	}
+	else {
+	  continue;
+	}
+
+      }
+#endif
 
       // Make temporary copy on processor 0
       bbox<int,dim> ext = data->extent();
@@ -252,9 +283,9 @@ namespace CarpetIOFlexIO {
 
       // Ignore ghost zones if desired
 
-      const int out3D_output_outer_boundary_var = (called_from_checkpoint) ? 1 : out3D_output_outer_boundary;
-      const int out3D_max_num_lower_ghosts_var = (called_from_checkpoint) ? 0 : out3D_max_num_lower_ghosts;
-      const int out3D_max_num_upper_ghosts_var = (called_from_checkpoint) ? 0 : out3D_max_num_upper_ghosts;
+      const int out3D_output_outer_boundary_var = (called_from_checkpoint) ? -1 : out3D_output_outer_boundary;
+      const int out3D_max_num_lower_ghosts_var = (called_from_checkpoint) ? -1 : out3D_max_num_lower_ghosts;
+      const int out3D_max_num_upper_ghosts_var = (called_from_checkpoint) ? -1 : out3D_max_num_upper_ghosts;
       
 
       for (int d=0; d<dim; ++d) {
@@ -272,28 +303,50 @@ namespace CarpetIOFlexIO {
       
       gdata<dim>* const tmp = data->make_typed (varindex);
       tmp->allocate (ext, 0);
+      //fprintf(stderr,"\n writing1 %d\n",CCTK_MyProc(cgh));
+      if ( !((cgdata.disttype == CCTK_DISTRIB_CONSTANT) && (hh->processors[reflevel][component]!=0))) {
 
-      
+	if (cgdata.disttype == CCTK_DISTRIB_CONSTANT) {
+	  assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
+	  //fprintf(stderr,"\n scalar %d %d comp: %d\n",CCTK_MyProc(cgh),varindex,component);
+	  int origin[dim], dims[dim];
+	  for (int d=0; d<dim; ++d) {
+	    origin[d] = (ext.lower() / ext.stride())[d];
+	    dims[d]   = (ext.shape() / ext.stride())[d];
+	  }
+	  if (CCTK_MyProc(cgh)==0) {
+	    amrwriter->write (origin, dims, (void*)data->storage());
+	    DumpCommonAttributes(cgh,writer,request);
+	  }
+	  delete tmp;
+	  continue;
+	} else {
 
-      for (comm_state<dim> state; !state.done(); state.step()) {
-	tmp->copy_from (state, data, ext);
-      }
-      
-      // Write data
-      if (CCTK_MyProc(cgh)==0) {
-	int origin[dim], dims[dim];
-	for (int d=0; d<dim; ++d) {
-	  origin[d] = (ext.lower() / ext.stride())[d];
-	  dims[d]   = (ext.shape() / ext.stride())[d];
+	  for (comm_state<dim> state; !state.done(); state.step()) {
+	    tmp->copy_from (state, data, ext);
+	  }
+
+	  //fprintf(stderr,"\n writing2 %d component: %d varindex: %d distrib_const: %d\n",CCTK_MyProc(cgh),component,varindex,(cgdata.disttype == CCTK_DISTRIB_CONSTANT));
+	  // Write data
+	  if (CCTK_MyProc(cgh)==0) {
+	    int origin[dim], dims[dim];
+	    for (int d=0; d<dim; ++d) {
+	      origin[d] = (ext.lower() / ext.stride())[d];
+	      dims[d]   = (ext.shape() / ext.stride())[d];
+	    }
+	    
+	    amrwriter->write (origin, dims, (void*)tmp->storage());
+	    
+	    // dump attributes
+	    DumpCommonAttributes(cgh,writer,request);
+	    
+	  }
+	  // Delete temporary copy
+
+	  delete tmp;
+
 	}
-
-	amrwriter->write (origin, dims, (void*)tmp->storage());
-	// dump attributes
-	DumpCommonAttributes(cgh,writer,request);
-
       }
-      // Delete temporary copy
-      delete tmp;
     } END_COMPONENT_LOOP;
 
 
@@ -411,6 +464,7 @@ namespace CarpetIOFlexIO {
       amrwriter = new AMRwriter(*writer);
     }
 
+
       WriteGF(cgh,writer,amrwriter,request,0);
     
     // Close the file
@@ -496,6 +550,7 @@ namespace CarpetIOFlexIO {
     int tl = -1;
     int mglevel = -1;
     int rl = -1;
+    int comp = -1;
     int myproc = CCTK_MyProc (cgh);
     int rank;
     int dims[dim];
@@ -548,6 +603,16 @@ namespace CarpetIOFlexIO {
 	  CCTK_WARN (0, "Something is wrong! Can't read refinement level!!!"); 
 	}
 
+      i = reader->readAttributeInfo ("component", datatype, asize);
+      if (i >= 0 && datatype == FLEXIO_INT && asize > 0)
+	{
+	  reader->readAttribute (i, &comp);
+	}
+      else
+	{
+	  CCTK_WARN (0, "Something is wrong! Can't read component!!!"); 
+	}
+
       i = reader->readAttributeInfo ("timelevel", datatype, asize);
       if (i >= 0 && datatype == FLEXIO_INT && asize > 0)
 	{
@@ -597,7 +662,7 @@ namespace CarpetIOFlexIO {
 	CCTK_WARN(0,"Non-scalar variable with dimension 0!!!");
 
 
-      CCTK_VInfo(CCTK_THORNSTRING,"Recovering varindex: %d grouptype: %d varname: %s tl: %d, rl: %d",varindex,grouptype,varname,tl,rl);
+      CCTK_VInfo(CCTK_THORNSTRING,"Recovering varindex: %d grouptype: %d varname: %s tl: %d, rl: %d, c: %d",varindex,grouptype,varname,tl,rl,comp);
 
       free(varname);	
       
@@ -621,10 +686,15 @@ namespace CarpetIOFlexIO {
     MPI_Bcast (&rl, 1, MPI_INT, 0, dist::comm);
     MPI_Bcast (&tl, 1, MPI_INT, 0, dist::comm);
     MPI_Bcast (&mglevel, 1, MPI_INT, 0, dist::comm);
+    MPI_Bcast (&comp, 1, MPI_INT, 0, dist::comm);
 
 
     int gpdim = CCTK_GroupDimI(group);
     const int grouptype = CCTK_GroupTypeI(group);
+
+    cGroup cgdata;
+    int ierr = CCTK_GroupData(group,&cgdata);
+    assert(ierr==0);
 
     // Read grid
     AmrGrid* amrgrid = 0;
@@ -683,6 +753,11 @@ namespace CarpetIOFlexIO {
     //    BEGIN_COMPONENT_LOOP(cgh, grouptype) {
 
     //cout << "compontents " << hh->components(rl) << endl;
+
+    //cout << "myproc: " <<  CCTK_MyProc(cgh) << endl;
+    //    fprintf(stderr,"%d amr_dims: %d,%d,%d\n",CCTK_MyProc(cgh),amr_dims[0],amr_dims[1],amr_dims[2]);
+    //fprintf(stderr,"%d amr_origin: %d,%d,%d\n",CCTK_MyProc(cgh),amr_origin[0],amr_origin[1],amr_origin[2]);
+
     for(int c=0;c<hh->components(rl);c++) {
 
       ggf<dim>* ff = 0;
@@ -701,13 +776,28 @@ namespace CarpetIOFlexIO {
 	str = vect<int,dim> (1);
 
 
-      const vect<int,dim> lb = vect<int,dim>(amr_origin) * str;
-      const vect<int,dim> ub = lb + (vect<int,dim>(amr_dims) - 1) * str;
-      const bbox<int,dim> ext(lb,ub,str);
+      vect<int,dim> lb = vect<int,dim>(amr_origin) * str;
+      vect<int,dim> ub = lb + (vect<int,dim>(amr_dims) - 1) * str;
+
 
 
       gdata<dim>* const tmp = data->make_typed (varindex);
 
+        
+      // Copy into grid function
+
+      if (cgdata.disttype == CCTK_DISTRIB_CONSTANT) {
+	assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
+	if (grouptype == CCTK_SCALAR) {
+	  lb[0] = hh->processors.at(rl).at(c);
+	  ub[0] = hh->processors.at(rl).at(c);
+	} else {
+	  lb[dim-1] = lb[dim-1] + (ub[dim-1]-lb[dim-1]+1)*hh->processors.at(rl).at(c);
+	  ub[dim-1] = ub[dim-1] + (ub[dim-1]-lb[dim-1]+1)*hh->processors.at(rl).at(c);
+	}
+      }
+      
+      const bbox<int,dim> ext(lb,ub,str);
 
 
       if (myproc==0) {
@@ -715,12 +805,12 @@ namespace CarpetIOFlexIO {
       } else {
 	tmp->allocate (ext, 0, 0);
       }
-        
-      // Copy into grid function
-            for (comm_state<dim> state; !state.done(); state.step()) {
-      	data->copy_from (state, tmp, ext);
+
+      for (comm_state<dim> state; !state.done(); state.step()) {
+	data->copy_from (state, tmp, ext & data->extent() );
       }
-        
+
+       
       // Delete temporary copy
       delete tmp;
         
