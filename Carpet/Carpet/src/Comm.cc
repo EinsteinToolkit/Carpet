@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.11 2002/09/25 19:55:05 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.12 2002/10/12 13:02:52 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Comm_cc)
 
@@ -23,7 +23,7 @@ namespace Carpet {
   
   int SyncGroup (cGH* cgh, const char* groupname)
   {
-    if (hh->components(reflevel) > 1) assert (component == -1);
+    if (hh->local_components(reflevel) > 1) assert (component == -1);
     
     Checkpoint ("%*sSyncGroup %s", 2*reflevel, "", groupname);
     
