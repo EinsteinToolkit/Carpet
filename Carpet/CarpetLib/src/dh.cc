@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.40 2003/07/20 21:03:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.41 2003/07/23 14:31:44 schnetter Exp $
 
 #include <assert.h>
 
@@ -222,41 +222,76 @@ void dh<D>::recompose (const int initialise_upto) {
       	      // coarsify boundaries of fine component
       	      for (typename ibset::const_iterator bi=bndsf.begin();
 		   bi!=bndsf.end(); ++bi) {
-                // TODO
-//  		const ibbox& bndf = *bi;
- 		const ibbox& bndf = ((*bi).expand(buffer_width, buffer_width)
-                                     & boxes[rl+1][cc][ml].exterior);
+  		const ibbox& bndf = *bi;
 		// (the prolongation may use the exterior of the
 		// coarse grid, and must fill all of the boundary of
 		// the fine grid)
+                const ibbox maxrecvs = (extr.expand(-pss,-pss)
+                                        .contracted_for(bndf));
                 ibset recvs = (extr.expand(-pss,-pss).contracted_for(bndf)
                                & bndf);
-                const iblistvect& rrbc
-                  = boxes[rl+1][cc][ml].recv_ref_bnd_coarse;
-                for (typename iblistvect::const_iterator lvi=rrbc.begin();
-                     lvi!=rrbc.end(); ++lvi) {
-                  for (typename iblist::const_iterator li=lvi->begin();
-                       li!=lvi->end(); ++li) {
-                    recvs -= *li;
+                {
+                  // Do not prolongate what is synced
+                  const iblistvect& rs = boxes[rl+1][cc][ml].recv_sync;
+                  for (typename iblistvect::const_iterator lvi=rs.begin();
+                       lvi!=rs.end(); ++lvi) {
+                    for (typename iblist::const_iterator li=lvi->begin();
+                         li!=lvi->end(); ++li) {
+                      recvs -= *li;
+                    }
                   }
+                  recvs.normalize();
                 }
-                const iblistvect& rs = boxes[rl+1][cc][ml].recv_sync;
-                for (typename iblistvect::const_iterator lvi=rs.begin();
-                     lvi!=rs.end(); ++lvi) {
-                  for (typename iblist::const_iterator li=lvi->begin();
-                       li!=lvi->end(); ++li) {
-                    recvs -= *li;
+                {
+                  // TODO
+                  // Take buffer zone into account
+                  const ibset oldrecvs(recvs);
+                  recvs = ibset();
+                  for (typename ibset::const_iterator ori=oldrecvs.begin();
+                       ori!=oldrecvs.end(); ++ori) {
+                    recvs |= ((*ori).expand(buffer_width, buffer_width)
+                              & boxes[rl+1][cc][ml].exterior
+                              & maxrecvs);
                   }
+                  recvs.normalize();
                 }
-                recvs.normalize();
-                for (typename ibset::const_iterator si = recvs.begin();
-                     si != recvs.end(); ++si) {
-                  const ibbox & recv = *si;
-                  const ibbox send = recv.expanded_for(extr);
-                  assert (! send.empty());
-                  assert (send.is_contained_in(extr));
-                  boxes[rl+1][cc][ml].recv_ref_bnd_coarse[c ].push_back(recv);
-                  boxes[rl  ][c ][ml].send_ref_bnd_fine  [cc].push_back(send);
+                {
+                  // Do not prolongate what is synced (again)
+                  const iblistvect& rs = boxes[rl+1][cc][ml].recv_sync;
+                  for (typename iblistvect::const_iterator lvi=rs.begin();
+                       lvi!=rs.end(); ++lvi) {
+                    for (typename iblist::const_iterator li=lvi->begin();
+                         li!=lvi->end(); ++li) {
+                      recvs -= *li;
+                    }
+                  }
+                  recvs.normalize();
+                }
+                {
+                  // Do not prolongate what is already prolongated
+                  const iblistvect& rrbc
+                    = boxes[rl+1][cc][ml].recv_ref_bnd_coarse;
+                  for (typename iblistvect::const_iterator lvi=rrbc.begin();
+                       lvi!=rrbc.end(); ++lvi) {
+                    for (typename iblist::const_iterator li=lvi->begin();
+                         li!=lvi->end(); ++li) {
+                      recvs -= *li;
+                    }
+                  }
+                  recvs.normalize();
+                }
+                {
+                  for (typename ibset::const_iterator si = recvs.begin();
+                       si != recvs.end(); ++si) {
+                    const ibbox & recv = *si;
+                    const ibbox send = recv.expanded_for(extr);
+                    assert (! send.empty());
+                    assert (send.is_contained_in(extr));
+                    boxes[rl+1][cc][ml].recv_ref_bnd_coarse[c ]
+                      .push_back(recv);
+                    boxes[rl  ][c ][ml].send_ref_bnd_fine  [cc]
+                      .push_back(send);
+                  }
                 }
       	      }
       	    }
@@ -463,9 +498,13 @@ void dh<D>::recompose (const int initialise_upto) {
                 intr -= *li;
                 const int new_sz = intr.size();
                 // TODO
-//                 assert (new_sz + this_sz == old_sz);
+                assert (new_sz + this_sz == old_sz);
               }
             }
+            // TODO
+            // This need not be empty at outer boundaries.  Check that
+            // those are indeed outer boundaries!  But what size of the
+            // boundary region should be used for that?
 #if 0
             assert (intr.empty());
 #endif
@@ -501,9 +540,19 @@ void dh<D>::recompose (const int initialise_upto) {
               bnds -= *li;
               const int new_sz = bnds.size();
               // TODO
+              // The new size can be larger if part of the
+              // prolongation went into the buffer zone.
 //               assert (new_sz + this_sz == old_sz);
+              assert (new_sz + this_sz >= old_sz);
             }
           }
+          // TODO
+          // This need not be empty at outer boundaries.  Check that
+          // those are indeed outer boundaries!  But what size of the
+          // boundary region should be used for that?
+#if 0
+          assert (bnds.empty());
+#endif
         }
         
       } // for ml
