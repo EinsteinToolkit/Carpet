@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.7 2001/11/02 10:58:59 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.8 2001/11/14 17:57:55 schnetter Exp $";
 
 
 
@@ -29,6 +29,7 @@ namespace Carpet {
   
   
   static void Adapt (const cGH* cgh, int reflevels, gh<dim>* hh);
+  static void Output (const cGH* cgh, const gh<dim>* hh, const char* descr);
   
   
   
@@ -55,34 +56,14 @@ namespace Carpet {
     
     // Recompose
     hh->recompose (next_bbsss, next_pss);
-    
-    if (verbose && CCTK_MyProc(cgh)==0) {
-      cout << endl;
-      cout << "New bounding boxes:" << endl;
-      for (int rl=0; rl<hh->reflevels(); ++rl) {
-	for (int c=0; c<hh->components(rl); ++c) {
-	  for (int ml=0; ml<hh->mglevels(rl,c); ++ml) {
-	    cout << "   rl " << rl << "   c " << c << "   ml " << ml
-		 << "   bbox " << hh->extents[rl][c][ml] << endl;
-	  }
-	}
-      }
-      cout << endl;
-      cout << "New processor distribution:" << endl;
-      for (int rl=0; rl<hh->reflevels(); ++rl) {
-	for (int c=0; c<hh->components(rl); ++c) {
-	  cout << "   rl " << rl << "   c " << c
-	       << "   processor " << hh->processors[rl][c] << endl;
-	}
-      }
-      cout << endl;
-    }
+    Output (cgh, hh, 0);
     
     // Don't recompose to these regions any more
     do_recompose = false;
     
     // Adapt grid scalars
     Adapt (cgh, hh->reflevels(), hh0);
+    Output (cgh, hh0, "");
     
     // Adapt grid arrays
     for (int group=0; group<CCTK_NumGroups(); ++group) {
@@ -91,6 +72,7 @@ namespace Carpet {
 	break;
       case CCTK_ARRAY:
 	Adapt (cgh, hh->reflevels(), arrdata[group].hh);
+	Output (cgh, arrdata[group].hh, CCTK_GroupName(group));
       case CCTK_GF:
 	break;
       default:
@@ -101,6 +83,9 @@ namespace Carpet {
   
   
   
+  // This routine is a leftover. It determines "automatically" how
+  // scalars and arrays should be refined. The user really should have
+  // a possibility to define how arrays are to be refined.
   static void Adapt (const cGH* cgh, const int reflevels, gh<dim>* hh)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -141,7 +126,9 @@ namespace Carpet {
 	const int zstep = locnpz * cstr[dim-1];
 	clb[dim-1] = rlb[dim-1] + zstep *  c;
 	cub[dim-1] = rlb[dim-1] + zstep * (c+1);
-	if (cub[dim-1] > rub[dim-1]) cub[dim-1] = rub[dim-1];
+ 	if (clb[dim-1] > rub[dim-1]) clb[dim-1] = rub[dim-1];
+ 	if (cub[dim-1] > rub[dim-1]) cub[dim-1] = rub[dim-1];
+	assert (clb[dim-1] <= cub[dim-1]);
 	assert (cub[dim-1] <= rub[dim-1]);
 	bbs[c] = bbox<int,dim>(clb, cub-cstr, cstr);
       }
@@ -149,6 +136,7 @@ namespace Carpet {
     }
     vector<vector<vector<bbox<int,dim> > > > bbsss
       = hh->make_multigrid_boxes(bbss, mglevels);
+    
     vector<vector<int> > pss(bbss.size());
     for (int rl=0; rl<reflevels; ++rl) {
       pss[rl] = vector<int>(bbss[rl].size());
@@ -158,11 +146,15 @@ namespace Carpet {
 	pss[rl][c] = c % nprocs; // distribute among processors
       }
     }
+    
     hh->recompose(bbsss, pss);
   }
   
   
   
+  // This is a helpful helper routine. The user can use it to define
+  // how the hierarchy should be refined. But the result of this
+  // routine is rather arbitrary.
   void MakeRegions_RefineCentre (const cGH* cgh, const int reflevels,
 				 gh<dim>::rexts& bbsss, gh<dim>::rprocs& pss)
   {
@@ -209,7 +201,9 @@ namespace Carpet {
 	const int zstep = locnpz * cstr[dim-1];
 	clb[dim-1] = rlb[dim-1] + zstep *  c;
 	cub[dim-1] = rlb[dim-1] + zstep * (c+1);
-	if (c == nprocs-1) cub[dim-1] = rub[dim-1];
+ 	if (clb[dim-1] > rub[dim-1]) clb[dim-1] = rub[dim-1];
+ 	if (cub[dim-1] > rub[dim-1]) cub[dim-1] = rub[dim-1];
+	assert (clb[dim-1] <= cub[dim-1]);
 	assert (cub[dim-1] <= rub[dim-1]);
 	bbs[c] = bbox<int,dim>(clb, cub-cstr, cstr);
       }
@@ -225,6 +219,51 @@ namespace Carpet {
       for (int c=0; c<(int)bbss[rl].size(); ++c) {
 	pss[rl][c] = c % nprocs; // distribute among processors
       }
+    }
+  }
+  
+  
+  
+  static void Output (const cGH* cgh, const gh<dim>* hh, const char* descr)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (verbose && CCTK_MyProc(cgh)==0) {
+      cout << endl;
+      cout << "New bounding boxes";
+      if (descr) {
+	if (strlen(descr)) {
+	  cout << " for group " << descr;
+	} else {
+	  cout << " for scalars";
+	}
+      }
+      cout  << ":" << endl;
+      for (int rl=0; rl<hh->reflevels(); ++rl) {
+	for (int c=0; c<hh->components(rl); ++c) {
+	  for (int ml=0; ml<hh->mglevels(rl,c); ++ml) {
+	    cout << "   rl " << rl << "   c " << c << "   ml " << ml
+		 << "   bbox " << hh->extents[rl][c][ml] << endl;
+	  }
+	}
+      }
+      cout << endl;
+      cout << "New processor distribution";
+      if (descr) {
+	if (strlen(descr)) {
+	  cout << " for group " << descr;
+	} else {
+	  cout << " for scalars";
+	}
+      }
+      cout  << ":" << endl;
+      for (int rl=0; rl<hh->reflevels(); ++rl) {
+	for (int c=0; c<hh->components(rl); ++c) {
+	  cout << "   rl " << rl << "   c " << c
+	       << "   processor " << hh->processors[rl][c] << endl;
+	}
+      }
+      cout << endl;
     }
   }
   

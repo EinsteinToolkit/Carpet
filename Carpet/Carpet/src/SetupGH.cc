@@ -10,7 +10,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.9 2001/11/02 16:05:03 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.10 2001/11/14 17:57:55 schnetter Exp $";
 
 
 
@@ -30,6 +30,10 @@ namespace Carpet {
     assert (convLevel==0);
     
     dist::pseudoinit();
+    
+    CCTK_VInfo (CCTK_THORNSTRING,
+		"Carpet is running on %d processors", CCTK_nProcs(cgh));
+    
     Checkpoint ("starting SetupGH...");
     
     // Refinement information

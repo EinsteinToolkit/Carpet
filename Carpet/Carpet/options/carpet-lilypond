@@ -1,6 +1,6 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond,v 1.6 2001/08/23 17:52:57 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond,v 1.7 2001/11/14 17:57:54 schnetter Exp $
 
-CPP			= gcc -E -DTMPL_EXPLICIT -DCARPET_REAL
+CPP			= cpp -traditional -DTMPL_EXPLICIT -DCARPET_REAL
 F77			= g77
 F90			= g77
 

@@ -11,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.8 2001/11/05 17:53:02 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.9 2001/11/14 17:57:56 schnetter Exp $";
 
 
 
@@ -294,6 +294,15 @@ namespace Carpet {
 	    = (ext.lower() / ext.stride())[d];
 	  ((int*)arrdata[group].info.ubnd)[d]
 	    = (ext.upper() / ext.stride())[d];
+	  if (!  (arrdata[group].info.lsh[d]>=0
+		  && arrdata[group].info.lsh[d]<=arrdata[group].info.gsh[d])) {
+	    cout << "ext=" << ext << endl;
+	    cout << "group=" << group
+		 << " d=" << d
+		 << "lsh=" << arrdata[group].info.lsh[0] << "," << arrdata[group].info.lsh[1] << "," << arrdata[group].info.lsh[2]
+		 << "gsh=" << arrdata[group].info.gsh[0] << "," << arrdata[group].info.gsh[1] << "," << arrdata[group].info.gsh[2]
+		 << endl;
+	  }
 	  assert (arrdata[group].info.lsh[d]>=0
 		  && arrdata[group].info.lsh[d]<=arrdata[group].info.gsh[d]);
 	  assert (arrdata[group].info.lbnd[d]>=0
