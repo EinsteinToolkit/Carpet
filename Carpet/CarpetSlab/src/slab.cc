@@ -80,11 +80,14 @@ namespace CarpetSlab {
       CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in meta mode or global mode (use singlemap mode instead)");
     }
     const int rl = gp.grouptype==CCTK_GF ? reflevel : 0;
+    assert (rl>=0);
     
     if (gp.grouptype==CCTK_GF && Carpet::map==-1 && maps>1) {
       CCTK_WARN (0, "It is not possible to use hyperslabbing for a grid function in level mode when there are multiple maps (use singlemap mode instead, or make sure that there is only one map)");
     }
-    const int m = gp.grouptype==CCTK_GF ? Carpet::map : 0;
+    const int m = gp.grouptype==CCTK_GF ? (maps>1 ? Carpet::map : 0) : 0;
+    assert (m>=0);
+    
     const int oldmap = Carpet::map;
     if (gp.grouptype==CCTK_GF  && oldmap==-1) {
       enter_singlemap_mode(const_cast<cGH*>(cgh), m);
