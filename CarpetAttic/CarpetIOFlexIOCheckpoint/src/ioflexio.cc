@@ -45,7 +45,7 @@
 
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.14 2004/01/07 12:57:56 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.15 2004/01/07 13:14:04 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -323,97 +323,8 @@ namespace CarpetIOFlexIO {
     } END_COMPONENT_LOOP;
 
 
-  return 0;
+    return 0;
   }
-  
-  int WriteGS (const cGH* const cgh, IObase* writer, ioRequest* request)
-  {
-#warning This function should be obsolete by now!!!
-    // writes out a grid scalar 
-
-    DECLARE_CCTK_PARAMETERS;
-
-    const int timelevel = request->timelevel;
-    const int varindex  = request->vindex;
-
-    const int group = CCTK_GroupIndexFromVarI (varindex);
-    const int n0 = CCTK_FirstVarIndexI(group);
-    assert (n0>=0 && n0<CCTK_NumVars());
-    const int var = varindex - n0;
-    assert (var>=0 && var<CCTK_NumVars());
-    const int tl = 0;
-    const int grouptype = CCTK_GroupTypeI(group);
-    assert (! (grouptype != CCTK_SCALAR && reflevel>0));
-
-
-    int myproc = CCTK_MyProc (cgh);
-    int nprocs = CCTK_nProcs (cgh);
-    char* fullname = CCTK_FullName (varindex);
-    
-    int datatype = CCTK_VarTypeI(varindex);
-    int datatypesize = CCTK_VarTypeSize(datatype);
-
-    char* buffer = (char*) calloc (nprocs, datatypesize);
-    memcpy (buffer + myproc*datatypesize,
-                 CCTK_VarDataPtrI (cgh,timelevel,varindex),
-                 datatypesize);
-
-    if (nprocs > 1) {
-      int i = CCTK_ReductionHandle ("sum");
-      if (i >= 0)
-      {
-      i = CCTK_ReduceArray (cgh, -1, i, nprocs, datatype, buffer, 1, 1, datatype, nprocs, buffer);
-      }
-    if (i < 0)
-    {
-      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-      "WriteGS: Cannot check whether values on differentprocessors are the same for grid scalar '%s'", fullname);
-      // copy this processor's value to the start of buffer 
-      memcpy (buffer, buffer + myproc*datatypesize, datatypesize);
-    }
-  else
-    {
-      int retval = 0;
-      for (i = 1; i < nprocs; i++)
-      {
-        retval |= memcmp (buffer, buffer + i*datatypesize, datatypesize);
-      }
-      if (retval)
-      {
-        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "WriteGS: value of grid scalar variable '%s' (timelevel %d)"
-                    " differs between processors, only value from processor 0 "
-                    "will be written", fullname, timelevel);
-      }
-    }
-  }
-    
-    if (myproc==0) 
-    {
-      int dim = 1;
-
-    // Traverse all components on this refinement and multigrid level
-     BEGIN_COMPONENT_LOOP(cgh, grouptype) {
-
-       // actually, looping makes no sense here, since a scalar must be the
-       // same on all components. in fact, the loop is not being
-       // executed for scalars; see macro definition.
-
-       if (verbose)
-	 CCTK_VInfo (CCTK_THORNSTRING, "SCALAR reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
-
-      writer->write(FlexIODataType(CCTK_VarTypeI(varindex)),1,&dim,buffer);
-      /* scalars have size 0 */
-      request->hsize[0] = 0;
-      DumpCommonAttributes (cgh,writer,request);
-
-    } END_COMPONENT_LOOP;
-    
-    }
-
-  return 0;
-  }
-
 
 
   int OutputVarAs (const cGH* const cgh, const char* const varname,
