@@ -1,5 +1,5 @@
 # Interface definition for thorn HydroToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/interface.ccl,v 1.1 2001/03/18 22:37:09 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/interface.ccl,v 1.2 2001/03/26 02:28:15 eschnett Exp $
 
 implements: hydrotoy
 
@@ -7,7 +7,7 @@ implements: hydrotoy
 
 public:
 
-CCTK_REAL hydroevolve type=GF timelevels=2
+CCTK_REAL hydroevolve type=GF timelevels=3
 {
   u vx vy vz
 } "The evolve hydro fields"
