@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.15 2004/01/25 14:57:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gf.cc,v 1.16 2004/03/23 12:40:27 schnetter Exp $
 
 #include <assert.h>
 
@@ -13,15 +13,16 @@ using namespace std;
 
 
 // Constructors
-// VGF
 template<class T,int D>
 gf<T,D>::gf (const int varindex, const operator_type transport_operator,
              th<D>& t, dh<D>& d,
-	     const int tmin, const int tmax, const int prolongation_order_time)
+	     const int tmin, const int tmax, const int prolongation_order_time,
+             const int vectorlength, const int vectorindex,
+             gf* const vectorleader)
   : ggf<D>(varindex, transport_operator,
-           t, d, tmin, tmax, prolongation_order_time)
+           t, d, tmin, tmax, prolongation_order_time,
+           vectorlength, vectorindex, vectorleader)
 {
-  // VGF
   this->recompose (0, true);
 }
 

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.17 2004/03/23 12:14:29 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.18 2004/03/23 12:40:27 schnetter Exp $
 
 #ifndef DATA_HH
 #define DATA_HH
@@ -30,13 +30,21 @@ class data: public gdata<D> {
 
   // Fields
   T* _storage;			// the data (if located on this processor)
+   
+  int vectorlength;
+  int vectorindex;
+  data* vectorleader;
   
 public:
   
   // Constructors
   data (const int varindex = -1,
-        const operator_type transport_operator = op_error);
+        const operator_type transport_operator = op_error,
+        const int vectorlength = 1, const int vectorindex = 0,
+        data* const vectorleader = NULL);
   data (const int varindex, const operator_type transport_operator,
+        const int vectorlength, const int vectorindex,
+        data* const vectorleader,
         const ibbox& extent, const int proc);
 
   // Destructors
@@ -51,6 +59,10 @@ public:
 			 void* const mem=0);
   virtual void free ();
   virtual void transfer_from (gdata<D>* gsrc);
+
+private:
+  T* vectordata (const int vectorindex) const;
+public:
 
   // Processor management
   virtual void change_processor (comm_state<D>& state,

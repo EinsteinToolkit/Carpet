@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.46 2004/03/23 12:14:29 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.47 2004/03/23 12:40:27 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -28,17 +28,34 @@ using namespace std;
 
 // Constructors
 template<class T, int D>
-data<T,D>::data (const int varindex_, const operator_type transport_operator_)
+data<T,D>::data (const int varindex_, const operator_type transport_operator_,
+                 const int vectorlength, const int vectorindex,
+                 data* const vectorleader)
   : gdata<D>(varindex_, transport_operator_),
-    _storage(0)
-{ }
+    _storage(0),
+    vectorlength(vectorlength), vectorindex(vectorindex),
+    vectorleader(vectorleader)
+{
+  assert (vectorlength>=1);
+  assert (vectorindex>=0 && vectorindex<vectorlength);
+  assert ((vectorindex==0 && !vectorleader)
+          || (vectorindex!=0 && vectorleader));
+}
 
 template<class T, int D>
 data<T,D>::data (const int varindex_, const operator_type transport_operator_,
+                 const int vectorlength, const int vectorindex,
+                 data* const vectorleader,
                  const ibbox& extent_, const int proc_)
   : gdata<D>(varindex_, transport_operator_),
-    _storage(0)
+    _storage(0),
+    vectorlength(vectorlength), vectorindex(vectorindex),
+    vectorleader(vectorleader)
 {
+  assert (vectorlength>=1);
+  assert (vectorindex>=0 && vectorindex<vectorlength);
+  assert ((vectorindex==0 && !vectorleader)
+          || (vectorindex!=0 && vectorleader));
   allocate(extent_, proc_);
 }
 
@@ -80,7 +97,13 @@ void data<T,D>::allocate (const ibbox& extent_, const int proc_,
   if (rank==this->_proc) {
     this->_owns_storage = !mem;
     if (this->_owns_storage) {
-      this->_storage = new T[this->_size];
+      if (this->vectorindex == 0) {
+        assert (! this->vectorleader);
+        this->_storage = new T[this->vectorlength * this->_size];
+      } else {
+        assert (this->vectorleader);
+        this->_storage = this->vectorleader->vectordata (this->vectorindex);
+      }
     } else {
       this->_storage = (T*)mem;
     }
@@ -91,17 +114,31 @@ void data<T,D>::allocate (const ibbox& extent_, const int proc_,
 
 template<class T, int D>
 void data<T,D>::free () {
-  if (this->_storage && this->_owns_storage) delete [] _storage;
+  if (this->_storage && this->_owns_storage && this->vectorindex==0) {
+    delete [] _storage;
+  }
   _storage = 0;
   this->_has_storage = false;
 }
 
 template<class T, int D>
 void data<T,D>::transfer_from (gdata<D>* gsrc) {
+  assert (this->vectorlength==1);
   data* src = (data*)gsrc;
+  assert (src->vectorlength==1);
   assert (!_storage);
   *this = *src;
   *src = data(this->varindex, this->transport_operator);
+}
+
+template<class T, int D>
+T* data<T,D>::vectordata (const int vectorindex) const
+{
+  assert (this->vectorindex==0);
+  assert (! this->vectorleader);
+  assert (vectorindex>=0 && vectorindex<this->vectorlength);
+  assert (this->_storage && this->_owns_storage);
+  return this->_storage + vectorindex * this->_size;
 }
 
 

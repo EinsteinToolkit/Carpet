@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.34 2004/03/23 09:26:49 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.35 2004/03/23 12:40:27 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -23,12 +23,16 @@ template<int D>
 ggf<D>::ggf (const int varindex, const operator_type transport_operator,
              th<D>& t, dh<D>& d,
              const int tmin, const int tmax,
-             const int prolongation_order_time)
+             const int prolongation_order_time,
+             const int vectorlength, const int vectorindex,
+             ggf* const vectorleader)
   : varindex(varindex), transport_operator(transport_operator), t(t),
     tmin(tmin), tmax(tmax),
     prolongation_order_time(prolongation_order_time),
     h(d.h), d(d),
-    storage(tmax-tmin+1)
+    storage(tmax-tmin+1),
+    vectorlength(vectorlength), vectorindex(vectorindex),
+    vectorleader(vectorleader)
 {
   assert (&t.h == &d.h);
 
@@ -50,7 +54,6 @@ bool ggf<D>::operator== (const ggf<D>& f) const {
 
 
 // Modifiers
-// VGF
 template<int D>
 void ggf<D>::recompose (const int initialise_from, const bool do_prolongate) {
   
@@ -68,7 +71,7 @@ void ggf<D>::recompose (const int initialise_from, const bool do_prolongate) {
       for (int c=0; c<h.components(rl); ++c) {
       	storage[tl-tmin][rl][c].resize(h.mglevels(rl,c));
 	for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-          storage[tl-tmin][rl][c][ml] = 0;
+          storage[tl-tmin][rl][c][ml] = NULL;
 	} // for ml
       } // for c
     } // for rl
@@ -80,10 +83,9 @@ void ggf<D>::recompose (const int initialise_from, const bool do_prolongate) {
       for (int c=0; c<h.components(rl); ++c) {
       	for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
 	  
-	  storage[tl-tmin][rl][c][ml] = typed_data();
+	  storage[tl-tmin][rl][c][ml] = typed_data(tl,rl,c,ml);
 	  
       	  // Allocate storage
-          // VGF
       	  storage[tl-tmin][rl][c][ml]->allocate
       	    (d.boxes[rl][c][ml].exterior, h.proc(rl,c));
 	  

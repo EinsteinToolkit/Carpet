@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.31 2004/02/09 13:06:05 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.32 2004/03/23 12:40:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -79,21 +79,29 @@ namespace Carpet {
       }
     }
     
-    // VGF: allocate
+    cGroup gp;
+    const int ierr = CCTK_GroupData (group, &gp);
+    assert (!ierr);
+    const int vectorlength = gp.vectorgroup ? gp.vectorlength : 1;
     
     assert (arrdata.at(group).at(0).data.size()==0
 	    || arrdata.at(group).at(0).data.at(0) == 0);
     for (int m=0; m<maps; ++m) {
       for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+        const int vectorindex = gp.vectorgroup ? var % vectorlength : 0;
+        ggf<dim>* vectorleader
+          = (gp.vectorgroup && vectorindex>0
+             ? arrdata.at(group).at(m).data.at(var - vectorindex)
+             : NULL);
         const int n = n0 + var;
         switch (CCTK_VarTypeI(n)) {
 #define TYPECASE(N,T)                                                   \
         case N:                                                         \
-          /* VGF */                                                     \
           arrdata.at(group).at(m).data.at(var) = new gf<T,dim>          \
             (n, groupdata.at(group).transport_operator,                 \
              *arrdata.at(group).at(m).tt, *arrdata.at(group).at(m).dd,  \
-             tmin, tmax, prolongation_order_time);                      \
+             tmin, tmax, prolongation_order_time,                       \
+             vectorlength, vectorindex, (gf<T,dim>*)vectorleader);      \
           break;
 #include "typecase"
 #undef TYPECASE
@@ -157,25 +165,23 @@ namespace Carpet {
         case N:                                                         \
           assert (arrdata.at(group).at(m).data.at(var));                \
           delete (gf<T,dim>*)arrdata.at(group).at(m).data.at(var);      \
-          arrdata.at(group).at(m).data.at(var) = 0;                     \
+          arrdata.at(group).at(m).data.at(var) = NULL;                  \
           break;
 #include "typecase"
 #undef TYPECASE
         default:
           UnsupportedVarType(n);
         } // switch
-        arrdata.at(group).at(m).data.at(var) = 0;
+        arrdata.at(group).at(m).data.at(var) = NULL;
         
         if (CCTK_GroupTypeI(group) != CCTK_GF) {
           for (int tl=0; tl<num_tl; ++tl) {
-            cgh->data[n][tl] = 0;
+            cgh->data[n][tl] = NULL;
           }
         }
         
       } // for
     } // for
-    
-    // VGF: free
     
     // storage was enabled previously
     return 1;
@@ -198,7 +204,7 @@ namespace Carpet {
     
     assert (group<(int)arrdata.size());
     assert (var<(int)arrdata.at(group).at(0).data.size());
-    return arrdata.at(group).at(0).data.at(var) != 0;
+    return arrdata.at(group).at(0).data.at(var) != NULL;
   }
   
   

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.hh,v 1.1 2004/01/25 14:57:28 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.hh,v 1.2 2004/03/23 12:40:27 schnetter Exp $
 
 // It is assumed that each group has at least one map.  All arrays
 // have exactly one map.  All maps have the same number of refinement
@@ -118,7 +118,6 @@ namespace Carpet {
     dh<dim>* dd;
     th<dim>* tt;
     vector<ggf<dim>*> data;     // [var]
-    // VGF
   };
   extern vector<vector<arrdesc> > arrdata; // [group][map]
   

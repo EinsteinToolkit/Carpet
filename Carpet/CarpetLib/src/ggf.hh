@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.19 2004/03/23 09:26:49 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.20 2004/03/23 12:40:27 schnetter Exp $
 
 #ifndef GGF_HH
 #define GGF_HH
@@ -47,9 +47,9 @@ class ggf {
   typedef vector<mdata> cdata;  // ... for each component
   typedef vector<cdata> rdata;  // ... for each refinement level
   typedef vector<rdata> fdata;  // ... for each time level
-
+  
 public:				// should be readonly
-
+  
   // Fields
   int varindex;                 // Cactus variable index
   operator_type transport_operator;
@@ -63,14 +63,20 @@ public:				// should be readonly
 
 protected:
   fdata storage;		// storage
-
+  
+  int vectorlength;             // vector length
+  int vectorindex;              // index of *this
+  ggf* vectorleader;            // first vector element
+  
 public:
 
   // Constructors
   ggf (const int varindex, const operator_type transport_operator,
        th<D>& t, dh<D>& d,
        const int tmin, const int tmax,
-       const int prolongation_order_time);
+       const int prolongation_order_time,
+       const int vectorlength, const int vectorindex,
+       ggf* const vectorleader);
 
   // Destructors
   virtual ~ggf ();
@@ -81,7 +87,6 @@ public:
 
 
   // Modifiers
-  // VGF
   void recompose (const int initialise_from, const bool do_prolongate);
 
   // Cycle the time levels by rotating the data sets
@@ -96,7 +101,7 @@ public:
   
 protected:
   
-  virtual gdata<D>* typed_data() = 0;
+  virtual gdata<D>* typed_data (int tl, int rl, int c, int ml) = 0;
   
   
   
