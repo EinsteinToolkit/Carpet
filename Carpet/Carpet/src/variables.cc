@@ -5,7 +5,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.3 2001/12/17 13:34:02 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.4 2002/01/09 13:56:26 schnetter Exp $";
 
 
 
@@ -27,6 +27,12 @@ namespace Carpet {
   // Refinement factor on finest grid
   int maxreflevelfact;
   
+  // Multigrid levels
+  int mglevels;
+  
+  // Multigrid factor
+  int mgfact;
+  
   // Current iteration per refinement level
   vector<int> iteration;
   
@@ -35,7 +41,7 @@ namespace Carpet {
   int reflevel;
   int component;
   
-  // refinement factor of current level: pow(refinement_factor, reflevel)
+  // refinement factor of current level: ipow(refinement_factor, reflevel)
   int reflevelfact;
   
   // Time step on base grid

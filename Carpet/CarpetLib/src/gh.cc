@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.10 2001/12/14 16:39:42 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.11 2002/01/09 13:56:27 schnetter Exp $
 
  ***************************************************************************/
 
@@ -189,7 +189,7 @@ gh<D>::cexts gh<D>::make_reflevel_multigrid_boxes (const vector<ibbox>& exts,
       up = up - (up - lo) % str;
       
       ext = ibbox(lo,up,str);
-    }	// for ml
+    } // for ml
   } // for c
   
   return mexts;

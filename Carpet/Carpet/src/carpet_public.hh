@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.12 2002/01/02 17:14:08 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.13 2002/01/09 13:56:25 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -40,6 +40,12 @@ namespace Carpet {
   
   // Refinement factor on finest grid
   extern int maxreflevelfact;
+  
+  // Multigrid levels
+  extern int mglevels;
+  
+  // Multigrid factor
+  extern int mgfact;
   
   // Current iteration per refinement level
   extern vector<int> iteration;

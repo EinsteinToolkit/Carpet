@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <math.h>
 #include <stdlib.h>
 
 #include <list>
@@ -10,12 +9,13 @@
 
 #include "Carpet/CarpetLib/src/bbox.hh"
 #include "Carpet/CarpetLib/src/bboxset.hh"
+#include "Carpet/CarpetLib/src/defs.hh"
 #include "Carpet/CarpetLib/src/gh.hh"
 #include "Carpet/CarpetLib/src/vect.hh"
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.14 2002/01/01 16:48:29 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.15 2002/01/09 13:56:25 schnetter Exp $";
 
 
 
@@ -57,11 +57,17 @@ namespace Carpet {
       // No empty levels
       assert (bbsss[rl].size() > 0);
       for (int c=0; c<(int)bbsss[rl].size(); ++c) {
-	// Just one multigrid level
-	assert (bbsss[rl][c].size() == 1);
+	// At least one multigrid level
+	assert (bbsss[rl][c].size() > 0);
 	for (int ml=0; ml<(int)bbsss[rl][c].size(); ++ml) {
-	  assert (all(bbsss[rl][c][ml].stride()
-		      == floor(pow((double)reffact,maxreflevels-rl-1)+0.5)));
+	  // Check sizes
+	  assert (all(bbsss[rl][c][ml].lower() <= bbsss[rl][c][ml].upper()));
+	  // Check strides
+	  const int str = ipow(reffact, maxreflevels-rl-1) * ipow(mgfact, ml);
+	  assert (all(bbsss[rl][c][ml].stride() == str));
+	  // Check alignments
+	  assert (all(bbsss[rl][c][ml].lower() % str == 0));
+	  assert (all(bbsss[rl][c][ml].upper() % str == 0));
 	}
       }
     }
@@ -133,7 +139,6 @@ namespace Carpet {
   static void Adapt (const cGH* cgh, const int reflevels, gh<dim>* hh)
   {
     const int nprocs   = CCTK_nProcs(cgh);
-    const int mglevels = 1;	// for now
     vector<vector<bbox<int,dim> > > bbss(reflevels);
     // note: what this routine calls "ub" is "ub+str" elsewhere
     vect<int,dim> rstr = hh->baseextent.stride();

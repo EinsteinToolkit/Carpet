@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.17 2001/12/09 16:43:09 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.18 2002/01/09 13:56:27 schnetter Exp $
 
  ***************************************************************************/
 
@@ -280,6 +280,7 @@ void dh<D>::recompose () {
   }
   
 #ifdef DEBUG_OUTPUT
+  cout << endl << h << endl;
   for (int rl=0; rl<h.reflevels(); ++rl) {
     for (int c=0; c<h.components(rl); ++c) {
       for (int ml=0; ml<h.mglevels(rl,c); ++ml) {

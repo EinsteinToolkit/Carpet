@@ -5,13 +5,14 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
+#include "Carpet/CarpetLib/src/defs.hh"
 #include "Carpet/CarpetLib/src/dist.hh"
 #include "Carpet/CarpetLib/src/ggf.hh"
 #include "Carpet/CarpetLib/src/vect.hh"
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.17 2001/12/17 13:34:01 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.18 2002/01/09 13:56:25 schnetter Exp $";
 
 
 
@@ -40,7 +41,11 @@ namespace Carpet {
     // Refinement information
     maxreflevels = max_refinement_levels;
     reffact = refinement_factor;
-    maxreflevelfact = floor(pow((double)reffact, maxreflevels-1) + 0.5);
+    maxreflevelfact = ipow(reffact, maxreflevels-1);
+    
+    // Multigrid information
+    mglevels = multigrid_levels;
+    mgfact = multigrid_factor;
     
     // Ghost zones
     vect<int,dim> lghosts, ughosts;
@@ -250,7 +255,6 @@ namespace Carpet {
     bbss[0] = bbs;
     
     gh<dim>::rexts bbsss;
-    const int mglevels = 1;
     bbsss = hh->make_multigrid_boxes(bbss, mglevels);
     
     gh<dim>::rprocs pss;

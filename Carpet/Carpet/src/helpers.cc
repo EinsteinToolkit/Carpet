@@ -7,11 +7,12 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
+#include "Carpet/CarpetLib/src/defs.hh"
 #include "Carpet/CarpetLib/src/dist.hh"
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.14 2001/12/17 13:34:01 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.15 2002/01/09 13:56:26 schnetter Exp $";
 
 
 
@@ -184,7 +185,7 @@ namespace Carpet {
     // Change
     reflevel = rl;
     const bbox<int,dim>& base = hh->baseextent;
-    reflevelfact = floor(pow((double)hh->reffact, reflevel) + 0.5);
+    reflevelfact = ipow(hh->reffact, reflevel);
     cgh->cctk_delta_time = base_delta_time / reflevelfact;
     for (int d=0; d<dim; ++d) {
       cgh->cctk_gsh[d]

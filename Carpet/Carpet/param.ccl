@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.15 2001/12/14 16:39:04 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.16 2002/01/09 13:56:24 schnetter Exp $
 
 shares: Cactus
 
@@ -66,6 +66,11 @@ CCTK_INT refinement_factor "Refinement factor"
 {
   1:* :: "must be positive"
 } 2
+
+CCTK_INT multigrid_levels "Number of multigrid levels (including the base level)"
+{
+  1:* :: "must be positive"
+} 1
 
 CCTK_INT multigrid_factor "Multigrid factor"
 {
