@@ -9,7 +9,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.11 2002/10/24 10:39:38 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Cycle.cc,v 1.12 2002/11/16 19:10:50 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Cycle_cc);
 }
 
@@ -45,74 +45,38 @@ namespace Carpet {
   
   void FlipTimeLevels (const cGH* cgh)
   {
-    Checkpoint ("%*sFlipTimeLevels", 2*reflevel, "");
+    Checkpoint ("FlipTimeLevels");
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
-      if (CCTK_GroupTypeI(group) == CCTK_GF
-	  && CCTK_QueryGroupStorageI(cgh, group)) {
-	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-	  
-	  assert (group<(int)arrdata.size());
-	  assert (var<(int)arrdata[group].data.size());
-	  for (int rl=0; rl<arrdata[group].hh->reflevels(); ++rl) {
-	    for (int c=0; c<arrdata[group].hh->components(rl); ++c) {
-	      arrdata[group].data[var]->flip (rl, c, mglevel);
-	    }
-	  }
-	  
-	}
-      }
-    }
-  }
-
-  
-  void FlipTimeLevelsOnCoarser (const cGH* cgh, const int cur_rl)
-  {
-    Checkpoint ("%*sFlipTimeLevels", 2*reflevel,  "");
-    
-    for (int group=0; group<CCTK_NumGroups(); ++group) {
-      if (CCTK_GroupTypeI(group) == CCTK_GF
-	  && CCTK_QueryGroupStorageI(cgh, group)) {
-	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-	  
-	  assert (group<(int)arrdata.size());
-	  assert (var<(int)arrdata[group].data.size());
-	  for (int rl=0; rl<arrdata[group].hh->reflevels(); ++rl) {
-            if (rl <= cur_rl) {
+      if (CCTK_QueryGroupStorageI(cgh, group)) {
+	
+	const int var0 = CCTK_FirstVarIndexI(group);
+	const int num_tl = CCTK_NumTimeLevelsFromVarI(var0);
+	switch (num_tl) {
+	case 1:
+	  // Do nothing
+	  break;
+	case 3:
+	  // Flip
+	  for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+	    
+	    assert (group<(int)arrdata.size());
+	    assert (var<(int)arrdata[group].data.size());
+	    for (int rl=0; rl<hh->reflevels(); ++rl) {
 	      for (int c=0; c<arrdata[group].hh->components(rl); ++c) {
-	        arrdata[group].data[var]->flip (rl, c, mglevel);
+		arrdata[group].data[var]->flip (rl, c, mglevel);
 	      }
 	    }
+	    
 	  }
-	  
-	}
+	  break;
+	default:
+	  // Error
+	  assert (0);
+	} // switch
+	
       }
     }
   }
-
-  void CopyCurrToPrevTimeLevels (const cGH* cgh, const int cur_rl)
-  {
-    Checkpoint ("%*sFlipTimeLevels", 2*reflevel, "");
-    
-    for (int group=0; group<CCTK_NumGroups(); ++group) {
-      if (CCTK_GroupTypeI(group) == CCTK_GF
-	  && CCTK_QueryGroupStorageI(cgh, group)) {
-	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-	  
-	  assert (group<(int)arrdata.size());
-	  assert (var<(int)arrdata[group].data.size());
-	  for (int rl=0; rl<arrdata[group].hh->reflevels(); ++rl) {
-	    for (int c=0; c<arrdata[group].hh->components(rl); ++c) {
-	      arrdata[group].data[var]->copytoprevs (rl, c, mglevel);
-	    }
-	  }
-	  
-	}
-      }
-    }
-  }
-
-
-
   
 } // namespace Carpet

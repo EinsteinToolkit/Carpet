@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.21 2002/09/25 19:55:04 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.22 2002/11/16 19:10:49 schnetter Exp $
 
 shares: Cactus
 
@@ -62,6 +62,8 @@ CCTK_INT ghost_size "Ghost zones in each spatial direction"
 } -1
 
 
+
+private:
 
 CCTK_INT max_refinement_levels "Maximum number of refinement levels (including the base level)"
 {
@@ -198,7 +200,7 @@ CCTK_INT processor_topology_3d_z "Number of processors in z-direction"
 
 STRING grid_structure_filename "File name to output grid structure to (empty = no output)"
 {
-  .* :: "must be a file name"
+  ".*" :: "must be a legal file name"
 } ""
 
 

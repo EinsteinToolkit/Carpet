@@ -9,7 +9,7 @@
 #include "carpet.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.5 2002/10/24 10:39:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.6 2002/11/16 19:10:50 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_CallFunction_cc);
 }
 
@@ -34,6 +34,8 @@ namespace Carpet {
     if (attribute->global) {
       // Global operation: call once per refinement level
       
+      Waypoint ("%*sGlobal mode call at %s to %s::%s", 2*reflevel, "",
+		attribute->where, attribute->thorn, attribute->routine);
       const int res = CCTK_CallFunction (function, attribute, data);
       assert (res==0);
       
@@ -42,6 +44,9 @@ namespace Carpet {
       
       BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
 	
+	Waypoint ("%*sLocal mode call on component %d at %s to %s::%s",
+		  2*reflevel, "", component,
+		  attribute->where, attribute->thorn, attribute->routine);
 	const int res = CCTK_CallFunction (function, attribute, data);
 	assert (res==0);
 	
