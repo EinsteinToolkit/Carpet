@@ -108,9 +108,9 @@ namespace Carpet {
   // Data for grid functions
   
   // The grid hierarchy
-  extern vector<gh<dim>*> vhh;  // [map]
-  extern vector<dh<dim>*> vdd;  // [map]
-  extern vector<th<dim>*> vtt;  // [map]
+  extern vector<gh*> vhh;       // [map]
+  extern vector<dh*> vdd;       // [map]
+  extern vector<th*> vtt;       // [map]
   
   // Data for the groups
   struct groupdesc {
@@ -122,10 +122,10 @@ namespace Carpet {
   // Data for everything
   struct arrdesc {
     // points to hh etc. for GF, and is unique for SCALAR and ARRAY
-    gh<dim>* hh;
-    dh<dim>* dd;
-    th<dim>* tt;
-    vector<ggf<dim>*> data;     // [var]
+    gh* hh;
+    dh* dd;
+    th* tt;
+    vector<ggf*> data;          // [var]
   };
   extern vector<vector<arrdesc> > arrdata; // [group][map]
   

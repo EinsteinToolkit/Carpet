@@ -35,11 +35,11 @@ static size_t total_allocated_objects = 0;
 static const CCTK_REAL eps = 1.0e-10;
 
 // Constructors
-template<class T, int D>
-data<T,D>::data (const int varindex_, const operator_type transport_operator_,
-                 const int vectorlength_, const int vectorindex_,
-                 data* const vectorleader_)
-  : gdata<D>(varindex_, transport_operator_),
+template<typename T>
+data<T>::data (const int varindex_, const operator_type transport_operator_,
+               const int vectorlength_, const int vectorindex_,
+               data* const vectorleader_)
+  : gdata(varindex_, transport_operator_),
     _storage(NULL), _allocated_bytes(0),
     vectorlength(vectorlength_), vectorindex(vectorindex_),
     vectorleader(vectorleader_)
@@ -52,12 +52,12 @@ data<T,D>::data (const int varindex_, const operator_type transport_operator_,
   if (vectorleader) vectorleader->register_client (vectorindex);
 }
 
-template<class T, int D>
-data<T,D>::data (const int varindex_, const operator_type transport_operator_,
-                 const int vectorlength_, const int vectorindex_,
-                 data* const vectorleader_,
-                 const ibbox& extent_, const int proc_)
-  : gdata<D>(varindex_, transport_operator_),
+template<typename T>
+data<T>::data (const int varindex_, const operator_type transport_operator_,
+               const int vectorlength_, const int vectorindex_,
+               data* const vectorleader_,
+               const ibbox& extent_, const int proc_)
+  : gdata(varindex_, transport_operator_),
     _storage(NULL), _allocated_bytes(0),
     vectorlength(vectorlength_), vectorindex(vectorindex_),
     vectorleader(vectorleader_)
@@ -72,8 +72,8 @@ data<T,D>::data (const int varindex_, const operator_type transport_operator_,
 }
 
 // Destructors
-template<class T, int D>
-data<T,D>::~data ()
+template<typename T>
+data<T>::~data ()
 {
   if (vectorleader) vectorleader->unregister_client (vectorindex);
   if (vectorindex==0) assert (! has_clients());
@@ -81,9 +81,9 @@ data<T,D>::~data ()
 }
   
 // Pseudo constructors
-template<class T, int D>
-data<T,D>* data<T,D>::make_typed (const int varindex_,
-                                  const operator_type transport_operator_)
+template<typename T>
+data<T>* data<T>::make_typed (const int varindex_,
+                              const operator_type transport_operator_)
   const
 {
   return new data(varindex_, transport_operator_);
@@ -92,22 +92,22 @@ data<T,D>* data<T,D>::make_typed (const int varindex_,
 
 
 // Vector mamagement
-template<class T, int D>
-void data<T,D>::register_client (const int index)
+template<typename T>
+void data<T>::register_client (const int index)
 {
   assert (! vectorclients.at(index));
   vectorclients.at(index) = true;
 }
 
-template<class T, int D>
-void data<T,D>::unregister_client (const int index)
+template<typename T>
+void data<T>::unregister_client (const int index)
 {
   assert (vectorclients.at(index));
   vectorclients.at(index) = false;
 }
 
-template<class T, int D>
-bool data<T,D>::has_clients ()
+template<typename T>
+bool data<T>::has_clients ()
 {
   bool retval = false;
   for (int n=0; n<vectorlength; ++n) {
@@ -119,8 +119,8 @@ bool data<T,D>::has_clients ()
 
 
 // Storage management
-template<class T, int D>
-void data<T,D>::getmem (const size_t nelems)
+template<typename T>
+void data<T>::getmem (const size_t nelems)
 {
   const size_t nbytes = nelems * sizeof(T);
   try {
@@ -143,8 +143,8 @@ void data<T,D>::getmem (const size_t nelems)
 
 
 
-template<class T, int D>
-void data<T,D>::freemem ()
+template<typename T>
+void data<T>::freemem ()
 {
   delete [] _storage;
   assert (total_allocated_bytes > this->_allocated_bytes);
@@ -156,10 +156,10 @@ void data<T,D>::freemem ()
 
 
 
-template<class T, int D>
-void data<T,D>::allocate (const ibbox& extent_,
-                          const int proc_,
-			  void* const mem)
+template<typename T>
+void data<T>::allocate (const ibbox& extent_,
+                        const int proc_,
+                        void* const mem)
 {
   assert (!this->_has_storage);
   this->_has_storage = true;
@@ -172,7 +172,7 @@ void data<T,D>::allocate (const ibbox& extent_,
   this->_extent = extent_;
   this->_shape = max(ivect(0), this->_extent.shape() / this->_extent.stride());
   this->_size = 1;
-  for (int d=0; d<D; ++d) {
+  for (int d=0; d<dim; ++d) {
     this->_stride[d] = this->_size;
     assert (this->_shape[d]==0 || this->_size <= INT_MAX / this->_shape[d]);
     this->_size *= this->_shape[d];
@@ -196,8 +196,8 @@ void data<T,D>::allocate (const ibbox& extent_,
   }
 }
 
-template<class T, int D>
-void data<T,D>::free ()
+template<typename T>
+void data<T>::free ()
 {
   if (this->_storage && this->_owns_storage && this->vectorindex==0) {
     freemem ();
@@ -206,8 +206,8 @@ void data<T,D>::free ()
   this->_has_storage = false;
 }
 
-template<class T, int D>
-void data<T,D>::transfer_from (gdata<D>* gsrc)
+template<typename T>
+void data<T>::transfer_from (gdata* gsrc)
 {
   assert (this->vectorlength==1);
   data* src = (data*)gsrc;
@@ -217,8 +217,8 @@ void data<T,D>::transfer_from (gdata<D>* gsrc)
   *src = data(this->varindex, this->transport_operator);
 }
 
-template<class T, int D>
-T* data<T,D>::vectordata (const int vectorindex_) const
+template<typename T>
+T* data<T>::vectordata (const int vectorindex_) const
 {
   assert (this->vectorindex==0);
   assert (! this->vectorleader);
@@ -230,10 +230,10 @@ T* data<T,D>::vectordata (const int vectorindex_) const
 
 
 // Processor management
-template<class T, int D>
-void data<T,D>::change_processor_recv (comm_state<D>& state,
-                                       const int newproc,
-                                       void* const mem)
+template<typename T>
+void data<T>::change_processor_recv (comm_state& state,
+                                     const int newproc,
+                                     void* const mem)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -283,10 +283,10 @@ void data<T,D>::change_processor_recv (comm_state<D>& state,
 
 
 
-template<class T, int D>
-void data<T,D>::change_processor_send (comm_state<D>& state,
-                                       const int newproc,
-                                       void* const mem)
+template<typename T>
+void data<T>::change_processor_send (comm_state& state,
+                                     const int newproc,
+                                     void* const mem)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -329,10 +329,10 @@ void data<T,D>::change_processor_send (comm_state<D>& state,
 
 
 
-template<class T, int D>
-void data<T,D>::change_processor_wait (comm_state<D>& state,
-                                       const int newproc,
-                                       void* const mem)
+template<typename T>
+void data<T>::change_processor_wait (comm_state& state,
+                                     const int newproc,
+                                     void* const mem)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -400,9 +400,9 @@ void data<T,D>::change_processor_wait (comm_state<D>& state,
 
 
 // Data manipulators
-template<class T, int D>
-void data<T,D>
-::copy_from_innerloop (const gdata<D>* gsrc, const ibbox& box)
+template<typename T>
+void data<T>
+::copy_from_innerloop (const gdata* gsrc, const ibbox& box)
 {
   const data* src = (const data*)gsrc;
   assert (this->has_storage() && src->has_storage());
@@ -438,9 +438,9 @@ void data<T,D>
 
 
 
-template<class T, int D>
-void data<T,D>
-::interpolate_from_innerloop (const vector<const gdata<D>*> gsrcs,
+template<typename T>
+void data<T>
+::interpolate_from_innerloop (const vector<const gdata*> gsrcs,
 			      const vector<CCTK_REAL> times,
 			      const ibbox& box, const CCTK_REAL time,
 			      const int order_space,
@@ -471,8 +471,8 @@ void data<T,D>
   char* groupname = CCTK_GroupName(groupindex);
   T Tdummy;
   CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-	      "There is no interpolator available for the group \"%s\" with variable type %s, dimension %d, spatial interpolation order %d, temporal interpolation order %d.",
-	      groupname, typestring(Tdummy), D, order_space, order_time);
+	      "There is no interpolator available for the group \"%s\" with variable type %s, spatial interpolation order %d, temporal interpolation order %d.",
+	      groupname, typestring(Tdummy), order_space, order_time);
   ::free (groupname);
 }
 
@@ -505,15 +505,18 @@ extern "C" {
      const int regbbox[3][3]);
 }
 
-template<class T,int D>
-void data<T,D>
-::fill_bbox_arrays (int srcshp[D], int dstshp[D],
-                    int srcbbox[D][D], int dstbbox[D][D], int regbbox[D][D],
-                    const data<T,D>::ibbox & box,
-                    const data<T,D>::ibbox & sext,
-                    const data<T,D>::ibbox & dext)
+template<class T>
+void data<T>
+::fill_bbox_arrays (int srcshp[dim],
+                    int dstshp[dim],
+                    int srcbbox[dim][dim],
+                    int dstbbox[dim][dim],
+                    int regbbox[dim][dim],
+                    const ibbox & box,
+                    const ibbox & sext,
+                    const ibbox & dext)
 {
-  for (int d=0; d<D; ++d) {
+  for (int d=0; d<dim; ++d) {
     srcshp[d] = (sext.shape() / sext.stride())[d];
     dstshp[d] = (dext.shape() / dext.stride())[d];
     
@@ -532,8 +535,8 @@ void data<T,D>
 }
 
 template<>
-void data<CCTK_INT4,3>
-::copy_from_innerloop (const gdata<3>* gsrc, const ibbox& box)
+void data<CCTK_INT4>
+::copy_from_innerloop (const gdata* gsrc, const ibbox& box)
 {
   const data* src = (const data*)gsrc;
   assert (has_storage() && src->has_storage());
@@ -575,8 +578,8 @@ void data<CCTK_INT4,3>
 }
 
 template<>
-void data<CCTK_REAL8,3>
-::copy_from_innerloop (const gdata<3>* gsrc, const ibbox& box)
+void data<CCTK_REAL8>
+::copy_from_innerloop (const gdata* gsrc, const ibbox& box)
 {
   const data* src = (const data*)gsrc;
   assert (has_storage() && src->has_storage());
@@ -618,8 +621,8 @@ void data<CCTK_REAL8,3>
 }
 
 template<>
-void data<CCTK_COMPLEX16,3>
-::copy_from_innerloop (const gdata<3>* gsrc, const ibbox& box)
+void data<CCTK_COMPLEX16>
+::copy_from_innerloop (const gdata* gsrc, const ibbox& box)
 {
   const data* src = (const data*)gsrc;
   assert (has_storage() && src->has_storage());
@@ -877,15 +880,15 @@ extern "C" {
 }
 
 template<>
-bool data<CCTK_REAL8,3>
-::interpolate_in_time (const vector<const gdata<3>*> & gsrcs,
-			      const vector<CCTK_REAL> & times,
-			      const ibbox& box, const CCTK_REAL time,
-			      const int order_space,
-			      const int order_time) {
+bool data<CCTK_REAL8>
+::interpolate_in_time (const vector<const gdata*> & gsrcs,
+                       const vector<CCTK_REAL> & times,
+                       const ibbox& box, const CCTK_REAL time,
+                       const int order_space,
+                       const int order_time) {
   for (size_t tl=0; tl<times.size(); ++tl) {
     if (abs(times[tl] - time) < eps) {
-      vector<const gdata<3>*> my_gsrcs(1);
+      vector<const gdata*> my_gsrcs(1);
       vector<CCTK_REAL> my_times(1);
       my_gsrcs[0] = gsrcs[tl];
       my_times[0] = times[tl];
@@ -898,11 +901,11 @@ bool data<CCTK_REAL8,3>
   return false;
 }
 
-template<class T, int D>
-void data<T,D>
-::interpolate_restrict (const vector<const data<T,D>*> & srcs,
-			      const vector<CCTK_REAL> & times,
-			      const ibbox& box)
+template<typename T>
+void data<T>
+::interpolate_restrict (const vector<const data<T>*> & srcs,
+                        const vector<CCTK_REAL> & times,
+                        const ibbox& box)
 {
   const ibbox& sext = srcs[0]->extent();
   const ibbox& dext = this->extent();
@@ -910,8 +913,8 @@ void data<T,D>
   int srcshp[3], dstshp[3];
   int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
   
-  fill_bbox_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
-	box, sext, dext );
+  fill_bbox_arrays (srcshp, dstshp, srcbbox, dstbbox, regbbox,
+                    box, sext, dext );
   
   switch (this->transport_operator) {
       
@@ -941,24 +944,24 @@ void data<T,D>
   }
 }
 
-template<class T, int D>
-void data<T,D>
-::interpolate_prolongate (const vector<const data<T,D>*> & srcs,
-			      const vector<CCTK_REAL> & times,
-			      const ibbox& box, const CCTK_REAL time,
-                              const int order_space,
-                              const int order_time)
+template<typename T>
+void data<T>
+::interpolate_prolongate (const vector<const data<T>*> & srcs,
+                          const vector<CCTK_REAL> & times,
+                          const ibbox& box, const CCTK_REAL time,
+                          const int order_space,
+                          const int order_time)
 {
   const ibbox& sext = srcs[0]->extent();
   const ibbox& dext = this->extent();
   
-  int srcshp[3], dstshp[3];
-  int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
+  int srcshp[dim], dstshp[dim];
+  int srcbbox[dim][dim], dstbbox[dim][dim], regbbox[dim][dim];
   
-  fill_bbox_arrays( srcshp, dstshp, srcbbox, dstbbox, regbbox,
-	box, sext, dext );
+  fill_bbox_arrays (srcshp, dstshp, srcbbox, dstbbox, regbbox,
+                    box, sext, dext);
   switch (this->transport_operator) {
-      
+    
   case op_Lagrange:
     switch (order_time) {
       
@@ -1308,7 +1311,7 @@ void data<T,D>
 }
 
 template<>
-void data<CCTK_REAL8,3>
+void data<CCTK_REAL8>
 ::Check_that_the_times_are_consistent (const vector<CCTK_REAL> & times,
                                        const CCTK_REAL time)
 {
@@ -1329,8 +1332,8 @@ void data<CCTK_REAL8,3>
 }
 
 template<>
-void data<CCTK_REAL8,3>
-::interpolate_from_innerloop (const vector<const gdata<3>*> gsrcs,
+void data<CCTK_REAL8>
+::interpolate_from_innerloop (const vector<const gdata*> gsrcs,
 			      const vector<CCTK_REAL> times,
 			      const ibbox& box, const CCTK_REAL time,
 			      const int order_space,
@@ -1392,11 +1395,11 @@ void data<CCTK_REAL8,3>
 }
 
 // Output
-template<class T,int D>
-ostream& data<T,D>::output (ostream& os) const
+template<typename T>
+ostream& data<T>::output (ostream& os) const
 {
   T Tdummy;
-  os << "data<" << typestring(Tdummy) << "," << D << ">:"
+  os << "data<" << typestring(Tdummy) << ">:"
      << "extent=" << this->extent() << ","
      << "stride=" << this->stride() << ",size=" << this->size();
   return os;
@@ -1405,7 +1408,7 @@ ostream& data<T,D>::output (ostream& os) const
 
 
 #define INSTANTIATE(T)				\
-template class data<T,3>;
+template class data<T>;
 
 #include "instantiate"
 

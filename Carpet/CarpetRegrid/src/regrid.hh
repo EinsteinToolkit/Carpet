@@ -43,25 +43,25 @@ namespace CarpetRegrid {
   
   
   int BaseLevel (cGH const * const cctkGH,
-                 gh<dim> const & hh,
-                 gh<dim>::rexts  & bbsss,
-                 gh<dim>::rbnds  & obss,
-                 gh<dim>::rprocs & pss);
+                 gh const & hh,
+                 gh::rexts  & bbsss,
+                 gh::rbnds  & obss,
+                 gh::rprocs & pss);
 
   int Centre (cGH const * const cctkGH,
-              gh<dim> const & hh,
-              gh<dim>::rexts  & bbsss,
-              gh<dim>::rbnds  & obss,
-              gh<dim>::rprocs & pss);
+              gh const & hh,
+              gh::rexts  & bbsss,
+              gh::rbnds  & obss,
+              gh::rprocs & pss);
 
   int ManualGridpoints (cGH const * const cctkGH,
-                        gh<dim> const & hh,
-                        gh<dim>::rexts  & bbsss,
-                        gh<dim>::rbnds  & obss,
-                        gh<dim>::rprocs & pss);
+                        gh const & hh,
+                        gh::rexts  & bbsss,
+                        gh::rbnds  & obss,
+                        gh::rprocs & pss);
   
   void ManualGridpoints_OneLevel (const cGH * const cctkGH,
-                                  const gh<dim> & hh,
+                                  const gh & hh,
                                   const int rl,
                                   const int numrl,
                                   const ivect ilower,
@@ -71,13 +71,13 @@ namespace CarpetRegrid {
                                   vector<bbvect> & obs);
 
   int ManualCoordinates (cGH const * const cctkGH,
-                         gh<dim> const & hh,
-                         gh<dim>::rexts  & bbsss,
-                         gh<dim>::rbnds  & obss,
-                         gh<dim>::rprocs & pss);
+                         gh const & hh,
+                         gh::rexts  & bbsss,
+                         gh::rbnds  & obss,
+                         gh::rprocs & pss);
   
   void ManualCoordinates_OneLevel (const cGH * const cctkGH,
-                                   const gh<dim> & hh,
+                                   const gh & hh,
                                    const int rl,
                                    const int numrl,
                                    const rvect lower,
@@ -87,55 +87,55 @@ namespace CarpetRegrid {
                                    vector<bbvect> & obs);
   
   ivect delta2int (const cGH * const cctkGH,
-                   const gh<dim>& hh,
+                   const gh& hh,
                    const rvect & rpos,
                    const int rl);
   ivect pos2int (const cGH* const cctkGH,
-                 const gh<dim>& hh,
+                 const gh& hh,
                  const rvect & rpos,
                  const int rl);
 
   int ManualGridpointList (cGH const * const cctkGH,
-                           gh<dim> const & hh,
-                           gh<dim>::rexts  & bbsss,
-                           gh<dim>::rbnds  & obss,
-                           gh<dim>::rprocs & pss);
+                           gh const & hh,
+                           gh::rexts  & bbsss,
+                           gh::rbnds  & obss,
+                           gh::rprocs & pss);
   
   int ManualCoordinateList (cGH const * const cctkGH,
-                            gh<dim> const & hh,
-                            gh<dim>::rexts  & bbsss,
-                            gh<dim>::rbnds  & obss,
-                            gh<dim>::rprocs & pss);
+                            gh const & hh,
+                            gh::rexts  & bbsss,
+                            gh::rbnds  & obss,
+                            gh::rprocs & pss);
 
   int Moving (cGH const * const cctkGH,
-              gh<dim> const & hh,
-              gh<dim>::rexts  & bbsss,
-              gh<dim>::rbnds  & obss,
-              gh<dim>::rprocs & pss);
+              gh const & hh,
+              gh::rexts  & bbsss,
+              gh::rbnds  & obss,
+              gh::rprocs & pss);
   
   int Automatic (cGH const * const cctkGH,
-                 gh<dim> const & hh,
-                 gh<dim>::rexts  & bbsss,
-                 gh<dim>::rbnds  & obss,
-                 gh<dim>::rprocs & pss);
+                 gh const & hh,
+                 gh::rexts  & bbsss,
+                 gh::rbnds  & obss,
+                 gh::rprocs & pss);
   
   void Automatic_OneLevel (const cGH * const cctkGH,
-                           const gh<dim> & hh,
+                           const gh & hh,
                            const int rl,
                            const int numrl,
                            const int minwidth,
                            const CCTK_REAL minfraction,
                            const CCTK_REAL maxerror,
-                           const gf<CCTK_REAL,dim> & errorvar,
+                           const gf<CCTK_REAL> & errorvar,
                            vector<ibbox> & bbs,
                            vector<bbvect> & obs);
   
   void Automatic_Recursive (const cGH * const cctkGH,
-                            const gh<dim> & hh,
+                            const gh & hh,
                             const int minwidth,
                             const CCTK_REAL minfraction,
                             const CCTK_REAL maxerror,
-                            const data<CCTK_REAL,dim> & errorvar,
+                            const data<CCTK_REAL> & errorvar,
                             list<ibbox> & bbl,
                             const ibbox & region);
   

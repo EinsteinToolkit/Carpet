@@ -20,8 +20,8 @@ namespace Carpet {
                                           const char *groupname );
   static void ProlongateGroupBoundaries ( const cGH* cgh,
                                           CCTK_REAL initial_time, int group );
-  static void SyncGFGroup ( const cGH* cgh, comm_state<dim> &state, int group );
-  static void SyncGFArrayGroup ( const cGH* cgh, comm_state<dim> &state, int group );
+  static void SyncGFGroup ( const cGH* cgh, comm_state &state, int group );
+  static void SyncGFArrayGroup ( const cGH* cgh, comm_state &state, int group );
   
   int SyncGroup (const cGH* cgh, const char* groupname)
   {
@@ -66,7 +66,7 @@ namespace Carpet {
       }
     
       // Sync
-      for (comm_state<dim> state; !state.done(); state.step()) {
+      for (comm_state state; !state.done(); state.step()) {
         switch (CCTK_GroupTypeI(group)) {
           
         case CCTK_GF:
@@ -93,7 +93,7 @@ namespace Carpet {
     const CCTK_REAL time = (cgh->cctk_time - initial_time) / delta_time;
     const int tl = 0;
     
-    for (comm_state<dim> state; !state.done(); state.step()) {
+    for (comm_state state; !state.done(); state.step()) {
       for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
         for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
           for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
@@ -105,7 +105,7 @@ namespace Carpet {
     }
   }
 
-  void SyncGFGroup ( const cGH* cgh, comm_state<dim> &state, int group )
+  void SyncGFGroup ( const cGH* cgh, comm_state &state, int group )
   {
     const int tl = 0;
     for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
@@ -118,7 +118,7 @@ namespace Carpet {
     }
   }
 
-  void SyncGFArrayGroup ( const cGH* cgh, comm_state<dim> &state, int group )
+  void SyncGFArrayGroup ( const cGH* cgh, comm_state &state, int group )
   {
     for (int var=0; var<(int)arrdata.at(group).at(0).data.size(); ++var) {
       arrdata.at(group).at(0).data.at(var)->sync (state, 0, 0, 0, 0);

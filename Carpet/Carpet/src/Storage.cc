@@ -85,7 +85,7 @@ namespace Carpet {
     for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
       for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
         const int vectorindex = gp.vectorgroup ? var % vectorlength : 0;
-        ggf<dim>* vectorleader
+        ggf* vectorleader
           = (gp.vectorgroup && vectorindex>0
              ? arrdata.at(group).at(m).data.at(var - vectorindex)
              : NULL);
@@ -93,11 +93,11 @@ namespace Carpet {
         switch (CCTK_VarTypeI(n)) {
 #define TYPECASE(N,T)                                                   \
         case N:                                                         \
-          arrdata.at(group).at(m).data.at(var) = new gf<T,dim>          \
+          arrdata.at(group).at(m).data.at(var) = new gf<T>              \
             (n, groupdata.at(group).transport_operator,                 \
              *arrdata.at(group).at(m).tt, *arrdata.at(group).at(m).dd,  \
              tmin, tmax, prolongation_order_time,                       \
-             vectorlength, vectorindex, (gf<T,dim>*)vectorleader);      \
+             vectorlength, vectorindex, (gf<T>*)vectorleader);          \
           break;
 #include "typecase"
 #undef TYPECASE
@@ -156,7 +156,7 @@ namespace Carpet {
 #define TYPECASE(N,T)                                                   \
         case N:                                                         \
           assert (arrdata.at(group).at(m).data.at(var));                \
-          delete (gf<T,dim>*)arrdata.at(group).at(m).data.at(var);      \
+          delete (gf<T>*)arrdata.at(group).at(m).data.at(var);          \
           arrdata.at(group).at(m).data.at(var) = NULL;                  \
           break;
 #include "typecase"

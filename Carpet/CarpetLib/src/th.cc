@@ -14,21 +14,18 @@ using namespace std;
 
 
 // Constructors
-template<int D>
-th<D>::th (gh<D>& h, const CCTK_REAL basedelta)
+th::th (gh& h, const CCTK_REAL basedelta)
   : h(h), delta(basedelta) {
   h.add(this);
 }
 
 // Destructors
-template<int D>
-th<D>::~th () {
+th::~th () {
   h.remove(this);
 }
 
 // Modifiers
-template<int D>
-void th<D>::recompose () {
+void th::recompose () {
   times.resize(h.reflevels());
   deltas.resize(h.reflevels());
   for (int rl=0; rl<h.reflevels(); ++rl) {
@@ -59,9 +56,8 @@ void th<D>::recompose () {
 
 
 // Output
-template<int D>
-void th<D>::output (ostream& os) const {
-  os << "th<" << D << ">:"
+void th::output (ostream& os) const {
+  os << "th:"
      << "times={";
   for (int rl=0; rl<h.reflevels(); ++rl) {
     for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
@@ -72,7 +68,3 @@ void th<D>::output (ostream& os) const {
   }
   os << "}";
 }
-
-
-
-template class th<3>;

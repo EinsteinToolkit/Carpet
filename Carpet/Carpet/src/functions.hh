@@ -36,17 +36,17 @@ namespace Carpet {
    
    
   // Helpers for recomposing the grid hierarchy
-  void CheckRegions (const gh<dim>::rexts & bbsss,
-                     const gh<dim>::rbnds & obss,
-                     const gh<dim>::rprocs& pss);
+  void CheckRegions (const gh::rexts & bbsss,
+                     const gh::rbnds & obss,
+                     const gh::rprocs& pss);
   
-  void OutputGrids (const cGH* cgh, const int m, const gh<dim>& hh);
+  void OutputGrids (const cGH* cgh, const int m, const gh& hh);
   
   void OutputGridStructure (const cGH *cgh,
                             const int m,
-                            const gh<dim>::rexts & bbsss,
-                            const gh<dim>::rbnds & obss,
-                            const gh<dim>::rprocs& pss);
+                            const gh::rexts & bbsss,
+                            const gh::rbnds & obss,
+                            const gh::rprocs& pss);
   
   
   

@@ -381,15 +381,14 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
         }
 
         // Copy the overlap to the local processor
-        const ggf<dim>* ff = arrdata.at(gindex).at(Carpet::map).data.at(var);
-        const gdata<dim>* const data = (*ff) (-request->timelevel,
-                                              refinementlevel,
-                                              component, mglevel);
-        gdata<dim>* const processor_component =
-          data->make_typed (request->vindex);
+        const ggf* ff = arrdata.at(gindex).at(Carpet::map).data.at(var);
+        const gdata* const data = (*ff) (-request->timelevel,
+                                         refinementlevel,
+                                         component, mglevel);
+        gdata* const processor_component = data->make_typed (request->vindex);
 
         processor_component->allocate (overlap, 0);
-        for (comm_state<dim> state; !state.done(); state.step())
+        for (comm_state state; !state.done(); state.step())
         {
           processor_component->copy_from (state, data, overlap);
         }

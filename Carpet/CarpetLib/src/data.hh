@@ -19,14 +19,10 @@ using namespace std;
 
 
 // A distributed multi-dimensional array
-template<class T,int D>
-class data: public gdata<D>
+template<typename T>
+class data: public gdata
 {
   
-  // Types
-  typedef vect<int,D> ivect;
-  typedef bbox<int,D> ibbox;
-
   // Fields
   T* _storage;			// the data (if located on this processor)
   size_t _allocated_bytes;      // number of allocated bytes
@@ -68,7 +64,7 @@ public:
   virtual void allocate (const ibbox& extent, const int proc,
 			 void* const mem=0);
   virtual void free ();
-  virtual void transfer_from (gdata<D>* gsrc);
+  virtual void transfer_from (gdata* gsrc);
 
 private:
   T* vectordata (const int vectorindex) const;
@@ -76,13 +72,13 @@ public:
 
   // Processor management
 private:
-  virtual void change_processor_recv (comm_state<D>& state,
+  virtual void change_processor_recv (comm_state& state,
                                       const int newproc,
                                       void* const mem=0);
-  virtual void change_processor_send (comm_state<D>& state,
+  virtual void change_processor_send (comm_state& state,
                                       const int newproc,
                                       void* const mem=0);
-  virtual void change_processor_wait (comm_state<D>& state,
+  virtual void change_processor_wait (comm_state& state,
                                       const int newproc,
                                       void* const mem=0);
 public:
@@ -115,13 +111,16 @@ public:
   // Data manipulators
 private:
   static void
-  fill_bbox_arrays (int srcshp[D], int dstshp[D],
-                    int srcbbox[D][D], int dstbbox[D][D], int regbbox[D][D],
+  fill_bbox_arrays (int srcshp[dim],
+                    int dstshp[dim],
+                    int srcbbox[dim][dim],
+                    int dstbbox[dim][dim],
+                    int regbbox[dim][dim],
                     const ibbox & box, const ibbox & sext, const ibbox & dext);
 public:
-  void copy_from_innerloop (const gdata<D>* gsrc,
+  void copy_from_innerloop (const gdata* gsrc,
 			    const ibbox& box);
-  void interpolate_from_innerloop (const vector<const gdata<D>*> gsrcs,
+  void interpolate_from_innerloop (const vector<const gdata*> gsrcs,
 				   const vector<CCTK_REAL> times,
 				   const ibbox& box, const CCTK_REAL time,
 				   const int order_space,
@@ -133,15 +132,15 @@ public:
   // Output
   ostream& output (ostream& os) const;
 private:
-  bool interpolate_in_time (const vector<const gdata<D>*> & gsrcs,
+  bool interpolate_in_time (const vector<const gdata*> & gsrcs,
                                    const vector<CCTK_REAL> & times,
                                    const ibbox& box, const CCTK_REAL time,
                                    const int order_space,
                                    const int order_time);
-  void interpolate_restrict (const vector<const data<T,D>*> & gsrcs,
+  void interpolate_restrict (const vector<const data<T>*> & gsrcs,
                               const vector<CCTK_REAL> & times,
                               const ibbox& box);
-  void interpolate_prolongate (const vector<const data<T,D>*> & gsrcs,
+  void interpolate_prolongate (const vector<const data<T>*> & gsrcs,
                               const vector<CCTK_REAL> & times,
                               const ibbox& box, const CCTK_REAL time,
                               const int order_space,
@@ -155,8 +154,8 @@ private:
 
 // Declare a specialisation
 template<>
-void data<CCTK_REAL8,3>
-::interpolate_from_innerloop (const vector<const gdata<3>*> gsrcs,
+void data<CCTK_REAL8>
+::interpolate_from_innerloop (const vector<const gdata*> gsrcs,
                               const vector<CCTK_REAL> times,
                               const ibbox& box, const CCTK_REAL time,
                               const int order_space,

@@ -20,10 +20,10 @@ namespace CarpetRegrid {
   
   
   int ManualCoordinates (cGH const * const cctkGH,
-                         gh<dim> const & hh,
-                         gh<dim>::rexts  & bbsss,
-                         gh<dim>::rbnds  & obss,
-                         gh<dim>::rprocs & pss)
+                         gh const & hh,
+                         gh::rexts  & bbsss,
+                         gh::rbnds  & obss,
+                         gh::rprocs & pss)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -56,14 +56,14 @@ namespace CarpetRegrid {
       bbvect const ob (false);
       
       vector<ibbox> bbs;
-      gh<dim>::cbnds obs;
+      gh::cbnds obs;
       
       ManualCoordinates_OneLevel
         (cctkGH, hh, rl, refinement_levels,
          lower.at(rl-1), upper.at(rl-1), ob, bbs, obs);
       
       // make multiprocessor aware
-      gh<dim>::cprocs ps;
+      gh::cprocs ps;
       SplitRegions (cctkGH, bbs, obs, ps);
       
       // make multigrid aware
@@ -82,7 +82,7 @@ namespace CarpetRegrid {
   
   
   void ManualCoordinates_OneLevel (const cGH * const cctkGH,
-                                   const gh<dim> & hh,
+                                   const gh & hh,
                                    const int rl,
                                    const int numrl,
                                    const rvect lower,
@@ -102,7 +102,7 @@ namespace CarpetRegrid {
   
   
   
-  ivect delta2int (const cGH * const cctkGH, const gh<dim>& hh,
+  ivect delta2int (const cGH * const cctkGH, const gh& hh,
                    const rvect & rpos, const int rl)
   {
     rvect global_lower, global_upper;
@@ -132,7 +132,7 @@ namespace CarpetRegrid {
   
   
   
-  ivect pos2int (const cGH* const cctkGH, const gh<dim>& hh,
+  ivect pos2int (const cGH* const cctkGH, const gh& hh,
                  const rvect & rpos, const int rl)
   {
     rvect global_lower, global_upper;

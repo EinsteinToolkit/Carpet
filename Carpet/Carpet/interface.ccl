@@ -77,9 +77,9 @@ USES FUNCTION ConvertFromExteriorBoundary
 
 # The true prototype of the routine below:
 #   int Carpet_Regrid (const cGH * cctkGH,
-#                      gh<dim>::rexts  * bbsss,
-#                      gh<dim>::rbnds  * obss,
-#                      gh<dim>::rprocs * pss);
+#                      gh::rexts  * bbsss,
+#                      gh::rbnds  * obss,
+#                      gh::rprocs * pss);
 CCTK_INT FUNCTION Carpet_Regrid (CCTK_POINTER_TO_CONST IN cctkGH,  \
                                  CCTK_POINTER IN bbsss,            \
                                  CCTK_POINTER IN obss,             \

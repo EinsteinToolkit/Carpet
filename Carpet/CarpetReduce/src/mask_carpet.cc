@@ -42,8 +42,8 @@ namespace CarpetMask {
       ivect const izero = ivect(0);
       ivect const ione  = ivect(1);
       
-      gh<dim> const & hh = *vhh.at(Carpet::map);
-      dh<dim> const & dd = *vdd.at(Carpet::map);
+      gh const & hh = *vhh.at(Carpet::map);
+      dh const & dd = *vdd.at(Carpet::map);
       
       ibbox const & base = hh.bases().at(reflevel).at(mglevel);
       

@@ -28,11 +28,11 @@ namespace CarpetRegrid {
     
     const cGH * const cctkGH = (const cGH *) cctkGH_;
     
-    gh<dim>::rexts  & bbsss = * (gh<dim>::rexts  *) bbsss_;
-    gh<dim>::rbnds  & obss  = * (gh<dim>::rbnds  *) obss_;
-    gh<dim>::rprocs & pss   = * (gh<dim>::rprocs *) pss_;
+    gh::rexts  & bbsss = * (gh::rexts  *) bbsss_;
+    gh::rbnds  & obss  = * (gh::rbnds  *) obss_;
+    gh::rprocs & pss   = * (gh::rprocs *) pss_;
     
-    gh<dim> const & hh = *vhh.at(Carpet::map);
+    gh const & hh = *vhh.at(Carpet::map);
     
     assert (is_singlemap_mode());
     

@@ -18,10 +18,10 @@ namespace CarpetRegrid {
   
   
   int BaseLevel (cGH const * const cctkGH,
-                 gh<dim> const & hh,
-                 gh<dim>::rexts  & bbsss,
-                 gh<dim>::rbnds  & obss,
-                 gh<dim>::rprocs & pss)
+                 gh const & hh,
+                 gh::rexts  & bbsss,
+                 gh::rbnds  & obss,
+                 gh::rprocs & pss)
   {
     DECLARE_CCTK_PARAMETERS;
     

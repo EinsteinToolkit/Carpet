@@ -40,7 +40,7 @@ namespace CarpetInterp {
   static inline int ind_rc_(int const m,
                             int const rl, int const minrl, int const maxrl,
                             int const c, int const maxncomps,
-                            vector<gh<dim> *> const hh)
+                            vector<gh*> const hh)
   {
     assert (m>=0 && m<maps);
     assert (rl>=minrl && rl<maxrl);
@@ -59,7 +59,7 @@ namespace CarpetInterp {
                              int const rl, int const minrl, int const maxrl,
                              int const c, int const maxncomps,
                              cGH const * const cgh,
-                             vector<gh<dim> *> const hh)
+                             vector<gh*> const hh)
   {
     assert (p>=0 && p<nprocs);
     assert (nprocs==CCTK_nProcs(cgh));
@@ -307,8 +307,7 @@ namespace CarpetInterp {
     
     
     // Create coordinate patches
-    vector<data<CCTK_REAL,dim> > allcoords
-      (nprocs * (maxrl-minrl) * maxncomps);
+    vector<data<CCTK_REAL> > allcoords (nprocs * (maxrl-minrl) * maxncomps);
     for (int p=0; p<nprocs; ++p) {
       for (int rl=minrl; rl<maxrl; ++rl) {
         for (int c=0; c<vhh.at(m)->components(rl); ++c) {
@@ -348,7 +347,7 @@ namespace CarpetInterp {
     }
     
     // Transfer coordinate patches
-    for (comm_state<dim> state; !state.done(); state.step()) {
+    for (comm_state state; !state.done(); state.step()) {
       for (int p=0; p<nprocs; ++p) {
         for (int rl=minrl; rl<maxrl; ++rl) {
           for (int c=0; c<vhh.at(m)->components(rl); ++c) {
@@ -362,9 +361,9 @@ namespace CarpetInterp {
     
     
     // Create output patches
-    vector<data<CCTK_REAL,dim> > alloutputs
+    vector<data<CCTK_REAL> > alloutputs
       (nprocs * (maxrl-minrl) * maxncomps, -1);
-    vector<data<CCTK_INT,dim> > allstatuses
+    vector<data<CCTK_INT> > allstatuses
       (nprocs * (maxrl-minrl) * maxncomps, -1);
     for (int p=0; p<nprocs; ++p) {
       for (int rl=minrl; rl<maxrl; ++rl) {
@@ -756,7 +755,7 @@ namespace CarpetInterp {
     
     
     // Transfer output patches back
-    for (comm_state<dim> state; !state.done(); state.step()) {
+    for (comm_state state; !state.done(); state.step()) {
       for (int p=0; p<nprocs; ++p) {
         for (int rl=minrl; rl<maxrl; ++rl) {
           for (int c=0; c<vhh.at(m)->components(rl); ++c) {

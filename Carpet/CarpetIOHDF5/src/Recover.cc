@@ -514,14 +514,14 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
       {
         did_read_something = true;
 
-        ggf<dim>* ff = 0;
+        ggf* ff = 0;
 
         assert (var < (int)arrdata.at(group).at(Carpet::map).data.size());
-        ff = (ggf<dim>*)arrdata.at(group).at(Carpet::map).data.at(var);
+        ff = (ggf*)arrdata.at(group).at(Carpet::map).data.at(var);
 
         if(called_from_recovery) tl = group_timelevel;
 
-        gdata<dim>* const data = (*ff) (tl, reflevel, component, mglevel);
+        gdata* const data = (*ff) (tl, reflevel, component, mglevel);
 
         // Create temporary data storage on processor 0
         vect<int,dim> str = vect<int,dim>(maxreflevelfact/reflevelfact);
@@ -533,7 +533,7 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
         vect<int,dim> ub
           = lb + (vect<int,dim>::ref(amr_dims) - 1) * str;
 
-        gdata<dim>* const tmp = data->make_typed (vindex);
+        gdata* const tmp = data->make_typed (vindex);
 
 
         cGroup cgdata;
@@ -604,7 +604,7 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
         MPI_Barrier(MPI_COMM_WORLD);
 
         // Copy into grid function
-        for (comm_state<dim> state; !state.done(); state.step())
+        for (comm_state state; !state.done(); state.step())
         {
           data->copy_from (state, tmp, overlap);
         }
@@ -757,7 +757,7 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
   {
     for (int m=0; m<Carpet::maps; ++m)
     {
-      dh<dim>& thedd = *arrdata.at(group).at(m).dd;
+      dh& thedd = *arrdata.at(group).at(m).dd;
       ibset all_exterior;
       for (size_t c=0; c<thedd.boxes.at(rl).size(); ++c)
       {

@@ -18,10 +18,10 @@ namespace CarpetRegrid {
   
   
   int Centre (cGH const * const cctkGH,
-              gh<dim> const & hh,
-              gh<dim>::rexts  & bbsss,
-              gh<dim>::rbnds  & obss,
-              gh<dim>::rprocs & pss)
+              gh const & hh,
+              gh::rexts  & bbsss,
+              gh::rbnds  & obss,
+              gh::rprocs & pss)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -67,11 +67,11 @@ namespace CarpetRegrid {
       bbs.at(0) = bb;
       
       bbvect const ob (false);
-      gh<dim>::cbnds obs (1);
+      gh::cbnds obs (1);
       obs.at(0) = ob;
       
       // make multiprocessor aware
-      gh<dim>::cprocs ps;
+      gh::cprocs ps;
       SplitRegions (cctkGH, bbs, obs, ps);
       
       // make multigrid aware

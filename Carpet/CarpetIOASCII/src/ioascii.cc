@@ -73,22 +73,22 @@ namespace CarpetIOASCII {
 
 
 
-  template<int D,int DD>
+  template<int outdim>
   void WriteASCII (ostream& os,
-		   const gdata<D>* const gfdata,
-		   const bbox<int,D>& gfext,
+		   const gdata* const gfdata,
+		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
-		   const vect<int,D>& org,
-		   const vect<int,DD>& dirs,
+		   const vect<int,dim>& org,
+		   const vect<int,outdim>& dirs,
 		   const int rl,
 		   const int ml,
 		   const int m,
 		   const int c,
 		   const int tl,
 		   const CCTK_REAL coord_time,
-		   const vect<CCTK_REAL,D>& coord_lower,
-		   const vect<CCTK_REAL,D>& coord_upper);
+		   const vect<CCTK_REAL,dim>& coord_lower,
+		   const vect<CCTK_REAL,dim>& coord_upper);
 
 
 
@@ -495,16 +495,16 @@ namespace CarpetIOASCII {
             // refinement level and map
             BEGIN_COMPONENT_LOOP(cgh, grouptype) {
 
-              const ggf<dim>* ff = 0;
+              const ggf* ff = 0;
 
               assert (var < (int)arrdata.at(group).at(Carpet::map).data.size());
-              ff = (ggf<dim>*)arrdata.at(group).at(Carpet::map).data.at(var);
+              ff = (ggf*)arrdata.at(group).at(Carpet::map).data.at(var);
 
               const int mintl = output_all_timelevels ? 1-num_tl : 0;
               const int maxtl = 0;
               for (int tl=mintl; tl<=maxtl; ++tl) {
 
-                const gdata<dim>* const data
+                const gdata* const data
                   = (*ff) (tl, rl, component, mglevel);
                 ibbox ext = data->extent();
 
@@ -983,24 +983,24 @@ namespace CarpetIOASCII {
 
 
   // Output
-  template<int D,int DD>
+  template<int outdim>
   void WriteASCII (ostream& os,
-		   const gdata<D>* const gfdata,
-		   const bbox<int,D>& gfext,
+		   const gdata* const gfdata,
+		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
-		   const vect<int,D>& org,
-		   const vect<int,DD>& dirs,
+		   const vect<int,dim>& org,
+		   const vect<int,outdim>& dirs,
 		   const int rl,
 		   const int ml,
                    const int m,
 		   const int c,
 		   const int tl,
 		   const CCTK_REAL coord_time,
-		   const vect<CCTK_REAL,D>& coord_lower,
-		   const vect<CCTK_REAL,D>& coord_upper)
+		   const vect<CCTK_REAL,dim>& coord_lower,
+		   const vect<CCTK_REAL,dim>& coord_upper)
   {
-    assert (DD<=D);
+    assert (outdim<=dim);
 
     if (gfdata->proc()==0) {
       // output on processor 0
@@ -1019,34 +1019,34 @@ namespace CarpetIOASCII {
            << "   time level " << tl
            << endl
 	   << "# column format: it\ttl rl c ml\t";
-	assert (D>=1 && D<=3);
+	assert (dim>=1 && dim<=3);
 	const char* const coords = "xyz";
-	for (int d=0; d<D-1; ++d) os << "i" << coords[d] << " "; os << "i" << coords[D-1];
+	for (int d=0; d<dim-1; ++d) os << "i" << coords[d] << " "; os << "i" << coords[dim-1];
 	os << "\ttime\t";
-	for (int d=0; d<D-1; ++d) os << coords[d] << " "; os << coords[D-1];
+	for (int d=0; d<dim-1; ++d) os << coords[d] << " "; os << coords[dim-1];
 	os << "\tdata" << endl;
 
-	const vect<int,DD> lo = gfext.lower()[dirs];
-	const vect<int,DD> up = gfext.upper()[dirs];
-	const vect<int,DD> str = gfext.stride()[dirs];
-	const bbox<int,DD> ext(lo,up,str);
+	const vect<int,outdim> lo = gfext.lower()[dirs];
+	const vect<int,outdim> up = gfext.upper()[dirs];
+	const vect<int,outdim> str = gfext.stride()[dirs];
+	const bbox<int,outdim> ext(lo,up,str);
 
 	// Check whether the output origin is contained in the extent
 	// of the data that should be output
 	ivect org1(org);
-	for (int d=0; d<DD; ++d) org1[dirs[d]] = ext.lower()[d];
+	for (int d=0; d<outdim; ++d) org1[dirs[d]] = ext.lower()[d];
 	if (gfext.contains(org1)) {
 
-          typename bbox<int,DD>::iterator it=ext.begin();
+          typename bbox<int,outdim>::iterator it=ext.begin();
           do {
 
 	    ivect index(org);
-	    for (int d=0; d<DD; ++d) index[dirs[d]] = (*it)[d];
+	    for (int d=0; d<outdim; ++d) index[dirs[d]] = (*it)[d];
 	    os << time << "\t" << tl << " " << rl << " " << c << " " << ml
                << "\t";
-	    for (int d=0; d<D-1; ++d) os << index[d] << " "; os << index[D-1];
+	    for (int d=0; d<dim-1; ++d) os << index[d] << " "; os << index[dim-1];
 	    os << "\t" << coord_time << "\t";
-	    for (int d=0; d<D; ++d) {
+	    for (int d=0; d<dim; ++d) {
 	      assert (gfext.upper()[d] - gfext.lower()[d] >= 0);
 	      if (gfext.upper()[d] - gfext.lower()[d] == 0) {
                 os << coord_lower[d];
@@ -1057,13 +1057,13 @@ namespace CarpetIOASCII {
                        (coord_lower[d] + (index[d] - gfext.lower()[d]) * dx,
                         dx * 1.0e-8));
               }
-              if (d != D-1) os << " ";
+              if (d != dim-1) os << " ";
 	    }
 	    os << "\t";
 	    switch (CCTK_VarTypeI(vi)) {
 #define TYPECASE(N,T)					\
 	    case N:					\
-	      os << (*(const data<T,D>*)gfdata)[index];	\
+	      os << (*(const data<T>*)gfdata)[index];	\
 	      break;
 #include "carpet_typecase.hh"
 #undef TYPECASE
@@ -1074,7 +1074,7 @@ namespace CarpetIOASCII {
 
             ++it;
 
-	    for (int d=0; d<DD; ++d) {
+	    for (int d=0; d<outdim; ++d) {
 	      if ((*it)[d]!=(*ext.end())[d]) break;
 	      os << endl;
 	    }
@@ -1094,9 +1094,9 @@ namespace CarpetIOASCII {
     } else {
       // copy to processor 0 and output there
 
-      gdata<D>* const tmp = gfdata->make_typed(vi);
+      gdata* const tmp = gfdata->make_typed(vi);
       tmp->allocate(gfdata->extent(), 0);
-      for (comm_state<dim> state; !state.done(); state.step()) {
+      for (comm_state state; !state.done(); state.step()) {
         tmp->copy_from (state, gfdata, gfdata->extent());
       }
       WriteASCII (os, tmp, gfext, vi, time, org, dirs, rl, ml, m, c, tl,
@@ -1118,11 +1118,11 @@ namespace CarpetIOASCII {
 
   template
   void WriteASCII (ostream& os,
-		   const gdata<3>* const gfdata,
-		   const bbox<int,3>& gfext,
+		   const gdata* const gfdata,
+		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
-		   const vect<int,3>& org,
+		   const vect<int,dim>& org,
 		   const vect<int,0>& dirs,
 		   const int rl,
 		   const int ml,
@@ -1130,16 +1130,16 @@ namespace CarpetIOASCII {
 		   const int c,
 		   const int tl,
 		   const CCTK_REAL coord_time,
-		   const vect<CCTK_REAL,3>& coord_lower,
-		   const vect<CCTK_REAL,3>& coord_upper);
+		   const vect<CCTK_REAL,dim>& coord_lower,
+		   const vect<CCTK_REAL,dim>& coord_upper);
 
   template
   void WriteASCII (ostream& os,
-		   const gdata<3>* const gfdata,
-		   const bbox<int,3>& gfext,
+		   const gdata* const gfdata,
+		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
-		   const vect<int,3>& org,
+		   const vect<int,dim>& org,
 		   const vect<int,1>& dirs,
 		   const int rl,
 		   const int ml,
@@ -1147,16 +1147,16 @@ namespace CarpetIOASCII {
 		   const int c,
 		   const int tl,
 		   const CCTK_REAL coord_time,
-		   const vect<CCTK_REAL,3>& coord_lower,
-		   const vect<CCTK_REAL,3>& coord_upper);
+		   const vect<CCTK_REAL,dim>& coord_lower,
+		   const vect<CCTK_REAL,dim>& coord_upper);
 
   template
   void WriteASCII (ostream& os,
-		   const gdata<3>* const gfdata,
-		   const bbox<int,3>& gfext,
+		   const gdata* const gfdata,
+		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
-		   const vect<int,3>& org,
+		   const vect<int,dim>& org,
 		   const vect<int,2>& dirs,
 		   const int rl,
 		   const int ml,
@@ -1164,16 +1164,16 @@ namespace CarpetIOASCII {
 		   const int c,
 		   const int tl,
 		   const CCTK_REAL coord_time,
-		   const vect<CCTK_REAL,3>& coord_lower,
-		   const vect<CCTK_REAL,3>& coord_upper);
+		   const vect<CCTK_REAL,dim>& coord_lower,
+		   const vect<CCTK_REAL,dim>& coord_upper);
 
   template
   void WriteASCII (ostream& os,
-		   const gdata<3>* const gfdata,
-		   const bbox<int,3>& gfext,
+		   const gdata* const gfdata,
+		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
-		   const vect<int,3>& org,
+		   const vect<int,dim>& org,
 		   const vect<int,3>& dirs,
 		   const int rl,
 		   const int ml,
@@ -1181,7 +1181,7 @@ namespace CarpetIOASCII {
 		   const int c,
 		   const int tl,
 		   const CCTK_REAL coord_time,
-		   const vect<CCTK_REAL,3>& coord_lower,
-		   const vect<CCTK_REAL,3>& coord_upper);
+		   const vect<CCTK_REAL,dim>& coord_lower,
+		   const vect<CCTK_REAL,dim>& coord_upper);
 
 } // namespace CarpetIOASCII

@@ -16,10 +16,9 @@ using namespace std;
 
 
   // Constructors
-template<int D>
-gh<D>::gh (const int reffact, const centering refcent,
-	   const int mgfact, const centering mgcent,
-           const ibbox baseextent)
+gh::gh (const int reffact, const centering refcent,
+        const int mgfact, const centering mgcent,
+        const ibbox baseextent)
   : reffact(reffact), refcent(refcent),
     mgfact(mgfact), mgcent(mgcent),
     baseextent(baseextent)
@@ -27,15 +26,13 @@ gh<D>::gh (const int reffact, const centering refcent,
 }
 
 // Destructors
-template<int D>
-gh<D>::~gh () { }
+gh::~gh () { }
 
 // Modifiers
-template<int D>
-void gh<D>::recompose (const rexts& exts,
-                       const rbnds& outer_bounds,
-		       const rprocs& procs,
-                       const bool do_prolongate)
+void gh::recompose (const rexts& exts,
+                    const rbnds& outer_bounds,
+                    const rprocs& procs,
+                    const bool do_prolongate)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -62,17 +59,16 @@ void gh<D>::recompose (const rexts& exts,
   
   // Recompose the other hierarchies
   
-  for (typename list<th<D>*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
+  for (list<th*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
     (*t)->recompose();
   }
   
-  for (typename list<dh<D>*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
+  for (list<dh*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
     (*d)->recompose (do_prolongate);
   }
 }
 
-template<int D>
-void gh<D>::check_processor_number_consistency () {
+void gh::check_processor_number_consistency () {
   for (int rl=0; rl<reflevels(); ++rl) {
     assert (processors().size() == extents().size());
     assert (outer_boundaries().size() == extents().size());
@@ -83,8 +79,7 @@ void gh<D>::check_processor_number_consistency () {
   }
 }
   
-template<int D>
-void gh<D>::check_multigrid_consistency () {
+void gh::check_multigrid_consistency () {
   for (int rl=0; rl<reflevels(); ++rl) {
     for (int c=0; c<components(rl); ++c) {
       assert (mglevels(rl,c)>0);
@@ -103,8 +98,7 @@ void gh<D>::check_multigrid_consistency () {
   }
 }
   
-template<int D>
-void gh<D>::check_component_consistency () {
+void gh::check_component_consistency () {
   for (int rl=0; rl<reflevels(); ++rl) {
     assert (components(rl)>0);
     for (int c=0; c<components(rl); ++c) {
@@ -121,8 +115,7 @@ void gh<D>::check_component_consistency () {
   }
 }
 
-template<int D>
-void gh<D>::check_base_grid_extent () {
+void gh::check_base_grid_extent () {
   if (reflevels()>0) {
     for (int c=0; c<components(0); ++c) {
       // TODO: put the check back in, taking outer boundaries into
@@ -134,14 +127,13 @@ void gh<D>::check_base_grid_extent () {
   }
 }
   
-template<int D>
-void gh<D>::check_refinement_levels () {
+void gh::check_refinement_levels () {
   for (int rl=1; rl<reflevels(); ++rl) {
     assert (all(extents().at(rl-1).at(0).at(0).stride()
 		== ivect(reffact) * extents().at(rl).at(0).at(0).stride()));
     // Check contained-ness:
     // first take all coarse grids ...
-    bboxset<int,D> all;
+    ibset all;
     for (int c=0; c<components(rl-1); ++c) {
       all |= extents().at(rl-1).at(c).at(0);
     }
@@ -156,8 +148,7 @@ void gh<D>::check_refinement_levels () {
   }
 }
 
-template<int D>
-void gh<D>::calculate_base_extents_of_all_levels () {
+void gh::calculate_base_extents_of_all_levels () {
   _bases.resize(reflevels());
   for (int rl=0; rl<reflevels(); ++rl) {
     if (components(rl)==0) {
@@ -176,8 +167,7 @@ void gh<D>::calculate_base_extents_of_all_levels () {
 }
 
 // Accessors
-template<int D>
-int gh<D>::local_components (const int rl) const {
+int gh::local_components (const int rl) const {
   int lc = 0;
   for (int c=0; c<components(rl); ++c) {
     if (is_local(rl,c)) ++lc;
@@ -188,32 +178,27 @@ int gh<D>::local_components (const int rl) const {
 
 
 // Time hierarchy management
-template<int D>
-void gh<D>::add (th<D>* t) {
+void gh::add (th* t) {
   ths.push_back(t);
 }
 
-template<int D>
-void gh<D>::remove (th<D>* t) {
+void gh::remove (th* t) {
   ths.remove(t);
 }
 
 
 
 // Data hierarchy management
-template<int D>
-void gh<D>::add (dh<D>* d) {
+void gh::add (dh* d) {
   dhs.push_back(d);
 }
 
-template<int D>
-void gh<D>::remove (dh<D>* d) {
+void gh::remove (dh* d) {
   dhs.remove(d);
 }
 
 
-template<int D>
-void gh<D>::do_output_bboxes (ostream& os) const {
+void gh::do_output_bboxes (ostream& os) const {
   for (int rl=0; rl<reflevels(); ++rl) {
     for (int c=0; c<components(rl); ++c) {
       for (int ml=0; ml<mglevels(rl,c); ++ml) {
@@ -228,8 +213,7 @@ void gh<D>::do_output_bboxes (ostream& os) const {
   }
 }
 
-template<int D>
-void gh<D>::do_output_bases (ostream& os) const {
+void gh::do_output_bases (ostream& os) const {
   for (int rl=0; rl<reflevels(); ++rl) {
     if (components(rl)>0) {
       for (int ml=0; ml<mglevels(rl,0); ++ml) {
@@ -242,9 +226,8 @@ void gh<D>::do_output_bases (ostream& os) const {
   }
 }
 
-template<int D>
-ostream& gh<D>::output (ostream& os) const {
-  os << "gh<" << D << ">:"
+ostream& gh::output (ostream& os) const {
+  os << "gh:"
      << "reffactor=" << reffact << ",refcentering=" << refcent << ","
      << "mgfactor=" << mgfact << ",mgcentering=" << mgcent << ","
      << "extents=" << extents() << ","
@@ -252,7 +235,7 @@ ostream& gh<D>::output (ostream& os) const {
      << "processors=" << processors() << ","
      << "dhs={";
   const char * sep = "";
-  for (typename list<dh<D>*>::const_iterator d = dhs.begin();
+  for (list<dh*>::const_iterator d = dhs.begin();
        d != dhs.end(); ++d)
   {
     os << sep;
@@ -262,7 +245,3 @@ ostream& gh<D>::output (ostream& os) const {
   os << "}";
   return os;
 }
-
-
-
-template class gh<3>;

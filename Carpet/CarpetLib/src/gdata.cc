@@ -20,14 +20,12 @@ using namespace std;
 
 
 // Communication state control
-template<int D>
-comm_state<D>::comm_state ()
+comm_state::comm_state ()
   : thestate(state_recv)
 {
 }
 
-template<int D>
-void comm_state<D>::step ()
+void comm_state::step ()
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -73,14 +71,12 @@ void comm_state<D>::step ()
   }
 }
 
-template<int D>
-bool comm_state<D>::done ()
+bool comm_state::done ()
 {
   return thestate==state_done;
 }
 
-template<int D>
-comm_state<D>::~comm_state ()
+comm_state::~comm_state ()
 {
   assert (thestate==state_recv || thestate==state_done);
   assert (tmps1.empty());
@@ -105,8 +101,7 @@ static int nexttag ()
 
 
 // Constructors
-template<int D>
-gdata<D>::gdata (const int varindex_, const operator_type transport_operator_)
+gdata::gdata (const int varindex_, const operator_type transport_operator_)
   : varindex(varindex_), transport_operator(transport_operator_),
     _has_storage(false),
     comm_active(false),
@@ -119,8 +114,7 @@ gdata<D>::gdata (const int varindex_, const operator_type transport_operator_)
 }
 
 // Destructors
-template<int D>
-gdata<D>::~gdata ()
+gdata::~gdata ()
 {
   DECLARE_CCTK_PARAMETERS;
   if (barriers) {
@@ -129,8 +123,7 @@ gdata<D>::~gdata ()
 }
 
 // Assignment
-template<int D>
-gdata<D> & gdata<D>::operator= (gdata const & from)
+gdata & gdata::operator= (gdata const & from)
 {
   return * this = from;
 }
@@ -138,10 +131,9 @@ gdata<D> & gdata<D>::operator= (gdata const & from)
 
 
 // Processor management
-template<int D>
-void gdata<D>::change_processor (comm_state<D>& state,
-                                 const int newproc,
-                                 void* const mem)
+void gdata::change_processor (comm_state& state,
+                              const int newproc,
+                              void* const mem)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -172,9 +164,8 @@ void gdata<D>::change_processor (comm_state<D>& state,
 
 
 // Data manipulators
-template<int D>
-void gdata<D>::copy_from (comm_state<D>& state,
-                          const gdata* src, const ibbox& box)
+void gdata::copy_from (comm_state& state,
+                       const gdata* src, const ibbox& box)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -204,8 +195,7 @@ void gdata<D>::copy_from (comm_state<D>& state,
 
 
 
-template<int D>
-void gdata<D>::copy_from_nocomm (const gdata* src, const ibbox& box)
+void gdata::copy_from_nocomm (const gdata* src, const ibbox& box)
 {
   assert (has_storage() && src->has_storage());
   assert (all(box.lower()>=extent().lower()
@@ -230,9 +220,8 @@ void gdata<D>::copy_from_nocomm (const gdata* src, const ibbox& box)
 
 
 
-template<int D>
-void gdata<D>::copy_from_recv (comm_state<D>& state,
-                               const gdata* src, const ibbox& box)
+void gdata::copy_from_recv (comm_state& state,
+                            const gdata* src, const ibbox& box)
 {
   assert (has_storage() && src->has_storage());
   assert (all(box.lower()>=extent().lower()
@@ -255,7 +244,7 @@ void gdata<D>::copy_from_recv (comm_state<D>& state,
     
     // copy to different processor
     wtime_copyfrom_recv_maketyped.start();
-    gdata<D>* const tmp = make_typed(varindex, transport_operator);
+    gdata* const tmp = make_typed(varindex, transport_operator);
     wtime_copyfrom_recv_maketyped.stop();
     state.tmps1.push (tmp);
     wtime_copyfrom_recv_allocate.start();
@@ -272,9 +261,8 @@ void gdata<D>::copy_from_recv (comm_state<D>& state,
 
 
 
-template<int D>
-void gdata<D>::copy_from_send (comm_state<D>& state,
-                               const gdata* src, const ibbox& box)
+void gdata::copy_from_send (comm_state& state,
+                            const gdata* src, const ibbox& box)
 {
   assert (has_storage() && src->has_storage());
   assert (all(box.lower()>=extent().lower()
@@ -300,7 +288,7 @@ void gdata<D>::copy_from_send (comm_state<D>& state,
   } else {
     
     // copy to different processor
-    gdata<D>* const tmp = state.tmps1.front();
+    gdata* const tmp = state.tmps1.front();
     state.tmps1.pop();
     state.tmps2.push (tmp);
     assert (tmp);
@@ -318,9 +306,8 @@ void gdata<D>::copy_from_send (comm_state<D>& state,
 
 
 
-template<int D>
-void gdata<D>::copy_from_wait (comm_state<D>& state,
-                               const gdata* src, const ibbox& box)
+void gdata::copy_from_wait (comm_state& state,
+                            const gdata* src, const ibbox& box)
 {
   assert (has_storage() && src->has_storage());
   assert (all(box.lower()>=extent().lower()
@@ -342,7 +329,7 @@ void gdata<D>::copy_from_wait (comm_state<D>& state,
   } else {
     
     // copy to different processor
-    gdata<D>* const tmp = state.tmps2.front();
+    gdata* const tmp = state.tmps2.front();
     state.tmps2.pop();
     assert (tmp);
     wtime_copyfrom_wait_changeproc_wait.start();
@@ -362,9 +349,8 @@ void gdata<D>::copy_from_wait (comm_state<D>& state,
 
 
 
-template<int D>
-void gdata<D>
-::interpolate_from (comm_state<D>& state,
+void gdata
+::interpolate_from (comm_state& state,
                     const vector<const gdata*> srcs,
                     const vector<CCTK_REAL> times,
                     const ibbox& box, const CCTK_REAL time,
@@ -401,8 +387,7 @@ void gdata<D>
 
 
 
-template<int D>
-void gdata<D>
+void gdata
 ::interpolate_from_nocomm (const vector<const gdata*> srcs,
                            const vector<CCTK_REAL> times,
                            const ibbox& box, const CCTK_REAL time,
@@ -438,9 +423,8 @@ void gdata<D>
 
 
 
-template<int D>
-void gdata<D>
-::interpolate_from_recv (comm_state<D>& state,
+void gdata
+::interpolate_from_recv (comm_state& state,
                          const vector<const gdata*> srcs,
                          const vector<CCTK_REAL> times,
                          const ibbox& box, const CCTK_REAL time,
@@ -468,7 +452,7 @@ void gdata<D>
   } else {
     // interpolate from other processor
     
-    gdata<D>* const tmp = make_typed(varindex, transport_operator);
+    gdata* const tmp = make_typed(varindex, transport_operator);
     state.tmps1.push (tmp);
     tmp->allocate (box, srcs.at(0)->proc());
     tmp->change_processor_recv (state, proc());
@@ -478,9 +462,8 @@ void gdata<D>
 
 
 
-template<int D>
-void gdata<D>
-::interpolate_from_send (comm_state<D>& state,
+void gdata
+::interpolate_from_send (comm_state& state,
                          const vector<const gdata*> srcs,
                          const vector<CCTK_REAL> times,
                          const ibbox& box, const CCTK_REAL time,
@@ -510,7 +493,7 @@ void gdata<D>
   } else {
     // interpolate from other processor
     
-    gdata<D>* const tmp = state.tmps1.front();
+    gdata* const tmp = state.tmps1.front();
     state.tmps1.pop();
     state.tmps2.push (tmp);
     assert (tmp);
@@ -522,9 +505,8 @@ void gdata<D>
 
 
 
-template<int D>
-void gdata<D>
-::interpolate_from_wait (comm_state<D>& state,
+void gdata
+::interpolate_from_wait (comm_state& state,
                          const vector<const gdata*> srcs,
                          const vector<CCTK_REAL> times,
                          const ibbox& box, const CCTK_REAL time,
@@ -552,7 +534,7 @@ void gdata<D>
   } else {
     // interpolate from other processor
     
-    gdata<D>* const tmp = state.tmps2.front();
+    gdata* const tmp = state.tmps2.front();
     state.tmps2.pop();
     assert (tmp);
     tmp->change_processor_wait (state, proc());
@@ -561,8 +543,3 @@ void gdata<D>
     
   }
 }
-
-
-
-template class comm_state<3>;
-template class gdata<3>;

@@ -18,28 +18,23 @@ using namespace std;
 
 
 // Forward declaration
-template<int D> class ggf;
-template<int D> class dh;
+class ggf;
+class dh;
 
 // Output
-template<int D>
-ostream& operator<< (ostream& os, const dh<D>& d);
+ostream& operator<< (ostream& os, const dh& d);
 
 
 
 // A data hierarchy (grid hierarchy plus ghost zones)
-template<int D>
 class dh {
   
   // Types
-  typedef vect<int,D>    ivect;
-  typedef bbox<int,D>    ibbox;
-  typedef bboxset<int,D> ibset;
-  typedef list<ibbox>    iblist;
 public:
+  typedef list<ibbox>    iblist;
   typedef vector<iblist> iblistvect; // vector of lists
-  
-  
+
+
   // in here, the term "boundary" means both ghost zones and
   // refinement boundaries, but does not refer to outer (physical)
   // boundaries.
@@ -97,7 +92,7 @@ private:
                                  // generic member function taking a dboxes,
                                  // a refinement level, a component, and a 
                                  // multigrid level
-  typedef void    (dh<D>::*boxesop)( dboxes &, int rl, int c, int ml ); 
+  typedef void    (dh::*boxesop)( dboxes &, int rl, int c, int ml ); 
   void foreach_reflevel_component_mglevel ( boxesop op );
 
                                  // these all of form 'boxesop'
@@ -119,7 +114,7 @@ private:
 public:                         // should be readonly
   
   // Fields
-  gh<D>& h;                     // hierarchy
+  gh& h;                        // hierarchy
   ivect lghosts, ughosts;       // ghost zones
   
   int prolongation_order_space; // order of spatial prolongation operator
@@ -128,12 +123,12 @@ public:                         // should be readonly
   rboxes boxes;
   rbases bases;
   
-  list<ggf<D>*> gfs;            // list of all grid functions
+  list<ggf*> gfs;               // list of all grid functions
   
 public:
   
   // Constructors
-  dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts,
+  dh (gh& h, const ivect& lghosts, const ivect& ughosts,
       int prolongation_order_space, int buffer_width);
   
   // Destructors
@@ -146,8 +141,8 @@ public:
   void recompose (const bool do_prolongate);
   
   // Grid function management
-  void add (ggf<D>* f);
-  void remove (ggf<D>* f);
+  void add (ggf* f);
+  void remove (ggf* f);
   
   // Output
   virtual void output (ostream& os) const;
@@ -155,8 +150,7 @@ public:
 
 
 
-template<int D>
-inline ostream& operator<< (ostream& os, const dh<D>& d) {
+inline ostream& operator<< (ostream& os, const dh& d) {
   d.output(os);
   return os;
 }

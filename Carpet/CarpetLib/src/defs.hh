@@ -18,10 +18,36 @@
 
 #include "cctk.h"
 
+
+
 using namespace std;
+
+
+  
+// Number of dimensions
+const int dim = 3;
+  
+
+
+// Some shortcuts for type names
+template<typename T, int D> class bbox;
+template<typename T, int D> class bboxset;
+template<typename T, int D> class vect;
+
+typedef vect<bool,dim>   bvect;
+typedef vect<int,dim>    ivect;
+typedef bbox<int,dim>    ibbox;
+typedef bboxset<int,dim> ibset;
+
+typedef vect<vect<bool,2>,dim> bbvect;
+typedef vect<vect<int,2>,dim>  iivect;
+
+
 
 // A general type
 enum centering { vertex_centered, cell_centered };
+
+
 
 // Useful helper
 template<class T>

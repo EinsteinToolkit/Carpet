@@ -306,7 +306,7 @@ namespace Carpet {
                       CCTK_INT ghost_size_z);
   static ivect make_global_number_of_grid_points (CCTK_INT global_nsize,
                    CCTK_INT global_nx, CCTK_INT global_ny, CCTK_INT global_nz);
-  static void check_time_hierarchy (const vector<dh<dim>*> &vdd, int m,
+  static void check_time_hierarchy (const vector<dh*> &vdd, int m,
                       CCTK_INT max_refinement_levels,
                       CCTK_INT refinement_factor,
                       CCTK_INT prolongation_order_space,
@@ -340,7 +340,7 @@ namespace Carpet {
   static void handle_group_tags_table (cGH* cgh, int group, cGroup &gp,
                       jvect &convpowers, jvect &convoffsets);
   static void finish_initialisation (cGH* cgh);
-  static void print_grid_structure (vector<gh<dim>*> & vhh, int m);
+  static void print_grid_structure (vector<gh*> & vhh, int m);
   static void print_some_statistics (cGH* cgh);
   static void enable_storage_for_all_groups (cGH* cgh);
   static void leave_all_modes (cGH* cgh);
@@ -563,15 +563,15 @@ namespace Carpet {
     const ibbox baseext (lb, ub, str);
     
     // Allocate grid hierarchy
-    vhh.at(m) = new gh<dim> (refinement_factor, vertex_centered,
-                            convergence_factor, vertex_centered, baseext);
+    vhh.at(m) = new gh (refinement_factor, vertex_centered,
+                        convergence_factor, vertex_centered, baseext);
     
     // Allocate data hierarchy
-    vdd.at(m) = new dh<dim> (*vhh.at(m), lghosts, ughosts,
-                            prolongation_order_space, buffer_width);
+    vdd.at(m) = new dh (*vhh.at(m), lghosts, ughosts,
+                        prolongation_order_space, buffer_width);
     
     // Allocate time hierarchy
-    vtt.at(m) = new th<dim> (*vhh.at(m), 1.0);
+    vtt.at(m) = new th (*vhh.at(m), 1.0);
       
     check_time_hierarchy (vdd, m, max_refinement_levels, refinement_factor,
                              prolongation_order_space, lghosts, ughosts);
@@ -719,7 +719,7 @@ namespace Carpet {
     }
   }
 
-  void check_time_hierarchy (const vector<dh<dim>*> &vdd, int m,
+  void check_time_hierarchy (const vector<dh*> &vdd, int m,
                              CCTK_INT max_refinement_levels,
                              CCTK_INT refinement_factor,
                              CCTK_INT prolongation_order_space,
@@ -743,8 +743,10 @@ namespace Carpet {
   }
 
   void read_explicit_grid_components (CCTK_STRING base_extents,
-                                 CCTK_STRING base_outerbounds,
-                                 vector<ibbox> & bbs, vector<bbvect> & obs) { 
+                                      CCTK_STRING base_outerbounds,
+                                      vector<ibbox> & bbs,
+                                      vector<bbvect> & obs)
+  { 
     // TODO: invent something for the other convergence levels
     istringstream ext_str (base_extents);
     try {
@@ -766,7 +768,7 @@ namespace Carpet {
     assert (obs.size() == bbs.size());
   }
 
-  void print_grid_structure (vector<gh<dim>*> & vhh, int m) {
+  void print_grid_structure (vector<gh*> & vhh, int m) {
     const int rl = 0;
     for (int c=0; c<vhh.at(m)->components(rl); ++c) {
       for (int ml=0; ml<vhh.at(m)->mglevels(rl,c); ++ml) {
@@ -925,15 +927,15 @@ namespace Carpet {
       const int amgfact1 = ipow(mgfact, convpowers[0]);
       
       arrdata.at (group).at (0).hh
-        = new gh<dim> (refinement_factor, vertex_centered,
-                      amgfact1, vertex_centered,
-                      abaseext);
+        = new gh (refinement_factor, vertex_centered,
+                  amgfact1, vertex_centered,
+                  abaseext);
       
       arrdata.at (group).at (0).dd
-        = new dh<dim> (*arrdata.at (group).at (0).hh, alghosts, aughosts, 0, 0);
+        = new dh (*arrdata.at (group).at (0).hh, alghosts, aughosts, 0, 0);
       
       arrdata.at (group).at (0).tt
-        = new th<dim> (*arrdata.at (group).at (0).hh, 1.0);
+        = new th (*arrdata.at (group).at (0).hh, 1.0);
 
       
       

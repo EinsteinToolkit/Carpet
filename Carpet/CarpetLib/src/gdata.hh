@@ -21,7 +21,6 @@ using namespace std;
 
 
 
-template<int D>
 class gdata;
 
 
@@ -29,7 +28,6 @@ class gdata;
 // State information for communications
 enum astate { state_recv, state_send, state_wait, state_done };
 
-template<int D>
 struct comm_state {
   astate thestate;
   comm_state ();
@@ -43,19 +41,14 @@ private:
   comm_state& operator= (comm_state const &);
 public:
   
-  queue<gdata<D>*> tmps1, tmps2;
+  queue<gdata*> tmps1, tmps2;
   vector<MPI_Request> requests; // for use_waitall
 };
 
 
 
 // A generic data storage without type information
-template<int D>
 class gdata {
-
-  // Types
-  typedef vect<int,D> ivect;
-  typedef bbox<int,D> ibbox;
 
 protected:                      // should be readonly
 
@@ -90,7 +83,7 @@ public:
   virtual ~gdata ();
 
   // Pseudo constructors
-  virtual gdata<D>*
+  virtual gdata*
   make_typed (const int varindex,
               const operator_type transport_operator = op_error) const = 0;
   
@@ -98,26 +91,26 @@ public:
   gdata & operator= (gdata const & from);
 
   // Processor management
-  void change_processor (comm_state<D>& state,
+  void change_processor (comm_state& state,
                          const int newproc,
                          void* const mem=0);
  protected:
-  virtual void change_processor_recv (comm_state<D>& state,
+  virtual void change_processor_recv (comm_state& state,
                                       const int newproc,
                                       void* const mem=0)
     = 0;
-  virtual void change_processor_send (comm_state<D>& state,
+  virtual void change_processor_send (comm_state& state,
                                       const int newproc,
                                       void* const mem=0)
     = 0;
-  virtual void change_processor_wait (comm_state<D>& state,
+  virtual void change_processor_wait (comm_state& state,
                                       const int newproc,
                                       void* const mem=0)
     = 0;
  public:
   
   // Storage management
-  virtual void transfer_from (gdata<D>* src) = 0;
+  virtual void transfer_from (gdata* src) = 0;
   
   virtual void allocate (const ibbox& extent, const int proc,
 			 void* const mem=0) = 0;
@@ -173,18 +166,18 @@ public:
   
   // Data manipulators
  public:
-    void copy_from (comm_state<D>& state,
+    void copy_from (comm_state& state,
                     const gdata* src, const ibbox& box);
  private:
   void copy_from_nocomm (const gdata* src, const ibbox& box);
-  void copy_from_recv (comm_state<D>& state,
+  void copy_from_recv (comm_state& state,
                        const gdata* src, const ibbox& box);
-  void copy_from_send (comm_state<D>& state,
+  void copy_from_send (comm_state& state,
                        const gdata* src, const ibbox& box);
-  void copy_from_wait (comm_state<D>& state,
+  void copy_from_wait (comm_state& state,
                        const gdata* src, const ibbox& box);
  public:
-  void interpolate_from (comm_state<D>& state,
+  void interpolate_from (comm_state& state,
                          const vector<const gdata*> srcs,
                          const vector<CCTK_REAL> times,
                          const ibbox& box, const CCTK_REAL time,
@@ -196,19 +189,19 @@ public:
                                 const ibbox& box, const CCTK_REAL time,
                                 const int order_space,
                                 const int order_time);
-  void interpolate_from_recv (comm_state<D>& state,
+  void interpolate_from_recv (comm_state& state,
                               const vector<const gdata*> srcs,
                               const vector<CCTK_REAL> times,
                               const ibbox& box, const CCTK_REAL time,
                               const int order_space,
                               const int order_time);
-  void interpolate_from_send (comm_state<D>& state,
+  void interpolate_from_send (comm_state& state,
                               const vector<const gdata*> srcs,
                               const vector<CCTK_REAL> times,
                               const ibbox& box, const CCTK_REAL time,
                               const int order_space,
                               const int order_time);
-  void interpolate_from_wait (comm_state<D>& state,
+  void interpolate_from_wait (comm_state& state,
                               const vector<const gdata*> srcs,
                               const vector<CCTK_REAL> times,
                               const ibbox& box, const CCTK_REAL time,

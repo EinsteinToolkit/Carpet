@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "bbox.hh"
+#include "bboxset.hh"
 #include "defs.hh"
 #include "dist.hh"
 #include "vect.hh"
@@ -16,34 +17,27 @@ using namespace std;
 
 
 // Forward declaration
-template<int D> class dh;
-template<int D> class th;
-template<int D> class gh;
+class dh;
+class th;
+class gh;
 
 // Output
-template<int D>
-ostream& operator<< (ostream& os, const gh<D>& h);
+ostream& operator<< (ostream& os, const gh& h);
 
 
 
 // A refinement hierarchy, where higher levels are finer than the base
 // level.  The extents do not include ghost zones.
-template<int D>
 class gh {
   
 public:
   
   // Types
-  typedef vect<int,D> ivect;
-  typedef bbox<int,D> ibbox;
-  
-  typedef vect<vect<bool,2>,D> bvect;
-  
   typedef vector<ibbox> mexts;	// ... for each multigrid level
   typedef vector<mexts> cexts;	// ... for each component
   typedef vector<cexts> rexts;	// ... for each refinement level
   
-  typedef vector<bvect> cbnds;	// ... for each component
+  typedef vector<bbvect> cbnds;	// ... for each component
   typedef vector<cbnds> rbnds;	// ... for each refinement level
   
   typedef vector<int>    cprocs; // ... for each component
@@ -68,8 +62,8 @@ private:
   rbnds _outer_boundaries;	// boundary descriptions of all grids
   rprocs _processors;		// processor numbers of all grids
 
-  list<th<D>*> ths;		// list of all time hierarchies
-  list<dh<D>*> dhs;		// list of all data hierarchies
+  list<th*> ths;		// list of all time hierarchies
+  list<dh*> dhs;		// list of all data hierarchies
   
 public:
   
@@ -115,7 +109,7 @@ public:
     return (int)_extents.at(rl).at(c).size();
   }
   
-  bvect outer_boundary (const int rl, const int c) const {
+  bbvect outer_boundary (const int rl, const int c) const {
     return _outer_boundaries.at(rl).at(c);
   }
   
@@ -132,12 +126,12 @@ public:
   int local_components (const int rl) const;
   
   // Time hierarchy management
-  void add (th<D>* t);
-  void remove (th<D>* t);
+  void add (th* t);
+  void remove (th* t);
   
   // Data hierarchy management
-  void add (dh<D>* d);
-  void remove (dh<D>* d);
+  void add (dh* d);
+  void remove (dh* d);
   
   // Output
   virtual ostream& output (ostream& os) const;
@@ -156,8 +150,7 @@ private:
 
 
 
-template<int D>
-inline ostream& operator<< (ostream& os, const gh<D>& h) {
+inline ostream& operator<< (ostream& os, const gh& h) {
   h.output(os);
   return os;
 }

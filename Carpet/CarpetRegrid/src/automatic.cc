@@ -25,10 +25,10 @@ namespace CarpetRegrid {
   
   
   int Automatic (cGH const * const cctkGH,
-                 gh<dim> const & hh,
-                 gh<dim>::rexts  & bbsss,
-                 gh<dim>::rbnds  & obss,
-                 gh<dim>::rprocs & pss)
+                 gh const & hh,
+                 gh::rexts  & bbsss,
+                 gh::rbnds  & obss,
+                 gh::rprocs & pss)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -50,14 +50,14 @@ namespace CarpetRegrid {
     assert (CCTK_GroupDimI(gi) == dim);
     
     assert (arrdata.at(gi).at(Carpet::map).data.at(vi-v1));
-    const gf<CCTK_REAL,dim>& errorgf
-      = (*dynamic_cast<const gf<CCTK_REAL,dim>*>
+    const gf<CCTK_REAL>& errorgf
+      = (*dynamic_cast<const gf<CCTK_REAL>*>
          (arrdata.at(gi).at(Carpet::map).data.at(vi-v1)));
     
     assert (! smart_outer_boundaries);
     
     vector<ibbox> bbs;
-    gh<dim>::cbnds obs;
+    gh::cbnds obs;
     Automatic_OneLevel
       (cctkGH, hh,
        reflevel, min(reflevels+1, maxreflevels),
@@ -65,7 +65,7 @@ namespace CarpetRegrid {
        bbs, obs);
     
     // make multiprocessor aware
-    gh<dim>::cprocs ps;
+    gh::cprocs ps;
     SplitRegions (cctkGH, bbs, obs, ps);
     
     // make multigrid aware
@@ -100,13 +100,13 @@ namespace CarpetRegrid {
   
   
   void Automatic_OneLevel (const cGH * const cctkGH,
-                           const gh<dim> & hh,
+                           const gh & hh,
                            const int rl,
                            const int numrl,
                            const int minwidth,
                            const CCTK_REAL minfraction,
                            const CCTK_REAL maxerror,
-                           const gf<CCTK_REAL,dim> & errorgf,
+                           const gf<CCTK_REAL> & errorgf,
                            vector<ibbox> & bbs,
                            vector<bbvect> & obs)
   {
@@ -123,7 +123,7 @@ namespace CarpetRegrid {
       const ibbox region = hh.extents().at(rl).at(c).at(ml);
       assert (! region.empty());
       
-      const data<CCTK_REAL,dim>& errordata = *errorgf(tl,rl,c,ml);
+      const data<CCTK_REAL>& errordata = *errorgf(tl,rl,c,ml);
       
       Automatic_Recursive (cctkGH, hh, minwidth, minfraction, maxerror,
                            errordata, bbl, region);
@@ -168,11 +168,11 @@ namespace CarpetRegrid {
   
   
   void Automatic_Recursive (const cGH * const cctkGH,
-                            const gh<dim> & hh,
+                            const gh & hh,
                             const int minwidth,
                             const CCTK_REAL minfraction,
                             const CCTK_REAL maxerror,
-                            const data<CCTK_REAL,dim> & errordata,
+                            const data<CCTK_REAL> & errordata,
                             list<ibbox> & bbl,
                             const ibbox & region)
   {

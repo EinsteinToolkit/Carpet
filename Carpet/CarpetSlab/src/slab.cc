@@ -131,9 +131,9 @@ namespace CarpetSlab {
     }
     
     // Get insider information about variable
-    const gh<dim>* myhh;
-    const dh<dim>* mydd;
-    const ggf<dim>* myff;
+    const gh* myhh;
+    const dh* mydd;
+    const ggf* myff;
     assert (group < (int)arrdata.size());
     myhh = arrdata.at(group).at(m).hh;
     assert (myhh);
@@ -173,7 +173,7 @@ namespace CarpetSlab {
     }
     
     // Get sample data
-    const gdata<dim>* mydata;
+    const gdata* mydata;
     mydata = (*myff)(tl, rl, 0, 0);
     
     // Stride of data in memory
@@ -203,13 +203,13 @@ namespace CarpetSlab {
     
     // Create collector data object
     void* myhdata = rank==collect_proc ? hdata : 0;
-    gdata<dim>* const alldata = mydata->make_typed(-1);
+    gdata* const alldata = mydata->make_typed(-1);
     alldata->allocate (hextent, collect_proc, myhdata);
     
     // Done with the temporary stuff
     mydata = 0;
     
-    for (comm_state<dim> state; !state.done(); state.step()) {
+    for (comm_state state; !state.done(); state.step()) {
       
       // Loop over all components, copying data from them
       BEGIN_LOCAL_COMPONENT_LOOP (cgh, gp.grouptype) {
@@ -239,8 +239,8 @@ namespace CarpetSlab {
     
     // Copy result to all processors
     if (dest_proc == -1) {
-      vector<gdata<dim>*> tmpdata(CCTK_nProcs(cgh));
-      vector<comm_state<dim> > state;
+      vector<gdata*> tmpdata(CCTK_nProcs(cgh));
+      vector<comm_state> state;
       
       for (int proc=0; proc<CCTK_nProcs(cgh); ++proc) {
         if (proc != collect_proc) {

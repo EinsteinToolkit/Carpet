@@ -134,9 +134,9 @@ namespace Carpet {
           for (int var=0; var<numvars; ++var) {
             assert (firstvar+var<CCTK_NumVars());
             for (int tl=0; tl<num_tl; ++tl) {
-              ggf<dim> * const ff = arrdata.at(group).at(m).data.at(var);
+              ggf * const ff = arrdata.at(group).at(m).data.at(var);
               if (ff) {
-                gdata<dim> * const data = (*ff) (-tl, rl, c, ml);
+                gdata * const data = (*ff) (-tl, rl, c, ml);
                 assert (data);
                 cgh->data[firstvar+var][tl] = data->storage();
               } else {
@@ -414,10 +414,9 @@ namespace Carpet {
           for (int var=0; var<numvars; ++var) {
             assert (firstvar+var<CCTK_NumVars());
             for (int tl=0; tl<num_tl; ++tl) {
-              ggf<dim> * const ff = arrdata.at(group).at(map).data.at(var);
+              ggf * const ff = arrdata.at(group).at(map).data.at(var);
               if (ff) {
-                gdata<dim> * const data
-                  = (*ff) (-tl, reflevel, component, mglevel);
+                gdata * const data = (*ff) (-tl, reflevel, component, mglevel);
                 assert (data);
                 cgh->data[firstvar+var][tl] = data->storage();
               } else {

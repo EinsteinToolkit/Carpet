@@ -33,7 +33,7 @@ namespace Carpet {
     
     // Restrict
     if (reflevel < reflevels-1) {
-      for (comm_state<dim> state; !state.done(); state.step()) {
+      for (comm_state state; !state.done(); state.step()) {
         for (int group=0; group<CCTK_NumGroups(); ++group) {
           if (CCTK_GroupTypeI(group) == CCTK_GF) {
             if (CCTK_QueryGroupStorageI(cgh, group)) {
@@ -71,7 +71,7 @@ namespace Carpet {
     
     // Sync
     if (reflevel < reflevels-1) {
-      for (comm_state<dim> state; !state.done(); state.step()) {
+      for (comm_state state; !state.done(); state.step()) {
         for (int group=0; group<CCTK_NumGroups(); ++group) {
           if (CCTK_GroupTypeI(group) == CCTK_GF) {
             if (CCTK_QueryGroupStorageI(cgh, group)) {

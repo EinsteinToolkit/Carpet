@@ -19,10 +19,10 @@ namespace CarpetRegrid {
   
   
   int Moving (cGH const * const cctkGH,
-              gh<dim> const & hh,
-              gh<dim>::rexts  & bbsss,
-              gh<dim>::rbnds  & obss,
-              gh<dim>::rprocs & pss)
+              gh const & hh,
+              gh::rexts  & bbsss,
+              gh::rbnds  & obss,
+              gh::rprocs & pss)
   {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
@@ -54,13 +54,13 @@ namespace CarpetRegrid {
       rvect const rub (symmetric.ifthen (rvect(radius), pos + rvect(radius)));
       
       vector<ibbox> bbs;
-      gh<dim>::cbnds obs;
+      gh::cbnds obs;
       
       ManualCoordinates_OneLevel
         (cctkGH, hh, rl, refinement_levels, rlb, rub, ob, bbs, obs);
       
       // make multiprocessor aware
-      gh<dim>::cprocs ps;
+      gh::cprocs ps;
       SplitRegions (cctkGH, bbs, obs, ps);
       
       // make multigrid aware

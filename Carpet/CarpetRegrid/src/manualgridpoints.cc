@@ -21,10 +21,10 @@ namespace CarpetRegrid {
   
   
   int ManualGridpoints (cGH const * const cctkGH,
-                        gh<dim> const & hh,
-                        gh<dim>::rexts  & bbsss,
-                        gh<dim>::rbnds  & obss,
-                        gh<dim>::rprocs & pss)
+                        gh const & hh,
+                        gh::rexts  & bbsss,
+                        gh::rbnds  & obss,
+                        gh::rprocs & pss)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -57,14 +57,14 @@ namespace CarpetRegrid {
       bbvect const ob (false);
       
       vector<ibbox> bbs;
-      gh<dim>::cbnds obs;
+      gh::cbnds obs;
       
       ManualGridpoints_OneLevel
         (cctkGH, hh, rl,refinement_levels,
          ilower.at(rl-1), iupper.at(rl-1), ob, bbs, obs);
       
       // make multiprocessor aware
-      gh<dim>::cprocs ps;
+      gh::cprocs ps;
       SplitRegions (cctkGH, bbs, obs, ps);
       
       // make multigrid aware
@@ -83,7 +83,7 @@ namespace CarpetRegrid {
   
   
   void ManualGridpoints_OneLevel (const cGH * const cctkGH,
-                                  const gh<dim> & hh,
+                                  const gh & hh,
                                   const int rl,
                                   const int numrl,
                                   const ivect ilower,

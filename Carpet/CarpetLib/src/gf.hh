@@ -20,17 +20,11 @@ using namespace std;
 
 
 // A real grid function
-template<class T,int D>
-class gf: public ggf<D> {
+template<typename T>
+class gf: public ggf {
   
   // Types
-  typedef vect<int,D>    ivect;
-  typedef bbox<int,D>    ibbox;
-  typedef bboxset<int,D> ibset;
-  typedef list<ibbox>    iblist;
-  typedef vector<iblist> iblistvect;
-  
-  typedef data<T,D>*    tdata;	        // data ...
+  typedef data<T>*      tdata;	        // data ...
   typedef vector<tdata> mdata;	        // ... for each multigrid level
   typedef vector<mdata> cdata;	        // ... for each component
   typedef vector<cdata> rdata;	        // ... for each refinement level
@@ -40,7 +34,7 @@ public:
   
   // Constructors
   gf (const int varindex, const operator_type transport_operator,
-      th<D>& t, dh<D>& d,
+      th& t, dh& d,
       const int tmin, const int tmax, const int prolongation_order_time,
       const int vectorlength, const int vectorindex,
       gf* const vectorleader);
@@ -54,13 +48,13 @@ public:
   
 protected:
   
-  virtual gdata<D>* typed_data (int tl, int rl, int c, int ml)
+  virtual gdata* typed_data (int tl, int rl, int c, int ml)
   {
-    return new data<T,D>(this->varindex, this->transport_operator,
-                         this->vectorlength, this->vectorindex,
-                         this->vectorleader
-                         ? (data<T,D>*)(*this->vectorleader)(tl,rl,c,ml)
-                         : NULL);
+    return new data<T>(this->varindex, this->transport_operator,
+                       this->vectorlength, this->vectorindex,
+                       this->vectorleader
+                       ? (data<T>*)(*this->vectorleader)(tl,rl,c,ml)
+                       : NULL);
   }
   
   
@@ -69,9 +63,9 @@ protected:
   
 public:
   
-  virtual const data<T,D>* operator() (int tl, int rl, int c, int ml) const;
+  virtual const data<T>* operator() (int tl, int rl, int c, int ml) const;
   
-  virtual data<T,D>* operator() (int tl, int rl, int c, int ml);
+  virtual data<T>* operator() (int tl, int rl, int c, int ml);
   
   
   

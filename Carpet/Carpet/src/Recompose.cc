@@ -65,9 +65,9 @@ namespace Carpet {
   
   
   
-  void CheckRegions (const gh<dim>::rexts & bbsss,
-                     const gh<dim>::rbnds & obss,
-                     const gh<dim>::rprocs& pss)
+  void CheckRegions (const gh::rexts & bbsss,
+                     const gh::rbnds & obss,
+                     const gh::rprocs& pss)
   {
     // At least one level
     if (bbsss.size() == 0) {
@@ -128,9 +128,9 @@ namespace Carpet {
     bool did_change = false;
     BEGIN_MAP_LOOP(cgh, CCTK_GF) {
       
-      gh<dim>::rexts  bbsss = vhh.at(map)->extents();
-      gh<dim>::rbnds  obss  = vhh.at(map)->outer_boundaries();
-      gh<dim>::rprocs pss   = vhh.at(map)->processors();
+      gh::rexts  bbsss = vhh.at(map)->extents();
+      gh::rbnds  obss  = vhh.at(map)->outer_boundaries();
+      gh::rprocs pss   = vhh.at(map)->processors();
       
       // Check whether to recompose
       CCTK_INT const do_recompose
@@ -173,7 +173,7 @@ namespace Carpet {
   
   
   
-  void OutputGrids (const cGH* cgh, const int m, const gh<dim>& hh)
+  void OutputGrids (const cGH* cgh, const int m, const gh& hh)
   {
     CCTK_INFO ("New grid structure (grid points):");
     cout << "   Refinement level " << reflevel << ", map " << map << endl;
@@ -230,9 +230,9 @@ namespace Carpet {
   
   void OutputGridStructure (const cGH * const cgh,
                             const int m,
-                            const gh<dim>::rexts & bbsss,
-                            const gh<dim>::rbnds & obss,
-                            const gh<dim>::rprocs& pss)
+                            const gh::rexts & bbsss,
+                            const gh::rbnds & obss,
+                            const gh::rprocs& pss)
   {
     DECLARE_CCTK_PARAMETERS;
     

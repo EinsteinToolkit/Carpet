@@ -82,9 +82,9 @@ namespace Carpet {
   // Data for grid functions
   
   // The grid hierarchy
-  vector<gh<dim>*> vhh;         // [map]
-  vector<dh<dim>*> vdd;         // [map]
-  vector<th<dim>*> vtt;         // [map]
+  vector<gh*> vhh;              // [map]
+  vector<dh*> vdd;              // [map]
+  vector<th*> vtt;              // [map]
 
   // Data for the groups
   vector<groupdesc> groupdata;  // [group]

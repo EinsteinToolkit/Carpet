@@ -22,10 +22,10 @@ namespace CarpetRegrid {
   
   
   int ManualCoordinateList (cGH const * const cctkGH,
-                            gh<dim> const & hh,
-                            gh<dim>::rexts  & bbsss,
-                            gh<dim>::rbnds  & obss,
-                            gh<dim>::rprocs & pss)
+                            gh const & hh,
+                            gh::rexts  & bbsss,
+                            gh::rbnds  & obss,
+                            gh::rprocs & pss)
   {
     DECLARE_CCTK_PARAMETERS;
     int ierr;
@@ -143,7 +143,7 @@ namespace CarpetRegrid {
     for (size_t rl=1; rl<refinement_levels; ++rl) {
       
       vector<ibbox> bbs;
-      gh<dim>::cbnds obs;
+      gh::cbnds obs;
       
       bbs.reserve (newbbss.at(rl-1).size());
       obs.reserve (newbbss.at(rl-1).size());
@@ -180,7 +180,7 @@ namespace CarpetRegrid {
       }
       
       // make multiprocessor aware
-      gh<dim>::cprocs ps;
+      gh::cprocs ps;
       SplitRegions (cctkGH, bbs, obs, ps);
       
       // make multigrid aware

@@ -15,22 +15,20 @@ using namespace std;
 
 
 // Forward declaration
-template<int D> class th;
+class th;
 
 // Output
-template<int D>
-ostream& operator<< (ostream& os, const th<D>& t);
+ostream& operator<< (ostream& os, const th& t);
 
 
 
 // The time hierarchy (information about the current time)
-template<int D>
 class th {
   
 public:				// should be readonly
   
   // Fields
-  gh<D>& h;                     // hierarchy
+  gh& h;                        // hierarchy
   
 private:
   
@@ -41,7 +39,7 @@ private:
 public:
   
   // Constructors
-  th (gh<D>& h, const CCTK_REAL basedelta);
+  th (gh& h, const CCTK_REAL basedelta);
   
   // Destructors
   ~th ();
@@ -90,8 +88,7 @@ public:
 
 
 
-template<int D>
-inline ostream& operator<< (ostream& os, const th<D>& t) {
+inline ostream& operator<< (ostream& os, const th& t) {
   t.output(os);
   return os;
 }
