@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.31 2004/06/02 16:52:45 bzink Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.32 2004/06/07 09:26:57 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -607,7 +607,7 @@ namespace CarpetIOHDF5 {
     // I didn't like what the flesh provides:
     
     IOUtil_PrepareFilename (cctkGH, NULL, cp_filename, called_from,
-           myproc / ioUtilGH->ioproc_every, ioUtilGH->unchunked);
+           myproc / ioUtilGH->ioproc_every,1);
 
 
     /* ... and append the extension */
