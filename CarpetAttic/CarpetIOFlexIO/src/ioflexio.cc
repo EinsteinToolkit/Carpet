@@ -34,7 +34,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.23 2003/03/12 09:34:44 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.24 2003/03/27 17:11:55 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -674,7 +674,7 @@ namespace CarpetIOFlexIO {
     const int numvars = CCTK_NumVars();
     assert (vindex>=0 && vindex<numvars);
     
-    vector<bool> flags;
+    vector<bool> flags(numvars);
     
     CCTK_TraverseString (varlist, SetFlag, &flags, CCTK_GROUP_OR_VAR);
     
