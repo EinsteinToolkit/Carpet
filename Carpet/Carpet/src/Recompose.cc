@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.57 2004/03/23 19:30:14 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.58 2004/03/23 19:31:44 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -176,7 +176,7 @@ namespace Carpet {
     // Calculate new number of levels
     reflevels = vhh.at(0)->reflevels();
     for (int m=0; m<maps; ++m) {
-      assert (vhh.at(0)->reflevels() == reflevels);
+      assert (vhh.at(m)->reflevels() == reflevels);
     }
     
     // One cannot switch off the current level
