@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-ic7,v 1.5 2002/11/16 19:10:50 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-ic7,v 1.1 2002/08/30 16:18:42 schnetter Exp $
 
 CPP		= cpp -traditional -DCARPET_REAL
 CC		= /opt/intel/compiler70/ia32/bin/icc
@@ -11,18 +11,18 @@ LIBDIRS		=
 LIBS		= intrins IEPCF90 F90 imf m irc cxa cprts cxa
 
 # basic
-CFLAGS		= -DCARPET_REAL -c99
-CXXFLAGS	= -DCARPET_REAL -c99
-F90FLAGS	= -DCARPET_REAL -w95
-F77FLAGS	= -DCARPET_REAL -w95
+CFLAGS		= -DCARPET_REAL -align -c99
+CXXFLAGS	= -DCARPET_REAL -align -c99
+F90FLAGS	= -DCARPET_REAL -align -w95
+F77FLAGS	= -DCARPET_REAL -align -w95
 LDFLAGS		= -g -Qoption,ld,-rpath,/opt/intel/compiler70/ia32/lib
 
 # debugging
 DEBUG		= yes
-C_DEBUG_FLAGS	= -g -fp
-CXX_DEBUG_FLAGS	= -g -fp
-F77_DEBUG_FLAGS	= -g -fp
-F90_DEBUG_FLAGS	= -g -fp
+C_DEBUG_FLAGS	= -g
+CXX_DEBUG_FLAGS	= -g
+F77_DEBUG_FLAGS	= -g
+F90_DEBUG_FLAGS	= -g
 
 # warnings
 #WARN=yes
@@ -33,10 +33,10 @@ F90_WARN_FLAGS	=
 
 # optimisation
 OPTIMISE		= yes
-C_OPTIMISE_FLAGS	= -O3 -tpp6 -xi
-CXX_OPTIMISE_FLAGS	= -O3 -tpp6 -xi
-F77_OPTIMISE_FLAGS	= -O3 -tpp6
-F90_OPTIMISE_FLAGS	= -O3 -tpp6
+C_OPTIMISE_FLAGS	= -O3 -ip -tpp6 -xiM
+CXX_OPTIMISE_FLAGS	= -O3 -ip -tpp6 -xiM
+F77_OPTIMISE_FLAGS	= -O3 -ip -tpp6 -xiM
+F90_OPTIMISE_FLAGS	= -O3 -ip -tpp6 -xiM
 
 # HDF
 HDF5		= YES
@@ -45,6 +45,3 @@ HDF5_DIR	= /usr/local
 # MPI
 MPI		= MPICH
 MPICH_DIR	= /usr/lib/mpich
-
-# PTHREADS
-PTHREADS	= yes
