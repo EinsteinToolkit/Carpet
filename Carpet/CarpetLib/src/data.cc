@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.2 2001/03/05 14:31:03 eschnett Exp $
 
  ***************************************************************************/
 
@@ -311,64 +311,14 @@ void data<T,D>::interpolate_from (const generic_data<D>* gsrc,
   }
 }
 
+
+
 // Output
 template<class T, int D>
-template<int DD>
-void data<T,D>::write_ascii (const string name, const double time,
-                             const vect<int,DD>& dirs,
-                             const int tl, const int rl,
-                             const int c, const int ml)
+void data<T,D>::write_ascii_output_element (ofstream& file, const ivect& index)
   const
 {
-  assert (_has_storage);
-  
-  if (_proc==0) {
-    // output on processor 0
-    
-    int rank;
-    MPI_Comm_rank (dist::comm, &rank);
-    if (rank == 0) {
-      
-      const vect<int,DD> lo = extent().lower()[dirs];
-      const vect<int,DD> up = extent().upper()[dirs];
-      const vect<int,DD> str = extent().stride()[dirs];
-      const bbox<int,DD> ext(lo,up,str);
-      
-      ofstream file(name.c_str(), ios::app);
-      assert (file.good());
-      
-      file << "# time=" << time << " tl=" << tl << " rl=" << rl
-	   << " c=" << c << " ml=" << ml << " ";
-      assert (DD<=3);
-      for (int d=0; d<DD; ++d) file << "xyz"[d] << " ";
-      file << "data" << endl;
-      
-      for (bbox<int,DD>::iterator it=ext.begin(); it!=ext.end(); ++it) {
-        ivect index(0);
-        for (int d=0; d<DD; ++d) index[dirs[d]] = (*it)[d];
-        file << time << " " << tl << " " << rl << " " << c << " " << ml << " ";
-        for (int d=0; d<D; ++d) file << index[d] << " ";
-        file << (*this)[index] << endl;
-        for (int d=0; d<D; ++d) {
-          if (index[d]!=extent().upper()[d]) break;
-          file << endl;
-        }
-      }
-      
-      file.close();
-      assert (file.good());
-      
-    }
-    
-  } else {
-    // copy to processor 0 and output there
-    
-    data* tmp = new data(_extent, 0);
-    tmp->copy_from (this, _extent);
-    tmp->write_ascii (name, time, dirs, tl, rl, c, ml);
-    delete tmp;
-    
-  }
+  file << (*this)[index] << endl;
 }
 
 
@@ -386,37 +336,10 @@ ostream& data<T,D>::out (ostream& os) const {
 
 #if defined(TMPL_EXPLICIT)
 
-#define INSTANTIATE(T)							    \
-									    \
-template data<T,1>;							    \
-template void data<T,1>::write_ascii (const string name, const double time, \
-				      const vect<int,1>& dirs,		    \
-				      const int tl, const int rl,	    \
-				      const int c, const int ml) const;	    \
-									    \
-template data<T,2>;							    \
-template void data<T,2>::write_ascii (const string name, const double time, \
-				      const vect<int,1>& dirs,		    \
-				      const int tl, const int rl,	    \
-				      const int c, const int ml) const;	    \
-template void data<T,2>::write_ascii (const string name, const double time, \
-				      const vect<int,2>& dirs,		    \
-				      const int tl, const int rl,	    \
-				      const int c, const int ml) const;	    \
-									    \
-template data<T,3>;							    \
-template void data<T,3>::write_ascii (const string name, const double time, \
-				      const vect<int,1>& dirs,		    \
-				      const int tl, const int rl,	    \
-				      const int c, const int ml) const;	    \
-template void data<T,3>::write_ascii (const string name, const double time, \
-				      const vect<int,2>& dirs,		    \
-				      const int tl, const int rl,	    \
-				      const int c, const int ml) const;	    \
-template void data<T,3>::write_ascii (const string name, const double time, \
-				      const vect<int,3>& dirs,		    \
-				      const int tl, const int rl,	    \
-				      const int c, const int ml) const;
+#define INSTANTIATE(T)				\
+template data<T,1>;				\
+template data<T,2>;				\
+template data<T,3>;
 
 #include "instantiate"
 

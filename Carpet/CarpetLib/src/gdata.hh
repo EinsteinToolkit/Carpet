@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.2 2001/03/05 14:31:03 eschnett Exp $
 
  ***************************************************************************/
 
@@ -23,6 +23,7 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -137,49 +138,22 @@ public:
 
   // Output
   template<int DD>
-  void write_ascii (const string name, const double time,
-                    const vect<int,DD>& dirs,
+  void write_ascii (const string name, const int time,
+                    const vect<int,D>& org, const vect<int,DD>& dirs,
 		    const int tl, const int rl,
                     const int c, const int ml)
-    const
-  {
-    switch (DD) {
-    case 1:
-      write_ascii_1 (name, time, *(const vect<int,1>*)&dirs, tl, rl, c, ml);
-      break;
-    case 2:
-      write_ascii_2 (name, time, *(const vect<int,2>*)&dirs, tl, rl, c, ml);
-      break;
-    case 3:
-      write_ascii_3 (name, time, *(const vect<int,3>*)&dirs, tl, rl, c, ml);
-      break;
-    default:
-      abort();
-    }
-  }
+    const;
 protected:
-  virtual void write_ascii_1 (const string name, const double time,
-                              const vect<int,1>& dirs,
-			      const int tl, const int rl,
-                              const int c, const int ml)
+  virtual void write_ascii_output_element (ofstream& file, const ivect& index)
     const = 0;
-  virtual void write_ascii_2 (const string name, const double time,
-                              const vect<int,2>& dirs,
-			      const int tl, const int rl,
-                              const int c, const int ml)
-    const = 0;
-  virtual void write_ascii_3 (const string name, const double time,
-                              const vect<int,3>& dirs,
-			      const int tl, const int rl,
-                              const int c, const int ml)
-    const = 0;
-//   void write_ieee (const string name, const double time,
+public:
+//   void write_ieee (const string name, const int time,
 // 		   const int tl, const int rl, const int c, const int ml)
 //     const;
-//   void write_hdf (const string name, const double time,
+//   void write_hdf (const string name, const int time,
 // 		  const int tl, const int rl, const int c, const int ml)
 //     const;
-//   void write_h5 (const string name, const double time,
+//   void write_h5 (const string name, const int time,
 // 		 const int tl, const int rl, const int c, const int ml)
 //     const;
 public:

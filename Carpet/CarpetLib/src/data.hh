@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.2 2001/03/05 14:31:03 eschnett Exp $
 
  ***************************************************************************/
 
@@ -106,39 +106,14 @@ public:
 				 const double tfact,
 				 const ibbox& box);
   
-  // Output
-  template<int DD>
-  void write_ascii (const string name, const double time,
-                    const vect<int,DD>& dirs,
-		    const int tl, const int rl,
-                    const int c, const int ml)
-    const;
-protected:
-  virtual void write_ascii_1 (const string name, const double time,
-                              const vect<int,1>& dirs,
-			      const int tl, const int rl,
-                              const int c, const int ml) const {
-    write_ascii (name, time, dirs, tl, rl, c, ml);
-  }
-  virtual void write_ascii_2 (const string name, const double time,
-                              const vect<int,2>& dirs,
-                              const int tl, const int rl,
-                              const int c, const int ml) const {
-    write_ascii (name, time, dirs, tl, rl, c, ml);
-  }
-  virtual void write_ascii_3 (const string name, const double time,
-                              const vect<int,3>& dirs,
-                              const int tl, const int rl,
-                              const int c, const int ml) const {
-    write_ascii (name, time, dirs, tl, rl, c, ml);
-  }
-//   void write_ieee (const string name, const double time,
+  void write_ascii_output_element (ofstream& file, const ivect& index) const;
+//   void write_ieee (const string name, const int time,
 // 		   const int tl, const int rl, const int c, const int ml)
 //     const;
-//   void write_hdf (const string name, const double time,
+//   void write_hdf (const string name, const int time,
 // 		  const int tl, const int rl, const int c, const int ml)
 //     const;
-//   void write_h5 (const string name, const double time,
+//   void write_h5 (const string name, const int time,
 // 		 const int tl, const int rl, const int c, const int ml)
 //     const;
 public:
