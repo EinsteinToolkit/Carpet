@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.9 2004/03/10 21:20:24 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.10 2004/03/10 22:29:58 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -33,7 +33,7 @@ extern "C" {
 #include "carpet.hh"
 
 #include "iohdf5.hh"
-
+#include "iohdf5GH.h"
 
 
 namespace CarpetIOHDF5 {
@@ -78,6 +78,8 @@ namespace CarpetIOHDF5 {
   {
     DECLARE_CCTK_PARAMETERS;
     
+    CarpetIOHDF5GH* myGH;
+
     // Truncate all files if this is not a restart
     do_truncate.resize(CCTK_NumVars(), true);
     
@@ -93,7 +95,27 @@ namespace CarpetIOHDF5 {
     // We register only once, ergo we get only one handle.  We store
     // that statically, so there is no need to pass anything to
     // Cactus.
-    return 0;
+
+    /* allocate a new GH extension structure */
+
+    CCTK_INT numvars = CCTK_NumVars ();
+
+    myGH            = (CarpetIOHDF5GH*) malloc (sizeof (CarpetIOHDF5GH));
+    myGH->out_last  = (int *) malloc (numvars * sizeof (int));
+    myGH->requests  = (ioRequest **) calloc (numvars, sizeof (ioRequest *));
+    myGH->cp_filename_list = (char **) calloc (abs (checkpoint_keep), sizeof (char *));
+    myGH->cp_filename_index = 0;
+    myGH->out_vars = strdup ("");
+    myGH->out_every_default = out_every - 1;
+
+    for (int i = 0; i < numvars; i++)
+    {
+      myGH->out_last [i] = -1;
+    }
+
+    myGH->open_output_files = NULL;
+
+    return (myGH);
   }
   
   
