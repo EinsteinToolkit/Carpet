@@ -1,5 +1,4 @@
-!DESC "Octant evolution with robin boundaries"
-# $Id: wavetoyf77_rob.par,v 1.1 2001/03/11 11:57:16 eschnett Exp $
+# $Id: wavetoyf77_rob.par,v 1.2 2001/03/11 12:04:39 eschnett Exp $
 #
 # /*@@
 #   @file      test_rad.par
@@ -10,34 +9,35 @@
 #   @enddesc
 # @@*/          
 
-ActiveThorns = "boundary iobasic idscalarwave time wavetoyf77 pugh pughreduce cartgrid3d ioutil ioascii"
+!DESC "Octant evolution with robin boundaries"
+
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetSlab IDScalarWave WaveToyF77"
+
+Cactus::cctk_itlast		= 4
  
-time::dtfac = 0.5
+Time::dtfac			= 0.5
 
-idscalarwave::initial_data = "gaussian"
-idscalarwave::sigma = 2.8
-idscalarwave::radius = 5
+driver::global_nx		= 10
+driver::global_ny		= 10
+driver::global_nz		= 10
 
-wavetoyf77::bound = "robin"
+grid::type			= byspacing
+grid::mode			= octant
+grid::dxyz			= 0.6
+ 
+IO::outdir			= "wavetoyf77_rob"
 
-grid::type = "BySpacing"
-grid::domain = "octant"
-grid::dxyz = 0.6
+IOBasic::outinfo_every		= 1
+#IOBasic::outinfo_vars		= "wavetoy::phi"
 
-driver::global_nx = 10
-driver::global_ny = 10
-driver::global_nz = 10
+#IOBasic::outScalar_every	= 1
+#IOBasic::outScalar_vars		= "wavetoy::phi"
 
-cactus::cctk_itlast = 4
+IOASCII::out1D_every		= 1
+IOASCII::out1D_vars		= "wavetoy::phi "
 
-IOBASIC::outScalar_every = 1
-IOBASIC::outScalar_vars = "wavetoy::phi"
+WaveToyF77::bound		= robin
 
-IOASCII::out1D_every = 1
-IOASCII::out1D_z = "no"
-IOASCII::out1D_y = "no"
-IOASCII::out1D_d = "no"
-IOASCII::out1D_vars = "wavetoy::phi "
-
-IO::outdir = "test_rob"
-
+IDScalarWave::initial_data	= gaussian
+IDScalarWave::sigma		= 2.8
+IDScalarWave::radius		= 5

@@ -1,43 +1,43 @@
-!DESC "Octant evolution with radiation boundaries"
-# $Id: wavetoyf77_rad.par,v 1.1 2001/03/11 11:57:16 eschnett Exp $
-#
 # /*@@
-#   @file      test_rad.par
-#   @date      Saturday 18 Sept 1999
-#   @author    Gabrielle Allen
+#   @file      wavetoyf77_rad.par
+#   @date      2001-03-06
+#   @author    Erik Schnetter
 #   @desc
-#   Wavetoy parameter file demonstrating radiation boundaries in Octant
+#   Wavetoy parameter file demonstrating radiation boundaries in octant mode
 #   @enddesc
-# @@*/          
+# @@*/
+#
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77_rad.par,v 1.2 2001/03/11 12:04:39 eschnett Exp $
 
-ActiveThorns = "boundary iobasic idscalarwave time wavetoyf77 pugh pughreduce cartgrid3d ioutil ioascii"
+!DESC "Octant evolution with radiation boundaries"
+
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetSlab IDScalarWave WaveToyF77"
+
+Cactus::cctk_itlast		= 4
  
-time::dtfac = 0.5
+Time::dtfac			= 0.5
 
-idscalarwave::initial_data = "gaussian"
-idscalarwave::sigma = 2.8
-idscalarwave::radius = 5
+driver::global_nx		= 10
+driver::global_ny		= 10
+driver::global_nz		= 10
 
-wavetoyf77::bound = "radiation"
+grid::type			= byspacing
+grid::mode			= octant
+grid::dxyz			= 0.6
+ 
+IO::outdir			= "wavetoyf77_rad"
 
-grid::type = "BySpacing"
-grid::domain = "octant"
-grid::dxyz = 0.6
+IOBasic::outinfo_every		= 1
+#IOBasic::outinfo_vars		= "wavetoy::phi"
 
-driver::global_nx = 15
-driver::global_ny = 15
-driver::global_nz = 15
+#IOBasic::outScalar_every	= 1
+#IOBasic::outScalar_vars		= "wavetoy::phi"
 
-cactus::cctk_itlast = 10
+IOASCII::out1D_every		= 1
+IOASCII::out1D_vars		= "wavetoy::phi "
 
-IOBASIC::outScalar_every = 1
-IOBASIC::outScalar_vars = "wavetoy::phi"
+WaveToyF77::bound		= radiation
 
-IOASCII::out1D_every = 1
-IOASCII::out1D_z = "no"
-IOASCII::out1D_y = "no"
-IOASCII::out1D_d = "no"
-IOASCII::out1D_vars = "wavetoy::phi "
-
-IO::outdir = "test_rad"
-
+IDScalarWave::initial_data	= gaussian
+IDScalarWave::sigma		= 2.8
+IDScalarWave::radius		= 0

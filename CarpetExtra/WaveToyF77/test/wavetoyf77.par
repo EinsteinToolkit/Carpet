@@ -1,30 +1,40 @@
+# /*@@
+#   @file      wavetoyf77.par
+#   @date      2001-03-11
+#   @author    Erik Schnetter
+#   @desc
+#   Wavetoy parameter file demonstrating minimal evolution
+#   @enddesc
+# @@*/
+#
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77.par,v 1.2 2001/03/11 12:04:39 eschnett Exp $
+
 !DESC "Octant evolution with no boundary condition"
 
-ActiveThorns = "time wavetoyf77 idscalarwave pugh pughreduce cartgrid3d ioutil iobasic ioascii"
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib IDScalarWave WaveToyF77"
 
-grid::type  = "box"
+Time::dtfac			= 0.5
 
-time::dtfac = 0.5
+Carpet::global_nx		= 20
+Carpet::global_ny		= 20
+Carpet::global_nz		= 20
 
-idscalarwave::initial_data = "gaussian"
-idscalarwave::sigma        = 0.1
-idscalarwave::radius       = 0
+grid::type			= byrange
+grid::xyzmin			= -1.0
+grid::xyzmax			= +1.0
 
-driver::global_nx = 20
-driver::global_ny = 20
-driver::global_nz = 20
+grid::mode			= none
 
-cactus::cctk_itlast       = 10
+WaveToy::bound			= zero
 
-IOASCII::out1D_every = 2
-IOASCII::out1D_vars = "wavetoy::phi "
-IOASCII::out1D_z = "no"
+IO::outdir			= "wavetoyf77"
 
-IOBasic::outScalar_every = 2
-IOBasic::outScalar_vars = "wavetoy::phi "
+IOBasic::outInfo_every		= 1
+#IOBasic::outInfo_vars		= "wavetoy::phi"
 
-IOBasic::outInfo_every = 2
-IOBasic::outInfo_vars = "wavetoy::phi "
+#IOBasic::outScalar_every	= 1
+#IOBasic::outScalar_vars		= "wavetoy::phi"
+#IOBasic::outScalar_style	= gnuplot
 
-IO::outdir = "test_wavetoyf77"
-
+IOASCII::out1D_every		= 1
+IOASCII::out1D_vars		= "wavetoy::phi"
