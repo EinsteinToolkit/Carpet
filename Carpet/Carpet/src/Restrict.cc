@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.14 2003/04/07 16:08:31 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.15 2003/05/14 08:33:37 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Restrict_cc);
 }
 
@@ -43,7 +43,7 @@ namespace Carpet {
             if (tl==0) {
               const CCTK_REAL time1 = tt->time (tl, reflevel, mglevel);
               const CCTK_REAL time2 = cgh->cctk_time / base_delta_time;
-              assert (fabs(time1 - time2) < 1e-12);
+              assert (fabs((time1 - time2) / (fabs(time1) + fabs(time2) + fabs(base_delta_time))) < 1e-12);
             }
             
             if (mglevel > 0) {
