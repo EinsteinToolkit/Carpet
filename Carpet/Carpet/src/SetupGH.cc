@@ -20,7 +20,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.54 2003/11/05 16:18:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.55 2003/11/06 13:50:23 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -245,7 +245,8 @@ namespace Carpet {
 	  
 	case CCTK_SCALAR:
 	  // treat scalars as DIM=0, DISTRIB=const arrays
-	  assert (arrdata[group].info.dim == 0);
+	  assert (gp.dim==0);
+	  arrdata[group].info.dim = gp.dim;
 	  disttype = CCTK_DISTRIB_CONSTANT;
 	  break;
 	  

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.33 2003/11/05 16:18:39 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.34 2003/11/06 13:50:37 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -326,9 +326,10 @@ void data<T,D>
   const int groupindex = CCTK_GroupIndexFromVarI (varindex);
   assert (groupindex >= 0);
   char* groupname = CCTK_GroupName(groupindex);
+  T Tdummy;
   CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
 	      "There is no interpolator available for the group \"%s\" with variable type %s, dimension %d, spatial interpolation order %d, temporal interpolation order %d.",
-	      groupname, D, order_space, order_time);
+	      groupname, typestring(Tdummy), D, order_space, order_time);
   ::free (groupname);
 }
 
