@@ -1,16 +1,19 @@
-/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.h,v 1.1 2001/12/11 13:08:58 schnetter Exp $ */
+/* $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.h,v 1.2 2002/09/01 14:52:27 schnetter Exp $ */
 
 #ifndef CARPETREDUCE_H
 #define CARPETREDUCE_H
 
 #ifdef __cplusplus
-extern "C" {
+namespace CarpetReduce {
+  extern "C" {
 #endif
   
-  int CarpetReduceStartup (void);
-  
+    /* Scheduled functions */
+    int CarpetReduceStartup (void);
+    
 #ifdef __cplusplus
-} /* extern "C" */
+  } /* extern "C" */
+} /* namespace CarpetReduce */
 #endif
 
 #endif /* !defined(CARPETREDUCE_H) */

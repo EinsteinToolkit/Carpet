@@ -1,7 +1,9 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.hh,v 1.3 2001/03/10 20:55:09 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.hh,v 1.4 2002/09/01 14:52:30 schnetter Exp $
 
 #ifndef CARPETSLAB_HH
 #define CARPETSLAB_HH
+
+#include "cctk.h"
 
 #include "carpetslab.h"
 

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.18 2002/06/06 00:23:35 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.19 2002/09/01 14:52:24 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -19,6 +19,8 @@
 #include "Carpet/CarpetLib/src/gh.hh"
 #include "Carpet/CarpetLib/src/th.hh"
   
+#include "carpet_public.h"
+
   
   
 namespace Carpet {
@@ -252,4 +254,4 @@ namespace Carpet {
   
 } // namespace Carpet
 
-#endif // ! defined(CARPET_PUBLIC_HH)
+#endif // !defined(CARPET_PUBLIC_HH)

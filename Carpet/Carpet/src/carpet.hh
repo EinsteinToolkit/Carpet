@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.19 2002/08/30 18:08:52 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.20 2002/09/01 14:52:23 schnetter Exp $
 
 #ifndef CARPET_HH
 #define CARPET_HH
@@ -48,4 +48,4 @@ namespace Carpet {
   
 } // namespace Carpet
 
-#endif // ! defined(CARPET_HH)
+#endif // !defined(CARPET_HH)

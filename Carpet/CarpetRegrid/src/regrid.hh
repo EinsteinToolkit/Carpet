@@ -1,7 +1,7 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.6 2002/05/16 23:25:54 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.hh,v 1.7 2002/09/01 14:52:29 schnetter Exp $
 
-#ifndef REGRID_HH
-#define REGRID_HH
+#ifndef CARPETREGRID_HH
+#define CARPETREGRID_HH
 
 #include <list>
 
@@ -12,18 +12,14 @@
 
 #include "carpet.hh"
 
+#include "regrid.h"
+
 
 
 namespace CarpetRegrid {
   
   using namespace std;
   using namespace Carpet;
-  
-  // scheduled functions
-  extern "C" {
-    int CarpetRegridStartup ();
-    int CarpetRegridParamcheck (CCTK_ARGUMENTS);
-  }
   
   
   
@@ -70,4 +66,4 @@ namespace CarpetRegrid {
   
 } // namespace CarpetRegrid
 
-#endif // ! defined(REGRID_HH)
+#endif // !defined(CARPETREGRID_HH)
