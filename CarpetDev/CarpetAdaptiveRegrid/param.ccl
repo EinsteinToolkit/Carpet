@@ -3,28 +3,35 @@
 
 # Refinement criteria for automatic refining
 
-CCTK_INT minwidth "Minimum width of refined region" STEERABLE=always
+CCTK_INT min_width "Minimum width of refined region" STEERABLE=always
 {
   1:* :: "must be positive"
 } 8
 
-CCTK_REAL minfraction "Minimum fraction of points in need of refinement in a refined region" STEERABLE=always
+CCTK_REAL min_fraction "Minimum fraction of points in need of refinement in a refined region" STEERABLE=always
 {
   0:1 :: "must be positive and less than one"
 } 0.75
 
-CCTK_REAL maxerror "Maximum allowed error for non-refined grid points" STEERABLE=always
+CCTK_REAL max_error "Maximum allowed error for non-refined grid points" STEERABLE=always
 {
   *:* :: "everything goes"
 } 1.0
 
-CCTK_STRING errorvar "Name of grid function that contains the error" STEERABLE=always
+CCTK_STRING error_var "Name of grid function that contains the error" STEERABLE=always
 {
   ".*" :: "must be the name of a grid function"
 } ""
 
-shares: driver
-
-USES INT ghost_size ""
+CCTK_INT regrid_every "Regrid every n time steps" STEERABLE=always
 {
-}
+  -1   :: "regrid never"
+   0   :: "regrid during initial data calculation only"
+   1:* :: "regrid every n time steps"
+} 0
+
+CCTK_INT pad "Number of cells that the error should be padded" STEERABLE=always
+{
+  0:* :: "Non negative"
+} 2
+

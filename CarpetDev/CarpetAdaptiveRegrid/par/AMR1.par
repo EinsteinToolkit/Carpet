@@ -1,0 +1,57 @@
+
+ActiveThorns = "coordbase SymBase NaNChecker carpetReduce CartGrid3D carpet carpetlib carpetadaptiveregrid Boundary IOBasic IOUtil carpetIOASCII IDWaveMoL carpetSlab WaveMoL Time MoL"
+
+
+IDWaveMoL::initial_data = "gaussian"
+
+wavemol::bound = "radiation"
+
+mol::initial_data_is_crap = "yes"
+
+##carpet::adaptive_stepsize = "yes"
+
+##carpet::veryverbose = "yes"
+
+grid::domain = "full"
+grid::type = "byspacing"
+grid::avoid_origin = "no"
+driver::global_nx = 51
+driver::global_ny = 51
+driver::global_nz = 51
+grid::dxyz = 0.02
+driver::ghost_size = 1
+time::dtfac = 0.5
+
+carpet::max_refinement_levels = 2
+carpet::init_3_timelevels = yes
+carpetadaptiveregrid::max_error = 1.e-6
+carpetadaptiveregrid::error_var = "mol::errorestimate[0]"
+#carpetadaptiveregrid::error_var = "wavemol::phi"
+carpetadaptiveregrid::regrid_every = 1
+
+
+cactus::terminate = "time"
+cactus::cctk_final_time = 0.5
+
+iobasic::outScalar_every = 1
+iobasic::outScalar_vars = "wavemol::phi mol::errorestimate"
+
+iobasic::outInfo_every = 1
+iobasic::outInfo_vars = "wavemol::phi mol::errorestimate[0]"
+
+ioascii::out1D_every = 1
+ioascii::out1D_vars = "wavemol::scalarevolvemol_scalar mol::errorestimate"
+
+IO::out_dir = $.
+
+#mol::ode_method = "Generic"
+#mol::mol_intermediate_steps = 4
+#mol::mol_num_scratch_levels = 3
+mol::ode_method = "RK45"
+mol::mol_intermediate_steps = 6
+mol::mol_num_scratch_levels = 6
+mol::adaptive_stepsize = "no"
+
+carpet::prolongation_order_space = 3
+carpet::prolongation_order_time = 2
+driver::ghost_size = 2

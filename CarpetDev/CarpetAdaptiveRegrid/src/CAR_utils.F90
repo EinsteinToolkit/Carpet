@@ -136,8 +136,8 @@ subroutine prune_box(nx, ny, nz, sum_x, sum_y, sum_z, &
 
   call prune(nx, sum_x, lo, hi)
   
-  newbbox(1,1) = bbox(1,1) + lo - 1
-  newbbox(1,2) = bbox(1,2) + hi - nx
+  newbbox(1,1) = bbox(1,1) + (lo - 1) * newbbox(1,3)
+  newbbox(1,2) = bbox(1,2) + (hi - nx) * newbbox(1,3)
 
 !!$  write(*,*) "x dirn",lo,hi,nx,bbox(1,:)
   
@@ -149,8 +149,8 @@ subroutine prune_box(nx, ny, nz, sum_x, sum_y, sum_z, &
 
   call prune(ny, sum_y, lo, hi)
   
-  newbbox(2,1) = bbox(2,1) + lo - 1
-  newbbox(2,2) = bbox(2,2) + hi - ny
+  newbbox(2,1) = bbox(2,1) + (lo - 1) * newbbox(2,3)
+  newbbox(2,2) = bbox(2,2) + (hi - ny) * newbbox(2,3)
 
 !!$  write(*,*) "y dirn",lo,hi,ny,bbox(2,:)
   
@@ -162,8 +162,8 @@ subroutine prune_box(nx, ny, nz, sum_x, sum_y, sum_z, &
 
   call prune(nz, sum_z, lo, hi)
   
-  newbbox(3,1) = bbox(3,1) + lo - 1
-  newbbox(3,2) = bbox(3,2) + hi - nz
+  newbbox(3,1) = bbox(3,1) + (lo - 1) * newbbox(3,3)
+  newbbox(3,2) = bbox(3,2) + (hi - nz) * newbbox(3,3)
 
 !!$  write(*,*) "z dirn",lo,hi,nz,bbox(3,:)
   
@@ -260,8 +260,8 @@ subroutine split_box_at_hole(nx, ny, nz, sum_x, sum_y, sum_z, &
 
     didit = 1
     
-    newbbox1(3,2) = bbox(3,1) + ihole - 2
-    newbbox2(3,1) = newbbox1(3,2) + 1
+    newbbox1(3,2) = bbox(3,1) + (ihole - 1) * bbox(3,3)
+    newbbox2(3,1) = newbbox1(3,2) + bbox(3,3)
     
     return
     
@@ -277,8 +277,8 @@ subroutine split_box_at_hole(nx, ny, nz, sum_x, sum_y, sum_z, &
     
     didit = 1
     
-    newbbox1(2,2) = bbox(2,1) + ihole - 2
-    newbbox2(2,1) = newbbox1(2,2) + 1
+    newbbox1(2,2) = bbox(2,1) + (ihole - 1) * bbox(2,3)
+    newbbox2(2,1) = newbbox1(2,2) + bbox(2,3)
     
     return
     
@@ -294,8 +294,8 @@ subroutine split_box_at_hole(nx, ny, nz, sum_x, sum_y, sum_z, &
     
     didit = 1
     
-    newbbox1(1,2) = bbox(1,1) + ihole - 2
-    newbbox2(1,1) = newbbox1(1,2) + 1
+    newbbox1(1,2) = bbox(1,1) + (ihole - 1) * bbox(1,3)
+    newbbox2(1,1) = newbbox1(1,2) + bbox(1,3)
     
     return
     
@@ -425,6 +425,8 @@ subroutine split_box_at_sig(nx, ny, nz, sig_x, sig_y, sig_z, &
   newbbox1(:,3) = bbox(:,3)
   newbbox2(:,3) = bbox(:,3)
 
+!!$  write(*,*) "Split at sig", nx, ny, nz,bbox
+
 !!$  Try splitting in z first
 
   call split(nz, sig_z, min_width, isplit, max_jump)
@@ -435,9 +437,15 @@ subroutine split_box_at_sig(nx, ny, nz, sig_x, sig_y, sig_z, &
     
     didit = 1
     
-    newbbox1(3,2) = bbox(3,1) + isplit - 2
-    newbbox2(3,1) = newbbox1(3,2) + 1
+    newbbox1(3,2) = bbox(3,1) + (isplit - 1) * bbox(3,3)
+    newbbox2(3,1) = newbbox1(3,2) + bbox(3,3)
     
+  end if
+
+  if (didit > 0) then
+!!$    write(*,*) 'new box 1',newbbox1
+!!$    write(*,*) 'new box 2',newbbox2
+    return
   end if
   
 !!$  Then try splitting in y next
@@ -452,11 +460,17 @@ subroutine split_box_at_sig(nx, ny, nz, sig_x, sig_y, sig_z, &
     
     newbbox1(3,2) = bbox(3,2)
     newbbox2(3,1) = bbox(3,1)
-    newbbox1(2,2) = bbox(2,1) + isplit - 2
-    newbbox2(2,1) = newbbox1(2,2) + 1
+    newbbox1(2,2) = bbox(2,1) + (isplit - 1) * bbox(2,3)
+    newbbox2(2,1) = newbbox1(2,2) + bbox(2,3)
     
   end if
-  
+
+  if (didit > 0) then
+!!$    write(*,*) 'new box 1',newbbox1
+!!$    write(*,*) 'new box 2',newbbox2
+    return
+  end if
+      
 !!$  Then try splitting in x last
 
   call split(nx, sig_x, min_width, isplit, max_jump)
@@ -471,13 +485,17 @@ subroutine split_box_at_sig(nx, ny, nz, sig_x, sig_y, sig_z, &
     newbbox2(3,1) = bbox(3,1)
     newbbox1(2,2) = bbox(2,2)
     newbbox2(2,1) = bbox(2,1)
-    newbbox1(1,2) = bbox(1,1) + isplit - 2
-    newbbox2(1,1) = newbbox1(1,2) + 1
+    newbbox1(1,2) = bbox(1,1) + (isplit - 1) * bbox(1,3)
+    newbbox2(1,1) = newbbox1(1,2) + bbox(1,3)
     
   end if
-  
-  if (didit > 0) return
 
+  if (didit > 0) then
+!!$    write(*,*) 'new box 1',newbbox1
+!!$    write(*,*) 'new box 2',newbbox2
+    return
+  end if
+  
 !!$  We should only reach here if we did not find any holes
 !!$  So set newbbox2 to dummy values
 
@@ -509,9 +527,9 @@ subroutine prune_new_box(nx, ny, nz, mask, bbox, newbbox)
   CCTK_INT :: tmp_didit
   CCTK_INT :: ierr
 
-  tmp_nx = newbbox(1,2) - newbbox(1,1) + 1
-  tmp_ny = newbbox(2,2) - newbbox(2,1) + 1
-  tmp_nz = newbbox(3,2) - newbbox(3,1) + 1
+  tmp_nx = (newbbox(1,2) - newbbox(1,1))/newbbox(1,3) + 1
+  tmp_ny = (newbbox(2,2) - newbbox(2,1))/newbbox(2,3) + 1
+  tmp_nz = (newbbox(3,2) - newbbox(3,1))/newbbox(3,3) + 1
 
   newbbox(:,3) = bbox(:,3)
   
@@ -730,10 +748,10 @@ subroutine copy_mask(snx, sny, snz, smask, sbbox, &
 
   CCTK_INT :: snx, sny, snz
   CCTK_INT :: smask(snx, sny, snz)
-  CCTK_INT :: sbbox(3, 2)
+  CCTK_INT :: sbbox(3, 3)
   CCTK_INT :: dnx, dny, dnz
   CCTK_INT :: dmask(dnx, dny, dnz)
-  CCTK_INT :: dbbox(3, 2)
+  CCTK_INT :: dbbox(3, 3)
   
   CCTK_INT :: i, j, k, si, sj, sk, di, dj, dk
   
@@ -743,21 +761,21 @@ subroutine copy_mask(snx, sny, snz, smask, sbbox, &
        (dbbox(1,2) > sbbox(1,2)) .or. &
        (dbbox(2,2) > sbbox(2,2)) .or. &
        (dbbox(3,2) > sbbox(3,2)) ) then
-    call CCTK_WARN(0, &
-        "The destination mask is not contained in the source mask!")
+    call CCTK_WARN(0, \
+                   "The destination mask is not contained in the source mask!")
   end if
 
-  do k = dbbox(3,1), dbbox(3,2)
-    do j = dbbox(2,1), dbbox(2,2)
-      do i = dbbox(1,1), dbbox(1,2)
+  do k = dbbox(3,1), dbbox(3,2), dbbox(3,3)
+    do j = dbbox(2,1), dbbox(2,2), dbbox(2, 3)
+      do i = dbbox(1,1), dbbox(1,2), dbbox(1, 3)
         
-        si = 1 + i - sbbox(1,1)
-        sj = 1 + j - sbbox(2,1)
-        sk = 1 + k - sbbox(3,1)
+        si = 1 + (i - sbbox(1,1)) / dbbox(1, 3)
+        sj = 1 + (j - sbbox(2,1)) / dbbox(2, 3)
+        sk = 1 + (k - sbbox(3,1)) / dbbox(3, 3)
         
-        di = 1 + i - dbbox(1,1)
-        dj = 1 + j - dbbox(2,1)
-        dk = 1 + k - dbbox(3,1)
+        di = 1 + (i - dbbox(1,1)) / dbbox(1, 3)
+        dj = 1 + (j - dbbox(2,1)) / dbbox(2, 3)
+        dk = 1 + (k - dbbox(3,1)) / dbbox(3, 3)
         
         dmask(di, dj, dk) = smask(si, sj, sk)
 

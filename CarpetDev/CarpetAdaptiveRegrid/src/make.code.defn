@@ -2,8 +2,8 @@
 # $Header$
 
 # Source files in this directory
-SRCS = 	CAR_Paramcheck.cc \\
-	CAR.cc \\
+SRCS = 	CAR_Paramcheck.cc \
+	CAR.cc \
 	CAR_utils.F90
 
 # Subdirectories containing source files
