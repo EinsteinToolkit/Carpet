@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.22 2004/02/15 11:15:16 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.23 2004/02/27 16:22:05 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -21,7 +21,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.22 2004/02/15 11:15:16 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.23 2004/02/27 16:22:05 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -190,8 +190,7 @@ namespace CarpetInterp {
       for (int rl=maxrl-1; rl>=minrl; --rl) {
         
         const int fact = maxreflevelfact * ipow(mgfact, basemglevel + mglevel) / ipow(reffact, rl);
-        CCTK_REAL (* const rfloor) (CCTK_REAL const) = floor;
-        ivect const ipos = ivect(::map(rfloor, (pos - lower) / (delta * fact) + 0.5)) * fact;
+        ivect const ipos = ivect(floor((pos - lower) / (delta * fact) + 0.5)) * fact;
         assert (all(ipos % vhh.at(m)->bases.at(rl).at(ml).stride() == 0));
         
         // TODO: use something faster than a linear search
