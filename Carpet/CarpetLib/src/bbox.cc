@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.25 2004/05/21 18:13:41 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.26 2004/06/26 15:08:09 schnetter Exp $
 
 #include <assert.h>
 
@@ -222,17 +222,32 @@ typename bbox<T,D>::iterator bbox<T,D>::end () const {
 // Input
 template<class T,int D>
 void bbox<T,D>::input (istream& is) {
-  skipws (is);
-  consume (is, '(');
-  is >> _lower;
-  skipws (is);
-  consume (is, ':');
-  is >> _upper;
-  skipws (is);
-  consume (is, ':');
-  is >> _stride;
-  skipws (is);
-  consume (is, ')');
+  try {
+    skipws (is);
+    consume (is, '(');
+    is >> _lower;
+    skipws (is);
+    consume (is, ':');
+    is >> _upper;
+    skipws (is);
+    consume (is, ':');
+    is >> _stride;
+    skipws (is);
+    consume (is, ')');
+  } catch (input_error &err) {
+    cout << "Input error while reading a bbox" << endl;
+    throw err;
+  }
+  if (any(_stride<=T(0))) {
+    cout << "While reading the bbox " << *this << ":" << endl
+         << "   The stride is not positive." << endl;
+    throw input_error();
+  }
+  if (any((_upper-_lower)%_stride != T(0))) {
+    cout << "While reading the bbox " << *this << ":" << endl
+         << "   The stride does not evenly divide the extent." << endl;
+    throw input_error();
+  }
   assert (all(_stride>T(0)));
   assert (all((_upper-_lower)%_stride == T(0)));
 }
