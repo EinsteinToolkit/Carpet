@@ -203,7 +203,7 @@ namespace CarpetIOHDF5 {
 	assert(!mpierr);
       }
 
-      cout << "leveltimes: " << leveltimes << endl;
+      if (verbose) cout << "leveltimes: " << leveltimes << endl;
 
       cctkGH->cctk_time = leveltimes[mglevel][reflevel];
 
@@ -215,7 +215,7 @@ namespace CarpetIOHDF5 {
       // set tt (ask Erik why...)
       //	  arrdata[0][0].tt->set_time(reflevel,mglevel,(CCTK_REAL) cctkGH->cctk_iteration/maxreflevelfact);
 	  
-      cout << "reflevel: " << reflevel << endl;
+      if (verbose) cout << "reflevel: " << reflevel << endl;
       result += RecoverVariables (cctkGH,reader);
 
 

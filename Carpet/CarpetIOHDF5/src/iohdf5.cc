@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.16 2004/03/14 15:14:00 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.17 2004/03/15 19:49:15 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -735,7 +735,7 @@ namespace CarpetIOHDF5 {
       return 0;
     }  
 
-    cout << "amr_level: " << amr_level << " reflevel: " << reflevel << endl;
+    if (verbose) cout << "amr_level: " << amr_level << " reflevel: " << reflevel << endl;
     
     if (amr_level == rl) {
 	  
@@ -772,8 +772,10 @@ namespace CarpetIOHDF5 {
 	   cGroup cgdata;
 	   int ierr = CCTK_GroupData(group,&cgdata);
 	   assert(ierr==0);
-	     
+	   // cout << "lb_before: " << lb << endl;
+	   // cout << "ub_before: " << ub << endl;
 	   if (cgdata.disttype == CCTK_DISTRIB_CONSTANT) {
+	     if (verbose) cout << "CCTK_DISTRIB_CONSTANT: " << varname << endl;
 	     assert(grouptype == CCTK_ARRAY || grouptype == CCTK_SCALAR);
 	     if (grouptype == CCTK_SCALAR) {
 	       lb[0] = arrdata[group][Carpet::map].hh->processors.at(rl).at(component);
@@ -783,15 +785,18 @@ namespace CarpetIOHDF5 {
 		 ub[i]=0;
 	       }
 	     } else {
-	       lb[dim-1] = lb[dim-1] + (ub[dim-1]-lb[dim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
-	       ub[dim-1] = ub[dim-1] + (ub[dim-1]-lb[dim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
-	       // cout << "lb: " << lb << endl;
-	       // cout << "ub: " << ub << endl;
+	       //	       lb[dim-1] = lb[dim-1] + (ub[dim-1]-lb[dim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
+	       //ub[dim-1] = ub[dim-1] + (ub[dim-1]-lb[dim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
+	       lb[gpdim-1] = lb[gpdim-1] + (ub[gpdim-1]-lb[gpdim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
+	       ub[gpdim-1] = lb[gpdim-1] + ub[gpdim-1] + (ub[gpdim-1]-lb[gpdim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component));
+	       //	       cout << (ub[gpdim-1]-lb[gpdim-1]+1)*(arrdata[group][Carpet::map].hh->processors.at(rl).at(component)) << endl;
 	     }
+	      if (verbose)  cout << "lb: " << lb << endl;
+	      if (verbose)  cout << "ub: " << ub << endl;
 	   }
 	   const bbox<int,dim> ext(lb,ub,str);
 	   
-	   //	   cout << ext << endl;
+	   if (verbose) cout << "ext: " << ext << endl;
 	     
 	   if (CCTK_MyProc(cctkGH)==0) {
 	     tmp->allocate (ext, 0, h5data);
@@ -804,12 +809,13 @@ namespace CarpetIOHDF5 {
 	   const bbox<int,dim> overlap = tmp->extent() & data->extent();
 	   regions_read.at(Carpet::map) |= overlap;
 
-	   cout << "working on component: " << component << endl;
-	   cout << "tmp->extent " << tmp->extent() << endl;
-	   cout << "data->extent " << data->extent() << endl;
-	   cout << "overlap " << overlap << endl;
-	   cout << "-----------------------------------------------------" << endl;
-
+	   if (verbose) {
+	     cout << "working on component: " << component << endl;
+	     cout << "tmp->extent " << tmp->extent() << endl;
+	     cout << "data->extent " << data->extent() << endl;
+	     cout << "overlap " << overlap << endl;
+	     cout << "-----------------------------------------------------" << endl;
+	   }
 	   MPI_Barrier(MPI_COMM_WORLD);
 	   
 	   // Copy into grid function
