@@ -77,6 +77,17 @@ c     -----------------
       
 c     Do the evolution
 c     ----------------
+      do k = 1, cctk_lsh(3)
+         do j = 1, cctk_lsh(2)
+            do i = 1, cctk_lsh(1)
+               if (phi(i,j,k).gt.1.0d10) then
+                  print *,"problem",i,j,k
+               end if
+               phi_n(i,j,k) = 1.0d100
+            end do
+         end do
+      end do
+      
       do k = kstart, kend
          do j = jstart, jend
             do i = istart, iend

@@ -1,12 +1,12 @@
 /***************************************************************************
                           dh.cc  -  Data Hierarchy
-                          a grid hierarchy plus ghost zones
+                          A grid hierarchy plus ghost zones
                              -------------------
     begin                : Sun Jun 11 2000
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.11 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.12 2001/03/28 18:56:09 eschnett Exp $
 
  ***************************************************************************/
 
@@ -38,10 +38,13 @@ using namespace std;
 
 // Constructors
 template<int D>
-dh<D>::dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts)
-  : h(h), lghosts(lghosts), ughosts(ughosts)
+dh<D>::dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts,
+	   int prolongation_order)
+  : h(h), lghosts(lghosts), ughosts(ughosts),
+    prolongation_order(prolongation_order)
 {
   assert (all(lghosts>=0 && ughosts>=0));
+  assert (prolongation_order>=0);
   CHECKPOINT;
   h.add(this);
   recompose();
@@ -196,7 +199,9 @@ void dh<D>::recompose () {
 		// (the prolongation may use the exterior of the
 		// coarse grid, and must fill all of the boundary of
 		// the fine grid)
-		const ibbox recv = extr.contracted_for(bndf) & bndf;
+		const int pss = prolongation_stencil_size();
+		const ibbox recv = (extr.expand(-pss,-pss).contracted_for(bndf)
+				    & bndf);
 		const ibbox send = recv.expanded_for(extr);
 		assert (send.is_contained_in(extr));
 		boxes[rl+1][cc][ml].recv_ref_bnd_coarse[c ].push_back(recv);

@@ -1,12 +1,12 @@
 /***************************************************************************
                           dh.hh  -  Data Hierarchy
-													A grid hierarchy plus ghost zones
+			  A grid hierarchy plus ghost zones
                              -------------------
     begin                : Sun Jun 11 2000
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.5 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.6 2001/03/28 18:56:09 eschnett Exp $
 
  ***************************************************************************/
 
@@ -101,6 +101,7 @@ public:				// should be readonly
   // Fields
   gh<D> &h;			// hierarchy
   ivect lghosts, ughosts;	// ghost zones
+  int prolongation_order;	// order of spatial prolongation operator
   
   rboxes boxes;
   rbases bases;
@@ -110,10 +111,17 @@ public:				// should be readonly
 public:
   
   // Constructors
-  dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts);
+  dh (gh<D>& h, const ivect& lghosts, const ivect& ughosts,
+      int prolongation_order);
   
   // Destructors
   ~dh ();
+  
+  // Helpers
+  int prolongation_stencil_size () const {
+    assert (prolongation_order>=0);
+    return prolongation_order/2;
+  }
   
   // Modifiers
   void recompose ();
