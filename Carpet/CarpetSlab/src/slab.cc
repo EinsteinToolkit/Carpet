@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.7 2003/05/13 12:19:42 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.8 2003/05/21 14:31:29 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -21,7 +21,7 @@
 #include "slab.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.7 2003/05/13 12:19:42 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/slab.cc,v 1.8 2003/05/21 14:31:29 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetSlab_slab_cc);
 }
 
@@ -259,8 +259,8 @@ namespace CarpetSlab {
 			      void** const hdata,
 			      int hsize [/*hdim*/])
   {
-    const int gpdim = CCTK_GroupDimFromVarI(vindex);
-    assert (gpdim>=1 && gpdim<=dim);
+    const int vdim = CCTK_GroupDimFromVarI(vindex);
+    assert (vdim>=1 && vdim<=dim);
     
     // Check some arguments
     assert (hdim>=0 && hdim<=dim);
@@ -270,20 +270,20 @@ namespace CarpetSlab {
     assert (hsize);
     
     // Calculate more convenient representation of the direction
-    vector<int> dirs(hdim);
+    int dirs[dim];              // should really be dirs[hdim]
     // The following if statement is written according to the
     // definition of "dir".
     if (hdim==1) {
       // 1-dimensional hyperslab
       int mydir = 0;
-      for (int d=0; d<dim; ++d) {
+      for (int d=0; d<vdim; ++d) {
 	if (directions[d]!=0) {
 	  mydir = d+1;
 	  break;
 	}
       }
       assert (mydir>0);
-      for (int d=0; d<dim; ++d) {
+      for (int d=0; d<vdim; ++d) {
 	if (d == mydir-1) {
 	  assert (directions[d]!=0);
 	} else {
@@ -291,23 +291,23 @@ namespace CarpetSlab {
 	}
       }
       dirs[0] = mydir;
-    } else if (hdim==dim) {
-      // dim-dimensional hyperslab
-      for (int dd=0; dd<hdim; ++dd) {
-	dirs[dd] = dd+1;
+    } else if (hdim==vdim) {
+      // vdim-dimensional hyperslab
+      for (int d=0; d<vdim; ++d) {
+	dirs[d] = d+1;
       }
     } else if (hdim==2) {
-      // 2-dimensional hyperslab with dim==3
-      assert (dim==3);
+      // 2-dimensional hyperslab with vdim==3
+      assert (vdim==3);
       int mydir = 0;
-      for (int d=0; d<dim; ++d) {
+      for (int d=0; d<vdim; ++d) {
 	if (directions[d]==0) {
 	  mydir = d+1;
 	  break;
 	}
       }
       assert (mydir>0);
-      for (int d=0; d<dim; ++d) {
+      for (int d=0; d<vdim; ++d) {
 	if (d == mydir-1) {
 	  assert (directions[d]==0);
 	} else {
@@ -315,7 +315,7 @@ namespace CarpetSlab {
 	}
       }
       int dd=0;
-      for (int d=0; d<dim; ++d) {
+      for (int d=0; d<vdim; ++d) {
 	if (d != mydir-1) {
 	  dirs[dd] = d+1;
 	  ++dd;
@@ -324,6 +324,10 @@ namespace CarpetSlab {
       assert (dd==hdim);
     } else {
       assert (0);
+    }
+    // Fill remaining length
+    for (int d=vdim; d<dim; ++d) {
+      dirs[d] = d+1;
     }
     
     // Calculate lengths
@@ -352,7 +356,7 @@ namespace CarpetSlab {
 		      vtimelvl,
 		      hdim,
 		      global_startpoint,
-		      &dirs[0],
+		      dirs,
 		      downsample,
 		      hsize);
     
