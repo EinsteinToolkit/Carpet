@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.17 2002/06/06 14:20:15 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.18 2002/07/18 14:32:47 shawley Exp $
 
 #include "Carpet/CarpetLib/src/gh.hh"
 
@@ -9,6 +9,8 @@ namespace Carpet {
   void Regrid (const cGH* cgh);
   void CycleTimeLevels (const cGH* cgh);
   void FlipTimeLevels (const cGH* cgh);
+  void FlipTimeLevelsOnCoarser (const cGH* cgh, const int cur_rl);
+  void CopyCurrToPrevTimeLevels (const cGH* cgh, const int cur_rl);
   void Restrict (const cGH* cgh);
   
   void Recompose (const cGH* cgh,
