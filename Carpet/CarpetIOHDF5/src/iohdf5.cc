@@ -17,7 +17,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.36 2004/06/25 11:57:04 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5.cc,v 1.37 2004/07/06 15:33:01 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5_cc);
 }
 
@@ -463,7 +463,7 @@ namespace CarpetIOHDF5 {
                           min_ext[d] = origin[d] + cctk_lbnd[d] * delta[d];
                           max_ext[d] = origin[d] + cctk_ubnd[d] * delta[d];
                       }
-                      WriteAttribute (dataset, "origin", origin, dim);
+                      WriteAttribute (dataset, "origin", min_ext, dim);
                       WriteAttribute (dataset, "delta", delta, dim);
                       WriteAttribute (dataset, "min_ext", min_ext, dim);
                       WriteAttribute (dataset, "max_ext", max_ext, dim);
