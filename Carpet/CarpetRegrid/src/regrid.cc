@@ -13,7 +13,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.36 2004/02/05 16:11:20 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.37 2004/02/09 16:48:43 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -110,13 +110,18 @@ namespace CarpetRegrid {
       }
       const int newnumlevels
         = RegridLevel (cctkGH, reflevel, refinement_levels, maxreflevels);
-      assert (newnumlevels>0 && newnumlevels<=maxreflevels);
-      
-      *const_cast<CCTK_INT*>(&refinement_levels) = newnumlevels;
-      ostringstream param;
-      param << refinement_levels;
-      CCTK_ParameterSet
-        ("refinement_levels", "CarpetRegrid", param.str().c_str());
+      if (newnumlevels>0 && newnumlevels<=maxreflevels) {
+        
+        *const_cast<CCTK_INT*>(&refinement_levels) = newnumlevels;
+        ostringstream param;
+        param << refinement_levels;
+        CCTK_ParameterSet
+          ("refinement_levels", "CarpetRegrid", param.str().c_str());
+        
+      } else {
+        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "The aliased function \"RegridLevel\" returned an illegal number of refinement levels (%d).  No levels will be activated or deactivated.", newnumlevels);
+      }
       
     } else {
       
