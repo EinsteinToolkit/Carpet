@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.66 2004/06/02 07:11:22 bzink Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.67 2004/06/21 12:28:59 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -119,7 +119,7 @@ namespace Carpet {
   
   
   
-  void Regrid (const cGH* cgh, bool checkpoint_recovery)
+  bool Regrid (const cGH* cgh, bool checkpoint_recovery)
   {
     assert (is_level_mode());
     
@@ -129,9 +129,10 @@ namespace Carpet {
 	CCTK_WARN (1, "No regridding routine has been provided.  There will be no regridding.  Maybe you forgot to activate a regridding thorn?");
 	didtell = true;
       }
-      return;
+      return false;
     }
     
+    bool did_change = false;
     BEGIN_MAP_LOOP(cgh, CCTK_GF) {
       
       gh<dim>::rexts  bbsss = vhh.at(map)->extents;
@@ -142,6 +143,7 @@ namespace Carpet {
       CCTK_INT const do_recompose = Carpet_Regrid (cgh, &bbsss, &obss, &pss,
 						   checkpoint_recovery);
       assert (do_recompose >= 0);
+      did_change = did_change || do_recompose;
       
       if (do_recompose) {
         
@@ -172,6 +174,8 @@ namespace Carpet {
     
     // One cannot switch off the current level
     assert (reflevels > reflevel);
+    
+    return did_change;
   }
   
   
