@@ -1,7 +1,8 @@
 # Schedule definitions for thorn IDScalarWaveFO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveFO/schedule.ccl,v 1.3 2004/01/11 12:20:39 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveFO/schedule.ccl,v 1.1 2003/06/18 18:24:29 schnetter Exp $
 
 SCHEDULE IDScalarWaveFO_InitialData AT initial
 {
   LANG: Fortran
+  STORAGE: WaveToyFO::scalarevolve[1]
 } "Initial data for the scalar field"

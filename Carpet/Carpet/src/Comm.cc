@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.16 2003/05/21 14:30:24 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.17 2003/06/18 18:24:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Comm_cc);
 }
 
@@ -24,18 +24,30 @@ namespace Carpet {
   
   int SyncGroup (cGH* cgh, const char* groupname)
   {
-    if (hh->local_components(reflevel) != 1 && component != -1) {
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-		  "Cannot synchronise in local mode "
-		  "(Tried to synchronise group \"%s\")",
-		  groupname);
-    }
-    if (hh->local_components(reflevel) != 1) assert (component == -1);
-    
-    Checkpoint ("%*sSyncGroup %s", 2*reflevel, "", groupname);
+    DECLARE_CCTK_PARAMETERS;
     
     const int group = CCTK_GroupIndex(groupname);
     assert (group>=0 && group<CCTK_NumGroups());
+    
+    Checkpoint ("%*sSyncGroup %s", 2*reflevel, "", groupname);
+    
+    const int grouptype = CCTK_GroupTypeI(group);
+    
+    if (grouptype == CCTK_GF) {
+      if (reflevel == -1) {
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Cannot synchronise grid functions in global mode "
+                    "(Tried to synchronise group \"%s\")",
+                    groupname);
+      }
+      if (hh->local_components(reflevel) != 1 && component != -1) {
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Cannot synchronise grid functions in local mode "
+                    "(Tried to synchronise group \"%s\")",
+                    groupname);
+      }
+      if (hh->local_components(reflevel) != 1) assert (component == -1);
+    }
     
     if (! CCTK_QueryGroupStorageI(cgh, group)) {
       CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -43,6 +55,8 @@ namespace Carpet {
 		  groupname);
       return -1;
     }
+    
+    if (CCTK_NumVarsInGroupI(group)==0) return 0;
     
     const int n0 = CCTK_FirstVarIndexI(group);
     assert (n0>=0);
@@ -52,19 +66,19 @@ namespace Carpet {
     
     assert (group<(int)arrdata.size());
     for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
-      if (CCTK_GroupTypeI(group) == CCTK_GF) {
+      if (grouptype == CCTK_GF) {
         if (arrdata[group].do_transfer) {
           if (reflevel>0) {
+            // use the current time here (which may be modified by the
+            // user)
+            const CCTK_REAL time = (cgh->cctk_time - cctk_initial_time) / delta_time;
+            if (false) {
+              const CCTK_REAL time1 = tt->time (tl, reflevel, mglevel);
+              const CCTK_REAL time2 = (cgh->cctk_time - cctk_initial_time) / delta_time;
+              assert (fabs((time1 - time2) / (fabs(time1) + fabs(time2) + fabs(cgh->cctk_delta_time))) < 1e-12);
+            }
+            
             for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
-              // use the current time here (which may be modified by the
-              // user)
-              const CCTK_REAL time = cgh->cctk_time / base_delta_time;
-              if (false) {
-                const CCTK_REAL time1 = tt->time (tl, reflevel, mglevel);
-                const CCTK_REAL time2 = cgh->cctk_time / base_delta_time;
-                assert (fabs((time1 - time2) / (fabs(time1) + fabs(time2) + fabs(base_delta_time))) < 1e-12);
-              }
-              
               arrdata[group].data[var]->ref_bnd_prolongate
                 (tl, reflevel, c, mglevel, time);
             }
@@ -73,9 +87,11 @@ namespace Carpet {
           Checkpoint ("%*s(no prolongating for group %s)",
                       2*reflevel, "", groupname);
         }
-      }
-      for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
-	arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);
+        for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
+          arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);
+        }
+      } else {                  // grouptype != CCTK_GF
+        arrdata[group].data[var]->sync (0, 0, 0, 0);
       }
     }
     

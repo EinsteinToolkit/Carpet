@@ -1,8 +1,7 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveExpl/src/initialdata.F77,v 1.2 2003/11/05 16:18:40 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveExpl/src/initialdata.F77,v 1.1 2003/06/18 18:24:29 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
-#include "cctk_Functions.h"
 #include "cctk_Parameters.h"
       
       subroutine IDScalarWaveExpl_InitialData (CCTK_ARGUMENTS)

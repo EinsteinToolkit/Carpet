@@ -19,7 +19,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.45 2003/05/23 23:51:17 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.46 2003/06/18 18:24:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -461,8 +461,15 @@ namespace Carpet {
     
     
     // Initialise time step on coarse grid
-    base_delta_time = 1.0;
-    base_origin_space = vect<CCTK_REAL,dim>((CCTK_REAL)0);
+    cgh->cctk_timefac = 1;
+    for (int d=0; d<dim; ++d) {
+      cgh->cctk_levoff[d] = 0;
+      cgh->cctk_levoffdenom[d] = 1;
+    }
+    
+    refleveltimes.resize (maxreflevels);
+    cgh->cctk_time = 0xdeadbeef;
+    cgh->cctk_delta_time = 0xdeadbeef;
     
     
     
@@ -473,8 +480,8 @@ namespace Carpet {
 	  for (int group=0; group<CCTK_NumGroups(); ++group) {
 	    EnableGroupStorage (cgh, CCTK_GroupName(group));
 	  }
-	} END_MGLEVEL_LOOP(cgh);
-      } END_REFLEVEL_LOOP(cgh);
+	} END_MGLEVEL_LOOP;
+      } END_REFLEVEL_LOOP;
     }
     
     Waypoint ("done with SetupGH.");

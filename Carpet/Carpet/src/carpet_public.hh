@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.28 2003/05/23 23:51:17 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.29 2003/06/18 18:24:28 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -73,13 +73,9 @@ namespace Carpet {
   // Is this the time for a global mode call?
   extern bool do_global_mode;
   
-  
-  
-  // Time step on base grid
-  extern CCTK_REAL base_delta_time;
-  
-  // Spatial origin on base grid
-  extern vect<CCTK_REAL,dim> base_origin_space;
+  // Current times on the refinement levels
+  extern vector<CCTK_REAL> refleveltimes;
+  extern CCTK_REAL delta_time;
   
   
   
@@ -163,99 +159,117 @@ namespace Carpet {
   
   // Refinement level iterator
   
-#define BEGIN_REFLEVEL_LOOP(cgh)			\
-  do {							\
-    int _rll;						\
-    assert (reflevel==-1);				\
-    for (int _rl=0; _rl<hh->reflevels(); ++_rl) {	\
-      set_reflevel ((cGH*)(cgh), _rl);			\
+#define BEGIN_REFLEVEL_LOOP(cgh)                        \
+  do {                                                  \
+    int _rll;                                           \
+    cGH * const _cgh = const_cast<cGH*>(cgh);           \
+    assert (reflevel==-1);                              \
+    for (int _rl=0; _rl<hh->reflevels(); ++_rl) {       \
+      set_reflevel (_cgh, _rl);                         \
       {
-#define END_REFLEVEL_LOOP(cgh)			\
-      }						\
-    }						\
-    set_reflevel ((cGH*)(cgh), -1);		\
-    assert (reflevel==-1);			\
-    _rll = 0;					\
+#define END_REFLEVEL_LOOP                       \
+      }                                         \
+    }                                           \
+    set_reflevel (_cgh, -1);                    \
+    _rll = 0;                                   \
   } while (0)
   
   
   
   // Reverse refinement level iterator
   
-#define BEGIN_REVERSE_REFLEVEL_LOOP(cgh)		\
-  do {							\
-    int _rrll;						\
-    assert (reflevel==-1);				\
-    for (int _rl=hh->reflevels()-1; _rl>=0; --_rl) {	\
-      set_reflevel ((cGH*)(cgh), _rl);			\
+#define BEGIN_REVERSE_REFLEVEL_LOOP(cgh)                \
+  do {                                                  \
+    int _rrll;                                          \
+    cGH * const _cgh = const_cast<cGH*>(cgh);           \
+    assert (reflevel==-1);                              \
+    for (int _rl=hh->reflevels()-1; _rl>=0; --_rl) {    \
+      set_reflevel (_cgh, _rl);                         \
       {
-#define END_REVERSE_REFLEVEL_LOOP(cgh)		\
-      }						\
-    }						\
-    set_reflevel ((cGH*)(cgh), -1);		\
-    assert (reflevel==-1);			\
-    _rrll = 0;					\
+#define END_REVERSE_REFLEVEL_LOOP               \
+      }                                         \
+    }                                           \
+    set_reflevel (_cgh, -1);                    \
+    _rrll = 0;                                  \
   } while (0)
   
   
   
   // Multigrid level iterator
   
-#define BEGIN_MGLEVEL_LOOP(cgh)				\
-  do {							\
-    int _mgl;						\
-    assert (reflevel>=0 && reflevel<hh->reflevels());	\
-    assert (mglevel==-1);				\
-    for (int _ml=mglevels-1; _ml>=0; --_ml) {		\
-      set_mglevel ((cGH*)(cgh), _ml);			\
+#define BEGIN_MGLEVEL_LOOP(cgh)                         \
+  do {                                                  \
+    int _mgl;                                           \
+    cGH * const _cgh = const_cast<cGH*>(cgh);           \
+    assert (reflevel>=0 && reflevel<hh->reflevels());   \
+    assert (mglevel==-1);                               \
+    for (int _ml=mglevels-1; _ml>=0; --_ml) {           \
+      set_mglevel (_cgh, _ml);                          \
       {
-#define END_MGLEVEL_LOOP(cgh)			\
-      }						\
-    }						\
-    set_mglevel ((cGH*)(cgh), -1);		\
-    assert (mglevel==-1);			\
-    _mgl = 0;					\
+#define END_MGLEVEL_LOOP                        \
+      }                                         \
+    }                                           \
+    set_mglevel (_cgh, -1);                     \
+    _mgl = 0;                                   \
   } while (0)
   
   
   
   // Component iterator
   
-#define BEGIN_COMPONENT_LOOP(cgh)                                       \
+#define BEGIN_COMPONENT_LOOP(cgh, grouptype)                            \
   do {                                                                  \
     int _cl;                                                            \
-    assert (reflevel>=0 && reflevel<hh->reflevels());                   \
-    assert (mglevel>=0 && mglevel<mglevels);                            \
-    assert (hh->local_components(reflevel)==1 || component==-1);        \
-    int const _saved_component = component;                             \
-    for (int _c=0; _c<hh->components(reflevel); ++_c) {                 \
-      set_component ((cGH*)(cgh), _c);                                  \
+    cGH * const _cgh = const_cast<cGH*>(cgh);                           \
+    int const _grouptype = (grouptype);                                 \
+    int _mincl, _maxcl;                                                 \
+    if (_grouptype == CCTK_GF) {                                        \
+      assert (reflevel>=0 && reflevel<hh->reflevels());                 \
+      assert (mglevel>=0 && mglevel<mglevels);                          \
+      assert (hh->local_components(reflevel)==1 || component==-1);      \
+      _mincl=0;                                                         \
+      _maxcl=hh->components(reflevel);                                  \
+    } else {                                                            \
+      _mincl=component;                                                 \
+      _maxcl=component;                                                 \
+    }                                                                   \
+    for (int _c=_mincl; _c<_maxcl; ++_c) {                              \
+      if (_grouptype==CCTK_GF) set_component (_cgh, _c);                \
       {
-#define END_COMPONENT_LOOP(cgh)                         \
+#define END_COMPONENT_LOOP                              \
       }                                                 \
     }                                                   \
-    set_component ((cGH*)(cgh), _saved_component);      \
+    if (_grouptype==CCTK_GF) set_component (_cgh, -1);  \
     _cl = 0;                                            \
   } while (0)
 
 
   
-#define BEGIN_LOCAL_COMPONENT_LOOP(cgh)                                 \
+#define BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype)                      \
   do {                                                                  \
     int _lcl;                                                           \
-    assert (reflevel>=0 && reflevel<hh->reflevels());                   \
-    assert (mglevel>=0 && mglevel<mglevels);                            \
-    assert (hh->local_components(reflevel)==1 || component==-1);        \
-    int const _saved_component = component;                             \
-    for (int _c=0; _c<hh->components(reflevel); ++_c) {                 \
-      if (hh->is_local(reflevel,_c)) {                                  \
-	set_component ((cGH*)(cgh), _c);                                \
-	{
-#define END_LOCAL_COMPONENT_LOOP(cgh)                   \
-	}                                               \
+    cGH * const _cgh = const_cast<cGH*>(cgh);                           \
+    int const _grouptype = (grouptype);                                 \
+    int _mincl, _maxcl;                                                 \
+    if (_grouptype == CCTK_GF) {                                        \
+      assert (reflevel>=0 && reflevel<hh->reflevels());                 \
+      assert (mglevel>=0 && mglevel<mglevels);                          \
+      assert (hh->local_components(reflevel)==1 || component==-1);      \
+      _mincl=0;                                                         \
+      _maxcl=hh->components(reflevel);                                  \
+    } else {                                                            \
+      _mincl=component;                                                 \
+      _maxcl=component;                                                 \
+    }                                                                   \
+    for (int _c=_mincl; _c<_maxcl; ++_c) {                              \
+      if (_grouptype==CCTK_GF || hh->is_local(reflevel,_c)) {           \
+        if (_grouptype==CCTK_GF) set_component (_cgh, _c);              \
+        {
+#define END_LOCAL_COMPONENT_LOOP                        \
+        }                                               \
       }                                                 \
     }                                                   \
-    set_component ((cGH*)(cgh), _saved_component);      \
+    if (_grouptype==CCTK_GF) set_component (_cgh, -1);  \
     _lcl = 0;                                           \
   } while (0)
   

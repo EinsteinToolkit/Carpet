@@ -1,9 +1,10 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.9 2001/08/26 13:59:58 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/src/SpaceTimeToy.F77,v 1.10 2003/06/18 18:24:30 schnetter Exp $
       
-#include "cctk.h" 
-#include "cctk_Parameters.h"
+#include "cctk.h"
+#include "cctk_Faces.h"
 #include "cctk_Arguments.h"
+#include "cctk_Parameters.h"
       
       
       
@@ -63,9 +64,6 @@ c     Copy
       
 c     Evolve
       call SpaceTimeToy_Step (CCTK_PASS_FTOF)
-      
-c     Apply boundaries
-      call SpaceTimeToy_Boundaries (CCTK_PASS_FTOF)
       
 c     Initialise ICN iterations
       icn_iteration = 0
@@ -138,9 +136,6 @@ c     Average
 c     Evolve
       call SpaceTimeToy_Step (CCTK_PASS_FTOF)
       
-c     Apply boundaries
-      call SpaceTimeToy_Boundaries (CCTK_PASS_FTOF)
-      
 c     Step ICN iterations
       icn_iteration = icn_iteration + 1
       if (icn_iteration .eq. icn_iterations) then
@@ -200,45 +195,44 @@ c     Evolve
       DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
       
-      CCTK_REAL zero, one
-      parameter (zero=0, one=1)
+      character fbound*1000
+      CCTK_INT fboundlen
       
-      CCTK_REAL finf
-      parameter (finf=1)
-      integer npow
-      parameter (npow=1)
+      integer options
       
-      integer sw(3)
+      CCTK_INT boundary_width
+      CCTK_INT options1
+      
+      integer d
       integer ierr
       
-      sw(1) = cctk_nghostzones(1)
-      sw(2) = cctk_nghostzones(2)
-      sw(3) = cctk_nghostzones(3)
+      external Boundary_SelectGroupForBC
+      CCTK_INT Boundary_SelectGroupForBC
       
-c     Apply boundary condition
-      if (CCTK_EQUALS(bound, "flat")) then
-         call BndFlatGN (ierr, cctkGH, sw, "spacetimetoy::spacetimeevolve")
-      else if (CCTK_EQUALS(bound, "zero")) then
-         call BndScalarGN (ierr, cctkGH, sw, zero,
-     $        "spacetimetoy::spacetimeevolve")
-      else if (CCTK_EQUALS(bound, "radiation")) then
-         call BndRadiativeGN (ierr, cctkGH, sw, zero, one,
-     $        "spacetimetoy::spacetimeevolve", "spacetimetoy::spacetimeevolve")
-      else if (CCTK_EQUALS(bound, "robin")) then
-         call BndRobinGN (ierr, cctkGH, sw, finf, npow,
-     $        "spacetimetoy::spacetimeevolve")
-      else if (CCTK_EQUALS(bound, "none")) then
-         ierr = 0
-      else
-         call CCTK_WARN (0, "internal error")
+      boundary_width = cctk_nghostzones(1)
+      do d=1,3
+         if (cctk_nghostzones(d) .ne. boundary_width) then
+            call CCTK_WARN (0, "internal error")
+         end if
+      end do
+      
+      call Util_TableCreateFromString (options, "")
+      if (options .lt. 0) call CCTK_WARN (0, "internal error")
+      
+      call CCTK_FortranString (fboundlen, bound, fbound)
+      
+      options1 = options
+      ierr = Boundary_SelectGroupForBC (cctkGH, CCTK_ALL_FACES, boundary_width, options1, "spacetimetoy::spacetimeevolve", fbound)
+      if (ierr .lt. 0) then
+         call CCTK_WARN (0, "Error while selecting boundary condition")
       end if
-      if (ierr .lt. 0)  then
-         call CCTK_WARN (0, "Error while applying boundary condition")
-      end if
+      
+      call Util_TableDestroy (ierr, options)
+      if (ierr .lt. 0) call CCTK_WARN (0, "internal error")
       
       call Cart3dSymGN (ierr, cctkGH, "spacetimetoy::spacetimeevolve")
-      if (ierr .lt. 0)  then
+      if (ierr .lt. 0) then
          call CCTK_WARN (0, "Error while applying symmetry condition")
       end if
-      
+    
       end

@@ -5,6 +5,7 @@
 #include <mpi.h>
 
 #include "cctk.h"
+#include "cctk_FortranString.h"
 #include "cctk_Parameters.h"
 
 #include "Carpet/CarpetLib/src/defs.hh"
@@ -14,7 +15,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.35 2003/05/27 12:01:11 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.36 2003/06/18 18:24:28 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_helpers_cc);
 }
 
@@ -216,6 +217,15 @@ namespace Carpet {
     assert (reflevel>=0 && reflevel<hh->reflevels());
     assert (component == -1);
     
+    // Save
+    if (mglevel == -1) {
+      assert (cgh->cctk_time == 0xdeadbeef);
+      assert (cgh->cctk_delta_time == 0xdeadbeef);
+    } else {
+      refleveltimes[reflevel] = cgh->cctk_time;
+      delta_time = cgh->cctk_delta_time;
+    }
+    
     // Change
     mglevel = ml;
     mglevelfact = ipow(mgfact, mglevel);
@@ -227,10 +237,13 @@ namespace Carpet {
       mglevelfact = 0xdeadbeef;
       cgh->cctk_convlevel = 0xdeadbeef;
       
-      cgh->cctk_delta_time = 0xdeadbeef;
+      cgh->cctk_timefac = 0;
       for (int d=0; d<dim; ++d) {
-        cgh->cctk_origin_space[d] = 0xdeadbeef;
+        cgh->cctk_levoff[d] = 0xdeadbeef;
+        cgh->cctk_levoffdenom[d] = 0xdeadbeef;
       }
+      cgh->cctk_time = 0xdeadbeef;
+      cgh->cctk_delta_time = 0xdeadbeef;
       
       vect<int,dim>::ref(cgh->cctk_gsh) = 0xdeadbeef;
       for (int group=0; group<CCTK_NumGroups(); ++group) {
@@ -244,17 +257,18 @@ namespace Carpet {
       mglevelfact = ipow(mgfact, mglevel);
       cgh->cctk_convlevel = mglevel;
       
-      // TODO: set cctk_time here as well
-      cgh->cctk_delta_time = base_delta_time / reflevelfact * mglevelfact;
+      const bbox<int,dim>& baseext = dd->bases[reflevel][mglevel].exterior;
       
-      {
-        const bbox<int,dim>& baseext = dd->bases[reflevel][mglevel].exterior;
-        for (int d=0; d<dim; ++d) {
-          cgh->cctk_origin_space[d] = base_origin_space[d] + cgh->cctk_delta_space[d] / maxreflevelfact * baseext.lower()[d];
-        }
+      assert (mglevelfact==1);
+      cgh->cctk_timefac = reflevelfact / mglevelfact;
+      cgh->cctk_time = refleveltimes[reflevel];
+      cgh->cctk_delta_time = delta_time;
+      for (int d=0; d<dim; ++d) {
+        assert (baseext.lower()[d] * reflevelfact % maxreflevelfact == 0);
+        cgh->cctk_levoff[d] = baseext.lower()[d] * reflevelfact / maxreflevelfact;
+        cgh->cctk_levoffdenom[d] = 1;
       }
       
-      const bbox<int,dim>& baseext = dd->bases[reflevel][mglevel].exterior;
       vect<int,dim>::ref(cgh->cctk_gsh)	= baseext.shape() / baseext.stride();
       for (int group=0; group<CCTK_NumGroups(); ++group) {
         if (CCTK_GroupTypeI(group) == CCTK_GF) {
@@ -355,15 +369,6 @@ namespace Carpet {
       
       }
         
-#if 0
-      cout << "set_component: reflevel=" << reflevel << endl;
-      cout << "set_component: gsh=[" << cgh->cctk_gsh[0] << "," << cgh->cctk_gsh[1] << "," << cgh->cctk_gsh[2] << "]" << endl;
-      cout << "set_component: lsh=[" << cgh->cctk_lsh[0] << "," << cgh->cctk_lsh[1] << "," << cgh->cctk_lsh[2] << "]" << endl;
-      cout << "set_component: lbnd=[" << cgh->cctk_lbnd[0] << "," << cgh->cctk_lbnd[1] << "," << cgh->cctk_lbnd[2] << "]" << endl;
-      cout << "set_component: origin_space=[" << cgh->cctk_origin_space[0] << "," << cgh->cctk_origin_space[1] << "," << cgh->cctk_origin_space[2] << "]" << endl;
-      cout << "set_component: delta_space=[" << cgh->cctk_delta_space[0] << "," << cgh->cctk_delta_space[1] << "," << cgh->cctk_delta_space[2] << "]" << endl;
-#endif
-      
       for (int group=0; group<CCTK_NumGroups(); ++group) {
         if (CCTK_GroupTypeI(group) == CCTK_GF) {
           
@@ -435,6 +440,14 @@ namespace Carpet {
     return 0;
   }
   
+  extern "C" void CCTK_FCALL CCTK_FNAME(CallScheduleGroup)
+    (int * const ierr, cGH * const cgh, ONE_FORTSTRING_ARG)
+  {
+    ONE_FORTSTRING_CREATE (group);
+    *ierr = CallScheduleGroup (cgh, group);
+    free (group);
+  }
+  
   
   
   // This is a temporary measure to call a local mode function from a
@@ -448,16 +461,16 @@ namespace Carpet {
       // we are in global mode
       BEGIN_REFLEVEL_LOOP(cgh) {
         BEGIN_MGLEVEL_LOOP(cgh) {
-          BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
+          BEGIN_LOCAL_COMPONENT_LOOP(cgh, CCTK_GF) {
             function (cgh);
-          } END_LOCAL_COMPONENT_LOOP(cgh);
-        } END_MGLEVEL_LOOP(cgh);
-      } END_REFLEVEL_LOOP(cgh);
+          } END_LOCAL_COMPONENT_LOOP;
+        } END_MGLEVEL_LOOP;
+      } END_REFLEVEL_LOOP;
     } else {
       // we are in level mode
-      BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
+      BEGIN_LOCAL_COMPONENT_LOOP(cgh, CCTK_GF) {
         function (cgh);
-      } END_LOCAL_COMPONENT_LOOP(cgh);
+      } END_LOCAL_COMPONENT_LOOP;
     }
     return 0;
   }
@@ -469,8 +482,8 @@ namespace Carpet {
     BEGIN_REFLEVEL_LOOP(cgh) {
       BEGIN_MGLEVEL_LOOP(cgh) {
         function (cgh);
-      } END_MGLEVEL_LOOP(cgh);
-    } END_REFLEVEL_LOOP(cgh);
+      } END_MGLEVEL_LOOP;
+    } END_REFLEVEL_LOOP;
     return 0;
   }
   

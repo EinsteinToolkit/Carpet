@@ -1,5 +1,5 @@
 # Schedule definitions for thorn IDScalarWaveExpl
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveExpl/schedule.ccl,v 1.2 2003/11/05 16:18:40 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveExpl/schedule.ccl,v 1.1 2003/06/18 18:24:29 schnetter Exp $
 
 SCHEDULE IDScalarWaveExpl_InitialData AT initial
 {

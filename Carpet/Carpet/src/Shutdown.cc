@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.9 2003/05/08 15:35:49 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Shutdown.cc,v 1.10 2003/06/18 18:24:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Shutdown_cc);
 }
 
@@ -34,7 +34,6 @@ namespace Carpet {
     Waypoint ("Current time is %g", cgh->cctk_time);
     
     BEGIN_REFLEVEL_LOOP(cgh) {
-      
       BEGIN_MGLEVEL_LOOP(cgh) {
 	
         do_global_mode = reflevel == 0;
@@ -47,14 +46,13 @@ namespace Carpet {
         Waypoint ("%*sScheduling TERMINATE", 2*reflevel, "");
         CCTK_ScheduleTraverse ("CCTK_TERMINATE", cgh, CallFunction);
 	
-      } END_MGLEVEL_LOOP(cgh);
-      
-    } END_REFLEVEL_LOOP(cgh);
+      } END_MGLEVEL_LOOP;
+    } END_REFLEVEL_LOOP;
     
     do_global_mode = true;
     
     // Shutdown
-    Waypoint ("%*sScheduling SHUTDOWN", 2*reflevel, "");
+    Waypoint ("Scheduling SHUTDOWN");
     CCTK_ScheduleTraverse ("CCTK_SHUTDOWN", cgh, CallFunction);
     
     CCTK_PRINTSEPARATOR;

@@ -6,7 +6,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.14 2003/05/12 16:24:25 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.15 2003/06/18 18:24:28 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_variables_cc);
 }
 
@@ -55,13 +55,9 @@ namespace Carpet {
   // Is this the time for a global mode call?
   bool do_global_mode;
   
-  
-  
-  // Time step on base grid
-  CCTK_REAL base_delta_time;
-  
-  // Spatial origin on base grid
-  vect<CCTK_REAL,dim> base_origin_space;
+  // Current times on the refinement levels
+  vector<CCTK_REAL> refleveltimes;
+  CCTK_REAL delta_time;
   
   
   

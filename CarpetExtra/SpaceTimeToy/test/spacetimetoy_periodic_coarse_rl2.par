@@ -1,8 +1,8 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/test/spacetimetoy_periodic_coarse_rl2.par,v 1.3 2002/10/24 21:11:07 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/test/spacetimetoy_periodic_coarse_rl2.par,v 1.4 2003/06/18 18:24:30 schnetter Exp $
 
 !DESC "SpaceTimeToy with periodic boundaries, 1 refinement level"
 
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDSpaceTimeToy SpaceTimeToy Hydrotoy"
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Slab Carpet CarpetIOASCII CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDSpaceTimeToy SpaceTimeToy Hydrotoy"
 
 Carpet::poison_new_timelevels	= yes
 #Carpet::check_for_poison	= yes

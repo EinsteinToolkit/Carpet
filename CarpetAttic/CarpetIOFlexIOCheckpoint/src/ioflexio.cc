@@ -43,7 +43,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.1 2003/05/16 14:02:18 hawke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.2 2003/06/18 18:24:28 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -168,19 +168,23 @@ namespace CarpetIOFlexIO {
 
   
 
-  int WriteVarAs (const cGH* const cgh, IObase* writer, AMRwriter* amrwriter, int varindex, int group)
+  int WriteVarAs (const cGH* const cgh, IObase* writer, AMRwriter* amrwriter, int varindex)
   {
 
     DECLARE_CCTK_PARAMETERS;
 
-    /* I have got no idea why this stuff below is needed... ask Eric Schnetter */
+    /* I have got no idea why this stuff below is needed... ask Erik Schnetter */
 
+    const int group = CCTK_GroupIndexFromVarI (varindex);
     const int n0 = CCTK_FirstVarIndexI(group);
     assert (n0>=0 && n0<CCTK_NumVars());
     const int var = varindex - n0;
     assert (var>=0 && var<CCTK_NumVars());
     const int tl = 0;
-
+    
+    const int grouptype = CCTK_GroupTypeI(group);
+    assert (! (grouptype != CCTK_GF && reflevel>0));
+    
     if (CCTK_MyProc(cgh)==0) {
 
       // Set datatype
@@ -214,7 +218,7 @@ namespace CarpetIOFlexIO {
 	origin[d] = lower[d];
 	delta[d] = cgh->cctk_delta_space[d];
       }
-      timestep = base_delta_time;
+      timestep = cgh->cctk_delta_time;
       amrwriter->setTopLevelParameters
 	(gpdim, origin, delta, timestep, maxreflevels);
       
@@ -239,7 +243,7 @@ namespace CarpetIOFlexIO {
     }
     
     // Traverse all components on this refinement and multigrid level
-    BEGIN_COMPONENT_LOOP(cgh) {
+    BEGIN_COMPONENT_LOOP(cgh, grouptype) {
       
       const ggf<dim>* ff = 0;
       
@@ -289,7 +293,7 @@ namespace CarpetIOFlexIO {
       // Delete temporary copy
       delete tmp;
       
-    } END_COMPONENT_LOOP(cgh);
+    } END_COMPONENT_LOOP;
 
 
   return 0;
@@ -317,6 +321,9 @@ namespace CarpetIOFlexIO {
 		  varname);
       return 0;
     }
+    
+    const int grouptype = CCTK_GroupTypeI(group);
+    if (grouptype != CCTK_GF && reflevel>0) return 0;
     
     // Get grid hierarchy extentsion from IOUtil
     const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cgh, "IO");
@@ -394,7 +401,7 @@ namespace CarpetIOFlexIO {
       amrwriter = new AMRwriter(*writer);
     }
 
-      WriteVarAs(cgh,writer,amrwriter,n,group);
+      WriteVarAs(cgh,writer,amrwriter,n);
     
     // Close the file
     if (CCTK_MyProc(cgh)==0) {
@@ -497,220 +504,201 @@ namespace CarpetIOFlexIO {
     assert (var>=0 && var<CCTK_NumVars());
     const int tl = 0;
     
-    switch (CCTK_GroupTypeI(group)) {
-      
-    case CCTK_SCALAR: {
-      // Don't input scalars
-      CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
-		  "Cannout input variable \"%s\" because it is a scalar",
-		  varname);
+    // Check for storage
+    if (! CCTK_QueryGroupStorageI(cgh, group)) {
+      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Cannot input variable \"%s\" because it has no storage",
+                  varname);
       return 0;
     }
     
-    case CCTK_ARRAY:
-    case CCTK_GF: {
+    const int grouptype = CCTK_GroupTypeI(group);
+    if (grouptype != CCTK_GF && reflevel>0) return 0;
+    
+    // Find the input directory
+    const char* myindir = GetStringParameter("indir3D", "");
+    
+    // Invent a file name
+    const char* extension = 0;
+    if (CCTK_Equals(in3D_format, "IEEE")) {
+      extension = ".raw";
+#ifdef HDF5
+    } else if (CCTK_Equals(in3D_format, "HDF4")) {
+      extension = ".hdf";
+    } else if (CCTK_Equals(in3D_format, "HDF5")) {
+      extension = ".h5";
+#endif
+    } else {
+      assert (0);
+    }
+    extension = GetStringParameter ("in3D_extension", extension);
+    
+    ostringstream filenamebuf;
+    filenamebuf << myindir << "/" << alias << extension;
+    string filenamestr = filenamebuf.str();
+    const char * const filename = filenamestr.c_str();
+    
+    IObase* reader = 0;
+    AmrGridReader* amrreader = 0;
+    int ndatasets = -1;
+    
+    const int gpdim = CCTK_GroupDimI(group);
+    
+    int rank;
+    int dims[dim];
+    int nbytes;
+    
+    // Read the file only on the root processor
+    if (CCTK_MyProc(cgh)==0) {
       
-      // Check for storage
-      if (! CCTK_QueryGroupStorageI(cgh, group)) {
-	CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-		    "Cannot input variable \"%s\" because it has no storage",
-		    varname);
-	return 0;
-      }
-      
-      // Find the input directory
-      const char* myindir = GetStringParameter("indir3D", "");
-      
-      // Invent a file name
-      const char* extension = 0;
+      // Open the file 
+      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Opening file \"%s\"", filename);
       if (CCTK_Equals(in3D_format, "IEEE")) {
-	extension = ".raw";
+        reader = new IEEEIO(filename, IObase::Read);
 #ifdef HDF5
       } else if (CCTK_Equals(in3D_format, "HDF4")) {
-	extension = ".hdf";
+        reader = new HDFIO(filename, IObase::Read);
       } else if (CCTK_Equals(in3D_format, "HDF5")) {
-	extension = ".h5";
+        reader = new H5IO(filename, IObase::Read);
 #endif
       } else {
-	assert (0);
+        assert (0);
       }
-      extension = GetStringParameter ("in3D_extension", extension);
-      
-      ostringstream filenamebuf;
-      filenamebuf << myindir << "/" << alias << extension;
-      string filenamestr = filenamebuf.str();
-      const char * const filename = filenamestr.c_str();
-      
-      IObase* reader = 0;
-      AmrGridReader* amrreader = 0;
-      int ndatasets = -1;
-      
-      const int gpdim = CCTK_GroupDimI(group);
-      
-      int rank;
-      int dims[dim];
-      int nbytes;
-      
-      // Read the file only on the root processor
-      if (CCTK_MyProc(cgh)==0) {
-	
-	// Open the file 
-	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Opening file \"%s\"", filename);
- 	if (CCTK_Equals(in3D_format, "IEEE")) {
-	  reader = new IEEEIO(filename, IObase::Read);
-#ifdef HDF5
-	} else if (CCTK_Equals(in3D_format, "HDF4")) {
-	  reader = new HDFIO(filename, IObase::Read);
-	} else if (CCTK_Equals(in3D_format, "HDF5")) {
-	  reader = new H5IO(filename, IObase::Read);
-#endif
-	} else {
-	  assert (0);
-	}
-	if (!reader->isValid()) {
-	  CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-		      "Could not open file \"%s\" for reading", filename);
-	}
-	assert (reader->isValid());
-	
-	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Reading AMR info");
-	amrreader = new AmrGridReader(*reader);
-	
-	// Read information about dataset
-	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Reading dataset info");
-	IObase::DataType numbertype;
-	reader->readInfo (numbertype, rank, dims);
-	nbytes = IObase::nBytes(numbertype,rank,dims);
-	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "type=%d rank=%d dims=[%d,%d,%d] nbytes=%d", (int)numbertype, rank, dims[0], dims[1], dims[2], nbytes);
-	
-	// Check rank
-	assert (rank==gpdim);
-	
-	// Check datatype
-	// TODO: Check datatype correctly
-	assert (CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL8
-		|| (sizeof(CCTK_REAL) == sizeof(CCTK_REAL8)
-		    && CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL));
-	
-	// TODO: check grid spacing
-	
-	// Number of datasets
-	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Reading number of datasets");
-	ndatasets = reader->nDatasets();
-	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "ndatasets=%d", ndatasets);
-	assert (ndatasets>=0);
+      if (!reader->isValid()) {
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Could not open file \"%s\" for reading", filename);
       }
+      assert (reader->isValid());
       
-      // Broadcast rank, dimensions, and nbytes
-      MPI_Bcast (&rank, 1, MPI_INT, 0, dist::comm);
-      assert (rank>=1);
-      MPI_Bcast (&dims, rank, MPI_INT, 0, dist::comm);
-      for (int d=0; d<rank; ++d) assert (dims[d]>=0);
-      MPI_Bcast (&nbytes, 1, MPI_INT, 0, dist::comm);
-      assert (nbytes>=0);
+      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Reading AMR info");
+      amrreader = new AmrGridReader(*reader);
       
-      // Broadcast number of datasets
-      MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
+      // Read information about dataset
+      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Reading dataset info");
+      IObase::DataType numbertype;
+      reader->readInfo (numbertype, rank, dims);
+      nbytes = IObase::nBytes(numbertype,rank,dims);
+      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "type=%d rank=%d dims=[%d,%d,%d] nbytes=%d", (int)numbertype, rank, dims[0], dims[1], dims[2], nbytes);
+      
+      // Check rank
+      assert (rank==gpdim);
+      
+      // Check datatype
+      // TODO: Check datatype correctly
+      assert (CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL8
+              || (sizeof(CCTK_REAL) == sizeof(CCTK_REAL8)
+                  && CCTK_VarTypeI(n) == CCTK_VARIABLE_REAL));
+      
+      // TODO: check grid spacing
+      
+      // Number of datasets
+      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Reading number of datasets");
+      ndatasets = reader->nDatasets();
+      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "ndatasets=%d", ndatasets);
       assert (ndatasets>=0);
+    }
+    
+    // Broadcast rank, dimensions, and nbytes
+    MPI_Bcast (&rank, 1, MPI_INT, 0, dist::comm);
+    assert (rank>=1);
+    MPI_Bcast (&dims, rank, MPI_INT, 0, dist::comm);
+    for (int d=0; d<rank; ++d) assert (dims[d]>=0);
+    MPI_Bcast (&nbytes, 1, MPI_INT, 0, dist::comm);
+    assert (nbytes>=0);
+    
+    // Broadcast number of datasets
+    MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
+    assert (ndatasets>=0);
+    
+    // Read all datasets
+    // TODO: read only some datasets
+    for (int dataset=0; dataset<ndatasets; ++dataset) {
+      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Handling dataset #%d", dataset);
       
-      // Read all datasets
-      // TODO: read only some datasets
-      for (int dataset=0; dataset<ndatasets; ++dataset) {
-	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Handling dataset #%d", dataset);
-	
-	// Read grid
-	AmrGrid* amrgrid = 0;
-	int amr_origin[dim];
-	int amr_dims[dim];
-	
-	if (CCTK_MyProc(cgh)==0) {
-	  
-	  // Read data
-	  if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Reading AMR data");
-	  amrgrid = amrreader->getGrid(dataset);
-	  assert (amrgrid!=0);
-	  assert (amrgrid->data!=0);
-	  
-	  // If iorigin attribute is absent, assume file has unigrid
-	  // data.  Initialize iorigin to 0.
-	  IObase::DataType atype;
-	  int alength;
-	  if (reader->readAttributeInfo("iorigin", atype, alength) < 0) {
-	    for (int d=0; d<gpdim; ++d) {
-	      amrgrid->iorigin[d] = 0;
-	    }
-	  }
-	  
-	  for (int d=0; d<gpdim; ++d) {
-	    amr_origin[d] = amrgrid->iorigin[d];
-	    amr_dims[d] = amrgrid->dims[d];
-	  }
-	  for (int d=gpdim; d<dim; ++d) {
-	    amr_origin[d] = 0;
-	    amr_dims[d] = 1;
-	  }
-	  
-	} // MyProc == 0
-	MPI_Bcast (amr_origin, dim, MPI_INT, 0, dist::comm);
-	MPI_Bcast (amr_dims, dim, MPI_INT, 0, dist::comm);
-	
-	// Traverse all components on this refinement and multigrid
-	// level
-	BEGIN_COMPONENT_LOOP(cgh) {
-	  
-	  ggf<dim>* ff = 0;
-	  
-	  assert (var < (int)arrdata[group].data.size());
-	  ff = (ggf<dim>*)arrdata[group].data[var];
-	  
-	  gdata<dim>* const data
-	    = (*ff) (tl, reflevel, component, mglevel);
-	  
-	  // Create temporary data storage on processor 0
-	  const vect<int,dim> str = vect<int,dim>(reflevelfact);
-	  const vect<int,dim> lb = vect<int,dim>(amr_origin) * str;
-	  const vect<int,dim> ub
-	    = lb + (vect<int,dim>(amr_dims) - 1) * str;
-	  const bbox<int,dim> ext(lb,ub,str);
-	  gdata<dim>* const tmp = data->make_typed ();
-	  
-	  if (CCTK_MyProc(cgh)==0) {
-	    tmp->allocate (ext, 0, amrgrid->data);
-	  } else {
-	    tmp->allocate (ext, 0, 0);
-	  }
-	  
-	  // Copy into grid function
-	  data->copy_from (tmp, ext);
-	  
-	  // Delete temporary copy
-	  delete tmp;
-	  
-	} END_COMPONENT_LOOP(cgh);
-	
-	if (CCTK_MyProc(cgh)==0) {
-	  free (amrgrid->data);
-	  free (amrgrid);
-	  amrgrid = 0;
-	}
-	
-      }	// loop over datasets
+      // Read grid
+      AmrGrid* amrgrid = 0;
+      int amr_origin[dim];
+      int amr_dims[dim];
       
-      // Close the file
       if (CCTK_MyProc(cgh)==0) {
-	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Deleting AMR info");
-	delete amrreader;
-	amrreader = 0;
-	if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Closing file");
-	delete reader;
-	reader = 0;
+        
+        // Read data
+        if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Reading AMR data");
+        amrgrid = amrreader->getGrid(dataset);
+        assert (amrgrid!=0);
+        assert (amrgrid->data!=0);
+        
+        // If iorigin attribute is absent, assume file has unigrid
+        // data.  Initialize iorigin to 0.
+        IObase::DataType atype;
+        int alength;
+        if (reader->readAttributeInfo("iorigin", atype, alength) < 0) {
+          for (int d=0; d<gpdim; ++d) {
+            amrgrid->iorigin[d] = 0;
+          }
+        }
+        
+        for (int d=0; d<gpdim; ++d) {
+          amr_origin[d] = amrgrid->iorigin[d];
+          amr_dims[d] = amrgrid->dims[d];
+        }
+        for (int d=gpdim; d<dim; ++d) {
+          amr_origin[d] = 0;
+          amr_dims[d] = 1;
+        }
+        
+      } // MyProc == 0
+      MPI_Bcast (amr_origin, dim, MPI_INT, 0, dist::comm);
+      MPI_Bcast (amr_dims, dim, MPI_INT, 0, dist::comm);
+      
+      // Traverse all components on this refinement and multigrid
+      // level
+      BEGIN_COMPONENT_LOOP(cgh, grouptype) {
+        
+        ggf<dim>* ff = 0;
+        
+        assert (var < (int)arrdata[group].data.size());
+        ff = (ggf<dim>*)arrdata[group].data[var];
+        
+        gdata<dim>* const data = (*ff) (tl, reflevel, component, mglevel);
+        
+        // Create temporary data storage on processor 0
+        const vect<int,dim> str = vect<int,dim>(reflevelfact);
+        const vect<int,dim> lb = vect<int,dim>(amr_origin) * str;
+        const vect<int,dim> ub = lb + (vect<int,dim>(amr_dims) - 1) * str;
+        const bbox<int,dim> ext(lb,ub,str);
+        gdata<dim>* const tmp = data->make_typed ();
+        
+        if (CCTK_MyProc(cgh)==0) {
+          tmp->allocate (ext, 0, amrgrid->data);
+        } else {
+          tmp->allocate (ext, 0, 0);
+        }
+        
+        // Copy into grid function
+        data->copy_from (tmp, ext);
+        
+        // Delete temporary copy
+        delete tmp;
+        
+      } END_COMPONENT_LOOP;
+      
+      if (CCTK_MyProc(cgh)==0) {
+        free (amrgrid->data);
+        free (amrgrid);
+        amrgrid = 0;
       }
       
-      break;
-    } // ARRAY or GROUP
-      
-    default:
-      assert (0);
+    }	// loop over datasets
+    
+    // Close the file
+    if (CCTK_MyProc(cgh)==0) {
+      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Deleting AMR info");
+      delete amrreader;
+      amrreader = 0;
+      if (verbose) CCTK_VInfo (CCTK_THORNSTRING, "Closing file");
+      delete reader;
+      reader = 0;
     }
     
     return 0;

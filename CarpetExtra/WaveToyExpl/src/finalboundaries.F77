@@ -1,8 +1,8 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyExpl/src/finalboundaries.F77,v 1.2 2003/10/27 15:31:40 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyExpl/src/finalboundaries.F77,v 1.1 2003/06/18 18:24:30 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
-#include "cctk_Functions.h"
+#include "cctk_Faces.h"
 #include "cctk_Parameters.h"
 
       subroutine WaveToyExpl_FinalBoundaries (CCTK_ARGUMENTS)
@@ -10,6 +10,8 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyExpl/src/finalb
       DECLARE_CCTK_ARGUMENTS
       DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
+      external Boundary_SelectGroupForBC
+      CCTK_INT Boundary_SelectGroupForBC
       CCTK_INT bndwidth
       parameter (bndwidth = 1)
       character fbound*100

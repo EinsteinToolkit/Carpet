@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.29 2003/05/27 12:01:11 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.30 2003/06/18 18:24:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -42,7 +42,6 @@ namespace Carpet {
     
     // Initialise stuff
     cgh->cctk_iteration = 0;
-    cgh->cctk_time = cctk_initial_time;
     do_global_mode = true;
     
     // Enable storage and communtication
@@ -65,10 +64,12 @@ namespace Carpet {
       
       BEGIN_MGLEVEL_LOOP(cgh) {
 	
+        cgh->cctk_time = cctk_initial_time + tt->time (0, reflevel, mglevel) * cgh->cctk_delta_time;
         do_global_mode = reflevel == 0;
         
-	Waypoint ("%*sCurrent time is %g%s", 2*reflevel, "",
+        Waypoint ("%*sCurrent time is %g, delta is %g%s", 2*reflevel, "",
                   cgh->cctk_time,
+                  cgh->cctk_delta_time / cgh->cctk_timefac,
                   do_global_mode ? "   (global time)" : "");
 	
 	// Checking
@@ -77,20 +78,6 @@ namespace Carpet {
 	// Set up the grid
 	Waypoint ("%*sScheduling BASEGRID", 2*reflevel, "");
 	CCTK_ScheduleTraverse ("CCTK_BASEGRID", cgh, CallFunction);
-	
-	// Allow the time step to be changed
-	if (reflevel==0) {
-	  // Initialise time and time step on coarse grid
-	  base_delta_time = cgh->cctk_delta_time;
-          for (int d=0; d<dim; ++d) {
-            base_origin_space[d] = cgh->cctk_origin_space[d];
-          }
-	} else {
-// 	assert (abs(cgh->cctk_delta_time - base_delta_time / reflevelfactor)
-// 		< 1e-6 * base_delta_time);
-	  // This circumvents a bug in CactusBase/Time
-	  cgh->cctk_delta_time = base_delta_time / reflevelfact * mglevelfact;
-	}
 	
         if (! init_each_timelevel) {
           
@@ -103,7 +90,7 @@ namespace Carpet {
         } else {
           // init_each_timelevel
           
-          bool const orig_do_global_mode = do_global_mode;
+          bool const saved_do_global_mode = do_global_mode;
           
 	  tt->set_delta
             (reflevel, mglevel, - tt->get_delta (reflevel, mglevel));
@@ -115,18 +102,18 @@ namespace Carpet {
           
           for (int tl=-2; tl<=0; ++tl) {
             
-            do_global_mode = orig_do_global_mode && tl==0;
+            do_global_mode = saved_do_global_mode && tl==0;
             
             // Advance level times
             tt->advance_time (reflevel, mglevel);
-            cgh->cctk_time
-              = tt->time (0, reflevel, mglevel) * base_delta_time;
+            cgh->cctk_time = cctk_initial_time + tt->time (0, reflevel, mglevel) * cgh->cctk_delta_time;
             
             // Cycle time levels
             CycleTimeLevels (cgh);
             
-            Waypoint ("%*sCurrent time is %g%s", 2*reflevel, "",
+            Waypoint ("%*sCurrent time is %g, delta is %g%s", 2*reflevel, "",
                       cgh->cctk_time,
+                      cgh->cctk_delta_time / cgh->cctk_timefac,
                       do_global_mode ? "   (global time)" : "");
             
             // Set up the initial data
@@ -137,7 +124,7 @@ namespace Carpet {
             
           } // for tl
           
-          do_global_mode = orig_do_global_mode;
+          do_global_mode = saved_do_global_mode;
           
         } // init_each_timelevel
 	
@@ -148,13 +135,13 @@ namespace Carpet {
 	// Checking
 	PoisonCheck (cgh, alltimes);
 	
-      } END_MGLEVEL_LOOP(cgh);
+      } END_MGLEVEL_LOOP;
       
       // Regrid
       Waypoint ("%*sRegrid", 2*reflevel, "");
       Regrid (cgh, reflevel);
       
-    } END_REFLEVEL_LOOP(cgh);
+    } END_REFLEVEL_LOOP;
     
     
     
@@ -164,18 +151,20 @@ namespace Carpet {
 	
         do_global_mode = reflevel == 0;
         
-	// Restrict
-	Waypoint ("%*sCurrent time is %g%s", 2*reflevel, "",
+        Waypoint ("%*sCurrent time is %g, delta is %g%s", 2*reflevel, "",
                   cgh->cctk_time,
+                  cgh->cctk_delta_time / cgh->cctk_timefac,
                   do_global_mode ? "   (global time)" : "");
+        
+	// Restrict
  	Restrict (cgh);
         
         Waypoint ("%*sScheduling POSTRESTRICT", 2*reflevel, "");
         CCTK_ScheduleTraverse ("POSTRESTRICT", cgh, CallFunction);
 	
-      } END_MGLEVEL_LOOP(cgh);
+      } END_MGLEVEL_LOOP;
       
-    } END_REVERSE_REFLEVEL_LOOP(cgh);
+    } END_REVERSE_REFLEVEL_LOOP;
     
     
     
@@ -192,8 +181,9 @@ namespace Carpet {
 	
         do_global_mode = reflevel == 0;
         
-	Waypoint ("%*sCurrent time is %g%s", 2*reflevel, "",
+        Waypoint ("%*sCurrent time is %g, delta is %g%s", 2*reflevel, "",
                   cgh->cctk_time,
+                  cgh->cctk_delta_time / cgh->cctk_timefac,
                   do_global_mode ? "   (global time)" : "");
         
 	// Checking
@@ -216,9 +206,9 @@ namespace Carpet {
 	// Checking
 	CheckChecksums (cgh, allbutcurrenttime);
 	
-      } END_MGLEVEL_LOOP(cgh);
+      } END_MGLEVEL_LOOP;
       
-    } END_REFLEVEL_LOOP(cgh);
+    } END_REFLEVEL_LOOP;
     
     Waypoint ("done with Initialise.");
     
@@ -239,7 +229,6 @@ namespace Carpet {
     BEGIN_REFLEVEL_LOOP(cgh) {
       BEGIN_MGLEVEL_LOOP(cgh) {
 	
-	cgh->cctk_time = cctk_initial_time;
 	
 	// Cycle time levels (ignore arrays)
 	cout << "3TL rl=" << reflevel << " cycling" << endl;
@@ -247,10 +236,10 @@ namespace Carpet {
 	
 	// Advance level times
 	tt->advance_time (reflevel, mglevel);
-	cgh->cctk_time += cgh->cctk_delta_time;
+        cgh->cctk_time = cctk_initial_time + tt->time (0, reflevel, mglevel) * cgh->cctk_delta_time;
 	cout << "3TL rl=" << reflevel << " ml=" << mglevel
 	     << " time=" << tt->get_time (reflevel, mglevel)
-	     << " time=" << cgh->cctk_time / base_delta_time << endl;
+	     << " time=" << cgh->cctk_time / cgh->cctk_delta_time << endl;
 	
 	// Evolve forward
 	Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
@@ -271,11 +260,11 @@ namespace Carpet {
 	  tt->advance_time (rl, mglevel);
 	}
 	cgh->cctk_delta_time *= -1;
-	cgh->cctk_time += cgh->cctk_delta_time;
-	cgh->cctk_time += cgh->cctk_delta_time;
+        delta_time *= -1;
+        cgh->cctk_time = cctk_initial_time - tt->time (0, reflevel, mglevel) * cgh->cctk_delta_time;
 	cout << "3TL rl=" << reflevel << " ml=" << mglevel
 	     << " time=" << tt->get_time (reflevel, mglevel)
-	     << " time=" << cgh->cctk_time / base_delta_time << endl;
+	     << " time=" << cgh->cctk_time / cgh->cctk_delta_time << endl;
 	
 	// Evolve backward
 	Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
@@ -296,14 +285,14 @@ namespace Carpet {
 	  tt->advance_time (rl, mglevel);
 	}
 	cgh->cctk_delta_time *= -1;
-	cgh->cctk_time += cgh->cctk_delta_time;
-	cgh->cctk_time += cgh->cctk_delta_time;
+        delta_time *= -1;
+        cgh->cctk_time = cctk_initial_time + tt->time (0, reflevel, mglevel) * cgh->cctk_delta_time;
 	cout << "3TL rl=" << reflevel << " ml=" << mglevel
 	     << " time=" << tt->get_time (reflevel, mglevel)
-	     << " time=" << cgh->cctk_time / base_delta_time << endl;
+	     << " time=" << cgh->cctk_time / cgh->cctk_delta_time << endl;
 	
-      } END_MGLEVEL_LOOP(cgh);
-    } END_REFLEVEL_LOOP(cgh);
+      } END_MGLEVEL_LOOP;
+    } END_REFLEVEL_LOOP;
     
     cout << "Hourglass structure in place" << endl;
       
@@ -315,7 +304,7 @@ namespace Carpet {
     BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
       BEGIN_MGLEVEL_LOOP(cgh) {
 	
-	cgh->cctk_time = cctk_initial_time + cgh->cctk_delta_time;
+	cgh->cctk_time = cctk_initial_time + cgh->cctk_delta_time / cgh->cctk_timefac;
 	
 	// Restrict
 	cout << "3TL rl=" << reflevel << " restricting" << endl;
@@ -335,11 +324,11 @@ namespace Carpet {
 	  tt->advance_time (rl, mglevel);
 	}
 	cgh->cctk_delta_time *= -1;
-	cgh->cctk_time += cgh->cctk_delta_time;
-	cgh->cctk_time += cgh->cctk_delta_time;
+        delta_time *= -1;
+        cgh->cctk_time = cctk_initial_time - tt->time (0, reflevel, mglevel) * cgh->cctk_delta_time;
 	cout << "3TL rl=" << reflevel << " ml=" << mglevel
 	     << " time=" << tt->get_time (reflevel, mglevel)
-	     << " time=" << cgh->cctk_time / base_delta_time << endl;
+	     << " time=" << cgh->cctk_time / cgh->cctk_delta_time << endl;
 	
 	// Cycle time levels
 	cout << "3TL rl=" << reflevel << " cycling" << endl;
@@ -347,10 +336,10 @@ namespace Carpet {
 	
 	// Advance level times
 	tt->advance_time (reflevel, mglevel);
-	cgh->cctk_time += cgh->cctk_delta_time;
+        cgh->cctk_time = cctk_initial_time - tt->time (0, reflevel, mglevel) * cgh->cctk_delta_time;
 	cout << "3TL rl=" << reflevel << " ml=" << mglevel
 	     << " time=" << tt->get_time (reflevel, mglevel)
-	     << " time=" << cgh->cctk_time / base_delta_time << endl;
+	     << " time=" << cgh->cctk_time / cgh->cctk_delta_time << endl;
 	
 	// Evolve backward
 	Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
@@ -371,18 +360,17 @@ namespace Carpet {
 	  tt->advance_time (rl, mglevel);
 	}
 	cgh->cctk_delta_time *= -1;
-	cgh->cctk_time += cgh->cctk_delta_time;
-	cgh->cctk_time += cgh->cctk_delta_time;
+        delta_time *= -1;
+        cgh->cctk_time = cctk_initial_time + tt->time (0, reflevel, mglevel) * cgh->cctk_delta_time;
 	cout << "3TL rl=" << reflevel << " ml=" << mglevel
 	     << " time=" << tt->get_time (reflevel, mglevel)
-	     << " time=" << cgh->cctk_time / base_delta_time << endl;
+	     << " time=" << cgh->cctk_time / cgh->cctk_delta_time << endl;
 	
-      } END_MGLEVEL_LOOP(cgh);
-    } END_REVERSE_REFLEVEL_LOOP(cgh);
+      } END_MGLEVEL_LOOP;
+    } END_REVERSE_REFLEVEL_LOOP;
     
     // Reset stuff
     cgh->cctk_iteration = 0;
-    cgh->cctk_time = cctk_initial_time;
     
     CCTK_INFO ("Finished initialising three timelevels");
   }

@@ -30,7 +30,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.48 2003/05/13 16:32:10 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.49 2003/06/18 18:24:28 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -166,7 +166,8 @@ namespace CarpetIOASCII {
     assert (n0>=0 && n0<CCTK_NumVars());
     const int var = n - n0;
     assert (var>=0 && var<CCTK_NumVars());
-    const int tl = 0;
+    const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
+    assert (num_tl>=1);
     
     // Check for storage
     if (! CCTK_QueryGroupStorageI(cgh, group)) {
@@ -175,6 +176,9 @@ namespace CarpetIOASCII {
 		  varname);
       return 0;
     }
+    
+    const int grouptype = CCTK_GroupTypeI(group);
+    const int rl = grouptype==CCTK_GF ? reflevel : 0;
     
     // Get grid hierarchy extentsion from IOUtil
     const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cgh, "IO");
@@ -359,80 +363,88 @@ namespace CarpetIOASCII {
 	  
 	  // Traverse all components on this refinement and multigrid
 	  // level
-	  BEGIN_COMPONENT_LOOP(cgh) {
+	  BEGIN_COMPONENT_LOOP(cgh, grouptype) {
 	    
 	    const ggf<dim>* ff = 0;
 	    
 	    assert (var < (int)arrdata[group].data.size());
 	    ff = (ggf<dim>*)arrdata[group].data[var];
 	    
-	    const gdata<dim>* const data
-              = (*ff) (tl, reflevel, component, mglevel);
-	    bbox<int,dim> ext = data->extent();
-	    
-	    vect<int,dim> lo = ext.lower();
-	    vect<int,dim> hi = ext.upper();
-	    vect<int,dim> str = ext.stride();
-	    
-	    // Ignore ghost zones if desired
-	    for (int d=0; d<dim; ++d) {
-	      bool output_lower_ghosts
-		= cgh->cctk_bbox[2*d] ? out3D_outer_ghosts : out3D_ghosts;
-	      bool output_upper_ghosts
-		= cgh->cctk_bbox[2*d+1] ? out3D_outer_ghosts : out3D_ghosts;
-	      
-	      if (! output_lower_ghosts) {
-		lo[d] += cgh->cctk_nghostzones[d] * str[d];
-	      }
-	      if (! output_upper_ghosts) {
-		hi[d] -= cgh->cctk_nghostzones[d] * str[d];
-	      }
-	    }
-	    ext = bbox<int,dim>(lo,hi,str);
-	    
-	    // coordinates
-	    const CCTK_REAL coord_time = cgh->cctk_time;
-	    vect<CCTK_REAL,dim> global_lower, global_upper;
-	    vect<CCTK_REAL,dim> coord_delta;
-            if (CCTK_GroupTypeI(group) == CCTK_GF) {
+            const int mintl = output_all_timelevels ? 1-num_tl : 0;
+            const int maxtl = 0;
+            for (int tl=mintl; tl<=maxtl; ++tl) {
+              
+              const gdata<dim>* const data
+                = (*ff) (tl, rl, component, mglevel);
+              bbox<int,dim> ext = data->extent();
+              
+              vect<int,dim> lo = ext.lower();
+              vect<int,dim> hi = ext.upper();
+              vect<int,dim> str = ext.stride();
+              
+              // Ignore ghost zones if desired
               for (int d=0; d<dim; ++d) {
-                const int ierr = CCTK_CoordRange
-                  (cgh, &global_lower[d], &global_upper[d], d+1, 0, "cart3d");
-                assert (!ierr);
-                coord_delta[d] = cgh->cctk_delta_space[d] / maxreflevelfact;
+                bool output_lower_ghosts
+                  = cgh->cctk_bbox[2*d] ? out3D_outer_ghosts : out3D_ghosts;
+                bool output_upper_ghosts
+                  = cgh->cctk_bbox[2*d+1] ? out3D_outer_ghosts : out3D_ghosts;
+                
+                if (! output_lower_ghosts) {
+                  lo[d] += cgh->cctk_nghostzones[d] * str[d];
+                }
+                if (! output_upper_ghosts) {
+                  hi[d] -= cgh->cctk_nghostzones[d] * str[d];
+                }
               }
-            } else {
+              ext = bbox<int,dim>(lo,hi,str);
+              
+              // coordinates
+              const CCTK_REAL coord_time = cgh->cctk_time;
+              vect<CCTK_REAL,dim> global_lower;
+              vect<CCTK_REAL,dim> coord_delta;
+              if (grouptype == CCTK_GF) {
+                for (int d=0; d<dim; ++d) {
+                  global_lower[d] = cgh->cctk_origin_space[d];
+                  coord_delta[d] = cgh->cctk_delta_space[d] / maxreflevelfact;
+                }
+              } else {
+                for (int d=0; d<dim; ++d) {
+                  global_lower[d] = 0.0;
+                  coord_delta[d] = 1.0 / (cgh->cctk_gsh[d] - 1);
+                }
+              }
+              // Note: don't permute the "coord_delta" and
+              // "data->extent().lower()"
+              // (it seems that for gcc 2.95 you then pick up the
+              // integer operator*)
+              const vect<CCTK_REAL,dim> coord_lower = global_lower + coord_delta * vect<CCTK_REAL,dim>(lo);
+              const vect<CCTK_REAL,dim> coord_upper = global_lower + coord_delta * vect<CCTK_REAL,dim>(hi);
+              
+              vect<int,dim> offset1;
               for (int d=0; d<dim; ++d) {
-		global_lower[d] = 0;
-		global_upper[d] = 1;
-                coord_delta[d] = 1.0 / (cgh->cctk_gsh[d] - 1);
+                assert (cgh->cctk_levoffdenom[d]==1);
+                offset1[d] = (cgh->cctk_levoff[d] + offset[d]) * ext.stride()[d];
               }
-            }
-	    // Note: don't permute the "coord_delta" and "data->extent().lower()"
-	    // (it seems that for gcc 2.95 you'll then pick up the
-	    // integer operator*)
-	    const vect<CCTK_REAL,dim> coord_lower = global_lower + coord_delta * vect<CCTK_REAL,dim>(lo);
-	    const vect<CCTK_REAL,dim> coord_upper = global_lower + coord_delta * vect<CCTK_REAL,dim>(hi);
+              for (int d=0; d<outdim; ++d) {
+                offset1[dirs[d]] = ext.lower()[dirs[d]];
+              }
+              
+              WriteASCII (file, data, ext, n, cgh->cctk_iteration, offset1, dirs,
+                          tl, rl, component, mglevel,
+                          coord_time, coord_lower, coord_upper);
+              
+              // Append EOL after every component
+              if (CCTK_MyProc(cgh)==0) {
+                if (separate_components) {
+                  assert (file.good());
+                  file << endl;
+                }
+              }
+              assert (file.good());
+              
+            } // for tl
 	    
-	    const vect<int,dim> offset1 = ext.lower() + offset * ext.stride();
-#if 0
-            cout << "IOA reflevel=" << reflevel << " global=" << global_lower << " coord=" << coord_lower << " offset=" << offset << endl;
-#endif
-	    
-	    WriteASCII (file, data, ext, n, cgh->cctk_iteration, offset1, dirs,
-			tl, reflevel, component, mglevel,
-			coord_time, coord_lower, coord_upper);
-	    
-	    // Append EOL after every component
-	    if (CCTK_MyProc(cgh)==0) {
-	      if (separate_components) {
-		assert (file.good());
-		file << endl;
-	      }
-	    }
-	    assert (file.good());
-	    
-	  } END_COMPONENT_LOOP(cgh);
+	  } END_COMPONENT_LOOP;
 	  
 	  // Append EOL after every complete set of components
 	  if (CCTK_MyProc(cgh)==0) {
@@ -601,29 +613,15 @@ namespace CarpetIOASCII {
   {
     assert (dir>=1 && dir<=dim);
     
-#if 0
-    CCTK_REAL lower, upper;
-    CCTK_CoordRange (cgh, &lower, &upper, dir, 0, "cart3d");
-    
-    assert (reflevel!=-1 && mglevel!=-1);
-    const int npoints = (hh->baseextent.shape()[dir-1] - hh->baseextent.stride()[dir-1]) / hh->bases[reflevel][mglevel].stride()[dir-1] + 1;
-    
-    const CCTK_REAL rindex = (coord - lower) / (upper - lower) * (npoints-1);
-    int cindex = (int)floor(rindex + 0.5 + 1e-6);
-#endif
-    
     assert (reflevel!=-1 && mglevel!=-1);
     
     const int npoints = cgh->cctk_gsh[dir-1];
-    const CCTK_REAL lower = cgh->cctk_origin_space[dir-1];
     const CCTK_REAL delta = cgh->cctk_delta_space[dir-1] / cgh->cctk_levfac[dir-1];
+    const CCTK_REAL lower = cgh->cctk_origin_space[dir-1] + delta * cgh->cctk_levoff[dir-1] / cgh->cctk_levoffdenom[dir-1];
     const CCTK_REAL upper = lower + (npoints-1) * delta;
     
     const CCTK_REAL rindex = (coord - lower) / delta;
-    int cindex = (int)floor(rindex + 0.5 + 1e-6);
-#if 0
-    cout << "CTO rl=" << reflevel << " gsh=" << npoints << " l,u,d=" << lower << "," << upper << "," << delta << " coord=" << coord << " cindex=" << cindex << endl;
-#endif
+    int cindex = (int)floor(rindex + 0.75);
     
     if (cindex<0 || cindex>=npoints) {
       CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,

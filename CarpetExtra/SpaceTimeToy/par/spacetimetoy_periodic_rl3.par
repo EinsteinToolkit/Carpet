@@ -7,9 +7,9 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/spacetimetoy_periodic_rl3.par,v 1.8 2002/10/24 21:11:06 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/spacetimetoy_periodic_rl3.par,v 1.9 2003/06/18 18:24:29 schnetter Exp $
 
-ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDSpaceTimeToy SpaceTimeToy Hydrotoy"
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Slab Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDSpaceTimeToy SpaceTimeToy Hydrotoy"
 
 Carpet::poison_new_timelevels	= yes
 #Carpet::check_for_poison	= yes
@@ -51,10 +51,10 @@ IOBasic::outScalar_vars		= "spacetimetoy::spacetimeevolve"
 IOASCII::out1D_every		= 1 # 2
 IOASCII::out1D_vars		= "spacetimetoy::spacetimeevolve grid::coordinates"
 
-IOFlexIO::out3D_every		= 96
-IOFlexIO::out3D_vars		= "spacetimetoy::spacetimeevolve"
-IOFlexIO::out3D_format		= IEEE
-IOFlexIO::out3D_extension	= ".vcamr"
+#IOFlexIO::out3D_every		= 96
+#IOFlexIO::out3D_vars		= "spacetimetoy::spacetimeevolve"
+#IOFlexIO::out3D_format		= IEEE
+#IOFlexIO::out3D_extension	= ".vcamr"
 
 SpaceTimeToy::icn_iterations	= 2
 SpaceTimeToy::bound		= radiation

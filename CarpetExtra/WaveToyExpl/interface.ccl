@@ -1,17 +1,17 @@
 # Interface definition for thorn WaveToyExpl
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyExpl/interface.ccl,v 1.3 2004/05/21 17:43:57 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyExpl/interface.ccl,v 1.1 2003/06/18 18:24:30 schnetter Exp $
 
 IMPLEMENTS: WaveToyExpl
 
-INHERITS: grid
+INHERITS: boundary grid
 
 
 
-CCTK_INT FUNCTION Boundary_SelectGroupForBC(CCTK_POINTER_TO_CONST IN GH, \
+CCTK_INT FUNCTION Boundary_SelectGroupForBC(CCTK_POINTER IN GH, \
   CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, \
   CCTK_STRING IN group_name, CCTK_STRING IN bc_name)
 
-REQUIRES FUNCTION Boundary_SelectGroupForBC
+USES FUNCTION Boundary_SelectGroupForBC
 
 
 

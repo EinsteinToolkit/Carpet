@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.9 2003/05/21 16:03:32 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.10 2003/06/18 18:24:28 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -19,7 +19,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.9 2003/05/21 16:03:32 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.10 2003/06/18 18:24:28 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -104,12 +104,12 @@ namespace CarpetInterp {
     const char * coord_system_name
       = CCTK_CoordSystemName (coord_system_handle);
     assert (coord_system_name);
-    rvect clower, cupper, cdelta;
+    rvect lower, upper, delta;
     for (int d=0; d<dim; ++d) {
       ierr = CCTK_CoordRange
-        (cgh, &clower[d], &cupper[d], d+1, 0, coord_system_name);
+        (cgh, &lower[d], &upper[d], d+1, 0, coord_system_name);
       assert (!ierr);
-      cdelta[d] = cgh->cctk_delta_space[d];
+      delta[d] = (upper[d] - lower[d]) / (hh->baseextent.shape()[d] - hh->baseextent.stride()[d]);
     }
     
     assert (interp_coords);
@@ -127,6 +127,7 @@ namespace CarpetInterp {
     
     int const minrl = reflevel==-1 ? 0               : reflevel;
     int const maxrl = reflevel==-1 ? hh->reflevels() : reflevel+1;
+    int const ml = 0;
     int maxncomps = 0;
     for (int rl=minrl; rl<maxrl; ++rl) {
       maxncomps = max(maxncomps, hh->components(rl));
@@ -138,10 +139,9 @@ namespace CarpetInterp {
     // TODO: interpolate in time
     for (int rl=minrl; rl<maxrl; ++rl) {
       int const tl = 0;
-      int const ml = 0;
       CCTK_REAL const time1 = tt->time (tl, rl, ml);
-      CCTK_REAL const time2 = cgh->cctk_time / base_delta_time;
-      assert (fabs((time1 - time2) / (fabs(time1) + fabs(time2) + fabs(base_delta_time))) < 1e-12);
+      CCTK_REAL const time2 = cgh->cctk_time / cgh->cctk_delta_time;
+      assert (fabs((time1 - time2) / (fabs(time1) + fabs(time2) + fabs(cgh->cctk_delta_time))) < 1e-12);
     }
     
     
@@ -157,7 +157,7 @@ namespace CarpetInterp {
       assert (interp_coords_type_code == CCTK_VARIABLE_REAL);
       rvect pos;
       for (int d=0; d<dim; ++d) {
-        pos[d] = ((CCTK_REAL const *)interp_coords[d])[n];
+        pos[d] = static_cast<CCTK_REAL const *>(interp_coords[d])[n];
       }
       
       // Find the component that this grid point belongs to
@@ -165,17 +165,12 @@ namespace CarpetInterp {
       home[n] = -1;
       for (int rl=maxrl-1; rl>=minrl; --rl) {
         
-        bbox<int,dim> const& baseext = dd->bases[rl][0].exterior;
-        rvect const lower = clower + cdelta / maxreflevelfact * rvect(baseext.lower());
-        rvect const delta = cdelta / maxreflevelfact;
-        
         CCTK_REAL (* const rfloor) (CCTK_REAL const) = floor;
-        int const stride = maxreflevelfact / reflevelfact;
-        ivect const ipos = ivect(map(rfloor, (pos - lower) / delta / stride + 0.5)) * stride;
+        ivect const ipos = ivect(map(rfloor, (pos - lower) / delta + 0.5));
         
         // TODO: use something faster than a linear search
         for (int c=0; c<hh->components(rl); ++c) {
-          if (hh->extents[reflevel][c][mglevel].contains(ipos)) {
+          if (hh->extents[rl][c][ml].contains(ipos)) {
             rlev[n] = rl;
             home[n] = c;
             goto found;
@@ -228,7 +223,7 @@ namespace CarpetInterp {
         assert (dim==3);
         for (int d=0; d<dim; ++d) {
           allcoords[ind_prc(myproc,rl,c)][ivect(tmpcnts[ind_rc(rl,c)],d,0)]
-            = ((CCTK_REAL const *)interp_coords[d])[n];
+            = static_cast<CCTK_REAL const *>(interp_coords[d])[n];
         }
         ++ tmpcnts[c + (rl-minrl)*maxncomps];
       }
@@ -287,15 +282,15 @@ namespace CarpetInterp {
       if (reflevel>=minrl && reflevel<maxrl) {
         BEGIN_MGLEVEL_LOOP(cgh) {
           
-          BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
+          BEGIN_LOCAL_COMPONENT_LOOP(cgh, CCTK_GF) {
             
             // Find out about the local geometry
             ivect lsh;
             rvect coord_origin, coord_delta;
             for (int d=0; d<dim; ++d) {
               lsh[d] = cgh->cctk_lsh[d];
-              coord_origin[d] = cgh->cctk_origin_space[d];
               coord_delta[d] = cgh->cctk_delta_space[d] / cgh->cctk_levfac[d];
+              coord_origin[d] = cgh->cctk_origin_space[d] + (1.0 * cgh->cctk_levoff[d] / cgh->cctk_levoffdenom[d] + cgh->cctk_lbnd[d]) * coord_delta[d];
             }
             
             
@@ -354,29 +349,24 @@ namespace CarpetInterp {
                 tmp_output_arrays[m]
                   = &alloutputs[ind_prc(p,reflevel,component)][ivect(0,m,0)];
               }
-              ierr = CCTK_InterpLocalUniform (N_dims,
-                                              local_interp_handle,
-                                              param_table_handle,
-                                              &coord_origin[0],
-                                              &coord_delta[0],
-                                              allhomecnts[ind_prc(p,reflevel,component)],
-                                              interp_coords_type_code,
-                                              &tmp_interp_coords[0],
-                                              N_input_arrays,
-                                              &lsh[0],
-                                              &input_array_type_codes[0],
-                                              &input_arrays[0],
-                                              N_output_arrays,
-                                              output_array_type_codes,
-                                              &tmp_output_arrays[0]);
+              
+              ierr = CCTK_InterpLocalUniform
+                (N_dims, local_interp_handle, param_table_handle,
+                 &coord_origin[0], &coord_delta[0],
+                 allhomecnts[ind_prc(p,reflevel,component)],
+                 interp_coords_type_code, &tmp_interp_coords[0],
+                 N_input_arrays, &lsh[0],
+                 &input_array_type_codes[0], &input_arrays[0],
+                 N_output_arrays,
+                 output_array_type_codes, &tmp_output_arrays[0]);
               assert (!ierr);
               
             } // for processors
             
-          } END_LOCAL_COMPONENT_LOOP(cgh);
-        } END_MGLEVEL_LOOP(cgh);
-      }
-    } END_REFLEVEL_LOOP(cgh);
+          } END_LOCAL_COMPONENT_LOOP;
+        } END_MGLEVEL_LOOP;
+      } // if reflevel active
+    } END_REFLEVEL_LOOP;
     if (saved_reflevel!=-1) {
       set_reflevel ((cGH*)cgh, saved_reflevel);
     }
@@ -407,7 +397,7 @@ namespace CarpetInterp {
         for (int m=0; m<N_output_arrays; ++m) {
           assert (interp_coords_type_code == CCTK_VARIABLE_REAL);
           assert (dim==3);
-          ((CCTK_REAL *)output_arrays[m])[n] =
+          static_cast<CCTK_REAL *>(output_arrays[m])[n] =
             alloutputs[ind_prc(myproc,rl,c)][ivect(tmpcnts[ind_rc(rl,c)],m,0)];
         }
         ++ tmpcnts[ind_rc(rl,c)];

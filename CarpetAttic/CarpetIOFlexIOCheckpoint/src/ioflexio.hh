@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.1 2003/05/16 14:02:18 hawke Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.2 2003/06/18 18:24:28 schnetter Exp $
 
 #ifndef CARPETIOFLEXIO_HH
 #define CARPETIOFLEXIO_HH
@@ -73,7 +73,7 @@ namespace CarpetIOFlexIO {
   const char* GetStringParameter (const char* const parametername,
 					 const char* const fallback);
 
-  int WriteVarAs (const cGH* const cgh, IObase* writer,AMRwriter* amrwriter, int varindex, int group);
+  int WriteVarAs (const cGH* const cgh, IObase* writer,AMRwriter* amrwriter, int varindex);
 
 } // namespace CarpetIOFlexIO
 

@@ -1,8 +1,7 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/src/calcrhs.F77,v 1.3 2003/10/27 15:31:41 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/src/calcrhs.F77,v 1.1 2003/06/18 18:24:31 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
-#include "cctk_Functions.h"
 #include "cctk_Parameters.h"
 
       subroutine WaveToyMoL_CalcRHS (CCTK_ARGUMENTS)
@@ -10,15 +9,26 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/src/calcrhs
       DECLARE_CCTK_ARGUMENTS
       DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
-      CCTK_INT bndwidth
-      parameter (bndwidth = 1)
-      integer imin(3), imax(3)
       CCTK_REAL dx(3)
+      integer bndwidth(3)
+      integer imin(3), imax(3)
       integer i, j, k
       integer d
+      integer ierr
       do d=1,3
-         imin(d) = 1+bndwidth
-         imax(d) = cctk_lsh(d)-bndwidth
+         bndwidth(d) = 1
+      end do
+      do d=1,3
+         if (cctk_bbox(2*d).ne.0) then
+            imin(d) = 1+bndwidth(d)
+         else
+            imin(d) = 1+cctk_nghostzones(d)
+         end if
+         if (cctk_bbox(2*d+1).ne.0) then
+            imax(d) = cctk_lsh(d)-bndwidth(d)
+         else
+            imax(d) = cctk_lsh(d)-cctk_nghostzones(d)
+         end if
       end do
       do d=1,3
          dx(d) = CCTK_DELTA_SPACE(3)

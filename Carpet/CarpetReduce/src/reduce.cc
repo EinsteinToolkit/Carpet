@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.23 2003/05/21 14:31:03 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.24 2003/06/18 18:24:28 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -22,7 +22,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.23 2003/05/21 14:31:03 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.24 2003/06/18 18:24:28 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -716,7 +716,11 @@ namespace CarpetReduce {
     Initialise (cgh, proc, num_outvals, &myoutvals[0], outtype, &mycounts[0],
                 red);
     
-    if (reduce_arrays) {
+    int const saved_component = component;
+    if (component!=-1) {
+      set_component ((cGH*)cgh, -1);
+    }
+    BEGIN_LOCAL_COMPONENT_LOOP(cgh, reduce_arrays ? CCTK_ARRAY : CCTK_GF) {
       
       assert (grpdim<=dim);
       int lsh[dim], bbox[2*dim], nghostzones[dim];
@@ -727,34 +731,34 @@ namespace CarpetReduce {
       ierr = CCTK_GroupnghostzonesVI(cgh, grpdim, nghostzones, vi);
       assert (!ierr);
       for (int d=0; d<grpdim; ++d) {
-	assert (lsh[d]>=0);
-	assert (nghostzones[d]>=0 && 2*nghostzones[d]<=lsh[d]);
+        assert (lsh[d]>=0);
+        assert (nghostzones[d]>=0 && 2*nghostzones[d]<=lsh[d]);
       }
       
       vector<const void*> inarrays (num_invars);
       for (int n=0; n<num_invars; ++n) {
-	inarrays[n] = CCTK_VarDataPtrI(cgh, 0, invars[n]);
-	assert (inarrays[n]);
+        inarrays[n] = CCTK_VarDataPtrI(cgh, 0, invars[n]);
+        assert (inarrays[n]);
       }
       
       const int intype = CCTK_VarTypeI(vi);
       for (int n=0; n<num_invars; ++n) {
-	assert (CCTK_VarTypeI(invars[n]) == intype);
+        assert (CCTK_VarTypeI(invars[n]) == intype);
       }
       
       vect<int,dim> mylsh, mynghostzones;
       vect<vect<int,2>,dim> mybbox;
       for (int d=0; d<grpdim; ++d) {
-	mylsh[d] = lsh[d];
+        mylsh[d] = lsh[d];
         mybbox[d][0] = bbox[2*d  ];
         mybbox[d][1] = bbox[2*d+1];
-	mynghostzones[d] = nghostzones[d];
+        mynghostzones[d] = nghostzones[d];
       }
       for (int d=grpdim; d<dim; ++d) {
-	mylsh[d] = 1;
+        mylsh[d] = 1;
         mybbox[d][0] = 0;
         mybbox[d][1] = 0;
-	mynghostzones[d] = 0;
+        mynghostzones[d] = 0;
       }
       
       Reduce (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
@@ -762,64 +766,10 @@ namespace CarpetReduce {
               num_outvals, &myoutvals[0], outtype,
               &mycounts[0], red);
       
-    } else {                    // ! reduce_arrays
-    
-      int const saved_component = component;
-      if (component!=-1) {
-        set_component ((cGH*)cgh, -1);
-      }
-      BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
-      
-        assert (grpdim<=dim);
-        int lsh[dim], bbox[2*dim], nghostzones[dim];
-        ierr = CCTK_GrouplshVI(cgh, grpdim, lsh, vi);
-        assert (!ierr);
-        ierr = CCTK_GroupbboxVI(cgh, 2*grpdim, bbox, vi);
-        assert (!ierr);
-        ierr = CCTK_GroupnghostzonesVI(cgh, grpdim, nghostzones, vi);
-        assert (!ierr);
-        for (int d=0; d<grpdim; ++d) {
-          assert (lsh[d]>=0);
-          assert (nghostzones[d]>=0 && 2*nghostzones[d]<=lsh[d]);
-        }
-      
-        vector<const void*> inarrays (num_invars);
-        for (int n=0; n<num_invars; ++n) {
-          inarrays[n] = CCTK_VarDataPtrI(cgh, 0, invars[n]);
-          assert (inarrays[n]);
-        }
-      
-        const int intype = CCTK_VarTypeI(vi);
-        for (int n=0; n<num_invars; ++n) {
-          assert (CCTK_VarTypeI(invars[n]) == intype);
-        }
-      
-        vect<int,dim> mylsh, mynghostzones;
-        vect<vect<int,2>,dim> mybbox;
-        for (int d=0; d<grpdim; ++d) {
-          mylsh[d] = lsh[d];
-          mybbox[d][0] = bbox[2*d  ];
-          mybbox[d][1] = bbox[2*d+1];
-          mynghostzones[d] = nghostzones[d];
-        }
-        for (int d=grpdim; d<dim; ++d) {
-          mylsh[d] = 1;
-          mybbox[d][0] = 0;
-          mybbox[d][1] = 0;
-          mynghostzones[d] = 0;
-        }
-      
-        Reduce (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
-                num_invars, &inarrays[0], intype,
-                num_outvals, &myoutvals[0], outtype,
-                &mycounts[0], red);
-        
-      } END_LOCAL_COMPONENT_LOOP(cgh);
-      if (saved_component!=-1) {
-        set_component ((cGH*)cgh, saved_component);
-      }
-      
-    } // ! reduce_arrays
+    } END_LOCAL_COMPONENT_LOOP;
+    if (saved_component!=-1) {
+      set_component ((cGH*)cgh, saved_component);
+    }
     
     Finalise (cgh, proc, num_outvals, outvals, outtype,
               &myoutvals[0], &mycounts[0],

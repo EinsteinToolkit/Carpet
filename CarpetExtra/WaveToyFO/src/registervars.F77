@@ -1,8 +1,7 @@
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/registervars.F77,v 1.2 2003/10/27 15:31:41 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/registervars.F77,v 1.1 2003/06/18 18:24:30 schnetter Exp $
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
-#include "cctk_Functions.h"
 #include "cctk_Parameters.h"
 
       subroutine WaveToyFO_RegisterVars (CCTK_ARGUMENTS)
@@ -10,6 +9,8 @@ c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/src/register
       DECLARE_CCTK_ARGUMENTS
       DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
+      external MolRegisterEvolvedGroup
+      CCTK_INT MolRegisterEvolvedGroup
       integer group, groupdot
       integer ierr
       call CCTK_GroupIndex(group, "WaveToyFO::scalarevolve")

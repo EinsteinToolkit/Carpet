@@ -48,7 +48,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.2 2003/05/16 15:17:13 hawke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.3 2003/06/18 18:24:28 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
@@ -255,7 +255,7 @@ namespace CarpetCheckpointRestart {
 		    free (fullname);
 		  }
 		// write the var
-		retval += WriteVarAs(cgh,writer,amrwriter,request->vindex,group);
+		retval += WriteVarAs(cgh,writer,amrwriter,request->vindex);
 	      }
 	  } /* end of loop over all variables */
 

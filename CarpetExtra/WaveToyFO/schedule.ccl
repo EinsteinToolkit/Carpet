@@ -1,5 +1,5 @@
 # Schedule definitions for thorn WaveToyFO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/schedule.ccl,v 1.6 2004/05/06 14:21:18 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/schedule.ccl,v 1.1 2003/06/18 18:24:30 schnetter Exp $
 
 STORAGE: scalarevolve[3]
 STORAGE: scalarevolvedot
@@ -17,7 +17,7 @@ SCHEDULE WaveToyFO_InitSymBound AT basegrid
   OPTIONS: global
 } "Schedule symmetries"
 
-SCHEDULE WaveToyFO_RegisterVars IN MoL_Register
+SCHEDULE WaveToyFO_RegisterVars IN FO_Register
 {
   LANG: Fortran
   OPTIONS: global
@@ -25,44 +25,29 @@ SCHEDULE WaveToyFO_RegisterVars IN MoL_Register
 
 
 
-SCHEDULE WaveToyFO_CalcRHS IN MoL_CalcRHS
+SCHEDULE WaveToyFO_CalcRHS IN FO_CalcRHS
 {
   LANG: Fortran
 } "Calculate RHS for FO"
 
-SCHEDULE WaveToyFO_RHSBoundaries IN MoL_CalcRHS AFTER WaveToyFO_CalcRHS
-{
-  LANG: Fortran
-  SYNC: scalarevolvedot
-  OPTIONS: level
-} "Select RHS boundary conditions in FO"
-
-SCHEDULE GROUP ApplyBCs IN MoL_CalcRHS AFTER WaveToyFO_RHSBoundaries
-{
-} "Apply RHSboundary conditions in FO"
-
-
-
-SCHEDULE WaveToyFO_Boundaries IN MoL_PostStep
+SCHEDULE WaveToyFO_Boundaries IN FO_PostStep
 {
   LANG: Fortran
   SYNC: scalarevolve
-  OPTIONS: level
 } "Select boundary conditions in FO"
 
-SCHEDULE GROUP ApplyBCs IN MoL_PostStep AFTER WaveToyFO_Boundaries
+SCHEDULE GROUP ApplyBCs IN FO_PostStep AFTER WaveToyFO_Boundaries
 {
 } "Apply boundary conditions in FO"
 
 
 
-SCHEDULE WaveToyFO_Boundaries AT POSTRESTRICT
+SCHEDULE WaveToyFO_Boundaries IN postrestrict
 {
   LANG: Fortran
   SYNC: scalarevolve
-  OPTIONS: level
 } "Select boundary conditions after restricting"
 
-SCHEDULE GROUP ApplyBCs AT POSTRESTRICT AFTER WaveToyFO_Boundaries
+SCHEDULE GROUP ApplyBCs IN postrestrict AFTER WaveToyFO_Boundaries
 {
 } "Apply boundary conditions after restricting"

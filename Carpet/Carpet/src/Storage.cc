@@ -10,7 +10,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.20 2003/05/27 12:01:11 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Storage.cc,v 1.21 2003/06/18 18:24:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Storage_cc);
 }
 
@@ -44,7 +44,10 @@ namespace Carpet {
     const int grouptype = CCTK_GroupTypeI(group);
     
     // No storage change in local mode
-    assert (! (component!=-1 && grouptype==CCTK_GF));
+    if (grouptype == CCTK_GF) {
+      assert (reflevel == -1
+              || hh->local_components(reflevel) == 1 || component == -1);
+    }
     
     if (CCTK_QueryGroupStorageI(cgh, group)) {
       // storage was enabled previously
@@ -94,11 +97,12 @@ namespace Carpet {
     for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
       const int n = n0 + var;
       switch (CCTK_VarTypeI(n)) {
-#define TYPECASE(N,T)							\
-      case N:								\
-	arrdata[group].data[var] = new gf<T,dim>			\
-	  (CCTK_VarName(n), *arrdata[group].tt, *arrdata[group].dd,	\
-	   tmin, tmax, my_prolongation_order_time);			\
+#define TYPECASE(N,T)                                                   \
+      case N:                                                           \
+        assert (! arrdata[group].data[var]);                            \
+	arrdata[group].data[var] = new gf<T,dim>                        \
+	  (CCTK_VarName(n), *arrdata[group].tt, *arrdata[group].dd,     \
+	   tmin, tmax, my_prolongation_order_time);                     \
 	break;
 #include "typecase"
 #undef TYPECASE
@@ -115,7 +119,7 @@ namespace Carpet {
       
     } // for
     
-    PoisonGroup (cgh, group, alltimes);
+//     PoisonGroup (cgh, group, alltimes);
     
     // storage was not enabled previously
     return 0;
@@ -152,9 +156,11 @@ namespace Carpet {
     for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
       const int n = n0 + var;
       switch (CCTK_VarTypeI(n)) {
-#define TYPECASE(N,T)					\
-      case N:						\
-	delete (gf<T,dim>*)arrdata[group].data[var];	\
+#define TYPECASE(N,T)                                   \
+      case N:                                           \
+        assert (arrdata[group].data[var]);              \
+	delete (gf<T,dim>*)arrdata[group].data[var];    \
+        arrdata[group].data[var] = 0;                   \
 	break;
 #include "typecase"
 #undef TYPECASE

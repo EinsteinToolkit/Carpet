@@ -8,7 +8,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.11 2003/05/23 23:51:17 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Poison.cc,v 1.12 2003/06/18 18:24:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Poison_cc);
 }
 
@@ -38,6 +38,7 @@ namespace Carpet {
   void PoisonGroup (cGH* cgh, const int group, const checktimes where)
   {
     DECLARE_CCTK_PARAMETERS;
+    int ierr;
     
     assert (group>=0 && group<CCTK_NumGroups());
     
@@ -63,23 +64,20 @@ namespace Carpet {
     const int min_tl = mintl(where, num_tl);
     const int max_tl = maxtl(where, num_tl);
     
-    int np = 1;
     const int gpdim = CCTK_GroupDimI(group);
-    for (int d=0; d<gpdim; ++d) {
-      np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
-    }
     
-    if (CCTK_GroupTypeI(group) == CCTK_GF) {
+    const int grouptype = CCTK_GroupTypeI(group);
+    
+    BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype) {
       
-      BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
-        for (int n=var0; n<var0+nvar; ++n) {
-          for (int tl=min_tl; tl<=max_tl; ++tl) {
-            memset (cgh->data[n][tl], poison_value, np*sz);
-          } // for tl
-        } // for var
-      } END_LOCAL_COMPONENT_LOOP(cgh);
+      vector<int> lsh(gpdim);
+      ierr = CCTK_GrouplshGI (cgh, gpdim, &lsh[0], group);
+      assert (!ierr);
       
-    } else {
+      int np = 1;
+      for (int d=0; d<gpdim; ++d) {
+        np *= lsh[d];
+      }
       
       for (int n=var0; n<var0+nvar; ++n) {
         for (int tl=min_tl; tl<=max_tl; ++tl) {
@@ -87,7 +85,7 @@ namespace Carpet {
         } // for tl
       } // for var
       
-    } // group type != gf
+    } END_LOCAL_COMPONENT_LOOP;
   }
   
   
@@ -104,6 +102,8 @@ namespace Carpet {
       if (CCTK_QueryGroupStorageI(cgh, group)) {
 	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
 	  
+          const int grouptype = CCTK_GroupTypeI(group);
+          
 	  const int n = CCTK_FirstVarIndexI(group) + var;
 	  
 	  const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
@@ -113,7 +113,7 @@ namespace Carpet {
 	  
 	  for (int tl=min_tl; tl<=max_tl; ++tl) {
 	    
-	    BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
+	    BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype) {
 	      vect<int,dim> size(1);
 	      const int gpdim = arrdata[group].info.dim;
 	      for (int d=0; d<gpdim; ++d) {
@@ -161,7 +161,7 @@ namespace Carpet {
 			    fullname, numpoison, tl);
 		free (fullname);
 	      }
-	    } END_LOCAL_COMPONENT_LOOP(cgh);
+	    } END_LOCAL_COMPONENT_LOOP;
 	    
 	  } // for tl
 	  

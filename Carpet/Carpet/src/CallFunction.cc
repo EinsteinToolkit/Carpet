@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <algorithm>
+
 #include "cctk.h"
 #include "cctki_GHExtensions.h"
 
@@ -9,7 +11,7 @@
 #include "carpet.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.8 2003/05/08 15:35:49 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.9 2003/06/18 18:24:27 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_CallFunction_cc);
 }
 
@@ -32,10 +34,17 @@ namespace Carpet {
       // Global operation: call once
       
       if (do_global_mode) {
-        Waypoint ("%*sGlobal mode call at %s to %s::%s", 2*reflevel, "",
+        assert (component == -1);
+        const int saved_mglevel = mglevel;
+        if (mglevel!=-1) set_mglevel (cgh, -1);
+        const int saved_reflevel = reflevel;
+        if (reflevel!=-1) set_reflevel (cgh, -1);
+        Waypoint ("Global mode call at %s to %s::%s",
                   attribute->where, attribute->thorn, attribute->routine);
         const int res = CCTK_CallFunction (function, attribute, data);
         assert (res==0);
+        if (reflevel!=saved_reflevel) set_reflevel (cgh, saved_reflevel);
+        if (mglevel!=saved_mglevel) set_mglevel (cgh, saved_mglevel);
       }
       
     } else if (attribute->level) {
@@ -49,7 +58,7 @@ namespace Carpet {
     } else {
       // Local operation: call once per component
       
-      BEGIN_LOCAL_COMPONENT_LOOP(cgh) {
+      BEGIN_LOCAL_COMPONENT_LOOP(cgh, CCTK_GF) {
 	
 	Waypoint ("%*sLocal mode call on component %d at %s to %s::%s",
 		  2*reflevel, "", component,
@@ -57,7 +66,7 @@ namespace Carpet {
 	const int res = CCTK_CallFunction (function, attribute, data);
 	assert (res==0);
 	
-      }	END_LOCAL_COMPONENT_LOOP(cgh);
+      }	END_LOCAL_COMPONENT_LOOP;
       
     }
     

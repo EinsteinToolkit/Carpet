@@ -1,8 +1,8 @@
 # Main make.code.defn file for thorn WaveToyMoL
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/src/make.code.defn,v 1.2 2004/04/07 17:08:21 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/src/make.code.defn,v 1.1 2003/06/18 18:24:31 schnetter Exp $
 
 # Source files in this directory
-SRCS = boundaries.F77 calcrhs.F77 estimateerror.F77 initsymbound.F77 registervars.F77 startup.F77
+SRCS = boundaries.F77 calcrhs.F77 initsymbound.F77 registervars.F77 startup.F77
 
 # Subdirectories containing source files
 SUBDIRS = 

@@ -1,5 +1,5 @@
 # Schedule definitions for thorn SpaceTimeToy
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/schedule.ccl,v 1.5 2002/04/29 11:28:06 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/schedule.ccl,v 1.6 2003/06/18 18:24:29 schnetter Exp $
 
 STORAGE: spacetimeevolve[3]
 STORAGE: icn_state
@@ -28,16 +28,57 @@ schedule SpaceTimeToy_EulerStep at EVOL \
 {
   LANG: Fortran
   STORAGE: spacetimetemps hydrotemps
-  SYNC: spacetimeevolve
 } "Initial Euler step"
-  
-schedule SpaceTimeToy_ICNStep at EVOL \
+
+schedule SpaceTimeToy_Boundaries at EVOL \
+	after SpaceTimeToy_EulerStep
+{
+  LANG: Fortran
+  SYNC: spacetimeevolve
+} "Select boundary conditions after initial Euler step"
+
+schedule GROUP ApplyBCs at EVOL \
+	after SpaceTimeToy_Boundaries
+{
+} "Apply boundary conditions after initial Euler step"
+
+
+
+schedule GROUP SpaceTimeToy_ICNLoop at EVOL \
 	after SpaceTimeToy_EulerStep \
 	after HydroToy_EulerPredictor \
 	before HydroToy_EulerCorrector \
 	while SpaceTimeToy::do_iterate
 {
+} "All ICN steps"
+
+schedule SpaceTimeToy_ICNStep in SpaceTimeToy_ICNLoop
+{
   LANG: Fortran
   STORAGE: spacetimetemps hydrotemps
-  SYNC: spacetimeevolve
 } "One ICN step"
+
+schedule SpaceTimeToy_Boundaries in SpaceTimeToy_ICNLoop \
+	after SpaceTimeToy_ICNStep
+{
+  LANG: Fortran
+  SYNC: spacetimeevolve
+} "Select boundary conditions after ICN step"
+
+schedule GROUP ApplyBCs in SpaceTimeToy_ICNLoop \
+	after SpaceTimeToy_Boundaries
+{
+} "Apply boundary conditions after ICN step"
+
+
+
+schedule SpaceTimeToy_Boundaries in POSTRESTRICT
+{
+  LANG: Fortran
+  SYNC: spacetimeevolve
+} "Select boundary conditions after restricting"
+
+schedule GROUP ApplyBCs in POSTRESTRICT \
+	after SpaceTimeToy_Boundaries
+{
+} "Apply boundary conditions after restricting"
