@@ -1,8 +1,11 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.18 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.19 2003/04/30 12:39:39 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
 #include <iostream>
+
+#include "cctk.h"
+#include "cctk_Parameters.h"
 
 #include "defs.hh"
 #include "dh.hh"
@@ -31,8 +34,12 @@ gh<D>::~gh () { }
 
 // Modifiers
 template<int D>
-void gh<D>::recompose (const rexts& exts, const rbnds& outer_bounds,
-		       const rprocs& procs) {
+void gh<D>::recompose (const rexts& exts,
+                       const rbnds& outer_bounds,
+		       const rprocs& procs)
+{
+  DECLARE_CCTK_PARAMETERS;
+  
   extents = exts;
   outer_boundaries = outer_bounds;
   processors = procs;
@@ -117,6 +124,31 @@ void gh<D>::recompose (const rexts& exts, const rbnds& outer_bounds,
 	  bases[rl][ml]
 	    = bases[rl][ml].expanded_containing(extents[rl][c][ml]);
 	}
+      }
+    }
+  }
+  
+  if (output_bboxes) {
+    for (int rl=0; rl<reflevels(); ++rl) {
+      for (int c=0; c<components(rl); ++c) {
+	for (int ml=0; ml<mglevels(rl,c); ++ml) {
+	  cout << endl;
+          cout << "gh bboxes:" << endl;
+	  cout << "rl=" << rl << " c=" << c << " ml=" << ml << endl;
+          cout << "extent=" << extents[rl][c][ml] << endl;
+          cout << "outer_boundary=" << outer_boundaries[rl][c][ml] << endl;
+          cout << "processor=" << processors[rl][c] << endl;
+        }
+      }
+    }
+    for (int rl=0; rl<reflevels(); ++rl) {
+      if (components(rl)>0) {
+	for (int ml=0; ml<mglevels(rl,0); ++ml) {
+	  cout << endl;
+          cout << "gh bases:" << endl;
+	  cout << "rl=" << rl << " ml=" << ml << endl;
+          cout << "base=" << bases[rl][ml] << endl;
+        }
       }
     }
   }
@@ -242,6 +274,8 @@ ostream& gh<D>::output (ostream& os) const {
      << "mgfactor=" << mgfact << ",mgcentering=" << mgcent << ","
      << "baseextent=" << baseextent << ","
      << "extents=" << extents << ","
+     << "outer_boundaries=" << outer_boundaries << ","
+     << "processors=" << processors << ","
      << "dhs={";
   int cnt=0;
   for (typename list<dh<D>*>::const_iterator d = dhs.begin();

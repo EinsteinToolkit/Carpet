@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.10 2003/03/26 17:34:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.cc,v 1.11 2003/04/30 12:39:40 schnetter Exp $
 
 #include <assert.h>
 
@@ -54,6 +54,7 @@ template class vect<int,3>;
 template void vect<double,3>::input (istream& is);
 template void vect<vect<bool,2>,3>::input (istream& is);
 
+template void vect<bool,2>::output (ostream& os) const;
 template void vect<bool,3>::output (ostream& os) const;
 template void vect<double,3>::output (ostream& os) const;
 template void vect<vect<bool,2>,3>::output (ostream& os) const;
