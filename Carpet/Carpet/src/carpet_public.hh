@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.19 2002/09/01 14:52:24 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.20 2002/09/25 15:50:32 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -68,6 +68,9 @@ namespace Carpet {
   
   // Time step on base grid
   extern CCTK_REAL base_delta_time;
+  
+  // Current time
+  extern CCTK_REAL current_time;
   
   
   

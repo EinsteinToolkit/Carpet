@@ -12,7 +12,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.24 2002/08/02 15:11:13 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.25 2002/09/25 15:50:32 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_helpers_cc)
 
@@ -143,7 +143,7 @@ namespace Carpet {
       va_list args;
       char msg[1000];
       va_start (args, fmt);
-      vsnprintf (msg, sizeof(msg), fmt, args);
+      vsnprintf (msg, sizeof msg, fmt, args);
       va_end (args);
       CCTK_INFO (msg);
     }
@@ -159,7 +159,7 @@ namespace Carpet {
       va_list args;
       char msg[1000];
       va_start (args, fmt);
-      vsnprintf (msg, sizeof(msg), fmt, args);
+      vsnprintf (msg, sizeof msg, fmt, args);
       va_end (args);
       CCTK_INFO (msg);
     }

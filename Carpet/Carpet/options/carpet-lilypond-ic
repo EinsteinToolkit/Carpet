@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-ic,v 1.5 2002/09/08 20:38:36 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-ic,v 1.6 2002/09/25 15:50:30 schnetter Exp $
 
 CPP		= cpp -traditional -DCARPET_REAL
 CC		= icc
@@ -11,18 +11,18 @@ LIBDIRS		=
 LIBS		= intrins IEPCF90 F90 imf m irc cxa cprts cxa
 
 # basic
-CFLAGS		= -DCARPET_REAL -align -c99
-CXXFLAGS	= -DCARPET_REAL -align -c99
-F90FLAGS	= -DCARPET_REAL -align -w95
-F77FLAGS	= -DCARPET_REAL -align -w95
-LDFLAGS		= -DCARPET_REAL -align -c99 -g
+CFLAGS		= -DCARPET_REAL -c99
+CXXFLAGS	= -DCARPET_REAL -c99
+F90FLAGS	= -DCARPET_REAL -w95
+F77FLAGS	= -DCARPET_REAL -w95
+LDFLAGS		= -DCARPET_REAL -g
 
 # debugging
 DEBUG		= yes
-C_DEBUG_FLAGS	= -g
-CXX_DEBUG_FLAGS	= -g
-F77_DEBUG_FLAGS	= -g
-F90_DEBUG_FLAGS	= -g
+C_DEBUG_FLAGS	= -g -fp
+CXX_DEBUG_FLAGS	= -g -fp
+F77_DEBUG_FLAGS	= -g -fp
+F90_DEBUG_FLAGS	= -g -fp
 
 # warnings
 #WARN=yes

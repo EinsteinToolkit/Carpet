@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.9 2002/06/06 00:23:34 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Comm.cc,v 1.10 2002/09/25 15:50:31 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Comm_cc)
 
@@ -48,8 +48,11 @@ namespace Carpet {
       if (CCTK_GroupTypeI(group) == CCTK_GF) {
 	if (reflevel>0) {
 	  for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
+	    // use the current time here (which may be modified by the
+	    // user)
+	    const CCTK_REAL time = cgh->cctk_time;
 	    arrdata[group].data[var]->ref_bnd_prolongate
-	      (tl, reflevel, c, mglevel);
+	      (tl, reflevel, c, mglevel, time);
 	  }
 	}
       }

@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <iostream>
+
 #include "cctk.h"
 #include "cctk_Parameters.h"
 #include "cctki_GHExtensions.h"
@@ -9,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.17 2002/07/18 14:30:29 shawley Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.18 2002/09/25 15:50:31 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Initialise_cc)
 
@@ -101,7 +103,8 @@ namespace Carpet {
       //SHH:check the current time
       BEGIN_REFLEVEL_LOOP(cgh) {
         BEGIN_MGLEVEL_LOOP(cgh) {
-           printf("Time at rl=%d, ml=%d, is %d\n", reflevel, mglevel, tt->get_time (reflevel, mglevel));
+	  cout << "Time at rl=" << reflevel << ", ml=" << mglevel << ", is "
+	       << tt->get_time (reflevel, mglevel) << endl;
         } END_MGLEVEL_LOOP(cgh);
       } END_REFLEVEL_LOOP(cgh);
 
@@ -116,14 +119,18 @@ namespace Carpet {
 	BEGIN_MGLEVEL_LOOP(cgh) {
 	  // Evolve "forward" (which may be backward for lev=1,3,5,7...)
 
-           printf("`forward':Before CycleTimeLevels & AdvanceTime, time on rl=%d, ml=%d, is %d\n", reflevel, mglevel, tt->get_time (reflevel, mglevel));
+	  cout << "`forward': Before CycleTimeLevels & AdvanceTime, "
+	       << "time on rl=" << reflevel << ", ml=" << mglevel << ", is "
+	       << tt->get_time (reflevel, mglevel) << endl;
 	  // Cycle time levels
 	  // erik: what about arrays?
 	  CycleTimeLevels (cgh);
 	   
 	  // Advance level times
 	  tt->advance_time (reflevel, mglevel);
-           printf("`forward':After CycleTimeLevels & AdvanceTime, time on rl=%d, ml=%d, is %d\n", reflevel, mglevel, tt->get_time (reflevel, mglevel));
+	  cout << "`forward': After CycleTimeLevels & AdvanceTime, "
+	       << "time on rl=" << reflevel << ", ml=" << mglevel << ", is "
+	       << tt->get_time (reflevel, mglevel) << endl;
 	  Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
 	  CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
 	  Waypoint ("%*sScheduling EVOL", 2*reflevel, "");
@@ -144,14 +151,18 @@ namespace Carpet {
 	  time_dir *= -1;
 	  cgh->cctk_delta_time = time_dir * base_delta_time / reflevelfact * mglevelfact;
 	  
-           printf("`backward':Before CycleTimeLevels & AdvanceTime, time on rl=%d, ml=%d, is %d\n", reflevel, mglevel, tt->get_time (reflevel, mglevel));
+	  cout << "`backward': Before CycleTimeLevels & AdvanceTime, "
+	       << "time on rl=" << reflevel << ", ml=" << mglevel << ", is "
+	       << tt->get_time (reflevel, mglevel) << endl;
 	  // Evolve in the opposite time-direction
 	  // Cycle time levels
 	  // erik: what about arrays?
 //	  CycleTimeLevels (cgh);
 	  // Advance level times
 //	  tt->advance_time (reflevel, mglevel);
-           printf("`backward':After CycleTimeLevels & AdvanceTime, time on rl=%d, ml=%d, is %d\n", reflevel, mglevel, tt->get_time (reflevel, mglevel));
+	  cout << "`backward': After CycleTimeLevels & AdvanceTime, "
+	       << "time on rl=" << reflevel << ", ml=" << mglevel << ", is "
+	       << tt->get_time (reflevel, mglevel) << endl;
 	  Waypoint ("%*sScheduling PRESTEP", 2*reflevel, "");
 	  CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
 	  Waypoint ("%*sScheduling EVOL", 2*reflevel, "");
@@ -165,7 +176,8 @@ namespace Carpet {
       //SHH:check the current time
       BEGIN_REFLEVEL_LOOP(cgh) {
         BEGIN_MGLEVEL_LOOP(cgh) {
-           printf("Time at rl=%d, ml=%d, is %d\n", reflevel, mglevel, tt->get_time (reflevel, mglevel));
+	  cout << "Time at rl=" << reflevel << ", ml=" << mglevel << ", is "
+	       << tt->get_time (reflevel, mglevel) << endl;
         } END_MGLEVEL_LOOP(cgh);
       } END_REFLEVEL_LOOP(cgh);
 
@@ -198,8 +210,8 @@ namespace Carpet {
 
           // Restrict from reflevel+1 to reflevel
           // (it checks and does nothing if reflevel is the finest level
-          printf("Calling Restrict for revlevel = %d at time = %d\n",
-                   reflevel, tt->get_time (reflevel, mglevel));
+          cout << "Calling Restrict for revlevel = " << reflevel
+	       << " at time = " << tt->get_time (reflevel, mglevel) << endl;
 	  Restrict (cgh);
 	  
 	  // Cycle time levels
@@ -235,7 +247,8 @@ namespace Carpet {
       // At this point all "current times" should be the same
       BEGIN_REFLEVEL_LOOP(cgh) {
         BEGIN_MGLEVEL_LOOP(cgh) {
-           printf("Time at rl=%d, ml=%d, is %d\n", reflevel, mglevel, tt->get_time(reflevel, mglevel));
+	  cout << "Time at rl=" << reflevel << ", ml=" << mglevel << ", is "
+	       << tt->get_time(reflevel, mglevel) << endl;
         } END_MGLEVEL_LOOP(cgh);
       } END_REFLEVEL_LOOP(cgh);
 

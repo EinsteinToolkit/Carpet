@@ -5,7 +5,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.8 2002/06/06 00:23:35 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.9 2002/09/25 15:50:32 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_variables_cc)
 
@@ -54,6 +54,9 @@ namespace Carpet {
   
   // Time step on base grid
   CCTK_REAL base_delta_time;
+  
+  // Current time
+  CCTK_REAL current_time;
   
   
   

@@ -8,7 +8,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.8 2002/06/06 00:23:34 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Restrict.cc,v 1.9 2002/09/25 15:50:31 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Restrict_cc)
 
@@ -34,10 +34,16 @@ namespace Carpet {
 	  
 	  const int tl = 0;
 	  
+	  // use background time here (which may not be modified by
+	  // the user)
+	  const CCTK_REAL time = tt->time (tl, reflevel, mglevel);
+	  if (tl==0) assert (time == cgh->cctk_time);
+	  
 	  if (mglevel > 0) {
 	    
 	    for (int c=0; c<hh->components(reflevel); ++c) {
-	      arrdata[group].data[var]->mg_restrict (tl, reflevel, c, mglevel);
+	      arrdata[group].data[var]->mg_restrict
+		(tl, reflevel, c, mglevel, time);
 	    }
 	    for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
 	      arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);
@@ -49,7 +55,7 @@ namespace Carpet {
 	    
 	    for (int c=0; c<hh->components(reflevel); ++c) {
 	      arrdata[group].data[var]->ref_restrict
-		(tl, reflevel, c, mglevel);
+		(tl, reflevel, c, mglevel, time);
 	    }
 	    for (int c=0; c<arrdata[group].hh->components(reflevel); ++c) {
 	      arrdata[group].data[var]->sync (tl, reflevel, c, mglevel);
@@ -57,7 +63,7 @@ namespace Carpet {
 	    
 	    for (int c=0; c<arrdata[group].hh->components(reflevel+1); ++c) {
 	      arrdata[group].data[var]->ref_bnd_prolongate
-		(tl, reflevel+1, c, mglevel);
+		(tl, reflevel+1, c, mglevel, time);
 	    }
 	    // TODO: is this necessary?
 	    for (int c=0; c<arrdata[group].hh->components(reflevel+1); ++c) {
