@@ -278,7 +278,7 @@ namespace CarpetIOScalar {
         
         union {
 #define TYPECASE(N,T) T var_##T;
-#include "Carpet/Carpet/src/typecase"
+#include "carpet_typecase.hh"
 #undef TYPECASE
         } result;
         
@@ -295,7 +295,7 @@ namespace CarpetIOScalar {
           case N:                               \
             file << result.var_##T;             \
             break;
-#include "Carpet/Carpet/src/typecase"
+#include "carpet_typecase.hh"
 #undef TYPECASE
           default:
             UnsupportedVarType (n);

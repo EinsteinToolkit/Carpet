@@ -22,7 +22,7 @@ uses include header: th.hh
 
 uses include header: operators.hh
 
-
+INCLUDE HEADER: typecase in carpet_typecase.hh
 
 # Provide the function to en-/disable prolongation
 CCTK_INT FUNCTION EnableProlongating(CCTK_INT IN flag)

@@ -512,7 +512,7 @@ namespace CarpetReduce {
 	}					\
 	break;					\
       }
-#include "Carpet/Carpet/src/typecase"
+#include "carpet_typecase.hh"
 #undef TYPECASE
 #undef INITIALISE
       default:
@@ -566,7 +566,7 @@ namespace CarpetReduce {
           COPY(T);                              \
           break;                                \
         }
-#include "Carpet/Carpet/src/typecase"
+#include "carpet_typecase.hh"
 #undef TYPECASE
 #undef COPY
         default:
@@ -658,7 +658,7 @@ namespace CarpetReduce {
 	}					\
 	break;					\
       }
-#include "Carpet/Carpet/src/typecase"
+#include "carpet_typecase.hh"
 #undef TYPECASE
 #undef REDUCE
       default:
@@ -751,7 +751,7 @@ namespace CarpetReduce {
 	  }					\
 	  break;				\
 	}
-#include "Carpet/Carpet/src/typecase"
+#include "carpet_typecase.hh"
 #undef TYPECASE
 #undef FINALISE
 	default:

@@ -8,7 +8,7 @@ uses include header: vect.hh
 
 uses include header: carpet.hh
 
-
+uses include header: carpet_typecase.hh
 
 CCTK_INT FUNCTION \
     SymmetryTableHandleForGrid (CCTK_POINTER_TO_CONST IN cctkGH)

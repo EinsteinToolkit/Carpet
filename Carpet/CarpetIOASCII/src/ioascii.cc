@@ -1070,7 +1070,7 @@ namespace CarpetIOASCII {
 	    case N:					\
 	      os << (*(const data<T,D>*)gfdata)[index];	\
 	      break;
-#include "Carpet/Carpet/src/typecase"
+#include "carpet_typecase.hh"
 #undef TYPECASE
 	    default:
 	      UnsupportedVarType(vi);
