@@ -18,7 +18,7 @@
 #include "cctk_Version.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.12 2004/03/20 15:43:37 cott Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/src/iohdf5chckpt_recover.cc,v 1.13 2004/03/20 16:17:49 cott Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOHDF5_iohdf5chckpt_recover_cc);
 }
 
@@ -243,7 +243,7 @@ namespace CarpetIOHDF5 {
     int currdataset,ndatasets;
     char * name;
 
-    char datasetname[1024];
+    char datasetname[256];
 
     int varindex; 
 
@@ -259,7 +259,7 @@ namespace CarpetIOHDF5 {
     MPI_Bcast (&ndatasets, 1, MPI_INT, 0, dist::comm);
     assert (ndatasets>=0);
 
-    char datasetnames[ndatasets+1][1024];
+    char datasetnames[ndatasets+1][256];
 
     for (currdataset=0;currdataset<ndatasets+1;currdataset++){
       if (myproc==0) {
@@ -267,6 +267,7 @@ namespace CarpetIOHDF5 {
       } //myproc = 0
     }
 
+    
     if (h5verbose) cout << "ndatasets: " << ndatasets << endl;
 
      for (currdataset=0;currdataset < ndatasets+1;currdataset++) {
