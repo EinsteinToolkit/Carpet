@@ -64,7 +64,8 @@ namespace CarpetMask {
       // Calculate the union of all coarse regions
       ibset parent;
       for (int c=0; c<hh.components(reflevel-1); ++c) {
-        parent |= hh.extents.at(reflevel-1).at(c).at(mglevel).expanded_for(base);
+//         parent |= hh.extents.at(reflevel-1).at(c).at(mglevel).expanded_for(base);
+        parent |= hh.extents.at(reflevel-1).at(c).at(mglevel).expand(ivect(reffact-1),ivect(reffact-1)).contracted_for(base);
       }
       parent.normalize();
       
