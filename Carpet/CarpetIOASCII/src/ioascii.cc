@@ -24,7 +24,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.18 2001/11/02 16:05:04 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.19 2001/11/02 17:09:18 schnetter Exp $";
 
 
 
@@ -85,7 +85,7 @@ int CarpetIOASCII<outdim>::Startup()
 
 template<int outdim>
 void* CarpetIOASCII<outdim>
-::SetupGH (tFleshConfig* const fc, const int convLevel, const cGH* const cgh)
+::SetupGH (tFleshConfig* const fc, const int convLevel, cGH* const cgh)
 {
   DECLARE_CCTK_PARAMETERS;
   
