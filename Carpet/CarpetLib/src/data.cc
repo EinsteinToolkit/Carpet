@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.47 2004/03/23 12:40:27 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.48 2004/03/23 15:37:21 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -61,7 +61,8 @@ data<T,D>::data (const int varindex_, const operator_type transport_operator_,
 
 // Destructors
 template<class T, int D>
-data<T,D>::~data () {
+data<T,D>::~data ()
+{
   free();
 }
   
@@ -78,8 +79,10 @@ data<T,D>* data<T,D>::make_typed (const int varindex_,
 
 // Storage management
 template<class T, int D>
-void data<T,D>::allocate (const ibbox& extent_, const int proc_,
-			  void* const mem) {
+void data<T,D>::allocate (const ibbox& extent_,
+                          const int proc_,
+			  void* const mem)
+{
   assert (!this->_has_storage);
   this->_has_storage = true;
   // data
@@ -113,7 +116,8 @@ void data<T,D>::allocate (const ibbox& extent_, const int proc_,
 }
 
 template<class T, int D>
-void data<T,D>::free () {
+void data<T,D>::free ()
+{
   if (this->_storage && this->_owns_storage && this->vectorindex==0) {
     delete [] _storage;
   }
@@ -122,7 +126,8 @@ void data<T,D>::free () {
 }
 
 template<class T, int D>
-void data<T,D>::transfer_from (gdata<D>* gsrc) {
+void data<T,D>::transfer_from (gdata<D>* gsrc)
+{
   assert (this->vectorlength==1);
   data* src = (data*)gsrc;
   assert (src->vectorlength==1);
@@ -146,7 +151,8 @@ T* data<T,D>::vectordata (const int vectorindex) const
 // Processor management
 template<class T, int D>
 void data<T,D>::change_processor (comm_state<D>& state,
-                                  const int newproc, void* const mem)
+                                  const int newproc,
+                                  void* const mem)
 {
   switch (state.thestate) {
   case state_recv:
@@ -1287,7 +1293,8 @@ void data<CCTK_REAL8,3>
 
 // Output
 template<class T,int D>
-ostream& data<T,D>::output (ostream& os) const {
+ostream& data<T,D>::output (ostream& os) const
+{
   T Tdummy;
   os << "data<" << typestring(Tdummy) << "," << D << ">:"
      << "extent=" << this->extent() << ","

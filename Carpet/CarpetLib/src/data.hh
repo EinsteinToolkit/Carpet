@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.18 2004/03/23 12:40:27 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.hh,v 1.19 2004/03/23 15:37:21 schnetter Exp $
 
 #ifndef DATA_HH
 #define DATA_HH
@@ -22,7 +22,8 @@ using namespace std;
 
 // A real data storage
 template<class T,int D>
-class data: public gdata<D> {
+class data: public gdata<D>
+{
   
   // Types
   typedef vect<int,D> ivect;
@@ -67,14 +68,15 @@ public:
   // Processor management
   virtual void change_processor (comm_state<D>& state,
                                  const int newproc, void* const mem=0);
- private:
+private:
   virtual void change_processor_recv (const int newproc, void* const mem=0);
   virtual void change_processor_send (const int newproc, void* const mem=0);
   virtual void change_processor_wait (const int newproc, void* const mem=0);
- public:
+public:
 
   // Accessors
-  virtual const void* storage () const {
+  virtual const void* storage () const
+  {
     assert (this->_has_storage);
     return _storage;
   }
@@ -85,12 +87,14 @@ public:
   }
   
   // Data accessors
-  const T& operator[] (const ivect& index) const {
+  const T& operator[] (const ivect& index) const
+  {
     assert (_storage);
     return _storage[offset(index)];
   }
   
-  T& operator[] (const ivect& index) {
+  T& operator[] (const ivect& index)
+  {
     assert (_storage);
     return _storage[offset(index)];
   }
