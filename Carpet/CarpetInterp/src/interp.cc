@@ -501,17 +501,21 @@ namespace CarpetInterp {
                     assert (0);
                   }
                   
-                  if (input_array_variable_indices[n] == -1) {
-                    input_arrays.at(n) = 0;
-                  } else if (tl >= my_num_tl) {
-                    // Do a dummy interpolation from a later timelevel
-                    int const vi = input_array_variable_indices[n];
-                    assert (vi>=0 && vi<CCTK_NumVars());
-                    input_arrays.at(n) = CCTK_VarDataPtrI (cgh, 0, vi);
+                  if (vi == -1) {
+                    input_arrays.at(n) = NULL;
                   } else {
-                    int const vi = input_array_variable_indices[n];
+                    // Do a dummy interpolation from a later timelevel
+                    // if the desired timelevel does not exist
+                    int const my_tl = tl >= my_num_tl ? 0 : tl;
                     assert (vi>=0 && vi<CCTK_NumVars());
-                    input_arrays.at(n) = CCTK_VarDataPtrI (cgh, tl, vi);
+#if 0
+                    input_arrays.at(n) = CCTK_VarDataPtrI (cgh, my_tl, vi);
+#else
+                    int const vi0 = CCTK_FirstVarIndexI (gi);
+                    input_arrays.at(n)
+                      = ((*arrdata.at(gi).at(Carpet::map).data.at(vi-vi0))
+                         (my_tl, reflevel, component, mglevel)->storage());
+#endif
                   }
                 } // for input arrays
                 
