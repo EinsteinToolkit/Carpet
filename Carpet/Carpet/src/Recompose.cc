@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.64 2004/04/18 13:29:43 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.65 2004/04/22 14:16:16 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -178,6 +178,7 @@ namespace Carpet {
   void OutputGrids (const cGH* cgh, const int m, const gh<dim>& hh)
   {
     CCTK_INFO ("New grid structure (grid points):");
+    cout << "   Refinement level " << reflevel << ", map " << map << endl;
     for (int rl=0; rl<hh.reflevels(); ++rl) {
       for (int c=0; c<hh.components(rl); ++c) {
         for (int ml=0; ml<hh.mglevels(rl,c); ++ml) {
