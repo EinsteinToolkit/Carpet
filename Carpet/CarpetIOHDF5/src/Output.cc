@@ -217,7 +217,7 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
 
 int CarpetIOHDF5_Init (const cGH* const cctkGH)
 {
-  DECLARE_CCTK_ARGUMENTS
+  DECLARE_CCTK_ARGUMENTS;
 
   *this_iteration = -1;
   *next_output_iteration = 0;
@@ -230,7 +230,7 @@ int CarpetIOHDF5_Init (const cGH* const cctkGH)
 int WriteVar (const cGH* const cctkGH, const hid_t writer,
               const ioRequest* request, const int called_from_checkpoint)
 {
-  DECLARE_CCTK_PARAMETERS
+  DECLARE_CCTK_PARAMETERS;
 
   char *fullname = CCTK_FullName(request->vindex);
   const int gindex = CCTK_GroupIndexFromVarI (request->vindex);
@@ -496,8 +496,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
 static void CheckSteerableParameters (const cGH *const cctkGH,
                                       CarpetIOHDF5GH *myGH)
 {
-  DECLARE_CCTK_PARAMETERS
-
+  DECLARE_CCTK_PARAMETERS;
 
   // re-parse the 'IOHDF5::out_vars' parameter if it has changed
   if (strcmp (out_vars, myGH->out_vars))
@@ -543,14 +542,13 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
 
 static int OutputGH (const cGH* const cctkGH)
 {
+  DECLARE_CCTK_PARAMETERS;
   static int first_time = 1;
-
 
   // check if any deprecated parameters have been set in the parameter file
   //  (don't check after recovery though)
   if (first_time)
   {
-    DECLARE_CCTK_PARAMETERS
 
     if (CCTK_Equals (recover, "no") || ! *recover_file)
     {
@@ -581,8 +579,8 @@ static int OutputGH (const cGH* const cctkGH)
 
 static int TimeToOutput (const cGH* const cctkGH, const int vindex)
 {
-  DECLARE_CCTK_ARGUMENTS
-  DECLARE_CCTK_PARAMETERS
+  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_PARAMETERS;
 
   const int numvars = CCTK_NumVars();
   assert (vindex>=0 && vindex<numvars);
@@ -725,8 +723,8 @@ static void GetVarIndex (int vindex, const char* optstring, void* arg)
 static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
                         const char* const alias)
 {
-  DECLARE_CCTK_ARGUMENTS
-  DECLARE_CCTK_PARAMETERS
+  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_PARAMETERS;
 
   int vindex = -1;
 
@@ -826,8 +824,7 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
                            int vdim, int refinementlevel, int timelevel,
                            ibset::const_iterator bbox, hid_t dataset)
 {
-  DECLARE_CCTK_ARGUMENTS
-
+  DECLARE_CCTK_ARGUMENTS;
 
   // Write FlexIO attributes
   WriteAttribute (dataset, "level", refinementlevel);
@@ -869,10 +866,9 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
 
 static int WarnAboutDeprecatedParameters (void)
 {
+  DECLARE_CCTK_PARAMETERS;
   int warnings = 0;
   char buffer[20];
-  DECLARE_CCTK_PARAMETERS
-
 
   if (CCTK_ParameterQueryTimesSet ("out3D_dir", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("out_dir", CCTK_THORNSTRING))
