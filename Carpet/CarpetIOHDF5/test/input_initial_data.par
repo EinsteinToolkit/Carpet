@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/test/input_initial_data.par,v 1.1 2004/07/07 15:44:04 tradke Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/test/input_initial_data.par,v 1.2 2004/07/09 15:39:22 tradke Exp $
 
 # deactivate the IDScalarWaveMoL thorn
 # initial data is read from files using the filereader
@@ -52,7 +52,6 @@ IO::out_zline_x   = 0.5
 IOBasic::outInfo_vars   = "WaveToyMoL::scalarevolve"
 IOBasic::outScalar_vars = "WaveToyMoL::scalarevolve"
 
-# HDF5 output only for initial data
-IOHDF5::in3D_vars = "WaveToyMoL::scalarevolve"
-IOHDF5::in3D_dir  = "."
-IOHDF5::in3D_dir  = "../../../arrangements/Carpet/CarpetIOHDF5/test/"
+# filereader input files and directory
+IO::filereader_ID_files = "psi phi"
+IO::recover_dir  = "../../../arrangements/Carpet/CarpetIOHDF5/test/"
