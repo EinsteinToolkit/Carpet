@@ -277,18 +277,20 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
     ibset bboxes;
     BEGIN_COMPONENT_LOOP (cctkGH, group.grouptype)
     {
-      // Per Cactus convention, scalars are assumed the same values on each
-      // processor, so only component 0 is output.
-      if (component == 0 || group.grouptype != CCTK_SCALAR)
-      {
-        // Using "interior" removes ghost zones and refinement boundaries.
-        bboxes += arrdata.at(gindex).at(Carpet::map).dd->
-                  boxes.at(refinementlevel).at(component).at(mglevel).interior;
-      }
+      // Using "interior" removes ghost zones and refinement boundaries.
+      bboxes += arrdata.at(gindex).at(Carpet::map).dd->
+                boxes.at(refinementlevel).at(component).at(mglevel).interior;
     } END_COMPONENT_LOOP;
 
     // Normalise the set, i.e., try to represent the set with fewer bboxes.
-    bboxes.normalize();
+    //
+    // According to Cactus conventions, DISTRIB=CONSTANT arrays (including
+    // grid scalars) are assumed to be the same on all processors and therefor
+    // stored only by processor 0.
+    if (group.disttype != CCTK_DISTRIB_CONSTANT)
+    {
+      bboxes.normalize();
+    }
 
     // Loop over all components in the bbox set
     int bbox_id = 0;
@@ -311,9 +313,12 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
         continue;
       }
 
+      // create the dataset on the I/O processor
+      // skip DISTRIB=CONSTANT components from processors other than 0
       hid_t memfile = -1, memdataset = -1;
       hid_t dataspace = -1, dataset = -1;
-      if (myproc == 0)
+      if (myproc == 0 &&
+          (bbox_id == 0 || group.disttype != CCTK_DISTRIB_CONSTANT))
       {
         // Construct a file-wide unique HDF5 dataset name
         // (only add parts with varying metadata)
@@ -333,7 +338,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
         {
           datasetname << " rl=" << refinementlevel;
         }
-        if (bboxes.setsize () > 1)
+        if (bboxes.setsize () > 1 && group.disttype != CCTK_DISTRIB_CONSTANT)
         {
           datasetname << " c=" << bbox_id;
         }
@@ -385,54 +390,69 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
         gdata<dim>* const processor_component =
           data->make_typed (request->vindex);
 
-        void *h5data;
-        if (group.grouptype == CCTK_SCALAR)
+        processor_component->allocate (overlap, 0);
+        for (comm_state<dim> state; !state.done(); state.step())
         {
-          h5data = CCTK_VarDataPtrI (cctkGH, request->timelevel,
-                                     request->vindex);
-        }
-        else
-        {
-          processor_component->allocate (overlap, 0);
-          for (comm_state<dim> state; !state.done(); state.step())
-          {
-            processor_component->copy_from (state, data, overlap);
-          }
-          h5data = (void *) processor_component->storage();
+          processor_component->copy_from (state, data, overlap);
         }
 
         // Write data
         if (myproc == 0)
         {
-          hsize_t overlapshape[dim];
-          hssize_t overlaporigin[dim];
-          for (int d = 0; d < group.dim; ++d)
+          const void *data = (const void *) processor_component->storage();
+
+          // As per Cactus convention, DISTRIB=CONSTANT arrays (including
+          // grid scalars) are assumed to be the same on all processors
+          // and therefor are stored only by processor 0.
+          //
+          // Warn the user if this convention is violated.
+          if (bbox_id > 0 && group.disttype == CCTK_DISTRIB_CONSTANT)
           {
-            overlaporigin[group.dim-1-d] =
-             ((overlap.lower() - bbox->lower()) / overlap.stride())[d];
-            overlapshape[group.dim-1-d]  = (overlap.shape() / overlap.stride())[d];
+            const void *proc0 = CCTK_VarDataPtrI (cctkGH, request->timelevel,
+                                                  request->vindex);
+
+            if (memcmp (proc0, data, num_elems*CCTK_VarTypeSize(group.vartype)))
+            {
+              CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                          "values for DISTRIB=CONSTANT grid variable '%s' "
+                          "(timelevel %d) differ between processors 0 and %d; "
+                          "only the array from processor 0 will be stored",
+                          fullname, request->timelevel, bbox_id);
+            }
           }
-
-          // Write the processor component as a hyperslab into the recombined
-          // dataset.
-          hid_t overlap_dataspace;
-          HDF5_ERROR (overlap_dataspace =
-                      H5Screate_simple (group.dim, overlapshape, NULL));
-          HDF5_ERROR (H5Sselect_hyperslab (dataspace, H5S_SELECT_SET,
-                                           overlaporigin, NULL,
-                                           overlapshape, NULL));
-          HDF5_ERROR (H5Dwrite (memdataset, memdatatype, overlap_dataspace,
-                                dataspace, H5P_DEFAULT, h5data));
-          HDF5_ERROR (H5Sclose (overlap_dataspace));
-
-          // Add metadata information on the first time through
-          // (have to do it inside of the COMPONENT_LOOP so that we have
-          //  access to the cGH elements)
-          if (first_time)
+          else
           {
-            AddAttributes (cctkGH, fullname, group.dim, refinementlevel,
-                           request->timelevel, bbox, dataset);
-            first_time = 0;
+            hsize_t overlapshape[dim];
+            hssize_t overlaporigin[dim];
+            for (int d = 0; d < group.dim; ++d)
+            {
+              overlaporigin[group.dim-1-d] =
+                ((overlap.lower() - bbox->lower()) / overlap.stride())[d];
+              overlapshape[group.dim-1-d]  =
+                (overlap.shape() / overlap.stride())[d];
+            }
+
+            // Write the processor component as a hyperslab into the recombined
+            // dataset.
+            hid_t overlap_dataspace;
+            HDF5_ERROR (overlap_dataspace =
+                        H5Screate_simple (group.dim, overlapshape, NULL));
+            HDF5_ERROR (H5Sselect_hyperslab (dataspace, H5S_SELECT_SET,
+                                             overlaporigin, NULL,
+                                             overlapshape, NULL));
+            HDF5_ERROR (H5Dwrite (memdataset, memdatatype, overlap_dataspace,
+                                  dataspace, H5P_DEFAULT, data));
+            HDF5_ERROR (H5Sclose (overlap_dataspace));
+
+            // Add metadata information on the first time through
+            // (have to do it inside of the COMPONENT_LOOP so that we have
+            //  access to the cGH elements)
+            if (first_time)
+            {
+              AddAttributes (cctkGH, fullname, group.dim, refinementlevel,
+                             request->timelevel, bbox, dataset);
+              first_time = 0;
+            }
           }
         }
 
@@ -442,16 +462,18 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
       } END_COMPONENT_LOOP;
 
       // Finally create the recombined dataset in the real HDF5 file on disk
-      if (myproc == 0)
+      // (skip DISTRIB=CONSTANT components from processors other than 0)
+      if (myproc == 0 &&
+          (bbox_id == 0 || group.disttype != CCTK_DISTRIB_CONSTANT))
       {
-        void *h5data = malloc (H5Dget_storage_size (memdataset));
+        void *data = malloc (H5Dget_storage_size (memdataset));
         HDF5_ERROR (H5Dread (memdataset, filedatatype, H5S_ALL, H5S_ALL,
-                             H5P_DEFAULT, h5data));
+                             H5P_DEFAULT, data));
         HDF5_ERROR (H5Dclose (memdataset));
         HDF5_ERROR (H5Fclose (memfile));
         HDF5_ERROR (H5Dwrite (dataset, filedatatype, H5S_ALL, H5S_ALL,
-                              H5P_DEFAULT, h5data));
-        free (h5data);
+                              H5P_DEFAULT, data));
+        free (data);
         HDF5_ERROR (H5Sclose (dataspace));
         HDF5_ERROR (H5Dclose (dataset));
       }
@@ -851,7 +873,7 @@ static int WarnAboutDeprecatedParameters (void)
 
   if (CCTK_ParameterQueryTimesSet ("out3D_dir", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("out_dir", CCTK_THORNSTRING))
-  { 
+  {
     CCTK_WARN (1, "Parameter 'IOHDF5::out3D_dir' is deprecated, please use "
                   "'IOHDF5::out_dir' instead");
     CCTK_ParameterSet ("out_dir", CCTK_THORNSTRING, out3D_dir);
@@ -859,7 +881,7 @@ static int WarnAboutDeprecatedParameters (void)
   }
   if (CCTK_ParameterQueryTimesSet ("out3D_vars", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("out_vars", CCTK_THORNSTRING))
-  { 
+  {
     CCTK_WARN (1, "Parameter 'IOHDF5::out3D_vars' is deprecated, please use "
                   "'IOHDF5::out_vars' instead");
     CCTK_ParameterSet ("out_vars", CCTK_THORNSTRING, out3D_vars);
@@ -867,7 +889,7 @@ static int WarnAboutDeprecatedParameters (void)
   }
   if (CCTK_ParameterQueryTimesSet ("out3D_extension", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("out_extension", CCTK_THORNSTRING))
-  { 
+  {
     CCTK_WARN (1, "Parameter 'IOHDF5::out3D_extension' is deprecated, please use "
                   "'IOHDF5::out_extension' instead");
     CCTK_ParameterSet ("out_extension", CCTK_THORNSTRING, out3D_extension);
@@ -875,7 +897,7 @@ static int WarnAboutDeprecatedParameters (void)
   }
   if (CCTK_ParameterQueryTimesSet ("out3D_criterion", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("out_criterion", CCTK_THORNSTRING))
-  { 
+  {
     CCTK_WARN (1, "Parameter 'IOHDF5::out3D_criterion' is deprecated, please use "
                   "'IOHDF5::out_criterion' instead");
     CCTK_ParameterSet ("out_criterion", CCTK_THORNSTRING, out3D_criterion);
@@ -883,7 +905,7 @@ static int WarnAboutDeprecatedParameters (void)
   }
   if (CCTK_ParameterQueryTimesSet ("out3D_every", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("out_every", CCTK_THORNSTRING))
-  { 
+  {
     CCTK_WARN (1, "Parameter 'IOHDF5::out3D_every' is deprecated, please use "
                   "'IOHDF5::out_every' instead");
     snprintf (buffer, sizeof (buffer), "%d", out3D_every);
@@ -892,7 +914,7 @@ static int WarnAboutDeprecatedParameters (void)
   }
   if (CCTK_ParameterQueryTimesSet ("out3D_dt", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("out_dt", CCTK_THORNSTRING))
-  { 
+  {
     CCTK_WARN (1, "Parameter 'IOHDF5::out3D_dt' is deprecated, please use "
                   "'IOHDF5::out_dt' instead");
     snprintf (buffer, sizeof (buffer), "%f", out3D_dt);
@@ -901,7 +923,7 @@ static int WarnAboutDeprecatedParameters (void)
   }
   if (CCTK_ParameterQueryTimesSet ("in3D_dir", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("in_dir", CCTK_THORNSTRING))
-  { 
+  {
     CCTK_WARN (1, "Parameter 'IOHDF5::in3D_dir' is deprecated, please use "
                   "'IOHDF5::in_dir' instead");
     CCTK_ParameterSet ("in_dir", CCTK_THORNSTRING, in3D_dir);
@@ -909,7 +931,7 @@ static int WarnAboutDeprecatedParameters (void)
   }
   if (CCTK_ParameterQueryTimesSet ("in3D_vars", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("in_vars", CCTK_THORNSTRING))
-  { 
+  {
     CCTK_WARN (1, "Parameter 'IOHDF5::in3D_vars' is deprecated, please use "
                   "'IOHDF5::in_vars' instead");
     CCTK_ParameterSet ("in_vars", CCTK_THORNSTRING, in3D_vars);
@@ -917,7 +939,7 @@ static int WarnAboutDeprecatedParameters (void)
   }
   if (CCTK_ParameterQueryTimesSet ("in3D_extension", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("in_extension", CCTK_THORNSTRING))
-  { 
+  {
     CCTK_WARN (1, "Parameter 'IOHDF5::in3D_extension' is deprecated, please use "
                   "'IOHDF5::in_extension' instead");
     CCTK_ParameterSet ("in_extension", CCTK_THORNSTRING, in3D_extension);
