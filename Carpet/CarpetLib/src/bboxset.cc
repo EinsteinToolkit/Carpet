@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.2 2001/03/10 20:55:06 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.3 2001/03/12 16:54:25 eschnett Exp $
 
  ***************************************************************************/
 
@@ -59,7 +59,7 @@ template<class T, int D>
 bool bboxset<T,D>::invariant () const {
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
     if ((*bi).empty()) return false;
-    if (! (*bi).aligned_with(*bs.begin())) return false;
+    if (! (*bi).is_aligned_with(*bs.begin())) return false;
     // check for overlap (quadratic -- expensive)
     int cnt=0;
     for (const_iterator bi2=bi; bi2!=end(); ++bi2) {
@@ -212,7 +212,7 @@ bboxset<T,D>& bboxset<T,D>::operator&= (const bboxset& s) {
 // Difference
 template<class T, int D>
 bboxset<T,D> operator- (const bbox<T,D>& b1, const bbox<T,D>& b2) {
-  assert (b1.aligned_with(b2));
+  assert (b1.is_aligned_with(b2));
   if (b1.empty()) return bboxset<T,D>();
   if (b2.empty()) return bboxset<T,D>(b1);
   const vect<T,D> str = b1.stride();

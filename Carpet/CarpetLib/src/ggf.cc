@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.2 2001/03/05 21:48:38 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.3 2001/03/12 16:54:25 eschnett Exp $
 
  ***************************************************************************/
 
@@ -359,10 +359,8 @@ void generic_gf<D>::ref_bnd_prolongate (int tl, int rl, int c, int ml) {
   double time =
     (t.time(tl,rl,ml) - t.get_time(rl-1,ml)) / (double)t.get_delta(rl-1, ml);
   const int tl2 = (int)floor(time);
-  cout << "### ref_bnd_prolongate tl=" << tl << " rl=" << rl << " c=" << c << " ml=" << ml << " time=" << time << " tl2=" << tl2 << endl;
   assert (tl2>=tmin && tl2<=tmax);
   if (time==tl2) {
-    cout << "### (copycat)" << endl;
     copycat (tl ,rl  ,c,ml, &dh<D>::dboxes::recv_ref_bnd_coarse,
       	     tl2,rl-1,  ml, &dh<D>::dboxes::send_ref_bnd_fine);
   } else {
@@ -370,7 +368,6 @@ void generic_gf<D>::ref_bnd_prolongate (int tl, int rl, int c, int ml) {
     assert (tl3>=tmin && tl3<=tmax);
     const double fact2 = 1 - (time - tl2);
     const double fact3 = 1 - fact2;
-    cout << "### (intercat) tl3=" << tl3 << " fact2=" << fact2 << " fact3=" << fact3 << endl;
     intercat (tl,rl,c,ml, &dh<D>::dboxes::recv_ref_bnd_coarse,
       	      tl2,fact2, tl3,fact3,
       	      rl-1,ml, &dh<D>::dboxes::send_ref_bnd_fine);

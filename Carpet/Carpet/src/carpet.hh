@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.3 2001/03/10 20:55:03 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.4 2001/03/12 16:54:18 eschnett Exp $
 
 #include <vector>
 
@@ -20,6 +20,22 @@ namespace Carpet {
   
   // handle from CCTK_RegisterGHExtension
   extern int GHExtension;
+  
+  // time step on base grid
+  extern CCTK_REAL base_delta_time;
+  
+  // active time level
+  extern int activetimelevel;	// 0 for current, 1 for next
+  
+  // current position on the grid hierarchy
+  extern int mglevel;
+  extern int reflevel;
+  extern int component;
+  
+  // current refinement factor
+  extern int reflevelfactor;
+  
+  
   
   // data for scalars
   extern vector<vector<vector<void*> > > scdata;// [group][var][tl]
@@ -47,14 +63,6 @@ namespace Carpet {
   };
   extern vector<gfdesc> gfdata;	// [group]
   
-  // active time level
-  extern int activetimelevel;	// 0 for current, 1 for next
-  
-  // current position on the grid hierarchy
-  extern int mglevel;
-  extern int reflevel;
-  extern int component;
-  
   
   
   // scheduled functions
@@ -69,9 +77,6 @@ namespace Carpet {
   int Evolve (tFleshConfig *config);
   int Shutdown (tFleshConfig *config);
   int CallFunction (void *function, cFunctionData *attribute, void *data);
-  
-  void reflevel_up (cGH* cgh);
-  void reflevel_down (cGH* cgh);
   
   int SyncGroup (cGH *cgh, const char *groupname);
   int EnableGroupStorage (cGH *cgh, const char *groupname);
@@ -90,6 +95,8 @@ namespace Carpet {
   
   
   // Helper functions
+  void enact_reflevel (cGH *cgh);
+  
   extern "C" {
     MPI_Comm CarpetMPICommunicator();
   }

@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.4 2001/03/10 20:55:06 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.5 2001/03/12 16:54:25 eschnett Exp $
 
  ***************************************************************************/
 
@@ -142,7 +142,7 @@ void dh<D>::recompose () {
       	    // coarse grid, and may use the exterior of the fine grid)
       	    const ibbox recv = intr;
       	    const ibbox send = recv.expanded_for(extrf);
-      	    assert (send.contained_in(extrf));
+      	    assert (send.is_contained_in(extrf));
       	    boxes[rl][c][ml-1].send_mg_coarse.push_back(send);
       	    boxes[rl][c][ml  ].recv_mg_fine  .push_back(recv);
       	  }
@@ -180,7 +180,7 @@ void dh<D>::recompose () {
       	      // grid)
       	      const ibbox recv = extr.contracted_for(intrf) & intrf;
       	      const ibbox send = recv.expanded_for(extr);
-      	      assert (send.contained_in(extr));
+      	      assert (send.is_contained_in(extr));
       	      boxes[rl+1][cc][ml].recv_ref_coarse[c ].push_back(recv);
       	      boxes[rl  ][c ][ml].send_ref_fine  [cc].push_back(send);
       	    }
@@ -196,7 +196,7 @@ void dh<D>::recompose () {
 		// the fine grid)
 		const ibbox recv = extr.contracted_for(bndf) & bndf;
 		const ibbox send = recv.expanded_for(extr);
-		assert (send.contained_in(extr));
+		assert (send.is_contained_in(extr));
 		boxes[rl+1][cc][ml].recv_ref_bnd_coarse[c ].push_back(recv);
 		boxes[rl  ][c ][ml].send_ref_bnd_fine  [cc].push_back(send);
       	      }
@@ -244,8 +244,12 @@ void dh<D>::recompose () {
 	bases[rl][ml].exterior = ibbox();
 	bases[rl][ml].interior = ibbox();
 	for (int c=0; c<h.components(rl); ++c) {
-	  bases[rl][ml].exterior *= boxes[rl][c][ml].exterior;
-	  bases[rl][ml].interior *= boxes[rl][c][ml].interior;
+	  bases[rl][ml].exterior
+	    = (bases[rl][ml].exterior
+	       .expanded_containing(boxes[rl][c][ml].exterior));
+	  bases[rl][ml].interior
+	    = (bases[rl][ml].interior
+	       .expanded_containing(boxes[rl][c][ml].interior));
 	}
 	bases[rl][ml].boundaries
 	  = bases[rl][ml].exterior - bases[rl][ml].interior;
@@ -281,7 +285,7 @@ void dh<D>::recompose () {
   }
   for (int rl=0; rl<h.reflevels(); ++rl) {
     if (h.components(rl)>0) {
-      for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
+      for (int ml=0; ml<h.mglevels(rl,0); ++ml) {
       	cout << endl;
       	cout << "dh bases:" << endl;
       	cout << "rl=" << rl << " ml=" << ml << endl;

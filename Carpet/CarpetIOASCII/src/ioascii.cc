@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.3 2001/03/05 21:48:33 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.4 2001/03/12 16:54:25 eschnett Exp $
 
 #include <cassert>
 #include <cstdio>
@@ -111,7 +111,7 @@ int IOASCII<outdim>::OutputVarAs (cGH* const cgh, const char* const varname,
   assert (n0>=0 && n0<CCTK_NumVars());
   const int var = n - n0;
   assert (var>=0 && var<CCTK_NumVars());
-  const int tl = max(0, CCTK_NumTimeLevelsFromVarI(n) - 2);
+  const int tl = 0;
   
   switch (CCTK_GroupTypeI(group)) {
     
@@ -293,6 +293,8 @@ int IOASCII<outdim>::OutputVarAs (cGH* const cgh, const char* const varname,
 	  assert (mglevel>=0);
 	  assert (reflevel==0);
 	  for (reflevel=0; reflevel<hh->reflevels(); ++reflevel) {
+	    enact_reflevel (cgh);
+	    
 	    assert (component==-1);
 	    for (component=0; component<hh->components(reflevel);
 		 ++component) {
@@ -317,15 +319,36 @@ int IOASCII<outdim>::OutputVarAs (cGH* const cgh, const char* const varname,
 	      
 	      const generic_data<dim>* const data
 		= (*ff) (tl, reflevel, component, mglevel);
-	      const vect<int,dim> offset1 = offset * data->extent().stride();
+	      const vect<int,dim> offset1 = (offset * data->extent().stride()
+					     * vect<int,dim>(reflevelfactor));
 	      
 	      data->write_ascii (filename, cgh->cctk_iteration, offset1, dirs,
 				 tl, reflevel, component, mglevel);
 	      
-	    }
+	    } // Loop over components
 	    component = -1;
-	  }
+	    
+	    // Append EOL after every complete set of components
+	    if (CCTK_MyProc(cgh)==0) {
+	      ofstream file(filename, ios::app);
+	      assert (file.good());
+	      file << endl;
+	      file.close();
+	      assert (file.good());
+	    }
+	    
+	  } // Loop over refinement levels
 	  reflevel = 0;
+	  enact_reflevel (cgh);
+	  
+	  // Append EOL after every complete set of refinement levels
+	  if (CCTK_MyProc(cgh)==0) {
+	    ofstream file(filename, ios::app);
+	    assert (file.good());
+	    file << endl;
+	    file.close();
+	    assert (file.good());
+	  }
 	  
 	} // if (desired)
 	
@@ -484,7 +507,8 @@ int IOASCII<outdim>::CoordToOffset (cGH* cgh, int dir, double coord)
   
   const int npoints = cgh->cctk_gsh[dir-1];
   
-  int cindex = (int)floor((coord - lower) / (upper - lower) * npoints + 0.75);
+  const CCTK_REAL rindex = (coord - lower) / (upper - lower) * npoints;
+  const int cindex = (int)floor(rindex + 0.5 + 1e-6);
   assert (cindex>=0 && cindex<npoints);
   
   return cindex;

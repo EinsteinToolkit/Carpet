@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.5 2001/03/10 20:55:06 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.6 2001/03/12 16:54:25 eschnett Exp $
 
  ***************************************************************************/
 
@@ -70,12 +70,11 @@ void generic_data<D>::write_ascii (const string name, const int time,
       
       file << setprecision(15);
       
-      file << "#" << endl
-	   << "# iteration " << time << endl
+      file << "# iteration " << time << endl
 	   << "# time level " << tl << "   refinement level " << rl
 	   << "   component " << c << "   multigrid level " << ml << endl
 	   << "# column format: it tl rl c ml";
-      assert (D<=3);
+      assert (D>=1 && D<=3);
       for (int d=0; d<D; ++d) file << " " << "xyz"[d];
       file << " data" << endl;
       
@@ -104,7 +103,11 @@ void generic_data<D>::write_ascii (const string name, const int time,
 	  }
 	}
 	
-      }	// if ext contains org
+      }	else {
+	
+	file << "#" << endl;
+	
+      }	// if ! ext contains org
       
       file.close();
       assert (file.good());

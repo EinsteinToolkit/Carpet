@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.4 2001/03/10 20:55:06 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.hh,v 1.5 2001/03/12 16:54:25 eschnett Exp $
 
  ***************************************************************************/
 
@@ -81,10 +81,10 @@ public:
   bbox operator& (const bbox& b) const;
   
   // Containment
-  bool contained_in (const bbox& b) const;
+  bool is_contained_in (const bbox& b) const;
   
   // Alignment check
-  bool aligned_with (const bbox& b) const;
+  bool is_aligned_with (const bbox& b) const;
   
   // Expand the bbox a little by multiples of the stride
   bbox expand (const vect<T,D>& lo, const vect<T,D>& hi) const;
@@ -95,15 +95,8 @@ public:
   // Find the largest b-compatible box inside *this
   bbox contracted_for (const bbox& b) const;
   
-  // Set operations
-  // TODO: rename these; they clash with the bboxset operations
-  // (and name them & and | instead)
   // Smallest bbox containing both boxes
-  bbox operator* (const bbox& b) const;
-  bbox& operator*= (const bbox& b);
-  // Largest bbox inside both boxes
-  bbox operator+ (const bbox& b) const;
-  bbox& operator+= (const bbox& b);
+  bbox expanded_containing (const bbox<T,D>& b) const;
   
   // Iterators
   class iterator {

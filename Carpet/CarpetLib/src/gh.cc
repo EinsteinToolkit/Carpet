@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.2 2001/03/07 13:00:57 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.3 2001/03/12 16:54:25 eschnett Exp $
 
  ***************************************************************************/
 
@@ -80,7 +80,7 @@ void gh<D>::recompose (const rexts& exts, const rprocs& procs) {
 		    == ivect(mgfact) * extents[rl][c][ml-1].stride()));
 	assert (extents[rl][c][ml]
 		.contracted_for(extents[rl][c][ml-1])
-		.contained_in(extents[rl][c][ml-1]));
+		.is_contained_in(extents[rl][c][ml-1]));
       }
     }
   }
@@ -92,7 +92,7 @@ void gh<D>::recompose (const rexts& exts, const rprocs& procs) {
       for (int ml=0; ml<mglevels(rl,c); ++ml) {
 	assert (all(extents[rl][c][ml].stride()
 		    == extents[rl][0][ml].stride()));
-	assert (extents[rl][c][ml].aligned_with(extents[rl][0][ml]));
+	assert (extents[rl][c][ml].is_aligned_with(extents[rl][0][ml]));
       }
     }
   }
@@ -100,7 +100,7 @@ void gh<D>::recompose (const rexts& exts, const rprocs& procs) {
   // Check base grid extent
   if (reflevels()>0) {
     for (int c=0; c<components(0); ++c) {
-      assert (extents[0][c][0].contained_in(baseextent));
+      assert (extents[0][c][0].is_contained_in(baseextent));
     }
   }
   
@@ -134,7 +134,8 @@ void gh<D>::recompose (const rexts& exts, const rprocs& procs) {
       for (int ml=0; ml<mglevels(rl,0); ++ml) {
 	bases[rl][ml] = ibbox();
 	for (int c=0; c<components(rl); ++c) {
-	  bases[rl][ml] *= extents[rl][c][ml];
+	  bases[rl][ml]
+	    = bases[rl][ml].expanded_containing(extents[rl][c][ml]);
 	}
       }
     }

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.3 2001/03/07 13:00:57 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bbox.cc,v 1.4 2001/03/12 16:54:25 eschnett Exp $
 
  ***************************************************************************/
 
@@ -133,14 +133,14 @@ bbox<T,D> bbox<T,D>::operator& (const bbox& b) const {
 
 // Containment
 template<class T, int D>
-bool bbox<T,D>::contained_in (const bbox& b) const {
+bool bbox<T,D>::is_contained_in (const bbox& b) const {
   // no alignment check
   return all(lower()>=b.lower() && upper()<=b.upper());
 }
 
 // Alignment check
 template<class T, int D>
-bool bbox<T,D>::aligned_with (const bbox& b) const {
+bool bbox<T,D>::is_aligned_with (const bbox& b) const {
   return all(stride()==b.stride() && (lower()-b.lower()) % stride() == 0);
 }
 
@@ -175,40 +175,16 @@ bbox<T,D> bbox<T,D>::contracted_for (const bbox& b) const {
   return bbox(lo,up,str);
 }
 
-// Set operations
 // Smallest bbox containing both boxes
 template<class T, int D>
-bbox<T,D> bbox<T,D>::operator* (const bbox& b) const {
+bbox<T,D> bbox<T,D>::expanded_containing (const bbox& b) const {
   if (empty()) return b;
   if (b.empty()) return *this;
-  assert (aligned_with(b));
+  assert (is_aligned_with(b));
   const vect<T,D> lo = min(lower(), b.lower());
   const vect<T,D> up = max(upper(), b.upper());
   const vect<T,D> str = min(stride(), b.stride());
   return bbox(lo,up,str);
-}
-
-template<class T, int D>
-bbox<T,D>& bbox<T,D>::operator*= (const bbox& b) {
-  *this = *this * b;
-  return *this;
-}
-
-// Largest bbox inside both boxes
-template<class T, int D>
-bbox<T,D> bbox<T,D>::operator+ (const bbox& b) const {
-  if (empty() || b.empty()) return bbox();
-  assert (aligned_with(b));
-  const vect<T,D> lo = max(lower(), b.lower());
-  const vect<T,D> up = min(upper(), b.upper());
-  const vect<T,D> str = min(stride(), b.stride());
-  return bbox(lo,up,str);
-}
-
-template<class T, int D>
-bbox<T,D>& bbox<T,D>::operator+= (const bbox& b) {
-  *this = *this + b;
-  return *this;
 }
 
 // Iterators
