@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.15 2002/06/07 16:44:42 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.16 2002/06/07 17:25:09 shawley Exp $";
 
 CCTK_FILEVERSION(Carpet_Initialise_cc)
 
@@ -117,7 +117,8 @@ namespace Carpet {
 	  // erik: what about arrays?
 	  FlipTimeLevels(cgh);
 	  for (int rl=0; rl<hh->reflevels(); ++rl) {
-	    tt->set_time (rl, mglevel, 2*tt->get_delta (rl, mglevel) - tt->get_time (rl, mglevel));
+	    tt->set_time (rl, mglevel, -1*tt->get_time (rl, mglevel) );
+	    tt->set_delta (rl, mglevel,-1*tt->get_delta (rl, mglevel));
 	  }
 	  // Keep track of which direction (in time) we're integrating
 	  time_dir *= -1;
@@ -149,7 +150,8 @@ namespace Carpet {
 	BEGIN_MGLEVEL_LOOP(cgh) {
 	  FlipTimeLevels(cgh);
 	  for (int rl=0; rl<hh->reflevels(); ++rl) {
-	    tt->set_time (rl, mglevel, 2*tt->get_delta (rl, mglevel) - tt->get_time (rl, mglevel));
+	    tt->set_time (rl, mglevel, -1*tt->get_time (rl, mglevel) );
+	    tt->set_delta (rl, mglevel,-1*tt->get_delta (rl, mglevel));
 	  }
 	} END_MGLEVEL_LOOP(cgh);
 	time_dir *= -1;
@@ -184,7 +186,7 @@ namespace Carpet {
       BEGIN_MGLEVEL_LOOP(cgh) {
          FlipTimeLevels(cgh);
 	 for (int rl=0; rl<hh->reflevels(); ++rl) {
-	   tt->set_time (rl, mglevel, 2*tt->get_delta (rl, mglevel) - tt->get_time (rl, mglevel));
+	   tt->set_time (rl, mglevel, 0);
 	 }
       } END_MGLEVEL_LOOP(cgh);
       time_dir *= -1;
