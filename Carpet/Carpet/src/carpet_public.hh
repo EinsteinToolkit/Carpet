@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.24 2003/05/02 14:22:08 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.25 2003/05/05 14:57:28 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -232,23 +232,23 @@ namespace Carpet {
 
 
   
-#define BEGIN_LOCAL_COMPONENT_LOOP(cgh)			\
-  do {							\
-    int _lcl;						\
-    assert (reflevel>=0 && reflevel<hh->reflevels());	\
-    assert (mglevel>=0 && mglevel<mglevels);		\
-    assert (component==-1);				\
-    for (int _c=0; _c<hh->components(reflevel); ++_c) {	\
-      if (hh->is_local(reflevel,_c)) {			\
-	set_component ((cGH*)(cgh), _c);		\
+#define BEGIN_LOCAL_COMPONENT_LOOP(cgh)                                 \
+  do {                                                                  \
+    int _lcl;                                                           \
+    assert (reflevel>=0 && reflevel<hh->reflevels());                   \
+    assert (mglevel>=0 && mglevel<mglevels);                            \
+    assert (hh->local_components(reflevel)==1 || component==-1);        \
+    int const saved_component = component;                              \
+    for (int _c=0; _c<hh->components(reflevel); ++_c) {                 \
+      if (hh->is_local(reflevel,_c)) {                                  \
+	set_component ((cGH*)(cgh), _c);                                \
 	{
-#define END_LOCAL_COMPONENT_LOOP(cgh)		\
-	}					\
-      }						\
-    }						\
-    set_component ((cGH*)(cgh), -1);		\
-    assert (component==-1);			\
-    _lcl = 0;					\
+#define END_LOCAL_COMPONENT_LOOP(cgh)                   \
+	}                                               \
+      }                                                 \
+    }                                                   \
+    set_component ((cGH*)(cgh), saved_component);       \
+    _lcl = 0;                                           \
   } while (0)
   
 } // namespace Carpet
