@@ -4,6 +4,8 @@
 #include <stdlib.h>
 
 #include <list>
+#include <sstream>
+#include <string>
 #include <vector>
 
 #include "cctk.h"
@@ -19,7 +21,7 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.10 2002/03/11 15:09:41 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.11 2002/03/21 15:40:34 schnetter Exp $";
 
 
 
@@ -279,8 +281,9 @@ namespace CarpetRegrid {
     const ivect lb  (ilower);
     const ivect ub  (iupper);
     if (! all(lb>=rlb && ub<=rub)) {
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-		  "The refinement region boundaries for refinement level #%d are not within the main grid", rl);
+      ostringstream buf;
+      buf << "The refinement region boundaries for refinement level #" << rl << " are not within the main grid.  Allowed are the grid point boundaries " << rlb << " - " << rub << "; specified were " << lb << " - " << ub << ends;
+      CCTK_WARN (0, buf.str().c_str());
     }
     if (! all(lb<=ub)) {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
