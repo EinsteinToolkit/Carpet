@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/InitialData.F77,v 1.2 2002/02/26 14:14:07 shawley Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDFOScalarWave/src/InitialData.F77,v 1.3 2002/02/26 16:44:10 shawley Exp $
 
  /*@@
    @file      InitialData.F77
@@ -75,6 +75,11 @@ c     call CCTK_INFO ("IDFOScalarWave_InitialData")
          end do
 
       else if (CCTK_EQUALS(initial_data,"gaussian")) then 
+c
+c    A shell with gaussian cross-section, time reflection symmetry
+c    moving at unit velocity
+c             phi(r,t) = (r-t)/r * amp/2 * exp(-(r-r0-t)**2/sigma**2)
+c                      + (r+t)/r * amp/2 * exp(-(r-r0+t)**2/sigma**2)
 
          do k=1, cctk_lsh(3)
             do j=1, cctk_lsh(2)
@@ -82,9 +87,59 @@ c     call CCTK_INFO ("IDFOScalarWave_InitialData")
 
                   r = spher3d_r(i,j,k)
 
-                  phi(i,j,k) = amplitude
+                  phi(i,j,k) = amplitude 
      $                 * exp(- (r - radius)**2 / sigma**2)
 
+                  pi(i,j,k) = 0.0
+                  phix(i,j,k) = phi(i,j,k)*  (-2) * (r - radius) * 
+     $                     cart3d_x(i,j,k) / r / sigma**2
+                  phiy(i,j,k) = phi(i,j,k)*  (-2) * (r - radius) * 
+     $                     cart3d_y(i,j,k) / r / sigma**2
+                  phiz(i,j,k) = phi(i,j,k)*  (-2) * (r - radius) * 
+     $                     cart3d_z(i,j,k) / r / sigma**2
+
+
+                  pi_p(i,j,k) = amplitude *  
+     &               exp(- (r - radius - dt)**2 / sigma**2) *
+     &              ( (r - dt)/r * (r - radius - dt) / sigma**2 - 1/2/r )
+     &                        + amplitude *  
+     &               exp(- (r - radius + dt)**2 / sigma**2) *
+     &              ( -(r + dt)/r * (r - radius + dt) / sigma**2 + 1/2/r)
+
+                  pi_p_p(i,j,k) = amplitude *  
+     &               exp(- (r - radius - 2*dt)**2 / sigma**2) *
+     &              ( (r - 2*dt)/r * (r - radius - 2*dt) / sigma**2 
+     &                - 1/2/r )    + amplitude *  
+     &               exp(- (r - radius + 2*dt)**2 / sigma**2) *
+     &              ( -(r + 2*dt)/r * (r - radius + 2*dt) / sigma**2 
+     &                 + 1/2/r )
+
+c   first store partial phi / partial r in phix as a temporary variable,
+c   then come back and multiply by x/r
+                  phix_p(i,j,k) = amplitude  * 
+     &                exp(- (r - radius - dt)**2 / sigma**2) *
+     &                (dt/r**2 - (r-dt)/r*(r - radius - dt) / sigma**2 )
+     &                - amplitude * 
+     &                exp(- (r - radius + dt)**2 / sigma**2) *
+     &                 (dt/r**2 + (r+dt)/r*(r - radius + dt) / sigma**2 )
+c  do not mix up the order of these next three lines!
+                  phiy_p(i,j,k) = phix_p(i,j,k) * cart3d_y(i,j,k) / r
+                  phiz_p(i,j,k) = phix_p(i,j,k) * cart3d_z(i,j,k) / r
+                  phix_p(i,j,k) = phix_p(i,j,k) * cart3d_x(i,j,k) / r
+
+                  phix_p(i,j,k) = amplitude  * 
+     &              exp(- (r - radius - 2*dt)**2 / sigma**2) *
+     &              (2*dt/r**2 - (r-2*dt)/r*(r - radius - 2*dt) 
+     &                      / sigma**2 )
+     &              - amplitude * 
+     &              exp(- (r - radius + 2*dt)**2 / sigma**2) *
+     &              (2*dt/r**2 + (r+2*dt)/r*(r - radius + 2*dt) 
+     &                      / sigma**2 )
+c  do not mix up the order of these next three lines!
+                  phiy_p_p(i,j,k) = phix_p_p(i,j,k) * cart3d_y(i,j,k) / r
+                  phiz_p_p(i,j,k) = phix_p_p(i,j,k) * cart3d_z(i,j,k) / r
+                  phix_p_p(i,j,k) = phix_p_p(i,j,k) * cart3d_x(i,j,k) / r
+   
                   phi_p(i,j,k) = amplitude/2 * (r - dt) / r
      $                 * exp(- (r - radius - dt)**2 / sigma**2)
      $                 + amplitude/2 * (r + dt) / r
@@ -94,6 +149,7 @@ c     call CCTK_INFO ("IDFOScalarWave_InitialData")
      $                 * exp(- (r - radius - 2*dt)**2 / sigma**2)
      $                 + amplitude/2 * (r + 2*dt) / r
      $                 * exp(- (r - radius + 2*dt)**2 / sigma**2)
+
 
                end do
             end do
@@ -115,19 +171,14 @@ c        Use kx,ky,kz as number of modes in each direction.
      $                 * sin(kx * (x - 0.5d0) * cpi)
      $                 * sin(ky * (y - 0.5d0) * cpi)
      $                 * sin(kz * (z - 0.5d0) * cpi)
-     $                 * cos(omega * cctk_time * cpi)
                   
-                  phi_p(i,j,k) = amplitude
-     $                 * sin(kx * (x - 0.5d0) * cpi)
-     $                 * sin(ky * (y - 0.5d0) * cpi)
-     $                 * sin(kz * (z - 0.5d0) * cpi)
+                  phi_p(i,j,k) = phi(i,j,k)
      $                 * cos(omega * (cctk_time - dt) * cpi)
                   
-                  phi_p_p(i,j,k) = amplitude
-     $                 * sin(kx * (x - 0.5d0) * cpi)
-     $                 * sin(ky * (y - 0.5d0) * cpi)
-     $                 * sin(kz * (z - 0.5d0) * cpi)
+                  phi_p_p(i,j,k) = phi(i,j,k)
      $                 * cos(omega * (cctk_time - 2*dt) * cpi)
+
+                  phi(i,j,k) = phi(i,j,k) * cos(omega * cctk_time * cpi)
 
                end do
             end do
