@@ -13,7 +13,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.9 2001/12/05 03:31:56 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.10 2001/12/05 19:04:45 schnetter Exp $";
 
 
 
@@ -207,40 +207,58 @@ namespace Carpet {
     
     const int mglevels = 1;	// arbitrary value
     
-    // note: what this routine calls "ub" is "ub+str" elsewhere
     const vect<int,dim> rstr = hh->baseextent.stride();
     const vect<int,dim> rlb  = hh->baseextent.lower();
-    const vect<int,dim> rub  = hh->baseextent.upper() + rstr;
+    const vect<int,dim> rub  = hh->baseextent.upper();
     
-    if (reflevels>3) {
-      CCTK_WARN (0, "Cannot currently specify refinement regions for more than 3 refinement levels");
+    if (reflevels>4) {
+      CCTK_WARN (0, "Cannot currently specify refinement regions for more than 4 refinement levels");
     }
     
     assert (reflevels<4);
     vector<vect<int,dim> > lower(4), upper(4);
     lower[0] = rlb;
     upper[0] = rub;
-    lower[1] = rstr * vect<int,dim> (l1xmin, l1ymin, l1zmin);
-    upper[1] = rstr * vect<int,dim> (l1xmax, l1ymax, l1zmax);
-    lower[2] = rstr * vect<int,dim> (l2xmin, l2ymin, l2zmin);
-    upper[2] = rstr * vect<int,dim> (l2xmax, l2ymax, l2zmax);
-    lower[3] = rstr * vect<int,dim> (l3xmin, l3ymin, l3zmin);
-    upper[3] = rstr * vect<int,dim> (l3xmax, l3ymax, l3zmax);
+    lower[1] = vect<int,dim> (l1xmin, l1ymin, l1zmin);
+    upper[1] = vect<int,dim> (l1xmax, l1ymax, l1zmax);
+    lower[2] = vect<int,dim> (l2xmin, l2ymin, l2zmin);
+    upper[2] = vect<int,dim> (l2xmax, l2ymax, l2zmax);
+    lower[3] = vect<int,dim> (l3xmin, l3ymin, l3zmin);
+    upper[3] = vect<int,dim> (l3xmax, l3ymax, l3zmax);
     
     vector<vector<bbox<int,dim> > > bbss(reflevels);
     
     for (int rl=0; rl<reflevels; ++rl) {
-      const int fact = floor(pow(hh->reffact, rl) + 0.5);
-      assert (all (rstr % fact == 0));
-      const vect<int,dim> str (rstr / fact);
+      const int levfac = floor(pow(hh->reffact, rl) + 0.5);
+      assert (all (rstr % levfac == 0));
+      const vect<int,dim> str (rstr / levfac);
       const vect<int,dim> lb  (lower[rl]);
       const vect<int,dim> ub  (upper[rl]);
-      assert (all(lb<=ub && lb>=rlb && ub-str<=rub-rstr
-		  && lb%str==0 && ub%str==0));
+      if (! all(lb>=rlb && ub<=rub)) {
+	CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+		    "The refinement region boundaries for refinement level #%d are not within the main grid", rl);
+      }
+      if (! all(lb<=ub)) {
+	CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+		    "The refinement region boundaries for refinement level #%d have the upper boundary less than the lower boundary", rl);
+      }
+      if (! all(lb%str==0 && ub%str==0)) {
+	CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+		    "The refinement region boundaries for refinement level #%d are not a multiple of the stride for that level", rl);
+      }
+      assert (all(lb>=rlb && ub<=rub));
+      assert (all(lb<=ub));
+      assert (all(lb%str==0 && ub%str==0));
       vector<bbox<int,dim> > bbs(1);
-      bbs[0] = bbox<int,dim>(lb, ub-str, str);
+      bbs[0] = bbox<int,dim>(lb, ub, str);
       bbss[rl] = bbs;
     }
+    
+    if (reflevels>0) {
+      assert (bbss[0].size() > 0);
+      assert (bbss[0][0] == hh->baseextent);
+    }
+    
     bbsss = hh->make_multigrid_boxes(bbss, mglevels);
   }
   
