@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.2 2001/12/14 16:39:07 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.3 2001/12/18 10:29:35 schnetter Exp $";
 
 
 
@@ -69,12 +69,6 @@ namespace Carpet {
       Waypoint ("%*sScheduling POSTINITIAL", 2*reflevel, "");
       CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
       
-      // Recover
-      Waypoint ("%*sScheduling RECOVER_VARIABLES", 2*reflevel, "");
-      CCTK_ScheduleTraverse ("CCTK_RECOVER_VARIABLES", cgh, CallFunction);
-      Waypoint ("%*sScheduling CPINITIAL", 2*reflevel, "");
-      CCTK_ScheduleTraverse ("CCTK_CPINITIAL", cgh, CallFunction);
-      
       // Poststep
       Waypoint ("%*sScheduling POSTSTEP", 2*reflevel, "");
       CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
@@ -94,6 +88,12 @@ namespace Carpet {
       
       // Checking
       CalculateChecksums (cgh, allbutcurrenttime);
+      
+      // Recover
+      Waypoint ("%*sScheduling RECOVER_VARIABLES", 2*reflevel, "");
+      CCTK_ScheduleTraverse ("CCTK_RECOVER_VARIABLES", cgh, CallFunction);
+      Waypoint ("%*sScheduling CPINITIAL", 2*reflevel, "");
+      CCTK_ScheduleTraverse ("CCTK_CPINITIAL", cgh, CallFunction);
       
       // Analysis
       Waypoint ("%*sScheduling ANALYSIS", 2*reflevel, "");
