@@ -18,7 +18,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.19 2003/04/30 12:43:21 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.20 2003/05/07 10:03:21 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -166,7 +166,7 @@ namespace Carpet {
 	  // Regrid
 	  Waypoint ("%*sRegrid", 2*reflevel, "");
 	  Regrid (cgh);
-	  
+          
 	}
       } END_REFLEVEL_LOOP(cgh);
       
@@ -187,6 +187,9 @@ namespace Carpet {
 	      Waypoint ("%*sCurrent time is %g", 2*reflevel, "",
 			cgh->cctk_time);
 	      Restrict (cgh);
+              
+	      Waypoint ("%*sScheduling POSTRESTRICT", 2*reflevel, "");
+	      CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cgh, CallFunction);
 	      
 	    }
 	  } END_MGLEVEL_LOOP(cgh);

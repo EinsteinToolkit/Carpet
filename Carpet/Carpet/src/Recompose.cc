@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <list>
@@ -25,7 +26,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.38 2003/05/02 10:38:13 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.39 2003/05/07 10:03:21 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -376,6 +377,8 @@ namespace Carpet {
   
   
   
+  // TODO: this routine should go into CarpetRegrid (except maybe
+  // SplitRegions_AlongZ for grid arrays)
   void SplitRegions (const cGH* cgh, vector<ibbox>& bbs, vector<bbvect>& obs)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -462,8 +465,12 @@ namespace Carpet {
     // choose a direction
     int mydim = -1;
     double mysize = 0;
+    int alldims = 0;
+    double allsizes = 1;
     for (int d=0; d<dim; ++d) {
       if (! dims[d]) {
+        ++ alldims;
+        allsizes *= dshape[d];
         if (dshape[d] > mysize) {
           mydim = d;
           mysize = dshape[d];
@@ -478,12 +485,8 @@ namespace Carpet {
     bvect const newdims = dims.replace(mydim, true);
     
     // choose a number of slices for this direction
-    int nslices;
-    if (all(newdims)) {
-      nslices = nprocs;
-    } else {
-      nslices = (int)floor(mysize + 0.5);
-    }
+    int const nslices = min(nprocs, (int)floor(mysize * pow(nprocs/allsizes, 1.0/alldims) + 0.5));
+    assert (nslices <= nprocs);
     
     // split the remaining processors
     vector<int> mynprocs(nslices);
@@ -564,28 +567,71 @@ namespace Carpet {
     
 //     if (nprocs==1) return;
     
-    assert (bbs.size() == 1);
-    
-    const ibbox bb = bbs[0];
-    const bbvect ob = obs[0];
-    
-    const ivect rstr = bb.stride();
-    const ivect rlb  = bb.lower();
-    const ivect rub  = bb.upper() + rstr;
-    
-    // calculate real shape factors
-    dvect dshape;
-    for (int d=0; d<dim; ++d) {
-      dshape[d] = (double)(rub[d]-rlb[d]) / (rub[0]-rlb[0]);
+    // split the processors
+    int const nslices = bbs.size();
+    int const ncomps = (nslices + nprocs - 1) / nprocs;
+    assert (ncomps > 0);
+    vector<int> mysize(nslices);
+    for (int c=0; c<nslices; ++c) {
+      mysize[c] = bbs[c].num_points();
     }
-    const double dfact = pow(nprocs / prod(dshape), 1.0/dim);
-    dshape *= dfact;
-    assert (abs(prod(dshape) - nprocs) < 1e-6);
+    vector<int> mynprocs(nslices);
+    {
+      int ncomps_left = nprocs * ncomps;
+      for (int c=0; c<nslices; ++c) {
+        mynprocs[c] = 1;
+        -- ncomps_left;
+      }
+      while (ncomps_left > 0) {
+        int maxc = -1;
+        double maxratio = 0;
+        for (int c=0; c<nslices; ++c) {
+          double const ratio = (double)mysize[c] / mynprocs[c];
+          if (ratio > maxratio) { maxc=c; maxratio=ratio; }
+        }
+        assert (maxc>=0 && maxc<nslices);
+        ++ mynprocs[maxc];
+        -- ncomps_left;
+      }
+      assert (ncomps_left == 0);
+    }
     
-    bvect const dims = false;
+    vector<ibbox> allbbs;
+    vector<bbvect> allobs;
     
-    SplitRegions_Automatic_Recursively
-      (dims, nprocs, dshape, bb, ob, bbs, obs);
+    for (int c=0; c<nslices; ++c) {
+      
+      const ibbox bb = bbs[c];
+      const bbvect ob = obs[c];
+      
+      const ivect rstr = bb.stride();
+      const ivect rlb  = bb.lower();
+      const ivect rub  = bb.upper() + rstr;
+    
+      // calculate real shape factors
+      dvect dshape;
+      for (int d=0; d<dim; ++d) {
+        dshape[d] = (double)(rub[d]-rlb[d]) / (rub[0]-rlb[0]);
+      }
+      const double dfact = pow(nprocs / prod(dshape), 1.0/dim);
+      dshape *= dfact;
+      assert (abs(prod(dshape) - nprocs) < 1e-6);
+      
+      bvect const dims = false;
+      
+      vector<ibbox> thebbs;
+      vector<bbvect> theobs;
+
+      SplitRegions_Automatic_Recursively
+        (dims, mynprocs[c], dshape, bb, ob, thebbs, theobs);
+      
+      allbbs.insert(allbbs.end(), thebbs.begin(), thebbs.end());
+      allobs.insert(allobs.end(), theobs.begin(), theobs.end());
+      
+    } // for c
+    
+    bbs = allbbs;
+    obs = allobs;
   }
   
   

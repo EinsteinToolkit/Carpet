@@ -9,7 +9,7 @@
 #include "carpet.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.6 2002/11/16 19:10:50 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.7 2003/05/07 10:03:21 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_CallFunction_cc);
 }
 
@@ -32,9 +32,19 @@ namespace Carpet {
     cGH* cgh = (cGH*)data;
     
     if (attribute->global) {
-      // Global operation: call once per refinement level
+      // Global operation: call once
       
-      Waypoint ("%*sGlobal mode call at %s to %s::%s", 2*reflevel, "",
+      if (reflevel==0) {
+        Waypoint ("%*sGlobal mode call at %s to %s::%s", 2*reflevel, "",
+                  attribute->where, attribute->thorn, attribute->routine);
+        const int res = CCTK_CallFunction (function, attribute, data);
+        assert (res==0);
+      }
+      
+    } else if (attribute->level) {
+      // Level operation: call once per refinement level
+      
+      Waypoint ("%*sLevel mode call at %s to %s::%s", 2*reflevel, "",
 		attribute->where, attribute->thorn, attribute->routine);
       const int res = CCTK_CallFunction (function, attribute, data);
       assert (res==0);
