@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.79 2004/05/21 18:16:23 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.80 2004/06/16 16:34:42 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -227,7 +227,7 @@ namespace Carpet {
     Waypoint ("Setting up the grid hierarchy");
     
     // Processor information
-    Waypoint ("Carpet is running on %d processors", CCTK_nProcs(cgh));
+    Output ("Carpet is running on %d processors", CCTK_nProcs(cgh));
     
     // Multigrid information
     basemglevel = convergence_level;
