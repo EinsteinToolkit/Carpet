@@ -18,7 +18,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.17 2003/01/10 18:05:32 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.18 2003/04/07 16:08:31 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -130,17 +130,18 @@ namespace Carpet {
 	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
 	    if ((cgh->cctk_iteration-1) % do_every == 0) {
 	      
+	      // Advance level times
+	      tt->advance_time (reflevel, mglevel);
 	      const CCTK_REAL saved_time = cgh->cctk_time;
-	      cgh->cctk_time += cgh->cctk_delta_time;
+              cgh->cctk_time
+                = tt->time (0, reflevel, mglevel) * base_delta_time;
+              assert (fabs(saved_time + cgh->cctk_delta_time - cgh->cctk_time) < 1e-12);
 	      
 	      Waypoint ("%*sCurrent time is %g", 2*reflevel, "",
 			cgh->cctk_time);
 	      
 	      // Cycle time levels
 	      CycleTimeLevels (cgh);
-	      
-	      // Advance level times
-	      tt->advance_time (reflevel, mglevel);
 	      
 	      // Checking
 	      CalculateChecksums (cgh, allbutcurrenttime);
@@ -172,7 +173,11 @@ namespace Carpet {
 	}
       } END_REFLEVEL_LOOP(cgh);
       
-      cgh->cctk_time += base_delta_time / maxreflevelfact;
+      {
+        const CCTK_REAL saved_time = cgh->cctk_time;
+        cgh->cctk_time = cctk_initial_time + cgh->cctk_iteration * base_delta_time / maxreflevelfact;
+        assert (fabs(saved_time + base_delta_time / maxreflevelfact - cgh->cctk_time) < 1e12);
+      }
       
       
       
