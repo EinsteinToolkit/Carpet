@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.24 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.25 2003/02/11 10:54:16 schnetter Exp $
 
 #include <assert.h>
 
@@ -521,10 +521,13 @@ void data<CCTK_REAL8,3>
 // Output
 template<class T,int D>
 ostream& data<T,D>::output (ostream& os) const {
+  // The IBM C++ compiler has a bug: when "this->size()" is changed to
+  // "size()", it wants to use size(vect) instead, and complains about
+  // the missing argument.
   T Tdummy;
   os << "data<" << typestring(Tdummy) << "," << D << ">:"
      << "extent=" << extent() << ","
-     << "stride=" << stride() << ",size=" << size();
+     << "stride=" << stride() << ",size=" << this->size();
   return os;
 }
 
