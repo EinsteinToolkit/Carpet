@@ -540,7 +540,7 @@ void dh::calculate_bases ()
 
 void dh::save_time (bool do_prolongate)
 {
-  for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+  for (list<ggf*>::reverse_iterator f=gfs.rbegin(); f!=gfs.rend(); ++f) {
     (*f)->recompose_crop ();
   }
   for (int rl=0; rl<h.reflevels(); ++rl) {
