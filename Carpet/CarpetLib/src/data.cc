@@ -629,16 +629,14 @@ void data<T>
 
 
 
-template<class T>
-void data<T>
-::fill_bbox_arrays (int srcshp[dim],
-                    int dstshp[dim],
-                    int srcbbox[dim][dim],
-                    int dstbbox[dim][dim],
-                    int regbbox[dim][dim],
-                    const ibbox & box,
-                    const ibbox & sext,
-                    const ibbox & dext)
+static void fill_bbox_arrays (int srcshp[dim],
+                              int dstshp[dim],
+                              int srcbbox[dim][dim],
+                              int dstbbox[dim][dim],
+                              int regbbox[dim][dim],
+                              const ibbox & box,
+                              const ibbox & sext,
+                              const ibbox & dext)
 {
   for (int d=0; d<dim; ++d) {
     srcshp[d] = (sext.shape() / sext.stride())[d];

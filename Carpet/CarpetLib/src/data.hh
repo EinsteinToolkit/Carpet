@@ -136,13 +136,6 @@ private:
   make_typed_commbuf (const ibbox & box)
     const;
   
-  static void
-  fill_bbox_arrays (int srcshp[dim],
-                    int dstshp[dim],
-                    int srcbbox[dim][dim],
-                    int dstbbox[dim][dim],
-                    int regbbox[dim][dim],
-                    const ibbox & box, const ibbox & sext, const ibbox & dext);
 public:
   void copy_from_innerloop (const gdata* gsrc,
 			    const ibbox& box);
