@@ -28,7 +28,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.31 2002/04/29 11:27:56 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.32 2002/06/05 19:52:41 schnetter Exp $";
 
 CCTK_FILEVERSION(CarpetIOASCII_ioascii_cc)
 
@@ -272,7 +272,7 @@ int CarpetIOASCII<outdim>
 	    }
 	  }
 	  if (! file.is_open()) {
-	    file.open (filename, ios::app);
+	    file.open (filename, ios::out | ios::ate);
 	    assert (file.good());
 	  }
 	  file << setprecision(15);
