@@ -1,0 +1,6 @@
+# Parameter definitions for thorn CarpetReduce
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/param.ccl,v 1.2 2004/06/14 07:01:21 schnetter Exp $
+
+BOOLEAN verbose "Produce screen output while running"
+{
+} "no"

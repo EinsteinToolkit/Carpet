@@ -1,0 +1,8 @@
+Cactus Code Thorn CarpetRegrid
+Authors    : Erik Schnetter <schnetter@uni-tuebingen.de>
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/README,v 1.1 2001/12/14 16:34:37 schnetter Exp $
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+This thorn handles regridding for Carpet.

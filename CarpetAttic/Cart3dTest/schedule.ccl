@@ -1,0 +1,14 @@
+# Schedule definitions for thorn Cart3dTest
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/schedule.ccl,v 1.2 2003/11/05 16:18:39 schnetter Exp $
+
+storage: quantities
+
+schedule Cart3dTest_Initial at CCTK_INITIAL
+{
+  LANG: C
+} "Create some interesting initial data"
+
+schedule Cart3dTest_Evolve at CCTK_EVOL
+{
+  LANG: C
+} "Apply symmetry boundary conditions"

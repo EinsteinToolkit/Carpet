@@ -1,0 +1,9 @@
+# Main make.code.defn file for thorn IDSpaceTimeToy
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/src/make.code.defn,v 1.1 2001/03/17 16:05:56 eschnett Exp $
+
+# Source files in this directory
+SRCS = InitialData.F77 Startup.F77
+
+# Subdirectories containing source files
+SUBDIRS = 
+

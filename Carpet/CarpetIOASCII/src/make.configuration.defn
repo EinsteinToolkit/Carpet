@@ -1,0 +1,4 @@
+# Main make.configuration.defn file for thorn CarpetIOASCII
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/make.configuration.defn,v 1.1 2002/09/30 15:36:28 schnetter Exp $
+
+ALL_UTILS += carpet2sdf carpet2xgraph

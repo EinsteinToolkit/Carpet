@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="ISO-8859-15"?>
+<!DOCTYPE html
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "DTD/xhtml1-transitional.dtd">
+<!-- $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetWeb/index.html,v 1.9 2004/08/07 10:38:07 schnetter Exp $ -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15" />
+    <title>CarpetCode</title>
+  </head>
+  
+  <body>
+
+    <h1 align="center">CarpetCode</h1>
+
+<table>
+<tr>
+<td valign="top" bgcolor="#ffcc77" width="1%">
+
+<p><b>CarpetCode</b><br />
+<a href="http://www.carpetcode.org/">home page</a></p>
+
+<p><b>Documentation</b><br />
+<a href="doc/documentation.ps">Introduction</a> (ps,&nbsp;300&nbsp;kB)<br />
+<a href="doc/first-steps.ps">First Steps</a> (ps,&nbsp;160&nbsp;kB)<br />
+<a href="doc/internals.ps">Internals</a> (ps,&nbsp;130&nbsp;kB)</p>
+
+<p><b>Mailing lists</b><br />
+<a href="http://lists.carpetcode.org/listinfo/developers/">Subscribe</a><br />
+<a href="http://lists.carpetcode.org/archives/developers/">Archive</a></p>
+
+<p><b>Development</b><br />
+<a href="http://bugs.carpetcode.org/">Bugzilla</a><br />
+<a href="feature-requests.html">Missing&nbsp;features</a><br />
+<a href="bugs.html">Known bugs</a></p>
+
+<p><b>Related</b><br />
+<a href="http://www.cactuscode.org/">Cactus</a></p>
+<!-- <a href="http://testweb.aei.mpg.de/NumRelWeb/">numrel@aei</a></p> -->
+
+<p><b>Feedback</b><br />
+<a href="mailto:schnetter@aei.mpg.de">Send email</a></p>
+
+</td>
+<td valign="top">
+    
+    <p>Carpet is a mesh refinement driver for <a
+    href="http://www.cactuscode.org/">Cactus</a>.  Cactus is a
+    framework for solving time-dependent partial differential
+    equations on uniform grids, and Carpet is an extension of Cactus
+    that make mesh refinement possible.  Carpet was originally written
+    in 2001 by <a
+    href="http://www.tat.physik.uni-tuebingen.de/~schnette/">Erik
+    Schnetter</a> at the <a
+    href="http://www.tat.physik.uni-tuebingen.de/">TAT</a>
+    (Theoretische Astrophysik Tübingen) and is currently maintained at
+    the <a href="http://www.aei.mpg.de/">AEI</a> (Max-Planck-Institut
+    für Gravitationsphysik, Albert-Einstein-Institut).  These pages
+    describe Carpet and its current development.</p>
+      
+    <hr />
+
+    <h2>News</h2>
+
+    <p><b>July 31, 2004:</b> Carpet seems to have reached a point
+    where it is stable enough to be useful for at least some projects.
+    Consequently, people expressed the wish to have a version of
+    Carpet which is stable and sees no disrupting development.  The
+    idea is to have two "branches" of Carpet: a stable version for
+    production use, and a development version which might not be as
+    stable.  We plan to make the split in about three weeks.  The
+    discussion about this is held on the mailing list; your input is
+    welcome.</p>
+
+    <p><b>April 7, 2004:</b> Up to now, all Carpet thorns have been
+    living in a single arrangement for Cactus.  This caused problems,
+    because stable thorns, development thorns, and outdated thorns
+    were sitting next to each other, confusing newcomers.  We have <a
+    href="#getting-the-code">moved the Carpet arrangement</a> to a new
+    repository and split it into four.  Access to the old Carpet
+    arrangement has been disabled.</p>
+
+    <p><b>March 3, 2004:</b> We have recently had trouble with I/O
+    throuth the <a
+    href="http://zeus.ncsa.uiuc.edu/~jshalf/FlexIO/">FlexIO</a>
+    library.  We suspect that it might have a bug that causes HDF5
+    output to fail under certain, random conditions.  We have written
+    a new thorn CarpetIOHDF5 which uses the <a
+    href="http://hdf.ncsa.uiuc.edu/HDF5/">HDF5</a> library directly,
+    while remaining compatible to the FlexIO file format.  Please test
+    this thorn, and report any problems or incompatibilities you
+    find.</p>
+
+    <p>In <b>January 2004</b>, <a
+    href="http://www.tat.physik.uni-tuebingen.de/~kobras/">Daniel
+    Kobras</a> set up <a href="http://bugs.carpetcode.org/">Bugzilla
+    for Carpet</a>.  <a href="http://www.bugzilla.org/">Bugzilla</a>
+    is a bug-tracking system that will, so we hope, help us remember
+    what is missing or broken in Carpet.</p>
+
+    <p>In <b>October 2003</b>, Erik Schnetter, Scott H. Hawley, and
+    Ian Hawke published the preprint "Evolutions in 3D numerical
+    relativity using fixed mesh refinement" as <a
+    href="http://arXiv.org/abs/gr-qc/0310042">gr-qc/0310042</a>.  Its
+    main point is to present tests of Carpet with the BSSN code (AEI's
+    spacetime evolution code), and to show that mesh refinement does
+    not introduce instabilities.</p>
+
+    <p>In <b>August 2003</b>, <a
+    href="http://www.carpetcode.org/">these web pages</a> were
+    created.</p>
+
+    <p><b>May 2003</b> has informally been termed <a
+    href="CarpetMonth/index.html">"Carpet month"</a>.  In a flurry of
+    activity, bugs were fixed and some features added.  The BSSN code
+    of the numerical relativity group at the <a
+    href="http://www.aei.mpg.de/">AEI</a> now works together with
+    Carpet.</p>
+
+    <hr />
+
+    <h2>Documentation</h2>
+
+    <p>We have accumulated a few pieces of documentation:</p>
+    <ul>
+      <li>An <a href="doc/documentation.ps">introduction</a>
+      (ps,&nbsp;300&nbsp;kB) to Carpet, as well as a guide to the
+      first steps for using it.  Everybody should have read this.
+      (This is the same as the Arrangement Guide from the Carpet
+      sources.)</li>
+
+      <li><a
+      href=http://www.astro.psu.edu/nr/people/sperhake_ulrich.html">Ulrich
+      Sperhake</a> wrote a tutorial outlining the <a
+      href="doc/first-steps.ps">first steps</a> (ps,&nbsp;160&nbsp;kB)
+      that one has to take to install Carpet and run an example
+      application.</li>
+
+      <li>An explanation of the <a href="doc/internals.ps">internal
+      workings</a> (ps,&nbsp;130&nbsp;kB) of Carpet.  You should read
+      this if you want to modify Carpet.</li>
+
+      <li>The individual Thorn Guides of Carpet.  They are available
+      with the source code.  They give details about the thorns' APIs
+      and user interfaces.</li>
+
+      <li>Thanks to <a
+      href="http://www.stack.nl/~dimitri/doxygen/">Doxygen</a>, we now
+      have an <a href="doxygen/html/index.html">overview</a> over all
+      the routines and data structures in Carpet.  Most individual
+      Doxygen tags are still missing, but the extracted documentation
+      is already very useful.  (The online documentation might not
+      always be up to date; in case of doubt, extract the
+      documentation yourself.)</li>
+    </ul>
+
+    <hr />
+
+    <h2>Interacting with the developers</h2>
+
+    <p>Most discussions about Carpet, i.e. user questions, feature
+    requests, and bug reports, are held on the Carpet developers'
+    mailing list <a
+    href="mailto:developers@lists.carpetcode.org">developers@lists.carpetcode.org</a>.
+    You can subscribe and unsubscribe from our <a
+    href="http://lists.carpetcode.org/">list management web page</a>.
+    You will also find the mailing list archive there.  We thank <a
+    href="http://www.tat.physik.uni-tuebingen.de/~kobras/">Daniel
+    Kobras</a> for managing the mailing list server.</p>
+
+    <p>We have started to use <a
+    href="http://www.bugzilla.org/">Bugzilla</a> to keep track of
+    requested features or reported bugs in Carpet.  You can submit or
+    comment on issues from our <a
+    href="http://bugs.carpetcode.org/">Bugzilla pages</a> once you
+    have created an account there.  The old <a
+    href="feature-requests.html">list of missing features</a> and <a
+    href="bugs.html">list of known bugs</a> have not yet been moved
+    over to Bugzilla.</p>
+
+    <hr />
+
+    <h2 id="getting-the-code">Getting the code</h2>
+
+    <p>Carpet is distributed under the <a
+    href="http://www.gnu.org/licenses/licenses.html">GNU General
+    Public License (GPL)</a>.  It might be released under the GNU
+    Lesser General Public License (LGPL) in the future, to match the
+    distribution terms of Cactus.</p>
+
+    <p>Carpet is a driver for Cactus.  It works as a part of Cactus,
+    and you will need to have the developers' version of Cactus
+    installed before you can use Carpet.  Please look at the <a
+    href="http://www.cactuscode.org/">Cactus web pages</a> for an
+    introduction to Cactus and for installation instructions.</p>
+
+    <p>Carpet is available via anonymous <a
+    href="http://www.cvshome.org/">CVS</a>.  The CVSROOT is
+    <code>:pserver:cvs_anon@cvs.carpetcode.org:/home/cvs/carpet</code>,
+    and there are several arrangements, each living in a directory.
+    The arrangement <code>Carpet</code> contains the basic driver part
+    that everybody needs.  The arrangement <code>CarpetExtra</code>
+    contains useful add-ons and some example code.  Development of new
+    thorns happens in the <code>CarpetDev</code> arrangement, which
+    means that the code in there is not to be trusted.  And finally,
+    there is a graveyard arrangement <code>CarpetAttic</code> of
+    things that only used to be useful and are now in a state of
+    decay.</p>
+
+    <p>The password for anonymous CVS access is <code>anon</code>.  We
+    thank the <a
+    href="http://www.tat.physik.uni-tuebingen.de/">Institut für
+    Astronomie und Astrophysik</a> of the Universität Tübingen for
+    hosting the CVS server.</p>
+
+    <hr />
+
+    <h2>Pretty pictures</h2>
+
+    <p>We are currently collecting pretty pictures and movies of
+    simulations that were performed with Carpet.  Sorry; there is
+    nothing to see so far.</p>
+
+    <hr />
+
+    <h2>Making sense of results</h2>
+
+    <p>Three-dimensional time-dependent simulation results are
+    difficult enough to interpret when the grid is uniform.  With mesh
+    refinement, the sheer amount of available data makes it necessary
+    to use professional tools to examine the data.  This is not only
+    the case for "big physics runs", where one (should) know in
+    advance what to expect, but especially during development, where
+    things do not always go as planned.  <a
+    href="http://www.aei.mpg.de/~tradke/">Thomas Radke</a> was kind
+    enough to write an <a
+    href="http://www.cactuscode.org/VizTools/OpenDX.html">import
+    module</a> for the visualisation tool <a
+    href="http://www.research.ibm.com/dx/">OpenDX</a>.  He has also
+    produced an <a href="pictures/carpetwavetoy.jpeg">example
+    picture</a> (JPEG, 300&nbsp;KB) from a test run with the scalar
+    wave equation.</p>
+
+    <hr />
+
+    <h2>Related projects</h2>
+
+    <ul>
+    <li>Physicsc: <a href="http://www.cactuscode.org/">Cactus</a>, <a
+    href="http://numrel.aei.mpg.de/">numrel@aei</a></li>
+
+    <li>I/O: <a href="http://hdf.ncsa.uiuc.edu/HDF5/">HDF5</a>, <a
+    href="http://www.zib.de/benger/F5/doc/">F5</a></li>
+
+    <li>Visualisation: <a href="http://www.amiravis.com/">Amira</a>,
+    <a href="http://www.opendx.org/">OpenDX</a></li>
+    </ul>
+
+    <hr />
+
+    <p>
+      <a href="http://www.xemacs.org/About/created.html"><img
+      src="cbxSmall.jpg" alt="Created with XEmacs!" height="36"
+      width="100" /></a>
+      
+      <a href="http://www.anybrowser.org/campaign/"><img
+      src="logoab8.png" alt="Best Viewed With Any Browser" height="31"
+      width="88" /></a>
+
+      <a href="http://validator.w3.org/check/referer"><img
+      src="valid-xhtml10.png" alt="Valid XHTML 1.0!" height="31"
+      width="88" /></a>
+    </p>
+    
+    <address><a href="mailto:schnetter@uni-tuebingen.de">Erik Schnetter</a></address>
+<p>
+<!-- Created: Tue Aug 12 12:12:08 CEST 2003 -->
+<!-- hhmts start -->
+Last modified: Sat Aug  7 12:37:09 CEST 2004
+<!-- hhmts end -->
+</p>
+
+</td>
+</tr>
+</table>
+  </body>
+</html>

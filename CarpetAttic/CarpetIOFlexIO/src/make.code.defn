@@ -1,0 +1,5 @@
+# Main make.code.defn file for thorn CarpetIOFlexIO
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/make.code.defn,v 1.6 2003/07/04 16:03:57 tradke Exp $
+
+# Source files in this directory
+SRCS = ioflexio.cc

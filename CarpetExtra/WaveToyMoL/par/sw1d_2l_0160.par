@@ -1,0 +1,99 @@
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/par/sw1d_2l_0160.par,v 1.5 2004/07/07 16:15:31 tradke Exp $
+
+Cactus::cctk_initial_time = 0
+Cactus::cctk_itlast = 25600
+
+
+
+ActiveThorns = "IOUtil Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce CarpetSlab"
+
+driver::global_nx = 164
+driver::global_ny = 5
+driver::global_nz = 5
+driver::ghost_size = 2
+
+#Carpet::verbose = yes
+#Carpet::veryverbose = yes
+Carpet::max_refinement_levels = 3
+Carpet::prolongation_order_space = 3
+Carpet::prolongation_order_time = 2
+#Carpet::init_3_timelevels = yes
+Carpet::init_each_timelevel = yes
+
+#CarpetLib::output_bboxes = yes
+
+CarpetRegrid::refinement_levels = 2
+CarpetRegrid::refined_regions = manual-gridpoint-list
+CarpetRegrid::gridpoints = "[[ ([170,4,4]:[486,12,12]:[2,2,2]) ]]"
+CarpetRegrid::outerbounds = "[[ [[0,0],[1,1],[1,1]] ]]"
+
+
+
+ActiveThorns = "LocalInterp NaNChecker Slab"
+
+NaNChecker::check_every = 128
+NaNChecker::check_vars = "all"
+NaNChecker::action_if_found = terminate
+
+
+
+ActiveThorns = "Boundary CoordBase SymBase CartGrid3D Periodic"
+
+grid::domain = full
+grid::type = byrange
+grid::xmin = -0.0125
+grid::ymin = -0.0125
+grid::zmin = -0.0125
+grid::xmax = +1.00625
+grid::ymax = +0.0125
+grid::zmax = +0.0125
+
+Periodic::periodic = yes
+
+
+
+ActiveThorns = "Time MoL"
+
+Time::dtfac = 0.25
+
+MoL::ODE_Method = ICN
+
+#MoL::ODE_Method = RK2
+#MoL::MoL_Intermediate_Steps = 2
+
+
+
+ActiveThorns = "IDScalarWaveMoL WaveToyMoL"
+
+IDScalarWaveMoL::wave_number[0] = 1.0
+
+
+
+#ActiveThorns = "Dissipation"
+#
+#Dissipation::epsdis = 0.1
+#Dissipation::timelevel = "n+1"
+#Dissipation::vars = "WaveToyMoL::scalarevolve"
+
+
+
+ActiveThorns = "IOBasic CarpetIOASCII"
+
+IO::out_dir = "sw1d_2l_0160"
+
+IOBasic::outInfo_every = 128
+IOBasic::outInfo_vars = "WaveToyMoL::phi IDScalarWaveMoL::phierror"
+ 
+IOBasic::outScalar_every = 128
+IOBasic::outScalar_reductions = "minimum maximum norm1 norm2 norm_inf"
+IOBasic::outScalar_vars = "WaveToyMoL::scalarevolve IDScalarWaveMoL::scalarevolveerror"
+
+#IOASCII::output_all_timelevels = yes
+
+IOASCII::out1D_every = 128
+IO::out_yline_x = 0.5
+IO::out_zline_x = 0.5
+IOASCII::out1D_vars = "WaveToyMoL::scalarevolve IDScalarWaveMoL::scalarevolveerror"
+
+#IOASCII::out3D_every = 128
+#IOASCII::out3D_vars = "WaveToyMoL::scalarevolve IDScalarWaveMoL::scalarevolveerror"

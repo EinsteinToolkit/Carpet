@@ -1,0 +1,10 @@
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/README,v 1.1 2003/06/18 18:24:30 schnetter Exp $
+
+Cactus Code Thorn WaveToyMoL
+Thorn Author(s)     : Erik Schnetter <schnetter@uni-tuebingen.de>
+Thorn Maintainer(s) : Erik Schnetter <schnetter@uni-tuebingen.de>
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+Implement WaveToy using MoL as time integrator.

@@ -1,0 +1,4 @@
+# Configuration definitions for thorn CarpetIOFlexIO
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/configuration.ccl,v 1.2 2003/09/17 13:47:00 cvs_anon Exp $
+
+Requires Thorns: Carpet CarpetLib FlexIO

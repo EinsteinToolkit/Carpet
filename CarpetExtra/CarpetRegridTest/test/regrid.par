@@ -1,0 +1,198 @@
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetRegridTest/test/regrid.par,v 1.1 2004/06/01 16:54:51 schnetter Exp $
+
+#==============================================================================
+# --- Test suite: PMR and regridding ---
+# --- Activation of new refinement level at arbitrary iteration ---
+#
+# The basic setup is an octant grid with 3 reflevels. 1 rl is 
+# activated at a specified iteration. The total number of
+# timesteps is 30.
+#
+# Initial model is a non-rotating n=3 polytrope, which collapses
+# with a 5 % pressure reduction.
+#
+# It is suggested to set carpetregrid::regrid_every to 16 for 
+# regridding at an iteration involving all reflevels, or to
+# 18 for a iteration involving only the finest reflevel.
+#==============================================================================
+
+#==============================================================================
+# Thorn activation
+#==============================================================================
+
+ActiveThorns = "time carpet carpetlib carpetregrid carpetreduce carpetslab carpetinterp cartgrid3d coordbase symbase mol boundary admbase staticconformal spacemask admcoupling coordgauge admmacros whisky whisky_init_data eos_base eos_polytrope iobasic carpetioascii ioutil admconstraints bssn_mol whisky_rnsid carpetiohdf5 nanchecker"
+
+#==============================================================================
+# Test parameters
+# Play around with these to produce different test cases.
+#==============================================================================
+
+carpetregrid::regrid_every			= 18
+
+#==============================================================================
+# Directories and recovery
+#==============================================================================
+
+io::out_dir				=	$parfile
+
+#==============================================================================
+# Time
+#==============================================================================
+
+cactus::cctk_itlast			=	30
+
+time::dtfac              		= 	0.375             
+
+#==============================================================================
+# Grid setup
+#==============================================================================
+
+grid::type                    = "byrange"
+grid::domain                  = "octant"
+grid::avoid_origin            = "no"
+
+driver::global_nx             = 30
+driver::global_ny             = 30
+driver::global_nz             = 30
+
+driver::ghost_size            = 3
+
+grid::xmax                    =  2200.000000
+grid::ymax                    =  2200.000000
+grid::zmax                    =  2200.000000
+
+carpet::buffer_width          =  6
+
+carpet::max_refinement_levels   = 4
+carpetregrid::refinement_levels = 3
+
+carpetregrid::refined_regions = "manual-gridpoint-list"
+carpetregrid::gridpoints      = "[ [ ([12,12,12]:[128,128,128]:[4,4,4]) ], [ ([18,18,18]:[76,76,76]:[2,2,2]) ], [ ([21,21,21]:[50,50,50]:[1,1,1]) ] ]"
+carpetregrid::outerbounds     = "[ [ [[1,0],[1,0],[1,0]] ], [ [[1,0],[1,0],[1,0]] ], [ [[1,0],[1,0],[1,0]] ] ]"
+
+#==============================================================================
+# Regridding
+#==============================================================================
+
+carpetregrid::num_new_levels			= 1
+carpetregrid::activate_levels_on_regrid		= "fixed"
+
+#==============================================================================
+# Initial data: Supermassive star at the critical limit
+#==============================================================================
+
+admbase::initial_data			=	"rnsid"
+admbase::initial_lapse			=	"rnsid"
+admbase::initial_shift			=	"rnsid"
+
+whisky::whisky_rho_central		=	7.84e-9
+
+rnsid::accuracy                         =       1e-7
+rnsid::axes_ratio                       =       1.0
+rnsid::zero_shift                       =       no
+rnsid::rns_gamma			=	1.3333333333333333
+rnsid::rns_k				=	1.0
+
+#==============================================================================
+# Equation of state
+#==============================================================================
+
+whisky::whisky_eos_type                 =       "Polytype"
+whisky::whisky_eos_table                =       "2D_Polytrope"
+
+whisky::EoS_Change			=	"yes"
+EOS_Polytrope::eos_gamma                =       1.3333333333333333
+EOS_Polytrope::eos_k                    =       0.95
+EOS_Polytrope::use_cgs			=	"no"
+EOS_Polytrope::gamma_ini		=	1.3333333333333333
+
+whisky::whisky_maxnumsandrvars 		= 	0
+
+#==============================================================================
+# Carpet parameters
+#==============================================================================
+
+carpet::init_3_timelevels               = 	"yes"
+Carpet::prolongation_order_space	=	3
+Carpet::prolongation_order_time		=	2
+
+#==============================================================================
+# Whisky parameters
+#==============================================================================
+
+whisky::riemann_solver			=	"Marquina"
+whisky::bound	                	=       "none"
+
+whisky::recon_method			=       "ppm"
+whisky::ppm_detect			=	"yes"
+whisky::whisky_stencil			=       3
+
+whisky::rho_rel_min			=	1.e-8
+whisky::initial_atmosphere_factor	=	1.e2
+whisky::initial_rho_abs_min		=	5e-17
+
+spacemask::use_mask 			=	yes
+
+#==============================================================================
+# BSSN parameters
+#==============================================================================
+
+admbase::evolution_method		=	"adm_bssn"
+admbase::lapse_evolution_method		=	"1+log"
+admbase::shift_evolution_method		=	"static"
+# admbase::shift_evolution_method	=	"gamma2"
+
+adm_bssn::lapsesource			=	"modified"
+adm_bssn::bound				=	"radiative"
+boundary::radpower			=	2
+adm_bssn::harmonic_f			=	2.0
+
+adm_bssn::ShiftGammaCoeff		=	0.75
+adm_bssn::BetaDriver			=	4
+
+admconstraints::bound			=	"static"
+
+#==============================================================================
+# MoL parameters
+#==============================================================================
+
+mol::ode_method				=	"icn"
+mol::generic_type 			= 	"RK"
+mol::mol_intermediate_steps 		= 	3
+
+#==============================================================================
+# NaNChecker
+#==============================================================================
+
+nanchecker::check_vars                  =       "admbase::gxx"
+nanchecker::action_if_found             =       terminate
+nanchecker::check_every                 =       1
+
+#==============================================================================
+# Output: General settings
+#==============================================================================
+
+iobasic::out_format      		= 	".13e"
+
+#==============================================================================
+# Output: Scalar and 1D
+#==============================================================================
+
+iobasic::outinfo_every   		= 	1
+iobasic::outscalar_every 		=	1
+ioascii::out1d_every			= 	4 # 1
+
+iobasic::outinfo_vars = "whisky::rho admbase::alp"
+
+iobasic::outscalar_vars	= "admconstraints::ham admconstraints::momentum whisky::whisky_prim_scalar_var whisky::whisky_prim_vector_var whisky::whisky_cons_scalar_var whisky::whisky_cons_vector_var admbase::metric admbase::curv admbase::lapse admbase::shift"
+
+#ioascii::out1d_vars = "admconstraints::ham admconstraints::momentum whisky::whisky_prim_scalar_var whisky::whisky_prim_vector_var whisky::whisky_cons_scalar_var whisky::whisky_cons_vector_var admbase::metric admbase::curv admbase::lapse admbase::shift adm_bssn::adm_bssn_curv adm_bssn::adm_bssn_k adm_bssn::adm_bssn_gamma adm_bssn::adm_bssn_phi adm_bssn::adm_bssn_metric"
+ioascii::out1d_vars = "admconstraints::ham admconstraints::momentum whisky::whisky_prim_scalar_var whisky::whisky_prim_vector_var whisky::whisky_cons_scalar_var whisky::whisky_cons_vector_var admbase::metric admbase::curv admbase::lapse admbase::shift"
+
+##==============================================================================
+## Output: 3D
+##==============================================================================
+#
+#iohdf5::out3d_every 			= 	1
+#
+#iohdf5::out3d_vars = "admconstraints::ham admconstraints::momentum whisky::whisky_prim_scalar_var whisky::whisky_prim_vector_var whisky::whisky_cons_scalar_var whisky::whisky_cons_vector_var admbase::metric admbase::curv admbase::lapse admbase::shift adm_bssn::adm_bssn_curv adm_bssn::adm_bssn_k adm_bssn::adm_bssn_gamma adm_bssn::adm_bssn_phi adm_bssn::adm_bssn_metric"

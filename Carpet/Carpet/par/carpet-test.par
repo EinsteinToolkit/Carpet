@@ -1,0 +1,7 @@
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/par/carpet-test.par,v 1.2 2004/03/23 11:58:54 schnetter Exp $
+
+ActiveThorns = "Carpet"
+
+Cactus::cctk_itlast		= 10
+
+Carpet::max_refinement_levels	= 2

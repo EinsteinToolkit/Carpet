@@ -1,0 +1,124 @@
+--------------------------------------------------------------------------------
+
+       10                                  
+  1   0101       ************************  
+  01  1010 10      The Cactus Code V4.0    
+ 1010 1101 011      www.cactuscode.org     
+  1001 100101    ************************  
+    00010101                               
+     100011     (c) Copyright The Authors  
+      0100      GNU Licensed. No Warranty  
+      0101                                 
+
+--------------------------------------------------------------------------------
+
+Cactus version: 4.0.b11
+Compile date:   Nov 30 2001 (15:23:02)
+Run date:       Dec  3 2001 (11:33:23)
+Run host:       lilypond.tat.physik.uni-tuebingen.de
+Parameter file: /home/eschnett/Calpha/Cactus/arrangements/Carpet/SpaceTimeToy/test/spacetimetoy_periodic_coarse.par
+--------------------------------------------------------------------------------
+
+Activating thorn Cactus...Success -> active implementation Cactus
+Activation requested for 
+--->Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetSlab IDSpaceTimeToy SpaceTimeToy Hydrotoy<---
+Activating thorn Boundary...Success -> active implementation boundary
+Activating thorn Carpet...Success -> active implementation driver
+Activating thorn CarpetIOASCII...Success -> active implementation IOASCII
+Activating thorn CarpetLib...Success -> active implementation CarpetLib
+Activating thorn CarpetSlab...Success -> active implementation Hyperslab
+Activating thorn Cart3d...Success -> active implementation grid
+Activating thorn Hydrotoy...Success -> active implementation hydrotoy
+Activating thorn IDSpaceTimeToy...Success -> active implementation idspacetimetoy
+Activating thorn IOBasic...Success -> active implementation IOBasic
+Activating thorn IOUtil...Success -> active implementation IO
+Activating thorn SpaceTimeToy...Success -> active implementation spacetimetoy
+Activating thorn Time...Success -> active implementation time
+--------------------------------------------------------------------------------
+  if (recover)
+    Recover parameters
+  endif
+
+  Startup routines
+    Carpet: Startup routine
+    IOUtil: Startup routine
+    Cart3d: Register GH extension for Cartesian coordinates
+    IDSpaceTimeToy: Register banner
+    IOBasic: Startup routine
+    CarpetIOASCII: Startup routine
+    SpaceTimeToy: Register banner
+
+  Parameter checking routines
+    Cart3d: Check coordinate and symmetry parameters
+
+  Initialisation
+    Cart3d: Set up 3d Cartesian coordinates
+    SpaceTimeToy: Schedule symmetries
+    Time: Initialise Time variables
+    Time: Set timestep based on Courant condition
+    IDSpaceTimeToy: Initial data for 3D wave equation
+    if (recover)
+    endif
+    if (checkpoint initial data)
+    endif
+    if (analysis)
+    endif
+
+  do loop over timesteps
+    Rotate timelevels
+    iteration = iteration + 1
+    t = t+dt
+    SpaceTimeToy: Initial Euler step
+    while (SpaceTimeToy::do_iterate)
+    SpaceTimeToy: One ICN step
+   end while
+    if (checkpoint)
+    endif
+    if (analysis)
+    endif
+  enddo
+  Termination routines
+  Shutdown routines
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+AMR driver provided by Carpet
+--------------------------------------------------------------------------------
+IDSpaceTimeToy: Initial data for two Scalar Fields
+--------------------------------------------------------------------------------
+AMR 1D ASCII I/O provided by CarpetIOASCII
+--------------------------------------------------------------------------------
+AMR 2D ASCII I/O provided by CarpetIOASCII
+--------------------------------------------------------------------------------
+AMR 3D ASCII I/O provided by CarpetIOASCII
+--------------------------------------------------------------------------------
+SpaceTimeToy: Evolutions of two Scalar Fields
+--------------------------------------------------------------------------------
+
+INFO (Carpet): Carpet is running on 1 processors
+INFO (IOBasic): I/O Method 'Scalar' registered
+INFO (IOBasic): Scalar: Output of scalar quantities (grid scalars, reductions) to ASCII files
+INFO (IOBasic): I/O Method 'Info' registered
+INFO (IOBasic): Info: Output of scalar quantities (grid scalars, reductions) to screen
+INFO (Cart3d): Cartesian coordinates:
+INFO (Cart3d):    Whole grid: lower bound [-5.4, -7.2, -9.6]
+INFO (Cart3d):    Whole grid: upper bound [5.4, 7.8, 10.2]
+INFO (Cart3d):    Whole grid:      extent [11.4, 15.6, 20.4]
+INFO (Cart3d):    Interior:   lower bound [-4.2, -6, -8.4]
+INFO (Cart3d):    Interior:   upper bound [4.2, 6.6, 9]
+INFO (Cart3d):    Interior:        extent [9, 13.2, 18]
+INFO (Cart3d):    Grid spacing:           [0.6, 0.6, 0.6]
+INFO (IOBasic): Scalar: Output every -1 iterations
+INFO (IOBasic): Info: Output every 1 iterations
+------------------
+  it  |          |
+      |    t     |
+------------------
+    0 |    0.000 |
+    1 |    0.300 |
+    2 |    0.600 |
+    3 |    0.900 |
+    4 |    1.200 |
+    5 |    1.500 |
+    6 |    1.800 |
+--------------------------------------------------------------------------------
+Done.

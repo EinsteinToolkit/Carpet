@@ -1,0 +1,17 @@
+# CARPETTEST::gf x (gf)
+#
+# iteration 0
+# time level 0   refinement level 0   component 0   multigrid level 0
+# column format: it tl rl c ml x y z data
+0 0 0 0 0 0 0 0 10101
+0 0 0 0 0 1 0 0 20101
+0 0 0 0 0 2 0 0 30101
+0 0 0 0 0 3 0 0 40101
+0 0 0 0 0 4 0 0 50101
+0 0 0 0 0 5 0 0 60101
+0 0 0 0 0 6 0 0 70101
+0 0 0 0 0 7 0 0 80101
+0 0 0 0 0 8 0 0 90101
+0 0 0 0 0 9 0 0 100101
+
+

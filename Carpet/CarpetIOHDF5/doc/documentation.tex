@@ -1,0 +1,314 @@
+% *======================================================================*
+%  Cactus Thorn template for ThornGuide documentation
+%  Author: Ian Kelley
+%  Date: Sun Jun 02, 2002
+%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/doc/documentation.tex,v 1.4 2004/06/22 11:56:20 tradke Exp $                                                             
+%
+%  Thorn documentation in the latex file doc/documentation.tex 
+%  will be included in ThornGuides built with the Cactus make system.
+%  The scripts employed by the make system automatically include 
+%  pages about variables, parameters and scheduling parsed from the 
+%  relevent thorn CCL files.
+%  
+%  This template contains guidelines which help to assure that your     
+%  documentation will be correctly added to ThornGuides. More 
+%  information is available in the Cactus UsersGuide.
+%                                                    
+%  Guidelines:
+%   - Do not change anything before the line
+%       % START CACTUS THORNGUIDE",
+%     except for filling in the title, author, date etc. fields.
+%        - Each of these fields should only be on ONE line.
+%        - Author names should be sparated with a \\ or a comma
+%   - You can define your own macros are OK, but they must appear after
+%     the START CACTUS THORNGUIDE line, and do not redefine standard 
+%     latex commands.
+%   - To avoid name clashes with other thorns, 'labels', 'citations', 
+%     'references', and 'image' names should conform to the following 
+%     convention:          
+%       ARRANGEMENT_THORN_LABEL
+%     For example, an image wave.eps in the arrangement CactusWave and 
+%     thorn WaveToyC should be renamed to CactusWave_WaveToyC_wave.eps
+%   - Graphics should only be included using the graphix package. 
+%     More specifically, with the "includegraphics" command. Do
+%     not specify any graphic file extensions in your .tex file. This 
+%     will allow us (later) to create a PDF version of the ThornGuide
+%     via pdflatex. |
+%   - References should be included with the latex "bibitem" command. 
+%   - use \begin{abstract}...\end{abstract} instead of \abstract{...}
+%   - For the benefit of our Perl scripts, and for future extensions, 
+%     please use simple latex.     
+%
+% *======================================================================* 
+% 
+% Example of including a graphic image:
+%    \begin{figure}[ht]
+% 	\begin{center}
+%    	   \includegraphics[width=6cm]{MyArrangement_MyThorn_MyFigure}
+% 	\end{center}
+% 	\caption{Illustration of this and that}
+% 	\label{MyArrangement_MyThorn_MyLabel}
+%    \end{figure}
+%
+% Example of using a label:
+%   \label{MyArrangement_MyThorn_MyLabel}
+%
+% Example of a citation:
+%    \cite{MyArrangement_MyThorn_Author99}
+%
+% Example of including a reference
+%   \bibitem{MyArrangement_MyThorn_Author99}
+%   {J. Author, {\em The Title of the Book, Journal, or periodical}, 1 (1999), 
+%   1--16. {\tt http://www.nowhere.com/}}
+%
+% *======================================================================* 
+
+% If you are using CVS use this line to give version information
+% $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/doc/documentation.tex,v 1.4 2004/06/22 11:56:20 tradke Exp $
+
+\documentclass{article}
+
+% Use the Cactus ThornGuide style file
+% (Automatically used from Cactus distribution, if you have a 
+%  thorn without the Cactus Flesh download this from the Cactus
+%  homepage at www.cactuscode.org)
+\usepackage{../../../../doc/ThornGuide/cactus}
+
+\begin{document}
+
+% The author of the documentation
+\author{Erik Schnetter $<$schnetter@uni-tuebingen.de$>$, Christian D. Ott $<$cott@aei.mpg.de$>$}
+
+% The title of the document (not necessarily the name of the Thorn)
+\title{CarpetIOHDF5}
+
+% the date your document was last changed, if your document is in CVS, 
+% please use:
+%    \date{$ $Date: 2004/06/22 11:56:20 $ $}
+\date{March 18, 2004}
+
+\maketitle
+
+% Do not delete next line
+% START CACTUS THORNGUIDE
+
+% Add all definitions used in this documentation here 
+%   \def\mydef etc
+
+% Add an abstract for this thorn's documentation
+\begin{abstract}
+CarpetIOHDF5 provides HDF5 based 3-D output to the Cactus mesh refinement driver Carpet.
+This document explains CarpetIOHDF5's usage and contains a specification of the
+CarpetIOHDF5 file format that was adapted from John Shalf's FlexIO library.
+\end{abstract}
+
+% The following sections are suggestive only.
+% Remove them or add your own.
+
+\section{Introduction}
+
+Having encountered various problems with CarpetIOFlexIO and the underlying FlexIO library,
+Erik Schnetter decided to create CarpetIOHDF5. CarpetIOHDF5 provides 3-D output for the
+Carpet Mesh Refinement driver within the Cactus Code. Christian D. Ott added  
+file reader (analogous to Erik Schnetter's implementation present in CarpetIOFlexIO) 
+and checkpoint/recovery features to CarpetIOHDF5.
+
+Right now, CarpetIOHDF5 only uses serial I/O - all data are copied to processor 0 for I/O.
+
+This document aims at giving the user a first handle on how to use
+CarpetIOHDF5. It also documents the HDF5 file layout used.
+
+
+\section{Using This Thorn}
+
+
+\subsection{Obtaining This Thorn}
+
+You can get a checkout from 
+
+{\tt cvs.carpetcode.org:/home/cvs Carpet/CarpetIOHDF5}
+
+\subsection{Basic Usage}
+
+First, you have to activate the thorn in your Cactus parameter file:
+
+{\tt ActiveThorns = "CarpetIOHDF5"}
+
+\subsubsection{3-D Output}
+
+\begin{itemize}
+  \item {\tt iohdf5::out3D\_vars = "your list of Cactus grid functions to output"}
+  \item {\tt iohdf5::out3D\_every = n} : Output every {\tt n} time steps
+  \item {\tt iohdf5::out3D\_dir = "your preferred 3-D output directory"}
+  \item {\tt IO::out\_single\_precision = "yes/no (output double-precision data in single precision)"}
+\end{itemize}
+
+\subsubsection{3-D Input}
+
+There are two ways to use the 3-D input capabilities:
+
+\begin{enumerate}
+  \item For evolutions using ADMBase, one may use the thorn IDFileADM and the following parameter settings:
+    \begin{itemize}
+      \item {\tt ADMBase::initial\_data  = "read from file"}
+      \item {\tt IO::filereader\_ID\_files = "space separated list of files containing the ADM variables"}
+      \item {\tt IO::filereader\_ID\_vars = "space separated list of variables to be read in"}
+    \end{itemize}
+  \item For evolutions not using ADMBase one may try to read in data by setting
+    \begin{itemize}
+      \item {\tt iohdf5::in3D\_dir = "directory from where to read data"}
+      \item {\tt iohdf5::in3D\_vars = "space separated list of variables to be read in"}
+    \end{itemize}
+\end{enumerate}
+
+
+\subsubsection{Checkpointing}
+
+CarpetIOHDF5 uses the Cactus checkpoint/recovery infrastructure provided by
+CactusBase/IOUtil.
+
+\begin{itemize}
+  \item {\tt iohdf5::checkpoint = "yes"} : Turns on checkpointing
+  \item {\tt iohdf5::checkpoint\_every = n} : Checkpointing every {\tt n} time steps
+  \item {\tt iohdf5::checkpoint\_ID = "yes"} : Turns on checkpointing after initial data
+  \item {\tt io::checkpoint\_dir = "your preferred checkpoint directory"} 
+  \item  {\tt iohdf5::checkpoint\_keep = n} : Keep {\tt n} checkpoint files around
+\end{itemize}
+
+
+\subsubsection{Recover}
+
+CarpetIOHDF5 uses the Cactus checkpoint/recovery infrastructure provided by
+CactusBase/IOUtil. Currently all the checkpoint information is copied onto processor 0 and
+ written into a single file whose name is invented by IOUtil. Unfortunately, single cpu
+checkpoint files have a different name (a missing \_file\_0 tag) than checkpoint
+files from multi-cpu runs. Somebody should tweek IOBase... 
+
+In principle, CarpetIOHDF5 is able to restart on any number
+of cpus  from a checkpoint file of a run using any (other or same) number of cpus.
+
+\begin{itemize}
+  \item {\tt iohdf5::recover = "auto"} : Recover from the most recent Checkpoint file. This bombs,
+    if no checkpoint file is found.
+  \item {\tt iohdf5::recover = "autoprobe"} : Recover from the most recent Checkpoint file. This continues
+    without recovering if no checkpoint file is found.
+  \item {\tt iohdf5::recover\_dir = "directory containing the checkpoint file"} 
+  \item {\tt iohdf5::recover = "manual"} : Recover from a file specified by {\tt iohdf5::recover\_file}. This
+     bombs if the file is not found.
+  \item {\tt iohdf5::recover\_file = "file you want to recover from"} : Only needs to be set if
+    {\tt iohdf5::recover = "manual"}.
+
+\end{itemize}
+
+
+
+\subsection{Special Behaviour}
+
+\begin{itemize}
+  \item {\tt iohdf5::h5verbose = "yes"} : Makes CarpetIOHDF5 very talkative.
+\end{itemize}
+
+
+\section{CarpetIOHDF5's HDF5 file layout}
+
+The HDF5 file layout of CarpetIOHDF5 is quite simple. There are no groups besides the 
+standard HDF5 root data object group:
+
+\begin{itemize}
+  \item Each dataset is named according to this template: \\
+    {\tt \small [Full Variable Name] it=[Iteration] tl=[Timelevel] ml=[mglevel] rl=[reflevel] m=[map] c=[component]}
+    
+  \item Each dataset has the following (largely redundant!) attributes associated with it:
+
+    \begin{itemize}
+    \item {\tt level} : Carpet::reflevel
+    \item {\tt origin} : 1-D array of length Carpet::dim. \\ origin[d]=CCTK\_ORIGIN\_SPACE(d) + 
+      cctk\_lbnd[d] * delta[d]
+    \item {\tt delta} : 1-D array of length Carpet::dim. \\ delta[d] = CCTK\_DELTA\_SPACE(d)
+    \item {\tt min\_ext} : 1-D array of length Carpet::dim. \\ min\_ext[d] = delta[d] 
+    \item {\tt max\_ext} : 1-D array of length Carpet::dim. \\ origin[d] + cctk\_lsh[d] * delta[d]
+    \item {\tt time} : cctk\_time
+    \item {\tt timestep} : cctk\_iteration
+    \item {\tt level\_timestep} : cctk\_iteration / Carpet::reflevelfact
+    \item {\tt persistence} : cctk\_iteration / Carpet::reflevelfact
+    \item {\tt time\_refinement} : Carpet::time\_refinement
+    \item {\tt spatial\_refinement} : 1-D array of length Carpet::dim. \\ spatial\_refinement[d] = Carpet::reflevelfact
+    \item {\tt grid\_placement\_refinement} : 1-D array of length Carpet::dim. \\ grid\_placement\_refinement[d] = Carpet::reflevelfact
+    \item {\tt iorigin} : 1-D array of length Carpet::dim. \\ iorigin[d] = (Carpet::ext.lower() / Carpet::ext.stride())[d]
+    \item {\tt name} : CCTK\_FullName(variable index)
+    \item {\tt group\_version} : 1
+    \item {\tt group\_fullname} : CCTK\_FullName(variable index)
+    \item {\tt group\_varname} : CCTK\_VarName(variable index)
+    \item {\tt group\_groupname} : CCTK\_GroupName(group index)
+    \item {\tt group\_grouptype} : CCTK\_GF, CCTK\_ARRAY or CCTK\_SCALAR
+    \item {\tt group\_dim} : CCTK\_GroupDimI(group index)
+    \item {\tt group\_timelevel} : tl (current timelevel)
+    \item {\tt group\_numtimelevels} : CCTK\_NumTimeLevelsI(group index)
+    \item {\tt cctk\_version} : 1
+    \item {\tt cctk\_dim} : cctk\_dim
+    \item {\tt cctk\_iteration} : cctk\_iteration
+    \item {\tt cctk\_gsh} : 1-D array of length Carpet::dim. cctk\_gsh
+    \item {\tt cctk\_lsh} : 1-D array of length Carpet::dim. cctk\_lsh
+    \item {\tt cctk\_lbnd} : 1-D array of length Carpet::dim. cctk\_lbnd
+    \item {\tt cctk\_delta\_time} : 1-D array of length Carpet::dim. cctk\_delta\_time
+    \item {\tt cctk\_delta\_space} : 1-D array of length Carpet::dim. cctk\_delta\_space
+    \item {\tt cctk\_origin\_space} : 1-D array of length Carpet::dim. cctk\_origin\_space
+    \item {\tt cctk\_bbox} : 1-D array of length 2*Carpet::dim. cctk\_box
+    \item {\tt cctk\_levfac} : 1-D array of length Carpet::dim. cctk\_levfac
+    \item {\tt cctk\_levoff} : 1-D array of length Carpet::dim. cctk\_levoff
+    \item {\tt cctk\_levoffdenom} : 1-D array of length Carpet::dim. cctk\_levoffdenom
+    \item {\tt cctk\_timefac} : cctk\_timefac
+    \item {\tt cctk\_convlevel} : cctk\_convlevel
+    \item {\tt cctk\_convfac} : cctk\_convfac
+    \item {\tt cctk\_nghostzones} : 1-D array of length Carpet::dim. cctk\_nghostzones
+    \item {\tt cctk\_time} : cctk\_time
+    \item {\tt carpet\_version} : 1
+    \item {\tt carpet\_dim} : Carpet::dim
+    \item {\tt carpet\_basemglevel} : Carpet::basemglevel
+    \item {\tt carpet\_mglevel} : Carpet::mglevel
+    \item {\tt carpet\_mglevels} : Carpet::mglevels
+    \item {\tt carpet\_mgface} : Carpet::mgfact
+    \item {\tt carpet\_reflevel} : Carpet::reflevel
+    \item {\tt carpet\_reflevels} : Carpet::reflevels
+    \item {\tt carpet\_reffact} : Carpet::reffact
+    \item {\tt carpet\_map} : Carpet::map
+    \item {\tt carpet\_maps} : Carpet::maps
+    \item {\tt carpet\_component} : Carpet::component
+    \item {\tt carpet\_components} : Carpet::vhh.at(Carpet::map)->components(reflevel))
+
+    \end{itemize}
+\end{itemize}
+
+\subsection{Attributes needed by the file reader}
+
+The number of attributes needed by the CarpetIOHDF5 file reader is much smaller then the total
+number of attributes attached to each dataset:
+
+\begin{itemize}
+  \item {\tt name}
+  \item {\tt level}
+  \item {\tt iorigin}
+\end{itemize}
+
+
+%\subsection{Interaction With Other Thorns}
+%
+%\subsection{Support and Feedback}
+%
+%\section{History}
+%
+%\subsection{Thorn Source Code}
+%
+%\subsection{Thorn Documentation}
+%
+%\subsection{Acknowledgements}
+%
+%
+%\begin{thebibliography}{9}
+%
+%\end{thebibliography}
+%
+% Do not delete next line
+% END CACTUS THORNGUIDE
+
+\end{document}

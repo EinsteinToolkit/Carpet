@@ -1,0 +1,7 @@
+Cactus Code Thorn CarpetIOSer
+Authors    : ...
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIOSer/README,v 1.1.1.1 2002/02/08 14:55:30 shawley Exp $
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+Provide 1D output from Carpet to Matt Choptuik's "ser" (via socket connection)

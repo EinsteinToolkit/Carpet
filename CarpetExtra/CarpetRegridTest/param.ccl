@@ -1,0 +1,19 @@
+# Parameter definitions for thorn CarpetRegridTest
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetRegridTest/param.ccl,v 1.1 2004/05/23 15:56:14 cott Exp $
+
+private:
+
+REAL radius "The radius of the gaussian wave"
+{
+ *:*  :: "No restriction"
+} 0.0
+
+REAL sigma "The sigma for the gaussian wave"
+{
+ 0:* :: "Positive"
+} 0.1
+
+REAL amplitude "The amplitude of the wave"
+{
+  *:* :: "No restriction"
+} 1.0

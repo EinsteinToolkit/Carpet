@@ -1,0 +1,12 @@
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyExpl/README,v 1.1 2003/06/18 18:24:30 schnetter Exp $
+
+Cactus Code Thorn WaveToyExpl
+Thorn Author(s)     : Erik Schnetter <schnetter@uni-tuebingen.de>
+Thorn Maintainer(s) : Erik Schnetter <schnetter@uni-tuebingen.de>
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+Integrate the scalar wave equation with a multi-step integrator, but
+preserving the intermediate steps to allow fine grid boundary
+prolongation on them.

@@ -1,0 +1,34 @@
+# CART3DTEST::vy z (vy)
+#
+# iteration 0
+# time level 0   refinement level 0   component 0   multigrid level 0
+# column format: it tl rl c ml x y z data
+0 0 0 0 0 1 1 0 12010100
+0 0 0 0 0 1 1 1 12010101
+0 0 0 0 0 1 1 2 12010102
+0 0 0 0 0 1 1 3 12010103
+0 0 0 0 0 1 1 4 12010104
+0 0 0 0 0 1 1 5 12010105
+0 0 0 0 0 1 1 6 12010106
+0 0 0 0 0 1 1 7 12010107
+0 0 0 0 0 1 1 8 12010108
+0 0 0 0 0 1 1 9 12010109
+
+
+
+# iteration 1
+# time level 0   refinement level 0   component 0   multigrid level 0
+# column format: it tl rl c ml x y z data
+1 0 0 0 0 1 1 0 12010100
+1 0 0 0 0 1 1 1 12010101
+1 0 0 0 0 1 1 2 12010102
+1 0 0 0 0 1 1 3 12010103
+1 0 0 0 0 1 1 4 12010104
+1 0 0 0 0 1 1 5 12010105
+1 0 0 0 0 1 1 6 12010106
+1 0 0 0 0 1 1 7 12010107
+1 0 0 0 0 1 1 8 12010108
+1 0 0 0 0 1 1 9 12010109
+
+
+

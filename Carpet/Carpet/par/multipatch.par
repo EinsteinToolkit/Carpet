@@ -1,0 +1,42 @@
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/par/multipatch.par,v 1.1 2004/05/04 22:07:18 schnetter Exp $
+
+Cactus::cctk_itlast = 20
+
+ActiveThorns = "Slab"
+
+ActiveThorns = "IOUtil"
+IO::out_dir = $parfile
+
+ActiveThorns = "Carpet CarpetLib CarpetReduce"
+Carpet::num_maps     =  2
+driver::global_nsize = 12
+
+ActiveThorns = "Boundary CartGrid3D CoordBase SymBase"
+grid::type = byspacing
+grid::dxyz = 0.1
+
+#ActiveThorns = "Periodic"
+#Periodic::periodic_y = yes
+#Periodic::periodic_z = yes
+
+ActiveThorns = "SimplePatchBoundary"
+SimplePatchBoundary::offset_x[1] = 1.0
+
+ActiveThorns = "WaveToyC"
+WaveToy::bound = radiation
+
+ActiveThorns = "IDScalarWaveC"
+#IDScalarWave::initial_data = plane
+#IDScalarWave::kx = 6.28318530717959
+#IDScalarWave::ky = 6.28318530717959
+
+ActiveThorns = "Time"
+Time::dtfac = 0.5
+
+ActiveThorns = "IOBasic"
+IOBasic::outInfo_every = 1
+IOBasic::outInfo_vars = "WaveToy::phi"
+
+ActiveThorns = "CarpetIOASCII"
+IOASCII::out1D_every = 1
+IOASCII::out1D_vars = "WaveToy::phi"

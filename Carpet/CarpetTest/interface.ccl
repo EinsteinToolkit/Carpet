@@ -1,0 +1,29 @@
+# Interface definition for thorn CarpetTest
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetTest/interface.ccl,v 1.2 2001/07/09 09:00:26 schnetter Exp $
+
+implements: CarpetTest
+
+CCTK_REAL gfg type=GF
+{
+  gf
+} "grid function"
+
+CCTK_REAL arrg3 type=ARRAY size=i3,i4,i5
+{
+  arr3
+} "3D array"
+
+CCTK_REAL arrg2 type=ARRAY dim=2 size=i6,i7
+{
+  arr2
+} "2D array"
+
+CCTK_REAL arrg1 type=ARRAY dim=1 size=i8
+{
+  arr1
+} "1D array"
+
+CCTK_REAL scg type=SCALAR
+{
+  sc
+} "scalar"

@@ -1,0 +1,50 @@
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-ic,v 1.8 2002/11/16 19:10:50 schnetter Exp $
+
+CPP		= cpp -traditional -DCARPET_REAL
+CC		= icc
+CXX		= icc
+F77		= ifc
+F90		= ifc
+LD		= icc
+
+LIBDIRS		= 
+LIBS		= intrins IEPCF90 F90 imf m irc cxa cprts cxa
+
+# basic
+CFLAGS		= -DCARPET_REAL -c99
+CXXFLAGS	= -DCARPET_REAL -c99
+F90FLAGS	= -DCARPET_REAL -w95
+F77FLAGS	= -DCARPET_REAL -w95
+LDFLAGS		= -DCARPET_REAL -g
+
+# debugging
+DEBUG		= yes
+C_DEBUG_FLAGS	= -g -fp
+CXX_DEBUG_FLAGS	= -g -fp
+F77_DEBUG_FLAGS	= -g -fp
+F90_DEBUG_FLAGS	= -g -fp
+
+# warnings
+#WARN=yes
+C_WARN_FLAGS	= -w1
+CXX_WARN_FLAGS	= -w1
+F77_WARN_FLAGS	= 
+F90_WARN_FLAGS	= 
+
+# optimisation
+OPTIMISE		= yes
+C_OPTIMISE_FLAGS	= -O3 -tpp6 -xi
+CXX_OPTIMISE_FLAGS	= -O3 -tpp6 -xi
+F77_OPTIMISE_FLAGS	= -O3 -tpp6
+F90_OPTIMISE_FLAGS	= -O3 -tpp6
+
+# HDF
+HDF5		= YES
+HDF5_DIR	= /usr/local
+
+# MPI
+MPI		= MPICH
+MPICH_DIR	= /usr/lib/mpich
+
+# PTHREADS
+PTHREADS	= yes

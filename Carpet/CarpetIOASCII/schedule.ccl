@@ -1,0 +1,16 @@
+# Schedule definitions for thorn CarpetIOASCII
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/schedule.ccl,v 1.8 2004/06/21 16:07:19 schnetter Exp $
+
+storage: last_output_iteration last_output_time this_iteration
+
+schedule CarpetIOASCIIStartup at STARTUP after IOUtil_Startup
+{
+  LANG: C
+  OPTIONS: global
+} "Startup routine"
+
+schedule CarpetIOASCIIInit at BASEGRID
+{
+  LANG: C
+  OPTIONS: global
+} "Initialisation routine"

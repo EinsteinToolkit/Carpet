@@ -1,0 +1,9 @@
+# Main make.code.defn file for thorn CarpetReduce
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/make.code.defn,v 1.2 2004/06/14 07:01:21 schnetter Exp $
+
+# Source files in this directory
+SRCS = mask_carpet.cc mask_coords.c mask_init.c reduce.cc
+
+# Subdirectories containing source files
+SUBDIRS = 
+

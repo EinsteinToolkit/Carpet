@@ -1,0 +1,9 @@
+# Main make.code.defn file for thorn CarpetIOSer
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIOSer/src/make.code.defn,v 1.1.1.1 2002/02/08 14:55:31 shawley Exp $
+
+# Source files in this directory
+SRCS = ioser.cc
+
+# Subdirectories containing source files
+SUBDIRS = 
+

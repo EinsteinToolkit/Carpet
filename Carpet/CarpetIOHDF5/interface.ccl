@@ -1,0 +1,20 @@
+# Interface definition for thorn CarpetIOHDF5
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/interface.ccl,v 1.5 2004/06/08 21:09:25 schnetter Exp $
+
+IMPLEMENTS: IOHDF5
+
+uses include header: carpet.hh
+
+uses include header: bbox.hh
+uses include header: vect.hh
+
+uses include header: data.hh
+uses include header: gdata.hh
+
+uses include header: ggf.hh
+
+
+
+CCTK_INT next_output_iteration TYPE=scalar
+CCTK_REAL next_output_time TYPE=scalar
+CCTK_INT this_iteration TYPE=scalar

@@ -1,0 +1,777 @@
+% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/internals.tex,v 1.4 2003/05/03 13:29:23 schnetter Exp $
+
+\documentclass{article}
+
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[english] {babel}
+\usepackage{exscale}
+\usepackage[final]{graphicx}
+\usepackage[backref,draft=false]{hyperref}
+%\usepackage{concrete}
+\usepackage{mathpple}
+%\usepackage{pslatex}
+
+\newcommand{\todo}[1]{\rule{1em}{1ex}~{\small [{#1}]}}
+
+\sloppypar
+
+\begin{document}
+
+\title{Carpet under the hood}
+\author{Erik Schnetter \textless schnetter@uni-tuebingen.de\textgreater}
+\date{$ $Date: 2003/05/03 13:29:23 $ $}
+\maketitle
+
+\begin{abstract}
+   This document describes the internal workings of the Carpet
+   arrangement.  Its intended readership are people who extend Carpet,
+   or who use Carpet more thant the average user.  This document is
+   supposed to be read in conjuction with and guiding through the
+   source code.
+\end{abstract}
+
+\tableofcontents
+
+\section{Overview}
+
+   The Carpet driver, which lives in the Carpet arrangement, is
+   divided into several parts.  The thorn \texttt{Carpet} is the main
+   driver piece; it provides all the routines and structures that
+   Cactus expects from it.  The thorn \texttt{CarpetLib} is the
+   workhorse that does all the bookkeeping and data shuffling.  Those
+   two alone form a valid Cactus driver; the other thorns provide
+   additional functionality.  The thorns \texttt{CarpetInterp},
+   \texttt{CarpetReduce}, and \texttt{CarpetSlab} provide the
+   corresponding interpolation, reduction, and slabbing interfaces.
+   The thorns \texttt{CarpetIOASCII} and \texttt{CarpetIOFlexIO}
+   provide I/O methods.  Finally, thorn \texttt{CarpetRegrid} provides
+   a user interface to select where and what to refine.  (The actual
+   refinement is handled in \texttt{CarpetLib}.)
+
+
+
+\section{Terminology}
+
+   Carpet is called ``Carpet'' because a carpet consists of many
+   individual patches.
+
+   Carpet is a mesh refinement driver.  It knows about a hierarchy of
+   \emph{refinement levels}, where each level is decomposed into a set
+   of cuboid \emph{grid patches}.  For historic reasons it also has a
+   notion of \emph{multigrid levels}, but those are currently unused.
+   They might conceivably be reactivated to form multigrid stacks to
+   solve elliptic equations.  The grid patch is the smallest unit of
+   grid points that Carpet deals with.  Carpet parallelises by
+   assigning sets of grid patches to processors.
+
+   A multi-patch run is a run where more than one grid patch (of the
+   same refinement level) is assigned to a single processor.  This is
+   a situation that can occur even without refinement.  This is also a
+   situation that cannot occur with PUGH, so that most thorns cannot
+   handle this situation.  In multi-patch runs one has to distinguish
+   between \emph{local mode}, where one has access to a single grid
+   patch, and \emph{global mode}, where one cannot access individual
+   grid patches, but can instead perfom global operations such as
+   synchronisation, interpolation, or reduction.  This part of Cactus
+   is currently (2003-04-30) undergoing changes.
+
+   Carpet uses vertex-centered refinement.  That is, each coarse grid
+   point coincides with a fine grid point.  To \emph{regrid} means to
+   select a new set of grid patches for each refinement level.  To
+   \emph{recompose} the grid hierarchy means to move data around.
+   Regridding is only about bookkeeping, while recomposing is about
+   data munging.
+
+   Each grid patch can be divided in up to four zones: the interior,
+   the outer boundary, and the ghost zone, and the refinement
+   boundary.  The interior is where the actual compuations go on.  The
+   outer boundary is where the users' outer boundary condition is
+   applied; from Carpet's point of view, these two are the same.  (The
+   only difference is that Carpet sets \texttt{cctk\_bbox}
+   correspondingly.)  The ghost zones are boundaries to other grid
+   patches on the same refinement level (that might live on a
+   different processor).  The refinement boundary is the boundary of
+   the refined region in a level, and it is filled by prolongation
+   (interpolation) from the next coarser level.  Both the ghost zones
+   and the prolongation boundary are filled by \emph{synchronising}.
+
+   Grid patches that are on the same refinement level never overlap
+   except with their ghost zones.  Conversly, all ghost zones must
+   overlap with a non-ghost zone of another grid patch of the same
+   level.  All refinement boundaries must overlap with a grid patch on
+   the next coarser level.  (This is also called \emph{proper
+   nesting}.)
+
+   Except for exceptions, Carpet numbers grid point indices and time
+   levels with integers.  It counts always in terms of the finest
+   grid, so that coarser grids have \emph{strides} that are powers of
+   the refinement factor.  This has the advantage that different
+   refinement levels can use the same global numbering scheme.
+
+   The grid patches are described by a \emph{bounding box}
+   (abbreviated bbox, see \texttt{CarpetLib/src/bbox.*}.).  This is a
+   triplet of \emph{vectors} (see \texttt{CarpetLib/src/vect.*}),
+   where each triplet specifies \emph{lower bound}, \emph{upper
+   bound}, and \emph{stride}, much as is conventional in Fortran.
+   Triplets are enclosed in round parentheses $(\cdot:\cdot:\cdot)$,
+   and vectors are enclosed in square brackets $[\cdot,\cdot,\cdots]$.
+   A typical grid patch might have a bounding box which is denoted by
+   $([0,0,0]:[20,20,20]:[2,2,2])$.  This is to be read as
+   $(\textrm{lower}:\textrm{upper}:\textrm{stride})$, meaning that the
+   grid patch has one corner grid point at $[0,0,0]$, the diagonally
+   opposite corner grid point at $[20,20,20]$, and the grid points are
+   spaced two ``fine grid spacings'' apart.  This grid patch contains
+   $11 \times 11 \times 11$ grid points.  Empty bboxes have an upper
+   bound that is strictly lower than the lower bound.  The files
+   \texttt{CarpetLib/src/vect.*} contains many useful routines to deal
+   with short vectors, and the files \texttt{CarpetLib/src/bbox.*}
+   contain routines deal with an algebra of bboxes.  The files
+   \texttt{CarpetLib/src/bboxset.*} contain routines that handle sets
+   of bboxes.
+
+
+
+\section{The driver}
+
+   The driver consists of the two thorns \texttt{Carpet} and
+   \texttt{CarpetLib}.  \texttt{Carpet} is the front end to
+   Cactus, while \texttt{CarpetLib} is the back end to the
+   machine.  \texttt{Carpet} specifies the grid shape, decides when to
+   allocate and deallocate storage, cycles through thes schedule bins,
+   and passes all internal information in the \texttt{cGH} structure
+   to the thorns.
+
+
+
+\subsection{Specifying the grid extent}
+
+   \texttt{Carpet} defines the usual parameters necessary to specify
+   the extent of the grid.  Everything that has to do with coordinates
+   and symmetries is handled elsewhere, and the driver does not know
+   about that.
+
+   The \texttt{global\_*} parameters specify the global extent of the
+   coarsest grid.  Not all of this grid needs to be covered by grid
+   patches.  It is conceivable to have an L-shaped simulation domain
+   without any refinement.  This situation can be described to Carpet
+   by specifying a global shape that is the convex hull of the domain,
+   and then using two cuboid grid patchs to fill in the shape of
+   the~L.
+
+   The \texttt{ghost\_*} parameters specify the number of ghost zones.
+   The \texttt{periodic*} parameters are unused; they are only there
+   because some thorns look at these parameters.  Carpet itself does
+   not supply periodic boundary conditions; they have to be handled by
+   another thorn.  The size of the prolongation boundary is the same
+   as the number of ghost zones.
+
+   The parameter \texttt{max\_refinement\_levels} specifies the
+   maximum number of levels that can be present in a run, including
+   the base level.  This parameter, together with
+   \texttt{refinement\_factor}, define the grid point numbering
+   scheme, which (see above) depends on the finest possible grid.
+   However, none of the finer levels will be activated automatically.
+   The \texttt{multigrid\_*} parameters are unused.
+
+   The parameter \texttt{base\_extents} specifies the shapes of the
+   grid patches that are present on the coarsest grid.  This can be
+   used to set up e.g.\ an L-shaped domain.  The parameter
+   \texttt{base\_outerbounds} specifies which of the grid patches'
+   boundaries are to be treated as outer boundaries, i.e.\ for which
+   of those \texttt{cctk\_bbox} should be set to 1.
+
+   Carpet currently ignores \texttt{enable\_all\_storage} and always
+   enables all storage.  This is because it is not yet clear how
+   individual grid function can be allocated and deallocated while
+   still keeping enough data for the boundary prolongation.
+
+   Checksumming and poisoning are means to find thorns that alter grid
+   variables that should not be altered, or that fail to fill in grid
+   variables that they should fill in.
+
+   None of the above specifies anything about refined grids.  Refined
+   grid are created and destroyed at run time, possibly guided by the
+   thorn \texttt{CarpetRegrid} which provides a nice user interface.
+
+
+
+\subsection{The timeline}
+
+   It is \texttt{Carpet}'s task to walk through the schedule bins and
+   call all user routines.  Only some fairly fundamental
+   initialisation happens in the flesh before Carpet takes control.
+   The overall picture of what happens when is:
+\begin{enumerate}
+\item
+   Startup (see file \texttt{Carpet/src/CarpetStartup.cc}).  This is
+   the only scheduled routine; everything else happens by overloading
+   and registering.  This routine does nothing but registering and
+   overloading.
+\item
+   SetupGH (see file \texttt{Carpet/src/SetupGH.cc}).  This routine
+   does the bulk of initialising Carpet.  It sets up the internal
+   structures for all grid variables.
+\item
+   Initialise (see file \texttt{Carpet/src/Initialise.cc}).  This
+   routine walks the initialisation part of the scheduling bins.
+\item
+   Evolve (see file \texttt{Carpet/src/Evolve.cc}).  This routine
+   walks the evolution part of the scheduling bins.  It also contains
+   the main evolution loop.
+\item
+   Shutdown (see file \texttt{Carpet/src/Shutdown.cc}).  This routine
+   walks the shutdown part of the scheduling bins.  Normally, nothing
+   interesting happens here.
+\end{enumerate}
+   These stages are explained in the following sections.
+
+
+
+\subsubsection{Initialisation}
+
+   (See file \texttt{Carpet/src/Initialise.cc}.)  In this stage Carpet
+   initialises the simulation.  This includes setting up the grids,
+   calling routines to register symmetries and boundary conditions, as
+   well as calculating the actual initial data on several refinement
+   levels.  It traverses the scheduling bins in the following order:
+\begin{enumerate}
+\itemsep 0pt
+\item
+   Set \texttt{cctk\_iteration} to zero
+\item
+   Set \texttt{cctk\_time} to the initial time
+\item
+   PARAMCHECK
+\item
+   Loop over refinement levels, starting from coarsest:
+\item \quad
+   BASEGRID
+\item \quad
+   INITIAL
+\item \quad
+   POSTINITIAL
+\item \quad
+   POSTSTEP
+\item \quad
+   Regrid (possibly creating new levels)
+\item
+   End loop over refinement levels
+\item
+   Restrict from finer to coarser grids
+\item
+   If desired, perform Scott Hawley's initialisation scheme for three
+   timelevels
+\item
+   Loop over refinement levels, starting from coarsest:
+\item \quad
+   RECOVER\_VARIABLES
+\item \quad
+   CPINITIAL
+\item \quad
+   ANALYSIS
+\item \quad
+   OutputGH
+\item
+   End loop over refinement levels
+\end{enumerate}
+
+   In the beginning, only the coarsest level exists.  The first loop
+   starts by initialising this level.  At the end of this loop, more
+   levels are created if desired.  This makes it possible to make this
+   decision depend on an automatic refinement criterion.
+
+
+
+\subsubsection{Evolution}
+
+   (See file \texttt{Carpet/src/Evolve.cc}.)  In this stage Carpet
+   performs the main time evolution loop.  This is further complicated
+   by the fact that finer grids need to take more and smaller time
+   steps than coarser grids.  In Carpet's time step counting scheme,
+   which is based on the finest grid time steps, this means that the
+   coarser grids are skipped in the remaining time steps.  Thus the
+   elegant recursive scheme is flattened out.  The scheduling bins in
+   the main time evolution loop are traversed in the following order:
+\begin{enumerate}
+\itemsep 0pt
+\item
+   Advance \texttt{cctk\_iteration}
+\item
+   Loop over refinement levels, starting from coarsest:
+\item \quad
+   If the current level needs to be treated at this iteration:
+\item \quad \quad
+   Calculate current \texttt{cctk\_time}
+\item \quad \quad
+   Cycle time levels
+\item \quad \quad
+   PRESTEP
+\item \quad \quad
+   EVOL
+\item \quad \quad
+   POSTSTEP
+\item \quad \quad
+   Regrid
+\item
+   End loop over refinement levels
+\item
+   Restrict from finer to coarser grids
+\item
+   Loop over refinement levels, starting from coarsest:
+\item \quad
+   If the current level needs to be treated at this iteration:
+\item \quad \quad
+   CHECKPOINT
+\item \quad \quad
+   ANALYSIS
+\item \quad \quad
+   OutputGH
+\item
+   End loop over refinement levels
+\end{enumerate}
+
+   The condition whether a refinement level needs to be treated at the
+   current iteration is different for the two loops.  In the first
+   loop, the coarse grids need to be advanced before the finer grids,
+   so the condition is $iter \,\mathrm{mod}\, stride = 1$.  Here
+   $iter$ is the current iteration, and $stride$ the stride of the
+   current refinement level, i.e.\ the factor by which the finest grid
+   is finer than the current grid.  In the second loop above, the
+   coarse grids need to be treated after the finer grids, so that the
+   condition reads $iter \,\mathrm{mod}\, stride = stride$.
+
+
+
+\subsection{Calling scheduled routines}
+
+   (See file \texttt{Carpet/src/CallFunction.cc}.)  The process by
+   which the scheduling bins are traversed is different from the
+   process which actually calls the routines within the scheduling
+   bins.  The former has to do with mesh refinement, making sure that
+   the coarse and fine grids are evolved in the right order.  The
+   latter has to do with treating multiple patches, i.e.\ with local
+   mode and global mode operations, as mentioned above.
+
+   In the function \texttt{CallFunction}, all the arguments that are
+   passed to the scheduled routines have to be set up.  Additionally,
+   the \texttt{cGH} structure has to be filled in.  Some fields in the
+   \texttt{cGH} structure are always kept up-to-date during the
+   refinement level loops, such as the time step size and the grid
+   spacing.  The file \texttt{Carpet/src/helper.cc} contains helper
+   routines that allow easy looping over refinement levels and over
+   grid patches.  (Grid patches are also called \emph{compoments} in
+   Carpet.  The expression component seems to be confusing, so that I
+   switched to using \emph{patch} instead.  Some source code still
+   reflects the old conventsion.)
+
+   The function \texttt{CallFunction} first distinguishes between
+   global mode functions and local mode functions.
+\begin{description}
+\item[Global mode functions]
+   are called once (on each processor).  They are passed all the
+   global data, such as \texttt{cctk\_gsh} and
+   \texttt{cctk\_delta\_space}, but none of the local data, such as
+   \texttt{cctk\_lsh} or \texttt{cctk\_bbox}.  Grid functions are not
+   accessible, and they are passed as null pointers.  However, grid
+   scalars and grid arrays are accessible.  There is an untested
+   gateway to directly call local mode functions from global mode
+   functions.
+\item[Local mode functions]
+   might be called several times (on each processor), once for each
+   grid patch that is assigned to this processor.  They receive the
+   global data as well as data for a single grid patch.  It is illegal
+   to perform global operations, such as synchronisation,
+   interpolation, or reduction, in local mode.
+\end{description}
+
+   The distinction between global and local mode is only important for
+   multi-patch runs.  For single-patch runs, the distinction does not
+   exist.
+
+   Multi-patch runs are only necessary when there are more grid
+   patches on a refinement level than there are processors.  This is
+   normally not the case for fixed mesh refinement.  Things are
+   different for adaptive mesh refinement, which can create many
+   refined regions.
+
+
+
+\subsection{Grid arrays and grid scalars}
+
+   Grid scalars are implemented as zero-dimensional grid arrays with
+   \texttt{DISTRIB=CONSTANT}.
+
+   Grid arrays are implemented as grid functions, where each grid
+   array group has their own refinement hierarchy that consists of a
+   single level only and is never changed at run time.  Grid arrays
+   with less than 3 dimension are extended to have an extent of 1 (and
+   no ghost zones) in the remaining dimensions, so that all quantities
+   in Carpet have 3 dimensions\footnote{This is set by a compile-time
+   constant and could be changed to allow for grid functions and
+   arrays with more than 3 dimensions.}.  \texttt{DISTRIB=CONSTANT} grid arrays
+   are implemented by internally enlarging the grid array in the $z$
+   direction, and then distributing this array onto the processors.
+
+
+
+\subsection{Flesh interfaces}
+
+   The flesh has many interfaces that need to be filled in by a
+   driver.  These are in particular all the routines that are
+   overloaded in the SetupGH stage.  Those overloaded routines as well
+   as other helper function are implemented in the following files:
+\begin{description}
+\itemsep 0pt
+\item[\texttt{Carpet/src/Checksum.cc}]
+   catching illegal changes to grid variables
+\item[\texttt{Carpet/src/Comm.cc}]
+   synchronisation, prolongation
+\item[\texttt{Carpet/src/Cycle.cc}]
+   time level handling
+\item[\texttt{Carpet/src/Poison.cc}]
+   catching uninitialised grid variables
+\item[\texttt{Carpet/src/Restrict.cc}]
+   restriction from finer to coarser grids
+\item[\texttt{Carpet/src/Storage.cc}]
+   enabling and disabling storage
+\item[\texttt{Carpet/src/helpers.cc}]
+   small low-level helper routines
+\item[\texttt{Carpet/src/variables.cc}]
+   the global variables that keep Carpet's current state (this is used
+   instead of a GH extension --- should probably be changed some time)
+\end{description}
+
+   Most of these files are fairly self-contained, and they mostly
+   marshal the actual work to \texttt{CarpetLib}.
+
+
+
+\subsection{Interfaces to other thorns}
+
+   Some other thorns, mostly from the Carpet arrangement, do need to
+   access internal data of Carpet.  Carpet keeps its internal state in
+   global variables which are declared in
+   \texttt{Carpet/src/carpet\_public.hh} and defined in
+   \texttt{Carpet/src/variables.cc}.  Entities that can be accessed
+   from C are declared in \texttt{Carpet/src/carpet\_public.h}; some
+   of these would be quite useful if they were provided by the flesh.
+
+
+
+\subsection{Missing parts}
+
+   \texttt{Carpet} does not handle staggered grids.  \texttt{Carpet}
+   does not provide cell-centered refinement.  \texttt{Carpet} always
+   enables all storage.  \texttt{Carpet} does not run efficiently in
+   parallel.
+
+
+
+\section{The workhorse}
+
+   While \texttt{Carpet} provides the necessary interfaces to the
+   flesh, the grunt work is actually done by \texttt{CarpetLib}.  This
+   thorn grew from an earlier mesh refinement of mine (Erik Schnetter)
+   library that was independent of Cactus.  It has in the mean time
+   been thoroughly changed, and it does not make sense any more to use
+   it independent of Cactus.  \texttt{CarpetLib} contains of three
+   major parts: a set of generic useful helpers, the grid hierarchy
+   and data handling, and interpolation operators.  Especially the
+   latter could probably be separated out.  While \texttt{CarpetLib}
+   is written in C++, the interpolators are written in
+   \textsc{Fortran77}.
+
+
+
+\subsection{The helpers}
+
+   The helpers correspond closely to Carpet's terminology.  A class
+   \texttt{vect<T,D>} provides small \texttt{D}-dimensional vectors of
+   the type \texttt{T}, with all the operators that one has learned to
+   enjoy from Haskell and Fortran 90.  A \texttt{vect} corresponds to
+   a grid point location.  The class \texttt{bbox<T,D>} provides
+   \texttt{D}-dimensional bounding boxes using type \texttt{T} as
+   indices.  A \texttt{bbox} defines the location and shape of a grid
+   patch.  Finally, \texttt{bboxset<T,D>} is a collection of \texttt{bbox}es.
+   \texttt{bboxsets} are a useful extension of the algebra of bboxes, as it
+   closes the \texttt{bbox} algebra under the union operation.
+
+   The files \texttt{CarpetLib/src/defs.*} defines useful small
+   helpers and instantiates the STL templates.
+   \texttt{CarpetLib/src/dist.*} provides some routines around MPI.
+   Carpet is closely coupled to MPI and does not work without it.
+
+   (Instead of inserting switches into Carpet to make it work without
+   MPI, it would make more sense to use a dummy version of MPI.  PETSc
+   does contain such a dummy version.  It is also easily possible to
+   use a free MPI version such as MPICH and use that to run on a
+   single processor.  However, I cannot see any real need for making
+   Carpet work without MPI.)
+
+
+
+\subsection{The grid hierarchy}
+
+   The grid hierarchy is described by a set of classes.  Except for
+   the actual data, all structures and all information is replicated
+   on all processors.
+\begin{description}
+\item[\texttt{gh}]
+   is a grid hierarchy.  It describes, for each refinement level, the
+   location of the grid patches.  This \texttt{gh} does not contain
+   ghost zones or prolongation boundaries.  There exists only one
+   common \texttt{gh} for all grid functions.
+\item[\texttt{dh}]
+   is a data hierarchy.  It extends the notion of a \texttt{gh} by
+   ghost zones and prolongation boundaries.  The \texttt{dh} does most
+   of the bookkeeping work, deciding which grid patches interact with
+   what other grid patches through synchronisation, prolongation,
+   restriction, and boundary prolongation.  Unexpected situations are
+   often caught in one of \texttt{dh}'s many self checks.  As all grid
+   functions have the same number of ghost zones, there exists also
+   only one \texttt{dh} for all grid functions.
+\item[\texttt{th}]
+   is a time hierarchy.  It extends the notion of a \texttt{gh} by
+   multiple time levels.  There exists one \texttt{th} per grid
+   function group.  This is a small class that keeps track of the
+   current time on the different refinement levels.  (Note that
+   different refinement levels usually live at different times.)
+\item[\texttt{gf}]
+   is a grid function of a certain variable type.  There is one
+   instance of \texttt{gf} for every grid function, whether it has
+   storage or not.  Each \texttt{gf} is associated with a \texttt{dh}
+   and a \texttt{th} and holds the storage for all levels and all
+   patches.  It provides interfaces to access and modify these data,
+   either directly or through interpolation operators.  \texttt{gf}
+   also handles the data movement during a regridding operation.
+\item[\texttt{ggf}]
+   is an abstract superclass of \texttt{gf} which is independent of
+   the variable type.  This is necessary in C++ to prevent egregious
+   code duplication due to class templates.  Most of the routines in
+   \texttt{gf} are actually declared in \texttt{ggf}, and they either
+   are virtual functions themselves, or they call virtual functions
+   that are declared in \texttt{gf}.
+\item[\texttt{data}]
+   is a container for a grid patch of a certain variable type.  This is
+   a glorified multi-dimensional array that knows how to move between
+   processors.  \texttt{data} is not only used to store the grid
+   patches that make up a \texttt{gf}, it is also used to move parts
+   of patches around, e.g.\ for synchronisation or prolongation.
+\item[\texttt{gdata}]
+   is an abstract superclass of \texttt{data} for much the same
+   reasons as for \texttt{ggf}.  All information that is independent
+   of the variable type is kept in \texttt{gdata}.
+\end{description}
+
+
+
+\subsection{The interpolators}
+
+   There are three kinds of ``interpolators'': for prolongation, for
+   restricting, and for copying.  The latter is only a glorified
+   hyperslabber that moves parts of grid patches between grid patches.
+
+   The interpolators used for restriction and prolongation are
+   different from those used for the generic interpolation interface
+   in Cactus.  The reason is that interpolation is expensive, and
+   hence the interpolation operators used for restriction and
+   prolongation have to be streamlined and optimised.  As one knows
+   the location of the sampling points for the interpolation, one can
+   calculate the coefficients in advance, saving much time compared to
+   calling a generic interpolation interface.
+
+
+
+\subsubsection{Restriction}
+
+   Restriction operators move data from finer to coarser grids.  They
+   are typically called after both the coarse and the fine grid have
+   been advanced to the same time, and they overwrite parts of the
+   coarse grid with information from the fine grid, coupling the
+   coarse grid evolution to the fine grid evolution.  In principle,
+   there could be restriction operators with different orders of
+   accuracy.  Currently only a single restriction operator is
+   implemented that uses sampling.
+
+   The interface of the restriction operator (see file
+   \texttt{CarpetLib/src/restrict\_3d\_real8.F77}) is
+\begin{verbatim}
+subroutine restrict_3d_real8
+      (src, srciext, srcjext, srckext,
+       dst, dstiext, dstjext, dstkext,
+       srcbbox, dstbbox, regbbox)
+
+   integer    srciext, srcjext, srckext
+   CCTK_REAL8 src(srciext,srcjext,srckext)
+   integer    dstiext, dstjext, dstkext
+   CCTK_REAL8 dst(dstiext,dstjext,dstkext)
+   integer    srcbbox(3,3), dstbbox(3,3), regbbox(3,3)
+\end{verbatim}
+   This interpolator assumes that space has three dimensions.  The
+   arrays \texttt{src} and \texttt{dst} contain the source (fine) and
+   destination (coarse) grid patches, stored in Fortran order, as is
+   customary in Cactus.  The arrays \texttt{src} and \texttt{dst} have
+   the shapes \texttt{(srciext,srcjext,srckext)} and
+   \texttt{(dstiext,dstjext,dstkext)}, respectively --- this
+   corresponds to the \texttt{cctk\_lsh} field in the \texttt{cGH}
+   structure.
+
+   The three bboxes describe the location and shape of the two arrays
+   and of the region that should be prolongated in the global grid
+   point index system.  That is, while the two arrays \texttt{src} and
+   \texttt{dst} are stored as dense arrays, they correspond to grid
+   patches which in general have non-unit strides in the global index
+   system.  As prolongation is an operation that is performed between
+   overlapping grids, the prolongation region is the same for both the
+   coarse and the fine grids.
+
+   A few constraints must hold for these data.  For example, the
+   shapes of the arrays must be the same as the shapes defined by the
+   bounding boxes; the strides in the bounding boxes must differ by
+   the refinement factor; the bounding boxes must overlap, and the
+   region's bounding box must be contained in the arrays bounding
+   boxes, etc.  Checking these constraints makes up about three
+   quarters of the restriction routine.
+
+   The bboxes themselves are here represented as Fortran arrays.
+   Their meaning is
+\begin{description}
+\itemsep 0pt
+\item[\texttt{bbox(:,1)}]
+   lower boundary (inclusive)
+\item[\texttt{bbox(:,2)}]
+   upper boundary (inclusive)
+\item[\texttt{bbox(:,3)}]
+   stride
+\end{description}
+
+
+
+\subsubsection{Prolongation}
+
+   There are many prolongation operators implemented.  They differ in
+   the order of their interpolation in space (first and third, or
+   linear and cubic interpolation) and in time (first and second, or
+   linear and quadratic).  The higher the order of interpolation, the
+   larger is the stencil, i.e.\ the more ghost zones and time levels
+   are necessary, and the more expensive the operation becomes.
+
+   The prolongation operators live in the files
+   \texttt{CarpetLib/src/prolongate\_3d\_real8*.F77}, and the file
+   names indicate their orders: \texttt{$n$tl} stands for $n$ time
+   levels, and \texttt{o$n$} stands for an order $n$ interpolation in
+   space (which uses a stencil that is $n+1$ grid points wide).
+
+   Apart from taking more than one \texttt{src} array argument when
+   using more than one time level, the interface to the prolongation
+   operator is equivalent to that of the restriction operator
+   described above.
+
+
+
+\section{Regridding, how and where and when}
+
+   The thorn \texttt{Carpet} provides a routine
+   \texttt{RegisterRegridRoutine} where one can register a regridding
+   routine.  Such a regridding routine does not have to actually
+   regrid anything, it only has to return the new desired grid
+   hierarchy, i.e.\ basically a description of a \texttt{gh}.
+
+   Thorn \texttt{CarpetRegrid} provides a user interface to the
+   regridding routines in Carpet.  All it does is take a regridding
+   specification from the user and translate that into a \texttt{gh}.
+   As usual, the parts where the computer has to listen to what a
+   human being intends are the most complicated.
+
+   As humans are usually more adept at getting used to computers than
+   the other way around, it is useful and probably necessary to get
+   acquainted with how Carpet thinks in order to make it do what is
+   intended.
+
+   Carpet does not deal with real-valued coordinates.  Carpet deals
+   with integer grid point locations only, and it counts grid points
+   in terms of the finest possible grid (not the finest currently
+   existing grid).  The finest possible grid is defined by the maximum
+   number of refinement levels set in \texttt{Carpet}.  Changing this
+   parameter will change the meaning of many other values in parameter
+   files, such as e.g.\ iteration numbers (termination, output).  The
+   only parameter that is specified in terms of the coarsest grid is
+   the shape of the coarsest grid in the \texttt{global\_*} parameters
+   of \texttt{Carpet}.  I therefore suggest to set
+   \texttt{max\_refinement\_levels} to some large number (e.g.\ 10),
+   and then not changing it while experimenting with other parameter
+   settings.
+
+   Carpet also does not know about symmetries.  When specifying the
+   location of a fine grid in terms of grid points, it is the
+   responsibility of the user to place the fine grid correctly.  For
+   that one has to take ghost zones and symmetry zones into account.
+
+   It is also possible to specify the fine grid locations in terms of
+   real-valued coordinates.  In this case, \texttt{CarpetRegrid}
+   translates these into integer grid points.  A good translation is
+   quite complicated, because it has to take many user expectations
+   into account, such as the location of the origin, staggering with
+   respect to the origin, symmetry boundary conditions, the number of
+   ghost zones etc.  The current translation is naive and leads to
+   unexpected results in many cases.  A routine that does most of the
+   time what the user expects while being easy to understand is
+   probably important for the ease of use of Carpet, but it might be
+   some time until it is written.
+
+   \texttt{CarpetRegrid} contains also a routine that measures the
+   error, as provided in a grid function, and the automatically
+   decides where to refine.  This is called AMR (adaptive mesh
+   refinement) if it works efficiently.
+
+   Much of \texttt{CarpetRegrid} is just slabbed together in an
+   attempt to find out what people need and expect.  The thorn is a
+   mess, and a complete rewrite might be a good idea, once one knows
+   what exactly the rewritten thorn should do.
+
+
+
+\section{Random ramblings}
+
+   Carpet uses the STL, because the STL provides very useful container
+   classes such as vectors, sets, and lists.  Writing these abstract
+   datatypes oneself does not make sense in these times.  It makes
+   much more sense to politick computer administrators to upgrade
+   their software.
+
+   The STL and \texttt{CarpetLib}'s classes need to be instantiated
+   explicitly.  Several compilers have several ``automatic'' schemes
+   that handle all template issues ``just fine''.  Except they don't.
+   One wants to select the following: No automatic inclusion of
+   \texttt{.cc} files, no automatic template instantiation at link
+   time.  Instead, most templates are instantiated explicitly by
+   \texttt{CarpetLib}.  It is also necessary to specify to instantiate
+   used templates automatically.  The explicit instantiations of
+   \texttt{CarpetLib}'s classes live in the \texttt{.cc} files
+   corresponding to the \texttt{.hh} file that define the templates.
+   The STL templates are instantiated in the file
+   \texttt{CarpetLib/src/defs.cc}.
+
+   Carpet makes extensive use of the \texttt{assert()} macro in C.
+   This is a quick and easy way to ensure that a certain condition
+   holds.  Assert statements abort the code if the condition does not
+   hold.  Although I try to provide useful error messages to the user,
+   many unexpected cases are only caught deep inside Carpet and
+   manifest themselves as assertion failures.  If you report an
+   assertion failure, it is vitally important to remember
+   theaccompanying file name and line number.  It would also be useful
+   to extract from the core file a stack backtrace and the values of
+   the local variables of the current stack frame.
+
+   Using symmetry boundary conditions such as octant mode is currently
+   still awkward in Carpet.  There are several reasons for this:
+   \texttt{CarpetRegrid} does not know about symmetries, and hence
+   doesn't take them into account when choosing refinement regions.
+   The symmetry conditions on the finer grid might be different from
+   the conditions on the coarser grids, and the symmetry thorns cannot
+   cope with this, so this situation must be avoided: one cannot use
+   \texttt{avoid\_origin=yes}, because the finer grids all have
+   \texttt{avoid\_origin=no} due to the vertex-centred refinement.
+
+\end{document}

@@ -1,0 +1,7 @@
+# Schedule definitions for thorn Carpet
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/schedule.ccl,v 1.7 2004/05/27 12:28:01 schnetter Exp $
+
+schedule CarpetStartup at STARTUP as Driver_Startup
+{
+  LANG: C
+} "Startup routine"

@@ -1,0 +1,178 @@
+// Instantiate templates for all available types    -*-C++-*-
+// (C) 2001 Erik Schnetter <schnetter@uni-tuebingen.de>
+
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/instantiate,v 1.10 2004/03/01 21:35:13 schnetter Exp $
+
+// Usage:
+// Define the macro INSTANTIATE(T) to instantiate for the type T,
+// then include this file,
+// then undefine the macro INSTANTIATE.
+
+
+
+// Decide which types to instantiate
+
+#ifdef CARPET_ALL
+#  undef CARPET_BYTE
+#  undef CARPET_INT
+#  undef CARPET_REAL
+#  undef CARPET_COMPLEX
+#  define CARPET_BYTE
+#  define CARPET_INT
+#  define CARPET_REAL
+#  define CARPET_COMPLEX
+#endif
+
+#ifdef CARPET_ALL_INT
+#  undef CARPET_INT1
+#  undef CARPET_INT2
+#  undef CARPET_INT4
+#  undef CARPET_INT8
+#  define CARPET_INT1
+#  define CARPET_INT2
+#  define CARPET_INT4
+#  define CARPET_INT8
+#endif
+
+#ifdef CARPET_ALL_REAL
+#  undef CARPET_REAL4
+#  undef CARPET_REAL8
+#  undef CARPET_REAL16
+#  define CARPET_REAL4
+#  define CARPET_REAL8
+#  define CARPET_REAL16
+#endif
+
+#ifdef CARPET_ALL_COMPLEX
+#  undef CARPET_COMPLEX8
+#  undef CARPET_COMPLEX16
+#  undef CARPET_COMPLEX32
+#  define CARPET_COMPLEX8
+#  define CARPET_COMPLEX16
+#  define CARPET_COMPLEX32
+#endif
+
+#if !defined(CARPET_BYTE) && !defined(CARPET_INT) && !defined(CARPET_INT1) && !defined(CARPET_INT2) && !defined(CARPET_INT4) && !defined(CARPET_INT8) && !defined(CARPET_REAL) && !defined(CARPET_REAL4) && !defined(CARPET_REAL8) && !defined(CARPET_REAL16) && !defined(CARPET_COMPLEX) && !defined(CARPET_COMPLEX8) && !defined(CARPET_COMPLEX16) && !defined(CARPET_COMPLEX32)
+// Assume the user just wants INT, REAL, and COMPLEX
+#  undef CARPET_INT
+#  define CARPET_INT
+#  undef CARPET_REAL
+#  define CARPET_REAL
+#  undef CARPET_COMPLEX
+#  define CARPET_COMPLEX
+#endif
+
+#ifdef CARPET_INT
+#  ifdef CCTK_INTEGER_PRECISION_1
+#    undef CARPET_INT1
+#    define CARPET_INT1
+#  endif
+#  ifdef CCTK_INTEGER_PRECISION_2
+#    undef CARPET_INT2
+#    define CARPET_INT2
+#  endif
+#  ifdef CCTK_INTEGER_PRECISION_4
+#    undef CARPET_INT4
+#    define CARPET_INT4
+#  endif
+#  ifdef CCTK_INTEGER_PRECISION_8
+#    undef CARPET_INT8
+#    define CARPET_INT8
+#  endif
+#endif
+#ifdef CARPET_REAL
+#  ifdef CCTK_REAL_PRECISION_4
+#    undef CARPET_REAL4
+#    define CARPET_REAL4
+#  endif
+#  ifdef CCTK_REAL_PRECISION_8
+#    undef CARPET_REAL8
+#    define CARPET_REAL8
+#  endif
+#  ifdef CCTK_REAL_PRECISION_16
+#    undef CARPET_REAL16
+#    define CARPET_REAL16
+#  endif
+#endif
+#ifdef CARPET_COMPLEX
+#  ifdef CCTK_REAL_PRECISION_4
+#    undef CARPET_COMPLEX8
+#    define CARPET_COMPLEX8
+#  endif
+#  ifdef CCTK_REAL_PRECISION_8
+#    undef CARPET_COMPLEX16
+#    define CARPET_COMPLEX16
+#  endif
+#  ifdef CCTK_REAL_PRECISION_16
+#    undef CARPET_COMPLEX32
+#    define CARPET_COMPLEX32
+#  endif
+#endif
+
+
+
+// // Check
+// #if !defined(CARPET_BYTE) && !defined(CARPET_INT1) && !defined(CARPET_INT2) && !defined(CARPET_INT4) && !defined(CARPET_INT8) && !defined(CARPET_REAL4) && !defined(CARPET_REAL8) && !defined(CARPET_REAL16) && !defined(CARPET_COMPLEX8) && !defined(CARPET_COMPLEX16) && !defined(CARPET_COMPLEX32)
+// #  error "You have not defined which grid function types to instantiate."
+// #endif
+
+
+
+// Instantiate the desired types
+
+#ifdef CARPET_BYTE
+INSTANTIATE(CCTK_BYTE)
+#endif
+
+#ifdef CARPET_INT1
+#  ifdef CCTK_INT1
+INSTANTIATE(CCTK_INT1)
+#  endif
+#endif
+#ifdef CARPET_INT2
+#  ifdef CCTK_INT2
+INSTANTIATE(CCTK_INT2)
+#  endif
+#endif
+#ifdef CARPET_INT4
+#  ifdef CCTK_INT4
+INSTANTIATE(CCTK_INT4)
+#  endif
+#endif
+#ifdef CARPET_INT8
+#  ifdef CCTK_INT8
+INSTANTIATE(CCTK_INT8)
+#  endif
+#endif
+
+#ifdef CARPET_REAL4
+#  ifdef CCTK_REAL4
+INSTANTIATE(CCTK_REAL4)
+#  endif
+#endif
+#ifdef CARPET_REAL8
+#  ifdef CCTK_REAL8
+INSTANTIATE(CCTK_REAL8)
+#  endif
+#endif
+#ifdef CARPET_REAL16
+#  ifdef CCTK_REAL16
+INSTANTIATE(CCTK_REAL16)
+#  endif
+#endif
+
+#ifdef CARPET_COMPLEX8
+#  ifdef CCTK_REAL4
+INSTANTIATE(CCTK_COMPLEX8)
+#  endif
+#endif
+#ifdef CARPET_COMPLEX16
+#  ifdef CCTK_REAL8
+INSTANTIATE(CCTK_COMPLEX16)
+#  endif
+#endif
+#ifdef CARPET_COMPLEX32
+#  ifdef CCTK_REAL16
+INSTANTIATE(CCTK_COMPLEX32)
+#  endif
+#endif

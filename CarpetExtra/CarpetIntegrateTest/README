@@ -1,0 +1,10 @@
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIntegrateTest/README,v 1.1 2004/09/01 17:47:53 schnetter Exp $
+
+Cactus Code Thorn CarpetIntegrateTest
+Thorn Author(s)     : Burkhard Zink <bzink@mpa-garching.mpg.de>
+Thorn Maintainer(s) : Erik Schnetter <schnetter@aei.mpg.de>
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+Test integration in Carpet.

@@ -1,0 +1,99 @@
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyFO/par/fo1d_2l_0040.par,v 1.2 2004/03/23 12:02:17 schnetter Exp $
+
+Cactus::cctk_initial_time = 0
+Cactus::cctk_itlast = 6400
+
+
+
+ActiveThorns = "LocalInterp NaNChecker Slab"
+
+NaNChecker::check_every = 32
+NaNChecker::check_vars = "all"
+NaNChecker::action_if_found = terminate
+
+
+
+ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce CarpetSlab"
+
+driver::global_nx = 44
+driver::global_ny = 5
+driver::global_nz = 5
+driver::ghost_size = 2
+
+#Carpet::verbose = yes
+#Carpet::veryverbose = yes
+Carpet::max_refinement_levels = 3
+Carpet::prolongation_order_space = 3
+Carpet::prolongation_order_time = 2
+#Carpet::init_3_timelevels = yes
+Carpet::init_each_timelevel = yes
+
+#CarpetLib::output_bboxes = yes
+
+CarpetRegrid::refinement_levels = 2
+CarpetRegrid::refined_regions = manual-gridpoint-list
+CarpetRegrid::gridpoints = "[[ ([48,4,4]:[128,12,12]:[2,2,2]) ]]"
+CarpetRegrid::outerbounds = "[[ [[0,0],[1,1],[1,1]] ]]"
+
+
+
+ActiveThorns = "Boundary CartGrid3D Periodic"
+
+grid::domain = full
+grid::type = byrange
+grid::xmin = -0.05
+grid::ymin = -0.05
+grid::zmin = -0.05
+grid::xmax = +1.025
+grid::ymax = +0.05
+grid::zmax = +0.05
+
+Periodic::periodic = yes
+
+
+
+ActiveThorns = "Time MoL"
+
+Time::dtfac = 0.25
+
+MoL::ODE_Method = ICN
+
+#MoL::ODE_Method = RK2
+#MoL::MoL_Intermediate_Steps = 2
+
+
+
+ActiveThorns = "IDScalarWaveFO WaveToyFO"
+
+IDScalarWaveFO::wave_number[0] = 1.0
+
+
+
+#ActiveThorns = "Dissipation"
+#
+#Dissipation::epsdis = 0.1
+#Dissipation::timelevel = "n+1"
+#Dissipation::vars = "WaveToyFO::scalarevolve"
+
+
+
+ActiveThorns = "IOUtil IOBasic CarpetIOASCII"
+
+IO::out_dir = "fo1d_2l_0040"
+
+IOBasic::outInfo_every = 32
+IOBasic::outInfo_vars = "WaveToyFO::phi"
+ 
+IOBasic::outScalar_every = 32
+IOBasic::outScalar_reductions = "minimum maximum norm1 norm2 norm_inf"
+IOBasic::outScalar_vars = "WaveToyFO::scalarevolve"
+
+#IOASCII::output_all_timelevels = yes
+
+IOASCII::out1D_every = 32
+IO::out_yline_x = 0.5
+IO::out_zline_x = 0.5
+IOASCII::out1D_vars = "WaveToyFO::scalarevolve"
+
+#IOASCII::out3D_every = 32
+#IOASCII::out3D_vars = "WaveToyFO::scalarevolve"

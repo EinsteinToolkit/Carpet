@@ -1,0 +1,17 @@
+# Schedule definitions for thorn IDScalarWaveMoL
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveMoL/schedule.ccl,v 1.2 2003/11/05 16:18:40 schnetter Exp $
+
+SCHEDULE IDScalarWaveMoL_InitialData AT initial
+{
+  LANG: Fortran
+  STORAGE: WaveToyMoL::scalarevolve[1]
+} "Initial data for the scalar field"
+
+
+
+SCHEDULE IDScalarWaveMoL_Errors AT analysis
+{
+  LANG: Fortran
+  STORAGE:  scalarevolveerror WaveToyMoL::scalarevolve[1]
+  TRIGGERS: scalarevolveerror
+} "Calculate errors of the scalar field"

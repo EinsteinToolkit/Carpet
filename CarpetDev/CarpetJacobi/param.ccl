@@ -1,0 +1,32 @@
+# Parameter definitions for thorn CarpetJacobi
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetJacobi/param.ccl,v 1.2 2004/01/25 14:57:29 schnetter Exp $
+
+BOOLEAN verbose "Produce log output while running" STEERABLE=always
+{
+} "no"
+
+BOOLEAN veryverbose "Produce much log output while running" STEERABLE=always
+{
+} "no"
+
+CCTK_INT outevery "Produce output every n iterations" STEERABLE=always
+{
+  1:* :: ""
+} 1
+
+CCTK_INT outeveryseconds "Produce output every n seconds" STEERABLE=always
+{
+  0:* :: ""
+} 10
+
+
+
+CCTK_INT solve_minlevel "First level on which to solve" STEERABLE=always
+{
+  0:* :: ""
+} 0
+
+CCTK_INT reflevelpower "Power of the refinement factor" STEERABLE=always
+{
+  0:* :: ""
+} 2

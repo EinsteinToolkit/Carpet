@@ -1,0 +1,18 @@
+# Parameter definitions for thorn SpaceTimeToy
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/param.ccl,v 1.4 2003/06/18 18:24:29 schnetter Exp $
+
+shares: hydrotoy
+
+USES BOOLEAN hydrotoy_active
+
+private:
+ 
+STRING bound "Type of boundary condition to use"
+{
+  ".*" :: "Must be a registered boundary condition"
+} "Static"
+
+CCTK_INT icn_iterations "Number of ICN iterations to take after the initial Euler step"
+{
+  0:* :: "Must not be negative"
+} 1

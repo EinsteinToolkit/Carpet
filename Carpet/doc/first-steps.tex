@@ -1,0 +1,583 @@
+% $Header: /home/eschnett/C/carpet/Carpet/Carpet/doc/first-steps.tex,v 1.3 2004/08/05 14:43:52 schnetter Exp $
+
+\documentclass[11pt]{article}
+
+\usepackage{epsfig,amsmath,amssymb,amsfonts,mathrsfs}
+\RequirePackage{amssymb}
+\RequirePackage{amsfonts}
+\pagestyle{headings}
+
+%\bibliographystyle{chicagoa}
+%\bibliography{uli.bib}
+
+\setlength{\textwidth}{17cm}
+\setlength{\oddsidemargin}{-0.4cm}
+\setlength{\topmargin}{0.0cm}
+\setlength{\textheight}{22cm}
+%\setlength{\parindent}{0.5cm}
+
+\numberwithin{equation}{section}
+
+\renewcommand{\textfraction}{0}
+\renewcommand{\topfraction}{1}
+%\renewcommand{\bottomfraction}{1}
+\renewcommand{\floatpagefraction}{1}
+
+\begin{document}
+
+
+\title{A user's perspective on getting started with Carpet}
+\author{Ulrich Sperhake, Erik Schnetter}
+\date{$ $Date: 2004/08/05 14:43:52 $ $}
+\maketitle
+
+
+
+%=============================================================================
+\section{Introduction}
+
+These notes provide information on how to install and use the package
+Carpet as seen from a user's point of view. Carpet is a set of Thorns
+that provide fixed and to some extent adapted mesh refinement in
+the Cactus environment. As Cactus is a necessary requirement for
+using Carpet, these notes will inevitably contain some information about
+Cactus as well.
+
+The reader should regard these notes as a first draft and the information
+represents the author's personal experiences rather than an exhaustive
+recipe on getting Carpet to work on an arbitrary given platform. In this sense I
+am hopeful that users as well as developers will continue to add to this
+document to make it more useful in the future.
+
+Useful starting points for retrieving more detailed information on
+various issues are the project's web pages\\
+
+\hspace{1cm}{\tt http://www.cactuscode.org}\\
+
+\hspace{1cm}{\tt http://www.carpetcode.org}\\
+
+
+%=============================================================================
+\section{Downloading the necessary packages}
+
+One first needs to download the Cactus version 4.0.13 (or
+alternatively for the more daring the development version).
+A more detailed description about how this is done can be found on the
+Cactus web page
+%
+\begin{center}
+  {\tt http://www.cactuscode.org}
+\end{center}
+%
+Here we will summarize the required steps for downloading the complete
+Cactus-4.0.13 package. Change to a suitable directory on your system
+and log onto the Cactus cvs server via\\
+
+\hspace{1cm}{\tt cvs -d :pserver:cvs\_anon@cvs.cactuscode.org:/cactus login} \\
+
+which will prompt you for a password which is {\tt anon}.
+For the development version you will need to choose
+the directory {\tt /cactusdevcvs} instead.
+Next check out the Cactus
+flesh which will create a directory {\tt Cactus} under your current location\\
+
+\hspace{1cm}{\tt cvs -d :pserver:cvs\_anon@cvs.cactuscode.org:/cactus checkout Cactus} \\
+
+The rest of the cactus checkout is best done with the scripts that are shipped
+as part of Cactus. Change to that directory\\
+
+\hspace{1cm}{\tt cd Cactus} \\
+
+and enter the command\\
+
+\hspace{1cm}{\tt make checkout} \\
+
+That will give you various options to choose those parts of cactus you
+want to ckeckout. The default option {\em arrangements} is quite
+satisfactory for this purpose, so just hit return. You will then be
+given a list of (at the time of writing) 13 Cactus arrangements. Getting
+them all is a good idea, so choose once more the default option by pressing
+return. Depending on your internet connection this may take a while.
+Once all is downloaded you want to quit the script. This is not the
+default option, so type {\tt q} and hit return. \\
+
+In order to run the WaveToy example that comes with CarpetExtra
+(see below) you will need to check out
+Erik Schnetter's package TAT. First switch the directory to\\
+
+\hspace{1cm}{\tt cd arrangements} \\
+
+then checkout\\
+
+\hspace{1cm}{\tt cvs -d :pserver:cvs\_anon@cvs.cactuscode.org:/arrangements checkout TAT} \\
+
+Again this may take a little time. Finally you will have to check out the
+{\tt Carpet} package. As of mid April 2004 Carpet consists of 4 arrangements.
+{\tt Carpet} contains all the necessary thorns you will need to run Carpet
+in the first place. The latest cutting edge thorns currently under
+development are located in {\tt CarpetDev}. Do not be too surprised, though,
+if you find some the tools in there not to be fully functional.
+Packages not required to run {\tt Carpet}, but probably useful for
+various purposes, such as scalar wave examples,
+are located in {\tt CarpetExtra}.
+% Detailed instructions can be found on the
+% web page
+%
+% \begin{center}
+%   {\tt http://www.carpetcode.org}\\
+% \end{center}
+%
+Remain in the {\tt arrangements} directory for this purpose and log
+into the carpet cvs-server\\
+
+\hspace{1cm}{\tt cvs -d :pserver:cvs\_anon@cvs.carpetcode.org:/home/cvs/carpet login}\\
+
+the password being once more {\tt anon}. Next checkout Carpet by typing\\
+
+\hspace{1cm}{\tt cvs -d :pserver:cvs\_anon@cvs.carpetcode.org:/home/cvs/carpet checkout Carpet}
+
+\hspace{1cm}{\tt cvs -d :pserver:cvs\_anon@cvs.carpetcode.org:/home/cvs/carpet checkout CarpetExtra}
+
+\hspace{1cm}{\tt cvs -d :pserver:cvs\_anon@cvs.carpetcode.org:/home/cvs/carpet checkout CarpetDev}\\
+
+
+
+%=============================================================================
+\section{Documentation}
+
+Documentation about Cactus, Carpet and their separate thorns comes
+in different forms. Most importantly you generate the UsersGuide and
+ReferenceManual for Cactus by going into the {\tt Cactus} directory
+and typing
+
+\hspace{1cm}{\tt make UsersGuide}\\
+
+\hspace{1cm}{\tt make ReferenceManual}\\
+
+\hspace{1cm}{\tt make ArrangementDoc}\\
+
+\hspace{1cm}{\tt make ThornDoc}\\
+
+(four separate commands). They will be created in postscript format under
+the directory\\
+
+\hspace{1cm}{\tt doc}\\
+
+relative to your current position, i.e.\,the {\rm Cactus} directory.
+In addition each thorn may contain a subdirectory {\tt doc} where
+the author (or users) may store additional documentation, typically
+in the form of a file {\tt documentation.tex}.
+
+
+%=============================================================================
+\section{Compilers}
+
+Before we indulge in using Cactus/Carpet, we have to address issues
+concerning the system you are working on. We begin with the compilers
+although we will not be able to deal with the subject in an exhaustive
+fashion.
+Basically these notes list our experiences with local machines
+(i.e. at Penn State) and may or may not be valid for your environment.
+Users are encouraged to add their experiences to this list.
+
+At Penn State we largely work with the Intel compilers and the success
+of compilations has been found to depend sensitively on which version of the
+Intel compilers we are using. We will discuss some error messages
+encountered in the process of compiler testing below.
+
+Free download (at least for Linux) of
+the Intel compiler (Fortran and C++) for
+non-commercial private or academic use is available from the web page
+%
+\begin{center}
+  {\tt http://downloadfinder.intel.com/scripts-df/support\_intel.asp}
+\end{center}
+%
+(click on Software Development, check for the compilers on your system
+and follow their instructions).
+
+In case you haven't got root access,
+you may need to install the compiler locally or you will have to ask your
+sys-admin. Additional difficulties may arise in case you have no
+root access, i.e. install locally, while your sys-admin keeps
+some older version installed. In order to make sure that no conflict
+arises thereof (e.g. by linking against old versions of the library)
+the environment variable {\tt LD\_LIBRARY\_PATH} must point to your local
+new version and not to the old version in {\tt /usr/local} or wherever.
+You will probably end up with error messages such as
+{\tt undefined symbols ...} otherwise. We decided to use the Intel compiler
+for both Fortran and C++ code. This was mainly a result of the current
+version of g++ not having the complete stl libraries that are made use of
+extensively in Carpet. \\
+An important aspect of the Intel compilers is that they come in various
+different versions. Even the same version number (say 7.1) comes in many
+different releases. You can check this by typing \\
+
+\hspace{1cm}{\tt ifc -V}\\
+
+and likewise for {\tt icc}. Note in particular the date of build given in the
+form of {\em 20030307Z}. This corresponds to the March 2003 build of
+version 7.1 and caused difficulties for me. I encountered an error message
+like\\
+
+\hspace{1cm}{\tt /home/terminator/sperhake/src/2004\_02\_16\_cactus-FMR/configs/test01/build/CarpetLib/}
+
+\hspace{1cm}{\tt data.cc(173): error: no instance of overloaded function "dist::datatype"}
+
+\hspace{1cm}{\tt matches the argument list}\\
+
+This can be rectified by switching to a newer release, at least the
+September 2003 build of version 7.1 (I'd recommend doing that for both
+the Fortran and the C++ compiler).
+
+Some Cactus-Carpet users have reported problems, such as segmentation faults,
+by using the most recent versions of the Intel compilers, namely the March
+2004 release of version 7.1 and the latest version 8.0. So far we have
+been using the former of these without encountering any difficulties,
+but you should probably stick to the December or September 2003 version
+of 7.1 if you can.
+
+On my Gentoo Linux laptop, on the other hand, I experienced trouble with
+the September 2003 version of 7.1.
+I received error messages like\\
+
+\hspace{1cm}{\tt struct stat stat\_bbox ...}
+
+\hspace{1cm}{\tt Incomplete components in structure not allowed}\\
+
+at compilation (I have forgotten the exact wording, but you'll recognize it).
+I managed to work around this by using the Intel Fortran
+and C++ compilers version 8.0 (build October 2003).
+As I have not done extensive code development on this laptop, though,
+I cannot really comment on the potential issues concerning the 8.0 version
+mentioned above. \\
+%In case you decide to use version 8.0, however, note that it does not
+%accept the {\tt rpath} option as specified in the {\tt LDFLAGS} entry
+%of the configuration file (see below). This option, for
+%what little I know, tells the linker about the paths for shared libraries.
+%The error message obtained with the {\tt rpath} option was something like\\
+
+%\hspace{1cm}{\tt undefined reference to CCTK\_FullVersion, CCTK\_TimeInfo}\\
+
+Trouble may also arise from preprocessing
+in case you are using RedHat 7.3 (possibly also with other versions).
+This is essentially related to the
+treatment of white space in Fortran files.
+Should you encounter rather stupid error messages which clearly indicate
+that proper lines of Fortran have been corrupted by introducing white space
+(e.g. line breaks) at preprocessing, you should check your cpp and possibly
+download another (probably older) version.
+Details about this can be found on
+%
+\begin{center}
+  {\tt http://www.cactuscode.org/Documentation/Architectures/Linux.html}
+\end{center}
+%
+which also gives a link to the preprocessor of the older RedHat 6.2
+distribution. I downloaded that older version and it solved the preprocessing
+problems I encountered prior to that. \\
+
+
+%=============================================================================
+\section{Libraries}
+\label{sec: libraries}
+
+As much as the compiler issue is strongly dependent on your platform,
+the extent to which you will have to install new libraries will depend on
+what your system administrator has already done for you. Again these notes
+cannot be exhaustive and rather focus on our experience. Feel free,
+as before, to add to our list.
+
+%=============================================================================
+\subsection{HDF library}
+
+The HDF5 library is required for handling in/output in
+a particular binary data
+format. The use of these libraries in Cactus/Carpet is entirely optional,
+but in the end I found it easier to install the libraries than to
+convince my system that I do not want to use them. They should be useful
+in the long run anyway, so I recommend their installation unless
+they are already part of your system.
+
+Let us start with the hdf5 libraries. The binary version can be obtained from
+%
+\begin{center}
+  {\tt ftp://ftp.ncsa.uiuc.edu/HDF/HDF5/hdf5-1.6.1/bin}
+\end{center}
+%
+As before I prefer compiling the source which you can get from
+%
+\begin{center}
+  {\tt ftp://ftp.ncsa.uiuc.edu/HDF/HDF5/hdf5-1.6.1/src}
+\end{center}
+%
+Again the instructions in the {\tt INSTALL} file are straightforward. I
+included the C++ interface by setting the options\\
+
+\hspace{1cm}{\tt ./configure --enable-cxx}\\
+
+and used the variables {\tt CPPFLAGS} and {\tt LDFLAGS} to ensure that the
+szip libraries were found (see {\tt INSTALL} file). The Fortran interface
+did not work for me, so I did not enable that. In future versions of
+this document this issued may be readdressed. Finally you may need to point
+the environment variable {\tt LD\_LIBRARY\_PATH} in your {\tt .bashrc}
+or {\tt .cshrc} to the directory containing the hdf5 library.\\
+
+
+%=============================================================================
+\subsection{Parallelization}
+
+This subsection is relevant only if you plan to do multi processor runs
+(which you are rather likely to do, though, since it is a key feature of
+Cactus/Carpet). There are various packages that take care of
+parallelization, such as {\tt MPICH} or {\tt lam} and your machine
+will probably come equipped with one of these.
+
+I have only had the need to install a message passing interface
+{\tt (MPI)} on my laptop. It's a single processor laptop but
+you can emulate multi-processor runs none the less. Furthermore
+it appears to me that Carpet expects {\tt MPI} at least in the
+form of a header file {\tt mpi.h}, so you'd better install it.
+I chose the {\tt lam} package for this
+purpose, so that is the only experience I have to report.
+
+Installation of this package was straightforward on my Gentoo
+Linux laptop by typing\\
+
+\hspace{1cm}{\tt emerge lam-mpi}\\
+
+Depending on your Linux flavor installation may be done differently,
+for example using {\tt rpm}. {\tt lam} is started by typing\\
+
+\hspace{1cm}{\tt lamboot}\\
+
+and then executables can be started via\\
+
+\hspace{1cm}{\tt mpirun -np} $<$n$>$ $<$executable$>$\\
+
+where $<$n$>$ is the number of processors and $<$executable$>$
+the binary file (with full path) you want to run.
+
+
+%=============================================================================
+\section{Creating a configuration}
+
+%=============================================================================
+\subsection{The configuration file}
+
+Eventually we can start writing a configuration file for a Cactus-Carpet
+project. In this configuration file the paths to various files, such as
+libraries and compilers need to be specified. Naturally these paths will
+differ from machine to machine. In this subsection I will assume
+the installation path
+
+\hspace{1cm}{\tt /usr/local/}$<$name$>$\\
+
+for most libraries,
+where $<$name$>$ is the name of the library, e.g. {\tt hdf4} or {\tt szip}.
+I further assume that each of these directories contains subdirectories
+{\tt lib} and {\tt include} which contain the libraries and header files.
+Similarly I presume that all compilers/preprocessors are installed in the
+directory\\
+
+\hspace{1cm}{\tt /usr/local/for\_carpet/bin}\\
+
+This is, of course, not where they reside on your machine
+(nor on mine), but it'll be sufficient for this document and
+you will merely have to replace each of these paths with the correct one
+on your system.
+
+We are now in the position to create the configuration file, say
+{\tt mycode\_carpet.cfg} (you can store that file wherever you think
+convenient). We will focus on the most important entries
+in this file only. Please refer to the Cactus documentation
+for a more detailed description. First we specify information
+about the compilers\\
+
+\hspace{1cm}{\tt F90 \hspace{1cm} /usr/local/for\_carpet/bin/ifc}
+
+\hspace{1cm}{\tt F77 \hspace{1cm} /usr/local/for\_carpet/bin/ifc}
+
+\hspace{1cm}{\tt CC  \hspace{1.2cm} /usr/local/for\_carpet/bin/icc}
+
+\hspace{1cm}{\tt CXX \hspace{1cm} /usr/local/for\_carpet/bin/icc}
+
+\hspace{1cm}{\tt CPP \hspace{1cm} /usr/local/for\_carpet/bin/cpp}
+
+\hspace{1cm}{\tt FPP \hspace{1cm} /usr/local/for\_carpet/bin/cpp}\\
+
+
+(the exact amount of white space between the variables {\tt F90, F77,...} and
+their entries should not matter and you may even put in an $=$ sign).
+Note that you do not need to specify the
+full path if your environment variable {\tt PATH} points to the correct
+versions of the compilers/preprocessors already.\\
+Next we need to specify information about the message passing interface.
+In my case that was {\tt lam}, so the next entries in my
+file {\tt mycode\_carpet.cfg} are\\
+
+\hspace{1cm}{\tt MPI \hspace{2.5cm} LAM}
+
+\hspace{1cm}{\tt LAM\_INC\_DIR \hspace{1cm} /usr/include}
+
+\hspace{1cm}{\tt LAM\_LIB\_DIR \hspace{1cm} /usr/lib}\\
+
+In case you are using a different {\tt MPI} package refer to the Cactus
+users guide to find the correct entry for {\tt MPI}. Make sure that you
+specify the correct paths for the corresponding header files
+and libraries (ask your sys-admin if necessary).\\
+Next we specify the libraries to be included in the compilation. For the
+7.1 version of the Intel compilers in combination with {\tt lam}
+we found the following to work fine\\
+
+\hspace{1cm}{\tt LIBS \hspace{2cm} crypt lapack blas g2c z BINDF90 CEPCF90
+F90 IEPCF90 PEPCF90}
+
+\hspace{4.2cm}{\tt POSF90 cprts cxa guide imf intrins irc ircmt ompstub svml}
+
+\hspace{4.2cm}{\tt unwind X11 ieeeio df m mpi lam pmpi}\\
+
+(all in one line). It goes without saying that all these libraries must
+be installed on your machine. Most of them probably are and the
+installation of some that may not is described in more detail above
+in Sec.\,\ref{sec: libraries}. \\
+The paths to some of these libraries may not be known automatically by the
+linker and needs to be specified separately. This is done with the variable
+{\tt LIBDIRS} which I had to set to\\
+
+\hspace{1cm}{\tt LIBDIRS \hspace{1.4cm} /usr/local/intel/compiler70/ia32/lib}
+
+\hspace{4.2cm}{\tt /usr/X11R6/lib /usr/local/IEEEIO/lib /usr/local/hdf4/lib}
+
+\hspace{4.2cm}{\tt /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66}\\
+
+(again on all in one line). As before you will have to adjust this line to
+your demands.\\
+Finally I set
+
+%\hspace{1cm}{\tt LDFLAGS \hspace{1.4cm} -Wl,-rpath,/usr/nrlocal/petsc-2.1.0/lib/libO/linux}\\
+
+\hspace{1cm}{\tt PTHREADS \hspace{1.2cm} yes}\\
+
+though I am not sure what this is exactly doing.
+%As has been mentioned above the first of these lines is valid for
+%version 7.1 of the Intel compiler and should be omitted if you are using
+%version 8.0.
+
+
+
+%=============================================================================
+\subsection{make-config}
+
+In order to create a configuration change into the {\tt Cactus}
+directory and type\\
+
+\hspace{1cm}{\tt make} $<$name$>${\tt-config options=}$<$config-file$>$\\
+
+where you can choose an arbitrary $<$name$>$ for your configuration and
+$<$config-file$>$ is the file (with full path) created in the previous
+subsection.
+
+%=============================================================================
+\subsection{Creating a thornlist}
+
+Next you will need to generate a thornlist, i.e.\,a list of all those
+thorns you want to compile. This is done in the {\tt Cactus} directory
+by typing\\
+
+\hspace{1cm}{\tt make} $<$name$>${\tt-thornlist}\\
+
+where $<$name$>$ must be the same as in setting up the configuration.
+This command
+will search all arrangements for all thorns and eventually prompt you
+whether you want to modify the list. As all thorns are activated by default
+you do want to modify the list and type {\em yes} and hit return. This
+will open an editor session where you can unselect thorns by putting a
+hash '\#' at the beginning of the line. Unselect all thorns in this
+way except for the following\\
+
+\hspace{1cm}{\tt CactusBase/Boundary}
+
+\hspace{1cm}{\tt CactusBase/CartGrid3D}
+
+\hspace{1cm}{\tt CactusBase/CoordBase}
+
+\hspace{1cm}{\tt CactusBase/IOBasic}
+
+\hspace{1cm}{\tt CactusBase/IOUtil}
+
+\hspace{1cm}{\tt CactusBase/LocalInterp}
+
+\hspace{1cm}{\tt CactusBase/SymBase}
+
+\hspace{1cm}{\tt CactusBase/Time}
+
+\hspace{1cm}{\tt Carpet/Carpet}
+
+\hspace{1cm}{\tt Carpet/CarpetIOASCII}
+
+\hspace{1cm}{\tt Carpet/CarpetIOHDF5}
+
+\hspace{1cm}{\tt Carpet/CarpetInterp}
+
+\hspace{1cm}{\tt Carpet/CarpetLib}
+
+\hspace{1cm}{\tt Carpet/CarpetReduce}
+
+\hspace{1cm}{\tt Carpet/CarpetRegrid}
+
+\hspace{1cm}{\tt Carpet/CarpetSlab}
+
+\hspace{1cm}{\tt CarpetExtra/IDScalarWave}
+
+\hspace{1cm}{\tt CarpetExtra/WaveToyF77}\\
+
+Before you compile, you need to apply one modification to the file\\
+
+{\tt arrangements/CarpetExtra/WaveToyF77/configuration.ccl}\\
+
+namely remove the entry {\tt Cart3d} from the list of {\tt REQUIRED}
+thorns. This thorn is actually required but, for some reason unknown
+to me, must not be mentioned here. It gave an error message complaining
+that there is no thorn {\tt Cart3d}. Having applied this modification
+you can start compiling by typing\\
+
+\hspace{1cm}{\tt make} $<$name$>$
+
+There is no guarantee, but at least you have a chance of compiling through
+without error messages (do not be intimidated by the odd warning, though).
+In case you still cannot compile, please add your wisdom to this document to
+help future users.
+
+
+%=============================================================================
+\subsection{Running the first application: WaveToyF77}
+
+If you've gotten this far, you should be able to run your first
+simulation with mesh refinement. Change to some convenient directory
+for this purpose and copy over from relative to the main {\tt Cactus}
+directory the parameter file\\
+
+\hspace{1cm}{\tt arrangements/CarpetExtra/WaveToyF77/par/wavetoyf77\_rad\_full\_rl2.par}\\
+
+You will need to adjust this parameter file a little to get it running (I am
+not aware of a WaveToy-parameter file that does not require such minor
+modification). First add to the first line beginning with {\tt ActiveThorns}
+the thorns {\tt Slab CoordBase SymBase} (that is within the quotes).
+Finally you should be able to run this example by typing something like\\
+
+\hspace{1cm}{\tt mpirun -np 1} $\tilde{\,\,}${\tt /Cactus/exe/cactus-}$<$name$>$ {\tt wavetoyf77\_rad\_full\_rl2.par}\\
+
+where $<$name$>$ is again the name of the configuration above. In case you do
+not have your main {\tt Cactus} directory under your home directory you will
+need to adjust that part in the command.\\
+By running this command you should obtain a directory
+{\tt wavetoyf77\_rad\_full\_rl2} with the resulting data in ascii format.
+You can check for example the file\\
+
+\hspace{1cm}{\tt wavetoyf77\_rad\_full\_rl2/phi.x.asc}\\
+
+(relative to the directory where you ran the code)
+which lists the data on the separate refinement levels.
+
+\end{document}

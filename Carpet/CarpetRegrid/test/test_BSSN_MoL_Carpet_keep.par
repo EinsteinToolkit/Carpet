@@ -1,0 +1,68 @@
+
+!DESC "1+log sliced black hole, ADM_BSSN, Iterative CN, Carpet with 2 levels"
+
+# Required thorns
+
+ActiveThorns = "CoordBase SymBase time carpet carpetlib carpetregrid carpetreduce carpetslab boundary cartgrid3d bssn_mol mol nanchecker idanalyticbh carpetioascii ioutil iobasic admcoupling admbase admmacros coordgauge spacemask staticconformal"
+
+# Grid
+
+driver::global_nx = 21
+driver::global_ny = 21
+driver::global_nz = 21
+
+driver::ghost_size_x = 2
+driver::ghost_size_y = 2
+driver::ghost_size_z = 2
+
+Carpet::max_refinement_levels = 3
+Carpet::prolongation_order_space = 3
+Carpet::prolongation_order_time = 2
+
+Carpet::init_each_timelevel = yes
+Carpet::buffer_width = 1
+
+CarpetRegrid::refinement_levels = 2
+CarpetRegrid::regrid_every = 0
+CarpetRegrid::keep_same_grid_structure = yes
+
+grid::type   = "byspacing"
+grid::dxyz   = 0.2
+grid::domain = "octant"
+
+cactus::cctk_initial_time = 0.0
+cactus::cctk_itlast       = 20
+ 
+time::dtfac = 0.25
+
+# Initial data 
+
+admbase::metric_type = "static conformal"
+admbase::initial_data = "schwarzschild"
+
+# Evolution
+
+admbase::evolution_method = "adm_bssn" 
+
+MoL::ODE_Method = "ICN"
+MoL::MoL_Intermediate_Steps = 3
+
+adm_bssn::bound  = "flat"
+
+# Gauge
+
+admbase::lapse_evolution_method = "1+log"
+
+# Output
+
+IO::out_fileinfo="none"
+IO::out_dir = $parfile
+
+IOBasic::outInfo_every = 1
+IOBasic::outInfo_vars  = "admbase::gxx"
+
+IOBasic::outScalar_every =  8
+IOBasic::outScalar_vars  = "adm_bssn::adm_bs_gxx adm_bssn::adm_bs_Axx adm_bssn::adm_bs_phi adm_bssn::adm_bs_k adm_bssn::adm_bs_Gx admbase::gxx admbase::kxx admbase::alp"
+
+##################################################################
+

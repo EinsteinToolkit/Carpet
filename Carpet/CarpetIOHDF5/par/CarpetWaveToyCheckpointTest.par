@@ -1,0 +1,43 @@
+ActiveThorns = "Boundary CoordBase CartGrid3D SymBase Time Carpet CarpetReduce CarpetSlab CarpetLib CarpetRegrid IOUtil IOBasic CarpetIOASCII CarpetIOHDF5 IDScalarWaveC WaveToyC"
+
+
+Cactus::cctk_itlast = 12
+
+Time::dtfac = 0.5
+
+IDScalarWave::initial_data = "gaussian"
+IDScalarWave::sigma        = 2.8
+IDScalarWave::radius       = 0.0
+
+Grid::avoid_origin = "no"
+Grid::type         = "byrange"
+Grid::dxyz         = 1
+
+Driver::global_nsize = 20
+Driver::ghost_size   = 2
+
+Carpet::prolongation_order_space = 3
+Carpet::prolongation_order_time  = 2
+Carpet::init_each_timelevel      = "yes"
+Carpet::buffer_width             = 6
+Carpet::max_refinement_levels    = 2
+
+CarpetRegrid::refinement_levels  = 2
+
+# Output
+IO::out_dir = $parfile
+
+IOBasic::outInfo_every = 1
+IOBasic::outInfo_vars  = "wavetoy::phi"
+
+IOASCII::out1D_vars  = "wavetoy::phi"
+IOASCII::out1D_every = 12
+IOASCII::out3D_vars  = "wavetoy::phi"
+IOASCII::out3D_every = 12
+
+# Checkpoint
+IO::checkpoint_every = 12
+IO::checkpoint_keep  = 2
+
+IOHDF5::checkpoint = "yes"
+IOHDF5::verbose    = "yes"

@@ -1,0 +1,31 @@
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-debug,v 1.3 2002/10/16 17:33:51 schnetter Exp $
+
+CPP			= cpp -traditional -DCARPET_REAL
+F77			= g77
+F90			= g77
+
+CXXFLAGS		= -DCARPET_REAL -ftemplate-depth-30
+
+C_OPTIMISE_FLAGS	= -O2 -funroll-loops -march=pentiumpro
+CXX_OPTIMISE_FLAGS	= -O2 -funroll-loops -march=pentiumpro
+F90_OPTIMISE_FLAGS	= -O2 -funroll-loops -march=pentiumpro -malign-double
+F77_OPTIMISE_FLAGS	= -O2 -funroll-loops -march=pentiumpro -malign-double
+
+C_WARN_FLAGS		= -Wall -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wstrict-prototypes -Wmissing-declarations
+CXX_WARN_FLAGS		= -Wall -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wstrict-prototypes -Wmissing-declarations
+F90_WARN_FLAGS		= -Wall
+F77_WARN_FLAGS		= -Wall
+
+#FLEXIO_DIR		= /home/eschnett/proj/FlexIO
+#SYS_INC_DIRS		= /home/eschnett/proj/FlexIO
+#LIBDIRS			= /home/eschnett/proj/FlexIO
+#LIBS			= AMR h5io hdfio hlio ieeeio  hdf5 mfhdf df jpeg z  crypt  g2c m
+
+HDF5			= yes
+MPI			= MPICH
+
+DEBUG			= yes
+OPTIMISE		= no
+
+# PTHREADS
+PTHREADS	= yes

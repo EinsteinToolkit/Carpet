@@ -1,0 +1,7 @@
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIntegrateTest/interface.ccl,v 1.1 2004/09/01 17:47:53 schnetter Exp $
+
+implements: CarpetIntegrateTest
+
+inherits: Reduce Grid Driver
+
+CCTK_REAL integrand TYPE=GF TIMELEVELS=3

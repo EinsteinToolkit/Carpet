@@ -1,0 +1,105 @@
+--------------------------------------------------------------------------------
+       10                                  
+  1   0101       ************************  
+  01  1010 10      The Cactus Code V4.0    
+ 1010 1101 011      www.cactuscode.org     
+  1001 100101    ************************  
+    00010101                               
+     100011     (c) Copyright The Authors  
+      0100      GNU Licensed. No Warranty  
+      0101                                 
+
+--------------------------------------------------------------------------------
+Activating thorn Cactus...Success -> active implementation Cactus
+Activating thorn Boundary...Success -> active implementation boundary
+Activating thorn IOBasic...Success -> active implementation IOBasic
+Activating thorn IOUtil...Success -> active implementation IO
+Activating thorn Time...Success -> active implementation time
+Activating thorn Cart3d...Success -> active implementation grid
+Activating thorn Carpet...Success -> active implementation driver
+Activating thorn CarpetIOASCII...Success -> active implementation IOASCII
+Activating thorn CarpetLib...Success -> active implementation CarpetLib
+Activating thorn IDScalarWave...Success -> active implementation idscalarwave
+Activating thorn WaveToyF77...Success -> active implementation wavetoy
+--------------------------------------------------------------------------------
+  Startup routines
+    Carpet: Startup routine
+    CarpetIOASCII: Startup routine
+    Cart3d: Register GH extension for Cartesian coordinates
+    IOUtil: Startup routine
+    IOBasic: Startup routine
+    WaveToyF77: Register banner
+
+  Parameter checking routines
+    Cart3d: Check coordinate and symmetry parameters
+    IDScalarWave: Check parameters
+
+  Initialisation
+    Cart3d: Set up 3d Cartesian coordinates
+    Time: Set timestep based on Courant condition
+    WaveToyF77: Schedule symmetries
+    IDScalarWave: Initial data for 3D wave equation
+
+  do loop over timesteps
+    WaveToyF77: Evolution of 3D wave equation
+    WaveToyF77: Boundaries of 3D wave equation
+    t = t+dt
+    if (analysis)
+    endif
+  enddo
+  Termination routines
+  Shutdown routines
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+AMR driver provided by Carpet
+--------------------------------------------------------------------------------
+AMR 1D ASCII I/O provided by CarpetIOASCII
+--------------------------------------------------------------------------------
+AMR 2D ASCII I/O provided by CarpetIOASCII
+--------------------------------------------------------------------------------
+AMR 3D ASCII I/O provided by CarpetIOASCII
+--------------------------------------------------------------------------------
+WaveToyF77: Evolutions of a Scalar Field
+--------------------------------------------------------------------------------
+
+dh bboxes:
+rl=0 c=0 ml=0
+exterior=([0,0,0]:[19,19,19]:[1,1,1])
+interior=([1,1,1]:[18,18,18]:[1,1,1])
+send_mg_fine=[]
+send_mg_coarse=[]
+recv_mg_fine=[]
+recv_mg_coarse=[]
+send_ref_fine=[]
+send_ref_coarse=[]
+recv_ref_fine=[]
+recv_ref_coarse=[]
+send_sync=[0:[]]
+send_ref_bnd_fine=[]
+boundaries={([0,0,0]:[0,19,19]:[1,1,1]),([1,0,0]:[18,0,19]:[1,1,1]),([19,0,0]:[19,19,19]:[1,1,1]),([1,1,0]:[18,18,0]:[1,1,1]),([1,19,0]:[18,19,19]:[1,1,1]),([1,1,19]:[18,18,19]:[1,1,1])}
+recv_sync=[0:[]]
+recv_ref_bnd_coarse=[]
+sync_not={([0,0,0]:[0,19,19]:[1,1,1]),([1,0,0]:[18,0,19]:[1,1,1]),([19,0,0]:[19,19,19]:[1,1,1]),([1,1,0]:[18,18,0]:[1,1,1]),([1,19,0]:[18,19,19]:[1,1,1]),([1,1,19]:[18,18,19]:[1,1,1])}
+
+dh bases:
+rl=0 ml=0
+exterior=([0,0,0]:[19,19,19]:[1,1,1])
+interior=([1,1,1]:[18,18,18]:[1,1,1])
+boundaries={([0,0,0]:[0,19,19]:[1,1,1]),([1,0,0]:[18,0,19]:[1,1,1]),([19,0,0]:[19,19,19]:[1,1,1]),([1,1,0]:[18,18,0]:[1,1,1]),([1,19,0]:[18,19,19]:[1,1,1]),([1,1,19]:[18,18,19]:[1,1,1])}
+----------------
+ it  |         |
+     |    t    |
+----------------
+   0 |    0.000|
+   1 |    0.053|
+   2 |    0.105|
+   3 |    0.158|
+   4 |    0.211|
+   5 |    0.263|
+   6 |    0.316|
+   7 |    0.368|
+   8 |    0.421|
+   9 |    0.474|
+  10 |    0.526|
+--------------------------------------------------------------------------------
+Done.

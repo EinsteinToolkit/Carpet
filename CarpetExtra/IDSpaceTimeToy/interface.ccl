@@ -1,0 +1,5 @@
+# Interface definition for thorn IDSpaceTimeToy
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDSpaceTimeToy/interface.ccl,v 1.2 2001/03/20 17:27:26 eschnett Exp $
+
+implements: idspacetimetoy
+inherits: spacetimetoy hydrotoy grid

@@ -1,0 +1,8 @@
+Cactus Code Thorn CarpetIOHDF5
+Authors    : Erik Schnetter <schnetter@aei.mpg.de>
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOHDF5/README,v 1.1 2004/03/03 09:44:59 schnetter Exp $
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+This thorn provides HDF5 based file I/O for Carpet.

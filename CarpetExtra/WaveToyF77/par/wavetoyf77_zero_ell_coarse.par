@@ -1,0 +1,44 @@
+# /*@@
+#   @file      wavetoyf77_rad.par
+#   @date      2001-03-06
+#   @author    Erik Schnetter
+#   @desc
+#   Wavetoy parameter file demonstrating radiation boundaries in octant mode
+#   @enddesc
+# @@*/
+#
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_zero_ell_coarse.par,v 1.3 2004/03/23 12:00:37 schnetter Exp $
+
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
+
+Cactus::cctk_itlast		= 60
+ 
+Time::dtfac			= 0.5
+
+driver::global_nx		= 17
+driver::global_ny		= 23
+driver::global_nz		= 31
+
+Carpet::base_extents		= "[ ([1,1,1]:[15,21,14]:[1,1,1]), ([1,1,18]:[15,21,29]:[1,1,1]) ]"
+Carpet::base_bboxes		= "[ [[1,1],[1,1],[1,1]], [[1,1],[1,1],[1,1]] ]"
+
+grid::type			= byspacing
+grid::dxyz			= 0.6
+grid::avoid_origin		= no
+
+IO::out_dir			= "wavetoyf77_zero_ell_coarse"
+
+IOBasic::outinfo_every		= 1
+IOBasic::outinfo_vars		= "wavetoy::phi"
+
+IOBasic::outScalar_every	= 2
+IOBasic::outScalar_vars		= "wavetoy::phi"
+
+IOASCII::out1D_every		= 1
+IOASCII::out1D_vars		= "wavetoy::phi grid::coordinates"
+
+WaveToyF77::bound		= zero # radiation
+
+IDScalarWave::initial_data	= gaussian
+IDScalarWave::sigma		= 2.8
+IDScalarWave::radius		= 0

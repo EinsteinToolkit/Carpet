@@ -1,0 +1,34 @@
+# CART3DTEST::txz y (txz)
+#
+# iteration 0
+# time level 0   refinement level 0   component 0   multigrid level 0
+# column format: it tl rl c ml x y z data
+0 0 0 0 0 0 0 5 23000005
+0 0 0 0 0 0 1 5 23000105
+0 0 0 0 0 0 2 5 23000205
+0 0 0 0 0 0 3 5 23000305
+0 0 0 0 0 0 4 5 23000405
+0 0 0 0 0 0 5 5 23000505
+0 0 0 0 0 0 6 5 23000605
+0 0 0 0 0 0 7 5 23000705
+0 0 0 0 0 0 8 5 23000805
+0 0 0 0 0 0 9 5 23000905
+
+
+
+# iteration 1
+# time level 0   refinement level 0   component 0   multigrid level 0
+# column format: it tl rl c ml x y z data
+1 0 0 0 0 0 0 5 23000105
+1 0 0 0 0 0 1 5 23000105
+1 0 0 0 0 0 2 5 23000205
+1 0 0 0 0 0 3 5 23000305
+1 0 0 0 0 0 4 5 23000405
+1 0 0 0 0 0 5 5 23000505
+1 0 0 0 0 0 6 5 23000605
+1 0 0 0 0 0 7 5 23000705
+1 0 0 0 0 0 8 5 23000805
+1 0 0 0 0 0 9 5 23000905
+
+
+

@@ -1,0 +1,91 @@
+# Parameter definitions for thorn CarpetIOFlexIO
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/param.ccl,v 1.9 2004/02/07 16:21:40 schnetter Exp $
+
+
+
+shares: IO
+
+USES STRING out_dir
+
+USES CCTK_INT out_every
+
+
+
+private:
+
+
+
+BOOLEAN verbose "Produce log output"
+{
+} "no"
+
+
+
+CCTK_STRING out3D_dir "Name of 3D FlexIO output directory, overrides out_dir" STEERABLE = ALWAYS
+{
+  .* :: "A regex which matches everything"
+} "."
+
+CCTK_STRING out3D_vars "Variables to output in 3D FlexIO file format" STEERABLE = ALWAYS
+{
+  .* :: "A regex which matches everything"
+} ""
+
+KEYWORD out3D_format "File format to use for 3D FlexIO output" STEERABLE = ALWAYS
+{
+  "IEEE" :: "IEEE, readable by the FlexIO library"
+  "HDF4" :: "The old HDF format"
+  "HDF5" :: "The new HDF format"
+} "HDF5"
+
+CCTK_STRING out3D_extension "File extension to use for 3D FlexIO output" STEERABLE = ALWAYS
+{
+  .* :: "A regex which matches everything"
+} ""
+
+CCTK_INT out3D_every "How often to do 3D FlexIO output, overrides out_every" STEERABLE = ALWAYS
+{
+  -1:* :: "Values <= 0 disable 3D output"
+} -1
+
+
+
+CCTK_INT out3D_max_num_lower_ghosts "Maximum number of lower ghost zones that are output" STEERABLE = ALWAYS
+{
+  -1  :: "output all ghost zones"
+  0:* :: "output that many ghost zones"
+} -1
+
+CCTK_INT out3D_max_num_upper_ghosts "Maximum number of upper ghost zones that are output" STEERABLE = ALWAYS
+{
+  -1  :: "output all ghost zones"
+  0:* :: "output that many ghost zones"
+} -1
+
+BOOLEAN out3D_output_outer_boundary "Output all of the outer boundary ghost zones even if not all ghost zones are output" STEERABLE = ALWAYS
+{
+} "yes"
+
+
+
+CCTK_STRING in3D_dir "Name of 3D FlexIO input directory" STEERABLE = ALWAYS
+{
+  .* :: "A regex which matches everything"
+} "."
+
+CCTK_STRING in3D_vars "Variables to input in 3D FlexIO file format" STEERABLE = ALWAYS
+{
+  .* :: "A regex which matches everything"
+} ""
+
+KEYWORD in3D_format "File format to use for 3D FlexIO input" STEERABLE = ALWAYS
+{
+  "IEEE" :: "IEEE, readable by the FlexIO library"
+  "HDF4" :: "The old HDF format"
+  "HDF5" :: "The new HDF format"
+} "HDF5"
+
+CCTK_STRING in3D_extension "File extension to use for 3D FlexIO input" STEERABLE = ALWAYS
+{
+  .* :: "A regex which matches everything"
+} ""

@@ -1,0 +1,8 @@
+# Main make.code.defn file for thorn CarpetRegridTest
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetRegridTest/src/make.code.defn,v 1.1 2004/05/23 15:56:14 cott Exp $
+
+# Source files in this directory
+SRCS = Startup.c SetupGaussian.c TestGaussian.c
+
+# Subdirectories containing source files
+SUBDIRS = 

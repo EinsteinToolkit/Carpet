@@ -1,0 +1,27 @@
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-hawaii-sgi,v 1.2 2002/05/05 22:16:56 schnetter Exp $
+
+CPP			= /lib/cpp -DMPIPP_H
+
+CXXFLAGS		= -LANG:std -LANG:vla=ON -FE:eliminate_duplicate_inline_copies -FE:template_in_elf_section -64 -mips4 -r12000 -no_auto_include -ptused -DMPIPP_H
+LDFLAGS			= -LANG:std -LANG:vla=ON -64 -mips4 -r12000 -Wl,"-woff 84","-woff 85"
+
+C_OPTIMISE_FLAGS	= -O3 -INLINE -LNO -OPT:Olimit=100000
+CXX_OPTIMISE_FLAGS	= -O3 -INLINE -LNO -OPT:Olimit=100000
+F77_OPTIMISE_FLAGS	= -O3 -INLINE -LNO -OPT:Olimit=100000
+F90_OPTIMISE_FLAGS	= -O3 -INLINE -LNO -OPT:Olimit=100000
+
+C_DEBUG_FLAGS		= -g3
+CXX_DEBUG_FLAGS		= -g3
+F77_DEBUG_FLAGS		= -g3
+F90_DEBUG_FLAGS		= -g3
+
+SYS_INC_DIRS		= /usr/center/maui/eriks/include /usr/center/maui/eriks/FlexIO
+LIBDIRS			= /usr/center/maui/eriks/lib /usr/center/maui/eriks/FlexIO
+LIBS			= AMR h5io hdfio hlio ieeeio  hdf5 mfhdf df jpeg z
+
+HDF5			= yes
+HDF5_DIR		= /usr/center/maui/eriks
+MPI			= NATIVE
+
+OPTIMISE		= yes
+DEBUG			= yes

@@ -1,0 +1,12 @@
+# CARPETTEST::arr3 z (arr3)
+#
+# iteration 0
+# time level 0   refinement level 0   component 0   multigrid level 0
+# column format: it tl rl c ml x y z data
+0 0 0 0 0 0 0 0 10101
+0 0 0 0 0 0 0 1 10102
+0 0 0 0 0 0 0 2 10103
+0 0 0 0 0 0 0 3 10104
+0 0 0 0 0 0 0 4 10105
+
+

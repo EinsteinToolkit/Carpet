@@ -1,0 +1,10 @@
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveExpl/README,v 1.1 2003/06/18 18:24:29 schnetter Exp $
+
+Cactus Code Thorn IDScalarWaveExpl
+Thorn Author(s)     : Erik Schnetter <schnetter@uni-tuebingen.de>
+Thorn Maintainer(s) : Erik Schnetter <schnetter@uni-tuebingen.de>
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+Create initial data for WaveToyExpl.

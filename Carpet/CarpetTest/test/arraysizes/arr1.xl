@@ -1,0 +1,15 @@
+# CARPETTEST::arr1 x (arr1)
+#
+# iteration 0
+# time level 0   refinement level 0   component 0   multigrid level 0
+# column format: it tl rl c ml x y z data
+0 0 0 0 0 0 0 0 1
+0 0 0 0 0 1 0 0 2
+0 0 0 0 0 2 0 0 3
+0 0 0 0 0 3 0 0 4
+0 0 0 0 0 4 0 0 5
+0 0 0 0 0 5 0 0 6
+0 0 0 0 0 6 0 0 7
+0 0 0 0 0 7 0 0 8
+
+

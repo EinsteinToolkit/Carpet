@@ -1,0 +1,9 @@
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetRegridTest/README,v 1.1 2004/05/23 15:56:14 cott Exp $
+
+Cactus Code Thorn CarpetRegridTest
+Thorn Author(s)     : Christian D. Ott <cott@aei.mpg.de>
+Thorn Maintainer(s) : Christian D. Ott <cott@aei.mpg.de>
+--------------------------------------------------------------------------
+
+Purpose of the thorn: This thorn tries to test Carpet Progressive Meshrefinement
+

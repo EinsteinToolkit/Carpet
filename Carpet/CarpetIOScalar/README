@@ -1,0 +1,10 @@
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/README,v 1.1 2004/06/11 17:41:51 schnetter Exp $
+
+Cactus Code Thorn CarpetIOScalar
+Thorn Author(s)     : Erik Schnetter <schnetter@aei.mpg.de>
+Thorn Maintainer(s) : Erik Schnetter <schnetter@aei.mpg.de>
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+This thorn provides scalar output for Carpet.

@@ -1,0 +1,14 @@
+# Interface definition for thorn Cart3dTest
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/interface.ccl,v 1.1 2001/03/01 15:49:27 eschnett Exp $
+
+implements: Cart3dTest
+inherits: grid
+
+CCTK_REAL quantities type=GF
+{
+  s,
+  vx, vy, vz,
+  fxx, fxy, fxz, fyx, fyy, fyz, fzx, fzy, fzz,
+  txx, txy, txz, tyy, tyz, tzz,
+  ax, ay, az
+} "Some tensor quantities"

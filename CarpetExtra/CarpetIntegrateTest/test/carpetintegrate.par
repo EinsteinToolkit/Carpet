@@ -1,0 +1,90 @@
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/CarpetIntegrateTest/test/carpetintegrate.par,v 1.1 2004/09/01 17:47:53 schnetter Exp $
+
+#==============================================================================
+# --- Test file for Carpet integration ---
+#==============================================================================
+
+
+#==============================================================================
+# Thorn activation
+#==============================================================================
+
+ActiveThorns = "time carpet carpetlib carpetregrid carpetreduce carpetslab carpetinterp cartgrid3d coordbase symbase boundary iobasic carpetioascii carpetioscalar ioutil carpetiohdf5 carpetintegratetest"
+
+#==============================================================================
+# Directories and recovery
+#==============================================================================
+
+io::out_dir				=	$parfile
+
+#==============================================================================
+# Time
+#==============================================================================
+
+# cactus::terminate			=	"never"
+cactus::cctk_itlast			=	0
+
+time::dtfac              		= 	0.375             
+
+#==============================================================================
+# Grid setup
+#==============================================================================
+
+grid::type                    = "coordbase"
+grid::domain                  = "bitant"
+grid::avoid_origin            = "no"
+
+carpet::domain_from_coordbase = yes
+driver::ghost_size            = 3
+
+coordbase::domainsize = minmax
+coordbase::xmin = -0.5
+coordbase::xmax =  0.5
+coordbase::ymin = -0.5
+coordbase::ymax =  0.5
+coordbase::zmin = -0.0
+coordbase::zmax =  0.5
+
+coordbase::spacing = numcells
+coordbase::ncells_x = 45
+coordbase::ncells_y = 45
+coordbase::ncells_z = 23
+
+coordbase::boundary_size_z_lower     = 3
+coordbase::boundary_shiftout_z_lower = 1
+
+carpet::buffer_width          =  6
+
+carpet::max_refinement_levels   = 12
+carpetregrid::refinement_levels = 3
+
+carpetregrid::refined_regions = "manual-gridpoint-list"
+carpetregrid::gridpoints      = "[ [ ([22528,22528,3072]:[67584,67584,28672]:[1024,1024,1024]) ], [ ([33792,33792,4608]:[56320,56320,17408]:[512,512,512]) ], [ ([39424,39424,5376]:[50688,50688,11776]:[256,256,256]) ], [ ([42240,42240,5760]:[47872,47872,8960]:[128,128,128]) ], [ ([43648,43648,5952]:[46464,46464,7552]:[64,64,64]) ], [ ([44352,44352,6048]:[45760,45760,6848]:[32,32,32]) ], [ ([44704,44704,6096]:[45408,45408,6496]:[16,16,16]) ], [ ([44880,44880,6120]:[45232,45232,6320]:[8,8,8]) ], [ ([44968,44968,6132]:[45144,45144,6232]:[4,4,4]) ], [ ([45012,45012,6138]:[45100,45100,6188]:[2,2,2]) ], [ ([45034,45034,6141]:[45078,45078,6166]:[1,1,1]) ] ]"
+carpetregrid::outerbounds     = "[ [ [[0,0],[0,0],[1,0]] ], [ [[0,0],[0,0],[1,0]] ], [ [[0,0],[0,0],[1,0]] ], [ [[0,0],[0,0],[1,0]] ], [ [[0,0],[0,0],[1,0]] ], [ [[0,0],[0,0],[1,0]] ], [ [[0,0],[0,0],[1,0]] ], [ [[0,0],[0,0],[1,0]] ], [ [[0,0],[0,0],[1,0]] ], [ [[0,0],[0,0],[1,0]] ], [ [[0,0],[0,0],[1,0]] ] ]"
+
+#==============================================================================
+# Carpet parameters
+#==============================================================================
+
+carpet::init_3_timelevels                = 	yes
+Carpet::prolongation_order_space	 =	3
+Carpet::prolongation_order_time		 =	2
+carpetlib::save_memory_during_regridding = 	yes
+iohdf5::use_reflevels_from_checkpoint	 =	no
+
+#==============================================================================
+# Output: Scalar and 1D
+#==============================================================================
+
+iobasic::outinfo_every   		= 	1
+
+carpetioscalar::outscalar_every		=	1
+
+ioascii::out1d_every			=	1
+ioascii::out1d_criterion		=	"divisor"
+
+iobasic::outinfo_vars = "carpetreduce::weight carpetintegrate::integrand"
+
+carpetioscalar::outscalar_vars	= "carpetreduce::weight carpetintegrate::integrand"
+
+ioascii::out1d_vars = "carpetreduce::weight carpetintegrate::integrand"

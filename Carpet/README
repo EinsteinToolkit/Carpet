@@ -1,0 +1,11 @@
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/Carpet/README,v 1.9 2003/12/19 11:43:52 schnetter Exp $
+
+Cactus Code Arrangement Carpet
+Arrangement Author(s)     : Erik Schnetter <schnetter@aei.mpg.de>
+Arrangement Maintainer(s) : Erik Schnetter <schnetter@aei.mpg.de>
+--------------------------------------------------------------------------
+
+Purpose of the arrangement:
+
+This arrangement provides a parallel AMR (adaptive mesh refinement)
+driver with MPI.  See http://www.carpetcode.org/ for more information.

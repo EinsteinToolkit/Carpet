@@ -1,0 +1,11 @@
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/CarpetDev/CarpetJacobi/README,v 1.1 2003/09/02 14:35:57 schnetter Exp $
+
+Cactus Code Thorn CarpetJacobi
+Thorn Author(s)     : Erik Schnetter <schnetter@uni-tuebingen.de>
+Thorn Maintainer(s) : Erik Schnetter <schnetter@uni-tuebingen.de>
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+Solve an elliptic equation using Jacobi iterations with varying step
+size.

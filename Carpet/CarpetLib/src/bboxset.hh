@@ -1,0 +1,156 @@
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.hh,v 1.11 2003/09/19 16:06:41 schnetter Exp $
+
+#ifndef BBOXSET_HH
+#define BBOXSET_HH
+
+#include <assert.h>
+
+#include <iostream>
+#include <set>
+
+#include "bbox.hh"
+#include "defs.hh"
+#include "vect.hh"
+
+using namespace std;
+
+
+
+// Forward declaration
+template<class T, int D> class bboxset;
+
+// template<class T,int D>
+// bboxset<T,D> operator+ (const bbox<T,D>& b1, const bbox<T,D>& b2);
+// template<class T,int D>
+// bboxset<T,D> operator+ (const bbox<T,D>& b, const bboxset<T,D>& s);
+
+// template<class T,int D>
+// bboxset<T,D> operator- (const bbox<T,D>& b1, const bbox<T,D>& b2);
+// template<class T,int D>
+// bboxset<T,D> operator- (const bbox<T,D>& b, const bboxset<T,D>& s);
+
+// Output
+template<class T,int D>
+ostream& operator<< (ostream& os, const bboxset<T,D>& s);
+
+
+
+// Bounding box class
+template<class T, int D>
+class bboxset {
+  
+  // Types
+  typedef bbox<T,D> box;
+  typedef set<box> bset;
+  
+  // Fields
+  bset bs;
+  // Invariant:
+  // All bboxes have the same stride.
+  // No bbox is empty.
+  // The bboxes don't overlap.
+  
+public:
+  
+  // Constructors
+  bboxset ();
+  bboxset (const box& b);
+  bboxset (const bboxset& s);
+  bboxset (const bset& bs);
+  
+  // Invariant
+  bool invariant () const;
+  
+  // Normalisation
+  void normalize ();
+  
+  // Accessors
+  bool empty () const { return bs.empty(); }
+  T size () const;
+  int setsize () const { return bs.size(); }
+  
+  // Add (bboxes that don't overlap)
+  bboxset& operator+= (const box& b);
+  bboxset& operator+= (const bboxset& s);
+  bboxset operator+ (const box& b) const;
+  bboxset operator+ (const bboxset& s) const;
+  static bboxset plus (const box& b1, const box& b2);
+  static bboxset plus (const box& b, const bboxset& s);
+  
+  // Union
+  bboxset& operator|= (const box& b);
+  bboxset& operator|= (const bboxset& s);
+  bboxset operator| (const box& b) const;
+  bboxset operator| (const bboxset& s) const;
+  
+  // Intersection
+  bboxset operator& (const box& b) const;
+  bboxset operator& (const bboxset& s) const;
+  bboxset& operator&= (const box& b);
+  bboxset& operator&= (const bboxset& s);
+  
+  // Difference
+  // friend bboxset operator- <T,D>(const box& b1, const box& b2);
+  static bboxset minus (const box& b1, const box& b2);
+  bboxset operator- (const box& b) const;
+  bboxset& operator-= (const box& b);
+  bboxset& operator-= (const bboxset& s);
+  bboxset operator- (const bboxset& s) const;
+  // friend bboxset operator- <T,D>(const box& b, const bboxset& s);
+  static bboxset minus (const box& b, const bboxset& s);
+  
+  // Equality
+  bool operator== (const bboxset& s) const;
+  bool operator!= (const bboxset& s) const;
+  bool operator< (const bboxset& s) const;
+  bool operator<= (const bboxset& s) const;
+  bool operator> (const bboxset& s) const;
+  bool operator>= (const bboxset& s) const;
+  
+  // Iterators
+  typedef typename bset::const_iterator const_iterator;
+  typedef typename bset::iterator       iterator;
+  
+  const_iterator begin () const { return bs.begin(); }
+  const_iterator end () const   { return bs.end(); }
+//   iterator begin () const { return bs.begin(); }
+//   iterator end () const   { return bs.end(); }
+  
+  // Output
+  void output (ostream& os) const;
+};
+
+
+
+template<class T,int D>
+inline bboxset<T,D> operator+ (const bbox<T,D>& b1, const bbox<T,D>& b2) {
+  return bboxset<T,D>::plus(b1,b2);
+}
+
+template<class T,int D>
+inline bboxset<T,D> operator+ (const bbox<T,D>& b, const bboxset<T,D>& s) {
+  return bboxset<T,D>::plus(b,s);
+}
+
+template<class T,int D>
+inline bboxset<T,D> operator- (const bbox<T,D>& b1, const bbox<T,D>& b2) {
+  return bboxset<T,D>::minus(b1,b2);
+}
+
+template<class T,int D>
+inline bboxset<T,D> operator- (const bbox<T,D>& b, const bboxset<T,D>& s) {
+  return bboxset<T,D>::minus(b,s);
+}
+
+
+
+// Output
+template<class T,int D>
+inline ostream& operator<< (ostream& os, const bboxset<T,D>& s) {
+  s.output(os);
+  return os;
+}
+
+
+
+#endif // BBOXSET_HH

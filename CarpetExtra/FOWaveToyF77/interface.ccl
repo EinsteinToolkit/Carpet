@@ -1,0 +1,27 @@
+# Interface definition for thorn WaveToyF77
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/interface.ccl,v 1.10 2004/05/21 17:43:57 schnetter Exp $
+
+implements: FOwavetoy
+inherits: grid idfoscalarwave
+
+USES INCLUDE: Symmetry.h
+
+public:
+
+CCTK_REAL scalarevolve type=GF timelevels=3
+{
+  phi
+} "The evolved scalar field phi" 
+
+CCTK_REAL scalarevolve_derivs type=GF timelevels=3
+{
+  pi,
+  phix,
+  phiy,
+  phiz,
+} "Time and space derivatives of phi"
+
+CCTK_INT FUNCTION Boundary_SelectGroupForBC(CCTK_POINTER_TO_CONST IN GH, \
+  CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, \
+  CCTK_STRING IN group_name, CCTK_STRING IN bc_name)
+REQUIRES FUNCTION Boundary_SelectGroupForBC

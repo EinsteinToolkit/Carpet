@@ -1,0 +1,7 @@
+Cactus Code Thorn IDScalarWave
+Authors    : Tom Goodale, Gabrielle Allen
+CVS info   : $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/README,v 1.1 2001/03/01 13:40:10 eschnett Exp $
+--------------------------------------------------------------------------
+
+This thorns sets initial data for the scalar wave equation evolver
+

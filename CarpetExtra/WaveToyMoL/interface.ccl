@@ -1,0 +1,42 @@
+# Interface definition for thorn WaveToyMoL
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyMoL/interface.ccl,v 1.4 2004/05/21 17:43:57 schnetter Exp $
+
+IMPLEMENTS: WaveToyMoL
+
+INHERITS: grid
+
+
+
+CCTK_INT FUNCTION Boundary_SelectGroupForBC(CCTK_POINTER_TO_CONST IN GH, \
+  CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, \
+  CCTK_STRING IN group_name, CCTK_STRING IN bc_name)
+
+REQUIRES FUNCTION Boundary_SelectGroupForBC
+
+
+
+CCTK_INT FUNCTION MoLRegisterEvolvedGroup(CCTK_INT IN EvolvedIndex, \
+                                          CCTK_INT IN RHSIndex)
+
+REQUIRES FUNCTION MoLRegisterEvolvedGroup
+
+
+
+PUBLIC:
+
+CCTK_REAL scalarevolve TYPE=gf TIMELEVELS=3
+{
+  phi psi
+} "Scalar field"
+
+PRIVATE:
+
+CCTK_REAL scalarevolvedot TYPE=gf
+{
+  phidot psidot
+} "Time derivative of the scalar field"
+
+CCTK_REAL scalarevolveerrorestimate TYPE=gf
+{
+  error
+} "Error estimate"

@@ -1,0 +1,8 @@
+# CARPETTEST::sc x (sc)
+#
+# iteration 0
+# time level 0   refinement level 0   component 0   multigrid level 0
+# column format: it tl rl c ml x y z data
+0 0 0 0 0 0 0 0 42
+
+

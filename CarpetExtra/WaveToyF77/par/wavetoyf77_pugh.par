@@ -1,0 +1,35 @@
+ActiveThorns = "boundary iobasic idscalarwave time wavetoyf77 pugh pughslab pughreduce cartgrid3d ioutil ioascii ioflexio flexio"
+ 
+time::dtfac = 0.5
+
+idscalarwave::initial_data = "gaussian"
+idscalarwave::sigma = 2.8
+idscalarwave::radius = 0
+
+wavetoyf77::bound = "radiation"
+
+grid::type = "BySpacing"
+grid::domain = "octant"
+grid::dxyz = 0.3
+
+driver::global_nx = 30
+driver::global_ny = 30
+driver::global_nz = 30
+
+cactus::cctk_itlast = 120
+
+IOBasic::outScalar_every = 2
+IOBasic::outScalar_vars = "wavetoy::phi"
+
+IOASCII::out1D_every = 2
+IOASCII::out1D_z = "no"
+IOASCII::out1D_y = "no"
+IOASCII::out1D_vars = "wavetoy::phi"
+
+IOBasic::outinfo_every = 10
+IOBasic::outinfo_vars = "wavetoy::phi"
+
+IOFlexIO::out3D_every = 1
+IOFlexIO::out3D_vars = "wavetoy::phi"
+ 
+IO::out_dir = "wavetoyf77_pugh"

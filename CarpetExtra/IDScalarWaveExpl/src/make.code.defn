@@ -1,0 +1,9 @@
+# Main make.code.defn file for thorn IDScalarWaveExpl
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWaveExpl/src/make.code.defn,v 1.1 2003/06/18 18:24:29 schnetter Exp $
+
+# Source files in this directory
+SRCS = initialdata.F77
+
+# Subdirectories containing source files
+SUBDIRS = 
+

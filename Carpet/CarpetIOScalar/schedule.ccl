@@ -1,0 +1,16 @@
+# Schedule definitions for thorn CarpetIOScalar
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOScalar/schedule.ccl,v 1.2 2004/06/21 16:07:41 schnetter Exp $
+
+storage: last_output_iteration last_output_time this_iteration
+
+schedule CarpetIOScalarStartup at STARTUP after IOUtil_Startup
+{
+  LANG: C
+  OPTIONS: global
+} "Startup routine"
+
+schedule CarpetIOScalarInit at BASEGRID
+{
+  LANG: C
+  OPTIONS: global
+} "Initialisation routine"

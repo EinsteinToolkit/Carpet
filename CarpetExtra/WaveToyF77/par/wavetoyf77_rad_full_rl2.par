@@ -1,0 +1,45 @@
+# /*@@
+#   @file      wavetoyf77_rad.par
+#   @date      2001-03-06
+#   @author    Erik Schnetter
+#   @desc
+#   Wavetoy parameter file demonstrating radiation boundaries in octant mode
+#   @enddesc
+# @@*/
+#
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/par/wavetoyf77_rad_full_rl2.par,v 1.5 2004/03/23 12:00:37 schnetter Exp $
+
+ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetReduce CarpetRegrid CarpetSlab IDScalarWave WaveToyF77"
+
+Cactus::cctk_itlast		= 120
+ 
+Time::dtfac			= 0.5
+
+driver::global_nx		= 33
+driver::global_ny		= 45
+driver::global_nz		= 61
+
+Carpet::max_refinement_levels	= 2
+
+CarpetRegrid::refinement_levels	= 2
+
+grid::type			= byspacing
+grid::dxyz			= 0.3
+grid::avoid_origin		= no
+
+IO::out_dir			= "wavetoyf77_rad_full_rl2"
+
+IOBasic::outinfo_every		= 1
+IOBasic::outinfo_vars		= "wavetoy::phi"
+
+IOBasic::outScalar_every	= 2
+IOBasic::outScalar_vars		= "wavetoy::phi"
+
+IOASCII::out1D_every		= 1
+IOASCII::out1D_vars		= "wavetoy::phi grid::coordinates"
+
+WaveToyF77::bound		= radiation
+
+IDScalarWave::initial_data	= gaussian
+IDScalarWave::sigma		= 2.8
+IDScalarWave::radius		= 0

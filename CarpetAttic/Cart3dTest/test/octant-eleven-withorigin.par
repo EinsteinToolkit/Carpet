@@ -1,0 +1,23 @@
+# Check Cartesian coordinates and symmetries
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/test/octant-eleven-withorigin.par,v 1.3 2004/03/23 11:59:46 schnetter Exp $
+
+ActiveThorns = "CarpetIOASCII IOBasic IOUtil Carpet CarpetLib CarpetSlab Cart3d Cart3dTest"
+
+cactus::cctk_itlast = 1
+
+grid::type = "byspacing"
+grid::mode = "octant"
+
+grid::avoid_origin = "no"
+
+driver::global_nx = 11
+driver::global_ny = 11
+driver::global_nz = 11
+
+driver::ghost_size_x = 0
+driver::ghost_size_y = 1
+driver::ghost_size_z = 2
+
+IO::out_dir = "octant-eleven-withorigin"
+IOASCII::out1D_vars = "grid::coordinates Cart3dTest::quantities"
+IOASCII::out1D_every = 1

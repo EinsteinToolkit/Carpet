@@ -1,0 +1,22 @@
+# Interface definition for thorn CarpetIOASCII
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/interface.ccl,v 1.14 2004/06/21 16:07:19 schnetter Exp $
+
+IMPLEMENTS: IOASCII
+
+uses include header: carpet.hh
+
+uses include header: dist.hh
+
+uses include header: vect.hh
+
+uses include header: data.hh
+uses include header: gdata.hh
+
+uses include header: gf.hh
+uses include header: ggf.hh
+
+
+
+CCTK_INT last_output_iteration[4] TYPE=scalar
+CCTK_REAL last_output_time[4] TYPE=scalar
+CCTK_INT this_iteration[4] TYPE=scalar

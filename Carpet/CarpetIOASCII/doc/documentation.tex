@@ -1,0 +1,154 @@
+% *======================================================================*
+%  Cactus Thorn template for ThornGuide documentation
+%  Author: Ian Kelley
+%  Date: Sun Jun 02, 2002
+%  $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/doc/documentation.tex,v 1.1 2002/10/16 12:36:05 schnetter Exp $                                                             
+%
+%  Thorn documentation in the latex file doc/documentation.tex 
+%  will be included in ThornGuides built with the Cactus make system.
+%  The scripts employed by the make system automatically include 
+%  pages about variables, parameters and scheduling parsed from the 
+%  relevent thorn CCL files.
+%  
+%  This template contains guidelines which help to assure that your     
+%  documentation will be correctly added to ThornGuides. More 
+%  information is available in the Cactus UsersGuide.
+%                                                    
+%  Guidelines:
+%   - Do not change anything before the line
+%       % STARTx CACTUS THORNGUIDE",
+%     except for filling in the title, author, date etc. fields.
+%        - Each of these fields should only be on ONE line.
+%        - Author names should be sparated with a \\ or a comma
+%   - You can define your own macros are OK, but they must appear after
+%     the STARTx CACTUS THORNGUIDE line, and do not redefine standard 
+%     latex commands.
+%   - To avoid name clashes with other thorns, 'labels', 'citations', 
+%     'references', and 'image' names should conform to the following 
+%     convention:          
+%       ARRANGEMENT_THORN_LABEL
+%     For example, an image wave.eps in the arrangement CactusWave and 
+%     thorn WaveToyC should be renamed to CactusWave_WaveToyC_wave.eps
+%   - Graphics should only be included using the graphix package. 
+%     More specifically, with the "includegraphics" command. Do
+%     not specify any graphic file extensions in your .tex file. This 
+%     will allow us (later) to create a PDF version of the ThornGuide
+%     via pdflatex. |
+%   - References should be included with the latex "bibitem" command. 
+%   - use \begin{abstract}...\end{abstract} instead of \abstract{...}
+%   - For the benefit of our Perl scripts, and for future extensions, 
+%     please use simple latex.     
+%
+% *======================================================================* 
+% 
+% Example of including a graphic image:
+%    \begin{figure}[ht]
+%       \begin{center}
+%          \includegraphics[width=6cm]{MyArrangement_MyThorn_MyFigure}
+%       \end{center}
+%       \caption{Illustration of this and that}
+%       \label{MyArrangement_MyThorn_MyLabel}
+%    \end{figure}
+%
+% Example of using a label:
+%   \label{MyArrangement_MyThorn_MyLabel}
+%
+% Example of a citation:
+%    \cite{MyArrangement_MyThorn_Author99}
+%
+% Example of including a reference
+%   \bibitem{MyArrangement_MyThorn_Author99}
+%   {J. Author, {\em The Title of the Book, Journal, or periodical}, 1 (1999), 
+%   1--16. {\tt http://www.nowhere.com/}}
+%
+% *======================================================================* 
+
+% If you are using CVS use this line to give version information
+% $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/doc/documentation.tex,v 1.1 2002/10/16 12:36:05 schnetter Exp $
+
+\documentclass{article}
+
+% Use the Cactus ThornGuide style file
+% (Automatically used from Cactus distribution, if you have a 
+%  thorn without the Cactus Flesh download this from the Cactus
+%  homepage at www.cactuscode.org)
+\usepackage{../../../../doc/ThornGuide/cactus}
+
+\begin{document}
+
+% The author of the documentation
+\author{Erik Schnetter} 
+
+% The title of the document (not necessarily the name of the Thorn)
+\title{CarpetIOASCII}
+
+% the date your document was last changed, if your document is in CVS, 
+% please use:
+\date{$ $Date: 2002/10/16 12:36:05 $ $}
+%\date{}
+
+\maketitle
+
+% Do not delete next line
+% START CACTUS THORNGUIDE
+
+% Add all definitions used in this documentation here 
+%   \def\mydef etc
+
+% Add an abstract for this thorn's documentation
+\begin{abstract}
+  This thorn reproduces thorn IOASCII from arrangement CactusBase but
+  is specifically for the driver thorn Carpet.
+\end{abstract}
+
+% The following sections are suggestive only.
+% Remove them or add your own.
+
+\section{Introduction}
+
+This thorn provides ASCII output of data in 1, 2 or 3 dimensions. It
+reproduces most of the functionality of thorn IOASCII from the
+standard CactusBase arrangement. Where possible the names of
+parameters and their use is identical. For most purposes it should be
+sufficient to take a parameter file written for the standard IOASCII
+and just change the active thorn.
+
+However, this thorn outputs considerably more information than the
+standard IOASCII thorn. Information about, e.g., the refinement level
+and the index position of the output are also given. All the output
+can be visualized using gnuplot.
+
+\section{Utilities}
+\label{sec:utils}
+
+For those that prefer other visualization packages than gnuplot there
+are some utilities in the src/util directory. These are
+\begin{itemize}
+\item {\bf carpet2sdf} A program to convert to a format suitable for
+  the {\it ser} program written by M. Choptuik,
+\item {\bf carpet2xgraph} A program to convert to a format suitable
+  for the {\it xgraph} or {\it ygraph} packages of P. Walker and D.
+  Pollney,
+\item {\bf Carpet2ygraph.pl} A perl script to convert to a format
+  suitable for the {\it xgraph} or {\it ygraph} packages of P. Walker
+  and D. Pollney.
+\end{itemize}
+The first two, written by Scott Hawley, are C codes that require the
+Makefile (building using the -utils flag from the main Cactus
+directory currently does not work). Each output one refinement level,
+either to standard output or to a file.
+
+The last script writes all refinement levels from a given file in a
+given direction to a number of different files given a prefix
+filename, where the number in the output filename is given by the
+refinement level.
+
+
+\begin{thebibliography}{9}
+
+\end{thebibliography}
+
+% Do not delete next line
+% END CACTUS THORNGUIDE
+
+\end{document}

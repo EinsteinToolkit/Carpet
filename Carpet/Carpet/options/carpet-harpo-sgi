@@ -1,0 +1,31 @@
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-harpo-sgi,v 1.5 2002/06/07 20:44:03 schnetter Exp $
+
+CPP			= /lib/cpp -DMPIPP_H
+
+CFLAGS			= -mips4 -r12000 -64 -LANG:restrict=ON
+CXXFLAGS		= -mips4 -r12000 -64 -LANG:restrict=ON -LANG:std -LANG:vla=ON -no_auto_include -ptused -DMPIPP_H
+F90FLAGS		= -mips4 -r12000 -64
+F77FLAGS		= -mips4 -r12000 -64
+LDFLAGS			= -LANG:std -LANG:vla=ON -64 -mips4 -r12000 -Wl,"-woff 84","-woff 85"
+
+C_OPTIMISE_FLAGS	= -O3 -OPT:Olimit=0
+CXX_OPTIMISE_FLAGS	= -O3 -OPT:Olimit=0
+F77_OPTIMISE_FLAGS	= -O3 -OPT:Olimit=0
+F90_OPTIMISE_FLAGS	= -O3 -OPT:Olimit=0
+
+C_DEBUG_FLAGS		= -g3
+CXX_DEBUG_FLAGS		= -g3
+F77_DEBUG_FLAGS		= -g3
+F90_DEBUG_FLAGS		= -g3
+
+SYS_INC_DIRS		= /usr/local/hdf/include /u1/eschnett/FlexIO
+LIBDIRS			= /usr/local/hdf/lib /u1/eschnett/FlexIO
+LIBS			= AMR h5io hdfio hlio ieeeio   ffio fpe fortran ftn ftn90   hdf5 mfhdf df jpeg z
+
+HDF5			= yes
+HDF5_DIR		= /usr/local/hdf5_64
+
+MPI			= NATIVE
+
+OPTIMISE		= yes
+DEBUG			= yes

@@ -1,0 +1,46 @@
+# Parameter definitions for thorn IDHydroToy
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDHydroToy/param.ccl,v 1.2 2002/03/23 20:20:59 schnetter Exp $
+
+restricted:
+
+KEYWORD initial_data "Type of initial data"
+{
+  "plane"      :: "Plane wave"
+  "gaussian"   :: "Gaussian wave"
+  "box"        :: "Box wave"
+  "none"       :: "No initial data, zero phi"
+} "gaussian"
+
+private:
+
+## Parameter for initial wavepulses
+
+REAL radius "The radius of the gaussian wave"
+{
+ 0:*  :: "Positive"
+} 0.0
+
+REAL sigma "The sigma for the gaussian wave"
+{
+ 0:* :: "Positive"
+} 0.1
+
+REAL kx "The wave number in the x-direction"
+{
+ *:* :: "No restriction"
+} 4.0
+
+REAL ky "The wave number in the y-direction"
+{
+ *:* :: "No restriction"
+} 0.0
+
+REAL kz "The wave number in the z-direction"
+{
+ *:* :: "No restriction"
+} 0.0
+
+REAL amplitude "The amplitude of the waves"
+{
+  *:* :: "No restriction"
+} 1.0

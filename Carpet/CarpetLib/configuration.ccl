@@ -1,0 +1,8 @@
+# Configuration definitions for thorn CarpetLib
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/configuration.ccl,v 1.1 2004/04/18 14:09:59 schnetter Exp $
+
+PROVIDES CarpetLib
+{
+  SCRIPT
+  LANG
+}
