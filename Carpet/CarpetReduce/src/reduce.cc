@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.15 2003/04/12 12:09:26 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.16 2003/04/29 14:01:52 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -20,7 +20,7 @@
 #include "reduce.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.15 2003/04/12 12:09:26 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.16 2003/04/29 14:01:52 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetReduce_reduce_cc);
 }
 
@@ -57,6 +57,7 @@ namespace CarpetReduce {
   
   // count: count the number of grid points
   struct count : reduction {
+    count () { }
     ared thered () const { return do_count; }
     bool uses_cnt () const { return false; }
     template<class T>
@@ -69,6 +70,7 @@ namespace CarpetReduce {
   };
   
   struct minimum : reduction {
+    minimum () { }
     ared thered () const { return do_minimum; }
     bool uses_cnt () const { return false; }
     template<class T>
@@ -105,6 +107,7 @@ namespace CarpetReduce {
 #endif
   
   struct maximum : reduction {
+    maximum () { }
     ared thered () const { return do_maximum; }
     bool uses_cnt () const { return false; }
     template<class T>
@@ -141,6 +144,7 @@ namespace CarpetReduce {
 #endif
   
   struct product : reduction {
+    product () { }
     ared thered () const { return do_product; }
     bool uses_cnt () const { return false; }
     template<class T>
@@ -153,6 +157,7 @@ namespace CarpetReduce {
   };
   
   struct sum : reduction {
+    sum () { }
     ared thered () const { return do_sum; }
     bool uses_cnt () const { return false; }
     template<class T>
@@ -165,6 +170,7 @@ namespace CarpetReduce {
   };
   
   struct sum_abs : reduction {
+    sum_abs () { }
     ared thered () const { return do_sum_abs; }
     bool uses_cnt () const { return false; }
     template<class T>
@@ -177,6 +183,7 @@ namespace CarpetReduce {
   };
   
   struct sum_squared : reduction {
+    sum_squared () { }
     ared thered () const { return do_sum_squared; }
     bool uses_cnt () const { return false; }
     template<class T>
@@ -189,6 +196,7 @@ namespace CarpetReduce {
   };
   
   struct average : reduction {
+    average () { }
     ared thered () const { return do_average; }
     bool uses_cnt () const { return true; }
     template<class T>
@@ -201,6 +209,7 @@ namespace CarpetReduce {
   };
   
   struct norm1 : reduction {
+    norm1 () { }
     ared thered () const { return do_norm1; }
     bool uses_cnt () const { return true; }
     template<class T>
@@ -213,6 +222,7 @@ namespace CarpetReduce {
   };
   
   struct norm2 : reduction {
+    norm2 () { }
     ared thered () const { return do_norm2; }
     bool uses_cnt () const { return true; }
     template<class T>
@@ -232,6 +242,7 @@ namespace CarpetReduce {
   template<> inline void norm2::op<long long>    ::finalise (long long    & accum, const long long    & cnt) { accum = sqrt((double)accum / cnt); }
   
   struct norm_inf : reduction {
+    norm_inf () { }
     ared thered () const { return do_norm_inf; }
     bool uses_cnt () const { return false; }
     template<class T>
@@ -535,19 +546,19 @@ namespace CarpetReduce {
       assert (inarrays[n]);
     }
     
-    assert (dim>=0 && dim<=dim);
-    for (int d=0; d<dim; ++d) {
+    assert (num_dims>=0 && num_dims<=dim);
+    for (int d=0; d<num_dims; ++d) {
       assert (dims[d]>=0);
     }
     
     int mylsh[dim], mybbox[2*dim], mynghostzones[dim];
-    for (int d=0; d<dim; ++d) {
+    for (int d=0; d<num_dims; ++d) {
       mylsh[d] = dims[d];
       mybbox[2*d  ] = 0;
       mybbox[2*d+1] = 0;
       mynghostzones[d] = 0;
     }
-    for (int d=dim; d<dim; ++d) {
+    for (int d=num_dims; d<dim; ++d) {
       mylsh[d] = 1;
       mybbox[2*d  ] = 0;
       mybbox[2*d+1] = 0;
@@ -583,10 +594,12 @@ namespace CarpetReduce {
     int ierr;
     
     // global mode
-    if (component != -1) {
+    if (hh->local_components(reflevel) != 1 && component != -1) {
       CCTK_WARN (0, "It is not possible to use a grid variable reduction operator in local mode");
     }
-    assert (component == -1);
+    if (hh->local_components(reflevel) != 1) assert (component == -1);
+    int const saved_component = component;
+    component = -1;
     
     assert (cgh);
     
@@ -630,7 +643,7 @@ namespace CarpetReduce {
       assert (!ierr);
       ierr = CCTK_GroupnghostzonesVI(cgh, grpdim, nghostzones, vi);
       assert (!ierr);
-      for (int d=0; d<dim; ++d) {
+      for (int d=0; d<grpdim; ++d) {
 	assert (lsh[d]>=0);
 	assert (nghostzones[d]>=0 && 2*nghostzones[d]<=lsh[d]);
       }
@@ -647,13 +660,13 @@ namespace CarpetReduce {
       }
       
       int mylsh[dim], mybbox[2*dim], mynghostzones[dim];
-      for (int d=0; d<dim; ++d) {
+      for (int d=0; d<grpdim; ++d) {
 	mylsh[d] = lsh[d];
         mybbox[2*d  ] = bbox[2*d  ];
         mybbox[2*d+1] = bbox[2*d+1];
 	mynghostzones[d] = nghostzones[d];
       }
-      for (int d=dim; d<dim; ++d) {
+      for (int d=grpdim; d<dim; ++d) {
 	mylsh[d] = 1;
         mybbox[2*d  ] = 0;
         mybbox[2*d+1] = 0;
@@ -673,6 +686,8 @@ namespace CarpetReduce {
     
     delete [] myoutvals;
     delete [] mycounts;
+    
+    component = saved_component;
     
     return 0;
   }
