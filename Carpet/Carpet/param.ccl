@@ -1,5 +1,5 @@
 # Parameter definitions for thorn Carpet
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.8 2001/03/30 00:21:20 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/param.ccl,v 1.9 2001/04/23 08:10:11 schnetter Exp $
 
 shares: Cactus
 
@@ -83,6 +83,12 @@ CCTK_INT prolongation_order_time "Order of prolongation operator in time"
   1 :: "first order (linear)"
   2 :: "second order (quadratic)"
 } 1
+
+
+
+BOOLEAN enable_all_storage "Enable storage for all grid functions"
+{
+} "no"
 
 
 

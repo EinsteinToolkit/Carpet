@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.8 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.9 2001/04/23 08:10:15 schnetter Exp $
 
  ***************************************************************************/
 
@@ -276,9 +276,9 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
   vector<int> tls(tl2s.size());
   for (int i=0; i<(int)gsrcs.size(); ++i) {
     gsrcs[i] = storage[tl2s[i]-tmin][rl2][c2][ml2];
-    tls[i] = tl2s[i] * t.get_delta(rl2,ml2);
+    tls[i] = t.time(tl2s[i],rl2,ml2);
   }
-  const int tl = tl1 * t.get_delta(rl1,ml1);
+  const int tl = t.time(tl1,rl1,ml1);
   
   const ibbox recv = d.boxes[rl1][c1][ml1].*recv_list;
   const ibbox send = d.boxes[rl2][c2][ml2].*send_list;
@@ -312,9 +312,9 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
   vector<int> tls(tl2s.size());
   for (int i=0; i<(int)gsrcs.size(); ++i) {
     gsrcs[i] = storage[tl2s[i]-tmin][rl2][c2][ml2];
-    tls[i] = tl2s[i] * t.get_delta(rl2,ml2);
+    tls[i] = t.time(tl2s[i],rl2,ml2);
   }
-  const int tl = tl1 * t.get_delta(rl1,ml1);
+  const int tl = t.time(tl1,rl1,ml1);
   
   const iblist recv = d.boxes[rl1][c1][ml1].*recv_list;
   const iblist send = d.boxes[rl2][c2][ml2].*send_list;
@@ -353,9 +353,9 @@ void generic_gf<D>::intercat (int tl1, int rl1, int c1, int ml1,
     vector<int> tls(tl2s.size());
     for (int i=0; i<(int)gsrcs.size(); ++i) {
       gsrcs[i] = storage[tl2s[i]-tmin][rl2][c2][ml2];
-      tls[i] = tl2s[i] * t.get_delta(rl2,ml2);
+      tls[i] = t.time(tl2s[i],rl2,ml2);
     }
-    const int tl = tl1 * t.get_delta(rl1,ml1);
+    const int tl = t.time(tl1,rl1,ml1);
     
     const iblist recv = (d.boxes[rl1][c1][ml1].*recv_listvect)[c2];
     const iblist send = (d.boxes[rl2][c2][ml2].*send_listvect)[c1];

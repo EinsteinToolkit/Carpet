@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.7 2001/04/06 10:37:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.8 2001/04/23 08:10:13 schnetter Exp $
 
 #include <vector>
 
@@ -26,9 +26,6 @@ namespace Carpet {
   
   // Refinement factor on finest grid
   extern int maxreflevelfact;
-  
-  // Active time level
-  extern int activetimelevel;	// 0 for current, 1 for next
   
   // Current iteration per refinement level
   extern vector<int> iteration;

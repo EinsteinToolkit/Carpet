@@ -24,7 +24,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.11 2001/03/22 18:42:05 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.12 2001/04/23 08:10:13 schnetter Exp $";
 
 
 
@@ -134,7 +134,7 @@ int CarpetIOASCII<outdim>
   assert (n0>=0 && n0<CCTK_NumVars());
   const int var = n - n0;
   assert (var>=0 && var<CCTK_NumVars());
-  const int tl = activetimelevel;
+  const int tl = 0;
   
   switch (CCTK_GroupTypeI(group)) {
     

@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.6 2001/03/28 18:56:09 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.hh,v 1.7 2001/04/23 08:10:15 schnetter Exp $
 
  ***************************************************************************/
 
@@ -79,7 +79,8 @@ public:
     ibset boundaries;		// boundaries
     iblistvect recv_sync;	// received while syncing
     iblistvect recv_ref_bnd_coarse; // received from coarser grids
-    ibset sync_not;		// not received while syncing (outer boundary)
+    ibset sync_not;		// not received while syncing (outer boundary of that level)
+    ibset recv_not;		// not received while syncing or prolongating (globally outer boundary)
   };
 private:
   
@@ -118,10 +119,7 @@ public:
   ~dh ();
   
   // Helpers
-  int prolongation_stencil_size () const {
-    assert (prolongation_order>=0);
-    return prolongation_order/2;
-  }
+  int prolongation_stencil_size () const;
   
   // Modifiers
   void recompose ();

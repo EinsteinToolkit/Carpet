@@ -7,7 +7,7 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/spacetimetoy_periodic_rl3.par,v 1.3 2001/03/30 00:50:48 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/SpaceTimeToy/par/spacetimetoy_periodic_rl3.par,v 1.4 2001/04/23 08:10:21 schnetter Exp $
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetIOFlexIO CarpetLib CarpetSlab IDSpaceTimeToy SpaceTimeToy"
 
@@ -19,21 +19,23 @@ Cactus::cctk_itlast		= 480
 
 Time::dtfac			= 0.5
 
-driver::global_nx		= 32
-driver::global_ny		= 46
-driver::global_nz		= 62
+driver::global_nx		= 34
+driver::global_ny		= 48
+driver::global_nz		= 64
+
+driver::ghost_size		= 2
 
 Carpet::max_refinement_levels	= 3
 Carpet::prolongation_order_space= 3
 Carpet::prolongation_order_time	= 2
 
 grid::type			= byrange
-grid::xmin			= -4.8
-grid::ymin			= -6.6
-grid::zmin			= -9.0
-grid::xmax			=  4.5
-grid::ymax			=  6.9
-grid::zmax			=  9.3
+grid::xmin			= -5.1
+grid::ymin			= -6.9
+grid::zmin			= -9.3
+grid::xmax			=  4.8
+grid::ymax			=  7.2
+grid::zmax			=  9.6
 grid::mode			= periodic
 
 IO::outdir			= "spacetimetoy_periodic_rl3"

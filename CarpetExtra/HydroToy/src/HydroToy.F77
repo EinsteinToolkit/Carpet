@@ -1,5 +1,5 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/src/HydroToy.F77,v 1.4 2001/03/26 02:28:36 eschnett Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/HydroToy/src/HydroToy.F77,v 1.5 2001/04/23 08:10:19 schnetter Exp $
       
 #include "cctk.h" 
 #include "cctk_Parameters.h"
@@ -22,10 +22,10 @@ c     Copy
          do j=1,cctk_lsh(2)
             do i=1,cctk_lsh(1)
                
-               u_i(i,j,k)  = u(i,j,k)
-               vx_i(i,j,k) = vx(i,j,k)
-               vy_i(i,j,k) = vy(i,j,k)
-               vz_i(i,j,k) = vz(i,j,k)
+               u_i(i,j,k)  = u_p(i,j,k)
+               vx_i(i,j,k) = vx_p(i,j,k)
+               vy_i(i,j,k) = vy_p(i,j,k)
+               vz_i(i,j,k) = vz_p(i,j,k)
                
             end do
          end do
@@ -59,10 +59,10 @@ c     Copy
          do j=1,cctk_lsh(2)
             do i=1,cctk_lsh(1)
                
-               u_i(i,j,k)  = u_n(i,j,k)
-               vx_i(i,j,k) = vx_n(i,j,k)
-               vy_i(i,j,k) = vy_n(i,j,k)
-               vz_i(i,j,k) = vz_n(i,j,k)
+               u_i(i,j,k)  = u(i,j,k)
+               vx_i(i,j,k) = vx(i,j,k)
+               vy_i(i,j,k) = vy(i,j,k)
+               vz_i(i,j,k) = vz(i,j,k)
                
             end do
          end do
@@ -76,10 +76,10 @@ c     Average
          do j=1,cctk_lsh(2)
             do i=1,cctk_lsh(1)
                
-               u_n(i,j,k)  = half * (u(i,j,k) + u_n(i,j,k))
-               vx_n(i,j,k) = half * (vx(i,j,k) + vx_n(i,j,k))
-               vy_n(i,j,k) = half * (vy(i,j,k) + vy_n(i,j,k))
-               vz_n(i,j,k) = half * (vz(i,j,k) + vz_n(i,j,k))
+               u(i,j,k)  = half * (u_p(i,j,k)  + u(i,j,k))
+               vx(i,j,k) = half * (vx_p(i,j,k) + vx(i,j,k))
+               vy(i,j,k) = half * (vy_p(i,j,k) + vy(i,j,k))
+               vz(i,j,k) = half * (vz_p(i,j,k) + vz(i,j,k))
                
             end do
          end do
@@ -109,20 +109,20 @@ c     Apply boundaries
       dt = CCTK_DELTA_TIME
       
 c     Evolve
-      do k=2,cctk_lsh(3)-1
-         do j=2,cctk_lsh(2)-1
-            do i=2,cctk_lsh(1)-1
+      do k=1+cctk_nghostzones(3),cctk_lsh(3)-cctk_nghostzones(3)
+         do j=1+cctk_nghostzones(2),cctk_lsh(2)-cctk_nghostzones(2)
+            do i=1+cctk_nghostzones(1),cctk_lsh(1)-cctk_nghostzones(1)
                
-               u_n(i,j,k)  = u_i(i,j,k)
+               u(i,j,k)  = u_i(i,j,k)
      $              + dt * (vx_i(i+1,j,k) - vx_i(i-1,j,k)) / (2*dx)
      $              + dt * (vy_i(i,j+1,k) - vy_i(i,j-1,k)) / (2*dy)
      $              + dt * (vz_i(i,j,k+1) - vz_i(i,j,k-1)) / (2*dz)
                
-               vx_n(i,j,k) = vx_i(i,j,k)
+               vx(i,j,k) = vx_i(i,j,k)
      $              + dt * (u_i(i+1,j,k) - u_i(i-1,j,k)) / (2*dx)
-               vy_n(i,j,k) = vy_i(i,j,k)
+               vy(i,j,k) = vy_i(i,j,k)
      $              + dt * (u_i(i,j+1,k) - u_i(i,j-1,k)) / (2*dy)
-               vz_n(i,j,k) = vz_i(i,j,k)
+               vz(i,j,k) = vz_i(i,j,k)
      $              + dt * (u_i(i,j,k+1) - u_i(i,j,k-1)) / (2*dz)
                
             end do
@@ -144,15 +144,17 @@ c     Evolve
       CCTK_REAL zero, one
       parameter (zero=0, one=1)
       
-      CCTK_REAL finf, npow
-      parameter (finf=1, npow=1)
+      CCTK_REAL finf
+      parameter (finf=1)
+      integer npow
+      parameter (npow=1)
       
       integer sw(3)
       integer ierr
       
-      sw(1) = 1
-      sw(2) = 1
-      sw(3) = 1
+      sw(1) = cctk_nghostzones(1)
+      sw(2) = cctk_nghostzones(2)
+      sw(3) = cctk_nghostzones(3)
       
 c     Apply boundary condition
       if (CCTK_EQUALS(bound, "flat")) then

@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/utils/cmptest,v 1.3 2001/03/17 16:27:02 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/Cart3dTest/utils/cmptest,v 1.4 2001/04/23 08:10:17 schnetter Exp $
 
 # Call this script from the Cactus directory.  It compares a Carpet
 # ASCII testsuite output to PUGH ASCII testsuite output.
@@ -11,17 +11,10 @@ for suite in $(ls TEST/carpet | grep -v log\$); do
     
     for file in $(ls arrangements/AlphaThorns/Cart3dTest/test/$suite | grep -v CVS | grep -v \.dl); do
 	
-	mkfifo /tmp/out-old.$$
-	mkfifo /tmp/out-new.$$
-	
-	awk 'NF==2 { print $2; }' arrangements/AlphaThorns/Cart3dTest/test/$suite/$file > /tmp/out-old.$$ &
-	awk 'NF==9 { print $9; }' TEST/carpet/$suite/$file > /tmp/out-new.$$ &
-    	
-	paste /tmp/out-old.$$ /tmp/out-new.$$ |
-	awk '{ diff=(($1-$2)/($1+$2+1e-6))**2; if (diff>1e-10) { ++cnt; print l+0,$1,$2,diff; ++l; } } END { if (cnt>0) print "File '$file'",cnt+0,"differing lines"; }'
-	
-	rm /tmp/out-old.$$
-	rm /tmp/out-new.$$
+	paste \
+	    <( awk 'NF==2 { print $2; }' arrangements/AlphaThorns/Cart3dTest/test/$suite/$file ) \
+	    <( awk 'NF==9 { print $9; }' TEST/carpet/$suite/$file ) \
+	| awk '{ diff=(($1-$2)/($1+$2+1e-6))**2; if (diff>1e-10) { ++cnt; print l+0,$1,$2,diff; ++l; } } END { if (cnt>0) print "File '$file'",cnt+0,"differing lines"; }'
 	
     done
     

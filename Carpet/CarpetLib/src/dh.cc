@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.12 2001/03/28 18:56:09 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.13 2001/04/23 08:10:15 schnetter Exp $
 
  ***************************************************************************/
 
@@ -55,6 +55,13 @@ template<int D>
 dh<D>::~dh () {
   CHECKPOINT;
   h.remove(this);
+}
+
+// Helpers
+template<int D>
+int dh<D>::prolongation_stencil_size () const {
+  assert (prolongation_order>=0);
+  return prolongation_order/2;
 }
 
 // Modifiers
@@ -220,12 +227,14 @@ void dh<D>::recompose () {
     for (int c=0; c<h.components(rl); ++c) {
       for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
 	
-	// Boundaries that are neither synced nor prolonged from
-	// coarser grids (outer boundaries)
+	// Boundaries that are not synced, or are neither synced nor
+	// prolonged to from coarser grids (outer boundaries)
 	ibset& sync_not = boxes[rl][c][ml].sync_not;
+	ibset& recv_not = boxes[rl][c][ml].recv_not;
 	
 	// The whole boundary
 	sync_not = boxes[rl][c][ml].boundaries;
+	recv_not = boxes[rl][c][ml].boundaries;
 	
 	// Subtract boxes received during synchronisation
 	const iblistvect& recv_sync = boxes[rl][c][ml].recv_sync;
@@ -234,6 +243,18 @@ void dh<D>::recompose () {
 	  for (iblist::const_iterator li=lvi->begin();
 	       li!=lvi->end(); ++li) {
 	    sync_not -= *li;
+	    recv_not -= *li;
+	  }
+	}
+	
+	// Subtract all boxes received
+	const iblistvect& recv_ref_bnd_coarse
+	  = boxes[rl][c][ml].recv_ref_bnd_coarse;
+	for (iblistvect::const_iterator lvi=recv_ref_bnd_coarse.begin();
+	     lvi!=recv_ref_bnd_coarse.end(); ++lvi) {
+	  for (iblist::const_iterator li=lvi->begin();
+	       li!=lvi->end(); ++li) {
+	    recv_not -= *li;
 	  }
 	}
 	
@@ -287,6 +308,7 @@ void dh<D>::recompose () {
       	cout << "recv_sync=" << boxes[rl][c][ml].recv_sync << endl;
       	cout << "recv_ref_bnd_coarse=" << boxes[rl][c][ml].recv_ref_bnd_coarse << endl;
       	cout << "sync_not=" << boxes[rl][c][ml].sync_not << endl;
+      	cout << "recv_not=" << boxes[rl][c][ml].recv_not << endl;
       }
     }
   }
