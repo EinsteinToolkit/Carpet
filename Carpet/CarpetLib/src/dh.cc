@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.35 2003/05/23 23:52:31 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.36 2003/07/14 15:41:34 schnetter Exp $
 
 #include <assert.h>
 
@@ -411,7 +411,9 @@ void dh<D>::recompose (const int initialise_upto) {
 	// Assert that all boundaries are synced or received
         {
           const ibset& sync_not = boxes[rl][c][ml].sync_not;
+#if 0
           const ibset& recv_not = boxes[rl][c][ml].recv_not;
+#endif
           
           // Check that no boundaries are left over
           if (rl==0) assert (sync_not.empty());

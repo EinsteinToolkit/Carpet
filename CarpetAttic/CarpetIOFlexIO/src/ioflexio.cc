@@ -11,13 +11,18 @@
 #include <sstream>
 #include <vector>
 
+
+
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
 #include "AMRwriter.hh"
 #include "AmrGridReader.hh"
+#ifdef HDF4
+#  include "HDFIO.hh"
+#endif
 #ifdef HDF5
-#include "H5IO.hh"
+#  include "H5IO.hh"
 #endif
 #include "IEEEIO.hh"
 #include "IO.hh"
@@ -35,7 +40,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.29 2003/07/03 10:51:05 tradke Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.30 2003/07/14 15:41:34 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 

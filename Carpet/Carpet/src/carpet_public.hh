@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.31 2003/06/20 11:58:32 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.32 2003/07/14 15:41:34 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -117,11 +117,11 @@ namespace Carpet {
   int Shutdown (tFleshConfig* config);
   int CallFunction (void* function, cFunctionData* attribute, void* data);
   
-  int SyncGroup (cGH* cgh, const char* groupname);
-  int EnableGroupStorage (cGH* cgh, const char* groupname);
-  int DisableGroupStorage (cGH* cgh, const char* groupname); 
-  int EnableGroupComm (cGH* cgh, const char* groupname);
-  int DisableGroupComm (cGH* cgh, const char* groupname);
+  int SyncGroup (const cGH* cgh, const char* groupname);
+  int EnableGroupStorage (const cGH* cgh, const char* groupname);
+  int DisableGroupStorage (const cGH* cgh, const char* groupname); 
+  int EnableGroupComm (const cGH* cgh, const char* groupname);
+  int DisableGroupComm (const cGH* cgh, const char* groupname);
   int Barrier (const cGH* cgh);
   int Exit (cGH* cgh, int retval);
   int Abort (cGH* cgh, int retval);

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.23 2003/06/18 18:28:07 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.24 2003/07/14 15:41:34 schnetter Exp $
 
 #ifndef CARPET_HH
 #define CARPET_HH
@@ -31,12 +31,12 @@ namespace Carpet {
   int mintl (checktimes where, int num_tl);
   int maxtl (checktimes where, int num_tl);
   
-  void Poison (cGH* cgh, checktimes where);
-  void PoisonGroup (cGH* cgh, int group, checktimes where);
-  void PoisonCheck (cGH* cgh, checktimes where);
+  void Poison (const cGH* cgh, checktimes where);
+  void PoisonGroup (const cGH* cgh, int group, checktimes where);
+  void PoisonCheck (const cGH* cgh, checktimes where);
   
-  void CalculateChecksums (cGH* cgh, checktimes where);
-  void CheckChecksums (cGH* cgh, checktimes where);
+  void CalculateChecksums (const cGH* cgh, checktimes where);
+  void CheckChecksums (const cGH* cgh, checktimes where);
   
   // Debugging output
   void Waypoint (const char* fmt, ...);
