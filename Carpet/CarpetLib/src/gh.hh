@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.6 2001/06/12 14:57:00 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.7 2001/09/06 11:18:28 schnetter Exp $
 
  ***************************************************************************/
 
@@ -49,6 +49,8 @@ template<int D> class gh;
 // level.  The extents do not include ghost zones.
 template<int D>
 class gh: public dimgeneric_gh {
+  
+public:
   
   // Types
   typedef vect<int,D> ivect;
