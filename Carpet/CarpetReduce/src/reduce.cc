@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.8 2002/04/11 15:43:15 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.9 2002/06/05 19:11:00 schnetter Exp $
 
 #include <assert.h>
 #include <float.h>
@@ -18,17 +18,17 @@
 
 #include "reduce.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.8 2002/04/11 15:43:15 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.cc,v 1.9 2002/06/05 19:11:00 schnetter Exp $";
 
 CCTK_FILEVERSION(CarpetReduce_reduce_cc)
 
 
 
 #ifndef LLONG_MAX
-#  warning "no long long int support"
+// #  warning "no long long int support"
 #endif
 #ifndef LDBL_MAX
-#  warning "no long double support"
+// #  warning "no long double support"
 #endif
 
 
@@ -604,7 +604,7 @@ namespace CarpetReduce {
 	assert (nghostzones[d]>=0 && 2*nghostzones[d]<=dims[d]);
       }
       
-      const void** const inarrays = new (const void*) [num_invars];
+      const void** inarrays = new const void * [num_invars];
       for (int n=0; n<num_invars; ++n) {
 	inarrays[n] = CCTK_VarDataPtrI(cgh, 0, invars[n]);
 	assert (inarrays[n]);
