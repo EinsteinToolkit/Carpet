@@ -1,65 +1,43 @@
-ActiveThorns = "Boundary CartGrid3D Time CARPET CARPETReduce CARPETSlab carpetioascii carpetlib carpetregrid carpetIOASCII IOBasic IOUtil nanchecker carpetiohdf5 coordbase always IDScalarWave WaveToyF77 SymBase"
+ActiveThorns = "Boundary CoordBase CartGrid3D SymBase Time Carpet CarpetReduce CarpetSlab CarpetLib CarpetRegrid IOUtil IOBasic CarpetIOASCII CarpetIOHDF5 IDScalarWaveC WaveToyC"
 
 
-Cactus::cctk_itlast		= 12
+Cactus::cctk_itlast = 12
 
-Time::dtfac			= 0.5  
+Time::dtfac = 0.5
 
+IDScalarWave::initial_data = "gaussian"
+IDScalarWave::sigma        = 2.8
+IDScalarWave::radius       = 0.0
 
-driver::global_nsize		= 20
-driver::ghost_size		= 2
+Grid::avoid_origin = "no"
+Grid::type         = "byrange"
+Grid::dxyz         = 1
 
-Carpet::max_refinement_levels   = 2
+Driver::global_nsize = 20
+Driver::ghost_size   = 2
+
 Carpet::prolongation_order_space = 3
-Carpet::prolongation_order_time = 2
-Carpet::init_each_timelevel = yes
+Carpet::prolongation_order_time  = 2
+Carpet::init_each_timelevel      = "yes"
+Carpet::buffer_width             = 6
+Carpet::max_refinement_levels    = 2
 
-#CarpetLib::output_bboxes = yes
-Carpet::buffer_width = 6
+CarpetRegrid::refinement_levels  = 2
 
-CarpetRegrid::refinement_levels = 2
-cartgrid3d::avoid_origin = "no"
+# Output
+IO::out_dir = $parfile
 
-grid::type			= byrange
-grid::dxyz			= 1
+IOBasic::outInfo_every = 1
+IOBasic::outInfo_vars  = "wavetoy::phi"
 
+IOASCII::out1D_vars  = "wavetoy::phi"
+IOASCII::out1D_every = 12
+IOASCII::out3D_vars  = "wavetoy::phi"
+IOASCII::out3D_every = 12
 
-IO::out_dir			= $parfile
-IO::checkpoint_dir		= $parfile
-io::recover_dir		= $parfile
+# Checkpoint
+IO::checkpoint_every = 12
+IO::checkpoint_keep  = 2
 
-
-IOBasic::outinfo_every		= 1
-IOBasic::outinfo_vars		= "wavetoy::phi"
-
-
-IDScalarWave::initial_data	= "gaussian"
-IDScalarWave::sigma		= 2.8
-IDScalarWave::radius		= 0.0
-
-
-iohdf5::checkpoint = "yes"
-io::checkpoint_every = 12
-iohdf5::verbose = "yes"
-io::checkpoint_keep = 2
-
-#io::recover = "auto"
-
-carpetioascii::out1D_vars = "wavetoy::phi"
-carpetioascii::out1D_dir  = $parfile
-carpetioascii::out1D_every = 12
-
-carpetioascii::out3D_vars = "wavetoy::phi"
-carpetioascii::out3D_dir  = $parfile
-carpetioascii::out3D_every = 12
-
-#IOFlexIO::out3D_vars    =       "wavetoy::phi"
-#IOFlexIO::out3D_every	= 128
-
-
-
-
-
-
-
-
+IOHDF5::checkpoint = "yes"
+IOHDF5::verbose    = "yes"
