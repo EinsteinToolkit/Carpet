@@ -22,7 +22,7 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.13 2002/03/26 13:22:31 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.14 2002/05/22 16:31:14 shawley Exp $";
 
 CCTK_FILEVERSION(CarpetRegrid_regrid_cc)
 
@@ -75,6 +75,13 @@ namespace CarpetRegrid {
 	&& cctkGH->cctk_iteration % regrid_every != 0) {
       return 0;
     }
+
+    int newnumlevels = refinement_levels + activate_newlevels_on_regrid;
+    if ( ( newnumlevels >= 1) && (newnumlevels <= maxreflevels )) {
+      char numlevelstring[10];
+      sprintf(numlevelstring,"%d",newnumlevels);
+      CCTK_ParameterSet("refinement_levels","carpetregrid",numlevelstring);
+     }
     
     list<ibbox> bbl;
     list<bvect> obl;
