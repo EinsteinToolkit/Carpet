@@ -11,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.16 2001/12/14 16:39:08 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.17 2001/12/17 13:34:01 schnetter Exp $";
 
 
 
@@ -39,7 +39,8 @@ namespace Carpet {
     
     // Refinement information
     maxreflevels = max_refinement_levels;
-    maxreflevelfact = floor(pow((double)refinement_factor, maxreflevels-1) + 0.5);
+    reffact = refinement_factor;
+    maxreflevelfact = floor(pow((double)reffact, maxreflevels-1) + 0.5);
     
     // Ghost zones
     vect<int,dim> lghosts, ughosts;
@@ -243,13 +244,14 @@ namespace Carpet {
     vector<bbox<int,dim> > bbs(1);
     bbs[0] = hh->baseextent;
     
+    SplitRegions (cgh, bbs);
+    
     vector<vector<bbox<int,dim> > > bbss(1);
     bbss[0] = bbs;
     
-    SplitRegions (cgh, bbss);
-    
     gh<dim>::rexts bbsss;
-    bbsss = hh->make_multigrid_boxes(bbss, 1);
+    const int mglevels = 1;
+    bbsss = hh->make_multigrid_boxes(bbss, mglevels);
     
     gh<dim>::rprocs pss;
     MakeProcessors (cgh, bbsss, pss);

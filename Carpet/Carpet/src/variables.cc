@@ -5,7 +5,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.2 2001/07/09 09:00:15 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/variables.cc,v 1.3 2001/12/17 13:34:02 schnetter Exp $";
 
 
 
@@ -20,6 +20,9 @@ namespace Carpet {
   
   // Maximum number of refinement levels
   int maxreflevels;
+  
+  // Refinement factor
+  int reffact;
   
   // Refinement factor on finest grid
   int maxreflevelfact;

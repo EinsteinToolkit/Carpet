@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.9 2001/12/14 16:39:09 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet_public.hh,v 1.10 2001/12/17 13:34:01 schnetter Exp $
 
 // It is assumed that the number of components of all arrays is equal
 // to the number of components of the grid functions, and that their
@@ -34,6 +34,9 @@ namespace Carpet {
   
   // Maximum number of refinement levels
   extern int maxreflevels;
+  
+  // Refinement factor
+  extern int reffact;
   
   // Refinement factor on finest grid
   extern int maxreflevelfact;
@@ -125,7 +128,7 @@ namespace Carpet {
   void RegisterRecomposeRegions (const gh<dim>::rexts& bbsss,
 				 const gh<dim>::rprocs& pss);
   
-  void SplitRegions (const cGH* cgh, gh<dim>::cexts& bbss);
+  void SplitRegions (const cGH* cgh, vector<bbox<int,dim> >& bbs);
   
   void MakeProcessors (const cGH* cgh, const gh<dim>::rexts& bbsss,
 		       gh<dim>::rprocs& pss);

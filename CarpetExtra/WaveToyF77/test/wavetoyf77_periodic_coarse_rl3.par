@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77_periodic_coarse_rl3.par,v 1.4 2001/12/14 18:00:08 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77_periodic_coarse_rl3.par,v 1.5 2001/12/17 13:34:50 schnetter Exp $
 
 !DESC "WaveToy with periodic boundaries, 2 refinement levels"
 
@@ -22,7 +22,7 @@ Carpet::max_refinement_levels	= 3
 Carpet::prolongation_order_space= 3
 Carpet::prolongation_order_time	= 2
 
-CarpetRegrid::refinement_levels	= 2
+CarpetRegrid::refinement_levels	= 3
 
 grid::type			= byrange
 grid::xmin			= -5.4

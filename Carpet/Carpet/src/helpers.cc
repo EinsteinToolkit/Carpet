@@ -11,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.13 2001/12/14 16:39:10 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.14 2001/12/17 13:34:01 schnetter Exp $";
 
 
 
@@ -294,37 +294,35 @@ namespace Carpet {
       // Local mode -- a component is active
       
       // Set Cactus parameters
-      for (int d=0; d<dim; ++d) {
+      {
+	assert (reflevel < (int)dd->boxes.size());
+	assert (component < (int)dd->boxes[reflevel].size());
+	assert (mglevel < (int)dd->boxes[reflevel][component].size());
 	const bbox<int,dim>& ext
 	  = dd->boxes[reflevel][component][mglevel].exterior;
-	cgh->cctk_lsh[d] = (ext.shape() / ext.stride())[d];
-	cgh->cctk_lbnd[d] = (ext.lower() / ext.stride())[d];
-	cgh->cctk_ubnd[d] = (ext.upper() / ext.stride())[d];
-	assert (cgh->cctk_lsh[d]>=0 && cgh->cctk_lsh[d]<=cgh->cctk_gsh[d]);
-	assert (cgh->cctk_lbnd[d]>=0 && cgh->cctk_ubnd[d]<cgh->cctk_gsh[d]);
-	assert (cgh->cctk_lbnd[d]<=cgh->cctk_ubnd[d]+1);
-#if 0
-	// No outer boundaries on the finer grids
-	cgh->cctk_bbox[2*d  ]
-	  = reflevel==0 && cgh->cctk_lbnd[d] == 0;
-	cgh->cctk_bbox[2*d+1]
-	  = reflevel==0 && cgh->cctk_ubnd[d] == cgh->cctk_gsh[d]-1;
-#else
-	// Do allow outer boundaries on the finer grids (but this is
-	// generally inconsistent -- c. f. periodicity)
-	const bbox<int,dim>& base = hh->baseextent;
-	cgh->cctk_bbox[2*d  ] = (ext.lower() < base.lower())[d];
-	cgh->cctk_bbox[2*d+1] = (ext.upper() > base.upper())[d];
-#endif
-	for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
-	  // TODO: support staggering
-	  cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
+	for (int d=0; d<dim; ++d) {
+	  cgh->cctk_lsh[d] = (ext.shape() / ext.stride())[d];
+	  cgh->cctk_lbnd[d] = (ext.lower() / ext.stride())[d];
+	  cgh->cctk_ubnd[d] = (ext.upper() / ext.stride())[d];
+	  assert (cgh->cctk_lsh[d]>=0 && cgh->cctk_lsh[d]<=cgh->cctk_gsh[d]);
+	  assert (cgh->cctk_lbnd[d]>=0 && cgh->cctk_ubnd[d]<cgh->cctk_gsh[d]);
+	  assert (cgh->cctk_lbnd[d]<=cgh->cctk_ubnd[d]+1);
+	  // Do allow outer boundaries on the finer grids
+	  cgh->cctk_bbox[2*d  ] = cgh->cctk_lbnd[d] == 0;
+	  cgh->cctk_bbox[2*d+1] = cgh->cctk_ubnd[d] == cgh->cctk_gsh[d]-1;
+	  for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
+	    // TODO: support staggering
+	    cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
+	  }
 	}
       }
       for (int group=0; group<CCTK_NumGroups(); ++group) {
+	assert (reflevel < (int)arrdata[group].dd->boxes.size());
+	assert (component < (int)arrdata[group].dd->boxes[reflevel].size());
+	assert (mglevel < (int)arrdata[group].dd->boxes[reflevel][component].size());
+	const bbox<int,dim>& ext
+	  = arrdata[group].dd->boxes[reflevel][component][mglevel].exterior;
 	for (int d=0; d<dim; ++d) {
-	  const bbox<int,dim>& ext
-	    = arrdata[group].dd->boxes[reflevel][component][mglevel].exterior;
 	  ((int*)arrdata[group].info.lsh)[d]
 	    = (ext.shape() / ext.stride())[d];
 	  ((int*)arrdata[group].info.lbnd)[d]
@@ -336,21 +334,11 @@ namespace Carpet {
 	  assert (arrdata[group].info.lbnd[d]>=0
 		  && arrdata[group].info.ubnd[d]<arrdata[group].info.gsh[d]);
 	  assert (arrdata[group].info.lbnd[d]<=arrdata[group].info.ubnd[d]+1);
-	  // No outer boundaries on the finer grids
+	  // Do allow outer boundaries on the finer grids
 	  ((int*)arrdata[group].info.bbox)[2*d  ]
-	    = reflevel==0 && arrdata[group].info.lbnd[d] == 0;
+	    = arrdata[group].info.lbnd[d] == 0;
 	  ((int*)arrdata[group].info.bbox)[2*d+1]
-	    = (reflevel==0
-	       && arrdata[group].info.ubnd[d] == arrdata[group].info.gsh[d]-1);
-#if 0
-	  // Do allow outer boundaries on the finer grids (but this is
-	  // generally inconsistent -- c. f. periodicity)
-	  const bbox<int,dim>& base = arrdata[group].hh->baseextent;
-	  ((int*)arrdata[group].info.bbox)[2*d  ]
-	    = (ext.lower() < base.lower())[d];
-	  ((int*)arrdata[group].info.bbox)[2*d+1]
-	    = (ext.upper() > base.upper())[d];
-#endif
+	    = arrdata[group].info.ubnd[d] == arrdata[group].info.gsh[d]-1;
 	}
       }
       
@@ -359,7 +347,7 @@ namespace Carpet {
 	
 	const int group = CCTK_GroupIndexFromVarI(n);
 	assert (group>=0);
-	const int var   = n - CCTK_FirstVarIndexI(group);
+	const int var = n - CCTK_FirstVarIndexI(group);
 	assert (var>=0);
 	const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
 	assert (num_tl>0);

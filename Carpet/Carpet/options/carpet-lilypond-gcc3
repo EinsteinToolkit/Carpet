@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/Attic/carpet-lilypond-gcc3,v 1.1 2001/12/07 18:24:15 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/Attic/carpet-lilypond-gcc3,v 1.2 2001/12/17 13:34:00 schnetter Exp $
 
 #CPP			= /home/eschnett/gcc/bin/cpp -traditional -DTMPL_EXPLICIT -DCARPET_REAL
 CPP			= cpp -traditional -DTMPL_EXPLICIT -DCARPET_REAL
@@ -7,7 +7,8 @@ CXX			= /home/eschnett/gcc/bin/g++
 F77			= /home/eschnett/gcc/bin/g77
 F90			= /home/eschnett/gcc/bin/g77
 
-CXXFLAGS		= -DTMPL_EXPLICIT -DCARPET_REAL -ftemplate-depth-30 -Wl,-rpath,/home/eschnett/gcc/lib
+CXXFLAGS		= -DTMPL_EXPLICIT -DCARPET_REAL -ftemplate-depth-30
+LDFLAGS			= -Wl,-rpath,/home/eschnett/gcc/lib
 
 C_OPTIMISE_FLAGS	= -O2 -funroll-loops -march=pentiumpro
 CXX_OPTIMISE_FLAGS	= -O2 -funroll-loops -march=pentiumpro

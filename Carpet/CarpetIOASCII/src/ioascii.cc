@@ -25,7 +25,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.24 2001/12/14 17:59:54 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.25 2001/12/17 13:34:03 schnetter Exp $";
 
 
 
@@ -336,6 +336,15 @@ int CarpetIOASCII<outdim>
 	  
 	  data->write_ascii (file, cgh->cctk_iteration, offset1, dirs,
 			     tl, reflevel, component, mglevel);
+	  
+	  // Append EOL after every component
+	  if (CCTK_MyProc(cgh)==0) {
+	    if (separate_components) {
+	      assert (file.good());
+	      file << endl;
+	    }
+	  }
+	  assert (file.good());
 	  
 	} END_COMPONENT_LOOP(cgh);
 	
