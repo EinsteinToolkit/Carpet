@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dggf.hh,v 1.1 2001/06/12 14:56:58 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/Attic/dggf.hh,v 1.2 2001/07/02 13:22:13 schnetter Exp $
 
  ***************************************************************************/
 
@@ -76,6 +76,8 @@ public:
   
   
   
+  // TODO:
+  
   // are these necessary in dimgeneric_gf, or is it sufficient to have
   // them in generic_gf<D>?
   
@@ -84,7 +86,6 @@ public:
   
   // i likely also have to make a dimgeneric_data class.
   
-#if 0
   // The grid boundaries have to be updated after calling mg_restrict,
   // mg_prolongate, ref_restrict, or ref_prolongate.
 
@@ -116,15 +117,14 @@ public:
   // Prolongate a refinement level
   virtual void ref_prolongate (int tl, int rl, int c, int ml,
 			       int order_space=1) = 0;
-#endif
   
   
   
   // Access to the data
   virtual const dimgeneric_data* operator() (int tl, int rl, int c, int ml)
-    const;
+    const = 0;
   
-  virtual dimgeneric_data* operator() (int tl, int rl, int c, int ml);
+  virtual dimgeneric_data* operator() (int tl, int rl, int c, int ml) = 0;
   
   
   

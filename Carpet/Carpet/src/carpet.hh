@@ -1,10 +1,13 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.9 2001/06/12 14:56:56 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.10 2001/07/02 13:22:10 schnetter Exp $
 
 #include <vector>
 
 #include "cctk.h"
 #include "cctk_Schedule.h"
 
+#include "Carpet/CarpetLib/src/dgdh.hh"
+#include "Carpet/CarpetLib/src/dggf.hh"
+#include "Carpet/CarpetLib/src/dggh.hh"
 #include "Carpet/CarpetLib/src/dh.hh"
 #include "Carpet/CarpetLib/src/ggf.hh"
 #include "Carpet/CarpetLib/src/gh.hh"
@@ -14,7 +17,8 @@ namespace Carpet {
   
   
   
-  const int dim = 3;
+  const int maxdim = 3;
+  const int gfdim = 3;
   
   
   
@@ -51,24 +55,25 @@ namespace Carpet {
   
   // Data for arrays
   struct arrdesc {
-    gh<dim>* hh;
+    int dim;
+    dimgeneric_gh* hh;
     th* tt;
-    dh<dim>* dd;
-    vector<generic_gf<dim>* > data; // [var]
-    int size[dim];
+    dimgeneric_dh* dd;
+    vector<dimgeneric_gf* > data; // [var]
+    int size[maxdim];
   };
   extern vector<arrdesc> arrdata; // [group]
   
   // Data for grid functions
   
   // The grid hierarchy
-  extern gh<dim>* hh;
+  extern gh<gfdim>* hh;
   extern th* tt;
-  extern dh<dim>* dd;
-  extern int gfsize[dim];
+  extern dh<gfdim>* dd;
+  extern int gfsize[gfdim];
   
   struct gfdesc {
-    vector<generic_gf<dim>* > data; // [var]
+    vector<dimgeneric_gf* > data; // [var]
   };
   extern vector<gfdesc> gfdata;	// [group]
   

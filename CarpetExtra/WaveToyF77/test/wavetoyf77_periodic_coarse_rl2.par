@@ -7,7 +7,9 @@
 #   @enddesc
 # @@*/
 #
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77_periodic_coarse_rl2.par,v 1.1 2001/03/30 15:37:13 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/WaveToyF77/test/wavetoyf77_periodic_coarse_rl2.par,v 1.2 2001/07/02 13:22:16 schnetter Exp $
+
+!DESC "WaveToy with radiation boundaries, 1 refinement level"
 
 ActiveThorns = "Boundary IOBasic IOUtil Time Cart3d Carpet CarpetIOASCII CarpetLib CarpetSlab IDScalarWave WaveToyF77"
 

@@ -24,7 +24,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.12 2001/04/23 08:10:13 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.13 2001/07/02 13:22:10 schnetter Exp $";
 
 
 
@@ -253,103 +253,229 @@ int CarpetIOASCII<outdim>
 	    }
 	  }
 	  
-	  // Find the output offset
-	  vect<int,dim> offset(0);
-	  switch (outdim) {
-	  case 1:
-	    switch (dirs[0]) {
-	    case 0:
-	      offset[1] = GetGridOffset (cgh, 2,
-					 "out%dD_xline_yi", "out_xline_yi",
-					 "out%dD_xline_y",  "out_xline_y",
-					 out_xline_y);
-	      offset[2] = GetGridOffset (cgh, 3,
-					 "out%dD_xline_zi", "out_xline_zi",
-					 "out%dD_xline_z",  "out_xline_z",
-					 out_xline_z);
-	      break;
+	  switch (CCTK_GroupDimI(group)) {
+	    
+	  case 1: {
+	    const int dim=1;
+	    
+	    // Find the output offset
+	    vect<int,dim> offset(0);
+	    switch (outdim) {
 	    case 1:
-	      offset[0] = GetGridOffset (cgh, 1,
-					 "out%dD_yline_xi", "out_yline_xi",
-					 "out%dD_yline_x",  "out_yline_x",
-					 out_yline_x);
-	      offset[2] = GetGridOffset (cgh, 3,
-					 "out%dD_yline_zi", "out_yline_zi",
-					 "out%dD_yline_z",  "out_yline_z",
-					 out_yline_z);
+	      // The offset doesn't matter in this case
+	      break;
+	    default:
+	      abort();
+	    }
+	    
+	    // Traverse all components on this refinement and
+	    // multigrid level
+	    BEGIN_COMPONENT_LOOP(cgh) {
+	      
+	      generic_gf<dim>* ff = 0;
+	      
+	      switch (CCTK_GroupTypeI(group)) {
+		
+	      case CCTK_ARRAY:
+		assert (var < (int)arrdata[group].data.size());
+		ff = (generic_gf<dim>*)arrdata[group].data[var];
+		break;
+		
+	      case CCTK_GF:
+		assert (var < (int)gfdata[group].data.size());
+		ff = (generic_gf<dim>*)gfdata[group].data[var];
+		break;
+		
+	      default:
+		abort();
+	      }
+	      
+	      const generic_data<dim>* const data
+		= (*ff) (tl, reflevel, component, mglevel);
+	      const bbox<int,dim> ext = data->extent();
+	      const vect<int,dim> offset1 = offset * ext.stride();
+	      
+	      data->write_ascii (filename, cgh->cctk_iteration, offset1, dirs,
+				 tl, reflevel, component, mglevel);
+	      
+	    } END_COMPONENT_LOOP(cgh);
+	    break;
+	  }
+	    
+	  case 2: {
+	    const int dim=2;
+	    
+	    // Find the output offset
+	    vect<int,dim> offset(0);
+	    switch (outdim) {
+	    case 1:
+	      switch (dirs[0]) {
+	      case 0:
+		offset[1] = GetGridOffset (cgh, 2,
+					   "out%dD_xline_yi", "out_xline_yi",
+					   "out%dD_xline_y",  "out_xline_y",
+					   out_xline_y);
+		break;
+	      case 1:
+		offset[0] = GetGridOffset (cgh, 1,
+					   "out%dD_yline_xi", "out_yline_xi",
+					   "out%dD_yline_x",  "out_yline_x",
+					   out_yline_x);
+		break;
+	      default:
+		abort();
+	      }
 	      break;
 	    case 2:
-	      offset[0] = GetGridOffset (cgh, 1,
-					 "out%dD_zline_xi", "out_zline_xi",
-					 "out%dD_zline_x",  "out_zline_x",
-					 out_zline_x);
-	      offset[1] = GetGridOffset (cgh, 2,
-					 "out%dD_zline_yi", "out_zline_yi",
-					 "out%dD_zline_y",  "out_zline_y",
-					 out_zline_y);
+	      // The offset doesn't matter in this case
 	      break;
 	    default:
 	      abort();
 	    }
+	    
+	    // Traverse all components on this refinement and
+	    // multigrid level
+	    BEGIN_COMPONENT_LOOP(cgh) {
+	      
+	      generic_gf<dim>* ff = 0;
+	      
+	      switch (CCTK_GroupTypeI(group)) {
+		
+	      case CCTK_ARRAY:
+		assert (var < (int)arrdata[group].data.size());
+		ff = (generic_gf<dim>*)arrdata[group].data[var];
+		break;
+		
+	      case CCTK_GF:
+		assert (var < (int)gfdata[group].data.size());
+		ff = (generic_gf<dim>*)gfdata[group].data[var];
+		break;
+		
+	      default:
+		abort();
+	      }
+	      
+	      const generic_data<dim>* const data
+		= (*ff) (tl, reflevel, component, mglevel);
+	      const bbox<int,dim> ext = data->extent();
+	      const vect<int,dim> offset1 = offset * ext.stride();
+	      
+	      data->write_ascii (filename, cgh->cctk_iteration, offset1, dirs,
+				 tl, reflevel, component, mglevel);
+	      
+	    } END_COMPONENT_LOOP(cgh);
 	    break;
-	  case 2:
-	    if (dirs[0]==0 && dirs[1]==1) {
-	      offset[2] = GetGridOffset (cgh, 3,
-					 "out%dD_xyplane_zi", "out_xyplane_zi",
-					 "out%dD_xyplane_z",  "out_xyplane_z",
-					 out_xyplane_z);
-	    } else if (dirs[0]==0 && dirs[1]==2) {
-	      offset[1]	= GetGridOffset (cgh, 2,
-					 "out%dD_xzplane_yi", "out_xzplane_yi",
-					 "out%dD_xzplane_y",  "out_xzplane_y",
-					 out_xzplane_y);
-	    } else if (dirs[0]==1 && dirs[1]==2) {
-	      offset[0] = GetGridOffset (cgh, 1,
-					 "out%dD_yzplane_xi", "out_yzplane_xi",
-					 "out%dD_yzplane_x",  "out_yzplane_x",
-					 out_yzplane_x);
-	    } else {
-	      abort();
-	    }
-	    break;
-	  case 3:
-	    // The offset doesn't matter in this case
-	    break;
-	  default:
-	    abort();
 	  }
-	  
-	  // Traverse all components on this refinement and multigrid
-	  // level
-	  BEGIN_COMPONENT_LOOP(cgh) {
 	    
-	    generic_gf<dim>* ff = 0;
+	  case 3: {
+	    const int dim=3;
 	    
-	    switch (CCTK_GroupTypeI(group)) {
-	      
-	    case CCTK_ARRAY:
-	      assert (var < (int)arrdata[group].data.size());
-	      ff = arrdata[group].data[var];
+	    // Find the output offset
+	    vect<int,dim> offset(0);
+	    switch (outdim) {
+	    case 1:
+	      switch (dirs[0]) {
+	      case 0:
+		offset[1] = GetGridOffset (cgh, 2,
+					   "out%dD_xline_yi", "out_xline_yi",
+					   "out%dD_xline_y",  "out_xline_y",
+					   out_xline_y);
+		offset[2] = GetGridOffset (cgh, 3,
+					   "out%dD_xline_zi", "out_xline_zi",
+					   "out%dD_xline_z",  "out_xline_z",
+					   out_xline_z);
+		break;
+	      case 1:
+		offset[0] = GetGridOffset (cgh, 1,
+					   "out%dD_yline_xi", "out_yline_xi",
+					   "out%dD_yline_x",  "out_yline_x",
+					   out_yline_x);
+		offset[2] = GetGridOffset (cgh, 3,
+					   "out%dD_yline_zi", "out_yline_zi",
+					   "out%dD_yline_z",  "out_yline_z",
+					   out_yline_z);
+		break;
+	      case 2:
+		offset[0] = GetGridOffset (cgh, 1,
+					   "out%dD_zline_xi", "out_zline_xi",
+					   "out%dD_zline_x",  "out_zline_x",
+					   out_zline_x);
+		offset[1] = GetGridOffset (cgh, 2,
+					   "out%dD_zline_yi", "out_zline_yi",
+					   "out%dD_zline_y",  "out_zline_y",
+					   out_zline_y);
+		break;
+	      default:
+		abort();
+	      }
 	      break;
-	      
-	    case CCTK_GF:
-	      assert (var < (int)gfdata[group].data.size());
-	      ff = gfdata[group].data[var];
+	    case 2:
+	      if (dirs[0]==0 && dirs[1]==1) {
+		offset[2] = GetGridOffset
+		  (cgh, 3,
+		   "out%dD_xyplane_zi", "out_xyplane_zi",
+		   "out%dD_xyplane_z",  "out_xyplane_z",
+		   out_xyplane_z);
+	      } else if (dirs[0]==0 && dirs[1]==2) {
+		offset[1] = GetGridOffset
+		  (cgh, 2,
+		   "out%dD_xzplane_yi", "out_xzplane_yi",
+		   "out%dD_xzplane_y",  "out_xzplane_y",
+		   out_xzplane_y);
+	      } else if (dirs[0]==1 && dirs[1]==2) {
+		offset[0] = GetGridOffset
+		  (cgh, 1,
+		   "out%dD_yzplane_xi", "out_yzplane_xi",
+		   "out%dD_yzplane_x",  "out_yzplane_x",
+		   out_yzplane_x);
+	      } else {
+		abort();
+	      }
 	      break;
-	      
+	    case 3:
+	      // The offset doesn't matter in this case
+	      break;
 	    default:
 	      abort();
 	    }
 	    
-	    const generic_data<dim>* const data
-	      = (*ff) (tl, reflevel, component, mglevel);
-	    const bbox<int,dim> ext = data->extent();
-	    const vect<int,dim> offset1 = offset * ext.stride();
+	    // Traverse all components on this refinement and
+	    // multigrid level
+	    BEGIN_COMPONENT_LOOP(cgh) {
+	      
+	      generic_gf<dim>* ff = 0;
+	      
+	      switch (CCTK_GroupTypeI(group)) {
+		
+	      case CCTK_ARRAY:
+		assert (var < (int)arrdata[group].data.size());
+		ff = (generic_gf<dim>*)arrdata[group].data[var];
+		break;
+		
+	      case CCTK_GF:
+		assert (var < (int)gfdata[group].data.size());
+		ff = (generic_gf<dim>*)gfdata[group].data[var];
+		break;
+		
+	      default:
+		abort();
+	      }
+	      
+	      const generic_data<dim>* const data
+		= (*ff) (tl, reflevel, component, mglevel);
+	      const bbox<int,dim> ext = data->extent();
+	      const vect<int,dim> offset1 = offset * ext.stride();
+	      
+	      data->write_ascii (filename, cgh->cctk_iteration, offset1, dirs,
+				 tl, reflevel, component, mglevel);
+	      
+	    } END_COMPONENT_LOOP(cgh);
+	    break;
+	  }
 	    
-	    data->write_ascii (filename, cgh->cctk_iteration, offset1, dirs,
-			       tl, reflevel, component, mglevel);
+	  default: abort();
 	    
-	  } END_COMPONENT_LOOP(cgh);
+	  } // switch (CCTK_GroupDimI(group))
 	  
 	  // Append EOL after every complete set of components
 	  if (CCTK_MyProc(cgh)==0) {
@@ -367,7 +493,7 @@ int CarpetIOASCII<outdim>
       // Next direction combination
       for (int d=0; d<outdim; ++d) {
 	++dirs[d];
-	if (dirs[d]<dim) goto notyetdone;
+	if (dirs[d]<CCTK_GroupDimI(group)) goto notyetdone;
 	dirs[d] = 0;
       }
       break;

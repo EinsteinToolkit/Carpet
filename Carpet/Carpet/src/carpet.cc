@@ -32,7 +32,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.27 2001/06/12 15:14:16 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.28 2001/07/02 13:22:09 schnetter Exp $";
 
 
 
@@ -101,10 +101,10 @@ namespace Carpet {
   vector<arrdesc> arrdata;	// [group]
   
   // The grid hierarchy
-  gh<dim>* hh;
+  gh<gfdim>* hh;
   th* tt;
-  dh<dim>* dd;
-  int gfsize[dim];
+  dh<gfdim>* dd;
+  int gfsize[gfdim];
   
   // Data for grid functions
   vector<gfdesc> gfdata;	// [group]
@@ -147,7 +147,8 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    assert (cgh->cctk_dim == dim);
+    assert (maxdim>0 && gfdim>0 && gfdim <= maxdim);
+    assert (cgh->cctk_dim == gfdim);
     
     // Not sure what to do with that
     assert (convLevel==0);
@@ -161,40 +162,41 @@ namespace Carpet {
       = (int)floor(pow((double)refinement_factor, maxreflevels-1) + 0.5);
     
     // Ghost zones
-    vect<int,dim> lghosts, ughosts;
+    assert (gfdim == 3);
+    vect<int,gfdim> lghosts, ughosts;
     if (ghost_size == -1) {
-      lghosts = vect<int,dim>(ghost_size_x, ghost_size_y, ghost_size_z);
-      ughosts = vect<int,dim>(ghost_size_x, ghost_size_y, ghost_size_z);
+      lghosts = vect<int,gfdim>(ghost_size_x, ghost_size_y, ghost_size_z);
+      ughosts = vect<int,gfdim>(ghost_size_x, ghost_size_y, ghost_size_z);
     } else {
-      lghosts = vect<int,dim>(ghost_size, ghost_size, ghost_size);
-      ughosts = vect<int,dim>(ghost_size, ghost_size, ghost_size);
+      lghosts = vect<int,gfdim>(ghost_size, ghost_size, ghost_size);
+      ughosts = vect<int,gfdim>(ghost_size, ghost_size, ghost_size);
     }
     
     // Grid size
     const int stride = maxreflevelfact;
-    vect<int,dim> npoints;
+    vect<int,gfdim> npoints;
     if (global_nsize == -1) {
-      npoints = vect<int,dim>(global_nx, global_ny, global_nz);
+      npoints = vect<int,gfdim>(global_nx, global_ny, global_nz);
     } else {
-      npoints = vect<int,dim>(global_nsize, global_nsize, global_nsize);
+      npoints = vect<int,gfdim>(global_nsize, global_nsize, global_nsize);
     }
     
-    const vect<int,dim> str(stride);
-    const vect<int,dim> lb(lghosts * str);
-    const vect<int,dim> ub = (npoints - ughosts - 1) * str;
+    const vect<int,gfdim> str(stride);
+    const vect<int,gfdim> lb(lghosts * str);
+    const vect<int,gfdim> ub = (npoints - ughosts - 1) * str;
     
-    const bbox<int,dim> baseext(lb, ub, str);
+    const bbox<int,gfdim> baseext(lb, ub, str);
     
     // Allocate grid hierarchy
-    hh = new gh<dim>(refinement_factor, vertex_centered,
-		     multigrid_factor, vertex_centered,
-		     baseext);
+    hh = new gh<gfdim>(refinement_factor, vertex_centered,
+		       multigrid_factor, vertex_centered,
+		       baseext);
     
     // Allocate time hierarchy
     tt = new th(hh, maxreflevelfact);
     
     // Allocate data hierarchy
-    dd = new dh<dim>(*hh, lghosts, ughosts, prolongation_order_space);
+    dd = new dh<gfdim>(*hh, lghosts, ughosts, prolongation_order_space);
     
     if (max_refinement_levels > 1) {
       const int prolongation_stencil_size = dd->prolongation_stencil_size();
@@ -238,47 +240,81 @@ namespace Carpet {
 	cGroup gp;
 	CCTK_GroupData (group, &gp);
 	
-	// TODO
-	assert (CCTK_GroupDimI(group) == dim);
+	assert (gp.dim>=1 || gp.dim<=maxdim);
 	
 	// TODO
 // 	assert (gp.disttype == CCTK_DISTRIB_CONSTANT);
 	assert (gp.disttype == CCTK_DISTRIB_DEFAULT);
-	vect<int,dim> alb, aub;
-	for (int d=0; d<dim; ++d) {
-	  alb[d] = 0;
-	  aub[d] = (*CCTK_GroupSizesI(group))[d];
+	
+	switch (gp.dim) {
+	  
+#define CODE								    \
+	do {								    \
+	  vect<int,dim> alb, aub, astr;					    \
+	  for (int d=0; d<dim; ++d) {					    \
+	    alb[d] = 0;							    \
+	    aub[d] = (*CCTK_GroupSizesI(group))[d];			    \
+	    astr[d] = stride;						    \
+	  }								    \
+	  const bbox<int,dim> arrext(alb, aub-astr, astr);		    \
+									    \
+	  arrdata[group].hh = new gh<dim>				    \
+	    (refinement_factor, vertex_centered,			    \
+	     multigrid_factor, vertex_centered,				    \
+	     arrext);							    \
+									    \
+	  arrdata[group].tt = new th (arrdata[group].hh, maxreflevelfact);  \
+									    \
+	  vect<int,dim> alghosts, aughosts;				    \
+	  for (int d=0; d<dim; ++d) {					    \
+	    alghosts[d] = (*CCTK_GroupGhostsizesI(group))[d];		    \
+	    aughosts[d] = (*CCTK_GroupGhostsizesI(group))[d];		    \
+	  }								    \
+									    \
+	  arrdata[group].dd						    \
+	    = new dh<dim>(*(gh<dim>*)arrdata[group].hh,			    \
+			  alghosts, aughosts,				    \
+			  prolongation_order_space);			    \
+	    								    \
+	  if (max_refinement_levels > 1) {				    \
+	    const int prolongation_stencil_size				    \
+	      = arrdata[group].dd->prolongation_stencil_size();		    \
+	    const int min_nghosts					    \
+	      = ((prolongation_stencil_size + refinement_factor - 2)	    \
+		 / (refinement_factor-1));				    \
+	    if (any(min(alghosts,aughosts) < min_nghosts)) {		    \
+	      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,	    \
+			  "There are not enough ghost zones for the desired spatial prolongation order for the grid function group \"%s\".  With Carpet::prolongation_order_space=%d, you need at least %d ghost zones.", \
+			  CCTK_GroupName(group),			      \
+			  prolongation_order_space, min_nghosts);	      \
+	    }								      \
+	  }								      \
+	  								      \
+	} while (0)
+	  
+	case 1: {
+	  const int dim = 1;
+	  CODE;
+	  break;
 	}
-	const bbox<int,dim> arrext(alb, aub-str, str);
-	
-	arrdata[group].hh = new gh<dim>
-	  (refinement_factor, vertex_centered,
-	   multigrid_factor, vertex_centered,
-	   arrext);
-	
-	arrdata[group].tt = new th (arrdata[group].hh, maxreflevelfact);
-	
-	vect<int,dim> alghosts, aughosts;
-	for (int d=0; d<dim; ++d) {
-	  alghosts[d] = (*CCTK_GroupGhostsizesI(group))[d];
-	  aughosts[d] = (*CCTK_GroupGhostsizesI(group))[d];
+	  
+	case 2: {
+	  const int dim = 2;
+	  CODE;
+	  break;
 	}
-	
-	arrdata[group].dd = new dh<dim>(*arrdata[group].hh, alghosts, aughosts,
-					prolongation_order_space);
-	
-	if (max_refinement_levels > 1) {
-	  const int prolongation_stencil_size
-	    = arrdata[group].dd->prolongation_stencil_size();
-	  const int min_nghosts
-	    = ((prolongation_stencil_size + refinement_factor - 2)
-	       / (refinement_factor-1));
-	  if (any(min(alghosts,aughosts) < min_nghosts)) {
-	    CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-			"There are not enough ghost zones for the desired spatial prolongation order for the grid function group \"%s\".  With Carpet::prolongation_order_space=%d, you need at least %d ghost zones.",
-			CCTK_GroupName(group),
-			prolongation_order_space, min_nghosts);
-	  }
+	  
+	case 3: {
+	  const int dim = 3;
+	  CODE;
+	  break;
+	}
+	  
+	default:
+	  abort();
+	  
+#undef CODE
+	  
 	}
 	
 	arrdata[group].data.resize(CCTK_NumVarsInGroupI(group));
@@ -289,8 +325,7 @@ namespace Carpet {
       }
 	
       case CCTK_GF: {
-	/* TODO */
-	assert (CCTK_GroupDimI(group) == dim);
+	assert (CCTK_GroupDimI(group) == gfdim);
 	
 	gfdata[group].data.resize(CCTK_NumVarsInGroupI(group));
 	for (int var=0; var<(int)scdata[group].data.size(); ++var) {
@@ -305,7 +340,7 @@ namespace Carpet {
     }
     
     // Initialise cgh
-    for (int d=0; d<dim; ++d) {
+    for (int d=0; d<gfdim; ++d) {
       cgh->cctk_nghostzones[d] = dd->lghosts[d];
     }
     
@@ -748,17 +783,56 @@ namespace Carpet {
 	      || arrdata[group].data[0] == 0);
       for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
 	const int n = n0 + var;
-	switch (CCTK_VarTypeI(n)) {
+	switch (CCTK_GroupDimI(group)) {
+	case 1: {
+	  const int dim=1;
+	  switch (CCTK_VarTypeI(n)) {
 #define TYPECASE(N,T)							\
-	case N:								\
-	  arrdata[group].data[var] = new gf<T,dim>			\
-	    (CCTK_VarName(n), *arrdata[group].tt, *arrdata[group].dd,	\
-	     tmin, tmax);						\
-	  break;
+	  case N:							\
+	    arrdata[group].data[var] = new gf<T,dim>			\
+	      (CCTK_VarName(n), *arrdata[group].tt, *(dh<dim>*)arrdata[group].dd,	\
+	       tmin, tmax);						\
+	    break;
 #include "typecase"
 #undef TYPECASE
-	default:
-	  UnsupportedVarType(n);
+	  default:
+	    UnsupportedVarType(n);
+	  }
+	  break;
+	}
+	case 2: {
+	  const int dim=2;
+	  switch (CCTK_VarTypeI(n)) {
+#define TYPECASE(N,T)							\
+	  case N:							\
+	    arrdata[group].data[var] = new gf<T,dim>			\
+	      (CCTK_VarName(n), *arrdata[group].tt, *(dh<dim>*)arrdata[group].dd,	\
+	       tmin, tmax);						\
+	    break;
+#include "typecase"
+#undef TYPECASE
+	  default:
+	    UnsupportedVarType(n);
+	  }
+	  break;
+	}
+	case 3: {
+	  const int dim=3;
+	  switch (CCTK_VarTypeI(n)) {
+#define TYPECASE(N,T)							\
+	  case N:							\
+	    arrdata[group].data[var] = new gf<T,dim>			\
+	      (CCTK_VarName(n), *arrdata[group].tt, *(dh<dim>*)arrdata[group].dd,	\
+	       tmin, tmax);						\
+	    break;
+#include "typecase"
+#undef TYPECASE
+	  default:
+	    UnsupportedVarType(n);
+	  }
+	  break;
+	}
+	default: abort();
 	}
       }
       break;
@@ -768,16 +842,53 @@ namespace Carpet {
 	      || gfdata[group].data[0] == 0);
       for (int var=0; var<(int)gfdata[group].data.size(); ++var) {
 	const int n = n0 + var;
-	switch (CCTK_VarTypeI(n)) {
+	switch (CCTK_GroupDimI(group)) {
+	case 1: {
+	  const int dim=1;
+	  switch (CCTK_VarTypeI(n)) {
 #define TYPECASE(N,T)					\
-	case N:						\
-	  gfdata[group].data[var] = new gf<T,dim>	\
-	    (CCTK_VarName(n), *tt, *dd, tmin, tmax);	\
-	  break;
+	  case N:					\
+	    gfdata[group].data[var] = new gf<T,dim>	\
+	      (CCTK_VarName(n), *tt, *(dh<dim>*)dd, tmin, tmax);	\
+	    break;
 #include "typecase"
 #undef TYPECASE
-	default:
-	  UnsupportedVarType(n);
+	  default:
+	    UnsupportedVarType(n);
+	  }
+	  break;
+	}
+	case 2: {
+	  const int dim=2;
+	  switch (CCTK_VarTypeI(n)) {
+#define TYPECASE(N,T)					\
+	  case N:					\
+	    gfdata[group].data[var] = new gf<T,dim>	\
+	      (CCTK_VarName(n), *tt, *(dh<dim>*)dd, tmin, tmax);	\
+	    break;
+#include "typecase"
+#undef TYPECASE
+	  default:
+	    UnsupportedVarType(n);
+	  }
+	  break;
+	}
+	case 3: {
+	  const int dim=3;
+	  switch (CCTK_VarTypeI(n)) {
+#define TYPECASE(N,T)					\
+	  case N:					\
+	    gfdata[group].data[var] = new gf<T,dim>	\
+	      (CCTK_VarName(n), *tt, *(dh<dim>*)dd, tmin, tmax);	\
+	    break;
+#include "typecase"
+#undef TYPECASE
+	  default:
+	    UnsupportedVarType(n);
+	  }
+	  break;
+	}
+	default: abort();
 	}
       }
       break;
@@ -851,15 +962,50 @@ namespace Carpet {
       }
       for (int var=0; var<(int)arrdata[group].data.size(); ++var) {
 	const int n = CCTK_FirstVarIndexI(group) + var;
-	switch (CCTK_VarTypeI(n)) {
-#define TYPECASE(N,T)					\
-	case N:						\
-	  delete (gf<T,dim>*)arrdata[group].data[var];	\
-	  break;
+	switch (CCTK_GroupDimI(group)) {
+	case 1: {
+	  const int dim=1;
+	  switch (CCTK_VarTypeI(n)) {
+#define TYPECASE(N,T)						\
+	  case N:						\
+	    delete (gf<T,dim>*)arrdata[group].data[var];	\
+	    break;
 #include "typecase"
 #undef TYPECASE
-	default:
-	  UnsupportedVarType(n);
+	  default:
+	    UnsupportedVarType(n);
+	  }
+	  break;
+	}
+	case 2: {
+	  const int dim=2;
+	  switch (CCTK_VarTypeI(n)) {
+#define TYPECASE(N,T)						\
+	  case N:						\
+	    delete (gf<T,dim>*)arrdata[group].data[var];	\
+	    break;
+#include "typecase"
+#undef TYPECASE
+	  default:
+	    UnsupportedVarType(n);
+	  }
+	  break;
+	}
+	case 3: {
+	  const int dim=3;
+	  switch (CCTK_VarTypeI(n)) {
+#define TYPECASE(N,T)						\
+	  case N:						\
+	    delete (gf<T,dim>*)arrdata[group].data[var];	\
+	    break;
+#include "typecase"
+#undef TYPECASE
+	  default:
+	    UnsupportedVarType(n);
+	  }
+	  break;
+	}
+	default: abort();
 	}
 	arrdata[group].data[var] = 0;
       }
@@ -873,15 +1019,50 @@ namespace Carpet {
       }
       for (int var=0; var<(int)gfdata[group].data.size(); ++var) {
 	const int n = CCTK_FirstVarIndexI(group) + var;
-	switch (CCTK_VarTypeI(n)) {
+	switch (CCTK_GroupDimI(group)) {
+	case 1: {
+	  const int dim=1;
+	  switch (CCTK_VarTypeI(n)) {
 #define TYPECASE(N,T)					\
-	case N:						\
-	  delete (gf<T,dim>*)gfdata[group].data[var];	\
-	  break;
+	  case N:					\
+	    delete (gf<T,dim>*)gfdata[group].data[var];	\
+	    break;
 #include "typecase"
 #undef TYPECASE
-	default:
-	  UnsupportedVarType(n);
+	  default:
+	    UnsupportedVarType(n);
+	  }
+	  break;
+	}
+	case 2: {
+	  const int dim=2;
+	  switch (CCTK_VarTypeI(n)) {
+#define TYPECASE(N,T)					\
+	  case N:					\
+	    delete (gf<T,dim>*)gfdata[group].data[var];	\
+	    break;
+#include "typecase"
+#undef TYPECASE
+	  default:
+	    UnsupportedVarType(n);
+	  }
+	  break;
+	}
+	case 3: {
+	  const int dim=3;
+	  switch (CCTK_VarTypeI(n)) {
+#define TYPECASE(N,T)					\
+	  case N:					\
+	    delete (gf<T,dim>*)gfdata[group].data[var];	\
+	    break;
+#include "typecase"
+#undef TYPECASE
+	  default:
+	    UnsupportedVarType(n);
+	  }
+	  break;
+	}
+	default: abort();
 	}
 	gfdata[group].data[var] = 0;
       }
@@ -921,6 +1102,7 @@ namespace Carpet {
     assert (component == -1);
     Checkpoint ("%*sRecompose", 2*reflevel, "");
     
+    const int dim = gfdim;
     const int nprocs    = CCTK_nProcs(cgh);
     const int reflevels = max_refinement_levels; // arbitrary value
     const int mglevels  = 1;	// arbitrary value
@@ -1141,6 +1323,8 @@ namespace Carpet {
     }
     assert (group>=0 && group<CCTK_NumGroups());
     
+    const int dim = CCTK_GroupDimI(group);
+    
     assert (dir>=0 && dir<dim);
     
     if (CCTK_QueryGroupStorageI(cgh, group)) {
@@ -1273,6 +1457,7 @@ namespace Carpet {
 	case CCTK_GF: {
 	  BEGIN_COMPONENT_LOOP(cgh) {
 	    if (hh->is_local(reflevel,component)) {
+	      const int dim = CCTK_GroupDimI(group);
 	      int np = 1;
 	      for (int d=0; d<dim; ++d) {
 		np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
@@ -1345,6 +1530,7 @@ namespace Carpet {
 	    case CCTK_GF: {
 	      BEGIN_COMPONENT_LOOP(cgh) {
 		if (hh->is_local(reflevel,component)) {
+		  const int dim = CCTK_GroupDimI(group);
 		  int size[dim];
 		  for (int d=0; d<dim; ++d) {
 		    size[d] = *CCTK_ArrayGroupSizeI(cgh, d, group);
@@ -1485,6 +1671,7 @@ namespace Carpet {
 	    case CCTK_GF: {
 	      BEGIN_COMPONENT_LOOP(cgh) {
 		if (hh->is_local(reflevel,component)) {
+		  const int dim = CCTK_GroupDimI(group);
 		  int np = 1;
 		  for (int d=0; d<dim; ++d) {
 		    np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
@@ -1566,6 +1753,7 @@ namespace Carpet {
 	      BEGIN_COMPONENT_LOOP(cgh) {
 		if (checksums[n][reflevel][tl][component].valid) {
 		  if (hh->is_local(reflevel,component)) {
+		    const int dim = CCTK_GroupDimI(group);
 		    int np = 1;
 		    for (int d=0; d<dim; ++d) {
 		      np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
@@ -1685,6 +1873,7 @@ namespace Carpet {
     
     // Change
     reflevel = rl;
+    const int dim = gfdim;
     const bbox<int,dim>& base = hh->baseextent;
     reflevelfact = (int)floor(pow((double)hh->reffact, reflevel)+0.5);
     cgh->cctk_delta_time = base_delta_time / reflevelfact;
@@ -1712,6 +1901,8 @@ namespace Carpet {
   {
     assert (c==-1 || (c>=0 && c<hh->components(reflevel)));
     component = c;
+      
+    const int dim = gfdim;
     
     if (component == -1) {
       // Global mode -- no component is active
@@ -1836,11 +2027,33 @@ namespace Carpet {
 	case CCTK_SCALAR:
 	  break;
 	case CCTK_ARRAY: {
-	  const bbox<int,dim> ext =
-	    arrdata[group].dd->
-	    boxes[reflevel][component][mglevel].exterior;
-	  for (int d=0; d<dim; ++d) {
-	    arrdata[group].size[d] = ext.shape()[d] / ext.stride()[d];
+	  switch (CCTK_GroupDimI(group)) {
+#define CODE								   \
+	    do {							   \
+	      const bbox<int,dim> ext =					   \
+		((dh<dim>*)arrdata[group].dd)->				   \
+		boxes[reflevel][component][mglevel].exterior;		   \
+	      for (int d=0; d<dim; ++d) {				   \
+		arrdata[group].size[d] = ext.shape()[d] / ext.stride()[d]; \
+	      }								   \
+	    } while(0)
+	  case 1: {
+	    const int dim = 1;
+	    CODE;
+	    break;
+	  }
+	  case 2: {
+	    const int dim = 1;
+	    CODE;
+	    break;
+	  }
+	  case 3: {
+	    const int dim = 1;
+	    CODE;
+	    break;
+	  }
+	  default: abort();
+#undef CODE
 	  }
 	  break;
 	}

@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.10 2001/06/12 14:56:59 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.11 2001/07/02 13:22:14 schnetter Exp $
 
  ***************************************************************************/
 
@@ -41,11 +41,11 @@ using namespace std;
 template<int D>
 generic_gf<D>::generic_gf (const string name, th& t, dh<D>& d,
                            const int tmin, const int tmax)
-  : name(name), h(d.h), t(t), d(d), tmin(tmin), tmax(tmax),
+  : dimgeneric_gf(name, t, tmin, tmax),
+    h(d.h), d(d),
     storage(tmax-tmin+1)
 {
   assert (t.h == &d.h);
-  assert (tmin<=tmax+1);
 
   d.add(this);
 
@@ -465,5 +465,7 @@ void generic_gf<D>::ref_prolongate (int tl, int rl, int c, int ml,
 
 
 #if defined(TMPL_EXPLICIT)
+template class generic_gf<1>;
+template class generic_gf<2>;
 template class generic_gf<3>;
 #endif

@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.5 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/defs.cc,v 1.6 2001/07/02 13:22:12 schnetter Exp $
 
  ***************************************************************************/
 
@@ -75,6 +75,20 @@ ostream& output (ostream& os, const vector<T>& v) {
 #if defined(TMPL_EXPLICIT)
 #include "bbox.hh"
 #include "bboxset.hh"
+
+template ostream& output (ostream& os, const list<bbox<int,1> >& l);
+template ostream& output (ostream& os, const set<bbox<int,1> >& s);
+template ostream& output (ostream& os, const set<bboxset<int,1> >& s);
+template ostream& output (ostream& os, const vector<list<bbox<int,1> > >& v);
+template ostream& output (ostream& os, const vector<vector<bbox<int,1> > >& v);
+template ostream& output (ostream& os, const vector<vector<vector<bbox<int,1> > > >& v);
+
+template ostream& output (ostream& os, const list<bbox<int,2> >& l);
+template ostream& output (ostream& os, const set<bbox<int,2> >& s);
+template ostream& output (ostream& os, const set<bboxset<int,2> >& s);
+template ostream& output (ostream& os, const vector<list<bbox<int,2> > >& v);
+template ostream& output (ostream& os, const vector<vector<bbox<int,2> > >& v);
+template ostream& output (ostream& os, const vector<vector<vector<bbox<int,2> > > >& v);
 
 template ostream& output (ostream& os, const list<bbox<int,3> >& l);
 template ostream& output (ostream& os, const set<bbox<int,3> >& s);

@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.6 2001/06/12 14:56:59 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.7 2001/07/02 13:22:14 schnetter Exp $
 
  ***************************************************************************/
 
@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "defs.hh"
+#include "dggf.hh"
 #include "dh.hh"
 #include "gdata.hh"
 #include "gh.hh"
@@ -49,7 +50,7 @@ ostream& operator<< (ostream& os, const generic_gf<D>& f);
 
 // A generic grid function without type information
 template<int D>
-class generic_gf {
+class generic_gf: public dimgeneric_gf {
 
   // Types
 
@@ -68,12 +69,9 @@ class generic_gf {
 public:				// should be readonly
 
   // Fields
-  string name;
 
   gh<D> &h;			// grid hierarchy
-  th &t;			// time hierarchy
   dh<D> &d;			// data hierarchy
-  int tmin, tmax;		// timelevels
 
 protected:
   fdata storage;		// storage

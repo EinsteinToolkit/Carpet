@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.12 2001/06/12 14:56:59 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.13 2001/07/02 13:22:13 schnetter Exp $
 
  ***************************************************************************/
 
@@ -141,6 +141,8 @@ void generic_data<D>::write_ascii (const string name, const int time,
   assert (_has_storage);
   CHECKPOINT;
   
+  assert (DD<=D);
+  
   if (proc()==0) {
     // output on processor 0
     
@@ -213,6 +215,41 @@ void generic_data<D>::write_ascii (const string name, const int time,
 
 
 #if defined(TMPL_EXPLICIT)
+
+template class generic_data<1>;
+
+template void generic_data<1>
+::write_ascii (const string name, const int time,
+	       const vect<int,1>& org, const vect<int,1>& dirs,
+	       const int tl, const int rl, const int c, const int ml) const;
+template void generic_data<1>
+::write_ascii (const string name, const int time,
+	       const vect<int,1>& org, const vect<int,2>& dirs,
+	       const int tl, const int rl, const int c, const int ml) const;
+template void generic_data<1>
+::write_ascii (const string name, const int time,
+	       const vect<int,1>& org, const vect<int,3>& dirs,
+	       const int tl, const int rl, const int c, const int ml) const;
+
+
+
+template class generic_data<2>;
+
+template void generic_data<2>
+::write_ascii (const string name, const int time,
+	       const vect<int,2>& org, const vect<int,1>& dirs,
+	       const int tl, const int rl, const int c, const int ml) const;
+template void generic_data<2>
+::write_ascii (const string name, const int time,
+	       const vect<int,2>& org, const vect<int,2>& dirs,
+	       const int tl, const int rl, const int c, const int ml) const;
+template void generic_data<2>
+::write_ascii (const string name, const int time,
+	       const vect<int,2>& org, const vect<int,3>& dirs,
+	       const int tl, const int rl, const int c, const int ml) const;
+
+
+
 template class generic_data<3>;
 
 template void generic_data<3>
@@ -227,4 +264,5 @@ template void generic_data<3>
 ::write_ascii (const string name, const int time,
 	       const vect<int,3>& org, const vect<int,3>& dirs,
 	       const int tl, const int rl, const int c, const int ml) const;
+
 #endif

@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.14 2001/06/12 14:56:59 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.15 2001/07/02 13:22:13 schnetter Exp $
 
  ***************************************************************************/
 
@@ -360,5 +360,7 @@ void dh<D>::output (ostream& os) const {
 
 
 #if defined(TMPL_EXPLICIT)
+template class dh<1>;
+template class dh<2>;
 template class dh<3>;
 #endif

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.8 2001/05/16 14:29:47 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.9 2001/07/02 13:22:15 schnetter Exp $
 
 #include <alloca.h>
 #include <assert.h>
@@ -18,7 +18,7 @@
 
 #include "carpetslab.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.8 2001/05/16 14:29:47 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetSlab/src/Attic/carpetslab.cc,v 1.9 2001/07/02 13:22:15 schnetter Exp $";
 
 
 
@@ -52,9 +52,6 @@ namespace CarpetSlab {
     // Check destination processor
     assert (dest_proc>=-1 && dest_proc<CCTK_nProcs(cgh));
     
-    // Check dimension
-    assert (hdim>=0 && hdim<=dim);
-    
     // Check variable index
     assert (n>=0 && n<CCTK_NumVars());
     
@@ -69,10 +66,15 @@ namespace CarpetSlab {
     // Get info about group
     cGroup gp;
     CCTK_GroupData (group, &gp);
-    assert (gp.dim==dim);
+    assert (gp.dim<=maxdim);
     assert (CCTK_QueryGroupStorageI(cgh, group));
     const int typesize = CCTK_VarTypeSize(gp.vartype);
     assert (typesize>0);
+    
+    const int dim = gp.dim;
+    
+    // Check dimension
+    assert (hdim>=0 && hdim<=gp.dim);
     
     // Check timelevel
     const int num_tl = gp.numtimelevels;
@@ -105,9 +107,9 @@ namespace CarpetSlab {
 //     }
     
     // Get insider information about variable
-    const gh<dim>* myhh;
-    const dh<dim>* mydd;
-    const generic_gf<dim>* myff;
+    const dimgeneric_gh* myhh;
+    const dimgeneric_dh* mydd;
+    const dimgeneric_gf* myff;
     switch (gp.grouptype) {
     case CCTK_SCALAR:
       abort();
@@ -120,7 +122,7 @@ namespace CarpetSlab {
       break;
     case CCTK_GF:
       myhh = hh;
-      mydd = Carpet::dd;	// necessary for pre-ANSI C++ compilers
+      mydd = Carpet::dd;	// dd is int dd above for old C++ compilers
       assert (group < (int)gfdata.size());
       assert (var < (int)gfdata[group].data.size());
       myff = gfdata[group].data[var];
@@ -153,88 +155,129 @@ namespace CarpetSlab {
     
     if (hh->components(reflevel) > 0) {
       
-      // Only temporarily
-      component = 0;
-      
-      // Get sample data
-      const generic_data<dim>* mydata;
-      mydata = (*myff)(tl, reflevel, component, mglevel);
-      
-      // Stride of data in memory
-      const vect<int,dim> str = mydata->extent().stride();
-      
-      // Stride of collected data
-      vect<int,dim> hstr = str;
-      for (int dd=0; dd<hdim; ++dd) {
-	hstr[dirs[dd]-1] *= stride[dd];
+      switch (CCTK_GroupDimI(group)) {
+	
+#define CODE								 \
+	do {								 \
+	  								 \
+	  /* convert types */						 \
+	  const gh<dim>* myhh1 = dynamic_cast<const gh<dim>*>(myhh);	 \
+	  const dh<dim>* mydd1 = dynamic_cast<const dh<dim>*>(mydd);	 \
+          const generic_gf<dim>* myff1					 \
+            = dynamic_cast<const generic_gf<dim>*>(myff);	 	 \
+									 \
+	  /* Only temporarily */					 \
+	  component = 0;						 \
+									 \
+	  /* Get sample data */						 \
+	  const generic_data<dim>* mydata;				 \
+	  mydata = (*myff1)(tl, reflevel, component, mglevel);		 \
+									 \
+	  /* Stride of data in memory */				 \
+	  const vect<int,dim> str = mydata->extent().stride();		 \
+									 \
+	  /* Stride of collected data */				 \
+	  vect<int,dim> hstr = str;					 \
+	  for (int dd=0; dd<hdim; ++dd) {				 \
+	    hstr[dirs[dd]-1] *= stride[dd];				 \
+	  }								 \
+									 \
+	  /* Lower bound of collected data */				 \
+	  vect<int,dim> hlb;						 \
+	  for (int d=0; d<dim; ++d) {					 \
+	    hlb[d] = origin[d] * str[d];				 \
+	  }								 \
+									 \
+	  /* Upper bound of collected data */				 \
+	  vect<int,dim> hub = hlb;					 \
+	  for (int dd=0; dd<hdim; ++dd) {				 \
+	    hub[dirs[dd]-1] += (length[dd]-1) * hstr[dirs[dd]-1];	 \
+	  }								 \
+									 \
+	  /* Calculate extent to collect */				 \
+	  const bbox<int,dim> hextent (hlb, hub, hstr);			 \
+	  assert (hextent.num_points() == totalsize);			 \
+									 \
+	  /* Create collector data object */				 \
+	  void* myhdata = rank==collect_proc ? hdata : 0;		 \
+	  generic_data<dim>* const alldata = mydata->make_typed();	 \
+	  alldata->allocate (hextent, collect_proc, myhdata);		 \
+									 \
+	  /* Done with the temporary stuff */				 \
+	  mydata = 0;							 \
+	  component = -1;						 \
+									 \
+	  /* Loop over all components, copying data from them */	 \
+	  assert (component == -1);					 \
+	  for (component=0;						 \
+	       component<hh->components(reflevel);			 \
+	       ++component) {						 \
+									 \
+	    /* Get data object */					 \
+	    mydata = (*myff1)(tl, reflevel, component, mglevel);	 \
+									 \
+	    /* Calculate overlapping extents */				 \
+	    const bboxset<int,dim> myextents				 \
+	      = ((mydd1->boxes[reflevel][component][mglevel].sync_not	 \
+		  | mydd1->boxes[reflevel][component][mglevel].interior) \
+		 & hextent);						 \
+									 \
+	    /* Loop over overlapping extents */				 \
+	    for (bboxset<int,dim>::const_iterator			 \
+		   ext_iter = myextents.begin();			 \
+		 ext_iter != myextents.end();				 \
+		 ++ext_iter) {						 \
+									 \
+	      /* Copy data */						 \
+	      alldata->copy_from (mydata, *ext_iter);			 \
+									 \
+	    }								 \
+									 \
+	  } /* Loop over components */					 \
+	  component = -1;						 \
+									 \
+	  /* Copy result to all processors */				 \
+	  if (dest_proc == -1) {					 \
+	    for (int proc=0; proc<CCTK_nProcs(cgh); ++proc) {		 \
+	      if (proc != collect_proc) {				 \
+									 \
+		void* myhdata = rank==proc ? hdata : 0;			 \
+		generic_data<dim>* const tmpdata = mydata->make_typed(); \
+		tmpdata->allocate (alldata->extent(), proc, myhdata);	 \
+		tmpdata->copy_from (alldata, alldata->extent());	 \
+		delete tmpdata;						 \
+									 \
+	      }								 \
+	    }								 \
+	  } /* Copy result */						 \
+									 \
+	  delete alldata;						 \
+									 \
+	} while(0)
+	
+      case 1: {
+	const int dim=1;
+	CODE;
+	break;
       }
-      
-      // Lower bound of collected data
-      vect<int,dim> hlb;
-      for (int d=0; d<dim; ++d) {
-	hlb[d] = origin[d] * str[d];
+	
+      case 2: {
+	const int dim=2;
+	CODE;
+	break;
       }
-      
-      // Upper bound of collected data
-      vect<int,dim> hub = hlb;
-      for (int dd=0; dd<hdim; ++dd) {
-	hub[dirs[dd]-1] += (length[dd]-1) * hstr[dirs[dd]-1];
+	
+      case 3: {
+	const int dim=3;
+	CODE;
+	break;
       }
-      
-      // Calculate extent to collect
-      const bbox<int,dim> hextent (hlb, hub, hstr);
-      assert (hextent.num_points() == totalsize);
-      
-      // Create collector data object
-      void* myhdata = rank==collect_proc ? hdata : 0;
-      generic_data<dim>* const alldata = mydata->make_typed();
-      alldata->allocate (hextent, collect_proc, myhdata);
-      
-      // Done with the temporary stuff
-      mydata = 0;
-      component = -1;
-      
-      // Loop over all components, copying data from them
-      assert (component == -1);
-      for (component=0; component<hh->components(reflevel); ++component) {
 	
-	// Get data object
-	mydata = (*myff)(tl, reflevel, component, mglevel);
+      default: abort();
 	
-	// Calculate overlapping extents
-	const bboxset<int,dim> myextents
-	  = ((mydd->boxes[reflevel][component][mglevel].sync_not
-	      | mydd->boxes[reflevel][component][mglevel].interior)
-	     & hextent);
+#undef CODE
 	
-	// Loop over overlapping extents
-	for (bboxset<int,dim>::const_iterator ext_iter = myextents.begin();
-	     ext_iter != myextents.end(); ++ext_iter) {
-	  
-	  // Copy data
-	  alldata->copy_from (mydata, *ext_iter);
-	  
-	}
-	
-      }	// Loop over components
-      component = -1;
-      
-      // Copy result to all processors
-      if (dest_proc == -1) {
-	for (int proc=0; proc<CCTK_nProcs(cgh); ++proc) {
-	  if (proc != collect_proc) {
-	    
-	    void* myhdata = rank==proc ? hdata : 0;
-	    generic_data<dim>* const tmpdata = mydata->make_typed();
-	    tmpdata->allocate (alldata->extent(), proc, myhdata);
-	    tmpdata->copy_from (alldata, alldata->extent());
-	    delete tmpdata;
-	    
-	  }
-	}
-      }	// Copy result
-      
-      delete alldata;
+      }	// switch
       
     } // if components>0
     
@@ -259,6 +302,9 @@ namespace CarpetSlab {
 			      void** const hdata,
 			      int hsize [/*hdim*/])
   {
+    const int dim = CCTK_GroupDimFromVarI(vindex);
+    assert (dim>=1 && dim<=maxdim);
+    
     // Check some arguments
     assert (hdim>=0 && hdim<=dim);
     

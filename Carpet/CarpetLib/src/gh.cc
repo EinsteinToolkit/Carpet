@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.7 2001/06/12 14:57:00 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.8 2001/07/02 13:22:14 schnetter Exp $
 
  ***************************************************************************/
 
@@ -235,5 +235,9 @@ ostream& gh<D>::output (ostream& os) const {
 
 
 #if defined(TMPL_EXPLICIT)
+
+template class gh<1>;
+template class gh<2>;
 template class gh<3>;
+
 #endif

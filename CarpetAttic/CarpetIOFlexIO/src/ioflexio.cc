@@ -25,7 +25,6 @@
 #include "Carpet/CarpetLib/src/bbox.hh"
 #include "Carpet/CarpetLib/src/data.hh"
 #include "Carpet/CarpetLib/src/gdata.hh"
-#include "Carpet/CarpetLib/src/gf.hh"
 #include "Carpet/CarpetLib/src/ggf.hh"
 #include "Carpet/CarpetLib/src/vect.hh"
 
@@ -33,7 +32,7 @@
 
 #include "ioflexio.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.8 2001/04/23 08:10:14 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.9 2001/07/02 13:22:11 schnetter Exp $";
 
 
 
@@ -222,9 +221,11 @@ namespace CarpetIOFlexIO {
 	// TODO: Set datatype correctly
 	amrwriter->setType (IObase::Float64);
 	
+	const int dim = CCTK_GroupDimI(group);
+	
 	// Set coordinate information
-	CCTK_REAL lower[dim], upper[dim];
-	double origin[dim], delta[dim], timestep;
+	CCTK_REAL lower[maxdim], upper[maxdim];
+	double origin[maxdim], delta[maxdim], timestep;
 	for (int d=0; d<dim; ++d) {
 	  const int ierr = CCTK_CoordRange
 	    (cgh, &lower[d], &upper[d], d+1, 0, "cart3d");
@@ -238,12 +239,11 @@ namespace CarpetIOFlexIO {
 	
 	// Set refinement information
 	int interlevel_timerefinement;
-	int interlevel_spacerefinement[dim];
-	int initial_gridplacementrefinement[dim];
+	int interlevel_spacerefinement[maxdim];
+	int initial_gridplacementrefinement[maxdim];
 	interlevel_timerefinement = hh->reffact;
 	for (int d=0; d<dim; ++d) {
 	  interlevel_spacerefinement[d] = hh->reffact;
-// 	  initial_gridplacementrefinement[d] = 2;
  	  initial_gridplacementrefinement[d] = 1;
 	}
 	amrwriter->setRefinement
@@ -261,46 +261,76 @@ namespace CarpetIOFlexIO {
       // level
       BEGIN_COMPONENT_LOOP(cgh) {
 	
-	const generic_gf<dim>* ff = 0;
-	
-	switch (CCTK_GroupTypeI(group)) {
+	switch (CCTK_GroupDimI(group)) {
 	  
-	case CCTK_ARRAY:
-	  assert (var < (int)arrdata[group].data.size());
-	  ff = arrdata[group].data[var];
-	  break;
+#define CODE								\
+	  do {								\
+	    const generic_gf<dim>* ff = 0;				\
+	    								\
+	    switch (CCTK_GroupTypeI(group)) {				\
+	      								\
+	    case CCTK_ARRAY:						\
+	      assert (var < (int)arrdata[group].data.size());		\
+	      ff = (generic_gf<dim>*)arrdata[group].data[var];		\
+	      break;							\
+	      								\
+	    case CCTK_GF:						\
+	      assert (var < (int)gfdata[group].data.size());		\
+	      ff = (generic_gf<dim>*)gfdata[group].data[var];		\
+	      break;							\
+	      								\
+	    default:							\
+	      abort();							\
+	    }								\
+	    								\
+	    const generic_data<dim>* const data				\
+	      = (*ff) (tl, reflevel, component, mglevel);		\
+	    								\
+	    /* Make temporary copy on processor 0 */			\
+	    const bbox<int,dim> ext = data->extent();			\
+	    generic_data<dim>* const tmp = data->make_typed ();		\
+	    tmp->allocate (ext, 0);					\
+	    tmp->copy_from (data, ext);					\
+	    								\
+	    /* Write data */						\
+	    if (CCTK_MyProc(cgh)==0) {					\
+	      int origin[dim], dims[dim];				\
+	      for (int d=0; d<dim; ++d) {				\
+		origin[d] = (ext.lower() / ext.stride())[d];		\
+		dims[d]   = (ext.shape() / ext.stride())[d];		\
+	      }								\
+	      amrwriter->write (origin, dims, (void*)tmp->storage());	\
+	    }								\
+	    								\
+	    /* Delete temporary copy */					\
+	    delete tmp;							\
+	    								\
+	} while (0)
 	  
-	case CCTK_GF:
-	  assert (var < (int)gfdata[group].data.size());
-	  ff = gfdata[group].data[var];
+	case 1: {
+	  const int dim=1;
+	  CODE;
 	  break;
+	}
+	  
+	case 2: {
+	  const int dim=2;
+	  CODE;
+	  break;
+	}
+	  
+	case 3: {
+	  const int dim=3;
+	  CODE;
+	  break;
+	}
 	  
 	default:
 	  abort();
+	  
+#undef CODE
+	  
 	}
-	
-	const generic_data<dim>* const data
-	  = (*ff) (tl, reflevel, component, mglevel);
-	
-	// Make temporary copy on processor 0
-	const bbox<int,dim> ext = data->extent();
-	generic_data<dim>* const tmp = data->make_typed ();
-	tmp->allocate (ext, 0);
-	tmp->copy_from (data, ext);
-	
-	// Write data
-	if (CCTK_MyProc(cgh)==0) {
-	  int origin[dim], dims[dim];
-	  for (int d=0; d<dim; ++d) {
-//  	    origin[d] = 2 * (ext.lower() / ext.stride())[d] + 1;
- 	    origin[d] = (ext.lower() / ext.stride())[d];
- 	    dims[d]   = (ext.shape() / ext.stride())[d];
-	  }
-	  amrwriter->write (origin, dims, (void*)tmp->storage());
-	}
-	
-	// Delete temporary copy
-	delete tmp;
 	
       } END_COMPONENT_LOOP(cgh);
       
@@ -384,14 +414,16 @@ namespace CarpetIOFlexIO {
   
   
   int InputGH (cGH* const cgh) {
+    int retval = 0;
     for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
       if (CheckForVariable(cgh, GetStringParameter("in3D_vars",""), vindex)) {
 	char* varname = CCTK_FullName(vindex);
-	const int retval = InputVarAs (cgh, varname, CCTK_VarName(vindex));
+	retval = InputVarAs (cgh, varname, CCTK_VarName(vindex));
 	free (varname);
+	if (retval != 0) return retval;
       }
     }
-    return 0;
+    return retval;
   }
   
   
@@ -456,6 +488,8 @@ namespace CarpetIOFlexIO {
       AmrGridReader* amrreader = 0;
       int ndatasets = -1;
       
+      const int dim = CCTK_GroupDimI(group);
+      
       // Read the file only on the root processor
       if (CCTK_MyProc(cgh)==0) {
 	
@@ -477,7 +511,7 @@ namespace CarpetIOFlexIO {
 	// Read information about dataset
 	IObase::DataType numbertype;
 	int rank;
-	int dims[dim];
+	int dims[maxdim];
 	reader->readInfo (numbertype, rank, dims);
 	
 	// Check rank
@@ -505,8 +539,8 @@ namespace CarpetIOFlexIO {
 	
 	// Read grid
 	AmrGrid* amrgrid = 0;
-	int amr_origin[dim];
-	int amr_dims[dim];
+	int amr_origin[maxdim];
+	int amr_dims[maxdim];
 	
 	if (CCTK_MyProc(cgh)==0) {
 	  
@@ -537,45 +571,77 @@ namespace CarpetIOFlexIO {
 	// level
 	BEGIN_COMPONENT_LOOP(cgh) {
 	  
-	  generic_gf<dim>* ff = 0;
-	  
-	  switch (CCTK_GroupTypeI(group)) {
+	  switch (CCTK_GroupDimI(group)) {
 	    
-	  case CCTK_ARRAY:
-	    assert (var < (int)arrdata[group].data.size());
-	    ff = arrdata[group].data[var];
+#define CODE								\
+	    do {							\
+	      generic_gf<dim>* ff = 0;					\
+	      								\
+	      switch (CCTK_GroupTypeI(group)) {				\
+									\
+	      case CCTK_ARRAY:						\
+		assert (var < (int)arrdata[group].data.size());		\
+		ff = (generic_gf<dim>*)arrdata[group].data[var];	\
+		break;							\
+									\
+	      case CCTK_GF:						\
+		assert (var < (int)gfdata[group].data.size());		\
+		ff = (generic_gf<dim>*)gfdata[group].data[var];		\
+		break;							\
+									\
+	      default:							\
+		abort();						\
+	      }								\
+	      								\
+	      generic_data<dim>* const data				\
+		= (*ff) (tl, reflevel, component, mglevel);		\
+	      								\
+	      /* Create temporary data storage on processor 0 */	\
+	      const vect<int,dim> str = vect<int,dim>(reflevelfact);	\
+	      const vect<int,dim> lb = vect<int,dim>(amr_origin) * str;	\
+	      const vect<int,dim> ub					\
+		= lb + (vect<int,dim>(amr_dims) - 1) * str;		\
+	      const bbox<int,dim> ext(lb,ub,str);			\
+	      generic_data<dim>* const tmp = data->make_typed ();	\
+	      								\
+	      if (CCTK_MyProc(cgh)==0) {				\
+		tmp->allocate (ext, 0, amrgrid->data);			\
+	      } else {							\
+		tmp->allocate (ext, 0, 0);				\
+	      }								\
+	      								\
+	      /* Copy into grid function */				\
+	      data->copy_from (tmp, ext);				\
+	      								\
+	      /* Delete temporary copy */				\
+	      delete tmp;						\
+	      								\
+	    } while (0)
+		
+	  case 1: {
+	    const int dim=1;
+	    CODE;
 	    break;
+	  }
 	    
-	  case CCTK_GF:
-	    assert (var < (int)gfdata[group].data.size());
-	    ff = gfdata[group].data[var];
+	  case 2: {
+	    const int dim=2;
+	    CODE;
 	    break;
+	  }
+	    
+	  case 3: {
+	    const int dim=3;
+	    CODE;
+	    break;
+	  }
 	    
 	  default:
 	    abort();
+	    
+#undef CODE
+	    
 	  }
-	  
-	  generic_data<dim>* const data
-	    = (*ff) (tl, reflevel, component, mglevel);
-	  
-	  // Create temporary data storage on processor 0
-	  const vect<int,dim> str = vect<int,dim>(reflevelfact);
-	  const vect<int,dim> lb = vect<int,dim>(amr_origin) * str;
-	  const vect<int,dim> ub = lb + (vect<int,dim>(amr_dims) - 1) * str;
-	  const bbox<int,dim> ext(lb,ub,str);
-	  generic_data<dim>* const tmp = data->make_typed ();
-	  
-	  if (CCTK_MyProc(cgh)==0) {
-	    tmp->allocate (ext, 0, amrgrid->data);
-	  } else {
-	    tmp->allocate (ext, 0, 0);
-	  }
-	  
-	  // Copy into grid function
-	  data->copy_from (tmp, ext);
-	  
-	  // Delete temporary copy
-	  delete tmp;
 	  
 	} END_COMPONENT_LOOP(cgh);
 	
