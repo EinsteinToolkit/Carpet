@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.5 2001/03/16 21:32:17 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.6 2001/03/30 00:21:24 eschnett Exp $
 
 #include <vector>
 
@@ -47,7 +47,10 @@ namespace Carpet {
   
   
   // Data for scalars
-  extern vector<vector<vector<void*> > > scdata; // [group][var][tl]
+  struct scdesc {
+    vector<vector<vector<void*> > > data; // [var][rl][tl]
+  };
+  extern vector<scdesc> scdata;	// group
   
   // Data for arrays
   struct arrdesc {
@@ -71,6 +74,9 @@ namespace Carpet {
     vector<generic_gf<dim>* > data; // [var]
   };
   extern vector<gfdesc> gfdata;	// [group]
+  
+  // Checksums
+  extern vector<vector<vector<vector<int> > > > checksums; // [n][rl][tl][c]
   
   
   
@@ -104,9 +110,9 @@ namespace Carpet {
   
   
   // Helper functions
-  void set_reflevel (cGH* cgh, const int rl);
-  void set_mglevel (cGH* cgh, const int ml);
-  void set_component (cGH* cgh, const int c);
+  void set_reflevel (cGH* cgh, int rl);
+  void set_mglevel (cGH* cgh, int ml);
+  void set_component (cGH* cgh, int c);
   
   
   

@@ -35,7 +35,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.20 2001/03/29 18:21:29 eschnett Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Attic/carpet.cc,v 1.21 2001/03/30 00:21:24 eschnett Exp $";
 
 
 
@@ -47,11 +47,21 @@ namespace Carpet {
   static void CycleTimeLevels (cGH* cgh);
   static void Restrict (cGH* cgh);
   
-  static void Poison (cGH* cgh);
-  static void PoisonCheck (cGH* cgh);
+  // where=0: all time levels but next time level
+  // where=1: only next time level
+  // but never if there is only one time level
+  
+  static void Poison (cGH* cgh, int where);
+  static void PoisonCheck (cGH* cgh, int where);
+  
+  static void CalculateChecksums (cGH* cgh, int where);
+  static void CheckChecksums (cGH* cgh, int where);
   
   // Debugging output
   static void Checkpoint (const char* fmt, ...);
+  
+  // Error output
+  static void UnsupportedVarType (int vindex);
   
   
   
@@ -84,7 +94,7 @@ namespace Carpet {
   
   
   // Data for scalars
-  vector<vector<vector<void*> > > scdata; // [group][var][ti]
+  vector<scdesc> scdata;	// [group]
   
   // Data for arrays
   // TODO: have replicated arrays
@@ -98,6 +108,9 @@ namespace Carpet {
   
   // Data for grid functions
   vector<gfdesc> gfdata;	// [group]
+  
+  // Checksums
+  vector<vector<vector<vector<int> > > > checksums; // [var][rl][tl][c]
   
   
   
@@ -205,12 +218,15 @@ namespace Carpet {
       switch (CCTK_GroupTypeI(group)) {
 	
       case CCTK_SCALAR: {
-	scdata[group].resize(CCTK_NumVarsInGroupI(group));
-	for (int var=0; var<(int)scdata[group].size(); ++var) {
+	scdata[group].data.resize(CCTK_NumVarsInGroupI(group));
+	for (int var=0; var<(int)scdata[group].data.size(); ++var) {
 	  const int n = (CCTK_FirstVarIndexI(group) + var);
-	  scdata[group][var].resize(CCTK_NumTimeLevelsFromVarI(n));
-	  for (int ti=0; ti<(int)scdata[group][var].size(); ++ti) {
-	    scdata[group][var][ti] = 0;
+	  scdata[group].data[var].resize(maxreflevels);
+	  for (int rl=0; rl<maxreflevels; ++rl) {
+	    scdata[group].data[var][rl].resize(CCTK_NumTimeLevelsFromVarI(n));
+	    for (int ti=0; ti<(int)scdata[group].data[var].size(); ++ti) {
+	      scdata[group].data[var][rl][ti] = 0;
+	    }
 	  }
 	}
 	break;
@@ -253,7 +269,7 @@ namespace Carpet {
 	}
 	
 	arrdata[group].data.resize(CCTK_NumVarsInGroupI(group));
-	for (int var=0; var<(int)scdata[group].size(); ++var) {
+	for (int var=0; var<(int)scdata[group].data.size(); ++var) {
 	  arrdata[group].data[var] = 0;
 	}
 	break;
@@ -261,7 +277,7 @@ namespace Carpet {
 	
       case CCTK_GF: {
 	gfdata[group].data.resize(CCTK_NumVarsInGroupI(group));
-	for (int var=0; var<(int)scdata[group].size(); ++var) {
+	for (int var=0; var<(int)scdata[group].data.size(); ++var) {
 	  gfdata[group].data[var] = 0;
 	}
 	break;
@@ -337,6 +353,8 @@ namespace Carpet {
     
     BEGIN_REFLEVEL_LOOP(cgh) {
       
+      Poison (cgh, 0);
+      
       // Set up the grid
       CCTK_ScheduleTraverse ("CCTK_BASEGRID", cgh, CallFunction);
       if (reflevel==0) {
@@ -369,6 +387,9 @@ namespace Carpet {
       
       // Poststep
       CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
+      
+      PoisonCheck (cgh, 0);
+      CalculateChecksums (cgh, 0);
       
       // Analysis
       CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
@@ -430,10 +451,12 @@ namespace Carpet {
       BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
 	if (cgh->cctk_iteration % (maxreflevelfact/reflevelfact) == 0) {
 	  
+	  CheckChecksums (cgh, 0);
+	  
 	  // Cycle time levels
-	  PoisonCheck (cgh);
+	  PoisonCheck (cgh, 1);
 	  CycleTimeLevels (cgh);
-	  Poison (cgh);
+	  Poison (cgh, 1);
 	  
 	  // Advance level times
 	  tt->advance_time (reflevel, mglevel);
@@ -453,6 +476,8 @@ namespace Carpet {
 	  
 	  // Restrict
 	  Restrict (cgh);
+	  
+	  CalculateChecksums (cgh, 0);
 	  
 	}
       } END_REVERSE_REFLEVEL_LOOP(cgh);
@@ -660,27 +685,26 @@ namespace Carpet {
     switch (CCTK_GroupTypeI(group)) {
       
     case CCTK_SCALAR:
-      if (scdata[group].size()==0 || scdata[group][0].size()==0
-	  || scdata[group][0][0] != 0) {
+      if (scdata[group].data.size()==0 || scdata[group].data[0].size()==0
+	  || scdata[group].data[0][0].size()==0
+	  || scdata[group].data[0][0][0] != 0) {
 	// group already has storage
 	break;
       }
-      for (int var=0; var<(int)scdata[group].size(); ++var) {
-	for (int ti=0; ti<(int)scdata[group][var].size(); ++ti) {
-	  const int n = n0 + var;
-	  switch (CCTK_VarTypeI(n)) {
-#define TYPECASE(N,T)				\
-	  case N:				\
-	    scdata[group][var][ti] = new T;	\
-	    break;
+      for (int var=0; var<(int)scdata[group].data.size(); ++var) {
+	for (int rl=0; rl<(int)scdata[group].data[var].size(); ++rl) {
+	  for (int ti=0; ti<(int)scdata[group].data[var][rl].size(); ++ti) {
+	    const int n = n0 + var;
+	    switch (CCTK_VarTypeI(n)) {
+#define TYPECASE(N,T)					\
+	    case N:					\
+	      scdata[group].data[var][rl][ti] = new T;	\
+	      break;
 #include "typecase"
 #undef TYPECASE
-	  default:
-	    CCTK_VWarn
-	      (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-	       "Carpet does not support the type of the variable \"%s\".\n"
-	       "Either enable support for this type, "
-	       "or change the type of this variable.", CCTK_FullName(n));
+	    default:
+	      UnsupportedVarType(n);
+	    }
 	  }
 	}
       }
@@ -704,11 +728,7 @@ namespace Carpet {
 #include "typecase"
 #undef TYPECASE
 	default:
-	  CCTK_VWarn
-	    (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-	     "Carpet does not support the type of the variable \"%s\".\n"
-	     "Either enable support for this type, "
-	     "or change the type of this variable.", CCTK_FullName(n));
+	  UnsupportedVarType(n);
 	}
       }
       break;
@@ -730,11 +750,7 @@ namespace Carpet {
 #include "typecase"
 #undef TYPECASE
 	default:
-	  CCTK_VWarn
-	    (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-	     "Carpet does not support the type of the variable \"%s\".\n"
-	     "Either enable support for this type, "
-	     "or change the type of this variable.", CCTK_FullName(n));
+	  UnsupportedVarType(n);
 	}
       }
       break;
@@ -762,29 +778,28 @@ namespace Carpet {
     switch (CCTK_GroupTypeI(group)) {
       
     case CCTK_SCALAR:
-      if (scdata[group].size()==0 || scdata[group][0].size()==0
-	  || scdata[group][0][0] == 0) {
+      if (scdata[group].data.size()==0 || scdata[group].data[0].size()==0
+	  || scdata[group].data[0][0].size()==0
+	  || scdata[group].data[0][0][0] == 0) {
 	// group already has no storage
 	break;
       }
-      for (int var=0; var<(int)scdata[group].size(); ++var) {
+      for (int var=0; var<(int)scdata[group].data.size(); ++var) {
 	const int n = CCTK_FirstVarIndexI(group) + var;
-	for (int ti=0; ti<(int)scdata[group][var].size(); ++ti) {
-	  switch (CCTK_VarTypeI(n)) {
-#define TYPECASE(N,T)				\
-	  case N:				\
-	    delete (T*)scdata[group][var][ti];	\
-	    break;
+	for (int rl=0; rl<(int)scdata[group].data[var].size(); ++rl) {
+	  for (int ti=0; ti<(int)scdata[group].data[var][rl].size(); ++ti) {
+	    switch (CCTK_VarTypeI(n)) {
+#define TYPECASE(N,T)						\
+	    case N:						\
+	      delete (T*)scdata[group].data[var][rl][ti];	\
+	      break;
 #include "typecase"
 #undef TYPECASE
-	  default:
-	    CCTK_VWarn
-	      (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-	       "Carpet does not support the type of the variable \"%s\".\n"
-	       "Either enable support for this type, "
-	       "or change the type of this variable.", CCTK_FullName(n));
+	    default:
+	      UnsupportedVarType(n);
+	    }
+	    scdata[group].data[var][rl][ti] = 0;
 	  }
-	  scdata[group][var][ti] = 0;
 	}
       }
       break;
@@ -804,11 +819,7 @@ namespace Carpet {
 #include "typecase"
 #undef TYPECASE
 	default:
-	  CCTK_VWarn
-	    (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-	     "Carpet does not support the type of the variable \"%s\".\n"
-	     "Either enable support for this type, "
-	     "or change the type of this variable.", CCTK_FullName(n));
+	  UnsupportedVarType(n);
 	}
 	arrdata[group].data[var] = 0;
       }
@@ -830,11 +841,7 @@ namespace Carpet {
 #include "typecase"
 #undef TYPECASE
 	default:
-	  CCTK_VWarn
-	    (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-	     "Carpet does not support the type of the variable \"%s\".\n"
-	     "Either enable support for this type, "
-	     "or change the type of this variable.", CCTK_FullName(n));
+	  UnsupportedVarType(n);
 	}
 	gfdata[group].data[var] = 0;
       }
@@ -945,14 +952,14 @@ namespace Carpet {
 	  switch (CCTK_GroupTypeFromVarI(n)) {
 	  case CCTK_SCALAR: {
 	    assert (group<(int)scdata.size());
-	    assert (var<(int)scdata[group].size());
+	    assert (var<(int)scdata[group].data.size());
 	    const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
-	    void* tmpdata = scdata[group][var][0];
+	    void* tmpdata = scdata[group].data[var][reflevel][0];
 	    for (int ti=0; ti<num_tl-1; ++ti) {
-	      // TODO: Which refinement level to use?
-	      scdata[group][var][ti] = scdata[group][var][ti+1];
+	      scdata[group].data[var][reflevel][ti]
+		= scdata[group].data[var][reflevel][ti+1];
 	    }
-	    scdata[group][var][num_tl-1] = tmpdata;
+	    scdata[group].data[var][reflevel][num_tl-1] = tmpdata;
 	    tmpdata = 0;
 	    break;
 	  }
@@ -1141,10 +1148,11 @@ namespace Carpet {
       
     case CCTK_SCALAR: {
       assert (group<(int)scdata.size());
-      assert (var<(int)scdata[group].size());
+      assert (var<(int)scdata[group].data.size());
+      assert (reflevel<(int)scdata[group].data[var].size());
       const int ti=0;
-      assert (ti<(int)scdata[group][var].size());
-      return scdata[group][var][ti] != 0;
+      assert (ti<(int)scdata[group].data[var][reflevel].size());
+      return scdata[group].data[var][reflevel][ti] != 0;
     }
       
     case CCTK_ARRAY: {
@@ -1166,7 +1174,7 @@ namespace Carpet {
   
   
   
-  void Poison (cGH* cgh)
+  void Poison (cGH* cgh, const int where)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -1174,61 +1182,53 @@ namespace Carpet {
     
     Checkpoint ("%*sPoison", 2*reflevel, "");
     
-    BEGIN_COMPONENT_LOOP(cgh) {
-      if (hh->is_local(reflevel,component)) {
-	
-	for (int group=0; group<CCTK_NumGroups(); ++group) {
-	  if (CCTK_QueryGroupStorageI(cgh, group)) {
-	    for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-	      
-	      const int n = CCTK_FirstVarIndexI(group) + var;
-	      const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
-	      const int sz = CCTK_VarTypeSize(CCTK_VarTypeI(n));
-	      assert (sz>0);
-	      
-	      if (num_tl>1) {
-		
-		switch (CCTK_GroupTypeFromVarI(n)) {
-		case CCTK_SCALAR: {
-		  assert (group<(int)scdata.size());
-		  assert (var<(int)scdata[group].size());
-		  memset (cgh->data[n][num_tl-1], poison_value, sz);
-		  break;
-		}
-		case CCTK_ARRAY: {
-		  assert (group<(int)arrdata.size());
-		  assert (var<(int)arrdata[group].data.size());
-		  assert (arrdata[group].hh->is_local(reflevel,component));
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
+      if (CCTK_QueryGroupStorageI(cgh, group)) {
+	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+	  
+	  const int n = CCTK_FirstVarIndexI(group) + var;
+	  const int sz = CCTK_VarTypeSize(CCTK_VarTypeI(n));
+	  assert (sz>0);
+	  
+	  const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
+	  const int min_tl = where ? max(num_tl-1,1) : 0;
+	  const int max_tl = where ? num_tl-1        : num_tl-2;
+	  for (int tl=min_tl; tl<=max_tl; ++tl) {
+	    
+	    switch (CCTK_GroupTypeFromVarI(n)) {
+	    case CCTK_SCALAR: {
+	      assert (group<(int)scdata.size());
+	      assert (var<(int)scdata[group].data.size());
+	      memset (cgh->data[n][tl], poison_value, sz);
+	      break;
+	    }
+	    case CCTK_ARRAY:
+	    case CCTK_GF: {
+	      BEGIN_COMPONENT_LOOP(cgh) {
+		if (hh->is_local(reflevel,component)) {
 		  int np = 1;
-		  for (int d=0; d<dim; ++d) np *= arrdata[group].size[d];
-		  memset (cgh->data[n][num_tl-1], poison_value, np*sz);
-		  break;
+		  for (int d=0; d<dim; ++d) {
+		    np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
+		  }
+		  memset (cgh->data[n][tl], poison_value, np*sz);
 		}
-		case CCTK_GF: {
-		  assert (group<(int)gfdata.size());
-		  assert (var<(int)gfdata[group].data.size());
-		  int np = 1;
-		  for (int d=0; d<dim; ++d) np *= gfsize[d];
-		  memset (cgh->data[n][num_tl-1], poison_value, np*sz);
-		  break;
-		}
-		default:
-		  abort();
-		}
-		
-	      }	// if more than one timelevel
-	      
-	    } // for var
-	  } // if has storage
-	} // for group
-	
-      }
-    } END_COMPONENT_LOOP(cgh);
+	      } END_COMPONENT_LOOP(cgh);
+	      break;
+	    }
+	    default:
+	      abort();
+	    }
+	    
+	  } // for tl
+	  
+	} // for var
+      } // if has storage
+    } // for group
   }
   
   
   
-  void PoisonCheck (cGH* cgh)
+  void PoisonCheck (cGH* cgh, const int where)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -1236,55 +1236,54 @@ namespace Carpet {
     
     Checkpoint ("%*sPoisonCheck", 2*reflevel, "");
     
-    BEGIN_COMPONENT_LOOP(cgh) {
-      if (hh->is_local(reflevel,component)) {
-	
-	for (int group=0; group<CCTK_NumGroups(); ++group) {
-	  if (CCTK_QueryGroupStorageI(cgh, group)) {
-	    for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
+      if (CCTK_QueryGroupStorageI(cgh, group)) {
+	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+	  
+	  const int n = CCTK_FirstVarIndexI(group) + var;
+	  
+	  const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
+	  const int min_tl = where ? max(num_tl-1,1) : 0;
+	  const int max_tl = where ? num_tl-1        : num_tl-2;
+	  for (int tl=min_tl; tl<=max_tl; ++tl) {
+	    
+	    switch (CCTK_GroupTypeFromVarI(n)) {
 	      
-	      const int n = CCTK_FirstVarIndexI(group) + var;
-	      const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
-	      
-	      if (num_tl>1) {
-		
-		switch (CCTK_GroupTypeFromVarI(n)) {
-		  
-		case CCTK_SCALAR: {
-		  bool poisoned=false;
-		  switch (CCTK_VarTypeI(n)) {
-#define TYPECASE(N,T)							  \
-		  case N: {						  \
-		    T worm;						  \
-		    memset (&worm, poison_value, sizeof(worm));		  \
-		    poisoned = *(const T*)cgh->data[n][num_tl-1] == worm; \
-		    break;						  \
-		  }
+	    case CCTK_SCALAR: {
+	      bool poisoned=false;
+	      switch (CCTK_VarTypeI(n)) {
+#define TYPECASE(N,T)						\
+	      case N: {						\
+		T worm;						\
+		memset (&worm, poison_value, sizeof(worm));	\
+		poisoned = *(const T*)cgh->data[n][tl] == worm;	\
+		break;						\
+	      }
 #include "typecase"
 #undef TYPECASE
-		  default:
-		    CCTK_VWarn
-		      (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-		       "Carpet does not support the type of the variable \"%s\".\n"
-		       "Either enable support for this type, "
-		       "or change the type of this variable.", CCTK_FullName(n));
-		  }
-		  if (poisoned) {
-		    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-				"The variable \"%s\" contains poison",
-				CCTK_VarName(n));
-		  }
-		  break;
-		}
-		  
-		case CCTK_ARRAY:
-		case CCTK_GF: {
+	      default:
+		UnsupportedVarType(n);
+	      }
+	      if (poisoned) {
+		char* fullname = CCTK_FullName(n);
+		CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+			    "The variable \"%s\" contains poison",
+			    fullname);
+		free (fullname);
+	      }
+	      break;
+	    }
+	      
+	    case CCTK_ARRAY:
+	    case CCTK_GF: {
+	      BEGIN_COMPONENT_LOOP(cgh) {
+		if (hh->is_local(reflevel,component)) {
 		  int size[dim];
 		  for (int d=0; d<dim; ++d) {
 		    size[d] = *CCTK_ArrayGroupSizeI(cgh, d, group);
 		  }
 		  const int tp = CCTK_VarTypeI(n);
-		  const void* const data = cgh->data[n][num_tl-1];
+		  const void* const data = cgh->data[n][tl];
 		  int numpoison=0;
 		  for (int k=0; k<size[2]; ++k) {
 		    for (int j=0; j<size[1]; ++j) {
@@ -1302,43 +1301,198 @@ namespace Carpet {
 #include "typecase"
 #undef TYPECASE
 			default:
-			  CCTK_VWarn
-			    (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-			     "Carpet does not support the type of the variable \"%s\".\n"
-			     "Either enable support for this type, "
-			     "or change the type of this variable.", CCTK_FullName(n));
+			  UnsupportedVarType(n);
 			}
 			if (poisoned) {
 			  ++numpoison;
 			  if (numpoison<=10) {
+			    char* fullname = CCTK_FullName(n);
 			    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
 					"The variable \"%s\" contains poison at [%d,%d,%d]",
-					CCTK_VarName(n), i,j,k);
+					fullname, i,j,k);
+			    free (fullname);
 			  }
 			} // if poisoned
 		      } // for i
 		    } // for j
 		  } // for k
 		  if (numpoison>10) {
+		    char* fullname = CCTK_FullName(n);
 		    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
 				"The variable \"%s\" contains poison at alltogether %d locations",
-				CCTK_VarName(n), numpoison);
+				fullname, numpoison);
+		    free (fullname);
 		  }
-		  break;
-		}
-		  
-		default:
-		  abort();
-		}
-		
-	      }	// if more than one timelevel
+		} // if is local
+	      } END_COMPONENT_LOOP(cgh);
+	      break;
+	    }
 	      
-	    } // for var
-	  } // if has storage
-	} // for group
-	
-      }	// if is local
-    } END_COMPONENT_LOOP(cgh);
+	    default:
+	      abort();
+	    }
+	    
+	  } // for tl
+	  
+	} // for var
+      } // if has storage
+    } // for group
+  }
+  
+  
+  
+  void CalculateChecksums (cGH* cgh, int where)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (! checksum_timelevels) return;
+    
+    Checkpoint ("%*sCalculateChecksums", 2*reflevel, "");
+    
+    checksums.resize(CCTK_NumVars());
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
+      if (CCTK_QueryGroupStorageI(cgh, group)) {
+	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+	  
+	  const int n = CCTK_FirstVarIndexI(group) + var;
+	  const int sz = CCTK_VarTypeSize(CCTK_VarTypeI(n));
+	  assert (sz>0);
+	  const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
+	  const int min_tl = where ? max(num_tl-1,1) : 0;
+	  const int max_tl = where ? num_tl-1        : num_tl-2;
+	  checksums[n].resize(maxreflevels);
+	  checksums[n][reflevel].resize(num_tl);
+	  for (int tl=min_tl; tl<=max_tl; ++tl) {
+	    switch (CCTK_GroupTypeFromVarI(n)) {
+	      
+	    case CCTK_SCALAR: {
+	      checksums[n][reflevel][tl].resize(1);
+	      const int c=0;
+	      int chk = 0;
+	      const void* data = cgh->data[n][tl];
+	      for (int i=0; i<sz/(int)sizeof(chk); ++i) {
+		chk += ((const int*)data)[i];
+	      }
+	      checksums[n][reflevel][tl][c] = chk;
+	      break;
+	    }
+	      
+	    case CCTK_ARRAY:
+	    case CCTK_GF: {
+	      checksums[n][reflevel][tl].resize(hh->components(reflevel));
+	      BEGIN_COMPONENT_LOOP(cgh) {
+		if (hh->is_local(reflevel,component)) {
+		  int np = 1;
+		  for (int d=0; d<dim; ++d) {
+		    np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
+		  }
+		  const void* data = cgh->data[n][tl];
+		  int chk = 0;
+		  for (int i=0; i<np*sz/(int)sizeof(chk); ++i) {
+		    chk += ((const int*)data)[i];
+		  }
+		  checksums[n][reflevel][tl][component] = chk;
+		}
+	      } END_COMPONENT_LOOP(cgh);
+	      break;
+	    }
+	      
+	    default:
+	      abort();
+	    }
+	    
+	  } // for tl
+	} // for var
+      }	// if has storage
+    } // for group
+  }
+  
+  
+  
+  void CheckChecksums (cGH* cgh, int where)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (! checksum_timelevels) return;
+    
+    Checkpoint ("%*sCheckChecksums", 2*reflevel, "");
+    
+    assert ((int)checksums.size()==CCTK_NumVars());
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
+      if (CCTK_QueryGroupStorageI(cgh, group)) {
+	for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+	  
+	  const int n = CCTK_FirstVarIndexI(group) + var;
+	  const int sz = CCTK_VarTypeSize(CCTK_VarTypeI(n));
+	  assert (sz>0);
+	  const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
+	  const int min_tl = where ? max(num_tl-1,1) : 0;
+	  const int max_tl = where ? num_tl-1        : num_tl-2;
+	  
+	  assert ((int)checksums[n].size()==maxreflevels);
+	  assert ((int)checksums[n][reflevel].size()==num_tl);
+	  
+	  bool unexpected_change = false;
+	  
+	  for (int tl=min_tl; tl<=max_tl; ++tl) {
+	    switch (CCTK_GroupTypeFromVarI(n)) {
+	      
+	    case CCTK_SCALAR: {
+	      assert ((int)checksums[n][reflevel][tl].size()==1);
+	      const int c=0;
+	      int chk = 0;
+	      const void* data = cgh->data[n][tl];
+	      for (int i=0; i<sz/(int)sizeof(chk); ++i) {
+		chk += ((const int*)data)[i];
+	      }
+	      unexpected_change = (unexpected_change
+				   || chk != checksums[n][reflevel][tl][c]);
+	      break;
+	    }
+	      
+	    case CCTK_ARRAY:
+	    case CCTK_GF: {
+	      assert ((int)checksums[n][reflevel][tl].size()
+		      ==hh->components(reflevel));
+	      BEGIN_COMPONENT_LOOP(cgh) {
+		if (hh->is_local(reflevel,component)) {
+		  int np = 1;
+		  for (int d=0; d<dim; ++d) {
+		    np *= *CCTK_ArrayGroupSizeI(cgh, d, group);
+		  }
+		  const void* data = cgh->data[n][tl];
+		  int chk = 0;
+		  for (int i=0; i<np*sz/(int)sizeof(chk); ++i) {
+		    chk += ((const int*)data)[i];
+		  }
+		  unexpected_change
+		    = (unexpected_change
+		       || chk != checksums[n][reflevel][tl][component]);
+		  if (chk != checksums[n][reflevel][tl][component]) {
+		    cout << "n tl rl c " << n << " " << tl << " " << reflevel << " " << component << endl;
+		  }
+		}
+	      } END_COMPONENT_LOOP(cgh);
+	      break;
+	    }
+	      
+	    default:
+	      abort();
+	    }
+	    
+	  } // for tl
+	  
+	  if (unexpected_change) {
+	    char* fullname = CCTK_FullName(n);
+	    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+			"Old timelevels of the variable \"%s\" have changed unexpectedly.",
+			fullname);
+	    free (fullname);
+	  }
+	  
+	} // for var
+      }	// if has storage
+    } // for group
   }
   
   
@@ -1357,6 +1511,18 @@ namespace Carpet {
     if (barriers) {
       MPI_Barrier (dist::comm);
     }
+  }
+  
+  
+  
+  void UnsupportedVarType (const int vindex)
+  {
+    assert (vindex>=0 && vindex<CCTK_NumVars());
+    CCTK_VWarn
+      (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+       "Carpet does not support the type of the variable \"%s\".\n"
+       "Either enable support for this type, "
+       "or change the type of this variable.", CCTK_FullName(vindex));
   }
   
   
@@ -1450,9 +1616,10 @@ namespace Carpet {
 	    case CCTK_SCALAR:
 	      // Scalar variables can be accessed
 	      assert (group<(int)scdata.size());
-	      assert (var<(int)scdata[group].size());
-	      assert (ti<(int)scdata[group][var].size());
-	      cgh->data[n][ti] = scdata[group][var][ti];
+	      assert (var<(int)scdata[group].data.size());
+	      assert (reflevel<(int)scdata[group].data[var].size());
+	      assert (ti<(int)scdata[group].data[var][reflevel].size());
+	      cgh->data[n][ti] = scdata[group].data[var][reflevel][ti];
 	      break;
 	      
 	    case CCTK_ARRAY:
@@ -1552,9 +1719,10 @@ namespace Carpet {
 	      
 	    case CCTK_SCALAR:
 	      assert (group<(int)scdata.size());
-	      assert (var<(int)scdata[group].size());
-	      assert (ti<(int)scdata[group][var].size());
-	      cgh->data[n][ti] = scdata[group][var][ti];
+	      assert (var<(int)scdata[group].data.size());
+	      assert (reflevel<(int)scdata[group].data[var].size());
+	      assert (ti<(int)scdata[group].data[var][reflevel].size());
+	      cgh->data[n][ti] = scdata[group].data[var][reflevel][ti];
 	      break;
 	      
 	    case CCTK_ARRAY:
