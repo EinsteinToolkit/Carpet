@@ -29,6 +29,7 @@ namespace CarpetAdaptiveRegrid {
   using namespace Carpet;
 
   static gh::mexts local_bbsss;
+  static CCTK_INT last_iteration = -1;
 
   extern "C" {
     void CCTK_FCALL CCTK_FNAME(copy_mask)
@@ -115,6 +116,14 @@ namespace CarpetAdaptiveRegrid {
         && (cctkGH->cctk_iteration-1) % regrid_every != 0)
     {
       return 0;
+    }
+
+    // Return if we have already been called on this iteration
+    if (cctkGH->cctk_iteration == last_iteration) {
+      return 0;
+    }
+    else {
+      last_iteration = cctkGH->cctk_iteration;
     }
 
 //     cout << "bbsss at start" << endl << bbsss << endl;
