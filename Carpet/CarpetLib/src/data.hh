@@ -86,12 +86,12 @@ public:
   // Accessors
   virtual const void* storage () const
   {
-    assert (this->_has_storage);
+    assert (_has_storage);
     return _storage;
   }
 
   virtual void* storage () {
-    assert (this->_has_storage);
+    assert (_has_storage);
     return _storage;
   }
   
