@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.37 2003/07/16 21:45:58 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.38 2003/07/17 12:24:05 schnetter Exp $
 
 #include <assert.h>
 
@@ -261,13 +261,14 @@ void dh<D>::recompose (const int initialise_upto) {
 #if 0
 	      // (the restriction must not fill points that are used
 	      // to prolongate the boundaries)
+              const int pss = prolongation_stencil_size();
               ibset recvs = intrf.contracted_for(intr) & intr;
               for (int ccc=0; ccc<h.components(rl); ++ccc) {
                 const iblist& sendlist
                   = boxes[rl][ccc][ml].send_ref_bnd_fine[cc];
                 for (typename iblist::const_iterator sli = sendlist.begin();
                      sli != sendlist.end(); ++sli) {
-                  recvs -= *sli;
+                  recvs -= (*sli).expand(pss+1,pss+1);
                 }
               }
               recvs.normalize();
@@ -281,8 +282,15 @@ void dh<D>::recompose (const int initialise_upto) {
                 boxes[rl  ][c ][ml].recv_ref_fine  [cc].push_back(recv);
               }
 #else
-              const ivect buf (buffer_width);
-              const ibbox recv = (intrf.contracted_for(intr).expand(-buf,-buf)
+              ivect buf[2];
+              for (int d=0; d<D; ++d) {
+                for (int f=0; f<2; ++f) {
+                  buf[f][d] = (h.outer_boundaries[rl+1][c][d][f]
+                               ? 0 : buffer_width);
+                }
+              }
+              const ibbox recv = (intrf.contracted_for(intr)
+                                  .expand(-buf[0], -buf[1])
                                   & intr);
               const ibbox send = recv.expanded_for(intrf);
               assert (send.empty() == recv.empty());
