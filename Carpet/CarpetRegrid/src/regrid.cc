@@ -13,7 +13,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.43 2004/05/29 18:52:42 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.44 2004/05/29 19:42:19 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_regrid_cc);
 }
 
@@ -131,8 +131,9 @@ namespace CarpetRegrid {
     
     
     
-    // Return if no change in the grid structure is desired
-    if (keep_same_grid_structure) {
+    // Return if this is not during initial data generation and if no
+    // change in the grid structure is desired
+    if (cctkGH->cctk_iteration != 0 && keep_same_grid_structure) {
       return refinement_levels != oldnumlevels;
     }
     
