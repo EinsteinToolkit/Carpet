@@ -10,7 +10,7 @@
 #include "mask_carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_carpet.cc,v 1.3 2004/08/02 11:43:35 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/mask_carpet.cc,v 1.4 2004/08/04 13:03:28 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetMask_Mask_cc);
 }
 
@@ -115,6 +115,10 @@ namespace CarpetMask {
             {
               
               ibbox const & box = (*bi) & ext;
+              assert (all ((box.lower() - ext.lower()               ) >= 0));
+              assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
+              assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
+              assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
               ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
               ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
               assert (all (izero <= imin));
@@ -168,6 +172,10 @@ namespace CarpetMask {
           {
             
             ibbox const & box = (*bi).contracted_for(ext) & ext;
+            assert (all ((box.lower() - ext.lower()               ) >= 0));
+            assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
+            assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
+            assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
             ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
             ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
             assert (all (izero <= imin));
@@ -193,6 +201,19 @@ namespace CarpetMask {
               
           } // for box
           
+          assert (dim == 3);
+          vector<int> mask (cctk_lsh[0] * cctk_lsh[1] * cctk_lsh[2]);
+          
+          assert (dim == 3);
+          for (int k=0; k<cctk_lsh[2]; ++k) {
+            for (int j=0; j<cctk_lsh[1]; ++j) {
+              for (int i=0; i<cctk_lsh[0]; ++i) {
+                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                mask[ind] = 0;
+              }
+            }
+          }
+          
           for (int d=0; d<dim; ++d) {
             for (ibset::const_iterator bi = boundaries[d].begin();
                  bi != boundaries[d].end();
@@ -200,6 +221,10 @@ namespace CarpetMask {
             {
               
               ibbox const & box = (*bi).contracted_for(ext) & ext;
+              assert (all ((box.lower() - ext.lower()               ) >= 0));
+              assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
+              assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
+              assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
               ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
               ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
               assert (all (izero <= imin));
@@ -218,13 +243,28 @@ namespace CarpetMask {
                 for (int j=imin[1]; j<imax[1]; ++j) {
                   for (int i=imin[0]; i<imax[0]; ++i) {
                     int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                    weight[ind] *= 0.5;
+                    if (mask[ind] == 0) {
+                      mask[ind] = 1;
+                    }
+                    mask[ind] *= 2;
                   }
                 }
               }
               
             } // for box
           } // for d
+          
+          assert (dim == 3);
+          for (int k=0; k<cctk_lsh[2]; ++k) {
+            for (int j=0; j<cctk_lsh[1]; ++j) {
+              for (int i=0; i<cctk_lsh[0]; ++i) {
+                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                if (mask[ind] > 0) {
+                  weight[ind] *= 1.0 - 1.0 / mask[ind];
+                }
+              }
+            }
+          }
           
         } END_LOCAL_COMPONENT_LOOP;
         
