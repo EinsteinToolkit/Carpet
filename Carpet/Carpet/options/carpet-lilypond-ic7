@@ -1,4 +1,4 @@
-# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-ic7,v 1.4 2002/10/16 17:33:52 schnetter Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/carpet-lilypond-ic7,v 1.5 2002/11/16 19:10:50 schnetter Exp $
 
 CPP		= cpp -traditional -DCARPET_REAL
 CC		= /opt/intel/compiler70/ia32/bin/icc
@@ -33,10 +33,10 @@ F90_WARN_FLAGS	=
 
 # optimisation
 OPTIMISE		= yes
-C_OPTIMISE_FLAGS	= -O3 -tpp6 -xiM
-CXX_OPTIMISE_FLAGS	= -O3 -tpp6 -xiM
-F77_OPTIMISE_FLAGS	= -O3 -tpp6 -xiM
-F90_OPTIMISE_FLAGS	= -O3 -tpp6 -xiM
+C_OPTIMISE_FLAGS	= -O3 -tpp6 -xi
+CXX_OPTIMISE_FLAGS	= -O3 -tpp6 -xi
+F77_OPTIMISE_FLAGS	= -O3 -tpp6
+F90_OPTIMISE_FLAGS	= -O3 -tpp6
 
 # HDF
 HDF5		= YES
