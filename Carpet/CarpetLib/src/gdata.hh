@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.10 2001/12/09 16:43:10 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.11 2001/12/14 16:39:42 schnetter Exp $
 
  ***************************************************************************/
 
@@ -24,7 +24,6 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -118,7 +117,7 @@ public:
   
   // Output
   template<int DD>
-  void write_ascii (const string name, const int time,
+  void write_ascii (ostream& os, const int time,
                     const vect<int,D>& org, const vect<int,DD>& dirs,
 		    const int tl, const int rl,
                     const int c, const int ml)

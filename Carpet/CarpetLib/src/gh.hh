@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.7 2001/09/06 11:18:28 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.8 2001/12/14 16:39:43 schnetter Exp $
 
  ***************************************************************************/
 
@@ -87,6 +87,9 @@ public:
   void recompose (const rexts& exts, const rprocs& procs);
   
   // Helpers
+  cexts make_reflevel_multigrid_boxes (const vector<ibbox>& exts,
+				       const int mglevels)
+    const;
   rexts make_multigrid_boxes (const vector<vector<ibbox> >& exts,
 			      const int mglevels)
     const;

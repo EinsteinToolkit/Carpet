@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.15 2001/12/09 16:43:10 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.16 2001/12/14 16:39:42 schnetter Exp $
 
  ***************************************************************************/
 
@@ -20,8 +20,7 @@
 
 #include <assert.h>
 
-#include <fstream>
-#include <iomanip>
+#include <iostream>
 
 #include "bbox.hh"
 #include "defs.hh"
@@ -132,7 +131,7 @@ void generic_data<D>
 // Output
 template<int D>
 template<int DD>
-void generic_data<D>::write_ascii (const string name, const int time,
+void generic_data<D>::write_ascii (ostream& os, const int time,
 				   const vect<int,D>& org,
 				   const vect<int,DD>& dirs,
 				   const int tl, const int rl,
@@ -151,19 +150,16 @@ void generic_data<D>::write_ascii (const string name, const int time,
     MPI_Comm_rank (dist::comm, &rank);
     if (rank == 0) {
       
-      ofstream file(name.c_str(), ios::app);
-      assert (file.good());
+      assert (os.good());
       
-      file << setprecision(15);
-      
-      file << "# iteration " << time << endl
-	   << "# time level " << tl << "   refinement level " << rl
-	   << "   component " << c << "   multigrid level " << ml << endl
-	   << "# column format: it tl rl c ml";
+      os << "# iteration " << time << endl
+	 << "# time level " << tl << "   refinement level " << rl
+	 << "   component " << c << "   multigrid level " << ml << endl
+	 << "# column format: it tl rl c ml";
       assert (D>=1 && D<=3);
       const char* const coords = "xyz";
-      for (int d=0; d<D; ++d) file << " " << coords[d];
-      file << " data" << endl;
+      for (int d=0; d<D; ++d) os << " " << coords[d];
+      os << " data" << endl;
       
       const vect<int,DD> lo = extent().lower()[dirs];
       const vect<int,DD> up = extent().upper()[dirs];
@@ -179,25 +175,24 @@ void generic_data<D>::write_ascii (const string name, const int time,
 	for (bbox<int,DD>::iterator it=ext.begin(); it!=ext.end(); ++it) {
 	  ivect index(org);
 	  for (int d=0; d<DD; ++d) index[dirs[d]] = (*it)[d];
-	  file << time << " " << tl << " " << rl << " " << c << " " << ml
-	       << " ";
-	  for (int d=0; d<D; ++d) file << index[d] << " ";
-	  write_ascii_output_element (file, index);
-	  file << endl;
+	  os << time << " " << tl << " " << rl << " " << c << " " << ml
+	     << " ";
+	  for (int d=0; d<D; ++d) os << index[d] << " ";
+	  write_ascii_output_element (os, index);
+	  os << endl;
 	  for (int d=0; d<DD; ++d) {
 	    if (index[dirs[d]]!=extent().upper()[dirs[d]]) break;
-	    file << endl;
+	    os << endl;
 	  }
 	}
 	
       }	else {
 	
-	file << "#" << endl;
+	os << "#" << endl;
 	
       }	// if ! ext contains org
       
-      file.close();
-      assert (file.good());
+      assert (os.good());
       
     }
     
@@ -207,7 +202,7 @@ void generic_data<D>::write_ascii (const string name, const int time,
     generic_data* const tmp = make_typed();
     tmp->allocate(extent(), 0);
     tmp->copy_from (this, extent());
-    tmp->write_ascii (name, time, org, dirs, tl, rl, c, ml);
+    tmp->write_ascii (os, time, org, dirs, tl, rl, c, ml);
     delete tmp;
     
   }
@@ -220,15 +215,15 @@ void generic_data<D>::write_ascii (const string name, const int time,
 template class generic_data<3>;
 
 template void generic_data<3>
-::write_ascii (const string name, const int time,
+::write_ascii (ostream& os, const int time,
 	       const vect<int,3>& org, const vect<int,1>& dirs,
 	       const int tl, const int rl, const int c, const int ml) const;
 template void generic_data<3>
-::write_ascii (const string name, const int time,
+::write_ascii (ostream& os, const int time,
 	       const vect<int,3>& org, const vect<int,2>& dirs,
 	       const int tl, const int rl, const int c, const int ml) const;
 template void generic_data<3>
-::write_ascii (const string name, const int time,
+::write_ascii (ostream& os, const int time,
 	       const vect<int,3>& org, const vect<int,3>& dirs,
 	       const int tl, const int rl, const int c, const int ml) const;
 

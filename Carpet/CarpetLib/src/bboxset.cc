@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.8 2001/07/04 12:29:51 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.cc,v 1.9 2001/12/14 16:39:41 schnetter Exp $
 
  ***************************************************************************/
 
@@ -95,7 +95,6 @@ T bboxset<T,D>::size () const {
 }
 
 
-
 // Add (bboxes that don't overlap)
 template<class T, int D>
 bboxset<T,D>& bboxset<T,D>::operator+= (const box& b) {
@@ -132,6 +131,16 @@ bboxset<T,D> bboxset<T,D>::operator+ (const bboxset& s) const {
   r += s;
   assert (r.invariant());
   return r;
+}
+
+template<class T, int D>
+bboxset<T,D> bboxset<T,D>::plus (const bbox<T,D>& b1, const bbox<T,D>& b2) {
+  return bboxset(b1) + b2;
+}
+
+template<class T, int D>
+bboxset<T,D> bboxset<T,D>::plus (const bbox<T,D>& b, const bboxset<T,D>& s) {
+  return s + b;
 }
 
 
@@ -289,6 +298,39 @@ bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b, const bboxset<T,D>& s) {
   bboxset<T,D> r = bboxset<T,D>(b) - s;
   assert (r.invariant());
   return r;
+}
+
+
+
+// Equality
+template<class T, int D>
+bool bboxset<T,D>::operator<= (const bboxset<T,D>& s) const {
+  return (*this - s).empty();
+}
+
+template<class T, int D>
+bool bboxset<T,D>::operator< (const bboxset<T,D>& s) const {
+  return (*this - s).empty() && ! (s - *this).empty();
+}
+
+template<class T, int D>
+bool bboxset<T,D>::operator>= (const bboxset<T,D>& s) const {
+  return s <= *this;
+}
+
+template<class T, int D>
+bool bboxset<T,D>::operator> (const bboxset<T,D>& s) const {
+  return s < *this;
+}
+
+template<class T, int D>
+bool bboxset<T,D>::operator== (const bboxset<T,D>& s) const {
+  return (*this <= s) && (*this >= s);
+}
+
+template<class T, int D>
+bool bboxset<T,D>::operator!= (const bboxset<T,D>& s) const {
+  return ! (*this == s);
 }
 
 

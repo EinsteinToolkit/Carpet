@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.5 2001/12/05 03:31:57 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/vect.hh,v 1.6 2001/12/14 16:39:43 schnetter Exp $
 
  ***************************************************************************/
 
@@ -505,7 +505,7 @@ template<class T,int D>
 inline T maxval (const vect<T,D>& a) {
   assert (D>0);
   T r(a[0]);
-  for (int d=0; d<D; ++d) r=max(r,a[d]);
+  for (int d=1; d<D; ++d) r=max(r,a[d]);
   return r;
 }
 
@@ -513,7 +513,23 @@ template<class T,int D>
 inline T minval (const vect<T,D>& a) {
   assert (D>0);
   T r(a[0]);
-  for (int d=0; d<D; ++d) r=min(r,a[d]);
+  for (int d=1; d<D; ++d) r=min(r,a[d]);
+  return r;
+}
+
+template<class T,int D>
+inline int maxloc (const vect<T,D>& a) {
+  assert (D>0);
+  int r(0);
+  for (int d=1; d<D; ++d) if (a[d]>a[r]) r=d;
+  return r;
+}
+
+template<class T,int D>
+inline int minloc (const vect<T,D>& a) {
+  assert (D>0);
+  int r(0);
+  for (int d=1; d<D; ++d) if (a[d]<a[r]) r=d;
   return r;
 }
 

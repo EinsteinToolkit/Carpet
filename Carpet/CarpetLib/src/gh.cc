@@ -7,7 +7,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.9 2001/07/04 12:29:52 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.10 2001/12/14 16:39:42 schnetter Exp $
 
  ***************************************************************************/
 
@@ -151,50 +151,61 @@ void gh<D>::recompose (const rexts& exts, const rprocs& procs) {
 
 // Helpers
 template<int D>
+gh<D>::cexts gh<D>::make_reflevel_multigrid_boxes (const vector<ibbox>& exts,
+						   const int mglevels)
+  const
+{
+  assert (mglevels>0);
+  
+  cexts mexts (exts.size());
+  for (int c=0; c<(int)exts.size(); ++c) {
+    
+    mexts[c].resize(mglevels);
+    
+    ibbox ext = exts[c];
+    for (int ml=0; ml<mglevels; ++ml) {
+      
+      mexts[c][ml] = ext;
+      
+      if (ml == mglevels-1) break;
+      
+      // This level's characteristics
+      ivect str = ext.stride();
+      ivect lo = ext.lower();
+      ivect up = ext.upper();
+      
+      // Transform to next (coarser) level
+      switch (mgcent) {
+      case vertex_centered:
+	break;
+      case cell_centered:
+	for (int d=0; d<D; ++d) assert (str[d]%2 == 0);
+	lo += str/2;
+	break;
+      default:
+	abort();
+      }
+      str *= mgfact;
+      up = up - (up - lo) % str;
+      
+      ext = ibbox(lo,up,str);
+    }	// for ml
+  } // for c
+  
+  return mexts;
+}
+
+template<int D>
 gh<D>::rexts gh<D>::make_multigrid_boxes (const vector<vector<ibbox> >& exts,
 					  const int mglevels)
   const
 {
   assert (mglevels>0);
   
-  rexts mexts;
-  mexts.resize(exts.size());
+  rexts mexts (exts.size());
   for (int rl=0; rl<(int)exts.size(); ++rl) {
-    mexts[rl].resize(exts[rl].size());
-    for (int c=0; c<(int)exts[rl].size(); ++c) {
-      
-      mexts[rl][c].resize(mglevels);
-      
-      ibbox ext = exts[rl][c];
-      for (int ml=0; ml<mglevels; ++ml) {
-	
-	mexts[rl][c][ml] = ext;
-	
-	if (ml == mglevels-1) break;
-	
-	// This level's characteristics
-	ivect str = ext.stride();
-	ivect lo = ext.lower();
-	ivect up = ext.upper();
-	
-	// Transform to next (coarser) level
-	switch (mgcent) {
-	case vertex_centered:
-	  break;
-	case cell_centered:
-	  for (int d=0; d<D; ++d) assert (str[d]%2 == 0);
-	  lo += str/2;
-	  break;
-	default:
-	  abort();
-	}
-	str *= mgfact;
-	up = up - (up - lo) % str;
-	
-	ext = ibbox(lo,up,str);
-      }	// for ml
-    } // for c
-  } // for rl
+    mexts[rl] = make_reflevel_multigrid_boxes (exts[rl], mglevels);
+  }
   
   return mexts;
 }

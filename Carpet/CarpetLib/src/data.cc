@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.14 2001/12/09 16:43:09 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.15 2001/12/14 16:39:41 schnetter Exp $
 
  ***************************************************************************/
 
@@ -20,7 +20,6 @@
 
 #include <assert.h>
 
-#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -226,7 +225,7 @@ void data<T,D>
   
   assert (order_space <= 1);
   
-  assert (srcs.size() > order_time);
+  assert ((int)srcs.size() > order_time);
   vector<T> src_fac(order_time+1);
   for (int t=0; t<(int)src_fac.size(); ++t) {
     src_fac[t] = 1;

@@ -6,7 +6,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.13 2001/12/09 16:43:10 schnetter Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.14 2001/12/14 16:39:42 schnetter Exp $
 
  ***************************************************************************/
 
@@ -70,26 +70,9 @@ bool generic_gf<D>::operator== (const generic_gf<D>& f) const {
 // Modifiers
 template<int D>
 void generic_gf<D>::recompose () {
-  // Retain storage that might be needed
-  fdata oldstorage;
   
-  oldstorage.resize(tmax-tmin+1);
-  for (int tl=tmin; tl<=tmax; ++tl) {
-    oldstorage[tl-tmin].resize
-      (min(h.reflevels(), (int)storage[tl-tmin].size()));
-    for (int rl=0; rl<(int)storage[tl-tmin].size(); ++rl) {
-      oldstorage[tl-tmin][rl].resize
-        (min(h.components(rl), (int)storage[tl-tmin][rl].size()));
-      for (int c=0; c<(int)storage[tl-tmin][rl].size(); ++c) {
-        oldstorage[tl-tmin][rl][c].resize
-	  (min(h.mglevels(rl,c), (int)storage[tl-tmin][rl][c].size()));
-        for (int ml=0; ml<(int)storage[tl-tmin][rl][ml].size(); ++ml) {
-          oldstorage[tl-tmin][rl][c][ml]->transfer_from
-            (storage[tl-tmin][tl][c][ml]);
-        } // for ml
-      } // for c
-    } // for rl
-  } // for tl
+  // Retain storage that might be needed
+  fdata oldstorage = storage;
   
   // Resize structure
   storage.resize(tmax-tmin+1);
@@ -99,10 +82,14 @@ void generic_gf<D>::recompose () {
       storage[tl-tmin][rl].resize(h.components(rl));
       for (int c=0; c<h.components(rl); ++c) {
       	storage[tl-tmin][rl][c].resize(h.mglevels(rl,c));
+	for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
+	  storage[tl-tmin][rl][c][ml] = 0;
+	} // for ml
       } // for c
     } // for rl
   } // for tl
   
+  // Initialise the new storage
   for (int rl=0; rl<h.reflevels(); ++rl) {
     for (int tl=tmin; tl<=tmax; ++tl) {
       for (int c=0; c<h.components(rl); ++c) {
@@ -136,16 +123,22 @@ void generic_gf<D>::recompose () {
 	} // for ml
       } // for c
       
-      // Delete old storage
-      if (rl<(int)oldstorage[tl-tmin].size()) {
-      	oldstorage[tl-tmin][rl].clear();
-      }
-      
+    } // for tl
+  } // for rl
+  
+  // Delete old storage
+  for (int tl=tmin; tl<=tmax; ++tl) {
+    for (int rl=0; rl<(int)oldstorage[tl-tmin].size(); ++rl) {
+      for (int c=0; c<(int)oldstorage[tl-tmin][rl].size(); ++c) {
+        for (int ml=0; ml<(int)oldstorage[tl-tmin][rl][c].size(); ++ml) {
+	  delete oldstorage[tl-tmin][rl][c][ml];
+        } // for ml
+      } // for c
     } // for rl
   } // for tl
   
-  for (int tl=tmin; tl<=tmax; ++tl) {
-    for (int rl=0; rl<h.reflevels(); ++rl) {
+  for (int rl=0; rl<h.reflevels(); ++rl) {
+    for (int tl=tmin; tl<=tmax; ++tl) {
       
       // Set boundaries
       for (int c=0; c<h.components(rl); ++c) {
@@ -158,8 +151,8 @@ void generic_gf<D>::recompose () {
       	} // for ml
       } // for c
       
-    } // for rl
-  } // for tl
+    } // for tl
+  } // for rl
 }
 
 // Cycle the time levels by rotating the data sets
@@ -411,20 +404,11 @@ template<int D>
 void generic_gf<D>::ref_bnd_prolongate (int tl, int rl, int c, int ml) {
   // Interpolate
   assert (rl>=1);
-//   const int tmod
-//     = ((t.time(tl,rl,ml) - t.get_time(rl-1,ml)) % t.get_delta(rl-1,ml)
-//        + t.get_delta(rl-1,ml)) % t.get_delta(rl-1,ml);
   vector<int> tl2s;
-//   if (tmod == 0) {
-//     // No interpolation in time
-//     tl2s.resize(1);
-//     tl2s[0] = tl;
-//   } else {
-    // Interpolation in time
-    assert (tmax-tmin+1 >= prolongation_order_time+1);
-    tl2s.resize(prolongation_order_time+1);
-    for (int i=0; i<=prolongation_order_time; ++i) tl2s[i] = tmax - i;
-//   }
+  // Interpolation in time
+  assert (tmax-tmin+1 >= prolongation_order_time+1);
+  tl2s.resize(prolongation_order_time+1);
+  for (int i=0; i<=prolongation_order_time; ++i) tl2s[i] = tmax - i;
   intercat (tl  ,rl  ,c,ml, &dh<D>::dboxes::recv_ref_bnd_coarse,
 	    tl2s,rl-1,  ml, &dh<D>::dboxes::send_ref_bnd_fine);
 }
@@ -466,23 +450,12 @@ void generic_gf<D>::ref_restrict (int tl, int rl, int c, int ml)
 template<int D>
 void generic_gf<D>::ref_prolongate (int tl, int rl, int c, int ml)
 {
-  // Require same times
-  assert (t.get_time(rl,ml) == t.get_time(rl-1,ml));
   assert (rl>=1);
-//   const int tmod
-//     = ((t.time(tl,rl,ml) - t.get_time(rl-1,ml)) % t.get_delta(rl-1,ml)
-//        + t.get_delta(rl-1,ml)) % t.get_delta(rl-1,ml);
   vector<int> tl2s;
-//   if (tmod == 0) {
-//     // No interpolation in time
-//     tl2s.resize(1);
-//     tl2s[0] = tl;
-//   } else {
-    // Interpolation in time
-    assert (tmax-tmin+1 >= prolongation_order_time+1);
-    tl2s.resize(prolongation_order_time+1);
-    for (int i=0; i<=prolongation_order_time; ++i) tl2s[i] = tmax - i;
-//   }
+  // Interpolation in time
+  assert (tmax-tmin+1 >= prolongation_order_time+1);
+  tl2s.resize(prolongation_order_time+1);
+  for (int i=0; i<=prolongation_order_time; ++i) tl2s[i] = tmax - i;
   intercat (tl  ,rl  ,c,ml, &dh<D>::dboxes::recv_ref_coarse,
 	    tl2s,rl-1,  ml, &dh<D>::dboxes::send_ref_fine);
 }

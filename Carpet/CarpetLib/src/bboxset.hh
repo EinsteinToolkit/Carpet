@@ -5,7 +5,7 @@
     copyright            : (C) 2000 by Erik Schnetter
     email                : schnetter@astro.psu.edu
 
-    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.hh,v 1.5 2001/03/27 22:26:31 eschnett Exp $
+    $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/bboxset.hh,v 1.6 2001/12/14 16:39:41 schnetter Exp $
 
  ***************************************************************************/
 
@@ -37,10 +37,15 @@ using namespace std;
 // Forward declaration
 template<class T, int D> class bboxset;
 
-template<class T,int D>
-bboxset<T,D> operator- (const bbox<T,D>& b1, const bbox<T,D>& b2);
-template<class T,int D>
-bboxset<T,D> operator- (const bbox<T,D>& b, const bboxset<T,D>& s);
+// template<class T,int D>
+// bboxset<T,D> operator+ (const bbox<T,D>& b1, const bbox<T,D>& b2);
+// template<class T,int D>
+// bboxset<T,D> operator+ (const bbox<T,D>& b, const bboxset<T,D>& s);
+
+// template<class T,int D>
+// bboxset<T,D> operator- (const bbox<T,D>& b1, const bbox<T,D>& b2);
+// template<class T,int D>
+// bboxset<T,D> operator- (const bbox<T,D>& b, const bboxset<T,D>& s);
 
 // Output
 template<class T,int D>
@@ -86,6 +91,8 @@ public:
   bboxset& operator+= (const bboxset& s);
   bboxset operator+ (const box& b) const;
   bboxset operator+ (const bboxset& s) const;
+  static bboxset plus (const box& b1, const box& b2);
+  static bboxset plus (const box& b, const bboxset& s);
   
   // Union
   bboxset& operator|= (const box& b);
@@ -109,6 +116,14 @@ public:
   // friend bboxset operator- <T,D>(const box& b, const bboxset& s);
   static bboxset minus (const box& b, const bboxset& s);
   
+  // Equality
+  bool operator== (const bboxset& s) const;
+  bool operator!= (const bboxset& s) const;
+  bool operator< (const bboxset& s) const;
+  bool operator<= (const bboxset& s) const;
+  bool operator> (const bboxset& s) const;
+  bool operator>= (const bboxset& s) const;
+  
   // Iterators
   typedef typename bset::const_iterator const_iterator;
   typedef typename bset::iterator       iterator;
@@ -123,6 +138,16 @@ public:
 
 
 template<class T,int D>
+inline bboxset<T,D> operator+ (const bbox<T,D>& b1, const bbox<T,D>& b2) {
+  return bboxset<T,D>::plus(b1,b2);
+}
+
+template<class T,int D>
+inline bboxset<T,D> operator+ (const bbox<T,D>& b, const bboxset<T,D>& s) {
+  return bboxset<T,D>::plus(b,s);
+}
+
+template<class T,int D>
 inline bboxset<T,D> operator- (const bbox<T,D>& b1, const bbox<T,D>& b2) {
   return bboxset<T,D>::minus(b1,b2);
 }
@@ -131,6 +156,8 @@ template<class T,int D>
 inline bboxset<T,D> operator- (const bbox<T,D>& b, const bboxset<T,D>& s) {
   return bboxset<T,D>::minus(b,s);
 }
+
+
 
 // Output
 template<class T,int D>
