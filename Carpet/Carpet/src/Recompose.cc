@@ -26,7 +26,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.41 2003/06/18 18:28:07 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.42 2003/07/25 16:19:35 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -662,30 +662,42 @@ namespace Carpet {
     assert (all (nprocs_dir > 0));
     if (prod(nprocs_dir) != nprocs) {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-		  "The specified processor topology [%d,%d,%d] does not fit the number of processors, which is %d", nprocs_dir[0], nprocs_dir[1], nprocs_dir[2], nprocs);
+		  "The specified processor topology [%d,%d,%d] is inconsistent with the number of processors, which is %d", nprocs_dir[0], nprocs_dir[1], nprocs_dir[2], nprocs);
     }
     assert (prod(nprocs_dir) == nprocs);
     
     bbs.resize(nprocs);
     obs.resize(nprocs);
+    const ivect cstr = rstr;
+    const ivect glonp = (rub - rlb) / cstr;
+//     const ivect locnp = (glonp + nprocs_dir - 1) / nprocs_dir;
+    const ivect locnp = glonp / nprocs_dir;
+    const ivect rem = glonp % nprocs_dir;
+    const ivect step = locnp * cstr;
     assert (dim==3);
     for (int k=0; k<nprocs_dir[2]; ++k) {
       for (int j=0; j<nprocs_dir[1]; ++j) {
 	for (int i=0; i<nprocs_dir[0]; ++i) {
 	  const int c = i + nprocs_dir[0] * (j + nprocs_dir[1] * k);
 	  const ivect ipos (i, j, k);
-	  ivect cstr = rstr;
-	  ivect clb = rlb;
-	  ivect cub = rub;
-	  const ivect glonp = (rub - rlb) / cstr;
-	  const ivect locnp = (glonp + nprocs_dir - 1) / nprocs_dir;
-	  const ivect step = locnp * cstr;
-	  clb = rlb + step *  ipos;
-	  cub = rlb + step * (ipos+1);
-	  clb = min (clb, rub);
-	  cub = min (cub, rub);
+	  ivect clb = rlb + step *  ipos;
+	  ivect cub = rlb + step * (ipos+1);
+// 	  clb = min (clb, rub);
+// 	  cub = min (cub, rub);
+          for (int d=0; d<dim; ++d) {
+            if (ipos[d]<rem[d]) {
+              clb[d] += ipos[d];
+              cub[d] += ipos[d]+1;
+            } else {
+              clb[d] += rem[d];
+              cub[d] += rem[d];
+            }
+          }
+	  assert (all (clb >= 0));
 	  assert (all (clb <= cub));
 	  assert (all (cub <= rub));
+          assert (all (! (ipos==0) || clb==0));
+          assert (all (! (ipos==nprocs_dir-1) || cub==rub));
 	  bbs[c] = ibbox(clb, cub-cstr, cstr);
 	  obs[c] = obnd;
 	  if (i>0) obs[c][0][0] = false;
