@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.25 2003/06/18 18:24:28 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.26 2003/08/10 12:52:09 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -478,10 +478,6 @@ void ggf<D>::ref_restrict (int tl, int rl, int c, int ml,
                            CCTK_REAL time)
 {
   // Require same times
-  // SHH: removed assert and added warning
-//   if (t.get_time(rl,ml) != t.get_time(rl+1,ml)) {
-//     printf("WARNING: Time on rl %d is %d, time on rl %d is %d\n",rl,t.get_time(rl,ml),rl+1,t.get_time(rl+1,ml));
-//   }
   assert (t.get_time(rl,ml) == t.get_time(rl+1,ml));
   const vector<int> tl2s(1,tl);
   intercat (tl  ,rl  ,c,ml, &dh<D>::dboxes::recv_ref_fine,

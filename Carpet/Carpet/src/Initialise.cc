@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.30 2003/06/18 18:24:27 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.31 2003/08/10 12:52:09 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -229,7 +229,6 @@ namespace Carpet {
     BEGIN_REFLEVEL_LOOP(cgh) {
       BEGIN_MGLEVEL_LOOP(cgh) {
 	
-	
 	// Cycle time levels (ignore arrays)
 	cout << "3TL rl=" << reflevel << " cycling" << endl;
 	CycleTimeLevels (cgh);
@@ -304,15 +303,6 @@ namespace Carpet {
     BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
       BEGIN_MGLEVEL_LOOP(cgh) {
 	
-	cgh->cctk_time = cctk_initial_time + cgh->cctk_delta_time / cgh->cctk_timefac;
-	
-	// Restrict
-	cout << "3TL rl=" << reflevel << " restricting" << endl;
-	Restrict (cgh);
-        
-        Waypoint ("%*sScheduling POSTRESTRICT", 2*reflevel, "");
-        CCTK_ScheduleTraverse ("POSTRESTRICT", cgh, CallFunction);
-	
 	// Flip time levels
 	cout << "3TL rl=" << reflevel << " flipping" << endl;
 	FlipTimeLevels (cgh);
@@ -329,6 +319,13 @@ namespace Carpet {
 	cout << "3TL rl=" << reflevel << " ml=" << mglevel
 	     << " time=" << tt->get_time (reflevel, mglevel)
 	     << " time=" << cgh->cctk_time / cgh->cctk_delta_time << endl;
+	
+	// Restrict
+	cout << "3TL rl=" << reflevel << " restricting" << endl;
+	Restrict (cgh);
+        
+        Waypoint ("%*sScheduling POSTRESTRICT", 2*reflevel, "");
+        CCTK_ScheduleTraverse ("POSTRESTRICT", cgh, CallFunction);
 	
 	// Cycle time levels
 	cout << "3TL rl=" << reflevel << " cycling" << endl;
