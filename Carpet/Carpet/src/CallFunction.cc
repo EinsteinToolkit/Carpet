@@ -11,7 +11,7 @@
 #include "carpet.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.11 2003/07/22 20:09:05 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/CallFunction.cc,v 1.12 2003/08/03 17:08:33 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_CallFunction_cc);
 }
 
@@ -21,9 +21,11 @@ namespace Carpet {
   
   using namespace std;
   
-  /** Traverse one function on all components of one refinement level
-      of one multigrid level.  */
-  int CallFunction (void* function, cFunctionData* attribute, void* data)
+  /// Traverse one function on all components of one refinement level
+  /// of one multigrid level.
+  int CallFunction (void* function, ///< the function to call
+                    cFunctionData* attribute, ///< attributes of the function
+                    void* data) ///< ???
   {
 //     Checkpoint ("%*sStarting CallFunction...", 2*reflevel, "");
     
