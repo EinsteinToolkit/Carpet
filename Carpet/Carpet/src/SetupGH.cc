@@ -10,7 +10,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.13 2001/12/05 19:34:30 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.14 2001/12/07 18:24:16 schnetter Exp $";
 
 
 
@@ -38,7 +38,7 @@ namespace Carpet {
     
     // Refinement information
     maxreflevels = max_refinement_levels;
-    maxreflevelfact = floor(pow(refinement_factor, maxreflevels-1) + 0.5);
+    maxreflevelfact = floor(pow((double)refinement_factor, maxreflevels-1) + 0.5);
     
     // Ghost zones
     vect<int,dim> lghosts, ughosts;
@@ -234,10 +234,11 @@ namespace Carpet {
     // Invent a refinement structure
     gh<dim>::rexts bbsss;
     gh<dim>::rprocs pss;
+    assert (refinement_levels <= max_refinement_levels);
     if (CCTK_EQUALS (refined_regions, "centre")) {
-      MakeRegions_RefineCentre (cgh, maxreflevels, bbsss);
+      MakeRegions_RefineCentre (cgh, refinement_levels, bbsss);
     } else if (CCTK_EQUALS (refined_regions, "manual")) {
-      MakeRegions_AsSpecified (cgh, maxreflevels, bbsss);
+      MakeRegions_AsSpecified (cgh, refinement_levels, bbsss);
     }
     if (CCTK_EQUALS (processor_topology, "automatic")) {
       SplitRegions_AlongZ (cgh, bbsss);

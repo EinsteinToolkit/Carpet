@@ -1,0 +1,29 @@
+# $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/options/Attic/carpet-lilypond-gcc3,v 1.1 2001/12/07 18:24:15 schnetter Exp $
+
+#CPP			= /home/eschnett/gcc/bin/cpp -traditional -DTMPL_EXPLICIT -DCARPET_REAL
+CPP			= cpp -traditional -DTMPL_EXPLICIT -DCARPET_REAL
+CC			= /home/eschnett/gcc/bin/gcc
+CXX			= /home/eschnett/gcc/bin/g++
+F77			= /home/eschnett/gcc/bin/g77
+F90			= /home/eschnett/gcc/bin/g77
+
+CXXFLAGS		= -DTMPL_EXPLICIT -DCARPET_REAL -ftemplate-depth-30 -Wl,-rpath,/home/eschnett/gcc/lib
+
+C_OPTIMISE_FLAGS	= -O2 -funroll-loops -march=pentiumpro
+CXX_OPTIMISE_FLAGS	= -O2 -funroll-loops -march=pentiumpro
+F90_OPTIMISE_FLAGS	= -O2 -funroll-loops -march=pentiumpro -malign-double
+F77_OPTIMISE_FLAGS	= -O2 -funroll-loops -march=pentiumpro -malign-double
+
+C_WARN_FLAGS		= -Wall -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wstrict-prototypes -Wmissing-declarations
+CXX_WARN_FLAGS		= -Wall -Wpointer-arith -Wbad-function-cast -Wcast-qual -Wcast-align -Wstrict-prototypes -Wmissing-declarations
+F90_WARN_FLAGS		= -Wall
+F77_WARN_FLAGS		= -Wall
+
+SYS_INC_DIRS		= /home/eschnett/proj/FlexIO
+LIBDIRS			= /home/eschnett/proj/FlexIO
+LIBS			= AMR h5io hdfio hlio ieeeio  hdf5 mfhdf df jpeg z  crypt  g2c m
+
+HDF5			= yes
+MPI			= MPICH
+
+DEBUG			= yes

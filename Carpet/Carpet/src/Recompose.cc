@@ -13,7 +13,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.10 2001/12/05 19:04:45 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.11 2001/12/07 18:24:16 schnetter Exp $";
 
 
 
@@ -229,7 +229,7 @@ namespace Carpet {
     vector<vector<bbox<int,dim> > > bbss(reflevels);
     
     for (int rl=0; rl<reflevels; ++rl) {
-      const int levfac = floor(pow(hh->reffact, rl) + 0.5);
+      const int levfac = floor(pow((double)hh->reffact, rl) + 0.5);
       assert (all (rstr % levfac == 0));
       const vect<int,dim> str (rstr / levfac);
       const vect<int,dim> lb  (lower[rl]);

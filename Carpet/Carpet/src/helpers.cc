@@ -11,7 +11,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.10 2001/11/15 16:41:33 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/helpers.cc,v 1.11 2001/12/07 18:24:17 schnetter Exp $";
 
 
 
@@ -60,9 +60,29 @@ namespace Carpet {
   
   
   
-  MPI_Comm CarpetMPICommunicator ()
+  MPI_Comm CarpetMPIComm ()
   {
     return dist::comm;
+  }
+  
+  
+  
+  MPI_Datatype CarpetMPIDatatype (const int vartype)
+  {
+    switch (vartype) {
+#define TYPECASE(N,T)				\
+    case N: {					\
+      T dummy;					\
+      return dist::datatype(dummy);		\
+    }
+#include "typecase"
+#undef TYPECASE
+    default:
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+		  "Carpet does not support the variable type %d.", vartype);
+    }
+    // notreached
+    return MPI_CHAR;
   }
   
   
@@ -148,7 +168,7 @@ namespace Carpet {
     // Change
     reflevel = rl;
     const bbox<int,dim>& base = hh->baseextent;
-    reflevelfact = (int)floor(pow((double)hh->reffact, reflevel)+0.5);
+    reflevelfact = floor(pow((double)hh->reffact, reflevel) + 0.5);
     cgh->cctk_delta_time = base_delta_time / reflevelfact;
     for (int d=0; d<dim; ++d) {
       cgh->cctk_gsh[d]
