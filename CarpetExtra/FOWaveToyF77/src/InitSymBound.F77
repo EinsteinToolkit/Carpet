@@ -35,14 +35,20 @@ c	-*-Fortran-*-
       DECLARE_CCTK_ARGUMENTS
       DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
-      
-      integer ierr
-      
-      call Cart3dSetTensorTypeVN (ierr, cctkGH, 'wavetoy::pi', 'SCALAR')
-      call Cart3dSetTensorTypeVN (ierr, cctkGH, 'wavetoy::phix' //
-     &     ' wavetoy::phiy wavetoy::phiz', 'VECTOR')
-     &
-      call Cart3dSetTensorTypeVN (ierr, cctkGH, 'wavetoy::phi', 'SCALAR')
-      call Cart3dSetTensorTypeVN (ierr, cctkGH, 'wavetoy::resid', 'SCALAR')
+
+      INTEGER one
+      PARAMETER (one = 1)
+      INTEGER ierr
+      INTEGER sym(3)
+
+      sym(1) = one
+      sym(2) = one
+      sym(3) = one
+
+      call SetCartSymVN(ierr, cctkGH, sym,'wavetoy::pi')
+      call SetCartSymVN(ierr, cctkGH, sym,'wavetoy::phi')
+      call SetCartSymVN(ierr, cctkGH, sym,'wavetoy::phix')
+      call SetCartSymVN(ierr, cctkGH, sym,'wavetoy::phiy')
+      call SetCartSymVN(ierr, cctkGH, sym,'wavetoy::phiz')
       
       end

@@ -13,6 +13,7 @@ c     -*-Fortran-*-
  @@*/
   
 #include "cctk.h" 
+#include "cctk_Faces.h"
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
 
@@ -117,8 +118,9 @@ c     ----------------
       implicit none
       
       DECLARE_CCTK_ARGUMENTS
-      DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
+      DECLARE_CCTK_FUNCTIONS
+      CCTK_INT Boundary_SelectVarForBC 
       
 c     Local declarations
       CCTK_REAL zero, one
@@ -167,6 +169,12 @@ c     do nothing
       else
          call CCTK_WARN (0, "internal error")
       end if
+
+c     Apply the symmetry boundary conditions on any coordinate axes
+c     -------------------------------------------------------------
+      call CartSymGN(ierr,cctkGH,"wavetoy::scalarevolve")
+      call CartSymGN(ierr,cctkGH,"wavetoy::scalarevolve_derivs")
+
       
 c     Apply the outer boundary conditions
 c     Only "flat" and "zero" and "none" are currently supported
@@ -184,11 +192,16 @@ c     -----------------------------------
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phiz")
          call BndScalarVN (ierr, cctkGH, sw, zero, "wavetoy::phi")
       else if (CCTK_EQUALS(bound, "static")) then
-         call BndCopyTLVN (ierr, cctkGH, sw, 1, 0, "wavetoy::phi")
-         call BndCopyTLVN (ierr, cctkGH, sw, 1, 0, "wavetoy::pi")
-         call BndCopyTLVN (ierr, cctkGH, sw, 1, 0, "wavetoy::phix")
-         call BndCopyTLVN (ierr, cctkGH, sw, 1, 0, "wavetoy::phiy")
-         call BndCopyTLVN (ierr, cctkGH, sw, 1, 0, "wavetoy::phiz")
+         ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
+     $        "wavetoy::phi", "Static");
+         ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
+     $        "wavetoy::pi", "Static");
+         ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
+     $        "wavetoy::phix", "Static");
+         ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
+     $        "wavetoy::phiy", "Static");
+         ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, 1, -1,
+     $        "wavetoy::phiz", "Static");
       else if (CCTK_EQUALS(bound, "radiation")) then
          call BndRadiativeVN (ierr, cctkGH, sw, zero, one,
      $        "wavetoy::phi", "wavetoy::phi")
@@ -203,13 +216,15 @@ c     -----------------------------------
         call CCTK_WARN (0, "Boundary conditions not applied - giving up!")
       end if
       
+c  SHH: Taking these out on June 26, 2003.  Presumably symmetry BCs are
+c       now handled by some other thorn?
 c     Apply the symmetry boundary conditions on any coordinate axes
 c     -------------------------------------------------------------
-      call Cart3dSymGN (ierr, cctkGH, "wavetoy::scalarevolve")
-      call Cart3dSymGN (ierr, cctkGH, "wavetoy::scalarevolve_derivs")
-      
-      if (ierr .lt. 0)  then
-        call CCTK_WARN (0, "Symmetry conditions not applied - giving up!")
-      end if
+c      call Cart3dSymGN (ierr, cctkGH, "wavetoy::scalarevolve")
+c      call Cart3dSymGN (ierr, cctkGH, "wavetoy::scalarevolve_derivs")
+c      
+c      if (ierr .lt. 0)  then
+c        call CCTK_WARN (0, "Symmetry conditions not applied - giving up!")
+c      end if
       
       end
