@@ -397,6 +397,12 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     CarpetIOHDF5_CloseFile ();
   }
 
+  // now synchronize all variables
+  for (int group = CCTK_NumGroups () - 1; group >= 0; group--)
+  {
+    CCTK_SyncGroupI (cctkGH, group);
+  }
+
   return (retval);
 }
 

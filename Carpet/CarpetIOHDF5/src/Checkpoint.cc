@@ -73,28 +73,10 @@ int CarpetIOHDF5_EvolutionCheckpoint (const cGH* const cctkGH)
   int retval = 0;
   DECLARE_CCTK_PARAMETERS
 
-  // Test checkpoint_every, and adjust it. This is necessary until
-  // recovery is more flexible.
-  int every_full = 1 << (maxreflevels-1);
-  if (checkpoint_every > 0 && (checkpoint_every % every_full) != 0)
-  {
-    char new_checkpoint_every[32];
-
-    snprintf (new_checkpoint_every, sizeof (new_checkpoint_every), "%d",
-              (checkpoint_every / every_full + 1) * every_full);
-    CCTK_ParameterSet ("checkpoint_every", "IOUtil", new_checkpoint_every);
-    CCTK_VInfo (CCTK_THORNSTRING,"I have adjusted your checkpoint_every to %s.",
-                new_checkpoint_every);
-  }
 
   if (checkpoint &&
     ((checkpoint_every > 0 && cctkGH->cctk_iteration % checkpoint_every == 0) ||
-#if 0
      checkpoint_next))
-#else
-     // currently we can only checkpoint after complete coarse grid timesteps
-     (checkpoint_next && cctkGH->cctk_iteration % maxreflevelfact)))
-#endif
   {
     if (! CCTK_Equals (verbose, "none"))
     {
