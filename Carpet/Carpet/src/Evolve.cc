@@ -9,7 +9,7 @@
 
 #include "carpet.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.10 2002/03/26 13:22:26 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.11 2002/05/22 18:26:27 schnetter Exp $";
 
 CCTK_FILEVERSION(Carpet_Evolve_cc)
 
@@ -119,13 +119,20 @@ namespace Carpet {
 	}
       } END_REFLEVEL_LOOP(cgh);
       
-      BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
+      BEGIN_REFLEVEL_LOOP(cgh) {
 	const int do_every = maxreflevelfact/reflevelfact;
 	if (cgh->cctk_iteration % do_every == 0) {
 	  
 	  // Regrid
 	  Waypoint ("%*sRegrid", 2*reflevel, "");
 	  Regrid (cgh);
+	  
+	}
+      } END_REFLEVEL_LOOP(cgh);
+      
+      BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
+	const int do_every = maxreflevelfact/reflevelfact;
+	if (cgh->cctk_iteration % do_every == 0) {
 	  
 	  BEGIN_MGLEVEL_LOOP(cgh) {
 	    const int do_every = mglevelfact * maxreflevelfact/reflevelfact;
