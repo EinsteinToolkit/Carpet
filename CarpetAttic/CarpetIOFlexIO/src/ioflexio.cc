@@ -15,7 +15,7 @@
 #include "cctk_Parameters.h"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.45 2004/03/01 22:22:46 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.cc,v 1.46 2004/03/08 09:12:29 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -815,8 +815,8 @@ namespace CarpetIOFlexIO {
         }
         if (regions_read.at(m) != all_exterior) {
           CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "Variable \"%s\" could not be initialised from file -- the file may be missing data",
-                      varname);
+                      "Variable \"%s\" could not be initialised from file \"%s\" -- the file contains data for this variable, but the grids therein are too small",
+                      varname, filename);
         }
       }
     } // if did_read_something
