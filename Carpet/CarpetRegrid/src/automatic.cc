@@ -16,7 +16,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/automatic.cc,v 1.2 2004/04/18 13:29:43 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/automatic.cc,v 1.3 2004/04/24 07:40:16 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_automatic_cc);
 }
 
@@ -55,7 +55,7 @@ namespace CarpetRegrid {
     assert (CCTK_GroupDimI(gi) == dim);
     
     assert (arrdata.at(gi).at(Carpet::map).data.at(vi-v1));
-    const gf<CCTK_REAL,dim>& errorvar
+    const gf<CCTK_REAL,dim>& errorgf
       = (*dynamic_cast<const gf<CCTK_REAL,dim>*>
          (arrdata.at(gi).at(Carpet::map).data.at(vi-v1)));
 
@@ -64,7 +64,7 @@ namespace CarpetRegrid {
     Automatic_OneLevel
       (cctkGH, hh,
        reflevel, min(reflevels+1, maxreflevels),
-       minwidth, minfraction, maxerror, errorvar,
+       minwidth, minfraction, maxerror, errorgf,
        bbs, obs);
     
     // make multiprocessor aware
@@ -109,7 +109,7 @@ namespace CarpetRegrid {
                            const int minwidth,
                            const CCTK_REAL minfraction,
                            const CCTK_REAL maxerror,
-                           const gf<CCTK_REAL,dim> & errorvar,
+                           const gf<CCTK_REAL,dim> & errorgf,
                            vector<ibbox> & bbs,
                            vector<bbvect> & obs)
   {
@@ -126,10 +126,10 @@ namespace CarpetRegrid {
       const ibbox region = hh.extents.at(rl).at(c).at(ml);
       assert (! region.empty());
       
-      const data<CCTK_REAL,dim>& errdata = *errorvar(tl,rl,c,ml);
+      const data<CCTK_REAL,dim>& errordata = *errorgf(tl,rl,c,ml);
       
       Automatic_Recursive (cctkGH, hh, minwidth, minfraction, maxerror,
-                           errdata, bbl, region);
+                           errordata, bbl, region);
     }
     
 //     int numpoints = 0;
@@ -175,7 +175,7 @@ namespace CarpetRegrid {
                             const int minwidth,
                             const CCTK_REAL minfraction,
                             const CCTK_REAL maxerror,
-                            const data<CCTK_REAL,dim> & errorvar,
+                            const data<CCTK_REAL,dim> & errordata,
                             list<ibbox> & bbl,
                             const ibbox & region)
   {
@@ -187,7 +187,7 @@ namespace CarpetRegrid {
     assert (CCTK_nProcs(cctkGH)==1);
     int cnt = 0;
     for (ibbox::iterator it=region.begin(); it!=region.end(); ++it) {
-      if (errorvar[*it] > maxerror) ++cnt;
+      if (errordata[*it] > maxerror) ++cnt;
     }
     const CCTK_REAL fraction = (CCTK_REAL)cnt / region.size();
     const int width = maxval(region.shape() / region.stride());
@@ -221,9 +221,9 @@ namespace CarpetRegrid {
       assert (region1 + region2 == region);
       list<ibbox> bbl1, bbl2;
       Automatic_Recursive (cctkGH, hh, minwidth, minfraction, maxerror,
-                           errorvar, bbl1, region1);
+                           errordata, bbl1, region1);
       Automatic_Recursive (cctkGH, hh, minwidth, minfraction, maxerror,
-                           errorvar, bbl2, region2);
+                           errordata, bbl2, region2);
       // Combine regions if possible
       up2 += str-str/reffact;
       up2[dir] = lo2[dir];
