@@ -31,7 +31,7 @@
 #include "ioascii.hh"
   
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.70 2004/05/21 18:10:37 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.71 2004/05/27 12:23:03 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOASCII_ioascii_cc);
 }
 
@@ -427,7 +427,7 @@ namespace CarpetIOASCII {
               if (new_filename_scheme) {
                 filenamebuf << myoutdir << "/" << alias << ".";
                 if (maps > 1) {
-                  filenamebuf << Carpet::map << "-";
+                  filenamebuf << Carpet::map << ".";
                 }
                 for (int d=0; d<outdim; ++d) {
                   const char* const coords = "xyz";
@@ -447,7 +447,7 @@ namespace CarpetIOASCII {
               } else {
                 filenamebuf << myoutdir << "/" << alias << ".";
                 if (maps > 1) {
-                  filenamebuf << Carpet::map << "-";
+                  filenamebuf << Carpet::map << ".";
                 }
                 for (int d=0; d<outdim; ++d) {
                   assert (dirs[d]>=0 && dirs[d]<3);
