@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.40 2004/02/03 14:33:02 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/data.cc,v 1.41 2004/02/09 14:55:07 schnetter Exp $
 
 #include <assert.h>
 #include <limits.h>
@@ -299,7 +299,10 @@ void data<T,D>
   assert (group_tags_table >= 0);
   
   // Disallow this.
-  assert (0);
+  T Tdummy;
+  CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+              "There is no copy operator available for the variable type %s, dimension %d.",
+              typestring(Tdummy), D);
   
   int rank;
   MPI_Comm_rank (dist::comm, &rank);
