@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.11 2003/06/18 18:28:07 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.12 2003/08/15 11:42:25 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -19,7 +19,7 @@
 #include "interp.hh"
 
 extern "C" {
-  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.11 2003/06/18 18:28:07 schnetter Exp $";
+  static char const * const rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetInterp/src/interp.cc,v 1.12 2003/08/15 11:42:25 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetInterp_interp_cc);
 }
 
@@ -137,11 +137,27 @@ namespace CarpetInterp {
     
     // Assert that all refinement levels have the same time
     // TODO: interpolate in time
-    for (int rl=minrl; rl<maxrl; ++rl) {
-      int const tl = 0;
-      CCTK_REAL const time1 = tt->time (tl, rl, ml);
-      CCTK_REAL const time2 = cgh->cctk_time / cgh->cctk_delta_time;
-      assert (fabs((time1 - time2) / (fabs(time1) + fabs(time2) + fabs(cgh->cctk_delta_time))) < 1e-12);
+    {
+      bool can_interp = true;
+      for (int rl=minrl; rl<maxrl; ++rl) {
+        int const tl = 0;
+        CCTK_REAL const time1 = tt->time (tl, rl, ml);
+        CCTK_REAL const time2 = cgh->cctk_time / cgh->cctk_delta_time;
+//         assert (fabs((time1 - time2) / (fabs(time1) + fabs(time2) + fabs(cgh->cctk_delta_time))) < 1e-12);
+        can_interp = can_interp && (fabs((time1 - time2) / (fabs(time1) + fabs(time2) + fabs(cgh->cctk_delta_time))) < 1e-12);
+      }
+      if (! can_interp) {
+        if (reflevel == -1) {
+          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Cannot interpolate in global mode at iteration %d (time %g), because not all refinement levels exist at this time.  Interpolation in time is not yet implemented.",
+                      cgh->cctk_iteration, (double)cgh->cctk_time);
+        } else {
+          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Cannot interpolate in level mode at iteration %d (time %g), because refinement level %d does not exist at this time.  Interpolation in time is not yet implemented.",
+                      cgh->cctk_iteration, (double)cgh->cctk_time, reflevel);
+        }
+        assert (0);
+      }
     }
     
     
