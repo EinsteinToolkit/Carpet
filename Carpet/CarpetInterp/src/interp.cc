@@ -80,7 +80,8 @@ namespace CarpetInterp {
     return ind;
   }
   
-
+  
+  
   static int GetInterpNumTimelevels(const cGH * const cgh,
                                     const int group)
   {
@@ -117,6 +118,7 @@ namespace CarpetInterp {
     return interp_ntl;
     
   }
+  
   
   
   void CarpetInterpStartup ()
