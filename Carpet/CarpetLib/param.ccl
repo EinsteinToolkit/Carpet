@@ -2,6 +2,10 @@
 
 restricted:
 
+BOOLEAN use_collective_communication_buffers "Use collective buffers for MPI communications" STEERABLE=always
+{
+} "no"
+
 BOOLEAN minimise_outstanding_communications "Minimise the number of Isend/Irecv operations that are submitted concurrently"
 {
 } "no"

@@ -16,6 +16,8 @@ namespace Carpet {
   
   using namespace std;
   
+  // restricts a set of groups which all have the same vartype
+  static void RestrictGroups (const cGH* cgh, group_set& groups);
   
   
   void Restrict (const cGH* cgh)
@@ -31,90 +33,111 @@ namespace Carpet {
     
     Checkpoint ("Restrict");
     
-    // Restrict
-    if (reflevel < reflevels-1) {
+    // all but the finest level are restricted
+    if (reflevel == reflevels-1) {
+      return;
+    }
 
-      // make the comm_state loop the innermost
-      // in order to minimise the number of outstanding communications
-      if (minimise_outstanding_communications) {
-        for (int group=0; group<CCTK_NumGroups(); ++group) {
-          if (CCTK_GroupTypeI(group) == CCTK_GF) {
-            if (CCTK_QueryGroupStorageI(cgh, group)) {
-              
-              const int tl = 0;
-              
-              for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-                
-                // use background time here (which may not be modified
-                // by the user)
-                const CCTK_REAL time = vtt.at(m)->time (tl, reflevel, mglevel);
-                
-                const CCTK_REAL time1 = vtt.at(m)->time (0, reflevel, mglevel);
-                const CCTK_REAL time2
-                  = (cgh->cctk_time - cctk_initial_time) / delta_time;
-                assert (fabs(time1 - time2) / (fabs(time1) + fabs(time2) + fabs(cgh->cctk_delta_time)) < 1e-12);
-                
-                for (int var=0; var<(int)arrdata.at(group).at(m).data.size(); ++var) {
-                  for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
-                    for (comm_state state; !state.done(); state.step()) {
-                      arrdata.at(group).at(m).data.at(var)->ref_restrict
-                        (state, tl, reflevel, c, mglevel, time);
-                    }
-                  }
-                }
-              }
-              
-            } // if group has storage
-          } // if grouptype == CCTK_GF
-        } // loop over groups
-      } else {
-        for (comm_state state; !state.done(); state.step()) {
-          for (int group=0; group<CCTK_NumGroups(); ++group) {
-            if (CCTK_GroupTypeI(group) == CCTK_GF) {
-              if (CCTK_QueryGroupStorageI(cgh, group)) {
-              
-                const int tl = 0;
-              
-                for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-                
-                  // use background time here (which may not be modified
-                  // by the user)
-                  const CCTK_REAL time = vtt.at(m)->time (tl, reflevel, mglevel);
-                
-                  const CCTK_REAL time1 = vtt.at(m)->time (0, reflevel, mglevel);
-                  const CCTK_REAL time2
-                    = (cgh->cctk_time - cctk_initial_time) / delta_time;
-                  assert (fabs(time1 - time2) / (fabs(time1) + fabs(time2) + fabs(cgh->cctk_delta_time)) < 1e-12);
-                
-                  for (int var=0; var<(int)arrdata.at(group).at(m).data.size(); ++var) {
-                    for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
-                      arrdata.at(group).at(m).data.at(var)->ref_restrict
-                        (state, tl, reflevel, c, mglevel, time);
-                    }
-                  }
-                }
-              
-              } // if group has storage
-            } // if grouptype == CCTK_GF
-          } // loop over groups
-        } // for state
-      } // if minimise_outstanding_communications
-    } // if not finest refinement level
-    
-    
-    
-    // Sync
-    if (reflevel < reflevels-1) {
-      for (int group=0; group<CCTK_NumGroups(); ++group) {
-        if (CCTK_GroupTypeI(group) == CCTK_GF
-            && CCTK_NumVarsInGroupI(group) > 0
-            && CCTK_QueryGroupStorageI(cgh, group)) {
-          SyncGVGroup(cgh, group);
+    // sort all grid functions into sets of the same vartype
+    vector<group_set> groups;
+
+    for (int group = 0; group < CCTK_NumGroups(); ++group) {
+      if (CCTK_GroupTypeI(group) == CCTK_GF
+          && CCTK_NumVarsInGroupI(group) > 0
+          && CCTK_QueryGroupStorageI(cgh, group)) {
+
+        group_set newset;
+        const int firstvar = CCTK_FirstVarIndexI (group);
+        newset.vartype = CCTK_VarTypeI (firstvar);
+        assert (newset.vartype >= 0);
+        int c;
+        for (c = 0; c < groups.size(); c++) {
+          if (newset.vartype == groups[c].vartype) {
+            break;
+          }
         }
+        if (c == groups.size()) {
+          groups.push_back (newset);
+        }
+        groups[c].members.push_back (group);
       }
-    } // if not finest refinement level
-    
+    }
+
+    // Restrict
+    for (int c = 0; c < groups.size(); c++) {
+      RestrictGroups (cgh, groups[c]);
+    }
+
+    // Synchronise
+    for (int c = 0; c < groups.size(); c++) {
+      SyncGroups (cgh, groups[c]);
+    }
   }
   
+
+  // restricts a set of groups which all have the same vartype
+  static void RestrictGroups (const cGH* cgh, group_set& groups) {
+    DECLARE_CCTK_PARAMETERS;
+
+    const int tl = 0;
+
+    // Use collective or single-component buffers for communication ?
+    const int vartype =
+      use_collective_communication_buffers ? groups.vartype : -1;
+
+    if (use_collective_communication_buffers ||
+        ! minimise_outstanding_communications) {
+      for (comm_state state(vartype); ! state.done(); state.step()) {
+        for (int c = 0; c < groups.members.size(); ++c) {
+          const int group = groups.members[c];
+          for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
+
+            // use background time here (which may not be modified
+            // by the user)
+            const CCTK_REAL time = vtt.at(m)->time (tl, reflevel, mglevel);
+
+            const CCTK_REAL time1 = vtt.at(m)->time (0, reflevel, mglevel);
+            const CCTK_REAL time2
+              = (cgh->cctk_time - cctk_initial_time) / delta_time;
+            assert (fabs(time1 - time2) / (fabs(time1) + fabs(time2) + fabs(cgh->cctk_delta_time)) < 1e-12);
+
+            for (int v = 0; v < arrdata.at(group).at(m).data.size(); ++v) {
+              ggf *const gv = arrdata.at(group).at(m).data.at(v);
+              for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
+                gv->ref_restrict (state, tl, reflevel, c, mglevel, time);
+              }
+            }
+          }
+        } // loop over groups
+      } // for state
+    } else {
+      // make the comm_state loop the innermost
+      // in order to minimise the number of outstanding communications
+      for (int c = 0; c < groups.members.size(); ++c) {
+        const int group = groups.members[c];
+        for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
+     
+          // use background time here (which may not be modified
+          // by the user)
+          const CCTK_REAL time = vtt.at(m)->time (tl, reflevel, mglevel);
+
+          const CCTK_REAL time1 = vtt.at(m)->time (0, reflevel, mglevel);
+          const CCTK_REAL time2
+            = (cgh->cctk_time - cctk_initial_time) / delta_time;
+          assert (fabs(time1 - time2) / (fabs(time1) + fabs(time2) + fabs(cgh->cctk_delta_time)) < 1e-12);
+  
+          for (int v = 0; v < arrdata.at(group).at(m).data.size(); ++v) {
+            ggf *const gv = arrdata.at(group).at(m).data.at(v);
+            for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
+              for (comm_state state(vartype); ! state.done(); state.step()) {
+                gv->ref_restrict (state, tl, reflevel, c, mglevel, time);
+              }
+            }
+          }
+        }
+      } // loop over groups
+    } // if use_collective_communication_buffers
+  }
+
 } // namespace Carpet
 

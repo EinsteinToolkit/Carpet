@@ -16,10 +16,12 @@ namespace Carpet {
   using namespace std;
   
   
-  static int CheckSyncGroupConsistency ( const cGH* cgh,
-                                          const char *groupname );
-  static void ProlongateGroupBoundaries ( const cGH* cgh,
-                                          CCTK_REAL initial_time, int group );
+  static int CheckSyncGroupConsistency (const cGH* cgh,
+                                        const char *groupname);
+  static void ProlongateGroupBoundaries (const cGH* cgh,
+                                         CCTK_REAL initial_time, int group,
+                                         int vartype);
+
   
   int SyncGroup (const cGH* cgh, const char* groupname)
   {
@@ -29,6 +31,8 @@ namespace Carpet {
     assert (group>=0 and group<CCTK_NumGroups());
     assert (group<(int)arrdata.size());
     const int grouptype = CCTK_GroupTypeI(group);
+    const int firstvar = CCTK_FirstVarIndexI (group);
+    const int vartype = CCTK_VarTypeI (firstvar);
     assert(grouptype == CCTK_GF ||
            grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY);
     assert (CCTK_NumVarsInGroupI(group) != 0);
@@ -43,18 +47,21 @@ namespace Carpet {
       if (do_prolongate && grouptype == CCTK_GF) {
         assert (reflevel>=0 and reflevel<reflevels);
         if (reflevel > 0) {
-          ProlongateGroupBoundaries ( cgh, cctk_initial_time, group );
+          ProlongateGroupBoundaries (cgh, cctk_initial_time, group, vartype);
         }
       }
     
       // Sync
-      SyncGVGroup ( cgh, group );
+      const vector<int> members(1, group);
+      group_set groups = {vartype, members};
+      SyncGroups (cgh, groups);
     }
     return retval;
   }
   
-  void ProlongateGroupBoundaries ( const cGH* cgh, CCTK_REAL initial_time,
-                                  int group )
+  static void ProlongateGroupBoundaries (const cGH* cgh,
+                                         CCTK_REAL initial_time, int group,
+                                         int vartype)
   {
     DECLARE_CCTK_PARAMETERS;
 
@@ -62,26 +69,32 @@ namespace Carpet {
     const CCTK_REAL time = (cgh->cctk_time - initial_time) / delta_time;
     const int tl = 0;
     
-    // make the comm_state loop the innermost
-    // in order to minimise the number of outstanding communications
-    if (minimise_outstanding_communications) {
-      for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-        for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-          for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
-            for (comm_state state; !state.done(); state.step()) {
-              arrdata.at(group).at(m).data.at(var)->ref_bnd_prolongate
-                (state, tl, reflevel, c, mglevel, time);
+    // Use collective or single-component buffers for communication ?
+    if (! use_collective_communication_buffers) {
+      vartype = -1;
+    }
+
+    if (use_collective_communication_buffers ||
+        ! minimise_outstanding_communications) {
+      for (comm_state state(vartype); ! state.done(); state.step()) {
+        for (int m = 0; m < arrdata.at(group).size(); ++m) {
+          for (int v = 0; v < arrdata.at(group).at(m).data.size(); ++v) {
+            ggf *const gv = arrdata.at(group).at(m).data.at(v);
+            for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
+              gv->ref_bnd_prolongate (state, tl, reflevel, c, mglevel, time);
             }
           }
         }
       }
     } else {
-      for (comm_state state; !state.done(); state.step()) {
-        for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-          for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-            for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
-              arrdata.at(group).at(m).data.at(var)->ref_bnd_prolongate
-                (state, tl, reflevel, c, mglevel, time);
+      // make the comm_state loop the innermost
+      // in order to minimise the number of outstanding communications
+      for (int m = 0; m < arrdata.at(group).size(); ++m) {
+        for (int v = 0; v < arrdata.at(group).at(m).data.size(); ++v) {
+          ggf *const gv = arrdata.at(group).at(m).data.at(v);
+          for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
+            for (comm_state state(vartype); ! state.done(); state.step()) {
+              gv->ref_bnd_prolongate (state, tl, reflevel, c, mglevel, time);
             }
           }
         }
@@ -89,37 +102,52 @@ namespace Carpet {
     }
   }
 
-  void SyncGVGroup ( const cGH* cgh, int group )
+  // synchronises a set of group which all have the same vartype
+  void SyncGroups (const cGH* cgh, group_set& groups)
   {
     DECLARE_CCTK_PARAMETERS;
     const int tl = 0;
 
-    // make the comm_state loop the innermost
-    // in order to minimise the number of outstanding communications
-    if (minimise_outstanding_communications) {
-      for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-        for (int var=0; var<(int)arrdata.at(group).at(m).data.size(); ++var) {
-          for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
-            for (comm_state state; ! state.done(); state.step()) {
-              arrdata.at(group).at(m).data.at(var)->sync
-                (state, tl, reflevel, c, mglevel);
+    assert (groups.members.size() > 0);
+
+    // Use collective or single-component buffers for communication ?
+    const int vartype =
+      use_collective_communication_buffers ? groups.vartype : -1;
+
+    if (use_collective_communication_buffers ||
+        ! minimise_outstanding_communications) {
+      for (comm_state state(vartype); ! state.done(); state.step()) {
+        for (int group = 0; group < groups.members.size(); ++group) {
+          const int g = groups.members.at(group);
+          for (int m = 0; m < arrdata.at(g).size(); ++m) {
+            for (int v = 0; v < arrdata.at(g).at(m).data.size(); ++v) {
+              ggf *const gv = arrdata.at(g).at(m).data.at(v);
+              for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
+                gv->sync (state, tl, reflevel, c, mglevel);
+              }
             }
           }
         }
       }
     } else {
-      for (comm_state state; ! state.done(); state.step()) {
-        for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-          for (int var=0; var<(int)arrdata.at(group).at(m).data.size(); ++var) {
-            for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
-              arrdata.at(group).at(m).data.at(var)->sync
-                (state, tl, reflevel, c, mglevel);
+      // make the comm_state loop the innermost
+      // in order to minimise the number of outstanding communications
+      for (int group = 0; group < groups.members.size(); ++group) {
+        const int g = groups.members.at(group);
+        for (int m = 0; m < arrdata.at(g).size(); ++m) {
+          for (int v = 0; v < arrdata.at(g).at(m).data.size(); ++v) {
+            ggf *const gv = arrdata.at(g).at(m).data.at(v);
+            for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
+              for (comm_state state(vartype); ! state.done(); state.step()) {
+                gv->sync (state, tl, reflevel, c, mglevel);
+              }
             }
           }
         }
       }
     }
   }
+
 
   int CheckSyncGroupConsistency ( const cGH* cgh,const char *groupname )
   {
@@ -168,7 +196,6 @@ namespace Carpet {
     }
     return retval;
   }
-  
   
   int EnableGroupComm (const cGH* cgh, const char* groupname)
   {

@@ -19,3 +19,5 @@ includes header: gh.hh in gh.hh
 includes header: th.hh in th.hh
 
 includes header: operators.hh in operators.hh
+
+uses include header: carpet_typecase.hh

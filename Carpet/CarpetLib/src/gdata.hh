@@ -158,6 +158,17 @@ private:
                        const gdata* src, const ibbox& box);
   void copy_from_wait (comm_state& state,
                        const gdata* src, const ibbox& box);
+
+  // Copy processor-local source data into communication send buffer 
+  // of the corresponding destination processor
+  // The case when both source and destination are local is also handled here.
+  void copy_into_sendbuffer (comm_state& state,
+                             const gdata* src, const ibbox& box);
+  // Copy processor-local destination data from communication recv buffer
+  // of the corresponding source processor
+  void copy_from_recvbuffer (comm_state& state,
+                             const gdata* src, const ibbox& box);
+
 #if 0
  protected:
   virtual void
@@ -213,6 +224,17 @@ private:
                               const ibbox& box, const CCTK_REAL time,
                               const int order_space,
                               const int order_time);
+
+  // Interpolate processor-local source data into communication send buffer
+  // of the corresponding destination processor
+  // The case when both source and destination are local is also handled here.
+  void interpolate_into_sendbuffer (comm_state& state,
+                                    const vector<const gdata*> srcs,
+                                    const vector<CCTK_REAL> times,
+                                    const ibbox& box,
+                                    const CCTK_REAL time,
+                                    const int order_space,
+                                    const int order_time);
  public:
   
 protected:

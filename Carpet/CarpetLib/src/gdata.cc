@@ -137,6 +137,33 @@ void gdata::copy_from (comm_state& state,
   case state_wait:
     copy_from_wait (state, src, box);
     break;
+  case state_get_buffer_sizes:
+    // don't count processor-local copies
+    if (proc() != src->proc()) {
+      // if this is a destination processor: advance its recv buffer size
+      if (proc() == dist::rank()) {
+        state.collbufs.at(src->proc()).recvbufsize += box.size();
+      }
+      // if this is a source processor: increment its send buffer size
+      if (src->proc() == dist::rank()) {
+        state.collbufs.at(proc()).sendbufsize += box.size();
+      }
+    }
+    break;
+  case state_fill_send_buffers:
+    // if this is a source processor: copy its data into the send buffer
+    // (the processor-local case is also handled here)
+    if (src->proc() == dist::rank()) {
+      copy_into_sendbuffer (state, src, box);
+    }
+    break;
+  case state_empty_recv_buffers:
+    // if this is a destination processor: copy its data from the recv buffer
+    // (the processor-local case is not handled here)
+    if (proc() == dist::rank() && src->proc() != proc()) {
+      copy_from_recvbuffer (state, src, box);
+    }
+    break;
   default:
     assert(0);
   }
@@ -193,7 +220,6 @@ void gdata::copy_from_recv (comm_state& state,
         wtime_copyfrom_recvinner_allocate.stop();
         
         wtime_copyfrom_recvinner_recv.start();
-        assert (dist::rank() == proc());
         MPI_Irecv (b->pointer(), b->size(), b->datatype(), src->proc(),
                    tag, dist::comm, &b->request);
         wtime_copyfrom_recvinner_recv.stop();
@@ -210,8 +236,6 @@ void gdata::copy_from_recv (comm_state& state,
   
   wtime_copyfrom_recv.stop();
 }
-
-
 
 void gdata::copy_from_send (comm_state& state,
                             const gdata* src, const ibbox& box)
@@ -262,7 +286,6 @@ void gdata::copy_from_send (comm_state& state,
         wtime_copyfrom_sendinner_copy.stop();
         
         wtime_copyfrom_sendinner_send.start();
-        assert (dist::rank() == src->proc());
         MPI_Isend (b->pointer(), b->size(), b->datatype(), proc(),
                    tag, dist::comm, &b->request);
         wtime_copyfrom_sendinner_send.stop();
@@ -278,8 +301,6 @@ void gdata::copy_from_send (comm_state& state,
   
   wtime_copyfrom_send.stop();
 }
-
-
 
 void gdata::copy_from_wait (comm_state& state,
                             const gdata* src, const ibbox& box)
@@ -382,6 +403,56 @@ void gdata::copy_from_wait (comm_state& state,
 }
 
 
+// Copy processor-local source data into communication send buffer
+// of the corresponding destination processor
+// The case when both source and destination are local is also handled here.
+void gdata::copy_into_sendbuffer (comm_state& state,
+                                  const gdata* src, const ibbox& box)
+{
+  if (proc() == src->proc()) {
+    // copy on same processor
+    copy_from_innerloop (src, box);
+  } else {
+    // copy to remote processor
+    assert (src->_has_storage);
+    assert (src->_owns_storage);
+    assert (state.collbufs.at(proc()).sendbuf -
+            state.collbufs.at(proc()).sendbufbase <=
+            (state.collbufs.at(proc()).sendbufsize - box.size()) *
+            state.vartypesize);
+
+    // copy this processor's data into the send buffer
+    gdata* tmp = src->make_typed (varindex, transport_operator, tag);
+    tmp->allocate (box, src->proc(), state.collbufs.at(proc()).sendbuf);
+    tmp->copy_from_innerloop (src, box);
+    delete tmp;
+
+    // advance send buffer to point to the next ibbox slot
+    state.collbufs.at(proc()).sendbuf += state.vartypesize * box.size();
+  }
+}
+
+
+// Copy processor-local destination data from communication recv buffer
+// of the corresponding source processor
+void gdata::copy_from_recvbuffer (comm_state& state,
+                                  const gdata* src, const ibbox& box)
+{
+  assert (state.collbufs.at(proc()).recvbuf -
+          state.collbufs.at(proc()).recvbufbase <=
+          (state.collbufs.at(proc()).recvbufsize-box.size()) * state.vartypesize);
+
+  // copy this processor's data from the recv buffer
+  gdata* tmp = make_typed (varindex, transport_operator, tag);
+  tmp->allocate (box, proc(), state.collbufs.at(src->proc()).recvbuf);
+  copy_from_innerloop (tmp, box);
+  delete tmp;
+
+  // advance recv buffer to point to the next ibbox slot
+  state.collbufs.at(src->proc()).recvbuf += state.vartypesize * box.size();
+}
+
+
 
 void gdata
 ::interpolate_from (comm_state& state,
@@ -429,6 +500,34 @@ void gdata
     break;
   case state_wait:
     interpolate_from_wait (state, srcs, times, box, time, order_space, order_time);
+    break;
+  case state_get_buffer_sizes:
+    // don't count processor-local interpolations
+    if (proc() != srcs.at(0)->proc()) {
+      // if this is a destination processor: increment its recv buffer size
+      if (proc() == dist::rank()) {
+        state.collbufs.at(srcs.at(0)->proc()).recvbufsize += box.size();
+      }
+      // if this is a source processor: increment its send buffer size
+      if (srcs.at(0)->proc() == dist::rank()) {
+        state.collbufs.at(proc()).sendbufsize += box.size();
+      }
+    }
+    break;
+  case state_fill_send_buffers:
+    // if this is a source processor: interpolate its data into the send buffer
+    // (the processor-local case is also handled here)
+    if (srcs.at(0)->proc() == dist::rank()) {
+      interpolate_into_sendbuffer (state, srcs, times, box, time,
+                                   order_space, order_time);
+    }
+    break;
+  case state_empty_recv_buffers:
+    // if this is a destination processor: copy its data from the recv buffer
+    // (the processor-local case is not handled here)
+    if (proc() == dist::rank() && srcs.at(0)->proc() != proc()) {
+      copy_from_recvbuffer (state, srcs.at(0), box);
+    }
     break;
   default:
     assert(0);
@@ -646,5 +745,43 @@ void gdata
       
     }
     
+  }
+}
+
+
+// Interpolate processor-local source data into communication send buffer
+// of the corresponding destination processor
+// The case when both source and destination are local is also handled here.
+void gdata
+::interpolate_into_sendbuffer (comm_state& state,
+                               const vector<const gdata*> srcs,
+                               const vector<CCTK_REAL> times,
+                               const ibbox& box,
+                               const CCTK_REAL time,
+                               const int order_space,
+                               const int order_time)
+{
+  if (proc() == srcs.at(0)->proc()) {
+    // interpolate on same processor
+    interpolate_from_innerloop (srcs, times, box, time,
+                                order_space, order_time);
+  } else {
+    // interpolate to remote processor
+    assert (srcs.at(0)->_has_storage);
+    assert (srcs.at(0)->_owns_storage);
+    assert (state.collbufs.at(proc()).sendbuf -
+            state.collbufs.at(proc()).sendbufbase <=
+            (state.collbufs.at(proc()).sendbufsize - box.size()) *
+            state.vartypesize);
+
+    // copy this processor's data into the send buffer
+    gdata* tmp = srcs.at(0)->make_typed (varindex, transport_operator, tag);
+    tmp->allocate (box, srcs.at(0)->proc(), state.collbufs.at(proc()).sendbuf);
+    tmp->interpolate_from_innerloop (srcs, times, box, time,
+                                     order_space, order_time);
+    delete tmp;
+
+    // advance send buffer to point to the next ibbox slot
+    state.collbufs.at(proc()).sendbuf += state.vartypesize * box.size();
   }
 }

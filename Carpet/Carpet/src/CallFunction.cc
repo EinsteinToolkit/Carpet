@@ -15,7 +15,7 @@ namespace Carpet {
   
   using namespace std;
   
-  static void SyncAllGroups( cFunctionData* attribute, cGH* cgh );
+  static void SyncGroupsInScheduleBlock( cFunctionData* attribute, cGH* cgh );
   /// Traverse one function on all components of one refinement level
   /// of one multigrid level.
   int CallFunction (void* function, ///< the function to call
@@ -53,7 +53,7 @@ namespace Carpet {
                     assert (res==0);
                   } END_LOCAL_COMPONENT_LOOP;
                 } END_MAP_LOOP;
-                SyncAllGroups( attribute, cgh );
+                SyncGroupsInScheduleBlock( attribute, cgh );
               } END_REFLEVEL_LOOP;
             } END_MGLEVEL_LOOP;
           } END_META_MODE;
@@ -67,7 +67,7 @@ namespace Carpet {
                   const int res = CCTK_CallFunction (function, attribute, data);
                   assert (res==0);
                 } END_MAP_LOOP;
-                SyncAllGroups( attribute, cgh );
+                SyncGroupsInScheduleBlock( attribute, cgh );
               } END_REFLEVEL_LOOP;
             } END_MGLEVEL_LOOP;
           } END_META_MODE;
@@ -79,7 +79,7 @@ namespace Carpet {
                             attribute->where, attribute->thorn, attribute->routine);
                 const int res = CCTK_CallFunction (function, attribute, data);
                 assert (res==0);
-                SyncAllGroups( attribute, cgh );
+                SyncGroupsInScheduleBlock( attribute, cgh );
               } END_REFLEVEL_LOOP;
             } END_MGLEVEL_LOOP;
           } END_META_MODE;
@@ -90,7 +90,7 @@ namespace Carpet {
                           attribute->where, attribute->thorn, attribute->routine);
               const int res = CCTK_CallFunction (function, attribute, data);
               assert (res==0);
-              SyncAllGroups( attribute, cgh );
+              SyncGroupsInScheduleBlock( attribute, cgh );
             } END_MGLEVEL_LOOP;
           } END_META_MODE;
         } else {
@@ -99,7 +99,7 @@ namespace Carpet {
                         attribute->where, attribute->thorn, attribute->routine);
             const int res = CCTK_CallFunction (function, attribute, data);
             assert (res==0);
-            SyncAllGroups( attribute, cgh );
+            SyncGroupsInScheduleBlock( attribute, cgh );
           } END_META_MODE;
         }
       }
@@ -121,7 +121,7 @@ namespace Carpet {
                   assert (res==0);
                 } END_LOCAL_COMPONENT_LOOP;
               } END_MAP_LOOP;
-              SyncAllGroups( attribute, cgh );
+              SyncGroupsInScheduleBlock( attribute, cgh );
             } END_REFLEVEL_LOOP;
           } END_GLOBAL_MODE;
         } else if (attribute->loop_singlemap) {
@@ -133,7 +133,7 @@ namespace Carpet {
                 const int res = CCTK_CallFunction (function, attribute, data);
                 assert (res==0);
               } END_MAP_LOOP;
-              SyncAllGroups( attribute, cgh );
+              SyncGroupsInScheduleBlock( attribute, cgh );
             } END_REFLEVEL_LOOP;
           } END_GLOBAL_MODE;
         } else if (attribute->loop_level) {
@@ -143,7 +143,7 @@ namespace Carpet {
                           attribute->where, attribute->thorn, attribute->routine);
               const int res = CCTK_CallFunction (function, attribute, data);
               assert (res==0);
-              SyncAllGroups( attribute, cgh );
+              SyncGroupsInScheduleBlock( attribute, cgh );
             } END_REFLEVEL_LOOP;
           } END_GLOBAL_MODE;
         } else {
@@ -152,7 +152,7 @@ namespace Carpet {
                         attribute->where, attribute->thorn, attribute->routine);
             const int res = CCTK_CallFunction (function, attribute, data);
             assert (res==0);
-            SyncAllGroups( attribute, cgh );
+            SyncGroupsInScheduleBlock( attribute, cgh );
           } END_GLOBAL_MODE;
         }
       }
@@ -185,7 +185,7 @@ namespace Carpet {
         const int res = CCTK_CallFunction (function, attribute, data);
         assert (res==0);
       }
-      SyncAllGroups( attribute, cgh );
+      SyncGroupsInScheduleBlock( attribute, cgh );
       
     } else if (attribute->singlemap) {
       // Single map operation: call once per refinement level and map
@@ -211,7 +211,7 @@ namespace Carpet {
           assert (res==0);
         } END_MAP_LOOP;
       }
-      SyncAllGroups( attribute, cgh );
+      SyncGroupsInScheduleBlock( attribute, cgh );
       
     } else {
       // Local operation: call once per component
@@ -229,7 +229,7 @@ namespace Carpet {
           assert (res==0);
         } END_LOCAL_COMPONENT_LOOP;
       }	END_MAP_LOOP;
-      SyncAllGroups( attribute, cgh );
+      SyncGroupsInScheduleBlock( attribute, cgh );
       
     }
     
@@ -242,12 +242,43 @@ namespace Carpet {
     return 1;
   }
 
-  void SyncAllGroups( cFunctionData* attribute, cGH* cgh ) {
-      for (int n=0; n<attribute->n_SyncGroups; ++n) {
-        char * const groupname = CCTK_GroupName (attribute->SyncGroups[n]);
-        SyncGroup (cgh, groupname);
-        free (groupname);
+  struct typed_group {
+    int vartype;
+    vector<int> members;
+  };
+
+  void SyncGroupsInScheduleBlock( cFunctionData* attribute, cGH* cgh )
+  {
+    // check if there is anything to do
+    if (attribute->n_SyncGroups <= 0) return;
+
+    vector<group_set> groups;
+
+    // sort all grid variables into sets of the same vartype
+    for (int g = 0; g < attribute->n_SyncGroups; g++) {
+      // skip empty groups
+      const int group = attribute->SyncGroups[g];
+      if (CCTK_NumVarsInGroupI (group) <= 0) continue;
+
+      group_set newset;
+      const int firstvar = CCTK_FirstVarIndexI (group);
+      newset.vartype = CCTK_VarTypeI (firstvar);
+      assert (newset.vartype >= 0);
+      int c;
+      for (c = 0; c < groups.size(); c++) {
+        if (newset.vartype == groups[c].vartype) {
+          break;
+        }
       }
+      if (c == groups.size()) {
+        groups.push_back (newset);
+      }
+      groups[c].members.push_back (group);
+    }
+
+    for (int c = 0; c < groups.size(); c++) {
+      SyncGroups (cgh, groups[c]);
+    }
   }
   
 } // namespace Carpet
