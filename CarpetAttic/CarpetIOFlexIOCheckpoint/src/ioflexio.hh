@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.4 2003/09/23 12:34:43 cvs_anon Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.hh,v 1.5 2003/09/25 08:38:04 cvs_anon Exp $
 
 #ifndef CARPETIOFLEXIO_HH
 #define CARPETIOFLEXIO_HH
@@ -13,6 +13,7 @@
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
 
 #include "ioflexio.h"
+#include "ioflexioGH.h"
 
 /* define the IOFlexIO datatypes according to CCTK_??? datatypes */
 #define FLEXIO_CHAR    IObase::Char

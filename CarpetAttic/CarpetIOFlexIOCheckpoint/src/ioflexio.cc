@@ -43,8 +43,9 @@
 
 #include "ioflexio.hh"
 
+
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.7 2003/09/24 08:35:30 cvs_anon Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/ioflexio.cc,v 1.8 2003/09/25 08:38:04 cvs_anon Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_ioflexio_cc);
 }
 
@@ -58,7 +59,7 @@ namespace CarpetIOFlexIO {
   
   
   // Variable definitions
-  int GHExtension;
+  //  int GHExtension;
   int IOMethod;
   vector<bool> do_truncate;
   vector<vector<int> > last_output;
@@ -78,10 +79,10 @@ namespace CarpetIOFlexIO {
   {
     CCTK_RegisterBanner ("AMR 3D FlexIO I/O provided by CarpetIOFlexIO");
     
-    GHExtension = CCTK_RegisterGHExtension("CarpetIOFlexIO");
-    CCTK_RegisterGHExtensionSetupGH (GHExtension, SetupGH);
+    //    GHExtension = CCTK_RegisterGHExtension("CarpetIOFlexIO");
+    CCTK_RegisterGHExtensionSetupGH (CCTK_RegisterGHExtension("CarpetIOFlexIO"),SetupGH);
     
-    IOMethod = CCTK_RegisterIOMethod ("IOFlexIO");
+    IOMethod = CCTK_RegisterIOMethod ("CarpetIOFlexIO");
     CCTK_RegisterIOMethodOutputGH (IOMethod, OutputGH);
     CCTK_RegisterIOMethodOutputVarAs (IOMethod, OutputVarAs);
     CCTK_RegisterIOMethodTimeToOutput (IOMethod, TimeToOutput);
@@ -95,7 +96,9 @@ namespace CarpetIOFlexIO {
   void* SetupGH (tFleshConfig* const fc, const int convLevel, cGH* const cgh)
   {
     DECLARE_CCTK_PARAMETERS;
-    
+    CarpetIOFlexIOGH* myGH;
+    CCTK_INT i;
+
     // Truncate all files if this is not a restart
     do_truncate.resize(CCTK_NumVars(), true);
     
@@ -108,9 +111,31 @@ namespace CarpetIOFlexIO {
     // We register only once, ergo we get only one handle.  We store
     // that statically, so there is no need to pass anything to
     // Cactus.
+
+    /* allocate a new GH extension structure */
+
+
+    CCTK_INT numvars = CCTK_NumVars ();
+    myGH            = (CarpetIOFlexIOGH*) malloc (sizeof (CarpetIOFlexIOGH));
+    myGH->out_last  = (int *) malloc (numvars * sizeof (int));
+    myGH->requests  = (ioRequest **) calloc (numvars, sizeof (ioRequest *));
+    myGH->cp_filename_list = (char **) calloc (abs (checkpoint_keep), sizeof (char *));
+    myGH->cp_filename_index = 0;
+    myGH->out_vars = strdup ("");
+    myGH->out_every_default = out_every - 1;
+
+    for (i = 0; i < numvars; i++)
+    {
+      myGH->out_last [i] = -1;
+    }
+
+    myGH->open_output_files = NULL;
+
+  
+    return (myGH);
+
     return 0;
   }
-  
   
   
   int OutputGH (const cGH* const cgh) {
@@ -213,8 +238,8 @@ namespace CarpetIOFlexIO {
       // this is a DIRTY hack to fix problems caused by the fact that I am to lazy to write a more
       //   general output routine...
       CCTK_VInfo (CCTK_THORNSTRING, "ARRAY reflevel: %d component: %d grouptype: %d ",reflevel,component,grouptype);
-      component = 0;
-      reflevel = 0;
+      if(reflevel !=0 || component !=0)
+	return 0;
     }
     else
       CCTK_VInfo (CCTK_THORNSTRING, "GF reflevel: %d component: %d grouptype: %d",reflevel,component,grouptype);
@@ -229,6 +254,11 @@ namespace CarpetIOFlexIO {
       //      CCTK_VInfo (CCTK_THORNSTRING, "bogus reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
       const gdata<dim>* const data = (*ff) (tl, reflevel, component, mglevel);
 
+      // get some more group information
+      cGroupDynamicData gdyndata;
+      int ierr = CCTK_GroupDynamicData(cgh,group,&gdyndata);
+      assert(ierr==0);
+
       // Make temporary copy on processor 0
       bbox<int,dim> ext = data->extent();
       vect<int,dim> lo = ext.lower();
@@ -237,14 +267,14 @@ namespace CarpetIOFlexIO {
 
       // Ignore ghost zones if desired
       for (int d=0; d<dim; ++d) {
-	const int max_lower_ghosts = (cgh->cctk_bbox[2*d  ] && !out3D_output_outer_boundary) ? -1 : out3D_max_num_lower_ghosts;
-	const int max_upper_ghosts = (cgh->cctk_bbox[2*d+1] && !out3D_output_outer_boundary) ? -1 : out3D_max_num_upper_ghosts;
+	const int max_lower_ghosts = (gdyndata.bbox[2*d  ] && !out3D_output_outer_boundary) ? -1 : out3D_max_num_lower_ghosts;
+	const int max_upper_ghosts = (gdyndata.bbox[2*d+1] && !out3D_output_outer_boundary) ? -1 : out3D_max_num_upper_ghosts;
 	
-	const int num_lower_ghosts = max_lower_ghosts == -1 ? cgh->cctk_nghostzones[d] : min(out3D_max_num_lower_ghosts, cgh->cctk_nghostzones[d]);
-	const int num_upper_ghosts = max_upper_ghosts == -1 ? cgh->cctk_nghostzones[d] : min(out3D_max_num_upper_ghosts, cgh->cctk_nghostzones[d]);
+	const int num_lower_ghosts = max_lower_ghosts == -1 ? gdyndata.nghostzones[d] : min(out3D_max_num_lower_ghosts, gdyndata.nghostzones[d]);
+	const int num_upper_ghosts = max_upper_ghosts == -1 ? gdyndata.nghostzones[d] : min(out3D_max_num_upper_ghosts, gdyndata.nghostzones[d]);
 	
-	lo[d] += (cgh->cctk_nghostzones[d] - num_lower_ghosts) * str[d];
-	hi[d] -= (cgh->cctk_nghostzones[d] - num_upper_ghosts) * str[d];
+	lo[d] += (gdyndata.nghostzones[d] - num_lower_ghosts) * str[d];
+	hi[d] -= (gdyndata.nghostzones[d] - num_upper_ghosts) * str[d];
       }
       
       ext = bbox<int,dim>(lo,hi,str);
@@ -364,7 +394,7 @@ namespace CarpetIOFlexIO {
 
     } END_COMPONENT_LOOP;
     
-   }
+    }
 
   return 0;
   }
@@ -854,6 +884,6 @@ namespace CarpetIOFlexIO {
     flags[index] = true;
   }
   
-  
+
   
 } // namespace CarpetIOFlexIO

@@ -48,7 +48,7 @@
 #include "ioflexio.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.8 2003/09/24 08:35:30 cvs_anon Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIOCheckpoint/src/checkpointrestart.cc,v 1.9 2003/09/25 08:38:04 cvs_anon Exp $";
   CCTK_FILEVERSION(Carpet_CarpetIOFlexIO_checkpointrestart_cc);
 }
 
@@ -158,6 +158,7 @@ namespace CarpetCheckpointRestart {
 					 "Time to dump datasets:   ",
 					 "Total time to checkpoint:"};
     const ioGH *ioUtilGH;
+    
 
     //    const int varindex = CCTK_VarIndex("ADMBASE:gxx");
     int varindex = 0;
@@ -170,6 +171,17 @@ namespace CarpetCheckpointRestart {
 
     DECLARE_CCTK_PARAMETERS
       //   CCTK_VInfo (CCTK_THORNSTRING, "boguscheck reflevel,component,mglevel %d,%d,%d",reflevel,component,mglevel);
+
+    CarpetIOFlexIOGH *myGH;
+    myGH = (CarpetIOFlexIOGH *) CCTK_GHExtension (cgh, "CarpetIOFlexIO");
+
+    /* check if CarpetIOFlexIO was registered as I/O method */
+    if (myGH == NULL)
+    {
+      CCTK_WARN (-1, "No CarpetIOFlexIO I/O methods registered");
+      return (-1);
+    }
+
 
   
     myproc = CCTK_MyProc (cgh);
@@ -193,8 +205,8 @@ namespace CarpetCheckpointRestart {
       assert (0);
     }
   
-    sprintf(cp_tempname,"%s.tmp.%s",cp_filename,extension);
-    sprintf(cp_filename,"%s.%s",cp_filename,extension);
+    sprintf(cp_tempname,"%s.tmp%s",cp_filename,extension);
+    sprintf(cp_filename,"%s%s",cp_filename,extension);
   
 
     if (CCTK_MyProc(cgh)==0)
@@ -205,6 +217,20 @@ namespace CarpetCheckpointRestart {
 	  }
 
 	writer = new IEEEIO(cp_tempname, IObase::Create);
+
+	if (CCTK_Equals(out3D_format, "IEEE")) {
+	  writer = new IEEEIO(cp_tempname, IObase::Create);
+#ifdef HDF4
+	} else if (CCTK_Equals(out3D_format, "HDF4")) {
+	    writer = new HDFIO(cp_tempname, IObase::Create);
+#endif
+#ifdef HDF5
+	} else if (CCTK_Equals(out3D_format, "HDF5")) {
+	  writer = new H5IO(cp_tempname, IObase::Create);
+#endif
+	} else {
+	  assert (0);
+	}
 
 	if (! (writer->isValid()) )
 	  {
@@ -318,9 +344,7 @@ namespace CarpetCheckpointRestart {
     } END_REFLEVEL_LOOP;
 
 
-
-
-    // Close the file
+    // Close the temporary file
     if (CCTK_MyProc(cgh)==0) {
       delete amrwriter;
       amrwriter = 0;
@@ -328,9 +352,33 @@ namespace CarpetCheckpointRestart {
       writer = 0;
     }
 
+    if (retval == 0)
+    {
+      if (rename (cp_tempname, cp_filename))
+      {
+        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Could not rename temporary checkpoint file '%s' to '%s'",
+                    cp_tempname, cp_filename);
+        retval = -1;
+      }
+      else
+      {
+        if (myGH->cp_filename_list[myGH->cp_filename_index])
+        {
+          if (checkpoint_keep > 0)
+          {
+            remove (myGH->cp_filename_list[myGH->cp_filename_index]);
+          }
+          free (myGH->cp_filename_list[myGH->cp_filename_index]);
+        }
+        myGH->cp_filename_list[myGH->cp_filename_index] = strdup (cp_filename);
+        myGH->cp_filename_index = (myGH->cp_filename_index+1) % abs (checkpoint_keep);
+      }
+    }
+    
 
     return 0;
-      }
+  }
 
 
 } // namespace CarpetCheckpointRestart
