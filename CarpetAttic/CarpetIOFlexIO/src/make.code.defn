@@ -1,5 +1,5 @@
 # Main make.code.defn file for thorn CarpetIOFlexIO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/make.code.defn,v 1.1 2001/03/15 23:28:50 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/make.code.defn,v 1.2 2002/08/16 20:19:57 schnetter Exp $
 
 # Source files in this directory
 SRCS = ioflexio.cc
@@ -7,3 +7,14 @@ SRCS = ioflexio.cc
 # Subdirectories containing source files
 SUBDIRS = 
 
+
+
+# Provide configuration information for the FlexIO library
+
+# Add your include directories here until Cactus has a better
+# configuration mechanism:
+# (The library directories are set in the make.configuration.defn file.)
+FLEXIO_SYS_INC_DIRS := /home/eschnett/proj/FlexIO/include /home/schnette/proj/FlexIO/include
+
+# Add this thorn's configuration information
+SYS_INC_DIRS := $(FLEXIO_SYS_INC_DIRS) $(SYS_INC_DIRS)
