@@ -20,8 +20,8 @@ namespace Carpet {
                                           const char *groupname );
   static void ProlongateGroupBoundaries ( const cGH* cgh,
                                           CCTK_REAL initial_time, int group );
-  static void SyncGFGroup ( const cGH* cgh, comm_state &state, int group );
-  static void SyncGFArrayGroup ( const cGH* cgh, comm_state &state, int group );
+  static void SyncGFGroup ( const cGH* cgh, int group );
+  static void SyncGFArrayGroup ( const cGH* cgh, int group );
   
   int SyncGroup (const cGH* cgh, const char* groupname)
   {
@@ -64,21 +64,19 @@ namespace Carpet {
       }
     
       // Sync
-      for (comm_state state; !state.done(); state.step()) {
-        switch (CCTK_GroupTypeI(group)) {
-          
-        case CCTK_GF:
-          SyncGFGroup ( cgh, state, group );
-          break;
+      switch (CCTK_GroupTypeI(group)) {
         
-        case CCTK_SCALAR:
-        case CCTK_ARRAY:
-          SyncGFArrayGroup ( cgh, state, group );
-          break;
-        
-        default:
-          assert (0);
-        }
+      case CCTK_GF:
+        SyncGFGroup ( cgh, group );
+        break;
+      
+      case CCTK_SCALAR:
+      case CCTK_ARRAY:
+        SyncGFArrayGroup ( cgh, group );
+        break;
+      
+      default:
+        assert (0);
       }
     }
     return retval;
@@ -87,39 +85,89 @@ namespace Carpet {
   void ProlongateGroupBoundaries ( const cGH* cgh, CCTK_REAL initial_time,
                                   int group )
   {
+    DECLARE_CCTK_PARAMETERS;
+
     // use the current time here (which may be modified by the user)
     const CCTK_REAL time = (cgh->cctk_time - initial_time) / delta_time;
     const int tl = 0;
     
-    for (comm_state state; !state.done(); state.step()) {
+    // make the comm_state loop the innermost
+    // in order to minimise the number of outstanding communications
+    if (minimise_outstanding_communications) {
       for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
         for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
           for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
-            arrdata.at(group).at(m).data.at(var)->ref_bnd_prolongate
-              (state, tl, reflevel, c, mglevel, time);
+            for (comm_state state; !state.done(); state.step()) {
+              arrdata.at(group).at(m).data.at(var)->ref_bnd_prolongate
+                (state, tl, reflevel, c, mglevel, time);
+            }
+          }
+        }
+      }
+    } else {
+      for (comm_state state; !state.done(); state.step()) {
+        for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
+          for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+            for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
+              arrdata.at(group).at(m).data.at(var)->ref_bnd_prolongate
+                (state, tl, reflevel, c, mglevel, time);
+            }
           }
         }
       }
     }
   }
 
-  void SyncGFGroup ( const cGH* cgh, comm_state &state, int group )
+  void SyncGFGroup ( const cGH* cgh, int group )
   {
+    DECLARE_CCTK_PARAMETERS;
     const int tl = 0;
-    for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-      for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-        for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
-          arrdata.at(group).at(m).data.at(var)->sync
-            (state, tl, reflevel, c, mglevel);
+
+    // make the comm_state loop the innermost
+    // in order to minimise the number of outstanding communications
+    if (minimise_outstanding_communications) {
+      for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
+        for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+          for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
+            for (comm_state state; ! state.done(); state.step()) {
+              arrdata.at(group).at(m).data.at(var)->sync
+                (state, tl, reflevel, c, mglevel);
+            }
+          }
+        }
+      }
+    } else {
+      for (comm_state state; ! state.done(); state.step()) {
+        for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
+          for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
+            for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
+              arrdata.at(group).at(m).data.at(var)->sync
+                (state, tl, reflevel, c, mglevel);
+            }
+          }
         }
       }
     }
   }
 
-  void SyncGFArrayGroup ( const cGH* cgh, comm_state &state, int group )
+  void SyncGFArrayGroup ( const cGH* cgh, int group )
   {
-    for (int var=0; var<(int)arrdata.at(group).at(0).data.size(); ++var) {
-      arrdata.at(group).at(0).data.at(var)->sync (state, 0, 0, 0, 0);
+    DECLARE_CCTK_PARAMETERS;
+
+    // make the comm_state loop the innermost
+    // in order to minimise the number of outstanding communications
+    if (minimise_outstanding_communications) {
+      for (int var=0; var<(int)arrdata.at(group).at(0).data.size(); ++var) {
+        for (comm_state state; ! state.done(); state.step()) {
+          arrdata.at(group).at(0).data.at(var)->sync (state, 0, 0, 0, 0);
+        }
+      }
+    } else {
+      for (comm_state state; ! state.done(); state.step()) {
+        for (int var=0; var<(int)arrdata.at(group).at(0).data.size(); ++var) {
+          arrdata.at(group).at(0).data.at(var)->sync (state, 0, 0, 0, 0);
+        }
+      }
     }
   }
 

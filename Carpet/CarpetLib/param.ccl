@@ -1,5 +1,12 @@
 # Parameter definitions for thorn CarpetLib
 
+restricted:
+
+BOOLEAN minimise_outstanding_communications "Minimise the number of Isend/Irecv operations that are submitted concurrently"
+{
+} "no"
+
+
 private:
 
 BOOLEAN verbose "Print info to the screen" STEERABLE=always

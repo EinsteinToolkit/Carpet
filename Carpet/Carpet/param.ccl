@@ -10,11 +10,14 @@ USES CCTK_REAL cctk_final_time
 USES CCTK_REAL max_runtime 
 
 
-
 shares: IO
 
 USES STRING out_dir
 
+
+shares: CarpetLib
+
+USES BOOLEAN minimise_outstanding_communications
 
 
 private:

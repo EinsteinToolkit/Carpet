@@ -540,6 +540,8 @@ void dh::calculate_bases ()
 
 void dh::save_time (bool do_prolongate)
 {
+  DECLARE_CCTK_PARAMETERS;
+
   for (list<ggf*>::reverse_iterator f=gfs.rbegin(); f!=gfs.rend(); ++f) {
     (*f)->recompose_crop ();
   }
@@ -547,22 +549,45 @@ void dh::save_time (bool do_prolongate)
     for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
       (*f)->recompose_allocate (rl);
     }
-    for (comm_state state; !state.done(); state.step()) {
+    // make the comm_state loop the innermost
+    // in order to minimise the number of outstanding communications
+    if (minimise_outstanding_communications) {
       for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-        (*f)->recompose_fill (state, rl, do_prolongate);
+        for (comm_state state; !state.done(); state.step()) {
+          (*f)->recompose_fill (state, rl, do_prolongate);
+        }
       }
-    }
-    for (list<ggf*>::reverse_iterator f=gfs.rbegin(); f!=gfs.rend(); ++f) {
-      (*f)->recompose_free (rl);
-    }
-    for (comm_state state; !state.done(); state.step()) {
-      for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-        (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
+      for (list<ggf*>::reverse_iterator f=gfs.rbegin(); f!=gfs.rend(); ++f) {
+        (*f)->recompose_free (rl);
       }
-    }
-    for (comm_state state; !state.done(); state.step()) {
       for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-        (*f)->recompose_sync (state, rl, do_prolongate);
+        for (comm_state state; !state.done(); state.step()) {
+          (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
+        }
+      }
+      for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+        for (comm_state state; !state.done(); state.step()) {
+          (*f)->recompose_sync (state, rl, do_prolongate);
+        }
+      }
+    } else {
+      for (comm_state state; !state.done(); state.step()) {
+        for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+          (*f)->recompose_fill (state, rl, do_prolongate);
+        }
+      }
+      for (list<ggf*>::reverse_iterator f=gfs.rbegin(); f!=gfs.rend(); ++f) {
+        (*f)->recompose_free (rl);
+      }
+      for (comm_state state; !state.done(); state.step()) {
+        for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+          (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
+        }
+      }
+      for (comm_state state; !state.done(); state.step()) {
+        for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+          (*f)->recompose_sync (state, rl, do_prolongate);
+        }
       }
     }
   } // for rl
