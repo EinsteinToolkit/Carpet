@@ -22,7 +22,7 @@
 #include "carpet.hh"
 #include "regrid.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.14 2002/05/22 16:31:14 shawley Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/regrid.cc,v 1.15 2002/07/12 09:09:52 schnetter Exp $";
 
 CCTK_FILEVERSION(CarpetRegrid_regrid_cc)
 
@@ -713,6 +713,11 @@ namespace CarpetRegrid {
     
     // TODO: create obl depending on the boundary position
     // (at or close to the boundary)
+    for (list<ibbox>::const_iterator it = bbl.begin();
+	 it != bbl.end();
+	 ++it) {
+      obl.push_back (bvect(vect<bool,2>(false)));
+    }
     
   }
   
