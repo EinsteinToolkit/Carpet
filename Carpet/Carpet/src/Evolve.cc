@@ -31,7 +31,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.38 2004/03/23 13:31:43 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.39 2004/03/23 13:32:04 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -148,7 +148,8 @@ namespace Carpet {
       global_time = cctk_initial_time
         + cgh->cctk_iteration * delta_time / maxreflevelfact;
       cgh->cctk_time = global_time;
-      if ((cgh->cctk_iteration-1) % (maxreflevelfact / ipow(reffact, reflevels-1)) == 0) {
+      if ((cgh->cctk_iteration-1)
+          % (maxreflevelfact / ipow(reffact, reflevels-1)) == 0) {
         Waypoint ("Evolving iteration %d at t=%g",
                   cgh->cctk_iteration, (double)cgh->cctk_time);
       }
