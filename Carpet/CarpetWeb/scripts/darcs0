@@ -1,0 +1,99 @@
+#!/usr/bin/perl -w
+
+# (C) 2004-12-10 Thomas Radke <tradke@aei.mpg.de>
+# Some changes by Erik Schnetter <schnetter@aei.mpg.de>
+# GPL licenced
+
+### some constants
+# list of email addresses to send notifications to
+my $email_list = 'schnetter@aei.mpg.de swhite@aei.mpg.de tradke@aei.mpg.de';
+# where to find the real darcs executable
+my $darcs = '/home/darcs/bin/darcs1';
+
+
+# patch database
+my %submitters = ();
+my %timestamps = ();
+my %comments   = ();
+
+
+# sanity check
+die "Couldn't find executable '$darcs' !\n\n" if (! -x $darcs);
+
+# short cut for darcs commands other than 'apply --all'
+exec ($darcs, @ARGV)
+  if (! ($#ARGV == 1 && $ARGV[0] eq 'apply' && $ARGV[1] eq '--all'));
+
+# open a pipe for running darcs on the other end
+open (DARCS, "| $darcs @ARGV") || die "Couldn't open pipe to darcs !\n";
+
+# skip everything before the 'New patches:' section
+while (<STDIN>)
+{
+  print DARCS;
+  last if (/^New patches:$/);
+}
+
+# separator for a patch's header and its contents
+my $endmarker = '] {';
+
+# now parse individual patches
+while (<STDIN>)
+{
+  print DARCS;
+
+  # each patch starts with a line '[<patch name>'
+  next if (! /^\[(.+)$/);
+  my $patch = $1;
+
+  # on the next line follow the submitter's email address
+  # and the timestamp of the patch
+  $_ = <STDIN>;
+  print DARCS;
+  next if (! /^(.+)\*\*(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})($endmarker)??$/o);
+
+  # add this patch to the database
+  $submitters{$patch} = $1;
+  # convert the timestamp into some readable form 'DD-MM-YYYY HH:MM:SS'
+  $timestamps{$patch} = "$4-$3-$2 $5:$6:$7";
+
+  # everything until an end-marker string belongs to
+  # a long comment for this patch
+  if (! $8)
+  {
+    while (<STDIN>)
+    {
+      print DARCS;
+      last if (/^$endmarker$/);
+      $comments{$patch} .= $_;
+    }
+  }
+
+  # skip everything that makes out the patch's contents
+  # (ie. read away until a single line '}' matches)
+  while (<STDIN>)
+  {
+    print DARCS;
+    last if (/^}$/);
+  }
+}
+
+close (DARCS) || die "Failed to run darcs command '$darcs @ARGV'\n";
+
+# now send out notification email(s)
+foreach $patch (keys %submitters)
+{
+  open (NOTIFY, "| mail -s 'darcs: $patch' $email_list");
+
+  print NOTIFY "A new patch named\n\n";
+  print NOTIFY " $patch\n\n";
+  print NOTIFY "has been pushed by " .
+               "${submitters{$patch}} at ${timestamps{$patch}}.";
+  if ($comments{$patch})
+  {
+    print NOTIFY "\n\nThe long comment for this patch reads:\n\n";
+    print NOTIFY $comments{$patch};
+  }
+
+  close (NOTIFY);
+}
