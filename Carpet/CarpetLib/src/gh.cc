@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.28 2004/04/18 13:29:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.cc,v 1.29 2004/08/07 19:47:11 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -36,7 +36,8 @@ gh<D>::~gh () { }
 template<int D>
 void gh<D>::recompose (const rexts& exts,
                        const rbnds& outer_bounds,
-		       const rprocs& procs)
+		       const rprocs& procs,
+                       const bool do_prolongate)
 {
   DECLARE_CCTK_PARAMETERS;
   
@@ -171,7 +172,7 @@ void gh<D>::recompose (const rexts& exts,
   }
   
   for (typename list<dh<D>*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
-    (*d)->recompose ();
+    (*d)->recompose (do_prolongate);
   }
 }
 

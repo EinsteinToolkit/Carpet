@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.44 2004/05/29 11:36:22 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.45 2004/08/07 19:47:11 schnetter Exp $
 
 #include <assert.h>
 #include <math.h>
@@ -103,7 +103,8 @@ void ggf<D>::recompose_allocate (const int rl)
 }
 
 template<int D>
-void ggf<D>::recompose_fill (comm_state<D>& state, const int rl)
+void ggf<D>::recompose_fill (comm_state<D>& state, const int rl,
+                             const bool do_prolongate)
 {
   // Initialise the new storage
   for (int c=0; c<h.components(rl); ++c) {
@@ -133,43 +134,45 @@ void ggf<D>::recompose_fill (comm_state<D>& state, const int rl)
           } // for cc
         } // if rl
         
-        // Initialise from coarser level, if possible
-        if (rl>0) {
-          if (transport_operator != op_none) {
-            const int numtl = prolongation_order_time+1;
-            assert (tmax-tmin+1 >= numtl);
-            vector<int> tls(numtl);
-            vector<CCTK_REAL> times(numtl);
-            for (int i=0; i<numtl; ++i) {
-              tls.at(i) = tmax - i;
-              times.at(i) = t.time(tls.at(i),rl-1,ml);
-            }
-            for (int cc=0; cc<(int)storage.at(tl-tmin).at(rl-1).size(); ++cc) {
-              vector<const gdata<D>*> gsrcs(numtl);
+        if (do_prolongate) {
+          // Initialise from coarser level, if possible
+          if (rl>0) {
+            if (transport_operator != op_none) {
+              const int numtl = prolongation_order_time+1;
+              assert (tmax-tmin+1 >= numtl);
+              vector<int> tls(numtl);
+              vector<CCTK_REAL> times(numtl);
               for (int i=0; i<numtl; ++i) {
-                gsrcs.at(i)
-                  = storage.at(tls.at(i)-tmin).at(rl-1).at(cc).at(ml);
-                assert (gsrcs.at(i)->extent() == gsrcs.at(0)->extent());
+                tls.at(i) = tmax - i;
+                times.at(i) = t.time(tls.at(i),rl-1,ml);
               }
-              const CCTK_REAL time = t.time(tl,rl,ml);
-              
-              // TODO: choose larger regions first
-              // TODO: prefer regions from the same processor
-              const iblist& list
-                = d.boxes.at(rl).at(c).at(ml).recv_ref_coarse.at(cc);
-              for (typename iblist::const_iterator iter=list.begin(); iter!=list.end(); ++iter) {
-                ibset ovlp = work & *iter;
-                ovlp.normalize();
-                work -= ovlp;
-                for (typename ibset::const_iterator r=ovlp.begin(); r!=ovlp.end(); ++r) {
-                  storage.at(tl-tmin).at(rl).at(c).at(ml)->interpolate_from
-                    (state, gsrcs, times, *r, time,
-                     d.prolongation_order_space, prolongation_order_time);
-                } // for r
-              } // for iter
-            } // for cc
-          } // if transport_operator
-        } // if rl
+              for (int cc=0; cc<(int)storage.at(tl-tmin).at(rl-1).size(); ++cc) {
+                vector<const gdata<D>*> gsrcs(numtl);
+                for (int i=0; i<numtl; ++i) {
+                  gsrcs.at(i)
+                    = storage.at(tls.at(i)-tmin).at(rl-1).at(cc).at(ml);
+                  assert (gsrcs.at(i)->extent() == gsrcs.at(0)->extent());
+                }
+                const CCTK_REAL time = t.time(tl,rl,ml);
+                
+                // TODO: choose larger regions first
+                // TODO: prefer regions from the same processor
+                const iblist& list
+                  = d.boxes.at(rl).at(c).at(ml).recv_ref_coarse.at(cc);
+                for (typename iblist::const_iterator iter=list.begin(); iter!=list.end(); ++iter) {
+                  ibset ovlp = work & *iter;
+                  ovlp.normalize();
+                  work -= ovlp;
+                  for (typename ibset::const_iterator r=ovlp.begin(); r!=ovlp.end(); ++r) {
+                    storage.at(tl-tmin).at(rl).at(c).at(ml)->interpolate_from
+                      (state, gsrcs, times, *r, time,
+                       d.prolongation_order_space, prolongation_order_time);
+                  } // for r
+                } // for iter
+              } // for cc
+            } // if transport_operator
+          } // if rl
+        } // if do_prolongate
         
         // Note that work need not be empty here; in this case, not
         // everything could be initialised.  This is okay on outer
@@ -196,37 +199,43 @@ void ggf<D>::recompose_free (const int rl)
 }
 
 template<int D>
-void ggf<D>::recompose_bnd_prolongate (comm_state<D>& state, const int rl)
+void ggf<D>::recompose_bnd_prolongate (comm_state<D>& state, const int rl,
+                                       const bool do_prolongate)
 {
-  // Set boundaries
-  if (rl>0) {
+  if (do_prolongate) {
+    // Set boundaries
+    if (rl>0) {
+      for (int c=0; c<h.components(rl); ++c) {
+        for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
+          for (int tl=tmin; tl<=tmax; ++tl) {
+            
+            // TODO: assert that reflevel 0 boundaries are copied
+            const CCTK_REAL time = t.time(tl,rl,ml);
+            ref_bnd_prolongate (state,tl,rl,c,ml,time);
+            
+          } // for tl
+        } // for ml
+      } // for c
+    } // if rl
+  } // if do_prolongate
+}
+
+template<int D>
+void ggf<D>::recompose_sync (comm_state<D>& state, const int rl,
+                             const bool do_prolongate)
+{
+  if (do_prolongate) {
+    // Set boundaries
     for (int c=0; c<h.components(rl); ++c) {
       for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
         for (int tl=tmin; tl<=tmax; ++tl) {
           
-          // TODO: assert that reflevel 0 boundaries are copied
-          const CCTK_REAL time = t.time(tl,rl,ml);
-          ref_bnd_prolongate (state,tl,rl,c,ml,time);
+          sync (state,tl,rl,c,ml);
           
         } // for tl
       } // for ml
     } // for c
-  } // if rl
-}
-
-template<int D>
-void ggf<D>::recompose_sync (comm_state<D>& state, const int rl)
-{
-  // Set boundaries
-  for (int c=0; c<h.components(rl); ++c) {
-    for (int ml=0; ml<h.mglevels(rl,c); ++ml) {
-      for (int tl=tmin; tl<=tmax; ++tl) {
-        
-        sync (state,tl,rl,c,ml);
-        
-      } // for tl
-    } // for ml
-  } // for c
+  } // if do_prolongate
 }
 
 

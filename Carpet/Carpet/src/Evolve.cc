@@ -31,7 +31,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.51 2004/08/02 11:43:15 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Evolve.cc,v 1.52 2004/08/07 19:47:12 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Evolve_cc);
 }
 
@@ -157,7 +157,7 @@ namespace Carpet {
               enter_level_mode (cgh, rl);
               
               Checkpoint ("Regrid");
-              did_regrid |= Regrid (cgh);
+              did_regrid |= Regrid (cgh, true);
               
               leave_level_mode (cgh);
               leave_global_mode (cgh);
@@ -171,7 +171,7 @@ namespace Carpet {
               enter_global_mode (cgh, ml);
               enter_level_mode (cgh, rl);
               
-              do_global_mode = rl==0;
+              do_global_mode = reflevel==0;
               do_meta_mode = do_global_mode && mglevel==mglevels-1;
               
               Waypoint ("Postregrid at iteration %d time %g%s%s",

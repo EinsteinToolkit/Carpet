@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.24 2004/06/08 22:58:01 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.25 2004/08/07 19:47:11 schnetter Exp $
 
 #ifndef GGF_HH
 #define GGF_HH
@@ -94,10 +94,10 @@ public:
   // void recompose ();
   void recompose_crop ();
   void recompose_allocate (int rl);
-  void recompose_fill (comm_state<D>& state, int rl);
+  void recompose_fill (comm_state<D>& state, int rl, bool do_prolongate);
   void recompose_free (int rl);
-  void recompose_bnd_prolongate (comm_state<D>& state, int rl);
-  void recompose_sync (comm_state<D>& state, int rl);
+  void recompose_bnd_prolongate (comm_state<D>& state, int rl, bool do_prolongate);
+  void recompose_sync (comm_state<D>& state, int rl, bool do_prolongate);
 
   // Cycle the time levels by rotating the data sets
   void cycle (int rl, int c, int ml);

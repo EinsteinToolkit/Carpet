@@ -12,7 +12,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.50 2004/08/02 12:18:14 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Initialise.cc,v 1.51 2004/08/07 19:47:12 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Initialise_cc);
 }
 
@@ -255,7 +255,7 @@ namespace Carpet {
             
             // Regrid
             Checkpoint ("Regrid");
-            did_regrid |= Regrid (cgh);
+            did_regrid |= Regrid (cgh, prolongate_initial_data);
             
             leave_level_mode (cgh);
             leave_global_mode (cgh);

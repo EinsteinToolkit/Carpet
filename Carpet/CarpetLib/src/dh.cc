@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.55 2004/06/08 22:58:01 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/dh.cc,v 1.56 2004/08/07 19:47:11 schnetter Exp $
 
 #include <assert.h>
 
@@ -31,7 +31,7 @@ dh<D>::dh (gh<D>& h,
   assert (buffer_width>=0);
   h.add(this);
   CHECKPOINT;
-  recompose ();
+  recompose (false);
 }
 
 // Destructors
@@ -51,7 +51,7 @@ int dh<D>::prolongation_stencil_size () const {
 
 // Modifiers
 template<int D>
-void dh<D>::recompose () {
+void dh<D>::recompose (const bool do_prolongate) {
   DECLARE_CCTK_PARAMETERS;
   
   CHECKPOINT;
@@ -583,7 +583,7 @@ void dh<D>::recompose () {
       }
       for (comm_state<D> state; !state.done(); state.step()) {
         for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-          (*f)->recompose_fill (state, rl);
+          (*f)->recompose_fill (state, rl, do_prolongate);
         }
       }
       for (typename list<ggf<D>*>::reverse_iterator f=gfs.rbegin(); f!=gfs.rend(); ++f) {
@@ -591,12 +591,12 @@ void dh<D>::recompose () {
       }
       for (comm_state<D> state; !state.done(); state.step()) {
         for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-          (*f)->recompose_bnd_prolongate (state, rl);
+          (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
         }
       }
       for (comm_state<D> state; !state.done(); state.step()) {
         for (typename list<ggf<D>*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-          (*f)->recompose_sync (state, rl);
+          (*f)->recompose_sync (state, rl, do_prolongate);
         }
       }
     } // for rl
@@ -610,7 +610,7 @@ void dh<D>::recompose () {
       for (int rl=0; rl<h.reflevels(); ++rl) {
         (*f)->recompose_allocate (rl);
         for (comm_state<D> state; !state.done(); state.step()) {
-          (*f)->recompose_fill (state, rl);
+          (*f)->recompose_fill (state, rl, do_prolongate);
         }
         if ((*f)->vectorlength == 1) {
           (*f)->recompose_free (rl);
@@ -632,10 +632,10 @@ void dh<D>::recompose () {
           }
         }
         for (comm_state<D> state; !state.done(); state.step()) {
-          (*f)->recompose_bnd_prolongate (state, rl);
+          (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
         }
         for (comm_state<D> state; !state.done(); state.step()) {
-          (*f)->recompose_sync (state, rl);
+          (*f)->recompose_sync (state, rl, do_prolongate);
         }
       } // for rl
       

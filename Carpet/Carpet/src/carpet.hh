@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.30 2004/06/21 12:28:59 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/carpet.hh,v 1.31 2004/08/07 19:47:11 schnetter Exp $
 
 #ifndef CARPET_HH
 #define CARPET_HH
@@ -34,7 +34,7 @@ namespace Carpet {
   int CallFunction (void* function, cFunctionData* attribute, void* data);
   
   // Other functions
-  bool Regrid (const cGH* cgh, bool checkpoint_recovery = false);
+  bool Regrid (const cGH* cgh, const bool do_init);
   void CycleTimeLevels (const cGH* cgh);
   void FlipTimeLevels (const cGH* cgh);
   void Restrict (const cGH* cgh);

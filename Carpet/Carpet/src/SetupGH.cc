@@ -24,7 +24,7 @@
 #include "carpet.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.83 2004/08/02 12:18:14 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/SetupGH.cc,v 1.84 2004/08/07 19:47:11 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_SetupGH_cc);
 }
 
@@ -567,7 +567,7 @@ namespace Carpet {
 #endif
       
       // Recompose grid hierarchy
-      vhh.at(m)->recompose (bbsss, obss, pss);
+      vhh.at(m)->recompose (bbsss, obss, pss, false);
       
       CCTK_INFO ("Grid structure (grid points):");
       const int rl = 0;
@@ -821,7 +821,7 @@ namespace Carpet {
         assert (groupname);
         Checkpoint ("Recomposing grid array group \"%s\"", groupname);
         free (groupname);
-	arrdata.at(group).at(0).hh->recompose (bbsss, obss, pss);
+	arrdata.at(group).at(0).hh->recompose (bbsss, obss, pss, false);
 	
 	break;
       } // case of scalar or array

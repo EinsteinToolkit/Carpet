@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.17 2004/04/18 13:29:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gh.hh,v 1.18 2004/08/07 19:47:11 schnetter Exp $
 
 #ifndef GH_HH
 #define GH_HH
@@ -85,7 +85,8 @@ public:
   
   // Modifiers
   void recompose (const rexts& exts, const rbnds& outer_bounds,
-		  const rprocs& procs);
+		  const rprocs& procs,
+                  const bool do_prolongate);
   
   // Accessors
   int reflevels () const {

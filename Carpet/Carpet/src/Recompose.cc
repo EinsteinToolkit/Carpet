@@ -27,7 +27,7 @@
 #include "modes.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.69 2004/08/02 12:18:14 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/Carpet/src/Recompose.cc,v 1.70 2004/08/07 19:47:11 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_Carpet_Recompose_cc);
 }
 
@@ -118,8 +118,8 @@ namespace Carpet {
   }
   
   
-  
-  bool Regrid (const cGH* cgh, bool checkpoint_recovery)
+ 
+  bool Regrid (const cGH* cgh, const bool do_init)
   {
     assert (is_level_mode());
     
@@ -140,8 +140,7 @@ namespace Carpet {
       gh<dim>::rprocs pss   = vhh.at(map)->processors;
       
       // Check whether to recompose
-      CCTK_INT const do_recompose = Carpet_Regrid (cgh, &bbsss, &obss, &pss,
-						   checkpoint_recovery);
+      CCTK_INT const do_recompose = Carpet_Regrid (cgh, &bbsss, &obss, &pss, false);
       assert (do_recompose >= 0);
       did_change = did_change || do_recompose;
       
@@ -158,7 +157,7 @@ namespace Carpet {
         OutputGridStructure (cgh, map, bbsss, obss, pss);
         
         // Recompose
-        vhh.at(map)->recompose (bbsss, obss, pss);
+        vhh.at(map)->recompose (bbsss, obss, pss, do_init);
         
         OutputGrids (cgh, map, *vhh.at(map));
         
