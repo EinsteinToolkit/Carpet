@@ -1,7 +1,20 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/copy_3d_real8.F77,v 1.5 2003/02/24 17:43:10 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/copy_3d_real8.F77,v 1.6 2003/02/25 22:57:00 schnetter Exp $
       
 #include "cctk.h"
+
+
+
+#define CHKIDX(i,j,k, imax,jmax,kmax, where)                                  \
+      if ((i).lt.1 .or. (i).gt.(imax)                                         \
+           .or. (j).lt.1 .or. (j).gt.(jmax)                                   \
+           .or. (k).lt.1 .or. (k).gt.(kmax)) then                           &&\
+         write (msg, '(a, " array index out of bounds: shape is (",i4,",",i4,",",i4,"), index is (",i4,",",i4,",",i4,")")') \
+              (where), (imax), (jmax), (kmax), (i), (j), (k)                &&\
+         call CCTK_WARN (0, msg(1:len_trim(msg)))                           &&\
+      end if
+
+
       
       subroutine copy_3d_real8 (
      $     src, srciext, srcjext, srckext,
@@ -27,6 +40,8 @@ c     bbox(:,3) is stride
       integer i, j, k
       integer d
       
+      character msg*1000
+      
       
       
       do d=1,3
@@ -43,15 +58,15 @@ c     bbox(:,3) is stride
      $        .or. mod(regbbox(d,1), regbbox(d,3)).ne.0) then
             call CCTK_WARN (0, "Internal error: array origins are not integer multiples of the strides")
          end if
+         if (regbbox(d,1).gt.regbbox(d,2)) then
+c     This could be handled, but is likely to point to an error elsewhere
+            call CCTK_WARN (0, "Internal error: region extent is empty")
+         end if
          if (regbbox(d,1).lt.srcbbox(d,1)
      $        .or. regbbox(d,1).lt.dstbbox(d,1)
      $        .or. regbbox(d,2).gt.srcbbox(d,2)
      $        .or. regbbox(d,2).gt.dstbbox(d,2)) then
             call CCTK_WARN (0, "Internal error: region extent is not contained in array extent")
-         end if
-         if (regbbox(d,1).gt.regbbox(d,2)) then
-c     This could be handled, but is likely to point to an error elsewhere
-            call CCTK_WARN (0, "Internal error: region extent is empty")
          end if
       end do
       
@@ -85,6 +100,10 @@ c     Loop over region
          do j = 0, regjext-1
             do i = 0, regiext-1
                
+               CHKIDX (srcioff+i+1, srcjoff+j+1, srckoff+k+1, \
+                       srciext,srcjext,srckext, "source")
+               CHKIDX (dstioff+i+1, dstjoff+j+1, dstkoff+k+1, \
+                       dstiext,dstjext,dstkext, "destination")
                dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1)
      $              = src (srcioff+i+1, srcjoff+j+1, srckoff+k+1)
                

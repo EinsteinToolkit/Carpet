@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.21 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.cc,v 1.22 2003/02/25 22:57:00 schnetter Exp $
 
 #include <assert.h>
 
@@ -43,6 +43,8 @@ void gdata<D>::copy_from (const gdata* src, const ibbox& box)
   assert (all((box.lower()-extent().lower())%box.stride() == 0
 	      && (box.lower()-src->extent().lower())%box.stride() == 0));
   
+  if (box.empty()) return;
+  
   if (proc() == src->proc()) {
     // copy on same processor
     
@@ -86,6 +88,9 @@ void gdata<D>
     assert (all(box.lower()>=srcs[t]->extent().lower()));
     assert (all(box.upper()<=srcs[t]->extent().upper()));
   }
+  
+  assert (! box.empty());
+  if (box.empty()) return;
   
   if (proc() == srcs[0]->proc()) {
     // interpolate on same processor

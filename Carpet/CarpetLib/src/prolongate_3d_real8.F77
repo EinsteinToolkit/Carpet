@@ -1,8 +1,21 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8.F77,v 1.9 2003/02/24 17:43:10 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8.F77,v 1.10 2003/02/25 22:57:00 schnetter Exp $
       
 #include "cctk.h"
-      
+
+
+
+#define CHKIDX(i,j,k, imax,jmax,kmax, where)                                  \
+      if ((i).lt.1 .or. (i).gt.(imax)                                         \
+           .or. (j).lt.1 .or. (j).gt.(jmax)                                   \
+           .or. (k).lt.1 .or. (k).gt.(kmax)) then                           &&\
+         write (msg, '(a, " array index out of bounds: shape is (",i4,",",i4,",",i4,"), index is (",i4,",",i4,",",i4,")")') \
+              (where), (imax), (jmax), (kmax), (i), (j), (k)                &&\
+         call CCTK_WARN (0, msg(1:len_trim(msg)))                           &&\
+      end if
+
+
+
       subroutine prolongate_3d_real8 (
      $     src, srciext, srcjext, srckext,
      $     dst, dstiext, dstjext, dstkext,
@@ -34,10 +47,12 @@ c     bbox(:,3) is stride
       integer i0, j0, k0
       integer fi, fj, fk
       integer ifac(2), jfac(2), kfac(2)
-c$$$      integer ii, jj, kk
+      integer ii, jj, kk
       integer fac
       CCTK_REAL8 res
       integer d
+      
+      character msg*1000
       
       
       
@@ -58,15 +73,15 @@ c$$$      integer ii, jj, kk
      $        .or. mod(regbbox(d,1), regbbox(d,3)).ne.0) then
             call CCTK_WARN (0, "Internal error: array origins are not integer multiples of the strides")
          end if
+         if (regbbox(d,1).gt.regbbox(d,2)) then
+c     This could be handled, but is likely to point to an error elsewhere
+            call CCTK_WARN (0, "Internal error: region extent is empty")
+         end if
          if (regbbox(d,1).lt.srcbbox(d,1)
      $        .or. regbbox(d,1).lt.dstbbox(d,1)
      $        .or. regbbox(d,2).gt.srcbbox(d,2)
      $        .or. regbbox(d,2).gt.dstbbox(d,2)) then
             call CCTK_WARN (0, "Internal error: region extent is not contained in array extent")
-         end if
-         if (regbbox(d,1).gt.regbbox(d,2)) then
-c     This could be handled, but is likely to point to an error elsewhere
-            call CCTK_WARN (0, "Internal error: region extent is empty")
          end if
       end do
       
@@ -122,44 +137,48 @@ c     Loop over fine region
                
                res = 0
                
-c$$$               do kk=1,2
-c$$$                  do jj=1,2
-c$$$                     do ii=1,2
-c$$$                        
-c$$$                        fac = ifac(ii) * jfac(jj) * kfac(kk)
-c$$$                        
-c$$$                        if (fac.ne.0) then
-c$$$                           res = res + fac * src(i0+ii, j0+jj, k0+kk)
-c$$$                        end if
-c$$$                        
-c$$$                     end do
-c$$$                  end do
-c$$$               end do
+               do kk=1,2
+                  do jj=1,2
+                     do ii=1,2
+                        
+                        fac = ifac(ii) * jfac(jj) * kfac(kk)
+                        
+                        if (fac.ne.0) then
+                           CHKIDX (i0+ii, j0+jj, k0+kk, \
+                                   srciext,srcjext,srckext, "source")
+                           res = res + fac * src(i0+ii, j0+jj, k0+kk)
+                        end if
+                        
+                     end do
+                  end do
+               end do
                
-               fac = ifac(1) * jfac(1) * kfac(1)
-               if (fac.ne.0) res = res + fac * src(i0+1, j0+1, k0+1)
+c$$$               fac = ifac(1) * jfac(1) * kfac(1)
+c$$$               if (fac.ne.0) res = res + fac * src(i0+1, j0+1, k0+1)
+c$$$               
+c$$$               fac = ifac(2) * jfac(1) * kfac(1)
+c$$$               if (fac.ne.0) res = res + fac * src(i0+2, j0+1, k0+1)
+c$$$               
+c$$$               fac = ifac(1) * jfac(2) * kfac(1)
+c$$$               if (fac.ne.0) res = res + fac * src(i0+1, j0+2, k0+1)
+c$$$               
+c$$$               fac = ifac(2) * jfac(2) * kfac(1)
+c$$$               if (fac.ne.0) res = res + fac * src(i0+2, j0+2, k0+1)
+c$$$               
+c$$$               fac = ifac(1) * jfac(1) * kfac(2)
+c$$$               if (fac.ne.0) res = res + fac * src(i0+1, j0+1, k0+2)
+c$$$               
+c$$$               fac = ifac(2) * jfac(1) * kfac(2)
+c$$$               if (fac.ne.0) res = res + fac * src(i0+2, j0+1, k0+2)
+c$$$               
+c$$$               fac = ifac(1) * jfac(2) * kfac(2)
+c$$$               if (fac.ne.0) res = res + fac * src(i0+1, j0+2, k0+2)
+c$$$               
+c$$$               fac = ifac(2) * jfac(2) * kfac(2)
+c$$$               if (fac.ne.0) res = res + fac * src(i0+2, j0+2, k0+2)
                
-               fac = ifac(2) * jfac(1) * kfac(1)
-               if (fac.ne.0) res = res + fac * src(i0+2, j0+1, k0+1)
-               
-               fac = ifac(1) * jfac(2) * kfac(1)
-               if (fac.ne.0) res = res + fac * src(i0+1, j0+2, k0+1)
-               
-               fac = ifac(2) * jfac(2) * kfac(1)
-               if (fac.ne.0) res = res + fac * src(i0+2, j0+2, k0+1)
-               
-               fac = ifac(1) * jfac(1) * kfac(2)
-               if (fac.ne.0) res = res + fac * src(i0+1, j0+1, k0+2)
-               
-               fac = ifac(2) * jfac(1) * kfac(2)
-               if (fac.ne.0) res = res + fac * src(i0+2, j0+1, k0+2)
-               
-               fac = ifac(1) * jfac(2) * kfac(2)
-               if (fac.ne.0) res = res + fac * src(i0+1, j0+2, k0+2)
-               
-               fac = ifac(2) * jfac(2) * kfac(2)
-               if (fac.ne.0) res = res + fac * src(i0+2, j0+2, k0+2)
-               
+               CHKIDX (dstioff+i+1, dstjoff+j+1, dstkoff+k+1, \
+                       dstiext,dstjext,dstkext, "destination")
                dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = dstdiv * res
                
             end do

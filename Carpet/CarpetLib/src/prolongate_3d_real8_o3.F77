@@ -1,7 +1,20 @@
 c     -*-Fortran-*-
-c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_o3.F77,v 1.7 2003/02/24 17:43:10 schnetter Exp $
+c     $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/prolongate_3d_real8_o3.F77,v 1.8 2003/02/25 22:57:00 schnetter Exp $
       
 #include "cctk.h"
+
+
+
+#define CHKIDX(i,j,k, imax,jmax,kmax, where)                                  \
+      if ((i).lt.1 .or. (i).gt.(imax)                                         \
+           .or. (j).lt.1 .or. (j).gt.(jmax)                                   \
+           .or. (k).lt.1 .or. (k).gt.(kmax)) then                           &&\
+         write (msg, '(a, " array index out of bounds: shape is (",i4,",",i4,",",i4,"), index is (",i4,",",i4,",",i4,")")') \
+              (where), (imax), (jmax), (kmax), (i), (j), (k)                &&\
+         call CCTK_WARN (0, msg(1:len_trim(msg)))                           &&\
+      end if
+
+
       
       subroutine prolongate_3d_real8_o3 (
      $     src, srciext, srcjext, srckext,
@@ -41,6 +54,8 @@ c     bbox(:,3) is stride
       CCTK_REAL8 res
       integer d
       
+      character msg*1000
+      
       
       
       do d=1,3
@@ -60,22 +75,32 @@ c     bbox(:,3) is stride
      $        .or. mod(regbbox(d,1), regbbox(d,3)).ne.0) then
             call CCTK_WARN (0, "Internal error: array origins are not integer multiples of the strides")
          end if
+         if (regbbox(d,1).gt.regbbox(d,2)) then
+c     This could be handled, but is likely to point to an error elsewhere
+            call CCTK_WARN (0, "Internal error: region extent is empty")
+         end if
          regkext = (regbbox(d,2) - regbbox(d,1)) / regbbox(d,3) + 1
          dstkfac = srcbbox(d,3) / dstbbox(d,3)
          srckoff = (regbbox(d,1) - srcbbox(d,1)) / dstbbox(d,3)
          offsetlo = regbbox(d,3)
-         if (mod(srckoff + 0, dstkfac).eq.0) offsetlo = 0
+         if (mod(srckoff + 0, dstkfac).eq.0) then
+            offsetlo = 0
+            if (regkext.gt.1) then
+               offsetlo = regbbox(d,3)
+            end if
+         end if
          offsethi = regbbox(d,3)
-         if (mod(srckoff + regkext-1, dstkfac).eq.0) offsethi = 0
+         if (mod(srckoff + regkext-1, dstkfac).eq.0) then
+            offsethi = 0
+            if (regkext.gt.1) then
+               offsethi = regbbox(d,3)
+            end if
+         end if
          if (regbbox(d,1)-offsetlo.lt.srcbbox(d,1)
      $        .or. regbbox(d,2)+offsethi.gt.srcbbox(d,2)
      $        .or. regbbox(d,1).lt.dstbbox(d,1)
      $        .or. regbbox(d,2).gt.dstbbox(d,2)) then
             call CCTK_WARN (0, "Internal error: region extent is not contained in array extent")
-         end if
-         if (regbbox(d,1).gt.regbbox(d,2)) then
-c     This could be handled, but is likely to point to an error elsewhere
-            call CCTK_WARN (0, "Internal error: region extent is empty")
          end if
       end do
       
@@ -144,6 +169,8 @@ c     Loop over fine region
                         fac = ifac(ii) * jfac(jj) * kfac(kk)
                         
                         if (fac.ne.0) then
+                           CHKIDX (i0+ii-1, j0+jj-1, k0+kk-1, \
+                                   srciext,srcjext,srckext, "source")
                            res = res + fac * src(i0+ii-1, j0+jj-1, k0+kk-1)
                         end if
                         
@@ -151,6 +178,8 @@ c     Loop over fine region
                   end do
                end do
                
+               CHKIDX (dstioff+i+1, dstjoff+j+1, dstkoff+k+1, \
+                       dstiext,dstjext,dstkext, "destination")
                dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = dstdiv * res
                
             end do

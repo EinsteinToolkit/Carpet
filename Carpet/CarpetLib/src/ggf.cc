@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.20 2003/01/03 15:49:36 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.21 2003/02/25 22:57:00 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -32,8 +32,6 @@ ggf<D>::ggf (const string name, th<D>& t, dh<D>& d,
   assert (t.h == &d.h);
 
   d.add(this);
-
-//   recompose();
 }
 
 // Destructors
