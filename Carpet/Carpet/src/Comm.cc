@@ -26,7 +26,7 @@ namespace Carpet {
   static void ProlongateGroupBoundaries ( const cGH* cgh,
                                           CCTK_REAL initial_time, int group );
   static void SyncGFGroup ( const cGH* cgh, comm_state<dim> &state, int group );
-  static void SyncGFARRAY ( const cGH* cgh, comm_state<dim> &state, int group );
+  static void SyncGFArrayGroup ( const cGH* cgh, comm_state<dim> &state, int group );
   
   int SyncGroup (const cGH* cgh, const char* groupname)
   {
@@ -83,7 +83,7 @@ namespace Carpet {
         
       case CCTK_SCALAR:
       case CCTK_ARRAY:
-        SyncGFARRAY ( cgh, state, group );
+        SyncGFArrayGroup ( cgh, state, group );
         break;
         
       default:
@@ -126,7 +126,7 @@ namespace Carpet {
     }
   }
 
-  void SyncGFARRAY ( const cGH* cgh, comm_state<dim> &state, int group )
+  void SyncGFArrayGroup ( const cGH* cgh, comm_state<dim> &state, int group )
   {
     for (int var=0; var<(int)arrdata.at(group).at(0).data.size(); ++var) {
       arrdata.at(group).at(0).data.at(var)->sync (state, 0, 0, 0, 0);
