@@ -70,7 +70,7 @@ public:
     return any(lower()>upper());
   }
   
-  /** Return the size, which is the product of the shape.  */
+  /** Return the size, which is the number of contained points.  */
   T size () const;
   
   // Queries
