@@ -1,7 +1,7 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.hh,v 1.1 2001/12/11 13:08:59 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetReduce/src/reduce.hh,v 1.2 2001/12/14 17:59:55 schnetter Exp $
 
-#ifndef CARPETREDUCE_HH
-#define CARPETREDUCE_HH
+#ifndef REDUCE_HH
+#define REDUCE_HH
 
 namespace CarpetReduce {
   
@@ -9,4 +9,4 @@ namespace CarpetReduce {
   
 } // namespace CarpetReduce
 
-#endif // !defined(CARPETREDUCE_HH)
+#endif // !defined(REDUCE_HH)

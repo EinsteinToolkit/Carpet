@@ -8,6 +8,7 @@
 #include <sys/types.h>
 
 #include <fstream>
+#include <iomanip>
 #include <vector>
 
 #include "cctk.h"
@@ -24,7 +25,7 @@
 
 #include "ioascii.hh"
 
-static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.23 2001/12/07 18:23:29 schnetter Exp $";
+static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetIOASCII/src/ioascii.cc,v 1.24 2001/12/14 17:59:54 schnetter Exp $";
 
 
 
@@ -220,14 +221,16 @@ int CarpetIOASCII<outdim>
 	const char* const suffixes = "lpv";
 	sprintf (filename, "%s%c", filename, suffixes[outdim-1]);
 	
-	// If this is the first time, then write a nice header on
-	// the root processor
-	if (do_truncate[n]) {
-	  if (CCTK_MyProc(cgh)==0) {
+	ofstream file;
+	
+	if (CCTK_MyProc(cgh)==0) {
+	  // If this is the first time, then write a nice header on
+	  // the root processor
+	  if (do_truncate[n]) {
 	    struct stat fileinfo;
 	    if (! IOUtil_RestartFromRecovery(cgh)
 		|| stat(filename, &fileinfo)!=0) {
-	      ofstream file(filename, ios::out | ios::trunc);
+	      file.open (filename, ios::out | ios::trunc);
 	      assert (file.good());
 	      file << "# " << varname;
 	      for (int d=0; d<outdim; ++d) {
@@ -235,10 +238,15 @@ int CarpetIOASCII<outdim>
 	      }
 	      file << " (" << alias << ")" << endl;
 	      file << "#" << endl;
-	      file.close();
 	      assert (file.good());
 	    }
 	  }
+	  if (! file.is_open()) {
+	    file.open (filename, ios::app);
+	    assert (file.good());
+	  }
+	  file << setprecision(15);
+	  assert (file.good());
 	}
 	
 	assert (outdim <= CCTK_GroupDimI(group));
@@ -326,19 +334,22 @@ int CarpetIOASCII<outdim>
 	  const bbox<int,dim> ext = data->extent();
 	  const vect<int,dim> offset1 = offset * ext.stride();
 	  
-	  data->write_ascii (filename, cgh->cctk_iteration, offset1, dirs,
+	  data->write_ascii (file, cgh->cctk_iteration, offset1, dirs,
 			     tl, reflevel, component, mglevel);
 	  
 	} END_COMPONENT_LOOP(cgh);
 	
 	// Append EOL after every complete set of components
 	if (CCTK_MyProc(cgh)==0) {
-	  ofstream file(filename, ios::app);
-	  assert (file.good());
-	  file << endl;
+	  if (separate_grids) {
+	    assert (file.good());
+	    file << endl;
+	  }
 	  file.close();
 	  assert (file.good());
 	}
+	
+	assert (! file.is_open());
 	
       } // if (desired)
       

@@ -1,9 +1,10 @@
 c     -*-Fortran-*-
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/InitialData.F77,v 1.8 2001/12/14 18:00:01 schnetter Exp $
 
  /*@@
    @file      InitialData.F77
    @date      
-   @author    Tom Goodale
+   @author    Tom Goodale, Erik Schnetter
    @desc 
               Initial data for the 3D Wave Equation
    @enddesc 
@@ -17,7 +18,7 @@ c     -*-Fortran-*-
  /*@@
    @routine    IDScalarWave_InitialData
    @date       
-   @author     Tom Goodale
+   @author     Tom Goodale, Erik Schnetter
    @desc 
                Set up initial data for the wave equation
    @enddesc 
@@ -39,6 +40,7 @@ c     -*-Fortran-*-
 
       INTEGER    i,j,k
       CCTK_REAL  dt,omega, pi
+      CCTK_REAL  x,y,z, r
       
 c     call CCTK_INFO ("IDScalarWave_InitialData")
       
@@ -54,12 +56,18 @@ c     call CCTK_INFO ("IDScalarWave_InitialData")
             do j=1,cctk_lsh(2)
                do i=1,cctk_lsh(1)
 
+                  x = cart3d_x(i,j,k)
+                  y = cart3d_y(i,j,k)
+                  z = cart3d_z(i,j,k)
+                  
                   phi(i,j,k) = amplitude
-     $                 * cos((kx*cart3d_x(i,j,k) + ky*cart3d_y(i,j,k)
-     $                 + kz*cart3d_z(i,j,k) + omega*cctk_time) * pi)
+     $                 * cos((kx*x + ky*y + kz*z + omega*cctk_time) * pi)
+
                   phi_p(i,j,k) = amplitude
-     $                 * cos((kx*cart3d_x(i,j,k) + ky*cart3d_y(i,j,k)
-     $                 + kz*cart3d_z(i,j,k) + omega*(cctk_time - dt)) * pi)
+     $                 * cos((kx*x + ky*y + kz*z + omega*(cctk_time - dt)) * pi)
+
+                  phi_p_p(i,j,k) = amplitude
+     $                 * cos((kx*x + ky*y + kz*z + omega*(cctk_time - 2*dt)) * pi)
                   
                end do
             end do
@@ -71,10 +79,20 @@ c     call CCTK_INFO ("IDScalarWave_InitialData")
             do j=1, cctk_lsh(2)
                do i=1, cctk_lsh(1)
 
+                  r = spher3d_r(i,j,k)
+
                   phi(i,j,k) = amplitude
-     $                 * exp(- (spher3d_r(i,j,k) - radius)**2 / sigma**2)
-                  phi_p(i,j,k) = amplitude
-     $                 * exp(- (spher3d_r(i,j,k) - radius - dt)**2 / sigma**2)
+     $                 * exp(- (r - radius)**2 / sigma**2)
+
+                  phi_p(i,j,k) = amplitude/2 * (r - dt) / r
+     $                 * exp(- (r - radius - dt)**2 / sigma**2)
+     $                 + amplitude/2 * (r + dt) / r
+     $                 * exp(- (r - radius + dt)**2 / sigma**2)
+
+                  phi_p_p(i,j,k) = amplitude/2 * (r - 2*dt) / r
+     $                 * exp(- (r - radius - 2*dt)**2 / sigma**2)
+     $                 + amplitude/2 * (r + 2*dt) / r
+     $                 * exp(- (r - radius + 2*dt)**2 / sigma**2)
 
                end do
             end do
@@ -88,17 +106,27 @@ c        Use kx,ky,kz as number of modes in each direction.
             do j=1,cctk_lsh(2)
                do i=1,cctk_lsh(1)
 
+                  x = cart3d_x(i,j,k)
+                  y = cart3d_y(i,j,k)
+                  z = cart3d_z(i,j,k)
+
                   phi(i,j,k) = amplitude
-     $                 * sin(kx * (cart3d_x(i,j,k) - 0.5d0) * pi)
-     $                 * sin(ky * (cart3d_y(i,j,k) - 0.5d0) * pi)
-     $                 * sin(kz * (cart3d_z(i,j,k) - 0.5d0) * pi)
+     $                 * sin(kx * (x - 0.5d0) * pi)
+     $                 * sin(ky * (y - 0.5d0) * pi)
+     $                 * sin(kz * (z - 0.5d0) * pi)
      $                 * cos(omega * cctk_time * pi)
                   
                   phi_p(i,j,k) = amplitude
-     $                 * sin(kx * (cart3d_x(i,j,k) - 0.5d0) * pi)
-     $                 * sin(ky * (cart3d_y(i,j,k) - 0.5d0) * pi)
-     $                 * sin(kz * (cart3d_z(i,j,k) - 0.5d0) * pi)
-     $                 * cos(omega * (cctk_time-dt) * pi)
+     $                 * sin(kx * (x - 0.5d0) * pi)
+     $                 * sin(ky * (y - 0.5d0) * pi)
+     $                 * sin(kz * (z - 0.5d0) * pi)
+     $                 * cos(omega * (cctk_time - dt) * pi)
+                  
+                  phi_p_p(i,j,k) = amplitude
+     $                 * sin(kx * (x - 0.5d0) * pi)
+     $                 * sin(ky * (y - 0.5d0) * pi)
+     $                 * sin(kz * (z - 0.5d0) * pi)
+     $                 * cos(omega * (cctk_time - 2*dt) * pi)
 
                end do
             end do
@@ -110,8 +138,9 @@ c        Use kx,ky,kz as number of modes in each direction.
             do j=1,cctk_lsh(2)
                do i=1,cctk_lsh(1)
                   
-                  phi(i,j,k)   = 0.0d0
-                  phi_p(i,j,k) = 0.0d0
+                  phi(i,j,k)     = 0.0d0
+                  phi_p(i,j,k)   = 0.0d0
+                  phi_p_p(i,j,k) = 0.0d0
 
                end do
             end do

@@ -1,4 +1,5 @@
-c	-*-Fortran-*-
+c     -*-Fortran-*-
+c     $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/IDScalarWave/src/CheckParameters.F77,v 1.3 2001/12/14 18:00:01 schnetter Exp $
 
  /*@@
    @file      CheckParameters.F77
