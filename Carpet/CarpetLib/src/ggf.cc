@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.30 2004/01/25 14:57:30 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.cc,v 1.31 2004/02/03 14:33:22 schnetter Exp $
 
 #include <assert.h>
 #include <stdlib.h>
@@ -453,6 +453,7 @@ void ggf<D>::ref_bnd_prolongate (comm_state<D>& state,
 {
   // Interpolate
   assert (rl>=1);
+  if (transport_operator == op_none) return;
   vector<int> tl2s;
   // Interpolation in time
   assert (tmax-tmin+1 >= prolongation_order_time+1);
@@ -502,6 +503,7 @@ void ggf<D>::ref_restrict (comm_state<D>& state,
 {
   // Require same times
   assert (t.get_time(rl,ml) == t.get_time(rl+1,ml));
+  if (transport_operator == op_none) return;
   const vector<int> tl2s(1,tl);
   intercat (state,
             tl  ,rl  ,c,ml, &dh<D>::dboxes::recv_ref_fine,
@@ -516,6 +518,7 @@ void ggf<D>::ref_prolongate (comm_state<D>& state,
                              CCTK_REAL time)
 {
   assert (rl>=1);
+  if (transport_operator == op_none) return;
   vector<int> tl2s;
   // Interpolation in time
   assert (tmax-tmin+1 >= prolongation_order_time+1);
