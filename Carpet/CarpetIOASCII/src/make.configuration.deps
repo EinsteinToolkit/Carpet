@@ -34,7 +34,7 @@ $(UTIL_DIR)$(DIRSEP)%: $(BUILD_DIR)$(DIRSEP)CarpetIOASCII$(DIRSEP)%.o
 $(BUILD_DIR)$(DIRSEP)CarpetIOASCII$(DIRSEP)carpet2sdf.o: $(PACKAGE_DIR)$(DIRSEP)Carpet$(DIRSEP)CarpetIOASCII$(DIRSEP)src$(DIRSEP)util$(DIRSEP)carpet2sdf.c
 	@echo "Compiling carpet2sdf"
 	-$(MKDIR) $(MKDIRFLAGS) $(BUILD_DIR)$(DIRSEP)CarpetIOASCII 2> /dev/null
-	-$(CC) $< -DCCODE $(CFLAGS) -I$(CONFIG) -I$(BINDINGS_DIR)$(DIRSEP)include -I$(FLESH_DIR)$(DIRSEP)include -I$(CCTK_HOME)$(DIRSEP)arrangements -I$(SDF_INCDIRS:%=-I%) $(CCOMPILEONLY)$(OPTIONSEP)$@
+	$(CC) $< -DCCODE $(CFLAGS) $(INC_DIRS:%=-I%) $(CCOMPILEONLY)$(OPTIONSEP)$@
 
 
 
@@ -43,11 +43,4 @@ $(BUILD_DIR)$(DIRSEP)CarpetIOASCII$(DIRSEP)carpet2sdf.o: $(PACKAGE_DIR)$(DIRSEP)
 $(UTIL_DIR)$(DIRSEP)carpet2sdf: $(BUILD_DIR)$(DIRSEP)CarpetIOASCII$(DIRSEP)carpet2sdf.o
 	@echo "Creating $* in $(UTIL_DIR) from $<"
 	-$(MKDIR) $(MKDIRFLAGS) $(UTIL_DIR) 2> /dev/null
-	-$(LD) $(CREATEEXE)$(OPTIONSEP)$@ $(DEBUG_LD) $(LDFLAGS) $(EXTRAFLAGS) $< $(SDF_LIBDIRS:%=-L%) $(SDF_LIBS:%=-l%)
-	@if [ ! -e $(UTIL_DIR)$(DIRSEP)/carpet2sdf ]; then \
-	echo "*************************************"; \
-	echo "Warning: could not install carpet2sdf"; \
-	echo "*************************************"; \
-	echo "echo \"carpet2sdf could not be installed\"" > $@; \
-	chmod a+x $@; \
-	fi
+	$(LD) $(CREATEEXE)$(OPTIONSEP)$@ $(DEBUG_LD) $(LDFLAGS) $(EXTRAFLAGS) $< $(GENERAL_LIBRARIES)
