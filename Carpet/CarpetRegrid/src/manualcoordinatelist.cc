@@ -13,7 +13,7 @@
 #include "regrid.hh"
 
 extern "C" {
-  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinatelist.cc,v 1.11 2004/08/03 19:39:45 schnetter Exp $";
+  static const char* rcsid = "$Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetRegrid/src/manualcoordinatelist.cc,v 1.12 2004/08/14 07:42:00 schnetter Exp $";
   CCTK_FILEVERSION(Carpet_CarpetRegrid_manualcoordinatelist_cc);
 }
 
@@ -156,7 +156,9 @@ namespace CarpetRegrid {
       for (size_t c=0; c<newbbss.at(rl-1).size(); ++c) {
         rbbox const & ext = newbbss.at(rl-1).at(c);
         bbvect const & ob = newobss.at(rl-1).at(c);
-        rvect const spacing = base_spacing / ipow(reffact, rl);
+        // TODO:
+        // assert (domain_from_coordbase);
+        rvect const spacing = base_spacing * pow(CCTK_REAL(mgfact), basemglevel) / ipow(reffact, rl);
         assert (all(abs(ext.stride() - spacing) < spacing * 1.0e-10));
         ManualCoordinates_OneLevel
           (cctkGH, hh, rl, refinement_levels,
