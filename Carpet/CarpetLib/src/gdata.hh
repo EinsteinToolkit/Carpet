@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.23 2004/03/23 12:14:29 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/gdata.hh,v 1.24 2004/04/19 07:56:35 schnetter Exp $
 
 #ifndef GDATA_HH
 #define GDATA_HH
@@ -159,7 +159,8 @@ public:
   
   // Data manipulators
  public:
-    void copy_from (comm_state<D>& state, const gdata* src, const ibbox& box);
+    void copy_from (comm_state<D>& state,
+                    const gdata* src, const ibbox& box);
  private:
   void copy_from_nocomm (const gdata* src, const ibbox& box);
   void copy_from_recv (comm_state<D>& state,

@@ -1,4 +1,4 @@
-// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.21 2004/04/18 13:29:43 schnetter Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/Carpet/CarpetLib/src/ggf.hh,v 1.22 2004/04/19 07:56:35 schnetter Exp $
 
 #ifndef GGF_HH
 #define GGF_HH
@@ -171,19 +171,24 @@ public:
   void sync (comm_state<D>& state, int tl, int rl, int c, int ml);
 
   // Prolongate the boundaries of a component
-  void ref_bnd_prolongate (comm_state<D>& state, int tl, int rl, int c, int ml, CCTK_REAL time);
+  void ref_bnd_prolongate (comm_state<D>& state,
+                           int tl, int rl, int c, int ml, CCTK_REAL time);
 
   // Restrict a multigrid level
-  void mg_restrict (comm_state<D>& state, int tl, int rl, int c, int ml, CCTK_REAL time);
+  void mg_restrict (comm_state<D>& state,
+                    int tl, int rl, int c, int ml, CCTK_REAL time);
 
   // Prolongate a multigrid level
-  void mg_prolongate (comm_state<D>& state, int tl, int rl, int c, int ml, CCTK_REAL time);
+  void mg_prolongate (comm_state<D>& state,
+                      int tl, int rl, int c, int ml, CCTK_REAL time);
 
   // Restrict a refinement level
-  void ref_restrict (comm_state<D>& state, int tl, int rl, int c, int ml, CCTK_REAL time);
+  void ref_restrict (comm_state<D>& state,
+                     int tl, int rl, int c, int ml, CCTK_REAL time);
 
   // Prolongate a refinement level
-  void ref_prolongate (comm_state<D>& state, int tl, int rl, int c, int ml, CCTK_REAL time);
+  void ref_prolongate (comm_state<D>& state,
+                       int tl, int rl, int c, int ml, CCTK_REAL time);
   
   
   
