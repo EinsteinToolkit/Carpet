@@ -1,7 +1,12 @@
 # Schedule definitions for thorn CarpetIOFlexIO
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/schedule.ccl,v 1.1 2001/03/15 23:28:45 eschnett Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/schedule.ccl,v 1.2 2001/03/17 22:37:21 eschnett Exp $
 
 schedule CarpetIOFlexIOStartup at STARTUP after IOUtilStartup
 {
   LANG: C
 } "Startup routine"
+
+schedule CarpetIOFlexIOReadData at INITIAL
+{
+  LANG: C
+} "Read initial data from file"

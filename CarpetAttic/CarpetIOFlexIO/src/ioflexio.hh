@@ -1,8 +1,9 @@
-// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.hh,v 1.2 2001/03/16 21:32:17 eschnett Exp $
+// $Header: /home/eschnett/C/carpet/Carpet/CarpetAttic/CarpetIOFlexIO/src/ioflexio.hh,v 1.3 2001/03/17 22:37:28 eschnett Exp $
 
 #include <vector>
 
 #include "cctk.h"
+#include "cctk_Arguments.h"
 
 namespace CarpetIOFlexIO {
   
@@ -15,6 +16,7 @@ namespace CarpetIOFlexIO {
   // Scheduled functions
   extern "C" {
     int CarpetIOFlexIOStartup ();
+    int CarpetIOFlexIOReadData (CCTK_ARGUMENTS);
   }
   
   void* SetupGH (tFleshConfig* const fc,
@@ -25,5 +27,9 @@ namespace CarpetIOFlexIO {
 		   const char* const alias);
   int TimeToOutput (cGH* const cgh, const int vindex);
   int TriggerOutput (cGH* const cgh, const int vindex);
+  
+  int InputGH (cGH* const cgh);
+  int InputVarAs (cGH* const cgh, const char* const varname,
+		  const char* const alias);
   
 } // namespace CarpetIOFlexIO
