@@ -1,7 +1,7 @@
 # Schedule definitions for thorn FOWaveToy77
-# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/schedule.ccl,v 1.1 2002/02/18 11:25:34 shawley Exp $
+# $Header: /home/eschnett/C/carpet/Carpet/CarpetExtra/FOWaveToyF77/schedule.ccl,v 1.2 2002/02/18 14:36:47 shawley Exp $
 
-STORAGE: scalarevolve
+STORAGE: scalarevolve scalarevolve_derivs
 
 schedule FOWaveToyF77_Startup at STARTUP
 {
