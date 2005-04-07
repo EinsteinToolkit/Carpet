@@ -277,7 +277,7 @@ namespace Carpet {
     }
 
     for (int c = 0; c < groups.size(); c++) {
-      SyncGroups (cgh, groups[c]);
+      SyncProlongateGroups (cgh, groups[c]);
     }
   }
   
