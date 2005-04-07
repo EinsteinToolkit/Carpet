@@ -21,14 +21,6 @@
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
 
-#include "bbox.hh"
-#include "data.hh"
-#include "gdata.hh"
-#include "ggf.hh"
-#include "vect.hh"
-
-#include "carpet.hh"
-
 #include "CarpetIOHDF5.hh"
 
 /* some macros for HDF5 group names */
@@ -36,6 +28,10 @@
 #define ALL_PARAMETERS "All Parameters"
 
 
+// That's a hack
+namespace Carpet {
+  void SyncProlongateGroups (const cGH* cctkGH, group_set& groups);
+}
 
 namespace CarpetIOHDF5
 {
@@ -380,10 +376,32 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     CarpetIOHDF5_CloseFile ();
   }
 
-  // now synchronize all variables
-  for (int group = CCTK_NumGroups () - 1; group >= 0; group--)
-  {
-    CCTK_SyncGroupI (cctkGH, group);
+  // now synchronize all variables, in sets of groups of the same vartype
+  vector<group_set> groups;
+
+  for (int group = 0; group < CCTK_NumGroups(); group++) {
+    if (CCTK_NumVarsInGroupI (group) > 0
+        && CCTK_QueryGroupStorageI (cctkGH, group)) {
+
+      group_set newset;
+      const int firstvar = CCTK_FirstVarIndexI (group);
+      newset.vartype = CCTK_VarTypeI (firstvar);
+      assert (newset.vartype >= 0);
+      int c;
+      for (c = 0; c < groups.size(); c++) {
+        if (newset.vartype == groups[c].vartype) {
+          break;
+        }
+      }
+      if (c == groups.size()) {
+        groups.push_back (newset);
+      }
+      groups[c].members.push_back (group);
+    }
+  }
+
+  for (int c = 0; c < groups.size(); c++) {
+    SyncProlongateGroups (cctkGH, groups[c]);
   }
 
   return (retval);
@@ -543,12 +561,12 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
             for(int i=1;i<dim;i++)
             {
               lb[i]=0;
-              ub[i]=0; 
+              ub[i]=0;
             }
           }
           else
           {
-            const int newlb = lb[gpdim-1] + 
+            const int newlb = lb[gpdim-1] +
               (ub[gpdim-1]-lb[gpdim-1]+1)*
               (arrdata.at(group).at(Carpet::map).hh->processors().at(reflevel).at(component));
             const int newub = ub[gpdim-1] +
@@ -567,7 +585,7 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
 #ifdef CARPETIOHDF5_DEBUG
         cout << "ext: " << ext << endl;
 #endif
-    
+
         if (CCTK_MyProc(cctkGH)==0)
         {
           tmp->allocate (ext, 0, h5data);
@@ -710,18 +728,18 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
 
     if (CCTK_MyProc(cctkGH)==0)
     {
-      // Read data 
+      // Read data
       char * name;
       ReadAttribute (dataset, "name", name);
       //        cout << "dataset name is " << name << endl;
       if (CCTK_Equals (verbose, "full") && name)
-      { 
+      {
         CCTK_VInfo (CCTK_THORNSTRING, "Dataset name is \"%s\"", name);
       }
       want_dataset = name && CCTK_EQUALS(name, fullname);
       free (name);
     } // myproc == 0
-  
+
     MPI_Bcast (&want_dataset, 1, MPI_INT, 0, dist::comm);
 
     if(want_dataset)
@@ -730,7 +748,7 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
     } // want_dataset
 
   } // loop over datasets
-  
+
   // Close the file
   if (CCTK_MyProc(cctkGH)==0)
   {
@@ -741,7 +759,7 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
     HDF5_ERROR (H5Fclose(reader));
     reader=-1;
   }
-  
+
   // Was everything initialised?
   if (did_read_something)
   {
@@ -766,7 +784,7 @@ static int InputVarAs (const cGH* const cctkGH, const int vindex,
     }
   } // if did_read_something
   //        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,"stop!");
-  
+
   return did_read_something ? 0 : -1;
 }
 
@@ -816,7 +834,7 @@ static herr_t ReadMetadata (hid_t group, const char *objectname, void *arg)
 
   dataset.datasetname = strdup (objectname);
   assert (dataset.datasetname);
-  
+
   HDF5_ERROR (dset = H5Dopen (group, objectname));
   char *varname = NULL;
   ReadAttribute (dset, "name", varname);
