@@ -883,46 +883,51 @@ namespace Carpet {
   {
     bbs.resize (mglevels);
     bbs.at(0) = bb;
-    // boundary offsets
-    jjvect nboundaryzones, is_internal, is_staggered, shiftout;
-    const int ierr = GetBoundarySpecification
-      (2*dim, &nboundaryzones[0][0], &is_internal[0][0],
-       &is_staggered[0][0], &shiftout[0][0]);
-    assert (!ierr);
-    // (distance in grid points between the exterior and the physical boundary)
-    iivect offset;
-    for (int d=0; d<dim; ++d) {
-      for (int f=0; f<2; ++f) {
-        assert (! is_staggered[d][f]);
-        offset[d][f] = (+ (is_internal[d][f] ? 0 : nboundaryzones[d][f] - 1)
-                        + shiftout[d][f]);
-      }
-    }
     vector<ibbox> bases(mglevels);
+    assert (mglevels >= 1);
     bases.at(0) = base;
-    for (int ml=1; ml<mglevels; ++ml) {
-      // next finer base
-      ivect const fbaselo = bases.at(ml-1).lower();
-      ivect const fbasehi = bases.at(ml-1).upper();
-      ivect const fbasestr = bases.at(ml-1).stride();
-      // this base
-      ivect const basestr = fbasestr * mgfact;
-      ivect const baselo = fbaselo + (xpose(offset)[0] - ivect(mgfact) * xpose(offset)[0]) * fbasestr;
-      ivect const basehi = fbasehi + (xpose(offset)[1] - ivect(mgfact) * xpose(offset)[1]) * fbasestr;
-      ivect const baselo1 = baselo;
-      ivect const basehi1 = baselo1 + (basehi - baselo1) / basestr * basestr;
-      bases.at(ml) = ibbox(baselo1, basehi1, basestr);
-      // next finer grid
-      ivect const flo = bbs.at(ml-1).lower();
-      ivect const fhi = bbs.at(ml-1).upper();
-      ivect const fstr = bbs.at(ml-1).stride();
-      // this grid
-      ivect const str = fstr * mgfact;
-      ivect const lo = flo + xpose(ob)[0].ifthen (  (xpose(offset)[0] - ivect(mgfact) * xpose(offset)[0]) * fstr, ivect(0));
-      ivect const hi = fhi + xpose(ob)[1].ifthen (- (xpose(offset)[1] - ivect(mgfact) * xpose(offset)[1]) * fstr, ivect(0));
-      ivect const lo1 = baselo1 + (lo - baselo1 + str - 1) / str * str;
-      ivect const hi1 = lo1 + (hi - lo1) / str * str;
-      bbs.at(ml) = ibbox(lo1, hi1, str);
+    if (mglevels > 1) {
+      // boundary offsets
+      jjvect nboundaryzones, is_internal, is_staggered, shiftout;
+      const int ierr = GetBoundarySpecification
+        (2*dim, &nboundaryzones[0][0], &is_internal[0][0],
+         &is_staggered[0][0], &shiftout[0][0]);
+      assert (!ierr);
+      // (distance in grid points between the exterior and the physical boundary)
+      iivect offset;
+      for (int d=0; d<dim; ++d) {
+        for (int f=0; f<2; ++f) {
+          assert (! is_staggered[d][f]);
+          offset[d][f] = (+ (is_internal[d][f] ? 0 : nboundaryzones[d][f] - 1)
+                          + shiftout[d][f]);
+        }
+      }
+      vector<ibbox> bases(mglevels);
+      bases.at(0) = base;
+      for (int ml=1; ml<mglevels; ++ml) {
+        // next finer base
+        ivect const fbaselo = bases.at(ml-1).lower();
+        ivect const fbasehi = bases.at(ml-1).upper();
+        ivect const fbasestr = bases.at(ml-1).stride();
+        // this base
+        ivect const basestr = fbasestr * mgfact;
+        ivect const baselo = fbaselo + (xpose(offset)[0] - ivect(mgfact) * xpose(offset)[0]) * fbasestr;
+        ivect const basehi = fbasehi + (xpose(offset)[1] - ivect(mgfact) * xpose(offset)[1]) * fbasestr;
+        ivect const baselo1 = baselo;
+        ivect const basehi1 = baselo1 + (basehi - baselo1) / basestr * basestr;
+        bases.at(ml) = ibbox(baselo1, basehi1, basestr);
+        // next finer grid
+        ivect const flo = bbs.at(ml-1).lower();
+        ivect const fhi = bbs.at(ml-1).upper();
+        ivect const fstr = bbs.at(ml-1).stride();
+        // this grid
+        ivect const str = fstr * mgfact;
+        ivect const lo = flo + xpose(ob)[0].ifthen (  (xpose(offset)[0] - ivect(mgfact) * xpose(offset)[0]) * fstr, ivect(0));
+        ivect const hi = fhi + xpose(ob)[1].ifthen (- (xpose(offset)[1] - ivect(mgfact) * xpose(offset)[1]) * fstr, ivect(0));
+        ivect const lo1 = baselo1 + (lo - baselo1 + str - 1) / str * str;
+        ivect const hi1 = lo1 + (hi - lo1) / str * str;
+        bbs.at(ml) = ibbox(lo1, hi1, str);
+      }
     }
   }
   
