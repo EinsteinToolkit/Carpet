@@ -2,7 +2,7 @@
 # $Header:$
 
 implements: FOwavetoy
-inherits: grid idfoscalarwave
+inherits: grid
 
 USES INCLUDE: Symmetry.h
 
