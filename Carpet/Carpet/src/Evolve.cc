@@ -152,6 +152,14 @@ namespace Carpet {
       Evolution_Restrict( cgh );
 
       EvolutionII( cgh );
+
+      if (output_internal_data) {
+        CCTK_INFO ("Internal data dump:");
+        cout << "   global_time: " << global_time << endl
+             << "   leveltimes: " << leveltimes << endl
+             << "   delta_time: " << delta_time << endl;
+      }
+
     }
 
     Waypoint ("Done with evolution loop");

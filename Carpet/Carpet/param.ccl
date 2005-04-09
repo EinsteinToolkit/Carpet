@@ -248,6 +248,10 @@ BOOLEAN barriers "Insert barriers at strategic places for debugging purposes (sl
 {
 } "no"
 
+BOOLEAN output_internal_data "Periodically print internal data to the screen for debugging purposes"
+{
+} "no"
+
 
 
 KEYWORD processor_topology "How to determine the processor topology" STEERABLE=recover

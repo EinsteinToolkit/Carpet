@@ -75,6 +75,13 @@ namespace Carpet {
 
       recovery_II (cgh);
 
+      if (output_internal_data) {
+        CCTK_INFO ("Internal data dump:");
+        cout << "   global_time: " << global_time << endl
+             << "   leveltimes: " << leveltimes << endl
+             << "   delta_time: " << delta_time << endl;
+      }
+
     } else {
 
       for (int rl=0; rl<reflevels; ++rl) {
@@ -86,12 +93,26 @@ namespace Carpet {
 
       initialisation_II (cgh);
 
+      if (output_internal_data) {
+        CCTK_INFO ("Internal data dump:");
+        cout << "   global_time: " << global_time << endl
+             << "   leveltimes: " << leveltimes << endl
+             << "   delta_time: " << delta_time << endl;
+      }
+
       if (init_3_timelevels) {
         get_two_extra_timelevels_of_data (cgh);
       }
     }
 
     initialisation_III (cgh);
+
+    if (output_internal_data) {
+      CCTK_INFO ("Internal data dump:");
+      cout << "   global_time: " << global_time << endl
+           << "   leveltimes: " << leveltimes << endl
+           << "   delta_time: " << delta_time << endl;
+    }
 
     Waypoint ("Done with initialisation");
 
