@@ -547,7 +547,34 @@ void dh::calculate_bases ()
 
 void dh::save_time (bool do_prolongate)
 {
-  for (list<ggf*>::reverse_iterator f=gfs.rbegin(); f!=gfs.rend(); ++f) {
+  DECLARE_CCTK_PARAMETERS;
+
+  // sort all grid functions into sets of the same vartype
+  vector<gf_set> ggfs;
+  for (list<ggf*>::iterator f = gfs.begin(); f != gfs.end(); ++f) {
+    gf_set newset;
+    newset.vartype = CCTK_VarTypeI ((*f)->varindex);
+    assert (newset.vartype >= 0);
+    int c;
+    for (c = 0; c < ggfs.size(); c++) {
+      if (newset.vartype == ggfs[c].vartype) {
+        break;
+      }
+    }
+    if (c == ggfs.size()) {
+      ggfs.push_back (newset);
+    }
+    ggfs[c].members.push_back (*f);
+  }
+
+  // Use collective or single-component buffers for communication ?
+  if (! use_collective_communication_buffers) {
+    for (int c = 0; c < ggfs.size(); c++) {
+      ggfs[c].vartype = -1;
+    }
+  }
+
+  for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
     (*f)->recompose_crop ();
   }
   for (int rl=0; rl<h.reflevels(); ++rl) {
@@ -562,19 +589,13 @@ void dh::save_time (bool do_prolongate)
             ggfs[c].members[g]->recompose_fill (state, rl, do_prolongate);
           }
         }
-        // free in the opposite order
-        for (int g = ggfs[c].members.size() - 1; g >= 0; g--) {
+        for (int g = 0; g < ggfs[c].members.size(); g++) {
           ggfs[c].members[g]->recompose_free (rl);
         }
-      }
-    }
-    for (list<ggf*>::reverse_iterator f=gfs.rbegin(); f!=gfs.rend(); ++f) {
-      (*f)->recompose_free (rl);
-    }
-    for (comm_state state; !state.done(); state.step()) {
-      for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-        for (comm_state state; !state.done(); state.step()) {
-          (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
+        for (comm_state state(ggfs[c].vartype); ! state.done(); state.step()) {
+          for (int g = 0; g < ggfs[c].members.size(); g++) {
+            ggfs[c].members[g]->recompose_bnd_prolongate (state, rl, do_prolongate);
+          }
         }
         for (comm_state state(ggfs[c].vartype); ! state.done(); state.step()) {
           for (int g = 0; g < ggfs[c].members.size(); g++) {
@@ -594,8 +615,7 @@ void dh::save_time (bool do_prolongate)
             ggfs[c].members[g]->recompose_fill (state, rl, do_prolongate);
           }
         }
-        // free in the opposite order
-        for (int g = ggfs[c].members.size() - 1; g >= 0; g--) {
+        for (int g = 0; g < ggfs[c].members.size(); g++) {
           ggfs[c].members[g]->recompose_free (rl);
         }
         for (int g = 0; g < ggfs[c].members.size(); g++) {
