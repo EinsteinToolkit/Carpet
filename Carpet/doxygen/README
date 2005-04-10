@@ -1,12 +1,12 @@
-This directory contains, in CVS, the Doxygen configuration file.  The
-generated documentation will also be placed here, but should not go
-into CVS.
+This directory contains, in the CVS or darcs repository, the Doxygen
+configuration file.  The generated documentation will also be placed
+here, but should not go into the repository.
 
 Create the Doxygen configuration by running the command
 
         doxygen doxygen/Doxyfile
 
-from one directory up, i.e. from the Carpet arrangement directory.
+from one directory up, i.e., from the Carpet arrangement directory.
 This will create html documentation in a subdirectory html, and latex
 documentation in a subdirectory latex.  The latex subdirectory
 contains a makefile that creates pdf from the latex sources.
