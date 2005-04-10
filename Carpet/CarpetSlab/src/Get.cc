@@ -94,10 +94,10 @@ namespace CarpetSlab {
       retvals[n] = CarpetSlab_Get (cctkGH, mapping_handle, procs[n],
                                    vindices[n], timelevels[n], hdatatypes[n],
                                    hdata[n]);
-      everyting_okay = everyting_okay && retvals[n];
+      everyting_okay = everyting_okay && retvals[n] == 0;
     }
     
-    return everyting_okay ? 0 : -1;
+    return everyting_okay ? num_arrays : -1;
   }
   
   
