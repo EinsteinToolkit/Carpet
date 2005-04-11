@@ -87,8 +87,6 @@ public:
  public:
   
   // Storage management
-  virtual void transfer_from (gdata* src) = 0;
-  
   virtual void allocate (const ibbox& extent, const int proc,
 			 void* const mem=0) = 0;
   virtual void free () = 0;

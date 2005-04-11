@@ -127,17 +127,6 @@ void data<T>::free ()
   _has_storage = false;
 }
 
-template<typename T>
-void data<T>::transfer_from (gdata* gsrc)
-{
-  assert (vectorlength==1);
-  data* src = (data*)gsrc;
-  assert (src->vectorlength==1);
-  assert (!_memory);
-  *this = *src;
-  *src = data(varindex, transport_operator);
-}
-
 
 
 // Processor management

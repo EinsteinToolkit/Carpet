@@ -57,7 +57,6 @@ public:
   virtual void allocate (const ibbox& extent, const int proc,
 			 void* const memptr = NULL);
   virtual void free ();
-  virtual void transfer_from (gdata* gsrc);
 
   // Processor management
 private:
