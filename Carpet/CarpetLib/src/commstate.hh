@@ -90,15 +90,13 @@ public:
   // the following members are used for collective communications
   //////////////////////////////////////////////////////////////////////////
 
+public:
   // CCTK vartype used for this comm_state object
   int vartype;
 
   // size of CCTK vartype
   // (used as stride for advancing the char-based buffer pointers)
   int vartypesize;
-
-  // MPI datatype corresponding to CCTK vartype
-  MPI_Datatype datatype;
 
   // buffers for collective communications
   struct collbufdesc {
@@ -115,17 +113,29 @@ public:
                     sendbuf(NULL), recvbuf(NULL),
                     sendbufbase(NULL), recvbufbase(NULL) {}
 
-// FIXME: why can't these be made private ??
-//private:
     // the allocated communication buffers
     char* sendbufbase;
     char* recvbufbase;
   };
   vector<collbufdesc> collbufs;          // [nprocs]
 
+  // flags indicating which receive buffers are ready to be emptied
+  vector<bool> recvbuffers_ready;        // [nprocs]
+
+  // MPI datatype corresponding to CCTK vartype
+  MPI_Datatype datatype;
+
+  // lists of outstanding requests for posted send/recv communications
+  vector<MPI_Request> srequests;         // [nprocs]
 private:
-  // Exchange pairs of send/recv buffers between all processors.
-  void ExchangeBuffers();
+  vector<MPI_Request> rrequests;         // [nprocs]
+
+  // number of posted and already completed receive communications
+  int num_posted_recvs;
+  int num_completed_recvs;
+
+  // wait for completion of posted collective buffer sends/receives
+  bool AllPostedCommunicationsFinished(bool use_waitall);
 };
 
 

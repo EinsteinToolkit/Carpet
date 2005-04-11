@@ -158,9 +158,9 @@ void gdata::copy_from (comm_state& state,
     }
     break;
   case state_empty_recv_buffers:
-    // if this is a destination processor: copy its data from the recv buffer
-    // (the processor-local case is not handled here)
-    if (proc() == dist::rank() && src->proc() != proc()) {
+    // if this is a destination processor and data has already been received
+    // from the source processor: copy it from the recv buffer
+    if (proc() == dist::rank() && state.recvbuffers_ready.at(src->proc())) {
       copy_from_recvbuffer (state, src, box);
     }
     break;
@@ -416,19 +416,28 @@ void gdata::copy_into_sendbuffer (comm_state& state,
     // copy to remote processor
     assert (src->_has_storage);
     assert (src->_owns_storage);
-    assert (state.collbufs.at(proc()).sendbuf -
-            state.collbufs.at(proc()).sendbufbase <=
-            (state.collbufs.at(proc()).sendbufsize - box.size()) *
-            state.vartypesize);
+    assert (proc() < state.collbufs.size());
+    int fillstate = (state.collbufs[proc()].sendbuf +
+                     box.size()*state.vartypesize) -
+                    state.collbufs[proc()].sendbufbase;
+    assert (fillstate <= state.collbufs[proc()].sendbufsize*state.vartypesize);
 
     // copy this processor's data into the send buffer
     gdata* tmp = src->make_typed (varindex, transport_operator, tag);
-    tmp->allocate (box, src->proc(), state.collbufs.at(proc()).sendbuf);
+    tmp->allocate (box, src->proc(), state.collbufs[proc()].sendbuf);
     tmp->copy_from_innerloop (src, box);
     delete tmp;
 
     // advance send buffer to point to the next ibbox slot
-    state.collbufs.at(proc()).sendbuf += state.vartypesize * box.size();
+    state.collbufs[proc()].sendbuf += state.vartypesize * box.size();
+
+    // post the send if the buffer is full
+    if (fillstate == state.collbufs[proc()].sendbufsize*state.vartypesize) {
+      MPI_Irsend (state.collbufs[proc()].sendbufbase,
+                  state.collbufs[proc()].sendbufsize,
+                  state.datatype, proc(), 0, dist::comm,
+                  &state.srequests[proc()]);
+    }
   }
 }
 
@@ -438,18 +447,20 @@ void gdata::copy_into_sendbuffer (comm_state& state,
 void gdata::copy_from_recvbuffer (comm_state& state,
                                   const gdata* src, const ibbox& box)
 {
-  assert (state.collbufs.at(proc()).recvbuf -
-          state.collbufs.at(proc()).recvbufbase <=
-          (state.collbufs.at(proc()).recvbufsize-box.size()) * state.vartypesize);
+  assert (src->proc() < state.collbufs.size());
+  assert (state.collbufs[src->proc()].recvbuf -
+          state.collbufs[src->proc()].recvbufbase <=
+          (state.collbufs[src->proc()].recvbufsize-box.size()) *
+          state.vartypesize);
 
   // copy this processor's data from the recv buffer
   gdata* tmp = make_typed (varindex, transport_operator, tag);
-  tmp->allocate (box, proc(), state.collbufs.at(src->proc()).recvbuf);
+  tmp->allocate (box, proc(), state.collbufs[src->proc()].recvbuf);
   copy_from_innerloop (tmp, box);
   delete tmp;
 
   // advance recv buffer to point to the next ibbox slot
-  state.collbufs.at(src->proc()).recvbuf += state.vartypesize * box.size();
+  state.collbufs[src->proc()].recvbuf += state.vartypesize * box.size();
 }
 
 
@@ -523,9 +534,10 @@ void gdata
     }
     break;
   case state_empty_recv_buffers:
-    // if this is a destination processor: copy its data from the recv buffer
+    // if this is a destination processor and data has already been received
+    // from the source processor: copy it from the recv buffer
     // (the processor-local case is not handled here)
-    if (proc() == dist::rank() && srcs.at(0)->proc() != proc()) {
+    if (proc() == dist::rank() && state.recvbuffers_ready.at(srcs.at(0)->proc())) {
       copy_from_recvbuffer (state, srcs.at(0), box);
     }
     break;
@@ -769,19 +781,28 @@ void gdata
     // interpolate to remote processor
     assert (srcs.at(0)->_has_storage);
     assert (srcs.at(0)->_owns_storage);
-    assert (state.collbufs.at(proc()).sendbuf -
-            state.collbufs.at(proc()).sendbufbase <=
-            (state.collbufs.at(proc()).sendbufsize - box.size()) *
-            state.vartypesize);
+    assert (proc() < state.collbufs.size());
+    int fillstate = (state.collbufs[proc()].sendbuf +
+                     box.size()*state.vartypesize) -
+                    state.collbufs[proc()].sendbufbase;
+    assert (fillstate <= state.collbufs[proc()].sendbufsize*state.vartypesize);
 
     // copy this processor's data into the send buffer
     gdata* tmp = srcs.at(0)->make_typed (varindex, transport_operator, tag);
-    tmp->allocate (box, srcs.at(0)->proc(), state.collbufs.at(proc()).sendbuf);
+    tmp->allocate (box, srcs.at(0)->proc(), state.collbufs[proc()].sendbuf);
     tmp->interpolate_from_innerloop (srcs, times, box, time,
                                      order_space, order_time);
     delete tmp;
 
     // advance send buffer to point to the next ibbox slot
-    state.collbufs.at(proc()).sendbuf += state.vartypesize * box.size();
+    state.collbufs[proc()].sendbuf += state.vartypesize * box.size();
+
+    // post the send if the buffer is full
+    if (fillstate == state.collbufs[proc()].sendbufsize*state.vartypesize) {
+      MPI_Irsend (state.collbufs[proc()].sendbufbase,
+                  state.collbufs[proc()].sendbufsize,
+                  state.datatype, proc(), 0, dist::comm, 
+                  &state.srequests[proc()]);
+    }
   }
 }
