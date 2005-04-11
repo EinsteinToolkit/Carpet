@@ -48,6 +48,11 @@ protected:                      // should be readonly
   
   int tag;                      // MPI tag for this object
   
+private:
+  // Forbid copying and passing by value
+  gdata (gdata const &);
+  gdata & operator= (gdata const &);
+  
 public:
 
   // Constructors
@@ -64,9 +69,6 @@ public:
               const operator_type transport_operator = op_error,
               const int tag = -1) const = 0;
   
-  // Assignment
-  gdata & operator= (gdata const & from);
-
   // Processor management
   void change_processor (comm_state& state,
                          const int newproc,

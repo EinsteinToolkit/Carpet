@@ -59,12 +59,6 @@ gdata::~gdata ()
   }
 }
 
-// Assignment
-gdata & gdata::operator= (gdata const & from)
-{
-  return * this = from;
-}
-
 
 
 // Processor management

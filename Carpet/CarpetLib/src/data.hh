@@ -31,6 +31,11 @@ class data: public gdata
   int vectorlength;             // number of vector elements
   int vectorindex;              // index of this vector element
   data* vectorleader;           // if index!=0: first vector element
+   
+private:
+  // Forbid copying and passing by value
+  data (data const &);
+  data & operator= (data const &);
   
 public:
   
