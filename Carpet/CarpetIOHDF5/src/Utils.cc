@@ -71,12 +71,12 @@ void WriteAttribute (const hid_t dataset, const char* const name, const int* con
 
 
 
-void WriteAttribute (const hid_t dataset, const char* const name, const double value)
+void WriteAttribute (const hid_t dataset, const char* const name, const CCTK_REAL value)
 {
   WriteAttribute (dataset, name, &value, 1);
 }
 
-void WriteAttribute (const hid_t dataset, const char* const name, const double* const values, const int nvalues)
+void WriteAttribute (const hid_t dataset, const char* const name, const CCTK_REAL* const values, const int nvalues)
 {
   assert (dataset>=0);
   assert (name);
@@ -90,7 +90,7 @@ void WriteAttribute (const hid_t dataset, const char* const name, const double* 
   const hid_t dataspace = nvalues==1 ? H5Screate (H5S_SCALAR) : H5Screate_simple (1, shape, NULL);
   assert (dataspace>=0);
   
-  const hid_t datatype = H5T_NATIVE_DOUBLE;
+  const hid_t datatype = h5DataType (*values);
   
   const hid_t attribute = H5Acreate (dataset, name, datatype, dataspace, H5P_DEFAULT);
   assert (attribute>=0);
@@ -505,6 +505,39 @@ hid_t h5DataType (const cGH* const cctkGH, int cctk_type, int single_precision)
 
   return (retval);
 }
+
+
+hid_t h5DataType (const CCTK_CHAR& dummy) { return HDF5_CHAR; }
+#ifdef CCTK_INT1
+hid_t h5DataType (const CCTK_INT1& dummy) { return HDF5_INT1; }
+#endif
+#ifdef CCTK_INT2
+hid_t h5DataType (const CCTK_INT2& dummy) { return HDF5_INT2; }
+#endif
+#ifdef CCTK_INT4
+hid_t h5DataType (const CCTK_INT4& dummy) { return HDF5_INT4; }
+#endif
+#ifdef CCTK_INT8
+hid_t h5DataType (const CCTK_INT8& dummy) { return HDF5_INT8; }
+#endif
+#ifdef CCTK_REAL4
+hid_t h5DataType (const CCTK_REAL4& dummy) { return HDF5_REAL4; }
+#endif
+#ifdef CCTK_REAL8
+hid_t h5DataType (const CCTK_REAL8& dummy) { return HDF5_REAL8; }
+#endif
+#ifdef CCTK_REAL16
+hid_t h5DataType (const CCTK_REAL16& dummy) { return HDF5_REAL16; }
+#endif
+#ifdef CCTK_COMPLEX8
+hid_t h5DataType (const CCTK_COMPLEX8& dummy) { return HDF5_COMPLEX8; }
+#endif
+#ifdef CCTK_COMPLEX16
+hid_t h5DataType (const CCTK_COMPLEX16& dummy) { return HDF5_COMPLEX16; }
+#endif
+#ifdef CCTK_COMPLEX32
+hid_t h5DataType (const CCTK_COMPLEX32& dummy) { return HDF5_COMPLEX32; }
+#endif
 
 
 } // namespace CarpetIOHDF5

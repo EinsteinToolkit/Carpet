@@ -61,9 +61,9 @@ typedef struct
   int parameter_len;
   int cctk_iteration;
   int main_loop_index;
-  double global_time;
-  double delta_time;
-  double *mgleveltimes;  // [num_mglevels*num_reflevels]
+  CCTK_REAL global_time;
+  CCTK_REAL delta_time;
+  CCTK_REAL *mgleveltimes;  // [num_mglevels*num_reflevels]
 
   char *filename;
   hid_t file;
@@ -273,7 +273,7 @@ static int OpenFile (const char *basefilename, file_t *file, int called_from)
   // leave space at the end for global_time and delta_time
   // so that all double variables can be broadcasted in one go
   int num_times = file->num_mglevels*file->num_reflevels + 2;
-  file->mgleveltimes = new double[num_times];
+  file->mgleveltimes = new CCTK_REAL[num_times];
   if (myproc == 0)
   {
     // FIXME: should store all mgleveltimes in a single contiguous array
@@ -291,7 +291,7 @@ static int OpenFile (const char *basefilename, file_t *file, int called_from)
   // broadcast double variables
   file->mgleveltimes[num_times - 2] = file->global_time;
   file->mgleveltimes[num_times - 1] = file->delta_time;
-  MPI_Bcast (file->mgleveltimes, num_times, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast (file->mgleveltimes, num_times, CARPET_MPI_REAL, 0, MPI_COMM_WORLD);
   file->global_time = file->mgleveltimes[num_times - 2];
   file->delta_time = file->mgleveltimes[num_times - 1];
 

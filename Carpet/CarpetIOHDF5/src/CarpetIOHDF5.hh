@@ -29,7 +29,7 @@
 #define CARPET_MPI_CHAR      MPI_CHAR
 
 /* floating point types are architecture-independent,
-   ie. a float has always 4 bytes, and a double has 8 bytes
+   i.e., a float has always 4 bytes, and a double has 8 bytes
 
    PUGH_MPI_REAL  is used for communicating reals of the generic CCTK_REAL type
    PUGH_MPI_REALn is used to explicitely communicate n-byte reals */
@@ -62,7 +62,7 @@
 #define HDF5_CHAR   H5T_NATIVE_CHAR
 
 /* floating point types are architecture-independent,
-   ie. a float has always 4 bytes, and a double has 8 bytes
+   i.e., a float has always 4 bytes, and a double has 8 bytes
      HDF5_REAL  is used for storing reals of the generic CCTK_REAL type
      HDF5_REALn is used to explicitely store n-byte reals */
 #ifdef  CCTK_REAL4
@@ -203,16 +203,16 @@ namespace CarpetIOHDF5 {
 
   void WriteAttribute (const hid_t dataset, const char* name, int value);
   void WriteAttribute (const hid_t dataset, const char* name, const int* values, int nvalues);
-  void WriteAttribute (const hid_t dataset, const char* name, double value);
-  void WriteAttribute (const hid_t dataset, const char* name, const double* values, int nvalues);
+  void WriteAttribute (const hid_t dataset, const char* name, CCTK_REAL value);
+  void WriteAttribute (const hid_t dataset, const char* name, const CCTK_REAL* values, int nvalues);
   void WriteAttribute (const hid_t dataset, const char* name, char value);
   void WriteAttribute (const hid_t dataset, const char* name, const char* values);
   void WriteAttribute (const hid_t dataset, const char* name, const char* values, int nvalues);
   
   int ReadAttribute (const hid_t dataset, const char* name, int& value);
   int ReadAttribute (const hid_t dataset, const char* name, int* values, int nvalues);
-  int ReadAttribute (const hid_t dataset, const char* name, double& value);
-  int ReadAttribute (const hid_t dataset, const char* name, double* values, int nvalues);
+  int ReadAttribute (const hid_t dataset, const char* name, CCTK_REAL& value);
+  int ReadAttribute (const hid_t dataset, const char* name, CCTK_REAL* values, int nvalues);
   int ReadAttribute (const hid_t dataset, const char* name, char& value);
   int ReadAttribute (const hid_t dataset, const char* name, char*& values);
   int ReadAttribute (const hid_t dataset, const char* name, char* values, int nvalues);
@@ -222,6 +222,37 @@ namespace CarpetIOHDF5 {
 
   hid_t h5DataType (const cGH* const cctkGH, int cctk_type,
                     int single_precision);
+  hid_t h5DataType (const CCTK_CHAR& dummy);
+#ifdef CCTK_INT1
+  hid_t h5DataType (const CCTK_INT1& dummy);
+#endif
+#ifdef CCTK_INT2
+  hid_t h5DataType (const CCTK_INT2& dummy);
+#endif
+#ifdef CCTK_INT4
+  hid_t h5DataType (const CCTK_INT4& dummy);
+#endif
+#ifdef CCTK_INT8
+  hid_t h5DataType (const CCTK_INT8& dummy);
+#endif
+#ifdef CCTK_REAL4
+  hid_t h5DataType (const CCTK_REAL4& dummy);
+#endif
+#ifdef CCTK_REAL8
+  hid_t h5DataType (const CCTK_REAL8& dummy);
+#endif
+#ifdef CCTK_REAL16
+  hid_t h5DataType (const CCTK_REAL16& dummy);
+#endif
+#ifdef CCTK_COMPLEX8
+  hid_t h5DataType (const CCTK_COMPLEX8& dummy);
+#endif
+#ifdef CCTK_COMPLEX16
+  hid_t h5DataType (const CCTK_COMPLEX16& dummy);
+#endif
+#ifdef CCTK_COMPLEX32
+  hid_t h5DataType (const CCTK_COMPLEX32& dummy);
+#endif
 
 extern "C" {
 

@@ -938,7 +938,7 @@ static int WarnAboutDeprecatedParameters (void)
   {
     CCTK_WARN (2, "Parameter 'IOHDF5::out3D_dt' is deprecated, please use "
                   "'IOHDF5::out_dt' instead");
-    snprintf (buffer, sizeof (buffer), "%f", out3D_dt);
+    snprintf (buffer, sizeof (buffer), "%f", (double)out3D_dt);
     CCTK_ParameterSet ("out_dt", CCTK_THORNSTRING, buffer);
     warnings++;
   }

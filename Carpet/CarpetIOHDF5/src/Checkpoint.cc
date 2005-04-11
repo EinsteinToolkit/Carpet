@@ -306,7 +306,7 @@ static int DumpParametersGHExtentions (const cGH *cctkGH, int all, hid_t writer)
   hsize_t size;
 
   int itmp;
-  double dtmp;
+  CCTK_REAL dtmp;
   const char *version;
   const ioGH *ioUtilGH;
 
@@ -368,7 +368,7 @@ static int DumpParametersGHExtentions (const cGH *cctkGH, int all, hid_t writer)
     {
       char buffer[100];
       snprintf (buffer, sizeof (buffer), "mgleveltimes %d", i);
-      WriteAttribute(dset,buffer,(double *) &leveltimes.at(i).at(0), reflevels);
+      WriteAttribute(dset,buffer,&leveltimes.at(i).at(0), reflevels);
     }
 
     HDF5_ERROR (H5Dclose (dset));
