@@ -200,11 +200,8 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
           continue;
         }
 
-        /* get the number of allocated timelevels */
-        gdata.numtimelevels = 0;
-        gdata.numtimelevels = CCTK_GroupStorageIncrease (cctkGH, 1, &group,
-                                                         &gdata.numtimelevels,
-                                                         NULL);
+        /* get the number of active timelevels */
+        gdata.numtimelevels = CCTK_ActiveTimeLevelsGI (cctkGH, group);
 
         int first_vindex = CCTK_FirstVarIndexI (group);
 
