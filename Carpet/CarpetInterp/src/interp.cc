@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdlib>
 #include <vector>
 
 #include <mpi.h>
@@ -308,7 +309,7 @@ namespace CarpetInterp {
     
     
     // Create coordinate patches
-    vector<data<CCTK_REAL> > allcoords (nprocs * (maxrl-minrl) * maxncomps);
+    vector<data<CCTK_REAL> *> allcoords (nprocs * (maxrl-minrl) * maxncomps);
     for (int p=0; p<nprocs; ++p) {
       for (int rl=minrl; rl<maxrl; ++rl) {
         for (int c=0; c<vhh.at(m)->components(rl); ++c) {
@@ -318,7 +319,8 @@ namespace CarpetInterp {
           up[1] = dim;
           ivect str (1);
           ibbox extent (lo, up-str, str);
-          allcoords.at(ind_prc(p,m,rl,c)).allocate (extent, p);
+          allcoords.at(ind_prc(p,m,rl,c)) = new data<CCTK_REAL>;
+          allcoords.at(ind_prc(p,m,rl,c))->allocate (extent, p);
         }
       }
     }
@@ -335,7 +337,7 @@ namespace CarpetInterp {
         assert (tmpcnts.at(ind_rc(m,rl,c)) < homecnts.at(ind_rc(m,rl,c)));
         assert (dim==3);
         for (int d=0; d<dim; ++d) {
-          allcoords.at(ind_prc(myproc,m,rl,c))[ivect(tmpcnts.at(ind_rc(m,rl,c)),d,0)]
+          (*allcoords.at(ind_prc(myproc,m,rl,c)))[ivect(tmpcnts.at(ind_rc(m,rl,c)),d,0)]
             = static_cast<CCTK_REAL const *>(interp_coords[d])[n];
         }
         ++ tmpcnts.at(c + (rl-minrl)*maxncomps);
@@ -352,7 +354,7 @@ namespace CarpetInterp {
       for (int p=0; p<nprocs; ++p) {
         for (int rl=minrl; rl<maxrl; ++rl) {
           for (int c=0; c<vhh.at(m)->components(rl); ++c) {
-            allcoords.at(ind_prc(p,m,rl,c)).change_processor
+            allcoords.at(ind_prc(p,m,rl,c))->change_processor
               (state, vhh.at(m)->processors().at(rl).at(c));
           }
         }
@@ -362,10 +364,10 @@ namespace CarpetInterp {
     
     
     // Create output patches
-    vector<data<CCTK_REAL> > alloutputs
-      (nprocs * (maxrl-minrl) * maxncomps, -1);
-    vector<data<CCTK_INT> > allstatuses
-      (nprocs * (maxrl-minrl) * maxncomps, -1);
+    vector<data<CCTK_REAL> *> alloutputs
+      (nprocs * (maxrl-minrl) * maxncomps, static_cast<data<CCTK_REAL> *> (0));
+    vector<data<CCTK_INT> *> allstatuses
+      (nprocs * (maxrl-minrl) * maxncomps, static_cast<data<CCTK_INT> *> (0));
     for (int p=0; p<nprocs; ++p) {
       for (int rl=minrl; rl<maxrl; ++rl) {
         for (int c=0; c<vhh.at(m)->components(rl); ++c) {
@@ -375,7 +377,8 @@ namespace CarpetInterp {
           up[1] = N_output_arrays;
           ivect const str (1);
           ibbox const extent (lo, up-str, str);
-          alloutputs.at(ind_prc(p,m,rl,c)).allocate
+          alloutputs.at(ind_prc(p,m,rl,c)) = new data<CCTK_REAL>;
+          alloutputs.at(ind_prc(p,m,rl,c))->allocate
             (extent, vhh.at(m)->processors().at(rl).at(c));
           
           ivect const slo (0);
@@ -383,7 +386,8 @@ namespace CarpetInterp {
           sup[0] = allhomecnts.at(ind_prc(p,m,rl,c));
           ivect const sstr (1);
           ibbox const sextent (lo, up-str, str);
-          allstatuses.at(ind_prc(p,m,rl,c)).allocate
+          allstatuses.at(ind_prc(p,m,rl,c)) = new data<CCTK_INT>;
+          allstatuses.at(ind_prc(p,m,rl,c))->allocate
             (sextent, vhh.at(m)->processors().at(rl).at(c));
         }
       }
@@ -459,16 +463,16 @@ namespace CarpetInterp {
             
               // Work on the data from all processors
             for (int p=0; p<nprocs; ++p) {
-              assert (allcoords.at(ind_prc(p,m,reflevel,component)).proc() == dist::rank());
-              assert (allhomecnts.at(ind_prc(p,m,reflevel,component)) == allcoords.at(ind_prc(p,m,reflevel,component)).shape()[0]);
-              assert (allhomecnts.at(ind_prc(p,m,reflevel,component)) == alloutputs.at(ind_prc(p,m,reflevel,component)).shape()[0]);
+              assert (allcoords.at(ind_prc(p,m,reflevel,component))->proc() == dist::rank());
+              assert (allhomecnts.at(ind_prc(p,m,reflevel,component)) == allcoords.at(ind_prc(p,m,reflevel,component))->shape()[0]);
+              assert (allhomecnts.at(ind_prc(p,m,reflevel,component)) == alloutputs.at(ind_prc(p,m,reflevel,component))->shape()[0]);
               
               int const npoints = allhomecnts.at(ind_prc(p,m,reflevel,component));
               
               // Do the processor-local interpolation
               vector<const void *> tmp_interp_coords (dim);
               for (int d=0; d<dim; ++d) {
-                tmp_interp_coords.at(d) = &allcoords.at(ind_prc(p,m,reflevel,component))[ivect(0,d,0)];
+                tmp_interp_coords.at(d) = &(*allcoords.at(ind_prc(p,m,reflevel,component)))[ivect(0,d,0)];
               }
               
               
@@ -526,10 +530,10 @@ namespace CarpetInterp {
                   if (need_time_interp) {
                     tmp_output_arrays.at(tl).at(j) = new CCTK_REAL [npoints];
                   } else {
-                    tmp_output_arrays.at(tl).at(j) = &alloutputs.at(ind_prc(p,m,reflevel,component))[ivect(0,j,0)];
+                    tmp_output_arrays.at(tl).at(j) = &(*alloutputs.at(ind_prc(p,m,reflevel,component)))[ivect(0,j,0)];
                   }
                 }
-                tmp_status_array.at(tl) = &allstatuses.at(ind_prc(p,m,reflevel,component))[ivect(0,0,0)];
+                tmp_status_array.at(tl) = &(*allstatuses.at(ind_prc(p,m,reflevel,component)))[ivect(0,0,0)];
                 
                 ierr = Util_TableSetPointer
                   (param_table_handle,
@@ -638,7 +642,7 @@ namespace CarpetInterp {
                     // Interpolate
                     assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
                     for (int k=0; k<npoints; ++k) {
-                      CCTK_REAL & dest = alloutputs.at(ind_prc(p,m,reflevel,component))[ivect(k,j,0)];
+                      CCTK_REAL & dest = (*alloutputs.at(ind_prc(p,m,reflevel,component)))[ivect(k,j,0)];
                       dest = 0;
                       for (int tl=0; tl<my_num_tl; ++tl) {
                         CCTK_REAL const src = ((CCTK_REAL const *)tmp_output_arrays.at(tl).at(j))[k];
@@ -727,7 +731,7 @@ namespace CarpetInterp {
                         assert (0);
                       } // switch time_deriv_order
                       
-                      CCTK_REAL & dest = alloutputs.at(ind_prc(p,m,reflevel,component))[ivect(k,j,0)];
+                      CCTK_REAL & dest = (*alloutputs.at(ind_prc(p,m,reflevel,component)))[ivect(k,j,0)];
                       dest = 0;
                       for (int tl=0; tl<my_num_tl; ++tl) {
                         CCTK_REAL const src = ((CCTK_REAL const *)tmp_output_arrays.at(tl).at(j))[k];
@@ -759,13 +763,25 @@ namespace CarpetInterp {
     
     
     
+    // Free coordinate patches
+    for (int p=0; p<nprocs; ++p) {
+      for (int rl=minrl; rl<maxrl; ++rl) {
+        for (int c=0; c<vhh.at(m)->components(rl); ++c) {
+          delete allcoords.at(ind_prc(p,m,rl,c));
+          allcoords.at(ind_prc(p,m,rl,c)) = NULL;
+        }
+      }
+    }
+    
+    
+    
     // Transfer output patches back
     for (comm_state state; !state.done(); state.step()) {
       for (int p=0; p<nprocs; ++p) {
         for (int rl=minrl; rl<maxrl; ++rl) {
           for (int c=0; c<vhh.at(m)->components(rl); ++c) {
-            alloutputs.at(ind_prc(p,m,rl,c)).change_processor (state, p);
-            allstatuses.at(ind_prc(p,m,rl,c)).change_processor (state, p);
+            alloutputs.at(ind_prc(p,m,rl,c))->change_processor (state, p);
+            allstatuses.at(ind_prc(p,m,rl,c))->change_processor (state, p);
           }
         }
       }
@@ -782,14 +798,14 @@ namespace CarpetInterp {
         int const c = home.at(n);
         for (int j=0; j<N_output_arrays; ++j) {
           assert (interp_coords_type_code == CCTK_VARIABLE_REAL);
-          assert (alloutputs.at(ind_prc(myproc,m,rl,c)).proc() == dist::rank());
+          assert (alloutputs.at(ind_prc(myproc,m,rl,c))->proc() == dist::rank());
           assert (output_arrays);
           assert (output_arrays[j]);
-          static_cast<CCTK_REAL *>(output_arrays[j])[n] = alloutputs.at(ind_prc(myproc,m,rl,c))[ivect(tmpcnts.at(ind_rc(m,rl,c)),j,0)];
+          static_cast<CCTK_REAL *>(output_arrays[j])[n] = (*alloutputs.at(ind_prc(myproc,m,rl,c)))[ivect(tmpcnts.at(ind_rc(m,rl,c)),j,0)];
         }
         local_interpolator_status
           = min (local_interpolator_status,
-                 allstatuses.at(ind_prc(myproc,m,rl,c))[ivect(tmpcnts.at(ind_rc(m,rl,c)),0,0)]);
+                 (*allstatuses.at(ind_prc(myproc,m,rl,c)))[ivect(tmpcnts.at(ind_rc(m,rl,c)),0,0)]);
         ++ tmpcnts.at(ind_rc(m,rl,c));
       }
       for (int rl=minrl; rl<maxrl; ++rl) {
@@ -801,6 +817,21 @@ namespace CarpetInterp {
         (param_table_handle,
          local_interpolator_status, "local_interpolator_status");
       assert (ierr >= 0);
+    }
+    
+    
+    
+    // Free local output patches
+    for (int p=0; p<nprocs; ++p) {
+      for (int rl=minrl; rl<maxrl; ++rl) {
+        for (int c=0; c<vhh.at(m)->components(rl); ++c) {
+          delete alloutputs.at(ind_prc(p,m,rl,c));
+          alloutputs.at(ind_prc(p,m,rl,c)) = NULL;
+          
+          delete allstatuses.at(ind_prc(p,m,rl,c));
+          allstatuses.at(ind_prc(p,m,rl,c)) = NULL;
+        }
+      }
     }
     
     
