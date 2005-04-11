@@ -415,7 +415,6 @@ void gdata::copy_into_sendbuffer (comm_state& state,
   } else {
     // copy to remote processor
     assert (src->_has_storage);
-    assert (src->_owns_storage);
     assert (proc() < state.collbufs.size());
     int fillstate = (state.collbufs[proc()].sendbuf +
                      box.size()*state.vartypesize) -
@@ -780,7 +779,6 @@ void gdata
   } else {
     // interpolate to remote processor
     assert (srcs.at(0)->_has_storage);
-    assert (srcs.at(0)->_owns_storage);
     assert (proc() < state.collbufs.size());
     int fillstate = (state.collbufs[proc()].sendbuf +
                      box.size()*state.vartypesize) -
