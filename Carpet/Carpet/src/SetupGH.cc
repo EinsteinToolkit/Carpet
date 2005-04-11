@@ -546,7 +546,8 @@ namespace Carpet {
                    physical_min, physical_max, interior_min, interior_max,
                    exterior_min, exterior_max, spacing);
     
-    rvect const real_npoints = (exterior_max - exterior_min) / spacing + 1;
+    rvect const real_npoints
+      = spacing.ifthen ((exterior_max - exterior_min) / spacing + 1, rvect(1));
     
     print_map_base_grid_spec (m, real_npoints, lghosts);
     
