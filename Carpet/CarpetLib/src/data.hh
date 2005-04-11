@@ -75,23 +75,27 @@ public:
   virtual const void* storage () const
   {
     assert (_has_storage);
+    if (! _memory) return 0;
     return _memory->storage(vectorindex);
   }
 
   virtual void* storage () {
     assert (_has_storage);
+    if (! _memory) return 0;
     return _memory->storage(vectorindex);
   }
   
   // Data accessors
   const T& operator[] (const ivect& index) const
   {
+    assert (_has_storage);
     assert (_memory);
     return _memory->storage(vectorindex)[offset(index)];
   }
   
   T& operator[] (const ivect& index)
   {
+    assert (_has_storage);
     assert (_memory);
     return _memory->storage(vectorindex)[offset(index)];
   }

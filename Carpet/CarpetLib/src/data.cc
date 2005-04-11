@@ -66,7 +66,7 @@ data<T>::data (const int varindex_, const operator_type transport_operator_,
 template<typename T>
 data<T>::~data ()
 {
-  free();
+  if (_memory) free();
 }
   
 // Pseudo constructors
@@ -111,6 +111,7 @@ void data<T>::allocate (const ibbox& extent_,
     } else {
       assert (vectorleader);
       _memory = vectorleader->_memory;
+      assert (_memory);
     }
     _memory->register_client (vectorindex);
   } else {
@@ -121,6 +122,8 @@ void data<T>::allocate (const ibbox& extent_,
 template<typename T>
 void data<T>::free ()
 {
+  assert (_has_storage);
+  assert (_memory);
   _memory->unregister_client (vectorindex);
   if (! _memory->has_clients()) delete _memory;
   _memory = NULL;
@@ -146,17 +149,20 @@ void data<T>::change_processor_recv (comm_state& state,
   }
   
   wtime_changeproc_recv.start();
-
+  
+  assert (vectorlength == 1);
+  
   if (_has_storage) {
     if (dist::rank() == newproc) {
       // copy from other processor
       
       assert (!_memory);
       _memory = new mem<T> (1, _size, (T*)memptr);
+      _memory->register_client (0);
       
       wtime_irecv.start();
       T dummy;
-      MPI_Irecv (_memory->storage(vectorindex),
+      MPI_Irecv (_memory->storage(0),
                  _size, dist::datatype(dummy), proc(),
                  tag, dist::comm, &request);
       wtime_irecv.stop();
@@ -194,6 +200,8 @@ void data<T>::change_processor_send (comm_state& state,
   
   wtime_changeproc_send.start();
   
+  assert (vectorlength == 1);
+  
   if (_has_storage) {
     if (dist::rank() == newproc) {
       // copy from other processor
@@ -206,7 +214,7 @@ void data<T>::change_processor_send (comm_state& state,
       
       wtime_isend.start();
       T dummy;
-      MPI_Isend (_memory->storage(vectorindex),
+      MPI_Isend (_memory->storage(0),
                  _size, dist::datatype(dummy), newproc,
                  tag, dist::comm, &request);
       wtime_isend.stop();
@@ -241,7 +249,9 @@ void data<T>::change_processor_wait (comm_state& state,
   }
   
   wtime_changeproc_wait.start();
-
+  
+  assert (vectorlength == 1);
+  
   if (use_waitall) {
     if (! state.requests.empty()) {
       // wait for all requests at once
@@ -275,8 +285,9 @@ void data<T>::change_processor_wait (comm_state& state,
         wtime_isendwait.stop();
       }
       
+      _memory->unregister_client (0);
       if (! _memory->has_clients()) delete _memory;
-      _memory = NULL;
+      _memory = 0;
       
     } else {
       assert (!memptr);
