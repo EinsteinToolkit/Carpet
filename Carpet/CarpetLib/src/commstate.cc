@@ -27,9 +27,12 @@ comm_state::comm_state (int vartype_) : vartype(vartype_)
   //   state_send
   //   state_wait
 
-  use_collective_communication_buffers = vartype >= 0;
+  DECLARE_CCTK_PARAMETERS;
 
-  if (use_collective_communication_buffers) {
+  uses_collective_communication_buffers =
+    use_collective_communication_buffers && vartype >= 0;
+
+  if (uses_collective_communication_buffers) {
     vartypesize = CCTK_VarTypeSize (vartype);
     assert (vartypesize > 0);
 
@@ -52,7 +55,7 @@ void comm_state::step ()
   DECLARE_CCTK_PARAMETERS;
   
   assert (thestate!=state_done);
-  if (! use_collective_communication_buffers && combine_recv_send) {
+  if (! uses_collective_communication_buffers && combine_recv_send) {
     switch (thestate) {
     case state_recv:
       assert (tmps1.empty());
@@ -141,7 +144,7 @@ bool comm_state::done ()
 comm_state::~comm_state ()
 {
   assert (thestate == state_done ||
-          thestate == use_collective_communication_buffers ?
+          thestate == uses_collective_communication_buffers ?
                       state_get_buffer_sizes : state_recv);
   assert (tmps1.empty());
   assert (tmps2.empty());

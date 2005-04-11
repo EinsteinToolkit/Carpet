@@ -48,7 +48,7 @@ private:
 
   // flag to indicate whether this comm state object is used for
   // collective (true) or single-component communications (false)
-  bool use_collective_communication_buffers;
+  bool uses_collective_communication_buffers;
 
 public:
   
