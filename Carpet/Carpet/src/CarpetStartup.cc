@@ -37,6 +37,15 @@ namespace Carpet {
     CCTK_OverloadArrayGroupSizeB (ArrayGroupSizeB);
     CCTK_OverloadQueryGroupStorageB (QueryGroupStorageB);
     CCTK_OverloadGroupDynamicData (GroupDynamicData);
+
+    if (CCTK_ParameterQueryTimesSet ("minimise_outstanding_communications",
+                                     "CarpetLib") > 0) {
+      CCTK_WARN (CCTK_WARN_COMPLAIN,
+        "You set the parameter 'CarpetLib::minimise_outstanding_communications'"
+        " in your parfile. This parameter is deprecated and should not be used"
+        " anymore. Use 'CarpetLib::use_collective_communication_buffers'"
+        " instead.");
+    }
   }
   
 } // namespace Carpet

@@ -138,37 +138,10 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     const int tl = 0;
 
-    // Use collective or single-component buffers for communication ?
-    const int vartype =
-      use_collective_communication_buffers ? groups.vartype : -1;
-
     // use the current time here (which may be modified by the user)
     const CCTK_REAL time = (cctkGH->cctk_time - initial_time) / delta_time;
 
-    if (use_collective_communication_buffers ||
-        ! minimise_outstanding_communications) {
-      for (comm_state state(vartype); ! state.done(); state.step()) {
-        for (int group = 0; group < groups.members.size(); ++group) {
-          const int g = groups.members.at(group);
-          const int grouptype = CCTK_GroupTypeI (g);
-          if (grouptype != CCTK_GF) {
-            continue;
-          }
-          assert (reflevel>=0 and reflevel<reflevels);
-
-          for (int m = 0; m < arrdata.at(g).size(); ++m) {
-            for (int v = 0; v < arrdata.at(g).at(m).data.size(); ++v) {
-              ggf *const gv = arrdata.at(g).at(m).data.at(v);
-              for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
-                gv->ref_bnd_prolongate (state, tl, reflevel, c, mglevel, time);
-              }
-            }
-          }
-        }
-      }
-    } else {
-      // make the comm_state loop the innermost
-      // in order to minimise the number of outstanding communications
+    for (comm_state state(groups.vartype); ! state.done(); state.step()) {
       for (int group = 0; group < groups.members.size(); ++group) {
         const int g = groups.members.at(group);
         const int grouptype = CCTK_GroupTypeI (g);
@@ -181,9 +154,7 @@ namespace Carpet {
           for (int v = 0; v < arrdata.at(g).at(m).data.size(); ++v) {
             ggf *const gv = arrdata.at(g).at(m).data.at(v);
             for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
-              for (comm_state state(vartype); ! state.done(); state.step()) {
-                gv->ref_bnd_prolongate (state, tl, reflevel, c, mglevel, time);
-              }
+              gv->ref_bnd_prolongate (state, tl, reflevel, c, mglevel, time);
             }
           }
         }
@@ -200,31 +171,7 @@ namespace Carpet {
 
     assert (groups.members.size() > 0);
 
-    // Use collective or single-component buffers for communication ?
-    const int vartype =
-      use_collective_communication_buffers ? groups.vartype : -1;
-
-    if (use_collective_communication_buffers ||
-        ! minimise_outstanding_communications) {
-      for (comm_state state(vartype); ! state.done(); state.step()) {
-        for (int group = 0; group < groups.members.size(); ++group) {
-          const int g = groups.members.at(group);
-          const int grouptype = CCTK_GroupTypeI (g);
-          const int ml = grouptype == CCTK_GF ? mglevel : 0;
-          const int rl = grouptype == CCTK_GF ? reflevel : 0;
-          for (int m = 0; m < arrdata.at(g).size(); ++m) {
-            for (int v = 0; v < arrdata.at(g).at(m).data.size(); ++v) {
-              ggf *const gv = arrdata.at(g).at(m).data.at(v);
-              for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
-                gv->sync (state, tl, rl, c, ml);
-              }
-            }
-          }
-        }
-      }
-    } else {
-      // make the comm_state loop the innermost
-      // in order to minimise the number of outstanding communications
+    for (comm_state state(groups.vartype); ! state.done(); state.step()) {
       for (int group = 0; group < groups.members.size(); ++group) {
         const int g = groups.members.at(group);
         const int grouptype = CCTK_GroupTypeI (g);
@@ -234,9 +181,7 @@ namespace Carpet {
           for (int v = 0; v < arrdata.at(g).at(m).data.size(); ++v) {
             ggf *const gv = arrdata.at(g).at(m).data.at(v);
             for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
-              for (comm_state state(vartype); ! state.done(); state.step()) {
-                gv->sync (state, tl, rl, c, ml);
-              }
+              gv->sync (state, tl, rl, c, ml);
             }
           }
         }

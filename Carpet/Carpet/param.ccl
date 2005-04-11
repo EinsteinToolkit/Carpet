@@ -15,12 +15,6 @@ shares: IO
 USES STRING out_dir
 
 
-shares: CarpetLib
-
-USES BOOLEAN use_collective_communication_buffers
-USES BOOLEAN minimise_outstanding_communications
-
-
 private:
 
 BOOLEAN domain_from_coordbase "Use the domain description from CoordBase"

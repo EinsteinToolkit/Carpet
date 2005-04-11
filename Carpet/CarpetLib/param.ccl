@@ -1,16 +1,5 @@
 # Parameter definitions for thorn CarpetLib
 
-restricted:
-
-BOOLEAN use_collective_communication_buffers "Use collective buffers for MPI communications" STEERABLE=always
-{
-} "no"
-
-BOOLEAN minimise_outstanding_communications "Minimise the number of Isend/Irecv operations that are submitted concurrently"
-{
-} "no"
-
-
 private:
 
 BOOLEAN verbose "Print info to the screen" STEERABLE=always
@@ -53,5 +42,13 @@ BOOLEAN combine_recv_send "Combine MPI_Irecv and MPI_Isend calls"
 } "no"
 
 BOOLEAN use_lightweight_buffers "Use lightweight communication buffers instead of data objects"
+{
+} "no"
+
+BOOLEAN use_collective_communication_buffers "Use collective buffers for MPI communications" STEERABLE=always
+{
+} "no"
+
+BOOLEAN minimise_outstanding_communications "Minimise the number of Isend/Irecv operations that are submitted concurrently -- DEPRECATED - DO NOT USE ANYMORE"
 {
 } "no"

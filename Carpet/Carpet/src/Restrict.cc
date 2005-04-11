@@ -81,42 +81,11 @@ namespace Carpet {
 
     const int tl = 0;
 
-    // Use collective or single-component buffers for communication ?
-    const int vartype =
-      use_collective_communication_buffers ? groups.vartype : -1;
-
-    if (use_collective_communication_buffers ||
-        ! minimise_outstanding_communications) {
-      for (comm_state state(vartype); ! state.done(); state.step()) {
-        for (int c = 0; c < groups.members.size(); ++c) {
-          const int group = groups.members[c];
-          for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-
-            // use background time here (which may not be modified
-            // by the user)
-            const CCTK_REAL time = vtt.at(m)->time (tl, reflevel, mglevel);
-
-            const CCTK_REAL time1 = vtt.at(m)->time (0, reflevel, mglevel);
-            const CCTK_REAL time2
-              = (cgh->cctk_time - cctk_initial_time) / delta_time;
-            assert (fabs(time1 - time2) / (fabs(time1) + fabs(time2) + fabs(cgh->cctk_delta_time)) < 1e-12);
-
-            for (int v = 0; v < arrdata.at(group).at(m).data.size(); ++v) {
-              ggf *const gv = arrdata.at(group).at(m).data.at(v);
-              for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
-                gv->ref_restrict (state, tl, reflevel, c, mglevel, time);
-              }
-            }
-          }
-        } // loop over groups
-      } // for state
-    } else {
-      // make the comm_state loop the innermost
-      // in order to minimise the number of outstanding communications
+    for (comm_state state(groups.vartype); ! state.done(); state.step()) {
       for (int c = 0; c < groups.members.size(); ++c) {
         const int group = groups.members[c];
         for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-     
+
           // use background time here (which may not be modified
           // by the user)
           const CCTK_REAL time = vtt.at(m)->time (tl, reflevel, mglevel);
@@ -125,18 +94,16 @@ namespace Carpet {
           const CCTK_REAL time2
             = (cgh->cctk_time - cctk_initial_time) / delta_time;
           assert (fabs(time1 - time2) / (fabs(time1) + fabs(time2) + fabs(cgh->cctk_delta_time)) < 1e-12);
-  
+
           for (int v = 0; v < arrdata.at(group).at(m).data.size(); ++v) {
             ggf *const gv = arrdata.at(group).at(m).data.at(v);
             for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
-              for (comm_state state(vartype); ! state.done(); state.step()) {
-                gv->ref_restrict (state, tl, reflevel, c, mglevel, time);
-              }
+              gv->ref_restrict (state, tl, reflevel, c, mglevel, time);
             }
           }
         }
       } // loop over groups
-    } // if use_collective_communication_buffers
+    } // for state
   }
 
 } // namespace Carpet
