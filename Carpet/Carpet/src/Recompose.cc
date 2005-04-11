@@ -121,7 +121,7 @@ namespace Carpet {
     
     if (! CCTK_IsFunctionAliased ("Carpet_Regrid")) {
       static bool didtell = false;
-      if (!didtell) {
+      if (maxreflevels > 1 and ! didtell) {
 	CCTK_WARN (2, "No regridding routine has been provided.  There will be no regridding.  Maybe you forgot to activate a regridding thorn?");
 	didtell = true;
       }
