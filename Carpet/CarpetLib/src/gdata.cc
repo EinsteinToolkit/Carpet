@@ -270,13 +270,17 @@ void gdata::copy_from_wait (comm_state& state,
 void gdata::copy_into_sendbuffer (comm_state& state,
                                   const gdata* src, const ibbox& box)
 {
-  // copy to remote processor
-  assert (src->has_storage());
-  assert (proc() < state.collbufs.size());
-  int fillstate = (state.collbufs[proc()].sendbuf +
-                   box.size()*state.vartypesize) -
-                  state.collbufs[proc()].sendbufbase;
-  assert (fillstate <= state.collbufs[proc()].sendbufsize*state.vartypesize);
+  if (proc() == src->proc()) {
+    // copy on same processor
+    copy_from_innerloop (src, box);
+  } else {
+    // copy to remote processor
+    assert (src->_has_storage);
+    assert (src->_owns_storage);
+    assert (state.collbufs.at(proc()).sendbuf -
+            state.collbufs.at(proc()).sendbufbase <=
+            (state.collbufs.at(proc()).sendbufsize - box.size()) *
+            state.vartypesize);
 
   // copy this processor's data into the send buffer
   const ibbox& ext = src->extent();
@@ -465,14 +469,18 @@ void gdata
                                const int order_space,
                                const int order_time)
 {
-  // interpolate to remote processor
-  const gdata* src = srcs.at(0);
-  assert (src->has_storage());
-  assert (proc() < state.collbufs.size());
-  int fillstate = (state.collbufs[proc()].sendbuf +
-                   box.size()*state.vartypesize) -
-                  state.collbufs[proc()].sendbufbase;
-  assert (fillstate <= state.collbufs[proc()].sendbufsize*state.vartypesize);
+  if (proc() == srcs.at(0)->proc()) {
+    // interpolate on same processor
+    interpolate_from_innerloop (srcs, times, box, time,
+                                order_space, order_time);
+  } else {
+    // interpolate to remote processor
+    assert (srcs.at(0)->_has_storage);
+    assert (srcs.at(0)->_owns_storage);
+    assert (state.collbufs.at(proc()).sendbuf -
+            state.collbufs.at(proc()).sendbufbase <=
+            (state.collbufs.at(proc()).sendbufsize - box.size()) *
+            state.vartypesize);
 
   // interpolate this processor's data into the send buffer
   gdata* tmp = src->make_typed (varindex, transport_operator, tag);
