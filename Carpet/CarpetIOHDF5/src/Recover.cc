@@ -28,11 +28,6 @@
 #define ALL_PARAMETERS "All Parameters"
 
 
-// That's a hack
-namespace Carpet {
-  void SyncProlongateGroups (const cGH* cctkGH, group_set& groups);
-}
-
 namespace CarpetIOHDF5
 {
 
@@ -398,10 +393,6 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       }
       groups[c].members.push_back (group);
     }
-  }
-
-  for (int c = 0; c < groups.size(); c++) {
-    SyncProlongateGroups (cctkGH, groups[c]);
   }
 
   return (retval);

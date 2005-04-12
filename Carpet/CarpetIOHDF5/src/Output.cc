@@ -60,7 +60,7 @@ static int TriggerOutput (const cGH* const cctkGH, const int vindex);
 static void AddAttributes (const cGH *const cctkGH, const char *fullname,
                            int vdim, int refinementlevel,
                            const ioRequest* request,
-                           ibset::const_iterator bbox, hid_t dataset);
+                           const ibbox& bbox, hid_t dataset);
 
 // callback for I/O parameter parsing routine
 static void GetVarIndex (int vindex, const char* optstring, void* arg);
@@ -224,8 +224,182 @@ int CarpetIOHDF5_Init (const cGH* const cctkGH)
 }
 
 
-int WriteVar (const cGH* const cctkGH, const hid_t writer,
-              const ioRequest* request, const int called_from_checkpoint)
+int WriteVarChunked (const cGH* const cctkGH,
+                     const hid_t writer,
+                     const ioRequest* request,
+                     const int called_from_checkpoint)
+{
+  DECLARE_CCTK_PARAMETERS;
+
+  char *fullname = CCTK_FullName(request->vindex);
+  const int gindex = CCTK_GroupIndexFromVarI (request->vindex);
+  assert (gindex >= 0 && gindex < (int) Carpet::arrdata.size ());
+  const int var = request->vindex - CCTK_FirstVarIndexI (gindex);
+  assert (var >= 0 && var < CCTK_NumVars ());
+  cGroup group;
+  CCTK_GroupData (gindex, &group);
+
+
+  // Scalars and arrays have only one refinement level 0,
+  // regardless of what the current refinement level is.
+  // Output for them must be called in global mode.
+  int refinementlevel = reflevel;
+  if (group.grouptype == CCTK_SCALAR || group.grouptype == CCTK_ARRAY)
+  {
+    assert (do_global_mode);
+    refinementlevel = 0;
+  }
+
+  // HDF5 doesn't like 0-dimensional arrays
+  if (group.grouptype == CCTK_SCALAR)
+  {
+    group.dim = 1;
+  }
+
+  // If the user requested so, select single precision data output
+  hid_t memdatatype, filedatatype;
+  HDF5_ERROR (memdatatype = h5DataType (cctkGH, group.vartype, 0));
+  HDF5_ERROR (filedatatype =
+              h5DataType (cctkGH, group.vartype,
+                          out_single_precision && ! called_from_checkpoint));
+
+  const int myproc = CCTK_MyProc (cctkGH);
+
+  // Traverse all maps
+  BEGIN_MAP_LOOP (cctkGH, group.grouptype)
+  {
+    BEGIN_COMPONENT_LOOP (cctkGH, group.grouptype)
+    {
+      // Using "exterior" removes ghost zones and refinement boundaries.
+      ibbox& bbox = arrdata.at(gindex).at(Carpet::map).dd->
+                    boxes.at(mglevel).at(refinementlevel).at(component).exterior;
+
+      // Get the shape of the HDF5 dataset (in Fortran index order)
+      hsize_t shape[dim];
+      hsize_t num_elems = 1;
+      for (int d = 0; d < group.dim; ++d)
+      {
+        shape[group.dim-1-d] = (bbox.shape() / bbox.stride())[d];
+        num_elems *= shape[group.dim-1-d];
+      }
+
+      // Don't create zero-sized components
+      if (num_elems == 0)
+      {
+        continue;
+      }
+
+      // Copy the overlap to the local processor
+      const ggf* ff = arrdata.at(gindex).at(Carpet::map).data.at(var);
+      const gdata* const data = (*ff) (request->timelevel, refinementlevel,
+                                       component, mglevel);
+      gdata* const processor_component = data->make_typed (request->vindex);
+
+      processor_component->allocate (bbox, 0);
+      for (comm_state state(group.vartype); !state.done(); state.step())
+      {
+        processor_component->copy_from (state, data, bbox);
+      }
+
+      // Write data on I/O processor 0
+      if (myproc == 0)
+      {
+        const void *data = (const void *) processor_component->storage();
+
+        // As per Cactus convention, DISTRIB=CONSTANT arrays
+        // (including grid scalars) are assumed to be the same on
+        // all processors and are therefore stored only by processor 0.
+        //
+        // Warn the user if this convention is violated.
+        if (component > 0 && group.disttype == CCTK_DISTRIB_CONSTANT)
+        {
+          const void *proc0 = CCTK_VarDataPtrI (cctkGH, request->timelevel,
+                                                request->vindex);
+
+          if (memcmp (proc0, data, num_elems*CCTK_VarTypeSize(group.vartype)))
+          {
+            CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "values for DISTRIB=CONSTANT grid variable '%s' "
+                        "(timelevel %d) differ between processors 0 and %d; "
+                        "only the array from processor 0 will be stored",
+                        fullname, request->timelevel, component);
+          }
+        }
+        else
+        {
+          // Construct a file-wide unique HDF5 dataset name
+          // (only add parts with varying metadata)
+          ostringstream datasetname;
+          datasetname << fullname
+                      << " it=" << cctkGH->cctk_iteration
+                      << " tl=" << request->timelevel;
+          if (mglevels > 1)
+          {
+            datasetname << " ml=" << mglevel;
+          }
+          if (group.grouptype == CCTK_GF)
+          {
+            if (Carpet::maps > 1)
+            {
+              datasetname << " m="  << Carpet::map;
+            }
+            datasetname << " rl=" << refinementlevel;
+          }
+          if (arrdata.at(gindex).at(Carpet::map).dd->
+              boxes.at(mglevel).at(refinementlevel).size () > 1 &&
+              group.disttype != CCTK_DISTRIB_CONSTANT)
+          {
+            datasetname << " c=" << component;
+          }
+
+          // remove an already existing dataset of the same name
+          if (request->check_exist)
+          {
+            H5E_BEGIN_TRY
+            {
+              H5Gunlink (writer, datasetname.str().c_str());
+            } H5E_END_TRY;
+          }
+
+          hsize_t shape[dim];
+          hssize_t origin[dim];
+          for (int d = 0; d < group.dim; ++d)
+          {
+            origin[group.dim-1-d] = (bbox.lower() / bbox.stride())[d];
+            shape[group.dim-1-d]  = (bbox.shape() / bbox.stride())[d];
+          }
+
+          // Write the component as an individual dataset
+          hid_t dataspace, dataset;
+          HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
+          HDF5_ERROR (dataset = H5Dcreate (writer, datasetname.str().c_str(),
+                                           filedatatype, dataspace, H5P_DEFAULT));
+          HDF5_ERROR (H5Sclose (dataspace));
+          HDF5_ERROR (H5Dwrite (dataset, memdatatype, H5S_ALL, H5S_ALL,
+                                H5P_DEFAULT, data));
+          AddAttributes (cctkGH, fullname, group.dim, refinementlevel,
+                         request, bbox, dataset);
+          HDF5_ERROR (H5Dclose (dataset));
+        }
+
+      } // if myproc == 0
+
+      // Delete temporary copy of this component
+      delete processor_component;
+
+    } END_COMPONENT_LOOP;
+  } END_MAP_LOOP;
+
+  free (fullname);
+
+  return 0;
+}
+
+
+int WriteVarUnchunked (const cGH* const cctkGH,
+                       const hid_t writer,
+                       const ioRequest* request,
+                       const int called_from_checkpoint)
 {
   DECLARE_CCTK_PARAMETERS;
 
@@ -448,7 +622,7 @@ int WriteVar (const cGH* const cctkGH, const hid_t writer,
             if (first_time)
             {
               AddAttributes (cctkGH, fullname, group.dim, refinementlevel,
-                             request, bbox, dataset);
+                             request, *bbox, dataset);
               first_time = false;
             }
           }
@@ -808,7 +982,14 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
                 "Writing variable '%s' on mglevel %d reflevel %d",
                 fullname, mglevel, reflevel);
   }
-  WriteVar (cctkGH, writer, request, 0);
+  if (out_unchunked)
+  {
+    WriteVarUnchunked (cctkGH, writer, request, 0);
+  }
+  else
+  {
+    WriteVarChunked (cctkGH, writer, request, 0);
+  }
 
   // Close the file
   if (writer >= 0)
@@ -826,7 +1007,7 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
 static void AddAttributes (const cGH *const cctkGH, const char *fullname,
                            int vdim, int refinementlevel,
                            const ioRequest* request,
-                           ibset::const_iterator bbox, hid_t dataset)
+                           const ibbox& bbox, hid_t dataset)
 {
   DECLARE_CCTK_ARGUMENTS;
 
@@ -842,10 +1023,10 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
       Util_TableGetIntArray (coord_system_handle, vdim,
                              coord_handles, "COORDINATES") >= 0)
   {
-    const ibbox& baseext = 
+    const ibbox& baseext =
     vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
 
-    const ivect pos = (bbox->lower() - baseext.lower()) / bbox->stride();
+    const ivect pos = (bbox.lower() - baseext.lower()) / bbox.stride();
 
     for (int d = 0; d < vdim; d++)
     {
@@ -862,7 +1043,7 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
   // Write FlexIO attributes
   WriteAttribute (dataset, "level", refinementlevel);
 
-  vect<int, dim> iorigin = bbox->lower() / bbox->stride();
+  vect<int, dim> iorigin = bbox.lower() / bbox.stride();
   WriteAttribute (dataset, "iorigin", &iorigin[0], vdim);
 
   WriteAttribute (dataset, "time", cctk_time);

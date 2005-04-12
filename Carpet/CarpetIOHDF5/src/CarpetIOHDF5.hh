@@ -189,8 +189,14 @@ namespace CarpetIOHDF5 {
   extern vector<bool> do_truncate; // [var]
   extern vector<vector<vector<int> > > last_output; // [ml][rl][var]
   
-  int WriteVar (const cGH* const cctkGH, const hid_t writer, const ioRequest* request,
-		   const int called_from_checkpoint);
+  int WriteVarChunked (const cGH* const cctkGH,
+                       const hid_t writer,
+                       const ioRequest* request,
+                       const int called_from_checkpoint);
+  int WriteVarUnChunked (const cGH* const cctkGH,
+                         const hid_t writer,
+                         const ioRequest* request,
+                         const int called_from_checkpoint);
 
   int InputGH (const cGH* const cctkGH);
   int ReadVar (const cGH* const cctkGH, const int vindex,

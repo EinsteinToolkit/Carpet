@@ -160,3 +160,7 @@ BOOLEAN checkpoint_next "Checkpoint at next iteration ?" STEERABLE = ALWAYS
 BOOLEAN use_reflevels_from_checkpoint "Use 'CarpetRegrid::refinement_levels' from the checkpoint file rather than from the parameter file ?" STEERABLE = ALWAYS
 {
 } "no"
+
+BOOLEAN out_unchunked "Write recombined (unchunked) grid components to HDF5 output files ?" STEERABLE = RECOVER
+{
+} "yes"

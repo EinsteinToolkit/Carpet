@@ -237,7 +237,7 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
             }
 
             // write the var
-            retval += WriteVar (cctkGH, writer, request, 1);
+            retval += WriteVarChunked (cctkGH, writer, request, 1);
           }
           free (fullname);
 
