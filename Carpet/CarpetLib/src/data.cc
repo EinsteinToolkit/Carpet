@@ -349,7 +349,7 @@ data<T>::copy_from_send_inner (comm_state& state,
   wtime_copyfrom_sendinner_copy.start();
   const data<T> * src = dynamic_cast<const data<T> *> (gsrc);
   assert (src->_has_storage);
-  assert (src->_owns_storage);
+  assert (dist::rank() == src->proc());
   // copy src to b
 #if 0
   {
@@ -422,7 +422,7 @@ data<T>::copy_from_recv_wait_inner (comm_state& state,
   
   wtime_copyfrom_recvwaitinner_copy.start();
   assert (_has_storage);
-  assert (_owns_storage);
+  assert (dist::rank() == proc());
   // copy b to this
   {
     T * restrict const p = _storage;

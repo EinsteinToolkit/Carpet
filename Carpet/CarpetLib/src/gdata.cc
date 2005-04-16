@@ -272,7 +272,7 @@ void gdata::copy_from_send (comm_state& state,
         
         wtime_copyfrom_sendinner_copy.start();
         assert (src->_has_storage);
-        assert (src->_owns_storage);
+        assert (dist::rank() == src->proc());
         gdata * tmp = src->make_typed (varindex, transport_operator, tag);
         tmp->allocate (box, src->proc(), b->pointer());
         tmp->copy_from_innerloop (src, box);
@@ -349,7 +349,7 @@ void gdata::copy_from_wait (comm_state& state,
         
         wtime_copyfrom_recvwaitinner_copy.start();
         assert (_has_storage);
-        assert (_owns_storage);
+        assert (dist::rank() == proc());
         gdata * tmp = make_typed (varindex, transport_operator, tag);
         tmp->allocate (box, proc(), b->pointer());
         copy_from_innerloop (tmp, box);
@@ -644,7 +644,7 @@ void gdata
         comm_state::gcommbuf * b = srcs.at(0)->make_typed_commbuf (box);
         
         assert (srcs.at(0)->_has_storage);
-        assert (srcs.at(0)->_owns_storage);
+        assert (dist::rank() == srcs.at(0)->proc());
         gdata * tmp
           = srcs.at(0)->make_typed (varindex, transport_operator, tag);
         tmp->allocate (box, srcs.at(0)->proc(), b->pointer());
@@ -715,7 +715,7 @@ void gdata
         }
         
         assert (_has_storage);
-        assert (_owns_storage);
+        assert (dist::rank() == proc());
         gdata * tmp = make_typed (varindex, transport_operator, tag);
         tmp->allocate (box, proc(), b->pointer());
         copy_from_innerloop (tmp, box);
