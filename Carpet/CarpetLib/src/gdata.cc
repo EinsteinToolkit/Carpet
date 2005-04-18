@@ -276,6 +276,7 @@ void gdata::copy_into_sendbuffer (comm_state& state,
   } else {
     // copy to remote processor
     assert (src->_has_storage);
+    assert (src->_owns_storage);
     assert (state.collbufs.at(proc()).sendbuf -
             state.collbufs.at(proc()).sendbufbase <=
             (state.collbufs.at(proc()).sendbufsize - box.size()) *
@@ -318,11 +319,9 @@ void gdata::copy_into_sendbuffer (comm_state& state,
 void gdata::copy_from_recvbuffer (comm_state& state,
                                   const gdata* src, const ibbox& box)
 {
-  assert (src->proc() < state.collbufs.size());
-  assert (state.collbufs[src->proc()].recvbuf -
-          state.collbufs[src->proc()].recvbufbase <=
-          (state.collbufs[src->proc()].recvbufsize-box.size()) *
-          state.vartypesize);
+  assert (state.collbufs.at(proc()).recvbuf -
+          state.collbufs.at(proc()).recvbufbase <=
+          (state.collbufs.at(proc()).recvbufsize-box.size()) * state.vartypesize);
 
   // copy this processor's data from the recv buffer
   const ibbox& ext = extent();
