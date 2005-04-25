@@ -1,0 +1,23 @@
+# Interface definition for thorn CarpetIOF5
+
+IMPLEMENTS: IOF5
+
+USES INCLUDE: bbox.hh defs.hh vect.hh
+
+
+
+CCTK_INT next_output_iteration TYPE=scalar
+CCTK_REAL next_output_time TYPE=scalar
+CCTK_INT this_iteration TYPE=scalar
+
+
+
+CCTK_INT FUNCTION Coord_GroupSystem \
+  (CCTK_POINTER_TO_CONST IN cctkGH, \
+   CCTK_STRING IN groupname)
+REQUIRES FUNCTION Coord_GroupSystem
+
+# Check whether existing output files should be truncated or not
+CCTK_INT FUNCTION IO_TruncateOutputFiles \
+  (CCTK_POINTER_TO_CONST IN cctkGH)
+REQUIRES FUNCTION IO_TruncateOutputFiles

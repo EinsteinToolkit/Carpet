@@ -1,0 +1,3 @@
+# Configuration definitions for thorn CarpetIOF5
+
+REQUIRES CarpetLib HDF5 IOUtil

@@ -1,0 +1,17 @@
+# Parameter definitions for thorn CarpetIOF5
+
+STRING out_dir "Output directory, overrides 'IO::out_dir'" STEERABLE = ALWAYS
+{
+  "^$" :: "Empty: use IO::out_dir"
+  ".+" :: "Not empty: directory name"
+} ""
+
+STRING out_extension "File extension for CarpetIOF5 output" STEERABLE = ALWAYS
+{
+  ".*" :: "File extension (including a leading dot, if desired)"
+} ".f5"
+
+STRING out_vars "Variables and groups which should be output in the F5 file format" STEERABLE = ALWAYS
+{
+  .* :: "List of group or variable names"
+} ""
