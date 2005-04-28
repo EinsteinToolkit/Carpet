@@ -967,29 +967,27 @@ namespace CarpetReduce {
           // Are there enough time levels?
           int const max_tl = CCTK_MaxTimeLevelsVI(vi);
           int const active_tl = CCTK_ActiveTimeLevelsVI(cgh, vi);
-          if (active_tl < num_tl) {
-            if (max_tl == 1) {
-              num_tl = 1;
-              need_time_interp = false;
-              static vector<bool> have_warned;
-              if (have_warned.empty()) {
-                have_warned.resize (CCTK_NumVars(), false);
-              }
-              if (! have_warned.at(vi)) {
-                char * const fullname = CCTK_FullName(vi);
-                CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                            "Grid function \"%s\" has only %d time levels; this is not enough for time interpolation",
-                            fullname, max_tl);
-                free (fullname);
-                have_warned.at(vi) = true;
-              }
-            } else {
-              char * const fullname = CCTK_FullName(vi);
-              CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                          "Grid function \"%s\" has only %d active time levels on refinement level %d; this is not enough for time interpolation",
-                          fullname, active_tl, reflevel);
-              free (fullname);
+          if (max_tl == 1) {
+            num_tl = 1;
+            need_time_interp = false;
+            static vector<bool> have_warned;
+            if (have_warned.empty()) {
+              have_warned.resize (CCTK_NumVars(), false);
             }
+            if (! have_warned.at(vi)) {
+              char * const fullname = CCTK_FullName(vi);
+              CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                          "Grid function \"%s\" has only %d time levels on refinement level %d; this is not enough for time interpolation",
+                          fullname, max_tl, reflevel);
+              free (fullname);
+              have_warned.at(vi) = true;
+            }
+          } else if (active_tl < num_tl) {
+            char * const fullname = CCTK_FullName(vi);
+            CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "Grid function \"%s\" has only %d active time levels out of %d maximum time levels on refinement level %d; this is not enough for time interpolation",
+                        fullname, active_tl, max_tl, reflevel);
+            free (fullname);
           }
           
         } else {
