@@ -471,8 +471,8 @@ namespace CarpetReduce {
     const int vartypesize = CCTK_VarTypeSize(outtype);
     assert (vartypesize>=0);
     
-    assert (myoutvals);
-    assert (mycounts);
+    assert (num_outvals==0 || myoutvals);
+    assert (num_outvals==0 || mycounts);
     
     assert (red);
     
@@ -539,8 +539,8 @@ namespace CarpetReduce {
       assert (inarrays[n]);
     }
     
-    assert (myoutvals);
-    assert (mycounts);
+    assert (num_outvals==0 || myoutvals);
+    assert (num_outvals==0 || mycounts);
     
     assert (outtype == intype);
     
@@ -680,8 +680,8 @@ namespace CarpetReduce {
     const int vartypesize = CCTK_VarTypeSize(outtype);
     assert (vartypesize>=0);
     
-    assert (myoutvals);
-    assert (mycounts);
+    assert (num_outvals==0 || myoutvals);
+    assert (num_outvals==0 || mycounts);
     
     vector<char> counts;
     if (proc==-1 || proc==CCTK_MyProc(cgh)) {
