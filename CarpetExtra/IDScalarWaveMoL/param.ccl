@@ -4,6 +4,7 @@ KEYWORD initial_data "Initial data"
 {
   "plane wave"     :: "Plane wave"
   "Gaussian pulse" :: "Gaussian pulse"
+  "Gaussian"       :: "Gaussian"
 } "plane wave"
 
 
@@ -30,6 +31,25 @@ CCTK_REAL pulse_direction[3] "Pulse width"
 } 0.0
 
 CCTK_REAL pulse_offset[3] "Pulse offset"
+{
+  *:* :: ""
+} 0.0
+
+
+
+# Gaussian specification
+
+REAL radius "Radius"
+{
+  *:* :: ""
+} 0.0
+
+REAL sigma "Width"
+{
+  (0:* :: ""
+} 1.0
+
+REAL origin[3] "Origin"
 {
   *:* :: ""
 } 0.0
