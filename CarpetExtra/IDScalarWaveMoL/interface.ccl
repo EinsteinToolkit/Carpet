@@ -6,7 +6,7 @@ INHERITS: Grid WaveToyMoL
 
 
 
-CCTK_REAL scalarevolveerror TYPE=gf
+CCTK_REAL scalarevolveerror TYPE=gf TAGS='tensortypealias="scalar"'
 {
   phierror psierror
 } "Errors of the scalar field"

@@ -23,19 +23,19 @@ REQUIRES FUNCTION MoLRegisterEvolvedGroup
 
 PUBLIC:
 
-CCTK_REAL scalarevolve TYPE=gf TIMELEVELS=3
+CCTK_REAL scalarevolve TYPE=gf TIMELEVELS=3 TAGS='tensortypealias="scalar"'
 {
   phi psi
 } "Scalar field"
 
 PRIVATE:
 
-CCTK_REAL scalarevolvedot TYPE=gf
+CCTK_REAL scalarevolvedot TYPE=gf TAGS='tensortypealias="scalar"'
 {
   phidot psidot
 } "Time derivative of the scalar field"
 
-CCTK_REAL scalarevolveerrorestimate TYPE=gf
+CCTK_REAL scalarevolveerrorestimate TYPE=gf TAGS='tensortypealias="scalar"'
 {
   error
 } "Error estimate"
