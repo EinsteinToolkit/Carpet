@@ -284,6 +284,12 @@ public:
     return r;
   }
   
+  vect reverse () const {
+    vect r;
+    for (int d=0; d<D; ++d) r[d]=elt[D-1-d];
+    return r;
+  }
+  
   vect operator+ () const {
     vect r;
     for (int d=0; d<D; ++d) r[d]=+elt[d];
