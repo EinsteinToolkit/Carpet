@@ -1,5 +1,4 @@
 # Schedule definitions for thorn IDScalarWaveMoL
-# $Header:$
 
 SCHEDULE IDScalarWaveMoL_InitialData AT initial
 {

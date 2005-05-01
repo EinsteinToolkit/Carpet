@@ -1,5 +1,4 @@
 # Parameter definitions for thorn WaveToyMoL
-# $Header:$
 
 SHARES: MethodOfLines
 

@@ -1,5 +1,4 @@
 # Parameter definitions for thorn IDScalarWaveMoL
-# $Header:$
 
 KEYWORD initial_data "Initial data"
 {

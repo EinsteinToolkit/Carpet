@@ -1,5 +1,3 @@
-c     $Header:$
-
 #include "cctk.h"
 #include "cctk_Arguments.h"
 #include "cctk_Functions.h"

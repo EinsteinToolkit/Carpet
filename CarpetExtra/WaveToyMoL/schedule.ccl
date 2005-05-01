@@ -1,5 +1,4 @@
 # Schedule definitions for thorn WaveToyMoL
-# $Header:$
 
 STORAGE: scalarevolve[3]
 STORAGE: scalarevolvedot

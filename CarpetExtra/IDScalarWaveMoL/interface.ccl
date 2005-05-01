@@ -1,5 +1,4 @@
 # Interface definition for thorn IDScalarWaveMoL
-# $Header:$
 
 IMPLEMENTS: IDScalarWaveMoL
 
