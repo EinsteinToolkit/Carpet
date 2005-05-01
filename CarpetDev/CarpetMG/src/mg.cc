@@ -590,7 +590,10 @@ namespace CarpetMG {
             }
             
             // Recurse
-            CCTK_REAL const coarse_minerror = error / ipow(reffact, dim);
+            ivect const reffact
+              = (spacereffacts.at (reflevel)
+                 / spacereffacts.at (coarse_reflevel));
+            CCTK_REAL const coarse_minerror = error / prod (reffact);
             int const ierr
               = multigrid (cctkGH,
                            var, res, rhs, sav, wgt, aux,

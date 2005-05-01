@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
+#include <vector>
 
 #include "cctk.h"
 
@@ -14,9 +15,15 @@ using namespace std;
 
 
 // Constructors
-th::th (gh& h_, const CCTK_REAL basedelta)
-  : h(h_), delta(basedelta)
+th::th (gh& h_, const vector<int> & reffacts_, const CCTK_REAL basedelta)
+  : h(h_), reffacts(reffacts_), delta(basedelta)
 {
+  assert (reffacts.size() >= 1);
+  assert (reffacts.front() == 1);
+  for (size_t n = 1; n < reffacts.size(); ++ n) {
+    assert (reffacts.at(n) >= reffacts.at(n-1));
+    assert (reffacts.at(n) % reffacts.at(n-1) == 0);
+  }
   h.add(this);
 }
 
@@ -44,10 +51,8 @@ void th::recompose ()
       } else {
         times.at(ml).at(rl) = times.at(ml).at(rl-1);
       }
-      if (ml==0 and rl==0) {
-	deltas.at(ml).at(rl) = delta;
-      } else if (ml==0) {
-	deltas.at(ml).at(rl) = deltas.at(ml).at(rl-1) / h.reffact;
+      if (ml==0) {
+	deltas.at(ml).at(rl) = delta / reffacts.at(rl);
       } else {
 	deltas.at(ml).at(rl) = deltas.at(ml-1).at(rl) * h.mgfact;
       }

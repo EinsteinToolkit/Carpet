@@ -80,7 +80,7 @@ namespace CarpetAdaptiveRegrid {
       for (size_t c=0; c<newobss.at(rl).size(); ++c) {
         for (int d=0; d<dim; ++d) {
           assert (mglevel==0);
-          rvect const spacing = base_spacing * ipow((CCTK_REAL)mgfact, basemglevel) / ipow(reffact, rl+1);
+          rvect const spacing = base_spacing * ipow((CCTK_REAL)mgfact, basemglevel) / spacereffacts.at(rl+1);
           ierr = ConvertFromPhysicalBoundary
             (dim, &physical_min[0], &physical_max[0],
              &interior_min[0], &interior_max[0],
@@ -94,7 +94,7 @@ namespace CarpetAdaptiveRegrid {
             lo[d] = exterior_min[d];
             newbbss.at(rl).at(c) = rbbox(lo, up, str);
           }
-          newobss.at(rl).at(c)[d][1] = abs(newbbss.at(rl).at(c).upper()[d] - physical_max[d]) < 1.0e-6 * base_spacing[d] / ipow(reffact, rl);
+          newobss.at(rl).at(c)[d][1] = abs(newbbss.at(rl).at(c).upper()[d] - physical_max[d]) < 1.0e-6 * base_spacing[d] / spacereffacts.at(rl)[d];
           if (newobss.at(rl).at(c)[d][1]) {
             rvect lo = newbbss.at(rl).at(c).lower();
             rvect up = newbbss.at(rl).at(c).upper();
@@ -124,7 +124,7 @@ namespace CarpetAdaptiveRegrid {
         bbvect const & ob = newobss.at(rl-1).at(c);
         // TODO: why can basemglevel not be used here?
         // rvect const spacing = base_spacing * ipow(CCTK_REAL(mgfact), basemglevel) / ipow(reffact, rl);
-        rvect const spacing = base_spacing / ipow(reffact, rl);
+        rvect const spacing = base_spacing / spacereffacts.at(rl);
         if (! all(abs(ext.stride() - spacing) < spacing * 1.0e-10)) {
           assert (dim==3);
           CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -230,7 +230,7 @@ namespace CarpetAdaptiveRegrid {
     const ivect rlb  = hh.baseextent.lower();
     const ivect rub  = hh.baseextent.upper();
     
-    const int levfac = ipow(hh.reffact, rl);
+    const ivect levfac = hh.reffacts.at(rl);
     assert (all (rstr % levfac == 0));
     const ivect str (rstr / levfac);
     const ivect lb  (ilower);

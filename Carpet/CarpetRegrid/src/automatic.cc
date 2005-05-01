@@ -111,6 +111,9 @@ namespace CarpetRegrid {
     const int tl = 0;
     const int ml = 0;
     
+    // Determine refinement factor
+    ivect const reffact = spacereffacts.at(rl+1) / spacereffacts.at(rl);
+    
     if (veryverbose) {
       cout << endl << "MRA: Choosing regions to refine on level " << rl << " in " << hh.components(rl) << " components" << endl;
     }
@@ -122,7 +125,7 @@ namespace CarpetRegrid {
       
       const data<CCTK_REAL>& errordata = *errorgf(tl,rl,c,ml);
       
-      Automatic_Recursive (cctkGH, hh, errordata, bbl, region);
+      Automatic_Recursive (cctkGH, hh, errordata, bbl, region, reffact);
     }
     
     if (veryverbose) {
@@ -167,7 +170,8 @@ namespace CarpetRegrid {
                             const gh & hh,
                             const data<CCTK_REAL> & errordata,
                             list<ibbox> & bbl,
-                            const ibbox & region)
+                            const ibbox & region,
+                            const ivect & reffact)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -202,7 +206,7 @@ namespace CarpetRegrid {
     
     if (cnt == 0) {
       // Don't refine
-    } else if (width*reffact < 2*minwidth or fraction >= minfraction) {
+    } else if (any (reffact*width < 2*minwidth) or fraction >= minfraction) {
       // Refine the whole region
       const ivect lo(region.lower());
       const ivect up(region.upper());
@@ -231,8 +235,8 @@ namespace CarpetRegrid {
       assert ((region1 & region2).empty());
       assert (region1 + region2 == region);
       list<ibbox> bbl1, bbl2;
-      Automatic_Recursive (cctkGH, hh, errordata, bbl1, region1);
-      Automatic_Recursive (cctkGH, hh, errordata, bbl2, region2);
+      Automatic_Recursive (cctkGH, hh, errordata, bbl1, region1, reffact);
+      Automatic_Recursive (cctkGH, hh, errordata, bbl2, region2, reffact);
       // Combine regions if possible
       up2 += str-str/reffact;
       up2[dir] = lo2[dir];

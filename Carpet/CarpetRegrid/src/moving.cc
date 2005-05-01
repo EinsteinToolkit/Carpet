@@ -49,10 +49,11 @@ namespace CarpetRegrid {
         (moving_centre_x + moving_circle_radius * cos(argument),
          moving_centre_y + moving_circle_radius * sin(argument),
          moving_centre_z);
-      CCTK_REAL const radius = moving_region_radius / ipow(reffact, rl-1);
+      rvect const radius
+        (rvect(moving_region_radius) / spacereffacts.at(rl-1));
       
-      rvect const rlb (symmetric.ifthen (rvect(0),      pos - rvect(radius)));
-      rvect const rub (symmetric.ifthen (rvect(radius), pos + rvect(radius)));
+      rvect const rlb (symmetric.ifthen (rvect(0), pos - radius));
+      rvect const rub (symmetric.ifthen (radius  , pos + radius));
       
       vector<ibbox> bbs;
       gh::cbnds obs;

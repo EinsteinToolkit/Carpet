@@ -101,6 +101,22 @@ CCTK_INT refinement_factor "Refinement factor"
   1:* :: "must be positive"
 } 2
 
+STRING space_refinement_factors "Spatial refinement factors over the coarsest level"
+{
+  "^$" :: "Use the value of refinement_factor"
+  # V = [SDS(,SDS)*]
+  # L = [SVS(,SVS)*]
+  #   = [S[SDS(,SDS)*]S(,S[SDS(,SDS)*]S)*]
+  "^\[[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*(,[[:space:]]*[[:digit:]]+[[:space:]]*)*\][[:space:]]*(,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*(,[[:space:]]*[[:digit:]]+[[:space:]]*)*\][[:space:]]*)*\]$" :: "[ [<ifact>,<jfact>,<kfact>], ... ]"
+} ""
+
+STRING time_refinement_factors "Temporal refinement factors over the coarsest level"
+{
+  "^$" :: "Use the value of refinement_factor"
+  # L = [SDS(,SDS)*]
+  "^\[[[:space:]]*[[:digit:]]+[[:space:]]*(,[[:space:]]*[[:digit:]]+[[:space:]]*)*\]$" :: "[ <tfact>, ... ]"
+} ""
+
 
 
 CCTK_INT convergence_level "Convergence level"

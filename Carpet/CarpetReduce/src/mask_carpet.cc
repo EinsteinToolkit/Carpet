@@ -31,8 +31,6 @@ namespace CarpetMask {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    assert (reffact == 2);
-    
     if (! is_singlemap_mode()) {
       CCTK_WARN (0, "This routine may only be called in singlemap mode");
     }
@@ -46,6 +44,10 @@ namespace CarpetMask {
       dh const & dd = *vdd.at(Carpet::map);
       
       ibbox const & base = hh.bases().at(mglevel).at(reflevel);
+      
+      ivect const reffact
+        = spacereffacts.at(reflevel) / spacereffacts.at(reflevel-1);
+      assert (all (reffact == 2));
       
       
       

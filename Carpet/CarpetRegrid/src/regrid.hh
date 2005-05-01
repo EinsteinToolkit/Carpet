@@ -131,7 +131,8 @@ namespace CarpetRegrid {
                             const gh & hh,
                             const data<CCTK_REAL> & errorvar,
                             list<ibbox> & bbl,
-                            const ibbox & region);
+                            const ibbox & region,
+                            const ivect & reffact);
   
   void Automatic_Recombine (list<ibbox> & bbl1,
                             list<ibbox> & bbl2,

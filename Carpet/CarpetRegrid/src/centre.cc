@@ -53,8 +53,8 @@ namespace CarpetRegrid {
       ivect const oldrub = rub;
       
       // refined boxes have smaller stride
-      assert (all(rstr%hh.reffact == 0));
-      rstr /= hh.reffact;
+      assert (all(rstr%(hh.reffacts.at(rl)/hh.reffacts.at(rl-1)) == 0));
+      rstr /= hh.reffacts.at(rl)/hh.reffacts.at(rl-1);
       
       // calculate new extent
       ivect const quarter = (rub - rlb) / 4 / rstr * rstr;

@@ -95,7 +95,8 @@ namespace Carpet {
           // Do allow processors with zero grid points
 //           assert (all(bbsss.at(rl).at(c).at(ml).lower() <= bbsssi.at(rl).at(c).at(ml).upper()));
           // Check strides
-          const int str = ipow(reffact, maxreflevels-rl-1) * ipow(mgfact, ml);
+          const ivect str
+            = (maxspacereflevelfact / spacereffacts.at(rl) * ipow(mgfact, ml));
           assert (all(bbsss.at(ml).at(rl).at(c).stride() == str));
           // Check alignments
           assert (all(bbsss.at(ml).at(rl).at(c).lower() % str == 0));
@@ -183,13 +184,13 @@ namespace Carpet {
       for (int rl=0; rl<hh.reflevels(); ++rl) {
         for (int c=0; c<hh.components(rl); ++c) {
           const int convfact = ipow(mgfact, ml);
-          const int levfact = ipow(reffact, rl);
+          const ivect levfact = spacereffacts.at(rl);
           const ivect lower = hh.extents().at(ml).at(rl).at(c).lower();
           const ivect upper = hh.extents().at(ml).at(rl).at(c).upper();
           const ivect stride = hh.extents().at(ml).at(rl).at(c).stride();
-          assert (all(lower * levfact % maxreflevelfact == 0));
-          assert (all(upper * levfact % maxreflevelfact == 0));
-          assert (all(((upper - lower) * levfact / maxreflevelfact)
+          assert (all(lower * levfact % maxspacereflevelfact == 0));
+          assert (all(upper * levfact % maxspacereflevelfact == 0));
+          assert (all(((upper - lower) * levfact / maxspacereflevelfact)
                       % convfact == 0));
           cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
                << "   exterior: "
@@ -219,12 +220,12 @@ namespace Carpet {
           const ivect lower = hh.extents().at(ml).at(rl).at(c).lower();
           const ivect upper = hh.extents().at(ml).at(rl).at(c).upper();
           const int convfact = ipow(mgfact, ml);
-          const int levfact = ipow(reffact, rl);
+          const ivect levfact = spacereffacts.at(rl);
           cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
                << "   exterior: "
-               << origin + delta * lower / maxreflevelfact
+               << origin + delta * lower / maxspacereflevelfact
                << " : "
-               << origin + delta * upper / maxreflevelfact
+               << origin + delta * upper / maxspacereflevelfact
                << " : "
                << delta * convfact / levfact << endl;
         }
@@ -316,7 +317,7 @@ namespace Carpet {
         
         // TODO: processor distribution, average load, std deviation
         
-        coarsevolume = totalvolume * ipow (reflevelfact, dim);
+        coarsevolume = totalvolume * prod (rvect (spacereflevelfact));
       }
     }
     cout.precision (oldprecision);

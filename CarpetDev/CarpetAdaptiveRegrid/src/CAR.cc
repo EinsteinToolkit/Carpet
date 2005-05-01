@@ -261,6 +261,8 @@ namespace CarpetAdaptiveRegrid {
       vector<vector<ibbox> > bbss = bbsss.at(0);
       vector<vector<ibbox> > local_bbss = local_bbsss.at(0);
       
+      ivect const reffact = spacereffacts.at(rl+1) / spacereffacts.at(rl);
+
       bool did_regrid = false;
             
       //
@@ -458,15 +460,15 @@ namespace CarpetAdaptiveRegrid {
                     // Correct for the change in level !
                     CCTK_INT ii = (i + cctkGH->cctk_lbnd[0] 
                                    - cctkGH->cctk_nghostzones[0]
-                                   + child_levoff[0]) / reffact - 
+                                   + child_levoff[0]) / reffact[0] - 
                       imin[0];
                     CCTK_INT jj = (j + cctkGH->cctk_lbnd[1] 
                                    - cctkGH->cctk_nghostzones[1]
-                                   + child_levoff[1]) / reffact - 
+                                   + child_levoff[1]) / reffact[1] - 
                       imin[1];
                     CCTK_INT kk = (k + cctkGH->cctk_lbnd[2] 
                                    - cctkGH->cctk_nghostzones[2]
-                                   + child_levoff[1]) / reffact - 
+                                   + child_levoff[1]) / reffact[2] - 
                       imin[2];
                     // Check that this point actually intersects with 
                     // this box (if this component was actually a
@@ -822,7 +824,7 @@ namespace CarpetAdaptiveRegrid {
           rvect hi = int2pos(cctkGH, hh, ihi, reflevel);
           rvect str = base_spacing * 
             ipow((CCTK_REAL)mgfact, basemglevel) /
-            ipow(reffact, reflevel);
+            spacereffacts.at(reflevel);
           rbbox newbbcoord(lo, hi, str);
           
           if (veryverbose) {
@@ -1057,7 +1059,7 @@ namespace CarpetAdaptiveRegrid {
     const ivect global_extent (hh.baseextent.upper() - hh.baseextent.lower());
     
     const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
-    const int levfac = ipow(hh.reffact, rl);
+    const ivect levfac = hh.reffacts.at(rl);
     assert (all (hh.baseextent.stride() % levfac == 0));
     const ivect istride = hh.baseextent.stride() / levfac;
     
@@ -1084,7 +1086,7 @@ namespace CarpetAdaptiveRegrid {
     const ivect global_extent (hh.baseextent.upper() - hh.baseextent.lower());
     
     const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
-    const int levfac = ipow(hh.reffact, rl);
+    const ivect levfac = hh.reffacts.at(rl);
     assert (all (hh.baseextent.stride() % levfac == 0));
     const ivect istride = hh.baseextent.stride() / levfac;    
     

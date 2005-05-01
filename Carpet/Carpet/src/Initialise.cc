@@ -307,7 +307,7 @@ namespace Carpet {
         vtt.at(m)->advance_time (reflevel, mglevel);
       }
       cgh->cctk_time
-        = global_time - tl * delta_time * mglevelfact / reflevelfact;
+        = global_time - tl * delta_time * mglevelfact / timereflevelfact;
       CycleTimeLevels (cgh);
 
       // Set up the initial data
@@ -439,7 +439,7 @@ namespace Carpet {
           vtt.at(m)->advance_time (reflevel, mglevel);
         }
         cgh->cctk_time
-          = global_time + delta_time * mglevelfact / reflevelfact;
+          = global_time + delta_time * mglevelfact / timereflevelfact;
         CycleTimeLevels (cgh);
 
         Waypoint ("Initialisation 3TL evolution I (a) (forwards) at iteration"
@@ -477,7 +477,7 @@ namespace Carpet {
         FlipTimeLevels (cgh);
 
         cgh->cctk_time
-          = global_time + delta_time * mglevelfact / reflevelfact;
+          = global_time + delta_time * mglevelfact / timereflevelfact;
 
         leave_level_mode (cgh);
       } END_MGLEVEL_LOOP;
@@ -549,7 +549,7 @@ namespace Carpet {
           vtt.at(m)->advance_time (reflevel, mglevel);
         }
         cgh->cctk_time
-          = global_time + 2 * delta_time * mglevelfact / reflevelfact;
+          = global_time + 2 * delta_time * mglevelfact / timereflevelfact;
         CycleTimeLevels (cgh);
 
         Waypoint ("Initialisation 3TL evolution I (c) (backwards) at iteration"
@@ -618,7 +618,7 @@ namespace Carpet {
                   (do_meta_mode ? " (meta)" : ""));
 
         const int do_every =
-          ipow(mgfact, mglevel) * (maxreflevelfact / ipow(reffact, rl));
+          ipow(mgfact, mglevel) * (maxtimereflevelfact / timereffacts.at(rl));
         if (cgh->cctk_iteration % do_every == 0)
         {
           // Checkpoint

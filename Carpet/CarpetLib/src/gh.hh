@@ -46,7 +46,7 @@ public:
 public:				// should be readonly
   
   // Fields
-  const int reffact;		// refinement factor
+  const vector<ivect> reffacts; // refinement factors
   const centering refcent;	// vertex or cell centered
  
   const int mgfact;		// default multigrid factor
@@ -68,7 +68,7 @@ private:
 public:
   
   // Constructors
-  gh (const int reffact, const centering refcent,
+  gh (const vector<ivect> & reffacts, const centering refcent,
       const int mgfact, const centering mgcent,
       const ibbox baseextent);
   

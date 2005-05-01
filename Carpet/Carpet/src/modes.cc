@@ -236,9 +236,10 @@ namespace Carpet {
     Checkpoint ("Entering level mode");
     
     reflevel = rl;
-    reflevelfact = ipow(reffact, reflevel);
-    ivect::ref(cgh->cctk_levfac) = reflevelfact;
-    cgh->cctk_timefac = reflevelfact;
+    timereflevelfact = timereffacts.at (reflevel);
+    spacereflevelfact = spacereffacts.at (reflevel);
+    ivect::ref(cgh->cctk_levfac) = spacereflevelfact;
+    cgh->cctk_timefac = timereflevelfact;
     
     // Set current time
     assert (mglevel>=0 and mglevel<(int)leveltimes.size());
@@ -272,7 +273,8 @@ namespace Carpet {
     }
     
     reflevel = -1;
-    reflevelfact = -deadbeef;
+    timereflevelfact = -deadbeef;
+    spacereflevelfact = ivect(-deadbeef);
     ivect::ref(cgh->cctk_levfac) = -deadbeef;
     cgh->cctk_timefac = -deadbeef;
     

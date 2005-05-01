@@ -117,7 +117,7 @@ namespace CarpetRegrid {
     const ivect global_extent (hh.baseextent.upper() - hh.baseextent.lower());
     
     const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
-    const int levfac = ipow(hh.reffact, rl);
+    const ivect levfac = hh.reffacts.at(rl);
     assert (all (hh.baseextent.stride() % levfac == 0));
     const ivect istride = hh.baseextent.stride() / levfac;
     
@@ -147,7 +147,7 @@ namespace CarpetRegrid {
     const ivect global_extent (hh.baseextent.upper() - hh.baseextent.lower());
     
     const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
-    const int levfac = ipow(hh.reffact, rl);
+    const ivect levfac = hh.reffacts.at(rl);
     assert (all (hh.baseextent.stride() % levfac == 0));
     const ivect istride = hh.baseextent.stride() / levfac;
     

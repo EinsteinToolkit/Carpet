@@ -293,8 +293,11 @@ namespace Carpet {
   static void setup_multigrid_info (cGH* cgh, CCTK_INT convergence_level,
                       CCTK_INT convergence_factor,
                       CCTK_INT num_convergence_levels);
-  static void setup_refinement_level_info (CCTK_INT max_refinement_levels,
-                      CCTK_INT refinement_factor);
+  static void
+  setup_refinement_level_info (CCTK_INT const max_refinement_levels,
+                               CCTK_INT const refinement_factor,
+                               char const * const space_refinement_factors,
+                               char const * const time_refinement_factors);
   static void allocate_map(cGH* cgh, int m,
                       CCTK_INT domain_from_coordbase,
                       CCTK_INT convergence_factor, CCTK_INT refinement_factor,
@@ -371,7 +374,9 @@ namespace Carpet {
     setup_multigrid_info ( cgh, convergence_level, convergence_factor,
                            num_convergence_levels );
     
-    setup_refinement_level_info ( max_refinement_levels, refinement_factor );
+    setup_refinement_level_info (max_refinement_levels, refinement_factor,
+                                 space_refinement_factors,
+                                 time_refinement_factors);
     
     // Map information
     carpetGH.maps = maps = num_maps;
@@ -471,11 +476,72 @@ namespace Carpet {
     cgh->cctk_convfac = mgfact;
   }
 
-  void setup_refinement_level_info (CCTK_INT max_refinement_levels,
-                                      CCTK_INT refinement_factor) { 
+  void
+  setup_refinement_level_info (CCTK_INT const max_refinement_levels,
+                               CCTK_INT const refinement_factor,
+                               char const * const space_refinement_factors,
+                               char const * const time_refinement_factors)
+  {
+    // Set maximum number of refinement levels
     maxreflevels = max_refinement_levels;
+    
+#if 0
+    // Set default refinement factor
     reffact = refinement_factor;
-    maxreflevelfact = ipow(reffact, maxreflevels-1);
+#endif
+    
+    // Set the per-level spatial refinement factors
+    if (strcmp (space_refinement_factors, "") == 0) {
+      // Calculate them from the default refinement factor
+      spacereffacts.resize (maxreflevels);
+      for (int n=0; n<maxreflevels; ++n) {
+        spacereffacts.at(n) = ivect (ipow (refinement_factor, n));
+      }
+    } else {
+      // Read them from the parameter
+      try {
+        istringstream srf (space_refinement_factors);
+        srf >> spacereffacts;
+      } catch (input_error) {
+        CCTK_WARN
+          (0, "Could not parse parameter \"space_refinement_factors\"");
+      }
+    }
+    // TODO: turn these into real error messages
+    assert (spacereffacts.size() >= maxreflevels);
+    assert (all (spacereffacts.front() == 1));
+    for (int n=1; n<maxreflevels; ++n) {
+      assert (all (spacereffacts.at(n) >= spacereffacts.at(n-1)));
+      assert (all (spacereffacts.at(n) % spacereffacts.at(n-1) == 0));
+    }
+    
+    // Set the per-level temporal refinement factors
+    if (strcmp (time_refinement_factors, "") == 0) {
+      // Calculate them from the default refinement factor
+      timereffacts.resize (maxreflevels);
+      for (int n=0; n<maxreflevels; ++n) {
+        timereffacts.at(n) = ipow (refinement_factor, n);
+      }
+    } else {
+      // Read them from the parameter
+      try {
+        istringstream trf (time_refinement_factors);
+        trf >> timereffacts;
+      } catch (input_error) {
+        CCTK_WARN (0, "Could not parse parameter \"time_refinement_factors\"");
+      }
+    }
+    // TODO: turn these into real error messages
+    assert (timereffacts.size() >= maxreflevels);
+    assert (timereffacts.front() == 1);
+    for (int n=1; n<maxreflevels; ++n) {
+      assert (timereffacts.at(n) >= timereffacts.at(n-1));
+      assert (timereffacts.at(n) % timereffacts.at(n-1) == 0);
+    }
+    
+    // Calculate the maximum refinement factors
+    maxtimereflevelfact = timereffacts.at (maxreflevels-1);
+    maxspacereflevelfact = spacereffacts.at (maxreflevels-1);
   }
 
   void allocate_map (cGH* cgh, int m,
@@ -558,14 +624,13 @@ namespace Carpet {
     Sanity_check (npoints);
     
     // Base grid extent
-    const int stride = maxreflevelfact;
-    const ivect str (stride);
+    const ivect str (maxspacereflevelfact);
     const ivect lb (0);
     const ivect ub ((npoints - 1) * str);
     const ibbox baseext (lb, ub, str);
     
     // Allocate grid hierarchy
-    vhh.at(m) = new gh (refinement_factor, vertex_centered,
+    vhh.at(m) = new gh (spacereffacts, vertex_centered,
                         convergence_factor, vertex_centered, baseext);
     
     // Allocate data hierarchy
@@ -573,7 +638,7 @@ namespace Carpet {
                         prolongation_order_space, buffer_width);
     
     // Allocate time hierarchy
-    vtt.at(m) = new th (*vhh.at(m), 1.0);
+    vtt.at(m) = new th (*vhh.at(m), timereffacts, 1.0);
       
     check_time_hierarchy (vdd, m, max_refinement_levels, refinement_factor,
                              prolongation_order_space, lghosts, ughosts);
@@ -806,13 +871,13 @@ namespace Carpet {
         const ivect lower = vhh.at(m)->extents().at(ml).at(rl).at(c).lower();
         const ivect upper = vhh.at(m)->extents().at(ml).at(rl).at(c).upper();
         const int convfact = ipow(mgfact, ml);
-        assert (all(lower % maxreflevelfact == 0));
-        assert (all(upper % maxreflevelfact == 0));
-        assert (all(((upper - lower) / maxreflevelfact) % convfact == 0));
+        assert (all(lower % maxspacereflevelfact == 0));
+        assert (all(upper % maxspacereflevelfact == 0));
+        assert (all(((upper - lower) / maxspacereflevelfact) % convfact == 0));
         cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
-             << "   exterior extent: " << lower / maxreflevelfact
-             << " : " << upper / maxreflevelfact
-             << "   (" << (upper - lower) / maxreflevelfact / convfact + 1
+             << "   exterior extent: " << lower / maxspacereflevelfact
+             << " : " << upper / maxspacereflevelfact
+             << "   (" << (upper - lower) / maxspacereflevelfact / convfact + 1
              << ")" << endl;
       }
     }
@@ -956,9 +1021,11 @@ namespace Carpet {
       
       assert (all(convpowers == convpowers[0]));
       const int amgfact1 = ipow(mgfact, convpowers[0]);
+      const vector<ivect> aspacereffacts (1, ivect (1));
+      const vector<int> atimereffacts (1, 1);
       
       arrdata.at (group).at (0).hh
-        = new gh (refinement_factor, vertex_centered,
+        = new gh (aspacereffacts, vertex_centered,
                   amgfact1, vertex_centered,
                   abaseext);
       
@@ -966,7 +1033,7 @@ namespace Carpet {
         = new dh (*arrdata.at (group).at (0).hh, alghosts, aughosts, 0, 0);
       
       arrdata.at (group).at (0).tt
-        = new th (*arrdata.at (group).at (0).hh, 1.0);
+        = new th (*arrdata.at (group).at (0).hh, atimereffacts, 1.0);
 
       
       

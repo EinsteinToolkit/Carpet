@@ -46,7 +46,8 @@ namespace Carpet {
     bool term;
 
     // Early return for non-active reflevels to save the MPI_Allreduce() below
-    if (iteration % (maxreflevelfact / ipow(reffact, reflevels-1)) != 0) {
+    if (iteration % (maxtimereflevelfact / timereffacts.at(reflevels-1)) != 0)
+    {
 
       return false;
 
@@ -139,7 +140,7 @@ namespace Carpet {
       AdvanceTime( cgh, cctk_initial_time );
 
       if ((cgh->cctk_iteration-1)
-          % (maxreflevelfact / ipow(reffact, reflevels-1)) == 0) {
+          % (maxtimereflevelfact / timereffacts.at(reflevels-1)) == 0) {
         Waypoint ("Evolving iteration %d at t=%g",
                   cgh->cctk_iteration, (double)cgh->cctk_time);
       }
@@ -177,7 +178,7 @@ namespace Carpet {
     ++cgh->cctk_iteration;
     if (! adaptive_stepsize) {
       global_time = initial_time
-        + cgh->cctk_iteration * delta_time / maxreflevelfact;
+        + cgh->cctk_iteration * delta_time / maxtimereflevelfact;
       cgh->cctk_time = global_time;
     } else {
       cgh->cctk_time += delta_time;
@@ -191,7 +192,7 @@ namespace Carpet {
 
     for (int rl=0; rl<reflevels; ++rl) {
       const int ml=0;
-      const int do_every = maxreflevelfact / ipow(reffact, rl);
+      const int do_every = maxtimereflevelfact / timereffacts.at(rl);
       if ((cgh->cctk_iteration-1) % do_every == 0) {
         enter_global_mode (cgh, ml);
         enter_level_mode (cgh, rl);
@@ -239,7 +240,7 @@ namespace Carpet {
 
       for (int rl=0; rl<reflevels; ++rl) {
         const int do_every
-          = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl));
+          = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.at(rl));
         if ((cgh->cctk_iteration-1) % do_every == 0) {
           enter_global_mode (cgh, ml);
           enter_level_mode (cgh, rl);
@@ -255,8 +256,8 @@ namespace Carpet {
             vtt.at(m)->advance_time (reflevel, mglevel);
           }
           cgh->cctk_time = (global_time
-                            - delta_time / maxreflevelfact
-                            + delta_time * mglevelfact / reflevelfact);
+                            - delta_time / maxtimereflevelfact
+                            + delta_time * mglevelfact / timereflevelfact);
           CycleTimeLevels (cgh);
 
           Waypoint ("Evolution I at iteration %d time %g%s%s",
@@ -293,7 +294,7 @@ namespace Carpet {
     for (int ml=mglevels-1; ml>=0; --ml) {
       for (int rl=reflevels-1; rl>=0; --rl) {
         const int do_every
-          = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl));
+          = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.at(rl));
         if (cgh->cctk_iteration % do_every == 0) {
           enter_global_mode (cgh, ml);
           enter_level_mode (cgh, rl);
@@ -319,7 +320,7 @@ namespace Carpet {
 
       for (int rl=0; rl<reflevels; ++rl) {
         const int do_every
-          = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl));
+          = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.at(rl));
         if (cgh->cctk_iteration % do_every == 0) {
           enter_global_mode (cgh, ml);
           enter_level_mode (cgh, rl);
@@ -328,7 +329,8 @@ namespace Carpet {
           {
             for (int rl_=0; rl_<reflevels; ++rl_) {
               const int do_every_
-                = ipow(mgfact, ml) * (maxreflevelfact / ipow(reffact, rl_));
+                = (ipow(mgfact, ml)
+                   * (maxtimereflevelfact / timereffacts.at(rl_)));
               if (cgh->cctk_iteration % do_every_ == 0) {
                 finest_active_reflevel = rl_;
               }

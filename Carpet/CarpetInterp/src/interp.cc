@@ -232,7 +232,7 @@ namespace CarpetInterp {
     }
 #else
     rvect const lower = rvect::ref(cgh->cctk_origin_space);
-    rvect const delta = rvect::ref(cgh->cctk_delta_space) / maxreflevelfact;
+    rvect const delta = rvect::ref(cgh->cctk_delta_space) / maxspacereflevelfact;
     rvect const upper = lower + delta * (vhh.at(m)->baseextent.upper() - vhh.at(m)->baseextent.lower());
 #endif
     
@@ -272,7 +272,7 @@ namespace CarpetInterp {
       if (all(pos>=lower && pos<=upper)) {
         for (int rl=maxrl-1; rl>=minrl; --rl) {
           
-          int const fact = maxreflevelfact / ipow(reffact, rl) * ipow(mgfact, mglevel);
+          ivect const fact = maxspacereflevelfact / spacereffacts.at(rl) * ipow(mgfact, mglevel);
           ivect const ipos = ivect(floor((pos - lower) / (delta * fact) + 0.5)) * fact;
           assert (all(ipos % vhh.at(m)->bases().at(ml).at(rl).stride() == 0));
           

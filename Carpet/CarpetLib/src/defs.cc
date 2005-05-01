@@ -150,14 +150,18 @@ ostream& output (ostream& os, const vector<T>& v) {
 
 #include "bbox.hh"
 #include "bboxset.hh"
+#include "vect.hh"
 
 template int ipow (int x, int y);
 template CCTK_REAL ipow (CCTK_REAL x, int y);
+template vect<int,3> ipow (vect<int,3> x, int y);
 
+template istream& input (istream& os, vector<int>& v);
 template istream& input (istream& os, vector<bbox<int,3> >& v);
 template istream& input (istream& os, vector<bbox<CCTK_REAL,3> >& v);
 template istream& input (istream& os, vector<vector<bbox<int,3> > >& v);
 template istream& input (istream& os, vector<vector<bbox<CCTK_REAL,3> > >& v);
+template istream& input (istream& os, vector<vect<int,3> >& v);
 template istream& input (istream& os, vector<vect<vect<bool,2>,3> >& v);
 template istream& input (istream& os, vector<vector<vect<vect<bool,2>,3> > >& v);
 

@@ -32,6 +32,8 @@ public:				// should be readonly
   
 private:
   
+  const vector<int> reffacts;
+
   CCTK_REAL delta;		// time step
   vector<vector<CCTK_REAL> > times; // current times [ml][rl]
   vector<vector<CCTK_REAL> > deltas; // time steps [ml][rl]
@@ -39,7 +41,7 @@ private:
 public:
   
   // Constructors
-  th (gh& h, const CCTK_REAL basedelta);
+  th (gh& h, const vector<int> & reffacts, const CCTK_REAL basedelta);
   
   // Destructors
   ~th ();

@@ -535,7 +535,8 @@ namespace CarpetIOASCII {
                 if (grouptype == CCTK_GF) {
                   for (int d=0; d<dim; ++d) {
                     global_lower[d] = cgh->cctk_origin_space[d];
-                    coord_delta[d] = cgh->cctk_delta_space[d] / maxreflevelfact;
+                    coord_delta[d]
+                      = cgh->cctk_delta_space[d] / maxspacereflevelfact[d];
                   }
                 } else {
                   for (int d=0; d<dim; ++d) {

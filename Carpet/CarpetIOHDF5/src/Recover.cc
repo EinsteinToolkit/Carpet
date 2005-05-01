@@ -523,7 +523,7 @@ int ReadVar (const cGH* const cctkGH, const int vindex,
         gdata* const data = (*ff) (tl, reflevel, component, mglevel);
 
         // Create temporary data storage on processor 0
-        vect<int,dim> str = vect<int,dim>(maxreflevelfact/reflevelfact);
+        vect<int,dim> str = maxspacereflevelfact/spacereflevelfact;
 
         if(grouptype == CCTK_SCALAR || grouptype == CCTK_ARRAY)
           str = vect<int,dim> (1);

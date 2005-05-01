@@ -18,11 +18,20 @@ namespace Carpet {
   // Refinement levels
   int reflevels;
   
+#if 0
   // Refinement factor
   int reffact;
+#endif
   
-  // Refinement factor on finest grid
-  int maxreflevelfact;
+  // Temporal refinement factors over the coarsest grid
+  vector<int> timereffacts;
+  
+  // Spatial refinement factors over the coarsest grid
+  vector<vect<int,dim> > spacereffacts;
+  
+  // Maximum refinement factors on finest possible grid
+  int maxtimereflevelfact;
+  vect<int,dim> maxspacereflevelfact;
   
   // Base multigrid level
   int basemglevel;
@@ -47,10 +56,11 @@ namespace Carpet {
   int map;
   int component;
   
-  // refinement factor of current level: ipow(refinement_factor, reflevel)
-  int reflevelfact;
+  // Current refinement factors
+  int timereflevelfact;
+  vect<int,dim> spacereflevelfact;
   
-  // multigrid factor of current level: ipow(multigrid_factor, mglevel)
+  // Current multigrid factor
   int mglevelfact;
   
   

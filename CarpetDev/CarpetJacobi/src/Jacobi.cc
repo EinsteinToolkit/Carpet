@@ -194,7 +194,8 @@ namespace CarpetJacobi {
         for (int m=0; m<maps; ++m) {
           vtt[m]->set_time (reflevel, mglevel, 0);
           vtt[m]->set_delta
-            (reflevel, mglevel, 1.0 / ipow(reflevelfact, reflevelpower));
+            (reflevel, mglevel, 1.0 / ipow (maxval (spacereflevelfact),
+                                            reflevelpower));
         }
       } END_REFLEVEL_LOOP;
       
@@ -217,14 +218,16 @@ namespace CarpetJacobi {
       }
       
       const int icoarsestep
-        = ipow (mglevelfact * maxreflevelfact, reflevelpower);
+        = ipow (mglevelfact * maxval (maxspacereflevelfact), reflevelpower);
       const int istep
-        = ipow (mglevelfact * maxreflevelfact / ipow(reffact, solve_level),
+        = ipow (mglevelfact * maxval (maxspacereflevelfact
+                                      / spacereffacts.at(solve_level)),
                 reflevelpower);
       int iter = istep;
       for (;; iter+=istep) {
         
-        global_time = 1.0 * iter / ipow(maxreflevelfact, reflevelpower);
+        global_time = 1.0 * iter / ipow (maxval (maxspacereflevelfact),
+                                         reflevelpower);
         * const_cast<CCTK_REAL *> (& cctkGH->cctk_time) = global_time;
 //         cout << "CJ global iter " << iter << " time " << global_time << flush << endl;
         
@@ -232,7 +235,8 @@ namespace CarpetJacobi {
         ierr = 0;
         BEGIN_REFLEVEL_LOOP(cctkGH) {
           const int do_every
-            = ipow (mglevelfact * (maxreflevelfact/reflevelfact),
+            = ipow (mglevelfact * maxval (maxspacereflevelfact
+                                          / spacereflevelfact),
                     reflevelpower);
           if (reflevel <= solve_level && (iter-istep) % do_every == 0) {
             
@@ -242,7 +246,7 @@ namespace CarpetJacobi {
             }
             * const_cast<CCTK_REAL *> (& cctkGH->cctk_time)
               = (1.0 * (iter - istep + do_every)
-                 / ipow(maxreflevelfact, reflevelpower));
+                 / ipow (maxval (maxspacereflevelfact), reflevelpower));
             CycleTimeLevels (cctkGH);
 //             cout << "CJ residual iter " << iter << " reflevel " << reflevel << " time " << cctkGH->cctk_time << flush << endl;
             
@@ -326,7 +330,8 @@ namespace CarpetJacobi {
         ierr = 0;
         BEGIN_REVERSE_REFLEVEL_LOOP(cctkGH) {
           const int do_every
-            = ipow (mglevelfact * (maxreflevelfact/reflevelfact),
+            = ipow (mglevelfact * maxval (maxspacereflevelfact
+                                          / spacereflevelfact),
                     reflevelpower);
           if (reflevel <= solve_level && iter % do_every == 0) {
             
@@ -533,7 +538,7 @@ namespace CarpetJacobi {
         * const_cast<CCTK_REAL *> (& cctkGH->cctk_time) = global_time;
         for (int m=0; m<maps; ++m) {
           vtt[m]->set_time (reflevel, mglevel, 0);
-          vtt[m]->set_delta (reflevel, mglevel, 1.0 / reflevelfact);
+          vtt[m]->set_delta (reflevel, mglevel, 1.0 / timereflevelfact);
         }
       } END_REFLEVEL_LOOP;
       

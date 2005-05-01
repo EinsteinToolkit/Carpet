@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
+#include <vector>
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
@@ -8,6 +9,7 @@
 #include "defs.hh"
 #include "dh.hh"
 #include "th.hh"
+#include "vect.hh"
 
 #include "gh.hh"
 
@@ -16,13 +18,19 @@ using namespace std;
 
 
   // Constructors
-gh::gh (const int reffact_, const centering refcent_,
+gh::gh (const vector<ivect> & reffacts_, const centering refcent_,
         const int mgfact_, const centering mgcent_,
         const ibbox baseextent_)
-  : reffact(reffact_), refcent(refcent_),
+  : reffacts(reffacts_), refcent(refcent_),
     mgfact(mgfact_), mgcent(mgcent_),
     baseextent(baseextent_)
 {
+  assert (reffacts.size() >= 1);
+  assert (all (reffacts.front() == 1));
+  for (size_t n = 1; n < reffacts.size(); ++ n) {
+    assert (all (reffacts.at(n) >= reffacts.at(n-1)));
+    assert (all (reffacts.at(n) % reffacts.at(n-1) == 0));
+  }
 }
 
 // Destructors
@@ -136,7 +144,8 @@ void gh::check_refinement_levels ()
   for (int ml=0; ml<mglevels(); ++ml) {
     for (int rl=1; rl<reflevels(); ++rl) {
       assert (all(extents().at(ml).at(rl-1).at(0).stride()
-                  == ivect(reffact) * extents().at(ml).at(rl).at(0).stride()));
+                  == ((reffacts.at(rl) / reffacts.at(rl-1))
+                      * extents().at(ml).at(rl).at(0).stride())));
       // Check contained-ness:
       // first take all coarse grids ...
       ibset all;
@@ -240,7 +249,7 @@ void gh::do_output_bases (ostream& os) const
 ostream& gh::output (ostream& os) const
 {
   os << "gh:"
-     << "reffactor=" << reffact << ",refcentering=" << refcent << ","
+     << "reffacts=" << reffacts << ",refcentering=" << refcent << ","
      << "mgfactor=" << mgfact << ",mgcentering=" << mgcent << ","
      << "extents=" << extents() << ","
      << "outer_boundaries=" << outer_boundaries() << ","

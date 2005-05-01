@@ -96,7 +96,7 @@ namespace CarpetRegrid {
     const ivect rlb  = hh.baseextent.lower();
     const ivect rub  = hh.baseextent.upper();
     
-    const int levfac = ipow(hh.reffact, rl);
+    const ivect levfac = hh.reffacts.at(rl);
     assert (all (rstr % levfac == 0));
     const ivect str (rstr / levfac);
     const ivect lb  (ilower);

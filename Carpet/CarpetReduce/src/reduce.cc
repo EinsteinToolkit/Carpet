@@ -1084,7 +1084,7 @@ namespace CarpetReduce {
               weight = (static_cast<CCTK_REAL const *>
                         (CCTK_VarDataPtr (cgh, 0, "CarpetReduce::weight")));
               assert (weight);
-              levfac = ipow((CCTK_REAL)reflevelfact, -grpdim);
+              levfac = 1.0 / prod (rvect (spacereflevelfact));
             } else {
               weight = NULL;
               levfac = 1.0;
