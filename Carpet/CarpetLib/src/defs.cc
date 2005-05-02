@@ -180,5 +180,6 @@ template ostream& output (ostream& os, const vector<vector<CCTK_REAL> >& v);
 template ostream& output (ostream& os, const vector<vector<bbox<int,3> > >& v);
 template ostream& output (ostream& os, const vector<vector<bbox<CCTK_REAL,3> > >& v);
 template ostream& output (ostream& os, const vector<vector<vect<vect<bool,2>,3> > >& v);
+template ostream& output (ostream& os, const vector<vect<int,3> >& v);
 template ostream& output (ostream& os, const vector<vect<vect<bool,2>,3> >& v);
 template ostream& output (ostream& os, const vector<vector<vector<bbox<int,3> > > >& v);
