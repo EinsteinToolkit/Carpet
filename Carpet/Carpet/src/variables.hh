@@ -44,6 +44,7 @@ namespace Carpet {
   // Refinement levels
   extern int reflevels;
   
+#define CARPET_NEW_REFFACT
 #if 0
   // Refinement factor
   extern int reffact;
