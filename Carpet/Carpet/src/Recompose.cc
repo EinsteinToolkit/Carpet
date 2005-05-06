@@ -118,6 +118,8 @@ namespace Carpet {
  
   bool Regrid (const cGH* cgh, const bool force_recompose, const bool do_init)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     assert (is_level_mode());
     
     if (! CCTK_IsFunctionAliased ("Carpet_Regrid")) {
@@ -157,7 +159,7 @@ namespace Carpet {
         // Recompose
         vhh.at(map)->recompose (bbsss, obss, pss, do_init);
         
-        OutputGrids (cgh, map, *vhh.at(map));
+        if (verbose) OutputGrids (cgh, map, *vhh.at(map));
         
       }
 
