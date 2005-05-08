@@ -139,8 +139,11 @@ void gh::check_base_grid_extent ()
   }
 }
   
+// Check proper nesting, i.e., whether the fine grids are contained in
+// the coarser grids
 void gh::check_refinement_levels ()
 {
+  bool have_error = false;
   for (int ml=0; ml<mglevels(); ++ml) {
     for (int rl=1; rl<reflevels(); ++rl) {
       assert (all(extents().at(ml).at(rl-1).at(0).stride()
@@ -152,6 +155,7 @@ void gh::check_refinement_levels ()
       for (int c=0; c<components(rl-1); ++c) {
         all |= extents().at(ml).at(rl-1).at(c);
       }
+#if 0
       // ... remember their size ...
       const int sz = all.size();
       // ... then add the coarsified fine grids ...
@@ -160,7 +164,33 @@ void gh::check_refinement_levels ()
       }
       // ... and then check the sizes:
       assert (all.size() == sz);
+#endif
+      for (int c=0; c<components(rl); ++c) {
+        ibset const finebox
+          = (extents().at(ml).at(rl).at(c).contracted_for
+             (extents().at(ml).at(rl-1).at(0)));
+        if (! (finebox <= all)) {
+          if (! have_error) {
+            cout << "The following components are not properly nested, i.e., they are not" << endl
+                 << "contained within their next coarser level's components:" << endl;
+          }
+          cout << "   ml " << ml << " rl " << rl << " c " << c << endl;
+          have_error = true;
+        }
+      }      
     }
+  }
+  if (have_error) {
+    cout << "The grid hierarchy looks like:" << endl;
+    for (int ml=0; ml<mglevels(); ++ml) {
+      for (int rl=0; rl<reflevels(); ++rl) {
+        for (int c=0; c<components(rl); ++c) {
+          cout << "   ml " << ml << " rl " << rl << " c " << c << ":   "
+               << extents().at(ml).at(rl).at(c) << endl;
+        }
+      }
+    }
+    CCTK_WARN (0, "The refinement hierarchy is not properly nested.");
   }
 }
 
