@@ -3,10 +3,6 @@
 STORAGE: scalarevolve[3]
 STORAGE: scalarevolvedot
 
-if (estimate_error) {
-  STORAGE: scalarevolveerrorestimate
-}
-
 
 
 SCHEDULE WaveToyMol_Startup AT startup
@@ -47,8 +43,11 @@ SCHEDULE GROUP ApplyBCs IN MoL_PostStep AFTER WaveToyMoL_Boundaries
 
 
 
-if (estimate_error) {
+if (estimate_error)
+{
   
+  STORAGE: scalarevolveerrorestimate
+
   SCHEDULE WaveToyMoL_EstimateError AT poststep
   {
     LANG: Fortran

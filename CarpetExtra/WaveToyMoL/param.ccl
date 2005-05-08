@@ -21,3 +21,9 @@ STRING bound "Type of boundary condition to use"
 BOOLEAN estimate_error "Estimate the truncation error"
 {
 } "no"
+
+INT order "Finite differencing order"
+{
+  2 :: "second order"
+  4 :: "fourth order"
+} 2

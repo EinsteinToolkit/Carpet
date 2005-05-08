@@ -15,8 +15,10 @@
       integer i, j, k
       integer d
       do d=1,3
-         imin(d) = 1+bndwidth
-         imax(d) = cctk_lsh(d)-bndwidth
+         imin(d) = 1+cctk_nghostzones(d)
+         imax(d) = cctk_lsh(d)-cctk_nghostzones(d)
+         if (cctk_bbox(2*d-1).ne.0) imin(d) = 1+bndwidth
+         if (cctk_bbox(2*d  ).ne.0) imax(d) = cctk_lsh(d)-bndwidth
       end do
       do d=1,3
          dx(d) = CCTK_DELTA_SPACE(3)
