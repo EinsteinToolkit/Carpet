@@ -18,6 +18,12 @@ private:
 
 
 
+BOOLEAN one_file_per_group "Write one file per group instead of per variable"
+{
+} "no"
+
+
+
 CCTK_STRING outScalar_dir "Name of scalar output directory, overrides out_dir" STEERABLE = ALWAYS
 {
   "^$" :: "Empty: use IO::out_dir"

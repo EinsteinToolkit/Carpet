@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cstdlib>
+#include <cctype>
 #include <fstream>
 #include <iomanip>
 #include <list>
@@ -272,6 +273,15 @@ namespace CarpetIOScalar {
             file.open (filename, ios::out | ios::trunc);
             file << "# " << varname << " (" << alias << ")" << endl;
             file << "# iteration time data" << endl;
+            if (one_file_per_group) {
+              file << "# data columns:";
+              int const firstvar = CCTK_FirstVarIndexI(group);
+              int const numvars = CCTK_NumVarsInGroupI(group);
+              for (int n=firstvar; n<firstvar+numvars; ++n) {
+                file << " " << CCTK_VarName(n);
+              }
+              file << endl;
+            }
           } else {
             file.open (filename, ios::out | ios::app);
           }
@@ -287,7 +297,11 @@ namespace CarpetIOScalar {
           assert (file.good());
 
         } // if on the root processor
-
+        
+        if (CCTK_MyProc(cctkGH)==0) {
+          file << cctk_iteration << " " << cctk_time;
+        }
+        
         int const handle = ireduction->handle;
 
         union {
@@ -296,29 +310,39 @@ namespace CarpetIOScalar {
 #undef TYPECASE
         } result;
 
-        int const ierr
-          = CCTK_Reduce (cctkGH, 0, handle, 1, vartype, &result, 1, n);
-        assert (! ierr);
-
-        if (CCTK_MyProc(cctkGH)==0) {
-
-          file << cctk_iteration << " " << cctk_time << " ";
-
-          switch (vartype) {
+        int const firstvar
+          = one_file_per_group ? CCTK_FirstVarIndexI(group) : n;
+        int const numvars
+          = one_file_per_group ? CCTK_NumVarsInGroupI(group) : 1;
+        
+        for (int n=firstvar; n<firstvar+numvars; ++n) {
+          
+          int const ierr
+            = CCTK_Reduce (cctkGH, 0, handle, 1, vartype, &result, 1, n);
+          assert (! ierr);
+          
+          if (CCTK_MyProc(cctkGH)==0) {
+            file << " ";
+            
+            switch (vartype) {
 #define TYPECASE(N,T)                           \
-          case N:                               \
-            file << result.var_##T;             \
-            break;
+              case N:                           \
+                file << result.var_##T;         \
+              break;
 #include "carpet_typecase.hh"
 #undef TYPECASE
-          default:
-            UnsupportedVarType (n);
+            default:
+              UnsupportedVarType (n);
+            }
           }
-
+          
+        } // for n
+        
+        if (CCTK_MyProc(cctkGH)==0) {
           file << endl;
           assert (file.good());
         }
-
+        
         if (CCTK_MyProc(cctkGH)==0) {
           file.close();
           assert (file.good());
@@ -475,15 +499,39 @@ namespace CarpetIOScalar {
   TriggerOutput (const cGH * const cctkGH, int const vindex)
   {
     DECLARE_CCTK_ARGUMENTS;
+    DECLARE_CCTK_PARAMETERS;
 
     assert (vindex>=0 && vindex<CCTK_NumVars());
-
-    char* const varname = CCTK_FullName(vindex);
-    const int retval = OutputVarAs (cctkGH, varname, CCTK_VarName(vindex));
-    free (varname);
-
-    last_output.at(vindex) = cctk_iteration;
-
+    
+    int retval;
+    
+    if (one_file_per_group) {
+      
+      char* fullname = CCTK_FullName(vindex);
+      int const gindex = CCTK_GroupIndexFromVarI(vindex);
+      char* groupname = CCTK_GroupName(gindex);
+      for (char* p=groupname; *p; ++p) *p=tolower(*p);
+      retval = OutputVarAs (cctkGH, fullname, groupname);
+      free (fullname);
+      free (groupname);
+      
+      int const firstvar = CCTK_FirstVarIndexI(gindex);
+      int const numvars = CCTK_NumVarsInGroupI(gindex);
+      for (int n=firstvar; n<firstvar+numvars; ++n) {
+        last_output.at(n) = cctk_iteration;
+      }
+      
+    } else {
+      
+      char* const fullname = CCTK_FullName(vindex);
+      char const* varname = CCTK_FullName(vindex);
+      const int retval = OutputVarAs (cctkGH, fullname, varname);
+      free (fullname);
+      
+      last_output.at(vindex) = cctk_iteration;
+      
+    }
+    
     return retval;
   }
 
