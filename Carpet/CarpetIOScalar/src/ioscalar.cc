@@ -507,9 +507,9 @@ namespace CarpetIOScalar {
     
     if (one_file_per_group) {
       
-      char* fullname = CCTK_FullName(vindex);
+      char* const fullname = CCTK_FullName(vindex);
       int const gindex = CCTK_GroupIndexFromVarI(vindex);
-      char* groupname = CCTK_GroupName(gindex);
+      char* const groupname = CCTK_GroupName(gindex);
       for (char* p=groupname; *p; ++p) *p=tolower(*p);
       retval = OutputVarAs (cctkGH, fullname, groupname);
       free (fullname);
@@ -524,7 +524,7 @@ namespace CarpetIOScalar {
     } else {
       
       char* const fullname = CCTK_FullName(vindex);
-      char const* varname = CCTK_FullName(vindex);
+      char const* const varname = CCTK_VarName(vindex);
       const int retval = OutputVarAs (cctkGH, fullname, varname);
       free (fullname);
       
