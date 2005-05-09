@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ctype.h>
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
@@ -75,7 +76,7 @@ namespace CarpetIOASCII {
 
   template<int outdim>
   void WriteASCII (ostream& os,
-		   const gdata* const gfdata,
+		   vector<const gdata*> const gfdatas,
 		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
@@ -470,7 +471,13 @@ namespace CarpetIOASCII {
                                 filename, varname);
                   }
                   assert (file.good());
-                  file << "# " << varname;
+                  if (one_file_per_group) {
+                    char* groupname = CCTK_GroupNameFromVarI(n);
+                    file << "# " << groupname;
+                    free (groupname);
+                  } else {
+                    file << "# " << varname;
+                  }
                   for (int d=0; d<outdim; ++d) {
                     file << " " << "xyz"[dirs[d]];
                   }
@@ -495,10 +502,8 @@ namespace CarpetIOASCII {
             // refinement level and map
             BEGIN_COMPONENT_LOOP(cgh, grouptype) {
 
-              const ggf* ff = 0;
-
-              assert (var < (int)arrdata.at(group).at(Carpet::map).data.size());
-              ff = (ggf*)arrdata.at(group).at(Carpet::map).data.at(var);
+              const ggf* const ff
+                = arrdata.at(group).at(Carpet::map).data.at(var);
 
               const int mintl = output_all_timelevels ? 1-num_tl : 0;
               const int maxtl = 0;
@@ -561,7 +566,20 @@ namespace CarpetIOASCII {
                   offset1[dirs[d]] = ext.lower()[dirs[d]];
                 }
 
-                WriteASCII (file, data, ext, n, cgh->cctk_iteration,
+                vector<const gdata*> datas;
+                if (one_file_per_group) {
+                  int const numvars = CCTK_NumVarsInGroupI(group);
+                  datas.resize (numvars);
+                  for (int n=0; n<numvars; ++n) {
+                    const ggf* const ff1
+                      = arrdata.at(group).at(Carpet::map).data.at(n);
+                    datas.at(n) = (*ff1) (tl, rl, component, mglevel);
+                  }
+                } else {
+                  datas.resize (1);
+                  datas.at(0) = data;
+                }
+                WriteASCII (file, datas, ext, n, cgh->cctk_iteration,
                             offset1, dirs,
                             rl, mglevel, Carpet::map, component, tl,
                             coord_time, coord_lower, coord_upper);
@@ -782,14 +800,39 @@ namespace CarpetIOASCII {
   int IOASCII<outdim>
   ::TriggerOutput (const cGH* const cgh, const int vindex)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     assert (vindex>=0 && vindex<CCTK_NumVars());
 
-    char* varname = CCTK_FullName(vindex);
-    const int retval = OutputVarAs (cgh, varname, CCTK_VarName(vindex));
-    free (varname);
-
-    last_output.at(mglevel).at(reflevel).at(vindex) = cgh->cctk_iteration;
-
+    int retval;
+    
+    if (one_file_per_group) {
+      
+      char* fullname = CCTK_FullName(vindex);
+      int const gindex = CCTK_GroupIndexFromVarI(vindex);
+      char* groupname = CCTK_GroupName(gindex);
+      for (char* p=groupname; *p; ++p) *p=tolower(*p);
+      retval = OutputVarAs (cgh, fullname, groupname);
+      free (fullname);
+      free (groupname);
+      
+      int const firstvar = CCTK_FirstVarIndexI(gindex);
+      int const numvars = CCTK_NumVarsInGroupI(gindex);
+      for (int n=firstvar; n<firstvar+numvars; ++n) {
+        last_output.at(mglevel).at(reflevel).at(n) = cgh->cctk_iteration;
+      }
+      
+    } else {
+      
+      char* fullname = CCTK_FullName(vindex);
+      char const* varname = CCTK_FullName(vindex);
+      retval = OutputVarAs (cgh, fullname, varname);
+      free (fullname);
+      
+      last_output.at(mglevel).at(reflevel).at(vindex) = cgh->cctk_iteration;
+      
+    }
+    
     return retval;
   }
 
@@ -987,7 +1030,7 @@ namespace CarpetIOASCII {
   // Output
   template<int outdim>
   void WriteASCII (ostream& os,
-		   const gdata* const gfdata,
+		   vector<const gdata*> const gfdatas,
 		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
@@ -1002,10 +1045,16 @@ namespace CarpetIOASCII {
 		   const vect<CCTK_REAL,dim>& coord_lower,
 		   const vect<CCTK_REAL,dim>& coord_upper)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     assert (outdim<=dim);
     const int vartype = CCTK_VarTypeI(vi);
 
-    if (gfdata->proc()==0) {
+    bool all_on_root = true;
+    for (size_t n=0; n<gfdatas.size(); ++n) {
+      all_on_root &= gfdatas.at(n)->proc() == 0;
+    }
+    if (all_on_root) {
       // output on processor 0
 
       int rank;
@@ -1028,6 +1077,16 @@ namespace CarpetIOASCII {
 	os << "\ttime\t";
 	for (int d=0; d<dim-1; ++d) os << coords[d] << " "; os << coords[dim-1];
 	os << "\tdata" << endl;
+        if (one_file_per_group) {
+          os << "# data columns:";
+          int const gindex = CCTK_GroupIndexFromVarI(vi);
+          int const firstvar = CCTK_FirstVarIndexI(gindex);
+          int const numvars = CCTK_NumVarsInGroupI(gindex);
+          for (int n=firstvar; n<firstvar+numvars; ++n) {
+            os << " " << CCTK_VarName(n);
+          }
+          os << endl;
+        }
 
 	const vect<int,outdim> lo = gfext.lower()[dirs];
 	const vect<int,outdim> up = gfext.upper()[dirs];
@@ -1050,6 +1109,7 @@ namespace CarpetIOASCII {
 	    for (int d=0; d<dim-1; ++d) os << index[d] << " "; os << index[dim-1];
 	    os << "\t" << coord_time << "\t";
 	    for (int d=0; d<dim; ++d) {
+              if (d > 0) os << " ";
 	      assert (gfext.upper()[d] - gfext.lower()[d] >= 0);
 	      if (gfext.upper()[d] - gfext.lower()[d] == 0) {
                 os << coord_lower[d];
@@ -1060,19 +1120,22 @@ namespace CarpetIOASCII {
                        (coord_lower[d] + (index[d] - gfext.lower()[d]) * dx,
                         dx * 1.0e-8));
               }
-              if (d != dim-1) os << " ";
 	    }
-	    os << "\t";
-	    switch (vartype) {
-#define TYPECASE(N,T)					\
-	    case N:					\
-	      os << (*(const data<T>*)gfdata)[index];	\
-	      break;
+            os << "\t";
+            for (size_t n=0; n<gfdatas.size(); ++n) {
+              const gdata* gfdata = gfdatas.at(n);
+              if (n > 0) os << " ";
+              switch (vartype) {
+#define TYPECASE(N,T)                                           \
+                case N:                                         \
+                  os << (*(const data<T>*)gfdata)[index];	\
+                break;
 #include "carpet_typecase.hh"
 #undef TYPECASE
-	    default:
-	      UnsupportedVarType(vi);
-	    }
+              default:
+                UnsupportedVarType(vi);
+              }
+            } // for n
 	    os << endl;
 
             ++it;
@@ -1097,14 +1160,20 @@ namespace CarpetIOASCII {
     } else {
       // copy to processor 0 and output there
 
-      gdata* const tmp = gfdata->make_typed(vi);
-      tmp->allocate(gfdata->extent(), 0);
-      for (comm_state state(vartype); !state.done(); state.step()) {
-        tmp->copy_from (state, gfdata, gfdata->extent());
+      vector<const gdata*> tmps (gfdatas.size());
+      for (size_t n=0; n<gfdatas.size(); ++n) {
+        gdata * const tmp = gfdatas.at(n)->make_typed(vi);
+        tmp->allocate(gfdatas.at(n)->extent(), 0);
+        for (comm_state state(vartype); !state.done(); state.step()) {
+          tmp->copy_from (state, gfdatas.at(n), gfdatas.at(n)->extent());
+        }
+        tmps.at(n) = tmp;
       }
-      WriteASCII (os, tmp, gfext, vi, time, org, dirs, rl, ml, m, c, tl,
+      WriteASCII (os, tmps, gfext, vi, time, org, dirs, rl, ml, m, c, tl,
 		  coord_time, coord_lower, coord_upper);
-      delete tmp;
+      for (size_t n=0; n<gfdatas.size(); ++n) {
+        delete tmps.at(n);
+      }
 
     }
   }
@@ -1121,7 +1190,7 @@ namespace CarpetIOASCII {
 
   template
   void WriteASCII (ostream& os,
-		   const gdata* const gfdata,
+		   vector<const gdata*> const gfdatas,
 		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
@@ -1138,7 +1207,7 @@ namespace CarpetIOASCII {
 
   template
   void WriteASCII (ostream& os,
-		   const gdata* const gfdata,
+		   vector<const gdata*> const gfdatas,
 		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
@@ -1155,7 +1224,7 @@ namespace CarpetIOASCII {
 
   template
   void WriteASCII (ostream& os,
-		   const gdata* const gfdata,
+		   vector<const gdata*> const gfdatas,
 		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
@@ -1172,7 +1241,7 @@ namespace CarpetIOASCII {
 
   template
   void WriteASCII (ostream& os,
-		   const gdata* const gfdata,
+		   vector<const gdata*> const gfdatas,
 		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,

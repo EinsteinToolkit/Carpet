@@ -47,13 +47,9 @@ private:
 
 
 
-BOOLEAN out3D_ghosts "Output ghost zones as well"
+BOOLEAN one_file_per_group "Write one file per group instead of per variable"
 {
-} "yes"
-
-BOOLEAN out3D_outer_ghosts "Output outer boundary ghost zones as well"
-{
-} "yes"
+} "no"
 
 
 
@@ -363,6 +359,16 @@ CCTK_REAL out2D_yzplane_x "x coordinate for 2D planes in yz-direction" STEERABLE
 {
   *:* :: ""
 } 0
+
+
+
+BOOLEAN out3D_ghosts "Output ghost zones as well"
+{
+} "yes"
+
+BOOLEAN out3D_outer_ghosts "Output outer boundary ghost zones as well"
+{
+} "yes"
 
 
 
