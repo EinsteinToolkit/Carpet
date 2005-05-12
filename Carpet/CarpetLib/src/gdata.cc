@@ -426,10 +426,10 @@ void gdata::copy_into_sendbuffer (comm_state& state,
 
     // post the send if the buffer is full
     if (fillstate == state.collbufs[proc()].sendbufsize*state.vartypesize) {
-      MPI_Irsend (state.collbufs[proc()].sendbufbase,
-                  state.collbufs[proc()].sendbufsize,
-                  state.datatype, proc(), 0, dist::comm,
-                  &state.srequests[proc()]);
+      MPI_Isend (state.collbufs[proc()].sendbufbase,
+                 state.collbufs[proc()].sendbufsize,
+                 state.datatype, proc(), 0, dist::comm,
+                 &state.srequests[proc()]);
     }
   }
 }
@@ -791,10 +791,10 @@ void gdata
 
     // post the send if the buffer is full
     if (fillstate == state.collbufs[proc()].sendbufsize*state.vartypesize) {
-      MPI_Irsend (state.collbufs[proc()].sendbufbase,
-                  state.collbufs[proc()].sendbufsize,
-                  state.datatype, proc(), 0, dist::comm, 
-                  &state.srequests[proc()]);
+      MPI_Isend (state.collbufs[proc()].sendbufbase,
+                 state.collbufs[proc()].sendbufsize,
+                 state.datatype, proc(), 0, dist::comm, 
+                 &state.srequests[proc()]);
     }
   }
 }

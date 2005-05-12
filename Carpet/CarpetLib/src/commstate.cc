@@ -97,7 +97,7 @@ void comm_state::step ()
       // The sizes of the collective communication buffers are known
       // so now allocate them.
       // The receive operations are also posted here already
-      // so that we can use ready mode sends (MPI_Irsend()) later.
+      // (a clever MPI layer may take advantage of such early posting).
       num_posted_recvs = num_completed_recvs = 0;
 
       for (size_t i = 0; i < collbufs.size(); i++) {
