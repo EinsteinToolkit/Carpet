@@ -44,6 +44,15 @@ namespace CarpetIOF5 {
     }
     
     
+      
+    physical_quantity_t & tensor_component_t::
+    get_physical_quantity ()
+        const
+    {
+      return m_physical_quantity;
+    }
+    
+    
     
     hid_t tensor_component_t::
     get_variable ()

@@ -34,6 +34,10 @@ namespace CarpetIOF5 {
       virtual
       ~ simulation_t ();
       
+      timestep_t &
+      get_timestep ()
+        const;
+      
       hid_t
       get_hdf5_simulation ()
         const;

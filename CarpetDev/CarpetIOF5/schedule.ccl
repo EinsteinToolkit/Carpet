@@ -1,1 +1,6 @@
 # Schedule definitions for thorn CarpetIOF5
+
+SCHEDULE CarpetIOF5_Startup AT startup AFTER IOUtil_Startup
+{
+  LANG: C
+} "Startup routine"

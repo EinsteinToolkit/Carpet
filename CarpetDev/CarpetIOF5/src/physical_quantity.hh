@@ -27,6 +27,14 @@ namespace CarpetIOF5 {
       virtual
       ~ physical_quantity_t ();
       
+      coordinate_system_t &
+      get_coordinate_system ()
+        const;
+      
+      int
+      get_group ()
+        const;
+      
       hid_t
       get_hdf5_physical_quantity ()
         const;

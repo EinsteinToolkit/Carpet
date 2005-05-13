@@ -2,7 +2,8 @@
 
 IMPLEMENTS: IOF5
 
-USES INCLUDE: bbox.hh defs.hh vect.hh
+USES INCLUDE: bbox.hh defs.hh dh.hh vect.hh
+USES INCLUDE: carpet.hh
 
 
 

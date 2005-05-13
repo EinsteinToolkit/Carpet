@@ -28,6 +28,15 @@ namespace CarpetIOF5 {
     
     
     
+    topology_t & coordinate_system_t::
+    get_topology ()
+      const
+    {
+      return m_topology;
+    }
+    
+    
+    
     hid_t coordinate_system_t::
     get_hdf5_coordinate_system ()
       const
@@ -103,7 +112,7 @@ namespace CarpetIOF5 {
     {
       assert (all (m_level_delta > 0));
       
-      ostringstream buf;
+      std::ostringstream buf;
       buf << "Cartesian 3D, x0=" << m_level_origin << ", dx=" << m_level_delta;
       char const * const name = buf.str().c_str();
       

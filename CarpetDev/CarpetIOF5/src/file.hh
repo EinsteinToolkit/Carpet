@@ -24,10 +24,15 @@ namespace CarpetIOF5 {
     public:
       
       file_t (cGH const * cctkGH,
-              char const * filename);
+              char const * filename,
+              bool do_truncate);
       
       virtual
       ~ file_t ();
+      
+      cGH const *
+      get_cctkGH ()
+        const;
       
       hid_t
       get_hdf5_file ()

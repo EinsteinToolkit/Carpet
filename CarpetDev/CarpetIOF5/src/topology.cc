@@ -5,6 +5,9 @@
 
 #include "cctk.h"
 
+#include "defs.hh"
+#include "vect.hh"
+
 #include "topology.hh"
 #include "utils.hh"
 
@@ -25,6 +28,15 @@ namespace CarpetIOF5 {
     topology_t::
     ~ topology_t ()
     {
+    }
+    
+    
+    
+    simulation_t & topology_t::
+    get_simulation ()
+      const
+    {
+      return m_simulation;
     }
     
     
@@ -83,8 +95,8 @@ namespace CarpetIOF5 {
     mesh_refinement_topology_t (simulation_t & simulation,
                                 int const refinement_level,
                                 int const max_refinement_levels,
-                                int const level_refinement_factor,
-                                int const max_refinement_factor)
+                                vect<int, dim> const & level_refinement_factor,
+                                vect<int, dim> const & max_refinement_factor)
       : topology_t (simulation),
         m_refinement_level (refinement_level),
         m_max_refinement_levels (max_refinement_levels),
@@ -93,8 +105,8 @@ namespace CarpetIOF5 {
     {
       assert (refinement_level >= 0);
       assert (refinement_level < max_refinement_levels);
-      assert (level_refinement_factor > 0);
-      assert (level_refinement_factor <= max_refinement_factor);
+      assert (all (level_refinement_factor > 0));
+      assert (all (level_refinement_factor <= max_refinement_factor));
       
       ostringstream buf;
       buf << "Vertices level " << refinement_level;
@@ -147,8 +159,8 @@ namespace CarpetIOF5 {
       return (topology_t::invariant()
               and m_refinement_level >= 0
               and m_refinement_level < m_max_refinement_levels
-              and m_level_refinement_factor > 0
-              and m_level_refinement_factor <= m_max_refinement_factor);
+              and all (m_level_refinement_factor > 0)
+              and all (m_level_refinement_factor <= m_max_refinement_factor));
     }
     
   } // namespace F5

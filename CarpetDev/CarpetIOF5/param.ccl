@@ -1,17 +1,61 @@
 # Parameter definitions for thorn CarpetIOF5
 
-STRING out_dir "Output directory, overrides 'IO::out_dir'" STEERABLE = ALWAYS
+SHARES: IO
+
+USES STRING  out_dir       AS IO_out_dir
+USES KEYWORD out_criterion AS IO_out_criterion
+USES INT     out_every     AS IO_out_every
+USES REAL    out_dt        AS IO_out_dt
+
+PRIVATE:
+
+STRING out_dir "Output directory (overrides IO::out_dir)" STEERABLE=always
 {
   "^$" :: "Empty: use IO::out_dir"
   ".+" :: "Not empty: directory name"
 } ""
 
-STRING out_extension "File extension for CarpetIOF5 output" STEERABLE = ALWAYS
+STRING out_filename "File name (without extension)" STEERABLE=always
 {
-  ".*" :: "File extension (including a leading dot, if desired)"
+  "" :: ""
+} "output"
+
+STRING out_extension "File name extension" STEERABLE=always
+{
+  "" :: "File extension (including a leading dot, if desired)"
 } ".f5"
 
-STRING out_vars "Variables and groups which should be output in the F5 file format" STEERABLE = ALWAYS
+STRING out_vars "Variables and groups which should be output in the F5 file format" STEERABLE=always
 {
-  .* :: "List of group or variable names"
+  "" :: "List of group or variable names"
 } ""
+
+KEYWORD out_criterion "Criterion to select CarpetIOHDF5 output intervals" STEERABLE=always
+{
+  "default"   :: "Use IO::out_criterion"
+  "always"    :: "Always output"
+  "never"     :: "Never output"
+  "iteration" :: "Output every so many iterations"
+  "time"      :: "Output every that much coordinate time"
+} "default"
+
+INT out_every "How often to do CarpetIOF5 output (overrides IO::out_every)" STEERABLE=always
+{
+  1:* :: "Output every so many time steps"
+  0   :: "As often as possible"
+  -1  :: "No output"
+  -2  :: "Use IO::out_every"
+} -2
+
+REAL out_dt "How often to do CarpetIOF5 output (overrides IO::out_dt)" STEERABLE=always
+{
+  (0:* :: "In intervals of that much coordinate time"
+  0    :: "As often as possible"
+  -1   :: "No output"
+  -2   :: "Use IO::out_dt"
+} -2
+
+REAL dt_fudge "Fudge factor for time comparisons" STEERABLE=always
+{
+  0:* :: ""
+} 1.0e-8

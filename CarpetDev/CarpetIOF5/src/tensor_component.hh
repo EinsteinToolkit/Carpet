@@ -27,6 +27,10 @@ namespace CarpetIOF5 {
       virtual
       ~ tensor_component_t ();
       
+      physical_quantity_t &
+      get_physical_quantity ()
+        const;
+      
       hid_t
       get_variable ()
         const;

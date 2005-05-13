@@ -47,6 +47,15 @@ namespace CarpetIOF5 {
     
     
     
+    timestep_t & simulation_t::
+    get_timestep ()
+      const
+    {
+      return m_timestep;
+    }
+    
+    
+    
     hid_t simulation_t::
     get_hdf5_simulation()
       const

@@ -14,30 +14,22 @@ namespace CarpetIOF5 {
     
     file_t::
     file_t (cGH const * const cctkGH,
-            char const * const filename)
+            char const * const filename,
+            bool const do_truncate)
       : m_cctkGH (cctkGH),
         m_filename (filename)
     {
       assert (cctkGH);
       assert (filename);
       
-      extending extension (cctkGH);
-      
-      bool const should_truncate = IO_TruncateOutputFiles (cctkGH);
-      
-      bool const did_truncate
-        = (extension.get_did_truncate().find (filename)
-           != extension.get_did_truncate().end());
-      
       htri_t is_hdf5 = H5Fis_hdf5 (filename);
       assert (is_hdf5 >= 0);
       bool const file_exists = is_hdf5 > 0;
       
-      if ((should_truncate and ! did_truncate) or ! file_exists)
+      if (do_truncate or ! file_exists)
       {
         m_hdf5_file
           = H5Fcreate (filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-        extension.get_did_truncate().insert (filename);
       }
       else
       {
@@ -54,6 +46,15 @@ namespace CarpetIOF5 {
     {
       herr_t const herr = H5Fclose (m_hdf5_file);
       assert (! herr);
+    }
+    
+    
+    
+    cGH const * file_t::
+    get_cctkGH ()
+      const
+    {
+      return m_cctkGH;
     }
     
     

@@ -1,9 +1,11 @@
 # Main make.code.defn file for thorn CarpetIOF5
 
 # Source files in this directory
-SRCS =	coordinate_system.cc			\
+SRCS =	IOF5.cc					\
+	coordinate_system.cc			\
 	data_region.cc				\
-        extending.cc file.cc			\
+        extending.cc				\
+        file.cc					\
         physical_quantity.cc 			\
         simulation.cc 				\
         tensor_component.cc			\

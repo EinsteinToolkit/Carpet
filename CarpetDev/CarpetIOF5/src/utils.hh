@@ -14,34 +14,34 @@ namespace CarpetIOF5 {
   namespace F5 {
     
     hid_t
-    hdf5_datatype (signed char const & dummy);
+    hdf5_datatype_from_dummy (signed char const & dummy);
     hid_t
-    hdf5_datatype (short const & dummy);
+    hdf5_datatype_from_dummy (short const & dummy);
     hid_t
-    hdf5_datatype (int const & dummy);
+    hdf5_datatype_from_dummy (int const & dummy);
     hid_t
-    hdf5_datatype (long const & dummy);
+    hdf5_datatype_from_dummy (long const & dummy);
     hid_t
-    hdf5_datatype (long long const & dummy);
+    hdf5_datatype_from_dummy (long long const & dummy);
     hid_t
-    hdf5_datatype (float const & dummy);
+    hdf5_datatype_from_dummy (float const & dummy);
     hid_t
-    hdf5_datatype (double const & dummy);
+    hdf5_datatype_from_dummy (double const & dummy);
     hid_t
-    hdf5_datatype (long double const & dummy);
+    hdf5_datatype_from_dummy (long double const & dummy);
     hid_t
-    hdf5_datatype (CCTK_COMPLEX8 const & dummy);
+    hdf5_datatype_from_dummy (CCTK_COMPLEX8 const & dummy);
     hid_t
-    hdf5_datatype (CCTK_COMPLEX16 const & dummy);
+    hdf5_datatype_from_dummy (CCTK_COMPLEX16 const & dummy);
     hid_t
-    hdf5_datatype (CCTK_COMPLEX32 const & dummy);
+    hdf5_datatype_from_dummy (CCTK_COMPLEX32 const & dummy);
     
     template<typename T, typename R>
     hid_t
-    hdf5_complex_datatype (T const & dummy, R const & real);
+    hdf5_complex_datatype_from_dummy (T const & dummy, R const & real);
     
     hid_t
-    hdf5_datatype_from_cactus (int cactus_type);
+    hdf5_datatype_from_cactus_datatype (int cactus_datatype);
     
     
     

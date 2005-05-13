@@ -32,8 +32,8 @@ namespace CarpetIOF5 {
       
       int const vartype = CCTK_VarTypeI (m_tensor_component.get_variable());
       assert (vartype >= 0);
-      hid_t const datatype = hdf5_datatype_from_cactus (vartype);
-      assert (datatype >= 0);
+      hid_t const hdf5_datatype = hdf5_datatype_from_cactus_datatype (vartype);
+      assert (hdf5_datatype >= 0);
       
       m_properties = H5Pcreate (H5P_DATASET_CREATE);
       assert (m_properties >= 0);
@@ -44,7 +44,8 @@ namespace CarpetIOF5 {
       assert (m_dataspace >= 0);
 
       m_dataset
-        = H5Dcreate (m_dataspace, name, datatype, m_dataspace, m_properties);
+        = H5Dcreate (m_dataspace, name, hdf5_datatype,
+                     m_dataspace, m_properties);
       assert (m_dataset >= 0);
       
       write_or_check_attribute
@@ -72,14 +73,23 @@ namespace CarpetIOF5 {
     
     
     
-    template<typename T>
-    void data_region_t::
-    write (T const * const data)
+    tensor_component_t & data_region_t::
+    get_tensor_component ()
       const
     {
-      T dummy;
-      hid_t const memory_datatype = hdf5_datatype (dummy);
-      assert (memory_datatype >= 0);
+      return m_tensor_component;
+    }
+    
+    
+    
+    void data_region_t::
+    write (void const * const data,
+           int const cactus_datatype)
+      const
+    {
+      hid_t const memory_hdf5_datatype
+        = hdf5_datatype_from_cactus_datatype (cactus_datatype);
+      assert (memory_hdf5_datatype >= 0);
       
       vect<hsize_t, dim> const dims
         = (m_region.shape() / m_region.stride()).reverse();
@@ -92,7 +102,7 @@ namespace CarpetIOF5 {
       
       herr_t herr;
       herr
-        = H5Dwrite (m_dataset, memory_datatype, memory_dataspace,
+        = H5Dwrite (m_dataset, memory_hdf5_datatype, memory_dataspace,
                     m_dataspace, transfer_properties, data);
       assert (! herr);
       
@@ -102,10 +112,6 @@ namespace CarpetIOF5 {
       herr = H5Sclose (memory_dataspace);
       assert (! herr);
     }
-    
-    template void data_region_t::write (CCTK_INT     const * const data) const;
-    template void data_region_t::write (CCTK_REAL    const * const data) const;
-    template void data_region_t::write (CCTK_COMPLEX const * const data) const;
     
     
     

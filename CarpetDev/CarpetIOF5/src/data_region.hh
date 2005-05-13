@@ -32,9 +32,13 @@ namespace CarpetIOF5 {
       virtual
       ~ data_region_t ();
       
-      template<typename T>
+      tensor_component_t &
+      get_tensor_component ()
+        const;
+      
       void
-      write (T const * data)
+      write (void const * data,
+             int cactus_datatype)
         const;
       
       virtual bool

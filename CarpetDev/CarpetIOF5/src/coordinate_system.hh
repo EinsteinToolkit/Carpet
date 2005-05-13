@@ -31,6 +31,10 @@ namespace CarpetIOF5 {
       virtual
       ~ coordinate_system_t ();
       
+      topology_t &
+      get_topology ()
+        const;
+      
       hid_t
       get_hdf5_coordinate_system ()
         const;

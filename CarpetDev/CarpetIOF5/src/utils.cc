@@ -1,5 +1,6 @@
 #include <cassert>
 #include <complex>
+#include <cstring>
 #include <vector>
 
 #include <hdf5.h>
@@ -22,80 +23,80 @@ namespace CarpetIOF5 {
     
     
     hid_t
-    hdf5_datatype (signed char const & dummy)
+    hdf5_datatype_from_dummy (signed char const & dummy)
     {
       return H5T_NATIVE_SCHAR;
     }
     
     hid_t
-    hdf5_datatype (short const & dummy)
+    hdf5_datatype_from_dummy (short const & dummy)
     {
       return H5T_NATIVE_SHORT;
     }
     
     hid_t
-    hdf5_datatype (int const & dummy)
+    hdf5_datatype_from_dummy (int const & dummy)
     {
       return H5T_NATIVE_INT;
     }
     
     hid_t
-    hdf5_datatype (long const & dummy)
+    hdf5_datatype_from_dummy (long const & dummy)
     {
       return H5T_NATIVE_LONG;
     }
     
     hid_t
-    hdf5_datatype (long long const & dummy)
+    hdf5_datatype_from_dummy (long long const & dummy)
     {
       return H5T_NATIVE_LLONG;
     }
     
     hid_t
-    hdf5_datatype (float const & dummy)
+    hdf5_datatype_from_dummy (float const & dummy)
     {
       return H5T_NATIVE_FLOAT;
     }
     
     hid_t
-    hdf5_datatype (double const & dummy)
+    hdf5_datatype_from_dummy (double const & dummy)
     {
       return H5T_NATIVE_DOUBLE;
     }
     
     hid_t
-    hdf5_datatype (long double const & dummy)
+    hdf5_datatype_from_dummy (long double const & dummy)
     {
       return H5T_NATIVE_LDOUBLE;
     }
     
     hid_t
-    hdf5_datatype (CCTK_COMPLEX8 const & dummy)
+    hdf5_datatype_from_dummy (CCTK_COMPLEX8 const & dummy)
     {
       CCTK_REAL4 real;
-      return hdf5_complex_datatype (dummy, real);
+      return hdf5_complex_datatype_from_dummy (dummy, real);
     }
     
     hid_t
-    hdf5_datatype (CCTK_COMPLEX16 const & dummy)
+    hdf5_datatype_from_dummy (CCTK_COMPLEX16 const & dummy)
     {
       CCTK_REAL8 real;
-      return hdf5_complex_datatype (dummy, real);
+      return hdf5_complex_datatype_from_dummy (dummy, real);
     }
     
     hid_t
-    hdf5_datatype (CCTK_COMPLEX32 const & dummy)
+    hdf5_datatype_from_dummy (CCTK_COMPLEX32 const & dummy)
     {
       CCTK_REAL16 real;
-      return hdf5_complex_datatype (dummy, real);
+      return hdf5_complex_datatype_from_dummy (dummy, real);
     }
     
     template<typename T, typename R>
     hid_t
-    hdf5_complex_datatype (T const & dummy, R const & real)
+    hdf5_complex_datatype_from_dummy (T const & dummy, R const & real)
     {
       static bool initialised = false;
-      static hid_t hdf_complex;
+      static hid_t hdf_complex_datatype;
       
       if (! initialised)
       {
@@ -104,34 +105,44 @@ namespace CarpetIOF5 {
         hsize_t const dim = 2;
         int const perm = 0;
         
-        hdf_complex = H5Tarray_create (hdf5_datatype (real), 1, & dim, & perm);
-        assert (hdf_complex >= 0);
+        hdf_complex_datatype
+          = H5Tarray_create (hdf5_datatype_from_dummy (real),
+                             1, & dim, & perm);
+        assert (hdf_complex_datatype >= 0);
       }
       
-      return hdf_complex;
+      return hdf_complex_datatype;
     }
     
     
     
     hid_t
-    hdf5_datatype_from_cactus (int const cactus_type)
+    hdf5_datatype_from_cactus_datatype (int const cactus_datatype)
     {
-      switch (cactus_type) {
+      switch (cactus_datatype) {
       case CCTK_VARIABLE_VOID     : return H5I_INVALID_HID;
-      case CCTK_VARIABLE_BYTE     : { CCTK_BYTE      const dummy = 0; return hdf5_datatype (dummy); }
-      case CCTK_VARIABLE_INT      : { CCTK_INT       const dummy = 0; return hdf5_datatype (dummy); }
-      case CCTK_VARIABLE_INT1     : { CCTK_INT1      const dummy = 0; return hdf5_datatype (dummy); }
-      case CCTK_VARIABLE_INT2     : { CCTK_INT2      const dummy = 0; return hdf5_datatype (dummy); }
-      case CCTK_VARIABLE_INT4     : { CCTK_INT4      const dummy = 0; return hdf5_datatype (dummy); }
-      case CCTK_VARIABLE_INT8     : { CCTK_INT8      const dummy = 0; return hdf5_datatype (dummy); }
-      case CCTK_VARIABLE_REAL     : { CCTK_REAL      const dummy = 0; return hdf5_datatype (dummy); }
-      case CCTK_VARIABLE_REAL4    : { CCTK_REAL4     const dummy = 0; return hdf5_datatype (dummy); }
-      case CCTK_VARIABLE_REAL8    : { CCTK_REAL8     const dummy = 0; return hdf5_datatype (dummy); }
-      case CCTK_VARIABLE_REAL16   : { CCTK_REAL16    const dummy = 0; return hdf5_datatype (dummy); }
-      case CCTK_VARIABLE_COMPLEX  : { CCTK_COMPLEX         dummy    ; return hdf5_datatype (dummy); }
-      case CCTK_VARIABLE_COMPLEX8 : { CCTK_COMPLEX8        dummy    ; return hdf5_datatype (dummy); }
-      case CCTK_VARIABLE_COMPLEX16: { CCTK_COMPLEX16       dummy    ; return hdf5_datatype (dummy); }
-      case CCTK_VARIABLE_COMPLEX32: { CCTK_COMPLEX32       dummy    ; return hdf5_datatype (dummy); }
+#define CASE(TYPEID, TYPE)                              \
+        case TYPEID:                                    \
+          {                                             \
+            TYPE dummy;                                 \
+            return hdf5_datatype_from_dummy (dummy);    \
+          }                                             \
+          break
+      CASE (CCTK_VARIABLE_BYTE     , CCTK_BYTE     );
+      CASE (CCTK_VARIABLE_INT      , CCTK_INT      );
+      CASE (CCTK_VARIABLE_INT1     , CCTK_INT1     );
+      CASE (CCTK_VARIABLE_INT2     , CCTK_INT2     );
+      CASE (CCTK_VARIABLE_INT4     , CCTK_INT4     );
+      CASE (CCTK_VARIABLE_INT8     , CCTK_INT8     );
+      CASE (CCTK_VARIABLE_REAL     , CCTK_REAL     );
+      CASE (CCTK_VARIABLE_REAL4    , CCTK_REAL4    );
+      CASE (CCTK_VARIABLE_REAL8    , CCTK_REAL8    );
+      CASE (CCTK_VARIABLE_REAL16   , CCTK_REAL16   );
+      CASE (CCTK_VARIABLE_COMPLEX  , CCTK_COMPLEX  );
+      CASE (CCTK_VARIABLE_COMPLEX8 , CCTK_COMPLEX8 );
+      CASE (CCTK_VARIABLE_COMPLEX16, CCTK_COMPLEX16);
+      CASE (CCTK_VARIABLE_COMPLEX32, CCTK_COMPLEX32);
+#undef CASE
       case CCTK_VARIABLE_CHAR     : return H5I_INVALID_HID;
       case CCTK_VARIABLE_STRING   : return H5I_INVALID_HID;
       case CCTK_VARIABLE_POINTER  : return H5I_INVALID_HID;
@@ -185,7 +196,7 @@ namespace CarpetIOF5 {
       assert (num_values == 0 or values != 0);
       
       T dummy;
-      hid_t const datatype = hdf5_datatype (dummy);
+      hid_t const datatype = hdf5_datatype_from_dummy (dummy);
       
       hid_t attribute;
       H5E_BEGIN_TRY {
@@ -297,6 +308,78 @@ namespace CarpetIOF5 {
     write_or_check_attribute (hid_t where,
                               char const * name,
                               vect<CCTK_REAL, dim> const & value);
+    
+    
+    
+    template<>
+    void
+    write_or_check_attribute (hid_t const where,
+                              char const * const name,
+                              char const * const & value)
+    {
+      assert (where >= 0);
+      assert (name != 0);
+      assert (value != 0);
+      
+      hid_t attribute;
+      H5E_BEGIN_TRY {
+        attribute = H5Aopen_name (where, name);
+      } H5E_END_TRY;
+      
+      if (attribute < 0)
+      {
+        // The attribute does not yet exist; create it
+        hid_t const datatype = H5Tcopy (H5T_C_S1);
+        assert (datatype >= 0);
+        herr_t herr;
+        int const length = strlen (value) + 1;
+        herr = H5Tset_size (datatype, length);
+        assert (! herr);
+        hsize_t const dim = 1;
+        hid_t const dataspace = H5Screate_simple (1, & dim, & dim);
+        assert (dataspace >= 0);
+        attribute = H5Acreate (where, name, datatype, dataspace, H5P_DEFAULT);
+        assert (attribute >= 0);
+        herr = H5Awrite (attribute, datatype, value);
+        assert (! herr);
+        herr = H5Aclose (attribute);
+        assert (! herr);
+        herr = H5Sclose (dataspace);
+        assert (! herr);
+        herr = H5Tclose (datatype);
+        assert (! herr);
+      }
+      else
+      {
+        // The attribute already exists; read and check it
+        hid_t datatype = H5Aget_type (attribute);
+        assert (datatype >= 0);
+        hid_t typeclass = H5Tget_class (datatype);
+        assert (typeclass == H5T_STRING);
+        int const length = H5Tget_size (datatype);
+        assert (length >= 0);
+        hid_t const dataspace = H5Aget_space (attribute);
+        htri_t const is_simple = H5Sis_simple (dataspace);
+        assert (is_simple >= 0);
+        assert (is_simple > 0);
+        int const ndims = H5Sget_simple_extent_ndims (dataspace);
+        assert (ndims == 1);
+        hsize_t dim;
+        herr_t herr;
+        herr = H5Sget_simple_extent_dims (dataspace, & dim, 0);
+        assert (dim == 1);
+        vector<char> buf (length);
+        herr = H5Aread (attribute, datatype, & buf.front());
+        assert (! herr);
+        herr = H5Sclose (dataspace);
+        assert (! herr);
+        herr = H5Aclose (attribute);
+        assert (! herr);
+        herr = H5Tclose (datatype);
+        assert (! herr);
+        assert (strcmp (& buf.front(), value) == 0);
+      }
+    }
 
   } // namespace F5
 

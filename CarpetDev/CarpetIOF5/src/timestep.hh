@@ -36,6 +36,14 @@ namespace CarpetIOF5 {
       virtual
       ~ timestep_t ();
       
+      file_t &
+      get_file ()
+        const;
+      
+      CCTK_REAL
+      get_time ()
+        const;
+      
       hid_t
       get_hdf5_timestep ()
         const;

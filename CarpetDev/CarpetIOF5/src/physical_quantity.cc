@@ -45,6 +45,24 @@ namespace CarpetIOF5 {
     
     
     
+    coordinate_system_t & physical_quantity_t::
+    get_coordinate_system ()
+      const
+    {
+      return m_coordinate_system;
+    }
+    
+    
+    
+    int physical_quantity_t::
+    get_group ()
+      const
+    {
+      return m_group;
+    }
+    
+    
+    
     hid_t physical_quantity_t::
     get_hdf5_physical_quantity ()
       const

@@ -33,6 +33,10 @@ namespace CarpetIOF5 {
       
     public:
       
+      simulation_t &
+      get_simulation ()
+        const;
+      
       hid_t
       get_hdf5_topology ()
         const;
@@ -65,16 +69,16 @@ namespace CarpetIOF5 {
       
       int const m_refinement_level;
       int const m_max_refinement_levels;
-      int const m_level_refinement_factor;
-      int const m_max_refinement_factor;
+      vect<int, dim> const m_level_refinement_factor;
+      vect<int, dim> const m_max_refinement_factor;
       
     public:
       
       mesh_refinement_topology_t (simulation_t & simulation,
                                   int refinement_level,
                                   int max_refinement_levels,
-                                  int level_refinement_factor,
-                                  int max_refinement_factor);
+                                  vect<int, dim> const & level_refinement_factors,
+                                  vect<int, dim> const & max_refinement_factors);
       
       void
       calculate_level_origin_delta (vect<CCTK_REAL, dim> const & coarse_origin,

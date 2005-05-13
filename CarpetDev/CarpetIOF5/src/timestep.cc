@@ -63,6 +63,24 @@ namespace CarpetIOF5 {
     }
     
     
+      
+    file_t & timestep_t::
+    get_file ()
+      const
+    {
+      return m_file;
+    }
+    
+    
+    
+    CCTK_REAL timestep_t::
+    get_time ()
+      const
+    {
+      return m_time;
+    }
+    
+    
     
     hid_t timestep_t::
     get_hdf5_timestep()
