@@ -19,6 +19,10 @@ namespace CarpetIOF5 {
       
       hid_t m_hdf5_tensor_component;
       
+      tensor_component_t ();
+      tensor_component_t (tensor_component_t const &);
+      tensor_component_t operator= (tensor_component_t const &);
+      
     public:
       
       tensor_component_t (physical_quantity_t & physical_quantity,

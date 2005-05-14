@@ -2,6 +2,7 @@
 #define EXTENDING_HH
 
 #include <set>
+#include <string>
 #include <vector>
 
 #include "cctk.h"
@@ -11,6 +12,7 @@
 namespace CarpetIOF5 {
   
   using std::set;
+  using std::string;
   using std::vector;
   
   
@@ -20,32 +22,39 @@ namespace CarpetIOF5 {
     static char const * const extension_name;
     
     struct extension_t {
-      set<char const *> did_truncate;
+      set<string> did_truncate;
       // [mglevel][reflevel][variable];
       vector<vector<vector<int> > > last_output_iteration;
-      vector<vector<vector<CCTK_REAL> > > last_output_time;
     };
     
     extension_t * m_extension;
     
   public:
     
-    static void
-    create ();
+    static int
+    create (void * (* Setup) (tFleshConfig * config,
+                              int convlevel,
+                              cGH * cctkGH));
     
     static void *
-    setup (tFleshConfig * config,
-           int convlevel,
-           cGH * cctkGH);
+    setup (cGH * cctkGH,
+           int (* OutputGH) (cGH const * cctkGH),
+           int (* TimeToOutput) (cGH const * cctkGH,
+                                 int variable),
+           int (* TriggerOutput) (cGH const * cctkGH,
+                                  int variable),
+           int (* OutputVarAs) (cGH const * cctkGH,
+                                char const * varname,
+                                char const * alias));
     
     extending_t (cGH const * cctkGH);
     
     bool
-    get_did_truncate (char const * name)
+    get_did_truncate (string name)
       const;
     
     void
-    set_did_truncate (char const * name);
+    set_did_truncate (string name);
     
     int
     get_last_output_iteration (int ml, int rl, int vi)
@@ -54,19 +63,11 @@ namespace CarpetIOF5 {
     void
     set_last_output_iteration (int ml, int rl, int vi, int iteration);
     
-    CCTK_REAL
-    get_last_output_time (int ml, int rl, int vi)
-      const;
-    
-    void
-    set_last_output_time (int ml, int rl, int vi, CCTK_REAL time);
-    
   private:
     
-    template<typename T>
-    static void
-    resize_last_output (int ml, int rl, int vi,
-                        vector<vector<vector<T> > > & array);
+    void
+    resize_last_output_iteration (int ml, int rl, int vi)
+      const;
     
   };
   

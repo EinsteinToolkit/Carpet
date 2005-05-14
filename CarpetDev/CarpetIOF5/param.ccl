@@ -58,4 +58,4 @@ REAL out_dt "How often to do CarpetIOF5 output (overrides IO::out_dt)" STEERABLE
 REAL dt_fudge "Fudge factor for time comparisons" STEERABLE=always
 {
   0:* :: ""
-} 1.0e-8
+} 1.0e-12

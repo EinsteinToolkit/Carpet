@@ -1,4 +1,5 @@
 #include <sstream>
+#include <string>
 
 #include <hdf5.h>
 
@@ -112,9 +113,11 @@ namespace CarpetIOF5 {
     {
       assert (all (m_level_delta > 0));
       
-      std::ostringstream buf;
-      buf << "Cartesian 3D, x0=" << m_level_origin << ", dx=" << m_level_delta;
-      char const * const name = buf.str().c_str();
+      ostringstream namebuf;
+      namebuf << "Cartesian 3D, x0=" << m_level_origin
+              << ", dx=" << m_level_delta;
+      string const namestr = namebuf.str();
+      char const * const name = namestr.c_str();
       
       m_hdf5_coordinate_system
         = open_or_create_group (m_topology.get_hdf5_topology(), name);

@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cstring>
+#include <iostream>
 
 #include "cctk.h"
 
@@ -12,22 +13,42 @@ namespace CarpetIOF5 {
   char const * const extending_t::
   extension_name = "CarpetIOF5";
   
-  void extending_t::
-  create ()
+  int extending_t::
+  create (void * (* const Setup) (tFleshConfig * config,
+                                  int convlevel,
+                                  cGH * cctkGH))
   {
     int const handle = CCTK_RegisterGHExtension (extension_name);
     assert (handle >= 0);
-    int const ierr = CCTK_RegisterGHExtensionSetupGH (handle, setup);
-    assert (! ierr);
+    int const iflag = CCTK_RegisterGHExtensionSetupGH (handle, Setup);
+    assert (iflag);
+    return 0;                   // no error
   }
   
   void * extending_t::
-  setup (tFleshConfig * const fleshconfig,
-         int const convlevel,
-         cGH * const cctkGH)
+  setup (cGH * const cctkGH,
+         int (* const OutputGH) (cGH const * cctkGH),
+         int (* const TimeToOutput) (cGH const * cctkGH,
+                                     int variable),
+         int (* const TriggerOutput) (cGH const * cctkGH,
+                                      int variable),
+         int (* const OutputVarAs) (cGH const * cctkGH,
+                                    char const * varname,
+                                    char const * alias))
   {
-    assert (fleshconfig != 0);
     assert (cctkGH != 0);
+    
+    int ierr;
+    int const io_method = CCTK_RegisterIOMethod (extension_name);
+    ierr = CCTK_RegisterIOMethodOutputGH (io_method, OutputGH);
+    assert (! ierr);
+    ierr = CCTK_RegisterIOMethodTimeToOutput (io_method, TimeToOutput);
+    assert (! ierr);
+    ierr = CCTK_RegisterIOMethodTriggerOutput (io_method, TriggerOutput);
+    assert (! ierr);
+    ierr = CCTK_RegisterIOMethodOutputVarAs (io_method, OutputVarAs);
+    assert (! ierr);
+    
     return new extension_t;
   }
   
@@ -41,26 +62,24 @@ namespace CarpetIOF5 {
   }
   
   bool extending_t::
-  get_did_truncate (char const * const name)
+  get_did_truncate (string const name)
     const
   {
-    assert (name != 0);
     return (m_extension->did_truncate.find (name)
             != m_extension->did_truncate.end());
   }
   
   void extending_t::
-  set_did_truncate (char const * const name)
+  set_did_truncate (string const name)
   {
-    assert (name != 0);
-    m_extension->did_truncate.insert (strdup (name));
+    m_extension->did_truncate.insert (name);
   }
   
   int extending_t::
   get_last_output_iteration (int const ml, int const rl, int const vi)
     const
   {
-    resize_last_output (ml, rl, vi, m_extension->last_output_iteration);
+    resize_last_output_iteration (ml, rl, vi);
     return m_extension->last_output_iteration.at(ml).at(rl).at(vi);
   }
   
@@ -68,54 +87,28 @@ namespace CarpetIOF5 {
   set_last_output_iteration (int const ml, int const rl, int const vi,
                              int const iteration)
   {
-    resize_last_output (ml, rl, vi, m_extension->last_output_iteration);
+    resize_last_output_iteration (ml, rl, vi);
     m_extension->last_output_iteration.at(ml).at(rl).at(vi) = iteration;
   }
   
-  CCTK_REAL extending_t::
-  get_last_output_time (int const ml, int const rl, int const vi)
+  void extending_t::
+  resize_last_output_iteration (int ml, int rl, int vi)
     const
   {
-    resize_last_output (ml, rl, vi, m_extension->last_output_time);
-    return m_extension->last_output_time.at(ml).at(rl).at(vi);
-  }
-  
-  void extending_t::
-  set_last_output_time (int const ml, int const rl, int const vi,
-                        CCTK_REAL const time)
-  {
-    resize_last_output (ml, rl, vi, m_extension->last_output_time);
-    m_extension->last_output_time.at(ml).at(rl).at(vi) = time;
-  }
-  
-  template<typename T>
-  void extending_t::
-  resize_last_output (int ml, int rl, int vi,
-                      vector<vector<vector<T> > > & array)
-  {
     assert (ml >= 0);
-    if (ml >= array.size())
+    if (ml >= m_extension->last_output_iteration.size())
     {
-      array.resize (ml+1);
+      m_extension->last_output_iteration.resize (ml+1);
     }
     assert (rl >= 0);
-    if (rl >= array.at(ml).size())
+    if (rl >= m_extension->last_output_iteration.at(ml).size())
     {
-      array.at(ml).resize (rl+1);
+      m_extension->last_output_iteration.at(ml).resize (rl+1);
     }
-    if (vi >= array.at(ml).at(rl).size())
+    if (vi >= m_extension->last_output_iteration.at(ml).at(rl).size())
     {
-      array.at(ml).at(rl).resize (vi+1, -1);
+      m_extension->last_output_iteration.at(ml).at(rl).resize (vi+1, -1);
     }
   }
-  
-  template
-  void extending_t::
-  resize_last_output (int ml, int rl, int vi,
-                      vector<vector<vector<int> > > & array);
-  template
-  void extending_t::
-  resize_last_output (int ml, int rl, int vi,
-                      vector<vector<vector<CCTK_REAL> > > & array);
   
 } // namespace CarpetIOF5

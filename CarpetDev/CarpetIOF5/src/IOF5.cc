@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "cctk.h"
@@ -43,9 +44,9 @@ namespace CarpetIOF5 {
   CarpetIOF5_Startup ();
   
   static void *
-  SetupGH (tFleshConfig * fleshconfig,
-           int convlevel,
-           cGH * cctkGH);
+  Setup (tFleshConfig * const fleshconfig,
+         int const convlevel,
+         cGH * const cctkGH);
   
   
   
@@ -83,6 +84,12 @@ namespace CarpetIOF5 {
                      int variable);
   
   static void
+  write_global (cGH const * cctkGH,
+                F5::simulation_t & simulation,
+                int group,
+                int variable);
+
+  static void
   write_one_reflevel (cGH const * cctkGH,
                       F5::simulation_t & simulation,
                       int group,
@@ -104,37 +111,24 @@ namespace CarpetIOF5 {
   
   
   
-  extern "C" int
+  int
   CarpetIOF5_Startup ()
   {
-    int const ierr
-      = CCTK_RegisterBanner ("AMR HDF5 I/O provided by CarpetIOF5");
-    assert (! ierr);
-    
-    extending_t::create();
-    
-    return 0;                   // no error
+    CCTK_INFO ("Startup");
+    return extending_t::create (Setup);
   }
   
   
   
   void *
-  SetupGH (tFleshConfig * const fleshconfig,
-           int const convlevel,
-           cGH * const cctkGH)
+  Setup (tFleshConfig * const fleshconfig,
+         int const convlevel,
+         cGH * const cctkGH)
   {
-    int ierr;
-    int const io_method = CCTK_RegisterIOMethod ("IOF5");
-    ierr = CCTK_RegisterIOMethodOutputGH (io_method, OutputGH);
-    assert (! ierr);
-    ierr = CCTK_RegisterIOMethodOutputVarAs (io_method, OutputVarAs);
-    assert (! ierr);
-    ierr = CCTK_RegisterIOMethodTimeToOutput (io_method, TimeToOutput);
-    assert (! ierr);
-    ierr = CCTK_RegisterIOMethodTriggerOutput (io_method, TriggerOutput);
-    assert (! ierr);
-    
-    return extending_t::setup (fleshconfig, convlevel, cctkGH);
+    assert (fleshconfig != 0);
+    CCTK_INFO ("Setup");
+    return extending_t::setup
+      (cctkGH, OutputGH, TimeToOutput, TriggerOutput, OutputVarAs);
   }
   
   
@@ -145,6 +139,8 @@ namespace CarpetIOF5 {
     DECLARE_CCTK_PARAMETERS;
     
     assert (cctkGH != 0);
+    
+    CCTK_INFO ("OutputGH");
     
     int ierr;
     
@@ -194,13 +190,19 @@ namespace CarpetIOF5 {
   TimeToOutput (cGH const * const cctkGH,
                 int const variable)
   {
+    DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
     assert (cctkGH != 0);
     assert (variable >= 0 and variable < CCTK_NumVars());
     
     assert (Carpet::is_level_mode());
-    extending_t extending (cctkGH);
+    
+    {
+      char * const fullname = CCTK_FullName(variable);
+      CCTK_VInfo (CCTK_THORNSTRING, "TimeToOutput \"%s\"", fullname);
+      free (fullname);
+    }
     
     bool should_output;
     
@@ -219,9 +221,6 @@ namespace CarpetIOF5 {
     }
     else if (CCTK_EQUALS (my_out_criterion, "iteration"))
     {
-      int const last_output_iteration
-        = (extending.get_last_output_iteration
-           (Carpet::mglevel, Carpet::reflevel, variable));
       int const my_out_every = out_every == -2 ? IO_out_every : out_every;
       switch (my_out_every)
       {
@@ -232,36 +231,82 @@ namespace CarpetIOF5 {
         should_output = false;
         break;
       default:
-        should_output
-          = cctkGH->cctk_iteration >= last_output_iteration + my_out_every;
+        if (* this_iteration == cctk_iteration)
+        {
+          // we already decided to output this iteration
+          should_output = true;
+        }
+        else if (cctk_iteration >= * next_output_iteration)
+        {
+          // it is time for the next output
+          should_output = true;
+          * this_iteration = cctk_iteration;
+          * next_output_iteration = cctk_iteration + my_out_every;
+        }
+        else
+        {
+          should_output = false;
+        }
         break;
       }
     }
     else if (CCTK_EQUALS (my_out_criterion, "time"))
     {
-      CCTK_REAL const last_output_time
-        = (extending.get_last_output_time
-           (Carpet::mglevel, Carpet::reflevel, variable));
-      CCTK_REAL const my_out_dt
-        = abs (out_dt - (-2)) <= dt_fudge ? IO_out_dt : out_dt;
+      CCTK_REAL const my_out_dt = out_dt == -2 ? IO_out_dt : out_dt;
       if (out_dt == 0)
       {
         should_output = true;
       }
-      else if (abs (out_dt - (-1)) <= dt_fudge)
+      else if (out_dt == -1)
       {
         should_output = false;
       }
       else
       {
-        should_output
-          = cctkGH->cctk_time - dt_fudge >= last_output_time + my_out_dt;
+        if (* this_iteration == cctk_iteration)
+        {
+          // we already decided to output this iteration
+          should_output = true;
+        }
+        else if (cctk_time / cctk_delta_time
+                 >= * next_output_time / cctk_delta_time - dt_fudge)
+        {
+          // it is time for the next output
+          should_output = true;
+          * this_iteration = cctk_iteration;
+          * next_output_time = cctk_time + my_out_dt;
+        }
+        else
+        {
+          should_output = false;
+        }
       }
     }
     else
     {
       CCTK_WARN (1, "internal error");
       should_output = false;
+    }
+    
+    if (should_output)
+    {
+      extending_t extending (cctkGH);
+      int const last_output_iteration
+        = (extending.get_last_output_iteration
+           (Carpet::mglevel, Carpet::reflevel, variable));
+      assert (last_output_iteration <= cctk_iteration);
+      if (last_output_iteration == cctk_iteration)
+      {
+        // Skipping output for variable, because this variable has
+        // already been output during the current iteration --
+        // probably via a trigger during the analysis stage
+        should_output = false;
+      }
+      else
+      {
+        extending.set_last_output_iteration
+          (Carpet::mglevel, Carpet::reflevel, variable, cctk_iteration);
+      }
     }
     
     return should_output;
@@ -278,19 +323,18 @@ namespace CarpetIOF5 {
     assert (cctkGH != 0);
     assert (variable >= 0 and variable < CCTK_NumVars());
     
+    {
+      char * const fullname = CCTK_FullName(variable);
+      CCTK_VInfo (CCTK_THORNSTRING, "TriggerOutput \"%s\"", fullname);
+      free (fullname);
+    }
+    
     char * fullname = CCTK_FullName (variable);
     assert (fullname);
     
     int const ierr = OutputVarAs (cctkGH, fullname, out_filename);
     
     free (fullname);
-    
-    assert (Carpet::is_level_mode());
-    extending_t extending (cctkGH);
-    extending.set_last_output_iteration
-      (Carpet::mglevel, Carpet::reflevel, variable, cctkGH->cctk_iteration);
-    extending.set_last_output_time
-      (Carpet::mglevel, Carpet::reflevel, variable, cctkGH->cctk_time);
     
     return ierr;
   }
@@ -307,6 +351,9 @@ namespace CarpetIOF5 {
     assert (cctkGH != 0);
     assert (varname != 0);
     assert (alias != 0);
+    
+    CCTK_VInfo (CCTK_THORNSTRING, "OutputVarAs \"%s\" \"%s\"",
+                varname, alias);
     
     int const variable = CCTK_VarIndex (varname);
     if (variable < 0)
@@ -325,49 +372,30 @@ namespace CarpetIOF5 {
     
     extending_t extending (cctkGH);
     
-    std::ostringstream filenamebuf;
+    ostringstream filenamebuf;
     bool const use_IO_out_dir = strcmp (out_dir, "") == 0;
     filenamebuf << (use_IO_out_dir ? IO_out_dir : out_dir)
                 << "/"
                 << alias
                 << out_extension;
-    char const * const filename = filenamebuf.str().c_str();
+    string const filename = filenamebuf.str();
     
     bool const did_truncate = extending.get_did_truncate (filename);
     bool const do_truncate
       = ! did_truncate and IO_TruncateOutputFiles (cctkGH);
     extending.set_did_truncate (filename);
     
-    F5::file_t file (cctkGH, filenamebuf.str().c_str(), do_truncate);
+    F5::file_t file (cctkGH, filename, do_truncate);
     
     F5::timestep_t timestep (file, cctkGH->cctk_time);
     
     if (Carpet::is_meta_mode())
     {
-      int const grouptype = CCTK_GroupTypeI (group);
-      assert (grouptype >= 0);
-      switch (grouptype)
+      for (Carpet::mglevel_iterator mglevel_iter (cctkGH);
+           ! mglevel_iter.done();
+           mglevel_iter.step())
       {
-      case CCTK_GF:
-        {
-          for (Carpet::mglevel_iterator mglevel_iter (cctkGH);
-               ! mglevel_iter.done();
-               mglevel_iter.step())
-          {
-            write_one_mglevel (cctkGH, timestep, group, variable);
-          }
-        }
-        break;
-      case CCTK_ARRAY:
-      case CCTK_SCALAR:
-        {
-          Carpet::enter_global_mode (cctkGH, 0);
-          write_one_mglevel (cctkGH, timestep, group, variable);
-          Carpet::leave_global_mode (cctkGH);
-        }
-        break;
-      default:
-        assert (0);
+        write_one_mglevel (cctkGH, timestep, group, variable);
       }
     }
     else
@@ -386,17 +414,31 @@ namespace CarpetIOF5 {
                      int const group,
                      int const variable)
   {
-    std::ostringstream namebuf;
-    namebuf << "convlevel " << cctkGH->cctk_convlevel;
-    F5::simulation_t simulation (timestep, namebuf.str().c_str());
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "OutputVarAs/write_one_mglevel mglevel=%d", Carpet::mglevel);
     
-    if (grouptype == CCTK_GF and Carpet::is_global_mode())
+    ostringstream namebuf;
+    namebuf << "convlevel=" << cctkGH->cctk_convlevel;
+    string const namestr = namebuf.str();
+    char const * const name = namestr.c_str();
+    F5::simulation_t simulation (timestep, name);
+    
+    int const grouptype = CCTK_GroupTypeI (group);
+    assert (grouptype >= 0);
+    switch (grouptype)
     {
-      int const grouptype = CCTK_GroupTypeI (group);
-      assert (grouptype >= 0);
-      switch (grouptype)
+    case CCTK_ARRAY:
+    case CCTK_SCALAR:
       {
-      case CCTK_GF:
+        if (Carpet::do_global_mode)
+        {
+          write_global (cctkGH, simulation, group, variable);
+        }
+      }
+      break;
+    case CCTK_GF:
+      {
+        if (Carpet::is_global_mode())
         {
           for (Carpet::reflevel_iterator reflevel_iter (cctkGH);
                ! reflevel_iter.done();
@@ -405,23 +447,58 @@ namespace CarpetIOF5 {
             write_one_reflevel (cctkGH, simulation, group, variable);
           }
         }
-        break;
-      case CCTK_ARRAY:
-      case CCTK_SCALAR:
+        else
         {
-          Carpet::enter_level_mode (cctkGH, 0);
-          write_one_reflevel (cctkGH, timestep, group, variable);
-          Carpet::leave_level_mode (cctkGH);
+          write_one_reflevel (cctkGH, simulation, group, variable);
         }
-        break;
-      default:
-        assert (0);
       }
+      break;
+    default:
+      assert (0);
     }
-    else
+  }
+  
+  
+  
+  void
+  write_global (cGH const * const cctkGH,
+                F5::simulation_t & simulation,
+                int const group,
+                int const variable)
+  {
+    CCTK_INFO ("OutputVarAs/write_global");
+    
+    F5::unigrid_topology_t topology (simulation);
+    
+    int const grouptype = CCTK_GroupTypeI (group);
+    assert (grouptype >= 0);
+    assert (grouptype == CCTK_SCALAR or grouptype == CCTK_ARRAY);
+    
+    vect<CCTK_REAL, dim> level_origin, level_delta;
+    for (int d=0; d<dim; ++d)
     {
-      write_one_reflevel (cctkGH, simulation, group, variable);
+      level_origin[d] = 0.0;
+      level_delta[d]  = 1.0;
     }
+    F5::Cartesian_coordinate_system_t coordinate_system
+      (topology, level_origin, level_delta);
+    
+    F5::physical_quantity_t physical_quantity (coordinate_system, group);
+    
+    F5::tensor_component_t tensor_component (physical_quantity, variable);
+    
+    int const myproc = CCTK_MyProc (cctkGH);
+    dh * const dd = Carpet::arrdata.at(group).at(0).dd;
+    bbox<int, dim> const & region
+      = dd->boxes.at(Carpet::mglevel).at(0).at(myproc).exterior;
+    
+    F5::data_region_t data_region (tensor_component, region);
+    
+    void const * const varptr = CCTK_VarDataPtrI (cctkGH, 0, variable);
+    assert (varptr != 0);
+    int const vartype = CCTK_VarTypeI (variable);
+    assert (vartype >= 0);
+    data_region.write (varptr, vartype);
   }
   
   
@@ -432,6 +509,14 @@ namespace CarpetIOF5 {
                       int const group,
                       int const variable)
   {
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "OutputVarAs/write_one_reflevel reflevel=%d",
+                Carpet::reflevel);
+    
+    int const grouptype = CCTK_GroupTypeI (group);
+    assert (grouptype >= 0);
+    assert (grouptype == CCTK_GF);
+    
     F5::mesh_refinement_topology_t topology
       (simulation, Carpet::reflevel, Carpet::maxreflevels,
        Carpet::spacereflevelfact, Carpet::maxspacereflevelfact);
@@ -452,9 +537,6 @@ namespace CarpetIOF5 {
     
     if (Carpet::is_level_mode())
     {
-      int const grouptype = CCTK_GroupTypeI (group);
-      assert (grouptype >= 0);
-      
       for (Carpet::map_iterator map_iter (cctkGH, grouptype);
            ! map_iter.done();
            map_iter.step())
@@ -475,6 +557,9 @@ namespace CarpetIOF5 {
                  F5::tensor_component_t & tensor_component,
                  int const group)
   {
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "OutputVarAs/write_one_map map=%d", Carpet::map);
+    
     if (Carpet::is_singlemap_mode())
     {
       int const grouptype = CCTK_GroupTypeI (group);
@@ -499,21 +584,27 @@ namespace CarpetIOF5 {
   write_one_component (cGH const * const cctkGH,
                        F5::tensor_component_t & tensor_component)
   {
-    int const variable = tensor_component.get_variable();
-    int const group = tensor_component.get_physical_quantity().get_group();
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "OutputVarAs/write_one_component component=%d",
+                Carpet::component);
     
-    dh * const dd = Carpet::arrdata.at(group).at(Carpet::map).dd;
-    bbox<int, dim> const & region
-      = (dd->boxes.at(Carpet::mglevel).at(Carpet::reflevel)
-         .at(Carpet::component).exterior);
-    
-    F5::data_region_t data_region (tensor_component, region);
-    
-    void const * const varptr = CCTK_VarDataPtrI (cctkGH, 0, variable);
-    assert (varptr != 0);
-    int const vartype = CCTK_VarTypeI (variable);
-    assert (vartype >= 0);
-    data_region.write (varptr, vartype);
+    gh * const hh = Carpet::vhh.at(Carpet::map);
+    if (hh->is_local (Carpet::reflevel, Carpet::component))
+    {
+      dh * const dd = Carpet::vdd.at(Carpet::map);
+      bbox<int, dim> const & region
+        = (dd->boxes.at(Carpet::mglevel).at(Carpet::reflevel)
+           .at(Carpet::component).exterior);
+      
+      F5::data_region_t data_region (tensor_component, region);
+      
+      int const variable = tensor_component.get_variable();
+      void const * const varptr = CCTK_VarDataPtrI (cctkGH, 0, variable);
+      assert (varptr != 0);
+      int const vartype = CCTK_VarTypeI (variable);
+      assert (vartype >= 0);
+      data_region.write (varptr, vartype);
+    }
   }
   
   

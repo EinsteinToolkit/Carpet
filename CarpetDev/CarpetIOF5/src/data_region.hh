@@ -24,6 +24,10 @@ namespace CarpetIOF5 {
       hid_t m_dataset;
       hid_t m_dataspace;
       
+      data_region_t ();
+      data_region_t (data_region_t const &);
+      data_region_t operator= (data_region_t const &);
+      
     public:
       
       data_region_t (tensor_component_t & tensor_component,

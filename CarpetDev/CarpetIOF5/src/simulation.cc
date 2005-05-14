@@ -1,6 +1,4 @@
 #include <cassert>
-#include <string>
-#include <sstream>
 
 #include <hdf5.h>
 
@@ -22,12 +20,9 @@ namespace CarpetIOF5 {
     simulation_t::
     simulation_t (timestep_t & timestep,
                   char const * const name)
-      : m_timestep (timestep)
+      : m_timestep (timestep),
+        m_name (name)
     {
-      ostringstream buf;
-      buf << name;
-      m_name = buf.str();
-      
       m_hdf5_simulation
         = open_or_create_group (m_timestep.get_hdf5_timestep(),
                                 m_name.c_str());

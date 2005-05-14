@@ -18,6 +18,10 @@ namespace CarpetIOF5 {
     
     class coordinate_system_t {
       
+      coordinate_system_t ();
+      coordinate_system_t (coordinate_system_t const &);
+      coordinate_system_t operator= (coordinate_system_t const &);
+      
     protected:
       
       topology_t & m_topology;
@@ -51,6 +55,11 @@ namespace CarpetIOF5 {
       
       vect<CCTK_REAL, dim> m_level_origin;
       vect<CCTK_REAL, dim> m_level_delta;
+      
+      Cartesian_coordinate_system_t ();
+      Cartesian_coordinate_system_t (Cartesian_coordinate_system_t const &);
+      Cartesian_coordinate_system_t
+      operator= (Cartesian_coordinate_system_t const &);
       
     public:
       

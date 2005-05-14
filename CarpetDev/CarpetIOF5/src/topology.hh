@@ -18,6 +18,10 @@ namespace CarpetIOF5 {
     
     class topology_t {
       
+      topology_t ();
+      topology_t (topology_t const &);
+      topology_t operator= (topology_t const &);
+      
     protected:
       
       simulation_t & m_simulation;
@@ -50,6 +54,10 @@ namespace CarpetIOF5 {
     
     class unigrid_topology_t : public topology_t {
       
+      unigrid_topology_t ();
+      unigrid_topology_t (unigrid_topology_t const &);
+      unigrid_topology_t operator= (unigrid_topology_t const &);
+      
     public:
       
       // Create unigrid topology
@@ -71,6 +79,11 @@ namespace CarpetIOF5 {
       int const m_max_refinement_levels;
       vect<int, dim> const m_level_refinement_factor;
       vect<int, dim> const m_max_refinement_factor;
+      
+      mesh_refinement_topology_t ();
+      mesh_refinement_topology_t (mesh_refinement_topology_t const &);
+      mesh_refinement_topology_t
+      operator= (mesh_refinement_topology_t const &);
       
     public:
       

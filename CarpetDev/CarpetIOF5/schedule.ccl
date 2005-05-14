@@ -1,5 +1,7 @@
 # Schedule definitions for thorn CarpetIOF5
 
+STORAGE: next_output_iteration next_output_time this_iteration
+
 SCHEDULE CarpetIOF5_Startup AT startup AFTER IOUtil_Startup
 {
   LANG: C

@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <sstream>
+#include <string>
 
 #include "cctk.h"
 
@@ -25,9 +26,10 @@ namespace CarpetIOF5 {
     {
       assert (! region.empty());
       
-      ostringstream buf;
-      buf << "Region " << m_region;
-      char const * const name = buf.str().c_str();
+      ostringstream namebuf;
+      namebuf << "region=" << m_region;
+      string const namestr = namebuf.str();
+      char const * const name = namestr.c_str();
       assert (name != 0);
       
       int const vartype = CCTK_VarTypeI (m_tensor_component.get_variable());
@@ -44,8 +46,8 @@ namespace CarpetIOF5 {
       assert (m_dataspace >= 0);
 
       m_dataset
-        = H5Dcreate (m_dataspace, name, hdf5_datatype,
-                     m_dataspace, m_properties);
+        = H5Dcreate (m_tensor_component.get_hdf5_tensor_component(), name,
+                     hdf5_datatype, m_dataspace, m_properties);
       assert (m_dataset >= 0);
       
       write_or_check_attribute

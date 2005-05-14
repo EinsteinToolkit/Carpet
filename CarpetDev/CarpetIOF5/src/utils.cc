@@ -70,26 +70,32 @@ namespace CarpetIOF5 {
       return H5T_NATIVE_LDOUBLE;
     }
     
+#ifdef HAVE_CCTK_COMPLEX8
     hid_t
     hdf5_datatype_from_dummy (CCTK_COMPLEX8 const & dummy)
     {
       CCTK_REAL4 real;
       return hdf5_complex_datatype_from_dummy (dummy, real);
     }
+#endif
     
+#ifdef HAVE_CCTK_COMPLEX16
     hid_t
     hdf5_datatype_from_dummy (CCTK_COMPLEX16 const & dummy)
     {
       CCTK_REAL8 real;
       return hdf5_complex_datatype_from_dummy (dummy, real);
     }
+#endif
     
+#ifdef HAVE_CCTK_COMPLEX32
     hid_t
     hdf5_datatype_from_dummy (CCTK_COMPLEX32 const & dummy)
     {
       CCTK_REAL16 real;
       return hdf5_complex_datatype_from_dummy (dummy, real);
     }
+#endif
     
     template<typename T, typename R>
     hid_t
@@ -102,12 +108,12 @@ namespace CarpetIOF5 {
       {
         initialised = true;
         
-        hsize_t const dim = 2;
+        hsize_t const cdim = 2;
         int const perm = 0;
         
         hdf_complex_datatype
           = H5Tarray_create (hdf5_datatype_from_dummy (real),
-                             1, & dim, & perm);
+                             1, & cdim, & perm);
         assert (hdf_complex_datatype >= 0);
       }
       
@@ -130,18 +136,38 @@ namespace CarpetIOF5 {
           break
       CASE (CCTK_VARIABLE_BYTE     , CCTK_BYTE     );
       CASE (CCTK_VARIABLE_INT      , CCTK_INT      );
+#ifdef HAVE_CCTK_INT1
       CASE (CCTK_VARIABLE_INT1     , CCTK_INT1     );
+#endif
+#ifdef HAVE_CCTK_INT1
       CASE (CCTK_VARIABLE_INT2     , CCTK_INT2     );
+#endif
+#ifdef HAVE_CCTK_INT2
       CASE (CCTK_VARIABLE_INT4     , CCTK_INT4     );
+#endif
+#ifdef HAVE_CCTK_INT4
       CASE (CCTK_VARIABLE_INT8     , CCTK_INT8     );
+#endif
       CASE (CCTK_VARIABLE_REAL     , CCTK_REAL     );
+#ifdef HAVE_CCTK_REAL4
       CASE (CCTK_VARIABLE_REAL4    , CCTK_REAL4    );
+#endif
+#ifdef HAVE_CCTK_REAL8
       CASE (CCTK_VARIABLE_REAL8    , CCTK_REAL8    );
+#endif
+#ifdef HAVE_CCTK_REAL16
       CASE (CCTK_VARIABLE_REAL16   , CCTK_REAL16   );
+#endif
       CASE (CCTK_VARIABLE_COMPLEX  , CCTK_COMPLEX  );
+#ifdef HAVE_CCTK_COMPLEX8
       CASE (CCTK_VARIABLE_COMPLEX8 , CCTK_COMPLEX8 );
+#endif
+#ifdef HAVE_CCTK_COMPLEX16
       CASE (CCTK_VARIABLE_COMPLEX16, CCTK_COMPLEX16);
+#endif
+#ifdef HAVE_CCTK_COMPLEX32
       CASE (CCTK_VARIABLE_COMPLEX32, CCTK_COMPLEX32);
+#endif
 #undef CASE
       case CCTK_VARIABLE_CHAR     : return H5I_INVALID_HID;
       case CCTK_VARIABLE_STRING   : return H5I_INVALID_HID;
@@ -206,8 +232,8 @@ namespace CarpetIOF5 {
       if (attribute < 0)
       {
         // The attribute does not yet exist; create it
-        hsize_t const dim = num_values;
-        hid_t const dataspace = H5Screate_simple (1, & dim, & dim);
+        hsize_t const adim = num_values;
+        hid_t const dataspace = H5Screate_simple (1, & adim, & adim);
         assert (dataspace >= 0);
         attribute = H5Acreate (where, name, datatype, dataspace, H5P_DEFAULT);
         assert (attribute >= 0);
@@ -228,11 +254,11 @@ namespace CarpetIOF5 {
         assert (is_simple > 0);
         int const ndims = H5Sget_simple_extent_ndims (dataspace);
         assert (ndims == 1);
-        hsize_t dim;
+        hsize_t adim;
         herr_t herr;
-        herr = H5Sget_simple_extent_dims (dataspace, & dim, 0);
-        assert (dim == num_values);
-        vector<T> buf (dim);
+        herr = H5Sget_simple_extent_dims (dataspace, & adim, 0);
+        assert (adim == num_values);
+        vector<T> buf (adim);
         herr = H5Aread (attribute, datatype, & buf.front());
         assert (! herr);
         herr = H5Sclose (dataspace);

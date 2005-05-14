@@ -108,9 +108,10 @@ namespace CarpetIOF5 {
       assert (all (level_refinement_factor > 0));
       assert (all (level_refinement_factor <= max_refinement_factor));
       
-      ostringstream buf;
-      buf << "Vertices level " << refinement_level;
-      char const * const name = buf.str().c_str();
+      ostringstream namebuf;
+      namebuf << "Vertices level=" << refinement_level;
+      string const namestr = namebuf.str();
+      char const * const name = namestr.c_str();
       
       m_hdf5_topology
         = open_or_create_group (m_simulation.get_hdf5_simulation(), name);
@@ -133,7 +134,7 @@ namespace CarpetIOF5 {
       assert (all (coarse_delta > 0));
       assert (all (level_offset_denominator > 0));
       
-      CCTK_REAL const one = 1;
+      vect<CCTK_REAL, dim> const one = 1;
       level_delta = coarse_delta / m_level_refinement_factor;
       level_origin
         = (coarse_origin

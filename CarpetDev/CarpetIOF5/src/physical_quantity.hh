@@ -19,6 +19,10 @@ namespace CarpetIOF5 {
       
       hid_t m_hdf5_physical_quantity;
       
+      physical_quantity_t ();
+      physical_quantity_t (physical_quantity_t const &);
+      physical_quantity_t operator= (physical_quantity_t const &);
+      
     public:
       
       physical_quantity_t (coordinate_system_t & coordinate_system,

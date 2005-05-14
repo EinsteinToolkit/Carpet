@@ -27,6 +27,10 @@ namespace CarpetIOF5 {
       
       hid_t m_hdf5_timestep;
       
+      timestep_t ();
+      timestep_t (timestep_t const &);
+      timestep_t operator= (timestep_t const &);
+      
     public:
       
       timestep_t (file_t & file,

@@ -29,12 +29,18 @@ namespace CarpetIOF5 {
     hdf5_datatype_from_dummy (double const & dummy);
     hid_t
     hdf5_datatype_from_dummy (long double const & dummy);
+#ifdef HAVE_CCTK_COMPLEX8
     hid_t
     hdf5_datatype_from_dummy (CCTK_COMPLEX8 const & dummy);
+#endif
+#ifdef HAVE_CCTK_COMPLEX16
     hid_t
     hdf5_datatype_from_dummy (CCTK_COMPLEX16 const & dummy);
+#endif
+#ifdef HAVE_CCTK_COMPLEX32
     hid_t
     hdf5_datatype_from_dummy (CCTK_COMPLEX32 const & dummy);
+#endif
     
     template<typename T, typename R>
     hid_t

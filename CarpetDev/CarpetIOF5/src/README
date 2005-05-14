@@ -1,0 +1,10 @@
+An F5 file contains the following hierarchy:
+
+        file
+        timestep
+        simulation
+        topology
+        coordinate_system
+        physical_quantity
+        tensor_component
+        data_region

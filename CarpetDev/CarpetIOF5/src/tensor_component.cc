@@ -20,7 +20,7 @@ namespace CarpetIOF5 {
     {
       assert (variable >= 0 and variable < CCTK_NumVars());
       
-      char * const name = CCTK_FullName (variable);
+      char const * const name = CCTK_VarName (variable);
       assert (name != 0);
       
       m_hdf5_tensor_component
@@ -28,8 +28,6 @@ namespace CarpetIOF5 {
                                 .get_hdf5_physical_quantity(),
                                 name);
       assert (m_hdf5_tensor_component >= 0);
-      
-      free (name);
       
       assert (invariant());
     }

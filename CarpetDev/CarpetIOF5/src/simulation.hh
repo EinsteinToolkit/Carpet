@@ -22,9 +22,13 @@ namespace CarpetIOF5 {
       
       timestep_t & m_timestep;
       
-      string m_name;
+      string const m_name;
       
       hid_t m_hdf5_simulation;
+      
+      simulation_t ();
+      simulation_t (simulation_t const &);
+      simulation_t operator= (simulation_t const &);
       
     public:
       
