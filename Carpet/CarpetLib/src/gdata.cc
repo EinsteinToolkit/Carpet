@@ -416,13 +416,20 @@ void gdata::copy_into_sendbuffer (comm_state& state,
     assert (fillstate <= state.collbufs[proc()].sendbufsize*state.vartypesize);
 
     // copy this processor's data into the send buffer
-    gdata* tmp = src->make_typed (varindex, transport_operator, tag);
-    tmp->allocate (box, src->proc(), state.collbufs[proc()].sendbuf);
-    tmp->copy_from_innerloop (src, box);
-    delete tmp;
+    const ibbox& ext = src->extent();
+    ivect shape = ext.shape() / ext.stride();
+    ivect items = (box.upper() - box.lower()) / box.stride() + 1;
+    ivect offs  = (box.lower() - ext.lower()) / ext.stride();
 
-    // advance send buffer to point to the next ibbox slot
-    state.collbufs[proc()].sendbuf += state.vartypesize * box.size();
+    for (int k = 0; k < items[2]; k++) {
+      for (int j = 0; j < items[1]; j++) {
+        int i = offs[0] + shape[0]*((j+offs[1]) + shape[1]*(k+offs[2]));
+        memcpy (state.collbufs[proc()].sendbuf,
+                ((const char*) src->storage()) + state.vartypesize*i,
+                state.vartypesize*items[0]);
+        state.collbufs[proc()].sendbuf += state.vartypesize*items[0];
+      }
+    }
 
     // post the send if the buffer is full
     if (fillstate == state.collbufs[proc()].sendbufsize*state.vartypesize) {
@@ -447,15 +454,21 @@ void gdata::copy_from_recvbuffer (comm_state& state,
           state.vartypesize);
 
   // copy this processor's data from the recv buffer
-  gdata* tmp = make_typed (varindex, transport_operator, tag);
-  tmp->allocate (box, proc(), state.collbufs[src->proc()].recvbuf);
-  copy_from_innerloop (tmp, box);
-  delete tmp;
+  const ibbox& ext = src->extent();
+  ivect shape = ext.shape() / ext.stride();
+  ivect items = (box.upper() - box.lower()) / box.stride() + 1;
+  ivect offs  = (box.lower() - ext.lower()) / ext.stride();
 
-  // advance recv buffer to point to the next ibbox slot
-  state.collbufs[src->proc()].recvbuf += state.vartypesize * box.size();
+  for (int k = 0; k < items[2]; k++) {
+    for (int j = 0; j < items[1]; j++) {
+      int i = offs[0] + shape[0]*((j+offs[1]) + shape[1]*(k+offs[2]));
+      memcpy (((char*) storage()) + state.vartypesize*i,
+              state.collbufs[src->proc()].recvbuf,
+              state.vartypesize*items[0]);
+      state.collbufs[src->proc()].recvbuf += state.vartypesize*items[0];
+    }
+  }
 }
-
 
 
 void gdata
@@ -779,7 +792,7 @@ void gdata
                     state.collbufs[proc()].sendbufbase;
     assert (fillstate <= state.collbufs[proc()].sendbufsize*state.vartypesize);
 
-    // copy this processor's data into the send buffer
+    // interpolate this processor's data into the send buffer
     gdata* tmp = srcs.at(0)->make_typed (varindex, transport_operator, tag);
     tmp->allocate (box, srcs.at(0)->proc(), state.collbufs[proc()].sendbuf);
     tmp->interpolate_from_innerloop (srcs, times, box, time,
