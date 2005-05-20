@@ -454,7 +454,7 @@ void gdata::copy_from_recvbuffer (comm_state& state,
           state.vartypesize);
 
   // copy this processor's data from the recv buffer
-  const ibbox& ext = src->extent();
+  const ibbox& ext = extent();
   ivect shape = ext.shape() / ext.stride();
   ivect items = (box.upper() - box.lower()) / box.stride() + 1;
   ivect offs  = (box.lower() - ext.lower()) / ext.stride();
