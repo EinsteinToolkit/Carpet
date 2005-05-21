@@ -371,30 +371,6 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     CarpetIOHDF5_CloseFile ();
   }
 
-  // now synchronize all variables, in sets of groups of the same vartype
-  vector<group_set> groups;
-
-  for (int group = 0; group < CCTK_NumGroups(); group++) {
-    if (CCTK_NumVarsInGroupI (group) > 0
-        && CCTK_QueryGroupStorageI (cctkGH, group)) {
-
-      group_set newset;
-      const int firstvar = CCTK_FirstVarIndexI (group);
-      newset.vartype = CCTK_VarTypeI (firstvar);
-      assert (newset.vartype >= 0);
-      int c;
-      for (c = 0; c < groups.size(); c++) {
-        if (newset.vartype == groups[c].vartype) {
-          break;
-        }
-      }
-      if (c == groups.size()) {
-        groups.push_back (newset);
-      }
-      groups[c].members.push_back (group);
-    }
-  }
-
   return (retval);
 }
 
