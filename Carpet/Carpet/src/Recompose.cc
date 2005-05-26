@@ -520,7 +520,8 @@ namespace Carpet {
       if (! dims[d]) {
         ++ alldims;
         allsizes *= rshape[d];
-        if (rshape[d] >= mysize) {
+        // prefer to split in the z direction
+        if (rshape[d] > 1.01 * mysize) {
           mydim = d;
           mysize = rshape[d];
         }
