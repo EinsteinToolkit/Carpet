@@ -19,7 +19,6 @@ Driver::ghost_size   = 2
 Carpet::prolongation_order_space = 3
 Carpet::prolongation_order_time  = 2
 Carpet::init_each_timelevel      = "yes"
-Carpet::buffer_width             = 6
 Carpet::max_refinement_levels    = 4
 CarpetRegrid::refinement_levels  = 4
 
