@@ -32,9 +32,6 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     int retval;
 
-    Checkpoint ("SyncGroup \"%s\" time=%g",
-                groupname, (double) cctkGH->cctk_time);
-
     const int group = CCTK_GroupIndex(groupname);
     if (group >= 0) {
       assert (group < (int)arrdata.size());
@@ -70,6 +67,8 @@ namespace Carpet {
       const int group = groups.members[g];
       const int grouptype = CCTK_GroupTypeI (group);
       char* groupname = CCTK_GroupName (group);
+      Checkpoint ("SyncGroup \"%s\" time=%g",
+                  groupname, (double) cctkGH->cctk_time);
 
       if (grouptype == CCTK_GF) {
         if (reflevel == -1) {
