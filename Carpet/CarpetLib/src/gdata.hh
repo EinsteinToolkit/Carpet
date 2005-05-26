@@ -141,14 +141,26 @@ private:
     const = 0;
   
  public:
-    void copy_from (comm_state& state,
-                    const gdata* src, const ibbox& box);
+  void copy_from (comm_state& state,
+                  const gdata* src, const ibbox& box);
+  void interpolate_from (comm_state& state,
+                         const vector<const gdata*> srcs,
+                         const vector<CCTK_REAL> times,
+                         const ibbox& box,
+                         const CCTK_REAL time,
+                         const int order_space,
+                         const int order_time);
+
  private:
-  void copy_from_nocomm (const gdata* src, const ibbox& box);
-  void copy_from_recv (comm_state& state,
+  void copy_from_post (comm_state& state,
                        const gdata* src, const ibbox& box);
-  void copy_from_send (comm_state& state,
-                       const gdata* src, const ibbox& box);
+  void interpolate_from_post (comm_state& state,
+                              const vector<const gdata*> srcs,
+                              const vector<CCTK_REAL> times,
+                              const ibbox& box,
+                              const CCTK_REAL time,
+                              const int order_space,
+                              const int order_time);
   void copy_from_wait (comm_state& state,
                        const gdata* src, const ibbox& box);
 
@@ -161,63 +173,6 @@ private:
   // of the corresponding source processor
   void copy_from_recvbuffer (comm_state& state,
                              const gdata* src, const ibbox& box);
-
-#if 0
- protected:
-  virtual void
-  copy_from_recv_inner (comm_state& state,
-                        const gdata* src,
-                        const ibbox& box)
-    = 0;
-  virtual void
-  copy_from_send_inner (comm_state& state,
-                        const gdata* src,
-                        const ibbox& box)
-    = 0;
-  virtual void
-  copy_from_recv_wait_inner (comm_state& state,
-                             const gdata* src,
-                             const ibbox& box)
-    = 0;
-  virtual void
-  copy_from_send_wait_inner (comm_state& state,
-                             const gdata* src,
-                             const ibbox& box)
-    = 0;
-#endif
-  
- public:
-  void interpolate_from (comm_state& state,
-                         const vector<const gdata*> srcs,
-                         const vector<CCTK_REAL> times,
-                         const ibbox& box, const CCTK_REAL time,
-                         const int order_space,
-                         const int order_time);
- private:
-  void interpolate_from_nocomm (const vector<const gdata*> srcs,
-                                const vector<CCTK_REAL> times,
-                                const ibbox& box, const CCTK_REAL time,
-                                const int order_space,
-                                const int order_time);
-  void interpolate_from_recv (comm_state& state,
-                              const vector<const gdata*> srcs,
-                              const vector<CCTK_REAL> times,
-                              const ibbox& box, const CCTK_REAL time,
-                              const int order_space,
-                              const int order_time);
-  void interpolate_from_send (comm_state& state,
-                              const vector<const gdata*> srcs,
-                              const vector<CCTK_REAL> times,
-                              const ibbox& box, const CCTK_REAL time,
-                              const int order_space,
-                              const int order_time);
-  void interpolate_from_wait (comm_state& state,
-                              const vector<const gdata*> srcs,
-                              const vector<CCTK_REAL> times,
-                              const ibbox& box, const CCTK_REAL time,
-                              const int order_space,
-                              const int order_time);
-
   // Interpolate processor-local source data into communication send buffer
   // of the corresponding destination processor
   // The case when both source and destination are local is also handled here.
@@ -228,15 +183,15 @@ private:
                                     const CCTK_REAL time,
                                     const int order_space,
                                     const int order_time);
- public:
-  
-protected:
+
+ protected:
   virtual void
   copy_from_innerloop (const gdata* src, const ibbox& box) = 0;
   virtual void
   interpolate_from_innerloop (const vector<const gdata*> srcs,
 			      const vector<CCTK_REAL> times,
-			      const ibbox& box, const CCTK_REAL time,
+			      const ibbox& box,
+                              const CCTK_REAL time,
 			      const int order_space,
 			      const int order_time) = 0;
 };

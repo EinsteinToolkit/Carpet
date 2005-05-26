@@ -21,10 +21,9 @@ comm_state::comm_state (int vartype_) : vartype(vartype_)
   // This path needs the size of the vartype, the corresponding MPI datatype
   // and the collective communication buffers initialized also.
   //
-  // If this comm state is created with a negative vartype then it will be
-  // for single-component communications and set up to step through
-  //   state_recv
-  //   state_send
+  // If this comm state is created with a negative vartype then individual
+  // communications on single components are used by stepping through
+  //   state_post
   //   state_wait
 
   DECLARE_CCTK_PARAMETERS;
@@ -42,7 +41,7 @@ comm_state::comm_state (int vartype_) : vartype(vartype_)
       case  N: { T dummy; datatype = dist::datatype(dummy); } break;
 #include "carpet_typecase.hh"
 #undef TYPECASE
-      default: assert (0);
+      default: assert (0 && "invalid datatype");
     }
     collbufs.resize (dist::size());
     rrequests.resize (dist::size(), MPI_REQUEST_NULL);
@@ -50,49 +49,15 @@ comm_state::comm_state (int vartype_) : vartype(vartype_)
     recvbuffers_ready.resize (dist::size());
 
   } else {
-    thestate = state_recv;
+    thestate = state_post;
   }
 }
 
 void comm_state::step ()
 {
-  DECLARE_CCTK_PARAMETERS;
-  
-  assert (thestate!=state_done);
-  if (! uses_collective_communication_buffers && combine_recv_send) {
+  assert (thestate != state_done);
+  if (uses_collective_communication_buffers) {
     switch (thestate) {
-    case state_recv:
-      assert (tmps1.empty());
-      thestate = state_wait;
-      break;
-    case state_send:
-      assert (0);
-    case state_wait:
-      assert (tmps1.empty());
-      assert (tmps2.empty());
-      thestate = state_done;
-      break;
-    case state_done:
-      assert (0);
-    default:
-      assert (0);
-    }
-  } else {
-    switch (thestate) {
-    case state_recv:
-      assert (tmps2.empty());
-      thestate = state_send;
-      break;
-    case state_send:
-      assert (tmps1.empty());
-      thestate = state_wait;
-      break;
-    case state_wait:
-      assert (tmps1.empty());
-      assert (tmps2.empty());
-      thestate = state_done;
-      break;
-
     case state_get_buffer_sizes:
       // The sizes of the collective communication buffers are known
       // so now allocate them.
@@ -127,7 +92,7 @@ void comm_state::step ()
 
     case state_empty_recv_buffers:
       // Finish (at least one of) the posted communications
-      if (! AllPostedCommunicationsFinished (use_waitall)) {
+      if (! AllPostedCommunicationsFinished ()) {
         // No state change if there are still outstanding communications;
         // do another comm_state loop iteration.
       } else {
@@ -140,38 +105,50 @@ void comm_state::step ()
       }
       break;
 
-    case state_done:
-      assert (0);
     default:
-      assert (0);
+      assert (0 && "invalid state");
+    }
+  } else {
+    switch (thestate) {
+    case state_post:
+      // After all sends/recvs have been posted in 'state_post'
+      // now wait for their completion in 'state_wait'.
+      thestate = state_wait;
+      break;
+    case state_wait:
+      thestate = state_done;
+      break;
+    default:
+      assert (0 && "invalid state");
     }
   }
 }
 
 bool comm_state::done ()
 {
-  return thestate==state_done;
+  return thestate == state_done;
 }
 
 comm_state::~comm_state ()
 {
   assert (thestate == state_done ||
           thestate == uses_collective_communication_buffers ?
-                      state_get_buffer_sizes : state_recv);
-  assert (tmps1.empty());
-  assert (tmps2.empty());
+                      state_get_buffer_sizes : state_post);
   assert (requests.empty());
 }
 
 
 // wait for completion of posted collective buffer sends/receives
 //
-// Depending on use_waitall, this function will wait for all at once (true)
-// or at least one (false) of the posted receive operations to finish.
+// Depending on the parameter CarpetLib::use_waitall, this function will wait
+// for all at once (true) or at least one (false) of the
+// posted receive operations to finish.
 //
 // It returns true if all posted communications have been completed.
-bool comm_state::AllPostedCommunicationsFinished (bool use_waitall)
+bool comm_state::AllPostedCommunicationsFinished ()
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   // check if all outstanding receives have been completed already
   if (num_posted_recvs == num_completed_recvs) {
     // finalize the outstanding sends in one go
@@ -213,16 +190,6 @@ bool comm_state::AllPostedCommunicationsFinished (bool use_waitall)
 
   return (false);
 }
-
-
-comm_state::gcommbuf::gcommbuf ()
-{
-}
-
-comm_state::gcommbuf::~gcommbuf ()
-{
-}
-
 
 
 template<typename T>

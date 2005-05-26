@@ -21,8 +21,8 @@ class gdata;
 // Depending on how a comm state object was created,
 // it will step through one of two state transitions (in the given order):
 enum astate {
-  // "recv -> send -> wait" are used for single-component communications
-  state_recv, state_send, state_wait,
+  // these are used for communications on individual components
+  state_post, state_wait,
 
   // these are used for collective communications
   state_get_buffer_sizes, state_fill_send_buffers, state_empty_recv_buffers,
@@ -56,16 +56,13 @@ public:
   // the following members are used for single-component communications
   //////////////////////////////////////////////////////////////////////////
 
-  // Lists of temporary data objects
-  queue<gdata*> tmps1, tmps2;
-  
   // List of MPI requests for use_waitall
   vector<MPI_Request> requests;
   
   // Lists of communication buffers for use_lightweight_buffers
   struct gcommbuf {
-    gcommbuf ();
-    virtual ~gcommbuf ();
+    gcommbuf () {};
+    virtual ~gcommbuf () {};
     MPI_Request request;
     virtual void const * pointer () const = 0;
     virtual void * pointer () = 0;
@@ -135,7 +132,7 @@ private:
   int num_completed_recvs;
 
   // wait for completion of posted collective buffer sends/receives
-  bool AllPostedCommunicationsFinished(bool use_waitall);
+  bool AllPostedCommunicationsFinished();
 };
 
 

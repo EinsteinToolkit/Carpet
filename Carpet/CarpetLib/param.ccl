@@ -37,11 +37,11 @@ BOOLEAN use_waitall "Use MPI_Waitall instead individual MPI_Wait/MPI_Waitsome st
 {
 } "yes"
 
-BOOLEAN combine_recv_send "Combine MPI_Irecv and MPI_Isend calls"
+BOOLEAN combine_recv_send "Combine MPI_Irecv and MPI_Isend calls -- DEPRECATED - DO NOT USE ANYMORE"
 {
 } "no"
 
-BOOLEAN use_lightweight_buffers "Use lightweight communication buffers instead of data objects"
+BOOLEAN use_lightweight_buffers "Use lightweight communication buffers instead of data objects -- DEPRECATED - DO NOT USE ANYMORE"
 {
 } "no"
 
