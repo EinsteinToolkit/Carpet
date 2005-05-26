@@ -32,9 +32,6 @@ protected:                      // should be readonly
   operator_type transport_operator;
   
   bool _has_storage;		// has storage associated (on some processor)
-  bool _owns_storage;		// owns the storage
-  // (only valid if there is storage on this processor; it means that
-  // the memory is allocated and freed by this class)
   int _size;			// size
 
   int _proc;			// stored on processor
@@ -97,10 +94,6 @@ public:
 
   bool has_storage () const {
     return _has_storage;
-  }
-  bool owns_storage () const {
-    assert (_has_storage);
-    return _owns_storage;
   }
   
   virtual const void* storage () const = 0;
