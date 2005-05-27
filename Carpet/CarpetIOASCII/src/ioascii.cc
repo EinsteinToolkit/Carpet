@@ -17,6 +17,7 @@
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
+#include "util_Table.h"
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 
@@ -516,6 +517,27 @@ namespace CarpetIOASCII {
                 ivect lo = ext.lower();
                 ivect hi = ext.upper();
                 ivect str = ext.stride();
+
+                // Ignore symmetry boundaries if desired
+                if (grouptype == CCTK_GF) {
+                  CCTK_INT const symtable
+                    = SymmetryTableHandleForGrid (cgh);
+                  if (symtable < 0) CCTK_WARN (0, "internal error");
+                  CCTK_INT symbnd[2*dim];
+                  int const ierr = Util_TableGetIntArray
+                    (symtable, 2*dim, symbnd, "symmetry_handle");
+                  if (ierr != 2*dim) CCTK_WARN (0, "internal error");
+                  for (int d=0; d<dim; ++d) {
+                    if (symbnd[2*d] < 0) {
+                      // lower boundary is a symmetry boundary
+                      lo[d] += cgh->cctk_nghostzones[d] * str[d];
+                    }
+                    if (symbnd[2*d+1] < 0) {
+                      // upper boundary is a symmetry boundary
+                      hi[d] -= cgh->cctk_nghostzones[d] * str[d];
+                    }
+                  }
+                }
 
                 // Ignore ghost zones if desired
                 for (int d=0; d<dim; ++d) {

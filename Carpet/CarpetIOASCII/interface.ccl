@@ -21,8 +21,15 @@ CCTK_REAL last_output_time[4] TYPE=scalar
 CCTK_INT this_iteration[4] TYPE=scalar
 
 
-# function to check whether existing output files should be truncated or not
+# Check whether existing output files should be truncated or not
 CCTK_INT FUNCTION IO_TruncateOutputFiles \
   (CCTK_POINTER_TO_CONST IN GH)
 
 REQUIRES FUNCTION IO_TruncateOutputFiles
+
+
+
+# Determine which boundaries are symmetry boundaries
+CCTK_INT FUNCTION \
+    SymmetryTableHandleForGrid (CCTK_POINTER_TO_CONST IN cctkGH)
+REQUIRES FUNCTION SymmetryTableHandleForGrid
