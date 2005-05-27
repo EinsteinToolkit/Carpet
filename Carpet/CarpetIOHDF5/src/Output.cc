@@ -270,7 +270,7 @@ int WriteVarChunked (const cGH* const cctkGH,
   {
     BEGIN_COMPONENT_LOOP (cctkGH, group.grouptype)
     {
-      // Using "exterior" removes ghost zones and refinement boundaries.
+      // Using "exterior" includes ghost zones and refinement boundaries.
       ibbox& bbox = arrdata.at(gindex).at(Carpet::map).dd->
                     boxes.at(mglevel).at(refinementlevel).at(component).exterior;
 

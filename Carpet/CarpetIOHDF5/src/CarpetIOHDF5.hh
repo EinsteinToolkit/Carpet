@@ -228,37 +228,6 @@ namespace CarpetIOHDF5 {
 
   hid_t h5DataType (const cGH* const cctkGH, int cctk_type,
                     int single_precision);
-  hid_t h5DataType (const CCTK_CHAR& dummy);
-#ifdef CCTK_INT1
-  hid_t h5DataType (const CCTK_INT1& dummy);
-#endif
-#ifdef CCTK_INT2
-  hid_t h5DataType (const CCTK_INT2& dummy);
-#endif
-#ifdef CCTK_INT4
-  hid_t h5DataType (const CCTK_INT4& dummy);
-#endif
-#ifdef CCTK_INT8
-  hid_t h5DataType (const CCTK_INT8& dummy);
-#endif
-#ifdef CCTK_REAL4
-  hid_t h5DataType (const CCTK_REAL4& dummy);
-#endif
-#ifdef CCTK_REAL8
-  hid_t h5DataType (const CCTK_REAL8& dummy);
-#endif
-#ifdef CCTK_REAL16
-  hid_t h5DataType (const CCTK_REAL16& dummy);
-#endif
-#ifdef CCTK_COMPLEX8
-  hid_t h5DataType (const CCTK_COMPLEX8& dummy);
-#endif
-#ifdef CCTK_COMPLEX16
-  hid_t h5DataType (const CCTK_COMPLEX16& dummy);
-#endif
-#ifdef CCTK_COMPLEX32
-  hid_t h5DataType (const CCTK_COMPLEX32& dummy);
-#endif
 
 extern "C" {
 
