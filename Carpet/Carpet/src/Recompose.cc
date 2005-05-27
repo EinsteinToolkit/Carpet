@@ -516,12 +516,12 @@ namespace Carpet {
     CCTK_REAL mysize = 0;
     int alldims = 0;
     CCTK_REAL allsizes = 1;
-    for (int d=0; d<dim; ++d) {
+    // prefer to split in the z direction
+    for (int d=dim-1; d>=0; --d) {
       if (! dims[d]) {
         ++ alldims;
         allsizes *= rshape[d];
-        // prefer to split in the z direction
-        if (rshape[d] > 1.01 * mysize) {
+        if (rshape[d] >= 0.99 * mysize) {
           mydim = d;
           mysize = rshape[d];
         }
