@@ -212,7 +212,7 @@ namespace CarpetSlab {
     for (comm_state state(gp.vartype); !state.done(); state.step()) {
       
       // Loop over all components, copying data from them
-      BEGIN_LOCAL_COMPONENT_LOOP (cgh, gp.grouptype) {
+      BEGIN_COMPONENT_LOOP (cgh, gp.grouptype) {
         
         // Get data object
         mydata = (*myff)(tl, rl, component, mglevel);
@@ -233,7 +233,7 @@ namespace CarpetSlab {
           
         }
         
-      } END_LOCAL_COMPONENT_LOOP;
+      } END_COMPONENT_LOOP;
       
     } // for step
     
