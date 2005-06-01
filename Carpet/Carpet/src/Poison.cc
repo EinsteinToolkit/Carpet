@@ -47,10 +47,9 @@ namespace Carpet {
       return;
     }
     
-    const int nvar = CCTK_NumVarsInGroupI(group);
-    if (nvar == 0) return;
     const int n0 = CCTK_FirstVarIndexI(group);
     assert (n0>=0);
+    const int nvar = CCTK_NumVarsInGroupI(group);
     const int sz = CCTK_VarTypeSize(CCTK_VarTypeI(n0));
     assert (sz>0);
     
@@ -103,12 +102,12 @@ namespace Carpet {
     Checkpoint ("PoisonCheck");
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
-      const int nvar = CCTK_NumVarsInGroupI(group);
-      if (nvar > 0 && CCTK_QueryGroupStorageI(cgh, group)) {
+      if (CCTK_QueryGroupStorageI(cgh, group)) {
         
         const int grouptype = CCTK_GroupTypeI(group);
         const int n0 = CCTK_FirstVarIndexI(group);
         assert (n0>=0);
+        const int nvar = CCTK_NumVarsInGroupI(group);
         const int tp = CCTK_VarTypeI(n0);
         const int gpdim = groupdata.at(group).info.dim;
         
