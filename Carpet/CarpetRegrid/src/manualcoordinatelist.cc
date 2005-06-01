@@ -65,6 +65,9 @@ namespace CarpetRegrid {
       } catch (input_error) {
         CCTK_WARN (0, "Could not parse parameter \"coordinates\"");
       }
+      if (newbbss.size() >= spacereffacts.size()) {
+        CCTK_WARN (0, "Parameter \"coordinates\" defines too many refinement levels; at most Carpet::max_refinement_levels - 1 may be defined");
+      }
     }
 
     vector<vector<bbvect> > newobss;
@@ -75,31 +78,28 @@ namespace CarpetRegrid {
       newobss.resize(newbbss.size());
       for (size_t rl=0; rl<newobss.size(); ++rl) {
         newobss.at(rl).resize(newbbss.at(rl).size());
+        ivect const spacereffact = spacereffacts.at(rl+1);
         for (size_t c=0; c<newobss.at(rl).size(); ++c) {
           for (int d=0; d<dim; ++d) {
             assert (mglevel==0);
-            rvect const spacing = base_spacing * ipow((CCTK_REAL)mgfact, basemglevel) / spacereffacts.at(rl+1);
+            rvect const spacing = base_spacing * ipow((CCTK_REAL)mgfact, basemglevel) / spacereffact;
             ierr = ConvertFromPhysicalBoundary
               (dim, &physical_min[0], &physical_max[0],
                &interior_min[0], &interior_max[0],
                &exterior_min[0], &exterior_max[0], &spacing[0]);
             assert (!ierr);
             newobss.at(rl).at(c)[d][0] = abs(newbbss.at(rl).at(c).lower()[d] - physical_min[d]) < 1.0e-6 * spacing[d];
+            rvect lo = newbbss.at(rl).at(c).lower();
+            rvect up = newbbss.at(rl).at(c).upper();
+            rvect str = newbbss.at(rl).at(c).stride();
             if (newobss.at(rl).at(c)[d][0]) {
-              rvect lo = newbbss.at(rl).at(c).lower();
-              rvect up = newbbss.at(rl).at(c).upper();
-              rvect str = newbbss.at(rl).at(c).stride();
               lo[d] = exterior_min[d];
-              newbbss.at(rl).at(c) = rbbox(lo, up, str);
             }
-            newobss.at(rl).at(c)[d][1] = abs(newbbss.at(rl).at(c).upper()[d] - physical_max[d]) < 1.0e-6 * base_spacing[d] / spacereffacts.at(rl)[d];
+            newobss.at(rl).at(c)[d][1] = abs(newbbss.at(rl).at(c).upper()[d] - physical_max[d]) < 1.0e-6 * base_spacing[d] / spacereffact[d];
             if (newobss.at(rl).at(c)[d][1]) {
-              rvect lo = newbbss.at(rl).at(c).lower();
-              rvect up = newbbss.at(rl).at(c).upper();
-              rvect str = newbbss.at(rl).at(c).stride();
               up[d] = exterior_max[d];
-              newbbss.at(rl).at(c) = rbbox(lo, up, str);
             }
+            newbbss.at(rl).at(c) = rbbox(lo, up, str);
           }
         }
       }
@@ -112,6 +112,9 @@ namespace CarpetRegrid {
           ob_str >> newobss;
         } catch (input_error) {
           CCTK_WARN (0, "Could not parse parameter \"outerbounds\"");
+        }
+        if (newobss.size() >= spacereffacts.size()) {
+          CCTK_WARN (0, "Parameter \"outerbounds\" defines too many refinement levels; at most Carpet::max_refinement_levels - 1 may be defined");
         }
         bool good = newobss.size() == newbbss.size();
         if (good) {
