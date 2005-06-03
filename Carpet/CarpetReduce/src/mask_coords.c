@@ -88,32 +88,48 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
              on the boundary the weight 1/2 */
           if (! is_staggered[2*d+f]) {
             
-            /* Adapt the extent of the boundary */
-            if (f==0) {
-              /* lower face */
-              imin[d] = imax[d];
-              imax[d] = imin[d] + 1;
+            /* Check whether the domain is empty */
+            if (imin[d] == imax[d] - 1) {
+              
+              /* The domain is empty.  The correct thing to do would
+                 be to set the weights to 0.  But this is boring,
+                 because then there are no interior points left, and
+                 all reductions become trivial.  Instead, leave the
+                 non-staggered boundary points alone, and assume that
+                 the user wants to perform a reduction in one
+                 dimension less.  */
+              /* do nothing */
+              
             } else {
-              /* upper face */
-              imax[d] = imin[d];
-              imin[d] = imax[d] - 1;
-            }
+            
+              /* Adapt the extent of the boundary */
+              if (f==0) {
+                /* lower face */
+                imin[d] = imax[d];
+                imax[d] = imin[d] + 1;
+              } else {
+                /* upper face */
+                imax[d] = imin[d];
+                imin[d] = imax[d] - 1;
+              }
           
-            /* Loop over the points next to boundary */
-            if (verbose) {
-              CCTK_VInfo (CCTK_THORNSTRING,
-                          "Setting staggered boundary points in direction %d face %d to weight 1/2", d, f);
-            }
-            for (k=imin[2]; k<imax[2]; ++k) {
-              for (j=imin[1]; j<imax[1]; ++j) {
-                for (i=imin[0]; i<imax[0]; ++i) {
+              /* Loop over the points next to boundary */
+              if (verbose) {
+                CCTK_VInfo (CCTK_THORNSTRING,
+                            "Setting non-staggered boundary points in direction %d face %d to weight 1/2", d, f);
+              }
+              for (k=imin[2]; k<imax[2]; ++k) {
+                for (j=imin[1]; j<imax[1]; ++j) {
+                  for (i=imin[0]; i<imax[0]; ++i) {
                   
-                  int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                  weight[ind] *= 0.5;
+                    int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                    weight[ind] *= 0.5;
                   
+                  }
                 }
               }
-            }
+
+            } /* if the domain is not empty */
             
           } /* if the boundary is not staggered */
           
