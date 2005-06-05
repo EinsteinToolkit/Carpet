@@ -1,6 +1,8 @@
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstdlib>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -374,9 +376,13 @@ namespace CarpetIOF5 {
     
     ostringstream filenamebuf;
     bool const use_IO_out_dir = strcmp (out_dir, "") == 0;
+    int const maxval = CCTK_nProcs (cctkGH);
+    int const digits = 1 + int (floor (log (double (maxval)) / log (10.0)));
     filenamebuf << (use_IO_out_dir ? IO_out_dir : out_dir)
                 << "/"
                 << alias
+                << "."
+                << setw (digits) << setfill ('0') << CCTK_MyProc (cctkGH) 
                 << out_extension;
     string const filename = filenamebuf.str();
     
