@@ -96,16 +96,16 @@ namespace CarpetIOF5 {
     const
   {
     assert (ml >= 0);
-    if (ml >= m_extension->last_output_iteration.size())
+    if (size_t (ml) >= m_extension->last_output_iteration.size())
     {
       m_extension->last_output_iteration.resize (ml+1);
     }
     assert (rl >= 0);
-    if (rl >= m_extension->last_output_iteration.at(ml).size())
+    if (size_t (rl) >= m_extension->last_output_iteration.at(ml).size())
     {
       m_extension->last_output_iteration.at(ml).resize (rl+1);
     }
-    if (vi >= m_extension->last_output_iteration.at(ml).at(rl).size())
+    if (size_t (vi) >= m_extension->last_output_iteration.at(ml).at(rl).size())
     {
       m_extension->last_output_iteration.at(ml).at(rl).resize (vi+1, -1);
     }
