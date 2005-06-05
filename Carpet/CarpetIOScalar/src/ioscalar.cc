@@ -10,7 +10,9 @@
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
+#include "cctk_Functions.h"
 #include "cctk_Parameters.h"
+#include "util_Network.h"
 #include "util_String.h"
 
 #include "CactusBase/IOUtil/src/ioGH.h"
@@ -271,6 +273,30 @@ namespace CarpetIOScalar {
           // If this is the first time, then write a nice header
           if (do_truncate.at(n) && IO_TruncateOutputFiles (cctkGH)) {
             file.open (filename, ios::out | ios::trunc);
+            {
+              char run_host [1000];
+              Util_GetHostName (run_host, sizeof run_host);
+#if 0
+              char const * const run_user = CCTK_RunUser();
+#else
+              char const * const run_user = getenv ("USER");
+#endif
+              char run_date [1000];
+              Util_CurrentDate (sizeof run_date, run_date);
+              char run_time [1000];
+              Util_CurrentTime (sizeof run_time, run_time);
+              file << "# Scalar ASCII output created by CarpetIOScalar" << endl
+                   << "# created on " << run_host
+                   << " by " << run_user
+                   << " on " << run_date
+                   << " at " << run_time << endl;
+              if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
+                char const * const job_id
+                  = static_cast<char const *> (UniqueSimulationID (cctkGH));
+                file << "# Simulation ID: " << job_id << endl;
+              }
+            }
+            file << "#" << endl;
             file << "# " << varname << " (" << alias << ")" << endl;
             file << "# iteration time data" << endl;
             if (one_file_per_group) {
