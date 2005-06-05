@@ -30,3 +30,11 @@ CCTK_INT FUNCTION IO_TruncateOutputFiles \
   (CCTK_POINTER_TO_CONST IN GH)
 
 REQUIRES FUNCTION IO_TruncateOutputFiles
+
+
+
+# Return a pointer to an unmodifiable C string
+# which contains a unique ID for this simulation
+CCTK_POINTER_TO_CONST \
+FUNCTION UniqueSimulationID (CCTK_POINTER_TO_CONST IN  cctkGH)
+USES FUNCTION UniqueSimulationID

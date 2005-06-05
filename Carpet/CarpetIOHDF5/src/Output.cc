@@ -15,6 +15,7 @@
 #include <hdf5.h>
 
 #include "cctk.h"
+#include "cctk_Functions.h"
 #include "cctk_Parameters.h"
 #include "util_String.h"
 #include "util_Table.h"
@@ -1068,6 +1069,13 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
   WriteAttribute (dataset, "carpet_version", CARPET_VERSION);
   WriteAttribute (dataset, "carpet_mglevel", mglevel);
   WriteAttribute (dataset, "carpet_reflevel", refinementlevel);
+
+  // Simulation arguments
+  if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
+    char const * const job_id
+      = static_cast<char const *> (UniqueSimulationID (cctkGH));
+    WriteAttribute (dataset, "simulation id", job_id);
+  }
 }
 
 
