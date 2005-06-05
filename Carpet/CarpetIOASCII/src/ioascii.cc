@@ -1,10 +1,11 @@
-#include <assert.h>
-#include <ctype.h>
-#include <limits.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cctype>
+#include <climits>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
 #include <sys/stat.h>
 #include <sys/types.h>
 
