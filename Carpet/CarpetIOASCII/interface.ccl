@@ -33,3 +33,11 @@ REQUIRES FUNCTION IO_TruncateOutputFiles
 CCTK_INT FUNCTION \
     SymmetryTableHandleForGrid (CCTK_POINTER_TO_CONST IN cctkGH)
 REQUIRES FUNCTION SymmetryTableHandleForGrid
+
+
+
+# Return a pointer to an unmodifiable C string
+# which contains a unique ID for this simulation
+CCTK_POINTER_TO_CONST \
+FUNCTION UniqueSimulationID (CCTK_POINTER_TO_CONST IN  cctkGH)
+USES FUNCTION UniqueSimulationID
