@@ -208,6 +208,10 @@ namespace CarpetIOASCII {
   {
     DECLARE_CCTK_PARAMETERS;
 
+    if (! is_level_mode()) {
+      CCTK_WARN (1, "OutputVarAs must be called in level mode");
+      return -1;
+    }
     assert (is_level_mode());
 
     const int n = CCTK_VarIndex(varname);
