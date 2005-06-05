@@ -7,6 +7,7 @@
 #include <hdf5.h>
 
 #include "cctk.h"
+#include "cctk_Functions.h"
 
 #include "timestep.hh"
 #include "utils.hh"
@@ -49,6 +50,13 @@ namespace CarpetIOF5 {
         = open_or_create_group (m_file.get_hdf5_file(), m_name.c_str());
       assert (m_hdf5_timestep >= 0);
       write_or_check_attribute (m_hdf5_timestep, "time", time);
+      
+      if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
+        cGH const * const cctkGH = get_file().get_cctkGH();
+        char const * const job_id
+          = static_cast<char const *> (UniqueSimulationID (cctkGH));
+        write_or_check_attribute (m_hdf5_timestep, "simulation id", job_id);
+      }
       
       assert (invariant());
     }
