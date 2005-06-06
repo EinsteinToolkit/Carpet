@@ -31,7 +31,7 @@
 <a href="http://lists.carpetcode.org/listinfo/carpet-darcs/">darcs messages</a></p>
 
 <p><b>Development</b><br />
-<a href="http://darcs.net/">Darcs</a><br />
+<a href="get-carpet-darcs.html">Download</a><br />
 <a href="http://bugs.carpetcode.org/">Bugzilla</a><br />
 <a href="feature-requests.html">Missing&nbsp;features</a></p>
 
@@ -72,6 +72,21 @@
 
     <h2>News</h2>
 
+    <p><b>June 6, 2005:</b> We have updated the <a
+    href="get-carpet-darcs.html">downloading instructions for
+    Carpet</a>.</p>
+
+    <p><b>June 6, 2005:</b> Version 1.0.3 of the pre-compiled darcs
+    binary is <a href="get-carpet-darcs.html">now available</a>.</p>
+
+    <p><b>April 13, 2005:</b> Thomas Radke has implemented a new
+    communication scheme in Carpet.  Instead of sending many small
+    messages in an interleaved manner, Carpet now collects all
+    messages into an internal buffer and sends only one big message
+    with MPI.  This circumvents certain problems with internal
+    limitations of MPICH, and it also improves the performance
+    greatly.</p>
+
     <p><b>March 9, 2005:</b> We have started to move towards a new
     stable version of Carpet.</p>
 
@@ -109,25 +124,6 @@
     stable.  We plan to make the split in about three weeks.  The
     discussion about this is held on the mailing list; your input is
     welcome.</p>
-
-    <p><b>April 7, 2004:</b> Up to now, all Carpet thorns have been
-    living in a single arrangement for Cactus.  This caused problems,
-    because stable thorns, development thorns, and outdated thorns
-    were sitting next to each other, confusing newcomers.  We have <a
-    href="#getting-the-code">moved the Carpet arrangement</a> to a new
-    repository and split it into four.  Access to the old Carpet
-    arrangement has been disabled.</p>
-
-    <p><b>March 3, 2004:</b> We have recently had trouble with I/O
-    throuth the <a
-    href="http://zeus.ncsa.uiuc.edu/~jshalf/FlexIO/">FlexIO</a>
-    library.  We suspect that it might have a bug that causes HDF5
-    output to fail under certain, random conditions.  We have written
-    a new thorn CarpetIOHDF5 which uses the <a
-    href="http://hdf.ncsa.uiuc.edu/HDF5/">HDF5</a> library directly,
-    while remaining compatible to the FlexIO file format.  Please test
-    this thorn, and report any problems or incompatibilities you
-    find.</p>
 
     <p><a href="olds.html"><b>Old News...</b></a></p>
 
@@ -190,41 +186,6 @@
     have created an account there.  The old <a
     href="feature-requests.html">list of missing features</a> have not
     yet been moved over to Bugzilla.</p>
-
-    <hr />
-
-    <h2 id="getting-the-code">Getting the code</h2>
-
-    <p>Carpet is distributed under the <a
-    href="http://www.gnu.org/licenses/licenses.html">GNU General
-    Public License (GPL)</a>.  It might be released under the GNU
-    Lesser General Public License (LGPL) in the future, to match the
-    distribution terms of Cactus.</p>
-
-    <p>Carpet is a driver for Cactus.  It works as a part of Cactus,
-    and you will need to have the developers' version of Cactus
-    installed before you can use Carpet.  Please look at the <a
-    href="http://www.cactuscode.org/">Cactus web pages</a> for an
-    introduction to Cactus and for installation instructions.</p>
-
-    <p>Carpet is available via anonymous <a
-    href="http://www.cvshome.org/">CVS</a>.  The CVSROOT is
-    <code>:pserver:cvs_anon@cvs.carpetcode.org:/home/cvs/carpet</code>,
-    and there are several arrangements, each living in a directory.
-    The arrangement <code>Carpet</code> contains the basic driver part
-    that everybody needs.  The arrangement <code>CarpetExtra</code>
-    contains useful add-ons and some example code.  Development of new
-    thorns happens in the <code>CarpetDev</code> arrangement, which
-    means that the code in there is not to be trusted.  And finally,
-    there is a graveyard arrangement <code>CarpetAttic</code> of
-    things that only used to be useful and are now in a state of
-    decay.</p>
-
-    <p>The password for anonymous CVS access is <code>anon</code>.  We
-    thank the <a
-    href="http://www.tat.physik.uni-tuebingen.de/">Institut für
-    Astronomie und Astrophysik</a> of the Universität Tübingen for
-    hosting the CVS server.</p>
 
     <hr />
 
@@ -356,7 +317,7 @@
 <p>
 <!-- Created: Tue Aug 12 12:12:08 CEST 2003 -->
 <!-- hhmts start -->
-Last modified: Mon Apr 11 19:21:48 CEST 2005
+Last modified: Mon Jun  6 21:10:16 CEST 2005
 <!-- hhmts end -->
 </p>
 

@@ -5,19 +5,124 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15" />
-    <title>Getting the Development Version of Carpet</title>
+    <title>Download Carpet</title>
   </head>
 
   <body>
-    <h1>Getting the Development Version of Carpet</h1>
+    <h1>Download Carpet</h1>
 
 
 
-    <h2>About Darcs</h2>
+    <h2>Available Versions</h2>
 
-    <p>The development version of Carpet is now managed in a <a
-    href="http://darcs.net/">darcs</a> repository.  Darcs has a number
-    of advantages for us developers, such as:</p>
+    <p>Carpet is distributed under the <a
+    href="http://www.gnu.org/licenses/licenses.html">GNU General
+    Public License (GPL)</a>.  It might be released under the GNU
+    Lesser General Public License (LGPL) in the future, to match the
+    distribution terms of Cactus.</p>
+
+    <p>There are currently three different versions of Carpet
+    available:</p>
+
+    <ul>
+      <li>Version 1, the old stable version (via CVS)</li>
+      <li>Version 2, the upcoming second stable version (via darcs;
+          CVS mirror planned)</li>
+      <li>Development version (via darcs)</li>
+    </ul>
+
+    <p>Version 1 has been unchanged for quite some time.  There are no
+    plans to make any further changes to this version unless a
+    catastrophic error is detected.</p>
+
+    <p>Version 2 is the upcoming next stable version.  This version is
+    almost feature complete, but we continue to improve its
+    performance for parallel communication and I/O.  This version will
+    probably be released in a few week.  After its release, we will
+    only correct errors, so that its users have a stable platform to
+    rely on.  We recommend this version for the casual user and for
+    production runs.</p>
+
+    <p>The development version will always see changes, some of which
+    might surprise you.  You should not use it without keeping close
+    contact to the developers.</p>
+
+
+
+    <h2>Getting Carpet</h2>
+
+    <p>Carpet is a driver for Cactus.  It works as a part of Cactus,
+    and you will need to have the developers' version of Cactus
+    installed before you can use Carpet.  Please look at the <a
+    href="http://www.cactuscode.org/">Cactus web pages</a> for an
+    introduction to Cactus and for installation instructions.</p>
+
+    <p>Carpet consists of several arrangements, each living in a
+    directory.  The arrangement <code>Carpet</code> contains the basic
+    driver part that everybody needs.  The arrangement
+    <code>CarpetExtra</code> contains useful add-ons and some example
+    code.  Development of new thorns happens in the
+    <code>CarpetDev</code> arrangement, which means that the code in
+    there is not to be trusted.  And finally, there is a graveyard
+    arrangement <code>CarpetAttic</code> of things that only used to
+    be useful and are now in a state of decay.</p>
+
+    <h3>Version 1</h3>
+
+    <p>Version 1 of Carpet is available via anonymous <a
+    href="http://www.cvshome.org/">CVS</a>:
+<pre>        cd Cactus/arrangements
+        cvs -d :pserver:cvs_anon@cvs.carpetcode.org:/home/cvs/carpet login
+        cvs -d :pserver:cvs_anon@cvs.carpetcode.org:/home/cvs/carpet checkout Carpet
+        cvs -d :pserver:cvs_anon@cvs.carpetcode.org:/home/cvs/carpet checkout CarpetExtra
+        cvs -d :pserver:cvs_anon@cvs.carpetcode.org:/home/cvs/carpet checkout CarpetDev</pre>
+    The password for anonymous CVS access is <code>anon</code>.
+    Instructions for dealing with CVS are available everywhere on the
+    web, e.g. also on the <a href="http://www.cactuscode.org/">Cactus
+    pages</a>.</p>
+
+    <h3>Version 2</h3>
+
+    <p>Version 2 of Carpet is available via anonymous <a
+    href="http://www.darcs.net/">darcs</a> (a CVS mirror is planned):
+<pre>        cd Cactus
+        darcs get http://www.carpetcode.org/~darcs/carpet-stable-2
+        cd arrangements
+        ln -s ../carpet-stable-2/Carpet* .</pre>
+    (Don't miss the dot after the <code>Carpet*</code> in the last
+    line.)  Instructions for using darcs are given <a
+    href="#darcs">below</a>.  You can also have a look at <a
+    href="http://www.carpetcode.org/~darcs/carpet-stable-2">Carpet's
+    source tree</a> in your web browser.</p>
+
+    <h3>Development Version</h3>
+
+    <p>The development version of Carpet is not available anonymously.
+    <a href="mailto:schnetter@aei.mpg.de">Ask me</a> if you would like
+    an account.  Once you have an account, you get the development
+    version via
+<pre>        cd Cactus
+        darcs get darcs@cvs.carpetcode.org/~darcs/carpet
+        cd arrangements
+        ln -s ../carpet-stable-2/Carpet* .</pre>
+    (Don't miss the dot after the <code>Carpet*</code> in the last
+    line.)  Instructions for using darcs are given <a
+    href="#darcs">below</a>.</p>
+
+    <p>We thank the <a
+    href="http://www.tat.physik.uni-tuebingen.de/">Institut für
+    Astronomie und Astrophysik</a> of the Universität Tübingen for
+    hosting the CVS and darcs server.</p>
+
+
+
+    <hr />
+
+    <h2 id="darcs">Using Darcs</h2>
+
+    <p>Carpet is managed in a <a href="http://darcs.net/">darcs</a>
+    repository instead of a CVS repository.  Darcs has a number of
+    advantages over CVS for us developers, such as:</p>
 
     <ul>
       <li>You have a local copy of the repository, and can therefore
@@ -31,80 +136,35 @@
           convenient and more secure</li>
     </ul>
 
-    <p>and them some more, as described in the <a
+    <p>and then some more, as described in the <a
     href="http://darcs.net/manual/">darcs manual</a>.</p>
 
+    <p>If darcs is not already installed on your system, you need to
+    do so.  This is described on the <a href="http://darcs.net/">darcs
+    home page</a>, and some links to binaries are given in the darcs
+    wiki.  If you have problems installing or using darcs in general,
+    then you should ask on the darcs mailing list, which I (Erik
+    Schnetter) read regularly.  For your convenience, we have also
+    prepared a gzipped, statically linked <a
+    href="binaries/darcs-1.0.3-static-linux-i386.gz">executable of
+    darcs 1.0.3</a> for Linux/i386 (2.5&nbsp;MB), and the <a
+    href="doc/darcs-1.0.3.ps.gz">gzipped postscript documentation</a>
+    (270&nbsp;kB) for it.</p>
 
-
-    <h2>Getting Carpet</h2>
-
-    <p>In order to get the <a
-    href="http://www.carpetcode.org/~darcs/carpet/">development
-    version of Carpet</a>, you first need to install <tt>darcs</tt> on
-    your system.  This is described on the <a
-    href="http://darcs.net/">darcs home page</a>, and some links to
-    binaries are given in the darcs wiki.  If you have problems
-    installing or using darcs in general, then you should ask on the
-    darcs mailing list, which I (Erik Schnetter) read regularly.  We
-    have also prepared a <a
-    href="binaries/darcs-1.0.2-static-linux-i386.gz">gzipped,
-    statically linked version for Linux/i386</a>, and the <a
-    href="doc/darcs-1.0.2.ps.gz">gzipped postscript documentation</a>
-    (260&nbsp;kB) for it.</p>
-
-    <p>By the way, you can also have a look at <a
-    href="http://www.carpetcode.org/~darcs/carpet">Carpet's source
-    tree</a> in your web browser.</p>
-
-    <p>After installing <tt>darcs</tt>, take the following steps to
-    get Carpet:</p>
-
-    <ol>
-      <li>Move your old version of <tt>Carpet</tt> to a secure place:
-<pre>cd Cactus
-mkdir oldcarpet
-mv arrangements/Carpet* oldcarpet</pre></li>
-
-      <li>Get the development version of Carpet.  Carpet consists of
-          four arrangements that live in a single repository.  This
-          structure is not what Cactus expects, and we will therefore
-          put it outside the <tt>arrangements</tt> directory:
-<pre>cd Cactus
-darcs get http://www.carpetcode.org/~darcs/carpet</pre>
-          This copies the whole Carpet repository, and it will take some
-          time.</li>
-
-      <li>Create some symbolic links in the arrangements directory:
-<pre>cd Cactus/arrangements
-ln -s ../carpet/Carpet* .</pre>
-          (don't forget the dot at the end of the last line).</li>
-    </ol>
-
-    <p>That's it; you can now recompile your Cactus/Carpet
-    configurations.</p>
-
-
-
-    <h2>Updating Carpet</h2>
+    <h3>Updating the Repository from the Master</h3>
 
     <p>At some time you will want to update your version of Carpet and
-    incorporate some changes from the main Carpet repository.</p>
-
-    <ol>
-      <li>You do this with the command
-<pre>cd Cactus/carpet
+    incorporate some changes from the main Carpet repository.  You do
+    this with the command
+<pre>cd Cactus/carpet-stable-2
 darcs pull</pre>
       which will look for new changes, and then ask you which of these
-      you want to obtain.  Normally, you will want all changes.</li>
-    </ol>
+      you want to obtain.  Normally, you will want all changes.</p>
 
-
-
-    <h2>Working with Darcs</h2>
+    <h3>Working with Darcs</h3>
 
     <p>We also have some instructions on how to <a
     href="work-with-darcs.html">develop Carpet with darcs</a>.</p>
-
 
 
 
@@ -124,7 +184,7 @@ darcs pull</pre>
     <address><a href="mailto:schnetter@uni-tuebingen.de">Erik Schnetter</a></address>
 <!-- Created: Tue Sep 28 16:52:20 CEST 2004 -->
 <!-- hhmts start -->
-Last modified: Fri Feb 11 13:11:54 CET 2005
+Last modified: Mon Jun  6 21:31:06 CEST 2005
 <!-- hhmts end -->
   </body>
 </html>
