@@ -276,34 +276,39 @@ void gdata::copy_into_sendbuffer (comm_state& state,
   } else {
     // copy to remote processor
     assert (src->_has_storage);
-    assert (src->_owns_storage);
     assert (state.collbufs.at(proc()).sendbuf -
             state.collbufs.at(proc()).sendbufbase <=
             (state.collbufs.at(proc()).sendbufsize - box.size()) *
             state.vartypesize);
+    assert (proc() < state.collbufs.size());
+    int fillstate = (state.collbufs[proc()].sendbuf +
+                     box.size()*state.vartypesize) -
+                    state.collbufs[proc()].sendbufbase;
+    assert (fillstate <= state.collbufs[proc()].sendbufsize*state.vartypesize);
 
-  // copy this processor's data into the send buffer
-  const ibbox& ext = src->extent();
-  ivect shape = ext.shape() / ext.stride();
-  ivect items = (box.upper() - box.lower()) / box.stride() + 1;
-  ivect offs  = (box.lower() - ext.lower()) / ext.stride();
-
-  for (int k = 0; k < items[2]; k++) {
-    for (int j = 0; j < items[1]; j++) {
-      int i = offs[0] + shape[0]*((j+offs[1]) + shape[1]*(k+offs[2]));
-      memcpy (state.collbufs[proc()].sendbuf,
-              ((const char*) src->storage()) + state.vartypesize*i,
-              state.vartypesize*items[0]);
-      state.collbufs[proc()].sendbuf += state.vartypesize*items[0];
+    // copy this processor's data into the send buffer
+    const ibbox& ext = src->extent();
+    ivect shape = ext.shape() / ext.stride();
+    ivect items = (box.upper() - box.lower()) / box.stride() + 1;
+    ivect offs  = (box.lower() - ext.lower()) / ext.stride();
+  
+    for (int k = 0; k < items[2]; k++) {
+      for (int j = 0; j < items[1]; j++) {
+        int i = offs[0] + shape[0]*((j+offs[1]) + shape[1]*(k+offs[2]));
+        memcpy (state.collbufs[proc()].sendbuf,
+                ((const char*) src->storage()) + state.vartypesize*i,
+                state.vartypesize*items[0]);
+        state.collbufs[proc()].sendbuf += state.vartypesize*items[0];
+      }
     }
-  }
-
-  // post the send if the buffer is full
-  if (fillstate == state.collbufs[proc()].sendbufsize*state.vartypesize) {
-    MPI_Isend (state.collbufs[proc()].sendbufbase,
-               state.collbufs[proc()].sendbufsize,
-               state.datatype, proc(), 0, dist::comm,
-               &state.srequests[proc()]);
+  
+    // post the send if the buffer is full
+    if (fillstate == state.collbufs[proc()].sendbufsize*state.vartypesize) {
+      MPI_Isend (state.collbufs[proc()].sendbufbase,
+                 state.collbufs[proc()].sendbufsize,
+                 state.datatype, proc(), 0, dist::comm,
+                 &state.srequests[proc()]);
+    }
   }
 }
 
@@ -475,28 +480,35 @@ void gdata
                                 order_space, order_time);
   } else {
     // interpolate to remote processor
-    assert (srcs.at(0)->_has_storage);
-    assert (srcs.at(0)->_owns_storage);
+    const gdata* src = srcs.at(0);
+    assert (src->_has_storage);
     assert (state.collbufs.at(proc()).sendbuf -
             state.collbufs.at(proc()).sendbufbase <=
             (state.collbufs.at(proc()).sendbufsize - box.size()) *
             state.vartypesize);
+    assert (src->has_storage());
+    assert (proc() < state.collbufs.size());
+    int fillstate = (state.collbufs[proc()].sendbuf +
+                     box.size()*state.vartypesize) -
+                    state.collbufs[proc()].sendbufbase;
+    assert (fillstate <= state.collbufs[proc()].sendbufsize*state.vartypesize);
 
-  // interpolate this processor's data into the send buffer
-  gdata* tmp = src->make_typed (varindex, transport_operator, tag);
-  tmp->allocate (box, src->proc(), state.collbufs[proc()].sendbuf);
-  tmp->interpolate_from_innerloop (srcs, times, box, time,
-                                   order_space, order_time);
-  delete tmp;
-
-  // advance send buffer to point to the next ibbox slot
-  state.collbufs[proc()].sendbuf += state.vartypesize * box.size();
-
-  // post the send if the buffer is full
-  if (fillstate == state.collbufs[proc()].sendbufsize*state.vartypesize) {
-    MPI_Isend (state.collbufs[proc()].sendbufbase,
-               state.collbufs[proc()].sendbufsize,
-               state.datatype, proc(), 0, dist::comm,
-               &state.srequests[proc()]);
+    // interpolate this processor's data into the send buffer
+    gdata* tmp = src->make_typed (varindex, transport_operator, tag);
+    tmp->allocate (box, src->proc(), state.collbufs[proc()].sendbuf);
+    tmp->interpolate_from_innerloop (srcs, times, box, time,
+                                     order_space, order_time);
+    delete tmp;
+  
+    // advance send buffer to point to the next ibbox slot
+    state.collbufs[proc()].sendbuf += state.vartypesize * box.size();
+  
+    // post the send if the buffer is full
+    if (fillstate == state.collbufs[proc()].sendbufsize*state.vartypesize) {
+      MPI_Isend (state.collbufs[proc()].sendbufbase,
+                 state.collbufs[proc()].sendbufsize,
+                 state.datatype, proc(), 0, dist::comm,
+                 &state.srequests[proc()]);
+    }
   }
 }
