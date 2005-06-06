@@ -12,6 +12,8 @@ USES CCTK_REAL out_dt
 
 USES KEYWORD verbose
 USES BOOLEAN strict_io_parameter_check
+USES KEYWORD out_fileinfo
+
 
 
 private:

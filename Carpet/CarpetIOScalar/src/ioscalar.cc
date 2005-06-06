@@ -274,29 +274,55 @@ namespace CarpetIOScalar {
           if (do_truncate.at(n) && IO_TruncateOutputFiles (cctkGH)) {
             file.open (filename, ios::out | ios::trunc);
             {
-              char run_host [1000];
-              Util_GetHostName (run_host, sizeof run_host);
-#if 0
-              char const * const run_user = CCTK_RunUser();
-#else
-              char const * const run_user = getenv ("USER");
-#endif
-              char run_date [1000];
-              Util_CurrentDate (sizeof run_date, run_date);
-              char run_time [1000];
-              Util_CurrentTime (sizeof run_time, run_time);
-              file << "# Scalar ASCII output created by CarpetIOScalar" << endl
-                   << "# created on " << run_host
-                   << " by " << run_user
-                   << " on " << run_date
-                   << " at " << run_time << endl;
-              if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
-                char const * const job_id
-                  = static_cast<char const *> (UniqueSimulationID (cctkGH));
-                file << "# Simulation ID: " << job_id << endl;
+              bool want_date = false;
+              bool want_parfilename = false;
+              bool want_other = false;
+              if (CCTK_EQUALS (out_fileinfo, "none")) {
+                // do nothing
+              } else if (CCTK_EQUALS (out_fileinfo, "creation date")) {
+                want_date = true;
+              } else if (CCTK_EQUALS (out_fileinfo, "parameter filename")) {
+                want_parfilename = true;
+              } else if (CCTK_EQUALS (out_fileinfo, "all")) {
+                want_date = true;
+                want_parfilename = true;
+                want_other = true;
+              } else {
+                CCTK_WARN (0, "internal error");
               }
+              file << "# Scalar ASCII output created by CarpetIOScalar" << endl;
+              if (want_date) {
+                char run_host [1000];
+                Util_GetHostName (run_host, sizeof run_host);
+#if 0
+                char const * const run_user = CCTK_RunUser();
+#else
+                char const * const run_user = getenv ("USER");
+#endif
+                char run_date [1000];
+                Util_CurrentDate (sizeof run_date, run_date);
+                char run_time [1000];
+                Util_CurrentTime (sizeof run_time, run_time);
+                file << "# created on " << run_host
+                     << " by " << run_user
+                     << " on " << run_date
+                     << " at " << run_time << endl;
+              }
+              if (want_parfilename) {
+                char parameter_filename [10000];
+                CCTK_ParameterFilename
+                  (sizeof parameter_filename, parameter_filename);
+                file << "# parameter filename: \"" << parameter_filename << "\"" << endl;
+              }
+              if (want_other) {
+                if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
+                  char const * const job_id
+                    = static_cast<char const *> (UniqueSimulationID (cctkGH));
+                  file << "# Simulation ID: " << job_id << endl;
+                }
+              }
+              file << "#" << endl;
             }
-            file << "#" << endl;
             file << "# " << varname << " (" << alias << ")" << endl;
             file << "# iteration time data" << endl;
             if (one_file_per_group) {
