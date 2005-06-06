@@ -480,26 +480,51 @@ namespace CarpetIOASCII {
                   }
                   assert (file.good());
                   {
-                    char run_host [1000];
-                    Util_GetHostName (run_host, sizeof run_host);
+                    bool want_date = false;
+                    bool want_parfilename = false;
+                    bool want_other = false;
+                    if (CCTK_EQUALS (out_fileinfo, "none")) {
+                      // do nothing
+                    } else if (CCTK_EQUALS (out_fileinfo, "creation date")) {
+                      want_date = true;
+                    } else if (CCTK_EQUALS (out_fileinfo, "parameter filename")) {
+                      want_parfilename = true;
+                    } else if (CCTK_EQUALS (out_fileinfo, "all")) {
+                      want_date = true;
+                      want_parfilename = true;
+                      want_other = true;
+                    } else {
+                      CCTK_WARN (0, "internal error");
+                    }
+                    file << "# "<< outdim << "D ASCII output created by CarpetIOASCII" << endl;
+                    if (want_date) {
+                      char run_host [1000];
+                      Util_GetHostName (run_host, sizeof run_host);
 #if 0
-                    char const * const run_user = CCTK_RunUser();
+                      char const * const run_user = CCTK_RunUser();
 #else
-                    char const * const run_user = getenv ("USER");
+                      char const * const run_user = getenv ("USER");
 #endif
-                    char run_date [1000];
-                    Util_CurrentDate (sizeof run_date, run_date);
-                    char run_time [1000];
-                    Util_CurrentTime (sizeof run_time, run_time);
-                    file << "# "<< outdim << "D ASCII output created by CarpetIOASCII" << endl
-                         << "# created on " << run_host
-                         << " by " << run_user
-                         << " on " << run_date
-                         << " at " << run_time << endl;
-                    if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
-                      char const * const job_id
-                        = (char const *) UniqueSimulationID (cgh);
-                      file << "# Simulation ID: " << job_id << endl;
+                      char run_date [1000];
+                      Util_CurrentDate (sizeof run_date, run_date);
+                      char run_time [1000];
+                      Util_CurrentTime (sizeof run_time, run_time);
+                      file << "# created on " << run_host
+                           << " by " << run_user
+                           << " on " << run_date
+                           << " at " << run_time << endl;
+                    }
+                    if (want_parfilename) {
+                      char parameter_filename [10000];
+                      CCTK_ParameterFilename (sizeof parameter_filename, parameter_filename);
+                      file << "# parameter filename: \"" << parameter_filename << "\"" << endl;
+                    }
+                    if (want_other) {
+                      if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
+                        char const * const job_id
+                          = (char const *) UniqueSimulationID (cgh);
+                        file << "# Simulation ID: " << job_id << endl;
+                      }
                     }
                     file << "#" << endl;
                   }
