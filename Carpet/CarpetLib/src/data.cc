@@ -992,6 +992,7 @@ void data<T>
   
   switch (transport_operator) {
       
+  case op_copy:
   case op_Lagrange:
   case op_TVD:
   case op_ENO:
@@ -1035,6 +1036,60 @@ void data<T>
   fill_bbox_arrays (srcshp, dstshp, srcbbox, dstbbox, regbbox,
                     box, sext, dext);
   switch (transport_operator) {
+    
+  case op_copy:
+    assert (times.size() == 1);
+    assert (srcs.size()>=1);
+    switch (order_space) {
+    case 0:
+    case 1:
+      if (all (sext.stride() == dext.stride() * 2)) {
+        CCTK_FNAME(prolongate_3d_real8_rf2)
+          ((const CCTK_REAL8*)srcs[0]->storage(),
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(),
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+      } else {
+        CCTK_FNAME(prolongate_3d_real8)
+          ((const CCTK_REAL8*)srcs[0]->storage(),
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(),
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+      }
+      break;
+    case 2:
+    case 3:
+      if (all (sext.stride() == dext.stride() * 2)) {
+        CCTK_FNAME(prolongate_3d_real8_o3_rf2)
+          ((const CCTK_REAL8*)srcs[0]->storage(),
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(),
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+      } else {
+        CCTK_FNAME(prolongate_3d_real8_o3)
+          ((const CCTK_REAL8*)srcs[0]->storage(),
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(),
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+      }
+      break;
+    case 4:
+    case 5:
+      CCTK_FNAME(prolongate_3d_real8_o5)
+        ((const CCTK_REAL8*)srcs[0]->storage(),
+         srcshp[0], srcshp[1], srcshp[2],
+         (CCTK_REAL8*)storage(),
+         dstshp[0], dstshp[1], dstshp[2],
+         srcbbox, dstbbox, regbbox);
+      break;
+    default:
+      assert (0);
+    }
+    break;
     
   case op_Lagrange:
     switch (order_time) {
@@ -1396,12 +1451,22 @@ void data<CCTK_REAL8>
     min_time = min(min_time, times[tl]);
     max_time = max(max_time, times[tl]);
   }
-  if (time < min_time - eps || time > max_time + eps) {
-    ostringstream buf;
-    buf << "Internal error: extrapolation in time."
-        << "  time=" << time
-        << "  times=" << times;
-    CCTK_WARN (0, buf.str().c_str());
+  if (transport_operator != op_copy) {
+    if (time < min_time - eps || time > max_time + eps) {
+      ostringstream buf;
+      buf << "Internal error: extrapolation in time."
+          << "  time=" << time
+          << "  times=" << times;
+      CCTK_WARN (0, buf.str().c_str());
+    }
+  } else {
+    if (time > max_time + eps) {
+      ostringstream buf;
+      buf << "Internal error: extrapolation into the future."
+          << "  time=" << time
+          << "  times=" << times;
+      CCTK_WARN (0, buf.str().c_str());
+    }
   }
 }
 

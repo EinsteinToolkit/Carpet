@@ -477,9 +477,11 @@ void ggf::intercat (comm_state& state,
     {
       // (use the send boxes for communication)
       // interpolate the content
+      int const pos = d.prolongation_order_space;
+      int const pot
+        = transport_operator == op_copy ? 0 : prolongation_order_time;
       storage.at(ml1).at(rl1).at(c1).at(tl1)->interpolate_from
-      	(state, gsrcs, times, *r, time,
-	 d.prolongation_order_space, prolongation_order_time);
+      	(state, gsrcs, times, *r, time, pos, pot);
     }
   }
 }
@@ -513,13 +515,19 @@ void ggf::ref_bnd_prolongate (comm_state& state,
   assert (rl>=1);
   if (transport_operator == op_none) return;
   vector<int> tl2s;
-  // Interpolation in time
-  assert (timelevels() >= prolongation_order_time+1);
-  tl2s.resize(prolongation_order_time+1);
-  for (int i=0; i<=prolongation_order_time; ++i) tl2s.at(i) = i;
+  if (transport_operator != op_copy) {
+    // Interpolation in time
+    assert (timelevels() >= prolongation_order_time+1);
+    tl2s.resize(prolongation_order_time+1);
+    for (int i=0; i<=prolongation_order_time; ++i) tl2s.at(i) = i;
+  } else {
+    assert (timelevels() >= 1);
+    tl2s.resize(1);
+    tl2s.at(0) = 0;
+  }
   intercat (state,
             tl  ,rl  ,c,ml, &dh::dboxes::recv_ref_bnd_coarse,
-	    tl2s,rl-1,  ml, time);
+            tl2s,rl-1,  ml, time);
 }
 
 // Restrict a multigrid level
