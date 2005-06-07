@@ -35,6 +35,11 @@ namespace Carpet {
     assert (groups);
     assert (timelevels);
     for (int n=0; n<n_groups; ++n) {
+      if (groups[n] < 0 or groups[n] >= CCTK_NumGroups()) {
+        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Group index %d is illegal", groups[n]);
+        return -1;
+      }
       assert (groups[n] >= 0 and groups[n] < CCTK_NumGroups());
       // TODO: timelevels[n] can also be -1; in that case, all time
       // levels should be activated / deactivated
