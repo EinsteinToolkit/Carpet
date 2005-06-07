@@ -239,14 +239,14 @@ namespace Carpet {
       if (can_transfer) {
         // Use the default
         if (gp.numtimelevels == 1) {
-          // Only one time level: do not prolongate
+          // Only one time level: copy instead of prolongating
           char * const groupname = CCTK_GroupName (group);
           CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "Group \"%s\" has only one time level; therefore it "
-                      "will not be prolongated or restricted.",
+                      "will be copied insted of prolongated.",
                       groupname);
           free (groupname);
-          return op_none;
+          return op_copy;
         } else {
           // Several time levels: use the default
           return op_Lagrange;
@@ -270,6 +270,8 @@ namespace Carpet {
     assert (have_prolong_string);
     if (CCTK_Equals(prolong_string, "none")) {
       return op_none;
+    } else if (CCTK_Equals(prolong_string, "copy")) {
+      return op_copy;
     } else if (CCTK_Equals(prolong_string, "Lagrange")) {
       return op_Lagrange;
     } else if (CCTK_Equals(prolong_string, "TVD")) {

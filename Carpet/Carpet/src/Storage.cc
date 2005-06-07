@@ -174,17 +174,27 @@ namespace Carpet {
       // Complain if there are not enough active time levels
       if (gp.grouptype == CCTK_GF) {
         if (max_refinement_levels > 1) {
-          if (groupdata.at(group).transport_operator != op_none) {
+          if (groupdata.at(group).transport_operator != op_none
+              and groupdata.at(group).transport_operator != op_copy) {
             if (groupdata.at(group).info.activetimelevels != 0
                 and (groupdata.at(group).info.activetimelevels
                      < prolongation_order_time+1))
             {
-              char * const groupname = CCTK_GroupName (group);
-              CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                          "There are not enough time levels for the desired temporal prolongation order in the grid function group \"%s\".  With Carpet::prolongation_order_time=%d, you need at least %d time levels.",
-                          groupname,
-                          prolongation_order_time, prolongation_order_time+1);
-              free (groupname);
+              static vector<bool> didwarn;
+              int const numgroups = CCTK_NumGroups();
+              if (didwarn.size() < numgroups) {
+                didwarn.resize (numgroups, false);
+              }
+              if (! didwarn.at(group)) {
+                // Warn only once per group
+                didwarn.at(group) = true;
+                char * const groupname = CCTK_GroupName (group);
+                CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                            "There are not enough time levels for the desired temporal prolongation order in the grid function group \"%s\".  With Carpet::prolongation_order_time=%d, you need at least %d time levels.",
+                            groupname,
+                            prolongation_order_time, prolongation_order_time+1);
+                free (groupname);
+              }
             }
           }
         }
