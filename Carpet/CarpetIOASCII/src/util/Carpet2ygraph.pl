@@ -97,7 +97,7 @@ while (<CARPETFILE>)
     }
     else # The line contains real data
     {
-	@data = split(/ \t]+/,$line);
+	@data = split([/ \t]+/,$line);
 	if ($flag== 0) # This is the first line of data
 	{
 	    $flag = 1;
