@@ -163,7 +163,11 @@ void ggf::recompose_fill (comm_state& state, const int rl,
           // Initialise from coarser level, if possible
           if (rl>0) {
             if (transport_operator != op_none) {
-              const int numtl = prolongation_order_time+1;
+              const int pos = d.prolongation_order_space;
+              const int pot = (transport_operator != op_copy
+                               ? prolongation_order_time
+                               : 0);
+              const int numtl = pot+1;
               assert (timelevels() >= numtl);
               vector<int> tls(numtl);
               vector<CCTK_REAL> times(numtl);
@@ -193,8 +197,7 @@ void ggf::recompose_fill (comm_state& state, const int rl,
                        r!=ovlp.end(); ++r)
                   {
                     storage.at(ml).at(rl).at(c).at(tl)->interpolate_from
-                      (state, gsrcs, times, *r, time,
-                       d.prolongation_order_space, prolongation_order_time);
+                      (state, gsrcs, times, *r, time, pos, pot);
                   } // for r
                 } // for iter
               } // for cc
