@@ -269,16 +269,30 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
     }
     else
     {
-      if (myGH->cp_filename_list[myGH->cp_filename_index])
+      if (checkpoint_keep > 0)
       {
-        if (checkpoint_keep > 0)
+        if (myGH->cp_filename_list[myGH->cp_filename_index])
         {
           remove (myGH->cp_filename_list[myGH->cp_filename_index]);
+          free (myGH->cp_filename_list[myGH->cp_filename_index]);
+          myGH->cp_filename_list[myGH->cp_filename_index] = NULL;
         }
-        free (myGH->cp_filename_list[myGH->cp_filename_index]);
+        myGH->cp_filename_list[myGH->cp_filename_index] = strdup (filename);
+        myGH->cp_filename_index = (myGH->cp_filename_index+1) % checkpoint_keep;
+        if (myGH->checkpoint_keep != checkpoint_keep)
+        {
+          char **cp_filename_list = (char **) calloc (checkpoint_keep, sizeof (char *));
+          int min = myGH->checkpoint_keep < checkpoint_keep ?
+                    myGH->checkpoint_keep : checkpoint_keep;
+          while (min-- > 0)
+          {
+            cp_filename_list[min] = myGH->cp_filename_list[min];
+          }
+          free (myGH->cp_filename_list);
+          myGH->cp_filename_list = cp_filename_list;
+          myGH->checkpoint_keep = checkpoint_keep;
+        }
       }
-      myGH->cp_filename_list[myGH->cp_filename_index] = strdup (filename);
-      myGH->cp_filename_index = (myGH->cp_filename_index+1) % abs (checkpoint_keep);
     }
   }
 

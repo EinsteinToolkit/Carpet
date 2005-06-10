@@ -124,8 +124,9 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
   myGH            = (CarpetIOHDF5GH*) malloc (sizeof (CarpetIOHDF5GH));
   myGH->out_last  = (int *) malloc (numvars * sizeof (int));
   myGH->requests  = (ioRequest **) calloc (numvars, sizeof (ioRequest *));
-  myGH->cp_filename_list = (char **) calloc (abs (checkpoint_keep), sizeof (char *));
   myGH->cp_filename_index = 0;
+  myGH->checkpoint_keep = abs (checkpoint_keep);
+  myGH->cp_filename_list = (char **) calloc (myGH->checkpoint_keep, sizeof (char *));
   myGH->out_vars = strdup ("");
   myGH->out_every_default = out_every - 1;
 

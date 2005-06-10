@@ -168,6 +168,7 @@ typedef struct
   // int print_timing_info;
 
   /* ring buffer for list of successfully created cp files */
+  int    checkpoint_keep;
   int    cp_filename_index;
   char **cp_filename_list;
 
