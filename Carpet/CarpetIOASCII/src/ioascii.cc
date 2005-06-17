@@ -485,6 +485,8 @@ namespace CarpetIOASCII {
                     bool want_other = false;
                     if (CCTK_EQUALS (out_fileinfo, "none")) {
                       // do nothing
+                    } else if (CCTK_EQUALS (out_fileinfo, "axis labels")) {
+                      // do nothing
                     } else if (CCTK_EQUALS (out_fileinfo, "creation date")) {
                       want_date = true;
                     } else if (CCTK_EQUALS (out_fileinfo, "parameter filename")) {
