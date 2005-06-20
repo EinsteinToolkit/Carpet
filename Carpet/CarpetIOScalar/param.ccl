@@ -51,10 +51,12 @@ KEYWORD outScalar_criterion "Criterion to select scalar output intervals, overri
   "time"      :: "Output every that much coordinate time"
 } "iteration"
 
-CCTK_INT outScalar_every "How often to do scalar output, overrides out_every" STEERABLE = ALWAYS
+CCTK_INT outScalar_every "How often to do scalar output, overrides IO::out_every" STEERABLE = ALWAYS
 {
-  -1:* :: "Values <= 0 disable scalar output"
-} -1
+   1:* :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Default to IO::out_every"
+} -2
 
 REAL outScalar_dt "How often to do scalar output, overrides out_dt" STEERABLE = ALWAYS
 {
