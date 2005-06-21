@@ -292,7 +292,7 @@ CCTK_INT split_direction "Direction in which the domain should be split" STEERAB
   0:* :: "0 for x, 1 for y, 2 for z, etc."
 } 2
 
-BOOLEAN constant_load_per_processor "Keep the load per processor constant -- this is meant for benchmarks"
+BOOLEAN constant_load_per_processor "Keep the load per processor constant -- this is meant for benchmarks" STEERABLE=recover
 {
 } "no"
 
