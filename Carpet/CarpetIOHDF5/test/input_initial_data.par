@@ -52,4 +52,4 @@ IOBasic::outScalar_vars = "WaveToyMoL::scalarevolve"
 
 # filereader input files and directory
 IO::filereader_ID_files = "psi phi"
-IO::recover_dir  = "../../../arrangements/Carpet/CarpetIOHDF5/test/input_initial_data"
+IO::filereader_ID_dir   = "../../../arrangements/Carpet/CarpetIOHDF5/test/input_initial_data"
