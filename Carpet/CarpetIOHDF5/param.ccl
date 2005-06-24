@@ -8,9 +8,12 @@ USES STRING  out_dir       AS io_out_dir
 USES KEYWORD out_criterion AS io_out_criterion
 USES INT     out_every     AS io_out_every
 USES REAL    out_dt        AS io_out_dt
+USES BOOLEAN out_unchunked AS io_out_unchunked
 
 USES KEYWORD verbose
 USES BOOLEAN out_single_precision
+USES KEYWORD out_mode 
+USES KEYWORD out_save_parameters 
 
 USES INT     checkpoint_every
 USES INT     checkpoint_keep
@@ -24,7 +27,7 @@ USES STRING  checkpoint_ID_file
 USES STRING  checkpoint_file
 USES STRING  recover_dir
 USES STRING  recover_file
-
+USES STRING  filereader_ID_dir
 
 
 shares: Cactus
@@ -117,32 +120,32 @@ REAL out3D_dt "How often to do CarpetIOHDF5 output, overrides 'IO::out_dt' (DEPR
 
 
 
-STRING in_dir "Name of CarpetIOHDF5 input directory" STEERABLE = ALWAYS
+STRING in_dir "Name of CarpetIOHDF5 input directory (DEPRECATED - please use filereader interface instead)" STEERABLE = ALWAYS
 {
   ".+" :: "Directory name"
 } "."
 
-STRING in3D_dir "Name of CarpetIOHDF5 input directory (DEPRECATED - please use 'IOHDF5::in_dir' instead)" STEERABLE = ALWAYS
+STRING in3D_dir "Name of CarpetIOHDF5 input directory (DEPRECATED - please use filereader interface instead)" STEERABLE = ALWAYS
 {
   ".+" :: "Directory name"
 } "."
 
-STRING in_vars "Variables to input in CarpetIOHDF5 file format" STEERABLE = ALWAYS
+STRING in_vars "Variables to input in CarpetIOHDF5 file format (DEPRECATED - please use filereader interface instead)" STEERABLE = ALWAYS
 {
   .* :: "List of group or variable names"
 } ""
 
-STRING in3D_vars "Variables to input in CarpetIOHDF5 file format (DEPRECATED - please use 'IOHDF5::in_vars' instead)" STEERABLE = ALWAYS
+STRING in3D_vars "Variables to input in CarpetIOHDF5 file format (DEPRECATED - please use filereader interface instead)" STEERABLE = ALWAYS
 {
   .* :: "List of group or variable names"
 } ""
 
-STRING in_extension "File extension to use for CarpetIOHDF5 input" STEERABLE = ALWAYS
+STRING in_extension "File extension to use for CarpetIOHDF5 input (DEPRECATED - please use filereader interface instead)" STEERABLE = ALWAYS
 {
   ".*" :: "File extension (including a leading dot, if desired)"
 } ".h5"
 
-STRING in3D_extension "File extension to use for CarpetIOHDF5 input (DEPRECATED - please use 'IOHDF5::in_extension' instead)" STEERABLE = ALWAYS
+STRING in3D_extension "File extension to use for CarpetIOHDF5 input (DEPRECATED - please use filereader interface instead)" STEERABLE = ALWAYS
 {
   ".*" :: "File extension (including a leading dot, if desired)"
 } ".h5"
@@ -161,6 +164,6 @@ BOOLEAN use_reflevels_from_checkpoint "Use 'CarpetRegrid::refinement_levels' fro
 {
 } "no"
 
-BOOLEAN out_unchunked "Write recombined (unchunked) grid components to HDF5 output files ?" STEERABLE = RECOVER
+BOOLEAN out_unchunked "Write recombined (unchunked) grid components to HDF5 output files ? DEPRECATED - DO NOT USE ANYMORE" STEERABLE = RECOVER
 {
 } "yes"

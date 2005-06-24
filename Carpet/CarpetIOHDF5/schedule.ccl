@@ -13,12 +13,6 @@ schedule CarpetIOHDF5_Init at BASEGRID
   OPTIONS: global
 } "Initialisation routine"
 
-schedule CarpetIOHDF5_ReadData at INITIAL
-{
-  LANG: C
-  OPTIONS: level
-} "Read initial data from file"
-
 if (checkpoint && checkpoint_ID)
 {
   schedule CarpetIOHDF5_InitialDataCheckpoint at CPINITIAL
@@ -40,11 +34,11 @@ schedule CarpetIOHDF5_TerminationCheckpoint at TERMINATE
   OPTIONS: meta
 } "Termination checkpoint routine"
 
-schedule CarpetIOHDF5_CloseFile at POSTINITIAL
+schedule CarpetIOHDF5_CloseFiles at POSTINITIAL
 {
   LANG: C
   OPTIONS: global
-} "Close an input file opened by the filereader"
+} "Close all filereader input files"
 
 if (! CCTK_Equals (recover, "no") && *recover_file)
 {
@@ -54,9 +48,9 @@ if (! CCTK_Equals (recover, "no") && *recover_file)
     OPTIONS: meta
   } "Parameter recovery routine"
 
-  schedule CarpetIOHDF5_CloseFile at POST_RECOVER_VARIABLES
+  schedule CarpetIOHDF5_CloseFiles at POST_RECOVER_VARIABLES
   {
     LANG: C
     OPTIONS: global
-  } "Close an initial data checkpoint file"
+  } "Close all initial data checkpoint files after recovery"
 }
