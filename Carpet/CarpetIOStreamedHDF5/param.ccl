@@ -1,0 +1,51 @@
+# Parameter definitions for thorn CarpetIOStreamedHDF5
+
+private:
+
+STRING out_vars "Variables to stream in HDF5 file format" STEERABLE = ALWAYS
+{
+  ".+" :: "Space-separated list of fully qualified variable/group names"
+  "^$" :: "An empty string to output nothing"
+} ""
+ 
+KEYWORD out_criterion "Criterion to select CarpetIOHDF5 output intervals, overrides out_every" STEERABLE = ALWAYS
+{
+  "default"   :: "Use 'IO::out_criterion'"
+  "never"     :: "Never output"
+  "iteration" :: "Output every so many iterations"
+  "divisor"   :: "Output if (iteration % out_every) == 0."
+  "time"      :: "Output every that much coordinate time"
+} "default"
+
+INT out_every "How often to do HDF5 streaming, overrides IO::out_every" STEERABLE = ALWAYS
+{
+   1:* :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Use 'IO::out_every'"
+} -2
+
+REAL out_dt "How often to do CarpetIOHDF5 output, overrides 'IO::out_dt'" STEERABLE = ALWAYS
+{
+  (0:* :: "In intervals of that much coordinate time"
+   0   :: "As often as possible"
+  -1   :: "Disable output"
+  -2   :: "Default to 'IO::out_dt'"
+} -2
+
+INT port "Port number for clients to connect to" STEERABLE = RECOVER
+{
+  1000:32000 :: "Ports below 1000 require root access"
+} 10000
+
+
+#############################################################################
+### import IOUtil parameters
+#############################################################################
+shares: IO
+
+USES INT     out_every     AS io_out_every
+USES REAL    out_dt        AS io_out_dt
+USES KEYWORD out_criterion AS io_out_criterion
+USES KEYWORD verbose
+USES BOOLEAN out_unchunked
+USES BOOLEAN strict_io_parameter_check

@@ -1,0 +1,159 @@
+\documentclass{article}
+
+\usepackage{../../../../doc/latex/cactus}
+
+\begin{document}
+
+\author{Thomas Radke \textless tradke@aei.mpg.de\textgreater}
+
+\title{CarpetIOStreamedHDF5}
+
+% the date your document was last changed, if your document is in CVS,
+% please use:
+%    \date{$ $Date: 2004/01/07 20:12:39 $ $}
+%\date{June 24 2005}
+\date{}
+
+\maketitle
+
+% Do not delete next line
+% START CACTUS THORNGUIDE
+
+\newcommand{\ThisThorn}{{\it CarpetIOStreamedHDF5}}
+
+\begin{abstract}
+Thorn \ThisThorn\ provides an I/O method to stream Cactus grid
+variables in HDF5 file format via a socket to any connected clients.
+In combination with client programs, which are capable of receiving and
+postprocessing streamed HDF5 data, this thorn can be used to perform online
+remote visualisation of live data from running Carpet FMR/AMR simulations.
+\end{abstract}
+
+
+\section{Introduction}
+
+Thorn \ThisThorn\ uses the standard I/O library HDF5 (Hierarchical
+Data Format version 5) to output any type of Cactus grid variables
+(grid scalars, grid functions, and grid arrays of arbitrary dimension)
+in the HDF5 file format.
+
+Streamed output is enabled by activating thorn \ThisThorn\ in your parameter
+file. At simulation startup it registers its own I/O method with the
+flesh's I/O interface and opens a server port on the root processor
+(with processor ID 0) to which clients can connect to.
+Like any Cactus I/O method, it will then check periodically after each iteration
+whether output should be done for grid variables as chosen in the
+parameter file.
+
+Data is streamed as a serialized HDF5 file to all clients which try to
+connect to the server port at the time of output. If multiple variables are to
+be output at the same time they will all be sent in a single streamed HDF5 file.
+
+It should be noticed here that, due to the implementation of data streaming
+in the HDF5 library, streaming many variables (or a single variable with many
+refinement levels and/or a large global grid size) can be a costly
+operation in terms of memory requirements, as the resulting HDF5 file has
+to be kept in main memory before it gets sent to a client. You should instead
+switch on streamed HDF5 output only for those variables/refinement levels
+which you are currently interested in visualising; the corresponding
+I/O parameter is steerable so you can select other variables and/or levels
+any time.
+
+
+\section{\ThisThorn\ Parameters}
+
+Parameters to control the \ThisThorn\ I/O method are:
+\begin{itemize}
+  \item {\tt IOStreamedHDF5::port}\\
+        The initial port number which should be opened at startup for
+        client connections. If the given port is already in use by some other
+        program, {\tt IOStreamedHDF5} will search for the next available port
+        by advancing {\tt IOStreamedHDF5::port}.\\
+        The actual port number used by \ThisThorn\ will be output in a INFO
+        message at startup, along with the hostname of the root processor.
+
+  \item {\tt IOStreamedHDF5::out\_every} (steerable)\\
+        How often to do periodic \ThisThorn\ output. If this parameter
+        is set in the parameter file, it will override the setting of the shared
+        {\tt IO::out\_every} parameter. The output frequency can also be set
+        for individual variables using the {\tt out\_every} option in an option
+        string appended to the {\tt IOStreamedHDF5::out\_vars} parameter.
+
+  \item {\tt IOStreamedHDF5::out\_dt} (steerable)\\
+        output in intervals of that much coordinate time (overwrites {\tt IO::ou
+t\_dt})
+
+  \item {\tt IOStreamedHDF5::out\_criterion} (steerable)\\
+        criterion to select output intervals (overwrites {\tt IO::out\_criterion
+})
+
+  \item {\tt IOStreamedHDF5::out\_vars} (steerable)\\
+        The list of variables to output using the \ThisThorn\ I/O method.
+        The variables must be given by their fully qualified variable or group
+        name. Multiple names must be separated by whitespaces.\\
+
+        Each group/variable name can have an option string attached in which you
+        can specify a different output frequency for that individual variable
+        or a set of individual refinement levels to be output, e.g.
+\begin{verbatim}
+  IOStreamedHDF5::out_vars = "wavetoy::phi{ out_every = 4 refinement_levels = { 1 2 } }"
+\end{verbatim}
+
+  \item {\tt IO::out\_single\_precision (steerable)}\\
+        whether to output double-precision data in single precision
+
+  \item {\tt IO::out\_unchunked}\\
+        whether to output the data from multiple processors in chunked or
+        unchunked format
+
+\end{itemize}
+
+
+\section{A Practical Session of Remote Online Visualisation}
+
+The following steps illustrate how a practical session of visualising
+live data from a Carpet simulation with the DataVault visualisation tool
+could look like.
+It is assumed that Cactus is running as a PBS job on a parallel cluster,
+with the compute nodes behind a cluster firewall (only the cluster head node
+can be directly accessed from outside).
+
+\begin{enumerate}
+  \item[0.] Your job has been submitted to PBS and shortly after begins its
+        execution.\\
+        Let's assume that you want to run the HDF5 data streaming
+        demo parameter file {\tt CarpetIOStreamedHDF5.par} contained in the
+        {\tt par/} subdirectory of thorn \ThisThorn.
+
+  \item Grep the stdout of your job's startup messages for a line
+        containing '{\tt CarpetIOStreamedHDF5}' and '{\tt data streaming
+        service started on}'.
+        This tells you the hostname and port number to connect to (eg. {\tt ic0010:10000}).
+
+  \item On the head node, set the {\tt DVHOST} shell environment variable
+        to the hostname of the machine which runs the DV server (ideally
+        your laptop or local workstation).\\
+        Then run the {\tt hdf5todv} client
+        with the URL of your Cactus simulation's data streaming service, eg.
+        '{\tt hdf5todv ic0010:10000}'. This should receive one timestep of
+        chosen \ThisThorn\ variables from the simulation and
+        send it on to DV. The new timestep should appear there as a new
+        register.
+
+  \item Repeat the previous step as often as you like in order
+        to get a sequence of timesteps which you then can animate.
+
+\end{enumerate}
+
+\section{Further Information}
+
+More information on HDF5 can be found on the HDF5 home page
+\url{http://hdf.ncsa.uiuc.edu/whatishdf5.html}.
+
+The list of tools for visualising Cactus and Carpet output data can be found
+on the Cactus VisTools page \url{http://www.cactuscode.org/VizTools.html}.
+
+% Do not delete next line
+% END CACTUS THORNGUIDE
+
+\end{document}

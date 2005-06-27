@@ -1,0 +1,5 @@
+# Configuration definitions for thorn CarpetIOStreamedHDF5
+
+REQUIRES Socket CarpetLib
+
+REQUIRES THORNS: CarpetIOHDF5

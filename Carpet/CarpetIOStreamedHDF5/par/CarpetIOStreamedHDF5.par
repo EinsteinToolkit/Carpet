@@ -1,0 +1,59 @@
+# /*@@
+#   @file    CarpetIOStreamedHDF5.par
+#   @date    Sunday 25 June 2005
+#   @author  Thomas Radke
+#   @desc
+#            WaveToy parameter file demonstrating streamed HDF5 output
+#            for a WaveBinarySource simulation
+#   @enddesc
+# @@*/
+
+ActiveThorns = "Boundary Time CartGrid3D CoordBase SymBase"
+ActiveThorns = "IOUtil IOBasic"
+ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetReduce CarpetSlab"
+ActiveThorns = "CarpetIOHDF5 CarpetIOStreamedHDF5"
+ActiveThorns = "IDScalarWaveC WaveToyC WaveBinarySource"
+
+####################
+# Driver parameters
+####################
+Driver::global_nsize = 40
+
+Carpet::max_refinement_levels   = 4
+CarpetRegrid::refinement_levels = 4
+CarpetRegrid::refined_regions   = "manual-gridpoint-list"
+CarpetRegrid::gridpoints        = "[
+                                     [ ([ 60, 60, 60]:[260,260,260]:[4,4,4]) ],
+                                     [ ([ 80,110, 80]:[160,210,150]:[2,2,2]),
+                                       ([ 80,110,170]:[160,210,240]:[2,2,2]) ],
+                                     [ ([100,135, 90]:[140,185,140]:[1,1,1]), 
+                                       ([135,135,180]:[140,185,230]:[1,1,1]) ]
+                                                                              ]"
+
+#########################
+# Application parameters
+#########################
+Cactus::terminate = "never"
+
+Grid::type   = "BySpacing"
+Grid::domain = "full"
+Grid::dxyz   = 0.005
+
+Time::dtfac = 0.5
+
+WaveToy::bound = "radiation"
+
+WaveBinarySource::binary_omega  = 26 
+WaveBinarySource::binary_charge = 0.00001
+WaveBinarySource::binary_radius = 0.07
+WaveBinarySource::binary_size   = 0.04
+
+####################
+# output parameters
+####################
+IO::out_every            = 16
+IO::out_single_precision = "yes"
+IO::parfile_write        = "no"
+
+IOBasic::outInfo_vars    = "wavetoy::phi"
+IOStreamedHDF5::out_vars = "wavetoy::phi"

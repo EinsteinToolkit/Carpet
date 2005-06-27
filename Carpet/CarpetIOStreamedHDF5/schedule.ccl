@@ -1,0 +1,19 @@
+# Schedule definitions for thorn CarpetIOStreamedHDF5
+
+storage: next_output_iteration next_output_time this_iteration
+
+schedule CarpetIOStreamedHDF5_Startup at STARTUP
+{
+  LANG: C
+} "Open the socket to be used for HDF5 data streaming"
+
+schedule CarpetIOStreamedHDF5_Init at BASEGRID
+{
+  LANG: C
+  OPTIONS: global
+} "Initialise I/O scalars"
+
+schedule CarpetIOStreamedHDF5_Terminate at TERMINATE
+{
+  LANG:C
+} "Close the socket used for HDF5 data streaming"

@@ -1,0 +1,6 @@
+# make.configuration.defn for IOStreamedHDF5
+
+# make sure that the HDF5 Stream Virtual File Driver is available
+ifeq ($(strip $(HAVE_HDF5_STREAM_VFD)),)
+  $(error 'CarpetIOStreamedHDF5 requires an HDF5 installation with built-in Stream Virtual File Driver. Please reconfigure with an appropriate HDF5 installation or remove CarpetIOStreamedHDF5 from ThornList !')
+endif

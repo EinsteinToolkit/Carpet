@@ -1,0 +1,12 @@
+# Interface definition for thorn CarpetIOStreamedHDF5
+
+implements: IOStreamedHDF5
+inherits:   IO
+
+uses include header: SocketUtils.h
+uses include header: CarpetIOHDF5.hh
+
+private:
+INT  next_output_iteration TYPE = SCALAR
+REAL next_output_time      TYPE = SCALAR
+INT  this_iteration        TYPE = SCALAR
