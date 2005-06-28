@@ -535,9 +535,6 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
                            const ioRequest* request,
                            const ibbox& bbox, hid_t dataset)
 {
-  DECLARE_CCTK_ARGUMENTS;
-
-
   // Legacy arguments
   hid_t attr, dataspace, datatype;
   HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
@@ -553,7 +550,7 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
 
   HDF5_ERROR (attr = H5Acreate (dataset, "timestep", H5T_NATIVE_INT,
                                 dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &cctk_iteration));
+  HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &cctkGH->cctk_iteration));
   HDF5_ERROR (H5Aclose (attr));
 
   HDF5_ERROR (attr = H5Acreate (dataset, "group_timelevel", H5T_NATIVE_INT,
@@ -563,7 +560,7 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
 
   HDF5_ERROR (attr = H5Acreate (dataset, "time", HDF5_REAL,
                                 dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attr, HDF5_REAL, &cctk_time));
+  HDF5_ERROR (H5Awrite (attr, HDF5_REAL, &cctkGH->cctk_time));
   HDF5_ERROR (H5Aclose (attr));
 
   HDF5_ERROR (datatype = H5Tcopy (H5T_C_S1));
@@ -572,13 +569,30 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
                                 dataspace, H5P_DEFAULT));
   HDF5_ERROR (H5Awrite (attr, datatype, fullname));
   HDF5_ERROR (H5Aclose (attr));
+  HDF5_ERROR (H5Sclose (dataspace));
 
-#if 0
-  // FIXME TR: output bbox and nghostzones again for chunked output
-  // Cactus arguments
-  WriteAttribute (dataset, "cctk_bbox", cctk_bbox, 2*vdim);
-  WriteAttribute (dataset, "cctk_nghostzones", cctk_nghostzones, vdim);
-#endif
+  // store cctk_bbox and cctk_nghostzones (for grid arrays only)
+  if (CCTK_GroupTypeFromVarI (request->vindex) != CCTK_SCALAR) {
+    vector<int> cctk_bbox(2*vdim);
+    hsize_t size = cctk_bbox.size();
+    HDF5_ERROR (dataspace = H5Screate_simple (1, &size, NULL));
+    CCTK_GroupbboxVI (cctkGH, size, &cctk_bbox[0], request->vindex);
+    HDF5_ERROR (attr = H5Acreate (dataset, "cctk_bbox", H5T_NATIVE_INT,
+                                  dataspace, H5P_DEFAULT));
+    HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &cctk_bbox[0]));
+    HDF5_ERROR (H5Aclose (attr));
+    HDF5_ERROR (H5Sclose (dataspace));
+
+    ivect cctk_nghostzones;
+    size = vdim;
+    HDF5_ERROR (dataspace = H5Screate_simple (1, &size, NULL));
+    CCTK_GroupnghostzonesVI (cctkGH, size, &cctk_nghostzones[0],
+                             request->vindex);
+    HDF5_ERROR (attr = H5Acreate (dataset, "cctk_nghostzones", H5T_NATIVE_INT,
+                                  dataspace, H5P_DEFAULT));
+    HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &cctk_nghostzones[0]));
+    HDF5_ERROR (H5Aclose (attr));
+  }
 
   // write bbox attributes if we have coordinate system info
   CCTK_REAL origin[dim], delta[dim];
@@ -586,7 +600,6 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
   int coord_system_handle = Coord_GroupSystem (cctkGH, groupname);
   free (groupname);
 
-  HDF5_ERROR (H5Sclose (dataspace));
   hsize_t size = vdim;
   HDF5_ERROR (dataspace = H5Screate_simple (1, &size, NULL));
 
@@ -602,8 +615,8 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
     for (int d = 0; d < vdim; d++) {
       Util_TableGetReal (coord_handles[d], &origin[d], "COMPMIN");
       Util_TableGetReal (coord_handles[d], &delta[d], "DELTA");
-      delta[d]  /= cctk_levfac[d];
-      origin[d] += delta[d] * (cctk_levoff[d] / cctk_levoffdenom[d] + pos[d]);
+      delta[d]  /= cctkGH->cctk_levfac[d];
+      origin[d] += delta[d] * (cctkGH->cctk_levoff[d] / cctkGH->cctk_levoffdenom[d] + pos[d]);
     }
 
     HDF5_ERROR (attr = H5Acreate (dataset, "origin", HDF5_REAL,
@@ -616,7 +629,7 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
     HDF5_ERROR (H5Aclose (attr));
   }
 
-  vect<int, dim> iorigin = bbox.lower() / bbox.stride();
+  ivect iorigin = bbox.lower() / bbox.stride();
   HDF5_ERROR (attr = H5Acreate (dataset, "iorigin", H5T_NATIVE_INT,
                                 dataspace, H5P_DEFAULT));
   HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &iorigin[0]));
