@@ -157,7 +157,13 @@ Parallel output in a parallel simulation will ensure maximum I/O
 performance. Note that changing the output mode to serial I/O might only be
 necessary if the data analysis and visualisation tools cannot deal with
 chunked output files. Cactus itself, as well as many of the tools to
-visualise Carpet HDF5 data, can process both chunked and unchunked data.
+visualise Carpet HDF5 data (see \url{http://www.cactuscode.org/VizTools.html}),
+can process both chunked and unchunked data. For instance, to visualise parallel
+output datafiles with DataVault, you would just send all the individual files
+to the DV server: {\tt hdf5todv phi.file\_*.h5}. In OpenDX the {\tt
+ImportCarpetIOHDF5} module can be given any filename from the set of parallel
+chunked files; the module will determine the total number of files in the set
+automatically and read them all.
 
 
 \section{Checkpointing \& Recovery and Importing Data}
