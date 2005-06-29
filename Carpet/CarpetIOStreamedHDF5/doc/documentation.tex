@@ -153,6 +153,19 @@ More information on HDF5 can be found on the HDF5 home page
 The list of tools for visualising Cactus and Carpet output data can be found
 on the Cactus VisTools page \url{http://www.cactuscode.org/VizTools.html}.
 
+The {\tt OpenDXutils} package, which provides the {\tt ImportCarpetHDF5} import
+module to read Carpet HDF5 data, also contains a network {\tt
+net/CarpetIOStreamedHDF5.net} to visualise live streamed HDF5 data produced
+by a Carpet simulation running the {\tt CarpetIOStreamedHDF5.par} parameter
+file. The package is publicly available under GPL via anonymous CVS:
+\begin{verbatim}
+  cvs -d :pserver:cvs_anon@cvs.cactuscode.org:/cactus login    # password is 'anon'
+  cvs -d :pserver:cvs_anon@cvs.cactuscode.org:/cactus checkout VizTools/OpenDXutils
+\end{verbatim}
+
+To report problems or discuss general things about visualisation of Carpet data
+we have a public mailing list \url{visualization@aei.mpg.de}.
+
 % Do not delete next line
 % END CACTUS THORNGUIDE
 
