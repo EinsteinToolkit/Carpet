@@ -64,14 +64,6 @@ any time.
 
 Parameters to control the \ThisThorn\ I/O method are:
 \begin{itemize}
-  \item {\tt IOStreamedHDF5::port}\\
-        The initial port number which should be opened at startup for
-        client connections. If the given port is already in use by some other
-        program, {\tt IOStreamedHDF5} will search for the next available port
-        by advancing {\tt IOStreamedHDF5::port}.\\
-        The actual port number used by \ThisThorn\ will be output in a INFO
-        message at startup, along with the hostname of the root processor.
-
   \item {\tt IOStreamedHDF5::out\_every} (steerable)\\
         How often to do periodic \ThisThorn\ output. If this parameter
         is set in the parameter file, it will override the setting of the shared
@@ -105,6 +97,25 @@ t\_dt})
   \item {\tt IO::out\_unchunked}\\
         whether to output the data from multiple processors in chunked or
         unchunked format
+
+  \item {\tt IOStreamedHDF5::port}\\
+        The initial port number which should be opened at startup for
+        client connections. If the given port is already in use by some other
+        program, {\tt IOStreamedHDF5} will search for the next available port
+        by advancing {\tt IOStreamedHDF5::port}.\\
+        The actual port number used by \ThisThorn\ will be output in a INFO
+        message at startup, along with the hostname of the root processor.
+
+  \item {\tt IOStreamedHDF5::max\_num\_clients}\\
+        The overhead of serving many clients with streamed HDF5 data can slow
+        down your simulation notably. When you are running both the simulation
+        and the visualisation client on the same machine, it could also happen
+        that the client is fast enough to reconnect to the simulation while
+        it is still serving the same timestep -- which leads to duplicate
+        data streaming.\\
+        In order to prevent this, you can set the {\tt max\_num\_clients}
+        parameter to limit the maximum number of clients allowed to connect
+        to the simulation at the same time.
 
 \end{itemize}
 

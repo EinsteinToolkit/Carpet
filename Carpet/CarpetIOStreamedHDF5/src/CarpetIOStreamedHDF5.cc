@@ -266,7 +266,7 @@ static int OutputGH (const cGH* const cctkGH)
         fapl.increment = 0;
         fapl.socket = myGH->socket;
         fapl.do_socket_io = 1;
-        fapl.backlog = 5;
+        fapl.backlog = max_num_clients;
         fapl.broadcast_fn = NULL;
         fapl.broadcast_arg = NULL;
 

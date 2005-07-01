@@ -37,6 +37,11 @@ INT port "Port number for clients to connect to" STEERABLE = RECOVER
   1000:32000 :: "Ports below 1000 require root access"
 } 10000
 
+INT max_num_clients "Maximum number of clients allowed to connect at the same time" STEERABLE = RECOVER
+{
+  1:20 :: "a small positive number"
+} 3
+
 
 #############################################################################
 ### import IOUtil parameters

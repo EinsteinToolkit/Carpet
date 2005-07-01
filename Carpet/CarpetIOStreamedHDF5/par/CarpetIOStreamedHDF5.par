@@ -57,3 +57,7 @@ IO::parfile_write        = "no"
 
 IOBasic::outInfo_vars    = "wavetoy::phi"
 IOStreamedHDF5::out_vars = "wavetoy::phi"
+
+# allow only one client at at time to connect to the simulation
+# (to prevent potentially multiple connects from the same client)
+IOStreamedHDF5::max_num_clients = 1
