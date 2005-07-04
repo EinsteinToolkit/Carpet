@@ -732,7 +732,7 @@ namespace CarpetInterp {
                       // Get interpolation times
                       vector<CCTK_REAL> times(my_num_tl);
                       for (int tl=0; tl<my_num_tl; ++tl) {
-                        times.at(tl) = vtt.at(Carpet::map)->time (-tl, reflevel, mglevel);
+                        times.at(tl) = vtt.at(Carpet::map)->time (tl, reflevel, mglevel);
                       }
                       
                       // Calculate interpolation weights
