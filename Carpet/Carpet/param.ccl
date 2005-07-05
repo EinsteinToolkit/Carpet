@@ -23,22 +23,23 @@ BOOLEAN domain_from_coordbase "Use the domain description from CoordBase"
 
 
 
-CCTK_INT global_nx "Grid size in x direction"
+
+CCTK_INT global_nx "Grid size in x direction" STEERABLE=recover
 {
   0:* :: "must be nonnegative"
 } 10
 
-CCTK_INT global_ny "Grid size in y direction"
+CCTK_INT global_ny "Grid size in y direction" STEERABLE=recover
 {
   0:* :: "must be nonnegative"
 } 10
 
-CCTK_INT global_nz "Grid size in z direction"
+CCTK_INT global_nz "Grid size in z direction" STEERABLE=recover
 {
   0:* :: "must be nonnegative"
 } 10
 
-CCTK_INT global_nsize "Grid size in each spatial direction"
+CCTK_INT global_nsize "Grid size in each spatial direction" STEERABLE=recover
 {
   0:* :: "must be nonnegative"
   -1  :: "use the per-dimension parameters"
