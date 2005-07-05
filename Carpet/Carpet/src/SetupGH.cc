@@ -559,6 +559,17 @@ namespace Carpet {
                      &is_internal[0][0], &is_staggered[0][0], &shiftout[0][0]);
     assert (!ierr);
     
+    if (max_refinement_levels > 1) {
+      // Ensure that the boundary is not staggered
+      for (int d=0; d<dim; ++d) {
+        for (int f=0; f<2; ++f) {
+          if (is_staggered[d][f]) {
+            CCTK_WARN (0, "The parameters CoordBase::boundary_staggered specify a staggered boundary.  Carpet does not support staggered boundaries when Carpet::max_refinement_levels > 1");
+          }
+        }
+      }
+    }
+    
     print_map_coordbase_boundary_specs (m, nboundaryzones, is_internal,
                is_staggered, shiftout);
     
@@ -570,6 +581,20 @@ namespace Carpet {
     
     if (domain_from_coordbase) {
       
+      // Ensure that CartGrid3D::type = "coordbase"
+      if (CCTK_IsThornActive ("CartGrid3D")) {
+        int type;
+        void const * const ptr
+          = CCTK_ParameterGet ("type", "CartGrid3D", & type);
+        assert (ptr != 0);
+        assert (type == PARAMETER_KEYWORD);
+        char const * const coordtype
+          = * static_cast<char const * const *> (ptr);
+        if (! CCTK_EQUALS (coordtype, "coordbase")) {
+          CCTK_WARN (0, "When Carpet::domain_from_coordbase = yes, and when thorn CartGrid3D is active, then you also have to set CartGrid3D::type = \"coordbase\"");
+        }
+      }
+      
       ierr = GetDomainSpecification (dim, &physical_min[0], &physical_max[0],
                          &interior_min[0], &interior_max[0],
                          &exterior_min[0], &exterior_max[0], &base_spacing[0]);
@@ -577,6 +602,65 @@ namespace Carpet {
       
     } else {
       // Legacy code
+      
+      if (max_refinement_levels > 1) {
+        // Ensure that CartGrid3D::avoid_origin = no
+        if (CCTK_IsThornActive ("CartGrid3D")) {
+          int type;
+          void const * ptr;
+        
+          ptr = CCTK_ParameterGet ("no_origin", "CartGrid3D", & type);
+          assert (ptr != 0);
+          assert (type == PARAMETER_BOOLEAN);
+          CCTK_INT const no_origin = * static_cast<CCTK_INT const *> (ptr);
+        
+          ptr = CCTK_ParameterGet ("no_originx", "CartGrid3D", & type);
+          assert (ptr != 0);
+          assert (type == PARAMETER_BOOLEAN);
+          CCTK_INT const no_originx = * static_cast<CCTK_INT const *> (ptr);
+        
+          ptr = CCTK_ParameterGet ("no_originy", "CartGrid3D", & type);
+          assert (ptr != 0);
+          assert (type == PARAMETER_BOOLEAN);
+          CCTK_INT const no_originy = * static_cast<CCTK_INT const *> (ptr);
+        
+          ptr = CCTK_ParameterGet ("no_originz", "CartGrid3D", & type);
+          assert (ptr != 0);
+          assert (type == PARAMETER_BOOLEAN);
+          CCTK_INT const no_originz = * static_cast<CCTK_INT const *> (ptr);
+        
+          ptr = CCTK_ParameterGet ("avoid_origin", "CartGrid3D", & type);
+          assert (ptr != 0);
+          assert (type == PARAMETER_BOOLEAN);
+          CCTK_INT const avoid_origin = * static_cast<CCTK_INT const *> (ptr);
+        
+          ptr = CCTK_ParameterGet ("avoid_originx", "CartGrid3D", & type);
+          assert (ptr != 0);
+          assert (type == PARAMETER_BOOLEAN);
+          CCTK_INT const avoid_originx = * static_cast<CCTK_INT const *> (ptr);
+        
+          ptr = CCTK_ParameterGet ("avoid_originy", "CartGrid3D", & type);
+          assert (ptr != 0);
+          assert (type == PARAMETER_BOOLEAN);
+          CCTK_INT const avoid_originy = * static_cast<CCTK_INT const *> (ptr);
+        
+          ptr = CCTK_ParameterGet ("avoid_originz", "CartGrid3D", & type);
+          assert (ptr != 0);
+          assert (type == PARAMETER_BOOLEAN);
+          CCTK_INT const avoid_originz = * static_cast<CCTK_INT const *> (ptr);
+        
+          bool cntstag[3];
+          cntstag[0] = no_origin && no_originx && avoid_origin && avoid_originx;
+          cntstag[1] = no_origin && no_originy && avoid_origin && avoid_originy;
+          cntstag[2] = no_origin && no_originz && avoid_origin && avoid_originz;
+        
+          // TODO: Check only if there is actually a symmetry boundary
+          if (cntstag[0] or cntstag[1] or cntstag[2]) {
+            CCTK_WARN (0, "When Carpet::domain_from_coordbase = no, when Carpet::max_refinement_levels > 1, and when thorn CartGrid3D is active, then you have to set CartGrid3D::avoid_origin = no");
+          }
+        }
+      }
+      
       ivect & npoints = a_npoints;
       ostringstream buf;
       buf << "Standard grid specification for map " << m << ":" << endl
@@ -593,6 +677,51 @@ namespace Carpet {
          &exterior_min[0], &exterior_max[0], &base_spacing[0]);
       assert (!ierr);
       
+    }
+    
+    if (max_refinement_levels>1) {
+      // Ensure that ReflectionSymmetry::avoid_origin = no
+      if (CCTK_IsThornActive ("ReflectionSymmetry")) {
+        int type;
+        void const * ptr;
+        
+        ptr = CCTK_ParameterGet ("avoid_origin_x", "ReflectionSymmetry", & type);
+        assert (ptr != 0);
+        assert (type == PARAMETER_BOOLEAN);
+        CCTK_INT const avoid_origin_x = * static_cast<CCTK_INT const *> (ptr);
+        
+        ptr = CCTK_ParameterGet ("avoid_origin_y", "ReflectionSymmetry", & type);
+        assert (ptr != 0);
+        assert (type == PARAMETER_BOOLEAN);
+        CCTK_INT const avoid_origin_y = * static_cast<CCTK_INT const *> (ptr);
+        
+        ptr = CCTK_ParameterGet ("avoid_origin_z", "ReflectionSymmetry", & type);
+        assert (ptr != 0);
+        assert (type == PARAMETER_BOOLEAN);
+        CCTK_INT const avoid_origin_z = * static_cast<CCTK_INT const *> (ptr);
+        
+        ptr = CCTK_ParameterGet ("reflection_x", "ReflectionSymmetry", & type);
+        assert (ptr != 0);
+        assert (type == PARAMETER_BOOLEAN);
+        CCTK_INT const reflection_x = * static_cast<CCTK_INT const *> (ptr);
+        
+        ptr = CCTK_ParameterGet ("reflection_y", "ReflectionSymmetry", & type);
+        assert (ptr != 0);
+        assert (type == PARAMETER_BOOLEAN);
+        CCTK_INT const reflection_y = * static_cast<CCTK_INT const *> (ptr);
+        
+        ptr = CCTK_ParameterGet ("reflection_z", "ReflectionSymmetry", & type);
+        assert (ptr != 0);
+        assert (type == PARAMETER_BOOLEAN);
+        CCTK_INT const reflection_z = * static_cast<CCTK_INT const *> (ptr);
+        
+        if ((reflection_x and avoid_origin_x)
+            or (reflection_y and avoid_origin_y)
+            or (reflection_z and avoid_origin_z))
+        {
+          CCTK_WARN (0, "When Carpet::max_refinement_levels > 1, and when ReflectionSymmetry::symmetry_[xyz] = yes, then you also have to set ReflectionSymmetry::avoid_origin_[xyz] = no");
+        }
+      }
     }
     
     print_map_domain_specs (m, physical_min, physical_max,
