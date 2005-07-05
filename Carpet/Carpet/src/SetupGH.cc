@@ -302,6 +302,7 @@ namespace Carpet {
                                char const * const time_refinement_factors);
   static void allocate_map(cGH* cgh, int m,
                       CCTK_INT domain_from_coordbase,
+                      CCTK_INT domain_from_multipatch,
                       CCTK_INT convergence_factor, CCTK_INT refinement_factor,
                       CCTK_STRING base_outerbounds, CCTK_STRING base_extents,
                       CCTK_INT max_refinement_levels,
@@ -381,7 +382,16 @@ namespace Carpet {
                                  time_refinement_factors);
     
     // Map information
-    carpetGH.maps = maps = num_maps;
+    if (domain_from_multipatch) {
+      assert (num_maps == 1);   // must be the default to avoid confusion
+      assert (CCTK_IsFunctionAliased ("MultiPatch_GetSystemSpecification"));
+      CCTK_INT maps1;
+      int const ierr = MultiPatch_GetSystemSpecification (& maps1);
+      assert (! ierr);
+      carpetGH.maps = maps = maps1;
+    } else {
+      carpetGH.maps = maps = num_maps;
+    }
     
     // Allocate space for groups
     groupdata.resize (CCTK_NumGroups());
@@ -400,7 +410,7 @@ namespace Carpet {
                                 global_nx, global_ny, global_nz,
                                 constant_load_per_processor);
 
-      allocate_map (cgh, m, domain_from_coordbase,
+      allocate_map (cgh, m, domain_from_coordbase, domain_from_multipatch,
                convergence_factor, refinement_factor,
                base_outerbounds, base_extents,
                max_refinement_levels, buffer_width, prolongation_order_space,
@@ -548,6 +558,7 @@ namespace Carpet {
 
   void allocate_map (cGH* cgh, int m,
                CCTK_INT domain_from_coordbase,
+               CCTK_INT domain_from_multipatch,
                CCTK_INT convergence_factor, CCTK_INT refinement_factor,
                CCTK_STRING base_outerbounds, CCTK_STRING base_extents,
                CCTK_INT max_refinement_levels,
@@ -579,7 +590,20 @@ namespace Carpet {
     rvect exterior_min, exterior_max;
     rvect base_spacing;
     
-    if (domain_from_coordbase) {
+    if (domain_from_multipatch) {
+      assert (! domain_from_coordbase);
+      
+#warning "TODO: handle CartGrid3D: either add parameter type=multipatch, and make it handle map numbers, or ignore it altogether, maybe creating a new thorn"
+      
+      assert (CCTK_IsFunctionAliased ("MultiPatch_GetDomainSpecification"));
+      ierr = MultiPatch_GetDomainSpecification
+        (m, dim,
+         &physical_min[0], &physical_max[0],
+         &interior_min[0], &interior_max[0],
+         &exterior_min[0], &exterior_max[0], &base_spacing[0]);
+      assert (!ierr);
+      
+    } else if (domain_from_coordbase) {
       
       // Ensure that CartGrid3D::type = "coordbase"
       if (CCTK_IsThornActive ("CartGrid3D")) {

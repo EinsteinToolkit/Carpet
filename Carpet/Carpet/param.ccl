@@ -21,6 +21,9 @@ BOOLEAN domain_from_coordbase "Use the domain description from CoordBase"
 {
 } "no"
 
+BOOLEAN domain_from_multipatch "Use the domain description from MultiPatch"
+{
+} "no"
 
 
 

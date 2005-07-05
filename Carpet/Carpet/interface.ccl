@@ -75,6 +75,36 @@ USES FUNCTION ConvertFromExteriorBoundary
 
 
 
+# The setup of the system
+CCTK_INT FUNCTION MultiPatch_GetSystemSpecification \
+  (CCTK_INT OUT maps)
+USES FUNCTION MultiPatch_GetSystemSpecification
+
+# The location of the boundary points
+CCTK_INT FUNCTION MultiPatch_GetBoundarySpecification \
+  (CCTK_INT IN map, \
+   CCTK_INT IN size, \
+   CCTK_INT OUT ARRAY nboundaryzones, \
+   CCTK_INT OUT ARRAY is_internal, \
+   CCTK_INT OUT ARRAY is_staggered, \
+   CCTK_INT OUT ARRAY shiftout)
+USES FUNCTION MultiPatch_GetBoundarySpecification
+
+# The overall size of the domain
+CCTK_INT FUNCTION MultiPatch_GetDomainSpecification \
+  (CCTK_INT IN map, \
+   CCTK_INT IN size, \
+   CCTK_REAL OUT ARRAY physical_min, \
+   CCTK_REAL OUT ARRAY physical_max, \
+   CCTK_REAL OUT ARRAY interior_min, \
+   CCTK_REAL OUT ARRAY interior_max, \
+   CCTK_REAL OUT ARRAY exterior_min, \
+   CCTK_REAL OUT ARRAY exterior_max, \
+   CCTK_REAL OUT ARRAY spacing)
+USES FUNCTION MultiPatch_GetDomainSpecification
+
+
+
 # The true prototype of the routine below:
 #   int Carpet_Regrid (const cGH * cctkGH,
 #                      gh::mexts  * bbsss,
