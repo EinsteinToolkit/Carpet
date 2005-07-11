@@ -673,14 +673,20 @@ namespace Carpet {
           assert (type == PARAMETER_BOOLEAN);
           CCTK_INT const avoid_originz = * static_cast<CCTK_INT const *> (ptr);
         
+          ptr = CCTK_ParameterGet ("domain", "CartGrid3D", & type);
+          assert (ptr != 0);
+          assert (type == PARAMETER_KEYWORD);
+          char const * const domain = * static_cast<char const * const *> (ptr);
+          
           bool cntstag[3];
           cntstag[0] = no_origin && no_originx && avoid_origin && avoid_originx;
           cntstag[1] = no_origin && no_originy && avoid_origin && avoid_originy;
           cntstag[2] = no_origin && no_originz && avoid_origin && avoid_originz;
         
           // TODO: Check only if there is actually a symmetry boundary
-          if (cntstag[0] or cntstag[1] or cntstag[2]) {
-            CCTK_WARN (0, "When Carpet::domain_from_coordbase = no, when Carpet::max_refinement_levels > 1, and when thorn CartGrid3D is active, then you have to set CartGrid3D::avoid_origin = no");
+          if (! CCTK_EQUALS (domain, "full")
+              and (cntstag[0] or cntstag[1] or cntstag[2])) {
+            CCTK_WARN (0, "When Carpet::domain_from_coordbase = no, when Carpet::max_refinement_levels > 1, and when thorn CartGrid3D provides symmetry boundaries, then you have then you have to set CartGrid3D::avoid_origin = no");
           }
         }
       }
