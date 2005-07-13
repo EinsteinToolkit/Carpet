@@ -734,7 +734,8 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
 
       for (int group = CCTK_NumGroups () - 1; group >= 0; group--) {
         /* only dump groups which have storage assigned */
-        if (CCTK_QueryGroupStorageI (cctkGH, group) <= 0) {
+        if (CCTK_QueryGroupStorageI (cctkGH, group) <= 0 || 
+	    CCTK_NumVarsInGroupI(group) == 0) {
           continue;
         }
 
