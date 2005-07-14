@@ -112,9 +112,6 @@ namespace Carpet {
         for (int d=0; d<dim; ++d) {
           assert (groupdata.at(group).info.lsh[d]>=0);
           assert (groupdata.at(group).info.lsh[d]<=groupdata.at(group).info.gsh[d]);
-          if (d>=groupdata.at(group).info.dim) {
-            assert (groupdata.at(group).info.lsh[d]==1);
-          }
           assert (groupdata.at(group).info.lbnd[d]>=0);
           assert (groupdata.at(group).info.lbnd[d]<=groupdata.at(group).info.ubnd[d]+1);
           assert (groupdata.at(group).info.ubnd[d]<groupdata.at(group).info.gsh[d]);
