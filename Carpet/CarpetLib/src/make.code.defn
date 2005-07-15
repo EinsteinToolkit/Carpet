@@ -24,16 +24,23 @@ SRCS =	bbox.cc					\
 	prolongate_3d_real8_o3.F77		\
 	prolongate_3d_real8_o3_rf2.F77		\
 	prolongate_3d_real8_o5.F77		\
+	prolongate_3d_real8_o5_rf2.F77		\
+	prolongate_3d_real8_o7.F77		\
+	prolongate_3d_real8_o7_rf2.F77		\
 	prolongate_3d_real8_2tl.F77		\
 	prolongate_3d_real8_2tl_rf2.F77		\
 	prolongate_3d_real8_2tl_o3.F77		\
 	prolongate_3d_real8_2tl_o3_rf2.F77	\
 	prolongate_3d_real8_2tl_o5.F77		\
+	prolongate_3d_real8_2tl_o5_rf2.F77	\
+	prolongate_3d_real8_2tl_o7_rf2.F77	\
 	prolongate_3d_real8_3tl.F77		\
 	prolongate_3d_real8_3tl_rf2.F77		\
 	prolongate_3d_real8_3tl_o3.F77		\
 	prolongate_3d_real8_3tl_o3_rf2.F77	\
 	prolongate_3d_real8_3tl_o5.F77		\
+	prolongate_3d_real8_3tl_o5_rf2.F77	\
+	prolongate_3d_real8_3tl_o7_rf2.F77	\
 	prolongate_3d_real8_minmod.F77		\
 	prolongate_3d_real8_2tl_minmod.F77	\
 	prolongate_3d_real8_3tl_minmod.F77	\
