@@ -78,6 +78,162 @@ namespace CarpetInterp {
   
   
   
+  static void
+  find_time_interpolation_order (cGH const * const cgh,
+                                 int const param_table_handle,
+                                 int const N_interp_points,
+                                 int & prolongation_order_time,
+                                 CCTK_REAL & current_time,
+                                 vector<CCTK_INT> & time_deriv_order,
+                                 vector<CCTK_REAL> & interpolation_times,
+                                 bool & interpolation_times_differ,
+                                 bool & have_time_derivs);
+  
+  static void
+  assign_interpolation_points_to_components (vector<int> & rlev,
+                                             vector<int> & home,
+                                             vector<int> & homecnts,
+                                             int const ml,
+                                             vector<CCTK_INT> const & source_map,
+                                             int const interp_coords_type_code,
+                                             void const * const interp_coords [],
+                                             vector<rvect> const & lower,
+                                             vector<rvect> const & upper,
+                                             vector<rvect> const & delta,
+                                             int const minrl,
+                                             int const maxrl,
+                                             int const maxncomps,
+                                             int const N_interp_points);
+  
+  static void
+  create_coordinate_patches (cGH const * const cgh,
+                             int const nprocs,
+                             int const minrl,
+                             int const maxrl,
+                             int const maxncomps,
+                             vector<int> const & allhomecnts,
+                             vector<data<CCTK_INT> *> & allmaps,
+                             vector<data<CCTK_REAL> *> & allcoords);
+  
+  static void
+  fill_local_coordinate_patches (cGH const * const cgh,
+                                 int const nprocs,
+                                 int const minrl,
+                                 int const maxrl,
+                                 int const maxncomps,
+                                 CCTK_INT const N_interp_points,
+                                 vector<int> const & rlev,
+                                 vector<CCTK_INT> const & source_map,
+                                 vector<int> const & home,
+                                 vector<int> const & homecnts,
+                                 int const myproc,
+                                 vector<int> const & allhomecnts,
+                                 vector<data<CCTK_INT> *> & allmaps,
+                                 vector<data<CCTK_REAL> *> & allcoords,
+                                 CCTK_POINTER_TO_CONST const interp_coords []);
+  
+  static void
+  transfer_coordinate_patches (cGH const * const cgh,
+                               int const nprocs,
+                               int const minrl,
+                               int const maxrl,
+                               int const maxncomps,
+                               vector<data<CCTK_INT> *> & allmaps,
+                               vector<data<CCTK_REAL> *> & allcoords);
+  
+  static void
+  create_output_patches (cGH const * const cgh,
+                         int const nprocs,
+                         int const minrl,
+                         int const maxrl,
+                         int const maxncomps,
+                         CCTK_INT const N_output_arrays,
+                         vector<int> const & allhomecnts,
+                         vector<data<CCTK_REAL> *> & allcoords,
+                         vector<data<CCTK_REAL> *> & alloutputs,
+                         vector<data<CCTK_INT> *> & allstatuses);
+  
+  static int
+  do_local_interpolation (cGH const * const cgh,
+                          int const minrl,
+                          int const maxrl,
+                          int const maxncomps,
+                          bool const want_global_mode,
+                          int const prolongation_order_time,
+                          int const N_dims,
+                          vector<data<CCTK_REAL> *> & allcoords,
+                          vector<data<CCTK_REAL> *> & alloutputs,
+                          vector<data<CCTK_INT> *> & allstatuses,
+                          vector<CCTK_INT> & time_deriv_order,
+                          vector<int> & allhomecnts,
+                          vector<CCTK_REAL> & interpolation_times,
+                          CCTK_INT const local_interp_handle,
+                          CCTK_INT const param_table_handle,
+                          CCTK_REAL const current_time,
+                          int const interp_coords_type_code,
+                          bool const interpolation_times_differ,
+                          bool const have_time_derivs,
+                          int const N_input_arrays,
+                          int const N_output_arrays,
+                          CCTK_INT const output_array_type_codes [],
+                          CCTK_INT const input_array_variable_indices []);
+  
+  static void
+  transfer_output_patches_back (cGH const * const cgh,
+                                int const nprocs,
+                                int const minrl,
+                                int const maxrl,
+                                int const maxncomps,
+                                vector<data<CCTK_REAL> *> & alloutputs,
+                                vector<data<CCTK_INT> *> & allstatuses);
+  
+  static void
+  read_out_local_output_patches (cGH const * const cgh,
+                                 int const nprocs,
+                                 int const minrl,
+                                 int const maxrl,
+                                 int const maxncomps,
+                                 int const myproc,
+                                 CCTK_INT const N_interp_points,
+                                 vector<int> const & rlev,
+                                 vector<CCTK_INT> const & source_map,
+                                 vector<int> const & home,
+                                 CCTK_INT const N_output_arrays,
+                                 CCTK_INT const interp_coords_type_code,
+                                 vector<data<CCTK_REAL> *> const & alloutputs,
+                                 CCTK_POINTER const output_arrays [],
+                                 vector<data<CCTK_INT> *> const & allstatuses,
+                                 vector<int> const & allhomecnts,
+                                 vector<int> const & homecnts,
+                                 CCTK_INT const param_table_handle);
+  
+  static int
+  interpolate_within_component (cGH const * const cgh,
+                                int const minrl,
+                                int const maxrl,
+                                int const maxncomps,
+                                int const N_dims,
+                                vector<data<CCTK_REAL> *> & allcoords,
+                                vector<data<CCTK_REAL> *> & alloutputs,
+                                vector<data<CCTK_INT> *> & allstatuses,
+                                vector<CCTK_INT> & time_deriv_order,
+                                vector<int> & allhomecnts,
+                                vector<CCTK_REAL> &interpolation_times,
+                                CCTK_INT const local_interp_handle,
+                                CCTK_INT const param_table_handle,
+                                CCTK_REAL const current_time,
+                                int const interp_coords_type_code,
+                                int const num_tl,
+                                bool const need_time_interp,
+                                bool const interpolation_times_differ,
+                                bool const have_time_derivs,
+                                int const N_input_arrays,
+                                int const N_output_arrays,
+                                CCTK_INT const output_array_type_codes [],
+                                CCTK_INT const input_array_variable_indices []);
+  
+  
+  
   void CarpetInterpStartup ()
   {
     CCTK_OverloadInterpGridArrays (InterpGridArrays);
@@ -115,9 +271,9 @@ namespace CarpetInterp {
          N_output_arrays, output_array_type_codes, output_arrays);
     }
   }
-  
-  
-  
+
+
+
   extern "C" CCTK_INT
   Carpet_DriverInterpolate (CCTK_POINTER_TO_CONST const cgh_,
                             CCTK_INT const N_dims,
@@ -210,44 +366,20 @@ namespace CarpetInterp {
     
     
     // Find the time interpolation order
-    int partype;
-    void const * const parptr
-      = CCTK_ParameterGet ("prolongation_order_time", "Carpet", &partype);
-    assert (parptr);
-    assert (partype == PARAMETER_INTEGER);
-    int const prolongation_order_time = * (CCTK_INT const *) parptr;
-    
-    CCTK_REAL const current_time = cgh->cctk_time / cgh->cctk_delta_time;
-    
+    vector<CCTK_INT> time_deriv_order (N_interp_points);
     vector<CCTK_REAL> interpolation_times (N_interp_points);
     bool interpolation_times_differ;
-    ierr = Util_TableGetRealArray
-      (param_table_handle, N_interp_points,
-       &interpolation_times.front(), "interpolation_times");
-    if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-      for (int n=0; n<N_interp_points; ++n) {
-        interpolation_times.at(n) = current_time;
-      }
-      interpolation_times_differ = false;
-    } else {
-      assert (ierr == N_interp_points);
-      interpolation_times_differ = true;
-    }
-    
-    vector<CCTK_INT> time_deriv_order (N_interp_points);
     bool have_time_derivs;
-    ierr = Util_TableGetIntArray
-      (param_table_handle, N_interp_points,
-       &time_deriv_order.front(), "time_deriv_order");
-    if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-      for (int n=0; n<N_interp_points; ++n) {
-        time_deriv_order.at(n) = 0;
-      }
-      have_time_derivs = false;
-    } else {
-      assert (ierr == N_interp_points);
-      have_time_derivs = true;
-    }
+    CCTK_REAL current_time;
+    int prolongation_order_time;
+    
+    find_time_interpolation_order
+      (cgh,
+       param_table_handle,
+       N_interp_points,
+       prolongation_order_time, current_time,
+       time_deriv_order, interpolation_times,
+       interpolation_times_differ, have_time_derivs);
     
     
     
@@ -298,6 +430,226 @@ namespace CarpetInterp {
     vector<int> home (N_interp_points); // component of point n
     vector<int> homecnts ((maxrl-minrl) * maps * maxncomps); // number of points in component c
     
+    assign_interpolation_points_to_components
+      (rlev, home, homecnts,
+       ml,
+       source_map,
+       interp_coords_type_code, interp_coords,
+       lower, upper, delta,
+       minrl, maxrl,
+       maxncomps,
+       N_interp_points);
+    
+    // Communicate counts
+    vector<int> allhomecnts(nprocs * (maxrl-minrl) * maps * maxncomps);
+    MPI_Allgather
+      (&homecnts   .at(0), (maxrl-minrl) * maps * maxncomps, MPI_INT,
+       &allhomecnts.at(0), (maxrl-minrl) * maps * maxncomps, MPI_INT, comm);
+    
+    
+    
+    // Create coordinate patches
+    vector<data<CCTK_INT> *>  allmaps   (nprocs * (maxrl-minrl) * maps * maxncomps);
+    vector<data<CCTK_REAL> *> allcoords (nprocs * (maxrl-minrl) * maps * maxncomps);
+    
+    create_coordinate_patches
+      (cgh, nprocs,
+       minrl, maxrl,
+       maxncomps,
+       allhomecnts,
+       allmaps, allcoords);
+    
+    fill_local_coordinate_patches
+      (cgh, nprocs,
+       minrl, maxrl,
+       maxncomps,
+       N_interp_points,
+       rlev,
+       source_map,
+       home,
+       homecnts,
+       myproc,
+       allhomecnts,
+       allmaps,
+       allcoords,
+       interp_coords);
+    
+    transfer_coordinate_patches
+      (cgh, nprocs,
+       minrl, maxrl,
+       maxncomps,
+       allmaps, allcoords);
+    
+    
+    
+    // Create output patches
+    vector<data<CCTK_REAL> *> alloutputs
+      (nprocs * (maxrl-minrl) * maps * maxncomps, static_cast<data<CCTK_REAL> *> (0));
+    vector<data<CCTK_INT> *> allstatuses
+      (nprocs * (maxrl-minrl) * maps * maxncomps, static_cast<data<CCTK_INT> *> (0));
+    
+    create_output_patches
+      (cgh, nprocs,
+       minrl, maxrl,
+       maxncomps,
+       N_output_arrays,
+       allhomecnts,
+       allcoords,
+       alloutputs,
+       allstatuses);
+    
+    
+    
+    //
+    // Do the local interpolation
+    //
+    int const overall_ierr = do_local_interpolation
+      (cgh,
+       minrl, maxrl,
+       maxncomps,
+       want_global_mode,
+       prolongation_order_time,
+       N_dims,
+       allcoords, alloutputs, allstatuses,
+       time_deriv_order,
+       allhomecnts,
+       interpolation_times,
+       local_interp_handle, param_table_handle,
+       current_time,
+       interp_coords_type_code,
+       interpolation_times_differ,
+       have_time_derivs,
+       N_input_arrays, N_output_arrays,
+       output_array_type_codes, input_array_variable_indices);
+    
+    
+    
+    transfer_output_patches_back
+      (cgh, nprocs,
+       minrl, maxrl,
+       maxncomps,
+       alloutputs,
+       allstatuses);
+    
+    
+    
+    read_out_local_output_patches
+      (cgh, nprocs,
+       minrl, maxrl,
+       maxncomps,
+       myproc,
+       N_interp_points,
+       rlev,
+       source_map,
+       home,
+       N_output_arrays,
+       interp_coords_type_code,
+       alloutputs,
+       output_arrays,
+       allstatuses,
+       allhomecnts,
+       homecnts,
+       param_table_handle);
+    
+    
+    
+    // Free local output patches
+    for (int p=0; p<nprocs; ++p) {
+      for (int rl=minrl; rl<maxrl; ++rl) {
+        for (int m=0; m<maps; ++m) {
+          for (int c=0; c<vhh.at(m)->components(rl); ++c) {
+            delete alloutputs.at(ind_prc(p,m,rl,c));
+            alloutputs.at(ind_prc(p,m,rl,c)) = NULL;
+            delete allstatuses.at(ind_prc(p,m,rl,c));
+            allstatuses.at(ind_prc(p,m,rl,c)) = NULL;
+          }
+        }
+      }
+    }
+    
+    
+    
+    int global_overall_ierr;
+    MPI_Allreduce
+      (const_cast<int *> (& overall_ierr), & global_overall_ierr,
+       1, MPI_INT, MPI_MIN, comm);
+    
+    
+    
+    // Done.
+    return global_overall_ierr;
+  }
+  
+  
+  
+  static void
+  find_time_interpolation_order (cGH const * const cgh,
+                                 int const param_table_handle,
+                                 int const N_interp_points,
+                                 int & prolongation_order_time,
+                                 CCTK_REAL & current_time,
+                                 vector<CCTK_INT> & time_deriv_order,
+                                 vector<CCTK_REAL> & interpolation_times,
+                                 bool & interpolation_times_differ,
+                                 bool & have_time_derivs)
+  {
+    // Find the time interpolation order
+    int ierr;
+    
+    int partype;
+    void const * const parptr
+      = CCTK_ParameterGet ("prolongation_order_time", "Carpet", &partype);
+    assert (parptr);
+    assert (partype == PARAMETER_INTEGER);
+    prolongation_order_time = * (CCTK_INT const *) parptr;
+    
+    current_time = cgh->cctk_time / cgh->cctk_delta_time;
+    
+    ierr = Util_TableGetRealArray
+      (param_table_handle, N_interp_points,
+       &interpolation_times.front(), "interpolation_times");
+    if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+      for (int n=0; n<N_interp_points; ++n) {
+        interpolation_times.at(n) = current_time;
+      }
+      interpolation_times_differ = false;
+    } else {
+      assert (ierr == N_interp_points);
+      interpolation_times_differ = true;
+    }
+    
+    ierr = Util_TableGetIntArray
+      (param_table_handle, N_interp_points,
+       &time_deriv_order.front(), "time_deriv_order");
+    if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+      for (int n=0; n<N_interp_points; ++n) {
+        time_deriv_order.at(n) = 0;
+      }
+      have_time_derivs = false;
+    } else {
+      assert (ierr == N_interp_points);
+      have_time_derivs = true;
+    }
+  }
+  
+  
+  
+  static void
+  assign_interpolation_points_to_components (vector<int> & rlev,
+                                             vector<int> & home,
+                                             vector<int> & homecnts,
+                                             int const ml,
+                                             vector<CCTK_INT> const & source_map,
+                                             int const interp_coords_type_code,
+                                             void const * const interp_coords [],
+                                             vector<rvect> const & lower,
+                                             vector<rvect> const & upper,
+                                             vector<rvect> const & delta,
+                                             int const minrl,
+                                             int const maxrl,
+                                             int const maxncomps,
+                                             int const N_interp_points)
+  {
     for (int n=0; n<N_interp_points; ++n) {
       
       int const m = source_map.at(n);
@@ -342,18 +694,21 @@ namespace CarpetInterp {
       ++ homecnts.at(ind_rc(m, rlev.at(n), home.at(n)));
       
     } // for n
-    
-    // Communicate counts
-    vector<int> allhomecnts(nprocs * (maxrl-minrl) * maps * maxncomps);
-    MPI_Allgather
-      (&homecnts   .at(0), (maxrl-minrl) * maps * maxncomps, MPI_INT,
-       &allhomecnts.at(0), (maxrl-minrl) * maps * maxncomps, MPI_INT, comm);
-    
-    
-    
+  }
+  
+  
+  
+  static void
+  create_coordinate_patches (cGH const * const cgh,
+                             int const nprocs,
+                             int const minrl,
+                             int const maxrl,
+                             int const maxncomps,
+                             vector<int> const & allhomecnts,
+                             vector<data<CCTK_INT> *> & allmaps,
+                             vector<data<CCTK_REAL> *> & allcoords)
+  {
     // Create coordinate patches
-    vector<data<CCTK_INT> *>  allmaps   (nprocs * (maxrl-minrl) * maps * maxncomps);
-    vector<data<CCTK_REAL> *> allcoords (nprocs * (maxrl-minrl) * maps * maxncomps);
     for (int p=0; p<nprocs; ++p) {
       for (int rl=minrl; rl<maxrl; ++rl) {
         for (int m=0; m<maps; ++m) {
@@ -382,37 +737,67 @@ namespace CarpetInterp {
         }
       }
     }
-    
+  }
+  
+  
+  
+  static void
+  fill_local_coordinate_patches (cGH const * const cgh,
+                                 int const nprocs,
+                                 int const minrl,
+                                 int const maxrl,
+                                 int const maxncomps,
+                                 CCTK_INT const N_interp_points,
+                                 vector<int> const & rlev,
+                                 vector<CCTK_INT> const & source_map,
+                                 vector<int> const & home,
+                                 vector<int> const & homecnts,
+                                 int const myproc,
+                                 vector<int> const & allhomecnts,
+                                 vector<data<CCTK_INT> *> & allmaps,
+                                 vector<data<CCTK_REAL> *> & allcoords,
+                                 CCTK_POINTER_TO_CONST const interp_coords [])
+  {
     // Fill in local coordinate patches
-    {
-      vector<int> tmpcnts ((maxrl-minrl) * maps * maxncomps);
-      for (int n=0; n<N_interp_points; ++n) {
-        int const rl = rlev.at(n);
-        int const m = source_map.at(n);
-        int const c = home.at(n);
-        assert (rl>=minrl && rl<maxrl);
-        assert (m>=0 && m<maps);
-        assert (c>=0 && c<vhh.at(m)->components(rl));
-        assert (tmpcnts.at(ind_rc(m,rl,c)) >= 0);
-        assert (tmpcnts.at(ind_rc(m,rl,c)) < homecnts.at(ind_rc(m,rl,c)));
-        assert (dim==3);
-        (*allmaps.at(ind_prc(myproc,m,rl,c)))[ivect(tmpcnts.at(ind_rc(m,rl,c)),0,0)]
-          = source_map.at(n);
-        for (int d=0; d<dim; ++d) {
-          (*allcoords.at(ind_prc(myproc,m,rl,c)))[ivect(tmpcnts.at(ind_rc(m,rl,c)),d,0)]
-            = static_cast<CCTK_REAL const *>(interp_coords[d])[n];
-        }
-        ++ tmpcnts.at(c + maxncomps * (m + maps * (rl-minrl)));
+    vector<int> tmpcnts ((maxrl-minrl) * maps * maxncomps);
+    for (int n=0; n<N_interp_points; ++n) {
+      int const rl = rlev.at(n);
+      int const m = source_map.at(n);
+      int const c = home.at(n);
+      assert (rl>=minrl && rl<maxrl);
+      assert (m>=0 && m<maps);
+      assert (c>=0 && c<vhh.at(m)->components(rl));
+      assert (tmpcnts.at(ind_rc(m,rl,c)) >= 0);
+      assert (tmpcnts.at(ind_rc(m,rl,c)) < homecnts.at(ind_rc(m,rl,c)));
+      assert (dim==3);
+      (*allmaps.at(ind_prc(myproc,m,rl,c)))[ivect(tmpcnts.at(ind_rc(m,rl,c)),0,0)]
+        = source_map.at(n);
+      for (int d=0; d<dim; ++d) {
+        (*allcoords.at(ind_prc(myproc,m,rl,c)))[ivect(tmpcnts.at(ind_rc(m,rl,c)),d,0)]
+          = static_cast<CCTK_REAL const *>(interp_coords[d])[n];
       }
-      for (int rl=minrl; rl<maxrl; ++rl) {
-        for (int m=0; m<maps; ++m) {
-          for (int c=0; c<vhh.at(m)->components(rl); ++c) {
-            assert (tmpcnts.at(ind_rc(m,rl,c)) == homecnts.at(ind_rc(m,rl,c)));
-          }
+      ++ tmpcnts.at(c + maxncomps * (m + maps * (rl-minrl)));
+    }
+    for (int rl=minrl; rl<maxrl; ++rl) {
+      for (int m=0; m<maps; ++m) {
+        for (int c=0; c<vhh.at(m)->components(rl); ++c) {
+          assert (tmpcnts.at(ind_rc(m,rl,c)) == homecnts.at(ind_rc(m,rl,c)));
         }
       }
     }
-    
+  }
+  
+  
+  
+  static void
+  transfer_coordinate_patches (cGH const * const cgh,
+                               int const nprocs,
+                               int const minrl,
+                               int const maxrl,
+                               int const maxncomps,
+                               vector<data<CCTK_INT> *> & allmaps,
+                               vector<data<CCTK_REAL> *> & allcoords)
+  {
     // Transfer coordinate patches
     for (comm_state state; !state.done(); state.step()) {
       for (int p=0; p<nprocs; ++p) {
@@ -428,14 +813,22 @@ namespace CarpetInterp {
         }
       }
     }
-    
-    
-    
-    // Create output patches
-    vector<data<CCTK_REAL> *> alloutputs
-      (nprocs * (maxrl-minrl) * maps * maxncomps, static_cast<data<CCTK_REAL> *> (0));
-    vector<data<CCTK_INT> *> allstatuses
-      (nprocs * (maxrl-minrl) * maps * maxncomps, static_cast<data<CCTK_INT> *> (0));
+  }
+  
+  
+  
+  static void
+  create_output_patches (cGH const * const cgh,
+                         int const nprocs,
+                         int const minrl,
+                         int const maxrl,
+                         int const maxncomps,
+                         CCTK_INT const N_output_arrays,
+                         vector<int> const & allhomecnts,
+                         vector<data<CCTK_REAL> *> & allcoords,
+                         vector<data<CCTK_REAL> *> & alloutputs,
+                         vector<data<CCTK_INT> *> & allstatuses)
+  {
     for (int p=0; p<nprocs; ++p) {
       for (int rl=minrl; rl<maxrl; ++rl) {
         for (int m=0; m<maps; ++m) {
@@ -462,13 +855,39 @@ namespace CarpetInterp {
         }
       }
     }
-    
-    
-    
-    //
+  }
+  
+  
+  
+  static int
+  do_local_interpolation (cGH const * const cgh,
+                          int const minrl,
+                          int const maxrl,
+                          int const maxncomps,
+                          bool const want_global_mode,
+                          int const prolongation_order_time,
+                          int const N_dims,
+                          vector<data<CCTK_REAL> *> & allcoords,
+                          vector<data<CCTK_REAL> *> & alloutputs,
+                          vector<data<CCTK_INT> *> & allstatuses,
+                          vector<CCTK_INT> & time_deriv_order,
+                          vector<int> & allhomecnts,
+                          vector<CCTK_REAL> & interpolation_times,
+                          CCTK_INT const local_interp_handle,
+                          CCTK_INT const param_table_handle,
+                          CCTK_REAL const current_time,
+                          int const interp_coords_type_code,
+                          bool const interpolation_times_differ,
+                          bool const have_time_derivs,
+                          int const N_input_arrays,
+                          int const N_output_arrays,
+                          CCTK_INT const output_array_type_codes [],
+                          CCTK_INT const input_array_variable_indices [])
+  {
     // Do the local interpolation
-    //
+    int ierr;
     int overall_ierr = 0;
+    
     BEGIN_GLOBAL_MODE(cgh) {
       for (int rl=minrl; rl<maxrl; ++rl) {
         enter_level_mode (const_cast<cGH*>(cgh), rl);
@@ -488,340 +907,25 @@ namespace CarpetInterp {
         BEGIN_MAP_LOOP(cgh, CCTK_GF) {
           BEGIN_LOCAL_COMPONENT_LOOP(cgh, CCTK_GF) {
             
-            // Find out about the local geometry
-            ivect lsh;
-            rvect coord_origin, coord_delta;
-            for (int d=0; d<dim; ++d) {
-              lsh[d] = cgh->cctk_lsh[d];
-              coord_delta[d] = cgh->cctk_delta_space[d] / cgh->cctk_levfac[d];
-              coord_origin[d] = cgh->cctk_origin_space[d] + (cgh->cctk_lbnd[d] + 1.0 * cgh->cctk_levoff[d] / cgh->cctk_levoffdenom[d]) * coord_delta[d];
-            }
-            
-            
-            
-            // Find out about the grid functions
-            vector<CCTK_INT> input_array_type_codes(N_input_arrays);
-            vector<const void *> input_arrays(N_input_arrays);
-            for (int n=0; n<N_input_arrays; ++n) {
-              if (input_array_variable_indices[n] == -1) {
-                
-                // Ignore this entry
-                input_array_type_codes.at(n) = -1;
-                
-              } else {
-                
-                int const vi = input_array_variable_indices[n];
-                assert (vi>=0 && vi<CCTK_NumVars());
-                
-                int const gi = CCTK_GroupIndexFromVarI (vi);
-                assert (gi>=0 && gi<CCTK_NumGroups());
-                
-                cGroup group;
-                ierr = CCTK_GroupData (gi, &group);
-                assert (!ierr);
-                assert (group.grouptype == CCTK_GF);
-                assert (group.dim == dim);
-                assert (group.disttype == CCTK_DISTRIB_DEFAULT);
-                assert (group.stagtype == 0); // not staggered
-                
-                input_array_type_codes.at(n) = group.vartype;
-                
-              }
-            } // for input arrays
-            
-            
-            
-              // Work on the data from all processors
-            for (int p=0; p<nprocs; ++p) {
-              assert (allcoords.at(ind_prc(p,Carpet::map,reflevel,component))->proc() == dist::rank());
-              assert (allhomecnts.at(ind_prc(p,Carpet::map,reflevel,component)) == allcoords.at(ind_prc(p,Carpet::map,reflevel,component))->shape()[0]);
-              assert (allhomecnts.at(ind_prc(p,Carpet::map,reflevel,component)) == alloutputs.at(ind_prc(p,Carpet::map,reflevel,component))->shape()[0]);
-              
-              int const npoints = allhomecnts.at(ind_prc(p,Carpet::map,reflevel,component));
-              
-              // Do the processor-local interpolation
-              const void * tmp_interp_coords[dim];
-              for (int d=0; d<dim; ++d) {
-                tmp_interp_coords[d] = &(*allcoords.at(ind_prc(p,Carpet::map,reflevel,component)))[ivect(0,d,0)];
-              }
-              
-              
-              
-              vector<vector<void *> > tmp_output_arrays (num_tl);
-              vector<void *> tmp_status_array (num_tl);
-              
-              for (int tl=0; tl<num_tl; ++tl) {
-                
-                for (int n=0; n<N_input_arrays; ++n) {
-                  
-                  int const vi = input_array_variable_indices[n];
-                  assert (vi>=0 && vi<CCTK_NumVars());
-                  
-                  int const gi = CCTK_GroupIndexFromVarI (vi);
-                  assert (gi>=0 && gi<CCTK_NumGroups());
-                  
-                  int const table = CCTK_GroupTagsTableI (gi);
-                  assert (table>=0);
-                  
-                  int my_num_tl;
-                  CCTK_INT interp_num_time_levels;
-                  int const ilen = Util_TableGetInt
-                    (table, &interp_num_time_levels, "InterpNumTimelevels");
-                  if (ilen == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-                    my_num_tl = num_tl;
-                  } else if (ilen >= 0) {
-                    my_num_tl = interp_num_time_levels;
-                    assert (my_num_tl>0 && my_num_tl<=num_tl);
-                  } else {
-                    assert (0);
-                  }
-                  
-                  if (vi == -1) {
-                    input_arrays.at(n) = NULL;
-                  } else {
-                    // Do a dummy interpolation from a later timelevel
-                    // if the desired timelevel does not exist
-                    int const my_tl = tl >= my_num_tl ? 0 : tl;
-                    assert (vi>=0 && vi<CCTK_NumVars());
-#if 0
-                    input_arrays.at(n) = CCTK_VarDataPtrI (cgh, my_tl, vi);
-#else
-                    int const vi0 = CCTK_FirstVarIndexI (gi);
-                    input_arrays.at(n)
-                      = ((*arrdata.at(gi).at(Carpet::map).data.at(vi-vi0))
-                         (my_tl, reflevel, component, mglevel)->storage());
-#endif
-                  }
-                } // for input arrays
-                
-                tmp_output_arrays.at(tl).resize (N_output_arrays);
-                for (int j=0; j<N_output_arrays; ++j) {
-                  assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
-                  if (need_time_interp) {
-                    tmp_output_arrays.at(tl).at(j) = new CCTK_REAL [npoints];
-                  } else {
-                    tmp_output_arrays.at(tl).at(j) = &(*alloutputs.at(ind_prc(p,Carpet::map,reflevel,component)))[ivect(0,j,0)];
-                  }
-                }
-                tmp_status_array.at(tl) = &(*allstatuses.at(ind_prc(p,Carpet::map,reflevel,component)))[ivect(0,0,0)];
-                
-                ierr = Util_TableSetPointer
-                  (param_table_handle,
-                   tmp_status_array.at(tl), "per_point_status");
-                assert (ierr >= 0);
-                
-                ierr = CCTK_InterpLocalUniform
-                  (N_dims, local_interp_handle, param_table_handle,
-                   &coord_origin[0], &coord_delta[0],
-                   npoints,
-                   interp_coords_type_code, tmp_interp_coords,
-                   N_input_arrays, &lsh[0],
-                   &input_array_type_codes[0], &input_arrays[0],
-                   N_output_arrays,
-                   output_array_type_codes, &tmp_output_arrays.at(tl)[0]);
-                if (ierr) {
-                  CCTK_VWarn (4, __LINE__, __FILE__, CCTK_THORNSTRING,
-                              "The local interpolator returned the error code %d", ierr);
-                }
-                overall_ierr = min(overall_ierr, ierr);
-                
-                ierr = Util_TableDeleteKey
-                  (param_table_handle, "per_point_status");
-                assert (! ierr);
-                
-              } // for tl
-              
-              // Interpolate in time, if necessary
-              if (need_time_interp) {
-                
-                for (int j=0; j<N_output_arrays; ++j) {
-                  
-                  // Find output variable indices
-                  vector<CCTK_INT> operand_indices (N_output_arrays);
-                  ierr = Util_TableGetIntArray
-                    (param_table_handle, N_output_arrays,
-                     &operand_indices.front(), "operand_indices");
-                  if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-                    assert (N_output_arrays == N_input_arrays);
-                    for (int m=0; m<N_output_arrays; ++m) {
-                      operand_indices.at(m) = m;
-                    }
-                  } else {
-                    assert (ierr == N_output_arrays);
-                  }
-                  
-                  // Find input array for this output array
-                  int const n = operand_indices.at(j);
-                  
-                  int const vi = input_array_variable_indices[n];
-                  assert (vi>=0 && vi<CCTK_NumVars());
-                  
-                  int const gi = CCTK_GroupIndexFromVarI (vi);
-                  assert (gi>=0 && gi<CCTK_NumGroups());
-                  
-                  int const table = CCTK_GroupTagsTableI (gi);
-                  assert (table>=0);
-                  
-                  int my_num_tl;
-                  CCTK_INT interp_num_time_levels;
-                  int const ilen = Util_TableGetInt
-                    (table, &interp_num_time_levels, "InterpNumTimelevels");
-                  if (ilen == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-                    my_num_tl = num_tl;
-                  } else if (ilen >= 0) {
-                    my_num_tl = interp_num_time_levels;
-                    assert (my_num_tl>0 && my_num_tl<=num_tl);
-                  } else {
-                    assert (0);
-                  }
-                  
-                  if (! interpolation_times_differ && ! have_time_derivs) {
-                    
-                    // Get interpolation times
-                    CCTK_REAL const time = current_time;
-                    vector<CCTK_REAL> times(my_num_tl);
-                    for (int tl=0; tl<my_num_tl; ++tl) {
-                      times.at(tl) = vtt.at(Carpet::map)->time (tl, reflevel, mglevel);
-                    }
-                    
-                    // Calculate interpolation weights
-                    vector<CCTK_REAL> tfacs(my_num_tl);
-                    switch (my_num_tl) {
-                    case 1:
-                      // no interpolation
-                      // We have to assume that any GF with one timelevel
-                      // is constant in time!!!
-                      // assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
-                      tfacs.at(0) = 1.0;
-                      break;
-                    case 2:
-                      // linear (2-point) interpolation
-                      tfacs.at(0) = (time - times.at(1)) / (times.at(0) - times.at(1));
-                      tfacs.at(1) = (time - times.at(0)) / (times.at(1) - times.at(0));
-                      break;
-                    case 3:
-                      // quadratic (3-point) interpolation
-                      tfacs.at(0) = (time - times.at(1)) * (time - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
-                      tfacs.at(1) = (time - times.at(0)) * (time - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
-                      tfacs.at(2) = (time - times.at(0)) * (time - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
-                      break;
-                    default:
-                      assert (0);
-                    }
-                    
-                    // Interpolate
-                    assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
-                    for (int k=0; k<npoints; ++k) {
-                      CCTK_REAL & dest = (*alloutputs.at(ind_prc(p,Carpet::map,reflevel,component)))[ivect(k,j,0)];
-                      dest = 0;
-                      for (int tl=0; tl<my_num_tl; ++tl) {
-                        CCTK_REAL const src = ((CCTK_REAL const *)tmp_output_arrays.at(tl).at(j))[k];
-                        dest += tfacs[tl] * src;
-                      }
-                    }
-                    
-                  } else {
-                    
-                    // Interpolate
-                    assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
-                    for (int k=0; k<npoints; ++k) {
-                      
-                      CCTK_REAL const time = interpolation_times.at(k);
-                      CCTK_INT const deriv_order = time_deriv_order.at(k);
-                      
-                      // Get interpolation times
-                      vector<CCTK_REAL> times(my_num_tl);
-                      for (int tl=0; tl<my_num_tl; ++tl) {
-                        times.at(tl) = vtt.at(Carpet::map)->time (tl, reflevel, mglevel);
-                      }
-                      
-                      // Calculate interpolation weights
-                      vector<CCTK_REAL> tfacs(my_num_tl);
-                      switch (deriv_order) {
-                      case 0:
-                        switch (my_num_tl) {
-                        case 1:
-                          // no interpolation
-                          // We have to assume that any GF with one timelevel
-                          // is constant in time!!!
-                          // assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
-                          tfacs.at(0) = 1.0;
-                          break;
-                        case 2:
-                          // linear (2-point) interpolation
-                          tfacs.at(0) = (time - times.at(1)) / (times.at(0) - times.at(1));
-                          tfacs.at(1) = (time - times.at(0)) / (times.at(1) - times.at(0));
-                          break;
-                        case 3:
-                          // quadratic (3-point) interpolation
-                          tfacs.at(0) = (time - times.at(1)) * (time - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
-                          tfacs.at(1) = (time - times.at(0)) * (time - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
-                          tfacs.at(2) = (time - times.at(0)) * (time - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
-                          break;
-                        default:
-                          assert (0);
-                        }
-                        break;
-                        
-                      case 1:
-                        switch (my_num_tl) {
-                        case 2:
-                          // linear (2-point) interpolation
-                          // first order accurate
-                          tfacs.at(0) = (1 - times.at(1)) / (times.at(0) - times.at(1));
-                          tfacs.at(1) = (1 - times.at(0)) / (times.at(1) - times.at(0));
-                          break;
-                        case 3:
-                          // quadratic (3-point) interpolation
-                          // second order accurate
-                          tfacs.at(0) = ((1 - times.at(1)) * (time - times.at(2)) + (time - times.at(1)) * (1 - times.at(2))) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
-                          tfacs.at(1) = ((1 - times.at(0)) * (time - times.at(2)) + (time - times.at(0)) * (1 - times.at(2))) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
-                          tfacs.at(2) = ((1 - times.at(0)) * (time - times.at(1)) + (time - times.at(0)) * (1 - times.at(1))) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
-                          break;
-                        default:
-                          assert (0);
-                        }
-                        break;
-                        
-                      case 2:
-                        switch (my_num_tl) {
-                        case 3:
-                          // quadratic (3-point) interpolation
-                          // second order accurate
-                          tfacs.at(0) = 2 * (1 - times.at(1)) * (1 - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
-                          tfacs.at(1) = 2 * (1 - times.at(0)) * (1 - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
-                          tfacs.at(2) = 2 * (1 - times.at(0)) * (1 - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
-                          break;
-                        default:
-                          assert (0);
-                        }
-                        break;
-                        
-                      default:
-                        assert (0);
-                      } // switch time_deriv_order
-                      
-                      CCTK_REAL & dest = (*alloutputs.at(ind_prc(p,Carpet::map,reflevel,component)))[ivect(k,j,0)];
-                      dest = 0;
-                      for (int tl=0; tl<my_num_tl; ++tl) {
-                        CCTK_REAL const src = ((CCTK_REAL const *)tmp_output_arrays.at(tl).at(j))[k];
-                        dest += tfacs[tl] * src;
-                      }
-                    }
-                    
-                  } // if interpolation_times_differ
-                  
-                } // for j
-                  
-                for (int tl=0; tl<num_tl; ++tl) {
-                  for (int j=0; j<N_output_arrays; ++j) {
-                    delete [] (CCTK_REAL *)tmp_output_arrays.at(tl).at(j);
-                  }
-                }
-                
-              } // if need_time_interp
-              
-            } // for processors
+            ierr = interpolate_within_component
+              (cgh,
+               minrl, maxrl, maxncomps,
+               N_dims,
+               allcoords, alloutputs, allstatuses,
+               time_deriv_order,
+               allhomecnts,
+               interpolation_times,
+               local_interp_handle, param_table_handle,
+               current_time,
+               interp_coords_type_code,
+               num_tl,
+               need_time_interp,
+               interpolation_times_differ,
+               have_time_derivs,
+               N_input_arrays, N_output_arrays,
+               output_array_type_codes,
+               input_array_variable_indices);
+            overall_ierr = min(overall_ierr, ierr);
             
           } END_LOCAL_COMPONENT_LOOP;
         } END_MAP_LOOP;
@@ -831,24 +935,20 @@ namespace CarpetInterp {
       
     } END_GLOBAL_MODE;
     
-    
-    
-    // Free coordinate patches
-    for (int p=0; p<nprocs; ++p) {
-      for (int rl=minrl; rl<maxrl; ++rl) {
-        for (int m=0; m<maps; ++m) {
-          for (int c=0; c<vhh.at(m)->components(rl); ++c) {
-            delete allmaps.at(ind_prc(p,m,rl,c));
-            allmaps.at(ind_prc(p,m,rl,c)) = NULL;
-            delete allcoords.at(ind_prc(p,m,rl,c));
-            allcoords.at(ind_prc(p,m,rl,c)) = NULL;
-          }
-        }
-      }
-    }
-    
-    
-    
+    return overall_ierr;
+  }
+  
+  
+  
+  static void
+  transfer_output_patches_back (cGH const * const cgh,
+                                int const nprocs,
+                                int const minrl,
+                                int const maxrl,
+                                int const maxncomps,
+                                vector<data<CCTK_REAL> *> & alloutputs,
+                                vector<data<CCTK_INT> *> & allstatuses)
+  {
     // Transfer output patches back
     for (comm_state state; !state.done(); state.step()) {
       for (int p=0; p<nprocs; ++p) {
@@ -862,68 +962,429 @@ namespace CarpetInterp {
         }
       }
     }
-    
-    
-    
+  }
+  
+  
+  
+  static void
+  read_out_local_output_patches (cGH const * const cgh,
+                                 int const nprocs,
+                                 int const minrl,
+                                 int const maxrl,
+                                 int const maxncomps,
+                                 int const myproc,
+                                 CCTK_INT const N_interp_points,
+                                 vector<int> const & rlev,
+                                 vector<CCTK_INT> const & source_map,
+                                 vector<int> const & home,
+                                 CCTK_INT const N_output_arrays,
+                                 CCTK_INT const interp_coords_type_code,
+                                 vector<data<CCTK_REAL> *> const & alloutputs,
+                                 CCTK_POINTER const output_arrays [],
+                                 vector<data<CCTK_INT> *> const & allstatuses,
+                                 vector<int> const & allhomecnts,
+                                 vector<int> const & homecnts,
+                                 CCTK_INT const param_table_handle)
+  {
     // Read out local output patches
-    {
-      vector<int> tmpcnts ((maxrl-minrl) * maps * maxncomps);
-      CCTK_INT local_interpolator_status = 0;
-      for (int n=0; n<N_interp_points; ++n) {
-        int const rl = rlev.at(n);
-        int const m = source_map.at(n);
-        int const c = home.at(n);
-        for (int j=0; j<N_output_arrays; ++j) {
-          assert (interp_coords_type_code == CCTK_VARIABLE_REAL);
-          assert (alloutputs.at(ind_prc(myproc,m,rl,c))->proc() == dist::rank());
-          assert (output_arrays);
-          assert (output_arrays[j]);
-          static_cast<CCTK_REAL *>(output_arrays[j])[n] = (*alloutputs.at(ind_prc(myproc,m,rl,c)))[ivect(tmpcnts.at(ind_rc(m,rl,c)),j,0)];
-        }
-        local_interpolator_status
-          = min (local_interpolator_status,
-                 (*allstatuses.at(ind_prc(myproc,m,rl,c)))[ivect(tmpcnts.at(ind_rc(m,rl,c)),0,0)]);
-        ++ tmpcnts.at(ind_rc(m,rl,c));
+    vector<int> tmpcnts ((maxrl-minrl) * maps * maxncomps);
+    CCTK_INT local_interpolator_status = 0;
+    for (int n=0; n<N_interp_points; ++n) {
+      int const rl = rlev.at(n);
+      int const m = source_map.at(n);
+      int const c = home.at(n);
+      for (int j=0; j<N_output_arrays; ++j) {
+        assert (interp_coords_type_code == CCTK_VARIABLE_REAL);
+        assert (alloutputs.at(ind_prc(myproc,m,rl,c))->proc() == dist::rank());
+        assert (output_arrays);
+        assert (output_arrays[j]);
+        static_cast<CCTK_REAL *>(output_arrays[j])[n]
+          = (*alloutputs.at(ind_prc(myproc,m,rl,c)))[ivect(tmpcnts.at(ind_rc(m,rl,c)),j,0)];
       }
-      for (int rl=minrl; rl<maxrl; ++rl) {
-        for (int m=0; m<maps; ++m) {
-          for (int c=0; c<vhh.at(m)->components(rl); ++c) {
-            assert (tmpcnts.at(ind_rc(m,rl,c)) == homecnts.at(ind_rc(m,rl,c)));
-          }
+      local_interpolator_status
+        = min (local_interpolator_status,
+               (*allstatuses.at(ind_prc(myproc,m,rl,c)))[ivect(tmpcnts.at(ind_rc(m,rl,c)),0,0)]);
+      ++ tmpcnts.at(ind_rc(m,rl,c));
+    }
+    for (int rl=minrl; rl<maxrl; ++rl) {
+      for (int m=0; m<maps; ++m) {
+        for (int c=0; c<vhh.at(m)->components(rl); ++c) {
+          assert (tmpcnts.at(ind_rc(m,rl,c)) == homecnts.at(ind_rc(m,rl,c)));
         }
       }
-      ierr = Util_TableSetInt
-        (param_table_handle,
-         local_interpolator_status, "local_interpolator_status");
-      assert (ierr >= 0);
+    }
+    int ierr = Util_TableSetInt
+      (param_table_handle,
+       local_interpolator_status, "local_interpolator_status");
+    assert (ierr >= 0);
+  }
+  
+  
+  
+  static int
+  interpolate_within_component (cGH const * const cgh,
+                                int const minrl,
+                                int const maxrl,
+                                int const maxncomps,
+                                int const N_dims,
+                                vector<data<CCTK_REAL> *> & allcoords,
+                                vector<data<CCTK_REAL> *> & alloutputs,
+                                vector<data<CCTK_INT> *> & allstatuses,
+                                vector<CCTK_INT> & time_deriv_order,
+                                vector<int> & allhomecnts,
+                                vector<CCTK_REAL> &interpolation_times,
+                                CCTK_INT const local_interp_handle,
+                                CCTK_INT const param_table_handle,
+                                CCTK_REAL const current_time,
+                                int const interp_coords_type_code,
+                                int const num_tl,
+                                bool const need_time_interp,
+                                bool const interpolation_times_differ,
+                                bool const have_time_derivs,
+                                int const N_input_arrays,
+                                int const N_output_arrays,
+                                CCTK_INT const output_array_type_codes [],
+                                CCTK_INT const input_array_variable_indices [])
+  {
+    int ierr;
+    int overall_ierr = 0;
+    int const nprocs = CCTK_nProcs (cgh);
+    
+    // Find out about the local geometry
+    ivect lsh;
+    rvect coord_origin, coord_delta;
+    for (int d=0; d<dim; ++d) {
+      lsh[d] = cgh->cctk_lsh[d];
+      coord_delta[d] = cgh->cctk_delta_space[d] / cgh->cctk_levfac[d];
+      coord_origin[d] = cgh->cctk_origin_space[d] + (cgh->cctk_lbnd[d] + 1.0 * cgh->cctk_levoff[d] / cgh->cctk_levoffdenom[d]) * coord_delta[d];
     }
     
     
     
-    // Free local output patches
+    // Find out about the grid functions
+    vector<CCTK_INT> input_array_type_codes(N_input_arrays);
+    vector<const void *> input_arrays(N_input_arrays);
+    for (int n=0; n<N_input_arrays; ++n) {
+      if (input_array_variable_indices[n] == -1) {
+        
+        // Ignore this entry
+        input_array_type_codes.at(n) = -1;
+        
+      } else {
+        
+        int const vi = input_array_variable_indices[n];
+        assert (vi>=0 && vi<CCTK_NumVars());
+        
+        int const gi = CCTK_GroupIndexFromVarI (vi);
+        assert (gi>=0 && gi<CCTK_NumGroups());
+        
+        cGroup group;
+        ierr = CCTK_GroupData (gi, &group);
+        assert (!ierr);
+        assert (group.grouptype == CCTK_GF);
+        assert (group.dim == dim);
+        assert (group.disttype == CCTK_DISTRIB_DEFAULT);
+        assert (group.stagtype == 0); // not staggered
+        
+        input_array_type_codes.at(n) = group.vartype;
+        
+      }
+    } // for input arrays
+    
+    
+    
+    // Work on the data from all processors
     for (int p=0; p<nprocs; ++p) {
-      for (int rl=minrl; rl<maxrl; ++rl) {
-        for (int m=0; m<maps; ++m) {
-          for (int c=0; c<vhh.at(m)->components(rl); ++c) {
-            delete alloutputs.at(ind_prc(p,m,rl,c));
-            alloutputs.at(ind_prc(p,m,rl,c)) = NULL;
-            delete allstatuses.at(ind_prc(p,m,rl,c));
-            allstatuses.at(ind_prc(p,m,rl,c)) = NULL;
+      assert (allcoords.at(ind_prc(p,Carpet::map,reflevel,component))->proc() == dist::rank());
+      assert (allhomecnts.at(ind_prc(p,Carpet::map,reflevel,component)) == allcoords.at(ind_prc(p,Carpet::map,reflevel,component))->shape()[0]);
+      assert (allhomecnts.at(ind_prc(p,Carpet::map,reflevel,component)) == alloutputs.at(ind_prc(p,Carpet::map,reflevel,component))->shape()[0]);
+      
+      int const npoints = allhomecnts.at(ind_prc(p,Carpet::map,reflevel,component));
+      
+      // Do the processor-local interpolation
+      const void * tmp_interp_coords[dim];
+      for (int d=0; d<dim; ++d) {
+        tmp_interp_coords[d] = &(*allcoords.at(ind_prc(p,Carpet::map,reflevel,component)))[ivect(0,d,0)];
+      }
+      
+      
+      
+      vector<vector<void *> > tmp_output_arrays (num_tl);
+      vector<void *> tmp_status_array (num_tl);
+      
+      for (int tl=0; tl<num_tl; ++tl) {
+        
+        for (int n=0; n<N_input_arrays; ++n) {
+          
+          int const vi = input_array_variable_indices[n];
+          assert (vi>=0 && vi<CCTK_NumVars());
+          
+          int const gi = CCTK_GroupIndexFromVarI (vi);
+          assert (gi>=0 && gi<CCTK_NumGroups());
+          
+          int const table = CCTK_GroupTagsTableI (gi);
+          assert (table>=0);
+          
+          int my_num_tl;
+          CCTK_INT interp_num_time_levels;
+          int const ilen = Util_TableGetInt
+            (table, &interp_num_time_levels, "InterpNumTimelevels");
+          if (ilen == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+            my_num_tl = num_tl;
+          } else if (ilen >= 0) {
+            my_num_tl = interp_num_time_levels;
+            assert (my_num_tl>0 && my_num_tl<=num_tl);
+          } else {
+            assert (0);
+          }
+          
+          if (vi == -1) {
+            input_arrays.at(n) = NULL;
+          } else {
+            // Do a dummy interpolation from a later timelevel
+            // if the desired timelevel does not exist
+            int const my_tl = tl >= my_num_tl ? 0 : tl;
+            assert (vi>=0 && vi<CCTK_NumVars());
+#if 0
+            input_arrays.at(n) = CCTK_VarDataPtrI (cgh, my_tl, vi);
+#else
+            int const vi0 = CCTK_FirstVarIndexI (gi);
+            input_arrays.at(n)
+              = ((*arrdata.at(gi).at(Carpet::map).data.at(vi-vi0))
+                 (my_tl, reflevel, component, mglevel)->storage());
+#endif
+          }
+        } // for input arrays
+        
+        tmp_output_arrays.at(tl).resize (N_output_arrays);
+        for (int j=0; j<N_output_arrays; ++j) {
+          assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
+          if (need_time_interp) {
+            tmp_output_arrays.at(tl).at(j) = new CCTK_REAL [npoints];
+          } else {
+            tmp_output_arrays.at(tl).at(j) = &(*alloutputs.at(ind_prc(p,Carpet::map,reflevel,component)))[ivect(0,j,0)];
           }
         }
-      }
-    }
+        tmp_status_array.at(tl) = &(*allstatuses.at(ind_prc(p,Carpet::map,reflevel,component)))[ivect(0,0,0)];
+        
+        ierr = Util_TableSetPointer
+          (param_table_handle, tmp_status_array.at(tl), "per_point_status");
+        assert (ierr >= 0);
+        
+        ierr = CCTK_InterpLocalUniform
+          (N_dims, local_interp_handle, param_table_handle,
+           &coord_origin[0], &coord_delta[0],
+           npoints,
+           interp_coords_type_code, tmp_interp_coords,
+           N_input_arrays, &lsh[0],
+           &input_array_type_codes[0], &input_arrays[0],
+           N_output_arrays,
+           output_array_type_codes, &tmp_output_arrays.at(tl)[0]);
+        if (ierr) {
+          CCTK_VWarn (4, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "The local interpolator returned the error code %d", ierr);
+        }
+        overall_ierr = min(overall_ierr, ierr);
+        
+        ierr = Util_TableDeleteKey
+          (param_table_handle, "per_point_status");
+        assert (! ierr);
+        
+      } // for tl
+      
+      // Interpolate in time, if necessary
+      if (need_time_interp) {
+        
+        for (int j=0; j<N_output_arrays; ++j) {
+          
+          // Find output variable indices
+          vector<CCTK_INT> operand_indices (N_output_arrays);
+          ierr = Util_TableGetIntArray
+            (param_table_handle, N_output_arrays,
+             &operand_indices.front(), "operand_indices");
+          if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+            assert (N_output_arrays == N_input_arrays);
+            for (int m=0; m<N_output_arrays; ++m) {
+              operand_indices.at(m) = m;
+            }
+          } else {
+            assert (ierr == N_output_arrays);
+          }
+          
+          // Find input array for this output array
+          int const n = operand_indices.at(j);
+          
+          int const vi = input_array_variable_indices[n];
+          assert (vi>=0 && vi<CCTK_NumVars());
+          
+          int const gi = CCTK_GroupIndexFromVarI (vi);
+          assert (gi>=0 && gi<CCTK_NumGroups());
+          
+          int const table = CCTK_GroupTagsTableI (gi);
+          assert (table>=0);
+          
+          int my_num_tl;
+          CCTK_INT interp_num_time_levels;
+          int const ilen = Util_TableGetInt
+            (table, &interp_num_time_levels, "InterpNumTimelevels");
+          if (ilen == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+            my_num_tl = num_tl;
+          } else if (ilen >= 0) {
+            my_num_tl = interp_num_time_levels;
+            assert (my_num_tl>0 && my_num_tl<=num_tl);
+          } else {
+            assert (0);
+          }
+          
+          if (! interpolation_times_differ && ! have_time_derivs) {
+            
+            // Get interpolation times
+            CCTK_REAL const time = current_time;
+            vector<CCTK_REAL> times(my_num_tl);
+            for (int tl=0; tl<my_num_tl; ++tl) {
+              times.at(tl) = vtt.at(Carpet::map)->time (tl, reflevel, mglevel);
+            }
+            
+            // Calculate interpolation weights
+            vector<CCTK_REAL> tfacs(my_num_tl);
+            switch (my_num_tl) {
+            case 1:
+              // no interpolation
+              // We have to assume that any GF with one timelevel
+              // is constant in time!!!
+              // assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
+              tfacs.at(0) = 1.0;
+              break;
+            case 2:
+              // linear (2-point) interpolation
+              tfacs.at(0) = (time - times.at(1)) / (times.at(0) - times.at(1));
+              tfacs.at(1) = (time - times.at(0)) / (times.at(1) - times.at(0));
+              break;
+            case 3:
+              // quadratic (3-point) interpolation
+              tfacs.at(0) = (time - times.at(1)) * (time - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
+              tfacs.at(1) = (time - times.at(0)) * (time - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
+              tfacs.at(2) = (time - times.at(0)) * (time - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
+              break;
+            default:
+              assert (0);
+            }
+            
+            // Interpolate
+            assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
+            for (int k=0; k<npoints; ++k) {
+              CCTK_REAL & dest = (*alloutputs.at(ind_prc(p,Carpet::map,reflevel,component)))[ivect(k,j,0)];
+              dest = 0;
+              for (int tl=0; tl<my_num_tl; ++tl) {
+                CCTK_REAL const src = ((CCTK_REAL const *)tmp_output_arrays.at(tl).at(j))[k];
+                dest += tfacs[tl] * src;
+              }
+            }
+            
+          } else {
+            
+            // Interpolate
+            assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
+            for (int k=0; k<npoints; ++k) {
+              
+              CCTK_REAL const time = interpolation_times.at(k);
+              CCTK_INT const deriv_order = time_deriv_order.at(k);
+              
+              // Get interpolation times
+              vector<CCTK_REAL> times(my_num_tl);
+              for (int tl=0; tl<my_num_tl; ++tl) {
+                times.at(tl) = vtt.at(Carpet::map)->time (tl, reflevel, mglevel);
+              }
+              
+              // Calculate interpolation weights
+              vector<CCTK_REAL> tfacs(my_num_tl);
+              switch (deriv_order) {
+              case 0:
+                switch (my_num_tl) {
+                case 1:
+                  // no interpolation
+                  // We have to assume that any GF with one timelevel
+                  // is constant in time!!!
+                  // assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
+                  tfacs.at(0) = 1.0;
+                  break;
+                case 2:
+                  // linear (2-point) interpolation
+                  tfacs.at(0) = (time - times.at(1)) / (times.at(0) - times.at(1));
+                  tfacs.at(1) = (time - times.at(0)) / (times.at(1) - times.at(0));
+                  break;
+                case 3:
+                  // quadratic (3-point) interpolation
+                  tfacs.at(0) = (time - times.at(1)) * (time - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
+                  tfacs.at(1) = (time - times.at(0)) * (time - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
+                  tfacs.at(2) = (time - times.at(0)) * (time - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
+                  break;
+                default:
+                  assert (0);
+                }
+                break;
+                
+              case 1:
+                switch (my_num_tl) {
+                case 2:
+                  // linear (2-point) interpolation
+                  // first order accurate
+                  tfacs.at(0) = (1 - times.at(1)) / (times.at(0) - times.at(1));
+                  tfacs.at(1) = (1 - times.at(0)) / (times.at(1) - times.at(0));
+                  break;
+                case 3:
+                  // quadratic (3-point) interpolation
+                  // second order accurate
+                  tfacs.at(0) = ((1 - times.at(1)) * (time - times.at(2)) + (time - times.at(1)) * (1 - times.at(2))) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
+                  tfacs.at(1) = ((1 - times.at(0)) * (time - times.at(2)) + (time - times.at(0)) * (1 - times.at(2))) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
+                  tfacs.at(2) = ((1 - times.at(0)) * (time - times.at(1)) + (time - times.at(0)) * (1 - times.at(1))) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
+                  break;
+                default:
+                  assert (0);
+                }
+                break;
+                
+              case 2:
+                switch (my_num_tl) {
+                case 3:
+                  // quadratic (3-point) interpolation
+                  // second order accurate
+                  tfacs.at(0) = 2 * (1 - times.at(1)) * (1 - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
+                  tfacs.at(1) = 2 * (1 - times.at(0)) * (1 - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
+                  tfacs.at(2) = 2 * (1 - times.at(0)) * (1 - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
+                  break;
+                default:
+                  assert (0);
+                }
+                break;
+                
+              default:
+                assert (0);
+              } // switch time_deriv_order
+              
+              CCTK_REAL & dest = (*alloutputs.at(ind_prc(p,Carpet::map,reflevel,component)))[ivect(k,j,0)];
+              dest = 0;
+              for (int tl=0; tl<my_num_tl; ++tl) {
+                CCTK_REAL const src = ((CCTK_REAL const *)tmp_output_arrays.at(tl).at(j))[k];
+                dest += tfacs[tl] * src;
+              }
+            }
+            
+          } // if interpolation_times_differ
+          
+        } // for j
+        
+        for (int tl=0; tl<num_tl; ++tl) {
+          for (int j=0; j<N_output_arrays; ++j) {
+            delete [] (CCTK_REAL *)tmp_output_arrays.at(tl).at(j);
+          }
+        }
+        
+      } // if need_time_interp
+      
+    } // for processors
     
-    
-    
-    int global_overall_ierr;
-    MPI_Allreduce
-      (&overall_ierr, &global_overall_ierr, 1, MPI_INT, MPI_MIN, comm);
-    
-    
-    
-    // Done.
-    return global_overall_ierr;
+    return overall_ierr;
   }
   
 } // namespace CarpetInterp
