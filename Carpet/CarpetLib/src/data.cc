@@ -1041,7 +1041,6 @@ void data<T>
     assert (times.size() == 1);
     assert (srcs.size()>=1);
     switch (order_space) {
-    case 0:
     case 1:
       if (all (sext.stride() == dext.stride() * 2)) {
         CCTK_FNAME(prolongate_3d_real8_rf2)
@@ -1059,7 +1058,6 @@ void data<T>
            srcbbox, dstbbox, regbbox);
       }
       break;
-    case 2:
     case 3:
       if (all (sext.stride() == dext.stride() * 2)) {
         CCTK_FNAME(prolongate_3d_real8_o3_rf2)
@@ -1077,7 +1075,6 @@ void data<T>
            srcbbox, dstbbox, regbbox);
       }
       break;
-    case 4:
     case 5:
       CCTK_FNAME(prolongate_3d_real8_o5)
         ((const CCTK_REAL8*)srcs[0]->storage(),
@@ -1099,7 +1096,6 @@ void data<T>
       assert (abs(times[0] - time) < eps);
       assert (srcs.size()>=1);
       switch (order_space) {
-      case 0:
       case 1:
         if (all (sext.stride() == dext.stride() * 2)) {
           CCTK_FNAME(prolongate_3d_real8_rf2)
@@ -1117,7 +1113,6 @@ void data<T>
              srcbbox, dstbbox, regbbox);
         }
         break;
-      case 2:
       case 3:
         if (all (sext.stride() == dext.stride() * 2)) {
           CCTK_FNAME(prolongate_3d_real8_o3_rf2)
@@ -1135,7 +1130,6 @@ void data<T>
              srcbbox, dstbbox, regbbox);
         }
         break;
-      case 4:
       case 5:
         CCTK_FNAME(prolongate_3d_real8_o5)
           ((const CCTK_REAL8*)srcs[0]->storage(),
@@ -1152,7 +1146,6 @@ void data<T>
     case 1:
       assert (srcs.size()>=2);
       switch (order_space) {
-      case 0:
       case 1:
         if (all (sext.stride() == dext.stride() * 2)) {
           CCTK_FNAME(prolongate_3d_real8_2tl_rf2)
@@ -1172,7 +1165,6 @@ void data<T>
              srcbbox, dstbbox, regbbox);
         }
         break;
-      case 2:
       case 3:
         if (all (sext.stride() == dext.stride() * 2)) {
           CCTK_FNAME(prolongate_3d_real8_2tl_o3_rf2)
@@ -1192,7 +1184,6 @@ void data<T>
              srcbbox, dstbbox, regbbox);
         }
         break;
-      case 4:
       case 5:
         CCTK_FNAME(prolongate_3d_real8_2tl_o5)
           ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
@@ -1210,7 +1201,6 @@ void data<T>
     case 2:
       assert (srcs.size()>=3);
       switch (order_space) {
-      case 0:
       case 1:
         if (all (sext.stride() == dext.stride() * 2)) {
           CCTK_FNAME(prolongate_3d_real8_3tl_rf2)
@@ -1232,7 +1222,6 @@ void data<T>
              srcbbox, dstbbox, regbbox);
         }
         break;
-      case 2:
       case 3:
         if (all (sext.stride() == dext.stride() * 2)) {
           CCTK_FNAME(prolongate_3d_real8_3tl_o3_rf2)
@@ -1254,7 +1243,6 @@ void data<T>
              srcbbox, dstbbox, regbbox);
         }
         break;
-      case 4:
       case 5:
         CCTK_FNAME(prolongate_3d_real8_3tl_o5)
           ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
@@ -1306,11 +1294,9 @@ void data<T>
       break;
     case 1:
       switch (order_space) {
-      case 0:
       case 1:
         CCTK_WARN (0, "There is no stencil for op=\"TVD\" with order_space=1");
         break;
-      case 2:
       case 3:
         CCTK_FNAME(prolongate_3d_real8_2tl_rf2)
           ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
@@ -1333,11 +1319,9 @@ void data<T>
       break;
     case 2: 
       switch (order_space) {
-      case 0:
       case 1:
         CCTK_WARN (0, "There is no stencil for op=\"TVD\" with order_space=1");
         break;
-      case 2:
       case 3:
         CCTK_FNAME(prolongate_3d_real8_3tl_rf2)
           ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
@@ -1371,11 +1355,9 @@ void data<T>
       assert (times.size() == 1);
       assert (abs(times[0] - time) < eps);
       switch (order_space) {
-      case 0:
       case 1:
         CCTK_WARN (0, "There is no stencil for op=\"ENO\" with order_space=1");
         break;
-      case 2:
       case 3:
         CCTK_FNAME(prolongate_3d_real8_eno)
           ((const CCTK_REAL8*)srcs[0]->storage(),
@@ -1390,11 +1372,9 @@ void data<T>
       break;
     case 1:
       switch (order_space) {
-      case 0:
       case 1:
         CCTK_WARN (0, "There is no stencil for op=\"ENO\" with order_space=1");
         break;
-      case 2:
       case 3:
         CCTK_FNAME(prolongate_3d_real8_2tl_eno)
           ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
@@ -1410,11 +1390,9 @@ void data<T>
       break;
     case 2: 
       switch (order_space) {
-      case 0:
       case 1:
         CCTK_WARN (0, "There is no stencil for op=\"ENO\" with order_space=1");
         break;
-      case 2:
       case 3:
         CCTK_FNAME(prolongate_3d_real8_3tl_eno)
           ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
