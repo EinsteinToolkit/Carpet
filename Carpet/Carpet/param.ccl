@@ -152,6 +152,7 @@ CCTK_INT prolongation_order_space "Order of prolongation operator in space" STEE
   1 :: "first order (linear)"
   3 :: "third order (cubic)"
   5 :: "fifth order"
+  7 :: "seventh order"
 } 1
 
 CCTK_INT prolongation_order_time "Order of prolongation operator in time" STEERABLE=recover
