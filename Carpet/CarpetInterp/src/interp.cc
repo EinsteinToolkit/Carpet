@@ -524,6 +524,22 @@ namespace CarpetInterp {
     
     
     
+    // Free coordinate patches
+    for (int p=0; p<nprocs; ++p) {
+      for (int rl=minrl; rl<maxrl; ++rl) {
+        for (int m=0; m<maps; ++m) {
+          for (int c=0; c<vhh.at(m)->components(rl); ++c) {
+            delete allmaps.at(ind_prc(p,m,rl,c));
+            allmaps.at(ind_prc(p,m,rl,c)) = NULL;
+            delete allcoords.at(ind_prc(p,m,rl,c));
+            allcoords.at(ind_prc(p,m,rl,c)) = NULL;
+          }
+        }
+      }
+    }
+    
+    
+    
     transfer_output_patches_back
       (cgh, nprocs,
        minrl, maxrl,
