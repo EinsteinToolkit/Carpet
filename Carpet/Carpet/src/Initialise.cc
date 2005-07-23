@@ -407,23 +407,23 @@ namespace Carpet {
   // data
   void get_two_extra_timelevels_of_data (cGH* cgh)
   {
-        Waypoint ("Initialising three timelevels");
+    Waypoint ("Initialising three timelevels");
 
-        initialise_3_Timelevels (cgh);
+    initialise_3_Timelevels (cgh);
 
-        delta_time *= -1;
-        initialise_Flip_Timelevels (cgh);
+    delta_time *= -1;
+    initialise_Flip_Timelevels (cgh);
 
-        initialise_evolve_3TL_backwards_Ib (cgh);
+    initialise_evolve_3TL_backwards_Ib (cgh);
 
-        Waypoint ("Hourglass structure in place");
+    Waypoint ("Hourglass structure in place");
 
-        initialise_evolve_3TL_backwards_IIb_Ic (cgh);
+    initialise_evolve_3TL_backwards_IIb_Ic (cgh);
 
-        delta_time *= -1;
-        initialise_Flip_Timelevels_back (cgh);
+    delta_time *= -1;
+    initialise_Flip_Timelevels_back (cgh);
 
-        Waypoint ("Finished initialising three timelevels");
+    Waypoint ("Finished initialising three timelevels");
   }
 
   void initialise_3_Timelevels (cGH* cgh)
