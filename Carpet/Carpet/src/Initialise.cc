@@ -17,26 +17,32 @@ namespace Carpet {
   using namespace std;
 
 
-  static void output_the_grid_structure ( cGH* cgh );
-  static void register_coordinates_and_check_parameters ( cGH* cgh );
-  static void recovery_I ( cGH* cgh, int rl );
-  static void recovery_Regrid ( cGH* cgh, int rl );
-  static void recovery_II ( cGH* cgh );
-  static void
-  initialisation_I ( cGH* cgh, int rl, int init_each_timelevel );
-  static void initialise_rewind ( cGH* cgh, int num_tl );
-  static void initialise_Schedule_INITIAL ( cGH* cgh, int num_tl );
-  static void
-  initialise_Regrid ( cGH* cgh, int rl, int prolongate_initial_data );
-  static void initialise_Restrict ( cGH* cgh );
-  static void initialisation_II ( cGH* cgh );
-  static void get_two_extra_timelevels_of_data ( cGH* cgh );
-  static void initialise_3_Timelevels ( cGH* cgh );
-  static void initialise_Flip_Timelevels ( cGH* cgh );
-  static void initialise_evolve_3TL_backwards_Ib ( cGH* cgh );
-  static void initialise_evolve_3TL_backwards_IIb_Ic ( cGH* cgh );
-  static void initialise_Flip_Timelevels_back ( cGH* cgh );
-  static void initialisation_III ( cGH* cgh );
+
+  static void output_grid_structure (cGH* cgh);
+  static void setup_I (cGH* cgh);
+
+  static void recover_I (cGH* cgh, int rl);
+  static void recover_Regrid (cGH* cgh, int rl);
+  static void recover_II (cGH* cgh);
+
+  static void initialise_I (cGH* cgh, int rl, int init_each_timelevel);
+  static void initialise_I_rewind (cGH* cgh, int num_tl);
+  static void initialise_I_initialise (cGH* cgh, int num_tl);
+  static void initialise_Regrid (cGH* cgh, int rl, int prolongate_initial_data);
+  static void initialise_Restrict (cGH* cgh);
+  static void initialise_II (cGH* cgh);
+  static void initialise_III (cGH* cgh);
+
+  static void initialise_3tl (cGH* cgh);
+  static void initialise_3tl_evolve_Ia (cGH* cgh);
+  static void initialise_3tl_flip_timelevels (cGH* cgh);
+  static void initialise_3tl_evolve_Ib (cGH* cgh);
+  static void initialise_3tl_evolve_IIb_Ic (cGH* cgh);
+  static void initialise_3tl_flip_timelevels_back (cGH* cgh);
+
+  static void print_internal_data ();
+
+
 
   int Initialise (tFleshConfig* fc)
   {
@@ -62,73 +68,54 @@ namespace Carpet {
 
     CCTKi_InitGHExtensions (cgh);
 
-    output_the_grid_structure (cgh);
+    output_grid_structure (cgh);
 
-    register_coordinates_and_check_parameters (cgh);
+    setup_I (cgh);
 
     if (fc->recovered) {
+      // Read data from a checkpoint file
 
       for (int rl=0; rl<reflevels; ++rl) {
-        recovery_I (cgh, rl);
-        recovery_Regrid (cgh, rl);
+        recover_I (cgh, rl);
+        recover_Regrid (cgh, rl);
       }
 
-      recovery_II (cgh);
+      recover_II (cgh);
 
-      if (output_internal_data) {
-        CCTK_INFO ("Internal data dump:");
-        const int oldprecision = cout.precision();
-        cout.precision (17);
-        cout << "   global_time: " << global_time << endl
-             << "   leveltimes: " << leveltimes << endl
-             << "   delta_time: " << delta_time << endl;
-        cout.precision (oldprecision);
-      }
+      print_internal_data ();
 
     } else {
+      // Calculate initial data
 
       for (int rl=0; rl<reflevels; ++rl) {
-        initialisation_I (cgh, rl, init_each_timelevel);
+        initialise_I (cgh, rl, init_each_timelevel);
         initialise_Regrid (cgh, rl, prolongate_initial_data);
       }
 
       initialise_Restrict (cgh);
 
-      initialisation_II (cgh);
+      initialise_II (cgh);
 
-      if (output_internal_data) {
-        CCTK_INFO ("Internal data dump:");
-        const int oldprecision = cout.precision();
-        cout.precision (17);
-        cout << "   global_time: " << global_time << endl
-             << "   leveltimes: " << leveltimes << endl
-             << "   delta_time: " << delta_time << endl;
-        cout.precision (oldprecision);
-      }
+      print_internal_data ();
 
       if (init_3_timelevels) {
-        get_two_extra_timelevels_of_data (cgh);
+        initialise_3tl (cgh);
       }
     }
 
-    initialisation_III (cgh);
+    // Analyse initial data
+    initialise_III (cgh);
 
-    if (output_internal_data) {
-      CCTK_INFO ("Internal data dump:");
-      const int oldprecision = cout.precision();
-      cout.precision (17);
-      cout << "   global_time: " << global_time << endl
-           << "   leveltimes: " << leveltimes << endl
-           << "   delta_time: " << delta_time << endl;
-      cout.precision (oldprecision);
-    }
+    print_internal_data ();
 
     Waypoint ("Done with initialisation");
 
     return 0;
   }
-
-  void output_the_grid_structure (cGH* cgh)
+  
+  
+  
+  void output_grid_structure (cGH* cgh)
   {
     // Loop over maps
     for (int m=0; m<maps; ++m) {
@@ -140,7 +127,7 @@ namespace Carpet {
     } // loop over maps
   }
 
-  void register_coordinates_and_check_parameters (cGH* cgh)
+  void setup_I (cGH* cgh)
   {
     BEGIN_MGLEVEL_LOOP(cgh) {
       do_global_mode = true;
@@ -153,11 +140,14 @@ namespace Carpet {
       // Check parameters
       Checkpoint ("Scheduling PARAMCHECK");
       CCTK_ScheduleTraverse ("CCTK_PARAMCHECK", cgh, CallFunction);
-      CCTKi_FinaliseParamWarn();
     } END_MGLEVEL_LOOP;
+    
+    CCTKi_FinaliseParamWarn();
   }
 
-  void recovery_I (cGH* cgh, int rl)
+
+
+  void recover_I (cGH* cgh, int rl)
   {
     BEGIN_MGLEVEL_LOOP(cgh) {
       enter_level_mode (cgh, rl);
@@ -183,7 +173,7 @@ namespace Carpet {
     } END_MGLEVEL_LOOP;
   }
 
-  void recovery_Regrid (cGH* cgh, int rl)
+  void recover_Regrid (cGH* cgh, int rl)
   {
     bool did_regrid = false;
     {
@@ -219,7 +209,7 @@ namespace Carpet {
     } // if did_regrid
   }
 
-  void recovery_II (cGH* cgh)
+  void recover_II (cGH* cgh)
   {
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cgh) {
@@ -246,7 +236,9 @@ namespace Carpet {
     }
   }
 
-  void initialisation_I (cGH* cgh, int rl, int init_each_timelevel)
+
+
+  void initialise_I (cGH* cgh, int rl, int init_each_timelevel)
   {
     BEGIN_MGLEVEL_LOOP(cgh) {
       enter_level_mode (cgh, rl);
@@ -269,9 +261,9 @@ namespace Carpet {
 
       const int num_tl = init_each_timelevel ? 3 : 1;
 
-      initialise_rewind (cgh, num_tl);
+      initialise_I_rewind (cgh, num_tl);
 
-      initialise_Schedule_INITIAL (cgh, num_tl);
+      initialise_I_initialise (cgh, num_tl);
 
       // Checking
       PoisonCheck (cgh, currenttime);
@@ -280,7 +272,7 @@ namespace Carpet {
     } END_MGLEVEL_LOOP;
   }
 
-  void initialise_rewind (cGH* cgh, int num_tl)
+  void initialise_I_rewind (cGH* cgh, int num_tl)
   {
     for (int m=0; m<maps; ++m) {
       vtt.at(m)->set_delta
@@ -296,7 +288,7 @@ namespace Carpet {
     }
   }
 
-  void initialise_Schedule_INITIAL (cGH* cgh, int num_tl)
+  void initialise_I_initialise (cGH* cgh, int num_tl)
   {
     const bool outer_do_global_mode = do_global_mode;
     for (int tl=num_tl-1; tl>=0; --tl) {
@@ -370,7 +362,7 @@ namespace Carpet {
     }
   }
 
-  void initialisation_II (cGH* cgh)
+  void initialise_II (cGH* cgh)
   {
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cgh) {
@@ -403,30 +395,29 @@ namespace Carpet {
     }
   }
 
-  // Use Scott Hawley's algorithm for getting two extra timelevels of
-  // data
-  void get_two_extra_timelevels_of_data (cGH* cgh)
+  // Use Scott Hawley's algorithm to get two extra timelevels of data
+  void initialise_3tl (cGH* cgh)
   {
     Waypoint ("Initialising three timelevels");
 
-    initialise_3_Timelevels (cgh);
+    initialise_3tl_evolve_Ia (cgh);
 
     delta_time *= -1;
-    initialise_Flip_Timelevels (cgh);
+    initialise_3tl_flip_timelevels (cgh);
 
-    initialise_evolve_3TL_backwards_Ib (cgh);
+    initialise_3tl_evolve_Ib (cgh);
 
     Waypoint ("Hourglass structure in place");
 
-    initialise_evolve_3TL_backwards_IIb_Ic (cgh);
+    initialise_3tl_evolve_IIb_Ic (cgh);
 
     delta_time *= -1;
-    initialise_Flip_Timelevels_back (cgh);
+    initialise_3tl_flip_timelevels_back (cgh);
 
     Waypoint ("Finished initialising three timelevels");
   }
 
-  void initialise_3_Timelevels (cGH* cgh)
+  void initialise_3tl_evolve_Ia (cGH* cgh)
   {
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cgh) {
@@ -464,7 +455,7 @@ namespace Carpet {
     }
   }
 
-  void initialise_Flip_Timelevels (cGH* cgh)
+  void initialise_3tl_flip_timelevels (cGH* cgh)
   {
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cgh) {
@@ -484,7 +475,7 @@ namespace Carpet {
     }
   }
 
-  void initialise_evolve_3TL_backwards_Ib (cGH* cgh)
+  void initialise_3tl_evolve_Ib (cGH* cgh)
   {
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cgh) {
@@ -518,7 +509,7 @@ namespace Carpet {
 
   // Evolve each level "backwards" one more timestep
   // Starting with the finest level and proceeding to the coarsest
-  void initialise_evolve_3TL_backwards_IIb_Ic (cGH* cgh)
+  void initialise_3tl_evolve_IIb_Ic (cGH* cgh)
   {
     for (int rl=reflevels-1; rl>=0; --rl) {
       BEGIN_MGLEVEL_LOOP(cgh) {
@@ -576,7 +567,7 @@ namespace Carpet {
     }
   }
 
-  void initialise_Flip_Timelevels_back (cGH* cgh)
+  void initialise_3tl_flip_timelevels_back (cGH* cgh)
   {
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cgh) {
@@ -604,7 +595,7 @@ namespace Carpet {
     }
   }
 
-  void initialisation_III (cGH* cgh)
+  void initialise_III (cGH* cgh)
   {
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cgh) {
@@ -640,6 +631,21 @@ namespace Carpet {
 
         leave_level_mode (cgh);
       } END_MGLEVEL_LOOP;
+    }
+  }
+
+  void print_internal_data ()
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (output_internal_data) {
+      CCTK_INFO ("Internal data dump:");
+      const int oldprecision = cout.precision();
+      cout.precision (17);
+      cout << "   global_time: " << global_time << endl
+           << "   leveltimes: " << leveltimes << endl
+           << "   delta_time: " << delta_time << endl;
+      cout.precision (oldprecision);
     }
   }
 
