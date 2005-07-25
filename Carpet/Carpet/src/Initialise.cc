@@ -25,10 +25,10 @@ namespace Carpet {
   static void recover_Regrid (cGH * cgh, int rl);
   static void recover_II (cGH * cgh, int rl);
 
-  static void initialise_I (cGH * cgh, int rl, int init_each_timelevel);
+  static void initialise_I (cGH * cgh, int rl);
   static void initialise_I_rewind (cGH * cgh, int num_tl);
   static void initialise_I_initialise (cGH * cgh, int num_tl);
-  static void initialise_Regrid (cGH * cgh, int rl, int prolongate_initial_data);
+  static void initialise_Regrid (cGH * cgh, int rl);
   static void initialise_Restrict (cGH * cgh, int rl);
   static void initialise_II (cGH * cgh, int rl);
   static void initialise_III (cGH * cgh, int rl);
@@ -90,8 +90,8 @@ namespace Carpet {
       // Calculate initial data
 
       for (int rl=0; rl<reflevels; ++rl) {
-        initialise_I (cgh, rl, init_each_timelevel);
-        initialise_Regrid (cgh, rl, prolongate_initial_data);
+        initialise_I (cgh, rl);
+        initialise_Regrid (cgh, rl);
       }
 
       for (int rl=reflevels-1; rl>=0; --rl) {
@@ -244,8 +244,10 @@ namespace Carpet {
 
 
 
-  void initialise_I (cGH * const cgh, int rl, int init_each_timelevel)
+  void initialise_I (cGH * const cgh, int const rl)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     BEGIN_MGLEVEL_LOOP(cgh) {
       enter_level_mode (cgh, rl);
       do_global_mode = reflevel==0;
@@ -316,8 +318,10 @@ namespace Carpet {
     do_global_mode = outer_do_global_mode;
   }
 
-  void initialise_Regrid (cGH * const cgh, int rl, int prolongate_initial_data)
+  void initialise_Regrid (cGH * const cgh, int const rl)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     bool did_regrid = false;
     {
       const int ml=0;
