@@ -280,7 +280,7 @@ namespace Carpet {
     } END_MGLEVEL_LOOP;
   }
 
-  void initialise_I_rewind (cGH * const cgh, int num_tl)
+  void initialise_I_rewind (cGH * const cgh, int const num_tl)
   {
     for (int m=0; m<maps; ++m) {
       vtt.at(m)->set_delta
@@ -296,7 +296,7 @@ namespace Carpet {
     }
   }
 
-  void initialise_I_initialise (cGH * const cgh, int num_tl)
+  void initialise_I_initialise (cGH * const cgh, int const num_tl)
   {
     const bool outer_do_global_mode = do_global_mode;
     for (int tl=num_tl-1; tl>=0; --tl) {
