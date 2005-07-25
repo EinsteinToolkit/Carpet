@@ -19,7 +19,11 @@
 % Do not delete next line
 % START CACTUS THORNGUIDE
 
+\ifx\ThisThorn\undefined
 \newcommand{\ThisThorn}{{\it CarpetIOStreamedHDF5}}
+\else
+\renewcommand{\ThisThorn}{{\it CarpetIOStreamedHDF5}}
+\fi
 
 \begin{abstract}
 Thorn \ThisThorn\ provides an I/O method to stream Cactus grid
