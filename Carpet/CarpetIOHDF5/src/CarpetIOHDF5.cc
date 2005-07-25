@@ -804,14 +804,18 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
     HDF5_ERROR (H5Fclose(file));
   }
 
-  if (retval == 0 and file >= 0) {
-    if (rename (tempname, filename)) {
-      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Could not rename temporary checkpoint file '%s' to '%s'",
-                  tempname, filename);
-      retval = -1;
-    } else {
-      if (checkpoint_keep > 0) {
+  // get global error count
+  int temp = retval;
+  MPI_Allreduce (&temp, &retval, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+  if (retval == 0) {
+    if (file >= 0) {
+      if (rename (tempname, filename)) {
+        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Could not rename temporary checkpoint file '%s' to '%s'",
+                    tempname, filename);
+        retval = -1;
+      } else if (checkpoint_keep > 0) {
         CarpetIOHDF5GH *myGH =
           (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
 
@@ -836,6 +840,10 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
         }
       }
     }
+  } else {
+    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Failed to create checkpoint at iteration %d",
+                cctkGH->cctk_iteration);
   }
 
   // save the iteration number of this checkpoint
