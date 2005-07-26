@@ -1,10 +1,10 @@
-#include <assert.h>
-#include <float.h>
-#include <limits.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-
+#include <algorithm>
+#include <cassert>
+#include <cfloat>
+#include <climits>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <complex>
 #include <limits>
 #include <vector>
@@ -12,7 +12,6 @@
 #include <mpi.h>
 
 #include "cctk.h"
-
 #include "util_ErrorCodes.h"
 #include "util_Table.h"
 
