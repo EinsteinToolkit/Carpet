@@ -9,7 +9,6 @@
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
 #include "cctk_Version.h"
-#include "util_String.h"
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
@@ -395,22 +394,21 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
 
     // notify the user about the new setting
     if (not CCTK_Equals (verbose, "none")) {
-      char *msg = NULL;
+      int count = 0;
+      string msg ("Periodic HDF5 output requested for '");
       for (int i = CCTK_NumVars () - 1; i >= 0; i--) {
         if (myGH->requests[i]) {
-          char *fullname = CCTK_FullName (i);
-          if (not msg) {
-            Util_asprintf (&msg, "Periodic HDF5 output requested for '%s'",
-                           fullname);
-          } else {
-            Util_asprintf (&msg, "%s, '%s'", msg, fullname);
+          if (count++) {
+            msg += "', '";
           }
+          char *fullname = CCTK_FullName (i);
+          msg += fullname;
           free (fullname);
         }
       }
-      if (msg) {
-        CCTK_INFO (msg);
-        free (msg);
+      if (count) {
+        msg += "'";
+        CCTK_INFO (msg.c_str());
       }
     }
 

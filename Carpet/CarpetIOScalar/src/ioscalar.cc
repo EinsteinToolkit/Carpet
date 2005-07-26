@@ -13,7 +13,6 @@
 #include "cctk_Functions.h"
 #include "cctk_Parameters.h"
 #include "util_Network.h"
-#include "util_String.h"
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
@@ -595,38 +594,29 @@ namespace CarpetIOScalar {
     DECLARE_CCTK_PARAMETERS;
 
     // re-parse the 'IOScalar::outScalar_vars' parameter if it has changed
-    if (strcmp (outScalar_vars, IOparameters.out_vars))
-    {
+    if (strcmp (outScalar_vars, IOparameters.out_vars)) {
       IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING,
                                  "IOScalar::outScalar_vars",
                                  IOparameters.stop_on_parse_errors,
                                  outScalar_vars, -1, IOparameters.requests);
 
       // notify the user about the new setting
-      if (! CCTK_Equals (verbose, "none"))
-      {
-        char *msg = NULL;
-        for (int i = CCTK_NumVars () - 1; i >= 0; i--)
-        {
-          if (IOparameters.requests[i])
-          {
+      if (! CCTK_Equals (verbose, "none")) {
+        int count = 0;
+        string msg ("Periodic scalar output requested for '");
+        for (int i = CCTK_NumVars () - 1; i >= 0; i--) {
+          if (IOparameters.requests[i]) {
+            if (count++) {
+              msg += "', '";
+            }
             char *fullname = CCTK_FullName (i);
-            if (! msg)
-            {
-              Util_asprintf (&msg, "Periodic scalar output requested for '%s'",
-                             fullname);
-            }
-            else
-            {
-              Util_asprintf (&msg, "%s, '%s'", msg, fullname);
-            }
+            msg += fullname;
             free (fullname);
           }
         }
-        if (msg)
-        {
-          CCTK_INFO (msg);
-          free (msg);
+        if (count) {
+          msg += "'";
+          CCTK_INFO (msg.c_str());
         }
       }
 
