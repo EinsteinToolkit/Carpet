@@ -1581,14 +1581,27 @@ void data<CCTK_REAL8>
           << "  times=" << times;
       CCTK_WARN (0, buf.str().c_str());
     }
+#if 0
+    // We cannot check because we do not know delta_time
   } else {
-    if (time > max_time + eps) {
-      ostringstream buf;
-      buf << "Internal error: extrapolation into the future."
-          << "  time=" << time
-          << "  times=" << times;
-      CCTK_WARN (0, buf.str().c_str());
+    if (delta_time > 0) {
+      if (time > max_time + eps) {
+        ostringstream buf;
+        buf << "Internal error: extrapolation into the future."
+            << "  time=" << time
+            << "  times=" << times;
+        CCTK_WARN (0, buf.str().c_str());
+      }
+    } else {
+      if (time < min_time - eps) {
+        ostringstream buf;
+        buf << "Internal error: extrapolation into the past."
+            << "  time=" << time
+            << "  times=" << times;
+        CCTK_WARN (0, buf.str().c_str());
+      }
     }
+#endif
   }
 }
 
