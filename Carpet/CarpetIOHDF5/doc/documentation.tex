@@ -9,9 +9,9 @@
 \begin{document}
 
 % The author of the documentation
-\author{Erik Schnetter $<$schnetter@uni-tuebingen.de$>$\\
-        Christian D. Ott $<$cott@aei.mpg.de$>$\\
-        Thomas Radke $<$tradke@aei.mpg.de$>$}
+\author{Erik Schnetter \textless schnetter@uni-tuebingen.de\textgreater\\
+        Christian D. Ott \textless cott@aei.mpg.de\textgreater\\
+        Thomas Radke \textless tradke@aei.mpg.de\textgreater}
 
 % The title of the document (not necessarily the name of the Thorn)
 \title{CarpetIOHDF5}
@@ -150,8 +150,10 @@ When visualising chunked data files, they probably need to be recombined
 for a global view on the data.
 
 The default is to output distributed grid variables in parallel, each processor
-writing a file {\tt $<$varname$>$.file\_$<$processor ID$>$.h5}. Grid scalars
-and {\tt DISTRIB $=$ CONST} grid arrays are always output as unchunked data
+writing a file
+{\tt \textless varname\textgreater.file\_\textless processor ID\textgreater.h5}.
+Grid scalars
+and {\tt DISTRIB = CONST} grid arrays are always output as unchunked data
 on processor 0 only.\\
 Parallel output in a parallel simulation will ensure maximum I/O
 performance. Note that changing the output mode to serial I/O might only be
