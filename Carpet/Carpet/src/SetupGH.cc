@@ -686,7 +686,7 @@ namespace Carpet {
           // TODO: Check only if there is actually a symmetry boundary
           if (! CCTK_EQUALS (domain, "full")
               and (cntstag[0] or cntstag[1] or cntstag[2])) {
-            CCTK_WARN (0, "When Carpet::domain_from_coordbase = no, when Carpet::max_refinement_levels > 1, and when thorn CartGrid3D provides symmetry boundaries, then you have then you have to set CartGrid3D::avoid_origin = no");
+            CCTK_WARN (0, "When Carpet::domain_from_coordbase = no, when Carpet::max_refinement_levels > 1, and when thorn CartGrid3D provides symmetry boundaries, then you have to set CartGrid3D::avoid_origin = no");
           }
         }
       }
