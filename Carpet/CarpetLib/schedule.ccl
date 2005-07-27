@@ -5,3 +5,9 @@ SCHEDULE CarpetLib_printtimestats AT analysis
   LANG: C
   OPTIONS: global
 } "Print timing statistics if desired"
+
+SCHEDULE CarpetLib_printmemstats AT analysis
+{
+  LANG: C
+  OPTIONS: global
+} "Print memory statistics if desired"
