@@ -11,7 +11,7 @@
 #   @enddesc
 # @@*/          
 
-ActiveThorns = "boundary iobasic idscalarwavec time wavetoyc carpet carpetlib carpetregrid carpetslab carpetreduce cartgrid3d ioutil carpetioascii"
+ActiveThorns = "boundary iobasic idscalarwavec time wavetoyc carpet carpetlib carpetregrid carpetreduce cartgrid3d coordbase symbase ioutil carpetioascii"
  
 time::dtfac = 0.5
 
@@ -24,6 +24,7 @@ wavetoyc::bound = "radiation"
 grid::type = "BySpacing"
 grid::domain = "octant"
 grid::dxyz = 0.6
+grid::avoid_origin = "no"
 
 # this file produces wrong output because the coordinat thorn
 # produces wrong coordinate arrays.

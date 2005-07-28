@@ -11,7 +11,7 @@
 #   @enddesc
 # @@*/          
 
-ActiveThorns = "boundary iobasic idscalarwavec time wavetoyc carpet carpetlib carpetslab carpetreduce cartgrid3d ioutil ioascii"
+ActiveThorns = "boundary idscalarwavec time wavetoyc carpet carpetlib carpetreduce cartgrid3d coordbase symbase ioutil iobasic carpetioascii"
  
 time::dtfac = 0.5
 
@@ -34,7 +34,6 @@ cactus::cctk_itlast = 10
 IOBasic::outScalar_every = 1
 IOBasic::outScalar_vars = "wavetoy::phi"
 
-IOASCII::out1D_style = "gnuplot f(x)"
 IOASCII::out1D_every = 1
 IOASCII::out1D_z = "no"
 IOASCII::out1D_y = "no"
