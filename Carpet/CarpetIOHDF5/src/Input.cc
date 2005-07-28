@@ -23,8 +23,10 @@ typedef struct {
   int reflevel;
   int timestep;
   int timelevel;
+  int component;
   int rank;
   ivect iorigin;
+  vector<hsize_t> shape;
 } patch_t;
 
 // structure describing the contents of an HDF5 file to read from
@@ -170,12 +172,18 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
                 mglevel, reflevel);
   }
 
-  // create a bbox set for each variable to mark how much has been read already
+  // create a bbox set for each active timelevel of all variables
+  // to mark how much has been read already
   const int numvars = CCTK_NumVars ();
-  vector<bool> read_completely(numvars, false);
-  vector<vector<ibset> > bboxes_read (numvars);
-  for (int i = 0; i < bboxes_read.size(); i++) {
-    bboxes_read[i].resize (Carpet::maps);
+  vector<vector<bool> > read_completely(numvars);
+  vector<vector<vector<ibset> > > bboxes_read (numvars);
+  for (int vindex = 0; vindex < bboxes_read.size(); vindex++) {
+    const int timelevels = CCTK_ActiveTimeLevelsVI (cctkGH, vindex);
+    read_completely[vindex].resize (timelevels, false);
+    bboxes_read[vindex].resize (timelevels);
+    for (int tl = 0; tl < timelevels; tl++) {
+      bboxes_read[vindex][tl].resize (Carpet::maps);
+    }
   }
 
   // create a bbox set for each group to list how much needs to be read
@@ -217,6 +225,21 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     }
     assert (file.patches.size() > 0);
 
+    // some optimisation for the case when all processors recover
+    // from a single chunked checkpoint file:
+    // reorder the list so that processor-local components come first
+    if (fileset->nioprocs == 1) {
+      list<patch_t>::iterator patch = file.patches.begin();
+      while (patch != file.patches.end()) {
+        if (patch->component == dist::rank()) {
+          file.patches.push_front (*patch);
+          patch = file.patches.erase (patch);
+        } else {
+          patch++;
+        }
+      }
+    }
+
     // now loop over all patches contained in this file
     for (list<patch_t>::const_iterator patch = file.patches.begin();
          patch != file.patches.end();
@@ -246,22 +269,24 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       }
 
       // actually read the patch
-      if (not read_completely[patch->vindex]) {
-        ReadVar (cctkGH, file.file, patch, bboxes_read[patch->vindex],
+      if (not read_completely.at(patch->vindex).at(patch->timelevel)) {
+        ReadVar (cctkGH, file.file, patch,
+                 bboxes_read.at(patch->vindex).at(patch->timelevel),
                  in_recovery);
+
+        // update the read_completely entry
+        const int gindex = CCTK_GroupIndexFromVarI (patch->vindex);
+        read_completely.at(patch->vindex).at(patch->timelevel) =
+          bboxes_read.at(patch->vindex).at(patch->timelevel) ==
+          group_bboxes.at(gindex);
       }
     }
 
     // check if all variables have been read completely already
     int all_read_completely = true;
     for (int vindex = 0; vindex < read_completely.size(); vindex++) {
-      if (not read_completely[vindex]) {
-        const int gindex = CCTK_GroupIndexFromVarI (vindex);
-        const int gtype = CCTK_GroupTypeI (gindex);
-        if (gtype == CCTK_GF or (reflevel == 0 and mglevel == 0)) {
-          read_completely[vindex] = bboxes_read[vindex] == group_bboxes[gindex];
-          all_read_completely &= read_completely[vindex];
-        }
+      for (int tl = 0; tl < read_completely[vindex].size(); tl++) {
+        all_read_completely &= read_completely[vindex][tl];
       }
     }
     if (all_read_completely) {
@@ -272,22 +297,26 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   // check that all variables have been read completely on this mglevel/reflevel
   int num_incomplete = 0;
   for (int vindex = 0; vindex < read_completely.size(); vindex++) {
-    if (not read_completely[vindex]) {
-      // check if the variable has been read partially
-      size_t size = 0;
-      for (int map = 0; map < Carpet::maps; map++) {
-        size += bboxes_read[vindex][map].size();
+    for (int tl = 0; tl < read_completely[vindex].size(); tl++) {
+      if (not read_completely[vindex][tl]) {
+        // check if the variable has been read partially
+        size_t size = 0;
+        for (int map = 0; map < Carpet::maps; map++) {
+          size += bboxes_read[vindex][tl][map].size();
+        }
+        char* fullname = CCTK_FullName (vindex);
+        if (size == 0) {
+          CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "variable '%s' timelevel %d has not been read",
+                      fullname, tl);
+        } else {
+          CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "variable '%s' timelevel %d has been read only partially",
+                      fullname, tl);
+          num_incomplete++;
+        }
+        free (fullname);
       }
-      char* fullname = CCTK_FullName (vindex);
-      if (size == 0) {
-        CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "variable '%s' has not been read", fullname);
-      } else {
-        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "variable '%s' has been read only partially", fullname);
-        num_incomplete++;
-      }
-      free (fullname);
     }
   }
   if (num_incomplete) {
@@ -518,6 +547,8 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
   HDF5_ERROR (dataspace = H5Dget_space (dataset));
   patch.rank = H5Sget_simple_extent_ndims (dataspace);
   assert (patch.rank > 0 and patch.rank <= ::dim);
+  patch.shape.resize (patch.rank);
+  HDF5_ERROR (H5Sget_simple_extent_dims (dataspace, &patch.shape[0], NULL));
   HDF5_ERROR (H5Sclose (dataspace));
   HDF5_ERROR (attr = H5Aopen_name (dataset, "name"));
   HDF5_ERROR (attrtype = H5Aget_type (attr));
@@ -551,6 +582,13 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
   HDF5_ERROR (H5Aread (attr, H5T_NATIVE_INT, &patch.iorigin[0]));
   HDF5_ERROR (H5Aclose (attr));
   HDF5_ERROR (H5Dclose (dataset));
+
+  // try to obtain the component number from the patch's name
+  patch.component = -1;
+  const char* component_string = strstr (objectname, " c=");
+  if (component_string) {
+    sscanf (component_string, " c=%d", &patch.component);
+  }
 
   // add this patch to our list
   if (patch.vindex >=0 and patch.vindex < CCTK_NumVars ()) {
@@ -586,12 +624,6 @@ static int ReadVar (const cGH* const cctkGH,
   // grid arrays and scalars are read once on the coarsest reflevel
   assert (group.grouptype == CCTK_GF or (mglevel == 0 and reflevel == 0));
 
-  if (CCTK_Equals (verbose, "full")) {
-    char *fullname = CCTK_FullName (patch->vindex);
-    CCTK_VInfo (CCTK_THORNSTRING, "  reading '%s'", fullname);
-    free (fullname);
-  }
-
   // Check for storage
   if (not CCTK_QueryGroupStorageI(cctkGH, gindex)) {
     char *fullname = CCTK_FullName (patch->vindex);
@@ -601,25 +633,16 @@ static int ReadVar (const cGH* const cctkGH,
     return 0;
   }
 
-  hid_t dataset;
-  HDF5_ERROR (dataset = H5Dopen (file, patch->patchname.c_str()));
-  assert (dataset >= 0);
-
   // filereader reads the current timelevel
   int timelevel = in_recovery ? patch->timelevel : 0;
 
   // get dataset dimensions
-  hid_t filespace;
-  HDF5_ERROR (filespace = H5Dget_space (dataset));
   assert (group.dim == (group.grouptype == CCTK_SCALAR ?
                         patch->rank-1 : patch->rank));
-  vector<hsize_t> h5shape(patch->rank);
-  HDF5_ERROR (H5Sget_simple_extent_dims (filespace, &h5shape[0], NULL));
-
   ivect shape(1);
   int elems = 1;
   for (int i = 0; i < patch->rank; i++) {
-    shape[i] = h5shape[patch->rank-i-1];
+    shape[i] = patch->shape[patch->rank-i-1];
     elems   *= shape[i];
   }
   const hid_t datatype = CCTKtoHDF5_Datatype (cctkGH, group.vartype, 0);
@@ -630,6 +653,7 @@ static int ReadVar (const cGH* const cctkGH,
   ivect upper = lower + (shape - 1) * stride;
 
   // Traverse all local components on all maps
+  hid_t filespace = -1, dataset = -1;
   BEGIN_MAP_LOOP (cctkGH, group.grouptype) {
     struct arrdesc& data = arrdata.at(gindex).at(Carpet::map);
 
@@ -658,6 +682,13 @@ static int ReadVar (const cGH* const cctkGH,
         continue;
       }
 
+      if (CCTK_Equals (verbose, "full")) {
+        char *fullname = CCTK_FullName (patch->vindex);
+        CCTK_VInfo (CCTK_THORNSTRING, "  reading '%s' from dataset '%s'",
+                    fullname, patch->patchname.c_str());
+        free (fullname);
+      }
+
       // get the overlap with this component's exterior
       ibbox& membox =
         data.dd->boxes.at(mglevel).at(reflevel).at(component).exterior;
@@ -682,6 +713,13 @@ static int ReadVar (const cGH* const cctkGH,
           group.disttype == CCTK_DISTRIB_CONSTANT ?
           0 : (overlap.lower() - lower)[i] / stride[i];
       }
+
+      // open the dataset on the first time through
+      if (dataset < 0) {
+        HDF5_ERROR (dataset = H5Dopen (file, patch->patchname.c_str()));
+        HDF5_ERROR (filespace = H5Dget_space (dataset));
+      }
+
       // read the hyperslab
       hid_t memspace;
       HDF5_ERROR (memspace  = H5Screate_simple (patch->rank, memdims, NULL));
@@ -703,8 +741,10 @@ static int ReadVar (const cGH* const cctkGH,
 
   } END_MAP_LOOP;
 
-  HDF5_ERROR (H5Sclose (filespace));
-  HDF5_ERROR (H5Dclose (dataset));
+  if (dataset >= 0) {
+    HDF5_ERROR (H5Dclose (dataset));
+    HDF5_ERROR (H5Sclose (filespace));
+  }
 
   return 1;
 }
