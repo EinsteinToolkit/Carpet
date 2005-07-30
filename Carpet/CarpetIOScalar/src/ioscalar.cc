@@ -325,13 +325,15 @@ namespace CarpetIOScalar {
               file << "#" << endl;
             }
             file << "# " << varname << " (" << alias << ")" << endl;
-            file << "# iteration time data" << endl;
+            file << "# 1:iteration 2:time 3:data" << endl;
+            int col = 3;
             if (one_file_per_group) {
               file << "# data columns:";
               int const firstvar = CCTK_FirstVarIndexI(group);
               int const numvars = CCTK_NumVarsInGroupI(group);
               for (int n=firstvar; n<firstvar+numvars; ++n) {
-                file << " " << CCTK_VarName(n);
+                file << " " << col << ":" << CCTK_VarName(n);
+                col += CarpetSimpleMPIDatatypeLength (vartype);
               }
               file << endl;
             }
