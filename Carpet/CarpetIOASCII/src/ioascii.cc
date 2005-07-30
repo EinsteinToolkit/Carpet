@@ -1152,20 +1152,26 @@ namespace CarpetIOASCII {
 	   << "   component " << c
            << "   time level " << tl
            << endl
-	   << "# column format: it\ttl rl c ml\t";
+	   << "# column format: 1:it\t2:tl 3:rl 4:c 5:ml";
+        int col=6;
 	assert (dim>=1 && dim<=3);
 	const char* const coords = "xyz";
-	for (int d=0; d<dim-1; ++d) os << "i" << coords[d] << " "; os << "i" << coords[dim-1];
-	os << "\ttime\t";
-	for (int d=0; d<dim-1; ++d) os << coords[d] << " "; os << coords[dim-1];
-	os << "\tdata" << endl;
+	for (int d=0; d<dim; ++d) {
+          os << (d==0 ? "\t" : " ") << col++ << ":i" << coords[d];
+        }
+	os << "\t" << col++ << ":time";
+	for (int d=0; d<dim; ++d) {
+          os << (d==0 ? "\t" : " ") << col++ << ":" << coords[d];
+        }
+	os << "\t" << col << ":data" << endl;
         if (one_file_per_group) {
           os << "# data columns:";
           int const gindex = CCTK_GroupIndexFromVarI(vi);
           int const firstvar = CCTK_FirstVarIndexI(gindex);
           int const numvars = CCTK_NumVarsInGroupI(gindex);
           for (int n=firstvar; n<firstvar+numvars; ++n) {
-            os << " " << CCTK_VarName(n);
+            os << " " << col << ":" << CCTK_VarName(n);
+            col += CarpetSimpleMPIDatatypeLength (vartype);
           }
           os << endl;
         }
