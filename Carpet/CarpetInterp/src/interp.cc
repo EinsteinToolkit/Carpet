@@ -337,17 +337,16 @@ namespace CarpetInterp {
         source_map.at(n) = 0;
       }
     } else {
-      source_map.resize (N_interp_points);
-      ierr = Util_TableGetIntArray
+      int const iret = Util_TableGetIntArray
         (param_table_handle, N_interp_points,
          &source_map.front(), "source_map");
-      if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+      if (iret == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
         CCTK_WARN (1, "No source map specified");
         return -1;
-      } else if (ierr < 0) {
+      } else if (iret < 0) {
         CCTK_WARN (1, "internal error");
         return -1;
-      } else if (ierr != N_interp_points) {
+      } else if (iret != N_interp_points) {
         CCTK_WARN (1, "Source map array has wrong size");
         return -1;
       }
