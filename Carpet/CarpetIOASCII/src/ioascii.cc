@@ -571,9 +571,8 @@ namespace CarpetIOASCII {
                 const ggf* const ff
                   = arrdata.at(group).at(Carpet::map).data.at(var);
 
-                const int mintl = output_all_timelevels ? 1-num_tl : 0;
-                const int maxtl = 0;
-                for (int tl=mintl; tl<=maxtl; ++tl) {
+                const int maxtl = output_all_timelevels ? num_tl : 1;
+                for (int tl=0; tl<maxtl; ++tl) {
 
                   const gdata* const data
                     = (*ff) (tl, rl, component, mglevel);
