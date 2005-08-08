@@ -13,6 +13,7 @@
 using namespace std;
 
 
+
 // structure to hold a set of grid functions
 // which all have the same CCTK vartype
 struct gf_set {
@@ -25,15 +26,18 @@ struct gf_set {
 // Constructors
 dh::dh (gh& h_,
         const ivect& lghosts_, const ivect& ughosts_,
-        const int prolongation_order_space_, const int buffer_width_)
+        const int prolongation_order_space_, const int inner_buffer_width_,
+        const ivect& lbuffers_, const ivect& ubuffers_)
   : h(h_),
-    lghosts(lghosts_), ughosts(ughosts_),
+    ghosts(lghosts_, ughosts_),
     prolongation_order_space(prolongation_order_space_),
-    buffer_width(buffer_width_)
+    inner_buffer_width(inner_buffer_width_),
+    buffers(lbuffers_, ubuffers_)
 {
-  assert (all(lghosts>=0 and ughosts>=0));
+  assert (all(ghosts[0]>=0 and ghosts[1]>=0));
   assert (prolongation_order_space>=0);
-  assert (buffer_width>=0);
+  assert (inner_buffer_width>=0);
+  assert (all(buffers[0]>=0 and buffers[1]>=0));
   h.add(this);
   CHECKPOINT;
   recompose (false);
@@ -109,13 +113,31 @@ void dh::allocate_bboxes ()
         // (the content of the exterior is completely determined by
         // the interior of this or other components; the content of
         // the exterior is redundant)
-        ivect ldist(lghosts), udist(ughosts);
-        for (int d=0; d<dim; ++d) {
-          if (h.outer_boundaries().at(rl).at(c)[d][0]) ldist[d] = 0;
-          if (h.outer_boundaries().at(rl).at(c)[d][1]) udist[d] = 0;
+        i2vect dist(ghosts);
+        for (int f=0; f<2; ++f) {
+          for (int d=0; d<dim; ++d) {
+            if (h.outer_boundaries().at(rl).at(c)[d][f]) {
+              dist[f][d] = 0;
+            } else {
+              // Check whether the boundary in this direction is
+              // covered by other interiors
+              vect<ivect,2> dist1(0,0);
+              dist1[f][d] = dist[f][d];
+              ibset bnd = intr.expand(dist1[0], dist1[1]) - intr;
+              for (int cc=0; cc<h.components(rl); ++cc) {
+                bnd -= h.extents().at(ml).at(rl).at(cc);
+              }
+              bool const is_interproc = bnd.empty();
+              boxes.at(ml).at(rl).at(c).is_interproc[d][f] = is_interproc;
+              if (! is_interproc) {
+                dist[f][d] += buffers[f][d];
+              }
+            }
+          }
         }
-        b.exterior = intr.expand(ldist, udist);
-
+        
+        b.exterior = intr.expand(dist[0], dist[1]);
+        
         // Boundaries (ghost zones only)
         // (interior + boundaries = exterior)
         b.boundaries = b.exterior - intr;
@@ -296,13 +318,14 @@ void dh::setup_refinement_exterior_boxes (dh::dboxes & box, int rl, int c, int m
           }
           pbndsf.normalize();
         }
-        // Buffer zones
+        // Inner buffer zones
         ibset buffers;
         {
           for (ibset::const_iterator pbi=pbndsf.begin();
                pbi!=pbndsf.end(); ++pbi)
           {
-            buffers |= (*pbi).expand(buffer_width, buffer_width) & extrf;
+            buffers
+              |= (*pbi).expand(inner_buffer_width, inner_buffer_width) & extrf;
           }
           buffers.normalize();
         }
@@ -637,7 +660,7 @@ void dh::remove (ggf* f)
 void dh::output (ostream& os) const
 {
   os << "dh:"
-     << "ghosts=[" << lghosts << "," << ughosts << "],"
+     << "ghosts=" << ghosts << ","
      << "gfs={";
   int cnt=0;
   for (list<ggf*>::const_iterator f = gfs.begin();

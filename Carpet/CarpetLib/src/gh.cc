@@ -59,7 +59,7 @@ void gh::recompose (const mexts& exts,
   check_refinement_levels ();
   
   calculate_base_extents_of_all_levels ();
-  
+
   if (output_bboxes) {
     do_output_bboxes (cout);
     do_output_bases (cout);

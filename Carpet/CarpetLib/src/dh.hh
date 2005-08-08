@@ -45,6 +45,8 @@ public:
   
   struct dboxes {
     ibbox exterior;             // whole region (including boundaries)
+    bbvect is_interproc;        // the whole boundary is an
+                                // interprocessor boundary
     
     ibbox interior;             // interior (without boundaries)
     iblist send_mg_fine;
@@ -107,10 +109,11 @@ public:                         // should be readonly
   
   // Fields
   gh& h;                        // hierarchy
-  ivect lghosts, ughosts;       // ghost zones
+  i2vect ghosts;                // ghost zones
   
   int prolongation_order_space; // order of spatial prolongation operator
-  int buffer_width;             // buffer inside refined grids
+  int inner_buffer_width;       // buffer inside refined grids
+  i2vect buffers;               // buffer outside refined grids
   
   mboxes boxes;
   mbases bases;
@@ -121,7 +124,8 @@ public:
   
   // Constructors
   dh (gh& h, const ivect& lghosts, const ivect& ughosts,
-      int prolongation_order_space, int buffer_width);
+      int prolongation_order_space, int inner_buffer_width,
+      const ivect& lbuffers, const ivect& ubuffers);
   
   // Destructors
   virtual ~dh ();
