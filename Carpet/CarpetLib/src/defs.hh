@@ -42,6 +42,9 @@ typedef bboxset<int,dim> ibset;
 typedef vect<vect<bool,2>,dim> bbvect;
 typedef vect<vect<int,2>,dim>  iivect;
 
+typedef vect<vect<bool,dim>,2> b2vect;
+typedef vect<vect<int,dim>,2>  i2vect;
+
 
 
 // A general type
