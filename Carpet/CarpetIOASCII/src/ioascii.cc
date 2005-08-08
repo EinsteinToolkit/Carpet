@@ -561,121 +561,130 @@ namespace CarpetIOASCII {
             // refinement level and map
             BEGIN_COMPONENT_LOOP(cgh, grouptype) {
 
-              const ggf* const ff
-                = arrdata.at(group).at(Carpet::map).data.at(var);
+              cGroup groupdata;
+              int const ierr = CCTK_GroupData (group, & groupdata);
+              assert (! ierr);
+              if (groupdata.disttype != CCTK_DISTRIB_CONSTANT
+                  or component == 0)
+              {
 
-              const int mintl = output_all_timelevels ? 1-num_tl : 0;
-              const int maxtl = 0;
-              for (int tl=mintl; tl<=maxtl; ++tl) {
+                const ggf* const ff
+                  = arrdata.at(group).at(Carpet::map).data.at(var);
 
-                const gdata* const data
-                  = (*ff) (tl, rl, component, mglevel);
-                ibbox ext = data->extent();
+                const int mintl = output_all_timelevels ? 1-num_tl : 0;
+                const int maxtl = 0;
+                for (int tl=mintl; tl<=maxtl; ++tl) {
 
-                ivect lo = ext.lower();
-                ivect hi = ext.upper();
-                ivect str = ext.stride();
+                  const gdata* const data
+                    = (*ff) (tl, rl, component, mglevel);
+                  ibbox ext = data->extent();
 
-                // Ignore symmetry boundaries if desired
-                if (! output_symmetry_points) {
-                  if (grouptype == CCTK_GF) {
-                    CCTK_INT const symtable
-                      = SymmetryTableHandleForGrid (cgh);
-                    if (symtable < 0) CCTK_WARN (0, "internal error");
-                    CCTK_INT symbnd[2*dim];
-                    int const ierr = Util_TableGetIntArray
-                      (symtable, 2*dim, symbnd, "symmetry_handle");
-                    if (ierr != 2*dim) CCTK_WARN (0, "internal error");
-                    for (int d=0; d<dim; ++d) {
-                      if (symbnd[2*d] < 0) {
-                        // lower boundary is a symmetry boundary
-                        lo[d] += cgh->cctk_nghostzones[d] * str[d];
-                      }
-                      if (symbnd[2*d+1] < 0) {
-                        // upper boundary is a symmetry boundary
-                        hi[d] -= cgh->cctk_nghostzones[d] * str[d];
+                  ivect lo = ext.lower();
+                  ivect hi = ext.upper();
+                  ivect str = ext.stride();
+
+                  // Ignore symmetry boundaries if desired
+                  if (! output_symmetry_points) {
+                    if (grouptype == CCTK_GF) {
+                      CCTK_INT const symtable
+                        = SymmetryTableHandleForGrid (cgh);
+                      if (symtable < 0) CCTK_WARN (0, "internal error");
+                      CCTK_INT symbnd[2*dim];
+                      int const ierr = Util_TableGetIntArray
+                        (symtable, 2*dim, symbnd, "symmetry_handle");
+                      if (ierr != 2*dim) CCTK_WARN (0, "internal error");
+                      for (int d=0; d<dim; ++d) {
+                        if (symbnd[2*d] < 0) {
+                          // lower boundary is a symmetry boundary
+                          lo[d] += cgh->cctk_nghostzones[d] * str[d];
+                        }
+                        if (symbnd[2*d+1] < 0) {
+                          // upper boundary is a symmetry boundary
+                          hi[d] -= cgh->cctk_nghostzones[d] * str[d];
+                        }
                       }
                     }
                   }
-                }
 
-                // Ignore ghost zones if desired
-                for (int d=0; d<dim; ++d) {
-                  bool output_lower_ghosts
-                    = cgh->cctk_bbox[2*d] ? out3D_outer_ghosts : out3D_ghosts;
-                  bool output_upper_ghosts
-                    = cgh->cctk_bbox[2*d+1] ? out3D_outer_ghosts : out3D_ghosts;
-
-                  if (! output_lower_ghosts) {
-                    lo[d] += cgh->cctk_nghostzones[d] * str[d];
-                  }
-                  if (! output_upper_ghosts) {
-                    hi[d] -= cgh->cctk_nghostzones[d] * str[d];
-                  }
-                }
-                ext = ibbox(lo,hi,str);
-
-                // coordinates
-                const CCTK_REAL coord_time = cgh->cctk_time;
-                rvect global_lower;
-                rvect coord_delta;
-                if (grouptype == CCTK_GF) {
+                  // Ignore ghost zones if desired
                   for (int d=0; d<dim; ++d) {
-                    global_lower[d] = cgh->cctk_origin_space[d];
-                    coord_delta[d]
-                      = cgh->cctk_delta_space[d] / maxspacereflevelfact[d];
-                  }
-                } else {
-                  for (int d=0; d<dim; ++d) {
-                    global_lower[d] = 0.0;
-                    coord_delta[d] = 1.0;
-                  }
-                }
-                const rvect coord_lower
-                  = global_lower + coord_delta * rvect(lo);
-                const rvect coord_upper
-                  = global_lower + coord_delta * rvect(hi);
+                    bool output_lower_ghosts
+                      = cgh->cctk_bbox[2*d] ? out3D_outer_ghosts : out3D_ghosts;
+                    bool output_upper_ghosts
+                      = cgh->cctk_bbox[2*d+1] ? out3D_outer_ghosts : out3D_ghosts;
 
-                ivect offset1;
-                if (grouptype == CCTK_GF) {
-                  const ibbox& baseext
-                    = vdd.at(Carpet::map)->bases.at(mglevel).at(0).exterior;
-                  offset1 = baseext.lower() + offset * ext.stride();
-                } else {
-                  offset1 = offset * ext.stride();
-                }
-                for (int d=0; d<outdim; ++d) {
-                  offset1[dirs[d]] = ext.lower()[dirs[d]];
-                }
-
-                vector<const gdata*> datas;
-                if (one_file_per_group) {
-                  int const numvars = CCTK_NumVarsInGroupI(group);
-                  datas.resize (numvars);
-                  for (int n=0; n<numvars; ++n) {
-                    const ggf* const ff1
-                      = arrdata.at(group).at(Carpet::map).data.at(n);
-                    datas.at(n) = (*ff1) (tl, rl, component, mglevel);
+                    if (! output_lower_ghosts) {
+                      lo[d] += cgh->cctk_nghostzones[d] * str[d];
+                    }
+                    if (! output_upper_ghosts) {
+                      hi[d] -= cgh->cctk_nghostzones[d] * str[d];
+                    }
                   }
-                } else {
-                  datas.resize (1);
-                  datas.at(0) = data;
-                }
-                WriteASCII (file, datas, ext, n, cgh->cctk_iteration,
-                            offset1, dirs,
-                            rl, mglevel, Carpet::map, component, tl,
-                            coord_time, coord_lower, coord_upper);
+                  ext = ibbox(lo,hi,str);
 
-                // Append EOL after every component
-                if (CCTK_MyProc(cgh)==0) {
-                  if (separate_components) {
-                    assert (file.good());
-                    file << endl;
+                  // coordinates
+                  const CCTK_REAL coord_time = cgh->cctk_time;
+                  rvect global_lower;
+                  rvect coord_delta;
+                  if (grouptype == CCTK_GF) {
+                    for (int d=0; d<dim; ++d) {
+                      global_lower[d] = cgh->cctk_origin_space[d];
+                      coord_delta[d]
+                        = cgh->cctk_delta_space[d] / maxspacereflevelfact[d];
+                    }
+                  } else {
+                    for (int d=0; d<dim; ++d) {
+                      global_lower[d] = 0.0;
+                      coord_delta[d] = 1.0;
+                    }
                   }
-                }
-                assert (file.good());
+                  const rvect coord_lower
+                    = global_lower + coord_delta * rvect(lo);
+                  const rvect coord_upper
+                    = global_lower + coord_delta * rvect(hi);
 
-              } // for tl
+                  ivect offset1;
+                  if (grouptype == CCTK_GF) {
+                    const ibbox& baseext
+                      = vdd.at(Carpet::map)->bases.at(mglevel).at(0).exterior;
+                    offset1 = baseext.lower() + offset * ext.stride();
+                  } else {
+                    offset1 = offset * ext.stride();
+                  }
+                  for (int d=0; d<outdim; ++d) {
+                    offset1[dirs[d]] = ext.lower()[dirs[d]];
+                  }
+
+                  vector<const gdata*> datas;
+                  if (one_file_per_group) {
+                    int const numvars = CCTK_NumVarsInGroupI(group);
+                    datas.resize (numvars);
+                    for (int n=0; n<numvars; ++n) {
+                      const ggf* const ff1
+                        = arrdata.at(group).at(Carpet::map).data.at(n);
+                      datas.at(n) = (*ff1) (tl, rl, component, mglevel);
+                    }
+                  } else {
+                    datas.resize (1);
+                    datas.at(0) = data;
+                  }
+                  WriteASCII (file, datas, ext, n, cgh->cctk_iteration,
+                              offset1, dirs,
+                              rl, mglevel, Carpet::map, component, tl,
+                              coord_time, coord_lower, coord_upper);
+
+                  // Append EOL after every component
+                  if (CCTK_MyProc(cgh)==0) {
+                    if (separate_components) {
+                      assert (file.good());
+                      file << endl;
+                    }
+                  }
+                  assert (file.good());
+
+                } // for tl
+
+              } // if distrib!=CONST or component==0
 
             } END_COMPONENT_LOOP;
 
