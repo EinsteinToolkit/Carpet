@@ -16,9 +16,10 @@ using namespace std;
 // structure to hold a set of grid functions
 // which all have the same CCTK vartype
 struct gf_set {
-  int vartype;                // eg. CCTK_VARIABLE_REAL, etc.
+  int vartype;                // e.g. CCTK_VARIABLE_REAL, etc.
   vector<ggf*> members;       // members of this set
 };
+
 
 
 // Constructors
