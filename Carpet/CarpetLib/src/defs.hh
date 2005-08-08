@@ -127,55 +127,55 @@ inline const char * typestring (const complex<long double>& dummy)
 
 #else
 
-#  ifdef CCTK_INT1
+#ifdef CCTK_INT1
 inline const char * typestring (const CCTK_INT1& dummy)
 { return "CCTK_INT1"; }
-#  endif
+#endif
 
-#  ifdef CCTK_INT2
+#ifdef CCTK_INT2
 inline const char * typestring (const CCTK_INT2& dummy)
 { return "CCTK_INT2"; }
-#  endif
+#endif
 
-#  ifdef CCTK_INT4
+#ifdef CCTK_INT4
 inline const char * typestring (const CCTK_INT4& dummy)
 { return "CCTK_INT4"; }
-#  endif
+#endif
 
-#  ifdef CCTK_INT8
+#ifdef CCTK_INT8
 inline const char * typestring (const CCTK_INT8& dummy)
 { return "CCTK_INT8"; }
-#  endif
+#endif
 
-#  ifdef CCTK_REAL4
+#ifdef CCTK_REAL4
 inline const char * typestring (const CCTK_REAL4& dummy)
 { return "CCTK_REAL4"; }
-#  endif
+#endif
 
-#  ifdef CCTK_REAL8
+#ifdef CCTK_REAL8
 inline const char * typestring (const CCTK_REAL8& dummy)
 { return "CCTK_REAL8"; }
-#  endif
+#endif
 
-#  ifdef CCTK_REAL16
+#ifdef CCTK_REAL16
 inline const char * typestring (const CCTK_REAL16& dummy)
 { return "CCTK_REAL16"; }
-#  endif
+#endif
 
-#  ifdef CCTK_REAL4
+#ifdef CCTK_REAL4
 inline const char * typestring (const CCTK_COMPLEX8& dummy)
 { return "CCTK_COMPLEX8"; }
-#  endif
+#endif
 
-#  ifdef CCTK_REAL8
+#ifdef CCTK_REAL8
 inline const char * typestring (const CCTK_COMPLEX16& dummy)
 { return "CCTK_COMPLEX16"; }
-#  endif
+#endif
 
-#  ifdef CCTK_REAL16
+#ifdef CCTK_REAL16
 inline const char * typestring (const CCTK_COMPLEX32& dummy)
 { return "CCTK_COMPLEX32"; }
-#  endif
+#endif
 
 #endif
 
