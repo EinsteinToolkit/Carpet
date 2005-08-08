@@ -24,7 +24,7 @@ BOOLEAN print_timestats "Print timing statistics at every iteration" STEERABLE=a
 
 BOOLEAN save_memory_during_regridding "Save some memory during regridding at the expense of speed"
 {
-} "no"
+} "yes"
 
 
 
@@ -43,13 +43,16 @@ INT max_allowed_memory_MB "Maximum allowed amount of memory per process (in Mega
 
 
 # Options to tune MPI communication
+# DEPRECATED - DO NOT USE ANYMORE
+# The defaults of these flags are now sensible for everybody;
+# you should not be setting these parameters by hand any more.
 
-INT max_mpi_tags "Maximum number of MPI tags to use"
+INT max_mpi_tags "Maximum number of MPI tags to use -- DEPRECATED - DO NOT USE ANYMORE"
 {
   1:30000 :: ""
 } 30000
 
-BOOLEAN use_waitall "Use MPI_Waitall instead individual MPI_Wait/MPI_Waitsome statements"
+BOOLEAN use_waitall "Use MPI_Waitall instead individual MPI_Wait/MPI_Waitsome statements -- DEPRECATED - DO NOT USE ANYMORE"
 {
 } "yes"
 
@@ -61,9 +64,9 @@ BOOLEAN use_lightweight_buffers "Use lightweight communication buffers instead o
 {
 } "no"
 
-BOOLEAN use_collective_communication_buffers "Use collective buffers for MPI communications" STEERABLE=always
+BOOLEAN use_collective_communication_buffers "Use collective buffers for MPI communications -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
 {
-} "no"
+} "yes"
 
 BOOLEAN minimise_outstanding_communications "Minimise the number of Isend/Irecv operations that are submitted concurrently -- DEPRECATED - DO NOT USE ANYMORE"
 {
