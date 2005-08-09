@@ -300,8 +300,6 @@ void data<T>::change_processor_wait (comm_state& state,
   wtime_changeproc_wait.stop();
 }
 
-
-
 #if 0
 template<typename T>
 void
@@ -1705,10 +1703,21 @@ ostream& data<T>::output (ostream& os) const
 }
 
 
+template<typename T>
+ostream & operator << ( ostream & os, const data<T> & d ) {
+  char * space = "";
+  for( size_t i = 0; i < d.vectorlength; i++ ) {
+    cout << space << d[i];
+    space = " ";
+  }
+  return os;
+}
+
 
 #define INSTANTIATE(T)				\
 template class data<T>;
-
+template 
+ostream & operator << <CCTK_REAL> ( ostream & os, data<CCTK_REAL> const & d );
 #include "instantiate"
 
 #undef INSTANTIATE

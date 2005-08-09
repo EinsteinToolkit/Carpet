@@ -17,7 +17,7 @@
 
 using namespace std;
 
-
+#include <iosfwd>
 
 // A distributed multi-dimensional array
 template<typename T>
@@ -162,7 +162,11 @@ private:
   void Check_that_the_times_are_consistent ( const vector<CCTK_REAL> & times,
                               const CCTK_REAL time );
 
+  friend ostream & operator << <T> ( ostream & os, const data<T> & d );
 };
+
+template<typename T>
+ostream & operator << ( ostream & os, const data<T> & d );
 
 
 
@@ -174,7 +178,6 @@ void data<CCTK_REAL8>
                               const ibbox& box, const CCTK_REAL time,
                               const int order_space,
                               const int order_time);
-
 
 
 #endif // DATA_HH
