@@ -306,7 +306,10 @@ namespace Carpet {
                       CCTK_INT convergence_factor, CCTK_INT refinement_factor,
                       CCTK_STRING base_outerbounds, CCTK_STRING base_extents,
                       CCTK_INT max_refinement_levels,
-                      CCTK_INT buffer_width, CCTK_INT prolongation_order_space,
+                      CCTK_INT prolongation_order_space,
+                      CCTK_INT buffer_width,
+                      CCTK_INT use_outer_buffer_zones,
+                      CCTK_INT num_integrator_substeps,
                       ivect & lghosts, ivect & ughosts, ivect & npoints);
   static ivect make_ghost_zone_vect (CCTK_INT ghost_size,
                       CCTK_INT ghost_size_x, CCTK_INT ghost_size_y,
@@ -413,7 +416,9 @@ namespace Carpet {
       allocate_map (cgh, m, domain_from_coordbase, domain_from_multipatch,
                convergence_factor, refinement_factor,
                base_outerbounds, base_extents,
-               max_refinement_levels, buffer_width, prolongation_order_space,
+               max_refinement_levels, prolongation_order_space,
+               buffer_width,
+               use_outer_buffer_zones, num_integrator_substeps,
                lghosts, ughosts, npoints);
     } 
     
@@ -562,8 +567,12 @@ namespace Carpet {
                CCTK_INT convergence_factor, CCTK_INT refinement_factor,
                CCTK_STRING base_outerbounds, CCTK_STRING base_extents,
                CCTK_INT max_refinement_levels,
-               CCTK_INT buffer_width, CCTK_INT prolongation_order_space,
-               ivect & lghosts, ivect & ughosts, ivect & a_npoints) {
+               CCTK_INT prolongation_order_space,
+               CCTK_INT buffer_width,
+               CCTK_INT use_outer_buffer_zones,
+               CCTK_INT num_integrator_substeps,
+               ivect & lghosts, ivect & ughosts, ivect & a_npoints)
+  {
     // Get boundary description
     jjvect nboundaryzones, is_internal, is_staggered, shiftout;
     int ierr = GetBoundarySpecification (2*dim, &nboundaryzones[0][0],
@@ -795,8 +804,18 @@ namespace Carpet {
                         convergence_factor, vertex_centered, baseext);
     
     // Allocate data hierarchy
+    int const inner_buffer_width = use_outer_buffer_zones ? 0 : buffer_width;
+    ivect const lbuffers
+      = (use_outer_buffer_zones
+         ? lghosts * num_integrator_substeps + buffer_width
+         : 0);
+    ivect const ubuffers
+      = (use_outer_buffer_zones
+         ? ughosts * num_integrator_substeps + buffer_width
+         : 0);
     vdd.at(m) = new dh (*vhh.at(m), lghosts, ughosts,
-                        prolongation_order_space, buffer_width);
+                        prolongation_order_space,
+                        inner_buffer_width, lbuffers, ubuffers);
     
     // Allocate time hierarchy
     vtt.at(m) = new th (*vhh.at(m), timereffacts, 1.0);
@@ -1191,7 +1210,7 @@ namespace Carpet {
                   abaseext);
       
       arrdata.at (group).at (0).dd
-        = new dh (*arrdata.at (group).at (0).hh, alghosts, aughosts, 0, 0);
+        = new dh (*arrdata.at (group).at (0).hh, alghosts, aughosts, 0, 0, 0, 0);
       
       arrdata.at (group).at (0).tt
         = new th (*arrdata.at (group).at (0).hh, atimereffacts, 1.0);

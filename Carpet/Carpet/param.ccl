@@ -164,10 +164,21 @@ CCTK_INT prolongation_order_time "Order of prolongation operator in time" STEERA
 
 
 
-CCTK_INT buffer_width "Width of the buffer zone inside the fine grid" STEERABLE=recover
+CCTK_INT buffer_width "Width of the buffer zone inside the fine grid (DEPRECATED)" STEERABLE=recover
 {
   0:* :: "Should be the radius of the numerical domain of dependence of the time integrator, minus the number of ghost zones"
 } 0
+
+
+
+BOOLEAN use_outer_buffer_zones "Add buffer zones at the outer edge of the refined regions; the buffer width is nghostzones * num_integrator_substeps + buffer_width"
+{
+} no
+
+CCTK_INT num_integrator_substeps "Number of substeps of the time integrator"
+{
+  0:* :: ""
+} 1
 
 
 

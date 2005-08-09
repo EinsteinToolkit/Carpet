@@ -95,7 +95,7 @@ namespace Carpet {
 	const ibbox& ext = arrdata.at(group).at(m).dd->boxes.at(ml).at(rl).at(c).exterior;
         
         ivect::ref(const_cast<int*>(groupdata.at(group).info.nghostzones))
-          = arrdata.at(group).at(m).dd->lghosts;
+          = arrdata.at(group).at(m).dd->ghosts[0];
         ivect::ref(const_cast<int*>(groupdata.at(group).info.gsh))
           = base.shape() / base.stride();
         ivect::ref(const_cast<int*>(groupdata.at(group).info.lsh))
@@ -180,7 +180,7 @@ namespace Carpet {
 //         ivect::ref(const_cast<int*>(groupdata.at(group).info.nghostzones))
 //           = deadbeef;
         ivect::ref(const_cast<int*>(groupdata.at(group).info.nghostzones))
-          = arrdata.at(group).at(m).dd->lghosts;
+          = arrdata.at(group).at(m).dd->ghosts[0];
         ivect::ref(const_cast<int*>(groupdata.at(group).info.gsh))
           = deadbeef;
         ivect::ref(const_cast<int*>(groupdata.at(group).info.lsh))
@@ -298,8 +298,8 @@ namespace Carpet {
     ivect::ref(cgh->cctk_levoff) = (baseext.lower() - coarseext.lower()) / baseext.stride();
     ivect::ref(cgh->cctk_levoffdenom) = 1;
     ivect::ref(cgh->cctk_gsh) = baseext.shape() / baseext.stride();
-    assert (all (vdd.at(map)->lghosts == vdd.at(map)->ughosts));
-    ivect::ref(cgh->cctk_nghostzones) = vdd.at(map)->lghosts;
+    assert (all (vdd.at(map)->ghosts[0] == vdd.at(map)->ghosts[1]));
+    ivect::ref(cgh->cctk_nghostzones) = vdd.at(map)->ghosts[0];
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_GroupTypeI(group) == CCTK_GF) {
@@ -327,7 +327,7 @@ namespace Carpet {
     ivect::ref(cgh->cctk_levoffdenom) = 0;
     ivect::ref(cgh->cctk_gsh) = deadbeef;
 //     ivect::ref(cgh->cctk_nghostzones) = deadbeef;
-    ivect::ref(cgh->cctk_nghostzones) = vdd.at(map)->lghosts;
+    ivect::ref(cgh->cctk_nghostzones) = vdd.at(map)->ghosts[0];
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_GroupTypeI(group) == CCTK_GF) {
