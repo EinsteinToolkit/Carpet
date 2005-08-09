@@ -1,5 +1,4 @@
 #include <cassert>
-#include <cmath>
 #include <cstdlib>
 
 #include "cctk.h"
@@ -140,7 +139,7 @@ namespace Carpet {
 
     // use the current time here (which may be modified by the user)
     const CCTK_REAL time
-      = (cctkGH->cctk_time - initial_time) / abs(delta_time);
+      = (cctkGH->cctk_time - initial_time) / delta_time;
 
     for (comm_state state(groups.vartype); ! state.done(); state.step()) {
       for (int group = 0; group < groups.members.size(); ++group) {

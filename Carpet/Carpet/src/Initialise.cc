@@ -108,8 +108,6 @@ namespace Carpet {
       print_internal_data ();
 
       if (init_3_timelevels) {
-#warning "TODO: ensure that there are 3 timelevels"
-#warning "TODO: ensure that prolongation_order_time = 2"
         initialise_3tl (cgh);
       }
     }
@@ -448,7 +446,12 @@ namespace Carpet {
   // Use Scott Hawley's algorithm to get two extra timelevels of data
   void initialise_3tl (cGH * const cgh)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     Waypoint ("Initialising three timelevels");
+
+    // TODO: ensure that there are 3 timelevels
+    assert (prolongation_order_time == 2);
 
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cgh) {
@@ -502,10 +505,11 @@ namespace Carpet {
   {
     Waypoint ("Advancing time");
     
+    cgh->cctk_time
+      = global_time + delta_time * mglevelfact / timereflevelfact;
     for (int m=0; m<maps; ++m) {
       vtt.at(m)->advance_time (reflevel, mglevel);
     }
-    cgh->cctk_time = global_time + delta_time * mglevelfact / timereflevelfact;
     
     CycleTimeLevels (cgh);
   }
@@ -539,12 +543,6 @@ namespace Carpet {
     BEGIN_MGLEVEL_LOOP(cgh) {
       BEGIN_REFLEVEL_LOOP (cgh) {
 
-        for (int m=0; m<maps; ++m) {
-          vtt.at(m)->set_delta
-            (reflevel, mglevel, - vtt.at(m)->get_delta (reflevel, mglevel));
-          vtt.at(m)->advance_time (reflevel, mglevel);
-          vtt.at(m)->advance_time (reflevel, mglevel);
-        }
         cgh->cctk_time
           = global_time + delta_time * mglevelfact / timereflevelfact;
 
@@ -603,11 +601,11 @@ namespace Carpet {
   {
     Waypoint ("Advancing time");
     
+    cgh->cctk_time
+      = global_time + 2 * delta_time * mglevelfact / timereflevelfact;
     for (int m=0; m<maps; ++m) {
       vtt.at(m)->advance_time (reflevel, mglevel);
     }
-    cgh->cctk_time
-      = global_time + 2 * delta_time * mglevelfact / timereflevelfact;
     
     CycleTimeLevels (cgh);
   }
@@ -644,10 +642,7 @@ namespace Carpet {
       BEGIN_REFLEVEL_LOOP (cgh) {
 
         for (int m=0; m<maps; ++m) {
-          vtt.at(m)->set_delta
-            (reflevel, mglevel, - vtt.at(m)->get_delta (reflevel, mglevel));
-          vtt.at(m)->advance_time (reflevel, mglevel);
-          vtt.at(m)->advance_time (reflevel, mglevel);
+          vtt.at(m)->set_time (reflevel, mglevel, 0);
         }
         cgh->cctk_time = global_time;
 
