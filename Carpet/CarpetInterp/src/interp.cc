@@ -82,6 +82,7 @@ namespace CarpetInterp {
   find_time_interpolation_order (cGH const * const cgh,
                                  int const param_table_handle,
                                  int const N_interp_points,
+                                 int const N_output_arrays,
                                  int & prolongation_order_time,
                                  CCTK_REAL & current_time,
                                  vector<CCTK_INT> & time_deriv_order,
@@ -365,7 +366,7 @@ namespace CarpetInterp {
     
     
     // Find the time interpolation order
-    vector<CCTK_INT> time_deriv_order (N_interp_points);
+    vector<CCTK_INT> time_deriv_order (N_output_arrays);
     vector<CCTK_REAL> interpolation_times (N_interp_points);
     bool interpolation_times_differ;
     bool have_time_derivs;
@@ -376,6 +377,7 @@ namespace CarpetInterp {
       (cgh,
        param_table_handle,
        N_interp_points,
+       N_output_arrays,
        prolongation_order_time, current_time,
        time_deriv_order, interpolation_times,
        interpolation_times_differ, have_time_derivs);
@@ -601,6 +603,7 @@ namespace CarpetInterp {
   find_time_interpolation_order (cGH const * const cgh,
                                  int const param_table_handle,
                                  int const N_interp_points,
+                                 int const N_output_arrays,
                                  int & prolongation_order_time,
                                  CCTK_REAL & current_time,
                                  vector<CCTK_INT> & time_deriv_order,
@@ -634,15 +637,15 @@ namespace CarpetInterp {
     }
     
     ierr = Util_TableGetIntArray
-      (param_table_handle, N_interp_points,
+      (param_table_handle, N_output_arrays,
        &time_deriv_order.front(), "time_deriv_order");
     if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-      for (int n=0; n<N_interp_points; ++n) {
+      for (int n=0; n<N_output_arrays; ++n) {
         time_deriv_order.at(n) = 0;
       }
       have_time_derivs = false;
     } else {
-      assert (ierr == N_interp_points);
+      assert (ierr == N_output_arrays);
       have_time_derivs = true;
     }
   }
@@ -1366,6 +1369,7 @@ namespace CarpetInterp {
           
           // Find input array for this output array
           int const n = operand_indices.at(j);
+          CCTK_INT const deriv_order = time_deriv_order.at(j);
           
           int const vi = input_array_variable_indices[n];
           assert (vi>=0 && vi<CCTK_NumVars());
@@ -1411,7 +1415,6 @@ namespace CarpetInterp {
             for (int k=0; k<npoints; ++k) {
               
               CCTK_REAL const time = interpolation_times.at(k);
-              CCTK_INT const deriv_order = time_deriv_order.at(k);
               
               const InterpolationTimes times (my_num_tl );
               const InterpolationWeights tfacs (deriv_order, times,
