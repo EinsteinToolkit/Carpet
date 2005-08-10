@@ -41,7 +41,7 @@ namespace Carpet {
   static void initialise_3tl_evolve_IIb (cGH * cgh);
   static void initialise_3tl_advance_time_2 (cGH * cgh);
   static void initialise_3tl_evolve_Ic (cGH * cgh);
-  static void initialise_3tl_flip_timelevels_back (cGH * cgh);
+  static void initialise_3tl_reset_time (cGH * cgh);
 
   static void print_internal_data ();
 
@@ -447,44 +447,32 @@ namespace Carpet {
   void initialise_3tl (cGH * const cgh)
   {
     DECLARE_CCTK_PARAMETERS;
-    
+
     Waypoint ("Initialising three timelevels");
 
     // TODO: ensure that there are 3 timelevels
     assert (prolongation_order_time == 2);
 
-    for (int rl=0; rl<reflevels; ++rl) {
-      BEGIN_MGLEVEL_LOOP(cgh) {
-        enter_level_mode (cgh, rl);
+    BEGIN_MGLEVEL_LOOP(cgh) {
+      BEGIN_REFLEVEL_LOOP(cgh) {
         do_global_mode = reflevel==0;
         do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
         initialise_3tl_advance_time (cgh);
         initialise_3tl_evolve_Ia (cgh);
-
-        leave_level_mode (cgh);
-      } END_MGLEVEL_LOOP;
-    }
-
-    initialise_3tl_flip_timelevels (cgh);
-
-    for (int rl=0; rl<reflevels; ++rl) {
-      BEGIN_MGLEVEL_LOOP(cgh) {
-        enter_level_mode (cgh, rl);
-        do_global_mode = reflevel==0;
-        do_meta_mode = do_global_mode and mglevel==mglevels-1;
-
+        initialise_3tl_flip_timelevels (cgh);
         initialise_3tl_evolve_Ib (cgh);
+        initialise_3tl_flip_timelevels (cgh);
 
-        leave_level_mode (cgh);
-      } END_MGLEVEL_LOOP;
-    }
+      } END_REFLEVEL_LOOP;
+    } END_MGLEVEL_LOOP;
 
     Waypoint ("Hourglass structure in place");
 
-    for (int rl=reflevels-1; rl>=0; --rl) {
-      BEGIN_MGLEVEL_LOOP(cgh) {
-        enter_level_mode (cgh, rl);
+    initialise_3tl_flip_timelevels (cgh);
+
+    BEGIN_MGLEVEL_LOOP(cgh) {
+      BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
         do_global_mode = reflevel==0;
         do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
@@ -492,11 +480,20 @@ namespace Carpet {
         initialise_3tl_advance_time_2 (cgh);
         initialise_3tl_evolve_Ic (cgh);
 
-        leave_level_mode (cgh);
-      } END_MGLEVEL_LOOP;
-    }
+      } END_REVERSE_REFLEVEL_LOOP;
+    } END_MGLEVEL_LOOP;
 
-    initialise_3tl_flip_timelevels_back (cgh);
+    initialise_3tl_flip_timelevels (cgh);
+
+    BEGIN_MGLEVEL_LOOP(cgh) {
+      BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
+        do_global_mode = reflevel==0;
+        do_meta_mode = do_global_mode and mglevel==mglevels-1;
+
+        initialise_3tl_reset_time (cgh);
+
+      } END_REVERSE_REFLEVEL_LOOP;
+    } END_MGLEVEL_LOOP;
 
     Waypoint ("Finished initialising three timelevels");
   }
@@ -538,18 +535,21 @@ namespace Carpet {
   {
     Waypoint ("Flipping timelevels");
 
-    delta_time *= -1;
+    BEGIN_META_MODE(cgh) {
 
-    BEGIN_MGLEVEL_LOOP(cgh) {
-      BEGIN_REFLEVEL_LOOP (cgh) {
+      delta_time *= -1;
 
-        cgh->cctk_time
-          = global_time + delta_time * mglevelfact / timereflevelfact;
+      BEGIN_MGLEVEL_LOOP(cgh) {
+        BEGIN_REFLEVEL_LOOP (cgh) {
 
-        FlipTimeLevels (cgh);
+          cgh->cctk_time
+            = global_time + delta_time * mglevelfact / timereflevelfact;
 
-      } END_REFLEVEL_LOOP;
-    } END_MGLEVEL_LOOP;
+          FlipTimeLevels (cgh);
+
+        } END_REFLEVEL_LOOP;
+      } END_MGLEVEL_LOOP;
+    } END_META_MODE;
   }
 
   void initialise_3tl_evolve_Ib (cGH * const cgh)
@@ -632,24 +632,14 @@ namespace Carpet {
     PoisonCheck (cgh, alltimes);
   }
   
-  void initialise_3tl_flip_timelevels_back (cGH * const cgh)
+  void initialise_3tl_reset_time (cGH * const cgh)
   {
-    Waypoint ("Flipping timelevels back");
+    Waypoint ("Resetting time");
 
-    delta_time *= -1;
-
-    BEGIN_MGLEVEL_LOOP(cgh) {
-      BEGIN_REFLEVEL_LOOP (cgh) {
-
-        for (int m=0; m<maps; ++m) {
-          vtt.at(m)->set_time (reflevel, mglevel, 0);
-        }
-        cgh->cctk_time = global_time;
-
-        FlipTimeLevels (cgh);
-
-      } END_REFLEVEL_LOOP;
-    } END_MGLEVEL_LOOP;
+    cgh->cctk_time = global_time;
+    for (int m=0; m<maps; ++m) {
+      vtt.at(m)->set_time (reflevel, mglevel, 0);
+    }
   }
 
 
