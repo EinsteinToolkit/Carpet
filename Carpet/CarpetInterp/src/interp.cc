@@ -1047,9 +1047,6 @@ namespace CarpetInterp {
       : vector<CCTK_REAL> (num_timelevels )
     {
       for (int tl=0; tl<num_timelevels; ++tl) {
-        // SW: vtt, Carpet::map, reflevel and mglevel are all globals :<
- //       at(tl) = vtt.at(map)->time (-tl, reflevel, mglevel);
-        // SW oh dear, this formula changed under my feet!
         at(tl) = vtt.at(Carpet::map)->time (tl, reflevel, mglevel);
       }
     }
