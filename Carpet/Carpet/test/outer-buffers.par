@@ -1,4 +1,4 @@
-Cactus::cctk_run_title     = "WaveToy Interpolation Test"
+Cactus::cctk_run_title     = "WaveToy outer buffer zone test"
 Cactus::cctk_full_warnings = yes
 
 Cactus::terminate       = time
@@ -10,7 +10,7 @@ ActiveThorns = "IOUtil"
 
 IO::out_dir       = $parfile
 IO::out_fileinfo  = "none"
-IO::parfile_write = "no"
+IO::parfile_write = no
 
 
 
