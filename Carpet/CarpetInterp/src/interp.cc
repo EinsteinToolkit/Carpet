@@ -326,34 +326,36 @@ namespace CarpetInterp {
     
     // Find source maps
     vector<CCTK_INT> source_map (N_interp_points);
-    if (Carpet::map != -1) {
-      // Interpolate from the current map
-      for (int n=0; n<N_interp_points; ++n) {
-        source_map.at(n) = Carpet::map;
-      }
-    } else if (maps == 1) {
-      // Interpolate from map 0 if this is the only one
-      // (for backwards compatibility)
-      for (int n=0; n<N_interp_points; ++n) {
-        source_map.at(n) = 0;
-      }
-    } else {
-      int const iret = Util_TableGetIntArray
-        (param_table_handle, N_interp_points,
-         &source_map.front(), "source_map");
-      if (iret == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+    int const iret = Util_TableGetIntArray
+      (param_table_handle, N_interp_points, &source_map.front(), "source_map");
+    if (iret == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+      // No explicit source map specified
+      if (Carpet::map != -1) {
+        // Interpolate from the current map
+        for (int n=0; n<N_interp_points; ++n) {
+          source_map.at(n) = Carpet::map;
+        }
+      } else if (maps == 1) {
+        // Interpolate from map 0 if this is the only one
+        // (for backwards compatibility)
+        for (int n=0; n<N_interp_points; ++n) {
+          source_map.at(n) = 0;
+        }
+      } else {
         CCTK_WARN (1, "No source map specified");
         return -1;
-      } else if (iret < 0) {
-        CCTK_WARN (1, "internal error");
-        return -1;
-      } else if (iret != N_interp_points) {
-        CCTK_WARN (1, "Source map array has wrong size");
-        return -1;
       }
-      for (int n=0; n<N_interp_points; ++n) {
-        assert (source_map.at(n) >=0 and source_map.at(n) < maps);
-      }
+    } else if (iret < 0) {
+      CCTK_WARN (1, "internal error");
+      return -1;
+    } else if (iret != N_interp_points) {
+      CCTK_WARN (1, "Source map array has wrong size");
+      return -1;
+    }
+    
+    // Check source maps
+    for (int n=0; n<N_interp_points; ++n) {
+      assert (source_map.at(n) >=0 and source_map.at(n) < maps);
     }
     
     int maxncomps = 0;
