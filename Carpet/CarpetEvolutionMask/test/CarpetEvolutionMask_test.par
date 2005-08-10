@@ -1,0 +1,111 @@
+
+!DESC "1+log sliced black hole, ADM_BSSN, Iterative CN, Carpet with 3 levels"
+
+# Required thorns
+
+ActiveThorns = "CoordBase SymBase time carpet carpetlib carpetregrid carpetreduce carpetslab boundary cartgrid3d bssn_mol mol nanchecker idanalyticbh carpetioascii ioutil iobasic admcoupling admbase admmacros coordgauge spacemask staticconformal carpetevolutionmask"
+
+# CarpetEvolutionMask 
+
+carpetevolutionmask::verbose = "yes"
+carpetevolutionmask::enforce_vars = "adm_bssn::adm_bs_gxx adm_bssn::adm_bs_Axx adm_bssn::adm_bs_phi"
+carpetevolutionmask::enforce_mask = "yes"
+carpetevolutionmask::writeNaNs = "yes"
+
+# Grid
+
+driver::ghost_size_x = 2
+driver::ghost_size_y = 2
+driver::ghost_size_z = 2
+
+CartGrid3D::avoid_origin = no
+
+
+Carpet::max_refinement_levels = 2
+Carpet::prolongation_order_space = 3
+Carpet::prolongation_order_time = 2
+
+Carpet::init_each_timelevel = yes
+Carpet::buffer_width = 6
+
+
+coordbase::xmin					= 0.0
+coordbase::xmax					= 6.4
+coordbase::ymin					= 0.0
+coordbase::ymax					= 6.4
+coordbase::zmin					= 0.0
+coordbase::zmax					= 6.4
+coordbase::dx					= 0.2
+coordbase::dy					= 0.2
+coordbase::dz					= 0.2
+
+CarpetRegrid::refinement_levels = 2
+CarpetRegrid::regrid_every = 0
+
+cartgrid3d::type                        	= "coordbase"
+cartgrid3d::domain                      	= "bitant"
+cartgrid3d::avoid_origin			= "no"
+
+Carpet::domain_from_coordbase 			= "yes"
+CoordBase::boundary_size_z_lower     		= 2
+CoordBase::boundary_shiftout_z_lower 		= 1
+CoordBase::boundary_size_y_lower     		= 2
+CoordBase::boundary_shiftout_y_lower 		= 1
+CoordBase::boundary_size_x_lower     		= 2
+CoordBase::boundary_shiftout_x_lower 		= 1
+
+
+carpetregrid::refined_regions = "manual-coordinate-list"
+carpetregrid::coordinates = "
+	[ [ ([0,0,0]:[3.2,3.2,3.4]:[0.1,0.1,0.1]) ] ]
+"
+
+
+carpetregrid::smart_outer_boundaries 		= "yes"
+
+cactus::cctk_initial_time = 0.0
+cactus::cctk_itlast       = 20
+ 
+time::dtfac = 0.25
+
+# Initial data 
+
+admbase::metric_type = "static conformal"
+admbase::initial_data = "schwarzschild"
+
+# Evolution
+
+admbase::evolution_method = "adm_bssn" 
+
+MoL::ODE_Method = "ICN"
+MoL::MoL_Intermediate_Steps = 3
+
+adm_bssn::bound  = "flat"
+
+# Gauge
+
+admbase::lapse_evolution_method = "1+log"
+
+# Output
+
+IO::out_fileinfo="none"
+IO::parfile_write = "no"
+IO::out_dir = $parfile
+
+IOBasic::outInfo_every = 1
+IOBasic::outInfo_vars  = "admbase::gxx"
+
+carpetioascii::out1D_every = 1
+carpetioascii::out2D_every = 1
+carpetioascii::out3D_every = -1
+
+carpetioascii::out1D_vars = "adm_bssn::adm_bs_gxx carpetevolutionmask::evolution_mask"
+carpetioascii::out2D_vars = "adm_bssn::adm_bs_gxx carpetevolutionmask::evolution_mask"
+carpetioascii::out3D_vars = "adm_bssn::adm_bs_gxx carpetevolutionmask::evolution_mask"
+
+
+IOBasic::outScalar_every =  4
+IOBasic::outScalar_vars  = "adm_bssn::adm_bs_gxx adm_bssn::adm_bs_Axx adm_bssn::adm_bs_phi adm_bssn::adm_bs_k adm_bssn::adm_bs_Gx admbase::gxx admbase::kxx admbase::alp"
+
+##################################################################
+

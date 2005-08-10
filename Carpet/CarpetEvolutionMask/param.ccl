@@ -1,0 +1,22 @@
+# Parameter definitions for thorn CarpetEvolutionMask
+
+
+
+BOOLEAN verbose "Do verbose debugging output"
+{
+} "no"
+
+BOOLEAN enforce_mask "Set RHS to zero where mask value is 0?"
+{
+} "no"
+
+
+
+BOOLEAN writeNaNs "Write NaNs into masked regions"
+{
+} "no"
+
+STRING enforce_vars "Enforce mask in MoL automatically on the following variables"
+{
+  "" :: "a list of variables or groups"
+} ""

@@ -1,0 +1,22 @@
+# Interface definition for thorn CarpetEvolutionMask
+
+IMPLEMENTS: CarpetEvolutionMask
+
+
+
+CCTK_INT FUNCTION MoLQueryEvolvedRHS (CCTK_INT IN EvolvedIndex)
+REQUIRES FUNCTION MoLQueryEvolvedRHS
+
+
+
+USES INCLUDE HEADER: dist.hh
+USES INCLUDE HEADER: vect.hh
+
+USES INCLUDE HEADER: carpet.hh
+USES INCLUDE HEADER: carpet_typecase.hh
+
+
+
+PUBLIC:
+
+CCTK_REAL evolution_mask TYPE=gf TAGS='prolongation="none" InterpNumTimelevels=1' "mask function"
