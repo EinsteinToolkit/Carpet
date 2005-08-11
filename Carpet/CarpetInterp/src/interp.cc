@@ -81,13 +81,10 @@ namespace CarpetInterp {
   static void
   find_time_interpolation_order (cGH const * const cgh,
                                  int const param_table_handle,
-                                 int const N_interp_points,
                                  int const N_output_arrays,
                                  int & prolongation_order_time,
                                  CCTK_REAL & current_time,
                                  vector<CCTK_INT> & time_deriv_order,
-                                 vector<CCTK_REAL> & interpolation_times,
-                                 bool & interpolation_times_differ,
                                  bool & have_time_derivs);
   
   static void
@@ -167,12 +164,10 @@ namespace CarpetInterp {
                           vector<data<CCTK_INT> *> & allstatuses,
                           vector<CCTK_INT> & time_deriv_order,
                           vector<int> & allhomecnts,
-                          vector<CCTK_REAL> & interpolation_times,
                           CCTK_INT const local_interp_handle,
                           CCTK_INT const param_table_handle,
                           CCTK_REAL const current_time,
                           int const interp_coords_type_code,
-                          bool const interpolation_times_differ,
                           bool const have_time_derivs,
                           int const N_input_arrays,
                           int const N_output_arrays,
@@ -219,15 +214,12 @@ namespace CarpetInterp {
                                 vector<data<CCTK_INT> *> & allstatuses,
                                 vector<CCTK_INT> & time_deriv_order,
                                 vector<int> & allhomecnts,
-                                vector<CCTK_REAL> &interpolation_times,
                                 CCTK_INT const local_interp_handle,
                                 CCTK_INT const param_table_handle,
                                 CCTK_REAL const current_time,
                                 int const interp_coords_type_code,
                                 int const num_tl,
                                 bool const need_time_interp,
-                                bool const interpolation_times_differ,
-                                bool const have_time_derivs,
                                 int const N_input_arrays,
                                 int const N_output_arrays,
                                 CCTK_INT const output_array_type_codes [],
@@ -369,8 +361,6 @@ namespace CarpetInterp {
     
     // Find the time interpolation order
     vector<CCTK_INT> time_deriv_order (N_output_arrays);
-    vector<CCTK_REAL> interpolation_times (N_interp_points);
-    bool interpolation_times_differ;
     bool have_time_derivs;
     CCTK_REAL current_time;
     int prolongation_order_time;
@@ -378,11 +368,9 @@ namespace CarpetInterp {
     find_time_interpolation_order
       (cgh,
        param_table_handle,
-       N_interp_points,
        N_output_arrays,
        prolongation_order_time, current_time,
-       time_deriv_order, interpolation_times,
-       interpolation_times_differ, have_time_derivs);
+       time_deriv_order, have_time_derivs);
     
     
     
@@ -516,11 +504,9 @@ namespace CarpetInterp {
        allcoords, alloutputs, allstatuses,
        time_deriv_order,
        allhomecnts,
-       interpolation_times,
        local_interp_handle, param_table_handle,
        current_time,
        interp_coords_type_code,
-       interpolation_times_differ,
        have_time_derivs,
        N_input_arrays, N_output_arrays,
        output_array_type_codes, input_array_variable_indices);
@@ -604,13 +590,10 @@ namespace CarpetInterp {
   static void
   find_time_interpolation_order (cGH const * const cgh,
                                  int const param_table_handle,
-                                 int const N_interp_points,
                                  int const N_output_arrays,
                                  int & prolongation_order_time,
                                  CCTK_REAL & current_time,
                                  vector<CCTK_INT> & time_deriv_order,
-                                 vector<CCTK_REAL> & interpolation_times,
-                                 bool & interpolation_times_differ,
                                  bool & have_time_derivs)
   {
     // Find the time interpolation order
@@ -624,19 +607,6 @@ namespace CarpetInterp {
     prolongation_order_time = * (CCTK_INT const *) parptr;
     
     current_time = cgh->cctk_time / cgh->cctk_delta_time;
-    
-    ierr = Util_TableGetRealArray
-      (param_table_handle, N_interp_points,
-       &interpolation_times.front(), "interpolation_times");
-    if (ierr == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-      for (int n=0; n<N_interp_points; ++n) {
-        interpolation_times.at(n) = current_time;
-      }
-      interpolation_times_differ = false;
-    } else {
-      assert (ierr == N_interp_points);
-      interpolation_times_differ = true;
-    }
     
     ierr = Util_TableGetIntArray
       (param_table_handle, N_output_arrays,
@@ -892,12 +862,10 @@ namespace CarpetInterp {
                           vector<data<CCTK_INT> *> & allstatuses,
                           vector<CCTK_INT> & time_deriv_order,
                           vector<int> & allhomecnts,
-                          vector<CCTK_REAL> & interpolation_times,
                           CCTK_INT const local_interp_handle,
                           CCTK_INT const param_table_handle,
                           CCTK_REAL const current_time,
                           int const interp_coords_type_code,
-                          bool const interpolation_times_differ,
                           bool const have_time_derivs,
                           int const N_input_arrays,
                           int const N_output_arrays,
@@ -915,12 +883,12 @@ namespace CarpetInterp {
         // Number of necessary time levels
         CCTK_REAL const level_time = cgh->cctk_time / cgh->cctk_delta_time;
         bool const need_time_interp
-          = (interpolation_times_differ || have_time_derivs
+          = (have_time_derivs
              || (fabs(current_time - level_time)
                  > 1e-12 * (fabs(level_time) + fabs(current_time)
                             + fabs(cgh->cctk_delta_time))));
         assert (! (! want_global_mode
-                   && ! interpolation_times_differ && ! have_time_derivs
+                   && ! have_time_derivs
                    && need_time_interp));
         int const num_tl = need_time_interp ? prolongation_order_time + 1 : 1;
         
@@ -934,14 +902,11 @@ namespace CarpetInterp {
                allcoords, alloutputs, allstatuses,
                time_deriv_order,
                allhomecnts,
-               interpolation_times,
                local_interp_handle, param_table_handle,
                current_time,
                interp_coords_type_code,
                num_tl,
                need_time_interp,
-               interpolation_times_differ,
-               have_time_derivs,
                N_input_arrays, N_output_arrays,
                output_array_type_codes,
                input_array_variable_indices);
@@ -1190,15 +1155,12 @@ namespace CarpetInterp {
                                 vector<data<CCTK_INT> *> & allstatuses,
                                 vector<CCTK_INT> & time_deriv_order,
                                 vector<int> & allhomecnts,
-                                vector<CCTK_REAL> &interpolation_times,
                                 CCTK_INT const local_interp_handle,
                                 CCTK_INT const param_table_handle,
                                 CCTK_REAL const current_time,
                                 int const interp_coords_type_code,
                                 int const num_tl,
                                 bool const need_time_interp,
-                                bool const interpolation_times_differ,
-                                bool const have_time_derivs,
                                 int const N_input_arrays,
                                 int const N_output_arrays,
                                 CCTK_INT const output_array_type_codes [],
@@ -1395,42 +1357,19 @@ namespace CarpetInterp {
             assert (0);
           }
           
-          if (! interpolation_times_differ && ! have_time_derivs) {
-            const InterpolationTimes times (my_num_tl );
-            const InterpolationWeights tfacs (0, times, current_time );
+          const InterpolationTimes times (my_num_tl);
+          const InterpolationWeights tfacs (deriv_order, times, current_time);
 
-            // Interpolate
-            assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
-            for (int k=0; k<npoints; ++k) {
-              CCTK_REAL & dest = (*alloutputs.at(ind_prc(p,Carpet::map,reflevel,component)))[ivect(k,j,0)];
-              dest = 0;
-              for (int tl=0; tl<my_num_tl; ++tl) {
-                CCTK_REAL const src = ((CCTK_REAL const *)tmp_output_arrays.at(tl).at(j))[k];
-                dest += tfacs[tl] * src;
-              }
+          // Interpolate
+          assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
+          for (int k=0; k<npoints; ++k) {
+            CCTK_REAL & dest = (*alloutputs.at(ind_prc(p,Carpet::map,reflevel,component)))[ivect(k,j,0)];
+            dest = 0;
+            for (int tl=0; tl<my_num_tl; ++tl) {
+              CCTK_REAL const src = ((CCTK_REAL const *)tmp_output_arrays.at(tl).at(j))[k];
+              dest += tfacs[tl] * src;
             }
-            
-          } else {
-            
-            // Interpolate
-            assert (output_array_type_codes[j] == CCTK_VARIABLE_REAL);
-            for (int k=0; k<npoints; ++k) {
-              
-              CCTK_REAL const time = interpolation_times.at(k);
-              
-              const InterpolationTimes times (my_num_tl );
-              const InterpolationWeights tfacs (deriv_order, times,
-			      current_time );
-             
-              CCTK_REAL & dest = (*alloutputs.at(ind_prc(p,Carpet::map,reflevel,component)))[ivect(k,j,0)];
-              dest = 0;
-              for (int tl=0; tl<my_num_tl; ++tl) {
-                CCTK_REAL const src = ((CCTK_REAL const *)tmp_output_arrays.at(tl).at(j))[k];
-                dest += tfacs[tl] * src;
-              }
-            }
-            
-          } // if interpolation_times_differ
+          }
           
         } // for j
         
