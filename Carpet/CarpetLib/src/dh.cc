@@ -594,49 +594,71 @@ void dh::save_time (bool do_prolongate)
   for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
     (*f)->recompose_crop ();
   }
+  bool any_level_changed = false;
   for (int rl=0; rl<h.reflevels(); ++rl) {
-    for (int c = 0; c < ggfs.size(); c++) {
-      for (int g = 0; g < ggfs[c].members.size(); g++) {
-        ggfs[c].members[g]->recompose_allocate (rl);
-      }
-      for (comm_state state(ggfs[c].vartype); ! state.done(); state.step()) {
+    
+    // TODO: calculate this_level_changed only once
+    bool const this_level_changed
+      = gfs.begin()!=gfs.end() and (*gfs.begin())->recompose_did_change (rl);
+    any_level_changed |= this_level_changed;
+    if (! fast_recomposing or any_level_changed) {
+
+      for (int c = 0; c < ggfs.size(); c++) {
         for (int g = 0; g < ggfs[c].members.size(); g++) {
-          ggfs[c].members[g]->recompose_fill (state, rl, do_prolongate);
+          ggfs[c].members[g]->recompose_allocate (rl);
         }
-      }
-      for (int g = 0; g < ggfs[c].members.size(); g++) {
-        ggfs[c].members[g]->recompose_free (rl);
-      }
-      for (comm_state state(ggfs[c].vartype); ! state.done(); state.step()) {
+        for (comm_state state(ggfs[c].vartype); ! state.done(); state.step()) {
+          for (int g = 0; g < ggfs[c].members.size(); g++) {
+            ggfs[c].members[g]->recompose_fill (state, rl, do_prolongate);
+          }
+        }
         for (int g = 0; g < ggfs[c].members.size(); g++) {
-          ggfs[c].members[g]->recompose_bnd_prolongate (state, rl, do_prolongate);
+          ggfs[c].members[g]->recompose_free (rl);
         }
-      }
-      for (comm_state state(ggfs[c].vartype); ! state.done(); state.step()) {
-        for (int g = 0; g < ggfs[c].members.size(); g++) {
-          ggfs[c].members[g]->recompose_sync (state, rl, do_prolongate);
+        for (comm_state state(ggfs[c].vartype); ! state.done(); state.step()) {
+          for (int g = 0; g < ggfs[c].members.size(); g++) {
+            ggfs[c].members[g]->recompose_bnd_prolongate (state, rl, do_prolongate);
+          }
         }
-      }
-    } // for all grid functions of same vartype
+        for (comm_state state(ggfs[c].vartype); ! state.done(); state.step()) {
+          for (int g = 0; g < ggfs[c].members.size(); g++) {
+            ggfs[c].members[g]->recompose_sync (state, rl, do_prolongate);
+          }
+        }
+      } // for all grid functions of same vartype
+
+    } // if did_change
   } // for all refinement levels
 }
 
-void dh::save_memory (bool do_prolongate) {
+void dh::save_memory (bool do_prolongate)
+{
+  DECLARE_CCTK_PARAMETERS;
+
   for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
     
     (*f)->recompose_crop ();
+
+    bool any_level_changed = false;
     for (int rl=0; rl<h.reflevels(); ++rl) {
-      (*f)->recompose_allocate (rl);
-      for (comm_state state; !state.done(); state.step()) {
-        (*f)->recompose_fill (state, rl, do_prolongate);
-      }
-      (*f)->recompose_free (rl);
-      for (comm_state state; !state.done(); state.step()) {
-        (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
-      }
-      for (comm_state state; !state.done(); state.step()) {
-        (*f)->recompose_sync (state, rl, do_prolongate);
-      }
+      // TODO: calculate this_level_changed only once
+      bool const this_level_changed = (*f)->recompose_did_change (rl);
+      any_level_changed |= this_level_changed;
+      if (! fast_recomposing or any_level_changed) {
+
+        (*f)->recompose_allocate (rl);
+        for (comm_state state; !state.done(); state.step()) {
+          (*f)->recompose_fill (state, rl, do_prolongate);
+        }
+        (*f)->recompose_free (rl);
+        for (comm_state state; !state.done(); state.step()) {
+          (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
+        }
+        for (comm_state state; !state.done(); state.step()) {
+          (*f)->recompose_sync (state, rl, do_prolongate);
+        }
+
+      } // if did_change
     } // for rl
     
   } // for gf

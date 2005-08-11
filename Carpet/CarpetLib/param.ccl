@@ -26,6 +26,10 @@ BOOLEAN save_memory_during_regridding "Save some memory during regridding at the
 {
 } "yes"
 
+BOOLEAN fast_recomposing "Take shortcuts during recomposing (EXPERIMENTAL)"
+{
+} "no"
+
 
 
 INT print_memstats_every "Report periodically how much memory is used per process" STEERABLE=always

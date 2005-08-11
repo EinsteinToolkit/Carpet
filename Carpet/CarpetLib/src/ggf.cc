@@ -102,10 +102,30 @@ void ggf::recompose_crop ()
   } // for ml
 }
 
+bool ggf::recompose_did_change (const int rl) const
+{
+  // Find out whether this level changed
+  if (storage.size() != h.mglevels()) return true;
+  for (int ml=0; ml<h.mglevels(); ++ml) {
+    if (storage.at(ml).size() <= rl) return true;
+    if (storage.at(ml).at(rl).size() != h.components(rl)) return true;
+    for (int c=0; c<h.components(rl); ++c) {
+      if (storage.at(ml).at(rl).at(c).size() != timelevels()) return true;
+      for (int tl=0; tl<timelevels(); ++tl) {
+        ibbox const & wantextent = d.boxes.at(ml).at(rl).at(c).exterior;
+        ibbox const & haveextent = storage.at(ml).at(rl).at(c).at(tl)->extent();
+        if (haveextent != wantextent) return true;
+        int const wantproc = h.proc(rl,c);
+        int const haveproc = storage.at(ml).at(rl).at(c).at(tl)->proc();
+        if (haveproc != wantproc) return true;
+      } // for tl
+    } // for c
+  } // for ml
+  return false;
+}
+
 void ggf::recompose_allocate (const int rl)
 {
-  // TODO: restructure storage only when needed
-  
   // Retain storage that might be needed
   oldstorage.resize(storage.size());
   for (int ml=0; ml<(int)storage.size(); ++ml) {
