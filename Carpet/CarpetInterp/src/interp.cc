@@ -1091,7 +1091,7 @@ namespace CarpetInterp {
         default:
           assert (0);
         }
-      break;
+        break;
                 
       case 1:
         switch (num_timelevels) {
@@ -1113,8 +1113,8 @@ namespace CarpetInterp {
           break;
         default:
         assert (0);
-      }
-      break;
+        }
+        break;
         
       default:
         assert (0);
@@ -1150,19 +1150,19 @@ namespace CarpetInterp {
                                                const InterpolationTimes & t,
                                                CCTK_REAL t0 )
     {
-      at(0) = (1 - t[1]) / (t[0] - t[1]);
-      at(1) = (1 - t[0]) / (t[1] - t[0]);
+      at(0) = 1 / (t[0] - t[1]);
+      at(1) = 1 / (t[1] - t[0]);
     }
 
     void for_1st_deriv_quadratic_3_pt_interp_2nd_order (
                                                const InterpolationTimes & t,
                                                CCTK_REAL t0 )
     {
-      at(0) = ((1 - t[1]) * (t0 - t[2]) + (t0 - t[1]) * (1 - t[2]))
+      at(0) = ((t0 - t[2]) + (t0 - t[1]))
                   / ((t[0] - t[1]) * (t[0] - t[2]));
-      at(1) = ((1 - t[0]) * (t0 - t[2]) + (t0 - t[0]) * (1 - t[2]))
+      at(1) = ((t0 - t[2]) + (t0 - t[0]))
                   / ((t[1] - t[0]) * (t[1] - t[2]));
-      at(2) = ((1 - t[0]) * (t0 - t[1]) + (t0 - t[0]) * (1 - t[1]))
+      at(2) = ((t0 - t[1]) + (t0 - t[0]))
                   / ((t[2] - t[0]) * (t[2] - t[1]));
     }
 
@@ -1170,9 +1170,9 @@ namespace CarpetInterp {
                                                const InterpolationTimes & t,
                                                CCTK_REAL t0 )
     {
-      at(0) = 2 * (1 - t[1]) * (1 - t[2]) / ((t[0] - t[1]) * (t[0] - t[2]));
-      at(1) = 2 * (1 - t[0]) * (1 - t[2]) / ((t[1] - t[0]) * (t[1] - t[2]));
-      at(2) = 2 * (1 - t[0]) * (1 - t[1]) / ((t[2] - t[0]) * (t[2] - t[1]));
+      at(0) = 2 / ((t[0] - t[1]) * (t[0] - t[2]));
+      at(1) = 2 / ((t[1] - t[0]) * (t[1] - t[2]));
+      at(2) = 2 / ((t[2] - t[0]) * (t[2] - t[1]));
     }
   };
   
