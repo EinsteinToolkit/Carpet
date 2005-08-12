@@ -25,9 +25,16 @@ namespace CarpetEvolutionMask {
     // ask the flesh what the value of carpet::buffer_width is...
     // this should be fixed at some point...
 
-    CCTK_INT buffer_width = *(CCTK_INT*) CCTK_ParameterGet
-      ("buffer_width","Carpet",0);
-    
+    CCTK_INT use_outer_buffer_zones = *(CCTK_INT*) CCTK_ParameterGet
+      ("use_outer_buffer_zones","Carpet",0);
+
+    CCTK_INT buffer_width;
+    if (use_outer_buffer_zones) {
+      buffer_width = 0;
+    } else {
+      buffer_width = *(CCTK_INT*) CCTK_ParameterGet
+        ("buffer_width","Carpet",0);
+    }
     // cout << "buffer width: " << buffer_width << endl;
     
     if (! is_singlemap_mode()) {
@@ -55,7 +62,7 @@ namespace CarpetEvolutionMask {
       // Calculate the union of all refined regions
       ibset refined;
       for (int c=0; c<hh.components(reflevel); ++c) {
-	ibbox refcomp = hh.extents().at(mglevel).at(reflevel).at(c);;
+	ibbox refcomp = hh.extents().at(mglevel).at(reflevel).at(c);
 	bbvect outer_boundary = hh.outer_boundary(reflevel,c);
 	ivect expand_right, expand_left;
 	for (int d=0;d<dim;d++) {
