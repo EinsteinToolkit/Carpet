@@ -331,7 +331,6 @@ void ggf::copycat (comm_state& state,
   assert (ml1>=0 and ml1<h.mglevels());
   assert (tl2>=0 and tl2<timelevels());
   assert (rl2>=0 and rl2<h.reflevels());
-  assert (state.vartype < 0 || state.vartype == CCTK_VarTypeI (varindex));
   const int c2=c1;
   assert (ml2<h.mglevels());
   const ibbox recv = d.boxes.at(ml1).at(rl1).at(c1).*recv_box;
@@ -354,12 +353,10 @@ void ggf::copycat (comm_state& state,
   assert (           ml2<h.mglevels());
   assert (tl2>=0 and tl2<timelevels());
   assert (rl2>=0 and rl2<h.reflevels());
-  assert (state.vartype < 0 || state.vartype == CCTK_VarTypeI (varindex));
   const int c2=c1;
   const iblist recv = d.boxes.at(ml1).at(rl1).at(c1).*recv_list;
   // walk all boxes
-  for (iblist::const_iterator r=recv.begin(); r!=recv.end(); ++r)
-  {
+  for (iblist::const_iterator r=recv.begin(); r!=recv.end(); ++r) {
     // (use the send boxes for communication)
     // copy the content
     gdata* const dst = storage.at(ml1).at(rl1).at(c1).at(tl1);
@@ -381,7 +378,6 @@ void ggf::copycat (comm_state& state,
   assert (           ml2<h.mglevels());
   assert (tl2>=0 and tl2<timelevels());
   assert (rl2>=0 and rl2<h.reflevels());
-  assert (state.vartype < 0 || state.vartype == CCTK_VarTypeI (varindex));
   // walk all components
   for (int c2=0; c2<h.components(rl2); ++c2) {
     const iblist recv = (d.boxes.at(ml1).at(rl1).at(c1).*recv_listvect).at(c2);
@@ -418,7 +414,6 @@ void ggf::intercat (comm_state& state,
   vector<CCTK_REAL> times(tl2s.size());
   for (int i=0; i<(int)gsrcs.size(); ++i) {
     gsrcs.at(i) = storage.at(ml2).at(rl2).at(c2).at(tl2s.at(i));
-    assert (state.vartype < 0 || state.vartype == CCTK_VarTypeI (varindex));
     times.at(i) = t.time(tl2s.at(i),rl2,ml2);
   }
   
@@ -451,7 +446,6 @@ void ggf::intercat (comm_state& state,
   vector<CCTK_REAL> times(tl2s.size());
   for (int i=0; i<(int)gsrcs.size(); ++i) {
     gsrcs.at(i) = storage.at(ml2).at(rl2).at(c2).at(tl2s.at(i));
-    assert (state.vartype < 0 || state.vartype == CCTK_VarTypeI (varindex));
     times.at(i) = t.time(tl2s.at(i),rl2,ml2);
   }
   
@@ -490,7 +484,6 @@ void ggf::intercat (comm_state& state,
     vector<CCTK_REAL> times(tl2s.size());
     for (int i=0; i<(int)gsrcs.size(); ++i) {
       gsrcs.at(i) = storage.at(ml2).at(rl2).at(c2).at(tl2s.at(i));
-      assert (state.vartype < 0 || state.vartype == CCTK_VarTypeI (varindex));
       times.at(i) = t.time(tl2s.at(i),rl2,ml2);
     }
     
@@ -540,6 +533,7 @@ void ggf::ref_bnd_prolongate (comm_state& state,
   vector<int> tl2s;
   if (transport_operator != op_copy) {
     // Interpolation in time
+if (timelevels() < prolongation_order_time+1) fprintf (stderr, "got '%s' with %d timelevels order %d\n", CCTK_FullName (varindex), timelevels(), prolongation_order_time);
     assert (timelevels() >= prolongation_order_time+1);
     tl2s.resize(prolongation_order_time+1);
     for (int i=0; i<=prolongation_order_time; ++i) tl2s.at(i) = i;

@@ -125,6 +125,15 @@ protected:
                              const ibbox& box);
 #endif
   
+  // Datatype accessors
+private:
+  // maps the C datatype of a data class object to a 0-based index
+  virtual unsigned int c_datatype () const
+  {
+    T dummy;
+    return dist::c_datatype (dummy);
+  }
+
   // Data manipulators
 private:
   virtual comm_state::gcommbuf *

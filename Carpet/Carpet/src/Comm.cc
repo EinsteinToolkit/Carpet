@@ -18,7 +18,7 @@ namespace Carpet {
 
   static void ProlongateGroupBoundaries (const cGH* cctkGH,
                                          CCTK_REAL initial_time,
-                                         group_set& groups);
+                                         const vector<int>& groups);
 
 
   // Carpet's overload function for CCTK_SyncGroup()
@@ -38,8 +38,7 @@ namespace Carpet {
 
       const int firstvar = CCTK_FirstVarIndexI (group);
       const int vartype = CCTK_VarTypeI (firstvar);
-      const vector<int> members(1, group);
-      group_set groups = {vartype, members};
+      const vector<int> groups(1, group);
       retval = SyncProlongateGroups (cctkGH, groups);
     } else {
       retval = -2;
@@ -49,22 +48,21 @@ namespace Carpet {
   }
 
 
-  // synchronises ghostzones and prolongates boundaries
-  // of a set of groups which all have the same vartype
+  // synchronises ghostzones and prolongates boundaries of a set of groups
   //
   // returns 0 for success and -1 if the set contains a group with no storage
-  int SyncProlongateGroups (const cGH* cctkGH, group_set& groups)
+  int SyncProlongateGroups (const cGH* cctkGH, const vector<int>& groups)
   {
     int retval = 0;
     DECLARE_CCTK_PARAMETERS;
 
-    assert (groups.members.size() > 0);
+    assert (groups.size() > 0);
 
     // check consistency of all groups:
     // create a new set with empty and no-storage groups removed
-    group_set goodgroups = {groups.vartype};
-    for (size_t g = 0; g < groups.members.size(); g++) {
-      const int group = groups.members[g];
+    vector<int> goodgroups;
+    for (size_t g = 0; g < groups.size(); g++) {
+      const int group = groups[g];
       const int grouptype = CCTK_GroupTypeI (group);
       char* groupname = CCTK_GroupName (group);
       Checkpoint ("SyncGroup \"%s\" time=%g",
@@ -110,13 +108,13 @@ namespace Carpet {
         retval = -1;
       }
       else if (CCTK_NumVarsInGroupI (group) > 0) {
-        goodgroups.members.push_back(group);
+        goodgroups.push_back(group);
       }
 
       free (groupname);
     }
 
-    if (goodgroups.members.size() > 0) {
+    if (goodgroups.size() > 0) {
       // prolongate boundaries
       if (do_prolongate && reflevel > 0) {
         ProlongateGroupBoundaries (cctkGH, cctk_initial_time, goodgroups);
@@ -132,7 +130,7 @@ namespace Carpet {
   // Prolongate the boundaries of all CCTK_GF groups in the given set
   static void ProlongateGroupBoundaries (const cGH* cctkGH,
                                          CCTK_REAL initial_time,
-                                         group_set& groups)
+                                         const vector<int>& groups)
   {
     DECLARE_CCTK_PARAMETERS;
     const int tl = 0;
@@ -141,9 +139,9 @@ namespace Carpet {
     const CCTK_REAL time
       = (cctkGH->cctk_time - initial_time) / delta_time;
 
-    for (comm_state state(groups.vartype); ! state.done(); state.step()) {
-      for (int group = 0; group < groups.members.size(); ++group) {
-        const int g = groups.members.at(group);
+    for (comm_state state; ! state.done(); state.step()) {
+      for (int group = 0; group < groups.size(); ++group) {
+        const int g = groups[group];
         const int grouptype = CCTK_GroupTypeI (g);
         if (grouptype != CCTK_GF) {
           continue;
@@ -163,17 +161,17 @@ namespace Carpet {
   }
 
 
-  // synchronises a set of group which all have the same vartype
-  void SyncGroups (const cGH* cctkGH, group_set& groups)
+  // synchronises a set of groups
+  void SyncGroups (const cGH* cctkGH, const vector<int>& groups)
   {
     DECLARE_CCTK_PARAMETERS;
     const int tl = 0;
 
-    assert (groups.members.size() > 0);
+    assert (groups.size() > 0);
 
-    for (comm_state state(groups.vartype); ! state.done(); state.step()) {
-      for (int group = 0; group < groups.members.size(); ++group) {
-        const int g = groups.members.at(group);
+    for (comm_state state; ! state.done(); state.step()) {
+      for (int group = 0; group < groups.size(); ++group) {
+        const int g = groups[group];
         const int grouptype = CCTK_GroupTypeI (g);
         const int ml = grouptype == CCTK_GF ? mglevel : 0;
         const int rl = grouptype == CCTK_GF ? reflevel : 0;

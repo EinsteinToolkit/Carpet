@@ -63,7 +63,88 @@ namespace dist {
   
   
   
-  // Datatype helpers
+  /////////////////////////////////////////////////////////////////////////
+  // C Datatype helpers
+  // Map a C datatype to a 0-based index running up to c_ndatatypes().
+  /////////////////////////////////////////////////////////////////////////
+  inline unsigned int c_datatype (const char&)
+  { return 0; }
+  
+  inline unsigned int c_datatype (const signed char&)
+  { return 1; }
+  
+  inline unsigned int c_datatype (const unsigned char&)
+  { return 2; }
+  
+  inline unsigned int c_datatype (const short&)
+  { return 3; }
+  
+  inline unsigned int c_datatype (const unsigned short&)
+  { return 4; }
+  
+  inline unsigned int c_datatype (const int&)
+  { return 5; }
+  
+  inline unsigned int c_datatype (const unsigned int&)
+  { return 6; }
+  
+  inline unsigned int c_datatype (const long&)
+  { return 7; }
+  
+  inline unsigned int c_datatype (const unsigned long&)
+  { return 8; }
+  
+  inline unsigned int c_datatype (const long long&)
+  { return 9; }
+  
+  inline unsigned int c_datatype (const float&)
+  { return 10; }
+  
+  inline unsigned int c_datatype (const double&)
+  { return 11; }
+  
+  inline unsigned int c_datatype (const long double&)
+  { return 12; }
+  
+#if 0
+  
+  inline unsigned int c_datatype (const complex<float>&)
+  { return 13; }
+  
+  inline unsigned int c_datatype (const complex<double>&)
+  { return 14; }
+  
+  inline unsigned int c_datatype (const complex<long double>&)
+  { return 15; }
+  
+#else
+  
+#  ifdef CCTK_REAL4
+  inline unsigned int c_datatype (const CCTK_COMPLEX8&)
+  { return 13; }
+#  endif
+  
+#  ifdef CCTK_REAL8
+  inline unsigned int c_datatype (const CCTK_COMPLEX16&)
+  { return 14; }
+#  endif
+  
+#  ifdef CCTK_REAL16
+  inline unsigned int c_datatype (const CCTK_COMPLEX32&)
+  { return 15; }
+#  endif
+  
+#endif
+  
+  // keep this function's return code consistent with functions above
+  inline unsigned int c_ndatatypes ()
+  { return 16; }
+
+
+  /////////////////////////////////////////////////////////////////
+  // MPI Datatype helpers
+  // Map a C datatype to its corresponding MPI datatype.
+  /////////////////////////////////////////////////////////////////
   inline MPI_Datatype datatype (const char&)
   { return MPI_CHAR; }
   

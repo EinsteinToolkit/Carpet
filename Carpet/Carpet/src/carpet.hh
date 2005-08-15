@@ -36,8 +36,8 @@ namespace Carpet {
   void CycleTimeLevels (const cGH* cgh);
   void FlipTimeLevels (const cGH* cgh);
   void Restrict (const cGH* cgh);
-  void SyncGroups (const cGH* cgh, group_set& groups);
-  int  SyncProlongateGroups (const cGH* cgh, group_set& groups);
+  void SyncGroups (const cGH* cgh, const vector<int>& groups);
+  int  SyncProlongateGroups (const cGH* cgh, const vector<int>& groups);
  
   // Sanity checks
   enum checktimes { currenttime,

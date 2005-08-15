@@ -14,15 +14,6 @@ using namespace std;
 
 
 
-// structure to hold a set of grid functions
-// which all have the same CCTK vartype
-struct gf_set {
-  int vartype;                // e.g. CCTK_VARIABLE_REAL, etc.
-  vector<ggf*> members;       // members of this set
-};
-
-
-
 // Constructors
 dh::dh (gh& h_,
         const ivect& lghosts_, const ivect& ughosts_,
@@ -573,24 +564,6 @@ void dh::save_time (bool do_prolongate)
 {
   DECLARE_CCTK_PARAMETERS;
 
-  // sort all grid functions into sets of the same vartype
-  vector<gf_set> ggfs;
-  for (list<ggf*>::iterator f = gfs.begin(); f != gfs.end(); ++f) {
-    gf_set newset;
-    newset.vartype = CCTK_VarTypeI ((*f)->varindex);
-    assert (newset.vartype >= 0);
-    int c;
-    for (c = 0; c < ggfs.size(); c++) {
-      if (newset.vartype == ggfs[c].vartype) {
-        break;
-      }
-    }
-    if (c == ggfs.size()) {
-      ggfs.push_back (newset);
-    }
-    ggfs[c].members.push_back (*f);
-  }
-
   for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
     (*f)->recompose_crop ();
   }
@@ -603,27 +576,17 @@ void dh::save_time (bool do_prolongate)
     any_level_changed |= this_level_changed;
     if (! fast_recomposing or any_level_changed) {
 
-      for (int c = 0; c < ggfs.size(); c++) {
-        for (int g = 0; g < ggfs[c].members.size(); g++) {
-          ggfs[c].members[g]->recompose_allocate (rl);
+      for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+        (*f)->recompose_allocate (rl);
+        for (comm_state state; ! state.done(); state.step()) {
+          (*f)->recompose_fill (state, rl, do_prolongate);
         }
-        for (comm_state state(ggfs[c].vartype); ! state.done(); state.step()) {
-          for (int g = 0; g < ggfs[c].members.size(); g++) {
-            ggfs[c].members[g]->recompose_fill (state, rl, do_prolongate);
-          }
+        (*f)->recompose_free (rl);
+        for (comm_state state; ! state.done(); state.step()) {
+          (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
         }
-        for (int g = 0; g < ggfs[c].members.size(); g++) {
-          ggfs[c].members[g]->recompose_free (rl);
-        }
-        for (comm_state state(ggfs[c].vartype); ! state.done(); state.step()) {
-          for (int g = 0; g < ggfs[c].members.size(); g++) {
-            ggfs[c].members[g]->recompose_bnd_prolongate (state, rl, do_prolongate);
-          }
-        }
-        for (comm_state state(ggfs[c].vartype); ! state.done(); state.step()) {
-          for (int g = 0; g < ggfs[c].members.size(); g++) {
-            ggfs[c].members[g]->recompose_sync (state, rl, do_prolongate);
-          }
+        for (comm_state state; ! state.done(); state.step()) {
+          (*f)->recompose_sync (state, rl, do_prolongate);
         }
       } // for all grid functions of same vartype
 

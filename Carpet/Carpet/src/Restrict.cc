@@ -16,8 +16,8 @@ namespace Carpet {
   
   using namespace std;
   
-  // restricts a set of groups which all have the same vartype
-  static void RestrictGroups (const cGH* cgh, group_set& groups);
+  // restricts a set of groups
+  static void RestrictGroups (const cGH* cgh, const vector<int>& groups);
   
   
   void Restrict (const cGH* cgh)
@@ -38,52 +38,34 @@ namespace Carpet {
       return;
     }
 
-    // sort all grid functions into sets of the same vartype
-    vector<group_set> groups;
+    // remove all groups with are non-GFs, empty, or have no storage assigned
+    vector<int> groups;
 
     for (int group = 0; group < CCTK_NumGroups(); ++group) {
       if (CCTK_GroupTypeI(group) == CCTK_GF
           && CCTK_NumVarsInGroupI(group) > 0
           && CCTK_QueryGroupStorageI(cgh, group)) {
-
-        group_set newset;
-        const int firstvar = CCTK_FirstVarIndexI (group);
-        newset.vartype = CCTK_VarTypeI (firstvar);
-        assert (newset.vartype >= 0);
-        int c;
-        for (c = 0; c < groups.size(); c++) {
-          if (newset.vartype == groups[c].vartype) {
-            break;
-          }
-        }
-        if (c == groups.size()) {
-          groups.push_back (newset);
-        }
-        groups[c].members.push_back (group);
+        groups.push_back (group);
       }
     }
 
     // Restrict
-    for (int c = 0; c < groups.size(); c++) {
-      RestrictGroups (cgh, groups[c]);
-    }
+    RestrictGroups (cgh, groups);
 
     // Synchronise
-    for (int c = 0; c < groups.size(); c++) {
-      SyncGroups (cgh, groups[c]);
-    }
+    SyncGroups (cgh, groups);
   }
   
 
   // restricts a set of groups which all have the same vartype
-  static void RestrictGroups (const cGH* cgh, group_set& groups) {
+  static void RestrictGroups (const cGH* cgh, const vector<int>& groups) {
     DECLARE_CCTK_PARAMETERS;
 
     const int tl = 0;
 
-    for (comm_state state(groups.vartype); ! state.done(); state.step()) {
-      for (int c = 0; c < groups.members.size(); ++c) {
-        const int group = groups.members[c];
+    for (comm_state state; ! state.done(); state.step()) {
+      for (int c = 0; c < groups.size(); ++c) {
+        const int group = groups[c];
         for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
 
           // use background time here (which may not be modified

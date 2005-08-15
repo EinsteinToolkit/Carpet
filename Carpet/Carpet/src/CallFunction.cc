@@ -252,33 +252,16 @@ namespace Carpet {
     // check if there is anything to do
     if (attribute->n_SyncGroups <= 0) return;
 
-    vector<group_set> groups;
-
-    // sort all grid variables into sets of the same vartype
+    // remove all empty groups from the list
+    vector<int> groups;
     for (int g = 0; g < attribute->n_SyncGroups; g++) {
-      // skip empty groups
       const int group = attribute->SyncGroups[g];
-      if (CCTK_NumVarsInGroupI (group) <= 0) continue;
-
-      group_set newset;
-      const int firstvar = CCTK_FirstVarIndexI (group);
-      newset.vartype = CCTK_VarTypeI (firstvar);
-      assert (newset.vartype >= 0);
-      int c;
-      for (c = 0; c < groups.size(); c++) {
-        if (newset.vartype == groups[c].vartype) {
-          break;
-        }
+      if (CCTK_NumVarsInGroupI (group) > 0) {
+        groups.push_back (group);
       }
-      if (c == groups.size()) {
-        groups.push_back (newset);
-      }
-      groups[c].members.push_back (group);
     }
 
-    for (int c = 0; c < groups.size(); c++) {
-      SyncProlongateGroups (cgh, groups[c]);
-    }
+    SyncProlongateGroups (cgh, groups);
   }
   
 } // namespace Carpet

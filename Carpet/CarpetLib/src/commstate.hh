@@ -6,14 +6,9 @@
 
 #include <mpi.h>
 
-
+#include "dist.hh"
 
 using namespace std;
-
-
-
-class gdata;
-
 
 
 // State information for communications
@@ -21,11 +16,11 @@ class gdata;
 // Depending on how a comm state object was created,
 // it will step through one of two state transitions (in the given order):
 enum astate {
-  // these are used for communications on individual components
-  state_post, state_wait,
-
   // these are used for collective communications
   state_get_buffer_sizes, state_fill_send_buffers, state_empty_recv_buffers,
+
+  // these are used for communications on individual components
+  state_post, state_wait,
 
   // all transition graphs must end with here
   state_done
@@ -34,31 +29,25 @@ enum astate {
 struct comm_state {
   astate thestate;
 
-  // If no vartype is given the comm state will be set up
-  // for single-component communications.
-  comm_state (int vartype = -1);
+  comm_state ();
   void step ();
   bool done ();
   ~comm_state ();
-  
+
 private:
   // Forbid copying and passing by value
   comm_state (comm_state const &);
   comm_state& operator= (comm_state const &);
 
-  // flag to indicate whether this comm state object is used for
-  // collective (true) or single-component communications (false)
-  bool uses_collective_communication_buffers;
-
 public:
-  
+
   //////////////////////////////////////////////////////////////////////////
   // the following members are used for single-component communications
   //////////////////////////////////////////////////////////////////////////
 
   // List of MPI requests for use_waitall
   vector<MPI_Request> requests;
-  
+
   // Lists of communication buffers for use_lightweight_buffers
   struct gcommbuf {
     gcommbuf () {};
@@ -88,16 +77,13 @@ public:
   //////////////////////////////////////////////////////////////////////////
 
 public:
-  // CCTK vartype used for this comm_state object
-  int vartype;
+  // structure describing a per-processor buffer for collective communications
+  struct procbufdesc {
+    // the allocated communication buffers
+    char* sendbufbase;
+    char* recvbufbase;
 
-  // size of CCTK vartype
-  // (used as stride for advancing the char-based buffer pointers)
-  int vartypesize;
-
-  // buffers for collective communications
-  struct collbufdesc {
-    // the sizes of communication buffers (in elements of type <vartype>)
+    // the sizes of communication buffers (in elements of type <datatype>)
     size_t sendbufsize;
     size_t recvbufsize;
 
@@ -106,26 +92,44 @@ public:
     char* sendbuf;
     char* recvbuf;
 
-    collbufdesc() : sendbufsize(0), recvbufsize(0),
+    // constructor for an instance of this structure
+    procbufdesc() : sendbufsize(0), recvbufsize(0),
                     sendbuf(NULL), recvbuf(NULL),
                     sendbufbase(NULL), recvbufbase(NULL) {}
-
-    // the allocated communication buffers
-    char* sendbufbase;
-    char* recvbufbase;
   };
-  vector<collbufdesc> collbufs;          // [nprocs]
+
+  // structure describing a collective communications buffer for a C datatype
+  struct typebufdesc {
+    // flag indicating whether this buffer is in use
+    bool in_use;
+
+    // the size of this datatype (in bytes)
+    int datatypesize;
+
+    // the corresponding MPI datatype
+    MPI_Datatype mpi_datatype;
+
+    // per-processor buffers
+    vector<procbufdesc> procbufs;      // [dist::size()]
+
+    // constructor for an instance of this structure
+    typebufdesc() : in_use(false), datatypesize(0),
+                    mpi_datatype(MPI_DATATYPE_NULL)
+    {
+      procbufs.resize (dist::size());
+    }
+  };
+
+  // list of datatype buffers
+  vector<typebufdesc> typebufs;        // [dist::c_ndatatypes()]
 
   // flags indicating which receive buffers are ready to be emptied
-  vector<bool> recvbuffers_ready;        // [nprocs]
-
-  // MPI datatype corresponding to CCTK vartype
-  MPI_Datatype datatype;
+  vector<bool> recvbuffers_ready;      // [dist::size() * dist::c_ndatatypes()]
 
   // lists of outstanding requests for posted send/recv communications
-  vector<MPI_Request> srequests;         // [nprocs]
+  vector<MPI_Request> srequests;       // [dist::size() * dist::c_ndatatypes()]
 private:
-  vector<MPI_Request> rrequests;         // [nprocs]
+  vector<MPI_Request> rrequests;       // [dist::size() * dist::c_ndatatypes()]
 
   // number of posted and already completed receive communications
   int num_posted_recvs;

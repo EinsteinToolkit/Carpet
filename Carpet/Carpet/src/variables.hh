@@ -130,12 +130,6 @@ namespace Carpet {
   };
   extern vector<groupdesc> groupdata; // [group]
   
-  // structure to hold a set of groups which all have the same CCTK vartype
-  struct group_set {
-    int vartype;                // eg. CCTK_VARIABLE_REAL, etc.
-    vector<int> members;        // members of this set
-  };                            // (given by their CCTK group indices)
-
   // Data for everything
   struct arrdesc {
     // points to hh etc. for GF, and is unique for SCALAR and ARRAY

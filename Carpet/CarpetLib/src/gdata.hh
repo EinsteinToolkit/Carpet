@@ -29,6 +29,7 @@ protected:                      // should be readonly
 
   // Fields
   const int varindex;           // Cactus variable index, or -1
+
   operator_type transport_operator;
   
   bool _has_storage;		// has storage associated (on some processor)
@@ -91,7 +92,6 @@ public:
   virtual void free () = 0;
   
   // Accessors
-
   bool has_storage () const {
     return _has_storage;
   }
@@ -134,6 +134,11 @@ public:
     return dot(ind, stride());
   }
   
+private:
+  // Datatype accessors
+  // maps the C datatype of a data class object to a 0-based index
+  virtual unsigned int c_datatype () const = 0;
+
   // Data manipulators
 private:
   virtual comm_state::gcommbuf *

@@ -1260,7 +1260,7 @@ namespace CarpetIOASCII {
       for (size_t n=0; n<gfdatas.size(); ++n) {
         gdata * const tmp = gfdatas.at(n)->make_typed(vi);
         tmp->allocate(gfdatas.at(n)->extent(), 0);
-        for (comm_state state(vartype); !state.done(); state.step()) {
+        for (comm_state state; !state.done(); state.step()) {
           tmp->copy_from (state, gfdatas.at(n), gfdatas.at(n)->extent());
         }
         tmps.at(n) = tmp;

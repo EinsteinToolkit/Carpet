@@ -160,7 +160,7 @@ int WriteVarUnchunked (const cGH* const cctkGH,
         gdata* const processor_component = data->make_typed (request->vindex);
 
         processor_component->allocate (overlap, 0);
-        for (comm_state state(group.vartype); not state.done(); state.step()) {
+        for (comm_state state; not state.done(); state.step()) {
           processor_component->copy_from (state, data, overlap);
         }
 
@@ -314,7 +314,7 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
       gdata* const processor_component = data->make_typed (request->vindex);
 
       processor_component->allocate (bbox, 0);
-      for (comm_state state(group.vartype); not state.done(); state.step()) {
+      for (comm_state state; not state.done(); state.step()) {
         processor_component->copy_from (state, data, bbox);
       }
 
