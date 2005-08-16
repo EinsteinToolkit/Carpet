@@ -68,13 +68,19 @@ void gdata::change_processor (comm_state& state,
                               const int newproc,
                               void* const mem)
 {
+  // if this function is being called with collective commbuffers turned on,
+  // mimic the old state transitions here
   switch (state.thestate) {
   case state_post:
+  case state_get_buffer_sizes:
     change_processor_recv (state, newproc, mem);
     change_processor_send (state, newproc, mem);
     break;
   case state_wait:
+  case state_fill_send_buffers:
     change_processor_wait (state, newproc, mem);
+    break;
+  case state_empty_recv_buffers:
     break;
   default:
     assert(0 and "invalid state");
