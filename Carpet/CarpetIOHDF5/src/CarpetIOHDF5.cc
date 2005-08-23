@@ -1,8 +1,6 @@
 #include <assert.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
-#include <set>
+#include <map>
 #include <sstream>
 
 #include "cctk.h"
@@ -24,8 +22,6 @@ using namespace Carpet;
 
 
 // Variable definitions
-static vector<bool> do_truncate;     // [var]
-static vector<vector<vector<int> > > last_output; // [ml][rl][var]
 
 // when was the last checkpoint written ?
 static int last_checkpoint_iteration = -1;
@@ -272,7 +268,6 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
   // allocate a new GH extension structure
   CarpetIOHDF5GH* myGH = new CarpetIOHDF5GH;
 
-  myGH->out_last.resize(numvars);
   myGH->requests.resize(numvars);
   myGH->cp_filename_index = 0;
   myGH->checkpoint_keep = abs (checkpoint_keep);
@@ -284,10 +279,6 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
   myGH->stop_on_parse_errors = strict_io_parameter_check;
   CheckSteerableParameters (cctkGH, myGH);
   myGH->stop_on_parse_errors = 0;
-
-  for (int i = 0; i < numvars; i++) {
-    myGH->out_last[i] = -1;
-  }
 
   // create the output directory (if it doesn't match ".")
   const char *my_out_dir = *out_dir ? out_dir : io_out_dir;
@@ -364,18 +355,6 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
   HDF5_ERROR (H5Tinsert (myGH->HDF5_COMPLEX32, "imag",
                          offsetof (CCTK_COMPLEX32, Im), H5T_NATIVE_LDOUBLE));
 #endif
-
-  // Truncate all files if this is not a restart
-  do_truncate.resize(numvars, true);
-
-  // No iterations have yet been output
-  last_output.resize(mglevels);
-  for (int ml=0; ml<mglevels; ++ml) {
-    last_output.at(ml).resize(maxreflevels);
-    for (int rl=0; rl<maxreflevels; ++rl) {
-      last_output.at(ml).at(rl).resize(numvars, INT_MIN);
-    }
-  }
 
   return (myGH);
 }
@@ -521,26 +500,7 @@ static int TimeToOutput (const cGH* const cctkGH, const int vindex)
     }
   }
 
-  if (not output_this_iteration) {
-    return 0;
-  }
-
-  if (last_output.at(mglevel).at(reflevel).at(vindex) == cctk_iteration) {
-    // Has already been output during this iteration
-    char* varname = CCTK_FullName(vindex);
-    CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "Skipping output for variable \"%s\", because this variable "
-                "has already been output during the current iteration -- "
-                "probably via a trigger during the analysis stage",
-                varname);
-    free (varname);
-    return 0;
-  }
-
-  assert (last_output.at(mglevel).at(reflevel).at(vindex) < cctk_iteration);
-
-  // Should be output during this iteration
-  return 1;
+  return output_this_iteration ? 1 : 0;
 }
 
 
@@ -550,8 +510,6 @@ static int TriggerOutput (const cGH* const cctkGH, const int vindex)
   const char *varname = CCTK_VarName (vindex);
   const int retval = OutputVarAs (cctkGH, fullname, varname);
   free (fullname);
-
-  last_output.at(mglevel).at(reflevel).at(vindex) = cctkGH->cctk_iteration;
 
   return (retval);
 }
@@ -606,7 +564,7 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
     return (0);
   }
 
-  /* get the default I/O request for this variable */
+  // get the default I/O request for this variable
   ioRequest* request = IOUtil_DefaultIORequest (cctkGH, vindex, 1);
 
   // Get grid hierarchy extentsion from IOUtil
@@ -617,9 +575,9 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
   int ioproc = 0, nioprocs = 1;
   const CarpetIOHDF5GH *myGH =
     (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
-  string cpp_filename;
-  cpp_filename.append (myGH->out_dir);
-  cpp_filename.append (alias);
+  string filename;
+  filename.append (myGH->out_dir);
+  filename.append (alias);
   if (not (CCTK_EQUALS (out_mode, "onefile") or
            groupdata.disttype == CCTK_DISTRIB_CONSTANT or
            dist::size() == 1)) {
@@ -627,34 +585,65 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
     ioproc = dist::rank();
     nioprocs = dist::size();
     snprintf (buffer, sizeof (buffer), ".file_%d", ioproc);
-    cpp_filename.append (buffer);
+    filename.append (buffer);
   }
-  cpp_filename.append (out_extension);
-  const char* const filename = cpp_filename.c_str();
+  filename.append (out_extension);
+  const char* const c_filename = filename.c_str();
+
+  // check if the file has been created already
+  typedef std::map<string, vector<vector<vector<int> > > > filelist;
+  static filelist created_files;
+  filelist::iterator thisfile = created_files.find (filename);
+  bool is_new_file = thisfile == created_files.end();
+  if (is_new_file) {
+    int const numvars = CCTK_NumVars ();
+    vector<vector<vector<int> > > last_outputs;   // [ml][rl][var]
+    last_outputs.resize (mglevels);
+    for (int ml = 0; ml < mglevels; ++ml) {
+      last_outputs[ml].resize (maxreflevels);
+      for (int rl = 0; rl < maxreflevels; ++rl) {
+        last_outputs[ml][rl].resize (numvars, cctk_iteration - 1);
+      }
+    }
+    thisfile = created_files.insert (thisfile,
+                                     filelist::value_type (filename,
+                                                           last_outputs));
+    assert (thisfile != created_files.end());
+  }
+
+  // check if this variable has been output already during this iteration
+  int& last_output = thisfile->second.at(mglevel).at(reflevel).at(vindex);
+  if (last_output == cctk_iteration) {
+    // Has already been output during this iteration
+    char* varname = CCTK_FullName(vindex);
+    CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Skipping output for variable \"%s\", because this variable "
+                "has already been output during the current iteration -- "
+                "probably via a trigger during the analysis stage",
+                varname);
+    free (varname);
+    return (0);
+  }
+  assert (last_output < cctk_iteration);
+  last_output = cctk_iteration;
 
   // Open the output file if this is a designated I/O processor
   hid_t file = -1;
   if (dist::rank() == ioproc) {
 
-    // check if the file should be created anew
-    static set<string> filename_set;
-    bool is_new = filename_set.find (cpp_filename) == filename_set.end();
-    if (is_new) {
-      if (not IO_TruncateOutputFiles (cctkGH)) {
-        H5E_BEGIN_TRY {
-          is_new = H5Fis_hdf5 (filename) <= 0;
-        } H5E_END_TRY;
-      }
-      filename_set.insert (cpp_filename);
+    if (is_new_file and not IO_TruncateOutputFiles (cctkGH)) {
+      H5E_BEGIN_TRY {
+        is_new_file = H5Fis_hdf5 (c_filename) <= 0;
+      } H5E_END_TRY;
     }
 
-    if (is_new) {
-      HDF5_ERROR (file = H5Fcreate (filename, H5F_ACC_TRUNC, H5P_DEFAULT,
+    if (is_new_file) {
+      HDF5_ERROR (file = H5Fcreate (c_filename, H5F_ACC_TRUNC, H5P_DEFAULT,
                                     H5P_DEFAULT));
       // write metadata information
       WriteMetadata (cctkGH, nioprocs, false, file);
     } else {
-      HDF5_ERROR (file = H5Fopen (filename, H5F_ACC_RDWR, H5P_DEFAULT));
+      HDF5_ERROR (file = H5Fopen (c_filename, H5F_ACC_RDWR, H5P_DEFAULT));
     }
   }
 
@@ -677,9 +666,6 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
   if (file >= 0) {
     HDF5_ERROR (H5Fclose (file));
   }
-
-  // Don't truncate again
-  do_truncate.at(vindex) = false;
 
   return (0);
 }

@@ -55,9 +55,6 @@ typedef struct
   // default number of times to output
   int out_every_default;
 
-  // the last iteration output for each variable
-  vector<int> out_last;
-
   // list of variables to output
   char *out_vars;
 
