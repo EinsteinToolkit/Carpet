@@ -1095,8 +1095,7 @@ namespace CarpetInterp {
   private:
     void for_no_interp (const InterpolationTimes & t, CCTK_REAL time )
     {
-      // We have to assume that any GF with one timelevel is constant in time!!!
-      // assert (fabs((time - t.at(0)) / fabs(time + t.at(0) + cgh->cctk_delta_time)) < 1e-12);
+      // We have to assume that any GF with one timelevel is constant in time
       at(0) = 1.0;
     }
 
