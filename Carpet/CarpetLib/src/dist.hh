@@ -34,7 +34,7 @@ namespace dist {
 #endif
   
   void init (int& argc, char**& argv);
-  void pseudoinit ();
+  void pseudoinit (MPI_Comm const c);
   void finalize ();
   
   // Debugging output

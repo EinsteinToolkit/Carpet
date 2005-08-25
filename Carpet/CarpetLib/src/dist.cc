@@ -29,11 +29,11 @@ namespace dist {
   
   void init (int& argc, char**& argv) {
     MPI_Init (&argc, &argv);
-    pseudoinit();
+    pseudoinit (MPI_COMM_WORLD);
   }
   
-  void pseudoinit () {
-    comm = MPI_COMM_WORLD;
+  void pseudoinit (MPI_Comm const c) {
+    comm = c;
     
 #if 0
     MPI_Type_contiguous (2, MPI_FLOAT, &mpi_complex_float);
