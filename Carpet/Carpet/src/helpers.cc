@@ -48,6 +48,23 @@ namespace Carpet {
 
 
 
+  // Multi-Model
+  CCTK_INT
+  Carpet_GetMPICommUniverse (CCTK_POINTER_TO_CONST const cctkGH)
+  {
+    assert (comm_universe >= 0);
+    return comm_universe;
+  }
+
+  CCTK_INT
+  Carpet_GetMPICommWorld (CCTK_POINTER_TO_CONST const cctkGH)
+  {
+    assert (comm_world >= 0);
+    return comm_world;
+  }
+  
+
+
   // Communication
 
   int Barrier (const cGH* cgh)

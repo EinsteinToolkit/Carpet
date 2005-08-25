@@ -23,6 +23,17 @@ uses include header: operators.hh
 
 INCLUDE HEADER: typecase in carpet_typecase.hh
 
+
+
+# Get access to communicators
+CCTK_INT FUNCTION GetMPICommUniverse (CCTK_POINTER_TO_CONST IN cctkGH)
+PROVIDES FUNCTION GetMPICommUniverse WITH Carpet_GetMPICommUniverse LANGUAGE C
+
+CCTK_INT FUNCTION GetMPICommWorld (CCTK_POINTER_TO_CONST IN cctkGH)
+PROVIDES FUNCTION GetMPICommWorld WITH Carpet_GetMPICommWorld LANGUAGE C
+
+
+
 # Provide the function to en-/disable prolongation
 CCTK_INT FUNCTION EnableProlongating(CCTK_INT IN flag)
 PROVIDES FUNCTION EnableProlongating WITH CarpetEnableProlongating LANGUAGE C

@@ -356,6 +356,7 @@ namespace Carpet {
   static void enable_storage_for_all_groups (cGH* cgh);
   static void leave_all_modes (cGH* cgh);
 
+
   
   void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cgh)
   {
@@ -366,13 +367,15 @@ namespace Carpet {
     // Not sure what to do with that
     assert (convLevel==0);
     
-    dist::pseudoinit();
-
+    comm_universe = MPI_COMM_WORLD;
+    SplitWorld (comm_universe, model, comm_world, verbose);
+    dist::pseudoinit (comm_world);
+    
     initialise_current_position ();
     
     Waypoint ("Setting up the grid hierarchy");
     
-    cgh->identity = strdup ("");
+    cgh->identity = strdup (model);
     
     // Processor information
     Output ("Carpet is running on %d processors", CCTK_nProcs(cgh));

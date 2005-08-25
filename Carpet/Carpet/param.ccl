@@ -147,6 +147,13 @@ CCTK_INT num_maps "Number of maps"
 
 
 
+STRING model "Model name for multi-model simulations -- the model name is used to distribute the processors onto the models"
+{
+  "" :: ""
+} "world"
+
+
+
 CCTK_INT prolongation_order_space "Order of prolongation operator in space" STEERABLE=recover
 {
   1 :: "first order (linear)"

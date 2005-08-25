@@ -14,6 +14,8 @@
 
 #include <vector>
 
+#include <mpi.h>
+
 #include "cctk.h"
 
 #include "data.hh"
@@ -139,6 +141,12 @@ namespace Carpet {
     vector<ggf*> data;          // [var]
   };
   extern vector<vector<arrdesc> > arrdata; // [group][map]
+  
+  
+  
+  // MPI Communicators
+  extern MPI_Comm comm_universe;
+  extern MPI_Comm comm_world;
   
 } // namespace Carpet
 

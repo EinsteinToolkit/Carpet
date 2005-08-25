@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include <mpi.h>
+
 #include "cctk.h"
 #include "cctk_Schedule.h"
 
@@ -39,6 +41,21 @@ namespace Carpet {
    
    
    
+  // Multi-Model
+  void
+  SplitWorld (MPI_Comm const world, string const model, MPI_Comm & comm,
+              bool verbose);
+  
+  extern "C" {
+    CCTK_INT
+    Carpet_GetMPICommUniverse (CCTK_POINTER_TO_CONST cctkGH);
+    CCTK_INT
+    Carpet_GetMPICommWorld (CCTK_POINTER_TO_CONST cctkGH);
+  }
+  
+  
+  
+  
   // Helpers for recomposing the grid hierarchy
   void CheckRegions (const gh::mexts & bbsss,
                      const gh::rbnds & obss,

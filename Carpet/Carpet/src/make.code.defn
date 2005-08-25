@@ -9,6 +9,7 @@ SRCS =	CallFunction.cc				\
 	Cycle.cc				\
 	Evolve.cc				\
 	Initialise.cc				\
+	MultiModel.cc				\
 	Poison.cc				\
 	Recompose.cc				\
 	Restrict.cc				\

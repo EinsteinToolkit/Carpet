@@ -102,4 +102,10 @@ namespace Carpet {
   // Data for everything
   vector<vector<arrdesc> > arrdata; // [group][map]
   
+  
+  
+  // MPI Communicators
+  MPI_Comm comm_universe = -1;
+  MPI_Comm comm_world = -1;
+  
 } // namespace Carpet
