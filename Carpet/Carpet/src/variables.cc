@@ -105,7 +105,7 @@ namespace Carpet {
   
   
   // MPI Communicators
-  MPI_Comm comm_universe = -1;
-  MPI_Comm comm_world = -1;
+  MPI_Comm comm_universe = MPI_COMM_NULL;
+  MPI_Comm comm_world = MPI_COMM_NULL;
   
 } // namespace Carpet

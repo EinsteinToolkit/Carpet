@@ -49,18 +49,18 @@ namespace Carpet {
 
 
   // Multi-Model
-  CCTK_INT
+  CCTK_POINTER_TO_CONST
   Carpet_GetMPICommUniverse (CCTK_POINTER_TO_CONST const cctkGH)
   {
-    assert (comm_universe >= 0);
-    return comm_universe;
+    assert (comm_universe != MPI_COMM_NULL);
+    return & comm_universe;
   }
 
-  CCTK_INT
+  CCTK_POINTER_TO_CONST
   Carpet_GetMPICommWorld (CCTK_POINTER_TO_CONST const cctkGH)
   {
-    assert (comm_world >= 0);
-    return comm_world;
+    assert (comm_world != MPI_COMM_NULL);
+    return & comm_world;
   }
   
 

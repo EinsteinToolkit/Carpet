@@ -47,9 +47,9 @@ namespace Carpet {
               bool verbose);
   
   extern "C" {
-    CCTK_INT
+    CCTK_POINTER_TO_CONST
     Carpet_GetMPICommUniverse (CCTK_POINTER_TO_CONST cctkGH);
-    CCTK_INT
+    CCTK_POINTER_TO_CONST
     Carpet_GetMPICommWorld (CCTK_POINTER_TO_CONST cctkGH);
   }
   
