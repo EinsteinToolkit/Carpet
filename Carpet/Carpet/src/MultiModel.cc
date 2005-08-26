@@ -32,9 +32,8 @@ namespace Carpet
     int const length = model.length();
     vector <int> lengths (num_procs);
     
-    MPI_Allgather (const_cast <void *> (static_cast <void const *> (& length)),
-                   1, MPI_INT,
-                   static_cast <void *> (& lengths.front()), 1, MPI_INT,
+    MPI_Allgather (const_cast <int *> (& length), 1, MPI_INT,
+                   & lengths.front(), 1, MPI_INT,
                    world);
     
     // Allocate space for all model strings
@@ -49,14 +48,10 @@ namespace Carpet
     // Gather all model strings
     vector <char> models_buffer (total_length);
     
-    MPI_Allgatherv (const_cast <void *>
-                    (static_cast <void const *> (model.c_str())),
-                    length, MPI_CHAR,
-                    static_cast <void *> (& models_buffer.front()),
-                    const_cast <int *>
-                    (static_cast <int const *> (& lengths.front())),
-                    const_cast <int *>
-                    (static_cast <int const *> (& offsets.front())),
+    MPI_Allgatherv (const_cast <char *> (model.c_str()), length, MPI_CHAR,
+                    & models_buffer.front(),
+                    const_cast <int *> (& lengths.front()),
+                    const_cast <int *> (& offsets.front()),
                     MPI_CHAR,
                     world);
     
