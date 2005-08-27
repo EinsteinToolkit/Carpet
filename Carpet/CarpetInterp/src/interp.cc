@@ -554,24 +554,21 @@ namespace CarpetInterp {
     //////////////////////////////////////////////////////////////////////
     // Finally, sort the received outputs back into the caller's arrays
     //////////////////////////////////////////////////////////////////////
-    {
-      // sorting is done with the help of the indices vector
-      //
-      // It would be nice if this could be done in a single step
-      // without copying data into an intermediate buffer.
-      vector<CCTK_REAL> tmp(N_interp_points);
-      for (int d = 0; d < N_output_arrays; d++) {
-        for (int c = 0, i = 0, offset = 0; c < allhomecnts.size(); c++) {
-          for (int n = 0; n < allhomecnts[c]; n++, i++) {
-            tmp.at(i) = outputs_buffer.at(allhomecnts[c]*d + offset + n);
-          }
-          offset += N_output_arrays * allhomecnts[c];
+
+    // sorting is done with the help of the inverse indices vector
+    vector<int> reverse_indices(indices.size());
+    for (int i = 0; i < indices.size(); i++) {
+      reverse_indices.at(indices[i]) = i;
+    }
+
+    for (int d = 0; d < N_output_arrays; d++) {
+      for (int c = 0, i = 0, offset = 0; c < allhomecnts.size(); c++) {
+        assert (allhomecnts[c]*(d+1) + offset <= outputs_buffer.size());
+        for (int n = 0; n < allhomecnts[c]; n++, i++) {
+          static_cast<CCTK_REAL *>(output_arrays[d])[reverse_indices[i]] =
+            outputs_buffer[allhomecnts[c]*d + offset + n];
         }
-        for (int c = 0, i = 0; c < allhomecnts.size(); c++) {
-          for (int n = 0; n < allhomecnts[c]; n++, i++) {
-            static_cast<CCTK_REAL *>(output_arrays[d])[i] = tmp.at(indices[i]);
-          }
-        }
+        offset += N_output_arrays * allhomecnts[c];
       }
     }
 
