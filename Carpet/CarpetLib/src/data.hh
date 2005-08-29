@@ -19,6 +19,12 @@ using namespace std;
 
 #include <iosfwd>
 
+template<typename T>
+class data;
+
+template<typename T>
+ostream & operator << ( ostream & os, const data<T> & d );
+
 // A distributed multi-dimensional array
 template<typename T>
 class data: public gdata
@@ -173,9 +179,6 @@ private:
 
   friend ostream & operator << <T> ( ostream & os, const data<T> & d );
 };
-
-template<typename T>
-ostream & operator << ( ostream & os, const data<T> & d );
 
 
 
