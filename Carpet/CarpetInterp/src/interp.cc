@@ -758,14 +758,13 @@ namespace CarpetInterp {
       // Point could not be mapped onto any processor's domain.
       // Map the point (arbitrarily) to the first component of the
       // coarsest grid
+      rl = minrl;
+      c = 0;
+      // only warn once
       if (map_onto_processors) {
         CCTK_VWarn (CCTK_WARN_PICKY, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Interpolation point #%d at [%g,%g,%g] is not on "
                     "any grid patch", n, pos[0], pos[1], pos[2]);
-        rl = minrl;
-        c = 0;
-      } else {
-        assert (0 and "point is not mapped");
       }
     found:
       assert (rl >= minrl and rl < maxrl);
