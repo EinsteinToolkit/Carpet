@@ -53,7 +53,11 @@ typedef struct {
   vector<CCTK_REAL> mgleveltimes;  // [num_mglevels*num_reflevels]
 } fileset_t;
 
+// list of checkpoint/filereader files
 static list<fileset_t> filesets;
+
+// number of reflevels in the checkpoint
+static int num_reflevels = -1;
 
 
 static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
@@ -77,6 +81,39 @@ int CarpetIOHDF5_RecoverParameters (void)
   int retval = IOUtil_RecoverParameters (Recover, ".h5", "HDF5");
 
   return (retval);
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Overwrite the "CarpetRegrid::refinement_levels"
+// with the number of levels given in the checkpoint file
+//
+// Note that this has to be done after parameter recovery in order to have
+// any effect of steering "CarpetRegrid::refinement_levels".
+//////////////////////////////////////////////////////////////////////////////
+int CarpetIOHDF5_SetNumRefinementLevels (void)
+{
+  DECLARE_CCTK_PARAMETERS;
+
+  if (num_reflevels > 0) {
+    if (not CCTK_Equals (verbose, "none")) {
+      char *buffer = CCTK_ParameterValString ("refinement_levels",
+                                              "CarpetRegrid");
+      assert (buffer);
+      CCTK_VInfo (CCTK_THORNSTRING, "Using %i reflevels from checkpoint file. "
+                  "Ignoring value '%s' in parameter file.",
+                  num_reflevels, buffer);
+      free (buffer);
+    }
+
+    char buffer[32];
+    snprintf (buffer, sizeof (buffer), "%d", num_reflevels);
+    int const retval = CCTK_ParameterSet ("refinement_levels", "CarpetRegrid",
+                                          buffer);
+    assert (retval == 0);
+  }
+
+  return (0);
 }
 
 
@@ -162,8 +199,8 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     CCTK_SetMainLoopIndex (fileset->main_loop_index);
 
     cctkGH->cctk_iteration = fileset->cctk_iteration;
-    cctkGH->cctk_time =
-      fileset->mgleveltimes.at(mglevel*fileset->num_reflevels + reflevel);
+    int const idx = mglevel*fileset->num_reflevels + reflevel;
+    cctkGH->cctk_time = fileset->mgleveltimes.at(idx);
   }
 
   if (not CCTK_Equals (verbose, "none")) {
@@ -419,19 +456,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
     IOUtil_SetAllParameters (parameters);
     delete[] parameters;
 
-    // use refinement levels parameter from checkpointing file ?
-    if (use_reflevels_from_checkpoint) {
-      char buffer[32];
-
-      snprintf (buffer, sizeof (buffer), "%d", fileset.num_reflevels);
-      CCTK_ParameterSet ("refinement_levels", "CarpetRegrid", buffer);
-
-      if (not CCTK_Equals (verbose, "none")) {
-        CCTK_VInfo (CCTK_THORNSTRING, "Using %i reflevels read from "
-                    "checkpoint file. Ignoring value in parameter file.",
-                    fileset.num_reflevels);
-      }
-    }
+    num_reflevels = fileset.num_reflevels;
   }
 
   // allocate and initialise the list of input files for this set

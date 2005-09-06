@@ -116,6 +116,7 @@ namespace CarpetIOHDF5
 
     int CarpetIOHDF5_Startup (void);
     int CarpetIOHDF5_Init (const cGH* const);
+    int CarpetIOHDF5_SetNumRefinementLevels (void);
     int CarpetIOHDF5_CloseFiles (void);
     int CarpetIOHDF5_InitialDataCheckpoint (const cGH* const);
     int CarpetIOHDF5_EvolutionCheckpoint (const cGH* const);

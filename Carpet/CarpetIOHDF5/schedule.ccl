@@ -48,6 +48,15 @@ if (! CCTK_Equals (recover, "no") && *recover_file)
     OPTIONS: meta
   } "Parameter recovery routine"
 
+  if (use_reflevels_from_checkpoint)
+  {
+    schedule CarpetIOHDF5_SetNumRefinementLevels at STARTUP before CarpetIOHDF5_Startup
+    {
+      LANG:C
+      OPTIONS: meta
+    } "Overwrite 'CarpetRegird::refinement_levels' with the number of levels found in the checkpoint file"
+  }
+
   schedule CarpetIOHDF5_CloseFiles at POST_RECOVER_VARIABLES
   {
     LANG: C
