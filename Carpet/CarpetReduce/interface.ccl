@@ -23,4 +23,4 @@ REQUIRES FUNCTION GetBoundarySpecification
 
 
 
-REAL weight TYPE=gf TAGS='prolongation="none" InterpNumTimelevels=1' "Weight function"
+REAL weight TYPE=gf TAGS='prolongation="none" InterpNumTimelevels=1 checkpoint="no"' "Weight function"
