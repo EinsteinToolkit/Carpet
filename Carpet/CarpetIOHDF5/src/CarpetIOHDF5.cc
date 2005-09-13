@@ -3,6 +3,7 @@
 #include <map>
 #include <sstream>
 
+#include "util_Table.h"
 #include "cctk.h"
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
@@ -731,6 +732,23 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
         // scalars and grid arrays only have one reflevel
         if (gdata.grouptype != CCTK_GF and reflevel > 0) {
           continue;
+        }
+
+        int const len = Util_TableGetString (gdata.tagstable, 0, NULL,
+                                             "checkpoint");
+        if (len > 0) {
+          char* value = new char[len + 1];
+          Util_TableGetString (gdata.tagstable, len + 1, value, "checkpoint");
+          if (len == sizeof ("no") - 1 and CCTK_Equals (value, "no")) {
+            continue;
+          } else if (not CCTK_Equals (value, "yes")) {
+            char* groupname = CCTK_GroupName (group);
+            CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "Ignoring unknown checkpoint tag '%s' for group '%s'",
+                        value, groupname);
+            free (groupname);
+          }
+          delete[] value;
         }
 
         /* get the number of active timelevels */
