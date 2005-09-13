@@ -168,6 +168,28 @@ chunked files; the module will determine the total number of files in the set
 automatically and read them all.
 
 
+\section{Using the flesh I/O API to produce HDF5 output}
+
+Periodic output of grid variables is usually specified via I/O parameters
+in the parameter file and then automatically triggered by the flesh scheduler
+at each iteration step after analysis. If output should also be triggered
+at a different time, one can do that from within an application thorn by
+invoking one of the {\tt CCTK\_OutputVar*()} I/O routines provided
+by the flesh I/O API (see chapter B8.2 ``IO'' in the Cactus Users Guide).
+In this case, the application thorn routine which calls {\tt CCTK\_OutputVar*()}
+must be scheduled in level mode.
+
+It should be noted here that -- due to a restriction in the naming scheme of
+objects in an HDF5 data file -- \ThisThorn\ can output a given grid variable
+with given refinement level only once per timestep. Attempts of application
+thorns to trigger the output of the same variable multiple times during an iteration
+will result in a runtime warning and have no further effect.
+If output for a variable is required also for intermediate timesteps
+this can be achieved by calling {\tt CCTK\_OutputVarAs*()} with a different
+{\tt alias} name; output for the same variable is then written into
+different HDF5 files based on the {\tt alias} argument.
+
+
 \section{Checkpointing \& Recovery and Importing Data}
 
 Thorn \ThisThorn\ can also be used to create HDF5 checkpoint files and
