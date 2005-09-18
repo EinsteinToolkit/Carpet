@@ -654,7 +654,6 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
                 fullname, mglevel, reflevel);
   }
   if ((CCTK_EQUALS (out_mode, "onefile") and io_out_unchunked) or
-      dist::size() == 1 or
       groupdata.disttype == CCTK_DISTRIB_CONSTANT) {
     WriteVarUnchunked (cctkGH, file, request, false);
   } else if (CCTK_EQUALS (out_mode, "onefile")) {
