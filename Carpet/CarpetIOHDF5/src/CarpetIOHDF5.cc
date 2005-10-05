@@ -566,7 +566,12 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
   }
 
   // get the default I/O request for this variable
-  ioRequest* request = IOUtil_DefaultIORequest (cctkGH, vindex, 1);
+  const CarpetIOHDF5GH *myGH =
+    (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
+  ioRequest* request = myGH->requests[vindex];
+  if (not request) {
+    request = IOUtil_DefaultIORequest (cctkGH, vindex, 1);
+  }
 
   // Get grid hierarchy extentsion from IOUtil
   const ioGH * const iogh = (const ioGH *) CCTK_GHExtension (cctkGH, "IO");
@@ -574,12 +579,11 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
 
   // Invent a file name
   int ioproc = 0, nioprocs = 1;
-  const CarpetIOHDF5GH *myGH =
-    (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
   string filename;
   filename.append (myGH->out_dir);
   filename.append (alias);
   if (not (CCTK_EQUALS (out_mode, "onefile") or
+           request->out_unchunked or
            groupdata.disttype == CCTK_DISTRIB_CONSTANT or
            dist::size() == 1)) {
     char buffer[32];
@@ -654,12 +658,18 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
                 fullname, mglevel, reflevel);
   }
   if ((CCTK_EQUALS (out_mode, "onefile") and io_out_unchunked) or
+      request->out_unchunked or
       groupdata.disttype == CCTK_DISTRIB_CONSTANT) {
     WriteVarUnchunked (cctkGH, file, request, false);
   } else if (CCTK_EQUALS (out_mode, "onefile")) {
     WriteVarChunkedSequential (cctkGH, file, request, false);
   } else {
     WriteVarChunkedParallel (cctkGH, file, request, false);
+  }
+
+  // free I/O request structure
+  if (request != myGH->requests[vindex]) {
+    IOUtil_FreeIORequest (&request);
   }
 
   // Close the file

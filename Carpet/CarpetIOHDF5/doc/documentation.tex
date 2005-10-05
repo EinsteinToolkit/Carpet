@@ -94,8 +94,9 @@ Parameters to control the \ThisThorn\ I/O method are:
         all variables. Multiple names must be separated by whitespaces.
 
         Each group/variable name can have an option string attached in which you
-        can specify a different output frequency for that individual variable
-	or a set of individual refinement levels to be output, e.g.
+        can specify a different output frequency for that individual variable,
+	a set of individual refinement levels to be output, or an individual
+        output mode, e.g.
 \begin{verbatim}
   IOHDF5::out_vars = "wavetoy::phi{ out_every = 4 refinement_levels = { 1 2 } }"
 \end{verbatim}
@@ -152,9 +153,20 @@ for a global view on the data.
 The default is to output distributed grid variables in parallel, each processor
 writing a file
 {\tt \textless varname\textgreater.file\_\textless processor ID\textgreater.h5}.
+The chunked/unchunked mode can also be set individually in a key/value
+option string (with the key {\tt out\_unchunked} and possible string values
+{\tt "true|false|yes|no"}) appended to a group/variable name in the
+{\tt out\_vars} parameter, eg.
+\begin{verbatim}
+  IOHDF5::out_vars = "wavetoy::phi{out_unchunked = 'true'}  grid::coordinates"
+\end{verbatim}
+will cause the variable {\tt phi} to be output into a single unchunked file
+whereas other variables will still be output into separate chunked files
+(assuming the output mode is left to its default).
 Grid scalars
 and {\tt DISTRIB = CONST} grid arrays are always output as unchunked data
-on processor 0 only.\\
+on processor 0 only.
+
 Parallel output in a parallel simulation will ensure maximum I/O
 performance. Note that changing the output mode to serial I/O might only be
 necessary if the data analysis and visualisation tools cannot deal with
