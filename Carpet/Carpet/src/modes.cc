@@ -270,10 +270,11 @@ namespace Carpet {
     }
     
     reflevel = -1;
-    timereflevelfact = -deadbeef;
+    timereflevelfact = timereffacts.at (reflevels - 1);
+    // TODO: use spacereffacts.at (reflevel - 1) instead?
     spacereflevelfact = ivect(-deadbeef);
-    ivect::ref(cgh->cctk_levfac) = -deadbeef;
-    cgh->cctk_timefac = -deadbeef;
+    ivect::ref(cgh->cctk_levfac) = spacereflevelfact;
+    cgh->cctk_timefac = timereflevelfact;
     
     assert (is_global_mode());
   }
