@@ -177,9 +177,9 @@ namespace Carpet {
         const int rl = grouptype == CCTK_GF ? reflevel : 0;
         for (int m = 0; m < arrdata.at(g).size(); ++m) {
           for (int v = 0; v < arrdata.at(g).at(m).data.size(); ++v) {
-            arrdesc& array = arrdata.at(g).at(m);
-            for (int c = 0; c < array.hh->components(rl); ++c) {
-              array.data.at(v)->sync (state, tl, rl, c, ml);
+            ggf *const gv = arrdata.at(g).at(m).data.at(v);
+            for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
+              gv->sync (state, tl, rl, c, ml);
             }
           }
         }
