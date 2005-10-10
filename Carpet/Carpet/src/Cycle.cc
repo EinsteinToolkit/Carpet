@@ -39,10 +39,23 @@ namespace Carpet {
         case CCTK_SCALAR:
         case CCTK_ARRAY:
           if (do_global_mode) {
+	    int const numtimelevels = CCTK_NumTimeLevelsI (group);
+	    int const firstvarindex = CCTK_FirstVarIndexI (group);
             for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
               for (int c=0; c<arrdata.at(group).at(0).hh->components(0); ++c) {
                 arrdata.at(group).at(0).data.at(var)->cycle (0, c, mglevel);
               }
+	      {
+                int const varindex = firstvarindex + var;
+		int const c = CCTK_MyProc(cgh);
+		for (int tl=0; tl<numtimelevels; ++tl) {
+		  cgh->data[varindex][tl]
+		    = (tl < groupdata.at(group).info.activetimelevels
+		       ? ((*arrdata.at(group).at(0).data.at(var))
+			  (tl, 0, c, 0)->storage())
+		       : NULL);
+		}
+	      }
             }
           }
           break;
