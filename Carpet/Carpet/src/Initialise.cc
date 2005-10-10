@@ -301,9 +301,7 @@ namespace Carpet {
 
   void initialise_I_initialise (cGH * const cgh, int const num_tl)
   {
-    const bool outer_do_global_mode = do_global_mode;
     for (int tl=num_tl-1; tl>=0; --tl) {
-      do_global_mode = outer_do_global_mode and tl==0;
 
       // Advance times
       for (int m=0; m<maps; ++m) {
@@ -318,7 +316,6 @@ namespace Carpet {
       CCTK_ScheduleTraverse ("CCTK_INITIAL", cgh, CallFunction);
 
     } // for tl
-    do_global_mode = outer_do_global_mode;
   }
 
   void initialise_Regrid (cGH * const cgh, int const rl)
