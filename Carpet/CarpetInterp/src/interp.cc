@@ -226,6 +226,9 @@ namespace CarpetInterp {
       assert (output_arrays);
       for (int j=0; j<N_output_arrays; ++j) {
         assert (output_arrays[j]);
+        for (int jj=0; jj<j; ++jj) {
+          assert (output_arrays[j] != output_arrays[jj]);
+        }
       }
     }
 
