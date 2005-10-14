@@ -120,8 +120,10 @@ namespace Carpet
         cout << "   processor " << n << ": "
              << "model " << m << " \"" << models.at(m) << "\"" << endl;
       }
+      int const my_model = model_ids.at(my_proc);
       CCTK_VInfo (CCTK_THORNSTRING,
-                  "Multi-Model: This is processor processor %d", my_proc);
+                  "Multi-Model: This is processor %d, model %d \"%s\"",
+                  my_proc, my_model, model.c_str());
     }
   }
   
