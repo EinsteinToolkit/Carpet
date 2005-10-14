@@ -896,7 +896,7 @@ namespace Carpet {
       stack<int> factors;
       for (int procsleft = nprocs; procsleft > 1;) {
         for (int divisor = 2; divisor <= procsleft; ++divisor) {
-          if (procsleft % divisor == 0) {
+          while (procsleft % divisor == 0) {
             factors.push (divisor);
             procsleft /= divisor;
           }
@@ -905,6 +905,7 @@ namespace Carpet {
       // Distribute the factors greedily onto the directions
       while (! factors.empty()) {
         int const mindir = minloc (npoints);
+        assert (mindir>=0 and mindir<dim);
         int const factor = factors.top();
         factors.pop();
         npoints[mindir] *= factor;
