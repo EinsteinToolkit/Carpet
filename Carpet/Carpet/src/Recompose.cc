@@ -887,9 +887,6 @@ namespace Carpet {
   {
     bbs.resize (mglevels);
     bbs.at(0) = bb;
-    vector<ibbox> bases(mglevels);
-    assert (mglevels >= 1);
-    bases.at(0) = base;
     if (mglevels > 1) {
       // boundary offsets
       jjvect nboundaryzones, is_internal, is_staggered, shiftout;
