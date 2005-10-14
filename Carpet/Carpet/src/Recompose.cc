@@ -521,6 +521,7 @@ namespace Carpet {
       if (! dims[d]) {
         ++ alldims;
         allsizes *= rshape[d];
+        // Why 0.99 and not 1.01?
         if (rshape[d] >= 0.99 * mysize) {
           mydim = d;
           mysize = rshape[d];
