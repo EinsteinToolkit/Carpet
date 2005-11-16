@@ -6,7 +6,7 @@
 
 ### some constants
 # list of email addresses to send notifications to
-my $email_list = 'schnetter@aei.mpg.de swhite@aei.mpg.de tradke@aei.mpg.de';
+my $email_list = 'carpet-darcs@lists.carpetcode.org';
 # where to find the real darcs executable
 my $darcs = '/home/darcs/bin/darcs1';
 
@@ -18,7 +18,7 @@ my %comments   = ();
 
 
 # sanity check
-die "Couldn't find executable '$darcs' !\n\n" if (! -x $darcs);
+die "Couldn't find executable '$darcs'!\n\n" if (! -x $darcs);
 
 # short cut for darcs commands other than 'apply --all'
 exec ($darcs, @ARGV)
@@ -54,8 +54,8 @@ while (<STDIN>)
 
   # add this patch to the database
   $submitters{$patch} = $1;
-  # convert the timestamp into some readable form 'DD-MM-YYYY HH:MM:SS'
-  $timestamps{$patch} = "$4-$3-$2 $5:$6:$7";
+  # convert the timestamp into some readable form 'YYYY-MM-DD HH:MM:SS'
+  $timestamps{$patch} = "$2-$3-$4 $5:$6:$7";
 
   # everything until an end-marker string belongs to
   # a long comment for this patch
@@ -70,7 +70,7 @@ while (<STDIN>)
   }
 
   # skip everything that makes out the patch's contents
-  # (ie. read away until a single line '}' matches)
+  # (i.e., read away until a single line '}' matches)
   while (<STDIN>)
   {
     print DARCS;
@@ -83,11 +83,20 @@ close (DARCS) || die "Failed to run darcs command '$darcs @ARGV'\n";
 # now send out notification email(s)
 foreach $patch (keys %submitters)
 {
-  open (NOTIFY, "| mail -s 'darcs: $patch' $email_list");
+  # Not safe, because the shell expands meta-characters:
+  #open (NOTIFY, "| mail -s '$patch' $email_list");
+  # More elegant, but only in Perl 5.8 and later:
+  #open (NOTIFY, '|-', 'mail', '-s', $patch, $email_list);
+  # Safe, I think:
+  open (NOTIFY, '|-') || exec 'mail', '-s', $patch, $email_list;
 
-  print NOTIFY "A new patch named\n\n";
-  print NOTIFY " $patch\n\n";
-  print NOTIFY "has been pushed by " .
+  #print NOTIFY "A new patch has been pushed into the Carpet repository:\n\n";
+  $repodir = `pwd`;
+  chomp $repodir;
+  $repodir =~ s+^.*/home/+~+;
+  print NOTIFY "The Carpet repository at $repodir received a new patch:\n\n";
+  print NOTIFY "   $patch\n\n";
+  print NOTIFY "This patch was recorded by " .
                "${submitters{$patch}} at ${timestamps{$patch}}.";
   if ($comments{$patch})
   {
