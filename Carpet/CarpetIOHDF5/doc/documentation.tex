@@ -267,10 +267,10 @@ refer to this thorn's documentation).
 \begin{verbatim}
   # say how often we want to checkpoint, how many checkpoints should be kept,
   # how the checkpoints should be named, and they should be written to
-  IO::checkpoint_ID   = 100
-  IO::checkpoint_keep = 2
-  IO::checkpoint_file = "wavetoy"
-  IO::checkpoint_dir  = "wavetoy-checkpoints"
+  IO::checkpoint_every = 100
+  IO::checkpoint_keep  = 2
+  IO::checkpoint_file  = "wavetoy"
+  IO::checkpoint_dir   = "wavetoy-checkpoints"
 
   # enable checkpointing for CarpetIOHDF5
   IOHDF5::checkpoint = "yes"
