@@ -171,7 +171,7 @@ int CarpetIOHDF5_TerminationCheckpoint (const cGH *const GH)
 hid_t CCTKtoHDF5_Datatype (const cGH* const cctkGH,
                            int cctk_type, bool single_precision)
 {
-  hid_t retval;  
+  hid_t retval;
 
   const CarpetIOHDF5GH *myGH =
     (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
@@ -285,7 +285,7 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
   const char *my_out_dir = *out_dir ? out_dir : io_out_dir;
   if (strcmp (my_out_dir, ".")) {
     int i = strlen (my_out_dir);
-    if (CCTK_Equals (out_mode, "onefile") || ! strstr (my_out_dir, "%u")) {
+    if (CCTK_Equals (out_mode, "onefile") or not strstr (my_out_dir, "%u")) {
       myGH->out_dir = (char*) malloc (i + 2);
       strcpy (myGH->out_dir, my_out_dir);
       myGH->out_dir[i] = '/';
@@ -302,12 +302,12 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
   /* create the output directory */
   const ioGH* const ioUtilGH = (const ioGH*) CCTK_GHExtension (cctkGH, "IO");
   int result = IOUtil_CreateDirectory (cctkGH, myGH->out_dir,
-                                       ! CCTK_Equals (out_mode, "onefile"),
+                                       not CCTK_Equals (out_mode, "onefile"),
                                        dist::rank());
   if (result < 0) {
     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                 "Problem creating HDF5 output directory '%s'", myGH->out_dir);
-  } else if (result > 0 && CCTK_Equals (verbose, "full")) {
+  } else if (result > 0 and CCTK_Equals (verbose, "full")) {
     CCTK_VInfo (CCTK_THORNSTRING,
                 "HDF5 output directory '%s' already exists", myGH->out_dir);
   }
@@ -320,7 +320,7 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
                 out_mode, CCTK_THORNSTRING);
   }
   if (CCTK_EQUALS(out_mode, "proc") and io_out_unchunked) {
-    CCTK_WARN (CCTK_WARN_COMPLAIN, 
+    CCTK_WARN (CCTK_WARN_COMPLAIN,
                "IO::out_unchunked = 'yes' is incompatible with IO::out_mode = "
                "'proc'. Ignoring setting for IO::out_unchunked...");
   }
@@ -728,7 +728,7 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
 
       for (int group = CCTK_NumGroups () - 1; group >= 0; group--) {
         /* only dump groups which have storage assigned */
-        if (CCTK_QueryGroupStorageI (cctkGH, group) <= 0 || 
+        if (CCTK_QueryGroupStorageI (cctkGH, group) <= 0 or
 	    CCTK_NumVarsInGroupI(group) == 0) {
           continue;
         }
@@ -826,7 +826,7 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
                     "Could not rename temporary checkpoint file '%s' to '%s'",
                     tempname, filename);
         retval = -1;
-      } else if (checkpoint_keep > 0) {
+      } else if (called_from == CP_EVOLUTION_DATA and checkpoint_keep > 0) {
         CarpetIOHDF5GH *myGH =
           (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
 
