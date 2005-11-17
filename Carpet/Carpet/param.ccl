@@ -192,32 +192,68 @@ CCTK_INT num_integrator_substeps "Number of substeps of the time integrator"
 CCTK_STRING base_extents "Extents of base grid components, in grid point units of the finest level"
 {
   "^$" :: "leave empty for one grid component covering the whole region (default)"
+
 # We want the string to contain a list of bboxes.  Each bbox contains
 # three vectors specifying the lower bound, upper bound, and stride.
 # (The upper bound is inclusive.  All values are nonnegative integers.)
 # The syntax for vectors, bboxes, and lists is described below.
 # All spaces are optional.
+
 # The () parentheses and [] brackets are literals.
 # The {} braces are used for grouping.
 # If you put everything together, you get the tapeworm below.
 # There should be a way to define abbreviations in regexps!
 # Having #defines in param.ccl files would help a lot.
 # VECT := " [ 0 , 0 , 0 ]"
-# BBOX := " (VECT :VECT :VECT )"
-# LIST := " [{{BBOX ,}*BBOX}? ]"
+# BBOX := " ( VECT : VECT : VECT )"
+# LIST := " [ {{ BBOX }* BBOX}? ]"
+
+# Almost human readable explanation follows.
+# The specification is hierarchical.
+
+# The following definitions are generic:
+# VECT3(x) := "[ x, x, x ]"
+#    three x, separated by commas, enclosed in square brackets
+# BBOX3(x) := "( x : x : x )"
+#    three x, separated by colons, enclosed in round parentheses
+# LIST(x) := "[ {{ x, }* x}? ]"
+#    zero or more x, separated by commas, enclosed in square brackets
+
+# A domain is built up as follows:
+# REGION   := BBOX3(VECT3(double))
+# DOMAIN   := LIST(REGION)
+
   "^\[(([[:space:]]*\([[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\)[[:space:]]*,)*[[:space:]]*\([[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\))?[[:space:]]*\]$" :: "[ ([<imin>,<jmin>,<kmin>]:[<imax>,<jmax>,<kmax>]:[<istride>,<jstride>,<kstride>]), ... ]"
 } ""
 
 CCTK_STRING base_outerbounds "Outer boundaries of base grid components"
 {
   "^$" :: "leave empty for using the default, which depends on cctk_gsh"
+
 # See above for an explanation of this syntax, and of the tapeworm below.
 # Each vector element is 0 or 1,
 # where 0 is handled by synchronisation or prolongation,
 # and 1 stands for a user-supplied ("outer") boundary condition.
+
 # BND := " [ 0 , 0 ]"
 # VECT := " [ BND , BND , BND ]"
 # LIST := " [{{VECT ,}*VECT}? ]"
+
+# Almost human readable explanation follows.
+# The specification is hierarchical.
+
+# The following definitions are generic:
+# VECT2(x) := "[ x, x ]"
+#    two x, separated by commas, enclosed in square brackets
+# VECT3(x) := "[ x, x, x ]"
+#    three x, separated by commas, enclosed in square brackets
+# LIST(x) := "[ {{ x, }* x}? ]"
+#    zero or more x, separated by commas, enclosed in square brackets
+
+# A domain is built up as follows:
+# REGION   := VECT3(VECT2(double))
+# DOMAIN   := LIST(REGION)
+
   "^\[(([[:space:]]*\[[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\][[:space:]]*,)*[[:space:]]*\[[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\])?[[:space:]]*\]$" :: "[ [ [<ilower>,<iupper>], [<jlower>,<jupper>], [<klower>,<kupper>] ], ... ]"
 } ""
 
