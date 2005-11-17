@@ -301,6 +301,28 @@ CCTK_REAL l3zmax "Upper boundary of level 3 box in z-direction" STEERABLE=always
 
 CCTK_STRING gridpoints "List of bounding box gridpoints" STEERABLE=always
 {
+# We want the string to contain a list of bboxes.  Each bbox contains
+# three vectors specifying the lower bound, upper bound, and stride.
+# (The upper bound is inclusive.  All values are nonnegative integers.)
+# The syntax for vectors, bboxes, and lists is described below.
+# All spaces are optional.
+
+# Almost human readable explanation follows.
+# The specification is hierarchical.
+
+# The following definitions are generic:
+# VECT2(x) := "[ x, x ]"
+#    two x, separated by commas, enclosed in square brackets
+# VECT3(x) := "[ x, x, x ]"
+#    three x, separated by commas, enclosed in square brackets
+# LIST(x) := "[ {{ x, }* x}? ]"
+#    zero or more x, separated by commas, enclosed in square brackets
+
+# A domain is built up as follows:
+# REGION   := VECT3(VECT2(double))
+# REFLEVEL := LIST(REGION)
+# DOMAIN   := LIST(REFLEVEL)
+
   "^$" :: "leave empty for no refinement"
   ".*" :: "[ [ ([<imin>,<jmin>,<kmin>]:[<imax>,<jmax>,<kmax>]:[<istride>,<jstride>,<kstride>]), ... ], ... ]"
 } ""
@@ -311,6 +333,28 @@ CCTK_STRING gridpoints "List of bounding box gridpoints" STEERABLE=always
 
 CCTK_STRING coordinates "List of bounding box coordinates" STEERABLE=always
 {
+# We want the string to contain a list of bboxes.  Each bbox contains
+# three vectors specifying the lower bound, upper bound, and stride.
+# (The upper bound is inclusive.  All values are nonnegative integers.)
+# The syntax for vectors, bboxes, and lists is described below.
+# All spaces are optional.
+
+# Almost human readable explanation follows.
+# The specification is hierarchical.
+
+# The following definitions are generic:
+# VECT2(x) := "[ x, x ]"
+#    two x, separated by commas, enclosed in square brackets
+# VECT3(x) := "[ x, x, x ]"
+#    three x, separated by commas, enclosed in square brackets
+# LIST(x) := "[ {{ x, }* x}? ]"
+#    zero or more x, separated by commas, enclosed in square brackets
+
+# A domain is built up as follows:
+# REGION   := VECT3(VECT2(double))
+# REFLEVEL := LIST(REGION)
+# DOMAIN   := LIST(REFLEVEL)
+
   "^$" :: "leave empty for no refinement"
   ".*" :: "[ [ ([<xmin>,<ymin>,<zmin>]:[<xmax>,<ymax>,<zmax>]:[<xstride>,<ystride>,<zstride>]), ... ], ... ]"
 } ""
@@ -353,6 +397,31 @@ PRIVATE:
 CCTK_STRING outerbounds "Outer boundaries" STEERABLE=always
 {
   "^$" :: "leave empty for no outer boundaries"
+
+# Each vector element is 0 or 1,
+# where 0 is handled by synchronisation or prolongation,
+# and 1 stands for a user-supplied ("outer") boundary condition.
+
+# BND := " [ 0 , 0 ]"
+# VECT := " [ BND , BND , BND ]"
+# LIST := " [{{VECT ,}*VECT}? ]"
+
+# Almost human readable explanation follows.
+# The specification is hierarchical.
+
+# The following definitions are generic:
+# VECT2(x) := "[ x, x ]"
+#    two x, separated by commas, enclosed in square brackets
+# VECT3(x) := "[ x, x, x ]"
+#    three x, separated by commas, enclosed in square brackets
+# LIST(x) := "[ {{ x, }* x}? ]"
+#    zero or more x, separated by commas, enclosed in square brackets
+
+# A domain is built up as follows:
+# REGION   := VECT3(VECT2(double))
+# REFLEVEL := LIST(REGION)
+# DOMAIN   := LIST(REFLEVEL)
+
   ".*" :: "[ [ [[?,?],[?,?],[?,?]], ... ], ...]"
 } ""
 
