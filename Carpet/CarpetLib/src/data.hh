@@ -17,8 +17,6 @@
 
 using namespace std;
 
-#include <iosfwd>
-
 template<typename T>
 class data;
 
