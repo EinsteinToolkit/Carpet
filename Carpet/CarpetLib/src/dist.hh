@@ -21,7 +21,7 @@ using namespace std;
 
 namespace dist {
   
-  extern MPI_Comm comm;
+  extern MPI_Comm comm_;
   
 #if 0
   extern MPI_Datatype mpi_complex_float;
@@ -45,11 +45,23 @@ namespace dist {
   
   // Information about the communicator
   
+  // Return the communicator
+  inline MPI_Comm comm ()
+  {
+    return comm_;
+  }
+  
+  // Always return a good communicator
+  inline MPI_Comm goodcomm ()
+  {
+    return comm_ != MPI_COMM_NULL ? comm_ : MPI_COMM_WORLD;
+  }
+  
   // Rank in the communicator (this processor's number, 0 .. size-1)
   inline int rank ()
   {
     int rank_;
-    MPI_Comm_rank (comm, &rank_);
+    MPI_Comm_rank (comm(), &rank_);
     return rank_;
   }
   
@@ -57,7 +69,7 @@ namespace dist {
   inline int size ()
   {
     int size_;
-    MPI_Comm_size (comm, &size_);
+    MPI_Comm_size (comm(), &size_);
     return size_;
   }
   

@@ -48,7 +48,7 @@ gdata::gdata (const int varindex_,
 {
   DECLARE_CCTK_PARAMETERS;
   if (barriers) {
-    MPI_Barrier (dist::comm);
+    MPI_Barrier (dist::comm());
   }
 }
 
@@ -57,7 +57,7 @@ gdata::~gdata ()
 {
   DECLARE_CCTK_PARAMETERS;
   if (barriers) {
-    MPI_Barrier (dist::comm);
+    MPI_Barrier (dist::comm());
   }
 }
 
@@ -181,7 +181,7 @@ void gdata::copy_from_post (comm_state& state,
 
     wtime_copyfrom_recvinner_recv.start();
     MPI_Irecv (b->pointer(), b->size(), b->datatype(), src->proc(),
-               tag, dist::comm, &b->request);
+               tag, dist::comm(), &b->request);
     wtime_copyfrom_recvinner_recv.stop();
     state.requests.push_back (b->request);
     state.recvbufs.push (b);
@@ -214,7 +214,7 @@ void gdata::copy_from_post (comm_state& state,
 
     wtime_copyfrom_sendinner_send.start();
     MPI_Isend (b->pointer(), b->size(), b->datatype(), proc(),
-               tag, dist::comm, &b->request);
+               tag, dist::comm(), &b->request);
     wtime_copyfrom_sendinner_send.stop();
     state.requests.push_back (b->request);
     state.sendbufs.push (b);
@@ -313,7 +313,7 @@ void gdata::copy_into_sendbuffer (comm_state& state,
     if (fillstate == procbuf.sendbufsize * datatypesize) {
       MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
                  state.typebufs.at(c_datatype()).mpi_datatype,
-                 proc(), c_datatype(), dist::comm,
+                 proc(), c_datatype(), dist::comm(),
                  &state.srequests.at(dist::size()*c_datatype() + proc()));
     }
   }
@@ -453,7 +453,7 @@ void gdata
     comm_state::gcommbuf * b = make_typed_commbuf (box);
 
     MPI_Irecv (b->pointer(), b->size(), b->datatype(), src->proc(),
-               tag, dist::comm, &b->request);
+               tag, dist::comm(), &b->request);
     state.requests.push_back (b->request);
     state.recvbufs.push (b);
   } else {
@@ -468,7 +468,7 @@ void gdata
     delete tmp;
 
     MPI_Isend (b->pointer(), b->size(), b->datatype(), proc(),
-               tag, dist::comm, &b->request);
+               tag, dist::comm(), &b->request);
     state.requests.push_back (b->request);
     state.sendbufs.push (b);
   }
@@ -518,7 +518,7 @@ void gdata
     if (fillstate == procbuf.sendbufsize*datatypesize) {
       MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
                  state.typebufs.at(c_datatype()).mpi_datatype,
-                 proc(), c_datatype(), dist::comm,
+                 proc(), c_datatype(), dist::comm(),
                  &state.srequests.at(dist::size()*c_datatype() + proc()));
     }
   }

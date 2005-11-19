@@ -91,7 +91,7 @@ void comm_state::step ()
           if (procbuf.recvbufsize > 0) {
             MPI_Irecv (procbuf.recvbufbase, procbuf.recvbufsize,
                        typebufs[type].mpi_datatype, proc, type,
-                       dist::comm, &rrequests[dist::size()*type + proc]);
+                       dist::comm(), &rrequests[dist::size()*type + proc]);
             num_posted_recvs++;
           }
         }

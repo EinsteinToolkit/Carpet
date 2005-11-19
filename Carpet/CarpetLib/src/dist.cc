@@ -15,7 +15,7 @@ using namespace std;
 
 namespace dist {
   
-  MPI_Comm comm = MPI_COMM_NULL;
+  MPI_Comm comm_ = MPI_COMM_NULL;
   
 #if 0
   MPI_Datatype mpi_complex_float;
@@ -33,7 +33,7 @@ namespace dist {
   }
   
   void pseudoinit (MPI_Comm const c) {
-    comm = c;
+    comm_ = c;
     
 #if 0
     MPI_Type_contiguous (2, MPI_FLOAT, &mpi_complex_float);
@@ -69,12 +69,12 @@ namespace dist {
     DECLARE_CCTK_PARAMETERS;
     if (verbose) {
       int rank;
-      MPI_Comm_rank (comm, &rank);
+      MPI_Comm_rank (comm(), &rank);
       printf ("CHECKPOINT: processor %d, file %s, line %d\n",
 	      rank, file, line);
     }
     if (barriers) {
-      MPI_Barrier (comm);
+      MPI_Barrier (comm());
     }
   }
   

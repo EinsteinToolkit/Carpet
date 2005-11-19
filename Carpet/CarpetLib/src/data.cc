@@ -164,7 +164,7 @@ void data<T>::change_processor_recv (comm_state& state,
       T dummy;
       MPI_Irecv (_memory->storage(0),
                  _size, dist::datatype(dummy), proc(),
-                 tag, dist::comm, &request);
+                 tag, dist::comm(), &request);
       wtime_irecv.stop();
       if (use_waitall) {
         state.requests.push_back (request);
@@ -216,7 +216,7 @@ void data<T>::change_processor_send (comm_state& state,
       T dummy;
       MPI_Isend (_memory->storage(0),
                  _size, dist::datatype(dummy), newproc,
-                 tag, dist::comm, &request);
+                 tag, dist::comm(), &request);
       wtime_isend.stop();
       if (use_waitall) {
         state.requests.push_back (request);
@@ -320,7 +320,7 @@ data<T>::copy_from_recv_inner (comm_state& state,
   T dummy;
   MPI_Irecv (&b->data.front(), b->data.size(),
              dist::datatype(dummy), gsrc->proc(),
-             tag, dist::comm, &b->request);
+             tag, dist::comm(), &b->request);
   wtime_copyfrom_recvinner_recv.stop();
   if (use_waitall) {
     state.requests.push_back (b->request);
@@ -378,7 +378,7 @@ data<T>::copy_from_send_inner (comm_state& state,
   assert (dist::rank() == src->proc());
   T dummy;
   MPI_Isend (b->pointer(), b->size(), b->datatype(), proc(),
-             tag, dist::comm, &b->request);
+             tag, dist::comm(), &b->request);
   wtime_copyfrom_sendinner_send.stop();
   if (use_waitall) {
     state.requests.push_back (b->request);
