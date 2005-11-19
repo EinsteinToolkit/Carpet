@@ -367,10 +367,6 @@ namespace Carpet {
     // Not sure what to do with that
     assert (convLevel==0);
     
-    comm_universe = MPI_COMM_WORLD;
-    SplitWorld (comm_universe, model, comm_world, true);
-    dist::pseudoinit (comm_world);
-    
     initialise_current_position ();
     
     Waypoint ("Setting up the grid hierarchy");

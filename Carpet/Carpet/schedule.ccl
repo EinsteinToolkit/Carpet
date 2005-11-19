@@ -1,5 +1,10 @@
 # Schedule definitions for thorn Carpet
 
+schedule CarpetMultiModelStartup at STARTUP as MultiModel_Startup before Driver_Startup
+{
+  LANG: C
+} "Multi-model Startup routine"
+
 schedule CarpetStartup at STARTUP as Driver_Startup
 {
   LANG: C

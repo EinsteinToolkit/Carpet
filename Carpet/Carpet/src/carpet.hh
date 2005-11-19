@@ -19,8 +19,9 @@ namespace Carpet {
   
   // Scheduled functions
   extern "C" {
+    int CarpetStartup (void);
+    int CarpetMultiModelStartup (void);
     void CarpetParamCheck (CCTK_ARGUMENTS);
-    void CarpetStartup (void);
   }
   
   // Registered functions

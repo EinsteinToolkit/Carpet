@@ -2,8 +2,11 @@
 #include <cstdlib>
 
 #include "cctk.h"
+#include "cctk_Parameters.h"
 
 #include "carpet.hh"
+
+#include "dist.hh"
 
 
 
@@ -11,7 +14,18 @@ namespace Carpet {
   
   using namespace std;
   
-  void CarpetStartup()
+  int CarpetMultiModelStartup()
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    comm_universe = MPI_COMM_WORLD;
+    SplitWorld (comm_universe, model, comm_world, true);
+    dist::pseudoinit (comm_world);
+    
+    return 0;
+  }
+  
+  int CarpetStartup()
   {
     CCTK_RegisterBanner ("AMR driver provided by Carpet");
     
@@ -61,6 +75,8 @@ namespace Carpet {
         " in your parfile. This parameter is deprecated and should not be used"
         " anymore.");
     }
+    
+    return 0;
   }
   
 } // namespace Carpet
