@@ -1100,8 +1100,13 @@ namespace CarpetReduce {
             CCTK_REAL const * weight;
             CCTK_REAL levfac;
             if (want_global_mode) {
+              static int iweight = -1;
+              if (iweight == -1) {
+                iweight = CCTK_VarIndex ("CarpetReduce::weight");
+                assert (iweight >= 0);
+              }
               weight = (static_cast<CCTK_REAL const *>
-                        (CCTK_VarDataPtr (cgh, 0, "CarpetReduce::weight")));
+                        (CCTK_VarDataPtrI (cgh, 0, iweight)));
               assert (weight);
               levfac = 1.0 / prod (rvect (spacereflevelfact));
             } else {
