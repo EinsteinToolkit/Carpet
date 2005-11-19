@@ -437,11 +437,7 @@ namespace Carpet {
     for (int ml=0; ml<mglevels; ++ml) {
       leveltimes.at(ml).resize (maxreflevels);
     }
-    origin_space.resize (maps);
-    delta_space.resize (maps);
-    for (int m=0; m<maps; ++m) {
-      origin_space.at(m).resize (mglevels);
-    }
+    origin_space.resize (mglevels);
     
     // Enable prolongating
     do_prolongate = true;

@@ -75,13 +75,12 @@ namespace Carpet {
     // TODO: this could also just be "mglevel" instead
     cgh->cctk_convlevel = basemglevel + mglevel;
     
-    // Set time delta
+    // Set time and space delta
     cgh->cctk_delta_time = delta_time * mglevelfact;
-//     // Set space delta
-//     for (int d=0; d<dim; ++d) {
-//       cgh->cctk_origin_space[d] = origin_space.at(mglevel)[d];
-//       cgh->cctk_delta_space[d] = delta_space[d] * mglevelfact;
-//     }
+    for (int d=0; d<dim; ++d) {
+      cgh->cctk_origin_space[d] = origin_space.at(mglevel)[d];
+      cgh->cctk_delta_space[d] = delta_space[d] * mglevelfact;
+    }
     
     // Set array information
     for (int group=0; group<CCTK_NumGroups(); ++group) {
@@ -162,16 +161,15 @@ namespace Carpet {
     
     if (mglevel == -1) return;  // early return
     
-    // Save and unset time delta
+    // Save and unset time and space delta
     delta_time = cgh->cctk_delta_time / mglevelfact;
     cgh->cctk_delta_time = 0.0;
-//     // Save and unset space delta
-//     for (int d=0; d<dim; ++d) {
-//       origin_space.at(mglevel)[d] = cgh->cctk_origin_space[d];
-//       delta_space[d] = cgh->cctk_delta_space[d] / mglevelfact;
-//       cgh->cctk_origin_space[d] = -424242.0;
-//       cgh->cctk_delta_space[d] = 0.0;
-//     }
+    for (int d=0; d<dim; ++d) {
+      origin_space.at(mglevel)[d] = cgh->cctk_origin_space[d];
+      delta_space[d] = cgh->cctk_delta_space[d] / mglevelfact;
+      cgh->cctk_origin_space[d] = -424242.0;
+      cgh->cctk_delta_space[d] = 0.0;
+    }
    
     // Set array information
     for (int group=0; group<CCTK_NumGroups(); ++group) {
@@ -293,12 +291,6 @@ namespace Carpet {
     
     carpetGH.map = map = m;
     
-    // Set space delta
-    for (int d=0; d<dim; ++d) {
-      cgh->cctk_origin_space[d] = origin_space.at(map).at(mglevel)[d];
-      cgh->cctk_delta_space[d] = delta_space.at(map)[d] * mglevelfact;
-    }
-    
     // Set grid shape
     const ibbox& coarseext = vdd.at(map)->bases.at(mglevel).at(0       ).exterior;
     const ibbox& baseext   = vdd.at(map)->bases.at(mglevel).at(reflevel).exterior;
@@ -330,14 +322,6 @@ namespace Carpet {
     Checkpoint ("Leaving singlemap mode");
     
     if (map == -1) return;      // early return
-    
-    // Save and unset space delta
-    for (int d=0; d<dim; ++d) {
-      origin_space.at(map).at(mglevel)[d] = cgh->cctk_origin_space[d];
-      delta_space.at(map)[d] = cgh->cctk_delta_space[d] / mglevelfact;
-      cgh->cctk_origin_space[d] = -424242.0;
-      cgh->cctk_delta_space[d] = 0.0;
-    }
     
     // Unset grid shape
     ivect::ref(cgh->cctk_levoff) = deadbeef;
