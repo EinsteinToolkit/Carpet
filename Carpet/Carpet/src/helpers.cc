@@ -90,13 +90,8 @@ namespace Carpet {
   {
     void *dummy = &dummy;
     dummy = &cgh;
-
-    MPI_Comm comm = dist::comm;
-    if (comm == MPI_COMM_NULL)
-    {
-      comm = MPI_COMM_WORLD;
-    }
-    MPI_Abort (comm, retval);
+    
+    MPI_Abort (MPI_COMM_WORLD, retval);
     abort ();
     return -999;
   }
@@ -105,19 +100,17 @@ namespace Carpet {
 
   int MyProc (const cGH* cgh)
   {
-    // if there is no cgh yet, assume nothing has been initialised
-    // yet, and don't use dist::comm
+    // This may be called very early, before dist:comm() is valid
     int rank;
-    MPI_Comm_rank (cgh ? dist::comm : MPI_COMM_WORLD, &rank);
+    MPI_Comm_rank (dist::goodcomm(), & rank);
     return rank;
   }
 
   int nProcs (const cGH* cgh)
   {
-    // if there is no cgh yet, assume nothing has been initialised
-    // yet, and don't use dist::comm
+    // This may be called very early, before dist:comm() is valid
     int size;
-    MPI_Comm_size (cgh ? dist::comm : MPI_COMM_WORLD, &size);
+    MPI_Comm_size (dist::goodcomm(), & size);
     return size;
   }
 
