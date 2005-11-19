@@ -196,7 +196,7 @@ void gdata::copy_from_post (comm_state& state,
     // copy data into send buffer
     wtime_copyfrom_sendinner_copy.start();
     const ibbox& ext = src->extent();
-    ivect shape = ext.shape() / ext.stride();
+    ivect myshape = ext.shape() / ext.stride();
     ivect items = (box.upper() - box.lower()) / box.stride() + 1;
     ivect offs  = (box.lower() - ext.lower()) / ext.stride();
     char* send_buffer = (char*) b->pointer();
@@ -204,7 +204,7 @@ void gdata::copy_from_post (comm_state& state,
 
     for (int k = 0; k < items[2]; k++) {
       for (int j = 0; j < items[1]; j++) {
-        int i = offs[0] + shape[0]*((j+offs[1]) + shape[1]*(k+offs[2]));
+        int i = offs[0] + myshape[0]*((j+offs[1]) + myshape[1]*(k+offs[2]));
         memcpy (send_buffer, ((char*) src->storage()) + datatypesize*i,
                 datatypesize * items[0]);
         send_buffer += datatypesize * items[0];
@@ -246,7 +246,7 @@ void gdata::copy_from_wait (comm_state& state,
   if (bufs == &state.recvbufs) {
     wtime_copyfrom_recvwaitinner_copy.start();
     const ibbox& ext = extent();
-    ivect shape = ext.shape() / ext.stride();
+    ivect myshape = ext.shape() / ext.stride();
     ivect items = (box.upper() - box.lower()) / box.stride() + 1;
     ivect offs  = (box.lower() - ext.lower()) / ext.stride();
     const char* recv_buffer = (const char*) b->pointer();
@@ -254,7 +254,7 @@ void gdata::copy_from_wait (comm_state& state,
 
     for (int k = 0; k < items[2]; k++) {
       for (int j = 0; j < items[1]; j++) {
-        int i = offs[0] + shape[0]*((j+offs[1]) + shape[1]*(k+offs[2]));
+        int i = offs[0] + myshape[0]*((j+offs[1]) + myshape[1]*(k+offs[2]));
         memcpy (((char*) storage()) + datatypesize*i, recv_buffer,
                 datatypesize * items[0]);
         recv_buffer += datatypesize * items[0];
@@ -283,7 +283,7 @@ void gdata::copy_into_sendbuffer (comm_state& state,
   } else {
     // copy to remote processor
     assert (src->_has_storage);
-    int& datatypesize = state.typebufs.at(c_datatype()).datatypesize;
+    int datatypesize = state.typebufs.at(c_datatype()).datatypesize;
     comm_state::procbufdesc& procbuf =
       state.typebufs.at(c_datatype()).procbufs.at(proc());
     assert (procbuf.sendbuf - procbuf.sendbufbase <=
@@ -294,14 +294,14 @@ void gdata::copy_into_sendbuffer (comm_state& state,
 
     // copy this processor's data into the send buffer
     const ibbox& ext = src->extent();
-    ivect shape = ext.shape() / ext.stride();
+    ivect myshape = ext.shape() / ext.stride();
     ivect items = (box.upper() - box.lower()) / box.stride() + 1;
     ivect offs  = (box.lower() - ext.lower()) / ext.stride();
   
     assert (dim == 3);
     for (int k = 0; k < items[2]; k++) {
       for (int j = 0; j < items[1]; j++) {
-        int i = offs[0] + shape[0]*((j+offs[1]) + shape[1]*(k+offs[2]));
+        int i = offs[0] + myshape[0]*((j+offs[1]) + myshape[1]*(k+offs[2]));
         memcpy (procbuf.sendbuf,
                 ((const char*) src->storage()) + datatypesize*i,
                 datatypesize * items[0]);
@@ -333,14 +333,14 @@ void gdata::copy_from_recvbuffer (comm_state& state,
 
   // copy this processor's data from the recv buffer
   const ibbox& ext = extent();
-  ivect shape = ext.shape() / ext.stride();
+  ivect myshape = ext.shape() / ext.stride();
   ivect items = (box.upper() - box.lower()) / box.stride() + 1;
   ivect offs  = (box.lower() - ext.lower()) / ext.stride();
 
   assert (dim == 3);
   for (int k = 0; k < items[2]; k++) {
     for (int j = 0; j < items[1]; j++) {
-      int i = offs[0] + shape[0]*((j+offs[1]) + shape[1]*(k+offs[2]));
+      int i = offs[0] + myshape[0]*((j+offs[1]) + myshape[1]*(k+offs[2]));
       memcpy (((char*) storage()) + datatypesize*i,
               procbuf.recvbuf, datatypesize * items[0]);
       procbuf.recvbuf += datatypesize * items[0];

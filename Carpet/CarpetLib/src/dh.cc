@@ -310,19 +310,19 @@ void dh::setup_refinement_exterior_boxes (dh::dboxes & box, int rl, int c, int m
           pbndsf.normalize();
         }
         // Inner buffer zones
-        ibset buffers;
+        ibset bufs;
         {
           for (ibset::const_iterator pbi=pbndsf.begin();
                pbi!=pbndsf.end(); ++pbi)
           {
-            buffers
+            bufs
               |= (*pbi).expand(inner_buffer_width, inner_buffer_width) & extrf;
           }
-          buffers.normalize();
+          bufs.normalize();
         }
         // Add boundaries
         const ibbox maxrecvs = extr.expand(-pss,-pss).contracted_for(extrf);
-        ibset recvs = buffers & maxrecvs;
+        ibset recvs = bufs & maxrecvs;
         recvs.normalize();
         {
           // Do not prolongate what is already prolongated
