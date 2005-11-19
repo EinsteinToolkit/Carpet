@@ -104,8 +104,8 @@ namespace Carpet {
   extern vector<vector<CCTK_REAL> > leveltimes; // [mglevel][reflevel]
   extern CCTK_REAL delta_time;
   
-  extern vector<vect<CCTK_REAL,dim> > origin_space; // [mglevel]
-  extern vect<CCTK_REAL,dim> delta_space;
+  extern vector<vector<vect<CCTK_REAL,dim> > > origin_space; // [map][mglevel]
+  extern vector<vect<CCTK_REAL,dim> > delta_space;           // [map]
   
   
   
