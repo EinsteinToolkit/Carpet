@@ -427,7 +427,7 @@ namespace CarpetReduce {
       imin[d] =          (bbox[2*d  ] ? 0 : nghostzones[d]);
       imax[d] = lsh[d] - (bbox[2*d+1] ? 0 : nghostzones[d]);
     }
-    assert (dim==3);
+    static_assert (dim==3);
     for (int k=imin[2]; k<imax[2]; ++k) {
       for (int j=imin[1]; j<imax[1]; ++j) {
         for (int i=imin[0]; i<imax[0]; ++i) {
