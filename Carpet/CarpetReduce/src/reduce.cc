@@ -47,7 +47,6 @@ namespace CarpetReduce {
     return max(x, y);
   }
   
-  // Square root
   template<typename T> inline T
   mysqrt (const T x)
   {
@@ -83,6 +82,46 @@ namespace CarpetReduce {
     typedef T goodtype;
     typedef T badtype;
   };
+  
+  
+  
+  // Overload the above helper functions and types for integer values
+  // The C++ compiler should supply these, but some old ones do not,
+  // e.g. our beloved workhorse Intel 7.1.  Self is the man.
+#ifdef HAVE_CCTK_BYTE
+  template<> inline CCTK_BYTE mysqrt (CCTK_BYTE const x)
+  {
+    return static_cast<CCTK_BYTE> (sqrt (static_cast<CCTK_REAL> (x)));
+  }
+#endif
+  
+#ifdef HAVE_CCTK_INT1
+  template<> inline CCTK_INT1 mysqrt (CCTK_INT1 const x)
+  {
+    return static_cast<CCTK_INT1> (sqrt (static_cast<CCTK_REAL> (x)));
+  }
+#endif
+  
+#ifdef HAVE_CCTK_INT2
+  template<> inline CCTK_INT2 mysqrt (CCTK_INT2 const x)
+  {
+    return static_cast<CCTK_INT2> (sqrt (static_cast<CCTK_REAL> (x)));
+  }
+#endif
+  
+#ifdef HAVE_CCTK_INT4
+  template<> inline CCTK_INT4 mysqrt (CCTK_INT4 const x)
+  {
+    return static_cast<CCTK_INT4> (sqrt (static_cast<CCTK_REAL> (x)));
+  }
+#endif
+  
+#ifdef HAVE_CCTK_INT8
+  template<> inline CCTK_INT8 mysqrt (CCTK_INT8 const x)
+  {
+    return static_cast<CCTK_INT8> (sqrt (static_cast<CCTK_REAL> (x)));
+  }
+#endif
   
   
   
@@ -202,41 +241,6 @@ namespace CarpetReduce {
   
 #endif
   
-  
-  
-  // Provide a square root function for integer values
-  
-#ifdef CCTK_INT1
-  template<> inline CCTK_INT1
-  mysqrt (const CCTK_INT1 x)
-  {
-    return sqrt((CCTK_REAL)x);
-  }
-#endif
-  
-#ifdef CCTK_INT2
-  template<> inline CCTK_INT2
-  mysqrt (const CCTK_INT2 x)
-  {
-    return sqrt((CCTK_REAL)x);
-  }
-#endif
-  
-#ifdef CCTK_INT4
-  template<> inline CCTK_INT4
-  mysqrt (const CCTK_INT4 x)
-  {
-    return sqrt((CCTK_REAL)x);
-  }
-#endif
-  
-#ifdef CCTK_INT8
-  template<> inline CCTK_INT8
-  mysqrt (const CCTK_INT8 x)
-  {
-    return sqrt((CCTK_REAL)x);
-  }
-#endif
   
   
   
