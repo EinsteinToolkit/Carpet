@@ -24,6 +24,11 @@ using namespace std;
 
 
   
+// A compile time pseudo assert statement
+#define static_assert(_x) do { typedef int ai[(_x) ? 1 : -1]; } while(0)
+
+
+
 // Number of dimensions
 const int dim = 3;
   
