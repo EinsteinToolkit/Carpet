@@ -1144,9 +1144,7 @@ namespace CarpetIOASCII {
     if (all_on_root) {
       // output on processor 0
 
-      int rank;
-      MPI_Comm_rank (dist::comm, &rank);
-      if (rank == 0) {
+      if (dist::rank() == 0) {
 
 	assert (os.good());
 
