@@ -1,5 +1,5 @@
 # Configuration definitions for thorn CarpetIOHDF5
 
-REQUIRES Carpet CarpetLib IOUtil
+REQUIRES Carpet CarpetLib IOUtil HDF5
 
 REQUIRES THORNS: Carpet CarpetLib IOUtil
