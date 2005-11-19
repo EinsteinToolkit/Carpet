@@ -316,6 +316,11 @@ namespace CarpetIOScalar {
                 file << "# parameter filename: \"" << parameter_filename << "\"" << endl;
               }
               if (want_other) {
+                if (CCTK_IsFunctionAliased ("UniqueBuildID")) {
+                  char const * const build_id
+                    = (char const *) UniqueBuildID (cctkGH);
+                  file << "# Build ID: " << build_id << endl;
+                }
                 if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
                   char const * const job_id
                     = static_cast<char const *> (UniqueSimulationID (cctkGH));
