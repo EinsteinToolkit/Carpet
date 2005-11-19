@@ -947,6 +947,17 @@ void WriteMetadata (const cGH *cctkGH, int nioprocs,
     HDF5_ERROR (H5Aclose (attr));
   }
 
+  // unique build identifier
+  if (CCTK_IsFunctionAliased ("UniqueBuildID")) {
+    char const * const build_id
+      = static_cast<char const *> (UniqueBuildID (cctkGH));
+    HDF5_ERROR (H5Tset_size (datatype, strlen (build_id)));
+    HDF5_ERROR (attr = H5Acreate (group, "build id", datatype,
+                                  scalar_dataspace, H5P_DEFAULT));
+    HDF5_ERROR (H5Awrite (attr, datatype, build_id));
+    HDF5_ERROR (H5Aclose (attr));
+  }
+
   // unique simulation identifier
   if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
     char const * const job_id
