@@ -1,15 +1,33 @@
 #include <algorithm>
 #include <cassert>
+#include <cstring>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <string>
 
 #include "cctk.h"
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
 
 #include "defs.hh"
+#include "dist.hh"
 
 #include "mem.hh"
+
+
+
+using namespace std;
+
+
+
+struct mstat {
+  int total_bytes;
+  int total_objects;
+  int max_bytes;
+  int max_objects;
+};
 
 
 
@@ -121,6 +139,7 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
+  
   if (print_memstats_every
       and cctk_iteration % print_memstats_every == 0)
   {
@@ -132,6 +151,64 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
          << "   Maximum allocated memory:  "
          << setprecision(3) << max_allocated_bytes / 1.0e6 << " MB" << endl
          << endl;
+    
+    if (strcmp (memstat_file, "") != 0) {
+      
+      mstat mybuf;
+      mybuf.total_bytes   = total_allocated_bytes;
+      mybuf.total_objects = total_allocated_objects;
+      mybuf.max_bytes     = max_allocated_bytes;
+      mybuf.max_objects   = max_allocated_objects;
+      vector<mstat> allbuf (dist::size());
+      MPI_Gather (& mybuf, 4, MPI_INT,
+                  & allbuf.front(), 4, MPI_INT,
+                  0, dist::comm());
+      
+      if (dist::rank() == 0) {
+        
+        int max_max_bytes = 0;
+        int avg_max_bytes = 0;
+        int cnt_max_bytes = 0;
+        for (size_t n=0; n<allbuf.size(); ++n) {
+          max_max_bytes = max (max_max_bytes, allbuf[n].max_bytes);
+          avg_max_bytes += allbuf[n].max_bytes;
+          ++ cnt_max_bytes;
+        }
+        avg_max_bytes /= cnt_max_bytes;
+        
+        ostringstream filenamebuf;
+        filenamebuf << out_dir << "/" << memstat_file;
+        string const filename = filenamebuf.str();
+        ofstream file;
+        static bool did_truncate = false;
+        if (not did_truncate) {
+          did_truncate = true;
+          file.open (filename.c_str(), ios::out | ios::trunc);
+          if (CCTK_IsFunctionAliased ("UniqueBuildID")) {
+            char const * const build_id
+              = static_cast<char const *> (UniqueBuildID (cctkGH));
+            file << "# Build ID: " << build_id << endl;
+          }
+          if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
+            char const * const job_id
+              = static_cast<char const *> (UniqueSimulationID (cctkGH));
+            file << "# Simulation ID: " << job_id << endl;
+          }
+          file << "# Running on " << dist::size() << " processors" << endl;
+          file << "#" << endl;
+          file << "# iteration maxmaxbytes avgmaxbytes" << endl;
+        } else {
+          file.open (filename.c_str(), ios::out | ios::app);
+        }
+        
+        file << cctk_iteration << " "
+             << max_max_bytes << " " << avg_max_bytes << endl;
+        
+        file.close ();
+        
+      } // if on root processor
+    } // if output to file
+    
   }
 }
 

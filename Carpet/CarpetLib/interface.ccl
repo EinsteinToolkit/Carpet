@@ -25,3 +25,17 @@ includes header: th.hh in th.hh
 includes header: operators.hh in operators.hh
 
 uses include header: carpet_typecase.hh
+
+
+
+# Return a pointer to an unmodifiable C string
+# which contains a unique ID for this build
+CCTK_POINTER_TO_CONST \
+FUNCTION UniqueBuildID (CCTK_POINTER_TO_CONST IN  cctkGH)
+USES FUNCTION UniqueBuildID
+
+# Return a pointer to an unmodifiable C string
+# which contains a unique ID for this simulation
+CCTK_POINTER_TO_CONST \
+FUNCTION UniqueSimulationID (CCTK_POINTER_TO_CONST IN  cctkGH)
+USES FUNCTION UniqueSimulationID
