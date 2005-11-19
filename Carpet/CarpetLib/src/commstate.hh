@@ -93,9 +93,9 @@ public:
     char* recvbuf;
 
     // constructor for an instance of this structure
-    procbufdesc() : sendbufbase(NULL), recvbufbase(NULL),
-                    sendbufsize(0), recvbufsize(0),
-                    sendbuf(NULL), recvbuf(NULL) { }
+    procbufdesc() : sendbufsize(0), recvbufsize(0),
+                    sendbuf(NULL), recvbuf(NULL),
+                    sendbufbase(NULL), recvbufbase(NULL) {}
   };
 
   // structure describing a collective communications buffer for a C datatype
