@@ -675,7 +675,6 @@ static int ReadVar (const cGH* const cctkGH,
 
   const int gindex = CCTK_GroupIndexFromVarI (patch->vindex);
   assert (gindex >= 0 and gindex < Carpet::arrdata.size());
-  const int var = patch->vindex - CCTK_FirstVarIndexI(gindex);
   cGroup group;
   CCTK_GroupData (gindex, &group);
 
