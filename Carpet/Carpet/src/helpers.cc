@@ -72,7 +72,7 @@ namespace Carpet {
     void *dummy = &dummy;
     dummy = &cgh;
 
-    MPI_Barrier (dist::comm);
+    MPI_Barrier (dist::comm());
     return 0;
   }
 
@@ -125,7 +125,7 @@ namespace Carpet {
 
   MPI_Comm CarpetMPIComm ()
   {
-    return dist::comm;
+    return dist::comm();
   }
 
 
@@ -294,7 +294,7 @@ namespace Carpet {
     va_end (args);
     CCTK_INFO (msg);
     if (barriers) {
-      MPI_Barrier (dist::comm);
+      MPI_Barrier (dist::comm());
     }
   }
 
@@ -312,7 +312,7 @@ namespace Carpet {
       CCTK_INFO (msg);
     }
     if (barriers) {
-      MPI_Barrier (dist::comm);
+      MPI_Barrier (dist::comm());
     }
   }
 
@@ -330,7 +330,7 @@ namespace Carpet {
       CCTK_INFO (msg);
     }
     if (barriers) {
-      MPI_Barrier (dist::comm);
+      MPI_Barrier (dist::comm());
     }
   }
 

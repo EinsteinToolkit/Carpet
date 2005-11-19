@@ -110,7 +110,7 @@ namespace Carpet {
     {
       int local, global;
       local = term;
-      MPI_Allreduce (&local, &global, 1, MPI_INT, MPI_LOR, dist::comm);
+      MPI_Allreduce (&local, &global, 1, MPI_INT, MPI_LOR, dist::comm());
       term = global;
     }
 
