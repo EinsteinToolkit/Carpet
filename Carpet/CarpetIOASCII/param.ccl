@@ -41,6 +41,7 @@ USES CCTK_REAL out_yzplane_x
 USES BOOLEAN new_filename_scheme
 USES BOOLEAN strict_io_parameter_check
 USES KEYWORD out_fileinfo
+USES KEYWORD verbose
 
 
 

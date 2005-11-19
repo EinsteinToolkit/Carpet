@@ -23,6 +23,7 @@
 #include "util_Table.h"
 
 #include "CactusBase/IOUtil/src/ioGH.h"
+#include "CactusBase/IOUtil/src/ioutil_Utils.h"
 
 #include "data.hh"
 #include "dist.hh"
@@ -122,12 +123,14 @@ namespace CarpetIOASCII {
 
 
   // Definition of static members
-  template<int outdim> int IOASCII<outdim>::GHExtension;
-  template<int outdim> int IOASCII<outdim>::IOMethod;
-  template<int outdim> vector<bool> IOASCII<outdim>::do_truncate;
+  template<int outdim> const char*        IOASCII<outdim>::my_out_dir;
+  template<int outdim> char*              IOASCII<outdim>::my_out_vars;
+  template<int outdim> vector<bool>       IOASCII<outdim>::do_truncate;
+  template<int outdim> vector<ioRequest*> IOASCII<outdim>::requests;
   template<int outdim>
-  vector<vector<vector<int> > > IOASCII<outdim>::last_output;
+    vector<vector<vector<int> > >         IOASCII<outdim>::last_output;
 
+  static bool stop_on_parse_errors = false;
 
 
   template<int outdim>
@@ -139,12 +142,12 @@ namespace CarpetIOASCII {
 
     ostringstream extension_name;
     extension_name << "CarpetIOASCII_" << outdim << "D";
-    GHExtension = CCTK_RegisterGHExtension(extension_name.str().c_str());
+    const int GHExtension = CCTK_RegisterGHExtension(extension_name.str().c_str());
     CCTK_RegisterGHExtensionSetupGH (GHExtension, SetupGH);
 
     ostringstream method_name;
     method_name << "IOASCII_" << outdim << "D";
-    IOMethod = CCTK_RegisterIOMethod (method_name.str().c_str());
+    const int IOMethod = CCTK_RegisterIOMethod (method_name.str().c_str());
     CCTK_RegisterIOMethodOutputGH (IOMethod, OutputGH);
     CCTK_RegisterIOMethodOutputVarAs (IOMethod, OutputVarAs);
     CCTK_RegisterIOMethodTimeToOutput (IOMethod, TimeToOutput);
@@ -157,18 +160,26 @@ namespace CarpetIOASCII {
 
   template<int outdim>
   void* IOASCII<outdim>
-  ::SetupGH (tFleshConfig* const fc, const int convLevel, cGH* const cgh)
+  ::SetupGH (tFleshConfig* const fc, const int convLevel, cGH* const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
     const void *dummy;
 
     dummy = &fc;
     dummy = &convLevel;
-    dummy = &cgh;
+    dummy = &cctkGH;
     dummy = &dummy;
 
+    if (not CCTK_Equals (verbose, "none")) {
+      CCTK_VInfo (CCTK_THORNSTRING, "I/O Method 'IOASCII_%dD' registered: "
+                  "%dD AMR output of grid variables to ASCII files",
+                  outdim, outdim);
+    }
+
     // Truncate all files if this is not a restart
-    do_truncate.resize(CCTK_NumVars(), true);
+    const int numvars = CCTK_NumVars ();
+    do_truncate.resize (numvars, true);
+    requests.resize (numvars);
 
     // No iterations have yet been output
     last_output.resize(mglevels);
@@ -179,6 +190,31 @@ namespace CarpetIOASCII {
       }
     }
 
+
+    /* create the output directory */
+    my_out_dir = GetStringParameter("out%dD_dir");
+    if (CCTK_EQUALS (my_out_dir, "")) {
+      my_out_dir = out_dir;
+    }
+
+    const ioGH* const ioUtilGH = (const ioGH*) CCTK_GHExtension (cctkGH, "IO");
+    int result = IOUtil_CreateDirectory (cctkGH, my_out_dir, 0, 0);
+    if (result < 0) {
+      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Problem creating %dD-output directory '%s'",
+                  outdim, my_out_dir);
+    } else if (result > 0 and CCTK_Equals (verbose, "full")) {
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "%dD-output directory '%s' already exists",
+                  outdim, my_out_dir);
+    }
+
+    // initial I/O parameter check
+    my_out_vars = strdup ("");
+    stop_on_parse_errors = strict_io_parameter_check != 0;
+    CheckSteerableParameters (cctkGH);
+    stop_on_parse_errors = false;
+
     // We register only once, ergo we get only one handle.  We store
     // that statically, so there is no need to pass anything to
     // Cactus.
@@ -188,12 +224,57 @@ namespace CarpetIOASCII {
 
 
   template<int outdim>
+  void IOASCII<outdim>
+  ::CheckSteerableParameters (const cGH *const cctkGH)
+  {
+    DECLARE_CCTK_PARAMETERS;
+
+    // re-parse the 'IOASCII::out%d_vars' parameter if it has changed
+    char name[11];
+    sprintf (name, "out%dD_vars", outdim);
+    const char* const out_vars = GetStringParameter("out%dD_vars");
+
+    if (strcmp (out_vars, my_out_vars)) {
+      IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING, name,
+                                 stop_on_parse_errors, out_vars,
+                                 -1, &requests[0]);
+
+      // notify the user about the new setting
+      if (not CCTK_Equals (verbose, "none")) {
+        int count = 0;
+        ostringstream msg;
+        msg << "Periodic " << outdim << "D AMR output requested for '";
+        for (int i = CCTK_NumVars () - 1; i >= 0; i--) {
+          if (requests[i]) {
+            if (count++) {
+              msg << "', '";
+            }
+            char *fullname = CCTK_FullName (i);
+            msg << fullname;
+            free (fullname);
+          }
+        }
+        if (count) {
+          msg << "'";
+          CCTK_INFO (msg.str().c_str());
+        }
+      }
+
+      // save the last setting of 'IOASCII::out%d_vars' parameter
+      free (my_out_vars);
+      my_out_vars = strdup (out_vars);
+    }
+  }
+
+
+
+  template<int outdim>
   int IOASCII<outdim>
-  ::OutputGH (const cGH* const cgh)
+  ::OutputGH (const cGH* const cctkGH)
   {
     for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
-      if (TimeToOutput(cgh, vindex)) {
-	TriggerOutput(cgh, vindex);
+      if (TimeToOutput(cctkGH, vindex)) {
+	TriggerOutput(cctkGH, vindex);
       }
     }
     return 0;
@@ -203,7 +284,7 @@ namespace CarpetIOASCII {
 
   template<int outdim>
   int IOASCII<outdim>
-  ::OutputVarAs (const cGH* const cgh,
+  ::OutputVarAs (const cGH* const cctkGH,
 		 const char* const varname, const char* const alias)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -231,7 +312,7 @@ namespace CarpetIOASCII {
     assert (num_tl>=1);
 
     // Check for storage
-    if (! CCTK_QueryGroupStorageI(cgh, group)) {
+    if (! CCTK_QueryGroupStorageI(cctkGH, group)) {
       CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
 		  "Cannot output variable \"%s\" because it has no storage",
 		  varname);
@@ -261,17 +342,8 @@ namespace CarpetIOASCII {
     assert (outdim <= groupdim);
 
     // Get grid hierarchy extentsion from IOUtil
-    const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cgh, "IO");
+    const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cctkGH, "IO");
     assert (iogh);
-
-    // Create the output directory
-    const char* myoutdir = GetStringParameter("out%dD_dir");
-    if (CCTK_EQUALS(myoutdir, "")) {
-      myoutdir = out_dir;
-    }
-    if (CCTK_MyProc(cgh)==0) {
-      CCTK_CreateDirectory (0755, myoutdir);
-    }
 
     // Loop over all direction combinations
     vect<int,outdim> dirs (0);
@@ -335,7 +407,7 @@ namespace CarpetIOASCII {
 	if (desired) {
 
 	  // Traverse all maps on this refinement and multigrid level
-	  BEGIN_MAP_LOOP(cgh, grouptype) {
+	  BEGIN_MAP_LOOP(cctkGH, grouptype) {
 
             // Find the output offset
             ivect offset(0);
@@ -343,17 +415,17 @@ namespace CarpetIOASCII {
               switch (outdim) {
               case 0:
                 offset[0] = GetGridOffset
-                  (cgh, 1,
+                  (cctkGH, 1,
                    "out%dD_point_xi", /*"out_point_xi"*/ NULL,
                    "out%dD_point_x",  /*"out_point_x"*/  NULL,
                    /*out_point_x*/ 0.0);
                 offset[1] = GetGridOffset
-                  (cgh, 2,
+                  (cctkGH, 2,
                    "out%dD_point_yi", /*"out_point_yi"*/ NULL,
                    "out%dD_point_y",  /*"out_point_y"*/  NULL,
                    /*out_point_y*/ 0.0);
                 offset[2] = GetGridOffset
-                  (cgh, 3,
+                  (cctkGH, 3,
                    "out%dD_point_zi", /*"out_point_zi"*/ NULL,
                    "out%dD_point_z",  /*"out_point_z"*/  NULL,
                    /*out_point_z*/ 0.0);
@@ -361,31 +433,31 @@ namespace CarpetIOASCII {
               case 1:
                 switch (dirs[0]) {
                 case 0:
-                  offset[1] = GetGridOffset (cgh, 2,
+                  offset[1] = GetGridOffset (cctkGH, 2,
                                              "out%dD_xline_yi", "out_xline_yi",
                                              "out%dD_xline_y",  "out_xline_y",
                                              out_xline_y);
-                  offset[2] = GetGridOffset (cgh, 3,
+                  offset[2] = GetGridOffset (cctkGH, 3,
                                              "out%dD_xline_zi", "out_xline_zi",
                                              "out%dD_xline_z",  "out_xline_z",
                                              out_xline_z);
                   break;
                 case 1:
-                  offset[0] = GetGridOffset (cgh, 1,
+                  offset[0] = GetGridOffset (cctkGH, 1,
                                              "out%dD_yline_xi", "out_yline_xi",
                                              "out%dD_yline_x",  "out_yline_x",
                                              out_yline_x);
-                  offset[2] = GetGridOffset (cgh, 3,
+                  offset[2] = GetGridOffset (cctkGH, 3,
                                              "out%dD_yline_zi", "out_yline_zi",
                                              "out%dD_yline_z",  "out_yline_z",
                                              out_yline_z);
                   break;
                 case 2:
-                  offset[0] = GetGridOffset (cgh, 1,
+                  offset[0] = GetGridOffset (cctkGH, 1,
                                              "out%dD_zline_xi", "out_zline_xi",
                                              "out%dD_zline_x",  "out_zline_x",
                                              out_zline_x);
-                  offset[1] = GetGridOffset (cgh, 2,
+                  offset[1] = GetGridOffset (cctkGH, 2,
                                              "out%dD_zline_yi", "out_zline_yi",
                                              "out%dD_zline_y",  "out_zline_y",
                                              out_zline_y);
@@ -397,19 +469,19 @@ namespace CarpetIOASCII {
               case 2:
                 if (dirs[0]==0 && dirs[1]==1) {
                   offset[2] = GetGridOffset
-                    (cgh, 3,
+                    (cctkGH, 3,
                      "out%dD_xyplane_zi", "out_xyplane_zi",
                      "out%dD_xyplane_z",  "out_xyplane_z",
                      out_xyplane_z);
                 } else if (dirs[0]==0 && dirs[1]==2) {
                   offset[1] = GetGridOffset
-                    (cgh, 2,
+                    (cctkGH, 2,
                      "out%dD_xzplane_yi", "out_xzplane_yi",
                      "out%dD_xzplane_y",  "out_xzplane_y",
                      out_xzplane_y);
                 } else if (dirs[0]==1 && dirs[1]==2) {
                   offset[0] = GetGridOffset
-                    (cgh, 1,
+                    (cctkGH, 1,
                      "out%dD_yzplane_xi", "out_yzplane_xi",
                      "out%dD_yzplane_x",  "out_yzplane_x",
                      out_yzplane_x);
@@ -426,12 +498,12 @@ namespace CarpetIOASCII {
             } // if grouptype is GF
 
             ofstream file;
-            if (CCTK_MyProc(cgh)==0) {
+            if (CCTK_MyProc(cctkGH)==0) {
 
               // Invent a file name
               ostringstream filenamebuf;
               if (new_filename_scheme) {
-                filenamebuf << myoutdir << "/" << alias << ".";
+                filenamebuf << my_out_dir << "/" << alias << ".";
                 if (maps > 1) {
                   filenamebuf << Carpet::map << ".";
                 }
@@ -451,7 +523,7 @@ namespace CarpetIOASCII {
 //                 }
                 filenamebuf << ".asc";
               } else {
-                filenamebuf << myoutdir << "/" << alias << ".";
+                filenamebuf << my_out_dir << "/" << alias << ".";
                 if (maps > 1) {
                   filenamebuf << Carpet::map << ".";
                 }
@@ -470,7 +542,7 @@ namespace CarpetIOASCII {
               // If this is the first time, then write a nice header
               if (do_truncate.at(n)) {
                 struct stat fileinfo;
-                if (IO_TruncateOutputFiles (cgh)
+                if (IO_TruncateOutputFiles (cctkGH)
                     || stat(filename, &fileinfo)!=0) {
                   file.open (filename, ios::out | ios::trunc);
                   if (! file.good()) {
@@ -524,7 +596,7 @@ namespace CarpetIOASCII {
                     if (want_other) {
                       if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
                         char const * const job_id
-                          = (char const *) UniqueSimulationID (cgh);
+                          = (char const *) UniqueSimulationID (cctkGH);
                         file << "# Simulation ID: " << job_id << endl;
                       }
                     }
@@ -559,7 +631,7 @@ namespace CarpetIOASCII {
 
             // Traverse and components on this multigrid and
             // refinement level and map
-            BEGIN_COMPONENT_LOOP(cgh, grouptype) {
+            BEGIN_COMPONENT_LOOP(cctkGH, grouptype) {
 
               cGroup groupdata;
               int const ierr = CCTK_GroupData (group, & groupdata);
@@ -586,7 +658,7 @@ namespace CarpetIOASCII {
                   if (! output_symmetry_points) {
                     if (grouptype == CCTK_GF) {
                       CCTK_INT const symtable
-                        = SymmetryTableHandleForGrid (cgh);
+                        = SymmetryTableHandleForGrid (cctkGH);
                       if (symtable < 0) CCTK_WARN (0, "internal error");
                       CCTK_INT symbnd[2*dim];
                       int const ierr = Util_TableGetIntArray
@@ -595,11 +667,11 @@ namespace CarpetIOASCII {
                       for (int d=0; d<dim; ++d) {
                         if (symbnd[2*d] < 0) {
                           // lower boundary is a symmetry boundary
-                          lo[d] += cgh->cctk_nghostzones[d] * str[d];
+                          lo[d] += cctkGH->cctk_nghostzones[d] * str[d];
                         }
                         if (symbnd[2*d+1] < 0) {
                           // upper boundary is a symmetry boundary
-                          hi[d] -= cgh->cctk_nghostzones[d] * str[d];
+                          hi[d] -= cctkGH->cctk_nghostzones[d] * str[d];
                         }
                       }
                     }
@@ -608,28 +680,28 @@ namespace CarpetIOASCII {
                   // Ignore ghost zones if desired
                   for (int d=0; d<dim; ++d) {
                     bool output_lower_ghosts
-                      = cgh->cctk_bbox[2*d] ? out3D_outer_ghosts : out3D_ghosts;
+                      = cctkGH->cctk_bbox[2*d] ? out3D_outer_ghosts : out3D_ghosts;
                     bool output_upper_ghosts
-                      = cgh->cctk_bbox[2*d+1] ? out3D_outer_ghosts : out3D_ghosts;
+                      = cctkGH->cctk_bbox[2*d+1] ? out3D_outer_ghosts : out3D_ghosts;
 
                     if (! output_lower_ghosts) {
-                      lo[d] += cgh->cctk_nghostzones[d] * str[d];
+                      lo[d] += cctkGH->cctk_nghostzones[d] * str[d];
                     }
                     if (! output_upper_ghosts) {
-                      hi[d] -= cgh->cctk_nghostzones[d] * str[d];
+                      hi[d] -= cctkGH->cctk_nghostzones[d] * str[d];
                     }
                   }
                   ext = ibbox(lo,hi,str);
 
                   // coordinates
-                  const CCTK_REAL coord_time = cgh->cctk_time;
+                  const CCTK_REAL coord_time = cctkGH->cctk_time;
                   rvect global_lower;
                   rvect coord_delta;
                   if (grouptype == CCTK_GF) {
                     for (int d=0; d<dim; ++d) {
-                      global_lower[d] = cgh->cctk_origin_space[d];
+                      global_lower[d] = cctkGH->cctk_origin_space[d];
                       coord_delta[d]
-                        = cgh->cctk_delta_space[d] / maxspacereflevelfact[d];
+                        = cctkGH->cctk_delta_space[d] / maxspacereflevelfact[d];
                     }
                   } else {
                     for (int d=0; d<dim; ++d) {
@@ -667,13 +739,13 @@ namespace CarpetIOASCII {
                     datas.resize (1);
                     datas.at(0) = data;
                   }
-                  WriteASCII (file, datas, ext, n, cgh->cctk_iteration,
+                  WriteASCII (file, datas, ext, n, cctkGH->cctk_iteration,
                               offset1, dirs,
                               rl, mglevel, Carpet::map, component, tl,
                               coord_time, coord_lower, coord_upper);
 
                   // Append EOL after every component
-                  if (CCTK_MyProc(cgh)==0) {
+                  if (CCTK_MyProc(cctkGH)==0) {
                     if (separate_components) {
                       assert (file.good());
                       file << endl;
@@ -688,7 +760,7 @@ namespace CarpetIOASCII {
             } END_COMPONENT_LOOP;
 
             // Append EOL after every complete set of components
-            if (CCTK_MyProc(cgh)==0) {
+            if (CCTK_MyProc(cctkGH)==0) {
               if (separate_grids) {
                 assert (file.good());
                 file << endl;
@@ -734,23 +806,10 @@ namespace CarpetIOASCII {
     DECLARE_CCTK_PARAMETERS;
 
     assert (vindex>=0 && vindex<CCTK_NumVars());
-
-
-
     const int grouptype = CCTK_GroupTypeFromVarI(vindex);
-    switch (grouptype) {
-    case CCTK_SCALAR:
-    case CCTK_ARRAY:
-      if (! do_global_mode) return 0;
-      break;
-    case CCTK_GF:
-      // do nothing
-      break;
-    default:
-      assert (0);
+    if (grouptype != CCTK_GF and not do_global_mode) {
+      return 0;
     }
-
-
 
     // check whether to output at this iteration
     bool output_this_iteration;
@@ -888,41 +947,41 @@ namespace CarpetIOASCII {
 
   template<int outdim>
   int IOASCII<outdim>
-  ::TriggerOutput (const cGH* const cgh, const int vindex)
+  ::TriggerOutput (const cGH* const cctkGH, const int vindex)
   {
     DECLARE_CCTK_PARAMETERS;
-    
+
     assert (vindex>=0 && vindex<CCTK_NumVars());
 
     int retval;
-    
+
     if (one_file_per_group) {
-      
+
       char* const fullname = CCTK_FullName(vindex);
       int const gindex = CCTK_GroupIndexFromVarI(vindex);
       char* const groupname = CCTK_GroupName(gindex);
-      for (char* p=groupname; *p; ++p) *p=tolower(*p);
-      retval = OutputVarAs (cgh, fullname, groupname);
+      for (char* p=groupname; *p; ++p) *p=(char)tolower(*p);
+      retval = OutputVarAs (cctkGH, fullname, groupname);
       free (fullname);
       free (groupname);
-      
+
       int const firstvar = CCTK_FirstVarIndexI(gindex);
       int const numvars = CCTK_NumVarsInGroupI(gindex);
       for (int n=firstvar; n<firstvar+numvars; ++n) {
-        last_output.at(mglevel).at(reflevel).at(n) = cgh->cctk_iteration;
+        last_output.at(mglevel).at(reflevel).at(n) = cctkGH->cctk_iteration;
       }
-      
+
     } else {
-      
+
       char* const fullname = CCTK_FullName(vindex);
       char const* varname = CCTK_VarName(vindex);
-      retval = OutputVarAs (cgh, fullname, varname);
+      retval = OutputVarAs (cctkGH, fullname, varname);
       free (fullname);
-      
-      last_output.at(mglevel).at(reflevel).at(vindex) = cgh->cctk_iteration;
-      
+
+      last_output.at(mglevel).at(reflevel).at(vindex) = cctkGH->cctk_iteration;
+
     }
-    
+
     return retval;
   }
 
@@ -930,7 +989,7 @@ namespace CarpetIOASCII {
 
   template<int outdim>
   int IOASCII<outdim>
-  ::GetGridOffset (const cGH* const cgh, const int dir,
+  ::GetGridOffset (const cGH* const cctkGH, const int dir,
 		   const char* const itempl, const char* const iglobal,
 		   const char* const ctempl, const char* const cglobal,
 		   const CCTK_REAL cfallback)
@@ -948,7 +1007,7 @@ namespace CarpetIOASCII {
       assert (pcoord);
       const CCTK_REAL coord = *pcoord;
       assert (ptype == PARAMETER_REAL);
-      return CoordToOffset (cgh, dir, coord, 0);
+      return CoordToOffset (cctkGH, dir, coord, 0);
     }
 
     // Second choice: explicit index
@@ -979,7 +1038,7 @@ namespace CarpetIOASCII {
         assert (pcoord);
         const CCTK_REAL coord = *pcoord;
         assert (ptype == PARAMETER_REAL);
-        return CoordToOffset (cgh, dir, coord, 0);
+        return CoordToOffset (cctkGH, dir, coord, 0);
       }
     }
 
@@ -999,24 +1058,24 @@ namespace CarpetIOASCII {
     }
 
     // Fifth choice: default coordinate
-    return CoordToOffset (cgh, dir, cfallback, 0);
+    return CoordToOffset (cctkGH, dir, cfallback, 0);
   }
 
 
 
   template<int outdim>
   int IOASCII<outdim>
-  ::CoordToOffset (const cGH* cgh, const int dir, const CCTK_REAL coord,
+  ::CoordToOffset (const cGH* cctkGH, const int dir, const CCTK_REAL coord,
 		   const int ifallback)
   {
     assert (dir>=1 && dir<=dim);
 
     assert (mglevel!=-1 && reflevel!=-1 && Carpet::map!=-1);
 
-    const CCTK_REAL delta = cgh->cctk_delta_space[dir-1] / cgh->cctk_levfac[dir-1];
-    const CCTK_REAL lower = cgh->cctk_origin_space[dir-1];
+    const CCTK_REAL delta = cctkGH->cctk_delta_space[dir-1] / cctkGH->cctk_levfac[dir-1];
+    const CCTK_REAL lower = cctkGH->cctk_origin_space[dir-1];
 #if 0
-    const int npoints = cgh->cctk_gsh[dir-1];
+    const int npoints = cctkGH->cctk_gsh[dir-1];
     const CCTK_REAL upper = lower + (npoints-1) * delta;
 #endif
 
@@ -1136,7 +1195,7 @@ namespace CarpetIOASCII {
 		   const vect<CCTK_REAL,dim>& coord_upper)
   {
     DECLARE_CCTK_PARAMETERS;
-    
+
     assert (outdim<=dim);
     const int vartype = CCTK_VarTypeI(vi);
 
