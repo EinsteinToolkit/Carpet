@@ -60,6 +60,6 @@ if (! CCTK_Equals (recover, "no") && *recover_file)
   schedule CarpetIOHDF5_CloseFiles at POST_RECOVER_VARIABLES
   {
     LANG: C
-    OPTIONS: global
+    OPTIONS: meta
   } "Close all initial data checkpoint files after recovery"
 }
