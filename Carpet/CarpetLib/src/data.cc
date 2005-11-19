@@ -1702,17 +1702,17 @@ ostream& data<T>::output (ostream& os) const
   return os;
 }
 
-
 template<typename T>
 ostream & operator << (ostream & os, const data<T> & d)
 {
-  char * space = "";
-  for (size_t i = 0; i < d.vectorlength; i++) {
+  char const * space = "";
+  for (int i = 0; i < d.vectorlength; i++) {
     os << space << d[i];
     space = " ";
   }
   return os;
 }
+
 
 
 #define INSTANTIATE(T)				\

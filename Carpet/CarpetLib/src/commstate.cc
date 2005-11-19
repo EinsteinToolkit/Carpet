@@ -31,7 +31,7 @@ comm_state::comm_state ()
              state_get_buffer_sizes : state_post;
 
   typebufs.resize (dist::c_ndatatypes());
-  for (int type = 0; type < typebufs.size(); type++) {
+  for (size_t type = 0; type < typebufs.size(); type++) {
     typebufs[type].procbufs.resize(dist::size());
   }
 
@@ -72,7 +72,7 @@ void comm_state::step ()
       // (a clever MPI layer may take advantage of such early posting).
       num_posted_recvs = num_completed_recvs = 0;
 
-      for (int type = 0; type < typebufs.size(); type++) {
+      for (size_t type = 0; type < typebufs.size(); type++) {
 
         // skip unused datatype buffers
         if (not typebufs[type].in_use) {
@@ -80,7 +80,7 @@ void comm_state::step ()
         }
 
         int& datatypesize = typebufs[type].datatypesize;
-        for (int proc = 0; proc < typebufs[type].procbufs.size(); proc++) {
+        for (size_t proc = 0; proc < typebufs[type].procbufs.size(); proc++) {
           procbufdesc& procbuf = typebufs[type].procbufs[proc];
 
           procbuf.sendbufbase = new char[procbuf.sendbufsize*datatypesize];
@@ -116,8 +116,8 @@ void comm_state::step ()
         // do another comm_state loop iteration.
       } else {
         // Everything is done so release the collective communication buffers.
-        for (int type = 0; type < typebufs.size(); type++) {
-          for (int proc = 0; proc < typebufs[type].procbufs.size(); proc++) {
+        for (size_t type = 0; type < typebufs.size(); type++) {
+          for (size_t proc = 0; proc < typebufs[type].procbufs.size(); proc++) {
             delete[] typebufs[type].procbufs[proc].sendbufbase;
             delete[] typebufs[type].procbufs[proc].recvbufbase;
           }
