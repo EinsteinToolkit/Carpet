@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "util_Table.h"
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
@@ -305,6 +306,14 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
         continue;
       }
 
+      // check the timelevel
+      if (patch->timelevel >= read_completely.at(patch->vindex).size()) {
+        CCTK_VWarn (3, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Ignoring dataset '%s' (invalid timelevel %d)",
+                    patch->patchname.c_str(), patch->timelevel);
+        continue;
+      }
+
       // actually read the patch
       if (not read_completely.at(patch->vindex).at(patch->timelevel)) {
         ReadVar (cctkGH, file.file, patch,
@@ -334,6 +343,24 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   // check that all variables have been read completely on this mglevel/reflevel
   int num_incomplete = 0;
   for (int vindex = 0; vindex < read_completely.size(); vindex++) {
+
+    if (CCTK_GroupTypeFromVarI (vindex) != CCTK_GF and reflevel > 0) {
+      continue;
+    }
+
+    bool not_checkpointed = false;
+    int gindex = CCTK_GroupIndexFromVarI (vindex);
+    int tagstable = CCTK_GroupTagsTableI (gindex);
+    int const len = Util_TableGetString (tagstable, 0, NULL, "checkpoint");
+    if (len > 0) {
+      char* value = new char[len + 1];
+      Util_TableGetString (tagstable, len + 1, value, "checkpoint");
+      if (len == sizeof ("no") - 1 and CCTK_Equals (value, "no")) {
+        not_checkpointed = true;
+      }
+      delete[] value;
+    }
+
     for (int tl = 0; tl < read_completely[vindex].size(); tl++) {
       if (not read_completely[vindex][tl]) {
         // check if the variable has been read partially
@@ -343,9 +370,16 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
         }
         char* fullname = CCTK_FullName (vindex);
         if (size == 0) {
-          CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "variable '%s' timelevel %d has not been read",
-                      fullname, tl);
+          if (not_checkpointed) {
+            CCTK_VWarn (4, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "variable '%s' timelevel %d has not been read "
+                        "(variable has option tag \"CHECKPOINT = 'no'\")",
+                        fullname, tl);
+          } else {
+            CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "variable '%s' timelevel %d has not been read",
+                        fullname, tl);
+          }
         } else {
           CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "variable '%s' timelevel %d has been read only partially",
