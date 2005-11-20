@@ -6,31 +6,19 @@
 #include <cstdlib>
 #include <cstring>
 
-#include <sys/stat.h>
-#include <sys/types.h>
-
 #include <fstream>
 #include <iomanip>
+#include <map>
 #include <ostream>
 #include <sstream>
-#include <string>
-#include <vector>
 
 #include "cctk.h"
-#include "cctk_Functions.h"
 #include "cctk_Parameters.h"
 #include "util_Network.h"
 #include "util_Table.h"
 
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
-
-#include "data.hh"
-#include "dist.hh"
-#include "gdata.hh"
-#include "gf.hh"
-#include "ggf.hh"
-#include "vect.hh"
 
 #include "carpet.hh"
 
@@ -50,7 +38,7 @@ namespace CarpetIOASCII {
   using namespace std;
   using namespace Carpet;
 
-  void SetFlag (int index, const char* optstring, void* arg);
+  static void GetVarIndex (int vindex, const char* optstring, void* arg);
 
 
 
@@ -125,10 +113,7 @@ namespace CarpetIOASCII {
   // Definition of static members
   template<int outdim> const char*        IOASCII<outdim>::my_out_dir;
   template<int outdim> char*              IOASCII<outdim>::my_out_vars;
-  template<int outdim> vector<bool>       IOASCII<outdim>::do_truncate;
   template<int outdim> vector<ioRequest*> IOASCII<outdim>::requests;
-  template<int outdim>
-    vector<vector<vector<int> > >         IOASCII<outdim>::last_output;
 
   static bool stop_on_parse_errors = false;
 
@@ -178,20 +163,9 @@ namespace CarpetIOASCII {
 
     // Truncate all files if this is not a restart
     const int numvars = CCTK_NumVars ();
-    do_truncate.resize (numvars, true);
     requests.resize (numvars);
 
-    // No iterations have yet been output
-    last_output.resize(mglevels);
-    for (int ml=0; ml<mglevels; ++ml) {
-      last_output.at(ml).resize(maxreflevels);
-      for (int rl=0; rl<maxreflevels; ++rl) {
-        last_output.at(ml).at(rl).resize(CCTK_NumVars(), -1);
-      }
-    }
-
-
-    /* create the output directory */
+    // create the output directory
     my_out_dir = GetStringParameter("out%dD_dir");
     if (CCTK_EQUALS (my_out_dir, "")) {
       my_out_dir = out_dir;
@@ -230,12 +204,12 @@ namespace CarpetIOASCII {
     DECLARE_CCTK_PARAMETERS;
 
     // re-parse the 'IOASCII::out%d_vars' parameter if it has changed
-    char name[11];
-    sprintf (name, "out%dD_vars", outdim);
     const char* const out_vars = GetStringParameter("out%dD_vars");
-
     if (strcmp (out_vars, my_out_vars)) {
-      IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING, name,
+      ostringstream parameter_name;
+      parameter_name << "IOASCII::out" << outdim << "D_vars";
+      IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING,
+                                 parameter_name.str().c_str(),
                                  stop_on_parse_errors, out_vars,
                                  -1, &requests[0]);
 
@@ -284,10 +258,117 @@ namespace CarpetIOASCII {
 
   template<int outdim>
   int IOASCII<outdim>
+  ::TimeToOutput (const cGH* const cctkGH, const int vindex)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    DECLARE_CCTK_PARAMETERS;
+
+    assert (vindex >= 0 and vindex < CCTK_NumVars ());
+
+    if (CCTK_GroupTypeFromVarI (vindex) != CCTK_GF and not do_global_mode) {
+      return 0;
+    }
+
+    CheckSteerableParameters (cctkGH);
+
+    // check if output for this variable was requested
+    if (not requests[vindex]) {
+      return (0);
+    }
+
+    // check whether this refinement level should be output
+    if (not (requests[vindex]->refinement_levels & (1 << reflevel))) {
+      return (0);
+    }
+
+    // check if output for this variable was requested individually
+    // by a "<varname>{ out_every = <number> }" option string
+    // this will overwrite the output criterion setting
+    const char* myoutcriterion = GetStringParameter("out%dD_criterion");
+    if (CCTK_EQUALS(myoutcriterion, "default")) {
+      myoutcriterion = out_criterion;
+    }
+    if (requests[vindex]->out_every >= 0) {
+      myoutcriterion = "divisor";
+    }
+
+    if (CCTK_EQUALS (myoutcriterion, "never")) {
+      return (0);
+    }
+
+    // check whether to output at this iteration
+    bool output_this_iteration = false;
+
+    if (CCTK_EQUALS (myoutcriterion, "iteration")) {
+      int myoutevery = GetIntParameter("out%dD_every");
+      if (myoutevery == -2) {
+        myoutevery = out_every;
+      }
+      if (myoutevery > 0) {
+        if (cctk_iteration == this_iteration[outdim]) {
+        // we already decided to output this iteration
+          output_this_iteration = true;
+        } else if (cctk_iteration
+                   >= last_output_iteration[outdim] + myoutevery) {
+          // it is time for the next output
+          output_this_iteration = true;
+          last_output_iteration[outdim] = cctk_iteration;
+          this_iteration[outdim] = cctk_iteration;
+        }
+      }
+    } else if (CCTK_EQUALS (myoutcriterion, "divisor")) {
+      int myoutevery = GetIntParameter("out%dD_every");
+      if (myoutevery == -2) {
+        myoutevery = out_every;
+      }
+      if (requests[vindex]->out_every >= 0) {
+        myoutevery = requests[vindex]->out_every;
+      }
+      if (myoutevery > 0 and (cctk_iteration % myoutevery) == 0) {
+        // we already decided to output this iteration
+        output_this_iteration = true;
+      }
+    } else if (CCTK_EQUALS (myoutcriterion, "time")) {
+      CCTK_REAL myoutdt = GetRealParameter("out%dD_dt");
+      if (myoutdt == -2) {
+        myoutdt = out_dt;
+      }
+      if (myoutdt == 0 or cctk_iteration == this_iteration[outdim]) {
+        output_this_iteration = true;
+      } else if (myoutdt > 0 and (cctk_time / cctk_delta_time
+                 >= (last_output_time[outdim] + myoutdt) / cctk_delta_time - 1.0e-12)) {
+        // it is time for the next output
+        output_this_iteration = true;
+        last_output_time[outdim] = cctk_time;
+        this_iteration[outdim] = cctk_iteration;
+      }
+    } // select output criterion
+
+    return output_this_iteration ? 1 : 0;
+  }
+
+
+
+  template<int outdim>
+  int IOASCII<outdim>
   ::OutputVarAs (const cGH* const cctkGH,
 		 const char* const varname, const char* const alias)
   {
+    DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
+
+    int vindex = -1;
+
+    if (CCTK_TraverseString (varname, GetVarIndex, &vindex, CCTK_VAR) < 0) {
+      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "error while parsing variable name '%s' (alias name '%s')",
+                  varname, alias);
+      return (-1);
+    }
+
+    if (vindex < 0) {
+      return (-1);
+    }
 
     if (! is_level_mode()) {
       CCTK_WARN (1, "OutputVarAs must be called in level mode");
@@ -295,51 +376,82 @@ namespace CarpetIOASCII {
     }
     assert (is_level_mode());
 
-    const int n = CCTK_VarIndex(varname);
-    if (n<0) {
-      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-		  "Variable \"%s\" does not exist", varname);
-      return -1;
-    }
-    assert (n>=0 && n<CCTK_NumVars());
-    const int group = CCTK_GroupIndexFromVarI (n);
-    assert (group>=0 && group<(int)Carpet::arrdata.size());
-    const int n0 = CCTK_FirstVarIndexI(group);
-    assert (n0>=0 && n0<CCTK_NumVars());
-    const int var = n - n0;
-    assert (var>=0 && var<CCTK_NumVarsInGroupI(group));
-    const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
-    assert (num_tl>=1);
+    const int group = CCTK_GroupIndexFromVarI (vindex);
+    assert (group >= 0);
+    const int vindex0 = CCTK_FirstVarIndexI (group);
+    assert (vindex0 >= 0 and vindex >= vindex0);
+    const int var = vindex - vindex0;
+    const int num_tl = CCTK_NumTimeLevelsFromVarI (vindex);
+    assert (num_tl >= 1);
 
-    // Check for storage
-    if (! CCTK_QueryGroupStorageI(cctkGH, group)) {
-      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-		  "Cannot output variable \"%s\" because it has no storage",
-		  varname);
-      return 0;
-    }
-
-    const int grouptype = CCTK_GroupTypeI(group);
-    switch (grouptype) {
-    case CCTK_SCALAR:
-    case CCTK_ARRAY:
+    const int grouptype = CCTK_GroupTypeI (group);
+    if (grouptype != CCTK_GF) {
       assert (do_global_mode);
-      break;
-    case CCTK_GF:
-      /* do nothing */
-      break;
-    default:
-      assert (0);
     }
     const int rl = grouptype == CCTK_GF ? reflevel : 0;
 
     const int groupdim = CCTK_GroupDimI(group);
     if (outdim > groupdim) {
       CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Cannot produce %dD ASCII output file \"%s\" for variable \"%s\" because it has only %d dimensions", outdim, alias, varname, groupdim);
+                  "Cannot produce %dD ASCII output file '%s' for variable '%s' "
+                  "because it has only %d dimensions",
+                  outdim, alias, varname, groupdim);
       return -1;
     }
-    assert (outdim <= groupdim);
+
+    // Check for storage
+    if (not CCTK_QueryGroupStorageI (cctkGH, group)) {
+      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+		  "Cannot output variable '%s' because it has no storage",
+		  varname);
+      return 0;
+    }
+
+    // get the default I/O request for this variable
+    ioRequest* request = requests[vindex];
+    if (not request) {
+      request = IOUtil_DefaultIORequest (cctkGH, vindex, 1);
+    }
+
+    // check if the file has been created already
+    typedef std::map<string, vector<vector<vector<int> > > > filelist;
+    static filelist created_files;
+    string basefilename (my_out_dir);
+    basefilename.append (alias);
+    filelist::iterator thisfile = created_files.find (basefilename);
+    bool is_new_file = thisfile == created_files.end();
+    if (is_new_file) {
+      int const numvars = CCTK_NumVars ();
+      vector<vector<vector<int> > > last_outputs;   // [ml][rl][var]
+      last_outputs.resize (mglevels);
+      for (int ml = 0; ml < mglevels; ++ml) {
+        last_outputs[ml].resize (maxreflevels);
+        for (int rl = 0; rl < maxreflevels; ++rl) {
+          last_outputs[ml][rl].resize (numvars, cctk_iteration - 1);
+        }
+      }
+      thisfile = created_files.insert (thisfile,
+                                       filelist::value_type (basefilename,
+                                                             last_outputs));
+      assert (thisfile != created_files.end());
+    }
+    is_new_file &= IO_TruncateOutputFiles (cctkGH);
+
+    // check if this variable has been output already during this iteration
+    int& last_output = thisfile->second.at(mglevel).at(reflevel).at(vindex);
+    if (last_output == cctk_iteration) {
+      // Has already been output during this iteration
+      char* varname = CCTK_FullName (vindex);
+      CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Skipping output for variable '%s', because this variable "
+                  "has already been output during the current iteration -- "
+                  "probably via a trigger during the analysis stage",
+                  varname);
+      free (varname);
+      return (0);
+    }
+    assert (last_output < cctk_iteration);
+    last_output = cctk_iteration;
 
     // Get grid hierarchy extentsion from IOUtil
     const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cctkGH, "IO");
@@ -502,11 +614,11 @@ namespace CarpetIOASCII {
 
               // Invent a file name
               ostringstream filenamebuf;
+              filenamebuf << my_out_dir << "/" << alias << ".";
+              if (maps > 1) {
+                filenamebuf << Carpet::map << ".";
+              }
               if (new_filename_scheme) {
-                filenamebuf << my_out_dir << "/" << alias << ".";
-                if (maps > 1) {
-                  filenamebuf << Carpet::map << ".";
-                }
                 for (int d=0; d<outdim; ++d) {
                   const char* const coords = "xyz";
                   filenamebuf << coords[dirs[d]];
@@ -523,10 +635,6 @@ namespace CarpetIOASCII {
 //                 }
                 filenamebuf << ".asc";
               } else {
-                filenamebuf << my_out_dir << "/" << alias << ".";
-                if (maps > 1) {
-                  filenamebuf << Carpet::map << ".";
-                }
                 for (int d=0; d<outdim; ++d) {
                   assert (dirs[d]>=0 && dirs[d]<3);
                   const char* const coords = "xyz";
@@ -539,93 +647,82 @@ namespace CarpetIOASCII {
               string filenamestr = filenamebuf.str();
               const char* const filename = filenamestr.c_str();
 
-              // If this is the first time, then write a nice header
-              if (do_truncate.at(n)) {
-                struct stat fileinfo;
-                if (IO_TruncateOutputFiles (cctkGH)
-                    || stat(filename, &fileinfo)!=0) {
-                  file.open (filename, ios::out | ios::trunc);
-                  if (! file.good()) {
-                    CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                                "Could not open output file \"%s\" for variable \"%s\"",
-                                filename, varname);
-                  }
-                  assert (file.good());
-                  {
-                    bool want_date = false;
-                    bool want_parfilename = false;
-                    bool want_other = false;
-                    if (CCTK_EQUALS (out_fileinfo, "none")) {
-                      // do nothing
-                    } else if (CCTK_EQUALS (out_fileinfo, "axis labels")) {
-                      // do nothing
-                    } else if (CCTK_EQUALS (out_fileinfo, "creation date")) {
-                      want_date = true;
-                    } else if (CCTK_EQUALS (out_fileinfo, "parameter filename")) {
-                      want_parfilename = true;
-                    } else if (CCTK_EQUALS (out_fileinfo, "all")) {
-                      want_date = true;
-                      want_parfilename = true;
-                      want_other = true;
-                    } else {
-                      CCTK_WARN (0, "internal error");
-                    }
-                    file << "# "<< outdim << "D ASCII output created by CarpetIOASCII" << endl;
-                    if (want_date) {
-                      char run_host [1000];
-                      Util_GetHostName (run_host, sizeof run_host);
-#if 0
-                      char const * const run_user = CCTK_RunUser();
-#else
-                      char const * const run_user = getenv ("USER");
-#endif
-                      char run_date [1000];
-                      Util_CurrentDate (sizeof run_date, run_date);
-                      char run_time [1000];
-                      Util_CurrentTime (sizeof run_time, run_time);
-                      file << "# created on " << run_host
-                           << " by " << run_user
-                           << " on " << run_date
-                           << " at " << run_time << endl;
-                    }
-                    if (want_parfilename) {
-                      char parameter_filename [10000];
-                      CCTK_ParameterFilename (sizeof parameter_filename, parameter_filename);
-                      file << "# parameter filename: \"" << parameter_filename << "\"" << endl;
-                    }
-                    if (want_other) {
-                      if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
-                        char const * const job_id
-                          = (char const *) UniqueSimulationID (cctkGH);
-                        file << "# Simulation ID: " << job_id << endl;
-                      }
-                    }
-                    file << "#" << endl;
-                  }
-                  if (one_file_per_group) {
-                    char* groupname = CCTK_GroupNameFromVarI(n);
-                    file << "# " << groupname;
-                    free (groupname);
-                  } else {
-                    file << "# " << varname;
-                  }
-                  for (int d=0; d<outdim; ++d) {
-                    file << " " << "xyz"[dirs[d]];
-                  }
-                  file << " (" << alias << ")" << endl;
-                  file << "#" << endl;
-                  assert (file.good());
-                }
-              }
 
               // Open the file
-              if (! file.is_open()) {
-                file.open (filename, ios::out | ios::app);
-                assert (file.good());
+              file.open (filename, ios::out |
+                         (is_new_file ? ios::trunc : ios::app));
+              if (! file.good()) {
+                CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                            "Could not open output file '%s' for variable '%s'",
+                            filename, varname);
+              }
+              // If this is the first time, then write a nice header
+              if (is_new_file) {
+                bool want_date = false;
+                bool want_parfilename = false;
+                bool want_other = false;
+                if (CCTK_EQUALS (out_fileinfo, "none")) {
+                  // do nothing
+                } else if (CCTK_EQUALS (out_fileinfo, "axis labels")) {
+                  // do nothing
+                } else if (CCTK_EQUALS (out_fileinfo, "creation date")) {
+                  want_date = true;
+                } else if (CCTK_EQUALS (out_fileinfo, "parameter filename")) {
+                  want_parfilename = true;
+                } else if (CCTK_EQUALS (out_fileinfo, "all")) {
+                  want_date = true;
+                  want_parfilename = true;
+                  want_other = true;
+                } else {
+                  CCTK_WARN (0, "internal error");
+                }
+                file << "# "<< outdim << "D ASCII output created by CarpetIOASCII" << endl;
+                if (want_date) {
+                  char run_host [1000];
+                  Util_GetHostName (run_host, sizeof run_host);
+#if 0
+                  char const * const run_user = CCTK_RunUser();
+#else
+                  char const * const run_user = getenv ("USER");
+#endif
+                  char run_date [1000];
+                  Util_CurrentDate (sizeof run_date, run_date);
+                  char run_time [1000];
+                  Util_CurrentTime (sizeof run_time, run_time);
+                  file << "# created on " << run_host
+                       << " by " << run_user
+                       << " on " << run_date
+                       << " at " << run_time << endl;
+
+                  if (want_parfilename) {
+                    char parameter_filename [10000];
+                    CCTK_ParameterFilename (sizeof parameter_filename, parameter_filename);
+                    file << "# parameter filename: \"" << parameter_filename << "\"" << endl;
+                  }
+                  if (want_other) {
+                    if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
+                      char const * const job_id
+                        = (char const *) UniqueSimulationID (cctkGH);
+                      file << "# Simulation ID: " << job_id << endl;
+                    }
+                  }
+                  file << "#" << endl;
+                }
+                if (one_file_per_group) {
+                  char* groupname = CCTK_GroupNameFromVarI(vindex);
+                  file << "# " << groupname;
+                  free (groupname);
+                } else {
+                  file << "# " << varname;
+                }
+                for (int d=0; d<outdim; ++d) {
+                  file << " " << "xyz"[dirs[d]];
+                }
+                file << " (" << alias << ")" << endl;
+                file << "#" << endl;
               }
 
               file << setprecision(out_precision);
-              assert (file.good());
 
             } // if on the root processor
 
@@ -637,8 +734,7 @@ namespace CarpetIOASCII {
               int const ierr = CCTK_GroupData (group, & groupdata);
               assert (! ierr);
               if (groupdata.disttype != CCTK_DISTRIB_CONSTANT
-                  or component == 0)
-              {
+                  or component == 0) {
 
                 const ggf* const ff
                   = arrdata.at(group).at(Carpet::map).data.at(var);
@@ -739,7 +835,7 @@ namespace CarpetIOASCII {
                     datas.resize (1);
                     datas.at(0) = data;
                   }
-                  WriteASCII (file, datas, ext, n, cctkGH->cctk_iteration,
+                  WriteASCII (file, datas, ext, vindex, cctkGH->cctk_iteration,
                               offset1, dirs,
                               rl, mglevel, Carpet::map, component, tl,
                               coord_time, coord_lower, coord_upper);
@@ -790,157 +886,7 @@ namespace CarpetIOASCII {
 
     } while (! done);		// all directions
 
-    // Don't truncate again
-    do_truncate.at(n) = false;
-
     return 0;
-  }
-
-
-
-  template<int outdim>
-  int IOASCII<outdim>
-  ::TimeToOutput (const cGH* const cctkGH, const int vindex)
-  {
-    DECLARE_CCTK_ARGUMENTS;
-    DECLARE_CCTK_PARAMETERS;
-
-    assert (vindex>=0 && vindex<CCTK_NumVars());
-    const int grouptype = CCTK_GroupTypeFromVarI(vindex);
-    if (grouptype != CCTK_GF and not do_global_mode) {
-      return 0;
-    }
-
-    // check whether to output at this iteration
-    bool output_this_iteration;
-
-    const char* myoutcriterion = GetStringParameter("out%dD_criterion");
-    if (CCTK_EQUALS(myoutcriterion, "default")) {
-      myoutcriterion = out_criterion;
-    }
-
-    if (CCTK_EQUALS (myoutcriterion, "never")) {
-
-      // Never output
-      output_this_iteration = false;
-
-    } else if (CCTK_EQUALS (myoutcriterion, "iteration")) {
-
-      int myoutevery = GetIntParameter("out%dD_every");
-      if (myoutevery == -2) {
-        myoutevery = out_every;
-      }
-      if (myoutevery <= 0) {
-        // output is disabled
-        output_this_iteration = false;
-      } else if (cctk_iteration == this_iteration[outdim]) {
-        // we already decided to output this iteration
-        output_this_iteration = true;
-      } else if (cctk_iteration
-                 >= last_output_iteration[outdim] + myoutevery) {
-        // it is time for the next output
-        output_this_iteration = true;
-        last_output_iteration[outdim] = cctk_iteration;
-        this_iteration[outdim] = cctk_iteration;
-      } else {
-        // we want no output at this iteration
-        output_this_iteration = false;
-      }
-
-    } else if (CCTK_EQUALS (myoutcriterion, "divisor")) {
-
-      int myoutevery = GetIntParameter("out%dD_every");
-      if (myoutevery == -2) {
-        myoutevery = out_every;
-      }
-      if (myoutevery <= 0) {
-        // output is disabled
-        output_this_iteration = false;
-      } else if (cctk_iteration % myoutevery == 0) {
-        // we already decided to output this iteration
-        output_this_iteration = true;
-      } else {
-        // we want no output at this iteration
-        output_this_iteration = false;
-      }
-
-    } else if (CCTK_EQUALS (myoutcriterion, "time")) {
-
-      CCTK_REAL myoutdt = GetRealParameter("out%dD_dt");
-      if (myoutdt == -2) {
-        myoutdt = out_dt;
-      }
-      if (myoutdt < 0) {
-        // output is disabled
-        output_this_iteration = false;
-      } else if (myoutdt == 0) {
-        // output all iterations
-        output_this_iteration = true;
-      } else if (cctk_iteration == this_iteration[outdim]) {
-        // we already decided to output this iteration
-        output_this_iteration = true;
-      } else if (cctk_time / cctk_delta_time
-                 >= (last_output_time[outdim] + myoutdt) / cctk_delta_time - 1.0e-12) {
-        // it is time for the next output
-        output_this_iteration = true;
-        last_output_time[outdim] = cctk_time;
-        this_iteration[outdim] = cctk_iteration;
-      } else {
-        // we want no output at this iteration
-        output_this_iteration = false;
-      }
-
-    } else {
-
-      assert (0);
-
-    } // select output criterion
-
-    if (! output_this_iteration) return 0;
-
-
-
-    // check which variables to output
-    static vector<bool> output_variables;
-    static int output_variables_iteration = -1;
-
-    if (cctk_iteration > output_variables_iteration) {
-      output_variables.resize (CCTK_NumVars());
-
-      const char* const varlist = GetStringParameter("out%dD_vars");
-      if (CCTK_TraverseString (varlist, SetFlag, &output_variables,
-                               CCTK_GROUP_OR_VAR) < 0)
-      {
-        int abort_on_error = output_variables_iteration < 0 &&
-                             strict_io_parameter_check;
-        CCTK_VWarn (abort_on_error ? 0 : 1, __LINE__, __FILE__,CCTK_THORNSTRING,
-                    "error while parsing parameter 'IOASCII::out%dD_vars'",
-                    outdim);
-      }
-
-      output_variables_iteration = cctk_iteration;
-    }
-
-    if (! output_variables.at(vindex)) return 0;
-
-
-
-    if (last_output.at(mglevel).at(reflevel).at(vindex) == cctk_iteration) {
-      // Has already been output during this iteration
-      char* varname = CCTK_FullName(vindex);
-      CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
-		  "Skipping output for variable \"%s\", because this variable "
-		  "has already been output during the current iteration -- "
-		  "probably via a trigger during the analysis stage",
-		  varname);
-      free (varname);
-      return 0;
-    }
-
-    assert (last_output.at(mglevel).at(reflevel).at(vindex) < cctk_iteration);
-
-    // Should be output during this iteration
-    return 1;
   }
 
 
@@ -951,36 +897,22 @@ namespace CarpetIOASCII {
   {
     DECLARE_CCTK_PARAMETERS;
 
-    assert (vindex>=0 && vindex<CCTK_NumVars());
+    assert (vindex >= 0 and vindex < CCTK_NumVars ());
+
+    char* const fullname = CCTK_FullName(vindex);
 
     int retval;
-
     if (one_file_per_group) {
-
-      char* const fullname = CCTK_FullName(vindex);
-      int const gindex = CCTK_GroupIndexFromVarI(vindex);
-      char* const groupname = CCTK_GroupName(gindex);
-      for (char* p=groupname; *p; ++p) *p=(char)tolower(*p);
-      retval = OutputVarAs (cctkGH, fullname, groupname);
-      free (fullname);
-      free (groupname);
-
-      int const firstvar = CCTK_FirstVarIndexI(gindex);
-      int const numvars = CCTK_NumVarsInGroupI(gindex);
-      for (int n=firstvar; n<firstvar+numvars; ++n) {
-        last_output.at(mglevel).at(reflevel).at(n) = cctkGH->cctk_iteration;
-      }
-
+      char* alias = CCTK_GroupNameFromVarI (vindex);
+      for (char* p = alias; *p; ++p) *p = (char) tolower (*p);
+      retval = OutputVarAs (cctkGH, fullname, alias);
+      free (alias);
     } else {
-
-      char* const fullname = CCTK_FullName(vindex);
-      char const* varname = CCTK_VarName(vindex);
-      retval = OutputVarAs (cctkGH, fullname, varname);
-      free (fullname);
-
-      last_output.at(mglevel).at(reflevel).at(vindex) = cctkGH->cctk_iteration;
-
+      const char* const alias = CCTK_VarName (vindex);
+      retval = OutputVarAs (cctkGH, fullname, alias);
     }
+
+    free (fullname);
 
     return retval;
   }
@@ -1158,11 +1090,17 @@ namespace CarpetIOASCII {
 
 
 
-  void SetFlag (int index, const char* optstring, void* arg)
+  static void GetVarIndex (int vindex, const char* optstring, void* arg)
   {
-    optstring = optstring;
-    vector<bool>& flags = *(vector<bool>*)arg;
-    flags.at(index) = true;
+    if (optstring) {
+      char *fullname = CCTK_FullName (vindex);
+      CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Option string '%s' will be ignored for ASCII output of "
+                  "variable '%s'", optstring, fullname);
+      free (fullname);
+    }
+
+    *((int *) arg) = vindex;
   }
 
 

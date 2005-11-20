@@ -1,67 +1,3 @@
-% *======================================================================*
-%  Cactus Thorn template for ThornGuide documentation
-%  Author: Ian Kelley
-%  Date: Sun Jun 02, 2002
-%
-%  Thorn documentation in the latex file doc/documentation.tex 
-%  will be included in ThornGuides built with the Cactus make system.
-%  The scripts employed by the make system automatically include 
-%  pages about variables, parameters and scheduling parsed from the 
-%  relevent thorn CCL files.
-%  
-%  This template contains guidelines which help to assure that your     
-%  documentation will be correctly added to ThornGuides. More 
-%  information is available in the Cactus UsersGuide.
-%                                                    
-%  Guidelines:
-%   - Do not change anything before the line
-%       % STARTx CACTUS THORNGUIDE",
-%     except for filling in the title, author, date etc. fields.
-%        - Each of these fields should only be on ONE line.
-%        - Author names should be sparated with a \\ or a comma
-%   - You can define your own macros are OK, but they must appear after
-%     the STARTx CACTUS THORNGUIDE line, and do not redefine standard 
-%     latex commands.
-%   - To avoid name clashes with other thorns, 'labels', 'citations', 
-%     'references', and 'image' names should conform to the following 
-%     convention:          
-%       ARRANGEMENT_THORN_LABEL
-%     For example, an image wave.eps in the arrangement CactusWave and 
-%     thorn WaveToyC should be renamed to CactusWave_WaveToyC_wave.eps
-%   - Graphics should only be included using the graphix package. 
-%     More specifically, with the "includegraphics" command. Do
-%     not specify any graphic file extensions in your .tex file. This 
-%     will allow us (later) to create a PDF version of the ThornGuide
-%     via pdflatex. |
-%   - References should be included with the latex "bibitem" command. 
-%   - use \begin{abstract}...\end{abstract} instead of \abstract{...}
-%   - For the benefit of our Perl scripts, and for future extensions, 
-%     please use simple latex.     
-%
-% *======================================================================* 
-% 
-% Example of including a graphic image:
-%    \begin{figure}[ht]
-%       \begin{center}
-%          \includegraphics[width=6cm]{MyArrangement_MyThorn_MyFigure}
-%       \end{center}
-%       \caption{Illustration of this and that}
-%       \label{MyArrangement_MyThorn_MyLabel}
-%    \end{figure}
-%
-% Example of using a label:
-%   \label{MyArrangement_MyThorn_MyLabel}
-%
-% Example of a citation:
-%    \cite{MyArrangement_MyThorn_Author99}
-%
-% Example of including a reference
-%   \bibitem{MyArrangement_MyThorn_Author99}
-%   {J. Author, {\em The Title of the Book, Journal, or periodical}, 1 (1999), 
-%   1--16. {\tt http://www.nowhere.com/}}
-%
-% *======================================================================* 
-
 \documentclass{article}
 
 % Use the Cactus ThornGuide style file
@@ -73,32 +9,31 @@
 \begin{document}
 
 % The author of the documentation
-\author{Erik Schnetter \textless schnetter@aei.mpg.de\textgreater}
+\author{Erik Schnetter \textless schnetter@aei.mpg.de\textgreater\\
+        Thomas Radke \textless tradke@aei.mpg.de\textgreater}
 
 % The title of the document (not necessarily the name of the Thorn)
 \title{CarpetIOASCII}
 
 % the date your document was last changed, if your document is in CVS, 
 % please use:
-\date{October 16, 2002}
+\date{November 20, 2005}
 
 \maketitle
 
 % Do not delete next line
 % START CACTUS THORNGUIDE
 
-% Add all definitions used in this documentation here 
-%   \def\mydef etc
+\newcommand{\ThisThorn}{{\it CarpetIOASCII}}
 
-% Add an abstract for this thorn's documentation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
   This thorn reproduces thorn IOASCII from arrangement CactusBase but
   is specifically for the driver thorn Carpet.
 \end{abstract}
 
-% The following sections are suggestive only.
-% Remove them or add your own.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 
 This thorn provides ASCII output of data in 1, 2 or 3 dimensions. It
@@ -113,6 +48,82 @@ standard IOASCII thorn. Information about, e.g., the refinement level
 and the index position of the output are also given. All the output
 can be visualized using gnuplot.
 
+The \ThisThorn\ I/O methods can output any type of CCTK grid variables
+(grid scalars, grid functions, and grid arrays of arbitrary dimension);
+data is written into separate files named {\tt "<varname>.asc"}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{\ThisThorn\ Parameters}
+
+The most important parameters to control the \ThisThorn\ I/O methods are listed
+below. Many parameters come as a set of four individuals, one for each
+I/O method, controlling 0, 1, 2, or 3-dimensional ASCII output respectively.
+
+\begin{itemize}
+  \item {\tt IOASCII::out[0-3]D\_every} (steerable)\\
+        How often to do periodic \ThisThorn\ output. If this parameter is set
+        in the parameter file, it will override the setting of the shared
+        {\tt IO::out\_every} parameter. The output frequency can also be set
+        for individual variables using the {\tt out\_every} option in an
+        option string appended to the {\tt IOASCII::out[0-3]D\_vars} parameter.
+  
+  \item {\tt IOASCII::out[0-3]D\_dt} (steerable)\\
+        output in intervals of that much coordinate time (overwrites
+        {\tt IO::out\_dt})
+  
+  \item {\tt IOASCII::out[0-3]D\_criterion} (steerable)\\
+        criterion to select output intervals (overwrites
+        {\tt IO::out\_criterion})
+  
+  \item {\tt IOASCII::out[0-3]D\_vars} (steerable)\\ 
+        The list of variables to output using the \ThisThorn\ I/O method.
+        The variables must be given by their fully qualified variable or group
+        name. The special keyword {\it all} requests \ThisThorn\ output for
+        all variables. Multiple names must be separated by whitespaces.
+
+        Each group/variable name can have an option string attached in which you
+        can specify a different output frequency for that individual variable,
+        or a set of individual refinement levels to be output, eg.
+\begin{verbatim}
+  IOASCII::out1D_vars = "wavetoy::phi{ out_every = 4 refinement_levels = { 1 2 } }"
+\end{verbatim}
+  
+  \item {\tt IOASCII::out[0-3]D\_dir}\\
+        The directory in which to place the \ThisThorn\ output files.
+        If the directory doesn't exist at startup it will be created.\\
+        If this parameter is set to an empty string \ThisThorn\ output will go
+        to the standard output directory as specified in {\tt IO::out\_dir}.
+  
+  \item {\tt IOASCII::out\_precision} (steerable)\\
+        How many digits to output floating-point numbers with (overwrites
+        {\tt IO::out\_precision}).
+
+  \item {\tt IOASCII::one\_file\_per\_group}\\
+        Write one output file per group instead of per variable.
+
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Using the flesh I/O API to produce ASCII output}
+
+Periodic output of grid variables is usually specified via I/O parameters
+in the parameter file and then automatically triggered by the flesh scheduler
+at each iteration step after analysis. If output should also be triggered
+at a different time, one can do that from within an application thorn by
+invoking one of the {\tt CCTK\_OutputVar*()} I/O routines provided
+by the flesh I/O API (see chapter B8.2 ``IO'' in the Cactus Users Guide).
+In this case, the application thorn routine which calls {\tt CCTK\_OutputVar*()}
+must be scheduled in level mode.
+
+If output for a variable is required also for intermediate timesteps
+this can be achieved by calling {\tt CCTK\_OutputVarAs*()} with a different
+{\tt alias} name; output for the same variable is then written into
+different ASCII files based on the {\tt alias} argument.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Utilities}
 \label{sec:utils}
 
@@ -139,9 +150,10 @@ filename, where the number in the output filename is given by the
 refinement level.
 
 
-\begin{thebibliography}{9}
-
-\end{thebibliography}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\begin{thebibliography}{9}
+%
+%\end{thebibliography}
 
 % Do not delete next line
 % END CACTUS THORNGUIDE

@@ -27,9 +27,6 @@ namespace CarpetIOASCII {
     // list of variables to output
     static char* my_out_vars;
 
-    // Do truncate the output files for a variable
-    static vector<bool> do_truncate;
-
     // Last iteration on which a refinement level of a variable was
     // output (INT_MIN for none)
     static vector<vector<vector<int> > > last_output; // [ml][rl][var]
