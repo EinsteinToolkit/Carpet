@@ -17,10 +17,14 @@
 #include "carpet.hh"
 #include "TATelliptic.h"
 
+
+
 namespace Carpet {
   // TODO: fix this
   void Restrict (const cGH* cgh);
 };
+
+
 
 #ifdef CCTK_CXX_RESTRICT
 #  define restrict CCTK_CXX_RESTRICT
