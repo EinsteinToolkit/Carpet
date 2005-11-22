@@ -32,8 +32,6 @@ namespace Carpet {
 
 #ifdef CCTK_CXX_RESTRICT
 #  define restrict CCTK_CXX_RESTRICT
-#else
-#  define restrict
 #endif
 
 
