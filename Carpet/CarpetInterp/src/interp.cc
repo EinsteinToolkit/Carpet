@@ -375,7 +375,7 @@ namespace CarpetInterp {
     vector<int> N_points_from (dist::size());
     MPI_Alltoall (&N_points_to[0],   1, dist::datatype (N_points_to[0]),
                   &N_points_from[0], 1, dist::datatype (N_points_from[0]),
-                  dist::comm);
+                  dist::comm());
 
     //////////////////////////////////////////////////////////////////////
     // Communicate the interpolation coordinates
@@ -443,7 +443,7 @@ namespace CarpetInterp {
       MPI_Datatype const datatype = dist::datatype (tmp[0]);
       MPI_Alltoallv (&coords_buffer[0], &sendcnt[0], &senddispl[0], datatype,
                      &tmp[0],           &recvcnt[0], &recvdispl[0], datatype,
-                     dist::comm);
+                     dist::comm());
       coords_buffer.swap (tmp);
     }
 
@@ -475,7 +475,7 @@ namespace CarpetInterp {
       MPI_Datatype const datatype = dist::datatype (tmp[0]);
       MPI_Alltoallv (&tmp[0],        &sendcnt[0], &senddispl[0], datatype,
                      &source_map[0], &recvcnt[0], &recvdispl[0], datatype,
-                     dist::comm);
+                     dist::comm());
     } else {
       // No explicit source map specified
       if (Carpet::map != -1) {
@@ -620,7 +620,7 @@ namespace CarpetInterp {
       vector<char> tmp (N_interp_points * N_output_arrays * vtypesize);
       MPI_Alltoallv (&outputs_buffer[0], &sendcnt[0], &senddispl[0], datatype,
                      &tmp[0],            &recvcnt[0], &recvdispl[0], datatype,
-                     dist::comm);
+                     dist::comm());
       outputs_buffer.swap (tmp);
     }
 
@@ -633,7 +633,7 @@ namespace CarpetInterp {
       // return codes across all processors for that processor
       vector<CCTK_INT> tmp (status_and_retval_buffer.size());
       MPI_Allreduce (&status_and_retval_buffer[0], &tmp[0], tmp.size(),
-                     dist::datatype (tmp[0]), MPI_MIN, dist::comm);
+                     dist::datatype (tmp[0]), MPI_MIN, dist::comm());
       status_and_retval_buffer.swap (tmp);
       per_proc_statuses = &status_and_retval_buffer.front();
       per_proc_retvals  = per_proc_statuses + dist::size();
