@@ -685,45 +685,33 @@ namespace CarpetIOASCII {
 #else
                   char const * const run_user = getenv ("USER");
 #endif
-                      char run_date [1000];
-                      Util_CurrentDate (sizeof run_date, run_date);
-                      char run_time [1000];
-                      Util_CurrentTime (sizeof run_time, run_time);
-                      file << "# created on " << run_host
-                           << " by " << run_user
-                           << " on " << run_date
-                           << " at " << run_time << endl;
-                    }
-                    if (want_parfilename) {
-                      char parameter_filename [10000];
-                      CCTK_ParameterFilename (sizeof parameter_filename, parameter_filename);
-                      file << "# parameter filename: \"" << parameter_filename << "\"" << endl;
-                    }
-                    if (want_other) {
-                      if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
-                        char const * const job_id
-                          = (char const *) UniqueSimulationID (cctkGH);
-                        file << "# Simulation ID: " << job_id << endl;
-                      }
-                    }
-                    file << "#" << endl;
-                  }
-                  if (one_file_per_group) {
-                    char* groupname = CCTK_GroupNameFromVarI(n);
-                    file << "# " << groupname;
-                    free (groupname);
-                  } else {
-                    file << "# " << varname;
-                  }
-                  if (want_other) {
-                    if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
-                      char const * const job_id
-                        = (char const *) UniqueSimulationID (cctkGH);
-                      file << "# Simulation ID: " << job_id << endl;
-                    }
-                  }
-                  file << "#" << endl;
+                  char run_date [1000];
+                  Util_CurrentDate (sizeof run_date, run_date);
+                  char run_time [1000];
+                  Util_CurrentTime (sizeof run_time, run_time);
+                  file << "# created on " << run_host
+                       << " by " << run_user
+                       << " on " << run_date
+                       << " at " << run_time << endl;
                 }
+                if (want_parfilename) {
+                  char parameter_filename [10000];
+                  CCTK_ParameterFilename (sizeof parameter_filename, parameter_filename);
+                  file << "# parameter filename: \"" << parameter_filename << "\"" << endl;
+                }
+                if (want_other) {
+                  if (CCTK_IsFunctionAliased ("UniqueBuildID")) {
+                    char const * const build_id
+                      = (char const *) UniqueBuildID (cctkGH);
+                    file << "# Build ID: " << build_id << endl;
+                  }
+                  if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
+                    char const * const job_id
+                      = (char const *) UniqueSimulationID (cctkGH);
+                    file << "# Simulation ID: " << job_id << endl;
+                  }
+                }
+                file << "#" << endl;
                 if (one_file_per_group) {
                   char* groupname = CCTK_GroupNameFromVarI(vindex);
                   file << "# " << groupname;
@@ -736,7 +724,7 @@ namespace CarpetIOASCII {
                 }
                 file << " (" << alias << ")" << endl;
                 file << "#" << endl;
-              }
+              } // if is_new_file
 
               file << setprecision(out_precision);
 
