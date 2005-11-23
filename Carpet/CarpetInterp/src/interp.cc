@@ -35,7 +35,7 @@ namespace CarpetInterp {
   using namespace Carpet;
 
 
-// return a unique index for component c on reflevel rl, map m and processor p
+// Return a unique index for component c on reflevel rl, map m and processor p
 #define component_idx(p,m,rl,c)    \
         component_idx_ (p, m, rl, c, minrl, maxrl, maxncomps)
   static inline int component_idx_ (int const p,
@@ -204,12 +204,12 @@ namespace CarpetInterp {
     assert (cctkGH);
     assert (1 <= N_dims and N_dims <= dim);
 
-    // check input arrays
+    // Check input arrays
     int coord_group = -1;
     cGroupDynamicData coord_group_data;
     for (int n = 0; n < N_input_arrays; n++) {
 
-      // negative indices are ignored
+      // Negative indices are ignored
       const int vindex = input_array_variable_indices[n];
       if (vindex < 0) {
         continue;
@@ -236,7 +236,7 @@ namespace CarpetInterp {
         coord_group = group;
         CCTK_GroupDynamicData (cctkGH, coord_group, &coord_group_data);
       } else {
-        // check that group and coord_group have the same layout
+        // Check that group and coord_group have the same layout
         cGroupDynamicData gdata;
         CCTK_GroupDynamicData (cctkGH, group, &gdata);
         const int size = gdata.dim * sizeof (int);
@@ -254,7 +254,7 @@ namespace CarpetInterp {
     }
     assert (coord_group >= 0);
 
-    // check output arrays
+    // Check output arrays
     assert (N_output_arrays > 0);
     const int output_array_type = output_array_type_codes[0];
     for (int n = 1; n < N_output_arrays; n++) {
@@ -356,9 +356,9 @@ namespace CarpetInterp {
                                             // number of points in component c
     vector<CCTK_REAL> coords_buffer (N_dims * N_interp_points);
 
-    // each point from coord_list is mapped onto the processor
+    // Each point from coord_list is mapped onto the processor
     // that owns it (dstprocs)
-    // also accumulate the number of points per processor (N_points_to)
+    // Also accumulate the number of points per processor (N_points_to)
     map_points (cctkGH, coord_system_handle, coord_group,
                 ml, minrl, maxrl, maxncomps, N_dims, N_interp_points,
                 source_map,
@@ -385,7 +385,7 @@ namespace CarpetInterp {
     vector<int> senddispl (dist::size());
     vector<int> recvdispl (dist::size());
 
-    // set up counts and displacements for MPI_Alltoallv()
+    // Set up counts and displacements for MPI_Alltoallv()
     sendcnt[0] = N_dims * N_points_to[0];
     recvcnt[0] = N_dims * N_points_from[0];
     senddispl[0] = recvdispl[0] = 0;
@@ -402,7 +402,7 @@ namespace CarpetInterp {
     // and thus the total number of points to interpolate on this processor
     N_points_local /= N_dims;
 
-    // set up the per-component coordinates
+    // Set up the per-component coordinates
     // as offset into the single communication send buffer
     vector<CCTK_REAL*> coords (allhomecnts.size());
     int offset = 0;
@@ -412,7 +412,7 @@ namespace CarpetInterp {
     }
     assert (offset == N_interp_points);
 
-    // copy the input coordinates into the communication send buffer
+    // Copy the input coordinates into the communication send buffer
     // also remember the position of each point in the original input arrays
     vector<int> indices (N_interp_points);
     {
@@ -436,7 +436,7 @@ namespace CarpetInterp {
       assert (tmpcnts == allhomecnts);
     }
 
-    // send this processor's points to owning processors,
+    // Send this processor's points to owning processors,
     // receive other processors' points for interpolation on this processor
     {
       vector<CCTK_REAL> tmp (N_dims * N_points_local);
@@ -448,7 +448,7 @@ namespace CarpetInterp {
     }
 
     //////////////////////////////////////////////////////////////////////
-    // Communicate the source map (if necessary)
+    // Communicate the source map (if neccessary)
     //////////////////////////////////////////////////////////////////////
     if (have_source_map) {
       vector<CCTK_INT> tmp (N_interp_points);
@@ -497,7 +497,7 @@ namespace CarpetInterp {
     vector<int> srcprocs (N_points_local); // which processor requested point n
     vector<int> homecnts (allhomecnts.size());  // points per components
 
-    // remember from where point n came from
+    // Remember from where point n came from
     offset = 0;
     for (int p = 0; p < N_points_from.size(); p++) {
       for (int n = 0; n < N_points_from[p]; n++) {
@@ -529,11 +529,11 @@ namespace CarpetInterp {
                 srcprocs, N_points_to,
                 rlev, home, homecnts);
 
-    // free some memory
+    // Free some memory
     source_map.clear();
     srcprocs.clear();
 
-    // reorder the coordinates from <N_dims>-tupels into <N_dims> vectors
+    // Reorder the coordinates from <N_dims>-tupels into <N_dims> vectors
     // as expected by CCTK_InterpLocalUniform()
     {
       int offset = 0;
@@ -562,7 +562,7 @@ namespace CarpetInterp {
     CCTK_INT* per_proc_statuses = &status_and_retval_buffer.front();
     CCTK_INT* per_proc_retvals  = per_proc_statuses + dist::size();
 
-    // set up the per-component coordinates and output arrays as offsets
+    // Set up the per-component coordinates and output arrays as offsets
     // into the single communication buffers
     offset = 0;
     for (int c = 0; c < homecnts.size(); c++) {
@@ -587,7 +587,7 @@ namespace CarpetInterp {
        N_input_arrays, N_output_arrays,
        output_array_type_codes, input_array_variable_indices);
 
-    // free some memory
+    // Free some memory
     coords_buffer.clear();
     coords.clear();
     homecnts.clear();
@@ -628,7 +628,7 @@ namespace CarpetInterp {
     // Communicate interpolation status codes and return values
     //////////////////////////////////////////////////////////////////////
     {
-      // a processor's overall status and return code
+      // A processor's overall status and return code
       // is defined as the minimum over all local interpolator status and
       // return codes across all processors for that processor
       vector<CCTK_INT> tmp (status_and_retval_buffer.size());
@@ -643,7 +643,7 @@ namespace CarpetInterp {
     // Finally, sort the received outputs back into the caller's arrays
     //////////////////////////////////////////////////////////////////////
 
-    // sorting is done with the help of the inverse indices vector
+    // Sorting is done with the help of the inverse indices vector
     vector<int> reverse_indices(indices.size());
     for (int i = 0; i < indices.size(); i++) {
       reverse_indices.at(indices[i]) = i;
@@ -856,7 +856,7 @@ namespace CarpetInterp {
       // coarsest grid
       rl = minrl;
       c = 0;
-      // only warn once
+      // Only warn once
       if (map_onto_processors) {
         CCTK_VWarn (CCTK_WARN_PICKY, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Interpolation point #%d at [%g,%g,%g] is not on "
@@ -925,7 +925,7 @@ namespace CarpetInterp {
       for (int rl=minrl; rl<maxrl; ++rl) {
         enter_level_mode (const_cast<cGH*>(cctkGH), rl);
 
-        // Number of necessary time levels
+        // Number of neccessary time levels
         CCTK_REAL const level_time = cctkGH->cctk_time / cctkGH->cctk_delta_time;
         bool const need_time_interp
           = (have_time_derivs
@@ -1153,7 +1153,7 @@ namespace CarpetInterp {
     // Find out about the local geometry
     rvect coord_origin, coord_delta;
 
-    // get global origin and spacing of the underlying coordinate system
+    // Get global origin and spacing of the underlying coordinate system
 #ifdef NEW_COORD_API
     const iret1 = Util_TableGetRealArray (coord_system_handle, N_dims,
                                           &coord_origin[0], "COMPMIN");
@@ -1176,7 +1176,7 @@ namespace CarpetInterp {
     coord_delta  = (upper - lower) / baseextent.upper();
 #endif
 
-    // get processor-local origin and spacing
+    // Get processor-local origin and spacing
     cGroupDynamicData coord_group_data;
     CCTK_GroupDynamicData (cctkGH, coord_group, &coord_group_data);
     for (int d = 0; d < N_dims; ++d) {
@@ -1264,7 +1264,7 @@ namespace CarpetInterp {
 
     } // for tl
 
-    // Interpolate in time, if necessary
+    // Interpolate in time, if neccessary
     if (need_time_interp) {
 
       for (int j=0; j<N_output_arrays; ++j) {
