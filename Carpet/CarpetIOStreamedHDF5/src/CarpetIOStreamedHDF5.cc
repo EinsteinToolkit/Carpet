@@ -111,7 +111,7 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
 
   // broadcast success of socket operation to all processors
   int have_socket = real_socket != INVALID_SOCKET;
-  MPI_Bcast (&have_socket, 1, MPI_INT, 0, dist::comm);
+  MPI_Bcast (&have_socket, 1, MPI_INT, 0, dist::comm());
 
   // do not continue here if no socket is available
   if (not have_socket) {
@@ -242,7 +242,7 @@ static int OutputGH (const cGH* const cctkGH)
           client_is_ready =
             select (FD_SETSIZE, &read_set, NULL, NULL, &timeout) == 1;
         }
-        MPI_Bcast (&client_is_ready, 1, MPI_INT, 0, dist::comm);
+        MPI_Bcast (&client_is_ready, 1, MPI_INT, 0, dist::comm());
       }
 
       // short cut if there is nothing to do
