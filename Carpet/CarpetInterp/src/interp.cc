@@ -202,7 +202,7 @@ namespace CarpetInterp {
   {
     cGH const * const cctkGH = static_cast<cGH const *> (cctkGH_);
     assert (cctkGH);
-    assert (1 <= N_dims and N_dims <= dim);
+    assert (0 <= N_dims and N_dims <= dim);
 
     // Check input arrays
     int coord_group = -1;
@@ -397,10 +397,10 @@ namespace CarpetInterp {
       senddispl[p] = senddispl[p-1] + sendcnt[p-1];
       recvdispl[p] = recvdispl[p-1] + recvcnt[p-1];
     }
-    assert (N_points_local % N_dims == 0);
+    if (N_dims > 0) assert (N_points_local % N_dims == 0);
     // N_points_local is the total number of points to receive
     // and thus the total number of points to interpolate on this processor
-    N_points_local /= N_dims;
+    if (N_dims > 0) N_points_local /= N_dims;
 
     // Set up the per-component coordinates
     // as offset into the single communication send buffer
