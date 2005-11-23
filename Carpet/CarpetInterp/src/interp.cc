@@ -1182,7 +1182,8 @@ namespace CarpetInterp {
     for (int d = 0; d < N_dims; ++d) {
       coord_delta[d]  /= cctkGH->cctk_levfac[d];
       coord_origin[d] += (coord_group_data.lbnd[d] +
-                          cctkGH->cctk_levoff[d] / cctkGH->cctk_levoffdenom[d])
+                          1.0 * cctkGH->cctk_levoff[d] /
+                          cctkGH->cctk_levoffdenom[d])
                        * coord_delta[d];
     }
 
