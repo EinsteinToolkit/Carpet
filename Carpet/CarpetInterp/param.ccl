@@ -1,2 +1,5 @@
 # Parameter definitions for thorn CarpetInterp
 
+SHARES: Cactus
+
+USES CCTK_REAL cctk_initial_time

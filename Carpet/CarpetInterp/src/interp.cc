@@ -7,6 +7,7 @@
 #include <mpi.h>
 
 #include "cctk.h"
+#include "cctk_Parameters.h"
 
 #include "util_ErrorCodes.h"
 #include "util_Table.h"
@@ -691,6 +692,8 @@ namespace CarpetInterp {
                                    vector<CCTK_INT>& operand_indices,
                                    vector<CCTK_INT>& time_deriv_order)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     // Find source map
     assert (source_map.size() == N_interp_points);
     int iret = Util_TableGetIntArray (param_table_handle, N_interp_points,
@@ -733,7 +736,8 @@ namespace CarpetInterp {
     assert (partype == PARAMETER_INTEGER);
     prolongation_order_time = *(CCTK_INT const*) parptr;
 
-    current_time = cctkGH->cctk_time / cctkGH->cctk_delta_time;
+    current_time =
+      (cctkGH->cctk_time - cctk_initial_time) / cctkGH->cctk_delta_time;
     delta_time = cctkGH->cctk_delta_time;
 
     iret = Util_TableGetIntArray (param_table_handle, N_output_arrays,
