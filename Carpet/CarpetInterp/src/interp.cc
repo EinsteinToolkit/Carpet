@@ -63,7 +63,7 @@ namespace CarpetInterp {
                                    int const N_input_arrays,
                                    int const N_output_arrays,
                                    bool& have_source_map,
-                                   bool& have_time_derivs,
+                                   int & num_time_derivs,
                                    int & prolongation_order_time,
                                    CCTK_REAL & current_time,
                                    CCTK_REAL & delta_time,
@@ -107,7 +107,7 @@ namespace CarpetInterp {
                           CCTK_INT* const per_proc_retvals,
                           vector<CCTK_INT> & operand_indices,
                           vector<CCTK_INT> & time_deriv_order,
-                          bool const have_time_derivs,
+                          int const num_time_derivs,
                           CCTK_INT const local_interp_handle,
                           CCTK_INT const param_table_handle,
                           CCTK_REAL const current_time,
@@ -331,7 +331,8 @@ namespace CarpetInterp {
     vector<CCTK_INT> source_map (N_interp_points);
     vector<CCTK_INT> operand_indices (N_output_arrays);
     vector<CCTK_INT> time_deriv_order (N_output_arrays);
-    bool have_source_map, have_time_derivs;
+    bool have_source_map;
+    int num_time_derivs;
     CCTK_REAL current_time, delta_time;
     int prolongation_order_time;
 
@@ -339,7 +340,7 @@ namespace CarpetInterp {
       (cctkGH,
        param_table_handle,
        N_interp_points, N_input_arrays, N_output_arrays,
-       have_source_map, have_time_derivs,
+       have_source_map, num_time_derivs,
        prolongation_order_time, current_time, delta_time,
        source_map, operand_indices, time_deriv_order);
     if (iret < 0) {
@@ -582,7 +583,7 @@ namespace CarpetInterp {
        N_dims,
        homecnts,
        coords, outputs, per_proc_statuses, per_proc_retvals,
-       operand_indices, time_deriv_order, have_time_derivs,
+       operand_indices, time_deriv_order, num_time_derivs,
        local_interp_handle, param_table_handle,
        current_time, delta_time,
        N_input_arrays, N_output_arrays,
@@ -684,7 +685,7 @@ namespace CarpetInterp {
                                    int const N_input_arrays,
                                    int const N_output_arrays,
                                    bool& have_source_map,
-                                   bool& have_time_derivs,
+                                   int& num_time_derivs,
                                    int& prolongation_order_time,
                                    CCTK_REAL& current_time,
                                    CCTK_REAL& delta_time,
@@ -742,11 +743,15 @@ namespace CarpetInterp {
 
     iret = Util_TableGetIntArray (param_table_handle, N_output_arrays,
                                  &time_deriv_order.front(), "time_deriv_order");
-    have_time_derivs = not (iret == UTIL_ERROR_TABLE_NO_SUCH_KEY);
-    if (not have_time_derivs) {
+    if (iret != UTIL_ERROR_TABLE_NO_SUCH_KEY) {
       time_deriv_order.assign (time_deriv_order.size(), 0);
+      num_time_derivs = 0;
+      for (int m = 0; m < N_output_arrays; ++m) {
+        num_time_derivs = max (num_time_derivs, time_deriv_order[m]);
+      }
     } else {
       assert (iret == N_output_arrays);
+      num_time_derivs = 0;
     }
 
     // Find output variable indices
@@ -899,7 +904,7 @@ namespace CarpetInterp {
                           CCTK_INT* const per_proc_retvals,
                           vector<CCTK_INT>& operand_indices,
                           vector<CCTK_INT>& time_deriv_order,
-                          bool const have_time_derivs,
+                          int const num_time_derivs,
                           CCTK_INT const local_interp_handle,
                           CCTK_INT const param_table_handle,
                           CCTK_REAL const current_time,
@@ -932,14 +937,17 @@ namespace CarpetInterp {
         // Number of neccessary time levels
         CCTK_REAL const level_time = cctkGH->cctk_time / cctkGH->cctk_delta_time;
         bool const need_time_interp
-          = (have_time_derivs
+          = (num_time_derivs > 0
              or (fabs(current_time - level_time)
                  > 1e-12 * (fabs(level_time) + fabs(current_time)
                             + fabs(cctkGH->cctk_delta_time))));
         assert (! (! want_global_mode
-                   and ! have_time_derivs
+                   and num_time_derivs == 0
                    and need_time_interp));
-        int const num_tl = need_time_interp ? prolongation_order_time + 1 : 1;
+        int const num_tl
+          = (need_time_interp
+             ? max (num_time_derivs + 1, prolongation_order_time + 1)
+             : 1);
 
         BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
           BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
