@@ -67,6 +67,7 @@ while (<STDIN>)
       last if (/^$endmarker$/);
       $comments{$patch} .= $_;
     }
+    delete $submitters{$patch} if (! /^$endmarker$/);
   }
 
   # skip everything that makes out the patch's contents
