@@ -743,15 +743,15 @@ namespace CarpetInterp {
 
     iret = Util_TableGetIntArray (param_table_handle, N_output_arrays,
                                  &time_deriv_order.front(), "time_deriv_order");
-    if (iret != UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+    if (iret == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
       time_deriv_order.assign (time_deriv_order.size(), 0);
+      num_time_derivs = 0;
+    } else {
+      assert (iret == N_output_arrays);
       num_time_derivs = 0;
       for (int m = 0; m < N_output_arrays; ++m) {
         num_time_derivs = max (num_time_derivs, time_deriv_order[m]);
       }
-    } else {
-      assert (iret == N_output_arrays);
-      num_time_derivs = 0;
     }
 
     // Find output variable indices
