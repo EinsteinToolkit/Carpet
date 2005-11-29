@@ -119,7 +119,7 @@ namespace CarpetInterp {
 
   static void
   interpolate_single_component (cGH const * const cctkGH,
-                                int const coord_system_handle, 
+                                int const coord_system_handle,
                                 int const coord_group,
                                 int const minrl,
                                 int const maxrl,
@@ -694,7 +694,7 @@ namespace CarpetInterp {
                                    vector<CCTK_INT>& time_deriv_order)
   {
     DECLARE_CCTK_PARAMETERS;
-    
+
     // Find source map
     assert (source_map.size() == N_interp_points);
     int iret = Util_TableGetIntArray (param_table_handle, N_interp_points,
@@ -819,8 +819,7 @@ namespace CarpetInterp {
     for (int m = 0; m < maps; ++m) {
       const ibbox& baseextent = arrdata.at(coord_group).at(m).hh->baseextent;
       lower.at(m) = coord_lower;
-      delta.at(m) = (coord_upper - coord_lower) /
-                    (baseextent.upper() * maxspacereflevelfact);
+      delta.at(m) = (coord_upper - coord_lower) / baseextent.upper();
       upper.at(m) = lower.at(m) +
                     delta.at(m) * (baseextent.upper() - baseextent.lower());
     }
@@ -1163,40 +1162,35 @@ namespace CarpetInterp {
 
     // Do the processor-local interpolation
     // Find out about the local geometry
-    rvect coord_origin, coord_delta;
+    rvect lower, upper, delta;
 
     // Get global origin and spacing of the underlying coordinate system
 #ifdef NEW_COORD_API
     const iret1 = Util_TableGetRealArray (coord_system_handle, N_dims,
-                                          &coord_origin[0], "COMPMIN");
+                                          &lower[0], "COMPMIN");
     const iret2 = Util_TableGetRealArray (coord_system_handle, N_dims,
-                                          &coord_delta[0], "DELTA");
+                                          &delta[0], "DELTA");
     assert (iret1 == N_dims and iret2 == N_dims);
 #else
-    const char* coord_system_name = CCTK_CoordSystemName(coord_system_handle);
+    const char* coord_system_name = CCTK_CoordSystemName (coord_system_handle);
     assert (CCTK_CoordSystemDim (coord_system_name) >= N_dims);
 
-    rvect lower, upper;
     for (int d = 0; d < N_dims; d++) {
       const int iret = CCTK_CoordRange (cctkGH, &lower[d], &upper[d], d+1,
                                         NULL, coord_system_name);
       assert (iret == 0);
     }
-    const ibbox& baseextent =
-      arrdata.at(coord_group).at(Carpet::map).hh->baseextent;
-    coord_origin = lower;
-    coord_delta  = (upper - lower) / baseextent.upper();
 #endif
 
     // Get processor-local origin and spacing
     cGroupDynamicData coord_group_data;
     CCTK_GroupDynamicData (cctkGH, coord_group, &coord_group_data);
     for (int d = 0; d < N_dims; ++d) {
-      coord_delta[d]  /= cctkGH->cctk_levfac[d];
-      coord_origin[d] += (coord_group_data.lbnd[d] +
-                          1.0 * cctkGH->cctk_levoff[d] /
-                          cctkGH->cctk_levoffdenom[d])
-                       * coord_delta[d];
+      delta[d]  = (upper[d] - lower[d]) /
+                  ((coord_group_data.gsh[d]-1) * cctkGH->cctk_levfac[d]);
+      lower[d] += delta[d] *
+                  (coord_group_data.lbnd[d] +
+                   1.0 * cctkGH->cctk_levoff[d] / cctkGH->cctk_levoffdenom[d]);
     }
 
     void const* tmp_coords[dim];
@@ -1256,7 +1250,7 @@ namespace CarpetInterp {
 
       const int retval = CCTK_InterpLocalUniform
         (N_dims, local_interp_handle, param_table_handle,
-         &coord_origin[0], &coord_delta[0],
+         &lower[0], &delta[0],
          npoints,
          CCTK_VARIABLE_REAL, tmp_coords,
          N_input_arrays, coord_group_data.lsh,
