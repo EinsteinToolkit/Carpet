@@ -13,6 +13,7 @@
 
 #include "util_ErrorCodes.h"
 #include "util_Table.h"
+#include "util_String.h"
 
 #include "bbox.hh"
 #include "defs.hh"
@@ -371,7 +372,7 @@ namespace Carpet {
     
     Waypoint ("Setting up the grid hierarchy");
     
-    cgh->identity = strdup (model);
+    cgh->identity = Util_Strdup (model);
     
     // Processor information
     Output ("Carpet is running on %d processors", CCTK_nProcs(cgh));
