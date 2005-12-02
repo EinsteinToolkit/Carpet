@@ -819,9 +819,9 @@ namespace CarpetInterp {
     for (int m = 0; m < maps; ++m) {
       const ibbox& baseextent = arrdata.at(coord_group).at(m).hh->baseextent;
       lower.at(m) = coord_lower;
-      delta.at(m) = (coord_upper - coord_lower) / baseextent.upper();
-      upper.at(m) = lower.at(m) +
-                    delta.at(m) * (baseextent.upper() - baseextent.lower());
+      upper.at(m) = coord_upper;
+      delta.at(m) = ((coord_upper - coord_lower) /
+                     (baseextent.upper() - baseextent.lower()));
     }
 
     // Assign interpolation points to processors/components
@@ -1182,15 +1182,28 @@ namespace CarpetInterp {
     }
 #endif
 
+    int const grouptype = CCTK_GroupTypeI (coord_group);
+    assert (grouptype >= 0);
+    int const m = grouptype == CCTK_GF ? Carpet::map : 0;
+    // delta for the Carpet grid indices
+    const ibbox& baseextent = arrdata.at(coord_group).at(m).hh->baseextent;
+    delta = (upper - lower) / (baseextent.upper() - baseextent.lower());
+
     // Get processor-local origin and spacing
     cGroupDynamicData coord_group_data;
     CCTK_GroupDynamicData (cctkGH, coord_group, &coord_group_data);
+    // To do: do this via hh->bases instead
     for (int d = 0; d < N_dims; ++d) {
-      delta[d]  = (upper[d] - lower[d]) /
-                  ((coord_group_data.gsh[d]-1) * cctkGH->cctk_levfac[d]);
-      lower[d] += delta[d] *
-                  (coord_group_data.lbnd[d] +
-                   1.0 * cctkGH->cctk_levoff[d] / cctkGH->cctk_levoffdenom[d]);
+      if (grouptype == CCTK_GF) {
+        assert (maxspacereflevelfact[d] % cctkGH->cctk_levfac[d] == 0);
+        delta[d] *= maxspacereflevelfact[d] / cctkGH->cctk_levfac[d];
+        lower[d] += (delta[d] *
+                     (cctkGH->cctk_lbnd[d] +
+                      1.0 * cctkGH->cctk_levoff[d] /
+                      cctkGH->cctk_levoffdenom[d]));
+      } else {
+        lower[d] += delta[d] * cctkGH->cctk_lbnd[d];
+      }
     }
 
     void const* tmp_coords[dim];
