@@ -42,7 +42,7 @@ namespace CarpetIOF5 {
       {
         // Create a string from the time without losing information
         int const precision = numeric_limits<CCTK_REAL>::digits10 + 2;
-        buf << setprecision (precision) << "T=" << time;
+        buf << setprecision (precision) << "t=" << time;
       }
       m_name = buf.str();
       

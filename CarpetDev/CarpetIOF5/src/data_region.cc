@@ -5,6 +5,8 @@
 
 #include "cctk.h"
 
+#include "carpet.hh"
+
 #include "data_region.hh"
 #include "utils.hh"
 
@@ -27,7 +29,8 @@ namespace CarpetIOF5 {
       assert (! region.empty());
       
       ostringstream namebuf;
-      namebuf << "region=" << m_region;
+      namebuf << "map=" << Carpet::map << " "
+              << "region=" << m_region;
       string const namestr = namebuf.str();
       char const * const name = namestr.c_str();
       assert (name != 0);
@@ -44,7 +47,7 @@ namespace CarpetIOF5 {
         = (region.shape() / region.stride()).reverse();
       m_dataspace = H5Screate_simple (dim, & dims [0], & dims [0]);
       assert (m_dataspace >= 0);
-
+      
       m_dataset
         = H5Dcreate (m_tensor_component.get_hdf5_tensor_component(), name,
                      hdf5_datatype, m_dataspace, m_properties);

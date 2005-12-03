@@ -6,3 +6,9 @@ SCHEDULE CarpetIOF5_Startup AT startup AFTER IOUtil_Startup
 {
   LANG: C
 } "Startup routine"
+
+SCHEDULE CarpetIOF5_Init AT basegrid
+{
+  LANG: C
+  OPTIONS: global
+} "Initialisation routine"

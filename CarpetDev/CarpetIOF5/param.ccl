@@ -1,5 +1,13 @@
 # Parameter definitions for thorn CarpetIOF5
 
+BOOLEAN verbose "Produce screen output while running"
+{
+} no
+
+BOOLEAN veryverbose "Produce much screen output while running"
+{
+} no
+
 SHARES: IO
 
 USES STRING  out_dir       AS IO_out_dir

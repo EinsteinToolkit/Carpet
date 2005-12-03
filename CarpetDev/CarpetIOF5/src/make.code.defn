@@ -11,7 +11,8 @@ SRCS =	IOF5.cc					\
         tensor_component.cc			\
         timestep.cc 				\
         topology.cc 				\
-        utils.cc
+        utils.cc				\
+        write.cc
 
 # Subdirectories containing source files
 SUBDIRS = 

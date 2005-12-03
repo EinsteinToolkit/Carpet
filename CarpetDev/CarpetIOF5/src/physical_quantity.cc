@@ -22,6 +22,10 @@ namespace CarpetIOF5 {
       
       char * const name = CCTK_GroupName (group);
       assert (name != 0);
+      for (char * p = name; * p; ++ p)
+      {
+        * p = static_cast<char> (tolower (* p));
+      }
       
       m_hdf5_physical_quantity
         = open_or_create_group (m_coordinate_system
