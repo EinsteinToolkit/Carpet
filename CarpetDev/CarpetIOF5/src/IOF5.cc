@@ -16,7 +16,7 @@
 #include "extending.hh"
 #include "file.hh"
 #include "utils.hh"
-#include "write.hh"
+#include "writer.hh"
 
 
 
@@ -404,7 +404,8 @@ namespace CarpetIOF5 {
     
     F5::file_t file (cctkGH, filename, do_truncate);
     
-    write::write_meta (cctkGH, file, group, variable);
+    writer_t writer (cctkGH, variable);
+    writer.write (file);
     
     return Error_none;
   }

@@ -93,6 +93,7 @@ namespace CarpetIOF5 {
     
     mesh_refinement_topology_t::
     mesh_refinement_topology_t (simulation_t & simulation,
+                                int const map,
                                 int const refinement_level,
                                 int const max_refinement_levels,
                                 vect<int, dim> const & level_refinement_factor,
@@ -109,7 +110,7 @@ namespace CarpetIOF5 {
       assert (all (level_refinement_factor <= max_refinement_factor));
       
       ostringstream namebuf;
-      namebuf << "Vertices level=" << refinement_level;
+      namebuf << "Vertices map=" << map << " level=" << refinement_level;
       string const namestr = namebuf.str();
       char const * const name = namestr.c_str();
       

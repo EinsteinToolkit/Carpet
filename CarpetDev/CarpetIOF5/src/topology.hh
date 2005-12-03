@@ -88,6 +88,7 @@ namespace CarpetIOF5 {
     public:
       
       mesh_refinement_topology_t (simulation_t & simulation,
+                                  int map,
                                   int refinement_level,
                                   int max_refinement_levels,
                                   vect<int, dim> const & level_refinement_factors,

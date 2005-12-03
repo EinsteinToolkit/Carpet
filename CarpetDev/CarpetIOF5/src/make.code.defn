@@ -12,7 +12,7 @@ SRCS =	IOF5.cc					\
         timestep.cc 				\
         topology.cc 				\
         utils.cc				\
-        write.cc
+        writer.cc
 
 # Subdirectories containing source files
 SUBDIRS = 
