@@ -1,0 +1,51 @@
+# Parameter definitions for thorn CarpetIOBasic
+
+
+
+shares: IO
+
+USES KEYWORD out_criterion
+USES CCTK_INT out_every
+USES CCTK_REAL out_dt
+
+USES BOOLEAN strict_io_parameter_check
+
+
+
+private:
+
+
+
+CCTK_STRING outInfo_vars "Variables to output in scalar form" STEERABLE = ALWAYS
+{
+  "" :: "A regex which matches everything"
+} ""
+
+CCTK_STRING outInfo_reductions "List of reductions to output in scalar form" STEERABLE = ALWAYS
+{
+  "" :: "A regex which matches everything"
+} "minimum maximum"
+
+
+
+KEYWORD outInfo_criterion "Criterion to select scalar output intervals, overrides out_every" STEERABLE = ALWAYS
+{
+  "never"     :: "Never output"
+  "iteration" :: "Output every so many iterations"
+  "time"      :: "Output every that much coordinate time"
+} "iteration"
+
+CCTK_INT outInfo_every "How often to do scalar output, overrides IO::out_every" STEERABLE = ALWAYS
+{
+   1:* :: "Output every so many time steps"
+  -1:0 :: "No output"
+  -2   :: "Default to IO::out_every"
+} -2
+
+REAL outInfo_dt "How often to do scalar output, overrides out_dt" STEERABLE = ALWAYS
+{
+  (0:* :: "In intervals of that much coordinate time"
+   0   :: "As often as possible"
+  -1   :: "Disable output"
+  -2   :: "Default to IO::out_dt"
+} -2

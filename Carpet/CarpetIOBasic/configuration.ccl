@@ -1,0 +1,5 @@
+# Configuration definitions for thorn CarpetIOBasic
+
+REQUIRES Carpet CarpetLib IOUtil
+
+REQUIRES THORNS: Carpet CarpetLib IOUtil
