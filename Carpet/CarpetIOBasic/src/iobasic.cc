@@ -39,13 +39,17 @@ namespace CarpetIOBasic {
 
 
   // Output field widths and precisions
-  int const iter_width =  9;
-  int const time_width =  9;
-  int const time_prec  =  3;
+  int const iter_width    =  9;
+  int const time_width    =  9;
+  int const time_prec     =  3;
   
-  int const int_width  = 11;
-  int const real_width = 13;
-  int const real_prec  =  6;
+  int const int_width     = 11;
+  int const real_width    = 13;
+  int const real_prec     =  8;
+  int const real_prec_sci =  6;
+
+  double const real_min = 1.0e-8;
+  double const real_max = 1.0e+3;
 
 
 
@@ -54,6 +58,7 @@ namespace CarpetIOBasic {
     string reduction;
     int handle;
   };
+
 
 
   // Registered functions
@@ -69,6 +74,7 @@ namespace CarpetIOBasic {
   void
   ExamineVariable (int vindex, bool & isint, int & numcomps, bool & isscalar);
   vector<string> ParseReductions (char const * credlist);
+  template <typename T> bool UseScientificNotation (T const & x);
 
 
 
@@ -91,9 +97,16 @@ namespace CarpetIOBasic {
 
 
 
-  // Special output routines for complex numbers
+  // Special numeric and output routines for complex numbers
+
+  template <typename T> T myabs (const T& val) { return abs(val); }
 
 #ifdef HAVE_CCTK_COMPLEX8
+  CCTK_REAL4 myabs (const CCTK_COMPLEX8& val)
+  {
+    return CCTK_Cmplx8Abs(val);
+  }
+
   ostream& operator<< (ostream& os, const CCTK_COMPLEX8& val)
   {
     int const w = os.width();
@@ -106,6 +119,11 @@ namespace CarpetIOBasic {
 #endif
 
 #ifdef HAVE_CCTK_COMPLEX16
+  CCTK_REAL8 myabs (const CCTK_COMPLEX16& val)
+  {
+    return CCTK_Cmplx16Abs(val);
+  }
+
   ostream& operator<< (ostream& os, const CCTK_COMPLEX16& val)
   {
     int const w = os.width();
@@ -118,6 +136,11 @@ namespace CarpetIOBasic {
 #endif
 
 #ifdef HAVE_CCTK_COMPLEX32
+  CCTK_REAL16 myabs (const CCTK_COMPLEX32& val)
+  {
+    return CCTK_Cmplx32Abs(val);
+  }
+
   ostream& operator<< (ostream& os, const CCTK_COMPLEX32& val)
   {
     int const w = os.width();
@@ -428,24 +451,31 @@ namespace CarpetIOBasic {
         cout << " |";
       }
       
+      int const width = isint ? int_width : real_width;
+      
       if (isscalar) {
         
         if (CCTK_MyProc(cctkGH) == 0) {
-
-          cout << " ";
-          if (isint) {
-            cout << setw(int_width);
-          } else {
-            cout << setw(real_width) << fixed << setprecision(real_prec);
-          }
+          
+          cout << " " << setw(width);
           
           void const * const vardataptr = CCTK_VarDataPtrI (cctkGH, 0, n);
           assert (vardataptr);
 
           switch (vartype) {
-#define TYPECASE(N,T)                                           \
-            case N:                                             \
-              cout << * static_cast <T const *> (vardataptr);   \
+#define TYPECASE(N,T)                                                   \
+            case N:                                                     \
+              {                                                         \
+                T const val = * static_cast <T const *> (vardataptr);   \
+                if (not isint) {                                        \
+                  if (UseScientificNotation (val)) {                    \
+                    cout << scientific << setprecision(real_prec_sci);  \
+                  } else {                                              \
+                    cout << fixed << setprecision(real_prec);           \
+                  }                                                     \
+                }                                                       \
+                cout << val;                                            \
+              }                                                         \
             break;
 #include "carpet_typecase.hh"
 #undef TYPECASE
@@ -477,17 +507,22 @@ namespace CarpetIOBasic {
         
           if (CCTK_MyProc(cctkGH) == 0) {
 
-            cout << " ";
-            if (isint) {
-              cout << setw(int_width);
-            } else {
-              cout << setw(real_width) << fixed << setprecision(real_prec);
-            }
+            cout << " " << setw(width);
           
             switch (vartype) {
-#define TYPECASE(N,T)                           \
-              case N:                           \
-                cout << result.var_##T;         \
+#define TYPECASE(N,T)                                                   \
+              case N:                                                   \
+                {                                                       \
+                  T const val = result.var_##T;                         \
+                  if (not isint) {                                      \
+                    if (UseScientificNotation (val)) {                  \
+                      cout << scientific << setprecision(real_prec_sci); \
+                    } else {                                            \
+                      cout << fixed << setprecision(real_prec);         \
+                    }                                                   \
+                  }                                                     \
+                  cout << val;                                          \
+                }                                                       \
               break;
 #include "carpet_typecase.hh"
 #undef TYPECASE
@@ -695,6 +730,16 @@ namespace CarpetIOBasic {
     default:
       assert (0);
     }
+  }
+  
+  
+  
+  template <typename T>
+  bool
+  UseScientificNotation (T const & x)
+  {
+    double const xa = myabs (x);
+    return xa != 0 and (xa < real_min or xa >= real_max);
   }
   
 } // namespace CarpetIOBasic
