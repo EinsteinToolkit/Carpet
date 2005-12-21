@@ -38,21 +38,6 @@ namespace CarpetIOBasic {
 
 
 
-  // Output field widths and precisions
-  int const iter_width    =  9;
-  int const time_width    =  9;
-  int const time_prec     =  3;
-  
-  int const int_width     = 11;
-  int const real_width    = 13;
-  int const real_prec     =  8;
-  int const real_prec_sci =  6;
-
-  double const real_min = 1.0e-8;
-  double const real_max = 1.0e+3;
-
-
-
   // Definition of local types
   struct info {
     string reduction;
@@ -738,7 +723,9 @@ namespace CarpetIOBasic {
   bool
   UseScientificNotation (T const & x)
   {
-    double const xa = myabs (x);
+    DECLARE_CCTK_PARAMETERS;
+    
+    CCTK_REAL const xa = myabs (x);
     return xa != 0 and (xa < real_min or xa >= real_max);
   }
   
