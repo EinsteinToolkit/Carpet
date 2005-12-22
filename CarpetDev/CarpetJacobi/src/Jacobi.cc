@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <ctime>
 #include <iostream>
 #include <vector>
@@ -28,9 +29,14 @@ namespace Carpet {
 
 
 
+#undef restrict
 #ifdef CCTK_CXX_RESTRICT
 #  define restrict CCTK_CXX_RESTRICT
 #endif
+
+
+
+#define DEBUG 0
 
 
 
@@ -233,14 +239,14 @@ namespace CarpetJacobi {
         global_time = 1.0 * iter / ipow (maxval (maxspacereflevelfact),
                                          reflevelpower);
         * const_cast<CCTK_REAL *> (& cctkGH->cctk_time) = global_time;
-//         cout << "CJ global iter " << iter << " time " << global_time << flush << endl;
+        if (DEBUG) cout << "CJ global iter " << iter << " time " << global_time << flush << endl;
         
         // Calculate residual, smooth, and apply boundary conditions
         ierr = 0;
         BEGIN_REFLEVEL_LOOP(cctkGH) {
           const int do_every
-            = ipow (mglevelfact * maxval (maxspacereflevelfact
-                                          / spacereflevelfact),
+            = ipow (mglevelfact
+                    * maxval (maxspacereflevelfact / spacereflevelfact),
                     reflevelpower);
           if (reflevel <= solve_level && (iter-istep) % do_every == 0) {
             
@@ -252,7 +258,24 @@ namespace CarpetJacobi {
               = (1.0 * (iter - istep + do_every)
                  / ipow (maxval (maxspacereflevelfact), reflevelpower));
             CycleTimeLevels (cctkGH);
-//             cout << "CJ residual iter " << iter << " reflevel " << reflevel << " time " << cctkGH->cctk_time << flush << endl;
+            if (DEBUG) cout << "CJ residual iter " << iter << " reflevel " << reflevel << " time " << cctkGH->cctk_time << flush << endl;
+            
+            // Advance time levels
+            BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+              BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
+                for (int n=0; n<nvars; ++n) {
+                  if (CCTK_ActiveTimeLevelsVI(cctkGH, var[n]) > 1) {
+                    size_t npoints = 1;
+                    for (int d=0; d<cctkGH->cctk_dim; ++d) {
+                      npoints *= cctkGH->cctk_lsh[d];
+                    }
+                    memcpy (CCTK_VarDataPtrI (cctkGH, 0, var[n]),
+                            CCTK_VarDataPtrI (cctkGH, 1, var[n]),
+                            npoints * sizeof(CCTK_REAL));
+                  }
+                } // for n
+              } END_LOCAL_COMPONENT_LOOP;
+            } END_MAP_LOOP;
             
             // Calculate residual
             BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
@@ -264,14 +287,16 @@ namespace CarpetJacobi {
             } END_MAP_LOOP;
             
             // Smooth and apply boundary conditions
-            CCTK_REAL levfac = 0;
-            for (int d=0; d<dim; ++d) {
-              levfac += 1 /
-                ipow (cctkGH->cctk_delta_space[d] / cctkGH->cctk_levfac[d], 2);
-            }
-            levfac = 1 / levfac;
-            
             BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+              
+              CCTK_REAL levfac = 0;
+              for (int d=0; d<dim; ++d) {
+                CCTK_REAL const delta
+                  = cctkGH->cctk_delta_space[d] / cctkGH->cctk_levfac[d];
+                levfac += 1 / ipow (delta, 2);
+              }
+              levfac = 1 / levfac;
+              
               BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
                 if (! ierr) {
                   
@@ -284,6 +309,7 @@ namespace CarpetJacobi {
                     assert (resptr);
                     assert (resptr != varptr);
                     const CCTK_REAL fac = factor * factors[n] * levfac;
+                    if (DEBUG) cout << "CJ    smoothing fac=" << fac << endl;
                     assert (cctkGH->cctk_dim == 3);
                     for (int k=cctkGH->cctk_nghostzones[2];
                          k<cctkGH->cctk_lsh[2]-cctkGH->cctk_nghostzones[2];
@@ -306,7 +332,7 @@ namespace CarpetJacobi {
                   ierr = applybnds (cctkGH, options_table, userdata);
 #endif
                   
-                }
+                } // if ! ierr
               } END_LOCAL_COMPONENT_LOOP;
             } END_MAP_LOOP;
             
@@ -317,7 +343,7 @@ namespace CarpetJacobi {
             
 #endif
 
-          }
+          } // if do_every
         } END_REFLEVEL_LOOP;
         
         if (ierr) {
@@ -334,12 +360,12 @@ namespace CarpetJacobi {
         ierr = 0;
         BEGIN_REVERSE_REFLEVEL_LOOP(cctkGH) {
           const int do_every
-            = ipow (mglevelfact * maxval (maxspacereflevelfact
-                                          / spacereflevelfact),
+            = ipow (mglevelfact
+                    * maxval (maxspacereflevelfact / spacereflevelfact),
                     reflevelpower);
           if (reflevel <= solve_level && iter % do_every == 0) {
             
-//             cout << "CJ restrict iter " << iter << " reflevel " << reflevel << " time " << cctkGH->cctk_time << flush << endl;
+            if (DEBUG) cout << "CJ restrict iter " << iter << " reflevel " << reflevel << " time " << cctkGH->cctk_time << flush << endl;
             
             if (! ierr) {
               if (reflevel < solve_level) {
@@ -369,6 +395,7 @@ namespace CarpetJacobi {
                       = (const CCTK_REAL *)CCTK_VarDataPtrI(cctkGH, 0, res[n]);
                     assert (resptr);
                     const CCTK_REAL fac = factors[n];
+                    if (DEBUG) cout << "CJ    norm fac=" << fac << endl;
                     assert (cctkGH->cctk_dim == 3);
                     for (int k=cctkGH->cctk_nghostzones[2];
                          k<cctkGH->cctk_lsh[2]-cctkGH->cctk_nghostzones[2];
@@ -386,6 +413,7 @@ namespace CarpetJacobi {
                         }
                       }
                     }
+                    if (DEBUG) cout << "CJ    norm=" << norm_l2 << endl;
                   } // for n
                   
                 }
