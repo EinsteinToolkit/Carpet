@@ -1,11 +1,11 @@
 # Erik Schnetter <schnetter@uni-tuebingen.de>
 
-ActiveThorns = "Boundary CartGrid3D CoordBase SymBase CarpetIOASCII IOBasic IOUtil Time Carpet CarpetLib CarpetRegrid CarpetReduce NaNCatcher IDScalarWave WaveToyC IDSWTEsimple TATelliptic CarpetJacobi"
+ActiveThorns = "Boundary CartGrid3D CoordBase SymBase CarpetIOBasic CarpetIOScalar CarpetIOASCII IOUtil Time Carpet CarpetLib CarpetRegrid CarpetReduce NaNCatcher IDScalarWave WaveToyC IDSWTEsimple TATelliptic CarpetJacobi"
 
 !DESC "Charged sphere initial data, solved with TATelliptic/CarpetJacobi"
 
 cactus::cctk_full_warnings      = yes
-cactus::cctk_timer_output       = full
+cactus::cctk_timer_output       = "full"
 
 #Cactus::cctk_itlast             = 10
 Cactus::cctk_itlast             = 0
@@ -24,36 +24,35 @@ Carpet::prolongation_order_time = 2
 Carpet::init_3_timelevels       = yes
 
 CarpetRegrid::refinement_levels = 1
-CarpetRegrid::refined_regions   = manual-gridpoint-list
+CarpetRegrid::refined_regions   = "manual-gridpoint-list"
 CarpetRegrid::gridpoints        = "[[ ([1,1,1]:[20,20,20]:[1,1,1]) ]]"
 CarpetRegrid::outerbounds       = "[[ [[1,0],[1,0],[1,0]] ]]"
 
-grid::type                      = byspacing
-grid::domain                    = octant
+grid::type                      = "byspacing"
+grid::domain                    = "octant"
 grid::dxyz                      = 1.2
 grid::avoid_origin              = no
 
-IDScalarWave::initial_data      = charge-TATelliptic-simple
-IDSWTEsimple::solver            = CarpetJacobi
+IDScalarWave::initial_data      = "charge-TATelliptic-simple"
+IDSWTEsimple::solver            = "CarpetJacobi"
 #IDSWTEsimple::options           = "maxiters=10000 minerror=1e-4 factor=1e-2"
 #IDSWTEsimple::options           = "maxiters=100000 minerror=1e-8 factor=1e-2"
 IDSWTEsimple::options           = "maxiters=10000 minerror=1e-8"
 IDSWTEsimple::radius            = 5.5
 IDSWTEsimple::charge            = 1.0
 
-WaveToyC::bound                 = radiation
+WaveToyC::bound                 = "radiation"
 
 CarpetJacobi::verbose           = yes
 
 IO::out_dir                     = "charge_te_cjac"
-IO::out_fileinfo                = none
+IO::out_fileinfo                = "none"
 
 IOBasic::outInfo_every          = 1
 IOBasic::outInfo_vars           = "wavetoy::phi IDSWTEsimple::residual"
 
-IOBasic::outScalar_every        = 1
-IOBasic::outScalar_vars         = "wavetoy::phi IDSWTEsimple::residual"
-IOBasic::outScalar_style        = "gnuplot"
+IOScalar::outScalar_every       = 1
+IOScalar::outScalar_vars        = "wavetoy::phi IDSWTEsimple::residual"
 
 CarpetIOASCII::out1D_every      = 1
 CarpetIOASCII::out1D_vars       = "wavetoy::phi IDSWTEsimple::residual"
