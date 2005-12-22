@@ -1,4 +1,3 @@
-# $Header:$
 # Erik Schnetter <schnetter@uni-tuebingen.de>
 
 ActiveThorns = "Boundary CartGrid3D CoordBase SymBase CarpetIOASCII IOBasic IOUtil Time Carpet CarpetLib CarpetRegrid CarpetReduce NaNCatcher IDScalarWave WaveToyC IDSWTEsimple TATelliptic CarpetJacobi"

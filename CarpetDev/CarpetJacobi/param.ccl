@@ -1,5 +1,4 @@
 # Parameter definitions for thorn CarpetJacobi
-# $Header:$
 
 BOOLEAN verbose "Produce log output while running" STEERABLE=always
 {

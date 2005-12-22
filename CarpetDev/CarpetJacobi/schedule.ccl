@@ -1,5 +1,4 @@
 # Schedule definitions for thorn CarpetJacobi
-# $Header:$
 
 SCHEDULE CarpetJacobi_register AT startup
 {
