@@ -1,5 +1,6 @@
 # Schedule definitions for thorn CarpetEvolutionMask
 
+STORAGE: evolution_mask
 
 
 SCHEDULE GROUP EvolutionMaskBase_SetupEvolutionMask AT basegrid
