@@ -214,7 +214,7 @@ namespace CarpetIOBasic {
         oldflags = cout.flags();
       }
       
-      if (output_count ++ % 20 == 0) {
+      if (output_count ++ % outHeader_every == 0 && outHeader_every != -1) {
         // Print the header
         OutputHeader (cctkGH);
       }

@@ -47,6 +47,11 @@ REAL outInfo_dt "How often to do scalar output, overrides out_dt" STEERABLE = AL
 } -2
 
 
+INT outHeader_every "How often to print the header" STEERABLE = ALWAYS
+{
+  1:* :: "Output every so many time steps" 
+ -1   :: "No header output"
+} 20
 
 # Output field widths and precisions
 
