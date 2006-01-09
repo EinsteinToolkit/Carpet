@@ -460,6 +460,8 @@ namespace CarpetIOASCII {
     // Loop over all direction combinations
     vect<int,outdim> dirs (0);
 
+
+
     bool done;
     do {
 
@@ -492,6 +494,9 @@ namespace CarpetIOASCII {
 	  case 2:
 	    desired = out1D_z;
 	    break;
+	  case 3:
+	    desired = out1D_d;
+	    break;
 	  default:
 	    assert (0);
 	  }
@@ -521,7 +526,7 @@ namespace CarpetIOASCII {
 	  // Traverse all maps on this refinement and multigrid level
 	  BEGIN_MAP_LOOP(cctkGH, grouptype) {
 
-            // Find the output offset
+            // Find the output offset.
             ivect offset(0);
             if (grouptype == CCTK_GF) {
               switch (outdim) {
@@ -574,6 +579,12 @@ namespace CarpetIOASCII {
                                              "out%dD_zline_y",  "out_zline_y",
                                              out_zline_y);
                   break;
+		case 3:
+		  // the diagonal: we don't care about the offset
+		  offset[0] = 0;
+		  offset[1] = 0;
+		  offset[2] = 0;		  
+		  break;
                 default:
                   assert (0);
                 }
@@ -620,7 +631,7 @@ namespace CarpetIOASCII {
               }
               if (new_filename_scheme) {
                 for (int d=0; d<outdim; ++d) {
-                  const char* const coords = "xyz";
+                  const char* const coords = "xyzd";
                   filenamebuf << coords[dirs[d]];
                 }
 // The offsets differ per level
@@ -637,7 +648,7 @@ namespace CarpetIOASCII {
               } else {
                 for (int d=0; d<outdim; ++d) {
                   assert (dirs[d]>=0 && dirs[d]<3);
-                  const char* const coords = "xyz";
+                  const char* const coords = "xyzd";
                   filenamebuf << coords[dirs[d]];
                 }
                 const char* const suffixes = "plpv";
@@ -720,7 +731,7 @@ namespace CarpetIOASCII {
                   file << "# " << varname;
                 }
                 for (int d=0; d<outdim; ++d) {
-                  file << " " << "xyz"[dirs[d]];
+                  file << " " << "xyzd"[dirs[d]];
                 }
                 file << " (" << alias << ")" << endl;
                 file << "#" << endl;
@@ -793,6 +804,7 @@ namespace CarpetIOASCII {
                   }
                   ext = ibbox(lo,hi,str);
 
+
                   // coordinates
                   const CCTK_REAL coord_time = cctkGH->cctk_time;
                   rvect global_lower;
@@ -822,8 +834,10 @@ namespace CarpetIOASCII {
                   } else {
                     offset1 = offset * ext.stride();
                   }
+
                   for (int d=0; d<outdim; ++d) {
-                    offset1[dirs[d]] = ext.lower()[dirs[d]];
+		    if(dirs[d] < 3)
+		      offset1[dirs[d]] = ext.lower()[dirs[d]];
                   }
 
                   vector<const gdata*> datas;
@@ -881,7 +895,7 @@ namespace CarpetIOASCII {
       done = true;
       for (int d=0; d<outdim; ++d) {
 	++dirs[d];
-	if (dirs[d]<groupdim) {
+	if (dirs[d]<groupdim + (outdim == 1 ? 1 : 0)) {
 	  done = false;
 	  break;
 	}
@@ -1182,76 +1196,143 @@ namespace CarpetIOASCII {
           }
           os << endl;
         }
+	
+	if(dirs[0] < 3) { // not outputting the diagonal
 
-	const vect<int,outdim> lo = gfext.lower()[dirs];
-	const vect<int,outdim> up = gfext.upper()[dirs];
-	const vect<int,outdim> str = gfext.stride()[dirs];
-	const bbox<int,outdim> ext(lo,up,str);
-
-	// Check whether the output origin is contained in the extent
-	// of the data that should be output
-	ivect org1(org);
-	for (int d=0; d<outdim; ++d) org1[dirs[d]] = ext.lower()[d];
-	if (gfext.contains(org1)) {
-
-          typename bbox<int,outdim>::iterator it=ext.begin();
-          do {
-
-	    ivect index(org);
-	    for (int d=0; d<outdim; ++d) index[dirs[d]] = (*it)[d];
-	    os << time << "\t" << tl << " " << rl << " " << c << " " << ml
-               << "\t";
-	    for (int d=0; d<dim-1; ++d) os << index[d] << " "; os << index[dim-1];
-	    os << "\t" << coord_time << "\t";
-	    for (int d=0; d<dim; ++d) {
-              if (d > 0) os << " ";
-	      assert (gfext.upper()[d] - gfext.lower()[d] >= 0);
-	      if (gfext.upper()[d] - gfext.lower()[d] == 0) {
-                os << coord_lower[d];
-              } else {
-                CCTK_REAL const dx = ((coord_upper[d] - coord_lower[d])
-                                      / (gfext.upper()[d] - gfext.lower()[d]));
-                os << (nicelooking
-                       (coord_lower[d] + (index[d] - gfext.lower()[d]) * dx,
-                        dx * 1.0e-8));
-              }
-	    }
-            os << "\t";
-            for (size_t n=0; n<gfdatas.size(); ++n) {
-              const gdata* gfdata = gfdatas.at(n);
-              if (n > 0) os << " ";
-              switch (vartype) {
+	  const vect<int,outdim> lo = gfext.lower()[dirs];
+	  const vect<int,outdim> up = gfext.upper()[dirs];
+	  const vect<int,outdim> str = gfext.stride()[dirs];
+	  const bbox<int,outdim> ext(lo,up,str);
+	
+	  // Check whether the output origin is contained in the extent
+	  // of the data that should be output
+	  ivect org1(org);
+	  for (int d=0; d<outdim; ++d) org1[dirs[d]] = ext.lower()[d];
+	  if (gfext.contains(org1)) {
+	    
+	    typename bbox<int,outdim>::iterator it=ext.begin();
+	    do {
+	      
+	      ivect index(org);
+	      for (int d=0; d<outdim; ++d) index[dirs[d]] = (*it)[d];
+	      os << time << "\t" << tl << " " << rl << " " << c << " " << ml
+		 << "\t";
+	      for (int d=0; d<dim-1; ++d) os << index[d] << " "; os << index[dim-1];
+	      os << "\t" << coord_time << "\t";
+	      for (int d=0; d<dim; ++d) {
+		if (d > 0) os << " ";
+		assert (gfext.upper()[d] - gfext.lower()[d] >= 0);
+		if (gfext.upper()[d] - gfext.lower()[d] == 0) {
+		  os << coord_lower[d];
+		} else {
+		  CCTK_REAL const dx = ((coord_upper[d] - coord_lower[d])
+					/ (gfext.upper()[d] - gfext.lower()[d]));
+		  os << (nicelooking
+			 (coord_lower[d] + (index[d] - gfext.lower()[d]) * dx,
+			  dx * 1.0e-8));
+		}
+	      }
+	      os << "\t";
+	      for (size_t n=0; n<gfdatas.size(); ++n) {
+		const gdata* gfdata = gfdatas.at(n);
+		if (n > 0) os << " ";
+		switch (vartype) {
 #define TYPECASE(N,T)                                           \
                 case N:                                         \
                   os << (*(const data<T>*)gfdata)[index];	\
                 break;
 #include "carpet_typecase.hh"
 #undef TYPECASE
-              default:
-                UnsupportedVarType(vi);
-              }
-            } // for n
-	    os << endl;
-
-            ++it;
-
-	    for (int d=0; d<outdim; ++d) {
-	      if ((*it)[d]!=(*ext.end())[d]) break;
+		default:
+		  UnsupportedVarType(vi);
+		}
+	      } // for n
 	      os << endl;
-	    }
+	      
+	      ++it;
 
-          } while (it!=ext.end());
+	      for (int d=0; d<outdim; ++d) {
+		if ((*it)[d]!=(*ext.end())[d]) break;
+		os << endl;
+	      }
+	          
+	    } while (it!=ext.end());
+	  
+	  } else {
 
-	} else {
+	    os << "#" << endl;
+	    
+	  } // if ! ext contains org
 
-          os << "#" << endl;
+	  assert (os.good());
 
-	} // if ! ext contains org
+	} else { // taking care of the diagonal
 
-	assert (os.good());
+	  const vect<int,3> lo = gfext.lower();
+	  const vect<int,3> up = gfext.upper();
+	  const vect<int,3> str = gfext.stride();
+	  const bbox<int,3> ext(lo,up,str);
+	
+	  gh const & hh = *vhh.at(Carpet::map);
+	  ibbox const & base = hh.bases().at(mglevel).at(reflevel);
 
-      }
+	  //	  cout << base << endl;
 
+       	  assert( base.stride()[0] ==  base.stride()[1] && base.stride()[0] == base.stride()[2] );
+
+	  // output the data on the diagonal 
+	  for(int i=maxval(base.lower());i<=minval(base.upper());i+=base.stride()[0]){
+	    
+	    ivect pos = ivect(i,i,i);
+
+	    // check if the point in question is in our gf's extent
+	    if(gfext.contains(pos)) {
+	      os << time << "\t" << tl << " " << rl << " " << c << " " << ml
+		 << "\t";
+	      for (int d=0; d<dim-1; ++d) os << pos[d] << " "; os << pos[dim-1];
+	      os << "\t" << coord_time << "\t";
+	      for (int d=0; d<dim; ++d) {
+		if (d > 0) os << " ";
+		CCTK_REAL const dx = ((coord_upper[d] - coord_lower[d])
+				      / (gfext.upper()[d] - gfext.lower()[d]));
+		os << (nicelooking
+		       (coord_lower[d] + (pos[d] - gfext.lower()[d]) * dx,
+			dx * 1.0e-8));
+	      }
+	      os << "\t";
+	      for (size_t n=0; n<gfdatas.size(); ++n) {
+		const gdata* gfdata = gfdatas.at(n);
+		if (n > 0) os << " ";
+		switch (vartype) {
+#define TYPECASE(N,T)                                           \
+                case N:                                         \
+                  os << (*(const data<T>*)gfdata)[pos];	        \
+                break;
+#include "carpet_typecase.hh"
+#undef TYPECASE
+		default:
+		  UnsupportedVarType(vi);
+		}
+	      } // for n
+	    	      
+	      os << endl;
+
+	    } else {
+
+	    os << "#" << endl;
+	    
+	   } // if ! ext contains org
+	    
+	  } // end for loop  
+
+	  os << endl;
+
+	  assert (os.good());
+
+	} // if(dirs[0]<3)
+      
+
+      } // if(dist::...)
     } else {
       // copy to processor 0 and output there
 
@@ -1273,7 +1354,7 @@ namespace CarpetIOASCII {
     }
   }
 
-
+    
 
 
 

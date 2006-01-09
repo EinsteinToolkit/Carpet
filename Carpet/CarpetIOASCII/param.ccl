@@ -381,6 +381,6 @@ BOOLEAN out3D_outer_ghosts "Output outer boundary ghost zones as well"
 # These parameters are here for historic reasons only.
 # They might go away in the future.  Do not use them.
 
-BOOLEAN out1D_d "do not use this parameter" STEERABLE = ALWAYS
+BOOLEAN out1D_d "Do output along the diagonal" STEERABLE = ALWAYS
 {
 } "yes"
