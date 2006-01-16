@@ -1196,8 +1196,12 @@ namespace CarpetIOASCII {
           }
           os << endl;
         }
-	
-	if(dirs[0] < 3) { // not outputting the diagonal
+
+	// boolean that says if we are doing 1D-diagonal output
+	// This is not beautiful, but works for the moment
+	bool const diagonal_output = outdim == 1 and dirs[0] == 3;
+
+	if(not diagonal_output) { // not outputting the diagonal
 
 	  const vect<int,outdim> lo = gfext.lower()[dirs];
 	  const vect<int,outdim> up = gfext.upper()[dirs];
