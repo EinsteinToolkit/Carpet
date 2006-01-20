@@ -20,6 +20,7 @@ using namespace Carpet;
 typedef struct {
   string patchname;
   int vindex;
+  int map;
   int mglevel;
   int reflevel;
   int timestep;
@@ -642,7 +643,13 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
   HDF5_ERROR (H5Aclose (attr));
   HDF5_ERROR (H5Dclose (dataset));
 
-  // try to obtain the component number from the patch's name
+  // try to obtain the map and component number from the patch's name
+  // (cleaner way would be to store attributes with the dataset)
+  patch.map = 0;
+  const char* map_string = strstr (objectname, " m=");
+  if (map_string) {
+    sscanf (map_string, " m=%d", &patch.map);
+  }
   patch.component = -1;
   const char* component_string = strstr (objectname, " c=");
   if (component_string) {
@@ -650,7 +657,7 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
   }
 
   // add this patch to our list
-  if (patch.vindex >=0 and patch.vindex < CCTK_NumVars ()) {
+  if (patch.vindex >= 0 and patch.vindex < CCTK_NumVars ()) {
     patch.patchname = objectname;
     file->patches.push_back (patch);
   } else {
@@ -713,6 +720,12 @@ static int ReadVar (const cGH* const cctkGH,
   // Traverse all local components on all maps
   hid_t filespace = -1, dataset = -1;
   BEGIN_MAP_LOOP (cctkGH, group.grouptype) {
+
+    // skip this dataset if it belongs to another map
+    if (group.grouptype == CCTK_GF and patch->map != Carpet::map) {
+      continue;
+    }
+
     struct arrdesc& data = arrdata.at(gindex).at(Carpet::map);
 
     BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, group.grouptype) {
