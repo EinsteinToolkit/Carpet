@@ -228,11 +228,31 @@
 
 \subsubsection{Initialisation}
 
+
+
    (See file \texttt{Carpet/src/Initialise.cc}.)  In this stage Carpet
    initialises the simulation.  This includes setting up the grids,
    calling routines to register symmetries and boundary conditions, as
    well as calculating the actual initial data on several refinement
-   levels.  It traverses the scheduling bins in the following order:
+   levels.
+
+There are three parameters influencing initial data generation, and
+it does not make sense to set more than one to "yes":
+
+\begin{verbatim}
+MoL::initial_data_is_crap
+Carpet::init_each_timelevel
+Carpet::init_3_timelevels
+\end{verbatim}
+
+That is, you have four methods, and the default (all no) gives you
+wrong data on the past timelevels and hence wrong data on the
+interpolated refinement boundaries when you use second order time
+interpolation.  For first order time interpolation, all four methods
+are identical.
+
+With all three parameters set to "no"
+Carpet traverses the scheduling bins in the following order:
 \begin{enumerate}
 \itemsep 0pt
 \item
@@ -243,25 +263,31 @@
    PARAMCHECK
 \item
    Loop over refinement levels, starting from coarsest:
+%\begin{enumerate}
 \item \quad
    BASEGRID
+\label{startinitsubloop}
 \item \quad
    INITIAL
 \item \quad
    POSTINITIAL
 \item \quad
    POSTSTEP
+\label{almostendinitsubloop}
 \item \quad
    Regrid (possibly creating new levels)
+\label{endinitsubloop}
+%\end{enumerate}
 \item
    End loop over refinement levels
 \item
    Restrict from finer to coarser grids
-\item
-   If desired, perform Scott Hawley's initialisation scheme for three
-   timelevels
+%\item
+%  If desired, perform Scott Hawley's initialisation scheme for three
+%  timelevels
 \item
    Loop over refinement levels, starting from coarsest:
+%\begin{enumerate}
 \item \quad
    RECOVER\_VARIABLES
 \item \quad
@@ -270,14 +296,42 @@
    ANALYSIS
 \item \quad
    OutputGH
+%\end{enumerate}
 \item
    End loop over refinement levels
+\label{endinitloop}
 \end{enumerate}
 
    In the beginning, only the coarsest level exists.  The first loop
    starts by initialising this level.  At the end of this loop, more
    levels are created if desired.  This makes it possible to make this
    decision depend on an automatic refinement criterion.
+
+
+\texttt{ MoL::initial\_data\_is\_crap} performs all steps as indicated.
+%, except 12
+ After \ref{endinitloop}, when the evolution starts, \texttt{MoL} copies the
+current
+timelevels to the past timelevels.
+
+\texttt{Carpet::init\_each\_timelevel} loops the steps \ref{startinitsubloop}
+ to
+\ref{almostendinitsubloop} over all
+timelevels, setting \texttt{cctk\_time} differently each time.
+
+Finally, \texttt{Carpet::init\_3\_timelevels} performs all steps in order, but
+evolves each level forward one and backwards two steps, creating two
+past time levels.
+
+The parameter that specifies the number of refinement levels is not a
+Carpet parameter, but a CarpetRegrid parameter.  CarpetRegrid
+determines item \ref{endinitsubloop}, i.e., whether to create a new, finer
+level when
+the coarser levels have been initialised.  CarpetRegrid has a host of
+other parameters, and it can decide item  \ref{endinitsubloop} also by a
+different means,
+e.g. ---in principle--- through the local truncation error.
+
 
 
 
