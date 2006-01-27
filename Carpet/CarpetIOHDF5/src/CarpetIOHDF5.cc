@@ -62,19 +62,19 @@ int CarpetIOHDF5_Startup (void)
 
   // warn about deprecated parameters if they are still being used
   if (CCTK_ParameterQueryTimesSet ("out_unchunked", CCTK_THORNSTRING) > 0) {
-    CCTK_WARN (CCTK_WARN_COMPLAIN,
+    CCTK_WARN (CCTK_WARN_ALERT,
       "You set the parameter 'IOHDF5::out_unchunked'"
       " in your parfile. This parameter is deprecated and should not be used"
       " anymore. Use 'IO::out_unchunked' instead.");
   }
   if (CCTK_ParameterQueryTimesSet ("in_dir", CCTK_THORNSTRING) > 0) {
-    CCTK_WARN (CCTK_WARN_COMPLAIN,
+    CCTK_WARN (CCTK_WARN_ALERT,
       "You set the parameter 'IOHDF5::in_dir'"
       " in your parfile. This parameter is deprecated and should not be used"
       " anymore. Use 'IO::filereader_dir' instead.");
   }
   if (CCTK_ParameterQueryTimesSet ("in_vars", CCTK_THORNSTRING) > 0) {
-    CCTK_WARN (CCTK_WARN_COMPLAIN,
+    CCTK_WARN (CCTK_WARN_ALERT,
       "You set the parameter 'IOHDF5::in_vars'"
       " in your parfile. This parameter is deprecated and should not be used"
       " anymore. Use 'IO::filereader_vars' instead.");
@@ -1000,58 +1000,58 @@ static void WarnAboutDeprecatedParameters (void)
 
   if (CCTK_ParameterQueryTimesSet ("out3D_dir", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("out_dir", CCTK_THORNSTRING)) {
-    CCTK_WARN (2, "Parameter 'IOHDF5::out3D_dir' is deprecated, please use "
-                  "'IOHDF5::out_dir' instead");
+    CCTK_WARN (CCTK_WARN_ALERT, "Parameter 'IOHDF5::out3D_dir' is deprecated, "
+               "please use 'IOHDF5::out_dir' instead");
     CCTK_ParameterSet ("out_dir", CCTK_THORNSTRING, out3D_dir);
   }
   if (CCTK_ParameterQueryTimesSet ("out3D_vars", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("out_vars", CCTK_THORNSTRING)) {
-    CCTK_WARN (2, "Parameter 'IOHDF5::out3D_vars' is deprecated, please use "
-                  "'IOHDF5::out_vars' instead");
+    CCTK_WARN (CCTK_WARN_ALERT, "Parameter 'IOHDF5::out3D_vars' is deprecated, "
+               "please use 'IOHDF5::out_vars' instead");
     CCTK_ParameterSet ("out_vars", CCTK_THORNSTRING, out3D_vars);
   }
   if (CCTK_ParameterQueryTimesSet ("out3D_extension", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("out_extension", CCTK_THORNSTRING)) {
-    CCTK_WARN (2, "Parameter 'IOHDF5::out3D_extension' is deprecated, please use "
-                  "'IOHDF5::out_extension' instead");
+    CCTK_WARN (CCTK_WARN_ALERT, "Parameter 'IOHDF5::out3D_extension' is "
+               "deprecated, please use 'IOHDF5::out_extension' instead");
     CCTK_ParameterSet ("out_extension", CCTK_THORNSTRING, out3D_extension);
   }
   if (CCTK_ParameterQueryTimesSet ("out3D_criterion", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("out_criterion", CCTK_THORNSTRING)) {
-    CCTK_WARN (2, "Parameter 'IOHDF5::out3D_criterion' is deprecated, please use "
-                  "'IOHDF5::out_criterion' instead");
+    CCTK_WARN (CCTK_WARN_ALERT, "Parameter 'IOHDF5::out3D_criterion' is "
+               "deprecated, please use 'IOHDF5::out_criterion' instead");
     CCTK_ParameterSet ("out_criterion", CCTK_THORNSTRING, out3D_criterion);
   }
   if (CCTK_ParameterQueryTimesSet ("out3D_every", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("out_every", CCTK_THORNSTRING)) {
-    CCTK_WARN (2, "Parameter 'IOHDF5::out3D_every' is deprecated, please use "
-                  "'IOHDF5::out_every' instead");
+    CCTK_WARN (CCTK_WARN_ALERT, "Parameter 'IOHDF5::out3D_every' is "
+               "deprecated, please use 'IOHDF5::out_every' instead");
     snprintf (buffer, sizeof (buffer), "%d", out3D_every);
     CCTK_ParameterSet ("out_every", CCTK_THORNSTRING, buffer);
   }
   if (CCTK_ParameterQueryTimesSet ("out3D_dt", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("out_dt", CCTK_THORNSTRING)) {
-    CCTK_WARN (2, "Parameter 'IOHDF5::out3D_dt' is deprecated, please use "
-                  "'IOHDF5::out_dt' instead");
+    CCTK_WARN (CCTK_WARN_ALERT, "Parameter 'IOHDF5::out3D_dt' is deprecated, "
+               "please use 'IOHDF5::out_dt' instead");
     snprintf (buffer, sizeof (buffer), "%f", (double)out3D_dt);
     CCTK_ParameterSet ("out_dt", CCTK_THORNSTRING, buffer);
   }
   if (CCTK_ParameterQueryTimesSet ("in3D_dir", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("in_dir", CCTK_THORNSTRING)) {
-    CCTK_WARN (2, "Parameter 'IOHDF5::in3D_dir' is deprecated, please use "
-                  "'IOHDF5::in_dir' instead");
+    CCTK_WARN (CCTK_WARN_ALERT, "Parameter 'IOHDF5::in3D_dir' is deprecated, "
+               "please use 'IOHDF5::in_dir' instead");
     CCTK_ParameterSet ("in_dir", CCTK_THORNSTRING, in3D_dir);
   }
   if (CCTK_ParameterQueryTimesSet ("in3D_vars", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("in_vars", CCTK_THORNSTRING)) {
-    CCTK_WARN (2, "Parameter 'IOHDF5::in3D_vars' is deprecated, please use "
-                  "'IOHDF5::in_vars' instead");
+    CCTK_WARN (CCTK_WARN_ALERT, "Parameter 'IOHDF5::in3D_vars' is deprecated, "
+               "please use 'IOHDF5::in_vars' instead");
     CCTK_ParameterSet ("in_vars", CCTK_THORNSTRING, in3D_vars);
   }
   if (CCTK_ParameterQueryTimesSet ("in3D_extension", CCTK_THORNSTRING) >
       CCTK_ParameterQueryTimesSet ("in_extension", CCTK_THORNSTRING)) {
-    CCTK_WARN (2, "Parameter 'IOHDF5::in3D_extension' is deprecated, please use "
-                  "'IOHDF5::in_extension' instead");
+    CCTK_WARN (CCTK_WARN_ALERT, "Parameter 'IOHDF5::in3D_extension' is "
+               "deprecated, please use 'IOHDF5::in_extension' instead");
     CCTK_ParameterSet ("in_extension", CCTK_THORNSTRING, in3D_extension);
   }
 }
