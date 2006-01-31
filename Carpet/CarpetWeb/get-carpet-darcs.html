@@ -158,6 +158,35 @@
     <a href="doc/darcs-1.0.5.pdf">PDF documentation</a> (450&nbsp;kB)
     for darcs.</p>
 
+    <h3>Convenient SSH key management</h3>
+
+    <p>Ssh has two mechanisms for authentication, typing a password,
+    or using ssh keys.  When you use ssh keys, your private key is
+    (<em>should</em>) usually be protected by a password.  That means
+    that you have to type this password every time you log into a
+    different machine.  Some people protect their private ssh key with
+    an empty password --- this way, they don't have to type a
+    password, but this is not very secure.  If somebody is able to
+    copy the private ssh key, they have access to your remote
+    accounts.  In this way, intruders can hop from one machine to the
+    next.  This is not just a theoretical risk.</p>
+
+    <p>Ssh-agent is a convenient way to make things safe yet
+    convenient.  It is an agent that starts automatically when you log
+    in, and asks you for your ssh key password.  It remembers this
+    password in memory, and whenever you use ssh to log into a remote
+    account, ssh contacts the ssh-agent for the password to the key.
+    If that password works, you don't have to type anything.</p>
+
+    <p>I use the following lines in my <code>.bash_profile</code> to
+    make this happen:</p>
+    <pre>keychain id_dsa
+test -f $HOME/.keychain/$(hostname)-sh && source $HOME/.keychain/$(hostname)-sh > /dev/null
+</pre>
+    <p>Keychain starts the ssh-agent.  Keychain can also handle gpg
+    key passwords for your encrypted and/or signed emails.</p>
+
+
     <h3>Updating the Repository from the Master</h3>
 
     <p>At some time you will want to update your version of Carpet and
