@@ -363,6 +363,11 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     }
 
     for (int tl = 0; tl < read_completely[vindex].size(); tl++) {
+      if (called_from == FILEREADER_DATA and not
+          (ioUtilGH->do_inVars and ioUtilGH->do_inVars[vindex])) {
+        continue;
+      }
+
       if (not read_completely[vindex][tl]) {
         // check if the variable has been read partially
         size_t size = 0;
