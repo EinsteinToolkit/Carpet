@@ -391,6 +391,7 @@ namespace CarpetIOBasic {
                   "Cannot output variable \"%s\" because it has no storage",
                   fullname);
       free (fullname);
+      return;
     }
     
     assert (do_global_mode);
