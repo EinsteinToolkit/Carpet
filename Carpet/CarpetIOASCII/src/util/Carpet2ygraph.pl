@@ -1,4 +1,4 @@
-#! /usr/bin/perl -s
+#! /usr/bin/perl -sw
 #
 # Blame Ian Hawke for not checking that Scott had already written a C
 # program to do this add so writing a perl version instead
@@ -23,41 +23,45 @@
 
 use FileHandle;
 
-if(@ARGV != 3)
+if(@ARGV != 3 or $ARGV[0] !~ /^0|1|2$/)
 {
-  print "Usage: $0 direction <Inputfile> <Outputfile> \n";
+  print "Usage: $0 direction <Inputfile> <Outputfile>\n";
+  print "       where direction is either 0, 1, 2\n";
   exit;
 }
 
 open(CARPETFILE,   "<$ARGV[1]") || die "Unable to find file \"$ARGV[1]\"."; 
 
+my $direction = $ARGV[0]+9; 
+my $flag = 0;
+my $refinementlevel = 0;
+my %componentflag = ();
+$componentflag{$refinementlevel} = 0;
+my @outputdata = ("\n");
+
 #
 # Open the output file for the base grid. 
 #
-
-$file = $ARGV[2]."_0.xg";
-my $fh = new FileHandle(">$file") || die "Unable to open file \"$file\"."; 
-push(@outputfilelist,$fh);
+my $file = $ARGV[2]."_$refinementlevel.xg";
+my %outputfilelist = ();
+$outputfilelist{$refinementlevel} =
+  new FileHandle(">$file") || die "Unable to open file \"$file\"."; 
 
 #
 # Find the correct column for the spatial coordinate; requires a magic number
 #
-
-$direction = $ARGV[0]+9; 
-
-$flag = 0;
-$timeset = 0;
-$refinementlevel = 0;
-$componentflag[0] = 0;
 while (<CARPETFILE>)
 {
+    # skip empty lines
+    next if (/^(\s)*$/);
+
     $line = $_;
 
     if(/^\#/) # The line is a header comment
     {
 	if ($flag==1) # It's a new level and there is data to output
         {
-	    $fh = $outputfilelist[$refinementlevel];
+	    my $fh = $outputfilelist{$refinementlevel};
 	    print $fh @outputdata;
 	    @outputdata=("\n");
 	    $flag = 0;
@@ -66,26 +70,20 @@ while (<CARPETFILE>)
 	{
 	    $refinementlevel = $1;
 	    $line =~ /component ([0-9+])/;
-	    $componentflag[$refinementlevel] = $1; # Which component?
+	    $componentflag{$refinementlevel} = $1; # Which component?
 
-	    #
 	    # If no file exists for this refinement level, 
-	    # open and add filehandle to array
-	    #
-
-	    if ($refinementlevel > $#outputfilelist)
+	    # open and add filehandle to list
+	    if (not defined $outputfilelist{$refinementlevel})
 	    { 
-		for ($i = $#outputfileflist+1; $i < $refinementlevel+1; $i++)
-		{
-		    $file = $ARGV[2]."_".$i.".xg";
-		    my $fh = new FileHandle(">$file") || die "Unable to open file \"$file\"."; 
-		    $outputfilelist[$i]=$fh;
-		}
+		$file = $ARGV[2] . "_$refinementlevel.xg";
+		$outputfilelist{$refinementlevel} = 
+		  new FileHandle(">$file") || die "Unable to open file \"$file\"."; 
 	    }
 	}
 	# Only output the headers if this is the zero component
 	# FIXME: what happens if component 0 isn't output first?
-	if (0 == $componentflag[$refinementlevel])
+	if (0 == $componentflag{$refinementlevel})
 	{
 	    push(@outputdata, ("\"",$line)); # Add ygraph comment marker
 	}
@@ -101,21 +99,21 @@ while (<CARPETFILE>)
 	if ($flag== 0) # This is the first line of data
 	{
 	    $flag = 1;
-	    $timeset = $data[8]; # Magic number gives the Cactus time
-	    @outputdata = ("\n\"Time = ",$timeset,@outputdata);
+	    my $timeset = $data[8]; # Magic number gives the Cactus time
+	    @outputdata = ("\n\"Time = $timeset",@outputdata);
 	}
-	push(@outputdata, $data[$direction], " ", $data[12]);
+        chomp ($data[12]);
+        push(@outputdata, "$data[$direction] $data[12]\n");
     }
 }
 
 #
 # At end of file, so output final data set.
 #
-
-$fh = $outputfilelist[$refinementlevel];
+my $fh = $outputfilelist{$refinementlevel};
 print $fh @outputdata;
 
-foreach $fh (@outputfilelist)
+foreach $refinementlevel (keys %outputfilelist)
 {
-    close($fh);
+    close($outputfilelist{$refinementlevel});
 }
