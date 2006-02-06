@@ -48,6 +48,8 @@ static void GetVarIndex (int vindex, const char* optstring, void* arg);
 static void CheckSteerableParameters (const cGH *const cctkGH,
                                       CarpetIOHDF5GH *myGH);
 static void WarnAboutDeprecatedParameters (void);
+static int WriteMetadata (const cGH *cctkGH, int nioprocs,
+                          bool called_from_checkpoint, hid_t file);
 
 //////////////////////////////////////////////////////////////////////////////
 // public routines
@@ -246,6 +248,7 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
 {
   DECLARE_CCTK_PARAMETERS;
 
+  int error_count = 0;
 
   // register CarpetIOHDF5's routines as a new I/O method
   const int IOMethod = CCTK_RegisterIOMethod ("IOHDF5");
@@ -536,6 +539,7 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
+  int error_count = 0;
   int vindex = -1;
 
   if (CCTK_TraverseString (fullname, GetVarIndex, &vindex, CCTK_VAR) < 0) {
@@ -646,7 +650,7 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
       HDF5_ERROR (file = H5Fcreate (c_filename, H5F_ACC_TRUNC, H5P_DEFAULT,
                                     H5P_DEFAULT));
       // write metadata information
-      WriteMetadata (cctkGH, nioprocs, false, file);
+      error_count += WriteMetadata (cctkGH, nioprocs, false, file);
     } else {
       HDF5_ERROR (file = H5Fopen (c_filename, H5F_ACC_RDWR, H5P_DEFAULT));
     }
@@ -683,7 +687,7 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
 
 static int Checkpoint (const cGH* const cctkGH, int called_from)
 {
-  int retval = 0;
+  int error_count = 0;
   DECLARE_CCTK_PARAMETERS;
 
 
@@ -713,7 +717,7 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
                                   H5P_DEFAULT));
 
     // write metadata information
-    WriteMetadata (cctkGH, nioprocs, true, file);
+    error_count += WriteMetadata (cctkGH, nioprocs, true, file);
   }
 
   // now dump the grid variables on all mglevels, reflevels, maps and components
@@ -793,7 +797,7 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
             }
 
             // write the var
-            retval += parallel_io ?
+            error_count += parallel_io ?
                       WriteVarChunkedParallel (cctkGH, file, request, true) :
                       WriteVarChunkedSequential (cctkGH, file, request, true);
           }
@@ -816,16 +820,16 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
   }
 
   // get global error count
-  int temp = retval;
-  MPI_Allreduce (&temp, &retval, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  int temp = error_count;
+  MPI_Allreduce (&temp, &error_count, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
-  if (retval == 0) {
+  if (error_count == 0) {
     if (file >= 0) {
       if (rename (tempname, filename)) {
         CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Could not rename temporary checkpoint file '%s' to '%s'",
                     tempname, filename);
-        retval = -1;
+        error_count = -1;
       } else if (called_from == CP_EVOLUTION_DATA and checkpoint_keep > 0) {
         CarpetIOHDF5GH *myGH =
           (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
@@ -864,14 +868,15 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
   free (tempname);
   free (filename);
 
-  return retval;
+  return error_count;
 
 } // Checkpoint
 
 
-void WriteMetadata (const cGH *cctkGH, int nioprocs,
-                    bool called_from_checkpoint, hid_t file)
+static int WriteMetadata (const cGH *cctkGH, int nioprocs,
+                          bool called_from_checkpoint, hid_t file)
 {
+  int error_count = 0;
   hid_t group, scalar_dataspace, array_dataspace, datatype, attr;
   DECLARE_CCTK_PARAMETERS;
 
@@ -990,6 +995,8 @@ void WriteMetadata (const cGH *cctkGH, int nioprocs,
   HDF5_ERROR (H5Sclose (scalar_dataspace));
   HDF5_ERROR (H5Sclose (array_dataspace));
   HDF5_ERROR (H5Gclose (group));
+
+  return (error_count);
 }
 
 

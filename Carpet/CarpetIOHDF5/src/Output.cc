@@ -20,10 +20,10 @@ using namespace Carpet;
 
 
 // add attributes to an HDF5 dataset
-static void AddAttributes (const cGH *const cctkGH, const char *fullname,
-                           int vdim, int refinementlevel,
-                           const ioRequest* const request,
-                           const ibbox& bbox, hid_t dataset);
+static int AddAttributes (const cGH *const cctkGH, const char *fullname,
+                          int vdim, int refinementlevel,
+                          const ioRequest* const request,
+                          const ibbox& bbox, hid_t dataset);
 
 
 int WriteVarUnchunked (const cGH* const cctkGH,
@@ -33,6 +33,7 @@ int WriteVarUnchunked (const cGH* const cctkGH,
 {
   DECLARE_CCTK_PARAMETERS;
 
+  int error_count = 0;
   char *fullname = CCTK_FullName(request->vindex);
   const int gindex = CCTK_GroupIndexFromVarI (request->vindex);
   assert (gindex >= 0 and gindex < (int) Carpet::arrdata.size ());
@@ -216,8 +217,9 @@ int WriteVarUnchunked (const cGH* const cctkGH,
             // (have to do it inside of the COMPONENT_LOOP so that we have
             //  access to the cGH elements)
             if (first_time) {
-              AddAttributes (cctkGH, fullname, group.dim, refinementlevel,
-                             request, *bbox, dataset);
+              error_count += AddAttributes (cctkGH, fullname, group.dim,
+                                            refinementlevel, request, *bbox,
+                                            dataset);
               first_time = false;
             }
           }
@@ -251,7 +253,8 @@ int WriteVarUnchunked (const cGH* const cctkGH,
 
   free (fullname);
 
-  return 0;
+  // return the number of errors that occured during this output
+  return error_count;
 }
 
 
@@ -262,6 +265,7 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
 {
   DECLARE_CCTK_PARAMETERS;
 
+  int error_count = 0;
   char *fullname = CCTK_FullName(request->vindex);
   const int gindex = CCTK_GroupIndexFromVarI (request->vindex);
   assert (gindex >= 0 and gindex < (int) Carpet::arrdata.size ());
@@ -378,8 +382,8 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           HDF5_ERROR (H5Sclose (dataspace));
           HDF5_ERROR (H5Dwrite (dataset, memdatatype, H5S_ALL, H5S_ALL,
                                 H5P_DEFAULT, data));
-          AddAttributes (cctkGH, fullname, group.dim, refinementlevel,
-                         request, bbox, dataset);
+          error_count += AddAttributes (cctkGH, fullname, group.dim,
+                                        refinementlevel, request, bbox,dataset);
           HDF5_ERROR (H5Dclose (dataset));
         }
 
@@ -393,7 +397,8 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
 
   free (fullname);
 
-  return 0;
+  // return the number of errors that occured during this output
+  return error_count;
 }
 
 
@@ -404,6 +409,7 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
 {
   DECLARE_CCTK_PARAMETERS;
 
+  int error_count = 0;
   char *fullname = CCTK_FullName(request->vindex);
   const int gindex = CCTK_GroupIndexFromVarI (request->vindex);
   assert (gindex >= 0 and gindex < (int) Carpet::arrdata.size ());
@@ -514,8 +520,8 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       HDF5_ERROR (H5Sclose (dataspace));
       HDF5_ERROR (H5Dwrite (dataset, memdatatype, H5S_ALL, H5S_ALL,
                             H5P_DEFAULT, data));
-      AddAttributes (cctkGH, fullname, group.dim, refinementlevel,
-                     request, bbox, dataset);
+      error_count += AddAttributes (cctkGH, fullname, group.dim,refinementlevel,
+                                    request, bbox, dataset);
       HDF5_ERROR (H5Dclose (dataset));
 
       if (data != mydata) free (data);
@@ -525,16 +531,19 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
 
   free (fullname);
 
-  return 0;
+  // return the number of errors that occured during this output
+  return error_count;
 }
 
 
 // add attributes to an HDF5 dataset
-static void AddAttributes (const cGH *const cctkGH, const char *fullname,
-                           int vdim, int refinementlevel,
-                           const ioRequest* request,
-                           const ibbox& bbox, hid_t dataset)
+static int AddAttributes (const cGH *const cctkGH, const char *fullname,
+                          int vdim, int refinementlevel,
+                          const ioRequest* request,
+                          const ibbox& bbox, hid_t dataset)
 {
+  int error_count = 0;
+
   // Legacy arguments
   hid_t attr, dataspace, datatype;
   HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
@@ -637,6 +646,9 @@ static void AddAttributes (const cGH *const cctkGH, const char *fullname,
 
   HDF5_ERROR (H5Tclose (datatype));
   HDF5_ERROR (H5Sclose (dataspace));
+
+  // return the number of errors that occured during this output
+  return error_count;
 }
 
 

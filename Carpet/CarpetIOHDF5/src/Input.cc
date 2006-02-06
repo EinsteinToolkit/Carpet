@@ -124,6 +124,7 @@ int CarpetIOHDF5_SetNumRefinementLevels (void)
 //////////////////////////////////////////////////////////////////////////////
 int CarpetIOHDF5_CloseFiles (void)
 {
+  int error_count = 0;
   DECLARE_CCTK_PARAMETERS;
 
 
@@ -145,7 +146,7 @@ int CarpetIOHDF5_CloseFiles (void)
 
   filesets.clear();
 
-  return (0);
+  return (-error_count);
 }
 
 
@@ -156,6 +157,7 @@ int CarpetIOHDF5_CloseFiles (void)
 //////////////////////////////////////////////////////////////////////////////
 int Recover (cGH* cctkGH, const char *basefilename, int called_from)
 {
+  int error_count = 0;
   DECLARE_CCTK_PARAMETERS;
 
 
@@ -423,6 +425,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
 {
   file_t file;
   fileset_t fileset;
+  int error_count = 0;
   DECLARE_CCTK_PARAMETERS;
 
   // first try to open a chunked file written on this processor
@@ -519,6 +522,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
 //////////////////////////////////////////////////////////////////////////////
 static void ReadMetadata (fileset_t& fileset, hid_t file)
 {
+  int error_count = 0;
   DECLARE_CCTK_PARAMETERS;
 
   fileset.nioprocs = 1;
@@ -592,6 +596,7 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
 //////////////////////////////////////////////////////////////////////////////
 static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
 {
+  int error_count = 0;
   file_t *file = (file_t *) arg;
   patch_t patch;
   hid_t dataset, dataspace, attr, attrtype;
@@ -683,6 +688,7 @@ static int ReadVar (const cGH* const cctkGH,
                     vector<ibset> &bboxes_read,
                     bool in_recovery)
 {
+  int error_count = 0;
   DECLARE_CCTK_PARAMETERS;
 
   const int gindex = CCTK_GroupIndexFromVarI (patch->vindex);

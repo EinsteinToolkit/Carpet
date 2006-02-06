@@ -45,6 +45,7 @@
             CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,              \
                         "HDF5 call '%s' returned error code %d",              \
                         #fn_call, _error_code);                               \
+            error_count++;                                                    \
           }                                                                   \
         }
 
@@ -99,12 +100,6 @@ namespace CarpetIOHDF5
                                hid_t file,
                                const ioRequest* const request,
                                bool called_from_checkpoint);
-
-  // adds simulation metadata (inclusive parameters) to an HDF5 file
-  void WriteMetadata (const cGH* const cctkGH,
-                      int nioprocs,
-                      bool called_from_checkpoint,
-                      hid_t file);
 
   // returns an HDF5 datatype corresponding to the given CCTK datatype
   hid_t CCTKtoHDF5_Datatype (const cGH* const cctkGH,
