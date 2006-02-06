@@ -2,15 +2,33 @@
 
 use FileHandle;
 
-if(@ARGV != 3)
+if(@ARGV != 1)
 {
-  print "Usage: $0 direction <Inputfile> <Outputfile> \n";
+  print "Usage: $0 <Inputfile> \n";
   exit;
 }
 
-open(CARPETFILE,   "<$ARGV[1]") || die "Unable to find file \"$ARGV[1]\".";
+open(CARPETFILE,   "<$ARGV[0]") || die "Unable to find file \"$ARGV[0]\".";
 
-$file = $ARGV[2].".xg";
+my $dirn;
+my $filename;
+$ARGV[0] =~ /(.*)\.([xyz])\..*/;
+$filename = $1; $dirn = $2;
+my $direction;
+if ($dirn eq "x") {
+  $direction = 0;
+}
+elsif ($dirn eq "y") {
+  $direction = 1;
+}
+elsif ($dirn eq "z") {
+  $direction = 2;
+}
+else {
+  die "Do not recognize direction \"${dirn}\" (file \"${ARGV[0]}\").";
+}
+
+$file = $filename."_${dirn}.xg";
 my $fh = new FileHandle(">$file") || die "Unable to open file \"$file\".";
 
 my %data;
@@ -60,7 +78,7 @@ while (<CARPETFILE>)
 	    $time = $dataline[8];
 	    $lastit = $currentit;
 	}
-	my $coord = $dataline[9+$ARGV[0]];
+	my $coord = $dataline[9+$direction];
 	my $val = $dataline[12];
 	$data{$coord} = $val;
     }
