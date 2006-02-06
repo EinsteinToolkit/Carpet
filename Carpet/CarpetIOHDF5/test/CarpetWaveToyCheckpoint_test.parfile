@@ -1,4 +1,4 @@
-ActiveThorns = "Boundary CartGrid3D Time CoordBase SymBase Carpet CarpetLib CarpetRegrid CarpetReduce CarpetSlab IOUtil IOBasic CarpetIOASCII CarpetIOHDF5 IDScalarWaveC WaveToyC"
+ActiveThorns = "Boundary CartGrid3D Time CoordBase SymBase Carpet CarpetLib CarpetRegrid CarpetReduce CarpetSlab IOUtil CarpetIOBasic CarpetIOScalar CarpetIOASCII CarpetIOHDF5 IDScalarWaveC WaveToyC"
 
 
 Cactus::cctk_itlast = 64
@@ -27,10 +27,11 @@ IO::out_dir       = $parfile
 IO::out_fileinfo  = "none"
 IO::parfile_write = "no"
 
-IOBasic::outInfo_every   = 1
-IOBasic::outInfo_vars    = "wavetoy::phi"
-IOBasic::outScalar_every = 32
-IOBasic::outScalar_vars  = "wavetoy::phi"
+IOBasic::outInfo_every         = 1
+IOBasic::outInfo_vars          = "wavetoy::phi"
+IOScalar::outScalar_every      = 32
+IOScalar::outScalar_vars       = "wavetoy::phi"
+IOScalar::outScalar_reductions = "average count maximum minimum  norm1 norm2 norm_inf product sum sum_abs sum_squared"
 
 IOASCII::out1D_vars  = "wavetoy::phi"
 IOASCII::out1D_every = 32
