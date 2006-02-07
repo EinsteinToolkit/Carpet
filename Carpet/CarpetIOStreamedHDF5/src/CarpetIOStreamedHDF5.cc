@@ -215,6 +215,7 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
 
 static int OutputGH (const cGH* const cctkGH)
 {
+  int error_count = 0;
   DECLARE_CCTK_PARAMETERS;
 
   CarpetIOStreamedHDF5GH *myGH =
@@ -297,7 +298,8 @@ static int OutputGH (const cGH* const cctkGH)
     client_is_ready = 0;
   }
 
-  return (0);
+  // return negative number of errors occured during this output
+  return (-error_count);
 }
 
 
