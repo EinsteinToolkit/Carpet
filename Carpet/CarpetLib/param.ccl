@@ -22,11 +22,11 @@ BOOLEAN print_timestats "Print timing statistics at every iteration" STEERABLE=a
 {
 } "no"
 
-BOOLEAN save_memory_during_regridding "Save some memory during regridding at the expense of speed"
+BOOLEAN save_memory_during_regridding "Save some memory during regridding at the expense of speed" STEERABLE=always
 {
 } "yes"
 
-BOOLEAN fast_recomposing "Take shortcuts during recomposing (EXPERIMENTAL)"
+BOOLEAN fast_recomposing "Take shortcuts during recomposing (EXPERIMENTAL)" STEERABLE=always
 {
 } "no"
 
@@ -44,7 +44,7 @@ INT max_allowed_memory_MB "Maximum allowed amount of memory per process (in Mega
   1:* :: "abort if more memory is used"
 } 0
 
-STRING memstat_file "File name to which memstat output is collected (because stdout from the root node may not be enough)"
+STRING memstat_file "File name to which memstat output is collected (because stdout from the root node may not be enough)" STEERABLE=always
 {
   "^$"   :: "empty filename: no file output"
   "^.+$" :: "file name"
@@ -63,20 +63,20 @@ PRIVATE:
 # The defaults of these flags are now sensible for everybody;
 # you should not be setting these parameters by hand any more.
 
-INT max_mpi_tags "Maximum number of MPI tags to use -- DEPRECATED - DO NOT USE ANYMORE"
+INT max_mpi_tags "Maximum number of MPI tags to use -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
 {
   1:30000 :: ""
 } 30000
 
-BOOLEAN use_waitall "Use MPI_Waitall instead individual MPI_Wait/MPI_Waitsome statements -- DEPRECATED - DO NOT USE ANYMORE"
+BOOLEAN use_waitall "Use MPI_Waitall instead individual MPI_Wait/MPI_Waitsome statements -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
 {
 } "yes"
 
-BOOLEAN combine_recv_send "Combine MPI_Irecv and MPI_Isend calls -- DEPRECATED - DO NOT USE ANYMORE"
+BOOLEAN combine_recv_send "Combine MPI_Irecv and MPI_Isend calls -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
 {
 } "no"
 
-BOOLEAN use_lightweight_buffers "Use lightweight communication buffers instead of data objects -- DEPRECATED - DO NOT USE ANYMORE"
+BOOLEAN use_lightweight_buffers "Use lightweight communication buffers instead of data objects -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
 {
 } "no"
 
@@ -84,6 +84,6 @@ BOOLEAN use_collective_communication_buffers "Use collective buffers for MPI com
 {
 } "yes"
 
-BOOLEAN minimise_outstanding_communications "Minimise the number of Isend/Irecv operations that are submitted concurrently -- DEPRECATED - DO NOT USE ANYMORE"
+BOOLEAN minimise_outstanding_communications "Minimise the number of Isend/Irecv operations that are submitted concurrently -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
 {
 } "no"
