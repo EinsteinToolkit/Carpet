@@ -122,7 +122,7 @@ int CarpetIOHDF5_SetNumRefinementLevels (void)
 //////////////////////////////////////////////////////////////////////////////
 // close all open checkpoint/filereader files after recovering grid variables
 //////////////////////////////////////////////////////////////////////////////
-int CarpetIOHDF5_CloseFiles (void)
+void CarpetIOHDF5_CloseFiles (const cGH* const cctkGH)
 {
   int error_count = 0;
   DECLARE_CCTK_PARAMETERS;
@@ -130,7 +130,7 @@ int CarpetIOHDF5_CloseFiles (void)
 
   for (list<fileset_t>::const_iterator set = filesets.begin();
        set != filesets.end(); set++) {
-    for (int i = 0; i < set->files.size(); i++) {
+    for (unsigned int i = 0; i < set->files.size(); i++) {
       if (set->files[i].file >= 0) {
 
         if (CCTK_Equals (verbose, "full")) {
@@ -145,8 +145,6 @@ int CarpetIOHDF5_CloseFiles (void)
   }
 
   filesets.clear();
-
-  return (-error_count);
 }
 
 
@@ -218,7 +216,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   const int numvars = CCTK_NumVars ();
   vector<vector<bool> > read_completely(numvars);
   vector<vector<vector<ibset> > > bboxes_read (numvars);
-  for (int vindex = 0; vindex < bboxes_read.size(); vindex++) {
+  for (unsigned int vindex = 0; vindex < bboxes_read.size(); vindex++) {
     const int timelevels = CCTK_ActiveTimeLevelsVI (cctkGH, vindex);
     read_completely[vindex].resize (timelevels, false);
     bboxes_read[vindex].resize (timelevels);
@@ -230,7 +228,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   // create a bbox set for each group to list how much needs to be read
   const int numgroups = CCTK_NumGroups ();
   vector<vector<ibset> > group_bboxes (numgroups);
-  for (int gindex = 0; gindex < group_bboxes.size(); gindex++) {
+  for (unsigned int gindex = 0; gindex < group_bboxes.size(); gindex++) {
     group_bboxes[gindex].resize (Carpet::maps);
     const int grouptype = CCTK_GroupTypeI (gindex);
     BEGIN_MAP_LOOP (cctkGH, grouptype) {
@@ -248,7 +246,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   const ioGH* ioUtilGH = (const ioGH*) CCTK_GHExtension (cctkGH, "IO");
 
   // loop over all input files of this set
-  for (int i = 0; i < fileset->files.size(); i++) {
+  for (unsigned int i = 0; i < fileset->files.size(); i++) {
     const int file_idx = (i + fileset->first_ioproc) % fileset->nioprocs;
     file_t& file = fileset->files[file_idx];
 
@@ -310,7 +308,8 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       }
 
       // check the timelevel
-      if (patch->timelevel >= read_completely.at(patch->vindex).size()) {
+      if ((unsigned int) patch->timelevel >=
+          read_completely.at(patch->vindex).size()) {
         CCTK_VWarn (3, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Ignoring dataset '%s' (invalid timelevel %d)",
                     patch->patchname.c_str(), patch->timelevel);
@@ -332,9 +331,9 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     }
 
     // check if all variables have been read completely already
-    int all_read_completely = true;
-    for (int vindex = 0; vindex < read_completely.size(); vindex++) {
-      for (int tl = 0; tl < read_completely[vindex].size(); tl++) {
+    bool all_read_completely = true;
+    for (unsigned int vindex = 0; vindex < read_completely.size(); vindex++) {
+      for (unsigned int tl = 0; tl < read_completely[vindex].size(); tl++) {
         all_read_completely &= read_completely[vindex][tl];
       }
     }
@@ -345,7 +344,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
 
   // check that all variables have been read completely on this mglevel/reflevel
   int num_incomplete = 0;
-  for (int vindex = 0; vindex < read_completely.size(); vindex++) {
+  for (unsigned int vindex = 0; vindex < read_completely.size(); vindex++) {
 
     if (CCTK_GroupTypeFromVarI (vindex) != CCTK_GF and reflevel > 0) {
       continue;
@@ -364,7 +363,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       delete[] value;
     }
 
-    for (int tl = 0; tl < read_completely[vindex].size(); tl++) {
+    for (unsigned int tl = 0; tl < read_completely[vindex].size(); tl++) {
       if (called_from == FILEREADER_DATA and not
           (ioUtilGH->do_inVars and ioUtilGH->do_inVars[vindex])) {
         continue;
@@ -692,7 +691,7 @@ static int ReadVar (const cGH* const cctkGH,
   DECLARE_CCTK_PARAMETERS;
 
   const int gindex = CCTK_GroupIndexFromVarI (patch->vindex);
-  assert (gindex >= 0 and gindex < Carpet::arrdata.size());
+  assert (gindex >= 0 and (unsigned int) gindex < Carpet::arrdata.size());
   cGroup group;
   CCTK_GroupData (gindex, &group);
 

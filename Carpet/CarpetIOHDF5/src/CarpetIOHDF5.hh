@@ -110,13 +110,13 @@ namespace CarpetIOHDF5
   extern "C" {
 
     int CarpetIOHDF5_Startup (void);
+    int CarpetIOHDF5_RecoverParameters (void);
     int CarpetIOHDF5_Init (const cGH* const);
     int CarpetIOHDF5_SetNumRefinementLevels (void);
-    int CarpetIOHDF5_CloseFiles (void);
     int CarpetIOHDF5_InitialDataCheckpoint (const cGH* const);
     int CarpetIOHDF5_EvolutionCheckpoint (const cGH* const);
     int CarpetIOHDF5_TerminationCheckpoint (const cGH* const);
-    int CarpetIOHDF5_RecoverParameters (void);
+    void CarpetIOHDF5_CloseFiles (const cGH* const);
 
   } // extern "C"
 
