@@ -578,6 +578,7 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
                                 dataspace, H5P_DEFAULT));
   HDF5_ERROR (H5Awrite (attr, datatype, fullname));
   HDF5_ERROR (H5Aclose (attr));
+  HDF5_ERROR (H5Tclose (datatype));
   HDF5_ERROR (H5Sclose (dataspace));
 
   // store cctk_bbox and cctk_nghostzones (for grid arrays only)
@@ -601,6 +602,7 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
                                   dataspace, H5P_DEFAULT));
     HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &cctk_nghostzones[0]));
     HDF5_ERROR (H5Aclose (attr));
+    HDF5_ERROR (H5Sclose (dataspace));
   }
 
   // write bbox attributes if we have coordinate system info
@@ -644,7 +646,6 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
   HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &iorigin[0]));
   HDF5_ERROR (H5Aclose (attr));
 
-  HDF5_ERROR (H5Tclose (datatype));
   HDF5_ERROR (H5Sclose (dataspace));
 
   // return the number of errors that occured during this output
