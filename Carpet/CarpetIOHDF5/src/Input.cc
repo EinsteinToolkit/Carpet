@@ -247,6 +247,14 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
 
   // loop over all input files of this set
   for (unsigned int i = 0; i < fileset->files.size(); i++) {
+
+    // some optimisation for the case when recovering on the same number
+    // of processors as during the checkpoint:
+    // read only this processor's chunked file, skip all others
+    if (fileset->nioprocs == dist::size() and i > 0) {
+      break;
+    }
+
     const int file_idx = (i + fileset->first_ioproc) % fileset->nioprocs;
     file_t& file = fileset->files[file_idx];
 
