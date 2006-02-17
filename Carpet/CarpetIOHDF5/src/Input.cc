@@ -225,6 +225,25 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     }
   }
 
+  // query for groups which have the 'CHECKPOINT = "no"' option set
+  // Such groups are not checked against being read completely.
+  vector<bool> not_checkpointed(numvars);
+  if (in_recovery) {
+    for (unsigned int vindex = 0; vindex < not_checkpointed.size(); vindex++) {
+      int gindex = CCTK_GroupIndexFromVarI (vindex);
+      int tagstable = CCTK_GroupTagsTableI (gindex);
+      int const len = Util_TableGetString (tagstable, 0, NULL, "checkpoint");
+      if (len > 0) {
+        char* value = new char[len + 1];
+        Util_TableGetString (tagstable, len + 1, value, "checkpoint");
+        if (len == sizeof ("no") - 1 and CCTK_Equals (value, "no")) {
+          not_checkpointed[vindex] = true;
+        }
+        delete[] value;
+      }
+    }
+  }
+
   // create a bbox set for each group to list how much needs to be read
   const int numgroups = CCTK_NumGroups ();
   vector<vector<ibset> > group_bboxes (numgroups);
@@ -248,13 +267,6 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   // loop over all input files of this set
   for (unsigned int i = 0; i < fileset->files.size(); i++) {
 
-    // some optimisation for the case when recovering on the same number
-    // of processors as during the checkpoint:
-    // read only this processor's chunked file, skip all others
-    if (fileset->nioprocs == dist::size() and i > 0) {
-      break;
-    }
-
     const int file_idx = (i + fileset->first_ioproc) % fileset->nioprocs;
     file_t& file = fileset->files[file_idx];
 
@@ -266,6 +278,11 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       assert (file.filename);
       HDF5_ERROR (file.file = H5Fopen (file.filename, H5F_ACC_RDONLY,
                                        H5P_DEFAULT));
+
+      if (CCTK_Equals (verbose, "full")) {
+        CCTK_VInfo (CCTK_THORNSTRING, "opening %s file '%s'",
+                    in_recovery ? "checkpoint" : "input", file.filename);
+      }
 
       // browse through all datasets contained in this file
       HDF5_ERROR (H5Giterate (file.file, "/", NULL, BrowseDatasets, &file));
@@ -339,13 +356,20 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     }
 
     // check if all variables have been read completely already
-    bool all_read_completely = true;
+    bool all_done = true;
     for (unsigned int vindex = 0; vindex < read_completely.size(); vindex++) {
+
+      // skip all variables which aren't expected to be recovered
+      if (not_checkpointed[vindex] or
+          (CCTK_GroupTypeFromVarI (vindex) != CCTK_GF and reflevel > 0)) {
+        continue;
+      }
+
       for (unsigned int tl = 0; tl < read_completely[vindex].size(); tl++) {
-        all_read_completely &= read_completely[vindex][tl];
+        all_done &= read_completely[vindex][tl];
       }
     }
-    if (all_read_completely) {
+    if (all_done) {
       break;
     }
   }
@@ -356,19 +380,6 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
 
     if (CCTK_GroupTypeFromVarI (vindex) != CCTK_GF and reflevel > 0) {
       continue;
-    }
-
-    bool not_checkpointed = false;
-    int gindex = CCTK_GroupIndexFromVarI (vindex);
-    int tagstable = CCTK_GroupTagsTableI (gindex);
-    int const len = Util_TableGetString (tagstable, 0, NULL, "checkpoint");
-    if (len > 0) {
-      char* value = new char[len + 1];
-      Util_TableGetString (tagstable, len + 1, value, "checkpoint");
-      if (len == sizeof ("no") - 1 and CCTK_Equals (value, "no")) {
-        not_checkpointed = true;
-      }
-      delete[] value;
     }
 
     for (unsigned int tl = 0; tl < read_completely[vindex].size(); tl++) {
@@ -385,7 +396,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
         }
         char* fullname = CCTK_FullName (vindex);
         if (size == 0) {
-          if (not_checkpointed) {
+          if (not_checkpointed[vindex]) {
             CCTK_VWarn (4, __LINE__, __FILE__, CCTK_THORNSTRING,
                         "variable '%s' timelevel %d has not been read "
                         "(variable has option tag \"CHECKPOINT = 'no'\")",
