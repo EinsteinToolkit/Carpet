@@ -69,6 +69,15 @@ BOOLEAN smart_outer_boundaries "Use the CoordBase interface for outer boundaries
 {
 } no
 
+BOOLEAN merge_overlapping_components "Merge overlapping components" STEERABLE=always
+{
+} no
+
+BOOLEAN tracking "Enable tracking" STEERABLE=always
+{
+} no
+
+
 
 
 # Region specifications for centre refinement

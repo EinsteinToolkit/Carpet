@@ -33,7 +33,7 @@ namespace CarpetRegrid {
     assert (refinement_levels >= 1);
     
     // do nothing if the levels already exist
-    if (reflevel == refinement_levels) return 0;
+    if (reflevel == refinement_levels && !tracking) return 0;
     
     assert (bbsss.size() >= 1);
     vector<vector<ibbox> > bbss = bbsss.at(0);
@@ -177,12 +177,75 @@ namespace CarpetRegrid {
             offset = rvect(offsetx[c], offsety[c], offsetz[c]);
           }
         }
-        
+
         ManualCoordinates_OneLevel
           (cctkGH, hh, rl, refinement_levels,
            ext.lower() + offset, ext.upper() + offset, ob, bbs, obs);
       }
+
       
+      // if we have more than 1 component, we might want to
+      // check if merging them makes sense
+      if(merge_overlapping_components && bbs.size() > 1) {
+
+	// now let's check if one or more of our components touch...
+
+
+	// we use this array to keep track of which component was merged
+	// with another.
+	int* merged_component = (int*) malloc(sizeof(int)*bbs.size());
+      
+	// initialize the damn array
+	for(int i=0;i<bbs.size();i++) {
+	  merged_component[i] = 0;
+	}
+
+	// loop over all components, starting at c=1
+        for (size_t c=1; c<bbs.size(); ++c) {
+
+	  ibset fun = bbs.at(c);
+	  ibbox morefun = bbs.at(c);
+
+	  // loop over all components with index < c
+	  for(size_t sc=0; sc<c; ++sc) {
+
+	    // calculate overlap of this and the previous component
+	    fun &= bbs.at(sc);
+
+	    // do we overlap ?
+	    if(fun.size() > 0) {
+	      // uh. this component will be merged
+	      merged_component[c] = 1;
+
+	      // calculate union
+	      morefun = morefun.expanded_containing(bbs.at(sc));
+
+	      // update the previous component with the union !
+	      bbs.at(sc) = morefun;
+	    	      
+	    }
+	  }
+        }
+
+	// now we need to get rid of those bboxes that were merged
+	vector<ibbox> mergedbbs;
+	for (size_t c=0;c<bbs.size(); ++c) {
+
+	  if(merged_component[c] == 0) {
+	    mergedbbs.push_back (bbs.at(c));
+	  }
+
+	}
+
+
+	bbs = mergedbbs;
+
+	//	cout << "merged components: " << bbs << endl;
+
+	free(merged_component);
+
+      } // if (merge_overlapping_components && ...)
+
       // make multiprocessor aware
       gh::cprocs ps;
       SplitRegions (cctkGH, bbs, obs, ps);
