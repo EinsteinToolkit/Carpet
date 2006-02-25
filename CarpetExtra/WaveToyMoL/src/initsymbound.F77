@@ -16,7 +16,7 @@
       end do
       call SetCartSymVN (ierr, cctkGH, sym, "WaveToyMoL::phi")
       if (ierr.ne.0) call CCTK_WARN (0, "internal error")
-      call SetCartSymVN (ierr, cctkGH, sym, "WaveToyMoL::phidot")
+      call SetCartSymVN (ierr, cctkGH, sym, "WaveToyMoL::psi")
       if (ierr.ne.0) call CCTK_WARN (0, "internal error")
       call SetCartSymVN (ierr, cctkGH, sym, "WaveToyMoL::error")
       if (ierr.ne.0) call CCTK_WARN (0, "internal error")
