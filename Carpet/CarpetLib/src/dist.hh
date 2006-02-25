@@ -60,16 +60,16 @@ namespace dist {
   // Rank in the communicator (this processor's number, 0 .. size-1)
   inline int rank ()
   {
-    int rank_;
-    MPI_Comm_rank (comm(), &rank_);
+    static int rank_ = -1;
+    if (rank_ == -1) MPI_Comm_rank (comm(), &rank_);
     return rank_;
   }
   
   // Size of the communicator
   inline int size ()
   {
-    int size_;
-    MPI_Comm_size (comm(), &size_);
+    static int size_ = -1;
+    if (size_ == -1) MPI_Comm_size (comm(), &size_);
     return size_;
   }
   
