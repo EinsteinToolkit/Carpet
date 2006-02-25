@@ -8,6 +8,9 @@
       DECLARE_CCTK_ARGUMENTS
       DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
+      CCTK_REAL one, two
+      parameter (one = 1)
+      parameter (two = 2)
       CCTK_REAL pi
       parameter (pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117068d0)
       CCTK_REAL omega
@@ -67,6 +70,15 @@
      $                       + (radius**4 * cctk_time + cctk_time**5 - 10 * cctk_time**3 * sigma**2 + 15 * cctk_time * sigma**4 - 4 * radius**4 * (cctk_time**2 - sigma**2) + 6 * radius**2 * (cctk_time**3 - 3 * cctk_time * sigma**2) - 4 * radius * (cctk_time**4 - 6 * cctk_time**2 * sigma**2 + 3 * sigma**4)) / (6 * sigma**8) * tmp**2)
      $                    * exp (-0.5d0 * (radius - cctk_time)**2 / sigma**2)
                   end if
+               end do
+            end do
+         end do
+      else if (CCTK_EQUALS(initial_data, "level index")) then
+         do k=1,cctk_lsh(3)
+            do j=1,cctk_lsh(2)
+               do i=1,cctk_lsh(1)
+                  phi(i,j,k) = log (one * cctk_levfac(1)) / log (two)
+                  psi(i,j,k) = log (one * cctk_levfac(1)) / log (two)
                end do
             end do
          end do

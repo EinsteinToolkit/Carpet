@@ -5,6 +5,7 @@ KEYWORD initial_data "Initial data"
   "plane wave"     :: "Plane wave"
   "Gaussian pulse" :: "Gaussian pulse"
   "Gaussian"       :: "Gaussian"
+  "level index"    :: "Fill the refinement levels with their level index (for testing)"
 } "plane wave"
 
 
