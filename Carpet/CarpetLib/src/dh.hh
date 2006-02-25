@@ -91,11 +91,11 @@ private:
 
   // these all of form 'boxesop'
   void setup_sync_and_refine_boxes (dboxes & b, int rl, int c, int ml);
-  void intersect_sync_with_interior (dboxes & b, int rl, int c, int ml);
+  void setup_sync_boxes (dboxes & b, int rl, int c, int ml);
   void setup_multigrid_boxes (dboxes & b, int rl, int c, int ml);
-  void setup_refinement_interior_boxes (dboxes & b, int rl, int c, int ml);
-  void setup_refinement_exterior_boxes (dboxes & b, int rl, int c, int ml);
-  void setup_restrict_interior_boxes (dboxes & b, int rl, int c, int ml);
+  void setup_refinement_prolongation_boxes (dboxes & b, int rl, int c, int ml);
+  void setup_refinement_boundary_prolongation_boxes (dboxes & b, int rl, int c, int ml);
+  void setup_refinement_restriction_boxes (dboxes & b, int rl, int c, int ml);
   void trim_unsynced_boundaries (dboxes & b, int rl, int c, int ml);
   void do_output_bboxes (dboxes & b, int rl, int c, int ml);
   void assert_assert_assert (dboxes & b, int rl, int c, int ml);

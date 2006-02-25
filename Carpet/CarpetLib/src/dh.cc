@@ -60,11 +60,11 @@ void dh::recompose (const bool do_prolongate)
   allocate_bboxes();
   
   foreach_reflevel_component_mglevel (&dh::setup_sync_and_refine_boxes);
-  foreach_reflevel_component_mglevel (&dh::intersect_sync_with_interior);
+  foreach_reflevel_component_mglevel (&dh::setup_sync_boxes);
   foreach_reflevel_component_mglevel (&dh::setup_multigrid_boxes);
-  foreach_reflevel_component_mglevel (&dh::setup_refinement_interior_boxes);
-  foreach_reflevel_component_mglevel (&dh::setup_refinement_exterior_boxes);
-  foreach_reflevel_component_mglevel (&dh::setup_restrict_interior_boxes);
+  foreach_reflevel_component_mglevel (&dh::setup_refinement_prolongation_boxes);
+  foreach_reflevel_component_mglevel (&dh::setup_refinement_boundary_prolongation_boxes);
+  foreach_reflevel_component_mglevel (&dh::setup_refinement_restriction_boxes);
   foreach_reflevel_component_mglevel (&dh::trim_unsynced_boundaries);
 
   calculate_bases();
@@ -175,7 +175,7 @@ void dh::setup_sync_and_refine_boxes (dh::dboxes & b, int rl, int c, int ml)
   }
 }
 
-void dh::intersect_sync_with_interior (dh::dboxes & box, int rl, int c, int ml)
+void dh::setup_sync_boxes (dh::dboxes & box, int rl, int c, int ml)
 {
   const ibset& bnds = box.boundaries;
 
@@ -233,7 +233,7 @@ void dh::setup_multigrid_boxes (dh::dboxes & box, int rl, int c, int ml)
   } // if not finest multigrid level
 }
 
-void dh::setup_refinement_interior_boxes (dh::dboxes & box, int rl, int c, int ml)
+void dh::setup_refinement_prolongation_boxes (dh::dboxes & box, int rl, int c, int ml)
 {
   const ibbox& extr = box.exterior;
 
@@ -275,7 +275,7 @@ void dh::setup_refinement_interior_boxes (dh::dboxes & box, int rl, int c, int m
   } // if not finest refinement level
 }
 
-void dh::setup_refinement_exterior_boxes (dh::dboxes & box, int rl, int c, int ml)
+void dh::setup_refinement_boundary_prolongation_boxes (dh::dboxes & box, int rl, int c, int ml)
 {
   const ibbox& extr = box.exterior;
 
@@ -357,7 +357,7 @@ void dh::setup_refinement_exterior_boxes (dh::dboxes & box, int rl, int c, int m
   } // if not finest refinement level
 }
 
-void dh::setup_restrict_interior_boxes (dh::dboxes & box, int rl, int c, int ml)
+void dh::setup_refinement_restriction_boxes (dh::dboxes & box, int rl, int c, int ml)
 {
   const ibbox& intr = box.interior;
 
