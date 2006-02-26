@@ -379,6 +379,8 @@ void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
         // grid, and the bbox must be as large as possible)
         // (the restriction must not use points that are filled
         // by boundary prolongation)
+        // (the restriction must not fill points that are used for
+        // boundary prolongation)
         ibset sends = intrf & intr.expanded_for(intrf);
         // remove what is received during boundary prolongation
         for (int ccc=0; ccc<h.components(rl); ++ccc) {
@@ -390,16 +392,35 @@ void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
           }
         }
         sends.normalize();
+        // coarsify
+        ibset recvs;
         for (ibset::const_iterator si = sends.begin();
              si != sends.end(); ++si)
         {
           const ibbox recv = (*si).contracted_for(intr);
-          if (! recv.empty()) {
-            const ibbox & send = recv.expanded_for(intrf);
-            assert (! send.empty());
-            box1.send_ref_coarse.at(c).push_back(send);
-            box .recv_ref_fine  .at(cc).push_back(recv);
+          recvs |= recv;
+        }
+        // remove what is sent during boundary prolongation
+        const int pss = prolongation_stencil_size();
+        for (int ccc=0; ccc<h.components(rl); ++ccc) {
+          const iblist& sendlist = box.send_ref_bnd_fine.at(ccc);
+          for (iblist::const_iterator sli = sendlist.begin();
+               sli != sendlist.end(); ++sli)
+          {
+            recvs -= (*sli).expand(pss,pss);
           }
+        }
+        recvs.normalize();
+        //
+        for (ibset::const_iterator ri = recvs.begin();
+             ri != recvs.end(); ++ri)
+        {
+          const ibbox recv = *ri;
+          assert (! recv.empty());
+          const ibbox & send = recv.expanded_for(intrf);
+          assert (! send.empty());
+          box1.send_ref_coarse.at(c).push_back(send);
+          box .recv_ref_fine  .at(cc).push_back(recv);
         }
       }
             
@@ -545,6 +566,50 @@ void dh::check_bboxes (dh::dboxes & box,
 #if 0
     assert (bnds.empty());
 #endif
+  }
+  
+  // Assert that points which are used for restricting are not
+  // boundary prolongated
+  {
+    for (iblistvect::const_iterator lvi = box.recv_ref_bnd_coarse.begin();
+         lvi != box.recv_ref_bnd_coarse.end(); ++ lvi)
+    {
+      for (iblist::const_iterator li = (*lvi).begin();
+           li != (*lvi).end(); ++ li)
+      {
+        for (iblistvect::const_iterator lvi2 = box.send_ref_coarse.begin();
+             lvi2 != box.send_ref_coarse.end(); ++ lvi2)
+        {
+          for (iblist::const_iterator li2 = (*lvi2).begin();
+               li2 != (*lvi2).end(); ++ li2)
+          {
+            assert ((*li & *li2).empty());
+          }
+        }
+      }
+    }
+  }
+  
+  // Assert that points which are used for boundary prolongation are
+  // not restricted
+  {
+    for (iblistvect::const_iterator lvi = box.send_ref_bnd_fine.begin();
+         lvi != box.send_ref_bnd_fine.end(); ++ lvi)
+    {
+      for (iblist::const_iterator li = (*lvi).begin();
+           li != (*lvi).end(); ++ li)
+      {
+        for (iblistvect::const_iterator lvi2 = box.recv_ref_fine.begin();
+             lvi2 != box.recv_ref_fine.end(); ++ lvi2)
+        {
+          for (iblist::const_iterator li2 = (*lvi2).begin();
+               li2 != (*lvi2).end(); ++ li2)
+          {
+            assert ((*li & *li2).empty());
+          }
+        }
+      }
+    }
   }
 }
 
