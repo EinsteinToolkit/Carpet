@@ -98,7 +98,7 @@ private:
   void setup_refinement_restriction_boxes (dboxes & b, int rl, int c, int ml);
   void trim_unsynced_boundaries (dboxes & b, int rl, int c, int ml);
   void do_output_bboxes (dboxes & b, int rl, int c, int ml);
-  void assert_assert_assert (dboxes & b, int rl, int c, int ml);
+  void check_bboxes (dboxes & b, int rl, int c, int ml);
 
   void calculate_bases (); 
   void output_bases (); 

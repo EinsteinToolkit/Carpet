@@ -75,7 +75,7 @@ void dh::recompose (const bool do_prolongate)
     output_bases();
   }
   
-  foreach_reflevel_component_mglevel (&dh::assert_assert_assert);
+  foreach_reflevel_component_mglevel (&dh::check_bboxes);
 
   if (! save_memory_during_regridding) {
     save_time(do_prolongate);
@@ -153,7 +153,8 @@ void dh::foreach_reflevel_component_mglevel (dh::boxesop op)
   }
 }
 
-void dh::setup_sync_and_refine_boxes (dh::dboxes & b, int rl, int c, int ml)
+void dh::setup_sync_and_refine_boxes (dh::dboxes & b,
+                                      int const rl, int const c, int const ml)
 {
   // Sync boxes
   const int cs = h.components(rl);
@@ -175,7 +176,8 @@ void dh::setup_sync_and_refine_boxes (dh::dboxes & b, int rl, int c, int ml)
   }
 }
 
-void dh::setup_sync_boxes (dh::dboxes & box, int rl, int c, int ml)
+void dh::setup_sync_boxes (dh::dboxes & box,
+                           int const rl, int const c, int const ml)
 {
   const ibset& bnds = box.boundaries;
 
@@ -192,7 +194,8 @@ void dh::setup_sync_boxes (dh::dboxes & box, int rl, int c, int ml)
   }
 }
 
-void dh::setup_multigrid_boxes (dh::dboxes & box, int rl, int c, int ml)
+void dh::setup_multigrid_boxes (dh::dboxes & box,
+                                int const rl, int const c, int const ml)
 {
   const ibbox& intr = box.interior;
   const ibbox& extr = box.exterior;
@@ -233,7 +236,8 @@ void dh::setup_multigrid_boxes (dh::dboxes & box, int rl, int c, int ml)
   } // if not finest multigrid level
 }
 
-void dh::setup_refinement_prolongation_boxes (dh::dboxes & box, int rl, int c, int ml)
+void dh::setup_refinement_prolongation_boxes (dh::dboxes & box,
+                                              int const rl, int const c, int const ml)
 {
   const ibbox& extr = box.exterior;
 
@@ -275,7 +279,8 @@ void dh::setup_refinement_prolongation_boxes (dh::dboxes & box, int rl, int c, i
   } // if not finest refinement level
 }
 
-void dh::setup_refinement_boundary_prolongation_boxes (dh::dboxes & box, int rl, int c, int ml)
+void dh::setup_refinement_boundary_prolongation_boxes (dh::dboxes & box,
+                                                       int const rl, int const c, int const ml)
 {
   const ibbox& extr = box.exterior;
 
@@ -357,7 +362,8 @@ void dh::setup_refinement_boundary_prolongation_boxes (dh::dboxes & box, int rl,
   } // if not finest refinement level
 }
 
-void dh::setup_refinement_restriction_boxes (dh::dboxes & box, int rl, int c, int ml)
+void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
+                                             int const rl, int const c, int const ml)
 {
   const ibbox& intr = box.interior;
 
@@ -401,7 +407,8 @@ void dh::setup_refinement_restriction_boxes (dh::dboxes & box, int rl, int c, in
   } // if not finest refinement level
 }
 
-void dh::trim_unsynced_boundaries (dh::dboxes & box, int rl, int c, int ml)
+void dh::trim_unsynced_boundaries (dh::dboxes & box,
+                                   int const rl, int const c, int const ml)
 {
   // Boundaries that are not synced, or are neither synced nor
   // prolonged to from coarser grids (outer boundaries)
@@ -438,7 +445,8 @@ void dh::trim_unsynced_boundaries (dh::dboxes & box, int rl, int c, int ml)
   }
 }
 
-void dh::assert_assert_assert (dh::dboxes & box, int rl, int c, int ml)
+void dh::check_bboxes (dh::dboxes & box,
+                       int const rl, int const c, int const ml)
 {
 // Assert that all boundaries are synced or received
   {
@@ -656,7 +664,8 @@ void dh::output (ostream& os) const
   os << "}";
 }
 
-void dh::do_output_bboxes(dh::dboxes & box, int rl, int c, int ml)
+void dh::do_output_bboxes(dh::dboxes & box,
+                          int const rl, int const c, int const ml)
 {
   cout << endl;
   cout << "dh bboxes:" << endl;
