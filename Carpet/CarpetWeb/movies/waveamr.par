@@ -1,0 +1,170 @@
+###   Technical Sections   ####################################################
+
+# Flesh settings
+
+Cactus::cctk_run_title     = "WaveToy AMR with Carpet"
+Cactus::cctk_full_warnings = yes
+Cactus::cctk_timer_output  = full
+
+Cactus::terminate       = time
+Cactus::cctk_final_time = 1.0
+
+
+
+# Prepare I/O
+
+ActiveThorns = "IOUtil"
+
+IO::out_dir = $parfile
+
+
+
+# Driver
+
+ActiveThorns = "Carpet CarpetLib CarpetInterp CarpetReduce CarpetSlab"
+
+Carpet::domain_from_coordbase = yes
+Carpet::max_refinement_levels = 2
+
+driver::ghost_size = 2
+
+Carpet::prolongation_order_space = 3
+Carpet::prolongation_order_time  = 2
+
+Carpet::convergence_level = 0
+
+Carpet::init_each_timelevel = yes
+
+#Carpet::verbose = yes
+#Carpet::veryverbose = yes
+#CarpetLib::output_bboxes = yes
+
+
+
+###   Physical Sections   #####################################################
+
+# Domain description
+
+ActiveThorns = "Boundary CartGrid3D CoordBase SymBase"
+
+CoordBase::domainsize = minmax
+CoordBase::spacing    = numcells
+
+CoordBase::xmin = -1.0
+CoordBase::ymin = -1.0
+CoordBase::zmin = -1.0
+CoordBase::xmax =  1.0
+CoordBase::ymax =  1.0
+CoordBase::zmax =  1.0
+
+CoordBase::ncells_x = 80
+CoordBase::ncells_y = 80
+CoordBase::ncells_z = 80
+
+CartGrid3D::type = coordbase
+
+
+
+ActiveThorns = "CarpetRegrid"
+
+CarpetRegrid::verbose           = yes
+CarpetRegrid::refinement_levels = 2
+CarpetRegrid::regrid_every      = 16
+
+CarpetRegrid::refined_regions = automatic
+CarpetRegrid::minwidth        = 8
+CarpetRegrid::minfraction     = 0.75
+CarpetRegrid::maxerror        = 0.1
+CarpetRegrid::errorvar        = "WaveToyC::error"
+
+
+
+# Self checking
+
+ActiveThorns = "NaNChecker"
+
+NaNChecker::check_every     = 16
+NaNChecker::action_if_found = terminate
+NaNChecker::check_vars      = "
+        WaveToy::phi
+"
+
+
+
+# Time integration
+
+ActiveThorns = "Time"
+
+Time::dtfac = 0.25
+
+
+
+# Physics
+
+ActiveThorns = "IDScalarWaveC WaveToyC"
+
+WaveToy::bound = radiation
+
+
+
+###   I/O Sections   ##########################################################
+
+# Screen I/O
+
+ActiveThorns = "CarpetIOBasic"
+
+IOBasic::outInfo_criterion  = time
+IOBasic::outInfo_dt         = 0.01
+IOBasic::outInfo_reductions = "norm2"
+IOBasic::outInfo_vars       = "
+        WaveToy::phi
+"
+
+
+
+# ASCII I/O
+
+ActiveThorns = "CarpetIOScalar"
+
+IOScalar::outScalar_criterion = time
+IOScalar::outScalar_dt        = 0.01
+IOScalar::outScalar_vars      = "
+        WaveToy::phi
+        WaveToyC::error
+"
+
+ActiveThorns = "CarpetIOASCII"
+
+IOASCII::out0D_criterion = time
+IOASCII::out0D_dt        = 0.01
+IOASCII::out0D_vars      = "
+        WaveToy::phi
+        WaveToyC::error
+"
+
+IOASCII::out1D_criterion = time
+IOASCII::out1D_dt        = 0.01
+IOASCII::out1D_vars      = "
+        WaveToy::phi
+        WaveToyC::error
+"
+
+IOASCII::out2D_criterion = time
+IOASCII::out2D_dt        = 0.1
+IOASCII::out2D_vars      = "
+        WaveToy::phi
+        WaveToyC::error
+"
+
+
+
+# HDF5 I/O
+
+ActiveThorns = "CarpetIOHDF5"
+
+IOHDF5::out_criterion = time
+IOHDF5::out_dt        = 0.01
+IOHDF5::out_vars      = "
+        WaveToy::phi
+        WaveToyC::error
+"
