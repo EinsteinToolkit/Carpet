@@ -383,12 +383,15 @@ void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
         // boundary prolongation)
         ibset sends = intrf & intr.expanded_for(intrf);
         // remove what is received during boundary prolongation
-        for (int ccc=0; ccc<h.components(rl); ++ccc) {
-          const iblist& sendlist = box1.recv_ref_bnd_coarse.at(ccc);
-          for (iblist::const_iterator sli = sendlist.begin();
-               sli != sendlist.end(); ++sli)
+        for (iblistvect::const_iterator rlvi = box1.recv_ref_bnd_coarse.begin();
+             rlvi != box1.recv_ref_bnd_coarse.end(); ++ rlvi)
+        {
+          const iblist& recvlist = * rlvi;
+          for (iblist::const_iterator rli = recvlist.begin();
+               rli != recvlist.end(); ++ rli)
           {
-            sends -= *sli;
+            const ibbox& recv = * rli;
+            sends -= recv;
           }
         }
         sends.normalize();
@@ -402,12 +405,15 @@ void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
         }
         // remove what is sent during boundary prolongation
         const int pss = prolongation_stencil_size();
-        for (int ccc=0; ccc<h.components(rl); ++ccc) {
-          const iblist& sendlist = box.send_ref_bnd_fine.at(ccc);
+        for (iblistvect::const_iterator slvi = box.send_ref_bnd_fine.begin();
+             slvi != box.send_ref_bnd_fine.end(); ++ slvi)
+        {
+          const iblist& sendlist = * slvi;
           for (iblist::const_iterator sli = sendlist.begin();
                sli != sendlist.end(); ++sli)
           {
-            recvs -= (*sli).expand(pss,pss);
+            const ibbox& send = * sli;
+            recvs -= send.expand(pss,pss);
           }
         }
         recvs.normalize();
@@ -571,19 +577,19 @@ void dh::check_bboxes (dh::dboxes & box,
   // Assert that points which are used for restricting are not
   // boundary prolongated
   {
-    for (iblistvect::const_iterator lvi = box.recv_ref_bnd_coarse.begin();
-         lvi != box.recv_ref_bnd_coarse.end(); ++ lvi)
+    for (iblistvect::const_iterator rlvi = box.recv_ref_bnd_coarse.begin();
+         rlvi != box.recv_ref_bnd_coarse.end(); ++ rlvi)
     {
-      for (iblist::const_iterator li = (*lvi).begin();
-           li != (*lvi).end(); ++ li)
+      for (iblist::const_iterator rli = (*rlvi).begin();
+           rli != (*rlvi).end(); ++ rli)
       {
-        for (iblistvect::const_iterator lvi2 = box.send_ref_coarse.begin();
-             lvi2 != box.send_ref_coarse.end(); ++ lvi2)
+        for (iblistvect::const_iterator slvi = box.send_ref_coarse.begin();
+             slvi != box.send_ref_coarse.end(); ++ slvi)
         {
-          for (iblist::const_iterator li2 = (*lvi2).begin();
-               li2 != (*lvi2).end(); ++ li2)
+          for (iblist::const_iterator sli = (*slvi).begin();
+               sli != (*slvi).end(); ++ sli)
           {
-            assert ((*li & *li2).empty());
+            assert ((*rli & *sli).empty());
           }
         }
       }
@@ -593,19 +599,19 @@ void dh::check_bboxes (dh::dboxes & box,
   // Assert that points which are used for boundary prolongation are
   // not restricted
   {
-    for (iblistvect::const_iterator lvi = box.send_ref_bnd_fine.begin();
-         lvi != box.send_ref_bnd_fine.end(); ++ lvi)
+    for (iblistvect::const_iterator slvi = box.send_ref_bnd_fine.begin();
+         slvi != box.send_ref_bnd_fine.end(); ++ slvi)
     {
-      for (iblist::const_iterator li = (*lvi).begin();
-           li != (*lvi).end(); ++ li)
+      for (iblist::const_iterator sli = (*slvi).begin();
+           sli != (*slvi).end(); ++ sli)
       {
-        for (iblistvect::const_iterator lvi2 = box.recv_ref_fine.begin();
-             lvi2 != box.recv_ref_fine.end(); ++ lvi2)
+        for (iblistvect::const_iterator rlvi = box.recv_ref_fine.begin();
+             rlvi != box.recv_ref_fine.end(); ++ rlvi)
         {
-          for (iblist::const_iterator li2 = (*lvi2).begin();
-               li2 != (*lvi2).end(); ++ li2)
+          for (iblist::const_iterator rli = (*rlvi).begin();
+               rli != (*rlvi).end(); ++ rli)
           {
-            assert ((*li & *li2).empty());
+            assert ((*sli & *rli).empty());
           }
         }
       }
