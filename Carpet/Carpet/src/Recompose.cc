@@ -469,8 +469,8 @@ namespace Carpet {
       bbs.at(c) = ibbox(clb, cub-cstr, cstr);
       obs.at(c) = obnd;
       ps.at(c) = c;
-      if (c>0)        obs.at(c)[dir][0] = false;
-      if (c<nprocs-1) obs.at(c)[dir][1] = false;
+      obs.at(c)[dir][0] = clb[dir] == rlb[dir];
+      obs.at(c)[dir][1] = cub[dir] == rub[dir];
     }
     
     for (int n=0; n<(int)ps.size(); ++n) {
@@ -631,11 +631,11 @@ namespace Carpet {
       bbvect newob = ob;
       if (n > 0) {
         lo[mydim] = last_up[mydim] + str[mydim];
-        newob[mydim][0] = false;
+        if (lo[mydim] > bb.lower()[mydim]) newob[mydim][0] = false;
       }
       if (n < nslices-1) {
         up[mydim] = lo[mydim] + (myslice.at(n)-1) * str[mydim];
-        newob[mydim][1] = false;
+        if (up[mydim] < bb.upper()[mydim]) newob[mydim][1] = false;
         last_up = up;
       }
       ibbox newbb(lo, up, str);
@@ -863,12 +863,10 @@ namespace Carpet {
 	  bbs.at(c) = ibbox(clb, cub-cstr, cstr);
 	  obs.at(c) = obnd;
           ps.at(c) = c;
-	  if (i>0) obs.at(c)[0][0] = false;
-	  if (j>0) obs.at(c)[1][0] = false;
-	  if (k>0) obs.at(c)[2][0] = false;
-	  if (i<nprocs_dir[0]-1) obs.at(c)[0][1] = false;
-	  if (j<nprocs_dir[1]-1) obs.at(c)[1][1] = false;
-	  if (k<nprocs_dir[2]-1) obs.at(c)[2][1] = false;
+          for (int d=0; d<dim; ++d) {
+            if (clb[d] > rlb[d]) obs.at(c)[0][d] = false;
+            if (cub[d] < rub[d]) obs.at(c)[1][d] = false;
+          }
 	}
       }
     }
