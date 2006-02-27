@@ -110,17 +110,21 @@ void dh::allocate_bboxes ()
             if (h.outer_boundaries().at(rl).at(c)[d][f]) {
               dist[f][d] = 0;
             } else {
+              bool const is_empty = intr.lower()[d] > intr.upper()[d];
+              if (is_empty) {
+                dist[f][d] = 0;
+              }
               // Check whether the boundary in this direction is
               // covered by other interiors
               vect<ivect,2> dist1(0,0);
-              dist1[f][d] = dist[f][d];
+              dist1[f][d] = is_empty ? 0 : dist[f][d];
               ibset bnd = intr.expand(dist1[0], dist1[1]) - intr;
               for (int cc=0; cc<h.components(rl); ++cc) {
                 bnd -= h.extents().at(ml).at(rl).at(cc);
               }
               bool const is_interproc = bnd.empty();
               boxes.at(ml).at(rl).at(c).is_interproc[d][f] = is_interproc;
-              if (! is_interproc) {
+              if (! is_empty and ! is_interproc) {
                 dist[f][d] += buffers[f][d];
               }
             }
