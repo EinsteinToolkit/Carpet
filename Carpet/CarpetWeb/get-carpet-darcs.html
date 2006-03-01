@@ -181,7 +181,7 @@
     <p>I use the following lines in my <code>.bash_profile</code> to
     make this happen:</p>
     <pre>keychain id_dsa
-test -f $HOME/.keychain/$(hostname)-sh && source $HOME/.keychain/$(hostname)-sh > /dev/null
+test -f $HOME/.keychain/$(hostname)-sh &amp;&amp; source $HOME/.keychain/$(hostname)-sh > /dev/null
 </pre>
     <p>Keychain starts the ssh-agent.  Keychain can also handle gpg
     key passwords for your encrypted and/or signed emails.</p>
