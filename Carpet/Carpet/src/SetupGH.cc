@@ -811,11 +811,11 @@ namespace Carpet {
     int const inner_buffer_width = use_outer_buffer_zones ? 0 : buffer_width;
     ivect const lbuffers
       = (use_outer_buffer_zones
-         ? lghosts * num_integrator_substeps + buffer_width
+         ? lghosts * (num_integrator_substeps - 1) + buffer_width
          : 0);
     ivect const ubuffers
       = (use_outer_buffer_zones
-         ? ughosts * num_integrator_substeps + buffer_width
+         ? ughosts * (num_integrator_substeps - 1) + buffer_width
          : 0);
     vdd.at(m) = new dh (*vhh.at(m), lghosts, ughosts,
                         prolongation_order_space,
