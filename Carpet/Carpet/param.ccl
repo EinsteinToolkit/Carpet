@@ -111,14 +111,14 @@ STRING space_refinement_factors "Spatial refinement factors over the coarsest le
   # V = [SDS(,SDS)*]
   # L = [SVS(,SVS)*]
   #   = [S[SDS(,SDS)*]S(,S[SDS(,SDS)*]S)*]
-  "^\[[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*(,[[:space:]]*[[:digit:]]+[[:space:]]*)*\][[:space:]]*(,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*(,[[:space:]]*[[:digit:]]+[[:space:]]*)*\][[:space:]]*)*\]$" :: "[ [<ifact>,<jfact>,<kfact>], ... ]"
+  "^[[:space:]]*\[[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*(,[[:space:]]*[[:digit:]]+[[:space:]]*)*\][[:space:]]*(,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*(,[[:space:]]*[[:digit:]]+[[:space:]]*)*\][[:space:]]*)*\][[:space:]]*$" :: "[ [<ifact>,<jfact>,<kfact>], ... ]"
 } ""
 
 STRING time_refinement_factors "Temporal refinement factors over the coarsest level"
 {
   "^$" :: "Use the value of refinement_factor"
   # L = [SDS(,SDS)*]
-  "^\[[[:space:]]*[[:digit:]]+[[:space:]]*(,[[:space:]]*[[:digit:]]+[[:space:]]*)*\]$" :: "[ <tfact>, ... ]"
+  "^[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*(,[[:space:]]*[[:digit:]]+[[:space:]]*)*\][[:space:]]*$" :: "[ <tfact>, ... ]"
 } ""
 
 
@@ -223,7 +223,7 @@ CCTK_STRING base_extents "Extents of base grid components, in grid point units o
 # REGION   := BBOX3(VECT3(double))
 # DOMAIN   := LIST(REGION)
 
-  "^\[(([[:space:]]*\([[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\)[[:space:]]*,)*[[:space:]]*\([[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\))?[[:space:]]*\]$" :: "[ ([<imin>,<jmin>,<kmin>]:[<imax>,<jmax>,<kmax>]:[<istride>,<jstride>,<kstride>]), ... ]"
+  "^[[:space:]]*\[(([[:space:]]*\([[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\)[[:space:]]*,)*[[:space:]]*\([[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*:[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\))?[[:space:]]*\][[:space:]]*$" :: "[ ([<imin>,<jmin>,<kmin>]:[<imax>,<jmax>,<kmax>]:[<istride>,<jstride>,<kstride>]), ... ]"
 } ""
 
 CCTK_STRING base_outerbounds "Outer boundaries of base grid components"
@@ -254,7 +254,7 @@ CCTK_STRING base_outerbounds "Outer boundaries of base grid components"
 # REGION   := VECT3(VECT2(double))
 # DOMAIN   := LIST(REGION)
 
-  "^\[(([[:space:]]*\[[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\][[:space:]]*,)*[[:space:]]*\[[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\])?[[:space:]]*\]$" :: "[ [ [<ilower>,<iupper>], [<jlower>,<jupper>], [<klower>,<kupper>] ], ... ]"
+  "^[[:space:]]*\[(([[:space:]]*\[[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\][[:space:]]*,)*[[:space:]]*\[[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*,[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*,[[:space:]]*[[:digit:]]+[[:space:]]*\][[:space:]]*\])?[[:space:]]*\][[:space:]]*$" :: "[ [ [<ilower>,<iupper>], [<jlower>,<jupper>], [<klower>,<kupper>] ], ... ]"
 } ""
 
 
