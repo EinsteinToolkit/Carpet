@@ -1,6 +1,8 @@
 #ifndef FUNCTIONS_HH
 #define FUNCTIONS_HH
 
+#include <map>
+#include <string>
 #include <vector>
 
 #include <mpi.h>
@@ -43,8 +45,24 @@ namespace Carpet {
    
   // Multi-Model
   void
-  SplitWorld (MPI_Comm const world, string const model, MPI_Comm & comm,
-              bool verbose);
+  SplitUniverse (MPI_Comm const world, string const model, MPI_Comm & comm,
+                 bool verbose);
+  
+  // Model id to model name
+  vector <string> Models ();
+  string Model (int id);
+  
+  // Model name to model id
+  std::map <string, int> ModelMap ();
+  int ModelMap (string name);
+  
+  // Processor to model id
+  vector <int> ModelIds ();
+  int ModelId (int proc);
+  
+  // Model id to processors
+  vector <vector <int> > ModelProcs ();
+  vector <int> ModelProcs (int proc);
   
   extern "C" {
     CCTK_POINTER_TO_CONST

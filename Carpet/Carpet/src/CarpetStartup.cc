@@ -19,7 +19,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     comm_universe = MPI_COMM_WORLD;
-    SplitWorld (comm_universe, model, comm_world, true);
+    SplitUniverse (comm_universe, model, comm_world, true);
     dist::pseudoinit (comm_world);
     
     return 0;

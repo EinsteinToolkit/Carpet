@@ -9,6 +9,8 @@
 
 #include "cctk.h"
 
+#include "functions.hh"
+
 
 
 namespace Carpet
@@ -18,9 +20,50 @@ namespace Carpet
   
   
   
+  vector <string> models;             // Model id to model name
+  std::map <string, int> model_map;   // Model name to model id
+  vector <int> model_ids;             // Processor to model id
+  vector <vector <int> > model_procs; // Model id to processors
+  
+  
+  
+  vector <string> Models () { return models; }
+  std::map <string, int> ModelMap () { return model_map; }
+  vector <int> ModelIds () { return model_ids; }
+  vector <vector <int> > ModelProcs () { return model_procs; }
+  
+  string Models (int const id)
+  {
+    return models.at (id);
+  }
+
+  int ModelMap (string const name)
+  {
+    if (model_map.find (name) != model_map.end())
+    {
+      return model_map[name];
+    }
+    else
+    {
+      return -1;
+    }
+  }
+  
+  int ModelId (int const proc)
+  {
+    return model_ids.at (proc);
+  }
+
+  vector <int> ModelProcs (int const proc)
+  {
+    return model_procs.at (proc);
+  }
+  
+  
+  
   void
-  SplitWorld (MPI_Comm const world, string const model, MPI_Comm & comm,
-              bool const verbose)
+  SplitUniverse (MPI_Comm const world, string const model, MPI_Comm & comm,
+                 bool const verbose)
   {
     // Get the total number of processors
     int num_procs;
@@ -56,7 +99,7 @@ namespace Carpet
                     world);
     
     // Convert model name buffer with C strings to C++ strings
-    vector <string> models (num_procs);
+    models.resize (num_procs);
     for (int n = 0; n < num_procs; ++ n)
     {
       models.at(n)
@@ -65,8 +108,8 @@ namespace Carpet
     
     // Map model strings to small integers
     int num_models = 0;
-    vector <int> model_ids (num_procs);
-    std::map <string, int> model_map;
+    model_ids.resize (num_procs);
+    model_map.clear ();
     for (int n = 0; n < num_procs; ++ n)
     {
       if (model_map.find (models.at(n)) != model_map.end())
@@ -88,7 +131,7 @@ namespace Carpet
       ++ num_model_procs.at (model_ids.at(n));
     }
     
-    vector <vector <int> > model_procs (num_models);
+    model_procs.resize (num_models);
     for (int m = 0; m < num_models; ++ m)
     {
       model_procs.at(m).reserve (num_model_procs.at(m));
