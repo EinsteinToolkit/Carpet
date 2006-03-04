@@ -217,8 +217,8 @@ namespace Carpet {
     for (int ml=0; ml<hh.mglevels(); ++ml) {
       for (int rl=0; rl<hh.reflevels(); ++rl) {
         for (int c=0; c<hh.components(rl); ++c) {
-          const rvect origin = origin_space.at(0);
-          const rvect delta = delta_space;
+          const rvect origin = origin_space.at(m).at(0);
+          const rvect delta = delta_space.at(m);
           const ivect lower = hh.extents().at(ml).at(rl).at(c).lower();
           const ivect upper = hh.extents().at(ml).at(rl).at(c).upper();
           const int convfact = ipow(mgfact, ml);

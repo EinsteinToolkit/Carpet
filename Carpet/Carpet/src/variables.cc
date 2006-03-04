@@ -75,8 +75,8 @@ namespace Carpet {
   vector<vector<CCTK_REAL> > leveltimes; // [mglevel][reflevel]
   CCTK_REAL delta_time;
   
-  vector<vect<CCTK_REAL,dim> > origin_space; // [mglevel]
-  vect<CCTK_REAL,dim> delta_space;
+  vector<vector<vect<CCTK_REAL,dim> > > origin_space; // [map][mglevel]
+  vector<vect<CCTK_REAL,dim> > delta_space;           // [map]
   
   
   
