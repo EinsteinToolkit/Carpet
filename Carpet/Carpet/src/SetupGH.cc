@@ -315,9 +315,17 @@ namespace Carpet {
   static ivect make_ghost_zone_vect (CCTK_INT ghost_size,
                       CCTK_INT ghost_size_x, CCTK_INT ghost_size_y,
                       CCTK_INT ghost_size_z);
-  static ivect make_global_number_of_grid_points (CCTK_INT global_nsize,
-                   CCTK_INT global_nx, CCTK_INT global_ny, CCTK_INT global_nz,
-                   CCTK_INT constant_load_per_processor);
+  static
+  ivect
+  make_global_number_of_grid_points (CCTK_INT global_nsize,
+                                     CCTK_INT global_nx,
+                                     CCTK_INT global_ny,
+                                     CCTK_INT global_nz,
+                                     CCTK_INT constant_load_per_processor,
+                                     char const * processor_topology,
+                                     CCTK_INT processor_topology_3d_x,
+                                     CCTK_INT processor_topology_3d_y,
+                                     CCTK_INT processor_topology_3d_z);
   static void check_time_hierarchy (const vector<dh*> &vdd, int m,
                       CCTK_INT max_refinement_levels,
                       CCTK_INT refinement_factor,
@@ -409,9 +417,14 @@ namespace Carpet {
       ivect lghosts = make_ghost_zone_vect (ghost_size,
                                 ghost_size_x, ghost_size_y, ghost_size_z);
       ivect ughosts = lghosts;
-      ivect npoints = make_global_number_of_grid_points (global_nsize,
-                                global_nx, global_ny, global_nz,
-                                constant_load_per_processor);
+      ivect npoints = make_global_number_of_grid_points
+        (global_nsize,
+         global_nx, global_ny, global_nz,
+         constant_load_per_processor,
+         processor_topology,
+         processor_topology_3d_x,
+         processor_topology_3d_y,
+         processor_topology_3d_z);
 
       allocate_map (cgh, m, domain_from_coordbase, domain_from_multipatch,
                convergence_factor, refinement_factor,
@@ -881,7 +894,11 @@ namespace Carpet {
                                      CCTK_INT const global_nx,
                                      CCTK_INT const global_ny,
                                      CCTK_INT const global_nz,
-                                     CCTK_INT const constant_load_per_processor)
+                                     CCTK_INT const constant_load_per_processor,
+                                     char const * const processor_topology,
+                                     CCTK_INT const processor_topology_3d_x,
+                                     CCTK_INT const processor_topology_3d_y,
+                                     CCTK_INT const processor_topology_3d_z)
   {
     ivect npoints;
     if (global_nsize == -1) {
@@ -890,28 +907,40 @@ namespace Carpet {
       npoints = ivect (global_nsize, global_nsize, global_nsize);
     }
     if (constant_load_per_processor) {
-      // Enlarge the domain so that each processor has the specified
-      // number of grid points
-      int const nprocs = dist::size();
-      // Factorise the number of processors
-      stack<int> factors;
-      for (int procsleft = nprocs; procsleft > 1;) {
-        for (int divisor = 2; divisor <= procsleft; ++divisor) {
-          while (procsleft % divisor == 0) {
-            factors.push (divisor);
-            procsleft /= divisor;
+      if (CCTK_EQUALS (processor_topology, "manual")) {
+        // Enlarge the domain so that each processor has the specified
+        // number of grid points, using the specified processor
+        // topology
+        assert (processor_topology_3d_x >= 1);
+        assert (processor_topology_3d_y >= 1);
+        assert (processor_topology_3d_z >= 1);
+        npoints[0] *= processor_topology_3d_x;
+        npoints[1] *= processor_topology_3d_y;
+        npoints[2] *= processor_topology_3d_z;
+      } else {
+        // Enlarge the domain in a smart way so that each processor
+        // has the specified number of grid points
+        int const nprocs = dist::size();
+        // Factorise the number of processors
+        stack<int> factors;
+        for (int procsleft = nprocs; procsleft > 1;) {
+          for (int divisor = 2; divisor <= procsleft; ++divisor) {
+            while (procsleft % divisor == 0) {
+              factors.push (divisor);
+              procsleft /= divisor;
+            }
           }
         }
+        // Distribute the factors greedily onto the directions
+        while (! factors.empty()) {
+          int const mindir = minloc (npoints);
+          assert (mindir>=0 and mindir<dim);
+          int const factor = factors.top();
+          factors.pop();
+          npoints[mindir] *= factor;
+        }
       }
-      // Distribute the factors greedily onto the directions
-      while (! factors.empty()) {
-        int const mindir = minloc (npoints);
-        assert (mindir>=0 and mindir<dim);
-        int const factor = factors.top();
-        factors.pop();
-        npoints[mindir] *= factor;
-      }
-    }
+    } // if constant_load_per_processor
     return npoints;
   }
 
