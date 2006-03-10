@@ -828,6 +828,14 @@ extern "C" {
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
+  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_weno)
+    (const CCTK_REAL8* src,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_o5)
     (const CCTK_REAL8* src,
      const int& srciext, const int& srcjext, const int& srckext,
@@ -899,6 +907,15 @@ extern "C" {
      const int dstbbox[3][3],
      const int regbbox[3][3]);
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_2tl_eno)
+    (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
+     const CCTK_REAL8* src2, const CCTK_REAL8& t2,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst, const CCTK_REAL8& t,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
+  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_2tl_weno)
     (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
      const CCTK_REAL8* src2, const CCTK_REAL8& t2,
      const int& srciext, const int& srcjext, const int& srckext,
@@ -995,6 +1012,16 @@ extern "C" {
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
+  void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_3tl_weno)
+    (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
+     const CCTK_REAL8* src2, const CCTK_REAL8& t2,
+     const CCTK_REAL8* src3, const CCTK_REAL8& t3,
+     const int& srciext, const int& srcjext, const int& srckext,
+     CCTK_REAL8* dst, const CCTK_REAL8& t,
+     const int& dstiext, const int& dstjext, const int& dstkext,
+     const int srcbbox[3][3],
+     const int dstbbox[3][3],
+     const int regbbox[3][3]);
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_3tl_o5)
     (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
      const CCTK_REAL8* src2, const CCTK_REAL8& t2,
@@ -1048,6 +1075,7 @@ void data<T>
   case op_Lagrange:
   case op_TVD:
   case op_ENO:
+  case op_WENO:
     assert (srcs.size() == 1);
     if (all (dext.stride() == sext.stride() * 2)) {
       CCTK_FNAME(restrict_3d_real8_rf2)
@@ -1537,6 +1565,78 @@ void data<T>
         break;
       case 3:
         CCTK_FNAME(prolongate_3d_real8_3tl_eno)
+          ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+           (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+           (const CCTK_REAL8*)srcs[2]->storage(), times[2],
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(), time,
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+        break;
+      default:
+        assert (0);
+      }
+      break;
+    default:
+      assert (0);
+    } // switch (order_time)
+    break;
+    
+  case op_WENO:
+    switch (order_time) {
+    case 0: 
+      assert (times.size() == 1);
+      assert (abs(times[0] - time) < eps);
+      switch (order_space) {
+      case 1:
+        CCTK_WARN (0, "There is no stencil for op=\"WENO\" with order_space=1");
+        break;
+      case 3:
+        CCTK_WARN (0, "There is no stencil for op=\"WENO\" with order_space=3");
+        break;
+      case 5:
+        CCTK_FNAME(prolongate_3d_real8_weno)
+          ((const CCTK_REAL8*)srcs[0]->storage(),
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(),
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+        break;
+      default:
+        assert (0);
+      }
+      break;
+    case 1:
+      switch (order_space) {
+      case 1:
+        CCTK_WARN (0, "There is no stencil for op=\"WENO\" with order_space=1");
+        break;
+      case 3:
+        CCTK_WARN (0, "There is no stencil for op=\"WENO\" with order_space=3");
+        break;
+      case 5:
+        CCTK_FNAME(prolongate_3d_real8_2tl_weno)
+          ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
+           (const CCTK_REAL8*)srcs[1]->storage(), times[1],
+           srcshp[0], srcshp[1], srcshp[2],
+           (CCTK_REAL8*)storage(), time,
+           dstshp[0], dstshp[1], dstshp[2],
+           srcbbox, dstbbox, regbbox);
+        break;
+      default:
+        assert (0);
+      }
+      break;
+    case 2: 
+      switch (order_space) {
+      case 1:
+        CCTK_WARN (0, "There is no stencil for op=\"WENO\" with order_space=1");
+        break;
+      case 3:
+        CCTK_WARN (0, "There is no stencil for op=\"WENO\" with order_space=3");
+        break;
+      case 5:
+        CCTK_FNAME(prolongate_3d_real8_3tl_weno)
           ((const CCTK_REAL8*)srcs[0]->storage(), times[0],
            (const CCTK_REAL8*)srcs[1]->storage(), times[1],
            (const CCTK_REAL8*)srcs[2]->storage(), times[2],

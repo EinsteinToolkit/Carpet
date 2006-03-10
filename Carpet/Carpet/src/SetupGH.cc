@@ -279,6 +279,8 @@ namespace Carpet {
       return op_TVD;
     } else if (CCTK_Equals(prolong_string, "ENO")) {
       return op_ENO;
+    } else if (CCTK_Equals(prolong_string, "WENO")) {
+      return op_WENO;
     } else {
       char * const groupname = CCTK_GroupName (group);
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
