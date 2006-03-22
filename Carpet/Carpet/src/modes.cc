@@ -336,7 +336,7 @@ namespace Carpet {
       origin_space.at(map).at(mglevel)[d] = cgh->cctk_origin_space[d];
       delta_space.at(map)[d] = cgh->cctk_delta_space[d] / mglevelfact;
       cgh->cctk_origin_space[d] = -424242.0;
-      cgh->cctk_delta_space[d] = 0.0;
+      cgh->cctk_delta_space[d] = -424242.0;
     }
     
     // Unset grid shape
