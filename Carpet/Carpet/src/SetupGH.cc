@@ -934,6 +934,7 @@ namespace Carpet {
           }
         }
         // Distribute the factors greedily onto the directions
+        npoints = npoints.reverse();
         while (! factors.empty()) {
           int const mindir = minloc (npoints);
           assert (mindir>=0 and mindir<dim);
@@ -941,6 +942,7 @@ namespace Carpet {
           factors.pop();
           npoints[mindir] *= factor;
         }
+        npoints = npoints.reverse();
       }
     } // if constant_load_per_processor
     return npoints;
