@@ -77,11 +77,13 @@ namespace Carpet {
     
     // Set time delta
     cgh->cctk_delta_time = delta_time * mglevelfact;
-//     // Set space delta
-//     for (int d=0; d<dim; ++d) {
-//       cgh->cctk_origin_space[d] = origin_space.at(mglevel)[d];
-//       cgh->cctk_delta_space[d] = delta_space[d] * mglevelfact;
-//     }
+    if (maps == 1) {
+      // Set space delta
+      for (int d=0; d<dim; ++d) {
+        cgh->cctk_origin_space[d] = origin_space.at(0).at(mglevel)[d];
+        cgh->cctk_delta_space[d] = delta_space.at(0)[d] * mglevelfact;
+      }
+    }
     
     // Set array information
     for (int group=0; group<CCTK_NumGroups(); ++group) {
@@ -165,14 +167,16 @@ namespace Carpet {
     // Save and unset time delta
     delta_time = cgh->cctk_delta_time / mglevelfact;
     cgh->cctk_delta_time = 0.0;
-//     // Save and unset space delta
-//     for (int d=0; d<dim; ++d) {
-//       origin_space.at(mglevel)[d] = cgh->cctk_origin_space[d];
-//       delta_space[d] = cgh->cctk_delta_space[d] / mglevelfact;
-//       cgh->cctk_origin_space[d] = -424242.0;
-//       cgh->cctk_delta_space[d] = 0.0;
-//     }
-   
+    if (maps == 1) {
+      // Save and unset space delta
+      for (int d=0; d<dim; ++d) {
+        origin_space.at(0).at(mglevel)[d] = cgh->cctk_origin_space[d];
+        delta_space.at(mglevel)[d] = cgh->cctk_delta_space[d] / mglevelfact;
+        cgh->cctk_origin_space[d] = -424242.0;
+        cgh->cctk_delta_space[d] = -424242.0;
+      }
+    }
+    
     // Set array information
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_GroupTypeI(group) != CCTK_GF) {
@@ -293,10 +297,12 @@ namespace Carpet {
     
     carpetGH.map = map = m;
     
-    // Set space delta
-    for (int d=0; d<dim; ++d) {
-      cgh->cctk_origin_space[d] = origin_space.at(map).at(mglevel)[d];
-      cgh->cctk_delta_space[d] = delta_space.at(map)[d] * mglevelfact;
+    if (maps > 1) {
+      // Set space delta
+      for (int d=0; d<dim; ++d) {
+        cgh->cctk_origin_space[d] = origin_space.at(map).at(mglevel)[d];
+        cgh->cctk_delta_space[d] = delta_space.at(map)[d] * mglevelfact;
+      }
     }
     
     // Set grid shape
@@ -331,12 +337,14 @@ namespace Carpet {
     
     if (map == -1) return;      // early return
     
-    // Save and unset space delta
-    for (int d=0; d<dim; ++d) {
-      origin_space.at(map).at(mglevel)[d] = cgh->cctk_origin_space[d];
-      delta_space.at(map)[d] = cgh->cctk_delta_space[d] / mglevelfact;
-      cgh->cctk_origin_space[d] = -424242.0;
-      cgh->cctk_delta_space[d] = -424242.0;
+    if (maps > 1) {
+      // Save and unset space delta
+      for (int d=0; d<dim; ++d) {
+        origin_space.at(map).at(mglevel)[d] = cgh->cctk_origin_space[d];
+        delta_space.at(map)[d] = cgh->cctk_delta_space[d] / mglevelfact;
+        cgh->cctk_origin_space[d] = -424242.0;
+        cgh->cctk_delta_space[d] = -424242.0;
+      }
     }
     
     // Unset grid shape
