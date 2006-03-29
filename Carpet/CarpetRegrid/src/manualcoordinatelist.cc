@@ -257,10 +257,10 @@ namespace CarpetRegrid {
       obss.at(rl) = obs;
       pss.at(rl) = ps;
       
-      // make multigrid aware
-      MakeMultigridBoxes (cctkGH, bbss, obss, bbsss);
-      
     } // for rl
+    
+    // make multigrid aware
+    MakeMultigridBoxes (cctkGH, bbss, obss, bbsss);
     
     return 1;
   }
