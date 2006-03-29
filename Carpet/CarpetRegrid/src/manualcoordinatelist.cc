@@ -69,7 +69,15 @@ namespace CarpetRegrid {
         CCTK_WARN (0, "Parameter \"coordinates\" defines too many refinement levels; at most Carpet::max_refinement_levels - 1 may be defined");
       }
     }
-
+    
+    if (newbbss.size() < refinement_levels-1) {
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "The parameter \"coordinates\" must contain at least \"refinement_levels-1\" (here: %d) levels", int(refinement_levels-1));
+    }
+    
+    // Remove superfluous boxes
+    newbbss.resize (refinement_levels-1);
+    
     vector<vector<bbvect> > newobss;
     if (smart_outer_boundaries) {
       // TODO:
@@ -138,11 +146,6 @@ namespace CarpetRegrid {
       }
 
     } // if ! smart_outer_boundaries
-    
-    if (newbbss.size() < refinement_levels-1) {
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The parameter \"coordinates\" must contain at least \"refinement_levels-1\" (here: %d) levels", int(refinement_levels-1));
-    }
     
     for (size_t rl=1; rl<refinement_levels; ++rl) {
       
