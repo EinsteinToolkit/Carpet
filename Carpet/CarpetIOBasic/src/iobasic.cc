@@ -536,15 +536,7 @@ namespace CarpetIOBasic {
     if (not do_global_mode) return false;
 
     CheckSteerableParameters (cctkGH);
-
-    // check if output for any variable was requested
-    bool do_output = false;
-    int const numvars = CCTK_NumVars();
-    for (int vindex=0; vindex<numvars; ++vindex) {
-      do_output = do_output or IOparameters.requests[vindex];
-    }
-    if (not do_output) return false;
-
+    
     // check whether to output at this iteration
     bool output_this_iteration;
 
