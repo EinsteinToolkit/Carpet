@@ -91,9 +91,10 @@ namespace CarpetSlab {
     // Loop over all slabs
     for (int n=0; n<num_arrays; ++n) {
       // Forward call
-      retvals[n] = CarpetSlab_Get (cctkGH, mapping_handle, procs[n],
-                                   vindices[n], timelevels[n], hdatatypes[n],
-                                   hdata[n]);
+      retvals[n] =
+        CarpetSlab::CarpetSlab_Get (cctkGH, mapping_handle, procs[n],
+                                    vindices[n], timelevels[n], hdatatypes[n],
+                                    hdata[n]);
       everyting_okay = everyting_okay && retvals[n] == 0;
     }
     
