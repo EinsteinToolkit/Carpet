@@ -80,7 +80,9 @@ namespace Carpet {
 
       for (int rl=0; rl<reflevels; ++rl) {
         recover_I (cgh, rl);
-        recover_Regrid (cgh, rl);
+        if (regrid_during_recovery) {
+          recover_Regrid (cgh, rl);
+        }
       }
 
       for (int rl=0; rl<reflevels; ++rl) {
