@@ -75,17 +75,17 @@ INT time_prec "Precision for the simulation time" STEERABLE = ALWAYS
 INT int_width "Field width for integer values" STEERABLE = ALWAYS
 {
   1:* :: ""
-} 11
+} 9
   
 INT real_width "Field width for real values" STEERABLE = ALWAYS
 {
   1:* :: ""
-} 13
+} 12
   
 INT real_prec "Precision for real values" STEERABLE = ALWAYS
 {
   0:* :: ""
-} 8
+} 7
   
 INT real_prec_sci "Precision for real values in scientific notation" STEERABLE = ALWAYS
 {
