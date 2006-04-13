@@ -58,7 +58,7 @@ namespace Carpet {
       
       cGroup gp;
       const int ierr = CCTK_GroupData (group, &gp);
-      assert (! ierr);
+      assert (not ierr);
       
       bool const all_rl = is_meta_mode() or is_global_mode();
       bool const is_array = gp.grouptype != CCTK_GF;
@@ -70,7 +70,7 @@ namespace Carpet {
               or (firstvarindex >= 0 and firstvarindex < CCTK_NumVars()));
       
       // Check an assumption
-      if (! gp.vectorgroup) assert (gp.vectorlength == 1);
+      if (not gp.vectorgroup) assert (gp.vectorlength == 1);
       
       // Record previous number of allocated time levels
       if (status) {
@@ -129,7 +129,7 @@ namespace Carpet {
                      : NULL);
                 const int varindex = firstvarindex + var;
 #warning "TODO: allocate these in SetupGH, and after recomposing"
-                if (! arrdata.at(group).at(m).data.at(var)) {
+                if (not arrdata.at(group).at(m).data.at(var)) {
                   switch (gp.vartype) {
 #define TYPECASE(N,T)                                                   \
                     case N:                                             \
@@ -146,11 +146,11 @@ namespace Carpet {
                   default:
                     UnsupportedVarType (varindex);
                   } // switch gp.vartype
-                } // if ! allocated
-              
+                } // if not allocated
+                
                 arrdata.at(group).at(m).data.at(var)->set_timelevels
                   (ml, rl, timelevels[n]);
-              
+                
                 // Set the data pointers for grid arrays
                 if (gp.grouptype != CCTK_GF) {
                   assert (rl==0 and m==0);
