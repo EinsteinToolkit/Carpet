@@ -106,22 +106,22 @@ CCTK_STRING out3D_dir "Name of 3D ASCII output directory, overrides IO::out_dir"
 
 CCTK_STRING out0D_vars "Variables to output in 0D ASCII file format" STEERABLE = ALWAYS
 {
-  ".*" :: "List of group or variable names"
+  "" :: "List of group or variable names"
 } ""
 
 CCTK_STRING out1D_vars "Variables to output in 1D ASCII file format" STEERABLE = ALWAYS
 {
-  ".*" :: "List of group or variable names"
+  "" :: "List of group or variable names"
 } ""
 
 CCTK_STRING out2D_vars "Variables to output in 2D ASCII file format" STEERABLE = ALWAYS
 {
-  ".*" :: "List of group or variable names"
+  "" :: "List of group or variable names"
 } ""
 
 CCTK_STRING out3D_vars "Variables to output in 3D ASCII file format" STEERABLE = ALWAYS
 {
-  ".*" :: "List of group or variable names"
+  "" :: "List of group or variable names"
 } ""
 
 
