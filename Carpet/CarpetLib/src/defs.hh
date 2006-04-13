@@ -52,6 +52,17 @@ typedef vect<vect<int,dim>,2>  i2vect;
 
 
 
+// Grid structure description
+struct grid_structure_t {
+  vector <vector <ibbox> >  bbss; // refinement regions [reflevel][component]
+  vector <vector <bbvect> > obss; // outer boundaries   [reflevel][component]
+};
+
+istream& operator>> (istream& is, grid_structure_t& gs);
+ostream& operator<< (ostream& os, grid_structure_t const& gs);
+
+
+
 // A general type
 enum centering { vertex_centered, cell_centered };
 
