@@ -137,10 +137,13 @@ ostream& output (ostream& os, const stack<T>& s) {
 template<class T>
 ostream& output (ostream& os, const vector<T>& v) {
   os << "[";
-  int cnt=0;
+  // Do not number the elements, as this would lead to a format that
+  // cannot be read back in.
+//   int cnt=0;
   for (typename vector<T>::const_iterator ti=v.begin(); ti!=v.end(); ++ti) {
     if (ti!=v.begin()) os << ",";
-    os << cnt++ << ":" << *ti;
+//     os << cnt++ << ":";
+    os << *ti;
   }
   os << "]";
   return os;
