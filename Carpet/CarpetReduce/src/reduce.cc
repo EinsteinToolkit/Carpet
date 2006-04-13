@@ -959,205 +959,219 @@ namespace CarpetReduce {
     
     BEGIN_GLOBAL_MODE(cgh) {
       for (int rl=minrl; rl<maxrl; ++rl) {
-        enter_level_mode (const_cast<cGH*>(cgh), rl);
-        
-        
-        
-        // Number of necessary time levels
-        CCTK_REAL const level_time = cgh->cctk_time / cgh->cctk_delta_time;
-        bool need_time_interp
-          = (! reduce_arrays
-             && (fabs(current_time - level_time)
-                 > 1e-12 * (fabs(level_time) + fabs(current_time)
-                            + fabs(cgh->cctk_delta_time))));
-        assert (! (! want_global_mode && need_time_interp));
-        assert (! (reduce_arrays && need_time_interp));
-        
-        int num_tl;
-        if (need_time_interp) {
+        ENTER_LEVEL_MODE(cgh, rl) {
           
-          int const gi = CCTK_GroupIndexFromVarI (vi);
-          assert (gi>=0);
-          int const table = CCTK_GroupTagsTableI (gi);
-          assert (table>=0);
-          CCTK_INT interp_num_time_levels;
-          int const ilen = Util_TableGetInt
-            (table, &interp_num_time_levels, "InterpNumTimelevels");
-          if (ilen == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-            num_tl = prolongation_order_time + 1;
-          } else if (ilen >= 0) {
-            assert (interp_num_time_levels>0);
-            num_tl = min (prolongation_order_time + 1, interp_num_time_levels);
-          } else {
-            assert (0);
-          }
           
-          // Are there enough time levels?
-          int const max_tl = CCTK_MaxTimeLevelsVI(vi);
-          int const active_tl = CCTK_ActiveTimeLevelsVI(cgh, vi);
-          if (max_tl == 1) {
-            num_tl = 1;
-            need_time_interp = false;
-            static vector<bool> have_warned;
-            if (have_warned.empty()) {
-              have_warned.resize (CCTK_NumVars(), false);
+          
+          // Number of necessary time levels
+          CCTK_REAL const level_time = cgh->cctk_time / cgh->cctk_delta_time;
+          bool need_time_interp
+            = (! reduce_arrays
+               && (fabs(current_time - level_time)
+                   > 1e-12 * (fabs(level_time) + fabs(current_time)
+                              + fabs(cgh->cctk_delta_time))));
+          assert (! (! want_global_mode && need_time_interp));
+          assert (! (reduce_arrays && need_time_interp));
+          
+          int num_tl;
+          if (need_time_interp) {
+            
+            int const gi = CCTK_GroupIndexFromVarI (vi);
+            assert (gi>=0);
+            int const table = CCTK_GroupTagsTableI (gi);
+            assert (table>=0);
+            CCTK_INT interp_num_time_levels;
+            int const ilen = Util_TableGetInt
+              (table, &interp_num_time_levels, "InterpNumTimelevels");
+            if (ilen == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+              num_tl = prolongation_order_time + 1;
+            } else if (ilen >= 0) {
+              assert (interp_num_time_levels>0);
+              num_tl
+                = min (prolongation_order_time + 1, interp_num_time_levels);
+            } else {
+              assert (0);
             }
-            if (! have_warned.at(vi)) {
+            
+            // Are there enough time levels?
+            int const max_tl = CCTK_MaxTimeLevelsVI(vi);
+            int const active_tl = CCTK_ActiveTimeLevelsVI(cgh, vi);
+            if (max_tl == 1 and active_tl == 1) {
+              num_tl = 1;
+              need_time_interp = false;
+              static vector<bool> have_warned;
+              if (have_warned.empty()) {
+                have_warned.resize (CCTK_NumVars(), false);
+              }
+              if (! have_warned.at(vi)) {
+                char * const fullname = CCTK_FullName(vi);
+                CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                            "Grid function \"%s\" has only %d time levels on refinement level %d; this is not enough for time interpolation",
+                            fullname, max_tl, reflevel);
+                free (fullname);
+                have_warned.at(vi) = true;
+              }
+            } else if (active_tl < num_tl) {
               char * const fullname = CCTK_FullName(vi);
               CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                          "Grid function \"%s\" has only %d time levels on refinement level %d; this is not enough for time interpolation",
-                          fullname, max_tl, reflevel);
+                          "Grid function \"%s\" has only %d active time levels out of %d maximum time levels on refinement level %d; this is not enough for time interpolation",
+                          fullname, active_tl, max_tl, reflevel);
               free (fullname);
-              have_warned.at(vi) = true;
+              return 1;         // error
             }
-          } else if (active_tl < num_tl) {
-            char * const fullname = CCTK_FullName(vi);
-            CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                        "Grid function \"%s\" has only %d active time levels out of %d maximum time levels on refinement level %d; this is not enough for time interpolation",
-                        fullname, active_tl, max_tl, reflevel);
-            free (fullname);
+            
+          } else {
+            
+            // no time interpolation
+            num_tl = 1;
+            
+            // Are there enough time levels?
+            int const active_tl = CCTK_ActiveTimeLevelsVI(cgh, vi);
+            if (active_tl < num_tl) {
+              char * const fullname = CCTK_FullName(vi);
+              CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                          "Grid function \"%s\" has no active time levels on refinement level %d",
+                          fullname, reflevel);
+              free (fullname);
+              return 1;         // error
+            }
+            
           }
           
-        } else {
+          assert (! need_time_interp || num_tl > 1);
           
-          // no time interpolation
-          num_tl = 1;
+          vector<CCTK_REAL> tfacs(num_tl);
           
-        }
-        
-        assert (! need_time_interp || num_tl > 1);
-        
-        vector<CCTK_REAL> tfacs(num_tl);
-        
-        // Interpolate in time, if necessary
-        if (need_time_interp) {
-          
-          // Get interpolation times
-          CCTK_REAL const time = current_time;
-          vector<CCTK_REAL> times(num_tl);
-          for (int tl=0; tl<num_tl; ++tl) {
-            times.at(tl) = vtt.at(0)->time (tl, reflevel, mglevel);
-          }
-          
-          // Calculate interpolation weights
-          switch (num_tl) {
-          case 1:
-            // no interpolation
-            assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
-            tfacs.at(0) = 1.0;
-            break;
-          case 2:
-            // linear (2-point) interpolation
-            tfacs.at(0) = (time - times.at(1)) / (times.at(0) - times.at(1));
-            tfacs.at(1) = (time - times.at(0)) / (times.at(1) - times.at(0));
-            break;
-          case 3:
-            // quadratic (3-point) interpolation
-            tfacs.at(0) = (time - times.at(1)) * (time - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
-            tfacs.at(1) = (time - times.at(0)) * (time - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
-            tfacs.at(2) = (time - times.at(0)) * (time - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
-            break;
-          default:
-            assert (0);
-          }
-          
-        } else { // if ! need_time_interp
-          
-          assert (num_tl == 1);
-          tfacs.at(0) = 1;
-          
-        } // if ! need_time_interp
-        
-        
-        
-        for (int m=minm; m<maxm; ++m) {
-          enter_singlemap_mode (const_cast<cGH*>(cgh), m);
-          BEGIN_LOCAL_COMPONENT_LOOP(cgh, reduce_arrays ? CCTK_ARRAY : CCTK_GF) {
+          // Interpolate in time, if necessary
+          if (need_time_interp) {
             
-            
-            
-            assert (grpdim<=dim);
-            int lsh[dim], bbox[2*dim], nghostzones[dim];
-            ierr = CCTK_GrouplshVI(cgh, grpdim, lsh, vi);
-            assert (!ierr);
-            ierr = CCTK_GroupbboxVI(cgh, 2*grpdim, bbox, vi);
-            assert (!ierr);
-            ierr = CCTK_GroupnghostzonesVI(cgh, grpdim, nghostzones, vi);
-            assert (!ierr);
-            for (int d=0; d<grpdim; ++d) {
-              assert (lsh[d]>=0);
-              assert (nghostzones[d]>=0 && 2*nghostzones[d]<=lsh[d]);
-            }
-            
-            vect<int,dim> mylsh, mynghostzones;
-            vect<vect<int,2>,dim> mybbox;
-            for (int d=0; d<grpdim; ++d) {
-              mylsh[d] = lsh[d];
-              mybbox[d][0] = bbox[2*d  ];
-              mybbox[d][1] = bbox[2*d+1];
-              mynghostzones[d] = nghostzones[d];
-            }
-            for (int d=grpdim; d<dim; ++d) {
-              mylsh[d] = 1;
-              mybbox[d][0] = 0;
-              mybbox[d][1] = 0;
-              mynghostzones[d] = 0;
-            }
-            
-            
-            
-            CCTK_REAL const * weight;
-            CCTK_REAL levfac;
-            if (want_global_mode) {
-              static int iweight = -1;
-              if (iweight == -1) {
-                iweight = CCTK_VarIndex ("CarpetReduce::weight");
-                assert (iweight >= 0);
-              }
-              weight = (static_cast<CCTK_REAL const *>
-                        (CCTK_VarDataPtrI (cgh, 0, iweight)));
-              assert (weight);
-              levfac = 1.0 / prod (rvect (spacereflevelfact));
-            } else {
-              weight = NULL;
-              levfac = 1.0;
-            }
-            
-            vector<vector<const void*> > myinarrays (num_tl);
-            vector<const void* const*> inarrays (num_tl);
+            // Get interpolation times
+            CCTK_REAL const time = current_time;
+            vector<CCTK_REAL> times(num_tl);
             for (int tl=0; tl<num_tl; ++tl) {
-              myinarrays.at(tl).resize (num_invars);
-              for (int n=0; n<num_invars; ++n) {
-#if 0
-                myinarrays.at(tl).at(n) = CCTK_VarDataPtrI(cgh, tl, invars[n]);
-#else
-                int const vi = invars[n];
-                int const gi = CCTK_GroupIndexFromVarI (vi);
-                int const vi0 = CCTK_FirstVarIndexI (gi);
-                myinarrays.at(tl).at(n)
-                  = ((*arrdata.at(gi).at(Carpet::map).data.at(vi-vi0))
-                     (tl, reflevel, component, mglevel)->storage());
-#endif
-                assert (myinarrays.at(tl).at(n));
-              }
-              inarrays.at(tl) = &myinarrays.at(tl).at(0);
+              times.at(tl) = vtt.at(0)->time (tl, reflevel, mglevel);
             }
             
+            // Calculate interpolation weights
+            switch (num_tl) {
+            case 1:
+              // no interpolation
+              assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
+              tfacs.at(0) = 1.0;
+              break;
+            case 2:
+              // linear (2-point) interpolation
+              tfacs.at(0) = (time - times.at(1)) / (times.at(0) - times.at(1));
+              tfacs.at(1) = (time - times.at(0)) / (times.at(1) - times.at(0));
+              break;
+            case 3:
+              // quadratic (3-point) interpolation
+              tfacs.at(0) = (time - times.at(1)) * (time - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
+              tfacs.at(1) = (time - times.at(0)) * (time - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
+              tfacs.at(2) = (time - times.at(0)) * (time - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
+              break;
+            default:
+              assert (0);
+            }
             
+          } else { // if ! need_time_interp
             
-            Reduce (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
-                    num_invars, inarrays, tfacs, intype,
-                    num_invars * num_outvals, &myoutvals[0], outtype,
-                    &mycounts[0], red,
-                    weight, levfac);
+            assert (num_tl == 1);
+            tfacs.at(0) = 1;
             
-            
-            
-          } END_LOCAL_COMPONENT_LOOP;
-          leave_singlemap_mode (const_cast<cGH*>(cgh));
-        } // for m
-        
-        leave_level_mode (const_cast<cGH*>(cgh));
+          } // if ! need_time_interp
+          
+          
+          
+          for (int m=minm; m<maxm; ++m) {
+            ENTER_SINGLEMAP_MODE(cgh, m) {
+              BEGIN_LOCAL_COMPONENT_LOOP(cgh, reduce_arrays ? CCTK_ARRAY : CCTK_GF) {
+                
+                
+                
+                assert (grpdim<=dim);
+                int lsh[dim], bbox[2*dim], nghostzones[dim];
+                ierr = CCTK_GrouplshVI(cgh, grpdim, lsh, vi);
+                assert (!ierr);
+                ierr = CCTK_GroupbboxVI(cgh, 2*grpdim, bbox, vi);
+                assert (!ierr);
+                ierr = CCTK_GroupnghostzonesVI(cgh, grpdim, nghostzones, vi);
+                assert (!ierr);
+                for (int d=0; d<grpdim; ++d) {
+                  assert (lsh[d]>=0);
+                  assert (nghostzones[d]>=0 && 2*nghostzones[d]<=lsh[d]);
+                }
+                
+                vect<int,dim> mylsh, mynghostzones;
+                vect<vect<int,2>,dim> mybbox;
+                for (int d=0; d<grpdim; ++d) {
+                  mylsh[d] = lsh[d];
+                  mybbox[d][0] = bbox[2*d  ];
+                  mybbox[d][1] = bbox[2*d+1];
+                  mynghostzones[d] = nghostzones[d];
+                }
+                for (int d=grpdim; d<dim; ++d) {
+                  mylsh[d] = 1;
+                  mybbox[d][0] = 0;
+                  mybbox[d][1] = 0;
+                  mynghostzones[d] = 0;
+                }
+                
+                
+                
+                CCTK_REAL const * weight;
+                CCTK_REAL levfac;
+                if (want_global_mode) {
+                  static int iweight = -1;
+                  if (iweight == -1) {
+                    iweight = CCTK_VarIndex ("CarpetReduce::weight");
+                    assert (iweight >= 0);
+                  }
+                  weight = (static_cast<CCTK_REAL const *>
+                            (CCTK_VarDataPtrI (cgh, 0, iweight)));
+                  assert (weight);
+                  levfac = 1.0 / prod (rvect (spacereflevelfact));
+                } else {
+                  weight = NULL;
+                  levfac = 1.0;
+                }
+                
+                vector<vector<const void*> > myinarrays (num_tl);
+                vector<const void* const*> inarrays (num_tl);
+                for (int tl=0; tl<num_tl; ++tl) {
+                  myinarrays.at(tl).resize (num_invars);
+                  for (int n=0; n<num_invars; ++n) {
+#if 0
+                    myinarrays.at(tl).at(n)
+                      = CCTK_VarDataPtrI(cgh, tl, invars[n]);
+#else
+                    int const vi = invars[n];
+                    int const gi = CCTK_GroupIndexFromVarI (vi);
+                    int const vi0 = CCTK_FirstVarIndexI (gi);
+                    myinarrays.at(tl).at(n)
+                      = ((*arrdata.at(gi).at(Carpet::map).data.at(vi-vi0))
+                         (tl, reflevel, component, mglevel)->storage());
+#endif
+                    assert (myinarrays.at(tl).at(n));
+                  }
+                  inarrays.at(tl) = &myinarrays.at(tl).at(0);
+                }
+                
+                
+                
+                Reduce (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
+                        num_invars, inarrays, tfacs, intype,
+                        num_invars * num_outvals, &myoutvals[0], outtype,
+                        &mycounts[0], red,
+                        weight, levfac);
+                
+                
+                
+              } END_LOCAL_COMPONENT_LOOP;
+            } LEAVE_SINGLEMAP_MODE;
+          } // for m
+          
+        } LEAVE_LEVEL_MODE;
       } // for rl
     } END_GLOBAL_MODE;
     
