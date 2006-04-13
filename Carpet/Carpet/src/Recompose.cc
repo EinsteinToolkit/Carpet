@@ -602,7 +602,8 @@ namespace Carpet {
       if (n == nslices-1) {
         myslice.at(n) = slice_left;
       } else {
-        myslice.at(n) = (int)floor(1.0 * slice_left * mynprocs.at(n) / nprocs_left + 0.5);
+        myslice.at(n)
+          = (int)floor(1.0 * slice_left * mynprocs.at(n) / nprocs_left + 0.5);
       }
       assert (myslice.at(n) >= 0);
       slice_left -= myslice.at(n);
