@@ -189,13 +189,13 @@ namespace CarpetIOScalar {
 		  "Variable \"%s\" does not exist", varname);
       return -1;
     }
-    assert (n>=0 && n<CCTK_NumVars());
+    assert (n>=0 and n<CCTK_NumVars());
     const int group = CCTK_GroupIndexFromVarI (n);
-    assert (group>=0 && group<(int)Carpet::arrdata.size());
+    assert (group>=0 and group<(int)Carpet::arrdata.size());
     const int n0 = CCTK_FirstVarIndexI(group);
-    assert (n0>=0 && n0<CCTK_NumVars());
+    assert (n0>=0 and n0<CCTK_NumVars());
     const int var = n - n0;
-    assert (var>=0 && var<CCTK_NumVarsInGroupI(group));
+    assert (var>=0 and var<CCTK_NumVarsInGroupI(group));
     const int num_tl = CCTK_NumTimeLevelsFromVarI(n);
     assert (num_tl>=1);
 
@@ -230,10 +230,10 @@ namespace CarpetIOScalar {
     string const redlist (outScalar_reductions);
     string::const_iterator p = redlist.begin();
     while (p!=redlist.end()) {
-      while (p!=redlist.end() && isspace(*p)) ++p;
+      while (p!=redlist.end() and isspace(*p)) ++p;
       if (p==redlist.end()) break;
       string::const_iterator const start = p;
-      while (p!=redlist.end() && !isspace(*p)) ++p;
+      while (p!=redlist.end() and !isspace(*p)) ++p;
       string::const_iterator const end = p;
       string const reduction (start, end);
       int const handle = CCTK_ReductionHandle (reduction.c_str());
@@ -270,7 +270,7 @@ namespace CarpetIOScalar {
           const char* const filename = filenamestr.c_str();
 
           // If this is the first time, then write a nice header
-          if (do_truncate.at(n) && IO_TruncateOutputFiles (cctkGH)) {
+          if (do_truncate.at(n) and IO_TruncateOutputFiles (cctkGH)) {
             file.open (filename, ios::out | ios::trunc);
             {
               bool want_date = false;
@@ -428,7 +428,7 @@ namespace CarpetIOScalar {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
 
-    assert (vindex>=0 && vindex<CCTK_NumVars());
+    assert (vindex>=0 and vindex<CCTK_NumVars());
 
     if (! do_global_mode) return 0;
 
@@ -523,7 +523,7 @@ namespace CarpetIOScalar {
       if (CCTK_TraverseString (varlist, SetFlag, &output_variables,
                                CCTK_GROUP_OR_VAR) < 0)
       {
-        CCTK_WARN (output_variables_iteration < 0 && strict_io_parameter_check ?
+        CCTK_WARN (output_variables_iteration < 0 and strict_io_parameter_check ?
                    0 : 1,
                    "error while parsing parameter 'IOScalar::outScalar_vars'");
       }
@@ -561,7 +561,7 @@ namespace CarpetIOScalar {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
 
-    assert (vindex>=0 && vindex<CCTK_NumVars());
+    assert (vindex>=0 and vindex<CCTK_NumVars());
     
     int retval;
     
