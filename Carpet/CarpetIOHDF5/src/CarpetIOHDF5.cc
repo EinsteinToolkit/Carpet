@@ -1,7 +1,8 @@
-#include <assert.h>
-
+#include <cassert>
+#include <cstring>
 #include <map>
 #include <sstream>
+#include <string>
 
 #include "util_Table.h"
 #include "cctk.h"
@@ -13,6 +14,9 @@
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
 
 #include "CarpetIOHDF5.hh"
+
+#include "defs.hh"
+#include "gh.hh"
 
 
 namespace CarpetIOHDF5
@@ -65,19 +69,17 @@ int CarpetIOHDF5_Startup (void)
 }
 
 
-int CarpetIOHDF5_Init (const cGH* const cctkGH)
+void CarpetIOHDF5_Init (CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
 
   *this_iteration = -1;
   *next_output_iteration = 0;
   *next_output_time = cctk_time;
-
-  return (0);
 }
 
 
-int CarpetIOHDF5_InitialDataCheckpoint (const cGH* const cctkGH)
+void CarpetIOHDF5_InitialDataCheckpoint (CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_PARAMETERS;
 
@@ -88,24 +90,23 @@ int CarpetIOHDF5_InitialDataCheckpoint (const cGH* const cctkGH)
     CCTK_INFO ("---------------------------------------------------------");
   }
   int retval = Checkpoint (cctkGH, CP_INITIAL_DATA);
-
-  return (retval);
 }
 
 
-int CarpetIOHDF5_EvolutionCheckpoint (const cGH* const cctkGH)
+void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS)
 {
   int retval = 0;
+  DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
 
   if (checkpoint and
-    ((checkpoint_every > 0 and cctkGH->cctk_iteration % checkpoint_every == 0) or
+    ((checkpoint_every > 0 and cctk_iteration % checkpoint_every == 0) or
      checkpoint_next)) {
     if (not CCTK_Equals (verbose, "none")) {
       CCTK_INFO ("---------------------------------------------------------");
       CCTK_VInfo (CCTK_THORNSTRING, "Dumping periodic checkpoint at "
-                  "iteration %d", cctkGH->cctk_iteration);
+                  "iteration %d", cctk_iteration);
       CCTK_INFO ("---------------------------------------------------------");
     }
 
@@ -115,27 +116,26 @@ int CarpetIOHDF5_EvolutionCheckpoint (const cGH* const cctkGH)
       CCTK_ParameterSet ("checkpoint_next", CCTK_THORNSTRING, "no");
     }
   }
-
-  return (retval);
 }
 
 
-int CarpetIOHDF5_TerminationCheckpoint (const cGH *const GH)
+void CarpetIOHDF5_TerminationCheckpoint (CCTK_ARGUMENTS)
 {
   int retval = 0;
+  DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
 
   if (checkpoint and checkpoint_on_terminate) {
-    if (last_checkpoint_iteration < GH->cctk_iteration) {
+    if (last_checkpoint_iteration < cctk_iteration) {
       if (not CCTK_Equals (verbose, "none")) {
         CCTK_INFO ("---------------------------------------------------------");
         CCTK_VInfo (CCTK_THORNSTRING, "Dumping termination checkpoint at "
-                    "iteration %d", GH->cctk_iteration);
+                    "iteration %d", cctk_iteration);
         CCTK_INFO ("---------------------------------------------------------");
       }
 
-      retval = Checkpoint (GH, CP_EVOLUTION_DATA);
+      retval = Checkpoint (cctkGH, CP_EVOLUTION_DATA);
     } else if (not CCTK_Equals (verbose, "none")) {
       CCTK_INFO ("---------------------------------------------------------");
       CCTK_VInfo (CCTK_THORNSTRING, "Termination checkpoint already dumped "
@@ -144,8 +144,6 @@ int CarpetIOHDF5_TerminationCheckpoint (const cGH *const GH)
       CCTK_INFO ("---------------------------------------------------------");
     }
   }
-
-  return (retval);
 }
 
 
@@ -955,6 +953,27 @@ static int WriteMetadata (const cGH *cctkGH, int nioprocs,
                           H5P_DEFAULT, parameters));
     HDF5_ERROR (H5Dclose (dataset));
     free (parameters);
+  }
+
+  // Save grid structure
+  if (called_from_checkpoint) {
+    vector <grid_structure_t> grid_structure (maps);
+    for (int m = 0; m < maps; ++ m) {
+      grid_structure.at(m).bbss = Carpet::vhh.at(m)->extents().at(0);
+      grid_structure.at(m).obss = Carpet::vhh.at(m)->outer_boundaries();
+    }
+    ostringstream gs_buf;
+    gs_buf << grid_structure;
+    string const gs_str = gs_buf.str();
+    size = gs_str.size() + 1;
+    char const * const gs_cstr = gs_str.c_str();
+    HDF5_ERROR (H5Sset_extent_simple (array_dataspace, 1, & size, NULL));
+    hid_t dataset;
+    HDF5_ERROR (dataset = H5Dcreate (group, GRID_STRUCTURE, H5T_NATIVE_UCHAR,
+                                     array_dataspace, H5P_DEFAULT));
+    HDF5_ERROR (H5Dwrite (dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
+                          H5P_DEFAULT, gs_cstr));
+    HDF5_ERROR (H5Dclose (dataset));
   }
 
   HDF5_ERROR (H5Tclose (datatype));

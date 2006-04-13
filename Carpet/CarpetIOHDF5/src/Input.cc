@@ -1,5 +1,7 @@
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
+#include <sstream>
+#include <vector>
 
 #include "util_Table.h"
 #include "cctk.h"
@@ -8,6 +10,8 @@
 #include "CarpetIOHDF5.hh"
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
+
+#include "defs.hh"
 
 
 namespace CarpetIOHDF5
@@ -53,6 +57,8 @@ typedef struct {
   CCTK_REAL global_time;
   CCTK_REAL delta_time;
   vector<CCTK_REAL> mgleveltimes;  // [num_mglevels*num_reflevels]
+
+  vector<grid_structure_t> grid_structure; // [maps]
 } fileset_t;
 
 // list of checkpoint/filereader files
@@ -78,13 +84,55 @@ static int ReadVar (const cGH* const cctkGH,
 //////////////////////////////////////////////////////////////////////////////
 // Register with the Cactus Recovery Interface
 //////////////////////////////////////////////////////////////////////////////
-int CarpetIOHDF5_RecoverParameters (void)
+void CarpetIOHDF5_RecoverParameters ()
 {
-  int retval = IOUtil_RecoverParameters (Recover, ".h5", "HDF5");
-
-  return (retval);
+  IOUtil_RecoverParameters (Recover, ".h5", "HDF5");
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// Recover the grid structure
+//////////////////////////////////////////////////////////////////////////////
+void CarpetIOHDF5_RecoverGridStructure ()
+{
+  cGH const * const cctkGH = 0; // fake it
+  
+  fileset_t & fileset = * filesets.begin();
+  
+  // Abort with an error if there is no grid structure in the
+  // checkpoint file
+  assert (fileset.grid_structure.size() == maps);
+  
+  for (int m = 0; m < maps; ++ m) {
+    grid_structure_t const & grid_structure = fileset.grid_structure.at(m);
+    
+    int const rls = grid_structure.bbss.size();
+    assert (grid_structure.obss.size() == rls);
+    
+    vector <vector <ibbox> >  bbss = grid_structure.bbss;
+    vector <vector <bbvect> > obss = grid_structure.obss;
+    vector <vector <int> >    pss (rls);
+    
+    for (int rl = 0; rl < rls; ++ rl) {
+      
+      vector <ibbox>  & bbs = bbss.at(rl);
+      vector <bbvect> & obs = obss.at(rl);
+      vector <int>    & ps  = pss.at(rl);
+      
+      // Make multiprocessor aware
+      Carpet::SplitRegions (cctkGH, bbs, obs, ps);
+      
+    } // for rl
+    
+    // Make multigrid aware
+    vector <vector <vector <ibbox> > > bbsss;
+    Carpet::MakeMultigridBoxes (cctkGH, bbss, obss, bbsss);
+    
+    // Regrid
+    Carpet::vhh.at(m)->recompose (bbsss, obss, pss, false);
+    Carpet::OutputGrids (cctkGH, m, * Carpet::vhh.at(m));
+    
+  } // for m
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Overwrite the "CarpetRegrid::refinement_levels"
@@ -93,7 +141,7 @@ int CarpetIOHDF5_RecoverParameters (void)
 // Note that this has to be done after parameter recovery in order to have
 // any effect of steering "CarpetRegrid::refinement_levels".
 //////////////////////////////////////////////////////////////////////////////
-int CarpetIOHDF5_SetNumRefinementLevels (void)
+void CarpetIOHDF5_SetNumRefinementLevels ()
 {
   DECLARE_CCTK_PARAMETERS;
 
@@ -114,18 +162,17 @@ int CarpetIOHDF5_SetNumRefinementLevels (void)
                                           buffer);
     assert (retval == 0);
   }
-
-  return (0);
 }
 
 
 //////////////////////////////////////////////////////////////////////////////
 // close all open checkpoint/filereader files after recovering grid variables
 //////////////////////////////////////////////////////////////////////////////
-void CarpetIOHDF5_CloseFiles (const cGH* const cctkGH)
+void CarpetIOHDF5_CloseFiles (CCTK_ARGUMENTS)
 {
-  int error_count = 0;
+  DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
+  int error_count = 0;
 
 
   for (list<fileset_t>::const_iterator set = filesets.begin();
@@ -585,6 +632,20 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
   HDF5_ERROR (attr = H5Aopen_name (metadata, "carpet_delta_time"));
   HDF5_ERROR (H5Aread (attr, H5T_NATIVE_DOUBLE, &fileset.delta_time));
   HDF5_ERROR (H5Aclose (attr));
+
+  // Read grid structure if it is present
+  hid_t dataset;
+  H5E_BEGIN_TRY {
+    dataset = H5Dopen (metadata, METADATA_GROUP "/" GRID_STRUCTURE);
+  } H5E_END_TRY;
+  if (dataset >= 0) {
+    vector<char> gs_cstr (H5Dget_storage_size (dataset) + 1);
+    HDF5_ERROR (H5Dread (dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
+                         H5P_DEFAULT, &gs_cstr.front()));
+    HDF5_ERROR (H5Dclose (dataset));
+    istringstream gs_buf (&gs_cstr.front());
+    gs_buf >> fileset.grid_structure;
+  }
 
   fileset.mgleveltimes.resize (fileset.num_mglevels * fileset.num_reflevels);
   for (int i = 0; i < fileset.num_mglevels; i++) {

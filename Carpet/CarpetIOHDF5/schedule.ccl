@@ -57,6 +57,15 @@ if (! CCTK_Equals (recover, "no") && *recover_file)
     } "Overwrite 'CarpetRegird::refinement_levels' with the number of levels found in the checkpoint file"
   }
 
+  if (use_grid_structure_from_checkpoint)
+  {
+    schedule CarpetIOHDF5_RecoverGridStructure at RECOVER_PARAMETERS
+    {
+      LANG:C
+      OPTIONS: meta
+    } "Grid structure recovery routine"
+  }
+
   schedule CarpetIOHDF5_CloseFiles at POST_RECOVER_VARIABLES
   {
     LANG: C

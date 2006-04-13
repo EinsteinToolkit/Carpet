@@ -86,7 +86,10 @@ BOOLEAN checkpoint_next "Checkpoint at next iteration ?" STEERABLE = ALWAYS
 {
 } "no"
 
+BOOLEAN use_reflevels_from_checkpoint "Use 'CarpetRegrid::refinement_levels' from the checkpoint file rather than from the parameter file ?" STEERABLE = RECOVER
+{
+} "no"
 
-BOOLEAN use_reflevels_from_checkpoint "Use 'CarpetRegrid::refinement_levels' from the checkpoint file rather than from the parameter file ?" STEERABLE = ALWAYS
+BOOLEAN use_grid_structure_from_checkpoint "Use the grid structure stored in the checkpoint file" STEERABLE = RECOVER
 {
 } "no"

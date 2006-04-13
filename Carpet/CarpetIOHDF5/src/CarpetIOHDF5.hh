@@ -3,16 +3,18 @@
 
 
 #include <hdf5.h>
-#include "carpet.hh"
+#include "cctk_Arguments.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
+#include "carpet.hh"
 
 
 // some macros for HDF5 group names
 #define METADATA_GROUP "Parameters and Global Attributes"
 #define ALL_PARAMETERS "All Parameters"
+#define GRID_STRUCTURE "Grid Structure"
 
 // atomic HDF5 datatypes for the generic CCTK datatypes
-// (the one for CCTK_COMPLEX is created at startup as a compound HDF5 datatype
+// (the one for CCTK_COMPLEX is created at startup as a compound HDF5 datatype)
 #define HDF5_CHAR   H5T_NATIVE_CHAR
 
 #ifdef  CCTK_REAL_PRECISION_16
@@ -110,13 +112,14 @@ namespace CarpetIOHDF5
   extern "C" {
 
     int CarpetIOHDF5_Startup (void);
-    int CarpetIOHDF5_RecoverParameters (void);
-    int CarpetIOHDF5_Init (const cGH* const);
-    int CarpetIOHDF5_SetNumRefinementLevels (void);
-    int CarpetIOHDF5_InitialDataCheckpoint (const cGH* const);
-    int CarpetIOHDF5_EvolutionCheckpoint (const cGH* const);
-    int CarpetIOHDF5_TerminationCheckpoint (const cGH* const);
-    void CarpetIOHDF5_CloseFiles (const cGH* const);
+    void CarpetIOHDF5_Init (CCTK_ARGUMENTS);
+    void CarpetIOHDF5_SetNumRefinementLevels (void);
+    void CarpetIOHDF5_CloseFiles (CCTK_ARGUMENTS);
+    void CarpetIOHDF5_InitialDataCheckpoint (CCTK_ARGUMENTS);
+    void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS);
+    void CarpetIOHDF5_TerminationCheckpoint (CCTK_ARGUMENTS);
+    void CarpetIOHDF5_RecoverParameters (void);
+    void CarpetIOHDF5_RecoverGridStructure (void);
 
   } // extern "C"
 

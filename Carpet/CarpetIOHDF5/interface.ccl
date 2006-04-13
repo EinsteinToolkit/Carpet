@@ -6,6 +6,8 @@ includes header: CarpetIOHDF5.hh in CarpetIOHDF5.hh
 
 uses include header: carpet.hh
 
+uses include header: defs.hh
+
 uses include header: bbox.hh
 uses include header: vect.hh
 
@@ -13,6 +15,7 @@ uses include header: data.hh
 uses include header: gdata.hh
 
 uses include header: ggf.hh
+uses include header: gh.hh
 
 
 
