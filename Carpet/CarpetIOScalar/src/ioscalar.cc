@@ -379,7 +379,14 @@ namespace CarpetIOScalar {
           
           int const ierr
             = CCTK_Reduce (cctkGH, 0, handle, 1, vartype, &result, 1, n);
-          assert (! ierr);
+          if (ierr) {
+            char * const fullname = CCTK_FullName (n);
+            CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "Error during reduction for variable \"%s\"",
+                        fullname);
+            free (fullname);
+            memset (&result, 0, sizeof result);
+          }
           
           if (CCTK_MyProc(cctkGH)==0) {
             file << " ";
