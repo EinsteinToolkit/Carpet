@@ -798,6 +798,15 @@ namespace CarpetReduce {
       assert (inarrays[n]);
     }
     
+    if (intype != outtype) {
+      char const * const intypename = CCTK_VarTypeName (intype);
+      char const * const outtypename = CCTK_VarTypeName (outtype);
+      CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "The input type must be the same as the output type.  Requested were intype=%s, outtype=%s.",
+                  intypename, outtypename);
+      return -1;
+    }
+    
     assert (num_dims>=0 && num_dims<=dim);
     for (int d=0; d<num_dims; ++d) {
       assert (dims[d]>=0);
