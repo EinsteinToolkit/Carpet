@@ -56,6 +56,14 @@ namespace Carpet {
     for (int n=0; n<n_groups; ++n) {
       int const group = groups[n];
       
+      {
+        char * const groupname = CCTK_GroupName (group);
+        assert (groupname);
+        Checkpoint ("  %s: %screase to %d",
+                    groupname, inc ? "in" : "de", timelevels[n]);
+        free (groupname);
+      }
+      
       cGroup gp;
       const int ierr = CCTK_GroupData (group, &gp);
       assert (not ierr);
@@ -72,49 +80,51 @@ namespace Carpet {
       // Check an assumption
       if (not gp.vectorgroup) assert (gp.vectorlength == 1);
       
-      // Record previous number of allocated time levels
-      if (status) {
-        status[n] = groupdata.at(group).info.activetimelevels;
+      // No storage change in local mode
+      if (gp.grouptype == CCTK_GF) {
+        assert ((map == -1 or maps == 1)
+                and (component == -1
+                     or vhh.at(0)->local_components(reflevel) == 1));
       }
       
-      // Only do something if the number of time levels actually needs
-      // to be changed -- do nothing otherwise
-
-      const bool do_increase
-        = inc and timelevels[n] > groupdata.at(group).info.activetimelevels;
-      const bool do_decrease
-        = ! inc and timelevels[n] < groupdata.at(group).info.activetimelevels;
-      if (do_increase or do_decrease) {
-        
-        // No storage change in local mode
-        if (gp.grouptype == CCTK_GF) {
-          assert ((map == -1 or maps == 1)
-                  and (component == -1
-                       or vhh.at(0)->local_components(reflevel) == 1));
-        }
-        
-        if (! can_do) {
-          char * const groupname = CCTK_GroupName (group);
-          char const * const modestring
-            = (is_meta_mode() ? "meta"
-               : is_global_mode() ? "global"
-               : is_level_mode() ? "level"
-               : is_singlemap_mode() ? "singlemap"
-               : is_local_mode() ? "local"
-               : NULL);
-          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "Cannot change storage for group \"%s\" in %s mode",
-                      groupname, modestring);
-          free (groupname);
-        }
-        assert (can_do);
-        
-        // Set the new number of active time levels
-        groupdata.at(group).info.activetimelevels = timelevels[n];
-        
-        // Allocate the time levels as well
-        for (int ml=min_ml; ml<max_ml; ++ml) {
-          for (int rl=min_rl; rl<max_rl; ++rl) {
+      // Allocate the time levels
+      for (int ml=min_ml; ml<max_ml; ++ml) {
+        for (int rl=min_rl; rl<max_rl; ++rl) {
+          
+          // Record previous number of allocated time levels
+          if (status) {
+            // Note: This remembers only the last level
+            status[n] = groupdata.at(group).activetimelevels.at(ml).at(rl);
+          }
+          
+          // Only do something if the number of time levels actually
+          // needs to be changed -- do nothing otherwise
+          
+          const bool do_increase
+            =     inc and timelevels[n] > groupdata.at(group).activetimelevels.at(ml).at(rl);
+          const bool do_decrease
+            = not inc and timelevels[n] < groupdata.at(group).activetimelevels.at(ml).at(rl);
+          if (do_increase or do_decrease) {
+            
+            if (not can_do) {
+              char * const groupname = CCTK_GroupName (group);
+              char const * const modestring
+                = (is_meta_mode() ? "meta"
+                   : is_global_mode() ? "global"
+                   : is_level_mode() ? "level"
+                   : is_singlemap_mode() ? "singlemap"
+                   : is_local_mode() ? "local"
+                   : NULL);
+              CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                          "Cannot change storage for group \"%s\" in %s mode",
+                          groupname, modestring);
+              free (groupname);
+            }
+            assert (can_do);
+            
+            // Set the new number of active time levels
+            groupdata.at(group).activetimelevels.at(ml).at(rl) = timelevels[n];
+            
             for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
               for (int var=0; var<gp.numvars; ++var) {
                 const int vectorindex
@@ -157,7 +167,7 @@ namespace Carpet {
                   int const c = CCTK_MyProc(cgh);
                   for (int tl=0; tl<gp.numtimelevels; ++tl) {
                     cgh->data[varindex][tl]
-                      = (tl < groupdata.at(group).info.activetimelevels
+                      = (tl < groupdata.at(group).activetimelevels.at(ml).at(rl)
                          ? ((*arrdata.at(group).at(m).data.at(var))
                             (tl, 0, c, 0)->storage())
                          : NULL);
@@ -166,42 +176,45 @@ namespace Carpet {
               
               } // for var
             } // for m
-          } // for rl
-        } // for ml
-        
-      } // if really change the number of active time levels
-      
-      // Complain if there are not enough active time levels
-      if (gp.grouptype == CCTK_GF) {
-        if (max_refinement_levels > 1) {
-          if (groupdata.at(group).transport_operator != op_none
-              and groupdata.at(group).transport_operator != op_copy) {
-            if (groupdata.at(group).info.activetimelevels != 0
-                and (groupdata.at(group).info.activetimelevels
-                     < prolongation_order_time+1))
-            {
-              static vector<bool> didwarn;
-              int const numgroups = CCTK_NumGroups();
-              if (didwarn.size() < numgroups) {
-                didwarn.resize (numgroups, false);
-              }
-              if (! didwarn.at(group)) {
-                // Warn only once per group
-                didwarn.at(group) = true;
-                char * const groupname = CCTK_GroupName (group);
-                CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                            "There are not enough time levels for the desired temporal prolongation order in the grid function group \"%s\".  With Carpet::prolongation_order_time=%d, you need at least %d time levels.",
-                            groupname,
-                            prolongation_order_time, prolongation_order_time+1);
-                free (groupname);
+            
+          } // if really change the number of active time levels
+          
+          // Complain if there are not enough active time levels
+          if (gp.grouptype == CCTK_GF) {
+            if (max_refinement_levels > 1) {
+              if (groupdata.at(group).transport_operator != op_none
+                  and groupdata.at(group).transport_operator != op_copy) {
+                if (groupdata.at(group).activetimelevels.at(ml).at(rl) != 0
+                    and (groupdata.at(group).activetimelevels.at(ml).at(rl)
+                         < prolongation_order_time+1))
+                {
+                  static vector<bool> didwarn;
+                  int const numgroups = CCTK_NumGroups();
+                  if (didwarn.size() < numgroups) {
+                    didwarn.resize (numgroups, false);
+                  }
+                  if (not didwarn.at(group)) {
+                    // Warn only once per group
+                    didwarn.at(group) = true;
+                    char * const groupname = CCTK_GroupName (group);
+                    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                                "There are not enough time levels for the desired temporal prolongation order in the grid function group \"%s\".  With Carpet::prolongation_order_time=%d, you need at least %d time levels.",
+                                groupname,
+                                prolongation_order_time, prolongation_order_time+1);
+                    free (groupname);
+                  }
+                }
               }
             }
           }
-        }
-      }
-      
-      // Record current number of time levels
-      total_num_timelevels += groupdata.at(group).info.activetimelevels;
+          
+          // Record current number of time levels
+          // Note: This adds the time levels of all refinement levels
+          total_num_timelevels
+            += groupdata.at(group).activetimelevels.at(ml).at(rl);
+          
+        } // for rl
+      } // for ml
       
     } // for n
     
@@ -263,12 +276,17 @@ namespace Carpet {
   int
   QueryGroupStorageB (const cGH* cgh, int group, const char* groupname)
   {
+    DECLARE_CCTK_PARAMETERS;
     if (groupname) {
       group = CCTK_GroupIndex(groupname);
     }
     assert (group>=0 and group<CCTK_NumGroups());
+    int const grouptype = CCTK_GroupTypeI (group);
+    if (is_meta_mode() or is_global_mode()) assert (grouptype != CCTK_GF);
+    int const rl = grouptype == CCTK_GF ? reflevel : 0;
     // Return whether storage is allocated
-    return groupdata.at(group).info.activetimelevels > 0;
+    assert (groupdata.at(group).activetimelevels.at(mglevel).at(rl) != deadbeef);
+    return groupdata.at(group).activetimelevels.at(mglevel).at(rl) > 0;
   }
   
   

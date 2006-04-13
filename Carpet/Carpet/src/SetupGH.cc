@@ -240,14 +240,24 @@ namespace Carpet {
       if (can_transfer) {
         // Use the default
         if (gp.numtimelevels == 1) {
+#if 0
           // Only one time level: copy instead of prolongating
           char * const groupname = CCTK_GroupName (group);
           CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "Group \"%s\" has only one time level; therefore it "
-                      "will be copied insted of prolongated.",
+                      "will be copied instead of prolongated.",
                       groupname);
           free (groupname);
           return op_copy;
+#endif
+          // Only one time level:
+          char * const groupname = CCTK_GroupName (group);
+          CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Group \"%s\" has only one time level; therefore it "
+                      "will not be prolongated or restricted.",
+                      groupname);
+          free (groupname);
+          return op_none;
         } else {
           // Several time levels: use the default
           return op_Lagrange;
@@ -1133,6 +1143,10 @@ namespace Carpet {
 
     case CCTK_GF: {
       assert (gp.dim == dim);
+      groupdata.at(group).activetimelevels.resize(mglevels);
+      for (int ml=0; ml<mglevels; ++ml) {
+        groupdata.at(group).activetimelevels.at(ml).resize(1);
+      }
       arrdata.at(group).resize(maps);
       for (int m=0; m<maps; ++m) {
         arrdata.at(group).at(m).hh = vhh.at(m);
@@ -1145,6 +1159,10 @@ namespace Carpet {
     case CCTK_SCALAR:
     case CCTK_ARRAY: {
         
+      groupdata.at(group).activetimelevels.resize(mglevels);
+      for (int ml=0; ml<mglevels; ++ml) {
+        groupdata.at(group).activetimelevels.at(ml).resize(1);
+      }
       arrdata.at(group).resize(1);
       
       ivect sizes(1), ghostsizes(0);

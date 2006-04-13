@@ -111,6 +111,8 @@ namespace Carpet {
           const_cast<int*>(groupdata.at(group).info.bbox)[2*d  ] = obnds[d][0];
           const_cast<int*>(groupdata.at(group).info.bbox)[2*d+1] = obnds[d][1];
         }
+        groupdata.at(group).info.activetimelevels
+          = groupdata.at(group).activetimelevels.at(mglevel).at(0);
         
         for (int d=0; d<dim; ++d) {
           assert (groupdata.at(group).info.lsh[d]>=0);
@@ -129,7 +131,7 @@ namespace Carpet {
           assert (firstvar>=0);
           const int max_tl = CCTK_MaxTimeLevelsGI (group);
           assert (max_tl>=0);
-          const int active_tl = CCTK_ActiveTimeLevelsGI (cgh, group);
+          const int active_tl = groupdata.at(group).info.activetimelevels;
           assert (active_tl>=0 and active_tl<=max_tl);
           
           assert (arrdata.at(group).at(m).hh->is_local(rl,c));
@@ -199,6 +201,7 @@ namespace Carpet {
           const_cast<int*>(groupdata.at(group).info.bbox)[2*d  ] = deadbeef;
           const_cast<int*>(groupdata.at(group).info.bbox)[2*d+1] = deadbeef;
         }
+        groupdata.at(group).info.activetimelevels = deadbeef;
         
         const int numvars = CCTK_NumVarsInGroupI (group);
         if (numvars>0) {
@@ -244,6 +247,14 @@ namespace Carpet {
     ivect::ref(cgh->cctk_levfac) = spacereflevelfact;
     cgh->cctk_timefac = timereflevelfact;
     
+    // Set number of time levels
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
+      if (CCTK_GroupTypeI(group) == CCTK_GF) {
+        groupdata.at(group).info.activetimelevels
+          = groupdata.at(group).activetimelevels.at(mglevel).at(reflevel);
+      }
+    }
+    
     // Set current time
     assert (mglevel>=0 and mglevel<(int)leveltimes.size());
     assert (reflevel>=0 and reflevel<(int)leveltimes.at(mglevel).size());
@@ -273,6 +284,13 @@ namespace Carpet {
       cgh->cctk_time = global_time;
     } else {
       global_time = cgh->cctk_time;
+    }
+    
+    // Unset number of time levels
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
+      if (CCTK_GroupTypeI(group) == CCTK_GF) {
+        groupdata.at(group).info.activetimelevels = deadbeef;
+      }
     }
     
     reflevel = -1;
@@ -1003,6 +1021,68 @@ namespace Carpet {
       function (cgh);
     } END_META_MODE;
     return 0;
+  }
+  
+  
+  
+  //
+  // Mode setters
+  //
+  
+  // mglevel setter
+  
+  mglevel_setter::mglevel_setter (cGH const * const cgh_, int const ml)
+    : cgh(const_cast<cGH*>(cgh_))
+  {
+    assert (is_meta_mode());
+    enter_global_mode (cgh, ml);
+  }
+  
+  mglevel_setter::~mglevel_setter ()
+  {
+    leave_global_mode (cgh);
+  }
+  
+  // reflevel setter
+  
+  reflevel_setter::reflevel_setter (cGH const * const cgh_, int const rl)
+    : cgh(const_cast<cGH*>(cgh_))
+  {
+    assert (is_global_mode());
+    enter_level_mode (cgh, rl);
+  }
+  
+  reflevel_setter::~reflevel_setter ()
+  {
+    leave_level_mode (cgh);
+  }
+  
+  // map setter
+  
+  map_setter::map_setter (cGH const * const cgh_, int const m)
+    : cgh(const_cast<cGH*>(cgh_))
+  {
+    assert (is_level_mode());
+    enter_singlemap_mode (cgh, m);
+  }
+  
+  map_setter::~map_setter ()
+  {
+    leave_singlemap_mode (cgh);
+  }
+  
+  // component setter
+  
+  component_setter::component_setter (cGH const * const cgh_, int const c)
+    : cgh(const_cast<cGH*>(cgh_))
+  {
+    assert (is_singlemap_mode());
+    enter_local_mode (cgh, c);
+  }
+  
+  component_setter::~component_setter ()
+  {
+    leave_local_mode (cgh);
   }
   
   

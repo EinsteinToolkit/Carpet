@@ -136,8 +136,8 @@ namespace Carpet {
     bool done () const;
     void step ();
   };
-    
-    
+  
+  
   
   // Compatibility defines for the mode iterators
   
@@ -314,6 +314,76 @@ namespace Carpet {
     assert (meta_mode_);                        \
     meta_mode_ = false;                         \
   } while (false)
+  
+  
+  
+  // Mode setters
+  
+  class mglevel_setter {
+    cGH * cgh;
+  public:
+    mglevel_setter (cGH const * const cgh, int const ml);
+    ~mglevel_setter ();
+  };
+  
+  class reflevel_setter {
+    cGH * cgh;
+  public:
+    reflevel_setter (cGH const * const cgh, int const rl);
+    ~reflevel_setter ();
+  };
+  
+  class map_setter {
+    cGH * cgh;
+  public:
+    map_setter (cGH const * const cgh, int const m);
+    ~map_setter ();
+  };
+  
+  class component_setter {
+    cGH * cgh;
+  public:
+    component_setter (cGH const * const cgh, int const c);
+    ~component_setter ();
+  };
+  
+  
+  
+  // Compatibility defines for the mode setters
+  
+#define ENTER_GLOBAL_MODE(cgh, ml)              \
+  do {                                          \
+    mglevel_setter mg_setter_(cgh, ml);         \
+    {
+#define LEAVE_GLOBAL_MODE                       \
+    }                                           \
+  } while (false)
+  
+#define ENTER_LEVEL_MODE(cgh, rl)               \
+  do {                                          \
+    reflevel_setter ref_setter_(cgh, rl);       \
+    {
+#define LEAVE_LEVEL_MODE                        \
+    }                                           \
+  } while (false)
+  
+#define ENTER_SINGLEMAP_MODE(cgh, m)            \
+  do {                                          \
+    map_setter m_setter_(cgh, m);               \
+    {
+#define LEAVE_SINGLEMAP_MODE                    \
+    }                                           \
+  } while (false)
+  
+#define ENTER_LOCAL_MODE(cgh, c)                \
+  do {                                          \
+    component_setter c_setter_(cgh, c);         \
+    {
+#define LEAVE_LOCAL_MODE                        \
+    }                                           \
+  } while (false)
+  
+  
   
 } // namespace Carpet
 

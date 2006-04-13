@@ -129,6 +129,7 @@ namespace Carpet {
   struct groupdesc {
     cGroupDynamicData info;
     operator_type transport_operator; // prolongation and restriction
+    vector<vector<int> > activetimelevels; // [mglevel][reflevel]
   };
   extern vector<groupdesc> groupdata; // [group]
   
