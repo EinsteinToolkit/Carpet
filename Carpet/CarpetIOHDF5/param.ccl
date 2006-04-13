@@ -46,12 +46,12 @@ STRING out_dir "Name of CarpetIOHDF5 output directory, overrides 'IO::out_dir'" 
 
 STRING out_vars "Variables to output in CarpetIOHDF5 file format" STEERABLE = ALWAYS
 {
-  .* :: "List of group or variable names"
+  "" :: "List of group or variable names"
 } ""
 
 STRING out_extension "File extension to use for CarpetIOHDF5 output" STEERABLE = ALWAYS
 {
-  ".*" :: "File extension (including a leading dot, if desired)"
+  "" :: "File extension (including a leading dot, if desired)"
 } ".h5"
 
 KEYWORD out_criterion "Criterion to select CarpetIOHDF5 output intervals, overrides out_every" STEERABLE = ALWAYS
