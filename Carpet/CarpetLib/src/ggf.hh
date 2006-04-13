@@ -51,10 +51,9 @@ public:				// should be readonly
   const gh &h;                  // grid hierarchy
   dh &d;			// data hierarchy
 
-private:
-  int timelevels_;              // time levels
-
 protected:
+  vector<vector<int> > timelevels_; // time levels
+
   mdata storage;		// storage
   
 public:
@@ -81,9 +80,9 @@ public:
   bool operator== (const ggf& f) const;
   
   // Querying
-  int timelevels () const
+  int timelevels (int const ml, int const rl) const
   {
-    return timelevels_;
+    return timelevels_.at(ml).at(rl);
   }
   
   

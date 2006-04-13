@@ -25,7 +25,6 @@ ggf::ggf (const int varindex_, const operator_type transport_operator_,
   : varindex(varindex_), transport_operator(transport_operator_), t(t_),
     prolongation_order_time(prolongation_order_time_),
     h(d_.h), d(d_),
-    timelevels_(0),
     storage(h.mglevels()),
     vectorlength(vectorlength_), vectorindex(vectorindex_),
     vectorleader(vectorleader_)
@@ -36,6 +35,11 @@ ggf::ggf (const int varindex_, const operator_type transport_operator_,
   assert (vectorindex >= 0 and vectorindex < vectorlength);
   assert ((vectorindex==0 and !vectorleader)
           or (vectorindex!=0 and vectorleader));
+  
+  timelevels_.resize(d.h.mglevels());
+  for (int ml=0; ml<d.h.mglevels(); ++ml) {
+    timelevels_.at(ml).resize(d.h.reflevels(), 0);
+  }
   
   d.add(this);
 }
@@ -60,20 +64,20 @@ void ggf::set_timelevels (const int ml, const int rl, const int new_timelevels)
   
   assert (new_timelevels >= 0);
   
-  if (new_timelevels < timelevels()) {
+  if (new_timelevels < timelevels(ml,rl)) {
     
     for (int c=0; c<(int)storage.at(ml).at(rl).size(); ++c) {
-      for (int tl=new_timelevels; tl<timelevels(); ++tl) {
+      for (int tl=new_timelevels; tl<timelevels(ml,rl); ++tl) {
         delete storage.at(ml).at(rl).at(c).at(tl);
       }
       storage.at(ml).at(rl).at(c).resize (new_timelevels);
     } // for c
     
-  } else if (new_timelevels > timelevels()) {
+  } else if (new_timelevels > timelevels(ml,rl)) {
     
     for (int c=0; c<(int)storage.at(ml).at(rl).size(); ++c) {
       storage.at(ml).at(rl).at(c).resize (new_timelevels);
-      for (int tl=timelevels(); tl<new_timelevels; ++tl) {
+      for (int tl=timelevels(ml,rl); tl<new_timelevels; ++tl) {
         storage.at(ml).at(rl).at(c).at(tl) = typed_data(tl,rl,c,ml);
         storage.at(ml).at(rl).at(c).at(tl)->allocate
           (d.boxes.at(ml).at(rl).at(c).exterior, h.proc(rl,c));
@@ -82,7 +86,7 @@ void ggf::set_timelevels (const int ml, const int rl, const int new_timelevels)
     
   }
   
-  timelevels_ = new_timelevels;
+  timelevels_.at(ml).at(rl) = new_timelevels;
 }
 
 
@@ -110,8 +114,8 @@ bool ggf::recompose_did_change (const int rl) const
     if (storage.at(ml).size() <= rl) return true;
     if (storage.at(ml).at(rl).size() != h.components(rl)) return true;
     for (int c=0; c<h.components(rl); ++c) {
-      if (storage.at(ml).at(rl).at(c).size() != timelevels()) return true;
-      for (int tl=0; tl<timelevels(); ++tl) {
+      if (storage.at(ml).at(rl).at(c).size() != timelevels(ml,rl)) return true;
+      for (int tl=0; tl<timelevels(ml,rl); ++tl) {
         ibbox const & wantextent = d.boxes.at(ml).at(rl).at(c).exterior;
         ibbox const & haveextent = storage.at(ml).at(rl).at(c).at(tl)->extent();
         if (haveextent != wantextent) return true;
@@ -134,14 +138,18 @@ void ggf::recompose_allocate (const int rl)
     storage.at(ml).at(rl).resize(0);
   }
   
+  for (int ml=0; ml<d.h.mglevels(); ++ml) {
+    timelevels_.at(ml).resize(d.h.reflevels(), timelevels_.at(ml).at(0));
+  }
+  
   // Resize structure and allocate storage
   storage.resize(h.mglevels());
   for (int ml=0; ml<h.mglevels(); ++ml) {
     storage.at(ml).resize(h.reflevels());
     storage.at(ml).at(rl).resize(h.components(rl));
     for (int c=0; c<h.components(rl); ++c) {
-      storage.at(ml).at(rl).at(c).resize(timelevels());
-      for (int tl=0; tl<timelevels(); ++tl) {
+      storage.at(ml).at(rl).at(c).resize(timelevels(ml,rl));
+      for (int tl=0; tl<timelevels(ml,rl); ++tl) {
         storage.at(ml).at(rl).at(c).at(tl) = typed_data(tl,rl,c,ml);
         storage.at(ml).at(rl).at(c).at(tl)->allocate
           (d.boxes.at(ml).at(rl).at(c).exterior, h.proc(rl,c));
@@ -156,7 +164,7 @@ void ggf::recompose_fill (comm_state& state, const int rl,
   // Initialise the new storage
   for (int ml=0; ml<h.mglevels(); ++ml) {
     for (int c=0; c<h.components(rl); ++c) {
-      for (int tl=0; tl<timelevels(); ++tl) {
+      for (int tl=0; tl<timelevels(ml,rl); ++tl) {
         
         // Find out which regions need to be prolongated
         // (Copy the exterior because some variables are not prolongated)
@@ -188,7 +196,7 @@ void ggf::recompose_fill (comm_state& state, const int rl,
                                ? prolongation_order_time
                                : 0);
               const int numtl = pot+1;
-              assert (timelevels() >= numtl);
+              assert (timelevels(ml,rl) >= numtl);
               vector<int> tls(numtl);
               vector<CCTK_REAL> times(numtl);
               for (int i=0; i<numtl; ++i) {
@@ -240,7 +248,7 @@ void ggf::recompose_free (const int rl)
   // Delete old storage
   for (int ml=0; ml<(int)oldstorage.size(); ++ml) {
     for (int c=0; c<(int)oldstorage.at(ml).at(rl).size(); ++c) {
-      for (int tl=0; tl<timelevels(); ++tl) {
+      for (int tl=0; tl<timelevels(ml,rl); ++tl) {
         delete oldstorage.at(ml).at(rl).at(c).at(tl);
       } // for tl
     } // for c
@@ -256,7 +264,7 @@ void ggf::recompose_bnd_prolongate (comm_state& state, const int rl,
     if (rl>0) {
       for (int ml=0; ml<h.mglevels(); ++ml) {
         for (int c=0; c<h.components(rl); ++c) {
-          for (int tl=0; tl<timelevels(); ++tl) {
+          for (int tl=0; tl<timelevels(ml,rl); ++tl) {
             
             // TODO: assert that reflevel 0 boundaries are copied
             const CCTK_REAL time = t.time(tl,rl,ml);
@@ -276,7 +284,7 @@ void ggf::recompose_sync (comm_state& state, const int rl,
     // Set boundaries
     for (int ml=0; ml<h.mglevels(); ++ml) {
       for (int c=0; c<h.components(rl); ++c) {
-        for (int tl=0; tl<timelevels(); ++tl) {
+        for (int tl=0; tl<timelevels(ml,rl); ++tl) {
           
           sync (state,tl,rl,c,ml);
           
@@ -293,8 +301,8 @@ void ggf::cycle (int rl, int c, int ml) {
   assert (rl>=0 and rl<h.reflevels());
   assert (c>=0 and c<h.components(rl));
   assert (ml>=0 and ml<h.mglevels());
-  gdata* tmpdata = storage.at(ml).at(rl).at(c).at(timelevels()-1);
-  for (int tl=timelevels()-1; tl>0; --tl) {
+  gdata* tmpdata = storage.at(ml).at(rl).at(c).at(timelevels(ml,rl)-1);
+  for (int tl=timelevels(ml,rl)-1; tl>0; --tl) {
     storage.at(ml).at(rl).at(c).at(tl) = storage.at(ml).at(rl).at(c).at(tl-1);
   }
   storage.at(ml).at(rl).at(c).at(0) = tmpdata;
@@ -305,9 +313,9 @@ void ggf::flip (int rl, int c, int ml) {
   assert (rl>=0 and rl<h.reflevels());
   assert (c>=0 and c<h.components(rl));
   assert (ml>=0 and ml<h.mglevels());
-  for (int tl=0; tl<(timelevels()-1)/2; ++tl) {
+  for (int tl=0; tl<(timelevels(ml,rl)-1)/2; ++tl) {
     const int tl1 =                  tl;
-    const int tl2 = timelevels()-1 - tl;
+    const int tl2 = timelevels(ml,rl)-1 - tl;
     assert (tl1 < tl2);
     gdata* tmpdata = storage.at(ml).at(rl).at(c).at(tl1);
     storage.at(ml).at(rl).at(c).at(tl1) = storage.at(ml).at(rl).at(c).at(tl2);
@@ -325,14 +333,14 @@ void ggf::copycat (comm_state& state,
                    const ibbox dh::dboxes::* recv_box,
                    int tl2, int rl2, int ml2)
 {
-  assert (tl1>=0 and tl1<timelevels());
   assert (rl1>=0 and rl1<h.reflevels());
   assert (c1>=0 and c1<h.components(rl1));
   assert (ml1>=0 and ml1<h.mglevels());
-  assert (tl2>=0 and tl2<timelevels());
+  assert (tl1>=0 and tl1<timelevels(ml1,rl1));
   assert (rl2>=0 and rl2<h.reflevels());
   const int c2=c1;
   assert (ml2<h.mglevels());
+  assert (tl2>=0 and tl2<timelevels(ml2,rl2));
   const ibbox recv = d.boxes.at(ml1).at(rl1).at(c1).*recv_box;
   // copy the content
   gdata* const dst = storage.at(ml1).at(rl1).at(c1).at(tl1);
@@ -346,14 +354,14 @@ void ggf::copycat (comm_state& state,
                    const iblist dh::dboxes::* recv_list,
                    int tl2, int rl2, int ml2)
 {
-  assert (tl1>=0 and tl1<timelevels());
   assert (rl1>=0 and rl1<h.reflevels());
   assert (c1>=0 and c1<h.components(rl1));
   assert (ml1>=0 and ml1<h.mglevels());
+  assert (tl1>=0 and tl1<timelevels(ml1,rl1));
   assert (           ml2<h.mglevels());
-  assert (tl2>=0 and tl2<timelevels());
   assert (rl2>=0 and rl2<h.reflevels());
   const int c2=c1;
+  assert (tl2>=0 and tl2<timelevels(ml2,rl2));
   const iblist recv = d.boxes.at(ml1).at(rl1).at(c1).*recv_list;
   // walk all boxes
   for (iblist::const_iterator r=recv.begin(); r!=recv.end(); ++r) {
@@ -371,13 +379,13 @@ void ggf::copycat (comm_state& state,
                    const iblistvect dh::dboxes::* recv_listvect,
                    int tl2, int rl2, int ml2)
 {
-  assert (tl1>=0 and tl1<timelevels());
   assert (rl1>=0 and rl1<h.reflevels());
   assert (c1>=0 and c1<h.components(rl1));
   assert (ml1>=0 and ml1<h.mglevels());
+  assert (tl1>=0 and tl1<timelevels(ml1,rl1));
   assert (           ml2<h.mglevels());
-  assert (tl2>=0 and tl2<timelevels());
   assert (rl2>=0 and rl2<h.reflevels());
+  assert (tl2>=0 and tl2<timelevels(ml2,rl2));
   // walk all components
   for (int c2=0; c2<h.components(rl2); ++c2) {
     const iblist recv = (d.boxes.at(ml1).at(rl1).at(c1).*recv_listvect).at(c2);
@@ -399,16 +407,16 @@ void ggf::intercat (comm_state& state,
                     const vector<int> tl2s, int rl2, int ml2,
                     CCTK_REAL time)
 {
-  assert (tl1>=0 and tl1<timelevels());
   assert (rl1>=0 and rl1<h.reflevels());
   assert (c1>=0 and c1<h.components(rl1));
   assert (ml1>=0 and ml1<h.mglevels());
-  for (int i=0; i<(int)tl2s.size(); ++i) {
-    assert (tl2s.at(i)>=0 and tl2s.at(i)<timelevels());
-  }
+  assert (tl1>=0 and tl1<timelevels(ml1,rl1));
   assert (rl2>=0 and rl2<h.reflevels());
   const int c2=c1;
   assert (ml2>=0 and ml2<h.mglevels());
+  for (int i=0; i<(int)tl2s.size(); ++i) {
+    assert (tl2s.at(i)>=0 and tl2s.at(i)<timelevels(ml2,rl2));
+  }
   
   vector<const gdata*> gsrcs(tl2s.size());
   vector<CCTK_REAL> times(tl2s.size());
@@ -431,16 +439,16 @@ void ggf::intercat (comm_state& state,
                     const vector<int> tl2s, int rl2, int ml2,
                     const CCTK_REAL time)
 {
-  assert (tl1>=0 and tl1<timelevels());
   assert (rl1>=0 and rl1<h.reflevels());
   assert (c1>=0 and c1<h.components(rl1));
   assert (ml1>=0 and ml1<h.mglevels());
-  for (int i=0; i<(int)tl2s.size(); ++i) {
-    assert (tl2s.at(i)>=0 and tl2s.at(i)<timelevels());
-  }
+  assert (tl1>=0 and tl1<timelevels(ml1,rl1));
   assert (rl2>=0 and rl2<h.reflevels());
   const int c2=c1;
   assert (ml2>=0 and ml2<h.mglevels());
+  for (int i=0; i<(int)tl2s.size(); ++i) {
+    assert (tl2s.at(i)>=0 and tl2s.at(i)<timelevels(ml2,rl2));
+  }
   
   vector<const gdata*> gsrcs(tl2s.size());
   vector<CCTK_REAL> times(tl2s.size());
@@ -468,14 +476,14 @@ void ggf::intercat (comm_state& state,
                     const vector<int> tl2s, int rl2, int ml2,
                     const CCTK_REAL time)
 {
-  assert (tl1>=0 and tl1<timelevels());
   assert (rl1>=0 and rl1<h.reflevels());
   assert (c1>=0 and c1<h.components(rl1));
   assert (ml1>=0 and ml1<h.mglevels());
-  for (int i=0; i<(int)tl2s.size(); ++i) {
-    assert (tl2s.at(i)>=0 and tl2s.at(i)<timelevels());
-  }
+  assert (tl1>=0 and tl1<timelevels(ml1,rl1));
   assert (rl2>=0 and rl2<h.reflevels());
+  for (int i=0; i<(int)tl2s.size(); ++i) {
+    assert (tl2s.at(i)>=0 and tl2s.at(i)<timelevels(ml2,rl2));
+  }
   // walk all components
   for (int c2=0; c2<h.components(rl2); ++c2) {
     assert (ml2>=0 and ml2<h.mglevels());
@@ -533,12 +541,11 @@ void ggf::ref_bnd_prolongate (comm_state& state,
   vector<int> tl2s;
   if (transport_operator != op_copy) {
     // Interpolation in time
-if (timelevels() < prolongation_order_time+1) fprintf (stderr, "got '%s' with %d timelevels order %d\n", CCTK_FullName (varindex), timelevels(), prolongation_order_time);
-    assert (timelevels() >= prolongation_order_time+1);
+    assert (timelevels(ml,rl) >= prolongation_order_time+1);
     tl2s.resize(prolongation_order_time+1);
     for (int i=0; i<=prolongation_order_time; ++i) tl2s.at(i) = i;
   } else {
-    assert (timelevels() >= 1);
+    assert (timelevels(ml,rl) >= 1);
     tl2s.resize(1);
     tl2s.at(0) = 0;
   }
@@ -599,7 +606,7 @@ void ggf::ref_prolongate (comm_state& state,
   if (transport_operator == op_none) return;
   vector<int> tl2s;
   // Interpolation in time
-  assert (timelevels() >= prolongation_order_time+1);
+  assert (timelevels(ml,rl) >= prolongation_order_time+1);
   tl2s.resize(prolongation_order_time+1);
   for (int i=0; i<=prolongation_order_time; ++i) tl2s.at(i) = i;
   intercat (state,

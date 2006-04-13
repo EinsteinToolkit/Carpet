@@ -54,20 +54,20 @@ gf<T>::~gf ()
 template<typename T>
 const data<T>* gf<T>::operator() (int tl, int rl, int c, int ml) const
 {
-  assert (tl>=0 and tl<timelevels());
   assert (rl>=0 and rl<h.reflevels());
   assert (c>=0 and c<h.components(rl));
   assert (ml>=0 and ml<h.mglevels());
+  assert (tl>=0 and tl<timelevels(ml, rl));
   return (const data<T>*)storage.at(ml).at(rl).at(c).at(tl);
 }
 
 template<typename T>
 data<T>* gf<T>::operator() (int tl, int rl, int c, int ml)
 {
-  assert (tl>=0 and tl<timelevels());
   assert (rl>=0 and rl<h.reflevels());
   assert (c>=0 and c<h.components(rl));
   assert (ml>=0 and ml<h.mglevels());
+  assert (tl>=0 and tl<timelevels(ml, rl));
   return (data<T>*)storage.at(ml).at(rl).at(c).at(tl);
 }
 
@@ -80,7 +80,7 @@ ostream& gf<T>::output (ostream& os) const
   T Tdummy;
   os << "gf<" << typestring(Tdummy) << ">:"
      << varindex << "[" << CCTK_VarName(varindex) << "],"
-     << "tls=" << timelevels();
+     << "tls=" << timelevels_;
   return os;
 }
 
