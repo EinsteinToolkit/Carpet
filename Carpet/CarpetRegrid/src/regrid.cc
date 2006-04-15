@@ -131,7 +131,7 @@ namespace CarpetRegrid {
       // Return if this is not during initial data generation, and if no
       // change in the grid structure is desired
       if (cctkGH->cctk_iteration != 0) {
-	if (keep_same_grid_structure and refinement_levels == reflevels) {
+	if (keep_same_grid_structure and refinement_levels == reflevels && !tracking) {
           return 0;
         }
       }
