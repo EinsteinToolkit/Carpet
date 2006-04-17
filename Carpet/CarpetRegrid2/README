@@ -1,0 +1,9 @@
+Cactus Code Thorn CarpetRegrid2
+Thorn Author(s)     : Erik Schnetter <schnetter@cct.lsu.edu>
+Thorn Maintainer(s) : Erik Schnetter <schnetter@cct.lsu.edu>
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+Set up refined regions by specifying a set of centres and radii about
+them.  The refined regions are then the conjunction of these regions.
