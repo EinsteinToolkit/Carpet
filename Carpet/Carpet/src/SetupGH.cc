@@ -460,7 +460,7 @@ namespace Carpet {
     // Allocate level times
     leveltimes.resize (mglevels);
     for (int ml=0; ml<mglevels; ++ml) {
-      leveltimes.at(ml).resize (maxreflevels);
+      leveltimes.at(ml).resize (1);
     }
     origin_space.resize (maps);
     delta_space.resize (maps);

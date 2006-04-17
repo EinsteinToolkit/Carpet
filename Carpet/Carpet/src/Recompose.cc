@@ -165,19 +165,8 @@ namespace Carpet {
 
     } END_MAP_LOOP;
     
-    // Set new number of active time levels
-    for (int n=0; n<CCTK_NumGroups(); ++n) {
-      int const grouptype = CCTK_GroupTypeI (n);
-      if (grouptype == CCTK_GF) {
-        for (int ml=0; ml<mglevels; ++ml) {
-          groupdata.at(n).activetimelevels.at(ml).resize
-            (vhh.at(0)->reflevels(),
-             groupdata.at(n).activetimelevels.at(ml).at(0));
-        }
-      }
-    }
-    
     // Calculate new number of levels
+    int const oldreflevels = reflevels;
     reflevels = vhh.at(0)->reflevels();
     for (int m=0; m<maps; ++m) {
       assert (vhh.at(m)->reflevels() == reflevels);
@@ -185,6 +174,23 @@ namespace Carpet {
     
     // One cannot switch off the current level
     assert (reflevels > reflevel);
+    
+    // Set new number of active time levels
+    for (int n=0; n<CCTK_NumGroups(); ++n) {
+      int const grouptype = CCTK_GroupTypeI (n);
+      if (grouptype == CCTK_GF) {
+        for (int ml=0; ml<mglevels; ++ml) {
+          groupdata.at(n).activetimelevels.at(ml).resize
+            (reflevels, groupdata.at(n).activetimelevels.at(ml).at(0));
+        }
+      }
+    }
+    
+    // Set new level times
+    for (int ml=0; ml<mglevels; ++ml) {
+      leveltimes.at(ml).resize
+        (reflevels, leveltimes.at(ml).at(oldreflevels-1));
+    }
     
     return did_change;
   }
