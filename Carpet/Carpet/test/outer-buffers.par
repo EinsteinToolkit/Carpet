@@ -14,7 +14,7 @@ IO::parfile_write = no
 
 
 
-ActiveThorns = "LocalInterp AEILocalInterp"
+ActiveThorns = "LocalInterp AEILocalInterp LocalReduce"
 
 
 

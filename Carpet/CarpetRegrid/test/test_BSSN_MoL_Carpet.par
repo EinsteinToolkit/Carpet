@@ -3,7 +3,7 @@
 
 # Required thorns
 
-ActiveThorns = "CoordBase SymBase time carpet carpetlib carpetregrid carpetreduce carpetslab boundary cartgrid3d bssn_mol mol nanchecker idanalyticbh carpetioascii ioutil iobasic admcoupling admbase admmacros coordgauge spacemask staticconformal"
+ActiveThorns = "CoordBase SymBase time carpet carpetlib carpetregrid carpetreduce carpetslab boundary cartgrid3d bssn_mol mol nanchecker idanalyticbh carpetioascii ioutil carpetiobasic carpetioscalar admcoupling admbase admmacros coordgauge spacemask staticconformal"
 
 # Grid
 
@@ -15,6 +15,8 @@ driver::ghost_size_x = 2
 driver::ghost_size_y = 2
 driver::ghost_size_z = 2
 
+CartGrid3D::avoid_origin = no
+
 Carpet::max_refinement_levels = 3
 Carpet::prolongation_order_space = 3
 Carpet::prolongation_order_time = 2
@@ -25,9 +27,9 @@ Carpet::buffer_width = 1
 CarpetRegrid::refinement_levels = 2
 CarpetRegrid::regrid_every = 0
 
-grid::type   = "byspacing"
-grid::dxyz   = 0.2
-grid::domain = "octant"
+Grid::type   = "byspacing"
+Grid::dxyz   = 0.2
+Grid::domain = "octant"
 
 cactus::cctk_initial_time = 0.0
 cactus::cctk_itlast       = 20
@@ -60,8 +62,8 @@ IO::out_dir = $parfile
 IOBasic::outInfo_every = 1
 IOBasic::outInfo_vars  = "admbase::gxx"
 
-IOBasic::outScalar_every =  8
-IOBasic::outScalar_vars  = "adm_bssn::adm_bs_gxx adm_bssn::adm_bs_Axx adm_bssn::adm_bs_phi adm_bssn::adm_bs_k adm_bssn::adm_bs_Gx admbase::gxx admbase::kxx admbase::alp"
+IOScalar::outScalar_every =  8
+IOScalar::outScalar_vars  = "adm_bssn::adm_bs_gxx adm_bssn::adm_bs_Axx adm_bssn::adm_bs_phi adm_bssn::adm_bs_k adm_bssn::adm_bs_Gx admbase::gxx admbase::kxx admbase::alp"
 
 ##################################################################
 
