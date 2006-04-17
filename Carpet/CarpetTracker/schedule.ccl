@@ -1,0 +1,9 @@
+# Schedule definitions for thorn CarpetTracker
+
+
+
+SCHEDULE CarpetTracker_SetPositions AT prestep
+{
+  LANG: C
+  OPTIONS: global
+} "Set positions of refined regions"

@@ -1,0 +1,5 @@
+# Interface definition for thorn CarpetTracker
+
+IMPLEMENTS: CarpetTracker
+
+INHERITS: SphericalSurface CarpetRegrid2

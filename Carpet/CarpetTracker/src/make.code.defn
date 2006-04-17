@@ -1,0 +1,7 @@
+# Main make.code.defn file for thorn CarpetTracker
+
+# Source files in this directory
+SRCS = SetPositions.cc
+
+# Subdirectories containing source files
+SUBDIRS = 

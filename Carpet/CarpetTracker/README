@@ -1,0 +1,8 @@
+Cactus Code Thorn CarpetTracker
+Thorn Author(s)     : Erik Schnetter <schnetter@cct.lsu.edu>
+Thorn Maintainer(s) : Erik Schnetter <schnetter@cct.lsu.edu>
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+Track black holes and update the location of the refinement regions.
