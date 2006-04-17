@@ -1,0 +1,8 @@
+# Interface definition for thorn RegridSyncTest
+# $Header:$
+
+implements: RegridSyncTest
+inherits:
+
+
+real myregridtestgf type=GF timelevels=3 "This is the regrid test grid function"

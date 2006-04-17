@@ -1,0 +1,18 @@
+# Schedule definitions for thorn RegridSyncTest
+# $Header:$
+
+storage: myregridtestgf[3]
+
+schedule RegridSyncTest_setup AT CCTK_INITIAL
+{
+  LANG: Fortran
+  SYNC: myregridtestgf
+} "Do something at inital"
+
+
+schedule RegridSyncTest_do_something AT PostRegrid
+{
+  LANG: Fortran
+  SYNC: myregridtestgf
+} "Do something at postregrid and try to sync"
+
