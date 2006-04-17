@@ -9,3 +9,7 @@ schedule CarpetStartup at STARTUP as Driver_Startup
 {
   LANG: C
 } "Startup routine"
+
+schedule group PreRegrid in DUMMY
+{
+} "Perform Pre-Regrid actions"

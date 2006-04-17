@@ -186,6 +186,24 @@ namespace Carpet {
 
   void recover_Regrid (cGH * const cgh, int const rl)
   {
+    BEGIN_MGLEVEL_LOOP(cgh) {
+      enter_level_mode (cgh, rl);
+      do_global_mode = true;
+      do_meta_mode = do_global_mode and mglevel==mglevels-1;
+      
+      Waypoint ("Preregrid at iteration %d time %g%s%s",
+		cgh->cctk_iteration, (double)cgh->cctk_time,
+		(do_global_mode ? " (global)" : ""),
+		(do_meta_mode ? " (meta)" : ""));
+      
+      // Preregrid
+      Checkpoint ("Scheduling PREREGRID");
+      CCTK_ScheduleTraverse ("PreRegrid", cgh, CallFunction);
+      
+      leave_level_mode (cgh);
+    } END_MGLEVEL_LOOP;
+    
+
     bool did_regrid = false;
     {
       const int ml=0;
@@ -321,7 +339,27 @@ namespace Carpet {
   void initialise_Regrid (cGH * const cgh, int const rl)
   {
     DECLARE_CCTK_PARAMETERS;
-    
+
+
+    // Preregrid
+    BEGIN_MGLEVEL_LOOP(cgh) {
+      enter_level_mode (cgh, rl);
+      do_global_mode = true;
+      do_meta_mode = do_global_mode and mglevel==mglevels-1;
+
+      Waypoint ("Preregrid at iteration %d time %g%s%s",
+		cgh->cctk_iteration, (double)cgh->cctk_time,
+		(do_global_mode ? " (global)" : ""),
+		(do_meta_mode ? " (meta)" : ""));
+
+      // Preregrid                                                                                            
+      Checkpoint ("Scheduling PREREGRID");
+      CCTK_ScheduleTraverse ("PreRegrid", cgh, CallFunction);
+
+      leave_level_mode (cgh);
+    } END_MGLEVEL_LOOP;
+
+
     bool did_regrid = false;
     {
       const int ml=0;

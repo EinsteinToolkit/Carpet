@@ -120,6 +120,7 @@ namespace Carpet {
 
   static void AdvanceTime( cGH* cgh, CCTK_REAL initial_time );
   static bool Regrid( cGH* cgh );
+  static void PreRegrid( cGH* cgh );
   static void PostRegrid( cGH* cgh );
   static void EvolutionI( cGH* cgh );
   static void Evolution_Restrict( cGH* cgh );
@@ -144,6 +145,8 @@ namespace Carpet {
         Waypoint ("Evolving iteration %d at t=%g",
                   cgh->cctk_iteration, (double)cgh->cctk_time);
       }
+
+      PreRegrid( cgh );
 
       if( Regrid( cgh ) )
         PostRegrid( cgh );
@@ -186,6 +189,33 @@ namespace Carpet {
     }
   }
 
+  void PreRegrid( cGH* cgh )
+  {
+    for (int rl=0; rl<reflevels; ++rl) {
+      for (int ml=mglevels-1; ml>=0; --ml) {
+        const int do_every = maxtimereflevelfact / timereffacts.at(rl);
+        if ((cgh->cctk_iteration-1) % do_every == 0) {
+          enter_global_mode (cgh, ml);
+          enter_level_mode (cgh, rl);
+
+          do_global_mode = reflevel==0;
+          do_meta_mode = do_global_mode and mglevel==mglevels-1;
+
+          Waypoint ("Preregrid at iteration %d time %g%s%s",
+                    cgh->cctk_iteration, (double)cgh->cctk_time,
+                    (do_global_mode ? " (global)" : ""),
+                    (do_meta_mode ? " (meta)" : ""));
+
+          Checkpoint ("Scheduling PREREGRID");
+          CCTK_ScheduleTraverse ("PreRegrid", cgh, CallFunction);
+
+          leave_level_mode (cgh);
+          leave_global_mode (cgh);
+        }
+      }
+    }
+  }
+
   bool Regrid( cGH* cgh )
   {
     bool did_regrid = false;
@@ -211,22 +241,25 @@ namespace Carpet {
   {
     for (int rl=0; rl<reflevels; ++rl) {
       for (int ml=mglevels-1; ml>=0; --ml) {
-        enter_global_mode (cgh, ml);
-        enter_level_mode (cgh, rl);
+        const int do_every = maxtimereflevelfact / timereffacts.at(rl);
+        if ((cgh->cctk_iteration-1) % do_every == 0) {
+          enter_global_mode (cgh, ml);
+          enter_level_mode (cgh, rl);
 
-        do_global_mode = reflevel==0;
-        do_meta_mode = do_global_mode and mglevel==mglevels-1;
+          do_global_mode = reflevel==0;
+          do_meta_mode = do_global_mode and mglevel==mglevels-1;
 
-        Waypoint ("Postregrid at iteration %d time %g%s%s",
-                  cgh->cctk_iteration, (double)cgh->cctk_time,
-                  (do_global_mode ? " (global)" : ""),
-                  (do_meta_mode ? " (meta)" : ""));
+          Waypoint ("Postregrid at iteration %d time %g%s%s",
+                    cgh->cctk_iteration, (double)cgh->cctk_time,
+                    (do_global_mode ? " (global)" : ""),
+                    (do_meta_mode ? " (meta)" : ""));
 
-        Checkpoint ("Scheduling POSTREGRID");
-        CCTK_ScheduleTraverse ("CCTK_POSTREGRID", cgh, CallFunction);
+          Checkpoint ("Scheduling POSTREGRID");
+          CCTK_ScheduleTraverse ("CCTK_POSTREGRID", cgh, CallFunction);
 
-        leave_level_mode (cgh);
-        leave_global_mode (cgh);
+          leave_level_mode (cgh);
+          leave_global_mode (cgh);
+        }
       }
     }
   }
