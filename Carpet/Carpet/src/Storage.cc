@@ -80,13 +80,6 @@ namespace Carpet {
       // Check an assumption
       if (not gp.vectorgroup) assert (gp.vectorlength == 1);
       
-      // No storage change in local mode
-      if (gp.grouptype == CCTK_GF) {
-        assert ((map == -1 or maps == 1)
-                and (component == -1
-                     or vhh.at(0)->local_components(reflevel) == 1));
-      }
-      
       // Allocate the time levels
       for (int ml=min_ml; ml<max_ml; ++ml) {
         for (int rl=min_rl; rl<max_rl; ++rl) {
@@ -121,6 +114,14 @@ namespace Carpet {
               free (groupname);
             }
             assert (can_do);
+            
+            // No storage change in local mode
+            // TODO: This this seems superfluous, given the test above
+            if (gp.grouptype == CCTK_GF) {
+              assert ((map == -1 or maps == 1)
+                      and (component == -1
+                           or vhh.at(0)->local_components(reflevel) == 1));
+            }
             
             // Set the new number of active time levels
             groupdata.at(group).activetimelevels.at(ml).at(rl) = timelevels[n];
