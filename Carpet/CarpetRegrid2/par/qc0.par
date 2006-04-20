@@ -164,6 +164,8 @@ TwoPunctures::par_m_minus    =  0.45
 TwoPunctures::par_P_plus [1] =  0.333
 TwoPunctures::par_P_minus[1] = -0.333
 
+TwoPunctures::grid_setup_method = "evaluation"
+
 TwoPunctures::TP_epsilon = 1e-4
 
 TwoPunctures::verbose = yes

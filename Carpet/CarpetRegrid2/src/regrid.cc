@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 #include <vector>
 
 #include "cctk.h"
@@ -24,6 +25,7 @@ namespace CarpetRegrid2 {
   
   typedef bboxset <int, dim> ibboxset;
   typedef vect <CCTK_REAL, dim> rvect;
+  typedef bbox <CCTK_REAL, dim> rbbox;
   
   
   
@@ -90,6 +92,40 @@ namespace CarpetRegrid2 {
   
   
   
+  ivect
+  rpos2ipos (rvect const & rpos,
+             rvect const & origin, rvect const & scale,
+             gh const & hh, int const rl)
+  {
+    ivect const levfac = hh.reffacts.at(rl);
+    assert (all (hh.baseextent.stride() % levfac == 0));
+    ivect const istride = hh.baseextent.stride() / levfac;
+    
+    return (ivect (floor ((rpos - origin) * scale / rvect(istride) + 0.5)) *
+            istride);
+  }
+  
+  rvect
+  ipos2rpos (ivect const & ipos,
+             rvect const & origin, rvect const & scale,
+             gh const & hh, int const rl)
+  {
+    return rvect(ipos) / scale + origin;
+  }
+  
+  rbbox
+  ibbox2rbbox (ibbox const & ib,
+               rvect const & origin, rvect const & scale,
+               gh const & hh, int const rl)
+  {
+    rvect const zero (0);
+    return rbbox (ipos2rpos (ib.lower() , origin, scale, hh, rl),
+                  ipos2rpos (ib.upper() , origin, scale, hh, rl),
+                  ipos2rpos (ib.stride(), zero  , scale, hh, rl));
+  }
+  
+  
+  
   extern "C" {
     CCTK_INT
     CarpetRegrid2_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
@@ -139,18 +175,59 @@ namespace CarpetRegrid2 {
     if (do_recompose) {
       
       // Find extent of domain
-      rvect global_lower, global_upper;
-      for (int d = 0; d < dim; ++ d) {
-        int const ierr = CCTK_CoordRange
-          (cctkGH, & global_lower[d], & global_upper[d], d + 1, 0, "cart3d");
-        if (ierr < 0) {
-          global_lower[d] = 0.0;
-          global_upper[d] = 1.0;
-        }
+      
+      // This requires that CoordBase is used (but this is not
+      // checked)
+      
+      iivect nboundaryzones;
+      iivect is_internal;
+      iivect is_staggered;
+      iivect shiftout;
+      {
+        CCTK_INT const ierr = GetBoundarySpecification
+          (2*dim,
+           & nboundaryzones[0][0],
+           & is_internal[0][0],
+           & is_staggered[0][0],
+           & shiftout[0][0]);
+        assert (not ierr);
       }
       
-      ivect const global_extent (hh.baseextent.upper() - hh.baseextent.lower());
-      rvect const scale (rvect (global_extent) / (global_upper - global_lower));
+      rvect physical_lower, physical_upper;
+      rvect interior_lower, interior_upper;
+      rvect exterior_lower, exterior_upper;
+      rvect spacing;
+      {
+        CCTK_INT const ierr = GetDomainSpecification
+          (dim,
+           & physical_lower[0], & physical_upper[0],
+           & interior_lower[0], & interior_upper[0],
+           & exterior_lower[0], & exterior_upper[0],
+           & spacing[0]);
+        assert (not ierr);
+      }
+      
+      // Adapt spacing for convergence level
+      spacing *= ipow ((CCTK_REAL) Carpet::mgfact, Carpet::basemglevel);
+      
+      {
+        CCTK_INT const ierr =
+          ConvertFromPhysicalBoundary
+          (dim,
+           & physical_lower[0], & physical_upper[0],
+           & interior_lower[0], & interior_upper[0],
+           & exterior_lower[0], & exterior_upper[0],
+           & spacing[0]);
+        assert (not ierr);
+      }
+      
+      rvect const origin (exterior_lower);
+      rvect const scale (rvect (hh.baseextent.stride()) / spacing);
+      
+      ivect const physical_ilower =
+        rpos2ipos (physical_lower, origin, scale, hh, 0);
+      ivect const physical_iupper =
+        rpos2ipos (physical_upper, origin, scale, hh, 0);
       
       // The set of refined regions
       vector <ibboxset> regions;
@@ -167,16 +244,14 @@ namespace CarpetRegrid2 {
           rvect const rmax = centre.position + centre.radius.at(rl);
           
           // Convert to an integer bbox
+          ivect const imin =
+            rpos2ipos (rmin, origin, scale, hh, rl);
+          ivect const imax =
+            rpos2ipos (rmax, origin, scale, hh, rl);
+          
           ivect const levfac = hh.reffacts.at(rl);
           assert (all (hh.baseextent.stride() % levfac == 0));
           ivect const istride = hh.baseextent.stride() / levfac;
-          
-          ivect const imin =
-            (ivect (floor ((rmin - global_lower) * scale / rvect(istride)))
-             * istride);
-          ivect const imax =
-            (ivect (ceil  ((rmax - global_lower) * scale / rvect(istride)))
-             * istride);
           
           ibbox const region (imin, imax, istride);
           
@@ -192,7 +267,7 @@ namespace CarpetRegrid2 {
       for (size_t rl = regions.size() - 1; rl >= 2; -- rl) {
         ibbox coarse = * regions.at(rl-1).begin();
         
-        regions.at(rl).normalize();        
+        regions.at(rl).normalize();
         ibboxset coarsified;
         for (ibboxset::const_iterator ibb = regions.at(rl).begin();
              ibb != regions.at(rl).end();
@@ -201,17 +276,14 @@ namespace CarpetRegrid2 {
           ivect const distance (min_distance);
           ibbox const fbb = * ibb;
           ibbox const cbb = fbb.expanded_for(coarse);
-          ibbox const ebb = cbb.expand(distance, distance);
+          ibbox const ebb = cbb.expand (distance, distance);
           coarsified |= ebb;
         }
         
         regions.at(rl-1) |= coarsified;
       }
       
-      // Simplify the set of refined regions
-      for (size_t rl = 1; rl < regions.size(); ++ rl) {
-        regions.at(rl).normalize();
-      }
+      
       
       // Convert to (bbsss, obss, pss) triplet
       vector <vector <ibbox> > bbss;
@@ -224,6 +296,51 @@ namespace CarpetRegrid2 {
       
       for (size_t rl = 1; rl < regions.size(); ++ rl) {
         
+        rvect const level_physical_lower = physical_lower;
+        rvect const level_physical_upper = physical_upper;
+        rvect const level_spacing = spacing / hh.reffacts.at(rl);
+        rvect level_interior_lower, level_interior_upper;
+        rvect level_exterior_lower, level_exterior_upper;
+        {
+          CCTK_INT const ierr =
+            ConvertFromPhysicalBoundary
+            (dim,
+             & level_physical_lower[0], & level_physical_upper[0],
+             & level_interior_lower[0], & level_interior_upper[0],
+             & level_exterior_lower[0], & level_exterior_upper[0],
+             & level_spacing[0]);
+          assert (not ierr);
+        }
+        
+        ivect const level_exterior_ilower =
+          rpos2ipos (level_exterior_lower, origin, scale, hh, rl);
+        ivect const level_exterior_iupper =
+          rpos2ipos (level_exterior_upper, origin, scale, hh, rl);
+        
+        // Clip at the outer boundary
+        regions.at(rl).normalize();
+        ibboxset clipped;
+        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+             ibb != regions.at(rl).end();
+             ++ ibb)
+        {
+          ibbox const bb = * ibb;
+          
+          bvect const lower_is_outer = bb.lower() <= physical_ilower;
+          bvect const upper_is_outer = bb.upper() >= physical_iupper;
+          
+          ibbox const clipped_bb (max (bb.lower(), level_exterior_ilower),
+                                  min (bb.upper(), level_exterior_iupper),
+                                  bb.stride());
+          
+          clipped += clipped_bb;
+        }
+        
+        regions.at(rl) = clipped;
+        
+        // Simplify the set of refined regions
+        regions.at(rl).normalize();
+        
         // Create a vector of bboxes for this level
         gh::cexts bbs;
         gh::cbnds obs;
@@ -234,12 +351,15 @@ namespace CarpetRegrid2 {
              ++ ibb)
         {
           ibbox bb = * ibb;
+          
+          bvect const lower_is_outer = bb.lower() <= physical_ilower;
+          bvect const upper_is_outer = bb.upper() >= physical_iupper;
+          
           bbvect ob;
           for (int d = 0; d < dim; ++ d) {
-            ob[d][0] = bb.lower()[d] <= hh.baseextent.lower()[d];
-            ob[d][1] = bb.upper()[d] >= hh.baseextent.upper()[d];
+            ob[d][0] = lower_is_outer[d];
+            ob[d][1] = upper_is_outer[d];
           }
-          bb = bb & hh.baseextent.expanded_for (bb);
           bbs.push_back (bb);
           obs.push_back (ob);
         }

@@ -12,15 +12,51 @@ USES INCLUDE HEADER: carpet.hh
 
 
 
+# The location of the boundary points
+CCTK_INT FUNCTION GetBoundarySpecification \
+    (CCTK_INT IN        size,              \
+     CCTK_INT OUT ARRAY nboundaryzones,    \
+     CCTK_INT OUT ARRAY is_internal,       \
+     CCTK_INT OUT ARRAY is_staggered,      \
+     CCTK_INT OUT ARRAY shiftout)
+USES FUNCTION GetBoundarySpecification
+
+# The overall size of the domain
+CCTK_INT FUNCTION GetDomainSpecification \
+    (CCTK_INT  IN        size,           \
+     CCTK_REAL OUT ARRAY physical_min,   \
+     CCTK_REAL OUT ARRAY physical_max,   \
+     CCTK_REAL OUT ARRAY interior_min,   \
+     CCTK_REAL OUT ARRAY interior_max,   \
+     CCTK_REAL OUT ARRAY exterior_min,   \
+     CCTK_REAL OUT ARRAY exterior_max,   \
+     CCTK_REAL OUT ARRAY spacing)
+USES FUNCTION GetDomainSpecification
+
+# Conversion between boundary types
+CCTK_INT FUNCTION ConvertFromPhysicalBoundary \
+    (CCTK_INT  IN        size,                \
+     CCTK_REAL IN  ARRAY physical_min,        \
+     CCTK_REAL IN  ARRAY physical_max,        \
+     CCTK_REAL OUT ARRAY interior_min,        \
+     CCTK_REAL OUT ARRAY interior_max,        \
+     CCTK_REAL OUT ARRAY exterior_min,        \
+     CCTK_REAL OUT ARRAY exterior_max,        \
+     CCTK_REAL IN  ARRAY spacing)
+USES FUNCTION ConvertFromPhysicalBoundary
+
+
+
 # The true prototype of the routine below:
 #   int Carpet_Regrid (const cGH * cctkGH,
 #                      gh::mexts  * bbsss,
 #                      gh::rbnds  * obss,
 #                      gh::rprocs * pss,
 #                      int          force);
-CCTK_INT FUNCTION Carpet_Regrid (CCTK_POINTER_TO_CONST IN cctkGH, \
-                                 CCTK_POINTER IN bbsss,           \
-                                 CCTK_POINTER IN obss,            \
-                                 CCTK_POINTER IN pss,		  \
-				 CCTK_INT IN force)
+CCTK_INT FUNCTION Carpet_Regrid       \
+    (CCTK_POINTER_TO_CONST IN cctkGH, \
+     CCTK_POINTER          IN bbsss,  \
+     CCTK_POINTER          IN obss,   \
+     CCTK_POINTER          IN pss,    \
+     CCTK_INT IN force)
 PROVIDES FUNCTION Carpet_Regrid WITH CarpetRegrid2_Regrid LANGUAGE C
