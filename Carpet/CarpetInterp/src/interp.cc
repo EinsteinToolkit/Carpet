@@ -1229,6 +1229,18 @@ namespace CarpetInterp {
           // Do a dummy interpolation from a later timelevel
           // if the desired timelevel does not exist
           int const my_tl = tl >= interp_num_tl ? 0 : tl;
+          assert (my_tl < num_tl);
+          
+          // Are there enough time levels?
+          int const active_tl = CCTK_ActiveTimeLevelsVI (cctkGH, vi);
+          if (active_tl <= my_tl) {
+            char * const fullname = CCTK_FullName(vi);
+            CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "Grid function \"%s\" has only %d active time levels on refinement level %d; this is not enough for time interpolation",
+                        fullname, active_tl, reflevel);
+            free (fullname);
+          }
+          
 #if 0
           input_arrays[n] = CCTK_VarDataPtrI (cctkGH, my_tl, vi);
 #else
