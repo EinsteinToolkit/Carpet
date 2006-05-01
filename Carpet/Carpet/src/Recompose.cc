@@ -883,8 +883,8 @@ namespace Carpet {
 	  obs.at(c) = obnd;
           ps.at(c) = c;
           for (int d=0; d<dim; ++d) {
-            if (clb[d] > rlb[d]) obs.at(c)[0][d] = false;
-            if (cub[d] < rub[d]) obs.at(c)[1][d] = false;
+            if (clb[d] > rlb[d]) obs.at(c)[d][0] = false;
+            if (cub[d] < rub[d]) obs.at(c)[d][1] = false;
           }
 	}
       }
