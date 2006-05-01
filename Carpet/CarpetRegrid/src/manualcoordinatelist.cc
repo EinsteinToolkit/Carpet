@@ -85,32 +85,39 @@ namespace CarpetRegrid {
       
       newobss.resize(newbbss.size());
       for (size_t rl=0; rl<newobss.size(); ++rl) {
-        newobss.at(rl).resize(newbbss.at(rl).size());
         ivect const spacereffact = spacereffacts.at(rl+1);
+        assert (mglevel==0);
+        rvect const spacing =
+          base_spacing * ipow((CCTK_REAL)mgfact, basemglevel) / spacereffact;
+        ierr = ConvertFromPhysicalBoundary
+          (dim, &physical_min[0], &physical_max[0],
+           &interior_min[0], &interior_max[0],
+           &exterior_min[0], &exterior_max[0], &spacing[0]);
+        assert (!ierr);
+        
+        newobss.at(rl).resize(newbbss.at(rl).size());
         for (size_t c=0; c<newobss.at(rl).size(); ++c) {
+          rvect lo = newbbss.at(rl).at(c).lower();
+          rvect up = newbbss.at(rl).at(c).upper();
+          rvect str = newbbss.at(rl).at(c).stride();
+          bbvect ob = newobss.at(rl).at(c);
           for (int d=0; d<dim; ++d) {
-            assert (mglevel==0);
-            rvect const spacing = base_spacing * ipow((CCTK_REAL)mgfact, basemglevel) / spacereffact;
-            ierr = ConvertFromPhysicalBoundary
-              (dim, &physical_min[0], &physical_max[0],
-               &interior_min[0], &interior_max[0],
-               &exterior_min[0], &exterior_max[0], &spacing[0]);
-            assert (!ierr);
-            newobss.at(rl).at(c)[d][0] = abs(newbbss.at(rl).at(c).lower()[d] - physical_min[d]) < 1.0e-6 * spacing[d];
-            rvect lo = newbbss.at(rl).at(c).lower();
-            rvect up = newbbss.at(rl).at(c).upper();
-            rvect str = newbbss.at(rl).at(c).stride();
-            if (newobss.at(rl).at(c)[d][0]) {
+            ob[d][0] = (abs(newbbss.at(rl).at(c).lower()[d] - physical_min[d])
+                        < 1.0e-6 * spacing[d]);
+            if (ob[d][0]) {
               lo[d] = exterior_min[d];
             }
-            newobss.at(rl).at(c)[d][1] = abs(newbbss.at(rl).at(c).upper()[d] - physical_max[d]) < 1.0e-6 * base_spacing[d] / spacereffact[d];
-            if (newobss.at(rl).at(c)[d][1]) {
+            ob[d][1] = (abs(newbbss.at(rl).at(c).upper()[d] - physical_max[d])
+                        < 1.0e-6 * base_spacing[d] / spacereffact[d]);
+            if (ob[d][1]) {
               up[d] = exterior_max[d];
             }
-            newbbss.at(rl).at(c) = rbbox(lo, up, str);
+            str[d] *= ipow((CCTK_REAL)mgfact, basemglevel);
           }
-        }
-      }
+          newbbss.at(rl).at(c) = rbbox(lo, up, str);
+          newobss.at(rl).at(c) = ob;
+        } // for c
+      } // for rl
       
     } else {                    // if ! smart_outer_boundaries
       
@@ -160,9 +167,9 @@ namespace CarpetRegrid {
         bbvect const & ob = newobss.at(rl-1).at(c);
         // TODO:
         // assert (domain_from_coordbase);
-        // TODO: why can basemglevel not be used here?
-        // rvect const spacing = base_spacing * ipow(CCTK_REAL(mgfact), basemglevel) / ipow(reffact, rl);
-        rvect const spacing = base_spacing / spacereffacts.at(rl);
+        ivect const spacereffact = spacereffacts.at(rl);
+        rvect const spacing =
+          base_spacing * ipow(CCTK_REAL(mgfact), basemglevel) / spacereffact;
         if (! all(abs(ext.stride() - spacing) < spacing * 1.0e-10)) {
           assert (dim==3);
           CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
