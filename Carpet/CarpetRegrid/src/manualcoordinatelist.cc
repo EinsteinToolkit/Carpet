@@ -203,12 +203,7 @@ namespace CarpetRegrid {
 
 	// we use this array to keep track of which component was merged
 	// with another.
-	int* merged_component = (int*) malloc(sizeof(int)*bbs.size());
-      
-	// initialize the damn array
-	for(int i=0;i<bbs.size();i++) {
-	  merged_component[i] = 0;
-	}
+        vector<bool> merged_component (bbs.size(), false);
 
 	// loop over all components, starting at c=1
         for (size_t c=1; c<bbs.size(); ++c) {
@@ -225,7 +220,7 @@ namespace CarpetRegrid {
 	    // do we overlap ?
 	    if(fun.size() > 0) {
 	      // uh. this component will be merged
-	      merged_component[c] = 1;
+	      merged_component.at(c) = true;
 
 	      // calculate union
 	      morefun = morefun.expanded_containing(bbs.at(sc));
@@ -241,18 +236,13 @@ namespace CarpetRegrid {
 	vector<ibbox> mergedbbs;
 	for (size_t c=0;c<bbs.size(); ++c) {
 
-	  if(merged_component[c] == 0) {
+	  if (not merged_component.at(c)) {
 	    mergedbbs.push_back (bbs.at(c));
 	  }
 
 	}
 
-
 	bbs = mergedbbs;
-
-	//	cout << "merged components: " << bbs << endl;
-
-	free(merged_component);
 
       } // if (merge_overlapping_components && ...)
 
