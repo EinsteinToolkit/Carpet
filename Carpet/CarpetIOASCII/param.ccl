@@ -364,15 +364,15 @@ CCTK_REAL out2D_yzplane_x "x coordinate for 2D planes in yz-direction" STEERABLE
 
 
 
-BOOLEAN output_symmetry_points "Output symmetry points"
+BOOLEAN output_symmetry_points "Output symmetry points (assuming that there are nghostzones symmetry points)"
 {
 } "yes"
 
-BOOLEAN out3D_ghosts "Output ghost zones as well"
+BOOLEAN out3D_ghosts "Output ghost zones"
 {
 } "yes"
 
-BOOLEAN out3D_outer_ghosts "Output outer boundary ghost zones as well"
+BOOLEAN out3D_outer_ghosts "Output outer boundary zones (assuming that there are nghostzones boundary points)"
 {
 } "yes"
 
