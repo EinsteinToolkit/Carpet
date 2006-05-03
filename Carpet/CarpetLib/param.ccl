@@ -32,6 +32,12 @@ BOOLEAN fast_recomposing "Take shortcuts during recomposing (EXPERIMENTAL)" STEE
 
 
 
+BOOLEAN omit_prolongation_points_when_restricting "Do not restrict to points which are used to prolongate the boundary" STEERABLE=recover
+{
+} "no"
+
+
+
 INT print_memstats_every "Report periodically how much memory is used per process" STEERABLE=always
 {
   0   :: "don't report"

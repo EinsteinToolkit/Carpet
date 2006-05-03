@@ -369,6 +369,8 @@ void dh::setup_refinement_boundary_prolongation_boxes (dh::dboxes & box,
 void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
                                              int const rl, int const c, int const ml)
 {
+  DECLARE_CCTK_PARAMETERS;
+
   const ibbox& intr = box.interior;
 
   // Refinement boxes
@@ -407,17 +409,22 @@ void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
           const ibbox recv = (*si).contracted_for(intr);
           recvs |= recv;
         }
-        // remove what is sent during boundary prolongation
-        const int pss = prolongation_stencil_size();
-        for (iblistvect::const_iterator slvi = box.send_ref_bnd_fine.begin();
-             slvi != box.send_ref_bnd_fine.end(); ++ slvi)
-        {
-          const iblist& sendlist = * slvi;
-          for (iblist::const_iterator sli = sendlist.begin();
-               sli != sendlist.end(); ++sli)
+        if (omit_prolongation_points_when_restricting) {
+          // remove what is sent during boundary prolongation
+          const int pss = prolongation_stencil_size();
+          // TODO: this needs to remove what is sent from other
+          // processors as well, not only what is sent from processor
+          // c
+          for (iblistvect::const_iterator slvi = box.send_ref_bnd_fine.begin();
+               slvi != box.send_ref_bnd_fine.end(); ++ slvi)
           {
-            const ibbox& send = * sli;
-            recvs -= send.expand(pss,pss);
+            const iblist& sendlist = * slvi;
+            for (iblist::const_iterator sli = sendlist.begin();
+                 sli != sendlist.end(); ++sli)
+            {
+              const ibbox& send = * sli;
+              recvs -= send.expand(pss,pss);
+            }
           }
         }
         recvs.normalize();
@@ -479,7 +486,9 @@ void dh::trim_unsynced_boundaries (dh::dboxes & box,
 void dh::check_bboxes (dh::dboxes & box,
                        int const rl, int const c, int const ml)
 {
-// Assert that all boundaries are synced or received
+  DECLARE_CCTK_PARAMETERS;
+
+  // Assert that all boundaries are synced or received
   {
     const ibset& sync_not = box.sync_not;
 #if 0
@@ -602,7 +611,7 @@ void dh::check_bboxes (dh::dboxes & box,
   
   // Assert that points which are used for boundary prolongation are
   // not restricted
-  {
+  if (omit_prolongation_points_when_restricting) {
     for (iblistvect::const_iterator slvi = box.send_ref_bnd_fine.begin();
          slvi != box.send_ref_bnd_fine.end(); ++ slvi)
     {
