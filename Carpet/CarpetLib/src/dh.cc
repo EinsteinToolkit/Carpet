@@ -415,15 +415,19 @@ void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
           // TODO: this needs to remove what is sent from other
           // processors as well, not only what is sent from processor
           // c
-          for (iblistvect::const_iterator slvi = box.send_ref_bnd_fine.begin();
-               slvi != box.send_ref_bnd_fine.end(); ++ slvi)
-          {
-            const iblist& sendlist = * slvi;
-            for (iblist::const_iterator sli = sendlist.begin();
-                 sli != sendlist.end(); ++sli)
+          for (int ccc=0; ccc<h.components(rl); ++ccc) {
+            const dh::dboxes& box2 = boxes.at(ml).at(rl).at(ccc);
+            for (iblistvect::const_iterator slvi =
+                   box2.send_ref_bnd_fine.begin();
+                 slvi != box2.send_ref_bnd_fine.end(); ++ slvi)
             {
-              const ibbox& send = * sli;
-              recvs -= send.expand(pss,pss);
+              const iblist& sendlist = * slvi;
+              for (iblist::const_iterator sli = sendlist.begin();
+                   sli != sendlist.end(); ++sli)
+              {
+                const ibbox& send = * sli;
+                recvs -= send.expand(pss,pss);
+              }
             }
           }
         }
