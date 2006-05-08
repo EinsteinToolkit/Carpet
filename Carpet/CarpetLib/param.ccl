@@ -32,7 +32,7 @@ BOOLEAN fast_recomposing "Take shortcuts during recomposing (EXPERIMENTAL)" STEE
 
 
 
-BOOLEAN omit_prolongation_points_when_restricting "Do not restrict to points which are used to prolongate the boundary" STEERABLE=recover
+BOOLEAN omit_prolongation_points_when_restricting "Do not restrict to points which are used to prolongate the boundary" STEERABLE=always
 {
 } "no"
 
