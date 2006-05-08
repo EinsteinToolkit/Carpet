@@ -412,9 +412,6 @@ void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
         if (omit_prolongation_points_when_restricting) {
           // remove what is sent during boundary prolongation
           const int pss = prolongation_stencil_size();
-          // TODO: this needs to remove what is sent from other
-          // processors as well, not only what is sent from processor
-          // c
           for (int ccc=0; ccc<h.components(rl); ++ccc) {
             const dh::dboxes& box2 = boxes.at(ml).at(rl).at(ccc);
             for (iblistvect::const_iterator slvi =
@@ -631,6 +628,71 @@ void dh::check_bboxes (dh::dboxes & box,
             assert ((*sli & *rli).empty());
           }
         }
+      }
+    }
+  }
+  
+  // Check proper nesting
+  // "Proper nesting" means that prolongation from level L to level
+  // L+1 does not use any points that are prolongated from level L-1
+  // to level L.
+  // We extend that notion to require a certain distance D in between.
+  if (c == 0) {
+    if (rl > 0 and rl < h.reflevels()) {
+      // Points that are filled by prolongation from level rl-1
+      ibset recvs;
+      for (int cc=0; cc<h.components(rl); ++cc) {
+        dboxes & box1 = boxes.at(ml).at(rl).at(cc);
+        for (iblistvect::const_iterator rlvi = box1.recv_ref_bnd_coarse.begin();
+             rlvi != box1.recv_ref_bnd_coarse.end(); ++ rlvi)
+        {
+          const iblist & recvlist = * rlvi;
+          for (iblist::const_iterator rli = recvlist.begin();
+               rli != recvlist.end(); ++ rli)
+          {
+            const ibbox & recv = * rli;
+            recvs |= recv;
+          }
+        }
+      }
+      recvs.normalize();
+      // Extend the received points by the desired distance
+      const ivect dist = proper_nesting_distance;
+      ibset taboo;
+      for (ibset::const_iterator bi = recvs.begin(); bi != recvs.end(); ++ bi) {
+        const ibbox & b = * bi;
+        const ibbox t = b.expand (dist, dist);
+        taboo |= t;
+      }
+      taboo.normalize();
+      // Points that are used for prolongation to level rl+1
+      ibset sends;
+      for (int cc=0; cc<h.components(rl); ++cc) {
+        dboxes & box1 = boxes.at(ml).at(rl).at(cc);
+        for (iblistvect::const_iterator slvi = box1.send_ref_bnd_fine.begin();
+             slvi != box1.send_ref_bnd_fine.end(); ++ slvi)
+        {
+          const iblist & sendlist = * slvi;
+          for (iblist::const_iterator sli = sendlist.begin();
+               sli != sendlist.end(); ++ sli)
+          {
+            const ibbox & send = * sli;
+            sends |= send;
+          }
+        }
+      }
+      sends.normalize();
+      // Calculate the overlap
+      ibset overlap = sends & taboo;
+      if (not overlap.empty()) {
+        overlap.normalize();
+        cout << "Not properly nested: rl=" << rl << ", "
+             << "required distance=" << proper_nesting_distance << endl;
+        cout << "Received from level " << rl-1 << ": " << recvs << endl;
+        cout << "Taboo region on level " << rl << ": " << taboo << endl;
+        cout << "Sent to level " << rl+1 << ": " << sends << endl;
+        cout << "Overlap on level " << rl << ": " << overlap << endl;
+        CCTK_WARN (1, "Not properly nested");
       }
     }
   }
