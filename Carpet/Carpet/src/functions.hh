@@ -75,6 +75,15 @@ namespace Carpet {
   
   
   // Helpers for recomposing the grid hierarchy
+  void Recompose (cGH const * const cctkGH,
+                  int const m,
+                  gh::mexts  const & bbsss,
+                  gh::rbnds  const & obss,
+                  gh::rprocs const & pss,
+                  bool const do_init);
+  
+  void PostRecompose ();
+  
   void CheckRegions (const gh::mexts & bbsss,
                      const gh::rbnds & obss,
                      const gh::rprocs& pss);

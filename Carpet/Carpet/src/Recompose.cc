@@ -115,8 +115,10 @@ namespace Carpet {
   }
   
   
- 
-  bool Regrid (const cGH* cgh, const bool force_recompose, const bool do_init)
+  
+  bool Regrid (const cGH* cgh,
+               const bool force_recompose,
+               const bool do_init)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -145,26 +147,48 @@ namespace Carpet {
       did_change = did_change or do_recompose;
       
       if (do_recompose) {
-        
-        CCTK_INFO ("Recomposing the grid hierarchy");
-        
-        // Check the regions
-        CheckRegions (bbsss, obss, pss);
-        // TODO: check also that the current and all coarser levels
-        // did not change
-        
-        // Write grid structure to file
-        OutputGridStructure (cgh, map, bbsss, obss, pss);
-        
-        // Recompose
-        vhh.at(map)->recompose (bbsss, obss, pss, do_init);
-        
-        if (verbose) OutputGrids (cgh, map, *vhh.at(map));
-        
+        Recompose (cgh, map, bbsss, obss, pss, do_init);
       }
-
+      
     } END_MAP_LOOP;
     
+    PostRecompose ();
+    
+    return did_change;
+  }
+  
+  
+  
+  void Recompose (cGH const * const cctkGH,
+                  int const m,
+                  gh::mexts  const & bbsss,
+                  gh::rbnds  const & obss,
+                  gh::rprocs const & pss,
+                  bool const do_init)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Recomposing the grid hierarchy for map %d", m);
+    
+    // Check the regions
+    CheckRegions (bbsss, obss, pss);
+    // TODO: check also that the current and all coarser levels did
+    // not change
+    
+    // Write grid structure to file
+    OutputGridStructure (cctkGH, m, bbsss, obss, pss);
+    
+    // Recompose
+    vhh.at(m)->recompose (bbsss, obss, pss, do_init);
+    
+    if (verbose) OutputGrids (cctkGH, m, *vhh.at(m));
+  }
+  
+  
+  
+  void PostRecompose ()
+  {
     // Calculate new number of levels
     int const oldreflevels = reflevels;
     reflevels = vhh.at(0)->reflevels();
@@ -191,8 +215,6 @@ namespace Carpet {
       leveltimes.at(ml).resize
         (reflevels, leveltimes.at(ml).at(oldreflevels-1));
     }
-    
-    return did_change;
   }
   
   
