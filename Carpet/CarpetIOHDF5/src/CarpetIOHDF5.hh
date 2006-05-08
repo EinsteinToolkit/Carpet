@@ -113,13 +113,13 @@ namespace CarpetIOHDF5
 
     int CarpetIOHDF5_Startup (void);
     void CarpetIOHDF5_Init (CCTK_ARGUMENTS);
-    void CarpetIOHDF5_SetNumRefinementLevels (void);
+    int CarpetIOHDF5_SetNumRefinementLevels (void);
     void CarpetIOHDF5_CloseFiles (CCTK_ARGUMENTS);
     void CarpetIOHDF5_InitialDataCheckpoint (CCTK_ARGUMENTS);
     void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS);
     void CarpetIOHDF5_TerminationCheckpoint (CCTK_ARGUMENTS);
-    void CarpetIOHDF5_RecoverParameters (void);
-    void CarpetIOHDF5_RecoverGridStructure (void);
+    int CarpetIOHDF5_RecoverParameters (void);
+    void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS);
 
   } // extern "C"
 

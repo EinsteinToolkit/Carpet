@@ -84,17 +84,17 @@ static int ReadVar (const cGH* const cctkGH,
 //////////////////////////////////////////////////////////////////////////////
 // Register with the Cactus Recovery Interface
 //////////////////////////////////////////////////////////////////////////////
-void CarpetIOHDF5_RecoverParameters ()
+int CarpetIOHDF5_RecoverParameters ()
 {
-  IOUtil_RecoverParameters (Recover, ".h5", "HDF5");
+  return IOUtil_RecoverParameters (Recover, ".h5", "HDF5");
 }
 
 //////////////////////////////////////////////////////////////////////////////
 // Recover the grid structure
 //////////////////////////////////////////////////////////////////////////////
-void CarpetIOHDF5_RecoverGridStructure ()
+void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
 {
-  cGH const * const cctkGH = 0; // fake it
+  DECLARE_CCTK_ARGUMENTS;
   
   fileset_t & fileset = * filesets.begin();
   
@@ -128,10 +128,11 @@ void CarpetIOHDF5_RecoverGridStructure ()
     Carpet::MakeMultigridBoxes (cctkGH, bbss, obss, bbsss);
     
     // Regrid
-    Carpet::vhh.at(m)->recompose (bbsss, obss, pss, false);
-    Carpet::OutputGrids (cctkGH, m, * Carpet::vhh.at(m));
+    Recompose (cctkGH, m, bbsss, obss, pss, false);
     
   } // for m
+  
+  PostRecompose ();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -141,7 +142,7 @@ void CarpetIOHDF5_RecoverGridStructure ()
 // Note that this has to be done after parameter recovery in order to have
 // any effect of steering "CarpetRegrid::refinement_levels".
 //////////////////////////////////////////////////////////////////////////////
-void CarpetIOHDF5_SetNumRefinementLevels ()
+int CarpetIOHDF5_SetNumRefinementLevels ()
 {
   DECLARE_CCTK_PARAMETERS;
 
@@ -162,6 +163,8 @@ void CarpetIOHDF5_SetNumRefinementLevels ()
                                           buffer);
     assert (retval == 0);
   }
+  
+  return 0;
 }
 
 
@@ -243,6 +246,16 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
 
   // set global Cactus/Carpet variables
   if (in_recovery) {
+
+    if (use_grid_structure_from_checkpoint) {
+      // recover the grid structure only once
+      static bool is_first = true;
+      if (is_first) {
+        is_first = false;
+        CarpetIOHDF5_RecoverGridStructure (cctkGH);
+      }
+    }
+
     global_time = fileset->global_time;
     delta_time = fileset->delta_time;
     CCTK_SetMainLoopIndex (fileset->main_loop_index);
@@ -636,7 +649,7 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
   // Read grid structure if it is present
   hid_t dataset;
   H5E_BEGIN_TRY {
-    dataset = H5Dopen (metadata, METADATA_GROUP "/" GRID_STRUCTURE);
+    dataset = H5Dopen (metadata, GRID_STRUCTURE);
   } H5E_END_TRY;
   if (dataset >= 0) {
     vector<char> gs_cstr (H5Dget_storage_size (dataset) + 1);
