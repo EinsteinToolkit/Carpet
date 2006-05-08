@@ -1,0 +1,17 @@
+ActiveThorns = "Boundary CartGrid3D Time CoordBase SymBase Carpet CarpetLib CarpetRegrid CarpetReduce CarpetSlab IOUtil CarpetIOBasic CarpetIOScalar CarpetIOASCII CarpetIOHDF5 IDScalarWaveC WaveToyC"
+
+
+Cactus::cctk_itlast = 128
+
+# Output
+IO::out_dir = $parfile
+
+# Recovery
+IO::recover_dir  = "../../../arrangements/Carpet/CarpetIOHDF5/test"
+IO::recover      = "manual"
+IO::recover_file = "CarpetWaveToyCheckpoint_test.it_64"
+
+Carpet::regrid_during_recovery                   = no
+CarpetIOHDF5::use_grid_structure_from_checkpoint = yes
+
+IOHDF5::checkpoint = "no"
