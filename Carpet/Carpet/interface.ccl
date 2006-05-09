@@ -40,6 +40,9 @@ PROVIDES FUNCTION GetMPICommWorld WITH Carpet_GetMPICommWorld LANGUAGE C
 CCTK_INT FUNCTION EnableProlongating(CCTK_INT IN flag)
 PROVIDES FUNCTION EnableProlongating WITH CarpetEnableProlongating LANGUAGE C
 
+CCTK_INT FUNCTION QueryProlongating()
+PROVIDES FUNCTION QueryProlongating WITH CarpetQueryProlongating LANGUAGE C
+
 
 
 # The location of the boundary points

@@ -46,6 +46,11 @@ namespace Carpet {
     return 0;
   }
 
+  CCTK_INT CarpetQueryProlongating ()
+  {
+    return do_prolongate;
+  }
+
 
 
   // Multi-Model
