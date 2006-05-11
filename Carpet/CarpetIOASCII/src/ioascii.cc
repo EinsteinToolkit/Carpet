@@ -399,14 +399,6 @@ namespace CarpetIOASCII {
       return -1;
     }
 
-    // Check for storage
-    if (not CCTK_QueryGroupStorageI (cctkGH, group)) {
-      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-		  "Cannot output variable '%s' because it has no storage",
-		  varname);
-      return 0;
-    }
-
     // get the default I/O request for this variable
     ioRequest* request = requests[vindex];
     if (not request) {
@@ -452,6 +444,14 @@ namespace CarpetIOASCII {
     }
     assert (last_output < cctk_iteration);
     last_output = cctk_iteration;
+
+    // Check for storage
+    if (not CCTK_QueryGroupStorageI (cctkGH, group)) {
+      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+		  "Cannot output variable '%s' because it has no storage",
+		  varname);
+      return 0;
+    }
 
     // Get grid hierarchy extentsion from IOUtil
     const ioGH * const iogh = (const ioGH *)CCTK_GHExtension (cctkGH, "IO");
