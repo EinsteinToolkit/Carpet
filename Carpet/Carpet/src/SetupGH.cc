@@ -1139,6 +1139,14 @@ namespace Carpet {
     }
 #endif
     
+    if (gp.stagtype != 0) {
+      char * const groupname = CCTK_GroupName (group);
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "The group \"%s\" is staggered.  Staggered groups are not yet supported",
+                  groupname);
+      free (groupname);
+    }
+    
     switch (gp.grouptype) {
 
     case CCTK_GF: {
