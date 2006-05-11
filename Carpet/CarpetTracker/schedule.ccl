@@ -2,7 +2,7 @@
 
 
 
-SCHEDULE CarpetTracker_SetPositions AT prestep
+SCHEDULE CarpetTracker_SetPositions IN PreRegrid
 {
   LANG: C
   OPTIONS: global
