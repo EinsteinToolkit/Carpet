@@ -189,10 +189,14 @@ int WriteVarUnchunked (const cGH* const cctkGH,
             }
           } else {
             hsize_t overlapshape[dim];
-#if (H5_VERS_MAJOR == 1 && H5_VERS_MINOR == 6 && H5_VERS_RELEASE >= 4)
-            hsize_t overlaporigin[dim];
-#else
+
+            // before HDF5-1.6.4 the H5Sselect_hyperslab() function expected
+            // the 'start' argument to be of type 'hssize_t'
+#if (H5_VERS_MAJOR == 1 && \
+     (H5_VERS_MINOR < 6 || (H5_VERS_MINOR == 6 && H5_VERS_RELEASE < 4)))
             hssize_t overlaporigin[dim];
+#else
+            hsize_t overlaporigin[dim];
 #endif
             for (int d = 0; d < group.dim; ++d) {
               overlaporigin[group.dim-1-d] =

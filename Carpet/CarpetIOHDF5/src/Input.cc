@@ -870,10 +870,14 @@ static int ReadVar (const cGH* const cctkGH,
       bboxes_read.at(Carpet::map) |= overlap;
 
       // calculate hyperslab selection parameters
-#if (H5_VERS_MAJOR == 1 && H5_VERS_MINOR >= 6 && H5_VERS_RELEASE >= 4)
-      hsize_t memorigin[dim], fileorigin[dim];
-#else
+
+      // before HDF5-1.6.4 the H5Sselect_hyperslab() function expected
+      // the 'start' argument to be of type 'hssize_t'
+#if (H5_VERS_MAJOR == 1 && \
+     (H5_VERS_MINOR < 6 || (H5_VERS_MINOR == 6 && H5_VERS_RELEASE < 4)))
       hssize_t memorigin[dim], fileorigin[dim];
+#else
+      hsize_t memorigin[dim], fileorigin[dim];
 #endif
       hsize_t memdims[dim], count[dim];
       for (int i = 0; i < patch->rank; i++) {
