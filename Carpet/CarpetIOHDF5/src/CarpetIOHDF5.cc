@@ -525,14 +525,6 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
     assert (do_global_mode);
   }
 
-  // Check for storage
-  if (not CCTK_QueryGroupStorageI (cctkGH, group)) {
-    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "Cannot output variable '%s' because it has no storage",
-                fullname);
-    return (0);
-  }
-
   // get the default I/O request for this variable
   const CarpetIOHDF5GH *myGH =
     (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
@@ -599,6 +591,14 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
   }
   assert (last_output < cctk_iteration);
   last_output = cctk_iteration;
+
+  // Check for storage
+  if (not CCTK_QueryGroupStorageI (cctkGH, group)) {
+    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                "Cannot output variable '%s' because it has no storage",
+                fullname);
+    return (0);
+  }
 
   // Open the output file if this is a designated I/O processor
   hid_t file = -1;
