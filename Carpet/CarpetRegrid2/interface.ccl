@@ -58,5 +58,5 @@ CCTK_INT FUNCTION Carpet_Regrid       \
      CCTK_POINTER          IN bbsss,  \
      CCTK_POINTER          IN obss,   \
      CCTK_POINTER          IN pss,    \
-     CCTK_INT IN force)
+     CCTK_INT              IN force)
 PROVIDES FUNCTION Carpet_Regrid WITH CarpetRegrid2_Regrid LANGUAGE C

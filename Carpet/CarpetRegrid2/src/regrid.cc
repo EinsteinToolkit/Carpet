@@ -230,7 +230,7 @@ namespace CarpetRegrid2 {
         rpos2ipos (physical_upper, origin, scale, hh, 0);
       
       // The set of refined regions
-      vector <ibboxset> regions;
+      vector <ibboxset> regions (1);
       
       // Loop over all centres
       for (int n = 0; n < centre_description::num_centres(); ++ n) {
