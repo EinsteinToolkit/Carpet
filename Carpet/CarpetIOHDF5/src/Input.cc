@@ -322,6 +322,22 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     } END_MAP_LOOP;
   }
 
+  // mark variables in groups with no grid points (size 0) as already done
+  for (int group = 0; group < group_bboxes.size(); group++) {
+    bool is_empty = true;
+    for (int map = 0; map < group_bboxes[group].size(); map++) {
+      is_empty &= group_bboxes[group][map].empty();
+    }
+    if (is_empty) {
+      int vindex = CCTK_FirstVarIndexI (group);
+      const int last = vindex + CCTK_NumVarsInGroupI (group);
+      while (vindex < last) {
+        read_completely[vindex].assign (read_completely[vindex].size(), true);
+        vindex++;
+      }
+    }
+  }
+
   const ioGH* ioUtilGH = (const ioGH*) CCTK_GHExtension (cctkGH, "IO");
 
   // loop over all input files of this set
