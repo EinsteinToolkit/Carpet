@@ -470,6 +470,7 @@ namespace Carpet {
     
     // Enable prolongating
     do_prolongate = true;
+    do_warn_about_storage = false; // This is enabled later
     
     finish_initialisation (cgh);
     

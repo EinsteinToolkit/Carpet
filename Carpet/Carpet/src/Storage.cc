@@ -23,6 +23,13 @@ namespace Carpet {
                       const int* timelevels, int* status,
                       const bool inc);
   
+  static void
+  GroupStorageCheck (cGH const * const cctkGH,
+                     int const group,
+                     int const ml, int const rl);
+  
+  
+  
   int
   GroupStorageCrease (const cGH* cgh, int n_groups, const int* groups,
                       const int* timelevels, int* status,
@@ -181,33 +188,7 @@ namespace Carpet {
           } // if really change the number of active time levels
           
           // Complain if there are not enough active time levels
-          if (gp.grouptype == CCTK_GF) {
-            if (max_refinement_levels > 1) {
-              if (groupdata.at(group).transport_operator != op_none
-                  and groupdata.at(group).transport_operator != op_copy) {
-                if (groupdata.at(group).activetimelevels.at(ml).at(rl) != 0
-                    and (groupdata.at(group).activetimelevels.at(ml).at(rl)
-                         < prolongation_order_time+1))
-                {
-                  static vector<bool> didwarn;
-                  int const numgroups = CCTK_NumGroups();
-                  if (didwarn.size() < numgroups) {
-                    didwarn.resize (numgroups, false);
-                  }
-                  if (not didwarn.at(group)) {
-                    // Warn only once per group
-                    didwarn.at(group) = true;
-                    char * const groupname = CCTK_GroupName (group);
-                    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                                "There are not enough time levels for the desired temporal prolongation order in the grid function group \"%s\".  With Carpet::prolongation_order_time=%d, you need at least %d time levels.",
-                                groupname,
-                                prolongation_order_time, prolongation_order_time+1);
-                    free (groupname);
-                  }
-                }
-              }
-            }
-          }
+          GroupStorageCheck (cgh, group, ml, rl);
           
           // Record current number of time levels
           // Note: This adds the time levels of all refinement levels
@@ -336,4 +317,59 @@ namespace Carpet {
     return 0;
   }
   
+  
+  
+  void
+  GroupStorageCheck (cGH const * const cctkGH,
+                     int const group,
+                     int const ml, int const rl)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (not do_warn_about_storage) return;
+    if (max_refinement_levels == 1) return;
+    
+    cGroup gp;
+    const int ierr = CCTK_GroupData (group, & gp);
+    assert (not ierr);
+    
+    if (gp.grouptype == CCTK_GF) {
+      if (groupdata.at(group).transport_operator != op_none
+          and groupdata.at(group).transport_operator != op_copy) {
+        if (groupdata.at(group).activetimelevels.at(ml).at(rl) != 0
+            and (groupdata.at(group).activetimelevels.at(ml).at(rl)
+                 < prolongation_order_time+1))
+        {
+          static vector<bool> didwarn;
+          int const numgroups = CCTK_NumGroups();
+          if (didwarn.size() < numgroups) {
+            didwarn.resize (numgroups, false);
+          }
+          if (not didwarn.at(group)) {
+            // Warn only once per group
+            didwarn.at(group) = true;
+            char * const groupname = CCTK_GroupName (group);
+            CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "There are not enough time levels for the desired temporal prolongation order in the grid function group \"%s\".  With Carpet::prolongation_order_time=%d, you need at least %d time levels.",
+                        groupname,
+                        prolongation_order_time, prolongation_order_time+1);
+            free (groupname);
+          }
+        }
+      }
+    }
+  }
+  
+  void
+  GroupsStorageCheck (cGH const * const cctkGH)
+  {
+    for (int group = 0; group < CCTK_NumGroups(); ++ group) {
+      for (int ml = 0; ml < mglevels; ++ ml) {
+        for (int rl = 0; rl < reflevels; ++ rl) {
+          GroupStorageCheck (cctkGH, group, ml, rl);
+        }
+      }
+    }
+  }
+
 } // namespace Carpet

@@ -73,7 +73,9 @@ namespace Carpet {
   
   
   
-  
+  // Helpers for storage
+  void GroupsStorageCheck (cGH const * const cctkGH);
+
   // Helpers for recomposing the grid hierarchy
   void Recompose (cGH const * const cctkGH,
                   int const m,

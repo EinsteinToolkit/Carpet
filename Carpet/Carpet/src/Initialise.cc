@@ -68,6 +68,8 @@ namespace Carpet {
     Waypoint ("Starting initialisation");
 
     CCTKi_ScheduleGHInit (cgh); // Enable storage and communication
+    GroupsStorageCheck (cgh);
+    do_warn_about_storage = true;
 
     CCTKi_InitGHExtensions (cgh);
 

@@ -87,6 +87,9 @@ namespace Carpet {
   // Is prolongation enabled?
   bool do_prolongate;
   
+  // Should we warn about groups with insufficiently many time levels?
+  bool do_warn_about_storage;
+  
   
   
   // Data for grid functions
