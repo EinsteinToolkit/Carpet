@@ -193,11 +193,12 @@ namespace Carpet {
   {
     for (int rl=0; rl<reflevels; ++rl) {
       for (int ml=mglevels-1; ml>=0; --ml) {
-        const int do_every = maxtimereflevelfact / timereffacts.at(rl);
         // Regridding may change coarser grids, so that postregrid has
         // to be run on all levels.  For symmetry, we also run
         // preregrid on all levels.
-        if (true or (cgh->cctk_iteration-1) % do_every == 0) {
+        // const int do_every = maxtimereflevelfact / timereffacts.at(rl);
+        const int do_every = maxtimereflevelfact / timereffacts.at(reflevels-1);
+        if ((cgh->cctk_iteration-1) % do_every == 0) {
           enter_global_mode (cgh, ml);
           enter_level_mode (cgh, rl);
 
@@ -244,10 +245,11 @@ namespace Carpet {
   {
     for (int rl=0; rl<reflevels; ++rl) {
       for (int ml=mglevels-1; ml>=0; --ml) {
-        const int do_every = maxtimereflevelfact / timereffacts.at(rl);
         // Regridding may change coarser grids, so that postregrid has
         // to be run on all levels.
-        if (true or (cgh->cctk_iteration-1) % do_every == 0) {
+        // const int do_every = maxtimereflevelfact / timereffacts.at(rl);
+        const int do_every = maxtimereflevelfact / timereffacts.at(reflevels-1);
+        if ((cgh->cctk_iteration-1) % do_every == 0) {
           enter_global_mode (cgh, ml);
           enter_level_mode (cgh, rl);
 

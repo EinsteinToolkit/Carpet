@@ -356,7 +356,7 @@ namespace Carpet {
 		(do_global_mode ? " (global)" : ""),
 		(do_meta_mode ? " (meta)" : ""));
 
-      // Preregrid                                                                                            
+      // Preregrid
       Checkpoint ("Scheduling PREREGRID");
       CCTK_ScheduleTraverse ("PreRegrid", cgh, CallFunction);
 
