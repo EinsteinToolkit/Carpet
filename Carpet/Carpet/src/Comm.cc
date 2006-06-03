@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstdlib>
 
 #include "cctk.h"
@@ -100,7 +102,7 @@ namespace Carpet {
         }
       }
 
-      if (! CCTK_QueryGroupStorageI (cctkGH, group)) {
+      if (not CCTK_QueryGroupStorageI (cctkGH, group)) {
         CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Cannot synchronise group \"%s\" because it has no storage",
                     groupname);
@@ -115,8 +117,30 @@ namespace Carpet {
 
     if (goodgroups.size() > 0) {
       // prolongate boundaries
-      if (do_prolongate && reflevel > 0) {
-        ProlongateGroupBoundaries (cctkGH, cctk_initial_time, goodgroups);
+      if (reflevel > 0) {
+        if (do_prolongate) {
+          bool local_do_prolongate;
+          if (use_tapered_grids) {
+            // TODO: Check iteration number instead
+            CCTK_REAL mytime;
+            CCTK_REAL parenttime;
+            if (map == -1) {
+              mytime = vtt.at(0)->time (0, reflevel, mglevel);
+              parenttime = vtt.at(0)->time (0, reflevel - 1, mglevel);
+            } else {
+              mytime = vtt.at(map)->time (0, reflevel, mglevel);
+              parenttime = vtt.at(map)->time (0, reflevel - 1, mglevel);
+            }
+            bool const in_sync =
+              abs (mytime - parenttime) < 1.0e-10 * abs (delta_time);
+            local_do_prolongate = in_sync;
+          } else {
+            local_do_prolongate = true;
+          }
+          if (local_do_prolongate) {
+            ProlongateGroupBoundaries (cctkGH, cctk_initial_time, goodgroups);
+          }
+        }
       }
 
       // synchronise ghostzones
@@ -138,7 +162,7 @@ namespace Carpet {
     const CCTK_REAL time
       = (cctkGH->cctk_time - initial_time) / delta_time;
 
-    for (comm_state state; ! state.done(); state.step()) {
+    for (comm_state state; not state.done(); state.step()) {
       for (int group = 0; group < groups.size(); ++group) {
         const int g = groups[group];
         const int grouptype = CCTK_GroupTypeI (g);
@@ -168,7 +192,7 @@ namespace Carpet {
 
     assert (groups.size() > 0);
 
-    for (comm_state state; ! state.done(); state.step()) {
+    for (comm_state state; not state.done(); state.step()) {
       for (int group = 0; group < groups.size(); ++group) {
         const int g = groups[group];
         const int grouptype = CCTK_GroupTypeI (g);

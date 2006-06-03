@@ -323,6 +323,7 @@ namespace Carpet {
                       CCTK_INT buffer_width,
                       CCTK_INT use_outer_buffer_zones,
                       CCTK_INT num_integrator_substeps,
+                      CCTK_INT use_tapered_grids,
                       ivect & lghosts, ivect & ughosts, ivect & npoints);
   static ivect make_ghost_zone_vect (CCTK_INT ghost_size,
                       CCTK_INT ghost_size_x, CCTK_INT ghost_size_y,
@@ -444,6 +445,7 @@ namespace Carpet {
                max_refinement_levels, prolongation_order_space,
                buffer_width,
                use_outer_buffer_zones, num_integrator_substeps,
+               use_tapered_grids,
                lghosts, ughosts, npoints);
     } 
     
@@ -601,6 +603,7 @@ namespace Carpet {
                CCTK_INT buffer_width,
                CCTK_INT use_outer_buffer_zones,
                CCTK_INT num_integrator_substeps,
+               CCTK_INT use_tapered_grids,
                ivect & lghosts, ivect & ughosts, ivect & a_npoints)
   {
     // Get boundary description
@@ -836,13 +839,19 @@ namespace Carpet {
     // Allocate data hierarchy
     int const inner_buffer_width = use_outer_buffer_zones ? 0 : buffer_width;
     ivect const lbuffers
-      = (use_outer_buffer_zones
-         ? lghosts * (num_integrator_substeps - 1) + buffer_width
-         : 0);
+      = (((use_tapered_grids ? refinement_factor : 1)
+          *
+          (use_outer_buffer_zones
+           ? lghosts * num_integrator_substeps + buffer_width
+           : lghosts))
+         - lghosts);
     ivect const ubuffers
-      = (use_outer_buffer_zones
-         ? ughosts * (num_integrator_substeps - 1) + buffer_width
-         : 0);
+      = (((use_tapered_grids ? refinement_factor : 1)
+          *
+          (use_outer_buffer_zones
+           ? ughosts * num_integrator_substeps + buffer_width
+           : ughosts))
+         - ughosts);
     vdd.at(m) = new dh (*vhh.at(m), lghosts, ughosts,
                         prolongation_order_space,
                         inner_buffer_width, lbuffers, ubuffers);
