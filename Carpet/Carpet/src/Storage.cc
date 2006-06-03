@@ -262,9 +262,14 @@ namespace Carpet {
     if (groupname) {
       group = CCTK_GroupIndex(groupname);
     }
-    assert (group>=0 and group<CCTK_NumGroups());
+    if (group<0 or group>=CCTK_NumGroups()) {
+      CCTK_WARN (1, "QueryGroupStorage: illegal group specified");
+      return -1;
+    }
     int const grouptype = CCTK_GroupTypeI (group);
-    if (is_meta_mode() or is_global_mode()) assert (grouptype != CCTK_GF);
+    if (is_meta_mode() or is_global_mode()) {
+      if (grouptype == CCTK_GF) return -2;
+    }
     int const rl = grouptype == CCTK_GF ? reflevel : 0;
     // Return whether storage is allocated
     assert (groupdata.at(group).activetimelevels.at(mglevel).at(rl) != deadbeef);
