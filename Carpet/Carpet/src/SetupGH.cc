@@ -839,14 +839,14 @@ namespace Carpet {
     // Allocate data hierarchy
     int const inner_buffer_width = use_outer_buffer_zones ? 0 : buffer_width;
     ivect const lbuffers
-      = (((use_tapered_grids ? refinement_factor : 1)
+      = ((ivect (use_tapered_grids ? refinement_factor : 1)
           *
           (use_outer_buffer_zones
            ? lghosts * num_integrator_substeps + buffer_width
            : lghosts))
          - lghosts);
     ivect const ubuffers
-      = (((use_tapered_grids ? refinement_factor : 1)
+      = ((ivect (use_tapered_grids ? refinement_factor : 1)
           *
           (use_outer_buffer_zones
            ? ughosts * num_integrator_substeps + buffer_width
