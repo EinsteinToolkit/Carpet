@@ -13,12 +13,12 @@ using namespace std;
 
 
 // Forward definition
-template<class T, int D> class vect;
+template<typename T, int D> class vect;
 
 // Input/Output
-template<class T,int D>
+template<typename T,int D>
 istream& operator>> (istream& is, vect<T,D>& a);
-template<class T,int D>
+template<typename T,int D>
 ostream& operator<< (ostream& os, const vect<T,D>& a);
 
 
@@ -26,7 +26,7 @@ ostream& operator<< (ostream& os, const vect<T,D>& a);
 /**
  * A short vector with a size that is specified at compile time.
  */
-template<class T, int D>
+template<typename T, int D>
 class vect {
   
   // Fields
@@ -48,12 +48,12 @@ public:
   
   /** Constructor from a single element.  This constructor might be
       confusing, but it is very convenient.  */
-  vect (const T x) {
+  vect (const T& x) {
     for (int d=0; d<D; ++d) elt[d]=x;
   }
   
   /** Constructor for 2-element vectors from 2 elements.  */
-  vect (const T x, const T y) {
+  vect (const T& x, const T& y) {
     assert (D==2);
     // Note: this statement may give "index out of range" warnings.
     // You can safely ignore these.
@@ -61,7 +61,7 @@ public:
   }
   
   /** Constructor for 3-element vectors from 3 elements.  */
-  vect (const T x, const T y, const T z) {
+  vect (const T& x, const T& y, const T& z) {
     assert (D==3);
     // Note: this statement may give "index out of range" warnings.
     // You can safely ignore these.
@@ -69,7 +69,7 @@ public:
   }
   
   /** Constructor for 4-element vectors from 4 elements.  */
-  vect (const T x, const T y, const T z, const T t) {
+  vect (const T& x, const T& y, const T& z, const T& t) {
     assert (D==4);
     // Note: this statement may give "index out of range" warnings.
     // You can safely ignore these.
@@ -85,7 +85,7 @@ public:
 #endif
   
   /** Constructor from a vector with a different type.  */
-  template<class S>
+  template<typename S>
   /*explicit*/ vect (const vect<S,D>& a) {
     for (int d=0; d<D; ++d) elt[d]=(T)a[d];
   }
@@ -97,25 +97,25 @@ public:
   }
   
   /** Create a new 1-element vector with a specific type.  */
-  static vect make (const T x) {
+  static vect make (const T& x) {
     assert (D==1);
     return vect(x);
   }
   
   /** Create a new 2-element vector with a specific type.  */
-  static vect make (const T x, const T y) {
+  static vect make (const T& x, const T& y) {
     assert (D==2);
     return vect(x, y);
   }
   
   /** Create a new 3-element vector with a specific type.  */
-  static vect make (const T x, const T y, const T z) {
+  static vect make (const T& x, const T& y, const T& z) {
     assert (D==3);
     return vect(x, y, z);
   }
   
   /** Create a new 4-element vector with a specific type.  */
-  static vect make (const T x, const T y, const T z, const T t) {
+  static vect make (const T& x, const T& y, const T& z, const T& t) {
     assert (D==4);
     return vect(x, y, z, t);
   }
@@ -185,7 +185,7 @@ public:
   
   /** Return a combination of the vector elements e[a[i]].  The
       element combination is selected by another vector.  */
-  template<class TT, int DD>
+  template<typename TT, int DD>
   vect<T,DD> operator[] (const vect<TT,DD>& a) const {
     vect<T,DD> r;
     // (*this)[] performs index checking
@@ -194,42 +194,42 @@ public:
   }
   
   // Modifying operators
-  vect& operator+=(const T x) {
+  vect& operator+=(const T& x) {
     for (int d=0; d<D; ++d) elt[d]+=x;
     return *this;
   }
   
-  vect& operator-=(const T x) {
+  vect& operator-=(const T& x) {
     for (int d=0; d<D; ++d) elt[d]-=x;
     return *this;
   }
   
-  vect& operator*=(const T x) {
+  vect& operator*=(const T& x) {
     for (int d=0; d<D; ++d) elt[d]*=x;
     return *this;
   }
   
-  vect& operator/=(const T x) {
+  vect& operator/=(const T& x) {
     for (int d=0; d<D; ++d) elt[d]/=x;
     return *this;
   }
   
-  vect& operator%=(const T x) {
+  vect& operator%=(const T& x) {
     for (int d=0; d<D; ++d) elt[d]%=x;
     return *this;
   }
   
-  vect& operator&=(const T x) {
+  vect& operator&=(const T& x) {
     for (int d=0; d<D; ++d) elt[d]&=x;
     return *this;
   }
   
-  vect& operator|=(const T x) {
+  vect& operator|=(const T& x) {
     for (int d=0; d<D; ++d) elt[d]|=x;
     return *this;
   }
   
-  vect& operator^=(const T x) {
+  vect& operator^=(const T& x) {
     for (int d=0; d<D; ++d) elt[d]^=x;
     return *this;
   }
@@ -277,7 +277,7 @@ public:
   // Non-modifying operators
   
   /** Return a new vector where one element has been replaced.  */
-  vect replace (const int d, const T x) const {
+  vect replace (const int d, const T& x) const {
     assert (d>=0 && d<D);
     vect r;
     for (int dd=0; dd<D; ++dd) r[dd]=dd==d?x:elt[dd];
@@ -314,61 +314,63 @@ public:
     return r;
   }
   
-  vect operator+ (const T x) const {
+#if 0
+  // These are now defined as template functions
+  vect operator+ (const T& x) const {
     vect r(*this);
     r+=x;
     return r;
   }
   
-  vect operator- (const T x) const {
+  vect operator- (const T& x) const {
     vect r(*this);
     r-=x;
     return r;
   }
   
-  vect operator* (const T x) const {
+  vect operator* (const T& x) const {
     vect r(*this);
     r*=x;
     return r;
   }
   
-  vect operator/ (const T x) const {
+  vect operator/ (const T& x) const {
     vect r(*this);
     r/=x;
     return r;
   }
   
-  vect operator% (const T x) const {
+  vect operator% (const T& x) const {
     vect r(*this);
     r%=x;
     return r;
   }
   
-  vect operator& (const T x) const {
+  vect operator& (const T& x) const {
     vect r(*this);
     r&=x;
     return r;
   }
   
-  vect operator| (const T x) const {
+  vect operator| (const T& x) const {
     vect r(*this);
     r|=x;
     return r;
   }
   
-  vect operator^ (const T x) const {
+  vect operator^ (const T& x) const {
     vect r(*this);
     r^=x;
     return r;
   }
   
-  vect<bool,D> operator&& (const T x) const {
+  vect<bool,D> operator&& (const T& x) const {
     vect<bool,D> r;
     for (int d=0; d<D; ++d) r[d]=elt[d]&&x;
     return r;
   }
   
-  vect<bool,D> operator|| (const T x) const {
+  vect<bool,D> operator|| (const T& x) const {
     vect<bool,D> r;
     for (int d=0; d<D; ++d) r[d]=elt[d]||x;
     return r;
@@ -469,11 +471,12 @@ public:
     for (int d=0; d<D; ++d) r[d]=elt[d]>=a[d];
     return r;
   }
+#endif
   
   /** This corresponds to the ?: operator.  Return a vector with the
       elements set to either a[i] or b[i], depending on whether
       (*this)[i] is true or not.  */
-  template<class TT>
+  template<typename TT>
   vect<TT,D> ifthen (const vect<TT,D>& a, const vect<TT,D>& b) const {
     vect<TT,D> r;
     for (int d=0; d<D; ++d) r[d]=elt[d]?a[d]:b[d];
@@ -506,8 +509,8 @@ public:
 /** This corresponds to the ?: operator.  Return a vector with the
     elements set to either b[i] or c[i], depending on whether a[i] is
     true or not.  */
-template<class T,int D>
-inline vect<T,D> either (const vect<bool,D>& a,
+template<typename S,typename T,int D>
+inline vect<T,D> either (const vect<S,D>& a,
                          const vect<T,D>& b, const vect<T,D>& c) {
   vect<T,D> r;
   for (int d=0; d<D; ++d) r[d]=a[d]?b[d]:c[d];
@@ -515,7 +518,7 @@ inline vect<T,D> either (const vect<bool,D>& a,
 }
 
 /** Transpose a vector of a vector */
-template<class T, int D, int DD>
+template<typename T, int D, int DD>
 inline vect<vect<T,D>,DD> xpose (vect<vect<T,DD>,D> const & a) {
   vect<vect<T,D>,DD> r;
   for (int dd=0; dd<DD; ++dd) for (int d=0; d<D; ++d) r[dd][d] = a[d][dd];
@@ -523,7 +526,7 @@ inline vect<vect<T,D>,DD> xpose (vect<vect<T,DD>,D> const & a) {
 }
 
 /** Return the element-wise absolute value.  */
-template<class T,int D>
+template<typename T,int D>
 inline vect<T,D> abs (const vect<T,D>& a) {
   vect<T,D> r;
   for (int d=0; d<D; ++d) r[d]=abs(a[d]);
@@ -531,7 +534,7 @@ inline vect<T,D> abs (const vect<T,D>& a) {
 }
 
 /** Return the element-wise ceiling.  */
-template<class T,int D>
+template<typename T,int D>
 inline vect<T,D> ceil (const vect<T,D>& a) {
   vect<T,D> r;
   for (int d=0; d<D; ++d) r[d]=ceil(a[d]);
@@ -539,7 +542,7 @@ inline vect<T,D> ceil (const vect<T,D>& a) {
 }
 
 /** Return the element-wise floor.  */
-template<class T,int D>
+template<typename T,int D>
 inline vect<T,D> floor (const vect<T,D>& a) {
   vect<T,D> r;
   for (int d=0; d<D; ++d) r[d]=floor(a[d]);
@@ -547,7 +550,7 @@ inline vect<T,D> floor (const vect<T,D>& a) {
 }
 
 /** Return the element-wise maximum of two vectors.  */
-template<class T,int D>
+template<typename T,int D>
 inline vect<T,D> max (const vect<T,D>& a, const vect<T,D>& b) {
   vect<T,D> r;
   for (int d=0; d<D; ++d) r[d]=max(a[d],b[d]);
@@ -555,7 +558,7 @@ inline vect<T,D> max (const vect<T,D>& a, const vect<T,D>& b) {
 }
 
 /** Return the element-wise minimum of two vectors.  */
-template<class T,int D>
+template<typename T,int D>
 inline vect<T,D> min (const vect<T,D>& a, const vect<T,D>& b) {
   vect<T,D> r;
   for (int d=0; d<D; ++d) r[d]=min(a[d],b[d]);
@@ -563,7 +566,7 @@ inline vect<T,D> min (const vect<T,D>& a, const vect<T,D>& b) {
 }
 
 /** Return the element-wise power of two vectors.  */
-template<class T,class U,int D>
+template<typename T,typename U,int D>
 inline vect<T,D> pow (const vect<T,D>& a, const vect<U,D>& b) {
   vect<T,D> r;
   for (int d=0; d<D; ++d) r[d]=pow(a[d],b[d]);
@@ -571,10 +574,330 @@ inline vect<T,D> pow (const vect<T,D>& a, const vect<U,D>& b) {
 }
 
 /** Return the element-wise integer power of two vectors.  */
-template<class T,int D>
+template<typename T,int D>
 inline vect<T,D> ipow (const vect<T,D>& a, const vect<int,D>& b) {
   vect<T,D> r;
   for (int d=0; d<D; ++d) r[d]=ipow(a[d],b[d]);
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator+ (const vect<T,D>& a, const T& x) {
+  vect<T,D> r(a);
+  r+=x;
+  return r;
+}
+template<typename T,int D>
+inline vect<T,D> operator+ (const T& x, const vect<T,D>& a) {
+  vect<T,D> r(x);
+  r+=a;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator- (const vect<T,D>& a, const T& x) {
+  vect<T,D> r(a);
+  r-=x;
+  return r;
+}
+template<typename T,int D>
+inline vect<T,D> operator- (const T& x, const vect<T,D>& a) {
+  vect<T,D> r(x);
+  r-=a;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator* (const vect<T,D>& a, const T& x) {
+  vect<T,D> r(a);
+  r*=x;
+  return r;
+}
+template<typename T,int D>
+inline vect<T,D> operator* (const T& x, const vect<T,D>& a) {
+  vect<T,D> r(x);
+  r*=a;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator/ (const vect<T,D>& a, const T& x) {
+  vect<T,D> r(a);
+  r/=x;
+  return r;
+}
+template<typename T,int D>
+inline vect<T,D> operator/ (const T& x, const vect<T,D>& a) {
+  vect<T,D> r(x);
+  r/=a;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator% (const vect<T,D>& a, const T& x) {
+  vect<T,D> r(a);
+  r%=x;
+  return r;
+}
+template<typename T,int D>
+inline vect<T,D> operator% (const T& x, const vect<T,D>& a) {
+  vect<T,D> r(x);
+  r%=a;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator| (const vect<T,D>& a, const T& x) {
+  vect<T,D> r(a);
+  r|=x;
+  return r;
+}
+template<typename T,int D>
+inline vect<T,D> operator| (const T& x, const vect<T,D>& a) {
+  vect<T,D> r(x);
+  r|=a;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator& (const vect<T,D>& a, const T& x) {
+  vect<T,D> r(a);
+  r&=x;
+  return r;
+}
+template<typename T,int D>
+inline vect<T,D> operator& (const T& x, const vect<T,D>& a) {
+  vect<T,D> r(x);
+  r&=a;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator^ (const vect<T,D>& a, const T& x) {
+  vect<T,D> r(a);
+  r^=x;
+  return r;
+}
+template<typename T,int D>
+inline vect<T,D> operator^ (const T& x, const vect<T,D>& a) {
+  vect<T,D> r(x);
+  r^=a;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator&& (const vect<T,D>& a, const T& x) {
+  vect<T,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]&&x;
+  return r;
+}
+template<typename T,int D>
+inline vect<T,D> operator&& (const T& x, const vect<T,D>& a) {
+  vect<T,D> r;
+  for (int d=0; d<D; ++d) r[d]=x&&a[d];
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator|| (const vect<T,D>& a, const T& x) {
+  vect<T,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]||x;
+  return r;
+}
+template<typename T,int D>
+inline vect<T,D> operator|| (const T& x, const vect<T,D>& a) {
+  vect<T,D> r;
+  for (int d=0; d<D; ++d) r[d]=x||a[d];
+  return r;
+}
+
+template<typename T,int D>
+inline vect<bool,D> operator== (const vect<T,D>& a, const T& x) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]==x;
+  return r;
+}
+template<typename T,int D>
+inline vect<bool,D> operator== (const T& x, const vect<T,D>& a) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=x==a[d];
+  return r;
+}
+
+template<typename T,int D>
+inline vect<bool,D> operator!= (const vect<T,D>& a, const T& x) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]!=x;
+  return r;
+}
+template<typename T,int D>
+inline vect<bool,D> operator!= (const T& x, const vect<T,D>& a) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=x!=a[d];
+  return r;
+}
+
+template<typename T,int D>
+inline vect<bool,D> operator< (const vect<T,D>& a, const T& x) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]<x;
+  return r;
+}
+template<typename T,int D>
+inline vect<bool,D> operator< (const T& x, const vect<T,D>& a) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=x<a[d];
+  return r;
+}
+
+template<typename T,int D>
+inline vect<bool,D> operator<= (const vect<T,D>& a, const T& x) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]<=x;
+  return r;
+}
+template<typename T,int D>
+inline vect<bool,D> operator<= (const T& x, const vect<T,D>& a) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=x<=a[d];
+  return r;
+}
+
+template<typename T,int D>
+inline vect<bool,D> operator> (const vect<T,D>& a, const T& x) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]>x;
+  return r;
+}
+template<typename T,int D>
+inline vect<bool,D> operator> (const T& x, const vect<T,D>& a) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=x>a[d];
+  return r;
+}
+
+template<typename T,int D>
+inline vect<bool,D> operator>= (const vect<T,D>& a, const T& x) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]>=x;
+  return r;
+}
+template<typename T,int D>
+inline vect<bool,D> operator>= (const T& x, const vect<T,D>& a) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=x>=a[d];
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator+ (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<T,D> r(a);
+  r+=b;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator- (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<T,D> r(a);
+  r-=b;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator* (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<T,D> r(a);
+  r*=b;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator/ (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<T,D> r(a);
+  r/=b;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator% (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<T,D> r(a);
+  r%=b;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator& (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<T,D> r(a);
+  r&=b;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator| (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<T,D> r(a);
+  r|=b;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<T,D> operator^ (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<T,D> r(a);
+  r^=b;
+  return r;
+}
+
+template<typename T,int D>
+inline vect<bool,D> operator&& (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]&&b[d];
+  return r;
+}
+
+template<typename T,int D>
+inline vect<bool,D> operator|| (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]||b[d];
+  return r;
+}
+
+template<typename T,int D>
+inline vect<bool,D> operator== (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]==b[d];
+  return r;
+}
+
+template<typename T,int D>
+inline vect<bool,D> operator!= (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]!=b[d];
+  return r;
+}
+
+template<typename T,int D>
+inline vect<bool,D> operator< (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]<b[d];
+  return r;
+}
+
+template<typename T,int D>
+inline vect<bool,D> operator<= (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]<=b[d];
+  return r;
+}
+
+template<typename T,int D>
+inline vect<bool,D> operator> (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]>b[d];
+  return r;
+}
+
+template<typename T,int D>
+inline vect<bool,D> operator>= (const vect<T,D>& a, const vect<T,D>& b) {
+  vect<bool,D> r;
+  for (int d=0; d<D; ++d) r[d]=a[d]>=b[d];
   return r;
 }
 
@@ -599,13 +922,13 @@ inline bool all (const vect<bool,D>& a) {
 }
 
 /** Count the number of elements in the vector.  */
-template<class T,int D>
+template<typename T,int D>
 inline int count (const vect<T,D>& a) {
   return D;
 }
 
 /** Return the dot product of two vectors.  */
-template<class T,int D>
+template<typename T,int D>
 inline T dot (const vect<T,D>& a, const vect<T,D>& b) {
   T r(0);
   for (int d=0; d<D; ++d) r+=a[d]*b[d];
@@ -613,13 +936,13 @@ inline T dot (const vect<T,D>& a, const vect<T,D>& b) {
 }
 
 /** Return the Euklidean length.  */
-template<class T,int D>
+template<typename T,int D>
 inline T hypot (const vect<T,D>& a) {
   return sqrt(dot(a,a));
 }
 
 /** Return the maximum element.  */
-template<class T,int D>
+template<typename T,int D>
 inline T maxval (const vect<T,D>& a) {
   assert (D>0);
   T r(a[0]);
@@ -628,7 +951,7 @@ inline T maxval (const vect<T,D>& a) {
 }
 
 /** Return the minimum element.  */
-template<class T,int D>
+template<typename T,int D>
 inline T minval (const vect<T,D>& a) {
   assert (D>0);
   T r(a[0]);
@@ -637,7 +960,7 @@ inline T minval (const vect<T,D>& a) {
 }
 
 /** Return the index of the first maximum element.  */
-template<class T,int D>
+template<typename T,int D>
 inline int maxloc (const vect<T,D>& a) {
   assert (D>0);
   int r(0);
@@ -646,7 +969,7 @@ inline int maxloc (const vect<T,D>& a) {
 }
 
 /** Return the index of the first minimum element.  */
-template<class T,int D>
+template<typename T,int D>
 inline int minloc (const vect<T,D>& a) {
   assert (D>0);
   int r(0);
@@ -655,7 +978,7 @@ inline int minloc (const vect<T,D>& a) {
 }
 
 /** Return the product of the elements.  */
-template<class T,int D>
+template<typename T,int D>
 inline T prod (const vect<T,D>& a) {
   T r(1);
   for (int d=0; d<D; ++d) r*=a[d];
@@ -663,13 +986,13 @@ inline T prod (const vect<T,D>& a) {
 }
 
 /** Return the size (number of elements) of the vector.  */
-template<class T,int D>
+template<typename T,int D>
 inline int size (const vect<T,D>& a) {
   return D;
 }
 
 /** Return the sum of the elements.  */
-template<class T,int D>
+template<typename T,int D>
 inline T sum (const vect<T,D>& a) {
   T r(0);
   for (int d=0; d<D; ++d) r+=a[d];
@@ -680,7 +1003,7 @@ inline T sum (const vect<T,D>& a) {
 
 /** Return a new vector where the function func() has been applied to
     all elements.  */
-template<class T, class U, int D>
+template<typename T, typename U, int D>
 inline vect<U,D> map (U (* const func)(T x), const vect<T,D>& a) {
   vect<U,D> r;
   for (int d=0; d<D; ++d) r[d] = func(a[d]);
@@ -689,7 +1012,7 @@ inline vect<U,D> map (U (* const func)(T x), const vect<T,D>& a) {
   
 /** Return a new vector where the function func() has been used
     element-wise to combine a and b.  */
-template<class S, class T, class U, int D>
+template<typename S, typename T, typename U, int D>
 inline vect<U,D> zip (U (* const func)(S x, T y),
                       const vect<S,D>& a, const vect<T,D>& b)
 {
@@ -700,7 +1023,7 @@ inline vect<U,D> zip (U (* const func)(S x, T y),
 
 /** Return a scalar where the function func() has been used to reduce
     the vector a, starting with the scalar value val.  */
-template<class T, class U, int D>
+template<typename T, typename U, int D>
 inline U fold (U (* const func)(U val, T x), U val, const vect<T,D>& a)
 {
   for (int d=0; d<D; ++d) val = func(val, a[d]);
@@ -709,7 +1032,7 @@ inline U fold (U (* const func)(U val, T x), U val, const vect<T,D>& a)
   
 /** Return a scalar where the function func() has been used to reduce
     the vector a, starting with element 0.  */
-template<class T, class U, int D>
+template<typename T, typename U, int D>
 inline U fold1 (U (* const func)(U val, T x), const vect<T,D>& a)
 {
   assert (D>=1);
@@ -720,7 +1043,7 @@ inline U fold1 (U (* const func)(U val, T x), const vect<T,D>& a)
 
 /** Return a vector where the function func() has been used to scan
     the vector a, starting with the scalar value val.  */
-template<class T, class U, int D>
+template<typename T, typename U, int D>
 inline vect<U,D> scan0 (U (* const func)(U val, T x), U val,
                         const vect<T,D>& a)
 {
@@ -734,7 +1057,7 @@ inline vect<U,D> scan0 (U (* const func)(U val, T x), U val,
 
 /** Return a vector where the function func() has been used to scan
     the vector a, starting with element 0.  */
-template<class T, class U, int D>
+template<typename T, typename U, int D>
 inline vect<U,D> scan1 (U (* const func)(U val, T x), U val,
                         const vect<T,D>& a)
 {
@@ -751,7 +1074,7 @@ inline vect<U,D> scan1 (U (* const func)(U val, T x), U val,
 // Input
 
 /** Read a formatted vector from a stream.  */
-template<class T,int D>
+template<typename T,int D>
 inline istream& operator>> (istream& is, vect<T,D>& a) {
   a.input(is);
   return is;
@@ -762,7 +1085,7 @@ inline istream& operator>> (istream& is, vect<T,D>& a) {
 // Output
 
 /** Write a vector formatted to a stream.  */
-template<class T,int D>
+template<typename T,int D>
 inline ostream& operator<< (ostream& os, const vect<T,D>& a) {
   a.output(os);
   return os;
@@ -774,19 +1097,19 @@ inline ostream& operator<< (ostream& os, const vect<T,D>& a) {
 // Specialise explicit constructors
 
 /** Constructor for 2-element vectors from 2 elements.  */
-template<class T>
-inline vect<T,2>::vect<T,2> (const T x, const T y) {
+template<typename T>
+inline vect<T,2>::vect<T,2> (const T& x, const T& y) {
   elt[0]=x; elt[1]=y;
 }
 
 /** Constructor for 3-element vectors from 3 elements.  */
-vect (const T x, const T y, const T z) {
+vect (const T& x, const T& y, const T& z) {
   assert (D==3);
   elt[0]=x; elt[1]=y; elt[2]=z;
 }
 
 /** Constructor for 4-element vectors from 4 elements.  */
-vect (const T x, const T y, const T z, const T t) {
+vect (const T& x, const T& y, const T& z, const T& t) {
   assert (D==4);
   elt[0]=x; elt[1]=y; elt[2]=z; elt[3]=t;
 }
@@ -798,17 +1121,17 @@ vect (const T x, const T y, const T z, const T t) {
 // These functions are declared, but never defined, so that using them
 // will result in a linker error
 
-template<> inline vect<int,0>::vect (const int x, const int y) { assert(0); }
-template<> inline vect<int,1>::vect (const int x, const int y) { assert(0); }
+template<> inline vect<int,0>::vect (const int& x, const int& y) { assert(0); }
+template<> inline vect<int,1>::vect (const int& x, const int& y) { assert(0); }
 
-template<> inline vect<int,0>::vect (const int x, const int y, const int z) { assert(0); }
-template<> inline vect<int,1>::vect (const int x, const int y, const int z) { assert(0); }
-template<> inline vect<int,2>::vect (const int x, const int y, const int z) { assert(0); }
+template<> inline vect<int,0>::vect (const int& x, const int& y, const int& z) { assert(0); }
+template<> inline vect<int,1>::vect (const int& x, const int& y, const int& z) { assert(0); }
+template<> inline vect<int,2>::vect (const int& x, const int& y, const int& z) { assert(0); }
 
-template<> inline vect<int,0>::vect (const int x, const int y, const int z, const int t) { assert(0); }
-template<> inline vect<int,1>::vect (const int x, const int y, const int z, const int t) { assert(0); }
-template<> inline vect<int,2>::vect (const int x, const int y, const int z, const int t) { assert(0); }
-template<> inline vect<int,3>::vect (const int x, const int y, const int z, const int t) { assert(0); }
+template<> inline vect<int,0>::vect (const int& x, const int& y, const int& z, const int& t) { assert(0); }
+template<> inline vect<int,1>::vect (const int& x, const int& y, const int& z, const int& t) { assert(0); }
+template<> inline vect<int,2>::vect (const int& x, const int& y, const int& z, const int& t) { assert(0); }
+template<> inline vect<int,3>::vect (const int& x, const int& y, const int& z, const int& t) { assert(0); }
 
 
 
