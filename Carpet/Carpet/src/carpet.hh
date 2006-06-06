@@ -36,7 +36,6 @@ namespace Carpet {
   bool Regrid (const cGH* cgh, const bool force_recompose, const bool do_init);
   void CycleTimeLevels (const cGH* cgh);
   void FlipTimeLevels (const cGH* cgh);
-  void Restrict (const cGH* cgh);
   void SyncGroups (const cGH* cgh, const vector<int>& groups);
   int  SyncProlongateGroups (const cGH* cgh, const vector<int>& groups);
  

@@ -40,7 +40,9 @@ namespace Carpet {
 			      const char* groupname);
   int QueryGroupStorageB (const cGH* cgh, int group, const char* groupname);
   int GroupDynamicData (const cGH* cgh, int group, cGroupDynamicData* data);
-   
+  
+  void Restrict (const cGH* cgh);
+  
    
    
   // Multi-Model
