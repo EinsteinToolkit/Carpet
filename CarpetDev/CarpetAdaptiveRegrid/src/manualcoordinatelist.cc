@@ -80,7 +80,7 @@ namespace CarpetAdaptiveRegrid {
       for (size_t c=0; c<newobss.at(rl).size(); ++c) {
         for (int d=0; d<dim; ++d) {
           assert (mglevel==0);
-          rvect const spacing = base_spacing * ipow((CCTK_REAL)mgfact, basemglevel) / spacereffacts.at(rl+1);
+          rvect const spacing = base_spacing * ipow((CCTK_REAL)mgfact, basemglevel) / rvect (spacereffacts.at(rl+1));
           ierr = ConvertFromPhysicalBoundary
             (dim, &physical_min[0], &physical_max[0],
              &interior_min[0], &interior_max[0],
@@ -124,7 +124,7 @@ namespace CarpetAdaptiveRegrid {
         bbvect const & ob = newobss.at(rl-1).at(c);
         // TODO: why can basemglevel not be used here?
         // rvect const spacing = base_spacing * ipow(CCTK_REAL(mgfact), basemglevel) / ipow(reffact, rl);
-        rvect const spacing = base_spacing / spacereffacts.at(rl);
+        rvect const spacing = base_spacing / rvect (spacereffacts.at(rl));
         if (! all(abs(ext.stride() - spacing) < spacing * 1.0e-10)) {
           assert (dim==3);
           CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,

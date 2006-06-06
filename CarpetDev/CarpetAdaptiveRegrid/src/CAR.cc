@@ -824,7 +824,7 @@ namespace CarpetAdaptiveRegrid {
           rvect hi = int2pos(cctkGH, hh, ihi, reflevel);
           rvect str = base_spacing * 
             ipow((CCTK_REAL)mgfact, basemglevel) /
-            spacereffacts.at(reflevel);
+            rvect (spacereffacts.at(reflevel));
           rbbox newbbcoord(lo, hi, str);
           
           if (veryverbose) {
@@ -844,7 +844,7 @@ namespace CarpetAdaptiveRegrid {
             
             rvect const spacing = base_spacing * 
               ipow((CCTK_REAL)mgfact, basemglevel) /
-              ipow(reffact, reflevel+1);
+              rvect (ipow(reffact, reflevel+1));
             ierr = ConvertFromPhysicalBoundary
               (dim, &physical_min[0], &physical_max[0],
                &interior_min[0], &interior_max[0],
