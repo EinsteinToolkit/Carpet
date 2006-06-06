@@ -45,7 +45,7 @@ namespace CarpetIOF5 {
       
       vect<hsize_t, dim> const dims
         = (region.shape() / region.stride()).reverse();
-      m_dataspace = H5Screate_simple (dim, & dims [0], & dims [0]);
+      m_dataspace = H5Screate_simple (dim, & dims [0], 0);
       assert (m_dataspace >= 0);
       
       m_dataset
