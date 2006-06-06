@@ -265,11 +265,11 @@ namespace Carpet {
           const ivect levfact = spacereffacts.at(rl);
           cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
                << "   exterior: "
-               << origin + delta * lower / maxspacereflevelfact
+               << origin + delta * rvect(lower) / rvect(maxspacereflevelfact)
                << " : "
-               << origin + delta * upper / maxspacereflevelfact
+               << origin + delta * rvect(upper) / rvect(maxspacereflevelfact)
                << " : "
-               << delta * convfact / levfact << endl;
+               << delta * rvect(convfact) / rvect(levfact) << endl;
         }
       }
     }
@@ -282,7 +282,8 @@ namespace Carpet {
       for (int rl=0; rl<hh.reflevels(); ++rl) {
         
         const CCTK_REAL basevolume
-          = prod (rvect (hh.baseextent.shape()) / hh.baseextent.stride());
+          = prod (rvect (hh.baseextent.shape())
+                  / rvect (hh.baseextent.stride()));
         CCTK_REAL countvolume = 0;
         CCTK_REAL totalvolume = 0;
         CCTK_REAL totalvolume2 = 0;
@@ -290,7 +291,7 @@ namespace Carpet {
         for (int c=0; c<hh.components(rl); ++c) {
           const ivect shape = hh.extents().at(ml).at(rl).at(c).shape();
           const ivect stride = hh.extents().at(ml).at(rl).at(c).stride();
-          const CCTK_REAL volume = prod (rvect (shape) / stride);
+          const CCTK_REAL volume = prod (rvect (shape) / rvect (stride));
           ++ countvolume;
           totalvolume += volume;
           totalvolume2 += ipow(volume, 2);
@@ -304,7 +305,7 @@ namespace Carpet {
         for (int c=0; c<hh.components(rl); ++c) {
           const ivect shape = hh.extents().at(ml).at(rl).at(c).shape();
           const ivect stride = hh.extents().at(ml).at(rl).at(c).stride();
-          const CCTK_REAL volume = prod(rvect (shape) / stride);
+          const CCTK_REAL volume = prod(rvect (shape) / rvect (stride));
           cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
                << "   volume: " << setprecision(0) << volume
                << "   of parent: " << setprecision(1) << 100 * volume / totalvolume << "%"
@@ -334,8 +335,8 @@ namespace Carpet {
         for (int c=0; c<hh.components(rl); ++c) {
           const ivect shape = hh.extents().at(ml).at(rl).at(c).shape();
           const ivect stride = hh.extents().at(ml).at(rl).at(c).stride();
-          const CCTK_REAL minlength = minval (rvect (shape) / stride);
-          const CCTK_REAL maxlength = maxval (rvect (shape) / stride);
+          const CCTK_REAL minlength = minval (rvect (shape) / rvect (stride));
+          const CCTK_REAL maxlength = maxval (rvect (shape) / rvect (stride));
           const CCTK_REAL quadrupole = minlength / maxlength;
           ++ countquadrupole;
           minquadrupole = min (minquadrupole, quadrupole);

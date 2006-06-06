@@ -816,7 +816,9 @@ namespace Carpet {
                    exterior_min, exterior_max, spacing);
     
     rvect const real_npoints
-      = spacing.ifthen ((exterior_max - exterior_min) / spacing + 1, rvect(1));
+      = either (spacing,
+                (exterior_max - exterior_min) / spacing + rvect(1),
+                rvect(1));
     
     print_map_base_grid_spec (m, real_npoints, lghosts);
     
@@ -1225,9 +1227,9 @@ namespace Carpet {
       }
         
       rvect real_sizes
-        = ((sizes - convoffsets)
+        = (rvect (sizes - convoffsets)
            / ipow (rvect (convergence_factor), convpowers * basemglevel)
-           + convoffsets);
+           + rvect (convoffsets));
       for (int d=gp.dim; d<dim; ++d) {
         real_sizes[d] = sizes[d];
       }
