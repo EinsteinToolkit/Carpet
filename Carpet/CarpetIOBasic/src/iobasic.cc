@@ -139,7 +139,7 @@ namespace CarpetIOBasic {
 
 
 
-  extern "C" void
+  extern "C" int
   CarpetIOBasicStartup ()
   {
     CCTK_RegisterBanner ("AMR info I/O provided by CarpetIOBasic");
@@ -149,6 +149,8 @@ namespace CarpetIOBasic {
 
     int IOMethod = CCTK_RegisterIOMethod ("CarpetIOBasic");
     CCTK_RegisterIOMethodOutputGH (IOMethod, OutputGH);
+
+    return 0;
   }
 
 
