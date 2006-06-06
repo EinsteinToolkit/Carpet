@@ -2,6 +2,11 @@
 
 
 
+BOOLEAN verbose "Tell what is going on"
+{
+} no
+
+
 CCTK_INT surface[3] "Spherical surface index which is the source for the location of the refine regions" STEERABLE=always
 {
   -1  :: "disabled"

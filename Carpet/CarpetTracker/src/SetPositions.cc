@@ -48,15 +48,29 @@ using namespace std;
       if (sn >= 0) {
         assert (sn >= 0 and sn < nsurfaces);
         
-        CCTK_VInfo (CCTK_THORNSTRING,
-                    "Setting position of refined region #%d from surface #%d to (%g,%g,%g)",
-                    n + 1, sn,
-                    static_cast <double> (sf_origin_x[sn]),
-                    static_cast <double> (sf_origin_y[sn]),
-                    static_cast <double> (sf_origin_z[sn]));
-        SetParameter ("x", n, sf_origin_x[sn]);
-        SetParameter ("y", n, sf_origin_y[sn]);
-        SetParameter ("z", n, sf_origin_z[sn]);
+        if (sf_valid[sn] > 0) {
+          
+          if (verbose) {
+            CCTK_VInfo (CCTK_THORNSTRING,
+                        "Setting position of refined region #%d from surface #%d to (%g,%g,%g)",
+                        n + 1, sn,
+                        static_cast <double> (sf_origin_x[sn]),
+                        static_cast <double> (sf_origin_y[sn]),
+                        static_cast <double> (sf_origin_z[sn]));
+          }
+          SetParameter ("x", n, sf_origin_x[sn]);
+          SetParameter ("y", n, sf_origin_y[sn]);
+          SetParameter ("z", n, sf_origin_z[sn]);
+          
+        } else {
+          
+          if (verbose) {
+            CCTK_VInfo (CCTK_THORNSTRING,
+                        "No position information available for refined region #%d from surface #%d",
+                        n + 1, sn);
+          }
+          
+        }
         
       } // if
     } // for
