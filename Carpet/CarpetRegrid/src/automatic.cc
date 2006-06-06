@@ -159,9 +159,15 @@ namespace CarpetRegrid {
     obs.resize (bbs.size());
     for (size_t c=0; c<bbs.size(); ++c) {
       assert (hh.bases().size()>0 and hh.bases().at(0).size()>0);
+#if 0
       obs.at(c) = zip ((vect<bool,2> (*) (bool, bool)) &vect<bool,2>::make,
                     bbs.at(c).lower() == hh.baseextent.lower(),
                     bbs.at(c).upper() == hh.baseextent.upper());
+#else
+      obs.at(c) = xpose (b2vect (bbs.at(c).lower() == hh.baseextent.lower(),
+                                 bbs.at(c).upper() == hh.baseextent.upper()));
+#endif
+
     }
     
   }
