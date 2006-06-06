@@ -132,15 +132,16 @@ namespace CarpetIOF5 {
                                   vect<CCTK_REAL, dim> & level_delta)
       const
     {
-      assert (all (coarse_delta > 0));
+      assert (all (coarse_delta > (CCTK_REAL) 0));
       assert (all (level_offset_denominator > 0));
       
-      vect<CCTK_REAL, dim> const one = 1;
-      level_delta = coarse_delta / m_level_refinement_factor;
+      level_delta
+        = coarse_delta / vect<CCTK_REAL, dim> (m_level_refinement_factor);
       level_origin
         = (coarse_origin
-           + (level_offset * one / level_offset_denominator
-              / m_max_refinement_factor));
+           + (vect<CCTK_REAL, dim> (level_offset)
+              / vect<CCTK_REAL, dim> (level_offset_denominator)
+              / vect<CCTK_REAL, dim> (m_max_refinement_factor)));
     }
     
     

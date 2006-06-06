@@ -64,7 +64,7 @@ namespace CarpetIOF5 {
         m_level_origin (level_origin),
         m_level_delta (level_delta)
     {
-      assert (all (m_level_delta > 0));
+      assert (all (m_level_delta > (CCTK_REAL) 0));
       
       init();
       
@@ -81,7 +81,7 @@ namespace CarpetIOF5 {
                                    vect<int, dim> const & level_offset_denominator)
       : coordinate_system_t (topology)
     {
-      assert (all (coarse_delta > 0));
+      assert (all (coarse_delta > (CCTK_REAL) 0));
       assert (all (level_offset_denominator > 0));
       
       mesh_refinement_topology_t * mesh_refinement_topology
@@ -111,7 +111,7 @@ namespace CarpetIOF5 {
     void Cartesian_coordinate_system_t::
     init ()
     {
-      assert (all (m_level_delta > 0));
+      assert (all (m_level_delta > (CCTK_REAL) 0));
       
       ostringstream namebuf;
       namebuf << "Cartesian 3D, x0=" << m_level_origin
@@ -136,7 +136,7 @@ namespace CarpetIOF5 {
       const
     {
       return (coordinate_system_t::invariant()
-              and all (m_level_delta > 0));
+              and all (m_level_delta > (CCTK_REAL) 0));
     }
     
   } // namespace F5
