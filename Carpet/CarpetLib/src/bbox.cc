@@ -49,7 +49,7 @@ template<class T, int D>
 T bbox<T,D>::size () const {
   if (empty()) return 0;
 //   return prod((shape()+stride()-1)/stride());
-  const vect<T,D> sh((shape()+stride()-1)/stride());
+  const vect<T,D> sh((shape()+stride()-T(1))/stride());
   T sz = 1, max = numeric_limits<T>::max();
   for (int d=0; d<D; ++d) {
     assert (sh[d] <= max);
