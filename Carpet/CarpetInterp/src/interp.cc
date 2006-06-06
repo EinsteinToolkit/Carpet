@@ -821,7 +821,7 @@ namespace CarpetInterp {
       lower.at(m) = coord_lower;
       upper.at(m) = coord_upper;
       delta.at(m) = ((coord_upper - coord_lower) /
-                     (baseextent.upper() - baseextent.lower()));
+                     rvect (baseextent.upper() - baseextent.lower()));
     }
 
     // Assign interpolation points to processors/components
@@ -847,7 +847,7 @@ namespace CarpetInterp {
           ivect const fact = maxspacereflevelfact / spacereffacts.at(rl) *
                              ipow(mgfact, mglevel);
           ivect const ipos = ivect(floor((pos - lower.at(m)) / (delta.at(m) *
-                             fact) + 0.5)) * fact;
+                             rvect(fact)) + 0.5)) * fact;
           const gh* hh = arrdata[coord_group][m].hh;
           assert (all (ipos % hh->bases().at(ml).at(rl).stride() == 0));
 
@@ -1187,7 +1187,7 @@ namespace CarpetInterp {
     int const m = grouptype == CCTK_GF ? Carpet::map : 0;
     // delta for the Carpet grid indices
     const ibbox& baseextent = arrdata.at(coord_group).at(m).hh->baseextent;
-    delta = (upper - lower) / (baseextent.upper() - baseextent.lower());
+    delta = (upper - lower) / rvect (baseextent.upper() - baseextent.lower());
 
     // Get processor-local origin and spacing
     cGroupDynamicData coord_group_data;
