@@ -92,6 +92,7 @@ namespace CarpetRegrid2 {
   
   
   
+  // Convert a coordinate location to an index location
   ivect
   rpos2ipos (rvect const & rpos,
              rvect const & origin, rvect const & scale,
@@ -105,6 +106,22 @@ namespace CarpetRegrid2 {
             istride);
   }
   
+  // Convert a coordinate location to an index location, rounding in
+  // the opposite manner as rpos2ipos
+  ivect
+  rpos2ipos1 (rvect const & rpos,
+              rvect const & origin, rvect const & scale,
+              gh const & hh, int const rl)
+  {
+    ivect const levfac = hh.reffacts.at(rl);
+    assert (all (hh.baseextent.stride() % levfac == 0));
+    ivect const istride = hh.baseextent.stride() / levfac;
+    
+    return (ivect (ceil ((rpos - origin) * scale / rvect(istride) - 0.5)) *
+            istride);
+  }
+  
+  // Convert an index location to a coordinate location
   rvect
   ipos2rpos (ivect const & ipos,
              rvect const & origin, rvect const & scale,
@@ -113,6 +130,7 @@ namespace CarpetRegrid2 {
     return rvect(ipos) / scale + origin;
   }
   
+  // Convert an index bbox to a coordinate bbox
   rbbox
   ibbox2rbbox (ibbox const & ib,
                rvect const & origin, rvect const & scale,
@@ -227,7 +245,7 @@ namespace CarpetRegrid2 {
       ivect const physical_ilower =
         rpos2ipos (physical_lower, origin, scale, hh, 0);
       ivect const physical_iupper =
-        rpos2ipos (physical_upper, origin, scale, hh, 0);
+        rpos2ipos1 (physical_upper, origin, scale, hh, 0);
       
       // The set of refined regions
       vector <ibboxset> regions (1);
@@ -247,7 +265,7 @@ namespace CarpetRegrid2 {
           ivect const imin =
             rpos2ipos (rmin, origin, scale, hh, rl);
           ivect const imax =
-            rpos2ipos (rmax, origin, scale, hh, rl);
+            rpos2ipos1 (rmax, origin, scale, hh, rl);
           
           ivect const levfac = hh.reffacts.at(rl);
           assert (all (hh.baseextent.stride() % levfac == 0));
@@ -298,7 +316,7 @@ namespace CarpetRegrid2 {
         
         rvect const level_physical_lower = physical_lower;
         rvect const level_physical_upper = physical_upper;
-        rvect const level_spacing = spacing / hh.reffacts.at(rl);
+        rvect const level_spacing = spacing / rvect (hh.reffacts.at(rl));
         rvect level_interior_lower, level_interior_upper;
         rvect level_exterior_lower, level_exterior_upper;
         {
@@ -315,7 +333,7 @@ namespace CarpetRegrid2 {
         ivect const level_exterior_ilower =
           rpos2ipos (level_exterior_lower, origin, scale, hh, rl);
         ivect const level_exterior_iupper =
-          rpos2ipos (level_exterior_upper, origin, scale, hh, rl);
+          rpos2ipos1 (level_exterior_upper, origin, scale, hh, rl);
         
         // Clip at the outer boundary
         regions.at(rl).normalize();
