@@ -98,7 +98,7 @@ namespace CarpetIOScalar {
 
 
 
-  extern "C" void
+  extern "C" int
   CarpetIOScalarStartup ()
   {
     CCTK_RegisterBanner ("AMR scalar I/O provided by CarpetIOScalar");
@@ -111,6 +111,8 @@ namespace CarpetIOScalar {
     CCTK_RegisterIOMethodOutputVarAs (IOMethod, OutputVarAs);
     CCTK_RegisterIOMethodTimeToOutput (IOMethod, TimeToOutput);
     CCTK_RegisterIOMethodTriggerOutput (IOMethod, TriggerOutput);
+
+    return 0;
   }
 
 
