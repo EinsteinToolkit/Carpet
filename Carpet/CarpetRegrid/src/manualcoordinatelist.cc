@@ -88,7 +88,8 @@ namespace CarpetRegrid {
         ivect const spacereffact = spacereffacts.at(rl+1);
         assert (mglevel==0);
         rvect const spacing =
-          base_spacing * ipow((CCTK_REAL)mgfact, basemglevel) / spacereffact;
+          base_spacing * ipow((CCTK_REAL)mgfact, basemglevel)
+          / rvect(spacereffact);
         ierr = ConvertFromPhysicalBoundary
           (dim, &physical_min[0], &physical_max[0],
            &interior_min[0], &interior_max[0],
@@ -175,7 +176,7 @@ namespace CarpetRegrid {
         // convergence_level), so that the user does not have to
         // change the parameter file when the convergence level is
         // changed.
-        rvect const spacing = base_spacing / spacereffact;
+        rvect const spacing = base_spacing / rvect(spacereffact);
         if (! all(abs(ext.stride() - spacing) < spacing * 1.0e-10)) {
           assert (dim==3);
           CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,

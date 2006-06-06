@@ -50,7 +50,7 @@ namespace CarpetRegrid {
          moving_centre_y + moving_circle_radius * sin(argument),
          moving_centre_z);
       rvect const radius
-        (rvect(moving_region_radius) / spacereffacts.at(rl-1));
+        (rvect(moving_region_radius) / rvect(spacereffacts.at(rl-1)));
       
       rvect const rlb (symmetric.ifthen (rvect(0), pos - radius));
       rvect const rub (symmetric.ifthen (radius  , pos + radius));

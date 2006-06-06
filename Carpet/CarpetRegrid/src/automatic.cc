@@ -146,10 +146,12 @@ namespace CarpetRegrid {
     // Remove grid points outside the outer boundary
     bbvect const obp (false);
     for (size_t c=0; c<bbs.size(); ++c) {
-      const ivect lb = xpose(obp)[0].ifthen
-        (bbs.at(c).lower(), max (bbs.at(c).lower(), hh.baseextent.lower()));
-      const ivect ub = xpose(obp)[1].ifthen
-        (bbs.at(c).upper(), min (bbs.at(c).upper(), hh.baseextent.upper()));
+      const ivect lb = either (xpose(obp)[0],
+                               bbs.at(c).lower(),
+                               max (bbs.at(c).lower(), hh.baseextent.lower()));
+      const ivect ub = either (xpose(obp)[1],
+                               bbs.at(c).upper(),
+                               min (bbs.at(c).upper(), hh.baseextent.upper()));
       bbs.at(c) = ibbox(lb, ub, bbs.at(c).stride());
     }
     
