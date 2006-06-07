@@ -25,10 +25,10 @@ namespace CarpetRegrid {
   
   extern "C" {
     
-    /* Scheduled functions */
-    int CarpetRegridParamcheck (CCTK_ARGUMENTS);
+    // Scheduled functions
+    void CarpetRegridParamcheck (CCTK_ARGUMENTS);
     
-    /* Aliased functions */
+    // Aliased functions
 //     CCTK_INT CarpetRegrid_Regrid (const cGH * const cctkGH,
 //                                   gh<dim>::mexts  * bbsss,
 //                                   gh<dim>::rbnds  * obss,

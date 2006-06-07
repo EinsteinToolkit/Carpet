@@ -14,7 +14,7 @@ namespace CarpetRegrid {
   using namespace std;
   using namespace Carpet;
   
-  int CarpetRegridParamcheck (CCTK_ARGUMENTS)
+  void CarpetRegridParamcheck (CCTK_ARGUMENTS)
   {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
@@ -38,8 +38,6 @@ namespace CarpetRegrid {
         CCTK_PARAMWARN ("The parameter CarpetRegrid::smart_outer_boundaries can currently only be used when CarpetRegrid::refined_regions is set to \"manual-coordinate-list\"");
       }
     }
-    
-    return 0;
   }
   
 }

@@ -10,7 +10,7 @@ namespace CarpetRegrid {
     
     /* Scheduled functions */
     int CarpetRegridStartup ();
-    int CarpetRegridParamcheck (CCTK_ARGUMENTS);
+    void CarpetRegridParamcheck (CCTK_ARGUMENTS);
 
 #ifdef __cplusplus
   } /* extern "C" */
