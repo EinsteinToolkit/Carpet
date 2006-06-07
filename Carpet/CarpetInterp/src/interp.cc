@@ -146,9 +146,10 @@ namespace CarpetInterp {
 
 
 
-  void CarpetInterpStartup ()
+  int CarpetInterpStartup ()
   {
     CCTK_OverloadInterpGridArrays (InterpGridArrays);
+    return 0;
   }
 
 

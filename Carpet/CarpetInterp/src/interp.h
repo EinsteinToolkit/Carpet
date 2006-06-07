@@ -7,7 +7,7 @@ namespace CarpetInterp {
 #endif
   
     /* Scheduled functions */
-    void CarpetInterpStartup (void);
+    int CarpetInterpStartup (void);
     
 #ifdef __cplusplus
   } /* extern "C" */
