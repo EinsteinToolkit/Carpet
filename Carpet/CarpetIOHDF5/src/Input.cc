@@ -339,6 +339,22 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   }
 
   const ioGH* ioUtilGH = (const ioGH*) CCTK_GHExtension (cctkGH, "IO");
+  CarpetIOHDF5GH* myGH =
+                  (CarpetIOHDF5GH*) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
+  // allocate list of recovery filenames
+  // if the recovery checkpoint should be removed eventually
+  if (in_recovery and not recover_and_remove and checkpoint_keep > 0) {
+    if (not myGH->recovery_filename_list) {
+      myGH->recovery_num_filenames = fileset->files.size();
+      myGH->recovery_filename_list =
+            (char **) calloc (fileset->files.size(), sizeof (char **));
+      assert (myGH->cp_filename_index == 0);
+
+      // add a dummy entry in the checkpoint filename ring buffer
+      myGH->cp_filename_list[myGH->cp_filename_index] = "bla";
+      myGH->cp_filename_index = (myGH->cp_filename_index+1) % checkpoint_keep;
+    }
+  }
 
   // loop over all input files of this set
   for (unsigned int i = 0; i < fileset->files.size(); i++) {
@@ -364,6 +380,9 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       HDF5_ERROR (H5Giterate (file.file, "/", NULL, BrowseDatasets, &file));
     }
     assert (file.patches.size() > 0);
+    if (myGH->recovery_filename_list and not myGH->recovery_filename_list[i]) {
+      myGH->recovery_filename_list[i] = strdup (file.filename);
+    }
 
     // some optimisation for the case when all processors recover
     // from a single chunked checkpoint file:

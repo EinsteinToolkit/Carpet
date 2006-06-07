@@ -253,6 +253,8 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
   myGH->cp_filename_index = 0;
   myGH->checkpoint_keep = abs (checkpoint_keep);
   myGH->cp_filename_list = (char **) calloc (myGH->checkpoint_keep, sizeof (char *));
+  myGH->recovery_num_filenames = 0;
+  myGH->recovery_filename_list = NULL;
   myGH->out_vars = strdup ("");
   myGH->out_every_default = out_every - 1;
 
@@ -798,13 +800,31 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
         CarpetIOHDF5GH *myGH =
           (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
 
+        // should an older checkpoint file be removed ?
         if (myGH->cp_filename_list[myGH->cp_filename_index]) {
-          remove (myGH->cp_filename_list[myGH->cp_filename_index]);
-          free (myGH->cp_filename_list[myGH->cp_filename_index]);
-          myGH->cp_filename_list[myGH->cp_filename_index] = NULL;
+          // check whether the recovery checkpoint (which can be a list of
+          // several chunked files) or a checkpoint file should be removed
+          if (myGH->recovery_filename_list) {
+            for (int i = 0; i < myGH->recovery_num_filenames; i++) {
+              if (myGH->recovery_filename_list[i]) {
+                remove (myGH->recovery_filename_list[i]);
+                free (myGH->recovery_filename_list[i]);
+              }
+            }
+            free (myGH->recovery_filename_list);
+            myGH->recovery_filename_list = NULL;
+          } else {
+            remove (myGH->cp_filename_list[myGH->cp_filename_index]);
+            free (myGH->cp_filename_list[myGH->cp_filename_index]);
+          }
         }
+
+        // add this checkpoint to the checkpoint filename ring buffer
         myGH->cp_filename_list[myGH->cp_filename_index] = strdup (filename);
         myGH->cp_filename_index = (myGH->cp_filename_index+1) % checkpoint_keep;
+
+        // since the 'checkpoint_keep' parameter is steerable,
+        // we may need to resize the ring buffer
         if (myGH->checkpoint_keep != checkpoint_keep) {
           char **cp_filename_list = (char **) calloc (checkpoint_keep,
                                                       sizeof (char *));

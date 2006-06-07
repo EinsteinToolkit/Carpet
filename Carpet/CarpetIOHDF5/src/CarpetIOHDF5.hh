@@ -75,6 +75,10 @@ typedef struct
   int    cp_filename_index;
   char **cp_filename_list;
 
+  // list of recovery files to remove
+  int    recovery_num_filenames;
+  char **recovery_filename_list;
+
   // iteration number of the last checkpoint
   int last_checkpoint_iteration;
 
