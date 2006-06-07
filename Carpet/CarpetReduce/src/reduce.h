@@ -7,7 +7,7 @@ namespace CarpetReduce {
 #endif
   
     /* Scheduled functions */
-    void CarpetReduceStartup (void);
+    int CarpetReduceStartup (void);
     
 #ifdef __cplusplus
   } /* extern "C" */

@@ -1226,7 +1226,7 @@ namespace CarpetReduce {
   
   
   
-  void CarpetReduceStartup ()
+  int CarpetReduceStartup ()
   {
     CCTK_RegisterReductionOperator (count_GVs,           "count");
     CCTK_RegisterReductionOperator (minimum_GVs,         "minimum");
@@ -1253,6 +1253,8 @@ namespace CarpetReduce {
     CCTK_RegisterReductionArrayOperator (norm1_arrays,           "norm1");
     CCTK_RegisterReductionArrayOperator (norm2_arrays,           "norm2");
     CCTK_RegisterReductionArrayOperator (norm_inf_arrays,        "norm_inf");
+    
+    return 0;
   }
   
 } // namespace CarpetReduce
