@@ -8,7 +8,9 @@
 
 #include "cctk.h"
 
+#include "bbox.hh"
 #include "defs.hh"
+#include "vect.hh"
 
 using namespace std;
 
