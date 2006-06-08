@@ -26,7 +26,7 @@ namespace CarpetAdaptiveRegrid {
   extern "C" {
     
     /* Scheduled functions */
-    int CarpetAdaptiveRegridParamcheck (CCTK_ARGUMENTS);
+    void CarpetAdaptiveRegridParamcheck (CCTK_ARGUMENTS);
     
     /* Aliased functions */
 //     CCTK_INT CarpetAdaptiveRegrid_Regrid (const cGH * const cctkGH,

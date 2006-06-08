@@ -16,7 +16,7 @@ namespace CarpetAdaptiveRegrid {
   using namespace std;
   using namespace Carpet;
   
-  int CarpetAdaptiveRegridParamcheck (CCTK_ARGUMENTS)
+  void CarpetAdaptiveRegridParamcheck (CCTK_ARGUMENTS)
   {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
@@ -29,8 +29,6 @@ namespace CarpetAdaptiveRegrid {
     if (! *domain_from_coordbase) {
       CCTK_PARAMWARN ("CarpetAdaptiveRegrid requires that Carpet::domain_from_coordbase=yes");
     }
-    
-    return 0;
   }
   
 }
