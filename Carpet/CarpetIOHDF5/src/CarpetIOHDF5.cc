@@ -89,7 +89,7 @@ void CarpetIOHDF5_InitialDataCheckpoint (CCTK_ARGUMENTS)
     CCTK_INFO ("Dumping initial data checkpoint");
     CCTK_INFO ("---------------------------------------------------------");
   }
-  int retval = Checkpoint (cctkGH, CP_INITIAL_DATA);
+  Checkpoint (cctkGH, CP_INITIAL_DATA);
 }
 
 
