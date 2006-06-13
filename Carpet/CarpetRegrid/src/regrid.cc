@@ -68,7 +68,7 @@ namespace CarpetRegrid {
       
 	if (cctkGH->cctk_iteration-1 >= activate_next) {
 	  const int newnumlevels
-	    = min(refinement_levels + num_new_levels, maxreflevels);
+	    = min((int)(refinement_levels + num_new_levels), maxreflevels);
 	  assert (newnumlevels>0 and newnumlevels<=maxreflevels);
         
 	  *const_cast<CCTK_INT*>(&activate_next) = cctkGH->cctk_iteration;

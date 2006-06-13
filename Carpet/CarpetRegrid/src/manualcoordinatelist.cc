@@ -177,7 +177,8 @@ namespace CarpetRegrid {
         // change the parameter file when the convergence level is
         // changed.
         rvect const spacing = base_spacing / rvect(spacereffact);
-        if (! all(abs(ext.stride() - spacing) < spacing * 1.0e-10)) {
+        if (! all(abs(ext.stride() - spacing)
+                  < spacing * (CCTK_REAL) 1.0e-10)) {
           assert (dim==3);
           CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "The grid spacing on refinement level %d is incorrect.  I expected [%g,%g,%g], but I found [%g,%g,%g].",
@@ -185,7 +186,8 @@ namespace CarpetRegrid {
                       double(spacing[0]), double(spacing[1]), double(spacing[2]),
                       double(ext.stride()[0]), double(ext.stride()[1]), double(ext.stride()[2]));
         }
-        assert (all(abs(ext.stride() - spacing) < spacing * 1.0e-10));
+        assert (all(abs(ext.stride() - spacing)
+                    < spacing * (CCTK_REAL) 1.0e-10));
         
         rvect offset = rvect(0);
         if (c < num_offsets) {

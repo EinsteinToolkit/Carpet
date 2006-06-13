@@ -60,7 +60,7 @@ namespace CarpetRegrid {
     vector<ibbox> bbs;
     gh::cbnds obs;
     Automatic_OneLevel
-      (cctkGH, hh, reflevel, min(reflevels+1, refinement_levels),
+      (cctkGH, hh, reflevel, min(reflevels+1, (int)refinement_levels),
        errorgf, bbs, obs);
     
     // make multiprocessor aware
@@ -214,7 +214,8 @@ namespace CarpetRegrid {
     
     if (cnt == 0) {
       // Don't refine
-    } else if (any (reffact*width < 2*minwidth) or fraction >= minfraction) {
+    } else if (any (reffact*width < (int)(2*minwidth))
+               or fraction >= minfraction) {
       // Refine the whole region
       const ivect lo(region.lower());
       const ivect up(region.upper());

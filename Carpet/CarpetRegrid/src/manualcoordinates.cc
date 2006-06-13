@@ -122,10 +122,10 @@ namespace CarpetRegrid {
     const ivect istride = hh.baseextent.stride() / levfac;
     
     const ivect ipos
-      = ivect(floor(rpos * scale / rvect(istride) + 0.5)) * istride;
+      = ivect(floor(rpos * scale / rvect(istride) + (CCTK_REAL) 0.5)) * istride;
     
     const rvect apos = rpos * scale;
-    assert (all(abs(apos - rvect(ipos)) < rvect(istride)*0.01));
+    assert (all(abs(apos - rvect(ipos)) < rvect(istride) * (CCTK_REAL) 0.01));
     
     return ipos;
   }
@@ -152,7 +152,8 @@ namespace CarpetRegrid {
     const ivect istride = hh.baseextent.stride() / levfac;
     
     const ivect ipos
-      = (ivect(floor((rpos - global_lower) * scale / rvect(istride) + 0.5))
+      = (ivect(floor((rpos - global_lower) * scale / rvect(istride)
+                     + (CCTK_REAL) 0.5))
          * istride);
     
     return ipos;
