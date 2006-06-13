@@ -357,7 +357,8 @@ namespace Carpet {
             CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                         "There are not enough time levels for the desired temporal prolongation order in the grid function group \"%s\".  With Carpet::prolongation_order_time=%d, you need at least %d time levels.",
                         groupname,
-                        prolongation_order_time, prolongation_order_time+1);
+                        (int)prolongation_order_time,
+                        (int)(prolongation_order_time+1));
             free (groupname);
           }
         }

@@ -544,7 +544,7 @@ namespace Carpet {
       // Calculate them from the default refinement factor
       spacereffacts.resize (maxreflevels);
       for (int n=0; n<maxreflevels; ++n) {
-        spacereffacts.at(n) = ivect (ipow (refinement_factor, n));
+        spacereffacts.at(n) = ivect (ipow ((int)refinement_factor, n));
       }
     } else {
       // Read them from the parameter
@@ -569,7 +569,7 @@ namespace Carpet {
       // Calculate them from the default refinement factor
       timereffacts.resize (maxreflevels);
       for (int n=0; n<maxreflevels; ++n) {
-        timereffacts.at(n) = ipow (refinement_factor, n);
+        timereffacts.at(n) = ipow ((int)refinement_factor, n);
       }
     } else {
       // Read them from the parameter
@@ -822,7 +822,7 @@ namespace Carpet {
     
     print_map_base_grid_spec (m, real_npoints, lghosts);
     
-    const ivect npoints = floor (real_npoints + 0.5);
+    const ivect npoints = floor (real_npoints + (CCTK_REAL) 0.5);
     check_domain_size (npoints, real_npoints,
                            m, basemglevel, convergence_factor);
     
@@ -844,14 +844,14 @@ namespace Carpet {
       = ((ivect (use_tapered_grids ? refinement_factor : 1)
           *
           (use_outer_buffer_zones
-           ? lghosts * num_integrator_substeps + buffer_width
+           ? lghosts * (int)num_integrator_substeps + (int)buffer_width
            : lghosts))
          - lghosts);
     ivect const ubuffers
       = ((ivect (use_tapered_grids ? refinement_factor : 1)
           *
           (use_outer_buffer_zones
-           ? ughosts * num_integrator_substeps + buffer_width
+           ? ughosts * (int)num_integrator_substeps + (int)buffer_width
            : ughosts))
          - ughosts);
     vdd.at(m) = new dh (*vhh.at(m), lghosts, ughosts,
@@ -991,10 +991,10 @@ namespace Carpet {
                jjvect & is_internal, jjvect &is_staggered, jjvect & shiftout) {
     ostringstream buf;
     buf << "CoordBase boundary specification for map " << m << ":" << endl
-        << "   nboundaryzones: " << nboundaryzones << endl
-        << "   is_internal   : " << is_internal    << endl
-        << "   is_staggered  : " << is_staggered   << endl
-        << "   shiftout      : " << shiftout;
+        << "   nboundaryzones: " << iivect(nboundaryzones) << endl
+        << "   is_internal   : " << iivect(is_internal)    << endl
+        << "   is_staggered  : " << iivect(is_staggered)   << endl
+        << "   shiftout      : " << iivect(shiftout);
     Output (buf.str().c_str());
   }
     
@@ -1037,11 +1037,11 @@ namespace Carpet {
 
   void check_domain_size (const rvect &npoints, const rvect &real_npoints,
                     int m, CCTK_INT basemglevel, CCTK_INT convergence_factor) {
-    if (any (abs (rvect (npoints) - real_npoints) > 0.001)) {
+    if (any (abs (rvect (npoints) - real_npoints) > (CCTK_REAL) 0.001)) {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "The domain size for map %d scaled for convergence level %d "
                   "with convergence factor %d is not integer",
-                  m, basemglevel, convergence_factor);
+                  m, (int)basemglevel, (int)convergence_factor);
     }
   }
 
@@ -1072,7 +1072,7 @@ namespace Carpet {
                       "spatial prolongation order on map %d.  "
                       "With Carpet::prolongation_order_space=%d, you need at "
                       "least %d ghost zones.",
-                    m, prolongation_order_space, min_nghosts);
+                    m, (int)prolongation_order_space, min_nghosts);
       }
       
     }
@@ -1227,27 +1227,28 @@ namespace Carpet {
       }
         
       rvect real_sizes
-        = (rvect (sizes - convoffsets)
-           / ipow (rvect (convergence_factor), convpowers * basemglevel)
+        = (rvect (sizes - ivect(convoffsets))
+           / ipow (rvect (convergence_factor),
+                   ivect(convpowers) * (int)basemglevel)
            + rvect (convoffsets));
       for (int d=gp.dim; d<dim; ++d) {
         real_sizes[d] = sizes[d];
       }
-      sizes = floor (real_sizes + 0.5);
+      sizes = floor (real_sizes + (CCTK_REAL) 0.5);
       if (any(sizes < 0)) {
         char * const groupname = CCTK_GroupName (group);
         CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "The shape of group \"%s\" scaled for convergence level %d "
                     "with convergence factor %d is negative",
-                    groupname, basemglevel, convergence_factor);
+                    groupname, (int)basemglevel, (int)convergence_factor);
         free (groupname);
       }
-      if (any(abs(rvect(sizes) - real_sizes) > 0.001)) {
+      if (any(abs(rvect(sizes) - real_sizes) > (CCTK_REAL) 0.001)) {
         char * const groupname = CCTK_GroupName(group);
         CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "The shape of group \"%s\" scaled for convergence level %d "
                     "with convergence factor %d is not integer",
-                    groupname, basemglevel, convergence_factor);
+                    groupname, (int)basemglevel, (int)convergence_factor);
         free (groupname);
       }
 
@@ -1407,7 +1408,7 @@ namespace Carpet {
                   groupname);
       free (groupname);
     }
-    assert (all (convpowers >= 0));
+    assert (all (convpowers >= (CCTK_INT)0));
     
     status = Util_TableGetIntArray
       (gp.tagstable, gp.dim, &convoffsets[0], "convergence_offset");
