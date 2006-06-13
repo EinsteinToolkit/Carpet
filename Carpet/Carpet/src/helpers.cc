@@ -83,7 +83,7 @@ namespace Carpet {
     CCTK_Barrier (cgh);
     dist::finalize();
     exit (retval);
-    return -999;
+    return -1;
   }
 
   int Abort (cGH* cgh, int retval)
@@ -92,8 +92,8 @@ namespace Carpet {
     dummy = &cgh;
     
     MPI_Abort (MPI_COMM_WORLD, retval);
-    abort ();
-    return -999;
+    exit (retval);
+    return -1;
   }
 
 
