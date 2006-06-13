@@ -751,7 +751,7 @@ namespace CarpetInterp {
       assert (iret == N_output_arrays);
       num_time_derivs = 0;
       for (int m = 0; m < N_output_arrays; ++m) {
-        num_time_derivs = max (num_time_derivs, time_deriv_order[m]);
+        num_time_derivs = max (num_time_derivs, (int)time_deriv_order[m]);
       }
     }
 
@@ -848,7 +848,7 @@ namespace CarpetInterp {
           ivect const fact = maxspacereflevelfact / spacereffacts.at(rl) *
                              ipow(mgfact, mglevel);
           ivect const ipos = ivect(floor((pos - lower.at(m)) / (delta.at(m) *
-                             rvect(fact)) + 0.5)) * fact;
+                             rvect(fact)) + (CCTK_REAL) 0.5)) * fact;
           const gh* hh = arrdata[coord_group][m].hh;
           assert (all (ipos % hh->bases().at(ml).at(rl).stride() == 0));
 
@@ -869,7 +869,8 @@ namespace CarpetInterp {
       if (map_onto_processors) {
         CCTK_VWarn (CCTK_WARN_PICKY, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Interpolation point #%d at [%g,%g,%g] is not on "
-                    "any grid patch", n, pos[0], pos[1], pos[2]);
+                    "any grid patch",
+                    n, (double)pos[0], (double)pos[1], (double)pos[2]);
       }
     found:
       assert (rl >= minrl and rl < maxrl);
@@ -1274,12 +1275,16 @@ namespace CarpetInterp {
         (param_table_handle, &per_point_status.front(), "per_point_status");
       assert (ierr >= 0);
 
+      vector<CCTK_INT> lsh(N_dims);
+      for (int d=0; d<N_dims; ++d) {
+        lsh.at(d) = coord_group_data.lsh[d];
+      }
       const int retval = CCTK_InterpLocalUniform
         (N_dims, local_interp_handle, param_table_handle,
          &lower[0], &delta[0],
          npoints,
          CCTK_VARIABLE_REAL, tmp_coords,
-         N_input_arrays, coord_group_data.lsh,
+         N_input_arrays, & lsh.front(),
          &input_array_type_codes.front(), &input_arrays.front(),
          N_output_arrays,
          output_array_type_codes, &tmp_output_arrays[tl].front());
@@ -1288,7 +1293,7 @@ namespace CarpetInterp {
                     "The local interpolator returned the error code %d",retval);
       }
 
-      overall_retval = min (overall_retval, retval);
+      overall_retval = min (overall_retval, (CCTK_INT)retval);
       for (int n = 0; n < per_point_status.size(); n++) {
         overall_status = min (overall_status, per_point_status[n]);
       }
