@@ -269,9 +269,8 @@ void dh::setup_refinement_prolongation_boxes (dh::dboxes & box,
           }
         }
         recvs.normalize();
-        assert (recvs.setsize() <= 1);
-        if (recvs.setsize() == 1) {
-          const ibbox recv = *recvs.begin();
+        for (ibset::const_iterator ri=recvs.begin(); ri!=recvs.end(); ++ri) {
+          const ibbox recv = *ri;
           const ibbox send = recv.expanded_for(extr);
           assert (! send.empty());
           assert (send.is_contained_in(extr));
