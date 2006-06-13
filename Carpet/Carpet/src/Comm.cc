@@ -38,7 +38,6 @@ namespace Carpet {
     if (group >= 0) {
       assert (group < (int)arrdata.size());
 
-      const int firstvar = CCTK_FirstVarIndexI (group);
       const vector<int> groups(1, group);
       retval = SyncProlongateGroups (cctkGH, groups);
     } else {
