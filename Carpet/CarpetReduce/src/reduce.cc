@@ -988,7 +988,8 @@ namespace CarpetReduce {
             } else if (ilen >= 0) {
               assert (interp_num_time_levels>0);
               num_tl
-                = min (prolongation_order_time + 1, interp_num_time_levels);
+                = min (prolongation_order_time + 1,
+                       (int)interp_num_time_levels);
             } else {
               assert (0);
             }
