@@ -82,41 +82,41 @@ namespace Carpet {
     }
     switch (type1) {
       
-#ifdef CCTK_REAL8
+#ifdef HAVE_CCTK_REAL8
     case CCTK_VARIABLE_REAL8:
       // This type is supported.
       return true;
 #endif
       
-#ifdef CCTK_REAL4
+#ifdef HAVE_CCTK_REAL4
     case CCTK_VARIABLE_REAL4:
 #endif
-#ifdef CCTK_REAL16
+#ifdef HAVE_CCTK_REAL16
     case CCTK_VARIABLE_REAL16:
 #endif
-#ifdef CCTK_REAL4 /* CCTK_COMPLEX8 */
+#ifdef HAVE_CCTK_COMPLEX8
     case CCTK_VARIABLE_COMPLEX8:
 #endif
-#ifdef CCTK_REAL8 /* CCTK_COMPLEX16 */
+#ifdef HAVE_CCTK_COMPLEX16
     case CCTK_VARIABLE_COMPLEX16:
 #endif
-#ifdef CCTK_REAL16 /* CCTK_COMPLEX32 */
+#ifdef HAVE_CCTK_COMPLEX32
     case CCTK_VARIABLE_COMPLEX32:
 #endif
       // This type is not supported, but could be.
       return false;
       
     case CCTK_VARIABLE_BYTE:
-#ifdef CCTK_INT1
+#ifdef HAVE_CCTK_INT1
     case CCTK_VARIABLE_INT1:
 #endif
-#ifdef CCTK_INT2
+#ifdef HAVE_CCTK_INT2
     case CCTK_VARIABLE_INT2:
 #endif
-#ifdef CCTK_INT4
+#ifdef HAVE_CCTK_INT4
     case CCTK_VARIABLE_INT4:
 #endif
-#ifdef CCTK_INT8
+#ifdef HAVE_CCTK_INT8
     case CCTK_VARIABLE_INT8:
 #endif
       // This type is not supported, and cannot be.

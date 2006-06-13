@@ -151,19 +151,19 @@ namespace Carpet {
       return CarpetMPIDatatype (CCTK_VARIABLE_REAL);
 #endif
 #ifdef CARPET_COMPLEX8
-#  ifdef CCTK_REAL4
+#  ifdef HAVE_CCTK_COMPLEX8
     case CCTK_VARIABLE_COMPLEX8:
       return CarpetMPIDatatype (CCTK_VARIABLE_REAL4);
 #  endif
 #endif
 #ifdef CARPET_COMPLEX16
-#  ifdef CCTK_REAL8
+#  ifdef HAVE_CCTK_COMPLEX16
     case CCTK_VARIABLE_COMPLEX16:
       return CarpetMPIDatatype (CCTK_VARIABLE_REAL8);
 #  endif
 #endif
 #ifdef CARPET_COMPLEX32
-#  ifdef CCTK_REAL16
+#  ifdef HAVE_CCTK_COMPLEX32
     case CCTK_VARIABLE_COMPLEX32:
       return CarpetMPIDatatype (CCTK_VARIABLE_REAL16);
 #  endif
@@ -182,17 +182,17 @@ namespace Carpet {
     case CCTK_VARIABLE_COMPLEX:
 #endif
 #ifdef CARPET_COMPLEX8
-#  ifdef CCTK_REAL4
+#  ifdef HAVE_CCTK_COMPLEX8
     case CCTK_VARIABLE_COMPLEX8:
 #  endif
 #endif
 #ifdef CARPET_COMPLEX16
-#  ifdef CCTK_REAL8
+#  ifdef HAVE_CCTK_COMPLEX16
     case CCTK_VARIABLE_COMPLEX16:
 #  endif
 #endif
 #ifdef CARPET_COMPLEX32
-#  ifdef CCTK_REAL16
+#  ifdef HAVE_CCTK_COMPLEX32
     case CCTK_VARIABLE_COMPLEX32:
 #  endif
 #endif
