@@ -162,7 +162,7 @@ namespace Carpet {
       = (cctkGH->cctk_time - initial_time) / delta_time;
 
     for (comm_state state; not state.done(); state.step()) {
-      for (int group = 0; group < groups.size(); ++group) {
+      for (int group = 0; group < (int)groups.size(); ++group) {
         const int g = groups[group];
         const int grouptype = CCTK_GroupTypeI (g);
         if (grouptype != CCTK_GF) {
@@ -170,8 +170,8 @@ namespace Carpet {
         }
         assert (reflevel>=0 and reflevel<reflevels);
 
-        for (int m = 0; m < arrdata.at(g).size(); ++m) {
-          for (int v = 0; v < arrdata.at(g).at(m).data.size(); ++v) {
+        for (int m = 0; m < (int)arrdata.at(g).size(); ++m) {
+          for (int v = 0; v < (int)arrdata.at(g).at(m).data.size(); ++v) {
             ggf *const gv = arrdata.at(g).at(m).data.at(v);
             for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
               gv->ref_bnd_prolongate (state, tl, reflevel, c, mglevel, time);
@@ -192,13 +192,13 @@ namespace Carpet {
     assert (groups.size() > 0);
 
     for (comm_state state; not state.done(); state.step()) {
-      for (int group = 0; group < groups.size(); ++group) {
+      for (int group = 0; group < (int)groups.size(); ++group) {
         const int g = groups[group];
         const int grouptype = CCTK_GroupTypeI (g);
         const int ml = grouptype == CCTK_GF ? mglevel : 0;
         const int rl = grouptype == CCTK_GF ? reflevel : 0;
-        for (int m = 0; m < arrdata.at(g).size(); ++m) {
-          for (int v = 0; v < arrdata.at(g).at(m).data.size(); ++v) {
+        for (int m = 0; m < (int)arrdata.at(g).size(); ++m) {
+          for (int v = 0; v < (int)arrdata.at(g).at(m).data.size(); ++v) {
             arrdesc& array = arrdata.at(g).at(m);
             for (int c = 0; c < array.hh->components(rl); ++c) {
               array.data.at(v)->sync (state, tl, rl, c, ml);

@@ -557,7 +557,7 @@ namespace Carpet {
       }
     }
     // TODO: turn these into real error messages
-    assert (spacereffacts.size() >= maxreflevels);
+    assert ((int)spacereffacts.size() >= maxreflevels);
     assert (all (spacereffacts.front() == 1));
     for (int n=1; n<maxreflevels; ++n) {
       assert (all (spacereffacts.at(n) >= spacereffacts.at(n-1)));
@@ -581,7 +581,7 @@ namespace Carpet {
       }
     }
     // TODO: turn these into real error messages
-    assert (timereffacts.size() >= maxreflevels);
+    assert ((int)timereffacts.size() >= maxreflevels);
     assert (timereffacts.front() == 1);
     for (int n=1; n<maxreflevels; ++n) {
       assert (timereffacts.at(n) >= timereffacts.at(n-1));

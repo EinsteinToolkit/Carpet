@@ -64,7 +64,7 @@ namespace Carpet {
     const int tl = 0;
 
     for (comm_state state; ! state.done(); state.step()) {
-      for (int c = 0; c < groups.size(); ++c) {
+      for (int c = 0; c < (int)groups.size(); ++c) {
         const int group = groups[c];
         for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
 
@@ -77,7 +77,7 @@ namespace Carpet {
             = (cgh->cctk_time - cctk_initial_time) / delta_time;
           assert (abs(time1 - time2) / (abs(time1) + abs(time2) + abs(cgh->cctk_delta_time)) < 1e-12);
 
-          for (int v = 0; v < arrdata.at(group).at(m).data.size(); ++v) {
+          for (int v = 0; v < (int)arrdata.at(group).at(m).data.size(); ++v) {
             ggf *const gv = arrdata.at(group).at(m).data.at(v);
             for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
               gv->ref_restrict (state, tl, reflevel, c, mglevel, time);

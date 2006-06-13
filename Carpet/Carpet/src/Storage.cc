@@ -347,7 +347,7 @@ namespace Carpet {
         {
           static vector<bool> didwarn;
           int const numgroups = CCTK_NumGroups();
-          if (didwarn.size() < numgroups) {
+          if ((int)didwarn.size() < numgroups) {
             didwarn.resize (numgroups, false);
           }
           if (not didwarn.at(group)) {
