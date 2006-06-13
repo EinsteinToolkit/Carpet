@@ -102,7 +102,8 @@ namespace CarpetRegrid2 {
     assert (all (hh.baseextent.stride() % levfac == 0));
     ivect const istride = hh.baseextent.stride() / levfac;
     
-    return (ivect (floor ((rpos - origin) * scale / rvect(istride) + 0.5)) *
+    return (ivect (floor ((rpos - origin) * scale / rvect(istride) +
+                          static_cast<CCTK_REAL> (0.5))) *
             istride);
   }
   
@@ -117,7 +118,8 @@ namespace CarpetRegrid2 {
     assert (all (hh.baseextent.stride() % levfac == 0));
     ivect const istride = hh.baseextent.stride() / levfac;
     
-    return (ivect (ceil ((rpos - origin) * scale / rvect(istride) - 0.5)) *
+    return (ivect (ceil ((rpos - origin) * scale / rvect(istride) -
+                         static_cast<CCTK_REAL> (0.5))) *
             istride);
   }
   
@@ -197,10 +199,11 @@ namespace CarpetRegrid2 {
       // This requires that CoordBase is used (but this is not
       // checked)
       
-      iivect nboundaryzones;
-      iivect is_internal;
-      iivect is_staggered;
-      iivect shiftout;
+      typedef vect<vect<CCTK_INT,2>,3> jjvect;
+      jjvect nboundaryzones;
+      jjvect is_internal;
+      jjvect is_staggered;
+      jjvect shiftout;
       {
         CCTK_INT const ierr = GetBoundarySpecification
           (2*dim,
