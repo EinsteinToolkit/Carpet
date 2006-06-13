@@ -131,17 +131,17 @@ namespace dist {
   
 #else
   
-#  ifdef CCTK_REAL4
+#  ifdef HAVE_CCTK_COMPLEX8
   inline unsigned int c_datatype (const CCTK_COMPLEX8&)
   { return 13; }
 #  endif
   
-#  ifdef CCTK_REAL8
+#  ifdef HAVE_CCTK_COMPLEX16
   inline unsigned int c_datatype (const CCTK_COMPLEX16&)
   { return 14; }
 #  endif
   
-#  ifdef CCTK_REAL16
+#  ifdef HAVE_CCTK_COMPLEX32
   inline unsigned int c_datatype (const CCTK_COMPLEX32&)
   { return 15; }
 #  endif
@@ -209,17 +209,17 @@ namespace dist {
   
 #else
   
-#  ifdef CCTK_REAL4
+#  ifdef HAVE_CCTK_COMPLEX8
   inline MPI_Datatype datatype (const CCTK_COMPLEX8&)
   { return mpi_complex8; }
 #  endif
   
-#  ifdef CCTK_REAL8
+#  ifdef HAVE_CCTK_COMPLEX16
   inline MPI_Datatype datatype (const CCTK_COMPLEX16&)
   { return mpi_complex16; }
 #  endif
   
-#  ifdef CCTK_REAL16
+#  ifdef HAVE_CCTK_COMPLEX32
   inline MPI_Datatype datatype (const CCTK_COMPLEX32&)
   { return mpi_complex32; }
 #  endif

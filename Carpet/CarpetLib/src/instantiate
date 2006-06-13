@@ -123,54 +123,54 @@ INSTANTIATE(CCTK_BYTE)
 #endif
 
 #ifdef CARPET_INT1
-#  ifdef CCTK_INT1
+#  ifdef HAVE_CCTK_INT1
 INSTANTIATE(CCTK_INT1)
 #  endif
 #endif
 #ifdef CARPET_INT2
-#  ifdef CCTK_INT2
+#  ifdef HAVE_CCTK_INT2
 INSTANTIATE(CCTK_INT2)
 #  endif
 #endif
 #ifdef CARPET_INT4
-#  ifdef CCTK_INT4
+#  ifdef HAVE_CCTK_INT4
 INSTANTIATE(CCTK_INT4)
 #  endif
 #endif
 #ifdef CARPET_INT8
-#  ifdef CCTK_INT8
+#  ifdef HAVE_CCTK_INT8
 INSTANTIATE(CCTK_INT8)
 #  endif
 #endif
 
 #ifdef CARPET_REAL4
-#  ifdef CCTK_REAL4
+#  ifdef HAVE_CCTK_REAL4
 INSTANTIATE(CCTK_REAL4)
 #  endif
 #endif
 #ifdef CARPET_REAL8
-#  ifdef CCTK_REAL8
+#  ifdef HAVE_CCTK_REAL8
 INSTANTIATE(CCTK_REAL8)
 #  endif
 #endif
 #ifdef CARPET_REAL16
-#  ifdef CCTK_REAL16
+#  ifdef HAVE_CCTK_REAL16
 INSTANTIATE(CCTK_REAL16)
 #  endif
 #endif
 
 #ifdef CARPET_COMPLEX8
-#  ifdef CCTK_REAL4
+#  ifdef HAVE_CCTK_COMPLEX8
 INSTANTIATE(CCTK_COMPLEX8)
 #  endif
 #endif
 #ifdef CARPET_COMPLEX16
-#  ifdef CCTK_REAL8
+#  ifdef HAVE_CCTK_COMPLEX16
 INSTANTIATE(CCTK_COMPLEX16)
 #  endif
 #endif
 #ifdef CARPET_COMPLEX32
-#  ifdef CCTK_REAL16
+#  ifdef HAVE_CCTK_COMPLEX32
 INSTANTIATE(CCTK_COMPLEX32)
 #  endif
 #endif
