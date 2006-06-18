@@ -669,18 +669,20 @@ namespace CarpetIOASCII {
               }
               // If this is the first time, then write a nice header
               if (is_new_file) {
+                bool want_labels = false;
                 bool want_date = false;
                 bool want_parfilename = false;
                 bool want_other = false;
                 if (CCTK_EQUALS (out_fileinfo, "none")) {
                   // do nothing
                 } else if (CCTK_EQUALS (out_fileinfo, "axis labels")) {
-                  // do nothing
+                  want_labels = true;
                 } else if (CCTK_EQUALS (out_fileinfo, "creation date")) {
                   want_date = true;
                 } else if (CCTK_EQUALS (out_fileinfo, "parameter filename")) {
                   want_parfilename = true;
                 } else if (CCTK_EQUALS (out_fileinfo, "all")) {
+                  want_labels = true;
                   want_date = true;
                   want_parfilename = true;
                   want_other = true;
@@ -723,18 +725,20 @@ namespace CarpetIOASCII {
                   }
                 }
                 file << "#" << endl;
-                if (one_file_per_group) {
-                  char* groupname = CCTK_GroupNameFromVarI(vindex);
-                  file << "# " << groupname;
-                  free (groupname);
-                } else {
-                  file << "# " << varname;
+                if (want_labels) {
+                  if (one_file_per_group) {
+                    char* groupname = CCTK_GroupNameFromVarI(vindex);
+                    file << "# " << groupname;
+                    free (groupname);
+                  } else {
+                    file << "# " << varname;
+                  }
+                  for (int d=0; d<outdim; ++d) {
+                    file << " " << "xyzd"[dirs[d]];
+                  }
+                  file << " (" << alias << ")" << endl;
+                  file << "#" << endl;
                 }
-                for (int d=0; d<outdim; ++d) {
-                  file << " " << "xyzd"[dirs[d]];
-                }
-                file << " (" << alias << ")" << endl;
-                file << "#" << endl;
               } // if is_new_file
 
               file << setprecision(out_precision);
@@ -1163,38 +1167,44 @@ namespace CarpetIOASCII {
 
       if (dist::rank() == 0) {
 
-	assert (os.good());
+        if (CCTK_EQUALS (out_fileinfo, "axis labels") or
+            CCTK_EQUALS (out_fileinfo, "all"))
+        {
 
-	os << "# iteration " << time << endl
-	   << "# refinement level " << rl
-           << "   multigrid level " << ml
-	   << "   map " << m
-	   << "   component " << c
-           << "   time level " << tl
-           << endl
-	   << "# column format: 1:it\t2:tl 3:rl 4:c 5:ml";
-        int col=6;
-	assert (dim>=1 and dim<=3);
-	const char* const coords = "xyz";
-	for (int d=0; d<dim; ++d) {
-          os << (d==0 ? "\t" : " ") << col++ << ":i" << coords[d];
-        }
-	os << "\t" << col++ << ":time";
-	for (int d=0; d<dim; ++d) {
-          os << (d==0 ? "\t" : " ") << col++ << ":" << coords[d];
-        }
-	os << "\t" << col << ":data" << endl;
-        if (one_file_per_group) {
-          os << "# data columns:";
-          int const gindex = CCTK_GroupIndexFromVarI(vi);
-          int const firstvar = CCTK_FirstVarIndexI(gindex);
-          int const numvars = CCTK_NumVarsInGroupI(gindex);
-          for (int n=firstvar; n<firstvar+numvars; ++n) {
-            os << " " << col << ":" << CCTK_VarName(n);
-            col += CarpetSimpleMPIDatatypeLength (vartype);
+          assert (os.good());
+
+          os << "# iteration " << time << endl
+             << "# refinement level " << rl
+             << "   multigrid level " << ml
+             << "   map " << m
+             << "   component " << c
+             << "   time level " << tl
+             << endl
+             << "# column format: 1:it\t2:tl 3:rl 4:c 5:ml";
+          int col=6;
+          assert (dim>=1 and dim<=3);
+          const char* const coords = "xyz";
+          for (int d=0; d<dim; ++d) {
+            os << (d==0 ? "\t" : " ") << col++ << ":i" << coords[d];
           }
-          os << endl;
-        }
+          os << "\t" << col++ << ":time";
+          for (int d=0; d<dim; ++d) {
+            os << (d==0 ? "\t" : " ") << col++ << ":" << coords[d];
+          }
+          os << "\t" << col << ":data" << endl;
+          if (one_file_per_group) {
+            os << "# data columns:";
+            int const gindex = CCTK_GroupIndexFromVarI(vi);
+            int const firstvar = CCTK_FirstVarIndexI(gindex);
+            int const numvars = CCTK_NumVarsInGroupI(gindex);
+            for (int n=firstvar; n<firstvar+numvars; ++n) {
+              os << " " << col << ":" << CCTK_VarName(n);
+              col += CarpetSimpleMPIDatatypeLength (vartype);
+            }
+            os << endl;
+          }
+          
+        } // if out_fileinfo
         
 	// boolean that says if we are doing 1D-diagonal output
 	// This is not beautiful, but works for the moment
