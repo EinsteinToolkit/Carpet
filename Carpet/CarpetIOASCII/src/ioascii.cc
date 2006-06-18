@@ -409,17 +409,23 @@ namespace CarpetIOASCII {
     typedef std::map<string, vector<vector<vector<int> > > > filelist;
     static filelist created_files;
     string basefilename (my_out_dir);
+    basefilename.append ("/");
     basefilename.append (alias);
     filelist::iterator thisfile = created_files.find (basefilename);
     bool is_new_file = thisfile == created_files.end();
     if (is_new_file) {
-      int const numvars = CCTK_NumVars ();
+      int numelems;
+      if (one_file_per_group) {
+        numelems = CCTK_NumGroups ();
+      } else {
+        numelems = CCTK_NumVars ();
+      }
       vector<vector<vector<int> > > last_outputs;   // [ml][rl][var]
       last_outputs.resize (mglevels);
       for (int ml = 0; ml < mglevels; ++ml) {
         last_outputs[ml].resize (maxreflevels);
         for (int rl = 0; rl < maxreflevels; ++rl) {
-          last_outputs[ml][rl].resize (numvars, cctk_iteration - 1);
+          last_outputs[ml][rl].resize (numelems, cctk_iteration - 1);
         }
       }
       thisfile = created_files.insert (thisfile,
@@ -430,7 +436,13 @@ namespace CarpetIOASCII {
     is_new_file &= IO_TruncateOutputFiles (cctkGH);
 
     // check if this variable has been output already during this iteration
-    int& last_output = thisfile->second.at(mglevel).at(reflevel).at(vindex);
+    int elem;
+    if (one_file_per_group) {
+      elem = CCTK_GroupIndexFromVarI (vindex);
+    } else {
+      elem = vindex;
+    }
+    int& last_output = thisfile->second.at(mglevel).at(reflevel).at(elem);
     if (last_output == cctk_iteration) {
       // Has already been output during this iteration
       char* varname = CCTK_FullName (vindex);
