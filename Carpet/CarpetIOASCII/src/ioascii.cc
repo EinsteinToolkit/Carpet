@@ -794,7 +794,7 @@ namespace CarpetIOASCII {
                     if (ierr != 2*dim) CCTK_WARN (0, "internal error");
                     bool is_symbnd[2*dim];
                     for (int d=0; d<2*dim; ++d) {
-                      is_symbnd[d] = symbnd[d] < 0;
+                      is_symbnd[d] = symbnd[d] >= 0;
                     }
                     
                     for (int d=0; d<dim; ++d) {
