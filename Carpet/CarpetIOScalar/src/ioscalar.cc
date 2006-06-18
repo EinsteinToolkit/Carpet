@@ -275,18 +275,20 @@ namespace CarpetIOScalar {
           if (do_truncate.at(n) and IO_TruncateOutputFiles (cctkGH)) {
             file.open (filename, ios::out | ios::trunc);
             {
+              bool want_labels = false;
               bool want_date = false;
               bool want_parfilename = false;
               bool want_other = false;
               if (CCTK_EQUALS (out_fileinfo, "none")) {
                 // do nothing
               } else if (CCTK_EQUALS (out_fileinfo, "axis labels")) {
-                // do nothing
+                want_labels = true;
               } else if (CCTK_EQUALS (out_fileinfo, "creation date")) {
                 want_date = true;
               } else if (CCTK_EQUALS (out_fileinfo, "parameter filename")) {
                 want_parfilename = true;
               } else if (CCTK_EQUALS (out_fileinfo, "all")) {
+                want_labels = true;
                 want_date = true;
                 want_parfilename = true;
                 want_other = true;
@@ -330,19 +332,21 @@ namespace CarpetIOScalar {
                 }
               }
               file << "#" << endl;
-            }
-            file << "# " << varname << " (" << alias << ")" << endl;
-            file << "# 1:iteration 2:time 3:data" << endl;
-            int col = 3;
-            if (one_file_per_group) {
-              file << "# data columns:";
-              int const firstvar = CCTK_FirstVarIndexI(group);
-              int const numvars = CCTK_NumVarsInGroupI(group);
-              for (int n=firstvar; n<firstvar+numvars; ++n) {
-                file << " " << col << ":" << CCTK_VarName(n);
-                col += CarpetSimpleMPIDatatypeLength (vartype);
+              if (want_labels) {
+                file << "# " << varname << " (" << alias << ")" << endl;
+                file << "# 1:iteration 2:time 3:data" << endl;
+                int col = 3;
+                if (one_file_per_group) {
+                  file << "# data columns:";
+                  int const firstvar = CCTK_FirstVarIndexI(group);
+                  int const numvars = CCTK_NumVarsInGroupI(group);
+                  for (int n=firstvar; n<firstvar+numvars; ++n) {
+                    file << " " << col << ":" << CCTK_VarName(n);
+                    col += CarpetSimpleMPIDatatypeLength (vartype);
+                  }
+                  file << endl;
+                }
               }
-              file << endl;
             }
           } else {
             file.open (filename, ios::out | ios::app);
