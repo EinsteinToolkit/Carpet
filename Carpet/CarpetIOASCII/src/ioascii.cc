@@ -762,8 +762,10 @@ namespace CarpetIOASCII {
             BEGIN_COMPONENT_LOOP(cctkGH, grouptype) {
 
               cGroup groupdata;
-              int const ierr = CCTK_GroupData (group, & groupdata);
-              assert (not ierr);
+              {
+                int const ierr = CCTK_GroupData (group, & groupdata);
+                assert (not ierr);
+              }
               if (groupdata.disttype != CCTK_DISTRIB_CONSTANT
                   or component == 0) {
 
