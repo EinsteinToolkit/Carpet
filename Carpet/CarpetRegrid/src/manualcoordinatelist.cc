@@ -169,14 +169,9 @@ namespace CarpetRegrid {
         // TODO:
         // assert (domain_from_coordbase);
         ivect const spacereffact = spacereffacts.at(rl);
-        // Do not use basemglevel here, since this spacing is not use
-        // for Carpet (internally), but only used to check the spacing
-        // specified by the user in the parameter file.  This spacing
-        // should be independent of basemglevel (i.e.,
-        // convergence_level), so that the user does not have to
-        // change the parameter file when the convergence level is
-        // changed.
-        rvect const spacing = base_spacing / rvect(spacereffact);
+        rvect const spacing =
+          base_spacing * ipow((CCTK_REAL)mgfact, basemglevel)
+          / rvect(spacereffact);
         if (! all(abs(ext.stride() - spacing)
                   < spacing * (CCTK_REAL) 1.0e-10)) {
           assert (dim==3);
