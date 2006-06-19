@@ -70,7 +70,7 @@ namespace CarpetRegrid {
       }
     }
     
-    if (newbbss.size() < refinement_levels-1) {
+    if ((int)newbbss.size() < refinement_levels-1) {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "The parameter \"coordinates\" must contain at least \"refinement_levels-1\" (here: %d) levels", int(refinement_levels-1));
     }
@@ -84,7 +84,7 @@ namespace CarpetRegrid {
       // assert (domain_from_coordbase);
       
       newobss.resize(newbbss.size());
-      for (size_t rl=0; rl<newobss.size(); ++rl) {
+      for (int rl=0; rl<(int)newobss.size(); ++rl) {
         ivect const spacereffact = spacereffacts.at(rl+1);
         assert (mglevel==0);
         rvect const spacing =
@@ -97,7 +97,7 @@ namespace CarpetRegrid {
         assert (!ierr);
         
         newobss.at(rl).resize(newbbss.at(rl).size());
-        for (size_t c=0; c<newobss.at(rl).size(); ++c) {
+        for (int c=0; c<(int)newobss.at(rl).size(); ++c) {
           rvect lo = newbbss.at(rl).at(c).lower();
           rvect up = newbbss.at(rl).at(c).upper();
           rvect str = newbbss.at(rl).at(c).stride();
@@ -134,7 +134,7 @@ namespace CarpetRegrid {
         }
         bool good = newobss.size() == newbbss.size();
         if (good) {
-          for (size_t rl=0; rl<newobss.size(); ++rl) {
+          for (int rl=0; rl<(int)newobss.size(); ++rl) {
             good = good and newobss.at(rl).size() == newbbss.at(rl).size();
           }
         }
@@ -145,9 +145,9 @@ namespace CarpetRegrid {
         }
       } else {
         newobss.resize(newbbss.size());
-        for (size_t rl=0; rl<newobss.size(); ++rl) {
+        for (int rl=0; rl<(int)newobss.size(); ++rl) {
           newobss.at(rl).resize(newbbss.at(rl).size());
-          for (size_t c=0; c<newobss.at(rl).size(); ++c) {
+          for (int c=0; c<(int)newobss.at(rl).size(); ++c) {
             newobss.at(rl).at(c) = bbvect(false);
           }
         }
@@ -155,7 +155,7 @@ namespace CarpetRegrid {
 
     } // if ! smart_outer_boundaries
     
-    for (size_t rl=1; rl<refinement_levels; ++rl) {
+    for (int rl=1; rl<refinement_levels; ++rl) {
       
       vector<ibbox> bbs;
       gh::cbnds obs;
@@ -163,7 +163,7 @@ namespace CarpetRegrid {
       bbs.reserve (newbbss.at(rl-1).size());
       obs.reserve (newbbss.at(rl-1).size());
       
-      for (size_t c=0; c<newbbss.at(rl-1).size(); ++c) {
+      for (int c=0; c<(int)newbbss.at(rl-1).size(); ++c) {
         rbbox const & ext = newbbss.at(rl-1).at(c);
         bbvect const & ob = newobss.at(rl-1).at(c);
         // TODO:
@@ -215,13 +215,13 @@ namespace CarpetRegrid {
         vector<bool> merged_component (bbs.size(), false);
 
 	// loop over all components, starting at c=1
-        for (size_t c=1; c<bbs.size(); ++c) {
+        for (int c=1; c<(int)bbs.size(); ++c) {
 
 	  ibset fun = bbs.at(c);
 	  ibbox morefun = bbs.at(c);
 
 	  // loop over all components with index < c
-	  for(size_t sc=0; sc<c; ++sc) {
+	  for(int sc=0; sc<c; ++sc) {
 
 	    // calculate overlap of this and the previous component
 	    fun &= bbs.at(sc);
@@ -243,7 +243,7 @@ namespace CarpetRegrid {
 
 	// now we need to get rid of those bboxes that were merged
 	vector<ibbox> mergedbbs;
-	for (size_t c=0;c<bbs.size(); ++c) {
+	for (int c=0;c<(int)bbs.size(); ++c) {
 
 	  if (not merged_component.at(c)) {
 	    mergedbbs.push_back (bbs.at(c));
