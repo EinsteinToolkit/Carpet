@@ -54,13 +54,13 @@ using namespace std;
             CCTK_VInfo (CCTK_THORNSTRING,
                         "Setting position of refined region #%d from surface #%d to (%g,%g,%g)",
                         n + 1, sn,
-                        static_cast <double> (sf_origin_x[sn]),
-                        static_cast <double> (sf_origin_y[sn]),
-                        static_cast <double> (sf_origin_z[sn]));
+                        static_cast <double> (sf_centroid_x[sn]),
+                        static_cast <double> (sf_centroid_y[sn]),
+                        static_cast <double> (sf_centroid_z[sn]));
           }
-          SetParameter ("x", n, sf_origin_x[sn]);
-          SetParameter ("y", n, sf_origin_y[sn]);
-          SetParameter ("z", n, sf_origin_z[sn]);
+          SetParameter ("x", n, sf_centroid_x[sn]);
+          SetParameter ("y", n, sf_centroid_y[sn]);
+          SetParameter ("z", n, sf_centroid_z[sn]);
           
         } else {
           
