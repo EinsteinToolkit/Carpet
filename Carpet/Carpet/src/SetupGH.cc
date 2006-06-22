@@ -1351,11 +1351,14 @@ namespace Carpet {
       }
 	
       // Recompose for this map
-      char * const groupname = CCTK_GroupName (group);
-      assert (groupname);
-      Checkpoint ("Recomposing grid array group \"%s\"", groupname);
-      free (groupname);
-      arrdata.at(group).at(0).hh->recompose (bbsss, obss, pss, false);
+      {
+        char * const groupname = CCTK_GroupName (group);
+        assert (groupname);
+        Checkpoint ("Recomposing grid array group \"%s\"...", groupname);
+        arrdata.at(group).at(0).hh->recompose (bbsss, obss, pss, false);
+        Checkpoint ("Done recomposing grid array group \"%s\".", groupname);
+        free (groupname);
+      }
 	
       break;
     } // case of scalar or array

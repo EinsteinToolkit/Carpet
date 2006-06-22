@@ -169,7 +169,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     CCTK_VInfo (CCTK_THORNSTRING,
-                "Recomposing the grid hierarchy for map %d", m);
+                "Recomposing the grid hierarchy for map %d...", m);
     
     // Check the regions
     CheckRegions (bbsss, obss, pss);
@@ -183,6 +183,9 @@ namespace Carpet {
     vhh.at(m)->recompose (bbsss, obss, pss, do_init);
     
     if (verbose) OutputGrids (cctkGH, m, *vhh.at(m));
+    
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Done recomposing the grid hierarchy for map %d.", m);
   }
   
   
