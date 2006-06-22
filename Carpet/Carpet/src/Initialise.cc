@@ -96,9 +96,16 @@ namespace Carpet {
     } else {
       // Calculate initial data
 
+      if (not regrid_during_initialisation) {
+        // Regrid once in the beginning
+        initialise_Regrid (cgh, 0);
+      }
       for (int rl=0; rl<reflevels; ++rl) {
         initialise_I (cgh, rl);
-        initialise_Regrid (cgh, rl);
+        if (regrid_during_initialisation) {
+          // Regrid after initialising each level
+          initialise_Regrid (cgh, rl);
+        }
       }
 
       for (int rl=reflevels-1; rl>=0; --rl) {
