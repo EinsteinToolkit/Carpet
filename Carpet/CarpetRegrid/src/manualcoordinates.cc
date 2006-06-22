@@ -1,5 +1,4 @@
-#include <assert.h>
-
+#include <cassert>
 #include <vector>
 
 #include "cctk.h"
@@ -136,6 +135,7 @@ namespace CarpetRegrid {
                  const rvect & rpos, const int rl)
   {
     rvect global_lower, global_upper;
+#if 0
     for (int d=0; d<dim; ++d) {
       const int ierr = CCTK_CoordRange
 	(cctkGH, &global_lower[d], &global_upper[d], d+1, 0, "cart3d");
@@ -144,6 +144,10 @@ namespace CarpetRegrid {
 	global_upper[d] = 1;
       }
     }
+#endif
+    assert (Carpet::map >= 0);
+    global_lower = domainspecs.at(Carpet::map).exterior_min;
+    global_upper = domainspecs.at(Carpet::map).exterior_max;
     const ivect global_extent (hh.baseextent.upper() - hh.baseextent.lower());
     
     const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
