@@ -834,6 +834,11 @@ namespace Carpet {
     const ivect ub ((npoints - 1) * str);
     const ibbox baseext (lb, ub, str);
     
+    domainspecs.resize(maps);
+    domainspecs.at(m).exterior_min = exterior_min;
+    domainspecs.at(m).exterior_max = exterior_max;
+    domainspecs.at(m).npoints = npoints;
+    
     // Allocate grid hierarchy
     vhh.at(m) = new gh (spacereffacts, vertex_centered,
                         convergence_factor, vertex_centered, baseext);

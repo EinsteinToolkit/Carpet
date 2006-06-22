@@ -107,6 +107,15 @@ namespace Carpet {
   extern vector<vector<vect<CCTK_REAL,dim> > > origin_space; // [map][mglevel]
   extern vector<vect<CCTK_REAL,dim> > delta_space;           // [map]
   
+  // Domain extent, as used for the original grid setup
+  // TODO: Unify this with origin_space and delta_space,
+  //       possibly asserting constency at run time
+  struct domainspec {
+    vect<CCTK_REAL,dim> exterior_min, exterior_max;
+    vect<int,dim> npoints;
+  };
+  extern vector<domainspec> domainspecs; // [map]
+  
   
   
   // Is this the time for a global mode call?

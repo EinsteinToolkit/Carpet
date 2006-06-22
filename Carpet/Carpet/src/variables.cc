@@ -78,6 +78,8 @@ namespace Carpet {
   vector<vector<vect<CCTK_REAL,dim> > > origin_space; // [map][mglevel]
   vector<vect<CCTK_REAL,dim> > delta_space;           // [map]
   
+  vector<domainspec> domainspecs; // [map]
+  
   
   
   // Is this the time for a global mode call?
