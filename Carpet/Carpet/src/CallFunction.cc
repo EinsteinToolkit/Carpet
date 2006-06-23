@@ -90,7 +90,9 @@ namespace Carpet {
                           attribute->where, attribute->thorn, attribute->routine);
               const int res = CCTK_CallFunction (function, attribute, data);
               assert (res==0);
-              SyncGroupsInScheduleBlock( attribute, cgh );
+              BEGIN_REFLEVEL_LOOP(cgh) {
+                SyncGroupsInScheduleBlock( attribute, cgh );
+              } END_REFLEVEL_LOOP;
             } END_MGLEVEL_LOOP;
           } END_META_MODE;
         } else {
@@ -99,7 +101,11 @@ namespace Carpet {
                         attribute->where, attribute->thorn, attribute->routine);
             const int res = CCTK_CallFunction (function, attribute, data);
             assert (res==0);
-            SyncGroupsInScheduleBlock( attribute, cgh );
+            BEGIN_MGLEVEL_LOOP(cgh) {
+              BEGIN_REFLEVEL_LOOP(cgh) {
+                SyncGroupsInScheduleBlock( attribute, cgh );
+              } END_REFLEVEL_LOOP;
+            } END_MGLEVEL_LOOP;
           } END_META_MODE;
         }
       }
@@ -152,7 +158,9 @@ namespace Carpet {
                         attribute->where, attribute->thorn, attribute->routine);
             const int res = CCTK_CallFunction (function, attribute, data);
             assert (res==0);
-            SyncGroupsInScheduleBlock( attribute, cgh );
+            BEGIN_REFLEVEL_LOOP(cgh) {
+              SyncGroupsInScheduleBlock( attribute, cgh );
+            } END_REFLEVEL_LOOP;
           } END_GLOBAL_MODE;
         }
       }
