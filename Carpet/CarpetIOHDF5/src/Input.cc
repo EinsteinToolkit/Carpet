@@ -343,7 +343,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
                   (CarpetIOHDF5GH*) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
   // allocate list of recovery filenames
   // if the recovery checkpoint should be removed eventually
-  if (in_recovery and not recover_and_remove and checkpoint_keep > 0) {
+  if (in_recovery and recover_and_remove and checkpoint_keep > 0) {
     if (not myGH->recovery_filename_list) {
       myGH->recovery_num_filenames = fileset->files.size();
       myGH->recovery_filename_list =
