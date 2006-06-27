@@ -1,1 +1,6 @@
 # Schedule definitions for thorn CarpetRegrid2
+
+SCHEDULE CarpetRegrid2_ParamCheck AT paramcheck
+{
+  LANG: C
+} "Check parameters"

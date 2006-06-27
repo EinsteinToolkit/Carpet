@@ -20,6 +20,7 @@
 namespace CarpetRegrid2 {
   
   using namespace std;
+  using namespace Carpet;
   
   
   
@@ -88,6 +89,8 @@ namespace CarpetRegrid2 {
     default:
       assert (0);
     }
+    
+    assert (num_levels <= maxreflevels);
   }
   
   
