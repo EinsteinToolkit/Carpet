@@ -18,8 +18,6 @@ driver::ghost_size_x = 2
 driver::ghost_size_y = 2
 driver::ghost_size_z = 2
 
-CartGrid3D::avoid_origin = no
-
 
 Carpet::max_refinement_levels = 2
 Carpet::prolongation_order_space = 3
