@@ -16,6 +16,7 @@ SRCS =	CallFunction.cc				\
 	SetupGH.cc				\
 	Shutdown.cc				\
 	Storage.cc				\
+	Timing.cc				\
 	helpers.cc				\
 	modes.cc				\
 	variables.cc

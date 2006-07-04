@@ -118,6 +118,13 @@ namespace Carpet {
                            gh::rbnds const & obss,
                            gh::mexts & bbsss);
   
+  
+  
+  // Timing statistics functions
+  void InitTiming (cGH const * const cctkGH);
+  void StepTiming (cGH const * const cctkGH);
+  void PrintTimingStats (cGH const * const cctkGH);
+  
 } // namespace Carpet
 
 #endif // !defined(FUNCTIONS_HH)

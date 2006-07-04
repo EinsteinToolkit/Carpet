@@ -135,6 +135,9 @@ namespace Carpet {
     const int convlev = 0;
     cGH* cgh = fc->GH[convlev];
 
+    // Timing statistics
+    InitTiming (cgh);
+
     // Main loop
     while (! do_terminate(cgh, cgh->cctk_time, cgh->cctk_iteration)) {
 
@@ -318,6 +321,9 @@ namespace Carpet {
           // Checking
           PoisonCheck (cgh, currenttime);
 
+          // Timing statistics
+          StepTiming (cgh);
+
           leave_level_mode (cgh);
           leave_global_mode (cgh);
         }
@@ -425,6 +431,10 @@ namespace Carpet {
         assert (have_done_global_mode);
 
     }
+
+    // Timing statistics
+    PrintTimingStats (cgh);
+
   }
 
 } // namespace Carpet
