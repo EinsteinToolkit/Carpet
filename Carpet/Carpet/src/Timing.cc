@@ -148,7 +148,8 @@ namespace Carpet {
     CCTK_REAL const updates_per_second = total_updates / elapsed_walltime;
     
     CCTK_VInfo (CCTK_THORNSTRING,
-                "Grid points per second: %g", double (updates_per_second));
+                "Grid point updates per process per second: %g",
+                double (updates_per_second));
     
 #if 0
     CCTK_REAL const updates_per_second_2 = ipow (updates_per_second, 2);
