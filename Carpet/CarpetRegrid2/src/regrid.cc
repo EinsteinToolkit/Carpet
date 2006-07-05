@@ -32,7 +32,7 @@ namespace CarpetRegrid2 {
   
   
   struct centre_description {
-    size_t             num_levels;
+    int                num_levels;
     rvect              position;
     vector <CCTK_REAL> radius;
     
@@ -64,7 +64,7 @@ namespace CarpetRegrid2 {
       num_levels = num_levels_1;
       position = rvect (position_x_1, position_y_1, position_z_1);
       radius.resize (num_levels);
-      for (size_t rl = 0; rl < num_levels; ++ rl) {
+      for (int rl = 0; rl < num_levels; ++ rl) {
         radius.at(rl) = radius_1[rl];
       }
       break;
@@ -73,7 +73,7 @@ namespace CarpetRegrid2 {
       num_levels = num_levels_2;
       position = rvect (position_x_2, position_y_2, position_z_2);
       radius.resize (num_levels);
-      for (size_t rl = 0; rl < num_levels; ++ rl) {
+      for (int rl = 0; rl < num_levels; ++ rl) {
         radius.at(rl) = radius_2[rl];
       }
       break;
@@ -82,7 +82,7 @@ namespace CarpetRegrid2 {
       num_levels = num_levels_3;
       position = rvect (position_x_3, position_y_3, position_z_3);
       radius.resize (num_levels);
-      for (size_t rl = 0; rl < num_levels; ++ rl) {
+      for (int rl = 0; rl < num_levels; ++ rl) {
         radius.at(rl) = radius_3[rl];
       }
       break;
@@ -269,7 +269,7 @@ namespace CarpetRegrid2 {
         centre_description centre (n);
         
         // Loop over all levels for this centre
-        for (size_t rl = 1; rl < centre.num_levels; ++ rl) {
+        for (int rl = 1; rl < centre.num_levels; ++ rl) {
           
           // Calculate a bbox for this region
           rvect const rmin = centre.position - centre.radius.at(rl);
@@ -288,7 +288,7 @@ namespace CarpetRegrid2 {
           ibbox const region (imin, imax, istride);
           
           // Add this region to the list of regions
-          if (regions.size() < rl+1) regions.resize (rl+1);
+          if (static_cast <int> (regions.size()) < rl+1) regions.resize (rl+1);
           regions.at(rl) |= region;
           
         } // for rl
