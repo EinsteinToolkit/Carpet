@@ -178,7 +178,7 @@ CCTK_INT buffer_width "Width of the buffer zone inside the fine grid (DEPRECATED
 
 
 
-BOOLEAN use_outer_buffer_zones "Add buffer zones at the outer edge of the refined regions; the buffer width is nghostzones * num_integrator_substeps + buffer_width"
+BOOLEAN use_outer_buffer_zones "Add buffer zones at the outer edge of the refined regions; the buffer width is nghostzones * (num_integrator_substeps-1) + buffer_width"
 {
 } no
 
