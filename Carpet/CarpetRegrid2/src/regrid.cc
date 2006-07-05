@@ -10,6 +10,7 @@
 #include "bbox.hh"
 #include "bboxset.hh"
 #include "defs.hh"
+#include "dh.hh"
 #include "gh.hh"
 #include "vect.hh"
 
@@ -64,7 +65,7 @@ namespace CarpetRegrid2 {
       position = rvect (position_x_1, position_y_1, position_z_1);
       radius.resize (num_levels);
       for (size_t rl = 0; rl < num_levels; ++ rl) {
-        radius.at(rl) = radius_1 [rl];
+        radius.at(rl) = radius_1[rl];
       }
       break;
       
@@ -73,7 +74,7 @@ namespace CarpetRegrid2 {
       position = rvect (position_x_2, position_y_2, position_z_2);
       radius.resize (num_levels);
       for (size_t rl = 0; rl < num_levels; ++ rl) {
-        radius.at(rl) = radius_2 [rl];
+        radius.at(rl) = radius_2[rl];
       }
       break;
       
@@ -82,7 +83,7 @@ namespace CarpetRegrid2 {
       position = rvect (position_x_3, position_y_3, position_z_3);
       radius.resize (num_levels);
       for (size_t rl = 0; rl < num_levels; ++ rl) {
-        radius.at(rl) = radius_3 [rl];
+        radius.at(rl) = radius_3[rl];
       }
       break;
       
@@ -176,6 +177,7 @@ namespace CarpetRegrid2 {
     
     assert (Carpet::is_singlemap_mode());
     gh const & hh = * Carpet::vhh.at (Carpet::map);
+    dh const & dd = * Carpet::vdd.at (Carpet::map);
     
     // Decide whether to change the grid hierarchy
     // (We always do)
@@ -197,7 +199,9 @@ namespace CarpetRegrid2 {
     
     if (do_recompose) {
       
+      //
       // Find extent of domain
+      //
       
       // This requires that CoordBase is used (but this is not
       // checked)
@@ -244,6 +248,10 @@ namespace CarpetRegrid2 {
            & spacing[0]);
         assert (not ierr);
       }
+      
+      //
+      // Calculate the union of the bounding boxes for all levels
+      //
       
       rvect const origin (exterior_lower);
       rvect const scale (rvect (hh.baseextent.stride()) / spacing);
@@ -309,7 +317,11 @@ namespace CarpetRegrid2 {
       
       
       
-      // Convert to (bbsss, obss, pss) triplet
+      //
+      // Clip at the outer boundary, and convert to (bbsss, obss, pss)
+      // triplet
+      //
+      
       vector <vector <ibbox> > bbss;
       
       bbss.resize (regions.size());
@@ -320,6 +332,7 @@ namespace CarpetRegrid2 {
       
       for (size_t rl = 1; rl < regions.size(); ++ rl) {
         
+        // Find the location of the outer boundary
         rvect const level_physical_lower = physical_lower;
         rvect const level_physical_upper = physical_upper;
         rvect const level_spacing = spacing / rvect (hh.reffacts.at(rl));
@@ -341,6 +354,10 @@ namespace CarpetRegrid2 {
         ivect const level_exterior_iupper =
           rpos2ipos1 (level_exterior_upper, origin, scale, hh, rl);
         
+        // Find the minimum necessary distance to the outer boundary
+        // due to buffer zones.  This is in terms of grid points.
+        i2vect const min_bnd_dist = dd.buffers;
+        
         // Clip at the outer boundary
         regions.at(rl).normalize();
         ibboxset clipped;
@@ -350,12 +367,18 @@ namespace CarpetRegrid2 {
         {
           ibbox const bb = * ibb;
           
-          bvect const lower_is_outer = bb.lower() <= physical_ilower;
-          bvect const upper_is_outer = bb.upper() >= physical_iupper;
+          // Clip boxes that extend outside the boundary.  Enlarge
+          // boxes that are inside but too close to the outer
+          // boundary.
+          bvect const lower_is_outer =
+            bb.lower() - min_bnd_dist[0] <= physical_ilower;
+          bvect const upper_is_outer =
+            bb.upper() + min_bnd_dist[1] >= physical_iupper;
           
-          ibbox const clipped_bb (max (bb.lower(), level_exterior_ilower),
-                                  min (bb.upper(), level_exterior_iupper),
-                                  bb.stride());
+          ibbox const clipped_bb
+            (either (lower_is_outer, level_exterior_ilower, bb.lower()),
+             either (upper_is_outer, level_exterior_iupper, bb.upper()),
+             bb.stride());
           
           clipped += clipped_bb;
         }
