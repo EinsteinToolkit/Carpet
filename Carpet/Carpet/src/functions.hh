@@ -11,6 +11,7 @@
 #include "cctk_Schedule.h"
 
 #include "bbox.hh"
+#include "dh.hh"
 #include "gh.hh"
 #include "vect.hh"
 
@@ -92,7 +93,7 @@ namespace Carpet {
                      const gh::rbnds & obss,
                      const gh::rprocs& pss);
   
-  void OutputGrids (const cGH* cgh, const int m, const gh& hh);
+  void OutputGrids (const cGH* cgh, const int m, const gh& hh, const dh& dd);
   
   void OutputGridStructure (const cGH *cgh,
                             const int m,

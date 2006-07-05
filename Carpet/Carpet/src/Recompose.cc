@@ -18,6 +18,7 @@
 #include "bbox.hh"
 #include "bboxset.hh"
 #include "defs.hh"
+#include "dh.hh"
 #include "gh.hh"
 #include "vect.hh"
 
@@ -182,7 +183,7 @@ namespace Carpet {
     // Recompose
     vhh.at(m)->recompose (bbsss, obss, pss, do_init);
     
-    if (verbose) OutputGrids (cctkGH, m, *vhh.at(m));
+    if (verbose) OutputGrids (cctkGH, m, *vhh.at(m), *vdd.at(m));
     
     CCTK_VInfo (CCTK_THORNSTRING,
                 "Done recomposing the grid hierarchy for map %d.", m);
@@ -222,7 +223,7 @@ namespace Carpet {
   
   
   
-  void OutputGrids (const cGH* cgh, const int m, const gh& hh)
+  void OutputGrids (const cGH* cgh, const int m, const gh& hh, const dh& dd)
   {
     CCTK_INFO ("New grid structure (grid points):");
     for (int ml=0; ml<hh.mglevels(); ++ml) {
@@ -242,13 +243,10 @@ namespace Carpet {
                << "proc "
                << hh.processors().at(rl).at(c)
                << "   "
-//                << lower * levfact / maxreflevelfact
                << lower / stride
                << " : "
-//                << upper * levfact / maxreflevelfact
                << upper / stride
                << "   ("
-//                << (upper - lower) * levfact / maxreflevelfact / convfact + 1
                << (upper - lower) / stride + 1
                << ")"
                << endl;
@@ -256,14 +254,45 @@ namespace Carpet {
       }
     }
     
+    CCTK_INFO ("New grid structure (boundaries):");
+    for (int rl=0; rl<hh.reflevels(); ++rl) {
+      for (int c=0; c<hh.components(rl); ++c) {
+        cout << "   [" << rl << "][" << m << "][" << c << "]"
+             << "   bbox: "
+             << hh.outer_boundary(rl,c)
+             << endl;
+      }
+    }
+    
     CCTK_INFO ("New grid structure (coordinates):");
     for (int ml=0; ml<hh.mglevels(); ++ml) {
       for (int rl=0; rl<hh.reflevels(); ++rl) {
         for (int c=0; c<hh.components(rl); ++c) {
-          const rvect origin = origin_space.at(m).at(0);
-          const rvect delta = delta_space.at(m);
+          const rvect origin = domainspecs.at(m).exterior_min;
+          const rvect delta  = (domainspecs.at(m).exterior_max - domainspecs.at(m).exterior_min) / rvect (domainspecs.at(m).npoints - 1);
           const ivect lower = hh.extents().at(ml).at(rl).at(c).lower();
           const ivect upper = hh.extents().at(ml).at(rl).at(c).upper();
+          const int convfact = ipow(mgfact, ml);
+          const ivect levfact = spacereffacts.at(rl);
+          cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
+               << "   exterior: "
+               << origin + delta * rvect(lower) / rvect(maxspacereflevelfact)
+               << " : "
+               << origin + delta * rvect(upper) / rvect(maxspacereflevelfact)
+               << " : "
+               << delta * rvect(convfact) / rvect(levfact) << endl;
+        }
+      }
+    }
+    
+    CCTK_INFO ("New grid structure (coordinates, including ghosts):");
+    for (int ml=0; ml<hh.mglevels(); ++ml) {
+      for (int rl=0; rl<hh.reflevels(); ++rl) {
+        for (int c=0; c<hh.components(rl); ++c) {
+          const rvect origin = domainspecs.at(m).exterior_min;
+          const rvect delta  = (domainspecs.at(m).exterior_max - domainspecs.at(m).exterior_min) / rvect (domainspecs.at(m).npoints - 1);
+          const ivect lower = dd.boxes.at(ml).at(rl).at(c).exterior.lower();
+          const ivect upper = dd.boxes.at(ml).at(rl).at(c).exterior.upper();
           const int convfact = ipow(mgfact, ml);
           const ivect levfact = spacereffacts.at(rl);
           cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
