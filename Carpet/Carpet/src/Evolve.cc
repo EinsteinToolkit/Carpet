@@ -430,10 +430,12 @@ namespace Carpet {
       if (have_done_anything)
         assert (have_done_global_mode);
 
-    }
+      if (have_done_anything) {
+        // Timing statistics
+        PrintTimingStats (cgh);
+      }
 
-    // Timing statistics
-    PrintTimingStats (cgh);
+    }
 
   }
 
