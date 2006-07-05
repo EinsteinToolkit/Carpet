@@ -20,9 +20,20 @@ my %comments   = ();
 # sanity check
 die "Couldn't find executable '$darcs'!\n\n" if (! -x $darcs);
 
+open (LOG, ">> /home/darcs/LOG");
+print LOG "\n";
+print LOG "darcs called:\n";
+print LOG "date: ", `date`, "\n";
+print LOG "arguments: ", join (' ', @ARGV), "\n";
+
 # short cut for darcs commands other than 'apply --all'
+$repodir = '';
 exec ($darcs, @ARGV)
-  if (! ($#ARGV == 1 && $ARGV[0] eq 'apply' && $ARGV[1] eq '--all'));
+  if (! ($#ARGV == 1 && ($ARGV[0] eq 'apply' && $ARGV[1] eq '--all')) &&
+      ! ($#ARGV == 3 && ($ARGV[0] eq 'apply' && $ARGV[1] eq '--all' &&
+                         $ARGV[2] eq '--repodir' && ($repodir = $ARGV[3]))));
+
+print LOG "calling darcs:\n";
 
 # open a pipe for running darcs on the other end
 open (DARCS, "| $darcs @ARGV") || die "Couldn't open pipe to darcs !\n";
@@ -31,6 +42,7 @@ open (DARCS, "| $darcs @ARGV") || die "Couldn't open pipe to darcs !\n";
 while (<STDIN>)
 {
   print DARCS;
+  print LOG;
   last if (/^New patches:$/);
 }
 
@@ -41,6 +53,7 @@ my $endmarker = '] {';
 while (<STDIN>)
 {
   print DARCS;
+  print LOG;
 
   # each patch starts with a line '[<patch name>'
   next if (! /^\[(.+)$/);
@@ -50,6 +63,7 @@ while (<STDIN>)
   # and the timestamp of the patch
   $_ = <STDIN>;
   print DARCS;
+  print LOG;
   next if (! /^(.+)\*\*(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})($endmarker)??$/o);
 
   # add this patch to the database
@@ -64,6 +78,7 @@ while (<STDIN>)
     while (<STDIN>)
     {
       print DARCS;
+      print LOG;
       last if (/^$endmarker$/);
       $comments{$patch} .= $_;
     }
@@ -75,11 +90,16 @@ while (<STDIN>)
   while (<STDIN>)
   {
     print DARCS;
+    print LOG;
     last if (/^}$/);
   }
 }
 
 close (DARCS) || die "Failed to run darcs command '$darcs @ARGV'\n";
+
+print LOG "(that was the patch set)\n";
+print LOG "submitters: ", join (' ', %submitters), "\n";
+print LOG "done.\n";
 
 # now send out notification email(s)
 foreach $patch (keys %submitters)
@@ -92,8 +112,10 @@ foreach $patch (keys %submitters)
   open (NOTIFY, '|-') || exec 'mail', '-s', $patch, $email_list;
 
   #print NOTIFY "A new patch has been pushed into the Carpet repository:\n\n";
-  $repodir = `pwd`;
-  chomp $repodir;
+  if ($repodir eq '') {
+    $repodir = `pwd`;
+    chomp $repodir;
+  }
   $repodir =~ s+^.*/home/+~+;
   print NOTIFY "The Carpet repository at $repodir received a new patch:\n\n";
   print NOTIFY "   $patch\n\n";
