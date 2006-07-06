@@ -214,7 +214,7 @@ namespace Carpet {
                     (do_meta_mode ? " (meta)" : ""));
 
           Checkpoint ("Scheduling PREREGRID");
-          CCTK_ScheduleTraverse ("PreRegrid", cgh, CallFunction);
+          CCTK_ScheduleTraverse ("CCTK_PREREGRID", cgh, CallFunction);
 
           leave_level_mode (cgh);
           leave_global_mode (cgh);

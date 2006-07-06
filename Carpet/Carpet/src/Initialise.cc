@@ -209,7 +209,7 @@ namespace Carpet {
       
       // Preregrid
       Checkpoint ("Scheduling PREREGRID");
-      CCTK_ScheduleTraverse ("PreRegrid", cgh, CallFunction);
+      CCTK_ScheduleTraverse ("CCTK_PREREGRID", cgh, CallFunction);
       
       leave_level_mode (cgh);
     } END_MGLEVEL_LOOP;
@@ -365,7 +365,7 @@ namespace Carpet {
 
       // Preregrid
       Checkpoint ("Scheduling PREREGRID");
-      CCTK_ScheduleTraverse ("PreRegrid", cgh, CallFunction);
+      CCTK_ScheduleTraverse ("CCTK_PREREGRID", cgh, CallFunction);
 
       leave_level_mode (cgh);
     } END_MGLEVEL_LOOP;
