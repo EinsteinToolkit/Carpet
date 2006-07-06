@@ -23,7 +23,8 @@ namespace Carpet {
   
   using namespace std;
   
-  int SyncGroup (const cGH* cgh, const char* groupname);
+  int SyncGroupsByDirI (const cGH* cctkGH, int num_groups,
+                        const int* groups, const int* directions);
   int EnableGroupComm (const cGH* cgh, const char* groupname);
   int DisableGroupComm (const cGH* cgh, const char* groupname);
   int EnableGroupStorage (const cGH* cgh, const char* groupname);

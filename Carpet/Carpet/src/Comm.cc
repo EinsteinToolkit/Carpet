@@ -23,25 +23,37 @@ namespace Carpet {
                                          const vector<int>& groups);
 
 
-  // Carpet's overload function for CCTK_SyncGroup()
-  // which synchronises a single group
+  // Carpet's overload function for CCTK_SyncGroupsByDirI()
+  // which synchronises a set of groups given by their indices.
+  // Synchronisation of individual directions is not (yet?) implemented.
   //
-  // returns 0 for success
-  //        -1 if the group doesn't have storage assigned
-  //        -2 if the given groupname is invalid
-  int SyncGroup (const cGH* cctkGH, const char* groupname)
+  // returns the number of groups successfully synchronised
+  //        -1 if a group in the set doesn't have storage assigned
+  int SyncGroupsByDirI (const cGH* cctkGH,
+                        int num_groups,
+                        const int *groups,
+                        const int *directions)
   {
-    DECLARE_CCTK_PARAMETERS;
-    int retval;
+    int group, retval = 0;
+    vector<int> groups_set;
 
-    const int group = CCTK_GroupIndex(groupname);
-    if (group >= 0) {
-      assert (group < (int)arrdata.size());
+    // individual directions aren't supported (yet?)
+    if (directions != NULL) {
+      CCTK_WARN (0, "Carpet doesn't support synchronisation of individual "
+                    "directions");
+    }
 
-      const vector<int> groups(1, group);
-      retval = SyncProlongateGroups (cctkGH, groups);
-    } else {
-      retval = -2;
+    for (group = 0; group < num_groups; group++) {
+      if (CCTK_NumVarsInGroupI (groups[group]) > 0) {
+        groups_set.push_back (groups[group]);
+      }
+    }
+
+    if (groups_set.size() > 0) {
+      retval = SyncProlongateGroups (cctkGH, groups_set);
+      if (retval == 0) {
+        retval = groups_set.size();
+      }
     }
 
     return retval;
