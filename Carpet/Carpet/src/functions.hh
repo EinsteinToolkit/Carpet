@@ -123,6 +123,7 @@ namespace Carpet {
   
   
   // Timing statistics functions
+  void InitTimingVariables (cGH const * const cctkGH);
   void InitTiming (cGH const * const cctkGH);
   void StepTiming (cGH const * const cctkGH);
   void PrintTimingStats (cGH const * const cctkGH);

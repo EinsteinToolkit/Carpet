@@ -136,3 +136,11 @@ CCTK_INT FUNCTION IO_TruncateOutputFiles \
   (CCTK_POINTER_TO_CONST IN GH)
 
 REQUIRES FUNCTION IO_TruncateOutputFiles
+
+
+
+CCTK_REAL timing
+{
+  grid_points_per_second
+  physical_time_per_hour
+} "Timing information"

@@ -299,6 +299,11 @@ namespace Carpet {
       Checkpoint ("Scheduling BASEGRID");
       CCTK_ScheduleTraverse ("CCTK_BASEGRID", cgh, CallFunction);
 
+      // Timing statistics
+      if (do_global_mode) {
+        InitTimingVariables (cgh);
+      }
+
       const int num_tl = init_each_timelevel ? 3 : 1;
 
       initialise_I_rewind (cgh, num_tl);

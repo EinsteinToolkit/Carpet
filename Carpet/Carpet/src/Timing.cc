@@ -4,6 +4,7 @@
 #include <cstdlib>
 
 #include "cctk.h"
+#include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
 
 // IRIX wants this before <time.h>
@@ -112,6 +113,18 @@ namespace Carpet {
   
   
   
+  // Initialise the timing variables (to be called during Initialise)
+  void
+  InitTimingVariables (cGH const * const cctkGH)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    
+    * grid_points_per_second = 0;
+    * physical_time_per_hour = 0;
+  }
+  
+  
+  
   // Initialise the timing statistics (to be called at the beginning
   // of Evolve)
   void
@@ -139,6 +152,7 @@ namespace Carpet {
   void
   PrintUpdatesPerSecond (cGH const * const cctkGH)
   {
+    DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
     // Measure the elapsed time
@@ -147,9 +161,13 @@ namespace Carpet {
     // Calculate updates per second
     CCTK_REAL const updates_per_second = total_updates / elapsed_walltime;
     
-    CCTK_VInfo (CCTK_THORNSTRING,
-                "Grid point updates per process per second: %g",
-                double (updates_per_second));
+    * grid_points_per_second = updates_per_second;
+    
+    if (not silent) {
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "Grid point updates per process per second: %g",
+                  double (updates_per_second));
+    }
     
 #if 0
     CCTK_REAL const updates_per_second_2 = ipow (updates_per_second, 2);
@@ -186,6 +204,9 @@ namespace Carpet {
   void
   PrintPhysicalTimePerHour (cGH const * const cctkGH)
   {
+    DECLARE_CCTK_ARGUMENTS;
+    DECLARE_CCTK_PARAMETERS;
+    
     // Measure the elapsed time
     CCTK_REAL const elapsed_walltime = get_walltime() - initial_walltime;
     
@@ -193,11 +214,14 @@ namespace Carpet {
     CCTK_REAL const physical_time = cctkGH->cctk_time - initial_phystime;
     
     // Calculate physical time per hour
-    CCTK_REAL const physical_time_per_hour =
+    * physical_time_per_hour =
       physical_time / elapsed_walltime * CCTK_REAL (3600.0);
     
-    CCTK_VInfo (CCTK_THORNSTRING,
-                "Physical time per hour: %g", double (physical_time_per_hour));
+    if (not silent) {
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "Physical time per hour: %g",
+                  double (* physical_time_per_hour));
+    }
   }
 
 
