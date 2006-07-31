@@ -72,7 +72,7 @@ STRING memstat_file "File name in which memstat output is collected (because std
 {
   "^$"   :: "empty filename: no file output"
   "^.+$" :: "file name"
-} "memory-statistics"
+} "carpetlib-memory-statistics"
 
 SHARES: IO
 
