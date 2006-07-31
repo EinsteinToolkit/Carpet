@@ -33,24 +33,13 @@
 #include "th.hh"
 
 #include "carpet.hh"
+#include "Timers.hh"
 
 
 
 namespace Carpet {
 
   using namespace std;
-
-
-
-  static int evolve_timer            ;
-  static int do_terminate_timer      ;
-  static int advance_time_timer      ;
-  static int preregrid_timer         ;
-  static int regrid_timer            ;
-  static int postregrid_timer        ;
-  static int evolution_i_timer       ;
-  static int evolution_restrict_timer;
-  static int evolution_ii_timer      ;
 
 
 
@@ -151,32 +140,32 @@ namespace Carpet {
     const int convlev = 0;
     cGH* cgh = fc->GH[convlev];
 
-    // Create timers
-    evolve_timer             = CCTK_TimerCreate ("Carpet::Evolve"           );
-    do_terminate_timer       = CCTK_TimerCreate ("Carpet::do_terminate"     );
-    advance_time_timer       = CCTK_TimerCreate ("Carpet::AdvanceTime"      );
-    preregrid_timer          = CCTK_TimerCreate ("Carpet::PreRegrid"        );
-    regrid_timer             = CCTK_TimerCreate ("Carpet::Regrid"           );
-    postregrid_timer         = CCTK_TimerCreate ("Carpet::PostRegrid"       );
-    evolution_i_timer        = CCTK_TimerCreate ("Carpet::EvolutionI"       );
-    evolution_restrict_timer = CCTK_TimerCreate ("Carpet::EvolutionRestrict");
-    evolution_ii_timer       = CCTK_TimerCreate ("Carpet::EvolutionII"      );
+    // Set up timers
+    static Timer evolve_timer       (timerSet, "Evolve");
+    static Timer do_terminate_timer (timerSet, "Evolve::do_terminate");
+    static Timer advance_time_timer (timerSet, "Evolve::AdvanceTime");
+    static Timer preregrid_timer    (timerSet, "Evolve::PreRegrid");
+    static Timer regrid_timer       (timerSet, "Evolve::Regrid");
+    static Timer postregrid_timer   (timerSet, "Evolve::PostRegrid");
+    static Timer evolution_i_timer  (timerSet, "Evolve::EvolutionI");
+    static Timer restrict_timer     (timerSet, "Evolve::Restrict");
+    static Timer evolution_ii_timer (timerSet, "Evolve::EvolutionII");
 
     // Timing statistics
     InitTiming (cgh);
 
     // Main loop
-    CCTK_TimerStartI (evolve_timer);
+    evolve_timer.start();
     for (;;) {
-      CCTK_TimerStartI (do_terminate_timer);
+      do_terminate_timer.start();
       bool const do_term =
         do_terminate (cgh, cgh->cctk_time, cgh->cctk_iteration);
-      CCTK_TimerStopI (do_terminate_timer);
+      do_terminate_timer.stop();
       if (do_term) break;
 
-      CCTK_TimerStartI (advance_time_timer);
+      advance_time_timer.start();
       AdvanceTime( cgh, cctk_initial_time );
-      CCTK_TimerStopI (advance_time_timer);
+      advance_time_timer.stop();
 
       if ((cgh->cctk_iteration-1)
           % (maxtimereflevelfact / timereffacts.at(reflevels-1)) == 0) {
@@ -184,31 +173,31 @@ namespace Carpet {
                   cgh->cctk_iteration, (double)cgh->cctk_time);
       }
 
-      CCTK_TimerStartI (preregrid_timer);
+      preregrid_timer.start();
       PreRegrid (cgh);
-      CCTK_TimerStopI (preregrid_timer);
+      preregrid_timer.stop();
 
-      CCTK_TimerStartI (regrid_timer);
+      regrid_timer.start();
       bool const did_regrid = Regrid (cgh);
-      CCTK_TimerStopI (regrid_timer);
+      regrid_timer.stop();
       
       if (did_regrid) {
-        CCTK_TimerStartI (postregrid_timer);
+        postregrid_timer.start();
         PostRegrid (cgh);
-        CCTK_TimerStopI (postregrid_timer);
+        postregrid_timer.stop();
       }
 
-      CCTK_TimerStartI (evolution_i_timer);
+      evolution_i_timer.start();
       EvolutionI (cgh);
-      CCTK_TimerStopI (evolution_i_timer);
+      evolution_i_timer.stop();
 
-      CCTK_TimerStartI (evolution_restrict_timer);
+      restrict_timer.start();
       Evolution_Restrict (cgh);
-      CCTK_TimerStopI (evolution_restrict_timer);
+      restrict_timer.stop();
 
-      CCTK_TimerStartI (evolution_ii_timer);
+      evolution_ii_timer.start();
       EvolutionII (cgh);
-      CCTK_TimerStopI (evolution_ii_timer);
+      evolution_ii_timer.stop();
 
       if (output_internal_data) {
         CCTK_INFO ("Internal data dump:");
@@ -220,94 +209,17 @@ namespace Carpet {
         cout.precision (oldprecision);
       }
 
+      // Print timer values
       if ((cgh->cctk_iteration - 1) %
           (maxtimereflevelfact / timereffacts.at(reflevels - 1)) == 0 and
           output_timers_every > 0 and
           (cgh->cctk_iteration - 1) % output_timers_every == 0)
       {
-        // Print timer values
-        
-        int fdsave;
-        if (not CCTK_EQUALS (timer_file, "")) {
-#ifndef HAVE_UNISTD_H
-          CCTK_WARN (1, "Cannot redirect timer output to a file; the operating system does not support this");
-#else // #ifdef HAVE_UNISTD_H
-          
-          int const myproc = CCTK_MyProc (cgh);
-          char filename [10000];
-          Util_snprintf (filename, sizeof filename,
-                         "%s/%s.%04d.txt", out_dir, timer_file, myproc);
-          
-          // append
-          int flags = O_WRONLY | O_CREAT | O_APPEND;
-          static bool first_time = true;
-          if (first_time) {
-            first_time = false;
-            if (IO_TruncateOutputFiles (cgh)) {
-              // truncate
-              flags = O_WRONLY | O_CREAT | O_TRUNC;
-            }
-          }
-          
-          // Temporarily redirect stdout
-          fflush (stdout);
-          fdsave = dup (1);      // fd 1 is stdout
-          int const mode = 0644; // rw-r--r--, or a+r u+w
-          int const fdfile = open (filename, flags, mode);
-          if (fdfile < 0)
-          {
-            CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                        "Could not open timer output file \"%s\"", filename);
-            goto cleanup;
-          }
-          close (1);
-          dup (fdfile);         // dup to 1, i.e., stdout again
-          close (fdfile);
-#endif  // #ifdef HAVE_UNISTD_H
-        }
-        
-        // Output the timers
-        printf ("Carpet Timing information at iteration %d time %g:\n",
-                cgh->cctk_iteration, (double) cgh->cctk_time);
-        CCTK_TimerStopI (evolve_timer);
-        CCTK_TimerPrintDataI (evolve_timer            , -1);
-        CCTK_TimerPrintDataI (do_terminate_timer      , -1);
-        CCTK_TimerPrintDataI (advance_time_timer      , -1);
-        CCTK_TimerPrintDataI (preregrid_timer         , -1);
-        CCTK_TimerPrintDataI (regrid_timer            , -1);
-        CCTK_TimerPrintDataI (postregrid_timer        , -1);
-        CCTK_TimerPrintDataI (evolution_i_timer       , -1);
-        CCTK_TimerPrintDataI (evolution_restrict_timer, -1);
-        CCTK_TimerPrintDataI (evolution_ii_timer      , -1);
-        CCTK_TimerStartI (evolve_timer);
-        printf ("\n********************************************************************************\n");
-        
-        if (not CCTK_EQUALS (timer_file, "")) {
-#ifdef HAVE_UNISTD_H
-          // Redirect stdout back
-          fflush (stdout);
-          close (1);
-          dup (fdsave);
-        cleanup:
-          close (fdsave);
-#endif  // #ifdef HAVE_UNISTD_H
-        }
-        
-      } // if timer output
+        timerSet.printData (cgh, timer_file);
+      }
 
     } // end main loop
-    CCTK_TimerStopI (evolve_timer);
-
-    // Destroy timers
-    CCTK_TimerDestroyI (evolve_timer            );
-    CCTK_TimerDestroyI (do_terminate_timer      );
-    CCTK_TimerDestroyI (advance_time_timer      );
-    CCTK_TimerDestroyI (preregrid_timer         );
-    CCTK_TimerDestroyI (regrid_timer            );
-    CCTK_TimerDestroyI (postregrid_timer        );
-    CCTK_TimerDestroyI (evolution_i_timer       );
-    CCTK_TimerDestroyI (evolution_restrict_timer);
-    CCTK_TimerDestroyI (evolution_ii_timer      );
+    evolve_timer.stop();
 
     Waypoint ("Done with evolution loop");
 

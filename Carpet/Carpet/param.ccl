@@ -335,7 +335,7 @@ INT output_timers_every "Print detailed statistics periodically" STEERABLE=alway
 {
   0   :: "don't report"
   1:* :: "report every so many iterations"
-} 1
+} 0
 
 STRING timer_file "File name in which detailed timing statistics are collected" STEERABLE=recover
 {
