@@ -307,8 +307,9 @@ namespace Carpet {
     }
     
     CCTK_INFO ("New grid statistics:");
-    cout.setf (ios::fixed);
     const int oldprecision = cout.precision();
+    const ios_base::fmtflags oldflags = cout.flags();
+    cout.setf (ios::fixed);
     for (int ml=0; ml<hh.mglevels(); ++ml) {
       CCTK_REAL coarsevolume = 0;
       for (int rl=0; rl<hh.reflevels(); ++rl) {
@@ -396,7 +397,7 @@ namespace Carpet {
       }
     }
     cout.precision (oldprecision);
-    cout.unsetf (ios::fixed);
+    cout.setf (oldflags);
     
   }
   
