@@ -13,6 +13,8 @@ class timestat {
 public:
   double wtime;
   double wtime2;
+  double wmin;
+  double wmax;
   double count;
   
 public:
@@ -68,6 +70,14 @@ extern timestat wtime_isend;
 extern timestat wtime_irecvwait;
 extern timestat wtime_isendwait;
 
-
+extern timestat wtime_commstate_sizes_irecv;
+extern timestat wtime_commstate_waitall_final;
+extern timestat wtime_commstate_waitall;
+extern timestat wtime_commstate_waitsome;
+extern timestat wtime_commstate_isend;
+extern timestat wtime_commstate_memcpy;
+extern timestat wtime_commstate_interpolate_irecv;
+extern timestat wtime_commstate_interpolate_from_isend;
+extern timestat wtime_commstate_interpolate_to_isend;
 
 #endif  // TIMESTAT_HH

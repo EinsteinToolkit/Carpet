@@ -7,6 +7,12 @@
 #include "vect.hh"
 
 #include "commstate.hh"
+#include "timestat.hh"
+
+
+
+using namespace std;
+
 
 
 // Communication state control
@@ -89,9 +95,11 @@ void comm_state::step ()
           procbuf.recvbuf = procbuf.recvbufbase;
 
           if (procbuf.recvbufsize > 0) {
+            wtime_commstate_sizes_irecv.start();
             MPI_Irecv (procbuf.recvbufbase, procbuf.recvbufsize,
                        typebufs[type].mpi_datatype, proc, type,
                        dist::comm(), &rrequests[dist::size()*type + proc]);
+            wtime_commstate_sizes_irecv.stop();
             num_posted_recvs++;
           }
         }
@@ -163,7 +171,9 @@ bool comm_state::AllPostedCommunicationsFinished ()
   // check if all outstanding receives have been completed already
   if (num_posted_recvs == num_completed_recvs) {
     // finalize the outstanding sends in one go
+    wtime_commstate_waitall_final.start();
     MPI_Waitall (srequests.size(), &srequests.front(), MPI_STATUSES_IGNORE);
+    wtime_commstate_waitall_final.stop();
 
     return true;
   }
@@ -178,15 +188,19 @@ bool comm_state::AllPostedCommunicationsFinished ()
     }
 
     // wait for completion of all posted receive operations
+    wtime_commstate_waitall.start();
     MPI_Waitall (rrequests.size(), &rrequests.front(), MPI_STATUSES_IGNORE);
+    wtime_commstate_waitall.stop();
     num_completed_recvs = num_posted_recvs;
   } else {
     int num_completed_recvs_ = 0;
     vector<int> completed_recvs(rrequests.size(), -1);
 
     // wait for completion of at least one posted receive operation
+    wtime_commstate_waitsome.start();
     MPI_Waitsome (rrequests.size(), &rrequests.front(), &num_completed_recvs_,
                   &completed_recvs.front(), MPI_STATUSES_IGNORE);
+    wtime_commstate_waitsome.stop();
     assert (0 < num_completed_recvs_);
     num_completed_recvs += num_completed_recvs_;
 

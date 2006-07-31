@@ -35,6 +35,12 @@ BOOLEAN print_timestats "Print timing statistics at every iteration" STEERABLE=a
 {
 } "no"
 
+INT print_timestats_every "Print timing statistics periodically" STEERABLE=always
+{
+  0   :: "don't report"
+  1:* :: "report every so many iterations"
+} 0
+
 BOOLEAN save_memory_during_regridding "Save some memory during regridding at the expense of speed" STEERABLE=always
 {
 } "yes"

@@ -316,6 +316,7 @@ void gdata::copy_into_sendbuffer (comm_state& state,
                  state.typebufs.at(c_datatype()).mpi_datatype,
                  proc(), c_datatype(), dist::comm(),
                  &state.srequests.at(dist::size()*c_datatype() + proc()));
+      wtime_commstate_isend.stop();
     }
   }
 }
@@ -338,6 +339,7 @@ void gdata::copy_from_recvbuffer (comm_state& state,
   ivect items = (box.upper() - box.lower()) / box.stride() + 1;
   ivect offs  = (box.lower() - ext.lower()) / ext.stride();
 
+  wtime_commstate_memcpy.start();
   assert (dim == 3);
   for (int k = 0; k < items[2]; k++) {
     for (int j = 0; j < items[1]; j++) {
@@ -347,6 +349,7 @@ void gdata::copy_from_recvbuffer (comm_state& state,
       procbuf.recvbuf += datatypesize * items[0];
     }
   }
+  wtime_commstate_memcpy.stop();
 }
 
 
@@ -453,8 +456,10 @@ void gdata
 
     comm_state::gcommbuf * b = make_typed_commbuf (box);
 
+    wtime_commstate_interpolate_irecv.start();
     MPI_Irecv (b->pointer(), b->size(), b->datatype(), src->proc(),
                tag, dist::comm(), &b->request);
+    wtime_commstate_interpolate_irecv.stop();
     state.requests.push_back (b->request);
     state.recvbufs.push (b);
   } else {
@@ -468,8 +473,10 @@ void gdata
                                      order_space, order_time);
     delete tmp;
 
+    wtime_commstate_interpolate_from_isend.start();
     MPI_Isend (b->pointer(), b->size(), b->datatype(), proc(),
                tag, dist::comm(), &b->request);
+    wtime_commstate_interpolate_from_isend.stop();
     state.requests.push_back (b->request);
     state.sendbufs.push (b);
   }
@@ -516,11 +523,13 @@ void gdata
     procbuf.sendbuf += datatypesize * box.size();
   
     // post the send if the buffer is full
-    if (fillstate == procbuf.sendbufsize*datatypesize) {
+    if (fillstate == (int)procbuf.sendbufsize*datatypesize) {
+      wtime_commstate_interpolate_to_isend.start();
       MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
                  state.typebufs.at(c_datatype()).mpi_datatype,
                  proc(), c_datatype(), dist::comm(),
                  &state.srequests.at(dist::size()*c_datatype() + proc()));
+      wtime_commstate_interpolate_to_isend.stop();
     }
   }
 }
