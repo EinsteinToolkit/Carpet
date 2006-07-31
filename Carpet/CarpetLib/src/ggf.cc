@@ -109,12 +109,14 @@ void ggf::recompose_crop ()
 bool ggf::recompose_did_change (const int rl) const
 {
   // Find out whether this level changed
-  if (storage.size() != h.mglevels()) return true;
+  if ((int)storage.size() != h.mglevels()) return true;
   for (int ml=0; ml<h.mglevels(); ++ml) {
-    if (storage.at(ml).size() <= rl) return true;
-    if (storage.at(ml).at(rl).size() != h.components(rl)) return true;
+    if ((int)storage.at(ml).size() <= rl) return true;
+    if ((int)storage.at(ml).at(rl).size() != h.components(rl)) return true;
     for (int c=0; c<h.components(rl); ++c) {
-      if (storage.at(ml).at(rl).at(c).size() != timelevels(ml,rl)) return true;
+      if ((int)storage.at(ml).at(rl).at(c).size() != timelevels(ml,rl)) {
+        return true;
+      }
       for (int tl=0; tl<timelevels(ml,rl); ++tl) {
         ibbox const & wantextent = d.boxes.at(ml).at(rl).at(c).exterior;
         ibbox const & haveextent = storage.at(ml).at(rl).at(c).at(tl)->extent();

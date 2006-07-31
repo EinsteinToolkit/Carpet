@@ -287,10 +287,10 @@ void gdata::copy_into_sendbuffer (comm_state& state,
     comm_state::procbufdesc& procbuf =
       state.typebufs.at(c_datatype()).procbufs.at(proc());
     assert (procbuf.sendbuf - procbuf.sendbufbase <=
-            (procbuf.sendbufsize - box.size()) * datatypesize);
-    int fillstate = procbuf.sendbuf + box.size()*datatypesize -
-                    procbuf.sendbufbase;
-    assert (fillstate <= procbuf.sendbufsize * datatypesize);
+            ((int)procbuf.sendbufsize - box.size()) * datatypesize);
+    int const fillstate = procbuf.sendbuf + (int)box.size()*datatypesize -
+                          procbuf.sendbufbase;
+    assert (fillstate <= (int)procbuf.sendbufsize * datatypesize);
 
     // copy this processor's data into the send buffer
     const ibbox& ext = src->extent();
@@ -310,7 +310,8 @@ void gdata::copy_into_sendbuffer (comm_state& state,
     }
   
     // post the send if the buffer is full
-    if (fillstate == procbuf.sendbufsize * datatypesize) {
+    if (fillstate == (int)procbuf.sendbufsize * datatypesize) {
+      wtime_commstate_isend.start();
       MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
                  state.typebufs.at(c_datatype()).mpi_datatype,
                  proc(), c_datatype(), dist::comm(),
@@ -329,7 +330,7 @@ void gdata::copy_from_recvbuffer (comm_state& state,
   comm_state::procbufdesc& procbuf =
     state.typebufs.at(c_datatype()).procbufs.at(src->proc());
   assert (procbuf.recvbuf - procbuf.recvbufbase <=
-          (procbuf.recvbufsize-box.size()) * datatypesize);
+          ((int)procbuf.recvbufsize-box.size()) * datatypesize);
 
   // copy this processor's data from the recv buffer
   const ibbox& ext = extent();
@@ -498,11 +499,11 @@ void gdata
     comm_state::procbufdesc& procbuf =
       state.typebufs.at(c_datatype()).procbufs.at(proc());
     assert (procbuf.sendbuf - procbuf.sendbufbase <=
-            (procbuf.sendbufsize - box.size()) * datatypesize);
+            ((int)procbuf.sendbufsize - box.size()) * datatypesize);
     assert (src->has_storage());
-    int fillstate = (procbuf.sendbuf + box.size()*datatypesize) -
-                    procbuf.sendbufbase;
-    assert (fillstate <= procbuf.sendbufsize * datatypesize);
+    int const fillstate = (procbuf.sendbuf + box.size()*datatypesize) -
+                          procbuf.sendbufbase;
+    assert (fillstate <= (int)procbuf.sendbufsize * datatypesize);
 
     // interpolate this processor's data into the send buffer
     gdata* tmp = src->make_typed (varindex, transport_operator, tag);
