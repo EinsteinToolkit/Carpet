@@ -23,21 +23,21 @@ using namespace std;
 
 
 struct mstat {
-  int total_bytes;
-  int total_objects;
-  int max_bytes;
-  int max_objects;
+  double total_bytes;
+  double total_objects;
+  double max_bytes;
+  double max_objects;
 };
 
 
 
 // Total number of currently allocated bytes and objects
-static size_t total_allocated_bytes   = 0;
-static size_t total_allocated_objects = 0;
+static double total_allocated_bytes   = 0;
+static double total_allocated_objects = 0;
 
 // Maximum of the above (over time)
-static size_t max_allocated_bytes   = 0;
-static size_t max_allocated_objects = 0;
+static double max_allocated_bytes   = 0;
+static double max_allocated_objects = 0;
 
 
 
@@ -53,10 +53,9 @@ mem (size_t const vectorlength, size_t const nelems, T * const memptr)
 {
   DECLARE_CCTK_PARAMETERS;
   if (memptr == NULL) {
-    const size_t nbytes = vectorlength * nelems * sizeof (T);
+    const double nbytes = vectorlength * nelems * sizeof (T);
     if (max_allowed_memory_MB
-        and (total_allocated_bytes + nbytes
-             > size_t(1000000) * max_allowed_memory_MB))
+        and (total_allocated_bytes + nbytes > 1.0e6 * max_allowed_memory_MB))
     {
       T Tdummy;
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -160,17 +159,17 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
       mybuf.max_bytes     = max_allocated_bytes;
       mybuf.max_objects   = max_allocated_objects;
       vector<mstat> allbuf (dist::size());
-      MPI_Gather (& mybuf, 4, MPI_INT,
-                  & allbuf.front(), 4, MPI_INT,
+      MPI_Gather (& mybuf, 4, MPI_DOUBLE,
+                  & allbuf.front(), 4, MPI_DOUBLE,
                   0, dist::comm());
       
       if (dist::rank() == 0) {
         
-        int max_max_bytes = 0;
-        int avg_max_bytes = 0;
-        int cnt_max_bytes = 0;
+        double max_max_bytes = 0;
+        double avg_max_bytes = 0;
+        double cnt_max_bytes = 0;
         for (size_t n=0; n<allbuf.size(); ++n) {
-          max_max_bytes = max (max_max_bytes, allbuf[n].max_bytes);
+          max_max_bytes = max (max_max_bytes, (double) allbuf[n].max_bytes);
           avg_max_bytes += allbuf[n].max_bytes;
           ++ cnt_max_bytes;
         }
