@@ -108,6 +108,7 @@ namespace Carpet {
         term = true;
       } else {
         CCTK_WARN (0, "Unsupported termination condition");
+        abort ();               // keep the compiler happy
       }
 
     }
