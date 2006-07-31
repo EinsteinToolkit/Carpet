@@ -55,7 +55,7 @@ INT max_allowed_memory_MB "Maximum allowed amount of memory per process (in Mega
   1:* :: "abort if more memory is used"
 } 0
 
-STRING memstat_file "File name to which memstat output is collected (because stdout from the root node may not be enough)" STEERABLE=always
+STRING memstat_file "File name in which memstat output is collected (because stdout from the root node may not be enough)" STEERABLE=always
 {
   "^$"   :: "empty filename: no file output"
   "^.+$" :: "file name"
