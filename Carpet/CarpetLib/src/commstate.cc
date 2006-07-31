@@ -14,7 +14,7 @@ comm_state::comm_state ()
 {
   // If CarpetLib::use_collective_communication_buffers is set to true,
   // this comm_state object will use collective communications,
-  // ie. it will step through
+  // i.e., it will step through
   //   state_get_buffer_sizes
   //   state_fill_send_buffers
   //   state_empty_recv_buffers
