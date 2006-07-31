@@ -14,6 +14,19 @@ BOOLEAN barriers "Insert barriers at strategic places for debugging purposes (sl
 {
 } "no"
 
+
+
+BOOLEAN poison_new_memory "Try to catch uninitialised data by setting newly allocated memory to values that will catch your attention" STEERABLE=always
+{
+} "no"
+
+CCTK_INT poison_value "Integer value (0..255) used to poison new timelevels (with memset)" STEERABLE=always
+{
+  0:255 :: "Must fit into a byte.  Use 0 for zero, 255 for nan, and e.g. 113 for a large value."
+} 255
+
+
+
 BOOLEAN output_bboxes "Output bounding box information to the screen" STEERABLE=always
 {
 } "no"

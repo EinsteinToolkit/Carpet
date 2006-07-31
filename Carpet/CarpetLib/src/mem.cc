@@ -70,6 +70,9 @@ mem (size_t const vectorlength, size_t const nelems, T * const memptr)
     try {
       storage_ = new T [vectorlength * nelems];
       owns_storage_ = true;
+      if (poison_new_memory) {
+        memset (storage_, poison_value, vectorlength * nelems * sizeof (T));
+      }
     } catch (...) {
       T Tdummy;
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
