@@ -63,6 +63,7 @@ namespace Carpet {
     for (int n=0; n<n_groups; ++n) {
       int const group = groups[n];
       
+      if(storage_verbose)
       {
         char * const groupname = CCTK_GroupName (group);
         assert (groupname);
@@ -209,7 +210,11 @@ namespace Carpet {
   GroupStorageIncrease (const cGH* cgh, int n_groups, const int* groups,
                         const int* timelevels, int* status)
   {
-    Checkpoint ("GroupStorageIncrease");
+    DECLARE_CCTK_PARAMETERS
+
+    if(storage_verbose) {
+      Checkpoint ("GroupStorageIncrease");
+    }
     return
       GroupStorageCrease (cgh, n_groups, groups, timelevels, status, true);
   }
@@ -220,7 +225,11 @@ namespace Carpet {
   GroupStorageDecrease (const cGH* cgh, int n_groups, const int* groups,
                         const int* timelevels, int* status)
   {
-    Checkpoint ("GroupStorageDecrease");
+    DECLARE_CCTK_PARAMETERS
+
+    if(storage_verbose) {
+      Checkpoint ("GroupStorageDecrease");
+    }
     return
       GroupStorageCrease (cgh, n_groups, groups, timelevels, status, false);
   }

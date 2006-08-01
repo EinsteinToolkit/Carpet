@@ -317,6 +317,10 @@ BOOLEAN veryverbose "Display a lot of info on the screen" STEERABLE=always
 {
 } "no"
 
+BOOLEAN storage_verbose "Display verbose storage information if veryverbose" STEERABLE=ALWAYS
+{
+} "no"
+
 BOOLEAN barriers "Insert barriers at strategic places for debugging purposes (slows down execution)" STEERABLE=always
 {
 } "no"
