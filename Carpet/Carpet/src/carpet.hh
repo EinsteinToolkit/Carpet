@@ -50,7 +50,7 @@ namespace Carpet {
   int mintl (checktimes where, int num_tl);
   int maxtl (checktimes where, int num_tl);
   
-  void Poison (const cGH* cgh, checktimes where);
+  void Poison (const cGH* cgh, checktimes where, int what = 0);
   void PoisonGroup (const cGH* cgh, int group, checktimes where);
   void PoisonCheck (const cGH* cgh, checktimes where);
   

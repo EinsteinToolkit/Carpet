@@ -155,6 +155,9 @@ namespace Carpet {
       do_global_mode = true;
       do_meta_mode = mglevel==mglevels-1;
 
+      // Checking
+      Poison (cgh, alltimes, CCTK_ARRAY);
+
       // Register coordinates
       Checkpoint ("Scheduling CCTK_WRAGH");
       CCTK_ScheduleTraverse ("CCTK_WRAGH", cgh, CallFunction);
@@ -182,6 +185,9 @@ namespace Carpet {
                 cgh->cctk_iteration, (double)cgh->cctk_time,
                 (do_global_mode ? " (global)" : ""),
                 (do_meta_mode ? " (meta)" : ""));
+
+      // Checking
+      Poison (cgh, alltimes, CCTK_GF);
 
       // Set up the grids
       Checkpoint ("Scheduling BASEGRID");
@@ -293,7 +299,7 @@ namespace Carpet {
                 (do_meta_mode ? " (meta)" : ""));
 
       // Checking
-      Poison (cgh, alltimes);
+      Poison (cgh, alltimes, CCTK_GF);
 
       // Set up the grids
       Checkpoint ("Scheduling BASEGRID");

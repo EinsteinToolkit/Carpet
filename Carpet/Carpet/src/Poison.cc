@@ -15,7 +15,7 @@ namespace Carpet {
   
   
   
-  void Poison (const cGH* cgh, const checktimes where)
+  void Poison (const cGH* cgh, const checktimes where, const int what)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -23,7 +23,14 @@ namespace Carpet {
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cgh, group)) {
-	PoisonGroup (cgh, group, where);
+        int const grouptype = CCTK_GroupTypeI (group);
+        if (what == 0 or
+            (what == CCTK_GF and grouptype == CCTK_GF) or
+            (what == CCTK_ARRAY and (grouptype == CCTK_ARRAY or
+                                     grouptype == CCTK_SCALAR)))
+        {
+          PoisonGroup (cgh, group, where);
+        }
       } // if has storage
     } // for group
   }
