@@ -165,8 +165,10 @@ namespace Carpet {
                             or numpoison<=max_poison_locations) {
                           char* fullname = CCTK_FullName(n);
                           CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                                      "Timelevel %d, component %d, map %d, refinement level %d of the variable \"%s\" contains poison at [%d,%d,%d]",
-                                      tl, component, map, reflevel, fullname, i,j,k);
+                                      "At iteration %d: timelevel %d, component %d, map %d, refinement level %d of the variable \"%s\" contains poison at [%d,%d,%d]",
+                                      cgh->cctk_iteration,
+                                      tl, component, map, reflevel,
+                                      fullname, i,j,k);
                           free (fullname);
                         }
                       } // if poisoned
@@ -176,8 +178,10 @@ namespace Carpet {
                 if (max_poison_locations!=-1 and numpoison>max_poison_locations) {
                   char* fullname = CCTK_FullName(n);
                   CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                              "Timelevel %d, component %d, map %d, refinement level %d of the variable \"%s\" contains poison at %d of %d locations; not all locations were printed",
-                              tl, component, map, reflevel, fullname, numpoison, np);
+                              "At iteration %d: timelevel %d, component %d, map %d, refinement level %d of the variable \"%s\" contains poison at %d of %d locations; not all locations were printed",
+                              cgh->cctk_iteration,
+                              tl, component, map, reflevel,
+                              fullname, numpoison, np);
                   free (fullname);
                 } else if (numpoison>0) {
                   CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
