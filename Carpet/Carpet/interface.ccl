@@ -122,13 +122,28 @@ USES FUNCTION MultiPatch_GetDomainSpecification
 #   int Carpet_Regrid (const cGH * cctkGH,
 #                      gh::mexts  * bbsss,
 #                      gh::rbnds  * obss,
-#                      gh::rprocs * pss);
+#                      gh::rprocs * pss,
+#                      int          force);
 CCTK_INT FUNCTION Carpet_Regrid (CCTK_POINTER_TO_CONST IN cctkGH,  \
                                  CCTK_POINTER IN bbsss,            \
                                  CCTK_POINTER IN obss,             \
-                                 CCTK_POINTER IN pss,		   \
-				 CCTK_INT IN force)
+                                 CCTK_POINTER IN pss,              \
+                                 CCTK_INT IN force)
 USES FUNCTION Carpet_Regrid
+
+# The true prototype of the routine below:
+#   int Carpet_Regrid (const cGH * cctkGH,
+#                      vector<gh::mexts>  * bbssss,
+#                      vector<gh::rbnds>  * obsss,
+#                      vector<gh::rprocs> * psss,
+#                      int                  force););
+CCTK_INT FUNCTION Carpet_RegridMaps (CCTK_POINTER_TO_CONST IN cctkGH,  \
+                                     CCTK_POINTER IN bbssss,           \
+                                     CCTK_POINTER IN obsss,            \
+                                     CCTK_POINTER IN psss,             \
+                                     CCTK_INT IN force)
+USES FUNCTION Carpet_RegridMaps
+
 
 
 # function to check whether existing output files should be truncated or not

@@ -314,17 +314,19 @@ namespace Carpet {
                                char const * const space_refinement_factors,
                                char const * const time_refinement_factors);
   static void allocate_map(cGH* cgh, int m,
-                      CCTK_INT domain_from_coordbase,
-                      CCTK_INT domain_from_multipatch,
-                      CCTK_INT convergence_factor, CCTK_INT refinement_factor,
-                      CCTK_STRING base_outerbounds, CCTK_STRING base_extents,
-                      CCTK_INT max_refinement_levels,
-                      CCTK_INT prolongation_order_space,
-                      CCTK_INT buffer_width,
-                      CCTK_INT use_outer_buffer_zones,
-                      CCTK_INT num_integrator_substeps,
-                      CCTK_INT use_tapered_grids,
-                      ivect & lghosts, ivect & ughosts, ivect & npoints);
+                           CCTK_INT domain_from_coordbase,
+                           CCTK_INT domain_from_multipatch,
+                           CCTK_INT convergence_factor, CCTK_INT refinement_factor,
+                           CCTK_STRING base_outerbounds, CCTK_STRING base_extents,
+                           CCTK_INT max_refinement_levels,
+                           CCTK_INT prolongation_order_space,
+                           CCTK_INT buffer_width,
+                           CCTK_INT use_outer_buffer_zones,
+                           CCTK_INT num_integrator_substeps,
+                           CCTK_INT use_tapered_grids,
+                           ivect & lghosts, ivect & ughosts, ivect & npoints,
+                           vector<vector<ibbox> > & bbss,
+                           vector<vector<bbvect> > & obss);
   static ivect make_ghost_zone_vect (CCTK_INT ghost_size,
                       CCTK_INT ghost_size_x, CCTK_INT ghost_size_y,
                       CCTK_INT ghost_size_z);
@@ -373,7 +375,7 @@ namespace Carpet {
   static void handle_group_tags_table (cGH* cgh, int group, cGroup &gp,
                       jvect &convpowers, jvect &convoffsets);
   static void finish_initialisation (cGH* cgh);
-  static void print_grid_structure (vector<gh*> & vhh, int m);
+  static void print_grid_structure (vector<gh*> & vhh);
   static void print_some_statistics (cGH* cgh);
   static void enable_storage_for_all_groups (cGH* cgh);
   static void leave_all_modes (cGH* cgh);
@@ -425,6 +427,9 @@ namespace Carpet {
     vdd.resize (maps);
     vtt.resize (maps);
     
+    vector<vector<vector<ibbox> > > bbsss (maps);
+    vector<vector<vector<bbvect> > > obsss (maps);
+    
     // Loop over maps
     for (int m=0; m<maps; ++m) {
       ivect lghosts = make_ghost_zone_vect (ghost_size,
@@ -440,14 +445,81 @@ namespace Carpet {
          processor_topology_3d_z);
 
       allocate_map (cgh, m, domain_from_coordbase, domain_from_multipatch,
-               convergence_factor, refinement_factor,
-               base_outerbounds, base_extents,
-               max_refinement_levels, prolongation_order_space,
-               buffer_width,
-               use_outer_buffer_zones, num_integrator_substeps,
-               use_tapered_grids,
-               lghosts, ughosts, npoints);
+                    convergence_factor, refinement_factor,
+                    base_outerbounds, base_extents,
+                    max_refinement_levels, prolongation_order_space,
+                    buffer_width,
+                    use_outer_buffer_zones, num_integrator_substeps,
+                    use_tapered_grids,
+                    lghosts, ughosts, npoints,
+                    bbsss.at(m), obsss.at(m));
     } 
+    
+    vector<vector<vector<vector<ibbox> > > > bbssss (maps);
+    vector<vector<vector<int> > > psss (maps);
+    if (not regrid_in_level_mode) {
+      
+      for (int m=0; m<maps; ++m) {
+        int const rl=0;
+        psss.at(m).resize(1);
+        
+        // Distribute onto the processors
+        SplitRegions
+          (cgh, bbsss.at(m).at(rl), obsss.at(m).at(rl), psss.at(m).at(rl));
+        
+        // Create all multigrid levels
+        MakeMultigridBoxes (cgh, bbsss.at(m), obsss.at(m), bbssss.at(m));
+      }
+      
+    } else {
+      
+      // Distribute onto the processors
+      {
+        int const rl=0;
+        
+        for (int m=0; m<maps; ++m) {
+          psss.at(m).resize(1);
+        }
+        
+        vector<vector<ibbox> > bbss(maps);
+        vector<vector<bbvect> > obss(maps);
+        vector<vector<int> > pss(maps);
+        for (int m=0; m<maps; ++m) {
+          bbss.at(m) = bbsss.at(m).at(rl);
+          obss.at(m) = obsss.at(m).at(rl);
+        }
+        
+        SplitRegionsMaps (cgh, bbss, obss, pss);
+        
+        for (int m=0; m<maps; ++m) {
+          bbsss.at(m).at(rl) = bbss.at(m);
+          obsss.at(m).at(rl) = obss.at(m);
+          psss.at(m).at(rl)  = pss.at(m);
+        }
+      }
+      
+      // Create all multigrid levels
+      MakeMultigridBoxesMaps (cgh, bbsss, obsss, bbssss);
+      
+    }
+    
+    for (int m=0; m<maps; ++m) {
+      
+      // Check the regions
+      CheckRegions (bbssss.at(m), obsss.at(m), psss.at(m));
+      
+#if 0
+      // Do this later because CactusBase/IO might not yet be
+      // initialised
+      // Write grid structure to file
+      OutputGridStructure (cgh, m, bbssss.at(m), obsss.at(m), psss.at(m));
+#endif
+      
+      // Recompose grid hierarchy
+      vhh.at(m)->recompose (bbssss.at(m), obsss.at(m), psss.at(m), false);
+    }
+    
+    print_grid_structure (vhh);
     
     reflevels = 1;
     for (int m=0; m<maps; ++m) {
@@ -594,17 +666,19 @@ namespace Carpet {
   }
 
   void allocate_map (cGH* cgh, int m,
-               CCTK_INT domain_from_coordbase,
-               CCTK_INT domain_from_multipatch,
-               CCTK_INT convergence_factor, CCTK_INT refinement_factor,
-               CCTK_STRING base_outerbounds, CCTK_STRING base_extents,
-               CCTK_INT max_refinement_levels,
-               CCTK_INT prolongation_order_space,
-               CCTK_INT buffer_width,
-               CCTK_INT use_outer_buffer_zones,
-               CCTK_INT num_integrator_substeps,
-               CCTK_INT use_tapered_grids,
-               ivect & lghosts, ivect & ughosts, ivect & a_npoints)
+                     CCTK_INT domain_from_coordbase,
+                     CCTK_INT domain_from_multipatch,
+                     CCTK_INT convergence_factor, CCTK_INT refinement_factor,
+                     CCTK_STRING base_outerbounds, CCTK_STRING base_extents,
+                     CCTK_INT max_refinement_levels,
+                     CCTK_INT prolongation_order_space,
+                     CCTK_INT buffer_width,
+                     CCTK_INT use_outer_buffer_zones,
+                     CCTK_INT num_integrator_substeps,
+                     CCTK_INT use_tapered_grids,
+                     ivect & lghosts, ivect & ughosts, ivect & a_npoints,
+                     vector<vector<ibbox> > & bbss,
+                     vector<vector<bbvect> > & obss)
   {
     // Get boundary description
     jjvect nboundaryzones, is_internal, is_staggered, shiftout;
@@ -884,38 +958,9 @@ namespace Carpet {
       read_explicit_grid_components (base_extents, base_outerbounds, bbs, obs);
     }
     
-    // Distribute onto the processors
-    // (TODO: this should be done globally for all maps)
-    vector<int> ps;
-    SplitRegions (cgh, bbs, obs, ps);
-    
     // Only one refinement level
-    vector<vector<ibbox> > bbss(1);
-    vector<vector<bbvect> > obss(1);
-    vector<vector<int> > pss(1);
-    bbss.at(0) = bbs;
-    obss.at(0) = obs;
-    pss.at(0) = ps;
-    
-    // Create all multigrid levels
-    vector<vector<vector<ibbox> > > bbsss;
-    MakeMultigridBoxes (cgh, bbss, obss, bbsss);
-    
-    // Check the regions
-    CheckRegions (bbsss, obss, pss);
-      
-#if 0
-    // Do this later, because CactusBase/IO might not yet be initialised
-    // Write grid structure to file
-    OutputGridStructure (cgh, m, bbsss, obss, pss);
-#endif
-      
-    // Recompose grid hierarchy
-    vhh.at(m)->recompose (bbsss, obss, pss, false);
-    
-    CCTK_INFO ("Grid structure (grid points):");
-    print_grid_structure (vhh, m);
-    
+    bbss.assign (1, bbs);
+    obss.assign (1, obs);
   }
 
   ivect
@@ -1109,21 +1154,30 @@ namespace Carpet {
     assert (obs.size() == bbs.size());
   }
 
-  void print_grid_structure (vector<gh*> & vhh, int m) {
-    for (int ml=0; ml<vhh.at(m)->mglevels(); ++ml) {
+  void print_grid_structure (vector<gh*> & vhh) {
+    CCTK_INFO ("Grid structure (grid points):");
+    for (int ml=0; ml<mglevels; ++ml) {
       const int rl = 0;
-      for (int c=0; c<vhh.at(m)->components(rl); ++c) {
-        const ivect lower = vhh.at(m)->extents().at(ml).at(rl).at(c).lower();
-        const ivect upper = vhh.at(m)->extents().at(ml).at(rl).at(c).upper();
-        const int convfact = ipow(mgfact, ml);
-        assert (all(lower % maxspacereflevelfact == 0));
-        assert (all(upper % maxspacereflevelfact == 0));
-        assert (all(((upper - lower) / maxspacereflevelfact) % convfact == 0));
-        cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
-             << "   exterior extent: " << lower / maxspacereflevelfact
-             << " : " << upper / maxspacereflevelfact
-             << "   (" << (upper - lower) / maxspacereflevelfact / convfact + 1
-             << ")" << endl;
+      for (int m=0; m<maps; ++m) {
+        for (int c=0; c<vhh.at(m)->components(rl); ++c) {
+          const ivect lower = vhh.at(m)->extents().at(ml).at(rl).at(c).lower();
+          const ivect upper = vhh.at(m)->extents().at(ml).at(rl).at(c).upper();
+          const int convfact = ipow(mgfact, ml);
+          assert (all(lower % maxspacereflevelfact == 0));
+          assert (all(upper % maxspacereflevelfact == 0));
+          assert (all(((upper - lower) / maxspacereflevelfact) % convfact == 0));
+          cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
+               << "   exterior: "
+               << "proc "
+               << vhh.at(m)->processors().at(rl).at(c)
+               << "   "
+               << lower / maxspacereflevelfact
+               << " : "
+               << upper / maxspacereflevelfact
+               << "   ("
+               << (upper - lower) / maxspacereflevelfact / convfact + 1
+               << ")" << endl;
+        }
       }
     }
   }

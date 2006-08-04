@@ -114,11 +114,23 @@ namespace Carpet {
                               const int dir);
   void SplitRegions_Automatic (const cGH* cgh, vector<ibbox>& bbs,
                                vector<bbvect>& obs, vector<int>& ps);
+  void SplitRegionsMaps (const cGH* cgh,
+                         vector<vector<ibbox> >& bbss,
+                         vector<vector<bbvect> >& obss,
+                         vector<vector<int> >& pss);
+  void SplitRegionsMaps_Automatic (const cGH* cgh,
+                                   vector<vector<ibbox> >& bbss,
+                                   vector<vector<bbvect> >& obss,
+                                   vector<vector<int> >& pss);
   
   void MakeMultigridBoxes (const cGH* cgh,
                            gh::rexts const & bbss,
                            gh::rbnds const & obss,
                            gh::mexts & bbsss);
+  void MakeMultigridBoxesMaps (const cGH* cgh,
+                               vector<gh::rexts> const & bbsss,
+                               vector<gh::rbnds> const & obsss,
+                               vector<gh::mexts> & bbssss);
   
   
   

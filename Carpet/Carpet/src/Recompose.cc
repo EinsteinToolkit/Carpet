@@ -63,6 +63,20 @@ namespace Carpet {
                                         vector<ibbox>& bbs,
                                         vector<bbvect>& obs,
                                         vector<int>& ps);
+  struct region {
+    ibbox bb;                   // bounding box
+    bbvect ob;                  // outer boundaries
+    int m;                      // map
+    int c;                      // component
+    int p;                      // processor
+    int size;
+    int nprocs;
+  };
+  static void SplitRegionsMaps_Automatic_Recursively (bvect const & dims,
+                                                      int const nprocs,
+                                                      rvect const rshape,
+                                                      region const & reg,
+                                                      list<region> & regs);
   
   
   
@@ -135,23 +149,54 @@ namespace Carpet {
     }
     
     bool did_change = false;
-    BEGIN_MAP_LOOP(cgh, CCTK_GF) {
+    
+    if (not regrid_in_level_mode) {
       
-      gh::mexts  bbsss = vhh.at(map)->extents();
-      gh::rbnds  obss  = vhh.at(map)->outer_boundaries();
-      gh::rprocs pss   = vhh.at(map)->processors();
+      BEGIN_MAP_LOOP(cgh, CCTK_GF) {
+        
+        gh::mexts  bbsss = vhh.at(map)->extents();
+        gh::rbnds  obss  = vhh.at(map)->outer_boundaries();
+        gh::rprocs pss   = vhh.at(map)->processors();
+        
+        // Check whether to recompose
+        CCTK_INT const do_recompose
+          = Carpet_Regrid (cgh, &bbsss, &obss, &pss, force_recompose);
+        assert (do_recompose >= 0);
+        did_change = did_change or do_recompose;
+        
+        if (do_recompose) {
+          Recompose (cgh, map, bbsss, obss, pss, do_init);
+        }
+        
+      } END_MAP_LOOP;
+      
+    } else {
+      
+      vector<gh::mexts>  bbssss (maps);
+      vector<gh::rbnds>  obsss  (maps);
+      vector<gh::rprocs> psss   (maps);
+      BEGIN_MAP_LOOP(cgh, CCTK_GF) {
+        bbssss.at(map) = vhh.at(map)->extents();
+        obsss.at(map)  = vhh.at(map)->outer_boundaries();
+        psss.at(map)   = vhh.at(map)->processors();
+      } END_MAP_LOOP;
       
       // Check whether to recompose
       CCTK_INT const do_recompose
-        = Carpet_Regrid (cgh, &bbsss, &obss, &pss, force_recompose);
+        = Carpet_RegridMaps (cgh, &bbssss, &obsss, &psss, force_recompose);
       assert (do_recompose >= 0);
       did_change = did_change or do_recompose;
       
       if (do_recompose) {
-        Recompose (cgh, map, bbsss, obss, pss, do_init);
+        BEGIN_MAP_LOOP(cgh, CCTK_GF) {
+          gh::mexts  const & bbsss = bbssss.at(map);
+          gh::rbnds  const & obss  = obsss.at(map);
+          gh::rprocs const & pss   = psss.at(map);
+          Recompose (cgh, map, bbsss, obss, pss, do_init);
+        } END_MAP_LOOP;
       }
       
-    } END_MAP_LOOP;
+    }
     
     PostRecompose ();
     
@@ -172,18 +217,18 @@ namespace Carpet {
     CCTK_VInfo (CCTK_THORNSTRING,
                 "Recomposing the grid hierarchy for map %d...", m);
     
+    // Write grid structure to file
+    OutputGridStructure (cctkGH, m, bbsss, obss, pss);
+    
+    if (verbose) OutputGrids (cctkGH, m, *vhh.at(m), *vdd.at(m));
+    
     // Check the regions
     CheckRegions (bbsss, obss, pss);
     // TODO: check also that the current and all coarser levels did
     // not change
     
-    // Write grid structure to file
-    OutputGridStructure (cctkGH, m, bbsss, obss, pss);
-    
     // Recompose
     vhh.at(m)->recompose (bbsss, obss, pss, do_init);
-    
-    if (verbose) OutputGrids (cctkGH, m, *vhh.at(m), *vdd.at(m));
     
     CCTK_VInfo (CCTK_THORNSTRING,
                 "Done recomposing the grid hierarchy for map %d.", m);
@@ -225,7 +270,7 @@ namespace Carpet {
   
   void OutputGrids (const cGH* cgh, const int m, const gh& hh, const dh& dd)
   {
-    CCTK_INFO ("New grid structure (grid points):");
+    CCTK_INFO ("Grid structure (grid points):");
     for (int ml=0; ml<hh.mglevels(); ++ml) {
       for (int rl=0; rl<hh.reflevels(); ++rl) {
         for (int c=0; c<hh.components(rl); ++c) {
@@ -254,7 +299,7 @@ namespace Carpet {
       }
     }
     
-    CCTK_INFO ("New grid structure (boundaries):");
+    CCTK_INFO ("Grid structure (boundaries):");
     for (int rl=0; rl<hh.reflevels(); ++rl) {
       for (int c=0; c<hh.components(rl); ++c) {
         cout << "   [" << rl << "][" << m << "][" << c << "]"
@@ -264,7 +309,7 @@ namespace Carpet {
       }
     }
     
-    CCTK_INFO ("New grid structure (coordinates):");
+    CCTK_INFO ("Grid structure (coordinates):");
     for (int ml=0; ml<hh.mglevels(); ++ml) {
       for (int rl=0; rl<hh.reflevels(); ++rl) {
         for (int c=0; c<hh.components(rl); ++c) {
@@ -285,7 +330,7 @@ namespace Carpet {
       }
     }
     
-    CCTK_INFO ("New grid structure (coordinates, including ghosts):");
+    CCTK_INFO ("Grid structure (coordinates, including ghosts):");
     for (int ml=0; ml<hh.mglevels(); ++ml) {
       for (int rl=0; rl<hh.reflevels(); ++rl) {
         for (int c=0; c<hh.components(rl); ++c) {
@@ -306,7 +351,7 @@ namespace Carpet {
       }
     }
     
-    CCTK_INFO ("New grid statistics:");
+    CCTK_INFO ("Grid statistics:");
     const int oldprecision = cout.precision();
     const ios_base::fmtflags oldflags = cout.flags();
     cout.setf (ios::fixed);
@@ -744,7 +789,7 @@ namespace Carpet {
     assert ((int)obs.size() == nprocs);
     assert ((int)ps.size() == nprocs);
     for (int n=0; n<(int)ps.size(); ++n) {
-      assert ((int)ps.at(n) == p+n);
+      assert (ps.at(n) == p+n);
     }
     if (DEBUG) cout << "SRAR exit" << endl;
   }
@@ -953,6 +998,422 @@ namespace Carpet {
   
   
   
+  // TODO: this routine should go into CarpetRegrid (except maybe
+  // SplitRegions_AlongZ for grid arrays)
+  void
+  SplitRegionsMaps (const cGH* cgh,
+                    vector<vector<ibbox> >& bbss,
+                    vector<vector<bbvect> >& obss,
+                    vector<vector<int> >& pss)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (CCTK_EQUALS (processor_topology, "along-z")) {
+      assert (0);
+//       SplitRegions_AlongZ (cgh, bbs, obs, ps);
+    } else if (CCTK_EQUALS (processor_topology, "along-dir")) {
+      assert (0);
+//       SplitRegions_AlongDir (cgh, bbs, obs, ps, split_direction);
+    } else if (CCTK_EQUALS (processor_topology, "automatic")) {
+      SplitRegionsMaps_Automatic (cgh, bbss, obss, pss);
+    } else if (CCTK_EQUALS (processor_topology, "manual")) {
+      assert (0);
+//       SplitRegions_AsSpecified (cgh, bbs, obs, ps);
+    } else {
+      assert (0);
+    }
+  }
+  
+  
+  
+  static void
+  SplitRegionsMaps_Automatic_Recursively (bvect const & dims,
+                                          int const nprocs,
+                                          rvect const rshape,
+                                          region const & reg,
+                                          list<region> & regs)
+  {
+    if (DEBUG) cout << "SRMAR enter" << endl;
+    // check preconditions
+    assert (nprocs >= 1);
+    
+    // are we done?
+    if (all(dims)) {
+      if (DEBUG) cout << "SRMAR bottom" << endl;
+      
+      // check precondition
+      assert (nprocs == 1);
+      
+      // return arguments
+      regs.assign (1, reg);
+      
+      // return
+      if (DEBUG) cout << "SRMAR exit" << endl;
+      return;
+    }
+    
+    // choose a direction
+    int mydim = -1;
+    CCTK_REAL mysize = 0;
+    int alldims = 0;
+    CCTK_REAL allsizes = 1;
+    // prefer to split in the z direction
+    for (int d=dim-1; d>=0; --d) {
+      if (! dims[d]) {
+        ++ alldims;
+        allsizes *= rshape[d];
+#warning "TODO"
+        // Why 0.99 and not 1.01?
+        if (rshape[d] >= 0.99 * mysize) {
+          mydim = d;
+          mysize = rshape[d];
+        }
+      }
+    }
+    assert (mydim>=0 and mydim<dim);
+    assert (mysize>=0);
+    if (DEBUG) cout << "SRMAR mydim " << mydim << endl;
+    if (DEBUG) cout << "SRMAR mysize " << mysize << endl;
+    
+    if (mysize == 0) {
+      // the bbox is empty
+      if (DEBUG) cout << "SRMAR empty" << endl;
+      
+      // create the bboxes
+      assert (regs.empty());
+      
+      // create a new bbox
+      assert (reg.bb.empty());
+      region newreg (reg);
+      newreg.ob = bbvect (false);
+      if (DEBUG) cout << "SRMAR " << mydim << " newbb " << newreg.bb << endl;
+      if (DEBUG) cout << "SRMAR " << mydim << " newob " << newreg.ob << endl;
+      if (DEBUG) cout << "SRMAR " << mydim << " newp " << newreg.p << endl;
+      
+      // store
+      for (int pp=0; pp<nprocs; ++pp) {
+        newreg.p = reg.p+pp;
+        regs.push_back (newreg);
+      }
+      
+      if (DEBUG) cout << "SRMAR exit" << endl;
+      return;
+    }
+    
+    // mark this direction as done
+    assert (not dims[mydim]);
+    bvect const newdims = dims.replace(mydim, true);
+    
+    // choose a number of slices for this direction
+#warning "TODO"
+    // Why floor and not ceil?
+    int const nslices
+      = min(nprocs,
+            (int)floor(mysize * pow(nprocs/allsizes, (CCTK_REAL)1/alldims)
+                       + 0.5));
+    assert (nslices <= nprocs);
+    if (DEBUG) cout << "SRMAR " << mydim << " nprocs " << nprocs << endl;
+    if (DEBUG) cout << "SRMAR " << mydim << " nslices " << nslices << endl;
+    
+    // split the remaining processors
+    vector<int> mynprocs(nslices);
+    int const mynprocs_base = nprocs / nslices;
+    int const mynprocs_left = nprocs - nslices * mynprocs_base;
+    for (int n=0; n<nslices; ++n) {
+      mynprocs.at(n) = n < mynprocs_left ? mynprocs_base+1 : mynprocs_base;
+    }
+    int sum_mynprocs = 0;
+    for (int n=0; n<nslices; ++n) {
+      sum_mynprocs += mynprocs.at(n);
+    }
+    assert (sum_mynprocs == nprocs);
+    if (DEBUG) cout << "SRMAR " << mydim << " mynprocs " << mynprocs << endl;
+    
+    // split the region
+    vector<int> myslice(nslices);
+    int slice_left =
+      ((reg.bb.upper() - reg.bb.lower()) / reg.bb.stride())[mydim] + 1;
+    int nprocs_left = nprocs;
+    for (int n=0; n<nslices; ++n) {
+      if (n == nslices-1) {
+        myslice.at(n) = slice_left;
+      } else {
+        myslice.at(n)
+          = (int)floor(1.0 * slice_left * mynprocs.at(n) / nprocs_left + 0.5);
+      }
+      assert (myslice.at(n) >= 0);
+      slice_left -= myslice.at(n);
+      nprocs_left -= mynprocs.at(n);
+    }
+    assert (slice_left == 0);
+    assert (nprocs_left == 0);
+    if (DEBUG) cout << "SRMAR " << mydim << " myslice " << myslice << endl;
+    
+    // create the bboxes and recurse
+    if (DEBUG) cout << "SRMAR " << mydim << ": create bboxes" << endl;
+    assert (regs.empty());
+    ivect last_up;
+    for (int n=0; n<nslices; ++n) {
+      if (DEBUG) cout << "SRMAR " << mydim << " n " << n << endl;
+      
+      // create a new bbox
+      region newreg(reg);
+      ivect lo = reg.bb.lower();
+      ivect up = reg.bb.upper();
+      ivect str = reg.bb.stride();
+      bbvect newob (reg.ob);
+      if (n > 0) {
+        lo[mydim] = last_up[mydim] + str[mydim];
+        if (lo[mydim] > reg.bb.lower()[mydim]) newob[mydim][0] = false;
+      }
+      if (n < nslices-1) {
+        up[mydim] = lo[mydim] + (myslice.at(n)-1) * str[mydim];
+        if (up[mydim] < reg.bb.upper()[mydim]) newob[mydim][1] = false;
+        last_up = up;
+      }
+      newreg.ob = newob;
+      newreg.bb = ibbox(lo, up, str);
+      int const poffset = n < mynprocs_left ? n : mynprocs_left;
+      newreg.p = reg.p + n * mynprocs_base + poffset;
+      if (DEBUG) cout << "SRMAR " << mydim << " newbb " << newreg.bb << endl;
+      if (DEBUG) cout << "SRMAR " << mydim << " newob " << newreg.ob << endl;
+      if (DEBUG) cout << "SRMAR " << mydim << " newp  " << newreg.p << endl;
+      
+      // recurse
+      list<region> newregs;
+      SplitRegionsMaps_Automatic_Recursively
+        (newdims, mynprocs.at(n), rshape, newreg, newregs);
+      if (DEBUG) {
+        cout << "SRMAR " << mydim << " newbbs";
+        for (list<region>::const_iterator
+               ireg=newregs.begin(); ireg!=newregs.end(); ++ireg)
+        {
+          cout << " " << (*ireg).bb;
+        }
+        cout << endl;
+        cout << "SRMAR " << mydim << " newobs";
+        for (list<region>::const_iterator
+               ireg=newregs.begin(); ireg!=newregs.end(); ++ireg)
+        {
+          cout << " " << (*ireg).ob;
+        }
+        cout << endl;
+        cout << "SRMAR " << mydim << " newps";
+        for (list<region>::const_iterator
+               ireg=newregs.begin(); ireg!=newregs.end(); ++ireg)
+        {
+          cout << " " << (*ireg).p;
+        }
+        cout << endl;
+      }
+      
+      // store
+      assert ((int)newregs.size() == mynprocs.at(n));
+      regs.insert (regs.end(), newregs.begin(), newregs.end());
+    }
+    
+    // check postconditions
+    assert ((int)regs.size() == nprocs);
+    {
+      int n=0;
+      for (list<region>::const_iterator
+             ireg=regs.begin(); ireg!=regs.end(); ++ireg, ++n)
+      {
+        assert ((*ireg).p == reg.p+n);
+      }
+    }
+    if (DEBUG) cout << "SRMAR exit" << endl;
+  }
+  
+  
+  
+  void
+  SplitRegionsMaps_Automatic (const cGH* cgh,
+                              vector<vector<ibbox> >& bbss,
+                              vector<vector<bbvect> >& obss,
+                              vector<vector<int> >& pss)
+  {
+    if (DEBUG) cout << "SRMA enter" << endl;
+    
+    int const nmaps = bbss.size();
+    // nslices: number of disjoint bboxes
+    int nslices = 0;
+    for (int m=0; m<nmaps; ++m) {
+      nslices += bbss.at(m).size();
+    }
+    if (DEBUG) cout << "SRMA nslices " << nslices << endl;
+    
+    // Something to do?
+    if (nslices == 0) {
+      for (int m=0; m<nmaps; ++m) {
+        pss.at(m).resize(0);
+      }
+      return;
+    }
+    
+    // Collect slices
+    vector<region> regs(nslices);
+    {
+      int s=0;
+      for (int m=0; m<nmaps; ++m) {
+        for (int c=0; c<(int)bbss.at(m).size(); ++c, ++s) {
+          regs.at(s).bb = bbss.at(m).at(c);
+          regs.at(s).ob = obss.at(m).at(c);
+          regs.at(s).m = m;
+          regs.at(s).c = c;
+          regs.at(s).p = -1;
+          regs.at(s).size = -1;
+          regs.at(s).nprocs = -1;
+        }
+      }
+      assert (s==nslices);
+    }
+    
+#warning "TODO: Add buffer zones, plus maybe more"
+    
+    const int nprocs = CCTK_nProcs(cgh);
+    if (DEBUG) cout << "SRMA nprocs " << nprocs << endl;
+    
+    // ncomps: number of components per processor
+    int const ncomps = (nslices + nprocs - 1) / nprocs;
+    if (DEBUG) cout << "SRMA ncomps " << ncomps << endl;
+    assert (ncomps > 0);
+    for (int s=0; s<nslices; ++s) {
+      regs.at(s).size = regs.at(s).bb.size();
+    }
+    {
+#warning "TODO: split slices if necessary"
+      if (DEBUG) cout << "SRMA: distributing processors to slices" << endl;
+      int ncomps_left = nprocs * ncomps;
+      for (int s=0; s<nslices; ++s) {
+        regs.at(s).nprocs = 1;
+        -- ncomps_left;
+      }
+      while (ncomps_left > 0) {
+        if (DEBUG) cout << "SRMA ncomps_left " << ncomps_left << endl;
+        int maxs = -1;
+        CCTK_REAL maxratio = -1;
+        for (int s=0; s<nslices; ++s) {
+          CCTK_REAL const ratio =
+            static_cast<CCTK_REAL>(regs.at(s).size) / regs.at(s).nprocs;
+          if (ratio > maxratio) { maxs=s; maxratio=ratio; }
+        }
+        assert (maxs>=0 and maxs<nslices);
+        ++ regs.at(maxs).nprocs;
+        if (DEBUG) cout << "SRMA maxs " << maxs << endl;
+        if (DEBUG) cout << "SRMA mynprocs[maxs] " << regs.at(maxs).nprocs << endl;
+        -- ncomps_left;
+      }
+      assert (ncomps_left == 0);
+      int sum_nprocs = 0;
+      for (int s=0; s<nslices; ++s) {
+        sum_nprocs += regs.at(s).nprocs;
+      }
+      assert (sum_nprocs == nprocs * ncomps);
+    }
+    if (DEBUG) {
+      for (int s=0; s<nslices; ++s) {
+        cout << "SRMA mynprocs[" << s << "] " << regs.at(s).nprocs << endl;
+      }
+    }
+    
+    list<region> allregs;
+    
+    if (DEBUG) cout << "SRMA: splitting regions" << endl;
+    for (int s=0, p=0; s<nslices; p+=regs.at(s).nprocs, ++s) {
+      
+      regs.at(s).p = p;
+      if (DEBUG) cout << "SRMA s  " << s << endl;
+      if (DEBUG) cout << "SRMA p  " << regs.at(s).p << endl;
+      if (DEBUG) cout << "SRMA bb " << regs.at(s).bb << endl;
+      if (DEBUG) cout << "SRMA ob " << regs.at(s).ob << endl;
+      
+      const ivect rstr = regs.at(s).bb.stride();
+      const ivect rlb  = regs.at(s).bb.lower();
+      const ivect rub  = regs.at(s).bb.upper() + rstr;
+      
+      // calculate real shape factors
+      rvect rshape;
+      if (any(rub == rlb)) {
+        // the bbox is empty
+        rshape = 0.0;
+      } else {
+        for (int d=0; d<dim; ++d) {
+          rshape[d] = (CCTK_REAL)(rub[d]-rlb[d]) / (rub[0]-rlb[0]);
+        }
+        const CCTK_REAL rfact = pow(nprocs / prod(rshape), (CCTK_REAL)1/dim);
+        rshape *= rfact;
+        assert (abs(prod(rshape) - nprocs) < 1e-6);
+      }
+      if (DEBUG) cout << "SRMA shapes " << rshape << endl;
+      
+      bvect const dims = false;
+      
+      list<region> theregs;
+      
+      SplitRegionsMaps_Automatic_Recursively
+        (dims, regs.at(s).nprocs, rshape, regs.at(s), theregs);
+      if (DEBUG) {
+        cout << "SRMA thebbs";
+        for (list<region>::const_iterator
+               ireg=theregs.begin(); ireg!=theregs.end(); ++ireg)
+        {
+          cout << " " << (*ireg).bb;
+        }
+        cout << endl;
+        cout << "SRMA theobs";
+        for (list<region>::const_iterator
+               ireg=theregs.begin(); ireg!=theregs.end(); ++ireg)
+        {
+          cout << " " << (*ireg).ob;
+        }
+        cout << endl;
+        cout << "SRMA theps ";
+        for (list<region>::const_iterator
+               ireg=theregs.begin(); ireg!=theregs.end(); ++ireg)
+        {
+          cout << " " << (*ireg).p;
+        }
+        cout << endl;
+      }
+      
+      allregs.insert(allregs.end(), theregs.begin(), theregs.end());
+      
+    } // for s
+    
+    regs.assign(allregs.begin(), allregs.end());
+    nslices = regs.size();
+    for (int s=0; s<nslices; ++s) {
+      regs.at(s).p /= ncomps;
+      assert (regs.at(s).p >= 0 and regs.at(s).p < nprocs);
+    }
+    
+#warning "TODO: Remove buffer zones again, plus anything more"
+    
+    // Distribute slices
+    {
+      int s=0;
+      for (int m=0; m<nmaps; ++m) {
+        int const smin = s;
+        while (s<nslices and regs.at(s).m == m) ++s;
+        int const smax = s;
+        bbss.at(m).resize(smax-smin);
+        obss.at(m).resize(smax-smin);
+        pss .at(m).resize(smax-smin);
+        for (int c=0; c<smax-smin; ++c) {
+          bbss.at(m).at(c) = regs.at(smin+c).bb;
+          obss.at(m).at(c) = regs.at(smin+c).ob;
+          pss .at(m).at(c) = regs.at(smin+c).p;
+        }
+      }
+      assert (s==nslices);
+    }
+    
+    if (DEBUG) cout << "SRMA exit" << endl;
+  }
+  
+  
+  
   static void MakeMultigridBoxes (const cGH* cgh,
                                   ibbox const & base,
                                   ibbox const & bb,
@@ -1043,6 +1504,17 @@ namespace Carpet {
       } // for c
       
     } // for rl
+  }
+  
+  void
+  MakeMultigridBoxesMaps (const cGH* cgh,
+                          vector<vector<vector<ibbox> > > const & bbsss,
+                          vector<vector<vector<bbvect> > > const & obsss,
+                          vector<vector<vector<vector<ibbox> > > > & bbssss)
+  {
+    for (int m = 0; m < maps; ++m) {
+      MakeMultigridBoxes (cgh, bbsss.at(m), obsss.at(m), bbssss.at(m));
+    } // for m
   }
   
 } // namespace Carpet
