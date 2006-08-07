@@ -329,9 +329,9 @@ namespace CarpetRegrid2 {
       ivect const level_exterior_iupper =
         rpos2ipos1 (level_exterior_upper, origin, scale, hh, rl);
       
-      // Find the minimum necessary distance to the outer boundary
-      // due to buffer zones.  This is in terms of grid points.
-      i2vect const min_bnd_dist = dd.buffers;
+      // Find the minimum necessary distance to the outer boundary due
+      // to buffer and ghost zones.  This is in terms of grid points.
+      i2vect const min_bnd_dist = dd.buffers + dd.ghosts;
       
       // Clip at the outer boundary
       regions.at(rl).normalize();
@@ -345,16 +345,16 @@ namespace CarpetRegrid2 {
         // Clip boxes that extend outside the boundary.  Enlarge boxes
         // that are inside but too close to the outer boundary.
         bvect const lower_is_outer =
-          bb.lower() - min_bnd_dist[0] <= physical_ilower;
+          bb.lower() - min_bnd_dist[0] * bb.stride() <= physical_ilower;
         bvect const upper_is_outer =
-          bb.upper() + min_bnd_dist[1] >= physical_iupper;
+          bb.upper() + min_bnd_dist[1] * bb.stride() >= physical_iupper;
         
         ibbox const clipped_bb
           (either (lower_is_outer, level_exterior_ilower, bb.lower()),
            either (upper_is_outer, level_exterior_iupper, bb.upper()),
            bb.stride());
         
-        clipped += clipped_bb;
+        clipped |= clipped_bb;
       }
       
       regions.at(rl) = clipped;
