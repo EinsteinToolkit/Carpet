@@ -36,6 +36,8 @@ of the HDF5 file format that was adapted from John Shalf's FlexIO library.
 \end{abstract}
 
 
+\tableofcontents
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 
@@ -222,6 +224,36 @@ functionality to feed back data into Cactus.
 Checkpointing and recovery are controlled by corresponding checkpoint/recovery
 parameters of thorn {\bf IOUtil} (for a description of these parameters please
 refer to this thorn's documentation).
+
+
+\section{CarpetIOHDF5 Utility Programs}
+
+\subsection{{\tt hdf5toascii\_slicer}}
+
+This utility program extracts 2D slices from 3D HDF5
+datasets produced by \ThisThorn\ and outputs them in {\tt CarpetIOASCII} format
+(suitable to be further processed by gnuplot).
+
+The {\tt hdf5toascci\_slicer} program is contained in the {\tt src/utils/}
+subdirectory of thorn \ThisThorn. It is built with
+\begin{verbatim}
+  make <configuration>-utils
+\end{verbatim}
+where the executable ends up in the subdirectory {\tt exe/<configuration>/}.
+
+\subsection{{\tt hdf5\_extract}}
+
+This utility program extracts selected datasets from any given HDF5 output file
+which may be useful when only certain parts (eg. a specific
+timestep) of large files are required (eg. for copying to some other
+location for further processing).
+
+The {\tt hdf5\_extract} program is contained in the {\tt src/utils/}
+subdirectory of thorn {\tt CactusPUGHIO/IOHDF5}. It is built with
+\begin{verbatim}
+  make <configuration>-utils
+\end{verbatim}
+where the executable ends up in the subdirectory {\tt exe/<configuration>/}.
 
 
 \section{Example Parameter File Excerpts}
