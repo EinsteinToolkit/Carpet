@@ -4,3 +4,6 @@
 ifeq ($(strip $(HAVE_HDF5)), )
     $(error Configuration error: The CarpetIOHDF5 thorn requires HDF5.  Please configure with HDF5, or remove the CarpetIOHDF5 thorn from the ThornList.)
 endif
+
+# add the Carpet HDF5-to-ASCII converter/slicer
+ALL_UTILS += hdf5toascii_slicer
