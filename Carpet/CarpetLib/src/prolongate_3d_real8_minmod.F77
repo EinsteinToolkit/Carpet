@@ -49,8 +49,8 @@ c$$$      prolongate_3d_real8_minmod.F77
       else
         minmod = b
       end if
-
-      end function
+      
+      end
       
       subroutine prolongate_3d_real8_minmod (
      $     src, srciext, srcjext, srckext,
