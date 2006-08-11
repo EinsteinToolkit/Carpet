@@ -34,6 +34,11 @@ CCTK_INT FUNCTION \
     SymmetryTableHandleForGrid (CCTK_POINTER_TO_CONST IN cctkGH)
 REQUIRES FUNCTION SymmetryTableHandleForGrid
 
+CCTK_INT FUNCTION \
+    SymmetryTableHandleForGI (CCTK_POINTER_TO_CONST IN cctkGH, \
+                              CCTK_INT IN group_index)
+REQUIRES FUNCTION SymmetryTableHandleForGI
+
 
 
 # Return a pointer to an unmodifiable C string

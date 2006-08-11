@@ -766,8 +766,17 @@ namespace CarpetIOASCII {
                 int const ierr = CCTK_GroupData (group, & groupdata);
                 assert (not ierr);
               }
+
+              cGroupDynamicData dyndata;
+              {
+                int const ierr = CCTK_GroupDynamicData
+                  (cctkGH, group, & dyndata);
+                assert (not ierr);
+              }
+
               if (groupdata.disttype != CCTK_DISTRIB_CONSTANT
-                  or component == 0) {
+                  or component == 0)
+              {
 
                 const ggf* const ff
                   = arrdata.at(group).at(Carpet::map).data.at(var);
@@ -785,37 +794,49 @@ namespace CarpetIOASCII {
                   
                   // Ignore symmetry and ghost zones if desired
                   {
-                    CCTK_INT const symtable
-                      = SymmetryTableHandleForGrid (cctkGH);
-                    if (symtable < 0) CCTK_WARN (0, "internal error");
+                    CCTK_INT symtable;
+                    // TODO: This is a bit ad hoc
+                    if (groupdata.grouptype == CCTK_GF
+                        and groupdata.dim == cctkGH->cctk_dim)
+                    {
+                      symtable
+                        = SymmetryTableHandleForGrid (cctkGH);
+                      if (symtable < 0) CCTK_WARN (0, "internal error");
+                    } else {
+                      symtable
+                        = SymmetryTableHandleForGI (cctkGH, group);
+                      if (symtable < 0) CCTK_WARN (0, "internal error");
+                    }
                     CCTK_INT symbnd[2*dim];
                     int const ierr = Util_TableGetIntArray
-                      (symtable, 2*dim, symbnd, "symmetry_handle");
-                    if (ierr != 2*dim) CCTK_WARN (0, "internal error");
+                      (symtable, 2*groupdata.dim, symbnd, "symmetry_handle");
+                    if (ierr != 2*groupdata.dim) {
+                      CCTK_WARN (0, "internal error");
+                    }
                     bool is_symbnd[2*dim];
-                    for (int d=0; d<2*dim; ++d) {
+                    for (int d=0; d<2*groupdata.dim; ++d) {
                       is_symbnd[d] = symbnd[d] >= 0;
                     }
                     
-                    for (int d=0; d<dim; ++d) {
+                    for (int d=0; d<groupdata.dim; ++d) {
                       bool const output_lower_ghosts =
-                        cctkGH->cctk_bbox[2*d]
+                        dyndata.bbox[2*d]
                         ? (is_symbnd[2*d]
                            ? output_symmetry_points
                            : out3D_outer_ghosts)
                         : out3D_ghosts;
                       bool const output_upper_ghosts =
-                        cctkGH->cctk_bbox[2*d+1]
+                        dyndata.bbox[2*d+1]
                         ? (is_symbnd[2*d+1]
                            ? output_symmetry_points
                            : out3D_outer_ghosts)
                         : out3D_ghosts;
                       
                       if (not output_lower_ghosts) {
-                        lo[d] += cctkGH->cctk_nghostzones[d] * str[d];
+                        lo[d] += dyndata.nghostzones[d] * str[d];
                       }
                       if (not output_upper_ghosts) {
-                        hi[d] -= cctkGH->cctk_nghostzones[d] * str[d];
+                        hi[d] -= dyndata.nghostzones[d] * str[d];
                       }
                     }
                   }
