@@ -12,74 +12,81 @@
 #@@*/
 
 
-if (@ARGV) {
-  print "\n" .
-        "  This script can be used to merge CarpetIOASCII output written\n" .
-        "  before and after recovery.\n" .
-        "  It reads from STDIN the contents of one or more files\n" .
-        "  in CarpetIOASCII format and writes them to STDOUT again,\n" .
-        "  eliminating duplicate datasets.\n\n" .
-        "  Example: cat alp.x.asc | $0 > alp.x.asc.merged\n\n";
+my $help = $#ARGV < 0;
+for (my $arg = 0; $arg <= $#ARGV; $arg++) {
+  $help |= ($ARGV[$arg] eq '-h'    or
+            $ARGV[$arg] eq '-help' or
+            $ARGV[$arg] eq '--help');
+}
+if ($help) {
+  print << "EOF";
+
+  Usage: $0 [-h | -help | --help] <list of files>
+
+  This script can be used to merge  CarpetIOASCII output  written before
+  and after recovery. It reads one or more files in CarpetIOASCII format
+  and  writes their contents  to STDOUT,  eliminating duplicate datasets
+  (all but the last occurance are discarded).
+
+    Example: $0 alp.x.asc > alp.x.asc.merged
+
+EOF
   exit;
 }
 
-# Skalar-Variable zur Speicherung der aktuellen Zeilennummer
-my $line = 0;
-
-# Rauten-Feld zur Speicherung der bereits ausgegebenen Datensaetze
+# Rauten-Feld zum Merken der Anzahl und Haeufigkeit vorhandener Datensaetze
 my %datasets = ();
 
-# lese die naechste Zeile von der Standard-Eingabe, solange das Dateiende
-# nicht erreicht ist
-while (<STDIN>) {
+# Liste aller Eingabe-Dateien
+my @filelist = @ARGV;
 
-  # aktualisiere die Zeilennummer
-  $line++;
+# lies zeilenweise alle Eingabe-Dateien
+while (<>) {
 
-  # vergleiche die aktuelle Zeile mit der Markierungszeile
-  # fuer einen neuen Datensatz
+  # falls diese Zeile einen neuen Datensatz einleitet:
   if (/^# iteration (\d+)$/) {
 
-    # ermittle die Iterationsnummer aus der Markierungszeile
+    # ermittle die Iterationsnummer aus der aktuellen Zeile ...
     my $iteration = $1;
 
-    # lies die naechste Zeile ein und pruefe, ob sie dem CarpetIOASCII-Format
-    # entspricht
-    $_ = <STDIN>;
-    $line++;
-    die "Format error in line $line: expected '# refinement level ...'\n"
+    # ... und die anderen Kennwerte dieses Datensatzes aus der folgenden Zeile
+    $_ = <>;
+    die "Format error in file $ARGV line $.: expected '# refinement level ...'\n"
       unless (/^# refinement level (\d+)   multigrid level (\d+)   map (\d+)   component (\d+)   time level (\d+)$/);
+
+    # vermerke den Datensatz mit seinen Parametern
+    ++$datasets{"$iteration $1 $2 $3 $4 $5"};
+  }
+} continue {
+  # setze die Zeilennummer fuer jede Eingabe-Datei wieder zurueck
+  close ARGV if eof;
+}
+
+# stelle die Liste aller Eingabe-Dateien wieder her
+@ARGV = @filelist;
+
+# Flaggen-Variable, die anzeigt, ob die aktuelle Zeile ignoriert werden soll
+my $discard = 0;
+
+# lies zeilenweise alle Eingabe-Dateien
+while (<>) {
+
+  # falls diese Zeile einen neuen Datensatz einleitet:
+  if (/^# iteration (\d+)$/) {
+
+    # ermittle die Iterationsnummer aus der aktuellen Zeile ...
+    my $iteration = $1;
+
+    # ... und die anderen Kennwerte dieses Datensatzes aus der folgenden Zeile
+    $_ = <>;
+    $_ =~ /^# refinement level (\d+)   multigrid level (\d+)   map (\d+)   component (\d+)   time level (\d+)$/;
 
     # erzeuge einen eindeutigen Schluessel fuer den aktuellen Datensatz
     my $key = "$iteration $1 $2 $3 $4 $5";
 
-    # pruefe im Rauten-Feld, ob dieser Datensatz bereits ausgegeben wurde
-    while (defined $datasets{$key}) {
-
-      # lies alle folgenden Zeilen von der Standard-Eingabe
-      # bis zur Markierungszeile des naechsten Datensatzes
-      while (<STDIN>) {
-        $line++;
-        next unless (/^# iteration (\d+)$/);
-
-        # erzeuge einen eindeutigen Schluessel fuer diesen Datensatz
-        $iteration = $1;
-        $_ = <STDIN>;
-        $line++;
-        die "Format error in line $line: expected '# refinement level ...'\n"
-          unless (/^# refinement level (\d+)   multigrid level (\d+)   map (\d+)   component (\d+)   time level (\d+)$/);
-        $key = "$iteration $1 $2 $3 $4 $5";
-        last;
-      }
-    }
-
-    # gib die Markierungszeile des aktuellen Datensatzes aus
-    print "# iteration $iteration\n";
-
-    # vermerke im Rauten-Feld, dass dieser Datensatz schon ausgegeben wurde
-    $datasets{$key} = 1;
+    # ueberspringe alle Datensaetze mit denselben Kennwerten bis auf den letzten
+    $discard = --$datasets{"$iteration $1 $2 $3 $4 $5"};
   }
 
-  # gib die aktuelle Zeile auf der Standard-Ausgabe aus
-  print;
+  print unless $discard;
 }
