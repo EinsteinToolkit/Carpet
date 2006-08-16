@@ -415,12 +415,14 @@ namespace CarpetInterp {
     // Set up the per-component coordinates
     // as offset into the single communication send buffer
     vector<CCTK_REAL*> coords (allhomecnts.size());
-    int offset = 0;
-    for (int c = 0; c < allhomecnts.size(); c++) {
-      coords[c] = &coords_buffer.front() + N_dims*offset;
-      offset += allhomecnts[c];
+    {
+      int offset = 0;
+      for (int c = 0; c < (int)allhomecnts.size(); c++) {
+        coords[c] = &coords_buffer.front() + N_dims*offset;
+        offset += allhomecnts[c];
+      }
+      assert (offset == N_interp_points);
     }
-    assert (offset == N_interp_points);
 
     // Copy the input coordinates into the communication send buffer
     // also remember the position of each point in the original input arrays
@@ -508,13 +510,15 @@ namespace CarpetInterp {
     vector<int> homecnts (allhomecnts.size());  // points per components
 
     // Remember from where point n came from
-    offset = 0;
-    for (int p = 0; p < N_points_from.size(); p++) {
-      for (int n = 0; n < N_points_from[p]; n++) {
-        srcprocs[offset++] = p;
+    {
+      int offset = 0;
+      for (int p = 0; p < (int)N_points_from.size(); p++) {
+        for (int n = 0; n < N_points_from[p]; n++) {
+          srcprocs[offset++] = p;
+        }
       }
+      assert (offset == N_points_local);
     }
-    assert (offset == N_points_local);
 
     // map each point in coords_buffer onto its component (srcproc, rlev, home)
     // also accumulate the number of points in each component (homecnts)
@@ -574,13 +578,15 @@ namespace CarpetInterp {
 
     // Set up the per-component coordinates and output arrays as offsets
     // into the single communication buffers
-    offset = 0;
-    for (int c = 0; c < homecnts.size(); c++) {
-      coords[c]   = &coords_buffer.front()  + N_dims*offset;
-      outputs[c]  = &outputs_buffer.front() + N_output_arrays*offset*vtypesize;
-      offset += homecnts[c];
+    {
+      int offset = 0;
+      for (int c = 0; c < (int)homecnts.size(); c++) {
+        coords[c]   = &coords_buffer.front()  + N_dims*offset;
+        outputs[c]  = &outputs_buffer.front() + N_output_arrays*offset*vtypesize;
+        offset += homecnts[c];
+      }
+      assert (offset == N_points_local);
     }
-    assert (offset == N_points_local);
 
     interpolate_components
       (cctkGH, coord_system_handle, coord_group,
