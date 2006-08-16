@@ -430,7 +430,7 @@ namespace CarpetInterp {
     {
       // totalhomecnts is the accumulated number of points over all components
       vector<int> totalhomecnts (allhomecnts.size());
-      for (int idx = 0; idx < allhomecnts.size() - 1; idx++) {
+      for (int idx = 0; idx < (int)allhomecnts.size() - 1; idx++) {
         totalhomecnts[idx + 1] = totalhomecnts[idx] + allhomecnts[idx];
       }
 
@@ -552,7 +552,7 @@ namespace CarpetInterp {
     {
       int offset = 0;
       vector<CCTK_REAL> tmp (coords_buffer.size());
-      for (int c = 0; c < homecnts.size(); c++) {
+      for (int c = 0; c < (int)homecnts.size(); c++) {
         for (int n = 0; n < homecnts[c]; n++) {
           for (int d = 0; d < N_dims; d++) {
             tmp[d*homecnts[c] + n + offset] = coords_buffer[n*N_dims + d + offset];
@@ -661,13 +661,13 @@ namespace CarpetInterp {
 
     // Sorting is done with the help of the inverse indices vector
     vector<int> reverse_indices(indices.size());
-    for (int i = 0; i < indices.size(); i++) {
+    for (int i = 0; i < (int)indices.size(); i++) {
       reverse_indices.at(indices[i]) = i;
     }
 
     for (int d = 0; d < N_output_arrays; d++) {
       char* output_array = static_cast<char*>(output_arrays[d]);
-      for (int c = 0, i = 0, offset = 0; c < allhomecnts.size(); c++) {
+      for (int c = 0, i = 0, offset = 0; c < (int)allhomecnts.size(); c++) {
         assert (allhomecnts[c]*(d+1) + offset <=
                 N_output_arrays*N_interp_points);
         for (int n = 0; n < allhomecnts[c]; n++, i++) {
@@ -710,7 +710,7 @@ namespace CarpetInterp {
     DECLARE_CCTK_PARAMETERS;
 
     // Find source map
-    assert (source_map.size() == N_interp_points);
+    assert ((int)source_map.size() == N_interp_points);
     int iret = Util_TableGetIntArray (param_table_handle, N_interp_points,
                                       &source_map.front(), "source_map");
     have_source_map = not (iret == UTIL_ERROR_TABLE_NO_SUCH_KEY);
@@ -736,9 +736,9 @@ namespace CarpetInterp {
     } else {
       iret = Util_TableGetIntArray (param_table_handle, source_map.size(),
                                     &source_map.front(), "source_map");
-      assert (iret == source_map.size());
+      assert (iret == (int)source_map.size());
       // Check source map
-      for (int n = 0; n < source_map.size(); ++n) {
+      for (int n = 0; n < (int)source_map.size(); ++n) {
         assert (source_map[n] >= 0 and source_map[n] < maps);
       }
     }
@@ -806,13 +806,13 @@ namespace CarpetInterp {
     bool const map_onto_processors = coords_list != NULL;
 
     if (not map_onto_processors) {
-      assert (coords.size() == N_dims * npoints);
+      assert ((int)coords.size() == N_dims * npoints);
     }
-    assert (procs.size() == npoints);
-    assert (N_points_to.size() == dist::size());
-    assert (rlev.size() == npoints);
-    assert (home.size() == npoints);
-    assert (source_map.size() == npoints);
+    assert ((int)procs.size() == npoints);
+    assert ((int)N_points_to.size() == dist::size());
+    assert ((int)rlev.size() == npoints);
+    assert ((int)home.size() == npoints);
+    assert ((int)source_map.size() == npoints);
 
 
     // Find out about the coordinates: origin and delta
@@ -1307,7 +1307,7 @@ namespace CarpetInterp {
       }
 
       overall_retval = min (overall_retval, (CCTK_INT)retval);
-      for (int n = 0; n < per_point_status.size(); n++) {
+      for (int n = 0; n < (int)per_point_status.size(); n++) {
         overall_status = min (overall_status, per_point_status[n]);
       }
       ierr = Util_TableDeleteKey (param_table_handle, "per_point_status");
