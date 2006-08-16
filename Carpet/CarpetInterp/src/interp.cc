@@ -209,6 +209,7 @@ namespace CarpetInterp {
     // Check input arrays
     int coord_group = -1;
     cGroupDynamicData coord_group_data;
+    int real_N_input_arrays = 0;
     for (int n = 0; n < N_input_arrays; n++) {
 
       // Negative indices are ignored
@@ -216,6 +217,7 @@ namespace CarpetInterp {
       if (vindex < 0) {
         continue;
       }
+      ++ real_N_input_arrays;
 
       const int group = CCTK_GroupIndexFromVarI (vindex);
       if (group < 0) {
@@ -253,6 +255,10 @@ namespace CarpetInterp {
                       "the underlying coordinate system", n);
         }
       }
+    }
+    if (real_N_input_arrays == 0) {
+      // When there are no interpolation variables, use a pseudo group
+      coord_group = CCTK_GroupIndex ("grid::coordinates");
     }
     assert (coord_group >= 0);
 
@@ -1220,7 +1226,7 @@ namespace CarpetInterp {
       for (int n=0; n<N_input_arrays; ++n) {
 
         int const vi = input_array_variable_indices[n];
-        assert (vi >= 0 and vi < CCTK_NumVars());
+        assert (vi == -1 or (vi >= 0 and vi < CCTK_NumVars()));
 
         if (vi == -1) {
           input_arrays[n] = NULL;
