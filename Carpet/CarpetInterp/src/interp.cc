@@ -246,11 +246,11 @@ namespace CarpetInterp {
         CCTK_GroupDynamicData (cctkGH, group, &gdata);
         const int size = gdata.dim * sizeof (int);
         if (gdata.dim != coord_group_data.dim or
-            memcmp (gdata.lsh,         coord_group_data.lsh,  size) or
-            memcmp (gdata.lbnd,        coord_group_data.lbnd, size) or
-            memcmp (gdata.ubnd,        coord_group_data.ubnd, size) or
-            memcmp (gdata.bbox,        coord_group_data.bbox, 2*size) or
-            memcmp (gdata.nghostzones, coord_group_data.nghostzones, size)) {
+            memcmp (gdata.lsh,         coord_group_data.lsh,           size) or
+            memcmp (gdata.lbnd,        coord_group_data.lbnd,          size) or
+            memcmp (gdata.ubnd,        coord_group_data.ubnd,          size) or
+            memcmp (gdata.bbox,        coord_group_data.bbox,        2*size) or
+            memcmp (gdata.nghostzones, coord_group_data.nghostzones,   size)) {
           CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "input array variable %d has different layout than "
                       "the underlying coordinate system", n);
@@ -269,7 +269,7 @@ namespace CarpetInterp {
     for (int n = 1; n < N_output_arrays; n++) {
       if (output_array_type != output_array_type_codes[n]) {
         CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Currently all output arrays have have the same datatype. "
+                    "Currently all output arrays have to have the same datatype. "
                     "Array 0 has type '%s' but array %d has type '%s'",
                     CCTK_VarTypeName (output_array_type), n,
                     CCTK_VarTypeName (output_array_type_codes[n]));
