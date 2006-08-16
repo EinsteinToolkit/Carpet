@@ -320,13 +320,13 @@ namespace CarpetInterp {
     }
     int const minrl = want_global_mode ? 0 : reflevel;
     int const maxrl = want_global_mode ?
-                        arrdata[coord_group][0].hh->reflevels() : reflevel+1;
+      arrdata.at(coord_group).at(0).hh->reflevels() : reflevel+1;
 
     // Find maximum number of components over all levels and maps
     int maxncomps = 0;
     for (int rl=minrl; rl<maxrl; ++rl) {
       for (int m=0; m<maps; ++m) {
-        maxncomps = max(maxncomps, arrdata[coord_group][m].hh->components(rl));
+        maxncomps = max(maxncomps, arrdata.at(coord_group).at(m).hh->components(rl));
       }
     }
 
@@ -856,7 +856,7 @@ namespace CarpetInterp {
                              ipow(mgfact, mglevel);
           ivect const ipos = ivect(floor((pos - lower.at(m)) / (delta.at(m) *
                              rvect(fact)) + (CCTK_REAL) 0.5)) * fact;
-          const gh* hh = arrdata[coord_group][m].hh;
+          const gh* hh = arrdata.at(coord_group).at(m).hh;
           assert (all (ipos % hh->bases().at(ml).at(rl).stride() == 0));
 
           // TODO: use something faster than a linear search
@@ -881,10 +881,10 @@ namespace CarpetInterp {
       }
     found:
       assert (rl >= minrl and rl < maxrl);
-      assert (c >= 0 and c < arrdata[coord_group][m].hh->components(rl));
+      assert (c >= 0 and c < arrdata.at(coord_group).at(m).hh->components(rl));
 
       if (map_onto_processors) {
-        procs[n] = arrdata[coord_group][m].hh->proc(rl, c);
+        procs[n] = arrdata.at(coord_group).at(m).hh->proc(rl, c);
         ++ N_points_to[procs[n]];
       }
       rlev[n] = rl;
