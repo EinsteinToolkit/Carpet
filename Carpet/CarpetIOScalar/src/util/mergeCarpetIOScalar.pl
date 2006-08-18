@@ -45,7 +45,7 @@ while (<>) {
 
   # falls diese Zeile eine Datenzeile ist:
   # vermerke den Datensatz mit seiner Iterationsnummer
-  ++$timesteps{$1} if (/^(\d+)\s/);
+  ++$timesteps{$1} if (/^(\d+(.\d+)?)\s/);
 }
 
 # stelle die Liste aller Eingabe-Dateien wieder her
@@ -57,5 +57,5 @@ while (<>) {
   # falls diese Zeile eine Datenzeile ist:
   # ueberspringe alle Datensaetze mit dieser Iterationsnummer
   # bis auf den letzten
-  print unless (/^(\d+)\s/ and --$timesteps{$1} > 0);
+  print unless (/^(\d+(.\d+)?)\s/ and --$timesteps{$1} > 0);
 }
