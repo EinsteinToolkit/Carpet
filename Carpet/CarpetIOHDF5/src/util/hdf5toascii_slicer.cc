@@ -25,6 +25,12 @@ using namespace std;
 // uncomment the following line to get some debug output
 // #define DEBUG 1
 
+// value for an unset parameter
+#define PARAMETER_UNSET	-424242.0
+
+// fuzzy factor for comparing dataset timesteps with user-specified value
+#define FUZZY_FACTOR	1e-6
+
 // the datatype for the 'start' argument in H5Sselect_hyperslab()
 #if (H5_VERS_MAJOR == 1 && \
      (H5_VERS_MINOR < 6 || (H5_VERS_MINOR == 6 && H5_VERS_RELEASE < 4)))
@@ -65,8 +71,10 @@ typedef struct {
  *****************************************************************************/
 
 // the slice coordinate as selected by the user
-#define SLICECOORD_UNSET	-424242.0
-static double slice_coord[3] = {SLICECOORD_UNSET, SLICECOORD_UNSET, SLICECOORD_UNSET};
+static double slice_coord[3] = {PARAMETER_UNSET, PARAMETER_UNSET, PARAMETER_UNSET};
+
+// the specific timestep selected by the user
+static double timestep = PARAMETER_UNSET;
 
 // the list of all patches
 static vector<patch_t> patchlist;
@@ -120,6 +128,8 @@ int main (int argc, char *const argv[])
       help = true; break;
     } else if (strcmp (argv[i], "--verbose") == 0) {
       verbose = true;
+    } else if (strcmp (argv[i], "--timestep") == 0 and i+1 < argc) {
+      timestep = atof (argv[++i]);
     } else if (strcmp (argv[i], "--out_precision") == 0 and i+1 < argc) {
       cout << setprecision (atoi (argv[++i]));
     } else if (strcmp (argv[i], "--out2d-yzplane-x") == 0 and i+1 < argc) {
@@ -143,21 +153,36 @@ int main (int argc, char *const argv[])
 
   /* give some help if called with incorrect number of parameters */
   if (help or i >= argc or num_slice_options + num_slicei_options != 1) {
+    const string indent (strlen (argv[0]) + 1, ' ');
     cerr << endl << "   ---------------------------"
          << endl << "   Carpet HDF5 to ASCII Slicer"
-         << endl << "   ---------------------------" << endl << endl;
-
-    cerr << "Usage: " << argv[0] << " [--help] [--out_precision <digits>] [--verbose] <--out2d-plane value> <hdf5_infiles>" << endl
-         << "       where <--out2d-plane value> must be specified as exactly one of the following options:" << endl
-         << "         --out2d-yzplane-x  <origin_x>" << endl
-         << "         --out2d-xzplane-y  <origin_y>" << endl
-         << "         --out2d-xyplane-z  <origin_z>" << endl
+         << endl << "   ---------------------------" << endl
+         << endl
+         << "Usage: " << endl
+         << argv[0] << " [--help]" << endl
+         << indent << "[--out_precision <digits>]" << endl
+         << indent << "[--timestep <timestep>]" << endl
+         << indent << "[--verbose]" << endl
+         << indent << "<--out2d-plane value>" << endl
+         << indent << "<hdf5_infiles>" << endl << endl
+         << "  where" << endl
+         << "    [--help]                   prints this help" << endl
+         << "    [--out_precision <digits>] sets the output precision" << endl
+         << "                               for floating-point numbers" << endl
+         << "    [--timestep <timestep>]    selects a specific timestep" << endl
+         << "    [--verbose]                lists skipped datasets on stderr" << endl
+         << "  and <--out2d-plane value> must be specified" << endl
+         << "  as exactly one of the following options:" << endl
+         << "    --out2d-yzplane-x  <origin_x>" << endl
+         << "    --out2d-xzplane-y  <origin_y>" << endl
+         << "    --out2d-xyplane-z  <origin_z>" << endl
 #if 0
-         << "         --out2d-yzplane-xi <origin_xi>" << endl
-         << "         --out2d-xzplane-yi <origin_yi>" << endl
-         << "         --out2d-xyplane-zi <origin_zi>" << endl << endl
+         << "    --out2d-yzplane-xi <origin_xi>" << endl
+         << "    --out2d-xzplane-yi <origin_yi>" << endl
+         << "    --out2d-xyplane-zi <origin_zi>" << endl
 #endif
-         << "       eg, " << argv[0] << " --out2d-xyplane-z 0.125 alp.file_*.h5" << endl << endl;
+         << endl
+         << "  eg, " << argv[0] << " --out2d-xyplane-z 0.125 alp.file_*.h5" << endl << endl;
     return (0);
   }
 
@@ -257,7 +282,12 @@ static herr_t FindPatches (hid_t group, const char *name, void *_file)
   CHECK_HDF5 (typeclass = H5Tget_class (datatype));
   CHECK_HDF5 (H5Tclose (datatype));
 
-  /* read the dimensions */
+  // read the timestep
+  CHECK_HDF5 (attr = H5Aopen_name (dataset, "time"));
+  CHECK_HDF5 (H5Aread (attr, H5T_NATIVE_DOUBLE, &patch.time));
+  CHECK_HDF5 (H5Aclose (attr));
+
+  // read the dimensions
   hid_t dataspace = -1;
   CHECK_HDF5 (dataspace = H5Dget_space (dataset));
   ndims = H5Sget_simple_extent_ndims (dataspace);
@@ -265,13 +295,19 @@ static herr_t FindPatches (hid_t group, const char *name, void *_file)
   bool is_okay = false;
   if (typeclass != H5T_FLOAT) {
     if (verbose) {
-      cerr << "dataset " << name << " is not of floating-point datatype "
-               "and thus will be ignored" << endl;
+      cerr << "skipping dataset '" << name << "':" << endl
+           << "  is not of floating-point datatype" << endl;
     }
   } else if (ndims != 3) {
     if (verbose) {
-      cerr << "dataset " << name << " has " << ndims << " dimensions and thus "
-              "will be ignored" << endl;
+      cerr << "skipping dataset '" << name << "':" << endl
+           << "  dataset has " << ndims << " dimensions" << endl;
+    }
+  } else if (timestep != PARAMETER_UNSET and
+             fabs (timestep - patch.time) / FUZZY_FACTOR > 1) {
+    if (verbose) {
+      cerr << "skipping dataset '" << name << "':" << endl
+           << "  timestep (" << patch.time << ") doesn't match" << endl;
     }
   } else {
     CHECK_HDF5 (attr = H5Aopen_name (dataset, "origin"));
@@ -282,16 +318,22 @@ static herr_t FindPatches (hid_t group, const char *name, void *_file)
     CHECK_HDF5 (H5Aclose (attr));
     CHECK_HDF5 (H5Sget_simple_extent_dims (dataspace, patch.dims, NULL));
 
-    for (int i = 0; i < 3; i++) {
-      if (slice_coord[i] != SLICECOORD_UNSET and
-          slice_coord[i] >= patch.origin[i] and
-          slice_coord[i] <= patch.origin[i] + patch.dims[2-i]*patch.delta[i]) {
-        is_okay = true; break;
+    int i;
+    for (i = 0; i < 3; i++) {
+      if (slice_coord[i] != PARAMETER_UNSET) {
+        is_okay = slice_coord[i] >= patch.origin[i] and
+                  slice_coord[i] <= patch.origin[i] +
+                                    (patch.dims[2-i]-1)*patch.delta[i];
+        break;
       }
     }
     if (not is_okay) {
       if (verbose) {
-        cerr << "dataset " << name << " doesn't match selected slice" << endl;
+        cerr << "skipping dataset '" << name << "':" << endl
+             << "  slice " << slice_coord[i] << " is out of dataset range ["
+             << patch.origin[i] << ", "
+             << patch.origin[i] + (patch.dims[2-i]-1)*patch.delta[i] << "]"
+             << endl;
       }
     }
   }
@@ -305,9 +347,6 @@ static herr_t FindPatches (hid_t group, const char *name, void *_file)
   patch.file = *(hid_t *) _file;
 
   /* read attributes */
-  CHECK_HDF5 (attr = H5Aopen_name (dataset, "time"));
-  CHECK_HDF5 (H5Aread (attr, H5T_NATIVE_DOUBLE, &patch.time));
-  CHECK_HDF5 (H5Aclose (attr));
   CHECK_HDF5 (attr = H5Aopen_name (dataset, "timestep"));
   CHECK_HDF5 (H5Aread (attr, H5T_NATIVE_INT, &patch.iteration));
   CHECK_HDF5 (H5Aclose (attr));
@@ -378,7 +417,7 @@ static void ReadPatch (const patch_t& patch, int last_iteration)
   h5size_t slabstart[3] = {0, 0, 0};
   hsize_t slabcount[3] = {patch.dims[0], patch.dims[1], patch.dims[2]};
   for (int i = 0; i < 3; i++) {
-    if (slice_coord[i] != SLICECOORD_UNSET) {
+    if (slice_coord[i] != PARAMETER_UNSET) {
       slabstart[2-i] = (h5size_t) ((slice_coord[i] - patch.origin[i]) /
                                    patch.delta[i] + 0.5);
       slabcount[2-i] = 1;
@@ -419,11 +458,11 @@ static void ReadPatch (const patch_t& patch, int last_iteration)
              << patch.origin[2] + k*patch.delta[2] << "\t"
              << *data++ << endl;
       }
-      if (slice_coord[0] == SLICECOORD_UNSET) cout << endl;
+      if (slice_coord[0] == PARAMETER_UNSET) cout << endl;
     }
-    if (slice_coord[1] == SLICECOORD_UNSET) cout << endl;
+    if (slice_coord[1] == PARAMETER_UNSET) cout << endl;
   }
-  if (slice_coord[2] == SLICECOORD_UNSET) cout << endl;
+  if (slice_coord[2] == PARAMETER_UNSET) cout << endl;
 
   data -= npoints;
   delete[] data;
