@@ -65,7 +65,7 @@ typedef struct {
  *****************************************************************************/
 
 // the slice coordinate as selected by the user
-#define SLICECOORD_UNSET	-424242424242
+#define SLICECOORD_UNSET	-424242.0
 static double slice_coord[3] = {SLICECOORD_UNSET, SLICECOORD_UNSET, SLICECOORD_UNSET};
 
 // the list of all patches
@@ -107,7 +107,7 @@ static bool ComparePatches (const patch_t& a, const patch_t& b);
 int main (int argc, char *const argv[])
 {
   int i;
-  bool help = false, print_help = true;
+  bool help = false;
 #if 0
   int iorigin[3] = {-1, -1, -1};
 #endif
@@ -185,22 +185,22 @@ int main (int argc, char *const argv[])
     sort (patchlist.begin(), patchlist.end(), ComparePatches);
 
     cout << "# 1D ASCII output created by";
-    for (int i = 0; i < argc; i++) cout << " " << argv[i];
+    for (int j = 0; j < argc; j++) cout << " " << argv[j];
     cout << endl << "#" << endl;
 
     int last_iteration = patchlist[0].iteration - 1;
-    for (int i = 0; i < patchlist.size(); i++) {
-      ReadPatch (patchlist[i], last_iteration);
-      last_iteration = patchlist[i].iteration;
+    for (size_t j = 0; j < patchlist.size(); j++) {
+      ReadPatch (patchlist[j], last_iteration);
+      last_iteration = patchlist[j].iteration;
     }
   } else {
     cerr << "No valid datasets found" << endl << endl;
   }
 
   // close all input files
-  for (int i = 0; i < filelist.size(); i++) {
-    if (filelist[i] >= 0) {
-      CHECK_HDF5 (H5Fclose (filelist[i]));
+  for (size_t j = 0; j < filelist.size(); j++) {
+    if (filelist[j] >= 0) {
+      CHECK_HDF5 (H5Fclose (filelist[j]));
     }
   }
 
@@ -399,9 +399,12 @@ static void ReadPatch (const patch_t& patch, int last_iteration)
   CHECK_HDF5 (H5Sclose (filespace));
   CHECK_HDF5 (H5Dclose (dataset));
 
-  for (h5size_t k = slabstart[0]; k < slabstart[0] + slabcount[0]; k++) {
-    for (h5size_t j = slabstart[1]; j < slabstart[1] + slabcount[1]; j++) {
-      for (h5size_t i = slabstart[2]; i < slabstart[2] + slabcount[2]; i++) {
+  for (h5size_t k = slabstart[0];
+       k < slabstart[0] + (h5size_t) slabcount[0]; k++) {
+    for (h5size_t j = slabstart[1];
+         j < slabstart[1] + (h5size_t) slabcount[1]; j++) {
+      for (h5size_t i = slabstart[2];
+           i < slabstart[2] + (h5size_t) slabcount[2]; i++) {
         cout << patch.iteration << "\t"
              << patch.timelevel << " "
              << patch.rflevel << " "
