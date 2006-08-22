@@ -162,16 +162,17 @@ int main (int argc, char *const argv[])
          << "Usage: " << endl
          << argv[0] << " [--help]" << endl
          << indent << "[--out_precision <digits>]" << endl
-         << indent << "[--timestep <timestep>]" << endl
+         << indent << "[--timestep <cctk_time value>]" << endl
          << indent << "[--verbose]" << endl
          << indent << "<--out2d-plane value>" << endl
          << indent << "<hdf5_infiles>" << endl << endl
          << "  where" << endl
-         << "    [--help]                   prints this help" << endl
-         << "    [--out_precision <digits>] sets the output precision" << endl
-         << "                               for floating-point numbers" << endl
-         << "    [--timestep <timestep>]    selects a specific timestep" << endl
-         << "    [--verbose]                lists skipped datasets on stderr" << endl
+         << "    [--help]                         prints this help" << endl
+         << "    [--out_precision <digits>]       sets the output precision" << endl
+         << "                                     for floating-point numbers" << endl
+         << "    [--timestep <cctk_time value>]   selects all HDF5 datasets which" << endl
+         << "                                     (fuzzily) match the specified time" << endl
+         << "    [--verbose]                      lists skipped HDF5 datasets on stderr" << endl
          << "  and <--out2d-plane value> must be specified" << endl
          << "  as exactly one of the following options:" << endl
          << "    --out2d-yzplane-x  <origin_x>" << endl
