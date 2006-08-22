@@ -156,7 +156,9 @@ processors) is stored in a single HDF5 dataset whereas {\em chunked} means
 that all the processor-local patches of this array are stored as separate
 HDF5 datasets (called {\it chunks}).
 Consequently, for unchunked data all interprocessor ghostzones are excluded
-from the output.
+from the output.  In contrast, for chunked data the interprocessor ghostzones
+\emph{are} included in the output.
+
 When visualising chunked datasets, they probably need to be recombined
 for a global view on the data. This needs to be done within the visualisation
 tool (see also below), Cactus itself does not provide its own recombiner
@@ -245,15 +247,36 @@ This utility program extracts 2D slices from 3D HDF5
 datasets produced by \ThisThorn\ and outputs them in {\tt CarpetIOASCII} format
 (suitable to be further processed by gnuplot).
 
-The {\tt hdf5toascci\_slicer} program is contained in the {\tt src/utils/}
+The {\tt hdf5toascii\_slicer} program is contained in the {\tt src/utils/}
 subdirectory of thorn \ThisThorn. It is built with
 \begin{verbatim}
   make <configuration>-utils
 \end{verbatim}
 where the executable ends up in the subdirectory {\tt exe/<configuration>/}.
 
-For details on how to use the {\tt hdf5toascci\_slicer} program,
+For details on how to use the {\tt hdf5toascii\_slicer} program,
 run it with no command-line options (or with the {\tt --help} option).
+
+{\tt hdf5toascii\_slicer} can be used on either chunked or unchunked
+data:
+\begin{itemize}
+\item	If the HDF5 data is unchunked, then {\tt hdf5toascii\_slicer}
+	will output unchunked ASCII data.
+\item	If the HDF5 data is chunked, then {\tt hdf5toascii\_slicer}
+	will output chunked ASCII data reflecting whatever subset of
+	the HDF5 files are provided.  That is, for example, the command
+	\begin{verbatim}
+	hdf5toascii_slicer my_variable.file_2.h5 my_variable.file_4.h5
+	\end{verbatim}
+	will output ASCII data only for that part of the Carpet grid
+	which lived on processors~2 and~4.  It's probably more useful
+	to use the command
+	\begin{verbatim}
+	hdf5toascii_slicer my_variable.file_*.h5
+	\end{verbatim}
+	which will output ASCII data for the entire Carpet grid.
+\end{itemize}
+
 
 \subsection{{\tt hdf5\_extract}}
 
