@@ -13,6 +13,7 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <cmath>
 
 #include <hdf5.h>
 
