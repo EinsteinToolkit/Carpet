@@ -62,8 +62,13 @@ data is written into separate files named {\tt "<varname>.h5"}.
 It implements both serial and full parallel I/O --
 data files can be written/read either by processor 0 only or by all processors.
 Such datafiles can be used for further postprocessing (eg. visualization with
-OpenDX or DataVault\footnote{see our VizTools page at \url{http://www.cactuscode.org/VizTools.html}
-for details}) or fed back into Cactus via the filereader capabilities of thorn
+OpenDX or DataVault%%%
+\footnote{%%%
+         See our visualization page at
+	 \url{http://www.cactuscode.org/Visualization/}
+	 for details.
+	 }%%%
+) or fed back into Cactus via the filereader capabilities of thorn
 {\bf IOUtil}.
 
 This document aims at giving the user a first handle on how to use
@@ -174,7 +179,8 @@ Parallel output in a parallel simulation will ensure maximum I/O
 performance. Note that changing the output mode to serial I/O might only be
 necessary if the data analysis and visualisation tools cannot deal with
 chunked output files. Cactus itself, as well as many of the tools to
-visualise Carpet HDF5 data (see \url{http://www.cactuscode.org/VizTools.html}),
+visualise Carpet HDF5 data
+(see \url{http://www.cactuscode.org/Visualization.html}),
 can process both chunked and unchunked data. For instance, to visualise parallel
 output datafiles with DataVault, you would just send all the individual files
 to the DV server: {\tt hdf5todv phi.file\_*.h5}. In OpenDX the {\tt
