@@ -151,12 +151,16 @@ According to the ouptput mode parameter settings of ({\tt IO::out\_mode},
 \end{verbatim}
 \end{itemize}
 
-For unchunked data all interprocessor ghostzones are excluded from the output.
-The entire grid variable in contained in a single HDF5 dataset.
-Chunked output includes all information from all processors as chunks in
-separate HDF5 datasets (thus adding some overhead in storing metadata).
-When visualising chunked data files, they probably need to be recombined
-for a global view on the data.
+{\em Unchunked} means that an entire Cactus grid array (gathered across all
+processors) is stored in a single HDF5 dataset whereas {\em chunked} means
+that all the processor-local patches of this array are stored as separate
+HDF5 datasets (called {\it chunks}).
+Consequently, for unchunked data all interprocessor ghostzones are excluded
+from the output.
+When visualising chunked datasets, they probably need to be recombined
+for a global view on the data. This needs to be done within the visualisation
+tool (see also below), Cactus itself does not provide its own recombiner
+utility program for \ThisThorn's output files.
 
 The default is to output distributed grid variables in parallel, each processor
 writing a file
@@ -180,7 +184,7 @@ performance. Note that changing the output mode to serial I/O might only be
 necessary if the data analysis and visualisation tools cannot deal with
 chunked output files. Cactus itself, as well as many of the tools to
 visualise Carpet HDF5 data
-(see \url{http://www.cactuscode.org/Visualization.html}),
+(see \url{http://www.cactuscode.org/Visualization}),
 can process both chunked and unchunked data. For instance, to visualise parallel
 output datafiles with DataVault, you would just send all the individual files
 to the DV server: {\tt hdf5todv phi.file\_*.h5}. In OpenDX the {\tt
