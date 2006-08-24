@@ -1,0 +1,1211 @@
+\documentclass{article}
+
+\addtolength{\oddsidemargin}{-25mm}
+\addtolength{\textwidth}{50mm}
+\addtolength{\textheight}{50mm}
+\addtolength{\topmargin}{-20mm}
+
+\renewcommand{\bottomfraction}{0.75}
+\addtolength{\textfloatsep}{5ex}
+
+\def\arrangement#1{\textbf{#1}}
+\def\thorn#1{\textbf{#1}}
+
+% get size/spacing of "++" right, cf online C++ FAQ question 35.1
+\def\Cplusplus{\hbox{C\raise.25ex\hbox{\footnotesize ++}}}
+
+\def\ie{i.e.\hbox{}}
+\def\eg{e.g.\hbox{}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\author{Thomas Radke and Jonathan Thornburg}
+\title{Carpet Scheduling}
+\date{24 August 2006}
+\maketitle
+\begin{abstract}
+This document describes how scheduling in (\thorn{PUGH} and)
+\thorn{Carpet} works.
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+
+Cactus offers a predefined set of about 20 schedule bins corresponding
+to major phases of a simulation, like \verb|BASEGRID|, \verb|INITIAL|,
+\verb|POSTINITIAL|, \verb|EVOL|, etc.  See the Cactus Users' Guide for
+an up-to-date list of all the schedule bins (currently these are listed
+in section~E3).%%%
+\footnote{%%%
+	 Note that there are a few special schedule bins, notably
+	 \texttt{STARTUP}, \texttt{RECOVER\_PARAMETERS}, and
+	 \texttt{SHUTDOWN}.  These have special semantics, and much
+	 of the description here doesn't apply to them.  As a user,
+	 you may want to try to avoid scheduling routines in these
+	 bins for this reason, and instead use the \texttt{WRAGH},
+	 \texttt{BASEGRID}, and \texttt{TERMINATE} schedule bins
+	 respectively.
+	 }%%%
+
+There are two major pieces of software involved in scheduling:
+\begin{itemize}
+\item	The Cactus flesh.%%%
+\footnote{%%%
+	 Strictly speaking, what we're calling the ``flesh'' is
+	 the combination of what's done by the CST when configuring
+	 Cactus, and by the actual Cactus flesh when Cactus runs.
+	 But this distinction isn't important here, so for simplicity
+	 we just refer to the ``flesh''.
+	 }%%%
+{}	The flesh knows about everything in \verb|schedule.ccl| files,
+	and handles sorting scheduled routines into an order which is
+	consistent with the \verb|BEFORE| and \verb|AFTER| clauses in
+	all the schedule groups.  The flesh also handles repeatedly
+	calling scheduled routines which are scheduled with a
+	\verb|WHILE| clause.  The flesh does \emph{not} know anything
+	about the spatial grid or grids, or how grid functions are
+	stored in memory or distributed across processors.
+\item	The driver, typically \thorn{PUGH} or \thorn{Carpet}.
+	The driver defines the set of allowed schedule bins.
+	The driver knows about the grid or grids, and how grid functions
+	are stored in memory and distributed across processors.
+	The driver does \emph{not} know what's in \verb|schedule.ccl| files.
+\end{itemize}
+
+The basic flow of control in Cactus is that the flesh starts up, does
+some initialization, then calls the driver.  The driver does some
+more initialization, then sequences through the schedule bins; for
+each one it calls back into the flesh to have the flesh call all the
+scheduled routines in that bin in the correct order.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{\thorn{PUGH} Scheduling}
+
+When using the \thorn{PUGH} unigrid driver, the scheduling process
+is pretty simple, and is shown in figure~\ref{fig-PUGH-schedule}.
+Nowdays most evolutions use \thorn{MoL}; all the \thorn{MoL} evolution
+happens inside the \verb|EVOL| schedule bin.
+
+%%%%%%%%%%
+\begin{figure}[bp]
+\begin{center}
+\fbox{\begin{minipage}[t]{\textwidth}
+RECOVER\_PARAMETERS\\
+STARTUP\\
+WRAGH\\
+PARAMCHECK\\
+BASEGRID
+\end{minipage}}
+\\
+\fbox{\begin{minipage}[t]{\textwidth}
+Recover? (yes/no)
+\\
+\fbox{\begin{minipage}[t]{0.475\textwidth}
+INITIAL\\
+POSTINITIAL\\
+POSTSTEP
+\end{minipage}}
+\fbox{\begin{minipage}[t]{0.475\textwidth}
+RECOVER\_VARIABLES\\
+POST\_RECOVER\_VARIABLES
+\end{minipage}}
+\end{minipage}}
+\\
+\fbox{\begin{minipage}[t]{\textwidth}
+CPINITIAL\\
+ANALYSIS\\
+OutputGH
+\end{minipage}}
+\\
+\fbox{\begin{minipage}[t]{0.1\textwidth}
+main\\
+loop
+\end{minipage}
+\fbox{\begin{minipage}[t]{0.87\textwidth}
+Advance time\\
+PRESTEP\\
+EVOL (includes all of \texttt{MoL})\\
+POSTSTEP\\
+CHECKPOINT\\
+ANALYSIS\\
+OutputGH
+\end{minipage}}}
+\\
+\fbox{\begin{minipage}[t]{\textwidth}
+TERMINATE\\
+SHUTDOWN
+\end{minipage}}
+\end{center}
+\caption[The \thorn{PUGH} schedule]
+	{
+	\label{fig-PUGH-schedule}
+	This figure shows the order in which \thorn{PUGH}
+	sequences through the shedule bins.
+	}
+\end{figure}
+%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{\thorn{Carpet} Scheduling}
+
+With \thorn{Carpet} the scheduling process is much more complicated,
+because there are (in general) many different grids, and the various
+actions on the different grids have to be carefully coordinated to
+obtain accurate results.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{The Berger-Oliger Algorithm}
+\label{sect-Berger-Oliger-algorithm}
+
+The basic idea underlying \thorn{Carpet} is \emph{mesh refinement}:
+use small high-resolution grids in those parts of our problem domain
+where they're needed, and use lower resolution elsewhere.  The goal
+is to approximate the accuracy of using the finest grid spacing
+everywhere, while being vastly more efficient.  The basic algorithm
+Carpet uses to do this was first published by Marhsa Berger and
+Joseph Oliger~\cite{Berger-1982,Berger84,Berger86,Berger89,Berger91}.
+
+The Berger-Oliger algorithm uses locally-uniform grids.  When the grid
+resolution needs to be changed, it's changed by a fixed (integer)
+refinement factor, typically a factor of~2.  Fine grids overlap
+coarser ones.%%%
+\footnote{%%%
+	 One could imagine omitting those coarse grid
+	 points where there is also a finer grid, but the
+	 cost saving would be small, and the bookkeeping
+	 quite messy, so it's not worth doing this.
+	 }%%%
+{}  The key to the Berger-Oliger algorithm is that, when doing the time
+evolution, in each time step coarse grids are stepped first, and their
+values are then interpolated (in space and/or time) as necessary to
+provide boundary conditions for fine grids.  This process is illustrated
+in figure~\ref{fig-Berger-Oliger-algorithm}.
+
+Notice that after each fine grid has taken enough time steps to be
+at the same time level as next coarser grid, the fine-grid values at
+points where there is a coarse-grid point are copied (``injected'')
+back to the coarse grid.  This keeps the coarse-grid evolution from
+gradually drifting away from the (more accurate) fine-grid evolution.
+
+%%%%%%%%%%
+\begin{figure}[bp]
+\begin{center}
+\vspace{35mm}
+This figure doesn't exist yet. :(
+\vspace{35mm}
+\end{center}
+\caption[The Berger-Oliger Algorithm]
+	{
+	This figure shows an example of the sequence of operations
+	for taking a single coarse-grid time step using the Berger-Oliger
+	mesh-refinement algorithm.
+	There are 3~grids, a coarse grid (shown on the left),
+	a medium grid (shown in the middle), and a fine grid
+	(shown on the right).
+	}
+\label{fig-Berger-Oliger-algorithm}
+\end{figure}
+%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Grid Attributes}
+
+In \thorn{Carpet}, a local grid (a ``cuboid'' that has a uniform spacing
+in each axis, and lives on a single processor) has a number of attributes:
+\begin{description}
+\item[\texttt{mglevel}]%%%
+\mbox{}\\
+	This is an integer specifying a ``convergence level''
+	in the sense of ``convergence testing''.  Convergence levels
+	are numbered from~0 (the lowest-resolution simulation)
+	up up to some maximum value ($\ge 0$) for the highest-resolution
+	simulation.  It's important to realise that in this context
+	``resolution'' refers to the entire ensemble of grids at
+	at different refinement levels in the Berger-Oliger algorithm.
+	That is, incrementing \texttt{mglevel} means coarsening
+	\emph{every} grid in the Berger-Oliger algorithm by
+	(typically) a factor of~2.
+
+	Using convergence levels, you can run several simulations
+	with different resolutions concurrently.  This might be useful
+	in a multigrid solver and/or for a ``shadow hierarchy'' of
+	grids for estimating the local accuracy of an evolution
+	(FIXME: REFERENCE FOR SHADOW HIERARCHY).
+
+	At present convergence levels aren't used, so \texttt{mglevel}
+	is always set to~0.
+\item[\texttt{reflevel}]%%%
+\mbox{}\\
+	This is an integer specifing the grid's ``refinement level''
+	in the Berger-Oliger algorithm (at this convergence level).
+	Refinement levels are numbered from~0 (the coarsest or ``base''
+	grid) up to some maximum value ($\ge 0$) for the finest grid.
+\item[\texttt{map}]
+\mbox{}\\
+	This is an integer ($\ge 0$) specifying the ``map'' (grid patch)
+	at this convergence level and refinement level.%%%
+\footnote{%%%
+	 The terms ``map'' and ``patch'' mean exactly the same
+	 thing.  Carpet originally used the term ``map'', but
+	 recently ``patch'' has become more common.  As a rule of
+	 thumb, the thorns in the \arrangement{Carpet} arrangement
+	 generally use ``map'', but other infrastructure thorns
+	 (like \texttt{MultiPatch} and \thorn{GZPatchSystem})
+	 generally use ``patch''.
+	 }%%%
+{}	This will always be~0 unless you're doing a multipatch simulation.
+\item[\texttt{component}]
+\mbox{}\\
+	This is an integer ($\ge 0$) specifying one of the local
+	grids in this map/patch.  By definition, a given local grid
+	lives on a single processor; there may be multiple local grids
+	on a single processor.
+\end{description}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Modes}
+
+When looping over grids, Carpet has a standard order to loop over
+the attributes described in the previous section.  This is shown in
+figure~\ref{fig-Carpet-loops-and-modes}.  Corresponding to this,
+Carpet defines a set of ``modes'', which correspond to the depth in this
+set of nested loops.  In more detail, the modes are as follows:
+\begin{description}
+\item[meta mode]%%%
+\mbox{}\\
+	In meta mode Carpet is logically outside its loops over
+	convergence levels, refinement levels, maps/patches, and
+	components.  Therefore, \emph{none} of \texttt{mglevel},
+	\texttt{reflevel}, \texttt{map}, or \texttt{component} are defined.
+\item[global mode]%%%
+\mbox{}\\
+	In global mode Carpet is logically inside its loop over
+ 	convergence levels, but outside its loops over refinement levels,
+	maps/patches, and components.  Therefore, \texttt{mglevel}
+	is defined, but \texttt{reflevel}, \texttt{map}, and
+	\texttt{component} aren't defined.
+\item[level mode]%%%
+\mbox{}\\
+	In level mode Carpet is logically inside its loops over
+	convergence levels and refinement levels, but outside its
+	loops over maps/patches and components.  Therefore,
+	\texttt{mglevel} and \texttt{reflevel} are defined,
+	but \texttt{map} and \texttt{component} are not defined.
+\item[singlemap mode]%%%
+\mbox{}\\
+	In singlemap mode Carpet is logically inside its loops over
+	convergence levels, refinement levels, and maps/patches, but
+	outside its loop over components.  Therefore, \texttt{mglevel},
+	\texttt{reflevel}, and \texttt{map} are defined,
+	but \texttt{component} is not defined.
+\item[local mode]%%%
+\mbox{}\\
+	In local mode Carpet is logically inside its loops over
+	convergence levels, refinement levels, maps/patches, and
+	components.  Therefore, all of \texttt{mglevel},
+	\texttt{reflevel}, \texttt{map}, and \texttt{component}
+	are defined.
+\end{description}
+
+%%%%%%%%%%
+\begin{figure}[bp]
+\begin{verbatim}
+#
+# meta mode
+#
+begin loop over mglevel (convergence level)
+        #
+        # global mode
+        #
+        begin loop over reflevel (refinement level)
+                #
+                # level mode
+                #
+                begin loop over map
+                        #
+                        # singlemap mode
+                        #
+                        begin loop over component
+                                #
+                                # local mode
+                                #
+                        end loop over component
+                        #
+                        # singlemap mode
+                        #
+                end loop over map
+                #
+                # level mode
+                #
+        end loop over reflevel
+        #
+        # global mode
+        #
+end loop over mglevel
+#
+# meta mode
+#
+\end{verbatim}
+\caption[Carpet Loops and Modes]
+	{
+	This figure shows how Carpet loops over the various
+	attributes of local grids, and how the Carpet modes
+	correspond to depth in this set of nested loops.
+	}
+\label{fig-Carpet-loops-and-modes}
+\end{figure}
+%%%%%%%%%%
+
+When you schedule a routine (by writing a schedule block in a
+\verb|schedule.ccl| file), you specify what mode it should run in.
+If you don't specify a mode, the default is local.  You can also
+specify various schedule options; some of these are used in the
+Carpet scheduling algorithms discussed in
+section~\ref{sect-Carpet-scheduling-pipeline}.
+
+Since convergence levels aren't used at present, for most practical
+purposes meta mode is identical to global mode.  Similarly, unless
+you're doing multipatch simulations, singlemap mode is identical to
+level mode.
+
+Table~\ref{tab-what-Carpet-defines-in-each-mode} shows which of the
+grid attributes and predefined Cactus macros and variables are defined
+in each mode.  [Notice that for backwards compatability and simpler
+program in the most common (single-patch) case, some variables which
+are logically only defined in singlemap and local modes, are ``extended''
+to also be defined in level mode in single-patch simulations.  Similarly,
+some variables which are logically only defined in level, singlemap,
+and local modes, are extended to also be defined in global mode,
+describing the coarsest grid.]
+
+%%%%%%%%%%
+\begin{table}[bp]
+\def\yes{$\surd$}
+\def\no{$\times$}
+\begin{center}
+\begin{tabular}{|lccccc|}
+\hline %----------------------------------------------------------------
+				&meta	&global	&level	&singlemap
+								&local	\\
+\hline %----------------------------------------------------------------
+\texttt{mglevel}		&\no	&\yes	&\yes	&\yes	&\yes	\\
+\texttt{reflevel}		&\no	&\no	&\yes	&\yes	&\yes	\\
+\texttt{map}			&\no	&\no	&\no	&\yes	&\yes	\\
+\texttt{component}		&\no	&\no	&\no	&\no	&\yes	\\
+\hline %----------------------------------------------------------------
+\texttt{CCTK\_ORIGIN\_SPACE}	&\no	&\no	&\yes{} if single-patch
+							&\yes	&\yes	\\
+\texttt{CCTK\_DELTA\_SPACE}	&\no	&\no	&\yes{} if single-patch
+							&\yes	&\yes	\\
+\texttt{CCTK\_DELTA\_TIME}	&\no	&\no	&\yes{} if single-patch
+							&\yes	&\yes	\\
+\texttt{cctk\_origin\_space}	&\no	&\yes (coarse)
+						&\yes{} if single-patch
+							&\yes	&\yes	\\
+\texttt{cctk\_delta\_space}	&\no	&\yes (coarse)
+						&\yes{} if single-patch
+							&\yes	&\yes	\\
+\texttt{cctk\_delta\_time}	&\no	&\yes (coarse)
+						&\yes{} if single-patch
+							&\yes	&\yes	\\
+\hline %----------------------------------------------------------------
+grid scalars			&\no	&\yes	&\yes	&\yes	&\yes	\\
+grid arrays			&\no	&\yes	&\yes	&\yes	&\yes	\\
+grid functions			&\no	&\no	&\no	&\no	&\yes	\\
+\hline %----------------------------------------------------------------
+\end{tabular}
+\end{center}
+\caption[What Carpet Defines in Each Mode]
+	{
+	This table shows what grid attributes and Cactus variables
+	are defined in each Carpet mode.				\\
+	``\yes{} if single-patch'' means that the corresponding macros
+	are defined if this is a single-patch simulation, but not if
+	this is a multipatch simulation.				\\
+	``\yes (coarse)'' means that the corresponding variables are
+	defined, and that they describe the \emph{coarsest} refinement
+	level.								%%%\\
+	}
+\label{tab-what-Carpet-defines-in-each-mode}
+\end{table}
+%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{What to Do in Each Mode}
+
+As can be seen from table~\ref{tab-what-Carpet-defines-in-each-mode},
+grid functions are defined \emph{only} in local mode.  Since most physics
+code needs to manipulate grid functions, it therefore must run in local
+mode.  (That's why local is the default mode in a \verb|schedule.ccl|
+schedule block.)
+
+However, in general code scheduled in local mode will run multiple times
+(because it's nested inside loops over \texttt{mglevel}, \texttt{reflevel},
+\texttt{map}, and \texttt{component}).  Sometimes you don't want this.
+For example, you may want to open or close an output file, or initialize
+some global property of your simulation.  Meta or global modes (recall
+that they're identical for most purposes) are good for this kind of thing.
+
+Level mode is in some sense the natural mode for Berger-Oliger mesh
+refinement.  That is, the Berger-Oliger algorithm is naturally written
+in terms of computations done in level mode.  Level mode is convenient
+for things like convergence tests that depend on the grid spacing.
+
+Singelmap mode is mostly useful (and differs from level mode) only if
+you're doing multipatch simulations.
+
+Synchronization and turning storage on/off happen in level mode.%%%
+\footnote{%%%
+	 For backwards compatibility, these operations are
+	 also allowed (with a warning message printed) in
+	 singlemap and local modes if there is only one
+	 component per processor.
+	 }%%%
+{}  Boundary conditions must be selected (in the sense of thorn
+\thorn{Boundary}) in level mode.  Cactus output must be done in level mode.
+
+Reduction/interpolation of grid arrays and/or grid functions may be
+done in either level mode (applying only to that refinement level),
+or in global mode (applying to all refinement levels).  
+
+%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Querying and Changing Modes}
+
+Normally, Carpet changes between modes automatically.  But for
+advanced programming, sometimes you need to do this explicitly.
+Carpet has various functions to query what mode you're in, and
+functions and macros to change modes.  These are all defined in
+\verb|Carpet/Carpet/src/modes.hh|, and are only usable from
+\Cplusplus{} code.
+
+To use any of these facilities, put the line
+``\verb|uses include: carpet.hh|'' in your \verb|interface.ccl|,
+then include \verb|"carpet.hh"| in your \Cplusplus{} source code
+(this must come \emph{after} including \verb|"cctk.h"|).
+
+To query the current mode, just use any of the Boolean predicates
+\verb|is_meta_mode()|, \verb|is_global_mode()|, \dots \verb|is_local_mode()|.
+A common usage of these is in assertions, to verify that the mode
+is what it should be, \eg{}
+\begin{verbatim}
+#include <cassert>
+
+#include "cctk.h"
+#include "carpet.hh"
+
+void my_function(...)
+{
+// make sure we're in level mode
+assert(Carpet::is_level_mode());
+...
+}
+\end{verbatim}
+
+For changing modes, the macros defined in \verb|carpet.hh| provide
+a higher-level interface, and automagically enforce proper nesting
+of the modes (in the sense of figure~\ref{fig-Carpet-loops-and-modes}).
+Unfortunately, they require you to import the entire Carpet namespace
+with ``\verb|using namespace Carpet;|''%%%
+\footnote{%%%
+	 This is a bug, and hopefully will be fixed someday\dots
+	 }%%%
+{} although you only need to this in a local block enclosing the macros'
+use.  The mode-changing functions provide a lower-level interface, and
+do not enforce proper nesting, but they can be used with explicit
+\verb|Carpet::| namespace qualifications, which avoids having to import
+the entire \verb|Carpet| namespace.
+
+The macros set the \verb|cctkGH| entries as appropriate.  However, they
+don't define or undefine grid functions, grid variables, or any \verb|cctk_|*
+variables; to do this, you need to place a \verb|DECLARE_CCTK_ARGUMENTS|
+inside the macro loop.
+
+The most commonly-used macros are probably the looping ones, which
+come in pairs \verb|BEGIN_|*\verb|_LOOP| and \verb|END_|*\verb|_LOOP|.
+These let you move one level deeper in the loop hierarchy.
+(For the \verb|BEGIN_COMPONENT_LOOP| or \verb|BEGIN_LOCAL_COMPONENT_LOOP|
+macros, \verb|grouptype| is either \verb|CCTK_GF| or \verb|CCTK_ARRAY|
+to specify whether you want to loop over grid function components or
+grid array components.)
+
+There are also \verb|ENTER_|*\verb|_MODE| and \verb|LEAVE_|*\verb|_MODE|
+macros, which let you escape out of a level (or even levels!) in the
+loop hierarchy.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{The \thorn{Carpet} Scheduling Pipeline}
+\label{sect-Carpet-scheduling-pipeline}
+
+It's useful to think of the overall Carpet scheduling process as a
+pipeline (in the Unix sense) of 3~subprocesses:
+\begin{enumerate}
+\item	First, Carpet runs the Berger-Oliger mesh refinement algorithm,
+	as described in section~\ref{sect-Berger-Oliger-algorithm}.
+	Figure~\ref{fig-Carpet-Berger-Oliger-summary} gives a summary
+	of how Carpet uses the Berger-Oliger algorithm to step through
+	scheule groups and refinement levels.
+	 Figure~\ref{fig-Carpet-Berger-Oliger-details} describes this
+	in (much!) more detail.
+
+	Notice that while some loops in the algorithm traverse the
+	different refinement levels from coarse grids to fine grids
+	as described above, other loops traverse the levels in the
+	opposite direction.  This is done to make boundary conditions
+	and symmetries work better.
+
+	Logically, the output of Carpet's Berger-Oliger algorithm
+	is a sequence of tuples:
+	$$
+	(\textrm{schedule bin},\,\,\texttt{mglevel},\,\,\texttt{reflevel})
+	$$
+	Since these tuples have definite \texttt{mglevel}
+	and \texttt{reflevel} values, but no \texttt{map} or
+	\texttt{component} values, they're semantically in level
+	mode.
+\item	Next, for each schedule bin output by the previous
+	``pipeline stage'', the Cactus flesh sorts all the
+	scheduled routines in that bin into some order which is
+	consistent with the combination of all active thorns'
+	\verb|schedule.ccl| files.%%%
+\footnote{%%%
+	 Strictly speaking, ``scheduled routine'' here also
+	 includes entry to and exit from a schedule group,
+	 since storage may need to be turned on or off when
+	 these events happen.
+	 }%%%
+{}	This is where \verb|BEFORE|,
+	\verb|AFTER|, and \verb|WHILE| clauses in \verb|schedule.ccl|
+	files are interpreted.
+
+	Logically, the output of this pipeline stage is a sequence
+	of tuples:
+	$$
+	(\textrm{scheduled routine},\,\,
+	 \textrm{schedule mode},\,\, \textrm{schedule options},\,\,
+	 \texttt{mglevel},\,\, \texttt{reflevel})
+	$$
+	For this ``pipeline stage'', the schedule mode and options
+	are just uninterpreted tokens to be passed along to the next
+	stage --- there's no knowledge (yet) of what they mean.
+\item	Finally, Carpet applies the schedule options for each
+	scheduled routine, in the manner shown in
+	figure~\ref{fig-how-Carpet-uses-modes}.  This generates
+	a sequence of calls on scheduled routines.  Some calls
+	may be performed in a loop (\eg{} for local mode), while
+	others may be skipped (\eg{} for global mode).
+\end{enumerate}
+
+%%%%%%%%%%
+\begin{figure}[bp]
+\begin{center}
+\fbox{\begin{minipage}[t]{\textwidth}
+RECOVER\_PARAMETERS\\
+STARTUP\\
+WRAGH\\
+PARAMCHECK
+\end{minipage}}
+\\
+\fbox{\begin{minipage}[t]{\textwidth}
+Recover? (yes/no)
+\\
+\fbox{\begin{minipage}[t]{0.1\textwidth}
+initial\\
+loop
+\end{minipage}
+\fbox{\begin{minipage}[t]{0.345\textwidth}
+BASEGRID\\
+INITIAL\\
+Regrid\\
+POSTREGRID\\
+$\longrightarrow$ Recurse\\
+Restrict\\
+POSTRESTRICTINITIAL\\
+POSTINITIAL\\
+POSTSTEP
+\end{minipage}}}
+\fbox{\begin{minipage}[t]{0.1\textwidth}
+recover\\
+loop
+\end{minipage}
+\fbox{\begin{minipage}[t]{0.345\textwidth}
+BASEGRID\\
+RECOVER\_VARIABLES\\
+POST\_RECOVER\_VARIABLES
+$\longrightarrow$ Recurse
+\end{minipage}}}
+\\
+\fbox{\begin{minipage}[t]{0.47\textwidth}
+3 Time Level Initialisation
+\end{minipage}}
+\end{minipage}}
+\\
+\fbox{\begin{minipage}[t]{0.1\textwidth}
+initial\\
+loop
+\end{minipage}
+\fbox{\begin{minipage}[t]{0.87\textwidth}
+$\longrightarrow$ Recurse\\
+CPINITIAL\\
+ANALYSIS\\
+OutputGH
+\end{minipage}}}
+\\
+\fbox{\begin{minipage}[t]{0.1\textwidth}
+main\\
+loop
+\end{minipage}
+\fbox{\begin{minipage}[t]{0.1\textwidth}
+evol\\
+loop
+\end{minipage}
+\fbox{\begin{minipage}[t]{0.74\textwidth}
+Regrid\\
+POSTREGRID\\
+Advance time\\
+PRESTEP\\
+EVOL\\
+$\longrightarrow$ Recurse\\
+Restrict\\
+POSTRESTRICT\\
+POSTSTEP\\
+CHECKPOINT\\
+ANALYSIS\\
+OutputGH
+\end{minipage}}}}
+\\
+\fbox{\begin{minipage}[t]{0.1\textwidth}
+shutdown\\
+loop
+\end{minipage}
+\fbox{\begin{minipage}[t]{0.87\textwidth}
+$\longrightarrow$ Recurse\\
+TERMINATE
+\end{minipage}}}
+\\
+\fbox{\begin{minipage}[t]{\textwidth}
+SHUTDOWN
+\end{minipage}}
+\end{center}
+\caption[Summary of the \thorn{Carpet} schedule]
+	{
+	This figure gives an outline of how Carpet uses the
+	Berger-Oliger algorithm to sequence through the
+	schedule bins and grids.
+	See figure~\protect\ref{fig-Carpet-Berger-Oliger-details}
+	for a (much!) more detailed description of the algorithm.	\\
+	In general, all the loops are traversed in the order
+	from coarse grids to fine grids.
+	FIXME: ARE THERE EXCPETIONS TO THIS RULE
+	(AMONG THE LOOPS SHOWN IN THIS FIGURE)?
+	}
+\label{fig-Carpet-Berger-Oliger-summary}
+\end{figure}
+%%%%%%%%%%
+
+%%%%%%%%%%
+\begin{figure}[bp]
+\begin{center}
+\fbox{
+ \begin{minipage}[t]{\textwidth}
+  RECOVER\_PARAMETERS\\
+  STARTUP
+ \end{minipage}
+}
+\\
+%%%%%
+\fbox{
+ \begin{minipage}[t]{\textwidth}
+  \begin{minipage}[c]{22ex}
+   \tt
+   loop $\uparrow$ mglevels
+  \end{minipage}
+%  
+  \fbox{
+   \begin{minipage}[c]{0.78\textwidth}
+    WRAGH\\
+    PARAMCHECK
+   \end{minipage}
+  }
+ \end{minipage}
+}
+\\ 
+%%%%%
+\fbox{
+ \begin{minipage}[t]{\textwidth}
+  Recover?\hspace*{0.14\textwidth}no\hspace*{0.47\textwidth}yes
+\\
+  \fbox{
+   \begin{minipage}[t]{0.47\textwidth}
+    \fbox{
+     \begin{minipage}[c]{12ex}
+      \tt
+      loop $\uparrow$\\
+      reflevels
+     \end{minipage}
+%   
+     \begin{minipage}[c]{0.73\textwidth}
+      \fbox{
+       \begin{minipage}[c]{10ex}
+        \tt
+        loop $\uparrow$ mg\-levels
+       \end{minipage}
+%
+       \fbox{
+        \begin{minipage}[c]{0.6\textwidth}
+         BASEGRID\\
+         INITIAL
+        \end{minipage}
+       }
+      }
+\\
+      \fbox{
+       \begin{minipage}[c]{10ex}
+        \tt
+        loop $\uparrow$ mg\-levels
+       \end{minipage}
+%    
+       \fbox{
+        \begin{minipage}[c]{0.6\textwidth}
+         PREREGRID
+        \end{minipage}
+       }
+      }
+\\
+      \fbox{
+       \begin{minipage}[c]{0.94\textwidth}
+        Regrid
+       \end{minipage}
+      }
+\\
+      \fbox{
+       \begin{minipage}[c]{10ex}
+        \tt
+        loop $\uparrow$ mg\-levels
+       \end{minipage}
+%
+       \fbox{
+        \begin{minipage}[c]{0.6\textwidth}
+         POSTREGRID
+        \end{minipage}
+       }
+      }
+     \end{minipage}
+    }
+\\
+    \fbox{
+     \begin{minipage}[c]{22ex}
+      \tt
+      loop $\downarrow$ reflevels\\
+      \hspace*{2ex}loop $\uparrow$ mglevels
+     \end{minipage}
+%
+     \fbox{
+      \begin{minipage}[c]{0.49\textwidth}
+       Restrict
+      \end{minipage}
+     }
+    }
+\\
+    \fbox{
+     \begin{minipage}[c]{22ex}
+      \tt
+      loop $\uparrow$ reflevels\\
+      \hspace*{2ex}loop $\uparrow$ mglevels
+     \end{minipage}
+%
+     \fbox{
+      \begin{minipage}[c]{0.49\textwidth}
+       POSTRESTRICTINITIAL\\
+       POSTINITIAL\\
+       POSTSTEP
+      \end{minipage}
+     }
+    }
+\\
+    \fbox{
+     \begin{minipage}[c]{0.95\textwidth}
+      3 Time Level Initialisation
+     \end{minipage}
+    }
+   \end{minipage}
+  }
+%
+  \fbox{
+   \begin{minipage}[t]{0.47\textwidth}
+    \fbox{
+     \begin{minipage}[c]{12ex}
+      \tt
+      loop $\uparrow$\\
+      reflevels
+     \end{minipage}
+%
+     \begin{minipage}[c]{0.73\textwidth}
+      \fbox{
+       \begin{minipage}[c]{10ex}
+        \tt
+        loop $\uparrow$ mglevels
+       \end{minipage}
+%
+       \fbox{
+        \begin{minipage}[c]{0.6\textwidth}
+         BASEGRID\\
+         RECOVER\_VARIABLES
+        \end{minipage}
+       }
+      }
+\\
+      \fbox{
+       \begin{minipage}[c]{10ex}
+        \tt
+        loop $\uparrow$ mglevels
+       \end{minipage}
+%
+       \fbox{
+        \begin{minipage}[c]{0.6\textwidth}
+         PREREGRID
+        \end{minipage}
+       }
+      }
+\\
+      \fbox{
+       \begin{minipage}[c]{0.94\textwidth}
+        Regrid
+       \end{minipage}
+      }
+\\
+      \fbox{
+       \begin{minipage}[c]{10ex}
+        \tt
+        loop $\uparrow$ mglevels
+       \end{minipage}
+%
+       \fbox{
+        \begin{minipage}[c]{0.6\textwidth}
+         POSTREGRID
+        \end{minipage}
+       }
+      }
+     \end{minipage}
+    }
+\\
+    \fbox{
+     \begin{minipage}[c]{22ex}
+      \tt
+      loop $\uparrow$ reflevels\\
+      \hspace*{2ex}loop $\uparrow$ mglevels
+     \end{minipage}
+%
+     \fbox{
+      \begin{minipage}[c]{0.49\textwidth}
+       POST\_RECOVER\_VARIABLES
+%      $\longrightarrow$ Recurse
+      \end{minipage}
+     }
+    }
+   \end{minipage}
+  }
+ \end{minipage}
+}
+\\
+%%%%%%
+\fbox{
+ \begin{minipage}[t]{\textwidth}
+  \begin{minipage}[c]{22ex}
+   \tt
+   loop $\uparrow$ reflevels\\
+   \hspace*{2ex}loop $\uparrow$ mglevels
+  \end{minipage}
+%
+  \fbox{
+   \begin{minipage}[c]{0.78\textwidth}
+    CPINITIAL\\
+    ANALYSIS\\
+    OutputGH
+   \end{minipage}
+  }
+ \end{minipage}
+}
+\\
+%%%%%%
+\fbox{
+ \begin{minipage}[t]{\textwidth}
+  \begin{minipage}[c]{0.1\textwidth}
+   main loop\\
+   over\\
+   time steps
+  \end{minipage}
+%
+  \begin{minipage}[c]{1.58\textwidth}
+   \fbox{
+    \begin{minipage}[c]{22ex}
+     \tt
+     loop $\uparrow$ reflevels\\
+     \hspace*{2ex}loop $\downarrow$ mglevels
+    \end{minipage}
+%
+    \fbox{
+     \begin{minipage}[c]{0.41\textwidth}
+      PREREGRID
+     \end{minipage}
+    }
+   }
+\\
+%
+   \fbox{
+    \begin{minipage}[c]{22ex}
+     \tt
+     loop $\uparrow$ reflevels
+    \end{minipage}
+%
+    \fbox{
+     \begin{minipage}[c]{0.41\textwidth}
+      Regrid
+     \end{minipage}
+    }
+   }
+\\
+%
+   \fbox{
+    \begin{minipage}[c]{22ex}
+     \tt
+     loop $\uparrow$ reflevels\\
+     \hspace*{2ex}loop $\downarrow$ mglevels
+    \end{minipage}
+%
+    \fbox{
+     \begin{minipage}[c]{0.41\textwidth}
+      POSTREGRID
+     \end{minipage}
+    }
+   }
+\\
+%
+   \fbox{
+    \begin{minipage}[c]{22ex}
+     \tt
+     loop $\downarrow$ mglevels\\
+     \hspace*{2ex}loop $\uparrow$ reflevels
+    \end{minipage}
+%
+    \fbox{
+     \begin{minipage}[c]{0.41\textwidth}
+      Advance time\\
+      PRESTEP\\
+      EVOL (includes all of \texttt{MoL})
+     \end{minipage}
+    }
+   }
+\\
+%
+   \fbox{
+    \begin{minipage}[c]{22ex}
+     \tt
+     loop $\downarrow$ mglevels\\
+     \hspace*{2ex}loop $\downarrow$ reflevels
+    \end{minipage}
+%
+    \fbox{
+     \begin{minipage}[c]{0.41\textwidth}
+      Restrict
+     \end{minipage}
+    }
+   }
+\\
+%
+   \fbox{
+    \begin{minipage}[c]{22ex}
+     \tt
+     loop $\downarrow$ mglevels\\
+     \hspace*{2ex}loop $\uparrow$ reflevels
+    \end{minipage}
+%
+    \fbox{
+     \begin{minipage}[c]{0.41\textwidth}
+      POSTRESTRICT\\
+      POSTSTEP\\
+      CHECKPOINT\\
+      ANALYSIS\\
+      OutputGH
+     \end{minipage}
+    }
+   }
+  \end{minipage}
+ \end{minipage}
+}
+\\
+%%%%%%
+\fbox{
+ \begin{minipage}[c]{\textwidth}
+  \begin{minipage}[c]{22ex}
+   \tt
+   loop $\downarrow$ reflevels\\
+   \hspace*{2ex}loop $\downarrow$ mglevels
+  \end{minipage}
+%
+  \fbox{
+   \begin{minipage}[c]{0.78\textwidth}
+%      $\longrightarrow$ Recurse\\
+    TERMINATE
+   \end{minipage}
+  }
+ \end{minipage}
+}
+\\
+%%%%%%
+\fbox{
+ \begin{minipage}[c]{\textwidth}
+  \begin{minipage}[c]{22ex}
+   \tt
+   loop $\downarrow$ mglevels
+  \end{minipage}
+%
+  \fbox{
+   \begin{minipage}[c]{0.78\textwidth}
+    SHUTDOWN
+   \end{minipage}
+  }
+ \end{minipage}
+}
+\end{center}
+\caption[Detailed View of the \thorn{Carpet} Berger-Oliger Algorithm]
+	{
+	This figure gives a detailed description of how Carpet
+		uses the Berger-Oliger algorithm
+		to sequence through the schedule bins and grids
+		(see figure~\protect\ref{fig-Carpet-Berger-Oliger-summary}
+		 for a summary of the algorithm).			\\
+	$\uparrow$ loops iterate upwards
+		on \texttt{mglevel} or \texttt{reflevel},
+		\ie{} (for \texttt{reflevel})
+		from coarse grids to fine grids.			\\
+	$\downarrow$ loops iterate downwards
+		on \texttt{mglevel} or \texttt{reflevel},
+		\ie{} (for \texttt{reflevel})
+		from fine grids to coarse grids.			\\
+	At present \texttt{mglevels} aren't used, \ie{} the
+		\texttt{mglevels} loops have only a single iteration.	%%%\\
+	}
+\label{fig-Carpet-Berger-Oliger-details}
+\end{figure}
+%%%%%%%%%%
+
+%%%%%%%%%%
+\begin{figure}
+\def\B#1{\textbf{#1}}
+\def\tab{\phantom{\texttt{~~~~~~~~}}}
+\begin{tabbing}
+\B{procedure} \verb|Carpet_use_modes|\B{(}\=%%%
+        \B{function} \verb|scheduled_routine|,				\\
+        \>\B{string} \verb|schedule_mode|,				\\
+        \>\B{string} \verb|schedule_options|,				\\
+        \>\B{int} \texttt{mglevel},
+        \B{int} \texttt{reflevel}\B{)}					\\
+\B{select} \B{case} \verb|schedule_mode|				\\
+\B{case} META\B{:}							\\
+\tab    \=\B{if} \=\B{(}\verb|do_global_mode_routines_now()|
+                        \textbf{and} this is the coarsest convergence level)
+									\\
+        \>        \>\B{then}
+                        call \verb|scheduled_routine()| in META mode	\\
+\B{case} GLOBAL\B{:}							\\
+\tab    \=\B{if} \=\B{(}\verb|do_global_mode_routines_now()|)		\\
+        \>       \>\B{then}
+			call \verb|scheduled_routine(mglevel)|
+			in GLOBAL mode					\\
+\B{case} LEVEL\B{:}							\\
+	\>call \verb|scheduled_routine(mglevel, reflevel)|
+	in LEVEL mode							\\
+\B{case} SINGLEMAP\B{:}							\\
+	\>\B{begin} loop over all maps \verb|m|
+		  in (\verb|mglevel, reflevel|)				\\
+	\>\tab	\=call \verb|scheduled_routine(mglevel, reflevel, m)|
+		  in SINGLEMAP mode					\\
+	\>\B{end} loop over map \verb|m|			\\
+\B{case} LOCAL\B{:}							\\
+	\>\B{begin} loop over all maps \verb|m|
+		  in (\verb|mglevel, reflevel|)				\\
+	\>\tab	\=\B{begin} loop over all components \verb|c|
+			  in (\verb|mglevel, reflevel, m|)		\\
+	\>	\>\tab	\=call
+			  \verb|scheduled_routine(mglevel, reflevel, m, c)|
+			  in LOCAL mode					\\
+	\>	\>\B{end} loop over components \verb|c|	\\
+	\>\B{end} loop over map \verb|m|			\\
+\B{end} \B{select} \B{case}						\\
+\B{end} \B{procedure}							%%%\\
+%
+\end{tabbing}
+\begin{tabbing}
+\B{Boolean} \B{function} \verb|do_global_mode_routines_now()|		\\
+FIXME: THIS IS COMPLICATED
+       AND VARIES FROM ONE SCHEDULE BIN TO ANOTHER			\\
+\B{end} \B{function}							%%%\\
+\end{tabbing}
+%
+In \verb|Carpet_use_modes()|, suppose \verb|schedule_mode| is X.
+Then if \verb|chedule_options| is ``loop-Y'', replace
+\begin{verbatim}
+call scheduled_routine(X_arguments) in X mode
+\end{verbatim}
+by
+\begin{verbatim}
+loop over all ... in ...
+        loop over all ... in ...
+                call scheduled_routine(X_arguments, ...) in Y mode
+        end loop over ...
+end loop over ...
+\end{verbatim}
+with the appropriate number and kind of loops to get from X mode to Y mode,
+and with the corresponding set of extra arguments to the scheduled routine.
+[If X is LEVEL, SINGLEMAP, or LOCAL, then this gives exactly the same
+result as just scheduling \verb|scheduled_routine| in Y~mode, so the
+``loop-Y'' schedule option is only interesting (gives new semantics)
+if X is META or GLOBAL.]
+\caption[How Carpet uses Modes when Calling Scheduled Routines]
+	{
+	This figure shows how Carpet uses modes when calling
+	scheduled routines.  The input to this algorithm is the
+	sequence of
+	$(\textrm{scheduled routine},\,\,
+	  \textrm{schedule mode},\,\, \textrm{schedule options},\,\,
+	  \texttt{mglevel},\,\, \texttt{reflevel})$
+	tuples produced as Carpet steps through the Berger-Oliger
+	algorithm (figures~\protect\ref{fig-Carpet-Berger-Oliger-summary}
+	and~\protect\ref{fig-Carpet-Berger-Oliger-details}).
+	}
+\label{fig-how-Carpet-uses-modes}
+\end{figure}
+%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Examples, Tips, and Tricks}
+
+This section isn't written yet. :(
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Other Miscellaneous Stuff}
+
+Erik says:
+I am surprised that the \verb|POSTSTEP| loop for the initial data is
+fine--to--coarse.  I think people may apply boundary conditions in
+this bin\ldots Maybe this loop needs to be reversed?
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\bibliographystyle{alpha}
+\bibliography{scheduling}
+
+\end{document}
