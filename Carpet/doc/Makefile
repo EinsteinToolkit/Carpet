@@ -1,4 +1,4 @@
-NAME=documentation
+NAME=scheduling
 
 all: ${NAME}.dvi ${NAME}.ps ${NAME}.ps.gz ${NAME}.pdf
 
@@ -11,7 +11,7 @@ ${NAME}.dvi: carpet.bib
 	latex $*
 
 %.ps: %.dvi
-	dvips $*
+	dvips $* -o ${NAME}.ps
 
 %.pdf: %.dvi
 	pdflatex $*
