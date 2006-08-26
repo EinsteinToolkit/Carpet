@@ -26,8 +26,12 @@
 \date{24 August 2006}
 \maketitle
 \begin{abstract}
-This document describes how scheduling in (\thorn{PUGH} and)
-\thorn{Carpet} works.
+This document describes how scheduling works in (\thorn{PUGH} and)
+\thorn{Carpet}.  This information is particularly useful if you're
+using \thorn{Carpet} and you need to do a mixture of local computations
+at each grid point (\eg{} computing some grid function), and global
+operations which need to operate across multiple grids (\eg{} computing
+norms of this grid function).
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -40,14 +44,13 @@ to major phases of a simulation, like \verb|BASEGRID|, \verb|INITIAL|,
 an up-to-date list of all the schedule bins (currently these are listed
 in section~E3).%%%
 \footnote{%%%
-	 Note that there are a few special schedule bins, notably
-	 \texttt{STARTUP}, \texttt{RECOVER\_PARAMETERS}, and
-	 \texttt{SHUTDOWN}.  These have special semantics, and much
-	 of the description here doesn't apply to them.  As a user,
-	 you may want to try to avoid scheduling routines in these
-	 bins for this reason, and instead use the \texttt{WRAGH},
-	 \texttt{BASEGRID}, and \texttt{TERMINATE} schedule bins
-	 respectively.
+	 Note that a few schedule bins (notably \texttt{STARTUP},
+	 \texttt{RECOVER\_PARAMETERS}, and \texttt{SHUTDOWN}) have
+	 special semantics; much of the description here doesn't
+	 apply to them.  Unless you really know what you're doing,
+	 you should probably avoid scheduling routines in these
+	 bins; instead use the \texttt{WRAGH}, \texttt{BASEGRID},
+	 and \texttt{TERMINATE} schedule bins respectively.
 	 }%%%
 
 There are two major pieces of software involved in scheduling:
@@ -497,7 +500,7 @@ then include \verb|"carpet.hh"| in your \Cplusplus{} source code
 (this must come \emph{after} including \verb|"cctk.h"|).
 
 To query the current mode, just use any of the Boolean predicates
-\verb|is_meta_mode()|, \verb|is_global_mode()|, \dots \verb|is_local_mode()|.
+\verb|is_meta_mode()|, \verb|is_global_mode()|, \dots, \verb|is_local_mode()|.
 A common usage of these is in assertions, to verify that the mode
 is what it should be, \eg{}
 \begin{verbatim}
@@ -517,16 +520,16 @@ assert(Carpet::is_level_mode());
 For changing modes, the macros defined in \verb|carpet.hh| provide
 a higher-level interface, and automagically enforce proper nesting
 of the modes (in the sense of figure~\ref{fig-Carpet-loops-and-modes}).
-Unfortunately, they require you to import the entire Carpet namespace
-with ``\verb|using namespace Carpet;|''%%%
+Unfortunately, they require you to import the entire \verb|Carpet::|
+namespace with ``\verb|using namespace Carpet;|''%%%
 \footnote{%%%
 	 This is a bug, and hopefully will be fixed someday\dots
 	 }%%%
 {} although you only need to this in a local block enclosing the macros'
 use.  The mode-changing functions provide a lower-level interface, and
 do not enforce proper nesting, but they can be used with explicit
-\verb|Carpet::| namespace qualifications, which avoids having to import
-the entire \verb|Carpet| namespace.
+\verb|Carpet::| namespace qualifications (\ie{} without having to import
+the entire \verb|Carpet::| namespace).
 
 The macros set the \verb|cctkGH| entries as appropriate.  However, they
 don't define or undefine grid functions, grid variables, or any \verb|cctk_|*
@@ -1148,8 +1151,11 @@ SHUTDOWN
 \end{tabbing}
 \begin{tabbing}
 \B{Boolean} \B{function} \verb|do_global_mode_routines_now()|		\\
-FIXME: THIS IS COMPLICATED
-       AND VARIES FROM ONE SCHEDULE BIN TO ANOTHER			\\
+FIXME: \=THIS IS COMPLICATED
+         AND VARIES FROM ONE SCHEDULE BIN TO ANOTHER,			\\
+       \>BUT IT IS USUALLY A TEST OF THE FORM				\\
+       \>\verb|reflevel == |$R$						\\
+       \>where $R$ is either the coarsest or the finest \verb|reflevel|	\\
 \B{end} \B{function}							%%%\\
 \end{tabbing}
 %
