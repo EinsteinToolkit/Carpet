@@ -68,13 +68,22 @@ There are two major pieces of software involved in scheduling:
 	consistent with the \verb|BEFORE| and \verb|AFTER| clauses in
 	all the schedule groups.  The flesh also handles repeatedly
 	calling scheduled routines which are scheduled with a
-	\verb|WHILE| clause.  The flesh does \emph{not} know anything
+	\verb|WHILE| clause.
+        In addition, the flesh determines when storage is turned
+        on/off for grid scalars, functions, and arrays and when
+        grid arrays and functions are synchronised,
+        based on the {\tt STORAGE:} and {\tt SYNC:} statements in
+        schedule blocks.
+
+        The flesh does \emph{not} know anything
 	about the spatial grid or grids, or how grid functions are
 	stored in memory or distributed across processors.
 \item	The driver, typically \thorn{PUGH} or \thorn{Carpet}.
 	The driver defines the set of allowed schedule bins.
 	The driver knows about the grid or grids, and how grid functions
-	are stored in memory and distributed across processors.
+	are stored in memory, distributed across processors, and
+        synchronised.
+
 	The driver does \emph{not} know what's in \verb|schedule.ccl| files.
 \end{itemize}
 
@@ -476,8 +485,10 @@ Synchronization and turning storage on/off happen in level mode.%%%
 	 singlemap and local modes if there is only one
 	 component per processor.
 	 }%%%
-{}  Boundary conditions must be selected (in the sense of thorn
-\thorn{Boundary}) in level mode.  Cactus output must be done in level mode.
+{}  (At any time only the ``current'' refinement level has storage
+turned on.)  Boundary conditions must be selected (in the sense of
+thorn \thorn{Boundary}) in level mode.  Cactus output must be done
+in level mode.
 
 Reduction/interpolation of grid arrays and/or grid functions may be
 done in either level mode (applying only to that refinement level),
