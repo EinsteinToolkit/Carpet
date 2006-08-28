@@ -1209,7 +1209,97 @@ if X is META or GLOBAL.]
 
 \subsection{Examples, Tips, and Tricks}
 
-This section isn't written yet. :(
+This section needs more writing. :(
+
+\subsubsection{Example 1}
+
+{\bf Problem}
+
+How to perform a global operation (e.g. maximum reduction) once at \verb|CCTK_POSTINITIAL| (call the
+routine which performs this global operation routine A), before another routine, B, which is scheduled in local mode. As a further
+constraint, suppose that the scheduling of thorn B cannot be modified.\\
+
+\noindent {\bf A solution}
+
+Use the Carpet namespace functions to manually change mode, before executing the global computation,
+and then go back to the original mode. That is, schedule A in local mode \verb|BEFORE| B:
+
+\begin{verbatim}
+schedule A  AT CCTK_PostInitial BEFORE B
+{
+  LANG: C
+} "global operation"
+\end{verbatim}
+
+where A is the \Cplusplus{} (this is necessary in order to access the carpet namespace variables
+and functions which are used in the routine) routine described in Fig.~\ref{fig-example1}
+
+\begin{figure}
+\begin{verbatim}
+#include "Carpet/Carpet/src/carpet.hh"
+
+void A(CCTK_ARGUMENTS)
+{
+ DECLARE_CCTK_ARGUMENTS;
+ DECLARE_CCTK_PARAMETERS;
+ static int flag = true; // flag used to have this routine effectively executed only once
+
+ // Store the present values of the active refinement level, single map and component.
+ // Variables from the Carpet namespace.
+ int rl = Carpet::reflevel;   
+ int singlemap = Carpet::map;
+ int comp = Carpet::component;
+    
+ if (flag)
+    {
+    // Go to global mode
+    // That is:
+    // Leave local mode
+    assert(Carpet::is_local_mode());
+    Carpet::leave_local_mode (cctkGH);
+
+    // Leave singlemap mode
+    assert(Carpet::is_singlemap_mode());
+    Carpet::leave_singlemap_mode (cctkGH);	    
+
+    // Leave level mode
+    assert(Carpet::is_level_mode());
+    Carpet::leave_level_mode (cctkGH);	    
+		
+    assert(Carpet::is_global_mode());
+	    
+    // Do the global operation
+    ...
+    // Go back to local mode
+	    
+    // Enter level mode
+    Carpet::enter_level_mode (cctkGH, rl);
+    assert(Carpet::is_level_mode());
+
+    // Enter singlemap mode
+    Carpet::enter_singlemap_mode (cctkGH, singlemap);
+    assert(Carpet::is_singlemap_mode());
+	    
+    // Enter local mode
+    Carpet::enter_local_mode (cctkGH, comp);
+    assert(Carpet::is_local_mode());
+  }
+// After this has run once, set the flag so that this does not run again
+flag = false;
+     } // end if (flag)
+   else
+     {
+      return;
+     }
+}
+\end{verbatim}
+\caption[Example1]
+	{
+	  Example1: perform a global operation A, before given local routine B, 
+	  in the case that the scheduling of thorn B cannot be modified.
+	}
+\label{fig-example1}
+\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
