@@ -74,6 +74,9 @@ while (<>) {
   # falls diese Zeile einen neuen Datensatz einleitet:
   if (/^# iteration (\d+)$/) {
 
+    # gib die aktuelle (Kommentar-)Zeile aus
+    print;
+
     # ermittle die Iterationsnummer aus der aktuellen Zeile ...
     my $iteration = $1;
 
