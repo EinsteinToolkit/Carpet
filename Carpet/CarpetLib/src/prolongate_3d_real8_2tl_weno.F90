@@ -1,3 +1,4 @@
+#ifndef OMIT_F90
 !!$     -*-Fortran-*-
 
 #include "cctk.h"
@@ -294,3 +295,4 @@ subroutine prolongate_3d_real8_2tl_weno (src1, t1, src2, t2, &
   end do
 
 end subroutine prolongate_3d_real8_2tl_weno
+#endif	/* !OMIT_F90 */
