@@ -58,6 +58,7 @@ using namespace std;
 typedef struct {
   hid_t file;
   string name;
+  bool is_real;
   hsize_t dims[3];
 
   int map, mglevel, component, iteration, timelevel, rflevel;
@@ -278,8 +279,8 @@ static herr_t FindPatches (hid_t group, const char *name, void *_file)
 {
   int ndims;
   hid_t dataset, datatype, attr;
-  H5T_class_t typeclass;
   H5G_stat_t object_info;
+  H5T_class_t typeclass;
   patch_t patch;
 
 
@@ -308,10 +309,10 @@ static herr_t FindPatches (hid_t group, const char *name, void *_file)
   ndims = H5Sget_simple_extent_ndims (dataspace);
 
   bool is_okay = false;
-  if (typeclass != H5T_FLOAT) {
+  if (typeclass != H5T_FLOAT and typeclass != H5T_INTEGER) {
     if (verbose) {
       cerr << "skipping dataset '" << name << "':" << endl
-           << "  is not of floating-point datatype" << endl;
+           << "  is not of integer or floating-point datatype" << endl;
     }
   } else if (ndims != 3) {
     if (verbose) {
@@ -360,6 +361,7 @@ static herr_t FindPatches (hid_t group, const char *name, void *_file)
   }
 
   patch.file = *(hid_t *) _file;
+  patch.is_real = typeclass == H5T_FLOAT;
 
   /* read attributes */
   CHECK_HDF5 (attr = H5Aopen_name (dataset, "timestep"));
@@ -446,19 +448,30 @@ static void ReadPatch (const patch_t& patch, int last_iteration)
   CHECK_HDF5 (H5Sselect_hyperslab (filespace, H5S_SELECT_SET,
                                    slabstart, NULL, slabcount, NULL));
   const hssize_t npoints = H5Sget_select_npoints (filespace);
-  double* data = new double[npoints];
-  CHECK_HDF5 (H5Dread (dataset, H5T_NATIVE_DOUBLE, slabspace, filespace,
-                       H5P_DEFAULT, data));
+  vector<int>    int_data;
+  vector<double> real_data;
+  // make sure the vector allocates at least one element
+  if (patch.is_real) {
+    real_data.resize (npoints + 1);
+  } else {
+    int_data.resize (npoints + 1);
+  }
+  CHECK_HDF5 (H5Dread (dataset,
+                       patch.is_real ? H5T_NATIVE_DOUBLE : H5T_NATIVE_INT,
+                       slabspace, filespace, H5P_DEFAULT,
+                       patch.is_real ? static_cast<void*> (&real_data[0])
+                                     : static_cast<void*> (&int_data[0])));
   CHECK_HDF5 (H5Sclose (slabspace));
   CHECK_HDF5 (H5Sclose (filespace));
   CHECK_HDF5 (H5Dclose (dataset));
 
+  int pos = 0;
   for (h5size_t k = slabstart[0];
        k < slabstart[0] + (h5size_t) slabcount[0]; k++) {
     for (h5size_t j = slabstart[1];
          j < slabstart[1] + (h5size_t) slabcount[1]; j++) {
       for (h5size_t i = slabstart[2];
-           i < slabstart[2] + (h5size_t) slabcount[2]; i++) {
+           i < slabstart[2] + (h5size_t) slabcount[2]; i++, pos++) {
         cout << patch.iteration << "\t"
              << patch.timelevel << " "
              << patch.rflevel << " "
@@ -472,20 +485,21 @@ static void ReadPatch (const patch_t& patch, int last_iteration)
              << patch.origin[0] + i*patch.delta[0] << " "
              << patch.origin[1] + j*patch.delta[1] << " "
              << patch.origin[2] + k*patch.delta[2] << "\t"
-             << resetiosflags (ios_base::fixed)
-             << setiosflags (ios_base::scientific)
-             << *data++
-             << resetiosflags (ios_base::scientific)
-             << endl;
+             << resetiosflags (ios_base::fixed);
+        if (patch.is_real) {
+          cout << setiosflags (ios_base::scientific)
+               << real_data.at(pos)
+               << resetiosflags (ios_base::scientific);
+        } else {
+          cout << int_data.at(pos);
+        }
+        cout << endl;
       }
       if (slab_coord[0] == PARAMETER_UNSET) cout << endl;
     }
     if (slab_coord[1] == PARAMETER_UNSET) cout << endl;
   }
   if (slab_coord[2] == PARAMETER_UNSET) cout << endl;
-
-  data -= npoints;
-  delete[] data;
 }
 
 
