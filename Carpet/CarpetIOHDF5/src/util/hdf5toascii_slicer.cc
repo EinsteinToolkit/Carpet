@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <vector>
 #include <cmath>
+#include <regex.h>
 
 #include <hdf5.h>
 
@@ -78,6 +79,10 @@ static double slab_coord[3] = {PARAMETER_UNSET, PARAMETER_UNSET, PARAMETER_UNSET
 // the specific timestep selected by the user
 static double timestep = PARAMETER_UNSET;
 
+// the regular expression to match against dataset names
+static const char* regex = NULL;
+static regex_t preg;
+
 // the list of all patches
 static vector<patch_t> patchlist;
 
@@ -97,7 +102,7 @@ static bool ComparePatches (const patch_t& a, const patch_t& b);
 
  /*@@
    @routine    main
-   @date       Sun 30 July 2007
+   @date       Sun 30 July 2006
    @author     Thomas Radke
    @desc
                Evaluates command line options and opens the input files.
@@ -132,6 +137,13 @@ int main (int argc, char *const argv[])
       verbose = true;
     } else if (strcmp (argv[i], "--timestep") == 0 and i+1 < argc) {
       timestep = atof (argv[++i]);
+    } else if (strcmp (argv[i], "--match") == 0 and i+1 < argc) {
+      regex = argv[++i];
+      if (regcomp (&preg, regex, REG_EXTENDED)) {
+        cerr << "Error: invalid regular expression '" << regex << "' given"
+             << endl << endl;
+        return (-1);
+      }
     } else if (strcmp (argv[i], "--out-precision") == 0 and i+1 < argc) {
       cout << setprecision (atoi (argv[++i]));
     } else if (strcmp (argv[i], "--out1d-xline-yz") == 0 and i+2 < argc) {
@@ -171,6 +183,7 @@ int main (int argc, char *const argv[])
          << endl
          << "Usage: " << endl
          << argv[0] << " [--help]" << endl
+         << indent << "[--match <regex string>]" << endl
          << indent << "[--out-precision <digits>]" << endl
          << indent << "[--timestep <cctk_time value>]" << endl
          << indent << "[--verbose]" << endl
@@ -178,11 +191,15 @@ int main (int argc, char *const argv[])
          << indent << "<hdf5_infiles>" << endl << endl
          << "  where" << endl
          << "    [--help]                         prints this help" << endl
+         << "    [--match <regex string>]         selects HDF5 datasets by their names" << endl
+         << "                                     matching a regex string using POSIX" << endl
+         << "                                     Extended Regular Expression syntax" << endl
          << "    [--out-precision <digits>]       sets the output precision" << endl
          << "                                     for floating-point numbers" << endl
          << "    [--timestep <cctk_time value>]   selects all HDF5 datasets which" << endl
          << "                                     (fuzzily) match the specified time" << endl
          << "    [--verbose]                      lists skipped HDF5 datasets on stderr" << endl
+         << endl
          << "  and either <--out1d-line value value> or <--out2d-plane value> triples" << endl
          << "  must be specified as in the following:" << endl
          << "    --out1d-xline-yz  <origin_y> <origin_z>" << endl
@@ -198,7 +215,11 @@ int main (int argc, char *const argv[])
          << "    --out2d-xyplane-zi <origin_zi>" << endl
 #endif
          << endl
-         << "  eg, " << argv[0] << " --out2d-xyplane-z 0.125 alp.file_*.h5" << endl << endl;
+         << "  eg, to extract a 2D xy-plane at z = 0:" << endl
+         << "    " << argv[0] << " --out2d-xyplane-z 0 alp.file_*.h5" << endl
+         << endl
+         << "  or the same plane but only for datasets of refinement level 0:" << endl
+         << "    " << argv[0] << " --match 'ADMBASE::alp it=[0-9]+ tl=0 rl=0' --out2d-xyplane-z 0 alp.file_*.h5" << endl;
     return (0);
   }
 
@@ -318,6 +339,11 @@ static herr_t FindPatches (hid_t group, const char *name, void *_file)
     if (verbose) {
       cerr << "skipping dataset '" << name << "':" << endl
            << "  dataset has " << ndims << " dimensions" << endl;
+    }
+  } else if (regex && regexec (&preg, name, 0, NULL, 0)) {
+    if (verbose) {
+      cerr << "skipping dataset '" << name << "':" << endl
+           << "  name doesn't match regex" << endl;
     }
   } else if (timestep != PARAMETER_UNSET and
              fabs (timestep - patch.time) > FUZZY_FACTOR) {
