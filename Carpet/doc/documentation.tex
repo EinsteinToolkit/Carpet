@@ -671,7 +671,78 @@ I assume that converting an application to FMR is straightforward
 after handling the time levels has been straightened out.
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\section{Other Features in Carpet}
+
+\subsection{Carpet Timers}
+
+{\it The text is this section was extracted from an email thread on the
+Carpet developers mailing list (see \url{http://lists.carpetcode.org/archives/developers/2006-August/001821.html})}.
+
+Special timers have been added to both {\tt Carpet} and {\tt CarpetLib} so
+that it would be easier to attribute time spent to different parts of
+a simulation.  These timers do not work as standard Cactus timers.
+Here is how to use their timing mechanisms:
+
+When measuring the performance of a simulation, one has to work on
+two levels.  On the higher level, one needs to attribute time spent
+to different routines in different thorns.  In addition to the
+existing Cactus timers, which measure the time for each scheduled
+routine, there are now timers in Carpet, measuring the following times:
+
+\begin{itemize}
+  \item{\tt Evolve}
+    total time in evolution
+  \item{\tt Evolve::do\_terminate}
+    determine whether to terminate
+  \item{\tt Evolve::AdvanceTime}
+    cycle time levels
+  \item{\tt Evolve::PreRegrid}
+    determine new grid structure
+  \item{\tt Evolve::Regrid}
+    change grid structure
+  \item{\tt Evolve::PostRegrid}
+    re-initialise after grid structure changes
+  \item{\tt Evolve::EvolutionI}
+    the "physics" time stepping
+  \item{\tt Evolve::Restrict}
+    copying fine grid values to coarser grids
+  \item{\tt Evolve::EvolutionII}
+    analysis and I/O
+\end{itemize}
+
+We suggest to active the thorn {\tt AlphaThorns/MPIClock}.  This is a timer
+based on MPI's Wtime function, measuring wall time, but also
+measuring how ofter the timer was started, and keeping track of the
+average time and the standard deviation.  We also suggest to use
+{\tt CactusUtils/TimerReport} to output these timers every few coarse grid
+time steps.
+
+Use {\tt Carpet::output\_timers\_every} to activate these timers.
+
+These timers should be understandable to every Cactus user who has
+written a thorn.  You can use them to find out what part of your
+simulation you need to optimise.  Keep in mind that Cactus's
+cumulative timing numbers for complete scheduling bins are wrong
+(there is double-counting if routines are scheduled multiple times),
+only the times for individual routines are correct.
+
+On a lower level, and when running on many processors, one needs to
+find out which processor spends how much time in what stage of
+communication.  We introduced special, non-Cactus timers for that.
+These timers measure the wall clock time,its average, its standard
+deviation, and the number of time measurements.  They also measure
+how many bytes were transferred in total, how many communications
+there were, and the average and standard deviation.
+
+Use {\tt CarpetLib::print\_timestats\_every} to activate these timers.
+
+Note that understanding  these timers probably requires some in-depth
+knowledge of Carpet's communication mechanism.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Further documentation}
 
 The individual thorns in the Carpet arrangement might contain further
