@@ -75,7 +75,7 @@ namespace Carpet {
     
     /* Prolongation management */
     CCTK_INT CarpetEnableProlongating (const CCTK_INT flag);
-    CCTK_INT CarpetQueryProlongating ();
+    CCTK_INT CarpetQueryProlongating (void);
     
     
     
