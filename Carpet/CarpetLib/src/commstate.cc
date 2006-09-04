@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
@@ -59,6 +61,7 @@ comm_state::comm_state ()
 
 void comm_state::step ()
 {
+  DECLARE_CCTK_PARAMETERS;
   assert (thestate != state_done);
   switch (thestate) {
     case state_post:
@@ -91,6 +94,12 @@ void comm_state::step ()
 
           procbuf.sendbufbase = new char[procbuf.sendbufsize*datatypesize];
           procbuf.recvbufbase = new char[procbuf.recvbufsize*datatypesize];
+          // TODO: this may be a bit extreme, and it is only for
+          // internal consistency checking
+          if (poison_new_memory) {
+            memset (procbuf.sendbufbase, poison_value, procbuf.sendbufsize*datatypesize);
+            memset (procbuf.recvbufbase, poison_value, procbuf.recvbufsize*datatypesize);
+          }
           procbuf.sendbuf = procbuf.sendbufbase;
           procbuf.recvbuf = procbuf.recvbufbase;
 
