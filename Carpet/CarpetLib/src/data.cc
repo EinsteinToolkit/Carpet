@@ -165,7 +165,7 @@ void data<T>::change_processor_recv (comm_state& state,
       MPI_Irecv (_memory->storage(0),
                  _size, dist::datatype(dummy), proc(),
                  tag, dist::comm(), &request);
-      wtime_irecv.stop();
+      wtime_irecv.stop(_size * sizeof(T));
       if (use_waitall) {
         state.requests.push_back (request);
       }
@@ -217,7 +217,7 @@ void data<T>::change_processor_send (comm_state& state,
       MPI_Isend (_memory->storage(0),
                  _size, dist::datatype(dummy), newproc,
                  tag, dist::comm(), &request);
-      wtime_isend.stop();
+      wtime_isend.stop(_size * sizeof(T));
       if (use_waitall) {
         state.requests.push_back (request);
       }

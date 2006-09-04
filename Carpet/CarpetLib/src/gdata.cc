@@ -177,12 +177,14 @@ void gdata::copy_from_post (comm_state& state,
 
     wtime_copyfrom_recvinner_allocate.start();
     comm_state::gcommbuf * b = make_typed_commbuf (box);
-    wtime_copyfrom_recvinner_allocate.stop();
+    int typesize;
+    MPI_Type_size (b->datatype(), & typesize);
+    wtime_copyfrom_recvinner_allocate.stop(b->size() * typesize);
 
     wtime_copyfrom_recvinner_recv.start();
     MPI_Irecv (b->pointer(), b->size(), b->datatype(), src->proc(),
                tag, dist::comm(), &b->request);
-    wtime_copyfrom_recvinner_recv.stop();
+    wtime_copyfrom_recvinner_recv.stop(b->size() * typesize);
     state.requests.push_back (b->request);
     state.recvbufs.push (b);
 
@@ -191,7 +193,9 @@ void gdata::copy_from_post (comm_state& state,
 
     wtime_copyfrom_sendinner_allocate.start();
     comm_state::gcommbuf * b = src->make_typed_commbuf (box);
-    wtime_copyfrom_sendinner_allocate.stop();
+    int typesize;
+    MPI_Type_size (b->datatype(), & typesize);
+    wtime_copyfrom_sendinner_allocate.stop(b->size() * typesize);
 
     // copy data into send buffer
     wtime_copyfrom_sendinner_copy.start();
@@ -202,20 +206,22 @@ void gdata::copy_from_post (comm_state& state,
     char* send_buffer = (char*) b->pointer();
     int& datatypesize = state.typebufs.at(c_datatype()).datatypesize;
 
+    double bytes = 0;
     for (int k = 0; k < items[2]; k++) {
       for (int j = 0; j < items[1]; j++) {
         int i = offs[0] + myshape[0]*((j+offs[1]) + myshape[1]*(k+offs[2]));
         memcpy (send_buffer, ((char*) src->storage()) + datatypesize*i,
                 datatypesize * items[0]);
         send_buffer += datatypesize * items[0];
+        bytes += datatypesize * items[0];
       }
     }
-    wtime_copyfrom_sendinner_copy.stop();
+    wtime_copyfrom_sendinner_copy.stop(bytes);
 
     wtime_copyfrom_sendinner_send.start();
     MPI_Isend (b->pointer(), b->size(), b->datatype(), proc(),
                tag, dist::comm(), &b->request);
-    wtime_copyfrom_sendinner_send.stop();
+    wtime_copyfrom_sendinner_send.stop(b->size() * typesize);
     state.requests.push_back (b->request);
     state.sendbufs.push (b);
   }
@@ -316,7 +322,7 @@ void gdata::copy_into_sendbuffer (comm_state& state,
                  state.typebufs.at(c_datatype()).mpi_datatype,
                  proc(), c_datatype(), dist::comm(),
                  &state.srequests.at(dist::size()*c_datatype() + proc()));
-      wtime_commstate_isend.stop();
+      wtime_commstate_isend.stop(procbuf.sendbufsize * datatypesize);
     }
   }
 }
@@ -340,6 +346,7 @@ void gdata::copy_from_recvbuffer (comm_state& state,
   ivect offs  = (box.lower() - ext.lower()) / ext.stride();
 
   wtime_commstate_memcpy.start();
+  double bytes = 0;
   assert (dim == 3);
   for (int k = 0; k < items[2]; k++) {
     for (int j = 0; j < items[1]; j++) {
@@ -347,9 +354,10 @@ void gdata::copy_from_recvbuffer (comm_state& state,
       memcpy (((char*) storage()) + datatypesize*i,
               procbuf.recvbuf, datatypesize * items[0]);
       procbuf.recvbuf += datatypesize * items[0];
+      bytes += datatypesize * items[0];
     }
   }
-  wtime_commstate_memcpy.stop();
+  wtime_commstate_memcpy.stop(bytes);
 }
 
 
@@ -455,17 +463,21 @@ void gdata
     // this processor receives data
 
     comm_state::gcommbuf * b = make_typed_commbuf (box);
+    int typesize;
+    MPI_Type_size (b->datatype(), & typesize);
 
     wtime_commstate_interpolate_irecv.start();
     MPI_Irecv (b->pointer(), b->size(), b->datatype(), src->proc(),
                tag, dist::comm(), &b->request);
-    wtime_commstate_interpolate_irecv.stop();
+    wtime_commstate_interpolate_irecv.stop(b->size() * typesize);
     state.requests.push_back (b->request);
     state.recvbufs.push (b);
   } else {
     // this processor sends data
 
     comm_state::gcommbuf * b = src->make_typed_commbuf (box);
+    int typesize;
+    MPI_Type_size (b->datatype(), & typesize);
 
     gdata * tmp = src->make_typed (varindex, transport_operator, tag);
     tmp->allocate (box, src->proc(), b->pointer());
@@ -476,7 +488,7 @@ void gdata
     wtime_commstate_interpolate_from_isend.start();
     MPI_Isend (b->pointer(), b->size(), b->datatype(), proc(),
                tag, dist::comm(), &b->request);
-    wtime_commstate_interpolate_from_isend.stop();
+    wtime_commstate_interpolate_from_isend.stop(b->size() * typesize);
     state.requests.push_back (b->request);
     state.sendbufs.push (b);
   }
@@ -529,7 +541,7 @@ void gdata
                  state.typebufs.at(c_datatype()).mpi_datatype,
                  proc(), c_datatype(), dist::comm(),
                  &state.srequests.at(dist::size()*c_datatype() + proc()));
-      wtime_commstate_interpolate_to_isend.stop();
+      wtime_commstate_interpolate_to_isend.stop(procbuf.sendbufsize*datatypesize);
     }
   }
 }

@@ -15,13 +15,19 @@ public:
   double wtime2;
   double wmin;
   double wmax;
+  
+  double bytes;
+  double bytes2;
+  double bmin;
+  double bmax;
+  
   double count;
   
 public:
   timestat ();
   
 private:
-  void addstat (double const t);
+  void addstat (double t, double b);
   
 private:
   bool running;
@@ -29,7 +35,7 @@ private:
   
 public:
   void start();
-  void stop();
+  void stop(double bytes = 0.0);
 };
 
 ostream& operator<< (ostream& os, const timestat& wt);

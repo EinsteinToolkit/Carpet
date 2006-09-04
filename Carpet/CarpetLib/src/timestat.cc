@@ -18,17 +18,25 @@ using namespace std;
 
 
 timestat::timestat ()
-  : wtime(0.0), wtime2(0.0), wmin(0.0), wmax(0.0), count(0.0),
+  : wtime(0.0), wtime2(0.0), wmin(0.0), wmax(0.0),
+    bytes(0.0), bytes2(0.0), bmin(0.0), bmax(0.0),
+    count(0.0),
     running(false)
 {
 }
 
-void timestat::addstat (double const t)
+void timestat::addstat (double const t, double const b)
 {
   wtime += t;
   wtime2 += t*t;
   wmin = min (wmin, t);
   wmax = max (wmax, t);
+  
+  bytes += b;
+  bytes2 += b*b;
+  bmin = min (bmin, b);
+  bmax = max (bmax, b);
+  
   ++count;
 }
 
@@ -39,12 +47,12 @@ void timestat::start ()
   starttime = MPI_Wtime();
 }
 
-void timestat::stop ()
+void timestat::stop (double const b)
 {
   assert (running);
   running = false;
   double const endtime = MPI_Wtime();
-  addstat (endtime - starttime);
+  addstat (endtime - starttime, b);
 }
 
 
@@ -53,13 +61,20 @@ ostream& operator<< (ostream& os, const timestat& wt)
 {
   double const avg = wt.wtime / wt.count;
   double const stddev = sqrt (max (0.0, wt.wtime2 / wt.count - pow (avg, 2)));
+  double const bavg = wt.bytes / wt.count;
+  double const bstddev = sqrt (max (0.0, wt.bytes2 / wt.count - pow (bavg, 2)));
   os << "timestat[seconds]:"
      << " cnt: " << wt.count
-     << " sum: " << wt.wtime
+     << "   time: sum: " << wt.wtime
      << " avg: " << avg
      << " stddev: " << stddev
      << " min: " << wt.wmin
-     << " max: " << wt.wmax;
+     << " max: " << wt.wmax
+     << "   bytes: sum: " << wt.bytes
+     << " avg: " << bavg
+     << " stddev: " << bstddev
+     << " min: " << wt.bmin
+     << " max: " << wt.bmax;
   return os;
 }
 
