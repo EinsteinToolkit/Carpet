@@ -516,7 +516,8 @@ namespace Carpet {
 #endif
       
       // Recompose grid hierarchy
-      vhh.at(m)->recompose (bbssss.at(m), obsss.at(m), psss.at(m), false);
+      vhh.at(m)->regrid (bbssss.at(m), obsss.at(m), psss.at(m));
+      vhh.at(m)->recompose (0, false);
     }
     
     print_grid_structure (vhh);
@@ -1412,7 +1413,8 @@ namespace Carpet {
         char * const groupname = CCTK_GroupName (group);
         assert (groupname);
         Checkpoint ("Recomposing grid array group \"%s\"...", groupname);
-        arrdata.at(group).at(0).hh->recompose (bbsss, obss, pss, false);
+        arrdata.at(group).at(0).hh->regrid (bbsss, obss, pss);
+        arrdata.at(group).at(0).hh->recompose (0, false);
         Checkpoint ("Done recomposing grid array group \"%s\".", groupname);
         free (groupname);
       }

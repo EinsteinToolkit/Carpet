@@ -228,7 +228,10 @@ namespace Carpet {
     // not change
     
     // Recompose
-    vhh.at(m)->recompose (bbsss, obss, pss, do_init);
+    vhh.at(m)->regrid (bbsss, obss, pss);
+    for (int rl=0; rl<vhh.at(m)->reflevels(); ++rl) {
+      vhh.at(m)->recompose (rl, do_init);
+    }
     
     CCTK_VInfo (CCTK_THORNSTRING,
                 "Done recomposing the grid hierarchy for map %d.", m);
