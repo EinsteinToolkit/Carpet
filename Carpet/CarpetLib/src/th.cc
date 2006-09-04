@@ -34,7 +34,7 @@ th::~th ()
 }
 
 // Modifiers
-void th::recompose ()
+void th::regrid ()
 {
   const int old_mglevels = times.size();
   times.resize(h.mglevels());

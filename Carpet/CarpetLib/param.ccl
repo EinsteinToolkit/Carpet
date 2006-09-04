@@ -16,6 +16,23 @@ BOOLEAN barriers "Insert barriers at strategic places for debugging purposes (sl
 
 
 
+BOOLEAN omit_prolongation_points_when_restricting "Do not restrict to points which are used to prolongate the boundary" STEERABLE=always
+{
+} "no"
+
+INT proper_nesting_distance "Minimum distance (in grid points) between two level interfaces" STEERABLE=always
+{
+  0:* :: "any non-negative value is fine; the default value is just a guess"
+} 4
+
+
+
+BOOLEAN output_bboxes "Output bounding box information to the screen" STEERABLE=always
+{
+} "no"
+
+
+
 BOOLEAN poison_new_memory "Try to catch uninitialised data by setting newly allocated memory to values that will catch your attention" STEERABLE=always
 {
 } "no"
@@ -27,10 +44,6 @@ CCTK_INT poison_value "Integer value (0..255) used to poison new timelevels (wit
 
 
 
-BOOLEAN output_bboxes "Output bounding box information to the screen" STEERABLE=always
-{
-} "no"
-
 BOOLEAN print_timestats "Print timing statistics at every iteration" STEERABLE=always
 {
 } "no"
@@ -40,25 +53,6 @@ INT print_timestats_every "Print timing statistics periodically" STEERABLE=alway
   0   :: "don't report"
   1:* :: "report every so many iterations"
 } 0
-
-BOOLEAN save_memory_during_regridding "Save some memory during regridding at the expense of speed" STEERABLE=always
-{
-} "yes"
-
-BOOLEAN fast_recomposing "Take shortcuts during recomposing (EXPERIMENTAL)" STEERABLE=always
-{
-} "no"
-
-
-
-BOOLEAN omit_prolongation_points_when_restricting "Do not restrict to points which are used to prolongate the boundary" STEERABLE=always
-{
-} "no"
-
-INT proper_nesting_distance "Minimum distance (in grid points) between two level interfaces" STEERABLE=always
-{
-  0:* :: "any non-negative value is fine; the default value is just a guess"
-} 4
 
 
 
@@ -79,6 +73,8 @@ STRING memstat_file "File name in which memstat output is collected (because std
   "^$"   :: "empty filename: no file output"
   "^.+$" :: "file name"
 } "carpetlib-memory-statistics"
+
+
 
 SHARES: IO
 
@@ -115,5 +111,13 @@ BOOLEAN use_collective_communication_buffers "Use collective buffers for MPI com
 } "yes"
 
 BOOLEAN minimise_outstanding_communications "Minimise the number of Isend/Irecv operations that are submitted concurrently -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
+{
+} "no"
+
+BOOLEAN save_memory_during_regridding "Save some memory during regridding at the expense of speed -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
+{
+} "yes"
+
+BOOLEAN fast_recomposing "Take shortcuts during recomposing -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
 {
 } "no"

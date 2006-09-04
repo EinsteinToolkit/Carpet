@@ -118,8 +118,9 @@ public:                         // should be readonly
   int inner_buffer_width;       // buffer inside refined grids
   i2vect buffers;               // buffer outside refined grids
   
-  mboxes boxes;
-  mbases bases;
+  mboxes boxes;                 // grid hierarchy
+  mbases bases;                 // bounding boxes around the grid
+                                // hierarchy
   
   list<ggf*> gfs;               // list of all grid functions
   
@@ -137,7 +138,8 @@ public:
   int prolongation_stencil_size () const;
   
   // Modifiers
-  void recompose (const bool do_prolongate);
+  void regrid ();
+  void recompose (const int rl, const bool do_prolongate);
   
   // Grid function management
   void add (ggf* f);

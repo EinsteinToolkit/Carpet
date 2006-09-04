@@ -91,7 +91,6 @@ public:
   void set_timelevels (int ml, int rl, int new_timelevels);
 
   void recompose_crop ();
-  bool recompose_did_change (int rl) const;
   void recompose_allocate (int rl);
   void recompose_fill (comm_state& state, int rl, bool do_prolongate);
   void recompose_free (int rl);

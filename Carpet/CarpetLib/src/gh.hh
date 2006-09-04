@@ -62,6 +62,10 @@ private:
   rbnds _outer_boundaries;	// boundary descriptions of all grids
   rprocs _processors;		// processor numbers of all grids
 
+  mexts _oldextents;            // a copy, used during regridding
+  rbnds _oldouter_boundaries;
+  rprocs _oldprocessors;
+
   list<th*> ths;		// list of all time hierarchies
   list<dh*> dhs;		// list of all data hierarchies
   
@@ -76,10 +80,15 @@ public:
   virtual ~gh ();
   
   // Modifiers
-  void recompose (const mexts& exts, const rbnds& outer_bounds,
-		  const rprocs& procs,
+  void regrid (const mexts& exts,
+               const rbnds& outer_bounds,
+               const rprocs& procs);
+  void recompose (const int rl,
                   const bool do_prolongate);
-
+private:
+  bool level_did_change (const int rl) const;
+  
+public:
   const mexts & extents() const
   {
     return _extents;

@@ -37,12 +37,16 @@ gh::gh (const vector<ivect> & reffacts_, const centering refcent_,
 gh::~gh () { }
 
 // Modifiers
-void gh::recompose (const mexts& exts,
-                    const rbnds& outer_bounds,
-                    const rprocs& procs,
-                    const bool do_prolongate)
+void gh::regrid (const mexts& exts,
+                 const rbnds& outer_bounds,
+                 const rprocs& procs)
 {
   DECLARE_CCTK_PARAMETERS;
+  
+  // Save the old grid hierarchy
+  _oldextents = _extents;
+  _oldouter_boundaries = _outer_boundaries;
+  _oldprocessors = _processors;
   
   _extents = exts;
   _outer_boundaries = outer_bounds;
@@ -66,14 +70,62 @@ void gh::recompose (const mexts& exts,
   }
   
   // Recompose the other hierarchies
-  
   for (list<th*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
-    (*t)->recompose();
+    (*t)->regrid();
   }
   
   for (list<dh*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
-    (*d)->recompose (do_prolongate);
+    (*d)->regrid();
   }
+}
+
+void gh::recompose (const int rl,
+                    const bool do_prolongate)
+{
+  // Handle changes in number of mglevels
+  if (_oldextents.size() != _extents.size()) {
+    _oldextents.resize (_extents.size());
+  }
+  
+  if (level_did_change(rl)) {
+    
+    // Recompose the other hierarchies
+    for (list<dh*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
+      (*d)->recompose (rl, do_prolongate);
+    }
+    
+    // Overwrite old with new grid hierarchy
+    for (int ml=0; ml<mglevels(); ++ml) {
+      _oldextents.at(ml).resize (_extents.at(ml).size());
+      _oldextents.at(ml).at(rl) = _extents.at(ml).at(rl);
+    }
+    _oldouter_boundaries.resize (_outer_boundaries.size());
+    _oldouter_boundaries.at(rl) = _outer_boundaries.at(rl);
+    _oldprocessors.resize (_processors.size());
+    _oldprocessors.at(rl) = _processors.at(rl);
+  }
+}
+
+bool gh::level_did_change (const int rl) const
+{
+  // Find out whether this level changed
+  if (_extents.size() != _oldextents.size()) return true;
+  for (int ml=0; ml<mglevels(); ++ml) {
+    assert (rl>=0 and rl<reflevels());
+    if (rl >= (int)_oldextents.at(ml).size()) return true;
+    if (_extents.at(ml).at(rl).size() != _oldextents.at(ml).at(rl).size()) {
+      return true;
+    }
+    for (int c=0; c<components(rl); ++c) {
+      if (_extents.at(ml).at(rl).at(c).size() !=
+          _oldextents.at(ml).at(rl).at(c).size())
+      {
+        return true;
+      }
+      if (_processors.at(rl).at(c) != _oldprocessors.at(rl).at(c)) return true;
+    } // for c
+  } // for ml
+  return false;
 }
 
 void gh::check_processor_number_consistency ()

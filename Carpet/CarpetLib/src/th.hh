@@ -47,7 +47,7 @@ public:
   ~th ();
   
   // Modifiers
-  void recompose ();
+  void regrid ();
   
   // Time management
   CCTK_REAL get_time (const int rl, const int ml) const

@@ -106,30 +106,6 @@ void ggf::recompose_crop ()
   } // for ml
 }
 
-bool ggf::recompose_did_change (const int rl) const
-{
-  // Find out whether this level changed
-  if ((int)storage.size() != h.mglevels()) return true;
-  for (int ml=0; ml<h.mglevels(); ++ml) {
-    if ((int)storage.at(ml).size() <= rl) return true;
-    if ((int)storage.at(ml).at(rl).size() != h.components(rl)) return true;
-    for (int c=0; c<h.components(rl); ++c) {
-      if ((int)storage.at(ml).at(rl).at(c).size() != timelevels(ml,rl)) {
-        return true;
-      }
-      for (int tl=0; tl<timelevels(ml,rl); ++tl) {
-        ibbox const & wantextent = d.boxes.at(ml).at(rl).at(c).exterior;
-        ibbox const & haveextent = storage.at(ml).at(rl).at(c).at(tl)->extent();
-        if (haveextent != wantextent) return true;
-        int const wantproc = h.proc(rl,c);
-        int const haveproc = storage.at(ml).at(rl).at(c).at(tl)->proc();
-        if (haveproc != wantproc) return true;
-      } // for tl
-    } // for c
-  } // for ml
-  return false;
-}
-
 void ggf::recompose_allocate (const int rl)
 {
   // Retain storage that might be needed
@@ -543,6 +519,14 @@ void ggf::ref_bnd_prolongate (comm_state& state,
   vector<int> tl2s;
   if (transport_operator != op_copy) {
     // Interpolation in time
+    if (not (timelevels(ml,rl) >= prolongation_order_time+1)) {
+      char * const fullname = CCTK_FullName (varindex);
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "The variable \"%s\" has only %d active time levels, which is not enough for boundary prolongation of order %d",
+                  fullname ? fullname : "<unknown variable>",
+                  timelevels(ml,rl), prolongation_order_time);
+      free (fullname);
+    }
     assert (timelevels(ml,rl) >= prolongation_order_time+1);
     tl2s.resize(prolongation_order_time+1);
     for (int i=0; i<=prolongation_order_time; ++i) tl2s.at(i) = i;

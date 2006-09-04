@@ -31,7 +31,10 @@ dh::dh (gh& h_,
   assert (all(buffers[0]>=0 and buffers[1]>=0));
   h.add(this);
   CHECKPOINT;
-  recompose (false);
+  regrid ();
+  for (int rl=0; rl<h.reflevels(); ++rl) {
+    recompose (rl, false);
+  }
 }
 
 // Destructors
@@ -49,12 +52,12 @@ int dh::prolongation_stencil_size () const
 }
 
 // Modifiers
-void dh::recompose (const bool do_prolongate)
+void dh::regrid ()
 {
   DECLARE_CCTK_PARAMETERS;
   
   CHECKPOINT;
-
+  
   boxes.clear();
 
   allocate_bboxes();
@@ -76,12 +79,29 @@ void dh::recompose (const bool do_prolongate)
   }
   
   foreach_reflevel_component_mglevel (&dh::check_bboxes);
+}
 
-  if (not save_memory_during_regridding) {
-    save_time(do_prolongate);
-  } else {
-    save_memory(do_prolongate);
+void dh::recompose (const int rl, const bool do_prolongate)
+{
+  assert (rl>=0 and rl<h.reflevels());
+  
+  for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+    (*f)->recompose_crop ();
   }
+  
+  for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+    (*f)->recompose_allocate (rl);
+    for (comm_state state; not state.done(); state.step()) {
+      (*f)->recompose_fill (state, rl, do_prolongate);
+    }
+    (*f)->recompose_free (rl);
+    for (comm_state state; not state.done(); state.step()) {
+      (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
+    }
+    for (comm_state state; not state.done(); state.step()) {
+      (*f)->recompose_sync (state, rl, do_prolongate);
+    }
+  } // for all grid functions of same vartype
 }
 
 void dh::allocate_bboxes ()
@@ -717,72 +737,7 @@ void dh::calculate_bases ()
   }
 }
 
-void dh::save_time (bool do_prolongate)
-{
-  DECLARE_CCTK_PARAMETERS;
 
-  for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-    (*f)->recompose_crop ();
-  }
-  bool any_level_changed = false;
-  for (int rl=0; rl<h.reflevels(); ++rl) {
-    
-    // TODO: calculate this_level_changed only once
-    bool const this_level_changed
-      = gfs.begin()!=gfs.end() and (*gfs.begin())->recompose_did_change (rl);
-    any_level_changed |= this_level_changed;
-    if (not fast_recomposing or any_level_changed) {
-
-      for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-        (*f)->recompose_allocate (rl);
-        for (comm_state state; not state.done(); state.step()) {
-          (*f)->recompose_fill (state, rl, do_prolongate);
-        }
-        (*f)->recompose_free (rl);
-        for (comm_state state; not state.done(); state.step()) {
-          (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
-        }
-        for (comm_state state; not state.done(); state.step()) {
-          (*f)->recompose_sync (state, rl, do_prolongate);
-        }
-      } // for all grid functions of same vartype
-
-    } // if did_change
-  } // for all refinement levels
-}
-
-void dh::save_memory (bool do_prolongate)
-{
-  DECLARE_CCTK_PARAMETERS;
-
-  for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-    
-    (*f)->recompose_crop ();
-
-    bool any_level_changed = false;
-    for (int rl=0; rl<h.reflevels(); ++rl) {
-      // TODO: calculate this_level_changed only once
-      bool const this_level_changed = (*f)->recompose_did_change (rl);
-      any_level_changed |= this_level_changed;
-      if (not fast_recomposing or any_level_changed) {
-
-        (*f)->recompose_allocate (rl);
-        for (comm_state state; not state.done(); state.step()) {
-          (*f)->recompose_fill (state, rl, do_prolongate);
-        }
-        (*f)->recompose_free (rl);
-        for (comm_state state; not state.done(); state.step()) {
-          (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
-        }
-        for (comm_state state; not state.done(); state.step()) {
-          (*f)->recompose_sync (state, rl, do_prolongate);
-        }
-
-      } // if did_change
-    } // for rl
-    
-  } // for gf
-}
 
 // Grid function management
 void dh::add (ggf* f)
