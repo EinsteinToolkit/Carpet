@@ -63,8 +63,11 @@ public:
     ibset boundaries;           // boundaries
     iblistvect recv_sync;       // received while syncing
     iblistvect recv_ref_bnd_coarse; // received from coarser grids
-    ibset sync_not;             // not received while syncing (outer boundary of that level)
-    ibset recv_not;             // not received while syncing or prolongating (globally outer boundary)
+    ibset sync_not;             // not received while syncing (outer
+                                // boundary of that level)
+    ibset recv_not;             // not received while syncing or
+                                // prolongating (globally outer
+                                // boundary)
   };
   
 private:
