@@ -677,8 +677,8 @@ after handling the time levels has been straightened out.
 
 \subsection{Carpet Timers}
 
-{\it The text is this section was extracted from an email thread on the
-Carpet developers mailing list (see \url{http://lists.carpetcode.org/archives/developers/2006-August/001821.html})}.
+{\it The text is this section was extracted from email threads on the
+Carpet developers mailing list (see \url{http://lists.carpetcode.org/archives/developers/2006-August/001821.html} and \url{http://lists.carpetcode.org/archives/developers/2006-September/001877.html})}.
 
 Special timers have been added to both {\tt Carpet} and {\tt CarpetLib} so
 that it would be easier to attribute time spent to different parts of
@@ -741,6 +741,34 @@ Use {\tt CarpetLib::print\_timestats\_every} to activate these timers.
 Note that understanding  these timers probably requires some in-depth
 knowledge of Carpet's communication mechanism.
 
+In order to measure the performance of a mesh refinement simulation  on multiple processors, I suggest to use parameters such as the  following:
+
+\begin{verbatim}
+# Activate standard Cactus timer output
+Cactus::cctk_timer_output = full
+
+# Activate an additional clock based on MPI
+# (important for runs on multiple processors)
+ActiveThorns = "MPIClock" # This thorn is in AlphaThorns
+
+# Produce timing information in regular intervals
+# (important since runs may abort early)
+ActiveThorns = "TimerReport" # This thorn is in CactusUtils
+TimerReport::out_every    = 1024
+
+# Activate Carpet timers
+# (using additional timers for mesh refinement related activities)
+Carpet::output_timers_every = 1024
+
+# Activate CarpetLib timers
+# (measuring inter-processor communication)
+CarpetLib::print_timestats_every = 1024
+CarpetLib::print_memstats_every  = 1024
+\end{verbatim}
+
+You should replace the number 1024 with a number of iterations that  corresponds to several coarse grid time steps; timing output every  ten minutes or so would be reasonable.
+
+Currently all timer output goes to stdout.  That will be improved soon.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Further documentation}
