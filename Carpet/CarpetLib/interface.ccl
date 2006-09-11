@@ -39,3 +39,22 @@ USES FUNCTION UniqueBuildID
 CCTK_POINTER_TO_CONST \
 FUNCTION UniqueSimulationID (CCTK_POINTER_TO_CONST IN  cctkGH)
 USES FUNCTION UniqueSimulationID
+
+
+
+# Check whether existing output files should be truncated
+CCTK_INT \
+FUNCTION IO_TruncateOutputFiles (CCTK_POINTER_TO_CONST IN cctkGH)
+REQUIRES FUNCTION IO_TruncateOutputFiles
+
+
+
+# The location of the boundary points
+CCTK_INT FUNCTION GetBoundarySpecification \
+  (CCTK_INT IN size, \
+   CCTK_INT OUT ARRAY nboundaryzones, \
+   CCTK_INT OUT ARRAY is_internal, \
+   CCTK_INT OUT ARRAY is_staggered, \
+   CCTK_INT OUT ARRAY shiftout)
+USES FUNCTION GetBoundarySpecification
+

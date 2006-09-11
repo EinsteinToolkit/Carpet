@@ -1,7 +1,10 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 
 #include <mpi.h>
 
@@ -9,6 +12,7 @@
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
 
+#include "dist.hh"
 #include "timestat.hh"
 
 
@@ -136,7 +140,45 @@ void CarpetLib_printtimestats (CCTK_ARGUMENTS)
       (print_timestats_every and
        cctk_iteration % print_timestats_every == 0))
   {
-    cout << "Timing statistics from CarpetLib:" << endl
+    ostringstream filenamebuf;
+    filenamebuf << out_dir << "/" << timestat_file
+                << "." << setw(4) << setfill('0') << dist::rank()
+                << ".txt";
+    string const filename = filenamebuf.str();
+    
+    ofstream file;
+    static bool do_truncate = true;
+    if (do_truncate) {
+      if (not IO_TruncateOutputFiles (cctkGH)) {
+        do_truncate = false;
+      }
+    }
+    if (do_truncate) {
+      do_truncate = false;
+      file.open (filename.c_str(), ios::out | ios::trunc);
+    } else {
+      file.open (filename.c_str(), ios::out | ios::app);
+    }
+    
+    static bool do_print_info = true;
+    if (do_print_info) {
+      do_print_info = false;
+      if (CCTK_IsFunctionAliased ("UniqueBuildID")) {
+        char const * const build_id
+          = static_cast<char const *> (UniqueBuildID (cctkGH));
+        file << "Build ID: " << build_id << endl;
+      }
+      if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
+        char const * const job_id
+          = static_cast<char const *> (UniqueSimulationID (cctkGH));
+        file << "Simulation ID: " << job_id << endl;
+      }
+      file << "Running on " << dist::size() << " processors" << endl;
+    }
+    
+    file << endl
+         << "********************************************************************************" << endl
+         << "Timing statistics from CarpetLib at iteration " << cctkGH->cctk_iteration << " time  " << cctkGH->cctk_time << ":" << endl
          << "   wtime_copyfrom_recv:                    " << wtime_copyfrom_recv                  << endl
          << "   wtime_copyfrom_send:                    " << wtime_copyfrom_send                  << endl
          << "   wtime_copyfrom_wait:                    " << wtime_copyfrom_wait                  << endl
