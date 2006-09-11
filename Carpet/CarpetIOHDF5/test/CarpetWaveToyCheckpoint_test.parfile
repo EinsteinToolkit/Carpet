@@ -13,7 +13,7 @@ IDScalarWave::initial_data = "gaussian"
 IDScalarWave::sigma        = 2.8
 IDScalarWave::radius       = 0.0
 
-Driver::global_nsize = 10
+Driver::global_nsize = 20
 Driver::ghost_size   = 2
 
 Carpet::prolongation_order_space = 3
