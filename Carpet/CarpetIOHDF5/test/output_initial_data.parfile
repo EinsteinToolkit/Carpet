@@ -44,11 +44,11 @@ IO::out_fileinfo  = "none"
 IO::parfile_write = "no"
 IO::out_every     = 1
 IO::out_yline_x   = 0.5
-IO::out_zline_x   = 0.5 
+IO::out_zline_x   = 0.5
  
 IOBasic::outInfo_vars          = "WaveToyMoL::scalarevolve"
 IOScalar::outScalar_vars       = "WaveToyMoL::scalarevolve"
-IOScalar::outScalar_reductions = "average count maximum minimum  norm1 norm2 norm_inf product sum sum_abs sum_squared"
+IOScalar::outScalar_reductions = "average count maximum minimum  norm1 norm2 norm_inf"
 
 # HDF5 output only for initial data
 IOHDF5::out_every = 513
