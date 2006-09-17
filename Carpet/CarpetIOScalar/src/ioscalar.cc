@@ -42,7 +42,13 @@ namespace CarpetIOScalar {
   };
 
 
-  // Registered functions
+
+  // Begin a new line without flushing the output buffer
+  char const * const eol = "\n";
+
+
+
+ // Registered functions
   static void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cctkGH);
   static int OutputGH (const cGH* cctkGH);
   static int OutputVarAs (const cGH* cctkGH, const char* varname, const char* alias);
@@ -295,7 +301,7 @@ namespace CarpetIOScalar {
               } else {
                 CCTK_WARN (0, "internal error");
               }
-              file << "# Scalar ASCII output created by CarpetIOScalar" << endl;
+              file << "# Scalar ASCII output created by CarpetIOScalar" << eol;
               if (want_date) {
                 char run_host [1000];
                 Util_GetHostName (run_host, sizeof run_host);
@@ -311,30 +317,30 @@ namespace CarpetIOScalar {
                 file << "# created on " << run_host
                      << " by " << run_user
                      << " on " << run_date
-                     << " at " << run_time << endl;
+                     << " at " << run_time << eol;
               }
               if (want_parfilename) {
                 char parameter_filename [10000];
                 CCTK_ParameterFilename
                   (sizeof parameter_filename, parameter_filename);
-                file << "# parameter filename: \"" << parameter_filename << "\"" << endl;
+                file << "# parameter filename: \"" << parameter_filename << "\"" << eol;
               }
               if (want_other) {
                 if (CCTK_IsFunctionAliased ("UniqueBuildID")) {
                   char const * const build_id
                     = (char const *) UniqueBuildID (cctkGH);
-                  file << "# Build ID: " << build_id << endl;
+                  file << "# Build ID: " << build_id << eol;
                 }
                 if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
                   char const * const job_id
                     = static_cast<char const *> (UniqueSimulationID (cctkGH));
-                  file << "# Simulation ID: " << job_id << endl;
+                  file << "# Simulation ID: " << job_id << eol;
                 }
               }
-              file << "#" << endl;
+              file << "#" << eol;
               if (want_labels) {
-                file << "# " << varname << " (" << alias << ")" << endl;
-                file << "# 1:iteration 2:time 3:data" << endl;
+                file << "# " << varname << " (" << alias << ")" << eol;
+                file << "# 1:iteration 2:time 3:data" << eol;
                 int col = 3;
                 if (one_file_per_group) {
                   file << "# data columns:";
@@ -344,7 +350,7 @@ namespace CarpetIOScalar {
                     file << " " << col << ":" << CCTK_VarName(n);
                     col += CarpetSimpleMPIDatatypeLength (vartype);
                   }
-                  file << endl;
+                  file << eol;
                 }
               }
             }
@@ -412,7 +418,7 @@ namespace CarpetIOScalar {
         } // for n
         
         if (CCTK_MyProc(cctkGH)==0) {
-          file << endl;
+          file << eol;
           assert (file.good());
         }
         
