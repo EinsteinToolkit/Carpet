@@ -38,6 +38,13 @@ namespace CarpetIOASCII {
   using namespace std;
   using namespace Carpet;
 
+
+
+  // Begin a new line without flushing the output buffer
+  char const * const eol = "\n";
+
+
+
   static void GetVarIndex (int vindex, const char* optstring, void* arg);
 
 
@@ -701,7 +708,7 @@ namespace CarpetIOASCII {
                 } else {
                   CCTK_WARN (0, "internal error");
                 }
-                file << "# "<< outdim << "D ASCII output created by CarpetIOASCII" << endl;
+                file << "# "<< outdim << "D ASCII output created by CarpetIOASCII" << eol;
                 if (want_date) {
                   char run_host [1000];
                   Util_GetHostName (run_host, sizeof run_host);
@@ -717,26 +724,26 @@ namespace CarpetIOASCII {
                   file << "# created on " << run_host
                        << " by " << run_user
                        << " on " << run_date
-                       << " at " << run_time << endl;
+                       << " at " << run_time << eol;
                 }
                 if (want_parfilename) {
                   char parameter_filename [10000];
                   CCTK_ParameterFilename (sizeof parameter_filename, parameter_filename);
-                  file << "# parameter filename: \"" << parameter_filename << "\"" << endl;
+                  file << "# parameter filename: \"" << parameter_filename << "\"" << eol;
                 }
                 if (want_other) {
                   if (CCTK_IsFunctionAliased ("UniqueBuildID")) {
                     char const * const build_id
                       = (char const *) UniqueBuildID (cctkGH);
-                    file << "# Build ID: " << build_id << endl;
+                    file << "# Build ID: " << build_id << eol;
                   }
                   if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
                     char const * const job_id
                       = (char const *) UniqueSimulationID (cctkGH);
-                    file << "# Simulation ID: " << job_id << endl;
+                    file << "# Simulation ID: " << job_id << eol;
                   }
                 }
-                file << "#" << endl;
+                file << "#" << eol;
                 if (want_labels) {
                   if (one_file_per_group) {
                     char* groupname = CCTK_GroupNameFromVarI(vindex);
@@ -748,8 +755,8 @@ namespace CarpetIOASCII {
                   for (int d=0; d<outdim; ++d) {
                     file << " " << "xyzd"[dirs[d]];
                   }
-                  file << " (" << alias << ")" << endl;
-                  file << "#" << endl;
+                  file << " (" << alias << ")" << eol;
+                  file << "#" << eol;
                 }
               } // if is_new_file
 
@@ -900,7 +907,7 @@ namespace CarpetIOASCII {
                   if (CCTK_MyProc(cctkGH)==0) {
                     if (separate_components) {
                       assert (file.good());
-                      file << endl;
+                      file << eol;
                     }
                   }
                   assert (file.good());
@@ -915,7 +922,7 @@ namespace CarpetIOASCII {
             if (CCTK_MyProc(cctkGH)==0) {
               if (separate_grids) {
                 assert (file.good());
-                file << endl;
+                file << eol;
               }
               file.close();
               assert (file.good());
@@ -1208,13 +1215,13 @@ namespace CarpetIOASCII {
 
           assert (os.good());
 
-          os << "# iteration " << time << endl
+          os << "# iteration " << time << eol
              << "# refinement level " << rl
              << "   multigrid level " << ml
              << "   map " << m
              << "   component " << c
              << "   time level " << tl
-             << endl
+             << eol
              << "# column format: 1:it\t2:tl 3:rl 4:c 5:ml";
           int col=6;
           assert (dim>=1 and dim<=3);
@@ -1226,7 +1233,7 @@ namespace CarpetIOASCII {
           for (int d=0; d<dim; ++d) {
             os << (d==0 ? "\t" : " ") << col++ << ":" << coords[d];
           }
-          os << "\t" << col << ":data" << endl;
+          os << "\t" << col << ":data" << eol;
           if (one_file_per_group) {
             os << "# data columns:";
             int const gindex = CCTK_GroupIndexFromVarI(vi);
@@ -1236,7 +1243,7 @@ namespace CarpetIOASCII {
               os << " " << col << ":" << CCTK_VarName(n);
               col += CarpetSimpleMPIDatatypeLength (vartype);
             }
-            os << endl;
+            os << eol;
           }
           
         } // if out_fileinfo
@@ -1297,20 +1304,20 @@ namespace CarpetIOASCII {
 		  UnsupportedVarType(vi);
 		}
 	      } // for n
-	      os << endl;
+	      os << eol;
 	      
 	      ++it;
 
 	      for (int d=0; d<outdim; ++d) {
 		if ((*it)[d]!=(*ext.end())[d]) break;
-		os << endl;
+		os << eol;
 	      }
 	          
 	    } while (it!=ext.end());
 	  
 	  } else {
 
-	    os << "#" << endl;
+	    os << "#" << eol;
 	    
 	  } // if not ext contains org
 
@@ -1366,17 +1373,17 @@ namespace CarpetIOASCII {
 		}
 	      } // for n
               
-	      os << endl;
+	      os << eol;
               
 	    } else {
               
-              os << "#" << endl;
+              os << "#" << eol;
               
             } // if not ext contains org
 	    
 	  } // end for loop  
           
-	  os << endl;
+	  os << eol;
           
 	  assert (os.good());
           
