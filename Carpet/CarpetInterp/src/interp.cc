@@ -947,6 +947,23 @@ namespace CarpetInterp {
       }
     }
 
+    {
+      // Ensure that this processor is only supposed to interpolate
+      // points from maps and components that are actually located on
+      // this processor
+      for (int rl=minrl; rl<maxrl; ++rl) {
+        for (int m=0; m<maps; ++m) {
+          gh const * const hh = arrdata.at(coord_group).at(m).hh;
+          for (int c=0; c<hh->components(rl); ++c) {
+            for (int p=0; p<dist::size(); ++p) {
+              int const idx = component_idx (p, m, rl, c);
+              assert (hh->is_local(rl, c) or homecnts.at(idx) == 0);
+            }
+          }
+        }
+      }
+    }
+
     BEGIN_GLOBAL_MODE(cctkGH) {
       for (int rl=minrl; rl<maxrl; ++rl) {
         ENTER_LEVEL_MODE (cctkGH, rl) {
