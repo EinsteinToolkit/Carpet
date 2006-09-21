@@ -460,16 +460,6 @@ namespace CarpetInterp {
     // Communicate the source map (if neccessary)
     //////////////////////////////////////////////////////////////////////
     if (have_source_map) {
-      vector<CCTK_INT> tmp (N_interp_points);
-      vector<int> tmpcnts (N_points_to.size());
-      for (int n = 0; n < N_interp_points; n++) {
-        int const p = dstprocs[n];
-        int const offset = senddispl[p] + tmpcnts[p];
-        tmp[offset] = source_map[n];
-        tmpcnts[p]++;
-      }
-      assert (tmpcnts == N_points_to);
-
       sendcnt[0] = N_points_to[0];
       recvcnt[0] = N_points_from[0];
       senddispl[0] = recvdispl[0] = 0;
@@ -479,6 +469,16 @@ namespace CarpetInterp {
         senddispl[p] = senddispl[p-1] + sendcnt[p-1];
         recvdispl[p] = recvdispl[p-1] + recvcnt[p-1];
       }
+
+      vector<CCTK_INT> tmp (N_interp_points);
+      vector<int> tmpcnts (N_points_to.size());
+      for (int n = 0; n < N_interp_points; n++) {
+        int const p = dstprocs[n];
+        int const offset = senddispl[p] + tmpcnts[p];
+        tmp[offset] = source_map[n];
+        tmpcnts[p]++;
+      }
+      assert (tmpcnts == N_points_to);
 
       source_map.resize (N_points_local);
       MPI_Datatype const datatype = dist::datatype (tmp[0]);
