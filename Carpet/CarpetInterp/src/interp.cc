@@ -122,9 +122,6 @@ namespace CarpetInterp {
   interpolate_single_component (cGH const * const cctkGH,
                                 int const coord_system_handle,
                                 int const coord_group,
-                                int const minrl,
-                                int const maxrl,
-                                int const maxncomps,
                                 int const N_dims,
                                 int const npoints,
                                 CCTK_REAL const* const coords,
@@ -971,7 +968,7 @@ namespace CarpetInterp {
               if (homecnts[idx] > 0) {
                 interpolate_single_component
                   (cctkGH, coord_system_handle, coord_group,
-                   minrl, maxrl, maxncomps, N_dims,
+                   N_dims,
                    homecnts[idx], coords[idx], outputs[idx],
                    per_proc_statuses[p], per_proc_retvals[p],
                    operand_indices, time_deriv_order, interp_num_time_levels,
@@ -1142,9 +1139,6 @@ namespace CarpetInterp {
   interpolate_single_component (cGH const* const cctkGH,
                                 int const coord_system_handle,
                                 int const coord_group,
-                                int const minrl,
-                                int const maxrl,
-                                int const maxncomps,
                                 int const N_dims,
                                 int const npoints,
                                 CCTK_REAL const* const coords,
