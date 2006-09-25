@@ -100,13 +100,13 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
   
   // Abort with an error if there is no grid structure in the
   // checkpoint file
-  assert (fileset.grid_structure.size() == maps);
+  assert ((int)fileset.grid_structure.size() == maps);
   
   for (int m = 0; m < maps; ++ m) {
     grid_structure_t const & grid_structure = fileset.grid_structure.at(m);
     
     int const rls = grid_structure.bbss.size();
-    assert (grid_structure.obss.size() == rls);
+    assert ((int)grid_structure.obss.size() == rls);
     
     vector <vector <ibbox> >  bbss = grid_structure.bbss;
     vector <vector <bbvect> > obss = grid_structure.obss;
@@ -323,9 +323,9 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   }
 
   // mark variables in groups with no grid points (size 0) as already done
-  for (int group = 0; group < group_bboxes.size(); group++) {
+  for (int group = 0; group < (int)group_bboxes.size(); group++) {
     bool is_empty = true;
-    for (int map = 0; map < group_bboxes[group].size(); map++) {
+    for (int map = 0; map < (int)group_bboxes[group].size(); map++) {
       is_empty &= group_bboxes[group][map].empty();
     }
     if (is_empty) {
