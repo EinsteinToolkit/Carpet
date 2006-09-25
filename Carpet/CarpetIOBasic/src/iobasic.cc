@@ -325,13 +325,13 @@ namespace CarpetIOBasic {
             case 0:
             case 3:
               {
-                size_t const numchars = (width+1)*numcomps*numreds;
+                size_t const numchars = (width+1)*numcomps*mynumreds;
                 cout << setw(numchars) << setfill('-') << "";
               }
               break;
             case 1:
               {
-                size_t const numchars = (width+1)*numcomps*numreds-1;
+                size_t const numchars = (width+1)*numcomps*mynumreds-1;
                 if (fullname.length() > numchars) {
                   int begin = fullname.length() - (numchars-1);
                   cout << " *" << fullname.substr(begin);
