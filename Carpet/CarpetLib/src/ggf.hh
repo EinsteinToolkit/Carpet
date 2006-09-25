@@ -52,7 +52,7 @@ public:				// should be readonly
   dh &d;			// data hierarchy
 
 protected:
-  vector<vector<int> > timelevels_; // time levels
+  vector<vector<int> > timelevels_; // time levels [ml][rl]
 
   mdata storage;		// storage
   
