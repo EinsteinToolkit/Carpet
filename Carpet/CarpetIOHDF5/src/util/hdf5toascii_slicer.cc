@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <vector>
 #include <cmath>
+#include <cstring>
 #include <regex.h>
 
 #include <hdf5.h>
