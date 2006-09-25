@@ -434,6 +434,14 @@ namespace CarpetIOBasic {
     // Output in global mode
     BEGIN_GLOBAL_MODE(cctkGH) {
       
+      // Remember cout state
+      int oldprec;
+      ios_base::fmtflags oldflags;
+      if (CCTK_MyProc(cctkGH) == 0) {
+        oldprec = cout.precision();
+        oldflags = cout.flags();
+      }
+
       // Print vertical separator
       if (CCTK_MyProc(cctkGH) == 0) {
         cout << " |";
@@ -523,6 +531,12 @@ namespace CarpetIOBasic {
         } // for reductions
       
       } // not isscalar
+      
+      // Restore cout state
+      if (CCTK_MyProc(cctkGH) == 0) {
+        cout.precision (oldprec);
+        cout.setf (oldflags);
+      }
       
     } END_GLOBAL_MODE;
   }
