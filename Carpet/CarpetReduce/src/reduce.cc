@@ -480,15 +480,15 @@ namespace CarpetReduce {
   {
     assert (cgh);
     
-    assert (proc == -1 || (proc>=0 && proc<CCTK_nProcs(cgh)));
+    assert (proc == -1 or (proc>=0 and proc<CCTK_nProcs(cgh)));
     
     assert (num_outvals>=0);
     
     const int vartypesize = CCTK_VarTypeSize(outtype);
     assert (vartypesize>=0);
     
-    assert (num_outvals==0 || myoutvals);
-    assert (num_outvals==0 || mycounts);
+    assert (num_outvals==0 or myoutvals);
+    assert (num_outvals==0 or mycounts);
     
     assert (red);
     
@@ -544,7 +544,7 @@ namespace CarpetReduce {
   {
     assert (cgh);
     
-    assert (proc == -1 || (proc>=0 && proc<CCTK_nProcs(cgh)));
+    assert (proc == -1 or (proc>=0 and proc<CCTK_nProcs(cgh)));
     
     assert (lsize >= 0);
     assert (num_outvals>=0);
@@ -556,8 +556,8 @@ namespace CarpetReduce {
       assert (inarrays[n]);
     }
     
-    assert (num_outvals==0 || myoutvals);
-    assert (num_outvals==0 || mycounts);
+    assert (num_outvals==0 or myoutvals);
+    assert (num_outvals==0 or mycounts);
     
     assert (outtype == intype);
     
@@ -603,7 +603,7 @@ namespace CarpetReduce {
   {
     assert (cgh);
     
-    assert (proc == -1 || (proc>=0 && proc<CCTK_nProcs(cgh)));
+    assert (proc == -1 or (proc>=0 and proc<CCTK_nProcs(cgh)));
     
     assert (num_outvals>=0);
     
@@ -619,7 +619,7 @@ namespace CarpetReduce {
     
     for (int d=0; d<dim; ++d) {
       assert (mylsh[d]>=0);
-      assert (mynghostzones[d]>=0 && 2*mynghostzones[d]<=mylsh[d]);
+      assert (mynghostzones[d]>=0 and 2*mynghostzones[d]<=mylsh[d]);
     }
     
     const int vartypesize = CCTK_VarTypeSize(outtype);
@@ -690,19 +690,19 @@ namespace CarpetReduce {
   {
     assert (cgh);
     
-    assert (proc == -1 || (proc>=0 && proc<CCTK_nProcs(cgh)));
+    assert (proc == -1 or (proc>=0 and proc<CCTK_nProcs(cgh)));
     
     assert (num_outvals>=0);
-    assert (outvals || (proc!=-1 && proc!=CCTK_MyProc(cgh)));
+    assert (outvals or (proc!=-1 and proc!=CCTK_MyProc(cgh)));
     
     const int vartypesize = CCTK_VarTypeSize(outtype);
     assert (vartypesize>=0);
     
-    assert (num_outvals==0 || myoutvals);
-    assert (num_outvals==0 || mycounts);
+    assert (num_outvals==0 or myoutvals);
+    assert (num_outvals==0 or mycounts);
     
     vector<char> counts;
-    if (proc==-1 || proc==CCTK_MyProc(cgh)) {
+    if (proc==-1 or proc==CCTK_MyProc(cgh)) {
       counts.resize(vartypesize * num_outvals);
     }
     
@@ -728,7 +728,7 @@ namespace CarpetReduce {
       }
     }
     
-    if (proc==-1 || proc==CCTK_MyProc(cgh)) {
+    if (proc==-1 or proc==CCTK_MyProc(cgh)) {
       
       for (int n=0; n<num_outvals; ++n) {
 	
@@ -787,10 +787,10 @@ namespace CarpetReduce {
   {
     assert (cgh);
     
-    assert (proc == -1 || (proc>=0 && proc<CCTK_nProcs(cgh)));
+    assert (proc == -1 or (proc>=0 and proc<CCTK_nProcs(cgh)));
     
     assert (num_outvals>=0);
-    assert (outvals || (proc!=-1 && proc!=CCTK_MyProc(cgh)));
+    assert (outvals or (proc!=-1 and proc!=CCTK_MyProc(cgh)));
     
     assert (num_inarrays>=0);
     assert (inarrays);
@@ -807,7 +807,7 @@ namespace CarpetReduce {
       return -1;
     }
     
-    assert (num_dims>=0 && num_dims<=dim);
+    assert (num_dims>=0 and num_dims<=dim);
     for (int d=0; d<num_dims; ++d) {
       assert (dims[d]>=0);
     }
@@ -819,7 +819,7 @@ namespace CarpetReduce {
     
     const bool do_local_reduction = num_outvals == 1;
     
-    if (! do_local_reduction) {
+    if (not do_local_reduction) {
       assert (num_outvals == lsize);
     }
     
@@ -879,26 +879,26 @@ namespace CarpetReduce {
     
     assert (cgh);
     
-    assert (proc == -1 || (proc>=0 && proc<CCTK_nProcs(cgh)));
+    assert (proc == -1 or (proc>=0 and proc<CCTK_nProcs(cgh)));
     
     assert (num_outvals>=0);
     assert (num_outvals==1);
-    assert (outvals || (proc!=-1 && proc!=CCTK_MyProc(cgh)));
+    assert (outvals or (proc!=-1 and proc!=CCTK_MyProc(cgh)));
     
     assert (num_invars>=0);
     assert (invars);
     for (int n=0; n<num_invars; ++n) {
-      assert (invars[n]>=0 && invars[n]<CCTK_NumVars());
+      assert (invars[n]>=0 and invars[n]<CCTK_NumVars());
     }
     
     if (num_invars==0) return 0;
     
     assert (num_invars>0);
     const int vi = invars[0];
-    assert (vi>=0 && vi<CCTK_NumVars());
+    assert (vi>=0 and vi<CCTK_NumVars());
     
     const int grpdim = CCTK_GroupDimFromVarI(vi);
-    assert (grpdim>=0 && grpdim<=dim);
+    assert (grpdim>=0 and grpdim<=dim);
     for (int n=0; n<num_invars; ++n) {
       assert (CCTK_GroupDimFromVarI(invars[n]) == grpdim);
     }
@@ -919,8 +919,8 @@ namespace CarpetReduce {
     }
     
     bool const reduce_arrays = CCTK_GroupTypeFromVarI(vi) != CCTK_GF;
-    bool const want_global_mode = is_global_mode() && ! reduce_arrays;
-    bool const want_level_mode = is_level_mode() && ! reduce_arrays;
+    bool const want_global_mode = is_global_mode() and not reduce_arrays;
+    bool const want_level_mode = is_level_mode() and not reduce_arrays;
     
     for (int n=0; n<num_invars; ++n) {
       if ((CCTK_GroupTypeFromVarI(invars[n]) != CCTK_GF) != reduce_arrays) {
@@ -934,8 +934,8 @@ namespace CarpetReduce {
     }
     int const minrl = reduce_arrays ? 0 : want_global_mode ? 0                      : reflevel;
     int const maxrl = reduce_arrays ? 1 : want_global_mode ? vhh.at(0)->reflevels() : reflevel+1;
-    int const minm = reduce_arrays ? 0 : want_global_mode || want_level_mode ? 0    : Carpet::map;
-    int const maxm = reduce_arrays ? 1 : want_global_mode || want_level_mode ? maps : Carpet::map+1;
+    int const minm = reduce_arrays ? 0 : want_global_mode or want_level_mode ? 0    : Carpet::map;
+    int const maxm = reduce_arrays ? 1 : want_global_mode or want_level_mode ? maps : Carpet::map+1;
     
     
     
@@ -966,12 +966,12 @@ namespace CarpetReduce {
           // Number of necessary time levels
           CCTK_REAL const level_time = cgh->cctk_time / cgh->cctk_delta_time;
           bool need_time_interp
-            = (! reduce_arrays
-               && (fabs(current_time - level_time)
+            = (not reduce_arrays
+               and (fabs(current_time - level_time)
                    > 1e-12 * (fabs(level_time) + fabs(current_time)
                               + fabs(cgh->cctk_delta_time))));
-          assert (! (! want_global_mode && need_time_interp));
-          assert (! (reduce_arrays && need_time_interp));
+          assert (not (not want_global_mode and need_time_interp));
+          assert (not (reduce_arrays and need_time_interp));
           
           int num_tl;
           if (need_time_interp) {
@@ -1004,7 +1004,7 @@ namespace CarpetReduce {
               if (have_warned.empty()) {
                 have_warned.resize (CCTK_NumVars(), false);
               }
-              if (! have_warned.at(vi)) {
+              if (not have_warned.at(vi)) {
                 char * const fullname = CCTK_FullName(vi);
                 CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                             "Grid function \"%s\" has only %d time levels on refinement level %d; this is not enough for time interpolation",
@@ -1039,7 +1039,7 @@ namespace CarpetReduce {
             
           }
           
-          assert (! need_time_interp || num_tl > 1);
+          assert (not need_time_interp or num_tl > 1);
           
           vector<CCTK_REAL> tfacs(num_tl);
           
@@ -1075,12 +1075,12 @@ namespace CarpetReduce {
               assert (0);
             }
             
-          } else { // if ! need_time_interp
+          } else { // if not need_time_interp
             
             assert (num_tl == 1);
             tfacs.at(0) = 1;
             
-          } // if ! need_time_interp
+          } // if not need_time_interp
           
           
           
@@ -1093,14 +1093,14 @@ namespace CarpetReduce {
                 assert (grpdim<=dim);
                 int lsh[dim], bbox[2*dim], nghostzones[dim];
                 ierr = CCTK_GrouplshVI(cgh, grpdim, lsh, vi);
-                assert (!ierr);
+                assert (not ierr);
                 ierr = CCTK_GroupbboxVI(cgh, 2*grpdim, bbox, vi);
-                assert (!ierr);
+                assert (not ierr);
                 ierr = CCTK_GroupnghostzonesVI(cgh, grpdim, nghostzones, vi);
-                assert (!ierr);
+                assert (not ierr);
                 for (int d=0; d<grpdim; ++d) {
                   assert (lsh[d]>=0);
-                  assert (nghostzones[d]>=0 && 2*nghostzones[d]<=lsh[d]);
+                  assert (nghostzones[d]>=0 and 2*nghostzones[d]<=lsh[d]);
                 }
                 
                 vect<int,dim> mylsh, mynghostzones;
