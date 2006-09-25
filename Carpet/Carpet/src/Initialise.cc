@@ -2,712 +2,733 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
-#include "cctki_GHExtensions.h"
-#include "cctki_ScheduleBindings.h"
-#include "cctki_WarnLevel.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
+#include <cctki_GHExtensions.h>
+#include <cctki_ScheduleBindings.h>
+#include <cctki_WarnLevel.h>
 
 #include "carpet.hh"
 
 
 
 namespace Carpet {
-
+  
   using namespace std;
-
-
-
-  static void output_grid_structure (cGH * cgh);
-  static void setup_I (cGH * cgh);
-
-  static void recover_I (cGH * cgh, int rl);
-  static void recover_Regrid (cGH * cgh, int rl);
-  static void recover_II (cGH * cgh, int rl);
-
-  static void initialise_I (cGH * cgh, int rl);
-  static void initialise_I_rewind (cGH * cgh, int num_tl);
-  static void initialise_I_initialise (cGH * cgh, int num_tl);
-  static void initialise_Regrid (cGH * cgh, int rl);
-  static void initialise_Restrict (cGH * cgh, int rl);
-  static void initialise_II (cGH * cgh, int rl);
-  static void initialise_III (cGH * cgh, int rl);
-
-  static void initialise_3tl (cGH * cgh);
-  static void initialise_3tl_advance_time (cGH * cgh);
-  static void initialise_3tl_evolve_Ia (cGH * cgh);
-  static void initialise_3tl_flip_timelevels (cGH * cgh);
-  static void initialise_3tl_evolve_Ib (cGH * cgh);
-  static void initialise_3tl_evolve_IIb (cGH * cgh);
-  static void initialise_3tl_advance_time_2 (cGH * cgh);
-  static void initialise_3tl_evolve_Ic (cGH * cgh);
-  static void initialise_3tl_reset_time (cGH * cgh);
-
+  
+  
+  
+  static void CallSetup (cGH * cctkGH);
+  static void CallRecoverVariables (cGH * cctkGH);
+  static void CallRegrid (cGH * cctkGH);
+  static void CallPostRecoverVariables (cGH * cctkGH);
+  static void CallInitial (cGH * cctkGH);
+  static void CallRestrict (cGH * cctkGH);
+  static void CallPostInitial (cGH * cctkGH);
+  static void CallAnalysis (cGH * cctkGH);
+  
+  static void Initialise3tl (cGH * cctkGH);
+  
   static void print_internal_data ();
-
-
-
-  int Initialise (tFleshConfig * const fc)
+  
+  
+  
+  int
+  Initialise (tFleshConfig * const fc)
   {
     DECLARE_CCTK_PARAMETERS;
-
-    const int convlev = 0;
-    cGH * const cgh = CCTK_SetupGH (fc, convlev);
-    CCTKi_AddGH (fc, convlev, cgh);
-
+    
+    int const convlev = 0;
+    cGH * const cctkGH = CCTK_SetupGH (fc, convlev);
+    CCTKi_AddGH (fc, convlev, cctkGH);
+    
     do_global_mode = true;
     do_meta_mode = true;
     global_time = cctk_initial_time;
     delta_time = 1.0;
-
-    cgh->cctk_iteration = 0;
-    cgh->cctk_time = global_time;
-    cgh->cctk_delta_time = delta_time;
-
+    
+    cctkGH->cctk_iteration = 0;
+    cctkGH->cctk_time = global_time;
+    cctkGH->cctk_delta_time = delta_time;
+    
     // Delay checkpoint until MPI has been initialised
     Waypoint ("Starting initialisation");
-
-    CCTKi_ScheduleGHInit (cgh); // Enable storage and communication
-    GroupsStorageCheck (cgh);
+    
+    CCTKi_ScheduleGHInit (cctkGH); // Enable storage and communication
+    GroupsStorageCheck (cctkGH);
     do_warn_about_storage = true;
-
-    CCTKi_InitGHExtensions (cgh);
-
-    output_grid_structure (cgh);
-
-    setup_I (cgh);
-
-    if (fc->recovered) {
-      // Read data from a checkpoint file
-
-      for (int rl=0; rl<reflevels; ++rl) {
-        recover_I (cgh, rl);
-        if (regrid_during_recovery) {
-          recover_Regrid (cgh, rl);
-        }
-      }
-
-      for (int rl=0; rl<reflevels; ++rl) {
-        recover_II (cgh, rl);
-      }
-
-      print_internal_data ();
-
-    } else {
-      // Calculate initial data
-
-      if (not regrid_during_initialisation) {
-        // Regrid once in the beginning
-        initialise_Regrid (cgh, 0);
-      }
-      for (int rl=0; rl<reflevels; ++rl) {
-        initialise_I (cgh, rl);
-        if (regrid_during_initialisation) {
-          // Regrid after initialising each level
-          initialise_Regrid (cgh, rl);
-        }
-      }
-
-      for (int rl=reflevels-1; rl>=0; --rl) {
-        initialise_Restrict (cgh, rl);
-      }
-
-      for (int rl=0; rl<reflevels; ++rl) {
-        initialise_II (cgh, rl);
-      }
-
-      print_internal_data ();
-
-      if (init_3_timelevels) {
-        initialise_3tl (cgh);
-      }
-    }
-
-    // Analyse initial data
-    for (int rl=0; rl<reflevels; ++rl) {
-      initialise_III (cgh, rl);
-    }
-
-    print_internal_data ();
-
-    Waypoint ("Done with initialisation");
-
-    return 0;
-  }
-
-
-
-  void output_grid_structure (cGH * const cgh)
-  {
-    // Loop over maps
+    
+    CCTKi_InitGHExtensions (cctkGH);
+    
+    // Write grid structure to file
     for (int m=0; m<maps; ++m) {
-      // Write grid structure to file
       OutputGridStructure
-        (cgh, m,
+        (cctkGH, m,
          vhh.at(m)->extents(), vhh.at(m)->outer_boundaries(),
          vhh.at(m)->processors());
-    } // loop over maps
+    } // for m
+    
+    CallSetup (cctkGH);
+    
+    if (fc->recovered) {
+      // Read data from a checkpoint file
+      
+      CallRecoverVariables (cctkGH);
+      CallPostRecoverVariables (cctkGH);
+      print_internal_data ();
+      
+    } else {
+      // Calculate initial data
+      
+      CallInitial (cctkGH);
+      CallRestrict (cctkGH);
+      CallPostInitial (cctkGH);
+      print_internal_data ();
+      
+      if (init_3_timelevels) {
+        Initialise3tl (cctkGH);
+      }
+    }
+    
+    // Analyse initial data
+    CallAnalysis (cctkGH);
+    print_internal_data ();
+    
+    Waypoint ("Done with initialisation");
+    
+    return 0;
   }
-
-  void setup_I (cGH * const cgh)
+  
+  
+  
+  //////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  
+  
+  
+  void
+  CallSetup (cGH * const cctkGH)
   {
-    BEGIN_MGLEVEL_LOOP(cgh) {
+    BEGIN_MGLEVEL_LOOP(cctkGH) {
       do_global_mode = true;
-      do_meta_mode = mglevel==mglevels-1;
-
+      do_meta_mode = mglevel==mglevels-1; // on first iteration, coarsest grid
+      
       // Checking
-      Poison (cgh, alltimes, CCTK_ARRAY);
-
+      Poison (cctkGH, alltimes, CCTK_ARRAY);
+      
       // Register coordinates
       Checkpoint ("Scheduling CCTK_WRAGH");
-      CCTK_ScheduleTraverse ("CCTK_WRAGH", cgh, CallFunction);
-
+      CCTK_ScheduleTraverse ("CCTK_WRAGH", cctkGH, CallFunction);
+      
       // Check parameters
       Checkpoint ("Scheduling PARAMCHECK");
-      CCTK_ScheduleTraverse ("CCTK_PARAMCHECK", cgh, CallFunction);
+      CCTK_ScheduleTraverse ("CCTK_PARAMCHECK", cctkGH, CallFunction);
     } END_MGLEVEL_LOOP;
-
+    
     CCTKi_FinaliseParamWarn();
   }
-
-
-
-  void recover_I (cGH * const cgh, int const rl)
-  {
-    BEGIN_MGLEVEL_LOOP(cgh) {
-      enter_level_mode (cgh, rl);
-      do_global_mode = reflevel==0;
-      do_meta_mode = do_global_mode and mglevel==mglevels-1;
-
-      cgh->cctk_time = global_time;
-
-      Waypoint ("Recovering I at iteration %d time %g%s%s",
-                cgh->cctk_iteration, (double)cgh->cctk_time,
-                (do_global_mode ? " (global)" : ""),
-                (do_meta_mode ? " (meta)" : ""));
-
-      // Checking
-      Poison (cgh, alltimes, CCTK_GF);
-
-      // Set up the grids
-      Checkpoint ("Scheduling BASEGRID");
-      CCTK_ScheduleTraverse ("CCTK_BASEGRID", cgh, CallFunction);
-
-      // Recover
-      Checkpoint ("Scheduling RECOVER_VARIABLES");
-      CCTK_ScheduleTraverse ("CCTK_RECOVER_VARIABLES", cgh, CallFunction);
-
-      leave_level_mode (cgh);
-    } END_MGLEVEL_LOOP;
-  }
-
-  void recover_Regrid (cGH * const cgh, int const rl)
-  {
-    BEGIN_MGLEVEL_LOOP(cgh) {
-      enter_level_mode (cgh, rl);
-      do_global_mode = true;
-      do_meta_mode = do_global_mode and mglevel==mglevels-1;
-      
-      Waypoint ("Preregrid at iteration %d time %g%s%s",
-		cgh->cctk_iteration, (double)cgh->cctk_time,
-		(do_global_mode ? " (global)" : ""),
-		(do_meta_mode ? " (meta)" : ""));
-      
-      // Preregrid
-      Checkpoint ("Scheduling PREREGRID");
-      CCTK_ScheduleTraverse ("CCTK_PREREGRID", cgh, CallFunction);
-      
-      leave_level_mode (cgh);
-    } END_MGLEVEL_LOOP;
-    
-
-    bool did_regrid = false;
-    {
-      const int ml=0;
-      enter_global_mode (cgh, ml);
-      enter_level_mode (cgh, rl);
-
-      // Regrid
-      Checkpoint ("Regrid");
-      did_regrid |= Regrid (cgh, true, false);
-
-      leave_level_mode (cgh);
-      leave_global_mode (cgh);
-    } // ml
-
-    if (did_regrid) {
-      BEGIN_MGLEVEL_LOOP(cgh) {
-        enter_level_mode (cgh, rl);
-        do_global_mode = true;
-        do_meta_mode = do_global_mode and mglevel==mglevels-1;
-
-        Waypoint ("Postregrid at iteration %d time %g%s%s",
-                  cgh->cctk_iteration, (double)cgh->cctk_time,
-                  (do_global_mode ? " (global)" : ""),
-                  (do_meta_mode ? " (meta)" : ""));
-
-        // Postregrid
-        Checkpoint ("Scheduling POSTREGRID");
-        CCTK_ScheduleTraverse ("CCTK_POSTREGRID", cgh, CallFunction);
-
-        leave_level_mode (cgh);
-      } END_MGLEVEL_LOOP;
-    } // if did_regrid
-  }
-
-  void recover_II (cGH * const cgh, int const rl)
-  {
-    BEGIN_MGLEVEL_LOOP(cgh) {
-      enter_level_mode (cgh, rl);
-      do_global_mode = reflevel==reflevels-1;
-      do_meta_mode = do_global_mode and mglevel==mglevels-1;
-      
-      Waypoint ("Recovering II at iteration %d time %g%s%s",
-                cgh->cctk_iteration, (double)cgh->cctk_time,
-                (do_global_mode ? " (global)" : ""),
-                (do_meta_mode ? " (meta)" : ""));
-      
-      // Post recover
-      Checkpoint ("Scheduling POST_RECOVER_VARIABLES");
-      CCTK_ScheduleTraverse
-        ("CCTK_POST_RECOVER_VARIABLES", cgh, CallFunction);
-      
-      // Checking
-      PoisonCheck (cgh, alltimes);
-      CheckChecksums (cgh, allbutcurrenttime);
-      
-      leave_level_mode (cgh);
-    } END_MGLEVEL_LOOP;
-  }
-
-
-
-  void initialise_I (cGH * const cgh, int const rl)
+  
+  
+  
+  void
+  CallRecoverVariables (cGH * const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
     
-    BEGIN_MGLEVEL_LOOP(cgh) {
-      enter_level_mode (cgh, rl);
-      do_global_mode = reflevel==0;
-      do_meta_mode = do_global_mode and mglevel==mglevels-1;
-
-      cgh->cctk_time = global_time;
-
-      Waypoint ("Initialisation I at iteration %d time %g%s%s",
-                cgh->cctk_iteration, (double)cgh->cctk_time,
-                (do_global_mode ? " (global)" : ""),
-                (do_meta_mode ? " (meta)" : ""));
-
-      // Checking
-      Poison (cgh, alltimes, CCTK_GF);
-
-      // Set up the grids
-      Checkpoint ("Scheduling BASEGRID");
-      CCTK_ScheduleTraverse ("CCTK_BASEGRID", cgh, CallFunction);
-
-      // Timing statistics
-      if (do_global_mode) {
-        InitTimingVariables (cgh);
-      }
-
-      const int num_tl = init_each_timelevel ? 3 : 1;
-
-      initialise_I_rewind (cgh, num_tl);
-
-      initialise_I_initialise (cgh, num_tl);
-
-      // Checking
-      PoisonCheck (cgh, currenttime);
-
-      leave_level_mode (cgh);
-    } END_MGLEVEL_LOOP;
+    for (int rl=0; rl<reflevels; ++rl) {
+      BEGIN_MGLEVEL_LOOP(cctkGH) {
+        ENTER_LEVEL_MODE (cctkGH, rl) {
+          do_global_mode = reflevel==0; // on first iteration, coarsest grid
+          do_meta_mode = do_global_mode and mglevel==mglevels-1; // on first iteration, coarsest grid
+          
+          cctkGH->cctk_time = global_time;
+          
+          Waypoint ("Recover I at iteration %d time %g%s%s",
+                    cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
+                    (do_global_mode ? " (global)" : ""),
+                    (do_meta_mode ? " (meta)" : ""));
+          
+          // Checking
+          Poison (cctkGH, alltimes, CCTK_GF);
+          
+          // Set up the grids
+          Checkpoint ("Scheduling BASEGRID");
+          CCTK_ScheduleTraverse ("CCTK_BASEGRID", cctkGH, CallFunction);
+          
+          // Timing statistics
+          if (do_global_mode) {
+            InitTimingVariables (cctkGH);
+          }
+          
+          // Recover
+          Checkpoint ("Scheduling RECOVER_VARIABLES");
+          CCTK_ScheduleTraverse ("CCTK_RECOVER_VARIABLES", cctkGH, CallFunction);
+          
+          if (regrid_during_recovery) {
+            CallRegrid (cctkGH);
+          } // if regrid_during_recovery
+          
+        } LEAVE_LEVEL_MODE;
+      } END_MGLEVEL_LOOP;
+    } // for rl
   }
-
-  void initialise_I_rewind (cGH * const cgh, int const num_tl)
+  
+  
+  
+  void
+  CallPostRecoverVariables (cGH * const cctkGH)
   {
-    for (int m=0; m<maps; ++m) {
-      vtt.at(m)->set_delta
-        (reflevel, mglevel, - vtt.at(m)->get_delta (reflevel, mglevel));
-      FlipTimeLevels (cgh);
-      for (int tl=0; tl<num_tl; ++tl) {
-        vtt.at(m)->advance_time (reflevel, mglevel);
-        CycleTimeLevels (cgh);
-      }
-      vtt.at(m)->set_delta
-        (reflevel, mglevel, - vtt.at(m)->get_delta (reflevel, mglevel));
-      FlipTimeLevels (cgh);
+    for (int rl=0; rl<reflevels; ++rl) {
+      BEGIN_MGLEVEL_LOOP(cctkGH) {
+        ENTER_LEVEL_MODE (cctkGH, rl) {
+          do_global_mode = reflevel==reflevels-1; // on last iteration, finest grid
+          do_meta_mode = do_global_mode and mglevel==mglevels-1; // on first iteration, coarsest grid
+          
+          Waypoint ("Recovering II at iteration %d time %g%s%s",
+                    cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
+                    (do_global_mode ? " (global)" : ""),
+                    (do_meta_mode ? " (meta)" : ""));
+          
+          // Post recover variables
+          Checkpoint ("Scheduling POST_RECOVER_VARIABLES");
+          CCTK_ScheduleTraverse
+            ("CCTK_POST_RECOVER_VARIABLES", cctkGH, CallFunction);
+          
+          // Checking
+          PoisonCheck (cctkGH, alltimes);
+          CheckChecksums (cctkGH, allbutcurrenttime);
+          
+        } LEAVE_LEVEL_MODE;
+      } END_MGLEVEL_LOOP;
+    } // for rl
+  }
+  
+  
+  
+  void
+  CallInitial (cGH * const cctkGH)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (not regrid_during_initialisation) {
+      // Regrid once in the beginning
+      ENTER_GLOBAL_MODE (cctkGH, 0) {
+        ENTER_LEVEL_MODE (cctkGH, 0) {
+          CallRegrid (cctkGH);
+        } LEAVE_LEVEL_MODE;
+      } LEAVE_GLOBAL_MODE;
     }
-  }
-
-  void initialise_I_initialise (cGH * const cgh, int const num_tl)
-  {
-    for (int tl=num_tl-1; tl>=0; --tl) {
-
-      // Advance times
-      for (int m=0; m<maps; ++m) {
-        vtt.at(m)->advance_time (reflevel, mglevel);
-      }
-      cgh->cctk_time
-        = global_time - tl * delta_time * mglevelfact / timereflevelfact;
-      CycleTimeLevels (cgh);
-
-      // Set up the initial data
-      Checkpoint ("Scheduling INITIAL");
-      CCTK_ScheduleTraverse ("CCTK_INITIAL", cgh, CallFunction);
-
-    } // for tl
-  }
-
-  void initialise_Regrid (cGH * const cgh, int const rl)
-  {
-    DECLARE_CCTK_PARAMETERS;
-
-
-    // Preregrid
-    BEGIN_MGLEVEL_LOOP(cgh) {
-      enter_level_mode (cgh, rl);
-      do_global_mode = true;
-      do_meta_mode = do_global_mode and mglevel==mglevels-1;
-
-      Waypoint ("Preregrid at iteration %d time %g%s%s",
-		cgh->cctk_iteration, (double)cgh->cctk_time,
-		(do_global_mode ? " (global)" : ""),
-		(do_meta_mode ? " (meta)" : ""));
-
-      // Preregrid
-      Checkpoint ("Scheduling PREREGRID");
-      CCTK_ScheduleTraverse ("CCTK_PREREGRID", cgh, CallFunction);
-
-      leave_level_mode (cgh);
-    } END_MGLEVEL_LOOP;
-
-
-    bool did_regrid = false;
-    {
-      const int ml=0;
-      enter_global_mode (cgh, ml);
-      enter_level_mode (cgh, rl);
-
-      // Regrid
-      Checkpoint ("Regrid");
-      did_regrid |= Regrid (cgh, false, prolongate_initial_data);
-
-      leave_level_mode (cgh);
-      leave_global_mode (cgh);
-    } // ml
-
-    if (did_regrid) {
-      BEGIN_MGLEVEL_LOOP(cgh) {
-        enter_level_mode (cgh, rl);
-        do_global_mode = true;
-        do_meta_mode = do_global_mode and mglevel==mglevels-1;
-
-        Waypoint ("Postregrid at iteration %d time %g%s%s",
-                  cgh->cctk_iteration, (double)cgh->cctk_time,
-                  (do_global_mode ? " (global)" : ""),
-                  (do_meta_mode ? " (meta)" : ""));
-
-        // Postregrid
-        Checkpoint ("Scheduling POSTREGRID");
-        CCTK_ScheduleTraverse ("CCTK_POSTREGRID", cgh, CallFunction);
-
-        leave_level_mode (cgh);
+    
+    for (int rl=0; rl<reflevels; ++rl) {
+      BEGIN_MGLEVEL_LOOP(cctkGH) {
+        ENTER_LEVEL_MODE (cctkGH, rl) {
+          do_global_mode = reflevel==0; // on first iteration, coarsest grid
+          do_meta_mode = do_global_mode and mglevel==mglevels-1; // on first iteration, coarsest grid
+          
+          cctkGH->cctk_time = global_time;
+          
+          Waypoint ("Initialisation I at iteration %d time %g%s%s",
+                    cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
+                    (do_global_mode ? " (global)" : ""),
+                    (do_meta_mode ? " (meta)" : ""));
+          
+          // Checking
+          Poison (cctkGH, alltimes, CCTK_GF);
+          
+          // Set up the grids
+          Checkpoint ("Scheduling BASEGRID");
+          CCTK_ScheduleTraverse ("CCTK_BASEGRID", cctkGH, CallFunction);
+          
+          // Timing statistics
+          if (do_global_mode) {
+            InitTimingVariables (cctkGH);
+          }
+          
+          int const num_tl =
+            init_each_timelevel ? prolongation_order_time+1 : 1;
+          
+          for (int m=0; m<maps; ++m) {
+            vtt.at(m)->set_delta
+              (reflevel, mglevel, - vtt.at(m)->get_delta (reflevel, mglevel));
+            FlipTimeLevels (cctkGH);
+            for (int tl=0; tl<num_tl; ++tl) {
+              vtt.at(m)->advance_time (reflevel, mglevel);
+              CycleTimeLevels (cctkGH);
+            }
+            vtt.at(m)->set_delta
+              (reflevel, mglevel, - vtt.at(m)->get_delta (reflevel, mglevel));
+            FlipTimeLevels (cctkGH);
+          } // for m
+          
+          for (int tl=num_tl-1; tl>=0; --tl) {
+            
+            // Advance times
+            for (int m=0; m<maps; ++m) {
+              vtt.at(m)->advance_time (reflevel, mglevel);
+            }
+            cctkGH->cctk_time =
+              (+ global_time
+               - tl * delta_time * mglevelfact / timereflevelfact);
+            CycleTimeLevels (cctkGH);
+            
+            // Set up the initial data
+            Checkpoint ("Scheduling INITIAL");
+            CCTK_ScheduleTraverse ("CCTK_INITIAL", cctkGH, CallFunction);
+            
+          } // for tl
+          
+          // Checking
+          PoisonCheck (cctkGH, currenttime);
+          
+          if (regrid_during_initialisation and mglevel==0) {
+            // Regrid after initialising each level
+            CallRegrid (cctkGH);
+          }
+          
+        } LEAVE_LEVEL_MODE;
       } END_MGLEVEL_LOOP;
-    } // if did_regrid
+      
+    } // for rl
   }
-
-  void initialise_Restrict (cGH * const cgh, int const rl)
+  
+  
+  
+  void
+  CallRestrict (cGH * const cctkGH)
   {
-    BEGIN_MGLEVEL_LOOP(cgh) {
-      enter_level_mode (cgh, rl);
-      
-      Waypoint ("Initialisation/Restrict at iteration %d time %g",
-                cgh->cctk_iteration, (double)cgh->cctk_time);
-      
-      Restrict (cgh);
-      
-      leave_level_mode (cgh);
-    } END_MGLEVEL_LOOP;
+    for (int rl=reflevels-1; rl>=0; --rl) {
+      BEGIN_MGLEVEL_LOOP(cctkGH) {
+        ENTER_LEVEL_MODE (cctkGH, rl) {
+          
+          Waypoint ("Initialisation/Restrict at iteration %d time %g",
+                    cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
+          
+          Restrict (cctkGH);
+          
+        } LEAVE_LEVEL_MODE;
+      } END_MGLEVEL_LOOP;
+    } // for rl
   }
-
-  void initialise_II (cGH * const cgh, int const rl)
+  
+  
+  
+  void
+  CallPostInitial (cGH * const cctkGH)
   {
-    BEGIN_MGLEVEL_LOOP(cgh) {
-      enter_level_mode (cgh, rl);
-      do_global_mode = reflevel==reflevels-1;
-      do_meta_mode = do_global_mode and mglevel==mglevels-1;
-      
-      Waypoint ("Initialisation II at iteration %d time %g%s%s",
-                cgh->cctk_iteration, (double)cgh->cctk_time,
-                (do_global_mode ? " (global)" : ""),
-                (do_meta_mode ? " (meta)" : ""));
-      
-      if (reflevel < reflevels-1) {
-        Checkpoint ("Scheduling POSTRESTRICTINITIAL");
-        CCTK_ScheduleTraverse
-          ("CCTK_POSTRESTRICTINITIAL", cgh, CallFunction);
-      }
-      
-      Checkpoint ("Scheduling POSTINITIAL");
-      CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cgh, CallFunction);
-      
-      Checkpoint ("Scheduling POSTSTEP");
-      CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
-      
-      PoisonCheck (cgh, alltimes);
-      CheckChecksums (cgh, allbutcurrenttime);
-      
-      leave_level_mode (cgh);
-    } END_MGLEVEL_LOOP;
+    for (int rl=0; rl<reflevels; ++rl) {
+      BEGIN_MGLEVEL_LOOP(cctkGH) {
+        ENTER_LEVEL_MODE (cctkGH, rl) {
+          do_global_mode = reflevel==reflevels-1; // on last iteration, finest grid
+          do_meta_mode = do_global_mode and mglevel==mglevels-1; // on first iteration, coarsest grid
+          
+          Waypoint ("Initialisation II at iteration %d time %g%s%s",
+                    cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
+                    (do_global_mode ? " (global)" : ""),
+                    (do_meta_mode ? " (meta)" : ""));
+          
+          if (reflevel < reflevels-1) {
+            Checkpoint ("Scheduling POSTRESTRICTINITIAL");
+            CCTK_ScheduleTraverse
+              ("CCTK_POSTRESTRICTINITIAL", cctkGH, CallFunction);
+          }
+          
+          Checkpoint ("Scheduling POSTINITIAL");
+          CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cctkGH, CallFunction);
+          
+          Checkpoint ("Scheduling POSTSTEP");
+          CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cctkGH, CallFunction);
+          
+          PoisonCheck (cctkGH, alltimes);
+          CheckChecksums (cctkGH, allbutcurrenttime);
+          
+        } LEAVE_LEVEL_MODE;
+      } END_MGLEVEL_LOOP;
+    } // for rl
   }
-
-  void initialise_III (cGH * const cgh, int const rl)
+  
+  
+  
+  void
+  CallAnalysis (cGH * const cctkGH)
   {
-    BEGIN_MGLEVEL_LOOP(cgh) {
-      enter_level_mode (cgh, rl);
-      do_global_mode = reflevel==reflevels-1;
-      do_meta_mode = do_global_mode and mglevel==mglevels-1;
-      
-      Waypoint ("Initialisation III at iteration %d time %g%s%s",
-                cgh->cctk_iteration, (double)cgh->cctk_time,
-                (do_global_mode ? " (global)" : ""),
-                (do_meta_mode ? " (meta)" : ""));
-      
-      const int do_every =
-        ipow(mgfact, mglevel) * (maxtimereflevelfact / timereffacts.at(rl));
-      if (cgh->cctk_iteration % do_every == 0)
-      {
-        // Checkpoint
-        Checkpoint ("Scheduling CPINITIAL");
-        CCTK_ScheduleTraverse ("CCTK_CPINITIAL", cgh, CallFunction);
-        
-        // Analysis
-        Checkpoint ("Scheduling ANALYSIS");
-        CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cgh, CallFunction);
-        
-        // Output
-        Checkpoint ("OutputGH");
-        CCTK_OutputGH (cgh);
-        
-        // Checking
-        PoisonCheck (cgh, alltimes);
-        CheckChecksums (cgh, allbutcurrenttime);
-      }
-      
-      leave_level_mode (cgh);
-    } END_MGLEVEL_LOOP;
+    for (int rl=0; rl<reflevels; ++rl) {
+      BEGIN_MGLEVEL_LOOP(cctkGH) {
+        ENTER_LEVEL_MODE (cctkGH, rl) {
+          do_global_mode = reflevel==reflevels-1; // last iteration, finest grid
+          do_meta_mode = do_global_mode and mglevel==mglevels-1; // first iteration, coarsest grid
+          
+          Waypoint ("Initialisation III at iteration %d time %g%s%s",
+                    cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
+                    (do_global_mode ? " (global)" : ""),
+                    (do_meta_mode ? " (meta)" : ""));
+          
+          int const do_every =
+            ipow(mgfact, mglevel) * (maxtimereflevelfact / timereffacts.at(rl));
+          if (cctkGH->cctk_iteration % do_every == 0)
+          {
+            // Checkpoint
+            Checkpoint ("Scheduling CPINITIAL");
+            CCTK_ScheduleTraverse ("CCTK_CPINITIAL", cctkGH, CallFunction);
+            
+            // Analysis
+            Checkpoint ("Scheduling ANALYSIS");
+            CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cctkGH, CallFunction);
+            
+            // Output
+            Checkpoint ("OutputGH");
+            CCTK_OutputGH (cctkGH);
+            
+            // Checking
+            PoisonCheck (cctkGH, alltimes);
+            CheckChecksums (cctkGH, allbutcurrenttime);
+          } // if do_every
+          
+        } LEAVE_LEVEL_MODE;
+      } END_MGLEVEL_LOOP;
+    } // for rl
   }
-
-
-
-  // Use Scott Hawley's algorithm to get two extra timelevels of data
-  void initialise_3tl (cGH * const cgh)
+  
+  
+  
+  void
+  CallRegrid (cGH * const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
-
+    
+    assert (is_level_mode());
+    
+    bool const old_do_global_mode = do_global_mode;
+    bool const old_do_meta_mode = do_meta_mode;
+    do_global_mode = true;
+    do_meta_mode = true;
+    
+    Waypoint ("Preregrid at iteration %d time %g%s%s",
+              cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
+              (do_global_mode ? " (global)" : ""),
+              (do_meta_mode ? " (meta)" : ""));
+    
+    // Preregrid
+    Checkpoint ("Scheduling PREREGRIDINITIAL");
+    CCTK_ScheduleTraverse ("CCTK_PREREGRIDINITIAL", cctkGH, CallFunction);
+    
+    // Regrid
+    Checkpoint ("Regrid");
+    bool const did_regrid = Regrid (cctkGH, true);
+    
+    if (did_regrid) {
+      BEGIN_META_MODE (cctkGH) {
+        for (int rl=0; rl<reflevels; ++rl) {
+          
+          bool const did_recompose
+            = Recompose (cctkGH, rl, prolongate_initial_data);
+          
+          if (did_recompose) {
+            BEGIN_MGLEVEL_LOOP (cctkGH) {
+              ENTER_LEVEL_MODE (cctkGH, rl) {
+                do_global_mode = reflevel == reflevels - 1;
+                do_meta_mode = do_global_mode and mglevel==mglevels-1;
+                
+                Waypoint ("Postregrid at iteration %d time %g%s%s",
+                          cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
+                          (do_global_mode ? " (global)" : ""),
+                          (do_meta_mode ? " (meta)" : ""));
+                
+                int const num_tl =
+                  init_each_timelevel ? prolongation_order_time+1 : 1;
+                
+                // Rewind times
+                for (int m=0; m<maps; ++m) {
+                  vtt.at(m)->set_delta
+                    (reflevel, mglevel,
+                     - vtt.at(m)->get_delta (reflevel, mglevel));
+                  FlipTimeLevels (cctkGH);
+                  for (int tl=0; tl<num_tl; ++tl) {
+                    vtt.at(m)->advance_time (reflevel, mglevel);
+                    CycleTimeLevels (cctkGH);
+                  }
+                  vtt.at(m)->set_delta
+                    (reflevel, mglevel,
+                     - vtt.at(m)->get_delta (reflevel, mglevel));
+                  FlipTimeLevels (cctkGH);
+                } // for m
+                CCTK_REAL const old_cctk_time = cctkGH->cctk_time;
+                cctkGH->cctk_time -=
+                  num_tl * (cctkGH->cctk_delta_time / cctkGH->cctk_timefac);
+                
+                for (int tl=num_tl-1; tl>=0; --tl) {
+                  
+                  // Advance times
+                  for (int m=0; m<maps; ++m) {
+                    vtt.at(m)->advance_time (reflevel, mglevel);
+                  }
+                  CycleTimeLevels (cctkGH);
+                  cctkGH->cctk_time +=
+                    cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
+                
+                  // Postregrid
+                  Checkpoint ("Scheduling POSTREGRIDINITIAL");
+                  CCTK_ScheduleTraverse
+                    ("CCTK_POSTREGRIDINITIAL", cctkGH, CallFunction);
+                  
+                } // for tl
+                cctkGH->cctk_time = old_cctk_time;
+                
+              } LEAVE_LEVEL_MODE;
+            } END_MGLEVEL_LOOP;
+          } // if did_recompose
+        } // for rl
+      } END_META_MODE;
+    } // if did_regrid
+    
+    do_global_mode = old_do_global_mode;
+    do_meta_mode = old_do_meta_mode;
+  }
+  
+  
+  
+  //////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  
+  
+  
+  // Use Scott Hawley's algorithm to get two extra timelevels of data
+  
+  static void initialise_3tl_advance_time (cGH * const cctkGH);
+  static void initialise_3tl_evolve_Ia (cGH * const cctkGH);
+  static void initialise_3tl_flip_timelevels (cGH * const cctkGH);
+  static void initialise_3tl_evolve_Ib (cGH * const cctkGH);
+  static void initialise_3tl_evolve_IIb (cGH * const cctkGH);
+  static void initialise_3tl_advance_time_2 (cGH * const cctkGH);
+  static void initialise_3tl_evolve_Ic (cGH * const cctkGH);
+  static void initialise_3tl_reset_time (cGH * const cctkGH);
+  
+  void
+  Initialise3tl (cGH * const cctkGH)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
     Waypoint ("Initialising three timelevels");
-
+    
     // TODO: ensure that there are 3 timelevels
     assert (prolongation_order_time == 2);
-
-    BEGIN_MGLEVEL_LOOP(cgh) {
-      BEGIN_REFLEVEL_LOOP(cgh) {
+    
+    BEGIN_MGLEVEL_LOOP(cctkGH) {
+      BEGIN_REFLEVEL_LOOP(cctkGH) {
         do_global_mode = reflevel==0;
         do_meta_mode = do_global_mode and mglevel==mglevels-1;
-
-        initialise_3tl_advance_time (cgh);
-        initialise_3tl_evolve_Ia (cgh);
-        initialise_3tl_flip_timelevels (cgh);
-        initialise_3tl_evolve_Ib (cgh);
-        initialise_3tl_flip_timelevels (cgh);
-
+        
+        initialise_3tl_advance_time (cctkGH);
+        initialise_3tl_evolve_Ia (cctkGH);
+        initialise_3tl_flip_timelevels (cctkGH);
+        initialise_3tl_evolve_Ib (cctkGH);
+        initialise_3tl_flip_timelevels (cctkGH);
+        
       } END_REFLEVEL_LOOP;
     } END_MGLEVEL_LOOP;
-
+    
     Waypoint ("Hourglass structure in place");
-
-    initialise_3tl_flip_timelevels (cgh);
-
-    BEGIN_MGLEVEL_LOOP(cgh) {
-      BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
+    
+    initialise_3tl_flip_timelevels (cctkGH);
+    
+    BEGIN_MGLEVEL_LOOP(cctkGH) {
+      BEGIN_REVERSE_REFLEVEL_LOOP(cctkGH) {
         do_global_mode = reflevel==0;
         do_meta_mode = do_global_mode and mglevel==mglevels-1;
-
-        initialise_3tl_evolve_IIb (cgh);
-        initialise_3tl_advance_time_2 (cgh);
-        initialise_3tl_evolve_Ic (cgh);
-
+        
+        initialise_3tl_evolve_IIb (cctkGH);
+        initialise_3tl_advance_time_2 (cctkGH);
+        initialise_3tl_evolve_Ic (cctkGH);
+        
       } END_REVERSE_REFLEVEL_LOOP;
     } END_MGLEVEL_LOOP;
-
-    initialise_3tl_flip_timelevels (cgh);
-
-    BEGIN_MGLEVEL_LOOP(cgh) {
-      BEGIN_REVERSE_REFLEVEL_LOOP(cgh) {
+    
+    initialise_3tl_flip_timelevels (cctkGH);
+    
+    BEGIN_MGLEVEL_LOOP(cctkGH) {
+      BEGIN_REVERSE_REFLEVEL_LOOP(cctkGH) {
         do_global_mode = reflevel==0;
         do_meta_mode = do_global_mode and mglevel==mglevels-1;
-
-        initialise_3tl_reset_time (cgh);
-
+        
+        initialise_3tl_reset_time (cctkGH);
+        
       } END_REVERSE_REFLEVEL_LOOP;
     } END_MGLEVEL_LOOP;
-
+    
     Waypoint ("Finished initialising three timelevels");
   }
-
-  void initialise_3tl_advance_time (cGH * const cgh)
+  
+  
+  
+  void
+  initialise_3tl_advance_time (cGH * const cctkGH)
   {
     Waypoint ("Advancing time");
     
-    cgh->cctk_time
+    cctkGH->cctk_time
       = global_time + delta_time * mglevelfact / timereflevelfact;
     for (int m=0; m<maps; ++m) {
       vtt.at(m)->advance_time (reflevel, mglevel);
     }
     
-    CycleTimeLevels (cgh);
+    CycleTimeLevels (cctkGH);
   }
-
-  void initialise_3tl_evolve_Ia (cGH * const cgh)
+  
+  void
+  initialise_3tl_evolve_Ia (cGH * const cctkGH)
   {
     Waypoint ("Initialisation 3TL evolution I (a) (forwards) at iteration"
               " %d time %g%s%s",
-              cgh->cctk_iteration, (double)cgh->cctk_time,
+              cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
               (do_global_mode ? " (global)" : ""),
               (do_meta_mode ? " (meta)" : ""));
-
-    CalculateChecksums (cgh, allbutcurrenttime);
-    Poison (cgh, currenttimebutnotifonly);
-
+    
+    CalculateChecksums (cctkGH, allbutcurrenttime);
+    Poison (cctkGH, currenttimebutnotifonly);
+    
     // Evolve forward
     Checkpoint ("Scheduling PRESTEP");
-    CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
+    CCTK_ScheduleTraverse ("CCTK_PRESTEP", cctkGH, CallFunction);
     Checkpoint ("Scheduling EVOL");
-    CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
-
-    PoisonCheck (cgh, currenttime);
+    CCTK_ScheduleTraverse ("CCTK_EVOL", cctkGH, CallFunction);
+    
+    PoisonCheck (cctkGH, currenttime);
   }
-
-  void initialise_3tl_flip_timelevels (cGH * const cgh)
+  
+  void
+  initialise_3tl_flip_timelevels (cGH * const cctkGH)
   {
     Waypoint ("Flipping timelevels");
-
-    BEGIN_META_MODE(cgh) {
-
+    
+    BEGIN_META_MODE(cctkGH) {
+      
       delta_time *= -1;
-
-      BEGIN_MGLEVEL_LOOP(cgh) {
-        BEGIN_REFLEVEL_LOOP (cgh) {
-
-          cgh->cctk_time
+      
+      BEGIN_MGLEVEL_LOOP(cctkGH) {
+        BEGIN_REFLEVEL_LOOP (cctkGH) {
+          
+          cctkGH->cctk_time
             = global_time + delta_time * mglevelfact / timereflevelfact;
-
-          FlipTimeLevels (cgh);
-
+          
+          FlipTimeLevels (cctkGH);
+          
         } END_REFLEVEL_LOOP;
       } END_MGLEVEL_LOOP;
     } END_META_MODE;
   }
-
-  void initialise_3tl_evolve_Ib (cGH * const cgh)
+  
+  void
+  initialise_3tl_evolve_Ib (cGH * const cctkGH)
   {
     Waypoint ("Initialisation 3TL evolution I (b) (backwards) at iteration"
               " %d time %g%s%s",
-              cgh->cctk_iteration, (double)cgh->cctk_time,
+              cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
               (do_global_mode ? " (global)" : ""),
               (do_meta_mode ? " (meta)" : ""));
-
+    
     // Checking
-    CalculateChecksums (cgh, allbutcurrenttime);
-    Poison (cgh, currenttimebutnotifonly);
-
+    CalculateChecksums (cctkGH, allbutcurrenttime);
+    Poison (cctkGH, currenttimebutnotifonly);
+    
     // Evolve backward
     Checkpoint ("Scheduling PRESTEP");
-    CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
+    CCTK_ScheduleTraverse ("CCTK_PRESTEP", cctkGH, CallFunction);
     Checkpoint ("Scheduling EVOL");
-    CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
-
+    CCTK_ScheduleTraverse ("CCTK_EVOL", cctkGH, CallFunction);
+    
     // Checking
-    PoisonCheck (cgh, alltimes);
+    PoisonCheck (cctkGH, alltimes);
   }
-
+  
   // Evolve backwards one more timestep
   // Starting with the finest level and proceeding to the coarsest
-  void initialise_3tl_evolve_IIb (cGH * const cgh)
+  void
+  initialise_3tl_evolve_IIb (cGH * const cctkGH)
   {
     Waypoint ("Initialisation 3TL evolution II (b) (backwards) at iteration"
               " %d time %g%s%s",
-              cgh->cctk_iteration, (double)cgh->cctk_time,
+              cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
               (do_global_mode ? " (global)" : ""),
               (do_meta_mode ? " (meta)" : ""));
-
-    Restrict (cgh);
-
+    
+    Restrict (cctkGH);
+    
     if (reflevel < reflevels-1) {
       Checkpoint ("Scheduling POSTRESTRICT");
-      CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cgh, CallFunction);
+      CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cctkGH, CallFunction);
     }
-
+    
     Checkpoint ("Scheduling POSTSTEP");
-    CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
-
-    PoisonCheck (cgh, alltimes);
+    CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cctkGH, CallFunction);
+    
+    PoisonCheck (cctkGH, alltimes);
   }
-
-  void initialise_3tl_advance_time_2 (cGH * const cgh)
+  
+  void
+  initialise_3tl_advance_time_2 (cGH * const cctkGH)
   {
     Waypoint ("Advancing time");
     
-    cgh->cctk_time
+    cctkGH->cctk_time
       = global_time + 2 * delta_time * mglevelfact / timereflevelfact;
     for (int m=0; m<maps; ++m) {
       vtt.at(m)->advance_time (reflevel, mglevel);
     }
     
-    CycleTimeLevels (cgh);
+    CycleTimeLevels (cctkGH);
   }
-
-  void initialise_3tl_evolve_Ic (cGH * const cgh)
+  
+  void
+  initialise_3tl_evolve_Ic (cGH * const cctkGH)
   {
     Waypoint ("Initialisation 3TL evolution I (c) (backwards) at iteration"
               " %d time %g%s%s",
-              cgh->cctk_iteration, (double)cgh->cctk_time,
+              cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
               (do_global_mode ? " (global)" : ""),
               (do_meta_mode ? " (meta)" : ""));
-
-    CalculateChecksums (cgh, allbutcurrenttime);
-    Poison (cgh, currenttimebutnotifonly);
-
+    
+    CalculateChecksums (cctkGH, allbutcurrenttime);
+    Poison (cctkGH, currenttimebutnotifonly);
+    
     // Evolve backward
     Checkpoint ("Scheduling PRESTEP");
-    CCTK_ScheduleTraverse ("CCTK_PRESTEP", cgh, CallFunction);
+    CCTK_ScheduleTraverse ("CCTK_PRESTEP", cctkGH, CallFunction);
     Checkpoint ("Scheduling EVOL");
-    CCTK_ScheduleTraverse ("CCTK_EVOL", cgh, CallFunction);
+    CCTK_ScheduleTraverse ("CCTK_EVOL", cctkGH, CallFunction);
     Checkpoint ("Scheduling POSTSTEP");
-    CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cgh, CallFunction);
-
-    PoisonCheck (cgh, alltimes);
+    CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cctkGH, CallFunction);
+    
+    PoisonCheck (cctkGH, alltimes);
   }
   
-  void initialise_3tl_reset_time (cGH * const cgh)
+  void
+  initialise_3tl_reset_time (cGH * const cctkGH)
   {
     Waypoint ("Resetting time");
-
-    cgh->cctk_time = global_time;
+    
+    cctkGH->cctk_time = global_time;
     for (int m=0; m<maps; ++m) {
       vtt.at(m)->set_time (reflevel, mglevel, 0);
     }
   }
-
-
-
-  void print_internal_data ()
+  
+  
+  
+  //////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  
+  
+  
+  void
+  print_internal_data ()
   {
     DECLARE_CCTK_PARAMETERS;
-
+    
     if (output_internal_data) {
       CCTK_INFO ("Internal data dump:");
-      const int oldprecision = cout.precision();
+      int const oldprecision = cout.precision();
       cout.precision (17);
       cout << "   global_time: " << global_time << endl
            << "   leveltimes: " << leveltimes << endl
@@ -715,5 +736,7 @@ namespace Carpet {
       cout.precision (oldprecision);
     }
   }
-
+  
+  
+  
 } // namespace Carpet
