@@ -121,9 +121,11 @@ c     Loop over region
             do i = 1, regiext
                
                if (check_array_accesses.ne.0) then
-                  call checkindex (srcioff+i, srcjoff+j+1, srckoff+k+1, 1,1,1,
+                  call checkindex (srcioff+i, srcjoff+j, srckoff+k, 1,1,1,
+     $                 srciext, srcjext, srckext,
      $                 "source")
-                  call checkindex (dstioff+i, dstjoff+j+1, dstkoff+k+1, 1,1,1,
+                  call checkindex (dstioff+i, dstjoff+j, dstkoff+k, 1,1,1,
+     $                 dstiext, dstjext, dstkext,
      $                 "destination")
                end if
                
