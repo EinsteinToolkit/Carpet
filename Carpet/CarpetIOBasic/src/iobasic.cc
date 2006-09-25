@@ -624,9 +624,10 @@ namespace CarpetIOBasic {
 
 
 
-    assert (last_output != cctk_iteration);
-
-    assert (last_output < cctk_iteration);
+    // These should be true in general, but may be false if
+    // CCTK_OutputGH is called explicitly:
+    // assert (last_output != cctk_iteration);
+    // assert (last_output < cctk_iteration);
 
     // Should be output during this iteration
     return true;
