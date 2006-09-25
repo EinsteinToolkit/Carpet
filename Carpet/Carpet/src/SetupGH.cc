@@ -1884,7 +1884,7 @@ namespace Carpet {
   ensure_group_options (int const group,
                         cGroup const & gdata)
   {
-    // Compact groups are not supported
+#ifdef CCTK_HAVE_COMPACT_GROUPS
     if (gdata.compact) {
       char * const groupname = CCTK_GroupName (group);
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -1892,9 +1892,9 @@ namespace Carpet {
                   groupname);
       free (groupname);
     }
+#endif
     
-    // Contiguous groups are supported
-#if 0
+#ifdef CCTK_HAVE_CONTIGUOUS_GROUPS
     if (gdata.contiguous) {
       char * const groupname = CCTK_GroupName (group);
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
