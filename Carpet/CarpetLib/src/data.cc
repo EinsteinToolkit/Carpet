@@ -837,7 +837,7 @@ extern "C" {
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
-#endif	/* !OMIT_F90 */
+#endif  // #ifndef OMIT_F90
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_o5)
     (const CCTK_REAL8* src,
      const int& srciext, const int& srcjext, const int& srckext,
@@ -927,7 +927,7 @@ extern "C" {
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
-#endif	/* !OMIT_F90 */
+#endif  // #ifndef OMIT_F90
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_2tl_o5)
     (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
      const CCTK_REAL8* src2, const CCTK_REAL8& t2,
@@ -1027,7 +1027,7 @@ extern "C" {
      const int srcbbox[3][3],
      const int dstbbox[3][3],
      const int regbbox[3][3]);
-#endif	/* !OMIT_F90 */
+#endif  // #ifndef OMIT_F90
   void CCTK_FCALL CCTK_FNAME(prolongate_3d_real8_3tl_o5)
     (const CCTK_REAL8* src1, const CCTK_REAL8& t1,
      const CCTK_REAL8* src2, const CCTK_REAL8& t2,
@@ -1588,9 +1588,9 @@ void data<T>
       assert (0);
     } // switch (order_time)
     break;
-#else
-    CCTK_WARN(0, "ENO stencils are not supported!");
-#endif	/* !OMIT_F90 */
+#else  // #ifdef OMIT_F90
+    CCTK_WARN (0, "ENO stencils are not supported in this configuration.  Remove the option OMIT_F90 to use them.");
+#endif  // #ifdef OMIT_F90
     
 #ifndef OMIT_F90
   case op_WENO:
@@ -1664,9 +1664,9 @@ void data<T>
       assert (0);
     } // switch (order_time)
     break;
-#else
-    CCTK_WARN(0, "ENO stencils are not supported!");
-#endif	/* !OMIT_F90 */
+#else  // #ifdef OMIT_F90
+    CCTK_WARN (0, "ENO stencils are not supported in this configuration.  Remove the option OMIT_F90 to use them.");
+#endif  // #ifdef OMIT_F90
     
   default:
     assert(0);
