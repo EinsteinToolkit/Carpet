@@ -81,14 +81,13 @@ namespace Carpet {
   void GroupsStorageCheck (cGH const * const cctkGH);
 
   // Helpers for recomposing the grid hierarchy
-  void Recompose (cGH const * const cctkGH,
-                  int const m,
+  void RegridMap (cGH const * cctkGH,
+                  int m,
                   gh::mexts  const & bbsss,
                   gh::rbnds  const & obss,
-                  gh::rprocs const & pss,
-                  bool const do_init);
-  
-  void PostRecompose ();
+                  gh::rprocs const & pss);
+  void PostRegrid ();
+  bool Recompose (cGH const * cctkGH, int rl, bool do_init);
   
   void CheckRegions (const gh::mexts & bbsss,
                      const gh::rbnds & obss,

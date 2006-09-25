@@ -131,28 +131,29 @@ namespace Carpet {
   
   
   
-  bool Regrid (const cGH* cgh,
-               const bool force_recompose,
-               const bool do_init)
+  bool Regrid (cGH const * const cctkGH,
+               bool const force_recompose)
   {
     DECLARE_CCTK_PARAMETERS;
     
     assert (is_level_mode());
     
-    if (! CCTK_IsFunctionAliased ("Carpet_Regrid")) {
+    if (not CCTK_IsFunctionAliased ("Carpet_Regrid")) {
       static bool didtell = false;
-      if (maxreflevels > 1 and ! didtell) {
+      if (maxreflevels > 1 and not didtell) {
 	CCTK_WARN (2, "No regridding routine has been provided.  There will be no regridding.  Maybe you forgot to activate a regridding thorn?");
 	didtell = true;
       }
       return false;
     }
     
+    
+    
     bool did_change = false;
     
     if (not regrid_in_level_mode) {
       
-      BEGIN_MAP_LOOP(cgh, CCTK_GF) {
+      BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
         
         gh::mexts  bbsss = vhh.at(map)->extents();
         gh::rbnds  obss  = vhh.at(map)->outer_boundaries();
@@ -160,12 +161,12 @@ namespace Carpet {
         
         // Check whether to recompose
         CCTK_INT const do_recompose
-          = Carpet_Regrid (cgh, &bbsss, &obss, &pss, force_recompose);
+          = Carpet_Regrid (cctkGH, &bbsss, &obss, &pss, force_recompose);
         assert (do_recompose >= 0);
         did_change = did_change or do_recompose;
         
         if (do_recompose) {
-          Recompose (cgh, map, bbsss, obss, pss, do_init);
+          RegridMap (cctkGH, map, bbsss, obss, pss);
         }
         
       } END_MAP_LOOP;
@@ -175,7 +176,7 @@ namespace Carpet {
       vector<gh::mexts>  bbssss (maps);
       vector<gh::rbnds>  obsss  (maps);
       vector<gh::rprocs> psss   (maps);
-      BEGIN_MAP_LOOP(cgh, CCTK_GF) {
+      BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
         bbssss.at(map) = vhh.at(map)->extents();
         obsss.at(map)  = vhh.at(map)->outer_boundaries();
         psss.at(map)   = vhh.at(map)->processors();
@@ -183,39 +184,45 @@ namespace Carpet {
       
       // Check whether to recompose
       CCTK_INT const do_recompose
-        = Carpet_RegridMaps (cgh, &bbssss, &obsss, &psss, force_recompose);
+        = Carpet_RegridMaps (cctkGH, &bbssss, &obsss, &psss, force_recompose);
       assert (do_recompose >= 0);
       did_change = did_change or do_recompose;
       
       if (do_recompose) {
-        BEGIN_MAP_LOOP(cgh, CCTK_GF) {
+        BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
           gh::mexts  const & bbsss = bbssss.at(map);
           gh::rbnds  const & obss  = obsss.at(map);
           gh::rprocs const & pss   = psss.at(map);
-          Recompose (cgh, map, bbsss, obss, pss, do_init);
+          RegridMap (cctkGH, map, bbsss, obss, pss);
         } END_MAP_LOOP;
       }
       
-    }
+    } // if regrid in level mode
     
-    PostRecompose ();
+    
+    
+    if (did_change) {
+      
+      PostRegrid ();
+      
+    } // if did change
+    
+    
     
     return did_change;
   }
   
   
   
-  void Recompose (cGH const * const cctkGH,
+  void RegridMap (cGH const * const cctkGH,
                   int const m,
                   gh::mexts  const & bbsss,
                   gh::rbnds  const & obss,
-                  gh::rprocs const & pss,
-                  bool const do_init)
+                  gh::rprocs const & pss)
   {
     DECLARE_CCTK_PARAMETERS;
     
-    CCTK_VInfo (CCTK_THORNSTRING,
-                "Recomposing the grid hierarchy for map %d...", m);
+    Waypoint ("Regridding map %d...", m);
     
     // Write grid structure to file
     OutputGridStructure (cctkGH, m, bbsss, obss, pss);
@@ -227,19 +234,15 @@ namespace Carpet {
     // TODO: check also that the current and all coarser levels did
     // not change
     
-    // Recompose
+    // Regrid
     vhh.at(m)->regrid (bbsss, obss, pss);
-    for (int rl=0; rl<vhh.at(m)->reflevels(); ++rl) {
-      vhh.at(m)->recompose (rl, do_init);
-    }
     
-    CCTK_VInfo (CCTK_THORNSTRING,
-                "Done recomposing the grid hierarchy for map %d.", m);
+    Waypoint ("Done regridding map %d.", m);
   }
   
   
   
-  void PostRecompose ()
+  void PostRegrid ()
   {
     // Calculate new number of levels
     int const oldreflevels = reflevels;
@@ -267,6 +270,26 @@ namespace Carpet {
       leveltimes.at(ml).resize
         (reflevels, leveltimes.at(ml).at(oldreflevels-1));
     }
+  }
+  
+  
+  
+  bool Recompose (cGH const * const cctkGH,
+                  int const rl,
+                  bool const do_init)
+  {
+    bool did_recompose = false;
+    
+    for (int m=0; m<maps; ++m) {
+      Waypoint ("Recomposing the grid hierarchy for map %d level %d...", m, rl);
+      
+      assert (rl>=0 and rl<vhh.at(m)->reflevels());
+      did_recompose |= vhh.at(m)->recompose (rl, do_init);
+      
+      Waypoint ("Done recomposing the grid hierarchy for map %d level %d.",
+                m, rl);
+    }
+    return did_recompose;
   }
   
   
@@ -643,6 +666,7 @@ namespace Carpet {
       if (! dims[d]) {
         ++ alldims;
         allsizes *= rshape[d];
+#warning "TODO"
         // Why 0.99 and not 1.01?
         if (rshape[d] >= 0.99 * mysize) {
           mydim = d;
@@ -694,6 +718,8 @@ namespace Carpet {
     bvect const newdims = dims.replace(mydim, true);
     
     // choose a number of slices for this direction
+#warning "TODO"
+    // Why floor and not ceil?
     int const nslices
       = min(nprocs,
             (int)floor(mysize * pow(nprocs/allsizes, (CCTK_REAL)1/alldims)
@@ -809,6 +835,8 @@ namespace Carpet {
       return;
     }
     
+#warning "TODO: Add buffer zones, plus maybe more"
+    
     const int nprocs = CCTK_nProcs(cgh);
     if (DEBUG) cout << "SRA nprocs " << nprocs << endl;
     
@@ -825,6 +853,7 @@ namespace Carpet {
     }
     vector<int> mynprocs(nslices);
     {
+#warning "TODO: split slices if necessary"
       if (DEBUG) cout << "SRA: distributing processors to slices" << endl;
       int ncomps_left = nprocs * ncomps;
       for (int c=0; c<nslices; ++c) {
@@ -912,6 +941,8 @@ namespace Carpet {
       ps.at(n) /= ncomps;
       assert (ps.at(n) >= 0 and ps.at(n) < nprocs);
     }
+    
+#warning "TODO: Remove buffer zones again, plus anything more"
     
     if (DEBUG) cout << "SRA exit" << endl;
   }

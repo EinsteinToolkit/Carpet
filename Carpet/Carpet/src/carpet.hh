@@ -33,7 +33,8 @@ namespace Carpet {
   int CallFunction (void* function, cFunctionData* attribute, void* data);
   
   // Other functions
-  bool Regrid (const cGH* cgh, const bool force_recompose, const bool do_init);
+  bool Regrid (cGH const * cctkGH, bool force_recompose);
+  
   void CycleTimeLevels (const cGH* cgh);
   void FlipTimeLevels (const cGH* cgh);
   void SyncGroups (const cGH* cgh, const vector<int>& groups);
