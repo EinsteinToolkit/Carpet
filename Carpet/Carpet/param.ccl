@@ -433,3 +433,9 @@ BOOLEAN adaptive_stepsize "Allow adaptive timestep sizes"
 BOOLEAN use_tapered_grids "Use tapered grids, avoiding time interpolation during evolution"
 {
 } "no"
+
+
+
+BOOLEAN global_mode_on_finest_grid "Run global mode routines on the finest grin" STEERABLE=always
+{
+} "no"
