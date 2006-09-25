@@ -8,19 +8,18 @@
 #include <stack>
 #include <vector>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
 
-#include "util_ErrorCodes.h"
-#include "util_Table.h"
-#include "util_String.h"
+#include <util_ErrorCodes.h>
+#include <util_Table.h>
 
-#include "bbox.hh"
-#include "defs.hh"
-#include "dist.hh"
-#include "ggf.hh"
-#include "gh.hh"
-#include "vect.hh"
+#include <bbox.hh>
+#include <defs.hh>
+#include <dist.hh>
+#include <ggf.hh>
+#include <gh.hh>
+#include <vect.hh>
 
 #include "carpet.hh"
 
@@ -32,7 +31,1593 @@ namespace Carpet {
   
   
   
-  static bool CanTransferVariableType (const cGH* const cgh, const int group)
+  static void setup_model_information (cGH * cctkGH);
+  static void setup_multigrid_information (cGH * cctkGH);
+  static void setup_refinement_information ();
+  static void setup_map_information ();
+  static void setup_domain_extents (cGH const * cctkGH);
+  static void allocate_grid_hierarchy (int m, ivect const & npoints);
+  static void
+  allocate_data_hierarchy (int m,
+                           ivect const & lghosts, ivect const & ughosts);
+  static void allocate_time_hierarchy (int m);
+  static void setup_grid_hierarchy (cGH const * cctkGH);
+  static void
+  set_base_extent (int m,
+                   vector<vector<ibbox> > & bbss,
+                   vector<vector<bbvect> > & obss);
+  
+  static void allocate_group_data (cGH const * cctkGH);
+  static void
+  allocate_group_hierarchies (int group,
+                              ivect const & sizes,
+                              ivect const & lghosts,
+                              ivect const & ughosts);
+  static void
+  setup_group_grid_hierarchy (cGH const * cctkGH,
+                              int group, cGroup const & gdata,
+                              ivect const & convpowers,
+                              ivect const & convoffsets);
+  static void
+  initialise_group_info (cGH const * cctkGH,
+                         int group, cGroup const & gdata);
+  static void set_state (cGH * cctkGH);
+  static void enable_storage_for_all_groups (cGH const * cctkGH);
+  
+  
+  
+  static ivect get_ghostzones ();
+  static ivect get_npoints ();
+  static void  get_boundary_specification (int m);
+  static void
+  get_domain_specification (int m,
+                            ivect const & npoints,
+                            rvect & physical_min,
+                            rvect & physical_max,
+                            rvect & base_spacing);
+  static void
+  adapt_domain_specification (int m,
+                              rvect const & physical_min,
+                              rvect const & physical_max,
+                              rvect const & base_spacing,
+                              rvect & exterior_min,
+                              rvect & exterior_max,
+                              rvect & spacing);
+  static void
+  calculate_grid_points (int m,
+                         ivect const & lghosts,
+                         ivect const & ughosts,
+                         rvect const & exterior_min,
+                         rvect const & exterior_max,
+                         rvect const & spacing,
+                         ivect & npoints);
+  static void
+  find_processor_decomposition
+  (cGH const * const cctkGH,
+   vector<vector<vector<ibbox> > >          & bbsss,
+   vector<vector<vector<bbvect> > >         & obsss,
+   vector<vector<vector<int> > >            & psss,
+   vector<vector<vector<vector<ibbox> > > > & bbssss);
+  
+  static void
+  get_group_size (int group, cGroup const & gdata,
+                  ivect & sizes,
+                  ivect & lghosts, ivect & ughosts);
+  static void
+  adapt_group_size_mglevel (int group, cGroup const & gdata,
+                            ivect & sizes,
+                            ivect & convpowers,
+                            ivect & convoffsets);
+  static void
+  get_convergence_options (int group, cGroup const & gdata,
+                           ivect & convpowers,
+                           ivect & convoffsets);
+  static void
+  adapt_group_size_disttype (cGH const * cctkGH,
+                             int group, cGroup const & gdata,
+                             ivect & sizes,
+                             ivect const & lghosts, ivect const & ughosts);
+  static void output_group_statistics (cGH const * cctkGH);
+  static operator_type
+  get_transport_operator (cGH const * cctkGH,
+                          int group, cGroup const & gdata);
+  static bool
+  can_transfer_variable_type (cGH const * cctkGH,
+                              int group, cGroup const & gdata);
+  
+  
+  
+  static void ensure_CartGrid3D_type ();
+  static void ensure_CartGrid3D_avoid_origin ();
+  static void ensure_ReflectionSymmetry_avoid_origin ();
+  static void
+  ensure_ghostzones (int m,
+                     ivect const & lghosts, ivect const & ughosts);
+  static void ensure_group_options (int group, cGroup const & gdata);
+  
+
+
+  
+  
+  
+  void *
+  SetupGH (tFleshConfig * const fc,
+           int const convLevel,
+           cGH * const cctkGH)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    // Initialise current position (must be the very first thing,
+    // before the first output)
+    mglevel   = -1;
+    reflevel  = -1;
+    map       = -1;
+    component = -1;
+    
+    // Say hello
+    Waypoint ("Setting up the grid hierarchy");
+    Output ("Carpet is running on %d processors", CCTK_nProcs(cctkGH));
+    
+    // Check arguments:
+    // Only a specific number of dimensions is supported
+    assert (cctkGH->cctk_dim == dim);
+    // Not sure what to do with that
+    assert (convLevel == 0);
+    
+    // Set up descriptions from user parameters
+    setup_model_information (cctkGH);
+    setup_multigrid_information (cctkGH);
+    setup_refinement_information ();
+    setup_map_information ();
+    
+    // Calculate domain extents for each map
+    setup_domain_extents (cctkGH);
+    
+    // Set up grid hierarchy
+    setup_grid_hierarchy (cctkGH);
+    
+    // Allocate space for group descriptions
+    allocate_group_data (cctkGH);
+    
+    // Set times, origin, and spacings, and go to meta mode
+    set_state (cctkGH);
+    
+    // Enable prolongating
+    do_prolongate = true;
+    do_warn_about_storage = false; // This is enabled later
+    
+    if (enable_all_storage) {
+      enable_storage_for_all_groups (cctkGH);
+    }
+    
+    Waypoint ("Done with setting up the grid hierarchy");
+    
+    return & carpetGH;
+  }
+  
+  
+  
+  //////////////////////////////////////////////////////////////////////////////
+  // Routines which perform actions ////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  
+  
+  
+  void
+  setup_model_information (cGH * const cctkGH)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    cctkGH->identity = strdup (model);
+  }
+  
+  
+  
+  void
+  setup_multigrid_information (cGH * const cctkGH)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    basemglevel = convergence_level;
+    mglevels = num_convergence_levels;
+    mgfact = convergence_factor;
+    maxmglevelfact = ipow(mgfact, mglevels-1);
+    cctkGH->cctk_convfac = mgfact;
+  }
+  
+  
+  
+  void
+  setup_refinement_information ()
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    // Set maximum number of refinement levels
+    maxreflevels = max_refinement_levels;
+    
+    // Set the per-level spatial refinement factors
+    if (CCTK_EQUALS (space_refinement_factors, "")) {
+      // Calculate them from the default refinement factor
+      spacereffacts.resize (maxreflevels);
+      for (int n=0; n<maxreflevels; ++n) {
+        spacereffacts.at(n) = ivect (ipow ((int)refinement_factor, n));
+      }
+    } else {
+      // Read them from the parameter
+      try {
+        istringstream srf (space_refinement_factors);
+        srf >> spacereffacts;
+      } catch (input_error) {
+        CCTK_WARN
+          (0, "Could not parse parameter \"space_refinement_factors\"");
+      }
+    }
+    // TODO: turn these into real error messages
+    assert ((int)spacereffacts.size() >= maxreflevels);
+    assert (all (spacereffacts.front() == 1));
+    for (int n=1; n<maxreflevels; ++n) {
+      assert (all (spacereffacts.at(n) >= spacereffacts.at(n-1)));
+      assert (all (spacereffacts.at(n) % spacereffacts.at(n-1) == 0));
+    }
+    
+    // Set the per-level temporal refinement factors
+    if (CCTK_EQUALS (time_refinement_factors, "")) {
+      // Calculate them from the default refinement factor
+      timereffacts.resize (maxreflevels);
+      for (int n=0; n<maxreflevels; ++n) {
+        timereffacts.at(n) = ipow ((int)refinement_factor, n);
+      }
+    } else {
+      // Read them from the parameter
+      try {
+        istringstream trf (time_refinement_factors);
+        trf >> timereffacts;
+      } catch (input_error) {
+        CCTK_WARN (0, "Could not parse parameter \"time_refinement_factors\"");
+      }
+    }
+    // TODO: turn these into real error messages
+    assert ((int)timereffacts.size() >= maxreflevels);
+    assert (timereffacts.front() == 1);
+    for (int n=1; n<maxreflevels; ++n) {
+      assert (timereffacts.at(n) >= timereffacts.at(n-1));
+      assert (timereffacts.at(n) % timereffacts.at(n-1) == 0);
+    }
+    
+    // Calculate the maximum refinement factors
+    maxtimereflevelfact = timereffacts.at (maxreflevels-1);
+    maxspacereflevelfact = spacereffacts.at (maxreflevels-1);
+  }
+  
+  
+  
+  void
+  setup_map_information ()
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (domain_from_multipatch) {
+      assert (num_maps == 1);   // must be the default to avoid confusion
+      assert (CCTK_IsFunctionAliased ("MultiPatch_GetSystemSpecification"));
+      CCTK_INT maps1;
+      int const ierr = MultiPatch_GetSystemSpecification (& maps1);
+      assert (not ierr);
+      maps = maps1;
+    } else {
+      maps = num_maps;
+    }
+    carpetGH.maps = maps;
+  }
+  
+  
+  
+  void
+  setup_domain_extents (cGH const * const cctkGH)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    for (int m=0; m<maps; ++m) {
+      
+      // Number of ghost zones
+      ivect const lghosts = get_ghostzones();
+      ivect const ughosts = lghosts;
+      
+      // Number of grid points
+      ivect npoints = get_npoints ();
+      
+      // Boundary description
+      get_boundary_specification (m);
+      
+      // Grid size
+      rvect physical_min, physical_max;
+      rvect base_spacing;
+      get_domain_specification
+        (m,
+         npoints,
+         physical_min, physical_max,
+         base_spacing);
+      
+      if (max_refinement_levels > 1) {
+        // Ensure that ReflectionSymmetry::avoid_origin = no
+        ensure_ReflectionSymmetry_avoid_origin ();
+      }
+      
+      // Adapt domain specification for convergence level
+      rvect exterior_min, exterior_max;
+      rvect spacing;
+      adapt_domain_specification
+        (m,
+         physical_min, physical_max,
+         base_spacing,
+         exterior_min, exterior_max,
+         spacing);
+      
+      // Calculate global number of grid points
+      calculate_grid_points
+        (m,
+         lghosts, ughosts,
+         exterior_min, exterior_max,
+         spacing,
+         npoints);
+      
+      // Allocate hierarchies
+      allocate_grid_hierarchy (m, npoints);
+      allocate_data_hierarchy (m, lghosts, ughosts);
+      allocate_time_hierarchy (m);
+      
+    } // for m
+  }
+  
+  
+  
+  void
+  allocate_grid_hierarchy (int const m,
+                           ivect const & npoints)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    // Base grid extent
+    ivect const str (maxspacereflevelfact);
+    ivect const lb (0);
+    ivect const ub ((npoints - 1) * str);
+    ibbox const baseext (lb, ub, str);
+    
+    // Allocate grid hierarchy
+    vhh.resize(maps);
+    vhh.at(m) = new gh (spacereffacts, vertex_centered,
+                        convergence_factor, vertex_centered,
+                        baseext);
+  }
+  
+  
+  
+  static ivect outer_buffer_width (ivect const & ghosts);
+  
+  void
+  allocate_data_hierarchy (int const m,
+                           ivect const & lghosts,
+                           ivect const & ughosts)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    int const taper_factor = use_tapered_grids ? refinement_factor : 1;
+    int const inner_buffer_width = use_outer_buffer_zones ? 0 : buffer_width;
+    
+    ivect const lbuffers =
+      taper_factor * outer_buffer_width (lghosts) - lghosts;
+    ivect const ubuffers =
+      taper_factor * outer_buffer_width (ughosts) - ughosts;
+    
+    vdd.resize(maps);
+    vdd.at(m) = new dh (* vhh.at(m),
+                        lghosts, ughosts,
+                        prolongation_order_space,
+                        inner_buffer_width, lbuffers, ubuffers);
+    
+    if (max_refinement_levels > 1) {
+      ensure_ghostzones (m, lghosts, ughosts);
+    }
+  }
+  
+  ivect
+  outer_buffer_width (ivect const & ghosts)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    return (use_outer_buffer_zones
+            ? ghosts * (int)num_integrator_substeps + (int)buffer_width
+            : ghosts);
+  }
+  
+  
+  
+  void
+  allocate_time_hierarchy (int const m)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    vtt.resize (maps);
+    vtt.at(m) = new th (* vhh.at(m),
+                        timereffacts,
+                        1.0);
+  }
+  
+  
+  
+  void
+  setup_grid_hierarchy (cGH const * const cctkGH)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    // bbssss[m][rl][c][ml]
+    // bbsss [m][rl][c]
+    // obsss [m][rl][c]
+    // psss  [m][rl][c]
+    
+    vector<vector<vector<ibbox > > > bbsss (maps);
+    vector<vector<vector<bbvect> > > obsss (maps);
+    
+    for (int m=0; m<maps; ++m) {
+      set_base_extent (m, bbsss.at(m), obsss.at(m));
+    }
+    
+    vector<vector<vector<int> > > psss (maps);
+    vector<vector<vector<vector<ibbox> > > > bbssss (maps);
+    
+    find_processor_decomposition (cctkGH, bbsss, obsss, psss, bbssss);
+    
+    for (int m=0; m<maps; ++m) {
+      
+      // Check the regions
+      CheckRegions (bbssss.at(m), obsss.at(m), psss.at(m));
+      
+#if 0
+      // Do this later because CactusBase/IO might not yet be
+      // initialised
+      // Write grid structure to file
+      OutputGridStructure (cctkGH, m, bbssss.at(m), obsss.at(m), psss.at(m));
+#endif
+      
+      // Recompose grid hierarchy
+      vhh.at(m)->regrid (bbssss.at(m), obsss.at(m), psss.at(m));
+      int const rl = 0;
+      vhh.at(m)->recompose (rl, false);
+      
+    } // for m
+    
+    CCTK_INFO ("Grid structure (grid points):");
+    for (int ml=0; ml<mglevels; ++ml) {
+      int const rl = 0;
+      for (int m=0; m<maps; ++m) {
+        for (int c=0; c<vhh.at(m)->components(rl); ++c) {
+          ivect const lower = vhh.at(m)->extents().at(ml).at(rl).at(c).lower();
+          ivect const upper = vhh.at(m)->extents().at(ml).at(rl).at(c).upper();
+          int const convfact = ipow(mgfact, ml);
+          assert (all(lower % maxspacereflevelfact == 0));
+          assert (all(upper % maxspacereflevelfact == 0));
+          assert (all(((upper - lower) / maxspacereflevelfact) % convfact == 0));
+          cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
+               << "   exterior: "
+               << "proc "
+               << vhh.at(m)->processors().at(rl).at(c)
+               << "   "
+               << lower / maxspacereflevelfact
+               << " : "
+               << upper / maxspacereflevelfact
+               << "   ("
+               << (upper - lower) / maxspacereflevelfact / convfact + 1
+               << ")" << endl;
+        }
+      }
+    }
+    
+    // Assert that all maps have one refinement level
+    reflevels = 1;
+    for (int m=0; m<maps; ++m) {
+      assert (vhh.at(m)->reflevels() == reflevels);
+    }
+  }
+  
+  
+  
+  void
+  set_base_extent (int const m,
+                   vector<vector<ibbox> > & bbss,
+                   vector<vector<bbvect> > & obss)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    // Create one refinement level
+    int const rl = 0;
+    bbss.resize(1);
+    obss.resize(1);
+    vector<ibbox>  & bbs = bbss.at(rl);
+    vector<bbvect> & obs = obss.at(rl);
+    
+    if (CCTK_EQUALS (base_extents, "")) {
+      
+      // Default: one grid component covering everything
+      bbs.push_back (vhh.at(m)->baseextent);
+      obs.push_back (bbvect(true));
+      
+    } else {
+      
+      // Read explicit grid components
+      // TODO: invent something for the other convergence levels
+      istringstream ext_str (base_extents);
+      try {
+        ext_str >> bbs;
+      } catch (input_error) {
+        CCTK_WARN (0, "Could not parse parameter \"base_extents\"");
+      }
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "Using %d grid components", (int)bbs.size());
+      if (bbs.size() == 0) {
+        CCTK_WARN (0, "Cannot evolve with zero grid components");
+      }
+      
+      istringstream ob_str (base_outerbounds);
+      try {
+        ob_str >> obs;
+      } catch (input_error) {
+        CCTK_WARN (0, "Could not parse parameter \"base_outerbounds\"");
+      }
+      assert (obs.size() == bbs.size());
+      
+    }
+  }
+  
+  
+  
+  void
+  allocate_group_data (cGH const * const cctkGH)
+  {
+    groupdata.resize (CCTK_NumGroups());
+    arrdata.resize (CCTK_NumGroups());
+    
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
+      
+      cGroup gdata;
+      int const ierr = CCTK_GroupData (group, &gdata);
+      assert (not ierr);
+      
+      // Check for compact, contiguous, and staggered groups
+      ensure_group_options (group, gdata);
+      
+      switch (gdata.grouptype) {
+        
+        // Grid functions
+      case CCTK_GF: {
+        
+        // All grid function groups must have the standard rank
+        assert (gdata.dim == dim);
+        
+        // Set up one refinement level
+        groupdata.at(group).activetimelevels.resize(mglevels);
+        for (int ml=0; ml<mglevels; ++ml) {
+          groupdata.at(group).activetimelevels.at(ml).resize(1);
+        }
+        
+        // Grid function groups use the global grid descriptors
+        arrdata.at(group).resize(maps);
+        for (int m=0; m<maps; ++m) {
+          arrdata.at(group).at(m).hh = vhh.at(m);
+          arrdata.at(group).at(m).dd = vdd.at(m);
+          arrdata.at(group).at(m).tt = vtt.at(m);
+        }
+        
+        break;
+      }
+        
+        // Grid scalars and grid arrays are treated in the same way
+      case CCTK_SCALAR:
+      case CCTK_ARRAY: {
+        
+        // Use only one refinement level for grid arrays
+        groupdata.at(group).activetimelevels.resize(mglevels);
+        for (int ml=0; ml<mglevels; ++ml) {
+          groupdata.at(group).activetimelevels.at(ml).resize(1);
+        }
+        
+        // Use only one map for grid arrays
+        arrdata.at(group).resize(1);
+        
+        ivect sizes, lghosts, ughosts;
+        get_group_size (group, gdata, sizes, lghosts, ughosts);
+        
+        // Adapt group sizes for convergence level
+        ivect convpowers, convoffsets;
+        adapt_group_size_mglevel (group, gdata, sizes, convpowers, convoffsets);
+        // Adapt group sizes for disttype
+        adapt_group_size_disttype
+          (cctkGH, group, gdata, sizes, lghosts, ughosts);
+        
+        allocate_group_hierarchies (group, sizes, lghosts, ughosts);
+        
+        setup_group_grid_hierarchy
+          (cctkGH, group, gdata, convpowers, convoffsets);
+        
+        break;
+      } // case scalar or array
+        
+      default:
+        assert (0);
+      } // switch grouptype
+      
+      initialise_group_info (cctkGH, group, gdata);
+      
+    } // for groups
+    
+    output_group_statistics (cctkGH);
+  }
+  
+  
+  
+  void
+  allocate_group_hierarchies (int const group,
+                              ivect const & sizes,
+                              ivect const & lghosts,
+                              ivect const & ughosts)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    // Calculate base extent
+    ivect const lb(0);
+    ivect const ub(sizes-1);
+    ivect const str(1);
+    ibbox const baseext(lb, ub, str);
+    
+    // One refinement level
+    vector<int> grouptimereffacts(1);
+    grouptimereffacts.at(0) = 1;
+    vector<ivect> groupspacereffacts(1);
+    groupspacereffacts.at(0) = ivect(1);
+    
+    // There is only one map
+    int const m=0;
+    
+    arrdata.at(group).at(m).hh =
+      new gh (groupspacereffacts, vertex_centered,
+              convergence_factor, vertex_centered,
+              baseext);
+    
+    arrdata.at (group).at(m).dd =
+      new dh (*arrdata.at (group).at(m).hh, lghosts, ughosts, 0, 0, 0, 0);
+    
+    arrdata.at (group).at(m).tt =
+      new th (*arrdata.at (group).at(m).hh, grouptimereffacts, 1.0);
+  }
+  
+  
+  
+  void
+  setup_group_grid_hierarchy (cGH const * const cctkGH,
+                              int const group,
+                              cGroup const & gdata,
+                              ivect const & convpowers,
+                              ivect const & convoffsets)
+  {
+    // Set refinement structure for scalars and arrays
+    vector<ibbox> bbs(1);
+    vector<bbvect> obs(1);
+    int const m=0;
+    bbs.at(0) = arrdata.at(group).at(m).hh->baseextent;
+    obs.at(0) = bbvect(true);
+    
+    // Split it into components, one for each processor
+    vector<int> ps;
+    switch (gdata.disttype) {
+    case CCTK_DISTRIB_DEFAULT: {
+      SplitRegions_Automatic (cctkGH, bbs, obs, ps);
+      break;
+    }
+    case CCTK_DISTRIB_CONSTANT: {
+      int const d = gdata.dim==0 ? 0 : gdata.dim-1;
+      SplitRegions_AlongDir (cctkGH, bbs, obs, ps, d);
+      break;
+    }
+    default:
+      assert (0);
+    }
+    
+    // Only one refinement level
+    vector<vector<ibbox> > bbss(1);
+    vector<vector<bbvect> > obss(1);
+    vector<vector<int> > pss(1);
+    bbss.at(0) = bbs;
+    obss.at(0) = obs;
+    pss.at(0) = ps;
+    
+    // Create all multigrid levels
+    vector<vector<vector<ibbox> > > bbsss (mglevels);
+    ivect mgfact1;
+    iivect offset;
+    for (int d=0; d<dim; ++d) {
+      mgfact1[d] = ipow (mgfact, convpowers[d]);
+      offset[d][0] = 0;
+      offset[d][1] = convoffsets[d];
+    }
+    bbsss.at(0) = bbss;
+
+    for (int ml=1; ml<mglevels; ++ml) {
+      int const rl = 0;
+      for (int c=0; c<(int)bbss.at(rl).size(); ++c) {
+        // this base
+        ivect const baselo = ivect(0);
+        ivect const baselo1 = baselo;
+        // next finer grid
+        ivect const flo = bbsss.at(ml-1).at(rl).at(c).lower();
+        ivect const fhi = bbsss.at(ml-1).at(rl).at(c).upper();
+        ivect const fstr = bbsss.at(ml-1).at(rl).at(c).stride();
+        // this grid
+        ivect const str = fstr * mgfact1;
+        ivect const lo = flo + xpose(obs.at(c))[0].ifthen
+          (+ (xpose(offset)[0] - mgfact1 * xpose(offset)[0]) * fstr,
+           ivect(0));
+        ivect const hi = fhi + xpose(obs.at(c))[1].ifthen
+          (- (xpose(offset)[1] - mgfact1 * xpose(offset)[1]) * fstr,
+           ivect(0));
+        ivect const lo1 = baselo1 + (lo - baselo1 + str - 1) / str * str;
+        ivect const hi1 = lo1 + (hi - lo1) / str * str;
+        bbsss.at(ml).at(rl).at(c) = ibbox(lo1, hi1, str);
+      }
+    }
+    
+    // Recompose for this map
+    {
+      char * const groupname = CCTK_GroupName (group);
+      assert (groupname);
+      Checkpoint ("Recomposing grid array group \"%s\"...", groupname);
+      arrdata.at(group).at(0).hh->regrid (bbsss, obss, pss);
+      arrdata.at(group).at(0).hh->recompose (0, false);
+      Checkpoint ("Done recomposing grid array group \"%s\".", groupname);
+      free (groupname);
+    }
+  }
+  
+  
+  
+  void
+  initialise_group_info (cGH const * const cctkGH,
+                         int const group,
+                         cGroup const & gdata)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    // Initialise group information
+    groupdata.at(group).info.dim         = gdata.dim;
+    groupdata.at(group).info.gsh         = new int [dim];
+    groupdata.at(group).info.lsh         = new int [dim];
+    groupdata.at(group).info.lbnd        = new int [dim];
+    groupdata.at(group).info.ubnd        = new int [dim];
+    groupdata.at(group).info.bbox        = new int [2*dim];
+    groupdata.at(group).info.nghostzones = new int [dim];
+    
+    groupdata.at(group).transport_operator =
+      get_transport_operator (cctkGH, group, gdata);
+    
+    groupdata.at(group).info.activetimelevels = 0;
+    
+    // Initialise group variables
+    for (size_t m=0; m<arrdata.at(group).size(); ++m) {
+      
+      arrdata.at(group).at(m).data.resize(CCTK_NumVarsInGroupI(group));
+      for (size_t var=0; var<arrdata.at(group).at(m).data.size(); ++var) {
+        arrdata.at(group).at(m).data.at(var) = 0;
+      }
+      
+    }
+  }
+  
+  
+  
+  void
+  set_state (cGH * const cctkGH)
+  {
+    // Allocate level times
+    leveltimes.resize (mglevels);
+    for (int ml=0; ml<mglevels; ++ml) {
+      leveltimes.at(ml).resize (1);
+    }
+    
+    // Allocate orgin and spacings
+    origin_space.resize (maps);
+    delta_space.resize (maps);
+    for (int m=0; m<maps; ++m) {
+      origin_space.at(m).resize (mglevels);
+    }
+    
+    // Current state
+    mglevelfact = 1;
+    cctkGH->cctk_time = 0.0;
+    cctkGH->cctk_delta_time = 1.0;
+    for (int d=0; d<dim; ++d) {
+      cctkGH->cctk_origin_space[d] = 0.0;
+      cctkGH->cctk_delta_space[d] = 1.0;
+    }
+    
+    // Set up things as if in local mode
+    mglevel   = 0;
+    reflevel  = 0;
+    map       = 0;
+    component = 0;
+    
+    // Leave everything, so that everything is set up correctly
+    leave_local_mode     (cctkGH);
+    leave_singlemap_mode (cctkGH);
+    leave_level_mode     (cctkGH);
+    leave_global_mode    (cctkGH);
+  }
+  
+  
+  
+  void
+  enable_storage_for_all_groups (cGH const * const cctkGH)
+  {
+    BEGIN_MGLEVEL_LOOP(cctkGH) {
+      BEGIN_REFLEVEL_LOOP(cctkGH) {
+        
+        for (int group=0; group<CCTK_NumGroups(); ++group) {
+          char * const groupname = CCTK_GroupName(group);
+          EnableGroupStorage (cctkGH, groupname);
+          free (groupname);
+        }
+        
+      } END_REFLEVEL_LOOP;
+    } END_MGLEVEL_LOOP;
+  }
+  
+  
+  
+  //////////////////////////////////////////////////////////////////////////////
+  // Routines which do not change state ////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  
+  
+  
+  ivect
+  get_ghostzones ()
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    // Decide which parameters to use
+    ivect ghostzones;
+    if (ghost_size == -1) {
+      ghostzones = ivect (ghost_size_x, ghost_size_y, ghost_size_z);
+    } else {
+      ghostzones = ivect (ghost_size, ghost_size, ghost_size);
+    }
+    return ghostzones;
+  }
+  
+  
+  
+  ivect
+  get_npoints ()
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    // Decide which parameters to use
+    ivect npoints;
+    if (global_nsize == -1) {
+      npoints = ivect (global_nx, global_ny, global_nz);
+    } else {
+      npoints = ivect (global_nsize, global_nsize, global_nsize);
+    }
+    
+    // Modify npoints for benchmarks
+    if (constant_load_per_processor) {
+      if (CCTK_EQUALS (processor_topology, "manual")) {
+        // Enlarge the domain so that each processor has the specified
+        // number of grid points, using the specified processor
+        // topology
+        assert (processor_topology_3d_x >= 1);
+        assert (processor_topology_3d_y >= 1);
+        assert (processor_topology_3d_z >= 1);
+        ivect const topo =
+          ivect (processor_topology_3d_x,
+                 processor_topology_3d_y,
+                 processor_topology_3d_z);
+        npoints *= topo;
+      } else if (CCTK_EQUALS (processor_topology, "automatic")) {
+        // Enlarge the domain in a smart way so that each processor
+        // has the specified number of grid points
+        int const nprocs = dist::size();
+        // Factorise the number of processors, placing the smallest
+        // factors in the tail
+        stack<int> factors;
+        for (int procsleft = nprocs; procsleft > 1;) {
+          for (int divisor = 2; divisor <= procsleft; ++divisor) {
+            while (procsleft % divisor == 0) {
+              factors.push (divisor);
+              procsleft /= divisor;
+            }
+          }
+        }
+        // Distribute the factors greedily onto the directions,
+        // starting with the largest factor, and preferring to enlarge
+        // the x direction
+        while (not factors.empty()) {
+          int const mindir = minloc (npoints);
+          assert (mindir>=0 and mindir<dim);
+          int const factor = factors.top();
+          factors.pop();
+          npoints[mindir] *= factor;
+        }
+      } else {
+        // TODO: handle processor_topology values "along-z" and "along-dir"
+        CCTK_WARN (0, "Unsupported value of parameter processor_topology");
+      }
+    } // if constant_load_per_processor
+    return npoints;
+  }
+  
+  
+  
+  void
+  get_boundary_specification (int const m)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    jjvect nboundaryzones, is_internal, is_staggered, shiftout;
+    
+    int const ierr =
+      GetBoundarySpecification (2*dim,
+                                &nboundaryzones[0][0],
+                                &is_internal[0][0],
+                                &is_staggered[0][0],
+                                &shiftout[0][0]);
+    assert (not ierr);
+    
+    ostringstream buf;
+    buf << "CoordBase boundary specification for map " << m << ":" << endl
+        << "   nboundaryzones: " << iivect(nboundaryzones) << endl
+        << "   is_internal   : " << iivect(is_internal)    << endl
+        << "   is_staggered  : " << iivect(is_staggered)   << endl
+        << "   shiftout      : " << iivect(shiftout);
+    Output (buf.str().c_str());
+    
+    if (max_refinement_levels > 1) {
+      // Ensure that the boundary is not staggered
+      for (int d=0; d<dim; ++d) {
+        for (int f=0; f<2; ++f) {
+          if (is_staggered[d][f]) {
+            CCTK_WARN (0, "The parameters CoordBase::boundary_staggered specify a staggered boundary.  Carpet does not support staggered boundaries when Carpet::max_refinement_levels > 1");
+          }
+        }
+      }
+    }
+  }
+  
+  
+  
+  void
+  get_domain_specification (int const m,
+                            ivect const & npoints,
+                            rvect & physical_min,
+                            rvect & physical_max,
+                            rvect & base_spacing)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    rvect interior_min, interior_max;
+    rvect exterior_min, exterior_max;
+    
+    if (domain_from_multipatch) {
+      assert (not domain_from_coordbase);
+      
+      // TODO: handle CartGrid3D: either add parameter
+      // type=multipatch, and make it handle map numbers, or ignore it
+      // altogether, maybe creating a new thorn
+      
+      assert (CCTK_IsFunctionAliased ("MultiPatch_GetDomainSpecification"));
+      int const ierr = MultiPatch_GetDomainSpecification
+        (m, dim,
+         &physical_min[0], &physical_max[0],
+         &interior_min[0], &interior_max[0],
+         &exterior_min[0], &exterior_max[0], &base_spacing[0]);
+      assert (not ierr);
+      
+    } else if (domain_from_coordbase) {
+      
+      // Ensure that CartGrid3D::type = "coordbase"
+      ensure_CartGrid3D_type ();
+      
+      int const ierr = GetDomainSpecification
+        (dim,
+         &physical_min[0], &physical_max[0],
+         &interior_min[0], &interior_max[0],
+         &exterior_min[0], &exterior_max[0],
+         &base_spacing[0]);
+      assert (not ierr);
+      
+    } else {
+      // Legacy code
+      
+      if (max_refinement_levels > 1) {
+        // Ensure that CartGrid3D::avoid_origin = no
+        ensure_CartGrid3D_avoid_origin ();
+      } // if max_refinement_levels > 1
+      
+      ostringstream buf;
+      buf << "Standard grid specification for map " << m << ":" << endl
+          << "   number of grid points: " << npoints;
+      Output (buf.str().c_str());
+      
+      // Reduce to physical domain
+      // TODO: This is not the true domain specification.  However, it
+      // is later written to the domainspec, and it is used by Carpet
+      // for screen output.
+      exterior_min = 0.0;
+      exterior_max = rvect (npoints - 1);
+      base_spacing = 1.0;
+      int const ierr = ConvertFromExteriorBoundary
+        (dim,
+         &physical_min[0], &physical_max[0],
+         &interior_min[0], &interior_max[0],
+         &exterior_min[0], &exterior_max[0],
+         &base_spacing[0]);
+      assert (not ierr);
+      
+    } // if legacy domain specification
+    
+    ostringstream buf;
+    buf << "CoordBase domain specification for map " << m << ":" << endl
+        << "   physical extent: " << physical_min << " : " << physical_max 
+        << "   (" << physical_max - physical_min << ")" << endl
+        << "   interior extent: " << interior_min << " : " << interior_max 
+        << "   (" << interior_max - interior_min << ")" << endl
+        << "   exterior extent: " << exterior_min << " : " << exterior_max 
+        << "   (" << exterior_max - exterior_min << ")" << endl
+        << "   base_spacing   : " << base_spacing;
+    Output (buf.str().c_str());
+  }
+  
+  
+  
+  void
+  adapt_domain_specification (int const m,
+                              rvect const & physical_min,
+                              rvect const & physical_max,
+                              rvect const & base_spacing,
+                              rvect & exterior_min,
+                              rvect & exterior_max,
+                              rvect & spacing)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    CCTK_REAL const baseconvfact =
+      ipow (static_cast<CCTK_REAL> (convergence_factor), basemglevel);
+    spacing = base_spacing * baseconvfact;
+    
+    rvect interior_min, interior_max;
+    int const ierr =
+      ConvertFromPhysicalBoundary
+      (dim,
+       &physical_min[0], &physical_max[0],
+       &interior_min[0], &interior_max[0],
+       &exterior_min[0], &exterior_max[0],
+       &spacing[0]);
+    assert (not ierr);
+    
+    ostringstream buf;
+    buf << "Adapted domain specification for map " << m << ":" << endl
+        << "   convergence factor: " << convergence_factor << endl
+        << "   convergence level : " << basemglevel << endl
+        << "   physical extent   : " << physical_min << " : " << physical_max
+             << "   (" << physical_max - physical_min << ")" << endl
+        << "   interior extent   : " << interior_min << " : " << interior_max
+             << "   (" << interior_max - interior_min << ")" << endl
+        << "   exterior extent   : " << exterior_min << " : " << exterior_max
+             << "   (" << exterior_max - exterior_min << ")" << endl
+        << "   spacing           : " << spacing;
+    Output (buf.str().c_str());
+  }
+  
+  
+  
+  void
+  calculate_grid_points (int const m,
+                         ivect const & lghosts,
+                         ivect const & ughosts,
+                         rvect const & exterior_min,
+                         rvect const & exterior_max,
+                         rvect const & spacing,
+                         ivect & npoints)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    rvect const real_npoints
+      = either (spacing,
+                (exterior_max - exterior_min) / spacing + rvect(1),
+                rvect(1));
+    
+    ostringstream buf;
+    buf << "Base grid specification for map " << m << ":" << endl
+        << "   number of grid points : " << real_npoints << endl
+        << "   number of ghost points: " << lghosts;
+    Output (buf.str().c_str());
+    
+    npoints = floor (real_npoints + static_cast<CCTK_REAL> (0.5));
+    
+    // Check domain size
+    if (any (abs (rvect (npoints) - real_npoints) >
+             static_cast<CCTK_REAL> (0.001)))
+    {
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "The domain size for map %d scaled for convergence level %d with convergence factor %d is not integer",
+                  m, (int)basemglevel, (int)convergence_factor);
+    }
+    
+    // Sanity check
+    assert (all (npoints <= INT_MAX));
+    int max = INT_MAX;
+    for (int d=0; d<dim; ++d) {
+      assert (npoints[d] <= max);
+      max /= npoints[d];
+    }
+    
+    // Save domain specification
+    domainspecs.resize(maps);
+    domainspecs.at(m).exterior_min = exterior_min;
+    domainspecs.at(m).exterior_max = exterior_max;
+    domainspecs.at(m).npoints = npoints;
+  }
+  
+  
+  
+  void
+  find_processor_decomposition
+  (cGH const * const cctkGH,
+   vector<vector<vector<ibbox> > >          & bbsss,
+   vector<vector<vector<bbvect> > >         & obsss,
+   vector<vector<vector<int> > >            & psss,
+   vector<vector<vector<vector<ibbox> > > > & bbssss)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (not regrid_in_level_mode) {
+      // Distribute each map independently
+      
+      for (int m=0; m<maps; ++m) {
+        int const rl=0;
+        psss.at(m).resize(1);
+        
+        // Distribute onto the processors
+        SplitRegions
+          (cctkGH, bbsss.at(m).at(rl), obsss.at(m).at(rl), psss.at(m).at(rl));
+        
+        // Create all multigrid levels
+        MakeMultigridBoxes (cctkGH, bbsss.at(m), obsss.at(m), bbssss.at(m));
+      } // for m
+      
+    } else {
+      // Distribute all maps at the same time
+      
+      int const rl=0;
+      
+      for (int m=0; m<maps; ++m) {
+        psss.at(m).resize(1);
+      }
+      
+      vector<vector<ibbox> > bbss(maps);
+      vector<vector<bbvect> > obss(maps);
+      vector<vector<int> > pss(maps);
+      for (int m=0; m<maps; ++m) {
+        bbss.at(m) = bbsss.at(m).at(rl);
+        obss.at(m) = obsss.at(m).at(rl);
+      }
+      
+      SplitRegionsMaps (cctkGH, bbss, obss, pss);
+      
+      for (int m=0; m<maps; ++m) {
+        bbsss.at(m).at(rl) = bbss.at(m);
+        obsss.at(m).at(rl) = obss.at(m);
+        psss.at(m).at(rl)  = pss.at(m);
+      }
+      
+      // Create all multigrid levels
+      MakeMultigridBoxesMaps (cctkGH, bbsss, obsss, bbssss);
+      
+    } // if
+  }
+  
+  
+  
+  void
+  get_group_size (int const group,
+                  cGroup const & gdata,
+                  ivect & sizes,
+                  ivect & lghosts,
+                  ivect & ughosts)
+  {
+    // Default values
+    sizes = 1;
+    lghosts = 0;
+    ughosts = 0;
+    
+    switch (gdata.grouptype) {
+      
+    case CCTK_SCALAR:
+      // treat scalars as DIM=0, DISTRIB=const arrays
+      assert (gdata.dim==0);
+      assert (gdata.disttype == CCTK_DISTRIB_CONSTANT);
+      break;
+      
+    case CCTK_ARRAY: {
+      assert (gdata.dim>=1 or gdata.dim<=dim);
+      CCTK_INT const * const * const sz  = CCTK_GroupSizesI (group);
+      CCTK_INT const * const * const gsz = CCTK_GroupGhostsizesI (group);
+      // Decode group sizes
+      for (int d=0; d<gdata.dim; ++d) {
+        if (sz) {
+          sizes[d] = *sz[d];
+        }
+        if (gsz) {
+          lghosts[d] = *gsz[d];
+          ughosts[d] = *gsz[d];
+        }
+      }
+      break;
+    }
+      
+    default:
+      assert (0);
+    } // switch grouptype
+  }
+  
+  
+  
+  void
+  adapt_group_size_mglevel (int const group,
+                            cGroup const & gdata,
+                            ivect & sizes,
+                            ivect & convpowers,
+                            ivect & convoffsets)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    // Adapt array sizes for convergence level
+    get_convergence_options (group, gdata, convpowers, convoffsets);
+    
+    ivect baseconvpowers = convpowers * (int)basemglevel;
+    rvect real_sizes =
+      (((rvect (sizes)
+         - rvect (convoffsets))
+        / ipow (rvect(convergence_factor), baseconvpowers))
+       + rvect (convoffsets));
+    // Do not modify extra dimensions
+    for (int d=gdata.dim; d<dim; ++d) {
+      real_sizes[d] = sizes[d];
+    }
+    
+    // Round group sizes
+    sizes = floor (real_sizes + static_cast<CCTK_REAL> (0.5));
+    
+    if (any(sizes < 0)) {
+      char * const groupname = CCTK_GroupName (group);
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "The shape of group \"%s\" scaled for convergence level %d with convergence factor %d is negative",
+                  groupname, (int)basemglevel, (int)convergence_factor);
+      free (groupname);
+    }
+    
+    if (any(abs(rvect(sizes) - real_sizes) > static_cast<CCTK_REAL> (1.0e-8))) {
+      char * const groupname = CCTK_GroupName(group);
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "The shape of group \"%s\" scaled for convergence level %d with convergence factor %d is not integer",
+                  groupname, (int)basemglevel, (int)convergence_factor);
+      free (groupname);
+    }
+  }
+  
+  
+  
+  void
+  get_convergence_options (int const group,
+                           cGroup const & gdata,
+                           ivect & convpowers,
+                           ivect & convoffsets)
+  {
+    if (gdata.tagstable >= 0) {
+      {
+        jvect convpowers1;
+        int const status = Util_TableGetIntArray
+          (gdata.tagstable,
+           gdata.dim, &convpowers1[0], "convergence_power");
+        if (status == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+          // use default: independent of convergence level
+          convpowers = 0;
+        } else if (status == 1) {
+          // a scalar was given
+          convpowers = convpowers1[0];
+        } else if (status == gdata.dim) {
+          convpowers = convpowers1;
+        } else {
+          char * const groupname = CCTK_GroupName (group);
+          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "The key \"convergence_power\" in the tags table of group \"%s\" is wrong",
+                      groupname);
+          free (groupname);
+        }
+        assert (all (convpowers >= 0));
+      }
+      
+      {
+        jvect convoffsets1;
+        int const status = Util_TableGetIntArray
+          (gdata.tagstable,
+           gdata.dim, &convoffsets1[0], "convergence_offset");
+        if (status == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+          // use default: offset is 0
+          convoffsets = 0;
+        } else if (status == 1) {
+          // a scalar was given
+          
+        } else if (status == gdata.dim) {
+          convoffsets = convoffsets1;
+        } else {
+          char * const groupname = CCTK_GroupName (group);
+          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "The key \"convergence_offset\" in the tags table of group \"%s\" is wrong",
+                      groupname);
+          free (groupname);
+        }
+      }
+    }
+  }
+  
+  
+  
+  void
+  adapt_group_size_disttype (cGH const * const cctkGH,
+                             int const group,
+                             cGroup const & gdata,
+                             ivect & sizes,
+                             ivect const & lghosts,
+                             ivect const & ughosts)
+  {
+    switch (gdata.disttype) {
+      
+    case CCTK_DISTRIB_DEFAULT: {
+      // do nothing
+      break;
+    }
+      
+    case CCTK_DISTRIB_CONSTANT: {
+      if (not all (lghosts == 0 and ughosts == 0)) {
+        char * const groupname = CCTK_GroupName (group);
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "The group \"%s\" has DISTRIB=constant, but its "
+                    "ghostsize is not 0",
+                    groupname);
+        free (groupname);
+      }
+      assert (all (lghosts == 0 and ughosts == 0));
+      
+      int const nprocs = CCTK_nProcs (cctkGH);
+      
+      // Find dimension which should be extended
+      int const d = gdata.dim==0 ? 0 : gdata.dim-1;
+      // Extend group sizes
+      sizes[d] = ((sizes[d] - (lghosts[d] + ughosts[d])) * nprocs
+                  + (lghosts[d] + ughosts[d]));
+      assert (sizes[d] >= 0);
+      break;
+    }
+      
+    default:
+      assert (0);
+    } // switch disttype
+  }
+    
+    
+    
+  void
+  output_group_statistics (cGH const * const cctkGH)
+  {
+    int num_gf_groups = 0;
+    int num_gf_vars = 0;
+    vector<int> num_array_groups(dim+1), num_array_vars(dim+1);
+    for (int d=0; d<=dim; ++d) {
+      num_array_groups.at(d) = 0;
+      num_array_vars.at(d) = 0;
+    }
+    
+    for (int group=0; group<CCTK_NumGroups(); ++group) {
+      
+      cGroup gdata;
+      int const ierr = CCTK_GroupData (group, & gdata);
+      assert (not ierr);
+      
+      switch (gdata.grouptype) {
+      case CCTK_GF:
+        num_gf_groups += 1;
+        num_gf_vars += gdata.numvars * gdata.numtimelevels;
+        break;
+      case CCTK_SCALAR:
+      case CCTK_ARRAY:
+        assert (gdata.dim<=dim);
+        num_array_groups.at(gdata.dim) += 1;
+        num_array_vars.at(gdata.dim) += gdata.numvars * gdata.numtimelevels;
+        break;
+      default:
+        assert (0);
+      }
+    } // for group
+    
+    CCTK_INFO ("Group and variable statistics:");
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "   There are %d grid functions in %d groups",
+                num_gf_vars, num_gf_groups);
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "   There are %d grid scalars in %d groups",
+                num_array_vars.at(0), num_array_groups.at(0));
+    for (int d=1; d<=dim; ++d) {
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "   There are %d %d-dimensional grid arrays in %d groups",
+                  num_array_vars.at(d), d, num_array_groups.at(d));
+    }
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "   (The number of variables counts all time levels)");
+  }
+  
+  
+  
+  operator_type
+  get_transport_operator (cGH const * const cctkGH,
+                          int const group,
+                          cGroup const & gdata)
+  {
+    assert (group>=0 and group<CCTK_NumGroups());
+    
+    if (CCTK_GroupTypeI(group) != CCTK_GF) {
+      // Ignore everything but true grid functions
+      return op_error;
+    }
+    
+    bool const can_transfer = can_transfer_variable_type (cctkGH, group, gdata);
+    
+    // Get prolongation method
+    char prolong_string[1000];
+    bool have_prolong_string = false;
+    {
+      int const prolong_length = Util_TableGetString
+        (gdata.tagstable,
+         sizeof prolong_string, prolong_string, "Prolongation");
+      if (prolong_length >= 0) {
+        have_prolong_string = true;
+      } else if (prolong_length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+        // do nothing
+      } else {
+        assert (0);
+      }
+    }
+    
+    // Get prolongation parameter name
+    char prolong_param_string[1000];
+    bool have_prolong_param_string = false;
+    {
+      int const prolong_param_length = Util_TableGetString
+        (gdata.tagstable,
+         sizeof prolong_param_string, prolong_param_string,
+         "ProlongationParameter");
+      if (prolong_param_length >= 0) {
+        have_prolong_param_string = true;
+      } else if (prolong_param_length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+        // do nothing
+      } else {
+        assert (0);
+      }
+    }
+    
+    // Complain if both are given
+    if (have_prolong_string and have_prolong_param_string) {
+      char * const groupname = CCTK_GroupName (group);
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Group \"%s\" has both the tags \"Prolongation\" and \"ProlongationParameter\".  This is not possible.",
+                  groupname);
+      free (groupname);
+    }
+    
+    // Map the parameter name
+    if (have_prolong_param_string) {
+      char * thorn;
+      char * name;
+      int const ierr2
+        = CCTK_DecomposeName (prolong_param_string, &thorn, &name);
+      if (ierr2 < 0) {
+        char * const groupname = CCTK_GroupName (group);
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\".  This is not a valid parameter name.",
+                    groupname, prolong_param_string);
+        free (groupname);
+      }
+      int type;
+      char const * const * const value
+        = (static_cast<char const * const *>
+           (CCTK_ParameterGet (name, thorn, &type)));
+      if (not value or not *value) {
+        char * const groupname = CCTK_GroupName (group);
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\".  This parameter does not exist.",
+                    groupname, prolong_param_string);
+        free (groupname);
+      }
+      if (type != PARAMETER_KEYWORD and type != PARAMETER_STRING) {
+        char * const groupname = CCTK_GroupName (group);
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\".  This parameter has the wrong type; it must be either KEYWORD or STRING.",
+                    groupname, prolong_param_string);
+        free (groupname);
+      }
+      free (thorn);
+      free (name);
+      assert (strlen(*value) < sizeof prolong_string);
+      strcpy (prolong_string, *value);
+      have_prolong_string = true;
+    }
+    
+    // Select a default, if necessary
+    if (not have_prolong_string) {
+      if (can_transfer) {
+        // Use the default
+        if (gdata.numtimelevels == 1) {
+          // Only one time level:
+          char * const groupname = CCTK_GroupName (group);
+          CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Group \"%s\" has only one time level; therefore it will not be prolongated or restricted.",
+                      groupname);
+          free (groupname);
+          return op_none;
+        } else {
+          // Several time levels: use the default
+          return op_Lagrange;
+        }
+      } else {
+        if (gdata.grouptype == CCTK_GF) {
+          char * const groupname = CCTK_GroupName (group);
+          CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Group \"%s\" has the variable type \"%s\" which cannot be prolongated or restricted.",
+                      groupname, CCTK_VarTypeName(gdata.vartype));
+          free (groupname);
+          return op_none;
+        } else {
+          return op_error;
+        }
+      }
+    }
+    
+    // Select the prolongation method
+    assert (have_prolong_string);
+    if (CCTK_Equals(prolong_string, "none")) {
+      return op_none;
+    } else if (CCTK_Equals(prolong_string, "copy")) {
+      return op_copy;
+    } else if (CCTK_Equals(prolong_string, "Lagrange")) {
+      return op_Lagrange;
+    } else if (CCTK_Equals(prolong_string, "TVD")) {
+      return op_TVD;
+    } else if (CCTK_Equals(prolong_string, "ENO")) {
+      return op_ENO;
+    } else if (CCTK_Equals(prolong_string, "WENO")) {
+      return op_WENO;
+    } else {
+      char * const groupname = CCTK_GroupName (group);
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Group \"%s\" has the unknown prolongation method \"%s\".",
+                  groupname, prolong_string);
+      free (groupname);
+      return op_error;
+    }
+    return op_error;
+  }
+  
+  
+  
+  bool
+  can_transfer_variable_type (cGH const * const cctkGH,
+                              int const group,
+                              cGroup const & gdata)
   {
     // Find out which types correspond to the default types
 #if CCTK_INTEGER_PRECISION_1
@@ -60,13 +1645,9 @@ namespace Carpet {
 #  error "Unsupported default real type"
 #endif
     
-    if (CCTK_NumVarsInGroupI(group) == 0)
-      return true;
-    
-    const int var0 = CCTK_FirstVarIndexI(group);
-    const int type0 = CCTK_VarTypeI(var0);
+    int const type0 = gdata.vartype;
     int type1;
-
+    
     switch (type0) {
     case CCTK_VARIABLE_INT:
       type1 = CCTK_DEFAULT_INTEGER_TYPE;
@@ -132,1066 +1713,179 @@ namespace Carpet {
     }
     
     // not reached
+    abort ();
     return false;
   }
 
+
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Parameter and consistency checking ////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
   
-  static operator_type GetTransportOperator (const cGH* const cgh,
-                                             const int group)
+  
+  
+  // Ensure that CartGrid3D::type = "coordbase"
+  void
+  ensure_CartGrid3D_type ()
   {
-    assert (group>=0 and group<CCTK_NumGroups());
-    
-    int ierr;
-    
-    if (CCTK_GroupTypeI(group) != CCTK_GF) {
-      // Ignore everything but true grid functions
-      return op_error;
-    }
-    
-    const bool can_transfer = CanTransferVariableType (cgh, group);
-    
-    cGroup gp;
-    ierr = CCTK_GroupData (group, &gp);
-    assert (!ierr);
-    
-    // Get prolongation method
-    char prolong_string[1000];
-    bool have_prolong_string = false;
-    {
-      const int prolong_length = Util_TableGetString
-        (gp.tagstable, sizeof prolong_string, prolong_string, "Prolongation");
-      if (prolong_length >= 0) {
-        have_prolong_string = true;
-      } else if (prolong_length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-        // do nothing
-      } else {
-        assert (0);
-      }
-    }
-    
-    // Get prolongation parameter name
-    char prolong_param_string[1000];
-    bool have_prolong_param_string = false;
-    {
-      const int prolong_param_length = Util_TableGetString
-        (gp.tagstable, sizeof prolong_param_string, prolong_param_string,
-         "ProlongationParameter");
-      if (prolong_param_length >= 0) {
-        have_prolong_param_string = true;
-      } else if (prolong_param_length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-        // do nothing
-      } else {
-        assert (0);
-      }
-    }
-    
-    // Complain if both are given
-    if (have_prolong_string and have_prolong_param_string) {
-      char * const groupname = CCTK_GroupName (group);
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Group \"%s\" has both the tags \"Prolongation\" and "
-                  "\"ProlongationParameter\".  This is not possible.",
-                  groupname);
-      free (groupname);
-    }
-    
-    // Map the parameter name
-    if (have_prolong_param_string) {
-      char * thorn;
-      char * name;
-      ierr = CCTK_DecomposeName (prolong_param_string, &thorn, &name);
-      if (ierr < 0) {
-        char * const groupname = CCTK_GroupName (group);
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\"."
-                    "  This is not a valid parameter name.",
-                    groupname, prolong_param_string);
-        free (groupname);
-      }
+    if (CCTK_IsThornActive ("CartGrid3D")) {
       int type;
-      char const * const * const value
-        = (static_cast<char const * const *>
-           (CCTK_ParameterGet (name, thorn, &type)));
-      if (! value or ! *value) {
-        char * const groupname = CCTK_GroupName (group);
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\"."
-                    "  This parameter does not exist.",
-                    groupname, prolong_param_string);
-        free (groupname);
-      }
-      if (type != PARAMETER_KEYWORD and type != PARAMETER_STRING) {
-        char * const groupname = CCTK_GroupName (group);
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\"."                    "  This parameter has the wrong type; "
-                    "it must be either KEYWORD or STRING.",
-                    groupname, prolong_param_string);
-        free (groupname);
-      }
-      free (thorn);
-      free (name);
-      assert (strlen(*value) < sizeof prolong_string);
-      strcpy (prolong_string, *value);
-      have_prolong_string = true;
-    }
-    
-    // Select a default, if necessary
-    if (! have_prolong_string) {
-      if (can_transfer) {
-        // Use the default
-        if (gp.numtimelevels == 1) {
-#if 0
-          // Only one time level: copy instead of prolongating
-          char * const groupname = CCTK_GroupName (group);
-          CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "Group \"%s\" has only one time level; therefore it "
-                      "will be copied instead of prolongated.",
-                      groupname);
-          free (groupname);
-          return op_copy;
-#endif
-          // Only one time level:
-          char * const groupname = CCTK_GroupName (group);
-          CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "Group \"%s\" has only one time level; therefore it "
-                      "will not be prolongated or restricted.",
-                      groupname);
-          free (groupname);
-          return op_none;
-        } else {
-          // Several time levels: use the default
-          return op_Lagrange;
-        }
-      } else {
-        if (gp.grouptype == CCTK_GF) {
-          char * const groupname = CCTK_GroupName (group);
-          CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "Group \"%s\" has the variable type \"%s\" which cannot "
-                      "be prolongated or restricted.",
-                      groupname, CCTK_VarTypeName(gp.vartype));
-          free (groupname);
-          return op_none;
-        } else {
-          return op_error;
-        }
+      void const * const ptr = CCTK_ParameterGet ("type", "CartGrid3D", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_KEYWORD);
+      char const * const coordtype
+        = * static_cast<char const * const *> (ptr);
+      if (not CCTK_EQUALS (coordtype, "coordbase")) {
+        CCTK_WARN (0, "When Carpet::domain_from_coordbase = yes, and when thorn CartGrid3D is active, then you also have to set CartGrid3D::type = \"coordbase\"");
       }
     }
-    
-    // Select the prolongation method
-    assert (have_prolong_string);
-    if (CCTK_Equals(prolong_string, "none")) {
-      return op_none;
-    } else if (CCTK_Equals(prolong_string, "copy")) {
-      return op_copy;
-    } else if (CCTK_Equals(prolong_string, "Lagrange")) {
-      return op_Lagrange;
-    } else if (CCTK_Equals(prolong_string, "TVD")) {
-      return op_TVD;
-    } else if (CCTK_Equals(prolong_string, "ENO")) {
-      return op_ENO;
-    } else if (CCTK_Equals(prolong_string, "WENO")) {
-      return op_WENO;
-    } else {
-      char * const groupname = CCTK_GroupName (group);
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Group \"%s\" has the unknown prolongation method \"%s\".",
-                  groupname, prolong_string);
-      free (groupname);
-      return op_error;
-    }
-    return op_error;
   }
   
   
-  static void initialise_current_position ();
-  static void finalise_current_position ();
-  static void setup_multigrid_info (cGH* cgh, CCTK_INT convergence_level,
-                      CCTK_INT convergence_factor,
-                      CCTK_INT num_convergence_levels);
-  static void
-  setup_refinement_level_info (CCTK_INT const max_refinement_levels,
-                               CCTK_INT const refinement_factor,
-                               char const * const space_refinement_factors,
-                               char const * const time_refinement_factors);
-  static void allocate_map(cGH* cgh, int m,
-                           CCTK_INT domain_from_coordbase,
-                           CCTK_INT domain_from_multipatch,
-                           CCTK_INT convergence_factor, CCTK_INT refinement_factor,
-                           CCTK_STRING base_outerbounds, CCTK_STRING base_extents,
-                           CCTK_INT max_refinement_levels,
-                           CCTK_INT prolongation_order_space,
-                           CCTK_INT buffer_width,
-                           CCTK_INT use_outer_buffer_zones,
-                           CCTK_INT num_integrator_substeps,
-                           CCTK_INT use_tapered_grids,
-                           ivect & lghosts, ivect & ughosts, ivect & npoints,
-                           vector<vector<ibbox> > & bbss,
-                           vector<vector<bbvect> > & obss);
-  static ivect make_ghost_zone_vect (CCTK_INT ghost_size,
-                      CCTK_INT ghost_size_x, CCTK_INT ghost_size_y,
-                      CCTK_INT ghost_size_z);
-  static
-  ivect
-  make_global_number_of_grid_points (CCTK_INT global_nsize,
-                                     CCTK_INT global_nx,
-                                     CCTK_INT global_ny,
-                                     CCTK_INT global_nz,
-                                     CCTK_INT constant_load_per_processor,
-                                     char const * processor_topology,
-                                     CCTK_INT processor_topology_3d_x,
-                                     CCTK_INT processor_topology_3d_y,
-                                     CCTK_INT processor_topology_3d_z);
-  static void check_time_hierarchy (const vector<dh*> &vdd, int m,
-                      CCTK_INT max_refinement_levels,
-                      CCTK_INT refinement_factor,
-                      CCTK_INT prolongation_order_space,
-                      const ivect & lghosts, const ivect & ughosts);
-  static void read_explicit_grid_components (CCTK_STRING base_extents,
-                      CCTK_STRING base_outerbounds,
-                      vector<ibbox> & bbs, vector<bbvect> & obs);
-  static void check_domain_size (const rvect &npoints,
-                      const rvect &real_npoints, int m, 
-                      CCTK_INT basemglevel, CCTK_INT convergence_factor);
-  static void Sanity_check (const ivect & npoints);
-  static void print_map_base_grid_spec (int m, const rvect & real_npoints,
-                      ivect &lghosts);
-  static void print_map_coordbase_boundary_specs (int m,
-                      jjvect &nboundaryzones, jjvect & is_internal,
-                      jjvect &is_staggered, jjvect & shiftout);
-  static void print_map_domain_specs (int m,
-                      rvect & physical_min, rvect & physical_max,
-                      rvect & interior_min, rvect & interior_max,
-                      rvect & exterior_min, rvect & exterior_max,
-                      rvect & base_spacing);
-  static void print_map_adapted_domain_specs (int m,
-                      CCTK_INT convergence_factor,
-                      CCTK_INT basemglevel,
-                      rvect & physical_min, rvect & physical_max,
-                      rvect & interior_min, rvect & interior_max,
-                      rvect & exterior_min, rvect & exterior_max,
-                      const rvect & spacing);
-  static void allocate_group_variables (cGH* cgh, int group,
-                      CCTK_INT convergence_factor, CCTK_INT refinement_factor);
-  static void handle_group_tags_table (cGH* cgh, int group, cGroup &gp,
-                      jvect &convpowers, jvect &convoffsets);
-  static void finish_initialisation (cGH* cgh);
-  static void print_grid_structure (vector<gh*> & vhh);
-  static void print_some_statistics (cGH* cgh);
-  static void enable_storage_for_all_groups (cGH* cgh);
-  static void leave_all_modes (cGH* cgh);
-
-
   
-  void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cgh)
+  // Ensure that CartGrid3D::avoid_origin = no
+  void
+  ensure_CartGrid3D_avoid_origin ()
+  {
+    if (CCTK_IsThornActive ("CartGrid3D")) {
+      int type;
+      void const * ptr;
+      
+      ptr = CCTK_ParameterGet ("no_origin", "CartGrid3D", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_BOOLEAN);
+      CCTK_INT const no_origin = * static_cast<CCTK_INT const *> (ptr);
+      
+      ptr = CCTK_ParameterGet ("no_originx", "CartGrid3D", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_BOOLEAN);
+      CCTK_INT const no_originx = * static_cast<CCTK_INT const *> (ptr);
+      
+      ptr = CCTK_ParameterGet ("no_originy", "CartGrid3D", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_BOOLEAN);
+      CCTK_INT const no_originy = * static_cast<CCTK_INT const *> (ptr);
+      
+      ptr = CCTK_ParameterGet ("no_originz", "CartGrid3D", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_BOOLEAN);
+      CCTK_INT const no_originz = * static_cast<CCTK_INT const *> (ptr);
+      
+      ptr = CCTK_ParameterGet ("avoid_origin", "CartGrid3D", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_BOOLEAN);
+      CCTK_INT const avoid_origin = * static_cast<CCTK_INT const *> (ptr);
+      
+      ptr = CCTK_ParameterGet ("avoid_originx", "CartGrid3D", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_BOOLEAN);
+      CCTK_INT const avoid_originx = * static_cast<CCTK_INT const *> (ptr);
+      
+      ptr = CCTK_ParameterGet ("avoid_originy", "CartGrid3D", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_BOOLEAN);
+      CCTK_INT const avoid_originy = * static_cast<CCTK_INT const *> (ptr);
+      
+      ptr = CCTK_ParameterGet ("avoid_originz", "CartGrid3D", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_BOOLEAN);
+      CCTK_INT const avoid_originz = * static_cast<CCTK_INT const *> (ptr);
+      
+      ptr = CCTK_ParameterGet ("domain", "CartGrid3D", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_KEYWORD);
+      char const * const domain = * static_cast<char const * const *> (ptr);
+      
+      bvect stag;
+      stag[0] = no_origin and no_originx and avoid_origin and avoid_originx;
+      stag[1] = no_origin and no_originy and avoid_origin and avoid_originy;
+      stag[2] = no_origin and no_originz and avoid_origin and avoid_originz;
+      
+      // TODO: Check only if there is actually a symmetry boundary
+      if (not CCTK_EQUALS (domain, "full") and any(stag)) {
+        CCTK_WARN (0, "When Carpet::domain_from_coordbase = no, when Carpet::max_refinement_levels > 1, and when thorn CartGrid3D provides symmetry boundaries, then you have to set CartGrid3D::avoid_origin = no");
+      }
+    }
+  }
+  
+  
+  
+  // Ensure that ReflectionSymmetry::avoid_origin = no
+  void
+  ensure_ReflectionSymmetry_avoid_origin ()
+  {
+    if (CCTK_IsThornActive ("ReflectionSymmetry")) {
+      int type;
+      void const * ptr;
+      
+      ptr = CCTK_ParameterGet ("avoid_origin_x", "ReflectionSymmetry", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_BOOLEAN);
+      CCTK_INT const avoid_origin_x = * static_cast<CCTK_INT const *> (ptr);
+      
+      ptr = CCTK_ParameterGet ("avoid_origin_y", "ReflectionSymmetry", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_BOOLEAN);
+      CCTK_INT const avoid_origin_y = * static_cast<CCTK_INT const *> (ptr);
+      
+      ptr = CCTK_ParameterGet ("avoid_origin_z", "ReflectionSymmetry", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_BOOLEAN);
+      CCTK_INT const avoid_origin_z = * static_cast<CCTK_INT const *> (ptr);
+      
+      ptr = CCTK_ParameterGet ("reflection_x", "ReflectionSymmetry", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_BOOLEAN);
+      CCTK_INT const reflection_x = * static_cast<CCTK_INT const *> (ptr);
+      
+      ptr = CCTK_ParameterGet ("reflection_y", "ReflectionSymmetry", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_BOOLEAN);
+      CCTK_INT const reflection_y = * static_cast<CCTK_INT const *> (ptr);
+      
+      ptr = CCTK_ParameterGet ("reflection_z", "ReflectionSymmetry", & type);
+      assert (ptr != 0);
+      assert (type == PARAMETER_BOOLEAN);
+      CCTK_INT const reflection_z = * static_cast<CCTK_INT const *> (ptr);
+      
+      if ((reflection_x and avoid_origin_x) or
+          (reflection_y and avoid_origin_y) or
+          (reflection_z and avoid_origin_z))
+      {
+        CCTK_WARN (0, "When Carpet::max_refinement_levels > 1, and when ReflectionSymmetry::symmetry_[xyz] = yes, then you also have to set ReflectionSymmetry::avoid_origin_[xyz] = no");
+      }
+    }
+  }
+  
+  
+  
+  void
+  ensure_ghostzones (int const m,
+                     ivect const & lghosts, ivect const & ughosts)
   {
     DECLARE_CCTK_PARAMETERS;
     
-    assert (cgh->cctk_dim == dim);
-    
-    // Not sure what to do with that
-    assert (convLevel==0);
-    
-    initialise_current_position ();
-    
-    Waypoint ("Setting up the grid hierarchy");
-    
-    cgh->identity = Util_Strdup (model);
-    
-    // Processor information
-    Output ("Carpet is running on %d processors", CCTK_nProcs(cgh));
-    
-    setup_multigrid_info ( cgh, convergence_level, convergence_factor,
-                           num_convergence_levels );
-    
-    setup_refinement_level_info (max_refinement_levels, refinement_factor,
-                                 space_refinement_factors,
-                                 time_refinement_factors);
-    
-    // Map information
-    if (domain_from_multipatch) {
-      assert (num_maps == 1);   // must be the default to avoid confusion
-      assert (CCTK_IsFunctionAliased ("MultiPatch_GetSystemSpecification"));
-      CCTK_INT maps1;
-      int const ierr = MultiPatch_GetSystemSpecification (& maps1);
-      assert (! ierr);
-      carpetGH.maps = maps = maps1;
-    } else {
-      carpetGH.maps = maps = num_maps;
-    }
-    
-    // Allocate space for groups
-    groupdata.resize (CCTK_NumGroups());
-    arrdata.resize (CCTK_NumGroups());
-    
-    vhh.resize (maps);
-    vdd.resize (maps);
-    vtt.resize (maps);
-    
-    vector<vector<vector<ibbox> > > bbsss (maps);
-    vector<vector<vector<bbvect> > > obsss (maps);
-    
-    // Loop over maps
-    for (int m=0; m<maps; ++m) {
-      ivect lghosts = make_ghost_zone_vect (ghost_size,
-                                ghost_size_x, ghost_size_y, ghost_size_z);
-      ivect ughosts = lghosts;
-      ivect npoints = make_global_number_of_grid_points
-        (global_nsize,
-         global_nx, global_ny, global_nz,
-         constant_load_per_processor,
-         processor_topology,
-         processor_topology_3d_x,
-         processor_topology_3d_y,
-         processor_topology_3d_z);
-
-      allocate_map (cgh, m, domain_from_coordbase, domain_from_multipatch,
-                    convergence_factor, refinement_factor,
-                    base_outerbounds, base_extents,
-                    max_refinement_levels, prolongation_order_space,
-                    buffer_width,
-                    use_outer_buffer_zones, num_integrator_substeps,
-                    use_tapered_grids,
-                    lghosts, ughosts, npoints,
-                    bbsss.at(m), obsss.at(m));
-    } 
-    
-    vector<vector<vector<vector<ibbox> > > > bbssss (maps);
-    vector<vector<vector<int> > > psss (maps);
-    if (not regrid_in_level_mode) {
-      
-      for (int m=0; m<maps; ++m) {
-        int const rl=0;
-        psss.at(m).resize(1);
-        
-        // Distribute onto the processors
-        SplitRegions
-          (cgh, bbsss.at(m).at(rl), obsss.at(m).at(rl), psss.at(m).at(rl));
-        
-        // Create all multigrid levels
-        MakeMultigridBoxes (cgh, bbsss.at(m), obsss.at(m), bbssss.at(m));
-      }
-      
-    } else {
-      
-      // Distribute onto the processors
-      {
-        int const rl=0;
-        
-        for (int m=0; m<maps; ++m) {
-          psss.at(m).resize(1);
-        }
-        
-        vector<vector<ibbox> > bbss(maps);
-        vector<vector<bbvect> > obss(maps);
-        vector<vector<int> > pss(maps);
-        for (int m=0; m<maps; ++m) {
-          bbss.at(m) = bbsss.at(m).at(rl);
-          obss.at(m) = obsss.at(m).at(rl);
-        }
-        
-        SplitRegionsMaps (cgh, bbss, obss, pss);
-        
-        for (int m=0; m<maps; ++m) {
-          bbsss.at(m).at(rl) = bbss.at(m);
-          obsss.at(m).at(rl) = obss.at(m);
-          psss.at(m).at(rl)  = pss.at(m);
-        }
-      }
-      
-      // Create all multigrid levels
-      MakeMultigridBoxesMaps (cgh, bbsss, obsss, bbssss);
-      
-    }
-    
-    for (int m=0; m<maps; ++m) {
-      
-      // Check the regions
-      CheckRegions (bbssss.at(m), obsss.at(m), psss.at(m));
-      
-#if 0
-      // Do this later because CactusBase/IO might not yet be
-      // initialised
-      // Write grid structure to file
-      OutputGridStructure (cgh, m, bbssss.at(m), obsss.at(m), psss.at(m));
-#endif
-      
-      // Recompose grid hierarchy
-      vhh.at(m)->regrid (bbssss.at(m), obsss.at(m), psss.at(m));
-      vhh.at(m)->recompose (0, false);
-    }
-    
-    print_grid_structure (vhh);
-    
-    reflevels = 1;
-    for (int m=0; m<maps; ++m) {
-      assert (vhh.at(m)->reflevels() == reflevels);
-    }
-    
-    for (int group=0; group<CCTK_NumGroups(); ++group) {
-      allocate_group_variables (cgh, group,
-               convergence_factor, refinement_factor);
-    }
-    
-    // Allocate level times
-    leveltimes.resize (mglevels);
-    for (int ml=0; ml<mglevels; ++ml) {
-      leveltimes.at(ml).resize (1);
-    }
-    origin_space.resize (maps);
-    delta_space.resize (maps);
-    for (int m=0; m<maps; ++m) {
-      origin_space.at(m).resize (mglevels);
-    }
-    
-    // Enable prolongating
-    do_prolongate = true;
-    do_warn_about_storage = false; // This is enabled later
-    
-    finish_initialisation (cgh);
-    
-    finalise_current_position ();
-
-    leave_all_modes (cgh); 
-    
-    print_some_statistics (cgh);
-    
-    if (enable_all_storage) {
-      enable_storage_for_all_groups (cgh);
-    }
-    
-    Waypoint ("Done with setting up the grid hierarchy");
-    
-    return &carpetGH;
-  }
-
-  void initialise_current_position () { 
-    mglevel   = -1;
-    reflevel  = -1;
-    map       = -1;
-    component = -1;
-  }
-
-  void finalise_current_position () { 
-    mglevel   = 0;
-    reflevel  = 0;
-    map       = 0;
-    component = 0;
-  }
-  
-  void finish_initialisation (cGH* cgh) {
-    mglevelfact = 1;
-    cgh->cctk_time = 0;
-    cgh->cctk_delta_time = 1.0;
-    for (int d=0; d<dim; ++d) {
-      cgh->cctk_origin_space[d] = 0.0;
-      cgh->cctk_delta_space[d] = 1.0;
-    }
-  }
-
-  void setup_multigrid_info (cGH* cgh, CCTK_INT convergence_level,
-                                      CCTK_INT convergence_factor,
-                                      CCTK_INT num_convergence_levels) { 
-    basemglevel = convergence_level;
-    mglevels = num_convergence_levels;
-    mgfact = convergence_factor;
-    maxmglevelfact = ipow(mgfact, mglevels-1);
-    cgh->cctk_convfac = mgfact;
-  }
-
-  void
-  setup_refinement_level_info (CCTK_INT const max_refinement_levels,
-                               CCTK_INT const refinement_factor,
-                               char const * const space_refinement_factors,
-                               char const * const time_refinement_factors)
-  {
-    // Set maximum number of refinement levels
-    maxreflevels = max_refinement_levels;
-    
-#if 0
-    // Set default refinement factor
-    reffact = refinement_factor;
-#endif
-    
-    // Set the per-level spatial refinement factors
-    if (strcmp (space_refinement_factors, "") == 0) {
-      // Calculate them from the default refinement factor
-      spacereffacts.resize (maxreflevels);
-      for (int n=0; n<maxreflevels; ++n) {
-        spacereffacts.at(n) = ivect (ipow ((int)refinement_factor, n));
-      }
-    } else {
-      // Read them from the parameter
-      try {
-        istringstream srf (space_refinement_factors);
-        srf >> spacereffacts;
-      } catch (input_error) {
-        CCTK_WARN
-          (0, "Could not parse parameter \"space_refinement_factors\"");
-      }
-    }
-    // TODO: turn these into real error messages
-    assert ((int)spacereffacts.size() >= maxreflevels);
-    assert (all (spacereffacts.front() == 1));
-    for (int n=1; n<maxreflevels; ++n) {
-      assert (all (spacereffacts.at(n) >= spacereffacts.at(n-1)));
-      assert (all (spacereffacts.at(n) % spacereffacts.at(n-1) == 0));
-    }
-    
-    // Set the per-level temporal refinement factors
-    if (strcmp (time_refinement_factors, "") == 0) {
-      // Calculate them from the default refinement factor
-      timereffacts.resize (maxreflevels);
-      for (int n=0; n<maxreflevels; ++n) {
-        timereffacts.at(n) = ipow ((int)refinement_factor, n);
-      }
-    } else {
-      // Read them from the parameter
-      try {
-        istringstream trf (time_refinement_factors);
-        trf >> timereffacts;
-      } catch (input_error) {
-        CCTK_WARN (0, "Could not parse parameter \"time_refinement_factors\"");
-      }
-    }
-    // TODO: turn these into real error messages
-    assert ((int)timereffacts.size() >= maxreflevels);
-    assert (timereffacts.front() == 1);
-    for (int n=1; n<maxreflevels; ++n) {
-      assert (timereffacts.at(n) >= timereffacts.at(n-1));
-      assert (timereffacts.at(n) % timereffacts.at(n-1) == 0);
-    }
-    
-    // Calculate the maximum refinement factors
-    maxtimereflevelfact = timereffacts.at (maxreflevels-1);
-    maxspacereflevelfact = spacereffacts.at (maxreflevels-1);
-  }
-
-  void allocate_map (cGH* cgh, int m,
-                     CCTK_INT domain_from_coordbase,
-                     CCTK_INT domain_from_multipatch,
-                     CCTK_INT convergence_factor, CCTK_INT refinement_factor,
-                     CCTK_STRING base_outerbounds, CCTK_STRING base_extents,
-                     CCTK_INT max_refinement_levels,
-                     CCTK_INT prolongation_order_space,
-                     CCTK_INT buffer_width,
-                     CCTK_INT use_outer_buffer_zones,
-                     CCTK_INT num_integrator_substeps,
-                     CCTK_INT use_tapered_grids,
-                     ivect & lghosts, ivect & ughosts, ivect & a_npoints,
-                     vector<vector<ibbox> > & bbss,
-                     vector<vector<bbvect> > & obss)
-  {
-    // Get boundary description
-    jjvect nboundaryzones, is_internal, is_staggered, shiftout;
-    int ierr = GetBoundarySpecification (2*dim, &nboundaryzones[0][0],
-                     &is_internal[0][0], &is_staggered[0][0], &shiftout[0][0]);
-    assert (!ierr);
-    
-    if (max_refinement_levels > 1) {
-      // Ensure that the boundary is not staggered
-      for (int d=0; d<dim; ++d) {
-        for (int f=0; f<2; ++f) {
-          if (is_staggered[d][f]) {
-            CCTK_WARN (0, "The parameters CoordBase::boundary_staggered specify a staggered boundary.  Carpet does not support staggered boundaries when Carpet::max_refinement_levels > 1");
-          }
-        }
-      }
-    }
-    
-    print_map_coordbase_boundary_specs (m, nboundaryzones, is_internal,
-               is_staggered, shiftout);
-    
-    // Grid size
-    rvect physical_min, physical_max;
-    rvect interior_min, interior_max;
-    rvect exterior_min, exterior_max;
-    rvect base_spacing;
-    
-    if (domain_from_multipatch) {
-      assert (! domain_from_coordbase);
-      
-#warning "TODO: handle CartGrid3D: either add parameter type=multipatch, and make it handle map numbers, or ignore it altogether, maybe creating a new thorn"
-      
-      assert (CCTK_IsFunctionAliased ("MultiPatch_GetDomainSpecification"));
-      ierr = MultiPatch_GetDomainSpecification
-        (m, dim,
-         &physical_min[0], &physical_max[0],
-         &interior_min[0], &interior_max[0],
-         &exterior_min[0], &exterior_max[0], &base_spacing[0]);
-      assert (!ierr);
-      
-    } else if (domain_from_coordbase) {
-      
-      // Ensure that CartGrid3D::type = "coordbase"
-      if (CCTK_IsThornActive ("CartGrid3D")) {
-        int type;
-        void const * const ptr
-          = CCTK_ParameterGet ("type", "CartGrid3D", & type);
-        assert (ptr != 0);
-        assert (type == PARAMETER_KEYWORD);
-        char const * const coordtype
-          = * static_cast<char const * const *> (ptr);
-        if (! CCTK_EQUALS (coordtype, "coordbase")) {
-          CCTK_WARN (0, "When Carpet::domain_from_coordbase = yes, and when thorn CartGrid3D is active, then you also have to set CartGrid3D::type = \"coordbase\"");
-        }
-      }
-      
-      ierr = GetDomainSpecification (dim, &physical_min[0], &physical_max[0],
-                         &interior_min[0], &interior_max[0],
-                         &exterior_min[0], &exterior_max[0], &base_spacing[0]);
-      assert (!ierr);
-      
-    } else {
-      // Legacy code
-      
-      if (max_refinement_levels > 1) {
-        // Ensure that CartGrid3D::avoid_origin = no
-        if (CCTK_IsThornActive ("CartGrid3D")) {
-          int type;
-          void const * ptr;
-        
-          ptr = CCTK_ParameterGet ("no_origin", "CartGrid3D", & type);
-          assert (ptr != 0);
-          assert (type == PARAMETER_BOOLEAN);
-          CCTK_INT const no_origin = * static_cast<CCTK_INT const *> (ptr);
-        
-          ptr = CCTK_ParameterGet ("no_originx", "CartGrid3D", & type);
-          assert (ptr != 0);
-          assert (type == PARAMETER_BOOLEAN);
-          CCTK_INT const no_originx = * static_cast<CCTK_INT const *> (ptr);
-        
-          ptr = CCTK_ParameterGet ("no_originy", "CartGrid3D", & type);
-          assert (ptr != 0);
-          assert (type == PARAMETER_BOOLEAN);
-          CCTK_INT const no_originy = * static_cast<CCTK_INT const *> (ptr);
-        
-          ptr = CCTK_ParameterGet ("no_originz", "CartGrid3D", & type);
-          assert (ptr != 0);
-          assert (type == PARAMETER_BOOLEAN);
-          CCTK_INT const no_originz = * static_cast<CCTK_INT const *> (ptr);
-        
-          ptr = CCTK_ParameterGet ("avoid_origin", "CartGrid3D", & type);
-          assert (ptr != 0);
-          assert (type == PARAMETER_BOOLEAN);
-          CCTK_INT const avoid_origin = * static_cast<CCTK_INT const *> (ptr);
-        
-          ptr = CCTK_ParameterGet ("avoid_originx", "CartGrid3D", & type);
-          assert (ptr != 0);
-          assert (type == PARAMETER_BOOLEAN);
-          CCTK_INT const avoid_originx = * static_cast<CCTK_INT const *> (ptr);
-        
-          ptr = CCTK_ParameterGet ("avoid_originy", "CartGrid3D", & type);
-          assert (ptr != 0);
-          assert (type == PARAMETER_BOOLEAN);
-          CCTK_INT const avoid_originy = * static_cast<CCTK_INT const *> (ptr);
-        
-          ptr = CCTK_ParameterGet ("avoid_originz", "CartGrid3D", & type);
-          assert (ptr != 0);
-          assert (type == PARAMETER_BOOLEAN);
-          CCTK_INT const avoid_originz = * static_cast<CCTK_INT const *> (ptr);
-        
-          ptr = CCTK_ParameterGet ("domain", "CartGrid3D", & type);
-          assert (ptr != 0);
-          assert (type == PARAMETER_KEYWORD);
-          char const * const domain = * static_cast<char const * const *> (ptr);
-          
-          bool cntstag[3];
-          cntstag[0] = no_origin && no_originx && avoid_origin && avoid_originx;
-          cntstag[1] = no_origin && no_originy && avoid_origin && avoid_originy;
-          cntstag[2] = no_origin && no_originz && avoid_origin && avoid_originz;
-        
-          // TODO: Check only if there is actually a symmetry boundary
-          if (! CCTK_EQUALS (domain, "full")
-              and (cntstag[0] or cntstag[1] or cntstag[2])) {
-            CCTK_WARN (0, "When Carpet::domain_from_coordbase = no, when Carpet::max_refinement_levels > 1, and when thorn CartGrid3D provides symmetry boundaries, then you have to set CartGrid3D::avoid_origin = no");
-          }
-        }
-      }
-      
-      ivect & npoints = a_npoints;
-      ostringstream buf;
-      buf << "Standard grid specification for map " << m << ":" << endl
-          << "   number of grid points: " << npoints;
-      Output (buf.str().c_str());
-      
-      // reduce to physical domain
-      exterior_min = 0.0;
-      exterior_max = rvect (npoints - 1);
-      base_spacing = 1.0;
-      ierr = ConvertFromExteriorBoundary
-        (dim, &physical_min[0], &physical_max[0],
-         &interior_min[0], &interior_max[0],
-         &exterior_min[0], &exterior_max[0], &base_spacing[0]);
-      assert (!ierr);
-      
-    }
-    
-    if (max_refinement_levels>1) {
-      // Ensure that ReflectionSymmetry::avoid_origin = no
-      if (CCTK_IsThornActive ("ReflectionSymmetry")) {
-        int type;
-        void const * ptr;
-        
-        ptr = CCTK_ParameterGet ("avoid_origin_x", "ReflectionSymmetry", & type);
-        assert (ptr != 0);
-        assert (type == PARAMETER_BOOLEAN);
-        CCTK_INT const avoid_origin_x = * static_cast<CCTK_INT const *> (ptr);
-        
-        ptr = CCTK_ParameterGet ("avoid_origin_y", "ReflectionSymmetry", & type);
-        assert (ptr != 0);
-        assert (type == PARAMETER_BOOLEAN);
-        CCTK_INT const avoid_origin_y = * static_cast<CCTK_INT const *> (ptr);
-        
-        ptr = CCTK_ParameterGet ("avoid_origin_z", "ReflectionSymmetry", & type);
-        assert (ptr != 0);
-        assert (type == PARAMETER_BOOLEAN);
-        CCTK_INT const avoid_origin_z = * static_cast<CCTK_INT const *> (ptr);
-        
-        ptr = CCTK_ParameterGet ("reflection_x", "ReflectionSymmetry", & type);
-        assert (ptr != 0);
-        assert (type == PARAMETER_BOOLEAN);
-        CCTK_INT const reflection_x = * static_cast<CCTK_INT const *> (ptr);
-        
-        ptr = CCTK_ParameterGet ("reflection_y", "ReflectionSymmetry", & type);
-        assert (ptr != 0);
-        assert (type == PARAMETER_BOOLEAN);
-        CCTK_INT const reflection_y = * static_cast<CCTK_INT const *> (ptr);
-        
-        ptr = CCTK_ParameterGet ("reflection_z", "ReflectionSymmetry", & type);
-        assert (ptr != 0);
-        assert (type == PARAMETER_BOOLEAN);
-        CCTK_INT const reflection_z = * static_cast<CCTK_INT const *> (ptr);
-        
-        if ((reflection_x and avoid_origin_x)
-            or (reflection_y and avoid_origin_y)
-            or (reflection_z and avoid_origin_z))
-        {
-          CCTK_WARN (0, "When Carpet::max_refinement_levels > 1, and when ReflectionSymmetry::symmetry_[xyz] = yes, then you also have to set ReflectionSymmetry::avoid_origin_[xyz] = no");
-        }
-      }
-    }
-    
-    print_map_domain_specs (m, physical_min, physical_max,
-	interior_min, interior_max, exterior_min, exterior_max, base_spacing);
-      
-    // Adapt for convergence level
-    rvect const spacing
-      = base_spacing * ipow ((CCTK_REAL) convergence_factor, basemglevel);
-    
-    // Calculate global number of grid points
-    // SW note this and other examples break the encapsulation of vect class
-    // besides being ugly.  ConvertFromPhysicalBoundary is from CarpetRegrid
-    ierr = ConvertFromPhysicalBoundary (dim, &physical_min[0], &physical_max[0],
-                              &interior_min[0], &interior_max[0],
-                              &exterior_min[0], &exterior_max[0], &spacing[0]);
-    assert (!ierr);
-    
-    print_map_adapted_domain_specs (m, convergence_factor, basemglevel,
-                   physical_min, physical_max, interior_min, interior_max,
-                   exterior_min, exterior_max, spacing);
-    
-    rvect const real_npoints
-      = either (spacing,
-                (exterior_max - exterior_min) / spacing + rvect(1),
-                rvect(1));
-    
-    print_map_base_grid_spec (m, real_npoints, lghosts);
-    
-    const ivect npoints = floor (real_npoints + (CCTK_REAL) 0.5);
-    check_domain_size (npoints, real_npoints,
-                           m, basemglevel, convergence_factor);
-    
-    Sanity_check (npoints);
-    
-    // Base grid extent
-    const ivect str (maxspacereflevelfact);
-    const ivect lb (0);
-    const ivect ub ((npoints - 1) * str);
-    const ibbox baseext (lb, ub, str);
-    
-    domainspecs.resize(maps);
-    domainspecs.at(m).exterior_min = exterior_min;
-    domainspecs.at(m).exterior_max = exterior_max;
-    domainspecs.at(m).npoints = npoints;
-    
-    // Allocate grid hierarchy
-    vhh.at(m) = new gh (spacereffacts, vertex_centered,
-                        convergence_factor, vertex_centered, baseext);
-    
-    // Allocate data hierarchy
-    int const inner_buffer_width = use_outer_buffer_zones ? 0 : buffer_width;
-    ivect const lbuffers
-      = ((ivect (use_tapered_grids ? refinement_factor : 1)
-          *
-          (use_outer_buffer_zones
-           ? lghosts * (int)num_integrator_substeps + (int)buffer_width
-           : lghosts))
-         - lghosts);
-    ivect const ubuffers
-      = ((ivect (use_tapered_grids ? refinement_factor : 1)
-          *
-          (use_outer_buffer_zones
-           ? ughosts * (int)num_integrator_substeps + (int)buffer_width
-           : ughosts))
-         - ughosts);
-    vdd.at(m) = new dh (*vhh.at(m), lghosts, ughosts,
-                        prolongation_order_space,
-                        inner_buffer_width, lbuffers, ubuffers);
-    
-    // Allocate time hierarchy
-    vtt.at(m) = new th (*vhh.at(m), timereffacts, 1.0);
-      
-    check_time_hierarchy (vdd, m, max_refinement_levels, refinement_factor,
-                             prolongation_order_space, lghosts, ughosts);
-
-    // Set initial refinement structure
-      
-    vector<ibbox> bbs;
-    vector<bbvect> obs;
-    if (strcmp(base_extents, "") == 0) {
-      
-      // default: one grid component covering everything
-      bbs.push_back (vhh.at(m)->baseextent);
-      obs.push_back (bbvect(true));
-      
-    } else {
-      
-      read_explicit_grid_components (base_extents, base_outerbounds, bbs, obs);
-    }
-    
-    // Only one refinement level
-    bbss.assign (1, bbs);
-    obss.assign (1, obs);
-  }
-
-  ivect
-  make_global_number_of_grid_points (CCTK_INT const global_nsize,
-                                     CCTK_INT const global_nx,
-                                     CCTK_INT const global_ny,
-                                     CCTK_INT const global_nz,
-                                     CCTK_INT const constant_load_per_processor,
-                                     char const * const processor_topology,
-                                     CCTK_INT const processor_topology_3d_x,
-                                     CCTK_INT const processor_topology_3d_y,
-                                     CCTK_INT const processor_topology_3d_z)
-  {
-    ivect npoints;
-    if (global_nsize == -1) {
-      npoints = ivect (global_nx, global_ny, global_nz);
-    } else {
-      npoints = ivect (global_nsize, global_nsize, global_nsize);
-    }
-    if (constant_load_per_processor) {
-      if (CCTK_EQUALS (processor_topology, "manual")) {
-        // Enlarge the domain so that each processor has the specified
-        // number of grid points, using the specified processor
-        // topology
-        assert (processor_topology_3d_x >= 1);
-        assert (processor_topology_3d_y >= 1);
-        assert (processor_topology_3d_z >= 1);
-        npoints[0] *= processor_topology_3d_x;
-        npoints[1] *= processor_topology_3d_y;
-        npoints[2] *= processor_topology_3d_z;
-      } else {
-        // Enlarge the domain in a smart way so that each processor
-        // has the specified number of grid points
-        int const nprocs = dist::size();
-        // Factorise the number of processors
-        stack<int> factors;
-        for (int procsleft = nprocs; procsleft > 1;) {
-          for (int divisor = 2; divisor <= procsleft; ++divisor) {
-            while (procsleft % divisor == 0) {
-              factors.push (divisor);
-              procsleft /= divisor;
-            }
-          }
-        }
-        // Distribute the factors greedily onto the directions
-        npoints = npoints.reverse();
-        while (! factors.empty()) {
-          int const mindir = minloc (npoints);
-          assert (mindir>=0 and mindir<dim);
-          int const factor = factors.top();
-          factors.pop();
-          npoints[mindir] *= factor;
-        }
-        npoints = npoints.reverse();
-      }
-    } // if constant_load_per_processor
-    return npoints;
-  }
-
-  ivect make_ghost_zone_vect (CCTK_INT ghost_size,
-         CCTK_INT ghost_size_x, CCTK_INT ghost_size_y, CCTK_INT ghost_size_z) {
-    if( ghost_size == -1 )
-      return ivect (ghost_size_x, ghost_size_y, ghost_size_z);
-    else
-      return ivect (ghost_size, ghost_size, ghost_size);
-  }
-  
-  void print_map_base_grid_spec (int m,
-            const rvect & real_npoints, ivect &lghosts) {
-    ostringstream buf;
-    buf << "Base grid specification for map " << m << ":" << endl
-        << "   number of grid points : " << real_npoints << endl
-        << "   number of ghost points: " << lghosts;
-    Output (buf.str().c_str());
-  }
-
-  void print_map_coordbase_boundary_specs (int m, jjvect &nboundaryzones,
-               jjvect & is_internal, jjvect &is_staggered, jjvect & shiftout) {
-    ostringstream buf;
-    buf << "CoordBase boundary specification for map " << m << ":" << endl
-        << "   nboundaryzones: " << iivect(nboundaryzones) << endl
-        << "   is_internal   : " << iivect(is_internal)    << endl
-        << "   is_staggered  : " << iivect(is_staggered)   << endl
-        << "   shiftout      : " << iivect(shiftout);
-    Output (buf.str().c_str());
-  }
-    
-  void print_map_domain_specs(int m,
-                        rvect & physical_min, rvect & physical_max,
-                        rvect & interior_min, rvect & interior_max,
-                        rvect & exterior_min, rvect & exterior_max,
-                        rvect & base_spacing) {
-    ostringstream buf;
-    buf << "CoordBase domain specification for map " << m << ":" << endl
-        << "   physical extent: " << physical_min << " : " << physical_max 
-                << "   (" << physical_max - physical_min << ")" << endl
-        << "   interior extent: " << interior_min << " : " << interior_max 
-                << "   (" << interior_max - interior_min << ")" << endl
-        << "   exterior extent: " << exterior_min << " : " << exterior_max 
-                << "   (" << exterior_max - exterior_min << ")" << endl
-        << "   base_spacing   : " << base_spacing;
-    Output (buf.str().c_str());
-  }
-
-  void print_map_adapted_domain_specs (int m, CCTK_INT convergence_factor,
-                             CCTK_INT basemglevel,
-                             rvect & physical_min, rvect & physical_max,
-                             rvect & interior_min, rvect & interior_max,
-                             rvect & exterior_min, rvect & exterior_max,
-                             const rvect & spacing) {
-    ostringstream buf;
-    buf << "Adapted domain specification for map " << m << ":" << endl
-        << "   convergence factor: " << convergence_factor << endl
-        << "   convergence level : " << basemglevel << endl
-        << "   physical extent   : " << physical_min << " : " << physical_max
-             << "   (" << physical_max - physical_min << ")" << endl
-        << "   interior extent   : " << interior_min << " : " << interior_max
-             << "   (" << interior_max - interior_min << ")" << endl
-        << "   exterior extent   : " << exterior_min << " : " << exterior_max
-             << "   (" << exterior_max - exterior_min << ")" << endl
-        << "   spacing           : " << spacing;
-    Output (buf.str().c_str());
-  }
-
-  void check_domain_size (const rvect &npoints, const rvect &real_npoints,
-                    int m, CCTK_INT basemglevel, CCTK_INT convergence_factor) {
-    if (any (abs (rvect (npoints) - real_npoints) > (CCTK_REAL) 0.001)) {
+    int const prolongation_stencil_size
+      = vdd.at(m)->prolongation_stencil_size();
+    int const min_nghosts
+      = ((prolongation_stencil_size + refinement_factor - 1)
+         / (refinement_factor - 1));
+    if (any (min (lghosts, ughosts) < min_nghosts)) {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The domain size for map %d scaled for convergence level %d "
-                  "with convergence factor %d is not integer",
-                  m, (int)basemglevel, (int)convergence_factor);
+                  "There are not enough ghost zones for the desired spatial prolongation order on map %d.  With Carpet::prolongation_order_space=%d, you need at least %d ghost zones.",
+                  m, (int)prolongation_order_space, min_nghosts);
     }
   }
-
-  // If this fails, someone requested an insane amount of memory
-  void Sanity_check (const ivect & npoints) {
-    assert (all(npoints <= INT_MAX));
-    int max = INT_MAX;
-    for (int d=0; d<dim; ++d) {
-      assert (npoints[d] <= max);
-      max /= npoints[d];
-    }
-  }
-
-  void check_time_hierarchy (const vector<dh*> &vdd, int m,
-                             CCTK_INT max_refinement_levels,
-                             CCTK_INT refinement_factor,
-                             CCTK_INT prolongation_order_space,
-                             const ivect & lghosts, const ivect & ughosts) {
-    if (max_refinement_levels > 1) {
-      const int prolongation_stencil_size
-        = vdd.at(m)->prolongation_stencil_size();
-      const int min_nghosts
-        = ((prolongation_stencil_size + refinement_factor - 1)
-           / (refinement_factor-1));
-      if (any(min(lghosts,ughosts) < min_nghosts)) {
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "There are not enough ghost zones for the desired "
-                      "spatial prolongation order on map %d.  "
-                      "With Carpet::prolongation_order_space=%d, you need at "
-                      "least %d ghost zones.",
-                    m, (int)prolongation_order_space, min_nghosts);
-      }
-      
-    }
-  }
-
-  void read_explicit_grid_components (CCTK_STRING base_extents,
-                                      CCTK_STRING base_outerbounds,
-                                      vector<ibbox> & bbs,
-                                      vector<bbvect> & obs)
-  { 
-    // TODO: invent something for the other convergence levels
-    istringstream ext_str (base_extents);
-    try {
-      ext_str >> bbs;
-    } catch (input_error) {
-      CCTK_WARN (0, "Could not parse parameter \"base_extents\"");
-    }
-    CCTK_VInfo (CCTK_THORNSTRING, "Using %d grid patches", (int)bbs.size());
-    cout << "grid-patches-are " << bbs << endl;
-    if (bbs.size()<=0) {
-      CCTK_WARN (0, "Cannot evolve with 0 grid patches");
-    }
-    istringstream ob_str (base_outerbounds);
-    try {
-      ob_str >> obs;
-    } catch (input_error) {
-      CCTK_WARN (0, "Could not parse parameter \"base_outerbounds\"");
-    }
-    assert (obs.size() == bbs.size());
-  }
-
-  void print_grid_structure (vector<gh*> & vhh) {
-    CCTK_INFO ("Grid structure (grid points):");
-    for (int ml=0; ml<mglevels; ++ml) {
-      const int rl = 0;
-      for (int m=0; m<maps; ++m) {
-        for (int c=0; c<vhh.at(m)->components(rl); ++c) {
-          const ivect lower = vhh.at(m)->extents().at(ml).at(rl).at(c).lower();
-          const ivect upper = vhh.at(m)->extents().at(ml).at(rl).at(c).upper();
-          const int convfact = ipow(mgfact, ml);
-          assert (all(lower % maxspacereflevelfact == 0));
-          assert (all(upper % maxspacereflevelfact == 0));
-          assert (all(((upper - lower) / maxspacereflevelfact) % convfact == 0));
-          cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
-               << "   exterior: "
-               << "proc "
-               << vhh.at(m)->processors().at(rl).at(c)
-               << "   "
-               << lower / maxspacereflevelfact
-               << " : "
-               << upper / maxspacereflevelfact
-               << "   ("
-               << (upper - lower) / maxspacereflevelfact / convfact + 1
-               << ")" << endl;
-        }
-      }
-    }
-  }
-
-  // Allocate space for variables in group (but don't enable storage
-  // yet)
-  static void allocate_group_variables (cGH* cgh, int group,
-               CCTK_INT convergence_factor, CCTK_INT refinement_factor) {
-    cGroup gp;
-    int ierr = CCTK_GroupData (group, &gp);
-    assert (!ierr);
-    
-    if (gp.compact) {
+  
+  
+  
+  void
+  ensure_group_options (int const group,
+                        cGroup const & gdata)
+  {
+    // Compact groups are not supported
+    if (gdata.compact) {
       char * const groupname = CCTK_GroupName (group);
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "The group \"%s\" has COMPACT=1.  Compact groups are not yet supported",
@@ -1199,8 +1893,9 @@ namespace Carpet {
       free (groupname);
     }
     
+    // Contiguous groups are supported
 #if 0
-    if (gp.contiguous) {
+    if (gdata.contiguous) {
       char * const groupname = CCTK_GroupName (group);
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "The group \"%s\" has CONTIGUOUS=1.  Contiguous groups are not yet supported",
@@ -1209,351 +1904,16 @@ namespace Carpet {
     }
 #endif
     
-    if (gp.stagtype != 0) {
+    // Staggered groups are not supported
+    if (gdata.stagtype != 0) {
       char * const groupname = CCTK_GroupName (group);
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "The group \"%s\" is staggered.  Staggered groups are not yet supported",
                   groupname);
       free (groupname);
     }
-    
-    switch (gp.grouptype) {
-
-    case CCTK_GF: {
-      assert (gp.dim == dim);
-      groupdata.at(group).activetimelevels.resize(mglevels);
-      for (int ml=0; ml<mglevels; ++ml) {
-        groupdata.at(group).activetimelevels.at(ml).resize(1);
-      }
-      arrdata.at(group).resize(maps);
-      for (int m=0; m<maps; ++m) {
-        arrdata.at(group).at(m).hh = vhh.at(m);
-        arrdata.at(group).at(m).dd = vdd.at(m);
-        arrdata.at(group).at(m).tt = vtt.at(m);
-      }
-      break;
-    }
-        
-    case CCTK_SCALAR:
-    case CCTK_ARRAY: {
-        
-      groupdata.at(group).activetimelevels.resize(mglevels);
-      for (int ml=0; ml<mglevels; ++ml) {
-        groupdata.at(group).activetimelevels.at(ml).resize(1);
-      }
-      arrdata.at(group).resize(1);
-      
-      ivect sizes(1), ghostsizes(0);
-	
-      switch (gp.grouptype) {
-	  
-      case CCTK_SCALAR:
-        // treat scalars as DIM=0, DISTRIB=const arrays
-        assert (gp.dim==0);
-        assert (gp.disttype == CCTK_DISTRIB_CONSTANT);
-        break;
-	  
-      case CCTK_ARRAY: {
-        assert (gp.dim>=1 or gp.dim<=dim);
-        const CCTK_INT * const * const sz  = CCTK_GroupSizesI (group);
-        const CCTK_INT * const * const gsz = CCTK_GroupGhostsizesI (group);
-        for (int d=0; d<gp.dim; ++d) {
-          if (sz)
-            sizes[d] = *sz[d];
-          if (gsz)
-            ghostsizes[d] = *gsz[d];
-        }
-        break;
-      }
-          
-      default:
-        assert (0);
-      }
-        
-      ivect alghosts(0), aughosts(0);
-      for (int d=0; d<gp.dim; ++d) {
-        alghosts[d] = ghostsizes[d];
-        aughosts[d] = ghostsizes[d];
-      }
-        
-      // Adapt array sizes for convergence level
-      jvect convpowers (0);
-      jvect convoffsets (0);
-        
-      if (gp.tagstable >= 0) {
-        handle_group_tags_table (cgh, group, gp, convpowers, convoffsets);
-      }
-        
-      rvect real_sizes
-        = (rvect (sizes - ivect(convoffsets))
-           / ipow (rvect (convergence_factor),
-                   ivect(convpowers) * (int)basemglevel)
-           + rvect (convoffsets));
-      for (int d=gp.dim; d<dim; ++d) {
-        real_sizes[d] = sizes[d];
-      }
-      sizes = floor (real_sizes + (CCTK_REAL) 0.5);
-      if (any(sizes < 0)) {
-        char * const groupname = CCTK_GroupName (group);
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "The shape of group \"%s\" scaled for convergence level %d "
-                    "with convergence factor %d is negative",
-                    groupname, (int)basemglevel, (int)convergence_factor);
-        free (groupname);
-      }
-      if (any(abs(rvect(sizes) - real_sizes) > (CCTK_REAL) 0.001)) {
-        char * const groupname = CCTK_GroupName(group);
-        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "The shape of group \"%s\" scaled for convergence level %d "
-                    "with convergence factor %d is not integer",
-                    groupname, (int)basemglevel, (int)convergence_factor);
-        free (groupname);
-      }
-
-      assert (gp.disttype==CCTK_DISTRIB_CONSTANT
-              or gp.disttype==CCTK_DISTRIB_DEFAULT);
-        
-      if (gp.disttype==CCTK_DISTRIB_CONSTANT) {
-        if (! all (ghostsizes == 0)) {
-          char * const groupname = CCTK_GroupName (group);
-          CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                      "The group \"%s\" has DISTRIB=constant, but its "
-                      "ghostsize is not 0",
-                      groupname);
-          free (groupname);
-        }
-        assert (all (ghostsizes == 0));
-        const int d = gp.dim==0 ? 0 : gp.dim-1;
-        sizes[d] = (sizes[d] - 2*ghostsizes[d]) * CCTK_nProcs (cgh)
-                      + 2*ghostsizes[d];
-        assert (sizes[d] >= 0);
-      }
-      
-      const ivect alb(0);
-      const ivect aub(sizes-1);
-      const ivect astr(1);
-      const ibbox abaseext(alb, aub, astr);
-      
-      assert (all(convpowers == convpowers[0]));
-      const int amgfact1 = ipow(mgfact, convpowers[0]);
-      const vector<ivect> aspacereffacts (1, ivect (1));
-      const vector<int> atimereffacts (1, 1);
-      
-      arrdata.at (group).at (0).hh
-        = new gh (aspacereffacts, vertex_centered,
-                  amgfact1, vertex_centered,
-                  abaseext);
-      
-      arrdata.at (group).at (0).dd
-        = new dh (*arrdata.at (group).at (0).hh, alghosts, aughosts, 0, 0, 0, 0);
-      
-      arrdata.at (group).at (0).tt
-        = new th (*arrdata.at (group).at (0).hh, atimereffacts, 1.0);
-
-      
-      
-      // Set refinement structure for scalars and arrays
-      vector<ibbox> bbs;
-      vector<bbvect> obs;
-      bbs.push_back (abaseext);
-      obs.push_back (bbvect (true));
-      
-      // Split it into components, one for each processor
-      vector<int> ps;
-      if (gp.disttype==CCTK_DISTRIB_CONSTANT) {
-        SplitRegions_AlongDir (cgh, bbs, obs, ps, gp.dim==0 ? 0 : gp.dim-1);
-      } else {
-        SplitRegions_Automatic (cgh, bbs, obs, ps);
-      }
-        
-      // Only one refinement level
-      vector<vector<ibbox> > bbss(1);
-      vector<vector<bbvect> > obss(1);
-      vector<vector<int> > pss(1);
-      bbss.at(0) = bbs;
-      obss.at(0) = obs;
-      pss.at(0) = ps;
-      
-      // Create all multigrid levels
-      vector<vector<vector<ibbox> > > bbsss (mglevels);
-      ivect amgfact;
-      iivect aoffset;
-      for (int d=0; d<dim; ++d) {
-        amgfact[d] = ipow (mgfact, convpowers[d]);
-        aoffset[d][0] = 0;
-        aoffset[d][1] = convoffsets[d];
-      }
-      bbsss.at(0) = bbss;
-      for (int ml=1; ml<mglevels; ++ml) {
-        const int rl = 0;
-        for (int c=0; c<(int)bbss.at(rl).size(); ++c) {
-          // this base
-          ivect const baselo = ivect(0);
-          ivect const baselo1 = baselo;
-          // next finer grid
-          ivect const flo = bbsss.at(ml-1).at(rl).at(c).lower();
-          ivect const fhi = bbsss.at(ml-1).at(rl).at(c).upper();
-          ivect const fstr = bbsss.at(ml-1).at(rl).at(c).stride();
-          // this grid
-          ivect const str = fstr * amgfact;
-          ivect const lo = flo + xpose(obs.at(c))[0].ifthen
-                (   (xpose(aoffset)[0] - amgfact * xpose(aoffset)[0]) * fstr,
-                ivect(0));
-          ivect const hi = fhi + xpose(obs.at(c))[1].ifthen
-                ( - (xpose(aoffset)[1] - amgfact * xpose(aoffset)[1]) * fstr,
-                ivect(0));
-          ivect const lo1 = baselo1 + (lo - baselo1 + str - 1) / str * str;
-          ivect const hi1 = lo1 + (hi - lo1) / str * str;
-          bbsss.at(ml).at(rl).at(c) = ibbox(lo1, hi1, str);
-        }
-      }
-	
-      // Recompose for this map
-      {
-        char * const groupname = CCTK_GroupName (group);
-        assert (groupname);
-        Checkpoint ("Recomposing grid array group \"%s\"...", groupname);
-        arrdata.at(group).at(0).hh->regrid (bbsss, obss, pss);
-        arrdata.at(group).at(0).hh->recompose (0, false);
-        Checkpoint ("Done recomposing grid array group \"%s\".", groupname);
-        free (groupname);
-      }
-	
-      break;
-    } // case of scalar or array
-
-    default:
-      assert (0);
-    } // switch on group type
-      
-    // Initialise group information
-    groupdata.at(group).info.dim         = gp.dim;
-    groupdata.at(group).info.gsh         = new int [dim];
-    groupdata.at(group).info.lsh         = new int [dim];
-    groupdata.at(group).info.lbnd        = new int [dim];
-    groupdata.at(group).info.ubnd        = new int [dim];
-    groupdata.at(group).info.bbox        = new int [2*dim];
-    groupdata.at(group).info.nghostzones = new int [dim];
-      
-    groupdata.at(group).transport_operator = GetTransportOperator (cgh, group);
-    
-    groupdata.at(group).info.activetimelevels = 0;
-    
-    // Initialise group variables
-    for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
-      
-      arrdata.at(group).at(m).data.resize(CCTK_NumVarsInGroupI(group));
-      for (int var=0; var<(int)arrdata.at(group).at(m).data.size(); ++var) {
-        arrdata.at(group).at(m).data.at(var) = NULL;
-      }
-      
-    }
-
   }
-      
-  void handle_group_tags_table (cGH* cgh, int group, cGroup &gp,
-                       jvect &convpowers, jvect &convoffsets) {
-    int status = Util_TableGetIntArray
-      (gp.tagstable, gp.dim, &convpowers[0], "convergence_power");
-    if (status == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-      // keep default: independent of convergence level
-    } else if (status == 1) {
-      // a scalar was given
-      convpowers = convpowers[0];
-    } else if (status == gp.dim) {
-      // do nothing
-    } else {
-      char * const groupname = CCTK_GroupName (group);
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The key \"convergence_power\" in the tags table of group "
-                  "\"%s\" is wrong",
-                  groupname);
-      free (groupname);
-    }
-    assert (all (convpowers >= (CCTK_INT)0));
-    
-    status = Util_TableGetIntArray
-      (gp.tagstable, gp.dim, &convoffsets[0], "convergence_offset");
-    if (status == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
-      // keep default: offset is 0
-    } else if (status == 1) {
-      // a scalar was given
-      convoffsets = convoffsets[0];
-    } else if (status == gp.dim) {
-      // do nothing
-    } else {
-      char * const groupname = CCTK_GroupName (group);
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The key \"convergence_offset\" in the tags table of group "
-                  "\"%s\" is wrong",
-                  groupname);
-      free (groupname);
-    }
-  }
-
-  void print_some_statistics (cGH* cgh) {
-    int num_gf_groups = 0;
-    int num_gf_vars = 0;
-    vector<int> num_array_groups(dim+1), num_array_vars(dim+1);
-    for (int d=0; d<=dim; ++d) {
-      num_array_groups.at(d) = 0;
-      num_array_vars.at(d) = 0;
-    }
-      
-    for (int group=0; group<CCTK_NumGroups(); ++group) {
-       
-      cGroup data;
-      int ierr = CCTK_GroupData (group, &data);
-      assert (!ierr);
-      
-      switch (data.grouptype) {
-      case CCTK_GF:
-        num_gf_groups += 1;
-        num_gf_vars += data.numvars * data.numtimelevels;
-        break;
-      case CCTK_SCALAR:
-      case CCTK_ARRAY:
-        assert (data.dim<=dim);
-        num_array_groups.at(data.dim) += 1;
-        num_array_vars.at(data.dim) += data.numvars * data.numtimelevels;
-        break;
-      default:
-        assert (0);
-      }
-    }
-    CCTK_INFO ("Group and variable statistics:");
-    CCTK_VInfo (CCTK_THORNSTRING,
-                "   There are %d grid functions in %d groups",
-                num_gf_vars, num_gf_groups);
-    CCTK_VInfo (CCTK_THORNSTRING,
-                "   There are %d grid scalars in %d groups",
-                num_array_vars.at(0), num_array_groups.at(0));
-    for (int d=1; d<=3; ++d) {
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "   There are %d %d-dimensional grid arrays in %d groups",
-                  num_array_vars.at(d), d, num_array_groups.at(d));
-    }
-    CCTK_VInfo (CCTK_THORNSTRING,
-                "   (The number of variables counts all time levels)");
-  }
-    
-  void enable_storage_for_all_groups (cGH* cgh) {
-    BEGIN_MGLEVEL_LOOP(cgh) {
-      BEGIN_REFLEVEL_LOOP(cgh) {
-        for (int group=0; group<CCTK_NumGroups(); ++group) {
-          char * const groupname = CCTK_GroupName(group);
-          EnableGroupStorage (cgh, groupname);
-          free (groupname);
-        }
-      } END_REFLEVEL_LOOP;
-    } END_MGLEVEL_LOOP;
-  }
-
-  void leave_all_modes (cGH* cgh) {
-    leave_local_mode     (cgh);
-    leave_singlemap_mode (cgh);
-    leave_level_mode     (cgh);
-    leave_global_mode    (cgh);
-  }
+  
+  
   
 } // namespace Carpet
