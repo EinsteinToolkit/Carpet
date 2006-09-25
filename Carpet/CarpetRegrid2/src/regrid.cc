@@ -545,7 +545,7 @@ namespace CarpetRegrid2 {
     assert (Carpet::is_level_mode());
     
     // Decide whether to change the grid hierarchy
-    // (We always do)
+    static int last_iteration = -1;
     bool do_recompose;
     if (force) {
       do_recompose = true;
@@ -556,14 +556,16 @@ namespace CarpetRegrid2 {
         do_recompose = cctkGH->cctk_iteration == 0;
       } else {
         do_recompose =
-          reflevel == 0 and
           (cctkGH->cctk_iteration == 0 or
            (cctkGH->cctk_iteration > 0 and
-            (cctkGH->cctk_iteration - 1) % regrid_every == 0));
+            (cctkGH->cctk_iteration - 1) % regrid_every == 0 and
+            cctkGH->cctk_iteration > last_iteration));
       }
     }
+    last_iteration = cctkGH->cctk_iteration;
     
     if (do_recompose) {
+      
       vector <gh::mexts>  & bbssss =
         * static_cast <vector <gh::mexts>  *> (bbssss_);
       vector <gh::rbnds>  & obsss  =
