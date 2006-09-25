@@ -1,7 +1,7 @@
 #ifndef MODES_HH
 #define MODES_HH
 
-#include "cctk.h"
+#include <cctk.h>
   
 
 
@@ -37,57 +37,57 @@ namespace Carpet {
   
   // Mode setting
   
-  void enter_global_mode (cGH * const cgh, int const ml);
-  void leave_global_mode (cGH * const cgh);
+  void enter_global_mode (cGH * const cctkGH, int const ml);
+  void leave_global_mode (cGH * const cctkGH);
   
-  void enter_level_mode (cGH * const cgh, int const rl);
-  void leave_level_mode (cGH * const cgh);
+  void enter_level_mode (cGH * const cctkGH, int const rl);
+  void leave_level_mode (cGH * const cctkGH);
   
-  void enter_singlemap_mode (cGH * const cgh, int const m);
-  void leave_singlemap_mode (cGH * const cgh);
+  void enter_singlemap_mode (cGH * const cctkGH, int const m);
+  void leave_singlemap_mode (cGH * const cctkGH);
   
-  void enter_local_mode (cGH * const cgh, int const c);
-  void leave_local_mode (cGH * const cgh);
+  void enter_local_mode (cGH * const cctkGH, int const c);
+  void leave_local_mode (cGH * const cctkGH);
   
   
   
   // Mode iterators
   
   class mglevel_iterator {
-    cGH * cgh;
+    cGH * cctkGH;
     int ml;
   public:
-    mglevel_iterator (cGH const * const cgh);
+    mglevel_iterator (cGH const * const cctkGH);
     ~mglevel_iterator ();
     bool done () const;
     void step ();
   };
   
   class reverse_mglevel_iterator {
-    cGH * cgh;
+    cGH * cctkGH;
     int ml;
   public:
-    reverse_mglevel_iterator (cGH const * const cgh);
+    reverse_mglevel_iterator (cGH const * const cctkGH);
     ~reverse_mglevel_iterator ();
     bool done () const;
     void step ();
   };
   
   class reflevel_iterator {
-    cGH * cgh;
+    cGH * cctkGH;
     int rl;
   public:
-    reflevel_iterator (cGH const * const cgh);
+    reflevel_iterator (cGH const * const cctkGH);
     ~reflevel_iterator ();
     bool done () const;
     void step ();
   };
   
   class reverse_reflevel_iterator {
-    cGH * cgh;
+    cGH * cctkGH;
     int rl;
   public:
-    reverse_reflevel_iterator (cGH const * const cgh);
+    reverse_reflevel_iterator (cGH const * const cctkGH);
     ~reverse_reflevel_iterator ();
     bool done () const;
     void step ();
@@ -99,11 +99,11 @@ namespace Carpet {
   // map denotes the current grid array map, i.e. it cannot be used to
   // access grid functions.
   class map_iterator {
-    cGH * cgh;
+    cGH * cctkGH;
     int grouptype;
     int m;
   public:
-    map_iterator (cGH const * const cgh, int const grouptype);
+    map_iterator (cGH const * const cctkGH, int const grouptype);
     ~map_iterator ();
     bool done () const;
     void step ();
@@ -116,22 +116,22 @@ namespace Carpet {
   // grid array component, i.e. it cannot be used to index grid
   // functions.
   class component_iterator {
-    cGH * cgh;
+    cGH * cctkGH;
     int grouptype;
     int c;
   public:
-    component_iterator (cGH const * const cgh, int const grouptype);
+    component_iterator (cGH const * const cctkGH, int const grouptype);
     ~component_iterator ();
     bool done () const;
     void step ();
   };
     
   class local_component_iterator {
-    cGH * cgh;
+    cGH * cctkGH;
     int grouptype;
     int c;
   public:
-    local_component_iterator (cGH const * const cgh, int const grouptype);
+    local_component_iterator (cGH const * const cctkGH, int const grouptype);
     ~local_component_iterator ();
     bool done () const;
     void step ();
@@ -141,11 +141,11 @@ namespace Carpet {
   
   // Compatibility defines for the mode iterators
   
-#define BEGIN_MGLEVEL_LOOP(cgh)                 \
+#define BEGIN_MGLEVEL_LOOP(cctkGH)                 \
   do {                                          \
     bool mglevel_loop_ = true;                  \
-    for (mglevel_iterator mg_iter_(cgh);        \
-         !mg_iter_.done();                      \
+    for (mglevel_iterator mg_iter_(cctkGH);        \
+         not mg_iter_.done();                      \
          mg_iter_.step()) {
 #define END_MGLEVEL_LOOP                        \
     }                                           \
@@ -153,11 +153,11 @@ namespace Carpet {
     mglevel_loop_ = false;                      \
   } while (false)
   
-#define BEGIN_REVERSE_MGLEVEL_LOOP(cgh)                 \
+#define BEGIN_REVERSE_MGLEVEL_LOOP(cctkGH)                 \
   do {                                                  \
     bool reverse_mglevel_loop_ = true;                  \
-    for (reverse_mglevel_iterator mg_iter_(cgh);        \
-         !mg_iter_.done();                              \
+    for (reverse_mglevel_iterator mg_iter_(cctkGH);        \
+         not mg_iter_.done();                              \
          mg_iter_.step()) {
 #define END_REVERSE_MGLEVEL_LOOP                \
     }                                           \
@@ -165,11 +165,11 @@ namespace Carpet {
     reverse_mglevel_loop_ = false;              \
   } while (false)
 
-#define BEGIN_REFLEVEL_LOOP(cgh)                \
+#define BEGIN_REFLEVEL_LOOP(cctkGH)                \
   do {                                          \
     bool reflevel_loop_ = true;                 \
-    for (reflevel_iterator ref_iter_(cgh);      \
-         !ref_iter_.done();                     \
+    for (reflevel_iterator ref_iter_(cctkGH);      \
+         not ref_iter_.done();                     \
          ref_iter_.step()) {
 #define END_REFLEVEL_LOOP                       \
     }                                           \
@@ -177,11 +177,11 @@ namespace Carpet {
     reflevel_loop_ = false;                     \
   } while (false)
 
-#define BEGIN_REVERSE_REFLEVEL_LOOP(cgh)                \
+#define BEGIN_REVERSE_REFLEVEL_LOOP(cctkGH)                \
   do {                                                  \
     bool reverse_reflevel_loop_ = true;                 \
-    for (reverse_reflevel_iterator ref_iter_(cgh);      \
-         !ref_iter_.done();                             \
+    for (reverse_reflevel_iterator ref_iter_(cctkGH);      \
+         not ref_iter_.done();                             \
          ref_iter_.step()) {
 #define END_REVERSE_REFLEVEL_LOOP               \
     }                                           \
@@ -189,11 +189,11 @@ namespace Carpet {
     reverse_reflevel_loop_ = false;             \
   } while (false)
 
-#define BEGIN_MAP_LOOP(cgh, grouptype)                  \
+#define BEGIN_MAP_LOOP(cctkGH, grouptype)                  \
   do {                                                  \
     bool map_loop_ = true;                              \
-    for (map_iterator map_iter_(cgh, grouptype);        \
-         !map_iter_.done();                             \
+    for (map_iterator map_iter_(cctkGH, grouptype);        \
+         not map_iter_.done();                             \
          map_iter_.step()) {
 #define END_MAP_LOOP                            \
     }                                           \
@@ -201,11 +201,11 @@ namespace Carpet {
     map_loop_ = false;                          \
   } while (false)
 
-#define BEGIN_COMPONENT_LOOP(cgh, grouptype)            \
+#define BEGIN_COMPONENT_LOOP(cctkGH, grouptype)            \
   do {                                                  \
     bool component_loop_ = true;                        \
-    for (component_iterator comp_iter_(cgh, grouptype); \
-         !comp_iter_.done();                            \
+    for (component_iterator comp_iter_(cctkGH, grouptype); \
+         not comp_iter_.done();                            \
          comp_iter_.step()) {
 #define END_COMPONENT_LOOP                      \
     }                                           \
@@ -213,11 +213,11 @@ namespace Carpet {
     component_loop_ = false;                    \
   } while (false)
 
-#define BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype)              \
+#define BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, grouptype)              \
   do {                                                          \
     bool local_component_loop_ = true;                          \
-    for (local_component_iterator comp_iter_(cgh, grouptype);   \
-         !comp_iter_.done();                                    \
+    for (local_component_iterator comp_iter_(cctkGH, grouptype);   \
+         not comp_iter_.done();                                    \
          comp_iter_.step()) {
 #define END_LOCAL_COMPONENT_LOOP                \
     }                                           \
@@ -230,40 +230,40 @@ namespace Carpet {
   // Mode escapes
   
   class singlemap_escape {
-    cGH * cgh;
+    cGH * cctkGH;
     int c;
   public:
-    singlemap_escape (cGH const * const cgh);
+    singlemap_escape (cGH const * const cctkGH);
     ~singlemap_escape ();
   };
   
   class level_escape {
-    cGH * cgh;
+    cGH * cctkGH;
     int m;
     int c;
   public:
-    level_escape (cGH const * const cgh);
+    level_escape (cGH const * const cctkGH);
     ~level_escape ();
   };
   
   class global_escape {
-    cGH * cgh;
+    cGH * cctkGH;
     int rl;
     int m;
     int c;
   public:
-    global_escape (cGH const * const cgh);
+    global_escape (cGH const * const cctkGH);
     ~global_escape ();
   };
   
   class meta_escape {
-    cGH * cgh;
+    cGH * cctkGH;
     int ml;
     int rl;
     int m;
     int c;
   public:
-    meta_escape (cGH const * const cgh);
+    meta_escape (cGH const * const cctkGH);
     ~meta_escape ();
   };
   
@@ -271,10 +271,10 @@ namespace Carpet {
   
   // Compatibility defines for the mode escapes
   
-#define BEGIN_SINGLEMAP_MODE(cgh)               \
+#define BEGIN_SINGLEMAP_MODE(cctkGH)               \
   do {                                          \
     bool singlemap_mode_ = true;                \
-    singlemap_escape esc_(cgh);                 \
+    singlemap_escape esc_(cctkGH);                 \
     {
 #define END_SINGLEMAP_MODE                      \
     }                                           \
@@ -282,10 +282,10 @@ namespace Carpet {
     singlemap_mode_ = false;                    \
   } while (false)
   
-#define BEGIN_LEVEL_MODE(cgh)                   \
+#define BEGIN_LEVEL_MODE(cctkGH)                   \
   do {                                          \
     bool level_mode_ = true;                    \
-    level_escape esc_(cgh);                     \
+    level_escape esc_(cctkGH);                     \
     {
 #define END_LEVEL_MODE                          \
     }                                           \
@@ -293,10 +293,10 @@ namespace Carpet {
     level_mode_ = false;                        \
   } while (false)
   
-#define BEGIN_GLOBAL_MODE(cgh)                  \
+#define BEGIN_GLOBAL_MODE(cctkGH)                  \
   do {                                          \
     bool global_mode_ = true;                   \
-    global_escape esc_(cgh);                    \
+    global_escape esc_(cctkGH);                    \
     {
 #define END_GLOBAL_MODE                         \
     }                                           \
@@ -304,10 +304,10 @@ namespace Carpet {
     global_mode_ = false;                       \
   } while (false)
   
-#define BEGIN_META_MODE(cgh)                    \
+#define BEGIN_META_MODE(cctkGH)                    \
   do {                                          \
     bool meta_mode_ = true;                     \
-    meta_escape esc_(cgh);                      \
+    meta_escape esc_(cctkGH);                      \
     {
 #define END_META_MODE                           \
     }                                           \
@@ -320,30 +320,30 @@ namespace Carpet {
   // Mode setters
   
   class mglevel_setter {
-    cGH * cgh;
+    cGH * cctkGH;
   public:
-    mglevel_setter (cGH const * const cgh, int const ml);
+    mglevel_setter (cGH const * const cctkGH, int const ml);
     ~mglevel_setter ();
   };
   
   class reflevel_setter {
-    cGH * cgh;
+    cGH * cctkGH;
   public:
-    reflevel_setter (cGH const * const cgh, int const rl);
+    reflevel_setter (cGH const * const cctkGH, int const rl);
     ~reflevel_setter ();
   };
   
   class map_setter {
-    cGH * cgh;
+    cGH * cctkGH;
   public:
-    map_setter (cGH const * const cgh, int const m);
+    map_setter (cGH const * const cctkGH, int const m);
     ~map_setter ();
   };
   
   class component_setter {
-    cGH * cgh;
+    cGH * cctkGH;
   public:
-    component_setter (cGH const * const cgh, int const c);
+    component_setter (cGH const * const cctkGH, int const c);
     ~component_setter ();
   };
   
@@ -351,33 +351,33 @@ namespace Carpet {
   
   // Compatibility defines for the mode setters
   
-#define ENTER_GLOBAL_MODE(cgh, ml)              \
+#define ENTER_GLOBAL_MODE(cctkGH, ml)              \
   do {                                          \
-    mglevel_setter mg_setter_(cgh, ml);         \
+    mglevel_setter mg_setter_(cctkGH, ml);         \
     {
 #define LEAVE_GLOBAL_MODE                       \
     }                                           \
   } while (false)
   
-#define ENTER_LEVEL_MODE(cgh, rl)               \
+#define ENTER_LEVEL_MODE(cctkGH, rl)               \
   do {                                          \
-    reflevel_setter ref_setter_(cgh, rl);       \
+    reflevel_setter ref_setter_(cctkGH, rl);       \
     {
 #define LEAVE_LEVEL_MODE                        \
     }                                           \
   } while (false)
   
-#define ENTER_SINGLEMAP_MODE(cgh, m)            \
+#define ENTER_SINGLEMAP_MODE(cctkGH, m)            \
   do {                                          \
-    map_setter m_setter_(cgh, m);               \
+    map_setter m_setter_(cctkGH, m);               \
     {
 #define LEAVE_SINGLEMAP_MODE                    \
     }                                           \
   } while (false)
   
-#define ENTER_LOCAL_MODE(cgh, c)                \
+#define ENTER_LOCAL_MODE(cctkGH, c)                \
   do {                                          \
-    component_setter c_setter_(cgh, c);         \
+    component_setter c_setter_(cctkGH, c);         \
     {
 #define LEAVE_LOCAL_MODE                        \
     }                                           \
@@ -387,4 +387,4 @@ namespace Carpet {
   
 } // namespace Carpet
 
-#endif // !defined(MODES_HH)
+#endif // #ifndef MODES_HH

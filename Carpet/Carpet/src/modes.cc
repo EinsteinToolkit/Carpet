@@ -4,11 +4,11 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
 
-#include "defs.hh"
-#include "ggf.hh"
+#include <defs.hh>
+#include <ggf.hh>
 
 #include "carpet.hh"
 
@@ -64,7 +64,7 @@ namespace Carpet {
   
   // Set global mode
   
-  void enter_global_mode (cGH * const cgh, int const ml)
+  void enter_global_mode (cGH * const cctkGH, int const ml)
   {
     assert (is_meta_mode());
     assert (ml>=0 and ml<mglevels);
@@ -73,25 +73,28 @@ namespace Carpet {
     mglevel = ml;
     mglevelfact = ipow(mgfact, mglevel);
     // TODO: this could also just be "mglevel" instead
-    cgh->cctk_convlevel = basemglevel + mglevel;
+    cctkGH->cctk_convlevel = basemglevel + mglevel;
     
     // Set time delta
-    cgh->cctk_delta_time = delta_time * mglevelfact;
+    cctkGH->cctk_delta_time = delta_time * mglevelfact;
     if (maps == 1) {
       // Set space delta
       for (int d=0; d<dim; ++d) {
-        cgh->cctk_origin_space[d] = origin_space.at(0).at(mglevel)[d];
-        cgh->cctk_delta_space[d] = delta_space.at(0)[d] * mglevelfact;
+        cctkGH->cctk_origin_space[d] = origin_space.at(0).at(mglevel)[d];
+        cctkGH->cctk_delta_space[d] = delta_space.at(0)[d] * mglevelfact;
       }
     }
     
     // Set array information
     for (int group=0; group<CCTK_NumGroups(); ++group) {
-      if (CCTK_GroupTypeI(group) != CCTK_GF) {
+      cGroup gp;
+      const int ierr = CCTK_GroupData (group, &gp);
+      assert (not ierr);
+      if (gp.grouptype != CCTK_GF) {
         
         const int rl = 0;
         const int m = 0;
-        const int c = CCTK_MyProc(cgh);
+        const int c = CCTK_MyProc(cctkGH);
         
         const ibbox& base = arrdata.at(group).at(m).hh->bases().at(ml).at(rl);
         const bbvect& obnds = arrdata.at(group).at(m).hh->outer_boundaries().at(rl).at(c);
@@ -107,6 +110,16 @@ namespace Carpet {
           = (ext.lower() - base.lower()) / ext.stride();
         ivect::ref(const_cast<int*>(groupdata.at(group).info.ubnd))
           = (ext.upper() - base.lower()) / ext.stride();
+        if (gp.disttype == CCTK_DISTRIB_CONSTANT) {
+          int const d = gp.dim==0 ? 0 : gp.dim-1;
+          ivect & gsh = ivect::ref(const_cast<int*>(groupdata.at(group).info.gsh));
+          ivect & lsh = ivect::ref(const_cast<int*>(groupdata.at(group).info.lsh));
+          ivect & lbnd = ivect::ref(const_cast<int*>(groupdata.at(group).info.lbnd));
+          ivect & ubnd = ivect::ref(const_cast<int*>(groupdata.at(group).info.ubnd));
+          gsh[d] = lsh[d];
+          lbnd[d] = 0;
+          ubnd[d] = lsh[d] - 1;
+        }
         for (int d=0; d<dim; ++d) {
           const_cast<int*>(groupdata.at(group).info.bbox)[2*d  ] = obnds[d][0];
           const_cast<int*>(groupdata.at(group).info.bbox)[2*d+1] = obnds[d][1];
@@ -143,9 +156,9 @@ namespace Carpet {
               if (ff and tl<active_tl) {
                 gdata * const data = (*ff) (tl, rl, c, ml);
                 assert (data);
-                cgh->data[firstvar+var][tl] = data->storage();
+                cctkGH->data[firstvar+var][tl] = data->storage();
               } else {
-                cgh->data[firstvar+var][tl] = NULL;
+                cctkGH->data[firstvar+var][tl] = NULL;
               }
             }
           }
@@ -157,7 +170,7 @@ namespace Carpet {
     assert (is_global_mode());
   }
   
-  void leave_global_mode (cGH * const cgh)
+  void leave_global_mode (cGH * const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -167,15 +180,15 @@ namespace Carpet {
     if (mglevel == -1) return;  // early return
     
     // Save and unset time delta
-    delta_time = cgh->cctk_delta_time / mglevelfact;
-    cgh->cctk_delta_time = 0.0;
+    delta_time = cctkGH->cctk_delta_time / mglevelfact;
+    cctkGH->cctk_delta_time = 0.0;
     if (maps == 1) {
       // Save and unset space delta
       for (int d=0; d<dim; ++d) {
-        origin_space.at(0).at(mglevel)[d] = cgh->cctk_origin_space[d];
-        delta_space.at(mglevel)[d] = cgh->cctk_delta_space[d] / mglevelfact;
-        cgh->cctk_origin_space[d] = -424242.0;
-        cgh->cctk_delta_space[d] = -424242.0;
+        origin_space.at(0).at(mglevel)[d] = cctkGH->cctk_origin_space[d];
+        delta_space.at(mglevel)[d] = cctkGH->cctk_delta_space[d] / mglevelfact;
+        cctkGH->cctk_origin_space[d] = -424242.0;
+        cctkGH->cctk_delta_space[d] = -424242.0;
       }
     }
     
@@ -214,7 +227,7 @@ namespace Carpet {
           for (int var=0; var<numvars; ++var) {
             assert (firstvar+var<CCTK_NumVars());
             for (int tl=0; tl<max_tl; ++tl) {
-              cgh->data[firstvar+var][tl] = NULL;
+              cctkGH->data[firstvar+var][tl] = NULL;
             }
           }
         }
@@ -224,7 +237,7 @@ namespace Carpet {
     
     mglevel = -1;
     mglevelfact = -deadbeef;
-    cgh->cctk_convlevel = -deadbeef;
+    cctkGH->cctk_convlevel = -deadbeef;
     
     assert (is_meta_mode());
   }
@@ -233,7 +246,7 @@ namespace Carpet {
   
   // Set level mode
   
-  void enter_level_mode (cGH * const cgh, int const rl)
+  void enter_level_mode (cGH * const cctkGH, int const rl)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -244,8 +257,8 @@ namespace Carpet {
     reflevel = rl;
     timereflevelfact = timereffacts.at (reflevel);
     spacereflevelfact = spacereffacts.at (reflevel);
-    ivect::ref(cgh->cctk_levfac) = spacereflevelfact;
-    cgh->cctk_timefac = timereflevelfact;
+    ivect::ref(cctkGH->cctk_levfac) = spacereflevelfact;
+    cctkGH->cctk_timefac = timereflevelfact;
     
     // Set number of time levels
     for (int group=0; group<CCTK_NumGroups(); ++group) {
@@ -258,16 +271,16 @@ namespace Carpet {
     // Set current time
     assert (mglevel>=0 and mglevel<(int)leveltimes.size());
     assert (reflevel>=0 and reflevel<(int)leveltimes.at(mglevel).size());
-    if (! adaptive_stepsize) {
-      cgh->cctk_time = leveltimes.at(mglevel).at(reflevel);
+    if (not adaptive_stepsize) {
+      cctkGH->cctk_time = leveltimes.at(mglevel).at(reflevel);
     } else {
-      leveltimes.at(mglevel).at(reflevel) = cgh->cctk_time;
+      leveltimes.at(mglevel).at(reflevel) = cctkGH->cctk_time;
     }
     
     assert (is_level_mode());
   }
   
-  void leave_level_mode (cGH * const cgh)
+  void leave_level_mode (cGH * const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -279,11 +292,11 @@ namespace Carpet {
     // Save and unset current time
     assert (mglevel>=0 and mglevel<(int)leveltimes.size());
     assert (reflevel>=0 and reflevel<(int)leveltimes.at(mglevel).size());
-    leveltimes.at(mglevel).at(reflevel) = cgh->cctk_time;
-    if (! adaptive_stepsize) {
-      cgh->cctk_time = global_time;
+    leveltimes.at(mglevel).at(reflevel) = cctkGH->cctk_time;
+    if (not adaptive_stepsize) {
+      cctkGH->cctk_time = global_time;
     } else {
-      global_time = cgh->cctk_time;
+      global_time = cctkGH->cctk_time;
     }
     
     // Unset number of time levels
@@ -297,8 +310,8 @@ namespace Carpet {
     timereflevelfact = timereffacts.at (reflevels - 1);
     // TODO: use spacereffacts.at (reflevel - 1) instead?
     spacereflevelfact = ivect(-deadbeef);
-    ivect::ref(cgh->cctk_levfac) = spacereflevelfact;
-    cgh->cctk_timefac = timereflevelfact;
+    ivect::ref(cctkGH->cctk_levfac) = spacereflevelfact;
+    cctkGH->cctk_timefac = timereflevelfact;
     
     assert (is_global_mode());
   }
@@ -307,7 +320,7 @@ namespace Carpet {
   
   // Set singlemap mode
   
-  void enter_singlemap_mode (cGH * const cgh, int const m)
+  void enter_singlemap_mode (cGH * const cctkGH, int const m)
   {
     assert (is_level_mode());
     assert (m>=0 and m<maps);
@@ -318,8 +331,8 @@ namespace Carpet {
     if (maps > 1) {
       // Set space delta
       for (int d=0; d<dim; ++d) {
-        cgh->cctk_origin_space[d] = origin_space.at(map).at(mglevel)[d];
-        cgh->cctk_delta_space[d] = delta_space.at(map)[d] * mglevelfact;
+        cctkGH->cctk_origin_space[d] = origin_space.at(map).at(mglevel)[d];
+        cctkGH->cctk_delta_space[d] = delta_space.at(map)[d] * mglevelfact;
       }
     }
     
@@ -328,25 +341,25 @@ namespace Carpet {
     const ibbox& baseext   = vdd.at(map)->bases.at(mglevel).at(reflevel).exterior;
     assert (all (baseext.lower() % baseext.stride() == 0));
     assert (all ((baseext.lower() - coarseext.lower()) % baseext.stride() == 0));
-    ivect::ref(cgh->cctk_levoff) = (baseext.lower() - coarseext.lower()) / baseext.stride();
-    ivect::ref(cgh->cctk_levoffdenom) = 1;
-    ivect::ref(cgh->cctk_gsh) = baseext.shape() / baseext.stride();
+    ivect::ref(cctkGH->cctk_levoff) = (baseext.lower() - coarseext.lower()) / baseext.stride();
+    ivect::ref(cctkGH->cctk_levoffdenom) = 1;
+    ivect::ref(cctkGH->cctk_gsh) = baseext.shape() / baseext.stride();
     assert (all (vdd.at(map)->ghosts[0] == vdd.at(map)->ghosts[1]));
-    ivect::ref(cgh->cctk_nghostzones) = vdd.at(map)->ghosts[0];
+    ivect::ref(cctkGH->cctk_nghostzones) = vdd.at(map)->ghosts[0];
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_GroupTypeI(group) == CCTK_GF) {
         ivect::ref(const_cast<int*>(groupdata.at(group).info.gsh))
-          = ivect::ref(cgh->cctk_gsh);
+          = ivect::ref(cctkGH->cctk_gsh);
         ivect::ref(const_cast<int*>(groupdata.at(group).info.nghostzones))
-          = ivect::ref(cgh->cctk_nghostzones);
+          = ivect::ref(cctkGH->cctk_nghostzones);
       }
     }
     
     assert (is_singlemap_mode());
   }
   
-  void leave_singlemap_mode (cGH * const cgh)
+  void leave_singlemap_mode (cGH * const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -358,26 +371,26 @@ namespace Carpet {
     if (maps > 1) {
       // Save and unset space delta
       for (int d=0; d<dim; ++d) {
-        origin_space.at(map).at(mglevel)[d] = cgh->cctk_origin_space[d];
-        delta_space.at(map)[d] = cgh->cctk_delta_space[d] / mglevelfact;
-        cgh->cctk_origin_space[d] = -424242.0;
-        cgh->cctk_delta_space[d] = -424242.0;
+        origin_space.at(map).at(mglevel)[d] = cctkGH->cctk_origin_space[d];
+        delta_space.at(map)[d] = cctkGH->cctk_delta_space[d] / mglevelfact;
+        cctkGH->cctk_origin_space[d] = -424242.0;
+        cctkGH->cctk_delta_space[d] = -424242.0;
       }
     }
     
     // Unset grid shape
-    ivect::ref(cgh->cctk_levoff) = deadbeef;
-    ivect::ref(cgh->cctk_levoffdenom) = 0;
-    ivect::ref(cgh->cctk_gsh) = deadbeef;
-//     ivect::ref(cgh->cctk_nghostzones) = deadbeef;
-    ivect::ref(cgh->cctk_nghostzones) = vdd.at(map)->ghosts[0];
+    ivect::ref(cctkGH->cctk_levoff) = deadbeef;
+    ivect::ref(cctkGH->cctk_levoffdenom) = 0;
+    ivect::ref(cctkGH->cctk_gsh) = deadbeef;
+//     ivect::ref(cctkGH->cctk_nghostzones) = deadbeef;
+    ivect::ref(cctkGH->cctk_nghostzones) = vdd.at(map)->ghosts[0];
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_GroupTypeI(group) == CCTK_GF) {
         ivect::ref(const_cast<int*>(groupdata.at(group).info.gsh))
-          = ivect::ref(cgh->cctk_gsh);
+          = ivect::ref(cctkGH->cctk_gsh);
         ivect::ref(const_cast<int*>(groupdata.at(group).info.nghostzones))
-          = ivect::ref(cgh->cctk_nghostzones);
+          = ivect::ref(cctkGH->cctk_nghostzones);
       }
     }
     
@@ -390,7 +403,7 @@ namespace Carpet {
   
   // Set local mode
   
-  void enter_local_mode (cGH * const cgh, int const c)
+  void enter_local_mode (cGH * const cctkGH, int const c)
   {
     assert (is_singlemap_mode());
     assert (c>=0 and c<vhh.at(map)->components(reflevel));
@@ -403,54 +416,54 @@ namespace Carpet {
     const bbvect& obnds = vhh.at(map)->outer_boundaries().at(reflevel).at(component);
     const ibbox& ext = vdd.at(map)->boxes.at(mglevel).at(reflevel).at(component).exterior;
     
-    ivect::ref(cgh->cctk_lsh) = ext.shape() / ext.stride();
-    ivect::ref(cgh->cctk_lbnd)
+    ivect::ref(cctkGH->cctk_lsh) = ext.shape() / ext.stride();
+    ivect::ref(cctkGH->cctk_lbnd)
       = (ext.lower() - baseext.lower()) / ext.stride();
-    ivect::ref(cgh->cctk_ubnd)
+    ivect::ref(cctkGH->cctk_ubnd)
       = (ext.upper() - baseext.lower()) / ext.stride();
-    ivect::ref(cgh->cctk_from) = 0;
-    ivect::ref(cgh->cctk_to) = ivect::ref(cgh->cctk_lsh);
+    ivect::ref(cctkGH->cctk_from) = 0;
+    ivect::ref(cctkGH->cctk_to) = ivect::ref(cctkGH->cctk_lsh);
     
     for (int d=0; d<dim; ++d) {
-      cgh->cctk_bbox[2*d  ] = obnds[d][0];
-      cgh->cctk_bbox[2*d+1] = obnds[d][1];
+      cctkGH->cctk_bbox[2*d  ] = obnds[d][0];
+      cctkGH->cctk_bbox[2*d+1] = obnds[d][1];
     }
       
     for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
       for (int d=0; d<dim; ++d) {
         // TODO: support staggering
-        cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
+        cctkGH->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cctkGH->cctk_lsh[d];
       }
     }
     
     for (int d=0; d<dim; ++d) {
-      assert (cgh->cctk_lsh[d] >= 0);
-      assert (cgh->cctk_lsh[d] <= cgh->cctk_gsh[d]);
-      assert (cgh->cctk_lbnd[d] >= 0);
-      assert (cgh->cctk_lbnd[d] <= cgh->cctk_ubnd[d] + 1);
-      assert (cgh->cctk_ubnd[d] < cgh->cctk_gsh[d]);
-      assert (cgh->cctk_lbnd[d] + cgh->cctk_lsh[d] - 1 == cgh->cctk_ubnd[d]);
-      assert (cgh->cctk_lbnd[d] <= cgh->cctk_ubnd[d]+1);
-      assert (cgh->cctk_from[d] >= 0);
-      assert (cgh->cctk_from[d] <= cgh->cctk_to[d]);
-      assert (cgh->cctk_to[d] <= cgh->cctk_lsh[d]);
+      assert (cctkGH->cctk_lsh[d] >= 0);
+      assert (cctkGH->cctk_lsh[d] <= cctkGH->cctk_gsh[d]);
+      assert (cctkGH->cctk_lbnd[d] >= 0);
+      assert (cctkGH->cctk_lbnd[d] <= cctkGH->cctk_ubnd[d] + 1);
+      assert (cctkGH->cctk_ubnd[d] < cctkGH->cctk_gsh[d]);
+      assert (cctkGH->cctk_lbnd[d] + cctkGH->cctk_lsh[d] - 1 == cctkGH->cctk_ubnd[d]);
+      assert (cctkGH->cctk_lbnd[d] <= cctkGH->cctk_ubnd[d]+1);
+      assert (cctkGH->cctk_from[d] >= 0);
+      assert (cctkGH->cctk_from[d] <= cctkGH->cctk_to[d]);
+      assert (cctkGH->cctk_to[d] <= cctkGH->cctk_lsh[d]);
     }
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_GroupTypeI(group) == CCTK_GF) {
         
         ivect::ref(const_cast<int*>(groupdata.at(group).info.lsh))
-          = ivect::ref(cgh->cctk_lsh);
+          = ivect::ref(cctkGH->cctk_lsh);
         ivect::ref(const_cast<int*>(groupdata.at(group).info.lbnd))
-          = ivect::ref(cgh->cctk_lbnd);
+          = ivect::ref(cctkGH->cctk_lbnd);
         ivect::ref(const_cast<int*>(groupdata.at(group).info.ubnd))
-          = ivect::ref(cgh->cctk_ubnd);
+          = ivect::ref(cctkGH->cctk_ubnd);
         
         for (int d=0; d<dim; ++d) {
           const_cast<int*>(groupdata.at(group).info.bbox)[2*d  ]
-            = cgh->cctk_bbox[2*d  ];
+            = cctkGH->cctk_bbox[2*d  ];
           const_cast<int*>(groupdata.at(group).info.bbox)[2*d+1]
-            = cgh->cctk_bbox[2*d+1];
+            = cctkGH->cctk_bbox[2*d+1];
         }
         
         const int numvars = CCTK_NumVarsInGroupI (group);
@@ -459,7 +472,7 @@ namespace Carpet {
           assert (firstvar>=0);
           const int max_tl = CCTK_MaxTimeLevelsGI (group);
           assert (max_tl>=0);
-          const int active_tl = CCTK_ActiveTimeLevelsGI (cgh, group);
+          const int active_tl = CCTK_ActiveTimeLevelsGI (cctkGH, group);
           assert (active_tl>=0 and active_tl<=max_tl);
           
 //           assert (vhh.at(map)->is_local(reflevel,component));
@@ -472,9 +485,9 @@ namespace Carpet {
               if (ff and tl<active_tl) {
                 gdata * const data = (*ff) (tl, reflevel, component, mglevel);
                 assert (data);
-                cgh->data[firstvar+var][tl] = data->storage();
+                cctkGH->data[firstvar+var][tl] = data->storage();
               } else {
-                cgh->data[firstvar+var][tl] = NULL;
+                cctkGH->data[firstvar+var][tl] = NULL;
               }
             }
           }
@@ -486,7 +499,7 @@ namespace Carpet {
     assert (is_local_mode());
   }
   
-  void leave_local_mode (cGH * const cgh)
+  void leave_local_mode (cGH * const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -496,21 +509,21 @@ namespace Carpet {
     if (component == -1) return; // early return
     
     // Unset cGH fields
-    ivect::ref(cgh->cctk_lsh) = deadbeef;
-    ivect::ref(cgh->cctk_lbnd) = -deadbeef;
-    ivect::ref(cgh->cctk_ubnd) = deadbeef;
-    ivect::ref(cgh->cctk_from) = -deadbeef;
-    ivect::ref(cgh->cctk_to) = deadbeef;
+    ivect::ref(cctkGH->cctk_lsh) = deadbeef;
+    ivect::ref(cctkGH->cctk_lbnd) = -deadbeef;
+    ivect::ref(cctkGH->cctk_ubnd) = deadbeef;
+    ivect::ref(cctkGH->cctk_from) = -deadbeef;
+    ivect::ref(cctkGH->cctk_to) = deadbeef;
     
     for (int d=0; d<dim; ++d) {
-      cgh->cctk_bbox[2*d  ] = deadbeef;
-      cgh->cctk_bbox[2*d+1] = deadbeef;
+      cctkGH->cctk_bbox[2*d  ] = deadbeef;
+      cctkGH->cctk_bbox[2*d+1] = deadbeef;
     }
       
     for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
       for (int d=0; d<dim; ++d) {
         // TODO: support staggering
-        cgh->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cgh->cctk_lsh[d];
+        cctkGH->cctk_lssh[CCTK_LSSH_IDX(stg,d)] = cctkGH->cctk_lsh[d];
       }
     }
     
@@ -518,17 +531,17 @@ namespace Carpet {
       if (CCTK_GroupTypeI(group) == CCTK_GF) {
         
         ivect::ref(const_cast<int*>(groupdata.at(group).info.lsh))
-          = ivect::ref(cgh->cctk_lsh);
+          = ivect::ref(cctkGH->cctk_lsh);
         ivect::ref(const_cast<int*>(groupdata.at(group).info.lbnd))
-          = ivect::ref(cgh->cctk_lbnd);
+          = ivect::ref(cctkGH->cctk_lbnd);
         ivect::ref(const_cast<int*>(groupdata.at(group).info.ubnd))
-          = ivect::ref(cgh->cctk_ubnd);
+          = ivect::ref(cctkGH->cctk_ubnd);
         
         for (int d=0; d<dim; ++d) {
           const_cast<int*>(groupdata.at(group).info.bbox)[2*d  ]
-            = cgh->cctk_bbox[2*d  ];
+            = cctkGH->cctk_bbox[2*d  ];
           const_cast<int*>(groupdata.at(group).info.bbox)[2*d+1]
-            = cgh->cctk_bbox[2*d+1];
+            = cctkGH->cctk_bbox[2*d+1];
         }
         
         const int numvars = CCTK_NumVarsInGroupI (group);
@@ -542,7 +555,7 @@ namespace Carpet {
           for (int var=0; var<numvars; ++var) {
             assert (firstvar+var<CCTK_NumVars());
             for (int tl=0; tl<max_tl; ++tl) {
-              cgh->data[firstvar+var][tl] = NULL;
+              cctkGH->data[firstvar+var][tl] = NULL;
             }
           }
         }
@@ -563,15 +576,15 @@ namespace Carpet {
   
   // mglevel iterator
   
-  mglevel_iterator::mglevel_iterator (cGH const * const cgh_)
-    : cgh(const_cast<cGH*>(cgh_)), ml(mglevels-1)
+  mglevel_iterator::mglevel_iterator (cGH const * const cctkGH_)
+    : cctkGH(const_cast<cGH*>(cctkGH_)), ml(mglevels-1)
   {
-    enter_global_mode (cgh, ml);
+    enter_global_mode (cctkGH, ml);
   }
   
   mglevel_iterator::~mglevel_iterator ()
   {
-    leave_global_mode (cgh);
+    leave_global_mode (cctkGH);
   }
   
   bool mglevel_iterator::done () const
@@ -582,9 +595,9 @@ namespace Carpet {
   void mglevel_iterator::step ()
   {
     -- ml;
-    if (! done()) {
-      leave_global_mode (cgh);
-      enter_global_mode (cgh, ml);
+    if (not done()) {
+      leave_global_mode (cctkGH);
+      enter_global_mode (cctkGH, ml);
     }
   }
   
@@ -592,15 +605,15 @@ namespace Carpet {
   
   // reverse mglevel iterator
   
-  reverse_mglevel_iterator::reverse_mglevel_iterator (cGH const * const cgh_)
-    : cgh(const_cast<cGH*>(cgh_)), ml(0)
+  reverse_mglevel_iterator::reverse_mglevel_iterator (cGH const * const cctkGH_)
+    : cctkGH(const_cast<cGH*>(cctkGH_)), ml(0)
   {
-    enter_global_mode (cgh, ml);
+    enter_global_mode (cctkGH, ml);
   }
   
   reverse_mglevel_iterator::~reverse_mglevel_iterator ()
   {
-    leave_global_mode (cgh);
+    leave_global_mode (cctkGH);
   }
   
   bool reverse_mglevel_iterator::done () const
@@ -611,9 +624,9 @@ namespace Carpet {
   void reverse_mglevel_iterator::step ()
   {
     ++ ml;
-    if (! done()) {
-      leave_global_mode (cgh);
-      enter_global_mode (cgh, ml);
+    if (not done()) {
+      leave_global_mode (cctkGH);
+      enter_global_mode (cctkGH, ml);
     }
   }
   
@@ -621,15 +634,15 @@ namespace Carpet {
   
   // reflevel iterator
   
-  reflevel_iterator::reflevel_iterator (cGH const * const cgh_)
-    : cgh(const_cast<cGH*>(cgh_)), rl(0)
+  reflevel_iterator::reflevel_iterator (cGH const * const cctkGH_)
+    : cctkGH(const_cast<cGH*>(cctkGH_)), rl(0)
   {
-    enter_level_mode (cgh, rl);
+    enter_level_mode (cctkGH, rl);
   }
   
   reflevel_iterator::~reflevel_iterator ()
   {
-    leave_level_mode (cgh);
+    leave_level_mode (cctkGH);
   }
   
   bool reflevel_iterator::done () const
@@ -640,9 +653,9 @@ namespace Carpet {
   void reflevel_iterator::step ()
   {
     ++ rl;
-    if (! done()) {
-      leave_level_mode (cgh);
-      enter_level_mode (cgh, rl);
+    if (not done()) {
+      leave_level_mode (cctkGH);
+      enter_level_mode (cctkGH, rl);
     }
   }
   
@@ -650,15 +663,15 @@ namespace Carpet {
   
   // reverse reflevel iterator
   
-  reverse_reflevel_iterator::reverse_reflevel_iterator (cGH const * const cgh_)
-    : cgh(const_cast<cGH*>(cgh_)), rl(reflevels-1)
+  reverse_reflevel_iterator::reverse_reflevel_iterator (cGH const * const cctkGH_)
+    : cctkGH(const_cast<cGH*>(cctkGH_)), rl(reflevels-1)
   {
-    enter_level_mode (cgh, rl);
+    enter_level_mode (cctkGH, rl);
   }
   
   reverse_reflevel_iterator::~reverse_reflevel_iterator ()
   {
-    leave_level_mode (cgh);
+    leave_level_mode (cctkGH);
   }
   
   bool reverse_reflevel_iterator::done () const
@@ -669,9 +682,9 @@ namespace Carpet {
   void reverse_reflevel_iterator::step ()
   {
     -- rl;
-    if (! done()) {
-      leave_level_mode (cgh);
-      enter_level_mode (cgh, rl);
+    if (not done()) {
+      leave_level_mode (cctkGH);
+      enter_level_mode (cctkGH, rl);
     }
   }
   
@@ -679,18 +692,18 @@ namespace Carpet {
   
   // map iterator
   
-  map_iterator::map_iterator (cGH const * const cgh_,
+  map_iterator::map_iterator (cGH const * const cctkGH_,
                               int const grouptype_)
-    : cgh(const_cast<cGH*>(cgh_)), grouptype(grouptype_), m(0)
+    : cctkGH(const_cast<cGH*>(cctkGH_)), grouptype(grouptype_), m(0)
   {
     assert (grouptype == CCTK_GF
             or grouptype == CCTK_ARRAY or grouptype == CCTK_SCALAR);
-    enter_singlemap_mode (cgh, m);
+    enter_singlemap_mode (cctkGH, m);
   }
   
   map_iterator::~map_iterator ()
   {
-    leave_singlemap_mode (cgh);
+    leave_singlemap_mode (cctkGH);
   }
   
   bool map_iterator::done () const
@@ -701,9 +714,9 @@ namespace Carpet {
   void map_iterator::step ()
   {
     ++ m;
-    if (! done()) {
-      leave_singlemap_mode (cgh);
-      enter_singlemap_mode (cgh, m);
+    if (not done()) {
+      leave_singlemap_mode (cctkGH);
+      enter_singlemap_mode (cctkGH, m);
     }
   }
   
@@ -711,33 +724,33 @@ namespace Carpet {
   
   // Local mode iterator
   
-  component_iterator::component_iterator (cGH const * const cgh_,
+  component_iterator::component_iterator (cGH const * const cctkGH_,
                                           int const grouptype_)
-    : cgh(const_cast<cGH*>(cgh_)), grouptype(grouptype_), c(0)
+    : cctkGH(const_cast<cGH*>(cctkGH_)), grouptype(grouptype_), c(0)
   {
     assert (grouptype == CCTK_GF
             or grouptype == CCTK_ARRAY or grouptype == CCTK_SCALAR);
-    enter_local_mode (cgh, c);
+    enter_local_mode (cctkGH, c);
   }
   
   component_iterator::~component_iterator ()
   {
-    leave_local_mode (cgh);
+    leave_local_mode (cctkGH);
   }
   
   bool component_iterator::done () const
   {
     return (grouptype == CCTK_GF
             ? c >= vhh.at(map)->components(reflevel)
-            : c >= CCTK_nProcs(cgh));
+            : c >= CCTK_nProcs(cctkGH));
   }
   
   void component_iterator::step ()
   {
     ++ c;
-    if (! done()) {
-      leave_local_mode (cgh);
-      enter_local_mode (cgh, c);
+    if (not done()) {
+      leave_local_mode (cctkGH);
+      enter_local_mode (cctkGH, c);
     }
   }
   
@@ -745,9 +758,9 @@ namespace Carpet {
   
   // Processor local mode iterator
   
-  local_component_iterator::local_component_iterator (cGH const * const cgh_,
+  local_component_iterator::local_component_iterator (cGH const * const cctkGH_,
                                                       int const grouptype_)
-    : cgh(const_cast<cGH*>(cgh_)), grouptype(grouptype_), c(-1)
+    : cctkGH(const_cast<cGH*>(cctkGH_)), grouptype(grouptype_), c(-1)
   {
     assert (grouptype == CCTK_GF
             or grouptype == CCTK_ARRAY or grouptype == CCTK_SCALAR);
@@ -757,26 +770,26 @@ namespace Carpet {
   
   local_component_iterator::~local_component_iterator ()
   {
-    leave_local_mode (cgh);
+    leave_local_mode (cctkGH);
   }
   
   bool local_component_iterator::done () const
   {
     return c >= (grouptype == CCTK_GF
                  ? vhh.at(map)->components(reflevel)
-                 : CCTK_nProcs(cgh));
+                 : CCTK_nProcs(cctkGH));
   }
   
   void local_component_iterator::step ()
   {
     do {
       ++ c;
-    } while (! done() and ! (grouptype == CCTK_GF
-                             ? vhh.at(map)->is_local(reflevel, c)
-                             : c == CCTK_MyProc(cgh)));
-    if (! done()) {
-      leave_local_mode (cgh);
-      enter_local_mode (cgh, c);
+    } while (not done() and not (grouptype == CCTK_GF
+                                 ? vhh.at(map)->is_local(reflevel, c)
+                                 : c == CCTK_MyProc(cctkGH)));
+    if (not done()) {
+      leave_local_mode (cctkGH);
+      enter_local_mode (cctkGH, c);
     }
   }
   
@@ -788,14 +801,14 @@ namespace Carpet {
   
   // Singlemap escape
   
-  singlemap_escape::singlemap_escape (cGH const * const cgh_)
-    : cgh(const_cast<cGH*>(cgh_)), c(component)
+  singlemap_escape::singlemap_escape (cGH const * const cctkGH_)
+    : cctkGH(const_cast<cGH*>(cctkGH_)), c(component)
   {
-    assert (! is_meta_mode());
-    assert (! is_global_mode());
-    assert (! is_level_mode());
-    if (! is_singlemap_mode()) {
-      leave_local_mode (cgh);
+    assert (not is_meta_mode());
+    assert (not is_global_mode());
+    assert (not is_level_mode());
+    if (not is_singlemap_mode()) {
+      leave_local_mode (cctkGH);
     }
   }
   
@@ -803,7 +816,7 @@ namespace Carpet {
   {
     assert (is_singlemap_mode());
     if (c != -1) {
-      enter_local_mode (cgh, c);
+      enter_local_mode (cctkGH, c);
     }
   }
   
@@ -811,16 +824,16 @@ namespace Carpet {
   
   // Level escape
   
-  level_escape::level_escape (cGH const * const cgh_)
-    : cgh(const_cast<cGH*>(cgh_)), m(map), c(component)
+  level_escape::level_escape (cGH const * const cctkGH_)
+    : cctkGH(const_cast<cGH*>(cctkGH_)), m(map), c(component)
   {
-    assert (! is_meta_mode());
-    assert (! is_global_mode());
-    if (! is_level_mode()) {
-      if (! is_singlemap_mode()) {
-        leave_local_mode (cgh);
+    assert (not is_meta_mode());
+    assert (not is_global_mode());
+    if (not is_level_mode()) {
+      if (not is_singlemap_mode()) {
+        leave_local_mode (cctkGH);
       }
-      leave_singlemap_mode (cgh);
+      leave_singlemap_mode (cctkGH);
     }
   }
   
@@ -828,9 +841,9 @@ namespace Carpet {
   {
     assert (is_level_mode());
     if (m != -1) {
-      enter_singlemap_mode (cgh, m);
+      enter_singlemap_mode (cctkGH, m);
       if (c != -1) {
-        enter_local_mode (cgh, c);
+        enter_local_mode (cctkGH, c);
       }
     }
   }
@@ -839,18 +852,18 @@ namespace Carpet {
   
   // Global escape
   
-  global_escape::global_escape (cGH const * const cgh_)
-    : cgh(const_cast<cGH*>(cgh_)), rl(reflevel), m(map), c(component)
+  global_escape::global_escape (cGH const * const cctkGH_)
+    : cctkGH(const_cast<cGH*>(cctkGH_)), rl(reflevel), m(map), c(component)
   {
-    assert (! is_meta_mode());
-    if (! is_global_mode()) {
-      if (! is_level_mode()) {
-        if (! is_singlemap_mode()) {
-          leave_local_mode (cgh);
+    assert (not is_meta_mode());
+    if (not is_global_mode()) {
+      if (not is_level_mode()) {
+        if (not is_singlemap_mode()) {
+          leave_local_mode (cctkGH);
         }
-        leave_singlemap_mode (cgh);
+        leave_singlemap_mode (cctkGH);
       }
-      leave_level_mode (cgh);
+      leave_level_mode (cctkGH);
     }
   }
   
@@ -858,11 +871,11 @@ namespace Carpet {
   {
     assert (is_global_mode());
     if (rl != -1) {
-      enter_level_mode (cgh, rl);
+      enter_level_mode (cctkGH, rl);
       if (m != -1) {
-        enter_singlemap_mode (cgh, m);
+        enter_singlemap_mode (cctkGH, m);
         if (c != -1) {
-          enter_local_mode (cgh, c);
+          enter_local_mode (cctkGH, c);
         }
       }
     }
@@ -872,20 +885,20 @@ namespace Carpet {
   
   // Meta escape
   
-  meta_escape::meta_escape (cGH const * const cgh_)
-    : cgh(const_cast<cGH*>(cgh_)), ml(mglevel), rl(reflevel), m(map), c(component)
+  meta_escape::meta_escape (cGH const * const cctkGH_)
+    : cctkGH(const_cast<cGH*>(cctkGH_)), ml(mglevel), rl(reflevel), m(map), c(component)
   {
-    if (! is_meta_mode()) {
-      if (! is_global_mode()) {
-        if (! is_level_mode()) {
-          if (! is_singlemap_mode()) {
-            leave_local_mode (cgh);
+    if (not is_meta_mode()) {
+      if (not is_global_mode()) {
+        if (not is_level_mode()) {
+          if (not is_singlemap_mode()) {
+            leave_local_mode (cctkGH);
           }
-          leave_singlemap_mode (cgh);
+          leave_singlemap_mode (cctkGH);
         }
-        leave_level_mode (cgh);
+        leave_level_mode (cctkGH);
       }
-      leave_global_mode (cgh);
+      leave_global_mode (cctkGH);
     }
   }
   
@@ -893,13 +906,13 @@ namespace Carpet {
   {
     assert (is_meta_mode());
     if (ml != -1) {
-      enter_global_mode (cgh, ml);
+      enter_global_mode (cctkGH, ml);
       if (rl != -1) {
-        enter_level_mode (cgh, rl);
+        enter_level_mode (cctkGH, rl);
         if (m != -1) {
-          enter_singlemap_mode (cgh, m);
+          enter_singlemap_mode (cctkGH, m);
           if (c != -1) {
-            enter_local_mode (cgh, c);
+            enter_local_mode (cctkGH, c);
           }
         }
       }
@@ -912,113 +925,113 @@ namespace Carpet {
   // Call functions in specific modes
   //
   
-  int CallLocalFunction (cGH * const cgh,
-                         void (* const function) (cGH * const cgh))
+  int CallLocalFunction (cGH * const cctkGH,
+                         void (* const function) (cGH * const cctkGH))
   {
     if (is_meta_mode()) {
-      BEGIN_MGLEVEL_LOOP(cgh) {
-        BEGIN_REFLEVEL_LOOP(cgh) {
-          BEGIN_MAP_LOOP(cgh, CCTK_GF) {
-            BEGIN_LOCAL_COMPONENT_LOOP(cgh, CCTK_GF) {
-              function (cgh);
+      BEGIN_MGLEVEL_LOOP(cctkGH) {
+        BEGIN_REFLEVEL_LOOP(cctkGH) {
+          BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+            BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
+              function (cctkGH);
             } END_LOCAL_COMPONENT_LOOP;
           } END_MAP_LOOP;
         } END_REFLEVEL_LOOP;
       } END_MGLEVEL_LOOP;
     } else if (is_global_mode()) {
-      BEGIN_REFLEVEL_LOOP(cgh) {
-        BEGIN_MAP_LOOP(cgh, CCTK_GF) {
-          BEGIN_LOCAL_COMPONENT_LOOP(cgh, CCTK_GF) {
-            function (cgh);
+      BEGIN_REFLEVEL_LOOP(cctkGH) {
+        BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+          BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
+            function (cctkGH);
           } END_LOCAL_COMPONENT_LOOP;
         } END_MAP_LOOP;
       } END_REFLEVEL_LOOP;
     } else if (is_level_mode()) {
-      BEGIN_MAP_LOOP(cgh, CCTK_GF) {
-        BEGIN_LOCAL_COMPONENT_LOOP(cgh, CCTK_GF) {
-          function (cgh);
+      BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+        BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
+          function (cctkGH);
         } END_LOCAL_COMPONENT_LOOP;
       } END_MAP_LOOP;
     } else if (is_singlemap_mode()) {
-      BEGIN_LOCAL_COMPONENT_LOOP(cgh, CCTK_GF) {
-        function (cgh);
+      BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
+        function (cctkGH);
       } END_LOCAL_COMPONENT_LOOP;
     } else {
-      function (cgh);
+      function (cctkGH);
     }
     return 0;
   }
   
-  int CallSinglemapFunction (cGH * const cgh,
-                             void (* const function) (cGH * const cgh))
+  int CallSinglemapFunction (cGH * const cctkGH,
+                             void (* const function) (cGH * const cctkGH))
   {
     if (is_meta_mode()) {
-      BEGIN_MGLEVEL_LOOP(cgh) {
-        BEGIN_REFLEVEL_LOOP(cgh) {
-          BEGIN_MAP_LOOP(cgh, CCTK_GF) {
-            function (cgh);
+      BEGIN_MGLEVEL_LOOP(cctkGH) {
+        BEGIN_REFLEVEL_LOOP(cctkGH) {
+          BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+            function (cctkGH);
           } END_MAP_LOOP;
         } END_REFLEVEL_LOOP;
       } END_MGLEVEL_LOOP;
     } else if (is_global_mode()) {
-      BEGIN_REFLEVEL_LOOP(cgh) {
-        BEGIN_MAP_LOOP(cgh, CCTK_GF) {
-          function (cgh);
+      BEGIN_REFLEVEL_LOOP(cctkGH) {
+        BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+          function (cctkGH);
         } END_MAP_LOOP;
       } END_REFLEVEL_LOOP;
     } else if (is_level_mode()) {
-      BEGIN_MAP_LOOP(cgh, CCTK_GF) {
-        function (cgh);
+      BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+        function (cctkGH);
       } END_MAP_LOOP;
     } else {
-      BEGIN_SINGLEMAP_MODE(cgh) {
-        function (cgh);
+      BEGIN_SINGLEMAP_MODE(cctkGH) {
+        function (cctkGH);
       } END_SINGLEMAP_MODE;
     }
     return 0;
   }
   
-  int CallLevelFunction (cGH * const cgh,
-                         void (* const function) (cGH * const cgh))
+  int CallLevelFunction (cGH * const cctkGH,
+                         void (* const function) (cGH * const cctkGH))
   {
     if (is_meta_mode()) {
-      BEGIN_MGLEVEL_LOOP(cgh) {
-        BEGIN_REFLEVEL_LOOP(cgh) {
-          function (cgh);
+      BEGIN_MGLEVEL_LOOP(cctkGH) {
+        BEGIN_REFLEVEL_LOOP(cctkGH) {
+          function (cctkGH);
         } END_REFLEVEL_LOOP;
       } END_MGLEVEL_LOOP;
     } else if (is_global_mode()) {
-      BEGIN_REFLEVEL_LOOP(cgh) {
-        function (cgh);
+      BEGIN_REFLEVEL_LOOP(cctkGH) {
+        function (cctkGH);
       } END_REFLEVEL_LOOP;
     } else {
-      BEGIN_LEVEL_MODE(cgh) {
-        function (cgh);
+      BEGIN_LEVEL_MODE(cctkGH) {
+        function (cctkGH);
       } END_LEVEL_MODE;
     }
     return 0;
   }
   
-  int CallGlobalFunction (cGH * const cgh,
-                          void (* const function) (cGH * const cgh))
+  int CallGlobalFunction (cGH * const cctkGH,
+                          void (* const function) (cGH * const cctkGH))
   {
     if (is_meta_mode()) {
-      BEGIN_MGLEVEL_LOOP(cgh) {
-        function (cgh);
+      BEGIN_MGLEVEL_LOOP(cctkGH) {
+        function (cctkGH);
       } END_MGLEVEL_LOOP;
     } else {
-      BEGIN_GLOBAL_MODE(cgh) {
-        function (cgh);
+      BEGIN_GLOBAL_MODE(cctkGH) {
+        function (cctkGH);
       } END_GLOBAL_MODE;
     }
     return 0;
   }
   
-  int CallMetaFunction (cGH * const cgh,
-                        void (* const function) (cGH * const cgh))
+  int CallMetaFunction (cGH * const cctkGH,
+                        void (* const function) (cGH * const cctkGH))
   {
-    BEGIN_META_MODE(cgh) {
-      function (cgh);
+    BEGIN_META_MODE(cctkGH) {
+      function (cctkGH);
     } END_META_MODE;
     return 0;
   }
@@ -1031,58 +1044,58 @@ namespace Carpet {
   
   // mglevel setter
   
-  mglevel_setter::mglevel_setter (cGH const * const cgh_, int const ml)
-    : cgh(const_cast<cGH*>(cgh_))
+  mglevel_setter::mglevel_setter (cGH const * const cctkGH_, int const ml)
+    : cctkGH(const_cast<cGH*>(cctkGH_))
   {
     assert (is_meta_mode());
-    enter_global_mode (cgh, ml);
+    enter_global_mode (cctkGH, ml);
   }
   
   mglevel_setter::~mglevel_setter ()
   {
-    leave_global_mode (cgh);
+    leave_global_mode (cctkGH);
   }
   
   // reflevel setter
   
-  reflevel_setter::reflevel_setter (cGH const * const cgh_, int const rl)
-    : cgh(const_cast<cGH*>(cgh_))
+  reflevel_setter::reflevel_setter (cGH const * const cctkGH_, int const rl)
+    : cctkGH(const_cast<cGH*>(cctkGH_))
   {
     assert (is_global_mode());
-    enter_level_mode (cgh, rl);
+    enter_level_mode (cctkGH, rl);
   }
   
   reflevel_setter::~reflevel_setter ()
   {
-    leave_level_mode (cgh);
+    leave_level_mode (cctkGH);
   }
   
   // map setter
   
-  map_setter::map_setter (cGH const * const cgh_, int const m)
-    : cgh(const_cast<cGH*>(cgh_))
+  map_setter::map_setter (cGH const * const cctkGH_, int const m)
+    : cctkGH(const_cast<cGH*>(cctkGH_))
   {
     assert (is_level_mode());
-    enter_singlemap_mode (cgh, m);
+    enter_singlemap_mode (cctkGH, m);
   }
   
   map_setter::~map_setter ()
   {
-    leave_singlemap_mode (cgh);
+    leave_singlemap_mode (cctkGH);
   }
   
   // component setter
   
-  component_setter::component_setter (cGH const * const cgh_, int const c)
-    : cgh(const_cast<cGH*>(cgh_))
+  component_setter::component_setter (cGH const * const cctkGH_, int const c)
+    : cctkGH(const_cast<cGH*>(cctkGH_))
   {
     assert (is_singlemap_mode());
-    enter_local_mode (cgh, c);
+    enter_local_mode (cctkGH, c);
   }
   
   component_setter::~component_setter ()
   {
-    leave_local_mode (cgh);
+    leave_local_mode (cctkGH);
   }
   
   
@@ -1091,17 +1104,17 @@ namespace Carpet {
   // Call a scheduling group
   //
   
-  int CallScheduleGroup (cGH * const cgh, const char * const group)
+  int CallScheduleGroup (cGH * const cctkGH, const char * const group)
   {
-    CCTK_ScheduleTraverse (group, cgh, CallFunction);
+    CCTK_ScheduleTraverse (group, cctkGH, CallFunction);
     return 0;
   }
   
   extern "C" void CCTK_FCALL CCTK_FNAME(CallScheduleGroup)
-    (int * const ierr, cGH * const * const cgh, ONE_FORTSTRING_ARG)
+    (int * const ierr, cGH * const * const cctkGH, ONE_FORTSTRING_ARG)
   {
     ONE_FORTSTRING_CREATE (group);
-    *ierr = CallScheduleGroup (*cgh, group);
+    *ierr = CallScheduleGroup (*cctkGH, group);
     free (group);
   }
   
