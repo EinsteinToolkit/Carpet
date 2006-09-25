@@ -394,6 +394,47 @@ namespace CarpetRegrid2 {
            bb.stride());
         
         clipped |= clipped_bb;
+        
+        if (symmetry_rotating90) {
+          assert (0);           // There is also a paramwarn about this
+        }
+        
+        if (symmetry_rotating180) {
+          // Make the boxes rotating-180 symmetric
+          if (lower_is_outside_lower[0]) {
+            ivect const ilo = clipped_bb.lower();
+            ivect const iup = clipped_bb.upper();
+            ivect const istr = clipped_bb.stride();
+            
+            // Origin
+            rvect const axis (physical_lower[0],
+                              (physical_lower[1] + physical_upper[1]) / 2,
+                              physical_lower[2]); // z component is unused
+            ivect const iaxis0 = rpos2ipos  (axis, origin, scale, hh, rl);
+            assert (all (iaxis0 % istr == 0));
+            ivect const iaxis1 = rpos2ipos1 (axis, origin, scale, hh, rl);
+            assert (all (iaxis1 % istr == 0));
+            ivect const offset = iaxis1 - iaxis0;
+            assert (all (offset % istr == 0));
+            assert (all (offset >= 0 and offset < 2*istr));
+            assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == 0));
+            ivect const iaxis = (iaxis0 + iaxis1 - offset) / 2;
+            
+            // Mirror about the y axis, cutting off most of the extent
+            // in the positive x direction
+            ivect const new_ilo (ilo[0],
+                                 (2*iaxis[1]+offset[1]) - iup[1],
+                                 ilo[2]);
+            ivect const new_iup ((2*iaxis[0]+offset[0]) - ilo[0],
+                                 (2*iaxis[1]+offset[1]) - ilo[1],
+                                 iup[2]);
+            ivect const new_istr (istr);
+            
+            ibbox const new_bb (new_ilo, new_iup, new_istr);
+            
+            clipped |= new_bb;
+          }
+        }
       }
       
       regions.at(rl) = clipped;

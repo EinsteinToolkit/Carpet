@@ -29,6 +29,16 @@ CCTK_INT regrid_every "Regrid every n time steps" STEERABLE=always
 
 
 
+BOOLEAN symmetry_rotating90 "Ensure a 90 degree rotating symmetry about the z axis"
+{
+} no
+
+BOOLEAN symmetry_rotating180 "Ensure a 180 degree rotating symmetry about the z axis"
+{
+} no
+
+
+
 ################################################################################
 
 CCTK_INT num_levels_1 "Number of refinement levels for this centre" STEERABLE=always
