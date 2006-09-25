@@ -127,7 +127,7 @@ namespace CarpetReduce {
   
   // Overload the above helper functions and types for complex values
   
-#ifdef CCTK_REAL4
+#ifdef HAVE_CCTK_REAL4
   
   template<> inline complex<CCTK_REAL4>
   mymin (const complex<CCTK_REAL4> x, const complex<CCTK_REAL4> y)
@@ -165,7 +165,7 @@ namespace CarpetReduce {
   
 #endif
   
-#ifdef CCTK_REAL8
+#ifdef HAVE_CCTK_REAL8
   
   template<> inline complex<CCTK_REAL8>
   mymin (const complex<CCTK_REAL8> x, const complex<CCTK_REAL8> y)
@@ -203,7 +203,7 @@ namespace CarpetReduce {
   
 #endif
   
-#ifdef CCTK_REAL16
+#ifdef HAVE_CCTK_REAL16
   
   template<> inline complex<CCTK_REAL16>
   mymin (const complex<CCTK_REAL16> x, const complex<CCTK_REAL16> y)
