@@ -197,58 +197,25 @@ namespace CarpetRegrid {
            ext.lower() + offset, ext.upper() + offset, ob, bbs, obs);
       }
 
-      
-      // if we have more than 1 component, we might want to
-      // check if merging them makes sense
-      if(merge_overlapping_components && bbs.size() > 1) {
-
-	// now let's check if one or more of our components touch...
-
-
-	// we use this array to keep track of which component was merged
-	// with another.
-        vector<bool> merged_component (bbs.size(), false);
-
-	// loop over all components, starting at c=1
-        for (int c=1; c<(int)bbs.size(); ++c) {
-
-	  ibset fun = bbs.at(c);
-	  ibbox morefun = bbs.at(c);
-
-	  // loop over all components with index < c
-	  for(int sc=0; sc<c; ++sc) {
-
-	    // calculate overlap of this and the previous component
-	    fun &= bbs.at(sc);
-
-	    // do we overlap ?
-	    if(fun.size() > 0) {
-	      // uh. this component will be merged
-	      merged_component.at(c) = true;
-
-	      // calculate union
-	      morefun = morefun.expanded_containing(bbs.at(sc));
-
-	      // update the previous component with the union !
-	      bbs.at(sc) = morefun;
-	    	      
-	    }
-	  }
+      if (merge_overlapping_components) {
+        
+	// Check if one or more of our components touch
+      again:
+        // Loop over all pairs of components
+        for (int c=0; c<(int)bbs.size(); ++c) {
+          for (int cc=0; cc<c; ++cc) {
+            ibbox const overlap = bbs.at(c) & bbs.at(cc);
+            if (not overlap.empty()) {
+              ibbox const combined =
+                bbs.at(c).expanded_containing (bbs.at(cc));
+              bbs.at(c) = combined;
+              bbs.erase (bbs.begin() + cc);
+              goto again;
+            }
+          }
         }
-
-	// now we need to get rid of those bboxes that were merged
-	vector<ibbox> mergedbbs;
-	for (int c=0;c<(int)bbs.size(); ++c) {
-
-	  if (not merged_component.at(c)) {
-	    mergedbbs.push_back (bbs.at(c));
-	  }
-
-	}
-
-	bbs = mergedbbs;
-
-      } // if (merge_overlapping_components && ...)
+        
+      } // if merge_overlapping_components
 
       // make multiprocessor aware
       gh::cprocs ps;
