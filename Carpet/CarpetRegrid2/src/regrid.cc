@@ -331,9 +331,16 @@ namespace CarpetRegrid2 {
       ivect const level_exterior_iupper =
         rpos2ipos1 (level_exterior_upper, origin, scale, hh, rl);
       
-      // Find the minimum necessary distance to the outer boundary due
-      // to buffer and ghost zones.  This is in terms of grid points.
-      i2vect const min_bnd_dist = dd.buffers + dd.ghosts;
+      // Find the minimum necessary distance away from the outer
+      // boundary due to buffer and ghost zones.  This is e.g. the
+      // distance that the lower boundary of a bbox has to have from
+      // the lower boundary.  This is in terms of grid points.
+      i2vect const min_bnd_dist_away = dd.buffers + dd.ghosts;
+      // Find the minimum necessary distance from the outer boundary
+      // due to buffer and ghost zones.  This is e.g. the distance
+      // that the upper boundary of a bbox has to have from the lower
+      // boundary.  This is in terms of grid points.
+      i2vect const min_bnd_dist_incl = dd.ghosts;
       
       // Clip at the outer boundary
       regions.at(rl).normalize();
@@ -346,14 +353,44 @@ namespace CarpetRegrid2 {
         
         // Clip boxes that extend outside the boundary.  Enlarge boxes
         // that are inside but too close to the outer boundary.
-        bvect const lower_is_outer =
-          bb.lower() - min_bnd_dist[0] * bb.stride() <= physical_ilower;
-        bvect const upper_is_outer =
-          bb.upper() + min_bnd_dist[1] * bb.stride() >= physical_iupper;
+        bvect const lower_is_outside_lower =
+          bb.lower() - min_bnd_dist_away[0] * bb.stride() <= physical_ilower;
+        // Remove bboxes that are completely outside.
+        bvect const upper_is_outside_lower =
+          bb.upper() < physical_ilower;
+        // Enlarge bboxes that extend not far enough inwards.
+        bvect const upper_is_almost_outside_lower =
+          bb.upper() < physical_ilower + min_bnd_dist_incl[0] * bb.stride();
+        
+        // Ditto for the upper boundary.
+        bvect const upper_is_outside_upper =
+          bb.upper() + min_bnd_dist_away[1] * bb.stride() >= physical_iupper;
+        bvect const lower_is_outside_upper =
+          bb.lower() > physical_iupper;
+        bvect const lower_is_almost_outside_upper =
+          bb.lower() > physical_iupper - min_bnd_dist_incl[1] * bb.stride();
+        
+        assert (not any (lower_is_almost_outside_upper and
+                         lower_is_outside_lower));
+        assert (not any (upper_is_almost_outside_lower and
+                         upper_is_outside_upper));
+        
+        if (any (upper_is_outside_lower or lower_is_outside_upper)) {
+          // The box is completely outside.  Ignore it.
+          continue;
+        }
         
         ibbox const clipped_bb
-          (either (lower_is_outer, level_exterior_ilower, bb.lower()),
-           either (upper_is_outer, level_exterior_iupper, bb.upper()),
+          (either (lower_is_outside_lower,
+                   level_exterior_ilower,
+                   either (lower_is_almost_outside_upper,
+                           physical_iupper - min_bnd_dist_incl[1] * bb.stride(),
+                           bb.lower())),
+           either (upper_is_outside_upper,
+                   level_exterior_iupper,
+                   either (upper_is_almost_outside_lower,
+                           physical_ilower + min_bnd_dist_incl[0] * bb.stride(),
+                           bb.upper())),
            bb.stride());
         
         clipped |= clipped_bb;
@@ -420,10 +457,9 @@ namespace CarpetRegrid2 {
         do_recompose = cctkGH->cctk_iteration == 0;
       } else {
         do_recompose =
-          reflevel == 0 and
-          (cctkGH->cctk_iteration == 0 or
-           (cctkGH->cctk_iteration > 0 and
-            (cctkGH->cctk_iteration - 1) % regrid_every == 0));
+          cctkGH->cctk_iteration == 0 or
+          (cctkGH->cctk_iteration > 0 and
+           (cctkGH->cctk_iteration - 1) % regrid_every == 0);
       }
     }
     
