@@ -128,11 +128,15 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
     Carpet::MakeMultigridBoxes (cctkGH, bbss, obss, bbsss);
     
     // Regrid
-    Recompose (cctkGH, m, bbsss, obss, pss, false);
+    RegridMap (cctkGH, m, bbsss, obss, pss);
     
   } // for m
   
-  PostRecompose ();
+  PostRegrid ();
+  
+  for (int rl = 0; rl < reflevels; ++ rl) {
+    Recompose (cctkGH, rl, false);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////
