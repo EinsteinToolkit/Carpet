@@ -976,7 +976,7 @@ static int WriteMetadata (const cGH *cctkGH, int nioprocs,
   }
 
   // Save grid structure
-  if (called_from_checkpoint) {
+  if (called_from_checkpoint or not CCTK_Equals (out_save_parameters, "no")) {
     vector <grid_structure_t> grid_structure (maps);
     for (int m = 0; m < maps; ++ m) {
       grid_structure.at(m).bbss = Carpet::vhh.at(m)->extents().at(0);
