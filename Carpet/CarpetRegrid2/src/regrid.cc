@@ -175,6 +175,8 @@ namespace CarpetRegrid2 {
   {
     DECLARE_CCTK_PARAMETERS;
     
+    if (verbose) CCTK_INFO ("Regridding");
+    
     assert (Carpet::is_singlemap_mode());
     gh const & hh = * Carpet::vhh.at (Carpet::map);
     dh const & dd = * Carpet::vdd.at (Carpet::map);
@@ -276,7 +278,7 @@ namespace CarpetRegrid2 {
       
     } // for n
     
-      // Ensure that the coarser grids contain the finer ones
+    // Ensure that the coarser grids contain the finer ones
     for (size_t rl = regions.size() - 1; rl >= 2; -- rl) {
       ibbox coarse = * regions.at(rl-1).begin();
       

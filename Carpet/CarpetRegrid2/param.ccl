@@ -1,5 +1,11 @@
 # Parameter definitions for thorn CarpetRegrid2
 
+BOOLEAN verbose "Display regridding information on the terminal" STEERABLE=always
+{
+} "no"
+
+
+
 CCTK_INT num_centres "Number of refinement centres" STEERABLE=always
 {
   0:3 :: ""
