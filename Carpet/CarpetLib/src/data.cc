@@ -1069,6 +1069,8 @@ void data<T>
   const ibbox& sext = srcs[0]->extent();
   const ibbox& dext = extent();
   
+  wtime_restrict.start();
+  
   int srcshp[3], dstshp[3];
   int srcbbox[3][3], dstbbox[3][3], regbbox[3][3];
   
@@ -1103,6 +1105,8 @@ void data<T>
   default:
     assert (0);
   }
+  
+  wtime_restrict.stop();
 }
 
 template<typename T>
@@ -1116,6 +1120,8 @@ void data<T>
   const ibbox& sext = srcs[0]->extent();
   const ibbox& dext = extent();
   
+  wtime_prolongate.start();
+  
   int srcshp[dim], dstshp[dim];
   int srcbbox[dim][dim], dstbbox[dim][dim], regbbox[dim][dim];
   
@@ -1124,6 +1130,7 @@ void data<T>
   switch (transport_operator) {
     
   case op_copy:
+    wtime_prolongate_copy.start();
     assert (times.size() == 1);
     assert (srcs.size()>=1);
     switch (order_space) {
@@ -1193,12 +1200,14 @@ void data<T>
     default:
       assert (0);
     }
+    wtime_prolongate_copy.stop();
     break;
     
   case op_Lagrange:
     switch (order_time) {
       
     case 0:
+      wtime_prolongate_Lagrange_0.start();
       assert (times.size() == 1);
       assert (abs(times[0] - time) < eps);
       assert (srcs.size()>=1);
@@ -1269,9 +1278,11 @@ void data<T>
       default:
         assert (0);
       }
+      wtime_prolongate_Lagrange_0.stop();
       break;
       
     case 1:
+      wtime_prolongate_Lagrange_1.start();
       assert (srcs.size()>=2);
       switch (order_space) {
       case 1:
@@ -1347,9 +1358,11 @@ void data<T>
       default:
         assert (0);
       }
+      wtime_prolongate_Lagrange_1.stop();
       break;
       
     case 2:
+      wtime_prolongate_Lagrange_2.start();
       assert (srcs.size()>=3);
       switch (order_space) {
       case 1:
@@ -1432,6 +1445,7 @@ void data<T>
       default:
         assert (0);
       }
+      wtime_prolongate_Lagrange_2.stop();
       break;
       
     default:
@@ -1442,6 +1456,7 @@ void data<T>
   case op_TVD:
     switch (order_time) {
     case 0: 
+      wtime_prolongate_TVD_0.start();
       assert (times.size() == 1);
       assert (abs(times[0] - time) < eps);
       switch (order_space) {
@@ -1467,8 +1482,10 @@ void data<T>
       default:
         assert (0);
       }
+      wtime_prolongate_TVD_0.stop();
       break;
     case 1:
+      wtime_prolongate_TVD_1.start();
       switch (order_space) {
       case 1:
         CCTK_WARN (0, "There is no stencil for op=\"TVD\" with order_space=1");
@@ -1492,8 +1509,10 @@ void data<T>
       default:
         assert (0);
       }
+      wtime_prolongate_TVD_1.stop();
       break;
     case 2: 
+      wtime_prolongate_TVD_2.start();
       switch (order_space) {
       case 1:
         CCTK_WARN (0, "There is no stencil for op=\"TVD\" with order_space=1");
@@ -1519,6 +1538,7 @@ void data<T>
       default:
         assert (0);
       }
+      wtime_prolongate_TVD_2.stop();
       break;
     default:
       assert (0);
@@ -1529,6 +1549,7 @@ void data<T>
   case op_ENO:
     switch (order_time) {
     case 0: 
+      wtime_prolongate_ENO_0.start();
       assert (times.size() == 1);
       assert (abs(times[0] - time) < eps);
       switch (order_space) {
@@ -1546,8 +1567,10 @@ void data<T>
       default:
         assert (0);
       }
+      wtime_prolongate_ENO_0.stop();
       break;
     case 1:
+      wtime_prolongate_ENO_1.start();
       switch (order_space) {
       case 1:
         CCTK_WARN (0, "There is no stencil for op=\"ENO\" with order_space=1");
@@ -1564,8 +1587,10 @@ void data<T>
       default:
         assert (0);
       }
+      wtime_prolongate_ENO_1.stop();
       break;
     case 2: 
+      wtime_prolongate_ENO_2.start();
       switch (order_space) {
       case 1:
         CCTK_WARN (0, "There is no stencil for op=\"ENO\" with order_space=1");
@@ -1583,6 +1608,7 @@ void data<T>
       default:
         assert (0);
       }
+      wtime_prolongate_ENO_2.stop();
       break;
     default:
       assert (0);
@@ -1596,6 +1622,7 @@ void data<T>
   case op_WENO:
     switch (order_time) {
     case 0: 
+      wtime_prolongate_WENO_0.start();
       assert (times.size() == 1);
       assert (abs(times[0] - time) < eps);
       switch (order_space) {
@@ -1616,8 +1643,10 @@ void data<T>
       default:
         assert (0);
       }
+      wtime_prolongate_WENO_0.stop();
       break;
     case 1:
+      wtime_prolongate_WENO_1.start();
       switch (order_space) {
       case 1:
         CCTK_WARN (0, "There is no stencil for op=\"WENO\" with order_space=1");
@@ -1637,8 +1666,10 @@ void data<T>
       default:
         assert (0);
       }
+      wtime_prolongate_WENO_1.stop();
       break;
     case 2: 
+      wtime_prolongate_WENO_2.start();
       switch (order_space) {
       case 1:
         CCTK_WARN (0, "There is no stencil for op=\"WENO\" with order_space=1");
@@ -1659,6 +1690,7 @@ void data<T>
       default:
         assert (0);
       }
+      wtime_prolongate_WENO_2.stop();
       break;
     default:
       assert (0);
@@ -1671,6 +1703,8 @@ void data<T>
   default:
     assert(0);
   } // switch (transport_operator)
+  
+  wtime_prolongate.stop();
 }
 
 template<>

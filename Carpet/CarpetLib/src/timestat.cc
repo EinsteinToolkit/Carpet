@@ -130,6 +130,24 @@ timestat wtime_commstate_interpolate_to_isend;
 
 
 
+timestat wtime_restrict;
+timestat wtime_prolongate;
+timestat wtime_prolongate_copy;
+timestat wtime_prolongate_Lagrange_0;
+timestat wtime_prolongate_Lagrange_1;
+timestat wtime_prolongate_Lagrange_2;
+timestat wtime_prolongate_TVD_0;
+timestat wtime_prolongate_TVD_1;
+timestat wtime_prolongate_TVD_2;
+timestat wtime_prolongate_ENO_0;
+timestat wtime_prolongate_ENO_1;
+timestat wtime_prolongate_ENO_2;
+timestat wtime_prolongate_WENO_0;
+timestat wtime_prolongate_WENO_1;
+timestat wtime_prolongate_WENO_2;     
+
+
+
 extern "C" void CarpetLib_printtimestats (CCTK_ARGUMENTS);
 
 void CarpetLib_printtimestats (CCTK_ARGUMENTS)
@@ -179,39 +197,39 @@ void CarpetLib_printtimestats (CCTK_ARGUMENTS)
     file << endl
          << "********************************************************************************" << endl
          << "Timing statistics from CarpetLib at iteration " << cctkGH->cctk_iteration << " time  " << cctkGH->cctk_time << ":" << endl
-         << "   wtime_copyfrom_recv:                    " << wtime_copyfrom_recv                  << endl
-         << "   wtime_copyfrom_send:                    " << wtime_copyfrom_send                  << endl
-         << "   wtime_copyfrom_wait:                    " << wtime_copyfrom_wait                  << endl
+         << "   wtime_copyfrom_recv:                    " << wtime_copyfrom_recv                    << endl
+         << "   wtime_copyfrom_send:                    " << wtime_copyfrom_send                    << endl
+         << "   wtime_copyfrom_wait:                    " << wtime_copyfrom_wait                    << endl
          << endl
-         << "   wtime_copyfrom_recv_maketyped:          " << wtime_copyfrom_recv_maketyped        << endl   
-         << "   wtime_copyfrom_recv_allocate:           " << wtime_copyfrom_recv_allocate         << endl
-         << "   wtime_copyfrom_recv_changeproc_recv:    " << wtime_copyfrom_recv_changeproc_recv  << endl
-         << "   wtime_copyfrom_send_copyfrom_nocomm1:   " << wtime_copyfrom_send_copyfrom_nocomm1 << endl
-         << "   wtime_copyfrom_send_copyfrom_nocomm2:   " << wtime_copyfrom_send_copyfrom_nocomm2 << endl
-         << "   wtime_copyfrom_send_changeproc_send:    " << wtime_copyfrom_send_changeproc_send  << endl
-         << "   wtime_copyfrom_wait_changeproc_wait:    " << wtime_copyfrom_wait_changeproc_wait  << endl
-         << "   wtime_copyfrom_wait_copyfrom_nocomm2:   " << wtime_copyfrom_wait_copyfrom_nocomm  << endl
-         << "   wtime_copyfrom_wait_delete:             " << wtime_copyfrom_wait_delete           << endl
+         << "   wtime_copyfrom_recv_maketyped:          " << wtime_copyfrom_recv_maketyped          << endl   
+         << "   wtime_copyfrom_recv_allocate:           " << wtime_copyfrom_recv_allocate           << endl
+         << "   wtime_copyfrom_recv_changeproc_recv:    " << wtime_copyfrom_recv_changeproc_recv    << endl
+         << "   wtime_copyfrom_send_copyfrom_nocomm1:   " << wtime_copyfrom_send_copyfrom_nocomm1   << endl
+         << "   wtime_copyfrom_send_copyfrom_nocomm2:   " << wtime_copyfrom_send_copyfrom_nocomm2   << endl
+         << "   wtime_copyfrom_send_changeproc_send:    " << wtime_copyfrom_send_changeproc_send    << endl
+         << "   wtime_copyfrom_wait_changeproc_wait:    " << wtime_copyfrom_wait_changeproc_wait    << endl
+         << "   wtime_copyfrom_wait_copyfrom_nocomm2:   " << wtime_copyfrom_wait_copyfrom_nocomm    << endl
+         << "   wtime_copyfrom_wait_delete:             " << wtime_copyfrom_wait_delete             << endl
          << endl
-         << "   wtime_copyfrom_recvinner_allocate:      " << wtime_copyfrom_recvinner_allocate    << endl
-         << "   wtime_copyfrom_recvinner_recv:          " << wtime_copyfrom_recvinner_recv        << endl
-         << "   wtime_copyfrom_sendinner_allocate:      " << wtime_copyfrom_sendinner_allocate    << endl
-         << "   wtime_copyfrom_sendinner_copy:          " << wtime_copyfrom_sendinner_copy        << endl
-         << "   wtime_copyfrom_sendinner_send:          " << wtime_copyfrom_sendinner_send        << endl
-         << "   wtime_copyfrom_recvwaitinner_wait:      " << wtime_copyfrom_recvwaitinner_wait    << endl
-         << "   wtime_copyfrom_recvwaitinner_copy:      " << wtime_copyfrom_recvwaitinner_copy    << endl
-         << "   wtime_copyfrom_recvwaitinner_delete:    " << wtime_copyfrom_recvwaitinner_delete  << endl
-         << "   wtime_copyfrom_sendwaitinner_wait:      " << wtime_copyfrom_sendwaitinner_wait    << endl
-         << "   wtime_copyfrom_sendwaitinner_delete:    " << wtime_copyfrom_sendwaitinner_delete  << endl
+         << "   wtime_copyfrom_recvinner_allocate:      " << wtime_copyfrom_recvinner_allocate      << endl
+         << "   wtime_copyfrom_recvinner_recv:          " << wtime_copyfrom_recvinner_recv          << endl
+         << "   wtime_copyfrom_sendinner_allocate:      " << wtime_copyfrom_sendinner_allocate      << endl
+         << "   wtime_copyfrom_sendinner_copy:          " << wtime_copyfrom_sendinner_copy          << endl
+         << "   wtime_copyfrom_sendinner_send:          " << wtime_copyfrom_sendinner_send          << endl
+         << "   wtime_copyfrom_recvwaitinner_wait:      " << wtime_copyfrom_recvwaitinner_wait      << endl
+         << "   wtime_copyfrom_recvwaitinner_copy:      " << wtime_copyfrom_recvwaitinner_copy      << endl
+         << "   wtime_copyfrom_recvwaitinner_delete:    " << wtime_copyfrom_recvwaitinner_delete    << endl
+         << "   wtime_copyfrom_sendwaitinner_wait:      " << wtime_copyfrom_sendwaitinner_wait      << endl
+         << "   wtime_copyfrom_sendwaitinner_delete:    " << wtime_copyfrom_sendwaitinner_delete    << endl
          << endl
-         << "   wtime_changeproc_recv:                  " << wtime_changeproc_recv                << endl
-         << "   wtime_changeproc_send:                  " << wtime_changeproc_send                << endl
-         << "   wtime_changeproc_wait:                  " << wtime_changeproc_wait                << endl
+         << "   wtime_changeproc_recv:                  " << wtime_changeproc_recv                  << endl
+         << "   wtime_changeproc_send:                  " << wtime_changeproc_send                  << endl
+         << "   wtime_changeproc_wait:                  " << wtime_changeproc_wait                  << endl
          << endl
-         << "   wtime_irecv:                            " << wtime_irecv                          << endl
-         << "   wtime_isend:                            " << wtime_isend                          << endl
-         << "   wtime_isendwait:                        " << wtime_isendwait                      << endl
-         << "   wtime_irecvwait:                        " << wtime_irecvwait                      << endl
+         << "   wtime_irecv:                            " << wtime_irecv                            << endl
+         << "   wtime_isend:                            " << wtime_isend                            << endl
+         << "   wtime_isendwait:                        " << wtime_isendwait                        << endl
+         << "   wtime_irecvwait:                        " << wtime_irecvwait                        << endl
          << endl
          << "   wtime_commstate_sizes_irecv:            " << wtime_commstate_sizes_irecv            << endl
          << "   wtime_commstate_waitall_final:          " << wtime_commstate_waitall_final          << endl
@@ -222,6 +240,22 @@ void CarpetLib_printtimestats (CCTK_ARGUMENTS)
          << "   wtime_commstate_interpolate_irecv:      " << wtime_commstate_interpolate_irecv      << endl
          << "   wtime_commstate_interpolate_from_isend: " << wtime_commstate_interpolate_from_isend << endl
          << "   wtime_commstate_interpolate_to_isend:   " << wtime_commstate_interpolate_to_isend   << endl
+         << endl
+         << "   wtime_restrict:                         " << wtime_restrict                         << endl
+         << "   wtime_prolongate:                       " << wtime_prolongate                       << endl
+         << "   wtime_prolongate_copy:                  " << wtime_prolongate_copy                  << endl
+         << "   wtime_prolongate_Lagrange_0:            " << wtime_prolongate_Lagrange_0            << endl
+         << "   wtime_prolongate_Lagrange_1:            " << wtime_prolongate_Lagrange_1            << endl
+         << "   wtime_prolongate_Lagrange_2:            " << wtime_prolongate_Lagrange_2            << endl
+         << "   wtime_prolongate_TVD_0:                 " << wtime_prolongate_TVD_0                 << endl
+         << "   wtime_prolongate_TVD_1:                 " << wtime_prolongate_TVD_1                 << endl
+         << "   wtime_prolongate_TVD_2:                 " << wtime_prolongate_TVD_2                 << endl
+         << "   wtime_prolongate_ENO_0:                 " << wtime_prolongate_ENO_0                 << endl
+         << "   wtime_prolongate_ENO_1:                 " << wtime_prolongate_ENO_1                 << endl
+         << "   wtime_prolongate_ENO_2:                 " << wtime_prolongate_ENO_2                 << endl
+         << "   wtime_prolongate_WENO_0:                " << wtime_prolongate_WENO_0                << endl
+         << "   wtime_prolongate_WENO_1:                " << wtime_prolongate_WENO_1                << endl
+         << "   wtime_prolongate_WENO_2:                " << wtime_prolongate_WENO_2                << endl
          << endl;
   }
 }

@@ -86,4 +86,22 @@ extern timestat wtime_commstate_interpolate_irecv;
 extern timestat wtime_commstate_interpolate_from_isend;
 extern timestat wtime_commstate_interpolate_to_isend;
 
+
+
+extern timestat wtime_restrict;
+extern timestat wtime_prolongate;
+extern timestat wtime_prolongate_copy;
+extern timestat wtime_prolongate_Lagrange_0;
+extern timestat wtime_prolongate_Lagrange_1;
+extern timestat wtime_prolongate_Lagrange_2;
+extern timestat wtime_prolongate_TVD_0;
+extern timestat wtime_prolongate_TVD_1;
+extern timestat wtime_prolongate_TVD_2;
+extern timestat wtime_prolongate_ENO_0;
+extern timestat wtime_prolongate_ENO_1;
+extern timestat wtime_prolongate_ENO_2;
+extern timestat wtime_prolongate_WENO_0;
+extern timestat wtime_prolongate_WENO_1;
+extern timestat wtime_prolongate_WENO_2;     
+
 #endif  // TIMESTAT_HH
