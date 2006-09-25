@@ -41,7 +41,7 @@ data<T>::data (const int varindex_, const operator_type transport_operator_,
 {
   assert (vectorlength>=1);
   assert (vectorindex>=0 && vectorindex<vectorlength);
-  assert ((vectorindex==0 && !vectorleader)
+  assert ((vectorindex==0 && not vectorleader)
           || (vectorindex!=0 && vectorleader));
 }
 
@@ -57,7 +57,7 @@ data<T>::data (const int varindex_, const operator_type transport_operator_,
 {
   assert (vectorlength>=1);
   assert (vectorindex>=0 && vectorindex<vectorlength);
-  assert ((vectorindex==0 && !vectorleader)
+  assert ((vectorindex==0 && not vectorleader)
           || (vectorindex!=0 && vectorleader));
   allocate(extent_, proc_);
 }
@@ -87,7 +87,7 @@ void data<T>::allocate (const ibbox& extent_,
                         const int proc_,
                         void* const memptr)
 {
-  assert (!_has_storage);
+  assert (not _has_storage);
   _has_storage = true;
   // prevent accidental wrap-around
   assert (all(extent_.lower() < numeric_limits<int>::max() / 2));
@@ -106,7 +106,7 @@ void data<T>::allocate (const ibbox& extent_,
   _proc = proc_;
   if (dist::rank() == _proc) {
     if (vectorindex == 0) {
-      assert (! vectorleader);
+      assert (not vectorleader);
       _memory = new mem<T> (vectorlength, _size, (T*)memptr);
     } else {
       assert (vectorleader);
@@ -115,7 +115,7 @@ void data<T>::allocate (const ibbox& extent_,
     }
     _memory->register_client (vectorindex);
   } else {
-    assert (!memptr);
+    assert (not memptr);
   }
 }
 
@@ -125,7 +125,7 @@ void data<T>::free ()
   assert (_has_storage);
   assert (_memory);
   _memory->unregister_client (vectorindex);
-  if (! _memory->has_clients()) delete _memory;
+  if (not _memory->has_clients()) delete _memory;
   _memory = NULL;
   _has_storage = false;
 }
@@ -140,11 +140,11 @@ void data<T>::change_processor_recv (comm_state& state,
 {
   DECLARE_CCTK_PARAMETERS;
   
-  assert (!comm_active);
+  assert (not comm_active);
   comm_active = true;
   
   if (newproc == _proc) {
-    assert (!memptr);
+    assert (not memptr);
     return;
   }
   
@@ -156,7 +156,7 @@ void data<T>::change_processor_recv (comm_state& state,
     if (dist::rank() == newproc) {
       // copy from other processor
       
-      assert (!_memory);
+      assert (not _memory);
       _memory = new mem<T> (1, _size, (T*)memptr);
       _memory->register_client (0);
       
@@ -174,8 +174,8 @@ void data<T>::change_processor_recv (comm_state& state,
       // copy to other processor
       
     } else {
-      assert (!memptr);
-      assert (!_memory);
+      assert (not memptr);
+      assert (not _memory);
     }
   }
   
@@ -194,7 +194,7 @@ void data<T>::change_processor_send (comm_state& state,
   assert (comm_active);
   
   if (newproc == _proc) {
-    assert (!memptr);
+    assert (not memptr);
     return;
   }
   
@@ -209,7 +209,7 @@ void data<T>::change_processor_send (comm_state& state,
     } else if (dist::rank() == _proc) {
       // copy to other processor
       
-      assert (!memptr);
+      assert (not memptr);
       assert (_memory);
       
       wtime_isend.start();
@@ -223,8 +223,8 @@ void data<T>::change_processor_send (comm_state& state,
       }
       
     } else {
-      assert (!memptr);
-      assert (!_memory);
+      assert (not memptr);
+      assert (not _memory);
     }
   }
   
@@ -244,7 +244,7 @@ void data<T>::change_processor_wait (comm_state& state,
   comm_active = false;
   
   if (newproc == _proc) {
-    assert (!memptr);
+    assert (not memptr);
     return;
   }
   
@@ -253,7 +253,7 @@ void data<T>::change_processor_wait (comm_state& state,
   assert (vectorlength == 1);
   
   if (use_waitall) {
-    if (! state.requests.empty()) {
+    if (not state.requests.empty()) {
       // wait for all requests at once
       wtime_irecvwait.start();
       MPI_Waitall
@@ -267,7 +267,7 @@ void data<T>::change_processor_wait (comm_state& state,
     if (dist::rank() == newproc) {
       // copy from other processor
       
-      if (! use_waitall) {
+      if (not use_waitall) {
         wtime_irecvwait.start();
         MPI_Wait (&request, MPI_STATUS_IGNORE);
         wtime_irecvwait.stop();
@@ -276,22 +276,22 @@ void data<T>::change_processor_wait (comm_state& state,
     } else if (dist::rank() == _proc) {
       // copy to other processor
       
-      assert (!memptr);
+      assert (not memptr);
       assert (_memory);
       
-      if (! use_waitall) {
+      if (not use_waitall) {
         wtime_isendwait.start();
         MPI_Wait (&request, MPI_STATUS_IGNORE);
         wtime_isendwait.stop();
       }
       
       _memory->unregister_client (0);
-      if (! _memory->has_clients()) delete _memory;
+      if (not _memory->has_clients()) delete _memory;
       _memory = 0;
       
     } else {
-      assert (!memptr);
-      assert (!_memory);
+      assert (not memptr);
+      assert (not _memory);
     }
   }
   
@@ -401,11 +401,11 @@ data<T>::copy_from_recv_wait_inner (comm_state& state,
     = (comm_state::commbuf<T> *) state.recvbufs.front();
   state.recvbufs.pop();
   assert (b->am_receiver);
-  assert (! b->am_sender);
+  assert (not b->am_sender);
   
   wtime_copyfrom_recvwaitinner_wait.start();
   if (use_waitall) {
-    if (! state.requests.empty()) {
+    if (not state.requests.empty()) {
       // wait for all requests at once
       MPI_Waitall
         (state.requests.size(), &state.requests.front(), MPI_STATUSES_IGNORE);
@@ -413,7 +413,7 @@ data<T>::copy_from_recv_wait_inner (comm_state& state,
     }
   }
   
-  if (! use_waitall) {
+  if (not use_waitall) {
     MPI_Wait (&b->request, MPI_STATUS_IGNORE);
   }
   wtime_copyfrom_recvwaitinner_wait.stop();
@@ -458,12 +458,12 @@ data<T>::copy_from_send_wait_inner (comm_state& state,
   comm_state::commbuf<T> * b
     = (comm_state::commbuf<T> *) state.sendbufs.front();
   state.sendbufs.pop();
-  assert (! b->am_receiver);
+  assert (not b->am_receiver);
   assert (b->am_sender);
   
   wtime_copyfrom_sendwaitinner_wait.start();
   if (use_waitall) {
-    if (! state.requests.empty()) {
+    if (not state.requests.empty()) {
       // wait for all requests at once
       MPI_Waitall
         (state.requests.size(), &state.requests.front(), MPI_STATUSES_IGNORE);
@@ -471,7 +471,7 @@ data<T>::copy_from_send_wait_inner (comm_state& state,
     }
   }
   
-  if (! use_waitall) {
+  if (not use_waitall) {
     MPI_Wait (&b->request, MPI_STATUS_IGNORE);
   }
   wtime_copyfrom_sendwaitinner_wait.stop();
@@ -1782,7 +1782,7 @@ void data<CCTK_REAL8>
       (gsrcs, times, box, time, order_space, order_time);
   }
   
-  if (!did_time_interpolation) {
+  if (not did_time_interpolation) {
     const ibbox& sext = srcs[0]->extent();
     const ibbox& dext = extent();
   
