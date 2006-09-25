@@ -63,10 +63,18 @@ void timestat::stop (double const b)
 
 ostream& operator<< (ostream& os, const timestat& wt)
 {
-  double const avg = wt.wtime / wt.count;
-  double const stddev = sqrt (max (0.0, wt.wtime2 / wt.count - pow (avg, 2)));
-  double const bavg = wt.bytes / wt.count;
-  double const bstddev = sqrt (max (0.0, wt.bytes2 / wt.count - pow (bavg, 2)));
+  double avg, stddev, bavg, bstddev;
+  if (wt.count == 0.0) {
+    avg = 0.0;
+    stddev = 0.0;
+    bavg = 0.0;
+    bstddev = 0.0;
+  } else {
+    avg = wt.wtime / wt.count;
+    stddev = sqrt (max (0.0, wt.wtime2 / wt.count - pow (avg, 2)));
+    bavg = wt.bytes / wt.count;
+    bstddev = sqrt (max (0.0, wt.bytes2 / wt.count - pow (bavg, 2)));
+  }
   os << "timestat[seconds]:"
      << " cnt: " << wt.count
      << "   time: sum: " << wt.wtime
