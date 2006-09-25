@@ -15,7 +15,8 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
   CCTK_INT is_staggered[6];
   CCTK_INT shiftout[6];
   
-  int imin[3], imax[3];         /* boundary extent */
+  int imin[3], imax[3];         /* domain extent */
+  int bmin[3], bmax[3];         /* boundary extent */
   
   int i, j, k;
   int d, f;
@@ -54,18 +55,23 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
             CCTK_WARN (0, "Illegal number of boundary points");
           }
           
-          /* Calculate the extent of the boundary */
+          /* Calculate the extent of the domain */
           for (dd=0; dd<3; ++dd) {
             imin[dd] = 0;
             imax[dd] = cctk_lsh[dd];
           }
           
+          /* Calculate the extent of the boundary */
+          for (dd=0; dd<3; ++dd) {
+            bmin[dd] = imin[dd];
+            bmax[dd] = imax[dd];
+          }
           if (f==0) {
             /* lower face */
-            imax[d] = imin[d] + npoints;
+            bmax[d] = imin[d] + npoints;
           } else {
             /* upper face */
-            imin[d] = imax[d] - npoints;
+            bmin[d] = imax[d] - npoints;
           }
           
           /* Loop over the boundary */
@@ -73,9 +79,9 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
             CCTK_VInfo (CCTK_THORNSTRING,
                         "Setting boundary points in direction %d face %d to weight 0", d, f);
           }
-          for (k=imin[2]; k<imax[2]; ++k) {
-            for (j=imin[1]; j<imax[1]; ++j) {
-              for (i=imin[0]; i<imax[0]; ++i) {
+          for (k=bmin[2]; k<bmax[2]; ++k) {
+            for (j=bmin[1]; j<bmax[1]; ++j) {
+              for (i=bmin[0]; i<bmax[0]; ++i) {
                 
                 int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                 weight[ind] = 0.0;
@@ -105,12 +111,12 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
               /* Adapt the extent of the boundary */
               if (f==0) {
                 /* lower face */
-                imin[d] = imax[d];
-                imax[d] = imin[d] + 1;
+                bmin[d] = bmax[d];
+                bmax[d] = bmin[d] + 1;
               } else {
                 /* upper face */
-                imax[d] = imin[d];
-                imin[d] = imax[d] - 1;
+                bmax[d] = bmin[d];
+                bmin[d] = bmax[d] - 1;
               }
           
               /* Loop over the points next to boundary */
@@ -118,9 +124,9 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
                 CCTK_VInfo (CCTK_THORNSTRING,
                             "Setting non-staggered boundary points in direction %d face %d to weight 1/2", d, f);
               }
-              for (k=imin[2]; k<imax[2]; ++k) {
-                for (j=imin[1]; j<imax[1]; ++j) {
-                  for (i=imin[0]; i<imax[0]; ++i) {
+              for (k=bmin[2]; k<bmax[2]; ++k) {
+                for (j=bmin[1]; j<bmax[1]; ++j) {
+                  for (i=bmin[0]; i<bmax[0]; ++i) {
                   
                     int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                     weight[ind] *= 0.5;
