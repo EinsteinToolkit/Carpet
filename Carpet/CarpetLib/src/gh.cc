@@ -79,7 +79,7 @@ void gh::regrid (const mexts& exts,
   }
 }
 
-void gh::recompose (const int rl,
+bool gh::recompose (const int rl,
                     const bool do_prolongate)
 {
   // Handle changes in number of mglevels
@@ -87,7 +87,9 @@ void gh::recompose (const int rl,
     _oldextents.resize (_extents.size());
   }
   
-  if (level_did_change(rl)) {
+  bool const do_recompose = level_did_change(rl);
+  
+  if (do_recompose) {
     
     // Recompose the other hierarchies
     for (list<dh*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
@@ -104,6 +106,8 @@ void gh::recompose (const int rl,
     _oldprocessors.resize (_processors.size());
     _oldprocessors.at(rl) = _processors.at(rl);
   }
+  
+  return do_recompose;
 }
 
 bool gh::level_did_change (const int rl) const

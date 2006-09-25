@@ -83,7 +83,7 @@ public:
   void regrid (const mexts& exts,
                const rbnds& outer_bounds,
                const rprocs& procs);
-  void recompose (const int rl,
+  bool recompose (const int rl,
                   const bool do_prolongate);
 private:
   bool level_did_change (const int rl) const;
