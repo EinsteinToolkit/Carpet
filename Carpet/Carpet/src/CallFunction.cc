@@ -325,7 +325,7 @@ namespace Carpet {
       
     }
     
-//     Checkpoint ("done with CallFunction.");
+    if (schedule_barriers) CCTK_Barrier (cctkGH);
     
     total_timer.stop();
     
