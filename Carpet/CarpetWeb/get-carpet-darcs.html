@@ -32,8 +32,10 @@
 
     <ul>
       <li>Version 1, the old stable version (via CVS)</li>
-      <li>Version 2, the upcoming second stable version (via darcs;
-          CVS mirror planned)</li>
+      <li>Version 2, the second stable version (via darcs; CVS and svn
+          mirrors planned)</li>
+      <li>Version 3, the upcoming third stable version (via darcs; CVS
+          and svn mirrors planned)</li>
       <li>Development version (via darcs)</li>
     </ul>
 
@@ -41,13 +43,15 @@
     plans to make any further changes to this version unless a
     catastrophic error is detected.</p>
 
-    <p>Version 2 is the upcoming next stable version.  This version is
-    almost feature complete, but we continue to improve its
-    performance for parallel communication and I/O.  This version will
-    probably be released in a few week.  After its release, we will
-    only correct errors, so that its users have a stable platform to
-    rely on.  We recommend this version for the casual user and for
-    production runs.</p>
+    <p>Version 2 is the current stable version.  We do not plan to
+     make further changes to this version unless a serious error is
+     detected.</p>
+
+    <p>Version 3 is the upcoming next stable version.  This version
+     will probably be released in a few week.  After its release, we
+     will only correct errors, so that its users have a stable
+     platform to rely on.  We recommend this version for the casual
+     user and for production runs.</p>
 
     <p>The development version will always see changes, some of which
     might surprise you.  You should not use it without keeping close
@@ -73,7 +77,7 @@
     arrangement <code>CarpetAttic</code> of things that only used to
     be useful and are now in a state of decay.</p>
 
-    <h3>Version 1</h3>
+    <h3>Version 1 (outdated)</h3>
 
     <p>Version 1 of Carpet is available via anonymous <a
     href="http://www.cvshome.org/">CVS</a>:</p>
@@ -87,38 +91,64 @@
     web, e.g. also on the <a href="http://www.cactuscode.org/">Cactus
     pages</a>.</p>
 
-    <h3>Version 2</h3>
+    <h3>Version 2 (outdated)</h3>
 
     <p>Version 2 of Carpet is available via anonymous <a
-    href="http://www.darcs.net/">darcs</a> (a CVS mirror is planned):</p>
+    href="http://www.darcs.net/">darcs</a>:</p>
 <pre>        cd Cactus
         darcs get http://www.carpetcode.org/~darcs/carpet-stable-2
         cd arrangements
         ln -s ../carpet-stable-2/Carpet* .</pre>
     <p>(Don't miss the dot after the <code>Carpet*</code> in the last
-    line.)  Instructions for using darcs are given <a
-    href="#darcs">below</a>.  You can also have a look at <a
-    href="http://www.carpetcode.org/~darcs/carpet-stable-2">Carpet's
+    line.)  Instructions for using darcs are
+    given <a href="#darcs">below</a>.  You can also have a look at
+    the <a
+    href="http://www.carpetcode.org/~darcs/carpet-stable-2">version 2
+    source tree</a> in your web browser.</p>
+
+    <h3>Version 3</h3>
+
+    <p>Version 3 of Carpet is available via anonymous <a
+    href="http://www.darcs.net/">darcs</a>:</p>
+<pre>        cd Cactus
+        darcs get http://www.carpetcode.org/~darcs/carpet-stable-3
+        cd arrangements
+        ln -s ../carpet-stable-3/Carpet* .</pre>
+    <p>(Don't miss the dot after the <code>Carpet*</code> in the last
+    line.)  Instructions for using darcs are
+    given <a href="#darcs">below</a>.  You can also have a look at
+    the <a
+    href="http://www.carpetcode.org/~darcs/carpet-stable-3">version 3
     source tree</a> in your web browser.</p>
 
     <h3>Development Version</h3>
 
-    <p>The development version of Carpet is not available anonymously.
-    <a href="mailto:schnetter@aei.mpg.de">Ask me</a> if you would like
-    an account.  Once you have an account, you get the development
-    version via</p>
+    <p>The development version of Carpet is available via
+    anonymous <a href="http://www.darcs.net/">darcs</a>:</p>
+<pre>        cd Cactus
+        darcs get http://www.carpetcode.org/~darcs/carpet
+        cd arrangements
+        ln -s ../carpet/Carpet* .</pre>
+    <p>(Don't miss the dot after the <code>Carpet*</code> in the last
+    line.)  Instructions for using darcs are
+    given <a href="#darcs">below</a>.  You can also have a look at
+    the <a href="http://www.carpetcode.org/~darcs/carpet">development
+    source tree</a> in your web browser.</p>
+   
+    <p>Write access to the development version of Carpet is via ssh.
+    Once you have an account, you get the development version via</p>
 <pre>        cd Cactus
         darcs get darcs@cvs.carpetcode.org:/home/darcs/carpet
         cd arrangements
-        ln -s ../carpet-stable-2/Carpet* .</pre>
+        ln -s ../carpet/Carpet* .</pre>
     <p>(Don't miss the dot after the <code>Carpet*</code> in the last
-    line.)  Instructions for using darcs are given <a
-    href="#darcs">below</a>.</p>
+    line.)  Instructions for using darcs are
+    given <a href="#darcs">below</a>.</p>
 
-    <p>We thank the <a
-    href="http://www.tat.physik.uni-tuebingen.de/">Institut für
+    <p>We thank
+    the <a href="http://www.tat.physik.uni-tuebingen.de/">Institut für
     Astronomie und Astrophysik</a> of the Universität Tübingen for
-    hosting the CVS and darcs server.</p>
+    hosting the CVS and darcs servers.</p>
 
 
 
@@ -223,7 +253,7 @@ darcs pull</pre>
     <address><a href="mailto:schnetter@uni-tuebingen.de">Erik Schnetter</a></address>
 <!-- Created: Tue Sep 28 16:52:20 CEST 2004 -->
 <!-- hhmts start -->
-Last modified: Tue Sep 12 2006
+Last modified: Tue Sep 26 2006
 <!-- hhmts end -->
   </body>
 </html>
