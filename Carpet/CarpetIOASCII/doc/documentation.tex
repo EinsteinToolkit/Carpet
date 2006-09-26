@@ -138,16 +138,36 @@ are some utilities in the src/util directory. These are
 \item {\bf Carpet2ygraph.pl} A perl script to convert to a format
   suitable for the {\it xgraph} or {\it ygraph} packages of P. Walker
   and D. Pollney.
+\item {\bf Carpet2ygraph.pl} An improved version of the previous script.
+\item {\bf mergeCarpetIOASCII.pl} A perl script to remove duplicate datasets from file(s).
 \end{itemize}
+
 The first two, written by Scott Hawley, are C codes that require the
 Makefile (building using the -utils flag from the main Cactus
 directory currently does not work). Each output one refinement level,
 either to standard output or to a file.
 
-The last script writes all refinement levels from a given file in a
+The third script writes all refinement levels from a given file in a
 given direction to a number of different files given a prefix
 filename, where the number in the output filename is given by the
-refinement level.
+refinement level. Usage: {\tt Carpet2ygraph.pl direction Inputfile Outputfile},
+where direction is 0, 1, 2, for x,y and z.
+
+The fourth script is an improved version of the previous one. It reads a 1D .asc file and produces a
+single file containing all the data from all levels, writing points that are in more levels only
+once. The output filename is the original filename with the suffix .asc changed into .xg. The
+direction (x,y or z) of the input file is automatically detected from the filename. It recognizes
+and converts also scalar data, like norms and extrema. Usage: {\tt Carpet2ygraphCat.pl Inputfile}.
+
+The fifth script can be used to merge CarpetIOASCII output written before and after recovery. It
+reads one or more files in CarpetIOASCII format and writes their contents to STDOUT, eliminating
+duplicate datasets (all but the last occurance are discarded), which may be created when a run died
+abruptly without checkpointing at the last output itaration and is recovered from a previous
+checkpoint.  
+Usage: {\tt mergeCarpetIOASCII.pl list of files}. \\
+Example 1: {\tt mergeCarpetIOASCII.pl alp.x.asc > alp.x.asc.merged}.\\ 
+Example 2: {\tt mergeCarpetIOASCII.pl alp.x.asc.firstCHKPT alp.x.asc.secondCHKPT > alp.x.asc.merged}.\\
+This script was written by Thomas Radke.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

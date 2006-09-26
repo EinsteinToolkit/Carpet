@@ -102,31 +102,34 @@
 
 \section{Introduction}
 
-\section{Physical System}
 
-\section{Numerical Implementation}
 
-\section{Using This Thorn}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Utilities}
+\label{sec:utils}
 
-\subsection{Obtaining This Thorn}
+These scripts may be useful handling CarpetIOASCII data:
+\begin{itemize}
+\item {\bf Carpet2ygraph.pl} A perl script to convert to a format
+  suitable for the {\it xgraph} or {\it ygraph} packages of P. Walker
+  and D. Pollney.
+\item {\bf mergeCarpetIOScalar.pl} A perl script to remove duplicate datasets from file(s).
+\end{itemize}
 
-\subsection{Basic Usage}
+The first script resides in CarpetIOASCII/src/utils and was meant primarily to convert 1D data,
+since the CarpetIOScalar data format is easily readable also by ygraph. Anyway, this script converts
+also scalar data files to the original 2-column ygraph format.
+Usage: {\tt Carpet2ygraphCat.pl Inputfile}.
 
-\subsection{Special Behaviour}
-
-\subsection{Interaction With Other Thorns}
-
-\subsection{Examples}
-
-\subsection{Support and Feedback}
-
-\section{History}
-
-\subsection{Thorn Source Code}
-
-\subsection{Thorn Documentation}
-
-\subsection{Acknowledgements}
+The second script can be used to merge CarpetIOScalar output written before and after recovery. It
+reads one or more files in CarpetIOScalar format and writes their contents to STDOUT, eliminating
+duplicate datasets (all but the last occurance are discarded), which may be created when a run died
+abruptly without checkpointing at the last output itaration and is recovered from a previous
+checkpoint.  
+Usage: {\tt mergeCarpetIOScalar.pl list of files}. \\
+Example 1: {\tt mergeCarpetIOScalar.pl alp.norm1.asc > alp.norm1.asc.merged}.\\ 
+Example 2: {\tt mergeCarpetIOScalar.pl alp.norm1.asc.firstCHKPT alp.norm1.asc.secondCHKPT > alp.norm1.asc.merged}.\\
+This script was written by Thomas Radke.
 
 
 \begin{thebibliography}{9}
