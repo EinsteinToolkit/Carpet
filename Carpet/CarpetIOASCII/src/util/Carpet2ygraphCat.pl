@@ -93,7 +93,7 @@ while (<CARPETFILE>)
   if ($currentit != $lastit) {
     if ($new) {
       # do not print "Time..." for zero-D data
-      push(@datatoprint,"\n\"Time = ".$time."\n") if ($direction !~ 8);
+      push(@datatoprint,"\n\n\"Time = ".$time."\n") if ($direction !~ 8);
 
       my @sortedcoords = sort numerically (keys %data);
       foreach my $localcoord (@sortedcoords) {
@@ -115,7 +115,7 @@ while (<CARPETFILE>)
 }
 
 # do not print "Time..." for zero-D data
-push(@datatoprint,"\n\"Time = ".$time."\n") if ($direction !~ 8);
+push(@datatoprint,"\n\n\"Time = ".$time."\n") if ($direction !~ 8);
 
 my @sortedcoords = sort numerically (keys %data);
 foreach my $localcoord (@sortedcoords) {
