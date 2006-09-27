@@ -40,6 +40,6 @@ void CarpetRegrid_TestGaussian(CCTK_ARGUMENTS)
 	}
     }
 
-  //  CCTK_VInfo(CCTK_THORNSTRING,"Performed CarpetRegridTest");
+  /*  CCTK_VInfo(CCTK_THORNSTRING,"Performed CarpetRegridTest"); */
 
 }
