@@ -666,7 +666,7 @@ namespace CarpetIOASCII {
                 filenamebuf << ".asc";
               } else {
                 for (int d=0; d<outdim; ++d) {
-                  assert (dirs[d]>=0 and dirs[d]<3);
+                  assert (dirs[d]>=0 and dirs[d]<4);
                   const char* const coords = "xyzd";
                   filenamebuf << coords[dirs[d]];
                 }
