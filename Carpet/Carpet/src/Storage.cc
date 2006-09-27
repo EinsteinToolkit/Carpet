@@ -136,10 +136,19 @@ namespace Carpet {
             
             for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
               for (int var=0; var<gp.numvars; ++var) {
+#ifdef CCTK_HAVE_CONTIGUOUS_GROUPS
+                bool const contiguous = gp.contiguous;
+#else
+                bool const contiguous = false;
+#endif
                 const int vectorindex
-                  = gp.vectorgroup ? var % gp.vectorlength : 0;
+                  = (contiguous
+                     ? var
+                     : gp.vectorgroup ? var % gp.vectorlength : 0);
                 const int vectorlength
-                  = gp.vectorgroup ? gp.vectorlength : 1;
+                  = (contiguous
+                     ? gp.numvars
+                     : gp.vectorgroup ? gp.vectorlength : 1);
                 assert (vectorindex>=0 and vectorindex<gp.numvars);
                 assert (vectorlength>0 and vectorlength<=gp.numvars);
                 ggf* const vectorleader
