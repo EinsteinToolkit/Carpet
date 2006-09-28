@@ -487,7 +487,12 @@ namespace CarpetRegrid2 {
     assert (Carpet::is_singlemap_mode());
     
     // Decide whether to change the grid hierarchy
-    // (We always do)
+    static bool last_iteration_initialised = false;
+    static vector<int> last_iteration;
+    if (not last_iteration_initialised) {
+      last_iteration_initialised = true;
+      last_iteration.resize (maps, -1);
+    }
     bool do_recompose;
     if (force) {
       do_recompose = true;
@@ -498,10 +503,14 @@ namespace CarpetRegrid2 {
         do_recompose = cctkGH->cctk_iteration == 0;
       } else {
         do_recompose =
-          cctkGH->cctk_iteration == 0 or
-          (cctkGH->cctk_iteration > 0 and
-           (cctkGH->cctk_iteration - 1) % regrid_every == 0);
+          (cctkGH->cctk_iteration == 0 or
+           (cctkGH->cctk_iteration > 0 and
+            (cctkGH->cctk_iteration - 1) % regrid_every == 0 and
+            cctkGH->cctk_iteration > last_iteration.at(Carpet::map)));
       }
+    }
+    if (do_recompose) {
+      last_iteration.at(Carpet::map) = cctkGH->cctk_iteration;
     }
     
     if (do_recompose) {
@@ -562,7 +571,9 @@ namespace CarpetRegrid2 {
             cctkGH->cctk_iteration > last_iteration));
       }
     }
-    last_iteration = cctkGH->cctk_iteration;
+    if (do_recompose) {
+      last_iteration = cctkGH->cctk_iteration;
+    }
     
     if (do_recompose) {
       
