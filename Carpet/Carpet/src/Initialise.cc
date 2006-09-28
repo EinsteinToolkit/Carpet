@@ -423,7 +423,7 @@ namespace Carpet {
           bool const did_recompose
             = Recompose (cctkGH, rl, prolongate_initial_data);
           
-          if (did_recompose) {
+          if (regrid_during_initialisation and did_recompose) {
             BEGIN_MGLEVEL_LOOP (cctkGH) {
               ENTER_LEVEL_MODE (cctkGH, rl) {
                 do_global_mode = reflevel == reflevels - 1;
