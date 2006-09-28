@@ -55,9 +55,6 @@ namespace Carpet {
       
     } END_REVERSE_MGLEVEL_LOOP;
     
-    CCTK_PRINTSEPARATOR;
-    printf ("Done.\n");
-    
     // earlier checkpoint before finalising MPI
     Waypoint ("Done with shutdown");
     
