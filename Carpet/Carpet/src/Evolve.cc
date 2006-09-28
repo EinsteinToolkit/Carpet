@@ -271,8 +271,7 @@ namespace Carpet {
                           (do_global_mode ? " (global)" : ""),
                           (do_meta_mode ? " (meta)" : ""));
                 
-                int const num_tl =
-                  init_each_timelevel ? prolongation_order_time+1 : 1;
+                int const num_tl = prolongation_order_time+1;
                 
                 // Rewind times
                 for (int m=0; m<maps; ++m) {
