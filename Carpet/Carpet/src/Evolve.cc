@@ -138,7 +138,8 @@ namespace Carpet {
       } else {
         
         // Test the various conditions
-        bool const term_iter = cctkGH->cctk_iteration >= cctk_itlast;
+        bool const term_iter
+          = cctk_itlast >= 0 and cctkGH->cctk_iteration >= cctk_itlast;
         bool const term_time
           = (delta_time > 0.0
              ? (cctkGH->cctk_time
