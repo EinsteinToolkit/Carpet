@@ -121,9 +121,7 @@ bool gh::level_did_change (const int rl) const
       return true;
     }
     for (int c=0; c<components(rl); ++c) {
-      if (_extents.at(ml).at(rl).at(c).size() !=
-          _oldextents.at(ml).at(rl).at(c).size())
-      {
+      if (_extents.at(ml).at(rl).at(c) != _oldextents.at(ml).at(rl).at(c)) {
         return true;
       }
       if (_processors.at(rl).at(c) != _oldprocessors.at(rl).at(c)) return true;
