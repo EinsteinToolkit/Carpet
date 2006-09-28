@@ -252,7 +252,7 @@ namespace Carpet {
     
     // Regrid
     Checkpoint ("Regrid");
-    bool const did_regrid = Regrid (cctkGH, true);
+    bool const did_regrid = Regrid (cctkGH, false);
     
     if (did_regrid) {
       BEGIN_META_MODE (cctkGH) {
