@@ -84,8 +84,8 @@ namespace CarpetSlab {
     assert (m>=0);
     
     const int oldmap = Carpet::map;
-    if (gp.grouptype==CCTK_GF  && oldmap==-1) {
-      enter_singlemap_mode(const_cast<cGH*>(cgh), m);
+    if (gp.grouptype==CCTK_GF && oldmap==-1) {
+      enter_singlemap_mode(const_cast<cGH*>(cgh), m, gp.grouptype);
     }
     
     // Check dimension

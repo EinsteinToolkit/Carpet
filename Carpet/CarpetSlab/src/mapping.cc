@@ -131,7 +131,7 @@ namespace CarpetSlab {
           assert (reflevel >= 0);
           assert (oldmap >= 0 || maps == 1);
           if (oldmap == -1) {
-            enter_singlemap_mode (const_cast<cGH*>(cctkGH), 0);
+            enter_singlemap_mode (const_cast<cGH*>(cctkGH), 0, grouptype);
           }
         }
 	int gsh[dim];
