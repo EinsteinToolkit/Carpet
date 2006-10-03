@@ -11,7 +11,7 @@ namespace CarpetAdaptiveRegrid {
 #endif
     
     /* Scheduled functions */
-    int CarpetAdaptiveregridParamcheck (CCTK_ARGUMENTS);
+    void CarpetAdaptiveregridParamcheck (CCTK_ARGUMENTS);
 
 #ifdef __cplusplus
   } /* extern "C" */
