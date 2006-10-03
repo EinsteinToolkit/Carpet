@@ -644,10 +644,11 @@ namespace CarpetIOASCII {
 
               // Invent a file name
               ostringstream filenamebuf;
-              filenamebuf << my_out_dir << "/" << alias << ".";
-              if (maps > 1) {
-                filenamebuf << Carpet::map << ".";
+              filenamebuf << my_out_dir << "/" << alias;
+              if (maps > 1 and grouptype == CCTK_GF) {
+                filenamebuf << "." << Carpet::map;
               }
+              filenamebuf << ".";
               if (new_filename_scheme) {
                 for (int d=0; d<outdim; ++d) {
                   const char* const coords = "xyzd";
