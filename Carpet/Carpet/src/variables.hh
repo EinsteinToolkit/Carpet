@@ -82,6 +82,7 @@ namespace Carpet {
   // Current position on the grid hierarchy
   extern int reflevel;
   extern int mglevel;
+  extern int mc_grouptype;      // -1, CCTK_SCALAR/CCTK_ARRAY, CCTK_GF
   extern int map;
   extern int component;
   

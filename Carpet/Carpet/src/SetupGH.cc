@@ -149,10 +149,11 @@ namespace Carpet {
     
     // Initialise current position (must be the very first thing,
     // before the first output)
-    mglevel   = -1;
-    reflevel  = -1;
-    map       = -1;
-    component = -1;
+    mglevel      = -1;
+    reflevel     = -1;
+    mc_grouptype = -1;
+    map          = -1;
+    component    = -1;
     
     // Say hello
     Waypoint ("Setting up the grid hierarchy");
@@ -836,10 +837,11 @@ namespace Carpet {
     }
     
     // Set up things as if in local mode
-    mglevel   = 0;
-    reflevel  = 0;
-    map       = 0;
-    component = 0;
+    mglevel      = 0;
+    reflevel     = 0;
+    mc_grouptype = CCTK_GF;
+    map          = 0;
+    component    = 0;
     
     // Leave everything, so that everything is set up correctly
     leave_local_mode     (cctkGH);

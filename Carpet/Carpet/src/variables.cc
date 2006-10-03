@@ -53,6 +53,7 @@ namespace Carpet {
   // Current position on the grid hierarchy
   int reflevel;
   int mglevel;
+  int mc_grouptype;
   int map;
   int component;
   

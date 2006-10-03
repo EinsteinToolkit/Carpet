@@ -43,10 +43,10 @@ namespace Carpet {
   void enter_level_mode (cGH * const cctkGH, int const rl);
   void leave_level_mode (cGH * const cctkGH);
   
-  void enter_singlemap_mode (cGH * const cctkGH, int const m);
+  void enter_singlemap_mode (cGH * const cctkGH, int const m, int const grouptype);
   void leave_singlemap_mode (cGH * const cctkGH);
   
-  void enter_local_mode (cGH * const cctkGH, int const c);
+  void enter_local_mode (cGH * const cctkGH, int const c, int const grouptype);
   void leave_local_mode (cGH * const cctkGH);
   
   
@@ -239,6 +239,7 @@ namespace Carpet {
   
   class level_escape {
     cGH * cctkGH;
+    int grouptype;
     int m;
     int c;
   public:
@@ -249,6 +250,7 @@ namespace Carpet {
   class global_escape {
     cGH * cctkGH;
     int rl;
+    int grouptype;
     int m;
     int c;
   public:
@@ -260,6 +262,7 @@ namespace Carpet {
     cGH * cctkGH;
     int ml;
     int rl;
+    int grouptype;
     int m;
     int c;
   public:
@@ -271,10 +274,10 @@ namespace Carpet {
   
   // Compatibility defines for the mode escapes
   
-#define BEGIN_SINGLEMAP_MODE(cctkGH)               \
+#define BEGIN_SINGLEMAP_MODE(cctkGH)            \
   do {                                          \
     bool singlemap_mode_ = true;                \
-    singlemap_escape esc_(cctkGH);                 \
+    singlemap_escape esc_(cctkGH);              \
     {
 #define END_SINGLEMAP_MODE                      \
     }                                           \
@@ -282,10 +285,10 @@ namespace Carpet {
     singlemap_mode_ = false;                    \
   } while (false)
   
-#define BEGIN_LEVEL_MODE(cctkGH)                   \
+#define BEGIN_LEVEL_MODE(cctkGH)                \
   do {                                          \
     bool level_mode_ = true;                    \
-    level_escape esc_(cctkGH);                     \
+    level_escape esc_(cctkGH);                  \
     {
 #define END_LEVEL_MODE                          \
     }                                           \
@@ -293,10 +296,10 @@ namespace Carpet {
     level_mode_ = false;                        \
   } while (false)
   
-#define BEGIN_GLOBAL_MODE(cctkGH)                  \
+#define BEGIN_GLOBAL_MODE(cctkGH)               \
   do {                                          \
     bool global_mode_ = true;                   \
-    global_escape esc_(cctkGH);                    \
+    global_escape esc_(cctkGH);                 \
     {
 #define END_GLOBAL_MODE                         \
     }                                           \
@@ -304,10 +307,10 @@ namespace Carpet {
     global_mode_ = false;                       \
   } while (false)
   
-#define BEGIN_META_MODE(cctkGH)                    \
+#define BEGIN_META_MODE(cctkGH)                 \
   do {                                          \
     bool meta_mode_ = true;                     \
-    meta_escape esc_(cctkGH);                      \
+    meta_escape esc_(cctkGH);                   \
     {
 #define END_META_MODE                           \
     }                                           \
@@ -336,14 +339,16 @@ namespace Carpet {
   class map_setter {
     cGH * cctkGH;
   public:
-    map_setter (cGH const * const cctkGH, int const m);
+    map_setter (cGH const * const cctkGH,
+                int const m, int const grouptype);
     ~map_setter ();
   };
   
   class component_setter {
     cGH * cctkGH;
   public:
-    component_setter (cGH const * const cctkGH, int const c);
+    component_setter (cGH const * const cctkGH,
+                      int const c, int const grouptype);
     ~component_setter ();
   };
   
@@ -351,33 +356,33 @@ namespace Carpet {
   
   // Compatibility defines for the mode setters
   
-#define ENTER_GLOBAL_MODE(cctkGH, ml)              \
+#define ENTER_GLOBAL_MODE(cctkGH, ml)           \
   do {                                          \
-    mglevel_setter mg_setter_(cctkGH, ml);         \
+    mglevel_setter mg_setter_(cctkGH, ml);      \
     {
 #define LEAVE_GLOBAL_MODE                       \
     }                                           \
   } while (false)
   
-#define ENTER_LEVEL_MODE(cctkGH, rl)               \
+#define ENTER_LEVEL_MODE(cctkGH, rl)            \
   do {                                          \
-    reflevel_setter ref_setter_(cctkGH, rl);       \
+    reflevel_setter ref_setter_(cctkGH, rl);    \
     {
 #define LEAVE_LEVEL_MODE                        \
     }                                           \
   } while (false)
   
-#define ENTER_SINGLEMAP_MODE(cctkGH, m)            \
-  do {                                          \
-    map_setter m_setter_(cctkGH, m);               \
+#define ENTER_SINGLEMAP_MODE(cctkGH, m, grouptype)      \
+  do {                                                  \
+    map_setter m_setter_(cctkGH, m, grouptype);         \
     {
 #define LEAVE_SINGLEMAP_MODE                    \
     }                                           \
   } while (false)
   
-#define ENTER_LOCAL_MODE(cctkGH, c)                \
-  do {                                          \
-    component_setter c_setter_(cctkGH, c);         \
+#define ENTER_LOCAL_MODE(cctkGH, c, grouptype)          \
+  do {                                                  \
+    component_setter c_setter_(cctkGH, c, grouptype);   \
     {
 #define LEAVE_LOCAL_MODE                        \
     }                                           \
