@@ -230,9 +230,10 @@ namespace CarpetAdaptiveRegrid {
 
     CCTK_INT sum_handle = CCTK_ReductionArrayHandle("sum");
 
-    CCTK_INT called_on_ml = mglevel;
-    CCTK_INT called_on_rl = reflevel;
-    CCTK_INT called_on_map = carpetGH.map;
+    int called_on_ml = mglevel;
+    int called_on_rl = reflevel;
+    int called_on_grouptype = mc_grouptype;
+    int called_on_map = carpetGH.map;
     
     CCTK_INT finest_current_rl = local_bbsss.at(0).size();
     finest_current_rl = min(finest_current_rl, maxreflevels - 1);
@@ -245,7 +246,7 @@ namespace CarpetAdaptiveRegrid {
     leave_level_mode(const_cast<cGH *> (cctkGH));
     for (CCTK_INT rl = called_on_rl; rl < finest_current_rl; ++rl) {
       enter_level_mode(const_cast<cGH *> (cctkGH), rl);
-      enter_singlemap_mode(const_cast<cGH *> (cctkGH), called_on_map);
+      enter_singlemap_mode(const_cast<cGH *> (cctkGH), called_on_map, called_on_grouptype);
 
       if (verbose) {
         ostringstream buf;
@@ -406,7 +407,7 @@ namespace CarpetAdaptiveRegrid {
           leave_level_mode(const_cast<cGH *> (cctkGH));
       
           enter_level_mode(const_cast<cGH *> (cctkGH), currentrl + 1);
-          enter_singlemap_mode(const_cast<cGH *> (cctkGH), currentmap);
+          enter_singlemap_mode(const_cast<cGH *> (cctkGH), currentmap, CCTK_GF);
 
           const ibbox& child_baseext = 
             vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
@@ -507,7 +508,7 @@ namespace CarpetAdaptiveRegrid {
           leave_level_mode(const_cast<cGH *> (cctkGH));
           
           enter_level_mode(const_cast<cGH *> (cctkGH), currentrl);
-          enter_singlemap_mode(const_cast<cGH *> (cctkGH), currentmap);
+          enter_singlemap_mode(const_cast<cGH *> (cctkGH), currentmap, CCTK_GF);
 
         }
 
@@ -1031,7 +1032,7 @@ namespace CarpetAdaptiveRegrid {
     } 
 
     enter_level_mode(const_cast<cGH *> (cctkGH), called_on_rl);
-    enter_singlemap_mode(const_cast<cGH *> (cctkGH), called_on_map);
+    enter_singlemap_mode(const_cast<cGH *> (cctkGH), called_on_map, called_on_grouptype);
 
     if (verbose) {
       ostringstream buf;
