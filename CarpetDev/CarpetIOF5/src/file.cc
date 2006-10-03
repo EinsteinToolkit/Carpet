@@ -30,7 +30,7 @@ namespace CarpetIOF5 {
       } H5E_END_TRY;
       bool const file_exists = is_hdf5 > 0;
       
-      if (do_truncate or ! file_exists)
+      if (do_truncate or not file_exists)
       {
         m_hdf5_file
           = H5Fcreate (filenameptr, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -49,7 +49,7 @@ namespace CarpetIOF5 {
     ~ file_t()
     {
       herr_t const herr = H5Fclose (m_hdf5_file);
-      assert (! herr);
+      assert (not herr);
     }
     
     

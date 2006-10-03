@@ -54,7 +54,7 @@ namespace CarpetIOF5 {
     if (Carpet::is_meta_mode())
     {
       for (Carpet::mglevel_iterator mglevel_iter (m_cctkGH);
-           ! mglevel_iter.done();
+           not mglevel_iter.done();
            mglevel_iter.step())
       {
         write_one_mglevel (timestep);
@@ -105,7 +105,7 @@ namespace CarpetIOF5 {
         if (Carpet::is_global_mode())
         {
           for (Carpet::reflevel_iterator reflevel_iter (m_cctkGH);
-               ! reflevel_iter.done();
+               not reflevel_iter.done();
                reflevel_iter.step())
           {
             write_one_reflevel (simulation);
@@ -196,7 +196,7 @@ namespace CarpetIOF5 {
     if (Carpet::is_level_mode())
     {
       for (Carpet::map_iterator map_iter (m_cctkGH, grouptype);
-           ! map_iter.done();
+           not map_iter.done();
            map_iter.step())
       {
         write_one_map (simulation);
@@ -249,7 +249,7 @@ namespace CarpetIOF5 {
       assert (grouptype >= 0);
       
       for (Carpet::component_iterator component_iter (m_cctkGH, grouptype);
-           ! component_iter.done();
+           not component_iter.done();
            component_iter.step())
       {
         write_one_component (tensor_component);

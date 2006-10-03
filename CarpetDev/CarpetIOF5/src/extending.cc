@@ -41,13 +41,13 @@ namespace CarpetIOF5 {
     int ierr;
     int const io_method = CCTK_RegisterIOMethod (extension_name);
     ierr = CCTK_RegisterIOMethodOutputGH (io_method, OutputGH);
-    assert (! ierr);
+    assert (not ierr);
     ierr = CCTK_RegisterIOMethodTimeToOutput (io_method, TimeToOutput);
-    assert (! ierr);
+    assert (not ierr);
     ierr = CCTK_RegisterIOMethodTriggerOutput (io_method, TriggerOutput);
-    assert (! ierr);
+    assert (not ierr);
     ierr = CCTK_RegisterIOMethodOutputVarAs (io_method, OutputVarAs);
-    assert (! ierr);
+    assert (not ierr);
     
     return new extension_t;
   }

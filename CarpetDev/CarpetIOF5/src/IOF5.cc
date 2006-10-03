@@ -399,7 +399,7 @@ namespace CarpetIOF5 {
     
     bool const did_truncate = extending.get_did_truncate (filename);
     bool const do_truncate
-      = ! did_truncate and IO_TruncateOutputFiles (cctkGH);
+      = not did_truncate and IO_TruncateOutputFiles (cctkGH);
     extending.set_did_truncate (filename);
     
     F5::file_t file (cctkGH, filename, do_truncate);
@@ -475,7 +475,7 @@ namespace CarpetIOF5 {
     }
     
     herr_t const herr = H5Gclose (parameter_group);
-    assert (! herr);
+    assert (not herr);
   }
   
 } // namespace CarpetIOF5

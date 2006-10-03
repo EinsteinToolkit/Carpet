@@ -38,7 +38,7 @@ namespace CarpetIOF5 {
     ~ tensor_component_t ()
     {
       herr_t const herr = H5Gclose (m_hdf5_tensor_component);
-      assert (! herr);
+      assert (not herr);
     }
     
     

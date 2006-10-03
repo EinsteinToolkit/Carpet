@@ -104,7 +104,7 @@ namespace CarpetIOF5 {
       static bool initialised = false;
       static hid_t hdf_complex_datatype;
       
-      if (! initialised)
+      if (not initialised)
       {
         initialised = true;
         
@@ -239,11 +239,11 @@ namespace CarpetIOF5 {
         assert (attribute >= 0);
         herr_t herr;
         herr = H5Awrite (attribute, datatype, values);
-        assert (! herr);
+        assert (not herr);
         herr = H5Aclose (attribute);
-        assert (! herr);
+        assert (not herr);
         herr = H5Sclose (dataspace);
-        assert (! herr);
+        assert (not herr);
       }
       else
       {
@@ -260,11 +260,11 @@ namespace CarpetIOF5 {
         assert (adim == num_values);
         vector<T> buf (adim);
         herr = H5Aread (attribute, datatype, & buf.front());
-        assert (! herr);
+        assert (not herr);
         herr = H5Sclose (dataspace);
-        assert (! herr);
+        assert (not herr);
         herr = H5Aclose (attribute);
-        assert (! herr);
+        assert (not herr);
         for (int n = 0; n < num_values; ++ n)
         {
           assert (values [n] == buf [n]);
@@ -360,20 +360,20 @@ namespace CarpetIOF5 {
         herr_t herr;
         int const length = strlen (value) + 1;
         herr = H5Tset_size (datatype, length);
-        assert (! herr);
+        assert (not herr);
         hsize_t const dim = 1;
         hid_t const dataspace = H5Screate_simple (1, & dim, & dim);
         assert (dataspace >= 0);
         attribute = H5Acreate (where, name, datatype, dataspace, H5P_DEFAULT);
         assert (attribute >= 0);
         herr = H5Awrite (attribute, datatype, value);
-        assert (! herr);
+        assert (not herr);
         herr = H5Aclose (attribute);
-        assert (! herr);
+        assert (not herr);
         herr = H5Sclose (dataspace);
-        assert (! herr);
+        assert (not herr);
         herr = H5Tclose (datatype);
-        assert (! herr);
+        assert (not herr);
       }
       else
       {
@@ -396,13 +396,13 @@ namespace CarpetIOF5 {
         assert (dim == 1);
         vector<char> buf (length);
         herr = H5Aread (attribute, datatype, & buf.front());
-        assert (! herr);
+        assert (not herr);
         herr = H5Sclose (dataspace);
-        assert (! herr);
+        assert (not herr);
         herr = H5Aclose (attribute);
-        assert (! herr);
+        assert (not herr);
         herr = H5Tclose (datatype);
-        assert (! herr);
+        assert (not herr);
         assert (strcmp (& buf.front(), value) == 0);
       }
     }

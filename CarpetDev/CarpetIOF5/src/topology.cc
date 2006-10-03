@@ -77,7 +77,7 @@ namespace CarpetIOF5 {
     ~ unigrid_topology_t ()
     {
       herr_t const herr = H5Gclose (m_hdf5_topology);
-      assert (! herr);
+      assert (not herr);
     }
     
     
@@ -150,7 +150,7 @@ namespace CarpetIOF5 {
     ~ mesh_refinement_topology_t ()
     {
       herr_t const herr = H5Gclose (m_hdf5_topology);
-      assert (! herr);
+      assert (not herr);
     }
     
     

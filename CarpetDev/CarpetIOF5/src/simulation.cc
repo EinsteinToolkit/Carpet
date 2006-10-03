@@ -37,7 +37,7 @@ namespace CarpetIOF5 {
     ~ simulation_t()
     {
       herr_t const herr = H5Gclose (m_hdf5_simulation);
-      assert (! herr);
+      assert (not herr);
     }
     
     

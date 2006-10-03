@@ -44,7 +44,7 @@ namespace CarpetIOF5 {
     ~ physical_quantity_t ()
     {
       herr_t const herr = H5Gclose (m_hdf5_physical_quantity);
-      assert (! herr);
+      assert (not herr);
     }
     
     

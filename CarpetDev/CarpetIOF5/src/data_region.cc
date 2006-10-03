@@ -26,7 +26,7 @@ namespace CarpetIOF5 {
       : m_tensor_component (tensor_component),
         m_region (region)
     {
-      assert (! region.empty());
+      assert (not region.empty());
       
       ostringstream namebuf;
       namebuf << "map=" << Carpet::map << " "
@@ -67,13 +67,13 @@ namespace CarpetIOF5 {
       herr_t herr;
       
       herr = H5Dclose (m_dataset);
-      assert (! herr);
+      assert (not herr);
       
       herr = H5Sclose (m_dataspace);
-      assert (! herr);
+      assert (not herr);
       
       herr = H5Pclose (m_properties);
-      assert (! herr);
+      assert (not herr);
     }
     
     
@@ -109,13 +109,13 @@ namespace CarpetIOF5 {
       herr
         = H5Dwrite (m_dataset, memory_hdf5_datatype, memory_dataspace,
                     m_dataspace, transfer_properties, data);
-      assert (! herr);
+      assert (not herr);
       
       herr = H5Pclose (transfer_properties);
-      assert (! herr);
+      assert (not herr);
       
       herr = H5Sclose (memory_dataspace);
-      assert (! herr);
+      assert (not herr);
     }
     
     
@@ -124,7 +124,7 @@ namespace CarpetIOF5 {
     invariant ()
       const
     {
-      return (! m_region.empty()
+      return (not m_region.empty()
               and m_properties >= 0
               and m_dataset >= 0
               and m_dataspace >= 0);

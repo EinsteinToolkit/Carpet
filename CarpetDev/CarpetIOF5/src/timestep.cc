@@ -67,7 +67,7 @@ namespace CarpetIOF5 {
     ~ timestep_t()
     {
       herr_t const herr = H5Gclose (m_hdf5_timestep);
-      assert (! herr);
+      assert (not herr);
     }
     
     

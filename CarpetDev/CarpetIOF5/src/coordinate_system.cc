@@ -103,7 +103,7 @@ namespace CarpetIOF5 {
     ~ Cartesian_coordinate_system_t ()
     {
       herr_t const herr = H5Gclose (m_hdf5_coordinate_system);
-      assert (! herr);
+      assert (not herr);
     }
     
     
