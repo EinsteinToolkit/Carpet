@@ -34,10 +34,10 @@ namespace CarpetAdaptiveRegrid {
 //                                   gh<dim>::rbnds  * obss,
 //                                   gh<dim>::rprocs * pss);
     CCTK_INT CarpetAdaptiveRegrid_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
-                                  CCTK_POINTER const bbsss_,
-                                  CCTK_POINTER const obss_,
-                                  CCTK_POINTER const pss_,
-				  CCTK_INT force);
+                                          CCTK_POINTER const bbsss_,
+                                          CCTK_POINTER const obss_,
+                                          CCTK_POINTER const pss_,
+                                          CCTK_INT force);
   }
 
   int ManualCoordinateList (cGH const * const cctkGH,

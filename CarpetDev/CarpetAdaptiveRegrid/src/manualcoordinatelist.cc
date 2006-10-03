@@ -125,7 +125,8 @@ namespace CarpetAdaptiveRegrid {
         // TODO: why can basemglevel not be used here?
         // rvect const spacing = base_spacing * ipow(CCTK_REAL(mgfact), basemglevel) / ipow(reffact, rl);
         rvect const spacing = base_spacing / rvect (spacereffacts.at(rl));
-        if (! all(abs(ext.stride() - spacing) < spacing * 1.0e-10)) {
+        if (! all(abs(ext.stride() - spacing)
+                  < spacing * (CCTK_REAL) 1.0e-10)) {
           assert (dim==3);
           CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                       "The grid spacing on refinement level %d is incorrect.  I expected [%g,%g,%g], but I found [%g,%g,%g].",
@@ -133,7 +134,8 @@ namespace CarpetAdaptiveRegrid {
                       double(spacing[0]), double(spacing[1]), double(spacing[2]),
                       double(ext.stride()[0]), double(ext.stride()[1]), double(ext.stride()[2]));
         }
-        assert (all(abs(ext.stride() - spacing) < spacing * 1.0e-10));
+        assert (all(abs(ext.stride() - spacing)
+                    < spacing * (CCTK_REAL) 1.0e-10));
         
         ManualCoordinates_OneLevel
           (cctkGH, hh, rl, refinement_levels,

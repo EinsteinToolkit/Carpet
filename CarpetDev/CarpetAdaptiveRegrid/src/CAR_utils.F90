@@ -8,11 +8,11 @@ subroutine count_points(nx, ny, nz, mask, sum_x, sum_y, sum_z)
 
   implicit none
 
-  CCTK_INT :: nx, ny, nz
-  CCTK_INT :: mask(nx, ny, nz)
-  CCTK_INT :: sum_x(nx), sum_y(ny), sum_z(nz)
+  integer :: nx, ny, nz
+  integer :: mask(nx, ny, nz)
+  integer :: sum_x(nx), sum_y(ny), sum_z(nz)
   
-  CCTK_INT :: i, j, k
+  integer :: i, j, k
   
   do i = 1, nx
     
@@ -56,10 +56,10 @@ subroutine signature(nx, lsum, sig)
 
   implicit none
   
-  CCTK_INT :: nx
-  CCTK_INT :: lsum(nx), sig(nx)
+  integer :: nx
+  integer :: lsum(nx), sig(nx)
   
-  CCTK_INT :: i
+  integer :: i
   
   sig(1)  = 0
   sig(nx) = 0
@@ -79,11 +79,11 @@ subroutine prune(nx, lsum, ilo, ihi)
 
   implicit none
   
-  CCTK_INT :: nx
-  CCTK_INT :: lsum(nx)
-  CCTK_INT :: ilo, ihi
+  integer :: nx
+  integer :: lsum(nx)
+  integer :: ilo, ihi
   
-  CCTK_INT :: i
+  integer :: i
   
   ilo = 0
   ihi = 0
@@ -125,12 +125,12 @@ subroutine prune_box(nx, ny, nz, sum_x, sum_y, sum_z, &
 
   implicit none
   
-  CCTK_INT :: nx, ny, nz
-  CCTK_INT :: sum_x(nx), sum_y(ny), sum_z(nz)
-  CCTK_INT :: bbox(3,3), newbbox(3,3)
-  CCTK_INT :: didit
+  integer :: nx, ny, nz
+  integer :: sum_x(nx), sum_y(ny), sum_z(nz)
+  integer :: bbox(3,3), newbbox(3,3)
+  integer :: didit
   
-  CCTK_INT :: lo, hi
+  integer :: lo, hi
   
   didit = 0
 
@@ -188,12 +188,12 @@ subroutine find_hole(nx, lsum, min_width, ihole)
   
   implicit none
   
-  CCTK_INT, intent(in) :: nx
-  CCTK_INT, intent(in) :: lsum(nx)
-  CCTK_INT, intent(in) :: min_width
-  CCTK_INT, intent(out) ::  ihole
+  integer, intent(in) :: nx
+  integer, intent(in) :: lsum(nx)
+  integer, intent(in) :: min_width
+  integer, intent(out) ::  ihole
   
-  CCTK_INT :: i
+  integer :: i
   
   ihole = 0
   
@@ -226,13 +226,13 @@ subroutine split_box_at_hole(nx, ny, nz, sum_x, sum_y, sum_z, &
 
   implicit none
 
-  CCTK_INT, intent(in) :: nx, ny, nz
-  CCTK_INT, intent(in) :: sum_x(nx), sum_y(ny), sum_z(nz)
-  CCTK_INT :: bbox(3,3), newbbox1(3,3), newbbox2(3,3)
-  CCTK_INT, intent(in) :: min_width
-  CCTK_INT, intent(out) :: didit
+  integer, intent(in) :: nx, ny, nz
+  integer, intent(in) :: sum_x(nx), sum_y(ny), sum_z(nz)
+  integer :: bbox(3,3), newbbox1(3,3), newbbox2(3,3)
+  integer, intent(in) :: min_width
+  integer, intent(out) :: didit
   
-  CCTK_INT :: ihole
+  integer :: ihole
   
   didit = 0
   
@@ -325,11 +325,11 @@ subroutine find_density(nx, ny, nz, mask, density)
 
   implicit none
 
-  CCTK_INT :: nx, ny, nz
-  CCTK_INT :: mask(nx, ny, nz)
+  integer :: nx, ny, nz
+  integer :: mask(nx, ny, nz)
   CCTK_REAL :: density
   
-  CCTK_INT :: marked, i, j, k
+  integer :: marked, i, j, k
   
   marked = 0
   
@@ -359,12 +359,12 @@ subroutine split(nx, signature, min_width, isplit, max_jump)
 
   implicit none
   
-  CCTK_INT :: nx
-  CCTK_INT :: signature(nx)
-  CCTK_INT :: min_width, isplit, max_jump
+  integer :: nx
+  integer :: signature(nx)
+  integer :: min_width, isplit, max_jump
   
-  CCTK_INT :: i
-  CCTK_INT :: jump
+  integer :: i
+  integer :: jump
   
   isplit = 0
   
@@ -402,13 +402,13 @@ subroutine split_box_at_sig(nx, ny, nz, sig_x, sig_y, sig_z, &
 
   implicit none
 
-  CCTK_INT :: nx, ny, nz
-  CCTK_INT :: sig_x(nx), sig_y(ny), sig_z(nz)
-  CCTK_INT :: bbox(3,3), newbbox1(3,3), newbbox2(3,3)
-  CCTK_INT :: min_width
-  CCTK_INT :: didit
+  integer :: nx, ny, nz
+  integer :: sig_x(nx), sig_y(ny), sig_z(nz)
+  integer :: bbox(3,3), newbbox1(3,3), newbbox2(3,3)
+  integer :: min_width
+  integer :: didit
   
-  CCTK_INT :: isplit, max_jump
+  integer :: isplit, max_jump
   
   didit = 0
   max_jump = 0
@@ -520,17 +520,17 @@ subroutine prune_new_box(nx, ny, nz, mask, bbox, newbbox)
 
   implicit none
 
-  CCTK_INT :: nx, ny, nz
-  CCTK_INT :: mask(nx, ny, nz)
-  CCTK_INT :: bbox(3,3), newbbox(3,3)
+  integer :: nx, ny, nz
+  integer :: mask(nx, ny, nz)
+  integer :: bbox(3,3), newbbox(3,3)
 
-  CCTK_INT, dimension(:,:,:), allocatable :: tmp_mask
-  CCTK_INT, dimension(:), allocatable :: tmp_sum_x, tmp_sum_y, tmp_sum_z
-  CCTK_INT, dimension(:), allocatable :: tmp_sig_x, tmp_sig_y, tmp_sig_z
-  CCTK_INT :: tmp_nx, tmp_ny, tmp_nz
-  CCTK_INT :: tmp_bbox(3,3)
-  CCTK_INT :: tmp_didit
-  CCTK_INT :: ierr
+  integer, dimension(:,:,:), allocatable :: tmp_mask
+  integer, dimension(:), allocatable :: tmp_sum_x, tmp_sum_y, tmp_sum_z
+  integer, dimension(:), allocatable :: tmp_sig_x, tmp_sig_y, tmp_sig_z
+  integer :: tmp_nx, tmp_ny, tmp_nz
+  integer :: tmp_bbox(3,3)
+  integer :: tmp_didit
+  integer :: ierr
 
   tmp_nx = (newbbox(1,2) - newbbox(1,1))/newbbox(1,3) + 1
   tmp_ny = (newbbox(2,2) - newbbox(2,1))/newbbox(2,3) + 1
@@ -587,16 +587,16 @@ subroutine check_box(nx, ny, nz, mask, sum_x, sum_y, sum_z, &
 
   implicit none
 
-  CCTK_INT :: nx, ny, nz
-  CCTK_INT :: mask(nx, ny, nz)
-  CCTK_INT :: sum_x(nx), sum_y(ny), sum_z(nz)
-  CCTK_INT :: sig_x(nx), sig_y(ny), sig_z(nz)
-  CCTK_INT :: bbox(3,3), newbbox1(3,3), newbbox2(3,3)
-  CCTK_INT :: min_width
+  integer :: nx, ny, nz
+  integer :: mask(nx, ny, nz)
+  integer :: sum_x(nx), sum_y(ny), sum_z(nz)
+  integer :: sig_x(nx), sig_y(ny), sig_z(nz)
+  integer :: bbox(3,3), newbbox1(3,3), newbbox2(3,3)
+  integer :: min_width
   CCTK_REAL :: min_density
-  CCTK_INT :: didit
+  integer :: didit
   
-  CCTK_INT :: i, j, k
+  integer :: i, j, k
 
   CCTK_REAL :: density
 
@@ -764,14 +764,14 @@ subroutine copy_mask(snx, sny, snz, smask, sbbox, &
 
   implicit none
 
-  CCTK_INT :: snx, sny, snz
-  CCTK_INT :: smask(snx, sny, snz)
-  CCTK_INT :: sbbox(3, 3)
-  CCTK_INT :: dnx, dny, dnz
-  CCTK_INT :: dmask(dnx, dny, dnz)
-  CCTK_INT :: dbbox(3, 3)
+  integer :: snx, sny, snz
+  integer :: smask(snx, sny, snz)
+  integer :: sbbox(3, 3)
+  integer :: dnx, dny, dnz
+  integer :: dmask(dnx, dny, dnz)
+  integer :: dbbox(3, 3)
   
-  CCTK_INT :: i, j, k, si, sj, sk, di, dj, dk
+  integer :: i, j, k, si, sj, sk, di, dj, dk
   
   if ( (dbbox(1,1) < sbbox(1,1)) .or. &
        (dbbox(2,1) < sbbox(2,1)) .or. &
