@@ -39,7 +39,7 @@ namespace CarpetCG {
   
     
   extern "C" {
-    void CarpetCG_register ();
+    int CarpetCG_register ();
   }
   
   int CarpetCG_solve (const cGH * const cctkGH,
@@ -531,11 +531,12 @@ namespace CarpetCG {
 
 
   // Register this solver
-  void CarpetCG_register ()
+  int CarpetCG_register ()
   {
     int const ierr = TATelliptic_RegisterSolver 
       (CarpetCG_solve, "CarpetCG");
     assert (!ierr);
+    return 0;
   }
 
 
