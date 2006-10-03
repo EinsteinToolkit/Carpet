@@ -63,7 +63,7 @@ namespace CarpetCG {
     
     int ierr;
 
-    vector<int> nboundaryzones(2*dim);
+    vector<CCTK_INT> nboundaryzones(2*dim);
 
     CCTK_REAL factor;
     vector<CCTK_REAL> factors;
@@ -916,7 +916,9 @@ namespace CarpetCG {
           if (veryverbose || (iter % outevery == 0 && currenttime >= nexttime)) {
             CCTK_VInfo (CCTK_THORNSTRING,
                         "Iteration %d (%d since restart): residual is %g (%g,%d,%g)",
-                        iter, iter2, (double)sqrt(epsilon / (nvars * gsize)),epsilon,nvars,gsize);
+                        iter, iter2,
+                        (double)sqrt(epsilon / (nvars * gsize)),
+                        (double)epsilon,nvars,(double)gsize);
             if (outeveryseconds > 0) {
               while (nexttime <= currenttime) nexttime += outeveryseconds;
             }
@@ -1052,7 +1054,8 @@ namespace CarpetCG {
             CCTK_VInfo
               (CCTK_THORNSTRING,
                "   Changing step size, iteration %d: was %g, now %g (%g, %g)", 
-               siter, alpha_old, alpha, eta, eta_prev);
+               siter,
+               (double)alpha_old, (double)alpha, (double)eta, (double)eta_prev);
           }
           assert (sum_alpha > - maxstepsize);
           if (sum_alpha > maxstepsize) {
