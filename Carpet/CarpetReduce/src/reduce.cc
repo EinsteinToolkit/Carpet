@@ -1084,9 +1084,10 @@ namespace CarpetReduce {
           
           
           
+          int const grouptype = reduce_arrays ? CCTK_ARRAY : CCTK_GF;
           for (int m=minm; m<maxm; ++m) {
-            ENTER_SINGLEMAP_MODE(cgh, m) {
-              BEGIN_LOCAL_COMPONENT_LOOP(cgh, reduce_arrays ? CCTK_ARRAY : CCTK_GF) {
+            ENTER_SINGLEMAP_MODE(cgh, m, grouptype) {
+              BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype) {
                 
                 
                 
