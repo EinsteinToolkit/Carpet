@@ -164,11 +164,12 @@ namespace CarpetEvolutionMask {
       // Set not evolved region on next coarser level
       {
         int const oldreflevel = reflevel;
+        int const oldgrouptype = mc_grouptype;
         int const oldmap = Carpet::map;
         leave_singlemap_mode (cctkGH);
         leave_level_mode (cctkGH);
         enter_level_mode (cctkGH, oldreflevel-1);
-        enter_singlemap_mode (cctkGH, oldmap);
+        enter_singlemap_mode (cctkGH, oldmap, oldgrouptype);
         
         BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
           
@@ -221,7 +222,7 @@ namespace CarpetEvolutionMask {
         leave_singlemap_mode (cctkGH);
         leave_level_mode (cctkGH);
         enter_level_mode (cctkGH, oldreflevel);
-        enter_singlemap_mode (cctkGH, oldmap);
+        enter_singlemap_mode (cctkGH, oldmap, oldgrouptype);
       }
       
     } // if reflevel>0
