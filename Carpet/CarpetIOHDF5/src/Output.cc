@@ -611,9 +611,13 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
 
   // write bbox attributes if we have coordinate system info
   CCTK_REAL origin[dim], delta[dim];
-  char *groupname = CCTK_GroupNameFromVarI (request->vindex);
-  int coord_system_handle = Coord_GroupSystem (cctkGH, groupname);
-  free (groupname);
+  int coord_system_handle = -1;
+  if (CCTK_IsFunctionAliased ("Coord_GroupSystem"))
+  {
+    char *groupname = CCTK_GroupNameFromVarI (request->vindex);
+    coord_system_handle = Coord_GroupSystem (cctkGH, groupname);
+    free (groupname);
+  }
 
   hsize_t size = vdim;
   HDF5_ERROR (dataspace = H5Screate_simple (1, &size, NULL));

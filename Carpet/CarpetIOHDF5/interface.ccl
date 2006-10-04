@@ -27,7 +27,7 @@ CCTK_INT this_iteration TYPE=scalar
 CCTK_INT FUNCTION Coord_GroupSystem    \
   (CCTK_POINTER_TO_CONST IN GH,        \
    CCTK_STRING IN groupname)
-REQUIRES FUNCTION Coord_GroupSystem
+USES FUNCTION Coord_GroupSystem
 
 # function to check whether existing output files should be truncated or not
 CCTK_INT FUNCTION IO_TruncateOutputFiles \
