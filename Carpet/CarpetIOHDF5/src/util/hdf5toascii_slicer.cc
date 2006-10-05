@@ -77,6 +77,9 @@ typedef struct {
 // the slab coordinate as selected by the user
 static double slab_coord[3] = {PARAMETER_UNSET, PARAMETER_UNSET, PARAMETER_UNSET};
 
+// flag for outputting data in full 3D
+static bool out3D = false;
+
 // the specific timestep selected by the user
 static double timestep = PARAMETER_UNSET;
 
@@ -136,6 +139,8 @@ int main (int argc, char *const argv[])
       help = true; break;
     } else if (strcmp (argv[i], "--verbose") == 0) {
       verbose = true;
+    } else if (strcmp (argv[i], "--out3d-cube") == 0) {
+      out3D = true;
     } else if (strcmp (argv[i], "--timestep") == 0 and i+1 < argc) {
       timestep = atof (argv[++i]);
     } else if (strcmp (argv[i], "--match") == 0 and i+1 < argc) {
@@ -147,6 +152,10 @@ int main (int argc, char *const argv[])
       }
     } else if (strcmp (argv[i], "--out-precision") == 0 and i+1 < argc) {
       cout << setprecision (atoi (argv[++i]));
+    } else if (strcmp (argv[i], "--out0d-point") == 0 and i+3 < argc) {
+      slab_coord[0] = atof (argv[++i]);
+      slab_coord[1] = atof (argv[++i]);
+      slab_coord[2] = atof (argv[++i]); num_slab_options++;
     } else if (strcmp (argv[i], "--out1d-xline-yz") == 0 and i+2 < argc) {
       slab_coord[1] = atof (argv[++i]);
       slab_coord[2] = atof (argv[++i]); num_slab_options++;
@@ -176,7 +185,7 @@ int main (int argc, char *const argv[])
   }
 
   /* give some help if called with incorrect number of parameters */
-  if (help or i >= argc or num_slab_options != 1) {
+  if (help or i >= argc or num_slab_options != (out3D ? 0 : 1)) {
     const string indent (strlen (argv[0]) + 1, ' ');
     cerr << endl << "   ---------------------------"
          << endl << "   Carpet HDF5 to ASCII Slicer"
@@ -188,7 +197,7 @@ int main (int argc, char *const argv[])
          << indent << "[--out-precision <digits>]" << endl
          << indent << "[--timestep <cctk_time value>]" << endl
          << indent << "[--verbose]" << endl
-         << indent << "<--out1d-line value value> | <--out2d-plane value>" << endl
+         << indent << "<--out0d-point value value value> | <--out1d-line value value> | <--out2d-plane value> | <out3d-cube>" << endl
          << indent << "<hdf5_infiles>" << endl << endl
          << "  where" << endl
          << "    [--help]                         prints this help" << endl
@@ -201,8 +210,10 @@ int main (int argc, char *const argv[])
          << "                                     (fuzzily) match the specified time" << endl
          << "    [--verbose]                      lists skipped HDF5 datasets on stderr" << endl
          << endl
-         << "  and either <--out1d-line value value> or <--out2d-plane value> triples" << endl
+         << "  and either --out0d-point value value value> or <--out1d-line value value> or <--out2d-plane value> or <--out3d-cube>" << endl
          << "  must be specified as in the following:" << endl
+         << "    --out0d-point     <origin_x> <origin_y> <origin_z>" << endl
+         << endl
          << "    --out1d-xline-yz  <origin_y> <origin_z>" << endl
          << "    --out1d-yline-xz  <origin_x> <origin_z>" << endl
          << "    --out1d-zline-xy  <origin_x> <origin_y>" << endl
@@ -210,6 +221,8 @@ int main (int argc, char *const argv[])
          << "    --out2d-yzplane-x  <origin_x>" << endl
          << "    --out2d-xzplane-y  <origin_y>" << endl
          << "    --out2d-xyplane-z  <origin_z>" << endl
+         << endl
+         << "    --out3d-cube" << endl
 #if 0
          << "    --out2d-yzplane-xi <origin_xi>" << endl
          << "    --out2d-xzplane-yi <origin_yi>" << endl
@@ -362,12 +375,15 @@ static herr_t FindPatches (hid_t group, const char *name, void *_file)
     CHECK_HDF5 (H5Sget_simple_extent_dims (dataspace, patch.dims, NULL));
 
     int i;
-    for (i = 0; i < 3; i++) {
-      if (slab_coord[i] != PARAMETER_UNSET) {
-        is_okay = slab_coord[i] >= patch.origin[i] and
-                  slab_coord[i] <= patch.origin[i] +
-                                    (patch.dims[2-i]-1)*patch.delta[i];
-        if (not is_okay) break;
+    is_okay = out3D;
+    if (not out3D) {
+      for (i = 0; i < 3; i++) {
+        if (slab_coord[i] != PARAMETER_UNSET) {
+          is_okay = slab_coord[i] >= patch.origin[i] and
+                    slab_coord[i] <= patch.origin[i] +
+                                      (patch.dims[2-i]-1)*patch.delta[i];
+          if (not is_okay) break;
+        }
       }
     }
     if (not is_okay) {
