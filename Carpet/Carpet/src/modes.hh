@@ -141,11 +141,11 @@ namespace Carpet {
   
   // Compatibility defines for the mode iterators
   
-#define BEGIN_MGLEVEL_LOOP(cctkGH)                 \
-  do {                                          \
-    bool mglevel_loop_ = true;                  \
-    for (mglevel_iterator mg_iter_(cctkGH);        \
-         not mg_iter_.done();                      \
+#define BEGIN_MGLEVEL_LOOP(cctkGH)                      \
+  do {                                                  \
+    bool mglevel_loop_ = true;                          \
+    for (Carpet::mglevel_iterator mg_iter_(cctkGH);     \
+         not mg_iter_.done();                           \
          mg_iter_.step()) {
 #define END_MGLEVEL_LOOP                        \
     }                                           \
@@ -153,11 +153,11 @@ namespace Carpet {
     mglevel_loop_ = false;                      \
   } while (false)
   
-#define BEGIN_REVERSE_MGLEVEL_LOOP(cctkGH)                 \
-  do {                                                  \
-    bool reverse_mglevel_loop_ = true;                  \
-    for (reverse_mglevel_iterator mg_iter_(cctkGH);        \
-         not mg_iter_.done();                              \
+#define BEGIN_REVERSE_MGLEVEL_LOOP(cctkGH)                      \
+  do {                                                          \
+    bool reverse_mglevel_loop_ = true;                          \
+    for (Carpet::reverse_mglevel_iterator mg_iter_(cctkGH);     \
+         not mg_iter_.done();                                   \
          mg_iter_.step()) {
 #define END_REVERSE_MGLEVEL_LOOP                \
     }                                           \
@@ -165,11 +165,11 @@ namespace Carpet {
     reverse_mglevel_loop_ = false;              \
   } while (false)
 
-#define BEGIN_REFLEVEL_LOOP(cctkGH)                \
-  do {                                          \
-    bool reflevel_loop_ = true;                 \
-    for (reflevel_iterator ref_iter_(cctkGH);      \
-         not ref_iter_.done();                     \
+#define BEGIN_REFLEVEL_LOOP(cctkGH)                     \
+  do {                                                  \
+    bool reflevel_loop_ = true;                         \
+    for (Carpet::reflevel_iterator ref_iter_(cctkGH);   \
+         not ref_iter_.done();                          \
          ref_iter_.step()) {
 #define END_REFLEVEL_LOOP                       \
     }                                           \
@@ -177,11 +177,11 @@ namespace Carpet {
     reflevel_loop_ = false;                     \
   } while (false)
 
-#define BEGIN_REVERSE_REFLEVEL_LOOP(cctkGH)                \
-  do {                                                  \
-    bool reverse_reflevel_loop_ = true;                 \
-    for (reverse_reflevel_iterator ref_iter_(cctkGH);      \
-         not ref_iter_.done();                             \
+#define BEGIN_REVERSE_REFLEVEL_LOOP(cctkGH)                     \
+  do {                                                          \
+    bool reverse_reflevel_loop_ = true;                         \
+    for (Carpet::reverse_reflevel_iterator ref_iter_(cctkGH);   \
+         not ref_iter_.done();                                  \
          ref_iter_.step()) {
 #define END_REVERSE_REFLEVEL_LOOP               \
     }                                           \
@@ -189,11 +189,11 @@ namespace Carpet {
     reverse_reflevel_loop_ = false;             \
   } while (false)
 
-#define BEGIN_MAP_LOOP(cctkGH, grouptype)                  \
-  do {                                                  \
-    bool map_loop_ = true;                              \
-    for (map_iterator map_iter_(cctkGH, grouptype);        \
-         not map_iter_.done();                             \
+#define BEGIN_MAP_LOOP(cctkGH, grouptype)                       \
+  do {                                                          \
+    bool map_loop_ = true;                                      \
+    for (Carpet::map_iterator map_iter_(cctkGH, grouptype);     \
+         not map_iter_.done();                                  \
          map_iter_.step()) {
 #define END_MAP_LOOP                            \
     }                                           \
@@ -201,11 +201,11 @@ namespace Carpet {
     map_loop_ = false;                          \
   } while (false)
 
-#define BEGIN_COMPONENT_LOOP(cctkGH, grouptype)            \
-  do {                                                  \
-    bool component_loop_ = true;                        \
-    for (component_iterator comp_iter_(cctkGH, grouptype); \
-         not comp_iter_.done();                            \
+#define BEGIN_COMPONENT_LOOP(cctkGH, grouptype)                         \
+  do {                                                                  \
+    bool component_loop_ = true;                                        \
+    for (Carpet::component_iterator comp_iter_(cctkGH, grouptype);      \
+         not comp_iter_.done();                                         \
          comp_iter_.step()) {
 #define END_COMPONENT_LOOP                      \
     }                                           \
@@ -213,11 +213,11 @@ namespace Carpet {
     component_loop_ = false;                    \
   } while (false)
 
-#define BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, grouptype)              \
-  do {                                                          \
-    bool local_component_loop_ = true;                          \
-    for (local_component_iterator comp_iter_(cctkGH, grouptype);   \
-         not comp_iter_.done();                                    \
+#define BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, grouptype)                   \
+  do {                                                                  \
+    bool local_component_loop_ = true;                                  \
+    for (Carpet::local_component_iterator comp_iter_(cctkGH, grouptype); \
+         not comp_iter_.done();                                         \
          comp_iter_.step()) {
 #define END_LOCAL_COMPONENT_LOOP                \
     }                                           \
@@ -277,7 +277,7 @@ namespace Carpet {
 #define BEGIN_SINGLEMAP_MODE(cctkGH)            \
   do {                                          \
     bool singlemap_mode_ = true;                \
-    singlemap_escape esc_(cctkGH);              \
+    Carpet::singlemap_escape esc_(cctkGH);      \
     {
 #define END_SINGLEMAP_MODE                      \
     }                                           \
@@ -288,7 +288,7 @@ namespace Carpet {
 #define BEGIN_LEVEL_MODE(cctkGH)                \
   do {                                          \
     bool level_mode_ = true;                    \
-    level_escape esc_(cctkGH);                  \
+    Carpet::level_escape esc_(cctkGH);          \
     {
 #define END_LEVEL_MODE                          \
     }                                           \
@@ -299,7 +299,7 @@ namespace Carpet {
 #define BEGIN_GLOBAL_MODE(cctkGH)               \
   do {                                          \
     bool global_mode_ = true;                   \
-    global_escape esc_(cctkGH);                 \
+    Carpet::global_escape esc_(cctkGH);         \
     {
 #define END_GLOBAL_MODE                         \
     }                                           \
@@ -310,7 +310,7 @@ namespace Carpet {
 #define BEGIN_META_MODE(cctkGH)                 \
   do {                                          \
     bool meta_mode_ = true;                     \
-    meta_escape esc_(cctkGH);                   \
+    Carpet::meta_escape esc_(cctkGH);           \
     {
 #define END_META_MODE                           \
     }                                           \
@@ -356,17 +356,17 @@ namespace Carpet {
   
   // Compatibility defines for the mode setters
   
-#define ENTER_GLOBAL_MODE(cctkGH, ml)           \
-  do {                                          \
-    mglevel_setter mg_setter_(cctkGH, ml);      \
+#define ENTER_GLOBAL_MODE(cctkGH, ml)                   \
+  do {                                                  \
+    Carpet::mglevel_setter mg_setter_(cctkGH, ml);      \
     {
 #define LEAVE_GLOBAL_MODE                       \
     }                                           \
   } while (false)
   
-#define ENTER_LEVEL_MODE(cctkGH, rl)            \
-  do {                                          \
-    reflevel_setter ref_setter_(cctkGH, rl);    \
+#define ENTER_LEVEL_MODE(cctkGH, rl)                    \
+  do {                                                  \
+    Carpet::reflevel_setter ref_setter_(cctkGH, rl);    \
     {
 #define LEAVE_LEVEL_MODE                        \
     }                                           \
@@ -374,15 +374,15 @@ namespace Carpet {
   
 #define ENTER_SINGLEMAP_MODE(cctkGH, m, grouptype)      \
   do {                                                  \
-    map_setter m_setter_(cctkGH, m, grouptype);         \
+    Carpet::map_setter m_setter_(cctkGH, m, grouptype); \
     {
 #define LEAVE_SINGLEMAP_MODE                    \
     }                                           \
   } while (false)
   
-#define ENTER_LOCAL_MODE(cctkGH, c, grouptype)          \
-  do {                                                  \
-    component_setter c_setter_(cctkGH, c, grouptype);   \
+#define ENTER_LOCAL_MODE(cctkGH, c, grouptype)                  \
+  do {                                                          \
+    Carpet::component_setter c_setter_(cctkGH, c, grouptype);   \
     {
 #define LEAVE_LOCAL_MODE                        \
     }                                           \
