@@ -280,7 +280,13 @@ namespace CarpetRegrid2 {
     
     // Ensure that the coarser grids contain the finer ones
     for (size_t rl = regions.size() - 1; rl >= 2; -- rl) {
-      ibbox coarse = * regions.at(rl-1).begin();
+      ibbox const coarse = * regions.at(rl-1).begin();
+      
+      i2vect const fdistance =
+        i2vect(ivect(0 * min_distance)) + dd.ghosts + dd.buffers;
+      i2vect const cdistance =
+        i2vect(ivect(min_distance + dd.inner_buffer_width +
+                     dd.prolongation_stencil_size()));
       
       regions.at(rl).normalize();
       ibboxset coarsified;
@@ -288,11 +294,11 @@ namespace CarpetRegrid2 {
            ibb != regions.at(rl).end();
            ++ ibb)
       {
-        ivect const distance (min_distance);
         ibbox const fbb = * ibb;
-        ibbox const cbb = fbb.expanded_for(coarse);
-        ibbox const ebb = cbb.expand (distance, distance);
-        coarsified |= ebb;
+        ibbox const efbb = fbb.expand (fdistance[0], fdistance[1]);
+        ibbox const cbb = efbb.expanded_for(coarse);
+        ibbox const ecbb = cbb.expand (cdistance[0], cdistance[1]);
+        coarsified |= ecbb;
       }
       
       regions.at(rl-1) |= coarsified;
