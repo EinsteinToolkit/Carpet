@@ -590,9 +590,9 @@ namespace CarpetRegrid2 {
         bbsss.at(m) = bbssss.at(m).at(0);
       }
       
-      for (int m = 0; m < maps; ++ m) {
-        Regrid (cctkGH, bbsss.at(m), obsss.at(m));
-      }
+      BEGIN_MAP_LOOP (cctkGH, CCTK_GF) {
+        Regrid (cctkGH, bbsss.at(Carpet::map), obsss.at(Carpet::map));
+      } END_MAP_LOOP;
       
       // Count levels
       vector <int> rls (maps);
