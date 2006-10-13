@@ -224,11 +224,6 @@ namespace Carpet {
     
     Waypoint ("Regridding map %d...", m);
     
-    // Write grid structure to file
-    OutputGridStructure (cctkGH, m, bbsss, obss, pss);
-    
-    if (verbose) OutputGrids (cctkGH, m, *vhh.at(m), *vdd.at(m));
-    
     // Check the regions
     CheckRegions (bbsss, obss, pss);
     // TODO: check also that the current and all coarser levels did
@@ -236,6 +231,11 @@ namespace Carpet {
     
     // Regrid
     vhh.at(m)->regrid (bbsss, obss, pss);
+    
+    // Write grid structure to file
+    OutputGridStructure (cctkGH, m, bbsss, obss, pss);
+    
+    if (verbose) OutputGrids (cctkGH, m, *vhh.at(m), *vdd.at(m));
     
     Waypoint ("Done regridding map %d.", m);
   }
