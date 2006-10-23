@@ -145,6 +145,14 @@
     line.)  Instructions for using darcs are
     given <a href="#darcs">below</a>.</p>
 
+    <p>You can obtain the darcs repository also using <tt>wget</tt>
+    instead of <tt>darcs</tt>.  For this, use the command</p>
+<pre>        wget -r -nH -np --cut-dirs=1 -R "index.html*" http://www.carpetcode.org/\~darcs/carpet/</pre>
+    <p>This copies the darcs repository into a subdirectory
+    called <tt>carpet</tt>, in much the same way as the <tt>darcs
+    get</tt> command above would.  That is, you also end up with a
+    fully functional local repository.</p>
+
     <p>We thank
     the <a href="http://www.tat.physik.uni-tuebingen.de/">Institut für
     Astronomie und Astrophysik</a> of the Universität Tübingen for
