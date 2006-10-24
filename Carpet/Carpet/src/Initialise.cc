@@ -115,7 +115,12 @@ namespace Carpet {
       do_meta_mode = mglevel==mglevels-1; // on first iteration, coarsest grid
       
       // Checking
-      Poison (cctkGH, alltimes, CCTK_ARRAY);
+      {
+        int const rl=0;
+        ENTER_LEVEL_MODE (cctkGH, rl) {
+          Poison (cctkGH, alltimes, CCTK_ARRAY);
+        } LEAVE_LEVEL_MODE;
+      }
       
       // Register coordinates
       Checkpoint ("Scheduling CCTK_WRAGH");
