@@ -61,7 +61,7 @@ namespace Carpet {
     const int sz = CCTK_VarTypeSize(CCTK_VarTypeI(n0));
     assert (sz>0);
     
-    const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
+    const int num_tl = CCTK_ActiveTimeLevelsVI(cgh, n0);
     assert (num_tl>0);
     const int min_tl = mintl(where, num_tl);
     const int max_tl = maxtl(where, num_tl);
@@ -119,7 +119,7 @@ namespace Carpet {
         const int tp = CCTK_VarTypeI(n0);
         const int gpdim = groupdata.at(group).info.dim;
         
-        const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
+        const int num_tl = CCTK_ActiveTimeLevelsVI(cgh, n0);
         assert (num_tl>0);
         const int min_tl = mintl(where, num_tl);
         const int max_tl = maxtl(where, num_tl);
