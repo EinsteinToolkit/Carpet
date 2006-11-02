@@ -8,6 +8,10 @@
 \renewcommand{\bottomfraction}{0.75}
 \addtolength{\textfloatsep}{5ex}
 
+% Make a comment stand out visually
+\def\todo#1{\textbf{Erik: #1}}
+%%\newcommand{\todo}[1]{$\blacksquare$~\textsf{[#1]}}
+
 \def\arrangement#1{\textbf{#1}}
 \def\thorn#1{\textbf{#1}}
 
@@ -23,7 +27,7 @@
 
 \author{Thomas Radke and Jonathan Thornburg}
 \title{Carpet Scheduling}
-\date{24 August 2006}
+\date{2 November 2006}
 \maketitle
 \begin{abstract}
 This document describes how scheduling works in (\thorn{PUGH} and)
@@ -50,7 +54,7 @@ in section~E3).%%%
 	 apply to them.  Unless you really know what you're doing,
 	 you should probably avoid scheduling routines in these
 	 bins; instead use the \texttt{WRAGH}, \texttt{BASEGRID},
-	 and \texttt{TERMINATE} schedule bins respectively.
+	 and \texttt{TERMINATE} schedule bins, respectively.
 	 }%%%
 
 There are two major pieces of software involved in scheduling:
@@ -195,6 +199,9 @@ coarser ones.%%%
 	 points where there is also a finer grid, but the
 	 cost saving would be small, and the bookkeeping
 	 quite messy, so it's not worth doing this.
+	 (If you want to try, Carpet does support this;
+	 it is only necessary to choose a grid structure
+	 that has a ``hole'' in the coarse grid.)
 	 }%%%
 {}  The key to the Berger-Oliger algorithm is that, when doing the time
 evolution, in each time step coarse grids are stepped first, and their
@@ -272,7 +279,7 @@ in each axis, and lives on a single processor) has a number of attributes:
 	 recently ``patch'' has become more common.  As a rule of
 	 thumb, the thorns in the \arrangement{Carpet} arrangement
 	 generally use ``map'', but other infrastructure thorns
-	 (like \texttt{MultiPatch} and \thorn{GZPatchSystem})
+	 (like \thorn{MultiPatch} and \thorn{GZPatchSystem})
 	 generally use ``patch''.
 	 }%%%
 {}	This will always be~0 unless you're doing a multipatch simulation.
@@ -396,10 +403,7 @@ grid attributes and predefined Cactus macros and variables are defined
 in each mode.  [Notice that for backwards compatability and simpler
 program in the most common (single-patch) case, some variables which
 are logically only defined in singlemap and local modes, are ``extended''
-to also be defined in level mode in single-patch simulations.  Similarly,
-some variables which are logically only defined in level, singlemap,
-and local modes, are extended to also be defined in global mode,
-describing the coarsest grid.]
+to also be defined in level mode in single-patch simulations.]
 
 %%%%%%%%%%
 \begin{table}[bp]
@@ -420,17 +424,23 @@ describing the coarsest grid.]
 							&\yes	&\yes	\\
 \texttt{CCTK\_DELTA\_SPACE}	&\no	&\no	&\yes{} if single-patch
 							&\yes	&\yes	\\
-\texttt{CCTK\_DELTA\_TIME}	&\no	&\no	&\yes{} if single-patch
+\texttt{CCTK\_DELTA\_TIME}	&\no	&\no	&\yes
 							&\yes	&\yes	\\
 \texttt{cctk\_origin\_space}	&\no	&\yes (coarse)
-						&\yes{} if single-patch
-							&\yes	&\yes	\\
+						&\yes (coarse) if single-patch
+							&\yes (coarse)
+								&\yes (coarse)
+									\\
 \texttt{cctk\_delta\_space}	&\no	&\yes (coarse)
-						&\yes{} if single-patch
-							&\yes	&\yes	\\
+						&\yes (coarse) if single-patch
+							&\yes (coarse)
+								&\yes (coarse)
+									\\
 \texttt{cctk\_delta\_time}	&\no	&\yes (coarse)
-						&\yes{} if single-patch
-							&\yes	&\yes	\\
+						&\yes (coarse)
+							&\yes (coarse)
+								&\yes (coarse)
+									\\
 \hline %----------------------------------------------------------------
 grid scalars			&\no	&\yes	&\yes	&\yes	&\yes	\\
 grid arrays			&\no	&\yes	&\yes	&\yes	&\yes	\\
@@ -531,15 +541,9 @@ assert(Carpet::is_level_mode());
 For changing modes, the macros defined in \verb|carpet.hh| provide
 a higher-level interface, and automagically enforce proper nesting
 of the modes (in the sense of figure~\ref{fig-Carpet-loops-and-modes}).
-Unfortunately, they require you to import the entire \verb|Carpet::|
-namespace with ``\verb|using namespace Carpet;|''%%%
-\footnote{%%%
-	 This is a bug, and hopefully will be fixed someday\dots
-	 }%%%
-{} although you only need to this in a local block enclosing the macros'
-use.  The mode-changing functions provide a lower-level interface, and
+The mode-changing functions provide a lower-level interface, and
 do not enforce proper nesting, but they can be used with explicit
-\verb|Carpet::| namespace qualifications (\ie{} without having to import
+\verb|Carpet::| namespace qualifications (\ie, without having to import
 the entire \verb|Carpet::| namespace).
 
 The macros set the \verb|cctkGH| entries as appropriate.  However, they
@@ -550,14 +554,13 @@ inside the macro loop.
 The most commonly-used macros are probably the looping ones, which
 come in pairs \verb|BEGIN_|*\verb|_LOOP| and \verb|END_|*\verb|_LOOP|.
 These let you move one level deeper in the loop hierarchy.
-(For the \verb|BEGIN_COMPONENT_LOOP| or \verb|BEGIN_LOCAL_COMPONENT_LOOP|
-macros, \verb|grouptype| is either \verb|CCTK_GF| or \verb|CCTK_ARRAY|
-to specify whether you want to loop over grid function components or
-grid array components.)
-
 There are also \verb|ENTER_|*\verb|_MODE| and \verb|LEAVE_|*\verb|_MODE|
 macros, which let you escape out of a level (or even levels!) in the
 loop hierarchy.
+
+Some of these macros also require a \verb|grouptype| argument; this
+is either \verb|CCTK_GF| or \verb|CCTK_ARRAY| to specify whether you
+are looping over grid function components or grid array components.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1109,6 +1112,12 @@ SHUTDOWN
 		from fine grids to coarse grids.			\\
 	At present \texttt{mglevels} aren't used, \ie{} the
 		\texttt{mglevels} loops have only a single iteration.	%%%\\
+%
+\todo{ES: The postregrid bin loops now over all time levels.  The
+  initial bin can also do this if init\_all\_timelevels is selected.}
+%
+\todo{ES: Some of these loops may have change recently.  Check.}
+%
 	}
 \label{fig-Carpet-Berger-Oliger-details}
 \end{figure}
@@ -1215,7 +1224,7 @@ This section needs more writing. :(
 
 {\bf Problem}
 
-How to perform a global operation (e.g. maximum reduction) once at \verb|CCTK_POSTINITIAL| (call the
+How to perform a global operation (e.g.\ maximum reduction) once at \verb|CCTK_POSTINITIAL| (call the
 routine which performs this global operation routine A), before another routine, B, which is scheduled in local mode. As a further
 constraint, suppose that the scheduling of thorn B cannot be modified.\\
 
