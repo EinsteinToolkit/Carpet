@@ -62,7 +62,7 @@ void dh::regrid ()
 
   allocate_bboxes();
   
-  foreach_reflevel_component_mglevel (&dh::setup_sync_and_refine_boxes);
+  foreach_reflevel_component_mglevel (&dh::setup_allocate);
   foreach_reflevel_component_mglevel (&dh::setup_sync_boxes);
   foreach_reflevel_component_mglevel (&dh::setup_multigrid_boxes);
   foreach_reflevel_component_mglevel (&dh::setup_refinement_prolongation_boxes);
@@ -115,16 +115,19 @@ void dh::allocate_bboxes ()
         const ibbox intr = h.extents().at(ml).at(rl).at(c);
         dboxes & b = boxes.at(ml).at(rl).at(c);
 
+
+
         // Interior
         // (the interior of the grid has the extent as specified by
         // the user)
         b.interior = intr;
-
+        
         // Exterior (add ghost zones)
         // (the content of the exterior is completely determined by
         // the interior of this or other components; the content of
         // the exterior is redundant)
-        i2vect dist(ghosts);
+        i2vect dist(ghosts);    // for ghosts
+        i2vect odist(0);        // for owned regions
         for (int f=0; f<2; ++f) {
           for (int d=0; d<dim; ++d) {
             if (h.outer_boundaries().at(rl).at(c)[d][f]) {
@@ -146,6 +149,7 @@ void dh::allocate_bboxes ()
               boxes.at(ml).at(rl).at(c).is_interproc[d][f] = is_interproc;
               if (! is_empty and ! is_interproc) {
                 dist[f][d] += buffers[f][d];
+                odist[f][d] = dist[f][d];
               }
             }
           }
@@ -153,11 +157,37 @@ void dh::allocate_bboxes ()
         
         b.exterior = intr.expand(dist[0], dist[1]);
         
+        // Owned (interior plus buffer zones)
+        // (will be made disjoint below)
+        b.owned = intr.expand(odist[0], odist[1]);
+        
         // Boundaries (ghost zones only)
         // (interior + boundaries = exterior)
         b.boundaries = b.exterior - intr;
 
       } // for c
+      
+      // Make owned regions disjoint
+      for (int c=0; c<h.components(rl); ++c) {
+        const ibbox intr = h.extents().at(ml).at(rl).at(c);
+        dboxes & b = boxes.at(ml).at(rl).at(c);
+        
+        // 1. Remove all other interiors from this owned region
+        for (int cc=0; cc<h.components(rl); ++cc) {
+          if (cc != c) {
+            b.owned -= boxes.at(ml).at(rl).at(cc).interior;
+          }
+        }
+        b.owned.normalize();
+        
+        // 2. Make disjoint from all earlier owned regions
+        for (int cc=0; cc<c; ++cc) {
+          b.owned -= boxes.at(ml).at(rl).at(cc).owned;
+        }
+        b.owned.normalize();
+        
+      } // for c
+      
     } // for rl
   } // for ml
 }
@@ -177,8 +207,8 @@ void dh::foreach_reflevel_component_mglevel (dh::boxesop op)
   }
 }
 
-void dh::setup_sync_and_refine_boxes (dh::dboxes & b,
-                                      int const rl, int const c, int const ml)
+void dh::setup_allocate (dh::dboxes & b,
+                         int const rl, int const c, int const ml)
 {
   // Sync boxes
   const int cs = h.components(rl);
@@ -208,10 +238,14 @@ void dh::setup_sync_boxes (dh::dboxes & box,
   // Sync boxes
   for (int cc=0; cc<h.components(rl); ++cc) {
     dboxes & box1 = boxes.at(ml).at(rl).at(cc);
-    // intersect boundaries with interior of that component
-    ibset ovlp = bnds & box1.interior;
-    ovlp.normalize();
-    for (ibset::const_iterator b=ovlp.begin();b!=ovlp.end(); ++b) {
+    ibset ovlp;
+    if (cc != c) {
+      // Do not sync from the same component
+      // Intersect boundaries with owned region of that component
+      ovlp = bnds & box1.owned;
+      ovlp.normalize();
+    }
+    for (ibset::const_iterator b=ovlp.begin(); b!=ovlp.end(); ++b) {
       box .recv_sync.at(cc).push_back(*b);
       box1.send_sync.at(c).push_back(*b);
     }
@@ -278,6 +312,7 @@ void dh::setup_refinement_prolongation_boxes (dh::dboxes & box,
         // grid)
         const int pss = prolongation_stencil_size();
         ibset recvs = extr.expand(-pss,-pss).contracted_for(intrf) & intrf;
+        // Receive only once
         const iblistvect& rrc = box1.recv_ref_coarse;
         for (iblistvect::const_iterator lvi=rrc.begin();
              lvi!=rrc.end(); ++lvi)
@@ -289,6 +324,7 @@ void dh::setup_refinement_prolongation_boxes (dh::dboxes & box,
           }
         }
         recvs.normalize();
+        //
         for (ibset::const_iterator ri=recvs.begin(); ri!=recvs.end(); ++ri) {
           const ibbox recv = *ri;
           const ibbox send = recv.expanded_for(extr);
@@ -311,16 +347,19 @@ void dh::setup_refinement_boundary_prolongation_boxes (dh::dboxes & box,
   if (rl<h.reflevels()-1) {
     for (int cc=0; cc<h.components(rl+1); ++cc) {
       dboxes & box1 = boxes.at(ml).at(rl+1).at(cc);
-      const ibbox intrf = box1.interior;
-      const ibbox& extrf = box1.exterior;
-      const ibset& bndsf = box1.boundaries;
+      const ibbox & intrf = box1.interior;
+      const ibbox & extrf = box1.exterior;
+      const ibset & bndsf = box1.boundaries;
+      const ibset & owndf = box1.owned;
       // Prolongation (boundaries)
       // TODO: prefer boxes from the same processor
       {
-        // (the prolongation may use the exterior of the coarse
-        // grid, and must fill all of the boundary of the fine
-        // grid)
+        // (the boundary prolongation may use the exterior of the
+        // coarse grid, and must fill all of the owned boundary of the
+        // fine grid)
         const int pss = prolongation_stencil_size();
+        ibset recvs = bndsf & owndf;
+        recvs.normalize();
         // Prolongation boundaries
         ibset pbndsf = bndsf;
         {
@@ -338,34 +377,33 @@ void dh::setup_refinement_boundary_prolongation_boxes (dh::dboxes & box,
           pbndsf.normalize();
         }
         // Inner buffer zones
-        ibset bufs;
         {
+          ibset bufs;
           for (ibset::const_iterator pbi=pbndsf.begin();
                pbi!=pbndsf.end(); ++pbi)
           {
-            bufs
-              |= (*pbi).expand(inner_buffer_width, inner_buffer_width) & extrf;
+            bufs |= (*pbi).expand(inner_buffer_width, inner_buffer_width);
           }
-          bufs.normalize();
-        }
-        // Add boundaries
-        const ibbox maxrecvs = extr.expand(-pss,-pss).contracted_for(extrf);
-        ibset recvs = bufs & maxrecvs;
-        recvs.normalize();
-        {
-          // Do not prolongate what is already prolongated
-          const iblistvect& rrbc = box1.recv_ref_bnd_coarse;
-          for (iblistvect::const_iterator lvi=rrbc.begin();
-               lvi!=rrbc.end(); ++lvi)
-          {
-            for (iblist::const_iterator li=lvi->begin();
-                 li!=lvi->end(); ++li)
-            {
-              recvs -= *li;
-            }
-          }
+          bufs &= intrf;
+          recvs |= bufs;
           recvs.normalize();
         }
+        const ibbox maxrecvs = extr.expand(-pss,-pss).contracted_for(extrf);
+        recvs &= maxrecvs;
+        recvs.normalize();
+        // Receive only once
+        const iblistvect& rrbc = box1.recv_ref_bnd_coarse;
+        for (iblistvect::const_iterator lvi=rrbc.begin();
+             lvi!=rrbc.end(); ++lvi)
+        {
+          for (iblist::const_iterator li=lvi->begin();
+               li!=lvi->end(); ++li)
+          {
+            recvs -= *li;
+          }
+        }
+        recvs.normalize();
+        //
         {
           for (ibset::const_iterator ri = recvs.begin();
                ri != recvs.end(); ++ri)
@@ -511,15 +549,17 @@ void dh::check_bboxes (dh::dboxes & box,
   // Assert that all boundaries are synced or received
   {
     const ibset& sync_not = box.sync_not;
-#if 0
     const ibset& recv_not = box.recv_not;
-#endif
           
     // Check that no boundaries are left over
     if (rl==0) assert (sync_not.empty());
 #if 0
     assert (recv_not.empty());
 #endif
+    
+    // Check that a component does not sync from itself
+    assert (box.recv_sync.at(c).empty());
+    assert (box.send_sync.at(c).empty());
   }
 
   // Assert that the interior is received exactly once during
@@ -553,7 +593,96 @@ void dh::check_bboxes (dh::dboxes & box,
 #if 0
       assert (intr.empty());
 #endif
+    
+#if 0
+      // TODO
+      // This just takes the number of boundary points into account.
+      // It should really also take the location of the boundary into
+      // account.
+
+      // Check that whatever is left is exactly the outer boundary
+      {
+        // Determine whether Carpet::domain_from_coordbase is used
+        int type;
+        void const * ptr =
+          CCTK_ParameterGet ("domain_from_coordbase", "Carpet", & type);
+        assert (ptr != 0);
+        assert (type == PARAMETER_BOOLEAN);
+        CCTK_INT const domain_from_coordbase =
+          * static_cast <CCTK_INT const *> (ptr);
+        
+        if (not domain_from_coordbase) {
+          CCTK_WARN (2, "Cannot check correctness of grid structure near outer or symmetry boundaries because Carpet::domain_from_coordbase is not used");
+        } else {
+          
+          // Find number of outer boundary points in each direction
+          int const size = 2 * dim;
+          CCTK_INT nboundaryzones_[size];
+          CCTK_INT is_internal_[size];
+          CCTK_INT is_staggered_[size];
+          CCTK_INT shiftout_[size];
+          int const ierr =
+            GetBoundarySpecification
+            (size, nboundaryzones_, is_internal_, is_staggered_, shiftout_);
+          assert (not ierr);
+          i2vect nboundaryzones;
+          for (int f=0; f<2; ++f) {
+            for (int d=0; d<dim; ++d) {
+              nboundaryzones[f][d] = nboundaryzones_[2*d+f];
+            }
+          }
+          
+          // Calculate boundary bboxes
+          b2vect const obs = xpose (h.outer_boundaries().at(rl).at(c));
+          ibset bnd =
+            box.interior - 
+            box.interior.expand (- (ivect (obs[0]) * nboundaryzones[0]),
+                                 - (ivect (obs[1]) * nboundaryzones[1]));
+          bnd.normalize();
+          
+          // TODO: why should not intr == bnd?
+          intr -= bnd;
+          
+          if (! intr.empty()) {
+            intr.normalize();
+            bnd.normalize();
+            cout << "rl " << rl << " c " << c << endl;
+            cout << "box.exterior: " << box.exterior << endl;
+            cout << "box.interior: " << box.interior << endl;
+            cout << "box.boundaries: " << box.boundaries << endl;
+            cout << "intr: " << intr << endl;
+            cout << "bnd: " << bnd << endl;
+          }
+          assert (intr.empty());
+        }
+      }
+#endif
     }
+  }
+  
+  // Assert that the owned regions are disjoint, that they together
+  // make up the sum of all exterior regions, and that each
+  // component's owned region contains its interior region
+  if (c==0) {
+    ibset combined_ownd;
+    ibset combined_extr;
+    for (int cc=0; cc<h.components(rl); ++cc) {
+      
+      dboxes const & box1 = boxes.at(ml).at(rl).at(cc);
+      
+      ibbox const & intr = box1.interior;
+      ibset const & ownd = box1.owned;
+      ibbox const & extr = box1.exterior;
+      
+      ibset const ovlp = combined_ownd & ownd;
+      assert (ovlp.empty());
+      
+      assert ((ownd & intr) == intr);
+      
+      combined_ownd |= ownd;
+      combined_extr |= extr;
+    }
+    assert (combined_ownd == combined_extr);
   }
   
   // Assert that the boundaries are received at most once during
@@ -775,7 +904,9 @@ void dh::do_output_bboxes(dh::dboxes & box,
   cout << "dh bboxes:" << endl;
   cout << "ml=" << ml << " rl=" << rl << " c=" << c << endl;
   cout << "exterior=" << box.exterior << endl;
+  cout << "is_interproc=" << box.is_interproc << endl;
   cout << "interior=" << box.interior << endl;
+  cout << "owned=" << box.owned << endl;
   cout << "send_mg_fine=" << box.send_mg_fine << endl;
   cout << "send_mg_coarse=" << box.send_mg_coarse << endl;
   cout << "recv_mg_fine=" << box.recv_mg_fine << endl;

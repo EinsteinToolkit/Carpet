@@ -39,9 +39,9 @@ public:
   // refinement boundaries, but does not refer to outer (physical)
   // boundaries.
   
-  // ghost zones, refinement boundaries, and outer boundaries are not
-  // used as sources for synchronisation.  this design choice might
-  // not be good.
+  // ghost zones and outer boundaries are not used as sources for
+  // synchronisation.  refinement boundaries are used.  this design
+  // choice might not be good.
   
   struct dboxes {
     ibbox exterior;             // whole region (including boundaries)
@@ -49,6 +49,7 @@ public:
                                 // interprocessor boundary
     
     ibbox interior;             // interior (without boundaries)
+    ibset owned;                // can be used for synchronisation
     iblist send_mg_fine;
     iblist send_mg_coarse;
     iblist recv_mg_fine;
@@ -93,7 +94,7 @@ private:
   void foreach_reflevel_component_mglevel (boxesop op);
 
   // these all of form 'boxesop'
-  void setup_sync_and_refine_boxes (dboxes & b, int rl, int c, int ml);
+  void setup_allocate (dboxes & b, int rl, int c, int ml);
   void setup_sync_boxes (dboxes & b, int rl, int c, int ml);
   void setup_multigrid_boxes (dboxes & b, int rl, int c, int ml);
   void setup_refinement_prolongation_boxes (dboxes & b, int rl, int c, int ml);
