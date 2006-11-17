@@ -118,6 +118,14 @@ Parameters to control the \ThisThorn\ I/O method are:
         If this parameter is set to an empty string \ThisThorn\ output will go
         to the standard output directory as specified in {\tt IO::out\_dir}.
 
+  \item {\tt IOHDF5::compression\_level (steerable)}\\
+        Compression level to use for writing HDF5 datasets.
+        Automatic {\tt gzip} dataset compression can be enabled by setting
+        this integer parameter to values between 1 and 9 (inclusive),
+        with increasing values requesting higher compression rates (at the cost
+        of additional runtime for outputting HDF5 data); a value of zero
+        (which is the default setting for this parameter) disables compression.
+
   \item {\tt IO::out\_single\_precision (steerable)}\\
         whether to output double-precision data in single precision
 

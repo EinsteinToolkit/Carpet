@@ -137,8 +137,16 @@ int WriteVarUnchunked (const cGH* const cctkGH,
             H5Gunlink (outfile, datasetname.str().c_str());
           } H5E_END_TRY;
         }
+        // enable compression if requested
+        hid_t plist;
+        HDF5_ERROR (plist = H5Pcreate (H5P_DATASET_CREATE));
+        if (compression_level) {
+          HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
+          HDF5_ERROR (H5Pset_deflate (plist, compression_level));
+        }
         HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
-                                         filedatatype, dataspace, H5P_DEFAULT));
+                                         filedatatype, dataspace, plist));
+        HDF5_ERROR (H5Pclose (plist));
       }
 
       // Loop over all components
@@ -379,10 +387,17 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           }
 
           // Write the component as an individual dataset
-          hid_t dataspace, dataset;
+          hid_t plist, dataspace, dataset;
+          HDF5_ERROR (plist = H5Pcreate (H5P_DATASET_CREATE));
+          // enable compression if requested
+          if (compression_level) {
+            HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
+            HDF5_ERROR (H5Pset_deflate (plist, compression_level));
+          }
           HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
           HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
-                                           filedatatype, dataspace, H5P_DEFAULT));
+                                           filedatatype, dataspace, plist));
+          HDF5_ERROR (H5Pclose (plist));
           HDF5_ERROR (H5Sclose (dataspace));
           HDF5_ERROR (H5Dwrite (dataset, memdatatype, H5S_ALL, H5S_ALL,
                                 H5P_DEFAULT, data));
@@ -517,10 +532,17 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       }
 
       // Write the component as an individual dataset
-      hid_t dataspace, dataset;
+      hid_t plist, dataspace, dataset;
+      HDF5_ERROR (plist = H5Pcreate (H5P_DATASET_CREATE));
+      // enable compression if requested
+      if (compression_level) {
+        HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
+        HDF5_ERROR (H5Pset_deflate (plist, compression_level));
+      }
       HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
       HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
-                                       filedatatype, dataspace, H5P_DEFAULT));
+                                       filedatatype, dataspace, plist));
+      HDF5_ERROR (H5Pclose (plist));
       HDF5_ERROR (H5Sclose (dataspace));
       HDF5_ERROR (H5Dwrite (dataset, memdatatype, H5S_ALL, H5S_ALL,
                             H5P_DEFAULT, data));

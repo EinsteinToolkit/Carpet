@@ -93,3 +93,8 @@ BOOLEAN use_reflevels_from_checkpoint "Use 'CarpetRegrid::refinement_levels' fro
 BOOLEAN use_grid_structure_from_checkpoint "Use the grid structure stored in the checkpoint file" STEERABLE = RECOVER
 {
 } "no"
+
+INT compression_level "Compression level to use for writing HDF5 data" STEERABLE = ALWAYS
+{
+  0:9 :: "Higher numbers compress better, a value of zero disables compression"
+} 0
