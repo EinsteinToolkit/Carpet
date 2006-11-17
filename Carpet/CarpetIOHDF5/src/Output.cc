@@ -140,9 +140,12 @@ int WriteVarUnchunked (const cGH* const cctkGH,
         // enable compression if requested
         hid_t plist;
         HDF5_ERROR (plist = H5Pcreate (H5P_DATASET_CREATE));
-        if (compression_level) {
+        const int compression_lvl = request->compression_level >= 0 ?
+                                    request->compression_level :
+                                    compression_level;
+        if (compression_lvl) {
           HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
-          HDF5_ERROR (H5Pset_deflate (plist, compression_level));
+          HDF5_ERROR (H5Pset_deflate (plist, compression_lvl));
         }
         HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
                                          filedatatype, dataspace, plist));
@@ -390,9 +393,12 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           hid_t plist, dataspace, dataset;
           HDF5_ERROR (plist = H5Pcreate (H5P_DATASET_CREATE));
           // enable compression if requested
-          if (compression_level) {
+          const int compression_lvl = request->compression_level >= 0 ?
+                                      request->compression_level :
+                                      compression_level;
+          if (compression_lvl) {
             HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
-            HDF5_ERROR (H5Pset_deflate (plist, compression_level));
+            HDF5_ERROR (H5Pset_deflate (plist, compression_lvl));
           }
           HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
           HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
@@ -535,9 +541,12 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       hid_t plist, dataspace, dataset;
       HDF5_ERROR (plist = H5Pcreate (H5P_DATASET_CREATE));
       // enable compression if requested
-      if (compression_level) {
+      const int compression_lvl = request->compression_level >= 0 ?
+                                  request->compression_level :
+                                  compression_level;
+      if (compression_lvl) {
         HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
-        HDF5_ERROR (H5Pset_deflate (plist, compression_level));
+        HDF5_ERROR (H5Pset_deflate (plist, compression_lvl));
       }
       HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
       HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),

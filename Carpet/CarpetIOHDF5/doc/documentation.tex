@@ -102,12 +102,13 @@ Parameters to control the \ThisThorn\ I/O method are:
 
         Each group/variable name can have an option string attached in which you
         can specify a different output frequency for that individual variable,
-	a set of individual refinement levels to be output, or an individual
-        output mode, e.g.
+	a set of individual refinement levels to be output, the compression
+        level, or an individual output mode, e.g.
 \begin{verbatim}
   IOHDF5::out_vars = "wavetoy::phi{ out_every = 4 refinement_levels = { 1 2 } }"
 \end{verbatim}
-        Option strings currently supported by \ThisThorn\ are: {\tt out\_every, out\_unchunked}, and {\tt refinement\_levels}.
+        Option strings currently supported by \ThisThorn\ are: {\tt out\_every,
+        out\_unchunked}, {\tt refinement\_levels}, and {\tt compression\_level}.
 
   \item {\tt IOHDF5::out\_dir}\\
         The directory in which to place the \ThisThorn\ output files.
@@ -125,6 +126,9 @@ Parameters to control the \ThisThorn\ I/O method are:
         with increasing values requesting higher compression rates (at the cost
         of additional runtime for outputting HDF5 data); a value of zero
         (which is the default setting for this parameter) disables compression.
+        The output compression level can also be set
+        for individual variables using the {\tt compression\_level} option in
+        an option string appended to the {\tt IOHDF5::out\_vars} parameter.
 
   \item {\tt IO::out\_single\_precision (steerable)}\\
         whether to output double-precision data in single precision
