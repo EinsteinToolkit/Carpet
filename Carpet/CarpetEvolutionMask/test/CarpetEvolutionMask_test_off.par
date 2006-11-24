@@ -3,7 +3,7 @@
 
 # Required thorns
 
-ActiveThorns = "CoordBase SymBase time carpet carpetlib carpetregrid carpetreduce carpetslab boundary cartgrid3d bssn_mol mol nanchecker idanalyticbh carpetioascii ioutil iobasic admcoupling admbase admmacros coordgauge spacemask staticconformal carpetevolutionmask"
+ActiveThorns = "CoordBase SymBase time carpet carpetlib carpetregrid carpetreduce carpetslab boundary cartgrid3d bssn_mol mol nanchecker idanalyticbh carpetioascii ioutil carpetiobasic carpetioscalar admcoupling admbase admmacros coordgauge spacemask staticconformal carpetevolutionmask"
 
 # CarpetEvolutionMask 
 
@@ -17,8 +17,6 @@ carpetevolutionmask::writeNaNs = "no"
 driver::ghost_size_x = 2
 driver::ghost_size_y = 2
 driver::ghost_size_z = 2
-
-CartGrid3D::avoid_origin = no
 
 
 Carpet::max_refinement_levels = 2
@@ -104,8 +102,8 @@ carpetioascii::out2D_vars = "adm_bssn::adm_bs_gxx carpetevolutionmask::evolution
 carpetioascii::out3D_vars = "adm_bssn::adm_bs_gxx carpetevolutionmask::evolution_mask"
 
 
-IOBasic::outScalar_every =  4
-IOBasic::outScalar_vars  = "adm_bssn::adm_bs_gxx adm_bssn::adm_bs_Axx adm_bssn::adm_bs_phi adm_bssn::adm_bs_k adm_bssn::adm_bs_Gx admbase::gxx admbase::kxx admbase::alp"
+IOScalar::outScalar_every =  4
+IOScalar::outScalar_vars  = "adm_bssn::adm_bs_gxx adm_bssn::adm_bs_Axx adm_bssn::adm_bs_phi adm_bssn::adm_bs_k adm_bssn::adm_bs_Gx admbase::gxx admbase::kxx admbase::alp"
 
 ##################################################################
 
