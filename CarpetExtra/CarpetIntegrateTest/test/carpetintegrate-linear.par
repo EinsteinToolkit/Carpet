@@ -9,12 +9,13 @@
 # Thorn activation
 #==============================================================================
 
-ActiveThorns = "time carpet carpetlib carpetregrid carpetreduce carpetslab carpetinterp cartgrid3d coordbase symbase boundary iobasic carpetioascii carpetioscalar ioutil carpetintegratetest"
+ActiveThorns = "time carpet carpetlib carpetregrid carpetreduce carpetslab carpetinterp cartgrid3d coordbase symbase boundary carpetiobasic carpetioascii carpetioscalar ioutil carpetintegratetest"
 
 #==============================================================================
 # Directories and recovery
 #==============================================================================
 
+io::out_fileinfo			=	"none"
 io::out_dir				=	$parfile
 
 #==============================================================================
