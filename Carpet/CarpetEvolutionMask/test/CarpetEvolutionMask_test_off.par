@@ -86,7 +86,7 @@ admbase::lapse_evolution_method = "1+log"
 
 # Output
 
-IO::out_fileinfo="none"
+IO::out_fileinfo="axis labels"
 IO::parfile_write = "no"
 IO::out_dir = $parfile
 
