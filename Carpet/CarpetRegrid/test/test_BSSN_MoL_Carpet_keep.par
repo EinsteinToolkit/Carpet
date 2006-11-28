@@ -57,14 +57,16 @@ admbase::lapse_evolution_method = "1+log"
 
 # Output
 
-IO::out_fileinfo="none"
-IO::out_dir = $parfile
+IO::out_dir       = $parfile
+IO::out_fileinfo  = "none"
+IO::parfile_write = "no"
 
 IOBasic::outInfo_every = 1
 IOBasic::outInfo_vars  = "admbase::gxx"
 
-IOScalar::outScalar_every =  8
-IOScalar::outScalar_vars  = "adm_bssn::adm_bs_gxx adm_bssn::adm_bs_Axx adm_bssn::adm_bs_phi adm_bssn::adm_bs_k adm_bssn::adm_bs_Gx admbase::gxx admbase::kxx admbase::alp"
+IOScalar::outScalar_every      = 8
+IOScalar::outScalar_reductions = "average count maximum minimum norm1 norm2 norm_inf"
+IOScalar::outScalar_vars       = "adm_bssn::adm_bs_gxx adm_bssn::adm_bs_Axx adm_bssn::adm_bs_phi adm_bssn::adm_bs_k adm_bssn::adm_bs_Gx admbase::gxx admbase::kxx admbase::alp"
 
 ##################################################################
 
