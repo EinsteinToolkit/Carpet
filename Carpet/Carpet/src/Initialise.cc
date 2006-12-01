@@ -414,8 +414,8 @@ namespace Carpet {
               (do_meta_mode ? " (meta)" : ""));
     
     // Preregrid
-    Checkpoint ("Scheduling PREREGRIDINITIAL");
-    CCTK_ScheduleTraverse ("CCTK_PREREGRIDINITIAL", cctkGH, CallFunction);
+    Checkpoint ("Scheduling PREREGRID");
+    CCTK_ScheduleTraverse ("CCTK_PREREGRID", cctkGH, CallFunction);
     
     // Regrid
     Checkpoint ("Regrid");
@@ -472,9 +472,9 @@ namespace Carpet {
                     cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
                 
                   // Postregrid
-                  Checkpoint ("Scheduling POSTREGRIDINITIAL");
+                  Checkpoint ("Scheduling POSTREGRID");
                   CCTK_ScheduleTraverse
-                    ("CCTK_POSTREGRIDINITIAL", cctkGH, CallFunction);
+                    ("CCTK_POSTREGRID", cctkGH, CallFunction);
                   
                 } // for tl
                 cctkGH->cctk_time = old_cctk_time;
