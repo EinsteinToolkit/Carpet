@@ -7,29 +7,32 @@ ActiveThorns = "CoordBase SymBase time carpet carpetlib carpetregrid carpetreduc
 
 # Grid
 
-driver::global_nx = 21
-driver::global_ny = 21
-driver::global_nz = 21
-
-driver::ghost_size_x = 2
-driver::ghost_size_y = 2
-driver::ghost_size_z = 2
+driver::ghost_size   = 2
+Carpet::buffer_width = 2
 
 CartGrid3D::avoid_origin = no
 
 Carpet::max_refinement_levels = 3
 Carpet::prolongation_order_space = 3
 Carpet::prolongation_order_time = 2
+Carpet::domain_from_coordbase = yes
 
 Carpet::init_each_timelevel = yes
-Carpet::buffer_width = 1
 
 CarpetRegrid::refinement_levels = 2
 CarpetRegrid::regrid_every = 0
 
-Grid::type   = "byspacing"
-Grid::dxyz   = 0.2
-Grid::domain = "octant"
+Grid::type = "coordbase"
+
+CoordBase::xmin = -2.0
+CoordBase::ymin = -2.0
+CoordBase::zmin = -2.0
+CoordBase::xmax = +2.0
+CoordBase::ymax = +2.0
+CoordBase::zmax = +2.0
+CoordBase::dx   =  0.2
+CoordBase::dy   =  0.2
+CoordBase::dz   =  0.2
 
 cactus::cctk_initial_time = 0.0
 cactus::cctk_itlast       = 20
