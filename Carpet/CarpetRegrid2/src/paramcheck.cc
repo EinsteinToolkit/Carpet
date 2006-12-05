@@ -1,6 +1,6 @@
-#include "cctk.h"
-#include "cctk_Arguments.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Arguments.h>
+#include <cctk_Parameters.h>
 
 #include "carpet.hh"
 
@@ -13,12 +13,14 @@ namespace CarpetRegrid2 {
   
   
   extern "C" {
-    void CarpetRegrid2_ParamCheck (CCTK_ARGUMENTS);
+    void
+    CarpetRegrid2_ParamCheck (CCTK_ARGUMENTS);
   }
   
   
   
-  void CarpetRegrid2_ParamCheck (CCTK_ARGUMENTS)
+  void
+  CarpetRegrid2_ParamCheck (CCTK_ARGUMENTS)
   {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
