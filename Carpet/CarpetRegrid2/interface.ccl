@@ -74,3 +74,27 @@ CCTK_INT FUNCTION Carpet_RegridMaps   \
      CCTK_POINTER          IN psss,   \
      CCTK_INT              IN force)
 PROVIDES FUNCTION Carpet_RegridMaps WITH CarpetRegrid2_RegridMaps LANGUAGE C
+
+
+
+CCTK_INT last_iteration "Last iteration at which there was a regridding"
+CCTK_INT last_map "Last map at which there was a regridding at last_iteration"
+
+
+
+PUBLIC:
+
+CCTK_INT num_levels[3] TYPE=scalar
+{
+  num_levels
+} "Number of refinement levels"
+
+CCTK_REAL positions[3] TYPE=scalar
+{
+  position_x position_y position_z
+} "Positions of refined regions"
+
+CCTK_REAL radii[3] TYPE=array DIM=1 SIZE=30 DISTRIB=constant
+{
+  radius
+} "Radii of refined regions for each level"

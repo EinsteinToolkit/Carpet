@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <cctk.h>
+#include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 
 #include <bbox.hh>
@@ -14,7 +15,9 @@
 #include <gh.hh>
 #include <vect.hh>
 
-#include "carpet.hh"
+#include <carpet.hh>
+
+#include "indexing.hh"
 
 
 
@@ -36,62 +39,30 @@ namespace CarpetRegrid2 {
     rvect              position;
     vector <CCTK_REAL> radius;
     
-    static int num_centres ();
-    centre_description (int n);
+    centre_description (cGH const * cctkGH, int n);
   };
   
   
   
-  int
   centre_description::
-  num_centres ()
+  centre_description (cGH const * const cctkGH, int const n)
   {
-    DECLARE_CCTK_PARAMETERS;
-    return num_centres;
-  }
-  
-  
-  
-  centre_description::
-  centre_description (int const n)
-  {
+    DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    assert (n >= 0 and n < centre_description::num_centres ());
-    switch (n) {
-      
-    case 0:
-      num_levels = num_levels_1;
-      position = rvect (position_x_1, position_y_1, position_z_1);
-      radius.resize (num_levels);
-      for (int rl = 0; rl < num_levels; ++ rl) {
-        radius.at(rl) = radius_1[rl];
-      }
-      break;
-      
-    case 1:
-      num_levels = num_levels_2;
-      position = rvect (position_x_2, position_y_2, position_z_2);
-      radius.resize (num_levels);
-      for (int rl = 0; rl < num_levels; ++ rl) {
-        radius.at(rl) = radius_2[rl];
-      }
-      break;
-      
-    case 2:
-      num_levels = num_levels_3;
-      position = rvect (position_x_3, position_y_3, position_z_3);
-      radius.resize (num_levels);
-      for (int rl = 0; rl < num_levels; ++ rl) {
-        radius.at(rl) = radius_3[rl];
-      }
-      break;
-      
-    default:
-      assert (0);
+    assert (n >= 0 and n < num_centres);
+    
+    int lsh[2];
+    getvectorindex2 (cctkGH, "CarpetRegrid2::radii", lsh);
+    
+    this->num_levels = num_levels[n];
+    this->position = rvect (position_x[n], position_y[n], position_z[n]);
+    this->radius.resize (this->num_levels);
+    for (int rl = 0; rl < this->num_levels; ++ rl) {
+      this->radius.at(rl) = radius[index2 (lsh, rl, n)];
     }
     
-    assert (num_levels <= maxreflevels);
+    assert (this->num_levels <= maxreflevels);
   }
   
   
@@ -248,8 +219,8 @@ namespace CarpetRegrid2 {
     vector <ibboxset> regions (1);
     
     // Loop over all centres
-    for (int n = 0; n < centre_description::num_centres(); ++ n) {
-      centre_description centre (n);
+    for (int n = 0; n < num_centres; ++ n) {
+      centre_description centre (cctkGH, n);
       
       // Loop over all levels for this centre
       for (int rl = 1; rl < centre.num_levels; ++ rl) {
@@ -510,19 +481,14 @@ namespace CarpetRegrid2 {
                         CCTK_POINTER          const pss_,
                         CCTK_INT              const force)
   {
-    DECLARE_CCTK_PARAMETERS;
-    
     cGH const * const cctkGH = static_cast <cGH const *> (cctkGH_);
+    
+    DECLARE_CCTK_ARGUMENTS;
+    DECLARE_CCTK_PARAMETERS;
     
     assert (Carpet::is_singlemap_mode());
     
     // Decide whether to change the grid hierarchy
-    static bool last_iteration_initialised = false;
-    static vector<int> last_iteration;
-    if (not last_iteration_initialised) {
-      last_iteration_initialised = true;
-      last_iteration.resize (maps, -1);
-    }
     bool do_recompose;
     if (force) {
       do_recompose = true;
@@ -530,17 +496,20 @@ namespace CarpetRegrid2 {
       if (regrid_every == -1) {
         do_recompose = false;
       } else if (regrid_every == 0) {
-        do_recompose = cctkGH->cctk_iteration == 0;
+        do_recompose = cctk_iteration == 0;
       } else {
         do_recompose =
-          (cctkGH->cctk_iteration == 0 or
-           (cctkGH->cctk_iteration > 0 and
-            (cctkGH->cctk_iteration - 1) % regrid_every == 0 and
-            cctkGH->cctk_iteration > last_iteration.at(Carpet::map)));
+          (cctk_iteration == 0 or
+           (cctk_iteration > 0 and
+            (cctk_iteration - 1) % regrid_every == 0 and
+            (cctk_iteration > * last_iteration or
+             (cctk_iteration == * last_iteration and
+              Carpet::map > * last_map))));
       }
     }
     if (do_recompose) {
-      last_iteration.at(Carpet::map) = cctkGH->cctk_iteration;
+      * last_iteration = cctk_iteration;
+      * last_map = Carpet::map;
     }
     
     if (do_recompose) {
@@ -577,14 +546,15 @@ namespace CarpetRegrid2 {
                             CCTK_POINTER          const psss_,
                             CCTK_INT              const force)
   {
-    DECLARE_CCTK_PARAMETERS;
-    
     cGH const * const cctkGH = static_cast <cGH const *> (cctkGH_);
+    
+    DECLARE_CCTK_ARGUMENTS;
+    DECLARE_CCTK_PARAMETERS;
     
     assert (Carpet::is_level_mode());
     
     // Decide whether to change the grid hierarchy
-    static int last_iteration = -1;
+    assert (* last_map == -1);  // ensure this remains unused
     bool do_recompose;
     if (force) {
       do_recompose = true;
@@ -592,17 +562,17 @@ namespace CarpetRegrid2 {
       if (regrid_every == -1) {
         do_recompose = false;
       } else if (regrid_every == 0) {
-        do_recompose = cctkGH->cctk_iteration == 0;
+        do_recompose = cctk_iteration == 0;
       } else {
         do_recompose =
-          (cctkGH->cctk_iteration == 0 or
-           (cctkGH->cctk_iteration > 0 and
-            (cctkGH->cctk_iteration - 1) % regrid_every == 0 and
-            cctkGH->cctk_iteration > last_iteration));
+          (cctk_iteration == 0 or
+           (cctk_iteration > 0 and
+            (cctk_iteration - 1) % regrid_every == 0 and
+            cctk_iteration > * last_iteration));
       }
     }
     if (do_recompose) {
-      last_iteration = cctkGH->cctk_iteration;
+      * last_iteration = cctk_iteration;
     }
     
     if (do_recompose) {

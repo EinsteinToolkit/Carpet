@@ -1,6 +1,17 @@
 # Schedule definitions for thorn CarpetRegrid2
 
+STORAGE: last_iteration last_map
+STORAGE: num_levels positions radii
+
+
+
 SCHEDULE CarpetRegrid2_ParamCheck AT paramcheck
 {
   LANG: C
 } "Check parameters"
+
+SCHEDULE CarpetRegrid2_Initialise AT initial
+{
+  LANG: C
+  OPTIONS: global
+} "Initialise locations of refined regions"
