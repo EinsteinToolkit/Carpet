@@ -448,6 +448,30 @@ namespace CarpetRegrid2 {
       // Simplify the set of refined regions
       regions.at(rl).normalize();
       
+      // Check whether it would be worthwhile to combine the regions
+      // into a single region
+      {
+        ibbox single;
+        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+             ibb != regions.at(rl).end();
+             ++ ibb)
+        {
+          ibbox bb = * ibb;
+          single = single.expanded_containing (bb);
+        }
+        
+        CCTK_REAL const regions_size
+          = static_cast <CCTK_REAL> (regions.at(rl).size());
+        CCTK_REAL const single_size
+          = static_cast <CCTK_REAL> (single.size());
+        
+        // Would a single bbox be efficient enough?
+        if (regions_size >= min_fraction * single_size) {
+          // Combine the boxes
+          regions.at(rl) = ibboxset (single);
+        }
+      }
+      
       // Create a vector of bboxes for this level
       gh::cexts bbs;
       gh::cbnds obs;
