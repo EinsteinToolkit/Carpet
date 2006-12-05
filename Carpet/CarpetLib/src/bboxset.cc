@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <limits>
@@ -57,74 +58,116 @@ bool bboxset<T,D>::invariant () const {
 
 // Normalisation
 template<class T, int D>
-void bboxset<T,D>::normalize () {
+void bboxset<T,D>::normalize ()
+{
   assert (invariant());
-  const int num_initial_boxes = bs.size();
-  int num_combined_boxes = 0;
-  stack<box> todo, done;
-  for (typename set<box>::const_iterator elt = bs.begin(); elt != bs.end(); ++elt) {
-    done.push (*elt);
+  
+  bboxset const oldbs = * this;
+  int const oldsize = this->size();
+  
+  // Split all bboxes into small pieces which have all their
+  // boundaries aligned.
+  for (int d=0; d<D; ++d) {
+    // Find all boundaries
+    set<T> sbnds;
+    for (typename bset::const_iterator si = bs.begin(); si != bs.end(); ++ si) {
+      box const & b = * si;
+      int const bstr = b.stride()[d];
+      int const blo = b.lower()[d];
+      int const bhi = b.upper()[d] + bstr;
+      sbnds.insert (blo);
+      sbnds.insert (bhi);
+    }
+    // Split bboxes
+    bset nbs;
+    for (typename bset::const_iterator si = bs.begin(); si != bs.end(); ++ si) {
+      box const & b = * si;
+      int const bstr = b.stride()[d];
+      int const blo = b.lower()[d];
+      int const bhi = b.upper()[d] + bstr;
+      typename set<T>::const_iterator const ilo
+        = find (sbnds.begin(), sbnds.end(), blo);
+      typename set<T>::const_iterator const ihi
+        = find (sbnds.begin(), sbnds.end(), bhi);
+      assert (ilo != sbnds.end());
+      assert (ihi != sbnds.end());
+      assert (* ilo == blo);
+      assert (* ihi == bhi);
+      // Split one bbox
+      for (typename set<T>::const_iterator curr = ilo; curr != ihi; ++ curr) {
+        typename set<T>::const_iterator next = curr;
+        advance (next, 1);
+        int const nblo = * curr;
+        int const nbhi = * next;
+        box nb (b.lower().replace(d, nblo),
+                b.upper().replace(d, nbhi - bstr),
+                b.stride());
+        nbs.insert (nb);
+      }
+    }
+    // Replace old set
+    bs.swap (nbs);
+    assert (invariant());
   }
-  int old_num_combined_boxes;
-  do {
-    old_num_combined_boxes = num_combined_boxes;
-    // TODO: This will not catch all cases where bboxes can be combined.
-    for (int d=0; d<D; ++d) {
-      todo = done;
-      done = stack<box>();
-      while (! todo.empty()) {
-      restart:;
-        box item = todo.top();
-        todo.pop();
-        stack<box> work = done;
-        done = stack<box>();
-        while (! work.empty()) {
-          box comp = work.top();
-          work.pop();
-          {
-            assert (all(comp.stride() == item.stride()));
-            if (comp.upper()[d] + item.stride()[d] == item.lower()[d]) {
-              if (all((comp.lower() == item.lower()
-                       && comp.upper() == item.upper()).replace (d, true))) {
-                box newbox = box(comp.lower(), item.upper(), item.stride());
-                todo.push (newbox);
-                while (! work.empty()) {
-                  done.push (work.top());
-                  work.pop();
-                }
-                ++num_combined_boxes;
-                goto restart;
-              }
-            }
-            if (item.upper()[d] + item.stride()[d] == comp.lower()[d]) {
-              if (all((comp.lower() == item.lower()
-                       && comp.upper() == item.upper()).replace (d, true))) {
-                box newbox = box(item.lower(), comp.upper(), item.stride());
-                todo.push (newbox);
-                while (! work.empty()) {
-                  done.push (work.top());
-                  work.pop();
-                }
-                ++num_combined_boxes;
-                goto restart;
-              }
-            }
+  
+  // Combine bboxes if possible
+  for (int d=0; d<D; ++d) {
+    bset nbs;
+    while (not bs.empty()) {
+      typename bset::iterator si = bs.begin();
+      assert (si != bs.end());
+      
+      box const b = * si;
+      int const bstr = b.stride()[d];
+      int const blo = b.lower()[d];
+      int const bhi = b.upper()[d] + bstr;
+      
+      for (typename bset::iterator nsi = nbs.begin(); nsi != nbs.end(); ++ nsi)
+      {
+        box const nb = * nsi;
+        int const nblo = nb.lower()[d];
+        int const nbhi = nb.upper()[d] + bstr;
+        
+        box const mb (nb.lower().replace(d, blo),
+                      nb.upper().replace(d, bhi - bstr),
+                      nb.stride());
+        
+        // Check whether the other dimensions match
+        if (b == mb) {
+          // Check whether the bboxes are adjacent in this dimension
+          if (nbhi == blo) {
+            // Combine boxes, nb < b
+            box const cb (b.lower().replace(d, nblo),
+                          b.upper(),
+                          b.stride());
+            bs.erase (si);
+            nbs.erase (nsi);
+            bs.insert (cb);
+            goto done;
+          } else if (bhi == nblo) {
+            // Combine boxes, b < nb
+            box const cb (b.lower(),
+                          b.upper().replace(d, nbhi - bstr),
+                          b.stride());
+            bs.erase (si);
+            nbs.erase (nsi);
+            bs.insert (cb);
+            goto done;
           }
-          done.push (comp);
-        } // while work
-        done.push (item);
-      } // while todo
-    } // for d
-  } while (num_combined_boxes > old_num_combined_boxes);
-  bs.clear();
-  while (! done.empty()) {
-    bs.insert (done.top());
-    done.pop();
+        }
+      }
+      bs.erase (si);
+      nbs.insert (b);
+    done:;
+    }
+    bs.swap (nbs);
+    assert (invariant());
   }
-  const int num_final_boxes = bs.size();
-  assert (num_final_boxes <= num_initial_boxes);
-  assert (num_initial_boxes - num_combined_boxes == num_final_boxes);
-  assert (invariant());
+  
+  int const newsize = this->size();
+  
+  assert (*this == oldbs);
+  assert (newsize <= oldsize);
 }
 
 
