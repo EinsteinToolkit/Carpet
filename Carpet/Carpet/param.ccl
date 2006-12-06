@@ -189,6 +189,12 @@ CCTK_INT num_integrator_substeps "Number of substeps of the time integrator"
 
 
 
+BOOLEAN sync_during_time_integration "Synchronise during time integration, even when prolongation is switched off"
+{
+} "yes"
+
+
+
 CCTK_STRING base_extents "Extents of base grid components, in grid point units of the finest level"
 {
   "^$" :: "leave empty for one grid component covering the whole region (default)"

@@ -127,35 +127,41 @@ namespace Carpet {
     }
 
     if (goodgroups.size() > 0) {
-      // prolongate boundaries
-      if (reflevel > 0) {
-        if (do_prolongate) {
-          bool local_do_prolongate;
-          if (use_tapered_grids) {
-            // TODO: Check iteration number instead
-            CCTK_REAL mytime;
-            CCTK_REAL parenttime;
-            if (map == -1) {
-              mytime = vtt.at(0)->time (0, reflevel, mglevel);
-              parenttime = vtt.at(0)->time (0, reflevel - 1, mglevel);
-            } else {
-              mytime = vtt.at(map)->time (0, reflevel, mglevel);
-              parenttime = vtt.at(map)->time (0, reflevel - 1, mglevel);
-            }
-            bool const in_sync =
-              abs (mytime - parenttime) < 1.0e-10 * abs (delta_time);
-            local_do_prolongate = in_sync;
+      
+      bool local_do_prolongate;
+      if (do_prolongate) {
+        if (use_tapered_grids) {
+          // TODO: Check iteration number instead
+          CCTK_REAL mytime;
+          CCTK_REAL parenttime;
+          if (map == -1) {
+            mytime = vtt.at(0)->time (0, reflevel, mglevel);
+            parenttime = vtt.at(0)->time (0, reflevel - 1, mglevel);
           } else {
-            local_do_prolongate = true;
+            mytime = vtt.at(map)->time (0, reflevel, mglevel);
+            parenttime = vtt.at(map)->time (0, reflevel - 1, mglevel);
           }
-          if (local_do_prolongate) {
-            ProlongateGroupBoundaries (cctkGH, cctk_initial_time, goodgroups);
-          }
+          bool const in_sync =
+            abs (mytime - parenttime) < 1.0e-10 * abs (delta_time);
+          local_do_prolongate = in_sync;
+        } else {
+          local_do_prolongate = true;
+        }
+      } else {
+        local_do_prolongate = false;
+      }
+      
+      // prolongate boundaries
+      if (local_do_prolongate) {
+        if (reflevel > 0) {
+          ProlongateGroupBoundaries (cctkGH, cctk_initial_time, goodgroups);
         }
       }
-
+      
       // synchronise ghostzones
-      SyncGroups (cctkGH, goodgroups);
+      if (sync_during_time_integration or local_do_prolongate) {
+        SyncGroups (cctkGH, goodgroups);
+      }
     }
 
     return retval;
