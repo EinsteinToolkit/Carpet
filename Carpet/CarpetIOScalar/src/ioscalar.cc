@@ -189,7 +189,10 @@ namespace CarpetIOScalar {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
 
-    assert (is_level_mode());
+    assert (is_level_mode() or
+            (is_singlemap_mode() and Carpet::maps == 1) or
+            (is_local_mode() and Carpet::maps == 1 and vhh.at(Carpet::map)->local_components(reflevel) == 1));
+    BEGIN_LEVEL_MODE (cctkGH) {
 
     const int n = CCTK_VarIndex(varname);
     if (n<0) {
@@ -435,6 +438,8 @@ namespace CarpetIOScalar {
 
     // Don't truncate again
     do_truncate.at(n) = false;
+
+    } END_LEVEL_MODE;
 
     return 0;
   }
