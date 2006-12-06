@@ -631,7 +631,7 @@ namespace CarpetInterp {
       case  N: { T dummy; datatype = dist::datatype(dummy); } break;
 #include "carpet_typecase.hh"
 #undef TYPECASE
-      default: CCTK_WARN (0, "invalid datatype");
+      default: CCTK_WARN (0, "invalid datatype"); abort();
       }
 
       vector<char> tmp (N_interp_points * N_output_arrays * vtypesize);
