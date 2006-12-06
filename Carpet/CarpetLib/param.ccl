@@ -82,6 +82,38 @@ STRING memstat_file "File name in which memstat output is collected (because std
 
 
 
+# Experimental communication parameters
+
+BOOLEAN interleave_communications "Try to interleave communications with each other; each processor begins to communicate with its 'right neighbour' in rank, instead of with the root processor" STEERABLE=always
+{
+} "no"
+
+BOOLEAN vary_tags "Use different tags for each communication" STEERABLE=always
+{
+} "no"
+
+BOOLEAN barrier_between_stages "Add a barrier between the communication stages (slows down, but may make timing numbers easier to interpret)" STEERABLE=always
+{
+} "no"
+
+BOOLEAN combine_sends "Send data together and in order of processor ranks" STEERABLE=always
+{
+} "no"
+
+BOOLEAN reduce_mpi_waitall "Call MPI_Waitall only for requests that are not null" STEERABLE=always
+{
+} "no"
+
+BOOLEAN use_mpi_send "Use MPI_Send instead of MPI_Isend" STEERABLE=always
+{
+} "no"
+
+BOOLEAN use_mpi_ssend "Use MPI_Ssend instead of MPI_Isend" STEERABLE=always
+{
+} "no"
+
+
+
 SHARES: IO
 
 USES STRING out_dir

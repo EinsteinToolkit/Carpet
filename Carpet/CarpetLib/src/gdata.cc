@@ -283,6 +283,8 @@ void gdata::copy_from_wait (comm_state& state,
 void gdata::copy_into_sendbuffer (comm_state& state,
                                   const gdata* src, const ibbox& box)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   if (proc() == src->proc()) {
     // copy on same processor
     copy_from_innerloop (src, box);
@@ -315,14 +317,16 @@ void gdata::copy_into_sendbuffer (comm_state& state,
       }
     }
   
-    // post the send if the buffer is full
-    if (fillstate == (int)procbuf.sendbufsize * datatypesize) {
-      wtime_commstate_isend.start();
-      MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
-                 state.typebufs.at(c_datatype()).mpi_datatype,
-                 proc(), c_datatype(), dist::comm(),
-                 &state.srequests.at(dist::size()*c_datatype() + proc()));
-      wtime_commstate_isend.stop(procbuf.sendbufsize * datatypesize);
+    if (not combine_sends) {
+      // post the send if the buffer is full
+      if (fillstate == (int)procbuf.sendbufsize * datatypesize) {
+        wtime_commstate_isend.start();
+        MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
+                   state.typebufs.at(c_datatype()).mpi_datatype,
+                   proc(), c_datatype(), dist::comm(),
+                   &state.srequests.at(dist::size()*c_datatype() + proc()));
+        wtime_commstate_isend.stop(procbuf.sendbufsize * datatypesize);
+      }
     }
   }
 }
@@ -506,6 +510,8 @@ void gdata
                                const int order_space,
                                const int order_time)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   if (proc() == srcs.at(0)->proc()) {
     // interpolate on same processor
     interpolate_from_innerloop (srcs, times, box, time,
@@ -534,14 +540,16 @@ void gdata
     // advance send buffer to point to the next ibbox slot
     procbuf.sendbuf += datatypesize * box.size();
   
-    // post the send if the buffer is full
-    if (fillstate == (int)procbuf.sendbufsize*datatypesize) {
-      wtime_commstate_interpolate_to_isend.start();
-      MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
-                 state.typebufs.at(c_datatype()).mpi_datatype,
-                 proc(), c_datatype(), dist::comm(),
-                 &state.srequests.at(dist::size()*c_datatype() + proc()));
-      wtime_commstate_interpolate_to_isend.stop(procbuf.sendbufsize*datatypesize);
+    if (not combine_sends) {
+      // post the send if the buffer is full
+      if (fillstate == (int)procbuf.sendbufsize*datatypesize) {
+        wtime_commstate_interpolate_to_isend.start();
+        MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
+                   state.typebufs.at(c_datatype()).mpi_datatype,
+                   proc(), c_datatype(), dist::comm(),
+                   &state.srequests.at(dist::size()*c_datatype() + proc()));
+        wtime_commstate_interpolate_to_isend.stop(procbuf.sendbufsize*datatypesize);
+      }
     }
   }
 }

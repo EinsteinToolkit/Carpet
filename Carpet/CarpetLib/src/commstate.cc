@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstring>
 
 #include "cctk.h"
@@ -81,15 +82,18 @@ void comm_state::step ()
       // (a clever MPI layer may take advantage of such early posting).
       num_posted_recvs = num_completed_recvs = 0;
 
-      for (size_t type = 0; type < typebufs.size(); type++) {
+      for (int proc1 = 0; proc1 < dist::size(); ++ proc1) {
+        size_t const proc =
+          interleave_communications
+          ? (proc1 + dist::rank()) % dist::size()
+          : proc1;
+        
+        for (size_t type = 0; type < typebufs.size(); type++) {
+          
+          // skip unused datatype buffers
+          if (not typebufs[type].in_use) continue;
 
-        // skip unused datatype buffers
-        if (not typebufs[type].in_use) {
-          continue;
-        }
-
-        int& datatypesize = typebufs[type].datatypesize;
-        for (size_t proc = 0; proc < typebufs[type].procbufs.size(); proc++) {
+          int datatypesize = typebufs[type].datatypesize;
           procbufdesc& procbuf = typebufs[type].procbufs[proc];
 
           procbuf.sendbufbase = new char[procbuf.sendbufsize*datatypesize];
@@ -105,13 +109,24 @@ void comm_state::step ()
 
           if (procbuf.recvbufsize > 0) {
             wtime_commstate_sizes_irecv.start();
+            int const tag =
+              vary_tags
+              ? (dist::rank() + dist::size() * (proc + dist::size() * type)) % 32768
+              : type;
             MPI_Irecv (procbuf.recvbufbase, procbuf.recvbufsize,
-                       typebufs[type].mpi_datatype, proc, type,
+                       typebufs[type].mpi_datatype, proc, tag,
                        dist::comm(), &rrequests[dist::size()*type + proc]);
             wtime_commstate_sizes_irecv.stop();
             num_posted_recvs++;
           }
         }
+      }
+
+      if (barrier_between_stages) {
+        // Add a barrier, to try to ensure that all Irecvs are posted
+        // before the first Isends are made
+        // (Alternative: Use MPI_Alltoallv instead)
+        MPI_Barrier (dist::comm());
       }
 
       // Now go and get the send buffers filled with data.
@@ -122,6 +137,61 @@ void comm_state::step ()
       break;
 
     case state_fill_send_buffers:
+      if (combine_sends) {
+        // Send the data.  Do not send them sequentially, but try to
+        // intersperse the communications
+        for (int proc1 = 0; proc1 < dist::size(); ++ proc1) {
+          int const proc =
+            interleave_communications
+            ? (proc1 + dist::size() - dist::rank()) % dist::size()
+            : proc1;
+        
+          for (size_t type = 0; type < typebufs.size(); type++) {
+            // skip unused datatype buffers
+            if (not typebufs[type].in_use) continue;
+          
+            int const datatypesize = typebufs[type].datatypesize;
+            procbufdesc const & procbuf = typebufs[type].procbufs[proc];
+          
+            int const fillstate = procbuf.sendbuf - procbuf.sendbufbase;
+            assert (fillstate == (int)procbuf.sendbufsize * datatypesize);
+          
+            if (procbuf.sendbufsize > 0) {
+              int const tag =
+                vary_tags
+                ? (proc + dist::size() * (dist::rank() + dist::size() * type)) % 32768
+                : type;
+              if (use_mpi_send) {
+                // use MPI_Send
+                wtime_commstate_send.start();
+                MPI_Send (procbuf.sendbufbase, procbuf.sendbufsize,
+                          typebufs[type].mpi_datatype, proc, tag,
+                          dist::comm());
+                srequests[dist::size()*type + proc] = MPI_REQUEST_NULL;
+                wtime_commstate_send.stop(procbuf.sendbufsize * datatypesize);
+              } else if (use_mpi_ssend) {
+                // use MPI_Ssend
+                wtime_commstate_ssend.start();
+                MPI_Ssend (procbuf.sendbufbase, procbuf.sendbufsize,
+                           typebufs[type].mpi_datatype, proc, tag,
+                           dist::comm());
+                srequests[dist::size()*type + proc] = MPI_REQUEST_NULL;
+                wtime_commstate_ssend.stop(procbuf.sendbufsize * datatypesize);
+              } else {
+                // use MPI_Isend
+                wtime_commstate_isend.start();
+                MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
+                           typebufs[type].mpi_datatype, proc, tag,
+                           dist::comm(), &srequests[dist::size()*type + proc]);
+                wtime_commstate_isend.stop(procbuf.sendbufsize * datatypesize);
+              }
+            }
+          
+          } // for type
+        
+        } // for proc
+      }
+
       // Now fall through to the next state in which the recv buffers
       // are emptied as soon as data has arrived.
       thestate = state_empty_recv_buffers;
@@ -180,9 +250,30 @@ bool comm_state::AllPostedCommunicationsFinished ()
   // check if all outstanding receives have been completed already
   if (num_posted_recvs == num_completed_recvs) {
     // finalize the outstanding sends in one go
-    wtime_commstate_waitall_final.start();
-    MPI_Waitall (srequests.size(), &srequests.front(), MPI_STATUSES_IGNORE);
-    wtime_commstate_waitall_final.stop();
+    if (reduce_mpi_waitall) {
+      size_t nreqs = 0;
+      for (size_t i=0; i<srequests.size(); ++i) {
+        if (srequests.at(i) != MPI_REQUEST_NULL) {
+          ++nreqs;
+        }
+      }
+      vector<MPI_Request> reqs(nreqs);
+      nreqs = 0;
+      for (size_t i=0; i<srequests.size(); ++i) {
+        if (srequests.at(i) != MPI_REQUEST_NULL) {
+          reqs.at(nreqs) = srequests.at(i);
+          ++nreqs;
+        }
+      }
+      assert (nreqs == reqs.size());
+      wtime_commstate_waitall_final.start();
+      MPI_Waitall (reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE);
+      wtime_commstate_waitall_final.stop();
+    } else {
+      wtime_commstate_waitall_final.start();
+      MPI_Waitall (srequests.size(), &srequests.front(), MPI_STATUSES_IGNORE);
+      wtime_commstate_waitall_final.stop();
+    }
 
     return true;
   }
@@ -193,13 +284,34 @@ bool comm_state::AllPostedCommunicationsFinished ()
   if (use_waitall) {
     // mark all posted recveive buffers as ready
     for (size_t i = 0; i < recvbuffers_ready.size(); i++) {
-      recvbuffers_ready[i] = rrequests[i] != MPI_REQUEST_NULL;
+      recvbuffers_ready.at(i) = rrequests.at(i) != MPI_REQUEST_NULL;
     }
 
     // wait for completion of all posted receive operations
-    wtime_commstate_waitall.start();
-    MPI_Waitall (rrequests.size(), &rrequests.front(), MPI_STATUSES_IGNORE);
-    wtime_commstate_waitall.stop();
+    if (reduce_mpi_waitall) {
+      size_t nreqs = 0;
+      for (size_t i=0; i<rrequests.size(); ++i) {
+        if (rrequests.at(i) != MPI_REQUEST_NULL) {
+          ++nreqs;
+        }
+      }
+      vector<MPI_Request> reqs(nreqs);
+      nreqs = 0;
+      for (size_t i=0; i<rrequests.size(); ++i) {
+        if (rrequests.at(i) != MPI_REQUEST_NULL) {
+          reqs.at(nreqs) = rrequests.at(i);
+          ++nreqs;
+        }
+      }
+      assert (nreqs == reqs.size());
+      wtime_commstate_waitall.start();
+      MPI_Waitall (reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE);
+      wtime_commstate_waitall.stop();
+    } else {
+      wtime_commstate_waitall.start();
+      MPI_Waitall (rrequests.size(), &rrequests.front(), MPI_STATUSES_IGNORE);
+      wtime_commstate_waitall.stop();
+    }
     num_completed_recvs = num_posted_recvs;
   } else {
     int num_completed_recvs_ = 0;

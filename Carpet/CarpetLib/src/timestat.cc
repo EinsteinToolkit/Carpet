@@ -130,6 +130,8 @@ timestat wtime_commstate_sizes_irecv;
 timestat wtime_commstate_waitall_final;
 timestat wtime_commstate_waitall;
 timestat wtime_commstate_waitsome;
+timestat wtime_commstate_send;
+timestat wtime_commstate_ssend;
 timestat wtime_commstate_isend;
 timestat wtime_commstate_memcpy;
 timestat wtime_commstate_interpolate_irecv;
@@ -243,6 +245,8 @@ void CarpetLib_printtimestats (CCTK_ARGUMENTS)
          << "   wtime_commstate_waitall_final:          " << wtime_commstate_waitall_final          << endl
          << "   wtime_commstate_waitall:                " << wtime_commstate_waitall                << endl
          << "   wtime_commstate_waitsome:               " << wtime_commstate_waitsome               << endl
+         << "   wtime_commstate_send:                   " << wtime_commstate_send                   << endl
+         << "   wtime_commstate_ssend:                  " << wtime_commstate_ssend                  << endl
          << "   wtime_commstate_isend:                  " << wtime_commstate_isend                  << endl
          << "   wtime_commstate_memcpy:                 " << wtime_commstate_memcpy                 << endl
          << "   wtime_commstate_interpolate_irecv:      " << wtime_commstate_interpolate_irecv      << endl

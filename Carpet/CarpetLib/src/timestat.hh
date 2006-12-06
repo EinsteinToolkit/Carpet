@@ -80,6 +80,8 @@ extern timestat wtime_commstate_sizes_irecv;
 extern timestat wtime_commstate_waitall_final;
 extern timestat wtime_commstate_waitall;
 extern timestat wtime_commstate_waitsome;
+extern timestat wtime_commstate_send;
+extern timestat wtime_commstate_ssend;
 extern timestat wtime_commstate_isend;
 extern timestat wtime_commstate_memcpy;
 extern timestat wtime_commstate_interpolate_irecv;
