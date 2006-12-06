@@ -7,6 +7,10 @@ SCHEDULE GROUP EvolutionMaskBase_SetupEvolutionMask AT basegrid
 {
 } "Set up the mask function"
 
+SCHEDULE GROUP EvolutionMaskBase_SetupEvolutionMask AT postregridinitial
+{
+} "Set up the mask function"
+
 SCHEDULE GROUP EvolutionMaskBase_SetupEvolutionMask AT postregrid
 {
 } "Set up the mask function"
