@@ -132,6 +132,7 @@ void dh::allocate_bboxes ()
           for (int d=0; d<dim; ++d) {
             if (h.outer_boundaries().at(rl).at(c)[d][f]) {
               dist[f][d] = 0;
+              boxes.at(ml).at(rl).at(c).is_interproc[d][f] = false;
             } else {
               bool const is_empty = intr.lower()[d] > intr.upper()[d];
               if (is_empty) {
