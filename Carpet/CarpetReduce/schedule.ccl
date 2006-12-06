@@ -14,6 +14,10 @@ SCHEDULE GROUP MaskBase_SetupMask AT basegrid
 {
 } "Set up the weight function"
 
+SCHEDULE GROUP MaskBase_SetupMask AT postregridinitial
+{
+} "Set up the weight function"
+
 SCHEDULE GROUP MaskBase_SetupMask AT postregrid
 {
 } "Set up the weight function"
