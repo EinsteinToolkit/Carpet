@@ -1347,7 +1347,7 @@ namespace CarpetIOASCII {
                i<=minval(base.upper()); i+=base.stride()[0])
           {
             
-	    ivect pos = ivect(i,i,i);
+	    ivect const pos = ivect(i,i,i);
             
 	    // check if the point in question is in our gf's extent
 	    if(gfext.contains(pos)) {
@@ -1398,7 +1398,7 @@ namespace CarpetIOASCII {
       } // if(dist::...)
     } else {
       // copy to processor 0 and output there
-
+      
       vector<const gdata*> tmps (gfdatas.size());
       for (size_t n=0; n<gfdatas.size(); ++n) {
         gdata * const tmp = gfdatas.at(n)->make_typed(vi);
@@ -1413,14 +1413,12 @@ namespace CarpetIOASCII {
       for (size_t n=0; n<gfdatas.size(); ++n) {
         delete tmps.at(n);
       }
-
+      
     }
   }
-
-    
-
-
-
+  
+  
+  
   // Explicit instantiation for all output dimensions
   template class IOASCII<0>;
   template class IOASCII<1>;
