@@ -377,11 +377,14 @@ namespace CarpetIOASCII {
       return (-1);
     }
 
-    if (not is_level_mode()) {
+    if (not (is_level_mode() or
+             (is_singlemap_mode() and Carpet::maps == 1) or
+             (is_local_mode() and Carpet::maps == 1 and vhh.at(Carpet::map)->local_components(reflevel) == 1)))
+    {
       CCTK_WARN (1, "OutputVarAs must be called in level mode");
       return -1;
     }
-    assert (is_level_mode());
+    BEGIN_LEVEL_MODE (cctkGH) {
 
     const int group = CCTK_GroupIndexFromVarI (vindex);
     assert (group >= 0);
@@ -949,6 +952,8 @@ namespace CarpetIOASCII {
       }
 
     } while (not done);		// all directions
+
+    } END_LEVEL_MODE;
 
     return 0;
   }
