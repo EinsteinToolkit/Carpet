@@ -1,26 +1,18 @@
 c     -*-Fortran-*-
       
 #include "cctk.h"
+#include "cctk_Parameters.h"
 
 
 
-#define CHKIDX(i,j,k, imax,jmax,kmax, where)                                  \
-      if ((i).lt.1 .or. (i).gt.(imax)                                         \
-           .or. (j).lt.1 .or. (j).gt.(jmax)                                   \
-           .or. (k).lt.1 .or. (k).gt.(kmax)) then                           &&\
-         write (msg, '(a, " array index out of bounds: shape is (",i4,",",i4,",",i4,"), index is (",i4,",",i4,",",i4,")")') \
-              (where), (imax), (jmax), (kmax), (i), (j), (k)                &&\
-         call CCTK_WARN (0, msg)                                            &&\
-      end if
-
-
-      
       subroutine restrict_3d_real8 (
      $     src, srciext, srcjext, srckext,
      $     dst, dstiext, dstjext, dstkext,
      $     srcbbox, dstbbox, regbbox)
       
       implicit none
+      
+      DECLARE_CCTK_PARAMETERS
       
       integer srciext, srcjext, srckext
       CCTK_REAL8 src(srciext,srcjext,srckext)
@@ -40,8 +32,6 @@ c     bbox(:,3) is stride
       
       integer i, j, k
       integer d
-      
-      character msg*1000
       
       
       
@@ -113,10 +103,10 @@ c     Loop over coarse region
          do j = 0, regjext-1
             do i = 0, regiext-1
                
-               CHKIDX (srcioff+srcifac*i+1, srcjoff+srcjfac*j+1, srckoff+srckfac*k+1, \
-                       srciext,srcjext,srckext, "source")
-               CHKIDX (dstioff+i+1, dstjoff+j+1, dstkoff+k+1, \
-                       dstiext,dstjext,dstkext, "destination")
+               if (check_array_accesses.ne.0) then
+                  call checkindex (srcioff+srcifac*i+1, srcjoff+srcjfac*j+1, srckoff+srckfac*k+1, 1,1,1, srciext,srcjext,srckext, "source")
+                  call checkindex (dstioff+i+1, dstjoff+j+1, dstkoff+k+1, 1,1,1, dstiext,dstjext,dstkext, "destination")
+               end if
                dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1)
      $              = src (srcioff+srcifac*i+1, srcjoff+srcjfac*j+1, srckoff+srckfac*k+1)
                

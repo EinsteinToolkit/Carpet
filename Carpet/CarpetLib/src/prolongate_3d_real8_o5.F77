@@ -1,26 +1,18 @@
 c     -*-Fortran-*-
       
 #include "cctk.h"
+#include "cctk_Parameters.h"
 
 
 
-#define CHKIDX(i,j,k, imax,jmax,kmax, where)                                  \
-      if ((i).lt.1 .or. (i).gt.(imax)                                         \
-           .or. (j).lt.1 .or. (j).gt.(jmax)                                   \
-           .or. (k).lt.1 .or. (k).gt.(kmax)) then                           &&\
-         write (msg, '(a, " array index out of bounds: shape is (",i4,",",i4,",",i4,"), index is (",i4,",",i4,",",i4,")")') \
-              (where), (imax), (jmax), (kmax), (i), (j), (k)                &&\
-         call CCTK_WARN (0, msg)                                            &&\
-      end if
-
-
-      
       subroutine prolongate_3d_real8_o5 (
      $     src, srciext, srcjext, srckext,
      $     dst, dstiext, dstjext, dstkext,
      $     srcbbox, dstbbox, regbbox)
       
       implicit none
+      
+      DECLARE_CCTK_PARAMETERS
       
       CCTK_REAL8 one
       parameter (one = 1)
@@ -52,8 +44,6 @@ c     bbox(:,3) is stride
       CCTK_REAL8 fac
       CCTK_REAL8 res
       integer d
-      
-      character msg*1000
       
       
       
@@ -181,8 +171,9 @@ c     (This expression cannot be evaluated as integer)
 c     (This expression cannot be evaluated as integer)
                            fac = one * ifac(ii) * jfac(jj) * kfac(kk)
                            
-                           CHKIDX (i0+ii-2, j0+jj-2, k0+kk-2, \
-                                   srciext,srcjext,srckext, "source")
+                           if (check_array_accesses.ne.0) then
+                              call checkindex (i0+ii-2, j0+jj-2, k0+kk-2, 1,1,1, srciext,srcjext,srckext, "source")
+                           end if
                            res = res + fac * src(i0+ii-2, j0+jj-2, k0+kk-2)
                         end if
                         
@@ -190,8 +181,9 @@ c     (This expression cannot be evaluated as integer)
                   end do
                end do
                
-               CHKIDX (dstioff+i+1, dstjoff+j+1, dstkoff+k+1, \
-                       dstiext,dstjext,dstkext, "destination")
+               if (check_array_accesses.ne.0) then
+                  call checkindex (dstioff+i+1, dstjoff+j+1, dstkoff+k+1, 1,1,1, dstiext,dstjext,dstkext, "destination")
+               end if
                dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = dstdiv * res
                
             end do

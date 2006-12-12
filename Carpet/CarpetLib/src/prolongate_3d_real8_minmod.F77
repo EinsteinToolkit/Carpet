@@ -1,6 +1,7 @@
 c     -*-Fortran-*-
       
 #include "cctk.h"
+#include "cctk_Parameters.h"
 
 
 c$$$ This routine performs "TVD" prolongation. It is intended to be used 
@@ -23,15 +24,6 @@ c$$$ The actual minmod function is defined in the routine
 c$$$
 c$$$      prolongate_3d_real8_minmod.F77
 
-
-#define CHKIDX(i,j,k, imax,jmax,kmax, where)                                  \
-      if ((i).lt.1 .or. (i).gt.(imax)                                         \
-           .or. (j).lt.1 .or. (j).gt.(jmax)                                   \
-           .or. (k).lt.1 .or. (k).gt.(kmax)) then                           &&\
-         write (msg, '(a, " array index out of bounds: shape is (",i4,",",i4,",",i4,"), index is (",i4,",",i4,",",i4,")")') \
-              (where), (imax), (jmax), (kmax), (i), (j), (k)                &&\
-         call CCTK_WARN (0, msg)                                            &&\
-      end if
 
       function minmod(a, b)
 
@@ -59,6 +51,8 @@ c$$$      prolongate_3d_real8_minmod.F77
       
       implicit none
       
+      DECLARE_CCTK_PARAMETERS
+      
       CCTK_REAL8 one
       parameter (one = 1)
       
@@ -85,8 +79,6 @@ c     bbox(:,3) is stride
       integer fi, fj, fk
       integer ii, jj, kk
       integer d
-      
-      character msg*1000
       
       external minmod
       CCTK_REAL8 minmod
@@ -247,8 +239,9 @@ c     Loop over fine region
                  end do
                end do
 
-               CHKIDX (dstioff+i+1, dstjoff+j+1, dstkoff+k+1, \
-                       dstiext,dstjext,dstkext, "destination")
+               if (check_array_accesses.ne.0) then
+                  call checkinde (dstioff+i+1, dstjoff+j+1, dstkoff+k+1, 1,1,1, dstiext,dstjext,dstkext, "destination")
+               end if
                dst (dstioff+i+1, dstjoff+j+1, dstkoff+k+1) = 
      .                      src(i0+1,j0+1,k0+1) + slopex + slopey + slopez
                
