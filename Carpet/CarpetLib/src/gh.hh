@@ -10,6 +10,7 @@
 #include "bboxset.hh"
 #include "defs.hh"
 #include "dist.hh"
+#include "region.hh"
 #include "vect.hh"
 
 using namespace std;
@@ -33,15 +34,9 @@ class gh {
 public:
   
   // Types
-  typedef vector<ibbox> cexts;	// ... for each component
-  typedef vector<cexts> rexts;	// ... for each refinement level
-  typedef vector<rexts> mexts;	// ... for each multigrid level
-  
-  typedef vector<bbvect> cbnds;	// ... for each component
-  typedef vector<cbnds> rbnds;	// ... for each refinement level
-  
-  typedef vector<int>    cprocs; // ... for each component
-  typedef vector<cprocs> rprocs; // ... for each refinement level
+  typedef vector<region_t> cregs; // ... for each component
+  typedef vector<cregs> rregs;    // ... for each refinement level
+  typedef vector<rregs> mregs;    // ... for each multigrid level
   
 public:				// should be readonly
   
@@ -54,18 +49,14 @@ public:				// should be readonly
   
   const ibbox baseextent;
   
-  
 private:
   vector<vector<ibbox> > _bases; // [ml][rl]
-  // TODO: invent structure for this
-  mexts _extents;		// extents of all grids
-  rbnds _outer_boundaries;	// boundary descriptions of all grids
-  rprocs _processors;		// processor numbers of all grids
-
-  mexts _oldextents;            // a copy, used during regridding
-  rbnds _oldouter_boundaries;
-  rprocs _oldprocessors;
-
+  
+  // Extents and properties of all grids
+  mregs _regions;
+  // A copy, used during regridding
+  mregs _oldregions;
+  
   list<th*> ths;		// list of all time hierarchies
   list<dh*> dhs;		// list of all data hierarchies
   
@@ -80,28 +71,18 @@ public:
   virtual ~gh ();
   
   // Modifiers
-  void regrid (const mexts& exts,
-               const rbnds& outer_bounds,
-               const rprocs& procs);
+  void regrid (mregs const & regs);
   bool recompose (const int rl,
                   const bool do_prolongate);
 private:
   bool level_did_change (const int rl) const;
   
+  // Accessors
+  
 public:
-  const mexts & extents() const
+  mregs const & regions () const
   {
-    return _extents;
-  }
-
-  const rbnds & outer_boundaries() const
-  {
-    return _outer_boundaries;
-  }
-
-  const rprocs & processors() const
-  {
-    return _processors;
+    return _regions;
   }
 
   const vector<vector<ibbox> > & bases() const
@@ -109,36 +90,45 @@ public:
     return _bases;
   }
   
-  // Accessors
+  ibbox extent (const int m, const int rl, const int c) const
+  {
+    return _regions.at(m).at(rl).at(c).extent;
+  }
+  
+  b2vect outer_boundaries (const int rl, const int c) const
+  {
+    return _regions.at(0).at(rl).at(c).outer_boundaries;
+  }
+
+  b2vect refinement_boundaries (const int rl, const int c) const
+  {
+    return _regions.at(0).at(rl).at(c).refinement_boundaries;
+  }
+
+  int processor (const int rl, const int c) const
+  {
+    return _regions.at(0).at(rl).at(c).processor;
+  }
+
   int mglevels () const
   {
-    return (int)_extents.size();
+    return (int)_regions.size();
   }
   
   int reflevels () const
   {
     if (mglevels() == 0) return 0;
-    return (int)_extents.at(0).size();
+    return (int)_regions.at(0).size();
   }
   
   int components (const int rl) const
   {
-    return (int)_extents.at(0).at(rl).size();
-  }
-  
-  bbvect outer_boundary (const int rl, const int c) const
-  {
-    return _outer_boundaries.at(rl).at(c);
-  }
-  
-  int proc (const int rl, const int c) const
-  {
-    return _processors.at(rl).at(c);
+    return (int)_regions.at(0).at(rl).size();
   }
 
   bool is_local (const int rl, const int c) const
   {
-    return proc(rl,c) == dist::rank();
+    return processor(rl,c) == dist::rank();
   }
   
   int local_components (const int rl) const;
@@ -155,7 +145,6 @@ public:
   virtual ostream& output (ostream& os) const;
 
 private:
-  void check_processor_number_consistency ();
   void check_multigrid_consistency ();
   void check_component_consistency ();
   void check_base_grid_extent ();

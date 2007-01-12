@@ -80,7 +80,7 @@ void ggf::set_timelevels (const int ml, const int rl, const int new_timelevels)
       for (int tl=timelevels(ml,rl); tl<new_timelevels; ++tl) {
         storage.at(ml).at(rl).at(c).at(tl) = typed_data(tl,rl,c,ml);
         storage.at(ml).at(rl).at(c).at(tl)->allocate
-          (d.boxes.at(ml).at(rl).at(c).exterior, h.proc(rl,c));
+          (d.boxes.at(ml).at(rl).at(c).exterior, h.processor(rl,c));
       } // for tl
     } // for c
     
@@ -130,7 +130,7 @@ void ggf::recompose_allocate (const int rl)
       for (int tl=0; tl<timelevels(ml,rl); ++tl) {
         storage.at(ml).at(rl).at(c).at(tl) = typed_data(tl,rl,c,ml);
         storage.at(ml).at(rl).at(c).at(tl)->allocate
-          (d.boxes.at(ml).at(rl).at(c).exterior, h.proc(rl,c));
+          (d.boxes.at(ml).at(rl).at(c).exterior, h.processor(rl,c));
       } // for tl
     } // for c
   } // for ml

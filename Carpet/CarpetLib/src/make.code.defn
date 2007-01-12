@@ -13,6 +13,7 @@ SRCS =	bbox.cc					\
 	ggf.cc					\
 	gh.cc					\
 	mem.cc					\
+	region.cc				\
 	th.cc					\
 	vect.cc					\
 	checkindex.c				\

@@ -112,7 +112,7 @@ void dh::allocate_bboxes ()
     for (int rl=0; rl<h.reflevels(); ++rl) {
       boxes.at(ml).at(rl).resize(h.components(rl));
       for (int c=0; c<h.components(rl); ++c) {
-        const ibbox intr = h.extents().at(ml).at(rl).at(c);
+        const ibbox intr = h.extent(ml,rl,c);
         dboxes & b = boxes.at(ml).at(rl).at(c);
 
 
@@ -130,7 +130,7 @@ void dh::allocate_bboxes ()
         i2vect odist(0);        // for owned regions
         for (int f=0; f<2; ++f) {
           for (int d=0; d<dim; ++d) {
-            if (h.outer_boundaries().at(rl).at(c)[d][f]) {
+            if (h.outer_boundaries(rl,c)[f][d]) {
               dist[f][d] = 0;
               boxes.at(ml).at(rl).at(c).is_interproc[d][f] = false;
             } else {
@@ -144,7 +144,7 @@ void dh::allocate_bboxes ()
               dist1[f][d] = is_empty ? 0 : dist[f][d];
               ibset bnd = intr.expand(dist1[0], dist1[1]) - intr;
               for (int cc=0; cc<h.components(rl); ++cc) {
-                bnd -= h.extents().at(ml).at(rl).at(cc);
+                bnd -= h.extent(ml,rl,cc);
               }
               bool const is_interproc = bnd.empty();
               boxes.at(ml).at(rl).at(c).is_interproc[d][f] = is_interproc;
@@ -170,7 +170,7 @@ void dh::allocate_bboxes ()
       
       // Make owned regions disjoint
       for (int c=0; c<h.components(rl); ++c) {
-        const ibbox intr = h.extents().at(ml).at(rl).at(c);
+        const ibbox intr = h.extent(ml,rl,c);
         dboxes & b = boxes.at(ml).at(rl).at(c);
         
         // 1. Remove all other interiors from this owned region
@@ -634,7 +634,7 @@ void dh::check_bboxes (dh::dboxes & box,
           }
           
           // Calculate boundary bboxes
-          b2vect const obs = xpose (h.outer_boundaries().at(rl).at(c));
+          b2vect const obs = h.outer_boundaries(rl,c);
           ibset bnd =
             box.interior - 
             box.interior.expand (- (ivect (obs[0]) * nboundaryzones[0]),

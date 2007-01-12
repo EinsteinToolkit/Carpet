@@ -37,26 +37,18 @@ gh::gh (const vector<ivect> & reffacts_, const centering refcent_,
 gh::~gh () { }
 
 // Modifiers
-void gh::regrid (const mexts& exts,
-                 const rbnds& outer_bounds,
-                 const rprocs& procs)
+void gh::regrid (mregs const & regs)
 {
   DECLARE_CCTK_PARAMETERS;
   
   // Save the old grid hierarchy
-  _oldextents = _extents;
-  _oldouter_boundaries = _outer_boundaries;
-  _oldprocessors = _processors;
-  
-  _extents = exts;
-  _outer_boundaries = outer_bounds;
-  _processors = procs;
+  _oldregions = _regions;
+  _regions = regs;
   
   // Consistency checks
   
   // nota bene: there might be 0 refinement levels.
   
-  check_processor_number_consistency ();
   check_multigrid_consistency ();
   check_component_consistency ();
   check_base_grid_extent ();
@@ -83,8 +75,8 @@ bool gh::recompose (const int rl,
                     const bool do_prolongate)
 {
   // Handle changes in number of mglevels
-  if (_oldextents.size() != _extents.size()) {
-    _oldextents.resize (_extents.size());
+  if (_oldregions.size() != _regions.size()) {
+    _oldregions.resize (_regions.size());
   }
   
   bool const do_recompose = level_did_change(rl);
@@ -98,13 +90,10 @@ bool gh::recompose (const int rl,
     
     // Overwrite old with new grid hierarchy
     for (int ml=0; ml<mglevels(); ++ml) {
-      _oldextents.at(ml).resize (_extents.at(ml).size());
-      _oldextents.at(ml).at(rl) = _extents.at(ml).at(rl);
+      _oldregions.at(ml).resize (_regions.at(ml).size());
+      _oldregions.at(ml).at(rl) = _regions.at(ml).at(rl);
     }
-    _oldouter_boundaries.resize (_outer_boundaries.size());
-    _oldouter_boundaries.at(rl) = _outer_boundaries.at(rl);
-    _oldprocessors.resize (_processors.size());
-    _oldprocessors.at(rl) = _processors.at(rl);
+    
   }
   
   return do_recompose;
@@ -113,33 +102,20 @@ bool gh::recompose (const int rl,
 bool gh::level_did_change (const int rl) const
 {
   // Find out whether this level changed
-  if (_extents.size() != _oldextents.size()) return true;
+  if (_regions.size() != _oldregions.size()) return true;
   for (int ml=0; ml<mglevels(); ++ml) {
     assert (rl>=0 and rl<reflevels());
-    if (rl >= (int)_oldextents.at(ml).size()) return true;
-    if (_extents.at(ml).at(rl).size() != _oldextents.at(ml).at(rl).size()) {
+    if (rl >= (int)_oldregions.at(ml).size()) return true;
+    if (_regions.at(ml).at(rl).size() != _oldregions.at(ml).at(rl).size()) {
       return true;
     }
     for (int c=0; c<components(rl); ++c) {
-      if (_extents.at(ml).at(rl).at(c) != _oldextents.at(ml).at(rl).at(c)) {
+      if (_regions.at(ml).at(rl).at(c) != _oldregions.at(ml).at(rl).at(c)) {
         return true;
       }
-      if (_processors.at(rl).at(c) != _oldprocessors.at(rl).at(c)) return true;
     } // for c
   } // for ml
   return false;
-}
-
-void gh::check_processor_number_consistency ()
-{
-  for (int rl=0; rl<reflevels(); ++rl) {
-    assert (processors().size() == extents().at(0).size());
-    assert (outer_boundaries().size() == extents().at(0).size());
-    for (int c=0; c<components(rl); ++c) {
-      assert (processors().at(rl).size() == extents().at(0).at(rl).size());
-      assert (outer_boundaries().at(rl).size() == extents().at(0).at(rl).size());
-    }
-  }
 }
   
 void gh::check_multigrid_consistency ()
@@ -148,14 +124,14 @@ void gh::check_multigrid_consistency ()
   for (int ml=1; ml<mglevels(); ++ml) {
     for (int rl=0; rl<reflevels(); ++rl) {
       for (int c=0; c<components(rl); ++c) {
-	assert (all(extents().at(ml).at(rl).at(c).stride()
-		    == ivect(mgfact) * extents().at(ml-1).at(rl).at(c).stride()));
+	assert (all(extent(ml,rl,c).stride()
+		    == ivect(mgfact) * extent(ml-1,rl,c).stride()));
         // TODO: put the check back in, taking outer boundaries into
         // account
 #if 0
-	assert (extents().at(ml).at(rl).at(c)
-		.contracted_for(extents().at(ml-1).at(rl).at(c))
-		.is_contained_in(extents().at(ml-1).at(rl).at(c)));
+	assert (extent(ml,rl,c)
+		.contracted_for(extent(ml-1,rl,c))
+		.is_contained_in(extent(ml-1,rl,c)));
 #endif
       }
     }
@@ -168,12 +144,12 @@ void gh::check_component_consistency ()
     for (int rl=0; rl<reflevels(); ++rl) {
       assert (components(rl)>0);
       for (int c=0; c<components(rl); ++c) {
-        const ibbox &b  = extents().at(ml).at(rl).at(c);
-        const ibbox &b0 = extents().at(ml).at(rl).at(0);
+        const ibbox &b  = extent(ml,rl,c);
+        const ibbox &b0 = extent(ml,rl,0);
 	assert (all(b.stride() == b0.stride()));
 	assert (b.is_aligned_with(b0));
         for (int cc=c+1; cc<components(rl); ++cc) {
-          assert ((b & extents().at(ml).at(rl).at(cc)).empty());
+          assert ((b & extent(ml,rl,cc)).empty());
         }
       }
     }
@@ -187,7 +163,7 @@ void gh::check_base_grid_extent ()
       // TODO: put the check back in, taking outer boundaries into
       // account
 #if 0
-      assert (extents().at(0).at(c).at(0).is_contained_in(baseextent));
+      assert (extent(0,c,0).is_contained_in(baseextent));
 #endif
     }
   }
@@ -200,29 +176,28 @@ void gh::check_refinement_levels ()
   bool have_error = false;
   for (int ml=0; ml<mglevels(); ++ml) {
     for (int rl=1; rl<reflevels(); ++rl) {
-      assert (all(extents().at(ml).at(rl-1).at(0).stride()
+      assert (all(extent(ml,rl-1,0).stride()
                   == ((reffacts.at(rl) / reffacts.at(rl-1))
-                      * extents().at(ml).at(rl).at(0).stride())));
+                      * extent(ml,rl,0).stride())));
       // Check contained-ness:
       // first take all coarse grids ...
       ibset all;
       for (int c=0; c<components(rl-1); ++c) {
-        all |= extents().at(ml).at(rl-1).at(c);
+        all |= extent(ml,rl-1,c);
       }
 #if 0
       // ... remember their size ...
       const int sz = all.size();
       // ... then add the coarsified fine grids ...
       for (int c=0; c<components(rl); ++c) {
-        all |= extents().at(ml).at(rl).at(c).contracted_for(extents().at(ml).at(rl-1).at(0));
+        all |= extent(ml,rl,c).contracted_for(extent(ml,rl-1,0));
       }
       // ... and then check the sizes:
       assert (all.size() == sz);
 #endif
       for (int c=0; c<components(rl); ++c) {
         ibset const finebox
-          = (extents().at(ml).at(rl).at(c).contracted_for
-             (extents().at(ml).at(rl-1).at(0)));
+          = (extent(ml,rl,c).contracted_for (extent(ml,rl-1,0)));
         if (! (finebox <= all)) {
           if (! have_error) {
             cout << "The following components are not properly nested, i.e., they are not" << endl
@@ -240,7 +215,7 @@ void gh::check_refinement_levels ()
       for (int rl=0; rl<reflevels(); ++rl) {
         for (int c=0; c<components(rl); ++c) {
           cout << "   ml " << ml << " rl " << rl << " c " << c << ":   "
-               << extents().at(ml).at(rl).at(c) << endl;
+               << extent(ml,rl,c) << endl;
         }
       }
     }
@@ -257,7 +232,7 @@ void gh::calculate_base_extents_of_all_levels ()
       _bases.at(ml).at(rl) = ibbox();
       ibbox &bb = _bases.at(ml).at(rl);
       for (int c=0; c<components(rl); ++c) {
-        bb = bb.expanded_containing(extents().at(ml).at(rl).at(c));
+        bb = bb.expanded_containing(extent(ml,rl,c));
       }
     }
   }
@@ -308,9 +283,10 @@ void gh::do_output_bboxes (ostream& os) const
         os << endl;
         os << "gh bboxes:" << endl;
         os << "ml=" << ml << " rl=" << rl << " c=" << c << endl;
-        os << "extent=" << extents().at(ml).at(rl).at(c) << endl;
-        os << "outer_boundary=" << outer_boundaries().at(rl).at(c) << endl;
-        os << "processor=" << processors().at(rl).at(c) << endl;
+        os << "extent=" << extent(ml,rl,c) << endl;
+        os << "outer_boundaries=" << outer_boundaries(rl,c) << endl;
+        os << "refinement_boundaries=" << refinement_boundaries(rl,c) << endl;
+        os << "processor=" << processor(rl,c) << endl;
       }
     }
   }
@@ -335,9 +311,7 @@ ostream& gh::output (ostream& os) const
   os << "gh:"
      << "reffacts=" << reffacts << ",refcentering=" << refcent << ","
      << "mgfactor=" << mgfact << ",mgcentering=" << mgcent << ","
-     << "extents=" << extents() << ","
-     << "outer_boundaries=" << outer_boundaries() << ","
-     << "processors=" << processors() << ","
+     << "regions=" << regions() << ","
      << "dhs={";
   const char * sep = "";
   for (list<dh*>::const_iterator d = dhs.begin();

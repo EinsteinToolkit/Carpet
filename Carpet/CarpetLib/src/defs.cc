@@ -10,30 +10,10 @@
 
 #include "bbox.hh"
 #include "defs.hh"
+#include "region.hh"
 #include "vect.hh"
 
 using namespace std;
-
-
-
-istream& operator>> (istream& is, grid_structure_t& gs)
-{
-  skipws (is);
-  consume (is, '{');
-  is >> gs.bbss;
-  skipws (is);
-  consume (is, ';');
-  is >> gs.obss;
-  skipws (is);
-  consume (is, '}');
-  return is;
-}
-
-ostream& operator<< (ostream& os, grid_structure_t const& gs)
-{
-  os << "{" << gs.bbss << ";" << gs.obss << "}";
-  return os;
-}
 
 
 
@@ -183,25 +163,30 @@ template CCTK_REAL ipow (CCTK_REAL x, int y);
 template vect<int,3> ipow (vect<int,3> x, int y);
 
 template istream& input (istream& os, vector<int>& v);
-template istream& input (istream& os, vector<grid_structure_t>& v);
 template istream& input (istream& os, vector<bbox<int,3> >& v);
 template istream& input (istream& os, vector<bbox<CCTK_REAL,3> >& v);
 template istream& input (istream& os, vector<vector<bbox<int,3> > >& v);
 template istream& input (istream& os, vector<vector<bbox<CCTK_REAL,3> > >& v);
+template istream& input (istream& os, vector<region_t>& v);
+template istream& input (istream& os, vector<vector<region_t> >& v);
+template istream& input (istream& os, vector<vector<vector<region_t> > >& v);
 template istream& input (istream& os, vector<vect<int,3> >& v);
 template istream& input (istream& os, vector<vect<vect<bool,2>,3> >& v);
 template istream& input (istream& os, vector<vector<vect<vect<bool,2>,3> > >& v);
 
 template ostream& output (ostream& os, const list<bbox<int,3> >& l);
+template ostream& output (ostream& os, const list<region_t>& l);
 template ostream& output (ostream& os, const set<bbox<int,3> >& s);
 template ostream& output (ostream& os, const set<bboxset<int,3> >& s);
 template ostream& output (ostream& os, const stack<bbox<int,3> >& s);
 template ostream& output (ostream& os, const vector<bool>& v);
 template ostream& output (ostream& os, const vector<int>& v);
 template ostream& output (ostream& os, const vector<CCTK_REAL>& v);
-template ostream& output (ostream& os, const vector<grid_structure_t>& v);
 template ostream& output (ostream& os, const vector<bbox<int,3> >& v);
 template ostream& output (ostream& os, const vector<bbox<CCTK_REAL,3> >& v);
+template ostream& output (ostream& os, const vector<region_t>& v);
+template ostream& output (ostream& os, const vector<vector<region_t> >& v);
+template ostream& output (ostream& os, const vector<vector<vector<region_t> > >& v);
 template ostream& output (ostream& os, const vector<list<bbox<int,3> > >& v);
 template ostream& output (ostream& os, const vector<vector<int> >& v);
 template ostream& output (ostream& os, const vector<vector<CCTK_REAL> >& v);
