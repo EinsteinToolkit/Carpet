@@ -27,10 +27,6 @@ namespace CarpetIOASCII {
     // list of variables to output
     static char* my_out_vars;
 
-    // Last iteration on which a refinement level of a variable was
-    // output (INT_MIN for none)
-    static vector<vector<vector<int> > > last_output; // [ml][rl][var]
-
     // I/O request description list (for all variables)
     static vector<ioRequest*> requests;
 
