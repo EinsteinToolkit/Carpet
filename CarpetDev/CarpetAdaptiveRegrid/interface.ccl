@@ -51,13 +51,8 @@ USES FUNCTION ConvertFromPhysicalBoundary
 
 # The true prototype of the routine below:
 #   int Carpet_Regrid (const cGH * cctkGH,
-#                      gh<dim>::rexts  * bbsss,
-#                      gh<dim>::rbnds  * obss,
-#                      gh<dim>::rprocs * pss);
-CCTK_INT FUNCTION Carpet_Regrid (CCTK_POINTER_TO_CONST IN cctkGH,  \
-                                 CCTK_POINTER IN bbsss,            \
-                                 CCTK_POINTER IN obss,             \
-                                 CCTK_POINTER IN pss,		   \
+#                      gh<dim>::regs * regsss);
+CCTK_INT FUNCTION Carpet_Regrid (CCTK_POINTER_TO_CONST IN cctkGH, \
+                                 CCTK_POINTER IN regsss,          \
 				 CCTK_INT IN force)
 PROVIDES FUNCTION Carpet_Regrid WITH CarpetAdaptiveRegrid_Regrid LANGUAGE C
-

@@ -30,23 +30,16 @@ namespace CarpetAdaptiveRegrid {
     
     /* Aliased functions */
 //     CCTK_INT CarpetAdaptiveRegrid_Regrid (const cGH * const cctkGH,
-//                                   gh<dim>::rexts  * bbsss,
-//                                   gh<dim>::rbnds  * obss,
-//                                   gh<dim>::rprocs * pss);
+//                                   gh<dim>::rregs * regsss);
     CCTK_INT CarpetAdaptiveRegrid_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
-                                          CCTK_POINTER const bbsss_,
-                                          CCTK_POINTER const obss_,
-                                          CCTK_POINTER const pss_,
+                                          CCTK_POINTER const regsss_,
                                           CCTK_INT force);
   }
 
   int ManualCoordinateList (cGH const * const cctkGH,
                             gh const & hh,
-                            gh::mexts  & bbsss,
-                            gh::rbnds  & obss,
-                            gh::rprocs & pss,
-                            gh::mexts  & local_bbsss,
-                            gh::rbnds  & local_obss);
+                            gh::mregs & regsss,
+                            gh::mregs & local_regsss);
 
     
   void ManualCoordinates_OneLevel (const cGH * const cctkGH,
@@ -56,8 +49,10 @@ namespace CarpetAdaptiveRegrid {
                                    const rvect lower,
                                    const rvect upper,
                                    const bbvect obound,
+                                   const bbvect rbound,
                                    vector<ibbox> & bbs,
-                                   vector<bbvect> & obs);
+                                   vector<bbvect> & obs,
+                                   vector<bbvect> & rbs);
   
   void ManualGridpoints_OneLevel (const cGH * const cctkGH,
                                   const gh & hh,
@@ -66,8 +61,10 @@ namespace CarpetAdaptiveRegrid {
                                   const ivect ilower,
                                   const ivect iupper,
                                   const bbvect obound,
+                                  const bbvect rbound,
                                   vector<ibbox> & bbs,
-                                  vector<bbvect> & obs);
+                                  vector<bbvect> & obs,
+                                  vector<bbvect> & rbs);
 
   rvect int2pos (const cGH* const cctkGH, const gh& hh,
                  const ivect & ipos, const int rl);

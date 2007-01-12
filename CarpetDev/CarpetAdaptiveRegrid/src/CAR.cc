@@ -39,8 +39,7 @@ namespace CarpetAdaptiveRegrid {
   // the "standard" variables before being passed back to Carpet.
   //
 
-  static gh::mexts local_bbsss;
-  static gh::rbnds local_obss;
+  static gh::mregs local_regsss;
   
   //
   // Keep track of the last iteration on which we were called. This
@@ -99,9 +98,7 @@ namespace CarpetAdaptiveRegrid {
   //
 
   CCTK_INT CarpetAdaptiveRegrid_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
-                                        CCTK_POINTER const bbsss_,
-                                        CCTK_POINTER const obss_,
-                                        CCTK_POINTER const pss_,
+                                        CCTK_POINTER const regsss_,
                                         CCTK_INT force)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -120,11 +117,9 @@ namespace CarpetAdaptiveRegrid {
     // refinement levels, maps.
     //
 
-    gh::mexts  & bbsss = * (gh::mexts  *) bbsss_;
-    gh::rbnds  & obss  = * (gh::rbnds  *) obss_;
-    gh::rprocs & pss   = * (gh::rprocs *) pss_;
+    gh::mregs & regsss = * (gh::mregs *) regsss_;
     
-    gh const & hh = *vhh.at(Carpet::map);
+    gh const & hh = *vhh.at(map);
     
     assert (is_singlemap_mode());
 
@@ -139,17 +134,22 @@ namespace CarpetAdaptiveRegrid {
       // refinement with multiple maps.
       //
       const ibbox& baseext = 
-        vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
+        vdd.at(map)->bases.at(mglevel).at(reflevel).exterior;
       vector<ibbox> tmp_bbs;
       tmp_bbs.push_back (baseext);
       vector<bbvect> tmp_obs;
       tmp_obs.push_back (bbvect(true));
+      vector<bbvect> tmp_rbs;
+      tmp_rbs.push_back (bbvect(false));
       vector<vector<ibbox> > tmp_bbss(1);
       vector<vector<bbvect> > tmp_obss(1);
+      vector<vector<bbvect> > tmp_rbss(1);
       tmp_bbss.at(0) = tmp_bbs;
       tmp_obss.at(0) = tmp_obs;
+      tmp_rbss.at(0) = tmp_rbs;
       MakeMultigridBoxes(cctkGH, tmp_bbss, tmp_obss, local_bbsss);
       local_obss = tmp_obss;
+      local_rbss = tmp_rbss;
       last_iteration = cctkGH->cctk_iteration;
       //
       // Having set up the base grid we then set any finer grids
@@ -157,8 +157,8 @@ namespace CarpetAdaptiveRegrid {
       // standard CarpetRegrid.
       //
       int do_recompose = 
-        ManualCoordinateList (cctkGH, hh, bbsss, obss, pss, 
-                              local_bbsss, local_obss);
+        ManualCoordinateList (cctkGH, hh, bbsss, obss, rbss, pss, 
+                              local_bbsss, local_obss, local_rbss);
 
       if (verbose) {
         ostringstream buf;
@@ -320,7 +320,7 @@ namespace CarpetAdaptiveRegrid {
         //
 
         const ibbox& baseext = 
-          vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
+          vdd.at(map)->bases.at(mglevel).at(reflevel).exterior;
         ivect imin = (bb.lower() - baseext.lower())/bb.stride(), 
           imax = (bb.upper() - baseext.lower())/bb.stride();
         
@@ -411,7 +411,7 @@ namespace CarpetAdaptiveRegrid {
           enter_singlemap_mode(const_cast<cGH *> (cctkGH), currentmap, CCTK_GF);
 
           const ibbox& child_baseext = 
-            vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
+            vdd.at(map)->bases.at(mglevel).at(reflevel).exterior;
           ivect child_levoff = child_baseext.lower()/(bb.stride()/reffact);
                           
           if (verbose) {
@@ -811,6 +811,7 @@ namespace CarpetAdaptiveRegrid {
         // Fixup the stride
         vector<ibbox> newbbs;
         vector<bbvect> obs;
+        vector<bbvect> rbs;
         while (! final.empty()) {
           ibbox bb = final.top(); final.pop();
           
@@ -840,6 +841,7 @@ namespace CarpetAdaptiveRegrid {
           // Set the correct ob here.
           
           bbvect ob(false);
+          bbvect rb(true);
           for (int d=0; d<dim; ++d) {
             assert (mglevel==0);
             
@@ -872,6 +874,8 @@ namespace CarpetAdaptiveRegrid {
               abs(lo[d] - exterior_min[d]) < 1.0e-6 * spacing[d];
             ob[d][1] = 
               abs(up[d] - exterior_max[d]) < 1.0e-6 * spacing[d];
+            rb[d][0] = ! ob[d][0];
+            rb[d][1] = ! ob[d][1];
             
             if (veryverbose) {
               ostringstream buf;
@@ -965,6 +969,7 @@ namespace CarpetAdaptiveRegrid {
           
           newbbs.push_back (newbb);
           obs.push_back(ob);
+          rbs.push_back(rb);
         }
         
         
@@ -991,18 +996,22 @@ namespace CarpetAdaptiveRegrid {
           bbss.resize(reflevel+2);
           local_obss.resize(reflevel+2);
           obss.resize(reflevel+2);
+          local_rbss.resize(reflevel+2);
+          rbss.resize(reflevel+2);
           pss.resize(reflevel+2);
         }
         local_bbss.at(reflevel+1) = bbs;
         local_obss.at(reflevel+1) = obs;
+        local_rbss.at(reflevel+1) = rbs;
         MakeMultigridBoxes (cctkGH, local_bbss, local_obss, local_bbsss);
         
         // make multiprocessor aware
         gh::cprocs ps;
-        SplitRegions (cctkGH, bbs, obs, ps);    
+        SplitRegions (cctkGH, bbs, obs, rbs, ps);
         
         bbss.at(reflevel+1) = bbs;
         obss.at(reflevel+1) = obs;
+        rbss.at(reflevel+1) = rbs;
         pss.at(reflevel+1) = ps;
         
       } // did_regrid?
@@ -1017,6 +1026,8 @@ namespace CarpetAdaptiveRegrid {
         bbss.resize(reflevel+1);
         local_obss.resize(reflevel+1);
         obss.resize(reflevel+1);
+        local_rbss.resize(reflevel+1);
+        rbss.resize(reflevel+1);
         // Set local bbsss
         MakeMultigridBoxes (cctkGH, local_bbss, local_obss, local_bbsss);
         

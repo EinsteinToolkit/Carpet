@@ -25,9 +25,11 @@ namespace CarpetAdaptiveRegrid {
                             gh const & hh,
                             gh::mexts  & bbsss,
                             gh::rbnds  & obss,
+                            gh::rbnds  & rbss,
                             gh::rprocs & pss,
                             gh::mexts  & local_bbsss,
-                            gh::rbnds  & local_obss)
+                            gh::rbnds  & local_obss,
+                            gh::rbnds  & local_rbss)
   {
     DECLARE_CCTK_PARAMETERS;
     int ierr;
@@ -60,6 +62,8 @@ namespace CarpetAdaptiveRegrid {
     local_bbss.resize (refinement_levels);
     obss.resize (refinement_levels);
     local_obss.resize (refinement_levels);
+    rbss.resize (refinement_levels);
+    local_rbss.resize (refinement_levels);
     pss.resize (refinement_levels);
     
     vector<vector<rbbox> > newbbss;
@@ -73,10 +77,13 @@ namespace CarpetAdaptiveRegrid {
     }
 
     vector<vector<bbvect> > newobss;
+    vector<vector<bbvect> > newrbss;
 
     newobss.resize(newbbss.size());
+    newrbss.resize(newbbss.size());
     for (size_t rl=0; rl<newobss.size(); ++rl) {
       newobss.at(rl).resize(newbbss.at(rl).size());
+      newrbss.at(rl).resize(newbbss.at(rl).size());
       for (size_t c=0; c<newobss.at(rl).size(); ++c) {
         for (int d=0; d<dim; ++d) {
           assert (mglevel==0);
@@ -87,6 +94,7 @@ namespace CarpetAdaptiveRegrid {
              &exterior_min[0], &exterior_max[0], &spacing[0]);
           assert (!ierr);
           newobss.at(rl).at(c)[d][0] = abs(newbbss.at(rl).at(c).lower()[d] - physical_min[d]) < 1.0e-6 * spacing[d];
+          newrbss.at(rl).at(c)[d][0] = ! newobss.at(rl).at(c)[d][0];
           if (newobss.at(rl).at(c)[d][0]) {
             rvect lo = newbbss.at(rl).at(c).lower();
             rvect up = newbbss.at(rl).at(c).upper();
@@ -95,6 +103,7 @@ namespace CarpetAdaptiveRegrid {
             newbbss.at(rl).at(c) = rbbox(lo, up, str);
           }
           newobss.at(rl).at(c)[d][1] = abs(newbbss.at(rl).at(c).upper()[d] - physical_max[d]) < 1.0e-6 * base_spacing[d] / spacereffacts.at(rl)[d];
+          newrbss.at(rl).at(c)[d][1] = ! newobss.at(rl).at(c)[d][1];
           if (newobss.at(rl).at(c)[d][1]) {
             rvect lo = newbbss.at(rl).at(c).lower();
             rvect up = newbbss.at(rl).at(c).upper();
@@ -115,13 +124,16 @@ namespace CarpetAdaptiveRegrid {
       
       vector<ibbox> bbs;
       gh::cbnds obs;
+      gh::cbnds rbs;
       
       bbs.reserve (newbbss.at(rl-1).size());
       obs.reserve (newbbss.at(rl-1).size());
+      rbs.reserve (newbbss.at(rl-1).size());
       
       for (size_t c=0; c<newbbss.at(rl-1).size(); ++c) {
         rbbox const & ext = newbbss.at(rl-1).at(c);
         bbvect const & ob = newobss.at(rl-1).at(c);
+        bbvect const & rb = newrbss.at(rl-1).at(c);
         // TODO: why can basemglevel not be used here?
         // rvect const spacing = base_spacing * ipow(CCTK_REAL(mgfact), basemglevel) / ipow(reffact, rl);
         rvect const spacing = base_spacing / rvect (spacereffacts.at(rl));
@@ -139,11 +151,12 @@ namespace CarpetAdaptiveRegrid {
         
         ManualCoordinates_OneLevel
           (cctkGH, hh, rl, refinement_levels,
-           ext.lower(), ext.upper(), ob, bbs, obs);
+           ext.lower(), ext.upper(), ob, rb, bbs, obs, rbs);
       }
 
       local_bbss.at(rl) = bbs;
       local_obss.at(rl) = obs;
+      local_rbss.at(rl) = rbs;
 
       if (verbose) {
         ostringstream buf;
@@ -167,10 +180,11 @@ namespace CarpetAdaptiveRegrid {
       
       // make multiprocessor aware
       gh::cprocs ps;
-      SplitRegions (cctkGH, bbs, obs, ps);
+      SplitRegions (cctkGH, bbs, obs, rbs, ps);
 
       bbss.at(rl) = bbs;
       obss.at(rl) = obs;
+      rbss.at(rl) = rbs;
       pss.at(rl) = ps;
 
       if (verbose) {
@@ -206,8 +220,10 @@ namespace CarpetAdaptiveRegrid {
                                    const rvect lower,
                                    const rvect upper,
                                    const bbvect obound,
+                                   const bbvect rbound,
                                    vector<ibbox> & bbs,
-                                   vector<bbvect> & obs)
+                                   vector<bbvect> & obs,
+                                   vector<bbvect> & rbs)
   {
     if (rl >= numrl) return;
     
@@ -215,7 +231,7 @@ namespace CarpetAdaptiveRegrid {
     jvect const iupper = pos2int (cctkGH, hh, upper, rl);
     
     ManualGridpoints_OneLevel
-      (cctkGH, hh, rl, numrl, ilower, iupper, obound, bbs, obs);
+      (cctkGH, hh, rl, numrl, ilower, iupper, obound, rbound, bbs, obs, rbs);
   }
 
   void ManualGridpoints_OneLevel (const cGH * const cctkGH,
@@ -225,8 +241,10 @@ namespace CarpetAdaptiveRegrid {
                                   const ivect ilower,
                                   const ivect iupper,
                                   const bbvect obound,
+                                  const bbvect rbound,
                                   vector<ibbox> & bbs,
-                                  vector<bbvect> & obs)
+                                  vector<bbvect> & obs,
+                                  vector<bbvect> & rbs)
   {
     const ivect rstr = hh.baseextent.stride();
     const ivect rlb  = hh.baseextent.lower();
@@ -257,6 +275,7 @@ namespace CarpetAdaptiveRegrid {
     
     bbs.push_back (ibbox(lb, ub, str));
     obs.push_back (obound);
+    rbs.push_back (rbound);
   }
   
 } // namespace CarpetRegrid
