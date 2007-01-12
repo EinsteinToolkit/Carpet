@@ -38,11 +38,11 @@ namespace Carpet {
     
     cGH * cctkGH = static_cast<cGH *> (data);
     
-    assert (not not attribute->meta +
-            not not attribute->global +
-            not not attribute->level +
-            not not attribute->singlemap +
-            not not attribute->local
+    assert (int (not not attribute->meta) +
+            int (not not attribute->global) +
+            int (not not attribute->level) +
+            int (not not attribute->singlemap) +
+            int (not not attribute->local)
             <= 1);
     
     assert (not not attribute->loop_global +
