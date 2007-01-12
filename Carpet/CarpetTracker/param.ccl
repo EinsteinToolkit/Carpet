@@ -18,21 +18,3 @@ CCTK_INT surface[3] "Spherical surface index which is the source for the locatio
 SHARES: SphericalSurface
 
 USES CCTK_INT nsurfaces
-
-
-
-#SHARES: CarpetRegrid2
-#
-#USES CCTK_INT num_centres
-#
-#USES CCTK_REAL position_x_1
-#USES CCTK_REAL position_y_1
-#USES CCTK_REAL position_z_1
-#
-#USES CCTK_REAL position_x_2
-#USES CCTK_REAL position_y_2
-#USES CCTK_REAL position_z_2
-#
-#USES CCTK_REAL position_x_3
-#USES CCTK_REAL position_y_3
-#USES CCTK_REAL position_z_3

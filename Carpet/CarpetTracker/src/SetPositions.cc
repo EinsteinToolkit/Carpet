@@ -22,22 +22,6 @@ using namespace std;
   
   
   void
-  SetParameter (char const * const dir, int const n, CCTK_REAL const pos)
-  {
-    ostringstream name_buf;
-    name_buf << "position_" << dir << "_" << n + 1;
-    string const name (name_buf.str());
-    ostringstream pos_buf;
-    pos_buf << pos;
-    string const pos_str (pos_buf.str());
-    int const ierr =
-      CCTK_ParameterSet (name.c_str(), "CarpetRegrid2", pos_str.c_str());
-    assert (not ierr);
-  }
-  
-  
-  
-  void
   CarpetTracker_SetPositions (CCTK_ARGUMENTS)
   {
     DECLARE_CCTK_ARGUMENTS;
@@ -58,9 +42,11 @@ using namespace std;
                         static_cast <double> (sf_centroid_y[sn]),
                         static_cast <double> (sf_centroid_z[sn]));
           }
-          SetParameter ("x", n, sf_centroid_x[sn]);
-          SetParameter ("y", n, sf_centroid_y[sn]);
-          SetParameter ("z", n, sf_centroid_z[sn]);
+          
+          // Set position in CarpetRegrid2
+          position_x[n] = sf_centroid_x[sn];
+          position_y[n] = sf_centroid_y[sn];
+          position_z[n] = sf_centroid_z[sn];
           
         } else {
           
@@ -70,10 +56,10 @@ using namespace std;
                         n + 1, sn);
           }
           
-        }
+        } // if valid
         
-      } // if
-    } // for
+      } // if sn > 0
+    } // for n
   }
   
 } // namespace CarpetTracker
