@@ -20,28 +20,25 @@ namespace CarpetRegrid {
   
   int Moving (cGH const * const cctkGH,
               gh const & hh,
-              gh::mexts  & bbsss,
-              gh::rbnds  & obss,
-              gh::rprocs & pss)
+              gh::mregs & regsss)
   {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
     assert (refinement_levels >= 1);
     
-    assert (bbsss.size() >= 1);
-    vector<vector<ibbox> > bbss = bbsss.at(0);
+    assert (regsss.size() >= 1);
+    vector<vector<region_t> > regss = regsss.at(0);
     
-    bbss.resize (refinement_levels);
-    obss.resize (refinement_levels);
-    pss.resize (refinement_levels);
+    regss.resize (refinement_levels);
     
     bvect const symmetric (symmetry_x, symmetry_y, symmetry_z);
-    bbvect const ob (false);
+    b2vect const ob (false);
+    b2vect const rb (true);
     
     assert (! smart_outer_boundaries);
     
-    for (size_t rl=1; rl<bbss.size(); ++rl) {
+    for (size_t rl=1; rl<regss.size(); ++rl) {
       
       // calculate new extent
       CCTK_REAL const argument = 2*M_PI * moving_circle_frequency * cctk_time;
@@ -55,24 +52,24 @@ namespace CarpetRegrid {
       rvect const rlb (symmetric.ifthen (rvect(0), pos - radius));
       rvect const rub (symmetric.ifthen (radius  , pos + radius));
       
-      vector<ibbox> bbs;
-      gh::cbnds obs;
+      region_t reg;
+      reg.map = Carpet::map;
+      reg.outer_boundaries = b2vect (false);
+      reg.refinement_boundaries = b2vect (true);
       
+      vector<region_t> regs;
       ManualCoordinates_OneLevel
-        (cctkGH, hh, rl, refinement_levels, rlb, rub, ob, bbs, obs);
+        (cctkGH, hh, rl, refinement_levels, rlb, rub, reg, regs);
       
       // make multiprocessor aware
-      gh::cprocs ps;
-      SplitRegions (cctkGH, bbs, obs, ps);
+      SplitRegions (cctkGH, regs);
       
-      bbss.at(rl) = bbs;
-      obss.at(rl) = obs;
-      pss.at(rl) = ps;
+      regss.at(rl) = regs;
       
     } // for rl
     
     // make multigrid aware
-    MakeMultigridBoxes (cctkGH, bbss, obss, bbsss);
+    MakeMultigridBoxes (cctkGH, regss, regsss);
     
     return 1;
   }

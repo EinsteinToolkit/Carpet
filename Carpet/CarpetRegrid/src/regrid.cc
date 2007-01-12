@@ -19,25 +19,21 @@ namespace CarpetRegrid {
   using namespace Carpet;
   
   CCTK_INT CarpetRegrid_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
-                                CCTK_POINTER const bbsss_,
-                                CCTK_POINTER const obss_,
-                                CCTK_POINTER const pss_,
+                                CCTK_POINTER const regsss_,
 				CCTK_INT force)
   {
     DECLARE_CCTK_PARAMETERS;
     
     const cGH * const cctkGH = (const cGH *) cctkGH_;
     
-    gh::mexts  & bbsss = * (gh::mexts  *) bbsss_;
-    gh::rbnds  & obss  = * (gh::rbnds  *) obss_;
-    gh::rprocs & pss   = * (gh::rprocs *) pss_;
+    gh::mregs & regsss = * (gh::mregs *) regsss_;
     
     gh const & hh = *vhh.at(Carpet::map);
     
     assert (is_singlemap_mode());
     
-    // In force mode (force == true) we do not check the
-    // CarpetRegrid parameters
+    // In force mode (force == true) we do not check the CarpetRegrid
+    // parameters
 
     if (!force) {
 
@@ -152,43 +148,45 @@ namespace CarpetRegrid {
     
     if (CCTK_EQUALS(refined_regions, "none")) {
       
-      do_recompose = BaseLevel (cctkGH, hh, bbsss, obss, pss);
+      do_recompose = BaseLevel (cctkGH, hh, regsss);
                  
     } else if (CCTK_EQUALS(refined_regions, "centre")) {
       
-      do_recompose = Centre (cctkGH, hh, bbsss, obss, pss);
+      do_recompose = Centre (cctkGH, hh, regsss);
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-gridpoints")) {
       
       do_recompose
-        = ManualGridpoints (cctkGH, hh, bbsss, obss, pss);
+        = ManualGridpoints (cctkGH, hh, regsss);
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-coordinates")) {
       
       do_recompose
-        = ManualCoordinates (cctkGH, hh, bbsss, obss, pss);
+        = ManualCoordinates (cctkGH, hh, regsss);
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-gridpoint-list")) {
       
       do_recompose
-        = ManualGridpointList (cctkGH, hh, bbsss, obss, pss);
+        = ManualGridpointList (cctkGH, hh, regsss);
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-coordinate-list")) {
       
       do_recompose
-        = ManualCoordinateList (cctkGH, hh, bbsss, obss, pss);
+        = ManualCoordinateList (cctkGH, hh, regsss);
                  
     } else if (CCTK_EQUALS(refined_regions, "moving")) {
       
-      do_recompose = Moving (cctkGH, hh, bbsss, obss, pss);
+      do_recompose = Moving (cctkGH, hh, regsss);
                  
     } else if (CCTK_EQUALS(refined_regions, "automatic")) {
       
-      do_recompose = Automatic (cctkGH, hh, bbsss, obss, pss);
+      do_recompose = Automatic (cctkGH, hh, regsss);
                  
     } else {
       assert (0);
     }
+    
+    assert (regsss.size() > 0);
     
     return do_recompose;
   }

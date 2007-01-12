@@ -19,9 +19,7 @@ namespace CarpetRegrid {
   
   int Centre (cGH const * const cctkGH,
               gh const & hh,
-              gh::mexts  & bbsss,
-              gh::rbnds  & obss,
-              gh::rprocs & pss)
+              gh::mregs & regsss)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -30,12 +28,10 @@ namespace CarpetRegrid {
     // do nothing if the levels already exist
     if (reflevel == refinement_levels) return 0;
     
-    assert (bbsss.size() >= 1);
-    vector<vector<ibbox> > bbss = bbsss.at(0);
+    assert (regsss.size() >= 1);
+    vector<vector<region_t> > regss = regsss.at(0);
     
-    bbss.resize (refinement_levels);
-    obss.resize (refinement_levels);
-    pss.resize (refinement_levels);
+    regss.resize (refinement_levels);
     
     bvect const symmetric (symmetry_x, symmetry_y, symmetry_z);
     ivect const zero(0), one(1), two(2);
@@ -46,7 +42,7 @@ namespace CarpetRegrid {
     
     assert (! smart_outer_boundaries);
     
-    for (size_t rl=1; rl<bbss.size(); ++rl) {
+    for (size_t rl=1; rl<regss.size(); ++rl) {
       
       // save old values
       ivect const oldrlb = rlb;
@@ -63,26 +59,28 @@ namespace CarpetRegrid {
       rub = oldrub - symmetric.ifthen(half, quarter);
       assert (all(rlb >= oldrlb and rub <= oldrub));
       
-      ibbox const bb (rlb, rub, rstr);
-      vector<ibbox> bbs (1);
-      bbs.at(0) = bb;
+      vector<region_t> regs (1);
       
-      bbvect const ob (false);
-      gh::cbnds obs (1);
-      obs.at(0) = ob;
+      ibbox const ext (rlb, rub, rstr);
+      regs.at(0).extent = ext;
+      
+      b2vect const ob (false);
+      regs.at(0).outer_boundaries = ob;
+      
+      b2vect const rb (true);
+      regs.at(0).refinement_boundaries = rb;
+      
+      regs.at(0).map = Carpet::map;
       
       // make multiprocessor aware
-      gh::cprocs ps;
-      SplitRegions (cctkGH, bbs, obs, ps);
+      SplitRegions (cctkGH, regs);
       
-      bbss.at(rl) = bbs;
-      obss.at(rl) = obs;
-      pss.at(rl) = ps;
+      regss.at(rl) = regs;
       
     } // for rl
     
     // make multigrid aware
-    MakeMultigridBoxes (cctkGH, bbss, obss, bbsss);
+    MakeMultigridBoxes (cctkGH, regss, regsss);
     
     return 1;
   }
