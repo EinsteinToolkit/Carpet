@@ -113,7 +113,7 @@ int WriteVarUnchunked (const cGH* const cctkGH,
                     << " tl=" << request->timelevel;
         if (mglevels > 1) datasetname << " ml=" << mglevel;
         if (group.grouptype == CCTK_GF) {
-          if (Carpet::maps > 1) datasetname << " m="  << Carpet::map;
+          if (maps > 1) datasetname << " m="  << Carpet::map;
           datasetname << " rl=" << refinementlevel;
         }
         if (bboxes.setsize () > 1 and group.disttype != CCTK_DISTRIB_CONSTANT) {
@@ -366,7 +366,7 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
                       << " tl=" << request->timelevel;
           if (mglevels > 1) datasetname << " ml=" << mglevel;
           if (group.grouptype == CCTK_GF) {
-            if (Carpet::maps > 1) datasetname << " m="  << Carpet::map;
+            if (maps > 1) datasetname << " m="  << Carpet::map;
             datasetname << " rl=" << refinementlevel;
           }
           if (arrdata.at(gindex).at(Carpet::map).dd->
@@ -513,7 +513,7 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
                   << " tl=" << request->timelevel;
       if (mglevels > 1) datasetname << " ml=" << mglevel;
       if (group.grouptype == CCTK_GF) {
-        if (Carpet::maps > 1) datasetname << " m="  << Carpet::map;
+        if (maps > 1) datasetname << " m="  << Carpet::map;
         datasetname << " rl=" << refinementlevel;
       }
       if (arrdata.at(gindex).at(Carpet::map).dd->
@@ -658,7 +658,7 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
       Util_TableGetIntArray (coord_system_handle, vdim,
                              coord_handles, "COORDINATES") >= 0) {
     const ibbox& baseext =
-    vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
+      vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
 
     const ivect pos = (bbox.lower() - baseext.lower()) / bbox.stride();
 

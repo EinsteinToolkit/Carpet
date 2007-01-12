@@ -285,7 +285,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     read_completely[vindex].resize (timelevels, false);
     bboxes_read[vindex].resize (timelevels);
     for (int tl = 0; tl < timelevels; tl++) {
-      bboxes_read[vindex][tl].resize (Carpet::maps);
+      bboxes_read[vindex][tl].resize (maps);
     }
   }
 
@@ -312,7 +312,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   const int numgroups = CCTK_NumGroups ();
   vector<vector<ibset> > group_bboxes (numgroups);
   for (unsigned int gindex = 0; gindex < group_bboxes.size(); gindex++) {
-    group_bboxes[gindex].resize (Carpet::maps);
+    group_bboxes[gindex].resize (maps);
     const int grouptype = CCTK_GroupTypeI (gindex);
     BEGIN_MAP_LOOP (cctkGH, grouptype) {
       struct arrdesc& data = arrdata.at(gindex).at(Carpet::map);
@@ -329,8 +329,8 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   // mark variables in groups with no grid points (size 0) as already done
   for (int group = 0; group < (int)group_bboxes.size(); group++) {
     bool is_empty = true;
-    for (int map = 0; map < (int)group_bboxes[group].size(); map++) {
-      is_empty &= group_bboxes[group][map].empty();
+    for (int m = 0; m < (int)group_bboxes[group].size(); m++) {
+      is_empty &= group_bboxes[group][m].empty();
     }
     if (is_empty) {
       int vindex = CCTK_FirstVarIndexI (group);
@@ -490,8 +490,8 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       if (not read_completely[vindex][tl]) {
         // check if the variable has been read partially
         size_t size = 0;
-        for (int map = 0; map < Carpet::maps; map++) {
-          size += bboxes_read[vindex][tl][map].size();
+        for (int m = 0; m < maps; m++) {
+          size += bboxes_read[vindex][tl][m].size();
         }
         char* fullname = CCTK_FullName (vindex);
         if (size == 0) {
