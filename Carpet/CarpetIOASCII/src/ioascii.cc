@@ -365,24 +365,26 @@ namespace CarpetIOASCII {
 
     int vindex = -1;
 
-    if (CCTK_TraverseString (varname, GetVarIndex, &vindex, CCTK_VAR) < 0) {
+    if (CCTK_TraverseString (varname, GetVarIndex, & vindex, CCTK_VAR) < 0) {
       CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "error while parsing variable name '%s' (alias name '%s')",
                   varname, alias);
-      return (-1);
+      return -1;
     }
 
     if (vindex < 0) {
-      return (-1);
+      return -1;
     }
 
     if (not (is_level_mode() or
-             (is_singlemap_mode() and Carpet::maps == 1) or
-             (is_local_mode() and Carpet::maps == 1 and vhh.at(Carpet::map)->local_components(reflevel) == 1)))
+             (is_singlemap_mode() and maps == 1) or
+             (is_local_mode() and maps == 1 and
+              vhh.at(Carpet::map)->local_components(reflevel) == 1)))
     {
       CCTK_WARN (1, "OutputVarAs must be called in level mode");
       return -1;
     }
+
     BEGIN_LEVEL_MODE (cctkGH) {
 
     const int group = CCTK_GroupIndexFromVarI (vindex);
@@ -454,14 +456,14 @@ namespace CarpetIOASCII {
     int& last_output = thisfile->second.at(mglevel).at(reflevel).at(elem);
     if (last_output == cctk_iteration) {
       // Has already been output during this iteration
-      char* varname = CCTK_FullName (vindex);
+      char * const fullname = CCTK_FullName (vindex);
       CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Skipping output for variable '%s', because this variable "
                   "has already been output during the current iteration -- "
                   "probably via a trigger during the analysis stage",
-                  varname);
-      free (varname);
-      return (0);
+                  fullname);
+      free (fullname);
+      return 0;
     }
     assert (last_output < cctk_iteration);
     last_output = cctk_iteration;
