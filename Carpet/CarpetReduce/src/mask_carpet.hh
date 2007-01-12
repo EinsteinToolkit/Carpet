@@ -1,5 +1,5 @@
-#include "cctk.h"
-#include "cctk_Arguments.h"
+#include <cctk.h>
+#include <cctk_Arguments.h>
 
 namespace CarpetMask {
 

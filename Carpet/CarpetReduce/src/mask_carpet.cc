@@ -1,11 +1,11 @@
 #include <cassert>
 #include <sstream>
 
-#include "cctk.h"
-#include "cctk_Arguments.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Arguments.h>
+#include <cctk_Parameters.h>
 
-#include "carpet.hh"
+#include <carpet.hh>
 
 #include "mask_carpet.hh"
 
@@ -31,7 +31,7 @@ namespace CarpetMask {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    if (! is_singlemap_mode()) {
+    if (not is_singlemap_mode()) {
       CCTK_WARN (0, "This routine may only be called in singlemap mode");
     }
     
@@ -113,7 +113,7 @@ namespace CarpetMask {
             {
               
               ibbox const & box = (*bi) & ext;
-              if (! box.empty()) {
+              if (not box.empty()) {
                 
                 assert (all ((box.lower() - ext.lower()               ) >= 0));
                 assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
@@ -122,7 +122,7 @@ namespace CarpetMask {
                 ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
                 ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
                 assert (all (izero <= imin));
-                assert (box.empty() || all (imin <= imax));
+                assert (box.empty() or all (imin <= imax));
                 assert (all (imax <= ivect::ref(cctk_lsh)));
                 
                 if (verbose) {
@@ -175,7 +175,7 @@ namespace CarpetMask {
           {
             
             ibbox const & box = (*bi).contracted_for(ext) & ext;
-            if (! box.empty()) {
+            if (not box.empty()) {
               
               assert (all ((box.lower() - ext.lower()               ) >= 0));
               assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
@@ -184,7 +184,7 @@ namespace CarpetMask {
               ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
               ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
               assert (all (izero <= imin));
-              assert (box.empty() || all (imin <= imax));
+              assert (box.empty() or all (imin <= imax));
               assert (all (imax <= ivect::ref(cctk_lsh)));
               
               if (verbose) {
@@ -228,7 +228,7 @@ namespace CarpetMask {
             {
               
               ibbox const & box = (*bi).contracted_for(ext) & ext;
-              if (! box.empty()) {
+              if (not box.empty()) {
                 
                 assert (all ((box.lower() - ext.lower()               ) >= 0));
                 assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
@@ -237,7 +237,7 @@ namespace CarpetMask {
                 ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
                 ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
                 assert (all (izero <= imin));
-                assert (box.empty() || all (imin <= imax));
+                assert (box.empty() or all (imin <= imax));
                 assert (all (imax <= ivect::ref(cctk_lsh)));
                 
                 if (verbose) {
