@@ -30,6 +30,7 @@ protected:                      // should be readonly
   // Fields
   const int varindex;           // Cactus variable index, or -1
 
+  centering cent;
   operator_type transport_operator;
   
   bool _has_storage;		// has storage associated (on some processor)
@@ -55,6 +56,7 @@ public:
 
   // Constructors
   gdata (const int varindex,
+         const centering cent = error_centered,
          const operator_type transport_operator = op_error,
          const int tag = -1);
 
@@ -64,6 +66,7 @@ public:
   // Pseudo constructors
   virtual gdata*
   make_typed (const int varindex,
+              const centering cent = error_centered,
               const operator_type transport_operator = op_error,
               const int tag = -1) const = 0;
   
@@ -193,8 +196,8 @@ private:
   virtual void
   copy_from_innerloop (const gdata* src, const ibbox& box) = 0;
   virtual void
-  interpolate_from_innerloop (const vector<const gdata*> srcs,
-			      const vector<CCTK_REAL> times,
+  interpolate_from_innerloop (const vector<const gdata*>& srcs,
+			      const vector<CCTK_REAL>& times,
 			      const ibbox& box,
                               const CCTK_REAL time,
 			      const int order_space,

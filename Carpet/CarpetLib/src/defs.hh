@@ -53,7 +53,7 @@ typedef vect<vect<int,dim>,2>  i2vect;
 
 
 // A general type
-enum centering { vertex_centered, cell_centered };
+enum centering { error_centered, vertex_centered, cell_centered };
 
 
 

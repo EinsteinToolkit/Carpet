@@ -143,18 +143,9 @@ timestat wtime_commstate_interpolate_to_isend;
 timestat wtime_restrict;
 timestat wtime_prolongate;
 timestat wtime_prolongate_copy;
-timestat wtime_prolongate_Lagrange_0;
-timestat wtime_prolongate_Lagrange_1;
-timestat wtime_prolongate_Lagrange_2;
-timestat wtime_prolongate_TVD_0;
-timestat wtime_prolongate_TVD_1;
-timestat wtime_prolongate_TVD_2;
-timestat wtime_prolongate_ENO_0;
-timestat wtime_prolongate_ENO_1;
-timestat wtime_prolongate_ENO_2;
-timestat wtime_prolongate_WENO_0;
-timestat wtime_prolongate_WENO_1;
-timestat wtime_prolongate_WENO_2;     
+timestat wtime_prolongate_Lagrange;
+timestat wtime_prolongate_ENO;
+timestat wtime_prolongate_WENO;
 
 
 
@@ -255,19 +246,9 @@ void CarpetLib_printtimestats (CCTK_ARGUMENTS)
          << endl
          << "   wtime_restrict:                         " << wtime_restrict                         << endl
          << "   wtime_prolongate:                       " << wtime_prolongate                       << endl
-         << "   wtime_prolongate_copy:                  " << wtime_prolongate_copy                  << endl
-         << "   wtime_prolongate_Lagrange_0:            " << wtime_prolongate_Lagrange_0            << endl
-         << "   wtime_prolongate_Lagrange_1:            " << wtime_prolongate_Lagrange_1            << endl
-         << "   wtime_prolongate_Lagrange_2:            " << wtime_prolongate_Lagrange_2            << endl
-         << "   wtime_prolongate_TVD_0:                 " << wtime_prolongate_TVD_0                 << endl
-         << "   wtime_prolongate_TVD_1:                 " << wtime_prolongate_TVD_1                 << endl
-         << "   wtime_prolongate_TVD_2:                 " << wtime_prolongate_TVD_2                 << endl
-         << "   wtime_prolongate_ENO_0:                 " << wtime_prolongate_ENO_0                 << endl
-         << "   wtime_prolongate_ENO_1:                 " << wtime_prolongate_ENO_1                 << endl
-         << "   wtime_prolongate_ENO_2:                 " << wtime_prolongate_ENO_2                 << endl
-         << "   wtime_prolongate_WENO_0:                " << wtime_prolongate_WENO_0                << endl
-         << "   wtime_prolongate_WENO_1:                " << wtime_prolongate_WENO_1                << endl
-         << "   wtime_prolongate_WENO_2:                " << wtime_prolongate_WENO_2                << endl
+         << "   wtime_prolongate_Lagrange:              " << wtime_prolongate_Lagrange              << endl
+         << "   wtime_prolongate_ENO:                   " << wtime_prolongate_ENO                   << endl
+         << "   wtime_prolongate_WENO:                  " << wtime_prolongate_WENO                  << endl
          << endl;
   }
 }

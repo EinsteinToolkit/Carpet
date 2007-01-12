@@ -10,7 +10,6 @@ enum operator_type
   op_copy,                      // use simple copying for prolongation
                                 // (needs only one time level)
   op_Lagrange,                  // Lagrange interpolation (standard)
-  op_TVD,                       // use TVD stencils (for hydro)
   op_ENO,                       // use ENO stencils (for hydro)
   op_WENO                       // use WENO stencils (for hydro)
 };

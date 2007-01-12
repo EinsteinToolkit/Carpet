@@ -45,11 +45,13 @@ public:
   
   // Constructors
   data (const int varindex = -1,
+        const centering cent = error_centered,
         const operator_type transport_operator = op_error,
         const int vectorlength = 1, const int vectorindex = 0,
         data* const vectorleader = NULL,
         const int tag = -1);
-  data (const int varindex, const operator_type transport_operator,
+  data (const int varindex,
+        const centering cent, const operator_type transport_operator,
         const int vectorlength, const int vectorindex,
         data* const vectorleader,
         const ibbox& extent, const int proc);
@@ -59,6 +61,7 @@ public:
 
   // Pseudo constructors
   virtual data* make_typed (const int varindex,
+                            const centering cent,
                             const operator_type transport_operator,
                             const int tag) const;
 
@@ -147,47 +150,43 @@ private:
 public:
   void copy_from_innerloop (const gdata* gsrc,
 			    const ibbox& box);
-  void interpolate_from_innerloop (const vector<const gdata*> gsrcs,
-				   const vector<CCTK_REAL> times,
+  void interpolate_from_innerloop (const vector<const gdata*>& gsrcs,
+				   const vector<CCTK_REAL>& times,
 				   const ibbox& box, const CCTK_REAL time,
 				   const int order_space,
 				   const int order_time);
   
+private:
+  void interpolate_time (vector <data const *> const & srcs,
+                         vector <CCTK_REAL> const & times,
+                         ibbox const & box,
+                         CCTK_REAL const time,
+                         int const order_space,
+                         int const order_time);
+  void interpolate_p_r (data const * const src,
+                        ibbox const & box,
+                        int const order_space);
+  void interpolate_p_vc_cc (data const * const src,
+                            ibbox const & box,
+                            int const order_space);
+  void interpolate_prolongate (data const * src,
+                               ibbox const & box,
+                               int order_space);
+  void interpolate_restrict (data const * src,
+                             ibbox const & box,
+                             int order_space);
+  void time_interpolate (vector <data *> const & srcs,
+                         ibbox const & box,
+                         vector <CCTK_REAL> const & times,
+                         CCTK_REAL time,
+                         int order_time);
   
 public:
 
   // Output
   ostream& output (ostream& os) const;
-private:
-  bool try_without_time_interpolation (const vector<const gdata*> & gsrcs,
-                                       const vector<CCTK_REAL> & times,
-                                       const ibbox& box, const CCTK_REAL time,
-                                       const int order_space,
-                                       const int order_time);
-  void interpolate_restrict (const vector<const data<T>*> & gsrcs,
-                              const vector<CCTK_REAL> & times,
-                              const ibbox& box);
-  void interpolate_prolongate (const vector<const data<T>*> & gsrcs,
-                              const vector<CCTK_REAL> & times,
-                              const ibbox& box, const CCTK_REAL time,
-                              const int order_space,
-                              const int order_time);
-  void Check_that_the_times_are_consistent ( const vector<CCTK_REAL> & times,
-                              const CCTK_REAL time );
 
   friend ostream & operator << <T> ( ostream & os, const data<T> & d );
 };
-
-
-
-// Declare a specialisation
-template<>
-void data<CCTK_REAL8>
-::interpolate_from_innerloop (const vector<const gdata*> gsrcs,
-                              const vector<CCTK_REAL> times,
-                              const ibbox& box, const CCTK_REAL time,
-                              const int order_space,
-                              const int order_time);
-
 
 #endif // DATA_HH

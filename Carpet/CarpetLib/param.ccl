@@ -6,10 +6,6 @@ BOOLEAN verbose "Print info to the screen" STEERABLE=always
 {
 } "no"
 
-BOOLEAN check_array_accesses "Check all array accesses in Fortran" STEERABLE=always
-{
-} "no"
-
 BOOLEAN barriers "Insert barriers at strategic places for debugging purposes (slows down execution)" STEERABLE=always
 {
 } "no"

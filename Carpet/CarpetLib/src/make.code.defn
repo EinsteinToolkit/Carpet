@@ -15,45 +15,19 @@ SRCS =	bbox.cc					\
 	mem.cc					\
 	region.cc				\
 	th.cc					\
+	timestat.cc				\
 	vect.cc					\
-	checkindex.c				\
-	copy_3d_complex16.F77			\
-	copy_3d_int4.F77			\
-	copy_3d_real8.F77			\
-	prolongate_3d_real8.F77			\
-	prolongate_3d_real8_rf2.F77		\
-	prolongate_3d_real8_o3.F77		\
-	prolongate_3d_real8_o3_rf2.F77		\
-	prolongate_3d_real8_o5.F77		\
-	prolongate_3d_real8_o5_rf2.F77		\
-	prolongate_3d_real8_o7.F77		\
-	prolongate_3d_real8_o7_rf2.F77		\
-	prolongate_3d_real8_2tl.F77		\
-	prolongate_3d_real8_2tl_rf2.F77		\
-	prolongate_3d_real8_2tl_o3.F77		\
-	prolongate_3d_real8_2tl_o3_rf2.F77	\
-	prolongate_3d_real8_2tl_o5.F77		\
-	prolongate_3d_real8_2tl_o5_rf2.F77	\
-	prolongate_3d_real8_2tl_o7_rf2.F77	\
-	prolongate_3d_real8_3tl.F77		\
-	prolongate_3d_real8_3tl_rf2.F77		\
-	prolongate_3d_real8_3tl_o3.F77		\
-	prolongate_3d_real8_3tl_o3_rf2.F77	\
-	prolongate_3d_real8_3tl_o5.F77		\
-	prolongate_3d_real8_3tl_o5_rf2.F77	\
-	prolongate_3d_real8_3tl_o7_rf2.F77	\
-	prolongate_3d_real8_minmod.F77		\
-	prolongate_3d_real8_2tl_minmod.F77	\
-	prolongate_3d_real8_3tl_minmod.F77	\
+	copy_3d.cc				\
+	interpolate_3d_2tl.cc			\
+	interpolate_3d_3tl.cc			\
+	restrict_3d_cc_rf2.cc			\
+	restrict_3d_rf2.cc			\
+	prolongate_3d_cc_rf2.cc			\
+	prolongate_3d_o1_rf2.cc			\
+	prolongate_3d_o3_rf2.cc			\
+	prolongate_3d_o5_rf2.cc			\
 	prolongate_3d_real8_eno.F90		\
-	prolongate_3d_real8_2tl_eno.F90		\
-	prolongate_3d_real8_3tl_eno.F90		\
-	prolongate_3d_real8_weno.F90		\
-	prolongate_3d_real8_2tl_weno.F90	\
-	prolongate_3d_real8_3tl_weno.F90	\
-	restrict_3d_real8.F77			\
-	restrict_3d_real8_rf2.F77		\
-	timestat.cc
+	prolongate_3d_real8_weno.F90
 
 # Subdirectories containing source files
 SUBDIRS = 

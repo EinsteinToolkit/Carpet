@@ -50,7 +50,8 @@ protected:
   
   virtual gdata* typed_data (int tl, int rl, int c, int ml)
   {
-    return new data<T>(this->varindex, this->transport_operator,
+    return new data<T>(this->varindex,
+                       h.refcent, this->transport_operator,
                        this->vectorlength, this->vectorindex,
                        this->vectorleader
                        ? (data<T>*)(*this->vectorleader)(tl,rl,c,ml)

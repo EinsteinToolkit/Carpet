@@ -38,9 +38,11 @@ static int nexttag ()
 
 // Constructors
 gdata::gdata (const int varindex_,
+              const centering cent_,
               const operator_type transport_operator_,
               const int tag_)
   : varindex(varindex_),
+    cent(cent_),
     transport_operator(transport_operator_),
     _has_storage(false),
     comm_active(false),
@@ -483,7 +485,7 @@ void gdata
     int typesize;
     MPI_Type_size (b->datatype(), & typesize);
 
-    gdata * tmp = src->make_typed (varindex, transport_operator, tag);
+    gdata * tmp = src->make_typed (varindex, cent, transport_operator, tag);
     tmp->allocate (box, src->proc(), b->pointer());
     tmp->interpolate_from_innerloop (srcs, times, box, time,
                                      order_space, order_time);
@@ -531,7 +533,7 @@ void gdata
     assert (fillstate <= (int)procbuf.sendbufsize * datatypesize);
 
     // interpolate this processor's data into the send buffer
-    gdata* tmp = src->make_typed (varindex, transport_operator, tag);
+    gdata* tmp = src->make_typed (varindex, cent, transport_operator, tag);
     tmp->allocate (box, src->proc(), procbuf.sendbuf);
     tmp->interpolate_from_innerloop (srcs, times, box, time,
                                      order_space, order_time);
