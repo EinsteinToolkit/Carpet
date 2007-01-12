@@ -272,11 +272,19 @@ namespace CarpetIOF5 {
       }
     }
     
+#if SIZEOF_INT != CCTK_INTEGER_PRECISION
     template
     void
     write_or_check_attribute (hid_t const where,
                               char const * const name,
                               int const * const values,
+                              int const num_values);
+#endif
+    template
+    void
+    write_or_check_attribute (hid_t const where,
+                              char const * const name,
+                              CCTK_INT const * const values,
                               int const num_values);
     template
     void
@@ -299,11 +307,18 @@ namespace CarpetIOF5 {
       write_or_check_attribute (where, name, & value, 1);
     }
     
+#if SIZEOF_INT != CCTK_INTEGER_PRECISION
     template
     void
     write_or_check_attribute (hid_t const where,
                               char const * const name,
                               int const & value);
+#endif
+    template
+    void
+    write_or_check_attribute (hid_t const where,
+                              char const * const name,
+                              CCTK_INT const & value);
     template
     void
     write_or_check_attribute (hid_t const where,
@@ -324,11 +339,18 @@ namespace CarpetIOF5 {
       write_or_check_attribute (where, name, & value [0], D);
     }
     
+#if SIZEOF_INT != CCTK_INTEGER_PRECISION
     template
     void
     write_or_check_attribute (hid_t where,
                               char const * name,
                               vect<int, dim> const & value);
+#endif
+    template
+    void
+    write_or_check_attribute (hid_t where,
+                              char const * name,
+                              vect<CCTK_INT, dim> const & value);
     template
     void
     write_or_check_attribute (hid_t where,
