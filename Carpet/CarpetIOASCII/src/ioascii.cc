@@ -399,7 +399,7 @@ namespace CarpetIOASCII {
     if (grouptype != CCTK_GF) {
       assert (do_global_mode);
     }
-    const int rl = grouptype == CCTK_GF ? reflevel : 0;
+    const int my_reflevel = grouptype == CCTK_GF ? reflevel : 0;
 
     const int groupdim = CCTK_GroupDimI(group);
     if (outdim > groupdim) {
@@ -797,7 +797,7 @@ namespace CarpetIOASCII {
                 for (int tl=0; tl<maxtl; ++tl) {
 
                   const gdata* const data
-                    = (*ff) (tl, rl, component, mglevel);
+                    = (*ff) (tl, my_reflevel, component, mglevel);
                   ibbox ext = data->extent();
 
                   ivect lo = ext.lower();
@@ -897,7 +897,7 @@ namespace CarpetIOASCII {
                     for (int n=0; n<numvars; ++n) {
                       const ggf* const ff1
                         = arrdata.at(group).at(Carpet::map).data.at(n);
-                      datas.at(n) = (*ff1) (tl, rl, component, mglevel);
+                      datas.at(n) = (*ff1) (tl, my_reflevel, component, mglevel);
                     }
                   } else {
                     datas.resize (1);
@@ -905,7 +905,7 @@ namespace CarpetIOASCII {
                   }
                   WriteASCII (file, datas, ext, vindex, cctkGH->cctk_iteration,
                               offset1, dirs,
-                              rl, mglevel, Carpet::map, component, tl,
+                              my_reflevel, mglevel, Carpet::map, component, tl,
                               coord_time, coord_lower, coord_upper);
 
                   // Append EOL after every component
