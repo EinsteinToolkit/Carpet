@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <list>
 #include <sstream>
 #include <string>
