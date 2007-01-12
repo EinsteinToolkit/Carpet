@@ -29,8 +29,12 @@ namespace CarpetIOF5 {
       assert (not region.empty());
       
       ostringstream namebuf;
+#if 0
       namebuf << "map=" << Carpet::map << " "
               << "region=" << m_region;
+#else
+      namebuf << "region=" << m_region;
+#endif
       string const namestr = namebuf.str();
       char const * const name = namestr.c_str();
       assert (name != 0);
