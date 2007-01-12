@@ -49,16 +49,15 @@ namespace Carpet {
     timer.start();
     while (not do_terminate (cctkGH)) {
       
+      int const do_every = maxtimereflevelfact / timereffacts.at(reflevels-1);
+      
       AdvanceTime (cctkGH);
-      {
-        int const do_every = maxtimereflevelfact / timereffacts.at(reflevels-1);
-        if ((cctkGH->cctk_iteration - 1) % do_every == 0) {
-          ENTER_GLOBAL_MODE (cctkGH, 0) {
-            BEGIN_REFLEVEL_LOOP (cctkGH) {
-              CallRegrid (cctkGH);
-            } END_REFLEVEL_LOOP;
-          } LEAVE_GLOBAL_MODE;
-        }
+      if ((cctkGH->cctk_iteration - 1) % do_every == 0) {
+        ENTER_GLOBAL_MODE (cctkGH, 0) {
+          BEGIN_REFLEVEL_LOOP (cctkGH) {
+            CallRegrid (cctkGH);
+          } END_REFLEVEL_LOOP;
+        } LEAVE_GLOBAL_MODE;
       }
       CallEvol (cctkGH);
       CallRestrict (cctkGH);
