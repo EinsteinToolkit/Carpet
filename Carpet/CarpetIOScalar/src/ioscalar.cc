@@ -190,8 +190,8 @@ namespace CarpetIOScalar {
     DECLARE_CCTK_PARAMETERS;
 
     assert (is_level_mode() or
-            (is_singlemap_mode() and Carpet::maps == 1) or
-            (is_local_mode() and Carpet::maps == 1 and vhh.at(Carpet::map)->local_components(reflevel) == 1));
+            (is_singlemap_mode() and maps == 1) or
+            (is_local_mode() and maps == 1 and vhh.at(Carpet::map)->local_components(reflevel) == 1));
     BEGIN_LEVEL_MODE (cctkGH) {
 
     const int n = CCTK_VarIndex(varname);
