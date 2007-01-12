@@ -74,7 +74,7 @@ namespace CarpetIOBasic {
     char *out_vars;
 
     /* stop on I/O parameter parsing errors ? */
-    int stop_on_parse_errors;
+    bool stop_on_parse_errors;
 
     /* I/O request description list (for all variables) */
     ioRequest **requests;
@@ -191,7 +191,7 @@ namespace CarpetIOBasic {
     // initial I/O parameter check
     IOparameters.stop_on_parse_errors = strict_io_parameter_check;
     CheckSteerableParameters (cctkGH);
-    IOparameters.stop_on_parse_errors = 0;
+    IOparameters.stop_on_parse_errors = false;
 
     // We register only once, ergo we get only one handle.  We store
     // that statically, so there is no need to pass anything to
