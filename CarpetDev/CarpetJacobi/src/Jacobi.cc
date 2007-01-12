@@ -36,7 +36,7 @@ namespace Carpet {
 
 
 
-#define DEBUG 0
+#define DEBUG 0                 // either 0 or 1
 
 
 
@@ -48,7 +48,7 @@ namespace CarpetJacobi {
   
   
   extern "C" {
-    void CarpetJacobi_register ();
+    int CarpetJacobi_register ();
   }
   
   int CarpetJacobi_solve (const cGH * const cctkGH,
@@ -62,11 +62,12 @@ namespace CarpetJacobi {
   
   
   
-  void CarpetJacobi_register ()
+  int CarpetJacobi_register ()
   {
     int const ierr = TATelliptic_RegisterSolver
       (CarpetJacobi_solve, "CarpetJacobi");
     assert (!ierr);
+    return 0;
   }
   
   
