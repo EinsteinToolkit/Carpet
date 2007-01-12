@@ -33,6 +33,13 @@ namespace CarpetReduce {
   
   // Helper functions and types
   
+  // Whether a value is nan
+  template<typename T> inline int
+  myisnan (const T x)
+  {
+    return isnan(x);
+  }
+  
   // The minimum of two values
   template<typename T> inline T
   mymin (const T x, const T y)
@@ -62,13 +69,23 @@ namespace CarpetReduce {
     // The smallest possible value
     static T min ()
     {
+      // numeric_limits<T>::min() is the smallest number (that can be
+      // represented) only for integer types.  For real types, it is
+      // only the smallest _positive_ number.  However, we need the
+      // true minimum.
+
+      // For two's complement integers, it is min < - max, and for
+      // floating point numbers, it is min = - max.  The expression
+      // below does the right thing in both cases.
       return mymin (numeric_limits<T>::min(), -numeric_limits<T>::max());
     }
     
     // The largest possible value
     static T max ()
     {
-      return mymax (numeric_limits<T>::max(), -numeric_limits<T>::min());
+      // numeric_limits<T>::max() is always the largest number that
+      // can be represented.
+      return numeric_limits<T>::max();
     }
     
   };
@@ -89,6 +106,11 @@ namespace CarpetReduce {
   // The C++ compiler should supply these, but some old ones do not,
   // e.g. our beloved workhorse Intel 7.1.  Self is the man.
 #ifdef HAVE_CCTK_BYTE
+//   template<> inline int myisnan (CCTK_BYTE const x)
+//   {
+//     return 0;
+//   }
+  
   template<> inline CCTK_BYTE mysqrt (CCTK_BYTE const x)
   {
     return static_cast<CCTK_BYTE> (sqrt (static_cast<CCTK_REAL> (x)));
@@ -96,6 +118,11 @@ namespace CarpetReduce {
 #endif
   
 #ifdef HAVE_CCTK_INT1
+//   template<> inline int myisnan (CCTK_INT1 const x)
+//   {
+//     return 0;
+//   }
+  
   template<> inline CCTK_INT1 mysqrt (CCTK_INT1 const x)
   {
     return static_cast<CCTK_INT1> (sqrt (static_cast<CCTK_REAL> (x)));
@@ -103,6 +130,11 @@ namespace CarpetReduce {
 #endif
   
 #ifdef HAVE_CCTK_INT2
+//   template<> inline int myisnan (CCTK_INT2 const x)
+//   {
+//     return 0;
+//   }
+  
   template<> inline CCTK_INT2 mysqrt (CCTK_INT2 const x)
   {
     return static_cast<CCTK_INT2> (sqrt (static_cast<CCTK_REAL> (x)));
@@ -128,6 +160,11 @@ namespace CarpetReduce {
   // Overload the above helper functions and types for complex values
   
 #ifdef HAVE_CCTK_REAL4
+  
+  template<> inline int myisnan (complex<CCTK_REAL4> const x)
+  {
+    return isnan (x.real()) or isnan (x.imag());
+  }
   
   template<> inline complex<CCTK_REAL4>
   mymin (const complex<CCTK_REAL4> x, const complex<CCTK_REAL4> y)
@@ -167,6 +204,11 @@ namespace CarpetReduce {
   
 #ifdef HAVE_CCTK_REAL8
   
+  template<> inline int myisnan (complex<CCTK_REAL8> const x)
+  {
+    return isnan (x.real()) or isnan (x.imag());
+  }
+  
   template<> inline complex<CCTK_REAL8>
   mymin (const complex<CCTK_REAL8> x, const complex<CCTK_REAL8> y)
   {
@@ -204,6 +246,11 @@ namespace CarpetReduce {
 #endif
   
 #ifdef HAVE_CCTK_REAL16
+  
+  template<> inline int myisnan (complex<CCTK_REAL16> const x)
+  {
+    return isnan (x.real()) or isnan (x.imag());
+  }
   
   template<> inline complex<CCTK_REAL16>
   mymin (const complex<CCTK_REAL16> x, const complex<CCTK_REAL16> y)
