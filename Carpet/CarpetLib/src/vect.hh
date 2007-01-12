@@ -545,10 +545,21 @@ inline vect<T,D> either (const vect<S,D>& a,
                          const vect<T,D>& b, const vect<T,D>& c) PURE;
 template<typename S,typename T,int D>
 inline vect<T,D> either (const vect<S,D>& a,
-                         const vect<T,D>& b, const vect<T,D>& c) {
+                         const vect<T,D>& b, const vect<T,D>& c)
+{
   vect<T,D> r;
   for (int d=0; d<D; ++d) r[d]=a[d]?b[d]:c[d];
   return r;
+}
+
+template<typename S,typename T,int D>
+inline vect<T,D> either (const vect<S,D>& a,
+                         const T& b, const T& c) PURE;
+template<typename S,typename T,int D>
+inline vect<T,D> either (const vect<S,D>& a,
+                         const T& b, const T& c)
+{
+  return either (a, vect<T,D>(b), vect<T,D>(c));
 }
 
 /** Transpose a vector of a vector */
@@ -1171,6 +1182,9 @@ inline T sum (const vect<T,D>& a) {
 
 // Higher order functions
 
+#if 0
+// They are rarely used, so disable them
+
 /** Return a new vector where the function func() has been applied to
     all elements.  */
 template<typename T, typename U, int D>
@@ -1238,6 +1252,7 @@ inline vect<U,D> scan1 (U (* const func)(U val, T x), U val,
   }
   return r;
 }
+#endif
 
 
 
@@ -1288,6 +1303,34 @@ vect (const T& x, const T& y, const T& z, const T& t) {
   elt[0]=x; elt[1]=y; elt[2]=z; elt[3]=t;
 }
 #endif
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Special versions for vect<vect>
+
+template<typename T,int D,int E>
+inline vect<vect<bool,D>,E> operator== (const vect<vect<T,D>,E>& a, const vect<vect<T,D>,E>& b) PURE;
+template<typename T,int D,int E>
+inline vect<vect<bool,D>,E> operator== (const vect<vect<T,D>,E>& a, const vect<vect<T,D>,E>& b) {
+  vect<vect<bool,D>,E> r;
+  for (int e=0; e<E; ++e) r[e]=a[e]==b[e];
+  return r;
+}
+
+/** Return true iff all of the elements are true (boolean product).  */
+template<int D,int E>
+inline vect<bool,E> all (const vect<vect<bool,D>,E>& a) PURE;
+template<int D,int E>
+inline vect<bool,E> all (const vect<vect<bool,D>,E>& a) {
+  vect<bool,E> r;
+  for (int e=0; e<E; ++e) r[e]=all(a[e]);
+  return r;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 
