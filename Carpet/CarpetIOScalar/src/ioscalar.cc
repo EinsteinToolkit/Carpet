@@ -79,30 +79,6 @@ namespace CarpetIOScalar {
   } IOparameters;
 
 
-  // Special output routines for complex numbers
-
-#ifdef HAVE_CCTK_COMPLEX8
-  ostream& operator<< (ostream& os, const CCTK_COMPLEX8& val)
-  {
-    return os << CCTK_Cmplx8Real(val) << " " << CCTK_Cmplx8Imag(val);
-  }
-#endif
-
-#ifdef HAVE_CCTK_COMPLEX16
-  ostream& operator<< (ostream& os, const CCTK_COMPLEX16& val)
-  {
-    return os << CCTK_Cmplx16Real(val) << " " << CCTK_Cmplx16Imag(val);
-  }
-#endif
-
-#ifdef HAVE_CCTK_COMPLEX32
-  ostream& operator<< (ostream& os, const CCTK_COMPLEX32& val)
-  {
-    return os << CCTK_Cmplx32Real(val) << " " << CCTK_Cmplx32Imag(val);
-  }
-#endif
-
-
 
   extern "C" int
   CarpetIOScalarStartup ()
