@@ -870,7 +870,7 @@ namespace CarpetInterp {
 
           // TODO: use something faster than a linear search
           for (c = 0; c < hh->components(rl); ++c) {
-            if (hh->extents().at(ml).at(rl).at(c).contains(ipos)) {
+            if (hh->extent(ml,rl,c).contains(ipos)) {
               goto found;
             }
           }
@@ -893,7 +893,7 @@ namespace CarpetInterp {
       assert (c >= 0 and c < hh->components(rl));
 
       if (map_onto_processors) {
-        procs.at(n) = hh->proc(rl, c);
+        procs.at(n) = hh->processor(rl, c);
         ++ N_points_to[procs.at(n)];
       }
       rlev.at(n) = rl;
