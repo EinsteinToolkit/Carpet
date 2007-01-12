@@ -62,16 +62,16 @@ namespace CarpetEvolutionMask {
       // Calculate the union of all refined regions
       ibset refined;
       for (int c=0; c<hh.components(reflevel); ++c) {
-	ibbox refcomp = hh.extents().at(mglevel).at(reflevel).at(c);
-	bbvect outer_boundary = hh.outer_boundary(reflevel,c);
+	ibbox refcomp = hh.extent(mglevel,reflevel,c);
+	b2vect outer_boundary = hh.outer_boundaries(reflevel,c);
 	ivect expand_right, expand_left;
 	for (int d=0;d<dim;d++) {
-	  if (outer_boundary[d][0]) {
+	  if (outer_boundary[0][d]) {
 	    expand_left[d] = 50;
 	  } else {
 	    expand_left[d] = 0;
 	  }
-	  if (outer_boundary[d][1]) {
+	  if (outer_boundary[1][d]) {
 	    expand_right[d] = 50;
 	  } else {
 	    expand_right[d] = 0;
@@ -123,7 +123,7 @@ namespace CarpetEvolutionMask {
       // Calculate the union of all coarse regions
       ibset parent;
       for (int c=0; c<hh.components(reflevel-1); ++c) {
-        parent |= hh.extents().at(mglevel).at(reflevel-1).at(c);
+        parent |= hh.extent(mglevel,reflevel-1,c);
       }
       parent.normalize();
 
