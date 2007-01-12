@@ -861,9 +861,12 @@ namespace CarpetIOASCII {
                   rvect coord_delta;
                   if (grouptype == CCTK_GF) {
                     for (int d=0; d<dim; ++d) {
+                      // lower boundary of Carpet's integer indexing
                       global_lower[d] = cctkGH->cctk_origin_space[d];
-                      coord_delta[d]
-                        = cctkGH->cctk_delta_space[d] / maxspacereflevelfact[d];
+                      // grid spacing of Carpet's integer indexing
+                      coord_delta[d] =
+                        cctkGH->cctk_delta_space[d] /
+                        vhh.at(Carpet::map)->baseextent.stride()[d];
                     }
                   } else {
                     for (int d=0; d<dim; ++d) {
@@ -879,7 +882,7 @@ namespace CarpetIOASCII {
                   ivect offset1;
                   if (grouptype == CCTK_GF) {
                     const ibbox& baseext
-                      = vdd.at(Carpet::map)->bases.at(mglevel).at(0).exterior;
+                      = vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
                     offset1 = baseext.lower() + offset * ext.stride();
                   } else {
                     offset1 = offset * ext.stride();
@@ -1075,11 +1078,7 @@ namespace CarpetIOASCII {
     assert (mglevel!=-1 and reflevel!=-1 and Carpet::map!=-1);
 
     const CCTK_REAL delta = cctkGH->cctk_delta_space[dir-1] / cctkGH->cctk_levfac[dir-1];
-    const CCTK_REAL lower = cctkGH->cctk_origin_space[dir-1];
-#if 0
-    const int npoints = cctkGH->cctk_gsh[dir-1];
-    const CCTK_REAL upper = lower + (npoints-1) * delta;
-#endif
+    const CCTK_REAL lower = cctkGH->cctk_origin_space[dir-1] + cctkGH->cctk_delta_space[dir-1] / cctkGH->cctk_levfac[dir-1] * cctkGH->cctk_levoff[dir-1] / cctkGH->cctk_levoffdenom[dir-1];
 
     const CCTK_REAL rindex = (coord - lower) / delta;
     int cindex = (int)floor(rindex + 0.75);
