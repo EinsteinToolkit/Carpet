@@ -547,6 +547,19 @@ void dh::check_bboxes (dh::dboxes & box,
 {
   DECLARE_CCTK_PARAMETERS;
 
+  // Ensure that the bboxes are aligned with the base extent
+  {
+    if (ml==0) {
+      if (rl==0) {
+        assert (box.interior.is_aligned_with(h.baseextent));
+      } else {
+        // TODO: check alignment with next coarser grid
+      }
+    } else {
+      // TODO: check alignment with next finer mglevel
+    }
+  }
+
   // Assert that all boundaries are synced or received
   {
     const ibset& sync_not = box.sync_not;
