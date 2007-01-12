@@ -1,5 +1,4 @@
 # Interface definition for thorn CarpetRegridTest
-# $Header:$
 
 implements: CarpetRegridTest
 inherits: grid

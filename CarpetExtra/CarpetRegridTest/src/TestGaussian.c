@@ -5,10 +5,6 @@
 #include "cctk_Arguments.h"
 
 
-static const char *rcsid = "$Header:$";
-
-CCTK_FILEVERSION(CarpetExtra_CarpetRegridTest_TestGaussian_c);
-
 void CarpetRegrid_TestGaussian(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_PARAMETERS;

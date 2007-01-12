@@ -6,7 +6,6 @@
               Initial data for the 3D Wave Equation
 	      Derived from Tom Goodale
    @enddesc 
-   @version $Header:$
  @@*/
 
 #include <math.h>
@@ -14,10 +13,6 @@
 #include "cctk.h" 
 #include "cctk_Parameters.h"
 #include "cctk_Arguments.h"
-
-static const char *rcsid = "$Header:$";
-
-CCTK_FILEVERSION(CactusWave_IDScalarWaveC_InitialData_c)
 
 static CCTK_REAL sqr(CCTK_REAL val)
 {

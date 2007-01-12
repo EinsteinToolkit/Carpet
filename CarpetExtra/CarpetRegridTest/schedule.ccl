@@ -1,5 +1,4 @@
 # Schedule definitions for thorn CarpetRegridTest
-# $Header:$
 
 
 schedule CarpetRegridTest_Startup AT STARTUP
