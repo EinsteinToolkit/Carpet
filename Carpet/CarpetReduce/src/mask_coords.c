@@ -97,7 +97,8 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
           if (! is_staggered[2*d+f]) {
             
             /* Check whether the domain is empty */
-            if (imin[d] == imax[d] - 1) {
+            /* TODO: This check is flawed, and therefore disabled */
+            if (0 && imin[d] == imax[d] - 1) {
               
               /* The domain is empty.  The correct thing to do would
                  be to set the weights to 0.  But this is boring,
