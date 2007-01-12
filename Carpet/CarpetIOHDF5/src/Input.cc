@@ -58,7 +58,7 @@ typedef struct {
   CCTK_REAL delta_time;
   vector<CCTK_REAL> mgleveltimes;  // [num_mglevels*num_reflevels]
 
-  vector<grid_structure_t> grid_structure; // [maps]
+  vector<vector<vector<region_t> > > grid_structure; // [map][reflevel][component]
 } fileset_t;
 
 // list of checkpoint/filereader files
@@ -103,32 +103,26 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
   assert ((int)fileset.grid_structure.size() == maps);
   
   for (int m = 0; m < maps; ++ m) {
-    grid_structure_t const & grid_structure = fileset.grid_structure.at(m);
+    vector <vector <region_t> > regss =
+      fileset.grid_structure.at(m);
     
-    int const rls = grid_structure.bbss.size();
-    assert ((int)grid_structure.obss.size() == rls);
-    
-    vector <vector <ibbox> >  bbss = grid_structure.bbss;
-    vector <vector <bbvect> > obss = grid_structure.obss;
-    vector <vector <int> >    pss (rls);
+    int const rls = int(regss.size());
     
     for (int rl = 0; rl < rls; ++ rl) {
       
-      vector <ibbox>  & bbs = bbss.at(rl);
-      vector <bbvect> & obs = obss.at(rl);
-      vector <int>    & ps  = pss.at(rl);
+      vector <region_t> & regs = regss.at(rl);
       
       // Make multiprocessor aware
-      Carpet::SplitRegions (cctkGH, bbs, obs, ps);
+      Carpet::SplitRegions (cctkGH, regs);
       
     } // for rl
     
     // Make multigrid aware
-    vector <vector <vector <ibbox> > > bbsss;
-    Carpet::MakeMultigridBoxes (cctkGH, bbss, obss, bbsss);
+    vector <vector <vector <region_t> > > regsss;
+    Carpet::MakeMultigridBoxes (cctkGH, regss, regsss);
     
     // Regrid
-    RegridMap (cctkGH, m, bbsss, obss, pss);
+    RegridMap (cctkGH, m, regsss);
     
   } // for m
   
@@ -877,10 +871,10 @@ static int ReadVar (const cGH* const cctkGH,
         assert (group.grouptype==CCTK_SCALAR or group.grouptype==CCTK_ARRAY);
         const int newlower = lower[patch->rank-1] +
           (upper[patch->rank-1]-lower[patch->rank-1]+1)*
-          (data.hh->processors().at(reflevel).at(component));
+          (data.hh->processor(reflevel,component));
         const int newupper = upper[patch->rank-1] +
           (upper[patch->rank-1]-lower[patch->rank-1]+1)*
-          (data.hh->processors().at(reflevel).at(component));
+          (data.hh->processor(reflevel,component));
         lower[patch->rank-1] = newlower;
         upper[patch->rank-1] = newupper;
       }
