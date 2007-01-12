@@ -71,6 +71,15 @@ void consume (istream& is, const char c) {
 
 
 
+void consume (istream& is, const char * const s) {
+  for (const char * p = s; * p; ++ p) {
+    expect (is, * p);
+    is.get();
+  }
+}
+
+
+
 // Vector input
 template<class T>
 istream& input (istream& is, vector<T>& v) {

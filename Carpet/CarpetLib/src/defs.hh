@@ -70,8 +70,9 @@ T ipow (T x, int y);
 // Input streams
 struct input_error { };
 void skipws (istream& is);
-void expect (istream& is, const char c);
-void consume (istream& is, const char c);
+void expect (istream& is, char c);
+void consume (istream& is, char c);
+void consume (istream& is, char const * c);
 
 
 
