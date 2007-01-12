@@ -178,7 +178,6 @@ namespace CarpetIOASCII {
       my_out_dir = out_dir;
     }
 
-    const ioGH* const ioUtilGH = (const ioGH*) CCTK_GHExtension (cctkGH, "IO");
     int result = IOUtil_CreateDirectory (cctkGH, my_out_dir, 0, 0);
     if (result < 0) {
       CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
