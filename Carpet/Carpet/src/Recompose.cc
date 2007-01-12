@@ -43,8 +43,8 @@ namespace Carpet {
           typename func::result_type const & init)
   {
     typename func::result_type res (init);
-    for (iter it (first); it != last; ++it) {
-      res = func::operator() (res, *it);
+    for (iter it = first; it != last; ++it) {
+      res = func (res, * it);
     }
     return res;
   }
