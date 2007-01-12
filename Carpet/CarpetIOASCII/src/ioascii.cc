@@ -1084,24 +1084,6 @@ namespace CarpetIOASCII {
     const CCTK_REAL rindex = (coord - lower) / delta;
     int cindex = (int)floor(rindex + 0.75);
 
-#if 0
-    if (cindex<0 or cindex>=npoints) {
-      cindex = ifallback;
-
-      assert (dir>=1 and dir<=3);
-      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "The specified coordinate value %g for the %c-direction is not within the grid range [%g,%g] on convergence level %d, refinement level %d, map %d; using %g instead",
-                  coord, "xyz"[dir-1], lower, upper,
-                  mglevel, reflevel, Carpet::map, lower + delta * cindex);
-    }
-
-    assert (cindex>=0 and cindex<npoints);
-#else
-    const void *dummy;
-    dummy = &ifallback;
-    dummy = &dummy;
-#endif
-
     return cindex;
   }
 
