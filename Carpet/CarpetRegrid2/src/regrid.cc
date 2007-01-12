@@ -13,6 +13,7 @@
 #include <defs.hh>
 #include <dh.hh>
 #include <gh.hh>
+#include <region.hh>
 #include <vect.hh>
 
 #include <carpet.hh>
@@ -124,16 +125,12 @@ namespace CarpetRegrid2 {
   extern "C" {
     CCTK_INT
     CarpetRegrid2_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
-                          CCTK_POINTER          const bbsss_,
-                          CCTK_POINTER          const obss_,
-                          CCTK_POINTER          const pss_,
+                          CCTK_POINTER          const regsss_,
                           CCTK_INT              const force);
     
     CCTK_INT
     CarpetRegrid2_RegridMaps (CCTK_POINTER_TO_CONST const cctkGH_,
-                              CCTK_POINTER          const bbssss_,
-                              CCTK_POINTER          const obsss_,
-                              CCTK_POINTER          const psss_,
+                              CCTK_POINTER          const regssss_,
                               CCTK_INT              const force);
   }
   
@@ -141,8 +138,7 @@ namespace CarpetRegrid2 {
   
   void
   Regrid (cGH const * const cctkGH,
-          gh::rexts & bbss,
-          gh::rbnds & obss)
+          gh::rregs & regss)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -278,11 +274,11 @@ namespace CarpetRegrid2 {
     
     
     //
-    // Clip at the outer boundary, and convert to (bbss, obss) pair
+    // Clip at the outer boundary, and convert to (bbss, obss, rbss)
+    // triple
     //
     
-    bbss.resize (regions.size());
-    obss.resize (regions.size());
+    regss.resize (regions.size());
     
     for (size_t rl = 1; rl < regions.size(); ++ rl) {
       
@@ -444,10 +440,8 @@ namespace CarpetRegrid2 {
       }
       
       // Create a vector of bboxes for this level
-      gh::cexts bbs;
-      gh::cbnds obs;
-      bbs.reserve (regions.at(rl).setsize());
-      obs.reserve (regions.at(rl).setsize());
+      gh::cregs regs;
+      regs.reserve (regions.at(rl).setsize());
       for (ibboxset::const_iterator ibb = regions.at(rl).begin();
            ibb != regions.at(rl).end();
            ++ ibb)
@@ -457,17 +451,18 @@ namespace CarpetRegrid2 {
         bvect const lower_is_outer = bb.lower() <= physical_ilower;
         bvect const upper_is_outer = bb.upper() >= physical_iupper;
         
-        bbvect ob;
-        for (int d = 0; d < dim; ++ d) {
-          ob[d][0] = lower_is_outer[d];
-          ob[d][1] = upper_is_outer[d];
-        }
-        bbs.push_back (bb);
-        obs.push_back (ob);
+        b2vect ob (lower_is_outer, upper_is_outer);
+        b2vect rb (not ob[0], not ob[1]);
+        
+        region_t reg;
+        reg.extent = bb;
+        reg.map = Carpet::map;
+        reg.outer_boundaries = ob;
+        reg.refinement_boundaries = rb;
+        regs.push_back (reg);
       }
       
-      bbss.at(rl) = bbs;
-      obss.at(rl) = obs;
+      regss.at(rl) = regs;
       
     } // for rl
   }
@@ -476,9 +471,7 @@ namespace CarpetRegrid2 {
   
   CCTK_INT
   CarpetRegrid2_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
-                        CCTK_POINTER          const bbsss_,
-                        CCTK_POINTER          const obss_,
-                        CCTK_POINTER          const pss_,
+                        CCTK_POINTER          const regsss_,
                         CCTK_INT              const force)
   {
     cGH const * const cctkGH = static_cast <cGH const *> (cctkGH_);
@@ -514,23 +507,20 @@ namespace CarpetRegrid2 {
     
     if (do_recompose) {
       
-      gh::mexts  & bbsss = * static_cast <gh::mexts  *> (bbsss_);
-      gh::rbnds  & obss  = * static_cast <gh::rbnds  *> (obss_ );
-      gh::rprocs & pss   = * static_cast <gh::rprocs *> (pss_  );
+      gh::mregs & regsss = * static_cast <gh::mregs *> (regsss_);
       
       // Make multigrid unaware
-      vector <vector <ibbox> > bbss = bbsss.at(0);
+      vector <vector <region_t> > regss = regsss.at(0);
       
-      Regrid (cctkGH, bbss, obss);
+      Regrid (cctkGH, regss);
       
       // Make multiprocessor aware
-      pss.resize (bbss.size());
-      for (size_t rl = 0; rl < pss.size(); ++ rl) {
-        Carpet::SplitRegions (cctkGH, bbss.at(rl), obss.at(rl), pss.at(rl));
+      for (size_t rl = 0; rl < regss.size(); ++ rl) {
+        Carpet::SplitRegions (cctkGH, regss.at(rl));
       } // for rl
       
       // Make multigrid aware
-      Carpet::MakeMultigridBoxes (cctkGH, bbss, obss, bbsss);
+      Carpet::MakeMultigridBoxes (cctkGH, regss, regsss);
       
     } // if do_recompose
     
@@ -541,9 +531,7 @@ namespace CarpetRegrid2 {
   
   CCTK_INT
   CarpetRegrid2_RegridMaps (CCTK_POINTER_TO_CONST const cctkGH_,
-                            CCTK_POINTER          const bbssss_,
-                            CCTK_POINTER          const obsss_,
-                            CCTK_POINTER          const psss_,
+                            CCTK_POINTER          const regssss_,
                             CCTK_INT              const force)
   {
     cGH const * const cctkGH = static_cast <cGH const *> (cctkGH_);
@@ -577,27 +565,23 @@ namespace CarpetRegrid2 {
     
     if (do_recompose) {
       
-      vector <gh::mexts>  & bbssss =
-        * static_cast <vector <gh::mexts>  *> (bbssss_);
-      vector <gh::rbnds>  & obsss  =
-        * static_cast <vector <gh::rbnds>  *> (obsss_ );
-      vector <gh::rprocs> & psss   =
-        * static_cast <vector <gh::rprocs> *> (psss_  );
+      vector <gh::mregs> & regssss =
+        * static_cast <vector <gh::mregs>  *> (regssss_);
       
       // Make multigrid unaware
-      vector< vector <vector <ibbox> > > bbsss (maps);
+      vector< vector <vector <region_t> > > regsss (Carpet::maps);
       for (int m = 0; m < maps; ++ m) {
-        bbsss.at(m) = bbssss.at(m).at(0);
+        regsss.at(m) = regssss.at(m).at(0);
       }
       
       BEGIN_MAP_LOOP (cctkGH, CCTK_GF) {
-        Regrid (cctkGH, bbsss.at(Carpet::map), obsss.at(Carpet::map));
+        Regrid (cctkGH, regsss.at(Carpet::map));
       } END_MAP_LOOP;
       
       // Count levels
       vector <int> rls (maps);
       for (int m = 0; m < maps; ++ m) {
-        rls.at(m) = bbsss.at(m).size();
+        rls.at(m) = regsss.at(m).size();
       }
       int maxrl = 0;
       for (int m = 0; m < maps; ++ m) {
@@ -605,32 +589,23 @@ namespace CarpetRegrid2 {
       }
       
       // Make multiprocessor aware
-      for (int m = 0; m < maps; ++ m) {
-        psss.at(m).resize (bbsss.at(m).size());
-      }
       for (int rl = 0; rl < maxrl; ++ rl) {
-        vector <vector <ibbox > > bbss (maps);
-        vector <vector <bbvect> > obss (maps);
-        vector <vector <int   > > pss  (maps);
+        vector <vector <region_t> > regss (maps);
         for (int m = 0; m < maps; ++ m) {
           if (rl < rls.at(m)) {
-            bbss.at(m) = bbsss.at(m).at(rl);
-            obss.at(m) = obsss.at(m).at(rl);
-            pss .at(m) = psss .at(m).at(rl);
+            regss.at(m) = regsss.at(m).at(rl);
           }
         }
-        Carpet::SplitRegionsMaps (cctkGH, bbss, obss, pss);
+        Carpet::SplitRegionsMaps (cctkGH, regss);
         for (int m = 0; m < maps; ++ m) {
           if (rl < rls.at(m)) {
-            bbsss.at(m).at(rl) = bbss.at(m);
-            obsss.at(m).at(rl) = obss.at(m);
-            psss .at(m).at(rl) = pss .at(m);
+            regsss.at(m).at(rl) = regss.at(m);
           }
         }
       } // for rl
       
       // Make multigrid aware
-      Carpet::MakeMultigridBoxesMaps (cctkGH, bbsss, obsss, bbssss);
+      Carpet::MakeMultigridBoxesMaps (cctkGH, regsss, regssss);
       
     } // if do_recompose
     
