@@ -21,6 +21,7 @@ Carpet::verbose                 = yes
 Carpet::max_refinement_levels   = 2
 #Carpet::prolongation_order_space = 3
 Carpet::prolongation_order_time = 2
+Carpet::prolongate_initial_data = yes
 Carpet::init_3_timelevels       = yes
 
 CarpetRegrid::refinement_levels = 1
@@ -37,7 +38,8 @@ IDScalarWave::initial_data      = "charge-TATelliptic-simple"
 IDSWTEsimple::solver            = "CarpetJacobi"
 #IDSWTEsimple::options           = "maxiters=10000 minerror=1e-4 factor=1e-2"
 #IDSWTEsimple::options           = "maxiters=100000 minerror=1e-8 factor=1e-2"
-IDSWTEsimple::options           = "maxiters=10000 minerror=1e-8"
+#IDSWTEsimple::options           = "maxiters=10000 minerror=1e-8"
+IDSWTEsimple::options           = "maxiters=10000 minerror=1e-8 factor=1e-1 acceleration=1.0 deceleration=1.0"
 IDSWTEsimple::radius            = 5.5
 IDSWTEsimple::charge            = 1.0
 
@@ -45,7 +47,7 @@ WaveToyC::bound                 = "radiation"
 
 CarpetJacobi::verbose           = yes
 
-IO::out_dir                     = "charge_te_cjac"
+IO::out_dir                     = $parfile
 IO::out_fileinfo                = "none"
 
 IOBasic::outInfo_every          = 1
