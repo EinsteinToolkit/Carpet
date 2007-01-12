@@ -31,6 +31,7 @@ gh::gh (const vector<ivect> & reffacts_, const centering refcent_,
     assert (all (reffacts.at(n) >= reffacts.at(n-1)));
     assert (all (reffacts.at(n) % reffacts.at(n-1) == 0));
   }
+  assert (all (baseextent.stride() % reffacts.at(reffacts.size()-1) == 0));
 }
 
 // Destructors
