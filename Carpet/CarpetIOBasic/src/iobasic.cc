@@ -82,63 +82,6 @@ namespace CarpetIOBasic {
 
 
 
-  // Special numeric and output routines for complex numbers
-
-  template <typename T> T myabs (const T& val) { return abs(val); }
-
-#ifdef HAVE_CCTK_COMPLEX8
-  CCTK_REAL4 myabs (const CCTK_COMPLEX8& val)
-  {
-    return CCTK_Cmplx8Abs(val);
-  }
-
-  ostream& operator<< (ostream& os, const CCTK_COMPLEX8& val)
-  {
-    int const w = os.width();
-    os << CCTK_Cmplx8Real(val);
-    os << " ";
-    os.width(w);
-    os << CCTK_Cmplx8Imag(val);
-    return os;
-  }
-#endif
-
-#ifdef HAVE_CCTK_COMPLEX16
-  CCTK_REAL8 myabs (const CCTK_COMPLEX16& val)
-  {
-    return CCTK_Cmplx16Abs(val);
-  }
-
-  ostream& operator<< (ostream& os, const CCTK_COMPLEX16& val)
-  {
-    int const w = os.width();
-    os << CCTK_Cmplx16Real(val);
-    os << " ";
-    os.width(w);
-    os << CCTK_Cmplx16Imag(val);
-    return os;
-  }
-#endif
-
-#ifdef HAVE_CCTK_COMPLEX32
-  CCTK_REAL16 myabs (const CCTK_COMPLEX32& val)
-  {
-    return CCTK_Cmplx32Abs(val);
-  }
-
-  ostream& operator<< (ostream& os, const CCTK_COMPLEX32& val)
-  {
-    int const w = os.width();
-    os << CCTK_Cmplx32Real(val);
-    os << " ";
-    os.width(w);
-    os << CCTK_Cmplx32Imag(val);
-    return os;
-  }
-#endif
-
-
-
   extern "C" int
   CarpetIOBasicStartup ()
   {
@@ -735,7 +678,7 @@ namespace CarpetIOBasic {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    CCTK_REAL const xa = myabs (x);
+    CCTK_REAL const xa = abs (x);
     return xa != 0 and (xa < real_min or xa >= real_max);
   }
   
