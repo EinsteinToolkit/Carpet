@@ -646,8 +646,9 @@ loop
 \fbox{\begin{minipage}[t]{0.345\textwidth}
 BASEGRID\\
 INITIAL\\
+PREREGRIDINITIAL\\
 Regrid\\
-POSTREGRID\\
+POSTREGRIDINITIAL\\
 $\longrightarrow$ Recurse\\
 Restrict\\
 POSTRESTRICTINITIAL\\
@@ -687,6 +688,7 @@ over\\
 time steps
 \end{minipage}
 \fbox{\begin{minipage}[t]{0.875\textwidth}
+PREREGRID\\
 Regrid\\
 POSTREGRID\\
 Advance time\\

@@ -416,7 +416,7 @@ namespace Carpet {
     do_global_mode = true;
     do_meta_mode = true;
     
-    Waypoint ("Preregrid at iteration %d time %g%s%s",
+    Waypoint ("Preregridinitial at iteration %d time %g%s%s",
               cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
               (do_global_mode ? " (global)" : ""),
               (do_meta_mode ? " (meta)" : ""));
@@ -442,7 +442,7 @@ namespace Carpet {
                 do_global_mode = reflevel == reflevels - 1;
                 do_meta_mode = do_global_mode and mglevel==mglevels-1;
                 
-                Waypoint ("Postregrid at iteration %d time %g%s%s",
+                Waypoint ("Postregridinitial at iteration %d time %g%s%s",
                           cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
                           (do_global_mode ? " (global)" : ""),
                           (do_meta_mode ? " (meta)" : ""));
