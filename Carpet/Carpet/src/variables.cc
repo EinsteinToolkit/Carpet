@@ -18,11 +18,6 @@ namespace Carpet {
   // Refinement levels
   int reflevels;
   
-#if 0
-  // Refinement factor
-  int reffact;
-#endif
-  
   // Temporal refinement factors over the coarsest grid
   vector<int> timereffacts;
   

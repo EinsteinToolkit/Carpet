@@ -47,11 +47,6 @@ namespace Carpet {
   extern int reflevels;
   
 #define CARPET_NEW_REFFACT
-#if 0
-  // Refinement factor
-  extern int reffact;
-#endif
-  
   // Temporal refinement factors over the coarsest grid
   extern vector<int> timereffacts;
   
