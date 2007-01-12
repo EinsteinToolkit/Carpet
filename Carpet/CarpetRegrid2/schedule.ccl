@@ -10,7 +10,7 @@ SCHEDULE CarpetRegrid2_ParamCheck AT paramcheck
   LANG: C
 } "Check parameters"
 
-SCHEDULE CarpetRegrid2_Initialise AT initial
+SCHEDULE CarpetRegrid2_Initialise AT wragh
 {
   LANG: C
   OPTIONS: global

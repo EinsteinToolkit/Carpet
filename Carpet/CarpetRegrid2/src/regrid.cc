@@ -74,13 +74,43 @@ namespace CarpetRegrid2 {
              rvect const & origin, rvect const & scale,
              gh const & hh, int const rl)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     ivect const levfac = hh.reffacts.at(rl);
     assert (all (hh.baseextent.stride() % levfac == 0));
     ivect const istride = hh.baseextent.stride() / levfac;
     
-    return (ivect (floor ((rpos - origin) * scale / rvect(istride) +
-                          static_cast<CCTK_REAL> (0.5))) *
-            istride);
+    ivect ipos = (ivect (floor ((rpos - origin) * scale / rvect(istride) +
+                                static_cast<CCTK_REAL> (0.5))) *
+                  istride);
+    
+    if (snap_to_coarse) {
+      if (rl > 0) {
+        ivect const clevfac = hh.reffacts.at(rl - 1);
+        assert (all (hh.baseextent.stride() % clevfac == 0));
+        ivect const cistride = hh.baseextent.stride() / clevfac;
+        ipos = ipos / cistride * cistride;
+      }
+    }
+    
+    if (hh.refcent == cell_centered) {
+#if 0
+      if (rl > 0) {
+        ivect const clevfac = hh.reffacts.at(rl - 1);
+        assert (all (hh.baseextent.stride() % clevfac == 0));
+        ivect const cistride = hh.baseextent.stride() / clevfac;
+        
+        ivect const offset = (cistride / istride + 1) % 2;
+        
+        assert (all (istride % offset == 0));
+        ipos += offset;
+      }
+#endif
+      assert (all (istride % 2 == 0));
+      ipos += istride / 2;
+    }
+    
+    return ipos;
   }
   
   // Convert a coordinate location to an index location, rounding in
@@ -90,13 +120,43 @@ namespace CarpetRegrid2 {
               rvect const & origin, rvect const & scale,
               gh const & hh, int const rl)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     ivect const levfac = hh.reffacts.at(rl);
     assert (all (hh.baseextent.stride() % levfac == 0));
     ivect const istride = hh.baseextent.stride() / levfac;
     
-    return (ivect (ceil ((rpos - origin) * scale / rvect(istride) -
-                         static_cast<CCTK_REAL> (0.5))) *
-            istride);
+    ivect ipos = (ivect (ceil ((rpos - origin) * scale / rvect(istride) -
+                               static_cast<CCTK_REAL> (0.5))) *
+                  istride);
+    
+    if (snap_to_coarse) {
+      if (rl > 0) {
+        ivect const clevfac = hh.reffacts.at(rl - 1);
+        assert (all (hh.baseextent.stride() % clevfac == 0));
+        ivect const cistride = hh.baseextent.stride() / clevfac;
+        ipos = (ipos + cistride - 1) / cistride * cistride;
+      }
+    }
+    
+    if (hh.refcent == cell_centered) {
+#if 0
+      if (rl > 0) {
+        ivect const clevfac = hh.reffacts.at(rl - 1);
+        assert (all (hh.baseextent.stride() % clevfac == 0));
+        ivect const cistride = hh.baseextent.stride() / clevfac;
+        
+        ivect const offset = (cistride / istride + 1) % 2;
+        
+        assert (all (istride % offset == 0));
+        ipos -= offset;
+      }
+#endif
+      assert (all (istride % 2 == 0));
+      ipos -= istride / 2;
+    }
+    
+    return ipos;
   }
   
   // Convert an index location to a coordinate location

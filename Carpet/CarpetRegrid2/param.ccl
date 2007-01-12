@@ -6,24 +6,21 @@ BOOLEAN verbose "Display regridding information on the terminal" STEERABLE=alway
 
 
 
-CCTK_INT num_centres "Number of refinement centres" STEERABLE=always
-{
-  0:3 :: ""
-} 0
-
-
-
 CCTK_INT min_distance "Minimum distance (in grid points) between coarse and fine grid boundaries" STEERABLE=always
 {
   0:* :: ""
 } 4
 
-
-
-CCTK_REAL min_fraction "Minimum fraction of required refined points that need to be present in a refined region"
+CCTK_REAL min_fraction "Minimum fraction of required refined points that need to be present in a refined region" STEERABLE=always
 {
   0:* :: ""
 } 0.9
+
+
+
+BOOLEAN snap_to_coarse "Ensure that the fine grid extent coincides with coarse grid points" STEERABLE=always
+{
+} "no"
 
 
 
@@ -43,6 +40,13 @@ BOOLEAN symmetry_rotating90 "Ensure a 90 degree rotating symmetry about the z ax
 BOOLEAN symmetry_rotating180 "Ensure a 180 degree rotating symmetry about the z axis"
 {
 } no
+
+
+
+CCTK_INT num_centres "Number of refinement centres" STEERABLE=always
+{
+  0:3 :: ""
+} 0
 
 
 
