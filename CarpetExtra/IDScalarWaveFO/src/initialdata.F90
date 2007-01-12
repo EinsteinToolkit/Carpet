@@ -13,6 +13,7 @@
       CCTK_REAL pi
       parameter (pi = 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117068d0)
       CCTK_REAL omega
+      double precision rphi, rpsix, rpsiy, rpsiz
       integer i, j, k
       
       if (CCTK_EQUALS(initial_data, "plane")) then
@@ -49,10 +50,14 @@
          do k=1,cctk_lsh(3)
             do j=1,cctk_lsh(2)
                do i=1,cctk_lsh(1)
-                  call random_number (phi(i,j,k))
-                  call random_number (psix(i,j,k))
-                  call random_number (psiy(i,j,k))
-                  call random_number (psiz(i,j,k))
+                  call random_number (rphi)
+                  call random_number (rpsix)
+                  call random_number (rpsiy)
+                  call random_number (rpsiz)
+                  phi(i,j,k)  = rphi
+                  psix(i,j,k) = rpsix
+                  psiy(i,j,k) = rpsiy
+                  psiz(i,j,k) = rpsiz
                end do
             end do
          end do
