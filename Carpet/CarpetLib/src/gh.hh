@@ -68,7 +68,7 @@ public:
       const ibbox baseextent);
   
   // Destructors
-  virtual ~gh ();
+  ~gh ();
   
   // Modifiers
   void regrid (mregs const & regs);
@@ -142,7 +142,7 @@ public:
   void remove (dh* d);
   
   // Output
-  virtual ostream& output (ostream& os) const;
+  ostream& output (ostream& os) const;
 
 private:
   void check_multigrid_consistency ();

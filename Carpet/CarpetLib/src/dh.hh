@@ -133,7 +133,7 @@ public:
       const ivect& lbuffers, const ivect& ubuffers);
   
   // Destructors
-  virtual ~dh ();
+  ~dh ();
   
   // Helpers
   int prolongation_stencil_size () const;
@@ -147,7 +147,7 @@ public:
   void remove (ggf* f);
   
   // Output
-  virtual void output (ostream& os) const;
+  void output (ostream& os) const;
 };
 
 
