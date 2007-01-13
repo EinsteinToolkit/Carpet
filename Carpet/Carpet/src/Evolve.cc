@@ -16,29 +16,6 @@
 
 
 
-// IRIX wants this before <time.h>
-#if HAVE_SYS_TYPES_H
-#  include <sys/types.h>
-#endif
-
-#if TIME_WITH_SYS_TIME
-#  include <sys/time.h>
-#  include <time.h>
-#else
-#  if HAVE_SYS_TIME_H
-#    include <sys/time.h>
-#  elif HAVE_TIME_H
-#    include <time.h>
-#  endif
-#endif
-
-#if HAVE_UNISTD_H
-#  include <fcntl.h>
-#  include <unistd.h>
-#endif
-
-
-
 namespace Carpet {
   
   using namespace std;
@@ -66,9 +43,6 @@ namespace Carpet {
     
     int const convlev = 0;
     cGH* cctkGH = fc->GH[convlev];
-    
-    // Timing statistics
-    InitTiming (cctkGH);
     
     // Main loop
     static Timer timer (timerSet(), "Evolve");
