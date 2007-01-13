@@ -67,6 +67,14 @@ namespace Carpet {
       int mglevelfact;
 #endif
       
+      
+      
+      
+#if 0
+      /* Number of buffer zones */
+      int const * nbufferzones;
+#endif
+      
     };
     
     struct CarpetGH const * GetCarpetGH (const cGH * const cgh);

@@ -96,6 +96,8 @@ namespace Carpet {
     void *dummy = &dummy;
     dummy = &cgh;
     
+    assert (0);
+    
     MPI_Abort (MPI_COMM_WORLD, retval);
     exit (retval);
     return -1;

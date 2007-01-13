@@ -377,15 +377,28 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
+    // Centering
+    centering refcentering;
+    int reffactdenom;
+    if (CCTK_EQUALS(refinement_centering, "vertex")) {
+      refcentering = vertex_centered;
+      reffactdenom = 1;
+    } else if (CCTK_EQUALS(refinement_centering, "cell")) {
+      refcentering = cell_centered;
+      reffactdenom = 2;
+    } else {
+      assert (0);
+    }
+    
     // Base grid extent
-    ivect const str (maxspacereflevelfact);
+    ivect const str (maxspacereflevelfact * reffactdenom);
     ivect const lb (0);
     ivect const ub ((npoints - 1) * str);
     ibbox const baseext (lb, ub, str);
     
     // Allocate grid hierarchy
     vhh.resize(maps);
-    vhh.at(m) = new gh (spacereffacts, vertex_centered,
+    vhh.at(m) = new gh (spacereffacts, refcentering,
                         convergence_factor, vertex_centered,
                         baseext);
   }
@@ -425,7 +438,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     return (use_outer_buffer_zones
-            ? ghosts * (int)num_integrator_substeps + (int)buffer_width
+            ? ghosts * int(num_integrator_substeps) + int(buffer_width)
             : ghosts);
   }
   
@@ -982,8 +995,16 @@ namespace Carpet {
       // Ensure that the boundary is not staggered
       for (int d=0; d<dim; ++d) {
         for (int f=0; f<2; ++f) {
-          if (is_staggered[d][f]) {
-            CCTK_WARN (0, "The parameters CoordBase::boundary_staggered specify a staggered boundary.  Carpet does not support staggered boundaries when Carpet::max_refinement_levels > 1");
+          if (CCTK_EQUALS (refinement_centering, "vertex")) {
+            if (is_staggered[d][f]) {
+              CCTK_WARN (0, "The parameters CoordBase::boundary_staggered specify a staggered boundary.  Carpet does not support staggered boundaries when Carpet::max_refinement_levels > 1 with Carpet::centering = \"vertex\"");
+            }
+          } else if (CCTK_EQUALS (refinement_centering, "cell")) {
+            if (not is_staggered[d][f]) {
+              CCTK_WARN (0, "The parameters CoordBase::boundary_staggered specify a non-staggered boundary.  Carpet does not support non-staggered boundaries when Carpet::max_refinement_levels > 1 with Carpet::centering = \"cell\"");
+            }
+          } else {
+            assert (0);
           }
         }
       }
@@ -1597,8 +1618,6 @@ namespace Carpet {
       return op_copy;
     } else if (CCTK_Equals(prolong_string, "Lagrange")) {
       return op_Lagrange;
-    } else if (CCTK_Equals(prolong_string, "TVD")) {
-      return op_TVD;
     } else if (CCTK_Equals(prolong_string, "ENO")) {
       return op_ENO;
     } else if (CCTK_Equals(prolong_string, "WENO")) {

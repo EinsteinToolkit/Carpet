@@ -95,6 +95,12 @@ BOOLEAN periodic_z "do not use this parameter"
 
 private:
 
+KEYWORD refinement_centering "Centering"
+{
+  "vertex" :: "use a vertex centred grid structure"
+  "cell"   :: "use a cell centred grid structure"
+} "vertex"
+
 CCTK_INT max_refinement_levels "Maximum number of refinement levels (including the base level)"
 {
   1:* :: "must be positive"
