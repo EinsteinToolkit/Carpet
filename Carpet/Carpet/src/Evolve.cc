@@ -71,7 +71,7 @@ namespace Carpet {
     InitTiming (cctkGH);
     
     // Main loop
-    static Timer timer (timerSet, "Evolve");
+    static Timer timer (timerSet(), "Evolve");
     timer.start();
     while (not do_terminate (cctkGH)) {
       
@@ -92,12 +92,11 @@ namespace Carpet {
       print_internal_data ();
       
       // Print timer values
-      if ((cctkGH->cctk_iteration - 1) %
-          (maxtimereflevelfact / timereffacts.at(reflevels - 1)) == 0 and
-          output_timers_every > 0 and
-          (cctkGH->cctk_iteration - 1) % output_timers_every == 0)
+      if (output_timers_every > 0 and
+          cctkGH->cctk_iteration % output_timers_every == 0 and
+          cctkGH->cctk_iteration % do_every == 0)
       {
-        timerSet.printData (cctkGH, timer_file);
+        timerSet().printData (cctkGH, timer_file);
       }
       
     } // end main loop
@@ -115,7 +114,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer timer (timerSet, "Evolve::do_terminate");
+    static Timer timer (timerSet(), "Evolve::do_terminate");
     timer.start();
     
     bool term;
@@ -199,7 +198,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer timer (timerSet, "Evolve::AdvanceTime");
+    static Timer timer (timerSet(), "Evolve::AdvanceTime");
     timer.start();
     
     ++ cctkGH->cctk_iteration;
@@ -231,7 +230,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer timer (timerSet, "Evolve::CallRegrid");
+    static Timer timer (timerSet(), "Evolve::CallRegrid");
     timer.start();
     
     assert (is_level_mode());
@@ -330,7 +329,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer timer (timerSet, "Evolve::CallEvol");
+    static Timer timer (timerSet(), "Evolve::CallEvol");
     timer.start();
     
     for (int ml=mglevels-1; ml>=0; --ml) {
@@ -402,7 +401,7 @@ namespace Carpet {
   void
   CallRestrict (cGH * const cctkGH)
   {
-    static Timer timer (timerSet, "Evolve::CallRestrict");
+    static Timer timer (timerSet(), "Evolve::CallRestrict");
     timer.start();
     
     for (int ml=mglevels-1; ml>=0; --ml) {
@@ -434,7 +433,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
 
-    static Timer timer (timerSet, "Evolve::CallAnalysis");
+    static Timer timer (timerSet(), "Evolve::CallAnalysis");
     timer.start();
     
     for (int ml=mglevels-1; ml>=0; --ml) {

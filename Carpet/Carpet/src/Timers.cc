@@ -24,7 +24,11 @@ namespace Carpet {
   
   
   // A global timer set
-  TimerSet timerSet;
+  TimerSet & timerSet ()
+  {
+    static TimerSet timerSet_;
+    return timerSet_;
+  }
   
   
   
@@ -46,13 +50,30 @@ namespace Carpet {
   
   
   
+  // Print all timer names
+  void
+  TimerSet::print ()
+    const
+  {
+    printf ("Timer names:\n");
+    int n = 0;
+    for (list <Timer *>::const_iterator
+           itimer = timers.begin(); itimer != timers.end(); ++ itimer)
+    {
+      printf ("   [%4d] %s\n", n, (* itimer)->name());
+      ++ n;
+    }
+  }
+  
+  
+    
   // Print all timer data
   void
   TimerSet::printData (cGH const * const cctkGH,
                        char const * const filename)
   {
     redirect (cctkGH, filename);
-    printf ("\n********************************************************************************\n");
+    printf ("********************************************************************************\n");
     printf ("Carpet timing information at iteration %d time %g:\n",
             cctkGH->cctk_iteration, (double) cctkGH->cctk_time);
     for (list <Timer *>::const_iterator
@@ -60,7 +81,7 @@ namespace Carpet {
     {
       (* itimer)->printData ();
     }
-    printf ("\n********************************************************************************\n");
+    printf ("********************************************************************************\n");
     unredirect ();
   }
   
@@ -152,7 +173,20 @@ namespace Carpet {
   Timer::~Timer ()
   {
     timerSet.remove (this);
-    CCTK_TimerDestroyI (handle);
+    int const ierr = CCTK_TimerDestroyI (handle);
+    assert (not ierr);
+  }
+  
+  
+  
+  // Timer name
+  char const *
+  Timer::name ()
+    const
+  {
+    char const * const name_ = CCTK_TimerName (handle);
+    assert (name_);
+    return name_;
   }
   
   
@@ -162,8 +196,9 @@ namespace Carpet {
   Timer::printData ()
   {
     bool const was_running = running;
-    if (running) stop();
-    CCTK_TimerPrintDataI (handle, -1); // -1 means: all clocks
+    if (was_running) stop();
+    int const ierr = CCTK_TimerPrintDataI (handle, -1); // -1 means: all clocks
+    assert (not ierr);
     if (was_running) start();
   }
   

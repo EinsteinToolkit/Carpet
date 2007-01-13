@@ -9,6 +9,7 @@
 #include <cctki_WarnLevel.h>
 
 #include "carpet.hh"
+#include "Timers.hh"
 
 
 
@@ -50,6 +51,9 @@ namespace Carpet {
     cctkGH->cctk_iteration = 0;
     cctkGH->cctk_time = global_time;
     cctkGH->cctk_delta_time = delta_time;
+    
+    static Timer timer (timerSet(), "Initialise");
+    timer.start();
     
     // Delay checkpoint until MPI has been initialised
     Waypoint ("Starting initialisation");
@@ -93,6 +97,9 @@ namespace Carpet {
     // Analyse initial data
     CallAnalysis (cctkGH);
     print_internal_data ();
+    
+    timer.stop();
+    timerSet().printData (cctkGH, timer_file);
     
     Waypoint ("Done with initialisation");
     

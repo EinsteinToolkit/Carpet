@@ -23,16 +23,21 @@ namespace Carpet {
     
     // Add a timer
     void
-    add (Timer * const timer);
+    add (Timer * timer);
     
     // Remove a timer
     void
-    remove (Timer * const timer);
+    remove (Timer * timer);
+    
+    // Print all timer names
+    void
+    print ()
+      const;
     
     // Print all timer data
     void
-    printData (cGH const * const cctkGH,
-               char const * const filename);
+    printData (cGH const * cctkGH,
+               char const * filename);
     
   private:
     
@@ -40,8 +45,8 @@ namespace Carpet {
     
     // If filename is not empty, then redirect stdout to a file
     void
-    redirect (cGH const * const cctkGH,
-              char const * const filename);
+    redirect (cGH const * cctkGH,
+              char const * filename);
     
     // Redirect stdout back
     void
@@ -50,7 +55,7 @@ namespace Carpet {
   }; // class TimerSet
   
   // A global timer set
-  extern TimerSet timerSet;
+  TimerSet & timerSet ();
   
   
   
@@ -66,7 +71,7 @@ namespace Carpet {
     // Create a new Cactus timer with the give name, which belongs to
     // a certain timer set
     Timer (TimerSet & timerSet_,
-           char const * const timername);
+           char const * timername);
     
     // Destroy a timer
     ~Timer ();
@@ -93,6 +98,11 @@ namespace Carpet {
     {
       CCTK_TimerResetI (handle);
     }
+    
+    // Timer name
+    char const *
+    name ()
+      const;
     
     // Print timer data
     void

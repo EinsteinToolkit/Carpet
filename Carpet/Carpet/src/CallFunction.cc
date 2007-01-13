@@ -30,9 +30,9 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer total_timer (timerSet, "CallFunction");
-    static Timer user_timer  (timerSet, "CallFunction::thorns");
-    static Timer sync_timer  (timerSet, "CallFunction::syncs");
+    static Timer total_timer (timerSet(), "CallFunction");
+    static Timer user_timer  (timerSet(), "CallFunction::thorns");
+    static Timer sync_timer  (timerSet(), "CallFunction::syncs");
     
     total_timer.start();
     
