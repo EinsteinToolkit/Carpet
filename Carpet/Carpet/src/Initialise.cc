@@ -57,6 +57,7 @@ namespace Carpet {
     
     static Timer timer (timerSet(), "Initialise");
     timer.start();
+#warning "TODO: add more timers"
     
     // Delay checkpoint until MPI has been initialised
     Waypoint ("Starting initialisation");
@@ -69,10 +70,7 @@ namespace Carpet {
     
     // Write grid structure to file
     for (int m=0; m<maps; ++m) {
-      OutputGridStructure
-        (cctkGH, m,
-         vhh.at(m)->extents(), vhh.at(m)->outer_boundaries(),
-         vhh.at(m)->processors());
+      OutputGridStructure (cctkGH, m, vhh.at(m)->regions());
     } // for m
     
     CallSetup (cctkGH);

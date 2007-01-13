@@ -10,6 +10,7 @@ uses include header: dist.hh
 
 uses include header: bbox.hh
 uses include header: bboxset.hh
+uses include header: region.hh
 uses include header: vect.hh
 
 uses include header: data.hh
@@ -123,27 +124,19 @@ USES FUNCTION MultiPatch_GetDomainSpecification
 
 # The true prototype of the routine below:
 #   int Carpet_Regrid (const cGH * cctkGH,
-#                      gh::mexts  * bbsss,
-#                      gh::rbnds  * obss,
-#                      gh::rprocs * pss,
-#                      int          force);
-CCTK_INT FUNCTION Carpet_Regrid (CCTK_POINTER_TO_CONST IN cctkGH,  \
-                                 CCTK_POINTER IN bbsss,            \
-                                 CCTK_POINTER IN obss,             \
-                                 CCTK_POINTER IN pss,              \
+#                      gh::mregs * regsss,
+#                      int         force);
+CCTK_INT FUNCTION Carpet_Regrid (CCTK_POINTER_TO_CONST IN cctkGH, \
+                                 CCTK_POINTER IN regsss,          \
                                  CCTK_INT IN force)
 USES FUNCTION Carpet_Regrid
 
 # The true prototype of the routine below:
 #   int Carpet_Regrid (const cGH * cctkGH,
-#                      vector<gh::mexts>  * bbssss,
-#                      vector<gh::rbnds>  * obsss,
-#                      vector<gh::rprocs> * psss,
-#                      int                  force););
-CCTK_INT FUNCTION Carpet_RegridMaps (CCTK_POINTER_TO_CONST IN cctkGH,  \
-                                     CCTK_POINTER IN bbssss,           \
-                                     CCTK_POINTER IN obsss,            \
-                                     CCTK_POINTER IN psss,             \
+#                      vector<gh::mregs> * regssss,
+#                      int                  force);
+CCTK_INT FUNCTION Carpet_RegridMaps (CCTK_POINTER_TO_CONST IN cctkGH, \
+                                     CCTK_POINTER IN regssss,         \
                                      CCTK_INT IN force)
 USES FUNCTION Carpet_RegridMaps
 

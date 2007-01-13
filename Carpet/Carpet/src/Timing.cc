@@ -74,19 +74,18 @@ namespace Carpet {
           assert (mglevel >= 0);
           int const ml = mglevel;
           
-          // Exterior of this region
-          ibbox const ext = vdd.at(m)->boxes.at(ml).at(rl).at(c).exterior;
-          // Outer boundaries
-          b2vect const obs = xpose (vhh.at(m)->outer_boundary (rl, c));
-          // Number of ghost zones
-          i2vect const ghosts = vdd.at(m)->ghosts;
-          // Computational domain: shrink the exterior by the number
-          // of ghost zones if the face is not an outer boundary.
-          // This ignores ghost zones, but takes buffer zones into
-          // account.
+          // Base region
+          ibbox const ext = vhh.at(m)->extent(ml,rl,c);
+          // Refinement boundaries
+          b2vect const rbs = vhh.at(m)->refinement_boundaries (rl, c);
+          // Number of buffer zones
+          i2vect const buffers = vdd.at(m)->buffers;
+          // Computational domain: Add the number of buffer zones to
+          // the base extent.  This takes buffer zones into account
+          // and ignores ghost zones.
           ibbox const domain =
-            ext.expand (ivect (not obs[0]) * ghosts[0],
-                        ivect (not obs[1]) * ghosts[1]);
+            ext.expand (ivect (rbs[0]) * buffers[0],
+                        ivect (rbs[1]) * buffers[1]);
           
           // Count the grid points
           num_grid_points += domain.size();

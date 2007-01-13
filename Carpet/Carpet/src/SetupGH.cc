@@ -19,6 +19,7 @@
 #include <dist.hh>
 #include <ggf.hh>
 #include <gh.hh>
+#include <region.hh>
 #include <vect.hh>
 
 #include "carpet.hh"
@@ -44,8 +45,7 @@ namespace Carpet {
   static void setup_grid_hierarchy (cGH const * cctkGH);
   static void
   set_base_extent (int m,
-                   vector<vector<ibbox> > & bbss,
-                   vector<vector<bbvect> > & obss);
+                   vector<vector<region_t> > & regss);
   
   static void allocate_group_data (cGH const * cctkGH);
   static void
@@ -93,11 +93,9 @@ namespace Carpet {
                          ivect & npoints);
   static void
   find_processor_decomposition
-  (cGH const * const cctkGH,
-   vector<vector<vector<ibbox> > >          & bbsss,
-   vector<vector<vector<bbvect> > >         & obsss,
-   vector<vector<vector<int> > >            & psss,
-   vector<vector<vector<vector<ibbox> > > > & bbssss);
+  (cGH const * cctkGH,
+   vector<vector<vector<region_t> > >          & regsss,
+   vector<vector<vector<vector<region_t> > > > & regssss);
   
   static void
   get_group_size (int group, cGroup const & gdata,
@@ -241,7 +239,7 @@ namespace Carpet {
       // Calculate them from the default refinement factor
       spacereffacts.resize (maxreflevels);
       for (int n=0; n<maxreflevels; ++n) {
-        spacereffacts.at(n) = ivect (ipow ((int)refinement_factor, n));
+        spacereffacts.at(n) = ivect (ipow (int(refinement_factor), n));
       }
     } else {
       // Read them from the parameter
@@ -254,7 +252,7 @@ namespace Carpet {
       }
     }
     // TODO: turn these into real error messages
-    assert ((int)spacereffacts.size() >= maxreflevels);
+    assert (int(spacereffacts.size()) >= maxreflevels);
     assert (all (spacereffacts.front() == 1));
     for (int n=1; n<maxreflevels; ++n) {
       assert (all (spacereffacts.at(n) >= spacereffacts.at(n-1)));
@@ -266,7 +264,7 @@ namespace Carpet {
       // Calculate them from the default refinement factor
       timereffacts.resize (maxreflevels);
       for (int n=0; n<maxreflevels; ++n) {
-        timereffacts.at(n) = ipow ((int)refinement_factor, n);
+        timereffacts.at(n) = ipow (int(refinement_factor), n);
       }
     } else {
       // Read them from the parameter
@@ -278,7 +276,7 @@ namespace Carpet {
       }
     }
     // TODO: turn these into real error messages
-    assert ((int)timereffacts.size() >= maxreflevels);
+    assert (int(timereffacts.size()) >= maxreflevels);
     assert (timereffacts.front() == 1);
     for (int n=1; n<maxreflevels; ++n) {
       assert (timereffacts.at(n) >= timereffacts.at(n-1));
@@ -462,37 +460,28 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    // bbssss[m][rl][c][ml]
-    // bbsss [m][rl][c]
-    // obsss [m][rl][c]
-    // psss  [m][rl][c]
-    
-    vector<vector<vector<ibbox > > > bbsss (maps);
-    vector<vector<vector<bbvect> > > obsss (maps);
-    
+    vector<vector<vector<region_t> > > regsss (maps);
     for (int m=0; m<maps; ++m) {
-      set_base_extent (m, bbsss.at(m), obsss.at(m));
+      set_base_extent (m, regsss.at(m));
     }
     
-    vector<vector<vector<int> > > psss (maps);
-    vector<vector<vector<vector<ibbox> > > > bbssss (maps);
-    
-    find_processor_decomposition (cctkGH, bbsss, obsss, psss, bbssss);
+    vector<vector<vector<vector<region_t> > > > regssss;
+    find_processor_decomposition (cctkGH, regsss, regssss);
     
     for (int m=0; m<maps; ++m) {
       
       // Check the regions
-      CheckRegions (bbssss.at(m), obsss.at(m), psss.at(m));
+      CheckRegions (regssss.at(m));
       
 #if 0
       // Do this later because CactusBase/IO might not yet be
       // initialised
       // Write grid structure to file
-      OutputGridStructure (cctkGH, m, bbssss.at(m), obsss.at(m), psss.at(m));
+      OutputGridStructure (cctkGH, m, regssss.at(m));
 #endif
       
       // Recompose grid hierarchy
-      vhh.at(m)->regrid (bbssss.at(m), obsss.at(m), psss.at(m));
+      vhh.at(m)->regrid (regssss.at(m));
       int const rl = 0;
       vhh.at(m)->recompose (rl, false);
       
@@ -503,8 +492,9 @@ namespace Carpet {
       int const rl = 0;
       for (int m=0; m<maps; ++m) {
         for (int c=0; c<vhh.at(m)->components(rl); ++c) {
-          ivect const lower = vhh.at(m)->extents().at(ml).at(rl).at(c).lower();
-          ivect const upper = vhh.at(m)->extents().at(ml).at(rl).at(c).upper();
+          ibbox const ext = vhh.at(m)->extent(ml,rl,c);
+          ivect const lower = ext.lower();
+          ivect const upper = ext.upper();
           int const convfact = ipow(mgfact, ml);
           assert (all(lower % maxspacereflevelfact == 0));
           assert (all(upper % maxspacereflevelfact == 0));
@@ -512,7 +502,7 @@ namespace Carpet {
           cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
                << "   exterior: "
                << "proc "
-               << vhh.at(m)->processors().at(rl).at(c)
+               << vhh.at(m)->processor(rl,c)
                << "   "
                << lower / maxspacereflevelfact
                << " : "
@@ -535,47 +525,59 @@ namespace Carpet {
   
   void
   set_base_extent (int const m,
-                   vector<vector<ibbox> > & bbss,
-                   vector<vector<bbvect> > & obss)
+                   vector<vector<region_t> > & regss)
   {
     DECLARE_CCTK_PARAMETERS;
     
     // Create one refinement level
     int const rl = 0;
-    bbss.resize(1);
-    obss.resize(1);
-    vector<ibbox>  & bbs = bbss.at(rl);
-    vector<bbvect> & obs = obss.at(rl);
+    regss.resize(1);
+    vector<region_t> & regs = regss.at(rl);
     
     if (CCTK_EQUALS (base_extents, "")) {
       
       // Default: one grid component covering everything
-      bbs.push_back (vhh.at(m)->baseextent);
-      obs.push_back (bbvect(true));
+      region_t reg;
+      reg.extent = vhh.at(m)->baseextent;
+      reg.outer_boundaries = b2vect (bvect (true));
+      reg.refinement_boundaries = b2vect (bvect (false));
+      reg.map = m;
+      regs.push_back (reg);
       
     } else {
       
       // Read explicit grid components
       // TODO: invent something for the other convergence levels
+      vector<ibbox> exts;
       istringstream ext_str (base_extents);
       try {
-        ext_str >> bbs;
+        ext_str >> exts;
       } catch (input_error) {
         CCTK_WARN (0, "Could not parse parameter \"base_extents\"");
       }
       CCTK_VInfo (CCTK_THORNSTRING,
-                  "Using %d grid components", (int)bbs.size());
-      if (bbs.size() == 0) {
+                  "Using %d grid components", int(exts.size()));
+      if (exts.size() == 0) {
         CCTK_WARN (0, "Cannot evolve with zero grid components");
       }
       
+      vector<bbvect> obs;
       istringstream ob_str (base_outerbounds);
       try {
         ob_str >> obs;
       } catch (input_error) {
         CCTK_WARN (0, "Could not parse parameter \"base_outerbounds\"");
       }
-      assert (obs.size() == bbs.size());
+      assert (obs.size() == exts.size());
+      
+      for (size_t n=0; n<exts.size(); ++n) {
+        region_t reg;
+        reg.extent = exts.at(n);
+        reg.outer_boundaries = xpose(obs.at(n));
+        reg.refinement_boundaries = b2vect(bvect(false));
+        reg.map = m;
+        regs.push_back (reg);
+      }
       
     }
   }
@@ -711,22 +713,22 @@ namespace Carpet {
                               ivect const & convoffsets)
   {
     // Set refinement structure for scalars and arrays
-    vector<ibbox> bbs(1);
-    vector<bbvect> obs(1);
+    vector<region_t> regs(1);
     int const m=0;
-    bbs.at(0) = arrdata.at(group).at(m).hh->baseextent;
-    obs.at(0) = bbvect(true);
+    regs.at(0).extent = arrdata.at(group).at(m).hh->baseextent;
+    regs.at(0).outer_boundaries = b2vect(true);
+    regs.at(0).refinement_boundaries = b2vect(false);
+    regs.at(m).map = m;
     
     // Split it into components, one for each processor
-    vector<int> ps;
     switch (gdata.disttype) {
     case CCTK_DISTRIB_DEFAULT: {
-      SplitRegions_Automatic (cctkGH, bbs, obs, ps);
+      SplitRegions_Automatic (cctkGH, regs);
       break;
     }
     case CCTK_DISTRIB_CONSTANT: {
       int const d = gdata.dim==0 ? 0 : gdata.dim-1;
-      SplitRegions_AlongDir (cctkGH, bbs, obs, ps, d);
+      SplitRegions_AlongDir (cctkGH, regs, d);
       break;
     }
     default:
@@ -734,45 +736,42 @@ namespace Carpet {
     }
     
     // Only one refinement level
-    vector<vector<ibbox> > bbss(1);
-    vector<vector<bbvect> > obss(1);
-    vector<vector<int> > pss(1);
-    bbss.at(0) = bbs;
-    obss.at(0) = obs;
-    pss.at(0) = ps;
+    vector<vector<region_t> > regss(1);
+    regss.at(0) = regs;
     
     // Create all multigrid levels
-    vector<vector<vector<ibbox> > > bbsss (mglevels);
+    vector<vector<vector<region_t> > > regsss (mglevels);
     ivect mgfact1;
-    iivect offset;
+    i2vect offset;
     for (int d=0; d<dim; ++d) {
       mgfact1[d] = ipow (mgfact, convpowers[d]);
-      offset[d][0] = 0;
-      offset[d][1] = convoffsets[d];
+      offset[0][d] = 0;
+      offset[1][d] = convoffsets[d];
     }
-    bbsss.at(0) = bbss;
-
+    regsss.at(0) = regss;
+    
     for (int ml=1; ml<mglevels; ++ml) {
       int const rl = 0;
-      for (int c=0; c<(int)bbss.at(rl).size(); ++c) {
+      for (int c=0; c<int(regss.at(rl).size()); ++c) {
         // this base
         ivect const baselo = ivect(0);
         ivect const baselo1 = baselo;
         // next finer grid
-        ivect const flo = bbsss.at(ml-1).at(rl).at(c).lower();
-        ivect const fhi = bbsss.at(ml-1).at(rl).at(c).upper();
-        ivect const fstr = bbsss.at(ml-1).at(rl).at(c).stride();
+        ivect const flo = regsss.at(ml-1).at(rl).at(c).extent.lower();
+        ivect const fhi = regsss.at(ml-1).at(rl).at(c).extent.upper();
+        ivect const fstr = regsss.at(ml-1).at(rl).at(c).extent.stride();
         // this grid
         ivect const str = fstr * mgfact1;
-        ivect const lo = flo + xpose(obs.at(c))[0].ifthen
-          (+ (xpose(offset)[0] - mgfact1 * xpose(offset)[0]) * fstr,
+        ivect const lo = flo + regsss.at(ml-1).at(rl).at(c).outer_boundaries[0].ifthen
+          (+ (offset[0] - mgfact1 * offset[0]) * fstr,
            ivect(0));
-        ivect const hi = fhi + xpose(obs.at(c))[1].ifthen
-          (- (xpose(offset)[1] - mgfact1 * xpose(offset)[1]) * fstr,
+        ivect const hi = fhi + regsss.at(ml-1).at(rl).at(c).outer_boundaries[1].ifthen
+          (- (offset[1] - mgfact1 * offset[1]) * fstr,
            ivect(0));
         ivect const lo1 = baselo1 + (lo - baselo1 + str - 1) / str * str;
         ivect const hi1 = lo1 + (hi - lo1) / str * str;
-        bbsss.at(ml).at(rl).at(c) = ibbox(lo1, hi1, str);
+        regsss.at(ml).at(rl).at(c) = regsss.at(ml-1).at(rl).at(c);
+        regsss.at(ml).at(rl).at(c).extent = ibbox(lo1, hi1, str);
       }
     }
     
@@ -781,7 +780,7 @@ namespace Carpet {
       char * const groupname = CCTK_GroupName (group);
       assert (groupname);
       Checkpoint ("Recomposing grid array group \"%s\"...", groupname);
-      arrdata.at(group).at(0).hh->regrid (bbsss, obss, pss);
+      arrdata.at(group).at(0).hh->regrid (regsss);
       arrdata.at(group).at(0).hh->recompose (0, false);
       Checkpoint ("Done recomposing grid array group \"%s\".", groupname);
       free (groupname);
@@ -1168,7 +1167,7 @@ namespace Carpet {
     {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "The domain size for map %d scaled for convergence level %d with convergence factor %d is not integer",
-                  m, (int)basemglevel, (int)convergence_factor);
+                  m, int(basemglevel), int(convergence_factor));
     }
     
     // Sanity check
@@ -1191,26 +1190,24 @@ namespace Carpet {
   void
   find_processor_decomposition
   (cGH const * const cctkGH,
-   vector<vector<vector<ibbox> > >          & bbsss,
-   vector<vector<vector<bbvect> > >         & obsss,
-   vector<vector<vector<int> > >            & psss,
-   vector<vector<vector<vector<ibbox> > > > & bbssss)
+   vector<vector<vector<region_t> > >          & regsss,
+   vector<vector<vector<vector<region_t> > > > & regssss)
   {
     DECLARE_CCTK_PARAMETERS;
     
     if (not regrid_in_level_mode) {
       // Distribute each map independently
       
+      assert (regssss.empty());
+      regssss.resize (maps);
       for (int m=0; m<maps; ++m) {
         int const rl=0;
-        psss.at(m).resize(1);
         
         // Distribute onto the processors
-        SplitRegions
-          (cctkGH, bbsss.at(m).at(rl), obsss.at(m).at(rl), psss.at(m).at(rl));
+        SplitRegions (cctkGH, regsss.at(m).at(rl));
         
         // Create all multigrid levels
-        MakeMultigridBoxes (cctkGH, bbsss.at(m), obsss.at(m), bbssss.at(m));
+        MakeMultigridBoxes (cctkGH, regsss.at(m), regssss.at(m));
       } // for m
       
     } else {
@@ -1218,28 +1215,19 @@ namespace Carpet {
       
       int const rl=0;
       
+      vector<vector<region_t> >  regss(maps);
       for (int m=0; m<maps; ++m) {
-        psss.at(m).resize(1);
+        regss.at(m) = regsss.at(m).at(rl);
       }
       
-      vector<vector<ibbox> > bbss(maps);
-      vector<vector<bbvect> > obss(maps);
-      vector<vector<int> > pss(maps);
-      for (int m=0; m<maps; ++m) {
-        bbss.at(m) = bbsss.at(m).at(rl);
-        obss.at(m) = obsss.at(m).at(rl);
-      }
-      
-      SplitRegionsMaps (cctkGH, bbss, obss, pss);
+      SplitRegionsMaps (cctkGH, regss);
       
       for (int m=0; m<maps; ++m) {
-        bbsss.at(m).at(rl) = bbss.at(m);
-        obsss.at(m).at(rl) = obss.at(m);
-        psss.at(m).at(rl)  = pss.at(m);
+        regsss.at(m).at(rl) = regss.at(m);
       }
       
       // Create all multigrid levels
-      MakeMultigridBoxesMaps (cctkGH, bbsss, obsss, bbssss);
+      MakeMultigridBoxesMaps (cctkGH, regsss, regssss);
       
     } // if
   }
@@ -1302,7 +1290,7 @@ namespace Carpet {
     // Adapt array sizes for convergence level
     get_convergence_options (group, gdata, convpowers, convoffsets);
     
-    ivect baseconvpowers = convpowers * (int)basemglevel;
+    ivect baseconvpowers = convpowers * int(basemglevel);
     rvect real_sizes =
       (((rvect (sizes)
          - rvect (convoffsets))
@@ -1320,7 +1308,7 @@ namespace Carpet {
       char * const groupname = CCTK_GroupName (group);
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "The shape of group \"%s\" scaled for convergence level %d with convergence factor %d is negative",
-                  groupname, (int)basemglevel, (int)convergence_factor);
+                  groupname, int(basemglevel), int(convergence_factor));
       free (groupname);
     }
     
@@ -1328,7 +1316,7 @@ namespace Carpet {
       char * const groupname = CCTK_GroupName(group);
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "The shape of group \"%s\" scaled for convergence level %d with convergence factor %d is not integer",
-                  groupname, (int)basemglevel, (int)convergence_factor);
+                  groupname, int(basemglevel), int(convergence_factor));
       free (groupname);
     }
   }
@@ -1895,7 +1883,7 @@ namespace Carpet {
     if (any (min (lghosts, ughosts) < min_nghosts)) {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "There are not enough ghost zones for the desired spatial prolongation order on map %d.  With Carpet::prolongation_order_space=%d, you need at least %d ghost zones.",
-                  m, (int)prolongation_order_space, min_nghosts);
+                  m, int(prolongation_order_space), min_nghosts);
     }
   }
   

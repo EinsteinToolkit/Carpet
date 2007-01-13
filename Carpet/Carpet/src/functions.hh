@@ -81,63 +81,70 @@ namespace Carpet {
   void GroupsStorageCheck (cGH const * const cctkGH);
 
   // Helpers for recomposing the grid hierarchy
-  void RegridMap (cGH const * cctkGH,
-                  int m,
-                  gh::mexts  const & bbsss,
-                  gh::rbnds  const & obss,
-                  gh::rprocs const & pss);
-  void PostRegrid ();
-  bool Recompose (cGH const * cctkGH, int rl, bool do_init);
+  void
+  RegridMap (cGH const * cctkGH,
+             int m,
+             gh::mregs const & regsss);
+  void
+  PostRegrid ();
+  bool
+  Recompose (cGH const * cctkGH,
+             int rl,
+             bool do_init);
   
-  void CheckRegions (const gh::mexts & bbsss,
-                     const gh::rbnds & obss,
-                     const gh::rprocs& pss);
+  void
+  CheckRegions (gh::mregs const & regsss);
   
-  void OutputGrids (const cGH* cgh, const int m, const gh& hh, const dh& dd);
+  void
+  OutputGrids (cGH const * cctkGH,
+               int const m,
+               gh const & hh,
+               dh const & dd);
   
-  void OutputGridStructure (const cGH *cgh,
-                            const int m,
-                            const gh::mexts & bbsss,
-                            const gh::rbnds & obss,
-                            const gh::rprocs& pss);
+  void
+  OutputGridStructure (cGH const * cctkGH,
+                       int const m,
+                       gh::mregs const & regsss);
   
   
   
   // Functions for recomposing the grid hierarchy
-  void SplitRegions (const cGH* cgh, vector<ibbox>& bbs,
-		     vector<bbvect>& obs, vector<int>& ps);
-  void SplitRegions_AlongZ (const cGH* cgh, vector<ibbox>& bbs,
-			    vector<bbvect>& obs, vector<int>& ps);
-  void SplitRegions_AlongDir (const cGH* cgh, vector<ibbox>& bbs,
-                              vector<bbvect>& obs, vector<int>& ps,
-                              const int dir);
-  void SplitRegions_Automatic (const cGH* cgh, vector<ibbox>& bbs,
-                               vector<bbvect>& obs, vector<int>& ps);
-  void SplitRegionsMaps (const cGH* cgh,
-                         vector<vector<ibbox> >& bbss,
-                         vector<vector<bbvect> >& obss,
-                         vector<vector<int> >& pss);
-  void SplitRegionsMaps_Automatic (const cGH* cgh,
-                                   vector<vector<ibbox> >& bbss,
-                                   vector<vector<bbvect> >& obss,
-                                   vector<vector<int> >& pss);
+  void
+  SplitRegions (cGH const * cctkGH,
+                vector<region_t> & regs);
+  void
+  SplitRegions_AlongZ (cGH const * cctkGH,
+                       vector<region_t> & regs);
+  void
+  SplitRegions_AlongDir (cGH const * cctkGH,
+                         vector<region_t> & regs,
+                         int const dir);
+  void
+  SplitRegions_Automatic (cGH const * cctkGH,
+                          vector<region_t> & regs);
+  void
+  SplitRegionsMaps (cGH const * cctkGH,
+                    vector<vector<region_t> > & regss);
+  void
+  SplitRegionsMaps_Automatic (cGH const * cctkGH,
+                              vector<vector<region_t> > & regss);
   
-  void MakeMultigridBoxes (const cGH* cgh,
-                           gh::rexts const & bbss,
-                           gh::rbnds const & obss,
-                           gh::mexts & bbsss);
-  void MakeMultigridBoxesMaps (const cGH* cgh,
-                               vector<gh::rexts> const & bbsss,
-                               vector<gh::rbnds> const & obsss,
-                               vector<gh::mexts> & bbssss);
+  void
+  MakeMultigridBoxes (cGH const * cctkGH,
+                      gh::rregs const & regss,
+                      gh::mregs       & regsss);
+  void
+  MakeMultigridBoxesMaps (cGH const * cctkGH,
+                          vector<gh::rregs> const & regsss,
+                          vector<gh::mregs>       & regssss);
   
   
   
   // Timing statistics functions
-  void InitTimingVariables (cGH const * const cctkGH);
-  void InitTiming (cGH const * const cctkGH);
-  void StepTiming (cGH const * const cctkGH);
-  void PrintTimingStats (cGH const * const cctkGH);
+  void InitTimingVariables (cGH const * cctkGH);
+  void InitTiming (cGH const * cctkGH);
+  void StepTiming (cGH const * cctkGH);
+  void PrintTimingStats (cGH const * cctkGH);
   
 } // namespace Carpet
 
