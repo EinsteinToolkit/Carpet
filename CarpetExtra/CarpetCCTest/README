@@ -1,0 +1,8 @@
+Cactus Code Thorn CarpetCCTest
+Thorn Author(s)     : Erik Schnetter <schnetter@cct.lsu.edu>
+Thorn Maintainer(s) : Erik Schnetter <schnetter@cct.lsu.edu>
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+Test cell-centering in Carpet, and provide examples.

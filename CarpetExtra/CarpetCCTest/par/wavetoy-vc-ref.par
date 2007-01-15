@@ -1,0 +1,214 @@
+Cactus::cctk_run_title = "WaveToy vertex-centred refined"
+
+Cactus::cctk_full_warnings         = yes
+Cactus::highlight_warning_messages = no
+Cactus::cctk_timer_output          = "full"
+
+Cactus::terminate       = "time"
+Cactus::cctk_final_time = 1.0
+
+
+
+ActiveThorns = "IOUtil"
+
+IO::out_dir = $parfile
+
+
+
+ActiveThorns = "AEILocalInterp"
+
+ActiveThorns = "Fortran"
+
+ActiveThorns = "HDF5"
+
+ActiveThorns = "LocalInterp"
+
+ActiveThorns = "MPIClock"
+
+ActiveThorns = "NaNCatcher"
+
+ActiveThorns = "Slab"
+
+
+
+ActiveThorns = "Carpet CarpetLib CarpetInterp CarpetReduce CarpetSlab"
+
+Carpet::verbose           = yes
+#Carpet::schedule_barriers = yes
+#Carpet::veryverbose       = yes
+CarpetLib::output_bboxes  = yes
+
+Carpet::domain_from_coordbase = yes
+Carpet::max_refinement_levels = 3
+
+driver::ghost_size = 2
+
+Carpet::refinement_centering     = "vertex"
+Carpet::prolongation_order_space = 3
+Carpet::prolongation_order_time  = 2
+
+Carpet::convergence_level = 0
+
+Carpet::regrid_during_initialisation = no
+Carpet::enable_all_storage           = no
+
+Carpet::poison_new_timelevels = yes
+CarpetLib::poison_new_memory  = yes
+
+Carpet::grid_structure_filename  = "carpet-grid-structure"
+Carpet::output_timers_every      = 100
+CarpetLib::print_timestats_every = 100
+CarpetLib::print_memstats_every  = 100
+
+
+
+ActiveThorns = "NaNChecker"
+
+NaNChecker::check_every     = 100
+NaNChecker::action_if_found = "terminate"
+NaNChecker::check_vars      = "
+        WaveToy::scalarevolve
+"
+
+
+
+ActiveThorns = "Boundary CartGrid3D CoordBase SymBase"
+
+CoordBase::domainsize = "minmax"
+
+CoordBase::xmin = -0.50
+CoordBase::ymin = -0.50
+CoordBase::zmin = -0.50
+CoordBase::xmax = +0.50
+CoordBase::ymax = +0.50
+CoordBase::zmax = +0.50
+CoordBase::dx   =  0.04
+CoordBase::dy   =  0.04
+CoordBase::dz   =  0.04
+
+CoordBase::boundary_staggered_x_lower = no
+CoordBase::boundary_staggered_y_lower = no
+CoordBase::boundary_staggered_z_lower = no
+CoordBase::boundary_staggered_x_upper = no
+CoordBase::boundary_staggered_y_upper = no
+CoordBase::boundary_staggered_z_upper = no
+
+CartGrid3D::type = "coordbase"
+
+
+
+ActiveThorns = "CarpetRegrid2"
+
+CarpetRegrid2::regrid_every = 0
+
+CarpetRegrid2::snap_to_coarse = yes
+
+CarpetRegrid2::num_centres = 1
+
+CarpetRegrid2::num_levels_1 =  3
+CarpetRegrid2::radius_1[ 1] = 0.50
+CarpetRegrid2::radius_1[ 2] = 0.25
+
+
+
+ActiveThorns = "WavetoyC"
+
+WaveToy::bound = "radiation"
+
+
+
+ActiveThorns = "IDScalarWaveC"
+
+IDScalarWave::initial_data = "gaussian"
+IDScalarWave::radius    = 0.0
+IDScalarWave::sigma     = 0.1
+IDScalarWave::amplitude = 1.0
+
+
+
+ActiveThorns = "Time"
+
+Time::dtfac = 0.5
+
+
+
+ActiveThorns = "CarpetIOBasic"
+
+IOBasic::outInfo_every      = 1
+IOBasic::outInfo_reductions = "norm2 minimum maximum"
+IOBasic::outInfo_vars       = "
+        WaveToy::phi
+"
+
+
+
+ActiveThorns = "CarpetIOScalar"
+
+IOScalar::one_file_per_group = yes
+
+IOScalar::outScalar_every = 1
+IOScalar::outScalar_vars  = "
+        WaveToy::scalarevolve
+"
+
+
+
+ActiveThorns = "CarpetIOASCII"
+
+IOASCII::one_file_per_group = yes
+
+IOASCII::output_symmetry_points = no
+IOASCII::out3D_ghosts           = no
+
+IOASCII::out0D_every = 1
+IOASCII::out0D_vars  = "
+        Carpet::timing
+        WaveToy::scalarevolve
+"
+
+IOASCII::out1D_every = 1
+IOASCII::out1D_vars  = "
+        WaveToy::scalarevolve
+"
+
+IOASCII::out2D_every = 1
+IOASCII::out2D_vars  = "
+        WaveToy::scalarevolve
+"
+
+
+
+Activethorns = "CarpetIOHDF5"
+
+IOHDF5::out_every = 100
+IOHDF5::compression_level = 1
+IOHDF5::out_vars  = "
+        WaveToy::scalarevolve
+"
+
+IOHDF5::checkpoint          = yes
+IO::checkpoint_dir          = $parfile
+IO::checkpoint_ID           = yes
+IO::checkpoint_every        = 100
+IO::checkpoint_on_terminate = yes
+
+Carpet::regrid_during_recovery             = no
+IOHDF5::use_grid_structure_from_checkpoint = yes
+
+IO::recover     = "autoprobe"
+IO::recover_dir = $parfile
+
+
+
+ActiveThorns = "Formaline"
+
+Formaline::send_as_rdf     = yes
+Formaline::rdf_hostname[0] = "mintaka.aip.de"
+Formaline::rdf_port    [0] = 24005
+
+
+
+ActiveThorns = "TimerReport"
+
+TimerReport::out_every    = 100
+TimerReport::out_filename = "TimerReport"
