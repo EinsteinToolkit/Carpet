@@ -29,6 +29,13 @@ using namespace std;
 
 
 
+// Define the restrict qualifier
+#ifdef CCTK_CXX_RESTRICT
+#  define restrict CCTK_CXX_RESTRICT
+#endif
+
+
+
 // Number of dimensions
 const int dim = 3;
   
