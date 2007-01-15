@@ -1195,11 +1195,12 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
+    assert (regssss.empty());
+    regssss.resize (maps);
+    
     if (not regrid_in_level_mode) {
       // Distribute each map independently
       
-      assert (regssss.empty());
-      regssss.resize (maps);
       for (int m=0; m<maps; ++m) {
         int const rl=0;
         
