@@ -1,0 +1,4 @@
+TEST outer-buffers
+{
+  NPROCS 1
+}

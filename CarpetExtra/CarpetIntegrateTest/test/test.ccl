@@ -1,0 +1,9 @@
+TEST carpetintegrate
+{
+  NPROCS 1
+}
+
+TEST carpetintegrate-linear
+{
+  NPROCS 1
+}
