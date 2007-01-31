@@ -102,8 +102,10 @@ carpetioascii::out2D_vars = "adm_bssn::adm_bs_gxx carpetevolutionmask::evolution
 carpetioascii::out3D_vars = "adm_bssn::adm_bs_gxx carpetevolutionmask::evolution_mask"
 
 
-IOScalar::outScalar_every =  4
-IOScalar::outScalar_vars  = "adm_bssn::adm_bs_gxx adm_bssn::adm_bs_Axx adm_bssn::adm_bs_phi adm_bssn::adm_bs_k adm_bssn::adm_bs_Gx admbase::gxx admbase::kxx admbase::alp"
+IOScalar::outScalar_every      =  4
+IOScalar::outScalar_vars       = "adm_bssn::adm_bs_gxx adm_bssn::adm_bs_Axx adm_bssn::adm_bs_phi adm_bssn::adm_bs_k adm_bssn::adm_bs_Gx admbase::gxx admbase::kxx admbase::alp"
+IOScalar::outScalar_reductions = "count minimum maximum average norm1 norm2 norm_inf"
+
 
 ##################################################################
 
