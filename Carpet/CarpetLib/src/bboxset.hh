@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <list>
 #include <set>
 
 #include "bbox.hh"
@@ -38,7 +39,8 @@ class bboxset {
   
   // Types
   typedef bbox<T,D> box;
-  typedef set<box> bset;
+  //S typedef set<box> bset;
+  typedef list<box> bset;
   
   // Fields
   bset bs;
@@ -67,8 +69,24 @@ public:
   int setsize () const { return bs.size(); }
   
   // Add (bboxes that don't overlap)
-  bboxset& operator+= (const box& b);
+  bboxset& operator+= (const box& b)
+  {
+    if (b.empty()) return *this;
+    // This is very slow when there are many bboxes
+#if 0 && ! defined(CARPET_OPTIMISE)
+    // check for overlap
+    for (const_iterator bi=begin(); bi!=end(); ++bi) {
+      assert (not (*bi).intersects(b));
+    }
+#endif
+    //S bs.insert(b);
+    bs.push_back(b);
+    assert (invariant());
+    return *this;
+  }
+  
   bboxset& operator+= (const bboxset& s);
+  bboxset& add_transfer (bboxset& s);
   bboxset operator+ (const box& b) const;
   bboxset operator+ (const bboxset& s) const;
   static bboxset plus (const box& b1, const box& b2);
@@ -90,7 +108,12 @@ public:
   // friend bboxset operator- <T,D>(const box& b1, const box& b2);
   static bboxset minus (const box& b1, const box& b2);
   bboxset operator- (const box& b) const;
-  bboxset& operator-= (const box& b);
+  bboxset& operator-= (const box& b)
+  {
+    *this = *this - b;
+    assert (invariant());
+    return *this;
+  }
   bboxset& operator-= (const bboxset& s);
   bboxset operator- (const bboxset& s) const;
   // friend bboxset operator- <T,D>(const box& b, const bboxset& s);

@@ -21,7 +21,8 @@ bboxset<T,D>::bboxset () {
 
 template<class T, int D>
 bboxset<T,D>::bboxset (const box& b) {
-  if (!b.empty()) bs.insert(b);
+  //S if (!b.empty()) bs.insert(b);
+  if (!b.empty()) bs.push_back(b);
   assert (invariant());
 }
 
@@ -41,13 +42,13 @@ bboxset<T,D>::bboxset (const bset& bs_): bs(bs_) {
 template<class T, int D>
 bool bboxset<T,D>::invariant () const {
 // This is very slow when there are many bboxes
-#if 0
+#if 0 && ! defined(CARPET_OPTIMISE)
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
     if ((*bi).empty()) return false;
-    if (! (*bi).is_aligned_with(*bs.begin())) return false;
+    if (not (*bi).is_aligned_with(*bs.begin())) return false;
     // check for overlap (quadratic -- expensive)
     for (const_iterator bi2=begin(); bi2!=bi; ++bi2) {
-      if (! ((*bi2) & (*bi)).empty()) return false;
+      if ((*bi2).intersects(*bi)) return false;
     }
   }
 #endif
@@ -69,15 +70,23 @@ void bboxset<T,D>::normalize ()
   // boundaries aligned.
   for (int d=0; d<D; ++d) {
     // Find all boundaries
-    set<T> sbnds;
+    //S typedef set<T> buf;
+    typedef vector<T> buf;
+    buf sbnds;
+    sbnds.reserve (2 * bs.size());
     for (typename bset::const_iterator si = bs.begin(); si != bs.end(); ++ si) {
       box const & b = * si;
       int const bstr = b.stride()[d];
       int const blo = b.lower()[d];
       int const bhi = b.upper()[d] + bstr;
-      sbnds.insert (blo);
-      sbnds.insert (bhi);
+      //S sbnds.insert (blo);
+      //S sbnds.insert (bhi);
+      sbnds.push_back (blo);
+      sbnds.push_back (bhi);
     }
+    sort (sbnds.begin(), sbnds.end());
+    typename buf::iterator const last = unique (sbnds.begin(), sbnds.end());
+    sbnds.resize (last - sbnds.begin());
     // Split bboxes
     bset nbs;
     for (typename bset::const_iterator si = bs.begin(); si != bs.end(); ++ si) {
@@ -85,24 +94,30 @@ void bboxset<T,D>::normalize ()
       int const bstr = b.stride()[d];
       int const blo = b.lower()[d];
       int const bhi = b.upper()[d] + bstr;
-      typename set<T>::const_iterator const ilo
-        = find (sbnds.begin(), sbnds.end(), blo);
-      typename set<T>::const_iterator const ihi
-        = find (sbnds.begin(), sbnds.end(), bhi);
+//       typename buf::const_iterator const ilo
+//         = find (sbnds.begin(), sbnds.end(), blo);
+//       typename buf::const_iterator const ihi
+//         = find (sbnds.begin(), sbnds.end(), bhi);
+      typename buf::const_iterator const ilo
+        = lower_bound (sbnds.begin(), sbnds.end(), blo);
+      typename buf::const_iterator const ihi
+        = lower_bound (sbnds.begin(), sbnds.end(), bhi);
       assert (ilo != sbnds.end());
       assert (ihi != sbnds.end());
       assert (* ilo == blo);
       assert (* ihi == bhi);
       // Split one bbox
-      for (typename set<T>::const_iterator curr = ilo; curr != ihi; ++ curr) {
-        typename set<T>::const_iterator next = curr;
+      for (typename buf::const_iterator curr = ilo; curr != ihi; ++ curr) {
+        typename buf::const_iterator next = curr;
         advance (next, 1);
         int const nblo = * curr;
         int const nbhi = * next;
+        assert (nbhi > nblo);   // ensure that the set remains sorted
         box nb (b.lower().replace(d, nblo),
                 b.upper().replace(d, nbhi - bstr),
                 b.stride());
-        nbs.insert (nb);
+        //S nbs.insert (nb);
+        nbs.push_back (nb);
       }
     }
     // Replace old set
@@ -142,7 +157,8 @@ void bboxset<T,D>::normalize ()
                           b.stride());
             bs.erase (si);
             nbs.erase (nsi);
-            bs.insert (cb);
+            //S bs.insert (cb);
+            bs.push_back (cb);
             goto done;
           } else if (bhi == nblo) {
             // Combine boxes, b < nb
@@ -151,13 +167,15 @@ void bboxset<T,D>::normalize ()
                           b.stride());
             bs.erase (si);
             nbs.erase (nsi);
-            bs.insert (cb);
+            //S bs.insert (cb);
+            bs.push_back (cb);
             goto done;
           }
         }
       }
       bs.erase (si);
-      nbs.insert (b);
+      //S nbs.insert (b);
+      nbs.push_back (b);
     done:;
     }
     bs.swap (nbs);
@@ -188,22 +206,17 @@ T bboxset<T,D>::size () const {
 
 // Add (bboxes that don't overlap)
 template<class T, int D>
-bboxset<T,D>& bboxset<T,D>::operator+= (const box& b) {
-  if (b.empty()) return *this;
-  // check for overlap
-  for (const_iterator bi=begin(); bi!=end(); ++bi) {
-    assert ((*bi & b).empty());
+bboxset<T,D>& bboxset<T,D>::operator+= (const bboxset& s) {
+  for (const_iterator bi=s.begin(); bi!=s.end(); ++bi) {
+    *this += *bi;
   }
-  bs.insert(b);
   assert (invariant());
   return *this;
 }
 
 template<class T, int D>
-bboxset<T,D>& bboxset<T,D>::operator+= (const bboxset& s) {
-  for (const_iterator bi=s.begin(); bi!=s.end(); ++bi) {
-    *this += *bi;
-  }
+bboxset<T,D>& bboxset<T,D>::add_transfer (bboxset& s) {
+  bs.splice (bs.end(), s.bs);
   assert (invariant());
   return *this;
 }
@@ -239,14 +252,16 @@ bboxset<T,D> bboxset<T,D>::plus (const bbox<T,D>& b, const bboxset<T,D>& s) {
 // Union
 template<class T, int D>
 bboxset<T,D>& bboxset<T,D>::operator|= (const box& b) {
-  *this += b - *this;
+  bboxset tmp = b - *this;
+  add_transfer (tmp);
   assert (invariant());
   return *this;
 }
 
 template<class T, int D>
 bboxset<T,D>& bboxset<T,D>::operator|= (const bboxset& s) {
-  *this += s - *this;
+  bboxset tmp = s - *this;
+  add_transfer (tmp);
   assert (invariant());
   return *this;
 }
@@ -290,7 +305,8 @@ bboxset<T,D> bboxset<T,D>::operator& (const bboxset& s) const {
   // walk all the bboxes
   for (const_iterator bi=s.begin(); bi!=s.end(); ++bi) {
     // insert the intersection with this bbox
-    r += *this & *bi;
+    bboxset tmp = *this & *bi;
+    r.add_transfer (tmp);
   }
   assert (r.invariant());
   return r;
@@ -317,8 +333,12 @@ template<class T, int D>
 bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b1, const bbox<T,D>& b2) {
   assert (b1.is_aligned_with(b2));
   if (b1.empty()) return bboxset<T,D>();
-  if (b2.empty()) return bboxset<T,D>(b1);
-  const vect<T,D> str = b1.stride();
+  if (not b1.intersects(b2)) return bboxset<T,D>(b1);
+  vect<T,D> const b2lo = max (b1.lower(), b2.lower());
+  vect<T,D> const b2up = min (b1.upper(), b2.upper());
+  vect<T,D> const & b1lo = b1.lower();
+  vect<T,D> const & b1up = b1.upper();
+  vect<T,D> const & str = b1.stride();
   bboxset<T,D> r;
   for (int d=0; d<D; ++d) {
     // make resulting bboxes as large as possible in x-direction (for
@@ -327,20 +347,20 @@ bboxset<T,D> bboxset<T,D>::minus (const bbox<T,D>& b1, const bbox<T,D>& b2) {
     bbox<T,D> b;
     for (int dd=0; dd<D; ++dd) {
       if (dd<d) {
-	lb[dd] = b2.lower()[dd];
-	ub[dd] = b2.upper()[dd];
+	lb[dd] = b2lo[dd];
+	ub[dd] = b2up[dd];
       } else if (dd>d) {
-	lb[dd] = b1.lower()[dd];
-	ub[dd] = b1.upper()[dd];
+	lb[dd] = b1lo[dd];
+	ub[dd] = b1up[dd];
       }
     }
-    lb[d] = b1.lower()[d];
-    ub[d] = b2.lower()[d] - str[d];
-    b = bbox<T,D>(lb,ub,str) & b1;
+    lb[d] = b1lo[d];
+    ub[d] = b2lo[d] - str[d];
+    b = bbox<T,D>(lb,ub,str);
     r += b;
-    lb[d] = b2.upper()[d] + str[d];
-    ub[d] = b1.upper()[d];
-    b = bbox<T,D>(lb,ub,str) & b1;
+    lb[d] = b2up[d] + str[d];
+    ub[d] = b1up[d];
+    b = bbox<T,D>(lb,ub,str);
     r += b;
   }
   assert (r.invariant());
@@ -354,17 +374,11 @@ bboxset<T,D> bboxset<T,D>::operator- (const box& b) const {
   // walk all my elements
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
     // insert the difference with the bbox
-    r += *bi - b;
+    bboxset tmp = *bi - b;
+    r.add_transfer (tmp);
   }
   assert (r.invariant());
   return r;
-}
-
-template<class T, int D>
-bboxset<T,D>& bboxset<T,D>::operator-= (const box& b) {
-  *this = *this - b;
-  assert (invariant());
-  return *this;
 }
   
 template<class T, int D>

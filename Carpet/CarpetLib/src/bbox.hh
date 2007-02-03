@@ -1,7 +1,9 @@
 #ifndef BBOX_HH
 #define BBOX_HH
 
+#include <cassert>
 #include <iostream>
+#include <limits>
 
 #include "defs.hh"
 #include "vect.hh"
@@ -38,17 +40,40 @@ public:
   // Constructors
   
   /** Construct an empty bbox.  */
-  bbox ();
+  bbox ()
+  : _lower(T(1)), _upper(T(0)), _stride(T(1))
+  {
+  }
   
   /** Copy constructor.  */
-  bbox (const bbox& b);
+  bbox (const bbox& b)
+    : _lower(b._lower), _upper(b._upper), _stride(b._stride)
+  {
+  }
   
   /** Assignment operator.  */
-  bbox& operator= (const bbox& b);
+  bbox& operator= (const bbox& b)
+  {
+    _lower=b._lower; _upper=b._upper; _stride=b._stride;
+    return *this;
+  }
   
   /** Create a bbox from bounds and stride.  */
-  bbox (const vect<T,D>& lower, const vect<T,D>& upper,
-	const vect<T,D>& stride);
+  bbox (const vect<T,D>& lower_,
+        const vect<T,D>& upper_,
+	const vect<T,D>& stride_)
+    : _lower(lower_), _upper(upper_), _stride(stride_)
+  {
+    assert (all(_stride>T(0)));
+    assert (all((_upper-_lower)%_stride == T(0)));
+    if (numeric_limits<T>::is_integer and numeric_limits<T>::is_signed) {
+      // prevent accidental wrap-around
+      assert (all(_lower < numeric_limits<T>::max() / 2));
+      assert (all(_lower > numeric_limits<T>::min() / 2));
+      assert (all(_upper < numeric_limits<T>::max() / 2));
+      assert (all(_upper > numeric_limits<T>::min() / 2));
+    }
+}
   
   // Accessors
   // (Don't return references; *this might be a temporary)
@@ -88,10 +113,19 @@ public:
   
   /** Calculate the intersection (the set of common points) with the
       bbox b.  */
-  bbox operator& (const bbox& b) const;
+  bbox operator& (const bbox& b) const
+  {
+    assert (all(stride()==b.stride()));
+    vect<T,D> lo = max(lower(),b.lower());
+    vect<T,D> up = min(upper(),b.upper());
+    return bbox(lo,up,stride());
+  }
   
   /** Find out whether this bbox is contained in the bbox b.  */
   bool is_contained_in (const bbox& b) const;
+  
+  /** Find out whether this bbox intersects the bbox b.  */
+  bool intersects (const bbox& b) const;
   
   /** Find out whether this bbox is aligned with the bbox b.
       ("aligned" means that both bboxes have the same stride and that

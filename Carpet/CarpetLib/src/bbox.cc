@@ -13,42 +13,13 @@ using namespace std;
 
 
 
-// Constructors
-template<class T, int D>
-bbox<T,D>::bbox (): _lower(T(1)), _upper(T(0)), _stride(T(1)) { }
-
-template<class T, int D>
-bbox<T,D>::bbox (const bbox& b)
-  : _lower(b._lower), _upper(b._upper), _stride(b._stride)
-{ }
-
-template<class T, int D>
-bbox<T,D>& bbox<T,D>::operator= (const bbox& b) {
-  _lower=b._lower; _upper=b._upper; _stride=b._stride;
-  return *this;
-}
-
-template<class T, int D>
-bbox<T,D>::bbox (const vect<T,D>& lower_, const vect<T,D>& upper_,
-		 const vect<T,D>& stride_)
-  : _lower(lower_), _upper(upper_), _stride(stride_)
-{
-  assert (all(_stride>T(0)));
-  assert (all((_upper-_lower)%_stride == T(0)));
-  if (numeric_limits<T>::is_integer && numeric_limits<T>::is_signed) {
-    // prevent accidental wrap-around
-    assert (all(_lower < numeric_limits<T>::max() / 2));
-    assert (all(_lower > numeric_limits<T>::min() / 2));
-    assert (all(_upper < numeric_limits<T>::max() / 2));
-    assert (all(_upper > numeric_limits<T>::min() / 2));
-  }
-}
-
 // Accessors
 template<class T, int D>
 T bbox<T,D>::size () const {
   if (empty()) return 0;
-//   return prod((shape()+stride()-1)/stride());
+#ifdef NDEBUG
+  return prod(shape()/stride()+1);
+#else
   const vect<T,D> sh((shape()+stride()-T(1))/stride());
   T sz = 1, max = numeric_limits<T>::max();
   for (int d=0; d<D; ++d) {
@@ -57,6 +28,7 @@ T bbox<T,D>::size () const {
     max /= sh[d];
   }
   return sz;
+#endif
 }
 
 // Queries
@@ -114,21 +86,19 @@ bool bbox<T,D>::operator>= (const bbox& b) const {
   return b <= *this;
 }
 
-// Intersection
-template<class T, int D>
-bbox<T,D> bbox<T,D>::operator& (const bbox& b) const {
-  assert (all(stride()==b.stride()));
-  vect<T,D> lo = max(lower(),b.lower());
-  vect<T,D> up = min(upper(),b.upper());
-  return bbox(lo,up,stride());
-}
-
 // Containment
 template<class T, int D>
 bool bbox<T,D>::is_contained_in (const bbox& b) const {
   if (empty()) return true;
   // no alignment check
   return all(lower()>=b.lower() && upper()<=b.upper());
+}
+
+// Intersection
+template<class T, int D>
+bool bbox<T,D>::intersects (const bbox& b) const {
+  // no alignment check
+  return all(upper()>=b.lower() && lower()<=b.upper());
 }
 
 // Alignment check
