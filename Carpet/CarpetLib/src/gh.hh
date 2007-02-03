@@ -92,22 +92,22 @@ public:
   
   ibbox extent (const int m, const int rl, const int c) const
   {
-    return _regions.at(m).at(rl).at(c).extent;
+    return _regions.AT(m).AT(rl).AT(c).extent;
   }
   
   b2vect outer_boundaries (const int rl, const int c) const
   {
-    return _regions.at(0).at(rl).at(c).outer_boundaries;
+    return _regions.AT(0).AT(rl).AT(c).outer_boundaries;
   }
 
   b2vect refinement_boundaries (const int rl, const int c) const
   {
-    return _regions.at(0).at(rl).at(c).refinement_boundaries;
+    return _regions.AT(0).AT(rl).AT(c).refinement_boundaries;
   }
 
   int processor (const int rl, const int c) const
   {
-    return _regions.at(0).at(rl).at(c).processor;
+    return _regions.AT(0).AT(rl).AT(c).processor;
   }
 
   int mglevels () const
@@ -118,12 +118,12 @@ public:
   int reflevels () const
   {
     if (mglevels() == 0) return 0;
-    return (int)_regions.at(0).size();
+    return (int)_regions.AT(0).size();
   }
   
   int components (const int rl) const
   {
-    return (int)_regions.at(0).at(rl).size();
+    return (int)_regions.AT(0).AT(rl).size();
   }
 
   bool is_local (const int rl, const int c) const

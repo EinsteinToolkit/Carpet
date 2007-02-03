@@ -82,7 +82,7 @@ public:
   // Querying
   int timelevels (int const ml, int const rl) const
   {
-    return timelevels_.at(ml).at(rl);
+    return timelevels_.AT(ml).AT(rl);
   }
   
   

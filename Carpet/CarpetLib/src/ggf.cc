@@ -38,7 +38,7 @@ ggf::ggf (const int varindex_, const operator_type transport_operator_,
   
   timelevels_.resize(d.h.mglevels());
   for (int ml=0; ml<d.h.mglevels(); ++ml) {
-    timelevels_.at(ml).resize(d.h.reflevels(), 0);
+    timelevels_.AT(ml).resize(d.h.reflevels(), 0);
   }
   
   d.add(this);
@@ -60,33 +60,33 @@ bool ggf::operator== (const ggf& f) const {
 void ggf::set_timelevels (const int ml, const int rl, const int new_timelevels)
 {
   assert (ml>=0 and ml<(int)storage.size());
-  assert (rl>=0 and rl<(int)storage.at(ml).size());
+  assert (rl>=0 and rl<(int)storage.AT(ml).size());
   
   assert (new_timelevels >= 0);
   
   if (new_timelevels < timelevels(ml,rl)) {
     
-    for (int c=0; c<(int)storage.at(ml).at(rl).size(); ++c) {
+    for (int c=0; c<(int)storage.AT(ml).AT(rl).size(); ++c) {
       for (int tl=new_timelevels; tl<timelevels(ml,rl); ++tl) {
-        delete storage.at(ml).at(rl).at(c).at(tl);
+        delete storage.AT(ml).AT(rl).AT(c).AT(tl);
       }
-      storage.at(ml).at(rl).at(c).resize (new_timelevels);
+      storage.AT(ml).AT(rl).AT(c).resize (new_timelevels);
     } // for c
     
   } else if (new_timelevels > timelevels(ml,rl)) {
     
-    for (int c=0; c<(int)storage.at(ml).at(rl).size(); ++c) {
-      storage.at(ml).at(rl).at(c).resize (new_timelevels);
+    for (int c=0; c<(int)storage.AT(ml).AT(rl).size(); ++c) {
+      storage.AT(ml).AT(rl).AT(c).resize (new_timelevels);
       for (int tl=timelevels(ml,rl); tl<new_timelevels; ++tl) {
-        storage.at(ml).at(rl).at(c).at(tl) = typed_data(tl,rl,c,ml);
-        storage.at(ml).at(rl).at(c).at(tl)->allocate
-          (d.boxes.at(ml).at(rl).at(c).exterior, h.processor(rl,c));
+        storage.AT(ml).AT(rl).AT(c).AT(tl) = typed_data(tl,rl,c,ml);
+        storage.AT(ml).AT(rl).AT(c).AT(tl)->allocate
+          (d.boxes.AT(ml).AT(rl).AT(c).exterior, h.processor(rl,c));
       } // for tl
     } // for c
     
   }
   
-  timelevels_.at(ml).at(rl) = new_timelevels;
+  timelevels_.AT(ml).AT(rl) = new_timelevels;
 }
 
 
@@ -95,14 +95,14 @@ void ggf::recompose_crop ()
 {
   // Free storage that will not be needed
   for (int ml=0; ml<h.mglevels(); ++ml) {
-    for (int rl=h.reflevels(); rl<(int)storage.at(ml).size(); ++rl) {
-      for (int c=0; c<(int)storage.at(ml).at(rl).size(); ++c) {
-        for (int tl=0; tl<(int)storage.at(ml).at(rl).at(c).size(); ++tl) {
-          delete storage.at(ml).at(rl).at(c).at(tl);
+    for (int rl=h.reflevels(); rl<(int)storage.AT(ml).size(); ++rl) {
+      for (int c=0; c<(int)storage.AT(ml).AT(rl).size(); ++c) {
+        for (int tl=0; tl<(int)storage.AT(ml).AT(rl).AT(c).size(); ++tl) {
+          delete storage.AT(ml).AT(rl).AT(c).AT(tl);
         } // for tl
       } // for c
     } // for rl
-    storage.at(ml).resize(h.reflevels());
+    storage.AT(ml).resize(h.reflevels());
   } // for ml
 }
 
@@ -111,26 +111,26 @@ void ggf::recompose_allocate (const int rl)
   // Retain storage that might be needed
   oldstorage.resize(storage.size());
   for (int ml=0; ml<(int)storage.size(); ++ml) {
-    oldstorage.at(ml).resize(storage.at(ml).size());
-    oldstorage.at(ml).at(rl) = storage.at(ml).at(rl);
-    storage.at(ml).at(rl).resize(0);
+    oldstorage.AT(ml).resize(storage.AT(ml).size());
+    oldstorage.AT(ml).AT(rl) = storage.AT(ml).AT(rl);
+    storage.AT(ml).AT(rl).resize(0);
   }
   
   for (int ml=0; ml<d.h.mglevels(); ++ml) {
-    timelevels_.at(ml).resize(d.h.reflevels(), timelevels_.at(ml).at(0));
+    timelevels_.AT(ml).resize(d.h.reflevels(), timelevels_.AT(ml).AT(0));
   }
   
   // Resize structure and allocate storage
   storage.resize(h.mglevels());
   for (int ml=0; ml<h.mglevels(); ++ml) {
-    storage.at(ml).resize(h.reflevels());
-    storage.at(ml).at(rl).resize(h.components(rl));
+    storage.AT(ml).resize(h.reflevels());
+    storage.AT(ml).AT(rl).resize(h.components(rl));
     for (int c=0; c<h.components(rl); ++c) {
-      storage.at(ml).at(rl).at(c).resize(timelevels(ml,rl));
+      storage.AT(ml).AT(rl).AT(c).resize(timelevels(ml,rl));
       for (int tl=0; tl<timelevels(ml,rl); ++tl) {
-        storage.at(ml).at(rl).at(c).at(tl) = typed_data(tl,rl,c,ml);
-        storage.at(ml).at(rl).at(c).at(tl)->allocate
-          (d.boxes.at(ml).at(rl).at(c).exterior, h.processor(rl,c));
+        storage.AT(ml).AT(rl).AT(c).AT(tl) = typed_data(tl,rl,c,ml);
+        storage.AT(ml).AT(rl).AT(c).AT(tl)->allocate
+          (d.boxes.AT(ml).AT(rl).AT(c).exterior, h.processor(rl,c));
       } // for tl
     } // for c
   } // for ml
@@ -147,20 +147,20 @@ void ggf::recompose_fill (comm_state& state, const int rl,
         // Find out which regions need to be prolongated
         // (Copy the exterior because some variables are not prolongated)
         // TODO: do this once in the dh instead of for each variable here
-        ibset work (d.boxes.at(ml).at(rl).at(c).exterior);
+        ibset work (d.boxes.AT(ml).AT(rl).AT(c).exterior);
         
         // Copy from old storage, if possible
         // TODO: copy only from interior regions?
-        if (rl<(int)oldstorage.at(ml).size()) {
-          for (int cc=0; cc<(int)oldstorage.at(ml).at(rl).size(); ++cc) {
+        if (rl<(int)oldstorage.AT(ml).size()) {
+          for (int cc=0; cc<(int)oldstorage.AT(ml).AT(rl).size(); ++cc) {
             // TODO: prefer same processor, etc., see dh.cc
             ibset ovlp
-              = work & oldstorage.at(ml).at(rl).at(cc).at(tl)->extent();
+              = work & oldstorage.AT(ml).AT(rl).AT(cc).AT(tl)->extent();
             ovlp.normalize();
             work -= ovlp;
             for (ibset::const_iterator r=ovlp.begin(); r!=ovlp.end(); ++r) {
-              storage.at(ml).at(rl).at(c).at(tl)->copy_from
-                (state, oldstorage.at(ml).at(rl).at(cc).at(tl), *r);
+              storage.AT(ml).AT(rl).AT(c).AT(tl)->copy_from
+                (state, oldstorage.AT(ml).AT(rl).AT(cc).AT(tl), *r);
             }
           } // for cc
         } // if rl
@@ -178,21 +178,21 @@ void ggf::recompose_fill (comm_state& state, const int rl,
               vector<int> tls(numtl);
               vector<CCTK_REAL> times(numtl);
               for (int i=0; i<numtl; ++i) {
-                tls.at(i) = i;
-                times.at(i) = t.time(tls.at(i),rl-1,ml);
+                tls.AT(i) = i;
+                times.AT(i) = t.time(tls.AT(i),rl-1,ml);
               }
-              for (int cc=0; cc<(int)storage.at(ml).at(rl-1).size(); ++cc) {
+              for (int cc=0; cc<(int)storage.AT(ml).AT(rl-1).size(); ++cc) {
                 vector<const gdata*> gsrcs(numtl);
                 for (int i=0; i<numtl; ++i) {
-                  gsrcs.at(i) = storage.at(ml).at(rl-1).at(cc).at(tls.at(i));
-                  assert (gsrcs.at(i)->extent() == gsrcs.at(0)->extent());
+                  gsrcs.AT(i) = storage.AT(ml).AT(rl-1).AT(cc).AT(tls.AT(i));
+                  assert (gsrcs.AT(i)->extent() == gsrcs.AT(0)->extent());
                 }
                 const CCTK_REAL time = t.time(tl,rl,ml);
                 
                 // TODO: choose larger regions first
                 // TODO: prefer regions from the same processor
                 const iblist& list
-                  = d.boxes.at(ml).at(rl).at(c).recv_ref_coarse.at(cc);
+                  = d.boxes.AT(ml).AT(rl).AT(c).recv_ref_coarse.AT(cc);
                 for (iblist::const_iterator iter=list.begin();
                      iter!=list.end(); ++iter)
                 {
@@ -202,7 +202,7 @@ void ggf::recompose_fill (comm_state& state, const int rl,
                   for (ibset::const_iterator r=ovlp.begin();
                        r!=ovlp.end(); ++r)
                   {
-                    storage.at(ml).at(rl).at(c).at(tl)->interpolate_from
+                    storage.AT(ml).AT(rl).AT(c).AT(tl)->interpolate_from
                       (state, gsrcs, times, *r, time, pos, pot);
                   } // for r
                 } // for iter
@@ -225,12 +225,12 @@ void ggf::recompose_free (const int rl)
 {
   // Delete old storage
   for (int ml=0; ml<(int)oldstorage.size(); ++ml) {
-    for (int c=0; c<(int)oldstorage.at(ml).at(rl).size(); ++c) {
+    for (int c=0; c<(int)oldstorage.AT(ml).AT(rl).size(); ++c) {
       for (int tl=0; tl<timelevels(ml,rl); ++tl) {
-        delete oldstorage.at(ml).at(rl).at(c).at(tl);
+        delete oldstorage.AT(ml).AT(rl).AT(c).AT(tl);
       } // for tl
     } // for c
-    oldstorage.at(ml).at(rl).resize(0);
+    oldstorage.AT(ml).AT(rl).resize(0);
   } // for ml
 }
 
@@ -295,9 +295,9 @@ void ggf::flip (int rl, int c, int ml) {
     const int tl1 =                  tl;
     const int tl2 = timelevels(ml,rl)-1 - tl;
     assert (tl1 < tl2);
-    gdata* tmpdata = storage.at(ml).at(rl).at(c).at(tl1);
-    storage.at(ml).at(rl).at(c).at(tl1) = storage.at(ml).at(rl).at(c).at(tl2);
-    storage.at(ml).at(rl).at(c).at(tl2) = tmpdata;
+    gdata* tmpdata = storage.AT(ml).AT(rl).AT(c).AT(tl1);
+    storage.AT(ml).AT(rl).AT(c).AT(tl1) = storage.AT(ml).AT(rl).AT(c).AT(tl2);
+    storage.AT(ml).AT(rl).AT(c).AT(tl2) = tmpdata;
   }
 }
 
@@ -316,13 +316,13 @@ void ggf::copycat (comm_state& state,
   assert (ml1>=0 and ml1<h.mglevels());
   assert (tl1>=0 and tl1<timelevels(ml1,rl1));
   assert (rl2>=0 and rl2<h.reflevels());
-  const int c2=c1;
+  int const c2= c1;
   assert (ml2<h.mglevels());
   assert (tl2>=0 and tl2<timelevels(ml2,rl2));
-  const ibbox recv = d.boxes.at(ml1).at(rl1).at(c1).*recv_box;
+  ibbox const & recv = d.boxes.AT(ml1).AT(rl1).AT(c1).*recv_box;
   // copy the content
-  gdata* const dst = storage.at(ml1).at(rl1).at(c1).at(tl1);
-  gdata* const src = storage.at(ml2).at(rl2).at(c2).at(tl2);
+  gdata * const dst = storage.AT(ml1).AT(rl1).AT(c1).AT(tl1);
+  gdata const * const src = storage.AT(ml2).AT(rl2).AT(c2).AT(tl2);
   dst->copy_from(state, src, recv);
 }
 
@@ -338,15 +338,15 @@ void ggf::copycat (comm_state& state,
   assert (tl1>=0 and tl1<timelevels(ml1,rl1));
   assert (           ml2<h.mglevels());
   assert (rl2>=0 and rl2<h.reflevels());
-  const int c2=c1;
+  int const c2 = c1;
   assert (tl2>=0 and tl2<timelevels(ml2,rl2));
-  const iblist recv = d.boxes.at(ml1).at(rl1).at(c1).*recv_list;
+  iblist const & recv = d.boxes.AT(ml1).AT(rl1).AT(c1).*recv_list;
   // walk all boxes
   for (iblist::const_iterator r=recv.begin(); r!=recv.end(); ++r) {
     // (use the send boxes for communication)
     // copy the content
-    gdata* const dst = storage.at(ml1).at(rl1).at(c1).at(tl1);
-    gdata* const src = storage.at(ml2).at(rl2).at(c2).at(tl2);
+    gdata * const dst = storage.AT(ml1).AT(rl1).AT(c1).AT(tl1);
+    gdata const * const src = storage.AT(ml2).AT(rl2).AT(c2).AT(tl2);
     dst->copy_from(state, src, *r);
   }
 }
@@ -390,22 +390,22 @@ void ggf::intercat (comm_state& state,
   assert (ml1>=0 and ml1<h.mglevels());
   assert (tl1>=0 and tl1<timelevels(ml1,rl1));
   assert (rl2>=0 and rl2<h.reflevels());
-  const int c2=c1;
+  int const c2 = c1;
   assert (ml2>=0 and ml2<h.mglevels());
   for (int i=0; i<(int)tl2s.size(); ++i) {
-    assert (tl2s.at(i)>=0 and tl2s.at(i)<timelevels(ml2,rl2));
+    assert (tl2s.AT(i)>=0 and tl2s.AT(i)<timelevels(ml2,rl2));
   }
   
   vector<const gdata*> gsrcs(tl2s.size());
   vector<CCTK_REAL> times(tl2s.size());
   for (int i=0; i<(int)gsrcs.size(); ++i) {
-    gsrcs.at(i) = storage.at(ml2).at(rl2).at(c2).at(tl2s.at(i));
-    times.at(i) = t.time(tl2s.at(i),rl2,ml2);
+    gsrcs.AT(i) = storage.AT(ml2).AT(rl2).AT(c2).AT(tl2s.AT(i));
+    times.AT(i) = t.time(tl2s.AT(i),rl2,ml2);
   }
   
-  const ibbox recv = d.boxes.at(ml1).at(rl1).at(c1).*recv_list;
+  ibbox const & recv = d.boxes.AT(ml1).AT(rl1).AT(c1).*recv_list;
   // interpolate the content
-  storage.at(ml1).at(rl1).at(c1).at(tl1)->interpolate_from
+  storage.AT(ml1).AT(rl1).AT(c1).AT(tl1)->interpolate_from
     (state, gsrcs, times, recv, time,
      d.prolongation_order_space, prolongation_order_time);
 }
@@ -422,26 +422,26 @@ void ggf::intercat (comm_state& state,
   assert (ml1>=0 and ml1<h.mglevels());
   assert (tl1>=0 and tl1<timelevels(ml1,rl1));
   assert (rl2>=0 and rl2<h.reflevels());
-  const int c2=c1;
+  int const c2 = c1;
   assert (ml2>=0 and ml2<h.mglevels());
   for (int i=0; i<(int)tl2s.size(); ++i) {
-    assert (tl2s.at(i)>=0 and tl2s.at(i)<timelevels(ml2,rl2));
+    assert (tl2s.AT(i)>=0 and tl2s.AT(i)<timelevels(ml2,rl2));
   }
   
   vector<const gdata*> gsrcs(tl2s.size());
   vector<CCTK_REAL> times(tl2s.size());
   for (int i=0; i<(int)gsrcs.size(); ++i) {
-    gsrcs.at(i) = storage.at(ml2).at(rl2).at(c2).at(tl2s.at(i));
-    times.at(i) = t.time(tl2s.at(i),rl2,ml2);
+    gsrcs.AT(i) = storage.AT(ml2).AT(rl2).AT(c2).AT(tl2s.AT(i));
+    times.AT(i) = t.time(tl2s.AT(i),rl2,ml2);
   }
   
-  const iblist recv = d.boxes.at(ml1).at(rl1).at(c1).*recv_list;
+  iblist const & recv = d.boxes.AT(ml1).AT(rl1).AT(c1).*recv_list;
   // walk all boxes
   for (iblist::const_iterator r=recv.begin(); r!=recv.end(); ++r)
   {
     // (use the send boxes for communication)
     // interpolate the content
-    storage.at(ml1).at(rl1).at(c1).at(tl1)->interpolate_from
+    storage.AT(ml1).AT(rl1).AT(c1).AT(tl1)->interpolate_from
       (state, gsrcs, times, *r, time,
        d.prolongation_order_space, prolongation_order_time);
   }
@@ -460,7 +460,7 @@ void ggf::intercat (comm_state& state,
   assert (tl1>=0 and tl1<timelevels(ml1,rl1));
   assert (rl2>=0 and rl2<h.reflevels());
   for (int i=0; i<(int)tl2s.size(); ++i) {
-    assert (tl2s.at(i)>=0 and tl2s.at(i)<timelevels(ml2,rl2));
+    assert (tl2s.AT(i)>=0 and tl2s.AT(i)<timelevels(ml2,rl2));
   }
   // walk all components
   for (int c2=0; c2<h.components(rl2); ++c2) {
@@ -469,20 +469,21 @@ void ggf::intercat (comm_state& state,
     vector<const gdata*> gsrcs(tl2s.size());
     vector<CCTK_REAL> times(tl2s.size());
     for (int i=0; i<(int)gsrcs.size(); ++i) {
-      gsrcs.at(i) = storage.at(ml2).at(rl2).at(c2).at(tl2s.at(i));
-      times.at(i) = t.time(tl2s.at(i),rl2,ml2);
+      gsrcs.AT(i) = storage.AT(ml2).AT(rl2).AT(c2).AT(tl2s.AT(i));
+      times.AT(i) = t.time(tl2s.AT(i),rl2,ml2);
     }
     
-    const iblist recv = (d.boxes.at(ml1).at(rl1).at(c1).*recv_listvect).at(c2);
+    iblist const &recv =
+      (d.boxes.AT(ml1).AT(rl1).AT(c1).*recv_listvect).AT(c2);
     // walk all boxes
     for (iblist::const_iterator r=recv.begin(); r!=recv.end(); ++r)
     {
       // (use the send boxes for communication)
       // interpolate the content
       int const pos = d.prolongation_order_space;
-      int const pot
-        = transport_operator == op_copy ? 0 : prolongation_order_time;
-      storage.at(ml1).at(rl1).at(c1).at(tl1)->interpolate_from
+      int const pot =
+        transport_operator == op_copy ? 0 : prolongation_order_time;
+      storage.AT(ml1).AT(rl1).AT(c1).AT(tl1)->interpolate_from
       	(state, gsrcs, times, *r, time, pos, pot);
     }
   }
@@ -529,11 +530,11 @@ void ggf::ref_bnd_prolongate (comm_state& state,
     }
     assert (timelevels(ml,rl) >= prolongation_order_time+1);
     tl2s.resize(prolongation_order_time+1);
-    for (int i=0; i<=prolongation_order_time; ++i) tl2s.at(i) = i;
+    for (int i=0; i<=prolongation_order_time; ++i) tl2s.AT(i) = i;
   } else {
     assert (timelevels(ml,rl) >= 1);
     tl2s.resize(1);
-    tl2s.at(0) = 0;
+    tl2s.AT(0) = 0;
   }
   intercat (state,
             tl  ,rl  ,c,ml, &dh::dboxes::recv_ref_bnd_coarse,

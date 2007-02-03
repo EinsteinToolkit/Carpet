@@ -25,7 +25,7 @@ public:
   T * storage (size_t vectorindex) const
   {
     assert (vectorindex < vectorlength_);
-    assert (clients_.at(vectorindex));
+    assert (clients_.AT(vectorindex));
     return & storage_ [vectorindex * nelems_];
   }
   

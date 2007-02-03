@@ -28,10 +28,10 @@ gh::gh (const vector<ivect> & reffacts_, const centering refcent_,
   assert (reffacts.size() >= 1);
   assert (all (reffacts.front() == 1));
   for (size_t n = 1; n < reffacts.size(); ++ n) {
-    assert (all (reffacts.at(n) >= reffacts.at(n-1)));
-    assert (all (reffacts.at(n) % reffacts.at(n-1) == 0));
+    assert (all (reffacts.AT(n) >= reffacts.AT(n-1)));
+    assert (all (reffacts.AT(n) % reffacts.AT(n-1) == 0));
   }
-  assert (all (baseextent.stride() % reffacts.at(reffacts.size()-1) == 0));
+  assert (all (baseextent.stride() % reffacts.AT(reffacts.size()-1) == 0));
 }
 
 // Destructors
@@ -91,8 +91,8 @@ bool gh::recompose (const int rl,
     
     // Overwrite old with new grid hierarchy
     for (int ml=0; ml<mglevels(); ++ml) {
-      _oldregions.at(ml).resize (_regions.at(ml).size());
-      _oldregions.at(ml).at(rl) = _regions.at(ml).at(rl);
+      _oldregions.AT(ml).resize (_regions.AT(ml).size());
+      _oldregions.AT(ml).AT(rl) = _regions.AT(ml).AT(rl);
     }
     
   }
@@ -106,12 +106,12 @@ bool gh::level_did_change (const int rl) const
   if (_regions.size() != _oldregions.size()) return true;
   for (int ml=0; ml<mglevels(); ++ml) {
     assert (rl>=0 and rl<reflevels());
-    if (rl >= (int)_oldregions.at(ml).size()) return true;
-    if (_regions.at(ml).at(rl).size() != _oldregions.at(ml).at(rl).size()) {
+    if (rl >= (int)_oldregions.AT(ml).size()) return true;
+    if (_regions.AT(ml).AT(rl).size() != _oldregions.AT(ml).AT(rl).size()) {
       return true;
     }
     for (int c=0; c<components(rl); ++c) {
-      if (_regions.at(ml).at(rl).at(c) != _oldregions.at(ml).at(rl).at(c)) {
+      if (_regions.AT(ml).AT(rl).AT(c) != _oldregions.AT(ml).AT(rl).AT(c)) {
         return true;
       }
     } // for c
@@ -178,7 +178,7 @@ void gh::check_refinement_levels ()
   for (int ml=0; ml<mglevels(); ++ml) {
     for (int rl=1; rl<reflevels(); ++rl) {
       assert (all(extent(ml,rl-1,0).stride()
-                  == ((reffacts.at(rl) / reffacts.at(rl-1))
+                  == ((reffacts.AT(rl) / reffacts.AT(rl-1))
                       * extent(ml,rl,0).stride())));
       // Check contained-ness:
       // first take all coarse grids ...
@@ -228,10 +228,10 @@ void gh::calculate_base_extents_of_all_levels ()
 {
   _bases.resize(mglevels());
   for (int ml=0; ml<mglevels(); ++ml) {
-    _bases.at(ml).resize(reflevels());
+    _bases.AT(ml).resize(reflevels());
     for (int rl=0; rl<reflevels(); ++rl) {
-      _bases.at(ml).at(rl) = ibbox();
-      ibbox &bb = _bases.at(ml).at(rl);
+      _bases.AT(ml).AT(rl) = ibbox();
+      ibbox &bb = _bases.AT(ml).AT(rl);
       for (int c=0; c<components(rl); ++c) {
         bb = bb.expanded_containing(extent(ml,rl,c));
       }
@@ -301,7 +301,7 @@ void gh::do_output_bases (ostream& os) const
         os << endl;
         os << "gh bases:" << endl;
         os << "ml=" << ml << " rl=" << rl << endl;
-        os << "base=" << bases().at(ml).at(rl) << endl;
+        os << "base=" << bases().AT(ml).AT(rl) << endl;
       }
     }
   }

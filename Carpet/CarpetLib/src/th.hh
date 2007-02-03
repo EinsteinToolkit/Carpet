@@ -54,14 +54,14 @@ public:
   {
     assert (rl>=0 and rl<h.reflevels());
     assert (ml>=0 and ml<h.mglevels());
-    return times.at(ml).at(rl);
+    return times.AT(ml).AT(rl);
   }
   
   void set_time (const int rl, const int ml, const CCTK_REAL t)
   {
     assert (rl>=0 and rl<h.reflevels());
     assert (ml>=0 and ml<h.mglevels());
-    times.at(ml).at(rl) = t;
+    times.AT(ml).AT(rl) = t;
   }
   
   void advance_time (const int rl, const int ml)
@@ -73,14 +73,14 @@ public:
   {
     assert (rl>=0 and rl<h.reflevels());
     assert (ml>=0 and ml<h.mglevels());
-    return deltas.at(ml).at(rl);
+    return deltas.AT(ml).AT(rl);
   }
   
   void set_delta (const int rl, const int ml, const CCTK_REAL dt)
   {
     assert (rl>=0 and rl<h.reflevels());
     assert (ml>=0 and ml<h.mglevels());
-    deltas.at(ml).at(rl) = dt;
+    deltas.AT(ml).AT(rl) = dt;
   }
   
   CCTK_REAL time (const int tl, const int rl, const int ml) const

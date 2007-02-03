@@ -128,15 +128,15 @@ void gdata::copy_from (comm_state& state,
     if (proc() != src->proc()) {
       // if this is a destination processor: advance its recv buffer size
       vector<comm_state::procbufdesc>& procbufs =
-        state.typebufs.at(c_datatype()).procbufs;
+        state.typebufs.AT(c_datatype()).procbufs;
       if (proc() == dist::rank()) {
-        procbufs.at(src->proc()).recvbufsize += box.size();
-        state.typebufs.at(c_datatype()).in_use = true;
+        procbufs.AT(src->proc()).recvbufsize += box.size();
+        state.typebufs.AT(c_datatype()).in_use = true;
       }
       // if this is a source processor: increment its send buffer size
       if (src->proc() == dist::rank()) {
-        procbufs.at(proc()).sendbufsize += box.size();
-        state.typebufs.at(c_datatype()).in_use = true;
+        procbufs.AT(proc()).sendbufsize += box.size();
+        state.typebufs.AT(c_datatype()).in_use = true;
       }
     }
     break;
@@ -157,7 +157,7 @@ void gdata::copy_from (comm_state& state,
     // if this is a destination processor and data has already been received
     // from the source processor: copy it from the recv buffer
     if (proc() == dist::rank() and
-        state.recvbuffers_ready.at(dist::size()*c_datatype() + src->proc())) {
+        state.recvbuffers_ready.AT(dist::size()*c_datatype() + src->proc())) {
       copy_from_recvbuffer (state, src, box);
     }
     break;
@@ -258,7 +258,7 @@ void gdata::copy_from_wait (comm_state& state,
     ivect items = (box.upper() - box.lower()) / box.stride() + 1;
     ivect offs  = (box.lower() - ext.lower()) / ext.stride();
     const char* recv_buffer = (const char*) b->pointer();
-    int& datatypesize = state.typebufs.at(c_datatype()).datatypesize;
+    int& datatypesize = state.typebufs.AT(c_datatype()).datatypesize;
 
     for (int k = 0; k < items[2]; k++) {
       for (int j = 0; j < items[1]; j++) {
@@ -293,9 +293,9 @@ void gdata::copy_into_sendbuffer (comm_state& state,
   } else {
     // copy to remote processor
     assert (src->_has_storage);
-    int datatypesize = state.typebufs.at(c_datatype()).datatypesize;
+    int const datatypesize = state.typebufs.AT(c_datatype()).datatypesize;
     comm_state::procbufdesc& procbuf =
-      state.typebufs.at(c_datatype()).procbufs.at(proc());
+      state.typebufs.AT(c_datatype()).procbufs.AT(proc());
     assert (procbuf.sendbuf - procbuf.sendbufbase <=
             ((int)procbuf.sendbufsize - box.size()) * datatypesize);
     int const fillstate = procbuf.sendbuf + (int)box.size()*datatypesize -
@@ -324,7 +324,7 @@ void gdata::copy_into_sendbuffer (comm_state& state,
       if (fillstate == (int)procbuf.sendbufsize * datatypesize) {
         wtime_commstate_isend.start();
         MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
-                   state.typebufs.at(c_datatype()).mpi_datatype,
+                   state.typebufs.AT(c_datatype()).mpi_datatype,
                    proc(), c_datatype(), dist::comm(),
                    &state.srequests.at(dist::size()*c_datatype() + proc()));
         wtime_commstate_isend.stop(procbuf.sendbufsize * datatypesize);
@@ -339,9 +339,9 @@ void gdata::copy_into_sendbuffer (comm_state& state,
 void gdata::copy_from_recvbuffer (comm_state& state,
                                   const gdata* src, const ibbox& box)
 {
-  int& datatypesize = state.typebufs.at(c_datatype()).datatypesize;
+  int& datatypesize = state.typebufs.AT(c_datatype()).datatypesize;
   comm_state::procbufdesc& procbuf =
-    state.typebufs.at(c_datatype()).procbufs.at(src->proc());
+    state.typebufs.AT(c_datatype()).procbufs.AT(src->proc());
   assert (procbuf.recvbuf - procbuf.recvbufbase <=
           ((int)procbuf.recvbufsize-box.size()) * datatypesize);
 
@@ -385,12 +385,12 @@ void gdata
   assert (all((box.lower()-extent().lower())%box.stride() == 0));
   assert (srcs.size() == times.size() and srcs.size()>0);
   for (int t=0; t<(int)srcs.size(); ++t) {
-    assert (srcs.at(t)->has_storage());
-    assert (all(box.lower()>=srcs.at(t)->extent().lower()));
-    assert (all(box.upper()<=srcs.at(t)->extent().upper()));
+    assert (srcs.AT(t)->has_storage());
+    assert (all(box.lower()>=srcs.AT(t)->extent().lower()));
+    assert (all(box.upper()<=srcs.AT(t)->extent().upper()));
   }
   assert (not box.empty());
-  const gdata* src = srcs.at(0);
+  const gdata* src = srcs.AT(0);
   if (dist::rank() != proc() and dist::rank() != src->proc()) return;
 
   switch (state.thestate) {
@@ -413,15 +413,15 @@ void gdata
     if (proc() != src->proc()) {
       // if this is a destination processor: increment its recv buffer size
       vector<comm_state::procbufdesc>& procbufs =
-        state.typebufs.at(c_datatype()).procbufs;
+        state.typebufs.AT(c_datatype()).procbufs;
       if (proc() == dist::rank()) {
-        procbufs.at(src->proc()).recvbufsize += box.size();
-        state.typebufs.at(c_datatype()).in_use = true;
+        procbufs.AT(src->proc()).recvbufsize += box.size();
+        state.typebufs.AT(c_datatype()).in_use = true;
       }
       // if this is a source processor: increment its send buffer size
       if (src->proc() == dist::rank()) {
-        procbufs.at(proc()).sendbufsize += box.size();
-        state.typebufs.at(c_datatype()).in_use = true;
+        procbufs.AT(proc()).sendbufsize += box.size();
+        state.typebufs.AT(c_datatype()).in_use = true;
       }
     }
     break;
@@ -443,7 +443,7 @@ void gdata
     // from the source processor: copy it from the recv buffer
     // (the processor-local case is not handled here)
     if (proc() == dist::rank() and
-        state.recvbuffers_ready.at(dist::size()*c_datatype() + src->proc())) {
+        state.recvbuffers_ready.AT(dist::size()*c_datatype() + src->proc())) {
       copy_from_recvbuffer(state, src, box);
     }
     break;
@@ -462,7 +462,7 @@ void gdata
                          const int order_space,
                          const int order_time)
 {
-  const gdata* src = srcs.at(0);
+  const gdata* src = srcs.AT(0);
   if (dist::rank() == proc()) {
     // interpolate from other processor
 
@@ -514,17 +514,17 @@ void gdata
 {
   DECLARE_CCTK_PARAMETERS;
   
-  if (proc() == srcs.at(0)->proc()) {
+  if (proc() == srcs.AT(0)->proc()) {
     // interpolate on same processor
     interpolate_from_innerloop (srcs, times, box, time,
                                 order_space, order_time);
   } else {
     // interpolate to remote processor
-    const gdata* src = srcs.at(0);
+    const gdata* src = srcs.AT(0);
     assert (src->_has_storage);
-    int& datatypesize = state.typebufs.at(c_datatype()).datatypesize;
+    int& datatypesize = state.typebufs.AT(c_datatype()).datatypesize;
     comm_state::procbufdesc& procbuf =
-      state.typebufs.at(c_datatype()).procbufs.at(proc());
+      state.typebufs.AT(c_datatype()).procbufs.AT(proc());
     assert (procbuf.sendbuf - procbuf.sendbufbase <=
             ((int)procbuf.sendbufsize - box.size()) * datatypesize);
     assert (src->has_storage());

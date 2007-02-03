@@ -108,12 +108,12 @@ void dh::allocate_bboxes ()
 {
   boxes.resize(h.mglevels());
   for (int ml=0; ml<h.mglevels(); ++ml) {
-    boxes.at(ml).resize(h.reflevels());
+    boxes.AT(ml).resize(h.reflevels());
     for (int rl=0; rl<h.reflevels(); ++rl) {
-      boxes.at(ml).at(rl).resize(h.components(rl));
+      boxes.AT(ml).AT(rl).resize(h.components(rl));
       for (int c=0; c<h.components(rl); ++c) {
         const ibbox intr = h.extent(ml,rl,c);
-        dboxes & b = boxes.at(ml).at(rl).at(c);
+        dboxes & b = boxes.AT(ml).AT(rl).AT(c);
 
 
 
@@ -132,7 +132,7 @@ void dh::allocate_bboxes ()
           for (int d=0; d<dim; ++d) {
             if (h.outer_boundaries(rl,c)[f][d]) {
               dist[f][d] = 0;
-              boxes.at(ml).at(rl).at(c).is_interproc[d][f] = false;
+              boxes.AT(ml).AT(rl).AT(c).is_interproc[d][f] = false;
             } else {
               bool const is_empty = intr.lower()[d] > intr.upper()[d];
               if (is_empty) {
@@ -147,7 +147,7 @@ void dh::allocate_bboxes ()
                 bnd -= h.extent(ml,rl,cc);
               }
               bool const is_interproc = bnd.empty();
-              boxes.at(ml).at(rl).at(c).is_interproc[d][f] = is_interproc;
+              boxes.AT(ml).AT(rl).AT(c).is_interproc[d][f] = is_interproc;
               if (! is_empty and ! is_interproc) {
                 dist[f][d] += buffers[f][d];
                 odist[f][d] = dist[f][d];
@@ -171,19 +171,19 @@ void dh::allocate_bboxes ()
       // Make owned regions disjoint
       for (int c=0; c<h.components(rl); ++c) {
         const ibbox intr = h.extent(ml,rl,c);
-        dboxes & b = boxes.at(ml).at(rl).at(c);
+        dboxes & b = boxes.AT(ml).AT(rl).AT(c);
         
         // 1. Remove all other interiors from this owned region
         for (int cc=0; cc<h.components(rl); ++cc) {
           if (cc != c) {
-            b.owned -= boxes.at(ml).at(rl).at(cc).interior;
+            b.owned -= boxes.AT(ml).AT(rl).AT(cc).interior;
           }
         }
         b.owned.normalize();
         
         // 2. Make disjoint from all earlier owned regions
         for (int cc=0; cc<c; ++cc) {
-          b.owned -= boxes.at(ml).at(rl).at(cc).owned;
+          b.owned -= boxes.AT(ml).AT(rl).AT(cc).owned;
         }
         b.owned.normalize();
         
@@ -201,7 +201,7 @@ void dh::foreach_reflevel_component_mglevel (dh::boxesop op)
   for (int ml=0; ml<h.mglevels(); ++ml) {
     for (int rl=0; rl<h.reflevels(); ++rl) {
       for (int c=0; c<h.components(rl); ++c) {
-        dboxes & box = boxes.at(ml).at(rl).at(c);
+        dboxes & box = boxes.AT(ml).AT(rl).AT(c);
         (this->*op)(box, rl, c, ml); // evaluate member function
       }
     }
@@ -238,7 +238,7 @@ void dh::setup_sync_boxes (dh::dboxes & box,
 
   // Sync boxes
   for (int cc=0; cc<h.components(rl); ++cc) {
-    dboxes & box1 = boxes.at(ml).at(rl).at(cc);
+    dboxes & box1 = boxes.AT(ml).AT(rl).AT(cc);
     ibset ovlp;
     if (cc != c) {
       // Do not sync from the same component
@@ -247,8 +247,8 @@ void dh::setup_sync_boxes (dh::dboxes & box,
       ovlp.normalize();
     }
     for (ibset::const_iterator b=ovlp.begin(); b!=ovlp.end(); ++b) {
-      box .recv_sync.at(cc).push_back(*b);
-      box1.send_sync.at(c).push_back(*b);
+      box .recv_sync.AT(cc).push_back(*b);
+      box1.send_sync.AT(c).push_back(*b);
     }
   }
 }
@@ -261,7 +261,7 @@ void dh::setup_multigrid_boxes (dh::dboxes & box,
 
   // Multigrid boxes
   if (ml>0) {
-    dboxes & bbox = boxes.at(ml-1).at(rl).at(c);
+    dboxes & bbox = boxes.AT(ml-1).AT(rl).AT(c);
     const ibbox intrf = bbox.interior;
     const ibbox extrf = bbox.exterior;
     // Restriction (interior)
@@ -303,7 +303,7 @@ void dh::setup_refinement_prolongation_boxes (dh::dboxes & box,
   // Refinement boxes
   if (rl<h.reflevels()-1) {
     for (int cc=0; cc<h.components(rl+1); ++cc) {
-      dboxes & box1 = boxes.at(ml).at(rl+1).at(cc);
+      dboxes & box1 = boxes.AT(ml).AT(rl+1).AT(cc);
       const ibbox intrf = box1.interior;
       // Prolongation (interior)
       // TODO: prefer boxes from the same processor
@@ -331,8 +331,8 @@ void dh::setup_refinement_prolongation_boxes (dh::dboxes & box,
           const ibbox send = recv.expanded_for(extr);
           assert (! send.empty());
           assert (send.is_contained_in(extr));
-          box1.recv_ref_coarse.at(c).push_back(recv);
-          box. send_ref_fine  .at(cc).push_back(send);
+          box1.recv_ref_coarse.AT(c).push_back(recv);
+          box. send_ref_fine  .AT(cc).push_back(send);
         }
       }
     } // for cc
@@ -347,7 +347,7 @@ void dh::setup_refinement_boundary_prolongation_boxes (dh::dboxes & box,
   // Refinement boxes
   if (rl<h.reflevels()-1) {
     for (int cc=0; cc<h.components(rl+1); ++cc) {
-      dboxes & box1 = boxes.at(ml).at(rl+1).at(cc);
+      dboxes & box1 = boxes.AT(ml).AT(rl+1).AT(cc);
       const ibbox & intrf = box1.interior;
       const ibbox & extrf = box1.exterior;
       const ibset & bndsf = box1.boundaries;
@@ -414,8 +414,8 @@ void dh::setup_refinement_boundary_prolongation_boxes (dh::dboxes & box,
             assert (! send.empty());
             assert (send.is_contained_in(extr));
             assert (send.is_contained_in(extr.expand(-pss,-pss)));
-            box1.recv_ref_bnd_coarse.at(c).push_back(recv);
-            box .send_ref_bnd_fine  .at(cc).push_back(send);
+            box1.recv_ref_bnd_coarse.AT(c).push_back(recv);
+            box .send_ref_bnd_fine  .AT(cc).push_back(send);
           }
         }
       }
@@ -434,7 +434,7 @@ void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
   // Refinement boxes
   if (rl<h.reflevels()-1) {
     for (int cc=0; cc<h.components(rl+1); ++cc) {
-      dboxes & box1 = boxes.at(ml).at(rl+1).at(cc);
+      dboxes & box1 = boxes.AT(ml).AT(rl+1).AT(cc);
       const ibbox intrf = box1.interior;
       // Restriction (interior)
       {
@@ -471,7 +471,7 @@ void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
           // remove what is sent during boundary prolongation
           const int pss = prolongation_stencil_size();
           for (int ccc=0; ccc<h.components(rl); ++ccc) {
-            const dh::dboxes& box2 = boxes.at(ml).at(rl).at(ccc);
+            const dh::dboxes& box2 = boxes.AT(ml).AT(rl).AT(ccc);
             for (iblistvect::const_iterator slvi =
                    box2.send_ref_bnd_fine.begin();
                  slvi != box2.send_ref_bnd_fine.end(); ++ slvi)
@@ -495,8 +495,8 @@ void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
           assert (! recv.empty());
           const ibbox & send = recv.expanded_for(intrf);
           assert (! send.empty());
-          box1.send_ref_coarse.at(c).push_back(send);
-          box .recv_ref_fine  .at(cc).push_back(recv);
+          box1.send_ref_coarse.AT(c).push_back(send);
+          box .recv_ref_fine  .AT(cc).push_back(recv);
         }
       }
             
@@ -572,8 +572,8 @@ void dh::check_bboxes (dh::dboxes & box,
 #endif
     
     // Check that a component does not sync from itself
-    assert (box.recv_sync.at(c).empty());
-    assert (box.send_sync.at(c).empty());
+    assert (box.recv_sync.AT(c).empty());
+    assert (box.send_sync.AT(c).empty());
   }
 
   // Assert that the interior is received exactly once during
@@ -682,7 +682,7 @@ void dh::check_bboxes (dh::dboxes & box,
     ibset combined_extr;
     for (int cc=0; cc<h.components(rl); ++cc) {
       
-      dboxes const & box1 = boxes.at(ml).at(rl).at(cc);
+      dboxes const & box1 = boxes.AT(ml).AT(rl).AT(cc);
       
       ibbox const & intr = box1.interior;
       ibset const & ownd = box1.owned;
@@ -804,7 +804,7 @@ void dh::check_bboxes (dh::dboxes & box,
       // Points that are filled by prolongation from level rl-1
       ibset recvs;
       for (int cc=0; cc<h.components(rl); ++cc) {
-        dboxes & box1 = boxes.at(ml).at(rl).at(cc);
+        dboxes & box1 = boxes.AT(ml).AT(rl).AT(cc);
         for (iblistvect::const_iterator rlvi = box1.recv_ref_bnd_coarse.begin();
              rlvi != box1.recv_ref_bnd_coarse.end(); ++ rlvi)
         {
@@ -830,7 +830,7 @@ void dh::check_bboxes (dh::dboxes & box,
       // Points that are used for prolongation to level rl+1
       ibset sends;
       for (int cc=0; cc<h.components(rl); ++cc) {
-        dboxes & box1 = boxes.at(ml).at(rl).at(cc);
+        dboxes & box1 = boxes.AT(ml).AT(rl).AT(cc);
         for (iblistvect::const_iterator slvi = box1.send_ref_bnd_fine.begin();
              slvi != box1.send_ref_bnd_fine.end(); ++ slvi)
         {
@@ -865,13 +865,13 @@ void dh::calculate_bases ()
   // Calculate bases
   bases.resize(h.mglevels());
   for (int ml=0; ml<h.mglevels(); ++ml) {
-    bases.at(ml).resize(h.reflevels());
+    bases.AT(ml).resize(h.reflevels());
     for (int rl=0; rl<h.reflevels(); ++rl) {
-      dbases & base = bases.at(ml).at(rl);
+      dbases & base = bases.AT(ml).AT(rl);
       base.exterior = ibbox();
       base.interior = ibbox();
       for (int c=0; c<h.components(rl); ++c) {
-        dboxes & box = boxes.at(ml).at(rl).at(c);
+        dboxes & box = boxes.AT(ml).AT(rl).AT(c);
         base.exterior = (base.exterior.expanded_containing(box.exterior));
         base.interior = (base.interior.expanded_containing(box.interior));
       }
@@ -943,7 +943,7 @@ void dh::output_bases ()
   for (int ml=0; ml<h.mglevels(); ++ml) {
     for (int rl=0; rl<h.reflevels(); ++rl) {
       if (h.components(rl)>0) {
-        dbases & base = bases.at(ml).at(rl);
+        dbases & base = bases.AT(ml).AT(rl);
         cout << endl;
         cout << "dh bases:" << endl;
         cout << "ml=" << ml << " rl=" << rl << endl;

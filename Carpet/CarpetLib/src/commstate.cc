@@ -48,8 +48,8 @@ comm_state::comm_state ()
   {                                                                    \
     T dummy;                                                           \
     int type = dist::c_datatype (dummy);                               \
-    typebufs.at(type).datatypesize = sizeof (dummy);                   \
-    typebufs.at(type).mpi_datatype = dist::datatype (dummy);           \
+    typebufs.AT(type).datatypesize = sizeof (dummy);                   \
+    typebufs.AT(type).mpi_datatype = dist::datatype (dummy);           \
   }
 #include "instantiate"
 #undef INSTANTIATE
@@ -253,15 +253,15 @@ bool comm_state::AllPostedCommunicationsFinished ()
     if (reduce_mpi_waitall) {
       size_t nreqs = 0;
       for (size_t i=0; i<srequests.size(); ++i) {
-        if (srequests.at(i) != MPI_REQUEST_NULL) {
+        if (srequests.AT(i) != MPI_REQUEST_NULL) {
           ++nreqs;
         }
       }
       vector<MPI_Request> reqs(nreqs);
       nreqs = 0;
       for (size_t i=0; i<srequests.size(); ++i) {
-        if (srequests.at(i) != MPI_REQUEST_NULL) {
-          reqs.at(nreqs) = srequests.at(i);
+        if (srequests.AT(i) != MPI_REQUEST_NULL) {
+          reqs.AT(nreqs) = srequests.AT(i);
           ++nreqs;
         }
       }
@@ -284,22 +284,22 @@ bool comm_state::AllPostedCommunicationsFinished ()
   if (use_waitall) {
     // mark all posted recveive buffers as ready
     for (size_t i = 0; i < recvbuffers_ready.size(); i++) {
-      recvbuffers_ready.at(i) = rrequests.at(i) != MPI_REQUEST_NULL;
+      recvbuffers_ready.AT(i) = rrequests.AT(i) != MPI_REQUEST_NULL;
     }
 
     // wait for completion of all posted receive operations
     if (reduce_mpi_waitall) {
       size_t nreqs = 0;
       for (size_t i=0; i<rrequests.size(); ++i) {
-        if (rrequests.at(i) != MPI_REQUEST_NULL) {
+        if (rrequests.AT(i) != MPI_REQUEST_NULL) {
           ++nreqs;
         }
       }
       vector<MPI_Request> reqs(nreqs);
       nreqs = 0;
       for (size_t i=0; i<rrequests.size(); ++i) {
-        if (rrequests.at(i) != MPI_REQUEST_NULL) {
-          reqs.at(nreqs) = rrequests.at(i);
+        if (rrequests.AT(i) != MPI_REQUEST_NULL) {
+          reqs.AT(nreqs) = rrequests.AT(i);
           ++nreqs;
         }
       }
@@ -327,8 +327,8 @@ bool comm_state::AllPostedCommunicationsFinished ()
 
     // mark the recveive buffers of completed communications as ready
     for (int i = 0; i < num_completed_recvs_; i++) {
-      assert (rrequests.at(completed_recvs.at(i)) == MPI_REQUEST_NULL);
-      recvbuffers_ready.at(completed_recvs.at(i)) = true;
+      assert (rrequests.AT(completed_recvs.AT(i)) == MPI_REQUEST_NULL);
+      recvbuffers_ready.AT(completed_recvs.AT(i)) = true;
     }
   }
 

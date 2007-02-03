@@ -453,13 +453,13 @@ void data <T>
   
   vector <data const *> srcs (gsrcs.size());
   for (size_t t=0; t<srcs.size(); ++t) {
-    srcs.at(t) = dynamic_cast <data const *> (gsrcs.at(t));
+    srcs.AT(t) = dynamic_cast <data const *> (gsrcs.AT(t));
   }
   assert (srcs.size() == times.size() and srcs.size() > 0);
   
   for (size_t t=0; t<srcs.size(); ++t) {
-    assert (srcs.at(t)->has_storage());
-    assert (proc() == srcs.at(t)->proc());
+    assert (srcs.AT(t)->has_storage());
+    assert (proc() == srcs.AT(t)->proc());
   }
   
   assert (dist::rank() == proc());
@@ -508,7 +508,7 @@ void data <T>
   }
   if (timelevel == -1) {
     for (size_t tl=0; tl<times.size(); ++tl) {
-      if (abs (times.at(tl) - time) < eps) {
+      if (abs (times.AT(tl) - time) < eps) {
         timelevel = tl;
         break;
       }
@@ -522,24 +522,24 @@ void data <T>
     
     for (size_t tl=0; tl<times.size(); ++tl) {
       
-      tmps.at(tl) =
+      tmps.AT(tl) =
         new data (this->varindex, this->cent, this->transport_operator);
-      tmps.at(tl)->allocate (box, this->proc());
+      tmps.AT(tl)->allocate (box, this->proc());
       
-      tmps.at(tl)->interpolate_p_r (srcs.at(tl), box, order_space);
+      tmps.AT(tl)->interpolate_p_r (srcs.AT(tl), box, order_space);
       
     }
     
     time_interpolate (tmps, box, times, time, order_time);
     
     for (size_t tl=0; tl<times.size(); ++tl) {
-      delete tmps.at(tl);
+      delete tmps.AT(tl);
     }
     
   } else {
     // No time interpolation
     
-    interpolate_p_r (srcs.at(timelevel), box, order_space);
+    interpolate_p_r (srcs.AT(timelevel), box, order_space);
     
   } // if
 }
@@ -848,32 +848,32 @@ void data <T>
     
   case 1:
     assert (times.size() >= 2);
-    interpolate_3d_2tl (static_cast <T const *> (srcs.at(0)->storage()),
-                        times.at(0),
-                        static_cast <T const *> (srcs.at(1)->storage()),
-                        times.at(1),
-                        srcs.at(0)->shape(),
+    interpolate_3d_2tl (static_cast <T const *> (srcs.AT(0)->storage()),
+                        times.AT(0),
+                        static_cast <T const *> (srcs.AT(1)->storage()),
+                        times.AT(1),
+                        srcs.AT(0)->shape(),
                         static_cast <T *> (this->storage()),
                         time,
                         this->shape(),
-                        srcs.at(0)->extent(),
+                        srcs.AT(0)->extent(),
                         this->extent(),
                         box);
     break;
     
   case 2:
     assert (times.size() >= 3);
-    interpolate_3d_3tl (static_cast <T const *> (srcs.at(0)->storage()),
-                        times.at(0),
-                        static_cast <T const *> (srcs.at(1)->storage()),
-                        times.at(1),
-                        static_cast <T const *> (srcs.at(2)->storage()),
-                        times.at(2),
-                        srcs.at(0)->shape(),
+    interpolate_3d_3tl (static_cast <T const *> (srcs.AT(0)->storage()),
+                        times.AT(0),
+                        static_cast <T const *> (srcs.AT(1)->storage()),
+                        times.AT(1),
+                        static_cast <T const *> (srcs.AT(2)->storage()),
+                        times.AT(2),
+                        srcs.AT(0)->shape(),
                         static_cast <T *> (this->storage()),
                         time,
                         this->shape(),
-                        srcs.at(0)->extent(),
+                        srcs.AT(0)->extent(),
                         this->extent(),
                         box);
     break;

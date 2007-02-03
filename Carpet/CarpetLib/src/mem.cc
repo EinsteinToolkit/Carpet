@@ -109,8 +109,8 @@ void mem<T>::
 register_client (size_t const vectorindex)
 {
   assert (vectorindex < vectorlength_);
-  assert (! clients_.at(vectorindex));
-  clients_.at(vectorindex) = true;
+  assert (! clients_.AT(vectorindex));
+  clients_.AT(vectorindex) = true;
   ++ num_clients_;
 }
 
@@ -119,8 +119,8 @@ void mem<T>::
 unregister_client (size_t const vectorindex)
 {
   assert (vectorindex < vectorlength_);
-  assert (clients_.at(vectorindex));
-  clients_.at(vectorindex) = false;
+  assert (clients_.AT(vectorindex));
+  clients_.AT(vectorindex) = false;
   assert (num_clients_ > 0);
   -- num_clients_;
 }
