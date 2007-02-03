@@ -2,98 +2,134 @@
 #define TIMESTAT_HH
 
 #include <iostream>
+#include <list>
+#include <string>
 
-using namespace std;
 
 
-
-// Time (in seconds) spend during various operations
-class timestat {
+namespace CarpetLib {
   
-public:
-  double wtime;
-  double wtime2;
-  double wmin;
-  double wmax;
+  using namespace std;
   
-  double bytes;
-  double bytes2;
-  double bmin;
-  double bmax;
   
-  double count;
   
-public:
-  timestat ();
+  class Timer;
   
-private:
-  void addstat (double t, double b);
   
-private:
-  bool running;
-  double starttime;
   
-public:
-  void start();
-  void stop(double bytes = 0.0);
-};
-
-ostream& operator<< (ostream& os, const timestat& wt);
-
-
-
-extern timestat wtime_copyfrom_recv;
-extern timestat wtime_copyfrom_send;
-extern timestat wtime_copyfrom_wait;
-
-extern timestat wtime_copyfrom_recv_maketyped;
-extern timestat wtime_copyfrom_recv_allocate;
-extern timestat wtime_copyfrom_recv_changeproc_recv;
-extern timestat wtime_copyfrom_send_copyfrom_nocomm1;
-extern timestat wtime_copyfrom_send_copyfrom_nocomm2;
-extern timestat wtime_copyfrom_send_changeproc_send;
-extern timestat wtime_copyfrom_wait_changeproc_wait;
-extern timestat wtime_copyfrom_wait_copyfrom_nocomm;
-extern timestat wtime_copyfrom_wait_delete;
-
-extern timestat wtime_copyfrom_recvinner_allocate;
-extern timestat wtime_copyfrom_recvinner_recv;
-extern timestat wtime_copyfrom_sendinner_allocate;
-extern timestat wtime_copyfrom_sendinner_copy;
-extern timestat wtime_copyfrom_sendinner_send;
-extern timestat wtime_copyfrom_recvwaitinner_wait;
-extern timestat wtime_copyfrom_recvwaitinner_copy;
-extern timestat wtime_copyfrom_recvwaitinner_delete;
-extern timestat wtime_copyfrom_sendwaitinner_wait;
-extern timestat wtime_copyfrom_sendwaitinner_delete;
-
-extern timestat wtime_changeproc_recv;
-extern timestat wtime_changeproc_send;
-extern timestat wtime_changeproc_wait;
-
-extern timestat wtime_irecv;
-extern timestat wtime_isend;
-extern timestat wtime_irecvwait;
-extern timestat wtime_isendwait;
-
-extern timestat wtime_commstate_sizes_irecv;
-extern timestat wtime_commstate_waitall_final;
-extern timestat wtime_commstate_waitall;
-extern timestat wtime_commstate_waitsome;
-extern timestat wtime_commstate_send;
-extern timestat wtime_commstate_ssend;
-extern timestat wtime_commstate_isend;
-extern timestat wtime_commstate_memcpy;
-extern timestat wtime_commstate_interpolate_irecv;
-extern timestat wtime_commstate_interpolate_from_isend;
-extern timestat wtime_commstate_interpolate_to_isend;
-
-
-
-extern timestat wtime_restrict;
-extern timestat wtime_prolongate;
-extern timestat wtime_prolongate_Lagrange;
-extern timestat wtime_prolongate_ENO;
-extern timestat wtime_prolongate_WENO;
+  // A set of timers
+  class TimerSet {
+    
+    list <Timer *> timers;
+    
+  public:
+    
+    // Add a timer
+    void
+    add (Timer * timer);
+    
+    // Remove a timer
+    void
+    remove (Timer * timer);
+    
+    // Output all timer names
+    void
+    outputNames (ostream & os)
+      const;
+    
+    // Output all timer data
+    void
+    outputData (ostream & os)
+      const;
+    
+  }; // class TimerSet
+  
+  inline
+  ostream & operator << (ostream & os,
+                         TimerSet const & timerSet)
+  {
+    timerSet.outputData (os);
+    return os;
+  }
+  
+  
+  
+  // A timer, which counts time (in seconds) spent in and amount (in
+  // bytes) used in various operations
+  class Timer {
+    
+    string timername;
+    
+  public:
+    
+    // Create a new timer with the given name
+    Timer (char const * timername_);
+    
+    // Destroy a timer
+    ~Timer ();
+    
+  private:
+    
+    // Reset the statistics
+    void
+    resetstats ();
+    
+    // Add statistics of a timing operation
+    void
+    addstat (double t,
+             double b);
+    
+  private:
+    
+    double wtime;
+    double wtime2;
+    double wmin;
+    double wmax;
+    
+    double bytes;
+    double bytes2;
+    double bmin;
+    double bmax;
+    
+    double count;
+    
+    bool running;
+    double starttime;
+    
+  public:
+    
+    // Start the timer
+    void
+    start ();
+    
+    // Stop the timer
+    void
+    stop (double b);
+    
+    // Reset the timer
+    void
+    reset ();
+    
+    // Timer name
+    string
+    name ()
+      const;
+    
+    // Print timer data
+    void
+    outputData (ostream & os)
+      const;
+    
+  };
+  
+  inline
+  ostream & operator << (ostream & os,
+                         Timer const & timer)
+  {
+    timer.outputData (os);
+    return os;
+  }
+  
+} // namespace CarpetLib
 
 #endif  // TIMESTAT_HH

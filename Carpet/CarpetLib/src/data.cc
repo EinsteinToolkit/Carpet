@@ -252,7 +252,8 @@ void data<T>::change_processor_recv (comm_state& state,
     return;
   }
   
-  wtime_changeproc_recv.start();
+  static Timer total ("change_processor_recv");
+  total.start ();
   
   assert (vectorlength == 1);
   
@@ -264,12 +265,13 @@ void data<T>::change_processor_recv (comm_state& state,
       _memory = new mem<T> (1, _size, (T*)memptr);
       _memory->register_client (0);
       
-      wtime_irecv.start();
+      static Timer timer ("irecv");
+      timer.start ();
       T dummy;
       MPI_Irecv (_memory->storage(0),
                  _size, dist::datatype(dummy), proc(),
                  tag, dist::comm(), &request);
-      wtime_irecv.stop(_size * sizeof(T));
+      timer.stop (_size * sizeof(T));
       if (use_waitall) {
         state.requests.push_back (request);
       }
@@ -283,7 +285,7 @@ void data<T>::change_processor_recv (comm_state& state,
     }
   }
   
-  wtime_changeproc_recv.stop();
+  total.stop (0);
 }
 
 
@@ -302,7 +304,8 @@ void data<T>::change_processor_send (comm_state& state,
     return;
   }
   
-  wtime_changeproc_send.start();
+  static Timer total ("change_processor_send");
+  total.start();
   
   assert (vectorlength == 1);
   
@@ -316,12 +319,13 @@ void data<T>::change_processor_send (comm_state& state,
       assert (not memptr);
       assert (_memory);
       
-      wtime_isend.start();
+      static Timer timer ("isend");
+      timer.start ();
       T dummy;
       MPI_Isend (_memory->storage(0),
                  _size, dist::datatype(dummy), newproc,
                  tag, dist::comm(), &request);
-      wtime_isend.stop(_size * sizeof(T));
+      timer.stop (_size * sizeof(T));
       if (use_waitall) {
         state.requests.push_back (request);
       }
@@ -332,7 +336,7 @@ void data<T>::change_processor_send (comm_state& state,
     }
   }
   
-  wtime_changeproc_send.stop();
+  total.stop (0);
 }
 
 
@@ -352,17 +356,19 @@ void data<T>::change_processor_wait (comm_state& state,
     return;
   }
   
-  wtime_changeproc_wait.start();
+  static Timer total ("change_processor_wait");
+  total.start ();
   
   assert (vectorlength == 1);
   
   if (use_waitall) {
     if (not state.requests.empty()) {
       // wait for all requests at once
-      wtime_irecvwait.start();
+      static Timer timer ("irecvwait");
+      timer.start ();
       MPI_Waitall
         (state.requests.size(), &state.requests.front(), MPI_STATUSES_IGNORE);
-      wtime_irecvwait.stop();
+      timer.stop (0);
       state.requests.clear();
     }
   }
@@ -372,9 +378,10 @@ void data<T>::change_processor_wait (comm_state& state,
       // copy from other processor
       
       if (not use_waitall) {
-        wtime_irecvwait.start();
+        static Timer timer ("irecvwait");
+        timer.start ();
         MPI_Wait (&request, MPI_STATUS_IGNORE);
-        wtime_irecvwait.stop();
+        timer.stop (0);
       }
       
     } else if (dist::rank() == _proc) {
@@ -384,9 +391,10 @@ void data<T>::change_processor_wait (comm_state& state,
       assert (_memory);
       
       if (not use_waitall) {
-        wtime_isendwait.start();
+        static Timer timer ("isendwait");
+        timer.start ();
         MPI_Wait (&request, MPI_STATUS_IGNORE);
-        wtime_isendwait.stop();
+        timer.stop (0);
       }
       
       _memory->unregister_client (0);
@@ -401,7 +409,7 @@ void data<T>::change_processor_wait (comm_state& state,
   
   _proc = newproc;
   
-  wtime_changeproc_wait.stop();
+  total.stop (0);
 }
 
 
@@ -671,13 +679,15 @@ void data <T>
                           ibbox const & box,
                           int const order_space)
 {
-  wtime_prolongate.start();
+  static Timer total ("prolongate");
+  total.start ();
   
   switch (transport_operator) {
     
   case op_copy:
-  case op_Lagrange:
-    wtime_prolongate_Lagrange.start();
+  case op_Lagrange: {
+    static Timer timer ("prolongate_Lagrange");
+    timer.start ();
     switch (order_space) {
     case 1:
       prolongate_3d_o1_rf2 (static_cast <T const *> (src->storage()),
@@ -709,11 +719,13 @@ void data <T>
     default:
       assert (0);
     }
-    wtime_prolongate_Lagrange.stop();
+    timer.stop (0);
     break;
+  }
     
-  case op_ENO:
-    wtime_prolongate_ENO.start();
+  case op_ENO: {
+    static Timer timer ("prolongate_ENO");
+    timer.start ();
     switch (order_space) {
     case 1:
       CCTK_WARN (0, "There is no stencil for op=\"ENO\" with order_space=1");
@@ -730,11 +742,13 @@ void data <T>
     default:
       assert (0);
     }
-    wtime_prolongate_ENO.stop();
+    timer.stop (0);
     break;
+  }
     
-  case op_WENO:
-    wtime_prolongate_WENO.start();
+  case op_WENO: {
+    static Timer timer ("prolongate_WENO");
+    timer.start ();
     switch (order_space) {
     case 1:
       CCTK_WARN (0, "There is no stencil for op=\"WENO\" with order_space=1");
@@ -754,14 +768,15 @@ void data <T>
     default:
       assert (0);
     }
-    wtime_prolongate_WENO.stop();
+    timer.stop (0);
     break;
+  }
     
   default:
     assert(0);
   } // switch (transport_operator)
   
-  wtime_prolongate.stop();
+  total.stop (0);
 }
 
 template <>
@@ -781,7 +796,8 @@ void data <T>
                         ibbox const & box,
                         int const order_space)
 {
-  wtime_restrict.start();
+  static Timer total ("restrict");
+  total.start ();
   
   switch (transport_operator) {
     
@@ -818,7 +834,7 @@ void data <T>
     assert(0);
   }
   
-  wtime_restrict.stop();
+  total.stop (0);
 }
 
 template <>

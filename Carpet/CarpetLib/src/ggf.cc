@@ -9,10 +9,12 @@
 #include "defs.hh"
 #include "dh.hh"
 #include "th.hh"
+#include "timestat.hh"
 
 #include "ggf.hh"
 
 using namespace std;
+using namespace CarpetLib;
 
 
 
@@ -319,11 +321,14 @@ void ggf::copycat (comm_state& state,
   int const c2= c1;
   assert (ml2<h.mglevels());
   assert (tl2>=0 and tl2<timelevels(ml2,rl2));
+  static Timer copycat1 ("copycat_1");
+  copycat1.start ();
   ibbox const & recv = d.boxes.AT(ml1).AT(rl1).AT(c1).*recv_box;
   // copy the content
   gdata * const dst = storage.AT(ml1).AT(rl1).AT(c1).AT(tl1);
   gdata const * const src = storage.AT(ml2).AT(rl2).AT(c2).AT(tl2);
   dst->copy_from(state, src, recv);
+  copycat1.stop (0);
 }
 
 // Copy regions
@@ -340,6 +345,8 @@ void ggf::copycat (comm_state& state,
   assert (rl2>=0 and rl2<h.reflevels());
   int const c2 = c1;
   assert (tl2>=0 and tl2<timelevels(ml2,rl2));
+  static Timer copycat1 ("copycat_list_1");
+  copycat1.start ();
   iblist const & recv = d.boxes.AT(ml1).AT(rl1).AT(c1).*recv_list;
   // walk all boxes
   for (iblist::const_iterator r=recv.begin(); r!=recv.end(); ++r) {
@@ -349,6 +356,7 @@ void ggf::copycat (comm_state& state,
     gdata const * const src = storage.AT(ml2).AT(rl2).AT(c2).AT(tl2);
     dst->copy_from(state, src, *r);
   }
+  copycat1.stop (0);
 }
 
 // Copy regions
@@ -365,6 +373,8 @@ void ggf::copycat (comm_state& state,
   assert (rl2>=0 and rl2<h.reflevels());
   assert (tl2>=0 and tl2<timelevels(ml2,rl2));
   // walk all components
+  static Timer copycat1 ("copycat_listvect_1");
+  copycat1.start ();
   for (int c2=0; c2<h.components(rl2); ++c2) {
     const iblist recv = (d.boxes.at(ml1).at(rl1).at(c1).*recv_listvect).at(c2);
     // walk all boxes
@@ -376,6 +386,7 @@ void ggf::copycat (comm_state& state,
       dst->copy_from(state, src, *r);
     }
   }
+  copycat1.stop (0);
 }
 
 // Interpolate a region
@@ -403,11 +414,14 @@ void ggf::intercat (comm_state& state,
     times.AT(i) = t.time(tl2s.AT(i),rl2,ml2);
   }
   
+  static Timer intercat1 ("intercat_1");
+  intercat1.start ();
   ibbox const & recv = d.boxes.AT(ml1).AT(rl1).AT(c1).*recv_list;
   // interpolate the content
   storage.AT(ml1).AT(rl1).AT(c1).AT(tl1)->interpolate_from
     (state, gsrcs, times, recv, time,
      d.prolongation_order_space, prolongation_order_time);
+  intercat1.stop (0);
 }
 
 // Interpolate regions
@@ -435,6 +449,8 @@ void ggf::intercat (comm_state& state,
     times.AT(i) = t.time(tl2s.AT(i),rl2,ml2);
   }
   
+  static Timer intercat1 ("intercat_list_1");
+  intercat1.start ();
   iblist const & recv = d.boxes.AT(ml1).AT(rl1).AT(c1).*recv_list;
   // walk all boxes
   for (iblist::const_iterator r=recv.begin(); r!=recv.end(); ++r)
@@ -445,6 +461,7 @@ void ggf::intercat (comm_state& state,
       (state, gsrcs, times, *r, time,
        d.prolongation_order_space, prolongation_order_time);
   }
+  intercat1.stop (0);
 }
 
 // Interpolate regions
@@ -463,6 +480,8 @@ void ggf::intercat (comm_state& state,
     assert (tl2s.AT(i)>=0 and tl2s.AT(i)<timelevels(ml2,rl2));
   }
   // walk all components
+  static Timer intercat1 ("intercat_listvect_1");
+  intercat1.start ();
   for (int c2=0; c2<h.components(rl2); ++c2) {
     assert (ml2>=0 and ml2<h.mglevels());
     
@@ -487,6 +506,7 @@ void ggf::intercat (comm_state& state,
       	(state, gsrcs, times, *r, time, pos, pot);
     }
   }
+  intercat1.stop (0);
 }
 
 
@@ -495,18 +515,24 @@ void ggf::intercat (comm_state& state,
 void ggf::copy (comm_state& state, int tl, int rl, int c, int ml)
 {
   // Copy
+  static Timer timer ("copy");
+  timer.start ();
   copycat (state,
            tl  ,rl,c,ml, &dh::dboxes::exterior,
       	   tl+1,rl,  ml);
+  timer.stop (0);
 }
 
 // Synchronise the boundaries a component
 void ggf::sync (comm_state& state, int tl, int rl, int c, int ml)
 {
   // Copy
+  static Timer timer ("sync");
+  timer.start ();
   copycat (state,
            tl,rl,c,ml, &dh::dboxes::recv_sync,
       	   tl,rl,  ml);
+  timer.stop (0);
 }
 
 // Prolongate the boundaries of a component
@@ -518,6 +544,8 @@ void ggf::ref_bnd_prolongate (comm_state& state,
   assert (rl>=1);
   if (transport_operator == op_none) return;
   vector<int> tl2s;
+  static Timer timer ("ref_bnd_prolongate");
+  timer.start ();
   if (transport_operator != op_copy) {
     // Interpolation in time
     if (not (timelevels(ml,rl) >= prolongation_order_time+1)) {
@@ -539,6 +567,7 @@ void ggf::ref_bnd_prolongate (comm_state& state,
   intercat (state,
             tl  ,rl  ,c,ml, &dh::dboxes::recv_ref_bnd_coarse,
             tl2s,rl-1,  ml, time);
+  timer.stop (0);
 }
 
 // Restrict a multigrid level
@@ -550,9 +579,12 @@ void ggf::mg_restrict (comm_state& state,
   assert (abs(t.get_time(rl,ml) - t.get_time(rl,ml-1))
 	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
   const vector<int> tl2s(1,tl);
+  static Timer timer ("mg_restrict");
+  timer.start ();
   intercat (state,
             tl  ,rl,c,ml,   &dh::dboxes::recv_mg_coarse,
 	    tl2s,rl,  ml-1, time);
+  timer.stop (0);
 }
 
 // Prolongate a multigrid level
@@ -563,10 +595,13 @@ void ggf::mg_prolongate (comm_state& state,
   // Require same times
   assert (abs(t.get_time(rl,ml) - t.get_time(rl,ml+1))
 	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
+  static Timer timer ("mg_prolongate");
+  timer.start ();
   const vector<int> tl2s(1,tl);
   intercat (state,
             tl  ,rl,c,ml,   &dh::dboxes::recv_mg_coarse,
 	    tl2s,rl,  ml+1, time);
+  timer.stop (0);
 }
 
 // Restrict a refinement level
@@ -579,9 +614,12 @@ void ggf::ref_restrict (comm_state& state,
 	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
   if (transport_operator == op_none) return;
   const vector<int> tl2s(1,tl);
+  static Timer timer ("ref_restrict");
+  timer.start ();
   intercat (state,
             tl  ,rl  ,c,ml, &dh::dboxes::recv_ref_fine,
 	    tl2s,rl+1,  ml, time);
+  timer.stop (0);
 }
 
 // Prolongate a refinement level
@@ -592,6 +630,8 @@ void ggf::ref_prolongate (comm_state& state,
   assert (rl>=1);
   if (transport_operator == op_none) return;
   vector<int> tl2s;
+  static Timer timer ("ref_prolongate");
+  timer.start ();
   // Interpolation in time
   assert (timelevels(ml,rl) >= prolongation_order_time+1);
   tl2s.resize(prolongation_order_time+1);
@@ -599,4 +639,5 @@ void ggf::ref_prolongate (comm_state& state,
   intercat (state,
             tl  ,rl  ,c,ml, &dh::dboxes::recv_ref_coarse,
 	    tl2s,rl-1,  ml, time);
+  timer.stop (0);
 }

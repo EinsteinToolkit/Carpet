@@ -54,7 +54,18 @@ STRING timestat_file "File name in which timestat output is collected (because s
 {
   "^$"   :: "empty filename: no file output"
   "^.+$" :: "file name"
-} "carpetlib-time-statistics"
+} "carpetlib-timing-statistics"
+
+KEYWORD timestat_timer "Timer for timing statistics" STEERABLE=recover
+{
+  "MPI_Wtime" :: "MPI_Wtime (expensive; uses system call)"
+  "rdtsc"     :: "Intel rdtsc instruction (exists only on Intel CPUs)"
+  "none"      :: "don't measure time"
+} "MPI_Wtime"
+
+BOOLEAN timestat_disable "Disable timing statistics" STEERABLE=always
+{
+} "no"
 
 
 

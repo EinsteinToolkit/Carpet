@@ -1,10 +1,13 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdio>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+
+#include <unistd.h>
 
 #include <mpi.h>
 
@@ -12,243 +15,343 @@
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
 
+#include "defs.hh"
 #include "dist.hh"
 #include "timestat.hh"
 
 
 
-using namespace std;
-
-
-
-timestat::timestat ()
-  : wtime(0.0), wtime2(0.0), wmin(0.0), wmax(0.0),
-    bytes(0.0), bytes2(0.0), bmin(0.0), bmax(0.0),
-    count(0.0),
-    running(false)
-{
-}
-
-void timestat::addstat (double const t, double const b)
-{
-  wtime += t;
-  wtime2 += t*t;
-  wmin = min (wmin, t);
-  wmax = max (wmax, t);
+namespace CarpetLib {
   
-  bytes += b;
-  bytes2 += b*b;
-  bmin = min (bmin, b);
-  bmax = max (bmax, b);
+  using namespace std;
   
-  ++count;
-}
-
-void timestat::start ()
-{
-  assert (! running);
-  running = true;
-  starttime = MPI_Wtime();
-}
-
-void timestat::stop (double const b)
-{
-  assert (running);
-  running = false;
-  double const endtime = MPI_Wtime();
-  addstat (endtime - starttime, b);
-}
-
-
-
-ostream& operator<< (ostream& os, const timestat& wt)
-{
-  double avg, stddev, bavg, bstddev;
-  if (wt.count == 0.0) {
-    avg = 0.0;
-    stddev = 0.0;
-    bavg = 0.0;
-    bstddev = 0.0;
-  } else {
-    avg = wt.wtime / wt.count;
-    stddev = sqrt (max (0.0, wt.wtime2 / wt.count - pow (avg, 2)));
-    bavg = wt.bytes / wt.count;
-    bstddev = sqrt (max (0.0, wt.bytes2 / wt.count - pow (bavg, 2)));
-  }
-  os << "timestat[seconds]:"
-     << " cnt: " << wt.count
-     << "   time: sum: " << wt.wtime
-     << " avg: " << avg
-     << " stddev: " << stddev
-     << " min: " << wt.wmin
-     << " max: " << wt.wmax
-     << "   bytes: sum: " << wt.bytes
-     << " avg: " << bavg
-     << " stddev: " << bstddev
-     << " min: " << wt.bmin
-     << " max: " << wt.bmax;
-  return os;
-}
-
-
-
-timestat wtime_copyfrom_recv;
-timestat wtime_copyfrom_send;
-timestat wtime_copyfrom_wait;
-
-timestat wtime_copyfrom_recv_maketyped;
-timestat wtime_copyfrom_recv_allocate;
-timestat wtime_copyfrom_recv_changeproc_recv;
-timestat wtime_copyfrom_send_copyfrom_nocomm1;
-timestat wtime_copyfrom_send_copyfrom_nocomm2;
-timestat wtime_copyfrom_send_changeproc_send;
-timestat wtime_copyfrom_wait_changeproc_wait;
-timestat wtime_copyfrom_wait_copyfrom_nocomm;
-timestat wtime_copyfrom_wait_delete;
-
-timestat wtime_copyfrom_recvinner_allocate;
-timestat wtime_copyfrom_recvinner_recv;
-timestat wtime_copyfrom_sendinner_allocate;
-timestat wtime_copyfrom_sendinner_copy;
-timestat wtime_copyfrom_sendinner_send;
-timestat wtime_copyfrom_recvwaitinner_wait;
-timestat wtime_copyfrom_recvwaitinner_copy;
-timestat wtime_copyfrom_recvwaitinner_delete;
-timestat wtime_copyfrom_sendwaitinner_wait;
-timestat wtime_copyfrom_sendwaitinner_delete;
-
-timestat wtime_changeproc_recv;
-timestat wtime_changeproc_send;
-timestat wtime_changeproc_wait;
-
-timestat wtime_irecv;
-timestat wtime_isend;
-timestat wtime_isendwait;
-timestat wtime_irecvwait;
-
-timestat wtime_commstate_sizes_irecv;
-timestat wtime_commstate_waitall_final;
-timestat wtime_commstate_waitall;
-timestat wtime_commstate_waitsome;
-timestat wtime_commstate_send;
-timestat wtime_commstate_ssend;
-timestat wtime_commstate_isend;
-timestat wtime_commstate_memcpy;
-timestat wtime_commstate_interpolate_irecv;
-timestat wtime_commstate_interpolate_from_isend;
-timestat wtime_commstate_interpolate_to_isend;
-
-
-
-timestat wtime_restrict;
-timestat wtime_prolongate;
-timestat wtime_prolongate_copy;
-timestat wtime_prolongate_Lagrange;
-timestat wtime_prolongate_ENO;
-timestat wtime_prolongate_WENO;
-
-
-
-extern "C" void CarpetLib_printtimestats (CCTK_ARGUMENTS);
-
-void CarpetLib_printtimestats (CCTK_ARGUMENTS)
-{
-  DECLARE_CCTK_ARGUMENTS;
-  DECLARE_CCTK_PARAMETERS;
-  if (print_timestats or
-      (print_timestats_every and
-       cctk_iteration % print_timestats_every == 0))
+  
+  
+  // A faster timing routine:
+  // Read the Intel CPU time stamp counter
+  static inline
+  double
+  rdtsc ()
   {
-    ostringstream filenamebuf;
-    filenamebuf << out_dir << "/" << timestat_file
-                << "." << setw(4) << setfill('0') << dist::rank()
-                << ".txt";
-    string const filename = filenamebuf.str();
-    
-    ofstream file;
-    static bool do_truncate = true;
-    if (do_truncate) {
-      if (not IO_TruncateOutputFiles (cctkGH)) {
-        do_truncate = false;
-      }
-    }
-    if (do_truncate) {
-      do_truncate = false;
-      file.open (filename.c_str(), ios::out | ios::trunc);
-    } else {
-      file.open (filename.c_str(), ios::out | ios::app);
-    }
-    
-    static bool do_print_info = true;
-    if (do_print_info) {
-      do_print_info = false;
-      if (CCTK_IsFunctionAliased ("UniqueBuildID")) {
-        char const * const build_id
-          = static_cast<char const *> (UniqueBuildID (cctkGH));
-        file << "Build ID: " << build_id << endl;
-      }
-      if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
-        char const * const job_id
-          = static_cast<char const *> (UniqueSimulationID (cctkGH));
-        file << "Simulation ID: " << job_id << endl;
-      }
-      file << "Running on " << dist::size() << " processors" << endl;
-    }
-    
-    file << endl
-         << "********************************************************************************" << endl
-         << "Timing statistics from CarpetLib at iteration " << cctkGH->cctk_iteration << " time  " << cctkGH->cctk_time << ":" << endl
-         << "   wtime_copyfrom_recv:                    " << wtime_copyfrom_recv                    << endl
-         << "   wtime_copyfrom_send:                    " << wtime_copyfrom_send                    << endl
-         << "   wtime_copyfrom_wait:                    " << wtime_copyfrom_wait                    << endl
-         << endl
-         << "   wtime_copyfrom_recv_maketyped:          " << wtime_copyfrom_recv_maketyped          << endl   
-         << "   wtime_copyfrom_recv_allocate:           " << wtime_copyfrom_recv_allocate           << endl
-         << "   wtime_copyfrom_recv_changeproc_recv:    " << wtime_copyfrom_recv_changeproc_recv    << endl
-         << "   wtime_copyfrom_send_copyfrom_nocomm1:   " << wtime_copyfrom_send_copyfrom_nocomm1   << endl
-         << "   wtime_copyfrom_send_copyfrom_nocomm2:   " << wtime_copyfrom_send_copyfrom_nocomm2   << endl
-         << "   wtime_copyfrom_send_changeproc_send:    " << wtime_copyfrom_send_changeproc_send    << endl
-         << "   wtime_copyfrom_wait_changeproc_wait:    " << wtime_copyfrom_wait_changeproc_wait    << endl
-         << "   wtime_copyfrom_wait_copyfrom_nocomm2:   " << wtime_copyfrom_wait_copyfrom_nocomm    << endl
-         << "   wtime_copyfrom_wait_delete:             " << wtime_copyfrom_wait_delete             << endl
-         << endl
-         << "   wtime_copyfrom_recvinner_allocate:      " << wtime_copyfrom_recvinner_allocate      << endl
-         << "   wtime_copyfrom_recvinner_recv:          " << wtime_copyfrom_recvinner_recv          << endl
-         << "   wtime_copyfrom_sendinner_allocate:      " << wtime_copyfrom_sendinner_allocate      << endl
-         << "   wtime_copyfrom_sendinner_copy:          " << wtime_copyfrom_sendinner_copy          << endl
-         << "   wtime_copyfrom_sendinner_send:          " << wtime_copyfrom_sendinner_send          << endl
-         << "   wtime_copyfrom_recvwaitinner_wait:      " << wtime_copyfrom_recvwaitinner_wait      << endl
-         << "   wtime_copyfrom_recvwaitinner_copy:      " << wtime_copyfrom_recvwaitinner_copy      << endl
-         << "   wtime_copyfrom_recvwaitinner_delete:    " << wtime_copyfrom_recvwaitinner_delete    << endl
-         << "   wtime_copyfrom_sendwaitinner_wait:      " << wtime_copyfrom_sendwaitinner_wait      << endl
-         << "   wtime_copyfrom_sendwaitinner_delete:    " << wtime_copyfrom_sendwaitinner_delete    << endl
-         << endl
-         << "   wtime_changeproc_recv:                  " << wtime_changeproc_recv                  << endl
-         << "   wtime_changeproc_send:                  " << wtime_changeproc_send                  << endl
-         << "   wtime_changeproc_wait:                  " << wtime_changeproc_wait                  << endl
-         << endl
-         << "   wtime_irecv:                            " << wtime_irecv                            << endl
-         << "   wtime_isend:                            " << wtime_isend                            << endl
-         << "   wtime_isendwait:                        " << wtime_isendwait                        << endl
-         << "   wtime_irecvwait:                        " << wtime_irecvwait                        << endl
-         << endl
-         << "   wtime_commstate_sizes_irecv:            " << wtime_commstate_sizes_irecv            << endl
-         << "   wtime_commstate_waitall_final:          " << wtime_commstate_waitall_final          << endl
-         << "   wtime_commstate_waitall:                " << wtime_commstate_waitall                << endl
-         << "   wtime_commstate_waitsome:               " << wtime_commstate_waitsome               << endl
-         << "   wtime_commstate_send:                   " << wtime_commstate_send                   << endl
-         << "   wtime_commstate_ssend:                  " << wtime_commstate_ssend                  << endl
-         << "   wtime_commstate_isend:                  " << wtime_commstate_isend                  << endl
-         << "   wtime_commstate_memcpy:                 " << wtime_commstate_memcpy                 << endl
-         << "   wtime_commstate_interpolate_irecv:      " << wtime_commstate_interpolate_irecv      << endl
-         << "   wtime_commstate_interpolate_from_isend: " << wtime_commstate_interpolate_from_isend << endl
-         << "   wtime_commstate_interpolate_to_isend:   " << wtime_commstate_interpolate_to_isend   << endl
-         << endl
-         << "   wtime_restrict:                         " << wtime_restrict                         << endl
-         << "   wtime_prolongate:                       " << wtime_prolongate                       << endl
-         << "   wtime_prolongate_Lagrange:              " << wtime_prolongate_Lagrange              << endl
-         << "   wtime_prolongate_ENO:                   " << wtime_prolongate_ENO                   << endl
-         << "   wtime_prolongate_WENO:                  " << wtime_prolongate_WENO                  << endl
-         << endl;
+#if defined(__i386__)
+    unsigned long long int val;
+    __asm__ __volatile__("rdtsc" : "=A" (val) : );
+    return val;
+#else
+    return 0;
+#endif
   }
-}
+  static
+  double rdtsc_cputick = 0.0;
+  
+  static
+  void
+  init_rdtsc ()
+  {
+    double const rstart = rdtsc ();
+    double const wstart = MPI_Wtime ();
+    int const ierr = usleep (1000 * 1000);
+    double const rend = rdtsc ();
+    double const wend = MPI_Wtime ();
+    if (ierr) {
+      CCTK_WARN (1, "Could not determine a reliable rdtsc timer resolution");
+    }
+    rdtsc_cputick = (wend - wstart) / (rend - rstart);
+  }
+  
+  
+  
+  
+  // Call a timer
+  static
+  double
+  call_timer ()
+  {
+    DECLARE_CCTK_PARAMETERS;
+    enum timer_type { timer_unset, timer_MPI_Wtime, timer_rdtsc, timer_none };
+    static timer_type timer = timer_unset;
+    if (timer == timer_unset) {
+      if (CCTK_EQUALS (timestat_timer, "MPI_Wtime")) {
+        timer = timer_MPI_Wtime;
+      } else if (CCTK_EQUALS (timestat_timer, "rdtsc")) {
+        timer = timer_rdtsc;
+        init_rdtsc ();
+      } else if (CCTK_EQUALS (timestat_timer, "none")) {
+        timer = timer_none;
+      } else {
+        assert (0);
+      }
+    }
+    switch (timer) {
+    case timer_MPI_Wtime:
+      return MPI_Wtime ();
+    case timer_rdtsc:
+      return rdtsc_cputick * rdtsc ();
+    case timer_none:
+      return 0.0;
+    default:
+      assert (0);
+    }
+  }
+  
+  
+  
+  // A global timer set
+  static
+  TimerSet timerSet;
+  
+  
+  
+  // Add a timer
+  void
+  TimerSet::add (Timer * const timer)
+  {
+    timers.push_back (timer);
+  }
+  
+  
+  
+  // Remove a timer
+  void
+  TimerSet::remove (Timer * const timer)
+  {
+    timers.remove (timer);
+  }
+  
+  
+  
+  // Output all timer names
+  void
+  TimerSet::outputNames (ostream & os)
+    const
+  {
+    os << "Timer names:" << eol;
+    int n = 0;
+    for (list <Timer *>::const_iterator
+           itimer = timers.begin(); itimer != timers.end(); ++ itimer)
+    {
+      os << "   [" << setw (4) << setfill ('0') << n << "] "
+         << (* itimer)->name() << eol;
+      ++ n;
+    }
+  }
+  
+  
+  
+  // Output all timer data
+  void
+  TimerSet::outputData (ostream & os)
+    const
+  {
+    for (list <Timer *>::const_iterator
+           itimer = timers.begin(); itimer != timers.end(); ++ itimer)
+    {
+      os << * (* itimer);
+    }
+  }
+  
+  
+  
+  // Create a new timer with the given name
+  Timer::Timer (char const * const timername_)
+    : timername (timername_)
+  {
+    assert (timername_);
+    resetstats ();
+    timerSet.add (this);
+  }
+  
+  
+  
+  // Destroy a timer
+  Timer::~Timer ()
+  {
+    timerSet.remove (this);
+  }
+  
+  
+  
+  // Reset the statistics
+  void
+  Timer::resetstats ()
+  {
+    wtime  = 0.0;
+    wtime2 = 0.0;
+    wmin   = 0.0;
+    wmax   = 0.0;
+    
+    bytes  = 0.0;
+    bytes2 = 0.0;
+    bmin   = 0.0;
+    bmax   = 0.0;
+    
+    count  = 0.0;
+    
+    running = false;
+  }
+  
+  
+  
+  // Add statistics of a timing operation
+  void
+  Timer::addstat (double const t,
+                  double const b)
+  {
+    wtime  += t;
+    wtime2 += pow (t, 2);
+    wmin   = min (wmin, t);
+    wmax   = max (wmax, t);
+    
+    bytes  += b;
+    bytes2 += pow (b, 2);
+    bmin   = min (bmin, b);
+    bmax   = max (bmax, b);
+    
+    ++ count;
+  }
+  
+  
+  
+  // Start the timer
+  void
+  Timer::start ()
+  {
+    DECLARE_CCTK_PARAMETERS;
+    if (timestat_disable) return;
+    assert (not running);
+    running = true;
+    starttime = call_timer ();
+  }
+  
+  
+  
+  // Stop the timer
+  void
+  Timer::stop (double const b)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    if (timestat_disable) return;
+    assert (running);
+    running = false;
+    double const endtime = call_timer ();
+    addstat (endtime - starttime, b);
+  }
+  
+  
+  
+  // Reset the timer
+  void
+  Timer::reset ()
+  {
+    resetstats ();
+  }
+  
+  
+  
+  // Timer name
+  string
+  Timer::name ()
+    const
+  {
+    return timername;
+  }
+  
+  
+  
+  // Output timer data
+  void
+  Timer::outputData (ostream & os)
+    const
+  {
+    double avg, stddev, bavg, bstddev;
+    if (count == 0.0) {
+      avg     = 0.0;
+      stddev  = 0.0;
+      bavg    = 0.0;
+      bstddev = 0.0;
+    } else {
+      avg     = wtime / count;
+      stddev  = sqrt (max (0.0, wtime2 / count - pow (avg, 2)));
+      bavg    = bytes / count;
+      bstddev = sqrt (max (0.0, bytes2 / count - pow (bavg, 2)));
+    }
+    
+    os << timername << ":"
+       << " cnt: " << count
+       << "   time: sum: " << wtime
+       << " avg: " << avg
+       << " stddev: " << stddev
+       << " min: " << wmin
+       << " max: " << wmax
+       << "   bytes: sum: " << bytes
+       << " avg: " << bavg
+       << " stddev: " << bstddev
+       << " min: " << bmin
+       << " max: " << bmax
+       << eol;
+  }
+  
+  
+  
+  extern "C" {
+    void
+    CarpetLib_printtimestats (CCTK_ARGUMENTS);
+  }
+  
+  void
+  CarpetLib_printtimestats (CCTK_ARGUMENTS)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (print_timestats or
+        (print_timestats_every and
+         cctk_iteration % print_timestats_every == 0))
+    {
+      ostringstream filenamebuf;
+      filenamebuf << out_dir << "/" << timestat_file
+                  << "." << setw(4) << setfill('0') << dist::rank()
+                  << ".txt";
+      string const filename = filenamebuf.str();
+      
+      ofstream file;
+      static bool do_truncate = true;
+      if (do_truncate) {
+        if (not IO_TruncateOutputFiles (cctkGH)) {
+          do_truncate = false;
+        }
+      }
+      if (do_truncate) {
+        do_truncate = false;
+        file.open (filename.c_str(), ios::out | ios::trunc);
+      } else {
+        file.open (filename.c_str(), ios::out | ios::app);
+      }
+      
+      static bool do_print_info = true;
+      if (do_print_info) {
+        do_print_info = false;
+        if (CCTK_IsFunctionAliased ("UniqueBuildID")) {
+          char const * const build_id =
+            static_cast <char const *> (UniqueBuildID (cctkGH));
+          file << "Build ID: " << build_id << eol;
+        }
+        if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
+          char const * const job_id =
+            static_cast <char const *> (UniqueSimulationID (cctkGH));
+          file << "Simulation ID: " << job_id << eol;
+        }
+        file << "Running on " << dist::size() << " processors" << eol;
+      } // if do_print_info
+      
+      file << "********************************************************************************" << eol
+           << "CarpetLib timing information at iteration " << cctkGH->cctk_iteration << " time " << cctkGH->cctk_time << ":" << eol
+           << timerSet;
+      
+      file.close ();
+      
+    } // if print_timestats
+    
+  }
+  
+} // namespace CarpetLib

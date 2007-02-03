@@ -14,11 +14,13 @@
 #include "commstate.hh"
 #include "defs.hh"
 #include "dist.hh"
+#include "timestat.hh"
 #include "vect.hh"
 
 #include "gdata.hh"
 
 using namespace std;
+using namespace CarpetLib;
 
 
 
@@ -171,36 +173,41 @@ void gdata::copy_from (comm_state& state,
 void gdata::copy_from_post (comm_state& state,
                             const gdata* src, const ibbox& box)
 {
-  wtime_copyfrom_recv.start();
+  static Timer total ("copy_from_post");
+  total.start();
 
   if (dist::rank() == proc()) {
 
     // this processor receives data
 
-    wtime_copyfrom_recvinner_allocate.start();
+    static Timer alloc ("copy_from_post_receive_allocate");
+    alloc.start ();
     comm_state::gcommbuf * b = make_typed_commbuf (box);
     int typesize;
     MPI_Type_size (b->datatype(), & typesize);
-    wtime_copyfrom_recvinner_allocate.stop(b->size() * typesize);
+    alloc.stop (b->size() * typesize);
 
-    wtime_copyfrom_recvinner_recv.start();
+    static Timer timer ("copy_from_post_receive_irecv");
+    timer. start ();
     MPI_Irecv (b->pointer(), b->size(), b->datatype(), src->proc(),
                tag, dist::comm(), &b->request);
-    wtime_copyfrom_recvinner_recv.stop(b->size() * typesize);
+    timer.stop (b->size() * typesize);
     state.requests.push_back (b->request);
     state.recvbufs.push (b);
 
   } else {
     // this processor sends data
 
-    wtime_copyfrom_sendinner_allocate.start();
+    static Timer alloc ("copy_from_post_send_allocate");
+    alloc.start ();
     comm_state::gcommbuf * b = src->make_typed_commbuf (box);
     int typesize;
     MPI_Type_size (b->datatype(), & typesize);
-    wtime_copyfrom_sendinner_allocate.stop(b->size() * typesize);
+    alloc.stop (b->size() * typesize);
 
     // copy data into send buffer
-    wtime_copyfrom_sendinner_copy.start();
+    static Timer copy ("copy_from_post_send_memcpy");
+    copy.start ();
     const ibbox& ext = src->extent();
     ivect myshape = ext.shape() / ext.stride();
     ivect items = (box.upper() - box.lower()) / box.stride() + 1;
@@ -218,33 +225,36 @@ void gdata::copy_from_post (comm_state& state,
         bytes += datatypesize * items[0];
       }
     }
-    wtime_copyfrom_sendinner_copy.stop(bytes);
+    copy.stop (bytes);
 
-    wtime_copyfrom_sendinner_send.start();
+    static Timer timer ("copy_from_post_send_isend");
+    timer.start ();
     MPI_Isend (b->pointer(), b->size(), b->datatype(), proc(),
                tag, dist::comm(), &b->request);
-    wtime_copyfrom_sendinner_send.stop(b->size() * typesize);
+    timer.stop (b->size() * typesize);
     state.requests.push_back (b->request);
     state.sendbufs.push (b);
   }
 
-  wtime_copyfrom_recv.stop();
+  total.stop (0);
 }
 
 
 void gdata::copy_from_wait (comm_state& state,
                             const gdata* src, const ibbox& box)
 {
-  wtime_copyfrom_wait.start();
+  static Timer total ("copy_from_wait");
+  total.start ();
 
-  wtime_copyfrom_recvwaitinner_wait.start();
+  static Timer wait ("copy_from_wait_wait");
+  wait.start ();
   if (not state.requests.empty()) {
     // wait for all requests at once
     MPI_Waitall (state.requests.size(), &state.requests.front(),
                  MPI_STATUSES_IGNORE);
     state.requests.clear();
   }
-  wtime_copyfrom_recvwaitinner_wait.stop();
+  wait.stop (0);
 
   queue<comm_state::gcommbuf*>* const bufs =
     dist::rank() == proc() ? &state.recvbufs : &state.sendbufs;
@@ -252,7 +262,8 @@ void gdata::copy_from_wait (comm_state& state,
 
   // copy data out of receive buffer
   if (bufs == &state.recvbufs) {
-    wtime_copyfrom_recvwaitinner_copy.start();
+    static Timer timer ("copy_from_wait_memcpy");
+    timer.start ();
     const ibbox& ext = extent();
     ivect myshape = ext.shape() / ext.stride();
     ivect items = (box.upper() - box.lower()) / box.stride() + 1;
@@ -268,15 +279,16 @@ void gdata::copy_from_wait (comm_state& state,
         recv_buffer += datatypesize * items[0];
       }
     }
-    wtime_copyfrom_recvwaitinner_copy.stop();
+    timer.stop (0);
   }
 
-  wtime_copyfrom_recvwaitinner_delete.start();
+  static Timer del ("copy_from_wait_delete");
+  del.start ();
   bufs->pop();
   delete b;
-  wtime_copyfrom_recvwaitinner_delete.stop();
+  del.stop (0);
 
-  wtime_copyfrom_wait.stop();
+  total.stop (0);
 }
 
 
@@ -322,12 +334,13 @@ void gdata::copy_into_sendbuffer (comm_state& state,
     if (not combine_sends) {
       // post the send if the buffer is full
       if (fillstate == (int)procbuf.sendbufsize * datatypesize) {
-        wtime_commstate_isend.start();
+        static Timer timer ("copy_into_sendbuffer_isend");
+        timer.start ();
         MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
                    state.typebufs.AT(c_datatype()).mpi_datatype,
                    proc(), c_datatype(), dist::comm(),
                    &state.srequests.at(dist::size()*c_datatype() + proc()));
-        wtime_commstate_isend.stop(procbuf.sendbufsize * datatypesize);
+        timer.stop (procbuf.sendbufsize * datatypesize);
       }
     }
   }
@@ -351,7 +364,8 @@ void gdata::copy_from_recvbuffer (comm_state& state,
   ivect items = (box.upper() - box.lower()) / box.stride() + 1;
   ivect offs  = (box.lower() - ext.lower()) / ext.stride();
 
-  wtime_commstate_memcpy.start();
+  static Timer timer ("copy_from_recvbuffer_memcpy");
+  timer.start ();
   double bytes = 0;
   assert (dim == 3);
   for (int k = 0; k < items[2]; k++) {
@@ -363,7 +377,7 @@ void gdata::copy_from_recvbuffer (comm_state& state,
       bytes += datatypesize * items[0];
     }
   }
-  wtime_commstate_memcpy.stop(bytes);
+  timer.stop (bytes);
 }
 
 
@@ -472,10 +486,11 @@ void gdata
     int typesize;
     MPI_Type_size (b->datatype(), & typesize);
 
-    wtime_commstate_interpolate_irecv.start();
+    static Timer timer ("interpolate_from_post_irecv");
+    timer.start ();
     MPI_Irecv (b->pointer(), b->size(), b->datatype(), src->proc(),
                tag, dist::comm(), &b->request);
-    wtime_commstate_interpolate_irecv.stop(b->size() * typesize);
+    timer.stop (b->size() * typesize);
     state.requests.push_back (b->request);
     state.recvbufs.push (b);
   } else {
@@ -491,10 +506,11 @@ void gdata
                                      order_space, order_time);
     delete tmp;
 
-    wtime_commstate_interpolate_from_isend.start();
+    static Timer timer ("interpolate_from_post_isend");
+    timer.start ();
     MPI_Isend (b->pointer(), b->size(), b->datatype(), proc(),
                tag, dist::comm(), &b->request);
-    wtime_commstate_interpolate_from_isend.stop(b->size() * typesize);
+    timer.stop (b->size() * typesize);
     state.requests.push_back (b->request);
     state.sendbufs.push (b);
   }
@@ -545,12 +561,13 @@ void gdata
     if (not combine_sends) {
       // post the send if the buffer is full
       if (fillstate == (int)procbuf.sendbufsize*datatypesize) {
-        wtime_commstate_interpolate_to_isend.start();
+        static Timer timer ("interpolate_into_sendbuffer_isend");
+        timer.start ();
         MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
                    state.typebufs.at(c_datatype()).mpi_datatype,
                    proc(), c_datatype(), dist::comm(),
                    &state.srequests.at(dist::size()*c_datatype() + proc()));
-        wtime_commstate_interpolate_to_isend.stop(procbuf.sendbufsize*datatypesize);
+        timer.stop (procbuf.sendbufsize*datatypesize);
       }
     }
   }

@@ -15,6 +15,7 @@
 
 
 using namespace std;
+using namespace CarpetLib;
 
 
 
@@ -36,6 +37,8 @@ comm_state::comm_state ()
 
   DECLARE_CCTK_PARAMETERS;
 
+  static Timer timer ("commstate::create");
+  timer.start ();
   thestate = use_collective_communication_buffers ?
              state_get_buffer_sizes : state_post;
 
@@ -57,12 +60,16 @@ comm_state::comm_state ()
   recvbuffers_ready.resize (dist::c_ndatatypes() * dist::size());
   srequests.resize (dist::c_ndatatypes() * dist::size(), MPI_REQUEST_NULL);
   rrequests.resize (dist::c_ndatatypes() * dist::size(), MPI_REQUEST_NULL);
+  
+  timer.stop (0);
 }
 
 
 void comm_state::step ()
 {
   DECLARE_CCTK_PARAMETERS;
+  static Timer total ("commstate::step");
+  total.start ();
   assert (thestate != state_done);
   switch (thestate) {
     case state_post:
@@ -108,7 +115,8 @@ void comm_state::step ()
           procbuf.recvbuf = procbuf.recvbufbase;
 
           if (procbuf.recvbufsize > 0) {
-            wtime_commstate_sizes_irecv.start();
+            static Timer timer ("commstate_sizes_irecv");
+            timer.start ();
             int const tag =
               vary_tags
               ? (dist::rank() + dist::size() * (proc + dist::size() * type)) % 32768
@@ -116,7 +124,7 @@ void comm_state::step ()
             MPI_Irecv (procbuf.recvbufbase, procbuf.recvbufsize,
                        typebufs[type].mpi_datatype, proc, tag,
                        dist::comm(), &rrequests[dist::size()*type + proc]);
-            wtime_commstate_sizes_irecv.stop();
+            timer.stop (0);
             num_posted_recvs++;
           }
         }
@@ -163,27 +171,30 @@ void comm_state::step ()
                 : type;
               if (use_mpi_send) {
                 // use MPI_Send
-                wtime_commstate_send.start();
+                static Timer timer ("commstate_send");
+                timer.start ();
                 MPI_Send (procbuf.sendbufbase, procbuf.sendbufsize,
                           typebufs[type].mpi_datatype, proc, tag,
                           dist::comm());
                 srequests[dist::size()*type + proc] = MPI_REQUEST_NULL;
-                wtime_commstate_send.stop(procbuf.sendbufsize * datatypesize);
+                timer.stop (procbuf.sendbufsize * datatypesize);
               } else if (use_mpi_ssend) {
                 // use MPI_Ssend
-                wtime_commstate_ssend.start();
+                static Timer timer ("commstate_ssend");
+                timer.start ();
                 MPI_Ssend (procbuf.sendbufbase, procbuf.sendbufsize,
                            typebufs[type].mpi_datatype, proc, tag,
                            dist::comm());
                 srequests[dist::size()*type + proc] = MPI_REQUEST_NULL;
-                wtime_commstate_ssend.stop(procbuf.sendbufsize * datatypesize);
+                timer.stop (procbuf.sendbufsize * datatypesize);
               } else {
                 // use MPI_Isend
-                wtime_commstate_isend.start();
+                static Timer timer ("commstate_isend");
+                timer.start ();
                 MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
                            typebufs[type].mpi_datatype, proc, tag,
                            dist::comm(), &srequests[dist::size()*type + proc]);
-                wtime_commstate_isend.stop(procbuf.sendbufsize * datatypesize);
+                timer.stop (procbuf.sendbufsize * datatypesize);
               }
             }
           
@@ -216,6 +227,7 @@ void comm_state::step ()
     default:
       assert (0 && "invalid state");
   }
+  total.stop (0);
 }
 
 
@@ -266,13 +278,15 @@ bool comm_state::AllPostedCommunicationsFinished ()
         }
       }
       assert (nreqs == reqs.size());
-      wtime_commstate_waitall_final.start();
+      static Timer timer ("commstate_waitall_final");
+      timer.start ();
       MPI_Waitall (reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE);
-      wtime_commstate_waitall_final.stop();
+      timer.stop (0);
     } else {
-      wtime_commstate_waitall_final.start();
+      static Timer timer ("commstate_waitall_final");
+      timer.start ();
       MPI_Waitall (srequests.size(), &srequests.front(), MPI_STATUSES_IGNORE);
-      wtime_commstate_waitall_final.stop();
+      timer.stop (0);
     }
 
     return true;
@@ -304,13 +318,15 @@ bool comm_state::AllPostedCommunicationsFinished ()
         }
       }
       assert (nreqs == reqs.size());
-      wtime_commstate_waitall.start();
+      static Timer timer ("commstate_waitall");
+      timer.start ();
       MPI_Waitall (reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE);
-      wtime_commstate_waitall.stop();
+      timer.stop (0);
     } else {
-      wtime_commstate_waitall.start();
+      static Timer timer ("commstate_waitall");
+      timer.start ();
       MPI_Waitall (rrequests.size(), &rrequests.front(), MPI_STATUSES_IGNORE);
-      wtime_commstate_waitall.stop();
+      timer.stop (0);
     }
     num_completed_recvs = num_posted_recvs;
   } else {
@@ -318,10 +334,11 @@ bool comm_state::AllPostedCommunicationsFinished ()
     vector<int> completed_recvs(rrequests.size(), -1);
 
     // wait for completion of at least one posted receive operation
-    wtime_commstate_waitsome.start();
+    static Timer timer ("commstate_waitsome");
+    timer.start ();
     MPI_Waitsome (rrequests.size(), &rrequests.front(), &num_completed_recvs_,
                   &completed_recvs.front(), MPI_STATUSES_IGNORE);
-    wtime_commstate_waitsome.stop();
+    timer.stop (0);
     assert (0 < num_completed_recvs_);
     num_completed_recvs += num_completed_recvs_;
 
