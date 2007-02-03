@@ -36,6 +36,11 @@ using namespace std;
 
 
 
+// Begin a new line without flushing the output buffer
+char const * const eol = "\n";
+
+
+
 // Number of dimensions
 const int dim = 3;
   
