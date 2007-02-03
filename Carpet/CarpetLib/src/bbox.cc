@@ -17,10 +17,10 @@ using namespace std;
 template<class T, int D>
 T bbox<T,D>::size () const {
   if (empty()) return 0;
+  const vect<T,D> sh(shape()/stride()+T(1));
 #ifdef NDEBUG
-  return prod(shape()/stride()+1);
+  return prod(sh);
 #else
-  const vect<T,D> sh((shape()+stride()-T(1))/stride());
   T sz = 1, max = numeric_limits<T>::max();
   for (int d=0; d<D; ++d) {
     assert (sh[d] <= max);
