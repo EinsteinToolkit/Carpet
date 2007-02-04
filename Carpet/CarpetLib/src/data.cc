@@ -777,7 +777,7 @@ void data <T>
   }
     
   default:
-    assert(0);
+    assert (0);
   } // switch (transport_operator)
   
   total.stop (0);
@@ -835,7 +835,7 @@ void data <T>
     break;
     
   default:
-    assert(0);
+    assert (0);
   }
   
   total.stop (0);
