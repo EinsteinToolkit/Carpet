@@ -316,15 +316,16 @@ void gdata::copy_into_sendbuffer (comm_state& state,
     assert (fillstate <= (int)procbuf.sendbufsize * datatypesize);
 
     // copy this processor's data into the send buffer
-    const ibbox& ext = src->extent();
-    ivect myshape = ext.shape() / ext.stride();
-    ivect items = (box.upper() - box.lower()) / box.stride() + 1;
-    ivect offs  = (box.lower() - ext.lower()) / ext.stride();
+    ibbox const & ext = src->extent();
+    ivect const myshape = ext.shape() / ext.stride();
+    ivect const items = (box.upper() - box.lower()) / box.stride() + 1;
+    ivect const offs  = (box.lower() - ext.lower()) / ext.stride();
   
     assert (dim == 3);
     for (int k = 0; k < items[2]; k++) {
       for (int j = 0; j < items[1]; j++) {
-        int i = offs[0] + myshape[0]*((j+offs[1]) + myshape[1]*(k+offs[2]));
+        int const i =
+          offs[0] + myshape[0]*((j+offs[1]) + myshape[1]*(k+offs[2]));
         memcpy (procbuf.sendbuf,
                 ((const char*) src->storage()) + datatypesize*i,
                 datatypesize * items[0]);

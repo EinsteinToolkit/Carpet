@@ -277,7 +277,7 @@ void ggf::recompose_sync (comm_state& state, const int rl,
 
 
 // Cycle the time levels by rotating the data sets
-void ggf::cycle (int rl, int c, int ml) {
+void ggf::cycle (int const rl, int const c, int const ml) {
   assert (rl>=0 and rl<h.reflevels());
   assert (c>=0 and c<h.components(rl));
   assert (ml>=0 and ml<h.mglevels());
