@@ -21,24 +21,10 @@ gf<T>::gf (const int varindex_, const operator_type transport_operator_,
         t_, d_, prolongation_order_time_,
         vectorlength_, vectorindex_, vectorleader_)
 {
-  // recompose ();
   recompose_crop ();
   for (int rl=0; rl<h.reflevels(); ++rl) {
     recompose_allocate (rl);
-#if 0
-    for (comm_state state; !state.done(); state.step()) {
-      recompose_fill (state, rl, false);
-    }
-#endif
-    recompose_free (rl);
-#if 0
-    for (comm_state state; !state.done(); state.step()) {
-      recompose_bnd_prolongate (state, rl, false);
-    }
-    for (comm_state state; !state.done(); state.step()) {
-      recompose_sync (state, rl, false);
-    }
-#endif
+    recompose_free_old (rl);
   } // for rl
 }
 

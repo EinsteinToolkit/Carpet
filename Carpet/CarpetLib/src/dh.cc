@@ -94,7 +94,7 @@ void dh::recompose (const int rl, const bool do_prolongate)
     for (comm_state state; not state.done(); state.step()) {
       (*f)->recompose_fill (state, rl, do_prolongate);
     }
-    (*f)->recompose_free (rl);
+    (*f)->recompose_free_old (rl);
     for (comm_state state; not state.done(); state.step()) {
       (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
     }

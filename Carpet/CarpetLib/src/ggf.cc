@@ -223,7 +223,7 @@ void ggf::recompose_fill (comm_state& state, const int rl,
   } // for ml
 }
 
-void ggf::recompose_free (const int rl)
+void ggf::recompose_free_old (const int rl)
 {
   // Delete old storage
   for (int ml=0; ml<(int)oldstorage.size(); ++ml) {

@@ -93,7 +93,7 @@ public:
   void recompose_crop ();
   void recompose_allocate (int rl);
   void recompose_fill (comm_state& state, int rl, bool do_prolongate);
-  void recompose_free (int rl);
+  void recompose_free_old (int rl);
   void recompose_bnd_prolongate (comm_state& state, int rl, bool do_prolongate);
   void recompose_sync (comm_state& state, int rl, bool do_prolongate);
 
