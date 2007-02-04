@@ -28,6 +28,8 @@ class gdata {
 protected:                      // should be readonly
 
   // Fields
+  void * _storage;              // A copy of the storage pointer
+  
   const int varindex;           // Cactus variable index, or -1
 
   centering cent;
@@ -99,9 +101,20 @@ public:
     return _has_storage;
   }
   
-  virtual const void* storage () const = 0;
+  void const *
+  storage ()
+    const
+  {
+    assert (_has_storage);
+    return _storage;
+  }
   
-  virtual void* storage () = 0;
+  void *
+  storage ()
+  {
+    assert (_has_storage);
+    return _storage;
+  }
   
   int size () const {
     assert (_has_storage);

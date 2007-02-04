@@ -218,6 +218,7 @@ void data<T>::allocate (const ibbox& extent_,
       assert (_memory);
     }
     _memory->register_client (vectorindex);
+    _storage = _memory->storage(vectorindex);
   } else {
     assert (not memptr);
   }
@@ -232,6 +233,7 @@ void data<T>::free ()
   if (not _memory->has_clients()) delete _memory;
   _memory = NULL;
   _has_storage = false;
+  _storage = NULL;
 }
 
 
@@ -264,6 +266,7 @@ void data<T>::change_processor_recv (comm_state& state,
       assert (not _memory);
       _memory = new mem<T> (1, _size, (T*)memptr);
       _memory->register_client (0);
+      _storage = _memory->storage (0);
       
       static Timer timer ("irecv");
       timer.start ();
@@ -399,7 +402,8 @@ void data<T>::change_processor_wait (comm_state& state,
       
       _memory->unregister_client (0);
       if (not _memory->has_clients()) delete _memory;
-      _memory = 0;
+      _memory = NULL;;
+      _storage = NULL;
       
     } else {
       assert (not memptr);

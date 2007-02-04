@@ -82,20 +82,6 @@ private:
                                       const int newproc,
                                       void* const memptr = NULL);
 public:
-
-  // Accessors
-  virtual const void* storage () const
-  {
-    assert (_has_storage);
-    if (! _memory) return 0;
-    return _memory->storage(vectorindex);
-  }
-
-  virtual void* storage () {
-    assert (_has_storage);
-    if (! _memory) return 0;
-    return _memory->storage(vectorindex);
-  }
   
   // Data accessors
   const T& operator[] (const ivect& index) const
