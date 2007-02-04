@@ -98,26 +98,6 @@ public:
     return _memory->storage(vectorindex)[offset(index)];
   }
 
-#if 0
-protected:
-  virtual void
-  copy_from_recv_inner (comm_state& state,
-                        const gdata* src,
-                        const ibbox& box);
-  virtual void
-  copy_from_send_inner (comm_state& state,
-                        const gdata* src,
-                        const ibbox& box);
-  virtual void
-  copy_from_recv_wait_inner (comm_state& state,
-                             const gdata* src,
-                             const ibbox& box);
-  virtual void
-  copy_from_send_wait_inner (comm_state& state,
-                             const gdata* src,
-                             const ibbox& box);
-#endif
-  
   // Datatype accessors
 private:
   // maps the C datatype of a data class object to a 0-based index
