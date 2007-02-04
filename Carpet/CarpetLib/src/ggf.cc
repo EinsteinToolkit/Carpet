@@ -281,11 +281,14 @@ void ggf::cycle (int const rl, int const c, int const ml) {
   assert (rl>=0 and rl<h.reflevels());
   assert (c>=0 and c<h.components(rl));
   assert (ml>=0 and ml<h.mglevels());
-  gdata* tmpdata = storage.at(ml).at(rl).at(c).at(timelevels(ml,rl)-1);
-  for (int tl=timelevels(ml,rl)-1; tl>0; --tl) {
-    storage.at(ml).at(rl).at(c).at(tl) = storage.at(ml).at(rl).at(c).at(tl-1);
+  int const ntl = timelevels(ml,rl);
+  assert (ntl > 0);
+  fdata & fdatas = storage.AT(ml).AT(rl).AT(c);
+  gdata * const tmpdata = fdatas.AT(ntl-1);
+  for (int tl=ntl-1; tl>0; --tl) {
+    fdatas.AT(tl) = fdatas.AT(tl-1);
   }
-  storage.at(ml).at(rl).at(c).at(0) = tmpdata;
+  fdatas.AT(0) = tmpdata;
 }
 
 // Flip the time levels by exchanging the data sets
