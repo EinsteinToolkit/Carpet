@@ -33,6 +33,8 @@ class ggf {
   typedef list<ibbox>    iblist;
   typedef vector<iblist> iblistvect;
   
+  typedef vector <pseudoregion> pvect;
+  
   typedef gdata*        tdata;  // data ...
   typedef vector<tdata> fdata;  // ... for each time level
   typedef vector<fdata> cdata;  // ... for each component
@@ -134,6 +136,12 @@ protected:
                 int tl1, int rl1, int c1, int ml1,
 		const iblistvect dh::dboxes::* recv_listvect,
 		int tl2, int rl2, int ml2);
+
+  // Copy regions
+  void copycat (comm_state& state,
+                int tl1, int rl1, int c1, int ml1,
+		const pvect dh::dboxes::* recv_pvect,
+                int tl2, int rl2, int ml2);
   
   // Interpolate a region
   void intercat (comm_state& state,
@@ -153,6 +161,13 @@ protected:
   void intercat (comm_state& state,
                  int tl1, int rl1, int c1, int ml1,
 		 const iblistvect dh::dboxes::* recv_listvect,
+		 const vector<int> tl2s, int rl2, int ml2,
+		 CCTK_REAL time);
+
+  // Interpolate regions
+  void intercat (comm_state& state,
+                 int tl1, int rl1, int c1, int ml1,
+		 const pvect dh::dboxes::* recv_pvect,
 		 const vector<int> tl2s, int rl2, int ml2,
 		 CCTK_REAL time);
 

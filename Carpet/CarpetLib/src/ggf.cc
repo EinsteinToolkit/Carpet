@@ -375,16 +375,51 @@ void ggf::copycat (comm_state& state,
   // walk all components
   static Timer copycat1 ("copycat_listvect_1");
   copycat1.start ();
-  for (int c2=0; c2<h.components(rl2); ++c2) {
-    const iblist recv = (d.boxes.at(ml1).at(rl1).at(c1).*recv_listvect).at(c2);
+  iblistvect::const_iterator recvi =
+    (d.boxes.AT(ml1).AT(rl1).AT(c1).*recv_listvect).begin();
+  gdata * const dst = storage.AT(ml1).AT(rl1).AT(c1).AT(tl1);
+  cdata::const_iterator srci = storage.AT(ml2).AT(rl2).begin();
+  int const nc = h.components(rl2);
+  for (int c2=0; c2<nc; ++c2) {
+    iblist const & recv = (*recvi);
+    gdata const * const src = (*srci).AT(tl2);
     // walk all boxes
     for (iblist::const_iterator r=recv.begin(); r!=recv.end(); ++r) {
       // (use the send boxes for communication)
       // copy the content
-      gdata* const dst = storage.at(ml1).at(rl1).at(c1).at(tl1);
-      gdata* const src = storage.at(ml2).at(rl2).at(c2).at(tl2);
       dst->copy_from(state, src, *r);
     }
+    ++ recvi;
+    ++ srci;
+  }
+  copycat1.stop (0);
+}
+
+// Copy regions
+void ggf::copycat (comm_state& state,
+                   int tl1, int rl1, int c1, int ml1,
+                   const pvect dh::dboxes::* recv_pvect,
+                   int tl2, int rl2, int ml2)
+{
+  assert (rl1>=0 and rl1<h.reflevels());
+  assert (c1>=0 and c1<h.components(rl1));
+  assert (ml1>=0 and ml1<h.mglevels());
+  assert (tl1>=0 and tl1<timelevels(ml1,rl1));
+  assert (           ml2<h.mglevels());
+  assert (rl2>=0 and rl2<h.reflevels());
+  assert (tl2>=0 and tl2<timelevels(ml2,rl2));
+  // walk all components
+  static Timer copycat1 ("copycat_pvect_1");
+  copycat1.start ();
+  gdata * const dst = storage.AT(ml1).AT(rl1).AT(c1).AT(tl1);
+  cdata const & srcs = storage.AT(ml2).AT(rl2);
+  pvect const & prs = d.boxes.AT(ml1).AT(rl1).AT(c1).*recv_pvect;
+  for (pvect::const_iterator ipr=prs.begin(); ipr!=prs.end(); ++ipr) {
+    pseudoregion const & pr = * ipr;
+    ibbox const & r = pr.extent;
+    int const c2 = pr.processor;
+    gdata const * const src = srcs.AT(c2).AT(tl2);
+    dst->copy_from(state, src, r);
   }
   copycat1.stop (0);
 }
@@ -509,6 +544,45 @@ void ggf::intercat (comm_state& state,
   intercat1.stop (0);
 }
 
+// Interpolate regions
+void ggf::intercat (comm_state& state,
+                    int tl1, int rl1, int c1, int ml1,
+                    const pvect dh::dboxes::* recv_pvect,
+                    const vector<int> tl2s, int rl2, int ml2,
+                    const CCTK_REAL time)
+{
+  assert (rl1>=0 and rl1<h.reflevels());
+  assert (c1>=0 and c1<h.components(rl1));
+  assert (ml1>=0 and ml1<h.mglevels());
+  assert (tl1>=0 and tl1<timelevels(ml1,rl1));
+  assert (rl2>=0 and rl2<h.reflevels());
+  assert (ml2>=0 and ml2<h.mglevels());
+  vector<CCTK_REAL> times(tl2s.size());
+  for (int i=0; i<(int)tl2s.size(); ++i) {
+    assert (tl2s.AT(i)>=0 and tl2s.AT(i)<timelevels(ml2,rl2));
+    times.AT(i) = t.time(tl2s.AT(i),rl2,ml2);
+  }
+  // walk all components
+  static Timer intercat1 ("intercat_pvect_1");
+  intercat1.start ();
+  int const pos = d.prolongation_order_space;
+  int const pot = transport_operator == op_copy ? 0 : prolongation_order_time;
+  gdata * const dst = storage.AT(ml1).AT(rl1).AT(c1).AT(tl1);
+  cdata const & srcs = storage.AT(ml2).AT(rl2);
+  vector<const gdata*> gsrcs(tl2s.size());
+  pvect const & prs = d.boxes.AT(ml1).AT(rl1).AT(c1).*recv_pvect;
+  for (pvect::const_iterator ipr=prs.begin(); ipr!=prs.end(); ++ipr) {
+    pseudoregion const & pr = * ipr;
+    ibbox const & r = pr.extent;
+    int const c2 = pr.processor;
+    for (int i=0; i<(int)gsrcs.size(); ++i) {
+      gsrcs.AT(i) = srcs.AT(c2).AT(tl2s.AT(i));
+    }
+    dst->interpolate_from (state, gsrcs, times, r, time, pos, pot);
+  }
+  intercat1.stop (0);
+}
+
 
 
 // Copy a component from the next time level
@@ -530,7 +604,7 @@ void ggf::sync (comm_state& state, int tl, int rl, int c, int ml)
   static Timer timer ("sync");
   timer.start ();
   copycat (state,
-           tl,rl,c,ml, &dh::dboxes::recv_sync,
+           tl,rl,c,ml, &dh::dboxes::recv_sync_fast,
       	   tl,rl,  ml);
   timer.stop (0);
 }
@@ -565,7 +639,7 @@ void ggf::ref_bnd_prolongate (comm_state& state,
     tl2s.AT(0) = 0;
   }
   intercat (state,
-            tl  ,rl  ,c,ml, &dh::dboxes::recv_ref_bnd_coarse,
+            tl  ,rl  ,c,ml, &dh::dboxes::recv_ref_bnd_coarse_fast,
             tl2s,rl-1,  ml, time);
   timer.stop (0);
 }
@@ -613,11 +687,11 @@ void ggf::ref_restrict (comm_state& state,
   assert (abs(t.get_time(rl,ml) - t.get_time(rl+1,ml))
 	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
   if (transport_operator == op_none) return;
-  const vector<int> tl2s(1,tl);
   static Timer timer ("ref_restrict");
   timer.start ();
+  vector<int> const tl2s(1,tl);
   intercat (state,
-            tl  ,rl  ,c,ml, &dh::dboxes::recv_ref_fine,
+            tl  ,rl  ,c,ml, &dh::dboxes::recv_ref_fine_fast,
 	    tl2s,rl+1,  ml, time);
   timer.stop (0);
 }
@@ -629,15 +703,15 @@ void ggf::ref_prolongate (comm_state& state,
 {
   assert (rl>=1);
   if (transport_operator == op_none) return;
-  vector<int> tl2s;
   static Timer timer ("ref_prolongate");
   timer.start ();
+  vector<int> tl2s;
   // Interpolation in time
   assert (timelevels(ml,rl) >= prolongation_order_time+1);
   tl2s.resize(prolongation_order_time+1);
-  for (int i=0; i<=prolongation_order_time; ++i) tl2s.at(i) = i;
+  for (int i=0; i<=prolongation_order_time; ++i) tl2s.AT(i) = i;
   intercat (state,
-            tl  ,rl  ,c,ml, &dh::dboxes::recv_ref_coarse,
+            tl  ,rl  ,c,ml, &dh::dboxes::recv_ref_coarse_fast,
 	    tl2s,rl-1,  ml, time);
   timer.stop (0);
 }

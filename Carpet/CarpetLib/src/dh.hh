@@ -17,6 +17,17 @@ using namespace std;
 
 
 
+// A pseudoregion is almost a region; it is a bbox that lives on a
+// certain processor.  Pseudoregions are a compact way to store
+// information about what processors needs to send data to what other
+// processor during synchronisation or regridding.
+struct pseudoregion {
+  ibbox extent;
+  int processor;
+};
+
+
+
 // Forward declaration
 class ggf;
 class dh;
@@ -33,6 +44,9 @@ class dh {
 public:
   typedef list<ibbox>    iblist;
   typedef vector<iblist> iblistvect; // vector of lists
+
+  typedef vector <pseudoregion> pvect;
+
 
 
   // in here, the term "boundary" means both ghost zones and
@@ -57,13 +71,17 @@ public:
     iblistvect send_ref_fine;
     iblistvect send_ref_coarse;
     iblistvect recv_ref_fine;
+    pvect recv_ref_fine_fast;
     iblistvect recv_ref_coarse;
+    pvect recv_ref_coarse_fast;
     iblistvect send_sync;       // send while syncing
     iblistvect send_ref_bnd_fine; // sent to finer grids
     
     ibset boundaries;           // boundaries
     iblistvect recv_sync;       // received while syncing
+    pvect recv_sync_fast;
     iblistvect recv_ref_bnd_coarse; // received from coarser grids
+    pvect recv_ref_bnd_coarse_fast;
     ibset sync_not;             // not received while syncing (outer
                                 // boundary of that level)
     ibset recv_not;             // not received while syncing or
@@ -100,6 +118,12 @@ private:
   void setup_refinement_prolongation_boxes (dboxes & b, int rl, int c, int ml);
   void setup_refinement_boundary_prolongation_boxes (dboxes & b, int rl, int c, int ml);
   void setup_refinement_restriction_boxes (dboxes & b, int rl, int c, int ml);
+  void optimise_field (dboxes & b,
+                       iblistvect const dboxes::* field,
+                       pvect dboxes::* field_fast,
+                       int rl, int c, int ml);
+  void optimise_fields (dboxes & b,
+                        int rl, int c, int ml);
   void trim_unsynced_boundaries (dboxes & b, int rl, int c, int ml);
   void do_output_bboxes (dboxes & b, int rl, int c, int ml);
   void check_bboxes (dboxes & b, int rl, int c, int ml);

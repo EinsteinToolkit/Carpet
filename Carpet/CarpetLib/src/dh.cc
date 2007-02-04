@@ -542,6 +542,43 @@ void dh::trim_unsynced_boundaries (dh::dboxes & box,
   }
 }
 
+void
+dh::
+optimise_field (dboxes & box,
+                iblistvect const dboxes::* const field,
+                pvect dboxes::* const field_fast,
+                int const rl, int const c, int const ml)
+{
+  size_t num_regions = 0;
+  for (int cc=0; cc<h.components(rl); ++cc) {
+    num_regions += (box.*field).AT(cc).size();
+  }
+  assert ((box.*field_fast).empty());
+  (box.*field_fast).reserve (num_regions);
+  for (int cc=0; cc<h.components(rl); ++cc) {
+    for (iblist::const_iterator
+           r=(box.*field).AT(cc).begin(); r!=(box.*field).AT(cc).end(); ++r)
+    {
+      pseudoregion pr;
+      pr.extent = * r;
+      pr.processor = cc;
+      (box.*field_fast).push_back (pr);
+    }
+  }
+  assert ((box.*field_fast).size() == num_regions);
+}
+
+void
+dh::
+optimise_fields (dboxes & box,
+                 int const rl, int const c, int const ml)
+{
+  optimise_field (box, &dboxes::recv_ref_fine, &dboxes::recv_ref_fine_fast, rl, c, ml);
+  optimise_field (box, &dboxes::recv_ref_coarse, &dboxes::recv_ref_coarse_fast, rl, c, ml);
+  optimise_field (box, &dboxes::recv_sync, &dboxes::recv_sync_fast, rl, c, ml);
+  optimise_field (box, &dboxes::recv_ref_bnd_coarse, &dboxes::recv_ref_bnd_coarse_fast, rl, c, ml);
+}
+
 void dh::check_bboxes (dh::dboxes & box,
                        int const rl, int const c, int const ml)
 {
