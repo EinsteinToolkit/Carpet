@@ -29,26 +29,16 @@ namespace CarpetLib {
   template <typename T>
   void
   prolongate_3d_o1_rf2 (T const * restrict const src,
-                        ivect3 const & srcext,
+                        ivect3 const & restrict srcext,
                         T * restrict const dst,
-                        ivect3 const & dstext,
-                        ibbox3 const & srcbbox,
-                        ibbox3 const & dstbbox,
-                        ibbox3 const & regbbox)
+                        ivect3 const & restrict dstext,
+                        ibbox3 const & restrict srcbbox,
+                        ibbox3 const & restrict dstbbox,
+                        ibbox3 const & restrict regbbox)
   {
     typedef typename typeprops<T>::real RT;
     
     
-    
-#if 0
-    // This is already guaranteed by bbox
-    if (any (srcbbox.stride() == 0 or
-             dstbbox.stride() == 0 or
-             regbbox.stride() == 0))
-    {
-      CCTK_WARN (0, "Internal error: stride is zero");
-    }
-#endif
     
     if (any (srcbbox.stride() <= regbbox.stride() or
              dstbbox.stride() != regbbox.stride()))
@@ -60,31 +50,11 @@ namespace CarpetLib {
       CCTK_WARN (0, "Internal error: source strides are not twice the destination strides");
     }
     
-#if 0
-    // This needs to be allowed for cell centring
-    if (any (srcbbox.lower() % srcbbox.stride() != 0 or
-             dstbbox.lower() % dstbbox.stride() != 0 or
-             regbbox.lower() % regbbox.stride() != 0))
-    {
-      CCTK_WARN (0, "Internal error: array origins are not integer multiples of the strides");
-    }
-#endif
-    
     // This could be handled, but is likely to point to an error
     // elsewhere
     if (regbbox.empty()) {
       CCTK_WARN (0, "Internal error: region extent is empty");
     }
-    
-#if 0
-    // This is already guaranteed by bbox
-    if (any ((srcbbox.upper() - srcbbox.lower()) % srcbbox.stride() != 0 or
-             (dstbbox.upper() - dstbbox.lower()) % dstbbox.stride() != 0 or
-             (regbbox.upper() - regbbox.lower()) % regbbox.stride() != 0))
-    {
-      CCTK_WARN (0, "Internal error: array extents are not integer multiples of the strides");
-    }
-#endif
     
     
     
@@ -369,22 +339,22 @@ namespace CarpetLib {
   template
   void
   prolongate_3d_o1_rf2 (CCTK_REAL const * restrict const src,
-                        ivect3 const & srcext,
+                        ivect3 const & restrict srcext,
                         CCTK_REAL * restrict const dst,
-                        ivect3 const & dstext,
-                        ibbox3 const & srcbbox,
-                        ibbox3 const & dstbbox,
-                        ibbox3 const & regbbox);
+                        ivect3 const & restrict dstext,
+                        ibbox3 const & restrict srcbbox,
+                        ibbox3 const & restrict dstbbox,
+                        ibbox3 const & restrict regbbox);
   
   template
   void
   prolongate_3d_o1_rf2 (CCTK_COMPLEX const * restrict const src,
-                        ivect3 const & srcext,
+                        ivect3 const & restrict srcext,
                         CCTK_COMPLEX * restrict const dst,
-                        ivect3 const & dstext,
-                        ibbox3 const & srcbbox,
-                        ibbox3 const & dstbbox,
-                        ibbox3 const & regbbox);
+                        ivect3 const & restrict dstext,
+                        ibbox3 const & restrict srcbbox,
+                        ibbox3 const & restrict dstbbox,
+                        ibbox3 const & restrict regbbox);
   
   
   

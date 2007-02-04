@@ -37,12 +37,12 @@ namespace CarpetLib {
   template <typename T>
   void
   prolongate_3d_cc_rf2_std2prim (T const * restrict const src,
-                                 ivect3 const & srcext,
+                                 ivect3 const & restrict srcext,
                                  T * restrict const dst,
-                                 ivect3 const & dstext,
-                                 ibbox3 const & srcbbox,
-                                 ibbox3 const & dstbbox,
-                                 ibbox3 const & regbbox)
+                                 ivect3 const & restrict dstext,
+                                 ibbox3 const & restrict srcbbox,
+                                 ibbox3 const & restrict dstbbox,
+                                 ibbox3 const & restrict regbbox)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -120,85 +120,6 @@ namespace CarpetLib {
     
     
     
-#if 0
-    // Original version
-    
-    // Initialize the corner
-    
-    dst [DSTIND3(0, 0, 0)] =
-      zero;
-    
-    // Compute the axis lines
-    
-    for (int i=1; i<regiext; ++i) {
-      dst [DSTIND3(i, 0, 0)] =
-        + dst [DSTIND3(i-1, 0, 0)]
-        + src [SRCIND3(i-1, 0, 0)];
-    }
-    
-    for (int j=1; j<regjext; ++j) {
-      dst [DSTIND3(0, j, 0)] =
-        + dst [DSTIND3(0, j-1, 0)]
-        + src [SRCIND3(0, j-1, 0)];
-    }
-    
-    for (int k=1; k<regkext; ++k) {
-      dst [DSTIND3(0, 0, k)] =
-        + dst [DSTIND3(0, 0, k-1)]
-        + src [SRCIND3(0, 0, k-1)];
-    }
-    
-    // Compute the planes
-    
-    for (int j=1; j<regjext; ++j) {
-      for (int i=1; i<regiext; ++i) {
-        dst [DSTIND3(i, j, 0)] =
-          + dst [DSTIND3(i-1, j, 0)]
-          + dst [DSTIND3(i, j-1, 0)]
-          - dst [DSTIND3(i-1, j-1, 0)]
-          + src [SRCIND3(i-1, j-1, 0)];
-      }
-    }
-    
-    for (int k=1; k<regkext; ++k) {
-      for (int i=1; i<regiext; ++i) {
-        dst [DSTIND3(i, 0, k)] =
-          + dst [DSTIND3(i-1, 0, k)]
-          + dst [DSTIND3(i, 0, k-1)]
-          - dst [DSTIND3(i-1, 0, k-1)]
-          + src [SRCIND3(i-1, 0, k-1)];
-      }
-    }
-    
-    for (int k=1; k<regkext; ++k) {
-      for (int j=1; j<regjext; ++j) {
-        dst [DSTIND3(0, j, k)] =
-          + dst [DSTIND3(0, j-1, k)]
-          + dst [DSTIND3(0, j, k-1)]
-          - dst [DSTIND3(0, j-1, k-1)]
-          + src [SRCIND3(0, j-1, k-1)];
-      }
-    }
-    
-    // Compute the interior
-    
-    for (int k=1; k<regkext; ++k) {
-      for (int j=1; j<regjext; ++j) {
-        for (int i=1; i<regiext; ++i) {
-          dst [DSTIND3(i, j, k)] =
-            + dst [DSTIND3(i-1, j, k)]
-            + dst [DSTIND3(i, j-1, k)]
-            + dst [DSTIND3(i, j, k-1)]
-            - 2 * dst [DSTIND3(i-1, j-1, k-1)]
-            + src [SRCIND3(i-1, j-1, k-1)];
-        }
-      }
-    }
-    
-#endif
-    
-#if 1
-    
     for (int k=0; k<regkext; ++k) {
       for (int j=0; j<regjext; ++j) {
         for (int i=0; i<regiext; ++i) {
@@ -230,26 +151,6 @@ namespace CarpetLib {
       }
     }
     
-#endif
-    
-#if 0
-    // For testing
-    
-#warning "TODO"
-    for (int k=0; k<regkext; ++k) {
-      for (int j=0; j<regjext; ++j) {
-        for (int i=0; i<regiext; ++i) {
-          if (i==0 or j==0 or k==0) {
-            dst [DSTIND3(i, j, k)] = zero;
-          } else {
-            dst [DSTIND3(i, j, k)] = src [SRCIND3(i-1, j-1, k-1)];
-          }
-        }
-      }
-    }
-    
-#endif
-    
   }
   
   
@@ -257,22 +158,22 @@ namespace CarpetLib {
   template
   void
   prolongate_3d_cc_rf2_std2prim (CCTK_REAL const * restrict const src,
-                                 ivect3 const & srcext,
+                                 ivect3 const & restrict srcext,
                                  CCTK_REAL * restrict const dst,
-                                 ivect3 const & dstext,
-                                 ibbox3 const & srcbbox,
-                                 ibbox3 const & dstbbox,
-                                 ibbox3 const & regbbox);
+                                 ivect3 const & restrict dstext,
+                                 ibbox3 const & restrict srcbbox,
+                                 ibbox3 const & restrict dstbbox,
+                                 ibbox3 const & restrict regbbox);
   
   template
   void
   prolongate_3d_cc_rf2_std2prim (CCTK_COMPLEX const * restrict const src,
-                                 ivect3 const & srcext,
+                                 ivect3 const & restrict srcext,
                                  CCTK_COMPLEX * restrict const dst,
-                                 ivect3 const & dstext,
-                                 ibbox3 const & srcbbox,
-                                 ibbox3 const & dstbbox,
-                                 ibbox3 const & regbbox);
+                                 ivect3 const & restrict dstext,
+                                 ibbox3 const & restrict srcbbox,
+                                 ibbox3 const & restrict dstbbox,
+                                 ibbox3 const & restrict regbbox);
   
   
   
@@ -282,12 +183,12 @@ namespace CarpetLib {
   template <typename T>
   void
   prolongate_3d_cc_rf2_prim2std (T const * restrict const src,
-                                 ivect const & srcext,
+                                 ivect const & restrict srcext,
                                  T * restrict const dst,
-                                 ivect const & dstext,
-                                 ibbox3 const & srcbbox,
-                                 ibbox3 const & dstbbox,
-                                 ibbox3 const & regbbox)
+                                 ivect const & restrict dstext,
+                                 ibbox3 const & restrict srcbbox,
+                                 ibbox3 const & restrict dstbbox,
+                                 ibbox3 const & restrict regbbox)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -358,28 +259,6 @@ namespace CarpetLib {
     
     
     
-#if 0
-    // Original version
-
-    // Compute the interior
-    
-    for (int k=0; k<regkext; ++k) {
-      for (int j=0; j<regjext; ++j) {
-        for (int i=0; i<regiext; ++i) {
-          dst [DSTIND3(i, j, k)] =
-            + src [SRCIND3(i+1, j+1, k+1)]
-            - src [SRCIND3(i, j+1, k+1)]
-            - src [SRCIND3(i+1, j, k+1)]
-            - src [SRCIND3(i+1, j+1, k)]
-            + 2 * src [SRCIND3(i-1, j-1, k-1)];
-        }
-      }
-    }
-    
-#endif
-    
-#if 1
-    
     for (int k=0; k<regkext; ++k) {
       for (int j=0; j<regjext; ++j) {
         for (int i=0; i<regiext; ++i) {
@@ -396,22 +275,6 @@ namespace CarpetLib {
       }
     }
     
-#endif
-    
-#if 0
-    // For testing
-    
-#warning "TODO"
-    for (int k=0; k<regkext; ++k) {
-      for (int j=0; j<regjext; ++j) {
-        for (int i=0; i<regiext; ++i) {
-          dst [DSTIND3(i, j, k)] = src [SRCIND3(i+1, j+1, k+1)];
-        }
-      }
-    }
-    
-#endif
-    
   }
   
   
@@ -419,22 +282,22 @@ namespace CarpetLib {
   template
   void
   prolongate_3d_cc_rf2_prim2std (CCTK_REAL const * restrict const src,
-                                 ivect const & srcext,
+                                 ivect const & restrict srcext,
                                  CCTK_REAL * restrict const dst,
-                                 ivect const & dstext,
-                                 ibbox3 const & srcbbox,
-                                 ibbox3 const & dstbbox,
-                                 ibbox3 const & regbbox);
+                                 ivect const & restrict dstext,
+                                 ibbox3 const & restrict srcbbox,
+                                 ibbox3 const & restrict dstbbox,
+                                 ibbox3 const & restrict regbbox);
   
   template
   void
   prolongate_3d_cc_rf2_prim2std (CCTK_COMPLEX const * restrict const src,
-                                 ivect const & srcext,
+                                 ivect const & restrict srcext,
                                  CCTK_COMPLEX * restrict const dst,
-                                 ivect const & dstext,
-                                 ibbox3 const & srcbbox,
-                                 ibbox3 const & dstbbox,
-                                 ibbox3 const & regbbox);
+                                 ivect const & restrict dstext,
+                                 ibbox3 const & restrict srcbbox,
+                                 ibbox3 const & restrict dstbbox,
+                                 ibbox3 const & restrict regbbox);
   
   
   
