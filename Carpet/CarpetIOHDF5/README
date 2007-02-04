@@ -4,4 +4,5 @@ Authors    : Erik Schnetter <schnetter@aei.mpg.de>
 
 Purpose of the thorn:
 
-This thorn provides HDF5 based file I/O for Carpet.
+This thorn provides HDF5 based file I/O for Carpet.  See
+http://www.hdfgroup.org/HDF5/ for information about HDF5.
