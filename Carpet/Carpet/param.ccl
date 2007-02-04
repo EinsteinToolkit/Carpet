@@ -301,7 +301,7 @@ CCTK_INT max_poison_locations "Maximum number of poison locations that are print
 CCTK_INT deadbeef "A strange integer value that indicates that something has gone wrong; the integer equivalent of a nan"
 {
   *:* :: "should be large and positive"
-} 7353315
+} 666 # 7353315
 
 
 
