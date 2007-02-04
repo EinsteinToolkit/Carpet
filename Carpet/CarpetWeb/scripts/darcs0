@@ -4,9 +4,12 @@
 # Some changes by Erik Schnetter <schnetter@aei.mpg.de>
 # GPL licenced
 
+use strict;
+
 ### some constants
 # list of email addresses to send notifications to
-my $email_list = 'carpet-darcs@lists.carpetcode.org';
+my $email_list_standard = 'carpet-darcs@lists.carpetcode.org';
+my $email_list_experimental = 'carpet-experimental-darcs@lists.carpetcode.org';
 # where to find the real darcs executable
 my $darcs = '/home/darcs/bin/darcs1';
 
@@ -27,7 +30,7 @@ print LOG "date: ", `date`, "\n";
 print LOG "arguments: ", join (' ', @ARGV), "\n";
 
 # short cut for darcs commands other than 'apply --all'
-$repodir = '';
+my $repodir = '';
 exec ($darcs, @ARGV)
   if (! ($#ARGV == 1 && ($ARGV[0] eq 'apply' && $ARGV[1] eq '--all')) &&
       ! ($#ARGV == 3 && ($ARGV[0] eq 'apply' && $ARGV[1] eq '--all' &&
@@ -101,8 +104,19 @@ print LOG "(that was the patch set)\n";
 print LOG "submitters: ", join (' ', %submitters), "\n";
 print LOG "done.\n";
 
+if ($repodir eq '') {
+  $repodir = `pwd`;
+  chomp $repodir;
+}
+$repodir =~ s+^.*/home/+~+;
+
+my $email_list = $email_list_standard;
+if ($repodir eq '~darcs/carpet-experimental') {
+  $email_list = $email_list_experimental;
+}
+
 # now send out notification email(s)
-foreach $patch (keys %submitters)
+foreach my $patch (keys %submitters)
 {
   # Not safe, because the shell expands meta-characters:
   #open (NOTIFY, "| mail -s '$patch' $email_list");
@@ -112,11 +126,6 @@ foreach $patch (keys %submitters)
   open (NOTIFY, '|-') || exec 'mail', '-s', $patch, $email_list;
 
   #print NOTIFY "A new patch has been pushed into the Carpet repository:\n\n";
-  if ($repodir eq '') {
-    $repodir = `pwd`;
-    chomp $repodir;
-  }
-  $repodir =~ s+^.*/home/+~+;
   print NOTIFY "The Carpet repository at $repodir received a new patch:\n\n";
   print NOTIFY "   $patch\n\n";
   print NOTIFY "This patch was recorded by " .
