@@ -134,9 +134,19 @@
     given <a href="#darcs">below</a>.  You can also have a look at
     the <a href="http://www.carpetcode.org/~darcs/carpet/">development
     source tree</a> in your web browser.</p>
+
+    <p>You can also obtain the darcs repository using <tt>wget</tt>
+    instead of <tt>darcs</tt>.  For this, use the command</p>
+<pre>        wget -r -nH -np --cut-dirs=1 -R "index.html*" http://www.carpetcode.org/\~darcs/carpet/</pre>
+    <p>This copies the darcs repository into a subdirectory
+    called <tt>carpet</tt>, in much the same way as the <tt>darcs
+    get</tt> command above would.  That is, you also end up with a
+    fully functional local repository.</p>
+
+    <h3>Write Access</h3>
    
-    <p>Write access to the development version of Carpet is via ssh.
-    Once you have an account, you get the development version via</p>
+    <p>Write access to Carpet is via ssh.  Once you have an account,
+    you get e.g. the development version via</p>
 <pre>        cd Cactus
         darcs get darcs@cvs.carpetcode.org:/home/darcs/carpet
         cd arrangements
@@ -145,9 +155,9 @@
     line.)  Instructions for using darcs are
     given <a href="#darcs">below</a>.</p>
 
-    <p>You can obtain the darcs repository also using <tt>wget</tt>
+    <p>You can also obtain the darcs repository using <tt>rsync</tt>
     instead of <tt>darcs</tt>.  For this, use the command</p>
-<pre>        wget -r -nH -np --cut-dirs=1 -R "index.html*" http://www.carpetcode.org/\~darcs/carpet/</pre>
+<pre>        rsync -Paz darcs@cvs.carpetcode.org:carpet .</pre>
     <p>This copies the darcs repository into a subdirectory
     called <tt>carpet</tt>, in much the same way as the <tt>darcs
     get</tt> command above would.  That is, you also end up with a
@@ -261,7 +271,7 @@ darcs pull</pre>
     <address><a href="mailto:schnetter@uni-tuebingen.de">Erik Schnetter</a></address>
 <!-- Created: Tue Sep 28 16:52:20 CEST 2004 -->
 <!-- hhmts start -->
-Last modified: Wed Jan 24 2007
+Last modified: Sun Feb 04 2007
 <!-- hhmts end -->
   </body>
 </html>
