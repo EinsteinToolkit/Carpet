@@ -321,6 +321,8 @@ void gdata::copy_into_sendbuffer (comm_state& state,
     ivect const items = (box.upper() - box.lower()) / box.stride() + 1;
     ivect const offs  = (box.lower() - ext.lower()) / ext.stride();
   
+    static Timer copy ("copy_into_sendbuffer_memcpy");
+    copy.start ();
     assert (dim == 3);
     for (int k = 0; k < items[2]; k++) {
       for (int j = 0; j < items[1]; j++) {
@@ -332,6 +334,7 @@ void gdata::copy_into_sendbuffer (comm_state& state,
         procbuf.sendbuf += datatypesize * items[0];
       }
     }
+    copy.stop (datatypesize * prod (items));
   
     if (not combine_sends) {
       // post the send if the buffer is full
