@@ -551,6 +551,7 @@ namespace CarpetRegrid2 {
       } else if (regrid_every == 0) {
         do_recompose = cctk_iteration == 0;
       } else {
+        // Regrid at most once per iteration
         do_recompose =
           (cctk_iteration == 0 or
            (cctk_iteration > 0 and
@@ -612,6 +613,7 @@ namespace CarpetRegrid2 {
       } else if (regrid_every == 0) {
         do_recompose = cctk_iteration == 0;
       } else {
+        // Regrid at most once per iteration
         do_recompose =
           (cctk_iteration == 0 or
            (cctk_iteration > 0 and
