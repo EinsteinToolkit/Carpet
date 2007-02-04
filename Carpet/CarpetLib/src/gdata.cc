@@ -214,7 +214,7 @@ void gdata::copy_from_post (comm_state& state,
     ivect items = (box.upper() - box.lower()) / box.stride() + 1;
     ivect offs  = (box.lower() - ext.lower()) / ext.stride();
     char* send_buffer = (char*) b->pointer();
-    int& datatypesize = state.typebufs.at(c_datatype()).datatypesize;
+    int& datatypesize = state.typebufs.AT(c_datatype()).datatypesize;
 
     double bytes = 0;
     for (int k = 0; k < items[2]; k++) {
@@ -340,7 +340,7 @@ void gdata::copy_into_sendbuffer (comm_state& state,
         MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
                    state.typebufs.AT(c_datatype()).mpi_datatype,
                    proc(), c_datatype(), dist::comm(),
-                   &state.srequests.at(dist::size()*c_datatype() + proc()));
+                   &state.srequests.AT(dist::size()*c_datatype() + proc()));
         timer.stop (procbuf.sendbufsize * datatypesize);
       }
     }
@@ -565,9 +565,9 @@ void gdata
         static Timer timer ("interpolate_into_sendbuffer_isend");
         timer.start ();
         MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
-                   state.typebufs.at(c_datatype()).mpi_datatype,
+                   state.typebufs.AT(c_datatype()).mpi_datatype,
                    proc(), c_datatype(), dist::comm(),
-                   &state.srequests.at(dist::size()*c_datatype() + proc()));
+                   &state.srequests.AT(dist::size()*c_datatype() + proc()));
         timer.stop (procbuf.sendbufsize*datatypesize);
       }
     }
