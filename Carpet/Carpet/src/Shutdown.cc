@@ -27,7 +27,7 @@ namespace Carpet {
     const int convlev = 0;
     cGH* cctkGH = fc->GH[convlev];
     
-    static Timer timer (timerSet(), "Shutdown");
+    static Timer timer ("Shutdown");
     timer.start();
     for (int rl=reflevels-1; rl>=0; --rl) {
       BEGIN_REVERSE_MGLEVEL_LOOP(cctkGH) {
@@ -58,7 +58,7 @@ namespace Carpet {
       
     } END_REVERSE_MGLEVEL_LOOP;
     timer.stop();
-    timerSet().printData (cctkGH, timer_file);
+    TimerSet::writeData (cctkGH, timer_file);
     
     // earlier checkpoint before finalising MPI
     Waypoint ("Done with shutdown");

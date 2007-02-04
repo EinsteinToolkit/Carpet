@@ -45,7 +45,7 @@ namespace Carpet {
     cGH* cctkGH = fc->GH[convlev];
     
     // Main loop
-    static Timer timer (timerSet(), "Evolve");
+    static Timer timer ("Evolve");
     timer.start();
     while (not do_terminate (cctkGH)) {
       
@@ -69,7 +69,7 @@ namespace Carpet {
           cctkGH->cctk_iteration % output_timers_every == 0 and
           cctkGH->cctk_iteration % do_every == 0)
       {
-        timerSet().printData (cctkGH, timer_file);
+        TimerSet::writeData (cctkGH, timer_file);
       }
       
     } // end main loop
@@ -87,7 +87,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer timer (timerSet(), "Evolve::do_terminate");
+    static Timer timer ("Evolve::do_terminate");
     timer.start();
     
     bool term;
@@ -171,7 +171,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer timer (timerSet(), "Evolve::AdvanceTime");
+    static Timer timer ("Evolve::AdvanceTime");
     timer.start();
     
     ++ cctkGH->cctk_iteration;
@@ -203,7 +203,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer timer (timerSet(), "Evolve::CallRegrid");
+    static Timer timer ("Evolve::CallRegrid");
     timer.start();
     
     assert (is_level_mode());
@@ -302,7 +302,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer timer (timerSet(), "Evolve::CallEvol");
+    static Timer timer ("Evolve::CallEvol");
     timer.start();
     
     for (int ml=mglevels-1; ml>=0; --ml) {
@@ -374,7 +374,7 @@ namespace Carpet {
   void
   CallRestrict (cGH * const cctkGH)
   {
-    static Timer timer (timerSet(), "Evolve::CallRestrict");
+    static Timer timer ("Evolve::CallRestrict");
     timer.start();
     
     for (int ml=mglevels-1; ml>=0; --ml) {
@@ -406,7 +406,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
 
-    static Timer timer (timerSet(), "Evolve::CallAnalysis");
+    static Timer timer ("Evolve::CallAnalysis");
     timer.start();
     
     for (int ml=mglevels-1; ml>=0; --ml) {

@@ -24,11 +24,8 @@ namespace Carpet {
   
   
   // A global timer set
-  TimerSet & timerSet ()
-  {
-    static TimerSet timerSet_;
-    return timerSet_;
-  }
+  static
+  TimerSet timerSet;
   
   
   
@@ -52,7 +49,7 @@ namespace Carpet {
   
   // Print all timer names
   void
-  TimerSet::print ()
+  TimerSet::printNames ()
     const
   {
     printf ("Timer names:\n");
@@ -69,39 +66,46 @@ namespace Carpet {
     
   // Print all timer data
   void
-  TimerSet::printData (cGH const * const cctkGH,
-                       char const * const filename)
+  TimerSet::printData ()
   {
-    redirect (cctkGH, filename);
-    printf ("********************************************************************************\n");
-    printf ("Carpet timing information at iteration %d time %g:\n",
-            cctkGH->cctk_iteration, (double) cctkGH->cctk_time);
     for (list <Timer *>::const_iterator
            itimer = timers.begin(); itimer != timers.end(); ++ itimer)
     {
       (* itimer)->printData ();
     }
+  }
+  
+  
+    
+  // Print all timer data
+  void
+  TimerSet::writeData (cGH const * const cctkGH,
+                       char const * const filename)
+  {
+    int const oldfd = redirect (cctkGH, filename);
     printf ("********************************************************************************\n");
-    unredirect ();
+    printf ("Carpet timing information at iteration %d time %g:\n",
+            cctkGH->cctk_iteration, (double) cctkGH->cctk_time);
+    timerSet.printData ();
+    unredirect (oldfd);
   }
   
   
   
   // If filename is not empty, then redirect stdout to a file
-  void
+  int
   TimerSet::redirect (cGH const * const cctkGH,
                       char const * const filename)
   {
     DECLARE_CCTK_PARAMETERS;
     
     if (CCTK_EQUALS (filename, "")) {
-      fdsave = -1;
-      return;
+      return -1;
     }
     
 #ifndef HAVE_UNISTD_H
     CCTK_WARN (1, "Cannot redirect timer output to a file; the operating system does not support this");
-    return;
+    return -1;
 #else
     
     int const myproc = CCTK_MyProc (cctkGH);
@@ -120,19 +124,19 @@ namespace Carpet {
     
     // Temporarily redirect stdout
     fflush (stdout);
-    fdsave = dup (1);          // fd 1 is stdout
-    int const mode = 0644;     // rw-r--r--, or a+r u+w
+    int const oldfd = dup (1);  // fd 1 is stdout
+    int const mode = 0644;      // rw-r--r--, or a+r u+w
     int const fdfile = open (fullname, flags, mode);
     if (fdfile < 0) {
       CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Could not open timer output file \"%s\"", fullname);
-      close (fdsave);
-      fdsave = -1;
-      return;
+      close (oldfd);
+      return -1;
     }
     close (1);
-    dup (fdfile);             // dup to 1, i.e., stdout again
+    dup (fdfile);               // dup to 1, i.e., stdout again
     close (fdfile);
+    return oldfd;
 #endif
   }
   
@@ -140,28 +144,26 @@ namespace Carpet {
   
   // Redirect stdout back
   void
-  TimerSet::unredirect ()
+  TimerSet::unredirect (int const oldfd)
   {
-    if (fdsave < 0) return;
+    if (oldfd < 0) return;
     
 #ifdef HAVE_UNISTD_H
     fflush (stdout);
     close (1);
-    dup (fdsave);
-    close (fdsave);
+    dup (oldfd);
+    close (oldfd);
 #endif
   }
   
   
   
-  // Create a new Cactus timer with the give name, which belongs to a
-  // certain timer set
-  Timer::Timer (TimerSet & timerSet_, char const * const name)
-    : running (false),
-      timerSet (timerSet_)
+  // Create a new Cactus timer with the given name
+  Timer::Timer (char const * const timername)
+    : running (false)
   {
-    assert (name);
-    handle = CCTK_TimerCreate (name);
+    assert (timername);
+    handle = CCTK_TimerCreate (timername);
     assert (handle >= 0);
     
     timerSet.add (this);
@@ -184,9 +186,9 @@ namespace Carpet {
   Timer::name ()
     const
   {
-    char const * const name_ = CCTK_TimerName (handle);
-    assert (name_);
-    return name_;
+    char const * const timername = CCTK_TimerName (handle);
+    assert (timername);
+    return timername;
   }
   
   

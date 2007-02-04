@@ -55,7 +55,7 @@ namespace Carpet {
     // Timing statistics
     InitTiming (cctkGH);
     
-    static Timer timer (timerSet(), "Initialise");
+    static Timer timer ("Initialise");
     timer.start();
 #warning "TODO: add more timers"
     
@@ -100,7 +100,7 @@ namespace Carpet {
     print_internal_data ();
     
     timer.stop();
-    timerSet().printData (cctkGH, timer_file);
+    TimerSet::writeData (cctkGH, timer_file);
     
     Waypoint ("Done with initialisation");
     

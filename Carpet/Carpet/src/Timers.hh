@@ -31,31 +31,33 @@ namespace Carpet {
     
     // Print all timer names
     void
-    print ()
+    printNames ()
       const;
     
-    // Print all timer data
+    // Print timer data
     void
-    printData (cGH const * cctkGH,
+    printData ();
+    
+    // Write all timer data
+    static
+    void
+    writeData (cGH const * cctkGH,
                char const * filename);
     
   private:
     
-    int fdsave;
-    
     // If filename is not empty, then redirect stdout to a file
-    void
+    static
+    int
     redirect (cGH const * cctkGH,
               char const * filename);
     
     // Redirect stdout back
+    static
     void
-    unredirect ();
+    unredirect (int oldfd);
     
   }; // class TimerSet
-  
-  // A global timer set
-  TimerSet & timerSet ();
   
   
   
@@ -64,14 +66,11 @@ namespace Carpet {
     
     int handle;
     bool running;
-    TimerSet & timerSet;
     
   public:
     
-    // Create a new Cactus timer with the give name, which belongs to
-    // a certain timer set
-    Timer (TimerSet & timerSet_,
-           char const * timername);
+    // Create a new Cactus timer with the given name
+    Timer (char const * timername);
     
     // Destroy a timer
     ~Timer ();
