@@ -7,9 +7,6 @@
 
 #include <algorithm>
 #include <cassert>
-#if 0
-#include <complex>
-#endif
 #include <iostream>
 #include <list>
 #include <set>
@@ -101,61 +98,6 @@ void consume (istream& is, char const * c);
 
 // Names for types
 
-#if 0
-
-inline const char * typestring (const char& dummy)
-{ return "char"; }
-
-inline const char * typestring (const signed char& dummy)
-{ return "signed char"; }
-
-inline const char * typestring (const unsigned char& dummy)
-{ return "unsigned char"; }
-
-inline const char * typestring (const short& dummy)
-{ return "short"; }
-
-inline const char * typestring (const unsigned short& dummy)
-{ return "unsigned short"; }
-
-inline const char * typestring (const int& dummy)
-{ return "int"; }
-
-inline const char * typestring (const unsigned int& dummy)
-{ return "unsigned int"; }
-
-inline const char * typestring (const long& dummy)
-{ return "long"; }
-
-inline const char * typestring (const unsigned long& dummy)
-{ return "unsigned long"; }
-
-inline const char * typestring (const long long& dummy)
-{ return "long long"; }
-
-inline const char * typestring (const unsigned long long& dummy)
-{ return "unsigned long long"; }
-
-inline const char * typestring (const float& dummy)
-{ return "float"; }
-
-inline const char * typestring (const double& dummy)
-{ return "double"; }
-
-inline const char * typestring (const long double& dummy)
-{ return "long double"; }
-
-inline const char * typestring (const complex<float>& dummy)
-{ return "complex<float>"; }
-
-inline const char * typestring (const complex<double>& dummy)
-{ return "complex<double>"; }
-
-inline const char * typestring (const complex<long double>& dummy)
-{ return "complex<long double>"; }
-
-#else
-
 #ifdef HAVE_CCTK_INT1
 inline const char * typestring (const CCTK_INT1& dummy)
 { return "CCTK_INT1"; }
@@ -204,8 +146,6 @@ inline const char * typestring (const CCTK_COMPLEX16& dummy)
 #ifdef HAVE_CCTK_REAL16
 inline const char * typestring (const CCTK_COMPLEX32& dummy)
 { return "CCTK_COMPLEX32"; }
-#endif
-
 #endif
 
 

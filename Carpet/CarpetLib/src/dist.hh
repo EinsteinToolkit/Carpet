@@ -5,10 +5,6 @@
 #include <cstdio>
 #include <cstdlib>
 
-#if 0
-#include <complex>
-#endif
-
 #include <mpi.h>
 
 #include "cctk.h"
@@ -23,15 +19,9 @@ namespace dist {
   
   extern MPI_Comm comm_;
   
-#if 0
-  extern MPI_Datatype mpi_complex_float;
-  extern MPI_Datatype mpi_complex_double;
-  extern MPI_Datatype mpi_complex_long_double;
-#else
   extern MPI_Datatype mpi_complex8;
   extern MPI_Datatype mpi_complex16;
   extern MPI_Datatype mpi_complex32;
-#endif
   
   void init (int& argc, char**& argv);
   void pseudoinit (MPI_Comm const c);
@@ -118,34 +108,19 @@ namespace dist {
   inline unsigned int c_datatype (const long double&)
   { return 12; }
   
-#if 0
-  
-  inline unsigned int c_datatype (const complex<float>&)
-  { return 13; }
-  
-  inline unsigned int c_datatype (const complex<double>&)
-  { return 14; }
-  
-  inline unsigned int c_datatype (const complex<long double>&)
-  { return 15; }
-  
-#else
-  
-#  ifdef HAVE_CCTK_COMPLEX8
+#ifdef HAVE_CCTK_COMPLEX8
   inline unsigned int c_datatype (const CCTK_COMPLEX8&)
   { return 13; }
-#  endif
+#endif
   
-#  ifdef HAVE_CCTK_COMPLEX16
+#ifdef HAVE_CCTK_COMPLEX16
   inline unsigned int c_datatype (const CCTK_COMPLEX16&)
   { return 14; }
-#  endif
+#endif
   
-#  ifdef HAVE_CCTK_COMPLEX32
+#ifdef HAVE_CCTK_COMPLEX32
   inline unsigned int c_datatype (const CCTK_COMPLEX32&)
   { return 15; }
-#  endif
-  
 #endif
   
   // keep this function's return code consistent with functions above
@@ -196,34 +171,19 @@ namespace dist {
   inline MPI_Datatype datatype (const long double&)
   { return MPI_LONG_DOUBLE; }
   
-#if 0
-  
-  inline MPI_Datatype datatype (const complex<float>&)
-  { return mpi_complex_float; }
-  
-  inline MPI_Datatype datatype (const complex<double>&)
-  { return mpi_complex_double; }
-  
-  inline MPI_Datatype datatype (const complex<long double>&)
-  { return mpi_complex_long_double; }
-  
-#else
-  
-#  ifdef HAVE_CCTK_COMPLEX8
+#ifdef HAVE_CCTK_COMPLEX8
   inline MPI_Datatype datatype (const CCTK_COMPLEX8&)
   { return mpi_complex8; }
-#  endif
+#endif
   
-#  ifdef HAVE_CCTK_COMPLEX16
+#ifdef HAVE_CCTK_COMPLEX16
   inline MPI_Datatype datatype (const CCTK_COMPLEX16&)
   { return mpi_complex16; }
-#  endif
+#endif
   
-#  ifdef HAVE_CCTK_COMPLEX32
+#ifdef HAVE_CCTK_COMPLEX32
   inline MPI_Datatype datatype (const CCTK_COMPLEX32&)
   { return mpi_complex32; }
-#  endif
-  
 #endif
   
 } // namespace dist
