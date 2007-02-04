@@ -433,9 +433,11 @@ namespace Carpet {
       BEGIN_META_MODE (cctkGH) {
         for (int rl=0; rl<reflevels; ++rl) {
           
-          bool const did_recompose
-            = Recompose (cctkGH, rl, prolongate_initial_data);
+          bool const did_recompose =
+            Recompose (cctkGH, rl, prolongate_initial_data);
           
+          // Call postregridinitial only if initial data have already
+          // been set up
           if (regrid_during_initialisation and did_recompose) {
             BEGIN_MGLEVEL_LOOP (cctkGH) {
               ENTER_LEVEL_MODE (cctkGH, rl) {

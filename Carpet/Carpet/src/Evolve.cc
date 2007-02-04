@@ -224,7 +224,10 @@ namespace Carpet {
     
     // Regrid
     Checkpoint ("Regrid");
+    int const oldreflevels = reflevels;
     bool const did_regrid = Regrid (cctkGH, false);
+    bool const did_remove_level = reflevels < oldreflevels;
+    assert (not did_remove_level or did_regrid);
     
     if (did_regrid) {
       BEGIN_META_MODE (cctkGH) {
@@ -232,7 +235,7 @@ namespace Carpet {
           
           bool const did_recompose = Recompose (cctkGH, rl, true);
           
-          if (did_recompose) {
+          if (did_recompose or (did_remove_level and rl == reflevels - 1)) {
             BEGIN_MGLEVEL_LOOP (cctkGH) {
               ENTER_LEVEL_MODE (cctkGH, rl) {
                 do_global_mode = reflevel == reflevels - 1;
@@ -285,6 +288,7 @@ namespace Carpet {
               } LEAVE_LEVEL_MODE;
             } END_MGLEVEL_LOOP;
           } // if did_recompose
+          
         } // for rl
       } END_META_MODE;
     } // if did_regrid
