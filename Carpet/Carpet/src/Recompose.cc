@@ -93,8 +93,10 @@ namespace Carpet {
   static rvect
   cost (region_t const & reg)
   {
-    assert (not reg.extent.empty());
-    
+    //    assert (not reg.extent.empty());
+    // Does this really do the right job?
+    if (reg.extent.empty()) return rvect(0.0);    
+
     return
       (rvect (reg.refinement_boundaries[0]) +
        rvect (reg.refinement_boundaries[1])) * boundary_weight() +
