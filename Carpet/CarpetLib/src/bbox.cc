@@ -17,7 +17,7 @@ using namespace std;
 template<class T, int D>
 T bbox<T,D>::size () const {
   if (empty()) return 0;
-  const vect<T,D> sh(shape()/stride()+T(1));
+  const vect<T,D> sh(shape()/stride());
 #ifdef NDEBUG
   return prod(sh);
 #else
