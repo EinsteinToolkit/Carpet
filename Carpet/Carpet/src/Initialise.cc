@@ -52,9 +52,6 @@ namespace Carpet {
     cctkGH->cctk_time = global_time;
     cctkGH->cctk_delta_time = delta_time;
     
-    // Timing statistics
-    InitTiming (cctkGH);
-    
     static Timer timer ("Initialise");
     timer.start();
 #warning "TODO: add more timers"

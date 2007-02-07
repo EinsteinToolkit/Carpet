@@ -44,6 +44,9 @@ namespace Carpet {
     int const convlev = 0;
     cGH* cctkGH = fc->GH[convlev];
     
+    // Timing statistics
+    InitTiming (cctkGH);
+    
     // Main loop
     static Timer timer ("Evolve");
     timer.start();
