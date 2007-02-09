@@ -70,6 +70,8 @@ void dh::regrid ()
   foreach_reflevel_component_mglevel (&dh::setup_refinement_restriction_boxes);
   foreach_reflevel_component_mglevel (&dh::trim_unsynced_boundaries);
 
+  foreach_reflevel_component_mglevel (&dh::optimise_fields);
+
   calculate_bases();
 
   if (output_bboxes) {
