@@ -552,12 +552,12 @@ optimise_field (dboxes & box,
                 int const rl, int const c, int const ml)
 {
   size_t num_regions = 0;
-  for (int cc=0; cc<h.components(rl); ++cc) {
+  for (size_t cc=0; cc<(box.*field).size(); ++cc) {
     num_regions += (box.*field).AT(cc).size();
   }
   assert ((box.*field_fast).empty());
   (box.*field_fast).reserve (num_regions);
-  for (int cc=0; cc<h.components(rl); ++cc) {
+  for (size_t cc=0; cc<(box.*field).size(); ++cc) {
     for (iblist::const_iterator
            r=(box.*field).AT(cc).begin(); r!=(box.*field).AT(cc).end(); ++r)
     {
