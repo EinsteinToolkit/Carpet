@@ -940,10 +940,9 @@ ostream & operator << (ostream & os, const data<T> & d)
 
 
 
-#define INSTANTIATE(T)				\
-template class data<T>;
-template 
-ostream & operator << <CCTK_REAL> (ostream & os, data<CCTK_REAL> const & d);
+#define INSTANTIATE(T)                                          \
+template class data<T>;                                         \
+template                                                        \
+ostream & operator << <T> (ostream & os, data<T> const & d);
 #include "instantiate"
-
 #undef INSTANTIATE
