@@ -136,25 +136,18 @@ namespace CarpetLib {
   
   
   
-  template
-  void
-  restrict_3d_cc_rf2 (CCTK_REAL const * restrict const src,
-                      ivect3 const & restrict srcext,
-                      CCTK_REAL * restrict const dst,
-                      ivect3 const & restrict dstext,
-                      ibbox3 const & restrict srcbbox,
-                      ibbox3 const & restrict dstbbox,
+#define INSTANTIATE(T)                                  \
+  template                                              \
+  void                                                  \
+  restrict_3d_cc_rf2 (T const * restrict const src,     \
+                      ivect3 const & restrict srcext,   \
+                      T * restrict const dst,           \
+                      ivect3 const & restrict dstext,   \
+                      ibbox3 const & restrict srcbbox,  \
+                      ibbox3 const & restrict dstbbox,  \
                       ibbox3 const & restrict regbbox);
-  
-  template
-  void
-  restrict_3d_cc_rf2 (CCTK_COMPLEX const * restrict const src,
-                      ivect3 const & restrict srcext,
-                      CCTK_COMPLEX * restrict const dst,
-                      ivect3 const & restrict dstext,
-                      ibbox3 const & restrict srcbbox,
-                      ibbox3 const & restrict dstbbox,
-                      ibbox3 const & restrict regbbox);
+#include "instantiate"
+#undef INSTANTIATE
   
   
   

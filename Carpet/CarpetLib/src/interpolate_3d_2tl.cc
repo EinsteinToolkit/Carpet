@@ -136,33 +136,22 @@ namespace CarpetLib {
   
   
   
-  template
-  void
-  interpolate_3d_2tl (CCTK_REAL const * restrict const src1,
-                      CCTK_REAL const t1,
-                      CCTK_REAL const * restrict const src2,
-                      CCTK_REAL const t2,
-                      ivect3 const & restrict srcext,
-                      CCTK_REAL * restrict const dst,
-                      CCTK_REAL const t,
-                      ivect3 const & restrict dstext,
-                      ibbox3 const & restrict srcbbox,
-                      ibbox3 const & restrict dstbbox,
+#define INSTANTIATE(T)                                  \
+  template                                              \
+  void                                                  \
+  interpolate_3d_2tl (T const * restrict const src1,    \
+                      CCTK_REAL const t1,               \
+                      T const * restrict const src2,    \
+                      CCTK_REAL const t2,               \
+                      ivect3 const & restrict srcext,   \
+                      T * restrict const dst,           \
+                      CCTK_REAL const t,                \
+                      ivect3 const & restrict dstext,   \
+                      ibbox3 const & restrict srcbbox,  \
+                      ibbox3 const & restrict dstbbox,  \
                       ibbox3 const & restrict regbbox);
-  
-  template
-  void
-  interpolate_3d_2tl (CCTK_COMPLEX const * restrict const src1,
-                      CCTK_REAL const t1,
-                      CCTK_COMPLEX const * restrict const src2,
-                      CCTK_REAL const t2,
-                      ivect3 const & restrict srcext,
-                      CCTK_COMPLEX * restrict const dst,
-                      CCTK_REAL const t,
-                      ivect3 const & restrict dstext,
-                      ibbox3 const & restrict srcbbox,
-                      ibbox3 const & restrict dstbbox,
-                      ibbox3 const & restrict regbbox);
+#include "instantiate"
+#undef INSTANTIATE
   
   
   
