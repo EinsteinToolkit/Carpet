@@ -128,6 +128,22 @@ namespace CarpetLib {
                       ibbox3 const & restrict dstbbox,
                       ibbox3 const & restrict regbbox);
   
+  template <typename T>
+  void
+  interpolate_eno_3d_3tl (T const * restrict const src1,
+                          CCTK_REAL const t1,
+                          T const * restrict const src2,
+                          CCTK_REAL const t2,
+                          T const * restrict const src3,
+                          CCTK_REAL const t3,
+                          ivect3 const & restrict srcext,
+                          T * restrict const dst,
+                          CCTK_REAL const t,
+                          ivect3 const & restrict dstext,
+                          ibbox3 const & restrict srcbbox,
+                          ibbox3 const & restrict dstbbox,
+                          ibbox3 const & restrict regbbox);
+  
   
   
   template <typename T>

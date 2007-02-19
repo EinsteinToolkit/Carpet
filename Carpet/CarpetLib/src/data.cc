@@ -860,47 +860,107 @@ void data <T>
                     CCTK_REAL const time,
                     int const order_time)
 {
-  switch (order_time) {
+  static Timer total ("time_interpolate");
+  total.start ();
+
+  switch (transport_operator) {
     
-  case 0:
-    // We could handle this, but this points to an inefficiency
-    assert (0);
-    
-  case 1:
-    assert (times.size() >= 2);
-    interpolate_3d_2tl (static_cast <T const *> (srcs.AT(0)->storage()),
-                        times.AT(0),
-                        static_cast <T const *> (srcs.AT(1)->storage()),
-                        times.AT(1),
-                        srcs.AT(0)->shape(),
-                        static_cast <T *> (this->storage()),
-                        time,
-                        this->shape(),
-                        srcs.AT(0)->extent(),
-                        this->extent(),
-                        box);
+  case op_copy:
+  case op_Lagrange: {
+    static Timer timer ("time_interpolate_Lagrange");
+    timer.start ();
+    switch (order_time) {
+      
+    case 1:
+      assert (times.size() >= 2);
+      interpolate_3d_2tl (static_cast <T const *> (srcs.AT(0)->storage()),
+                          times.AT(0),
+                          static_cast <T const *> (srcs.AT(1)->storage()),
+                          times.AT(1),
+                          srcs.AT(0)->shape(),
+                          static_cast <T *> (this->storage()),
+                          time,
+                          this->shape(),
+                          srcs.AT(0)->extent(),
+                          this->extent(),
+                          box);
+      break;
+      
+    case 2:
+      assert (times.size() >= 3);
+      interpolate_3d_3tl (static_cast <T const *> (srcs.AT(0)->storage()),
+                          times.AT(0),
+                          static_cast <T const *> (srcs.AT(1)->storage()),
+                          times.AT(1),
+                          static_cast <T const *> (srcs.AT(2)->storage()),
+                          times.AT(2),
+                          srcs.AT(0)->shape(),
+                          static_cast <T *> (this->storage()),
+                          time,
+                          this->shape(),
+                          srcs.AT(0)->extent(),
+                          this->extent(),
+                          box);
+      break;
+      
+    default:
+      assert (0);
+    }
+    timer.stop (0);
     break;
+  }
     
-  case 2:
-    assert (times.size() >= 3);
-    interpolate_3d_3tl (static_cast <T const *> (srcs.AT(0)->storage()),
-                        times.AT(0),
-                        static_cast <T const *> (srcs.AT(1)->storage()),
-                        times.AT(1),
-                        static_cast <T const *> (srcs.AT(2)->storage()),
-                        times.AT(2),
-                        srcs.AT(0)->shape(),
-                        static_cast <T *> (this->storage()),
-                        time,
-                        this->shape(),
-                        srcs.AT(0)->extent(),
-                        this->extent(),
-                        box);
+  case op_ENO:
+  case op_WENO: {
+    // ENO and WENO timer interpolation is the same for order_time <= 2
+    static Timer timer ("time_interpolate_ENO");
+    timer.start ();
+    switch (order_time) {
+      
+    case 1:
+      assert (times.size() >= 2);
+      interpolate_3d_2tl (static_cast <T const *> (srcs.AT(0)->storage()),
+                          times.AT(0),
+                          static_cast <T const *> (srcs.AT(1)->storage()),
+                          times.AT(1),
+                          srcs.AT(0)->shape(),
+                          static_cast <T *> (this->storage()),
+                          time,
+                          this->shape(),
+                          srcs.AT(0)->extent(),
+                          this->extent(),
+                          box);
+      break;
+      
+    case 2:
+      assert (times.size() >= 3);
+      interpolate_eno_3d_3tl (static_cast <T const *> (srcs.AT(0)->storage()),
+                              times.AT(0),
+                              static_cast <T const *> (srcs.AT(1)->storage()),
+                              times.AT(1),
+                              static_cast <T const *> (srcs.AT(2)->storage()),
+                              times.AT(2),
+                              srcs.AT(0)->shape(),
+                              static_cast <T *> (this->storage()),
+                              time,
+                              this->shape(),
+                              srcs.AT(0)->extent(),
+                              this->extent(),
+                              box);
+      break;
+      
+    default:
+      assert (0);
+    }
+    timer.stop (0);
     break;
+  }
     
   default:
     assert (0);
-  }
+  } // switch (transport_operator)
+  
+  total.stop (0);
 }
 
 template <>
