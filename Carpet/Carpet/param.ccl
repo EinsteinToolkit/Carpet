@@ -273,7 +273,7 @@ CCTK_STRING base_outerbounds "Outer boundaries of base grid components"
 
 BOOLEAN enable_all_storage "Enable storage for all grid functions" STEERABLE=recover
 {
-} "yes"
+} "no"
 
 
 
