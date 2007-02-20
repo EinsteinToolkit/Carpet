@@ -21,7 +21,15 @@ namespace Carpet {
   
   static void CallSetup (cGH * cctkGH);
   static void CallRecoverVariables (cGH * cctkGH);
-  static void CallRegrid (cGH * cctkGH);
+  static void CallRegrid (cGH * cctkGH,
+                          // whether to call preregrid and regrid or
+                          // not
+                          bool const callregrid,
+                          // whether to call postregrid or not
+                          bool const callpostregrid,
+                          // whether to call {pre|post}regridinitial
+                          // or {pre|post}regrid
+                          bool const regridinitial);
   static void CallPostRecoverVariables (cGH * cctkGH);
   static void CallInitial (cGH * cctkGH);
   static void CallRestrict (cGH * cctkGH);
@@ -176,8 +184,10 @@ namespace Carpet {
           CCTK_ScheduleTraverse ("CCTK_RECOVER_VARIABLES", cctkGH, CallFunction);
           
           if (regrid_during_recovery) {
-            CallRegrid (cctkGH);
-          } // if regrid_during_recovery
+            CallRegrid (cctkGH, true, true, false);
+          } else {
+            CallRegrid (cctkGH, false, true, false);
+          }
           
         } LEAVE_LEVEL_MODE;
       } END_MGLEVEL_LOOP;
@@ -225,7 +235,7 @@ namespace Carpet {
       // Regrid once in the beginning
       ENTER_GLOBAL_MODE (cctkGH, 0) {
         ENTER_LEVEL_MODE (cctkGH, 0) {
-          CallRegrid (cctkGH);
+          CallRegrid (cctkGH, true, false, true);
         } LEAVE_LEVEL_MODE;
       } LEAVE_GLOBAL_MODE;
     }
@@ -293,7 +303,7 @@ namespace Carpet {
           
           if (regrid_during_initialisation and mglevel==0) {
             // Regrid after initialising each level
-            CallRegrid (cctkGH);
+            CallRegrid (cctkGH, true, true, true);
           }
           
         } LEAVE_LEVEL_MODE;
@@ -402,7 +412,10 @@ namespace Carpet {
   
   
   void
-  CallRegrid (cGH * const cctkGH)
+  CallRegrid (cGH * const cctkGH,
+              bool const callregrid,
+              bool const callpostregrid,
+              bool const regridinitial)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -413,38 +426,62 @@ namespace Carpet {
     do_global_mode = true;
     do_meta_mode = true;
     
-    Waypoint ("Preregridinitial at iteration %d time %g%s%s",
-              cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
-              (do_global_mode ? " (global)" : ""),
-              (do_meta_mode ? " (meta)" : ""));
+    if (regridinitial) {
+      Waypoint ("Preregridinitial at iteration %d time %g%s%s",
+                cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
+                (do_global_mode ? " (global)" : ""),
+                (do_meta_mode ? " (meta)" : ""));
+    } else {
+      Waypoint ("Preregrid at iteration %d time %g%s%s",
+                cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
+                (do_global_mode ? " (global)" : ""),
+                (do_meta_mode ? " (meta)" : ""));
+    }
     
     // Preregrid
-    Checkpoint ("Scheduling PREREGRIDINITIAL");
-    CCTK_ScheduleTraverse ("CCTK_PREREGRIDINITIAL", cctkGH, CallFunction);
+    if (regridinitial) {
+      Checkpoint ("Scheduling PREREGRIDINITIAL");
+      CCTK_ScheduleTraverse ("CCTK_PREREGRIDINITIAL", cctkGH, CallFunction);
+    } else {
+      Checkpoint ("Scheduling PREREGRID");
+      CCTK_ScheduleTraverse ("CCTK_PREREGRID", cctkGH, CallFunction);
+    }
     
     // Regrid
-    Checkpoint ("Regrid");
-    bool const did_regrid = Regrid (cctkGH, true);
+    bool did_regrid = false;
+    if (callregrid) {
+      Checkpoint ("Regrid");
+      did_regrid = Regrid (cctkGH, true);
+    }
     
-    if (did_regrid) {
+    if (did_regrid or not callregrid) {
       BEGIN_META_MODE (cctkGH) {
         for (int rl=0; rl<reflevels; ++rl) {
           
-          bool const did_recompose =
-            Recompose (cctkGH, rl, prolongate_initial_data);
+          bool did_recompose = false;
+          if (did_regrid) {
+            did_recompose = Recompose (cctkGH, rl, prolongate_initial_data);
+          }
           
           // Call postregridinitial only if initial data have already
           // been set up
-          if (regrid_during_initialisation and did_recompose) {
+          if (callpostregrid and (did_recompose or not callregrid)) {
             BEGIN_MGLEVEL_LOOP (cctkGH) {
               ENTER_LEVEL_MODE (cctkGH, rl) {
                 do_global_mode = reflevel == reflevels - 1;
                 do_meta_mode = do_global_mode and mglevel==mglevels-1;
                 
-                Waypoint ("Postregridinitial at iteration %d time %g%s%s",
-                          cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
-                          (do_global_mode ? " (global)" : ""),
-                          (do_meta_mode ? " (meta)" : ""));
+                if (regridinitial) {
+                  Waypoint ("Postregridinitial at iteration %d time %g%s%s",
+                            cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
+                            (do_global_mode ? " (global)" : ""),
+                            (do_meta_mode ? " (meta)" : ""));
+                } else {
+                  Waypoint ("Postregrid at iteration %d time %g%s%s",
+                            cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
+                            (do_global_mode ? " (global)" : ""),
+                            (do_meta_mode ? " (meta)" : ""));
+                }
                 
                 int const num_tl =
                   init_each_timelevel ? prolongation_order_time+1 : 1;
@@ -477,11 +514,17 @@ namespace Carpet {
                   CycleTimeLevels (cctkGH);
                   cctkGH->cctk_time +=
                     cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
-                
+                  
                   // Postregrid
-                  Checkpoint ("Scheduling POSTREGRIDINITIAL");
-                  CCTK_ScheduleTraverse
-                    ("CCTK_POSTREGRIDINITIAL", cctkGH, CallFunction);
+                  if (regridinitial) {
+                    Checkpoint ("Scheduling POSTREGRIDINITIAL");
+                    CCTK_ScheduleTraverse
+                      ("CCTK_POSTREGRIDINITIAL", cctkGH, CallFunction);
+                  } else {
+                    Checkpoint ("Scheduling POSTREGRID");
+                    CCTK_ScheduleTraverse
+                      ("CCTK_POSTREGRID", cctkGH, CallFunction);
+                  }
                   
                 } // for tl
                 cctkGH->cctk_time = old_cctk_time;
@@ -489,6 +532,7 @@ namespace Carpet {
               } LEAVE_LEVEL_MODE;
             } END_MGLEVEL_LOOP;
           } // if did_recompose
+          
         } // for rl
       } END_META_MODE;
     } // if did_regrid
