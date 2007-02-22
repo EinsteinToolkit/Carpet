@@ -164,7 +164,6 @@ namespace CarpetLib {
           
           T d = s1fac3 * s1 + s2fac3 * s2 + s3fac3 * s3;
           
-          // if ((d - max3 (s1, s2, s3)) * (d - min3 (s1, s2, s3)) < 0)
           if (d > max3 (s1, s2, s3) or d < min3 (s1, s2, s3)) {
             if (use_12) {
               d = s1fac2_12 * s1 + s2fac2_12 * s2;
