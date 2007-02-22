@@ -264,7 +264,9 @@ namespace CarpetLib {
                           ibbox3 const & restrict srcbbox,      \
                           ibbox3 const & restrict dstbbox,      \
                           ibbox3 const & restrict regbbox);
+#define CARPET_NO_COMPLEX
 #include "instantiate"
+#undef CARPET_NO_COMPLEX
 #undef INSTANTIATE
   
   
