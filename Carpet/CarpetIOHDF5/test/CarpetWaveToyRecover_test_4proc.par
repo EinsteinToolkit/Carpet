@@ -11,4 +11,7 @@ IO::recover_dir  = "../../../arrangements/Carpet/CarpetIOHDF5/test"
 IO::recover      = "manual"
 IO::recover_file = "CarpetWaveToyCheckpoint_test.it_64"
 
+# omit sum norms in the reduction output
+IOScalar::outScalar_reductions = "average count maximum minimum norm1 norm2 norm_inf product"
+
 IOHDF5::checkpoint = "no"
