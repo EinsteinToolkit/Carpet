@@ -27,7 +27,7 @@ namespace CarpetLib {
   
   
   template <typename T>
-  static inline
+  inline
   T
   min3 (T const & x, T const & y, T const & z)
   {
@@ -35,7 +35,7 @@ namespace CarpetLib {
   }
   
   template <typename T>
-  static inline
+  inline
   T
   max3 (T const & x, T const & y, T const & z)
   {
