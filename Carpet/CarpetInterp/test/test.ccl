@@ -1,0 +1,9 @@
+TEST waveinterp-1p
+{
+  NPROCS 1
+}
+
+TEST waveinterp-2p
+{
+  NPROCS 2
+}
