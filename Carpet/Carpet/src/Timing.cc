@@ -178,10 +178,10 @@ namespace Carpet {
     
     if (not silent) {
       CCTK_VInfo (CCTK_THORNSTRING,
-                  "Local grid point updates per process per second: %g",
+                  "This processor's grid point updates per second (local): %g",
                   double (* local_grid_points_per_second));
       CCTK_VInfo (CCTK_THORNSTRING,
-                  "Total grid point updates per process per second: %g",
+                  "Overall grid point updates per second (total)         : %g",
                   double (* total_grid_points_per_second));
     }
     
