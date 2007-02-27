@@ -150,8 +150,8 @@ namespace Carpet {
   {
     int local_updates, global_updates;
     current_level_updates (cctkGH, local_updates, global_updates);
-    total_local_updates = local_updates;
-    total_global_updates = global_updates;
+    total_local_updates += local_updates;
+    total_global_updates += global_updates;
   }
   
   
