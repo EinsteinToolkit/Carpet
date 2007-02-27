@@ -678,7 +678,7 @@ namespace CarpetIOBasic {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    CCTK_REAL const xa = abs (x);
+    CCTK_REAL const xa = ::abs (x);
     return xa != 0 and (xa < real_min or xa >= real_max);
   }
   
