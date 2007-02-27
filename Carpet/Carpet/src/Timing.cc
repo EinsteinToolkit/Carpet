@@ -59,46 +59,48 @@ namespace Carpet {
   
   // Calculate the number of updates for the current level
   static
-  CCTK_REAL
-  current_level_updates (cGH const * const cctkGH)
+  void
+  current_level_updates (cGH const * const cctkGH,
+                         int & local_updates, int & global_updates)
   {
     DECLARE_CCTK_PARAMETERS;
     
     // Count the weighted number of grid points
-    int num_grid_points = 0;
+    int local_num_grid_points = 0;
+    int global_num_grid_points = 0;
     for (int m = 0; m < maps; ++ m) {
       assert (reflevel >= 0);
       int const rl = reflevel;
       for (int c = 0; c < vhh.at(m)->components(rl); ++ c) {
+        assert (mglevel >= 0);
+        int const ml = mglevel;
+        
+        // Base region
+        ibbox const ext = vhh.at(m)->extent(ml,rl,c);
+        // Refinement boundaries
+        b2vect const rbs = vhh.at(m)->refinement_boundaries (rl, c);
+        // Number of buffer zones
+        i2vect const buffers = vdd.at(m)->buffers;
+        // Computational domain: Add the number of buffer zones to the
+        // base extent.  This takes buffer zones into account and
+        // ignores ghost zones.
+        ibbox const domain =
+          ext.expand (ivect (rbs[0]) * buffers[0], ivect (rbs[1]) * buffers[1]);
+        
+        // Count the grid points
+        int const domainsize = domain.size();
+        
         if (vhh.at(m)->is_local (rl, c)) {
-          assert (mglevel >= 0);
-          int const ml = mglevel;
-          
-          // Base region
-          ibbox const ext = vhh.at(m)->extent(ml,rl,c);
-          // Refinement boundaries
-          b2vect const rbs = vhh.at(m)->refinement_boundaries (rl, c);
-          // Number of buffer zones
-          i2vect const buffers = vdd.at(m)->buffers;
-          // Computational domain: Add the number of buffer zones to
-          // the base extent.  This takes buffer zones into account
-          // and ignores ghost zones.
-          ibbox const domain =
-            ext.expand (ivect (rbs[0]) * buffers[0],
-                        ivect (rbs[1]) * buffers[1]);
-          
-          // Count the grid points
-          num_grid_points += domain.size();
-          
-        } // if local
-      }   // for c
-    }     // for m
+          local_num_grid_points += domainsize;
+        }
+        global_num_grid_points += domainsize;
+        
+      } // for c
+    }   // for m
     
     // Take number of RHS evaluations per time step into account
-    int const updates = num_grid_points * num_integrator_substeps;
-    
-    // Return result as CCTK_REAL to avoid potential overflows
-    return updates;
+    local_updates = local_num_grid_points * num_integrator_substeps;
+    global_updates = global_num_grid_points * num_integrator_substeps;
   }
   
   
@@ -108,7 +110,8 @@ namespace Carpet {
   CCTK_REAL initial_phystime;
   
   // Counters for evolved grid points
-  CCTK_REAL total_updates;
+  CCTK_REAL total_local_updates;
+  CCTK_REAL total_global_updates;
   
   
   
@@ -118,8 +121,10 @@ namespace Carpet {
   {
     DECLARE_CCTK_ARGUMENTS;
     
-    * grid_points_per_second = 0;
-    * physical_time_per_hour = 0;
+    * physical_time_per_hour = 0.0;
+    * local_grid_points_per_second = 0.0;
+    * total_grid_points_per_second = 0.0;
+    * grid_points_per_second = 0.0;
   }
   
   
@@ -132,7 +137,8 @@ namespace Carpet {
     initial_walltime = get_walltime();
     initial_phystime = cctkGH->cctk_time;
     
-    total_updates = 0.0;
+    total_local_updates = 0.0;
+    total_global_updates = 0.0;
   }
   
   
@@ -142,7 +148,10 @@ namespace Carpet {
   void
   StepTiming (cGH const * const cctkGH)
   {
-    total_updates += current_level_updates (cctkGH);
+    int local_updates, global_updates;
+    current_level_updates (cctkGH, local_updates, global_updates);
+    total_local_updates = local_updates;
+    total_global_updates = global_updates;
   }
   
   
@@ -158,14 +167,22 @@ namespace Carpet {
     CCTK_REAL const elapsed_walltime = get_walltime() - initial_walltime;
     
     // Calculate updates per second
-    CCTK_REAL const updates_per_second = total_updates / elapsed_walltime;
+    CCTK_REAL const local_updates_per_second =
+      total_local_updates / elapsed_walltime;
+    CCTK_REAL const global_updates_per_second =
+      total_global_updates / elapsed_walltime;
     
-    * grid_points_per_second = updates_per_second;
+    * local_grid_points_per_second = local_updates_per_second;
+    * total_grid_points_per_second = global_updates_per_second;
+    *       grid_points_per_second = local_updates_per_second;
     
     if (not silent) {
       CCTK_VInfo (CCTK_THORNSTRING,
-                  "Grid point updates per process per second: %g",
-                  double (updates_per_second));
+                  "Local grid point updates per process per second: %g",
+                  double (* local_grid_points_per_second));
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "Total grid point updates per process per second: %g",
+                  double (* total_grid_points_per_second));
     }
     
 #if 0
