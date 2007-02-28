@@ -653,6 +653,7 @@ void ggf::mg_restrict (comm_state& state,
                        CCTK_REAL time)
 {
   // Require same times
+  static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
   assert (abs(t.get_time(rl,ml) - t.get_time(rl,ml-1))
 	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
   const vector<int> tl2s(1,tl);
@@ -670,6 +671,7 @@ void ggf::mg_prolongate (comm_state& state,
                          CCTK_REAL time)
 {
   // Require same times
+  static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
   assert (abs(t.get_time(rl,ml) - t.get_time(rl,ml+1))
 	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
   static Timer timer ("mg_prolongate");
@@ -687,6 +689,7 @@ void ggf::ref_restrict (comm_state& state,
                         CCTK_REAL time)
 {
   // Require same times
+  static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
   assert (abs(t.get_time(rl,ml) - t.get_time(rl+1,ml))
 	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
   if (transport_operator == op_none) return;

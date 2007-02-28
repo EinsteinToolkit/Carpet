@@ -520,6 +520,8 @@ void data <T>
   }
   if (timelevel == -1) {
     for (size_t tl=0; tl<times.size(); ++tl) {
+      static_assert (abs(0.1) > 0,
+                     "Function CarpetLib::abs has wrong signature");
       if (abs (times.AT(tl) - time) < eps) {
         timelevel = tl;
         break;

@@ -24,7 +24,7 @@ using namespace std;
 
   
 // A compile time pseudo assert statement
-#define static_assert(_x) do { typedef int ai[(_x) ? 1 : -1]; } while(0)
+#define static_assert(_x, _msg) do { typedef int ai[(_x) ? 1 : -1]; } while(0)
 
 
 
