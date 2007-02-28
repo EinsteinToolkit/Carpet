@@ -93,10 +93,8 @@ namespace Carpet {
   static rvect
   cost (region_t const & reg)
   {
-    //    assert (not reg.extent.empty());
-    // Does this really do the right job?
-    if (reg.extent.empty()) return rvect(0.0);    
-
+    if (reg.extent.empty()) return rvect(0);
+    
     return
       (rvect (reg.refinement_boundaries[0]) +
        rvect (reg.refinement_boundaries[1])) * boundary_weight() +
@@ -913,19 +911,35 @@ namespace Carpet {
     int const leftskip  = int (rb[0][mydim]) * skip;
     int const rightskip = int (rb[1][mydim]) * skip;
     
-    int const icost = npoints + leftskip + rightskip;
-    int const slice_width = icost / nslices;
-    int const slice_left = icost - nslices * slice_width;
-    
-    for (int n=0; n<nslices; ++n) {
-      mynpoints.at(n) = slice_width + int (n < slice_left);
+    // Keep track of how many points and processors we have left to
+    // distribute
+    int npoints_left = npoints + leftskip + rightskip;
+    int nprocs_left  = nprocs;
+    // Handle the endpoints first, since they may require a fixup
+    for (int n0=-1; n0<nslices-1; ++n0) {
+      int const n = n0 < 0 ? n0 + nslices : n0;
+      mynpoints.at(n) = int (floor (CCTK_REAL(1) * npoints_left * mynprocs.at(n)
+                                    / nprocs_left + CCTK_REAL(0.5)));
+      // Fixup if necessary
       if (n == 0) {
-        mynpoints.at(n) -= leftskip;
+        mynpoints.at(n) = max (mynpoints.at(n), leftskip + 1);
       }
       if (n == nslices-1) {
-        mynpoints.at(n) -= rightskip;
+        mynpoints.at(n) = max (mynpoints.at(n), rightskip + 1);
       }
+      assert (mynpoints.at(n) > 0);
+      assert (mynprocs .at(n) > 0);
+      npoints_left -= mynpoints.at(n);
+      nprocs_left  -= mynprocs.at(n);
+      assert (npoints_left >= 0);
+      assert (nprocs_left  >= 0);
     }
+    assert (npoints_left == 0);
+    assert (nprocs_left  == 0);
+    mynpoints.at(0        ) -= leftskip;
+    mynpoints.at(nslices-1) -= rightskip;
+    assert (mynpoints.at(0        ) > 0);
+    assert (mynpoints.at(nslices-1) > 0);
     if (DEBUG) cout << "SRMAR " << mydim << " mynpoints " << mynpoints << endl;
     
     // Create the regions and recurse
