@@ -7,6 +7,8 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
+#include <cstdlib>
 #include <iostream>
 #include <list>
 #include <set>
@@ -147,6 +149,88 @@ inline const char * typestring (const CCTK_COMPLEX16& dummy)
 inline const char * typestring (const CCTK_COMPLEX32& dummy)
 { return "CCTK_COMPLEX32"; }
 #endif
+
+
+
+namespace CarpetLib {
+  namespace good {
+    
+    // Explicitly overload abs for all types in the same namespace, to
+    // circumvent confusion among some compilers
+    
+    // CCTK_BYTE is unsigned
+    inline CCTK_BYTE abs (CCTK_BYTE const & x) { return x; }
+    
+#if 0
+    // This does not work on AIX, which does not have long long abs
+    // (long long)
+#  ifdef HAVE_CCTK_INT1
+    inline CCTK_INT1 abs (CCTK_INT1 const & x) { return std::abs (x); }
+#  endif
+#  ifdef HAVE_CCTK_INT2
+    inline CCTK_INT2 abs (CCTK_INT2 const & x) { return std::abs (x); }
+#  endif
+#  ifdef HAVE_CCTK_INT4
+    inline CCTK_INT4 abs (CCTK_INT4 const & x) { return std::abs (x); }
+#  endif
+#  ifdef HAVE_CCTK_INT8
+    inline CCTK_INT8 abs (CCTK_INT8 const & x) { return std::abs (x); }
+#  endif
+#endif
+    
+#if 0
+    // This does not work on Linux with Intel compilers, which do not
+    // always have long long llabs (long long)
+    inline signed char abs (signed char const & x) { return ::abs (x); }
+    inline unsigned char abs (unsigned char const & x) { return ::abs (x); }
+    inline short abs (short const & x) { return ::abs (x); }
+    inline int abs (int const & x) { return ::abs (x); }
+    inline long abs (long const & x) { return ::labs (x); }
+#  ifdef SIZEOF_LONG_LONG
+    inline long long abs (long long const & x) { return ::llabs (x); }
+#  endif
+#endif
+    
+#if 1
+#  ifdef HAVE_CCTK_INT1
+    inline CCTK_INT1 abs (CCTK_INT1 const & x) { return x < 0 ? - x : x; }
+#  endif
+#  ifdef HAVE_CCTK_INT2
+    inline CCTK_INT2 abs (CCTK_INT2 const & x) { return x < 0 ? - x : x; }
+#  endif
+#  ifdef HAVE_CCTK_INT4
+    inline CCTK_INT4 abs (CCTK_INT4 const & x) { return x < 0 ? - x : x; }
+#  endif
+#  ifdef HAVE_CCTK_INT8
+    inline CCTK_INT8 abs (CCTK_INT8 const & x) { return x < 0 ? - x : x; }
+#  endif
+#endif
+    
+#ifdef HAVE_CCTK_REAL4
+    inline CCTK_REAL4 abs (CCTK_REAL4 const & x) { return std::abs (x); }
+#endif
+#ifdef HAVE_CCTK_REAL8
+    inline CCTK_REAL8 abs (CCTK_REAL8 const & x) { return std::abs (x); }
+#endif
+#ifdef HAVE_CCTK_REAL16
+    inline CCTK_REAL16 abs (CCTK_REAL16 const & x) { return std::abs (x); }
+#endif
+    
+#ifdef HAVE_CCTK_COMPLEX8
+    inline CCTK_REAL4 abs (CCTK_COMPLEX8 const & x)
+    { return CCTK_Cmplx8Abs (x); }
+#endif
+#ifdef HAVE_CCTK_COMPLEX16
+    inline CCTK_REAL8 abs (CCTK_COMPLEX16 const & x)
+    { return CCTK_Cmplx16Abs (x); }
+#endif
+#ifdef HAVE_CCTK_COMPLEX32
+    inline CCTK_REAL16 abs (CCTK_COMPLEX32 const & x)
+    { return CCTK_Cmplx32Abs (x); }
+#endif
+    
+  } // namespace good
+} // namespace CarpetLib
 
 
 
