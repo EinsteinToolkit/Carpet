@@ -109,10 +109,6 @@ namespace Carpet {
   CCTK_REAL initial_walltime;   // in seconds
   CCTK_REAL initial_phystime;
   
-  // Counters for evolved grid points
-  CCTK_REAL total_local_updates;
-  CCTK_REAL total_global_updates;
-  
   
   
   // Initialise the timing variables (to be called during Initialise)
@@ -124,7 +120,11 @@ namespace Carpet {
     * physical_time_per_hour = 0.0;
     * local_grid_points_per_second = 0.0;
     * total_grid_points_per_second = 0.0;
+    * local_grid_point_updates_count = 0.0;
+    * total_grid_point_updates_count = 0.0;
+    
     * grid_points_per_second = 0.0;
+    * grid_point_updates_count = 0.0;
   }
   
   
@@ -136,9 +136,6 @@ namespace Carpet {
   {
     initial_walltime = get_walltime();
     initial_phystime = cctkGH->cctk_time;
-    
-    total_local_updates = 0.0;
-    total_global_updates = 0.0;
   }
   
   
@@ -148,10 +145,15 @@ namespace Carpet {
   void
   StepTiming (cGH const * const cctkGH)
   {
+    DECLARE_CCTK_ARGUMENTS;
+    
     int local_updates, global_updates;
     current_level_updates (cctkGH, local_updates, global_updates);
-    total_local_updates += local_updates;
-    total_global_updates += global_updates;
+    
+    * local_grid_point_updates_count += local_updates;
+    * total_grid_point_updates_count += global_updates;
+    
+    * grid_point_updates_count = * local_grid_point_updates_count;
   }
   
   
@@ -167,14 +169,12 @@ namespace Carpet {
     CCTK_REAL const elapsed_walltime = get_walltime() - initial_walltime;
     
     // Calculate updates per second
-    CCTK_REAL const local_updates_per_second =
-      total_local_updates / elapsed_walltime;
-    CCTK_REAL const global_updates_per_second =
-      total_global_updates / elapsed_walltime;
+    * local_grid_points_per_second =
+      * local_grid_point_updates_count / elapsed_walltime;
+    * total_grid_points_per_second =
+      * total_grid_point_updates_count / elapsed_walltime;
     
-    * local_grid_points_per_second = local_updates_per_second;
-    * total_grid_points_per_second = global_updates_per_second;
-    *       grid_points_per_second = local_updates_per_second;
+    * grid_points_per_second = * local_grid_points_per_second;
     
     if (not silent) {
       CCTK_VInfo (CCTK_THORNSTRING,
