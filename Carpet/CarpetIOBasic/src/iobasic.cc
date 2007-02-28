@@ -22,6 +22,8 @@
 
 #include "carpet.hh"
 
+using namespace CarpetLib;
+
 
 
 // That's a hack
@@ -678,7 +680,9 @@ namespace CarpetIOBasic {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    CCTK_REAL const xa = ::abs (x);
+    static_assert (good::abs(0.1) > 0, "Function abs has wrong signature");
+    
+    CCTK_REAL const xa = good::abs (x);
     return xa != 0 and (xa < real_min or xa >= real_max);
   }
   
