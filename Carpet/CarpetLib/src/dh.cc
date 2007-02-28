@@ -770,8 +770,8 @@ void dh::check_bboxes (dh::dboxes & box,
         bnds -= *li;
         const int new_sz = bnds.size();
         // TODO
-        // The new size can be larger if part of the
-        // prolongation went into the buffer zone.
+        // The new size can be larger if part of the prolongation went
+        // into the buffer zone.
 //      assert (new_sz + this_sz == old_sz);
         assert (new_sz + this_sz >= old_sz);
 #if 0
