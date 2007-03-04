@@ -27,6 +27,10 @@ BOOLEAN output_bboxes "Output bounding box information to the screen" STEERABLE=
 {
 } "no"
 
+BOOLEAN check_bboxes "Check bounding box information for self-consistency" STEERABLE=always
+{
+} "yes"
+
 
 
 BOOLEAN poison_new_memory "Try to catch uninitialised data by setting newly allocated memory to values that will catch your attention" STEERABLE=always

@@ -6,11 +6,14 @@
 #include "defs.hh"
 #include "dist.hh"
 #include "ggf.hh"
+#include "timestat.hh"
 #include "vect.hh"
 
 #include "dh.hh"
 
 using namespace std;
+
+using namespace CarpetLib;
 
 
 
@@ -58,21 +61,84 @@ void dh::regrid ()
   
   CHECKPOINT;
   
+  static Timer total ("dh::regrid");
+  total.start ();
+  
   boxes.clear();
 
-  allocate_bboxes();
+  {
+    static Timer timer ("dh::regrid::allocate_bboxes");
+    timer.start ();
+    allocate_bboxes();
+    timer.stop (0);
+  }
   
-  foreach_reflevel_component_mglevel (&dh::setup_allocate);
-  foreach_reflevel_component_mglevel (&dh::setup_sync_boxes);
-  foreach_reflevel_component_mglevel (&dh::setup_multigrid_boxes);
-  foreach_reflevel_component_mglevel (&dh::setup_refinement_prolongation_boxes);
-  foreach_reflevel_component_mglevel (&dh::setup_refinement_boundary_prolongation_boxes);
-  foreach_reflevel_component_mglevel (&dh::setup_refinement_restriction_boxes);
-  foreach_reflevel_component_mglevel (&dh::trim_unsynced_boundaries);
+  {
+    static Timer timer ("dh::regrid::setup_allocate");
+    timer.start ();
+    foreach_reflevel_component_mglevel (&dh::setup_allocate);
+    timer.stop (0);
+  }
+  {
+    static Timer timer ("dh::regrid::setup_sync_boxes");
+    timer.start ();
+    foreach_reflevel_component_mglevel (&dh::setup_sync_boxes);
+    timer.stop (0);
+  }
+  {
+    static Timer timer ("dh::regrid::setup_multigrid_boxes");
+    timer.start ();
+    foreach_reflevel_component_mglevel (&dh::setup_multigrid_boxes);
+    timer.stop (0);
+  }
+  {
+    static Timer timer ("dh::regrid::setup_refinement_prolongation_boxes");
+    timer.start ();
+    foreach_reflevel_component_mglevel
+      (&dh::setup_refinement_prolongation_boxes);
+    timer.stop (0);
+  }
+  {
+    static Timer timer ("dh::regrid::prepare_refinement_boundary_prolongation_boxes");
+    timer.start ();
+    foreach_reflevel_component_mglevel
+      (&dh::prepare_refinement_boundary_prolongation_boxes);
+    timer.stop (0);
+  }
+  {
+    static Timer timer ("dh::regrid::setup_refinement_boundary_prolongation_boxes");
+    timer.start ();
+    foreach_reflevel_component_mglevel
+      (&dh::setup_refinement_boundary_prolongation_boxes);
+    timer.stop (0);
+  }
+  {
+    static Timer timer ("dh::regrid::setup_refinement_restriction_boxes");
+    timer.start ();
+    foreach_reflevel_component_mglevel
+      (&dh::setup_refinement_restriction_boxes);
+    timer.stop (0);
+  }
+  {
+    static Timer timer ("dh::regrid::trim_unsynced_boundaries");
+    timer.start ();
+    foreach_reflevel_component_mglevel (&dh::trim_unsynced_boundaries);
+    timer.stop (0);
+  }
 
-  foreach_reflevel_component_mglevel (&dh::optimise_fields);
+  {
+    static Timer timer ("dh::regrid::optimise_fields");
+    timer.start ();
+    foreach_reflevel_component_mglevel (&dh::optimise_fields);
+    timer.stop (0);
+  }
 
-  calculate_bases();
+  {
+    static Timer timer ("dh::regrid::calculate_bases");
+    timer.start ();
+    calculate_bases();
+    timer.stop (0);
+  }
 
   if (output_bboxes) {
     cout << endl << h << endl;
@@ -80,30 +146,72 @@ void dh::regrid ()
     output_bases();
   }
   
-  foreach_reflevel_component_mglevel (&dh::check_bboxes);
+  if (check_bboxes) {
+    static Timer timer ("dh::regrid::check_bboxes");
+    timer.start ();
+    foreach_reflevel_component_mglevel (&dh::do_check_bboxes);
+    timer.stop (0);
+  }
+  
+  total.stop (0);
 }
 
 void dh::recompose (const int rl, const bool do_prolongate)
 {
   assert (rl>=0 and rl<h.reflevels());
   
-  for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-    (*f)->recompose_crop ();
+  static Timer total ("dh::recompose");
+  total.start ();
+  
+  {
+    static Timer timer ("dh::recompose::crop");
+    timer.start ();
+    for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+      (*f)->recompose_crop ();
+    }
+    timer.stop (0);
   }
   
   for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-    (*f)->recompose_allocate (rl);
-    for (comm_state state; not state.done(); state.step()) {
-      (*f)->recompose_fill (state, rl, do_prolongate);
+    {
+      static Timer timer ("dh::recompose::allocate");
+      timer.start ();
+      (*f)->recompose_allocate (rl);
+      timer.stop (0);
     }
-    (*f)->recompose_free_old (rl);
-    for (comm_state state; not state.done(); state.step()) {
-      (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
+    {
+      static Timer timer ("dh::recompose::fill");
+      timer.start ();
+      for (comm_state state; not state.done(); state.step()) {
+        (*f)->recompose_fill (state, rl, do_prolongate);
+      }
+      timer.stop (0);
     }
-    for (comm_state state; not state.done(); state.step()) {
-      (*f)->recompose_sync (state, rl, do_prolongate);
+    {
+      static Timer timer ("dh::recompose::free_old");
+      timer.start ();
+      (*f)->recompose_free_old (rl);
+      timer.stop (0);
+    }
+    {
+      static Timer timer ("dh::recompose::bnd_prolongate");
+      timer.start ();
+      for (comm_state state; not state.done(); state.step()) {
+        (*f)->recompose_bnd_prolongate (state, rl, do_prolongate);
+      }
+      timer.stop (0);
+    }
+    {
+      static Timer timer ("dh::recompose::sync");
+      timer.start ();
+      for (comm_state state; not state.done(); state.step()) {
+        (*f)->recompose_sync (state, rl, do_prolongate);
+      }
+      timer.stop (0);
     }
   } // for all grid functions of same vartype
+  
+  total.stop (0);
 }
 
 void dh::allocate_bboxes ()
@@ -113,16 +221,24 @@ void dh::allocate_bboxes ()
     boxes.AT(ml).resize(h.reflevels());
     for (int rl=0; rl<h.reflevels(); ++rl) {
       boxes.AT(ml).AT(rl).resize(h.components(rl));
+      
+      ibset all_extents;
+      for (int c=0; c<h.components(rl); ++c) {
+        all_extents |= h.extent(ml,rl,c);
+      }
+      all_extents.normalize();
+      
+      ibset all_interiors;
+      
       for (int c=0; c<h.components(rl); ++c) {
         const ibbox intr = h.extent(ml,rl,c);
         dboxes & b = boxes.AT(ml).AT(rl).AT(c);
-
-
-
+        
         // Interior
         // (the interior of the grid has the extent as specified by
         // the user)
         b.interior = intr;
+        all_interiors += b.interior;
         
         // Exterior (add ghost zones)
         // (the content of the exterior is completely determined by
@@ -145,9 +261,12 @@ void dh::allocate_bboxes ()
               vect<ivect,2> dist1(0,0);
               dist1[f][d] = is_empty ? 0 : dist[f][d];
               ibset bnd = intr.expand(dist1[0], dist1[1]) - intr;
+#if 0
               for (int cc=0; cc<h.components(rl); ++cc) {
                 bnd -= h.extent(ml,rl,cc);
               }
+#endif
+              bnd -= all_extents;
               bool const is_interproc = bnd.empty();
               boxes.AT(ml).AT(rl).AT(c).is_interproc[d][f] = is_interproc;
               if (! is_empty and ! is_interproc) {
@@ -167,8 +286,13 @@ void dh::allocate_bboxes ()
         // Boundaries (ghost zones only)
         // (interior + boundaries = exterior)
         b.boundaries = b.exterior - intr;
+        b.boundaries.normalize();
 
       } // for c
+      
+      all_interiors.normalize();
+      
+      ibset all_owned;
       
       // Make owned regions disjoint
       for (int c=0; c<h.components(rl); ++c) {
@@ -176,17 +300,25 @@ void dh::allocate_bboxes ()
         dboxes & b = boxes.AT(ml).AT(rl).AT(c);
         
         // 1. Remove all other interiors from this owned region
+#if 0
         for (int cc=0; cc<h.components(rl); ++cc) {
           if (cc != c) {
             b.owned -= boxes.AT(ml).AT(rl).AT(cc).interior;
           }
         }
+#endif
+        b.owned -= all_interiors;
+        b.owned += b.interior;
         b.owned.normalize();
         
         // 2. Make disjoint from all earlier owned regions
+#if 0
         for (int cc=0; cc<c; ++cc) {
           b.owned -= boxes.AT(ml).AT(rl).AT(cc).owned;
         }
+#endif
+        b.owned -= all_owned;
+        all_owned += b.owned;
         b.owned.normalize();
         
       } // for c
@@ -237,7 +369,9 @@ void dh::setup_sync_boxes (dh::dboxes & box,
                            int const rl, int const c, int const ml)
 {
   const ibset& bnds = box.boundaries;
-
+  
+  assert (box.bnd_sync.empty());
+  
   // Sync boxes
   for (int cc=0; cc<h.components(rl); ++cc) {
     dboxes & box1 = boxes.AT(ml).AT(rl).AT(cc);
@@ -247,12 +381,17 @@ void dh::setup_sync_boxes (dh::dboxes & box,
       // Intersect boundaries with owned region of that component
       ovlp = bnds & box1.owned;
       ovlp.normalize();
+    } else {
+      assert ((bnds & box1.owned).empty());
     }
+    box.bnd_sync += ovlp;
     for (ibset::const_iterator b=ovlp.begin(); b!=ovlp.end(); ++b) {
       box .recv_sync.AT(cc).push_back(*b);
       box1.send_sync.AT(c).push_back(*b);
     }
   }
+  
+  box.bnd_sync.normalize();
 }
 
 void dh::setup_multigrid_boxes (dh::dboxes & box,
@@ -271,9 +410,9 @@ void dh::setup_multigrid_boxes (dh::dboxes & box,
       // (the restriction must fill all of the interior of the
       // coarse grid, and may use the exterior of the fine grid)
       const ibbox recv = intr;
-      assert (intr.empty() or ! recv.empty());
+      assert (intr.empty() or not recv.empty());
       const ibbox send = recv.expanded_for(extrf);
-      assert (intr.empty() or ! send.empty());
+      assert (intr.empty() or not send.empty());
       // TODO: put the check back in, taking outer boundaries
       // into account
 #if 0
@@ -288,9 +427,9 @@ void dh::setup_multigrid_boxes (dh::dboxes & box,
       // grid, and may fill only the interior of the fine grid,
       // and the bbox must be as large as possible)
       const ibbox recv = extr.contracted_for(intrf) & intrf;
-            assert (intr.empty() or ! recv.empty());
+            assert (intr.empty() or not recv.empty());
       const ibbox send = recv.expanded_for(extr);
-            assert (intr.empty() or ! send.empty());
+            assert (intr.empty() or not send.empty());
       bbox.recv_mg_coarse.push_back(recv);
       box .send_mg_fine  .push_back(send);
     }
@@ -300,10 +439,12 @@ void dh::setup_multigrid_boxes (dh::dboxes & box,
 void dh::setup_refinement_prolongation_boxes (dh::dboxes & box,
                                               int const rl, int const c, int const ml)
 {
-  const ibbox& extr = box.exterior;
-
   // Refinement boxes
   if (rl<h.reflevels()-1) {
+    
+    const ibbox& extr = box.exterior;
+    ibset all_received;
+    
     for (int cc=0; cc<h.components(rl+1); ++cc) {
       dboxes & box1 = boxes.AT(ml).AT(rl+1).AT(cc);
       const ibbox intrf = box1.interior;
@@ -316,6 +457,7 @@ void dh::setup_refinement_prolongation_boxes (dh::dboxes & box,
         const int pss = prolongation_stencil_size();
         ibset recvs = extr.expand(-pss,-pss).contracted_for(intrf) & intrf;
         // Receive only once
+#if 0
         const iblistvect& rrc = box1.recv_ref_coarse;
         for (iblistvect::const_iterator lvi=rrc.begin();
              lvi!=rrc.end(); ++lvi)
@@ -326,12 +468,15 @@ void dh::setup_refinement_prolongation_boxes (dh::dboxes & box,
             recvs -= *li;
           }
         }
+#endif
+        recvs -= all_received;
+        all_received += recvs;
         recvs.normalize();
         //
         for (ibset::const_iterator ri=recvs.begin(); ri!=recvs.end(); ++ri) {
           const ibbox recv = *ri;
           const ibbox send = recv.expanded_for(extr);
-          assert (! send.empty());
+          assert (not send.empty());
           assert (send.is_contained_in(extr));
           box1.recv_ref_coarse.AT(c).push_back(recv);
           box. send_ref_fine  .AT(cc).push_back(send);
@@ -341,71 +486,90 @@ void dh::setup_refinement_prolongation_boxes (dh::dboxes & box,
   } // if not finest refinement level
 }
 
+void dh::prepare_refinement_boundary_prolongation_boxes (dh::dboxes & box,
+                                                         int const rl, int const cc, int const ml)
+{
+  // Prolongation (boundaries)
+  // (the boundary prolongation may use the exterior of the coarse
+  // grid, and must fill all of the owned boundary of the fine grid)
+  box.bnd_ref = box.boundaries & box.owned;
+  box.bnd_ref.normalize();
+  
+  // Do not count what is synced
+  ibset pbndsf;
+  {
+    static Timer timer ("dh::prepare_refinement_boundary_prolongation_boxes::prolongation-boundaries");
+    timer.start ();
+    pbndsf = box.boundaries - box.bnd_sync;
+    pbndsf.normalize();
+    timer.stop (0);
+  }
+  
+  // Add inner buffer zones
+  {
+    static Timer timer ("dh::prepare_refinement_boundary_prolongation_boxes::inner-buffers");
+    timer.start ();
+    for (ibset::const_iterator pbi=pbndsf.begin();
+         pbi!=pbndsf.end(); ++pbi)
+    {
+      ibbox const pbndx = (*pbi).expand(inner_buffer_width, inner_buffer_width);
+      box.bnd_ref |= pbndx & box.interior;
+    }
+    box.bnd_ref.normalize();
+    timer.stop (0);
+  }
+}
+
 void dh::setup_refinement_boundary_prolongation_boxes (dh::dboxes & box,
                                                        int const rl, int const c, int const ml)
 {
-  const ibbox& extr = box.exterior;
-
   // Refinement boxes
   if (rl<h.reflevels()-1) {
+    
+    const int pss = prolongation_stencil_size();
+    const ibbox& extr = box.exterior;
+    ibset all_received;
+    
     for (int cc=0; cc<h.components(rl+1); ++cc) {
       dboxes & box1 = boxes.AT(ml).AT(rl+1).AT(cc);
-      const ibbox & intrf = box1.interior;
       const ibbox & extrf = box1.exterior;
-      const ibset & bndsf = box1.boundaries;
-      const ibset & owndf = box1.owned;
       // Prolongation (boundaries)
       // TODO: prefer boxes from the same processor
       {
         // (the boundary prolongation may use the exterior of the
         // coarse grid, and must fill all of the owned boundary of the
         // fine grid)
-        const int pss = prolongation_stencil_size();
-        ibset recvs = bndsf & owndf;
-        recvs.normalize();
         // Prolongation boundaries
-        ibset pbndsf = bndsf;
+        ibset recvs = box1.bnd_ref;
         {
-          // Do not count what is synced
-          const iblistvect& rs = box1.recv_sync;
-          for (iblistvect::const_iterator lvi=rs.begin();
-               lvi!=rs.end(); ++lvi)
+          static Timer timer ("dh::setup_refinement_boundary_prolongation_boxes::maxrecvs");
+          timer.start ();
+          const ibbox maxrecvs = extr.expand(-pss,-pss).contracted_for(extrf);
+          recvs &= maxrecvs;
+          recvs.normalize();
+          timer.stop (0);
+        }
+        // Receive only once
+        {
+          static Timer timer ("dh::setup_refinement_boundary_prolongation_boxes::receive-once");
+          timer.start ();
+#if 0
+          const iblistvect& rrbc = box1.recv_ref_bnd_coarse;
+          for (iblistvect::const_iterator lvi=rrbc.begin();
+               lvi!=rrbc.end(); ++lvi)
           {
             for (iblist::const_iterator li=lvi->begin();
                  li!=lvi->end(); ++li)
             {
-              pbndsf -= *li;
+              recvs -= *li;
             }
           }
-          pbndsf.normalize();
-        }
-        // Inner buffer zones
-        {
-          ibset bufs;
-          for (ibset::const_iterator pbi=pbndsf.begin();
-               pbi!=pbndsf.end(); ++pbi)
-          {
-            bufs |= (*pbi).expand(inner_buffer_width, inner_buffer_width);
-          }
-          bufs &= intrf;
-          recvs |= bufs;
+#endif
+          recvs -= all_received;
+          all_received += recvs;
           recvs.normalize();
+          timer.stop (0);
         }
-        const ibbox maxrecvs = extr.expand(-pss,-pss).contracted_for(extrf);
-        recvs &= maxrecvs;
-        recvs.normalize();
-        // Receive only once
-        const iblistvect& rrbc = box1.recv_ref_bnd_coarse;
-        for (iblistvect::const_iterator lvi=rrbc.begin();
-             lvi!=rrbc.end(); ++lvi)
-        {
-          for (iblist::const_iterator li=lvi->begin();
-               li!=lvi->end(); ++li)
-          {
-            recvs -= *li;
-          }
-        }
-        recvs.normalize();
         //
         {
           for (ibset::const_iterator ri = recvs.begin();
@@ -413,7 +577,7 @@ void dh::setup_refinement_boundary_prolongation_boxes (dh::dboxes & box,
           {
             const ibbox & recv = *ri;
             const ibbox send = recv.expanded_for(extr);
-            assert (! send.empty());
+            assert (not send.empty());
             assert (send.is_contained_in(extr));
             assert (send.is_contained_in(extr.expand(-pss,-pss)));
             box1.recv_ref_bnd_coarse.AT(c).push_back(recv);
@@ -449,6 +613,7 @@ void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
         // boundary prolongation)
         ibset sends = intrf & intr.expanded_for(intrf);
         // remove what is received during boundary prolongation
+#if 0
         for (iblistvect::const_iterator rlvi = box1.recv_ref_bnd_coarse.begin();
              rlvi != box1.recv_ref_bnd_coarse.end(); ++ rlvi)
         {
@@ -460,6 +625,8 @@ void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
             sends -= recv;
           }
         }
+#endif
+        sends -= box1.bnd_ref;
         sends.normalize();
         // coarsify
         ibset recvs;
@@ -494,9 +661,9 @@ void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
              ri != recvs.end(); ++ri)
         {
           const ibbox recv = *ri;
-          assert (! recv.empty());
+          assert (not recv.empty());
           const ibbox & send = recv.expanded_for(intrf);
-          assert (! send.empty());
+          assert (not send.empty());
           box1.send_ref_coarse.AT(c).push_back(send);
           box .recv_ref_fine  .AT(cc).push_back(recv);
         }
@@ -581,8 +748,8 @@ optimise_fields (dboxes & box,
   optimise_field (box, &dboxes::recv_ref_bnd_coarse, &dboxes::recv_ref_bnd_coarse_fast, rl, c, ml);
 }
 
-void dh::check_bboxes (dh::dboxes & box,
-                       int const rl, int const c, int const ml)
+void dh::do_check_bboxes (dh::dboxes & box,
+                          int const rl, int const c, int const ml)
 {
   DECLARE_CCTK_PARAMETERS;
 
@@ -641,7 +808,7 @@ void dh::check_bboxes (dh::dboxes & box,
       }
       // TODO
       // This need not be empty at outer boundaries.  Check that
-      // those are indeed outer boundaries!  But what size of the
+      // those are indeed outer boundariesnot  But what size of the
       // boundary region should be used for that?
 #if 0
       assert (intr.empty());
@@ -696,7 +863,7 @@ void dh::check_bboxes (dh::dboxes & box,
           // TODO: why should not intr == bnd?
           intr -= bnd;
           
-          if (! intr.empty()) {
+          if (not intr.empty()) {
             intr.normalize();
             bnd.normalize();
             cout << "rl " << rl << " c " << c << endl;
@@ -712,6 +879,23 @@ void dh::check_bboxes (dh::dboxes & box,
 #endif
     }
   }
+  
+  // Assert that the interior regions are disjoint
+  if (c==0) {
+    ibset combined_intr;
+    for (int cc=0; cc<h.components(rl); ++cc) {
+      
+      dboxes const & box1 = boxes.AT(ml).AT(rl).AT(cc);
+      
+      ibbox const & intr = box1.interior;
+      
+      ibset const ovlp = combined_intr & intr;
+      assert (ovlp.empty());
+      
+      combined_intr += intr;
+    }
+  }
+  
   
   // Assert that the owned regions are disjoint, that they together
   // make up the sum of all exterior regions, and that each
@@ -782,7 +966,7 @@ void dh::check_bboxes (dh::dboxes & box,
     }
     // TODO
     // This need not be empty at outer boundaries.  Check that
-    // those are indeed outer boundaries!  But what size of the
+    // those are indeed outer boundariesnot  But what size of the
     // boundary region should be used for that?
 #if 0
     assert (bnds.empty());

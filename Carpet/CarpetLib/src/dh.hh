@@ -64,6 +64,7 @@ public:
     
     ibbox interior;             // interior (without boundaries)
     ibset owned;                // can be used for synchronisation
+    
     iblist send_mg_fine;
     iblist send_mg_coarse;
     iblist recv_mg_fine;
@@ -78,6 +79,9 @@ public:
     iblistvect send_ref_bnd_fine; // sent to finer grids
     
     ibset boundaries;           // boundaries
+    ibset bnd_sync;             // boundaries which are synchronised
+    ibset bnd_ref;              // boundaries which are prolongated
+    
     iblistvect recv_sync;       // received while syncing
     pvect recv_sync_fast;
     iblistvect recv_ref_bnd_coarse; // received from coarser grids
@@ -116,6 +120,7 @@ private:
   void setup_sync_boxes (dboxes & b, int rl, int c, int ml);
   void setup_multigrid_boxes (dboxes & b, int rl, int c, int ml);
   void setup_refinement_prolongation_boxes (dboxes & b, int rl, int c, int ml);
+  void prepare_refinement_boundary_prolongation_boxes (dboxes & b, int rl, int c, int ml);
   void setup_refinement_boundary_prolongation_boxes (dboxes & b, int rl, int c, int ml);
   void setup_refinement_restriction_boxes (dboxes & b, int rl, int c, int ml);
   void optimise_field (dboxes & b,
@@ -126,7 +131,7 @@ private:
                         int rl, int c, int ml);
   void trim_unsynced_boundaries (dboxes & b, int rl, int c, int ml);
   void do_output_bboxes (dboxes & b, int rl, int c, int ml);
-  void check_bboxes (dboxes & b, int rl, int c, int ml);
+  void do_check_bboxes (dboxes & b, int rl, int c, int ml);
 
   void calculate_bases (); 
   void output_bases (); 
