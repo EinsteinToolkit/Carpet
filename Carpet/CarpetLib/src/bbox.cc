@@ -202,6 +202,23 @@ void bbox<T,D>::input (istream& is) {
     consume (is, ':');
     is >> _stride;
     skipws (is);
+    if (is.peek() == '/') {
+      consume (is, '/');
+      T lower_dummy;
+      is >> lower_dummy;
+      skipws (is);
+      consume (is, ':');
+      T upper_dummy;
+      is >> upper_dummy;
+      skipws (is);
+      consume (is, '/');
+      T shape_dummy;
+      is >> shape_dummy;
+      consume (is, '/');
+      T size_dummy;
+      is >> size_dummy;
+      skipws (is);
+    }
     consume (is, ')');
   } catch (input_error &err) {
     cout << "Input error while reading a bbox" << endl;
@@ -226,7 +243,10 @@ void bbox<T,D>::input (istream& is) {
 // Output
 template<class T,int D>
 void bbox<T,D>::output (ostream& os) const {
-  os << "(" << lower() << ":" << upper() << ":" << stride() << ")";
+  os << "(" << lower() << ":" << upper() << ":" << stride()
+     << "/" << lower() / stride() << ":" << upper() / stride()
+     << "/" << shape() / stride()
+     << "/" << size() << ")";
 }
 
 
