@@ -38,7 +38,7 @@ using namespace std;
 // Use this macro AT instead of vector's operator[] or at().
 // Depending on the macro NDEBUG, this macro AT either checks for
 // valid indices or not.
-#ifndef NDEBUG
+#ifndef CARPET_OPTIMISE
 #  define AT(index) at(index)
 #else
 #  define AT(index) operator[](index)

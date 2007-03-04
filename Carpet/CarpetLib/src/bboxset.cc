@@ -42,7 +42,7 @@ bboxset<T,D>::bboxset (const bset& bs_): bs(bs_) {
 template<class T, int D>
 bool bboxset<T,D>::invariant () const {
 // This is very slow when there are many bboxes
-#if 0 && ! defined(CARPET_OPTIMISE)
+#if 0 && defined(CARPET_DEBUG)
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
     if ((*bi).empty()) return false;
     if (not (*bi).is_aligned_with(*bs.begin())) return false;
