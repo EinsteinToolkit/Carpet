@@ -58,7 +58,9 @@ namespace Carpet {
       
     } END_REVERSE_MGLEVEL_LOOP;
     timer.stop();
-    TimerSet::writeData (cctkGH, timer_file);
+    if (output_timers_every > 0) {
+      TimerSet::writeData (cctkGH, timer_file);
+    }
     
     // earlier checkpoint before finalising MPI
     Waypoint ("Done with shutdown");

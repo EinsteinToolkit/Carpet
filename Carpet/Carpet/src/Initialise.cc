@@ -105,7 +105,9 @@ namespace Carpet {
     print_internal_data ();
     
     timer.stop();
-    TimerSet::writeData (cctkGH, timer_file);
+    if (output_timers_every > 0) {
+      TimerSet::writeData (cctkGH, timer_file);
+    }
     
     Waypoint ("Done with initialisation");
     
