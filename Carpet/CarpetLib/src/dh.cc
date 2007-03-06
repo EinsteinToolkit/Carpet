@@ -381,8 +381,6 @@ void dh::setup_sync_boxes (dh::dboxes & box,
       // Intersect boundaries with owned region of that component
       ovlp = bnds & box1.owned;
       ovlp.normalize();
-    } else {
-      assert ((bnds & box1.owned).empty());
     }
     box.bnd_sync += ovlp;
     for (ibset::const_iterator b=ovlp.begin(); b!=ovlp.end(); ++b) {
