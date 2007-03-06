@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -15,6 +16,10 @@
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
 
+#ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+#endif
+
 #include "defs.hh"
 #include "dist.hh"
 #include "timestat.hh"
@@ -27,27 +32,45 @@ namespace CarpetLib {
   
   
   
-  // A faster timing routine:
+  // A faster timing routine for i386 processors:
   // Read the Intel CPU time stamp counter
+  static
+  double rdtsc_cputick = 1.0;
+  
   static inline
   double
   rdtsc ()
   {
-#if defined(__i386__)
-    unsigned long long int val;
-    __asm__ __volatile__("rdtsc" : "=A" (val) : );
-    return val;
+    // Test for i386 (should use autoconf instead)
+#if defined(__i386__) || defined(__x86_64__)
+    // Serialise using cpuid
+    // (This is only strictly necessary on some systems)
+    __asm__ __volatile__("cpuid" : : );
+    // Using "=A" does not work on x86_64, where it uses rax instead
+    //    of (edx,eax)
+    // unsigned long long int val;
+    // __asm__ __volatile__("rdtsc" : "=A" (val) : );
+    unsigned long eax, edx;
+    asm volatile ("rdtsc" : "=a" (eax), "=d" (edx));
+    return rdtsc_cputick * ((unsigned long long) edx << 32 | eax);
 #else
+    static bool have_warned = false;
+    if (not have_warned) {
+      CCTK_WARN (1, "The Intel rdtsc timer is not supported");
+      have_warned = true;
+    }
     return 0;
 #endif
   }
-  static
-  double rdtsc_cputick = 0.0;
   
   static
   void
   init_rdtsc ()
   {
+    // Make three warmup measurements
+    volatile double const rdummy1 = rdtsc ();
+    volatile double const rdummy2 = rdtsc ();
+    volatile double const rdummy3 = rdtsc ();
     double const rstart = rdtsc ();
     double const wstart = MPI_Wtime ();
     int const ierr = usleep (1000 * 1000);
@@ -56,9 +79,31 @@ namespace CarpetLib {
     if (ierr) {
       CCTK_WARN (1, "Could not determine a reliable rdtsc timer resolution");
     }
-    rdtsc_cputick = (wend - wstart) / (rend - rstart);
+    rdtsc_cputick *= (wend - wstart) / (rend - rstart);
   }
   
+  
+  
+  // A faster timing routine for AIX
+  static inline
+  double
+  rtc ()
+  {
+    // Test for AIX (should use autoconf instead)
+#ifdef __IBMC__
+    timebasestruct_t val;
+    read_real_time (& val, TIMEBASE_SZ);
+    time_base_to_time (& val, TIMEBASE_SZ);
+    return val.tb_high + 1.0e-9 * val.tb_low;
+#else
+    static bool have_warned = false;
+    if (not have_warned) {
+      CCTK_WARN (1, "The AIX rtc timer not supported");
+      have_warned = true;
+    }
+    return 0;
+#endif
+  }
   
   
   
@@ -68,7 +113,9 @@ namespace CarpetLib {
   call_timer ()
   {
     DECLARE_CCTK_PARAMETERS;
-    enum timer_type { timer_unset, timer_MPI_Wtime, timer_rdtsc, timer_none };
+    enum timer_type {
+      timer_unset, timer_MPI_Wtime, timer_rdtsc, timer_rtc, timer_none
+    };
     static timer_type timer = timer_unset;
     if (timer == timer_unset) {
       if (CCTK_EQUALS (timestat_timer, "MPI_Wtime")) {
@@ -76,6 +123,8 @@ namespace CarpetLib {
       } else if (CCTK_EQUALS (timestat_timer, "rdtsc")) {
         timer = timer_rdtsc;
         init_rdtsc ();
+      } else if (CCTK_EQUALS (timestat_timer, "rtc")) {
+        timer = timer_rtc;
       } else if (CCTK_EQUALS (timestat_timer, "none")) {
         timer = timer_none;
       } else {
@@ -86,12 +135,15 @@ namespace CarpetLib {
     case timer_MPI_Wtime:
       return MPI_Wtime ();
     case timer_rdtsc:
-      return rdtsc_cputick * rdtsc ();
+      return rdtsc ();
+    case timer_rtc:
+      return rtc ();
     case timer_none:
       return 0.0;
     default:
       assert (0);
     }
+    abort ();
   }
   
   

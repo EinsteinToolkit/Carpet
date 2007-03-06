@@ -64,8 +64,9 @@ KEYWORD timestat_timer "Timer for timing statistics" STEERABLE=recover
 {
   "MPI_Wtime" :: "MPI_Wtime (expensive; uses system call)"
   "rdtsc"     :: "Intel rdtsc instruction (exists only on Intel CPUs)"
+  "rtc"       :: "AIX rtc timer (exists only on AIX systems)"
   "none"      :: "don't measure time"
-} "rdtsc"
+} "none"
 
 BOOLEAN timestat_disable "Disable timing statistics" STEERABLE=always
 {
