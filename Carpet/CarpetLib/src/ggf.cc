@@ -138,87 +138,55 @@ void ggf::recompose_allocate (const int rl)
   } // for ml
 }
 
-void ggf::recompose_fill (comm_state& state, const int rl,
-                          const bool do_prolongate)
+void ggf::recompose_fill (comm_state & state, int const rl,
+                          bool const do_prolongate)
 {
   // Initialise the new storage
-  for (int ml=0; ml<h.mglevels(); ++ml) {
-    for (int c=0; c<h.components(rl); ++c) {
-      for (int tl=0; tl<timelevels(ml,rl); ++tl) {
-        
-        // Find out which regions need to be prolongated
-        // (Copy the exterior because some variables are not prolongated)
-        // TODO: do this once in the dh instead of for each variable here
-        ibset work (d.boxes.AT(ml).AT(rl).AT(c).exterior);
-        
-        // Copy from old storage, if possible
-        // TODO: copy only from interior regions?
-        if (rl<(int)oldstorage.AT(ml).size()) {
-          for (int cc=0; cc<(int)oldstorage.AT(ml).AT(rl).size(); ++cc) {
-            // TODO: prefer same processor, etc., see dh.cc
-            ibset ovlp
-              = work & oldstorage.AT(ml).AT(rl).AT(cc).AT(tl)->extent();
-            ovlp.normalize();
-            work -= ovlp;
-            for (ibset::const_iterator r=ovlp.begin(); r!=ovlp.end(); ++r) {
-              storage.AT(ml).AT(rl).AT(c).AT(tl)->copy_from
-                (state, oldstorage.AT(ml).AT(rl).AT(cc).AT(tl), *r);
-            }
-          } // for cc
+  for (int ml = 0; ml < h.mglevels(); ++ ml) {
+    
+    int const numtl = timelevels (ml, rl);
+    vector <int> tls (numtl);
+    vector <CCTK_REAL> times (numtl);
+    for (int tl = 0; tl < numtl; ++ tl) {
+      tls.AT(tl) = tl;
+      times.AT(tl) = t.time (tls.AT(tl), rl - 1, ml);
+    }
+    
+    for (int c = 0; c < h.components (rl); ++c) {
+      
+      // Initialise from the same level of the old hierarchy, where
+      // possible
+      if (rl < (int)oldstorage.AT(ml).size()) {
+        for (int tl = 0; tl < timelevels (ml, rl); ++tl) {
+          copycat (state,
+                   tl, rl, c, ml,
+                   & dh::dboxes::old2new_recv_sync_fast,
+                   tl, rl, ml,
+                   & oldstorage);
+        } // for tl
+      } // if rl
+      
+      if (do_prolongate) {
+        // Initialise from a coarser level of the new hierarchy, where
+        // possible
+        if (rl > 0) {
+          if (transport_operator != op_none) {
+            for (int tl = 0; tl < timelevels (ml, rl); ++tl) {
+              intercat (state,
+                        tl, rl, c, ml,
+                        & dh::dboxes::old2new_recv_ref_coarse_fast,
+                        tls, rl - 1, ml,
+                        times.AT(tl));
+            } // for tl
+          } // if transport_operator
         } // if rl
-        
-        if (do_prolongate) {
-          // Initialise from coarser level, if possible
-          if (rl>0) {
-            if (transport_operator != op_none) {
-              const int pos = d.prolongation_order_space;
-              const int pot = (transport_operator != op_copy
-                               ? prolongation_order_time
-                               : 0);
-              const int numtl = pot+1;
-              assert (timelevels(ml,rl) >= numtl);
-              vector<int> tls(numtl);
-              vector<CCTK_REAL> times(numtl);
-              for (int i=0; i<numtl; ++i) {
-                tls.AT(i) = i;
-                times.AT(i) = t.time(tls.AT(i),rl-1,ml);
-              }
-              for (int cc=0; cc<(int)storage.AT(ml).AT(rl-1).size(); ++cc) {
-                vector<const gdata*> gsrcs(numtl);
-                for (int i=0; i<numtl; ++i) {
-                  gsrcs.AT(i) = storage.AT(ml).AT(rl-1).AT(cc).AT(tls.AT(i));
-                  assert (gsrcs.AT(i)->extent() == gsrcs.AT(0)->extent());
-                }
-                const CCTK_REAL time = t.time(tl,rl,ml);
-                
-                // TODO: choose larger regions first
-                // TODO: prefer regions from the same processor
-                const iblist& list
-                  = d.boxes.AT(ml).AT(rl).AT(c).recv_ref_coarse.AT(cc);
-                for (iblist::const_iterator iter=list.begin();
-                     iter!=list.end(); ++iter)
-                {
-                  ibset ovlp = work & *iter;
-                  ovlp.normalize();
-                  work -= ovlp;
-                  for (ibset::const_iterator r=ovlp.begin();
-                       r!=ovlp.end(); ++r)
-                  {
-                    storage.AT(ml).AT(rl).AT(c).AT(tl)->interpolate_from
-                      (state, gsrcs, times, *r, time, pos, pot);
-                  } // for r
-                } // for iter
-              } // for cc
-            } // if transport_operator
-          } // if rl
-        } // if do_prolongate
-        
-        // Note that work need not be empty here; in this case, not
-        // everything could be initialised.  This is okay on outer
-        // boundaries.
-        // TODO: check this.
-        
-      } // for tl
+      } // if do_prolongate
+      
+      // Note that work need not be empty here; in this case, not
+      // everything could be initialised.  This is okay on outer
+      // boundaries.
+      // TODO: check this.
+      
     } // for c
   } // for ml
 }
@@ -236,6 +204,7 @@ void ggf::recompose_free_old (const int rl)
   } // for ml
 }
 
+#if 0
 void ggf::recompose_bnd_prolongate (comm_state& state, const int rl,
                                     const bool do_prolongate)
 {
@@ -273,6 +242,7 @@ void ggf::recompose_sync (comm_state& state, const int rl,
     } // for ml
   } // if do_prolongate
 }
+#endif
 
 
 
@@ -402,7 +372,8 @@ void ggf::copycat (comm_state& state,
 void ggf::copycat (comm_state& state,
                    int tl1, int rl1, int c1, int ml1,
                    const pvect dh::dboxes::* recv_pvect,
-                   int tl2, int rl2, int ml2)
+                   int tl2, int rl2, int ml2,
+                   mdata * const srcstorage_)
 {
   assert (rl1>=0 and rl1<h.reflevels());
   assert (c1>=0 and c1<h.components(rl1));
@@ -411,11 +382,12 @@ void ggf::copycat (comm_state& state,
   assert (           ml2<h.mglevels());
   assert (rl2>=0 and rl2<h.reflevels());
   assert (tl2>=0 and tl2<timelevels(ml2,rl2));
+  mdata & srcstorage = srcstorage_ ? * srcstorage_ : storage;
   // walk all components
   static Timer copycat1 ("copycat_pvect_1");
   copycat1.start ();
   gdata * const dst = storage.AT(ml1).AT(rl1).AT(c1).AT(tl1);
-  cdata const & srcs = storage.AT(ml2).AT(rl2);
+  cdata const & srcs = srcstorage.AT(ml2).AT(rl2);
   pvect const & prs = d.boxes.AT(ml1).AT(rl1).AT(c1).*recv_pvect;
   for (pvect::const_iterator ipr=prs.begin(); ipr!=prs.end(); ++ipr) {
     pseudoregion const & pr = * ipr;

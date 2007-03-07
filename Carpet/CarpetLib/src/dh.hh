@@ -91,6 +91,13 @@ public:
     ibset recv_not;             // not received while syncing or
                                 // prolongating (globally outer
                                 // boundary)
+    
+    // Information for regridding, i.e., for copying data from the old
+    // to the new hierarchy
+    iblistvect old2new_recv_sync;
+    pvect old2new_recv_sync_fast;
+    iblistvect old2new_recv_ref_coarse;
+    pvect old2new_recv_ref_coarse_fast;
   };
   
 private:
@@ -123,13 +130,14 @@ private:
   void prepare_refinement_boundary_prolongation_boxes (dboxes & b, int rl, int c, int ml);
   void setup_refinement_boundary_prolongation_boxes (dboxes & b, int rl, int c, int ml);
   void setup_refinement_restriction_boxes (dboxes & b, int rl, int c, int ml);
+  void setup_old2new (dboxes & b, int rl, int c, int ml);
+  void trim_unsynced_boundaries (dboxes & b, int rl, int c, int ml);
   void optimise_field (dboxes & b,
                        iblistvect const dboxes::* field,
                        pvect dboxes::* field_fast,
                        int rl, int c, int ml);
   void optimise_fields (dboxes & b,
                         int rl, int c, int ml);
-  void trim_unsynced_boundaries (dboxes & b, int rl, int c, int ml);
   void do_output_bboxes (dboxes & b, int rl, int c, int ml);
   void do_check_bboxes (dboxes & b, int rl, int c, int ml);
 
@@ -151,6 +159,8 @@ public:                         // should be readonly
   mboxes boxes;                 // grid hierarchy
   mbases bases;                 // bounding boxes around the grid
                                 // hierarchy
+  
+  mboxes oldboxes;              // old grid hierarchy, used during regridding
   
   list<ggf*> gfs;               // list of all grid functions
   

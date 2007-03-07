@@ -96,8 +96,10 @@ public:
   void recompose_allocate (int rl);
   void recompose_fill (comm_state& state, int rl, bool do_prolongate);
   void recompose_free_old (int rl);
+#if 0
   void recompose_bnd_prolongate (comm_state& state, int rl, bool do_prolongate);
   void recompose_sync (comm_state& state, int rl, bool do_prolongate);
+#endif
 
   // Cycle the time levels by rotating the data sets
   void cycle (int rl, int c, int ml);
@@ -141,7 +143,8 @@ protected:
   void copycat (comm_state& state,
                 int tl1, int rl1, int c1, int ml1,
 		const pvect dh::dboxes::* recv_pvect,
-                int tl2, int rl2, int ml2);
+                int tl2, int rl2, int ml2,
+                mdata * srcstorage = 0);
   
   // Interpolate a region
   void intercat (comm_state& state,

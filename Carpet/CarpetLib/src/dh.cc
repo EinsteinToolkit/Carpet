@@ -64,8 +64,9 @@ void dh::regrid ()
   static Timer total ("dh::regrid");
   total.start ();
   
-  boxes.clear();
-
+  oldboxes.clear();
+  swap (boxes, oldboxes);
+  
   {
     static Timer timer ("dh::regrid::allocate_bboxes");
     timer.start ();
@@ -123,6 +124,12 @@ void dh::regrid ()
     static Timer timer ("dh::regrid::trim_unsynced_boundaries");
     timer.start ();
     foreach_reflevel_component_mglevel (&dh::trim_unsynced_boundaries);
+    timer.stop (0);
+  }
+  {
+    static Timer timer ("dh::regrid::setup_old2new");
+    timer.start ();
+    foreach_reflevel_component_mglevel (&dh::setup_old2new);
     timer.stop (0);
   }
 
@@ -193,6 +200,10 @@ void dh::recompose (const int rl, const bool do_prolongate)
       (*f)->recompose_free_old (rl);
       timer.stop (0);
     }
+    // Omit prolongation and synchronisation.  This is supposed to
+    // happen in the postregrid bin as part of the boundary conditions
+    // which are applied there.
+#if 0
     {
       static Timer timer ("dh::recompose::bnd_prolongate");
       timer.start ();
@@ -209,6 +220,7 @@ void dh::recompose (const int rl, const bool do_prolongate)
       }
       timer.stop (0);
     }
+#endif
   } // for all grid functions of same vartype
   
   total.stop (0);
@@ -711,6 +723,62 @@ void dh::trim_unsynced_boundaries (dh::dboxes & box,
 
 void
 dh::
+setup_old2new (dh::dboxes & box,
+               int const rl, int const c, int const ml)
+{
+  // Find out which regions need to be prolongated
+  // (Copy the exterior because some variables are not prolongated)
+  
+  if (oldboxes.empty()) return;
+  
+  ibset work = box.exterior;
+  
+  // Copy from old storage, if possible
+  // TODO: copy only from interior regions?
+  if (rl < (int)oldboxes.AT(ml).size()) {
+    for (int cc = 0; cc < (int)oldboxes.AT(ml).AT(rl).size(); ++ cc) {
+      // TODO: prefer same processor, etc.
+      ibset ovlp = work & oldboxes.AT(ml).AT(rl).AT(cc).exterior;
+      ovlp.normalize();
+      work -= ovlp;
+      for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end(); ++ ri) {
+        box.old2new_recv_sync.AT(cc).push_back (* ri);
+      }
+    } // for cc
+  } // if rl
+  
+  // Initialise from coarser level, if possible
+  if (rl>0) {
+    for (int cc=0; cc<(int)boxes.AT(ml).AT(rl-1).size(); ++cc) {
+      
+      // TODO: choose larger regions first
+      // TODO: prefer regions from the same processor
+      iblist const & clist = box.recv_ref_coarse.AT(cc);
+      ibset cset;
+      for (iblist::const_iterator
+             iter = clist.begin();iter != clist.end(); ++iter)
+      {
+        cset += * iter;
+      }
+      ibset ovlp = work & cset;
+      ovlp.normalize();
+      work -= ovlp;
+      for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end(); ++ ri) {
+        box.old2new_recv_ref_coarse.AT(cc).push_back (* ri);
+      }
+    } // for cc
+  } // if rl
+  
+  // Note that work need not be empty here; in this case, not
+  // everything could be initialised.  This is okay on outer
+  // boundaries.
+  // TODO: check this.
+}
+
+
+
+void
+dh::
 optimise_field (dboxes & box,
                 iblistvect const dboxes::* const field,
                 pvect dboxes::* const field_fast,
@@ -737,13 +805,14 @@ optimise_field (dboxes & box,
 
 void
 dh::
-optimise_fields (dboxes & box,
-                 int const rl, int const c, int const ml)
+optimise_fields (dboxes & box, int const rl, int const c, int const ml)
 {
   optimise_field (box, &dboxes::recv_ref_fine, &dboxes::recv_ref_fine_fast, rl, c, ml);
   optimise_field (box, &dboxes::recv_ref_coarse, &dboxes::recv_ref_coarse_fast, rl, c, ml);
   optimise_field (box, &dboxes::recv_sync, &dboxes::recv_sync_fast, rl, c, ml);
   optimise_field (box, &dboxes::recv_ref_bnd_coarse, &dboxes::recv_ref_bnd_coarse_fast, rl, c, ml);
+  optimise_field (box, &dboxes::old2new_recv_sync, &dboxes::old2new_recv_sync_fast, rl, c, ml);
+  optimise_field (box, &dboxes::old2new_recv_ref_coarse, &dboxes::old2new_recv_ref_coarse_fast, rl, c, ml);
 }
 
 void dh::do_check_bboxes (dh::dboxes & box,
@@ -1157,6 +1226,8 @@ void dh::do_output_bboxes(dh::dboxes & box,
   cout << "recv_ref_bnd_coarse=" << box.recv_ref_bnd_coarse << endl;
   cout << "sync_not=" << box.sync_not << endl;
   cout << "recv_not=" << box.recv_not << endl;
+  cout << "old2new_recv_sync=" << box.old2new_recv_sync << endl;
+  cout << "old2new_recv_ref_coarse=" << box.old2new_recv_ref_coarse << endl;
 }
 
 void dh::output_bases ()
