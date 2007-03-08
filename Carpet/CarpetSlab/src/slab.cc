@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <limits>
 #include <vector>
 
 #include "cctk.h"
@@ -152,7 +153,7 @@ namespace CarpetSlab {
     // Sanity check
     // (if this fails, someone requested an insane number of grid points)
     {
-      int max = INT_MAX;
+      int max = numeric_limits<int>::max();
       for (int dd=0; dd<hdim; ++dd) {
         assert (length[dd] >= 0 && length[dd] <= max);
         if (length[dd] > 0) max /= length[dd];
