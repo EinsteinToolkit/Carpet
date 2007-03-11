@@ -45,7 +45,7 @@ BOOLEAN symmetry_rotating180 "Ensure a 180 degree rotating symmetry about the z 
 
 CCTK_INT num_centres "Number of refinement centres" STEERABLE=always
 {
-  0:3 :: ""
+  0:10 :: ""
 } 0
 
 
@@ -143,6 +143,237 @@ CCTK_REAL position_z_3 "Position of this centre" STEERABLE=always
 
 
 CCTK_REAL radius_3[30] "Radius of refined region for this level of this centre" STEERABLE=always
+{
+  0:* :: ""
+} 1.0
+
+
+
+################################################################################
+
+CCTK_INT num_levels_4 "Number of refinement levels for this centre" STEERABLE=always
+{
+  0:30 :: ""
+} 0
+
+
+
+CCTK_REAL position_x_4 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL position_y_4 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL position_z_4 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+
+
+CCTK_REAL radius_4[30] "Radius of refined region for this level of this centre" STEERABLE=always
+{
+  0:* :: ""
+} 1.0
+
+
+
+################################################################################
+
+CCTK_INT num_levels_5 "Number of refinement levels for this centre" STEERABLE=always
+{
+  0:30 :: ""
+} 0
+
+
+
+CCTK_REAL position_x_5 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL position_y_5 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL position_z_5 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+
+
+CCTK_REAL radius_5[30] "Radius of refined region for this level of this centre" STEERABLE=always
+{
+  0:* :: ""
+} 1.0
+
+
+
+################################################################################
+
+CCTK_INT num_levels_6 "Number of refinement levels for this centre" STEERABLE=always
+{
+  0:30 :: ""
+} 0
+
+
+
+CCTK_REAL position_x_6 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL position_y_6 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL position_z_6 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+
+
+CCTK_REAL radius_6[30] "Radius of refined region for this level of this centre" STEERABLE=always
+{
+  0:* :: ""
+} 1.0
+
+
+
+################################################################################
+
+CCTK_INT num_levels_7 "Number of refinement levels for this centre" STEERABLE=always
+{
+  0:30 :: ""
+} 0
+
+
+
+CCTK_REAL position_x_7 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL position_y_7 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL position_z_7 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+
+
+CCTK_REAL radius_7[30] "Radius of refined region for this level of this centre" STEERABLE=always
+{
+  0:* :: ""
+} 1.0
+
+
+
+################################################################################
+
+CCTK_INT num_levels_8 "Number of refinement levels for this centre" STEERABLE=always
+{
+  0:30 :: ""
+} 0
+
+
+
+CCTK_REAL position_x_8 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL position_y_8 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL position_z_8 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+
+
+CCTK_REAL radius_8[30] "Radius of refined region for this level of this centre" STEERABLE=always
+{
+  0:* :: ""
+} 1.0
+
+
+
+################################################################################
+
+CCTK_INT num_levels_9 "Number of refinement levels for this centre" STEERABLE=always
+{
+  0:30 :: ""
+} 0
+
+
+
+CCTK_REAL position_x_9 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL position_y_9 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL position_z_9 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+
+
+CCTK_REAL radius_9[30] "Radius of refined region for this level of this centre" STEERABLE=always
+{
+  0:* :: ""
+} 1.0
+
+
+
+################################################################################
+
+CCTK_INT num_levels_10 "Number of refinement levels for this centre" STEERABLE=always
+{
+  0:30 :: ""
+} 0
+
+
+
+CCTK_REAL position_x_10 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL position_y_10 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+CCTK_REAL position_z_10 "Position of this centre" STEERABLE=always
+{
+  *:* :: ""
+} 0.0
+
+
+
+CCTK_REAL radius_10[30] "Radius of refined region for this level of this centre" STEERABLE=always
 {
   0:* :: ""
 } 1.0

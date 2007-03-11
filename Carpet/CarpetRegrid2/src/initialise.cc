@@ -64,6 +64,76 @@ namespace CarpetRegrid2 {
         radius[index2 (lsh, rl, 2)] = radius_3[rl];
       }
     }
+    
+    if (num_centres >= 4) {
+      num_levels[3] = num_levels_4;
+      position_x[3] = position_x_4;
+      position_y[3] = position_y_4;
+      position_z[3] = position_z_4;
+      for (int rl = 0; rl < num_levels[3]; ++ rl) {
+        radius[index2 (lsh, rl, 3)] = radius_4[rl];
+      }
+    }
+    
+    if (num_centres >= 5) {
+      num_levels[4] = num_levels_5;
+      position_x[4] = position_x_5;
+      position_y[4] = position_y_5;
+      position_z[4] = position_z_5;
+      for (int rl = 0; rl < num_levels[4]; ++ rl) {
+        radius[index2 (lsh, rl, 4)] = radius_5[rl];
+      }
+    }
+    
+    if (num_centres >= 6) {
+      num_levels[5] = num_levels_6;
+      position_x[5] = position_x_6;
+      position_y[5] = position_y_6;
+      position_z[5] = position_z_6;
+      for (int rl = 0; rl < num_levels[5]; ++ rl) {
+        radius[index2 (lsh, rl, 5)] = radius_6[rl];
+      }
+    }
+    
+    if (num_centres >= 7) {
+      num_levels[6] = num_levels_7;
+      position_x[6] = position_x_7;
+      position_y[6] = position_y_7;
+      position_z[6] = position_z_7;
+      for (int rl = 0; rl < num_levels[6]; ++ rl) {
+        radius[index2 (lsh, rl, 6)] = radius_7[rl];
+      }
+    }
+    
+    if (num_centres >= 8) {
+      num_levels[7] = num_levels_8;
+      position_x[7] = position_x_8;
+      position_y[7] = position_y_8;
+      position_z[7] = position_z_8;
+      for (int rl = 0; rl < num_levels[7]; ++ rl) {
+        radius[index2 (lsh, rl, 7)] = radius_8[rl];
+      }
+    }
+    
+    if (num_centres >= 9) {
+      num_levels[8] = num_levels_9;
+      position_x[8] = position_x_9;
+      position_y[8] = position_y_9;
+      position_z[8] = position_z_9;
+      for (int rl = 0; rl < num_levels[8]; ++ rl) {
+        radius[index2 (lsh, rl, 8)] = radius_9[rl];
+      }
+    }
+    
+    if (num_centres >= 10) {
+      num_levels[9] = num_levels_10;
+      position_x[9] = position_x_10;
+      position_y[9] = position_y_10;
+      position_z[9] = position_z_10;
+      for (int rl = 0; rl < num_levels[9]; ++ rl) {
+        radius[index2 (lsh, rl, 9)] = radius_10[rl];
+      }
+    }
   }
   
 } // namespace CarpetRegrid2
