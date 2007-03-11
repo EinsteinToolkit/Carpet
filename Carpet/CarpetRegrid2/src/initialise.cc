@@ -134,6 +134,12 @@ namespace CarpetRegrid2 {
         radius[index2 (lsh, rl, 9)] = radius_10[rl];
       }
     }
+    
+    for (int n = 0; n < num_centres; ++ n) {
+      old_position_x[n] = position_x[n];
+      old_position_y[n] = position_y[n];
+      old_position_z[n] = position_z[n];
+    }
   }
   
 } // namespace CarpetRegrid2

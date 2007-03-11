@@ -1,7 +1,7 @@
 # Schedule definitions for thorn CarpetRegrid2
 
 STORAGE: last_iteration last_map
-STORAGE: num_levels positions radii
+STORAGE: num_levels positions radii old_positions
 
 
 

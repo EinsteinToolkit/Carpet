@@ -83,6 +83,13 @@ CCTK_REAL radius_1[30] "Radius of refined region for this level of this centre" 
 
 
 
+CCTK_REAL movement_threshold_1 "Minimum movement to trigger a regridding" STEERABLE=always
+{
+  0:* :: ""
+} 0.0
+
+
+
 ################################################################################
 
 CCTK_INT num_levels_2 "Number of refinement levels for this centre" STEERABLE=always
@@ -113,6 +120,13 @@ CCTK_REAL radius_2[30] "Radius of refined region for this level of this centre" 
 {
   0:* :: ""
 } 1.0
+
+
+
+CCTK_REAL movement_threshold_2 "Minimum movement to trigger a regridding" STEERABLE=always
+{
+  0:* :: ""
+} 0.0
 
 
 
@@ -149,6 +163,13 @@ CCTK_REAL radius_3[30] "Radius of refined region for this level of this centre" 
 
 
 
+CCTK_REAL movement_threshold_3 "Minimum movement to trigger a regridding" STEERABLE=always
+{
+  0:* :: ""
+} 0.0
+
+
+
 ################################################################################
 
 CCTK_INT num_levels_4 "Number of refinement levels for this centre" STEERABLE=always
@@ -179,6 +200,13 @@ CCTK_REAL radius_4[30] "Radius of refined region for this level of this centre" 
 {
   0:* :: ""
 } 1.0
+
+
+
+CCTK_REAL movement_threshold_4 "Minimum movement to trigger a regridding" STEERABLE=always
+{
+  0:* :: ""
+} 0.0
 
 
 
@@ -215,6 +243,13 @@ CCTK_REAL radius_5[30] "Radius of refined region for this level of this centre" 
 
 
 
+CCTK_REAL movement_threshold_5 "Minimum movement to trigger a regridding" STEERABLE=always
+{
+  0:* :: ""
+} 0.0
+
+
+
 ################################################################################
 
 CCTK_INT num_levels_6 "Number of refinement levels for this centre" STEERABLE=always
@@ -245,6 +280,13 @@ CCTK_REAL radius_6[30] "Radius of refined region for this level of this centre" 
 {
   0:* :: ""
 } 1.0
+
+
+
+CCTK_REAL movement_threshold_6 "Minimum movement to trigger a regridding" STEERABLE=always
+{
+  0:* :: ""
+} 0.0
 
 
 
@@ -281,6 +323,13 @@ CCTK_REAL radius_7[30] "Radius of refined region for this level of this centre" 
 
 
 
+CCTK_REAL movement_threshold_7 "Minimum movement to trigger a regridding" STEERABLE=always
+{
+  0:* :: ""
+} 0.0
+
+
+
 ################################################################################
 
 CCTK_INT num_levels_8 "Number of refinement levels for this centre" STEERABLE=always
@@ -311,6 +360,13 @@ CCTK_REAL radius_8[30] "Radius of refined region for this level of this centre" 
 {
   0:* :: ""
 } 1.0
+
+
+
+CCTK_REAL movement_threshold_8 "Minimum movement to trigger a regridding" STEERABLE=always
+{
+  0:* :: ""
+} 0.0
 
 
 
@@ -347,6 +403,13 @@ CCTK_REAL radius_9[30] "Radius of refined region for this level of this centre" 
 
 
 
+CCTK_REAL movement_threshold_9 "Minimum movement to trigger a regridding" STEERABLE=always
+{
+  0:* :: ""
+} 0.0
+
+
+
 ################################################################################
 
 CCTK_INT num_levels_10 "Number of refinement levels for this centre" STEERABLE=always
@@ -377,3 +440,10 @@ CCTK_REAL radius_10[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
+
+
+
+CCTK_REAL movement_threshold_10 "Minimum movement to trigger a regridding" STEERABLE=always
+{
+  0:* :: ""
+} 0.0
