@@ -14,6 +14,11 @@ using namespace std;
   
   
   
+  // Maximum number of tracked surfaces
+  int const num_surfaces = 10;
+  
+  
+  
   extern "C" {
     void
     CarpetTracker_SetPositions (CCTK_ARGUMENTS);
@@ -27,7 +32,7 @@ using namespace std;
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    for (int n = 0; n < 3; ++ n) {
+    for (int n = 0; n < num_surfaces; ++ n) {
       int const sn = surface[n];
       if (sn >= 0) {
         assert (sn >= 0 and sn < nsurfaces);
