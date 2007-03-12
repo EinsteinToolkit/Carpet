@@ -96,20 +96,23 @@ namespace Carpet {
         const int m = 0;
         const int c = CCTK_MyProc(cctkGH);
         
+#if 0
         const ibbox& base = arrdata.at(group).at(m).hh->bases().at(ml).at(rl);
+#endif
+        const ibbox& baseext = arrdata.at(group).at(m).dd->bases.at(ml).at(rl).exterior;
 	const ibbox& ext = arrdata.at(group).at(m).dd->boxes.at(ml).at(rl).at(c).exterior;
         const b2vect& obnds = arrdata.at(group).at(m).hh->outer_boundaries(rl,c);
         
         ivect::ref(const_cast<int*>(groupdata.at(group).info.nghostzones))
           = arrdata.at(group).at(m).dd->ghosts[0];
         ivect::ref(const_cast<int*>(groupdata.at(group).info.gsh))
-          = base.shape() / base.stride();
+          = baseext.shape() / baseext.stride();
         ivect::ref(const_cast<int*>(groupdata.at(group).info.lsh))
           = ext.shape() / ext.stride();
         ivect::ref(const_cast<int*>(groupdata.at(group).info.lbnd))
-          = (ext.lower() - base.lower()) / ext.stride();
+          = (ext.lower() - baseext.lower()) / ext.stride();
         ivect::ref(const_cast<int*>(groupdata.at(group).info.ubnd))
-          = (ext.upper() - base.lower()) / ext.stride();
+          = (ext.upper() - baseext.lower()) / ext.stride();
         if (gp.disttype == CCTK_DISTRIB_CONSTANT) {
           int const d = gp.dim==0 ? 0 : gp.dim-1;
           ivect & gsh = ivect::ref(const_cast<int*>(groupdata.at(group).info.gsh));
