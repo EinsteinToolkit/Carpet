@@ -54,7 +54,7 @@ mem (size_t const vectorlength, size_t const nelems, T * const memptr)
   DECLARE_CCTK_PARAMETERS;
   if (memptr == NULL) {
     const double nbytes = vectorlength * nelems * sizeof (T);
-    if (max_allowed_memory_MB
+    if (max_allowed_memory_MB > 0
         and (total_allocated_bytes + nbytes > 1.0e6 * max_allowed_memory_MB))
     {
       T Tdummy;
@@ -142,7 +142,7 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
-  if (print_memstats_every
+  if (print_memstats_every > 0
       and cctk_iteration % print_memstats_every == 0)
   {
     cout << "Memory statistics from CarpetLib:" << endl

@@ -32,6 +32,14 @@ namespace CarpetLib {
   
   
   
+  // The timer type
+  enum timer_type {
+    timer_unset, timer_MPI_Wtime, timer_rdtsc, timer_rtc, timer_none
+  };
+  static timer_type timer = timer_unset;
+  
+  
+  
   // A faster timing routine for i386 processors:
   // Read the Intel CPU time stamp counter
   static
@@ -44,11 +52,11 @@ namespace CarpetLib {
     // Test for i386 (should use autoconf instead)
 #if defined(__i386__) || defined(__x86_64__)
     // Serialise using cpuid
-    // (This is only strictly necessary on some systems)
+    // (This is strictly necessary only on some systems)
     __asm__ __volatile__("cpuid" : : );
-    // Using "=A" does not work on x86_64, where it uses rax instead
+    // Using "=A" does not work on x86_64, where this uses rax instead
     //    of (edx,eax)
-    // unsigned long long int val;
+    // unsigned long long val;
     // __asm__ __volatile__("rdtsc" : "=A" (val) : );
     unsigned long eax, edx;
     asm volatile ("rdtsc" : "=a" (eax), "=d" (edx));
@@ -68,9 +76,9 @@ namespace CarpetLib {
   init_rdtsc ()
   {
     // Make three warmup measurements
-    volatile double const rdummy1 = rdtsc ();
-    volatile double const rdummy2 = rdtsc ();
-    volatile double const rdummy3 = rdtsc ();
+    double const rdummy1 = rdtsc ();
+    double const rdummy2 = rdtsc ();
+    double const rdummy3 = rdtsc ();
     double const rstart = rdtsc ();
     double const wstart = MPI_Wtime ();
     int const ierr = usleep (1000 * 1000);
@@ -113,10 +121,6 @@ namespace CarpetLib {
   call_timer ()
   {
     DECLARE_CCTK_PARAMETERS;
-    enum timer_type {
-      timer_unset, timer_MPI_Wtime, timer_rdtsc, timer_rtc, timer_none
-    };
-    static timer_type timer = timer_unset;
     if (timer == timer_unset) {
       if (CCTK_EQUALS (timestat_timer, "MPI_Wtime")) {
         timer = timer_MPI_Wtime;
@@ -269,7 +273,7 @@ namespace CarpetLib {
   Timer::start ()
   {
     DECLARE_CCTK_PARAMETERS;
-    if (timestat_disable) return;
+    if (timer == timer_none) return;
     assert (not running);
     running = true;
     starttime = call_timer ();
@@ -282,7 +286,7 @@ namespace CarpetLib {
   Timer::stop (double const b)
   {
     DECLARE_CCTK_PARAMETERS;
-    if (timestat_disable) return;
+    if (timer == timer_none) return;
     assert (running);
     running = false;
     double const endtime = call_timer ();
@@ -356,8 +360,7 @@ namespace CarpetLib {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    if (print_timestats or
-        (print_timestats_every and
+    if ((print_timestats_every > 0 and
          cctk_iteration % print_timestats_every == 0))
     {
       ostringstream filenamebuf;
