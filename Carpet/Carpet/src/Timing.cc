@@ -176,42 +176,46 @@ namespace Carpet {
     
     * grid_points_per_second = * local_grid_points_per_second;
     
-    if (not silent) {
+    if (print_timestats_every > 0 and
+        cctkGH->cctk_iteration % print_timestats_every == 0)
+    {
+      
       CCTK_VInfo (CCTK_THORNSTRING,
                   "This processor's grid point updates per second (local): %g",
                   double (* local_grid_points_per_second));
       CCTK_VInfo (CCTK_THORNSTRING,
                   "Overall grid point updates per second (total)         : %g",
                   double (* total_grid_points_per_second));
-    }
     
 #if 0
-    CCTK_REAL const updates_per_second_2 = ipow (updates_per_second, 2);
-    
-    struct {
-      CCTK_REAL ups, ups2;
-    } local, global;
-    local.ups  = updates_per_second;
-    local.ups2 = updates_per_second_2;
-    MPI_Allreduce (& local, & global, 2,
-                   dist::datatype (global.ups), MPI_SUM, dist::comm());
-    
-    int const count = dist::size();
-    CCTK_REAL const avg = global.ups / count;
-    CCTK_REAL const stddev = sqrt (abs (global.ups2 - ipow (avg,2)) / count);
-    
-    CCTK_VInfo (CCTK_THORNSTRING,
-                "Local updates per second:   %g", double (updates_per_second));
-    CCTK_VInfo (CCTK_THORNSTRING,
-                "Global updates per second:  %g", double (global.ups));
-    
-    if (verbose) {
+      CCTK_REAL const updates_per_second_2 = ipow (updates_per_second, 2);
+      
+      struct {
+        CCTK_REAL ups, ups2;
+      } local, global;
+      local.ups  = updates_per_second;
+      local.ups2 = updates_per_second_2;
+      MPI_Allreduce (& local, & global, 2,
+                     dist::datatype (global.ups), MPI_SUM, dist::comm());
+      
+      int const count = dist::size();
+      CCTK_REAL const avg = global.ups / count;
+      CCTK_REAL const stddev = sqrt (abs (global.ups2 - ipow (avg,2)) / count);
+      
       CCTK_VInfo (CCTK_THORNSTRING,
-                  "Average updates per second: %g", double (avg));
+                  "Local updates per second:   %g", double (updates_per_second));
       CCTK_VInfo (CCTK_THORNSTRING,
-                  "Standard deviation:         %g", double (stddev));
-    }
+                  "Global updates per second:  %g", double (global.ups));
+      
+      if (verbose) {
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "Average updates per second: %g", double (avg));
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "Standard deviation:         %g", double (stddev));
+      }
 #endif
+      
+    }
   }
   
   
@@ -233,7 +237,9 @@ namespace Carpet {
     * physical_time_per_hour =
       physical_time / elapsed_walltime * CCTK_REAL (3600.0);
     
-    if (not silent) {
+    if (print_timestats_every > 0 and
+        cctkGH->cctk_iteration % print_timestats_every == 0)
+    {
       CCTK_VInfo (CCTK_THORNSTRING,
                   "Physical time per hour: %g",
                   double (* physical_time_per_hour));

@@ -317,10 +317,6 @@ BOOLEAN suppress_restriction "Suppress the restriction operations.  This makes t
 
 
 
-BOOLEAN silent "Display no info on the screen" STEERABLE=always
-{
-} "no"
-
 BOOLEAN verbose "Display more info on the screen" STEERABLE=always
 {
 } "no"
@@ -347,12 +343,14 @@ BOOLEAN output_internal_data "Periodically print internal data to the screen for
 
 INT print_timestats_every "Print interesting timing statistics periodically" STEERABLE=always
 {
+  -1  :: "don't report"
   0   :: "don't report"
   1:* :: "report every so many iterations"
-} 1
+} 0
 
 INT output_timers_every "Print detailed statistics periodically" STEERABLE=always
 {
+  -1  :: "don't report"
   0   :: "don't report"
   1:* :: "report every so many iterations"
 } 0

@@ -467,10 +467,7 @@ namespace Carpet {
               // Checking
               CheckChecksums (cctkGH, alltimes);
               
-              if (do_global_mode and
-                  print_timestats_every > 0 and
-                  cctkGH->cctk_iteration % print_timestats_every == 0)
-              {
+              if (do_global_mode) {
                 // Timing statistics
                 PrintTimingStats (cctkGH);
               }
