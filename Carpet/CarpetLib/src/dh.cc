@@ -730,25 +730,28 @@ setup_old2new (dh::dboxes & box,
   // (Copy the exterior because some variables are not prolongated)
   
   if (oldboxes.empty()) return;
+  if (rl >= (int)oldboxes.AT(ml).size()) return;
   
   ibset work = box.exterior;
   
   // Copy from old storage, if possible
   // TODO: copy only from interior regions?
-  if (rl < (int)oldboxes.AT(ml).size()) {
-    for (int cc = 0; cc < (int)oldboxes.AT(ml).AT(rl).size(); ++ cc) {
-      // TODO: prefer same processor, etc.
-      ibset ovlp = work & oldboxes.AT(ml).AT(rl).AT(cc).exterior;
-      ovlp.normalize();
-      work -= ovlp;
-      for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end(); ++ ri) {
-        box.old2new_recv_sync.AT(cc).push_back (* ri);
-      }
-    } // for cc
-  } // if rl
+  assert (box.old2new_recv_sync.empty());
+  box.old2new_recv_sync.resize (oldboxes.AT(ml).AT(rl).size());
+  for (int cc = 0; cc < (int)oldboxes.AT(ml).AT(rl).size(); ++ cc) {
+    // TODO: prefer same processor, etc.
+    ibset ovlp = work & oldboxes.AT(ml).AT(rl).AT(cc).exterior;
+    ovlp.normalize();
+    work -= ovlp;
+    for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end(); ++ ri) {
+      box.old2new_recv_sync.AT(cc).push_back (* ri);
+    }
+  } // for cc
   
   // Initialise from coarser level, if possible
-  if (rl>0) {
+  if (rl > 0) {
+    assert (box.old2new_recv_ref_coarse.empty());
+    box.old2new_recv_ref_coarse.resize (oldboxes.AT(ml).AT(rl).size());
     for (int cc=0; cc<(int)boxes.AT(ml).AT(rl-1).size(); ++cc) {
       
       // TODO: choose larger regions first

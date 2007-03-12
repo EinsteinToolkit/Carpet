@@ -379,10 +379,16 @@ void ggf::copycat (comm_state& state,
   assert (c1>=0 and c1<h.components(rl1));
   assert (ml1>=0 and ml1<h.mglevels());
   assert (tl1>=0 and tl1<timelevels(ml1,rl1));
-  assert (           ml2<h.mglevels());
-  assert (rl2>=0 and rl2<h.reflevels());
-  assert (tl2>=0 and tl2<timelevels(ml2,rl2));
   mdata & srcstorage = srcstorage_ ? * srcstorage_ : storage;
+  // Uses wrong grid hierarchy; should use "old h" instead
+  // TODO: keep old grid hierarchy around
+  //assert (           ml2<h.mglevels());
+  //assert (rl2>=0 and rl2<h.reflevels());
+  //assert (tl2>=0 and tl2<timelevels(ml2,rl2));
+  // Cannot use srcstorage, since it may be empty when *recv_pvect is empty
+  //assert (           ml2<(int)srcstorage.size());
+  //assert (rl2>=0 and rl2<(int)srcstorage.AT(ml2).size());
+  //assert (tl2>=0 and tl2<(int)srcstorage.AT(ml2).AT(rl2).AT(0).size());
   // walk all components
   static Timer copycat1 ("copycat_pvect_1");
   copycat1.start ();
