@@ -43,7 +43,8 @@ void gh::regrid (mregs const & regs)
   DECLARE_CCTK_PARAMETERS;
   
   // Save the old grid hierarchy
-  _oldregions = _regions;
+  _oldregions.clear ();
+  swap (_oldregions, _regions);
   _regions = regs;
   
   // Consistency checks

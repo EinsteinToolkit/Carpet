@@ -125,7 +125,7 @@ public:
   {
     return (int)_regions.AT(0).AT(rl).size();
   }
-
+  
   bool is_local (const int rl, const int c) const
   {
     return processor(rl,c) == dist::rank();
