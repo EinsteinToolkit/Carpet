@@ -146,6 +146,12 @@ void dh::regrid ()
     calculate_bases();
     timer.stop (0);
   }
+  if (check_bboxes) {
+    static Timer timer ("dh::regrid::check_bboxes");
+    timer.start ();
+    foreach_reflevel_component_mglevel (&dh::do_check_bboxes);
+    timer.stop (0);
+  }
 
   if (output_bboxes) {
     cout << endl << h << endl;
@@ -153,12 +159,6 @@ void dh::regrid ()
     output_bases();
   }
   
-  if (check_bboxes) {
-    static Timer timer ("dh::regrid::check_bboxes");
-    timer.start ();
-    foreach_reflevel_component_mglevel (&dh::do_check_bboxes);
-    timer.stop (0);
-  }
   
   total.stop (0);
 }
