@@ -656,6 +656,34 @@ namespace CarpetRegrid2 {
             cctk_iteration > * last_iteration));
       }
     }
+    
+    if (do_recompose and cctk_iteration != 0) {
+      // Regrid only if the positions have changed sufficiently
+      do_recompose = false;
+      for (int n = 0; n < num_centres; ++ n) {
+        CCTK_REAL const dist2 =
+          pow (position_x[n] - old_position_x[n], 2) +
+          pow (position_y[n] - old_position_y[n], 2) +
+          pow (position_z[n] - old_position_z[n], 2);
+        CCTK_REAL mindist;
+        switch (n) {
+        case 0: mindist = movement_threshold_1; break;
+        case 1: mindist = movement_threshold_2; break;
+        case 2: mindist = movement_threshold_3; break;
+        case 3: mindist = movement_threshold_4; break;
+        case 4: mindist = movement_threshold_5; break;
+        case 5: mindist = movement_threshold_6; break;
+        case 6: mindist = movement_threshold_7; break;
+        case 7: mindist = movement_threshold_8; break;
+        case 8: mindist = movement_threshold_9; break;
+        case 9: mindist = movement_threshold_10; break;
+        default: assert (0);
+        }
+        do_recompose = dist2 >= pow (mindist, 2);
+        if (do_recompose) break;
+      } // for n
+    }
+    
     if (do_recompose) {
       * last_iteration = cctk_iteration;
     }
@@ -703,6 +731,13 @@ namespace CarpetRegrid2 {
       
       // Make multigrid aware
       Carpet::MakeMultigridBoxesMaps (cctkGH, regsss, regssss);
+      
+      // Remember current positions
+      for (int n = 0; n < num_centres; ++ n) {
+        old_position_x[n] = position_x[n];
+        old_position_y[n] = position_y[n];
+        old_position_z[n] = position_z[n];
+      }
       
     } // if do_recompose
     
