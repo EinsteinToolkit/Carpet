@@ -446,9 +446,10 @@ void dh::setup_multigrid_boxes (dh::dboxes & box,
   } // if not finest multigrid level
 }
 
-void dh::setup_refinement_prolongation_boxes (dh::dboxes & box,
+void dh::setup_refinement_prolongation_boxes (dh::dboxes & boxf,
                                               int const rl, int const c, int const ml)
 {
+#if 0
   // Refinement boxes
   if (rl<h.reflevels()-1) {
     
@@ -461,9 +462,8 @@ void dh::setup_refinement_prolongation_boxes (dh::dboxes & box,
       // Prolongation (interior)
       // TODO: prefer boxes from the same processor
       {
-        // (the prolongation may use the exterior of the coarse
-        // grid, and must fill all of the interior of the fine
-        // grid)
+        // (the prolongation may use the exterior of the coarse grid,
+        // and must fill all of the interior of the fine grid)
         const int pss = prolongation_stencil_size();
         ibset recvs = extr.expand(-pss,-pss).contracted_for(intrf) & intrf;
         // Receive only once
@@ -480,8 +480,8 @@ void dh::setup_refinement_prolongation_boxes (dh::dboxes & box,
         }
 #endif
         recvs -= all_received;
-        all_received += recvs;
         recvs.normalize();
+        all_received += recvs;
         //
         for (ibset::const_iterator ri=recvs.begin(); ri!=recvs.end(); ++ri) {
           const ibbox recv = *ri;
@@ -494,6 +494,41 @@ void dh::setup_refinement_prolongation_boxes (dh::dboxes & box,
       }
     } // for cc
   } // if not finest refinement level
+#endif
+  
+  // Refinement boxes
+  if (rl > 0) {
+    
+    int const pss = prolongation_stencil_size();
+    ibbox const & intrf = boxf.interior;
+    
+    ibset all_received;
+    for (int cc=0; cc<h.components(rl-1); ++cc) {
+      dboxes & boxc = boxes.AT(ml).AT(rl-1).AT(cc);
+      ibbox const & extr = boxc.exterior;
+      
+      // Prolongation (interior)
+      // (the prolongation may use the exterior of the coarse grid,
+      // and must fill all of the interior of the fine grid)
+      // TODO: prefer boxes from the same processor
+      
+      ibset recvs = extr.expand(-pss,-pss).contracted_for(intrf) & intrf;
+      // Receive only once
+      recvs -= all_received;
+      recvs.normalize();
+      all_received += recvs;
+      
+      for (ibset::const_iterator ri=recvs.begin(); ri!=recvs.end(); ++ri) {
+        const ibbox recv = *ri;
+        const ibbox send = recv.expanded_for(extr);
+        assert (not send.empty());
+        assert (send.is_contained_in(extr));
+        boxf.recv_ref_coarse.AT(cc).push_back(recv);
+        boxc.send_ref_fine  .AT(c ).push_back(send);
+      }
+    } // for cc
+    
+  } // if not coarsest refinement level
 }
 
 void dh::prepare_refinement_boundary_prolongation_boxes (dh::dboxes & box,
