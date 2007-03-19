@@ -447,70 +447,22 @@ void dh::setup_multigrid_boxes (dh::dboxes & box,
 void dh::setup_refinement_prolongation_boxes (dh::dboxes & boxf,
                                               int const rl, int const c, int const ml)
 {
-#if 0
-  // Refinement boxes
-  if (rl<h.reflevels()-1) {
-    
-    const ibbox& extr = box.exterior;
-    ibset all_received;
-    
-    for (int cc=0; cc<h.components(rl+1); ++cc) {
-      dboxes & box1 = boxes.AT(ml).AT(rl+1).AT(cc);
-      const ibbox intrf = box1.interior;
-      // Prolongation (interior)
-      // TODO: prefer boxes from the same processor
-      {
-        // (the prolongation may use the exterior of the coarse grid,
-        // and must fill all of the interior of the fine grid)
-        const int pss = prolongation_stencil_size();
-        ibset recvs = extr.expand(-pss,-pss).contracted_for(intrf) & intrf;
-        // Receive only once
-#if 0
-        const iblistvect& rrc = box1.recv_ref_coarse;
-        for (iblistvect::const_iterator lvi=rrc.begin();
-             lvi!=rrc.end(); ++lvi)
-        {
-          for (iblist::const_iterator li=lvi->begin();
-               li!=lvi->end(); ++li)
-          {
-            recvs -= *li;
-          }
-        }
-#endif
-        recvs -= all_received;
-        recvs.normalize();
-        all_received += recvs;
-        //
-        for (ibset::const_iterator ri=recvs.begin(); ri!=recvs.end(); ++ri) {
-          const ibbox recv = *ri;
-          const ibbox send = recv.expanded_for(extr);
-          assert (not send.empty());
-          assert (send.is_contained_in(extr));
-          box1.recv_ref_coarse.AT(c).push_back(recv);
-          box. send_ref_fine  .AT(cc).push_back(send);
-        }
-      }
-    } // for cc
-  } // if not finest refinement level
-#endif
+  // Prolongation (interior)
+  // (the prolongation may use the exterior of the coarse grid, and
+  // must fill all of the interior of the fine grid)
+  // TODO: prefer boxes from the same processor
   
-  // Refinement boxes
   if (rl > 0) {
     
     int const pss = prolongation_stencil_size();
     ibbox const & intrf = boxf.interior;
-    
     ibset all_received;
+    
     for (int cc=0; cc<h.components(rl-1); ++cc) {
       dboxes & boxc = boxes.AT(ml).AT(rl-1).AT(cc);
-      ibbox const & extr = boxc.exterior;
+      ibbox const & extrc = boxc.exterior;
       
-      // Prolongation (interior)
-      // (the prolongation may use the exterior of the coarse grid,
-      // and must fill all of the interior of the fine grid)
-      // TODO: prefer boxes from the same processor
-      
-      ibset recvs = extr.expand(-pss,-pss).contracted_for(intrf) & intrf;
+      ibset recvs = extrc.expand(-pss,-pss).contracted_for(intrf) & intrf;
       // Receive only once
       recvs -= all_received;
       recvs.normalize();
@@ -518,9 +470,9 @@ void dh::setup_refinement_prolongation_boxes (dh::dboxes & boxf,
       
       for (ibset::const_iterator ri=recvs.begin(); ri!=recvs.end(); ++ri) {
         const ibbox recv = *ri;
-        const ibbox send = recv.expanded_for(extr);
+        const ibbox send = recv.expanded_for(extrc);
         assert (not send.empty());
-        assert (send.is_contained_in(extr));
+        assert (send.is_contained_in(extrc));
         boxf.recv_ref_coarse.AT(cc).push_back(recv);
         boxc.send_ref_fine  .AT(c ).push_back(send);
       }
