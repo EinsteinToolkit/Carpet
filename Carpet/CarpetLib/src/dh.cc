@@ -382,8 +382,6 @@ void dh::setup_sync_boxes (dh::dboxes & box,
 {
   const ibset& bnds = box.boundaries;
   
-  assert (box.bnd_sync.empty());
-  
   // Sync boxes
   for (int cc=0; cc<h.components(rl); ++cc) {
     dboxes & box1 = boxes.AT(ml).AT(rl).AT(cc);
@@ -397,7 +395,7 @@ void dh::setup_sync_boxes (dh::dboxes & box,
     box.bnd_sync += ovlp;
     for (ibset::const_iterator b=ovlp.begin(); b!=ovlp.end(); ++b) {
       box .recv_sync.AT(cc).push_back(*b);
-      box1.send_sync.AT(c).push_back(*b);
+      box1.send_sync.AT(c ).push_back(*b);
     }
   }
   
