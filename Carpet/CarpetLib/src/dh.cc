@@ -570,85 +570,79 @@ void dh::setup_refinement_boundary_prolongation_boxes (dh::dboxes & boxf,
   } // if not coarsest refinement level
 }
 
-void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
+void dh::setup_refinement_restriction_boxes (dh::dboxes & boxc,
                                              int const rl, int const c, int const ml)
 {
-  DECLARE_CCTK_PARAMETERS;
-
-  const ibbox& intr = box.interior;
-
-  // Refinement boxes
-  if (rl<h.reflevels()-1) {
+  // Restriction (interior)
+  // (the restriction may fill the interior of the of the coarse grid,
+  // and may use the interior of the fine grid, and the bbox must be
+  // as large as possible)
+  // (the restriction must not use points that are filled by boundary
+  // prolongation)
+  // (the restriction must not fill points that are used for boundary
+  // prolongation)
+  
+  if (rl < h.reflevels() - 1) {
+    
+    DECLARE_CCTK_PARAMETERS;
+    
+    const ibbox& intrc = boxc.interior;
+    
     for (int cc=0; cc<h.components(rl+1); ++cc) {
-      dboxes & box1 = boxes.AT(ml).AT(rl+1).AT(cc);
-      const ibbox intrf = box1.interior;
+      dboxes & boxf = boxes.AT(ml).AT(rl+1).AT(cc);
+      const ibbox intrf = boxf.interior;
+      
+      ibset recvs;
+      
       // Restriction (interior)
       {
-        // (the restriction may fill the interior of the of the
-        // coarse grid, and may use the interior of the fine
-        // grid, and the bbox must be as large as possible)
-        // (the restriction must not use points that are filled
-        // by boundary prolongation)
-        // (the restriction must not fill points that are used for
-        // boundary prolongation)
-        ibset sends = intrf & intr.expanded_for(intrf);
-        // remove what is received during boundary prolongation
-#if 0
-        for (iblistvect::const_iterator rlvi = box1.recv_ref_bnd_coarse.begin();
-             rlvi != box1.recv_ref_bnd_coarse.end(); ++ rlvi)
-        {
-          const iblist& recvlist = * rlvi;
-          for (iblist::const_iterator rli = recvlist.begin();
-               rli != recvlist.end(); ++ rli)
-          {
-            const ibbox& recv = * rli;
-            sends -= recv;
-          }
-        }
-#endif
-        sends -= box1.bnd_ref;
+        ibset sends = intrf & intrc.expanded_for(intrf);
+        // Remove what is received during boundary prolongation
+        sends -= boxf.bnd_ref;
         sends.normalize();
-        // coarsify
-        ibset recvs;
+        // Coarsify
         for (ibset::const_iterator si = sends.begin();
              si != sends.end(); ++si)
         {
-          const ibbox recv = (*si).contracted_for(intr);
+          const ibbox recv = (*si).contracted_for(intrc);
           recvs |= recv;
         }
-        if (omit_prolongation_points_when_restricting) {
-          // remove what is sent during boundary prolongation
-          const int pss = prolongation_stencil_size();
-          for (int ccc=0; ccc<h.components(rl); ++ccc) {
-            const dh::dboxes& box2 = boxes.AT(ml).AT(rl).AT(ccc);
-            for (iblistvect::const_iterator slvi =
-                   box2.send_ref_bnd_fine.begin();
-                 slvi != box2.send_ref_bnd_fine.end(); ++ slvi)
+        recvs.normalize();
+      }
+      
+      if (omit_prolongation_points_when_restricting) {
+        // Remove what is sent during boundary prolongation
+        // TODO: This calculation is expensive
+        const int pss = prolongation_stencil_size();
+        for (int ccc=0; ccc<h.components(rl); ++ccc) {
+          const dh::dboxes& box2 = boxes.AT(ml).AT(rl).AT(ccc);
+          for (iblistvect::const_iterator slvi =
+                 box2.send_ref_bnd_fine.begin();
+               slvi != box2.send_ref_bnd_fine.end(); ++ slvi)
+          {
+            const iblist& sendlist = * slvi;
+            for (iblist::const_iterator sli = sendlist.begin();
+                 sli != sendlist.end(); ++sli)
             {
-              const iblist& sendlist = * slvi;
-              for (iblist::const_iterator sli = sendlist.begin();
-                   sli != sendlist.end(); ++sli)
-              {
-                const ibbox& send = * sli;
-                recvs -= send.expand(pss,pss);
-              }
+              const ibbox& send = * sli;
+              recvs -= send.expand(pss,pss);
             }
           }
         }
         recvs.normalize();
-        //
-        for (ibset::const_iterator ri = recvs.begin();
-             ri != recvs.end(); ++ri)
-        {
-          const ibbox recv = *ri;
-          assert (not recv.empty());
-          const ibbox & send = recv.expanded_for(intrf);
-          assert (not send.empty());
-          box1.send_ref_coarse.AT(c).push_back(send);
-          box .recv_ref_fine  .AT(cc).push_back(recv);
-        }
       }
-            
+      
+      for (ibset::const_iterator ri = recvs.begin();
+           ri != recvs.end(); ++ri)
+      {
+        const ibbox recv = *ri;
+        assert (not recv.empty());
+        const ibbox & send = recv.expanded_for(intrf);
+        assert (not send.empty());
+        boxf.send_ref_coarse.AT(c ).push_back(send);
+        boxc.recv_ref_fine  .AT(cc).push_back(recv);
+      }
+      
     } // for cc
   } // if not finest refinement level
 }
