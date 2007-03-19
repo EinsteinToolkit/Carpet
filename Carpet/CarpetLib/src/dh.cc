@@ -363,13 +363,13 @@ void dh::setup_allocate (dh::dboxes & b,
   b.recv_sync.resize(cs);
 
   // Refinement boxes
-  if (rl>0) {
+  if (rl > 0) {
     const int csm1 = h.components(rl-1);
     b.send_ref_coarse.resize(csm1);
     b.recv_ref_coarse.resize(csm1);
     b.recv_ref_bnd_coarse.resize(csm1);
   }
-  if (rl<h.reflevels()-1) {
+  if (rl < h.reflevels() - 1) {
     const int csp1 = h.components(rl+1);
     b.recv_ref_fine.resize(csp1);
     b.send_ref_fine.resize(csp1);
@@ -875,10 +875,10 @@ void dh::do_check_bboxes (dh::dboxes & box,
   // Assert that the interior is received exactly once during
   // prolongation, and that nothing else is received
   {
-    if (rl==0) {
+    if (rl == 0) {
       const iblistvect& recv_ref_coarse = box.recv_ref_coarse;
       assert (recv_ref_coarse.empty());
-    } else {                    // rl!=0
+    } else {                    // rl > 0
       const iblistvect& recv_ref_coarse = box.recv_ref_coarse;
       ibset intr = box.interior;
       ibset received;
