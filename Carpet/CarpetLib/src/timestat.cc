@@ -53,7 +53,11 @@ namespace CarpetLib {
 #if defined(__i386__) || defined(__x86_64__)
     // Serialise using cpuid
     // (This is strictly necessary only on some systems)
-    __asm__ __volatile__("cpuid" : : );
+    {
+      unsigned long eax;
+      asm volatile ("movl %%ebx, %%esi; cpuid; movl %%esi, %%ebx" :
+                    "=a" (eax) : "a" (0) : "edx", "ecx", "esi");
+    }
     // Using "=A" does not work on x86_64, where this uses rax instead
     //    of (edx,eax)
     // unsigned long long val;
