@@ -565,31 +565,30 @@ void dh::prepare_refinement_boundary_prolongation_boxes (dh::dboxes & box,
   }
 }
 
-void dh::setup_refinement_boundary_prolongation_boxes (dh::dboxes & box,
+void dh::setup_refinement_boundary_prolongation_boxes (dh::dboxes & boxf,
                                                        int const rl, int const c, int const ml)
 {
-  // Refinement boxes
-  if (rl<h.reflevels()-1) {
+  // Prolongation (boundaries)
+  // (the boundary prolongation may use the exterior of the coarse
+  // grid, and must fill all of the owned boundary of the fine grid)
+  // TODO: prefer boxes from the same processor
+  
+  if (rl > 0) {
     
     const int pss = prolongation_stencil_size();
-    const ibbox& extr = box.exterior;
+    const ibbox& extrf = boxf.exterior;
     ibset all_received;
     
-    for (int cc=0; cc<h.components(rl+1); ++cc) {
-      dboxes & box1 = boxes.AT(ml).AT(rl+1).AT(cc);
-      const ibbox & extrf = box1.exterior;
-      // Prolongation (boundaries)
-      // TODO: prefer boxes from the same processor
+    for (int cc=0; cc<h.components(rl-1); ++cc) {
+      dboxes & boxc = boxes.AT(ml).AT(rl-1).AT(cc);
+      const ibbox & extrc = boxc.exterior;
+      // Prolongation boundaries
       {
-        // (the boundary prolongation may use the exterior of the
-        // coarse grid, and must fill all of the owned boundary of the
-        // fine grid)
-        // Prolongation boundaries
-        ibset recvs = box1.bnd_ref;
+        ibset recvs = boxf.bnd_ref;
         {
           static Timer timer ("dh::setup_refinement_boundary_prolongation_boxes::maxrecvs");
           timer.start ();
-          const ibbox maxrecvs = extr.expand(-pss,-pss).contracted_for(extrf);
+          const ibbox maxrecvs = extrc.expand(-pss,-pss).contracted_for(extrf);
           recvs &= maxrecvs;
           recvs.normalize();
           timer.stop (0);
@@ -598,41 +597,27 @@ void dh::setup_refinement_boundary_prolongation_boxes (dh::dboxes & box,
         {
           static Timer timer ("dh::setup_refinement_boundary_prolongation_boxes::receive-once");
           timer.start ();
-#if 0
-          const iblistvect& rrbc = box1.recv_ref_bnd_coarse;
-          for (iblistvect::const_iterator lvi=rrbc.begin();
-               lvi!=rrbc.end(); ++lvi)
-          {
-            for (iblist::const_iterator li=lvi->begin();
-                 li!=lvi->end(); ++li)
-            {
-              recvs -= *li;
-            }
-          }
-#endif
           recvs -= all_received;
           all_received += recvs;
           recvs.normalize();
           timer.stop (0);
         }
-        //
+        
+        for (ibset::const_iterator ri = recvs.begin();
+             ri != recvs.end(); ++ri)
         {
-          for (ibset::const_iterator ri = recvs.begin();
-               ri != recvs.end(); ++ri)
-          {
-            const ibbox & recv = *ri;
-            const ibbox send = recv.expanded_for(extr);
-            assert (not send.empty());
-            assert (send.is_contained_in(extr));
-            assert (send.is_contained_in(extr.expand(-pss,-pss)));
-            box1.recv_ref_bnd_coarse.AT(c).push_back(recv);
-            box .send_ref_bnd_fine  .AT(cc).push_back(send);
-          }
+          const ibbox & recv = *ri;
+          const ibbox send = recv.expanded_for(extrc);
+          assert (not send.empty());
+          assert (send.is_contained_in(extrc));
+          assert (send.is_contained_in(extrc.expand(-pss,-pss)));
+          boxf.recv_ref_bnd_coarse.AT(cc).push_back(recv);
+          boxc.send_ref_bnd_fine  .AT(c ).push_back(send);
         }
       }
             
     } // for cc
-  } // if not finest refinement level
+  } // if not coarsest refinement level
 }
 
 void dh::setup_refinement_restriction_boxes (dh::dboxes & box,
