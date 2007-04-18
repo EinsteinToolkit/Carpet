@@ -44,7 +44,7 @@ static int TimeToOutput (const cGH* const cctkGH, const int vindex);
 static int TriggerOutput (const cGH* const cctkGH, const int vindex);
 
 // general checkpoint routine
-static int Checkpoint (const cGH* const cctkGH, int called_from);
+static void Checkpoint (const cGH* const cctkGH, int called_from);
 
 // callback for I/O parameter parsing routine
 static void GetVarIndex (int vindex, const char* optstring, void* arg);
@@ -95,7 +95,6 @@ void CarpetIOHDF5_InitialDataCheckpoint (CCTK_ARGUMENTS)
 
 void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS)
 {
-  int retval = 0;
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
@@ -110,7 +109,7 @@ void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS)
       CCTK_INFO ("---------------------------------------------------------");
     }
 
-    retval = Checkpoint (cctkGH, CP_EVOLUTION_DATA);
+    Checkpoint (cctkGH, CP_EVOLUTION_DATA);
 
     if (checkpoint_next) {
       CCTK_ParameterSet ("checkpoint_next", CCTK_THORNSTRING, "no");
@@ -121,7 +120,6 @@ void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS)
 
 void CarpetIOHDF5_TerminationCheckpoint (CCTK_ARGUMENTS)
 {
-  int retval = 0;
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
@@ -135,7 +133,7 @@ void CarpetIOHDF5_TerminationCheckpoint (CCTK_ARGUMENTS)
         CCTK_INFO ("---------------------------------------------------------");
       }
 
-      retval = Checkpoint (cctkGH, CP_EVOLUTION_DATA);
+      Checkpoint (cctkGH, CP_EVOLUTION_DATA);
     } else if (not CCTK_Equals (verbose, "none")) {
       CCTK_INFO ("---------------------------------------------------------");
       CCTK_VInfo (CCTK_THORNSTRING, "Termination checkpoint already dumped "
@@ -630,11 +628,11 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
   if ((CCTK_EQUALS (out_mode, "onefile") and io_out_unchunked) or
       request->out_unchunked or
       groupdata.disttype == CCTK_DISTRIB_CONSTANT) {
-    WriteVarUnchunked (cctkGH, file, request, false);
+    error_count += WriteVarUnchunked (cctkGH, file, request, false);
   } else if (CCTK_EQUALS (out_mode, "onefile")) {
-    WriteVarChunkedSequential (cctkGH, file, request, false);
+    error_count += WriteVarChunkedSequential (cctkGH, file, request, false);
   } else {
-    WriteVarChunkedParallel (cctkGH, file, request, false);
+    error_count += WriteVarChunkedParallel (cctkGH, file, request, false);
   }
 
   // free I/O request structure
@@ -647,11 +645,15 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
     HDF5_ERROR (H5Fclose (file));
   }
 
+  if (error_count > 0 and abort_on_io_errors) {
+    CCTK_WARN (0, "Aborting simulation due to previous I/O errors");
+  }
+
   return (0);
 }
 
 
-static int Checkpoint (const cGH* const cctkGH, int called_from)
+static void Checkpoint (const cGH* const cctkGH, int called_from)
 {
   int error_count = 0;
   DECLARE_CCTK_PARAMETERS;
@@ -852,7 +854,9 @@ static int Checkpoint (const cGH* const cctkGH, int called_from)
   free (tempname);
   free (filename);
 
-  return error_count;
+  if (error_count > 0 and abort_on_io_errors) {
+    CCTK_WARN (0, "Aborting simulation due to previous I/O errors");
+  }
 
 } // Checkpoint
 

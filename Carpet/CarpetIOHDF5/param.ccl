@@ -14,6 +14,7 @@ USES KEYWORD verbose
 USES BOOLEAN out_single_precision
 USES KEYWORD out_mode 
 USES KEYWORD out_save_parameters 
+USES BOOLEAN abort_on_io_errors 
 
 USES INT     checkpoint_every
 USES INT     checkpoint_keep
