@@ -49,8 +49,10 @@ namespace CarpetEvolutionMask {
       gh const & hh = *vhh.at(Carpet::map);
       dh const & dd = *vdd.at(Carpet::map);
       
-      ibbox const & base = hh.bases().at(mglevel).at(reflevel).expand(100,100);
-      ibbox const & coarsebase = hh.bases().at(mglevel).at(reflevel-1).expand(100,100);
+      ibbox const base =
+        hh.baseextents.at(mglevel).at(reflevel).expand(100,100);
+      ibbox const coarsebase =
+        hh.baseextents.at(mglevel).at(reflevel-1).expand(100,100);
       
       ivect const reffact
         = spacereffacts.at(reflevel) / spacereffacts.at(reflevel-1);
