@@ -13,8 +13,6 @@ EvolutionMaskBase_InitEvolutionMask (CCTK_ARGUMENTS)
   DECLARE_CCTK_PARAMETERS;
   
   int i, j, k;
-  int d, f;
-  int dd;
   
   
   

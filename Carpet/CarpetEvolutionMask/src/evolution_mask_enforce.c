@@ -37,8 +37,7 @@ enforce(int const varindex, char const * const optstring, void * const arg)
   int rhsindex;
   int vargroup, rhsgroup;
   cGroup vardata, rhsdata;
-  CCTK_REAL const * varptr;
-  CCTK_REAL       * rhsptr;
+  CCTK_REAL * rhsptr;
 
   int index;
   int i,j,k;
