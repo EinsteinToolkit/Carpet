@@ -13,7 +13,6 @@
 struct region_t {
   ibbox  extent;                            // extent
   b2vect outer_boundaries;                  // outer boundaries
-  b2vect refinement_boundaries;             // refinement boundaries
   int    map;                               // map to which this
                                             // region belongs
   int    processor;                         // processor number
@@ -25,7 +24,7 @@ bool operator== (region_t const & a, region_t const & b);
 inline
 bool operator!= (region_t const & a, region_t const & b)
 {
-  return not operator== (a, b);
+  return not (a == b);
 }
 
 

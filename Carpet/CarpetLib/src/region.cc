@@ -13,7 +13,6 @@ operator== (region_t const & a, region_t const & b)
   return
     a.extent == b.extent and
     all (all (a.outer_boundaries == b.outer_boundaries)) and
-    all (all (a.refinement_boundaries == b.refinement_boundaries)) and
     a.map == b.map and
     a.processor == b.processor;
 }
@@ -45,14 +44,6 @@ operator>> (istream & is, region_t & reg)
   consume (is, ',');
   
   skipws (is);
-  consume (is, "refinement_boundaries");
-  skipws (is);
-  consume (is, '=');
-  is >> reg.refinement_boundaries;
-  skipws (is);
-  consume (is, ',');
-  
-  skipws (is);
   consume (is, "map");
   skipws (is);
   consume (is, '=');
@@ -79,7 +70,6 @@ operator<< (ostream & os, region_t const & reg)
   os << "region_t("
      << "extent=" << reg.extent << ","
      << "outer_boundaries=" << reg.outer_boundaries << ","
-     << "refinement_boundaries=" << reg.refinement_boundaries << ","
      << "map=" << reg.map << ","
      << "processor=" << reg.processor << ")";
   return os;
