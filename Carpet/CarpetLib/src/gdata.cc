@@ -32,7 +32,7 @@ static int nexttag ()
   int const min_tag = 100;
   static int last = 0;
   ++last;
-  if (last >= max_mpi_tags) last = 0;
+  if (last >= 30000) last = 0;
   return min_tag + last;
 }
 
@@ -68,512 +68,228 @@ gdata::~gdata ()
 
 
 
-// Processor management
-void gdata::change_processor (comm_state& state,
-                              const int newproc,
-                              void* const mem)
+// Data manipulators
+
+void
+gdata::
+copy_from (comm_state & state,
+           gdata const * const src,
+           ibbox const & box)
 {
-  // if this function is being called with collective commbuffers turned on,
-  // mimic the old state transitions here
-  switch (state.thestate) {
-  case state_post:
-  case state_get_buffer_sizes:
-    change_processor_recv (state, newproc, mem);
-    change_processor_send (state, newproc, mem);
-    break;
-  case state_wait:
-  case state_fill_send_buffers:
-    change_processor_wait (state, newproc, mem);
-    break;
-  case state_empty_recv_buffers:
-    break;
-  default:
-    assert(0 and "invalid state");
-  }
+  vector <gdata const *> srcs (1, src);
+  CCTK_REAL const time = 0.0;
+  vector <CCTK_REAL> times (1, time);
+  transfer_from (state,
+                 srcs, times,
+                 box, box,
+                 time, 0, 0);
 }
 
 
 
-// Data manipulators
-void gdata::copy_from (comm_state& state,
-                       const gdata* src, const ibbox& box)
+void
+gdata::
+transfer_from (comm_state & state,
+               vector<gdata const *> const & srcs,
+               vector<CCTK_REAL>     const & times,
+               ibbox const & dstbox,
+               ibbox const & srcbox,
+               CCTK_REAL const time,
+               int const order_space,
+               int const order_time)
 {
-  assert (has_storage() and src->has_storage());
-  assert (all(box.lower()>=extent().lower()
-          and box.lower()>=src->extent().lower()));
-  assert (all(box.upper()<=extent().upper()
-          and box.upper()<=src->extent().upper()));
-  assert (all(box.stride()==extent().stride()
-          and box.stride()==src->extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0
-          and (box.lower()-src->extent().lower())%box.stride() == 0));
-
-  if (box.empty()) return;
+  assert (has_storage());
+  assert (not dstbox.empty());
+  assert (all(dstbox.lower() >= extent().lower()));
+  assert (all(dstbox.upper() <= extent().upper()));
+  assert (all(dstbox.stride() == extent().stride()));
+  assert (all((dstbox.lower() - extent().lower()) % dstbox.stride() == 0));
+  
+  assert (not srcbox.empty());
+  assert (srcs.size() == times.size() and srcs.size() > 0);
+  for (int t=0; t<(int)srcs.size(); ++t) {
+    assert (srcs.AT(t)->has_storage());
+    assert (all(srcbox.lower() >= srcs.AT(t)->extent().lower()));
+    assert (all(srcbox.upper() <= srcs.AT(t)->extent().upper()));
+  }
+  gdata const * const src = srcs.AT(0);
+  
+  assert (transport_operator != op_error);
+  if (transport_operator == op_none) return;
+  
+  // Return early if this communication does not concern us
   if (dist::rank() != proc() and dist::rank() != src->proc()) return;
-
+  
+  // Interpolate either on the source or on the destination processor,
+  // depending on whether this increases or reduces the amount of data
+  int timelevel0, ntimelevels;
+  find_source_timelevel (times, time, order_time, timelevel0, ntimelevels);
+  assert (int (srcs.size()) >= ntimelevels);
+  int const dstpoints = dstbox.size();
+  int const srcpoints = srcbox.size() * ntimelevels;
+  bool const interp_on_src = dstpoints <= srcpoints;
+  int const npoints = interp_on_src ? dstpoints : srcpoints;
+  
   switch (state.thestate) {
-  case state_post:
-    if (proc() == src->proc()) {
-      copy_from_innerloop (src, box);
-    } else {
-      copy_from_post (state, src, box);
-    }
-    break;
-
-  case state_wait:
-    if (proc() != src->proc()) {
-      copy_from_wait (state, src, box);
-    }
-    break;
-
+    
   case state_get_buffer_sizes:
     // don't count processor-local copies
     if (proc() != src->proc()) {
-      // if this is a destination processor: advance its recv buffer size
-      vector<comm_state::procbufdesc>& procbufs =
-        state.typebufs.AT(c_datatype()).procbufs;
+      // if this is a destination processor: advance its recv buffer
+      // size
       if (proc() == dist::rank()) {
-        procbufs.AT(src->proc()).recvbufsize += box.size();
-        state.typebufs.AT(c_datatype()).in_use = true;
+        state.reserve_recv_space (c_datatype(), src->proc(), npoints);
       }
       // if this is a source processor: increment its send buffer size
       if (src->proc() == dist::rank()) {
-        procbufs.AT(proc()).sendbufsize += box.size();
-        state.typebufs.AT(c_datatype()).in_use = true;
+        state.reserve_send_space (c_datatype(), proc(), npoints);
       }
     }
     break;
-
+    
   case state_fill_send_buffers:
-    // if this is a source processor: copy its data into the send buffer
-    // (the processor-local case is also handled here)
-    if (src->proc() == dist::rank()) {
-      if (proc() == src->proc()) {
-        copy_from_innerloop (src, box);
-      } else {
-        copy_into_sendbuffer (state, src, box);
+    // if this is a source processor: copy its data into the send
+    // buffer
+    if (proc() != src->proc()) {
+      if (src->proc() == dist::rank()) {
+        if (interp_on_src) {
+          void * const sendbuf =
+            state.send_buffer (c_datatype(), proc(), dstbox.size());
+          gdata * const buf =
+            make_typed (varindex, cent, transport_operator, tag);
+          buf->allocate (dstbox, src->proc(), sendbuf);
+          buf->transfer_from_innerloop
+            (srcs, times, dstbox, time, order_space, order_time);
+          delete buf;
+          state.commit_send_space (c_datatype(), proc(), dstbox.size());
+        } else {
+          for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
+            void * const sendbuf =
+              state.send_buffer (c_datatype(), proc(), srcbox.size());
+            gdata * const buf =
+              make_typed (varindex, cent, transport_operator, tag);
+            buf->allocate (srcbox, src->proc(), sendbuf);
+            buf->copy_from_innerloop (srcs.AT(tl), srcbox);
+            delete buf;
+            state.commit_send_space (c_datatype(), proc(), srcbox.size());
+          }
+        }
       }
     }
     break;
-
-  case state_empty_recv_buffers:
-    // if this is a destination processor and data has already been received
-    // from the source processor: copy it from the recv buffer
-    if (proc() == dist::rank() and
-        state.recvbuffers_ready.AT(dist::size()*c_datatype() + src->proc())) {
-      copy_from_recvbuffer (state, src, box);
-    }
-    break;
-
-  default:
-    assert(0 and "invalid state");
-  }
-}
-
-
-void gdata::copy_from_post (comm_state& state,
-                            const gdata* src, const ibbox& box)
-{
-  static Timer total ("copy_from_post");
-  total.start();
-
-  if (dist::rank() == proc()) {
-
-    // this processor receives data
-
-    static Timer alloc ("copy_from_post_receive_allocate");
-    alloc.start ();
-    comm_state::gcommbuf * b = make_typed_commbuf (box);
-    int typesize;
-    MPI_Type_size (b->datatype(), & typesize);
-    alloc.stop (b->size() * typesize);
-
-    static Timer timer ("copy_from_post_receive_irecv");
-    timer. start ();
-    MPI_Irecv (b->pointer(), b->size(), b->datatype(), src->proc(),
-               tag, dist::comm(), &b->request);
-    timer.stop (b->size() * typesize);
-    state.requests.push_back (b->request);
-    state.recvbufs.push (b);
-
-  } else {
-    // this processor sends data
-
-    static Timer alloc ("copy_from_post_send_allocate");
-    alloc.start ();
-    comm_state::gcommbuf * b = src->make_typed_commbuf (box);
-    int typesize;
-    MPI_Type_size (b->datatype(), & typesize);
-    alloc.stop (b->size() * typesize);
-
-    // copy data into send buffer
-    static Timer copy ("copy_from_post_send_memcpy");
-    copy.start ();
-    const ibbox& ext = src->extent();
-    ivect myshape = ext.shape() / ext.stride();
-    ivect items = (box.upper() - box.lower()) / box.stride() + 1;
-    ivect offs  = (box.lower() - ext.lower()) / ext.stride();
-    char* send_buffer = (char*) b->pointer();
-    int& datatypesize = state.typebufs.AT(c_datatype()).datatypesize;
-
-    double bytes = 0;
-    for (int k = 0; k < items[2]; k++) {
-      for (int j = 0; j < items[1]; j++) {
-        int i = offs[0] + myshape[0]*((j+offs[1]) + myshape[1]*(k+offs[2]));
-        memcpy (send_buffer, ((char*) src->storage()) + datatypesize*i,
-                datatypesize * items[0]);
-        send_buffer += datatypesize * items[0];
-        bytes += datatypesize * items[0];
-      }
-    }
-    copy.stop (bytes);
-
-    static Timer timer ("copy_from_post_send_isend");
-    timer.start ();
-    MPI_Isend (b->pointer(), b->size(), b->datatype(), proc(),
-               tag, dist::comm(), &b->request);
-    timer.stop (b->size() * typesize);
-    state.requests.push_back (b->request);
-    state.sendbufs.push (b);
-  }
-
-  total.stop (0);
-}
-
-
-void gdata::copy_from_wait (comm_state& state,
-                            const gdata* src, const ibbox& box)
-{
-  static Timer total ("copy_from_wait");
-  total.start ();
-
-  static Timer wait ("copy_from_wait_wait");
-  wait.start ();
-  if (not state.requests.empty()) {
-    // wait for all requests at once
-    MPI_Waitall (state.requests.size(), &state.requests.front(),
-                 MPI_STATUSES_IGNORE);
-    state.requests.clear();
-  }
-  wait.stop (0);
-
-  queue<comm_state::gcommbuf*>* const bufs =
-    dist::rank() == proc() ? &state.recvbufs : &state.sendbufs;
-  comm_state::gcommbuf* b = bufs->front();
-
-  // copy data out of receive buffer
-  if (bufs == &state.recvbufs) {
-    static Timer timer ("copy_from_wait_memcpy");
-    timer.start ();
-    const ibbox& ext = extent();
-    ivect myshape = ext.shape() / ext.stride();
-    ivect items = (box.upper() - box.lower()) / box.stride() + 1;
-    ivect offs  = (box.lower() - ext.lower()) / ext.stride();
-    const char* recv_buffer = (const char*) b->pointer();
-    int& datatypesize = state.typebufs.AT(c_datatype()).datatypesize;
-
-    for (int k = 0; k < items[2]; k++) {
-      for (int j = 0; j < items[1]; j++) {
-        int i = offs[0] + myshape[0]*((j+offs[1]) + myshape[1]*(k+offs[2]));
-        memcpy (((char*) storage()) + datatypesize*i, recv_buffer,
-                datatypesize * items[0]);
-        recv_buffer += datatypesize * items[0];
-      }
-    }
-    timer.stop (0);
-  }
-
-  static Timer del ("copy_from_wait_delete");
-  del.start ();
-  bufs->pop();
-  delete b;
-  del.stop (0);
-
-  total.stop (0);
-}
-
-
-// Copy processor-local source data into communication send buffer
-// of the corresponding destination processor
-void gdata::copy_into_sendbuffer (comm_state& state,
-                                  const gdata* src, const ibbox& box)
-{
-  DECLARE_CCTK_PARAMETERS;
-  
-  if (proc() == src->proc()) {
-    // copy on same processor
-    copy_from_innerloop (src, box);
-  } else {
-    // copy to remote processor
-    assert (src->_has_storage);
-    int const datatypesize = state.typebufs.AT(c_datatype()).datatypesize;
-    comm_state::procbufdesc& procbuf =
-      state.typebufs.AT(c_datatype()).procbufs.AT(proc());
-    assert (procbuf.sendbuf - procbuf.sendbufbase <=
-            ((int)procbuf.sendbufsize - box.size()) * datatypesize);
-    int const fillstate = procbuf.sendbuf + (int)box.size()*datatypesize -
-                          procbuf.sendbufbase;
-    assert (fillstate <= (int)procbuf.sendbufsize * datatypesize);
-
-    // copy this processor's data into the send buffer
-    ibbox const & ext = src->extent();
-    ivect const myshape = ext.shape() / ext.stride();
-    ivect const items = (box.upper() - box.lower()) / box.stride() + 1;
-    ivect const offs  = (box.lower() - ext.lower()) / ext.stride();
-  
-    static Timer copy ("copy_into_sendbuffer_memcpy");
-    copy.start ();
-    assert (dim == 3);
-    for (int k = 0; k < items[2]; k++) {
-      for (int j = 0; j < items[1]; j++) {
-        int const i =
-          offs[0] + myshape[0]*((j+offs[1]) + myshape[1]*(k+offs[2]));
-        memcpy (procbuf.sendbuf,
-                ((const char*) src->storage()) + datatypesize*i,
-                datatypesize * items[0]);
-        procbuf.sendbuf += datatypesize * items[0];
-      }
-    }
-    copy.stop (datatypesize * prod (items));
-  
-    if (not combine_sends) {
-      // post the send if the buffer is full
-      if (fillstate == (int)procbuf.sendbufsize * datatypesize) {
-        static Timer timer ("copy_into_sendbuffer_isend");
-        timer.start ();
-        MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
-                   state.typebufs.AT(c_datatype()).mpi_datatype,
-                   proc(), c_datatype(), dist::comm(),
-                   &state.srequests.AT(dist::size()*c_datatype() + proc()));
-        timer.stop (procbuf.sendbufsize * datatypesize);
-      }
-    }
-  }
-}
-
-
-// Copy processor-local destination data from communication recv buffer
-// of the corresponding source processor
-void gdata::copy_from_recvbuffer (comm_state& state,
-                                  const gdata* src, const ibbox& box)
-{
-  int& datatypesize = state.typebufs.AT(c_datatype()).datatypesize;
-  comm_state::procbufdesc& procbuf =
-    state.typebufs.AT(c_datatype()).procbufs.AT(src->proc());
-  assert (procbuf.recvbuf - procbuf.recvbufbase <=
-          ((int)procbuf.recvbufsize-box.size()) * datatypesize);
-
-  // copy this processor's data from the recv buffer
-  const ibbox& ext = extent();
-  ivect myshape = ext.shape() / ext.stride();
-  ivect items = (box.upper() - box.lower()) / box.stride() + 1;
-  ivect offs  = (box.lower() - ext.lower()) / ext.stride();
-
-  static Timer timer ("copy_from_recvbuffer_memcpy");
-  timer.start ();
-  double bytes = 0;
-  assert (dim == 3);
-  for (int k = 0; k < items[2]; k++) {
-    for (int j = 0; j < items[1]; j++) {
-      int i = offs[0] + myshape[0]*((j+offs[1]) + myshape[1]*(k+offs[2]));
-      memcpy (((char*) storage()) + datatypesize*i,
-              procbuf.recvbuf, datatypesize * items[0]);
-      procbuf.recvbuf += datatypesize * items[0];
-      bytes += datatypesize * items[0];
-    }
-  }
-  timer.stop (bytes);
-}
-
-
-void gdata
-::interpolate_from (comm_state& state,
-                    const vector<const gdata*> srcs,
-                    const vector<CCTK_REAL> times,
-                    const ibbox& box, const CCTK_REAL time,
-                    const int order_space,
-                    const int order_time)
-{
-  assert (transport_operator != op_error);
-  if (transport_operator == op_none) return;
-
-  assert (has_storage());
-  assert (all(box.lower()>=extent().lower()));
-  assert (all(box.upper()<=extent().upper()));
-  assert (all(box.stride()==extent().stride()));
-  assert (all((box.lower()-extent().lower())%box.stride() == 0));
-  assert (srcs.size() == times.size() and srcs.size()>0);
-  for (int t=0; t<(int)srcs.size(); ++t) {
-    assert (srcs.AT(t)->has_storage());
-    assert (all(box.lower()>=srcs.AT(t)->extent().lower()));
-    assert (all(box.upper()<=srcs.AT(t)->extent().upper()));
-  }
-  assert (not box.empty());
-  const gdata* src = srcs.AT(0);
-  if (dist::rank() != proc() and dist::rank() != src->proc()) return;
-
-  switch (state.thestate) {
-  case state_post:
+    
+  case state_do_some_work:
+    // handle the processor-local case
     if (proc() == src->proc()) {
-      interpolate_from_innerloop(srcs, times, box, time,
-                                 order_space, order_time);
-    } else {
-      interpolate_from_post(state, srcs, times, box, time,
-                            order_space, order_time);
-    }
-    break;
-  case state_wait:
-    if (proc() != src->proc()) {
-      copy_from_wait (state, src, box);
-    }
-    break;
-  case state_get_buffer_sizes:
-    // don't count processor-local interpolations
-    if (proc() != src->proc()) {
-      // if this is a destination processor: increment its recv buffer size
-      vector<comm_state::procbufdesc>& procbufs =
-        state.typebufs.AT(c_datatype()).procbufs;
       if (proc() == dist::rank()) {
-        procbufs.AT(src->proc()).recvbufsize += box.size();
-        state.typebufs.AT(c_datatype()).in_use = true;
-      }
-      // if this is a source processor: increment its send buffer size
-      if (src->proc() == dist::rank()) {
-        procbufs.AT(proc()).sendbufsize += box.size();
-        state.typebufs.AT(c_datatype()).in_use = true;
+        transfer_from_innerloop
+          (srcs, times, dstbox, time, order_space, order_time);
       }
     }
     break;
-  case state_fill_send_buffers:
-    // if this is a source processor: interpolate its data into the send buffer
-    // (the processor-local case is also handled here)
-    if (src->proc() == dist::rank()) {
-      if (proc() == src->proc()) {
-        interpolate_from_innerloop(srcs, times, box, time,
-                                   order_space, order_time);
-      } else {
-        interpolate_into_sendbuffer(state, srcs, times, box,
-                                    time, order_space, order_time);
-      }
-    }
-    break;
+    
   case state_empty_recv_buffers:
-    // if this is a destination processor and data has already been received
-    // from the source processor: copy it from the recv buffer
-    // (the processor-local case is not handled here)
-    if (proc() == dist::rank() and
-        state.recvbuffers_ready.AT(dist::size()*c_datatype() + src->proc())) {
-      copy_from_recvbuffer(state, src, box);
+    // if this is a destination processor: copy it from the recv
+    // buffer
+    if (proc() != src->proc()) {
+      if (proc() == dist::rank()) {
+        if (interp_on_src) {
+          void * const recvbuf =
+            state.recv_buffer (c_datatype(), src->proc(), dstbox.size());
+          gdata * const buf =
+            make_typed (varindex, cent, transport_operator, tag);
+          buf->allocate (dstbox, proc(), recvbuf);
+          state.commit_recv_space (c_datatype(), src->proc(), dstbox.size());
+          copy_from_innerloop (buf, dstbox);
+          delete buf;
+        } else {
+          gdata const * const null = 0;
+          vector <gdata const *> bufs (timelevel0 + ntimelevels, null);
+          for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
+            void * const recvbuf =
+              state.recv_buffer (c_datatype(), src->proc(), srcbox.size());
+            gdata * const buf =
+              make_typed (varindex, cent, transport_operator, tag);
+            buf->allocate (srcbox, proc(), recvbuf);
+            state.commit_recv_space (c_datatype(), src->proc(), srcbox.size());
+            bufs.AT(tl) = buf;
+          }
+          transfer_from_innerloop
+            (bufs, times, dstbox, time, order_space, order_time);
+          for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
+            delete bufs.AT(tl);
+          }
+        }
+      }
     }
     break;
+    
   default:
-    assert(0 and "invalid state");
+    assert (0);
   }
 }
 
 
-void gdata
-::interpolate_from_post (comm_state& state,
-                         const vector<const gdata*> srcs,
-                         const vector<CCTK_REAL> times,
-                         const ibbox& box,
-                         const CCTK_REAL time,
-                         const int order_space,
-                         const int order_time)
+
+void
+gdata::
+find_source_timelevel (vector <CCTK_REAL> const & times,
+                       CCTK_REAL const time,
+                       int const order_time,
+                       int & timelevel0,
+                       int & ntimelevels)
+  const
 {
-  const gdata* src = srcs.AT(0);
-  if (dist::rank() == proc()) {
-    // interpolate from other processor
-
-    // this processor receives data
-
-    comm_state::gcommbuf * b = make_typed_commbuf (box);
-    int typesize;
-    MPI_Type_size (b->datatype(), & typesize);
-
-    static Timer timer ("interpolate_from_post_irecv");
-    timer.start ();
-    MPI_Irecv (b->pointer(), b->size(), b->datatype(), src->proc(),
-               tag, dist::comm(), &b->request);
-    timer.stop (b->size() * typesize);
-    state.requests.push_back (b->request);
-    state.recvbufs.push (b);
-  } else {
-    // this processor sends data
-
-    comm_state::gcommbuf * b = src->make_typed_commbuf (box);
-    int typesize;
-    MPI_Type_size (b->datatype(), & typesize);
-
-    gdata * tmp = src->make_typed (varindex, cent, transport_operator, tag);
-    tmp->allocate (box, src->proc(), b->pointer());
-    tmp->interpolate_from_innerloop (srcs, times, box, time,
-                                     order_space, order_time);
-    delete tmp;
-
-    static Timer timer ("interpolate_from_post_isend");
-    timer.start ();
-    MPI_Isend (b->pointer(), b->size(), b->datatype(), proc(),
-               tag, dist::comm(), &b->request);
-    timer.stop (b->size() * typesize);
-    state.requests.push_back (b->request);
-    state.sendbufs.push (b);
+  // Ensure that the times are consistent
+  assert (times.size() > 0);
+  assert (order_time >= 0);
+  
+  CCTK_REAL const eps = 1.0e-12;
+  CCTK_REAL const min_time = * min_element (times.begin(), times.end());
+  CCTK_REAL const max_time = * max_element (times.begin(), times.end());
+  if (transport_operator != op_copy) {
+    if (time < min_time - eps or time > max_time + eps) {
+      ostringstream buf;
+      buf << "Internal error: extrapolation in time."
+          << "  time=" << time
+          << "  times=" << times;
+      CCTK_WARN (0, buf.str().c_str());
+    }
   }
-}
-
-
-// Interpolate processor-local source data into communication send buffer
-// of the corresponding destination processor
-void gdata
-::interpolate_into_sendbuffer (comm_state& state,
-                               const vector<const gdata*> srcs,
-                               const vector<CCTK_REAL> times,
-                               const ibbox& box,
-                               const CCTK_REAL time,
-                               const int order_space,
-                               const int order_time)
-{
-  DECLARE_CCTK_PARAMETERS;
   
-  if (proc() == srcs.AT(0)->proc()) {
-    // interpolate on same processor
-    interpolate_from_innerloop (srcs, times, box, time,
-                                order_space, order_time);
-  } else {
-    // interpolate to remote processor
-    const gdata* src = srcs.AT(0);
-    assert (src->_has_storage);
-    int& datatypesize = state.typebufs.AT(c_datatype()).datatypesize;
-    comm_state::procbufdesc& procbuf =
-      state.typebufs.AT(c_datatype()).procbufs.AT(proc());
-    assert (procbuf.sendbuf - procbuf.sendbufbase <=
-            ((int)procbuf.sendbufsize - box.size()) * datatypesize);
-    assert (src->has_storage());
-    int const fillstate = (procbuf.sendbuf + box.size()*datatypesize) -
-                          procbuf.sendbufbase;
-    assert (fillstate <= (int)procbuf.sendbufsize * datatypesize);
-
-    // interpolate this processor's data into the send buffer
-    gdata* tmp = src->make_typed (varindex, cent, transport_operator, tag);
-    tmp->allocate (box, src->proc(), procbuf.sendbuf);
-    tmp->interpolate_from_innerloop (srcs, times, box, time,
-                                     order_space, order_time);
-    delete tmp;
+  // Use this timelevel, or interpolate in time if set to -1
+  int timelevel = -1;
   
-    // advance send buffer to point to the next ibbox slot
-    procbuf.sendbuf += datatypesize * box.size();
-  
-    if (not combine_sends) {
-      // post the send if the buffer is full
-      if (fillstate == (int)procbuf.sendbufsize*datatypesize) {
-        static Timer timer ("interpolate_into_sendbuffer_isend");
-        timer.start ();
-        MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
-                   state.typebufs.AT(c_datatype()).mpi_datatype,
-                   proc(), c_datatype(), dist::comm(),
-                   &state.srequests.AT(dist::size()*c_datatype() + proc()));
-        timer.stop (procbuf.sendbufsize*datatypesize);
+  // Try to avoid time interpolation if possible
+  if (timelevel == -1) {
+    if (times.size() == 1) {
+      timelevel = 0;
+    }
+  }
+  if (timelevel == -1) {
+    if (transport_operator == op_copy) {
+      timelevel = 0;
+    }
+  }
+  if (timelevel == -1) {
+    for (size_t tl=0; tl<times.size(); ++tl) {
+      static_assert (abs(0.1) > 0,
+                     "Function CarpetLib::abs has wrong signature");
+      if (abs (times.AT(tl) - time) < eps) {
+        timelevel = tl;
+        break;
       }
     }
   }
+  
+  if (timelevel >= 0) {
+    timelevel0 = timelevel;
+    ntimelevels = 1;
+  } else {
+    timelevel0 = 0;
+    ntimelevels = order_time + 1;
+  }
+  
+  assert (timelevel0 >= 0 and timelevel0 < (int)times.size());
+  assert (ntimelevels > 0);
 }

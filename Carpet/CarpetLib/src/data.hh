@@ -69,18 +69,7 @@ public:
   virtual void allocate (const ibbox& extent, const int proc,
 			 void* const memptr = NULL);
   virtual void free ();
-
-  // Processor management
-private:
-  virtual void change_processor_recv (comm_state& state,
-                                      const int newproc,
-                                      void* const memptr = NULL);
-  virtual void change_processor_send (comm_state& state,
-                                      const int newproc,
-                                      void* const memptr = NULL);
-  virtual void change_processor_wait (comm_state& state,
-                                      const int newproc,
-                                      void* const memptr = NULL);
+  
 public:
   
   // Data accessors
@@ -108,51 +97,62 @@ private:
   }
 
   // Data manipulators
-private:
-  virtual comm_state::gcommbuf *
-  make_typed_commbuf (const ibbox & box)
-    const;
-  
-public:
-  void copy_from_innerloop (const gdata* gsrc,
-			    const ibbox& box);
-  void interpolate_from_innerloop (const vector<const gdata*>& gsrcs,
-				   const vector<CCTK_REAL>& times,
-				   const ibbox& box, const CCTK_REAL time,
-				   const int order_space,
-				   const int order_time);
   
 private:
-  void interpolate_time (vector <data const *> const & srcs,
-                         vector <CCTK_REAL> const & times,
-                         ibbox const & box,
-                         CCTK_REAL const time,
-                         int const order_space,
-                         int const order_time);
-  void interpolate_p_r (data const * const src,
-                        ibbox const & box,
-                        int const order_space);
-  void interpolate_p_vc_cc (data const * const src,
-                            ibbox const & box,
-                            int const order_space);
-  void interpolate_prolongate (data const * src,
-                               ibbox const & box,
-                               int order_space);
-  void interpolate_restrict (data const * src,
-                             ibbox const & box,
-                             int order_space);
-  void time_interpolate (vector <data *> const & srcs,
-                         ibbox const & box,
-                         vector <CCTK_REAL> const & times,
-                         CCTK_REAL time,
-                         int order_time);
+  
+  void
+  copy_from_innerloop (gdata const * gsrc,
+                       ibbox const & box);
+  
+  void
+  transfer_from_innerloop (vector <gdata const *> const & gsrcs,
+                           vector <CCTK_REAL> const & times,
+                           ibbox const & box,
+                           CCTK_REAL time,
+                           int order_space,
+                           int order_time);
+  
+  void
+  transfer_time (vector <gdata const *> const & gsrcs,
+                 vector <CCTK_REAL> const & times,
+                 ibbox const & box,
+                 CCTK_REAL time,
+                 int order_space,
+                 int order_time);
+  
+  void
+  transfer_p_r (data const * const src,
+                ibbox const & box,
+                int order_space);
+  
+  void
+  transfer_p_vc_cc (data const * const src,
+                    ibbox const & box,
+                    int order_space);
+  
+  void
+  transfer_prolongate (data const * const src,
+                       ibbox const & box,
+                       int order_space);
+  
+  void
+  transfer_restrict (data const * const src,
+                     ibbox const & box,
+                     int order_space);
+  
+  void
+  time_interpolate (vector <data *> const & srcs,
+                    ibbox const & box,
+                    vector <CCTK_REAL> const & times,
+                    CCTK_REAL time,
+                    int order_time);
   
 public:
-
+  
   // Output
-  ostream& output (ostream& os) const;
-
-  friend ostream & operator << <T> ( ostream & os, const data<T> & d );
+  ostream & output (ostream& os) const;
+  
+  friend ostream & operator<< <T> (ostream & os, data<T> const & d);
 };
 
 #endif // DATA_HH

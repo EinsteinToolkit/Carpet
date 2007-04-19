@@ -10,10 +10,10 @@
 
 #include "cctk.h"
 
+#include "bbox.hh"
 #include "commstate.hh"
 #include "defs.hh"
 #include "dist.hh"
-#include "bbox.hh"
 #include "operators.hh"
 #include "timestat.hh"
 #include "vect.hh"
@@ -71,25 +71,6 @@ public:
               const centering cent = error_centered,
               const operator_type transport_operator = op_error,
               const int tag = -1) const = 0;
-  
-  // Processor management
-  void change_processor (comm_state& state,
-                         const int newproc,
-                         void* const mem=0);
- protected:
-  virtual void change_processor_recv (comm_state& state,
-                                      const int newproc,
-                                      void* const mem=0)
-    = 0;
-  virtual void change_processor_send (comm_state& state,
-                                      const int newproc,
-                                      void* const mem=0)
-    = 0;
-  virtual void change_processor_wait (comm_state& state,
-                                      const int newproc,
-                                      void* const mem=0)
-    = 0;
- public:
   
   // Storage management
   virtual void allocate (const ibbox& extent, const int proc,
@@ -154,67 +135,51 @@ private:
   // Datatype accessors
   // maps the C datatype of a data class object to a 0-based index
   virtual unsigned int c_datatype () const = 0;
-
-  // Data manipulators
-private:
-  virtual comm_state::gcommbuf *
-  make_typed_commbuf (const ibbox & box)
-    const = 0;
   
- public:
-  void copy_from (comm_state& state,
-                  const gdata* src, const ibbox& box);
-  void interpolate_from (comm_state& state,
-                         const vector<const gdata*> srcs,
-                         const vector<CCTK_REAL> times,
-                         const ibbox& box,
-                         const CCTK_REAL time,
-                         const int order_space,
-                         const int order_time);
-
- private:
-  void copy_from_post (comm_state& state,
-                       const gdata* src, const ibbox& box);
-  void interpolate_from_post (comm_state& state,
-                              const vector<const gdata*> srcs,
-                              const vector<CCTK_REAL> times,
-                              const ibbox& box,
-                              const CCTK_REAL time,
-                              const int order_space,
-                              const int order_time);
-  void copy_from_wait (comm_state& state,
-                       const gdata* src, const ibbox& box);
-
-  // Copy processor-local source data into communication send buffer 
-  // of the corresponding destination processor
-  // The case when both source and destination are local is also handled here.
-  void copy_into_sendbuffer (comm_state& state,
-                             const gdata* src, const ibbox& box);
-  // Copy processor-local destination data from communication recv buffer
-  // of the corresponding source processor
-  void copy_from_recvbuffer (comm_state& state,
-                             const gdata* src, const ibbox& box);
-  // Interpolate processor-local source data into communication send buffer
-  // of the corresponding destination processor
-  // The case when both source and destination are local is also handled here.
-  void interpolate_into_sendbuffer (comm_state& state,
-                                    const vector<const gdata*> srcs,
-                                    const vector<CCTK_REAL> times,
-                                    const ibbox& box,
-                                    const CCTK_REAL time,
-                                    const int order_space,
-                                    const int order_time);
-
- protected:
-  virtual void
-  copy_from_innerloop (const gdata* src, const ibbox& box) = 0;
-  virtual void
-  interpolate_from_innerloop (const vector<const gdata*>& srcs,
-			      const vector<CCTK_REAL>& times,
-			      const ibbox& box,
-                              const CCTK_REAL time,
-			      const int order_space,
-			      const int order_time) = 0;
+  // Data manipulators
+  
+public:
+  void
+  copy_from (comm_state & state,
+             gdata const * src,
+             ibbox const & box);
+  
+  void
+  transfer_from (comm_state & state,
+                 vector<gdata const *> const & srcs,
+                 vector<CCTK_REAL>     const & times,
+                 ibbox const & dstbox,
+                 ibbox const & srcbox,
+                 CCTK_REAL time,
+                 int order_space,
+                 int order_time);
+  
+protected:
+  void
+  find_source_timelevel (vector <CCTK_REAL> const & times,
+                         CCTK_REAL time,
+                         int order_time,
+                         int & timelevel0,
+                         int & ntimelevels)
+    const;
+  
+private:
+  virtual
+  void
+  copy_from_innerloop (gdata const * gsrc,
+                       ibbox const & box)
+    = 0;
+  
+  virtual
+  void
+  transfer_from_innerloop (vector <gdata const *> const & gsrcs,
+                           vector <CCTK_REAL> const & times,
+                           ibbox const & box,
+                           CCTK_REAL time,
+                           int order_space,
+                           int order_time)
+    = 0;
+  
 };
 
 

@@ -204,7 +204,7 @@ void data<T>::allocate (const ibbox& extent_,
   _size = 1;
   for (int d=0; d<dim; ++d) {
     _stride[d] = _size;
-    assert (_shape[d]==0 || _size <= INT_MAX / _shape[d]);
+    assert (_shape[d]==0 or _size <= numeric_limits<int>::max() / _shape[d]);
     _size *= _shape[d];
   }
   _proc = proc_;
@@ -238,202 +238,13 @@ void data<T>::free ()
 
 
 
-// Processor management
-template<typename T>
-void data<T>::change_processor_recv (comm_state& state,
-                                     const int newproc,
-                                     void* const memptr)
-{
-  DECLARE_CCTK_PARAMETERS;
-  
-  assert (not comm_active);
-  comm_active = true;
-  
-  if (newproc == _proc) {
-    assert (not memptr);
-    return;
-  }
-  
-  static Timer total ("change_processor_recv");
-  total.start ();
-  
-  assert (vectorlength == 1);
-  
-  if (_has_storage) {
-    if (dist::rank() == newproc) {
-      // copy from other processor
-      
-      assert (not _memory);
-      _memory = new mem<T> (1, _size, (T*)memptr);
-      _memory->register_client (0);
-      _storage = _memory->storage (0);
-      
-      static Timer timer ("irecv");
-      timer.start ();
-      T dummy;
-      MPI_Irecv (_memory->storage(0),
-                 _size, dist::datatype(dummy), proc(),
-                 tag, dist::comm(), &request);
-      timer.stop (_size * sizeof(T));
-      if (use_waitall) {
-        state.requests.push_back (request);
-      }
-      
-    } else if (dist::rank() == _proc) {
-      // copy to other processor
-      
-    } else {
-      assert (not memptr);
-      assert (not _memory);
-    }
-  }
-  
-  total.stop (0);
-}
-
-
-
-template<typename T>
-void data<T>::change_processor_send (comm_state& state,
-                                     const int newproc,
-                                     void* const memptr)
-{
-  DECLARE_CCTK_PARAMETERS;
-  
-  assert (comm_active);
-  
-  if (newproc == _proc) {
-    assert (not memptr);
-    return;
-  }
-  
-  static Timer total ("change_processor_send");
-  total.start();
-  
-  assert (vectorlength == 1);
-  
-  if (_has_storage) {
-    if (dist::rank() == newproc) {
-      // copy from other processor
-      
-    } else if (dist::rank() == _proc) {
-      // copy to other processor
-      
-      assert (not memptr);
-      assert (_memory);
-      
-      static Timer timer ("isend");
-      timer.start ();
-      T dummy;
-      MPI_Isend (_memory->storage(0),
-                 _size, dist::datatype(dummy), newproc,
-                 tag, dist::comm(), &request);
-      timer.stop (_size * sizeof(T));
-      if (use_waitall) {
-        state.requests.push_back (request);
-      }
-      
-    } else {
-      assert (not memptr);
-      assert (not _memory);
-    }
-  }
-  
-  total.stop (0);
-}
-
-
-
-template<typename T>
-void data<T>::change_processor_wait (comm_state& state,
-                                     const int newproc,
-                                     void* const memptr)
-{
-  DECLARE_CCTK_PARAMETERS;
-  
-  assert (comm_active);
-  comm_active = false;
-  
-  if (newproc == _proc) {
-    assert (not memptr);
-    return;
-  }
-  
-  static Timer total ("change_processor_wait");
-  total.start ();
-  
-  assert (vectorlength == 1);
-  
-  if (use_waitall) {
-    if (not state.requests.empty()) {
-      // wait for all requests at once
-      static Timer timer ("irecvwait");
-      timer.start ();
-      MPI_Waitall
-        (state.requests.size(), &state.requests.front(), MPI_STATUSES_IGNORE);
-      timer.stop (0);
-      state.requests.clear();
-    }
-  }
-  
-  if (_has_storage) {
-    if (dist::rank() == newproc) {
-      // copy from other processor
-      
-      if (not use_waitall) {
-        static Timer timer ("irecvwait");
-        timer.start ();
-        MPI_Wait (&request, MPI_STATUS_IGNORE);
-        timer.stop (0);
-      }
-      
-    } else if (dist::rank() == _proc) {
-      // copy to other processor
-      
-      assert (not memptr);
-      assert (_memory);
-      
-      if (not use_waitall) {
-        static Timer timer ("isendwait");
-        timer.start ();
-        MPI_Wait (&request, MPI_STATUS_IGNORE);
-        timer.stop (0);
-      }
-      
-      _memory->unregister_client (0);
-      if (not _memory->has_clients()) delete _memory;
-      _memory = NULL;;
-      _storage = NULL;
-      
-    } else {
-      assert (not memptr);
-      assert (not _memory);
-    }
-  }
-  
-  _proc = newproc;
-  
-  total.stop (0);
-}
-
-
-
 // Data manipulators
-template<typename T>
-comm_state::gcommbuf *
-data<T>::
-make_typed_commbuf (const ibbox & box)
-  const
-{
-  return new comm_state::commbuf<T> (box);
-}
-
-
 
 template <typename T>
-void data <T>
-::copy_from_innerloop (gdata const * const gsrc,
-                       ibbox const & box)
+void
+data <T>::
+copy_from_innerloop (gdata const * const gsrc,
+                     ibbox const & box)
 {
   data const * const src = dynamic_cast <data const *> (gsrc);
   assert (has_storage() and src->has_storage());
@@ -453,107 +264,78 @@ void data <T>
 
 
 template <typename T>
-void data <T>
-::interpolate_from_innerloop (vector <gdata const *> const & gsrcs,
-                              vector <CCTK_REAL> const & times,
-			      ibbox const & box,
-                              CCTK_REAL const time,
-                              int const order_space,
-			      int const order_time)
+void
+data <T>::
+transfer_from_innerloop (vector <gdata const *> const & gsrcs,
+                         vector <CCTK_REAL> const & times,
+                         ibbox const & box,
+                         CCTK_REAL const time,
+                         int const order_space,
+                         int const order_time)
 {
   assert (has_storage());
-  
-  vector <data const *> srcs (gsrcs.size());
-  for (size_t t=0; t<srcs.size(); ++t) {
-    srcs.AT(t) = dynamic_cast <data const *> (gsrcs.AT(t));
-  }
-  assert (srcs.size() == times.size() and srcs.size() > 0);
-  
-  for (size_t t=0; t<srcs.size(); ++t) {
-    assert (srcs.AT(t)->has_storage());
-    assert (proc() == srcs.AT(t)->proc());
-  }
-  
   assert (dist::rank() == proc());
+  for (size_t tl=0; tl<gsrcs.size(); ++tl) {
+    if (gsrcs.AT(tl)) {
+      assert (gsrcs.AT(tl)->has_storage());
+      assert (gsrcs.AT(tl)->proc() == proc());
+    }
+  }
   
-  interpolate_time (srcs, times, box, time, order_space, order_time);
+  transfer_time (gsrcs, times, box, time, order_space, order_time);
 }
 
 
 
 template <typename T>
-void data <T>
-::interpolate_time (vector <data const *> const & srcs,
-                    vector <CCTK_REAL> const & times,
-                    ibbox const & box,
-                    CCTK_REAL const time,
-                    int const order_space,
-                    int const order_time)
+void
+data <T>::
+transfer_time (vector <gdata const *> const & gsrcs,
+               vector <CCTK_REAL> const & times,
+               ibbox const & box,
+               CCTK_REAL const time,
+               int const order_space,
+               int const order_time)
 {
-  // Ensure that the times are consistent
-  assert (times.size() > 0);
-  CCTK_REAL const min_time = * min_element (times.begin(), times.end());
-  CCTK_REAL const max_time = * max_element (times.begin(), times.end());
-  if (transport_operator != op_copy) {
-    if (time < min_time - eps or time > max_time + eps) {
-      ostringstream buf;
-      buf << "Internal error: extrapolation in time."
-          << "  time=" << time
-          << "  times=" << times;
-      CCTK_WARN (0, buf.str().c_str());
-    }
-  }
-  
   // Use this timelevel, or interpolate in time if set to -1
-  int timelevel = -1;
+  int timelevel0, ntimelevels;
+  find_source_timelevel (times, time, order_time, timelevel0, ntimelevels);
   
-  // Try to avoid time interpolation if possible
-  if (timelevel == -1) {
-    if (times.size() == 1) {
-      timelevel = 0;
-    }
-  }
-  if (timelevel == -1) {
-    if (transport_operator == op_copy) {
-      timelevel = 0;
-    }
-  }
-  if (timelevel == -1) {
-    for (size_t tl=0; tl<times.size(); ++tl) {
-      static_assert (abs(0.1) > 0,
-                     "Function CarpetLib::abs has wrong signature");
-      if (abs (times.AT(tl) - time) < eps) {
-        timelevel = tl;
-        break;
-      }
-    }
-  }
-  
-  if (timelevel == -1) {
+  if (ntimelevels > 1) {
     // Time interpolation is necessary
+    assert (timelevel0 == 0);
     
-    vector <data *> tmps (times.size());
+    assert ((int)gsrcs.size() >= ntimelevels);
+    assert ((int)times.size() >= ntimelevels);
     
-    for (size_t tl=0; tl<times.size(); ++tl) {
-      
+    data * const null = 0;
+    vector <data *> tmps (timelevel0 + ntimelevels, null);
+    
+    for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
       tmps.AT(tl) =
         new data (this->varindex, this->cent, this->transport_operator);
       tmps.AT(tl)->allocate (box, this->proc());
       
-      tmps.AT(tl)->interpolate_p_r (srcs.AT(tl), box, order_space);
-      
+      assert (gsrcs.AT(tl));
+      data const * const src = dynamic_cast <data const *> (gsrcs.AT(tl));
+      tmps.AT(tl)->transfer_p_r (src, box, order_space);
     }
     
     time_interpolate (tmps, box, times, time, order_time);
     
-    for (size_t tl=0; tl<times.size(); ++tl) {
+    for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
       delete tmps.AT(tl);
     }
     
   } else {
     // No time interpolation
     
-    interpolate_p_r (srcs.AT(timelevel), box, order_space);
+    assert ((int)gsrcs.size() > timelevel0);
+    assert ((int)times.size() > timelevel0);
+    
+    data const * const src = dynamic_cast <data const *> (gsrcs.AT(timelevel0));
+    
+    transfer_p_r (src, box, order_space);
     
   } // if
 }
@@ -561,17 +343,23 @@ void data <T>
 
 
 template <typename T>
-void data <T>
-::interpolate_p_r (data const * const src,
-                   ibbox const & box,
-                   int const order_space)
+void
+data <T>::
+transfer_p_r (data const * const src,
+              ibbox const & box,
+              int const order_space)
 {
-  if (all (src->extent().stride() > this->extent().stride())) {
+  if (all (src->extent().stride() == this->extent().stride())) {
+    // Copy
+    copy_from_innerloop (src, box);
+  } else if (all (src->extent().stride() > this->extent().stride())) {
     // Prolongate
-    interpolate_p_vc_cc (src, box, order_space);
+    assert (transport_operator != op_sync);
+    transfer_p_vc_cc (src, box, order_space);
   } else if (all (src->extent().stride() < this->extent().stride())) {
     // Restrict
-    interpolate_restrict (src, box, order_space);
+    assert (transport_operator != op_sync);
+    transfer_restrict (src, box, order_space);
   } else {
     assert (0);
   }
@@ -580,15 +368,16 @@ void data <T>
 
 
 template <typename T>
-void data <T>
-::interpolate_p_vc_cc (data const * const src,
-                       ibbox const & box,
-                       int const order_space)
+void
+data <T>::
+transfer_p_vc_cc (data const * const src,
+                  ibbox const & box,
+                  int const order_space)
 {
   if (cent == vertex_centered) {
     // Vertex centred
     
-    interpolate_prolongate (src, box, order_space);
+    transfer_prolongate (src, box, order_space);
     
   } else if (cent == cell_centered) {
     // Cell centred
@@ -648,7 +437,7 @@ void data <T>
        newsrc->extent());
     
     // Interpolate
-    newdst->interpolate_prolongate (newsrc, newdstbox, order_space);
+    newdst->transfer_prolongate (newsrc, newdstbox, order_space);
     
     // Convert destination to standard representation
     prolongate_3d_cc_rf2_prim2std
@@ -669,10 +458,11 @@ void data <T>
 }
 
 template <>
-void data <CCTK_INT>
-::interpolate_p_vc_cc (data const * const src,
-                       ibbox const & box,
-                       int const order_space)
+void
+data <CCTK_INT>::
+transfer_p_vc_cc (data const * const src,
+                  ibbox const & box,
+                  int const order_space)
 {
   CCTK_WARN (0, "Data type not supported");
 }
@@ -680,10 +470,11 @@ void data <CCTK_INT>
 
 
 template <typename T>
-void data <T>
-::interpolate_prolongate (data const * const src,
-                          ibbox const & box,
-                          int const order_space)
+void
+data <T>::
+transfer_prolongate (data const * const src,
+                     ibbox const & box,
+                     int const order_space)
 {
   static Timer total ("prolongate");
   total.start ();
@@ -786,10 +577,11 @@ void data <T>
 }
 
 template <>
-void data <CCTK_INT>
-::interpolate_prolongate (data const * const src,
-                          ibbox const & box,
-                          int const order_space)
+void
+data <CCTK_INT>::
+transfer_prolongate (data const * const src,
+                     ibbox const & box,
+                     int const order_space)
 {
   CCTK_WARN (0, "Data type not supported");
 }
@@ -797,10 +589,11 @@ void data <CCTK_INT>
 
 
 template <typename T>
-void data <T>
-::interpolate_restrict (data const * const src,
-                        ibbox const & box,
-                        int const order_space)
+void
+data <T>::
+transfer_restrict (data const * const src,
+                   ibbox const & box,
+                   int const order_space)
 {
   static Timer total ("restrict");
   total.start ();
@@ -844,10 +637,11 @@ void data <T>
 }
 
 template <>
-void data <CCTK_INT>
-::interpolate_restrict (data const * const src,
-                        ibbox const & box,
-                        int const order_space)
+void
+data <CCTK_INT>::
+transfer_restrict (data const * const src,
+                   ibbox const & box,
+                   int const order_space)
 {
   CCTK_WARN (0, "Data type not supported");
 }
@@ -855,12 +649,13 @@ void data <CCTK_INT>
 
 
 template <typename T>
-void data <T>
-::time_interpolate (vector <data *> const & srcs,
-                    ibbox const & box,
-                    vector <CCTK_REAL> const & times,
-                    CCTK_REAL const time,
-                    int const order_time)
+void
+data <T>::
+time_interpolate (vector <data *> const & srcs,
+                  ibbox const & box,
+                  vector <CCTK_REAL> const & times,
+                  CCTK_REAL const time,
+                  int const order_time)
 {
   static Timer total ("time_interpolate");
   total.start ();
@@ -966,12 +761,13 @@ void data <T>
 }
 
 template <>
-void data <CCTK_INT>
-::time_interpolate (vector <data *> const & srcs,
-                    ibbox const & box,
-                    vector <CCTK_REAL> const & times,
-                    CCTK_REAL const time,
-                    int const order_time)
+void
+data <CCTK_INT>::
+time_interpolate (vector <data *> const & srcs,
+                  ibbox const & box,
+                  vector <CCTK_REAL> const & times,
+                  CCTK_REAL const time,
+                  int const order_time)
 {
   CCTK_WARN (0, "Data type not supported");
 }
@@ -980,7 +776,10 @@ void data <CCTK_INT>
 
 // Output
 template<typename T>
-ostream& data<T>::output (ostream& os) const
+ostream &
+data<T>::
+output (ostream & os)
+  const
 {
   T Tdummy;
   os << "data<" << typestring(Tdummy) << ">:"
@@ -990,7 +789,8 @@ ostream& data<T>::output (ostream& os) const
 }
 
 template<typename T>
-ostream & operator << (ostream & os, const data<T> & d)
+ostream &
+operator << (ostream & os, data<T> const & d)
 {
   char const * space = "";
   for (int i = 0; i < d.vectorlength; i++) {
@@ -1002,9 +802,8 @@ ostream & operator << (ostream & os, const data<T> & d)
 
 
 
-#define INSTANTIATE(T)                                          \
-template class data<T>;                                         \
-template                                                        \
-ostream & operator << <T> (ostream & os, data<T> const & d);
+#define INSTANTIATE(T)                                                  \
+template class data<T>;                                                 \
+template ostream & operator << <T> (ostream & os, data<T> const & d);
 #include "instantiate"
 #undef INSTANTIATE
