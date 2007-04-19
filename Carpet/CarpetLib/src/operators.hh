@@ -7,6 +7,8 @@ enum operator_type
 {
   op_error,                     // illegal operator type
   op_none,                      // do not transport
+  op_sync,                      // transport only on the same level
+                                // (error if called between levels)
   op_copy,                      // use simple copying for prolongation
                                 // (needs only one time level)
   op_Lagrange,                  // Lagrange interpolation (standard)
