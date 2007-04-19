@@ -147,24 +147,8 @@ namespace CarpetIOASCII {
     const int numvars = CCTK_NumVars ();
     requests.resize (numvars);
 
-    // create the output directory
-    my_out_dir = GetStringParameter("out%dD_dir");
-    if (CCTK_EQUALS (my_out_dir, "")) {
-      my_out_dir = out_dir;
-    }
-
-    int result = IOUtil_CreateDirectory (cctkGH, my_out_dir, 0, 0);
-    if (result < 0) {
-      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Problem creating %dD-output directory '%s'",
-                  outdim, my_out_dir);
-    } else if (result > 0 and CCTK_Equals (verbose, "full")) {
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "%dD-output directory '%s' already exists",
-                  outdim, my_out_dir);
-    }
-
     // initial I/O parameter check
+    my_out_dir = 0;
     my_out_vars = strdup ("");
     stop_on_parse_errors = strict_io_parameter_check != 0;
     CheckSteerableParameters (cctkGH);
@@ -183,6 +167,30 @@ namespace CarpetIOASCII {
   ::CheckSteerableParameters (const cGH *const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
+
+    // re-parse the 'IOASCII::out%dD_dir' parameter if it has changed
+    const char* the_out_dir = GetStringParameter("out%dD_dir");
+    if (CCTK_EQUALS (the_out_dir, "")) {
+      the_out_dir = out_dir;
+    }
+
+    if (not my_out_dir or strcmp (the_out_dir, my_out_dir)) {
+      free (const_cast<char*>(my_out_dir));
+      my_out_dir = strdup (the_out_dir);
+
+      // create the output directory
+      int result = IOUtil_CreateDirectory (cctkGH, my_out_dir, 0, 0);
+      if (result < 0) {
+        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Problem creating %dD-output directory '%s'",
+                    outdim, my_out_dir);
+      } else if (result > 0 and CCTK_Equals (verbose, "full")) {
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "%dD-output directory '%s' already exists",
+                    outdim, my_out_dir);
+      }
+    }
+
 
     // re-parse the 'IOASCII::out%d_vars' parameter if it has changed
     const char* const out_vars = GetStringParameter("out%dD_vars");
