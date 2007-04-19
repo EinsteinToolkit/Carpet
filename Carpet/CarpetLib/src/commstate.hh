@@ -6,24 +6,26 @@
 
 #include <mpi.h>
 
+#include "cctk_Parameters.h"
+
 #include "dist.hh"
+#include "timestat.hh"
 
 using namespace std;
+using namespace CarpetLib;
+
 
 
 // State information for communications
-//
-// Depending on how a comm state object was created,
-// it will step through one of two state transitions (in the given order):
+
+// A comm state object will step through the state transitions in the
+// given order:
 enum astate {
-  // these are used for collective communications
-  state_get_buffer_sizes, state_fill_send_buffers, state_empty_recv_buffers,
-
-  // these are used for communications on individual components
-  state_post, state_wait,
-
-  // all transition graphs must end with here
-  state_done
+  state_get_buffer_sizes,
+  state_fill_send_buffers,
+  state_do_some_work,
+  state_empty_recv_buffers,
+  state_done,
 };
 
 struct comm_state {
@@ -40,37 +42,6 @@ private:
   comm_state& operator= (comm_state const &);
 
 public:
-
-  //////////////////////////////////////////////////////////////////////////
-  // the following members are used for single-component communications
-  //////////////////////////////////////////////////////////////////////////
-
-  // List of MPI requests for use_waitall
-  vector<MPI_Request> requests;
-
-  // Lists of communication buffers for use_lightweight_buffers
-  struct gcommbuf {
-    gcommbuf () {};
-    virtual ~gcommbuf () {};
-    MPI_Request request;
-    virtual void const * pointer () const = 0;
-    virtual void * pointer () = 0;
-    virtual int size () const = 0;
-    virtual MPI_Datatype datatype () const = 0;
-  };
-
-  template<typename T>
-  struct commbuf : gcommbuf {
-    commbuf (ibbox const & box);
-    virtual ~commbuf ();
-    virtual void const * pointer () const;
-    virtual void * pointer ();
-    virtual int size () const;
-    virtual MPI_Datatype datatype () const;
-    vector<T> data;
-  };
-  queue<gcommbuf*> recvbufs, sendbufs;
-
 
   //////////////////////////////////////////////////////////////////////////
   // the following members are used for collective communications
@@ -125,12 +96,39 @@ public:
   // list of datatype buffers
   vector<typebufdesc> typebufs;        // [dist::c_ndatatypes()]
 
-  // flags indicating which receive buffers are ready to be emptied
-  vector<bool> recvbuffers_ready;      // [dist::size() * dist::c_ndatatypes()]
+  void
+  reserve_send_space (unsigned int type,
+                      int proc,
+                      int npoints);
 
+  void
+  reserve_recv_space (unsigned int type,
+                      int proc,
+                      int npoints);
+
+  void *
+  send_buffer (unsigned int type,
+               int proc,
+               int npoints);
+
+  void *
+  recv_buffer (unsigned int type,
+               int proc,
+               int npoints);
+
+  void
+  commit_send_space (unsigned int type,
+                     int proc,
+                     int npoints);
+
+  void
+  commit_recv_space (unsigned int type,
+                     int proc,
+                     int npoints);
+
+private:
   // lists of outstanding requests for posted send/recv communications
   vector<MPI_Request> srequests;       // [dist::size() * dist::c_ndatatypes()]
-private:
   vector<MPI_Request> rrequests;       // [dist::size() * dist::c_ndatatypes()]
 
   // number of posted and already completed receive communications
