@@ -18,6 +18,7 @@ void vect<T,D>::input (istream& is) {
   consume (is, '[');
   for (int d=0; d<D; ++d) {
     is >> (*this)[d];
+    assert (is.good());
     if (d<D-1) {
       skipws (is);
       consume (is, ',');

@@ -8,6 +8,8 @@
 
 #include "cctk.h"
 
+#include "vect_helpers.hh"
+
 using namespace std;
 
 
@@ -109,9 +111,19 @@ public:
   
 #if 0
   // This creates confusion
-  /** Constructor from a pointer, i.e.\ a C array.  */
+  /** Constructor from a pointer, i.e., a C array.  */
   explicit vect (const T* const x) PURE {
     for (int d=0; d<D; ++d) elt[d]=x[d];
+  }
+#endif
+  
+#if 0
+  // This leads to an ICE on AIX
+  template<int E>
+  operator vect<vect<T,D>,E> () CONST {
+    vect<vect<T,D>,E> r;
+    for (int e=0; e<E; ++e) r[e]=*this;
+    return r;
   }
 #endif
   
@@ -225,85 +237,14 @@ public:
   }
   
   // Modifying operators
-  vect& operator+=(const T& x) {
-    for (int d=0; d<D; ++d) elt[d]+=x;
-    return *this;
-  }
-  
-  vect& operator-=(const T& x) {
-    for (int d=0; d<D; ++d) elt[d]-=x;
-    return *this;
-  }
-  
-  vect& operator*=(const T& x) {
-    for (int d=0; d<D; ++d) elt[d]*=x;
-    return *this;
-  }
-  
-  vect& operator/=(const T& x) {
-    for (int d=0; d<D; ++d) elt[d]/=x;
-    return *this;
-  }
-  
-  vect& operator%=(const T& x) {
-    for (int d=0; d<D; ++d) elt[d]%=x;
-    return *this;
-  }
-  
-  vect& operator&=(const T& x) {
-    for (int d=0; d<D; ++d) elt[d]&=x;
-    return *this;
-  }
-  
-  vect& operator|=(const T& x) {
-    for (int d=0; d<D; ++d) elt[d]|=x;
-    return *this;
-  }
-  
-  vect& operator^=(const T& x) {
-    for (int d=0; d<D; ++d) elt[d]^=x;
-    return *this;
-  }
-  
-  vect& operator+=(const vect& a) {
-    for (int d=0; d<D; ++d) elt[d]+=a[d];
-    return *this;
-  }
-  
-  vect& operator-=(const vect& a) {
-    for (int d=0; d<D; ++d) elt[d]-=a[d];
-    return *this;
-  }
-  
-  vect& operator*=(const vect& a) {
-    for (int d=0; d<D; ++d) elt[d]*=a[d];
-    return *this;
-  }
-  
-  vect& operator/=(const vect& a) {
-    for (int d=0; d<D; ++d) elt[d]/=a[d];
-    return *this;
-  }
-  
-  vect& operator%=(const vect& a) {
-    for (int d=0; d<D; ++d) elt[d]%=a[d];
-    return *this;
-  }
-  
-  vect& operator&=(const vect& a) {
-    for (int d=0; d<D; ++d) elt[d]&=a[d];
-    return *this;
-  }
-  
-  vect& operator|=(const vect& a) {
-    for (int d=0; d<D; ++d) elt[d]|=a[d];
-    return *this;
-  }
-  
-  vect& operator^=(const vect& a) {
-    for (int d=0; d<D; ++d) elt[d]^=a[d];
-    return *this;
-  }
+  DECLARE_MEMBER_OPERATOR_1_REF (operator+=, +=);
+  DECLARE_MEMBER_OPERATOR_1_REF (operator-=, -=);
+  DECLARE_MEMBER_OPERATOR_1_REF (operator*=, *=);
+  DECLARE_MEMBER_OPERATOR_1_REF (operator/=, /=);
+  DECLARE_MEMBER_OPERATOR_1_REF (operator%=, %=);
+  DECLARE_MEMBER_OPERATOR_1_REF (operator&=, &=);
+  DECLARE_MEMBER_OPERATOR_1_REF (operator|=, |=);
+  DECLARE_MEMBER_OPERATOR_1_REF (operator^=, ^=);
   
   // Non-modifying operators
   
@@ -321,189 +262,12 @@ public:
     return r;
   }
   
-  vect operator+ () const PURE {
-    vect r;
-    for (int d=0; d<D; ++d) r[d]=+elt[d];
-    return r;
-  }
-  
-  vect operator- () const PURE {
-    vect r;
-    for (int d=0; d<D; ++d) r[d]=-elt[d];
-    return r;
-  }
-  
-  vect<bool,D> operator! () const PURE {
-    vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=!elt[d];
-    return r;
-  }
-  
-  vect operator~ () const PURE {
-    vect r;
-    for (int d=0; d<D; ++d) r[d]=~elt[d];
-    return r;
-  }
+  DECLARE_MEMBER_OPERATOR_0 (operator+, +)
+  DECLARE_MEMBER_OPERATOR_0 (operator-, -)
+  DECLARE_MEMBER_OPERATOR_0 (operator~, ~)
+  // DECLARE_MEMBER_OPERATOR_0_RET (operator!, !, bool)
   
 #if 0
-  // These are now defined as template functions
-  vect operator+ (const T& x) const PURE {
-    vect r(*this);
-    r+=x;
-    return r;
-  }
-  
-  vect operator- (const T& x) const PURE {
-    vect r(*this);
-    r-=x;
-    return r;
-  }
-  
-  vect operator* (const T& x) const PURE {
-    vect r(*this);
-    r*=x;
-    return r;
-  }
-  
-  vect operator/ (const T& x) const PURE {
-    vect r(*this);
-    r/=x;
-    return r;
-  }
-  
-  vect operator% (const T& x) const PURE {
-    vect r(*this);
-    r%=x;
-    return r;
-  }
-  
-  vect operator& (const T& x) const PURE {
-    vect r(*this);
-    r&=x;
-    return r;
-  }
-  
-  vect operator| (const T& x) const PURE {
-    vect r(*this);
-    r|=x;
-    return r;
-  }
-  
-  vect operator^ (const T& x) const PURE {
-    vect r(*this);
-    r^=x;
-    return r;
-  }
-  
-  vect<bool,D> operator&& (const T& x) const PURE {
-    vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=elt[d]&&x;
-    return r;
-  }
-  
-  vect<bool,D> operator|| (const T& x) const PURE {
-    vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=elt[d]||x;
-    return r;
-  }
-  
-  vect operator+ (const vect& a) const PURE {
-    vect r(*this);
-    r+=a;
-    return r;
-  }
-  
-  vect operator- (const vect& a) const PURE {
-    vect r(*this);
-    r-=a;
-    return r;
-  }
-  
-  vect operator* (const vect& a) const PURE {
-    vect r(*this);
-    r*=a;
-    return r;
-  }
-  
-  vect operator/ (const vect& a) const PURE {
-    vect r(*this);
-    r/=a;
-    return r;
-  }
-  
-  vect operator% (const vect& a) const PURE {
-    vect r(*this);
-    r%=a;
-    return r;
-  }
-  
-  vect operator& (const vect& a) const PURE {
-    vect r(*this);
-    r&=a;
-    return r;
-  }
-  
-  vect operator| (const vect& a) const PURE {
-    vect r(*this);
-    r|=a;
-    return r;
-  }
-  
-  vect operator^ (const vect& a) const PURE {
-    vect r(*this);
-    r^=a;
-    return r;
-  }
-  
-  vect<bool,D> operator&& (const vect& a) const PURE {
-    vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=elt[d]&&a[d];
-    return r;
-  }
-  
-  vect<bool,D> operator|| (const vect& a) const PURE {
-    vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=elt[d]||a[d];
-    return r;
-  }
-  
-  vect<bool,D> operator== (const vect& a) const PURE {
-    vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=elt[d]==a[d];
-    return r;
-  }
-  
-  vect<bool,D> operator!= (const vect& a) const PURE {
-    vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=elt[d]!=a[d];
-    return r;
-  }
-  
-  vect<bool,D> operator< (const vect& a) const PURE {
-    vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=elt[d]<a[d];
-    return r;
-  }
-  
-  vect<bool,D> operator<= (const vect& a) const PURE {
-    vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=elt[d]<=a[d];
-    return r;
-  }
-  
-  vect<bool,D> operator> (const vect& a) const PURE {
-    vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=elt[d]>a[d];
-    return r;
-  }
-  
-  vect<bool,D> operator>= (const vect& a) const PURE {
-    vect<bool,D> r;
-    for (int d=0; d<D; ++d) r[d]=elt[d]>=a[d];
-    return r;
-  }
-#endif
-  
   /** This corresponds to the ?: operator.  Return a vector with the
       elements set to either a[i] or b[i], depending on whether
       (*this)[i] is true or not.  */
@@ -513,6 +277,7 @@ public:
     for (int d=0; d<D; ++d) r[d]=elt[d]?a[d]:b[d];
     return r;
   }
+#endif
   
   // Iterators
 #if 0
@@ -572,66 +337,6 @@ inline vect<vect<T,D>,DD> xpose (vect<vect<T,DD>,D> const & a) {
   return r;
 }
 
-/** Return the element-wise absolute value.  */
-template<typename T,int D>
-inline vect<T,D> abs (const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<T,D> abs (const vect<T,D>& a) {
-  vect<T,D> r;
-  for (int d=0; d<D; ++d) r[d]=abs(a[d]);
-  return r;
-}
-
-/** Return the element-wise ceiling.  */
-template<typename T,int D>
-inline vect<T,D> ceil (const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<T,D> ceil (const vect<T,D>& a) {
-  vect<T,D> r;
-  for (int d=0; d<D; ++d) r[d]=ceil(a[d]);
-  return r;
-}
-
-/** Return the element-wise floor.  */
-template<typename T,int D>
-inline vect<T,D> floor (const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<T,D> floor (const vect<T,D>& a) {
-  vect<T,D> r;
-  for (int d=0; d<D; ++d) r[d]=floor(a[d]);
-  return r;
-}
-
-/** Return the element-wise maximum of two vectors.  */
-template<typename T,int D>
-inline vect<T,D> max (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<T,D> max (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<T,D> r;
-  for (int d=0; d<D; ++d) r[d]=max(a[d],b[d]);
-  return r;
-}
-
-/** Return the element-wise minimum of two vectors.  */
-template<typename T,int D>
-inline vect<T,D> min (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<T,D> min (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<T,D> r;
-  for (int d=0; d<D; ++d) r[d]=min(a[d],b[d]);
-  return r;
-}
-
-/** Return the element-wise power of two vectors.  */
-template<typename T,typename U,int D>
-inline vect<T,D> pow (const vect<T,D>& a, const vect<U,D>& b) PURE;
-template<typename T,typename U,int D>
-inline vect<T,D> pow (const vect<T,D>& a, const vect<U,D>& b) {
-  vect<T,D> r;
-  for (int d=0; d<D; ++d) r[d]=pow(a[d],b[d]);
-  return r;
-}
-
 /** Return the element-wise integer power of two vectors.  */
 template<typename T,int D>
 inline vect<T,D> ipow (const vect<T,D>& a, const vect<int,D>& b) PURE;
@@ -642,445 +347,51 @@ inline vect<T,D> ipow (const vect<T,D>& a, const vect<int,D>& b) {
   return r;
 }
 
-template<typename T,int D>
-inline vect<T,D> operator+ (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<T,D> operator+ (const vect<T,D>& a, const T& x) {
-  vect<T,D> r(a);
-  r+=x;
-  return r;
-}
-template<typename T,int D>
-inline vect<T,D> operator+ (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<T,D> operator+ (const T& x, const vect<T,D>& a) {
-  vect<T,D> r(x);
-  r+=a;
-  return r;
-}
+DECLARE_FUNCTION_1 (abs)
+DECLARE_FUNCTION_1 (ceil)
+DECLARE_FUNCTION_1 (floor)
 
-template<typename T,int D>
-inline vect<T,D> operator- (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<T,D> operator- (const vect<T,D>& a, const T& x) {
-  vect<T,D> r(a);
-  r-=x;
-  return r;
-}
-template<typename T,int D>
-inline vect<T,D> operator- (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<T,D> operator- (const T& x, const vect<T,D>& a) {
-  vect<T,D> r(x);
-  r-=a;
-  return r;
-}
+DECLARE_OPERATOR_1_RET (operator!, !, bool)
 
-template<typename T,int D>
-inline vect<T,D> operator* (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<T,D> operator* (const vect<T,D>& a, const T& x) {
-  vect<T,D> r(a);
-  r*=x;
-  return r;
-}
-template<typename T,int D>
-inline vect<T,D> operator* (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<T,D> operator* (const T& x, const vect<T,D>& a) {
-  vect<T,D> r(x);
-  r*=a;
-  return r;
-}
+DECLARE_FUNCTION_2 (max)
+DECLARE_FUNCTION_2 (min)
+DECLARE_FUNCTION_2 (pow)
 
-template<typename T,int D>
-inline vect<T,D> operator/ (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<T,D> operator/ (const vect<T,D>& a, const T& x) {
-  vect<T,D> r(a);
-  r/=x;
-  return r;
-}
-template<typename T,int D>
-inline vect<T,D> operator/ (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<T,D> operator/ (const T& x, const vect<T,D>& a) {
-  vect<T,D> r(x);
-  r/=a;
-  return r;
-}
+DECLARE_OPERATOR_2 (operator+, +)
+DECLARE_OPERATOR_2 (operator-, -)
+DECLARE_OPERATOR_2 (operator*, *)
+DECLARE_OPERATOR_2 (operator/, /)
+DECLARE_OPERATOR_2 (operator%, %)
+DECLARE_OPERATOR_2 (operator&, &)
+DECLARE_OPERATOR_2 (operator|, |)
+DECLARE_OPERATOR_2 (operator^, ^)
 
-template<typename T,int D>
-inline vect<T,D> operator% (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<T,D> operator% (const vect<T,D>& a, const T& x) {
-  vect<T,D> r(a);
-  r%=x;
-  return r;
-}
-template<typename T,int D>
-inline vect<T,D> operator% (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<T,D> operator% (const T& x, const vect<T,D>& a) {
-  vect<T,D> r(x);
-  r%=a;
-  return r;
-}
-
-template<typename T,int D>
-inline vect<T,D> operator| (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<T,D> operator| (const vect<T,D>& a, const T& x) {
-  vect<T,D> r(a);
-  r|=x;
-  return r;
-}
-template<typename T,int D>
-inline vect<T,D> operator| (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<T,D> operator| (const T& x, const vect<T,D>& a) {
-  vect<T,D> r(x);
-  r|=a;
-  return r;
-}
-
-template<typename T,int D>
-inline vect<T,D> operator& (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<T,D> operator& (const vect<T,D>& a, const T& x) {
-  vect<T,D> r(a);
-  r&=x;
-  return r;
-}
-template<typename T,int D>
-inline vect<T,D> operator& (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<T,D> operator& (const T& x, const vect<T,D>& a) {
-  vect<T,D> r(x);
-  r&=a;
-  return r;
-}
-
-template<typename T,int D>
-inline vect<T,D> operator^ (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<T,D> operator^ (const vect<T,D>& a, const T& x) {
-  vect<T,D> r(a);
-  r^=x;
-  return r;
-}
-template<typename T,int D>
-inline vect<T,D> operator^ (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<T,D> operator^ (const T& x, const vect<T,D>& a) {
-  vect<T,D> r(x);
-  r^=a;
-  return r;
-}
-
-template<typename T,int D>
-inline vect<T,D> operator&& (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<T,D> operator&& (const vect<T,D>& a, const T& x) {
-  vect<T,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]&&x;
-  return r;
-}
-template<typename T,int D>
-inline vect<T,D> operator&& (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<T,D> operator&& (const T& x, const vect<T,D>& a) {
-  vect<T,D> r;
-  for (int d=0; d<D; ++d) r[d]=x&&a[d];
-  return r;
-}
-
-template<typename T,int D>
-inline vect<T,D> operator|| (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<T,D> operator|| (const vect<T,D>& a, const T& x) {
-  vect<T,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]||x;
-  return r;
-}
-template<typename T,int D>
-inline vect<T,D> operator|| (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<T,D> operator|| (const T& x, const vect<T,D>& a) {
-  vect<T,D> r;
-  for (int d=0; d<D; ++d) r[d]=x||a[d];
-  return r;
-}
-
-template<typename T,int D>
-inline vect<bool,D> operator== (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator== (const vect<T,D>& a, const T& x) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]==x;
-  return r;
-}
-template<typename T,int D>
-inline vect<bool,D> operator== (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator== (const T& x, const vect<T,D>& a) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=x==a[d];
-  return r;
-}
-
-template<typename T,int D>
-inline vect<bool,D> operator!= (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator!= (const vect<T,D>& a, const T& x) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]!=x;
-  return r;
-}
-template<typename T,int D>
-inline vect<bool,D> operator!= (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator!= (const T& x, const vect<T,D>& a) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=x!=a[d];
-  return r;
-}
-
-template<typename T,int D>
-inline vect<bool,D> operator< (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator< (const vect<T,D>& a, const T& x) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]<x;
-  return r;
-}
-template<typename T,int D>
-inline vect<bool,D> operator< (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator< (const T& x, const vect<T,D>& a) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=x<a[d];
-  return r;
-}
-
-template<typename T,int D>
-inline vect<bool,D> operator<= (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator<= (const vect<T,D>& a, const T& x) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]<=x;
-  return r;
-}
-template<typename T,int D>
-inline vect<bool,D> operator<= (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator<= (const T& x, const vect<T,D>& a) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=x<=a[d];
-  return r;
-}
-
-template<typename T,int D>
-inline vect<bool,D> operator> (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator> (const vect<T,D>& a, const T& x) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]>x;
-  return r;
-}
-template<typename T,int D>
-inline vect<bool,D> operator> (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator> (const T& x, const vect<T,D>& a) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=x>a[d];
-  return r;
-}
-
-template<typename T,int D>
-inline vect<bool,D> operator>= (const vect<T,D>& a, const T& x) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator>= (const vect<T,D>& a, const T& x) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]>=x;
-  return r;
-}
-template<typename T,int D>
-inline vect<bool,D> operator>= (const T& x, const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator>= (const T& x, const vect<T,D>& a) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=x>=a[d];
-  return r;
-}
-
-template<typename T,int D>
-inline vect<T,D> operator+ (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<T,D> operator+ (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<T,D> r(a);
-  r+=b;
-  return r;
-}
-
-template<typename T,int D>
-inline vect<T,D> operator- (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<T,D> operator- (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<T,D> r(a);
-  r-=b;
-  return r;
-}
-
-template<typename T,int D>
-inline vect<T,D> operator* (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<T,D> operator* (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<T,D> r(a);
-  r*=b;
-  return r;
-}
-
-template<typename T,int D>
-inline vect<T,D> operator/ (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<T,D> operator/ (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<T,D> r(a);
-  r/=b;
-  return r;
-}
-
-template<typename T,int D>
-inline vect<T,D> operator% (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<T,D> operator% (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<T,D> r(a);
-  r%=b;
-  return r;
-}
-
-template<typename T,int D>
-inline vect<T,D> operator& (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<T,D> operator& (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<T,D> r(a);
-  r&=b;
-  return r;
-}
-
-template<typename T,int D>
-inline vect<T,D> operator| (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<T,D> operator| (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<T,D> r(a);
-  r|=b;
-  return r;
-}
-
-template<typename T,int D>
-inline vect<T,D> operator^ (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<T,D> operator^ (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<T,D> r(a);
-  r^=b;
-  return r;
-}
-
-template<typename T,int D>
-inline vect<bool,D> operator&& (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator&& (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]&&b[d];
-  return r;
-}
-
-template<typename T,int D>
-inline vect<bool,D> operator|| (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator|| (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]||b[d];
-  return r;
-}
-
-template<typename T,int D>
-inline vect<bool,D> operator== (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator== (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]==b[d];
-  return r;
-}
-
-template<typename T,int D>
-inline vect<bool,D> operator!= (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator!= (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]!=b[d];
-  return r;
-}
-
-template<typename T,int D>
-inline vect<bool,D> operator< (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator< (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]<b[d];
-  return r;
-}
-
-template<typename T,int D>
-inline vect<bool,D> operator<= (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator<= (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]<=b[d];
-  return r;
-}
-
-template<typename T,int D>
-inline vect<bool,D> operator> (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator> (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]>b[d];
-  return r;
-}
-
-template<typename T,int D>
-inline vect<bool,D> operator>= (const vect<T,D>& a, const vect<T,D>& b) PURE;
-template<typename T,int D>
-inline vect<bool,D> operator>= (const vect<T,D>& a, const vect<T,D>& b) {
-  vect<bool,D> r;
-  for (int d=0; d<D; ++d) r[d]=a[d]>=b[d];
-  return r;
-}
+DECLARE_OPERATOR_2_RET (operator&&, &&, bool)
+DECLARE_OPERATOR_2_RET (operator||, ||, bool)
+DECLARE_OPERATOR_2_RET (operator==, ==, bool)
+DECLARE_OPERATOR_2_RET (operator!=, !=, bool)
+DECLARE_OPERATOR_2_RET (operator< , < , bool)
+DECLARE_OPERATOR_2_RET (operator<=, <=, bool)
+DECLARE_OPERATOR_2_RET (operator> , > , bool)
+DECLARE_OPERATOR_2_RET (operator>=, >=, bool)
 
 
 
 // Reduction operators
 
-/** Return true iff any of the elements are true (boolean sum).  */
-template<int D>
-inline bool any (const vect<bool,D>& a) PURE;
-template<int D>
-inline bool any (const vect<bool,D>& a) {
-  bool r(false);
-  for (int d=0; d<D; ++d) r|=a[d];
-  return r;
-}
+// Identity
+#define id(x) (x)
 
-/** Return true iff all of the elements are true (boolean product).  */
-template<int D>
-inline bool all (const vect<bool,D>& a) PURE;
-template<int D>
-inline bool all (const vect<bool,D>& a) {
-  bool r(true);
-  for (int d=0; d<D; ++d) r&=a[d];
-  return r;
-}
+DECLARE_REDUCTION_OPERATOR_1_T_RET (all,true ,&=,id,bool,bool)
+DECLARE_REDUCTION_OPERATOR_1_T_RET (any,false,|=,id,bool,bool)
+
+DECLARE_REDUCTION_FUNCTION_1 (maxval,a[0],max,id)
+DECLARE_REDUCTION_FUNCTION_1 (minval,a[0],min,id)
+DECLARE_REDUCTION_OPERATOR_1 (prod,1,*=,id)
+DECLARE_REDUCTION_OPERATOR_1 (sum,0,+=,id)
+
+DECLARE_REDUCTION_OPERATOR_2 (dot  ,0,+=,*,id  )
+DECLARE_REDUCTION_OPERATOR_2 (hypot,0,+=,*,sqrt)
 
 /** Count the number of elements in the vector.  */
 template<typename T,int D>
@@ -1090,44 +401,12 @@ inline int count (const vect<T,D>& a) {
   return D;
 }
 
-/** Return the dot product of two vectors.  */
+/** Return the size (number of elements) of the vector.  */
 template<typename T,int D>
-inline T dot (const vect<T,D>& a, const vect<T,D>& b) PURE;
+inline int size (const vect<T,D>& a) CONST;
 template<typename T,int D>
-inline T dot (const vect<T,D>& a, const vect<T,D>& b) {
-  T r(0);
-  for (int d=0; d<D; ++d) r+=a[d]*b[d];
-  return r;
-}
-
-/** Return the Euklidean length.  */
-template<typename T,int D>
-inline T hypot (const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline T hypot (const vect<T,D>& a) {
-  return sqrt(dot(a,a));
-}
-
-/** Return the maximum element.  */
-template<typename T,int D>
-inline T maxval (const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline T maxval (const vect<T,D>& a) {
-  assert (D>0);
-  T r(a[0]);
-  for (int d=1; d<D; ++d) r=max(r,a[d]);
-  return r;
-}
-
-/** Return the minimum element.  */
-template<typename T,int D>
-inline T minval (const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline T minval (const vect<T,D>& a) {
-  assert (D>0);
-  T r(a[0]);
-  for (int d=1; d<D; ++d) r=min(r,a[d]);
-  return r;
+inline int size (const vect<T,D>& a) {
+  return D;
 }
 
 /** Return the index of the first maximum element.  */
@@ -1152,33 +431,7 @@ inline int minloc (const vect<T,D>& a) {
   return r;
 }
 
-/** Return the product of the elements.  */
-template<typename T,int D>
-inline T prod (const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline T prod (const vect<T,D>& a) {
-  T r(1);
-  for (int d=0; d<D; ++d) r*=a[d];
-  return r;
-}
 
-/** Return the size (number of elements) of the vector.  */
-template<typename T,int D>
-inline int size (const vect<T,D>& a) CONST;
-template<typename T,int D>
-inline int size (const vect<T,D>& a) {
-  return D;
-}
-
-/** Return the sum of the elements.  */
-template<typename T,int D>
-inline T sum (const vect<T,D>& a) PURE;
-template<typename T,int D>
-inline T sum (const vect<T,D>& a) {
-  T r(0);
-  for (int d=0; d<D; ++d) r+=a[d];
-  return r;
-}
 
 // Higher order functions
 
@@ -1308,30 +561,6 @@ vect (const T& x, const T& y, const T& z, const T& t) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Special versions for vect<vect>
-
-template<typename T,int D,int E>
-inline vect<vect<bool,D>,E> operator== (const vect<vect<T,D>,E>& a, const vect<vect<T,D>,E>& b) PURE;
-template<typename T,int D,int E>
-inline vect<vect<bool,D>,E> operator== (const vect<vect<T,D>,E>& a, const vect<vect<T,D>,E>& b) {
-  vect<vect<bool,D>,E> r;
-  for (int e=0; e<E; ++e) r[e]=a[e]==b[e];
-  return r;
-}
-
-/** Return true iff all of the elements are true (boolean product).  */
-template<int D,int E>
-inline vect<bool,E> all (const vect<vect<bool,D>,E>& a) PURE;
-template<int D,int E>
-inline vect<bool,E> all (const vect<vect<bool,D>,E>& a) {
-  vect<bool,E> r;
-  for (int e=0; e<E; ++e) r[e]=all(a[e]);
-  return r;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
 
 
 // Specialise some constructors for lower dimensions
@@ -1363,6 +592,17 @@ inline vect<CCTK_REAL,3>& vect<CCTK_REAL,3>::operator%=(const vect<CCTK_REAL,3>&
     if (elt[d]<a[d]*(CCTK_REAL)(    1.0e-10)) elt[d]=(CCTK_REAL)0;
   }
   return *this;
+}
+
+template<>
+inline vect<CCTK_REAL,3> operator%(const vect<CCTK_REAL,3>& a, const vect<CCTK_REAL,3>& b) {
+  vect<CCTK_REAL,3> r;
+  for (int d=0; d<3; ++d) {
+    r[d]=fmod(a[d],b[d]);
+    if (r[d]>b[d]*(CCTK_REAL)(1.0-1.0e-10)) r[d]=(CCTK_REAL)0;
+    if (r[d]<b[d]*(CCTK_REAL)(    1.0e-10)) r[d]=(CCTK_REAL)0;
+  }
+  return r;
 }
 
 
