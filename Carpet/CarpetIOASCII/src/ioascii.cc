@@ -849,7 +849,7 @@ namespace CarpetIOASCII {
                       // grid spacing of Carpet's integer indexing
                       coord_delta[d] =
                         cctkGH->cctk_delta_space[d] /
-                        vhh.at(Carpet::map)->baseextent.stride()[d];
+                        vhh.at(Carpet::map)->baseextents.at(0).at(0).stride()[d];
                     }
                   } else {
                     for (int d=0; d<dim; ++d) {
@@ -864,8 +864,12 @@ namespace CarpetIOASCII {
 
                   ivect offset1;
                   if (grouptype == CCTK_GF) {
+#if 0                           // dh::dbases
                     const ibbox& baseext
                       = vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
+#endif
+                    const ibbox& baseext
+                      = vhh.at(Carpet::map)->baseextents.at(mglevel).at(reflevel);
                     offset1 = baseext.lower() + offset * ext.stride();
                   } else {
                     offset1 = offset * ext.stride();
@@ -1302,7 +1306,7 @@ namespace CarpetIOASCII {
 	  const bbox<int,3> ext(lo,up,str);
           
 	  gh const & hh = *vhh.at(Carpet::map);
-	  ibbox const & base = hh.bases().at(mglevel).at(reflevel);
+	  ibbox const & base = hh.baseextents.at(mglevel).at(reflevel);
           
        	  assert (base.stride()[0] ==  base.stride()[1]
                   and base.stride()[0] == base.stride()[2]);
@@ -1366,7 +1370,8 @@ namespace CarpetIOASCII {
       
       vector<const gdata*> tmps (gfdatas.size());
       for (size_t n=0; n<gfdatas.size(); ++n) {
-        gdata * const tmp = gfdatas.at(n)->make_typed(vi);
+        gdata * const tmp =
+          gfdatas.at(n)->make_typed (vi, error_centered, op_sync);
         tmp->allocate(gfdatas.at(n)->extent(), 0);
         for (comm_state state; not state.done(); state.step()) {
           tmp->copy_from (state, gfdatas.at(n), gfdatas.at(n)->extent());
