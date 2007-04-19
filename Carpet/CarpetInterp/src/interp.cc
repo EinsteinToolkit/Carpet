@@ -832,7 +832,8 @@ namespace CarpetInterp {
     }
 
     for (int m = 0; m < maps; ++m) {
-      const ibbox& baseextent = arrdata.at(coord_group).at(m).hh->baseextent;
+      const ibbox& baseextent =
+        arrdata.at(coord_group).at(m).hh->baseextents.at(mglevel).at(0);
       lower.at(m) = coord_lower;
       upper.at(m) = coord_upper;
       delta.at(m) = ((coord_upper - coord_lower) /
@@ -866,7 +867,7 @@ namespace CarpetInterp {
                              ipow(mgfact, mglevel);
           ivect const ipos = ivect(floor((pos - lower.at(m)) / (delta.at(m) *
                              rvect(fact)) + (CCTK_REAL) 0.5)) * fact;
-          assert (all (ipos % hh->bases().at(ml).at(rl).stride() == 0));
+          assert (all (ipos % hh->baseextents.at(ml).at(rl).stride() == 0));
 
           // TODO: use something faster than a linear search
           for (c = 0; c < hh->components(rl); ++c) {
@@ -1220,7 +1221,8 @@ namespace CarpetInterp {
     assert (grouptype >= 0);
     int const m = grouptype == CCTK_GF ? Carpet::map : 0;
     // delta for the Carpet grid indices
-    const ibbox& baseextent = arrdata.at(coord_group).at(m).hh->baseextent;
+    const ibbox& baseextent =
+      arrdata.at(coord_group).at(m).hh->baseextents.at(mglevel).at(0);
     delta = (upper - lower) / rvect (baseextent.upper() - baseextent.lower());
 
     // Get processor-local origin and spacing
