@@ -22,9 +22,6 @@ class dh;
 class th;
 class gh;
 
-// Output
-ostream& operator<< (ostream& os, const gh& h);
-
 
 
 // A refinement hierarchy, where higher levels are finer than the base
@@ -47,15 +44,11 @@ public:				// should be readonly
   const int mgfact;		// default multigrid factor
   const centering mgcent;	// default (vertex or cell centered)
   
-  const ibbox baseextent;
+  vector<vector<ibbox> > baseextents; // [ml][rl]
+  const i2vect boundary_width;
   
-private:
-  vector<vector<ibbox> > _bases; // [ml][rl]
-  
-  // Extents and properties of all grids
-  mregs _regions;
-  // A copy, used during regridding
-  mregs _oldregions;
+  mregs regions;                // extents and properties of all grids
+  mregs oldregions;             // a copy, used during regridding
   
   list<th*> ths;		// list of all time hierarchies
   list<dh*> dhs;		// list of all data hierarchies
@@ -63,67 +56,60 @@ private:
 public:
   
   // Constructors
-  gh (const vector<ivect> & reffacts, const centering refcent,
-      const int mgfact, const centering mgcent,
-      const ibbox baseextent);
+  gh (vector<ivect> const & reffacts, centering refcent,
+      int mgfact, centering mgcent,
+      vector<vector<ibbox> > const & baseextents, 
+      i2vect const & boundary_width);
   
   // Destructors
   ~gh ();
   
   // Modifiers
   void regrid (mregs const & regs);
-  bool recompose (const int rl,
-                  const bool do_prolongate);
+  bool recompose (int rl, bool do_prolongate);
+  
 private:
-  bool level_did_change (const int rl) const;
+  
+  bool level_did_change (int rl) const;
   
   // Accessors
   
 public:
-  mregs const & regions () const
+  
+  ibbox const & extent (const int ml, const int rl, const int c) const
   {
-    return _regions;
-  }
-
-  const vector<vector<ibbox> > & bases() const
-  {
-    return _bases;
+    return regions.AT(ml).AT(rl).AT(c).extent;
   }
   
-  ibbox extent (const int m, const int rl, const int c) const
+  ibbox const & baseextent (const int ml, const int rl) const
   {
-    return _regions.AT(m).AT(rl).AT(c).extent;
+    return baseextents.AT(ml).AT(rl);
   }
   
-  b2vect outer_boundaries (const int rl, const int c) const
+  b2vect const & outer_boundaries (const int rl, const int c) const
   {
-    return _regions.AT(0).AT(rl).AT(c).outer_boundaries;
+    return regions.AT(0).AT(rl).AT(c).outer_boundaries;
   }
-
-  b2vect refinement_boundaries (const int rl, const int c) const
-  {
-    return _regions.AT(0).AT(rl).AT(c).refinement_boundaries;
-  }
-
+  
   int processor (const int rl, const int c) const
   {
-    return _regions.AT(0).AT(rl).AT(c).processor;
+    return regions.AT(0).AT(rl).AT(c).processor;
   }
 
   int mglevels () const
   {
-    return (int)_regions.size();
+    return (int)regions.size();
   }
   
   int reflevels () const
   {
     if (mglevels() == 0) return 0;
-    return (int)_regions.AT(0).size();
+    return (int)regions.AT(0).size();
   }
   
   int components (const int rl) const
   {
-    return (int)_regions.AT(0).AT(rl).size();
+    return (int)regions.AT(0).AT(rl).size();
   }
   
   bool is_local (const int rl, const int c) const
@@ -134,32 +120,27 @@ public:
   int local_components (const int rl) const;
   
   // Time hierarchy management
-  void add (th* t);
-  void remove (th* t);
+  void add (th * t);
+  void remove (th * t);
   
   // Data hierarchy management
-  void add (dh* d);
-  void remove (dh* d);
+  void add (dh * d);
+  void remove (dh * d);
   
   // Output
-  ostream& output (ostream& os) const;
+  ostream & output (ostream & os) const;
 
 private:
-  void check_multigrid_consistency ();
-  void check_component_consistency ();
-  void check_base_grid_extent ();
-  void check_refinement_levels ();
-  void calculate_base_extents_of_all_levels ();
-  void do_output_bboxes (ostream& os) const;
-  void do_output_bases (ostream& os) const;
+  void do_output_bboxes (ostream & os) const;
+  void do_output_bases (ostream & os) const;
 
 };
 
 
 
-inline ostream& operator<< (ostream& os, const gh& h) {
-  h.output(os);
-  return os;
+inline ostream & operator<< (ostream & os, gh const & h)
+{
+  return h.output(os);
 }
 
 

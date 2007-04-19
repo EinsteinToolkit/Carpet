@@ -18,46 +18,163 @@ using namespace std;
 
 
   // Constructors
-gh::gh (const vector<ivect> & reffacts_, const centering refcent_,
-        const int mgfact_, const centering mgcent_,
-        const ibbox baseextent_)
+gh::
+gh (vector<ivect> const & reffacts_, centering const refcent_,
+    int const mgfact_,  centering const mgcent_,
+    vector<vector<ibbox> > const & baseextents_,
+    i2vect const & boundary_width_)
   : reffacts(reffacts_), refcent(refcent_),
     mgfact(mgfact_), mgcent(mgcent_),
-    baseextent(baseextent_)
+    baseextents(baseextents_),
+    boundary_width(boundary_width_)
 {
   assert (reffacts.size() >= 1);
   assert (all (reffacts.front() == 1));
-  for (size_t n = 1; n < reffacts.size(); ++ n) {
-    assert (all (reffacts.AT(n) >= reffacts.AT(n-1)));
-    assert (all (reffacts.AT(n) % reffacts.AT(n-1) == 0));
+  for (int rl = 1; rl < (int)reffacts.size(); ++ rl) {
+    assert (all (reffacts.AT(rl) >= reffacts.AT(rl-1)));
+    assert (all (reffacts.AT(rl) % reffacts.AT(rl-1) == 0));
   }
-  assert (all (baseextent.stride() % reffacts.AT(reffacts.size()-1) == 0));
+  assert (refcent == vertex_centered or refcent == cell_centered);
+  
+  assert (mgfact >= 1);
+  assert (mgcent == vertex_centered or mgcent == cell_centered);
+  
+  assert (baseextents.size() >= 1);
+  assert (baseextents.AT(0).size() >= 1);
+  assert (baseextents.AT(0).size() == reffacts.size());
+  for (int ml = 1; ml < (int)baseextents.size(); ++ ml) {
+    assert (baseextents.AT(ml).size() == baseextents.AT(ml-1).size());
+  }
+  for (int ml = 0; ml < (int)baseextents.size(); ++ ml) {
+    for (int rl = 1; rl < (int)baseextents.AT(ml).size(); ++ rl) {
+      ibbox const & cbox = baseextents.AT(ml).AT(rl-1);
+      ibbox const & fbox = baseextents.AT(ml).AT(rl);
+      assert (all (cbox.stride() * reffacts.AT(rl-1) == 
+                   fbox.stride() * reffacts.AT(rl)));
+    }
+  }
+  
+  assert (all (all (boundary_width >= 0)));
+  for (int ml = 0; ml < (int)baseextents.size(); ++ ml) {
+    for (int rl = 0; rl < (int)baseextents.AT(ml).size(); ++ rl) {
+      ibbox const & box = baseextents.AT(ml).AT(rl);
+      assert (all (box.shape() / box.stride() >
+                   boundary_width[0] + boundary_width[1]));
+    }
+  }
 }
 
 // Destructors
-gh::~gh () { }
+gh::
+~gh ()
+{
+}
+
+
 
 // Modifiers
-void gh::regrid (mregs const & regs)
+void
+gh::
+regrid (mregs const & regs)
 {
   DECLARE_CCTK_PARAMETERS;
   
-  // Save the old grid hierarchy
-  _oldregions.clear ();
-  swap (_oldregions, _regions);
-  _regions = regs;
+  // Save the grid hierarchy
+  oldregions.clear ();
+  swap (oldregions, regions);
+  regions = regs;
+  
+  
   
   // Consistency checks
   
-  // nota bene: there might be 0 refinement levels.
+  // Note: there may be zero refinement levels
   
-  check_multigrid_consistency ();
-  check_component_consistency ();
-  check_base_grid_extent ();
-  check_refinement_levels ();
+  // Check multigrid consistency
+  assert (mglevels()>0);
+  for (int ml=1; ml<mglevels(); ++ml) {
+    for (int rl=0; rl<reflevels(); ++rl) {
+      for (int c=0; c<components(rl); ++c) {
+	assert (all(extent(ml,rl,c).stride() ==
+                    mgfact * extent(ml-1,rl,c).stride()));
+	assert (extent(ml,rl,c)
+		.contracted_for(extent(ml-1,rl,c))
+		.is_contained_in(extent(ml-1,rl,c)));
+      }
+    }
+  }
   
-  calculate_base_extents_of_all_levels ();
+  // Check component consistency
+  for (int ml=0; ml<mglevels(); ++ml) {
+    for (int rl=0; rl<reflevels(); ++rl) {
+      assert (components(rl)>0);
+      for (int c=0; c<components(rl); ++c) {
+        ibbox const & b  = extent(ml,rl,c);
+        ibbox const & b0 = extent(ml,rl,0);
+	assert (all(b.stride() == b0.stride()));
+	assert (b.is_aligned_with(b0));
+        for (int cc=c+1; cc<components(rl); ++cc) {
+          assert ((b & extent(ml,rl,cc)).empty());
+        }
+      }
+    }
+  }
+  
+  // Check base grid extent
+  for (int ml=0; ml<mglevels(); ++ml) {
+    for (int rl=0; rl<reflevels(); ++rl) {
+      for (int c=0; c<components(rl); ++c) {
+        assert (extent(ml,rl,c).is_contained_in(baseextents.at(ml).at(rl)));
+      }
+    }
+  }
 
+  // Check proper nesting, i.e., whether the fine grids are contained
+  // in the coarser grids
+  {
+    bool have_error = false;
+    for (int ml=0; ml<mglevels(); ++ml) {
+      for (int rl=1; rl<reflevels(); ++rl) {
+        assert (all (extent(ml,rl,0).stride() * reffacts.AT(rl) ==
+                     extent(ml,rl-1,0).stride() * reffacts.AT(rl-1)));
+        // Check contained-ness:
+        // first take all coarse grids
+        ibset coarse;
+        for (int c=0; c<components(rl-1); ++c) {
+          coarse += extent(ml,rl-1,c);
+        }
+        coarse.normalize();
+        // then check all fine grids
+        for (int c=0; c<components(rl); ++c) {
+          ibbox const & fine =
+            extent(ml,rl,c).contracted_for(extent(ml,rl-1,0));
+          if (not (fine <= coarse)) {
+            if (not have_error) {
+              cout << "The following components are not properly nested, i.e.," << endl
+                   << "they are not contained within the next coarser level's components:" << endl;
+              have_error = true;
+            }
+            cout << "   ml " << ml << " rl " << rl << " c " << c << ":   "
+                 << fine << endl;
+          }
+        } // for c
+      }   // for rl
+    }     // for ml
+    if (have_error) {
+      cout << "The grid hierarchy is:" << endl;
+      for (int ml=0; ml<mglevels(); ++ml) {
+        for (int rl=0; rl<reflevels(); ++rl) {
+          for (int c=0; c<components(rl); ++c) {
+            cout << "   ml " << ml << " rl " << rl << " c " << c << ":   "
+                 << extent(ml,rl,c) << endl;
+          }
+        }
+      }
+      CCTK_WARN (0, "The refinement hierarchy is not properly nested.");
+    }
+  }
+  
+  // Output
   if (output_bboxes) {
     do_output_bboxes (cout);
     do_output_bases (cout);
@@ -73,12 +190,16 @@ void gh::regrid (mregs const & regs)
   }
 }
 
-bool gh::recompose (const int rl,
-                    const bool do_prolongate)
+
+
+bool
+gh::
+recompose (int const rl,
+           bool const do_prolongate)
 {
   // Handle changes in number of mglevels
-  if (_oldregions.size() != _regions.size()) {
-    _oldregions.resize (_regions.size());
+  if (oldregions.size() != regions.size()) {
+    oldregions.resize (regions.size());
   }
   
   bool const do_recompose = level_did_change(rl);
@@ -92,8 +213,8 @@ bool gh::recompose (const int rl,
     
     // Overwrite old with new grid hierarchy
     for (int ml=0; ml<mglevels(); ++ml) {
-      _oldregions.AT(ml).resize (_regions.AT(ml).size());
-      _oldregions.AT(ml).AT(rl) = _regions.AT(ml).AT(rl);
+      oldregions.AT(ml).resize (regions.AT(ml).size());
+      oldregions.AT(ml).AT(rl) = regions.AT(ml).AT(rl);
     }
     
   }
@@ -101,151 +222,42 @@ bool gh::recompose (const int rl,
   return do_recompose;
 }
 
-bool gh::level_did_change (const int rl) const
+
+
+bool
+gh::
+level_did_change (int const rl)
+  const
 {
   // Find out whether this level changed
-  if (_regions.size() != _oldregions.size()) return true;
+  if (regions.size() != oldregions.size()) return true;
   for (int ml=0; ml<mglevels(); ++ml) {
     assert (rl>=0 and rl<reflevels());
-    if (rl >= (int)_oldregions.AT(ml).size()) return true;
-    if (_regions.AT(ml).AT(rl).size() != _oldregions.AT(ml).AT(rl).size()) {
+    if (rl >= (int)oldregions.AT(ml).size()) return true;
+    if (regions.AT(ml).AT(rl).size() != oldregions.AT(ml).AT(rl).size()) {
       return true;
     }
     for (int c=0; c<components(rl); ++c) {
-      if (_regions.AT(ml).AT(rl).AT(c) != _oldregions.AT(ml).AT(rl).AT(c)) {
+      if (regions.AT(ml).AT(rl).AT(c) != oldregions.AT(ml).AT(rl).AT(c)) {
         return true;
       }
     } // for c
   } // for ml
   return false;
 }
-  
-void gh::check_multigrid_consistency ()
-{
-  assert (mglevels()>0);
-  for (int ml=1; ml<mglevels(); ++ml) {
-    for (int rl=0; rl<reflevels(); ++rl) {
-      for (int c=0; c<components(rl); ++c) {
-	assert (all(extent(ml,rl,c).stride()
-		    == ivect(mgfact) * extent(ml-1,rl,c).stride()));
-        // TODO: put the check back in, taking outer boundaries into
-        // account
-#if 0
-	assert (extent(ml,rl,c)
-		.contracted_for(extent(ml-1,rl,c))
-		.is_contained_in(extent(ml-1,rl,c)));
-#endif
-      }
-    }
-  }
-}
-  
-void gh::check_component_consistency ()
-{
-  for (int ml=0; ml<mglevels(); ++ml) {
-    for (int rl=0; rl<reflevels(); ++rl) {
-      assert (components(rl)>0);
-      for (int c=0; c<components(rl); ++c) {
-        const ibbox &b  = extent(ml,rl,c);
-        const ibbox &b0 = extent(ml,rl,0);
-	assert (all(b.stride() == b0.stride()));
-	assert (b.is_aligned_with(b0));
-        for (int cc=c+1; cc<components(rl); ++cc) {
-          assert ((b & extent(ml,rl,cc)).empty());
-        }
-      }
-    }
-  }
-}
 
-void gh::check_base_grid_extent ()
-{
-  if (reflevels()>0) {
-    for (int c=0; c<components(0); ++c) {
-      // TODO: put the check back in, taking outer boundaries into
-      // account
-#if 0
-      assert (extent(0,c,0).is_contained_in(baseextent));
-#endif
-    }
-  }
-}
-  
-// Check proper nesting, i.e., whether the fine grids are contained in
-// the coarser grids
-void gh::check_refinement_levels ()
-{
-  bool have_error = false;
-  for (int ml=0; ml<mglevels(); ++ml) {
-    for (int rl=1; rl<reflevels(); ++rl) {
-      assert (all(extent(ml,rl-1,0).stride()
-                  == ((reffacts.AT(rl) / reffacts.AT(rl-1))
-                      * extent(ml,rl,0).stride())));
-      // Check contained-ness:
-      // first take all coarse grids ...
-      ibset all;
-      for (int c=0; c<components(rl-1); ++c) {
-        all |= extent(ml,rl-1,c);
-      }
-#if 0
-      // ... remember their size ...
-      const int sz = all.size();
-      // ... then add the coarsified fine grids ...
-      for (int c=0; c<components(rl); ++c) {
-        all |= extent(ml,rl,c).contracted_for(extent(ml,rl-1,0));
-      }
-      // ... and then check the sizes:
-      assert (all.size() == sz);
-#endif
-      for (int c=0; c<components(rl); ++c) {
-        ibset const finebox
-          = (extent(ml,rl,c).contracted_for (extent(ml,rl-1,0)));
-        if (! (finebox <= all)) {
-          if (! have_error) {
-            cout << "The following components are not properly nested, i.e., they are not" << endl
-                 << "contained within their next coarser level's components:" << endl;
-          }
-          cout << "   ml " << ml << " rl " << rl << " c " << c << endl;
-          have_error = true;
-        }
-      }      
-    }
-  }
-  if (have_error) {
-    cout << "The grid hierarchy looks like:" << endl;
-    for (int ml=0; ml<mglevels(); ++ml) {
-      for (int rl=0; rl<reflevels(); ++rl) {
-        for (int c=0; c<components(rl); ++c) {
-          cout << "   ml " << ml << " rl " << rl << " c " << c << ":   "
-               << extent(ml,rl,c) << endl;
-        }
-      }
-    }
-    CCTK_WARN (0, "The refinement hierarchy is not properly nested.");
-  }
-}
 
-void gh::calculate_base_extents_of_all_levels ()
-{
-  _bases.resize(mglevels());
-  for (int ml=0; ml<mglevels(); ++ml) {
-    _bases.AT(ml).resize(reflevels());
-    for (int rl=0; rl<reflevels(); ++rl) {
-      _bases.AT(ml).AT(rl) = ibbox();
-      ibbox &bb = _bases.AT(ml).AT(rl);
-      for (int c=0; c<components(rl); ++c) {
-        bb = bb.expanded_containing(extent(ml,rl,c));
-      }
-    }
-  }
-}
 
 // Accessors
-int gh::local_components (const int rl) const
+
+int
+gh::
+local_components (int const rl)
+  const
 {
   int lc = 0;
   for (int c=0; c<components(rl); ++c) {
-    if (is_local(rl,c)) ++lc;
+    lc +=  is_local(rl,c);
   }
   return lc;
 }
@@ -253,75 +265,99 @@ int gh::local_components (const int rl) const
 
 
 // Time hierarchy management
-void gh::add (th* t)
+
+void
+gh::
+add (th * const t)
 {
-  ths.push_back(t);
+  ths.push_back (t);
 }
 
-void gh::remove (th* t)
+void
+gh::
+remove (th * const t)
 {
-  ths.remove(t);
+  ths.remove (t);
 }
 
 
 
 // Data hierarchy management
-void gh::add (dh* d)
+
+void
+gh::
+add (dh * const d)
 {
-  dhs.push_back(d);
+  dhs.push_back (d);
 }
 
-void gh::remove (dh* d)
+void
+gh::
+remove (dh * const d)
 {
-  dhs.remove(d);
+  dhs.remove (d);
 }
 
 
-void gh::do_output_bboxes (ostream& os) const
+
+// Output
+
+void
+gh::
+do_output_bboxes (ostream & os)
+  const
 {
   for (int ml=0; ml<mglevels(); ++ml) {
     for (int rl=0; rl<reflevels(); ++rl) {
       for (int c=0; c<components(rl); ++c) {
-        os << endl;
-        os << "gh bboxes:" << endl;
-        os << "ml=" << ml << " rl=" << rl << " c=" << c << endl;
-        os << "extent=" << extent(ml,rl,c) << endl;
-        os << "outer_boundaries=" << outer_boundaries(rl,c) << endl;
-        os << "refinement_boundaries=" << refinement_boundaries(rl,c) << endl;
-        os << "processor=" << processor(rl,c) << endl;
+        os << eol;
+        os << "gh bboxes:" << eol;
+        os << "ml=" << ml << " rl=" << rl << " c=" << c << eol;
+        os << "extent=" << extent(ml,rl,c) << eol;
+        os << "outer_boundaries=" << outer_boundaries(rl,c) << eol;
+        os << "processor=" << processor(rl,c) << eol;
       }
     }
   }
 }
 
-void gh::do_output_bases (ostream& os) const
+void
+gh::
+do_output_bases (ostream & os)
+  const
 {
   for (int ml=0; ml<mglevels(); ++ml) {
     for (int rl=0; rl<reflevels(); ++rl) {
       if (components(rl)>0) {
-        os << endl;
-        os << "gh bases:" << endl;
-        os << "ml=" << ml << " rl=" << rl << endl;
-        os << "base=" << bases().AT(ml).AT(rl) << endl;
+        os << eol;
+        os << "gh bases:" << eol;
+        os << "ml=" << ml << " rl=" << rl << eol;
+        os << "base=" << baseextents.AT(ml).AT(rl) << eol;
       }
     }
   }
 }
 
-ostream& gh::output (ostream& os) const
+ostream &
+gh::
+output (ostream & os)
+  const
 {
   os << "gh:"
      << "reffacts=" << reffacts << ",refcentering=" << refcent << ","
      << "mgfactor=" << mgfact << ",mgcentering=" << mgcent << ","
-     << "regions=" << regions() << ","
+     << "baseextents=" << baseextents << ","
+     << "boundary_width=" << boundary_width << ","
+     << "regions=" << regions << ","
      << "dhs={";
-  const char * sep = "";
-  for (list<dh*>::const_iterator d = dhs.begin();
-       d != dhs.end(); ++d)
   {
-    os << sep;
-    (*d)->output(os);
-    sep = ",";
+    bool isfirst = true;
+    for (list<dh*>::const_iterator
+           d = dhs.begin(); d != dhs.end(); ++ d, isfirst = false)
+    {
+      if (not isfirst) os << ",";
+      os << *d;
+    }
   }
   os << "}";
   return os;
