@@ -55,6 +55,10 @@ namespace Carpet {
     do_meta_mode = true;
     global_time = cctk_initial_time;
     delta_time = 1.0;
+    for (int ml = 0; ml < mglevel; ++ ml) {
+      assert (leveltimes.at(ml).size() == 1);
+      leveltimes.at(ml).at(0) = global_time;
+    }
     
     cctkGH->cctk_iteration = 0;
     cctkGH->cctk_time = global_time;
@@ -75,7 +79,7 @@ namespace Carpet {
     
     // Write grid structure to file
     for (int m=0; m<maps; ++m) {
-      OutputGridStructure (cctkGH, m, vhh.at(m)->regions());
+      OutputGridStructure (cctkGH, m, vhh.at(m)->regions);
     } // for m
     
     CallSetup (cctkGH);
@@ -162,7 +166,7 @@ namespace Carpet {
           do_global_mode = reflevel==0; // on first iteration, coarsest grid
           do_meta_mode = do_global_mode and mglevel==mglevels-1; // on first iteration, coarsest grid
           
-          cctkGH->cctk_time = global_time;
+          // cctkGH->cctk_time = global_time;
           
           Waypoint ("Recover I at iteration %d time %g%s%s",
                     cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
@@ -248,7 +252,7 @@ namespace Carpet {
           do_global_mode = reflevel==0; // on first iteration, coarsest grid
           do_meta_mode = do_global_mode and mglevel==mglevels-1; // on first iteration, coarsest grid
           
-          cctkGH->cctk_time = global_time;
+          // cctkGH->cctk_time = global_time;
           
           Waypoint ("Initialisation I at iteration %d time %g%s%s",
                     cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
