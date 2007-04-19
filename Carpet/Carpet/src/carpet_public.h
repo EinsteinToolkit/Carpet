@@ -69,7 +69,6 @@ namespace Carpet {
       
       
       
-      
 #if 0
       /* Number of buffer zones */
       int const * nbufferzones;

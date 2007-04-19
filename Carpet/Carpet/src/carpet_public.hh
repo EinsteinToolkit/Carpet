@@ -5,9 +5,10 @@
 #include "carpet_public.h"
 
 // Other declarations
-#include "defines.hh"
 #include "functions.hh"
 #include "modes.hh"
 #include "variables.hh"
+
+#include "defines.hh"
 
 #endif // !defined(CARPET_PUBLIC_HH)
