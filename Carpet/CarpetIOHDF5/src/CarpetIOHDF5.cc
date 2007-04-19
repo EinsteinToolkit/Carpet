@@ -257,40 +257,10 @@ static void* SetupGH (tFleshConfig* const fleshconfig,
   myGH->out_every_default = out_every - 1;
 
   // initial I/O parameter check
+  myGH->out_dir = 0;
   myGH->stop_on_parse_errors = strict_io_parameter_check;
   CheckSteerableParameters (cctkGH, myGH);
   myGH->stop_on_parse_errors = 0;
-
-  // create the output directory (if it doesn't match ".")
-  const char *my_out_dir = *out_dir ? out_dir : io_out_dir;
-  if (strcmp (my_out_dir, ".")) {
-    int i = strlen (my_out_dir);
-    if (CCTK_Equals (out_mode, "onefile") or not strstr (my_out_dir, "%u")) {
-      myGH->out_dir = (char*) malloc (i + 2);
-      strcpy (myGH->out_dir, my_out_dir);
-      myGH->out_dir[i] = '/';
-      myGH->out_dir[i+1] = 0;
-    } else {
-      myGH->out_dir = (char*) malloc (i + 20);
-      sprintf (myGH->out_dir, my_out_dir, dist::rank());
-      strcat (myGH->out_dir, "/");
-    }
-  } else {
-    myGH->out_dir = strdup ("");
-  }
-
-  /* create the output directory */
-  const ioGH* const ioUtilGH = (const ioGH*) CCTK_GHExtension (cctkGH, "IO");
-  int result = IOUtil_CreateDirectory (cctkGH, myGH->out_dir,
-                                       not CCTK_Equals (out_mode, "onefile"),
-                                       dist::rank());
-  if (result < 0) {
-    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "Problem creating HDF5 output directory '%s'", myGH->out_dir);
-  } else if (result > 0 and CCTK_Equals (verbose, "full")) {
-    CCTK_VInfo (CCTK_THORNSTRING,
-                "HDF5 output directory '%s' already exists", myGH->out_dir);
-  }
 
   // check parallel I/O parameters for chunked output
   if (not (CCTK_EQUALS(out_mode, "onefile") or CCTK_EQUALS(out_mode, "proc"))) {
@@ -345,6 +315,47 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
                                       CarpetIOHDF5GH *myGH)
 {
   DECLARE_CCTK_PARAMETERS;
+
+  // re-parse the 'IOHDF5::out_dir' parameter if it has changed
+  const char *my_out_dir = *out_dir ? out_dir : io_out_dir;
+  char *the_out_dir;
+  if (strcmp (my_out_dir, ".")) {
+    int i = strlen (my_out_dir);
+    if (CCTK_Equals (out_mode, "onefile") or not strstr (my_out_dir, "%u")) {
+      the_out_dir = (char*) malloc (i + 2);
+      strcpy (the_out_dir, my_out_dir);
+      the_out_dir[i] = '/';
+      the_out_dir[i+1] = 0;
+    } else {
+      // TODO: ensure that there is exactly one "%u" and no other "%"
+      // substrings, except possibly "%%".
+      the_out_dir = (char*) malloc (i + 20);
+      sprintf (the_out_dir, my_out_dir, dist::rank());
+      strcat (the_out_dir, "/");
+    }
+  } else {
+    the_out_dir = strdup ("");
+  }
+
+  if (not myGH->out_dir or strcmp (the_out_dir, myGH->out_dir)) {
+    free (myGH->out_dir);
+    myGH->out_dir = the_out_dir;
+
+    // create the output directory
+    const ioGH* const ioUtilGH = (const ioGH*) CCTK_GHExtension (cctkGH, "IO");
+    int result = IOUtil_CreateDirectory (cctkGH, myGH->out_dir,
+                                         not CCTK_Equals (out_mode, "onefile"),
+                                         dist::rank());
+    if (result < 0) {
+      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Problem creating HDF5 output directory '%s'", myGH->out_dir);
+    } else if (result > 0 and CCTK_Equals (verbose, "full")) {
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "HDF5 output directory '%s' already exists", myGH->out_dir);
+    }
+  } else {
+    free (the_out_dir);
+  }
 
   // re-parse the 'IOHDF5::out_vars' parameter if it has changed
   if (strcmp (out_vars, myGH->out_vars)) {
