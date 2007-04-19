@@ -77,18 +77,9 @@ namespace Carpet {
         
         // Base region
         ibbox const ext = vhh.at(m)->extent(ml,rl,c);
-        // Refinement boundaries
-        b2vect const rbs = vhh.at(m)->refinement_boundaries (rl, c);
-        // Number of buffer zones
-        i2vect const buffers = vdd.at(m)->buffers;
-        // Computational domain: Add the number of buffer zones to the
-        // base extent.  This takes buffer zones into account and
-        // ignores ghost zones.
-        ibbox const domain =
-          ext.expand (ivect (rbs[0]) * buffers[0], ivect (rbs[1]) * buffers[1]);
         
         // Count the grid points
-        int const domainsize = domain.size();
+        int const domainsize = ext.size();
         
         if (vhh.at(m)->is_local (rl, c)) {
           local_num_grid_points += domainsize;
