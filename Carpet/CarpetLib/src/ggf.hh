@@ -64,7 +64,7 @@ public:
   const ggf* vectorleader;      // first vector element
   
 private:
-  mdata oldstorage;            // temporary storage
+  mdata oldstorage;             // temporary storage
   
 public:
 
@@ -96,87 +96,12 @@ public:
   void recompose_allocate (int rl);
   void recompose_fill (comm_state& state, int rl, bool do_prolongate);
   void recompose_free_old (int rl);
-#if 0
-  void recompose_bnd_prolongate (comm_state& state, int rl, bool do_prolongate);
-  void recompose_sync (comm_state& state, int rl, bool do_prolongate);
-#endif
 
   // Cycle the time levels by rotating the data sets
   void cycle (int rl, int c, int ml);
   
   // Flip the time levels by exchanging the data sets
   void flip (int rl, int c, int ml);
-  
-  
-  
-  // Helpers
-  
-protected:
-  
-  virtual gdata* typed_data (int tl, int rl, int c, int ml) = 0;
-  
-  
-  
-  // Operations
-  
-protected:
-  
-  // Copy a region
-  void copycat (comm_state& state,
-                int tl1, int rl1, int c1, int ml1,
-		const ibbox dh::dboxes::* recv_list,
-		int tl2, int rl2, int ml2);
-
-  // Copy regions
-  void copycat (comm_state& state,
-                int tl1, int rl1, int c1, int ml1,
-		const iblist dh::dboxes::* recv_list,
-		int tl2, int rl2, int ml2);
-
-  // Copy regions
-  void copycat (comm_state& state,
-                int tl1, int rl1, int c1, int ml1,
-		const iblistvect dh::dboxes::* recv_listvect,
-		int tl2, int rl2, int ml2);
-
-  // Copy regions
-  void copycat (comm_state& state,
-                int tl1, int rl1, int c1, int ml1,
-		const pvect dh::dboxes::* recv_pvect,
-                int tl2, int rl2, int ml2,
-                mdata * srcstorage = 0);
-  
-  // Interpolate a region
-  void intercat (comm_state& state,
-                 int tl1, int rl1, int c1, int ml1,
-		 const ibbox dh::dboxes::* recv_list,
-		 const vector<int> tl2s, int rl2, int ml2,
-		 CCTK_REAL time);
-
-  // Interpolate regions
-  void intercat (comm_state& state,
-                 int tl1, int rl1, int c1, int ml1,
-		 const iblist dh::dboxes::* recv_list,
-		 const vector<int> tl2s, int rl2, int ml2,
-		 CCTK_REAL time);
-
-  // Interpolate regions
-  void intercat (comm_state& state,
-                 int tl1, int rl1, int c1, int ml1,
-		 const iblistvect dh::dboxes::* recv_listvect,
-		 const vector<int> tl2s, int rl2, int ml2,
-		 CCTK_REAL time);
-
-  // Interpolate regions
-  void intercat (comm_state& state,
-                 int tl1, int rl1, int c1, int ml1,
-		 const pvect dh::dboxes::* recv_pvect,
-		 const vector<int> tl2s, int rl2, int ml2,
-		 CCTK_REAL time);
-
-
-
-public:
 
   // The grid boundaries have to be updated after calling mg_restrict,
   // mg_prolongate, ref_restrict, or ref_prolongate.
@@ -211,6 +136,49 @@ public:
                        int tl, int rl, int c, int ml, CCTK_REAL time);
   
   
+  
+  // Helpers
+  
+protected:
+  
+  virtual gdata* typed_data (int tl, int rl, int c, int ml) = 0;
+  
+  
+  
+protected:
+  
+  // Transfer regions
+  void
+  transfer_from (comm_state & state,
+                 int tl1, int rl1, int c1, int ml1,
+                 pvect const dh::dboxes::* recvs,
+                 pvect const dh::dboxes::* sends,
+                 vector<int> const & tl2s, int rl2, int ml2,
+                 CCTK_REAL const & time,
+                 mdata * srcstorage = 0);
+  
+  void
+  transfer_from (comm_state & state,
+                 int tl1, int rl1, int c1, int ml1,
+                 pvect const dh::dboxes::* recvs,
+                 pvect const dh::dboxes::* sends,
+                 int tl2, int rl2, int ml2,
+                 mdata * srcstorage = 0)
+  {
+    vector <int> tl2s(1);
+    tl2s.AT(0) = tl2;
+    CCTK_REAL const time = t.time (tl2,rl2,ml2);
+    transfer_from (state,
+                   tl1, rl1, c1, ml1,
+                   recvs, sends,
+                   tl2s, rl2, ml2,
+                   time,
+                   srcstorage);
+  }
+
+
+
+public:
   
   // Access to the data
   virtual const gdata* operator() (int tl, int rl, int c, int ml) const = 0;
