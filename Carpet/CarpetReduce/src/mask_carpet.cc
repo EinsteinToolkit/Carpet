@@ -43,7 +43,7 @@ namespace CarpetMask {
       gh const & hh = *vhh.at(Carpet::map);
       dh const & dd = *vdd.at(Carpet::map);
       
-      ibbox const & base = hh.bases().at(mglevel).at(reflevel);
+      ibbox const & base = hh.baseextents.at(mglevel).at(reflevel);
       
       ivect const reffact
         = spacereffacts.at(reflevel) / spacereffacts.at(reflevel-1);
