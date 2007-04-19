@@ -37,68 +37,14 @@ namespace Carpet {
   
   
   
-  // Reduction operator
-  template<typename iter, typename func>
-  static typename func::result_type
-  reduce (iter const first, iter const last,
-          typename func::result_type const & init)
-  {
-    typename func::result_type res (init);
-    for (iter it = first; it != last; ++it) {
-      res = func (res, * it);
-    }
-    return res;
-  }
-  
-  
-  
   // Helper routines for spliting regions automatically
-  
-  // Number of ghost zones
-  static ivect
-  get_ghostzones ()
-  {
-    DECLARE_CCTK_PARAMETERS;
-    
-    // Decide which parameters to use
-    ivect ghostzones;
-    if (ghost_size == -1) {
-      ghostzones = ivect (ghost_size_x, ghost_size_y, ghost_size_z);
-    } else {
-      ghostzones = ivect (ghost_size, ghost_size, ghost_size);
-    }
-    return ghostzones;
-  }
-  
-  // Outer buffer width
-  static ivect
-  outer_buffer_width (ivect const & ghosts)
-  {
-    DECLARE_CCTK_PARAMETERS;
-    
-    return ghosts * (use_outer_buffer_zones
-                     ? int (num_integrator_substeps) + int (buffer_width)
-                     : 1);
-  }
-  
-  // Additional weight of boundary points
-  static rvect
-  boundary_weight ()
-  {
-    ivect const ghosts = get_ghostzones();
-    return rvect (outer_buffer_width (ghosts) - ghosts);
-  }
   
   // The cost for a region, assuming a cost of 1 per interior point
   static rvect
   cost (region_t const & reg)
   {
     if (reg.extent.empty()) return rvect(0);
-    
-    return
-      (rvect (reg.refinement_boundaries[0]) +
-       rvect (reg.refinement_boundaries[1])) * boundary_weight() +
-      rvect (reg.extent.shape() / reg.extent.stride());
+    return rvect (reg.extent.shape() / reg.extent.stride());
   }
   
   
@@ -181,7 +127,7 @@ namespace Carpet {
       
       BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
         
-        gh::mregs regsss = vhh.at(map)->regions();
+        gh::mregs regsss = vhh.at(map)->regions;
         
         // Check whether to recompose
         CCTK_INT const do_recompose =
@@ -199,7 +145,7 @@ namespace Carpet {
       
       vector<gh::mregs> regssss (maps);
       BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
-        regssss.at(map) = vhh.at(map)->regions();
+        regssss.at(map) = vhh.at(map)->regions;
       } END_MAP_LOOP;
       
       // Check whether to recompose
@@ -221,7 +167,7 @@ namespace Carpet {
     
     if (did_change) {
       
-      PostRegrid ();
+      PostRegrid (cctkGH);
       
     } // if did change
     
@@ -260,8 +206,10 @@ namespace Carpet {
   
   
   void
-  PostRegrid ()
+  PostRegrid (cGH const * const cctkGH)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     // Calculate new number of levels
     int const oldreflevels = reflevels;
     reflevels = vhh.at(0)->reflevels();
@@ -410,18 +358,13 @@ namespace Carpet {
       CCTK_REAL coarsevolume = 0;
       for (int rl=0; rl<hh.reflevels(); ++rl) {
         
-        const CCTK_REAL basevolume
-          = prod (rvect (hh.baseextent.shape())
-                  / rvect (hh.baseextent.stride()));
+        const CCTK_REAL basevolume = hh.baseextents.AT(0).AT(0).size();
         CCTK_REAL countvolume = 0;
         CCTK_REAL totalvolume = 0;
         CCTK_REAL totalvolume2 = 0;
         
         for (int c=0; c<hh.components(rl); ++c) {
-          const ibbox ext = hh.extent(ml,rl,c);
-          const ivect shape = ext.shape();
-          const ivect stride = ext.stride();
-          const CCTK_REAL volume = prod (rvect (shape) / rvect (stride));
+          const CCTK_REAL volume = hh.extent(ml,rl,c).size();
           ++ countvolume;
           totalvolume += volume;
           totalvolume2 += ipow(volume, 2);
@@ -433,10 +376,7 @@ namespace Carpet {
                        totalvolume2 / countvolume - ipow (avgvolume, 2)));
         
         for (int c=0; c<hh.components(rl); ++c) {
-          const ibbox ext = hh.extent(ml,rl,c);
-          const ivect shape = ext.shape();
-          const ivect stride = ext.stride();
-          const CCTK_REAL volume = prod(rvect (shape) / rvect (stride));
+          const CCTK_REAL volume = hh.extent(ml,rl,c).size();
           cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
                << "   volume: " << setprecision(0) << volume
                << "   of parent: " << setprecision(1) << 100 * volume / totalvolume << "%"
@@ -556,8 +496,7 @@ namespace Carpet {
           file << m << " " << ml << " " << rl << " " << c << "   "
                << regsss.at(ml).at(rl).at(c).processor << " "
                << regsss.at(ml).at(rl).at(c).extent
-               << regsss.at(ml).at(rl).at(c).outer_boundaries
-               << regsss.at(ml).at(rl).at(c).refinement_boundaries << endl;
+               << regsss.at(ml).at(rl).at(c).outer_boundaries << endl;
         }
       }
     }
@@ -627,7 +566,6 @@ namespace Carpet {
     const ivect  rlb0   = reg0.extent.lower();
     const ivect  rub0   = reg0.extent.upper() + rstr0;
     const b2vect obnd0 = reg0.outer_boundaries;
-    const b2vect rbnd0 = reg0.refinement_boundaries;
     
     regs.resize (nprocs);
     for (int c=0; c<nprocs; ++c) {
@@ -646,15 +584,11 @@ namespace Carpet {
       region_t & reg = regs.at(c);
       ibbox    & ext  = reg.extent;
       b2vect   & obnd = reg.outer_boundaries;
-      b2vect   & rbnd = reg.refinement_boundaries;
       int      & proc = reg.processor;
       ext = ibbox(clb, cub-cstr, cstr);
       obnd = obnd0;
       obnd[0][dir] &= clb[dir] == rlb0[dir];
       obnd[1][dir] &= cub[dir] == rub0[dir];
-      rbnd = rbnd0;
-      rbnd[0][dir] &= clb[dir] == rlb0[dir];
-      rbnd[1][dir] &= cub[dir] == rub0[dir];
       proc = c;
     }
     
@@ -697,7 +631,6 @@ namespace Carpet {
     const ivect rlb0   = reg0.extent.lower();
     const ivect rub0   = reg0.extent.upper() + rstr0;
     const b2vect obnd0 = reg0.outer_boundaries;
-    const b2vect rbnd0 = reg0.refinement_boundaries;
     
     const ivect nprocs_dir
       (processor_topology_3d_x,
@@ -747,15 +680,11 @@ namespace Carpet {
           region_t & reg  = regs.at(c);
           ibbox    & ext  = reg.extent;
           b2vect   & obnd = reg.outer_boundaries;
-          b2vect   & rbnd = reg.refinement_boundaries;
           int      & proc = reg.processor;
           ext = ibbox(clb, cub-cstr, cstr);
 	  obnd = obnd0;
           obnd[0] &= clb == rlb0;
           obnd[1] &= cub == rub0;
-	  rbnd = rbnd0;
-          rbnd[0] &= clb == rlb0;
-          rbnd[1] &= cub == rub0;
           proc = c;
 	}
       }
@@ -831,7 +760,6 @@ namespace Carpet {
       // Create a new region
       region_t newreg (reg);
       newreg.outer_boundaries      = b2vect(false);
-      newreg.refinement_boundaries = b2vect(false);
       if (DEBUG) cout << "SRMAR newreg " << newreg << endl;
       
       // Store
@@ -906,27 +834,13 @@ namespace Carpet {
     vector<int> mynpoints(nslices);
     int const npoints = (reg.extent.shape() / reg.extent.stride())[mydim];
     
-    b2vect const & rb = reg.refinement_boundaries;
-    int const skip = int (floor (boundary_weight()[mydim] + CCTK_REAL(0.5)));
-    int const leftskip  = int (rb[0][mydim]) * skip;
-    int const rightskip = int (rb[1][mydim]) * skip;
-    
     // Keep track of how many points and processors we have left to
     // distribute
-    int npoints_left = npoints + leftskip + rightskip;
+    int npoints_left = npoints;
     int nprocs_left  = nprocs;
-    // Handle the endpoints first, since they may require a fixup
-    for (int n0=-1; n0<nslices-1; ++n0) {
-      int const n = n0 < 0 ? n0 + nslices : n0;
+    for (int n=0; n<nslices; ++n) {
       mynpoints.at(n) = int (floor (CCTK_REAL(1) * npoints_left * mynprocs.at(n)
                                     / nprocs_left + CCTK_REAL(0.5)));
-      // Fixup if necessary
-      if (n == 0) {
-        mynpoints.at(n) = max (mynpoints.at(n), leftskip + 1);
-      }
-      if (n == nslices-1) {
-        mynpoints.at(n) = max (mynpoints.at(n), rightskip + 1);
-      }
       assert (mynpoints.at(n) > 0);
       assert (mynprocs .at(n) > 0);
       npoints_left -= mynpoints.at(n);
@@ -936,10 +850,6 @@ namespace Carpet {
     }
     assert (npoints_left == 0);
     assert (nprocs_left  == 0);
-    mynpoints.at(0        ) -= leftskip;
-    mynpoints.at(nslices-1) -= rightskip;
-    assert (mynpoints.at(0        ) > 0);
-    assert (mynpoints.at(nslices-1) > 0);
     if (DEBUG) cout << "SRMAR " << mydim << " mynpoints " << mynpoints << endl;
     
     // Create the regions and recurse
@@ -954,24 +864,16 @@ namespace Carpet {
       // Create a new region
       up[mydim] = lo[mydim] + (mynpoints.at(n) - 1) * str[mydim];
       b2vect newob (reg.outer_boundaries);
-      b2vect newrb (reg.refinement_boundaries);
       if (n > 0) {
-//         newob[0][mydim] &= lo[mydim] == reg.extent.lower()[mydim];
-//         newrb[0][mydim] &= lo[mydim] == reg.extent.lower()[mydim];
         newob[0][mydim] = false;
-        newrb[0][mydim] = false;
       }
       if (n < nslices-1) {
         up[mydim] = lo[mydim] + (mynpoints.at(n) - 1) * str[mydim];
-//         newob[1][mydim] &= up[mydim] == reg.extent.upper()[mydim];
-//         newrb[1][mydim] &= up[mydim] == reg.extent.upper()[mydim];
         newob[1][mydim] = false;
-        newrb[1][mydim] = false;
       }
       region_t newreg (reg);
       newreg.extent = ibbox(lo, up, str);
       newreg.outer_boundaries      = newob;
-      newreg.refinement_boundaries = newrb;
       newreg.processor = p;
       if (DEBUG) cout << "SRMAR " << mydim << " newreg " << newreg << endl;
       
@@ -1121,6 +1023,10 @@ namespace Carpet {
   
   
   
+  //////////////////////////////////////////////////////////////////////////////
+  
+  
+  
   static void
   MakeMultigridBoxes (cGH const * const cctkGH,
                       ibbox    const & base,
@@ -1164,8 +1070,8 @@ namespace Carpet {
         ivect const fstr = regs.at(ml-1).extent.stride();
         // this grid
         ivect const str = fstr * mgfact;
-        ivect const lo = flo + reg.outer_boundaries[0].ifthen (  (xpose(offset)[0] - ivect(mgfact) * xpose(offset)[0]) * fstr, ivect(0));
-        ivect const hi = fhi + reg.outer_boundaries[1].ifthen (- (xpose(offset)[1] - ivect(mgfact) * xpose(offset)[1]) * fstr, ivect(0));
+        ivect const lo = flo + either (reg.outer_boundaries[0],   (xpose(offset)[0] - ivect(mgfact) * xpose(offset)[0]) * fstr, ivect(0));
+        ivect const hi = fhi + either (reg.outer_boundaries[1], - (xpose(offset)[1] - ivect(mgfact) * xpose(offset)[1]) * fstr, ivect(0));
         ivect const lo1 = baselo1 + (lo - baselo1 + str - 1) / str * str;
         ivect const hi1 = lo1 + (hi - lo1) / str * str;
         regs.at(ml).extent = ibbox(lo1, hi1, str);

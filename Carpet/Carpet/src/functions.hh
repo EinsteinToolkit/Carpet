@@ -86,7 +86,7 @@ namespace Carpet {
              int m,
              gh::mregs const & regsss);
   void
-  PostRegrid ();
+  PostRegrid (cGH const * cctkGH);
   bool
   Recompose (cGH const * cctkGH,
              int rl,
@@ -123,16 +123,22 @@ namespace Carpet {
   SplitRegions_Automatic (cGH const * cctkGH,
                           vector<region_t> & regs);
   void
-  SplitRegionsMaps (cGH const * cctkGH,
-                    vector<vector<region_t> > & regss);
+  SplitRegions (cGH const * cctkGH,
+                vector<region_t> & regss);
+  
   void
   SplitRegionsMaps_Automatic (cGH const * cctkGH,
                               vector<vector<region_t> > & regss);
   
   void
+  SplitRegionsMaps (cGH const * cctkGH,
+                    vector<vector<region_t> > & regss);
+  
+  void
   MakeMultigridBoxes (cGH const * cctkGH,
                       gh::rregs const & regss,
                       gh::mregs       & regsss);
+  
   void
   MakeMultigridBoxesMaps (cGH const * cctkGH,
                           vector<gh::rregs> const & regsss,
