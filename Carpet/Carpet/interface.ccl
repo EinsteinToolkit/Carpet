@@ -46,6 +46,15 @@ PROVIDES FUNCTION QueryProlongating WITH CarpetQueryProlongating LANGUAGE C
 
 
 
+# The symmetry boundaries
+CCTK_INT FUNCTION GetSymmetryBoundaries \
+  (CCTK_POINTER_TO_CONST IN cctkGH, \
+   CCTK_INT IN size, \
+   CCTK_INT OUT ARRAY symbnd)
+USES FUNCTION GetSymmetryBoundaries
+
+
+
 # The location of the boundary points
 CCTK_INT FUNCTION GetBoundarySpecification \
   (CCTK_INT IN size, \

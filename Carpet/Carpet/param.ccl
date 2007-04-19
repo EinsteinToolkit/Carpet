@@ -177,20 +177,17 @@ CCTK_INT prolongation_order_time "Order of prolongation operator in time" STEERA
 
 
 
-CCTK_INT buffer_width "Width of the buffer zone inside the fine grid (DEPRECATED)" STEERABLE=recover
+BOOLEAN use_buffer_zones "Use buffer zones"
 {
-  0:* :: "Should be the radius of the numerical domain of dependence of the time integrator, minus the number of ghost zones"
-} 0
+} "no"
 
-
-
-BOOLEAN use_outer_buffer_zones "Add buffer zones at the outer edge of the refined regions; the buffer width is nghostzones * (num_integrator_substeps-1) + buffer_width"
+BOOLEAN use_tapered_grids "Use tapered grids, avoiding time interpolation during evolution"
 {
-} no
+} "no"
 
 CCTK_INT num_integrator_substeps "Number of substeps of the time integrator"
 {
-  0:* :: ""
+  1:* :: ""
 } 1
 
 
@@ -435,12 +432,6 @@ BOOLEAN init_3_timelevels "Set up 3 timelevels of initial data" STEERABLE=always
 
 
 BOOLEAN adaptive_stepsize "Allow adaptive timestep sizes"
-{
-} "no"
-
-
-
-BOOLEAN use_tapered_grids "Use tapered grids, avoiding time interpolation during evolution"
 {
 } "no"
 
