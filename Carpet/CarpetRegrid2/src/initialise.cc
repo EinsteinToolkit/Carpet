@@ -28,9 +28,9 @@ namespace CarpetRegrid2 {
     * last_map = -1;
     
     // Initialise refinement information
-    num_levels[0] = 0;
-    num_levels[1] = 0;
-    num_levels[2] = 0;
+    for (int n = 0; n < 10; ++ n) {
+      num_levels[n] = 0;
+    }
     
     int lsh[2];
     getvectorindex2 (cctkGH, "CarpetRegrid2::radii", lsh);
@@ -135,7 +135,7 @@ namespace CarpetRegrid2 {
       }
     }
     
-    for (int n = 0; n < num_centres; ++ n) {
+    for (int n = 0; n < 10; ++ n) {
       old_position_x[n] = position_x[n];
       old_position_y[n] = position_y[n];
       old_position_z[n] = position_z[n];
