@@ -109,7 +109,7 @@ namespace CarpetRegrid {
     
     list<region_t> regl;
     for (int c=0; c<hh.components(rl); ++c) {
-      const region_t region = hh.regions().at(ml).at(rl).at(c);
+      const region_t region = hh.regions.at(ml).at(rl).at(c);
       assert (! region.extent.empty());
       
       const data<CCTK_REAL>& errordata = *errorgf(tl,rl,c,ml);
@@ -138,17 +138,15 @@ namespace CarpetRegrid {
       const ivect lb = either (obp[0],
                                regs.at(c).extent.lower(),
                                max (regs.at(c).extent.lower(),
-                                    hh.baseextent.lower()));
+                                    hh.baseextents.at(0).at(0).lower()));
       const ivect ub = either (obp[1],
                                regs.at(c).extent.upper(),
                                min (regs.at(c).extent.upper(),
-                                    hh.baseextent.upper()));
+                                    hh.baseextents.at(0).at(rl).upper()));
       regs.at(c).extent = ibbox(lb, ub, regs.at(c).extent.stride());
       regs.at(c).outer_boundaries =
-        b2vect (regs.at(c).extent.lower() == hh.baseextent.lower(),
-                regs.at(c).extent.upper() == hh.baseextent.upper());
-      regs.at(c).refinement_boundaries[0] = ! regs.at(c).outer_boundaries[0];
-      regs.at(c).refinement_boundaries[1] = ! regs.at(c).outer_boundaries[1];
+        b2vect (regs.at(c).extent.lower() == hh.baseextents.at(0).at(0).lower(),
+                regs.at(c).extent.upper() == hh.baseextents.at(0).at(0).upper());
       regs.at(c).map = Carpet::map;
     }
     
@@ -379,8 +377,6 @@ namespace CarpetRegrid {
               combined.extent = ibbox (ireg1->extent.lower(), ireg2->extent.upper(), str);
               combined.outer_boundaries[0] = ireg1->outer_boundaries[0];
               combined.outer_boundaries[1] = ireg2->outer_boundaries[0];
-              combined.refinement_boundaries[0] = ireg1->refinement_boundaries[0];
-              combined.refinement_boundaries[1] = ireg2->refinement_boundaries[0];
 	      regl.push_back (combined);
 	      ireg1 = regl1.erase(ireg1);
 	      ireg2 = regl2.erase(ireg2);

@@ -50,11 +50,9 @@ namespace CarpetRegrid {
     for (size_t rl=1; rl<regss.size(); ++rl) {
       
       b2vect const ob (false);
-      b2vect const rb (true);
       region_t reg;
       reg.map = Carpet::map;
       reg.outer_boundaries = ob;
-      reg.refinement_boundaries = rb;
       
       vector<region_t> regs;
       ManualCoordinates_OneLevel
@@ -108,12 +106,13 @@ namespace CarpetRegrid {
 	global_upper[d] = 1;
       }
     }
-    const ivect global_extent (hh.baseextent.upper() - hh.baseextent.lower());
+    const ivect global_extent (hh.baseextents.at(0).at(0).upper() -
+                               hh.baseextents.at(0).at(0).lower());
     
     const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
     const ivect levfac = hh.reffacts.at(rl);
-    assert (all (hh.baseextent.stride() % levfac == 0));
-    const ivect istride = hh.baseextent.stride() / levfac;
+    assert (all (hh.baseextents.at(0).at(0).stride() % levfac == 0));
+    const ivect istride = hh.baseextents.at(0).at(0).stride() / levfac;
     
     const ivect ipos
       = ivect(floor(rpos * scale / rvect(istride) + (CCTK_REAL) 0.5)) * istride;
@@ -143,12 +142,13 @@ namespace CarpetRegrid {
     assert (Carpet::map >= 0);
     global_lower = domainspecs.at(Carpet::map).exterior_min;
     global_upper = domainspecs.at(Carpet::map).exterior_max;
-    const ivect global_extent (hh.baseextent.upper() - hh.baseextent.lower());
+    const ivect global_extent (hh.baseextents.at(0).at(0).upper() -
+                               hh.baseextents.at(0).at(0).lower());
     
     const rvect scale  = rvect(global_extent) / (global_upper - global_lower);
     const ivect levfac = hh.reffacts.at(rl);
-    assert (all (hh.baseextent.stride() % levfac == 0));
-    const ivect istride = hh.baseextent.stride() / levfac;
+    assert (all (hh.baseextents.at(0).at(0).stride() % levfac == 0));
+    const ivect istride = hh.baseextents.at(0).at(0).stride() / levfac;
     
     const ivect ipos
       = (ivect(floor((rpos - global_lower) * scale / rvect(istride)

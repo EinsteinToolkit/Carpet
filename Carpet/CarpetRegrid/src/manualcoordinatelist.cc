@@ -161,20 +161,6 @@ namespace CarpetRegrid {
 
     } // if ! smart_outer_boundaries
     
-    vector<vector<b2vect> > newrbss (newobss.size());
-    for (int rl=0; rl<(int)newobss.size(); ++rl) {
-      newrbss.at(rl).resize(newbbss.at(rl).size());
-      for (int c=0; c<(int)newobss.at(rl).size(); ++c) {
-        b2vect const & ob = newobss.at(rl).at(c);
-        b2vect       & rb = newrbss.at(rl).at(c);
-        for (int d=0; d<dim; ++d) {
-          for (int f=0; f<2; ++f) {
-            rb[f][d] = ! ob[f][d];
-          }
-        }
-      }
-    }
-    
     for (int rl=1; rl<refinement_levels; ++rl) {
       
       vector<region_t> regs;
@@ -183,7 +169,6 @@ namespace CarpetRegrid {
       for (int c=0; c<(int)newbbss.at(rl-1).size(); ++c) {
         rbbox const & ext = newbbss.at(rl-1).at(c);
         b2vect const & ob = newobss.at(rl-1).at(c);
-        b2vect const & rb = newrbss.at(rl-1).at(c);
         // TODO:
         // assert (domain_from_coordbase);
         ivect const spacereffact = spacereffacts.at(rl);
@@ -212,7 +197,6 @@ namespace CarpetRegrid {
         region_t reg;
         reg.map = Carpet::map;
         reg.outer_boundaries = ob;
-        reg.refinement_boundaries = rb;
         
         ManualCoordinates_OneLevel
           (cctkGH, hh, rl, refinement_levels,
@@ -233,8 +217,6 @@ namespace CarpetRegrid {
               regs.at(c).extent = combined;
               assert (all (all (regs.at(c).outer_boundaries ==
                                 regs.at(cc).outer_boundaries)));
-              assert (all (all (regs.at(c).refinement_boundaries ==
-                                regs.at(cc).refinement_boundaries)));
               regs.erase (regs.begin() + cc);
               goto again;
             }

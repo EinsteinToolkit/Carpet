@@ -36,9 +36,9 @@ namespace CarpetRegrid {
     bvect const symmetric (symmetry_x, symmetry_y, symmetry_z);
     ivect const zero(0), one(1), two(2);
     
-    ivect rstr = hh.baseextent.stride();
-    ivect rlb  = hh.baseextent.lower();
-    ivect rub  = hh.baseextent.upper();
+    ivect rstr = hh.baseextents.at(0).at(0).stride();
+    ivect rlb  = hh.baseextents.at(0).at(0).lower();
+    ivect rub  = hh.baseextents.at(0).at(0).upper();
     
     assert (! smart_outer_boundaries);
     
@@ -55,8 +55,8 @@ namespace CarpetRegrid {
       // calculate new extent
       ivect const quarter = (rub - rlb) / 4 / rstr * rstr;
       ivect const half    = (rub - rlb) / 2 / rstr * rstr;
-      rlb = oldrlb + symmetric.ifthen(zero, quarter);
-      rub = oldrub - symmetric.ifthen(half, quarter);
+      rlb = oldrlb + either (symmetric, zero, quarter);
+      rub = oldrub - either (symmetric, half, quarter);
       assert (all(rlb >= oldrlb and rub <= oldrub));
       
       vector<region_t> regs (1);
@@ -66,9 +66,6 @@ namespace CarpetRegrid {
       
       b2vect const ob (false);
       regs.at(0).outer_boundaries = ob;
-      
-      b2vect const rb (true);
-      regs.at(0).refinement_boundaries = rb;
       
       regs.at(0).map = Carpet::map;
       

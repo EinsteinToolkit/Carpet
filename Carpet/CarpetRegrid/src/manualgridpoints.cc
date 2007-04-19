@@ -52,11 +52,9 @@ namespace CarpetRegrid {
     for (size_t rl=1; rl<regss.size(); ++rl) {
       
       b2vect const ob (false);
-      b2vect const rb (true);
       region_t reg;
       reg.map = Carpet::map;
       reg.outer_boundaries = ob;
-      reg.refinement_boundaries = rb;
       
       vector<region_t> regs;
       ManualGridpoints_OneLevel
@@ -87,9 +85,9 @@ namespace CarpetRegrid {
                                   const region_t & reg,
                                   vector<region_t> & regs)
   {
-    const ivect rstr = hh.baseextent.stride();
-    const ivect rlb  = hh.baseextent.lower();
-    const ivect rub  = hh.baseextent.upper();
+    const ivect rstr = hh.baseextents.at(0).at(0).stride();
+    const ivect rlb  = hh.baseextents.at(0).at(0).lower();
+    const ivect rub  = hh.baseextents.at(0).at(0).upper();
     
     const ivect levfac = hh.reffacts.at(rl);
     assert (all (rstr % levfac == 0));

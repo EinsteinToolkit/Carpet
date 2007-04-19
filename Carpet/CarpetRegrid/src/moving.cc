@@ -49,13 +49,12 @@ namespace CarpetRegrid {
       rvect const radius
         (rvect(moving_region_radius) / rvect(spacereffacts.at(rl-1)));
       
-      rvect const rlb (symmetric.ifthen (rvect(0), pos - radius));
-      rvect const rub (symmetric.ifthen (radius  , pos + radius));
+      rvect const rlb (either (symmetric, rvect(0), pos - radius));
+      rvect const rub (either (symmetric, radius  , pos + radius));
       
       region_t reg;
       reg.map = Carpet::map;
       reg.outer_boundaries = b2vect (false);
-      reg.refinement_boundaries = b2vect (true);
       
       vector<region_t> regs;
       ManualCoordinates_OneLevel

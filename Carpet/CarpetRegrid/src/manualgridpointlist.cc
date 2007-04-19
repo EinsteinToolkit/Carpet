@@ -92,13 +92,13 @@ namespace CarpetRegrid {
       }
     }
     
-    if (newbbss.size() < refinement_levels-1) {
+    if ((int)newbbss.size() < refinement_levels-1) {
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "The parameter \"gridpoints\" must contain at least \"refinement_levels-1\" (here: %d) levels", (int)refinement_levels-1);
     }
     
     vector<vector<region_t> > newregs (newbbss.size());
-    for (size_t rl=1; rl<refinement_levels; ++rl) {
+    for (int rl=1; rl<refinement_levels; ++rl) {
       
       vector<region_t> regs;
       
@@ -107,12 +107,10 @@ namespace CarpetRegrid {
       for (size_t c=0; c<newbbss.at(rl-1).size(); ++c) {
         ibbox const ext = newbbss.at(rl-1).at(c);
         b2vect const ob = xpose (newobss.at(rl-1).at(c));
-        b2vect const rb = xpose (newobss.at(rl-1).at(c));
         region_t reg;
         reg.extent = ext;
         reg.map = Carpet::map;
         reg.outer_boundaries = ob;
-        reg.refinement_boundaries = rb;
         ManualGridpoints_OneLevel
           (cctkGH, hh, rl, refinement_levels,
            ext.lower(), ext.upper(), reg, regs);
