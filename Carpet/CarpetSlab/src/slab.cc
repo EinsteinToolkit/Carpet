@@ -204,7 +204,7 @@ namespace CarpetSlab {
     
     // Create collector data object
     void* myhdata = rank==collect_proc ? hdata : 0;
-    gdata* const alldata = mydata->make_typed(-1);
+    gdata* const alldata = mydata->make_typed (-1, error_centered, op_sync);
     alldata->allocate (hextent, collect_proc, myhdata);
     
     // Done with the temporary stuff
@@ -219,10 +219,8 @@ namespace CarpetSlab {
         mydata = (*myff)(tl, rl, component, mglevel);
         
         // Calculate overlapping extents
-        const bboxset<int,dim> myextents
-          = ((mydd->boxes.at(mglevel).at(rl).at(component).sync_not
-              | mydd->boxes.at(mglevel).at(rl).at(component).interior)
-             & hextent);
+        const bboxset<int,dim> myextents =
+          mydd->boxes.at(mglevel).at(rl).at(component).interior & hextent;
         
         // Loop over overlapping extents
         for (bboxset<int,dim>::const_iterator ext_iter = myextents.begin();
@@ -246,7 +244,7 @@ namespace CarpetSlab {
       for (int proc=0; proc<CCTK_nProcs(cgh); ++proc) {
         if (proc != collect_proc) {
           void* myhdata = rank==proc ? hdata : 0;
-          tmpdata.at(proc) = mydata->make_typed(-1);
+          tmpdata.at(proc) = mydata->make_typed (-1, error_centered, op_sync);
           tmpdata.at(proc)->allocate (alldata->extent(), proc, myhdata);
           tmpdata.at(proc)->copy_from (state.at(proc), alldata, alldata->extent());
         }
