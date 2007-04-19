@@ -208,8 +208,20 @@ namespace CarpetIOScalar {
     if (CCTK_EQUALS(myoutdir, "")) {
       myoutdir = out_dir;
     }
-    if (CCTK_MyProc(cctkGH)==0) {
-      CCTK_CreateDirectory (0755, myoutdir);
+    int const iret = IOUtil_CreateDirectory (cctkGH, myoutdir, 0, 0);
+    if (iret < 0) {
+      CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Could not create output directory \"%s\"", myoutdir);
+    } else if (CCTK_Equals (verbose, "full")) {
+      static bool firsttime = true;
+      if (firsttime and iret > 0) {
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "Output directory \"%s\" exists already", myoutdir);
+      } else if (not firsttime and iret == 0) {
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "Created output directory \"%s\"", myoutdir);
+      }
+      firsttime = false;
     }
 
     // Find the set of desired reductions
