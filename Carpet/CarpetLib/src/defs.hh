@@ -66,6 +66,7 @@ typedef vect<int,dim>    ivect;
 typedef bbox<int,dim>    ibbox;
 typedef bboxset<int,dim> ibset;
 
+// (Try to replace these by b2vect and i2vect)
 typedef vect<vect<bool,2>,dim> bbvect;
 typedef vect<vect<int,2>,dim>  iivect;
 
