@@ -36,7 +36,7 @@ namespace CarpetLib {
   enum timer_type {
     timer_unset, timer_MPI_Wtime, timer_rdtsc, timer_rtc, timer_none
   };
-  static timer_type timer = timer_unset;
+  static timer_type thetimer = timer_unset;
   
   
   
@@ -125,21 +125,21 @@ namespace CarpetLib {
   call_timer ()
   {
     DECLARE_CCTK_PARAMETERS;
-    if (timer == timer_unset) {
+    if (thetimer == timer_unset) {
       if (CCTK_EQUALS (timestat_timer, "MPI_Wtime")) {
-        timer = timer_MPI_Wtime;
+        thetimer = timer_MPI_Wtime;
       } else if (CCTK_EQUALS (timestat_timer, "rdtsc")) {
-        timer = timer_rdtsc;
+        thetimer = timer_rdtsc;
         init_rdtsc ();
       } else if (CCTK_EQUALS (timestat_timer, "rtc")) {
-        timer = timer_rtc;
+        thetimer = timer_rtc;
       } else if (CCTK_EQUALS (timestat_timer, "none")) {
-        timer = timer_none;
+        thetimer = timer_none;
       } else {
         assert (0);
       }
     }
-    switch (timer) {
+    switch (thetimer) {
     case timer_MPI_Wtime:
       return MPI_Wtime ();
     case timer_rdtsc:
@@ -277,7 +277,7 @@ namespace CarpetLib {
   Timer::start ()
   {
     DECLARE_CCTK_PARAMETERS;
-    if (timer == timer_none) return;
+    if (thetimer == timer_none) return;
     assert (not running);
     running = true;
     starttime = call_timer ();
@@ -290,7 +290,7 @@ namespace CarpetLib {
   Timer::stop (double const b)
   {
     DECLARE_CCTK_PARAMETERS;
-    if (timer == timer_none) return;
+    if (thetimer == timer_none) return;
     assert (running);
     running = false;
     double const endtime = call_timer ();
