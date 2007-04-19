@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
 
 #include <mpi.h>
 
