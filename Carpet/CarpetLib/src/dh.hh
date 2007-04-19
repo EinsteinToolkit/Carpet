@@ -32,9 +32,6 @@ struct pseudoregion {
 class ggf;
 class dh;
 
-// Output
-ostream& operator<< (ostream& os, const dh& d);
-
 
 
 // A data hierarchy (grid hierarchy plus ghost zones)
@@ -44,122 +41,114 @@ class dh {
 public:
   typedef list<ibbox>    iblist;
   typedef vector<iblist> iblistvect; // vector of lists
-
-  typedef vector <pseudoregion> pvect;
-
-
-
-  // in here, the term "boundary" means both ghost zones and
-  // refinement boundaries, but does not refer to outer (physical)
-  // boundaries.
   
-  // ghost zones and outer boundaries are not used as sources for
-  // synchronisation.  refinement boundaries are used.  this design
-  // choice might not be good.
+  typedef vector <pseudoregion> pvect;
+  
+  
   
   struct dboxes {
+    
+    // Region description:
+    
     ibbox exterior;             // whole region (including boundaries)
-    bbvect is_interproc;        // the whole boundary is an
-                                // interprocessor boundary
     
-    ibbox interior;             // interior (without boundaries)
-    ibset owned;                // can be used for synchronisation
+    b2vect is_outer_boundary;
+    ibset outer_boundaries;     // outer boundary
+    ibbox communicated;         // exterior without outer boundary
     
-    iblist send_mg_fine;
-    iblist send_mg_coarse;
-    iblist recv_mg_fine;
-    iblist recv_mg_coarse;
-    iblistvect send_ref_fine;
-    iblistvect send_ref_coarse;
-    iblistvect recv_ref_fine;
-    pvect recv_ref_fine_fast;
-    iblistvect recv_ref_coarse;
-    pvect recv_ref_coarse_fast;
-    iblistvect send_sync;       // send while syncing
-    iblistvect send_ref_bnd_fine; // sent to finer grids
+    ibset boundaries;           // ghost zones
+    ibbox owned;                // evolved in time
     
-    ibset boundaries;           // boundaries
-    ibset bnd_sync;             // boundaries which are synchronised
-    ibset bnd_ref;              // boundaries which are prolongated
+    ibset buffers;              // buffer zones
+    ibset active;               // owned minus buffers
     
-    iblistvect recv_sync;       // received while syncing
-    pvect recv_sync_fast;
-    iblistvect recv_ref_bnd_coarse; // received from coarser grids
-    pvect recv_ref_bnd_coarse_fast;
-    ibset sync_not;             // not received while syncing (outer
-                                // boundary of that level)
-    ibset recv_not;             // not received while syncing or
-                                // prolongating (globally outer
-                                // boundary)
+    ibset sync;                 // filled by synchronisation
+    ibset bndref;               // filled by boundary prolongation
     
-    // Information for regridding, i.e., for copying data from the old
-    // to the new hierarchy
-    iblistvect old2new_recv_sync;
-    pvect old2new_recv_sync_fast;
-    iblistvect old2new_recv_ref_coarse;
-    pvect old2new_recv_ref_coarse_fast;
+    // For Cactus: (these are like boundary or owned, but include the
+    // outer boundary)
+    ibset ghosts;               // ghost zones, as seen from Cactus
+    ibbox interior;             // interior (without ghost zones)
+    
+    // Communication schedule:
+    
+    // ref_prol_recv[cc] and ref_rest_send[cc] determine what needs to
+    // be sent from and received from cc for prolongation to this box
+    
+    iblist mg_rest_recv;
+    iblist mg_rest_send;
+    iblist mg_prol_recv;
+    iblist mg_prol_send;
+    iblistvect ref_prol_recv;
+    iblistvect ref_prol_send;
+    iblistvect ref_rest_recv;
+    iblistvect ref_rest_send;
+    iblistvect sync_recv;
+    iblistvect sync_send;
+    iblistvect ref_bnd_prol_recv;
+    iblistvect ref_bnd_prol_send;
+    
+    pvect fast_mg_rest_recv;
+    pvect fast_mg_rest_send;
+    pvect fast_mg_prol_recv;
+    pvect fast_mg_prol_send;
+    pvect fast_ref_prol_recv;
+    pvect fast_ref_prol_send;
+    pvect fast_ref_rest_recv;
+    pvect fast_ref_rest_send;
+    pvect fast_sync_recv;
+    pvect fast_sync_send;
+    pvect fast_ref_bnd_prol_recv;
+    pvect fast_ref_bnd_prol_send;
+    
+    // Regridding schedule:
+    
+    iblistvect old2new_sync_recv;
+    iblistvect old2new_sync_send;
+    iblistvect old2new_ref_prol_recv;
+    iblistvect old2new_ref_prol_send;
+    
+    pvect fast_old2new_sync_recv;
+    pvect fast_old2new_sync_send;
+    pvect fast_old2new_ref_prol_recv;
+    pvect fast_old2new_ref_prol_send;
+    
+    ostream & output (ostream & os) const;
   };
   
 private:
-  
-  struct dbases {
-    ibbox exterior;             // whole region (including boundaries)
-    ibbox interior;             // interior (without boundaries)
-    ibset boundaries;           // boundaries
-  };
   
   typedef vector<dboxes> cboxes; // ... for each component
   typedef vector<cboxes> rboxes; // ... for each refinement level
   typedef vector<rboxes> mboxes; // ... for each multigrid level
   
-  typedef vector<dbases> rbases; // ... for each refinement level
-  typedef vector<rbases> mbases; // ... for each multigrid level
- 
-  void allocate_bboxes ();
-
-  // generic member function taking a dboxes, a refinement level, a
-  // component, and a multigrid level
-  typedef void (dh::*boxesop) (dboxes &, int rl, int c, int ml); 
-  void foreach_reflevel_component_mglevel (boxesop op);
-
-  // these all of form 'boxesop'
-  void setup_allocate (dboxes & b, int rl, int c, int ml);
-  void setup_sync_boxes (dboxes & b, int rl, int c, int ml);
-  void setup_multigrid_boxes (dboxes & b, int rl, int c, int ml);
-  void setup_refinement_prolongation_boxes (dboxes & b, int rl, int c, int ml);
-  void prepare_refinement_boundary_prolongation_boxes (dboxes & b, int rl, int c, int ml);
-  void setup_refinement_boundary_prolongation_boxes (dboxes & b, int rl, int c, int ml);
-  void setup_refinement_restriction_boxes (dboxes & b, int rl, int c, int ml);
-  void setup_old2new (dboxes & b, int rl, int c, int ml);
-  void trim_unsynced_boundaries (dboxes & b, int rl, int c, int ml);
-  void optimise_field (dboxes & b,
-                       iblistvect const dboxes::* field,
-                       pvect dboxes::* field_fast,
-                       int rl, int c, int ml);
-  void optimise_fields (dboxes & b,
-                        int rl, int c, int ml);
-  void do_output_bboxes (dboxes & b, int rl, int c, int ml);
-  void do_check_bboxes (dboxes & b, int rl, int c, int ml);
-
-  void calculate_bases (); 
-  void output_bases (); 
-  void save_time (bool do_prolongate); 
-  void save_memory (bool do_prolongate); 
-
+  
+  
+  void
+  setup_bboxes ();
+  
+  static
+  void
+  optimise_field (dboxes & b,
+                  iblistvect const dboxes::* field,
+                  pvect dboxes::* fast_field);
+  static
+  void
+  optimise_field (dboxes & b,
+                  int proc,
+                  iblist const dboxes::* field,
+                  pvect dboxes::* fast_field);
+  
 public:                         // should be readonly
   
   // Fields
-  gh& h;                        // hierarchy
-  i2vect ghosts;                // ghost zones
+  gh & h;                       // hierarchy
+  i2vect ghost_width;           // number of ghost zones
+  i2vect buffer_width;          // number of buffer zones
   
   int prolongation_order_space; // order of spatial prolongation operator
-  int inner_buffer_width;       // buffer inside refined grids
-  i2vect buffers;               // buffer outside refined grids
   
   mboxes boxes;                 // grid hierarchy
-  mbases bases;                 // bounding boxes around the grid
-                                // hierarchy
-  
   mboxes oldboxes;              // old grid hierarchy, used during regridding
   
   list<ggf*> gfs;               // list of all grid functions
@@ -167,9 +156,9 @@ public:                         // should be readonly
 public:
   
   // Constructors
-  dh (gh& h, const ivect& lghosts, const ivect& ughosts,
-      int prolongation_order_space, int inner_buffer_width,
-      const ivect& lbuffers, const ivect& ubuffers);
+  dh (gh & h,
+      i2vect const & ghosts, i2vect const & buffers,
+      int prolongation_order_space);
   
   // Destructors
   ~dh ();
@@ -179,22 +168,26 @@ public:
   
   // Modifiers
   void regrid ();
-  void recompose (const int rl, const bool do_prolongate);
+  void recompose (int rl, bool do_prolongate);
   
   // Grid function management
-  void add (ggf* f);
-  void remove (ggf* f);
+  void add (ggf * f);
+  void remove (ggf * f);
   
   // Output
-  void output (ostream& os) const;
+  ostream & output (ostream & os) const;
 };
 
 
 
-inline ostream& operator<< (ostream& os, const dh& d)
+inline ostream & operator<< (ostream & os, dh::dboxes const & b)
 {
-  d.output (os);
-  return os;
+  return b.output (os);
+}
+
+inline ostream & operator<< (ostream & os, dh const & d)
+{
+  return d.output (os);
 }
 
 
