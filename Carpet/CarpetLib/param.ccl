@@ -12,14 +12,14 @@ BOOLEAN barriers "Insert barriers at strategic places for debugging purposes (sl
 
 
 
-BOOLEAN omit_prolongation_points_when_restricting "Do not restrict to points which are used to prolongate the boundary" STEERABLE=always
-{
-} "no"
+#BOOLEAN omit_prolongation_points_when_restricting "Do not restrict to points which are used to prolongate the boundary" STEERABLE=always
+#{
+#} "no"
 
-INT proper_nesting_distance "Minimum distance (in grid points) between two level interfaces" STEERABLE=always
-{
-  0:* :: "any non-negative value is fine; the default value is just a guess"
-} 4
+#INT proper_nesting_distance "Minimum distance (in grid points) between two level interfaces" STEERABLE=always
+#{
+#  0:* :: "any non-negative value is fine; the default value is just a guess"
+#} 4
 
 
 
@@ -124,45 +124,3 @@ BOOLEAN use_mpi_ssend "Use MPI_Ssend instead of MPI_Isend" STEERABLE=always
 SHARES: IO
 
 USES STRING out_dir
-
-PRIVATE:
-
-
-
-# Options to tune MPI communication
-# DEPRECATED - DO NOT USE ANYMORE
-# The defaults of these flags are now sensible for everybody;
-# you should not be setting these parameters by hand any more.
-
-INT max_mpi_tags "Maximum number of MPI tags to use -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
-{
-  1:30000 :: ""
-} 30000
-
-BOOLEAN use_waitall "Use MPI_Waitall instead individual MPI_Wait/MPI_Waitsome statements -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
-{
-} "yes"
-
-BOOLEAN combine_recv_send "Combine MPI_Irecv and MPI_Isend calls -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
-{
-} "no"
-
-BOOLEAN use_lightweight_buffers "Use lightweight communication buffers instead of data objects -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
-{
-} "no"
-
-BOOLEAN use_collective_communication_buffers "Use collective buffers for MPI communications -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
-{
-} "yes"
-
-BOOLEAN minimise_outstanding_communications "Minimise the number of Isend/Irecv operations that are submitted concurrently -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
-{
-} "no"
-
-BOOLEAN save_memory_during_regridding "Save some memory during regridding at the expense of speed -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
-{
-} "yes"
-
-BOOLEAN fast_recomposing "Take shortcuts during recomposing -- DEPRECATED - DO NOT USE ANYMORE" STEERABLE=always
-{
-} "no"
