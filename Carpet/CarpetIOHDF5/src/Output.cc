@@ -169,7 +169,8 @@ int WriteVarUnchunked (const cGH* const cctkGH,
         const gdata* const data = (*ff) (request->timelevel,
                                          refinementlevel,
                                          component, mglevel);
-        gdata* const processor_component = data->make_typed (request->vindex);
+        gdata* const processor_component =
+          data->make_typed (request->vindex, error_centered, op_sync);
 
         processor_component->allocate (overlap, 0);
         for (comm_state state; not state.done(); state.step()) {
@@ -657,8 +658,12 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
   if (coord_system_handle >= 0 and
       Util_TableGetIntArray (coord_system_handle, vdim,
                              coord_handles, "COORDINATES") >= 0) {
+#if 0                           // dh::dbases
     const ibbox& baseext =
       vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
+#endif
+    const ibbox& baseext =
+      vhh.at(Carpet::map)->baseextents.at(mglevel).at(reflevel);
 
     const ivect pos = (bbox.lower() - baseext.lower()) / bbox.stride();
 

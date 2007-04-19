@@ -993,11 +993,21 @@ static int WriteMetadata (const cGH *cctkGH, int nioprocs,
   // Save grid structure
   if (called_from_checkpoint or not CCTK_Equals (out_save_parameters, "no")) {
     vector <vector <vector <region_t> > > grid_structure (maps);
+    vector <vector <vector <CCTK_REAL> > > grid_times (maps);
     for (int m = 0; m < maps; ++ m) {
-      grid_structure.at(m) = vhh.at(m)->regions().at(0);
+      grid_structure.at(m) = vhh.at(m)->regions.at(0);
+      grid_times.at(m).resize(mglevels);
+      for  (int ml = 0; ml < mglevels; ++ ml) {
+        grid_times.at(m).at(ml).resize(vhh.at(m)->reflevels());
+        for (int rl = 0; rl < vhh.at(m)->reflevels(); ++ rl) {
+          grid_times.at(m).at(ml).at(rl) = vtt.at(m)->get_time(rl, ml);
+        }
+      }
     }
     ostringstream gs_buf;
     gs_buf << grid_structure;
+    gs_buf << grid_times;
+    gs_buf << leveltimes;
     string const gs_str = gs_buf.str();
     size = gs_str.size() + 1;
     char const * const gs_cstr = gs_str.c_str();

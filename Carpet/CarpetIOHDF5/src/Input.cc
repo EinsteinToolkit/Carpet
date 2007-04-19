@@ -59,6 +59,9 @@ typedef struct {
   vector<CCTK_REAL> mgleveltimes;  // [num_mglevels*num_reflevels]
 
   vector<vector<vector<region_t> > > grid_structure; // [map][reflevel][component]
+  vector<vector<vector<CCTK_REAL> > > grid_times;    // [map][mglevel][reflevel]
+  vector<vector<CCTK_REAL> > leveltimes;             // [mglevel][reflevel]
+
 } fileset_t;
 
 // list of checkpoint/filereader files
@@ -124,10 +127,20 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
     // Regrid
     RegridMap (cctkGH, m, regsss);
     
+    // Set time hierarchy correctly after RegridMap created it
+    for (int ml = 0; ml < mglevels; ++ ml) {
+      for (int rl = 0; rl < rls; ++ rl) {
+        vtt.at(m)->set_time (rl, ml, fileset.grid_times.at(m).at(ml).at(rl));
+      }
+    }
+    
   } // for m
   
-  PostRegrid ();
+  PostRegrid (cctkGH);
   
+  // Set level times correctly after PostRegrid created them
+  leveltimes = fileset.leveltimes;
+
   for (int rl = 0; rl < reflevels; ++ rl) {
     Recompose (cctkGH, rl, false);
   }
@@ -245,6 +258,14 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   // set global Cactus/Carpet variables
   if (in_recovery) {
 
+    global_time = fileset->global_time;
+    delta_time = fileset->delta_time;
+    CCTK_SetMainLoopIndex (fileset->main_loop_index);
+
+    cctkGH->cctk_iteration = fileset->cctk_iteration;
+    int const idx = mglevel*fileset->num_reflevels + reflevel;
+    cctkGH->cctk_time = fileset->mgleveltimes.at(idx);
+
     if (use_grid_structure_from_checkpoint) {
       // recover the grid structure only once
       static bool is_first = true;
@@ -253,14 +274,6 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
         CarpetIOHDF5_RecoverGridStructure (cctkGH);
       }
     }
-
-    global_time = fileset->global_time;
-    delta_time = fileset->delta_time;
-    CCTK_SetMainLoopIndex (fileset->main_loop_index);
-
-    cctkGH->cctk_iteration = fileset->cctk_iteration;
-    int const idx = mglevel*fileset->num_reflevels + reflevel;
-    cctkGH->cctk_time = fileset->mgleveltimes.at(idx);
   }
 
   if (not CCTK_Equals (verbose, "none")) {
@@ -691,6 +704,8 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
     HDF5_ERROR (H5Dclose (dataset));
     istringstream gs_buf (&gs_cstr.front());
     gs_buf >> fileset.grid_structure;
+    gs_buf >> fileset.grid_times;
+    gs_buf >> fileset.leveltimes;
   }
 
   fileset.mgleveltimes.resize (fileset.num_mglevels * fileset.num_reflevels);
