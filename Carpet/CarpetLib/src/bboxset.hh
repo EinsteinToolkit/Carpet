@@ -5,6 +5,7 @@
 #include <iostream>
 #include <list>
 #include <set>
+#include <vector>
 
 #include "bbox.hh"
 #include "defs.hh"
@@ -55,7 +56,9 @@ public:
   bboxset ();
   bboxset (const box& b);
   bboxset (const bboxset& s);
-  bboxset (const bset& bs);
+  
+  bboxset (const list<box>& lb);
+  bboxset (const vector<list<box> >& vlb);
   
   // Invariant
   bool invariant () const;
@@ -65,7 +68,9 @@ public:
   
   // Accessors
   bool empty () const { return bs.empty(); }
-  T size () const;
+  // T size () const;
+  typedef typename box::size_type size_type;
+  size_type size () const;
   int setsize () const { return bs.size(); }
   
   // Add (bboxes that don't overlap)
@@ -89,8 +94,6 @@ public:
   bboxset& add_transfer (bboxset& s);
   bboxset operator+ (const box& b) const;
   bboxset operator+ (const bboxset& s) const;
-  static bboxset plus (const box& b1, const box& b2);
-  static bboxset plus (const box& b, const bboxset& s);
   
   // Union
   bboxset& operator|= (const box& b);
@@ -144,12 +147,12 @@ public:
 
 template<class T,int D>
 inline bboxset<T,D> operator+ (const bbox<T,D>& b1, const bbox<T,D>& b2) {
-  return bboxset<T,D>::plus(b1,b2);
+  return bboxset<T,D>(b1) + bboxset<T,D>(b2);
 }
 
 template<class T,int D>
 inline bboxset<T,D> operator+ (const bbox<T,D>& b, const bboxset<T,D>& s) {
-  return bboxset<T,D>::plus(b,s);
+  return bboxset<T,D>(b) + s;
 }
 
 template<class T,int D>
@@ -160,6 +163,82 @@ inline bboxset<T,D> operator- (const bbox<T,D>& b1, const bbox<T,D>& b2) {
 template<class T,int D>
 inline bboxset<T,D> operator- (const bbox<T,D>& b, const bboxset<T,D>& s) {
   return bboxset<T,D>::minus(b,s);
+}
+
+
+
+template<class T,int D>
+inline bboxset<T,D> operator| (const bbox<T,D>& b, const bboxset<T,D>& s) {
+  return s | b;
+}
+
+template<class T,int D>
+inline bboxset<T,D> operator& (const bbox<T,D>& b, const bboxset<T,D>& s) {
+  return s & b;
+}
+
+
+
+template<class T,int D>
+inline bool operator== (const bbox<T,D>& b, const bboxset<T,D>& s) {
+  return bboxset<T,D>(b) == s;
+}
+
+template<class T,int D>
+inline bool operator!= (const bbox<T,D>& b, const bboxset<T,D>& s) {
+  return bboxset<T,D>(b) != s;
+}
+
+template<class T,int D>
+inline bool operator< (const bbox<T,D>& b, const bboxset<T,D>& s) {
+  return bboxset<T,D>(b) < s;
+}
+
+template<class T,int D>
+inline bool operator<= (const bbox<T,D>& b, const bboxset<T,D>& s) {
+  return bboxset<T,D>(b) <= s;
+}
+
+template<class T,int D>
+inline bool operator> (const bbox<T,D>& b, const bboxset<T,D>& s) {
+  return bboxset<T,D>(b) > s;
+}
+
+template<class T,int D>
+inline bool operator>= (const bbox<T,D>& b, const bboxset<T,D>& s) {
+  return bboxset<T,D>(b) >= s;
+}
+
+
+
+template<class T,int D>
+inline bool operator== (const bboxset<T,D>& s, const bbox<T,D>& b) {
+  return s == bboxset<T,D>(b);
+}
+
+template<class T,int D>
+inline bool operator!= (const bboxset<T,D>& s, const bbox<T,D>& b) {
+  return s != bboxset<T,D>(b);
+}
+
+template<class T,int D>
+inline bool operator< (const bboxset<T,D>& s, const bbox<T,D>& b) {
+  return s < bboxset<T,D>(b);
+}
+
+template<class T,int D>
+inline bool operator<= (const bboxset<T,D>& s, const bbox<T,D>& b) {
+  return s <= bboxset<T,D>(b);
+}
+
+template<class T,int D>
+inline bool operator> (const bboxset<T,D>& s, const bbox<T,D>& b) {
+  return s > bboxset<T,D>(b);
+}
+
+template<class T,int D>
+inline bool operator>= (const bboxset<T,D>& s, const bbox<T,D>& b) {
+  return s >= bboxset<T,D>(b);
 }
 
 

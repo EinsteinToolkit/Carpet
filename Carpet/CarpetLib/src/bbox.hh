@@ -84,6 +84,10 @@ public:
   /** Get upper bound.  */
   vect<T,D> upper () const { return _upper; }
   
+  /** Get bounds.  */
+  vect<vect<T,D>,2> bounds () const
+  { return vect<vect<T,D>,2> (_lower, _upper); }
+  
   /** Get stride.  */
   vect<T,D> stride () const { return _stride; }
   
@@ -96,20 +100,33 @@ public:
   }
   
   /** Return the size, which is the number of contained points.  */
-  T size () const;
+  // T size () const;
+  typedef long long int size_type;
+  size_type size () const;
   
   // Queries
   
   /** Find out whether the bbox contains the point x.  */
   bool contains (const vect<T,D>& x) const;
   
+  /** Find out whether this bbox is contained in the bbox b.  */
+  bool is_contained_in (const bbox& b) const;
+  
+  /** Find out whether this bbox intersects the bbox b.  */
+  bool intersects (const bbox& b) const;
+  
+  /** Find out whether this bbox is aligned with the bbox b.
+      ("aligned" means that both bboxes have the same stride and that
+      their boundaries are commensurate.)  */
+  bool is_aligned_with (const bbox& b) const;
+  
   // Operators
   bool operator== (const bbox& b) const;
   bool operator!= (const bbox& b) const;
-  bool operator< (const bbox& b) const;
-  bool operator> (const bbox& b) const;
   bool operator<= (const bbox& b) const;
   bool operator>= (const bbox& b) const;
+  bool operator< (const bbox& b) const;
+  bool operator> (const bbox& b) const;
   
   /** Calculate the intersection (the set of common points) with the
       bbox b.  */
@@ -121,19 +138,10 @@ public:
     return bbox(lo,up,stride());
   }
   
-  /** Find out whether this bbox is contained in the bbox b.  */
-  bool is_contained_in (const bbox& b) const;
-  
-  /** Find out whether this bbox intersects the bbox b.  */
-  bool intersects (const bbox& b) const;
-  
-  /** Find out whether this bbox is aligned with the bbox b.
-      ("aligned" means that both bboxes have the same stride and that
-      their boundaries are commesurate.)  */
-  bool is_aligned_with (const bbox& b) const;
-  
   /** Expand (enlarge) the bbox by multiples of the stride.  */
   bbox expand (const vect<T,D>& lo, const vect<T,D>& hi) const;
+  bbox expand (const vect<vect<T,D>,2>& lohi) const
+  { return expand (lohi[0], lohi[1]); }
   
   /** Find the smallest b-compatible box around this bbox.
       ("compatible" means having the same stride.)  */

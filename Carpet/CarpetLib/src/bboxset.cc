@@ -32,8 +32,23 @@ bboxset<T,D>::bboxset (const bboxset& s): bs(s.bs) {
 }
 
 template<class T, int D>
-bboxset<T,D>::bboxset (const bset& bs_): bs(bs_) {
-  assert (invariant());
+bboxset<T,D>::bboxset (const list<box>& lb) {
+  for (typename list<box>::const_iterator
+         li = lb.begin(); li != lb.end(); ++ li)
+  {
+    *this |= *li;
+  }
+  normalize();
+}
+
+template<class T, int D>
+bboxset<T,D>::bboxset (const vector<list<box> >& vlb) {
+  for (typename vector<list<box> >::const_iterator
+         vli = vlb.begin(); vli != vlb.end(); ++ vli)
+  {
+    *this |= bboxset (*vli);
+  }
+  normalize();
 }
 
 
@@ -64,7 +79,7 @@ void bboxset<T,D>::normalize ()
   assert (invariant());
   
   bboxset const oldbs = * this;
-  int const oldsize = this->size();
+  size_type const oldsize = this->size();
   
   // Split all bboxes into small pieces which have all their
   // boundaries aligned.
@@ -94,10 +109,6 @@ void bboxset<T,D>::normalize ()
       int const bstr = b.stride()[d];
       int const blo = b.lower()[d];
       int const bhi = b.upper()[d] + bstr;
-//       typename buf::const_iterator const ilo
-//         = find (sbnds.begin(), sbnds.end(), blo);
-//       typename buf::const_iterator const ihi
-//         = find (sbnds.begin(), sbnds.end(), bhi);
       typename buf::const_iterator const ilo
         = lower_bound (sbnds.begin(), sbnds.end(), blo);
       typename buf::const_iterator const ihi
@@ -182,7 +193,7 @@ void bboxset<T,D>::normalize ()
     assert (invariant());
   }
   
-  int const newsize = this->size();
+  size_type const newsize = this->size();
   
   assert (*this == oldbs);
   assert (newsize <= oldsize);
@@ -192,11 +203,11 @@ void bboxset<T,D>::normalize ()
 
 // Accessors
 template<class T, int D>
-T bboxset<T,D>::size () const {
-  T s=0;
+typename bboxset<T,D>::size_type bboxset<T,D>::size () const {
+  size_type s=0;
   for (const_iterator bi=begin(); bi!=end(); ++bi) {
-    const T bsz = (*bi).size();
-    assert (numeric_limits<T>::max() - bsz >= s);
+    const size_type bsz = (*bi).size();
+    assert (numeric_limits<size_type>::max() - bsz >= s);
     s += bsz;
   }
   return s;
@@ -235,16 +246,6 @@ bboxset<T,D> bboxset<T,D>::operator+ (const bboxset& s) const {
   r += s;
   assert (r.invariant());
   return r;
-}
-
-template<class T, int D>
-bboxset<T,D> bboxset<T,D>::plus (const bbox<T,D>& b1, const bbox<T,D>& b2) {
-  return bboxset(b1) + b2;
-}
-
-template<class T, int D>
-bboxset<T,D> bboxset<T,D>::plus (const bbox<T,D>& b, const bboxset<T,D>& s) {
-  return s + b;
 }
 
 

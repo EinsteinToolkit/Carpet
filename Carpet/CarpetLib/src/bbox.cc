@@ -1,3 +1,4 @@
+
 #include <cassert>
 #include <iostream>
 #include <limits>
@@ -15,13 +16,13 @@ using namespace std;
 
 // Accessors
 template<class T, int D>
-T bbox<T,D>::size () const {
+typename bbox<T,D>::size_type bbox<T,D>::size () const {
   if (empty()) return 0;
   const vect<T,D> sh(shape()/stride());
 #ifdef NDEBUG
-  return prod(sh);
+  return prod(vect<size_type,D>(sh));
 #else
-  T sz = 1, max = numeric_limits<T>::max();
+  size_type sz = 1, max = numeric_limits<size_type>::max();
   for (int d=0; d<D; ++d) {
     assert (sh[d] <= max);
     sz *= sh[d];
@@ -32,24 +33,50 @@ T bbox<T,D>::size () const {
 }
 
 // Queries
+
+// Containment
 template<class T, int D>
 bool bbox<T,D>::contains (const vect<T,D>& x) const {
-  return all(x>=lower() && x<=upper());
+  return all(x>=lower() and x<=upper());
+}
+
+template<class T, int D>
+bool bbox<T,D>::is_contained_in (const bbox& b) const {
+  if (empty()) return true;
+  // no alignment check
+  return all(lower()>=b.lower() and upper()<=b.upper());
+}
+
+// Intersection
+template<class T, int D>
+bool bbox<T,D>::intersects (const bbox& b) const {
+  if (empty()) return false;
+  if (b.empty()) return false;
+  // no alignment check
+  return all(upper()>=b.lower() and lower()<=b.upper());
+}
+
+// Alignment check
+template<class T, int D>
+bool bbox<T,D>::is_aligned_with (const bbox& b) const {
+  return all(stride()==b.stride() and (lower()-b.lower()) % stride() == T(0));
 }
 
 // Operators
 template<class T, int D>
 bool bbox<T,D>::operator== (const bbox& b) const {
-  if (empty() && b.empty()) return true;
+  if (empty() and b.empty()) return true;
   assert (all(stride()==b.stride()));
-  return all(lower()==b.lower() && upper()==b.upper());
+  return all(lower()==b.lower() and upper()==b.upper());
 }
 
 template<class T, int D>
 bool bbox<T,D>::operator!= (const bbox& b) const {
-  return ! (*this == b);
+  return not (*this == b);
 }
 
+#if 0
+// Introduce an ordering on bboxes
 template<class T, int D>
 bool bbox<T,D>::operator< (const bbox& b) const {
   // An arbitraty order: empty boxes come first, then sorted by lower
@@ -70,15 +97,11 @@ bool bbox<T,D>::operator< (const bbox& b) const {
   }
   return false;
 }
-
-template<class T, int D>
-bool bbox<T,D>::operator> (const bbox& b) const {
-  return b < *this;
-}
+#endif
 
 template<class T, int D>
 bool bbox<T,D>::operator<= (const bbox& b) const {
-  return ! (b > *this);
+  return is_contained_in (b);
 }
 
 template<class T, int D>
@@ -86,32 +109,21 @@ bool bbox<T,D>::operator>= (const bbox& b) const {
   return b <= *this;
 }
 
-// Containment
 template<class T, int D>
-bool bbox<T,D>::is_contained_in (const bbox& b) const {
-  if (empty()) return true;
-  // no alignment check
-  return all(lower()>=b.lower() && upper()<=b.upper());
+bool bbox<T,D>::operator< (const bbox& b) const {
+  return *this <= b and *this != b;
 }
 
-// Intersection
 template<class T, int D>
-bool bbox<T,D>::intersects (const bbox& b) const {
-  // no alignment check
-  return all(upper()>=b.lower() && lower()<=b.upper());
-}
-
-// Alignment check
-template<class T, int D>
-bool bbox<T,D>::is_aligned_with (const bbox& b) const {
-  return all(stride()==b.stride() && (lower()-b.lower()) % stride() == T(0));
+bool bbox<T,D>::operator> (const bbox& b) const {
+  return b < *this;
 }
 
 // Expand the bbox a little by multiples of the stride
 template<class T, int D>
 bbox<T,D> bbox<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi) const {
   // Allow expansion only into directions where the extent is not negative
-  assert (all(lower()<=upper() || (lo==T(0) && hi==T(0))));
+  assert (all(lower()<=upper() or (lo==T(0) and hi==T(0))));
   const vect<T,D> str = stride();
   const vect<T,D> lb = lower() - lo * str;
   const vect<T,D> ub = upper() + hi * str;
@@ -204,19 +216,21 @@ void bbox<T,D>::input (istream& is) {
     skipws (is);
     if (is.peek() == '/') {
       consume (is, '/');
-      T lower_dummy;
+      vect<T,D> lower_dummy;
       is >> lower_dummy;
       skipws (is);
       consume (is, ':');
-      T upper_dummy;
+      vect<T,D> upper_dummy;
       is >> upper_dummy;
       skipws (is);
       consume (is, '/');
-      T shape_dummy;
+      vect<T,D> shape_dummy;
       is >> shape_dummy;
+      skipws (is);
       consume (is, '/');
-      T size_dummy;
+      size_type size_dummy;
       is >> size_dummy;
+      assert (is.good());
       skipws (is);
     }
     consume (is, ')');
