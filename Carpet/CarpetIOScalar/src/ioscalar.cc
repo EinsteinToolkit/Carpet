@@ -597,7 +597,7 @@ namespace CarpetIOScalar {
       
       char* const fullname = CCTK_FullName(vindex);
       char const* const varname = CCTK_VarName(vindex);
-      const int retval = OutputVarAs (cctkGH, fullname, varname);
+      retval = OutputVarAs (cctkGH, fullname, varname);
       free (fullname);
       
       last_output.at(vindex) = cctk_iteration;
