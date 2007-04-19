@@ -76,9 +76,7 @@ namespace CarpetRegrid2 {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    ivect const levfac = hh.reffacts.at(rl);
-    assert (all (hh.baseextent.stride() % levfac == 0));
-    ivect const istride = hh.baseextent.stride() / levfac;
+    ivect const istride = hh.baseextents.at(0).at(rl).stride();
     
     ivect ipos = (ivect (floor ((rpos - origin) * scale / rvect(istride) +
                                 static_cast<CCTK_REAL> (0.5))) *
@@ -86,9 +84,7 @@ namespace CarpetRegrid2 {
     
     if (snap_to_coarse) {
       if (rl > 0) {
-        ivect const clevfac = hh.reffacts.at(rl - 1);
-        assert (all (hh.baseextent.stride() % clevfac == 0));
-        ivect const cistride = hh.baseextent.stride() / clevfac;
+        ivect const cistride = hh.baseextents.at(0).at(rl - 1).stride();
         ipos = ipos / cistride * cistride;
       }
     }
@@ -96,9 +92,7 @@ namespace CarpetRegrid2 {
     if (hh.refcent == cell_centered) {
 #if 0
       if (rl > 0) {
-        ivect const clevfac = hh.reffacts.at(rl - 1);
-        assert (all (hh.baseextent.stride() % clevfac == 0));
-        ivect const cistride = hh.baseextent.stride() / clevfac;
+        ivect const cistride = hh.baseextents.at(0).at(rl - 1).stride();
         
         ivect const offset = (cistride / istride + 1) % 2;
         
@@ -122,9 +116,7 @@ namespace CarpetRegrid2 {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    ivect const levfac = hh.reffacts.at(rl);
-    assert (all (hh.baseextent.stride() % levfac == 0));
-    ivect const istride = hh.baseextent.stride() / levfac;
+    ivect const istride = hh.baseextents.at(0).at(rl).stride();
     
     ivect ipos = (ivect (ceil ((rpos - origin) * scale / rvect(istride) -
                                static_cast<CCTK_REAL> (0.5))) *
@@ -132,9 +124,7 @@ namespace CarpetRegrid2 {
     
     if (snap_to_coarse) {
       if (rl > 0) {
-        ivect const clevfac = hh.reffacts.at(rl - 1);
-        assert (all (hh.baseextent.stride() % clevfac == 0));
-        ivect const cistride = hh.baseextent.stride() / clevfac;
+        ivect const cistride = hh.baseextents.at(0).at(rl - 1).stride();
         ipos = (ipos + cistride - 1) / cistride * cistride;
       }
     }
@@ -142,9 +132,7 @@ namespace CarpetRegrid2 {
     if (hh.refcent == cell_centered) {
 #if 0
       if (rl > 0) {
-        ivect const clevfac = hh.reffacts.at(rl - 1);
-        assert (all (hh.baseextent.stride() % clevfac == 0));
-        ivect const cistride = hh.baseextent.stride() / clevfac;
+        ivect const cistride = hh.baseextents.at(0).at(rl - 1).stride();
         
         ivect const offset = (cistride / istride + 1) % 2;
         
@@ -264,12 +252,14 @@ namespace CarpetRegrid2 {
     //
     
     rvect const origin (exterior_lower);
-    rvect const scale (rvect (hh.baseextent.stride()) / spacing);
+#warning "TODO: use hh.baseextents[0] [rl] instead of [0]"
+    rvect const scale (rvect (hh.baseextents.at(0).at(0).stride()) / spacing);
     
     ivect const physical_ilower =
       rpos2ipos (physical_lower, origin, scale, hh, 0);
     ivect const physical_iupper =
       rpos2ipos1 (physical_upper, origin, scale, hh, 0);
+    i2vect const physical_ibounds = i2vect (physical_ilower, physical_iupper);
     
     // The set of refined regions
     vector <ibboxset> regions (1);
@@ -291,56 +281,83 @@ namespace CarpetRegrid2 {
         ivect const imax =
           rpos2ipos1 (rmax, origin, scale, hh, rl);
         
-        ivect const levfac = hh.reffacts.at(rl);
-        assert (all (hh.baseextent.stride() % levfac == 0));
-        ivect const istride = hh.baseextent.stride() / levfac;
+        ivect const istride = hh.baseextents.at(0).at(rl).stride();
         
         ibbox const region (imin, imax, istride);
         
         // Add this region to the list of regions
         if (static_cast <int> (regions.size()) < rl+1) regions.resize (rl+1);
         regions.at(rl) |= region;
+        regions.at(rl).normalize();
         
       } // for rl
       
     } // for n
     
-    // Ensure that the coarser grids contain the finer ones
-    for (size_t rl = regions.size() - 1; rl >= 2; -- rl) {
-      ibbox const coarse = * regions.at(rl-1).begin();
+    
       
-      i2vect const fdistance =
-        i2vect(ivect(0 * min_distance)) + dd.ghosts + dd.buffers;
-      i2vect const cdistance =
-        i2vect(ivect(min_distance + dd.inner_buffer_width +
-                     dd.prolongation_stencil_size()));
-      
-      regions.at(rl).normalize();
-      ibboxset coarsified;
-      for (ibboxset::const_iterator ibb = regions.at(rl).begin();
-           ibb != regions.at(rl).end();
-           ++ ibb)
-      {
-        ibbox const fbb = * ibb;
-        ibbox const efbb = fbb.expand (fdistance[0], fdistance[1]);
-        ibbox const cbb = efbb.expanded_for(coarse);
-        ibbox const ecbb = cbb.expand (cdistance[0], cdistance[1]);
-        coarsified |= ecbb;
-      }
-      
-      regions.at(rl-1) |= coarsified;
-    }
-    
-    
-    
-    //
-    // Clip at the outer boundary, and convert to (bbss, obss, rbss)
-    // triple
-    //
-    
     regss.resize (regions.size());
     
-    for (size_t rl = 1; rl < regions.size(); ++ rl) {
+    for (size_t rl = regions.size() - 1; rl >= 1; -- rl) {
+      
+      //
+      // Add buffer zones
+      //
+      {
+        ibboxset buffered;
+        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+             ibb != regions.at(rl).end();
+             ++ ibb)
+        {
+          ibbox const & bb = * ibb;
+          
+          // bvect const lower_is_outer = bb.lower() <= physical_ilower;
+          // bvect const upper_is_outer = bb.upper() >= physical_iupper;
+          // 
+          // b2vect const ob (lower_is_outer, upper_is_outer);
+          // 
+          // ibbox const bbb = bb.expand (i2vect (not ob) * dd.buffer_width);
+          
+          ibbox const bbb = bb.expand (dd.buffer_width);
+
+          buffered |= bbb;
+        }
+        regions.at(rl) = buffered;
+        regions.at(rl).normalize();
+      }
+      
+      
+      
+      //
+      // Check whether it would be worthwhile to combine all regions
+      // into a single region
+      //
+      // TODO: Check this also for pairs of regions
+      //
+      // TODO: Check after clipping
+      {
+        ibbox single;
+        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+             ibb != regions.at(rl).end();
+             ++ ibb)
+        {
+          ibbox const & bb = * ibb;
+          single = single.expanded_containing (bb);
+        }
+        
+        CCTK_REAL const regions_size
+          = static_cast <CCTK_REAL> (regions.at(rl).size());
+        CCTK_REAL const single_size
+          = static_cast <CCTK_REAL> (single.size());
+        
+        // Would a single bbox be efficient enough?
+        if (regions_size >= min_fraction * single_size) {
+          // Combine the boxes
+          regions.at(rl) = ibboxset (single);
+        }
+      }
+      
+      
       
       // Find the location of the outer boundary
       rvect const level_physical_lower = physical_lower;
@@ -368,76 +385,111 @@ namespace CarpetRegrid2 {
       // boundary due to buffer and ghost zones.  This is e.g. the
       // distance that the lower boundary of a bbox has to have from
       // the lower boundary.  This is in terms of grid points.
-      i2vect const min_bnd_dist_away = dd.buffers + dd.ghosts;
+      i2vect const min_bnd_dist_away = dd.ghost_width;
       // Find the minimum necessary distance from the outer boundary
       // due to buffer and ghost zones.  This is e.g. the distance
       // that the upper boundary of a bbox has to have from the lower
       // boundary.  This is in terms of grid points.
-      i2vect const min_bnd_dist_incl = dd.ghosts;
+      i2vect const min_bnd_dist_incl = dd.ghost_width;
+      // TODO: The above is required only near symmetry boundaries.
       
+      
+      
+      //
       // Clip at the outer boundary
-      regions.at(rl).normalize();
-      ibboxset clipped;
-      for (ibboxset::const_iterator ibb = regions.at(rl).begin();
-           ibb != regions.at(rl).end();
-           ++ ibb)
+      //
       {
-        ibbox const bb = * ibb;
+        ibboxset clipped;
+        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+             ibb != regions.at(rl).end();
+             ++ ibb)
+        {
+          ibbox const & bb = * ibb;
+          
+          // Clip boxes that extend outside the boundary.  Enlarge
+          // boxes that are inside but too close to the outer
+          // boundary.
+          bvect const lower_is_outside_lower =
+            bb.lower() - min_bnd_dist_away[0] * bb.stride() <= physical_ilower;
+          // Remove bboxes that are completely outside.
+          bvect const upper_is_outside_lower =
+            bb.upper() < physical_ilower;
+          // Enlarge bboxes that extend not far enough inwards.
+          bvect const upper_is_almost_outside_lower =
+            bb.upper() < physical_ilower + min_bnd_dist_incl[0] * bb.stride();
+          
+          // Ditto for the upper boundary.
+          bvect const upper_is_outside_upper =
+            bb.upper() + min_bnd_dist_away[1] * bb.stride() >= physical_iupper;
+          bvect const lower_is_outside_upper =
+            bb.lower() > physical_iupper;
+          bvect const lower_is_almost_outside_upper =
+            bb.lower() > physical_iupper - min_bnd_dist_incl[1] * bb.stride();
+          
+          assert (not any (lower_is_almost_outside_upper and
+                           lower_is_outside_lower));
+          assert (not any (upper_is_almost_outside_lower and
+                           upper_is_outside_upper));
+          
+          if (any (upper_is_outside_lower or lower_is_outside_upper)) {
+            // The box is completely outside.  Ignore it.
+            continue;
+          }
+          
+          ibbox const clipped_bb
+            (either (lower_is_outside_lower,
+                     level_exterior_ilower,
+                     either (lower_is_almost_outside_upper,
+                             (physical_iupper -
+                              min_bnd_dist_incl[1] * bb.stride()),
+                             bb.lower())),
+             either (upper_is_outside_upper,
+                     level_exterior_iupper,
+                     either (upper_is_almost_outside_lower,
+                             (physical_ilower +
+                              min_bnd_dist_incl[0] * bb.stride()),
+                             bb.upper())),
+             bb.stride());
+          assert (clipped_bb.is_contained_in (hh.baseextents.at(0).at(rl)));
+          
+          clipped |= clipped_bb;
+          
+        } // for ibb
         
-        // Clip boxes that extend outside the boundary.  Enlarge boxes
-        // that are inside but too close to the outer boundary.
-        bvect const lower_is_outside_lower =
-          bb.lower() - min_bnd_dist_away[0] * bb.stride() <= physical_ilower;
-        // Remove bboxes that are completely outside.
-        bvect const upper_is_outside_lower =
-          bb.upper() < physical_ilower;
-        // Enlarge bboxes that extend not far enough inwards.
-        bvect const upper_is_almost_outside_lower =
-          bb.upper() < physical_ilower + min_bnd_dist_incl[0] * bb.stride();
+        regions.at(rl) = clipped;
+        regions.at(rl).normalize();
+      }
+      
+      
+      
+      //
+      // Make the boxes rotating-90 symmetric
+      //
+      if (symmetry_rotating90) {
+        assert (0);            // There is also a paramwarn about this
+      }
+      
+      
+      
+      //
+      // Make the boxes rotating-180 symmetric
+      //
+      if (symmetry_rotating180) {
         
-        // Ditto for the upper boundary.
-        bvect const upper_is_outside_upper =
-          bb.upper() + min_bnd_dist_away[1] * bb.stride() >= physical_iupper;
-        bvect const lower_is_outside_upper =
-          bb.lower() > physical_iupper;
-        bvect const lower_is_almost_outside_upper =
-          bb.lower() > physical_iupper - min_bnd_dist_incl[1] * bb.stride();
-        
-        assert (not any (lower_is_almost_outside_upper and
-                         lower_is_outside_lower));
-        assert (not any (upper_is_almost_outside_lower and
-                         upper_is_outside_upper));
-        
-        if (any (upper_is_outside_lower or lower_is_outside_upper)) {
-          // The box is completely outside.  Ignore it.
-          continue;
-        }
-        
-        ibbox const clipped_bb
-          (either (lower_is_outside_lower,
-                   level_exterior_ilower,
-                   either (lower_is_almost_outside_upper,
-                           physical_iupper - min_bnd_dist_incl[1] * bb.stride(),
-                           bb.lower())),
-           either (upper_is_outside_upper,
-                   level_exterior_iupper,
-                   either (upper_is_almost_outside_lower,
-                           physical_ilower + min_bnd_dist_incl[0] * bb.stride(),
-                           bb.upper())),
-           bb.stride());
-        
-        clipped |= clipped_bb;
-        
-        if (symmetry_rotating90) {
-          assert (0);           // There is also a paramwarn about this
-        }
-        
-        if (symmetry_rotating180) {
-          // Make the boxes rotating-180 symmetric
+        ibboxset added;
+        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+             ibb != regions.at(rl).end();
+             ++ ibb)
+        {
+          ibbox const & bb = * ibb;
+          
+          bvect const lower_is_outside_lower =
+            bb.lower() - min_bnd_dist_away[0] * bb.stride() <= physical_ilower;
+          
           if (lower_is_outside_lower[0]) {
-            ivect const ilo = clipped_bb.lower();
-            ivect const iup = clipped_bb.upper();
-            ivect const istr = clipped_bb.stride();
+            ivect const ilo = bb.lower();
+            ivect const iup = bb.upper();
+            ivect const istr = bb.stride();
             
             // Origin
             rvect const axis (physical_lower[0],
@@ -464,65 +516,78 @@ namespace CarpetRegrid2 {
             ivect const new_istr (istr);
             
             ibbox const new_bb (new_ilo, new_iup, new_istr);
+            assert (new_bb.is_contained_in (hh.baseextents.at(0).at(rl)));
             
-            clipped |= new_bb;
+            added |= new_bb;
           }
         }
-      }
+        
+        regions.at(rl) |= added;
+        regions.at(rl).normalize();
+        
+      } // if symmetry_rotating180
       
-      regions.at(rl) = clipped;
       
-      // Simplify the set of refined regions
-      regions.at(rl).normalize();
       
-      // Check whether it would be worthwhile to combine the regions
-      // into a single region
-      {
-        ibbox single;
+      //
+      // Ensure that the coarser grids contain the finer ones
+      //
+      // TODO: move this to the top, and check the current grid
+      // instead of the next coarser one
+      if (rl > 1) {
+        ibbox const & coarse = * regions.at(rl-1).begin();
+        
+        i2vect const fdistance =
+          i2vect (0 * min_distance) + dd.ghost_width + dd.buffer_width;
+        i2vect const cdistance =
+          dd.buffer_width +
+          i2vect (min_distance + dd.prolongation_stencil_size());
+        
+        ibboxset coarsified;
         for (ibboxset::const_iterator ibb = regions.at(rl).begin();
              ibb != regions.at(rl).end();
              ++ ibb)
         {
-          ibbox bb = * ibb;
-          single = single.expanded_containing (bb);
+          ibbox const & fbb = * ibb;
+          ibbox const efbb = fbb.expand (fdistance[0], fdistance[1]);
+          ibbox const cbb = efbb.expanded_for(coarse);
+          ibbox const ecbb = cbb.expand (cdistance[0], cdistance[1]);
+          coarsified |= ecbb;
         }
         
-        CCTK_REAL const regions_size
-          = static_cast <CCTK_REAL> (regions.at(rl).size());
-        CCTK_REAL const single_size
-          = static_cast <CCTK_REAL> (single.size());
-        
-        // Would a single bbox be efficient enough?
-        if (regions_size >= min_fraction * single_size) {
-          // Combine the boxes
-          regions.at(rl) = ibboxset (single);
-        }
+        regions.at(rl-1) |= coarsified;
+        regions.at(rl-1).normalize();
       }
       
+      
+      
+      //
       // Create a vector of bboxes for this level
-      gh::cregs regs;
-      regs.reserve (regions.at(rl).setsize());
-      for (ibboxset::const_iterator ibb = regions.at(rl).begin();
-           ibb != regions.at(rl).end();
-           ++ ibb)
+      //
       {
-        ibbox bb = * ibb;
+        gh::cregs regs;
+        regs.reserve (regions.at(rl).setsize());
+        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+             ibb != regions.at(rl).end();
+             ++ ibb)
+        {
+          ibbox const & bb = * ibb;
+          assert (bb.is_contained_in (hh.baseextents.at(0).at(rl)));
+          
+          bvect const lower_is_outer = bb.lower() <= physical_ilower;
+          bvect const upper_is_outer = bb.upper() >= physical_iupper;
+          
+          b2vect const ob (lower_is_outer, upper_is_outer);
+          
+          region_t reg;
+          reg.extent = bb;
+          reg.map = Carpet::map;
+          reg.outer_boundaries = ob;
+          regs.push_back (reg);
+        }
         
-        bvect const lower_is_outer = bb.lower() <= physical_ilower;
-        bvect const upper_is_outer = bb.upper() >= physical_iupper;
-        
-        b2vect ob (lower_is_outer, upper_is_outer);
-        b2vect rb (not ob[0], not ob[1]);
-        
-        region_t reg;
-        reg.extent = bb;
-        reg.map = Carpet::map;
-        reg.outer_boundaries = ob;
-        reg.refinement_boundaries = rb;
-        regs.push_back (reg);
+        regss.at(rl) = regs;
       }
-      
-      regss.at(rl) = regs;
       
     } // for rl
   }
