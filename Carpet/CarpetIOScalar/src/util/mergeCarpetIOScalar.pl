@@ -57,5 +57,5 @@ while (<>) {
   # falls diese Zeile eine Datenzeile ist:
   # ueberspringe alle Datensaetze mit dieser Iterationsnummer
   # bis auf den letzten
-  print unless (/^(\d+(.\d+)?)\s/ and --$timesteps{$1} > 0);
+  print unless (/^(\d+(.\d+)?)\s/ and --$timesteps{$1} == 0);
 }
