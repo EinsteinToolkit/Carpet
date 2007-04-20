@@ -44,8 +44,8 @@ my @filelist = @ARGV;
 while (<>) {
 
   # falls diese Zeile eine Datenzeile ist:
-  # vermerke den Datensatz mit seiner Iterationsnummer
-  ++$timesteps{$1} if (/^(\d+(.\d+)?)\s/);
+  # merke den Datensatz mit seinem Zeitschritt
+  $timesteps{$1} = $_ if (/^(\d+(.\d+)?)\s/);
 }
 
 # stelle die Liste aller Eingabe-Dateien wieder her
@@ -53,9 +53,12 @@ while (<>) {
 
 # lies zeilenweise alle Eingabe-Dateien
 while (<>) {
+  # gib alle Zeilen bis zur ersten Datenzeile aus
+  last if (/^(\d+(.\d+)?)\s/);
+  print;
+}
 
-  # falls diese Zeile eine Datenzeile ist:
-  # ueberspringe alle Datensaetze mit dieser Iterationsnummer
-  # bis auf den letzten
-  print unless (/^(\d+(.\d+)?)\s/ and --$timesteps{$1} == 0);
+# gib alle Datenzeilen aus, sortiert nach Zeitschritten
+foreach my $timestep (sort {$a <=> $b} keys %timesteps) {
+  print $timesteps{$timestep};
 }
