@@ -497,7 +497,17 @@ regrid ()
         
         // Synchronisation should fill as many boundary points as
         // possible
+        
+#if 0
+        // Outer boundaries are not synchronised, since they cannot be
+        // filled by boundary prolongation either, and therefore the
+        // user code must set them anyway.
         ibset needrecv = box.boundaries;
+#else
+        // Outer boundaries are synchronised for backward
+        // compatibility.
+        ibset needrecv = box.ghosts;
+#endif
         
         box.sync_recv.resize (h.components(rl));
         box.sync_send.resize (h.components(rl));
@@ -507,7 +517,11 @@ regrid ()
         for (int cc = 0; cc < h.components(rl); ++ cc) {
           dboxes const & obox = boxes.AT(ml).AT(rl).AT(cc);
           
+#if 0
           ibset ovlp = needrecv & obox.owned;
+#else
+          ibset ovlp = needrecv & obox.interior;
+#endif
           ovlp.normalize();
           
           if (cc == c) {
@@ -536,6 +550,9 @@ regrid ()
         
         if (rl > 0) {
           int const orl = rl - 1;
+          
+          // Outer boundary points cannot be boundary prolongated
+          needrecv &= box.communicated;
           
           // Prolongation must fill what cannot be synchronised, and
           // also all buffer zones
