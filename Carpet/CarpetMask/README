@@ -1,0 +1,9 @@
+Cactus Code Thorn CarpetMask
+Thorn Author(s)     : Erik Schnetter <schnetter@cct.lsu.edu>
+Thorn Maintainer(s) : Erik Schnetter <schnetter@cct.lsu.edu>
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+Remove unwanted regions from Carpet's reduction operations.  This can
+be used e.g. to excise the interior of horizons.

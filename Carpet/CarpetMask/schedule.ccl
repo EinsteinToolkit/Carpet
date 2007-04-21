@@ -1,0 +1,7 @@
+# Schedule definitions for thorn CarpetMask
+
+SCHEDULE CarpetExcludedSetup IN SetupMask
+{
+  LANG: C
+  OPTIONS: global loop-local
+} "Set up the weight function for the restriction regions"

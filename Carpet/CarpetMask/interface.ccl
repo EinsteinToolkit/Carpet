@@ -1,0 +1,5 @@
+# Interface definition for thorn CarpetMask
+
+IMPLEMENTS: CarpetMask
+
+INHERITS: grid SphericalSurface
