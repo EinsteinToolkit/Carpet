@@ -1,5 +1,5 @@
 # Parameter definitions for thorn CarpetReduce
 
-BOOLEAN verbose "Produce screen output while running"
+BOOLEAN verbose "Produce screen output while running" STEERABLE=always
 {
 } "no"
