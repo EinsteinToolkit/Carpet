@@ -71,40 +71,8 @@ namespace Carpet
     int my_proc;
     MPI_Comm_rank (world, & my_proc);
     
-    // Gather the lengths of the model strings
-    int const length = model.length();
-    vector <int> lengths (num_procs);
-    
-    MPI_Allgather (const_cast <int *> (& length), 1, MPI_INT,
-                   & lengths.front(), 1, MPI_INT,
-                   world);
-    
-    // Allocate space for all model strings
-    vector <int> offsets (num_procs + 1);
-    offsets.at(0) = 0;
-    for (int n = 0; n < num_procs; ++ n)
-    {
-      offsets.at(n + 1) = offsets.at(n) + lengths.at(n);
-    }
-    int const total_length = offsets.at(num_procs);
-    
-    // Gather all model strings
-    vector <char> models_buffer (total_length);
-    
-    MPI_Allgatherv (const_cast <char *> (model.c_str()), length, MPI_CHAR,
-                    & models_buffer.front(),
-                    const_cast <int *> (& lengths.front()),
-                    const_cast <int *> (& offsets.front()),
-                    MPI_CHAR,
-                    world);
-    
-    // Convert model name buffer with C strings to C++ strings
-    models.resize (num_procs);
-    for (int n = 0; n < num_procs; ++ n)
-    {
-      models.at(n)
-        = string (& models_buffer.at (offsets.at(n)), lengths.at(n));
-    }
+    // Gather all model names
+    models = AllGatherString (world, model);
     
     // Map model strings to small integers
     int num_models = 0;

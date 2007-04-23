@@ -45,8 +45,13 @@ namespace Carpet {
   
   void Restrict (const cGH* cgh);
   
-   
-   
+  
+  
+  // Strings
+  vector <string>
+  AllGatherString (MPI_Comm const world,
+                   string const & data);
+  
   // Multi-Model
   void
   SplitUniverse (MPI_Comm const world, string const model, MPI_Comm & comm,
