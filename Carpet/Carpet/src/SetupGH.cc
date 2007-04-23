@@ -6,12 +6,14 @@
 #include <iostream>
 #include <sstream>
 #include <stack>
+#include <string>
 #include <vector>
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
 #include <util_ErrorCodes.h>
+#include <util_Network.h>
 #include <util_Table.h>
 
 #include <bbox.hh>
@@ -188,6 +190,19 @@ namespace Carpet {
     // Say hello
     Waypoint ("Setting up the grid hierarchy");
     Output ("Carpet is running on %d processors", CCTK_nProcs(cctkGH));
+    Output ("This is processor %d", CCTK_MyProc(cctkGH));
+    
+    if (verbose) {
+      char hostnamebuf[1000];
+      Util_GetHostName (hostnamebuf, sizeof hostnamebuf);
+      string const hostname (hostnamebuf);
+      vector <string> hostnames = AllGatherString (MPI_COMM_WORLD, hostname);
+      int const nprocs = CCTK_nProcs (cctkGH);
+      Output ("Running on the following hosts:");
+      for (int n = 0; n < nprocs; ++ n) {
+        Output ("   %4d: %s\n", n, hostnames.at(n).c_str());
+      }
+    }
     
     // Check arguments:
     // Only a specific number of dimensions is supported
