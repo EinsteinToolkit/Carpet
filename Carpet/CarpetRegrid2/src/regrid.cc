@@ -534,7 +534,7 @@ namespace CarpetRegrid2 {
       //
       // TODO: move this to the top, and check the current grid
       // instead of the next coarser one
-      if (rl > 1) {
+      if (rl > 0) {
         ibbox const & coarse = * regions.at(rl-1).begin();
         
         i2vect const fdistance =
@@ -555,8 +555,16 @@ namespace CarpetRegrid2 {
           coarsified |= ecbb;
         }
         
-        regions.at(rl-1) |= coarsified;
-        regions.at(rl-1).normalize();
+#if 0
+        // We cannot just enlarge the grid; all the nice properties
+        // that were ensured above are then broken
+        if (rl > 1) {
+          // Do not enlarge the coarsest grid
+          regions.at(rl-1) |= coarsified;
+          regions.at(rl-1).normalize();
+        }
+#endif
+        assert (coarsified <= regions.at(rl-1));
       }
       
       
