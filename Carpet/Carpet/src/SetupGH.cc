@@ -477,11 +477,9 @@ namespace Carpet {
     // Number of ghost zones
     i2vect const ghosts = get_ghostzones();
     
-    i2vect const buffer_width =
-      i2vect (use_buffer_zones) * ghosts * int (num_integrator_substeps);
-    
+    int const buffer_factor = use_buffer_zones ? num_integrator_substeps : 1;
     int const taper_factor = use_tapered_grids ? refinement_factor : 1;
-    i2vect const buffers = taper_factor * buffer_width;
+    i2vect const buffers = (taper_factor * buffer_factor - 1) * ghosts;
     
     vdd.resize(maps);
     vdd.at(m) = new dh (* vhh.at(m),
