@@ -264,6 +264,9 @@ namespace CarpetRegrid2 {
     // The set of refined regions
     vector <ibboxset> regions (1);
     
+    // Set up coarsest level
+    regions.at(0) = ibboxset (hh.extent (0, 0, 0));
+    
     // Loop over all centres
     for (int n = 0; n < num_centres; ++ n) {
       centre_description centre (cctkGH, n);
@@ -535,6 +538,7 @@ namespace CarpetRegrid2 {
       // TODO: move this to the top, and check the current grid
       // instead of the next coarser one
       if (rl > 0) {
+        assert (not regions.at(rl-1).empty());
         ibbox const & coarse = * regions.at(rl-1).begin();
         
         i2vect const fdistance =
