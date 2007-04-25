@@ -11,12 +11,16 @@ CCTK_INT min_distance "Minimum distance (in grid points) between coarse and fine
   0:* :: ""
 } 4
 
+BOOLEAN ensure_proper_nesting "Ensure proper nesting automatically" STEERABLE=always
+{
+} "yes"
+
+
+
 CCTK_REAL min_fraction "Minimum fraction of required refined points that need to be present in a refined region" STEERABLE=always
 {
   0:* :: ""
 } 0.9
-
-
 
 BOOLEAN snap_to_coarse "Ensure that the fine grid extent coincides with coarse grid points" STEERABLE=always
 {

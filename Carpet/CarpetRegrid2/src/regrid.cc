@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
 #include <vector>
 
 #include <cctk.h>
@@ -265,7 +266,10 @@ namespace CarpetRegrid2 {
     vector <ibboxset> regions (1);
     
     // Set up coarsest level
-    regions.at(0) = ibboxset (hh.extent (0, 0, 0));
+    for (size_t c = 0; c < regss.at(0).size(); ++ c) {
+      regions.at(0) += regss.at(0).at(c).extent;
+    }
+    regions.at(0).normalize();
     
     // Loop over all centres
     for (int n = 0; n < num_centres; ++ n) {
@@ -301,7 +305,60 @@ namespace CarpetRegrid2 {
       
     regss.resize (regions.size());
     
+    assert (regions.size() > 0);
     for (size_t rl = regions.size() - 1; rl >= 1; -- rl) {
+      
+      // Sanity check
+      assert (not regions.at(rl).empty());
+      
+      
+      
+      //
+      // Ensure that this grid contains all finer ones
+      //
+      if (rl < regions.size() - 1) {
+        bool is_properly_nested = true;
+        
+        ibbox const & coarse0 = * regions.at(rl).begin();
+        
+        i2vect const fdistance = dd.ghost_width;
+        i2vect const cdistance =
+          i2vect (min_distance + dd.prolongation_stencil_size());
+        
+        for (ibboxset::const_iterator ibb = regions.at(rl+1).begin();
+             ibb != regions.at(rl+1).end();
+             ++ ibb)
+        {
+          ibbox const & fbb = * ibb;
+          
+          bvect const lower_is_outer = fbb.lower() <= physical_ilower;
+          bvect const upper_is_outer = fbb.upper() >= physical_iupper;
+          b2vect const ob (lower_is_outer, upper_is_outer);
+          
+          ibbox const ebb = fbb.expand (i2vect (ob) * fdistance);
+          ibbox const cbb = ebb.expanded_for (coarse0);
+          ibbox const ecbb = cbb.expand (i2vect (ob) * cdistance);
+          
+          is_properly_nested = is_properly_nested and ecbb <= regions.at(rl);
+          
+          // Enlarge this level
+          if (ensure_proper_nesting) {
+            regions.at(rl) |= ecbb;
+          }
+        }
+        
+        if (ensure_proper_nesting) {
+          regions.at(rl).normalize();
+        } else {
+          if (not is_properly_nested) {
+            ostringstream msg;
+            msg << "Level " << rl << " of the refinement hierarchy is not properly nested.  It does not contain level " << (rl+1) << ".";
+            CCTK_WARN (CCTK_WARN_ALERT, msg.str().c_str());
+          }
+        }
+      }
+      
+      
       
       //
       // Add buffer zones
@@ -533,43 +590,9 @@ namespace CarpetRegrid2 {
       
       
       //
-      // Ensure that the coarser grids contain the finer ones
+      // Ensure that this grid is contained in the domain
       //
-      // TODO: move this to the top, and check the current grid
-      // instead of the next coarser one
-      if (rl > 0) {
-        assert (not regions.at(rl-1).empty());
-        ibbox const & coarse = * regions.at(rl-1).begin();
-        
-        i2vect const fdistance =
-          i2vect (0 * min_distance) + dd.ghost_width + dd.buffer_width;
-        i2vect const cdistance =
-          dd.buffer_width +
-          i2vect (min_distance + dd.prolongation_stencil_size());
-        
-        ibboxset coarsified;
-        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
-             ibb != regions.at(rl).end();
-             ++ ibb)
-        {
-          ibbox const & fbb = * ibb;
-          ibbox const efbb = fbb.expand (fdistance[0], fdistance[1]);
-          ibbox const cbb = efbb.expanded_for(coarse);
-          ibbox const ecbb = cbb.expand (cdistance[0], cdistance[1]);
-          coarsified |= ecbb;
-        }
-        
-#if 0
-        // We cannot just enlarge the grid; all the nice properties
-        // that were ensured above are then broken
-        if (rl > 1) {
-          // Do not enlarge the coarsest grid
-          regions.at(rl-1) |= coarsified;
-          regions.at(rl-1).normalize();
-        }
-#endif
-        assert (coarsified <= regions.at(rl-1));
-      }
+      assert (regions.at(rl) <= hh.baseextents.at(0).at(rl));
       
       
       
