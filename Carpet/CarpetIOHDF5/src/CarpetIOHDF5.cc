@@ -485,9 +485,20 @@ static int TimeToOutput (const cGH* const cctkGH, const int vindex)
 
 static int TriggerOutput (const cGH* const cctkGH, const int vindex)
 {
-  char *fullname = CCTK_FullName (vindex);
-  const char *varname = CCTK_VarName (vindex);
-  const int retval = OutputVarAs (cctkGH, fullname, varname);
+  DECLARE_CCTK_PARAMETERS;
+  int retval;
+
+  char* const fullname = CCTK_FullName(vindex);
+  if (one_file_per_group) {
+    const int gindex = CCTK_GroupIndexFromVarI(vindex);
+    char* const groupname = CCTK_GroupName(gindex);
+    for (char* p=groupname; *p; ++p) *p=tolower(*p);
+    retval = OutputVarAs (cctkGH, fullname, groupname);
+    free (groupname);
+  } else {
+    const char *varname = CCTK_VarName (vindex);
+    retval = OutputVarAs (cctkGH, fullname, varname);
+  }
   free (fullname);
 
   return (retval);
@@ -587,17 +598,24 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
     assert (thisfile != created_files.end());
   }
 
+  const int firstvar = one_file_per_group ?
+                       CCTK_FirstVarIndexI(group) : vindex;
+  const int numvars  = one_file_per_group ?
+                       CCTK_NumVarsInGroupI(group) : 1;
+
   // check if this variable has been output already during this iteration
   int& last_output = thisfile->second.at(mglevel).at(reflevel).at(vindex);
   if (last_output == cctk_iteration) {
     // Has already been output during this iteration
-    char* varname = CCTK_FullName(vindex);
-    CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "Skipping output for variable \"%s\", because this variable "
-                "has already been output during the current iteration -- "
-                "probably via a trigger during the analysis stage",
-                varname);
-    free (varname);
+    if (not one_file_per_group or vindex == firstvar + numvars - 1) {
+      char* varname = CCTK_FullName(vindex);
+      CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Skipping output for variable \"%s\", because this variable "
+                  "has already been output during the current iteration -- "
+                  "probably via a trigger during the analysis stage",
+                  varname);
+      free (varname);
+    }
     return (0);
   }
   assert (last_output < cctk_iteration);
@@ -636,14 +654,24 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
                 "Writing variable '%s' on mglevel %d reflevel %d",
                 fullname, mglevel, reflevel);
   }
-  if ((CCTK_EQUALS (out_mode, "onefile") and io_out_unchunked) or
-      request->out_unchunked or
-      groupdata.disttype == CCTK_DISTRIB_CONSTANT) {
-    error_count += WriteVarUnchunked (cctkGH, file, request, false);
-  } else if (CCTK_EQUALS (out_mode, "onefile")) {
-    error_count += WriteVarChunkedSequential (cctkGH, file, request, false);
-  } else {
-    error_count += WriteVarChunkedParallel (cctkGH, file, request, false);
+  for (int var = firstvar; var < firstvar + numvars; var++) {
+    ioRequest* r = myGH->requests[var];
+    if (not r) {
+      r = IOUtil_DefaultIORequest (cctkGH, var, 1);
+    }
+    if ((CCTK_EQUALS (out_mode, "onefile") and io_out_unchunked) or
+        r->out_unchunked or
+        groupdata.disttype == CCTK_DISTRIB_CONSTANT) {
+      error_count += WriteVarUnchunked (cctkGH, file, r, false);
+    } else if (CCTK_EQUALS (out_mode, "onefile")) {
+      error_count += WriteVarChunkedSequential (cctkGH, file, r, false);
+    } else {
+      error_count += WriteVarChunkedParallel (cctkGH, file, r, false);
+    }
+    if (r != myGH->requests[var]) IOUtil_FreeIORequest (&r);
+
+    // mark this variable to have been output at this iteration
+    thisfile->second.at(mglevel).at(reflevel).at(var) = cctk_iteration;
   }
 
   // free I/O request structure

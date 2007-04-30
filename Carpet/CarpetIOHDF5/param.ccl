@@ -95,6 +95,10 @@ BOOLEAN use_grid_structure_from_checkpoint "Use the grid structure stored in the
 {
 } "no"
 
+BOOLEAN one_file_per_group "Write one file per group instead of per variable" STEERABLE = ALWAYS
+{
+} "no"
+
 INT compression_level "Compression level to use for writing HDF5 data" STEERABLE = ALWAYS
 {
   0:9 :: "Higher numbers compress better, a value of zero disables compression"
