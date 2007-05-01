@@ -8,6 +8,7 @@
 #include "cctk_Parameters.h"
 #include "util_Table.h"
 
+#include "operators.hh"
 #include "CarpetIOHDF5.hh"
 #include "CactusBase/IOUtil/src/ioGH.h"
 
@@ -331,7 +332,8 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
       const ggf* ff = arrdata.at(gindex).at(Carpet::map).data.at(var);
       const gdata* const data = (*ff) (request->timelevel, refinementlevel,
                                        component, mglevel);
-      gdata* const processor_component = data->make_typed (request->vindex);
+      gdata* const processor_component =
+        data->make_typed (request->vindex,error_centered, op_sync);
 
       processor_component->allocate (bbox, 0);
       for (comm_state state; not state.done(); state.step()) {
