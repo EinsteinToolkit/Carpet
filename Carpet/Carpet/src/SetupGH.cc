@@ -479,7 +479,11 @@ namespace Carpet {
     
     int const buffer_factor = use_buffer_zones ? num_integrator_substeps : 1;
     int const taper_factor = use_tapered_grids ? refinement_factor : 1;
-    i2vect const buffers = (taper_factor * buffer_factor - 1) * ghosts;
+    assert (all (all (buffer_factor * ghosts + additional_buffer_zones >= 0)));
+    i2vect const buffers =
+      taper_factor * (buffer_factor * ghosts + additional_buffer_zones) -
+      ghosts;
+    assert (all (all (buffers >= 0)));
     
     vdd.resize(maps);
     vdd.at(m) = new dh (* vhh.at(m),

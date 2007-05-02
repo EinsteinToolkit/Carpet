@@ -181,6 +181,11 @@ BOOLEAN use_buffer_zones "Use buffer zones"
 {
 } "no"
 
+CCTK_INT additional_buffer_zones "Additional buffer zones"
+{
+  *:* :: ""
+} 0
+
 BOOLEAN use_tapered_grids "Use tapered grids, avoiding time interpolation during evolution"
 {
 } "no"
