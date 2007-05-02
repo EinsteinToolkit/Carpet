@@ -33,13 +33,13 @@ using namespace CarpetLib;
 
 template <typename T>
 void
-prolongate_3d_eno (T const * restrict const src,
-                   ivect3 const & srcext,
-                   T * restrict const dst,
-                   ivect3 const & dstext,
-                   ibbox3 const & srcbbox,
-                   ibbox3 const & dstbbox,
-                   ibbox3 const & regbbox)
+prolongate_3d_eno (T const * restrict const /*src*/,
+                   ivect3 const & /*srcext*/,
+                   T * restrict const /*dst*/,
+                   ivect3 const & /*dstext*/,
+                   ibbox3 const & /*srcbbox*/,
+                   ibbox3 const & /*dstbbox*/,
+                   ibbox3 const & /*regbbox*/)
 {
   CCTK_WARN (0, "Data type not supported");
 }
@@ -81,13 +81,13 @@ prolongate_3d_eno (CCTK_REAL8 const * restrict const src,
 
 template <typename T>
 void
-prolongate_3d_weno (T const * restrict const src,
-                    ivect3 const & srcext,
-                    T * restrict const dst,
-                    ivect3 const & dstext,
-                    ibbox3 const & srcbbox,
-                    ibbox3 const & dstbbox,
-                    ibbox3 const & regbbox)
+prolongate_3d_weno (T const * restrict const /*src*/,
+                    ivect3 const & /*srcext*/,
+                    T * restrict const /*dst*/,
+                    ivect3 const & /*dstext*/,
+                    ibbox3 const & /*srcbbox*/,
+                    ibbox3 const & /*dstbbox*/,
+                    ibbox3 const & /*regbbox*/)
 {
   CCTK_WARN (0, "Data type not supported");
 }
@@ -460,9 +460,9 @@ transfer_p_vc_cc (data const * const src,
 template <>
 void
 data <CCTK_INT>::
-transfer_p_vc_cc (data const * const src,
-                  ibbox const & box,
-                  int const order_space)
+transfer_p_vc_cc (data const * const /*src*/,
+                  ibbox const & /*box*/,
+                  int const /*order_space*/)
 {
   CCTK_WARN (0, "Data type not supported");
 }
@@ -579,9 +579,9 @@ transfer_prolongate (data const * const src,
 template <>
 void
 data <CCTK_INT>::
-transfer_prolongate (data const * const src,
-                     ibbox const & box,
-                     int const order_space)
+transfer_prolongate (data const * const /*src*/,
+                     ibbox const & /*box*/,
+                     int const /*order_space*/)
 {
   CCTK_WARN (0, "Data type not supported");
 }
@@ -593,7 +593,7 @@ void
 data <T>::
 transfer_restrict (data const * const src,
                    ibbox const & box,
-                   int const order_space)
+                   int const /*order_space*/)
 {
   static Timer total ("restrict");
   total.start ();
@@ -639,9 +639,9 @@ transfer_restrict (data const * const src,
 template <>
 void
 data <CCTK_INT>::
-transfer_restrict (data const * const src,
-                   ibbox const & box,
-                   int const order_space)
+transfer_restrict (data const * const /*src*/,
+                   ibbox const & /*box*/,
+                   int const /*order_space*/)
 {
   CCTK_WARN (0, "Data type not supported");
 }
@@ -763,11 +763,11 @@ time_interpolate (vector <data *> const & srcs,
 template <>
 void
 data <CCTK_INT>::
-time_interpolate (vector <data *> const & srcs,
-                  ibbox const & box,
-                  vector <CCTK_REAL> const & times,
-                  CCTK_REAL const time,
-                  int const order_time)
+time_interpolate (vector <data *> const & /*srcs*/,
+                  ibbox const & /*box*/,
+                  vector <CCTK_REAL> const & /*times*/,
+                  CCTK_REAL const /*time*/,
+                  int const /*order_time*/)
 {
   CCTK_WARN (0, "Data type not supported");
 }
