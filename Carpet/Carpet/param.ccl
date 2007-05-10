@@ -426,7 +426,7 @@ BOOLEAN regrid_during_recovery "Regrid while recovering" STEERABLE=recover
 
 BOOLEAN regrid_in_level_mode "Regrid in level mode (instead of singlemap mode), enabling more efficient processor distributions when there are multiple maps" STEERABLE=always
 {
-} "no"
+} "yes"
 
 
 
