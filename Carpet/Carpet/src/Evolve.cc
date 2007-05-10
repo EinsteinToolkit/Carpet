@@ -1,6 +1,9 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
+#include <map>
+#include <string>
+#include <sstream>
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
@@ -31,6 +34,10 @@ namespace Carpet {
   static void CallAnalysis (cGH * cctkGH);
   
   static void print_internal_data ();
+  
+  static void ScheduleTraverse
+  (char const * where, char const * name, cGH * cctkGH);
+  static void OutputGH (char const * where, cGH * cctkGH);
   
   
   
@@ -412,8 +419,9 @@ namespace Carpet {
   CallAnalysis  (cGH * const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
-
-    static Timer timer ("Evolve::CallAnalysis");
+    
+    char const * const where = "Evolve::CallAnalysis";
+    static Timer timer (where);
     timer.start();
     
     for (int ml=mglevels-1; ml>=0; --ml) {
@@ -440,29 +448,24 @@ namespace Carpet {
                         (do_meta_mode ? " (meta)" : ""));
               
               if (reflevel < reflevels-1) {
-                Checkpoint ("Scheduling POSTRESTRICT");
-                CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cctkGH, CallFunction);
+                ScheduleTraverse (where, "CCTK_POSTRESTRICT", cctkGH);
               }
               
               // Poststep
-              Checkpoint ("Scheduling POSTSTEP");
-              CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cctkGH, CallFunction);
+              ScheduleTraverse (where, "CCTK_POSTSTEP", cctkGH);
               
               // Checking
               PoisonCheck (cctkGH, currenttime);
               CalculateChecksums (cctkGH, currenttime);
               
               // Checkpoint
-              Checkpoint ("Scheduling CHECKPOINT");
-              CCTK_ScheduleTraverse ("CCTK_CHECKPOINT", cctkGH, CallFunction);
+              ScheduleTraverse (where, "CCTK_CHECKPOINT", cctkGH);
               
               // Analysis
-              Checkpoint ("Scheduling ANALYSIS");
-              CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cctkGH, CallFunction);
+              ScheduleTraverse (where, "CCTK_ANALYSIS", cctkGH);
               
               // Output
-              Checkpoint ("OutputGH");
-              CCTK_OutputGH (cctkGH);
+              OutputGH (where, cctkGH);
               
               // Checking
               CheckChecksums (cctkGH, alltimes);
@@ -509,5 +512,40 @@ namespace Carpet {
   }
   
   
+  
+  void ScheduleTraverse (char const * const where, char const * const name,
+                         cGH * const cctkGH)
+  {
+    ostringstream timernamebuf;
+    timernamebuf << where << "::" << name;
+    string const timername = timernamebuf.str();
+    static std::map <string, Timer *> timers;
+    Timer * & mapped = timers[timername];
+    if (not mapped) {
+      mapped = new Timer (timername.c_str());
+    }
+    Timer & timer = * mapped;
+    
+    timer.start();
+    ostringstream infobuf;
+    infobuf << "Scheduling " << name;
+    string const info = infobuf.str();
+    Checkpoint (info.c_str());
+    CCTK_ScheduleTraverse (name, cctkGH, CallFunction);
+    timer.stop();
+  }
+  
+  void OutputGH (char const * const where, cGH * const cctkGH)
+  {
+    ostringstream buf;
+    buf << where << "::OutputGH";
+    string const timername = buf.str();
+    static Timer timer (timername.c_str());
+    
+    timer.start();
+    Checkpoint ("OutputGH");
+    CCTK_OutputGH (cctkGH);
+    timer.stop();
+  }
   
 } // namespace Carpet

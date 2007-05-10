@@ -1,6 +1,9 @@
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
+#include <map>
+#include <string>
+#include <sstream>
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
@@ -39,6 +42,10 @@ namespace Carpet {
   static void Initialise3tl (cGH * cctkGH);
   
   static void print_internal_data ();
+  
+  static void ScheduleTraverse
+  (char const * where, char const * name, cGH * cctkGH);
+  static void OutputGH (char const * where, cGH * cctkGH);
   
   
   
@@ -378,6 +385,10 @@ namespace Carpet {
   void
   CallAnalysis (cGH * const cctkGH)
   {
+    char const * const where = "Initialise::CallAnalysis";
+    static Timer timer (where);
+    timer.start();
+    
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cctkGH) {
         ENTER_LEVEL_MODE (cctkGH, rl) {
@@ -394,16 +405,13 @@ namespace Carpet {
           if (cctkGH->cctk_iteration % do_every == 0)
           {
             // Checkpoint
-            Checkpoint ("Scheduling CPINITIAL");
-            CCTK_ScheduleTraverse ("CCTK_CPINITIAL", cctkGH, CallFunction);
+            ScheduleTraverse (where, "CCTK_CPINITIAL", cctkGH);
             
             // Analysis
-            Checkpoint ("Scheduling ANALYSIS");
-            CCTK_ScheduleTraverse ("CCTK_ANALYSIS", cctkGH, CallFunction);
+            ScheduleTraverse (where, "CCTK_ANALYSIS", cctkGH);
             
             // Output
-            Checkpoint ("OutputGH");
-            CCTK_OutputGH (cctkGH);
+            OutputGH (where, cctkGH);
             
             // Checking
             PoisonCheck (cctkGH, alltimes);
@@ -413,6 +421,8 @@ namespace Carpet {
         } LEAVE_LEVEL_MODE;
       } END_MGLEVEL_LOOP;
     } // for rl
+    
+    timer.stop();
   }
   
   
@@ -797,6 +807,43 @@ namespace Carpet {
            << "   delta_time: " << delta_time << endl;
       cout.precision (oldprecision);
     }
+  }
+  
+  
+  
+  void ScheduleTraverse (char const * const where, char const * const name,
+                         cGH * const cctkGH)
+  {
+    ostringstream timernamebuf;
+    timernamebuf << where << "::" << name;
+    string const timername = timernamebuf.str();
+    static std::map <string, Timer *> timers;
+    Timer * & mapped = timers[timername];
+    if (not mapped) {
+      mapped = new Timer (timername.c_str());
+    }
+    Timer & timer = * mapped;
+    
+    timer.start();
+    ostringstream infobuf;
+    infobuf << "Scheduling " << name;
+    string const info = infobuf.str();
+    Checkpoint (info.c_str());
+    CCTK_ScheduleTraverse (name, cctkGH, CallFunction);
+    timer.stop();
+  }
+  
+  void OutputGH (char const * const where, cGH * const cctkGH)
+  {
+    ostringstream buf;
+    buf << where << "::OutputGH";
+    string const timername = buf.str();
+    static Timer timer (timername.c_str());
+    
+    timer.start();
+    Checkpoint ("OutputGH");
+    CCTK_OutputGH (cctkGH);
+    timer.stop();
   }
   
   
