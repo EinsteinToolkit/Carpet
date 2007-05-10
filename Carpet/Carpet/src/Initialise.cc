@@ -198,8 +198,10 @@ namespace Carpet {
           
           if (regrid_during_recovery) {
             CallRegrid (cctkGH, true, true, false);
+#if 0
           } else {
             CallRegrid (cctkGH, false, true, false);
+#endif
           }
           
         } LEAVE_LEVEL_MODE;
