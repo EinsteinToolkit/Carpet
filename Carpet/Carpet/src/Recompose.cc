@@ -110,20 +110,32 @@ namespace Carpet {
     
     assert (is_level_mode());
     
-    if (not CCTK_IsFunctionAliased ("Carpet_Regrid")) {
+    bool const have_regrid     = CCTK_IsFunctionAliased ("Carpet_Regrid");
+    bool const have_regridmaps = CCTK_IsFunctionAliased ("Carpet_RegridMaps");
+    bool const use_regridmaps = regrid_in_level_mode and have_regridmaps;
+    
+    if (not use_regridmaps and not have_regrid) {
       static bool didtell = false;
       if (maxreflevels > 1 and not didtell) {
-	CCTK_WARN (2, "No regridding routine has been provided.  There will be no regridding.  Maybe you forgot to activate a regridding thorn?");
+	CCTK_WARN (2, "The regridding routine Carpet_Regrid has not been provided.  There will be no regridding.  Maybe you forgot to activate a regridding thorn?");
 	didtell = true;
       }
       return false;
+    }
+    
+    if (regrid_in_level_mode and not have_regridmaps) {
+      static bool didtell = false;
+      if (maxreflevels > 1 and not didtell) {
+	CCTK_WARN (2, "The regridding routine Carpet_RegridMaps has not been provided.  Regridding will be performed in singlemap mode instead of level mode.");
+	didtell = true;
+      }
     }
     
     
     
     bool did_change = false;
     
-    if (not regrid_in_level_mode) {
+    if (not use_regridmaps) {
       
       BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
         
