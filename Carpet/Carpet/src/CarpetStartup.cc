@@ -51,30 +51,6 @@ namespace Carpet {
     CCTK_OverloadArrayGroupSizeB (ArrayGroupSizeB);
     CCTK_OverloadQueryGroupStorageB (QueryGroupStorageB);
     CCTK_OverloadGroupDynamicData (GroupDynamicData);
-
-    // print warnings if the user set deprecated parameters in her/his parfile
-    if (CCTK_ParameterQueryTimesSet ("minimise_outstanding_communications",
-                                     "CarpetLib") > 0) {
-      CCTK_WARN (CCTK_WARN_COMPLAIN,
-        "You set the parameter 'CarpetLib::minimise_outstanding_communications'"
-        " in your parfile. This parameter is deprecated and should not be used"
-        " anymore. Use 'CarpetLib::use_collective_communication_buffers'"
-        " instead.");
-    }
-    if (CCTK_ParameterQueryTimesSet ("combine_recv_send",
-                                     "CarpetLib") > 0) {
-      CCTK_WARN (CCTK_WARN_COMPLAIN,
-        "You set the parameter 'CarpetLib::combine_recv_send'"
-        " in your parfile. This parameter is deprecated and should not be used"
-        " anymore.");
-    }
-    if (CCTK_ParameterQueryTimesSet ("use_lightweight_buffers",
-                                     "CarpetLib") > 0) {
-      CCTK_WARN (CCTK_WARN_COMPLAIN,
-        "You set the parameter 'CarpetLib::use_lightweight_buffers'"
-        " in your parfile. This parameter is deprecated and should not be used"
-        " anymore.");
-    }
     
     return 0;
   }
