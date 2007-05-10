@@ -93,13 +93,16 @@ regrid ()
       // Domain:
       
       ibbox const & domain_exterior = h.baseextent(ml,rl);
-      assert (not domain_exterior.empty());
+      // Variables may have size zero
+      // assert (not domain_exterior.empty());
       
       i2vect const & boundary_width = h.boundary_width;
       assert (all (all (boundary_width >= 0)));
       
       ibbox const domain_active = domain_exterior.expand (- boundary_width);
-      assert (not domain_active.empty());
+      // Variables may have size zero
+      // assert (not domain_active.empty());
+      assert (domain_active <= domain_exterior);
       
       ibset domain_boundary = domain_exterior - domain_active;
       domain_boundary.normalize();
@@ -120,8 +123,9 @@ regrid ()
         // regridding thorn
         intr = h.extent (ml,rl,c);
         
-        // The interior must not be empty
-        assert (not intr.empty());
+        // (The interior must not be empty)
+        // Variables may have size zero
+        // assert (not intr.empty());
         
         // The interior must be contained in the domain
         assert (intr <= h.baseextent(ml,rl));
@@ -154,8 +158,9 @@ regrid ()
         assert (all (all (ghost_width >= 0)));
         extr = intr.expand (i2vect (not is_outer_boundary) * ghost_width);
         
-        // The exterior must not be empty
-        assert (not extr.empty());
+        // (The exterior must not be empty)
+        // Variables may have size zero
+        // assert (not extr.empty());
         
         // The exterior must be contained in the domain
         assert (extr <= domain_exterior);
@@ -182,8 +187,9 @@ regrid ()
         
         comm = extr.expand (i2vect (is_outer_boundary) * (- boundary_width));
         
-        // The communicated region must not be empty
-        assert (not comm.empty());
+        // (The communicated region must not be empty)
+        // Variables may have size zero
+        // assert (not comm.empty());
         
         // The communicated region must be contained in the active
         // part of the domain
@@ -210,8 +216,9 @@ regrid ()
         
         owned = intr.expand (i2vect (is_outer_boundary) * (- boundary_width));
         
-        // The owned region must not be empty
-        assert (not owned.empty());
+        // (The owned region must not be empty)
+        // Variables may have size zero
+        // assert (not owned.empty());
         
         // The owned region must be contained in the active part of
         // the domain

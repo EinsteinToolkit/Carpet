@@ -58,7 +58,8 @@ gh (vector<ivect> const & reffacts_, centering const refcent_,
   for (int ml = 0; ml < (int)baseextents.size(); ++ ml) {
     for (int rl = 0; rl < (int)baseextents.AT(ml).size(); ++ rl) {
       ibbox const & box = baseextents.AT(ml).AT(rl);
-      assert (all (box.shape() / box.stride() >
+      // This condition must hold even for zero-sized grid arrays
+      assert (all (box.shape() / box.stride() >=
                    boundary_width[0] + boundary_width[1]));
     }
   }
