@@ -726,22 +726,23 @@ regrid ()
       
       // Regridding schedule:
       
-      if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > rl) {
+      for (int c = 0; c < h.components(rl); ++ c) {
         
-        int const oldcomponents = oldboxes.AT(ml).AT(rl).size();
+        dboxes & box = boxes.AT(ml).AT(rl).AT(c);
         
-        for (int c = 0; c < h.components(rl); ++ c) {
+        ibset needrecv = box.active;
+        
+        
           
-          dboxes & box = boxes.AT(ml).AT(rl).AT(c);
+        // Synchronisation:
+        
+        if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > rl) {
           
+          int const oldcomponents = oldboxes.AT(ml).AT(rl).size();
           
-          
-          // Synchronisation:
-          
-          // Synchronisation should fill as many active points as
+          // Synchronisation copies from the same level of the old
+          // grid structure.  It should fill as many active points as
           // possible
-          
-          ibset needrecv = box.active;
           
           box.old2new_sync_recv.resize (oldcomponents);
           box.old2new_sync_send.resize (oldcomponents);
@@ -766,89 +767,91 @@ regrid ()
           } // for cc
           
           needrecv.normalize();
-          
-          
-          
-          // Prolongation:
-          
-          if (rl > 0) {
-            int const orl = rl - 1;
-            
-            // Prolongation must fill what cannot be synchronised
-            
-            box.old2new_ref_prol_recv.resize (h.components(orl));
-            box.old2new_ref_prol_send.resize (h.components(orl));
-            
-            i2vect const stencil_size = i2vect (prolongation_stencil_size());
-            
-            assert (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0));
-            i2vect const reffact =
-              i2vect (h.reffacts.at(rl) / h.reffacts.at(orl));
-            
-            for (int cc = 0; cc < h.components(orl); ++ cc) {
-              dboxes const & obox = boxes.AT(ml).AT(orl).AT(cc);
-              
-              ibset contracted_oactive;
-              for (ibset::const_iterator
-                     ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
-              {
-                ibbox const & oactive = * ai;
-                // untested for cell centering
-                contracted_oactive +=
-                  oactive.contracted_for (box.interior).expand (reffact);
-              }
-              contracted_oactive.normalize();
-              
-              ibset ovlp = needrecv & contracted_oactive;
-              ovlp.normalize();
-              
-              for (ibset::const_iterator ri =
-                     ovlp.begin(); ri != ovlp.end(); ++ ri)
-              {
-                ibbox const & recv = * ri;
-                box.old2new_ref_prol_recv.AT(cc).push_back (recv);
-                ibbox const send =
-                  recv.expanded_for (obox.interior).expand (stencil_size);
-                assert (send <= obox.exterior);
-                box.old2new_ref_prol_send.AT(cc).push_back (send);
-              }
-              
-              needrecv -= ovlp;
-              
-            } // for cc
-            
-            needrecv.normalize();
-            
-          } // if rl > 0
-          
-          // All points must now have been received, either through
-          // synchronisation or through prolongation
-          assert (needrecv.empty());
-          
-    
-          
-          // Optimise fields:
-          
-          optimise_field
-            (box,
-             & dboxes::old2new_sync_recv,
-             & dboxes::fast_old2new_sync_recv);
-          optimise_field
-            (box,
-             & dboxes::old2new_sync_send,
-             & dboxes::fast_old2new_sync_send);
-          optimise_field
-            (box,
-             & dboxes::old2new_ref_prol_recv,
-             & dboxes::fast_old2new_ref_prol_recv);
-          optimise_field
-            (box,
-             & dboxes::old2new_ref_prol_send,
-             & dboxes::fast_old2new_ref_prol_send);
-          
-        } // for c
         
-      } // if not oldboxes.empty
+        } // if not oldboxes.empty
+        
+        
+        
+        // Prolongation:
+        
+        if (rl > 0) {
+          int const orl = rl - 1;
+          
+          // Prolongation interpolates from the next coarser level of
+          // the new grid structure.  It must fill what cannot be
+          // synchronised
+            
+          box.old2new_ref_prol_recv.resize (h.components(orl));
+          box.old2new_ref_prol_send.resize (h.components(orl));
+          
+          i2vect const stencil_size = i2vect (prolongation_stencil_size());
+          
+          assert (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0));
+          i2vect const reffact =
+            i2vect (h.reffacts.at(rl) / h.reffacts.at(orl));
+          
+          for (int cc = 0; cc < h.components(orl); ++ cc) {
+            dboxes const & obox = boxes.AT(ml).AT(orl).AT(cc);
+            
+            ibset contracted_oactive;
+            for (ibset::const_iterator
+                   ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
+            {
+              ibbox const & oactive = * ai;
+              // untested for cell centering
+              contracted_oactive +=
+                oactive.contracted_for (box.interior).expand (reffact);
+            }
+            contracted_oactive.normalize();
+            
+            ibset ovlp = needrecv & contracted_oactive;
+            ovlp.normalize();
+            
+            for (ibset::const_iterator ri =
+                   ovlp.begin(); ri != ovlp.end(); ++ ri)
+            {
+              ibbox const & recv = * ri;
+              box.old2new_ref_prol_recv.AT(cc).push_back (recv);
+              ibbox const send =
+                recv.expanded_for (obox.interior).expand (stencil_size);
+              assert (send <= obox.exterior);
+              box.old2new_ref_prol_send.AT(cc).push_back (send);
+            }
+            
+            needrecv -= ovlp;
+            
+          } // for cc
+          
+          needrecv.normalize();
+          
+        } // if rl > 0
+        
+        // All points must now have been received, either through
+        // synchronisation or through prolongation
+        assert (needrecv.empty());
+        
+        
+        
+        // Optimise fields:
+        
+        optimise_field
+          (box,
+           & dboxes::old2new_sync_recv,
+           & dboxes::fast_old2new_sync_recv);
+        optimise_field
+          (box,
+           & dboxes::old2new_sync_send,
+           & dboxes::fast_old2new_sync_send);
+        optimise_field
+          (box,
+           & dboxes::old2new_ref_prol_recv,
+           & dboxes::fast_old2new_ref_prol_recv);
+        optimise_field
+          (box,
+           & dboxes::old2new_ref_prol_send,
+           & dboxes::fast_old2new_ref_prol_send);
+        
+      } // for c
       
       
       
@@ -1062,8 +1065,8 @@ output (ostream & os)
   
   os << "old2new_sync_recv:" << old2new_sync_recv << eol;
   os << "old2new_sync_send:" << old2new_sync_send << eol;
-  os << "old2new_prol_recv:" << old2new_ref_prol_recv << eol;
-  os << "old2new_prol_send:" << old2new_ref_prol_send << eol;
+  os << "old2new_ref_prol_recv:" << old2new_ref_prol_recv << eol;
+  os << "old2new_ref_prol_send:" << old2new_ref_prol_send << eol;
   
   return os;
 }
