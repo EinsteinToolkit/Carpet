@@ -826,9 +826,11 @@ regrid ()
           
         } // if rl > 0
         
-        // All points must now have been received, either through
-        // synchronisation or through prolongation
-        assert (needrecv.empty());
+        if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > 0) {
+          // All points must now have been received, either through
+          // synchronisation or through prolongation
+          assert (needrecv.empty());
+        }
         
         
         
