@@ -198,11 +198,6 @@ void ggf::recompose_fill (comm_state & state, int const rl,
         } // if rl
       } // if do_prolongate
       
-      // Note that work need not be empty here; in this case, not
-      // everything could be initialised.  This is okay on outer
-      // boundaries.
-      // TODO: check this.
-      
     } // for c
   } // for ml
   
