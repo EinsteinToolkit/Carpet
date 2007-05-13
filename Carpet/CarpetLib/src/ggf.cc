@@ -158,14 +158,11 @@ void ggf::recompose_fill (comm_state & state, int const rl,
   for (int ml = 0; ml < h.mglevels(); ++ ml) {
     
     vector <int> tls;
-    vector <CCTK_REAL> times;
     if (do_prolongate and rl > 0 and transport_operator != op_none) {
       int const numtl = timelevels (ml, rl);
       tls.resize (numtl);
-      times.resize (numtl);
       for (int tl = 0; tl < numtl; ++ tl) {
         tls.AT(tl) = tl;
-        times.AT(tl) = t.time (tls.AT(tl), rl - 1, ml);
       }
     }
     
@@ -195,7 +192,7 @@ void ggf::recompose_fill (comm_state & state, int const rl,
                              & dh::dboxes::fast_old2new_ref_prol_recv,
                              & dh::dboxes::fast_old2new_ref_prol_send,
                              tls, rl - 1, ml,
-                             times.AT(tl));
+                             t.time (tl, rl, ml));
             } // for tl
           } // if transport_operator
         } // if rl
