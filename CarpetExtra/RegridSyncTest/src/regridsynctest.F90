@@ -27,3 +27,14 @@ subroutine RegridSyncTest_do_something(CCTK_ARGUMENTS)
 
 end subroutine RegridSyncTest_do_something
 
+
+
+subroutine RegridSyncTest_evolve(CCTK_ARGUMENTS)
+
+  implicit none
+  DECLARE_CCTK_PARAMETERS
+  DECLARE_CCTK_ARGUMENTS
+
+  myregridtestgf = 0.8d0
+
+end subroutine RegridSyncTest_evolve

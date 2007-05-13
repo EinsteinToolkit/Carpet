@@ -15,3 +15,9 @@ schedule RegridSyncTest_do_something AT PostRegrid
   SYNC: myregridtestgf
 } "Do something at postregrid and try to sync"
 
+
+schedule RegridSyncTest_evolve AT CCTK_EVOL
+{
+  LANG: Fortran
+  SYNC: myregridtestgf
+} "Do something at evol"
