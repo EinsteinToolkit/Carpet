@@ -1,7 +1,7 @@
-#include "cctk.h"
-#include "cctk_Parameters.h"
-#include "cctk_Arguments.h"
-#include "cctk_Functions.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
+#include <cctk_Arguments.h>
+#include <cctk_Functions.h>
 
 
 
@@ -13,8 +13,8 @@ subroutine RegridSyncTest_setup(CCTK_ARGUMENTS)
 
   myregridtestgf = 0.9d0
 
-
 end subroutine RegridSyncTest_setup
+
 
 
 subroutine RegridSyncTest_do_something(CCTK_ARGUMENTS)
@@ -24,7 +24,6 @@ subroutine RegridSyncTest_do_something(CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS
 
   myregridtestgf = 1.0d0
-
 
 end subroutine RegridSyncTest_do_something
 

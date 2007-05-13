@@ -1,5 +1,4 @@
 # Schedule definitions for thorn RegridSyncTest
-# $Header:$
 
 storage: myregridtestgf[3]
 
