@@ -15,6 +15,16 @@ subroutine RegridSyncTest_setup(CCTK_ARGUMENTS)
 
 end subroutine RegridSyncTest_setup
 
+subroutine RegridSyncTest_sync(CCTK_ARGUMENTS)
+
+  implicit none
+  DECLARE_CCTK_PARAMETERS
+  DECLARE_CCTK_ARGUMENTS
+
+!  :-)
+
+end subroutine RegridSyncTest_sync
+
 
 
 subroutine RegridSyncTest_do_something(CCTK_ARGUMENTS)
