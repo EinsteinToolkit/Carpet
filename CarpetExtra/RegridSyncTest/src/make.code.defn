@@ -1,7 +1,7 @@
 # Main make.code.defn file for thorn RegridSyncTest
 
 # Source files in this directory
-SRCS = regridsynctest.F90
+SRCS = regridsynctest.F90 output.c
 
 # Subdirectories containing source files
 SUBDIRS = 

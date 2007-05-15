@@ -21,3 +21,8 @@ schedule RegridSyncTest_evolve AT CCTK_EVOL
   LANG: Fortran
   SYNC: myregridtestgf
 } "Do something at evol"
+
+schedule regridsynctest_output AT POSTREGRID BEFORE RegridSyncTest_do_something
+{
+  LANG: C
+} "Do something at postregrid"

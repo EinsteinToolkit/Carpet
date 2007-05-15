@@ -1,0 +1,176 @@
+
+#--- Base and Driver Thorns
+
+ActiveThorns	=  "	time 
+			carpet 
+			carpetlib 
+			carpetregrid 
+			carpetreduce 
+			carpetslab 
+			cartgrid3d 
+			coordbase 
+			mol 
+			boundary 
+			spacemask 
+			ioutil 
+			symbase 
+			aeilocalinterp 
+			carpetinterp 
+			constants 
+			nanchecker
+			nancatcher
+		   "
+
+#--- Output related thorns
+
+ActiveThorns	=  "	carpetioascii 
+			carpetiobasic
+			carpetioscalar 
+			carpetiohdf5 
+			regridsynctest
+		   "
+
+
+
+
+############################# Output Related Stuff ##################################
+
+
+carpetioascii::out1D_vars               =       "
+			regridsynctest::myregridtestgf
+			"
+
+
+#--- output directories
+
+IO::out_dir					=	$parfile
+IO::checkpoint_dir				=	$parfile
+IO::recover_dir					=	$parfile
+iohdf5::out_dir					=	$parfile
+
+
+
+#--- output frequency
+
+iohdf5::out_criterion 				= 	"divisor"
+carpetioascii::out1D_criterion 			=	"divisor"
+carpetioascii::out2D_criterion 			= 	"divisor"
+carpetioascii::output_all_timelevels		=	yes
+
+carpetioscalar::outScalar_every			=	1
+IOASCII::out1D_every	     			= 	1
+IOASCII::out2D_every				=	-1
+
+IOBasic::outInfo_every   			=	1
+
+io::out_single_precision 			= 	"yes"
+carpetlib::output_bboxes=yes
+
+carpetiobasic::real_min = 1.0e-2
+
+############################# DRIVER  #################################################
+
+#--- performance & infrastructure
+
+CarpetLib::interleave_communications = yes
+CarpetLib::vary_tags                 = yes
+CarpetLib::combine_sends             = yes
+CarpetLib::reduce_mpi_waitall        = yes
+
+#Carpet::regrid_during_initialisation = no
+Carpet::convergence_level = 0
+
+Carpet::output_timers_every      = 1024
+CarpetLib::print_timestats_every = 1024
+Carpet::print_timestats_every = 1
+CarpetLib::timestat_timer         = "rdtsc"
+CarpetLib::print_memstats_every  = 1024
+Carpet::regrid_in_level_mode                    = no
+Carpet::num_integrator_substeps                 = 3
+carpet::use_buffer_zones                        = yes
+
+#carpet::poison_new_timelevels			= yes
+carpet::poison_new_timelevels	= yes
+carpetlib::poison_new_memory     = yes
+
+#--- Carpet prolongation order settings
+
+Carpet::prolongation_order_space		= 3
+Carpet::prolongation_order_time			= 2
+
+
+#--- Carpet initial data setup parameters
+
+Carpet::init_3_timelevels 			= "no"
+Carpet::init_each_timelevel 			= "yes"
+
+
+#--- Grid Setup and carpet parameters
+
+
+driver::ghost_size                      	= 3
+
+cartgrid3d::type                        	= "coordbase"
+cartgrid3d::domain                      	= "octant"
+cartgrid3d::avoid_origin			= "no"
+
+coordbase::xmin					= 0
+coordbase::xmax					= 1966.08
+coordbase::ymin					= 0
+coordbase::ymax					= 1966.08
+coordbase::zmin					= 0
+coordbase::zmax					= 1966.08
+coordbase::dx					= 61.44
+coordbase::dy					= 61.44
+coordbase::dz					= 61.44
+
+
+
+cactus::cctk_itlast                     	= 768
+
+Carpet::domain_from_coordbase 			= "yes"
+CoordBase::boundary_size_z_lower     		= 3
+CoordBase::boundary_shiftout_z_lower 		= 1
+
+CoordBase::boundary_size_y_lower     		= 3
+CoordBase::boundary_shiftout_y_lower 		= 1
+
+CoordBase::boundary_size_x_lower     		= 3
+CoordBase::boundary_shiftout_x_lower 		= 1
+
+carpetregrid::refined_regions = "manual-coordinate-list"
+
+carpetregrid::coordinates = "
+        [ [ ([0,0,0]:[1228.8,1228.8,1228.8]:[30.72,30.72,30.72]) ],
+          [ ([0,0,0]:[614.4,614.4,614.4]:[15.36,15.36,15.36]) ],
+          [ ([0,0,0]:[307.2,307.2,307.2]:[7.68,7.68,7.68]) ],
+          [ ([0,0,0]:[153.6,153.6,153.6]:[3.84,3.84,3.84]) ],
+          [ ([0,0,0]:[76.8,76.8,76.8]:[1.92,1.92,1.92]) ],
+          [ ([0,0,0]:[46.08,46.08,46.08]:[0.96,0.96,0.96]) ],
+          [ ([0,0,0]:[24.96,24.96,24.96]:[0.48,0.48,0.48]) ],
+          [ ([0,0,0]:[11.52,11.52,11.52]:[0.24,0.24,0.24]) ] ]
+"
+
+
+carpetregrid::smart_outer_boundaries 		= "yes"
+
+
+carpet::max_refinement_levels           	= 9
+carpetregrid::refinement_levels         	= 1
+
+carpetregrid::regrid_every	        	= 512
+carpetregrid::num_new_levels   			= 1
+
+carpetregrid::activate_levels_on_regrid 	= "fixed"
+carpetregrid::keep_same_grid_structure 		= "yes"
+
+carpet::veryverbose 				= "yes"
+carpet::verbose					= "yes"
+
+#--- Time integration
+
+mol::ode_method					=	"icn"
+MoL::MoL_Intermediate_Steps 			= 	3
+time::dtfac                             	= 	0.375
+
+
