@@ -22,6 +22,10 @@ SCHEDULE GROUP MaskBase_SetupMask AT postregrid
 {
 } "Set up the weight function"
 
+SCHEDULE GROUP MaskBase_SetupMask AT post_recover_variables
+{
+} "Set up the weight function"
+
 SCHEDULE MaskBase_InitMask IN MaskBase_SetupMask
 {
   LANG: C
