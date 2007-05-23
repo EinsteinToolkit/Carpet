@@ -1,6 +1,8 @@
 #include <cassert>
 #include <cstring>
+#include <list>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "util_Table.h"
@@ -550,6 +552,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
   file_t file;
   fileset_t fileset;
   int error_count = 0;
+  list<string> filenames;
   DECLARE_CCTK_PARAMETERS;
 
   // first try to open a chunked file written on this processor
@@ -560,6 +563,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
 
   // try to open the file (prevent HDF5 error messages if it fails)
   H5E_BEGIN_TRY {
+    filenames.push_back (string (file.filename));
     file.file = H5Fopen (file.filename, H5F_ACC_RDONLY, H5P_DEFAULT);
   } H5E_END_TRY;
 
@@ -571,6 +575,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
     file.filename = IOUtil_AssembleFilename (NULL, basefilename, "", ".h5",
                                              called_from, fileset.first_ioproc, 0);
     H5E_BEGIN_TRY {
+      filenames.push_back (string (file.filename));
       file.file = H5Fopen (file.filename, H5F_ACC_RDONLY, H5P_DEFAULT);
     } H5E_END_TRY;
   }
@@ -582,6 +587,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
     file.filename = IOUtil_AssembleFilename (NULL, basefilename, "", ".h5",
                                              called_from, fileset.first_ioproc, 1);
     H5E_BEGIN_TRY {
+      filenames.push_back (string (file.filename));
       file.file = H5Fopen (file.filename, H5F_ACC_RDONLY, H5P_DEFAULT);
     } H5E_END_TRY;
   }
@@ -589,8 +595,14 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
   // return if no valid checkpoint could be found
   if (file.file < 0) {
     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                "No valid HDF5 file with basename '%s' found", basefilename);
+                "No valid HDF5 file with basename \"%s\" found", basefilename);
     free (file.filename);
+    for (list<string>::const_iterator
+           lsi = filenames.begin(); lsi != filenames.end(); ++ lsi)
+    {
+      CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Tried filename \"%s\"", lsi->c_str());
+    }
     return (filesets.end());
   }
 
