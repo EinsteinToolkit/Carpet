@@ -418,11 +418,11 @@ BOOLEAN prolongate_initial_data "Prolongate the refined regions during initial d
 
 BOOLEAN regrid_during_initialisation "Regrid while initialising" STEERABLE=recover
 {
-} "yes"
+} "no"
 
 BOOLEAN regrid_during_recovery "Regrid while recovering" STEERABLE=recover
 {
-} "yes"
+} "no"
 
 BOOLEAN regrid_in_level_mode "Regrid in level mode (instead of singlemap mode), enabling more efficient processor distributions when there are multiple maps" STEERABLE=always
 {
