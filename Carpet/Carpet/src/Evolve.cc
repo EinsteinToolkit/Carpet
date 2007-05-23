@@ -245,7 +245,10 @@ namespace Carpet {
           
           bool const did_recompose = Recompose (cctkGH, rl, true);
           
-          if (did_recompose or (did_remove_level and rl == reflevels - 1)) {
+          // Do not omit the global mode call when the finest level
+          // does not change:
+          // if (did_recompose or (did_remove_level and rl == reflevels - 1)) {
+          if (did_recompose or rl == reflevels - 1) {
             BEGIN_MGLEVEL_LOOP (cctkGH) {
               ENTER_LEVEL_MODE (cctkGH, rl) {
                 do_global_mode = reflevel == reflevels - 1;
