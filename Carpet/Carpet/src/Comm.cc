@@ -169,7 +169,7 @@ namespace Carpet {
 
   // Prolongate the boundaries of all CCTK_GF groups in the given set
   static void ProlongateGroupBoundaries (const cGH* cctkGH,
-                                         CCTK_REAL initial_time,
+                                         const CCTK_REAL initial_time,
                                          const vector<int>& groups)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -181,7 +181,7 @@ namespace Carpet {
 
     for (comm_state state; not state.done(); state.step()) {
       for (int group = 0; group < (int)groups.size(); ++group) {
-        const int g = groups[group];
+        const int g = groups.AT(group);
         const int grouptype = CCTK_GroupTypeI (g);
         if (grouptype != CCTK_GF) {
           continue;
