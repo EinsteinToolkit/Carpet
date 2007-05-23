@@ -533,7 +533,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   if (in_recovery and not CCTK_Equals (verbose, "none")) {
     CCTK_VInfo (CCTK_THORNSTRING,
                 "restarting simulation on mglevel %d reflevel %d "
-                "at iteration %d (physical time %g)", mglevel, reflevel,
+                "at iteration %d (simulation time %g)", mglevel, reflevel,
                 cctkGH->cctk_iteration, (double) cctkGH->cctk_time);
   }
 
