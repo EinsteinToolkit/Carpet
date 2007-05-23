@@ -200,7 +200,7 @@ namespace Carpet {
       int const nprocs = CCTK_nProcs (cctkGH);
       Output ("Running on the following hosts:");
       for (int n = 0; n < nprocs; ++ n) {
-        Output ("   %4d: %s\n", n, hostnames.at(n).c_str());
+        Output ("   %4d: %s", n, hostnames.at(n).c_str());
       }
     }
     
