@@ -192,8 +192,9 @@ BOOLEAN use_tapered_grids "Use tapered grids, avoiding time interpolation during
 
 CCTK_INT num_integrator_substeps "Number of substeps of the time integrator"
 {
-  1:* :: ""
-} 1
+  -1: :: "Call MoLNumIntegratorSubsteps"
+  0:* :: ""
+} -1
 
 
 

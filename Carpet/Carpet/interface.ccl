@@ -46,6 +46,13 @@ PROVIDES FUNCTION QueryProlongating WITH CarpetQueryProlongating LANGUAGE C
 
 
 
+# The number of time integrator substeps
+CCTK_INT FUNCTION MoLNumIntegratorSubsteps ()
+USES FUNCTION MoLNumIntegratorSubsteps
+
+
+
+
 # The symmetry boundaries
 CCTK_INT FUNCTION GetSymmetryBoundaries \
   (CCTK_POINTER_TO_CONST IN cctkGH, \

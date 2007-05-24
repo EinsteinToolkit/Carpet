@@ -477,10 +477,23 @@ namespace Carpet {
     // Number of ghost zones
     i2vect const ghosts = get_ghostzones();
     
-    int const buffer_factor = use_buffer_zones ? num_integrator_substeps : 1;
+    int buffer_factor;
+    if (use_buffer_zones) {
+      if (num_integrator_substeps == -1) {
+        assert (CCTK_IsFunctionAliased ("MoLNumIntegratorSubsteps"));
+        buffer_factor = MoLNumIntegratorSubsteps ();
+      } else {
+        buffer_factor = num_integrator_substeps;
+      }
+    } else {
+      buffer_factor = 1;
+    }
+    assert (buffer_factor > 0);
+    
     int const taper_factor = use_tapered_grids ? refinement_factor : 1;
     assert (all (all (buffer_factor * ghosts + int (additional_buffer_zones) >=
                       0)));
+    
     i2vect const buffers =
       taper_factor * (buffer_factor * ghosts + int (additional_buffer_zones)) -
       ghosts;
