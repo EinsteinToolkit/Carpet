@@ -59,15 +59,16 @@ namespace Carpet {
     timer.start();
     while (not do_terminate (cctkGH)) {
       
-      int const do_every = maxtimereflevelfact / timereffacts.at(reflevels-1);
-      
       AdvanceTime (cctkGH);
-      if ((cctkGH->cctk_iteration - 1) % do_every == 0) {
-        ENTER_GLOBAL_MODE (cctkGH, 0) {
-          BEGIN_REFLEVEL_LOOP (cctkGH) {
-            CallRegrid (cctkGH);
-          } END_REFLEVEL_LOOP;
-        } LEAVE_GLOBAL_MODE;
+      {
+        int const do_every = maxtimereflevelfact / timereffacts.at(reflevels-1);
+        if ((cctkGH->cctk_iteration - 1) % do_every == 0) {
+          ENTER_GLOBAL_MODE (cctkGH, 0) {
+            BEGIN_REFLEVEL_LOOP (cctkGH) {
+              CallRegrid (cctkGH);
+            } END_REFLEVEL_LOOP;
+          } LEAVE_GLOBAL_MODE;
+        }
       }
       CallEvol (cctkGH);
       CallRestrict (cctkGH);
@@ -75,11 +76,14 @@ namespace Carpet {
       print_internal_data ();
       
       // Print timer values
-      if (output_timers_every > 0 and
-          cctkGH->cctk_iteration % output_timers_every == 0 and
-          cctkGH->cctk_iteration % do_every == 0)
       {
-        TimerSet::writeData (cctkGH, timer_file);
+        int const do_every = maxtimereflevelfact / timereffacts.at(reflevels-1);
+        if (output_timers_every > 0 and
+            cctkGH->cctk_iteration % output_timers_every == 0 and
+            cctkGH->cctk_iteration % do_every == 0)
+        {
+          TimerSet::writeData (cctkGH, timer_file);
+        }
       }
       
     } // end main loop
