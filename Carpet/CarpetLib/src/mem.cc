@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
@@ -10,6 +11,10 @@
 #include "cctk.h"
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
+
+#ifdef HAVE_MALLOC_H
+#  include <malloc.h>
+#endif
 
 #include "defs.hh"
 #include "dist.hh"
@@ -23,11 +28,16 @@ using namespace std;
 
 
 struct mstat {
+  // Carpet statistics
   double total_bytes;
   double total_objects;
   double max_bytes;
   double max_objects;
+  // malloc statistics
+  double malloc_used_bytes;
+  double malloc_free_bytes;
 };
+int const mstat_entries = sizeof(mstat) / sizeof(double);
 
 
 
@@ -40,6 +50,8 @@ static double max_allocated_bytes   = 0;
 static double max_allocated_objects = 0;
 
 
+
+// TODO: Make this a plain class instead of a template
 
 template<typename T>
 mem<T>::
@@ -197,41 +209,68 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
   
+  int const ioproc = 0;
+  
   if (print_memstats_every > 0
       and cctk_iteration % print_memstats_every == 0)
   {
-    cout << "Memory statistics from CarpetLib:" << endl
-         << "   Current number of objects: " << total_allocated_objects << endl
+    mstat mybuf;
+    mybuf.total_bytes   = total_allocated_bytes;
+    mybuf.total_objects = total_allocated_objects;
+    mybuf.max_bytes     = max_allocated_bytes;
+    mybuf.max_objects   = max_allocated_objects;
+#ifdef HAVE_MALLINFO
+    struct mallinfo minfo = mallinfo ();
+    mybuf.malloc_used_bytes = minfo.uordblks;
+    mybuf.malloc_free_bytes = minfo.fordblks;
+#else
+    mybuf.malloc_used_bytes = 0;
+    mybuf.malloc_free_bytes = 0;
+#endif
+    
+    cout << "Memory statistics from CarpetLib:" << eol
+         << "   Current number of objects: " << total_allocated_objects << eol
          << "   Current allocated memory:  "
-         << setprecision(3) << total_allocated_bytes / 1.0e6 << " MB" << endl
-         << "   Maximum number of objects: " << max_allocated_objects << endl
+         << setprecision(3) << total_allocated_bytes / 1.0e6 << " MB" << eol
+         << "   Maximum number of objects: " << max_allocated_objects << eol
          << "   Maximum allocated memory:  "
-         << setprecision(3) << max_allocated_bytes / 1.0e6 << " MB" << endl
-         << endl;
+         << setprecision(3) << max_allocated_bytes / 1.0e6 << " MB" << eol
+         << "   Total allocated used system memory: "
+         << setprecision(3) << mybuf.malloc_used_bytes / 1.0e6 << " MB" << eol
+         << "   Total allocated free system memory: "
+         << setprecision(3) << mybuf.malloc_free_bytes / 1.0e6 << " MB" << endl;
     
     if (strcmp (memstat_file, "") != 0) {
-      
-      mstat mybuf;
-      mybuf.total_bytes   = total_allocated_bytes;
-      mybuf.total_objects = total_allocated_objects;
-      mybuf.max_bytes     = max_allocated_bytes;
-      mybuf.max_objects   = max_allocated_objects;
       vector<mstat> allbuf (dist::size());
-      MPI_Gather (& mybuf, 4, MPI_DOUBLE,
-                  & allbuf.front(), 4, MPI_DOUBLE,
-                  0, dist::comm());
+      MPI_Gather (& mybuf, mstat_entries, MPI_DOUBLE,
+                  & allbuf.front(), mstat_entries, MPI_DOUBLE,
+                  ioproc, dist::comm());
       
-      if (dist::rank() == 0) {
+      if (dist::rank() == ioproc) {
         
         double max_max_bytes = 0;
         double avg_max_bytes = 0;
         double cnt_max_bytes = 0;
+        double max_used_bytes = 0;
+        double avg_used_bytes = 0;
+        double cnt_used_bytes = 0;
+        double max_free_bytes = 0;
+        double avg_free_bytes = 0;
+        double cnt_free_bytes = 0;
         for (size_t n=0; n<allbuf.size(); ++n) {
-          max_max_bytes = max (max_max_bytes, (double) allbuf[n].max_bytes);
+          max_max_bytes = max (max_max_bytes, allbuf[n].max_bytes);
           avg_max_bytes += allbuf[n].max_bytes;
           ++ cnt_max_bytes;
+          max_used_bytes = max (max_used_bytes, allbuf[n].malloc_used_bytes);
+          avg_used_bytes += allbuf[n].malloc_used_bytes;
+          ++ cnt_used_bytes;
+          max_free_bytes = max (max_free_bytes, allbuf[n].malloc_free_bytes);
+          avg_free_bytes += allbuf[n].malloc_free_bytes;
+          ++ cnt_free_bytes;
         }
         avg_max_bytes /= cnt_max_bytes;
+        avg_used_bytes /= cnt_used_bytes;
+        avg_free_bytes /= cnt_free_bytes;
         
         ostringstream filenamebuf;
         filenamebuf << out_dir << "/" << memstat_file;
@@ -244,22 +283,25 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
           if (CCTK_IsFunctionAliased ("UniqueBuildID")) {
             char const * const build_id
               = static_cast<char const *> (UniqueBuildID (cctkGH));
-            file << "# Build ID: " << build_id << endl;
+            file << "# Build ID: " << build_id << eol;
           }
           if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
             char const * const job_id
               = static_cast<char const *> (UniqueSimulationID (cctkGH));
-            file << "# Simulation ID: " << job_id << endl;
+            file << "# Simulation ID: " << job_id << eol;
           }
-          file << "# Running on " << dist::size() << " processors" << endl;
-          file << "#" << endl;
-          file << "# iteration maxmaxbytes avgmaxbytes" << endl;
+          file << "# Running on " << dist::size() << " processors" << eol;
+          file << "#" << eol;
+          file << "# iteration   maxmaxbytes avgmaxbytes   maxusedbytes avgusedbytes   maxfreebytes avgfreebytes" << eol;
         } else {
           file.open (filename.c_str(), ios::out | ios::app);
         }
         
-        file << cctk_iteration << " "
-             << max_max_bytes << " " << avg_max_bytes << endl;
+        file << cctk_iteration
+              << "\t "<< max_max_bytes << " " << avg_max_bytes
+              << "\t "<< max_used_bytes << " " << avg_used_bytes
+              << "\t "<< max_free_bytes << " " << avg_free_bytes
+             << eol;
         
         file.close ();
         
