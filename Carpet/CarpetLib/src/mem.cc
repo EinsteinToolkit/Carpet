@@ -135,6 +135,61 @@ has_clients () const
 
 
 
+size_t const mempool::chunksize;
+size_t const mempool::align;
+
+mempool::
+mempool ()
+  : freeptr (0), freesize (0)
+{
+}
+
+mempool::
+~mempool ()
+{
+  while (not chunks.empty()) {
+    free (chunks.top());
+    chunks.pop();
+  }
+}
+
+void *
+mempool::
+alloc (size_t nbytes)
+{
+  // Take a shortcut for silly requests
+  if (nbytes == 0) return 0;
+  
+  // Round up request size
+  nbytes = (nbytes + align - 1) / align * align;
+  
+  // If there is not enough memory left, allocate a new chunk.  Ignore
+  // whatever is left in the old chunk.
+  if (nbytes > freesize) {
+    // Allocate the usual chunk size, or more if more is requested
+    freesize = max (chunksize, nbytes);
+    freeptr = malloc (freesize);
+    if (not freeptr) {
+      CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Failed to allocate %.3f MB of memory",
+                  double(freesize/1.0e6));
+    }
+    // Remember the pointer so that it can be freed
+    chunks.push (freeptr);
+  }
+  
+  // Allocate a piece from the current chunk
+  void * const ptr = freeptr;
+  assert (freesize >= nbytes);
+  freesize -= nbytes;
+  assert (freeptr);
+  freeptr = static_cast <char *> (freeptr) + nbytes;
+  
+  return ptr;
+}
+
+
+
 extern "C" void CarpetLib_printmemstats (CCTK_ARGUMENTS);
 
 void CarpetLib_printmemstats (CCTK_ARGUMENTS)

@@ -2,6 +2,7 @@
 #define MEM_HH
 
 #include <cstdlib>
+#include <stack>
 #include <vector>
 
 using namespace std;
@@ -32,6 +33,46 @@ public:
   void register_client (size_t vectorindex);
   void unregister_client (size_t vectorindex);
   bool has_clients () const;
+};
+
+
+
+// A mempool (memory pool) is a large chunk of memory.  You can
+// allocate pieces of it.  In order to simplify things there is no way
+// to free a piece again.  If the mempool is destroyed, then all its
+// memory is freed.  This is dangerous: you have to make sure that no
+// one continues to use that memory afterwards.  Using a memory pool
+// for short-lived objects can reduce memory fragmentation.
+class mempool
+{
+  // The minimum chunk size which is requested via malloc.  If a
+  // larger piece is required, then a larger chunk is allocated.
+  static size_t const chunksize = 10 * 1024 * 1024;
+  // The alignment of the returned memory.  All requests are rounded
+  // up to the next multiple of this alignment.
+  static size_t const align = 32;
+  
+  // List of all allocated chunks.  When the mempool is destroyed,
+  // these pointers need to be freed.
+  stack <void *> chunks;
+  
+  // Pointer to the beginning of some unused memory
+  void * freeptr;
+  // Size of that unused memory
+  size_t freesize;
+  
+private:
+  // Forbid copying
+  mempool (mempool const &);
+public:
+  
+  // Create and destroy a memory pool
+  mempool ();
+  ~mempool ();
+  
+  // Allocate some memory and return a pointer to it.  This cannot
+  // fail.
+  void * alloc (size_t nbytes);
 };
 
 #endif  // ifndef MEM_HH
