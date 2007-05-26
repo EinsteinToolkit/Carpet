@@ -830,7 +830,7 @@ namespace CarpetReduce {
 		    const void* const* const inarrays, const int intype,
 		    const int num_outvals,
 		    void* const outvals, const int outtype,
-		    const reduction* const red)
+		    const reduction* const red, const int igrid)
   {
     assert (cgh);
     
@@ -920,7 +920,7 @@ namespace CarpetReduce {
   int ReduceGVs (const cGH* const cgh, const int proc,
 		 const int num_outvals, const int outtype, void* const outvals,
 		 const int num_invars, const int* const invars,
-		 const reduction* const red)
+		 const reduction* const red, const int igrid)
   {
     int ierr;
     
@@ -1179,7 +1179,7 @@ namespace CarpetReduce {
                   weight = (static_cast<CCTK_REAL const *>
                             (CCTK_VarDataPtrI (cgh, 0, iweight)));
                   assert (weight);
-                  levfac = 1.0 / prod (rvect (spacereflevelfact));
+                  levfac = igrid ? 1.0 : 1.0 / prod (rvect (spacereflevelfact));
                 } else {
                   weight = NULL;
                   levfac = 1.0;
@@ -1232,44 +1232,59 @@ namespace CarpetReduce {
   
   
   
-#define REDUCTION(OP)                                                     \
-  int OP##_arrays (const cGH * const cgh, const int proc,                 \
-		   const int num_dims, const int * const dims,            \
-		   const int num_inarrays,                                \
-		   const void * const * const inarrays, const int intype, \
-		   const int num_outvals,                                 \
-		   void * const outvals, const int outtype)               \
-  {                                                                       \
-    const OP red;                                                         \
-    return ReduceArrays                                                   \
-      (cgh, proc, num_dims, dims,                                         \
-       num_inarrays, inarrays, intype, num_outvals, outvals, outtype,     \
-       &red);                                                             \
-  }                                                                       \
-                                                                          \
-  int OP##_GVs (const cGH * const cgh, const int proc,                    \
-	        const int num_outvals,                                    \
-	        const int outtype, void * const outvals,                  \
-	        const int num_invars, const int * const invars)           \
-  {                                                                       \
-    const OP red;                                                         \
-    return ReduceGVs (cgh, proc,                                          \
-		      num_outvals, outtype, outvals, num_invars, invars,  \
-		      &red);                                              \
+  // IGRID specifies whether the operator acts on grid points or cell
+  // volumes
+#define REDUCTION(OPNAME, OP, IGRID)                                    \
+  int OPNAME##_arrays (const cGH * const cgh, const int proc,           \
+                       const int num_dims, const int * const dims,      \
+                       const int num_inarrays,                          \
+                       const void * const * const inarrays, const int intype, \
+                       const int num_outvals,                           \
+                       void * const outvals, const int outtype)         \
+  {                                                                     \
+    const OP red;                                                       \
+    return ReduceArrays                                                 \
+      (cgh, proc, num_dims, dims,                                       \
+       num_inarrays, inarrays, intype, num_outvals, outvals, outtype,   \
+       &red, IGRID);                                                    \
+  }                                                                     \
+                                                                        \
+  int OPNAME##_GVs (const cGH * const cgh, const int proc,              \
+                    const int num_outvals,                              \
+                    const int outtype, void * const outvals,            \
+                    const int num_invars, const int * const invars)     \
+  {                                                                     \
+    const OP red;                                                       \
+    return ReduceGVs (cgh, proc,                                        \
+		      num_outvals, outtype, outvals, num_invars, invars, \
+		      &red, IGRID);                                     \
   }
   
-  REDUCTION(count);
-  REDUCTION(minimum);
-  REDUCTION(maximum);
-  REDUCTION(product);
-  REDUCTION(sum);
-  REDUCTION(sum_abs);
-  REDUCTION(sum_squared);
-  REDUCTION(sum_abs_squared);
-  REDUCTION(average);
-  REDUCTION(norm1);
-  REDUCTION(norm2);
-  REDUCTION(norm_inf);
+  REDUCTION(count          , count          , 0);
+  REDUCTION(minimum        , minimum        , 0);
+  REDUCTION(maximum        , maximum        , 0);
+  REDUCTION(product        , product        , 0);
+  REDUCTION(sum            , sum            , 0);
+  REDUCTION(sum_abs        , sum_abs        , 0);
+  REDUCTION(sum_squared    , sum_squared    , 0);
+  REDUCTION(sum_abs_squared, sum_abs_squared, 0);
+  REDUCTION(average        , average        , 0);
+  REDUCTION(norm1          , norm1          , 0);
+  REDUCTION(norm2          , norm2          , 0);
+  REDUCTION(norm_inf       , norm_inf       , 0);
+  
+  REDUCTION(icount          , count          , 1);
+  REDUCTION(iminimum        , minimum        , 1);
+  REDUCTION(imaximum        , maximum        , 1);
+  REDUCTION(iproduct        , product        , 1);
+  REDUCTION(isum            , sum            , 1);
+  REDUCTION(isum_abs        , sum_abs        , 1);
+  REDUCTION(isum_squared    , sum_squared    , 1);
+  REDUCTION(isum_abs_squared, sum_abs_squared, 1);
+  REDUCTION(iaverage        , average        , 1);
+  REDUCTION(inorm1          , norm1          , 1);
+  REDUCTION(inorm2          , norm2          , 1);
+  REDUCTION(inorm_inf       , norm_inf       , 1);
   
 #undef REDUCTION
   
@@ -1290,6 +1305,19 @@ namespace CarpetReduce {
     CCTK_RegisterReductionOperator (norm2_GVs,           "norm2");
     CCTK_RegisterReductionOperator (norm_inf_GVs,        "norm_inf");
     
+    CCTK_RegisterReductionOperator (icount_GVs,           "icount");
+    CCTK_RegisterReductionOperator (iminimum_GVs,         "iminimum");
+    CCTK_RegisterReductionOperator (imaximum_GVs,         "imaximum");
+    CCTK_RegisterReductionOperator (iproduct_GVs,         "iproduct");
+    CCTK_RegisterReductionOperator (isum_GVs,             "isum");
+    CCTK_RegisterReductionOperator (isum_abs_GVs,         "isum_abs");
+    CCTK_RegisterReductionOperator (isum_squared_GVs,     "isum_squared");
+    CCTK_RegisterReductionOperator (isum_abs_squared_GVs, "isum_abs_squared");
+    CCTK_RegisterReductionOperator (iaverage_GVs,         "iaverage");
+    CCTK_RegisterReductionOperator (inorm1_GVs,           "inorm1");
+    CCTK_RegisterReductionOperator (inorm2_GVs,           "inorm2");
+    CCTK_RegisterReductionOperator (inorm_inf_GVs,        "inorm_inf");
+    
     CCTK_RegisterReductionArrayOperator (count_arrays,           "count");
     CCTK_RegisterReductionArrayOperator (minimum_arrays,         "minimum");
     CCTK_RegisterReductionArrayOperator (maximum_arrays,         "maximum");
@@ -1302,6 +1330,19 @@ namespace CarpetReduce {
     CCTK_RegisterReductionArrayOperator (norm1_arrays,           "norm1");
     CCTK_RegisterReductionArrayOperator (norm2_arrays,           "norm2");
     CCTK_RegisterReductionArrayOperator (norm_inf_arrays,        "norm_inf");
+    
+    CCTK_RegisterReductionArrayOperator (icount_arrays,           "icount");
+    CCTK_RegisterReductionArrayOperator (iminimum_arrays,         "iminimum");
+    CCTK_RegisterReductionArrayOperator (imaximum_arrays,         "imaximum");
+    CCTK_RegisterReductionArrayOperator (iproduct_arrays,         "iproduct");
+    CCTK_RegisterReductionArrayOperator (isum_arrays,             "isum");
+    CCTK_RegisterReductionArrayOperator (isum_abs_arrays,         "isum_abs");
+    CCTK_RegisterReductionArrayOperator (isum_squared_arrays,     "isum_squared");
+    CCTK_RegisterReductionArrayOperator (isum_abs_squared_arrays, "isum_abs_squared");
+    CCTK_RegisterReductionArrayOperator (iaverage_arrays,         "iaverage");
+    CCTK_RegisterReductionArrayOperator (inorm1_arrays,           "inorm1");
+    CCTK_RegisterReductionArrayOperator (inorm2_arrays,           "inorm2");
+    CCTK_RegisterReductionArrayOperator (inorm_inf_arrays,        "inorm_inf");
     
     return 0;
   }
