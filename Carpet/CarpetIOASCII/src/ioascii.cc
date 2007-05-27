@@ -43,6 +43,9 @@ namespace CarpetIOASCII {
   // Begin a new line without flushing the output buffer
   char const * const eol = "\n";
 
+  // IO processor
+  int const ioproc = 0;
+
 
 
   static void GetVarIndex (int vindex, const char* optstring, void* arg);
@@ -422,6 +425,8 @@ namespace CarpetIOASCII {
           last_outputs[ml][rl].resize (numelems, cctk_iteration - 1);
         }
       }
+      // TODO: this makes a copy of last_outputs, which is expensive
+      // -- change this to use a reference instead
       thisfile = created_files.insert (thisfile,
                                        filelist::value_type (basefilename,
                                                              last_outputs));
@@ -627,7 +632,7 @@ namespace CarpetIOASCII {
             } // if grouptype is GF
 
             ofstream file;
-            if (CCTK_MyProc(cctkGH)==0) {
+            if (dist::rank()==ioproc) {
 
               // Invent a file name
               ostringstream filenamebuf;
@@ -899,7 +904,7 @@ namespace CarpetIOASCII {
                               coord_time, coord_lower, coord_upper);
 
                   // Append EOL after every component
-                  if (CCTK_MyProc(cctkGH)==0) {
+                  if (dist::rank()==ioproc) {
                     if (separate_components) {
                       assert (file.good());
                       file << eol;
@@ -914,7 +919,7 @@ namespace CarpetIOASCII {
             } END_COMPONENT_LOOP;
 
             // Append EOL after every complete set of components
-            if (CCTK_MyProc(cctkGH)==0) {
+            if (dist::rank()==ioproc) {
               if (separate_grids) {
                 assert (file.good());
                 file << eol;
@@ -1177,12 +1182,12 @@ namespace CarpetIOASCII {
 
     bool all_on_root = true;
     for (size_t n=0; n<gfdatas.size(); ++n) {
-      all_on_root &= gfdatas.at(n)->proc() == 0;
+      all_on_root &= gfdatas.at(n)->proc() == ioproc;
     }
     if (all_on_root) {
       // output on processor 0
 
-      if (dist::rank() == 0) {
+      if (dist::rank() == ioproc) {
 
         if (CCTK_EQUALS (out_fileinfo, "axis labels") or
             CCTK_EQUALS (out_fileinfo, "all"))
