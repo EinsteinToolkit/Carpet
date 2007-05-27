@@ -140,6 +140,17 @@ namespace CarpetRegrid2 {
       old_position_y[n] = position_y[n];
       old_position_z[n] = position_z[n];
     }
+    
+    if (verbose) {
+      for (int n = 0; n < num_centres; ++ n) {
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "Initialising position of centre %d to [%g,%g,%g]",
+                    n,
+                    static_cast <double> (position_x[n]),
+                    static_cast <double> (position_y[n]),
+                    static_cast <double> (position_z[n]));
+      }
+    }
   }
   
 } // namespace CarpetRegrid2

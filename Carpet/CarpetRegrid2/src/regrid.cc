@@ -662,7 +662,20 @@ namespace CarpetRegrid2 {
       }
     }
     
-    if (do_recompose and cctk_iteration != 0) {
+    if (verbose) {
+      if (do_recompose) {
+        for (int n = 0; n < num_centres; ++ n) {
+          CCTK_VInfo (CCTK_THORNSTRING,
+                      "Centre %d is at position [%g,%g,%g]",
+                      n,
+                      static_cast <double> (position_x[n]),
+                      static_cast <double> (position_y[n]),
+                      static_cast <double> (position_z[n]));
+        }
+      }
+    }
+    
+    if (do_recompose and * last_iteration != -1) {
       // Regrid only if the positions have changed sufficiently
       do_recompose = false;
       for (int n = 0; n < num_centres; ++ n) {
@@ -687,6 +700,12 @@ namespace CarpetRegrid2 {
         do_recompose = dist2 >= pow (mindist, 2);
         if (do_recompose) break;
       } // for n
+      if (verbose) {
+        if (not do_recompose) {
+          CCTK_INFO
+            ("Centres have not moved sufficiently; skipping regridding");
+        }
+      }
     }
     
     if (do_recompose) {
@@ -757,7 +776,20 @@ namespace CarpetRegrid2 {
       }
     }
     
-    if (do_recompose and cctk_iteration != 0) {
+    if (verbose) {
+      if (do_recompose) {
+        for (int n = 0; n < num_centres; ++ n) {
+          CCTK_VInfo (CCTK_THORNSTRING,
+                      "Centre %d is at position [%g,%g,%g]",
+                      n,
+                      static_cast <double> (position_x[n]),
+                      static_cast <double> (position_y[n]),
+                      static_cast <double> (position_z[n]));
+        }
+      }
+    }
+    
+    if (do_recompose and * last_iteration != -1) {
       // Regrid only if the positions have changed sufficiently
       do_recompose = false;
       for (int n = 0; n < num_centres; ++ n) {
@@ -782,6 +814,12 @@ namespace CarpetRegrid2 {
         do_recompose = dist2 >= pow (mindist, 2);
         if (do_recompose) break;
       } // for n
+      if (verbose) {
+        if (not do_recompose) {
+          CCTK_INFO
+            ("Centres have not moved sufficiently; skipping regridding");
+        }
+      }
     }
     
     if (do_recompose) {
