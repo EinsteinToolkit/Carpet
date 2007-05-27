@@ -2,7 +2,7 @@
 
 
 
-BOOLEAN verbose "Tell what is going on"
+BOOLEAN verbose "Tell what is going on" STEERABLE=always
 {
 } no
 
