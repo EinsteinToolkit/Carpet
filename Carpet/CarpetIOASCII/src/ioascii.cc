@@ -1373,18 +1373,25 @@ namespace CarpetIOASCII {
     } else {
       // copy to processor 0 and output there
       
-      vector<const gdata*> tmps (gfdatas.size());
+      mempool pool;
+      vector<gdata*> tmps (gfdatas.size());
       for (size_t n=0; n<gfdatas.size(); ++n) {
-        gdata * const tmp =
-          gfdatas.at(n)->make_typed (vi, error_centered, op_sync);
-        tmp->allocate(gfdatas.at(n)->extent(), 0);
-        for (comm_state state; not state.done(); state.step()) {
-          tmp->copy_from (state, gfdatas.at(n), gfdatas.at(n)->extent());
-        }
-        tmps.at(n) = tmp;
+        tmps.at(n) = gfdatas.at(n)->make_typed (vi, error_centered, op_sync);
+        void * const memptr =
+          pool.alloc (tmps.at(n)->allocsize (gfdatas.at(n)->extent(), ioproc));
+        tmps.at(n)->allocate(gfdatas.at(n)->extent(), ioproc, memptr);
       }
-      WriteASCII (os, tmps, gfext, vi, time, org, dirs, rl, ml, m, c, tl,
-		  coord_time, coord_lower, coord_upper);
+      for (comm_state state; not state.done(); state.step()) {
+        for (size_t n=0; n<gfdatas.size(); ++n) {
+          tmps.at(n)->copy_from (state, gfdatas.at(n), gfdatas.at(n)->extent());
+        }
+      }
+      vector<const gdata*> ctmps (gfdatas.size());
+      for (size_t n=0; n<gfdatas.size(); ++n) {
+        ctmps.at(n) = tmps.at(n);
+      }
+      WriteASCII (os, ctmps, gfext, vi, time, org, dirs, rl, ml, m, c, tl,
+                  coord_time, coord_lower, coord_upper);
       for (size_t n=0; n<gfdatas.size(); ++n) {
         delete tmps.at(n);
       }
