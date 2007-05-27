@@ -51,8 +51,9 @@ USES FUNCTION ConvertFromPhysicalBoundary
 
 
 # The true prototype of the routine below:
-#   int Carpet_Regrid (const cGH * cctkGH,
-#                      gh::mregs * regsss);
+#   int Carpet_Regrid (cGH const * cctkGH,
+#                      gh::mregs * regsss,
+#                      int         force);
 CCTK_INT FUNCTION Carpet_Regrid (CCTK_POINTER_TO_CONST IN cctkGH, \
                                  CCTK_POINTER IN regsss,          \
 				 CCTK_INT IN force)
