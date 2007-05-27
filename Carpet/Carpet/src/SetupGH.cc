@@ -189,8 +189,10 @@ namespace Carpet {
     
     // Say hello
     Waypoint ("Setting up the grid hierarchy");
-    Output ("Carpet is running on %d processors", CCTK_nProcs(cctkGH));
-    Output ("This is processor %d", CCTK_MyProc(cctkGH));
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Carpet is running on %d processors", CCTK_nProcs(cctkGH));
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "This is processor %d", CCTK_MyProc(cctkGH));
     
     if (verbose) {
       char hostnamebuf[1000];
@@ -198,9 +200,11 @@ namespace Carpet {
       string const hostname (hostnamebuf);
       vector <string> hostnames = AllGatherString (MPI_COMM_WORLD, hostname);
       int const nprocs = CCTK_nProcs (cctkGH);
-      Output ("Running on the following hosts:");
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "Running on the following hosts:");
       for (int n = 0; n < nprocs; ++ n) {
-        Output ("   %4d: %s", n, hostnames.at(n).c_str());
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "   %4d: %s", n, hostnames.at(n).c_str());
       }
     }
     
