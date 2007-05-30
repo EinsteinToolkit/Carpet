@@ -215,7 +215,7 @@ namespace Carpet {
 
   // Timelevels
 
-  int mintl (const checktimes where, const int num_tl)
+  int min_timelevel (const checktimes where, const int num_tl)
   {
     assert (num_tl>0);
     switch (where) {
@@ -239,7 +239,7 @@ namespace Carpet {
     return -999;
   }
 
-  int maxtl (const checktimes where, const int num_tl)
+  int max_timelevel (const checktimes where, const int num_tl)
   {
     assert (num_tl>0);
     switch (where) {

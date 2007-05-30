@@ -15,6 +15,9 @@ namespace Carpet {
   
   
   
+  // The parameter where specifies which time levels should be
+  // poisoned.  what specifies what kind of grid variables should be
+  // poisoned.
   void Poison (const cGH* cgh, const checktimes where, const int what)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -63,8 +66,8 @@ namespace Carpet {
     
     const int num_tl = CCTK_ActiveTimeLevelsVI(cgh, n0);
     assert (num_tl>0);
-    const int min_tl = mintl(where, num_tl);
-    const int max_tl = maxtl(where, num_tl);
+    const int min_tl = min_timelevel(where, num_tl);
+    const int max_tl = max_timelevel(where, num_tl);
     
     if (min_tl <= max_tl) {
       
@@ -121,8 +124,8 @@ namespace Carpet {
         
         const int num_tl = CCTK_ActiveTimeLevelsVI(cgh, n0);
         assert (num_tl>0);
-        const int min_tl = mintl(where, num_tl);
-        const int max_tl = maxtl(where, num_tl);
+        const int min_tl = min_timelevel(where, num_tl);
+        const int max_tl = max_timelevel(where, num_tl);
         
         BEGIN_MAP_LOOP(cgh, grouptype) {
           BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype) {

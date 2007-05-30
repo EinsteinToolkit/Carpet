@@ -48,8 +48,8 @@ namespace Carpet {
 		    allbutcurrenttime,
 		    alltimes };
   
-  int mintl (checktimes where, int num_tl);
-  int maxtl (checktimes where, int num_tl);
+  int min_timelevel (checktimes where, int num_tl);
+  int max_timelevel (checktimes where, int num_tl);
   
   void Poison (const cGH* cgh, checktimes where, int what = 0);
   void PoisonGroup (const cGH* cgh, int group, checktimes where);

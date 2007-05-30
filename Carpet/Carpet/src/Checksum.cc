@@ -33,6 +33,9 @@ namespace Carpet {
   
   
   
+  // The parameter where specifies which time levels should be
+  // poisoned.  what specifies what kind of grid variables should be
+  // poisoned.
   void CalculateChecksums (const cGH* cgh, const checktimes where)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -69,8 +72,8 @@ namespace Carpet {
                 
                 const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
                 assert (num_tl>0);
-                const int min_tl = mintl(where, num_tl);
-                const int max_tl = maxtl(where, num_tl);
+                const int min_tl = min_timelevel(where, num_tl);
+                const int max_tl = max_timelevel(where, num_tl);
                 
                 for (int var=0; var<nvars; ++var) {
                   checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(component).at(var).resize(num_tl);
@@ -135,8 +138,8 @@ namespace Carpet {
                 
                 const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
                 assert (num_tl>0);
-                const int min_tl = mintl(where, num_tl);
-                const int max_tl = maxtl(where, num_tl);
+                const int min_tl = min_timelevel(where, num_tl);
+                const int max_tl = max_timelevel(where, num_tl);
                 
                 for (int var=0; var<nvars; ++var) {
                   assert ((int)checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(component).at(var).size()==num_tl);
