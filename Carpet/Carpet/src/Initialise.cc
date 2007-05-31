@@ -165,8 +165,15 @@ namespace Carpet {
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cctkGH) {
         ENTER_LEVEL_MODE (cctkGH, rl) {
-          do_global_mode = reflevel==0; // on first iteration, coarsest grid
-          do_meta_mode = do_global_mode and mglevel==mglevels-1; // on first iteration, coarsest grid
+#if 0
+          // on first iteration, coarsest grid
+          do_global_mode = reflevel==0;
+#endif
+          // either on every or on the last iteration
+          do_global_mode =
+            regrid_during_recovery ? true : reflevel==reflevels-1;
+          // on first iteration
+          do_meta_mode = do_global_mode and mglevel==mglevels-1;
           
           // cctkGH->cctk_time = global_time;
           
@@ -249,8 +256,15 @@ namespace Carpet {
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cctkGH) {
         ENTER_LEVEL_MODE (cctkGH, rl) {
-          do_global_mode = reflevel==0; // on first iteration, coarsest grid
-          do_meta_mode = do_global_mode and mglevel==mglevels-1; // on first iteration, coarsest grid
+#if 0
+          // on first iteration, coarsest grid
+          do_global_mode = reflevel==0;
+#endif
+          // either on every or on the last iteration
+          do_global_mode =
+            regrid_during_recovery ? true : reflevel==reflevels-1;
+          // on first iteration, coarsest grid
+          do_meta_mode = do_global_mode and mglevel==mglevels-1;
           
           // cctkGH->cctk_time = global_time;
           
