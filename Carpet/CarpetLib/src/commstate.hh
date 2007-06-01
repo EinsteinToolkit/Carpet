@@ -25,7 +25,7 @@ enum astate {
   state_fill_send_buffers,
   state_do_some_work,
   state_empty_recv_buffers,
-  state_done,
+  state_done
 };
 
 struct comm_state {
