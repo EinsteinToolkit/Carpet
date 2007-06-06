@@ -511,15 +511,16 @@ namespace Carpet {
             assert (max_tl>=0);
             const int active_tl = CCTK_ActiveTimeLevelsGI (cctkGH, group);
             assert (active_tl>=0 and active_tl<=max_tl);
+            const int available_tl = do_allow_past_timelevels ? active_tl : 1;
             
-            //           assert (vhh.at(map)->is_local(reflevel,component));
+            // assert (vhh.at(map)->is_local(reflevel,component));
             
             assert (group<(int)arrdata.size());
             for (int var=0; var<numvars; ++var) {
               assert (firstvar+var<CCTK_NumVars());
               ggf * const ff = arrdata.at(group).at(map).data.at(var);
               for (int tl=0; tl<max_tl; ++tl) {
-                if (ff and tl<active_tl) {
+                if (ff and tl<available_tl) {
                   gdata * const data = (*ff) (tl, reflevel, component, mglevel);
                   assert (data);
                   cctkGH->data[firstvar+var][tl] = data->storage();

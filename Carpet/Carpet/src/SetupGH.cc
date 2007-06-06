@@ -233,6 +233,7 @@ namespace Carpet {
     set_state (cctkGH);
     
     // Enable prolongating
+    do_allow_past_timelevels = true;
     do_prolongate = true;
     do_warn_about_storage = false; // This is enabled later
     

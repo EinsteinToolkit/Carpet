@@ -287,6 +287,8 @@ namespace Carpet {
           
           int const num_tl =
             init_each_timelevel ? prolongation_order_time+1 : 1;
+          bool const old_do_allow_past_timelevels = do_allow_past_timelevels;
+          do_allow_past_timelevels = not init_each_timelevel;
           
           for (int m=0; m<maps; ++m) {
             vtt.at(m)->set_delta
@@ -316,10 +318,12 @@ namespace Carpet {
             Checkpoint ("Scheduling INITIAL");
             CCTK_ScheduleTraverse ("CCTK_INITIAL", cctkGH, CallFunction);
             
+            // Checking
+            PoisonCheck (cctkGH, currenttime);
+            
           } // for tl
           
-          // Checking
-          PoisonCheck (cctkGH, currenttime);
+          do_allow_past_timelevels = old_do_allow_past_timelevels;
           
           if (regrid_during_initialisation and mglevel==0) {
             // Regrid after initialising each level
@@ -511,6 +515,10 @@ namespace Carpet {
                   ? (init_each_timelevel ? prolongation_order_time+1 : 1)
                   : prolongation_order_time+1;
                 
+                bool const old_do_allow_past_timelevels =
+                  do_allow_past_timelevels;
+                do_allow_past_timelevels = false;
+                
                 // Rewind times
                 for (int m=0; m<maps; ++m) {
                   vtt.at(m)->set_delta
@@ -554,6 +562,8 @@ namespace Carpet {
                 } // for tl
                 cctkGH->cctk_time = old_cctk_time;
                 
+                do_allow_past_timelevels = old_do_allow_past_timelevels;
+                
               } LEAVE_LEVEL_MODE;
             } END_MGLEVEL_LOOP;
           } // if did_recompose
@@ -595,6 +605,9 @@ namespace Carpet {
           
           int const num_tl = prolongation_order_time + 1;
           
+          bool const old_do_allow_past_timelevels = do_allow_past_timelevels;
+          do_allow_past_timelevels = false;
+          
           // Rewind times
           for (int m=0; m<maps; ++m) {
             vtt.at(m)->set_delta
@@ -629,6 +642,8 @@ namespace Carpet {
               
           } // for tl
           cctkGH->cctk_time = old_cctk_time;
+          
+          do_allow_past_timelevels = old_do_allow_past_timelevels;
           
         } LEAVE_LEVEL_MODE;
       } END_MGLEVEL_LOOP;
@@ -690,6 +705,10 @@ namespace Carpet {
                 
                 int const num_tl = prolongation_order_time + 1;
                 
+                bool const old_do_allow_past_timelevels =
+                  do_allow_past_timelevels;
+                do_allow_past_timelevels = false;
+                
                 // Rewind times
                 for (int m=0; m<maps; ++m) {
                   vtt.at(m)->set_delta
@@ -726,6 +745,8 @@ namespace Carpet {
                   
                 } // for tl
                 cctkGH->cctk_time = old_cctk_time;
+                
+                do_allow_past_timelevels = old_do_allow_past_timelevels;
                 
               } LEAVE_LEVEL_MODE;
             } END_MGLEVEL_LOOP;
@@ -838,6 +859,10 @@ namespace Carpet {
                 int const num_tl =
                   init_each_timelevel ? prolongation_order_time+1 : 1;
                 
+                bool const old_do_allow_past_timelevels =
+                  do_allow_past_timelevels;
+                do_allow_past_timelevels = false;
+                
                 // Rewind times
                 for (int m=0; m<maps; ++m) {
                   vtt.at(m)->set_delta
@@ -874,6 +899,8 @@ namespace Carpet {
                   
                 } // for tl
                 cctkGH->cctk_time = old_cctk_time;
+                
+                do_allow_past_timelevels = old_do_allow_past_timelevels;
                 
               } LEAVE_LEVEL_MODE;
             } END_MGLEVEL_LOOP;

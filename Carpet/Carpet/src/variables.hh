@@ -118,6 +118,9 @@ namespace Carpet {
   extern bool do_meta_mode;
   extern bool do_global_mode;
   
+  // Can past time levels be accessed?
+  extern bool do_allow_past_timelevels;
+  
   // Is prolongation enabled?
   extern bool do_prolongate;
   

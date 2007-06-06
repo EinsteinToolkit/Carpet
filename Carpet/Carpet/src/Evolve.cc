@@ -265,6 +265,10 @@ namespace Carpet {
                 
                 int const num_tl = prolongation_order_time+1;
                 
+                bool const old_do_allow_past_timelevels =
+                  do_allow_past_timelevels;
+                do_allow_past_timelevels = false;
+                
                 // Rewind times
                 for (int m=0; m<maps; ++m) {
                   vtt.at(m)->set_delta
@@ -301,6 +305,8 @@ namespace Carpet {
                   
                 } // for tl
                 cctkGH->cctk_time = old_cctk_time;
+                
+                do_allow_past_timelevels = old_do_allow_past_timelevels;
                 
               } LEAVE_LEVEL_MODE;
             } END_MGLEVEL_LOOP;
