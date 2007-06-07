@@ -288,6 +288,7 @@ namespace Carpet {
     if (is_meta_mode() or is_global_mode()) {
       if (grouptype == CCTK_GF) return -2;
     }
+    if (groupdata.size() == 0) return -3;
     int const rl = grouptype == CCTK_GF ? reflevel : 0;
     // Return whether storage is allocated
     assert (groupdata.at(group).activetimelevels.at(mglevel).at(rl) != deadbeef);
