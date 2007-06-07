@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <cstdarg>
 #include <cstdio>
@@ -511,7 +512,8 @@ namespace Carpet {
             assert (max_tl>=0);
             const int active_tl = CCTK_ActiveTimeLevelsGI (cctkGH, group);
             assert (active_tl>=0 and active_tl<=max_tl);
-            const int available_tl = do_allow_past_timelevels ? active_tl : 1;
+            const int available_tl =
+              do_allow_past_timelevels ? active_tl : min (1, active_tl);
             
             // assert (vhh.at(map)->is_local(reflevel,component));
             
