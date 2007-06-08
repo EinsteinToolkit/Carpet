@@ -206,9 +206,11 @@ namespace Carpet {
       } END_MGLEVEL_LOOP;
     } // for rl
     
+#if 0
     // TODO: Maybe do not checkpoint (nor read back) ghost and buffer
     // zones
     CallRegridRecoverMeta (cctkGH);
+#endif
   }
   
   
