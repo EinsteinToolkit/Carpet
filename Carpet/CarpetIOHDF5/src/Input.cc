@@ -529,7 +529,47 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
                 "%d variables on mglevel %d reflevel %d have been read "
                 "only partially", num_incomplete, mglevel, reflevel);
   }
-
+  
+  // Synchronise all variables which have been read
+  {
+    vector <bool> dosync (CCTK_NumGroups());
+    for (size_t vindex = 0; vindex < read_completely.size(); vindex++) {
+      if (CCTK_GroupTypeFromVarI (vindex) == CCTK_GF or reflevel == 0) {
+        for (size_t tl = 0; tl < read_completely[vindex].size(); tl++) {
+          if (called_from != FILEREADER_DATA or
+              (ioUtilGH->do_inVars and ioUtilGH->do_inVars[vindex]))
+          {
+            if (read_completely[vindex][tl]) {
+              int const gindex = CCTK_GroupIndexFromVarI (vindex);
+              dosync.at(gindex) = true;
+            }
+          }
+        }
+      }
+    }
+    for (comm_state state; not state.done(); state.step()) {
+      for (size_t group = 0; group < dosync.size(); ++ group) {
+        if (dosync.at(group)) {
+          for (size_t m = 0; m < arrdata.at(group).size(); ++ m) {
+            arrdesc & ad = arrdata.at(group).at(m);
+            for (int ml = 0; ml < ad.hh->mglevels(); ++ ml) {
+              for (int rl = 0; rl < ad.hh->reflevels(); ++ rl) {
+                for (int c = 0; c < ad.hh->components(rl); ++ c) {
+                  for (size_t v = 0; v < ad.data.size(); ++ v) {
+                    ggf * const gf = ad.data.at(v);
+                    for (size_t tl = 0; tl < gf->timelevels (ml, rl); ++ tl) {
+                      gf->sync (state, tl, rl, c, ml);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
   if (in_recovery and not CCTK_Equals (verbose, "none")) {
     CCTK_VInfo (CCTK_THORNSTRING,
                 "restarting simulation on mglevel %d reflevel %d "
