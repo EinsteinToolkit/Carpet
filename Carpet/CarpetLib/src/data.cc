@@ -715,6 +715,46 @@ time_interpolate (vector <data *> const & srcs,
                           box);
       break;
       
+    case 3:
+      assert (times.size() >= 4);
+      interpolate_3d_4tl (static_cast <T const *> (srcs.AT(0)->storage()),
+                          times.AT(0),
+                          static_cast <T const *> (srcs.AT(1)->storage()),
+                          times.AT(1),
+                          static_cast <T const *> (srcs.AT(2)->storage()),
+                          times.AT(2),
+                          static_cast <T const *> (srcs.AT(3)->storage()),
+                          times.AT(3),
+                          srcs.AT(0)->shape(),
+                          static_cast <T *> (this->storage()),
+                          time,
+                          this->shape(),
+                          srcs.AT(0)->extent(),
+                          this->extent(),
+                          box);
+      break;
+      
+    case 4:
+      assert (times.size() >= 5);
+      interpolate_3d_5tl (static_cast <T const *> (srcs.AT(0)->storage()),
+                          times.AT(0),
+                          static_cast <T const *> (srcs.AT(1)->storage()),
+                          times.AT(1),
+                          static_cast <T const *> (srcs.AT(2)->storage()),
+                          times.AT(2),
+                          static_cast <T const *> (srcs.AT(3)->storage()),
+                          times.AT(3),
+                          static_cast <T const *> (srcs.AT(4)->storage()),
+                          times.AT(4),
+                          srcs.AT(0)->shape(),
+                          static_cast <T *> (this->storage()),
+                          time,
+                          this->shape(),
+                          srcs.AT(0)->extent(),
+                          this->extent(),
+                          box);
+      break;
+      
     default:
       assert (0);
     }
