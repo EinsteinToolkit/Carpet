@@ -173,6 +173,8 @@ CCTK_INT prolongation_order_time "Order of prolongation operator in time" STEERA
   0 :: "zeroth order (constant)"
   1 :: "first order (linear)"
   2 :: "second order (quadratic)"
+  3 :: "third order (cubic)"
+  4 :: "fourth order (quartic)"
 } 1
 
 
