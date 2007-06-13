@@ -217,7 +217,8 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer timer ("Evolve::CallRegrid");
+    char const * const where = "Evolve::CallRegrid";
+    static Timer timer (where);
     timer.start();
     
     assert (is_level_mode());
@@ -233,8 +234,7 @@ namespace Carpet {
               (do_meta_mode ? " (meta)" : ""));
     
     // Preregrid
-    Checkpoint ("Scheduling PREREGRID");
-    CCTK_ScheduleTraverse ("CCTK_PREREGRID", cctkGH, CallFunction);
+    ScheduleTraverse (where, "CCTK_PREREGRID", cctkGH);
     
     // Regrid
     Checkpoint ("Regrid");
@@ -299,9 +299,7 @@ namespace Carpet {
                     cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
                   
                   // Postregrid
-                  Checkpoint ("Scheduling POSTREGRID");
-                  CCTK_ScheduleTraverse
-                    ("CCTK_POSTREGRID", cctkGH, CallFunction);
+                  ScheduleTraverse (where, "CCTK_POSTREGRID", cctkGH);
                   
                 } // for tl
                 cctkGH->cctk_time = old_cctk_time;
@@ -329,7 +327,8 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    static Timer timer ("Evolve::CallEvol");
+    char const * const where = "Evolve::CallEvol";
+    static Timer timer (where);
     timer.start();
     
     for (int ml=mglevels-1; ml>=0; --ml) {
@@ -373,10 +372,8 @@ namespace Carpet {
               Poison (cctkGH, currenttimebutnotifonly);
               
               // Evolve
-              Checkpoint ("Scheduling PRESTEP");
-              CCTK_ScheduleTraverse ("CCTK_PRESTEP", cctkGH, CallFunction);
-              Checkpoint ("Scheduling EVOL");
-              CCTK_ScheduleTraverse ("CCTK_EVOL", cctkGH, CallFunction);
+              ScheduleTraverse (where, "CCTK_PRESTEP", cctkGH);
+              ScheduleTraverse (where, "CCTK_EVOL", cctkGH);
               
               // Checking
               PoisonCheck (cctkGH, currenttime);

@@ -131,6 +131,10 @@ namespace Carpet {
   void
   CallSetup (cGH * const cctkGH)
   {
+    char const * const where = "Initialise::CallSetup";
+    static Timer timer (where);
+    timer.start();
+    
     BEGIN_MGLEVEL_LOOP(cctkGH) {
       do_global_mode = true;
       do_meta_mode = mglevel==mglevels-1; // on first iteration, coarsest grid
@@ -144,15 +148,15 @@ namespace Carpet {
       }
       
       // Register coordinates
-      Checkpoint ("Scheduling CCTK_WRAGH");
-      CCTK_ScheduleTraverse ("CCTK_WRAGH", cctkGH, CallFunction);
+      ScheduleTraverse (where, "CCTK_WRAGH", cctkGH);
       
       // Check parameters
-      Checkpoint ("Scheduling PARAMCHECK");
-      CCTK_ScheduleTraverse ("CCTK_PARAMCHECK", cctkGH, CallFunction);
+      ScheduleTraverse (where, "CCTK_PARAMCHECK", cctkGH);
     } END_MGLEVEL_LOOP;
     
     CCTKi_FinaliseParamWarn();
+    
+    timer.stop();
   }
   
   
@@ -160,6 +164,10 @@ namespace Carpet {
   void
   CallRecoverVariables (cGH * const cctkGH)
   {
+    char const * const where = "Initialise::CallRecoverVariables";
+    static Timer timer (where);
+    timer.start();
+    
     DECLARE_CCTK_PARAMETERS;
     
     for (int rl=0; rl<reflevels; ++rl) {
@@ -186,8 +194,7 @@ namespace Carpet {
           Poison (cctkGH, alltimes, CCTK_GF);
           
           // Set up the grids
-          Checkpoint ("Scheduling BASEGRID");
-          CCTK_ScheduleTraverse ("CCTK_BASEGRID", cctkGH, CallFunction);
+          ScheduleTraverse (where, "CCTK_BASEGRID", cctkGH);
           
           // Timing statistics
           if (do_global_mode) {
@@ -195,8 +202,7 @@ namespace Carpet {
           }
           
           // Recover
-          Checkpoint ("Scheduling RECOVER_VARIABLES");
-          CCTK_ScheduleTraverse ("CCTK_RECOVER_VARIABLES", cctkGH, CallFunction);
+          ScheduleTraverse (where, "CCTK_RECOVER_VARIABLES", cctkGH);
           
           if (regrid_during_recovery) {
             CallRegridRecoverLevel (cctkGH);
@@ -211,6 +217,8 @@ namespace Carpet {
     // zones
     CallRegridRecoverMeta (cctkGH);
 #endif
+    
+    timer.stop();
   }
   
   
@@ -218,6 +226,10 @@ namespace Carpet {
   void
   CallPostRecoverVariables (cGH * const cctkGH)
   {
+    char const * const where = "Initialise::CallPostRecoverVariables";
+    static Timer timer (where);
+    timer.start();
+    
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cctkGH) {
         ENTER_LEVEL_MODE (cctkGH, rl) {
@@ -230,9 +242,7 @@ namespace Carpet {
                     (do_meta_mode ? " (meta)" : ""));
           
           // Post recover variables
-          Checkpoint ("Scheduling POST_RECOVER_VARIABLES");
-          CCTK_ScheduleTraverse
-            ("CCTK_POST_RECOVER_VARIABLES", cctkGH, CallFunction);
+          ScheduleTraverse (where, "CCTK_POST_RECOVER_VARIABLES", cctkGH);
           
           // Checking
           PoisonCheck (cctkGH, alltimes);
@@ -241,6 +251,8 @@ namespace Carpet {
         } LEAVE_LEVEL_MODE;
       } END_MGLEVEL_LOOP;
     } // for rl
+    
+    timer.stop();
   }
   
   
@@ -249,6 +261,10 @@ namespace Carpet {
   CallInitial (cGH * const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
+    
+    char const * const where = "Initialise::CallInitial";
+    static Timer timer (where);
+    timer.start();
     
     if (not regrid_during_initialisation) {
       // Regrid once in the beginning
@@ -279,8 +295,7 @@ namespace Carpet {
           Poison (cctkGH, alltimes, CCTK_GF);
           
           // Set up the grids
-          Checkpoint ("Scheduling BASEGRID");
-          CCTK_ScheduleTraverse ("CCTK_BASEGRID", cctkGH, CallFunction);
+          ScheduleTraverse (where, "CCTK_BASEGRID", cctkGH);
           
           // Timing statistics
           if (do_global_mode) {
@@ -317,8 +332,7 @@ namespace Carpet {
             CycleTimeLevels (cctkGH);
             
             // Set up the initial data
-            Checkpoint ("Scheduling INITIAL");
-            CCTK_ScheduleTraverse ("CCTK_INITIAL", cctkGH, CallFunction);
+            ScheduleTraverse (where, "CCTK_INITIAL", cctkGH);
             
             // Checking
             PoisonCheck (cctkGH, currenttime);
@@ -336,6 +350,8 @@ namespace Carpet {
       } END_MGLEVEL_LOOP;
       
     } // for rl
+    
+    timer.stop();
   }
   
   
@@ -362,6 +378,10 @@ namespace Carpet {
   void
   CallPostInitial (cGH * const cctkGH)
   {
+    char const * const where = "Initialise::CallPostInitial";
+    static Timer timer (where);
+    timer.start();
+    
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cctkGH) {
         ENTER_LEVEL_MODE (cctkGH, rl) {
@@ -374,16 +394,11 @@ namespace Carpet {
                     (do_meta_mode ? " (meta)" : ""));
           
           if (reflevel < reflevels-1) {
-            Checkpoint ("Scheduling POSTRESTRICTINITIAL");
-            CCTK_ScheduleTraverse
-              ("CCTK_POSTRESTRICTINITIAL", cctkGH, CallFunction);
+            ScheduleTraverse (where, "CCTK_POSTRESTRICTINITIAL", cctkGH);
           }
           
-          Checkpoint ("Scheduling POSTINITIAL");
-          CCTK_ScheduleTraverse ("CCTK_POSTINITIAL", cctkGH, CallFunction);
-          
-          Checkpoint ("Scheduling POSTSTEP");
-          CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cctkGH, CallFunction);
+          ScheduleTraverse (where, "CCTK_POSTINITIAL", cctkGH);
+          ScheduleTraverse (where, "CCTK_POSTSTEP", cctkGH);
           
           PoisonCheck (cctkGH, alltimes);
           CheckChecksums (cctkGH, allbutcurrenttime);
@@ -391,6 +406,8 @@ namespace Carpet {
         } LEAVE_LEVEL_MODE;
       } END_MGLEVEL_LOOP;
     } // for rl
+    
+    timer.stop();
   }
   
   
@@ -464,15 +481,13 @@ namespace Carpet {
                   cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
                   (do_global_mode ? " (global)" : ""),
                   (do_meta_mode ? " (meta)" : ""));
-        Checkpoint ("Scheduling PREREGRIDINITIAL");
-        CCTK_ScheduleTraverse ("CCTK_PREREGRIDINITIAL", cctkGH, CallFunction);
+        ScheduleTraverse (where, "CCTK_PREREGRIDINITIAL", cctkGH);
       } else {
         Waypoint ("Preregrid at iteration %d time %g%s%s",
                   cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
                   (do_global_mode ? " (global)" : ""),
                   (do_meta_mode ? " (meta)" : ""));
-        Checkpoint ("Scheduling PREREGRID");
-        CCTK_ScheduleTraverse ("CCTK_PREREGRID", cctkGH, CallFunction);
+        ScheduleTraverse (where, "CCTK_PREREGRID", cctkGH);
       }
     }
     
@@ -552,13 +567,9 @@ namespace Carpet {
                   
                   // Postregrid
                   if (regridinitial) {
-                    Checkpoint ("Scheduling POSTREGRIDINITIAL");
-                    CCTK_ScheduleTraverse
-                      ("CCTK_POSTREGRIDINITIAL", cctkGH, CallFunction);
+                    ScheduleTraverse (where, "CCTK_POSTREGRIDINITIAL", cctkGH);
                   } else {
-                    Checkpoint ("Scheduling POSTREGRID");
-                    CCTK_ScheduleTraverse
-                      ("CCTK_POSTREGRID", cctkGH, CallFunction);
+                    ScheduleTraverse (where, "CCTK_POSTREGRID", cctkGH);
                   }
                   
                 } // for tl
@@ -585,6 +596,10 @@ namespace Carpet {
   CallRegridRecoverMeta (cGH * const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
+    
+    char const * const where = "Initialise::CallRegridRecoverMeta";
+    static Timer timer (where);
+    timer.start();
     
     assert (is_meta_mode());
     
@@ -638,9 +653,7 @@ namespace Carpet {
               cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
             
             // Postregrid
-            Checkpoint ("Scheduling POSTREGRID");
-              CCTK_ScheduleTraverse
-                ("CCTK_POSTREGRID", cctkGH, CallFunction);
+            ScheduleTraverse (where, "CCTK_POSTREGRID", cctkGH);
               
           } // for tl
           cctkGH->cctk_time = old_cctk_time;
@@ -654,6 +667,8 @@ namespace Carpet {
     
     do_global_mode = old_do_global_mode;
     do_meta_mode = old_do_meta_mode;
+    
+    timer.stop();
   }
   
   
@@ -662,6 +677,10 @@ namespace Carpet {
   CallRegridRecoverLevel (cGH * const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
+    
+    char const * const where = "Initialise::CallRegridRecoverLevel";
+    static Timer timer (where);
+    timer.start();
     
     CCTK_WARN (CCTK_WARN_ALERT,
                "Regridding in level mode after recovering is discouraged");
@@ -678,8 +697,7 @@ namespace Carpet {
               cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
               (do_global_mode ? " (global)" : ""),
               (do_meta_mode ? " (meta)" : ""));
-    Checkpoint ("Scheduling PREREGRID");
-    CCTK_ScheduleTraverse ("CCTK_PREREGRID", cctkGH, CallFunction);
+    ScheduleTraverse (where, "CCTK_PREREGRID", cctkGH);
     
     // Regrid
     Checkpoint ("Regrid");
@@ -741,9 +759,7 @@ namespace Carpet {
                     cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
                   
                   // Postregrid
-                  Checkpoint ("Scheduling POSTREGRID");
-                  CCTK_ScheduleTraverse
-                    ("CCTK_POSTREGRID", cctkGH, CallFunction);
+                  ScheduleTraverse (where, "CCTK_POSTREGRID", cctkGH);
                   
                 } // for tl
                 cctkGH->cctk_time = old_cctk_time;
@@ -760,6 +776,8 @@ namespace Carpet {
     
     do_global_mode = old_do_global_mode;
     do_meta_mode = old_do_meta_mode;
+    
+    timer.stop();
   }
   
   
@@ -768,6 +786,10 @@ namespace Carpet {
   CallRegridInitialMeta (cGH * const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
+    
+    char const * const where = "Initialise::CallRegridInitialMeta";
+    static Timer timer (where);
+    timer.start();
     
     assert (is_meta_mode());
     
@@ -784,8 +806,7 @@ namespace Carpet {
                   cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
                   (do_global_mode ? " (global)" : ""),
                   (do_meta_mode ? " (meta)" : ""));
-        Checkpoint ("Scheduling PREREGRIDINITIAL");
-        CCTK_ScheduleTraverse ("CCTK_PREREGRIDINITIAL", cctkGH, CallFunction);
+        ScheduleTraverse (where, "CCTK_PREREGRIDINITIAL", cctkGH);
         
         // Regrid
         Checkpoint ("Regrid");
@@ -807,6 +828,8 @@ namespace Carpet {
     
     do_global_mode = old_do_global_mode;
     do_meta_mode = old_do_meta_mode;
+    
+    timer.stop();
   }
   
   
@@ -815,6 +838,10 @@ namespace Carpet {
   CallRegridInitialLevel (cGH * const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
+    
+    char const * const where = "Initialise::CallRegridInitialLevel";
+    static Timer timer (where);
+    timer.start();
     
     CCTK_WARN (CCTK_WARN_ALERT,
                "Regridding in level mode while initialising is discouraged");
@@ -831,8 +858,7 @@ namespace Carpet {
               cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
               (do_global_mode ? " (global)" : ""),
               (do_meta_mode ? " (meta)" : ""));
-    Checkpoint ("Scheduling PREREGRIDINITIAL");
-    CCTK_ScheduleTraverse ("CCTK_PREREGRIDINITIAL", cctkGH, CallFunction);
+    ScheduleTraverse (where, "CCTK_PREREGRIDINITIAL", cctkGH);
     
     // Regrid
     Checkpoint ("Regrid");
@@ -895,9 +921,7 @@ namespace Carpet {
                     cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
                   
                   // Postregrid
-                  Checkpoint ("Scheduling POSTREGRIDINITIAL");
-                  CCTK_ScheduleTraverse
-                    ("CCTK_POSTREGRIDINITIAL", cctkGH, CallFunction);
+                  ScheduleTraverse (where, "CCTK_POSTREGRIDINITIAL", cctkGH);
                   
                 } // for tl
                 cctkGH->cctk_time = old_cctk_time;
@@ -914,6 +938,8 @@ namespace Carpet {
     
     do_global_mode = old_do_global_mode;
     do_meta_mode = old_do_meta_mode;
+    
+    timer.stop();
   }
   
   
@@ -1009,6 +1035,10 @@ namespace Carpet {
   void
   initialise_3tl_evolve_Ia (cGH * const cctkGH)
   {
+    char const * const where = "Initialise3TL::EvolveIa";
+    static Timer timer (where);
+    timer.start();
+    
     Waypoint ("Initialisation 3TL evolution I (a) (forwards) at iteration"
               " %d time %g%s%s",
               cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
@@ -1019,12 +1049,12 @@ namespace Carpet {
     Poison (cctkGH, currenttimebutnotifonly);
     
     // Evolve forward
-    Checkpoint ("Scheduling PRESTEP");
-    CCTK_ScheduleTraverse ("CCTK_PRESTEP", cctkGH, CallFunction);
-    Checkpoint ("Scheduling EVOL");
-    CCTK_ScheduleTraverse ("CCTK_EVOL", cctkGH, CallFunction);
+    ScheduleTraverse (where, "CCTK_PRESTEP", cctkGH);
+    ScheduleTraverse (where, "CCTK_EVOL", cctkGH);
     
     PoisonCheck (cctkGH, currenttime);
+    
+    timer.stop();
   }
   
   void
@@ -1052,6 +1082,10 @@ namespace Carpet {
   void
   initialise_3tl_evolve_Ib (cGH * const cctkGH)
   {
+    char const * const where = "Initialise3TL::EvolveIb";
+    static Timer timer (where);
+    timer.start();
+    
     Waypoint ("Initialisation 3TL evolution I (b) (backwards) at iteration"
               " %d time %g%s%s",
               cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
@@ -1063,13 +1097,13 @@ namespace Carpet {
     Poison (cctkGH, currenttimebutnotifonly);
     
     // Evolve backward
-    Checkpoint ("Scheduling PRESTEP");
-    CCTK_ScheduleTraverse ("CCTK_PRESTEP", cctkGH, CallFunction);
-    Checkpoint ("Scheduling EVOL");
-    CCTK_ScheduleTraverse ("CCTK_EVOL", cctkGH, CallFunction);
+    ScheduleTraverse (where, "CCTK_PRESTEP", cctkGH);
+    ScheduleTraverse (where, "CCTK_EVOL", cctkGH);
     
     // Checking
     PoisonCheck (cctkGH, alltimes);
+    
+    timer.stop();
   }
   
   // Evolve backwards one more timestep
@@ -1077,6 +1111,10 @@ namespace Carpet {
   void
   initialise_3tl_evolve_IIb (cGH * const cctkGH)
   {
+    char const * const where = "Initialise3TL::EvolveIIb";
+    static Timer timer (where);
+    timer.start();
+    
     Waypoint ("Initialisation 3TL evolution II (b) (backwards) at iteration"
               " %d time %g%s%s",
               cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
@@ -1086,14 +1124,14 @@ namespace Carpet {
     Restrict (cctkGH);
     
     if (reflevel < reflevels-1) {
-      Checkpoint ("Scheduling POSTRESTRICT");
-      CCTK_ScheduleTraverse ("CCTK_POSTRESTRICT", cctkGH, CallFunction);
+      ScheduleTraverse (where, "CCTK_POSTRESTRICT", cctkGH);
     }
     
-    Checkpoint ("Scheduling POSTSTEP");
-    CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cctkGH, CallFunction);
+    ScheduleTraverse (where, "CCTK_POSTSTEP", cctkGH);
     
     PoisonCheck (cctkGH, alltimes);
+    
+    timer.stop();
   }
   
   void
@@ -1113,6 +1151,10 @@ namespace Carpet {
   void
   initialise_3tl_evolve_Ic (cGH * const cctkGH)
   {
+    char const * const where = "Initialise3TL::EvolveIc";
+    static Timer timer (where);
+    timer.start();
+    
     Waypoint ("Initialisation 3TL evolution I (c) (backwards) at iteration"
               " %d time %g%s%s",
               cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
@@ -1123,14 +1165,13 @@ namespace Carpet {
     Poison (cctkGH, currenttimebutnotifonly);
     
     // Evolve backward
-    Checkpoint ("Scheduling PRESTEP");
-    CCTK_ScheduleTraverse ("CCTK_PRESTEP", cctkGH, CallFunction);
-    Checkpoint ("Scheduling EVOL");
-    CCTK_ScheduleTraverse ("CCTK_EVOL", cctkGH, CallFunction);
-    Checkpoint ("Scheduling POSTSTEP");
-    CCTK_ScheduleTraverse ("CCTK_POSTSTEP", cctkGH, CallFunction);
+    ScheduleTraverse (where, "CCTK_PRESTEP", cctkGH);
+    ScheduleTraverse (where, "CCTK_EVOL", cctkGH);
+    ScheduleTraverse (where, "CCTK_POSTSTEP", cctkGH);
     
     PoisonCheck (cctkGH, alltimes);
+    
+    timer.stop();
   }
   
   void
