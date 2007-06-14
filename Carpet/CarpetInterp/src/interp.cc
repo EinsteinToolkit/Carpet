@@ -819,25 +819,50 @@ namespace CarpetInterp {
     // Find out about the coordinates: origin and delta
     // for the Carpet grid indices
     vector<rvect> lower (maps);
-    vector<rvect> delta (maps);
+    vector<rvect> delta (maps); // spacing on finest possible grid
     vector<rvect> upper (maps);
-    rvect coord_lower, coord_upper;
-    const char* coord_system_name = CCTK_CoordSystemName (coord_system_handle);
-
-    for (int d = 0; d < N_dims; d++) {
-      const int iret = CCTK_CoordRange (cctkGH, &coord_lower[d],
-                                        &coord_upper[d], d+1,
-                                        NULL, coord_system_name);
-      assert (iret == 0);
+    
+    int const grouptype = CCTK_GroupTypeI (coord_group);
+    switch (grouptype) {
+      
+    case CCTK_GF: {
+      for (int m = 0; m < Carpet::maps; ++ m) {
+        jvect gsh;
+        GetCoordRange (cctkGH, m, mglevel, dim,
+                       & gsh[0],
+                       & lower.at(m)[0], & upper.at(m)[0], & delta.at(m)[0]);
+        delta.at(m) /= maxspacereflevelfact;
+      }
+      break;
     }
-
-    for (int m = 0; m < maps; ++m) {
-      const ibbox& baseextent =
-        arrdata.at(coord_group).at(m).hh->baseextents.at(mglevel).at(0);
-      lower.at(m) = coord_lower;
-      upper.at(m) = coord_upper;
-      delta.at(m) = ((coord_upper - coord_lower) /
-                     rvect (baseextent.upper() - baseextent.lower()));
+      
+    case CCTK_SCALAR:
+    case CCTK_ARRAY: {
+      
+      rvect coord_lower, coord_upper;
+      char const * const coord_system_name =
+        CCTK_CoordSystemName (coord_system_handle);
+      
+      for (int d = 0; d < N_dims; ++ d) {
+        int const iret = CCTK_CoordRange (cctkGH, &coord_lower[d],
+                                          &coord_upper[d], d+1,
+                                          NULL, coord_system_name);
+        assert (iret == 0);
+      }
+      
+      for (int m = 0; m < maps; ++m) {
+        ibbox const & baseextent =
+          arrdata.at(coord_group).at(m).hh->baseextents.at(mglevel).at(0);
+        lower.at(m) = coord_lower;
+        upper.at(m) = coord_upper;
+        delta.at(m) = ((coord_upper - coord_lower) /
+                       rvect (baseextent.upper() - baseextent.lower()));
+      }
+      break;
+    }
+      
+    default:
+      assert (0);
     }
 
     // Assign interpolation points to processors/components
@@ -1200,30 +1225,50 @@ namespace CarpetInterp {
     rvect lower, upper, delta;
 
     // Get global origin and spacing of the underlying coordinate system
-#ifdef NEW_COORD_API
-    const iret1 = Util_TableGetRealArray (coord_system_handle, N_dims,
-                                          &lower[0], "COMPMIN");
-    const iret2 = Util_TableGetRealArray (coord_system_handle, N_dims,
-                                          &delta[0], "DELTA");
-    assert (iret1 == N_dims and iret2 == N_dims);
-#else
-    const char* coord_system_name = CCTK_CoordSystemName (coord_system_handle);
-    assert (CCTK_CoordSystemDim (coord_system_name) >= N_dims);
-
-    for (int d = 0; d < N_dims; d++) {
-      const int iret = CCTK_CoordRange (cctkGH, &lower[d], &upper[d], d+1,
-                                        NULL, coord_system_name);
-      assert (iret == 0);
-    }
-#endif
-
     int const grouptype = CCTK_GroupTypeI (coord_group);
-    assert (grouptype >= 0);
-    int const m = grouptype == CCTK_GF ? Carpet::map : 0;
-    // delta for the Carpet grid indices
-    const ibbox& baseextent =
-      arrdata.at(coord_group).at(m).hh->baseextents.at(mglevel).at(0);
-    delta = (upper - lower) / rvect (baseextent.upper() - baseextent.lower());
+    switch (grouptype) {
+      
+    case CCTK_GF: {
+      jvect gsh;
+      GetCoordRange (cctkGH, Carpet::map, mglevel, dim,
+                     & gsh[0], & lower[0], & upper[0], & delta[0]);
+      delta /= maxspacereflevelfact;
+      break;
+    }
+      
+    case CCTK_SCALAR:
+    case CCTK_ARRAY: {
+#ifdef NEW_COORD_API
+      int const iret1 = Util_TableGetRealArray (coord_system_handle, N_dims,
+                                                &lower[0], "COMPMIN");
+      int const iret2 = Util_TableGetRealArray (coord_system_handle, N_dims,
+                                                &delta[0], "DELTA");
+      assert (iret1 == N_dims and iret2 == N_dims);
+#else
+      char const * const coord_system_name =
+        CCTK_CoordSystemName (coord_system_handle);
+      assert (CCTK_CoordSystemDim (coord_system_name) >= N_dims);
+      
+      for (int d = 0; d < N_dims; ++ d) {
+        int const iret = CCTK_CoordRange (cctkGH, &lower[d], &upper[d], d+1,
+                                          NULL, coord_system_name);
+        assert (iret == 0);
+      }
+      
+      int const grouptype = CCTK_GroupTypeI (coord_group);
+      assert (grouptype >= 0);
+      int const m = grouptype == CCTK_GF ? Carpet::map : 0;
+      // delta for the Carpet grid indices
+      ibbox const & baseextent =
+        arrdata.at(coord_group).at(m).hh->baseextents.at(mglevel).at(0);
+      delta = (upper - lower) / rvect (baseextent.upper() - baseextent.lower());
+#endif
+      break;
+    }
+      
+    default:
+      assert (0);
+    }
 
     // Get processor-local origin and spacing
     cGroupDynamicData coord_group_data;
