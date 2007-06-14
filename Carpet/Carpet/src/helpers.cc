@@ -70,6 +70,43 @@ namespace Carpet {
   
 
 
+  CCTK_INT
+  Carpet_GetCoordRange (CCTK_POINTER_TO_CONST const cctkGH_,
+                        CCTK_INT              const m,
+                        CCTK_INT              const ml,
+                        CCTK_INT              const size,
+                        CCTK_INT            * const gsh,
+                        CCTK_REAL           * const lower,
+                        CCTK_REAL           * const upper,
+                        CCTK_REAL           * const delta)
+  {
+    cGH const * const cctkGH = static_cast <cGH const *> (cctkGH_);
+    assert (cctkGH);
+    assert (m >= 0 and m < maps);
+    assert (ml >= 0 and ml < mglevels);
+    assert (size >= 0);
+    assert (not size or gsh);
+    assert (not size or lower);
+    assert (not size or upper);
+    assert (not size or delta);
+    
+    assert (size == dim);
+    
+    ibbox const & baseext = vhh.at(m)->baseextents.at(ml).at(0);
+    ivect const igsh = baseext.shape() / baseext.stride();
+    
+    for (int d = 0; d < dim; ++ d) {
+      gsh[d] = igsh[d];
+      lower[d] = origin_space.at(m).at(ml)[d];
+      delta[d] = delta_space.at(m)[d] * mglevelfact;
+      upper[d] = lower[d] + delta[d] * (gsh[d] - 1);
+    }
+    
+    return 0;
+  }
+
+
+
   // Communication
 
   int Barrier (const cGH* cgh)

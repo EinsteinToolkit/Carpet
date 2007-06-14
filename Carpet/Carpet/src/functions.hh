@@ -78,6 +78,15 @@ namespace Carpet {
     Carpet_GetMPICommUniverse (CCTK_POINTER_TO_CONST cctkGH);
     CCTK_POINTER_TO_CONST
     Carpet_GetMPICommWorld (CCTK_POINTER_TO_CONST cctkGH);
+    CCTK_INT
+    Carpet_GetCoordRange (CCTK_POINTER_TO_CONST const         cctkGH_,
+                          CCTK_INT              const         m,
+                          CCTK_INT              const         ml,
+                          CCTK_INT              const         size,
+                          CCTK_INT                    * const gsh,
+                          CCTK_REAL                   * const lower,
+                          CCTK_REAL                   * const upper,
+                          CCTK_REAL                   * const delta);
   }
   
   

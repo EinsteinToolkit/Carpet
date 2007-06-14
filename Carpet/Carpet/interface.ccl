@@ -138,6 +138,20 @@ USES FUNCTION MultiPatch_GetDomainSpecification
 
 
 
+# Access coordinate information (on the coarse level)
+CCTK_INT FUNCTION GetCoordRange        \
+    (CCTK_POINTER_TO_CONST IN  cctkGH, \
+     CCTK_INT              IN  m,      \
+     CCTK_INT              IN  ml,     \
+     CCTK_INT              IN  size,   \
+     CCTK_INT        ARRAY OUT gsh,    \
+     CCTK_REAL       ARRAY OUT lower,  \
+     CCTK_REAL       ARRAY OUT upper,  \
+     CCTK_REAL       ARRAY OUT delta)
+PROVIDES FUNCTION GetCoordRange WITH Carpet_GetCoordRange LANGUAGE C
+
+
+
 # The true prototype of the routine below:
 #   int Carpet_Regrid (const cGH * cctkGH,
 #                      gh::mregs * regsss,
