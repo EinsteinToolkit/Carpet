@@ -393,11 +393,16 @@ namespace Carpet {
     
     if (mc_grouptype == CCTK_GF) {
       
+      // Save space delta
+      // (Do this early and often, so that interpolation has access to
+      // the correct values right away.)
+      for (int d=0; d<dim; ++d) {
+        origin_space.at(map).at(mglevel)[d] = cctkGH->cctk_origin_space[d];
+        delta_space.at(map)[d] = cctkGH->cctk_delta_space[d] / mglevelfact;
+      }
       if (maps > 1) {
-        // Save and unset space delta
+        // Unset space delta
         for (int d=0; d<dim; ++d) {
-          origin_space.at(map).at(mglevel)[d] = cctkGH->cctk_origin_space[d];
-          delta_space.at(map)[d] = cctkGH->cctk_delta_space[d] / mglevelfact;
           cctkGH->cctk_origin_space[d] = -424242.0;
           cctkGH->cctk_delta_space[d] = -424242.0;
         }
