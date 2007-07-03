@@ -529,7 +529,9 @@ transfer_prolongate (data const * const src,
                             box);
       break;
     default:
-      assert (0);
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "There is no stencil for op=\"LAGRANGE\" with order_space not in {1, 3, 5}");
+      break;
     }
     timer.stop (0);
     break;
@@ -540,7 +542,8 @@ transfer_prolongate (data const * const src,
     timer.start ();
     switch (order_space) {
     case 1:
-      CCTK_WARN (0, "There is no stencil for op=\"ENO\" with order_space=1");
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "There is no stencil for op=\"ENO\" with order_space==1");
       break;
     case 3:
       prolongate_3d_eno (static_cast <T const *> (src->storage()),
@@ -552,7 +555,9 @@ transfer_prolongate (data const * const src,
                          box);
       break;
     default:
-      assert (0);
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "There is no stencil for op=\"ENO\" with order_space!=3");
+      break;
     }
     timer.stop (0);
     break;
@@ -563,10 +568,12 @@ transfer_prolongate (data const * const src,
     timer.start ();
     switch (order_space) {
     case 1:
-      CCTK_WARN (0, "There is no stencil for op=\"WENO\" with order_space=1");
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "There is no stencil for op=\"WENO\" with order_space=1");
       break;
     case 3:
-      CCTK_WARN (0, "There is no stencil for op=\"WENO\" with order_space=3");
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "There is no stencil for op=\"WENO\" with order_space=3");
       break;
     case 5:
       prolongate_3d_eno (static_cast <T const *> (src->storage()),
@@ -578,7 +585,9 @@ transfer_prolongate (data const * const src,
                          box);
       break;
     default:
-      assert (0);
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "There is no stencil for op=\"WENO\" with order_space!=5");
+      break;
     }
     timer.stop (0);
     break;
