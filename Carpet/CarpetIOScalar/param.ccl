@@ -48,6 +48,7 @@ KEYWORD outScalar_criterion "Criterion to select scalar output intervals, overri
 {
   "never"     :: "Never output"
   "iteration" :: "Output every so many iterations"
+  "divisor"   :: "Output if iteration mod divisor == 0."
   "time"      :: "Output every that much coordinate time"
 } "iteration"
 
