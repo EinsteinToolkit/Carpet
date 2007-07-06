@@ -928,8 +928,10 @@ namespace Carpet {
     }
     
     // Collect slices
-    vector<region_t> regs(nregs);
+    vector<region_t> regs;
     {
+#if 0
+      regs.resize (nregs);
       int r=0;
       for (int m=0; m<nmaps; ++m) {
         for (int c=0; c<int(regss.at(m).size()); ++c, ++r) {
@@ -939,6 +941,61 @@ namespace Carpet {
         }
       }
       assert (r == nregs);
+#endif
+      for (int m=0; m<nmaps; ++m) {
+        ibset comps;
+        ibset cobnds[2][dim];
+        for (size_t c=0; c<regss.at(m).size(); ++c) {
+          region_t const & reg = regss.at(m).at(c);
+          comps += reg.extent;
+          for (int f = 0; f < 2; ++ f) {
+            for (int d = 0; d < dim; ++ d) {
+              if (reg.outer_boundaries[f][d]) {
+                ibbox bnd = reg.extent;
+                ivect lo = bnd.lower();
+                ivect up = bnd.upper();
+                if (f==0) {
+                  up[d] = lo[d];
+                } else {
+                  lo[d] = up[d];
+                }
+                bnd = ibbox (lo, up, bnd.stride());
+                cobnds[f][d] += bnd;
+              }
+            }
+          }
+        }
+        comps.normalize();
+        for (int f = 0; f < 2; ++ f) {
+          for (int d = 0; d < dim; ++ d) {
+            cobnds[f][d].normalize();
+          }
+        }
+        size_t const needsize = regs.size() + comps.setsize();
+        if (regs.capacity() < needsize) {
+          regs.reserve (1000 + 2 * needsize);
+        }
+        for (ibset::const_iterator ci = comps.begin(); ci != comps.end(); ++ ci)
+        {
+          ibbox const & c = * ci;
+          b2vect obnds;
+          for (int f = 0; f < 2; ++ f) {
+            for (int d = 0; d < dim; ++ d) {
+              obnds[f][d] = cobnds[f][d].intersects (c);
+              if (obnds[f][d]) {
+                assert ((cobnds[f][d] & ibset(c)) == cobnds[f][d]);
+              }
+            }
+          }
+          region_t reg;
+          reg.extent           = c;
+          reg.outer_boundaries = obnds;
+          reg.map              = m;
+          reg.processor        = -1;
+          regs.push_back (reg);
+        }
+      } // for m
+      nregs = regs.size();
     }
     
     const int nprocs = CCTK_nProcs (cctkGH);
