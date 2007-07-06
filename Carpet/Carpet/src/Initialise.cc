@@ -294,7 +294,9 @@ namespace Carpet {
           int const num_tl =
             init_each_timelevel ? prolongation_order_time+1 : 1;
           bool const old_do_allow_past_timelevels = do_allow_past_timelevels;
-          do_allow_past_timelevels = not init_each_timelevel;
+          // do_allow_past_timelevels = not init_each_timelevel;
+          do_allow_past_timelevels =
+            not CCTK_EQUALS (initial_data_setup_method, "single_level");
           
           for (int m=0; m<maps; ++m) {
             vtt.at(m)->set_delta
@@ -322,6 +324,10 @@ namespace Carpet {
             
             // Set up the initial data
             ScheduleTraverse (where, "CCTK_INITIAL", cctkGH);
+            
+            if (init_fill_timelevels) {
+              FillTimeLevels (cctkGH);
+            }
             
             // Checking
             PoisonCheck (cctkGH, currenttime);

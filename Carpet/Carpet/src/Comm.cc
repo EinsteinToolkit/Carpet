@@ -166,7 +166,8 @@ namespace Carpet {
       if (sync_during_time_integration or local_do_prolongate) {
         SyncGroups (cctkGH, goodgroups);
       }
-    }
+
+    } // for g
 
     return retval;
   }
@@ -178,7 +179,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     const int tl = 0;
-
+    
     // use the current time here (which may be modified by the user)
     const CCTK_REAL time
       = (cctkGH->cctk_time - initial_time) / delta_time;

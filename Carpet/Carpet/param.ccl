@@ -10,6 +10,11 @@ USES CCTK_REAL cctk_final_time
 USES CCTK_REAL max_runtime 
 
 
+shares: InitBase
+
+USES KEYWORD initial_data_setup_method
+
+
 shares: IO
 
 USES STRING out_dir
@@ -435,6 +440,10 @@ STRING grid_structure_filename "File name to output grid structure to (empty = n
 private:
 
 BOOLEAN init_each_timelevel "Call initial data routines once for each timelevel" STEERABLE=always
+{
+} "no"
+
+BOOLEAN init_fill_timelevels "Fill past time levels from current time level after calling initial data routines" STEERABLE=always
 {
 } "no"
 

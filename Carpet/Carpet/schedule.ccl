@@ -11,3 +11,8 @@ schedule CarpetStartup at STARTUP as Driver_Startup
 {
   LANG: C
 } "Startup routine"
+
+schedule CarpetParamCheck at PARAMCHECK
+{
+  LANG: C
+} "Parameter checking routine"

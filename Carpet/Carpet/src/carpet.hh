@@ -37,6 +37,7 @@ namespace Carpet {
   
   void CycleTimeLevels (const cGH* cgh);
   void FlipTimeLevels (const cGH* cgh);
+  void FillTimeLevels (const cGH* cgh);
   void SyncGroups (const cGH* cgh, const vector<int>& groups);
   int  SyncProlongateGroups (const cGH* cgh, const vector<int>& groups);
  
