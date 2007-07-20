@@ -158,7 +158,7 @@ void ggf::recompose_fill (comm_state & state, int const rl,
   for (int ml = 0; ml < h.mglevels(); ++ ml) {
     
     vector <int> tls;
-    if (do_prolongate and rl > 0 and transport_operator != op_none) {
+    if (do_prolongate and rl > 0 and transport_operator != op_none and transport_operator != op_sync) {
       int const numtl = timelevels (ml, rl);
       tls.resize (numtl);
       for (int tl = 0; tl < numtl; ++ tl) {
@@ -185,7 +185,7 @@ void ggf::recompose_fill (comm_state & state, int const rl,
         // Initialise from a coarser level of the new hierarchy, where
         // possible
         if (rl > 0) {
-          if (transport_operator != op_none) {
+          if (transport_operator != op_none and transport_operator != op_sync) {
             for (int tl = 0; tl < timelevels (ml, rl); ++tl) {
               transfer_from (state,
                              tl, rl, c, ml,
@@ -278,6 +278,7 @@ ggf::
 sync (comm_state & state,
       int const tl, int const rl, int const c, int const ml)
 {
+  if(transport_operator == op_none) return;
   // Copy
   static Timer timer ("sync");
   timer.start ();
@@ -300,7 +301,7 @@ ref_bnd_prolongate (comm_state & state,
 {
   // Interpolate
   assert (rl>=1);
-  if (transport_operator == op_none) return;
+  if (transport_operator == op_none or transport_operator == op_sync) return;
   vector<int> tl2s;
   static Timer timer ("ref_bnd_prolongate");
   timer.start ();
@@ -394,7 +395,7 @@ ref_restrict (comm_state & state,
   static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
   assert (abs(t.get_time(rl,ml) - t.get_time(rl+1,ml))
 	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
-  if (transport_operator == op_none) return;
+  if (transport_operator == op_none or transport_operator == op_sync) return;
   static Timer timer ("ref_restrict");
   timer.start ();
   vector<int> const tl2s(1,tl);
@@ -417,7 +418,7 @@ ref_prolongate (comm_state & state,
                 CCTK_REAL const time)
 {
   assert (rl>=1);
-  if (transport_operator == op_none) return;
+  if (transport_operator == op_none or transport_operator == op_sync) return;
   static Timer timer ("ref_prolongate");
   timer.start ();
   vector<int> tl2s;
