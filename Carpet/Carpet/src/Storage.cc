@@ -210,7 +210,9 @@ namespace Carpet {
       
     } // for n
     
-    return total_num_timelevels;
+    //    return total_num_timelevels;
+    return do_allow_past_timelevels ? 
+      total_num_timelevels : min(1,total_num_timelevels);
   }
   
   
@@ -359,7 +361,8 @@ namespace Carpet {
     
     if (gp.grouptype == CCTK_GF) {
       if (groupdata.at(group).transport_operator != op_none
-          and groupdata.at(group).transport_operator != op_copy) {
+          and groupdata.at(group).transport_operator != op_copy
+	  and groupdata.at(group).transport_operator != op_sync) {
         if (groupdata.at(group).activetimelevels.at(ml).at(rl) != 0
             and (groupdata.at(group).activetimelevels.at(ml).at(rl)
                  < prolongation_order_time+1))

@@ -1766,7 +1766,7 @@ namespace Carpet {
                       "Group \"%s\" has only one time level; therefore it will not be prolongated or restricted.",
                       groupname);
           free (groupname);
-          return op_none;
+          return op_sync;
         } else {
           // Several time levels: use the default
           return op_Lagrange;
@@ -1778,7 +1778,7 @@ namespace Carpet {
                       "Group \"%s\" has the variable type \"%s\" which cannot be prolongated or restricted.",
                       groupname, CCTK_VarTypeName(gdata.vartype));
           free (groupname);
-          return op_none;
+          return op_sync;
         } else {
           return op_error;
         }
@@ -1788,7 +1788,9 @@ namespace Carpet {
     // Select the prolongation method
     assert (have_prolong_string);
     if (CCTK_Equals(prolong_string, "none")) {
-      return op_none;
+      return op_sync; // sync absolutely everything
+    } else if (CCTK_Equals(prolong_string, "sync")) {
+      return op_sync;
     } else if (CCTK_Equals(prolong_string, "copy")) {
       return op_copy;
     } else if (CCTK_Equals(prolong_string, "Lagrange")) {
