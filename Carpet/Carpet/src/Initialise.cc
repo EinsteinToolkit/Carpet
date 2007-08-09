@@ -296,7 +296,7 @@ namespace Carpet {
           bool const old_do_allow_past_timelevels = do_allow_past_timelevels;
           // do_allow_past_timelevels = not init_each_timelevel;
           do_allow_past_timelevels =
-            not CCTK_EQUALS (initial_data_setup_method, "single_level");
+            not CCTK_EQUALS (initial_data_setup_method, "init_single_level");
           
           for (int m=0; m<maps; ++m) {
             vtt.at(m)->set_delta
