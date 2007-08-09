@@ -73,6 +73,9 @@ public:
   size_type size () const;
   int setsize () const { return bs.size(); }
   
+  // Find out whether this bboxset intersects the bbox b
+  bool intersects (const box& b) const;
+  
   // Add (bboxes that don't overlap)
   bboxset& operator+= (const box& b)
   {

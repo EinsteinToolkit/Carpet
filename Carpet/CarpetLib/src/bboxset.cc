@@ -215,6 +215,20 @@ typename bboxset<T,D>::size_type bboxset<T,D>::size () const {
 
 
 
+
+// Queries
+
+// Intersection
+template<class T, int D>
+bool bboxset<T,D>::intersects (const box& b) const {
+  for (const_iterator bi=begin(); bi!=end(); ++bi) {
+    if ((*bi).intersects(b)) return true;
+  }
+  return false;
+}
+
+
+
 // Add (bboxes that don't overlap)
 template<class T, int D>
 bboxset<T,D>& bboxset<T,D>::operator+= (const bboxset& s) {
