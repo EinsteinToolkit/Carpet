@@ -235,6 +235,7 @@ namespace Carpet {
     // Enable prolongating
     do_allow_past_timelevels = true;
     do_prolongate = true;
+    do_taper = false;
     do_warn_about_storage = false; // This is enabled later
     
     if (enable_all_storage) {

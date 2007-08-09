@@ -54,6 +54,9 @@ namespace Carpet {
     // Timing statistics
     InitTiming (cctkGH);
     
+    // Tapered grids
+    do_taper = use_tapered_grids;
+    
     // Main loop
     static Timer timer ("Evolve");
     timer.start();
@@ -63,11 +66,14 @@ namespace Carpet {
       {
         int const do_every = maxtimereflevelfact / timereffacts.at(reflevels-1);
         if ((cctkGH->cctk_iteration - 1) % do_every == 0) {
+          bool const old_do_taper = do_taper;
+          do_taper = false;
           ENTER_GLOBAL_MODE (cctkGH, 0) {
             BEGIN_REFLEVEL_LOOP (cctkGH) {
               CallRegrid (cctkGH);
             } END_REFLEVEL_LOOP;
           } LEAVE_GLOBAL_MODE;
+          do_taper = old_do_taper;
         }
       }
       CallEvol (cctkGH);
@@ -88,6 +94,8 @@ namespace Carpet {
       
     } // end main loop
     timer.stop();
+    
+    do_taper = false;
     
     Waypoint ("Done with evolution loop");
     

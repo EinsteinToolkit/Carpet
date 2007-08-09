@@ -130,24 +130,28 @@ namespace Carpet {
       
       bool local_do_prolongate;
       if (do_prolongate) {
-        if (use_tapered_grids) {
-          // TODO: Check iteration number instead
-          CCTK_REAL mytime;
-          CCTK_REAL parenttime;
-          if (map == -1) {
-            mytime = vtt.at(0)->time (0, reflevel, mglevel);
-            parenttime = vtt.at(0)->time (0, reflevel - 1, mglevel);
-          } else {
-            mytime = vtt.at(map)->time (0, reflevel, mglevel);
-            parenttime = vtt.at(map)->time (0, reflevel - 1, mglevel);
+        if (do_taper) {
+          if (reflevel == 0) {
+            local_do_prolongate = true;
+          } else {              // on a fine level
+#warning "TODO: Check iteration number instead -- this is wrong while regridding"
+            CCTK_REAL mytime;
+            CCTK_REAL parenttime;
+            if (map == -1) {
+              mytime = vtt.at(0)->time (0, reflevel, mglevel);
+              parenttime = vtt.at(0)->time (0, reflevel - 1, mglevel);
+            } else {
+              mytime = vtt.at(map)->time (0, reflevel, mglevel);
+              parenttime = vtt.at(map)->time (0, reflevel - 1, mglevel);
+            }
+            bool const in_sync =
+              abs (mytime - parenttime) < 1.0e-10 * abs (delta_time);
+            local_do_prolongate = in_sync;
           }
-          bool const in_sync =
-            abs (mytime - parenttime) < 1.0e-10 * abs (delta_time);
-          local_do_prolongate = in_sync;
-        } else {
+        } else {                // no tapered grids
           local_do_prolongate = true;
         }
-      } else {
+      } else {                  // not do_prolongate
         local_do_prolongate = false;
       }
       

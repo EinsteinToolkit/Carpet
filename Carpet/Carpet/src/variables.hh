@@ -124,6 +124,9 @@ namespace Carpet {
   // Is prolongation enabled?
   extern bool do_prolongate;
   
+  // Is tapering enabled?
+  extern bool do_taper;
+  
   // Should we warn about groups with insufficiently many time levels?
   extern bool do_warn_about_storage;
   
