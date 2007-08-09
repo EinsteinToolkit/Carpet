@@ -1789,7 +1789,9 @@ namespace Carpet {
     // Select the prolongation method
     assert (have_prolong_string);
     if (CCTK_Equals(prolong_string, "none")) {
-      return op_sync; // sync absolutely everything
+      // This would surprise too many people
+      // return op_none;
+      return op_sync;
     } else if (CCTK_Equals(prolong_string, "sync")) {
       return op_sync;
     } else if (CCTK_Equals(prolong_string, "copy")) {

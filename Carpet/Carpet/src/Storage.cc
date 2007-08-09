@@ -360,12 +360,13 @@ namespace Carpet {
     assert (not ierr);
     
     if (gp.grouptype == CCTK_GF) {
-      if (groupdata.at(group).transport_operator != op_none
-          and groupdata.at(group).transport_operator != op_copy
-	  and groupdata.at(group).transport_operator != op_sync) {
-        if (groupdata.at(group).activetimelevels.at(ml).at(rl) != 0
-            and (groupdata.at(group).activetimelevels.at(ml).at(rl)
-                 < prolongation_order_time+1))
+      if (groupdata.at(group).transport_operator != op_none and
+          groupdata.at(group).transport_operator != op_sync and
+          groupdata.at(group).transport_operator != op_copy)
+      {
+        if (groupdata.at(group).activetimelevels.at(ml).at(rl) != 0 and
+            (groupdata.at(group).activetimelevels.at(ml).at(rl) <
+             prolongation_order_time+1))
         {
           static vector<bool> didwarn;
           int const numgroups = CCTK_NumGroups();
