@@ -61,13 +61,14 @@ namespace Carpet {
   static
   void
   current_level_updates (cGH const * const cctkGH,
-                         int & local_updates, int & global_updates)
+                         CCTK_REAL & local_updates, CCTK_REAL & global_updates)
   {
     DECLARE_CCTK_PARAMETERS;
     
     // Count the weighted number of grid points
-    int local_num_grid_points = 0;
-    int global_num_grid_points = 0;
+    // (int is not good enough for this calculation)
+    CCTK_REAL local_num_grid_points = 0;
+    CCTK_REAL global_num_grid_points = 0;
     for (int m = 0; m < maps; ++ m) {
       assert (reflevel >= 0);
       int const rl = reflevel;
@@ -79,7 +80,7 @@ namespace Carpet {
         ibbox const ext = vhh.at(m)->extent(ml,rl,c);
         
         // Count the grid points
-        int const domainsize = ext.size();
+        CCTK_REAL const domainsize = ext.size();
         
         if (vhh.at(m)->is_local (rl, c)) {
           local_num_grid_points += domainsize;
@@ -138,7 +139,7 @@ namespace Carpet {
   {
     DECLARE_CCTK_ARGUMENTS;
     
-    int local_updates, global_updates;
+    CCTK_REAL local_updates, global_updates;
     current_level_updates (cctkGH, local_updates, global_updates);
     
     * local_grid_point_updates_count += local_updates;
