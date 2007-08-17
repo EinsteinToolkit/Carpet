@@ -983,7 +983,17 @@ namespace Carpet {
             for (int d = 0; d < dim; ++ d) {
               obnds[f][d] = cobnds[f][d].intersects (c);
               if (obnds[f][d]) {
-                assert ((cobnds[f][d] & ibset(c)) == cobnds[f][d]);
+                ivect lo = c.lower();
+                ivect up = c.upper();
+                if (f) lo[d]=up[d]; else up[d]=lo[d];
+                ibbox const cbnds (lo, up, c.stride());
+                if (not ((cobnds[f][d] & ibset(c)) == ibset(cbnds))) {
+                  cout << "cobnds[f][d] = " << cobnds[f][d] << endl
+                       << "ibset(c) = " << ibset(c) << endl
+                       << "(cobnds[f][d] & ibset(c)) = " << (cobnds[f][d] & ibset(c)) << endl
+                       << "ibset(cbnds) = " << ibset(cbnds) << endl;
+                }
+                assert ((cobnds[f][d] & ibset(c)) == ibset(cbnds));
               }
             }
           }
