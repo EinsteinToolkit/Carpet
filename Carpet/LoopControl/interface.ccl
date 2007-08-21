@@ -1,0 +1,5 @@
+# Interface definition for thorn LoopControl
+
+IMPLEMENTS: LoopControl
+
+INCLUDE HEADER: loopcontrol.h IN loopcontrol.h

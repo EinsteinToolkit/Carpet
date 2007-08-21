@@ -1,0 +1,5 @@
+# Configuration definition for thorn LoopControl
+
+PROVIDES LoopControl
+{
+}

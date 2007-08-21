@@ -1,0 +1,63 @@
+# Parameter definitions for thorn LoopControl
+
+# General options
+
+BOOLEAN verbose "Verbosity" STEERABLE=always
+{
+} "no"
+
+BOOLEAN debug "Output debug information" STEERABLE=always
+{
+} "no"
+
+
+
+# Thread topology
+
+CCTK_INT lc_inthreads "Number of threads in the i-direction" STEERABLE=recover
+{
+  -1  :: "choose automatically"
+  1:* :: "user-specified value"
+} -1
+
+CCTK_INT lc_jnthreads "Number of threads in the j-direction" STEERABLE=recover
+{
+  -1  :: "choose automatically"
+  1:* :: "user-specified value"
+} -1
+
+CCTK_INT lc_knthreads "Number of threads in the k-direction" STEERABLE=recover
+{
+  -1  :: "choose automatically"
+  1:* :: "user-specified value"
+} -1
+
+
+
+# Tiling specification
+
+CCTK_INT lc_inpoints "Number of grid points in the i-direction" STEERABLE=recover
+{
+  -1  :: "choose automatically"
+  1:* :: "user-specified value"
+} -1
+
+CCTK_INT lc_jnpoints "Number of grid points in the j-direction" STEERABLE=recover
+{
+  -1  :: "choose automatically"
+  1:* :: "user-specified value"
+} -1
+
+CCTK_INT lc_knpoints "Number of grid points in the k-direction" STEERABLE=recover
+{
+  -1  :: "choose automatically"
+  1:* :: "user-specified value"
+} -1
+
+
+
+# Automatic
+
+BOOLEAN cycle_j_tilings "Cycle through all available tilings in the j-direction" STEERABLE=recover
+{
+} "no"

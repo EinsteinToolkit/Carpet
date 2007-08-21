@@ -1,0 +1,9 @@
+Cactus Code Thorn LoopControl
+Thorn Author(s)     : Erik Schnetter <schnetter@cct.lsu.edu>
+Thorn Maintainer(s) : Erik Schnetter <schnetter@cct.lsu.edu>
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+Iterate over multi-dimensional arrays in an efficient manner, using
+OpenMP (if available) and cach-aware loop tiling.
