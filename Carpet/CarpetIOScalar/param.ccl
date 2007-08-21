@@ -40,7 +40,7 @@ CCTK_STRING outScalar_vars "Variables to output in scalar form" STEERABLE = ALWA
 CCTK_STRING outScalar_reductions "List of reductions to output in scalar form" STEERABLE = ALWAYS
 {
   "" :: "A regex which matches everything"
-} "count minimum maximum sum average norm1 norm2 norm_inf"
+} "count minimum maximum sum average norm1 norm2 norm_inf icount iaverage inorm1 inorm2"
 
 
 
