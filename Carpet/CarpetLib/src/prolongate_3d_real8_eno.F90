@@ -190,6 +190,7 @@ subroutine prolongate_3d_real8_eno (src, srciext, srcjext, &
 
 !!$     Loop over fine region
 
+!$omp parallel do private (k0, fk, j0, fj, i0, fi)
   do k = 0, regkext-1
     k0 = (srckoff + k) / dstkfac
     fk = mod(srckoff + k, dstkfac)

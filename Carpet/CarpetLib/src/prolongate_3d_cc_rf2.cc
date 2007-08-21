@@ -120,6 +120,7 @@ namespace CarpetLib {
     
     
     
+#pragma omp parallel for
     for (int k=0; k<regkext; ++k) {
       for (int j=0; j<regjext; ++j) {
         for (int i=0; i<regiext; ++i) {
@@ -252,6 +253,7 @@ namespace CarpetLib {
     
     
     
+#pragma omp parallel for
     for (int k=0; k<regkext; ++k) {
       for (int j=0; j<regjext; ++j) {
         for (int i=0; i<regiext; ++i) {

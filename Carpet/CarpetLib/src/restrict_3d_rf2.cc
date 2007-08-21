@@ -74,32 +74,33 @@ namespace CarpetLib {
     
     
     
-    size_t const srciext = srcext[0];
-    size_t const srcjext = srcext[1];
-    size_t const srckext = srcext[2];
+    ptrdiff_t const srciext = srcext[0];
+    ptrdiff_t const srcjext = srcext[1];
+    ptrdiff_t const srckext = srcext[2];
     
-    size_t const dstiext = dstext[0];
-    size_t const dstjext = dstext[1];
-    size_t const dstkext = dstext[2];
+    ptrdiff_t const dstiext = dstext[0];
+    ptrdiff_t const dstjext = dstext[1];
+    ptrdiff_t const dstkext = dstext[2];
     
-    size_t const regiext = regext[0];
-    size_t const regjext = regext[1];
-    size_t const regkext = regext[2];
+    ptrdiff_t const regiext = regext[0];
+    ptrdiff_t const regjext = regext[1];
+    ptrdiff_t const regkext = regext[2];
     
-    size_t const srcioff = srcoff[0];
-    size_t const srcjoff = srcoff[1];
-    size_t const srckoff = srcoff[2];
+    ptrdiff_t const srcioff = srcoff[0];
+    ptrdiff_t const srcjoff = srcoff[1];
+    ptrdiff_t const srckoff = srcoff[2];
     
-    size_t const dstioff = dstoff[0];
-    size_t const dstjoff = dstoff[1];
-    size_t const dstkoff = dstoff[2];
+    ptrdiff_t const dstioff = dstoff[0];
+    ptrdiff_t const dstjoff = dstoff[1];
+    ptrdiff_t const dstkoff = dstoff[2];
     
     
     
     // Loop over coarse region
-    for (size_t k=0; k<regkext; ++k) {
-      for (size_t j=0; j<regjext; ++j) {
-        for (size_t i=0; i<regiext; ++i) {
+#pragma omp parallel for
+    for (ptrdiff_t k=0; k<regkext; ++k) {
+      for (ptrdiff_t j=0; j<regjext; ++j) {
+        for (ptrdiff_t i=0; i<regiext; ++i) {
           
           dst [DSTIND3(i, j, k)] = src [SRCIND3(2*i, 2*j, 2*k)];
           

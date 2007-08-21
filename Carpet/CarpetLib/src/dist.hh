@@ -63,6 +63,28 @@ namespace dist {
     return size_;
   }
   
+  // Local number of threads
+  int num_threads_worker ();
+  inline int num_threads ()
+  {
+    static int num_threads_ = -1;
+    if (num_threads_ == -1) {
+      num_threads_ = num_threads_worker();
+    }
+    return num_threads_;
+  }
+  
+  // Global number of threads
+  int total_num_threads_worker ();
+  inline int total_num_threads ()
+  {
+    static int total_num_threads_ = -1;
+    if (total_num_threads_ == -1) {
+      total_num_threads_ = total_num_threads_worker();
+    }
+    return total_num_threads_;
+  }
+  
   
   
   /////////////////////////////////////////////////////////////////////////

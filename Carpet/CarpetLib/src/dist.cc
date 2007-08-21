@@ -1,5 +1,8 @@
 #include <cassert>
 
+#ifdef _OPENMP
+#  include <omp.h>
+#endif
 #include <mpi.h>
 
 #include "cctk.h"
@@ -63,4 +66,45 @@ namespace dist {
     }
   }
   
+  // Local number of threads
+  int num_threads_worker ()
+  {
+    DECLARE_CCTK_PARAMETERS;
+    int num_threads_;
+#ifdef _OPENMP
+    if (num_threads > 0) {
+      // Set number of threads which should be used
+      // TODO: do this at startup, not in this routine
+      omp_set_num_threads (num_threads);
+    }
+#pragma omp parallel
+    {
+#pragma omp single nowait
+      {
+        num_threads_ = omp_get_num_threads();
+      }
+    }
+#else
+    if (num_threads > 0 and num_threads != 1) {
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "OpenMP is not enabled.  Cannot set the number of threads.");
+    }
+    num_threads_ = 1;
+#endif
+    assert (num_threads_ >= 1);
+    return num_threads_;
+  }
+  
+  // Global number of threads
+  int total_num_threads_worker ()
+  {
+    int total_num_threads_;
+    int const mynthreads = num_threads();
+    MPI_Allreduce
+      (const_cast <int *> (& mynthreads), & total_num_threads_, 1, MPI_INT,
+       MPI_SUM, comm());
+    assert (total_num_threads_ >= size());
+    return total_num_threads_;
+  }
+
 } // namespace dist
