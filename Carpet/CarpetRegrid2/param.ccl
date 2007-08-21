@@ -61,6 +61,10 @@ CCTK_INT num_levels_1 "Number of refinement levels for this centre" STEERABLE=al
   0:30 :: ""
 } 0
 
+BOOLEAN active_1 "Is this region active?" STEERABLE=never
+{
+} "yes"
+
 
 
 CCTK_REAL position_x_1 "Position of this centre" STEERABLE=always
@@ -100,6 +104,10 @@ CCTK_INT num_levels_2 "Number of refinement levels for this centre" STEERABLE=al
 {
   0:30 :: ""
 } 0
+
+BOOLEAN active_2 "Is this region active?" STEERABLE=never
+{
+} "yes"
 
 
 
@@ -141,6 +149,10 @@ CCTK_INT num_levels_3 "Number of refinement levels for this centre" STEERABLE=al
   0:30 :: ""
 } 0
 
+BOOLEAN active_3 "Is this region active?" STEERABLE=never
+{
+} "yes"
+
 
 
 CCTK_REAL position_x_3 "Position of this centre" STEERABLE=always
@@ -180,6 +192,10 @@ CCTK_INT num_levels_4 "Number of refinement levels for this centre" STEERABLE=al
 {
   0:30 :: ""
 } 0
+
+BOOLEAN active_4 "Is this region active?" STEERABLE=never
+{
+} "yes"
 
 
 
@@ -221,6 +237,10 @@ CCTK_INT num_levels_5 "Number of refinement levels for this centre" STEERABLE=al
   0:30 :: ""
 } 0
 
+BOOLEAN active_5 "Is this region active?" STEERABLE=never
+{
+} "yes"
+
 
 
 CCTK_REAL position_x_5 "Position of this centre" STEERABLE=always
@@ -260,6 +280,10 @@ CCTK_INT num_levels_6 "Number of refinement levels for this centre" STEERABLE=al
 {
   0:30 :: ""
 } 0
+
+BOOLEAN active_6 "Is this region active?" STEERABLE=never
+{
+} "yes"
 
 
 
@@ -301,6 +325,10 @@ CCTK_INT num_levels_7 "Number of refinement levels for this centre" STEERABLE=al
   0:30 :: ""
 } 0
 
+BOOLEAN active_7 "Is this region active?" STEERABLE=never
+{
+} "yes"
+
 
 
 CCTK_REAL position_x_7 "Position of this centre" STEERABLE=always
@@ -340,6 +368,10 @@ CCTK_INT num_levels_8 "Number of refinement levels for this centre" STEERABLE=al
 {
   0:30 :: ""
 } 0
+
+BOOLEAN active_8 "Is this region active?" STEERABLE=never
+{
+} "yes"
 
 
 
@@ -381,6 +413,10 @@ CCTK_INT num_levels_9 "Number of refinement levels for this centre" STEERABLE=al
   0:30 :: ""
 } 0
 
+BOOLEAN active_9 "Is this region active?" STEERABLE=never
+{
+} "yes"
+
 
 
 CCTK_REAL position_x_9 "Position of this centre" STEERABLE=always
@@ -420,6 +456,10 @@ CCTK_INT num_levels_10 "Number of refinement levels for this centre" STEERABLE=a
 {
   0:30 :: ""
 } 0
+
+BOOLEAN active_10 "Is this region active?" STEERABLE=never
+{
+} "yes"
 
 
 

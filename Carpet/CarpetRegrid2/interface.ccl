@@ -83,6 +83,11 @@ CCTK_INT num_levels[10] TYPE=scalar
   num_levels
 } "Number of refinement levels"
 
+CCTK_INT active[10] TYPE=scalar
+{
+  active
+} "Whether this centre is active"
+
 CCTK_REAL positions[10] TYPE=scalar
 {
   position_x position_y position_z

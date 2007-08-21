@@ -38,6 +38,7 @@ namespace CarpetRegrid2 {
   
   struct centre_description {
     int                num_levels;
+    int                active;
     rvect              position;
     vector <CCTK_REAL> radius;
     
@@ -58,6 +59,7 @@ namespace CarpetRegrid2 {
     getvectorindex2 (cctkGH, "CarpetRegrid2::radii", lsh);
     
     this->num_levels = num_levels[n];
+    this->active = active[n];
     this->position = rvect (position_x[n], position_y[n], position_z[n]);
     this->radius.resize (this->num_levels);
     for (int rl = 0; rl < this->num_levels; ++ rl) {
@@ -274,32 +276,34 @@ namespace CarpetRegrid2 {
     // Loop over all centres
     for (int n = 0; n < num_centres; ++ n) {
       centre_description centre (cctkGH, n);
-      
-      // Loop over all levels for this centre
-      for (int rl = 1; rl < centre.num_levels; ++ rl) {
+      if (centre.active) {
         
-        // Calculate a bbox for this region
-        rvect const rmin = centre.position - centre.radius.at(rl);
-        rvect const rmax = centre.position + centre.radius.at(rl);
+        // Loop over all levels for this centre
+        for (int rl = 1; rl < centre.num_levels; ++ rl) {
+          
+          // Calculate a bbox for this region
+          rvect const rmin = centre.position - centre.radius.at(rl);
+          rvect const rmax = centre.position + centre.radius.at(rl);
+          
+          // Convert to an integer bbox
+          ivect const imin =
+            rpos2ipos (rmin, origin, scale, hh, rl);
+          ivect const imax =
+            rpos2ipos1 (rmax, origin, scale, hh, rl);
+          
+          ivect const istride = hh.baseextents.at(0).at(rl).stride();
+          
+          ibbox const region (imin, imax, istride);
+          
+          // Add this region to the list of regions
+          if (static_cast <int> (regions.size()) < rl+1) regions.resize (rl+1);
+          regions.at(rl) |= region;
+          regions.at(rl).normalize();
+          
+        } // for rl
         
-        // Convert to an integer bbox
-        ivect const imin =
-          rpos2ipos (rmin, origin, scale, hh, rl);
-        ivect const imax =
-          rpos2ipos1 (rmax, origin, scale, hh, rl);
-        
-        ivect const istride = hh.baseextents.at(0).at(rl).stride();
-        
-        ibbox const region (imin, imax, istride);
-        
-        // Add this region to the list of regions
-        if (static_cast <int> (regions.size()) < rl+1) regions.resize (rl+1);
-        regions.at(rl) |= region;
-        regions.at(rl).normalize();
-        
-      } // for rl
-      
-    } // for n
+      } // if centre is active
+    }   // for n
     
     
       
@@ -510,6 +514,22 @@ namespace CarpetRegrid2 {
                               min_bnd_dist_incl[0] * bb.stride()),
                              bb.upper())),
              bb.stride());
+          if (not clipped_bb.is_contained_in (hh.baseextents.at(0).at(rl))) {
+            ostringstream msg;
+            msg << "Level " << rl << " of the refinement hierarchy is not contained in the simulation domain."
+                << "  (There may be too many ghost of buffer zones.)"
+                << "  One bbox is " << clipped_bb << "."
+                << "  lower_is_outside_lower=" << lower_is_outside_lower
+                << "  upper_is_outside_upper=" << upper_is_outside_upper
+                << "  lower_is_almost_outside_upper=" << lower_is_almost_outside_upper
+                << "  upper_is_almost_outside_lower=" << upper_is_almost_outside_lower
+                << "  level_exterior_ilower=" << level_exterior_ilower
+                << "  level_exterior_iupper=" << level_exterior_iupper
+                << "  physical_ilower=" << physical_ilower
+                << "  physical_iupper=" << physical_iupper
+                << "  baseextent=" << hh.baseextents.at(0).at(rl);
+            CCTK_WARN (CCTK_WARN_ABORT, msg.str().c_str());
+          }
           assert (clipped_bb.is_contained_in (hh.baseextents.at(0).at(rl)));
           
           clipped |= clipped_bb;
@@ -665,12 +685,17 @@ namespace CarpetRegrid2 {
     if (verbose) {
       if (do_recompose) {
         for (int n = 0; n < num_centres; ++ n) {
-          CCTK_VInfo (CCTK_THORNSTRING,
-                      "Centre %d is at position [%g,%g,%g]",
-                      n,
-                      static_cast <double> (position_x[n]),
-                      static_cast <double> (position_y[n]),
-                      static_cast <double> (position_z[n]));
+          if (active[n]) {
+            CCTK_VInfo (CCTK_THORNSTRING,
+                        "Centre %d is at position [%g,%g,%g]",
+                        n,
+                        static_cast <double> (position_x[n]),
+                        static_cast <double> (position_y[n]),
+                        static_cast <double> (position_z[n]));
+          } else {
+            CCTK_VInfo (CCTK_THORNSTRING,
+                        "Centre %d is not active", n);
+          }
         }
       }
     }
@@ -779,12 +804,17 @@ namespace CarpetRegrid2 {
     if (verbose) {
       if (do_recompose) {
         for (int n = 0; n < num_centres; ++ n) {
-          CCTK_VInfo (CCTK_THORNSTRING,
-                      "Centre %d is at position [%g,%g,%g]",
-                      n,
-                      static_cast <double> (position_x[n]),
-                      static_cast <double> (position_y[n]),
-                      static_cast <double> (position_z[n]));
+          if (active[n]) {
+            CCTK_VInfo (CCTK_THORNSTRING,
+                        "Centre %d is at position [%g,%g,%g]",
+                        n,
+                        static_cast <double> (position_x[n]),
+                        static_cast <double> (position_y[n]),
+                        static_cast <double> (position_z[n]));
+          } else {
+            CCTK_VInfo (CCTK_THORNSTRING,
+                        "Centre %d is not active", n);
+          }
         }
       }
     }
