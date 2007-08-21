@@ -1,5 +1,7 @@
+#include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <vector>
 
 #include <cctk.h>
 #include <cctk_Arguments.h>
@@ -15,6 +17,11 @@ namespace CarpetMask {
   
   
   
+  // Number of excluded regions which are defined in param.ccl
+  int const num_excluded = 10;
+  
+  
+  
   /**
    * Set the weight in the excluded regions to zero.
    */
@@ -25,6 +32,12 @@ namespace CarpetMask {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
+    // Some state verbose output
+    static vector <int> last_output;
+    if (last_output.empty()) {
+      last_output.resize (num_excluded, -1);
+    }
+    
     CCTK_REAL * const weight =
       static_cast <CCTK_REAL *>
       (CCTK_VarDataPtr (cctkGH, 0, "CarpetReduce::weight"));
@@ -34,16 +47,16 @@ namespace CarpetMask {
                  "CarpetReduce is not active, or CarpetReduce::mask does not have storage");
     }
     
-    for (int n = 0; n < 10; ++ n) {
+    for (int n = 0; n < num_excluded; ++ n) {
       
       int const sn = excluded_surface[n];
       if (sn >= 0) {
         
         assert (sn < nsurfaces);
         
-        CCTK_REAL const shrink_factor = excluded_surface_factor[n];
-        
-        if (sf_valid[sn] > 0) {
+        if (sf_active[sn]) {
+          
+          CCTK_REAL const shrink_factor = excluded_surface_factor[n];
           
           CCTK_REAL const x0 = sf_origin_x[sn];
           CCTK_REAL const y0 = sf_origin_y[sn];
@@ -56,6 +69,17 @@ namespace CarpetMask {
           
           int const ntheta = sf_ntheta[sn];
           int const nphi   = sf_nphi  [sn];
+          
+          if (verbose) {
+            if (cctk_iteration > last_output.at(n)) {
+              last_output.at(n) = cctk_iteration;
+              CCTK_VInfo (CCTK_THORNSTRING,
+                          "Setting mask from surface %d at [%g,%g,%g], average radius %g",
+                          sn,
+                          double(x0), double(y0), double(z0),
+                          double(sf_mean_radius[sn]));
+            }
+          }
           
           for (int k = 0; k < cctk_lsh[2]; ++ k) {
             for (int j = 0; j < cctk_lsh[1]; ++ j) {
@@ -72,15 +96,28 @@ namespace CarpetMask {
                   // Always excise the surface origin
                   weight[ind] = 0.0;
                 } else {
-                  CCTK_REAL const theta = acos (dz / rho);
-                  CCTK_REAL const phi   = atan2 (dy, dx);
+                  CCTK_REAL const theta =
+                    acos (min (+1.0, max (-1.0, dz / rho)));
+                  assert (not isnan (theta));
+                  assert (theta >= 0);
+                  assert (theta <= M_PI);
+                  CCTK_REAL const phi =
+                    fmod (atan2 (dy, dx) + 2 * M_PI, 2 * M_PI);
+                  assert (not isnan (phi));
+                  assert (phi >= 0);
+                  assert (phi < 2 * M_PI);
                   int const a = floor ((theta - theta0) / dtheta + 0.5);
+                  assert (a >= 0);
+                  assert (a < ntheta);
                   int const b = floor ((phi   - phi0  ) / dphi   + 0.5);
+                  assert (b >= 0);
+                  assert (b < nphi);
                   
                   assert (a >= 0 and a < ntheta);
                   assert (b >= 0 and b < nphi  );
                   
-                  CCTK_REAL const dr = sf_radius[a + maxntheta * b];
+                  CCTK_REAL const dr =
+                    sf_radius[a + maxntheta * (b + maxnphi * sn)];
                   if (rho <= dr * shrink_factor) {
                     weight[ind] = 0.0;
                   }
@@ -90,9 +127,18 @@ namespace CarpetMask {
             }
           }
           
-        } // if surface is valid
+        } else {
+          
+          if (verbose) {
+            if (cctk_iteration > last_output.at(n)) {
+              last_output.at(n) = cctk_iteration;
+              CCTK_VInfo (CCTK_THORNSTRING, "Surface %d is not active", sn);
+            }
+          }
+          
+        } // if surface is not active
         
-      } // if r>=0
+      } // if sn >= 0
     }   // for n
     
   }

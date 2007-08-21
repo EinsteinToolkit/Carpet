@@ -2,6 +2,12 @@
 
 
 
+BOOLEAN verbose "Produce screen output" STEERABLE=always
+{
+} "no"
+
+
+
 # The exclusion parameters are re-interpreted after each regridding,
 # and are therefore marked as "always steerable".
 
@@ -44,6 +50,8 @@ CCTK_REAL excluded_surface_factor[10] "shrink factor of excluded surface" STEERA
 {
   0:* :: ""
 } 1.0
+
+
 
 SHARES: SphericalSurface
 
