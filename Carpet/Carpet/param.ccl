@@ -400,6 +400,21 @@ BOOLEAN constant_load_per_processor "Keep the load per processor constant -- thi
 {
 } "no"
 
+CCTK_REAL aspect_ratio_x "Desired aspect ratio for each processor's domain" STEERABLE=always
+{
+  (0:* :: ""
+} 1.0
+
+CCTK_REAL aspect_ratio_y "Desired aspect ratio for each processor's domain" STEERABLE=always
+{
+  (0:* :: ""
+} 1.0
+
+CCTK_REAL aspect_ratio_z "Desired aspect ratio for each processor's domain" STEERABLE=always
+{
+  (0:* :: ""
+} 1.0
+
 
 
 STRING grid_structure_filename "File name to output grid structure to (empty = no output)" STEERABLE=recover

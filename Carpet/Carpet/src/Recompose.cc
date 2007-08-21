@@ -43,8 +43,17 @@ namespace Carpet {
   static rvect
   cost (region_t const & reg)
   {
+    DECLARE_CCTK_PARAMETERS;
+    static rvect costfactor;
+    static bool initialised = false;
+    if (not initialised) {
+      costfactor = rvect(1.0);
+      if (dim > 0) costfactor[0] = 1.0 / aspect_ratio_x;
+      if (dim > 1) costfactor[1] = 1.0 / aspect_ratio_y;
+      if (dim > 2) costfactor[2] = 1.0 / aspect_ratio_z;
+    }
     if (reg.extent.empty()) return rvect(0);
-    return rvect (reg.extent.shape() / reg.extent.stride());
+    return rvect (reg.extent.shape() / reg.extent.stride()) * costfactor;
   }
   
   
