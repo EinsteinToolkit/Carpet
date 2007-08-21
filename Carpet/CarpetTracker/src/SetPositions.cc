@@ -37,31 +37,48 @@ using namespace std;
       if (sn >= 0) {
         assert (sn >= 0 and sn < nsurfaces);
         
-        if (sf_valid[sn] > 0) {
-          
-          if (verbose) {
-            CCTK_VInfo (CCTK_THORNSTRING,
-                        "Setting position of refined region #%d from surface #%d to (%g,%g,%g)",
-                        n + 1, sn,
-                        static_cast <double> (sf_centroid_x[sn]),
-                        static_cast <double> (sf_centroid_y[sn]),
-                        static_cast <double> (sf_centroid_z[sn]));
-          }
-          
-          // Set position in CarpetRegrid2
-          position_x[n] = sf_centroid_x[sn];
-          position_y[n] = sf_centroid_y[sn];
-          position_z[n] = sf_centroid_z[sn];
+        if (sf_active[sn]) {
+          if (sf_valid[sn] > 0) {
+            
+            if (verbose) {
+              CCTK_VInfo (CCTK_THORNSTRING,
+                          "Setting position of refined region #%d from surface #%d to (%g,%g,%g)",
+                          n + 1, sn,
+                          static_cast <double> (sf_centroid_x[sn]),
+                          static_cast <double> (sf_centroid_y[sn]),
+                          static_cast <double> (sf_centroid_z[sn]));
+            }
+            
+            // Activate region
+            active[n] = 1;
+            
+            // Set position in CarpetRegrid2
+            position_x[n] = sf_centroid_x[sn];
+            position_y[n] = sf_centroid_y[sn];
+            position_z[n] = sf_centroid_z[sn];
+            
+          } else {
+            
+            if (verbose) {
+              CCTK_VInfo (CCTK_THORNSTRING,
+                          "No position information available for refined region #%d from surface #%d",
+                          n + 1, sn);
+            }
+            
+          } // if not valid
           
         } else {
           
           if (verbose) {
             CCTK_VInfo (CCTK_THORNSTRING,
-                        "No position information available for refined region #%d from surface #%d",
+                        "Refined region #%d (depending on surface #%d) is inactive",
                         n + 1, sn);
           }
           
-        } // if valid
+          // Deactivate region
+          active[n] = 0;
+          
+        } // if not active
         
       } // if sn > 0
     } // for n
