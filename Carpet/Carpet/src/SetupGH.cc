@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include <mpi.h>
+
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
@@ -189,22 +191,41 @@ namespace Carpet {
     
     // Say hello
     Waypoint ("Setting up the grid hierarchy");
-    CCTK_VInfo (CCTK_THORNSTRING,
-                "Carpet is running on %d processors", CCTK_nProcs(cctkGH));
-    CCTK_VInfo (CCTK_THORNSTRING,
-                "This is processor %d", CCTK_MyProc(cctkGH));
     
-    if (verbose) {
-      char hostnamebuf[1000];
-      Util_GetHostName (hostnamebuf, sizeof hostnamebuf);
-      string const hostname (hostnamebuf);
-      vector <string> hostnames = AllGatherString (MPI_COMM_WORLD, hostname);
-      int const nprocs = CCTK_nProcs (cctkGH);
+    // Some statistics
+    {
+      int const nprocs = dist::size();
+      int const myproc = dist::rank();
+      int const mynthreads = dist::num_threads();
+      int const nthreads_total = dist::total_num_threads();
       CCTK_VInfo (CCTK_THORNSTRING,
-                  "Running on the following hosts:");
-      for (int n = 0; n < nprocs; ++ n) {
+                  "Carpet is running on %d processes", nprocs);
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "This is process %d", myproc);
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "This process contains %d threads", mynthreads);
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "There are %d threads in total", nthreads_total);
+      
+      if (verbose) {
+        // Collect host names
+        char hostnamebuf[1000];
+        Util_GetHostName (hostnamebuf, sizeof hostnamebuf);
+        string const hostname (hostnamebuf);
+        vector <string> hostnames = AllGatherString (dist::comm(), hostname);
+        // Collect number of threads
+        vector<int> nthreads (nprocs);
+        MPI_Allgather (const_cast <int *> (& mynthreads), 1, MPI_INT,
+                       & nthreads.front(), nprocs, MPI_INT,
+                       dist::comm());
+        // Output
         CCTK_VInfo (CCTK_THORNSTRING,
-                    "   %4d: %s", n, hostnames.at(n).c_str());
+                    "Running on the following hosts:");
+        for (int n = 0; n < nprocs; ++ n) {
+          CCTK_VInfo (CCTK_THORNSTRING,
+                      "   %4d [%d]: %s",
+                      n, nthreads.at(n), hostnames.at(n).c_str());
+        }
       }
     }
     
@@ -1020,7 +1041,7 @@ namespace Carpet {
       } else if (CCTK_EQUALS (processor_topology, "automatic")) {
         // Enlarge the domain in a smart way so that each processor
         // has the specified number of grid points
-        int const nprocs = dist::size();
+        int const nprocs = dist::total_num_threads();
         // Factorise the number of processors, placing the smallest
         // factors in the tail
         stack<int> factors;
