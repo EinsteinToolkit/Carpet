@@ -81,6 +81,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
             CCTK_VInfo (CCTK_THORNSTRING,
                         "Setting boundary points in direction %d face %d to weight 0", d, f);
           }
+#pragma omp parallel for
           for (k=bmin[2]; k<bmax[2]; ++k) {
             for (j=bmin[1]; j<bmax[1]; ++j) {
               for (i=bmin[0]; i<bmax[0]; ++i) {
@@ -127,6 +128,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
                 CCTK_VInfo (CCTK_THORNSTRING,
                             "Setting non-staggered boundary points in direction %d face %d to weight 1/2", d, f);
               }
+#pragma omp parallel for
               for (k=bmin[2]; k<bmax[2]; ++k) {
                 for (j=bmin[1]; j<bmax[1]; ++j) {
                   for (i=bmin[0]; i<bmax[0]; ++i) {

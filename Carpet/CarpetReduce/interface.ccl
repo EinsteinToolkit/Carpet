@@ -2,6 +2,7 @@
 
 IMPLEMENTS: reduce
 
+uses include header: defs.hh
 uses include header: dist.hh
 uses include header: vect.hh
 

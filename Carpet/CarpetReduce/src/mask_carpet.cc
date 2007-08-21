@@ -133,6 +133,7 @@ namespace CarpetMask {
                 
                 // Set weight on the boundary to 1/2
                 assert (dim == 3);
+#pragma omp parallel for
                 for (int k=imin[2]; k<imax[2]; ++k) {
                   for (int j=imin[1]; j<imax[1]; ++j) {
                     for (int i=imin[0]; i<imax[0]; ++i) {
@@ -195,6 +196,7 @@ namespace CarpetMask {
               
               // Set weight in the restricted region to 0
               assert (dim == 3);
+#pragma omp parallel for
               for (int k=imin[2]; k<imax[2]; ++k) {
                 for (int j=imin[1]; j<imax[1]; ++j) {
                   for (int i=imin[0]; i<imax[0]; ++i) {
@@ -212,6 +214,7 @@ namespace CarpetMask {
           vector<int> mask (cctk_lsh[0] * cctk_lsh[1] * cctk_lsh[2]);
           
           assert (dim == 3);
+#pragma omp parallel for
           for (int k=0; k<cctk_lsh[2]; ++k) {
             for (int j=0; j<cctk_lsh[1]; ++j) {
               for (int i=0; i<cctk_lsh[0]; ++i) {
@@ -248,6 +251,7 @@ namespace CarpetMask {
                 
                 // Set weight on the boundary to 1/2
                 assert (dim == 3);
+#pragma omp parallel for
                 for (int k=imin[2]; k<imax[2]; ++k) {
                   for (int j=imin[1]; j<imax[1]; ++j) {
                     for (int i=imin[0]; i<imax[0]; ++i) {
@@ -266,6 +270,7 @@ namespace CarpetMask {
           } // for d
           
           assert (dim == 3);
+#pragma omp parallel for
           for (int k=0; k<cctk_lsh[2]; ++k) {
             for (int j=0; j<cctk_lsh[1]; ++j) {
               for (int i=0; i<cctk_lsh[0]; ++i) {

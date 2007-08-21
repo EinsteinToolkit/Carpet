@@ -15,6 +15,7 @@
 #include <util_ErrorCodes.h>
 #include <util_Table.h>
 
+#include <defs.hh>
 #include <dist.hh>
 #include <vect.hh>
 
@@ -492,21 +493,33 @@ namespace CarpetReduce {
       imax[d] = lsh[d] - (bbox[2*d+1] ? 0 : nghostzones[d]);
     }
     static_assert (dim==3, "Only 3 dimensions are currently supported");
-    for (int k=imin[2]; k<imax[2]; ++k) {
-      for (int j=imin[1]; j<imax[1]; ++j) {
-        for (int i=imin[0]; i<imax[0]; ++i) {
-	  const int index = i + lsh[0] * (j + lsh[1] * k);
-          CCTK_REAL const w = (weight ? weight[index] : 1.0) * levfac;
-          T myinval = T(0);
-          for (size_t tl=0; tl<inarrays.size(); ++tl) {
-            myinval += (static_cast<const T*>(inarrays.at(tl))[index]
-                        * tfacs.at(tl));
+#pragma omp parallel
+    {
+      T myoutval_local;
+      OP::initialise (myoutval_local);
+      CCTK_REAL mycnt_local = 0;
+#pragma omp for
+      for (int k=imin[2]; k<imax[2]; ++k) {
+        for (int j=imin[1]; j<imax[1]; ++j) {
+          for (int i=imin[0]; i<imax[0]; ++i) {
+            const int index = i + lsh[0] * (j + lsh[1] * k);
+            CCTK_REAL const w = weight ? weight[index] * levfac : levfac;
+            T myinval = T(0);
+            for (size_t tl=0; tl<inarrays.size(); ++tl) {
+              myinval +=
+                static_cast<const T*>(inarrays.AT(tl))[index] * tfacs.AT(tl);
+            }
+            OP::reduce (myoutval_local, myinval, w);
+            mycnt_local += w;
           }
-	  OP::reduce (myoutval, myinval, w);
-	  mycnt += w;
-	}
+        }
       }
-    }
+#pragma omp critical
+      {
+        OP::reduce (myoutval, myoutval_local, mycnt_local);
+        mycnt += mycnt_local;
+      }
+    } // end omp parallel
     *(T*)outval = myoutval;
     *(T*)cnt    = mycnt;
   }

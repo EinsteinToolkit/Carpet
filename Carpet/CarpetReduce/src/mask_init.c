@@ -35,6 +35,7 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
     CCTK_INFO ("Initialising to weight 1");
   }
   
+#pragma omp parallel for
   for (k=0; k<cctk_lsh[2]; ++k) {
     for (j=0; j<cctk_lsh[1]; ++j) {
       for (i=0; i<cctk_lsh[0]; ++i) {
@@ -74,6 +75,7 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
         }
         
         /* Loop over the boundary slab */
+#pragma omp parallel for
         for (k=imin[2]; k<imax[2]; ++k) {
           for (j=imin[1]; j<imax[1]; ++j) {
             for (i=imin[0]; i<imax[0]; ++i) {
@@ -142,6 +144,7 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
           }
           
           /* Loop over the boundary slab */
+#pragma omp parallel for
           for (k=imin[2]; k<imax[2]; ++k) {
             for (j=imin[1]; j<imax[1]; ++j) {
               for (i=imin[0]; i<imax[0]; ++i) {
