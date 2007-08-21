@@ -10,15 +10,17 @@ schedule CarpetReduceStartup at STARTUP
 # This might move to MaskBase
 STORAGE: weight
 
-SCHEDULE GROUP MaskBase_SetupMask AT basegrid
+
+
+SCHEDULE GROUP MaskBase_SetupMask AT basegrid AFTER (SpatialCoordinates SphericalSurface_Setup)
 {
 } "Set up the weight function"
 
-SCHEDULE GROUP MaskBase_SetupMask AT postregridinitial
+SCHEDULE GROUP MaskBase_SetupMask AT postregridinitial AFTER SpatialCoordinates
 {
 } "Set up the weight function"
 
-SCHEDULE GROUP MaskBase_SetupMask AT postregrid
+SCHEDULE GROUP MaskBase_SetupMask AT postregrid AFTER SpatialCoordinates
 {
 } "Set up the weight function"
 
@@ -49,3 +51,30 @@ SCHEDULE CarpetMaskSetup IN SetupMask
   LANG: C
   OPTIONS: global loop-singlemap
 } "Set up the weight function for the restriction regions"
+
+
+
+#SCHEDULE GROUP MaskBase_SetupMask_LevelMode AT basegrid AFTER (SpatialCoordinates SphericalSurface_Setup)
+#{
+#} "Set up the weight function"
+#
+#SCHEDULE MaskBase_InitMask IN MaskBase_SetupMask_LevelMode
+#{
+#  LANG: C
+#} "Initialise the weight function"
+#
+#SCHEDULE GROUP SetupMask_LevelMode IN MaskBase_SetupMask_LevelMode AFTER MaskBase_InitMask
+#{
+#} "Set up the weight function (schedule other routines in here)"
+#
+## This might move to CoordBase
+#SCHEDULE CoordBase_SetupMask IN SetupMask_LevelMode
+#{
+#  LANG: C
+#} "Set up the outer boundaries of the weight function"
+#
+## This might move to CarpetMask
+#SCHEDULE CarpetMaskSetup IN SetupMask_LevelMode
+#{
+#  LANG: C
+#} "Set up the weight function for the restriction regions"
