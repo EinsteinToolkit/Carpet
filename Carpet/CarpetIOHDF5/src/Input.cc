@@ -532,7 +532,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   
   // Synchronise all variables which have been read
   {
-    vector <bool> dosync (CCTK_NumGroups());
+    vector <bool> dosync (CCTK_NumGroups(), false);
     for (size_t vindex = 0; vindex < read_completely.size(); vindex++) {
       if (CCTK_GroupTypeFromVarI (vindex) == CCTK_GF or reflevel == 0) {
         for (size_t tl = 0; tl < read_completely[vindex].size(); tl++) {
