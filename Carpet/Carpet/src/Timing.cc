@@ -91,8 +91,23 @@ namespace Carpet {
     }   // for m
     
     // Take number of RHS evaluations per time step into account
-    local_updates = local_num_grid_points * num_integrator_substeps;
-    global_updates = global_num_grid_points * num_integrator_substeps;
+    static int int_steps = -1;
+    if (int_steps == -1) {
+      if (num_integrator_substeps != -1) {
+        // if the user parameter is set, use it
+        int_steps = num_integrator_substeps;
+      } else if (CCTK_IsFunctionAliased ("MoLNumIntegratorSubsteps")) {
+        // if there is an aliased function, use it
+        int_steps = MoLNumIntegratorSubsteps ();
+      } else {
+        // use a sensible default, even if it is wrong -- it is better
+        // to have timing information which is wrong by a constant
+        // factor than to abort the code
+        int_steps = 1;
+      }
+    }
+    local_updates = local_num_grid_points * int_steps;
+    global_updates = global_num_grid_points * int_steps;
   }
   
   
