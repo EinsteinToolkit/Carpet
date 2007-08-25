@@ -5,6 +5,8 @@ IMPLEMENTS: Driver
 include header: carpet_public.hh in carpet.hh
 include header: carpet_public.h in carpet.h
 
+include header: Timers.hh in CarpetTimers.hh
+
 uses include header: defs.hh
 uses include header: dist.hh
 
