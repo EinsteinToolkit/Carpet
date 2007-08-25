@@ -18,6 +18,7 @@
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
 
 #include "carpet.hh"
+#include "CarpetTimers.hh"
 
 
 
@@ -148,11 +149,14 @@ namespace CarpetIOScalar {
   int
   OutputGH (const cGH * const cctkGH)
   {
+    static Carpet::Timer timer ("CarpetIOScalar::OutputGH");
+    timer.start();
     for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
       if (TimeToOutput(cctkGH, vindex)) {
 	TriggerOutput(cctkGH, vindex);
       }
     }
+    timer.stop();
     return 0;
   }
 
