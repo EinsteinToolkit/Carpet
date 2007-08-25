@@ -21,6 +21,7 @@
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
 
 #include "carpet.hh"
+#include "CarpetTimers.hh"
 
 using namespace CarpetLib;
 
@@ -152,6 +153,9 @@ namespace CarpetIOBasic {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
+    static Carpet::Timer timer ("CarpetIOBasic::OutputGH");
+    timer.start();
+    
     if (TimeToOutput (cctkGH)) {
       
       int oldprec;
@@ -192,6 +196,8 @@ namespace CarpetIOBasic {
       }
       
     } // if time to output
+    
+    timer.stop();
     
     return 0;
   }

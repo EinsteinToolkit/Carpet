@@ -9,3 +9,4 @@ CCTK_REAL last_output_time TYPE=scalar
 CCTK_INT this_iteration TYPE=scalar
 
 USES INCLUDE HEADER: carpet_typecase.hh
+USES INCLUDE HEADER: CarpetTimers.hh
