@@ -13,6 +13,8 @@
 #include "CactusBase/IOUtil/src/ioGH.h"
 #include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
 
+#include "CarpetTimers.hh"
+
 #include "CarpetIOHDF5.hh"
 
 #include "defs.hh"
@@ -392,11 +394,14 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
 
 static int OutputGH (const cGH* const cctkGH)
 {
+  static Carpet::Timer timer ("CarpetIOHDF5::OutputGH");
+  timer.start();
   for (int vindex = CCTK_NumVars () - 1; vindex >= 0; vindex--) {
     if (TimeToOutput (cctkGH, vindex)) {
       TriggerOutput (cctkGH, vindex);
     }
   }
+  timer.stop();
 
   return (0);
 }

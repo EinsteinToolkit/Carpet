@@ -5,6 +5,7 @@ IMPLEMENTS: IOHDF5
 includes header: CarpetIOHDF5.hh in CarpetIOHDF5.hh
 
 uses include header: carpet.hh
+uses include header: CarpetTimers.hh
 
 uses include header: defs.hh
 
