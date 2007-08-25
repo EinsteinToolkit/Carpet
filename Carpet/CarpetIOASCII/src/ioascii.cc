@@ -11,6 +11,7 @@
 #include <map>
 #include <ostream>
 #include <sstream>
+#include <string>
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
@@ -21,6 +22,7 @@
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
 
 #include "carpet.hh"
+#include "CarpetTimers.hh"
 
 #include "ioascii.hh"
 
@@ -238,11 +240,21 @@ namespace CarpetIOASCII {
   int IOASCII<outdim>
   ::OutputGH (const cGH* const cctkGH)
   {
+    static Carpet::Timer * restrict timer = 0;
+    if (not timer) {
+      ostringstream timer_name;
+      timer_name << "CarpetIOASCII<" << outdim << ">::OutputVarAs";
+      timer = new Carpet::Timer (timer_name.str().c_str());
+    }
+
+    timer->start();
     for (int vindex=0; vindex<CCTK_NumVars(); ++vindex) {
       if (TimeToOutput(cctkGH, vindex)) {
 	TriggerOutput(cctkGH, vindex);
       }
     }
+    timer->stop();
+
     return 0;
   }
 

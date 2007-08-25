@@ -3,6 +3,7 @@
 IMPLEMENTS: IOASCII
 
 uses include header: carpet.hh
+uses include header: CarpetTimers.hh
 
 uses include header: dist.hh
 
