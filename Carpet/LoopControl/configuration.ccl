@@ -1,5 +1,7 @@
 # Configuration definition for thorn LoopControl
 
+REQUIRES GSL
+
 PROVIDES LoopControl
 {
 }

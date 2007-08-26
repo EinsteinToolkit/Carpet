@@ -15,6 +15,7 @@
 #include <cctk_Parameters.h>
 
 #include "loopcontrol.h"
+#include "lc_auto.h"
 
 
 
@@ -49,14 +50,21 @@ omp_get_wtime (void)
 
 
 /* Linked list of all loop statistics structures */
-struct lc_statmap_t * lc_statmap_list = NULL;
+lc_statmap_t * lc_statmap_list = NULL;
 
 
 
 /* Find all possible thread topologies */
+/* This finds all possible thread topologies which can be expressed as
+   NIxNJxNK.  More complex topologies, e.g. based on a recursive
+   subdiviston, are not considered (and cannot be expressed in the
+   data structures used in LoopControl).  I think more complex
+   topologies are not necessary, since the number of treads is usually
+   quite small and contains many small factors in its prime
+   decomposition.  */
 static
 void
-find_thread_topologies (struct lc_topology_t * restrict const topologies,
+find_thread_topologies (lc_topology_t * restrict const topologies,
                         const int maxntopologies,
                         int * restrict const ntopologies,
                         int const nthreads)
@@ -83,17 +91,27 @@ find_thread_topologies (struct lc_topology_t * restrict const topologies,
 
 
 /* Find "good" tiling specifications */
+/* This calculates a subset of all possible thread specifications.
+   One aim is to reduce the search space by disregarding some
+   specifications.  The other aim is to distribute the specifications
+   "equally", so that one does not have to spend much effort
+   investigating tilign specifications with very similar properties.
+   For example, if there are 200 grid points, then half of the
+   possible tiling specifications consists of splitting the domain
+   into two subdomains with [100+N, 100-N] points.  This is avoided by
+   covering all possible tiling specifications in exponentially
+   growing step sizes.  */
 static
 int tiling_compare (const void * const a, const void * const b)
 {
-  struct lc_tiling_t const * const aa = a;
-  struct lc_tiling_t const * const bb = b;
+  lc_tiling_t const * const aa = a;
+  lc_tiling_t const * const bb = b;
   return aa->npoints - bb->npoints;
 }
 
 static
 void
-find_tiling_specifications (struct lc_tiling_t * restrict const tilings,
+find_tiling_specifications (lc_tiling_t * restrict const tilings,
                             const int maxntilings,
                             int * restrict const ntilings,
                             int const npoints)
@@ -142,8 +160,8 @@ find_tiling_specifications (struct lc_tiling_t * restrict const tilings,
 /* Initialise control parameter set statistics */
 static
 void
-lc_stattime_init (struct lc_stattime_t * restrict const lt,
-                  struct lc_statset_t * restrict const ls,
+lc_stattime_init (lc_stattime_t * restrict const lt,
+                  lc_statset_t * restrict const ls,
                   int const topology,
                   int const tiling[3])
 {
@@ -239,14 +257,14 @@ lc_stattime_init (struct lc_stattime_t * restrict const lt,
 }
 
 static
-struct lc_stattime_t *
-lc_stattime_find (struct lc_statset_t * restrict const ls,
+lc_stattime_t *
+lc_stattime_find (lc_statset_t * restrict const ls,
                   int const topology,
                   int const tiling[3])
 {
   assert (ls);
   
-  struct lc_stattime_t * lt;
+  lc_stattime_t * lt;
   
   for (lt = ls->stattime_list; lt; lt = lt->next) {
     if (lt->topology == topology &&
@@ -271,8 +289,8 @@ lc_stattime_find (struct lc_statset_t * restrict const ls,
 /* Initialise user parameter set statistics */
 static
 void
-lc_statset_init (struct lc_statset_t * restrict const ls,
-                 struct lc_statmap_t * restrict const lm,
+lc_statset_init (lc_statset_t * restrict const ls,
+                 lc_statmap_t * restrict const lm,
                  int const num_threads,
                  int const npoints[3])
 {
@@ -344,6 +362,11 @@ lc_statset_init (struct lc_statset_t * restrict const ls,
   
   
   
+  /* Simulated annealing state */
+  ls->auto_state = NULL;
+  
+  
+  
   /* Initialise list */
   ls->stattime_list = NULL;
   
@@ -355,14 +378,14 @@ lc_statset_init (struct lc_statset_t * restrict const ls,
 }
 
 static
-struct lc_statset_t *
-lc_statset_find (struct lc_statmap_t * restrict const lm,
+lc_statset_t *
+lc_statset_find (lc_statmap_t * restrict const lm,
                  int const num_threads,
                  int const npoints[3])
 {
   assert (lm);
   
-  struct lc_statset_t * ls;
+  lc_statset_t * ls;
   
   for (ls = lm->statset_list; ls; ls = ls->next) {
     if (ls->num_threads == num_threads &&
@@ -386,7 +409,7 @@ lc_statset_find (struct lc_statmap_t * restrict const lm,
 
 /* Initialise loop statistics */
 void
-lc_statmap_init (struct lc_statmap_t * restrict const lm,
+lc_statmap_init (lc_statmap_t * restrict const lm,
                  char const * restrict const name)
 {
   /* Check arguments */
@@ -406,8 +429,8 @@ lc_statmap_init (struct lc_statmap_t * restrict const lm,
 
 
 void
-lc_control_init (struct lc_control_t * restrict const lc,
-                 struct lc_statmap_t * restrict const lm,
+lc_control_init (lc_control_t * restrict const lc,
+                 lc_statmap_t * restrict const lm,
                  int const imin, int const jmin, int const kmin,
                  int const imax, int const jmax, int const kmax,
                  int const ilsh, int const jlsh, int const klsh)
@@ -438,7 +461,7 @@ lc_control_init (struct lc_control_t * restrict const lc,
   
   
   
-  struct lc_statset_t * restrict ls;
+  lc_statset_t * restrict ls;
   _Pragma ("omp single copyprivate (ls)") {
     /* Get number of threads */
     int const num_threads = omp_get_num_threads();
@@ -454,7 +477,7 @@ lc_control_init (struct lc_control_t * restrict const lc,
   
   
   
-  struct lc_stattime_t * restrict lt;
+  lc_stattime_t * restrict lt;
   _Pragma ("omp single copyprivate (lt)") {
     
     /* Select topology */
@@ -516,6 +539,11 @@ lc_control_init (struct lc_control_t * restrict const lc,
       tiling[2] = -1;
     } else {
       tiling[2] = ls->ntilings[2] - 1; /* as many points as possible */
+    }
+    
+    /* Use simulated annealing to find the best loop configuration */
+    if (use_simulated_annealing) {
+      lc_auto_init (ls, & topology, tiling);
     }
     
     /* Find or create database entry */
@@ -618,7 +646,7 @@ lc_control_init (struct lc_control_t * restrict const lc,
 
 
 void
-lc_control_finish (struct lc_control_t * restrict const lc)
+lc_control_finish (lc_control_t * restrict const lc)
 {
   /* Timer */
   double const time_calc_end   = omp_get_wtime();
@@ -632,9 +660,9 @@ lc_control_finish (struct lc_control_t * restrict const lc)
   
   double const time_calc_sum  = time_calc_end - time_calc_begin;
   double const time_calc_sum2 = pow (time_calc_sum, 2);
-  
+
   /* Update statistics */
-  struct lc_stattime_t * restrict const lt = lc->stattime;
+  lc_stattime_t * restrict const lt = lc->stattime;
   _Pragma ("omp critical") {
     lt->time_count += 1.0;
     
@@ -644,6 +672,18 @@ lc_control_finish (struct lc_control_t * restrict const lc)
     lt->time_calc_sum  += time_calc_sum;
     lt->time_calc_sum2 += time_calc_sum2;
   }
+  
+  {
+    DECLARE_CCTK_PARAMETERS;
+    if (use_simulated_annealing) {
+      _Pragma ("omp single") {
+        lc_statset_t * restrict const ls = lc->statset;
+        lc_auto_finish (ls, lt);
+      }
+    }
+  }
+  
+  _Pragma ("omp barrier");
 }
 
 
@@ -673,12 +713,12 @@ lc_printstats (CCTK_ARGUMENTS)
   if (! verbose) return;
   
   int nmaps = 0;
-  for (struct lc_statmap_t * lm = lc_statmap_list; lm; lm = lm->next) {
+  for (lc_statmap_t * lm = lc_statmap_list; lm; lm = lm->next) {
     printf ("statmap #%d \"%s\":\n",
             nmaps,
             lm->name);
     int nsets = 0;
-    for (struct lc_statset_t * ls = lm->statset_list; ls; ls = ls->next) {
+    for (lc_statset_t * ls = lm->statset_list; ls; ls = ls->next) {
       printf ("   statset #%d nthreads=%d npoints=[%d,%d,%d]\n",
               nsets,
               ls->num_threads, ls->npoints[0], ls->npoints[1], ls->npoints[2]);
@@ -687,7 +727,7 @@ lc_printstats (CCTK_ARGUMENTS)
       double min_calc = DBL_MAX;
       int imin_calc = -1;
       int ntimes = 0;
-      for (struct lc_stattime_t * lt = ls->stattime_list; lt; lt = lt->next) {
+      for (lc_stattime_t * lt = ls->stattime_list; lt; lt = lt->next) {
         printf ("      stattime #%d topology=%d [%d,%d,%d] tiling=[%d,%d,%d]\n",
                 ntimes,
                 lt->topology, lt->inthreads, lt->jnthreads, lt->knthreads,
@@ -714,7 +754,7 @@ lc_printstats (CCTK_ARGUMENTS)
 
 CCTK_FCALL
 void
-CCTK_FNAME (lc_statmap_init) (struct lc_statmap_t * restrict const lm,
+CCTK_FNAME (lc_statmap_init) (lc_statmap_t * restrict const lm,
                               ONE_FORTSTRING_ARG)
 {
   ONE_FORTSTRING_CREATE (name);
@@ -724,8 +764,8 @@ CCTK_FNAME (lc_statmap_init) (struct lc_statmap_t * restrict const lm,
 
 CCTK_FCALL
 void
-CCTK_FNAME (lc_control_init) (struct lc_control_t * restrict const lc,
-                              struct lc_statmap_t * restrict const lm,
+CCTK_FNAME (lc_control_init) (lc_control_t * restrict const lc,
+                              lc_statmap_t * restrict const lm,
                               int const * restrict const imin,
                               int const * restrict const jmin,
                               int const * restrict const kmin,
@@ -744,7 +784,7 @@ CCTK_FNAME (lc_control_init) (struct lc_control_t * restrict const lc,
 
 CCTK_FCALL
 void
-CCTK_FNAME (lc_control_finish) (struct lc_control_t * restrict const lc)
+CCTK_FNAME (lc_control_finish) (lc_control_t * restrict const lc)
 {
   lc_control_finish (lc);
 }

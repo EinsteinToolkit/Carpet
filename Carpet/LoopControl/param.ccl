@@ -61,3 +61,44 @@ CCTK_INT lc_knpoints "Number of grid points in the k-direction" STEERABLE=recove
 BOOLEAN cycle_j_tilings "Cycle through all available tilings in the j-direction" STEERABLE=recover
 {
 } "no"
+
+
+
+BOOLEAN use_simulated_annealing "Find a good loop configuration through simulated annealing"
+{
+} "no"
+
+CCTK_INT siman_iters_fixed_T ""
+{
+  1:* :: ""
+} 1
+
+CCTK_REAL siman_probability_change_topology ""
+{
+  0:1 :: ""
+} 0.1
+
+CCTK_REAL siman_step_size ""
+{
+  (1.0:* :: ""
+} 3.0
+
+CCTK_REAL siman_k "energy scale"
+{
+  (0:* :: ""
+} 1.0e-9
+
+CCTK_REAL siman_T_initial "initial variability"
+{
+  (0:* :: ""
+} 1.0
+
+CCTK_REAL siman_mu_T "speed"
+{
+  (0:* :: ""
+} 1.005
+
+CCTK_REAL siman_T_min "stopping criterion"
+{
+  (0:* :: ""
+} 0.01
