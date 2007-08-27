@@ -1183,7 +1183,7 @@ namespace CarpetReduce {
                 
                 CCTK_REAL const * weight;
                 CCTK_REAL levfac;
-                if (want_global_mode) {
+                if (want_global_mode or want_level_mode) {
                   static int iweight = -1;
                   if (iweight == -1) {
                     iweight = CCTK_VarIndex ("CarpetReduce::weight");
@@ -1192,7 +1192,9 @@ namespace CarpetReduce {
                   weight = (static_cast<CCTK_REAL const *>
                             (CCTK_VarDataPtrI (cgh, 0, iweight)));
                   assert (weight);
-                  levfac = igrid ? 1.0 : 1.0 / prod (rvect (spacereflevelfact));
+                  CCTK_REAL const levfac1 =
+                    1.0 / prod (rvect (spacereflevelfact));
+                  levfac = want_level_mode or igrid ? 1.0 : levfac1;
                 } else {
                   weight = NULL;
                   levfac = 1.0;
