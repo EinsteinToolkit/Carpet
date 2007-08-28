@@ -1015,6 +1015,21 @@ namespace Carpet {
         }
       } // for m
       nregs = regs.size();
+      
+      // If the last region was removed, add a new empty region again.
+      // A set of regions (corresponding to a refinement level or a
+      // grid array) cannot be empty.
+      if (nregs == 0) {
+        assert (nmaps == 1);    // we should only be here for grid
+                                // arrays
+        region_t reg;
+        reg.extent           = ibbox (ivect (0), ivect (-1), ivect (1));
+        reg.outer_boundaries = b2vect (bvect (true), bvect (true));
+        reg.map              = 0;
+        reg.processor        = -1;
+        regs.push_back (reg);
+        nregs = regs.size();
+      }
     }
     
     const int nprocs = CCTK_nProcs (cctkGH);
