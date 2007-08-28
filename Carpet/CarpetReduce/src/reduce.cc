@@ -314,8 +314,9 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { accum += T(weight); }
+      static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { accum += T(weight); cnt += T(weight); }
+      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -327,8 +328,9 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = my_numeric_limits<T>::max(); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight!=0) accum = mymin(accum, val); }
+      static inline void initialise (T& accum, T& cnt) { accum = my_numeric_limits<T>::max(); cnt = T(0); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum = mymin(accum, val); cnt += T(weight); }
+      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum = mymin(accum,accum2); cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_MIN; }
@@ -340,8 +342,9 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = my_numeric_limits<T>::min(); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight!=0) accum = mymax(accum, val); }
+      static inline void initialise (T& accum, T& cnt) { accum = my_numeric_limits<T>::min(); cnt = T(0); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum = mymax(accum, val); cnt += T(weight); }
+      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum = mymax(accum,accum2); cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_MAX; }
@@ -353,8 +356,9 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = T(1); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight!=0) accum *= weight==1 ? val : pow(val,weight); }
+      static inline void initialise (T& accum, T& cnt) { accum = T(1); cnt = T(0); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum *= weight==1 ? val : pow(val,weight); cnt += T(weight); }
+      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum *= accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_PROD; }
@@ -366,8 +370,9 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*val; }
+      static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*val; cnt += T(weight); }
+      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -379,8 +384,9 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*abs(val); }
+      static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*abs(val); cnt += T(weight); }
+      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -392,8 +398,9 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*val*val; }
+      static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*val*val; cnt += T(weight); }
+      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -405,8 +412,9 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*abs(val*val); }
+      static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*abs(val*val); cnt += T(weight); }
+      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -418,8 +426,9 @@ namespace CarpetReduce {
     bool uses_cnt () const { return true; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*val; }
+      static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*val; cnt += T(weight); }
+      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { accum /= cnt; }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -431,8 +440,9 @@ namespace CarpetReduce {
     bool uses_cnt () const { return true; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*abs(val); }
+      static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*abs(val); cnt += T(weight); }
+      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { accum /= cnt; }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -444,8 +454,9 @@ namespace CarpetReduce {
     bool uses_cnt () const { return true; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*abs(val)*abs(val); }
+      static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*abs(val)*abs(val); cnt += T(weight); }
+      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { accum = mysqrt(accum / cnt); }
     };
     MPI_Op mpi_op () const { return MPI_SUM; }
@@ -457,8 +468,9 @@ namespace CarpetReduce {
     bool uses_cnt () const { return false; }
     template<class T>
     struct op {
-      static inline void initialise (T& accum) { accum = T(0); }
-      static inline void reduce (T& accum, const T& val, const CCTK_REAL weight) { if (weight!=0) accum = mymax(accum, T(abs(val))); }
+      static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum = mymax(accum, T(abs(val))); cnt += T(weight); }
+      static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum = mymax(accum,accum2); cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
     MPI_Op mpi_op () const { return MPI_MAX; }
@@ -469,8 +481,7 @@ namespace CarpetReduce {
   template<class T,class OP>
   void initialise (void* const outval, void* const cnt)
   {
-    OP::initialise (*(T*)outval);
-    *(T*)cnt = T(0);
+    OP::initialise (*(T*)outval, *(T*)cnt);
   }
   
   template<class T,class OP>
@@ -485,8 +496,8 @@ namespace CarpetReduce {
       assert (inarrays.at(tl));
     }
     assert (tfacs.size() == inarrays.size());
-    T myoutval = *(T*)outval;
-    T mycnt = *(T*)cnt;
+    T & myoutval = * static_cast<T*>(outval);
+    T & mycnt    = * static_cast<T*>(cnt);
     vect<int,dim> imin, imax;
     for (int d=0; d<dim; ++d) {
       imin[d] =          (bbox[2*d  ] ? 0 : nghostzones[d]);
@@ -496,9 +507,9 @@ namespace CarpetReduce {
 #pragma omp parallel
     {
       T myoutval_local;
-      OP::initialise (myoutval_local);
-      CCTK_REAL mycnt_local = 0;
-#pragma omp for
+      T mycnt_local;
+      OP::initialise (myoutval_local, mycnt_local);
+#pragma omp for nowait
       for (int k=imin[2]; k<imax[2]; ++k) {
         for (int j=imin[1]; j<imax[1]; ++j) {
           for (int i=imin[0]; i<imax[0]; ++i) {
@@ -509,19 +520,16 @@ namespace CarpetReduce {
               myinval +=
                 static_cast<const T*>(inarrays.AT(tl))[index] * tfacs.AT(tl);
             }
-            OP::reduce (myoutval_local, myinval, w);
+            OP::reduce (myoutval_local, mycnt_local, myinval, w);
             mycnt_local += w;
           }
         }
       }
 #pragma omp critical
       {
-        OP::reduce (myoutval, myoutval_local, mycnt_local);
-        mycnt += mycnt_local;
+        OP::combine (myoutval, mycnt, myoutval_local, mycnt_local);
       }
     } // end omp parallel
-    *(T*)outval = myoutval;
-    *(T*)cnt    = mycnt;
   }
   
   template<class T,class OP>
