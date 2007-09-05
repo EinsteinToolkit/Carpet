@@ -24,7 +24,7 @@ ostream& operator<< (ostream& os, const bbox<T,D>& b);
 
 
 /**
- * A bounding box, i.e. a rectangle with lower and upper bound and a
+ * A bounding box, i.e., a rectangle with lower and upper bound and a
  * stride.
  */
 template<class T, int D>
@@ -34,6 +34,10 @@ class bbox {
   
   /** Bounding box bounds and stride.  The bounds are inclusive.  */
   vect<T,D> _lower, _upper, _stride;
+  
+  // Consistency checks
+  
+  void assert_bbox_limits () const;
   
 public:
   
@@ -64,16 +68,10 @@ public:
 	const vect<T,D>& stride_)
     : _lower(lower_), _upper(upper_), _stride(stride_)
   {
-    assert (all(_stride>T(0)));
-    assert (all((_upper-_lower)%_stride == T(0)));
-    if (numeric_limits<T>::is_integer and numeric_limits<T>::is_signed) {
-      // prevent accidental wrap-around
-      assert (all(_lower < numeric_limits<T>::max() / 2));
-      assert (all(_lower > numeric_limits<T>::min() / 2));
-      assert (all(_upper < numeric_limits<T>::max() / 2));
-      assert (all(_upper > numeric_limits<T>::min() / 2));
-    }
-}
+#ifndef NDEBUG
+    assert_bbox_limits();
+#endif
+  }
   
   // Accessors
   // (Don't return references; *this might be a temporary)

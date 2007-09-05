@@ -14,6 +14,27 @@ using namespace std;
 
 
 
+// Consistency checks
+template<class T, int D>
+void bbox<T,D>::assert_bbox_limits () const
+{
+  assert (all(_stride>T(0)));
+  assert (all((_upper-_lower)%_stride == T(0)));
+  if (numeric_limits<T>::is_integer) {
+    // prevent accidental wrap-around
+    if (any (_lower >= numeric_limits<T>::max() / 2) or
+        any (_lower <= numeric_limits<T>::min() / 2) or
+        any (_upper >= numeric_limits<T>::max() / 2) or
+        any (_upper <= numeric_limits<T>::min() / 2))
+    {
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "Tried to create a very large bbox -- it is likely that this would lead to an integer overflow");
+    }
+  }
+}
+
+
+
 // Accessors
 template<class T, int D>
 typename bbox<T,D>::size_type bbox<T,D>::size () const {
@@ -24,7 +45,10 @@ typename bbox<T,D>::size_type bbox<T,D>::size () const {
 #else
   size_type sz = 1, max = numeric_limits<size_type>::max();
   for (int d=0; d<D; ++d) {
-    assert (sh[d] <= max);
+    if (sh[d] > max) {
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "bbox size is too large -- integer overflow");
+    }
     sz *= sh[d];
     max /= sh[d];
   }
