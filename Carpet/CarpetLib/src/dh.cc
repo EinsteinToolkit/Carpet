@@ -64,6 +64,68 @@ prolongation_stencil_size ()
 
 
 // Modifiers
+
+bool there_was_an_error = false;
+
+static
+void
+assert_error (char const * restrict const checkstring,
+              int const ml, int const rl,
+              char const * restrict const message)
+{
+  CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+              "[ml=%d rl=%d] The following grid structure consistency check failed:\n   %s\n   %s",
+              ml, rl, message, checkstring);
+  there_was_an_error = true;
+}
+
+static
+void
+assert_error (char const * restrict const checkstring,
+              int const ml, int const rl, int const c,
+              char const * restrict const message)
+{
+  CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+              "[ml=%d rl=%d c=%d] The following grid structure consistency check failed:\n   %s\n   %s",
+              ml, rl, c, message, checkstring);
+  there_was_an_error = true;
+}
+
+static
+void
+assert_error (char const * restrict const checkstring,
+              int const ml, int const rl, int const c, int const cc,
+              char const * restrict const message)
+{
+  CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+              "[ml=%d rl=%d c=%d cc=%d] The following grid structure consistency check failed:\n   %s\n   %s",
+              ml, rl, c, cc, message, checkstring);
+  there_was_an_error = true;
+}
+
+#define ASSERT_rl(check, message)                       \
+  do {                                                  \
+    if (not (check)) {                                  \
+      assert_error (#check, ml, rl, message);           \
+    }                                                   \
+  } while (false)
+
+#define ASSERT_c(check, message)                        \
+  do {                                                  \
+    if (not (check)) {                                  \
+      assert_error (#check, ml, rl, c, message);        \
+    }                                                   \
+  } while (false)
+
+#define ASSERT_cc(check, message)                       \
+  do {                                                  \
+    if (not (check)) {                                  \
+      assert_error (#check, ml, rl, c, cc, message);    \
+    }                                                   \
+  } while (false)
+
+
+
 void
 dh::
 regrid ()
@@ -94,15 +156,19 @@ regrid ()
       
       ibbox const & domain_exterior = h.baseextent(ml,rl);
       // Variables may have size zero
-      // assert (not domain_exterior.empty());
+      // ASSERT_rl (not domain_exterior.empty(),
+      //            "The exterior of the domain must not be empty");
       
       i2vect const & boundary_width = h.boundary_width;
-      assert (all (all (boundary_width >= 0)));
+      ASSERT_rl (all (all (boundary_width >= 0)),
+                 "The gh boundary widths must not be negative");
       
       ibbox const domain_active = domain_exterior.expand (- boundary_width);
       // Variables may have size zero
-      // assert (not domain_active.empty());
-      assert (domain_active <= domain_exterior);
+      // ASSERT_rl (not domain_active.empty(),
+      //            "The active part of the domain must not be empty");
+      ASSERT_rl (domain_active <= domain_exterior,
+                 "The active part of the domain must be contained in the exterior part of the domain");
       
       ibset domain_boundary = domain_exterior - domain_active;
       domain_boundary.normalize();
@@ -125,14 +191,17 @@ regrid ()
         
         // (The interior must not be empty)
         // Variables may have size zero
-        // assert (not intr.empty());
+        // ASSERT_c (not intr.empty(),
+        //           "The interior must not be empty");
         
         // The interior must be contained in the domain
-        assert (intr <= h.baseextent(ml,rl));
+        ASSERT_c (intr <= h.baseextent(ml,rl),
+                  "The interior must be contained in the domain");
         
         // All interiors must be disjunct
         for (int cc = 0; cc < c; ++ cc) {
-          assert (not intr.intersects (level.AT(cc).interior));
+          ASSERT_cc (not intr.intersects (level.AT(cc).interior),
+                     "All interiors must be disjunct");
         }
         
         
@@ -155,15 +224,18 @@ regrid ()
         
         ibbox & extr = box.exterior;
         
-        assert (all (all (ghost_width >= 0)));
+        ASSERT_c (all (all (ghost_width >= 0)),
+                  "The gh ghost widths must not be negative");
         extr = intr.expand (i2vect (not is_outer_boundary) * ghost_width);
         
         // (The exterior must not be empty)
         // Variables may have size zero
-        // assert (not extr.empty());
+        // ASSERT_c (not extr.empty(),
+        //           "The experior must not be empty");
         
         // The exterior must be contained in the domain
-        assert (extr <= domain_exterior);
+        ASSERT_c (extr <= domain_exterior,
+                  "The exterior must be contained in the domain");
         
         
         
@@ -177,7 +249,8 @@ regrid ()
         // The ghosts must be contained in the domain.  Different from
         // the boundaries, the ghost can include part of the outer
         // boundary of the domain.
-        assert (ghosts <= domain_exterior);
+        ASSERT_c (ghosts <= domain_exterior,
+                  "The ghost zones must be contained in the domain");
         
         
         
@@ -189,11 +262,13 @@ regrid ()
         
         // (The communicated region must not be empty)
         // Variables may have size zero
-        // assert (not comm.empty());
+        // ASSERT_c (not comm.empty(),
+        //           "The communicated region must not be empty");
         
         // The communicated region must be contained in the active
         // part of the domain
-        assert (comm <= domain_active);
+        ASSERT_c (comm <= domain_active,
+                  "The communicated region must be contained in the active part of the domain");
         
         
         
@@ -206,7 +281,8 @@ regrid ()
         
         // The outer boundary must be contained in the outer boundary
         // of the domain
-        assert (outer_boundaries <= domain_boundary);
+        ASSERT_c (outer_boundaries <= domain_boundary,
+                  "The outer boundary must be contained in the outer boundary of the domain");
         
         
         
@@ -218,15 +294,18 @@ regrid ()
         
         // (The owned region must not be empty)
         // Variables may have size zero
-        // assert (not owned.empty());
+        // ASSERT_c (not owned.empty(),
+        //           "The owned region must not be empty");
         
         // The owned region must be contained in the active part of
         // the domain
-        assert (owned <= domain_active);
+        ASSERT_c (owned <= domain_active,
+                  "The owned region must be contained in the active part of the domain");
         
         // All owned regions must be disjunct
         for (int cc = 0; cc < c; ++ cc) {
-          assert (not owned.intersects (level.AT(cc).owned));
+          ASSERT_cc (not owned.intersects (level.AT(cc).owned),
+                     "All owned regions must be disjunct");
         }
         
         
@@ -243,7 +322,8 @@ regrid ()
         // domain.  This prevents that a region is too close to the
         // outer boundary, so that it has ghost zones overlapping with
         // the outer boundary.
-        assert (boundaries <= domain_active);
+        ASSERT_c (boundaries <= domain_active,
+                  "The boundary must be contained in the active part of the domain");
         
       } // for c
       
@@ -262,7 +342,8 @@ regrid ()
         allowned += box.owned;
       }
       allowned.normalize();
-      assert (allowned <= domain_active);
+      ASSERT_rl (allowned <= domain_active,
+                 "The owned regions must be contained in the active part of the domain");
       
       // All not-owned regions
       ibset notowned = domain_enlarged - allowned;
@@ -284,7 +365,8 @@ regrid ()
       allbuffers.normalize();
       
       // Buffer zones must be in the active part of the domain
-      assert (allbuffers <= domain_active);
+      ASSERT_rl (allbuffers <= domain_active,
+                 "The buffer zones must be in the active part of the domain");
       
       
       
@@ -318,7 +400,8 @@ regrid ()
         allbuffers1 += box.buffers;
       }
       allbuffers1.normalize();
-      assert (allbuffers1 == allbuffers);
+      ASSERT_rl (allbuffers1 == allbuffers,
+                 "Buffer zone consistency check");
       
       
       
@@ -327,19 +410,28 @@ regrid ()
       for (int c = 0; c < h.components(rl); ++ c) {
         dboxes const & box = boxes.AT(ml).AT(rl).AT(c);
         
-        assert ((box.active & box.buffers).empty());
-        assert ((box.active | box.buffers) == box.owned);
+        ASSERT_c ((box.active & box.buffers).empty(),
+                  "Consistency check");
+        ASSERT_c ((box.active | box.buffers) == box.owned,
+                  "Consistency check");
         
-        assert ((box.owned & box.boundaries).empty());
-        assert ((box.owned | box.boundaries) == box.communicated);
+        ASSERT_c ((box.owned & box.boundaries).empty(),
+                  "Consistency check");
+        ASSERT_c ((box.owned | box.boundaries) == box.communicated,
+                  "Consistency check");
         
-        assert ((box.communicated & box.outer_boundaries).empty());
-        assert ((box.communicated | box.outer_boundaries) == box.exterior);
+        ASSERT_c ((box.communicated & box.outer_boundaries).empty(),
+                  "Consistency check");
+        ASSERT_c ((box.communicated | box.outer_boundaries) == box.exterior,
+                  "Consistency check");
         
-        assert (box.boundaries <= box.ghosts);
+        ASSERT_c (box.boundaries <= box.ghosts,
+                  "Consistency check");
         
-        assert ((box.interior & box.ghosts).empty());
-        assert ((box.interior | box.ghosts) == box.exterior);
+        ASSERT_c ((box.interior & box.ghosts).empty(),
+                  "Consistency check");
+        ASSERT_c ((box.interior | box.ghosts) == box.exterior,
+                  "Consistency check");
         
       } // for c
       
@@ -381,7 +473,8 @@ regrid ()
             ibbox const & recv = * ri;
             box.mg_rest_recv.push_back (recv);
             ibbox const send = recv.expanded_for (obox.interior);
-            assert (send <= obox.exterior);
+            ASSERT_c (send <= obox.exterior,
+                      "Multigrid restriction: Send region must be contained in exterior");
             box.mg_rest_send.push_back (send);
           }
           
@@ -389,7 +482,8 @@ regrid ()
           needrecv.normalize();
             
           // All points must have been received
-          assert (needrecv.empty());
+          ASSERT_c (needrecv.empty(),
+                    "Multigrid restriction: All points must have been received");
           
         } // if ml > 0
         
@@ -427,7 +521,8 @@ regrid ()
             box.mg_prol_recv.push_back (recv);
             ibbox const send =
               recv.expanded_for (box.interior).expand (stencil_size);
-            assert (send <= box.exterior);
+            ASSERT_c (send <= box.exterior,
+                      "Multigrid prolongation: Send region must be contained in exterior");
             box.mg_prol_send.push_back (send);
           }
           
@@ -435,7 +530,8 @@ regrid ()
           oneedrecv.normalize();
           
           // All points must have been received
-          assert (oneedrecv.empty());
+          ASSERT_c (oneedrecv.empty(),
+                    "Multigrid prolongation: All points must have been received");
           
         } // if ml > 0
         
@@ -455,7 +551,8 @@ regrid ()
           
           i2vect const stencil_size = i2vect (prolongation_stencil_size());
           
-          assert (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0));
+          ASSERT_c (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
+                    "Refinement factors must be integer multiples of each other");
           i2vect const reffact =
             i2vect (h.reffacts.at(rl) / h.reffacts.at(orl));
           
@@ -483,7 +580,8 @@ regrid ()
               box.ref_prol_recv.AT(cc).push_back (recv);
               ibbox const send =
                 recv.expanded_for (obox.interior).expand (stencil_size);
-              assert (send <= obox.exterior);
+              ASSERT_c (send <= obox.exterior,
+                        "Refinement prolongation: Send region must be contained in exterior");
               box.ref_prol_send.AT(cc).push_back (send);
             }
             
@@ -494,7 +592,8 @@ regrid ()
           needrecv.normalize();
           
           // All points must have been received
-          assert (needrecv.empty());
+          ASSERT_c (needrecv.empty(),
+                    "Refinement prolongation: All points must have been received");
           
         } // if rl > 0
         
@@ -532,7 +631,8 @@ regrid ()
           ovlp.normalize();
           
           if (cc == c) {
-            assert (ovlp.empty());
+            ASSERT_cc (ovlp.empty(),
+                       "A region may not synchronise from itself");
           }
           
           for (ibset::const_iterator ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
@@ -573,7 +673,8 @@ regrid ()
           
           i2vect const stencil_size = i2vect (prolongation_stencil_size());
           
-          assert (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0));
+          ASSERT_c (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
+                    "Refinement factors must be integer multiples of each other");
           i2vect const reffact =
             i2vect (h.reffacts.at(rl) / h.reffacts.at(orl));
           
@@ -601,7 +702,8 @@ regrid ()
               box.ref_bnd_prol_recv.AT(cc).push_back (recv);
               ibbox const send =
                 recv.expanded_for (obox.interior).expand (stencil_size);
-              assert (send <= obox.exterior);
+              ASSERT_c (send <= obox.exterior,
+                        "Boundary prolongation: Send region must be contained in exterior");
               box.ref_bnd_prol_send.AT(cc).push_back (send);
             }
             
@@ -617,7 +719,8 @@ regrid ()
         
         // All points must now have been received, either through
         // synchronisation or through boundary prolongation
-        assert (needrecv.empty());
+        ASSERT_c (needrecv.empty(),
+                  "Synchronisation and boundary prolongation: All points must have been received");
         
         
         
@@ -700,7 +803,8 @@ regrid ()
               ibbox const & recv = * ri;
               obox.ref_rest_recv.AT(c).push_back (recv);
               ibbox const send = recv.expanded_for (box.interior);
-              assert (send <= box.active);
+              ASSERT_c (send <= box.active,
+                        "Refinement restriction: Send region must be contained in active part");
               obox.ref_rest_send.AT(c).push_back (send);
             }
             
@@ -718,7 +822,8 @@ regrid ()
         needrecv.normalize();
         
         // All points must have been received
-        assert (needrecv.empty());
+        ASSERT_rl (needrecv.empty(),
+                   "Refinement restriction: All points must have been received");
         
       } // if rl > 0
       
@@ -786,7 +891,8 @@ regrid ()
           
           i2vect const stencil_size = i2vect (prolongation_stencil_size());
           
-          assert (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0));
+          ASSERT_c (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
+                    "Refinement factors must be integer multiples of each other");
           i2vect const reffact =
             i2vect (h.reffacts.at(rl) / h.reffacts.at(orl));
           
@@ -814,7 +920,8 @@ regrid ()
               box.old2new_ref_prol_recv.AT(cc).push_back (recv);
               ibbox const send =
                 recv.expanded_for (obox.interior).expand (stencil_size);
-              assert (send <= obox.exterior);
+              ASSERT_c (send <= obox.exterior,
+                        "Regridding prolongation: Send region must be contained in exterior");
               box.old2new_ref_prol_send.AT(cc).push_back (send);
             }
             
@@ -829,7 +936,8 @@ regrid ()
         if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > 0) {
           // All points must now have been received, either through
           // synchronisation or through prolongation
-          assert (needrecv.empty());
+          ASSERT_c (needrecv.empty(),
+                        "Regridding prolongation: All points must have been received");
         }
         
         
@@ -877,6 +985,12 @@ regrid ()
       
     } // for rl
   }   // for m
+  
+  if (there_was_an_error) {
+    CCTK_WARN (CCTK_WARN_ABORT,
+               "The grid structure is inconsistent.  "
+               "It is impossible to continue.");
+  }
   
   
   
