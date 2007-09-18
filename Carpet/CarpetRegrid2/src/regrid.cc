@@ -318,10 +318,9 @@ namespace CarpetRegrid2 {
       
       
       //
-      // Ensure that this grid contains all finer ones
+      // Ensure that this grid contains the next finer grid
       //
       if (rl < regions.size() - 1) {
-        bool is_properly_nested = true;
         
         ibbox const & coarse0 = * regions.at(rl).begin();
         
@@ -329,37 +328,57 @@ namespace CarpetRegrid2 {
         i2vect const cdistance =
           i2vect (min_distance + dd.prolongation_stencil_size());
         
-        for (ibboxset::const_iterator ibb = regions.at(rl+1).begin();
-             ibb != regions.at(rl+1).end();
-             ++ ibb)
-        {
-          ibbox const & fbb = * ibb;
+        if (ensure_proper_nesting) {
           
-          bvect const lower_is_outer = fbb.lower() <= physical_ilower;
-          bvect const upper_is_outer = fbb.upper() >= physical_iupper;
-          b2vect const ob (lower_is_outer, upper_is_outer);
-          
-          ibbox const ebb = fbb.expand (i2vect (ob) * fdistance);
-          ibbox const cbb = ebb.expanded_for (coarse0);
-          ibbox const ecbb = cbb.expand (i2vect (ob) * cdistance);
-          
-          is_properly_nested = is_properly_nested and ecbb <= regions.at(rl);
-          
-          // Enlarge this level
-          if (ensure_proper_nesting) {
+          for (ibboxset::const_iterator ibb = regions.at(rl+1).begin();
+               ibb != regions.at(rl+1).end();
+               ++ ibb)
+          {
+            ibbox const & fbb = * ibb;
+            
+            bvect const lower_is_outer = fbb.lower() <= physical_ilower;
+            bvect const upper_is_outer = fbb.upper() >= physical_iupper;
+            b2vect const ob (lower_is_outer, upper_is_outer);
+            
+            ibbox const ebb = fbb.expand (i2vect (not ob) * fdistance);
+            ibbox const cbb = ebb.expanded_for (coarse0);
+            ibbox const ecbb = cbb.expand (i2vect (not ob) * cdistance);
+            
+            // Enlarge this level
             regions.at(rl) |= ecbb;
           }
-        }
-        
-        if (ensure_proper_nesting) {
+          
           regions.at(rl).normalize();
-        } else {
+          
+        } // if ensure proper nesting
+        
+        {
+          bool is_properly_nested = true;
+          
+          for (ibboxset::const_iterator ibb = regions.at(rl+1).begin();
+               ibb != regions.at(rl+1).end();
+               ++ ibb)
+          {
+            ibbox const & fbb = * ibb;
+            
+            bvect const lower_is_outer = fbb.lower() <= physical_ilower;
+            bvect const upper_is_outer = fbb.upper() >= physical_iupper;
+            b2vect const ob (lower_is_outer, upper_is_outer);
+            
+            ibbox const ebb = fbb.expand (i2vect (ob) * fdistance);
+            ibbox const cbb = ebb.expanded_for (coarse0);
+            ibbox const ecbb = cbb.expand (i2vect (ob) * cdistance);
+            
+            is_properly_nested = is_properly_nested and ecbb <= regions.at(rl);
+          }
+          
           if (not is_properly_nested) {
             ostringstream msg;
             msg << "Level " << rl << " of the refinement hierarchy is not properly nested.  It does not contain level " << (rl+1) << ".";
             CCTK_WARN (CCTK_WARN_ALERT, msg.str().c_str());
           }
         }
+        
       }
       
       
