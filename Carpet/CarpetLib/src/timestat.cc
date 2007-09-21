@@ -85,12 +85,15 @@ namespace CarpetLib {
     double const rdummy3 = rdtsc ();
     double const rstart = rdtsc ();
     double const wstart = MPI_Wtime ();
-    int const ierr = usleep (1000 * 1000);
+    // int const ierr = usleep (1000 * 1000);
+    while (MPI_Wtime() < wstart + 1.0) {
+      // do nothing, just wait
+    }
     double const rend = rdtsc ();
     double const wend = MPI_Wtime ();
-    if (ierr) {
-      CCTK_WARN (1, "Could not determine a reliable rdtsc timer resolution");
-    }
+    // if (ierr) {
+    //   CCTK_WARN (1, "Could not determine a reliable rdtsc timer resolution");
+    // }
     rdtsc_cputick *= (wend - wstart) / (rend - rstart);
   }
   
