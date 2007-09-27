@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
@@ -720,9 +721,23 @@ namespace CarpetRegrid2 {
     }
     
     if (do_recompose and * last_iteration != -1) {
-      // Regrid only if the positions have changed sufficiently
+      
+      // Regrid only if the regions have changed sufficiently
       do_recompose = false;
       for (int n = 0; n < num_centres; ++ n) {
+        
+        // Regrid if a region became active or inactive
+        do_recompose = active[n] != old_active[n];
+        if (do_recompose) break;
+        
+        // Check only active regions
+        if (! active[n]) continue;
+        
+        // Regrid if the number of levels changed
+        do_recompose = num_levels[n] != old_num_levels[n];
+        if (do_recompose) break;
+        
+        // Regrid if the positions have changed sufficiently
         CCTK_REAL const dist2 =
           pow (position_x[n] - old_position_x[n], 2) +
           pow (position_y[n] - old_position_y[n], 2) +
@@ -743,11 +758,31 @@ namespace CarpetRegrid2 {
         }
         do_recompose = dist2 >= pow (mindist, 2);
         if (do_recompose) break;
+        
+        // Regrid if the radii have changed sufficiently
+        CCTK_REAL const dr = abs (radius[n] - old_radius[n]);
+        CCTK_REAL mindr;
+        switch (n) {
+        case 0: mindr = radius_change_threshold_1; break;
+        case 1: mindr = radius_change_threshold_2; break;
+        case 2: mindr = radius_change_threshold_3; break;
+        case 3: mindr = radius_change_threshold_4; break;
+        case 4: mindr = radius_change_threshold_5; break;
+        case 5: mindr = radius_change_threshold_6; break;
+        case 6: mindr = radius_change_threshold_7; break;
+        case 7: mindr = radius_change_threshold_8; break;
+        case 8: mindr = radius_change_threshold_9; break;
+        case 9: mindr = radius_change_threshold_10; break;
+        default: assert (0);
+        }
+        do_recompose = dr >= mindr;
+        if (do_recompose) break;
+        
       } // for n
       if (verbose) {
         if (not do_recompose) {
           CCTK_INFO
-            ("Centres have not moved sufficiently; skipping regridding");
+            ("Refined regions have not changed sufficiently; skipping regridding");
         }
       }
     }
@@ -776,9 +811,15 @@ namespace CarpetRegrid2 {
       
       // Remember current positions
       for (int n = 0; n < num_centres; ++ n) {
+        old_active[n] = active[n];
+        
+        old_num_levels[n] = num_levels[n];
+        
         old_position_x[n] = position_x[n];
         old_position_y[n] = position_y[n];
         old_position_z[n] = position_z[n];
+        
+        old_radius[n] = radius[n];
       }
       
     } // if do_recompose
@@ -839,9 +880,23 @@ namespace CarpetRegrid2 {
     }
     
     if (do_recompose and * last_iteration != -1) {
-      // Regrid only if the positions have changed sufficiently
+      
+      // Regrid only if the regions have changed sufficiently
       do_recompose = false;
       for (int n = 0; n < num_centres; ++ n) {
+        
+        // Regrid if a region became active or inactive
+        do_recompose = active[n] != old_active[n];
+        if (do_recompose) break;
+        
+        // Check only active regions
+        if (! active[n]) continue;
+        
+        // Regrid if the number of levels changed
+        do_recompose = num_levels[n] != old_num_levels[n];
+        if (do_recompose) break;
+        
+        // Regrid if the positions have changed sufficiently
         CCTK_REAL const dist2 =
           pow (position_x[n] - old_position_x[n], 2) +
           pow (position_y[n] - old_position_y[n], 2) +
@@ -862,11 +917,31 @@ namespace CarpetRegrid2 {
         }
         do_recompose = dist2 >= pow (mindist, 2);
         if (do_recompose) break;
+        
+        // Regrid if the radii have changed sufficiently
+        CCTK_REAL const dr = abs (radius[n] - old_radius[n]);
+        CCTK_REAL mindr;
+        switch (n) {
+        case 0: mindr = radius_change_threshold_1; break;
+        case 1: mindr = radius_change_threshold_2; break;
+        case 2: mindr = radius_change_threshold_3; break;
+        case 3: mindr = radius_change_threshold_4; break;
+        case 4: mindr = radius_change_threshold_5; break;
+        case 5: mindr = radius_change_threshold_6; break;
+        case 6: mindr = radius_change_threshold_7; break;
+        case 7: mindr = radius_change_threshold_8; break;
+        case 8: mindr = radius_change_threshold_9; break;
+        case 9: mindr = radius_change_threshold_10; break;
+        default: assert (0);
+        }
+        do_recompose = dr >= mindr;
+        if (do_recompose) break;
+        
       } // for n
       if (verbose) {
         if (not do_recompose) {
           CCTK_INFO
-            ("Centres have not moved sufficiently; skipping regridding");
+            ("Refined regions have not changed sufficiently; skipping regridding");
         }
       }
     }
@@ -921,9 +996,15 @@ namespace CarpetRegrid2 {
       
       // Remember current positions
       for (int n = 0; n < num_centres; ++ n) {
+        old_active[n] = active[n];
+        
+        old_num_levels[n] = num_levels[n];
+        
         old_position_x[n] = position_x[n];
         old_position_y[n] = position_y[n];
         old_position_z[n] = position_z[n];
+        
+        old_radius[n] = radius[n];
       }
       
     } // if do_recompose
