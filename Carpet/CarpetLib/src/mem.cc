@@ -16,6 +16,9 @@
 #  include <malloc.h>
 #endif
 
+#include <sys/resource.h>
+#include <sys/time.h>
+
 #include "defs.hh"
 #include "dist.hh"
 
@@ -198,6 +201,43 @@ alloc (size_t nbytes)
   freeptr = static_cast <char *> (freeptr) + nbytes;
   
   return ptr;
+}
+
+
+
+extern "C" void CarpetLib_setmemlimit (CCTK_ARGUMENTS);
+
+void CarpetLib_setmemlimit (CCTK_ARGUMENTS)
+{
+  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_PARAMETERS;
+  
+  // Set address space limit
+  struct rlimit aslimit;
+  {
+    int const ierr = getrlimit (RLIMIT_AS, & aslimit);
+    assert (not ierr);
+  }
+  CCTK_VInfo (CCTK_THORNSTRING,
+              "Old address space size limit: hard=%lld, soft=%lld",
+              (long long) aslimit.rlim_max, (long long) aslimit.rlim_cur);
+  if (max_allowed_memory_MB > 0) {
+    aslimit.rlim_cur = max_allowed_memory_MB * 1000000LL;
+  }
+  {
+    int const ierr = setrlimit (RLIMIT_AS, & aslimit);
+    assert (not ierr);
+  }
+  {
+    int const ierr = getrlimit (RLIMIT_AS, & aslimit);
+    assert (not ierr);
+  }
+  CCTK_VInfo (CCTK_THORNSTRING,
+              "Old address space size limit: hard=%lld, soft=%lld",
+              (long long) aslimit.rlim_max, (long long) aslimit.rlim_cur);
+  CCTK_VInfo (CCTK_THORNSTRING,
+              "Unlimited address space size indicated by %lld",
+              (long long) RLIM_INFINITY);
 }
 
 

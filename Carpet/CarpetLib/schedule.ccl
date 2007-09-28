@@ -1,5 +1,11 @@
 # Schedule definitions for thorn CarpetLib
 
+SCHEDULE CarpetLib_setmemlimit AT WRAGH
+{
+  LANG: C
+  OPTIONS: global
+} "Set operating system memory limit"
+
 SCHEDULE CarpetLib_printtimestats AT analysis
 {
   LANG: C
