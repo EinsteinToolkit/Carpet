@@ -80,9 +80,9 @@ namespace CarpetLib {
   init_rdtsc ()
   {
     // Make three warmup measurements
-    double const rdummy1 = rdtsc ();
-    double const rdummy2 = rdtsc ();
-    double const rdummy3 = rdtsc ();
+    rdtsc ();
+    rdtsc ();
+    rdtsc ();
     double const rstart = rdtsc ();
     double const wstart = MPI_Wtime ();
     // int const ierr = usleep (1000 * 1000);
