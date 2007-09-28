@@ -963,12 +963,16 @@ regrid ()
         
       } // for c
       
-      
-      
-      // Output:
-      
-      if (output_bboxes) {
-        
+    } // for rl
+  }   // for m
+  
+  
+  
+  // Output:
+  if (output_bboxes or there_was_an_error) {
+    
+    for (int ml = 0; ml < h.mglevels(); ++ ml) {
+      for (int rl = 0; rl < h.reflevels(); ++ rl) {
         for (int c = 0; c < h.components(rl); ++ c) {
           dboxes const & box = boxes.AT(ml).AT(rl).AT(c);
           
@@ -978,13 +982,10 @@ regrid ()
           cout << endl;
           
         } // for c
-        
-      } // if output_bboxes
-      
-      
-      
-    } // for rl
-  }   // for m
+      }   // for rl
+    }     // for m
+    
+  } // if output_bboxes
   
   if (there_was_an_error) {
     CCTK_WARN (CCTK_WARN_ABORT,
