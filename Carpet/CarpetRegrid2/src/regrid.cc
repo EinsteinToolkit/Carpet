@@ -323,7 +323,7 @@ namespace CarpetRegrid2 {
       //
       if (rl < regions.size() - 1) {
         
-        ibbox const & coarse0 = * regions.at(rl).begin();
+        ibbox const coarse0 = * regions.at(rl).begin();
         
         i2vect const fdistance = dd.ghost_width;
         i2vect const cdistance =
