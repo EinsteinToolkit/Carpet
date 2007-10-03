@@ -263,7 +263,10 @@ namespace CarpetIOScalar {
       {
         string const reduction = ireduction->reduction;
 
-        ofstream file;
+        fstream file;
+        BeginTimingIO (cctkGH);
+        long long io_files = 0;
+        long long io_bytes_begin = 0, io_bytes_end = 0;
         if (CCTK_MyProc(cctkGH)==0) {
 
           // Invent a file name
@@ -277,6 +280,8 @@ namespace CarpetIOScalar {
           // If this is the first time, then write a nice header
           if (do_truncate.at(n) and IO_TruncateOutputFiles (cctkGH)) {
             file.open (filename, ios::out | ios::trunc);
+            io_files += 1;
+            io_bytes_begin = file.tellg();
             {
               bool want_labels = false;
               bool want_date = false;
@@ -353,6 +358,8 @@ namespace CarpetIOScalar {
             }
           } else {
             file.open (filename, ios::out | ios::app);
+            io_files += 1;
+            io_bytes_begin = file.tellg();
           }
           if (! file.good()) {
             CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -420,11 +427,18 @@ namespace CarpetIOScalar {
         }
         
         if (CCTK_MyProc(cctkGH)==0) {
+          io_bytes_end = file.tellg();
           file.close();
           assert (file.good());
         }
 
         assert (! file.is_open());
+
+        long long io_bytes = io_bytes_end - io_bytes_begin;
+        // Broadcast I/O size and synchronise processes
+        MPI_Bcast (& io_files, 1, MPI_LONG_LONG, 0, dist::comm());
+        MPI_Bcast (& io_bytes, 1, MPI_LONG_LONG, 0, dist::comm());
+        EndTimingIO (cctkGH, io_files, io_bytes, false);
 
       } // for reductions
 
