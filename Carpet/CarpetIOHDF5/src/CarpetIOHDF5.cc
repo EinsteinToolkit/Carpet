@@ -344,7 +344,7 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
     myGH->out_dir = the_out_dir;
 
     // create the output directory
-    const ioGH* const ioUtilGH = (const ioGH*) CCTK_GHExtension (cctkGH, "IO");
+    // const ioGH* const ioUtilGH = (const ioGH*) CCTK_GHExtension (cctkGH, "IO");
     int result = IOUtil_CreateDirectory (cctkGH, myGH->out_dir,
                                          not CCTK_Equals (out_mode, "onefile"),
                                          dist::rank());
@@ -917,7 +917,7 @@ static int WriteMetadata (const cGH *cctkGH, int nioprocs,
     CCTK_INFO ("Writing simulation metadata...");
   }
 
-  const ioGH *ioUtilGH = (const ioGH *) CCTK_GHExtension (cctkGH, "IO");
+  // const ioGH *ioUtilGH = (const ioGH *) CCTK_GHExtension (cctkGH, "IO");
   HDF5_ERROR (group = H5Gcreate (file, METADATA_GROUP, 0));
 
   int ivalue = CCTK_MainLoopIndex ();
