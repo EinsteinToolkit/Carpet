@@ -636,6 +636,9 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
 
   // Open the output file if this is a designated I/O processor
   hid_t file = -1;
+  long long io_files = 0;
+  long long io_bytes = 0;
+  BeginTimingIO (cctkGH);
   if (dist::rank() == ioproc) {
 
     if (is_new_file and not IO_TruncateOutputFiles (cctkGH)) {
@@ -652,6 +655,7 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
     } else {
       HDF5_ERROR (file = H5Fopen (c_filename, H5F_ACC_RDWR, H5P_DEFAULT));
     }
+    io_files += 1;
   }
 
   if (CCTK_Equals (verbose, "full")) {
@@ -667,11 +671,11 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
     if ((CCTK_EQUALS (out_mode, "onefile") and io_out_unchunked) or
         r->out_unchunked or
         groupdata.disttype == CCTK_DISTRIB_CONSTANT) {
-      error_count += WriteVarUnchunked (cctkGH, file, r, false);
+      error_count += WriteVarUnchunked (cctkGH, file, io_bytes, r, false);
     } else if (CCTK_EQUALS (out_mode, "onefile")) {
-      error_count += WriteVarChunkedSequential (cctkGH, file, r, false);
+      error_count += WriteVarChunkedSequential (cctkGH, file, io_bytes, r, false);
     } else {
-      error_count += WriteVarChunkedParallel (cctkGH, file, r, false);
+      error_count += WriteVarChunkedParallel (cctkGH, file, io_bytes, r, false);
     }
     if (r != myGH->requests[var]) IOUtil_FreeIORequest (&r);
 
@@ -688,6 +692,15 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
   if (file >= 0) {
     HDF5_ERROR (H5Fclose (file));
   }
+  {
+    long long local[2], global[2];
+    local[0] = io_files;
+    local[1] = io_bytes;
+    MPI_Allreduce (local, global, 2, MPI_LONG_LONG, MPI_SUM, dist::comm());
+    io_files = global[0];
+    io_bytes = global[1];
+  }
+  EndTimingIO (cctkGH, io_files, io_bytes, true);
 
   if (error_count > 0 and abort_on_io_errors) {
     CCTK_WARN (0, "Aborting simulation due to previous I/O errors");
@@ -719,6 +732,9 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
                              called_from, ioproc, not parallel_io);
 
   hid_t file = -1;
+  long long io_files = 0;
+  long long io_bytes = 0;
+  BeginTimingIO (cctkGH);
   if (dist::rank() == ioproc) {
     if (CCTK_Equals (verbose, "full")) {
       CCTK_VInfo (CCTK_THORNSTRING, "Creating temporary checkpoint file '%s'",
@@ -727,6 +743,7 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
 
     HDF5_ERROR (file = H5Fcreate (tempname, H5F_ACC_TRUNC, H5P_DEFAULT,
                                   H5P_DEFAULT));
+    io_files += 1;
 
     // write metadata information
     error_count += WriteMetadata (cctkGH, nioprocs, true, file);
@@ -810,8 +827,8 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
 
             // write the var
             error_count += parallel_io ?
-                      WriteVarChunkedParallel (cctkGH, file, request, true) :
-                      WriteVarChunkedSequential (cctkGH, file, request, true);
+              WriteVarChunkedParallel (cctkGH, file, io_bytes, request, true) :
+              WriteVarChunkedSequential (cctkGH, file, io_bytes, request, true);
           }
           free (fullname);
 
@@ -830,6 +847,15 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
   if (file >= 0) {
     HDF5_ERROR (H5Fclose(file));
   }
+  {
+    long long local[2], global[2];
+    local[0] = io_files;
+    local[1] = io_bytes;
+    MPI_Allreduce (local, global, 2, MPI_LONG_LONG, MPI_SUM, dist::comm());
+    io_files = global[0];
+    io_bytes = global[1];
+  }
+  EndTimingIO (cctkGH, io_files, io_bytes, true);
 
   // get global error count
   int temp = error_count;

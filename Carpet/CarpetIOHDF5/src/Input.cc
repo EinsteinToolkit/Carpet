@@ -81,6 +81,7 @@ static void ReadMetadata (fileset_t& fileset, hid_t file);
 static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg);
 static int ReadVar (const cGH* const cctkGH,
                     hid_t file,
+                    long long & io_bytes,
                     list<patch_t>::const_iterator patch,
                     vector<ibset> &bboxes_read,
                     bool in_recovery);
@@ -234,6 +235,10 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     setname.append (basefilename);
   }
 
+  long long io_files = 0;
+  long long io_bytes = 0;
+  BeginTimingIO (cctkGH);
+
   list<fileset_t>::iterator fileset = filesets.begin();
   while (fileset != filesets.end()) {
     if (fileset->setname == setname) {
@@ -383,6 +388,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       assert (file.filename);
       HDF5_ERROR (file.file = H5Fopen (file.filename, H5F_ACC_RDONLY,
                                        H5P_DEFAULT));
+      io_files += 1;
 
       if (CCTK_Equals (verbose, "full")) {
         CCTK_VInfo (CCTK_THORNSTRING, "opening %s file '%s'",
@@ -451,7 +457,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
 
       // actually read the patch
       if (not read_completely.at(patch->vindex).at(patch->timelevel)) {
-        ReadVar (cctkGH, file.file, patch,
+        ReadVar (cctkGH, file.file, io_bytes, patch,
                  bboxes_read.at(patch->vindex).at(patch->timelevel),
                  in_recovery);
 
@@ -529,6 +535,16 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
                 "%d variables on mglevel %d reflevel %d have been read "
                 "only partially", num_incomplete, mglevel, reflevel);
   }
+  
+  {
+    long long local[2], global[2];
+    local[0] = io_files;
+    local[1] = io_bytes;
+    MPI_Allreduce (local, global, 2, MPI_LONG_LONG, MPI_SUM, dist::comm());
+    io_files = global[0];
+    io_bytes = global[1];
+  }
+  EndTimingIO (cctkGH, io_files, io_bytes, true);
   
   // Synchronise all variables which have been read
   {
@@ -876,6 +892,7 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
 //////////////////////////////////////////////////////////////////////////////
 static int ReadVar (const cGH* const cctkGH,
                     hid_t file,
+                    long long & io_bytes,
                     list<patch_t>::const_iterator patch,
                     vector<ibset> &bboxes_read,
                     bool in_recovery)
@@ -1007,6 +1024,9 @@ static int ReadVar (const cGH* const cctkGH,
                                        NULL, count, NULL));
       HDF5_ERROR (H5Dread (dataset, datatype, memspace, filespace, H5P_DEFAULT,
                            cctkGH->data[patch->vindex][timelevel]));
+      io_bytes +=
+        H5Sget_simple_extent_npoints (filespace) *
+        H5Tget_size (H5Dget_type (dataset));
       HDF5_ERROR (H5Sclose (memspace));
 
     } END_LOCAL_COMPONENT_LOOP;

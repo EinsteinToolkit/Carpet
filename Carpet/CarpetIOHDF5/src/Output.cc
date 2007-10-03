@@ -29,6 +29,7 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
 
 int WriteVarUnchunked (const cGH* const cctkGH,
                        hid_t outfile,
+                       long long & io_bytes,
                        const ioRequest* const request,
                        bool called_from_checkpoint)
 {
@@ -228,6 +229,9 @@ int WriteVarUnchunked (const cGH* const cctkGH,
                                              overlapshape, NULL));
             HDF5_ERROR (H5Dwrite (memdataset, memdatatype, overlap_dataspace,
                                   dataspace, H5P_DEFAULT, data));
+            io_bytes +=
+              H5Sget_simple_extent_npoints (overlap_dataspace) *
+              H5Tget_size (filedatatype);
             HDF5_ERROR (H5Sclose (overlap_dataspace));
 
             // Add metadata information on the first time through
@@ -277,6 +281,7 @@ int WriteVarUnchunked (const cGH* const cctkGH,
 
 int WriteVarChunkedSequential (const cGH* const cctkGH,
                                hid_t outfile,
+                               long long & io_bytes,
                                const ioRequest* const request,
                                bool called_from_checkpoint)
 {
@@ -406,6 +411,9 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
           HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
                                            filedatatype, dataspace, plist));
+          io_bytes +=
+            H5Sget_simple_extent_npoints (dataspace) *
+            H5Tget_size (filedatatype);
           HDF5_ERROR (H5Pclose (plist));
           HDF5_ERROR (H5Sclose (dataspace));
           HDF5_ERROR (H5Dwrite (dataset, memdatatype, H5S_ALL, H5S_ALL,
@@ -432,6 +440,7 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
 
 int WriteVarChunkedParallel (const cGH* const cctkGH,
                              hid_t outfile,
+                             long long & io_bytes,
                              const ioRequest* const request,
                              bool called_from_checkpoint)
 {
@@ -554,6 +563,8 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
       HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
                                        filedatatype, dataspace, plist));
+      io_bytes +=
+        H5Sget_simple_extent_npoints (dataspace) * H5Tget_size (filedatatype);
       HDF5_ERROR (H5Pclose (plist));
       HDF5_ERROR (H5Sclose (dataspace));
       HDF5_ERROR (H5Dwrite (dataset, memdatatype, H5S_ALL, H5S_ALL,
