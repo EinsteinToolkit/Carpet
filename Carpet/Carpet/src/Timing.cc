@@ -125,10 +125,30 @@ namespace Carpet {
     DECLARE_CCTK_ARGUMENTS;
     
     * physical_time_per_hour = 0.0;
-    * local_grid_points_per_second = 0.0;
-    * total_grid_points_per_second = 0.0;
+    
+    * time_total         = 0.0;
+    * time_computing     = 0.0;
+    * time_communicating = 0.0;
+    * time_io            = 0.0;
+    
+    * local_grid_points_per_second   = 0.0;
+    * total_grid_points_per_second   = 0.0;
     * local_grid_point_updates_count = 0.0;
     * total_grid_point_updates_count = 0.0;
+    
+    * io_per_second              = 0.0;
+    * io_bytes_per_second        = 0.0;
+    * io_bytes_ascii_per_second  = 0.0;
+    * io_bytes_binary_per_second = 0.0;
+    * io_count                   = 0.0;
+    * io_bytes_count             = 0.0;
+    * io_bytes_ascii_count       = 0.0;
+    * io_bytes_binary_count      = 0.0;
+    
+    * comm_per_second       = 0.0;
+    * comm_bytes_per_second = 0.0;
+    * comm_count            = 0.0;
+    * comm_bytes_count      = 0.0;
     
     * grid_points_per_second = 0.0;
     * grid_point_updates_count = 0.0;
@@ -165,6 +185,98 @@ namespace Carpet {
   
   
   
+  // Last starting time
+  enum timing_state_t { state_computing, state_communicating, state_io };
+  timing_state_t timing_state = state_computing;
+  CCTK_REAL time_start;
+  
+  
+  
+  // Count some I/O (to be called from the I/O routine)
+  void
+  BeginTimingIO (cGH const * const cctkGH)
+  {
+    assert (timing_state == state_computing);
+    timing_state = state_io;
+    time_start = get_walltime();
+  }
+  
+  void
+  EndTimingIO (cGH const * const cctkGH,
+               CCTK_REAL const files, CCTK_REAL const bytes,
+               bool const is_binary)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    
+    assert (timing_state == state_io);
+    timing_state = state_io;
+    CCTK_REAL const time_end = get_walltime();
+    
+    * time_io += time_end - time_start;
+    
+    * io_count += files;
+    * io_bytes_count += bytes;
+    * (is_binary ? io_bytes_binary_count : io_bytes_ascii_count) += bytes;
+  }
+  
+  
+  
+  // Count some communication (to be called from the communication routine)
+  void
+  BeginTimingCommunication (cGH const * const cctkGH)
+  {
+    assert (timing_state == state_computing);
+    timing_state = state_communicating;
+    time_start = get_walltime();
+  }
+  
+  void
+  EndTimingCommunication (cGH const * const cctkGH,
+                          CCTK_REAL const messages, CCTK_REAL const bytes)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    
+    assert (timing_state == state_communicating);
+    timing_state = state_communicating;
+    CCTK_REAL const time_end = get_walltime();
+    
+    * time_communicating += time_end - time_start;
+    
+    * comm_count += messages;
+    * comm_bytes_count += bytes;
+  }
+  
+  
+  
+  static
+  void
+  PrintTimes (cGH const * const cctkGH)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    DECLARE_CCTK_PARAMETERS;
+    
+    assert (timing_state == state_computing);
+    
+    // Measure the elapsed time
+    * time_total = get_walltime() - initial_walltime;
+    
+    * time_computing = * time_total - (* time_communicating + * time_io);
+    
+    if (print_timestats_every > 0 and
+        cctkGH->cctk_iteration % print_timestats_every == 0)
+    {
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "Total run time second: %g", double (* time_total));
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "(Comp, Comm, I/O) fractions = (%3.1f, %3.1f, %3.1f)",
+                  double (100.0 * * time_computing     / * time_total),
+                  double (100.0 * * time_communicating / * time_total),
+                  double (100.0 * * time_io            / * time_total));
+    }
+  }
+  
+  
+  
   static
   void
   PrintUpdatesPerSecond (cGH const * const cctkGH)
@@ -172,14 +284,11 @@ namespace Carpet {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    // Measure the elapsed time
-    CCTK_REAL const elapsed_walltime = get_walltime() - initial_walltime;
-    
     // Calculate updates per second
     * local_grid_points_per_second =
-      * local_grid_point_updates_count / elapsed_walltime;
+      * local_grid_point_updates_count / * time_computing;
     * total_grid_points_per_second =
-      * total_grid_point_updates_count / elapsed_walltime;
+      * total_grid_point_updates_count / * time_computing;
     
     * grid_points_per_second = * local_grid_points_per_second;
     
@@ -229,20 +338,72 @@ namespace Carpet {
   
   static
   void
+  PrintIOStats (cGH const * const cctkGH)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    DECLARE_CCTK_PARAMETERS;
+    
+    * io_per_second              = * io_count              / * time_io;
+    * io_bytes_per_second        = * io_bytes_count        / * time_io;
+    * io_bytes_ascii_per_second  = * io_bytes_ascii_count  / * time_io;
+    * io_bytes_binary_per_second = * io_bytes_binary_count / * time_io;
+    
+    if (print_timestats_every > 0 and
+        cctkGH->cctk_iteration % print_timestats_every == 0)
+    {
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "I/O operations per second:     %g",
+                  double (* io_per_second));
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "I/O bytes per second:          %g",
+                  double (* io_bytes_per_second));
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "I/O bytes per second (ASCII):  %g",
+                  double (* io_bytes_ascii_per_second));
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "I/O bytes per second (binary): %g",
+                  double (* io_bytes_binary_per_second));
+    }
+  }
+  
+  
+  
+  static
+  void
+  PrintCommunicationStats (cGH const * const cctkGH)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    DECLARE_CCTK_PARAMETERS;
+    
+    * comm_per_second       = * comm_count       / * time_communicating;
+    * comm_bytes_per_second = * comm_bytes_count / * time_communicating;
+    
+    if (print_timestats_every > 0 and
+        cctkGH->cctk_iteration % print_timestats_every == 0)
+    {
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "Communication operations per second: %g",
+                  double (* comm_per_second));
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "Communicated bytes per second:       %g",
+                  double (* comm_bytes_per_second));
+    }
+  }
+  
+  
+  
+  static
+  void
   PrintPhysicalTimePerHour (cGH const * const cctkGH)
   {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    // Measure the elapsed time
-    CCTK_REAL const elapsed_walltime = get_walltime() - initial_walltime;
-    
     // Calculate elapsed physical time
     CCTK_REAL const physical_time = cctkGH->cctk_time - initial_phystime;
     
     // Calculate physical time per hour
-    * physical_time_per_hour =
-      physical_time / elapsed_walltime * CCTK_REAL (3600.0);
+    * physical_time_per_hour = 3600.0 * physical_time / * time_computing;
     
     if (print_timestats_every > 0 and
         cctkGH->cctk_iteration % print_timestats_every == 0)
@@ -260,7 +421,10 @@ namespace Carpet {
   void
   PrintTimingStats (cGH const * const cctkGH)
   {
+    PrintTimes (cctkGH);
     PrintUpdatesPerSecond (cctkGH);
+    PrintIOStats (cctkGH);
+    PrintCommunicationStats (cctkGH);
     PrintPhysicalTimePerHour (cctkGH);
   }
   

@@ -185,10 +185,21 @@ REQUIRES FUNCTION IO_TruncateOutputFiles
 CCTK_REAL timing TAGS='checkpoint="no"'
 {
   physical_time_per_hour
-  local_grid_points_per_second
-  total_grid_points_per_second
-  local_grid_point_updates_count
-  total_grid_point_updates_count
+  
+  time_total time_computing time_communicating time_io
+  
+  local_grid_points_per_second total_grid_points_per_second
+  local_grid_point_updates_count total_grid_point_updates_count
+  
+  io_per_second
+  io_bytes_per_second io_bytes_ascii_per_second io_bytes_binary_per_second
+  io_count
+  io_bytes_count io_bytes_ascii_count io_bytes_binary_count
+  
+  comm_per_second
+  comm_bytes_per_second
+  comm_count
+  comm_bytes_count
 } "Physical timing information"
 
 CCTK_REAL timing2 TYPE=array DIM=1 SIZE=1 DISTRIB=constant TAGS='checkpoint="no"'
