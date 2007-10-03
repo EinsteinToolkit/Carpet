@@ -118,6 +118,13 @@ namespace Carpet {
   
   
   
+  // Last starting time
+  enum timing_state_t { state_computing, state_communicating, state_io };
+  timing_state_t timing_state = state_computing;
+  CCTK_REAL time_start;
+  
+  
+  
   // Initialise the timing variables (to be called during Initialise)
   void
   InitTimingVariables (cGH const * const cctkGH)
@@ -174,6 +181,8 @@ namespace Carpet {
   {
     DECLARE_CCTK_ARGUMENTS;
     
+    assert (timing_state == state_computing);
+    
     CCTK_REAL local_updates, global_updates;
     current_level_updates (cctkGH, local_updates, global_updates);
     
@@ -182,13 +191,6 @@ namespace Carpet {
     
     * grid_point_updates_count = * local_grid_point_updates_count;
   }
-  
-  
-  
-  // Last starting time
-  enum timing_state_t { state_computing, state_communicating, state_io };
-  timing_state_t timing_state = state_computing;
-  CCTK_REAL time_start;
   
   
   
@@ -209,7 +211,7 @@ namespace Carpet {
     DECLARE_CCTK_ARGUMENTS;
     
     assert (timing_state == state_io);
-    timing_state = state_io;
+    timing_state = state_computing;
     CCTK_REAL const time_end = get_walltime();
     
     * time_io += time_end - time_start;
@@ -237,7 +239,7 @@ namespace Carpet {
     DECLARE_CCTK_ARGUMENTS;
     
     assert (timing_state == state_communicating);
-    timing_state = state_communicating;
+    timing_state = state_computing;
     CCTK_REAL const time_end = get_walltime();
     
     * time_communicating += time_end - time_start;
