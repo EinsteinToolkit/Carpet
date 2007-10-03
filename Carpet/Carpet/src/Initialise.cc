@@ -325,6 +325,7 @@ namespace Carpet {
             ScheduleTraverse (where, "CCTK_INITIAL", cctkGH);
             
             if (init_fill_timelevels) {
+              assert (tl==0);
               FillTimeLevels (cctkGH);
             }
             
