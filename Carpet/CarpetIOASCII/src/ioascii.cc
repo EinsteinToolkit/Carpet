@@ -643,7 +643,10 @@ namespace CarpetIOASCII {
               }
             } // if grouptype is GF
 
-            ofstream file;
+            fstream file;
+            BeginTimingIO (cctkGH);
+            long long io_files = 0;
+            long long io_bytes_begin = 0, io_bytes_end = 0;
             if (dist::rank()==ioproc) {
 
               // Invent a file name
@@ -682,7 +685,6 @@ namespace CarpetIOASCII {
               string filenamestr = filenamebuf.str();
               const char* const filename = filenamestr.c_str();
 
-
               // Open the file
               file.open (filename, ios::out |
                          (is_new_file ? ios::trunc : ios::app));
@@ -691,6 +693,8 @@ namespace CarpetIOASCII {
                             "Could not open output file '%s' for variable '%s'",
                             filename, varname);
               }
+              io_files += 1;
+              io_bytes_begin = file.tellg();
               // If this is the first time, then write a nice header
               if (is_new_file) {
                 bool want_labels = false;
@@ -936,11 +940,18 @@ namespace CarpetIOASCII {
                 assert (file.good());
                 file << eol;
               }
+              io_bytes_end = file.tellg();
               file.close();
               assert (file.good());
             }
 
             assert (not file.is_open());
+
+            long long io_bytes = io_bytes_end - io_bytes_begin;
+            // Broadcast I/O size and synchronise processes
+            MPI_Bcast (& io_files, 1, MPI_LONG_LONG, 0, dist::comm());
+            MPI_Bcast (& io_bytes, 1, MPI_LONG_LONG, 0, dist::comm());
+            EndTimingIO (cctkGH, io_files, io_bytes, false);
 
           } END_MAP_LOOP;
 
