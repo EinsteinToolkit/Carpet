@@ -18,6 +18,7 @@
 
 #include "cctk.h"
 
+#include "bbox.hh"
 #include "data.hh"
 #include "dh.hh"
 #include "ggf.hh"
