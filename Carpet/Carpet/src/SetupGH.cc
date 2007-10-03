@@ -207,6 +207,10 @@ namespace Carpet {
       CCTK_VInfo (CCTK_THORNSTRING,
                   "There are %d threads in total", nthreads_total);
       
+#if 0
+      // Do not call Util_GetHostName.  Certain InfiniBand libraries
+      // do not allow calling fork or exec, and getting the host name
+      // seems also not allowed.  It leads to random crashes.
       if (verbose) {
         // Collect host names
         char hostnamebuf[1000];
@@ -214,9 +218,9 @@ namespace Carpet {
         string const hostname (hostnamebuf);
         vector <string> hostnames = AllGatherString (dist::comm(), hostname);
         // Collect number of threads
-        vector<int> nthreads (nprocs);
+        vector <int> nthreads (nprocs);
         MPI_Allgather (const_cast <int *> (& mynthreads), 1, MPI_INT,
-                       & nthreads.front(), nprocs, MPI_INT,
+                       & nthreads.front(), 1, MPI_INT,
                        dist::comm());
         // Output
         CCTK_VInfo (CCTK_THORNSTRING,
@@ -227,6 +231,7 @@ namespace Carpet {
                       n, nthreads.at(n), hostnames.at(n).c_str());
         }
       }
+#endif
     }
     
     // Check arguments:
