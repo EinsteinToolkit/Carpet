@@ -57,7 +57,9 @@ namespace CarpetIOScalar {
   static int TriggerOutput (const cGH* cctkGH, int vindex);
 
   // Internal functions
+#if 0
   static void SetFlag (int index, const char* optstring, void* arg);
+#endif
   static void CheckSteerableParameters (const cGH *const cctkGH);
 
 
@@ -667,6 +669,8 @@ namespace CarpetIOScalar {
   }
 
 
+
+#if 0
   void
   SetFlag (int const index, const char * const optstring, void * const arg)
   {
@@ -678,6 +682,7 @@ namespace CarpetIOScalar {
     vector<bool>& flags = *(vector<bool>*)arg;
     flags.at(index) = true;
   }
+#endif
 
 
 
