@@ -134,7 +134,7 @@ namespace Carpet {
     
     if (regrid_in_level_mode and not have_regridmaps) {
       static bool didtell = false;
-      if (maxreflevels > 1 and not didtell) {
+      if (maps > 1 and maxreflevels > 1 and not didtell) {
 	CCTK_WARN (2, "The regridding routine Carpet_RegridMaps has not been provided.  Regridding will be performed in singlemap mode instead of level mode.");
 	didtell = true;
       }
