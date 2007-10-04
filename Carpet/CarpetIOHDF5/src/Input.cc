@@ -235,10 +235,6 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     setname.append (basefilename);
   }
 
-  long long io_files = 0;
-  long long io_bytes = 0;
-  BeginTimingIO (cctkGH);
-
   list<fileset_t>::iterator fileset = filesets.begin();
   while (fileset != filesets.end()) {
     if (fileset->setname == setname) {
@@ -288,6 +284,10 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
                 "reading grid variables on mglevel %d reflevel %d",
                 mglevel, reflevel);
   }
+
+  long long io_files = 0;
+  long long io_bytes = 0;
+  BeginTimingIO (cctkGH);
 
   // create a bbox set for each active timelevel of all variables
   // to mark how much has been read already

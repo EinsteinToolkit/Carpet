@@ -732,9 +732,6 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
                              called_from, ioproc, not parallel_io);
 
   hid_t file = -1;
-  long long io_files = 0;
-  long long io_bytes = 0;
-  BeginTimingIO (cctkGH);
   if (dist::rank() == ioproc) {
     if (CCTK_Equals (verbose, "full")) {
       CCTK_VInfo (CCTK_THORNSTRING, "Creating temporary checkpoint file '%s'",
@@ -743,7 +740,6 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
 
     HDF5_ERROR (file = H5Fcreate (tempname, H5F_ACC_TRUNC, H5P_DEFAULT,
                                   H5P_DEFAULT));
-    io_files += 1;
 
     // write metadata information
     error_count += WriteMetadata (cctkGH, nioprocs, true, file);
@@ -751,6 +747,11 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
 
   // now dump the grid variables on all mglevels, reflevels, maps and components
   BEGIN_MGLEVEL_LOOP (cctkGH) {
+
+    long long io_files = 1;
+    long long io_bytes = 0;
+    BeginTimingIO (cctkGH);
+
     BEGIN_REFLEVEL_LOOP (cctkGH) {
 
       if (CCTK_Equals (verbose, "full")) {
@@ -840,6 +841,16 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
       } /* end of loop over all groups */
     } END_REFLEVEL_LOOP;
 
+    {
+      long long local[2], global[2];
+      local[0] = io_files;
+      local[1] = io_bytes;
+      MPI_Allreduce (local, global, 2, MPI_LONG_LONG, MPI_SUM, dist::comm());
+      io_files = global[0];
+      io_bytes = global[1];
+    }
+    EndTimingIO (cctkGH, io_files, io_bytes, true);
+
   } END_MGLEVEL_LOOP;
 
 
@@ -847,15 +858,6 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
   if (file >= 0) {
     HDF5_ERROR (H5Fclose(file));
   }
-  {
-    long long local[2], global[2];
-    local[0] = io_files;
-    local[1] = io_bytes;
-    MPI_Allreduce (local, global, 2, MPI_LONG_LONG, MPI_SUM, dist::comm());
-    io_files = global[0];
-    io_bytes = global[1];
-  }
-  EndTimingIO (cctkGH, io_files, io_bytes, true);
 
   // get global error count
   int temp = error_count;
