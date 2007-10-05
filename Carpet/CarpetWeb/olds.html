@@ -20,6 +20,63 @@
 
     <p><a href="index.html"><b>New News...</b></a></p>
 
+    <p><b>September 26, 2006:</b> We are preparing a new release of
+    Carpet.  This will be Carpet version 3.  Among other things, this
+    version makes it easier to use dynamic grid structures, shows
+    better scaling behaviour than version 2, and has better support
+    for multiple patches.  A detailed list of changes
+    is <a href="version-3.html">here</a>.  The
+    the <a href="get-carpet-darcs.html">downloading instructions</a>
+    for Carpet explain how to access this version.</p>
+
+    <p><b>February 26, 2006:</b> We have started to collect
+    a <a href="publications.html">list of publications and theses</a>
+    that use Carpet.  Please tell us if you have written a publication
+    or a thesis using Carpet.</p>
+
+    <p><b>February 25,
+    2006:</b> <a href="http://www.aei.mpg.de/~cott/">Christian Ott</a>
+    has contributed code to Carpet, making the refined regions track
+    apparent horizon centroids, merging and un-merging refined regions
+    as necessary.  (<a href="movies/bh2.gif">Movie</a>, animated gif,
+    730&nbsp;kB.)  After Burkhard Zink's mechanism
+    which <a href="http://arxiv.org/abs/gr-qc/0501080">tracks the
+    density maximum in a star</a>, this is the second implementation
+    of a production level adaptive mesh refinement criterion in
+    Carpet.</p>
+
+    <p><b>February 25, 2006:</b> The
+    official <a href="http://www.cactuscode.org/Benchmarks/">Cactus
+    benchmarks</a> now include benchmarks with Carpet.  You can assess
+    Carpet's scaling and compare its performance on different machines
+    by generating graphs from the benchmark result database on these
+    pages.</p>
+
+    <hr />
+
+    <p><b>July 15, 2005:</b> We have now a page that links to <a
+    href="status-reports.html">all past montly status reports</a>.</p>
+
+    <p><b>June 6, 2005:</b> We have updated the <a
+    href="get-carpet-darcs.html">downloading instructions for
+    Carpet</a>.</p>
+
+    <p><b>June 6, 2005:</b> Version 1.0.3 of the pre-compiled darcs
+    binary is <a href="get-carpet-darcs.html">now available</a>.</p>
+
+    <p><b>April 13, 2005:</b> Thomas Radke has implemented a new
+    communication scheme in Carpet.  Instead of sending many small
+    messages in an interleaved manner, Carpet now collects all
+    messages into an internal buffer and sends only one big message
+    with MPI.  This circumvents certain problems with internal
+    limitations of MPICH, and it also improves the performance
+    greatly.</p>
+
+    <p><b>March 9, 2005:</b> We have started to move towards a new
+    stable version of Carpet.</p>
+
+    <hr />
+
     <p><b>December 7, 2004:</b> Jonathan Thornburg is organising a <a
     href="design-walkthrough.html">Carpet Design Walkthrough</a>,
     which will take place December 13 to 15 at the AEI and will be

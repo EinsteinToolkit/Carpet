@@ -67,7 +67,7 @@
 <a href="http://www.kisti.re.kr/english/">KISTI</a><br />
 <a href="http://www.cct.lsu.edu/">LSU</a><br />
 <a href="http://www.mpa-garching.mpg.de/hydro/index.shtml">MPA&nbsp;Garching</a><br />
-<a href="http://www.fis.unipr.it/">Parma</a><br />
+<a href="http://www.fis.unipr.it/numrel/">Parma</a><br />
 <a href="http://www.gravity.psu.edu/numrel/">Penn&nbsp;State</a><br />
 <a href="http://astrophysics.rit.edu/">RIT</a><br />
 <a href="http://www.sissa.it/ap/RelAstro/">SISSA</a><br />
@@ -102,63 +102,161 @@
     the <a href="http://www.cct.lsu.edu/">CCT</a> (Center for
     Computation &amp; Technology) at LSU.  These pages describe Carpet
     and its current development.</p>
-      
+
     <hr />
 
     <h2>News</h2>
 
-    <p><b>September 26, 2006:</b> We are preparing a new release of
-    Carpet.  This will be Carpet version 3.  Among other things, this
-    version makes it easier to use dynamic grid structures, shows
-    better scaling behaviour than version 2, and has better support
-    for multiple patches.  A detailed list of changes
-    is <a href="version-3.html">here</a>.  The
-    the <a href="get-carpet-darcs.html">downloading instructions</a>
-    for Carpet explain how to access this version.</p>
+<!--
+    <p><b>October 4, 2007:</b> Announcement: <i>The BBH factory</i><br />
+      <b>Physicist version:</b> The BBH factory is a glorified set of shell
+      scripts which help maintaining source code on different machines
+      and building Cactus executables there.  They also simplify the
+      task of managing many simulations on many machines and try to
+      prevent stupid errors.<br />
+      <b>Computer scientist version:</b> The BBH factory is a set of
+      abstractions over the various low-level interface that current
+      supercomputers offer for maintaining source code and performing
+      simulations.  As middleware, they encompass policies and best
+      practices that prevent common human errors.  They would also be
+      well suited for implementing graphical user interfaces.</p>
+-->
 
-    <p><b>February 26, 2006:</b> We have started to collect
-    a <a href="publications.html">list of publications and theses</a>
-    that use Carpet.  Please tell us if you have written a publication
-    or a thesis using Carpet.</p>
+    <p><b>October 3, 2007:</b> Carpet's timing infrastructure has been
+      extended to automatically measure both time spent computing and
+      time spent in I/O.  The performance of large simulations depends
+      not only on the computational efficiency and communication
+      latency, but also on the throughput to file servers.  These new
+      statistics give a real-time overview and can point out
+      performance problems.  The statistics are collected in the
+      existing <tt>Carpet::timing</tt> variables.</p>
 
-    <p><b>February 25,
-    2006:</b> <a href="http://www.aei.mpg.de/~cott/">Christian Ott</a>
-    has contributed code to Carpet, making the refined regions track
-    apparent horizon centroids, merging and un-merging refined regions
-    as necessary.  (<a href="movies/bh2.gif">Movie</a>, animated gif,
-    730&nbsp;kB.)  After Burkhard Zink's mechanism
-    which <a href="http://arxiv.org/abs/gr-qc/0501080">tracks the
-    density maximum in a star</a>, this is the second implementation
-    of a production level adaptive mesh refinement criterion in
-    Carpet.</p>
+    <p><b>August 30, 2007:</b> So far this year, ten of the
+      publications from three research groups examining the dynamics
+      of binary black hole systems are based on simulations performed
+      with Cactus and Carpet:<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <a href="http://www.journals.uchicago.edu/ApJ/journal/issues/ApJ/v661n1/71342/71342.html">Astrophys. J. <b>661</b>, 430-436 (2007)</a>
+      (<a href="http://arxiv.org/abs/gr-qc/0701143">arXiv:gr-qc/0701143</a>)<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <a href="http://link.aps.org/abstract/PRL/v99/e041102">Phys. Rev. Lett. <b>99</b>, 041102 (2007)</a>
+      (<a href="http://arxiv.org/abs/gr-qc/0701163">arXiv:gr-qc/0701163</a>)<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <a href="http://www.journals.uchicago.edu/ApJ/journal/issues/ApJL/v659n1/21515/brief/21515.abstract.html">Astrophys. J. <b>659</b>, L5-L8 (2007)</a>
+      (<a href="http://arxiv.org/abs/gr-qc/0701164">arXiv:gr-qc/0701164</a>)<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <a href="http://link.aps.org/abstract/PRL/v98/e231102">Phys. Rev. Lett. <b>98</b>, 231102 (2007)</a>
+      (<a href="http://arxiv.org/abs/gr-qc/0702133">arXiv:gr-qc/0702133</a>)<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <a href="http://www.iop.org/EJ/abstract/0264-9381/24/15/009/">Class. Quantum Grav. <b>24</b>, 3911-3918 (2007)</a>
+      (<a href="http://arxiv.org/abs/gr-qc/0701038">arXiv:gr-qc/0701038</a>)<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <a href="http://arxiv.org/abs/0705.3829">arXiv:0705.3829 [gr-qc]</a><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <a href="http://arxiv.org/abs/0706.2541">arXiv:0706.2541 [gr-qc]</a><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <a href="http://arxiv.org/abs/0707.2559">arXiv:0707.2559 [gr-qc]</a><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <a href="http://arxiv.org/abs/0708.3999">arXiv:0708.3999 [gr-qc]</a><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <a href="http://arxiv.org/abs/0708.4048">arXiv:0708.4048 [gr-qc]</a><br />
+      These publications mainly examine the spin dynamics and the
+      gravitational wave recoil in BBH systems.  Since not all
+      research groups use Cactus and Carpet, this represents only part
+      of the published work on this subject.</p>
 
-    <p><b>February 25, 2006:</b> The
-    official <a href="http://www.cactuscode.org/Benchmarks/">Cactus
-    benchmarks</a> now include benchmarks with Carpet.  You can assess
-    Carpet's scaling and compare its performance on different machines
-    by generating graphs from the benchmark result database on these
-    pages.</p>
+    <table><tr><td valign="top">
+      <p><b>August 26, 2007:</b> In experiments with hybrid
+        communication schemes
+        combining <a href="http://www-unix.mcs.anl.gov/mpi/">MPI</a>
+        and
+        <a href="http://www.openmp.org/">OpenMP</a>, we found a 20%
+        speed improvement when using a single node
+        of <a
+        href="http://www.ncsa.uiuc.edu/UserInfo/Resources/Hardware/Intel64Cluster/">Abe</a>
+        at <a href="http://www.ncsa.uiuc.edu">NCSA</a>, and a
+        substantial scaling improvement when using 1024 and more CPUs.
+        (Abe has 8 CPUs per node.)  These experiments included cache
+        optimisations when traversing the 3D arrays.  The tests were
+        performed with a modified version of
+        the <a
+        href="http://www.cactuscode.org/">Cactus</a> <a
+        href="http://www.cactuscode.org/WaveToyDemo/">WaveToy</a>
+        example application without using I/O or analysis methods.</p>
+    </td><td valign="top">
+        <p><a
+              href="hybrid-scaling/results-wavetoy-abe.png"><img
+              src="hybrid-scaling/results-wavetoy-abe.png" width="200"
+              alt="Scaling graph for Abe"/></a></p>
+    </td></tr></table>
 
-    <p><b>July 15, 2005:</b> We have now a page that links to <a
-    href="status-reports.html">all past montly status reports</a>.</p>
+    <p><b>August 15, 2007:</b> We are happy to hear that our
+      proposal <i>ALPACA: Cactus tools for Application Level Profiling
+      And Correctness Analysis</i> will be funded by
+      <a
+      href="http://www.nsf.gov/">NSF's</a> <a
+      href="http://www.nsf.gov/publications/pub_summ.jsp?ods_key=nsf07503">SDCI</a>
+      programme for three years.
+      The <a
+      href="http://www.cactuscode.org/Development/alpaca">ALPACA</a>
+      project is aiming at developing complex, collaborative
+      scientific applications, appropriate for highly scalable
+      hardware architectures, providing fault tolerance, advanced
+      debugging, and transparency against new developments in
+      communication, programming, and execution models.  Such tools
+      are especially rare at the application level, where they are
+      most critically needed.</p>
 
-    <p><b>June 6, 2005:</b> We have updated the <a
-    href="get-carpet-darcs.html">downloading instructions for
-    Carpet</a>.</p>
+    <p><b>July 31, 2007:</b> We are happy to hear that our
+      proposal <i>XiRel: Cyberinfrastructure for Numerical
+      Relativity</i> will be funded by
+      <a
+      href="http://www.nsf.gov/">NSF's</a> <a
+      href="http://www.nsf.gov/funding/pgm_summ.jsp?pims_id=6681">PIF</a>
+      programme for three
+      years.  <a
+      href="http://www.cactuscode.org/Development/xirel">XiRel</a> is
+      collaborative proposal
+      by <a
+      href="http://www.cct.lsu.edu/">LSU</a>, <a
+      href="http://gravity.psu.edu/numrel/">PSU</a>,
+      and <a href="http://www.phys.utb.edu/numrel/">UTB</a>
+      (now <a href="http://ccrg.rit.edu/">RIT</a>).  The central goal
+      of XiRel is the development of a highly scalable, efficient, and
+      accurate adaptive mesh refinement layer based on the current
+      Carpet driver, which will be fully integrated and supported in
+      Cactus and optimised for numerical relativity.</p>
 
-    <p><b>June 6, 2005:</b> Version 1.0.3 of the pre-compiled darcs
-    binary is <a href="get-carpet-darcs.html">now available</a>.</p>
+    <p><b>February 26, 2007:</b> The thorn <tt>LSUPETSc</tt>
+      implements a generic elliptic solver for Carpet's multi-patch
+      infrastructure, based
+      on <a
+      href="http://www-unix.mcs.anl.gov/petsc/petsc-as/">PETSc</a>.
+      It assumes touching (not overlapping) patches, and uses
+      inter-patch interface conditions very similar to those developed
+      by <a href="http://arxiv.org/abs/gr-qc/0510016">Harald
+      Pfeiffer</a>.  <tt>LSUPETSc</tt> can solve "arbitrary" systems
+      of coupled, non-linear elliptic equations.  It does not support
+      mesh refinement.</p>
 
-    <p><b>April 13, 2005:</b> Thomas Radke has implemented a new
-    communication scheme in Carpet.  Instead of sending many small
-    messages in an interleaved manner, Carpet now collects all
-    messages into an internal buffer and sends only one big message
-    with MPI.  This circumvents certain problems with internal
-    limitations of MPICH, and it also improves the performance
-    greatly.</p>
+    <p><b>January 12, 2007:</b> In order to be able to restructure
+      some of Carpet's internals without disturbing ongoing production
+      simulations, we have created an <i>experimental version</i>.
+      The main goals of this experimental version are to improve its
+      performance on many (&gt;100) processors and to re-arrange some
+      internal details to simplify future development.  Few new
+      features are planned, but some of the changes may be
+      incompatible.</p>
 
-    <p><b>March 9, 2005:</b> We have started to move towards a new
-    stable version of Carpet.</p>
+    <p><b>December 15, 2006:</b>
+      The <a href="http://numrel.aei.mpg.de/">AEI</a> hosted a small
+      workshop to improve the performance of the AEI/LSU CCATIE code
+      for binary black hole simulations, which uses Carpet as AMR
+      driver.  We examined especially the effect of various grid
+      structures on accuracy and speed and speeded up the wave
+      extraction routine.  We were able to improve the overall
+      performance of the code by a factor of six for a certain
+      benchmark problem simulating a QC-0 configuration.</p>
 
     <p><a href="olds.html"><b>Old News...</b></a></p>
 
@@ -263,7 +361,7 @@
 
       <td valign="top" width="38%">
       <p>A quadrupole wave.  Two rotating scalar charges create a
-      quadrupolar wave, mimicing the gravitational wave trail of a
+      quadrupolar wave, mimicking the gravitational wave trail of a
       binary black hole system.  The small bumps and riddles are
       artifacts caused by the discontinuous charge distribution.  To
       be improved.</p>
@@ -328,7 +426,7 @@
       </td>
 
       <td valign="top">
-      <p>The fate of a proto-neutron-star barmode deformation.
+      <p>The fate of a proto-neutron-star bar-mode deformation.
       Matter density at z=0 during the transition from an m=2 deformed star
       to an m=1 deformed one. The light on the right is used to emphasizes
       the spiral arms which are responsible for a small mass loss.
@@ -404,7 +502,7 @@
 <p>
 <!-- Created: Tue Aug 12 12:12:08 CEST 2003 -->
 <!-- hhmts start -->
-Last modified: Mon Sep 03 2007
+Last modified: Fri Oct 5 2007
 <!-- hhmts end -->
 </p>
 
