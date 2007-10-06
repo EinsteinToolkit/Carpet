@@ -161,8 +161,7 @@ namespace Carpet {
   
   
   // Timing statistics functions
-  void InitTimingVariables (cGH const * cctkGH);
-  void InitTiming (cGH const * cctkGH);
+  void InitTimingStats (cGH const * cctkGH);
   void StepTiming (cGH const * cctkGH);
   void BeginTimingIO (cGH const * cctkGH);
   void EndTimingIO (cGH const * cctkGH,
@@ -170,6 +169,7 @@ namespace Carpet {
   void BeginTimingCommunication (cGH const * cctkGH);
   void EndTimingCommunication (cGH const * cctkGH,
                                CCTK_REAL messages, CCTK_REAL bytes);
+  void UpdateTimingStats (cGH const * cctkGH);
   void PrintTimingStats (cGH const * cctkGH);
   
 } // namespace Carpet

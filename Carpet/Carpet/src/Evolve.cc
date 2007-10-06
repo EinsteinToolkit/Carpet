@@ -51,9 +51,6 @@ namespace Carpet {
     int const convlev = 0;
     cGH* cctkGH = fc->GH[convlev];
     
-    // Timing statistics
-    InitTiming (cctkGH);
-    
     // Tapered grids
     do_taper = use_tapered_grids;
     
@@ -481,6 +478,11 @@ namespace Carpet {
               
               // Analysis
               ScheduleTraverse (where, "CCTK_ANALYSIS", cctkGH);
+              
+              if (do_global_mode) {
+                // Timing statistics
+                UpdateTimingStats (cctkGH);
+              }
               
               // Output
               OutputGH (where, cctkGH);

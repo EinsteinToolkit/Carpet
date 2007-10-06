@@ -125,11 +125,14 @@ namespace Carpet {
   
   
   
-  // Initialise the timing variables (to be called during Initialise)
+  // Initialise the timing variables (to be called before basegrid)
   void
-  InitTimingVariables (cGH const * const cctkGH)
+  InitTimingStats (cGH const * const cctkGH)
   {
     DECLARE_CCTK_ARGUMENTS;
+    
+    initial_walltime = get_walltime();
+    initial_phystime = cctkGH->cctk_time;
     
     * physical_time_per_hour = 0.0;
     
@@ -157,19 +160,8 @@ namespace Carpet {
     * comm_count            = 0.0;
     * comm_bytes_count      = 0.0;
     
-    * grid_points_per_second = 0.0;
+    * grid_points_per_second   = 0.0;
     * grid_point_updates_count = 0.0;
-  }
-  
-  
-  
-  // Initialise the timing statistics (to be called at the beginning
-  // of Evolve)
-  void
-  InitTiming (cGH const * const cctkGH)
-  {
-    initial_walltime = get_walltime();
-    initial_phystime = cctkGH->cctk_time;
   }
   
   
@@ -252,10 +244,9 @@ namespace Carpet {
   
   static
   void
-  PrintTimes (cGH const * const cctkGH)
+  UpdateTimes (cGH const * const cctkGH)
   {
     DECLARE_CCTK_ARGUMENTS;
-    DECLARE_CCTK_PARAMETERS;
     
     assert (timing_state == state_computing);
     
@@ -263,18 +254,104 @@ namespace Carpet {
     * time_total = get_walltime() - initial_walltime;
     
     * time_computing = * time_total - (* time_communicating + * time_io);
+  }
+  
+  
+  
+  static
+  void
+  UpdateUpdatesPerSecond (cGH const * const cctkGH)
+  {
+    DECLARE_CCTK_ARGUMENTS;
     
-    if (print_timestats_every > 0 and
-        cctkGH->cctk_iteration % print_timestats_every == 0)
-    {
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "Total run time second: %g", double (* time_total));
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "(Comp, Comm, I/O) fractions = (%3.1f, %3.1f, %3.1f)",
-                  double (100.0 * * time_computing     / * time_total),
-                  double (100.0 * * time_communicating / * time_total),
-                  double (100.0 * * time_io            / * time_total));
-    }
+    // Calculate updates per second
+    * local_grid_points_per_second =
+      * local_grid_point_updates_count / max (* time_computing, 1.0e-15);
+    * total_grid_points_per_second =
+      * total_grid_point_updates_count / max (* time_computing, 1.0e-15);
+    
+    * grid_points_per_second = * local_grid_points_per_second;
+  }
+  
+  
+  
+  static
+  void
+  UpdateIOStats (cGH const * const cctkGH)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    
+    * io_per_second =
+      * io_count              / max (* time_io, 1.0e-15);
+    * io_bytes_per_second =
+      * io_bytes_count        / max (* time_io, 1.0e-15);
+    * io_bytes_ascii_per_second =
+      * io_bytes_ascii_count  / max (* time_io, 1.0e-15);
+    * io_bytes_binary_per_second =
+      * io_bytes_binary_count / max (* time_io, 1.0e-15);
+  }
+  
+  
+  
+  static
+  void
+  UpdateCommunicationStats (cGH const * const cctkGH)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    
+    * comm_per_second =
+      * comm_count       / max (* time_communicating, 1.0e-15);
+    * comm_bytes_per_second =
+      * comm_bytes_count / max (* time_communicating, 1.0e-15);
+  }
+  
+  
+  
+  static
+  void
+  UpdatePhysicalTimePerHour (cGH const * const cctkGH)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    
+    // Calculate elapsed physical time
+    CCTK_REAL const physical_time = cctkGH->cctk_time - initial_phystime;
+    
+    // Calculate physical time per hour
+    * physical_time_per_hour =
+      3600.0 * physical_time / max (* time_computing, 1.0e-15);
+  }
+  
+  
+  
+  // Calculate timing statistics (to be called before output)
+  void
+  UpdateTimingStats (cGH const * const cctkGH)
+  {
+    UpdateTimes (cctkGH);
+    UpdateUpdatesPerSecond (cctkGH);
+    UpdateIOStats (cctkGH);
+    UpdateCommunicationStats (cctkGH);
+    UpdatePhysicalTimePerHour (cctkGH);
+  }
+  
+  
+  
+  static
+  void
+  PrintTimes (cGH const * const cctkGH)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Total run time: %g h", double (* time_total / 3600.0));
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "(Comp, Comm, I/O) fractions = (%3.1f%%, %3.1f%%, %3.1f%%)",
+                double (100.0 * * time_computing /
+                        max (* time_total, 1.0e-15)),
+                double (100.0 * * time_communicating /
+                        max (* time_total, 1.0e-15)),
+                double (100.0 * * time_io /
+                        max (* time_total, 1.0e-15)));
   }
   
   
@@ -286,54 +363,41 @@ namespace Carpet {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    // Calculate updates per second
-    * local_grid_points_per_second =
-      * local_grid_point_updates_count / * time_computing;
-    * total_grid_points_per_second =
-      * total_grid_point_updates_count / * time_computing;
-    
-    * grid_points_per_second = * local_grid_points_per_second;
-    
-    if (print_timestats_every > 0 and
-        cctkGH->cctk_iteration % print_timestats_every == 0)
-    {
-      
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "This processor's grid point updates per second (local): %g",
-                  double (* local_grid_points_per_second));
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "Overall grid point updates per second (total)         : %g",
-                  double (* total_grid_points_per_second));
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "This processor's grid point updates per second (local): %g",
+                double (* local_grid_points_per_second));
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Overall grid point updates per second (total)         : %g",
+                double (* total_grid_points_per_second));
     
 #if 0
-      CCTK_REAL const updates_per_second_2 = ipow (updates_per_second, 2);
-      
-      struct {
-        CCTK_REAL ups, ups2;
-      } local, global;
-      local.ups  = updates_per_second;
-      local.ups2 = updates_per_second_2;
-      MPI_Allreduce (& local, & global, 2,
-                     dist::datatype (global.ups), MPI_SUM, dist::comm());
-      
-      int const count = dist::size();
-      CCTK_REAL const avg = global.ups / count;
-      CCTK_REAL const stddev = sqrt (abs (global.ups2 - ipow (avg,2)) / count);
-      
+    CCTK_REAL const updates_per_second_2 = ipow (updates_per_second, 2);
+    
+    struct {
+      CCTK_REAL ups, ups2;
+    } local, global;
+    local.ups  = updates_per_second;
+    local.ups2 = updates_per_second_2;
+    MPI_Allreduce (& local, & global, 2,
+                   dist::datatype (global.ups), MPI_SUM, dist::comm());
+    
+    int const count = dist::size();
+    CCTK_REAL const avg = global.ups / count;
+    CCTK_REAL const stddev = sqrt (abs (global.ups2 - ipow (avg,2)) / count);
+    
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Local updates per second:   %g",
+                double (updates_per_second));
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Global updates per second:  %g", double (global.ups));
+    
+    if (verbose) {
       CCTK_VInfo (CCTK_THORNSTRING,
-                  "Local updates per second:   %g", double (updates_per_second));
+                  "Average updates per second: %g", double (avg));
       CCTK_VInfo (CCTK_THORNSTRING,
-                  "Global updates per second:  %g", double (global.ups));
-      
-      if (verbose) {
-        CCTK_VInfo (CCTK_THORNSTRING,
-                    "Average updates per second: %g", double (avg));
-        CCTK_VInfo (CCTK_THORNSTRING,
-                    "Standard deviation:         %g", double (stddev));
-      }
-#endif
-      
+                  "Standard deviation:         %g", double (stddev));
     }
+#endif
   }
   
   
@@ -343,29 +407,19 @@ namespace Carpet {
   PrintIOStats (cGH const * const cctkGH)
   {
     DECLARE_CCTK_ARGUMENTS;
-    DECLARE_CCTK_PARAMETERS;
     
-    * io_per_second              = * io_count              / * time_io;
-    * io_bytes_per_second        = * io_bytes_count        / * time_io;
-    * io_bytes_ascii_per_second  = * io_bytes_ascii_count  / * time_io;
-    * io_bytes_binary_per_second = * io_bytes_binary_count / * time_io;
-    
-    if (print_timestats_every > 0 and
-        cctkGH->cctk_iteration % print_timestats_every == 0)
-    {
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "I/O operations per second:     %g",
-                  double (* io_per_second));
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "I/O bytes per second:          %g",
-                  double (* io_bytes_per_second));
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "I/O bytes per second (ASCII):  %g",
-                  double (* io_bytes_ascii_per_second));
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "I/O bytes per second (binary): %g",
-                  double (* io_bytes_binary_per_second));
-    }
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "I/O operations per second:     %g",
+                double (* io_per_second));
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "I/O bytes per second:          %g",
+                double (* io_bytes_per_second));
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "I/O bytes per second (ASCII):  %g",
+                double (* io_bytes_ascii_per_second));
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "I/O bytes per second (binary): %g",
+                double (* io_bytes_binary_per_second));
   }
   
   
@@ -375,21 +429,13 @@ namespace Carpet {
   PrintCommunicationStats (cGH const * const cctkGH)
   {
     DECLARE_CCTK_ARGUMENTS;
-    DECLARE_CCTK_PARAMETERS;
     
-    * comm_per_second       = * comm_count       / * time_communicating;
-    * comm_bytes_per_second = * comm_bytes_count / * time_communicating;
-    
-    if (print_timestats_every > 0 and
-        cctkGH->cctk_iteration % print_timestats_every == 0)
-    {
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "Communication operations per second: %g",
-                  double (* comm_per_second));
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "Communicated bytes per second:       %g",
-                  double (* comm_bytes_per_second));
-    }
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Communication operations per second: %g",
+                double (* comm_per_second));
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Communicated bytes per second:       %g",
+                double (* comm_bytes_per_second));
   }
   
   
@@ -399,21 +445,10 @@ namespace Carpet {
   PrintPhysicalTimePerHour (cGH const * const cctkGH)
   {
     DECLARE_CCTK_ARGUMENTS;
-    DECLARE_CCTK_PARAMETERS;
     
-    // Calculate elapsed physical time
-    CCTK_REAL const physical_time = cctkGH->cctk_time - initial_phystime;
-    
-    // Calculate physical time per hour
-    * physical_time_per_hour = 3600.0 * physical_time / * time_computing;
-    
-    if (print_timestats_every > 0 and
-        cctkGH->cctk_iteration % print_timestats_every == 0)
-    {
-      CCTK_VInfo (CCTK_THORNSTRING,
-                  "Physical time per hour: %g",
-                  double (* physical_time_per_hour));
-    }
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Physical time per hour: %g",
+                double (* physical_time_per_hour));
   }
 
 
@@ -423,11 +458,17 @@ namespace Carpet {
   void
   PrintTimingStats (cGH const * const cctkGH)
   {
-    PrintTimes (cctkGH);
-    PrintUpdatesPerSecond (cctkGH);
-    PrintIOStats (cctkGH);
-    PrintCommunicationStats (cctkGH);
-    PrintPhysicalTimePerHour (cctkGH);
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (print_timestats_every > 0 and
+        cctkGH->cctk_iteration % print_timestats_every == 0)
+    {
+      PrintTimes (cctkGH);
+      PrintUpdatesPerSecond (cctkGH);
+      PrintIOStats (cctkGH);
+      PrintCommunicationStats (cctkGH);
+      PrintPhysicalTimePerHour (cctkGH);
+    }
   }
   
 } // namespace Carpet

@@ -186,13 +186,13 @@ namespace Carpet {
           // Checking
           Poison (cctkGH, alltimes, CCTK_GF);
           
-          // Set up the grids
-          ScheduleTraverse (where, "CCTK_BASEGRID", cctkGH);
-          
           // Timing statistics
           if (do_global_mode) {
-            InitTimingVariables (cctkGH);
+            InitTimingStats (cctkGH);
           }
+          
+          // Set up the grids
+          ScheduleTraverse (where, "CCTK_BASEGRID", cctkGH);
           
           // Recover
           ScheduleTraverse (where, "CCTK_RECOVER_VARIABLES", cctkGH);
@@ -280,13 +280,13 @@ namespace Carpet {
           // Checking
           Poison (cctkGH, alltimes, CCTK_GF);
           
-          // Set up the grids
-          ScheduleTraverse (where, "CCTK_BASEGRID", cctkGH);
-          
           // Timing statistics
           if (do_global_mode) {
-            InitTimingVariables (cctkGH);
+            InitTimingStats (cctkGH);
           }
+          
+          // Set up the grids
+          ScheduleTraverse (where, "CCTK_BASEGRID", cctkGH);
           
           int const num_tl =
             init_each_timelevel ? prolongation_order_time+1 : 1;
@@ -425,6 +425,11 @@ namespace Carpet {
             
             // Analysis
             ScheduleTraverse (where, "CCTK_ANALYSIS", cctkGH);
+            
+            if (do_global_mode) {
+              // Timing statistics
+              UpdateTimingStats (cctkGH);
+            }
             
             // Output
             OutputGH (where, cctkGH);
