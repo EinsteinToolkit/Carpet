@@ -32,7 +32,7 @@ void
 take_step (const gsl_rng *rng, void *xp_, double step_size)
 {
   DECLARE_CCTK_PARAMETERS;
-  lc_auto_position_t * restrict const xp = xp_;
+  lc_state_t * restrict const xp = xp_;
   if (gsl_rng_uniform (rng) < siman_probability_change_topology) {
     xp->topology = gsl_rng_uniform_int (rng, statset->ntopologies);
   }
@@ -45,8 +45,8 @@ static
 double
 distance (void *xp_, void *yp_)
 {
-  lc_auto_position_t const * restrict const xp = xp_;
-  lc_auto_position_t const * restrict const yp = yp_;
+  lc_state_t const * restrict const xp = xp_;
+  lc_state_t const * restrict const yp = yp_;
   double dist = 10 * (xp->topology != yp->topology);
   for (int d=0; d<3; ++d) {
     dist += fabs (xp->tiling[d] - yp->tiling[d]);
@@ -58,8 +58,8 @@ static
 void
 print_position (void *xp_)
 {
-  lc_auto_position_t const * restrict const xp = xp_;
-  printf ("   #%2d/[%3d,%3d,%3d]",
+  lc_state_t const * restrict const xp = xp_;
+  printf ("   %2d/{%3d,%3d,%3d}",
           xp->topology,
           xp->tiling[0], xp->tiling[1], xp->tiling[2]);
 }
@@ -68,8 +68,7 @@ print_position (void *xp_)
 
 void
 lc_auto_init (lc_statset_t * restrict const ls,
-              int * restrict const topology,
-              int tiling[3])
+              lc_state_t * restrict const state)
 {
   DECLARE_CCTK_PARAMETERS;
   assert (! cycle_j_tilings);   /* don't mix strategies */
@@ -91,11 +90,8 @@ lc_auto_init (lc_statset_t * restrict const ls,
     gsl_rng_env_setup();
     ls->auto_state->rng = gsl_rng_alloc (gsl_rng_default);
     
-    /* Set initial position */
-    ls->auto_state->position.topology = * topology;
-    for (int d=0; d<3; ++d) {
-      ls->auto_state->position.tiling[d] = tiling[d];
-    }
+    /* Set initial state */
+    ls->auto_state->state = * state;
     
     /* Initialise simulated annealing state */
     statset = ls;
@@ -103,8 +99,8 @@ lc_auto_init (lc_statset_t * restrict const ls,
       lc_siman_solve (NULL,
                       ls->auto_state->rng,
                       NULL, 0.0,
-                      take_step, distance, print_position,
-                      sizeof (lc_auto_position_t),
+                      take_step, distance, verbose ? print_position : NULL,
+                      sizeof (lc_state_t),
                       ls->auto_state->siman_params);
     
   } else {
@@ -116,17 +112,14 @@ lc_auto_init (lc_statset_t * restrict const ls,
       ls->auto_state->siman_state =
         lc_siman_solve (ls->auto_state->siman_state,
                         ls->auto_state->rng,
-                        & ls->auto_state->position, ls->auto_state->time,
-                        take_step, distance, print_position,
-                        sizeof (lc_auto_position_t),
+                        & ls->auto_state->state, ls->auto_state->time,
+                        take_step, distance, verbose ? print_position : NULL,
+                        sizeof (lc_state_t),
                         ls->auto_state->siman_params);
     }
     
     /* Set thread topology and tiling specification */
-    * topology = ls->auto_state->position.topology;
-    for (int d=0; d<3; ++d) {
-      tiling[d] = ls->auto_state->position.tiling[d];
-    }
+    * state = ls->auto_state->state;
     
   } /* if not the first call */
 }

@@ -12,10 +12,13 @@
 #  include <omp.h>
 #endif
 
+#include <cctk.h>
 #include <cctk_Parameters.h>
 
 #include "loopcontrol.h"
+
 #include "lc_auto.h"
+#include "lc_hill.h"
 
 
 
@@ -77,9 +80,9 @@ find_thread_topologies (lc_topology_t * restrict const topologies,
           int const ni = nthreads/(nj*nk);
           if (nthreads == ni*nj*nk) {
             assert (* ntopologies < maxntopologies);
-            topologies[* ntopologies].ni = ni;
-            topologies[* ntopologies].nj = nj;
-            topologies[* ntopologies].nk = nk;
+            topologies[* ntopologies].nthreads[0] = ni;
+            topologies[* ntopologies].nthreads[1] = nj;
+            topologies[* ntopologies].nthreads[2] = nk;
             ++ * ntopologies;
           }
         }
@@ -101,6 +104,7 @@ find_thread_topologies (lc_topology_t * restrict const topologies,
    into two subdomains with [100+N, 100-N] points.  This is avoided by
    covering all possible tiling specifications in exponentially
    growing step sizes.  */
+#if 0
 static
 int tiling_compare (const void * const a, const void * const b)
 {
@@ -154,28 +158,60 @@ find_tiling_specifications (lc_tiling_t * restrict const tilings,
   /* Sort */
   qsort (tilings, * ntilings, sizeof * tilings, tiling_compare);
 }
+#endif
+
+static
+void
+find_tiling_specifications (lc_tiling_t * restrict const tilings,
+                            const int maxntilings,
+                            int * restrict const ntilings,
+                            int const npoints)
+{
+  /* In order to reduce the number of possible tilings, require that
+     the step sizes differ by more than 10% */
+  double const distance_factor = 1.1;
+  /* For N grid points and a minimum spacing factor F, there are at
+     most log(N) / log(F) possible tilings.  There will be fewer,
+     since the actual spacings will be rounded up to integers.  */
+  
+  * ntilings = 0;
+  
+  int minnpoints = 0;
+  for (int n=1; n<npoints; ++n) {
+    if ((double) n > minnpoints * distance_factor) {
+      assert (* ntilings < maxntilings);
+      tilings[* ntilings].npoints = n;
+      minnpoints = n;
+      ++ * ntilings;
+    }
+  }
+  
+  assert (* ntilings < maxntilings);
+  tilings[* ntilings].npoints = npoints;
+  minnpoints = npoints;
+  ++ * ntilings;
+}
 
 
 
 /* Initialise control parameter set statistics */
-static
 void
 lc_stattime_init (lc_stattime_t * restrict const lt,
                   lc_statset_t * restrict const ls,
-                  int const topology,
-                  int const tiling[3])
+                  lc_state_t const * restrict const state)
 {
   DECLARE_CCTK_PARAMETERS;
   
   /* Check arguments */
   assert (lt);
   assert (ls);
+  assert (state);
   
   /*** Topology ***************************************************************/
   
-  lt->topology = topology;
+  lt->state.topology = state->topology;
   
-  if (topology == -1) {
+  if (state->topology == -1) {
     
     /* User-specified topology */
     lt->inthreads = -1;
@@ -184,21 +220,21 @@ lc_stattime_init (lc_stattime_t * restrict const lt,
     
   } else {
     
-    assert (topology >= 0 && topology < ls->ntopologies);
+    assert (state->topology >= 0 && state->topology < ls->ntopologies);
     
-    lt->inthreads = ls->topologies[lt->topology].ni;
-    lt->jnthreads = ls->topologies[lt->topology].nj;
-    lt->knthreads = ls->topologies[lt->topology].nk;
+    lt->inthreads = ls->topologies[lt->state.topology].nthreads[0];
+    lt->jnthreads = ls->topologies[lt->state.topology].nthreads[1];
+    lt->knthreads = ls->topologies[lt->state.topology].nthreads[2];
     
   }
   
   if (debug) {
     printf ("Thread topology #%d [%d,%d,%d]\n",
-            lt->topology, lt->inthreads, lt->jnthreads, lt->knthreads);
+            lt->state.topology, lt->inthreads, lt->jnthreads, lt->knthreads);
   }
   
   /* Assert thread topology consistency */
-  if (lt->topology != -1) {
+  if (lt->state.topology != -1) {
     assert (lt->inthreads >= 1);
     assert (lt->jnthreads >= 1);
     assert (lt->knthreads >= 1);
@@ -208,20 +244,21 @@ lc_stattime_init (lc_stattime_t * restrict const lt,
   /*** Tilings ****************************************************************/
   
   for (int d=0; d<3; ++d) {
-    lt->tiling[d] = tiling[d];
-    if (tiling[d] != -1) {
-      assert (tiling[d] >= 0 && tiling[d] < ls->ntilings[d]);
+    lt->state.tiling[d] = state->tiling[d];
+    if (state->tiling[d] != -1) {
+      assert (state->tiling[d] >= 0 &&
+              state->tiling[d] < ls->topology_ntilings[d][lt->state.topology]);
     }
   }
   
-  if (tiling[0] != -1) {
-    lt->inpoints = ls->tilings[0][lt->tiling[0]].npoints;
+  if (state->tiling[0] != -1) {
+    lt->inpoints = ls->tilings[0][lt->state.tiling[0]].npoints;
   }
-  if (tiling[1] != -1) {
-    lt->jnpoints = ls->tilings[1][lt->tiling[1]].npoints;
+  if (state->tiling[1] != -1) {
+    lt->jnpoints = ls->tilings[1][lt->state.tiling[1]].npoints;
   }
-  if (tiling[2] != -1) {
-    lt->knpoints = ls->tilings[2][lt->tiling[2]].npoints;
+  if (state->tiling[2] != -1) {
+    lt->knpoints = ls->tilings[2][lt->state.tiling[2]].npoints;
   }
   
   if (debug) {
@@ -230,13 +267,13 @@ lc_stattime_init (lc_stattime_t * restrict const lt,
   }
   
   /* Assert tiling specification consistency */
-  if (tiling[0] != -1) {
+  if (state->tiling[0] != -1) {
     assert (lt->inpoints > 0);
   }
-  if (tiling[1] != -1) {
+  if (state->tiling[1] != -1) {
     assert (lt->jnpoints > 0);
   }
-  if (tiling[2] != -1) {
+  if (state->tiling[2] != -1) {
     assert (lt->knpoints > 0);
   }
   
@@ -249,6 +286,10 @@ lc_stattime_init (lc_stattime_t * restrict const lt,
   lt->time_calc_sum   = 0.0;
   lt->time_calc_sum2  = 0.0;
   
+  lt->last_updated = 0.0;       /* never updated */
+  
+  
+  
   /* Append to loop statistics list */
 /*   _Pragma ("omp critical") { */
     lt->next = ls->stattime_list;
@@ -256,38 +297,49 @@ lc_stattime_init (lc_stattime_t * restrict const lt,
 /*   } */
 }
 
-static
 lc_stattime_t *
-lc_stattime_find (lc_statset_t * restrict const ls,
-                  int const topology,
-                  int const tiling[3])
+lc_stattime_find (lc_statset_t const * restrict const ls,
+                  lc_state_t const * restrict const state)
 {
   assert (ls);
   
   lc_stattime_t * lt;
   
   for (lt = ls->stattime_list; lt; lt = lt->next) {
-    if (lt->topology == topology &&
-        lt->tiling[0] == tiling[0] &&
-        lt->tiling[1] == tiling[1] &&
-        lt->tiling[2] == tiling[2])
-    {
+    if (lc_state_equal (& lt->state, state)) {
+      break;
+    }
+  }
+  
+  return lt;
+}
+
+lc_stattime_t *
+lc_stattime_find_create (lc_statset_t * restrict const ls,
+                         lc_state_t const * restrict const state)
+{
+  assert (ls);
+  
+  lc_stattime_t * lt;
+  
+  for (lt = ls->stattime_list; lt; lt = lt->next) {
+    if (lc_state_equal (& lt->state, state)) {
       break;
     }
   }
   
   if (! lt) {
     lt = malloc (sizeof * lt);
-    lc_stattime_init (lt, ls, topology, tiling);
+    lc_stattime_init (lt, ls, state);
   }
   
+  assert (lt);
   return lt;
 }
 
 
 
 /* Initialise user parameter set statistics */
-static
 void
 lc_statset_init (lc_statset_t * restrict const ls,
                  lc_statmap_t * restrict const lm,
@@ -326,7 +378,9 @@ lc_statset_init (lc_statset_t * restrict const ls,
     for (int n = 0; n < ls->ntopologies; ++n) {
       printf ("   %2d: %2d %2d %2d\n",
               n,
-              ls->topologies[n].ni, ls->topologies[n].nj, ls->topologies[n].nk);
+              ls->topologies[n].nthreads[0],
+              ls->topologies[n].nthreads[1],
+              ls->topologies[n].nthreads[2]);
     }
   }
   
@@ -344,14 +398,28 @@ lc_statset_init (lc_statset_t * restrict const ls,
       printf ("Dimension %d: %d points\n", d, ls->npoints[d]);
     }
     ls->tilings[d] = malloc (maxntilings * sizeof * ls->tilings[d]);
+    int ntilings;
     find_tiling_specifications
       (ls->tilings[d], maxntilings, & ls->ntilings[d], ls->npoints[d]);
 #if 0
     ls->tilings[d] =
       realloc (ls->tilings[d], ls->ntilings[d] * sizeof * ls->tilings[d]);
 #endif
+    ls->topology_ntilings[d] =
+      malloc (ls->ntopologies * sizeof * ls->topology_ntilings[d]);
+    for (int n = 0; n < ls->ntopologies; ++n) {
+      int tiling;
+      for (tiling = 0; tiling < ls->ntilings[d]; ++tiling) {
+        if (ls->tilings[d][tiling].npoints * ls->topologies[n].nthreads[d] >
+            ls->npoints[d])
+        {
+          break;
+        }
+      }
+      ls->topology_ntilings[d][n] = tiling;
+    }
     if (debug) {
-      printf ("   Found %d possible tilings\n", ls->ntilings[d]);
+      printf ("   Found %d possible tilings\n", ntilings);
       printf ("     ");
       for (int n = 0; n < ls->ntilings[d]; ++n) {
         printf (" %d", ls->tilings[d][n].npoints);
@@ -365,10 +433,20 @@ lc_statset_init (lc_statset_t * restrict const ls,
   /* Simulated annealing state */
   ls->auto_state = NULL;
   
+  /* Hill climbing state */
+  ls->hill_state = NULL;
+  
   
   
   /* Initialise list */
   ls->stattime_list = NULL;
+  
+  /* Initialise statistics */
+  ls->time_count      = 0.0;
+  ls->time_setup_sum  = 0.0;
+  ls->time_setup_sum2 = 0.0;
+  ls->time_calc_sum   = 0.0;
+  ls->time_calc_sum2  = 0.0;
   
   /* Append to loop statistics list */
 /*   _Pragma ("omp critical") { */
@@ -377,11 +455,32 @@ lc_statset_init (lc_statset_t * restrict const ls,
 /*   } */
 }
 
-static
 lc_statset_t *
-lc_statset_find (lc_statmap_t * restrict const lm,
+lc_statset_find (lc_statmap_t const * restrict const lm,
                  int const num_threads,
                  int const npoints[3])
+{
+  assert (lm);
+  
+  lc_statset_t * ls;
+  
+  for (ls = lm->statset_list; ls; ls = ls->next) {
+    if (ls->num_threads == num_threads &&
+        ls->npoints[0] == npoints[0] &&
+        ls->npoints[1] == npoints[1] &&
+        ls->npoints[2] == npoints[2])
+    {
+      break;
+    }
+  }
+  
+  return ls;
+}
+
+lc_statset_t *
+lc_statset_find_create (lc_statmap_t * restrict const lm,
+                        int const num_threads,
+                        int const npoints[3])
 {
   assert (lm);
   
@@ -402,6 +501,7 @@ lc_statset_find (lc_statmap_t * restrict const lm,
     lc_statset_init (ls, lm, num_threads, npoints);
   }
   
+  assert (ls);
   return ls;
 }
                          
@@ -472,7 +572,7 @@ lc_control_init (lc_control_t * restrict const lc,
     npoints[1] = lc_max (jmax - jmin, 0);
     npoints[2] = lc_max (kmax - kmin, 0);
     
-    ls = lc_statset_find (lm, num_threads, npoints);
+    ls = lc_statset_find_create (lm, num_threads, npoints);
   }
   
   
@@ -480,9 +580,9 @@ lc_control_init (lc_control_t * restrict const lc,
   lc_stattime_t * restrict lt;
   _Pragma ("omp single copyprivate (lt)") {
     
-    /* Select topology */
+    lc_state_t state;
     
-    int topology;
+    /* Select topology */
     
     if (lc_inthreads != -1 || lc_jnthreads != -1 || lc_knthreads != -1)
     {
@@ -490,69 +590,73 @@ lc_control_init (lc_control_t * restrict const lc,
       
       if (lc_inthreads == -1 || lc_jnthreads == -1 || lc_knthreads == -1) {
         CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Illegal thread topology [%d,%d,%d] specified\n",
+                    "Illegal thread topology [%d,%d,%d] specified",
                     (int)lc_inthreads, (int)lc_jnthreads, (int)lc_knthreads);
       }
       if (lc_inthreads * lc_jnthreads * lc_knthreads != ls->num_threads) {
         CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                    "Specified thread topology [%d,%d,%d] is not compatible with the number of threads %d\n",
+                    "Specified thread topology [%d,%d,%d] is not compatible with the number of threads %d",
                     (int)lc_inthreads, (int)lc_jnthreads, (int)lc_knthreads,
                     ls->num_threads);
       }
       
-      topology = -1;
+      state.topology = -1;
       
     } else {
       
       /* Split in the k direction */
-      topology = ls->ntopologies - 1;
+      state.topology = ls->ntopologies - 1;
       
     }
     
     /* Select tiling */
     
-    int tiling[3];
-    
     if (lc_inpoints != -1) {
       /* User-specified tiling */
-      tiling[0] = -1;
+      state.tiling[0] = -1;
     } else {
-      tiling[0] = ls->ntilings[0] - 1; /* as many points as possible */
+      /* as many points as possible */
+      state.tiling[0] = ls->topology_ntilings[0][state.topology] - 1;
     }
     
     if (lc_jnpoints != -1) {
       /* User-specified tiling */
-      tiling[1] = -1;
+      state.tiling[1] = -1;
     } else {
       if (cycle_j_tilings) {
         /* cycle through all tilings */
         static int count = 0;
-        tiling[1] = (count ++) % ls->ntilings[1];
+        state.tiling[1] = (count ++) % ls->topology_ntilings[1][state.topology];
       } else {
         /* as few points as possible */
-        tiling[1] = 0;
+        state.tiling[1] = 0;
       }
     }
     
     if (lc_knpoints != -1) {
       /* User-specified tiling */
-      tiling[2] = -1;
+      state.tiling[2] = -1;
     } else {
-      tiling[2] = ls->ntilings[2] - 1; /* as many points as possible */
+      /* as many points as possible */
+      state.tiling[2] = ls->topology_ntilings[2][state.topology] - 1;
     }
     
     /* Use simulated annealing to find the best loop configuration */
     if (use_simulated_annealing) {
-      lc_auto_init (ls, & topology, tiling);
+      lc_auto_init (ls, & state);
+    }
+    /* Use hill climbing to find the best loop configuration */
+    if (use_random_restart_hill_climbing) {
+      lc_hill_init (ls, & state);
     }
     
     /* Find or create database entry */
     
-    lt = lc_stattime_find (ls, topology, tiling);
+    lt = lc_stattime_find_create (ls, & state);
     
     /* Topology */
     
-    if (topology == -1) {
+    if (state.topology == -1) {
       /* User-specified topology */
       lt->inthreads = lc_inthreads;
       lt->jnthreads = lc_jnthreads;
@@ -567,15 +671,15 @@ lc_control_init (lc_control_t * restrict const lc,
     
     /* Tilings */
     
-    if (tiling[0] == -1) {
+    if (state.tiling[0] == -1) {
       /* User-specified tiling */
       lt->inpoints = lc_inpoints;
     }
-    if (tiling[1] == -1) {
+    if (state.tiling[1] == -1) {
       /* User-specified tiling */
       lt->jnpoints = lc_jnpoints;
     }
-    if (tiling[2] == -1) {
+    if (state.tiling[2] == -1) {
       /* User-specified tiling */
       lt->knpoints = lc_knpoints;
     }
@@ -663,6 +767,7 @@ lc_control_finish (lc_control_t * restrict const lc)
 
   /* Update statistics */
   lc_stattime_t * restrict const lt = lc->stattime;
+  lc_statset_t * restrict const ls = lc->statset;
   _Pragma ("omp critical") {
     lt->time_count += 1.0;
     
@@ -671,19 +776,35 @@ lc_control_finish (lc_control_t * restrict const lc)
     
     lt->time_calc_sum  += time_calc_sum;
     lt->time_calc_sum2 += time_calc_sum2;
+    
+    ls->time_count += 1.0;
+    
+    ls->time_setup_sum  += time_setup_sum;
+    ls->time_setup_sum2 += time_setup_sum2;
+    
+    ls->time_calc_sum  += time_calc_sum;
+    ls->time_calc_sum2 += time_calc_sum2;
   }
+  
+  _Pragma ("omp master") {
+    lt->last_updated = time_calc_end;
+  }
+  
+  _Pragma ("omp barrier");
   
   {
     DECLARE_CCTK_PARAMETERS;
     if (use_simulated_annealing) {
       _Pragma ("omp single") {
-        lc_statset_t * restrict const ls = lc->statset;
         lc_auto_finish (ls, lt);
       }
     }
+    if (use_random_restart_hill_climbing) {
+      _Pragma ("omp single") {
+        lc_hill_finish (ls, lt);
+      }
+    }
   }
-  
-  _Pragma ("omp barrier");
 }
 
 
@@ -722,6 +843,7 @@ lc_printstats (CCTK_ARGUMENTS)
       printf ("   statset #%d nthreads=%d npoints=[%d,%d,%d]\n",
               nsets,
               ls->num_threads, ls->npoints[0], ls->npoints[1], ls->npoints[2]);
+      double sum_count = 0.0;
       double sum_setup = 0.0;
       double sum_calc  = 0.0;
       double min_calc = DBL_MAX;
@@ -730,20 +852,26 @@ lc_printstats (CCTK_ARGUMENTS)
       for (lc_stattime_t * lt = ls->stattime_list; lt; lt = lt->next) {
         printf ("      stattime #%d topology=%d [%d,%d,%d] tiling=[%d,%d,%d]\n",
                 ntimes,
-                lt->topology, lt->inthreads, lt->jnthreads, lt->knthreads,
+                lt->state.topology, lt->inthreads, lt->jnthreads, lt->knthreads,
                 lt->inpoints, lt->jnpoints, lt->knpoints);
+        double const count = lt->time_count;
+        double const setup = lt->time_setup_sum / count;
+        double const calc  = lt->time_calc_sum / count;
         printf ("         count: %g   setup: %g   calc: %g\n",
-                lt->time_count, lt->time_setup_sum, lt->time_calc_sum);
+                count, setup, calc);
+        sum_count += lt->time_count;
         sum_setup += lt->time_setup_sum;
         sum_calc  += lt->time_calc_sum;
-        if (lt->time_calc_sum < min_calc) {
-          min_calc = lt->time_calc_sum;
+        if (calc < min_calc) {
+          min_calc = calc;
           imin_calc = ntimes;
         }
         ++ ntimes;
       }
-      printf ("      total setup: %g   total calc: %g   min calc: %g (#%d)\n",
-              sum_setup, sum_calc, min_calc, imin_calc);
+      printf ("      total count: %g   total setup: %g   total calc: %g\n",
+              sum_count, sum_setup, sum_calc);
+      printf ("      min calc: %g (#%d)\n",
+              min_calc, imin_calc);
       ++ nsets;
     }
     ++ nmaps;

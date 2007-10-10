@@ -28,6 +28,8 @@
 #include <gsl/gsl_machine.h>
 #include <gsl/gsl_rng.h>
 
+#include <cctk.h>
+
 #include "lc_siman.h"
 
 static inline 
@@ -39,11 +41,11 @@ double safe_exp (double x) /* avoid underflow errors for large uphill steps */
 /* this structure contains internal state information for
    lc_siman_solve */
 
-typedef enum { state_initial, state_first, state_looping } lc_state_t;
+typedef enum { state_initial, state_first, state_looping } lc_siman_location_t;
 
 /* no typedef here; forward declcared in lc_siman.h */
 struct lc_siman_state_t {
-  lc_state_t state;
+  lc_siman_location_t state;
   const gsl_rng *r;
   lc_siman_step_t take_step;
   lc_siman_metric_t distance;

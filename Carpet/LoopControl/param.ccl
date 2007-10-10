@@ -56,7 +56,7 @@ CCTK_INT lc_knpoints "Number of grid points in the k-direction" STEERABLE=recove
 
 
 
-# Automatic
+# Automatic: simple cycling
 
 BOOLEAN cycle_j_tilings "Cycle through all available tilings in the j-direction" STEERABLE=recover
 {
@@ -64,41 +64,91 @@ BOOLEAN cycle_j_tilings "Cycle through all available tilings in the j-direction"
 
 
 
-BOOLEAN use_simulated_annealing "Find a good loop configuration through simulated annealing"
+# Automatic: simulated annealing
+
+BOOLEAN use_simulated_annealing "Find a good loop configuration through simulated annealing" STEERABLE=recover
 {
 } "no"
 
-CCTK_INT siman_iters_fixed_T ""
+CCTK_INT siman_iters_fixed_T "" STEERABLE=recover
 {
   1:* :: ""
 } 1
 
-CCTK_REAL siman_probability_change_topology ""
+CCTK_REAL siman_probability_change_topology "" STEERABLE=recover
 {
   0:1 :: ""
 } 0.1
 
-CCTK_REAL siman_step_size ""
+CCTK_REAL siman_step_size "" STEERABLE=recover
 {
   (1.0:* :: ""
 } 3.0
 
-CCTK_REAL siman_k "energy scale"
+CCTK_REAL siman_k "energy scale" STEERABLE=recover
 {
   (0:* :: ""
 } 1.0e-9
 
-CCTK_REAL siman_T_initial "initial variability"
+CCTK_REAL siman_T_initial "initial variability" STEERABLE=recover
 {
   (0:* :: ""
 } 1.0
 
-CCTK_REAL siman_mu_T "speed"
+CCTK_REAL siman_mu_T "speed" STEERABLE=recover
 {
   (0:* :: ""
 } 1.005
 
-CCTK_REAL siman_T_min "stopping criterion"
+CCTK_REAL siman_T_min "stopping criterion" STEERABLE=recover
 {
   (0:* :: ""
 } 0.01
+
+
+
+# Automatic: random restart hill climbing
+
+BOOLEAN use_random_restart_hill_climbing "http://en.wikipedia.org/wiki/Hill_climbing http://en.wikipedia.org/wiki/Tabu_search" STEERABLE=always
+{
+} "no"
+
+CCTK_REAL maximum_setup_overhead "Maximum allowable administrative overhead" STEERABLE=always
+{
+  0.0:* :: ""
+} 0.01
+
+CCTK_REAL probability_small_jump "Probability for a small jump once a local minimum has been reached" STEERABLE=always
+{
+  0.0:1.0 :: ""
+} 0.1
+
+CCTK_INT small_jump_distance "Maximum distance for a small jump" STEERABLE=always
+{
+  0:* :: ""
+} 3
+
+CCTK_REAL probability_random_jump "Probability for a random jump once a local minimum has been reached" STEERABLE=always
+{
+  0.0:1.0 :: ""
+} 0.01
+
+CCTK_INT max_jump_attempts "Maximum number of attempts to find a random unknown location" STEERABLE=always
+{
+  0:* :: ""
+} 10
+
+CCTK_REAL immediate_overhead_threshold "The maximum overhead (ratio of current to best known time) allowed during an excursion" STEERABLE=always
+{
+  0.0:* :: ""
+} 1.0
+
+CCTK_REAL delayed_overhead_threshold "The maximum overhead (ratio of current to best known time) allowed during an excursion" STEERABLE=always
+{
+  0.0:* :: ""
+} 0.1
+
+CCTK_INT overhead_threshold_delay "Number of steps in an excursion before the delayed overhead criterion is applied" STEERABLE=always
+{
+  0:* :: ""
+} 20

@@ -36,7 +36,7 @@
 
 /* A topology */
 typedef struct lc_topology_t {
-  int ni, nj, nk;
+  int nthreads[3];
 } lc_topology_t;
 
 /* A tiling specification */
@@ -46,8 +46,18 @@ typedef struct lc_tiling_t {
 
 
 
+typedef struct lc_state_t {
+  int topology;
+  int tiling[3];
+} lc_state_t;
+
+
+
 /* For simulated annealing */
 typedef struct lc_auto_state_t lc_auto_state_t;
+
+/* For hill climbing */
+typedef struct lc_hill_state_t lc_hill_state_t;
 
 
 
@@ -58,9 +68,8 @@ typedef struct lc_stattime_t {
   
   /* Keys */
   
-  int topology;
+  lc_state_t state;
   int inthreads, jnthreads, knthreads;
-  int tiling[3];
   int inpoints, jnpoints, knpoints;
   
   /* Data */
@@ -69,7 +78,11 @@ typedef struct lc_stattime_t {
   double time_count;            /* number of calls and threads */
   double time_setup_sum, time_setup_sum2; /* time spent setting up loops */
   double time_calc_sum, time_calc_sum2;   /* time spent iterating */
+  
+  double last_updated;          /* wall time tag */
 } lc_stattime_t;
+
+
 
 /* Statistics for one user parameter set (number of threads and number
    of iterations) of one loop */
@@ -90,12 +103,23 @@ typedef struct lc_statset_t {
   /* Tiling specifications */
   lc_tiling_t * restrict tilings[3];
   int ntilings[3];
+  int * restrict topology_ntilings[3]; /* [dim][topology] */
   
   /* Simulated annealing state */
   lc_auto_state_t * auto_state;
   
+  /* Hill climbing state */
+  lc_hill_state_t * hill_state;
+  
   lc_stattime_t * stattime_list;
+  
+  /* Statistics */
+  double time_count;            /* number of calls and threads */
+  double time_setup_sum, time_setup_sum2; /* time spent setting up loops */
+  double time_calc_sum, time_calc_sum2;   /* time spent iterating */
 } lc_statset_t;
+
+
 
 /* Statistics for one loop (one source code location) */
 typedef struct lc_statmap_t {
@@ -107,8 +131,72 @@ typedef struct lc_statmap_t {
   lc_statset_t * statset_list;
 } lc_statmap_t;
 
+
+
 /* Linked list of all loop statistics structures */
 extern lc_statmap_t * lc_statmap_list;
+
+
+
+static inline
+int
+lc_state_valid (lc_statset_t const * restrict const ls,
+                lc_state_t const * restrict const state)
+{
+  if (state->topology >= 0 && state->topology < ls->ntopologies) {
+    int const * restrict const ntilings =
+      ls->topology_ntilings[state->topology];
+    return (state->tiling[0] >= 0 && state->tiling[0] < ntilings[0] &&
+            state->tiling[1] >= 0 && state->tiling[1] < ntilings[1] &&
+            state->tiling[2] >= 0 && state->tiling[2] < ntilings[2]);
+  }
+  return 0;
+}
+
+static inline
+int
+lc_state_equal (lc_state_t const * restrict const state1,
+                lc_state_t const * restrict const state2)
+{
+  return (state1->topology == state2->topology &&
+          state1->tiling[0] == state2->tiling[0] &&
+          state1->tiling[1] == state2->tiling[1] &&
+          state1->tiling[2] == state2->tiling[2]);
+}
+
+
+
+void
+lc_stattime_init (lc_stattime_t * restrict const lt,
+                  lc_statset_t * restrict const ls,
+                  lc_state_t const * restrict const state);
+
+lc_stattime_t *
+lc_stattime_find (lc_statset_t const * restrict const ls,
+                  lc_state_t const * restrict const state);
+
+lc_stattime_t *
+lc_stattime_find_create (lc_statset_t * restrict const ls,
+                         lc_state_t const * restrict const state);
+
+
+
+/* TODO: introduce type for num_threads and npoints[3] */
+void
+lc_statset_init (lc_statset_t * restrict const ls,
+                 lc_statmap_t * restrict const lm,
+                 int const num_threads,
+                 int const npoints[3]);
+
+lc_statset_t *
+lc_statset_find (lc_statmap_t const * restrict const lm,
+                 int const num_threads,
+                 int const npoints[3]);
+
+lc_statset_t *
+lc_statset_find_create (lc_statmap_t * restrict const lm,
+                        int const num_threads,
+                        int const npoints[3]);
 
 
 
