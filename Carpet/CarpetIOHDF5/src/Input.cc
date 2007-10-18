@@ -1024,9 +1024,10 @@ static int ReadVar (const cGH* const cctkGH,
                                        NULL, count, NULL));
       HDF5_ERROR (H5Dread (dataset, datatype, memspace, filespace, H5P_DEFAULT,
                            cctkGH->data[patch->vindex][timelevel]));
-      io_bytes +=
-        H5Sget_simple_extent_npoints (filespace) *
-        H5Tget_size (H5Dget_type (dataset));
+      hid_t datatype;
+      HDF5_ERROR (datatype = H5Dget_type (dataset));
+      io_bytes += H5Sget_select_npoints (filespace) * H5Tget_size (datatype);
+      HDF5_ERROR (H5Tclose (datatype));
       HDF5_ERROR (H5Sclose (memspace));
 
     } END_LOCAL_COMPONENT_LOOP;
