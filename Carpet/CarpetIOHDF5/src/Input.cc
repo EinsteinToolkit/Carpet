@@ -486,6 +486,12 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     if (all_done) {
       break;
     }
+
+    // keep the file open if not requested otherwise by the user
+    if (open_one_input_file_at_a_time) {
+      HDF5_ERROR (H5Fclose (file.file));
+      file.file = -1;
+    }
   }
 
   // check that all variables have been read completely on this mglevel/reflevel

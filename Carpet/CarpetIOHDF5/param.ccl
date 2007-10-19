@@ -99,6 +99,12 @@ BOOLEAN one_file_per_group "Write one file per group instead of per variable" ST
 {
 } "no"
 
+BOOLEAN open_one_input_file_at_a_time "Open only one HDF5 file at a time when reading data from multiple chunked checkpoint/data files" STEERABLE = ALWAYS
+{
+  "no"  :: "Open all input files first, then import data (most efficient)"
+  "yes" :: "Process input files one after another (reduces memory requirements)"
+} "no"
+
 INT compression_level "Compression level to use for writing HDF5 data" STEERABLE = ALWAYS
 {
   0:9 :: "Higher numbers compress better, a value of zero disables compression"
