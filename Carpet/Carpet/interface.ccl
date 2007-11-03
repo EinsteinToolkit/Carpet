@@ -154,6 +154,23 @@ PROVIDES FUNCTION GetCoordRange WITH Carpet_GetCoordRange LANGUAGE C
 
 
 
+# Get current refinement level and number of refinement levels
+CCTK_INT FUNCTION     \
+    GetRefinementLevel \
+        (CCTK_POINTER_TO_CONST IN cctkGH)
+PROVIDES FUNCTION GetRefinementLevel \
+    WITH Carpet_GetRefinementLevel   \
+    LANGUAGE C
+
+CCTK_INT FUNCTION     \
+    GetRefinementLevels \
+        (CCTK_POINTER_TO_CONST IN cctkGH)
+PROVIDES FUNCTION GetRefinementLevels \
+    WITH Carpet_GetRefinementLevels   \
+    LANGUAGE C
+
+
+
 # The true prototype of the routine below:
 #   int Carpet_Regrid (const cGH * cctkGH,
 #                      gh::mregs * regsss,

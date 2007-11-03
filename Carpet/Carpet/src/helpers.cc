@@ -31,6 +31,20 @@ namespace Carpet {
     return &carpetGH;
   }
 
+  // Get current refinement level
+  extern "C"
+  CCTK_INT Carpet_GetRefinementLevel (CCTK_POINTER_TO_CONST const cctkGH)
+  {
+    return reflevel;
+  }
+
+  // Get number of refinement levels
+  extern "C"
+  CCTK_INT Carpet_GetRefinementLevels (CCTK_POINTER_TO_CONST const cctkGH)
+  {
+    return reflevels;
+  }
+
 
 
   // Enable or disable prolongating
