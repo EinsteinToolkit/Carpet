@@ -561,8 +561,8 @@ namespace Carpet {
     // Grid array statistics
     int num_gfs = 0;
     int num_arrays = 0;
-    ibbox::size_type num_active_array_points = 0;
-    ibbox::size_type num_total_array_points  = 0;
+    CCTK_REAL num_active_array_points = 0;
+    CCTK_REAL num_total_array_points  = 0;
     for (int g=0; g<CCTK_NumGroups(); ++g) {
       int const num_tl = CCTK_ActiveTimeLevelsGI (cctkGH, g);
       switch (CCTK_GroupTypeI(g)) {
@@ -589,43 +589,65 @@ namespace Carpet {
     
     // Grid function statistics
     int num_comps = 0;
-    ibbox::size_type num_active_points = 0;
-    ibbox::size_type num_owned_points  = 0;
-    ibbox::size_type num_total_points  = 0;
+    int num_steps = 0;
+    CCTK_REAL num_active_mem_points = 0;
+    CCTK_REAL num_owned_mem_points  = 0;
+    CCTK_REAL num_total_mem_points  = 0;
+    CCTK_REAL num_active_cpu_points = 0;
+    CCTK_REAL num_owned_cpu_points  = 0;
+    CCTK_REAL num_total_cpu_points  = 0;
     for (int m=0; m<maps; ++m) {
       gh const * const hh = vhh.AT(m);
       dh const * const dd = vdd.AT(m);
       for (int ml=0; ml<mglevels; ++ml) {
         for (int rl=0; rl<reflevels; ++rl) {
+          int const trf = timereffacts.AT(rl);
+          if (m==0 and ml==0) {
+            num_steps += trf;
+          }
           for (int c=0; c<hh->components(rl); ++c) {
             ++ num_comps;
             dh::dboxes const & b = dd->boxes.AT(m).AT(rl).AT(c);
-            num_active_points += num_gfs * b.active.size();
-            num_owned_points  += num_gfs * b.owned.size();
-            num_total_points  += num_gfs * b.exterior.size();
+            num_active_mem_points += num_gfs * b.active.size();
+            num_owned_mem_points  += num_gfs * b.owned.size();
+            num_total_mem_points  += num_gfs * b.exterior.size();
+            num_active_cpu_points += trf * b.active.size();
+            num_owned_cpu_points  += trf * b.owned.size();
+            num_total_cpu_points  += trf * b.exterior.size();
           }
         }
       }
     }
+    num_active_cpu_points /= num_steps * delta_time;
+    num_owned_cpu_points  /= num_steps * delta_time;
+    num_total_cpu_points  /= num_steps * delta_time;
     
     // Output
     CCTK_VInfo (CCTK_THORNSTRING,
                 "Grid structure statistics:");
     CCTK_VInfo (CCTK_THORNSTRING,
-                "GF: vars %d, pts %.0fk active, %.0fk owned (%.0f%%), %.0fk total (%.0f%%), %.1f c/p",
-                num_gfs,
-                1.0 * num_active_points / 1000,
-                1.0 * num_owned_points / 1000,
-                1.0 * num_owned_points / num_active_points * 100,
-                1.0 * num_total_points / 1000,
-                1.0 * num_total_points / num_owned_points * 100,
-                1.0 * num_comps / (reflevels * CCTK_nProcs (cctkGH)));
+                "GF: rhs: %.0fk active, %.0fk owned (+%.0f%%), %.0fk total (+%.0f%%), %.3g rhs/M",
+                double (num_active_cpu_points / 1000),
+                double (num_owned_cpu_points / 1000),
+                double (num_owned_cpu_points / num_active_cpu_points * 100 - 100),
+                double (num_total_cpu_points / 1000),
+                double (num_total_cpu_points / num_owned_cpu_points * 100 - 100),
+                double (num_steps / delta_time));
     CCTK_VInfo (CCTK_THORNSTRING,
-                "GA: vars %d, pts %.0fk active, %.0fk total (%.0f%%)",
+                "GF: vars: %d, pts: %.0fM active, %.0fM owned (+%.0f%%), %.0fM total (+%.0f%%), %.1f c/p",
+                num_gfs,
+                double (num_active_mem_points / 1000000),
+                double (num_owned_mem_points / 1000000),
+                double (num_owned_mem_points / num_active_mem_points * 100 - 100),
+                double (num_total_mem_points / 1000000),
+                double (num_total_mem_points / num_owned_mem_points * 100 - 100),
+                double (num_comps / (reflevels * CCTK_nProcs (cctkGH))));
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "GA: vars: %d, pts: %.0fM active, %.0fM total (+%.0f%%)",
                 num_arrays,
-                1.0 * num_active_array_points / 1000,
-                1.0 * num_total_array_points / 1000,
-                1.0 * num_total_array_points / num_active_array_points * 100);
+                double (num_active_array_points / 1000000),
+                double (num_total_array_points / 1000000),
+                double (num_total_array_points / num_active_array_points * 100 - 100));
   }
   
   
