@@ -258,6 +258,8 @@ namespace Carpet {
       leveltimes.at(ml).resize
         (reflevels, leveltimes.at(ml).at(oldreflevels-1));
     }
+    
+    OutputGridStatistics (cctkGH);
   }
   
   
@@ -549,6 +551,81 @@ namespace Carpet {
     } else {
       assert (0);
     }
+  }
+  
+  
+  
+  void
+  OutputGridStatistics (cGH const * const cctkGH)
+  {
+    // Grid array statistics
+    int num_gfs = 0;
+    int num_arrays = 0;
+    ibbox::size_type num_active_array_points = 0;
+    ibbox::size_type num_total_array_points  = 0;
+    for (int g=0; g<CCTK_NumGroups(); ++g) {
+      int const num_tl = CCTK_ActiveTimeLevelsGI (cctkGH, g);
+      switch (CCTK_GroupTypeI(g)) {
+      case CCTK_SCALAR:
+      case CCTK_ARRAY: {
+        int const num_vars = CCTK_NumVarsInGroupI (g);
+        num_arrays += num_tl * num_vars;
+        gh const * const hh = arrdata.AT(g).AT(0).hh;
+        dh const * const dd = arrdata.AT(g).AT(0).dd;
+        for (int c=0; c<hh->components(0); ++c) {
+          dh::dboxes const & b = dd->boxes.AT(0).AT(0).AT(c);
+          num_active_array_points += num_tl * num_vars * b.active.size();
+          num_total_array_points  += num_tl * num_vars * b.exterior.size();
+        }
+        break;
+      }
+      case CCTK_GF:
+        num_gfs += num_tl;
+        break;
+      default:
+        assert (0);
+      }
+    }
+    
+    // Grid function statistics
+    int num_comps = 0;
+    ibbox::size_type num_active_points = 0;
+    ibbox::size_type num_owned_points  = 0;
+    ibbox::size_type num_total_points  = 0;
+    for (int m=0; m<maps; ++m) {
+      gh const * const hh = vhh.AT(m);
+      dh const * const dd = vdd.AT(m);
+      for (int ml=0; ml<mglevels; ++ml) {
+        for (int rl=0; rl<reflevels; ++rl) {
+          for (int c=0; c<hh->components(rl); ++c) {
+            ++ num_comps;
+            dh::dboxes const & b = dd->boxes.AT(m).AT(rl).AT(c);
+            num_active_points += num_gfs * b.active.size();
+            num_owned_points  += num_gfs * b.owned.size();
+            num_total_points  += num_gfs * b.exterior.size();
+          }
+        }
+      }
+    }
+    
+    // Output
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Grid structure statistics:");
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "GF: vars %d, pts %.0fk active, %.0fk owned (%.0f%%), %.0fk total (%.0f%%), %.1f c/p",
+                num_gfs,
+                1.0 * num_active_points / 1000,
+                1.0 * num_owned_points / 1000,
+                1.0 * num_owned_points / num_active_points * 100,
+                1.0 * num_total_points / 1000,
+                1.0 * num_total_points / num_owned_points * 100,
+                1.0 * num_comps / (reflevels * CCTK_nProcs (cctkGH)));
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "GA: vars %d, pts %.0fk active, %.0fk total (%.0f%%)",
+                num_arrays,
+                1.0 * num_active_array_points / 1000,
+                1.0 * num_total_array_points / 1000,
+                1.0 * num_total_array_points / num_active_array_points * 100);
   }
   
   

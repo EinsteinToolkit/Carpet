@@ -120,6 +120,9 @@ namespace Carpet {
                        int const m,
                        gh::mregs const & regsss);
   
+  void
+  OutputGridStatistics (cGH const * cctkGH);
+  
   
   
   // Functions for recomposing the grid hierarchy
