@@ -22,7 +22,7 @@
          if (cctk_bbox(2*d  ).ne.0) imax(d) = cctk_lsh(d)-bndwidth
       end do
       do d=1,3
-         dx(d) = CCTK_DELTA_SPACE(3)
+         dx(d) = CCTK_DELTA_SPACE(d)
       end do
       do k=imin(3),imax(3)
          do j=imin(2),imax(2)
