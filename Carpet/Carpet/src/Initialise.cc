@@ -186,16 +186,17 @@ namespace Carpet {
           // Checking
           Poison (cctkGH, alltimes, CCTK_GF);
           
-          // Timing statistics
-          if (do_global_mode) {
-            InitTimingStats (cctkGH);
-          }
-          
           // Set up the grids
           ScheduleTraverse (where, "CCTK_BASEGRID", cctkGH);
           
           // Recover
           ScheduleTraverse (where, "CCTK_RECOVER_VARIABLES", cctkGH);
+          
+          // Timing statistics
+          // (do this here, after cctk_time has been recovered)
+          if (do_global_mode) {
+            InitTimingStats (cctkGH);
+          }
           
           if (regrid_during_recovery) {
             CallRegridRecoverLevel (cctkGH);
