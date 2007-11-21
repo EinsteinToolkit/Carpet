@@ -19,6 +19,6 @@ gridpoints=100**3
 time(x)=x*1.0e+6/gridpoints
 
 p \
-"< < results-wavetoy-abe.out grep 'Bench_WaveToy_PUGH_100l'        | grep ' 22 '" u 3:(time($5/1000.0)) t "PUGH, MPI only"               w lp lt 1 lw 3, \
-"< < results-wavetoy-abe.out grep 'Bench_WaveToy_Carpet_1lev_100l' | grep ' 22 '" u 3:(time($5/1023.0)) t "Carpet, 9 levels, MPI only"   w lp lt 2 lw 3, \
-"< < results-wavetoy-abe.out grep 'Bench_WaveToy_Carpet_1lev_100l' | grep ' 24 '" u 3:(time($5/1023.0)) t "Carpet, 9 levels, MPI+OpenMP" w lp lt 3 lw 3
+"< < results-wavetoy-abe.out grep 'Bench_WaveToy_PUGH_100l'        | grep ' 22 '" u 3:(time($5/1000.0)) t "PUGH, MPI only"              w lp lt 1 lw 3, \
+"< < results-wavetoy-abe.out grep 'Bench_WaveToy_Carpet_1lev_100l' | grep ' 22 '" u 3:(time($5/1023.0)) t "Carpet, 1 level, MPI only"   w lp lt 2 lw 3, \
+"< < results-wavetoy-abe.out grep 'Bench_WaveToy_Carpet_1lev_100l' | grep ' 24 '" u 3:(time($5/1023.0)) t "Carpet, 1 level, MPI+OpenMP" w lp lt 3 lw 3
