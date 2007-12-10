@@ -47,7 +47,7 @@ BOOLEAN symmetry_rotating180 "Ensure a 180 degree rotating symmetry about the z 
 
 
 
-CCTK_INT num_centres "Number of refinement centres" STEERABLE=always
+CCTK_INT num_centres "Number of refinement centres"
 {
   0:10 :: ""
 } 0
@@ -56,35 +56,35 @@ CCTK_INT num_centres "Number of refinement centres" STEERABLE=always
 
 ################################################################################
 
-CCTK_INT num_levels_1 "Number of refinement levels for this centre" STEERABLE=always
+CCTK_INT num_levels_1 "Number of refinement levels for this centre"
 {
   0:30 :: ""
 } 0
 
-BOOLEAN active_1 "Is this region active?" STEERABLE=never
+BOOLEAN active_1 "Is this region active?"
 {
 } "yes"
 
 
 
-CCTK_REAL position_x_1 "Position of this centre" STEERABLE=always
+CCTK_REAL position_x_1 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_y_1 "Position of this centre" STEERABLE=always
+CCTK_REAL position_y_1 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_z_1 "Position of this centre" STEERABLE=always
+CCTK_REAL position_z_1 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
 
 
-CCTK_REAL radius_1[30] "Radius of refined region for this level of this centre" STEERABLE=always
+CCTK_REAL radius_1[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
@@ -105,35 +105,35 @@ CCTK_REAL radius_change_threshold_1 "Minimum change in radius to trigger a regri
 
 ################################################################################
 
-CCTK_INT num_levels_2 "Number of refinement levels for this centre" STEERABLE=always
+CCTK_INT num_levels_2 "Number of refinement levels for this centre"
 {
   0:30 :: ""
 } 0
 
-BOOLEAN active_2 "Is this region active?" STEERABLE=never
+BOOLEAN active_2 "Is this region active?"
 {
 } "yes"
 
 
 
-CCTK_REAL position_x_2 "Position of this centre" STEERABLE=always
+CCTK_REAL position_x_2 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_y_2 "Position of this centre" STEERABLE=always
+CCTK_REAL position_y_2 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_z_2 "Position of this centre" STEERABLE=always
+CCTK_REAL position_z_2 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
 
 
-CCTK_REAL radius_2[30] "Radius of refined region for this level of this centre" STEERABLE=always
+CCTK_REAL radius_2[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
@@ -154,35 +154,35 @@ CCTK_REAL radius_change_threshold_2 "Minimum change in radius to trigger a regri
 
 ################################################################################
 
-CCTK_INT num_levels_3 "Number of refinement levels for this centre" STEERABLE=always
+CCTK_INT num_levels_3 "Number of refinement levels for this centre"
 {
   0:30 :: ""
 } 0
 
-BOOLEAN active_3 "Is this region active?" STEERABLE=never
+BOOLEAN active_3 "Is this region active?"
 {
 } "yes"
 
 
 
-CCTK_REAL position_x_3 "Position of this centre" STEERABLE=always
+CCTK_REAL position_x_3 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_y_3 "Position of this centre" STEERABLE=always
+CCTK_REAL position_y_3 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_z_3 "Position of this centre" STEERABLE=always
+CCTK_REAL position_z_3 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
 
 
-CCTK_REAL radius_3[30] "Radius of refined region for this level of this centre" STEERABLE=always
+CCTK_REAL radius_3[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
@@ -203,35 +203,35 @@ CCTK_REAL radius_change_threshold_3 "Minimum change in radius to trigger a regri
 
 ################################################################################
 
-CCTK_INT num_levels_4 "Number of refinement levels for this centre" STEERABLE=always
+CCTK_INT num_levels_4 "Number of refinement levels for this centre"
 {
   0:30 :: ""
 } 0
 
-BOOLEAN active_4 "Is this region active?" STEERABLE=never
+BOOLEAN active_4 "Is this region active?"
 {
 } "yes"
 
 
 
-CCTK_REAL position_x_4 "Position of this centre" STEERABLE=always
+CCTK_REAL position_x_4 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_y_4 "Position of this centre" STEERABLE=always
+CCTK_REAL position_y_4 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_z_4 "Position of this centre" STEERABLE=always
+CCTK_REAL position_z_4 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
 
 
-CCTK_REAL radius_4[30] "Radius of refined region for this level of this centre" STEERABLE=always
+CCTK_REAL radius_4[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
@@ -252,35 +252,35 @@ CCTK_REAL radius_change_threshold_4 "Minimum change in radius to trigger a regri
 
 ################################################################################
 
-CCTK_INT num_levels_5 "Number of refinement levels for this centre" STEERABLE=always
+CCTK_INT num_levels_5 "Number of refinement levels for this centre"
 {
   0:30 :: ""
 } 0
 
-BOOLEAN active_5 "Is this region active?" STEERABLE=never
+BOOLEAN active_5 "Is this region active?"
 {
 } "yes"
 
 
 
-CCTK_REAL position_x_5 "Position of this centre" STEERABLE=always
+CCTK_REAL position_x_5 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_y_5 "Position of this centre" STEERABLE=always
+CCTK_REAL position_y_5 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_z_5 "Position of this centre" STEERABLE=always
+CCTK_REAL position_z_5 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
 
 
-CCTK_REAL radius_5[30] "Radius of refined region for this level of this centre" STEERABLE=always
+CCTK_REAL radius_5[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
@@ -301,35 +301,35 @@ CCTK_REAL radius_change_threshold_5 "Minimum change in radius to trigger a regri
 
 ################################################################################
 
-CCTK_INT num_levels_6 "Number of refinement levels for this centre" STEERABLE=always
+CCTK_INT num_levels_6 "Number of refinement levels for this centre"
 {
   0:30 :: ""
 } 0
 
-BOOLEAN active_6 "Is this region active?" STEERABLE=never
+BOOLEAN active_6 "Is this region active?"
 {
 } "yes"
 
 
 
-CCTK_REAL position_x_6 "Position of this centre" STEERABLE=always
+CCTK_REAL position_x_6 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_y_6 "Position of this centre" STEERABLE=always
+CCTK_REAL position_y_6 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_z_6 "Position of this centre" STEERABLE=always
+CCTK_REAL position_z_6 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
 
 
-CCTK_REAL radius_6[30] "Radius of refined region for this level of this centre" STEERABLE=always
+CCTK_REAL radius_6[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
@@ -350,35 +350,35 @@ CCTK_REAL radius_change_threshold_6 "Minimum change in radius to trigger a regri
 
 ################################################################################
 
-CCTK_INT num_levels_7 "Number of refinement levels for this centre" STEERABLE=always
+CCTK_INT num_levels_7 "Number of refinement levels for this centre"
 {
   0:30 :: ""
 } 0
 
-BOOLEAN active_7 "Is this region active?" STEERABLE=never
+BOOLEAN active_7 "Is this region active?"
 {
 } "yes"
 
 
 
-CCTK_REAL position_x_7 "Position of this centre" STEERABLE=always
+CCTK_REAL position_x_7 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_y_7 "Position of this centre" STEERABLE=always
+CCTK_REAL position_y_7 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_z_7 "Position of this centre" STEERABLE=always
+CCTK_REAL position_z_7 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
 
 
-CCTK_REAL radius_7[30] "Radius of refined region for this level of this centre" STEERABLE=always
+CCTK_REAL radius_7[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
@@ -399,35 +399,35 @@ CCTK_REAL radius_change_threshold_7 "Minimum change in radius to trigger a regri
 
 ################################################################################
 
-CCTK_INT num_levels_8 "Number of refinement levels for this centre" STEERABLE=always
+CCTK_INT num_levels_8 "Number of refinement levels for this centre"
 {
   0:30 :: ""
 } 0
 
-BOOLEAN active_8 "Is this region active?" STEERABLE=never
+BOOLEAN active_8 "Is this region active?"
 {
 } "yes"
 
 
 
-CCTK_REAL position_x_8 "Position of this centre" STEERABLE=always
+CCTK_REAL position_x_8 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_y_8 "Position of this centre" STEERABLE=always
+CCTK_REAL position_y_8 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_z_8 "Position of this centre" STEERABLE=always
+CCTK_REAL position_z_8 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
 
 
-CCTK_REAL radius_8[30] "Radius of refined region for this level of this centre" STEERABLE=always
+CCTK_REAL radius_8[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
@@ -448,35 +448,35 @@ CCTK_REAL radius_change_threshold_8 "Minimum change in radius to trigger a regri
 
 ################################################################################
 
-CCTK_INT num_levels_9 "Number of refinement levels for this centre" STEERABLE=always
+CCTK_INT num_levels_9 "Number of refinement levels for this centre"
 {
   0:30 :: ""
 } 0
 
-BOOLEAN active_9 "Is this region active?" STEERABLE=never
+BOOLEAN active_9 "Is this region active?"
 {
 } "yes"
 
 
 
-CCTK_REAL position_x_9 "Position of this centre" STEERABLE=always
+CCTK_REAL position_x_9 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_y_9 "Position of this centre" STEERABLE=always
+CCTK_REAL position_y_9 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_z_9 "Position of this centre" STEERABLE=always
+CCTK_REAL position_z_9 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
 
 
-CCTK_REAL radius_9[30] "Radius of refined region for this level of this centre" STEERABLE=always
+CCTK_REAL radius_9[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
@@ -497,35 +497,35 @@ CCTK_REAL radius_change_threshold_9 "Minimum change in radius to trigger a regri
 
 ################################################################################
 
-CCTK_INT num_levels_10 "Number of refinement levels for this centre" STEERABLE=always
+CCTK_INT num_levels_10 "Number of refinement levels for this centre"
 {
   0:30 :: ""
 } 0
 
-BOOLEAN active_10 "Is this region active?" STEERABLE=never
+BOOLEAN active_10 "Is this region active?"
 {
 } "yes"
 
 
 
-CCTK_REAL position_x_10 "Position of this centre" STEERABLE=always
+CCTK_REAL position_x_10 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_y_10 "Position of this centre" STEERABLE=always
+CCTK_REAL position_y_10 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
-CCTK_REAL position_z_10 "Position of this centre" STEERABLE=always
+CCTK_REAL position_z_10 "Position of this centre"
 {
   *:* :: ""
 } 0.0
 
 
 
-CCTK_REAL radius_10[30] "Radius of refined region for this level of this centre" STEERABLE=always
+CCTK_REAL radius_10[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
