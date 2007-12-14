@@ -25,39 +25,73 @@
 
 use FileHandle;
 
-if(@ARGV != 1)
+if(@ARGV != 1 and @ARGV != 2)
 {
-  print "Usage: $0 <Inputfile>\n";
+  print "Usage: $0 <Inputfile> [<Data Column (0..n)>]\n";
   exit;
 }
 
 my $direction;
-my $filename = $ARGV[0];
-open(CARPETFILE, "< $filename") || die "Unable to find input file '$filename'\n.";
+my $infile = shift;
+my $varindex = 0;
+$varindex = shift if @ARGV == 1;
 
-if ($filename =~ /\.(x|y|z|d)\.asc$/) {
+open(CARPETFILE, "< $infile") || die "Unable to find input file '$infile'\n.";
+
+if ($infile =~ /\.(x|y|z|d)\.asc$/) {
   $direction = ord($1) - ord('x') + 9;
   print "extracting CarpetIOASCII 1D data in direction $1...\n";
-} elsif ($filename =~ /\.\.asc$/) {
+} elsif ($infile =~ /\.\.asc$/) {
   $direction = 8;
   print "extracting CarpetIOASCII 0D data...\n";
-} elsif ($filename =~ /\.asc$/) {
+} elsif ($infile =~ /\.asc$/) {
   $direction = 0;
   print "extracting CarpetIOScalar data...\n";
 } else {
-  die "Do not recognize input file format for '$filename'.\n";
+  die "Do not recognize input file format for '$infile'.\n";
 }
 
-$filename =~ s/asc$/xg/;
-my $fh = new FileHandle("> $filename") || die "Unable to open output file '$filename'.\n";
 
 # deal with scalar output
 if ($direction == 0) {
+  local @dataColumns = ();
+  while (<CARPETFILE>) {
+    if (/^# data columns: (.+)/) {
+      @dataColumns = split(/[ :]/, $1);
+      last;
+    }
+  }
+  # seek back to the beginning of the file
+  seek(CARPETFILE, 0, 0);
+
+  my $outfile = $infile;
+  $outfile =~ s/asc$/xg/;
+  if (exists $dataColumns[$varindex*2 + 1]) {
+    local @tokens = split(/::/, $outfile);
+    if (@tokens) {
+      $outfile = $tokens[0] . '::';
+      @tokens = split(/\./, $tokens[1]);
+    } else {
+      @tokens = split('.', $outfile);
+      $outfile = '';
+    }
+    $tokens[0] = $dataColumns[$varindex*2 + 1];
+    $outfile .= join('.', @tokens);
+  }
+  print "  output to file '$outfile'\n\n";
+
+  local $fh = new FileHandle("> $outfile") || die "Unable to open output file '$outfile'.\n";
   while (<CARPETFILE>) {
     # The line is not a header comment
     if(/^[0-9]/) {
       my @data = split(/\s+/);
-      print $fh $data[1]." ".$data[2]."\n";
+      if (not defined $data[$varindex + 2]) {
+        print STDERR "\nInput file '$infile' has no values in data column " .
+                     "$varindex.\n" . "Please specify a valid column index " .
+                     "(starting from 0) !\n\n";
+        exit -1;
+      }
+      print $fh $data[1]." ".$data[$varindex + 2]."\n";
     }
   }
   close ($fh);
@@ -75,6 +109,7 @@ my @datatoprint;
 my $nsets = 1;
 my $maxlength = 0;
 my @lengths;
+my @dataColumns = ();
 
 $lengths[0]=0;
 while (<CARPETFILE>)
@@ -86,6 +121,8 @@ while (<CARPETFILE>)
     @itline = split(/ +/);
     $currentit = $itline[2];
   }
+  @dataColumns = split(/[ :]/, $1) if (/^# data columns: (.+)/);
+
   #Do nothing for headers!
   next if (/^#/);
 
@@ -110,7 +147,13 @@ while (<CARPETFILE>)
     $lastit = $currentit;
   }
   my $coord = $dataline[$direction];
-  my $val = $dataline[12];
+  if (not defined $dataline[12 + $varindex]) {
+    print STDERR "\nInput file '$infile' has no values in data column " .
+                 "$varindex.\n" . "Please specify a valid column index " .
+                 "(starting from 0) !\n\n";
+    exit -1;
+  }
+  my $val = $dataline[12 + $varindex];
   $data{$coord} = $val;
 }
 
@@ -125,6 +168,24 @@ $maxlength = $maxlength > (scalar @sortedcoords) ? $maxlength : (scalar @sortedc
 $lengths[$nsets-1]=(scalar @sortedcoords);
 $nsets++;
 $lengths[$nsets-1]=0;
+
+my $outfile = $infile;
+$outfile =~ s/asc$/xg/;
+if (exists $dataColumns[$varindex*2 + 1]) {
+  my @tokens = split(/::/, $outfile);
+  if (@tokens) {
+    $outfile = $tokens[0] . '::';
+    @tokens = split(/\./, $tokens[1]);
+  } else {
+    @tokens = split('.', $outfile);
+    $outfile = '';
+  }
+  $tokens[0] = $dataColumns[$varindex*2 + 1];
+  $outfile .= join('.', @tokens);
+}
+print "  output to file '$outfile'\n\n";
+
+my $fh = new FileHandle("> $outfile") or die "Unable to open output file '$outfile'.\n";
 
 my $oldline="";
 $nouts=0;
