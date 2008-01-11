@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cstdlib>
 #include <cstring>
 #include <map>
 #include <sstream>
@@ -54,6 +55,7 @@ static void GetVarIndex (int vindex, const char* optstring, void* arg);
 static void CheckSteerableParameters (const cGH *const cctkGH,
                                       CarpetIOHDF5GH *myGH);
 static int WriteMetadata (const cGH *cctkGH, int nioprocs,
+                          int firstvar, int numvars,
                           bool called_from_checkpoint, hid_t file);
 
 //////////////////////////////////////////////////////////////////////////////
@@ -651,7 +653,8 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
       HDF5_ERROR (file = H5Fcreate (c_filename, H5F_ACC_TRUNC, H5P_DEFAULT,
                                     H5P_DEFAULT));
       // write metadata information
-      error_count += WriteMetadata (cctkGH, nioprocs, false, file);
+      error_count +=
+        WriteMetadata (cctkGH, nioprocs, firstvar, numvars, false, file);
     } else {
       HDF5_ERROR (file = H5Fopen (c_filename, H5F_ACC_RDWR, H5P_DEFAULT));
     }
@@ -742,7 +745,7 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
                                   H5P_DEFAULT));
 
     // write metadata information
-    error_count += WriteMetadata (cctkGH, nioprocs, true, file);
+    error_count += WriteMetadata (cctkGH, -1, -1, nioprocs, true, file);
   }
 
   // now dump the grid variables on all mglevels, reflevels, maps and components
@@ -933,8 +936,9 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
 } // Checkpoint
 
 
-static int WriteMetadata (const cGH *cctkGH, int nioprocs,
-                          bool called_from_checkpoint, hid_t file)
+static int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
+                          int const firstvar, int const numvars,
+                          bool const called_from_checkpoint, hid_t const file)
 {
   int error_count = 0;
   hid_t group, scalar_dataspace, array_dataspace, datatype, attr;
@@ -1032,6 +1036,33 @@ static int WriteMetadata (const cGH *cctkGH, int nioprocs,
                                   scalar_dataspace, H5P_DEFAULT));
     HDF5_ERROR (H5Awrite (attr, datatype, job_id));
     HDF5_ERROR (H5Aclose (attr));
+  }
+
+  // list all datasets in this file
+  if (not called_from_checkpoint) {
+    assert (firstvar >= 0 and numvars >= 0);
+    char * fullnames[numvars];
+    size_t maxlen = 0;
+    for (int vi = 0; vi < numvars; ++ vi) {
+      fullnames[vi] = CCTK_FullName (firstvar + vi);
+      size_t const len = strlen (fullnames[vi]);
+      maxlen = len > maxlen ? len : maxlen;
+    }
+    char components[numvars][maxlen];
+    for (int vi = 0; vi < numvars; ++ vi) {
+      strncpy (components[vi], fullnames[vi], maxlen);
+      free (fullnames[vi]);
+    }
+    hsize_t const dims[1] = { numvars };
+    hid_t const dataspace = H5Screate_simple (1, dims, 0);
+    hid_t const datatype = H5Tcopy (H5T_C_S1);
+    H5Tset_size (datatype, maxlen);
+    hid_t const attribute =
+      H5Acreate (group, "Datasets", datatype, dataspace, H5P_DEFAULT);
+    H5Awrite (attribute, datatype, components);
+    H5Aclose (attribute);
+    H5Tclose (datatype);
+    H5Sclose (dataspace);
   }
 
   // save parameters in a separate dataset (may be too big for an attribute)
