@@ -54,7 +54,7 @@
 
 // check return code of HDF5 call and print a warning in case of an error
 #define HDF5_ERROR(fn_call)                                                   \
-        {                                                                     \
+        do {                                                                  \
           int _error_code = fn_call;                                          \
                                                                               \
                                                                               \
@@ -65,7 +65,7 @@
                         #fn_call, _error_code);                               \
             error_count++;                                                    \
           }                                                                   \
-        }
+        } while (0)
 
 
 // CarpetIOHDF5 GH extension structure
