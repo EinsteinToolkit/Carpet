@@ -6,6 +6,9 @@
 #include <cstdlib>
 
 #include <mpi.h>
+#ifdef _OPENMP
+#  include <omp.h>
+#endif
 
 #include "cctk.h"
 
@@ -63,13 +66,20 @@ namespace dist {
     return size_;
   }
   
+  // Set number of threads
+  void set_num_threads (int num_threads);
+  
   // Local number of threads
-  int num_threads_worker ();
   inline int num_threads ()
   {
     static int num_threads_ = -1;
     if (num_threads_ == -1) {
-      num_threads_ = num_threads_worker();
+#ifdef _OPENMP
+      num_threads_ = omp_get_max_threads();
+#else
+      num_threads_ = 1;
+#endif
+      assert (num_threads_ >= 1);
     }
     return num_threads_;
   }

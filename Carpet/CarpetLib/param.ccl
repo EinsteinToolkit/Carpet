@@ -23,14 +23,6 @@ BOOLEAN barriers "Insert barriers at strategic places for debugging purposes (sl
 
 
 
-CCTK_INT num_threads "Number of threads per process" STEERABLE=recover
-{
-  -1  :: "use system default, probably influenced by OMP_NUM_THREADS"
-  1:* :: "use this many threads"
-} -1
-
-
-
 BOOLEAN output_bboxes "Output bounding box information to the screen" STEERABLE=always
 {
 } "no"
