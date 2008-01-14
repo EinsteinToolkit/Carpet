@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
@@ -39,6 +40,10 @@ namespace CarpetLib {
     if (any (srcbbox.stride() != regbbox.stride() or
              dstbbox.stride() != regbbox.stride()))
     {
+      cout << "copy_3d.cc:" << endl
+           << "srcbbox=" << srcbbox << endl
+           << "dstbbox=" << dstbbox << endl
+           << "regbbox=" << regbbox << endl;
       CCTK_WARN (0, "Internal error: strides disagree");
     }
     

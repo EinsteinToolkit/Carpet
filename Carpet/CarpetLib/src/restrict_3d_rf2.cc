@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
@@ -55,6 +56,9 @@ namespace CarpetLib {
     if (not regbbox.is_contained_in(srcbbox) or
         not regbbox.is_contained_in(dstbbox))
     {
+      cerr << "srcbbox: " << srcbbox << endl
+           << "dstbbox: " << dstbbox << endl
+           << "regbbox: " << regbbox << endl;
       CCTK_WARN (0, "Internal error: region extent is not contained in array extent");
     }
     
