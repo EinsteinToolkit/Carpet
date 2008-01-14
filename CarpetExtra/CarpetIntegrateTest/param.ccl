@@ -1,5 +1,3 @@
-# $Header:$
-
 REAL constant "Integrand constant"
 {
   *:* :: ""

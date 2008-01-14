@@ -1,5 +1,3 @@
-# $Header:$
-
 implements: CarpetIntegrateTest
 
 inherits: Reduce Grid Driver

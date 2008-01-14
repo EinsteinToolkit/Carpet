@@ -1,5 +1,3 @@
-# $Header:$
-
 # Source files in this directory
 SRCS = Local.cc Global.cc
 
