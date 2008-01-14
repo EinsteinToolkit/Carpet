@@ -24,7 +24,9 @@ namespace Carpet {
   
   static void CallSetup (cGH * cctkGH);
   static void CallRecoverVariables (cGH * cctkGH);
+#if 0
   static void CallRegridRecoverMeta (cGH * cctkGH);
+#endif
   static void CallRegridRecoverLevel (cGH * cctkGH);
   static void CallRegridInitialMeta (cGH * cctkGH);
   static void CallRegridInitialLevel (cGH * cctkGH);
@@ -584,6 +586,7 @@ namespace Carpet {
   
   
   
+#if 0
   void
   CallRegridRecoverMeta (cGH * const cctkGH)
   {
@@ -662,6 +665,7 @@ namespace Carpet {
     
     timer.stop();
   }
+#endif
   
   
   
