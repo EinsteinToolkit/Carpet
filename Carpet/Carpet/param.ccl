@@ -417,6 +417,14 @@ CCTK_REAL aspect_ratio_z "Desired aspect ratio for each processor's domain" STEE
 
 
 
+CCTK_INT num_threads "Number of threads per process" STEERABLE=recover
+{
+  -1  :: "use system default, probably influenced by OMP_NUM_THREADS"
+  1:* :: "use this many threads"
+} -1
+
+
+
 STRING grid_structure_filename "File name to output grid structure to (empty = no output)" STEERABLE=recover
 {
   ".*" :: "must be a legal file name"

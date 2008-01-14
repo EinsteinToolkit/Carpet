@@ -196,6 +196,7 @@ namespace Carpet {
     {
       int const nprocs = dist::size();
       int const myproc = dist::rank();
+      dist::set_num_threads (num_threads);
       int const mynthreads = dist::num_threads();
       int const nthreads_total = dist::total_num_threads();
       CCTK_VInfo (CCTK_THORNSTRING,
@@ -217,6 +218,12 @@ namespace Carpet {
         Util_GetHostName (hostnamebuf, sizeof hostnamebuf);
         string const hostname (hostnamebuf);
         vector <string> hostnames = AllGatherString (dist::comm(), hostname);
+        // Collect process ids
+        int const mypid = getpid ();
+        vector <int> pids (nprocs);
+        MPI_Allgather (const_cast <int *> (& mypid), 1, MPI_INT,
+                       & pids.front(), 1, MPI_INT,
+                       dist::comm());
         // Collect number of threads
         vector <int> nthreads (nprocs);
         MPI_Allgather (const_cast <int *> (& mynthreads), 1, MPI_INT,
@@ -227,8 +234,8 @@ namespace Carpet {
                     "Running on the following hosts:");
         for (int n = 0; n < nprocs; ++ n) {
           CCTK_VInfo (CCTK_THORNSTRING,
-                      "   %4d [%d]: %s",
-                      n, nthreads.at(n), hostnames.at(n).c_str());
+                      "   %4d [%d]: %s.%d",
+                      n, nthreads.at(n), hostnames.at(n).c_str(), pids.at(n));
         }
       }
 #endif
