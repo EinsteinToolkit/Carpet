@@ -5,6 +5,12 @@
 #include <list>
 #include <string>
 
+#include <cctk.h>
+
+extern "C" {
+#include "cycle.h"
+}
+
 
 
 namespace CarpetLib {
@@ -92,9 +98,9 @@ namespace CarpetLib {
     double bmax;
     
     double count;
-    
+
     bool running;
-    double starttime;
+    ticks starttime;
     
   public:
     

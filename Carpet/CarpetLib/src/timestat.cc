@@ -16,10 +16,6 @@
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
 
-#ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-#endif
-
 #include "defs.hh"
 #include "dist.hh"
 #include "timestat.hh"
@@ -32,129 +28,43 @@ namespace CarpetLib {
   
   
   
-  // The timer type
-  enum timer_type {
-    timer_unset, timer_MPI_Wtime, timer_rdtsc, timer_rtc, timer_none
-  };
-  static timer_type thetimer = timer_unset;
-  
-  
-  
-  // A faster timing routine for i386 processors:
-  // Read the Intel CPU time stamp counter
   static
-  double rdtsc_cputick = 1.0;
+  bool have_cputick = false;
   
-  static inline
-  double
-  rdtsc ()
-  {
-    // Test for i386 (should use autoconf instead)
-#if defined(__i386__) || defined(__x86_64__)
-    // Serialise using cpuid
-    // (This is strictly necessary only on some systems)
-    {
-      unsigned long eax;
-      asm volatile ("movl %%ebx, %%esi; cpuid; movl %%esi, %%ebx" :
-                    "=a" (eax) : "a" (0) : "edx", "ecx", "esi");
-    }
-    // Using "=A" does not work on x86_64, where this uses rax instead
-    //    of (edx,eax)
-    // unsigned long long val;
-    // __asm__ __volatile__("rdtsc" : "=A" (val) : );
-    unsigned long eax, edx;
-    asm volatile ("rdtsc" : "=a" (eax), "=d" (edx));
-    return rdtsc_cputick * ((unsigned long long) edx << 32 | eax);
-#else
-    static bool have_warned = false;
-    if (not have_warned) {
-      CCTK_WARN (1, "The Intel rdtsc timer is not supported");
-      have_warned = true;
-    }
-    return 0;
-#endif
-  }
+  static
+  double cputick = 0.0;
   
   static
   void
-  init_rdtsc ()
+  calculate_cputick ()
   {
-    // Make three warmup measurements
-    rdtsc ();
-    rdtsc ();
-    rdtsc ();
-    double const rstart = rdtsc ();
+    // Make a few warmup measurements
+    getticks ();
+    getticks ();
+    getticks ();
+    ticks const rstart = getticks ();
     double const wstart = MPI_Wtime ();
     // int const ierr = usleep (1000 * 1000);
     while (MPI_Wtime() < wstart + 1.0) {
       // do nothing, just wait
     }
-    double const rend = rdtsc ();
+    ticks const rend = getticks ();
     double const wend = MPI_Wtime ();
     // if (ierr) {
     //   CCTK_WARN (1, "Could not determine a reliable rdtsc timer resolution");
     // }
-    rdtsc_cputick *= (wend - wstart) / (rend - rstart);
-  }
-  
-  
-  
-  // A faster timing routine for AIX
-  static inline
-  double
-  rtc ()
-  {
-    // Test for AIX (should use autoconf instead)
-#ifdef __IBMC__
-    timebasestruct_t val;
-    read_real_time (& val, TIMEBASE_SZ);
-    time_base_to_time (& val, TIMEBASE_SZ);
-    return val.tb_high + 1.0e-9 * val.tb_low;
-#else
-    static bool have_warned = false;
-    if (not have_warned) {
-      CCTK_WARN (1, "The AIX rtc timer not supported");
-      have_warned = true;
-    }
-    return 0;
-#endif
+    cputick = (wend - wstart) / elapsed (rend, rstart);
+    have_cputick = true;
   }
   
   
   
   // Call a timer
   static
-  double
+  ticks
   call_timer ()
   {
-    DECLARE_CCTK_PARAMETERS;
-    if (thetimer == timer_unset) {
-      if (CCTK_EQUALS (timestat_timer, "MPI_Wtime")) {
-        thetimer = timer_MPI_Wtime;
-      } else if (CCTK_EQUALS (timestat_timer, "rdtsc")) {
-        thetimer = timer_rdtsc;
-        init_rdtsc ();
-      } else if (CCTK_EQUALS (timestat_timer, "rtc")) {
-        thetimer = timer_rtc;
-      } else if (CCTK_EQUALS (timestat_timer, "none")) {
-        thetimer = timer_none;
-      } else {
-        assert (0);
-      }
-    }
-    switch (thetimer) {
-    case timer_MPI_Wtime:
-      return MPI_Wtime ();
-    case timer_rdtsc:
-      return rdtsc ();
-    case timer_rtc:
-      return rtc ();
-    case timer_none:
-      return 0.0;
-    default:
-      assert (0);
-    }
-    abort ();
+    return getticks();
   }
   
   
@@ -220,6 +130,7 @@ namespace CarpetLib {
     : timername (timername_)
   {
     assert (timername_);
+    if (not have_cputick) calculate_cputick ();
     resetstats ();
     timerSet.add (this);
   }
@@ -280,7 +191,6 @@ namespace CarpetLib {
   Timer::start ()
   {
     DECLARE_CCTK_PARAMETERS;
-    if (thetimer == timer_none) return;
     assert (not running);
     running = true;
     starttime = call_timer ();
@@ -293,11 +203,10 @@ namespace CarpetLib {
   Timer::stop (double const b)
   {
     DECLARE_CCTK_PARAMETERS;
-    if (thetimer == timer_none) return;
     assert (running);
     running = false;
-    double const endtime = call_timer ();
-    addstat (endtime - starttime, b);
+    ticks const endtime = call_timer ();
+    addstat (elapsed (endtime, starttime), b);
   }
   
   
