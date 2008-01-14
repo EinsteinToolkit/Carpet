@@ -10,11 +10,15 @@
 #include <vector>
 
 #include <mpi.h>
+#ifdef _OPENMP
+#  include <omp.h>
+#endif
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
 #include "bbox.hh"
+#include "bboxset.hh"
 #include "defs.hh"
 #include "dist.hh"
 #include "timestat.hh"
@@ -26,6 +30,69 @@
 using namespace std;
 
 using namespace CarpetLib;
+
+
+
+template <typename T>
+static
+void
+call_operator (void
+               the_operator (T const * restrict const src,
+                             ivect3 const & restrict srcext,
+                             T * restrict const dst,
+                             ivect3 const & restrict dstext,
+                             ibbox3 const & restrict srcbbox,
+                             ibbox3 const & restrict dstbbox,
+                             ibbox3 const & restrict regbbox),
+               T const * restrict const src,
+               ivect3 const & restrict srcext,
+               T * restrict const dst,
+               ivect3 const & restrict dstext,
+               ibbox3 const & restrict srcbbox,
+               ibbox3 const & restrict dstbbox,
+               ibbox3 const & restrict regbbox)
+{
+#ifndef _OPENMP
+  the_operator (src, srcext, dst, dstext, srcbbox, dstbbox, regbbox);
+#else
+#  if ! defined (CARPET_OPTIMISE)
+  ibset allregbboxes;
+#  endif
+  _Pragma ("omp parallel") {
+    int const num_threads = omp_get_num_threads();
+    int const thread_num = omp_get_thread_num();
+    // Parallelise in z direction
+    int const dir = 2;
+    int const stride = regbbox.stride()[dir];
+    int const first_point = regbbox.lower()[dir];
+    int const last_point = regbbox.upper()[dir] + stride;
+    int const num_points = last_point - first_point;
+    assert (num_points >= 0);
+    assert (num_points % stride == 0);
+    int const my_num_points =
+      (num_points / stride + num_threads - 1) / num_threads * stride;
+    int const my_first_point =
+      min (last_point, first_point + thread_num * my_num_points);
+    int const my_last_point =
+      max (my_first_point, my_first_point + my_num_points);
+    ibbox3 const myregbbox
+      (regbbox.lower().replace (dir, my_first_point),
+       regbbox.upper().replace (dir, my_last_point - stride),
+       regbbox.stride());
+    if (not myregbbox.empty()) {
+      the_operator (src, srcext, dst, dstext, srcbbox, dstbbox, myregbbox);
+    }
+#  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
+    _Pragma ("omp critical") {
+      allregbboxes += myregbbox;
+    }
+#  endif
+  }
+#  if ! defined (CARPET_OPTIMISE)
+  assert (allregbboxes == ibset (regbbox));
+#  endif
+#endif
+}
 
 
 
@@ -502,31 +569,34 @@ transfer_prolongate (data const * const src,
     timer.start ();
     switch (order_space) {
     case 1:
-      prolongate_3d_o1_rf2 (static_cast <T const *> (src->storage()),
-                            src->shape(),
-                            static_cast <T *> (this->storage()),
-                            this->shape(),
-                            src->extent(),
-                            this->extent(),
-                            box);
+      call_operator<T> (prolongate_3d_o1_rf2,
+                        static_cast <T const *> (src->storage()),
+                        src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        box);
       break;
     case 3:
-      prolongate_3d_o3_rf2 (static_cast <T const *> (src->storage()),
-                            src->shape(),
-                            static_cast <T *> (this->storage()),
-                            this->shape(),
-                            src->extent(),
-                            this->extent(),
-                            box);
+      call_operator<T> (prolongate_3d_o3_rf2, 
+                        static_cast <T const *> (src->storage()),
+                        src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        box);
       break;
     case 5:
-      prolongate_3d_o5_rf2 (static_cast <T const *> (src->storage()),
-                            src->shape(),
-                            static_cast <T *> (this->storage()),
-                            this->shape(),
-                            src->extent(),
-                            this->extent(),
-                            box);
+      call_operator<T> (prolongate_3d_o5_rf2,
+                        static_cast <T const *> (src->storage()),
+                        src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        box);
       break;
     default:
       CCTK_WARN (CCTK_WARN_ABORT,
@@ -546,13 +616,14 @@ transfer_prolongate (data const * const src,
                  "There is no stencil for op=\"ENO\" with order_space==1");
       break;
     case 3:
-      prolongate_3d_eno (static_cast <T const *> (src->storage()),
-                         src->shape(),
-                         static_cast <T *> (this->storage()),
-                         this->shape(),
-                         src->extent(),
-                         this->extent(),
-                         box);
+      call_operator<T> (prolongate_3d_eno,
+                        static_cast <T const *> (src->storage()),
+                        src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        box);
       break;
     default:
       CCTK_WARN (CCTK_WARN_ABORT,
@@ -576,13 +647,14 @@ transfer_prolongate (data const * const src,
                  "There is no stencil for op=\"WENO\" with order_space=3");
       break;
     case 5:
-      prolongate_3d_eno (static_cast <T const *> (src->storage()),
-                         src->shape(),
-                         static_cast <T *> (this->storage()),
-                         this->shape(),
-                         src->extent(),
-                         this->extent(),
-                         box);
+      call_operator<T> (prolongate_3d_eno,
+                        static_cast <T const *> (src->storage()),
+                        src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        box);
       break;
     default:
       CCTK_WARN (CCTK_WARN_ABORT,
