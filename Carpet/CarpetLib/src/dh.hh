@@ -24,7 +24,31 @@ using namespace std;
 struct pseudoregion {
   ibbox extent;
   int processor;
+  pseudoregion ()
+  {
+  }
+  pseudoregion (ibbox const & extent_, int const processor_)
+    : extent (extent_), processor (processor_)
+  {
+  }
 };
+
+ostream & operator<< (ostream & os, pseudoregion const & p);
+
+struct sendrecv_pseudoregion {
+  pseudoregion send, recv;
+  sendrecv_pseudoregion ()
+  {
+  }
+  sendrecv_pseudoregion (ibbox const & send_extent, int const send_processor,
+                         ibbox const & recv_extent, int const recv_processor)
+    : send (pseudoregion (send_extent, send_processor)),
+      recv (pseudoregion (recv_extent, recv_processor))
+  {
+  }
+};
+
+ostream & operator<< (ostream & os, sendrecv_pseudoregion const & srp);
 
 
 
@@ -43,6 +67,7 @@ public:
   typedef vector<iblist> iblistvect; // vector of lists
   
   typedef vector <pseudoregion> pvect;
+  typedef vector <sendrecv_pseudoregion> srpvect;
   
   
   
@@ -101,6 +126,13 @@ public:
     pvect fast_ref_bnd_prol_recv;
     pvect fast_ref_bnd_prol_send;
     
+    srpvect fast_mg_rest_sendrecv;
+    srpvect fast_mg_prol_sendrecv;
+    srpvect fast_ref_prol_sendrecv;
+    srpvect fast_ref_rest_sendrecv;
+    srpvect fast_sync_sendrecv;
+    srpvect fast_ref_bnd_prol_sendrecv;
+    
     // Regridding schedule:
     
     iblistvect old2new_sync_recv;
@@ -112,6 +144,9 @@ public:
     pvect fast_old2new_sync_send;
     pvect fast_old2new_ref_prol_recv;
     pvect fast_old2new_ref_prol_send;
+    
+    srpvect fast_old2new_sync_sendrecv;
+    srpvect fast_old2new_ref_prol_sendrecv;
     
     ostream & output (ostream & os) const;
   };
@@ -138,6 +173,13 @@ private:
                   int proc,
                   iblist const dboxes::* field,
                   pvect dboxes::* fast_field);
+  
+  static
+  void
+  optimise2_field (cboxes & bs,
+                   pvect const dboxes::* fast_field_recv,
+                   pvect const dboxes::* fast_field_send,
+                   srpvect dboxes::* fast_field_sendrecv);
   
 public:                         // should be readonly
   

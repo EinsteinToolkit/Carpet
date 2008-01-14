@@ -167,6 +167,7 @@ void ggf::recompose_fill (comm_state & state, int const rl,
       }
     }
     
+#if 0
     for (int c = 0; c < h.components (rl); ++c) {
       
       // Initialise from the same level of the old hierarchy, where
@@ -200,6 +201,36 @@ void ggf::recompose_fill (comm_state & state, int const rl,
       } // if do_prolongate
       
     } // for c
+#endif
+    
+    // Initialise from the same level of the old hierarchy, where
+    // possible
+    if (rl < (int)oldstorage.AT(ml).size()) {
+      for (int tl = 0; tl < timelevels (ml, rl); ++tl) {
+        transfer_from_all (state,
+                           tl, rl, ml,
+                           & dh::dboxes::fast_old2new_sync_sendrecv,
+                           tl, rl, ml,
+                           & oldstorage);
+      } // for tl
+    } // if rl
+    
+    if (do_prolongate) {
+      // Initialise from a coarser level of the new hierarchy, where
+      // possible
+      if (rl > 0) {
+        if (transport_operator != op_none and transport_operator != op_sync) {
+          for (int tl = 0; tl < timelevels (ml, rl); ++tl) {
+            transfer_from_all (state,
+                               tl, rl, ml,
+                               & dh::dboxes::fast_old2new_ref_prol_sendrecv,
+                               tls, rl - 1, ml,
+                               t.time (tl, rl, ml));
+          } // for tl
+        } // if transport_operator
+      } // if rl
+    } // if do_prolongate
+    
   } // for ml
   
   timer.stop (0);
@@ -274,13 +305,13 @@ void ggf::fill (int rl, int c, int ml) {
 
 
 
-// Synchronise the boundaries a component
+// Synchronise the boundaries of a component
 void
 ggf::
 sync (comm_state & state,
       int const tl, int const rl, int const c, int const ml)
 {
-  if(transport_operator == op_none) return;
+  if (transport_operator == op_none) return;
   // Copy
   static Timer timer ("sync");
   timer.start ();
@@ -289,6 +320,23 @@ sync (comm_state & state,
                  & dh::dboxes::fast_sync_recv,
                  & dh::dboxes::fast_sync_send,
                  tl,rl,  ml);
+  timer.stop (0);
+}
+
+// Synchronise the boundaries of all components
+void
+ggf::
+sync_all (comm_state & state,
+          int const tl, int const rl, int const ml)
+{
+  if (transport_operator == op_none) return;
+  // Copy
+  static Timer timer ("sync_all");
+  timer.start ();
+  transfer_from_all (state,
+                     tl,rl,ml,
+                     & dh::dboxes::fast_sync_sendrecv,
+                     tl,rl,ml);
   timer.stop (0);
 }
 
@@ -334,6 +382,45 @@ ref_bnd_prolongate (comm_state & state,
   timer.stop (0);
 }
 
+// Prolongate the boundaries of all components
+void
+ggf::
+ref_bnd_prolongate_all (comm_state & state, 
+                        int const tl, int const rl, int const ml,
+                        CCTK_REAL const time)
+{
+  // Interpolate
+  assert (rl>=1);
+  if (transport_operator == op_none or transport_operator == op_sync) return;
+  vector<int> tl2s;
+  static Timer timer ("ref_bnd_prolongate_all");
+  timer.start ();
+  if (transport_operator != op_copy) {
+    // Interpolation in time
+    if (not (timelevels(ml,rl) >= prolongation_order_time+1)) {
+      char * const fullname = CCTK_FullName (varindex);
+      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "The variable \"%s\" has only %d active time levels, which is not enough for boundary prolongation of order %d",
+                  fullname ? fullname : "<unknown variable>",
+                  timelevels(ml,rl), prolongation_order_time);
+      free (fullname);
+    }
+    assert (timelevels(ml,rl) >= prolongation_order_time+1);
+    tl2s.resize(prolongation_order_time+1);
+    for (int i=0; i<=prolongation_order_time; ++i) tl2s.AT(i) = i;
+  } else {
+    assert (timelevels(ml,rl) >= 1);
+    tl2s.resize(1);
+    tl2s.AT(0) = 0;
+  }
+  transfer_from_all (state,
+                     tl  ,rl  ,ml,
+                     & dh::dboxes::fast_ref_bnd_prol_sendrecv,
+                     tl2s,rl-1,ml,
+                     time);
+  timer.stop (0);
+}
+
 
 
 // Restrict a multigrid level
@@ -356,6 +443,28 @@ mg_restrict (comm_state & state,
                  & dh::dboxes::fast_mg_rest_send,
                  tl2s,rl,  ml-1,
                  time);
+  timer.stop (0);
+}
+
+// Restrict a multigrid level
+void
+ggf::
+mg_restrict_all (comm_state & state,
+             int const tl, int const rl, int const ml,
+                 CCTK_REAL const time)
+{
+  static Timer timer ("mg_restrict_all");
+  timer.start ();
+  // Require same times
+  static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
+  assert (abs(t.get_time(rl,ml) - t.get_time(rl,ml-1))
+	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
+  vector<int> const tl2s(1,tl);
+  transfer_from_all (state,
+                     tl  ,rl,ml,
+                     & dh::dboxes::fast_mg_rest_sendrecv,
+                     tl2s,rl,ml-1,
+                     time);
   timer.stop (0);
 }
 
@@ -384,6 +493,28 @@ mg_prolongate (comm_state & state,
   timer.stop (0);
 }
 
+// Prolongate a multigrid level
+void
+ggf::
+mg_prolongate_all (comm_state & state,
+                   int const tl, int const rl, int const ml,
+                   CCTK_REAL const time)
+{
+  static Timer timer ("mg_prolongate_all");
+  timer.start ();
+  // Require same times
+  static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
+  assert (abs(t.get_time(rl,ml) - t.get_time(rl,ml+1))
+	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
+  vector<int> const tl2s(1,tl);
+  transfer_from_all (state,
+                     tl  ,rl,ml,
+                     & dh::dboxes::fast_mg_prol_sendrecv,
+                     tl2s,rl,ml+1,
+                     time);
+  timer.stop (0);
+}
+
 
 
 // Restrict a refinement level
@@ -407,6 +538,29 @@ ref_restrict (comm_state & state,
                  & dh::dboxes::fast_ref_rest_send,
                  tl2s,rl+1,  ml,
                  time);
+  timer.stop (0);
+}
+
+// Restrict a refinement level
+void
+ggf::
+ref_restrict_all (comm_state & state,
+                  int const tl, int const rl, int const ml,
+                  CCTK_REAL const time)
+{
+  // Require same times
+  static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
+  assert (abs(t.get_time(rl,ml) - t.get_time(rl+1,ml))
+	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
+  if (transport_operator == op_none or transport_operator == op_sync) return;
+  static Timer timer ("ref_restrict_all");
+  timer.start ();
+  vector<int> const tl2s(1,tl);
+  transfer_from_all (state,
+                     tl  ,rl  ,ml,
+                     & dh::dboxes::fast_ref_rest_sendrecv,
+                     tl2s,rl+1,ml,
+                     time);
   timer.stop (0);
 }
 
@@ -437,6 +591,30 @@ ref_prolongate (comm_state & state,
   timer.stop (0);
 }
 
+// Prolongate a refinement level
+void
+ggf::
+ref_prolongate_all (comm_state & state,
+                    int const tl, int const rl, int const ml,
+                    CCTK_REAL const time)
+{
+  assert (rl>=1);
+  if (transport_operator == op_none or transport_operator == op_sync) return;
+  static Timer timer ("ref_prolongate_all");
+  timer.start ();
+  vector<int> tl2s;
+  // Interpolation in time
+  assert (timelevels(ml,rl) >= prolongation_order_time+1);
+  tl2s.resize(prolongation_order_time+1);
+  for (int i=0; i<=prolongation_order_time; ++i) tl2s.AT(i) = i;
+  transfer_from_all (state,
+                     tl  ,rl  ,ml,
+                     & dh::dboxes::fast_ref_prol_sendrecv,
+                     tl2s,rl-1,ml,
+                     time);
+  timer.stop (0);
+}
+
 
 
 // Transfer regions
@@ -459,6 +637,9 @@ transfer_from (comm_state & state,
   pvect const & psends = d.boxes.AT(ml1).AT(rl1).AT(c1).*sends;
   assert (precvs.size() == psends.size());
   
+  // Return early if this communication does not concern us
+  if (precvs.empty()) return;
+  
   mdata & srcstorage = srcstorage_ ? * srcstorage_ : storage;
   
   if (not precvs.empty()) {
@@ -475,6 +656,7 @@ transfer_from (comm_state & state,
   total.start ();
   
   // Interpolation orders
+  assert (transport_operator != op_none);
   int const pos =
     transport_operator == op_copy ? 0 : d.prolongation_order_space;
   int const pot =
@@ -505,6 +687,80 @@ transfer_from (comm_state & state,
     ibbox const & send = psend.extent;
     int const c2 = precv.processor;
     assert (psend.processor == c2);
+    for (int i=0; i<(int)gsrcs.size(); ++i) {
+      gsrcs.AT(i) = srcs.AT(c2).AT(tl2s.AT(i));
+    }
+    dst->transfer_from (state, gsrcs, times, recv, send, time, pos, pot);
+  }
+  
+  total.stop (0);
+}
+
+// Transfer regions of all components
+void
+ggf::
+transfer_from_all (comm_state & state,
+                   int const tl1, int const rl1, int const ml1,
+                   srpvect const dh::dboxes::* sendrecvs,
+                   vector<int> const & tl2s, int const rl2, int const ml2,
+                   CCTK_REAL const & time,
+                   mdata * const srcstorage_)
+{
+  assert (rl1>=0 and rl1<h.reflevels());
+  assert (ml1>=0 and ml1<h.mglevels());
+  assert (tl1>=0 and tl1<timelevels(ml1,rl1));
+  
+  int const p = dist::rank();
+  srpvect const & psendrecvs = d.boxes.AT(ml1).AT(rl1).AT(p).*sendrecvs;
+  
+  // Return early if this communication does not concern us
+  if (psendrecvs.empty()) return;
+  
+  static Timer total ("transfer_from_all");
+  total.start ();
+  
+  mdata & srcstorage = srcstorage_ ? * srcstorage_ : storage;
+  
+  assert (           ml2<(int)srcstorage.size());
+  assert (rl2>=0 and rl2<(int)srcstorage.AT(ml2).size());
+  for (size_t i = 0; i < tl2s.size(); ++ i) {
+    int const tl2 = tl2s.AT(i);
+    assert (tl2>=0 and tl2<(int)srcstorage.AT(ml2).AT(rl2).AT(0).size());
+  }
+  
+  // Set up source times
+  vector<CCTK_REAL> times(tl2s.size());
+  for (size_t i=0; i<tl2s.size(); ++i) {
+    assert (tl2s.AT(i)>=0 and tl2s.AT(i)<timelevels(ml2,rl2));
+    for (size_t j=0; j<i; ++j) {
+      assert (tl2s.AT(i) != tl2s.AT(j));
+    }
+    times.AT(i) = t.time(tl2s.AT(i),rl2,ml2);
+  }
+  
+  // Interpolation orders
+  assert (transport_operator != op_none);
+  int const pos =
+    transport_operator == op_copy ? 0 : d.prolongation_order_space;
+  int const pot =
+    transport_operator == op_copy ? 0 : prolongation_order_time;
+  
+  vector<const gdata*> gsrcs(tl2s.size());
+  
+  // Walk all regions
+  for (srpvect::const_iterator ipsendrecv = psendrecvs.begin();
+       ipsendrecv!=psendrecvs.end(); ++ ipsendrecv)
+  {
+    pseudoregion const & psend = (* ipsendrecv).send;
+    pseudoregion const & precv = (* ipsendrecv).recv;
+    ibbox const & send = psend.extent;
+    ibbox const & recv = precv.extent;
+    int const c2 = psend.processor;
+    int const c1 = precv.processor;
+    
+    // Source and destination data
+    gdata * const dst = storage.AT(ml1).AT(rl1).AT(c1).AT(tl1);
+    cdata const & srcs = srcstorage.AT(ml2).AT(rl2);
     for (int i=0; i<(int)gsrcs.size(); ++i) {
       gsrcs.AT(i) = srcs.AT(c2).AT(tl2s.AT(i));
     }
