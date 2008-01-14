@@ -103,14 +103,14 @@ public:
   // Flip the time levels by exchanging the data sets
   void flip (int rl, int c, int ml);
 
+  // Fill all time levels from the current time level
+  void fill (int rl, int c, int ml);
+
   // The grid boundaries have to be updated after calling mg_restrict,
   // mg_prolongate, ref_restrict, or ref_prolongate.
 
   // "Updating" means here that the boundaries have to be
   // synchronised.  They don't need to be prolongated.
-
-  // Copy a component from the next time level
-  void copy (comm_state& state, int tl, int rl, int c, int ml);
 
   // Synchronise the boundaries of a component
   void sync (comm_state& state, int tl, int rl, int c, int ml);

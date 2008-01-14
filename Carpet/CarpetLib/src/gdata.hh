@@ -123,6 +123,10 @@ public:
     return _extent;
   }
 
+  int elementsize () const {
+    return c_datatype_size();
+  }
+
   // Data accessors
   int offset (const ivect& index) const {
     assert (_has_storage);
@@ -136,6 +140,7 @@ private:
   // Datatype accessors
   // maps the C datatype of a data class object to a 0-based index
   virtual unsigned int c_datatype () const = 0;
+  virtual size_t c_datatype_size () const = 0;
   
   // Data manipulators
   

@@ -96,6 +96,11 @@ private:
     T dummy;
     return dist::c_datatype (dummy);
   }
+  // size of the C datatype
+  virtual size_t c_datatype_size () const
+  {
+    return sizeof (T);
+  }
 
   // Data manipulators
   

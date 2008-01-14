@@ -257,19 +257,20 @@ void ggf::flip (int rl, int c, int ml) {
 
 
 
-#if 0
-// Copy a component from the next time level
-void ggf::copy (comm_state& state, int tl, int rl, int c, int ml)
-{
-  // Copy
-  static Timer timer ("copy");
-  timer.start ();
-  transfer_from (state,
-                 tl  ,rl,c,ml, &dh::dboxes::exterior,
-                 tl+1,rl,  ml);
-  timer.stop (0);
+// Fill all time levels from the current time level
+void ggf::fill (int rl, int c, int ml) {
+  assert (rl>=0 and rl<h.reflevels());
+  assert (c>=0 and c<h.components(rl));
+  assert (ml>=0 and ml<h.mglevels());
+  if (not h.is_local(rl,c)) return;
+  fdata const & fdatas = storage.AT(ml).AT(rl).AT(c);
+  void const * const srcptr = fdatas.AT(0)->storage();
+  size_t const size = fdatas.AT(0)->size() * fdatas.AT(0)->elementsize();
+  for (int tl=1; tl<timelevels(ml,rl); ++tl) {
+    void * const dstptr = fdatas.AT(tl)->storage();
+    memcpy (dstptr, srcptr, size);
+  }
 }
-#endif
 
 
 
