@@ -1,0 +1,54 @@
+#! /usr/bin/awk -f
+
+# Extract one line from the timing results, returning the minimum time
+# if several times match
+
+function undefined (var) {
+    return var==0 && var=="";
+}
+
+BEGIN {
+    min = 1000000000;
+    found = 0;
+}
+
+{
+    if (benchmark ~ "^Bench_.*_PUGH$" ||
+        benchmark ~ "^Bench_.*_Carpet_1lev")
+    {
+        if (undefined(steps)) steps = 10;
+        if (undefined(size)) size = 65;
+    } else if (benchmark ~ "^Bench_.*_Carpet_9lev$") {
+        if (undefined(steps)) steps = 64;
+        if (undefined(size)) size = 30;
+    }
+    if (machine == "queenbee") {
+        if (undefined(procs)) procs = 8;
+        if (undefined(ppn)) ppn = 8;
+    } else if (machine == "ranger") {
+        if (undefined(procs)) procs = 16;
+        if (undefined(ppn)) ppn = 16;
+    }
+    if (undefined(tpp)) tpp = 1;
+    if (undefined(itermin)) itermin = 40;
+    if (undefined(itermax)) itermax = 49;
+}
+
+function inrange (val, minval, maxval) {
+    return val >= minval && val <= maxval;
+}
+
+$1 == benchmark && $2 == steps && $3 == size && $4 == machine && $5 == procs && $6 == ppn && $7 == tpp && inrange($8,itermin,itermax) {
+    found = 1;
+    walltime = $9;
+    if (min > walltime) {
+        iter = $8;
+        min = walltime;
+    }
+}
+
+END {
+    if (found) {
+        print benchmark, steps, size, machine, procs, ppn, tpp, iter, min;
+    }
+}

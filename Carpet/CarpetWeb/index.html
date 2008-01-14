@@ -107,6 +107,41 @@
 
     <h2>News</h2>
 
+    <table><tr><td valign="top">
+      <p><b>January 14, 2008:</b> Carpet's communication
+        infrastructure has been improved significantly, making Carpet
+        scale to at least 4,000 processors, including mesh refinement.
+        Using "friendly user time"
+        on <a
+        href="http://www.tacc.utexas.edu/services/userguides/ranger/">Ranger</a>,
+        the new 60,000
+        core <a href="http://www.teragrid.org/">TeraGrid</a>
+        supercomputer
+        at <a href="http://www.tacc.utexas.edu/">TACC</a>, we measured
+        the benchmark results below for a numerical relativity kernel
+        solving the BSSN equations.  These benchmarks emply a hybrid
+        communication scheme
+        combining <a href="http://www-unix.mcs.anl.gov/mpi/">MPI</a>
+        and
+        <a href="http://www.openmp.org/">OpenMP</a>, using the shared
+        memory capabilities of Ranger's nodes to reduce the memory
+        overhead of parallelisation.  We are grateful for the help we
+        received from Ranger's support team.</p>
+      <p>The graph below shows weak scaling tests for both unigrid and
+        mesh refinement benchmarks.  The problem size per core was
+        kept fixed, and there were 4 OpenMP threads per MPI process,
+        with 1 MPI process per socket.  The benchmark was also run
+        with the PUGH driver for comparison for certain core counts.
+        As the graphs show, this benchmark scales near perfectly for
+        unigrid, and has only small variations in run time for nine
+        levels of mesh refinement.</p>
+    </td><td valign="top">
+        <p><a
+              href="scaling-ranger/results-ranger.pdf"><img
+              src="scaling-ranger/results-ranger.png" width="200"
+              alt="Scaling graph for Ranger"/></a></p>
+    </td></tr></table>
+
 <!--
     <p><b>October 4, 2007:</b> Announcement: <i>The BBH factory</i><br />
       <b>Physicist version:</b> The BBH factory is a glorified set of shell
@@ -185,7 +220,7 @@
         example application without using I/O or analysis methods.</p>
     </td><td valign="top">
         <p><a
-              href="hybrid-scaling/results-wavetoy-abe.png"><img
+              href="hybrid-scaling/results-wavetoy-abe.pdf"><img
               src="hybrid-scaling/results-wavetoy-abe.png" width="200"
               alt="Scaling graph for Abe"/></a></p>
     </td></tr></table>
