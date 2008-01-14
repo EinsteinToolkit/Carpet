@@ -199,7 +199,7 @@ template ostream& output (ostream& os, const vector<bbox<int,3> >& v);
 template ostream& output (ostream& os, const vector<bbox<CCTK_REAL,3> >& v);
 template ostream& output (ostream& os, const vector<vect<int,3> >& v);
 template ostream& output (ostream& os, const vector<vect<vect<bool,2>,3> >& v);
-template ostream& output (ostream& os, const vector<dh::dboxes> & b);
+template ostream& output (ostream& os, const vector<dh::dboxes> & v);
 template ostream& output (ostream& os, const vector<region_t>& v);
 template ostream& output (ostream& os, const vector<list<bbox<int,3> > >& v);
 template ostream& output (ostream& os, const vector<vector<int> >& v);
