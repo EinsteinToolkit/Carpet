@@ -79,9 +79,12 @@ namespace Carpet {
 
           for (int v = 0; v < (int)arrdata.at(group).at(m).data.size(); ++v) {
             ggf *const gv = arrdata.at(group).at(m).data.at(v);
+#if 0
             for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
               gv->ref_restrict (state, tl, reflevel, c, mglevel, time);
             }
+#endif
+            gv->ref_restrict_all (state, tl, reflevel, mglevel, time);
           }
         }
       } // loop over groups

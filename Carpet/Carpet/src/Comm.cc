@@ -195,9 +195,12 @@ namespace Carpet {
         for (int m = 0; m < (int)arrdata.at(g).size(); ++m) {
           for (int v = 0; v < (int)arrdata.at(g).at(m).data.size(); ++v) {
             ggf *const gv = arrdata.at(g).at(m).data.at(v);
+#if 0
             for (int c = 0; c < vhh.at(m)->components(reflevel); ++c) {
               gv->ref_bnd_prolongate (state, tl, reflevel, c, mglevel, time);
             }
+#endif
+            gv->ref_bnd_prolongate_all (state, tl, reflevel, mglevel, time);
           }
         }
       }
@@ -222,9 +225,12 @@ namespace Carpet {
         for (int m = 0; m < (int)arrdata.at(g).size(); ++m) {
           for (int v = 0; v < (int)arrdata.at(g).at(m).data.size(); ++v) {
             arrdesc& array = arrdata.at(g).at(m);
+#if 0
             for (int c = 0; c < array.hh->components(rl); ++c) {
               array.data.at(v)->sync (state, tl, rl, c, ml);
             }
+#endif
+            array.data.at(v)->sync_all (state, tl, rl, ml);
           }
         }
       }
