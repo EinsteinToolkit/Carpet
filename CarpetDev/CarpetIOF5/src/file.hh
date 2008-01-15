@@ -2,6 +2,7 @@
 #define FILE_HH
 
 #include <string>
+#include <vector>
 
 #include <hdf5.h>
 
@@ -14,6 +15,7 @@
 namespace CarpetIOF5 {
   
   using std::string;
+  using std::vector;
   
   
   
@@ -23,18 +25,40 @@ namespace CarpetIOF5 {
       
       cGH const * const m_cctkGH;
       
-      string const m_filename;
+      bool const m_have_metafile;
       
+      string const m_basename;
+      string const m_extension;
+      
+      string m_metafilename;
+      string m_filename;
+      
+      mutable vector <string> m_filenames;
+      
+      hid_t m_hdf5_metafile;
       hid_t m_hdf5_file;
       
       file_t ();
       file_t (file_t const &);
       file_t operator= (file_t const &);
       
+      static int
+      base_10_digits (int number);
+      
+      string
+      make_metafilename ()
+        const;
+      
+      string
+      make_filename (int proc)
+        const;
+      
     public:
       
       file_t (cGH const * cctkGH,
               string filename,
+              string extension,
+              bool want_metafile,
               bool do_truncate);
       
       virtual
@@ -44,8 +68,25 @@ namespace CarpetIOF5 {
       get_cctkGH ()
         const;
       
+      bool
+      get_have_metafile ()
+        const;
+      
+      string
+      get_filename (int proc)
+        const;
+      
+      hid_t
+      get_hdf5_metafile ()
+        const;
+      
       hid_t
       get_hdf5_file ()
+        const;
+      
+      void
+      get_link_destination (string & filename,
+                            string & objectname)
         const;
       
       virtual bool

@@ -9,7 +9,6 @@
 #include "vect.hh"
 
 #include "topology.hh"
-#include "utils.hh"
 
 
 
@@ -64,6 +63,7 @@ namespace CarpetIOF5 {
       : topology_t (simulation)
     {
       char const * const name = "Vertices";
+      m_name = string (name);
       m_hdf5_topology
         = open_or_create_group (m_simulation.get_hdf5_simulation(), name);
       assert (m_hdf5_topology >= 0);
@@ -112,6 +112,7 @@ namespace CarpetIOF5 {
       ostringstream namebuf;
       namebuf << "Vertices map=" << map << " level=" << refinement_level;
       string const namestr = namebuf.str();
+      m_name = namestr;
       char const * const name = namestr.c_str();
       
       m_hdf5_topology
@@ -151,6 +152,26 @@ namespace CarpetIOF5 {
     {
       herr_t const herr = H5Gclose (m_hdf5_topology);
       assert (not herr);
+    }
+    
+    
+    
+    void topology_t::
+    get_link_destination (string & filename,
+                          string & objectname)
+      const
+    {
+      static bool initialised = false;
+      static string l_filename;
+      static string l_objectname;
+      if (not initialised)
+      {
+        initialised = true;
+        get_simulation().get_link_destination (l_filename, l_objectname);
+        l_objectname += string ("/") + m_name;
+      }
+      filename = l_filename;
+      objectname = l_objectname;
     }
     
     

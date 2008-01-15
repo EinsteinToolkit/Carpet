@@ -26,6 +26,8 @@ namespace CarpetIOF5 {
       
       topology_t & m_topology;
       
+      string m_name;
+      
       hid_t m_hdf5_coordinate_system;
       
       coordinate_system_t (topology_t & topology);
@@ -41,6 +43,11 @@ namespace CarpetIOF5 {
       
       hid_t
       get_hdf5_coordinate_system ()
+        const;
+      
+      void
+      get_link_destination (string & filename,
+                            string & objectname)
         const;
       
       virtual bool

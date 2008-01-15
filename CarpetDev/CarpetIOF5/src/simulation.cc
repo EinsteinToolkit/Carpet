@@ -60,6 +60,26 @@ namespace CarpetIOF5 {
     
     
     
+    void simulation_t::
+    get_link_destination (string & filename,
+                          string & objectname)
+      const
+    {
+      static bool initialised = false;
+      static string l_filename;
+      static string l_objectname;
+      if (not initialised)
+      {
+        initialised = true;
+        get_timestep().get_link_destination (l_filename, l_objectname);
+        l_objectname += string ("/") + m_name;
+      }
+      filename = l_filename;
+      objectname = l_objectname;
+    }
+    
+    
+    
     bool simulation_t::
     invariant()
       const

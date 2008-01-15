@@ -4,7 +4,6 @@
 #include "cctk.h"
 
 #include "physical_quantity.hh"
-#include "utils.hh"
 
 
 
@@ -26,6 +25,7 @@ namespace CarpetIOF5 {
       {
         * p = static_cast<char> (tolower (* p));
       }
+      m_name = string (name);
       
       m_hdf5_physical_quantity
         = open_or_create_group (m_coordinate_system
@@ -72,6 +72,26 @@ namespace CarpetIOF5 {
       const
     {
       return m_hdf5_physical_quantity;
+    }
+    
+    
+    
+    void physical_quantity_t::
+    get_link_destination (string & filename,
+                          string & objectname)
+      const
+    {
+      static bool initialised = false;
+      static string l_filename;
+      static string l_objectname;
+      if (not initialised)
+      {
+        initialised = true;
+        get_coordinate_system().get_link_destination (l_filename, l_objectname);
+        l_objectname += string ("/") + m_name;
+      }
+      filename = l_filename;
+      objectname = l_objectname;
     }
     
     

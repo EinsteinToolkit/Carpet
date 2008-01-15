@@ -52,6 +52,11 @@ namespace CarpetIOF5 {
       get_hdf5_timestep ()
         const;
       
+      void
+      get_link_destination (string & filename,
+                            string & objectname)
+        const;
+      
       virtual bool
       invariant ()
         const;

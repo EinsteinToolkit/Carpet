@@ -117,6 +117,7 @@ namespace CarpetIOF5 {
       namebuf << "Cartesian 3D, x0=" << m_level_origin
               << ", dx=" << m_level_delta;
       string const namestr = namebuf.str();
+      m_name = namestr;
       char const * const name = namestr.c_str();
       
       m_hdf5_coordinate_system
@@ -127,6 +128,26 @@ namespace CarpetIOF5 {
         (m_hdf5_coordinate_system, "origin", m_level_origin);
       write_or_check_attribute
         (m_hdf5_coordinate_system, "delta", m_level_delta);
+    }
+    
+    
+    
+    void coordinate_system_t::
+    get_link_destination (string & filename,
+                          string & objectname)
+      const
+    {
+      static bool initialised = false;
+      static string l_filename;
+      static string l_objectname;
+      if (not initialised)
+      {
+        initialised = true;
+        get_topology().get_link_destination (l_filename, l_objectname);
+        l_objectname += string ("/") + m_name;
+      }
+      filename = l_filename;
+      objectname = l_objectname;
     }
     
     

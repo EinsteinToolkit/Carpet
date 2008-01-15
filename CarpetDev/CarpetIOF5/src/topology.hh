@@ -9,6 +9,7 @@
 #include "vect.hh"
 
 #include "simulation.hh"
+#include "utils.hh"
 
 
 
@@ -26,6 +27,8 @@ namespace CarpetIOF5 {
       
       simulation_t & m_simulation;
       
+      string m_name;
+      
       hid_t m_hdf5_topology;
       
       topology_t (simulation_t & simulation);
@@ -39,6 +42,11 @@ namespace CarpetIOF5 {
       
       simulation_t &
       get_simulation ()
+        const;
+      
+      void
+      get_link_destination (string & filename,
+                            string & objectname)
         const;
       
       hid_t
@@ -105,6 +113,11 @@ namespace CarpetIOF5 {
       
       virtual
       ~ mesh_refinement_topology_t ();
+      
+      void
+      get_link_destination (string & filename,
+                            string & objectname)
+        const;
       
       virtual bool
       invariant ()

@@ -30,27 +30,33 @@ namespace CarpetIOF5 {
   private:
     
     void
-    write_meta (F5::file_t & file)
+    write_meta (F5::file_t & file,
+                bool have_metafile)
       const;
     
     void
-    write_one_mglevel (F5::timestep_t & timestep)
+    write_one_mglevel (F5::timestep_t & timestep,
+                       bool have_metafile)
       const;
     
     void
-    write_global (F5::simulation_t & simulation)
+    write_global (F5::simulation_t & simulation,
+                  bool have_metafile)
       const;
     
     void
-    write_one_reflevel (F5::simulation_t & simulation)
+    write_one_reflevel (F5::simulation_t & simulation,
+                        bool have_metafile)
       const;
     
     void
-    write_one_map (F5::simulation_t & simulation)
+    write_one_map (F5::simulation_t & simulation,
+                   bool have_metafile)
       const;
     
     void
-    write_one_component (F5::tensor_component_t & tensor_component)
+    write_one_component (F5::tensor_component_t & tensor_component,
+                         bool have_metafile)
       const;
     
   };

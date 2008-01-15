@@ -8,7 +8,6 @@
 #include "carpet.hh"
 
 #include "data_region.hh"
-#include "utils.hh"
 
 
 
@@ -54,7 +53,8 @@ namespace CarpetIOF5 {
       
       m_dataset
         = H5Dcreate (m_tensor_component.get_hdf5_tensor_component(), name,
-                     hdf5_datatype, m_dataspace, m_properties);
+                     hdf5_datatype, m_dataspace,
+                     H5P_DEFAULT, m_properties, H5P_DEFAULT);
       assert (m_dataset >= 0);
       
       write_or_check_attribute
@@ -78,6 +78,21 @@ namespace CarpetIOF5 {
       
       herr = H5Pclose (m_properties);
       assert (not herr);
+    }
+    
+    
+    
+    string data_region_t::
+    name_from_region (bbox<int, dim> const & region)
+    {
+      ostringstream namebuf;
+#if 0
+      namebuf << "map=" << Carpet::map << " "
+              << "region=" << region;
+#else
+      namebuf << "region=" << region;
+#endif
+      return namebuf.str();
     }
     
     

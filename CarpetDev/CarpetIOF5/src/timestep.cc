@@ -99,6 +99,26 @@ namespace CarpetIOF5 {
     
     
     
+    void timestep_t::
+    get_link_destination (string & filename,
+                          string & objectname)
+      const
+    {
+      static bool initialised = false;
+      static string l_filename;
+      static string l_objectname;
+      if (not initialised)
+      {
+        initialised = true;
+        get_file().get_link_destination (l_filename, l_objectname);
+        l_objectname += string ("/") + m_name;
+      }
+      filename = l_filename;
+      objectname = l_objectname;
+    }
+    
+    
+    
     bool timestep_t::
     invariant()
       const

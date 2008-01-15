@@ -4,7 +4,6 @@
 #include "cctk.h"
 
 #include "tensor_component.hh"
-#include "utils.hh"
 
 
 
@@ -22,6 +21,7 @@ namespace CarpetIOF5 {
       
       char const * const name = CCTK_VarName (variable);
       assert (name != 0);
+      m_name = string (name);
       
       m_hdf5_tensor_component
         = open_or_create_group (m_physical_quantity
@@ -66,6 +66,26 @@ namespace CarpetIOF5 {
       const
     {
       return m_hdf5_tensor_component;
+    }
+    
+    
+    
+    void tensor_component_t::
+    get_link_destination (string & filename,
+                          string & objectname)
+      const
+    {
+      static bool initialised = false;
+      static string l_filename;
+      static string l_objectname;
+      if (not initialised)
+      {
+        initialised = true;
+        get_physical_quantity().get_link_destination (l_filename, l_objectname);
+        l_objectname += string ("/") + m_name;
+      }
+      filename = l_filename;
+      objectname = l_objectname;
     }
     
     

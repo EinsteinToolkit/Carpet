@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -56,9 +57,6 @@ namespace CarpetIOF5 {
   mark_variables (int variable,
                   char const * options,
                   void * ptr);
-  
-  static int
-  base_10_digits (int number);
   
   
   
@@ -176,21 +174,6 @@ namespace CarpetIOF5 {
   {
     vector<bool> & want_variables = * static_cast<vector<bool> *> (ptr);
     want_variables.at (variable) = true;
-  }
-  
-  
-  
-  int
-  base_10_digits (int number)
-  {
-    number = abs (number);
-    int digits = 1;
-    while (number >= 10)
-    {
-      number /= 10;
-      ++ digits;
-    }
-    return digits;
   }
   
   
@@ -386,23 +369,18 @@ namespace CarpetIOF5 {
     
     extending_t extending (cctkGH);
     
-    ostringstream filenamebuf;
-    bool const use_IO_out_dir = strcmp (out_dir, "") == 0;
-    int const digits = base_10_digits (CCTK_nProcs (cctkGH) - 1);
-    filenamebuf << (use_IO_out_dir ? IO_out_dir : out_dir)
-                << "/"
-                << alias
-                << "."
-                << setw (digits) << setfill ('0') << CCTK_MyProc (cctkGH) 
-                << out_extension;
-    string const filename = filenamebuf.str();
+    bool const use_IO_out_dir = std::strcmp (out_dir, "") == 0;
+    string const basename
+      = (use_IO_out_dir ? IO_out_dir : out_dir) + string ("/") + alias;
+    bool const want_metafile = CCTK_MyProc (cctkGH) == 0;
     
-    bool const did_truncate = extending.get_did_truncate (filename);
+    bool const did_truncate = extending.get_did_truncate (basename);
     bool const do_truncate
       = not did_truncate and IO_TruncateOutputFiles (cctkGH);
-    extending.set_did_truncate (filename);
+    extending.set_did_truncate (basename);
     
-    F5::file_t file (cctkGH, filename, do_truncate);
+    F5::file_t file (cctkGH, basename, string (out_extension),
+                     want_metafile, do_truncate);
     
     writer_t writer (cctkGH, variable);
     writer.write (file);

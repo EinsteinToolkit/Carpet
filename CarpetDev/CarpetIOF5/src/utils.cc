@@ -108,12 +108,10 @@ namespace CarpetIOF5 {
       {
         initialised = true;
         
-        hsize_t const cdim = 2;
-        int const perm = 0;
+        hsize_t const cdim[1] = { 2 };
         
         hdf_complex_datatype
-          = H5Tarray_create (hdf5_datatype_from_dummy (real),
-                             1, & cdim, & perm);
+          = H5Tarray_create (hdf5_datatype_from_dummy (real), 1, cdim);
         assert (hdf_complex_datatype >= 0);
       }
       
@@ -197,11 +195,11 @@ namespace CarpetIOF5 {
       hid_t group;
       if (group_exists)
       {
-        group = H5Gopen (where, name);
+        group = H5Gopen (where, name, H5P_DEFAULT);
       }
       else
       {
-        group = H5Gcreate (where, name, 0);
+        group = H5Gcreate (where, name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       }
       
       return group;
@@ -235,7 +233,8 @@ namespace CarpetIOF5 {
         hsize_t const adim = num_values;
         hid_t const dataspace = H5Screate_simple (1, & adim, & adim);
         assert (dataspace >= 0);
-        attribute = H5Acreate (where, name, datatype, dataspace, H5P_DEFAULT);
+        attribute = H5Acreate (where, name, datatype, dataspace,
+                               H5P_DEFAULT, H5P_DEFAULT);
         assert (attribute >= 0);
         herr_t herr;
         herr = H5Awrite (attribute, datatype, values);
@@ -257,7 +256,7 @@ namespace CarpetIOF5 {
         hsize_t adim;
         herr_t herr;
         herr = H5Sget_simple_extent_dims (dataspace, & adim, 0);
-        assert (adim == num_values);
+        assert (adim == hsize_t (num_values));
         vector<T> buf (adim);
         herr = H5Aread (attribute, datatype, & buf.front());
         assert (not herr);
@@ -386,7 +385,8 @@ namespace CarpetIOF5 {
         hsize_t const dim = 1;
         hid_t const dataspace = H5Screate_simple (1, & dim, & dim);
         assert (dataspace >= 0);
-        attribute = H5Acreate (where, name, datatype, dataspace, H5P_DEFAULT);
+        attribute = H5Acreate (where, name, datatype, dataspace,
+                               H5P_DEFAULT, H5P_DEFAULT);
         assert (attribute >= 0);
         herr = H5Awrite (attribute, datatype, value);
         assert (not herr);
@@ -428,7 +428,7 @@ namespace CarpetIOF5 {
         assert (strcmp (& buf.front(), value) == 0);
       }
     }
-
+    
   } // namespace F5
 
 } // namespace CarpetIOF5

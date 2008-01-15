@@ -8,6 +8,7 @@
 
 #include "data_region.hh"
 #include "file.hh"
+#include "meta_data_region.hh"
 #include "simulation.hh"
 #include "tensor_component.hh"
 #include "timestep.hh"
@@ -32,13 +33,14 @@ namespace CarpetIOF5 {
   write (F5::file_t & file)
     const
   {
-    write_meta (file);
+    write_meta (file, file.get_have_metafile());
   }
   
   
   
   void writer_t::
-  write_meta (F5::file_t & file)
+  write_meta (F5::file_t & file,
+              bool const have_metafile)
     const
   {
     DECLARE_CCTK_PARAMETERS;
@@ -57,19 +59,20 @@ namespace CarpetIOF5 {
            not mglevel_iter.done();
            mglevel_iter.step())
       {
-        write_one_mglevel (timestep);
+        write_one_mglevel (timestep, have_metafile);
       }
     }
     else
     {
-      write_one_mglevel (timestep);
+      write_one_mglevel (timestep, have_metafile);
     }
   }
   
   
   
   void writer_t::
-  write_one_mglevel (F5::timestep_t & timestep)
+  write_one_mglevel (F5::timestep_t & timestep,
+                     bool const have_metafile)
     const
   {
     DECLARE_CCTK_PARAMETERS;
@@ -96,7 +99,7 @@ namespace CarpetIOF5 {
       {
         if (Carpet::do_global_mode)
         {
-          write_global (simulation);
+          write_global (simulation, have_metafile);
         }
       }
       break;
@@ -108,12 +111,12 @@ namespace CarpetIOF5 {
                not reflevel_iter.done();
                reflevel_iter.step())
           {
-            write_one_reflevel (simulation);
+            write_one_reflevel (simulation, have_metafile);
           }
         }
         else
         {
-          write_one_reflevel (simulation);
+          write_one_reflevel (simulation, have_metafile);
         }
       }
       break;
@@ -125,7 +128,8 @@ namespace CarpetIOF5 {
   
   
   void writer_t::
-  write_global (F5::simulation_t & simulation)
+  write_global (F5::simulation_t & simulation,
+                bool const have_metafile)
     const
   {
     DECLARE_CCTK_PARAMETERS;
@@ -163,8 +167,15 @@ namespace CarpetIOF5 {
     bbox<int, dim> const & region
       = dd->boxes.at(Carpet::mglevel).at(reflevel).at(myproc).exterior;
     
-    F5::data_region_t data_region (tensor_component, region);
+    if (have_metafile)
+    {
+      F5::meta_data_region_t meta_data_region (tensor_component, region);
+      gh * const hh = Carpet::vhh.at(Carpet::map);
+      int const proc = hh->processor (Carpet::reflevel, Carpet::component);
+      meta_data_region.write (proc);
+    }
     
+    F5::data_region_t data_region (tensor_component, region);
     int const timelevel = 0;
     void const * const varptr
       = CCTK_VarDataPtrI (m_cctkGH, timelevel, m_variable);
@@ -177,7 +188,8 @@ namespace CarpetIOF5 {
   
   
   void writer_t::
-  write_one_reflevel (F5::simulation_t & simulation)
+  write_one_reflevel (F5::simulation_t & simulation,
+                      bool const have_metafile)
     const
   {
     DECLARE_CCTK_PARAMETERS;
@@ -199,19 +211,20 @@ namespace CarpetIOF5 {
            not map_iter.done();
            map_iter.step())
       {
-        write_one_map (simulation);
+        write_one_map (simulation, have_metafile);
       }
     }
     else
     {
-      write_one_map (simulation);
+      write_one_map (simulation, have_metafile);
     }
   }
   
   
   
   void writer_t::
-  write_one_map (F5::simulation_t & simulation)
+  write_one_map (F5::simulation_t & simulation,
+                 bool const have_metafile)
     const
   {
     DECLARE_CCTK_PARAMETERS;
@@ -252,19 +265,20 @@ namespace CarpetIOF5 {
            not component_iter.done();
            component_iter.step())
       {
-        write_one_component (tensor_component);
+        write_one_component (tensor_component, have_metafile);
       }
     }
     else
     {
-      write_one_component (tensor_component);
+      write_one_component (tensor_component, have_metafile);
     }
   }
   
   
   
   void writer_t::
-  write_one_component (F5::tensor_component_t & tensor_component)
+  write_one_component (F5::tensor_component_t & tensor_component,
+                       bool const have_metafile)
     const
   {
     DECLARE_CCTK_PARAMETERS;
@@ -277,22 +291,32 @@ namespace CarpetIOF5 {
     }
     
     gh * const hh = Carpet::vhh.at(Carpet::map);
-    if (hh->is_local (Carpet::reflevel, Carpet::component))
+    bool const is_local = hh->is_local (Carpet::reflevel, Carpet::component);
+    if (have_metafile or is_local)
     {
       dh * const dd = Carpet::vdd.at(Carpet::map);
       bbox<int, dim> const & region
         = (dd->boxes.at(Carpet::mglevel).at(Carpet::reflevel)
            .at(Carpet::component).exterior);
       
-      F5::data_region_t data_region (tensor_component, region);
+      if (have_metafile)
+      {
+        F5::meta_data_region_t meta_data_region (tensor_component, region);
+        int const proc = hh->processor (Carpet::reflevel, Carpet::component);
+        meta_data_region.write (proc);
+      }
       
-      int const timelevel = 0;
-      void const * const varptr
-        = CCTK_VarDataPtrI (m_cctkGH, timelevel, m_variable);
-      assert (varptr != 0);
-      int const vartype = CCTK_VarTypeI (m_variable);
-      assert (vartype >= 0);
-      data_region.write (varptr, vartype);
+      if (is_local)
+      {
+        F5::data_region_t data_region (tensor_component, region);
+        int const timelevel = 0;
+        void const * const varptr
+          = CCTK_VarDataPtrI (m_cctkGH, timelevel, m_variable);
+        assert (varptr != 0);
+        int const vartype = CCTK_VarTypeI (m_variable);
+        assert (vartype >= 0);
+        data_region.write (varptr, vartype);
+      }
     }
   }
   

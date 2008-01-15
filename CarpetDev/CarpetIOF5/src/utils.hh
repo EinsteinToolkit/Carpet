@@ -1,5 +1,5 @@
-#ifndef utils_HH
-#define utils_HH
+#ifndef UTILS_HH
+#define UTILS_HH
 
 #include <hdf5.h>
 

@@ -4,6 +4,7 @@
 #include <hdf5.h>
 
 #include "physical_quantity.hh"
+#include "utils.hh"
 
 
 
@@ -16,6 +17,7 @@ namespace CarpetIOF5 {
       physical_quantity_t & m_physical_quantity;
       
       int const m_variable;
+      string m_name;
       
       hid_t m_hdf5_tensor_component;
       
@@ -41,6 +43,11 @@ namespace CarpetIOF5 {
       
       hid_t
       get_hdf5_tensor_component ()
+        const;
+      
+      void
+      get_link_destination (string & filename,
+                            string & objectname)
         const;
       
       virtual bool

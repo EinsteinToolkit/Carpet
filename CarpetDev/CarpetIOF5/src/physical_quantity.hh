@@ -16,6 +16,7 @@ namespace CarpetIOF5 {
       coordinate_system_t & m_coordinate_system;
       
       int const m_group;
+      string m_name;
       
       hid_t m_hdf5_physical_quantity;
       
@@ -41,6 +42,11 @@ namespace CarpetIOF5 {
       
       hid_t
       get_hdf5_physical_quantity ()
+        const;
+      
+      void
+      get_link_destination (string & filename,
+                            string & objectname)
         const;
       
       virtual bool
