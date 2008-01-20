@@ -6,3 +6,21 @@ Thorn Maintainer(s) : Erik Schnetter <schnetter@aei.mpg.de>
 Purpose of the thorn:
 
 Input and output data using the HDF5 based F5 file format.
+
+
+
+An F5 file contains the following hierarchy:
+
+        file
+        timestep
+        simulation
+        topology
+        coordinate_system
+        physical_quantity
+        tensor_component
+        data_region
+
+2006-06-05: Werner says that tensor_component and data_region should
+be interchanged.
+
+2007-04-25: Werner confirms this.
