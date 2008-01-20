@@ -37,13 +37,13 @@ template <typename T>
 static
 void
 call_operator (void
-               the_operator (T const * restrict const src,
-                             ivect3 const & restrict srcext,
-                             T * restrict const dst,
-                             ivect3 const & restrict dstext,
-                             ibbox3 const & restrict srcbbox,
-                             ibbox3 const & restrict dstbbox,
-                             ibbox3 const & restrict regbbox),
+               (* the_operator) (T const * restrict const src,
+                                 ivect3 const & restrict srcext,
+                                 T * restrict const dst,
+                                 ivect3 const & restrict dstext,
+                                 ibbox3 const & restrict srcbbox,
+                                 ibbox3 const & restrict dstbbox,
+                                 ibbox3 const & restrict regbbox),
                T const * restrict const src,
                ivect3 const & restrict srcext,
                T * restrict const dst,
@@ -53,7 +53,7 @@ call_operator (void
                ibbox3 const & restrict regbbox)
 {
 #ifndef _OPENMP
-  the_operator (src, srcext, dst, dstext, srcbbox, dstbbox, regbbox);
+  (* the_operator) (src, srcext, dst, dstext, srcbbox, dstbbox, regbbox);
 #else
 #  if ! defined (CARPET_OPTIMISE)
   ibset allregbboxes;
@@ -80,7 +80,7 @@ call_operator (void
        regbbox.upper().replace (dir, my_last_point - stride),
        regbbox.stride());
     if (not myregbbox.empty()) {
-      the_operator (src, srcext, dst, dstext, srcbbox, dstbbox, myregbbox);
+      (* the_operator) (src, srcext, dst, dstext, srcbbox, dstbbox, myregbbox);
     }
 #  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
     _Pragma ("omp critical") {
@@ -569,7 +569,7 @@ transfer_prolongate (data const * const src,
     timer.start ();
     switch (order_space) {
     case 1:
-      call_operator<T> (prolongate_3d_o1_rf2,
+      call_operator<T> (& prolongate_3d_o1_rf2,
                         static_cast <T const *> (src->storage()),
                         src->shape(),
                         static_cast <T *> (this->storage()),
@@ -579,7 +579,7 @@ transfer_prolongate (data const * const src,
                         box);
       break;
     case 3:
-      call_operator<T> (prolongate_3d_o3_rf2, 
+      call_operator<T> (& prolongate_3d_o3_rf2, 
                         static_cast <T const *> (src->storage()),
                         src->shape(),
                         static_cast <T *> (this->storage()),
@@ -589,7 +589,7 @@ transfer_prolongate (data const * const src,
                         box);
       break;
     case 5:
-      call_operator<T> (prolongate_3d_o5_rf2,
+      call_operator<T> (& prolongate_3d_o5_rf2,
                         static_cast <T const *> (src->storage()),
                         src->shape(),
                         static_cast <T *> (this->storage()),
@@ -616,7 +616,7 @@ transfer_prolongate (data const * const src,
                  "There is no stencil for op=\"ENO\" with order_space==1");
       break;
     case 3:
-      call_operator<T> (prolongate_3d_eno,
+      call_operator<T> (& prolongate_3d_eno,
                         static_cast <T const *> (src->storage()),
                         src->shape(),
                         static_cast <T *> (this->storage()),
@@ -647,7 +647,7 @@ transfer_prolongate (data const * const src,
                  "There is no stencil for op=\"WENO\" with order_space=3");
       break;
     case 5:
-      call_operator<T> (prolongate_3d_eno,
+      call_operator<T> (& prolongate_3d_eno,
                         static_cast <T const *> (src->storage()),
                         src->shape(),
                         static_cast <T *> (this->storage()),
