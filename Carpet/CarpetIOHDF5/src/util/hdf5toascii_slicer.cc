@@ -18,7 +18,15 @@
 #include <cstring>
 #include <regex.h>
 
+// some macros to fix compatibility issues as long
+// as 1.8.0 is in beta phase
+#define H5_USE_16_API 1
+
 #include <hdf5.h>
+
+#if (H5_VERS_MAJOR == 1 && (H5_VERS_MINOR == 8) && (H5_VERS_RELEASE == 0))
+#warning "Hacking HDF5 1.8.0 compatiblity with 1.6.x; fix once 1.8.0 stable"
+#endif
 
 using namespace std;
 
