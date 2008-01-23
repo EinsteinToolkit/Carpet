@@ -1,6 +1,12 @@
 #ifndef DATA_REGION_HH
 #define DATA_REGION_HH
 
+// force HDF5 1.8.x installations to use the new API
+#ifdef H5Dcreate_vers
+#undef H5Dcreate_vers
+#endif
+#define H5Dcreate_vers 2
+
 #include <hdf5.h>
 
 #include "bbox.hh"

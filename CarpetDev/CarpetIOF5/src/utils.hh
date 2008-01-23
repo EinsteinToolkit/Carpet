@@ -1,6 +1,24 @@
 #ifndef UTILS_HH
 #define UTILS_HH
 
+// force HDF5 1.8.x installations to use the new API
+#ifdef H5Gopen_vers
+#undef H5Gopen_vers
+#endif
+#ifdef H5Gcreate_vers
+#undef H5Gcreate_vers
+#endif
+#ifdef H5Acreate_vers
+#undef H5Acreate_vers
+#endif
+#ifdef H5Tarray_create_vers
+#undef H5Tarray_create_vers
+#endif
+#define H5Gopen_vers 2
+#define H5Gcreate_vers 2
+#define H5Acreate_vers 2
+#define H5Tarray_create_vers 2
+
 #include <hdf5.h>
 
 #include "cctk.h"

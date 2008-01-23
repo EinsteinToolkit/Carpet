@@ -3,8 +3,6 @@
 #include <cstring>
 #include <vector>
 
-#include <hdf5.h>
-
 #include "cctk.h"
 
 #include "defs.hh"
