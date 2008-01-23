@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 
+#include <sys/time.h>
 #include <unistd.h>
 
 #include <mpi.h>
@@ -38,22 +39,37 @@ namespace CarpetLib {
   void
   calculate_cputick ()
   {
-    // Make a few warmup measurements
+    // Make a few warm-up measurements
     getticks ();
     getticks ();
     getticks ();
+    
+#if 0
+    // Use usleep to calibrate the timer
+    for (int i=0; i<10; ++i) {
+      useconds_t const waittime = 1000 * 1000;
+      ticks const rstart = getticks ();
+      int const ierr = usleep (waittime);
+      ticks const rend = getticks ();
+      cputick = waittime / 1.0e6 / elapsed (rend, rstart);
+      if (not ierr) goto done;
+    }
+    CCTK_WARN (1, "Could not determine timer resolution");
+  done:;
+#endif
+    
+#if 1
+    // Use MPI_Wtime to calibrate the timer
     ticks const rstart = getticks ();
     double const wstart = MPI_Wtime ();
-    // int const ierr = usleep (1000 * 1000);
     while (MPI_Wtime() < wstart + 1.0) {
       // do nothing, just wait
     }
     ticks const rend = getticks ();
     double const wend = MPI_Wtime ();
-    // if (ierr) {
-    //   CCTK_WARN (1, "Could not determine a reliable rdtsc timer resolution");
-    // }
     cputick = (wend - wstart) / elapsed (rend, rstart);
+#endif
+    
     have_cputick = true;
   }
   
