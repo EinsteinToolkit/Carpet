@@ -26,6 +26,11 @@ BOOLEAN snap_to_coarse "Ensure that the fine grid extent coincides with coarse g
 {
 } "no"
 
+CCTK_INT boundary_shiftout "Number of grid points added to the refinement boundary radius" STEERABLE=always
+{
+  *:* :: ""
+} 0
+
 
 
 CCTK_INT regrid_every "Regrid every n time steps" STEERABLE=always

@@ -287,12 +287,13 @@ namespace CarpetRegrid2 {
           rvect const rmax = centre.position + centre.radius.at(rl);
           
           // Convert to an integer bbox
-          ivect const imin =
-            rpos2ipos (rmin, origin, scale, hh, rl);
-          ivect const imax =
-            rpos2ipos1 (rmax, origin, scale, hh, rl);
-          
           ivect const istride = hh.baseextents.at(0).at(rl).stride();
+          ivect const imin =
+            rpos2ipos (rmin, origin, scale, hh, rl)
+            - boundary_shiftout * istride;
+          ivect const imax =
+            rpos2ipos1 (rmax, origin, scale, hh, rl)
+            + boundary_shiftout * istride;
           
           ibbox const region (imin, imax, istride);
           
