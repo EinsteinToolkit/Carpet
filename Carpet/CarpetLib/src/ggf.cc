@@ -239,7 +239,7 @@ void ggf::recompose_fill (comm_state & state, int const rl,
 void ggf::recompose_free_old (const int rl)
 {
   // Delete old storage
-  static Timer timer ("dh::recompose");
+  static Timer timer ("dh::recompose_free_old");
   timer.start ();
 
   for (int ml=0; ml<(int)oldstorage.size(); ++ml) {
@@ -249,6 +249,24 @@ void ggf::recompose_free_old (const int rl)
       } // for tl
     } // for c
     oldstorage.AT(ml).AT(rl).clear();
+  } // for ml
+  
+  timer.stop (0);
+}
+
+void ggf::recompose_free (const int rl)
+{
+  // Delete old storage
+  static Timer timer ("dh::recompose_free");
+  timer.start ();
+  
+  for (int ml=0; ml<(int)storage.size(); ++ml) {
+    for (int c=0; c<(int)storage.AT(ml).AT(rl).size(); ++c) {
+      for (int tl=0; tl<timelevels(ml,rl); ++tl) {
+        delete storage.AT(ml).AT(rl).AT(c).AT(tl);
+      } // for tl
+    } // for c
+    storage.AT(ml).AT(rl).clear();
   } // for ml
   
   timer.stop (0);

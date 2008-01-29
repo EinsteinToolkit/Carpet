@@ -32,6 +32,9 @@ gf<T>::gf (const int varindex_, const operator_type transport_operator_,
 template<typename T>
 gf<T>::~gf ()
 {
+  for (int rl=0; rl<h.reflevels(); ++rl) {
+    recompose_free (rl);
+  } // for rl
 }
 
 
