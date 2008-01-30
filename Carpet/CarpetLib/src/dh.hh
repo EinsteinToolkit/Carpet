@@ -11,44 +11,10 @@
 #include "bboxset.hh"
 #include "defs.hh"
 #include "gh.hh"
+#include "region.hh"
 #include "vect.hh"
 
 using namespace std;
-
-
-
-// A pseudoregion is almost a region; it is a bbox that lives on a
-// certain processor.  Pseudoregions are a compact way to store
-// information about what processors needs to send data to what other
-// processor during synchronisation or regridding.
-struct pseudoregion {
-  ibbox extent;
-  int processor;
-  pseudoregion ()
-  {
-  }
-  pseudoregion (ibbox const & extent_, int const processor_)
-    : extent (extent_), processor (processor_)
-  {
-  }
-};
-
-ostream & operator<< (ostream & os, pseudoregion const & p);
-
-struct sendrecv_pseudoregion {
-  pseudoregion send, recv;
-  sendrecv_pseudoregion ()
-  {
-  }
-  sendrecv_pseudoregion (ibbox const & send_extent, int const send_processor,
-                         ibbox const & recv_extent, int const recv_processor)
-    : send (pseudoregion (send_extent, send_processor)),
-      recv (pseudoregion (recv_extent, recv_processor))
-  {
-  }
-};
-
-ostream & operator<< (ostream & os, sendrecv_pseudoregion const & srp);
 
 
 
@@ -66,8 +32,8 @@ public:
   typedef list<ibbox>    iblist;
   typedef vector<iblist> iblistvect; // vector of lists
   
-  typedef vector <pseudoregion> pvect;
-  typedef vector <sendrecv_pseudoregion> srpvect;
+  typedef vector <pseudoregion_t> pvect;
+  typedef vector <sendrecv_pseudoregion_t> srpvect;
   
   
   

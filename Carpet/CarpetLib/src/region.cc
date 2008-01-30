@@ -74,3 +74,15 @@ operator<< (ostream & os, region_t const & reg)
      << "processor=" << reg.processor << ")";
   return os;
 }
+
+
+
+ostream & operator<< (ostream & os, pseudoregion_t const & p)
+{
+  return os << p.extent << "/p:" << p.processor;
+}
+
+ostream & operator<< (ostream & os, sendrecv_pseudoregion_t const & srp)
+{
+  return os << "(send:" << srp.send << ",recv:" << srp.recv << ")";
+}

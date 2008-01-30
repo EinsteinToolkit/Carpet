@@ -33,8 +33,8 @@ class ggf {
   typedef list<ibbox>    iblist;
   typedef vector<iblist> iblistvect;
   
-  typedef vector <pseudoregion> pvect;
-  typedef vector <sendrecv_pseudoregion> srpvect;
+  typedef vector <pseudoregion_t> pvect;
+  typedef vector <sendrecv_pseudoregion_t> srpvect;
   
   typedef gdata*        tdata;  // data ...
   typedef vector<tdata> fdata;  // ... for each time level

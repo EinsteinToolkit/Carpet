@@ -769,8 +769,8 @@ transfer_from_all (comm_state & state,
   for (srpvect::const_iterator ipsendrecv = psendrecvs.begin();
        ipsendrecv!=psendrecvs.end(); ++ ipsendrecv)
   {
-    pseudoregion const & psend = (* ipsendrecv).send;
-    pseudoregion const & precv = (* ipsendrecv).recv;
+    pseudoregion_t const & psend = (* ipsendrecv).send;
+    pseudoregion_t const & precv = (* ipsendrecv).recv;
     ibbox const & send = psend.extent;
     ibbox const & recv = precv.extent;
     int const c2 = psend.processor;

@@ -19,18 +19,6 @@ using namespace CarpetLib;
 
 
 
-ostream & operator<< (ostream & os, pseudoregion const & p)
-{
-  return os << p.extent << "/p:" << p.processor;
-}
-
-ostream & operator<< (ostream & os, sendrecv_pseudoregion const & srp)
-{
-  return os << "(send:" << srp.send << ",recv:" << srp.recv << ")";
-}
-
-
-
 // Constructors
 dh::
 dh (gh & h_,
@@ -518,7 +506,7 @@ regrid ()
               if (on_this_proc (c)) {
                 int const p = dist::rank();
                 level.AT(p).fast_mg_rest_sendrecv.push_back
-                  (sendrecv_pseudoregion (send, c, recv, c));
+                  (sendrecv_pseudoregion_t (send, c, recv, c));
               }
             }
             
@@ -574,7 +562,7 @@ regrid ()
               if (on_this_proc (c)) {
                 int const p = dist::rank();
                 level.AT(p).fast_mg_prol_sendrecv.push_back
-                  (sendrecv_pseudoregion (send, c, recv, c));
+                  (sendrecv_pseudoregion_t (send, c, recv, c));
               }
             }
             
@@ -640,7 +628,7 @@ regrid ()
                 if (on_this_proc (c, cc)) {
                   int const p = dist::rank();
                   level.AT(p).fast_ref_prol_sendrecv.push_back
-                    (sendrecv_pseudoregion (send, cc, recv, c));
+                    (sendrecv_pseudoregion_t (send, cc, recv, c));
                 }
               }
               
@@ -706,7 +694,7 @@ regrid ()
               if (on_this_proc (c, cc)) {
                 int const p = dist::rank();
                 level.AT(p).fast_sync_sendrecv.push_back
-                  (sendrecv_pseudoregion (send, cc, recv, c));
+                  (sendrecv_pseudoregion_t (send, cc, recv, c));
               }
             }
             
@@ -777,7 +765,7 @@ regrid ()
                 if (on_this_proc (c, cc)) {
                   int const p = dist::rank();
                   level.AT(p).fast_ref_bnd_prol_sendrecv.push_back
-                    (sendrecv_pseudoregion (send, cc, recv, c));
+                    (sendrecv_pseudoregion_t (send, cc, recv, c));
                 }
               }
               
@@ -886,7 +874,7 @@ regrid ()
                 if (on_this_proc (c, cc)) {
                   int const p = dist::rank();
                   olevel.AT(p).fast_ref_rest_sendrecv.push_back
-                    (sendrecv_pseudoregion (send, c, recv, cc));
+                    (sendrecv_pseudoregion_t (send, c, recv, cc));
                 }
               }
               
@@ -952,7 +940,7 @@ regrid ()
                 if (on_this_proc (c, cc)) {
                   int const p = dist::rank();
                   level.AT(p).fast_old2new_sync_sendrecv.push_back
-                    (sendrecv_pseudoregion (send, cc, recv, c));
+                    (sendrecv_pseudoregion_t (send, cc, recv, c));
                 }
               }
               
@@ -1017,7 +1005,7 @@ regrid ()
                 if (on_this_proc (c, cc)) {
                   int const p = dist::rank();
                   level.AT(p).fast_old2new_ref_prol_sendrecv.push_back
-                    (sendrecv_pseudoregion (send, cc, recv, c));
+                    (sendrecv_pseudoregion_t (send, cc, recv, c));
                 }
               }
               

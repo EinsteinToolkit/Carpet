@@ -201,6 +201,8 @@ template ostream& output (ostream& os, const vector<vect<int,3> >& v);
 template ostream& output (ostream& os, const vector<vect<vect<bool,2>,3> >& v);
 template ostream& output (ostream& os, const vector<dh::dboxes> & v);
 template ostream& output (ostream& os, const vector<region_t>& v);
+template ostream& output (ostream& os, const vector<pseudoregion_t>& v);
+template ostream& output (ostream& os, const vector<sendrecv_pseudoregion_t>& v);
 template ostream& output (ostream& os, const vector<list<bbox<int,3> > >& v);
 template ostream& output (ostream& os, const vector<vector<int> >& v);
 template ostream& output (ostream& os, const vector<vector<CCTK_REAL> >& v);
