@@ -115,36 +115,25 @@ public:
   // synchronised.  They don't need to be prolongated.
 
   // Synchronise the boundaries of a component
-  void sync (comm_state& state, int tl, int rl, int c, int ml);
   void sync_all (comm_state& state, int tl, int rl, int ml);
 
   // Prolongate the boundaries of a component
-  void ref_bnd_prolongate (comm_state& state,
-                           int tl, int rl, int c, int ml, CCTK_REAL time);
   void ref_bnd_prolongate_all (comm_state& state,
                                int tl, int rl, int ml, CCTK_REAL time);
 
   // Restrict a multigrid level
-  void mg_restrict (comm_state& state,
-                    int tl, int rl, int c, int ml, CCTK_REAL time);
   void mg_restrict_all (comm_state& state,
                         int tl, int rl, int ml, CCTK_REAL time);
 
   // Prolongate a multigrid level
-  void mg_prolongate (comm_state& state,
-                      int tl, int rl, int c, int ml, CCTK_REAL time);
   void mg_prolongate_all (comm_state& state,
                           int tl, int rl, int ml, CCTK_REAL time);
 
   // Restrict a refinement level
-  void ref_restrict (comm_state& state,
-                     int tl, int rl, int c, int ml, CCTK_REAL time);
   void ref_restrict_all (comm_state& state,
                          int tl, int rl, int ml, CCTK_REAL time);
 
   // Prolongate a refinement level
-  void ref_prolongate (comm_state& state,
-                       int tl, int rl, int c, int ml, CCTK_REAL time);
   void ref_prolongate_all (comm_state& state,
                            int tl, int rl, int ml, CCTK_REAL time);
   
@@ -162,14 +151,6 @@ protected:
   
   // Transfer regions
   void
-  transfer_from (comm_state & state,
-                 int tl1, int rl1, int c1, int ml1,
-                 pvect const dh::dboxes::* recvs,
-                 pvect const dh::dboxes::* sends,
-                 vector<int> const & tl2s, int rl2, int ml2,
-                 CCTK_REAL const & time,
-                 mdata * srcstorage = 0);
-  void
   transfer_from_all (comm_state & state,
                      int tl1, int rl1, int ml1,
                      srpvect const dh::dboxes::* sendrecvs,
@@ -177,24 +158,6 @@ protected:
                      CCTK_REAL const & time,
                      mdata * srcstorage = 0);
   
-  void
-  transfer_from (comm_state & state,
-                 int tl1, int rl1, int c1, int ml1,
-                 pvect const dh::dboxes::* recvs,
-                 pvect const dh::dboxes::* sends,
-                 int tl2, int rl2, int ml2,
-                 mdata * srcstorage = 0)
-  {
-    vector <int> tl2s(1);
-    tl2s.AT(0) = tl2;
-    CCTK_REAL const time = t.time (tl2,rl2,ml2);
-    transfer_from (state,
-                   tl1, rl1, c1, ml1,
-                   recvs, sends,
-                   tl2s, rl2, ml2,
-                   time,
-                   srcstorage);
-  }
   void
   transfer_from_all (comm_state & state,
                      int tl1, int rl1, int ml1,
