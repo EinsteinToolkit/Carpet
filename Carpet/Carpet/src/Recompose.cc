@@ -626,7 +626,7 @@ namespace Carpet {
     CCTK_VInfo (CCTK_THORNSTRING,
                 "Grid structure statistics:");
     CCTK_VInfo (CCTK_THORNSTRING,
-                "GF: rhs: %.0fk active, %.0fk owned (+%.0f%%), %.0fk total (+%.0f%%), %.3g rhs/M",
+                "GF: rhs: %.0fk active, %.0fk owned (+%.0f%%), %.0fk total (+%.0f%%), %.3g steps/time",
                 double (num_active_cpu_points / 1000),
                 double (num_owned_cpu_points / 1000),
                 double (num_owned_cpu_points / num_active_cpu_points * 100 - 100),
@@ -634,7 +634,7 @@ namespace Carpet {
                 double (num_total_cpu_points / num_owned_cpu_points * 100 - 100),
                 double (num_steps / delta_time));
     CCTK_VInfo (CCTK_THORNSTRING,
-                "GF: vars: %d, pts: %.0fM active, %.0fM owned (+%.0f%%), %.0fM total (+%.0f%%), %.1f c/p",
+                "GF: vars: %d, pts: %.0fM active, %.0fM owned (+%.0f%%), %.0fM total (+%.0f%%), %.1f comp/proc",
                 num_gfs,
                 double (num_active_mem_points / 1000000),
                 double (num_owned_mem_points / 1000000),

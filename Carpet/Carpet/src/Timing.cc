@@ -40,6 +40,11 @@ namespace Carpet {
   
   
   
+  // Small number to avoid division by zero
+  CCTK_REAL const eps = 1.0e-15;
+  
+  
+  
   // Return the current wall time
   static
   CCTK_REAL
@@ -266,9 +271,9 @@ namespace Carpet {
     
     // Calculate updates per second
     * local_grid_points_per_second =
-      * local_grid_point_updates_count / max (* time_computing, 1.0e-15);
+      * local_grid_point_updates_count / max (* time_computing, eps);
     * total_grid_points_per_second =
-      * total_grid_point_updates_count / max (* time_computing, 1.0e-15);
+      * total_grid_point_updates_count / max (* time_computing, eps);
     
     * grid_points_per_second = * local_grid_points_per_second;
   }
@@ -282,13 +287,13 @@ namespace Carpet {
     DECLARE_CCTK_ARGUMENTS;
     
     * io_per_second =
-      * io_count              / max (* time_io, 1.0e-15);
+      * io_count              / max (* time_io, eps);
     * io_bytes_per_second =
-      * io_bytes_count        / max (* time_io, 1.0e-15);
+      * io_bytes_count        / max (* time_io, eps);
     * io_bytes_ascii_per_second =
-      * io_bytes_ascii_count  / max (* time_io, 1.0e-15);
+      * io_bytes_ascii_count  / max (* time_io, eps);
     * io_bytes_binary_per_second =
-      * io_bytes_binary_count / max (* time_io, 1.0e-15);
+      * io_bytes_binary_count / max (* time_io, eps);
   }
   
   
@@ -300,9 +305,9 @@ namespace Carpet {
     DECLARE_CCTK_ARGUMENTS;
     
     * comm_per_second =
-      * comm_count       / max (* time_communicating, 1.0e-15);
+      * comm_count       / max (* time_communicating, eps);
     * comm_bytes_per_second =
-      * comm_bytes_count / max (* time_communicating, 1.0e-15);
+      * comm_bytes_count / max (* time_communicating, eps);
   }
   
   
@@ -318,7 +323,7 @@ namespace Carpet {
     
     // Calculate physical time per hour
     * physical_time_per_hour =
-      3600.0 * physical_time / max (* time_computing, 1.0e-15);
+      3600.0 * physical_time / max (* time_computing, eps);
   }
   
   
@@ -347,11 +352,11 @@ namespace Carpet {
     CCTK_VInfo (CCTK_THORNSTRING,
                 "(Comp, Comm, I/O) fractions = (%3.1f%%, %3.1f%%, %3.1f%%)",
                 double (100.0 * * time_computing /
-                        max (* time_total, 1.0e-15)),
+                        max (* time_total, eps)),
                 double (100.0 * * time_communicating /
-                        max (* time_total, 1.0e-15)),
+                        max (* time_total, eps)),
                 double (100.0 * * time_io /
-                        max (* time_total, 1.0e-15)));
+                        max (* time_total, eps)));
   }
   
   
