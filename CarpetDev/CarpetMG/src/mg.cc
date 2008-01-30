@@ -1016,18 +1016,16 @@ namespace CarpetMG {
     for (comm_state state; !state.done(); state.step()) {
       for (int m=0; m<maps; ++m) {
         const CCTK_REAL time = vtt.at(m)->time (tl, reflevel, mglevel);
-        for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
-          for (int n=0; n<var.size(); ++n) {
-            int const vi = var.at(n);
-            assert (vi >= 0);
-            int const gi = CCTK_GroupIndexFromVarI (vi);
-            assert (gi >= 0);
-            int const v0 = CCTK_FirstVarIndexI (gi);
-            assert (v0 >= 0);
-            arrdata.at(gi).at(m).data.at(vi-v0)->ref_restrict
-              (state, tl, reflevel, c, mglevel, time);
-          } // for n
-        } // for c
+        for (int n=0; n<var.size(); ++n) {
+          int const vi = var.at(n);
+          assert (vi >= 0);
+          int const gi = CCTK_GroupIndexFromVarI (vi);
+          assert (gi >= 0);
+          int const v0 = CCTK_FirstVarIndexI (gi);
+          assert (v0 >= 0);
+          arrdata.at(gi).at(m).data.at(vi-v0)->ref_restrict_all
+            (state, tl, reflevel, mglevel, time);
+        } // for n
       } // for m
     } // for state
   }
@@ -1045,18 +1043,16 @@ namespace CarpetMG {
     for (comm_state state; !state.done(); state.step()) {
       for (int m=0; m<maps; ++m) {
         const CCTK_REAL time = vtt.at(m)->time (tl, reflevel, mglevel);
-        for (int c=0; c<vhh.at(m)->components(reflevel); ++c) {
-          for (int n=0; n<var.size(); ++n) {
-            int const vi = var.at(n);
-            assert (vi >= 0);
-            int const gi = CCTK_GroupIndexFromVarI (vi);
-            assert (gi >= 0);
-            int const v0 = CCTK_FirstVarIndexI (gi);
-            assert (v0 >= 0);
-            arrdata.at(gi).at(m).data.at(vi-v0)->ref_prolongate
-              (state, tl, reflevel, c, mglevel, time);
-          } // for n
-        } // for c
+        for (int n=0; n<var.size(); ++n) {
+          int const vi = var.at(n);
+          assert (vi >= 0);
+          int const gi = CCTK_GroupIndexFromVarI (vi);
+          assert (gi >= 0);
+          int const v0 = CCTK_FirstVarIndexI (gi);
+          assert (v0 >= 0);
+          arrdata.at(gi).at(m).data.at(vi-v0)->ref_prolongate_all
+            (state, tl, reflevel, mglevel, time);
+        } // for n
       } // for m
     } // for state
   }
