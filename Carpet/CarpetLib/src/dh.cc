@@ -498,11 +498,9 @@ regrid ()
                    ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
             {
               ibbox const & recv = * ri;
-              box.mg_rest_recv.push_back (recv);
               ibbox const send = recv.expanded_for (obox.interior);
               ASSERT_c (send <= obox.exterior,
                         "Multigrid restriction: Send region must be contained in exterior");
-              box.mg_rest_send.push_back (send);
               if (on_this_proc (c)) {
                 int const p = dist::rank();
                 level.AT(p).fast_mg_rest_sendrecv.push_back
@@ -553,12 +551,10 @@ regrid ()
                    ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
             {
               ibbox const & recv = * ri;
-              box.mg_prol_recv.push_back (recv);
               ibbox const send =
                 recv.expanded_for (box.interior).expand (stencil_size);
               ASSERT_c (send <= box.exterior,
                         "Multigrid prolongation: Send region must be contained in exterior");
-              box.mg_prol_send.push_back (send);
               if (on_this_proc (c)) {
                 int const p = dist::rank();
                 level.AT(p).fast_mg_prol_sendrecv.push_back
@@ -586,9 +582,6 @@ regrid ()
           // Refinement prolongation must fill all active points
           
           ibset needrecv = box.active;
-          
-          box.ref_prol_recv.resize (h.components(orl));
-          box.ref_prol_send.resize (h.components(orl));
           
           i2vect const stencil_size = i2vect (prolongation_stencil_size());
           
@@ -619,12 +612,10 @@ regrid ()
                       ri =ovlp.begin(); ri != ovlp.end(); ++ ri)
               {
                 ibbox const & recv = * ri;
-                box.ref_prol_recv.AT(cc).push_back (recv);
                 ibbox const send =
                   recv.expanded_for (obox.interior).expand (stencil_size);
                 ASSERT_c (send <= obox.exterior,
                           "Refinement prolongation: Send region must be contained in exterior");
-                box.ref_prol_send.AT(cc).push_back (send);
                 if (on_this_proc (c, cc)) {
                   int const p = dist::rank();
                   level.AT(p).fast_ref_prol_sendrecv.push_back
@@ -663,9 +654,6 @@ regrid ()
         ibset needrecv = box.ghosts;
 #endif
         
-        box.sync_recv.resize (h.components(rl));
-        box.sync_send.resize (h.components(rl));
-        
         ibset & sync = box.sync;
         
         for (int cc = 0; cc < h.components(rl); ++ cc) {
@@ -688,9 +676,7 @@ regrid ()
                    ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
             {
               ibbox const & recv = * ri;
-              box.sync_recv.AT(cc).push_back (recv);
               ibbox const & send = recv;
-              box.sync_send.AT(cc).push_back (send);
               if (on_this_proc (c, cc)) {
                 int const p = dist::rank();
                 level.AT(p).fast_sync_sendrecv.push_back
@@ -721,9 +707,6 @@ regrid ()
           // also all buffer zones
           needrecv += box.buffers;
           needrecv.normalize();
-          
-          box.ref_bnd_prol_recv.resize (h.components(orl));
-          box.ref_bnd_prol_send.resize (h.components(orl));
           
           ibset & bndref = box.bndref;
           
@@ -756,12 +739,10 @@ regrid ()
                      ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
               {
                 ibbox const & recv = * ri;
-                box.ref_bnd_prol_recv.AT(cc).push_back (recv);
                 ibbox const send =
                   recv.expanded_for (obox.interior).expand (stencil_size);
                 ASSERT_c (send <= obox.exterior,
                           "Boundary prolongation: Send region must be contained in exterior");
-                box.ref_bnd_prol_send.AT(cc).push_back (send);
                 if (on_this_proc (c, cc)) {
                   int const p = dist::rank();
                   level.AT(p).fast_ref_bnd_prol_sendrecv.push_back
@@ -784,34 +765,6 @@ regrid ()
         // synchronisation or through boundary prolongation
         ASSERT_c (needrecv.empty(),
                   "Synchronisation and boundary prolongation: All points must have been received");
-        
-        
-        
-        // Optimise fields:
-        
-        optimise_field
-          (box, c, & dboxes::mg_rest_recv,     & dboxes::fast_mg_rest_recv);
-        optimise_field
-          (box, c, & dboxes::mg_rest_send,     & dboxes::fast_mg_rest_send);
-        optimise_field
-          (box, c, & dboxes::mg_prol_recv,     & dboxes::fast_mg_prol_recv);
-        optimise_field
-          (box, c, & dboxes::mg_prol_send,     & dboxes::fast_mg_prol_send);
-        
-        optimise_field
-          (box, & dboxes::ref_prol_recv,     & dboxes::fast_ref_prol_recv);
-        optimise_field
-          (box, & dboxes::ref_prol_send,     & dboxes::fast_ref_prol_send);
-        optimise_field
-          (box, & dboxes::sync_recv,         & dboxes::fast_sync_recv);
-        optimise_field
-          (box, & dboxes::sync_send,         & dboxes::fast_sync_send);
-        optimise_field
-          (box, & dboxes::ref_bnd_prol_recv, & dboxes::fast_ref_bnd_prol_recv);
-        optimise_field
-          (box, & dboxes::ref_bnd_prol_send, & dboxes::fast_ref_bnd_prol_send);
-        
-        
         
       } // for c
       
@@ -843,9 +796,6 @@ regrid ()
         for (int cc = 0; cc < h.components(orl); ++ cc) {
           dboxes & obox = boxes.AT(ml).AT(orl).AT(cc);
           
-          obox.ref_rest_recv.resize (h.components(rl));
-          obox.ref_rest_send.resize (h.components(rl));
-          
           for (int c = 0; c < h.components(rl); ++ c) {
             if (true or on_this_proc (c, cc)) {
               dboxes const & box = boxes.AT(ml).AT(rl).AT(c);
@@ -866,11 +816,9 @@ regrid ()
                       ri =ovlp.begin(); ri != ovlp.end(); ++ ri)
               {
                 ibbox const & recv = * ri;
-                obox.ref_rest_recv.AT(c).push_back (recv);
                 ibbox const send = recv.expanded_for (box.interior);
                 ASSERT_c (send <= box.active,
                           "Refinement restriction: Send region must be contained in active part");
-                obox.ref_rest_send.AT(c).push_back (send);
                 if (on_this_proc (c, cc)) {
                   int const p = dist::rank();
                   olevel.AT(p).fast_ref_rest_sendrecv.push_back
@@ -882,11 +830,6 @@ regrid ()
               
             }
           } // for c
-          
-          optimise_field
-            (obox, & dboxes::ref_rest_recv, & dboxes::fast_ref_rest_recv);
-          optimise_field
-            (obox, & dboxes::ref_rest_send, & dboxes::fast_ref_rest_send);
           
         } // for cc
         
@@ -920,9 +863,6 @@ regrid ()
           // grid structure.  It should fill as many active points as
           // possible
           
-          box.old2new_sync_recv.resize (oldcomponents);
-          box.old2new_sync_send.resize (oldcomponents);
-          
           for (int cc = 0; cc < oldcomponents; ++ cc) {
             if (true or on_this_proc (c, cc)) {
               dboxes const & obox = oldboxes.AT(ml).AT(rl).AT(cc);
@@ -934,9 +874,7 @@ regrid ()
                       ri =ovlp.begin(); ri != ovlp.end(); ++ ri)
               {
                 ibbox const & recv = * ri;
-                box.old2new_sync_recv.AT(cc).push_back (recv);
                 ibbox const & send = recv;
-                box.old2new_sync_send.AT(cc).push_back (send);
                 if (on_this_proc (c, cc)) {
                   int const p = dist::rank();
                   level.AT(p).fast_old2new_sync_sendrecv.push_back
@@ -964,9 +902,6 @@ regrid ()
           // the new grid structure.  It must fill what cannot be
           // synchronised
             
-          box.old2new_ref_prol_recv.resize (h.components(orl));
-          box.old2new_ref_prol_send.resize (h.components(orl));
-          
           i2vect const stencil_size = i2vect (prolongation_stencil_size());
           
           ASSERT_c (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
@@ -996,12 +931,10 @@ regrid ()
                      ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
               {
                 ibbox const & recv = * ri;
-                box.old2new_ref_prol_recv.AT(cc).push_back (recv);
                 ibbox const send =
                   recv.expanded_for (obox.interior).expand (stencil_size);
                 ASSERT_c (send <= obox.exterior,
                           "Regridding prolongation: Send region must be contained in exterior");
-                box.old2new_ref_prol_send.AT(cc).push_back (send);
                 if (on_this_proc (c, cc)) {
                   int const p = dist::rank();
                   level.AT(p).fast_old2new_ref_prol_sendrecv.push_back
@@ -1024,27 +957,6 @@ regrid ()
           ASSERT_c (needrecv.empty(),
                         "Regridding prolongation: All points must have been received");
         }
-        
-        
-        
-        // Optimise fields:
-        
-        optimise_field
-          (box,
-           & dboxes::old2new_sync_recv,
-           & dboxes::fast_old2new_sync_recv);
-        optimise_field
-          (box,
-           & dboxes::old2new_sync_send,
-           & dboxes::fast_old2new_sync_send);
-        optimise_field
-          (box,
-           & dboxes::old2new_ref_prol_recv,
-           & dboxes::fast_old2new_ref_prol_recv);
-        optimise_field
-          (box,
-           & dboxes::old2new_ref_prol_send,
-           & dboxes::fast_old2new_ref_prol_send);
         
       } // for c
       
@@ -1082,141 +994,6 @@ regrid ()
   
   total.stop (0);
 }
-
-
-
-void
-dh::
-optimise_field (dboxes & box,
-                iblistvect const dboxes::* const field,
-                pvect dboxes::* const fast_field)
-{
-  size_t num_regions = 0;
-  for (iblistvect::const_iterator
-         li = (box.*field).begin(); li != (box.*field).end(); ++ li)
-  {
-    iblist const & l = * li;
-    num_regions += l.size();
-  }
-  
-  assert ((box.*fast_field).empty());
-  (box.*fast_field).reserve (num_regions);
-  
-  {
-    int p = 0;
-    for (iblistvect::const_iterator
-           li = (box.*field).begin(); li != (box.*field).end(); ++ li, ++ p)
-    {
-      iblist const & l = * li;
-      for (iblist::const_iterator bi = l.begin(); bi != l.end(); ++ bi) {
-        ibbox const & b = * bi;
-        
-        pseudoregion pr;
-        pr.extent = b;
-        pr.processor = p;
-        
-        (box.*fast_field).push_back (pr);
-        
-      }
-    }
-  }
-  
-  assert ((box.*fast_field).size() == num_regions);
-}
-
-
-
-void
-dh::
-optimise_field (dboxes & box,
-                int const proc,
-                iblist const dboxes::* const field,
-                pvect dboxes::* const fast_field)
-{
-  size_t const num_regions = (box.*field).size();
-  
-  assert ((box.*fast_field).empty());
-  (box.*fast_field).reserve (num_regions);
-  
-  iblist const & l = box.*field;
-  for (iblist::const_iterator bi = l.begin(); bi != l.end(); ++ bi) {
-    ibbox const & b = * bi;
-    
-    pseudoregion pr;
-    pr.extent = b;
-    pr.processor = proc;
-    
-    (box.*fast_field).push_back (pr);
-  }
-  
-  assert ((box.*fast_field).size() == num_regions);
-}
-
-
-
-#if 0
-void
-dh::
-optimise2_field (cboxes & boxes,
-                 iblistvect const dboxes::* const field_send,
-                 iblistvect const dboxes::* const field_recv,
-                 srpvect dboxes::* const fast_field_sendrecv)
-{
-  int const nc = (int)boxes.size();
-  for (int c = 0; c < nc; ++ c) {
-    assert ((boxes.AT(c).*fast_field_sendrecv).empty());
-  }
-  
-  int const p = dist::rank();
-  dboxes & b = boxes.AT(p);
-  
-  size_t num_regions = 0;
-  
-  for (int sc = 0; sc < nc; ++ sc) {
-    for (int rc = 0; rc < nc; ++ rc) {
-      if (sc == p or rc == p) {
-        
-        iblist const & sbl = (boxes.AT(rc).*field_send).AT(sc);
-        iblist const & rbl = (boxes.AT(rc).*field_recv).AT(sc);
-        assert (sbl.size() == rbl.size());
-        
-        num_regions += sbl.size();
-        
-      } // if
-    } // for rc
-  } // for sc
-  
-  (b.*fast_field_sendrecv).reserve (num_regions);
-  
-  for (int sc = 0; sc < nc; ++ sc) {
-    for (int rc = 0; rc < nc; ++ rc) {
-      if (sc == p or rc == p) {
-        
-        iblist const & sbl = (boxes.AT(rc).*field_send).AT(sc);
-        iblist const & rbl = (boxes.AT(rc).*field_recv).AT(sc);
-        
-        for (iblist::const_iterator sbi = srl.begin(), rbi = rrl.begin();
-             sbi != sbl.end(); ++ sbi, ++ rbi)
-        {
-          ibbox const & sb = * sbi;
-          ibbox const & rb = * rbi;
-          
-          sendrecv_pseudoregion srp;
-          srp.send.extent    = sb;
-          srp.send.processor = p;
-          srp.recv.extent    = rb;
-          srp.recv.processor = c;
-          
-          (b.*fast_field_sendrecv).push_back (srp);
-        }
-        
-      } // if
-    } // for rc
-  } // for sc
-  
-  assert ((b.*fast_field_sendrecv).size() == num_regions);
-}
-#endif
 
 
 
@@ -1316,38 +1093,17 @@ output (ostream & os)
   // Communication schedule:
   
   os << "communication:" << eol;
-  os << "mg_rest_recv: " << mg_rest_recv << eol;
-  os << "mg_rest_send: " << mg_rest_send << eol;
-  os << "mg_prol_recv: " << mg_prol_recv << eol;
-  os << "mg_prol_send: " << mg_prol_send << eol;
-  os << "ref_prol_recv:" << ref_prol_recv << eol;
-  os << "ref_prol_send:" << ref_prol_send << eol;
-  os << "ref_rest_recv:" << ref_rest_recv << eol;
-  os << "ref_rest_send:" << ref_rest_send << eol;
-  os << "sync_recv:" << sync_recv << eol;
-  os << "sync_send:" << sync_send << eol;
-  os << "ref_bnd_prol_recv:" << ref_bnd_prol_recv << eol;
-  os << "ref_bnd_prol_send:" << ref_bnd_prol_send << eol;
+  os << "fast_mg_rest_sendrecv: " << fast_mg_rest_sendrecv << eol;
+  os << "fast_mg_prol_sendrecv: " << fast_mg_prol_sendrecv << eol;
+  os << "fast_ref_prol_sendrecv: " << fast_ref_prol_sendrecv << eol;
+  os << "fast_ref_rest_sendrecv: " << fast_ref_rest_sendrecv << eol;
+  os << "fast_sync_sendrecv: " << fast_sync_sendrecv << eol;
+  os << "fast_ref_bnd_prol_sendrecv: " << fast_ref_bnd_prol_sendrecv << eol;
   
   // Regridding schedule:
   
-  os << "old2new_sync_recv:" << old2new_sync_recv << eol;
-  os << "old2new_sync_send:" << old2new_sync_send << eol;
-  os << "old2new_ref_prol_recv:" << old2new_ref_prol_recv << eol;
-  os << "old2new_ref_prol_send:" << old2new_ref_prol_send << eol;
-  
-#if 0
-  // Fast schedule:
-  
-  os << " fast_mg_rest_sendrecv:"          << fast_mg_rest_sendrecv          << eol;
-  os << " fast_mg_prol_sendrecv:"          << fast_mg_prol_sendrecv          << eol;
-  os << " fast_ref_prol_sendrecv:"         << fast_ref_prol_sendrecv         << eol;
-  os << " fast_ref_rest_sendrecv:"         << fast_ref_rest_sendrecv         << eol;
-  os << " fast_sync_sendrecv:"             << fast_sync_sendrecv             << eol;
-  os << " fast_ref_bnd_prol_sendrecv:"     << fast_ref_bnd_prol_sendrecv     << eol;
-  os << " fast_old2new_sync_sendrecv:"     << fast_old2new_sync_sendrecv     << eol;
-  os << " fast_old2new_ref_prol_sendrecv:" << fast_old2new_ref_prol_sendrecv << eol;
-#endif
+  os << "fast_old2new_sync_sendrecv:" << fast_old2new_sync_sendrecv << eol;
+  os << "fast_old2new_ref_prol_sendrecv:" << fast_old2new_ref_prol_sendrecv << eol;
   
   return os;
 }

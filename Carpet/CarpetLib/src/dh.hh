@@ -63,35 +63,6 @@ public:
     
     // Communication schedule:
     
-    // ref_prol_recv[cc] and ref_rest_send[cc] determine what needs to
-    // be sent from and received from cc for prolongation to this box
-    
-    iblist mg_rest_recv;
-    iblist mg_rest_send;
-    iblist mg_prol_recv;
-    iblist mg_prol_send;
-    iblistvect ref_prol_recv;
-    iblistvect ref_prol_send;
-    iblistvect ref_rest_recv;
-    iblistvect ref_rest_send;
-    iblistvect sync_recv;
-    iblistvect sync_send;
-    iblistvect ref_bnd_prol_recv;
-    iblistvect ref_bnd_prol_send;
-    
-    pvect fast_mg_rest_recv;
-    pvect fast_mg_rest_send;
-    pvect fast_mg_prol_recv;
-    pvect fast_mg_prol_send;
-    pvect fast_ref_prol_recv;
-    pvect fast_ref_prol_send;
-    pvect fast_ref_rest_recv;
-    pvect fast_ref_rest_send;
-    pvect fast_sync_recv;
-    pvect fast_sync_send;
-    pvect fast_ref_bnd_prol_recv;
-    pvect fast_ref_bnd_prol_send;
-    
     srpvect fast_mg_rest_sendrecv;
     srpvect fast_mg_prol_sendrecv;
     srpvect fast_ref_prol_sendrecv;
@@ -100,16 +71,6 @@ public:
     srpvect fast_ref_bnd_prol_sendrecv;
     
     // Regridding schedule:
-    
-    iblistvect old2new_sync_recv;
-    iblistvect old2new_sync_send;
-    iblistvect old2new_ref_prol_recv;
-    iblistvect old2new_ref_prol_send;
-    
-    pvect fast_old2new_sync_recv;
-    pvect fast_old2new_sync_send;
-    pvect fast_old2new_ref_prol_recv;
-    pvect fast_old2new_ref_prol_send;
     
     srpvect fast_old2new_sync_sendrecv;
     srpvect fast_old2new_ref_prol_sendrecv;
@@ -127,25 +88,6 @@ private:
   
   void
   setup_bboxes ();
-  
-  static
-  void
-  optimise_field (dboxes & b,
-                  iblistvect const dboxes::* field,
-                  pvect dboxes::* fast_field);
-  static
-  void
-  optimise_field (dboxes & b,
-                  int proc,
-                  iblist const dboxes::* field,
-                  pvect dboxes::* fast_field);
-  
-  static
-  void
-  optimise2_field (cboxes & bs,
-                   pvect const dboxes::* fast_field_recv,
-                   pvect const dboxes::* fast_field_send,
-                   srpvect dboxes::* fast_field_sendrecv);
   
 public:                         // should be readonly
   
