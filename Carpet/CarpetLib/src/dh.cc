@@ -829,32 +829,6 @@ regrid ()
       
       
       
-#if 0
-      optimise2_field
-        (level,
-         & dboxes::fast_mg_rest_send, & dboxes::fast_mg_rest_recv,
-         & dboxes::fast_mg_rest_sendrecv);
-      optimise2_field
-        (level,
-         & dboxes::fast_mg_prol_send, & dboxes::fast_mg_prol_recv,
-         & dboxes::fast_mg_prol_sendrecv);
-      
-      optimise2_field
-        (level,
-         & dboxes::fast_ref_prol_send, & dboxes::fast_ref_prol_recv,
-         & dboxes::fast_ref_prol_sendrecv);
-      optimise2_field
-        (level,
-         & dboxes::fast_sync_send, & dboxes::fast_sync_recv,
-         & dboxes::fast_sync_sendrecv);
-      optimise2_field
-        (level,
-         & dboxes::fast_ref_bnd_prol_send, & dboxes::fast_ref_bnd_prol_recv,
-         & dboxes::fast_ref_bnd_prol_sendrecv);
-#endif
-      
-      
-      
       // Refinement restriction:
       
       if (rl > 0) {
@@ -933,12 +907,6 @@ regrid ()
         // All points must have been received
         ASSERT_rl (needrecv.empty(),
                    "Refinement restriction: All points must have been received");
-        
-#if 0
-        optimise2_field
-          (olevel, & dboxes::fast_ref_rest_send, & dboxes::fast_ref_rest_recv,
-           & dboxes::fast_ref_rest_sendrecv);
-#endif
         
       } // if rl > 0
       
@@ -1091,19 +1059,6 @@ regrid ()
            & dboxes::fast_old2new_ref_prol_send);
         
       } // for c
-      
-#if 0
-      optimise2_field
-        (level,
-         & dboxes::fast_old2new_sync_send,
-         & dboxes::fast_old2new_sync_recv,
-         & dboxes::fast_old2new_sync_sendrecv);
-      optimise2_field
-        (level,
-         & dboxes::fast_old2new_ref_prol_send,
-         & dboxes::fast_old2new_ref_prol_recv,
-         & dboxes::fast_old2new_ref_prol_sendrecv);
-#endif
       
     } // for rl
   }   // for m
