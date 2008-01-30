@@ -576,12 +576,10 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
             arrdesc & ad = arrdata.at(group).at(m);
             for (int ml = 0; ml < ad.hh->mglevels(); ++ ml) {
               for (int rl = 0; rl < ad.hh->reflevels(); ++ rl) {
-                for (int c = 0; c < ad.hh->components(rl); ++ c) {
-                  for (size_t v = 0; v < ad.data.size(); ++ v) {
-                    ggf * const gf = ad.data.at(v);
-                    for (size_t tl = 0; tl < gf->timelevels (ml, rl); ++ tl) {
-                      gf->sync (state, tl, rl, c, ml);
-                    }
+                for (size_t v = 0; v < ad.data.size(); ++ v) {
+                  ggf * const gf = ad.data.at(v);
+                  for (int tl = 0; tl < gf->timelevels (ml, rl); ++ tl) {
+                    gf->sync_all (state, tl, rl, ml);
                   }
                 }
               }
