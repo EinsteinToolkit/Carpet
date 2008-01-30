@@ -29,7 +29,7 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
 
 int WriteVarUnchunked (const cGH* const cctkGH,
                        hid_t outfile,
-                       long long & io_bytes,
+                       CCTK_REAL & io_bytes,
                        const ioRequest* const request,
                        bool called_from_checkpoint)
 {
@@ -281,7 +281,7 @@ int WriteVarUnchunked (const cGH* const cctkGH,
 
 int WriteVarChunkedSequential (const cGH* const cctkGH,
                                hid_t outfile,
-                               long long & io_bytes,
+                               CCTK_REAL & io_bytes,
                                const ioRequest* const request,
                                bool called_from_checkpoint)
 {
@@ -440,7 +440,7 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
 
 int WriteVarChunkedParallel (const cGH* const cctkGH,
                              hid_t outfile,
-                             long long & io_bytes,
+                             CCTK_REAL & io_bytes,
                              const ioRequest* const request,
                              bool called_from_checkpoint)
 {

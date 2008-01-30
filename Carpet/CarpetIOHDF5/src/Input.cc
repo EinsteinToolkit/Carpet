@@ -81,7 +81,7 @@ static void ReadMetadata (fileset_t& fileset, hid_t file);
 static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg);
 static int ReadVar (const cGH* const cctkGH,
                     hid_t file,
-                    long long & io_bytes,
+                    CCTK_REAL & io_bytes,
                     list<patch_t>::const_iterator patch,
                     vector<ibset> &bboxes_read,
                     bool in_recovery);
@@ -285,8 +285,8 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
                 mglevel, reflevel);
   }
 
-  long long io_files = 0;
-  long long io_bytes = 0;
+  CCTK_REAL io_files = 0;
+  CCTK_REAL io_bytes = 0;
   BeginTimingIO (cctkGH);
 
   // create a bbox set for each active timelevel of all variables
@@ -543,10 +543,10 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
   }
   
   {
-    long long local[2], global[2];
+    CCTK_REAL local[2], global[2];
     local[0] = io_files;
     local[1] = io_bytes;
-    MPI_Allreduce (local, global, 2, MPI_LONG_LONG, MPI_SUM, dist::comm());
+    MPI_Allreduce (local, global, 2, dist::datatype (local[0]), MPI_SUM, dist::comm());
     io_files = global[0];
     io_bytes = global[1];
   }
@@ -896,7 +896,7 @@ static herr_t BrowseDatasets (hid_t group, const char *objectname, void *arg)
 //////////////////////////////////////////////////////////////////////////////
 static int ReadVar (const cGH* const cctkGH,
                     hid_t file,
-                    long long & io_bytes,
+                    CCTK_REAL & io_bytes,
                     list<patch_t>::const_iterator patch,
                     vector<ibset> &bboxes_read,
                     bool in_recovery)

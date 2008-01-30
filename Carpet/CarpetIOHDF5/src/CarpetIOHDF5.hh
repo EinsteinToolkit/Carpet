@@ -100,17 +100,17 @@ namespace CarpetIOHDF5
   // worker routines to write a single variable
   int WriteVarUnchunked (const cGH* const cctkGH,
                          hid_t file,
-                         long long & io_bytes,
+                         CCTK_REAL & io_bytes,
                          const ioRequest* const request,
                          bool called_from_checkpoint);
   int WriteVarChunkedSequential (const cGH* const cctkGH,
                                  hid_t file,
-                                 long long & io_bytes,
+                                 CCTK_REAL & io_bytes,
                                  const ioRequest* const request,
                                  bool called_from_checkpoint);
   int WriteVarChunkedParallel (const cGH* const cctkGH,
                                hid_t file,
-                               long long & io_bytes,
+                               CCTK_REAL & io_bytes,
                                const ioRequest* const request,
                                bool called_from_checkpoint);
 
