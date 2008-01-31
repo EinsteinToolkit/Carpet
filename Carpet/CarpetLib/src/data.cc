@@ -62,6 +62,7 @@ call_operator (void
     int const num_threads = omp_get_num_threads();
     int const thread_num = omp_get_thread_num();
     // Parallelise in z direction
+    // TODO: parallelise along longest extent
     int const dir = 2;
     int const stride = regbbox.stride()[dir];
     int const first_point = regbbox.lower()[dir];
@@ -74,21 +75,26 @@ call_operator (void
     int const my_first_point =
       min (last_point, first_point + thread_num * my_num_points);
     int const my_last_point =
-      max (my_first_point, my_first_point + my_num_points);
+      max (my_first_point, min (last_point, my_first_point + my_num_points));
     ibbox3 const myregbbox
       (regbbox.lower().replace (dir, my_first_point),
        regbbox.upper().replace (dir, my_last_point - stride),
        regbbox.stride());
     if (not myregbbox.empty()) {
       (* the_operator) (src, srcext, dst, dstext, srcbbox, dstbbox, myregbbox);
-    }
 #  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
-    _Pragma ("omp critical") {
-      allregbboxes += myregbbox;
-    }
+      _Pragma ("omp critical") {
+        allregbboxes += myregbbox;
+      }
 #  endif
+    }
   }
 #  if ! defined (CARPET_OPTIMISE)
+  if (not (allregbboxes == ibset (regbbox))) {
+    allregbboxes.normalize();
+    cout << "allregbboxes=" << allregbboxes << endl
+         << "regbbox=" << regbbox << endl;
+  }
   assert (allregbboxes == ibset (regbbox));
 #  endif
 #endif
