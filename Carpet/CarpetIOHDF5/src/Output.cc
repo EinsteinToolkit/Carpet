@@ -628,6 +628,16 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
   HDF5_ERROR (H5Awrite (attr, datatype, fullname));
   HDF5_ERROR (H5Aclose (attr));
   HDF5_ERROR (H5Tclose (datatype));
+  
+  // Specify whether the coordinate system is Cartesian or not
+  if (CCTK_IsFunctionAliased ("MultiPatch_MapIsCartesian")) {
+    int const map_is_cartesian = MultiPatch_MapIsCartesian (Carpet::map);
+    HDF5_ERROR (attr = H5Acreate (dataset, "MapIsCartesian", H5T_NATIVE_INT,
+                                  dataspace, H5P_DEFAULT));
+    HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, & map_is_cartesian));
+    HDF5_ERROR (H5Aclose (attr));
+  }
+  
   HDF5_ERROR (H5Sclose (dataspace));
 
   // store cctk_bbox and cctk_nghostzones (for grid arrays only)
@@ -664,14 +674,7 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
     free (groupname);
   }
 
-  // Specify whether the coordinate system is Cartesian or not
-  if (CCTK_IsFunctionAliased ("MultiPatch_MapIsCartesian")) {
-    int const map_is_cartesian = MultiPatch_MapIsCartesian (Carpet::map);
-    HDF5_ERROR (attr = H5Acreate (dataset, "MapIsCartesian", H5T_NATIVE_INT,
-                                  dataspace, H5P_DEFAULT));
-    HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, & map_is_cartesian));
-    HDF5_ERROR (H5Aclose (attr));
-  }
+  
 
   hsize_t size = vdim;
   HDF5_ERROR (dataspace = H5Screate_simple (1, &size, NULL));
