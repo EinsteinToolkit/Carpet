@@ -455,6 +455,53 @@ namespace Carpet {
                 "Physical time per hour: %g",
                 double (* physical_time_per_hour));
   }
+  
+  
+  
+#define PRINTMEM(x) (memoryof(x) / 1.0e+6) << " MB"
+  
+  static
+  void
+  PrintMemoryStats (cGH const * const cctkGH)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    
+    cout << eol
+         << "Memory statistics:" << eol
+         << "   Grid hierarchy:" << eol;
+    for (int m = 0; m < Carpet::maps; ++ m) {
+      cout << "   gh[" << m << "]: " << PRINTMEM(*vhh.at(m)) << eol
+           << "   dh[" << m << "]: " << PRINTMEM(*vdd.at(m)) << eol
+           << "   th[" << m << "]: " << PRINTMEM(*vtt.at(m)) << eol;
+    }
+#if 0
+    for (int g = 0; g < (int)arrdata.size(); ++ g) {
+      if (CCTK_GroupTypeI(g) != CCTK_GF) {
+        char * const groupname = CCTK_GroupName(g);
+        for (int m = 0; m < (int)arrdata.at(g).size(); ++ m) {
+          cout << "   Group " << groupname << ":" << eol
+               << "   gh[" << m << "]: " << PRINTMEM(*arrdata.at(g).at(m).hh) << eol
+               << "   dh[" << m << "]: " << PRINTMEM(*arrdata.at(g).at(m).dd) << eol
+               << "   th[" << m << "]: " << PRINTMEM(*arrdata.at(g).at(m).tt) << eol;
+          for (int v = 0; v < (int)arrdata.at(g).at(m).data.size(); ++ v) {
+            char * const fullname = CCTK_FullName(CCTK_FirstVarIndexI(g)+v);
+            cout << "   Variable " << fullname << ":" << eol
+                 << "   ggf[" << m << "]: ";
+            if (arrdata.at(g).at(m).data.at(v)) {
+              cout << PRINTMEM(*arrdata.at(g).at(m).data.at(v));
+            } else {
+              cout << "<null>";
+            }
+            cout << eol;
+            free (fullname);
+          }
+        }
+        free (groupname);
+      }
+    }
+#endif
+    cout << endl;
+  }
 
 
 
@@ -473,6 +520,7 @@ namespace Carpet {
       PrintIOStats (cctkGH);
       PrintCommunicationStats (cctkGH);
       PrintPhysicalTimePerHour (cctkGH);
+      PrintMemoryStats (cctkGH);
     }
   }
   
