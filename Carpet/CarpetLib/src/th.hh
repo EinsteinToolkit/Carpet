@@ -91,11 +91,16 @@ public:
   }
   
   // Output
+  size_t memory () const;
   void output (ostream& os) const;
 };
 
 
 
+inline size_t memoryof (th const & t)
+{
+  return t.memory ();
+}
 inline ostream& operator<< (ostream& os, const th& t) {
   t.output(os);
   return os;

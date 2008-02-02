@@ -150,6 +150,25 @@ has_clients () const
 
 
 
+// Memory usage
+template<typename T>
+size_t
+mem<T>::
+memory ()
+  const
+{
+  return
+    memoryof (storage_) +
+    memoryof (nelems_) +
+    memoryof (vectorlength_) +
+    memoryof (owns_storage_) +
+    memoryof (clients_) +
+    memoryof (num_clients_) +
+    (owns_storage_ ? sizeof (T) * vectorlength_ * nelems_ : 0);
+}
+
+
+
 size_t const mempool::chunksize;
 size_t const mempool::align;
 
@@ -202,6 +221,25 @@ alloc (size_t nbytes)
   
   return ptr;
 }
+
+
+
+// Memory usage
+size_t
+mempool::
+memory ()
+  const
+{
+  return
+    memoryof (chunks) +
+    memoryof (freeptr) +
+    memoryof (freesize) +
+    (chunksize * chunks.size());
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 

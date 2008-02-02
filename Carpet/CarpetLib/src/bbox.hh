@@ -2,6 +2,7 @@
 #define BBOX_HH
 
 #include <cassert>
+#include <cstdlib>
 #include <iostream>
 #include <limits>
 
@@ -177,10 +178,23 @@ public:
       which means that it also points to the first point.  */
   iterator end () const;
   
+  // Memory usage
+  size_t memory () const
+  {
+    return memoryof (_lower) + memoryof (_upper) + memoryof (_stride);
+  }
+  
   // Input/Output helpers
   void input (istream& is);
   void output (ostream& os) const;
 };
+
+
+
+// Memory usage
+
+template<class T, int D>
+inline size_t memoryof (bbox<T,D> const & b) { return b.memory(); }
 
 
 

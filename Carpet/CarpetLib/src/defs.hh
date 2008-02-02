@@ -235,6 +235,30 @@ namespace CarpetLib {
 
 
 
+// Container memory usage
+inline size_t memoryof (char e) { return sizeof e; }
+inline size_t memoryof (short e) { return sizeof e; }
+inline size_t memoryof (int e) { return sizeof e; }
+inline size_t memoryof (long e) { return sizeof e; }
+inline size_t memoryof (long long e) { return sizeof e; }
+inline size_t memoryof (unsigned char e) { return sizeof e; }
+inline size_t memoryof (unsigned short e) { return sizeof e; }
+inline size_t memoryof (unsigned int e) { return sizeof e; }
+inline size_t memoryof (unsigned long e) { return sizeof e; }
+inline size_t memoryof (unsigned long long e) { return sizeof e; }
+inline size_t memoryof (float e) { return sizeof e; }
+inline size_t memoryof (double e) { return sizeof e; }
+inline size_t memoryof (long double e) { return sizeof e; }
+inline size_t memoryof (void * e) { return sizeof e; }
+template<class T> inline size_t memoryof (T * e) { return sizeof e; }
+template<class T> inline size_t memoryof (T const * e) { return sizeof e; }
+template<class T> size_t memoryof (list<T> const & c);
+template<class T> size_t memoryof (set<T> const & c);
+template<class T> size_t memoryof (stack<T> const & c);
+template<class T> size_t memoryof (vector<T> const & c);
+
+
+
 // Container input
 template<class T> istream& input (istream& is, vector<T>& v);
 

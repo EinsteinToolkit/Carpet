@@ -33,7 +33,13 @@ public:
   void register_client (size_t vectorindex);
   void unregister_client (size_t vectorindex);
   bool has_clients () const;
+  
+  // Memory usage
+  size_t memory () const;
 };
+
+template<typename T>
+inline size_t memoryof (mem<T> const & m) { return m.memory(); }
 
 
 
@@ -73,6 +79,11 @@ public:
   // Allocate some memory and return a pointer to it.  This cannot
   // fail.
   void * alloc (size_t nbytes);
+  
+  // Memory usage
+  size_t memory () const;
 };
+
+inline size_t memoryof (mempool const & m) { return m.memory(); }
 
 #endif  // ifndef MEM_HH

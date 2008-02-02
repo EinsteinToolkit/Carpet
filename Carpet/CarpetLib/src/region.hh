@@ -29,6 +29,15 @@ bool operator!= (region_t const & a, region_t const & b)
 
 
 
+inline size_t memoryof (region_t const & reg)
+{
+  return
+    memoryof (reg.extent) +
+    memoryof (reg.outer_boundaries) +
+    memoryof (reg.map) +
+    memoryof (reg.processor);
+}
+
 istream & operator>> (istream & is, region_t       & reg);
 ostream & operator<< (ostream & os, region_t const & reg);
 
@@ -50,6 +59,13 @@ struct pseudoregion_t {
   }
 };
 
+inline size_t memoryof (pseudoregion_t const & p)
+{
+  return
+    memoryof (p.extent) +
+    memoryof (p.processor);
+}
+
 ostream & operator<< (ostream & os, pseudoregion_t const & p);
 
 struct sendrecv_pseudoregion_t {
@@ -64,6 +80,11 @@ struct sendrecv_pseudoregion_t {
   {
   }
 };
+
+inline size_t memoryof (sendrecv_pseudoregion_t const & srp)
+{
+  return memoryof (srp.send) + memoryof (srp.recv);
+}
 
 ostream & operator<< (ostream & os, sendrecv_pseudoregion_t const & srp);
 

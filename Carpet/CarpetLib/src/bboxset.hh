@@ -142,6 +142,9 @@ public:
 //   iterator begin () const { return bs.begin(); }
 //   iterator end () const   { return bs.end(); }
   
+  // Memory usage
+  size_t memory () const { return memoryof (bs); }
+  
   // Output
   void output (ostream& os) const;
 };
@@ -243,6 +246,12 @@ template<class T,int D>
 inline bool operator>= (const bboxset<T,D>& s, const bbox<T,D>& b) {
   return s >= bboxset<T,D>(b);
 }
+
+
+
+// Memory usage
+template<class T, int D>
+inline size_t memoryof (bboxset<T,D> const & s) { return s.memory(); }
 
 
 

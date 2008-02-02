@@ -71,6 +71,7 @@ public:
   
   
   // Output
+  virtual size_t memory () const;
   virtual ostream& output (ostream& os) const;
 private:
   gf ();                        // canonical default construtor

@@ -62,6 +62,18 @@ data<T>* gf<T>::operator() (int tl, int rl, int c, int ml)
 
 
 
+// Memory usage
+template<typename T>
+size_t
+gf<T>::
+memory ()
+  const
+{
+  return ggf::memory();
+}
+
+
+
 // Output
 template<typename T>
 ostream& gf<T>::output (ostream& os) const

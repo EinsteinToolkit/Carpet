@@ -1042,7 +1042,54 @@ remove (ggf * const f)
 
 
 
+// Memory usage
+
+size_t
+dh::
+memory ()
+  const
+{
+  return
+    memoryof (ghost_width) +
+    memoryof (buffer_width) +
+    memoryof (prolongation_order_space) +
+    memoryof (boxes) +
+    memoryof (oldboxes) +
+    memoryof (gfs);
+}
+
+size_t
+dh::dboxes::
+memory ()
+  const
+{
+  return
+    memoryof (exterior) +
+    memoryof (is_outer_boundary) +
+    memoryof (outer_boundaries) +
+    memoryof (communicated) +
+    memoryof (boundaries) +
+    memoryof (owned) +
+    memoryof (buffers) +
+    memoryof (active) +
+    memoryof (sync) +
+    memoryof (bndref) +
+    memoryof (ghosts) +
+    memoryof (interior) +
+    memoryof (fast_mg_rest_sendrecv) +
+    memoryof (fast_mg_prol_sendrecv) +
+    memoryof (fast_ref_prol_sendrecv) +
+    memoryof (fast_ref_rest_sendrecv) +
+    memoryof (fast_sync_sendrecv) +
+    memoryof (fast_ref_bnd_prol_sendrecv) +
+    memoryof (fast_old2new_sync_sendrecv) +
+    memoryof (fast_old2new_ref_prol_sendrecv);
+}
+
+
+
 // Output
+
 ostream &
 dh::
 output (ostream & os)

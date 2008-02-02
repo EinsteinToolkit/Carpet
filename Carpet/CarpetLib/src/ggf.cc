@@ -519,3 +519,23 @@ transfer_from_all (comm_state & state,
   
   total.stop (0);
 }
+
+
+
+// Memory usage
+size_t
+ggf::
+memory ()
+  const
+{
+  return
+    memoryof (varindex) +
+    memoryof (transport_operator) +
+    memoryof (prolongation_order_time) +
+    memoryof (timelevels_) +
+    memoryof (storage) +
+    memoryof (vectorlength) +
+    memoryof (vectorindex) +
+    memoryof (vectorleader) +
+    memoryof (oldstorage);
+}

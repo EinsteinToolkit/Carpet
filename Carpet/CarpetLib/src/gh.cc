@@ -301,6 +301,28 @@ remove (dh * const d)
 
 
 
+// Memory usage
+
+size_t
+gh::
+memory ()
+  const
+{
+  return
+    memoryof (reffacts) +
+    memoryof (refcent) +
+    memoryof (mgfact) +
+    memoryof (mgcent) +
+    memoryof (baseextents) +
+    memoryof (boundary_width) +
+    memoryof (regions) +
+    memoryof (oldregions) +
+    memoryof (ths) +
+    memoryof (dhs);
+}
+
+
+
 // Output
 
 void

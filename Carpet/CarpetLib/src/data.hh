@@ -155,10 +155,20 @@ private:
   
 public:
   
+  // Memory usage
+  size_t memory () const;
+  
   // Output
   ostream & output (ostream& os) const;
   
   friend ostream & operator<< <T> (ostream & os, data<T> const & d);
 };
+  
+// Memory usage
+template<typename T>
+inline size_t memoryof (data<T> const & d)
+{
+  return d.memory();
+}
 
 #endif // DATA_HH

@@ -81,6 +81,63 @@ void consume (istream& is, const char * const s) {
 
 
 
+// Container memory usage
+template <class T>
+size_t
+memoryof (list<T> const & c)
+{
+  size_t s = sizeof c;
+  for (typename list<T>::const_iterator i=c.begin(); i!=c.end(); ++i) {
+    // Assume that there are two pointers per list element, pointing
+    // to the previous and next element, respectively
+    s += 2 * sizeof (void *) + memoryof(*i);
+  }
+  return s;
+}
+
+template <class T>
+size_t
+memoryof (set<T> const & c)
+{
+  size_t s = sizeof c;
+  for (typename set<T>::const_iterator i=c.begin(); i!=c.end(); ++i) {
+    // Assume that there are three pointers per list element, forming
+    // a tree structure
+    s += 3 * sizeof (void *) + memoryof(*i);
+  }
+  return s;
+}
+
+template <class T>
+size_t
+memoryof (stack<T> const & c)
+{
+  size_t s = sizeof c;
+#if 0
+  for (typename stack<T>::const_iterator i=c.begin(); i!=c.end(); ++i) {
+    // Assume that a stack is stored in an efficient manner
+    s += memoryof(*i);
+  }
+#endif
+  // Cannot access elements...  a stack is LIFO!
+  s += c.size() * sizeof (T);
+  return s;
+}
+
+template <class T>
+size_t
+memoryof (vector<T> const & c)
+{
+  size_t s = sizeof c;
+  for (typename vector<T>::const_iterator i=c.begin(); i!=c.end(); ++i) {
+    // Vectors are stored contiguously
+    s += memoryof(*i);
+  }
+  return s;
+}
+
+
+
 // Vector input
 template<class T>
 istream& input (istream& is, vector<T>& v) {
@@ -166,11 +223,40 @@ ostream& output (ostream& os, const vector<T>& v) {
 
 #include "bbox.hh"
 #include "bboxset.hh"
+#include "dh.hh"
+#include "gdata.hh"
+#include "ggf.hh"
+#include "region.hh"
+#include "th.hh"
 #include "vect.hh"
 
 template int ipow (int x, int y);
 template CCTK_REAL ipow (CCTK_REAL x, int y);
 template vect<int,3> ipow (vect<int,3> x, int y);
+
+template size_t memoryof (list<bbox<int,3> > const & l);
+template size_t memoryof (list<vect<int,3> > const & l);
+template size_t memoryof (list<dh*> const & l);
+template size_t memoryof (list<ggf*> const & l);
+template size_t memoryof (list<th*> const & l);
+template size_t memoryof (stack<void*> const & s);
+template size_t memoryof (vector<bool> const & v);
+template size_t memoryof (vector<int> const & v);
+template size_t memoryof (vector<CCTK_REAL> const & v);
+template size_t memoryof (vector<bbox<int,3> > const & v);
+template size_t memoryof (vector<vect<int,3> > const & v);
+template size_t memoryof (vector<pseudoregion_t> const & v);
+template size_t memoryof (vector<region_t> const & v);
+template size_t memoryof (vector<sendrecv_pseudoregion_t> const & v);
+template size_t memoryof (vector<vector<int> > const & v);
+template size_t memoryof (vector<vector<CCTK_REAL> > const & v);
+template size_t memoryof (vector<vector<bbox<int,3> > > const & v);
+template size_t memoryof (vector<vector<dh::dboxes> > const & v);
+template size_t memoryof (vector<vector<region_t> > const & v);
+template size_t memoryof (vector<vector<vector<dh::dboxes> > > const & v);
+template size_t memoryof (vector<vector<vector<region_t> > > const & v);
+template size_t memoryof (vector<vector<vector<gdata*> > > const & v);
+template size_t memoryof (vector<vector<vector<vector<gdata*> > > > const & v);
 
 template istream& input (istream& os, vector<int>& v);
 template istream& input (istream& os, vector<CCTK_REAL>& v);

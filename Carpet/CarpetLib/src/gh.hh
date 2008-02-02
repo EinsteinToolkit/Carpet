@@ -128,6 +128,7 @@ public:
   void remove (dh * d);
   
   // Output
+  size_t memory () const;
   ostream & output (ostream & os) const;
 
 private:
@@ -137,6 +138,11 @@ private:
 };
 
 
+
+inline size_t memoryof (gh const & g)
+{
+  return g.memory ();
+}
 
 inline ostream & operator<< (ostream & os, gh const & h)
 {

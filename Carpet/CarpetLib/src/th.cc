@@ -62,6 +62,21 @@ void th::regrid ()
 
 
 
+// Memory usage
+size_t
+th::
+memory ()
+  const
+{
+  return
+    memoryof (reffacts) +
+    memoryof (delta) +
+    memoryof (times) +
+    memoryof (deltas);
+}
+
+
+
 // Output
 void th::output (ostream& os) const
 {

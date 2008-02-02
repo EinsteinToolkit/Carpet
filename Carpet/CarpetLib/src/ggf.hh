@@ -182,12 +182,12 @@ public:
   
   // Access to the data
   virtual const gdata* operator() (int tl, int rl, int c, int ml) const = 0;
-  
   virtual gdata* operator() (int tl, int rl, int c, int ml) = 0;
   
   
   
   // Output
+  virtual size_t memory () const;
   virtual ostream& output (ostream& os) const = 0;
 
 private:
@@ -199,7 +199,11 @@ private:
 
 
 
-template<int D>
+inline size_t memoryof (ggf const & f)
+{
+  return f.memory ();
+}
+
 inline ostream& operator<< (ostream& os, const ggf& f)
 {
   return f.output(os);

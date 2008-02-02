@@ -293,6 +293,9 @@ public:
   };
 #endif
   
+  // Memory usage
+  size_t memory () const { return D * memoryof (*elt); }
+  
   // Input/Output helpers
   void input (istream& is);
   void output (ostream& os) const;
@@ -506,6 +509,13 @@ inline vect<U,D> scan1 (U (* const func)(U val, T x), U val,
   return r;
 }
 #endif
+
+
+
+// Memory usage
+
+template<typename T,int D>
+inline size_t memoryof (vect<T,D> const & a) { return a.memory(); }
 
 
 

@@ -2,6 +2,7 @@
 #define DH_HH
 
 #include <cassert>
+#include <cstdlib>
 #include <iostream>
 #include <list>
 #include <string>
@@ -21,7 +22,6 @@ using namespace std;
 // Forward declaration
 class ggf;
 class dh;
-
 
 
 // A data hierarchy (grid hierarchy plus ghost zones)
@@ -75,6 +75,7 @@ public:
     srpvect fast_old2new_sync_sendrecv;
     srpvect fast_old2new_ref_prol_sendrecv;
     
+    size_t memory () const;
     ostream & output (ostream & os) const;
   };
   
@@ -125,10 +126,21 @@ public:
   void remove (ggf * f);
   
   // Output
+  size_t memory () const;
   ostream & output (ostream & os) const;
 };
 
 
+
+inline size_t memoryof (dh::dboxes const & b)
+{
+  return b.memory ();
+}
+
+inline size_t memoryof (dh const & d)
+{
+  return d.memory ();
+}
 
 inline ostream & operator<< (ostream & os, dh::dboxes const & b)
 {

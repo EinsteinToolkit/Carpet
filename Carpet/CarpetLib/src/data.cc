@@ -916,6 +916,22 @@ time_interpolate (vector <data *> const & /*srcs*/,
 
 
 
+// Memory usage
+template<typename T>
+size_t
+data<T>::
+memory ()
+  const
+{
+  return
+    memoryof (_memory) +
+    memoryof (vectorlength) +
+    memoryof (vectorindex) +
+    memoryof (vectorleader);
+}
+
+
+
 // Output
 template<typename T>
 ostream &
