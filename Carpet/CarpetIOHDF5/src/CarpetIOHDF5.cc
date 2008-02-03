@@ -745,7 +745,7 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
                                   H5P_DEFAULT));
 
     // write metadata information
-    error_count += WriteMetadata (cctkGH, -1, -1, nioprocs, true, file);
+    error_count += WriteMetadata (cctkGH, nioprocs, -1, -1, true, file);
   }
 
   // now dump the grid variables on all mglevels, reflevels, maps and components
