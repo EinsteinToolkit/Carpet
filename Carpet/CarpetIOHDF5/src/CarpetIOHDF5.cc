@@ -1016,6 +1016,28 @@ static int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
     HDF5_ERROR (H5Aclose (attr));
   }
 
+  // unique configuration identifier
+  if (CCTK_IsFunctionAliased ("UniqueConfigID")) {
+    char const * const config_id
+      = static_cast<char const *> (UniqueConfigID (cctkGH));
+    HDF5_ERROR (H5Tset_size (datatype, strlen (config_id)));
+    HDF5_ERROR (attr = H5Acreate (group, "config id", datatype,
+                                  scalar_dataspace, H5P_DEFAULT));
+    HDF5_ERROR (H5Awrite (attr, datatype, config_id));
+    HDF5_ERROR (H5Aclose (attr));
+  }
+
+  // unique source tree identifier
+  if (CCTK_IsFunctionAliased ("UniqueSourceID")) {
+    char const * const source_id
+      = static_cast<char const *> (UniqueSourceID (cctkGH));
+    HDF5_ERROR (H5Tset_size (datatype, strlen (source_id)));
+    HDF5_ERROR (attr = H5Acreate (group, "source id", datatype,
+                                  scalar_dataspace, H5P_DEFAULT));
+    HDF5_ERROR (H5Awrite (attr, datatype, source_id));
+    HDF5_ERROR (H5Aclose (attr));
+  }
+
   // unique build identifier
   if (CCTK_IsFunctionAliased ("UniqueBuildID")) {
     char const * const build_id
@@ -1029,12 +1051,23 @@ static int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
 
   // unique simulation identifier
   if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
-    char const * const job_id
+    char const * const simulation_id
       = static_cast<char const *> (UniqueSimulationID (cctkGH));
-    HDF5_ERROR (H5Tset_size (datatype, strlen (job_id)));
+    HDF5_ERROR (H5Tset_size (datatype, strlen (simulation_id)));
     HDF5_ERROR (attr = H5Acreate (group, "simulation id", datatype,
                                   scalar_dataspace, H5P_DEFAULT));
-    HDF5_ERROR (H5Awrite (attr, datatype, job_id));
+    HDF5_ERROR (H5Awrite (attr, datatype, simulation_id));
+    HDF5_ERROR (H5Aclose (attr));
+  }
+
+  // unique run identifier
+  if (CCTK_IsFunctionAliased ("UniqueRunID")) {
+    char const * const run_id
+      = static_cast<char const *> (UniqueRunID (cctkGH));
+    HDF5_ERROR (H5Tset_size (datatype, strlen (run_id)));
+    HDF5_ERROR (attr = H5Acreate (group, "run id", datatype,
+                                  scalar_dataspace, H5P_DEFAULT));
+    HDF5_ERROR (H5Awrite (attr, datatype, run_id));
     HDF5_ERROR (H5Aclose (attr));
   }
 

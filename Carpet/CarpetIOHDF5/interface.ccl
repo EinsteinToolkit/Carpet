@@ -47,13 +47,31 @@ REQUIRES FUNCTION IO_TruncateOutputFiles
 
 
 # Return a pointer to an unmodifiable C string
+# which contains a unique ID for this configuration
+CCTK_POINTER_TO_CONST \
+FUNCTION UniqueConfigID (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION UniqueConfigID
+
+# Return a pointer to an unmodifiable C string
+# which contains a unique ID for this source tree
+CCTK_POINTER_TO_CONST \
+FUNCTION UniqueSourceID (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION UniqueSourceID
+
+# Return a pointer to an unmodifiable C string
 # which contains a unique ID for this build
 CCTK_POINTER_TO_CONST \
-FUNCTION UniqueBuildID (CCTK_POINTER_TO_CONST IN  cctkGH)
+FUNCTION UniqueBuildID (CCTK_POINTER_TO_CONST IN cctkGH)
 USES FUNCTION UniqueBuildID
 
 # Return a pointer to an unmodifiable C string
 # which contains a unique ID for this simulation
 CCTK_POINTER_TO_CONST \
-FUNCTION UniqueSimulationID (CCTK_POINTER_TO_CONST IN  cctkGH)
+FUNCTION UniqueSimulationID (CCTK_POINTER_TO_CONST IN cctkGH)
 USES FUNCTION UniqueSimulationID
+
+# Return a pointer to an unmodifiable C string
+# which contains a unique ID for this run
+CCTK_POINTER_TO_CONST \
+FUNCTION UniqueRunID (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION UniqueRunID
