@@ -79,3 +79,7 @@ Combine several strategies:
      - Note that a full sampling is too expensive.
      - Use a hierarchical strategy for this?
      - Use random sampling for this?
+
+5. Offer the parallelisation mechanism, or the tiling mechanism
+   separately, without actually looping over the array or over the
+   tiles.

@@ -2,6 +2,10 @@
 
 # General options
 
+BOOLEAN printstats "Output timing statistics at shutdown" STEERABLE=recover
+{
+} "no"
+
 BOOLEAN verbose "Verbosity" STEERABLE=always
 {
 } "no"
@@ -53,6 +57,14 @@ CCTK_INT lc_knpoints "Number of grid points in the k-direction" STEERABLE=recove
   -1  :: "choose automatically"
   1:* :: "user-specified value"
 } -1
+
+
+
+# Use legacy configuration
+
+BOOLEAN legacy_init "Initialise with legacy configuration (usually slower)" STEERABLE=recover
+{
+} "no"
 
 
 
@@ -117,6 +129,10 @@ CCTK_REAL maximum_setup_overhead "Maximum allowable administrative overhead" STE
 {
   0.0:* :: ""
 } 0.01
+
+BOOLEAN ignore_initial_overhead "Ignore the overhead from the initial setup" STEERABLE=recover
+{
+} "yes"
 
 CCTK_REAL probability_small_jump "Probability for a small jump once a local minimum has been reached" STEERABLE=always
 {

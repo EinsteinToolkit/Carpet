@@ -1,4 +1,4 @@
-/* -*-f90-mode-*- */
+/* -*-f90-*- */
 
 #ifndef LOOPCONTROL_FORTRAN_H
 #define LOOPCONTROL_FORTRAN_H

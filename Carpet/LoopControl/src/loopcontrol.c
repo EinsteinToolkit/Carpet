@@ -15,6 +15,10 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#ifdef HAVE_TGMATH_H
+#  include <tgmath.h>
+#endif
+
 #include "loopcontrol.h"
 
 #include "lc_auto.h"
@@ -383,6 +387,7 @@ lc_statset_init (lc_statset_t * restrict const ls,
               ls->topologies[n].nthreads[2]);
     }
   }
+  assert (ls->ntopologies > 0);
   
   /*** Tilings ****************************************************************/
   
@@ -398,28 +403,24 @@ lc_statset_init (lc_statset_t * restrict const ls,
       printf ("Dimension %d: %d points\n", d, ls->npoints[d]);
     }
     ls->tilings[d] = malloc (maxntilings * sizeof * ls->tilings[d]);
-    int ntilings;
     find_tiling_specifications
       (ls->tilings[d], maxntilings, & ls->ntilings[d], ls->npoints[d]);
-#if 0
-    ls->tilings[d] =
-      realloc (ls->tilings[d], ls->ntilings[d] * sizeof * ls->tilings[d]);
-#endif
     ls->topology_ntilings[d] =
       malloc (ls->ntopologies * sizeof * ls->topology_ntilings[d]);
     for (int n = 0; n < ls->ntopologies; ++n) {
       int tiling;
-      for (tiling = 0; tiling < ls->ntilings[d]; ++tiling) {
+      for (tiling = 1; tiling < ls->ntilings[d]; ++tiling) {
         if (ls->tilings[d][tiling].npoints * ls->topologies[n].nthreads[d] >
             ls->npoints[d])
         {
           break;
         }
       }
-      ls->topology_ntilings[d][n] = tiling;
+      /* Always allow at least one tiling */
+      ls->topology_ntilings[d][n] = tiling == 0 ? 1 : tiling;
     }
     if (debug) {
-      printf ("   Found %d possible tilings\n", ntilings);
+      printf ("   Found %d possible tilings\n", ls->ntilings[d]);
       printf ("     ");
       for (int n = 0; n < ls->ntilings[d]; ++n) {
         printf (" %d", ls->tilings[d][n].npoints);
@@ -605,8 +606,22 @@ lc_control_init (lc_control_t * restrict const lc,
     } else {
       
       /* Split in the k direction */
-      state.topology = ls->ntopologies - 1;
       
+      for (state.topology = ls->ntopologies - 1;
+           state.topology >= 0;
+           -- state.topology)
+      {
+        int have_tilings = 1;
+        for (int d=0; d<3; ++d) {
+          have_tilings = have_tilings &&
+            ls->topology_ntilings[d][state.topology] > 0;
+        }
+        if (have_tilings) break;
+      }
+      if (state.topology < 0) {
+        assert (0);
+        CCTK_WARN (CCTK_WARN_ABORT, "grid too small");
+      }
     }
     
     /* Select tiling */
@@ -616,6 +631,7 @@ lc_control_init (lc_control_t * restrict const lc,
       state.tiling[0] = -1;
     } else {
       /* as many points as possible */
+      assert (state.topology >= 0);
       state.tiling[0] = ls->topology_ntilings[0][state.topology] - 1;
     }
     
@@ -626,7 +642,12 @@ lc_control_init (lc_control_t * restrict const lc,
       if (cycle_j_tilings) {
         /* cycle through all tilings */
         static int count = 0;
+        assert (state.topology >= 0);
         state.tiling[1] = (count ++) % ls->topology_ntilings[1][state.topology];
+      } else if (legacy_init) {
+        /* as many points as possible */
+        assert (state.topology >= 0);
+        state.tiling[1] = ls->topology_ntilings[1][state.topology] - 1;
       } else {
         /* as few points as possible */
         state.tiling[1] = 0;
@@ -638,6 +659,7 @@ lc_control_init (lc_control_t * restrict const lc,
       state.tiling[2] = -1;
     } else {
       /* as many points as possible */
+      assert (state.topology >= 0);
       state.tiling[2] = ls->topology_ntilings[2][state.topology] - 1;
     }
     
@@ -752,6 +774,15 @@ lc_control_init (lc_control_t * restrict const lc,
 void
 lc_control_finish (lc_control_t * restrict const lc)
 {
+  lc_stattime_t * restrict const lt = lc->stattime;
+  lc_statset_t * restrict const ls = lc->statset;
+  
+  int ignore_iteration;
+  _Pragma ("omp single copyprivate (ignore_iteration)") {
+    DECLARE_CCTK_PARAMETERS;
+    ignore_iteration = ignore_initial_overhead && lt->time_count == 0.0;
+  }
+  
   /* Timer */
   double const time_calc_end   = omp_get_wtime();
   double const time_calc_begin = lc->time_calc_begin;
@@ -759,15 +790,14 @@ lc_control_finish (lc_control_t * restrict const lc)
   double const time_setup_end   = time_calc_begin;
   double const time_setup_begin = lc->time_setup_begin;
   
-  double const time_setup_sum  = time_setup_end - time_setup_begin;
+  double const time_setup_sum  =
+    ignore_iteration ? 0.0 : time_setup_end - time_setup_begin;
   double const time_setup_sum2 = pow (time_setup_sum, 2);
   
   double const time_calc_sum  = time_calc_end - time_calc_begin;
   double const time_calc_sum2 = pow (time_calc_sum, 2);
 
   /* Update statistics */
-  lc_stattime_t * restrict const lt = lc->stattime;
-  lc_statset_t * restrict const ls = lc->statset;
   _Pragma ("omp critical") {
     lt->time_count += 1.0;
     
@@ -831,7 +861,6 @@ void
 lc_printstats (CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_PARAMETERS;
-  if (! verbose) return;
   
   int nmaps = 0;
   for (lc_statmap_t * lm = lc_statmap_list; lm; lm = lm->next) {
@@ -868,10 +897,11 @@ lc_printstats (CCTK_ARGUMENTS)
         }
         ++ ntimes;
       }
+      double const avg_calc = sum_calc / sum_count;
       printf ("      total count: %g   total setup: %g   total calc: %g\n",
               sum_count, sum_setup, sum_calc);
-      printf ("      min calc: %g (#%d)\n",
-              min_calc, imin_calc);
+      printf ("      avg calc: %g   min calc: %g (#%d)\n",
+              avg_calc, min_calc, imin_calc);
       ++ nsets;
     }
     ++ nmaps;
