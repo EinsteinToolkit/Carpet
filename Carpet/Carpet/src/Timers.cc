@@ -73,6 +73,7 @@ namespace Carpet {
     {
       (* itimer)->printData ();
     }
+    printf ("\n");
   }
   
   
@@ -83,8 +84,10 @@ namespace Carpet {
                        char const * const filename)
   {
     int const oldfd = redirect (cctkGH, filename);
+#if 0
     printf ("********************************************************************************\n");
-    printf ("Carpet timing information at iteration %d time %g:\n",
+#endif
+    printf ("# Carpet timing information at iteration %d time %g:\n",
             cctkGH->cctk_iteration, (double) cctkGH->cctk_time);
     timerSet.printData ();
     unredirect (oldfd);
@@ -199,8 +202,46 @@ namespace Carpet {
   {
     bool const was_running = running;
     if (was_running) stop();
+    
+#if 0
     int const ierr = CCTK_TimerPrintDataI (handle, -1); // -1 means: all clocks
     assert (not ierr);
+#endif
+    
+    static cTimerData * timer = 0;
+    if (not timer) timer = CCTK_TimerCreateData ();
+    assert (timer);
+    CCTK_TimerI (handle, timer);
+    
+    static bool firsttime = true;
+    if (firsttime) {
+      printf ("# 1: timer name");
+      for (int i=0; i<timer->n_vals; ++i) {
+        printf (" %d: %s [%s]",
+                i+2, timer->vals[i].heading, timer->vals[i].units);
+      }
+      printf ("\n");
+      firsttime = false;
+    }
+    
+    printf ("%s:", name());
+    for (int i=0; i<timer->n_vals; ++i) {
+      switch (timer->vals[i].type) {
+      case val_int:
+        printf (" %d", timer->vals[i].val.i);
+        break;
+      case val_long:
+        printf (" %ld", timer->vals[i].val.l);
+        break;
+      case val_double:
+        printf (" %g", timer->vals[i].val.d);
+        break;
+      default:
+        assert (0);
+      }
+    }
+    printf ("\n");
+    
     if (was_running) start();
   }
   
