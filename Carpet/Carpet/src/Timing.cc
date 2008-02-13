@@ -322,8 +322,7 @@ namespace Carpet {
     CCTK_REAL const physical_time = cctkGH->cctk_time - initial_phystime;
     
     // Calculate physical time per hour
-    * physical_time_per_hour =
-      3600.0 * physical_time / max (* time_computing, eps);
+    * physical_time_per_hour = 3600.0 * physical_time / max (* time_total, eps);
   }
   
   
