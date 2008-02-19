@@ -1407,9 +1407,10 @@ namespace CarpetIOASCII {
       vector<gdata*> tmps (gfdatas.size());
       for (size_t n=0; n<gfdatas.size(); ++n) {
         tmps.at(n) = gfdatas.at(n)->make_typed (vi, error_centered, op_sync);
-        void * const memptr =
-          pool.alloc (tmps.at(n)->allocsize (gfdatas.at(n)->extent(), ioproc));
-        tmps.at(n)->allocate(gfdatas.at(n)->extent(), ioproc, memptr);
+        size_t const memsize =
+          tmps.at(n)->allocsize (gfdatas.at(n)->extent(), ioproc);
+        void * const memptr = pool.alloc (memsize);
+        tmps.at(n)->allocate(gfdatas.at(n)->extent(), ioproc, memptr, memsize);
       }
       for (comm_state state; not state.done(); state.step()) {
         for (size_t n=0; n<gfdatas.size(); ++n) {
