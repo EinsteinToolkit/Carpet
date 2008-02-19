@@ -94,6 +94,7 @@ int WriteVarUnchunked (const cGH* const cctkGH,
       hsize_t shape[dim];
       hsize_t num_elems = 1;
       for (int d = 0; d < group.dim; ++d) {
+        assert (group.dim-1-d>=0 and group.dim-1-d<dim);
         shape[group.dim-1-d] = (bbox->shape() / bbox->stride())[d];
         num_elems *= shape[group.dim-1-d];
       }
@@ -213,6 +214,7 @@ int WriteVarUnchunked (const cGH* const cctkGH,
             hsize_t overlaporigin[dim];
 #endif
             for (int d = 0; d < group.dim; ++d) {
+              assert (group.dim-1-d>=0 and group.dim-1-d<dim);
               overlaporigin[group.dim-1-d] =
                 ((overlap.lower() - bbox->lower()) / overlap.stride())[d];
               overlapshape[group.dim-1-d]  =
@@ -326,6 +328,7 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
       hsize_t shape[dim];
       hsize_t num_elems = 1;
       for (int d = 0; d < group.dim; ++d) {
+        assert (group.dim-1-d>=0 and group.dim-1-d<dim);
         shape[group.dim-1-d] = (bbox.shape() / bbox.stride())[d];
         num_elems *= shape[group.dim-1-d];
       }
@@ -393,6 +396,7 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           hsize_t shape[dim];
           hssize_t origin[dim];
           for (int d = 0; d < group.dim; ++d) {
+            assert (group.dim-1-d>=0 and group.dim-1-d<dim);
             origin[group.dim-1-d] = (bbox.lower() / bbox.stride())[d];
             shape[group.dim-1-d]  = (bbox.shape() / bbox.stride())[d];
           }
@@ -545,6 +549,7 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       hsize_t shape[dim];
       hssize_t origin[dim];
       for (int d = 0; d < group.dim; ++d) {
+        assert (group.dim-1-d>=0 and group.dim-1-d<dim);
         origin[group.dim-1-d] = (bbox.lower() / bbox.stride())[d];
         shape[group.dim-1-d]  = (bbox.shape() / bbox.stride())[d];
       }
@@ -591,6 +596,7 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
                           const ioRequest* request,
                           const ibbox& bbox, hid_t dataset)
 {
+  assert (vdim>=0 and vdim<=dim);
   int error_count = 0;
 
   // Legacy arguments

@@ -362,7 +362,7 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
       // TODO: ensure that there is exactly one "%u" and no other "%"
       // substrings, except possibly "%%".
       the_out_dir = (char*) malloc (i + 20);
-      sprintf (the_out_dir, my_out_dir, dist::rank());
+      snprintf (the_out_dir, i+19, my_out_dir, dist::rank());
       strcat (the_out_dir, "/");
     }
   } else {
