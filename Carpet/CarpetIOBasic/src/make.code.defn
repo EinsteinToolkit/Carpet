@@ -1,5 +1,4 @@
 # Main make.code.defn file for thorn CarpetIOBasic
-# $Header:$
 
 # Source files in this directory
 SRCS = iobasic.cc
