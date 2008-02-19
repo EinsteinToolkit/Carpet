@@ -738,6 +738,9 @@ namespace Carpet {
       case CCTK_SCALAR:
       case CCTK_ARRAY: {
         
+        // All grid variables must have at most the standard rank
+        assert (gdata.dim >= 0 and gdata.dim <= dim);
+        
         // Use only one refinement level for grid arrays
         groupdata.at(group).activetimelevels.resize(mglevels);
         for (int ml=0; ml<mglevels; ++ml) {
