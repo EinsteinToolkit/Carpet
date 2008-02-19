@@ -1,5 +1,4 @@
 # Interface definition for thorn CarpetCG
-# $Header:$
 
 implements: CarpetCG
 inherits: TATelliptic

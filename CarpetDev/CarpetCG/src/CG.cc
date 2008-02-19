@@ -1,5 +1,3 @@
-/* $Header:$ */
-
 #include <cassert>
 #include <cmath>
 #include <cstdio>
