@@ -16,15 +16,9 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
   CCTK_INT symtable;
   CCTK_INT symmetry_handle[6];
   CCTK_INT symmetry_zone_width[6];
-#endif
   
   int imin[3], imax[3];         /* boundary extent */
   
-  int i, j, k;
-  int d, f;
-  int dd;
-  
-#if 0
   int istat;
 #endif
   
@@ -36,9 +30,9 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
   }
   
 #pragma omp parallel for
-  for (k=0; k<cctk_lsh[2]; ++k) {
-    for (j=0; j<cctk_lsh[1]; ++j) {
-      for (i=0; i<cctk_lsh[0]; ++i) {
+  for (int k=0; k<cctk_lsh[2]; ++k) {
+    for (int j=0; j<cctk_lsh[1]; ++j) {
+      for (int i=0; i<cctk_lsh[0]; ++i) {
         
         int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
         weight[ind] = 1.0;
@@ -56,13 +50,13 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
   }
   
   /* Loop over all dimensions and faces */
-  for (d=0; d<3; ++d) {
-    for (f=0; f<2; ++f) {
+  for (int d=0; d<3; ++d) {
+    for (int f=0; f<2; ++f) {
       /* If this is an inter-processor boundary */
       if (! cctk_bbox[2*d+f]) {
         
         /* Calculate the extent of the boundary hyperslab */
-        for (dd=0; dd<3; ++dd) {
+        for (int dd=0; dd<3; ++dd) {
           imin[dd] = 0;
           imax[dd] = cctk_lsh[dd];
         }
@@ -76,9 +70,9 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
         
         /* Loop over the boundary slab */
 #pragma omp parallel for
-        for (k=imin[2]; k<imax[2]; ++k) {
-          for (j=imin[1]; j<imax[1]; ++j) {
-            for (i=imin[0]; i<imax[0]; ++i) {
+        for (int k=imin[2]; k<imax[2]; ++k) {
+          for (int j=imin[1]; j<imax[1]; ++j) {
+            for (int i=imin[0]; i<imax[0]; ++i) {
               
               int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
               weight[ind] = 0.0;
@@ -118,8 +112,8 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
   }
   
   /* Loop over all dimensions and faces */
-  for (d=0; d<3; ++d) {
-    for (f=0; f<2; ++f) {
+  for (int d=0; d<3; ++d) {
+    for (int f=0; f<2; ++f) {
       /* If this is a symmetry face */
       if (symmetry_handle[2*d+f] >= 0) {
         /* If this processor has the outer boundary */
@@ -131,7 +125,7 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
           }
           
           /* Calculate the extent of the boundary hyperslab */
-          for (dd=0; dd<3; ++dd) {
+          for (int dd=0; dd<3; ++dd) {
             imin[dd] = 0;
             imax[dd] = cctk_lsh[dd];
           }
@@ -145,9 +139,9 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
           
           /* Loop over the boundary slab */
 #pragma omp parallel for
-          for (k=imin[2]; k<imax[2]; ++k) {
-            for (j=imin[1]; j<imax[1]; ++j) {
-              for (i=imin[0]; i<imax[0]; ++i) {
+          for (int k=imin[2]; k<imax[2]; ++k) {
+            for (int j=imin[1]; j<imax[1]; ++j) {
+              for (int i=imin[0]; i<imax[0]; ++i) {
         
                 int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                 weight[ind] = 0.0;

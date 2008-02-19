@@ -20,10 +20,6 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
   int imin[3], imax[3];         /* domain extent */
   int bmin[3], bmax[3];         /* boundary extent */
   
-  int i, j, k;
-  int d, f;
-  int dd;
-  
   int ierr;
   
   
@@ -35,8 +31,8 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
   }
   
   /* Loop over all dimensions and faces */
-  for (d=0; d<3; ++d) {
-    for (f=0; f<2; ++f) {
+  for (int d=0; d<3; ++d) {
+    for (int f=0; f<2; ++f) {
       /* If this processor has the outer boundary */
       if (cctk_bbox[2*d+f]) {
         
@@ -58,13 +54,13 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
           }
           
           /* Calculate the extent of the domain */
-          for (dd=0; dd<3; ++dd) {
+          for (int dd=0; dd<3; ++dd) {
             imin[dd] = 0;
             imax[dd] = cctk_lsh[dd];
           }
           
           /* Calculate the extent of the boundary */
-          for (dd=0; dd<3; ++dd) {
+          for (int dd=0; dd<3; ++dd) {
             bmin[dd] = imin[dd];
             bmax[dd] = imax[dd];
           }
@@ -82,9 +78,9 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
                         "Setting boundary points in direction %d face %d to weight 0", d, f);
           }
 #pragma omp parallel for
-          for (k=bmin[2]; k<bmax[2]; ++k) {
-            for (j=bmin[1]; j<bmax[1]; ++j) {
-              for (i=bmin[0]; i<bmax[0]; ++i) {
+          for (int k=bmin[2]; k<bmax[2]; ++k) {
+            for (int j=bmin[1]; j<bmax[1]; ++j) {
+              for (int i=bmin[0]; i<bmax[0]; ++i) {
                 
                 int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                 weight[ind] = 0.0;
@@ -129,9 +125,9 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
                             "Setting non-staggered boundary points in direction %d face %d to weight 1/2", d, f);
               }
 #pragma omp parallel for
-              for (k=bmin[2]; k<bmax[2]; ++k) {
-                for (j=bmin[1]; j<bmax[1]; ++j) {
-                  for (i=bmin[0]; i<bmax[0]; ++i) {
+              for (int k=bmin[2]; k<bmax[2]; ++k) {
+                for (int j=bmin[1]; j<bmax[1]; ++j) {
+                  for (int i=bmin[0]; i<bmax[0]; ++i) {
                   
                     int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                     weight[ind] *= 0.5;
