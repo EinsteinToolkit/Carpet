@@ -40,11 +40,12 @@ namespace Carpet {
 
     // remove all groups with are non-GFs, empty, or have no storage assigned
     vector<int> groups;
+    groups.reserve (CCTK_NumGroups());
 
     for (int group = 0; group < CCTK_NumGroups(); ++group) {
       if (CCTK_GroupTypeI(group) == CCTK_GF
-          && CCTK_NumVarsInGroupI(group) > 0
-          && CCTK_QueryGroupStorageI(cgh, group)) {
+          and CCTK_NumVarsInGroupI(group) > 0
+          and CCTK_QueryGroupStorageI(cgh, group)) {
         groups.push_back (group);
       }
     }
@@ -63,7 +64,7 @@ namespace Carpet {
 
     const int tl = 0;
 
-    for (comm_state state; ! state.done(); state.step()) {
+    for (comm_state state; not state.done(); state.step()) {
       for (int g = 0; g < (int)groups.size(); ++g) {
         const int group = groups[g];
         for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
