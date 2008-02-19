@@ -226,8 +226,8 @@ namespace Carpet {
                     "Running on the following hosts:");
         for (int n = 0; n < nprocs; ++ n) {
           CCTK_VInfo (CCTK_THORNSTRING,
-                      "   %4d [%d]: %s.%d",
-                      n, nthreads.at(n), hostnames.at(n).c_str(), pids.at(n));
+                      "   %6d: %s, pid=%d, num_threads=%d",
+                      n, hostnames.at(n).c_str(), pids.at(n), nthreads.at(n));
         }
       }
 #endif
