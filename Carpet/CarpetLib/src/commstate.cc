@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cstdlib>
 #include <cstring>
 
 #include "cctk.h"
@@ -35,7 +36,7 @@ comm_state::comm_state ()
 
   typebufs.resize (dist::c_ndatatypes());
   for (size_t type = 0; type < typebufs.size(); type++) {
-    typebufs[type].procbufs.resize(dist::size());
+    typebufs.AT(type).procbufs.resize(dist::size());
   }
 
 #define INSTANTIATE(T)                                                 \
@@ -79,23 +80,25 @@ void comm_state::step ()
       for (size_t type = 0; type < typebufs.size(); type++) {
         
         // skip unused datatype buffers
-        if (not typebufs[type].in_use) continue;
+        if (not typebufs.AT(type).in_use) continue;
         
-        int datatypesize = typebufs[type].datatypesize;
-        procbufdesc& procbuf = typebufs[type].procbufs[proc];
+        int datatypesize = typebufs.AT(type).datatypesize;
+        procbufdesc& procbuf = typebufs.AT(type).procbufs.AT(proc);
         
-        procbuf.sendbufbase = new char[procbuf.sendbufsize*datatypesize];
-        procbuf.recvbufbase = new char[procbuf.recvbufsize*datatypesize];
+        assert (procbuf.sendbufbase.empty());
+        assert (procbuf.recvbufbase.empty());
+        procbuf.sendbufbase.resize (procbuf.sendbufsize*datatypesize);
+        procbuf.recvbufbase.resize (procbuf.recvbufsize*datatypesize);
         // TODO: this may be a bit extreme, and it is only for
         // internal consistency checking
         if (poison_new_memory) {
-          memset (procbuf.sendbufbase, poison_value,
+          memset (&procbuf.sendbufbase.front(), poison_value,
                   procbuf.sendbufsize*datatypesize);
-          memset (procbuf.recvbufbase, poison_value,
+          memset (&procbuf.recvbufbase.front(), poison_value,
                   procbuf.recvbufsize*datatypesize);
         }
-        procbuf.sendbuf = procbuf.sendbufbase;
-        procbuf.recvbuf = procbuf.recvbufbase;
+        procbuf.sendbuf = &procbuf.sendbufbase.front();
+        procbuf.recvbuf = &procbuf.recvbufbase.front();
         
         if (procbuf.recvbufsize > 0) {
           static Timer timer ("commstate_sizes_irecv");
@@ -104,9 +107,12 @@ void comm_state::step ()
             vary_tags
             ? (dist::rank() + dist::size() * (proc + dist::size() * type)) % 32768
             : type;
-          MPI_Irecv (procbuf.recvbufbase, procbuf.recvbufsize,
-                     typebufs[type].mpi_datatype, proc, tag,
-                     dist::comm(), &rrequests[dist::size()*type + proc]);
+//           CCTK_VWarn (3, __LINE__, __FILE__, CCTK_THORNSTRING,
+//                       "About to MPI_Irecv from %d", (int)proc);
+          MPI_Irecv (&procbuf.recvbufbase.front(), procbuf.recvbufsize,
+                     typebufs.AT(type).mpi_datatype, proc, tag,
+                     dist::comm(), &rrequests.AT(dist::size()*type + proc));
+//           CCTK_WARN (3, "Finished MPI_Irecv");
           timer.stop (0);
           num_posted_recvs++;
         }
@@ -139,13 +145,14 @@ void comm_state::step ()
         
         for (size_t type = 0; type < typebufs.size(); type++) {
           // skip unused datatype buffers
-          if (not typebufs[type].in_use) continue;
+          if (not typebufs.AT(type).in_use) continue;
           
-          int const datatypesize = typebufs[type].datatypesize;
-          procbufdesc const & procbuf = typebufs[type].procbufs[proc];
+          int const datatypesize = typebufs.AT(type).datatypesize;
+          procbufdesc const & procbuf = typebufs.AT(type).procbufs.AT(proc);
           
-          int const fillstate = procbuf.sendbuf - procbuf.sendbufbase;
-          assert (fillstate == (int)procbuf.sendbufsize * datatypesize);
+          size_t const fillstate =
+            procbuf.sendbuf - &procbuf.sendbufbase.front();
+          assert (fillstate == procbuf.sendbufsize * datatypesize);
           
           if (procbuf.sendbufsize > 0) {
             int const tag =
@@ -156,27 +163,39 @@ void comm_state::step ()
               // use MPI_Send
               static Timer timer ("commstate_send");
               timer.start ();
-              MPI_Send (procbuf.sendbufbase, procbuf.sendbufsize,
-                        typebufs[type].mpi_datatype, proc, tag,
+//               CCTK_VWarn (3, __LINE__, __FILE__, CCTK_THORNSTRING,
+//                           "About to MPI_Send to %d", (int)proc);
+              MPI_Send (const_cast<char*>(&procbuf.sendbufbase.front()),
+                        procbuf.sendbufsize,
+                        typebufs.AT(type).mpi_datatype, proc, tag,
                         dist::comm());
-              srequests[dist::size()*type + proc] = MPI_REQUEST_NULL;
+//               CCTK_WARN (3, "Finished MPI_Send");
+              srequests.AT(dist::size()*type + proc) = MPI_REQUEST_NULL;
               timer.stop (procbuf.sendbufsize * datatypesize);
             } else if (use_mpi_ssend) {
               // use MPI_Ssend
               static Timer timer ("commstate_ssend");
               timer.start ();
-              MPI_Ssend (procbuf.sendbufbase, procbuf.sendbufsize,
-                         typebufs[type].mpi_datatype, proc, tag,
+//               CCTK_VWarn (3, __LINE__, __FILE__, CCTK_THORNSTRING,
+//                           "About to MPI_Ssend to %d", (int)proc);
+              MPI_Ssend (const_cast<char*>(&procbuf.sendbufbase.front()),
+                         procbuf.sendbufsize,
+                         typebufs.AT(type).mpi_datatype, proc, tag,
                          dist::comm());
-              srequests[dist::size()*type + proc] = MPI_REQUEST_NULL;
+//               CCTK_WARN (3, "Finished MPI_Ssend");
+              srequests.AT(dist::size()*type + proc) = MPI_REQUEST_NULL;
               timer.stop (procbuf.sendbufsize * datatypesize);
             } else {
               // use MPI_Isend
               static Timer timer ("commstate_isend");
               timer.start ();
-              MPI_Isend (procbuf.sendbufbase, procbuf.sendbufsize,
-                         typebufs[type].mpi_datatype, proc, tag,
-                         dist::comm(), &srequests[dist::size()*type + proc]);
+//               CCTK_VWarn (3, __LINE__, __FILE__, CCTK_THORNSTRING,
+//                           "About to MPI_Isend to %d", (int)proc);
+              MPI_Isend (const_cast<char*>(&procbuf.sendbufbase.front()),
+                         procbuf.sendbufsize,
+                         typebufs.AT(type).mpi_datatype, proc, tag,
+                         dist::comm(), &srequests.AT(dist::size()*type + proc));
+//               CCTK_WARN (3, "Finished MPI_Isend");
               timer.stop (procbuf.sendbufsize * datatypesize);
             }
           }
@@ -204,9 +223,9 @@ void comm_state::step ()
     } else {
       // Everything is done so release the collective communication buffers.
       for (size_t type = 0; type < typebufs.size(); type++) {
-        for (size_t proc = 0; proc < typebufs[type].procbufs.size(); proc++) {
-          delete[] typebufs[type].procbufs[proc].sendbufbase;
-          delete[] typebufs[type].procbufs[proc].recvbufbase;
+        for (size_t proc = 0; proc < typebufs.AT(type).procbufs.size(); proc++) {
+          typebufs.AT(type).procbufs.AT(proc).sendbufbase.clear();
+          typebufs.AT(type).procbufs.AT(proc).recvbufbase.clear();
         }
       }
       thestate = state_done;
@@ -267,12 +286,16 @@ bool comm_state::AllPostedCommunicationsFinished ()
       assert (nreqs == reqs.size());
       static Timer timer ("commstate_waitall_final");
       timer.start ();
+//       CCTK_WARN (3, "About to MPI_Waitall");
       MPI_Waitall (reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE);
+//       CCTK_WARN (3, "Finished MPI_Waitall");
       timer.stop (0);
     } else {
       static Timer timer ("commstate_waitall_final");
       timer.start ();
+//       CCTK_WARN (3, "About to MPI_Waitall");
       MPI_Waitall (srequests.size(), &srequests.front(), MPI_STATUSES_IGNORE);
+//       CCTK_WARN (3, "Finished MPI_Waitall");
       timer.stop (0);
     }
 
@@ -298,12 +321,16 @@ bool comm_state::AllPostedCommunicationsFinished ()
     assert (nreqs == reqs.size());
     static Timer timer ("commstate_waitall");
     timer.start ();
+//     CCTK_WARN (3, "About to MPI_Waitall");
     MPI_Waitall (reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE);
+//     CCTK_WARN (3, "Finished MPI_Waitall");
     timer.stop (0);
   } else {
     static Timer timer ("commstate_waitall");
     timer.start ();
+//     CCTK_WARN (3, "About to MPI_Waitall");
     MPI_Waitall (rrequests.size(), &rrequests.front(), MPI_STATUSES_IGNORE);
+//     CCTK_WARN (3, "Finished MPI_Waitall");
     timer.stop (0);
   }
   num_completed_recvs = num_posted_recvs;
@@ -355,7 +382,8 @@ send_buffer (unsigned int const type,
   procbufdesc const & procbuf = typebuf.procbufs.AT(proc);
   
   assert (procbuf.sendbuf + npoints * typebuf.datatypesize <=
-          procbuf.sendbufbase + procbuf.sendbufsize * typebuf.datatypesize);
+          &procbuf.sendbufbase.front() +
+          procbuf.sendbufsize * typebuf.datatypesize);
   
   return procbuf.sendbuf;
 }
@@ -372,7 +400,8 @@ recv_buffer (unsigned int const type,
   procbufdesc const & procbuf = typebuf.procbufs.AT(proc);
   
   assert (procbuf.recvbuf + npoints * typebuf.datatypesize <=
-          procbuf.recvbufbase + procbuf.recvbufsize * typebuf.datatypesize);
+          &procbuf.recvbufbase.front() +
+          procbuf.recvbufsize * typebuf.datatypesize);
   
   return procbuf.recvbuf;
 }
@@ -392,19 +421,24 @@ commit_send_space (unsigned int const type,
   procbufdesc & procbuf = typebuf.procbufs.AT(proc);
   procbuf.sendbuf += npoints * typebuf.datatypesize;
   assert (procbuf.sendbuf <=
-          procbuf.sendbufbase + procbuf.sendbufsize * typebuf.datatypesize);
+          &procbuf.sendbufbase.front() +
+          procbuf.sendbufsize * typebuf.datatypesize);
   
   if (not combine_sends) {
     // post the send if the buffer is full
     if (procbuf.sendbuf ==
-        procbuf.sendbufbase + procbuf.sendbufsize * typebuf.datatypesize)
+        &procbuf.sendbufbase.front() +
+        procbuf.sendbufsize * typebuf.datatypesize)
     {
       static Timer timer ("commit_send_space::isend");
       timer.start ();
-      MPI_Isend (procbuf.sendbufbase,
+//       CCTK_VWarn (3, __LINE__, __FILE__, CCTK_THORNSTRING,
+//                   "About to MPI_Isend to %d", (int)proc);
+      MPI_Isend (&procbuf.sendbufbase.front(),
                  procbuf.sendbufsize, typebuf.mpi_datatype,
                  proc, type, dist::comm(),
                  & srequests.AT(type * dist::size() + proc));
+//       CCTK_WARN (3, "Finished MPI_Isend");
       timer.stop (procbuf.sendbufsize * typebuf.datatypesize);
     }
   }
@@ -423,5 +457,6 @@ commit_recv_space (unsigned int const type,
   procbufdesc & procbuf = typebuf.procbufs.AT(proc);
   procbuf.recvbuf += npoints * typebuf.datatypesize;
   assert (procbuf.recvbuf <=
-          procbuf.recvbufbase + procbuf.recvbufsize * typebuf.datatypesize);
+          &procbuf.recvbufbase.front() +
+          procbuf.recvbufsize * typebuf.datatypesize);
 }

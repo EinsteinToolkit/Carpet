@@ -51,8 +51,8 @@ public:
   // structure describing a per-processor buffer for collective communications
   struct procbufdesc {
     // the allocated communication buffers
-    char* sendbufbase;
-    char* recvbufbase;
+    vector<char> sendbufbase;
+    vector<char> recvbufbase;
 
     // the sizes of communication buffers (in elements of type <datatype>)
     size_t sendbufsize;
@@ -64,8 +64,7 @@ public:
     char* recvbuf;
 
     // constructor for an instance of this structure
-    procbufdesc() : sendbufbase(NULL), recvbufbase(NULL),
-                    sendbufsize(0), recvbufsize(0),
+    procbufdesc() : sendbufsize(0), recvbufsize(0),
                     sendbuf(NULL), recvbuf(NULL)
     {
     }
