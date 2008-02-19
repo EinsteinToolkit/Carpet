@@ -200,6 +200,8 @@ namespace CarpetInterp {
                             CCTK_INT const output_array_type_codes [],
                             CCTK_POINTER const output_arrays [])
   {
+    DECLARE_CCTK_PARAMETERS;
+
     cGH const * const cctkGH = static_cast<cGH const *> (cctkGH_);
     assert (cctkGH);
     assert (0 <= N_dims and N_dims <= dim);
@@ -306,6 +308,19 @@ namespace CarpetInterp {
           assert (output_arrays[j] != output_arrays[jj]);
         }
       }
+    }
+
+
+    if (barriers) {
+      static unsigned int magic = 0x2ad072fbUL; // a random starting value
+      unsigned int recv = magic;
+      MPI_Bcast (& recv, 1, MPI_UNSIGNED, 0, dist::comm());
+      if (recv != magic) {
+        CCTK_WARN (CCTK_WARN_ABORT,
+                   "Inconsistent communication schedule: not all processes call CarpetInterp");
+      }
+      ++ magic;
+      MPI_Barrier (dist::comm());
     }
 
 
