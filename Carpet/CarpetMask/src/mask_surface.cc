@@ -97,12 +97,14 @@ namespace CarpetMask {
                   weight[ind] = 0.0;
                 } else {
                   CCTK_REAL const theta =
-                    acos (min (+1.0, max (-1.0, dz / rho)));
+                    acos (min (CCTK_REAL (+1.0),
+                               max (CCTK_REAL (-1.0), dz / rho)));
                   assert (not isnan (theta));
                   assert (theta >= 0);
                   assert (theta <= M_PI);
                   CCTK_REAL const phi =
-                    fmod (atan2 (dy, dx) + 2 * M_PI, 2 * M_PI);
+                    fmod (atan2 (dy, dx) + CCTK_REAL (2 * M_PI),
+                          CCTK_REAL (2 * M_PI));
                   assert (not isnan (phi));
                   assert (phi >= 0);
                   assert (phi < 2 * M_PI);
