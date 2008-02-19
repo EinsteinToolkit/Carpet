@@ -241,49 +241,54 @@ void ggf::recompose_free (const int rl)
 
 
 // Cycle the time levels by rotating the data sets
-void ggf::cycle (int const rl, int const c, int const ml) {
+void ggf::cycle_all (int const rl, int const ml) {
   assert (rl>=0 and rl<h.reflevels());
-  assert (c>=0 and c<h.components(rl));
   assert (ml>=0 and ml<h.mglevels());
   int const ntl = timelevels(ml,rl);
   assert (ntl > 0);
-  fdata & fdatas = storage.AT(ml).AT(rl).AT(c);
-  gdata * const tmpdata = fdatas.AT(ntl-1);
-  for (int tl=ntl-1; tl>0; --tl) {
-    fdatas.AT(tl) = fdatas.AT(tl-1);
+  for (int c=0; c<(int)storage.AT(ml).AT(rl).size(); ++c) {
+    fdata & fdatas = storage.AT(ml).AT(rl).AT(c);
+    gdata * const tmpdata = fdatas.AT(ntl-1);
+    for (int tl=ntl-1; tl>0; --tl) {
+      fdatas.AT(tl) = fdatas.AT(tl-1);
+    }
+    fdatas.AT(0) = tmpdata;
   }
-  fdatas.AT(0) = tmpdata;
 }
 
 // Flip the time levels by exchanging the data sets
-void ggf::flip (int rl, int c, int ml) {
+void ggf::flip_all (int const rl, int const ml) {
   assert (rl>=0 and rl<h.reflevels());
-  assert (c>=0 and c<h.components(rl));
   assert (ml>=0 and ml<h.mglevels());
-  for (int tl=0; tl<(timelevels(ml,rl)-1)/2; ++tl) {
-    const int tl1 =                  tl;
-    const int tl2 = timelevels(ml,rl)-1 - tl;
-    assert (tl1 < tl2);
-    gdata* tmpdata = storage.AT(ml).AT(rl).AT(c).AT(tl1);
-    storage.AT(ml).AT(rl).AT(c).AT(tl1) = storage.AT(ml).AT(rl).AT(c).AT(tl2);
-    storage.AT(ml).AT(rl).AT(c).AT(tl2) = tmpdata;
+  for (int c=0; c<(int)storage.AT(ml).AT(rl).size(); ++c) {
+    fdata & fdatas = storage.AT(ml).AT(rl).AT(c);
+    for (int tl=0; tl<(timelevels(ml,rl)-1)/2; ++tl) {
+      const int tl1 =                       tl;
+      const int tl2 = timelevels(ml,rl)-1 - tl;
+      assert (tl1 < tl2);
+      gdata* tmpdata = fdatas.AT(tl1);
+      fdatas.AT(tl1) = fdatas.AT(tl2);
+      fdatas.AT(tl2) = tmpdata;
+    }
   }
 }
 
 
 
 // Fill all time levels from the current time level
-void ggf::fill (int rl, int c, int ml) {
+void ggf::fill_all (int const rl, int const ml) {
   assert (rl>=0 and rl<h.reflevels());
-  assert (c>=0 and c<h.components(rl));
   assert (ml>=0 and ml<h.mglevels());
-  if (not h.is_local(rl,c)) return;
-  fdata const & fdatas = storage.AT(ml).AT(rl).AT(c);
-  void const * const srcptr = fdatas.AT(0)->storage();
-  size_t const size = fdatas.AT(0)->size() * fdatas.AT(0)->elementsize();
-  for (int tl=1; tl<timelevels(ml,rl); ++tl) {
-    void * const dstptr = fdatas.AT(tl)->storage();
-    memcpy (dstptr, srcptr, size);
+  for (int c=0; c<(int)storage.AT(ml).AT(rl).size(); ++c) {
+    if (h.is_local(rl,c)) {
+      fdata const & fdatas = storage.AT(ml).AT(rl).AT(c);
+      void const * const srcptr = fdatas.AT(0)->storage();
+      size_t const size = fdatas.AT(0)->size() * fdatas.AT(0)->elementsize();
+      for (int tl=1; tl<timelevels(ml,rl); ++tl) {
+        void * const dstptr = fdatas.AT(tl)->storage();
+        memcpy (dstptr, srcptr, size);
+      }
+    }
   }
 }
 

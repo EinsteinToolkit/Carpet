@@ -100,13 +100,13 @@ public:
   void recompose_free (int rl);
 
   // Cycle the time levels by rotating the data sets
-  void cycle (int rl, int c, int ml);
+  void cycle_all (int rl, int ml);
   
   // Flip the time levels by exchanging the data sets
-  void flip (int rl, int c, int ml);
+  void flip_all (int rl, int ml);
 
   // Fill all time levels from the current time level
-  void fill (int rl, int c, int ml);
+  void fill_all (int rl, int ml);
 
   // The grid boundaries have to be updated after calling mg_restrict,
   // mg_prolongate, ref_restrict, or ref_prolongate.
