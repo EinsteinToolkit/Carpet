@@ -316,13 +316,7 @@ size_t data<T>::allocsize (const ibbox & extent_, const int proc_) const
   if (dist::rank() != proc_) return 0;
   if (vectorindex != 0) return 0;
   assert (not vectorleader);
-  ivect const shape_ = max(ivect(0), extent_.shape() / extent_.stride());
-  int size_ = vectorlength * sizeof (T);
-  for (int d=0; d<dim; ++d) {
-    assert (shape_[d]==0 or size_ <= numeric_limits<int>::max() / shape_[d]);
-    size_ *= shape_[d];
-  }
-  return size_;
+  return vectorlength * extent_.size() * sizeof (T);
 }
 
 
