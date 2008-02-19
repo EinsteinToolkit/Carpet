@@ -1273,9 +1273,7 @@ namespace CarpetInterp {
         assert (iret == 0);
       }
       
-      int const grouptype = CCTK_GroupTypeI (coord_group);
-      assert (grouptype >= 0);
-      int const m = grouptype == CCTK_GF ? Carpet::map : 0;
+      int const m = 0;
       // delta for the Carpet grid indices
       ibbox const & baseextent =
         arrdata.at(coord_group).at(m).hh->baseextents.at(mglevel).at(0);
