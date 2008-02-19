@@ -1,5 +1,4 @@
 # Interface definition for thorn CarpetAdaptiveRegrid
-# $Header$
 
 implements: CarpetAdaptiveRegrid
 

@@ -16,11 +16,6 @@
 #include "carpet.hh"
 #include "CAR.hh"
 
-extern "C" {
-  static const char* rcsid = "$Header:$";
-  CCTK_FILEVERSION(Carpet_CarpetAdaptiveregrid_regrid_cc);
-}
-
 //
 // For the moment this is going to live as one large file with one
 // large routine. However, it should be broken up into pieces later

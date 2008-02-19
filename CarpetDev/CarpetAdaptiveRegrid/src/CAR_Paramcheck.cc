@@ -7,10 +7,6 @@
 #include "carpet.hh"
 #include "CAR.hh"
 
-static const char* rcsid = "$Header:$";
-
-CCTK_FILEVERSION(CAR_Paramcheck_cc)
-
 namespace CarpetAdaptiveRegrid {
   
   using namespace std;

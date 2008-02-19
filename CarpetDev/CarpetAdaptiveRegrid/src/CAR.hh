@@ -1,5 +1,3 @@
-// $Header:$
-
 #ifndef CARPETADAPTIVEREGRID_HH
 #define CARPETADAPTIVEREGRID_HH
 

@@ -1,5 +1,4 @@
 # Main make.code.defn file for thorn CarpetAdaptiveRegrid
-# $Header$
 
 # Source files in this directory
 SRCS = 	CAR_Paramcheck.cc \

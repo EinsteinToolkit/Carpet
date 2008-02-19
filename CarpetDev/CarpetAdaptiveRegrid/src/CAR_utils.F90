@@ -1,5 +1,3 @@
-!!$  $Header:$
-      
 #include "cctk.h"
 
 !!$ Given the mask set the 1D sums
