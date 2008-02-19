@@ -159,7 +159,9 @@ void ggf::recompose_fill (comm_state & state, int const rl,
   for (int ml = 0; ml < h.mglevels(); ++ ml) {
     
     vector <int> tls;
-    if (do_prolongate and rl > 0 and transport_operator != op_none and transport_operator != op_sync) {
+    if (do_prolongate and rl > 0 and
+        transport_operator != op_none and transport_operator != op_sync)
+    {
       int const numtl = timelevels (ml, rl);
       tls.resize (numtl);
       for (int tl = 0; tl < numtl; ++ tl) {
