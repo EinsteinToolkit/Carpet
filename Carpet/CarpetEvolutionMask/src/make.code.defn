@@ -1,5 +1,4 @@
 # Main make.code.defn file for thorn CarpetEvolutionMask
-# $Header:$
 
 # Source files in this directory
 SRCS = evolution_mask.cc evolution_mask_init.c evolution_mask_enforce.c
