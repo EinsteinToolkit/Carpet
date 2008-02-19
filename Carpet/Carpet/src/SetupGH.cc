@@ -1286,14 +1286,30 @@ namespace Carpet {
     spacing = base_spacing * baseconvfact;
     
     rvect interior_min, interior_max;
-    int const ierr =
-      ConvertFromPhysicalBoundary
-      (dim,
-       &physical_min[0], &physical_max[0],
-       &interior_min[0], &interior_max[0],
-       &exterior_min[0], &exterior_max[0],
-       &spacing[0]);
-    assert (not ierr);
+    
+    if (domain_from_multipatch and
+        CCTK_IsFunctionAliased ("MultiPatch_ConvertFromPhysicalBoundary"))
+    {
+      assert (not domain_from_coordbase);
+      int const ierr =
+        MultiPatch_ConvertFromPhysicalBoundary
+        (m,
+         dim,
+         &physical_min[0], &physical_max[0],
+         &interior_min[0], &interior_max[0],
+         &exterior_min[0], &exterior_max[0],
+         &spacing[0]);
+      assert (not ierr);
+    } else {
+      int const ierr =
+        ConvertFromPhysicalBoundary
+        (dim,
+         &physical_min[0], &physical_max[0],
+         &interior_min[0], &interior_max[0],
+         &exterior_min[0], &exterior_max[0],
+         &spacing[0]);
+      assert (not ierr);
+    }
     
     ostringstream buf;
     buf << "Adapted domain specification for map " << m << ":" << endl

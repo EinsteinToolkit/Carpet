@@ -138,6 +138,19 @@ CCTK_INT FUNCTION MultiPatch_GetDomainSpecification \
    CCTK_REAL OUT ARRAY spacing)
 USES FUNCTION MultiPatch_GetDomainSpecification
 
+# Conversion between boundary types
+CCTK_INT FUNCTION MultiPatch_ConvertFromPhysicalBoundary \
+  (CCTK_INT IN map, \
+   CCTK_INT IN size, \
+   CCTK_REAL IN  ARRAY physical_min, \
+   CCTK_REAL IN  ARRAY physical_max, \
+   CCTK_REAL OUT ARRAY interior_min, \
+   CCTK_REAL OUT ARRAY interior_max, \
+   CCTK_REAL OUT ARRAY exterior_min, \
+   CCTK_REAL OUT ARRAY exterior_max, \
+   CCTK_REAL IN  ARRAY spacing)
+USES FUNCTION MultiPatch_ConvertFromPhysicalBoundary
+
 
 
 # Access coordinate information (on the coarse level)
