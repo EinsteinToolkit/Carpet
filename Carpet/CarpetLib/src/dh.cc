@@ -472,105 +472,101 @@ regrid ()
         
         // Multigrid restriction:
         
-        if (true or on_this_proc (c)) {
-          if (ml > 0) {
-            int const oml = ml - 1;
-            
-            // Multigrid restriction must fill all active points
-            
-            dboxes const & obox = boxes.AT(oml).AT(rl).AT(c);
-            
-            ibset needrecv = box.active;
-            
-            ibset contracted_oactive;
-            for (ibset::const_iterator
-                   ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
-            {
-              ibbox const & oactive = * ai;
-              contracted_oactive += oactive.contracted_for (box.interior);
+        if (ml > 0) {
+          int const oml = ml - 1;
+          
+          // Multigrid restriction must fill all active points
+          
+          dboxes const & obox = boxes.AT(oml).AT(rl).AT(c);
+          
+          ibset needrecv = box.active;
+          
+          ibset contracted_oactive;
+          for (ibset::const_iterator
+                 ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
+          {
+            ibbox const & oactive = * ai;
+            contracted_oactive += oactive.contracted_for (box.interior);
+          }
+          contracted_oactive.normalize();
+          
+          ibset ovlp = needrecv & contracted_oactive;
+          ovlp.normalize();
+          
+          for (ibset::const_iterator
+                 ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
+          {
+            ibbox const & recv = * ri;
+            ibbox const send = recv.expanded_for (obox.interior);
+            ASSERT_c (send <= obox.exterior,
+                      "Multigrid restriction: Send region must be contained in exterior");
+            if (on_this_proc (c)) {
+              int const p = dist::rank();
+              level.AT(p).fast_mg_rest_sendrecv.push_back
+                (sendrecv_pseudoregion_t (send, c, recv, c));
             }
-            contracted_oactive.normalize();
-            
-            ibset ovlp = needrecv & contracted_oactive;
-            ovlp.normalize();
-            
-            for (ibset::const_iterator
-                   ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
-            {
-              ibbox const & recv = * ri;
-              ibbox const send = recv.expanded_for (obox.interior);
-              ASSERT_c (send <= obox.exterior,
-                        "Multigrid restriction: Send region must be contained in exterior");
-              if (on_this_proc (c)) {
-                int const p = dist::rank();
-                level.AT(p).fast_mg_rest_sendrecv.push_back
-                  (sendrecv_pseudoregion_t (send, c, recv, c));
-              }
-            }
-            
-            needrecv -= ovlp;
-            needrecv.normalize();
-            
-            // All points must have been received
-            ASSERT_c (needrecv.empty(),
-                      "Multigrid restriction: All points must have been received");
-            
-          } // if ml > 0
-        }
+          }
+          
+          needrecv -= ovlp;
+          needrecv.normalize();
+          
+          // All points must have been received
+          ASSERT_c (needrecv.empty(),
+                    "Multigrid restriction: All points must have been received");
+          
+        } // if ml > 0
         
         
         
         // Multigrid prolongation:
         
-        if (true or on_this_proc (c)) {
-          if (ml > 0) {
-            int const oml = ml - 1;
-            
-            // Multigrid prolongation must fill all active points
-            // (this could probably be relaxed)
-            
-            dboxes const & obox = boxes.AT(oml).AT(rl).AT(c);
-            
-            ibset oneedrecv = obox.active;
-            
-            i2vect const stencil_size = i2vect (prolongation_stencil_size());
-            
-            ibset expanded_active;
-            for (ibset::const_iterator
-                   ai = box.active.begin(); ai != box.active.end(); ++ ai)
-            {
-              ibbox const & active = * ai;
-              expanded_active += active.expanded_for (obox.interior);
+        if (ml > 0) {
+          int const oml = ml - 1;
+          
+          // Multigrid prolongation must fill all active points
+          // (this could probably be relaxed)
+          
+          dboxes const & obox = boxes.AT(oml).AT(rl).AT(c);
+          
+          ibset oneedrecv = obox.active;
+          
+          i2vect const stencil_size = i2vect (prolongation_stencil_size());
+          
+          ibset expanded_active;
+          for (ibset::const_iterator
+                 ai = box.active.begin(); ai != box.active.end(); ++ ai)
+          {
+            ibbox const & active = * ai;
+            expanded_active += active.expanded_for (obox.interior);
+          }
+          expanded_active.normalize();
+          
+          ibset ovlp = oneedrecv & expanded_active;
+          ovlp.normalize();
+          
+          for (ibset::const_iterator
+                 ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
+          {
+            ibbox const & recv = * ri;
+            ibbox const send =
+              recv.expanded_for (box.interior).expand (stencil_size);
+            ASSERT_c (send <= box.exterior,
+                      "Multigrid prolongation: Send region must be contained in exterior");
+            if (on_this_proc (c)) {
+              int const p = dist::rank();
+              level.AT(p).fast_mg_prol_sendrecv.push_back
+                (sendrecv_pseudoregion_t (send, c, recv, c));
             }
-            expanded_active.normalize();
-            
-            ibset ovlp = oneedrecv & expanded_active;
-            ovlp.normalize();
-            
-            for (ibset::const_iterator
-                   ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
-            {
-              ibbox const & recv = * ri;
-              ibbox const send =
-                recv.expanded_for (box.interior).expand (stencil_size);
-              ASSERT_c (send <= box.exterior,
-                        "Multigrid prolongation: Send region must be contained in exterior");
-              if (on_this_proc (c)) {
-                int const p = dist::rank();
-                level.AT(p).fast_mg_prol_sendrecv.push_back
-                  (sendrecv_pseudoregion_t (send, c, recv, c));
-              }
-            }
-            
-            oneedrecv -= ovlp;
-            oneedrecv.normalize();
-            
-            // All points must have been received
-            ASSERT_c (oneedrecv.empty(),
-                      "Multigrid prolongation: All points must have been received");
-            
-          } // if ml > 0
-        }
+          }
+          
+          oneedrecv -= ovlp;
+          oneedrecv.normalize();
+          
+          // All points must have been received
+          ASSERT_c (oneedrecv.empty(),
+                    "Multigrid prolongation: All points must have been received");
+          
+        } // if ml > 0
         
         
         
@@ -591,41 +587,39 @@ regrid ()
             i2vect (h.reffacts.at(rl) / h.reffacts.at(orl));
           
           for (int cc = 0; cc < h.components(orl); ++ cc) {
-            if (true or on_this_proc (c, cc)) {
-              dboxes const & obox = boxes.AT(ml).AT(orl).AT(cc);
-              
-              ibset contracted_oactive;
-              for (ibset::const_iterator
-                     ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
-              {
-                ibbox const & oactive = * ai;
-                // untested for cell centering
-                contracted_oactive +=
-                  oactive.contracted_for (box.interior).expand (reffact);
-              }
-              contracted_oactive.normalize();
-              
-              ibset ovlp = needrecv & contracted_oactive;
-              ovlp.normalize();
-              
-              for (ibset::const_iterator
-                      ri =ovlp.begin(); ri != ovlp.end(); ++ ri)
-              {
-                ibbox const & recv = * ri;
-                ibbox const send =
-                  recv.expanded_for (obox.interior).expand (stencil_size);
-                ASSERT_c (send <= obox.exterior,
-                          "Refinement prolongation: Send region must be contained in exterior");
-                if (on_this_proc (c, cc)) {
-                  int const p = dist::rank();
-                  level.AT(p).fast_ref_prol_sendrecv.push_back
-                    (sendrecv_pseudoregion_t (send, cc, recv, c));
-                }
-              }
-              
-              needrecv -= ovlp;
-              
+            dboxes const & obox = boxes.AT(ml).AT(orl).AT(cc);
+            
+            ibset contracted_oactive;
+            for (ibset::const_iterator
+                   ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
+            {
+              ibbox const & oactive = * ai;
+              // untested for cell centering
+              contracted_oactive +=
+                oactive.contracted_for (box.interior).expand (reffact);
             }
+            contracted_oactive.normalize();
+            
+            ibset ovlp = needrecv & contracted_oactive;
+            ovlp.normalize();
+            
+            for (ibset::const_iterator
+                   ri =ovlp.begin(); ri != ovlp.end(); ++ ri)
+            {
+              ibbox const & recv = * ri;
+              ibbox const send =
+                recv.expanded_for (obox.interior).expand (stencil_size);
+              ASSERT_c (send <= obox.exterior,
+                        "Refinement prolongation: Send region must be contained in exterior");
+              if (on_this_proc (c, cc)) {
+                int const p = dist::rank();
+                level.AT(p).fast_ref_prol_sendrecv.push_back
+                  (sendrecv_pseudoregion_t (send, cc, recv, c));
+              }
+            }
+            
+            needrecv -= ovlp;
+            
           } // for cc
           
           needrecv.normalize();
@@ -657,37 +651,35 @@ regrid ()
         ibset & sync = box.sync;
         
         for (int cc = 0; cc < h.components(rl); ++ cc) {
-          if (true or on_this_proc (c, cc)) {
-            dboxes const & obox = boxes.AT(ml).AT(rl).AT(cc);
-            
+          dboxes const & obox = boxes.AT(ml).AT(rl).AT(cc);
+          
 #if 0
-            ibset ovlp = needrecv & obox.owned;
+          ibset ovlp = needrecv & obox.owned;
 #else
-            ibset ovlp = needrecv & obox.interior;
+          ibset ovlp = needrecv & obox.interior;
 #endif
-            ovlp.normalize();
-            
-            if (cc == c) {
-              ASSERT_cc (ovlp.empty(),
-                         "A region may not synchronise from itself");
-            }
-            
-            for (ibset::const_iterator
-                   ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
-            {
-              ibbox const & recv = * ri;
-              ibbox const & send = recv;
-              if (on_this_proc (c, cc)) {
-                int const p = dist::rank();
-                level.AT(p).fast_sync_sendrecv.push_back
-                  (sendrecv_pseudoregion_t (send, cc, recv, c));
-              }
-            }
-            
-            needrecv -= ovlp;
-            sync += ovlp;
-            
+          ovlp.normalize();
+          
+          if (cc == c) {
+            ASSERT_cc (ovlp.empty(),
+                       "A region may not synchronise from itself");
           }
+          
+          for (ibset::const_iterator
+                 ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
+          {
+            ibbox const & recv = * ri;
+            ibbox const & send = recv;
+            if (on_this_proc (c, cc)) {
+              int const p = dist::rank();
+              level.AT(p).fast_sync_sendrecv.push_back
+                (sendrecv_pseudoregion_t (send, cc, recv, c));
+            }
+          }
+          
+          needrecv -= ovlp;
+          sync += ovlp;
+          
         } // for cc
         
         needrecv.normalize();
@@ -718,42 +710,40 @@ regrid ()
             i2vect (h.reffacts.at(rl) / h.reffacts.at(orl));
           
           for (int cc = 0; cc < h.components(orl); ++ cc) {
-            if (true or on_this_proc (c, cc)) {
-              dboxes const & obox = boxes.AT(ml).AT(orl).AT(cc);
-              
-              ibset contracted_oactive;
-              for (ibset::const_iterator
-                     ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
-              {
-                ibbox const & oactive = * ai;
-                // untested for cell centering
-                contracted_oactive +=
-                  oactive.contracted_for (box.interior).expand (reffact);
-              }
-              contracted_oactive.normalize();
-              
-              ibset ovlp = needrecv & contracted_oactive;
-              ovlp.normalize();
-              
-              for (ibset::const_iterator
-                     ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
-              {
-                ibbox const & recv = * ri;
-                ibbox const send =
-                  recv.expanded_for (obox.interior).expand (stencil_size);
-                ASSERT_c (send <= obox.exterior,
-                          "Boundary prolongation: Send region must be contained in exterior");
-                if (on_this_proc (c, cc)) {
-                  int const p = dist::rank();
-                  level.AT(p).fast_ref_bnd_prol_sendrecv.push_back
-                    (sendrecv_pseudoregion_t (send, cc, recv, c));
-                }
-              }
-              
-              needrecv -= ovlp;
-              bndref += ovlp;
-              
+            dboxes const & obox = boxes.AT(ml).AT(orl).AT(cc);
+            
+            ibset contracted_oactive;
+            for (ibset::const_iterator
+                   ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
+            {
+              ibbox const & oactive = * ai;
+              // untested for cell centering
+              contracted_oactive +=
+                oactive.contracted_for (box.interior).expand (reffact);
             }
+            contracted_oactive.normalize();
+            
+            ibset ovlp = needrecv & contracted_oactive;
+            ovlp.normalize();
+            
+            for (ibset::const_iterator
+                   ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
+            {
+              ibbox const & recv = * ri;
+              ibbox const send =
+                recv.expanded_for (obox.interior).expand (stencil_size);
+              ASSERT_c (send <= obox.exterior,
+                        "Boundary prolongation: Send region must be contained in exterior");
+              if (on_this_proc (c, cc)) {
+                int const p = dist::rank();
+                level.AT(p).fast_ref_bnd_prol_sendrecv.push_back
+                  (sendrecv_pseudoregion_t (send, cc, recv, c));
+              }
+            }
+            
+            needrecv -= ovlp;
+            bndref += ovlp;
+              
           } // for cc
           
           needrecv.normalize();
@@ -797,38 +787,36 @@ regrid ()
           dboxes & obox = boxes.AT(ml).AT(orl).AT(cc);
           
           for (int c = 0; c < h.components(rl); ++ c) {
-            if (true or on_this_proc (c, cc)) {
-              dboxes const & box = boxes.AT(ml).AT(rl).AT(c);
-              
-              ibset contracted_active;
-              for (ibset::const_iterator
-                     ai = box.active.begin(); ai != box.active.end(); ++ ai)
-              {
-                ibbox const & active = * ai;
-                contracted_active += active.contracted_for (obox.interior);
-              }
-              contracted_active.normalize();
-              
-              ibset ovlp = obox.active & contracted_active;
-              ovlp.normalize();
-              
-              for (ibset::const_iterator
-                      ri =ovlp.begin(); ri != ovlp.end(); ++ ri)
-              {
-                ibbox const & recv = * ri;
-                ibbox const send = recv.expanded_for (box.interior);
-                ASSERT_c (send <= box.active,
-                          "Refinement restriction: Send region must be contained in active part");
-                if (on_this_proc (c, cc)) {
-                  int const p = dist::rank();
-                  olevel.AT(p).fast_ref_rest_sendrecv.push_back
-                    (sendrecv_pseudoregion_t (send, c, recv, cc));
-                }
-              }
-              
-              needrecv -= ovlp;
-              
+            dboxes const & box = boxes.AT(ml).AT(rl).AT(c);
+            
+            ibset contracted_active;
+            for (ibset::const_iterator
+                   ai = box.active.begin(); ai != box.active.end(); ++ ai)
+            {
+              ibbox const & active = * ai;
+              contracted_active += active.contracted_for (obox.interior);
             }
+            contracted_active.normalize();
+            
+            ibset ovlp = obox.active & contracted_active;
+            ovlp.normalize();
+            
+            for (ibset::const_iterator
+                   ri =ovlp.begin(); ri != ovlp.end(); ++ ri)
+            {
+              ibbox const & recv = * ri;
+              ibbox const send = recv.expanded_for (box.interior);
+              ASSERT_c (send <= box.active,
+                        "Refinement restriction: Send region must be contained in active part");
+              if (on_this_proc (c, cc)) {
+                int const p = dist::rank();
+                olevel.AT(p).fast_ref_rest_sendrecv.push_back
+                  (sendrecv_pseudoregion_t (send, c, recv, cc));
+              }
+            }
+            
+            needrecv -= ovlp;
+              
           } // for c
           
         } // for cc
@@ -864,27 +852,25 @@ regrid ()
           // possible
           
           for (int cc = 0; cc < oldcomponents; ++ cc) {
-            if (true or on_this_proc (c, cc)) {
-              dboxes const & obox = oldboxes.AT(ml).AT(rl).AT(cc);
-              
-              ibset ovlp = needrecv & obox.owned;
-              ovlp.normalize();
-              
-              for (ibset::const_iterator
-                      ri =ovlp.begin(); ri != ovlp.end(); ++ ri)
-              {
-                ibbox const & recv = * ri;
-                ibbox const & send = recv;
-                if (on_this_proc (c, cc)) {
-                  int const p = dist::rank();
-                  level.AT(p).fast_old2new_sync_sendrecv.push_back
-                    (sendrecv_pseudoregion_t (send, cc, recv, c));
-                }
+            dboxes const & obox = oldboxes.AT(ml).AT(rl).AT(cc);
+            
+            ibset ovlp = needrecv & obox.owned;
+            ovlp.normalize();
+            
+            for (ibset::const_iterator
+                   ri =ovlp.begin(); ri != ovlp.end(); ++ ri)
+            {
+              ibbox const & recv = * ri;
+              ibbox const & send = recv;
+              if (on_this_proc (c, cc)) {
+                int const p = dist::rank();
+                level.AT(p).fast_old2new_sync_sendrecv.push_back
+                  (sendrecv_pseudoregion_t (send, cc, recv, c));
               }
-              
-              needrecv -= ovlp;
-              
             }
+            
+            needrecv -= ovlp;
+            
           } // for cc
           
           needrecv.normalize();
@@ -910,41 +896,39 @@ regrid ()
             i2vect (h.reffacts.at(rl) / h.reffacts.at(orl));
           
           for (int cc = 0; cc < h.components(orl); ++ cc) {
-            if (true or on_this_proc (c, cc)) {
-              dboxes const & obox = boxes.AT(ml).AT(orl).AT(cc);
-              
-              ibset contracted_oactive;
-              for (ibset::const_iterator
-                     ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
-              {
-                ibbox const & oactive = * ai;
-                // untested for cell centering
-                contracted_oactive +=
-                  oactive.contracted_for (box.interior).expand (reffact);
-              }
-              contracted_oactive.normalize();
-              
-              ibset ovlp = needrecv & contracted_oactive;
-              ovlp.normalize();
-              
-              for (ibset::const_iterator
-                     ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
-              {
-                ibbox const & recv = * ri;
-                ibbox const send =
-                  recv.expanded_for (obox.interior).expand (stencil_size);
-                ASSERT_c (send <= obox.exterior,
-                          "Regridding prolongation: Send region must be contained in exterior");
-                if (on_this_proc (c, cc)) {
-                  int const p = dist::rank();
-                  level.AT(p).fast_old2new_ref_prol_sendrecv.push_back
-                    (sendrecv_pseudoregion_t (send, cc, recv, c));
-                }
-              }
-              
-              needrecv -= ovlp;
-              
+            dboxes const & obox = boxes.AT(ml).AT(orl).AT(cc);
+            
+            ibset contracted_oactive;
+            for (ibset::const_iterator
+                   ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
+            {
+              ibbox const & oactive = * ai;
+              // untested for cell centering
+              contracted_oactive +=
+                oactive.contracted_for (box.interior).expand (reffact);
             }
+            contracted_oactive.normalize();
+            
+            ibset ovlp = needrecv & contracted_oactive;
+            ovlp.normalize();
+            
+            for (ibset::const_iterator
+                   ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
+            {
+              ibbox const & recv = * ri;
+              ibbox const send =
+                recv.expanded_for (obox.interior).expand (stencil_size);
+              ASSERT_c (send <= obox.exterior,
+                        "Regridding prolongation: Send region must be contained in exterior");
+              if (on_this_proc (c, cc)) {
+                int const p = dist::rank();
+                level.AT(p).fast_old2new_ref_prol_sendrecv.push_back
+                  (sendrecv_pseudoregion_t (send, cc, recv, c));
+              }
+            }
+            
+            needrecv -= ovlp;
+            
           } // for cc
           
           needrecv.normalize();
