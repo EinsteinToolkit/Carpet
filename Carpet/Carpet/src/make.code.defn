@@ -10,6 +10,7 @@ SRCS =	AllGatherString.cc			\
 	Cycle.cc				\
 	Evolve.cc				\
 	Initialise.cc				\
+	Limits.cc				\
 	MultiModel.cc				\
 	Poison.cc				\
 	Recompose.cc				\

@@ -371,6 +371,20 @@ STRING timer_file "File name in which detailed timing statistics are collected" 
   "^.+$" :: "file name"
 } "carpet-timing-statistics"
 
+INT max_core_size_MB "Maximum size of a core file" STEERABLE=recover
+{
+  -2  :: "unchanged"
+  -1  :: "unlimited"
+  0:* :: "limited"
+} -2
+
+INT max_memory_size_MB "Maximum amount of memory per MPI process" STEERABLE=recover
+{
+  -2  :: "unchanged"
+  -1  :: "unlimited"
+  0:* :: "limited"
+} -2
+
 
 
 KEYWORD processor_topology "How to determine the processor topology" STEERABLE=recover

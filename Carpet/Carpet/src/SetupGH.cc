@@ -181,16 +181,8 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    // Initialise current position (must be the very first thing,
-    // before the first output)
-    mglevel      = -1;
-    reflevel     = -1;
-    mc_grouptype = -1;
-    map          = -1;
-    component    = -1;
-    
-    // Say hello
-    Waypoint ("Setting up the grid hierarchy");
+    // Check and/or modify system limits
+    SetSystemLimits ();
     
     // Some statistics
     {
@@ -240,6 +232,17 @@ namespace Carpet {
       }
 #endif
     }
+    
+    // Initialise current position (must be the very first thing,
+    // before the first output)
+    mglevel      = -1;
+    reflevel     = -1;
+    mc_grouptype = -1;
+    map          = -1;
+    component    = -1;
+    
+    // Say hello
+    Waypoint ("Setting up the grid hierarchy");
     
     // Check arguments:
     // Only a specific number of dimensions is supported

@@ -91,6 +91,10 @@ namespace Carpet {
   
   
   
+  void SetSystemLimits ();
+  
+  
+  
   // Helpers for storage
   void GroupsStorageCheck (cGH const * const cctkGH);
 
