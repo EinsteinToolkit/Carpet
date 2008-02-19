@@ -112,7 +112,8 @@ namespace CarpetRegrid {
       const region_t region = hh.regions.at(ml).at(rl).at(c);
       assert (! region.extent.empty());
       
-      const data<CCTK_REAL>& errordata = *errorgf(tl,rl,c,ml);
+      const data<CCTK_REAL>& errordata =
+        *dynamic_cast<const data<CCTK_REAL>*> (errorgf(tl,rl,c,ml));
       
       Automatic_Recursive (cctkGH, hh, errordata, regl, region, reffact);
     }
