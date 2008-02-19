@@ -58,7 +58,8 @@ static double max_allocated_objects = 0;
 
 template<typename T>
 mem<T>::
-mem (size_t const vectorlength, size_t const nelems, T * const memptr)
+mem (size_t const vectorlength, size_t const nelems,
+     T * const memptr, size_t const memsize)
   : storage_ (memptr),
     nelems_ (nelems),
     vectorlength_ (vectorlength),
@@ -85,9 +86,6 @@ mem (size_t const vectorlength, size_t const nelems, T * const memptr)
     try {
       storage_ = new T [vectorlength * nelems];
       owns_storage_ = true;
-      if (poison_new_memory) {
-        memset (storage_, poison_value, vectorlength * nelems * sizeof (T));
-      }
     } catch (...) {
       T Tdummy;
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -100,6 +98,15 @@ mem (size_t const vectorlength, size_t const nelems, T * const memptr)
     }
     total_allocated_bytes += nbytes;
     max_allocated_bytes = max (max_allocated_bytes, total_allocated_bytes);
+    if (poison_new_memory) {
+      memset (storage_, poison_value, vectorlength * nelems * sizeof (T));
+    }
+  } else {
+    assert (memsize >= vectorlength * nelems * sizeof (T));
+    // Don't poison the memory.  Passing in a pointer allows the
+    // pointer to be re-interpreted as a mem object, keeping the
+    // previous content.  This is e.g. used to turn communication
+    // buffers into mem objects.
   }
   ++ total_allocated_objects;
   max_allocated_objects = max (max_allocated_objects, total_allocated_objects);
@@ -109,7 +116,7 @@ template<typename T>
 mem<T>::
 ~mem ()
 {
-  assert (! has_clients());
+  assert (not has_clients());
   if (owns_storage_) {
     delete [] storage_;
     total_allocated_bytes -= vectorlength_ * nelems_ * sizeof (T);
@@ -124,7 +131,7 @@ void mem<T>::
 register_client (size_t const vectorindex)
 {
   assert (vectorindex < vectorlength_);
-  assert (! clients_.AT(vectorindex));
+  assert (not clients_.AT(vectorindex));
   clients_.AT(vectorindex) = true;
   ++ num_clients_;
 }
@@ -174,7 +181,7 @@ size_t const mempool::align;
 
 mempool::
 mempool ()
-  : freeptr (0), freesize (0)
+  : allocated (0), freeptr (0), freesize (0)
 {
 }
 
@@ -203,6 +210,7 @@ alloc (size_t nbytes)
     // Allocate the usual chunk size, or more if more is requested
     freesize = max (chunksize, nbytes);
     freeptr = malloc (freesize);
+    allocated += freesize;
     if (not freeptr) {
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Failed to allocate %.3f MB of memory",
@@ -234,7 +242,7 @@ memory ()
     memoryof (chunks) +
     memoryof (freeptr) +
     memoryof (freesize) +
-    (chunksize * chunks.size());
+    memoryof (allocated);
 }
 
 
@@ -298,7 +306,9 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
     mybuf.max_bytes     = max_allocated_bytes;
     mybuf.max_objects   = max_allocated_objects;
 #ifdef HAVE_MALLINFO
-    struct mallinfo minfo = mallinfo ();
+    // NOTE: struct mallinfo returns byte-counts as int, which can
+    // overflow.  In this case, the information is incorrect.
+    struct mallinfo const minfo = mallinfo ();
     mybuf.malloc_used_bytes = minfo.uordblks;
     mybuf.malloc_free_bytes = minfo.fordblks;
 #else

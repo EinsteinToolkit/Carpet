@@ -262,7 +262,8 @@ data<T>* data<T>::make_typed (const int varindex_,
 template<typename T>
 void data<T>::allocate (const ibbox& extent_,
                         const int proc_,
-                        void* const memptr)
+                        void* const memptr,
+                        size_t const memsize)
 {
   assert (not _has_storage);
   _has_storage = true;
@@ -284,7 +285,7 @@ void data<T>::allocate (const ibbox& extent_,
   if (dist::rank() == _proc) {
     if (vectorindex == 0) {
       assert (not vectorleader);
-      _memory = new mem<T> (vectorlength, _size, (T*)memptr);
+      _memory = new mem<T> (vectorlength, _size, (T*)memptr, memsize);
     } else {
       assert (vectorleader);
       _memory = vectorleader->_memory;

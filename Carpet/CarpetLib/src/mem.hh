@@ -20,7 +20,8 @@ class mem
   size_t num_clients_;
   
 public:
-  mem (size_t vectorlength, size_t nelems, T * memptr = NULL);
+  mem (size_t vectorlength, size_t nelems,
+       T * memptr = NULL, size_t memsize = 0);
   ~mem ();
   
   T * storage (size_t vectorindex) const
@@ -61,6 +62,8 @@ class mempool
   // List of all allocated chunks.  When the mempool is destroyed,
   // these pointers need to be freed.
   stack <void *> chunks;
+  // Total size of all allocated chunks
+  size_t allocated;
   
   // Pointer to the beginning of some unused memory
   void * freeptr;

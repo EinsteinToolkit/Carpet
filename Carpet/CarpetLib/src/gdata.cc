@@ -154,22 +154,24 @@ transfer_from (comm_state & state,
     if (proc() != src->proc()) {
       if (src->proc() == dist::rank()) {
         if (interp_on_src) {
+          size_t const sendbufsize = c_datatype_size() * dstbox.size();
           void * const sendbuf =
             state.send_buffer (c_datatype(), proc(), dstbox.size());
           gdata * const buf =
             make_typed (varindex, cent, transport_operator, tag);
-          buf->allocate (dstbox, src->proc(), sendbuf);
+          buf->allocate (dstbox, src->proc(), sendbuf, sendbufsize);
           buf->transfer_from_innerloop
             (srcs, times, dstbox, time, order_space, order_time);
           delete buf;
           state.commit_send_space (c_datatype(), proc(), dstbox.size());
         } else {
           for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
+            size_t const sendbufsize = c_datatype_size() * srcbox.size();
             void * const sendbuf =
               state.send_buffer (c_datatype(), proc(), srcbox.size());
             gdata * const buf =
               make_typed (varindex, cent, transport_operator, tag);
-            buf->allocate (srcbox, src->proc(), sendbuf);
+            buf->allocate (srcbox, src->proc(), sendbuf, sendbufsize);
             buf->copy_from_innerloop (srcs.AT(tl), srcbox);
             delete buf;
             state.commit_send_space (c_datatype(), proc(), srcbox.size());
@@ -195,11 +197,12 @@ transfer_from (comm_state & state,
     if (proc() != src->proc()) {
       if (proc() == dist::rank()) {
         if (interp_on_src) {
+          size_t const recvbufsize = c_datatype_size() * dstbox.size();
           void * const recvbuf =
             state.recv_buffer (c_datatype(), src->proc(), dstbox.size());
           gdata * const buf =
             make_typed (varindex, cent, transport_operator, tag);
-          buf->allocate (dstbox, proc(), recvbuf);
+          buf->allocate (dstbox, proc(), recvbuf, recvbufsize);
           state.commit_recv_space (c_datatype(), src->proc(), dstbox.size());
           copy_from_innerloop (buf, dstbox);
           delete buf;
@@ -207,11 +210,12 @@ transfer_from (comm_state & state,
           gdata const * const null = 0;
           vector <gdata const *> bufs (timelevel0 + ntimelevels, null);
           for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
+            size_t const recvbufsize = c_datatype_size() * srcbox.size();
             void * const recvbuf =
               state.recv_buffer (c_datatype(), src->proc(), srcbox.size());
             gdata * const buf =
               make_typed (varindex, cent, transport_operator, tag);
-            buf->allocate (srcbox, proc(), recvbuf);
+            buf->allocate (srcbox, proc(), recvbuf, recvbufsize);
             state.commit_recv_space (c_datatype(), src->proc(), srcbox.size());
             bufs.AT(tl) = buf;
           }

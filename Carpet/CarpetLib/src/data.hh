@@ -67,7 +67,7 @@ public:
 
   // Storage management
   virtual void allocate (const ibbox& extent, const int proc,
-			 void* const memptr = NULL);
+			 void* const memptr = NULL, size_t const memsize = 0);
   virtual void free ();
   virtual size_t allocsize (const ibbox& extent, const int proc) const;
   
