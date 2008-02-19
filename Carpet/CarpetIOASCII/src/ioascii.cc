@@ -935,7 +935,7 @@ namespace CarpetIOASCII {
 
                 } // for tl
 
-              } // if distrib!=CONST or component==0
+              } // if distrib!=CONSTANT or component==0
 
             } END_COMPONENT_LOOP;
 
