@@ -266,8 +266,8 @@ namespace CarpetIOScalar {
 
         fstream file;
         BeginTimingIO (cctkGH);
-        long long io_files = 0;
-        long long io_bytes_begin = 0, io_bytes_end = 0;
+        CCTK_REAL io_files = 0;
+        CCTK_REAL io_bytes_begin = 0, io_bytes_end = 0;
         if (CCTK_MyProc(cctkGH)==0) {
 
           // Invent a file name
@@ -440,10 +440,12 @@ namespace CarpetIOScalar {
 
         assert (! file.is_open());
 
-        long long io_bytes = io_bytes_end - io_bytes_begin;
+        CCTK_REAL const io_bytes = io_bytes_end - io_bytes_begin;
+#if 0
         // Broadcast I/O size and synchronise processes
-        MPI_Bcast (& io_files, 1, MPI_LONG_LONG, 0, dist::comm());
-        MPI_Bcast (& io_bytes, 1, MPI_LONG_LONG, 0, dist::comm());
+        MPI_Bcast (& io_files, 1, dist::datatype (io_files), 0, dist::comm());
+        MPI_Bcast (& io_bytes, 1, dist::datatype (io_bytes), 0, dist::comm());
+#endif
         EndTimingIO (cctkGH, io_files, io_bytes, false);
 
       } // for reductions
