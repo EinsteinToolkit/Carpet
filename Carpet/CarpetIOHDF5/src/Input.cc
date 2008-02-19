@@ -56,9 +56,9 @@ typedef struct {
   int num_reflevels;
   int cctk_iteration;
   int main_loop_index;
-  CCTK_REAL global_time;
-  CCTK_REAL delta_time;
-  vector<CCTK_REAL> mgleveltimes;  // [num_mglevels*num_reflevels]
+  double global_time;
+  double delta_time;
+  vector<double> mgleveltimes;  // [num_mglevels*num_reflevels]
 
   vector<vector<vector<region_t> > > grid_structure; // [map][reflevel][component]
   vector<vector<vector<CCTK_REAL> > > grid_times;    // [map][mglevel][reflevel]
