@@ -446,7 +446,7 @@ namespace CarpetInterp {
         totalhomecnts.at(idx) = totalhomecnts.at(idx-1) + allhomecnts.at(idx-1);
       }
 
-      vector<int> tmpcnts (allhomecnts.size());
+      vector<int> tmpcnts (allhomecnts.size(), 0);
       for (int n = 0; n < N_interp_points; n++) {
         int const idx = component_idx
           (dstprocs.at(n), source_map.at(n), rlev.at(n), home.at(n));
