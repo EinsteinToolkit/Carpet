@@ -451,6 +451,7 @@ namespace CarpetInterp {
         int const idx = component_idx
           (dstprocs.at(n), source_map.at(n), rlev.at(n), home.at(n));
         for (int d = 0; d < N_dims; d++) {
+          assert (d + N_dims*tmpcnts.at(idx) < N_dims*allhomecnts.at(idx));
           coords.at(idx)[d + N_dims*tmpcnts.at(idx)] =
             static_cast<CCTK_REAL const *>(coords_list[d])[n];
         }
@@ -683,8 +684,9 @@ namespace CarpetInterp {
 
     for (int d = 0; d < N_output_arrays; d++) {
       char* output_array = static_cast<char*>(output_arrays[d]);
-      for (int c = 0, i = 0, offset = 0; c < (int)allhomecnts.size(); c++) {
-        assert (allhomecnts.at(c)*(d+1) + offset <=
+      size_t offset = 0;
+      for (int c = 0, i = 0; c < (int)allhomecnts.size(); c++) {
+        assert ((int) (allhomecnts.at(c)*(d+1) + offset) <=
                 N_output_arrays*N_interp_points);
         for (int n = 0; n < allhomecnts.at(c); n++, i++) {
           memcpy (output_array + reverse_indices.at(i)*vtypesize,
@@ -694,6 +696,7 @@ namespace CarpetInterp {
         }
         offset += N_output_arrays * allhomecnts.at(c);
       }
+      assert ((int) offset == N_output_arrays * N_interp_points);
     }
 
     // set this processor's overall local interpolator status code
