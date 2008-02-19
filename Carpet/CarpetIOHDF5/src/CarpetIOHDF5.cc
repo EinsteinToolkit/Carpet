@@ -1,9 +1,11 @@
+#include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
 #include <map>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "util_Table.h"
 #include "cctk.h"
@@ -57,6 +59,32 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
 static int WriteMetadata (const cGH *cctkGH, int nioprocs,
                           int firstvar, int numvars,
                           bool called_from_checkpoint, hid_t file);
+
+static int WriteAttribute (hid_t const group,
+                           char const * const name,
+                           int const ivalue);
+static int WriteAttribute (hid_t const group,
+                           char const * const name,
+                           double const dvalue);
+static int WriteAttribute (hid_t const group,
+                           char const * const name,
+                           char const * const svalue);
+static int WriteAttribute (hid_t const group,
+                           char const * const name,
+                           int const * const ivalues,
+                           int const nvalues);
+static int WriteAttribute (hid_t const group,
+                           char const * const name,
+                           double const * const dvalues,
+                           int const nvalues);
+static int WriteAttribute (hid_t const group,
+                           char const * const name,
+                           char const * const * const svalues,
+                           int const nvalues);
+static int WriteLargeAttribute (hid_t const group,
+                                char const * const name,
+                                char const * const svalue);
+
 
 //////////////////////////////////////////////////////////////////////////////
 // public routines
@@ -940,9 +968,9 @@ static int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
                           int const firstvar, int const numvars,
                           bool const called_from_checkpoint, hid_t const file)
 {
-  int error_count = 0;
-  hid_t group, scalar_dataspace, array_dataspace, datatype, attr;
   DECLARE_CCTK_PARAMETERS;
+  hid_t group;
+  int error_count = 0;
 
 
   if (CCTK_Equals (verbose, "full")) {
@@ -952,166 +980,126 @@ static int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
   // const ioGH *ioUtilGH = (const ioGH *) CCTK_GHExtension (cctkGH, "IO");
   HDF5_ERROR (group = H5Gcreate (file, METADATA_GROUP, 0));
 
-  int ivalue = CCTK_MainLoopIndex ();
-  HDF5_ERROR (scalar_dataspace = H5Screate (H5S_SCALAR));
-  HDF5_ERROR (attr = H5Acreate (group, "main loop index", H5T_NATIVE_INT,
-                                scalar_dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &ivalue));
-  HDF5_ERROR (H5Aclose (attr));
-
-  ivalue = cctkGH->cctk_iteration;
-  HDF5_ERROR (attr = H5Acreate (group, "GH$iteration", H5T_NATIVE_INT,
-                                scalar_dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &ivalue));
-  HDF5_ERROR (H5Aclose (attr));
-
-  ivalue = nioprocs;
-  HDF5_ERROR (attr = H5Acreate (group, "nioprocs", H5T_NATIVE_INT,
-                                scalar_dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &ivalue));
-  HDF5_ERROR (H5Aclose (attr));
-
-  ivalue = reflevels;
-  HDF5_ERROR (attr = H5Acreate (group, "carpet_reflevels", H5T_NATIVE_INT,
-                                scalar_dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &ivalue));
-  HDF5_ERROR (H5Aclose (attr));
-
-  double dvalue = global_time;
-  HDF5_ERROR (attr = H5Acreate (group, "carpet_global_time",
-                                H5T_NATIVE_DOUBLE, scalar_dataspace,
-                                H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_DOUBLE, &dvalue));
-  HDF5_ERROR (H5Aclose (attr));
-
-  dvalue = delta_time;
-  HDF5_ERROR (attr = H5Acreate (group, "carpet_delta_time",
-                                H5T_NATIVE_DOUBLE, scalar_dataspace,
-                                H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_DOUBLE, &dvalue));
-  HDF5_ERROR (H5Aclose (attr));
-
-  const char *version = CCTK_FullVersion();
-  HDF5_ERROR (datatype = H5Tcopy (H5T_C_S1));
-  HDF5_ERROR (H5Tset_size (datatype, strlen (version)));
-  HDF5_ERROR (attr = H5Acreate (group, "Cactus version", datatype,
-                                scalar_dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attr, datatype, version));
-  HDF5_ERROR (H5Aclose (attr));
+  error_count += WriteAttribute (group,
+                                 "main loop index", CCTK_MainLoopIndex());
+  error_count += WriteAttribute (group,
+                                 "GH$iteration", cctkGH->cctk_iteration);
+  error_count += WriteAttribute (group,
+                                 "nioprocs", nioprocs);
+  error_count += WriteAttribute (group,
+                                 "carpet_reflevels", reflevels);
+  error_count += WriteAttribute (group,
+                                 "carpet_global_time", global_time);
+  error_count += WriteAttribute (group,
+                                 "carpet_delta_time", delta_time);
+  error_count += WriteAttribute (group,
+                                 "Cactus version", CCTK_FullVersion());
 
   // all times on all refinement levels
-  ivalue = mglevels;
-  HDF5_ERROR (attr = H5Acreate (group, "numberofmgtimes", H5T_NATIVE_INT,
-                                scalar_dataspace, H5P_DEFAULT));
-  HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_INT, &ivalue));
-  HDF5_ERROR (H5Aclose (attr));
-  hsize_t size = reflevels;
-  HDF5_ERROR (array_dataspace = H5Screate_simple (1, &size, NULL));
+  error_count += WriteAttribute (group,
+                                 "numberofmgtimes", mglevels);
   for (int i = 0; i < mglevels; i++) {
     char name[100];
     snprintf (name, sizeof (name), "mgleveltimes %d", i);
-    HDF5_ERROR (attr = H5Acreate (group, name, H5T_NATIVE_DOUBLE,
-                                  array_dataspace, H5P_DEFAULT));
-    HDF5_ERROR (H5Awrite (attr, H5T_NATIVE_DOUBLE, &leveltimes.at(i).at(0)));
-    HDF5_ERROR (H5Aclose (attr));
+    error_count += WriteAttribute
+      (group, name, &leveltimes.at(i).front(), leveltimes.at(i).size());
   }
 
   // unique configuration identifier
   if (CCTK_IsFunctionAliased ("UniqueConfigID")) {
-    char const * const config_id
-      = static_cast<char const *> (UniqueConfigID (cctkGH));
-    HDF5_ERROR (H5Tset_size (datatype, strlen (config_id)));
-    HDF5_ERROR (attr = H5Acreate (group, "config id", datatype,
-                                  scalar_dataspace, H5P_DEFAULT));
-    HDF5_ERROR (H5Awrite (attr, datatype, config_id));
-    HDF5_ERROR (H5Aclose (attr));
+    error_count += WriteAttribute
+      (group, "config id", static_cast<char const *> (UniqueConfigID (cctkGH)));
   }
 
-  // unique source tree identifier
+  // Unique source tree identifier
   if (CCTK_IsFunctionAliased ("UniqueSourceID")) {
-    char const * const source_id
-      = static_cast<char const *> (UniqueSourceID (cctkGH));
-    HDF5_ERROR (H5Tset_size (datatype, strlen (source_id)));
-    HDF5_ERROR (attr = H5Acreate (group, "source id", datatype,
-                                  scalar_dataspace, H5P_DEFAULT));
-    HDF5_ERROR (H5Awrite (attr, datatype, source_id));
-    HDF5_ERROR (H5Aclose (attr));
+    error_count += WriteAttribute
+      (group, "source id", static_cast<char const *> (UniqueSourceID (cctkGH)));
   }
 
   // unique build identifier
   if (CCTK_IsFunctionAliased ("UniqueBuildID")) {
-    char const * const build_id
-      = static_cast<char const *> (UniqueBuildID (cctkGH));
-    HDF5_ERROR (H5Tset_size (datatype, strlen (build_id)));
-    HDF5_ERROR (attr = H5Acreate (group, "build id", datatype,
-                                  scalar_dataspace, H5P_DEFAULT));
-    HDF5_ERROR (H5Awrite (attr, datatype, build_id));
-    HDF5_ERROR (H5Aclose (attr));
+    error_count += WriteAttribute
+      (group, "build id", static_cast<char const *> (UniqueBuildID (cctkGH)));
   }
 
   // unique simulation identifier
   if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
-    char const * const simulation_id
-      = static_cast<char const *> (UniqueSimulationID (cctkGH));
-    HDF5_ERROR (H5Tset_size (datatype, strlen (simulation_id)));
-    HDF5_ERROR (attr = H5Acreate (group, "simulation id", datatype,
-                                  scalar_dataspace, H5P_DEFAULT));
-    HDF5_ERROR (H5Awrite (attr, datatype, simulation_id));
-    HDF5_ERROR (H5Aclose (attr));
+    error_count += WriteAttribute
+      (group, "simulation id",
+       static_cast<char const *> (UniqueSimulationID (cctkGH)));
   }
 
   // unique run identifier
   if (CCTK_IsFunctionAliased ("UniqueRunID")) {
-    char const * const run_id
-      = static_cast<char const *> (UniqueRunID (cctkGH));
-    HDF5_ERROR (H5Tset_size (datatype, strlen (run_id)));
-    HDF5_ERROR (attr = H5Acreate (group, "run id", datatype,
-                                  scalar_dataspace, H5P_DEFAULT));
-    HDF5_ERROR (H5Awrite (attr, datatype, run_id));
-    HDF5_ERROR (H5Aclose (attr));
+    error_count += WriteAttribute
+      (group, "run id", static_cast<char const *> (UniqueRunID (cctkGH)));
   }
 
   // list all datasets in this file
-  if (not called_from_checkpoint) {
-    assert (firstvar >= 0 and numvars >= 0);
-    char * fullnames[numvars];
-    size_t maxlen = 0;
-    for (int vi = 0; vi < numvars; ++ vi) {
-      fullnames[vi] = CCTK_FullName (firstvar + vi);
-      size_t const len = strlen (fullnames[vi]);
-      maxlen = len > maxlen ? len : maxlen;
-    }
-    char components[numvars][maxlen];
-    for (int vi = 0; vi < numvars; ++ vi) {
-      strncpy (components[vi], fullnames[vi], maxlen);
-      free (fullnames[vi]);
-    }
-    hsize_t const dims[1] = { numvars };
-    hid_t const dataspace = H5Screate_simple (1, dims, 0);
-    hid_t const datatype = H5Tcopy (H5T_C_S1);
-    H5Tset_size (datatype, maxlen);
-    hid_t const attribute =
-      H5Acreate (group, "Datasets", datatype, dataspace, H5P_DEFAULT);
-    H5Awrite (attribute, datatype, components);
-    H5Aclose (attribute);
-    H5Tclose (datatype);
-    H5Sclose (dataspace);
+  {
+    ostringstream buf;
+    if (firstvar >= 0) {
+      // list the selected variables
+      assert (firstvar >= 0 and numvars >= 0);
+      for (int vi = 0; vi < numvars; ++ vi) {
+        char * const fullname = CCTK_FullName (firstvar + vi);
+        buf << fullname << "\n";
+        free (fullname);
+      }
+    } else {
+      // list all variables with storage and without checkpoint="no"
+      // TODO: check this only once, then pass the list of variables around
+      ENTER_GLOBAL_MODE (cctkGH, 0) {
+        for (int gi = 0; gi < CCTK_NumGroups(); ++ gi) {
+          int const numvars_group = CCTK_NumVarsInGroupI (gi);
+          if (numvars_group > 0) {
+            if (CCTK_QueryGroupStorageI (cctkGH, gi) > 0) {
+              cGroup gdata;
+              CCTK_GroupData (gi, &gdata);
+              bool do_checkpoint = true;
+              int const len = Util_TableGetString
+                (gdata.tagstable, 0, NULL, "checkpoint");
+              if (len >= 0) {
+                char value[len+1];
+                Util_TableGetString
+                  (gdata.tagstable, len + 1, value, "checkpoint");
+                if (CCTK_Equals (value, "no")) {
+                  do_checkpoint = false;
+                } else if (CCTK_Equals (value, "yes")) {
+                  do_checkpoint = true;
+                } else {
+                  char * const groupname = CCTK_GroupName (gi);
+                  CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                              "Ignoring unknown checkpoint tag '%s' for group '%s'",
+                              value, groupname);
+                  free (groupname);
+                }
+              }
+              if (do_checkpoint) {
+                int const firstvar_group = CCTK_FirstVarIndexI (gi);
+                for (int vi = 0; vi < numvars_group; ++ vi) {
+                  char * const fullname = CCTK_FullName (firstvar_group + vi);
+                  buf << fullname << "\n";
+                  free (fullname);
+                }
+              }
+            }
+          }
+        } // for vi
+      } LEAVE_GLOBAL_MODE;
+    } // if firstvar < 0
+    string const str = buf.str();
+    error_count += WriteLargeAttribute (group, "Datasets", str.c_str());
   }
 
   // save parameters in a separate dataset (may be too big for an attribute)
   if (called_from_checkpoint or not CCTK_Equals (out_save_parameters, "no")) {
-    hid_t dataset;
     const int get_all = called_from_checkpoint or
                         CCTK_Equals (out_save_parameters, "all");
     char* parameters = IOUtil_GetAllParameters (cctkGH, get_all);
     assert (parameters);
-    size = strlen (parameters) + 1;
-    HDF5_ERROR (H5Sset_extent_simple (array_dataspace, 1, &size, NULL));
-    HDF5_ERROR (dataset = H5Dcreate (group, ALL_PARAMETERS, H5T_NATIVE_UCHAR,
-                                     array_dataspace, H5P_DEFAULT));
-    HDF5_ERROR (H5Dwrite (dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
-                          H5P_DEFAULT, parameters));
-    HDF5_ERROR (H5Dclose (dataset));
+    error_count += WriteLargeAttribute (group, ALL_PARAMETERS, parameters);
     free (parameters);
   }
 
@@ -1134,23 +1122,167 @@ static int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
     gs_buf << grid_times;
     gs_buf << leveltimes;
     string const gs_str = gs_buf.str();
-    size = gs_str.size() + 1;
-    char const * const gs_cstr = gs_str.c_str();
-    HDF5_ERROR (H5Sset_extent_simple (array_dataspace, 1, & size, NULL));
-    hid_t dataset;
-    HDF5_ERROR (dataset = H5Dcreate (group, GRID_STRUCTURE, H5T_NATIVE_UCHAR,
-                                     array_dataspace, H5P_DEFAULT));
-    HDF5_ERROR (H5Dwrite (dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
-                          H5P_DEFAULT, gs_cstr));
-    HDF5_ERROR (H5Dclose (dataset));
+    error_count += WriteLargeAttribute (group, GRID_STRUCTURE, gs_str.c_str());
   }
 
-  HDF5_ERROR (H5Tclose (datatype));
-  HDF5_ERROR (H5Sclose (scalar_dataspace));
-  HDF5_ERROR (H5Sclose (array_dataspace));
   HDF5_ERROR (H5Gclose (group));
 
   return (error_count);
+}
+
+
+// Write an int attribute
+static int WriteAttribute (hid_t const group,
+                           char const * const name,
+                           int const ivalue)
+{
+  hid_t dataspace, attribute;
+  int error_count = 0;
+  
+  HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
+  HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_INT,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_INT, & ivalue));
+  HDF5_ERROR (H5Aclose (attribute));
+  HDF5_ERROR (H5Sclose (dataspace));
+  
+  return error_count;
+}
+
+
+// Write a double attribute
+static int WriteAttribute (hid_t const group,
+                           char const * const name,
+                           double const dvalue)
+{
+  hid_t dataspace, attribute;
+  int error_count = 0;
+  
+  HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
+  HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_DOUBLE,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_DOUBLE, & dvalue));
+  HDF5_ERROR (H5Aclose (attribute));
+  HDF5_ERROR (H5Sclose (dataspace));
+  
+  return error_count;
+}
+
+
+// Write a string attribute
+static int WriteAttribute (hid_t const group,
+                           char const * const name,
+                           char const * const svalue)
+{
+  hid_t datatype, dataspace, attribute;
+  int error_count = 0;
+  
+  HDF5_ERROR (datatype = H5Tcopy (H5T_C_S1));
+  HDF5_ERROR (H5Tset_size (datatype, strlen (svalue) + 1));
+  HDF5_ERROR (dataspace = H5Screate (H5S_SCALAR));
+  HDF5_ERROR (attribute = H5Acreate (group, name, datatype,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Awrite (attribute, datatype, svalue));
+  HDF5_ERROR (H5Aclose (attribute));
+  HDF5_ERROR (H5Sclose (dataspace));
+  
+  return error_count;
+}
+
+
+// Write an array of int attributes
+static int WriteAttribute (hid_t const group,
+                           char const * const name,
+                           int const * const ivalues,
+                           int const nvalues)
+{
+  hid_t dataspace, attribute;
+  int error_count = 0;
+  
+  hsize_t const size = nvalues;
+  HDF5_ERROR (dataspace = H5Screate_simple (1, & size, NULL));
+  HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_INT,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_INT, ivalues));
+  HDF5_ERROR (H5Aclose (attribute));
+  HDF5_ERROR (H5Sclose (dataspace));
+  
+  return error_count;
+}
+
+
+// Write an array of double attributes
+static int WriteAttribute (hid_t const group,
+                           char const * const name,
+                           double const * const dvalues,
+                           int const nvalues)
+{
+  hid_t dataspace, attribute;
+  int error_count = 0;
+  
+  hsize_t const size = nvalues;
+  HDF5_ERROR (dataspace = H5Screate_simple (1, & size, NULL));
+  HDF5_ERROR (attribute = H5Acreate (group, name, H5T_NATIVE_DOUBLE,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Awrite (attribute, H5T_NATIVE_DOUBLE, dvalues));
+  HDF5_ERROR (H5Aclose (attribute));
+  HDF5_ERROR (H5Sclose (dataspace));
+  
+  return error_count;
+}
+
+
+// Write an array of string attributes
+static int WriteAttribute (hid_t const group,
+                           char const * const name,
+                           char const * const * const svalues,
+                           int const nvalues)
+{
+  hid_t datatype, dataspace, attribute;
+  int error_count = 0;
+  
+  size_t maxstrlen = 0;
+  for (int i=0; i<nvalues; ++i) {
+    maxstrlen = max (maxstrlen, strlen (svalues[i]));
+  }
+  vector<char> svalue (nvalues * (maxstrlen+1));
+  for (int i=0; i<nvalues; ++i) {
+    strncpy (&svalue.at(i*maxstrlen), svalues[i], maxstrlen+1);
+  }
+  
+  HDF5_ERROR (datatype = H5Tcopy (H5T_C_S1));
+  HDF5_ERROR (H5Tset_size (datatype, maxstrlen + 1));
+  hsize_t const size = nvalues;
+  HDF5_ERROR (dataspace = H5Screate_simple (1, & size, NULL));
+  HDF5_ERROR (attribute = H5Acreate (group, name, datatype,
+                                     dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Awrite (attribute, datatype, &svalue.front()));
+  HDF5_ERROR (H5Aclose (attribute));
+  HDF5_ERROR (H5Sclose (dataspace));
+  
+  return error_count;
+}
+
+
+// Write a large string attribute
+static int WriteLargeAttribute (hid_t const group,
+                                char const * const name,
+                                char const * const svalue)
+{
+  hid_t dataspace, dataset;
+  int error_count = 0;
+  
+  // Create a dataset, since the data may not fit into an attribute
+  hsize_t const size = strlen (svalue) + 1;
+  HDF5_ERROR (dataspace = H5Screate_simple (1, & size, NULL));
+  HDF5_ERROR (dataset = H5Dcreate (group, name, H5T_NATIVE_CHAR,
+                                   dataspace, H5P_DEFAULT));
+  HDF5_ERROR (H5Dwrite (dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
+                        H5P_DEFAULT, svalue));
+  HDF5_ERROR (H5Dclose (dataset));
+  HDF5_ERROR (H5Sclose (dataspace));
+  
+  return error_count;
 }
 
 
