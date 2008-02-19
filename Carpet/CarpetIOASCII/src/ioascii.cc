@@ -751,6 +751,11 @@ namespace CarpetIOASCII {
                       = (char const *) UniqueSimulationID (cctkGH);
                     file << "# Simulation ID: " << job_id << eol;
                   }
+                  if (CCTK_IsFunctionAliased ("UniqueRunID")) {
+                    char const * const job_id
+                      = (char const *) UniqueRunID (cctkGH);
+                    file << "# Run ID: " << job_id << eol;
+                  }
                 }
                 file << "#" << eol;
                 if (want_labels) {

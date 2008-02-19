@@ -53,3 +53,9 @@ USES FUNCTION UniqueBuildID
 CCTK_POINTER_TO_CONST \
 FUNCTION UniqueSimulationID (CCTK_POINTER_TO_CONST IN  cctkGH)
 USES FUNCTION UniqueSimulationID
+
+# Return a pointer to an unmodifiable C string
+# which contains a unique ID for this run
+CCTK_POINTER_TO_CONST \
+FUNCTION UniqueRunID (CCTK_POINTER_TO_CONST IN  cctkGH)
+USES FUNCTION UniqueRunID
