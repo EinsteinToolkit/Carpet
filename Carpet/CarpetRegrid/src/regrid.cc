@@ -48,9 +48,12 @@ namespace CarpetRegrid {
       if (regrid_every == 0 and cctkGH->cctk_iteration != 0) return 0;
 
       // Return if we want to regrid regularly, but not at this time
-      if (regrid_every > 0 and cctkGH->cctk_iteration != 0
-	  and  ( (cctkGH->cctk_iteration-1) % regrid_every != 0) or
-	  ( (cctkGH->cctk_iteration-1) == 0 and regrid_every > 1 ))
+      if ((regrid_every > 0 and
+           cctkGH->cctk_iteration != 0 and
+           (cctkGH->cctk_iteration-1) % regrid_every != 0)
+          or
+	  ((cctkGH->cctk_iteration-1) == 0 and
+           regrid_every > 1))
       {
 	return 0;
       }
