@@ -125,7 +125,7 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
     
     // Make multigrid aware
     vector <vector <vector <region_t> > > regsss;
-    Carpet::MakeMultigridBoxes (cctkGH, regss, regsss);
+    Carpet::MakeMultigridBoxes (cctkGH, m, regss, regsss);
     
     // Regrid
     RegridMap (cctkGH, m, regsss);
