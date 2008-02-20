@@ -68,7 +68,7 @@ namespace CarpetRegrid {
     } // for rl
     
     // make multigrid aware
-    MakeMultigridBoxes (cctkGH, regss, regsss);
+    MakeMultigridBoxes (cctkGH, Carpet::map, regss, regsss);
     
     return 1;
   }
