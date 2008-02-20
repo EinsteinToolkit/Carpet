@@ -1232,18 +1232,30 @@ namespace Carpet {
   
   static void
   MakeMultigridBoxes (cGH const * const cctkGH,
+                      int const m,
                       ibbox    const & base,
                       region_t const & reg,
                       vector<region_t> & regs)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     regs.resize (mglevels, reg);
     if (mglevels > 1) {
       // boundary offsets
       jjvect nboundaryzones, is_internal, is_staggered, shiftout;
-      const int ierr = GetBoundarySpecification
-        (2*dim, &nboundaryzones[0][0], &is_internal[0][0],
-         &is_staggered[0][0], &shiftout[0][0]);
-      assert (not ierr);
+      if (domain_from_multipatch and
+          CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification"))
+      {
+        const int ierr = MultiPatch_GetBoundarySpecification
+          (m, 2*dim, &nboundaryzones[0][0], &is_internal[0][0],
+           &is_staggered[0][0], &shiftout[0][0]);
+        assert (not ierr);
+      } else {
+        const int ierr = GetBoundarySpecification
+          (2*dim, &nboundaryzones[0][0], &is_internal[0][0],
+           &is_staggered[0][0], &shiftout[0][0]);
+        assert (not ierr);
+      }
       // (distance in grid points between the exterior and the physical boundary)
       iivect offset;
       for (int d=0; d<dim; ++d) {
@@ -1284,6 +1296,7 @@ namespace Carpet {
   
   void
   MakeMultigridBoxes (cGH const * const cctkGH,
+                      int const m,
                       vector<vector<region_t> >  const & regss,
                       vector<vector<vector<region_t> > > & regsss)
   {
@@ -1304,7 +1317,7 @@ namespace Carpet {
       
       for (int c=0; c<(int)regss.at(rl).size(); ++c) {
         vector<region_t> mg_regs;
-        MakeMultigridBoxes (cctkGH, base, regss.at(rl).at(c), mg_regs);
+        MakeMultigridBoxes (cctkGH, m, base, regss.at(rl).at(c), mg_regs);
         assert ((int)mg_regs.size() == mglevels);
         for (int ml=0; ml<mglevels; ++ml) {
           regsss.at(ml).at(rl).at(c) = mg_regs.at(ml);
@@ -1321,7 +1334,7 @@ namespace Carpet {
                           vector<vector<vector<vector<region_t> > > > & regssss)
   {
     for (int m = 0; m < maps; ++m) {
-      MakeMultigridBoxes (cctkGH, regsss.at(m), regssss.at(m));
+      MakeMultigridBoxes (cctkGH, m, regsss.at(m), regssss.at(m));
     } // for m
   }
   

@@ -157,6 +157,7 @@ namespace Carpet {
   
   void
   MakeMultigridBoxes (cGH const * cctkGH,
+                      int m,
                       gh::rregs const & regss,
                       gh::mregs       & regsss);
   

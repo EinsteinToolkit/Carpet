@@ -1105,13 +1105,26 @@ namespace Carpet {
     if (domain_from_multipatch or domain_from_coordbase) {
       
       jjvect nboundaryzones_, is_internal_, is_staggered_, shiftout_;
-      int const ierr =
-        GetBoundarySpecification (2*dim,
-                                  &nboundaryzones_[0][0],
-                                  &is_internal_[0][0],
-                                  &is_staggered_[0][0],
-                                  &shiftout_[0][0]);
-      assert (not ierr);
+      if (domain_from_multipatch and
+          CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification"))
+      {
+        int const ierr =
+          MultiPatch_GetBoundarySpecification (m,
+                                               2*dim,
+                                               &nboundaryzones_[0][0],
+                                               &is_internal_[0][0],
+                                               &is_staggered_[0][0],
+                                               &shiftout_[0][0]);
+        assert (not ierr);
+      } else {
+        int const ierr =
+          GetBoundarySpecification (2*dim,
+                                    &nboundaryzones_[0][0],
+                                    &is_internal_[0][0],
+                                    &is_staggered_[0][0],
+                                    &shiftout_[0][0]);
+        assert (not ierr);
+      }
       nboundaryzones = xpose (nboundaryzones_);
       is_internal    = xpose (is_internal_);
       is_staggered   = xpose (is_staggered_);
@@ -1453,7 +1466,7 @@ namespace Carpet {
         SplitRegions (cctkGH, regsss.at(m).at(rl));
         
         // Create all multigrid levels
-        MakeMultigridBoxes (cctkGH, regsss.at(m), regssss.at(m));
+        MakeMultigridBoxes (cctkGH, m, regsss.at(m), regssss.at(m));
       } // for m
       
     } else {
