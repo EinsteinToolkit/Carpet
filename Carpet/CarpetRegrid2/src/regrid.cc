@@ -808,7 +808,7 @@ namespace CarpetRegrid2 {
       } // for rl
       
       // Make multigrid aware
-      Carpet::MakeMultigridBoxes (cctkGH, regss, regsss);
+      Carpet::MakeMultigridBoxes (cctkGH, Carpet::map, regss, regsss);
       
       // Remember current positions
       for (int n = 0; n < num_centres; ++ n) {
