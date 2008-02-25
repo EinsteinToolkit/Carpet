@@ -57,5 +57,8 @@ SHARES: SphericalSurface
 
 USES CCTK_INT nsurfaces
 
+USES BOOLEAN symmetric_z
+USES BOOLEAN symmetric_y
+USES BOOLEAN symmetric_x
 USES CCTK_INT maxntheta
 USES CCTK_INT maxnphi
