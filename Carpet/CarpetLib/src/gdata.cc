@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 
@@ -255,7 +256,8 @@ find_source_timelevel (vector <CCTK_REAL> const & times,
   if (transport_operator != op_copy) {
     if (time < min_time - eps or time > max_time + eps) {
       ostringstream buf;
-      buf << "Internal error: extrapolation in time."
+      buf << setprecision (17)
+          << "Internal error: extrapolation in time."
           << "  time=" << time
           << "  times=" << times;
       CCTK_WARN (0, buf.str().c_str());
