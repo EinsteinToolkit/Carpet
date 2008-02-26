@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
@@ -358,13 +359,21 @@ namespace Carpet {
               have_done_anything = true;
               
               // Advance times
-              for (int m=0; m<maps; ++m) {
-                vtt.at(m)->advance_time (reflevel, mglevel);
-              }
               cctkGH->cctk_time
                 = (global_time
                    - delta_time / maxtimereflevelfact
                    + delta_time * mglevelfact / timereflevelfact);
+              CCTK_REAL const carpet_time = cctkGH->cctk_time / delta_time;
+              for (int m=0; m<maps; ++m) {
+                vtt.at(m)->advance_time (reflevel, mglevel);
+                CCTK_REAL const eps = 1.0e-12;
+                static_assert (abs(0.1) > 0,
+                               "Function CarpetLib::abs has wrong signature");
+                CCTK_REAL const level_time =
+                  vtt.at(m)->get_time (reflevel, mglevel);
+                assert (abs (level_time - carpet_time) < eps);
+                vtt.at(m)->set_time (reflevel, mglevel, carpet_time);
+              }
               CycleTimeLevels (cctkGH);
               
               Waypoint ("Evolution I at iteration %d time %g%s%s",
