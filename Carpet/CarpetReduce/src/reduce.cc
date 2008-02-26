@@ -521,7 +521,6 @@ namespace CarpetReduce {
                 static_cast<const T*>(inarrays.AT(tl))[index] * tfacs.AT(tl);
             }
             OP::reduce (myoutval_local, mycnt_local, myinval, w);
-            mycnt_local += w;
           }
         }
       }
