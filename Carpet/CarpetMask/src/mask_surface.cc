@@ -97,23 +97,31 @@ namespace CarpetMask {
                   weight[ind] = 0.0;
                 } else {
                   CCTK_REAL theta =
-                    acos (min (+1.0, max (-1.0, dz / rho)));
-                  if (symmetric_z[sn])
-                     if (theta > M_PI/2.0)
-                        theta = M_PI - theta;
-
+                    acos (min (CCTK_REAL (+1.0),
+                               max (CCTK_REAL (-1.0), dz / rho)));
+                  if (symmetric_z[sn]) {
+                    if (theta > M_PI/2.0) {
+                      theta = M_PI - theta;
+                    }
+                  }
+                  
                   assert (not isnan (theta));
                   assert (theta >= 0);
                   assert (theta <= M_PI);
                   CCTK_REAL phi =
-                    fmod (atan2 (dy, dx) + 2 * M_PI, 2 * M_PI);
-                  if (symmetric_x[sn] || symmetric_y[sn])
-	             if (symmetric_y[sn] && symmetric_x[sn]) {
-                        if (phi > M_PI/2.0)
-                           phi = M_PI - phi;
-                     } else
-                        if (phi > M_PI)
-                           phi = 2*M_PI - phi;
+                    fmod (atan2 (dy, dx) + CCTK_REAL (2 * M_PI),
+                          CCTK_REAL (2 * M_PI));
+                  if (symmetric_x[sn] or symmetric_y[sn]) {
+                    if (symmetric_x[sn] and symmetric_y[sn]) {
+                      if (phi > M_PI / 2.0) {
+                        phi = M_PI - phi;
+                      }
+                    } else {
+                      if (phi > M_PI) {
+                        phi = 2 * M_PI - phi;
+                      }
+                    }
+                  }
                   assert (not isnan (phi));
                   assert (phi >= 0);
                   assert (phi < 2 * M_PI);
