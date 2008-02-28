@@ -21,10 +21,6 @@
 !!$ entire coarse grid cell for the least oscillatory quadratic in each 
 !!$ direction. If the slope changes sign over the extrema, linear
 !!$ interpolation is used instead.
-!!$
-!!$ The actual weno1d function is defined in the routine
-!!$
-!!$      prolongate_3d_real8_weno.F77
 
 
 function weno1d(q)

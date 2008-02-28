@@ -21,10 +21,6 @@
 !!$ entire coarse grid cell for the least oscillatory quadratic in each 
 !!$ direction. If the slope changes sign over the extrema, linear
 !!$ interpolation is used instead.
-!!$
-!!$ The actual eno1d function is defined in the routine
-!!$
-!!$      prolongate_3d_real8_eno.F77
 
 
 function eno1d(q)
