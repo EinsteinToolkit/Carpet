@@ -585,13 +585,6 @@ namespace Carpet {
       // Check the regions
       CheckRegions (regssss.at(m));
       
-#if 0
-      // Do this later because CactusBase/IO might not yet be
-      // initialised
-      // Write grid structure to file
-      OutputGridStructure (cctkGH, m, regssss.at(m));
-#endif
-      
       // Recompose grid hierarchy
       vhh.at(m)->regrid (regssss.at(m));
       int const rl = 0;
