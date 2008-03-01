@@ -70,7 +70,6 @@ namespace Carpet {
     
     static Timer timer ("Initialise");
     timer.start();
-#warning "TODO: add more timers"
     
     // Delay checkpoint until MPI has been initialised
     Waypoint ("Starting initialisation");
