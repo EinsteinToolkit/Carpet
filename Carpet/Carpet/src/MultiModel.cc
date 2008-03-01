@@ -128,8 +128,29 @@ namespace Carpet
       for (int n = 0; n < num_procs; ++ n)
       {
         int const m = model_ids.at(n);
-        cout << "   processor " << n << ": "
-             << "model " << m << " \"" << models.at(m) << "\"" << endl;
+        bool const same_model_as_prev =
+          n-1 >= 0 and model_ids.at(n-1) == m;
+        bool const same_model_as_next =
+          n+1 < num_procs and model_ids.at(n+1) == m;
+        if (same_model_as_next) {
+          if (same_model_as_prev) {
+            // Output nothing
+          } else {
+            // This processor has the same model as the next one:
+            // output only a partial line
+            cout << "   processors " << n << "-";
+          }
+        } else {
+          if (same_model_as_prev) {
+            // This processor has the same model as the previous one:
+            // finish a partial line
+            cout << n << ": "
+                 << "model " << m << " \"" << models.at(m) << "\"" << endl;
+          } else {
+            cout << "   processor " << n << ": "
+                 << "model " << m << " \"" << models.at(m) << "\"" << endl;
+          }
+        }
       }
       int const my_model = model_ids.at(my_proc);
       CCTK_VInfo (CCTK_THORNSTRING,
