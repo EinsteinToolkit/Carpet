@@ -348,6 +348,7 @@ namespace Carpet {
 
     // remove all empty groups from the list
     vector<int> groups;
+    groups.reserve (attribute->n_SyncGroups);
     for (int g = 0; g < attribute->n_SyncGroups; g++) {
       const int group = attribute->SyncGroups[g];
       if (CCTK_NumVarsInGroupI (group) > 0) {
