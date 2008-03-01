@@ -125,6 +125,11 @@ namespace Carpet {
                        gh::mregs const & regsss);
   
   void
+  OutputGridCoordinates (cGH const * cctkGH,
+                         int const m,
+                         gh::mregs const & regsss);
+  
+  void
   OutputGridStatistics (cGH const * cctkGH);
   
   

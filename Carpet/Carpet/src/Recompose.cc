@@ -219,6 +219,7 @@ namespace Carpet {
     
     // Write grid structure to file
     OutputGridStructure (cctkGH, m, regsss);
+    OutputGridCoordinates (cctkGH, m, regsss);
     
     if (verbose) OutputGrids (cctkGH, m, * vhh.at(m), * vdd.at(m));
     
@@ -477,7 +478,7 @@ namespace Carpet {
     if (CCTK_MyProc(cctkGH) != 0) return;
     
     // Output only if output is desired
-    if (strcmp(grid_structure_filename, "") == 0) return;
+    if (CCTK_EQUALS (grid_structure_filename, "")) return;
     
     // Create the output directory
     CCTK_CreateDirectory (0755, out_dir);
@@ -499,8 +500,8 @@ namespace Carpet {
 	  or stat(filename, &fileinfo)!=0) {
 	file.open (filename, ios::out | ios::trunc);
 	assert (file.good());
-	file << "# grid structure" << endl
-	     << "# format: map reflevel component mglevel   processor bounding-box is-outer-boundary" << endl;
+	file << "# grid structure" << eol
+	     << "# format: map reflevel component mglevel   processor bounding-box is-outer-boundary" << eol;
 	assert (file.good());
       }
     }
@@ -509,22 +510,196 @@ namespace Carpet {
       assert (file.good());
     }
     
-    file << "iteration " << cctkGH->cctk_iteration << endl;
-    file << "maps " << maps << endl;
-    file << m << " mglevels " << regsss.size() << endl;
+    file << "iteration " << cctkGH->cctk_iteration << eol;
+    file << "maps " << maps << eol;
+    file << m << " mglevels " << regsss.size() << eol;
     for (int ml=0; ml<(int)regsss.size(); ++ml) {
-      file << m << " " << ml << " reflevels " << regsss.at(ml).size() << endl;
+      file << m << " " << ml << " reflevels " << regsss.at(ml).size() << eol;
       for (int rl=0; rl<(int)regsss.at(ml).size(); ++rl) {
-        file << m << " " << ml << " " << rl << " components " << regsss.at(ml).at(rl).size() << endl;
+        file << m << " " << ml << " " << rl << " components " << regsss.at(ml).at(rl).size() << eol;
         for (int c=0; c<(int)regsss.at(ml).at(rl).size(); ++c) {
           file << m << " " << ml << " " << rl << " " << c << "   "
                << regsss.at(ml).at(rl).at(c).processor << " "
-               << regsss.at(ml).at(rl).at(c).extent
-               << regsss.at(ml).at(rl).at(c).outer_boundaries << endl;
+               << regsss.at(ml).at(rl).at(c).extent << " "
+               << regsss.at(ml).at(rl).at(c).outer_boundaries << eol;
         }
       }
     }
-    file << endl;
+    file << eol;
+    
+    file.close();
+    assert (file.good());
+  }
+  
+  
+  
+  void
+  OutputGridCoordinates (cGH const * const cctkGH,
+                         int const m,
+                         gh::mregs const & regsss)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    // Output only on the root processor
+    if (CCTK_MyProc(cctkGH) != 0) return;
+    
+    // Output only if output is desired
+    if (CCTK_EQUALS (grid_coordinates_filename, "")) return;
+    
+    // Create the output directory
+    CCTK_CreateDirectory (0755, out_dir);
+    
+    ostringstream filenamebuf;
+    filenamebuf << out_dir << "/" << grid_coordinates_filename;
+    // we need a persistent temporary here
+    string filenamestr = filenamebuf.str();
+    const char * filename = filenamestr.c_str();
+    
+    ofstream file;
+    
+    static bool do_truncate = true;
+    
+    if (do_truncate) {
+      do_truncate = false;
+      struct stat fileinfo;
+      if (IO_TruncateOutputFiles (cctkGH)
+	  or stat(filename, &fileinfo)!=0) {
+	file.open (filename, ios::out | ios::trunc);
+	assert (file.good());
+	file << "# grid coordinates" << eol
+	     << "# format: map reflevel region mglevel   bounding-box" << eol;
+	assert (file.good());
+      }
+    }
+    if (not file.is_open()) {
+      file.open (filename, ios::app);
+      assert (file.good());
+    }
+    
+    //
+    // Find extent of domain
+    //
+    
+    // This requires that CoordBase is used
+#warning "TODO: check this (for Carpet, and maybe also for CartGrid3D)"
+#warning "TODO: (the check that these two are consistent should be in Carpet)"
+    
+    typedef vect<vect<CCTK_INT,2>,3> jjvect;
+    jjvect nboundaryzones;
+    jjvect is_internal;
+    jjvect is_staggered;
+    jjvect shiftout;
+    {
+      CCTK_INT const ierr = GetBoundarySpecification
+        (2*dim,
+         & nboundaryzones[0][0],
+         & is_internal[0][0],
+         & is_staggered[0][0],
+         & shiftout[0][0]);
+      assert (not ierr);
+    }
+    
+    rvect physical_lower, physical_upper;
+    rvect interior_lower, interior_upper;
+    rvect exterior_lower, exterior_upper;
+    rvect spacing;
+    {
+      CCTK_INT const ierr = GetDomainSpecification
+        (dim,
+         & physical_lower[0], & physical_upper[0],
+         & interior_lower[0], & interior_upper[0],
+         & exterior_lower[0], & exterior_upper[0],
+         & spacing[0]);
+      assert (not ierr);
+    }
+    
+    // Adapt spacing for convergence level
+#warning "TODO: take ml into account"
+    spacing *= ipow ((CCTK_REAL) mgfact, basemglevel);
+    
+    {
+      CCTK_INT const ierr =
+        ConvertFromPhysicalBoundary
+        (dim,
+         & physical_lower[0], & physical_upper[0],
+         & interior_lower[0], & interior_upper[0],
+         & exterior_lower[0], & exterior_upper[0],
+         & spacing[0]);
+      assert (not ierr);
+    }
+    
+    // Affine transformation between index space and coordinate space
+    rvect const origin = exterior_lower;
+    rvect const scale =
+      rvect (vhh.at(m)->baseextents.at(0).at(0).stride()) / spacing;
+    
+    
+    
+    file << "iteration " << cctkGH->cctk_iteration << eol;
+    file << "maps " << maps << eol;
+    file << m << " mglevels " << regsss.size() << eol;
+    for (int ml=0; ml<(int)regsss.size(); ++ml) {
+      file << m << " " << ml << " reflevels " << regsss.at(ml).size() << eol;
+      for (int rl=0; rl<(int)regsss.at(ml).size(); ++rl) {
+        ibset extents;
+        for (int c=0; c<(int)regsss.at(ml).at(rl).size(); ++c) {
+          extents += regsss.at(ml).at(rl).at(c).extent;
+        }
+        extents.normalize();
+        file << m << " " << ml << " " << rl << " regions " << extents.setsize() << eol;
+        int c=0;
+        for (ibset::const_iterator
+               bi = extents.begin(); bi != extents.end(); ++ bi)
+        {
+#if 0
+          ibbox const & ext       = * bi;
+          ibbox const & baseext   = vhh.at(m)->baseextents.at(ml).at(rl);
+          ibbox const & coarseext = vhh.at(m)->baseextents.at(ml).at(0 );
+          
+          // This is nice, but is wrong since CartGrid3D has not yet
+          // initialised the coordinates
+          ivect const cctk_levfac       = spacereffacts.at(rl);
+          ivect const cctk_levoff       = baseext.lower() - coarseext.lower();
+          ivect const cctk_levoffdenom  = baseext.stride();
+          
+          ivect const cctk_lbnd =
+            (ext.lower() - baseext.lower()) / ext.stride();
+          ivect const cctk_ubnd =
+            (ext.upper() - baseext.lower()) / ext.stride();
+          
+          rvect const cctk_origin_space =
+            origin_space.at(m).at(ml);
+          rvect const cctk_delta_space  =
+            delta_space.at(m) * rvect (ipow (mgfact, ml));
+          
+          rvect const CCTK_ORIGIN_SPACE =
+            cctk_origin_space +
+            cctk_delta_space / rvect (cctk_levfac) *
+            rvect (cctk_levoff) / rvect (cctk_levoffdenom);
+          rvect const CCTK_DELTA_SPACE =
+            cctk_delta_space / rvect (cctk_levfac);
+          
+          rvect const rlower =
+            CCTK_ORIGIN_SPACE + rvect (cctk_lbnd) * CCTK_DELTA_SPACE;
+          rvect const rupper =
+            CCTK_ORIGIN_SPACE + rvect (cctk_ubnd) * CCTK_DELTA_SPACE;
+          rvect const rdelta =
+            CCTK_DELTA_SPACE;
+#endif
+          
+          ibbox const & ext       = * bi;
+          
+          rvect const rlower = origin + rvect (ext.lower()) / scale;
+          rvect const rupper = origin + rvect (ext.upper()) / scale;
+          rvect const rdelta = rvect (ext.stride()) / scale;
+          
+          rbbox const rb (rlower, rupper, rdelta);
+          file << m << " " << ml << " " << rl << " " << c << "   " << rb << eol;
+          ++c;
+        }
+      }
+    }
+    file << eol;
     
     file.close();
     assert (file.good());

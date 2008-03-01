@@ -449,6 +449,11 @@ STRING grid_structure_filename "File name to output grid structure to (empty = n
   ".*" :: "must be a legal file name"
 } ""
 
+STRING grid_coordinates_filename "File name to output grid coordinates to (empty = no output)" STEERABLE=recover
+{
+  ".*" :: "must be a legal file name"
+} ""
+
 
 
 private:

@@ -80,10 +80,13 @@ namespace Carpet {
     
     CCTKi_InitGHExtensions (cctkGH);
     
+#if 0
     // Write grid structure to file
     for (int m=0; m<maps; ++m) {
       OutputGridStructure (cctkGH, m, vhh.at(m)->regions);
+      OutputGridCoordinates (cctkGH, m, vhh.at(m)->regions);
     } // for m
+#endif
     
     CallSetup (cctkGH);
     
