@@ -20,6 +20,13 @@ namespace Carpet {
   
   
   static void
+  CallScheduledFunction (char const * restrict time_and_mode,
+                         void * function,
+                         cFunctionData * attribute,
+                         void * data,
+                         Timer & user_timer);
+  
+  static void
   SyncGroupsInScheduleBlock (cFunctionData * attribute, cGH * cctkGH);
   
   /// Traverse one function on all components of one refinement level
@@ -61,14 +68,9 @@ namespace Carpet {
               BEGIN_REFLEVEL_LOOP(cctkGH) {
                 BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
                   BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
-                    Checkpoint ("Meta time local mode call at %s to %s::%s",
-                                attribute->where,
-                                attribute->thorn, attribute->routine);
-                    user_timer.start();
-                    const int res = CCTK_CallFunction
-                      (function, attribute, data);
-                    user_timer.stop();
-                    assert (res==0);
+                    CallScheduledFunction
+                      ("Meta time local mode",
+                       function, attribute, data, user_timer);
                   } END_LOCAL_COMPONENT_LOOP;
                 } END_MAP_LOOP;
                 sync_timer.start();
@@ -82,13 +84,9 @@ namespace Carpet {
             BEGIN_MGLEVEL_LOOP(cctkGH) {
               BEGIN_REFLEVEL_LOOP(cctkGH) {
                 BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
-                  Checkpoint ("Meta time singlemap mode call at %s to %s::%s",
-                              attribute->where,
-                              attribute->thorn, attribute->routine);
-                  user_timer.start();
-                  const int res = CCTK_CallFunction (function, attribute, data);
-                  user_timer.stop();
-                  assert (res==0);
+                  CallScheduledFunction
+                    ("Meta time singlemap mode",
+                     function, attribute, data, user_timer);
                 } END_MAP_LOOP;
                 sync_timer.start();
                 SyncGroupsInScheduleBlock (attribute, cctkGH) ;
@@ -100,13 +98,9 @@ namespace Carpet {
           BEGIN_META_MODE(cctkGH) {
             BEGIN_MGLEVEL_LOOP(cctkGH) {
               BEGIN_REFLEVEL_LOOP(cctkGH) {
-                Checkpoint ("Meta time level mode call at %s to %s::%s",
-                            attribute->where,
-                            attribute->thorn, attribute->routine);
-                user_timer.start();
-                const int res = CCTK_CallFunction (function, attribute, data);
-                user_timer.stop();
-                assert (res==0);
+                CallScheduledFunction
+                  ("Meta time level mode",
+                   function, attribute, data, user_timer);
                 sync_timer.start();
                 SyncGroupsInScheduleBlock (attribute, cctkGH) ;
                 sync_timer.stop();
@@ -116,13 +110,9 @@ namespace Carpet {
         } else if (attribute->loop_global) {
           BEGIN_META_MODE(cctkGH) {
             BEGIN_MGLEVEL_LOOP(cctkGH) {
-              Checkpoint ("Meta time global mode call at %s to %s::%s",
-                          attribute->where,
-                          attribute->thorn, attribute->routine);
-              user_timer.start();
-              const int res = CCTK_CallFunction (function, attribute, data);
-              user_timer.stop();
-              assert (res==0);
+              CallScheduledFunction
+                ("Meta time global mode",
+                 function, attribute, data, user_timer);
               BEGIN_REFLEVEL_LOOP(cctkGH) {
                 sync_timer.start();
                 SyncGroupsInScheduleBlock (attribute, cctkGH) ;
@@ -132,13 +122,9 @@ namespace Carpet {
           } END_META_MODE;
         } else {
           BEGIN_META_MODE(cctkGH) {
-            Checkpoint ("Meta mode call at %s to %s::%s",
-                        attribute->where,
-                        attribute->thorn, attribute->routine);
-            user_timer.start();
-            const int res = CCTK_CallFunction (function, attribute, data);
-            user_timer.stop();
-            assert (res==0);
+            CallScheduledFunction
+              ("Meta mode",
+               function, attribute, data, user_timer);
             BEGIN_MGLEVEL_LOOP(cctkGH) {
               BEGIN_REFLEVEL_LOOP(cctkGH) {
                 sync_timer.start();
@@ -161,13 +147,9 @@ namespace Carpet {
             BEGIN_REFLEVEL_LOOP(cctkGH) {
               BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
                 BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
-                  Checkpoint ("Global time local mode call at %s to %s::%s",
-                              attribute->where,
-                              attribute->thorn, attribute->routine);
-                  user_timer.start();
-                  const int res = CCTK_CallFunction (function, attribute, data);
-                  user_timer.stop();
-                  assert (res==0);
+                  CallScheduledFunction
+                    ("Global time local mode",
+                     function, attribute, data, user_timer);
                 } END_LOCAL_COMPONENT_LOOP;
               } END_MAP_LOOP;
               sync_timer.start();
@@ -179,13 +161,9 @@ namespace Carpet {
           BEGIN_GLOBAL_MODE(cctkGH) {
             BEGIN_REFLEVEL_LOOP(cctkGH) {
               BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
-                Checkpoint ("Global time singlemap mode call at %s to %s::%s",
-                            attribute->where,
-                            attribute->thorn, attribute->routine);
-                user_timer.start();
-                const int res = CCTK_CallFunction (function, attribute, data);
-                user_timer.stop();
-                assert (res==0);
+                CallScheduledFunction
+                  ("Global time singlemap mode",
+                   function, attribute, data, user_timer);
               } END_MAP_LOOP;
               sync_timer.start();
               SyncGroupsInScheduleBlock (attribute, cctkGH) ;
@@ -195,13 +173,9 @@ namespace Carpet {
         } else if (attribute->loop_level) {
           BEGIN_GLOBAL_MODE(cctkGH) {
             BEGIN_REFLEVEL_LOOP(cctkGH) {
-              Checkpoint ("Global time level mode call at %s to %s::%s",
-                          attribute->where,
-                          attribute->thorn, attribute->routine);
-              user_timer.start();
-              const int res = CCTK_CallFunction (function, attribute, data);
-              user_timer.stop();
-              assert (res==0);
+              CallScheduledFunction
+                ("Global time level mode",
+                 function, attribute, data, user_timer);
               sync_timer.start();
               SyncGroupsInScheduleBlock (attribute, cctkGH) ;
               sync_timer.stop();
@@ -209,13 +183,9 @@ namespace Carpet {
           } END_GLOBAL_MODE;
         } else {
           BEGIN_GLOBAL_MODE(cctkGH) {
-            Checkpoint ("Global mode call at %s to %s::%s",
-                        attribute->where,
-                        attribute->thorn, attribute->routine);
-            user_timer.start();
-            const int res = CCTK_CallFunction (function, attribute, data);
-            user_timer.stop();
-            assert (res==0);
+            CallScheduledFunction
+              ("Global mode",
+               function, attribute, data, user_timer);
             BEGIN_REFLEVEL_LOOP(cctkGH) {
               sync_timer.start();
               SyncGroupsInScheduleBlock (attribute, cctkGH) ;
@@ -234,33 +204,21 @@ namespace Carpet {
       if (attribute->loop_local) {
         BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
           BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
-            Checkpoint ("Level time local mode call at %s to %s::%s",
-                        attribute->where,
-                        attribute->thorn, attribute->routine);
-            user_timer.start();
-            const int res = CCTK_CallFunction (function, attribute, data);
-            user_timer.stop();
-            assert (res==0);
+            CallScheduledFunction
+              ("Level time local mode",
+               function, attribute, data, user_timer);
           } END_LOCAL_COMPONENT_LOOP;
         } END_MAP_LOOP;
       } else if (attribute->loop_singlemap) {
         BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
-          Checkpoint ("Level time singlemap mode call at %s to %s::%s",
-                      attribute->where,
-                      attribute->thorn, attribute->routine);
-          user_timer.start();
-          const int res = CCTK_CallFunction (function, attribute, data);
-          user_timer.stop();
-          assert (res==0);
+          CallScheduledFunction
+            ("Level time singlemap mode",
+             function, attribute, data, user_timer);
         } END_MAP_LOOP;
       } else {
-        Checkpoint ("Level mode call at %s to %s::%s",
-                    attribute->where,
-                    attribute->thorn, attribute->routine);
-        user_timer.start();
-        const int res = CCTK_CallFunction (function, attribute, data);
-        user_timer.stop();
-        assert (res==0);
+        CallScheduledFunction
+          ("Level mode",
+           function, attribute, data, user_timer);
       }
       sync_timer.start();
       SyncGroupsInScheduleBlock (attribute, cctkGH) ;
@@ -276,24 +234,16 @@ namespace Carpet {
       if (attribute->loop_local) {
         BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
           BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
-            Checkpoint ("Singlemap time local mode call at %s to %s::%s",
-                        attribute->where,
-                        attribute->thorn, attribute->routine);
-            user_timer.start();
-            const int res = CCTK_CallFunction (function, attribute, data);
-            user_timer.stop();
-            assert (res==0);
+            CallScheduledFunction
+              ("Singlemap time local mode",
+               function, attribute, data, user_timer);
           } END_LOCAL_COMPONENT_LOOP;
         } END_MAP_LOOP;
       } else {
         BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
-          Checkpoint ("Singlemap mode call at %s to %s::%s",
-                      attribute->where,
-                      attribute->thorn, attribute->routine);
-          user_timer.start();
-          const int res = CCTK_CallFunction (function, attribute, data);
-          user_timer.stop();
-          assert (res==0);
+          CallScheduledFunction
+            ("Singlemap mode",
+             function, attribute, data, user_timer);
         } END_MAP_LOOP;
       }
       sync_timer.start();
@@ -310,13 +260,9 @@ namespace Carpet {
       
       BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
         BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
-          Checkpoint ("Local mode call at %s to %s::%s",
-                      attribute->where,
-                      attribute->thorn, attribute->routine);
-          user_timer.start();
-          const int res = CCTK_CallFunction (function, attribute, data);
-          user_timer.stop();
-          assert (res==0);
+          CallScheduledFunction
+            ("Local mode",
+             function, attribute, data, user_timer);
         } END_LOCAL_COMPONENT_LOOP;
       }	END_MAP_LOOP;
       sync_timer.start();
@@ -325,7 +271,21 @@ namespace Carpet {
       
     }
     
-    if (schedule_barriers) CCTK_Barrier (cctkGH);
+    if (schedule_barriers) {
+      static unsigned int magic = 0xe8932329UL; // a random starting value
+      unsigned int recv = magic;
+      Checkpoint ("About to Bcast %u", magic);
+      MPI_Bcast (& recv, 1, MPI_UNSIGNED, 0, dist::comm());
+      Checkpoint ("Finished Bcast");
+      if (recv != magic) {
+        CCTK_WARN (CCTK_WARN_ABORT,
+                   "Inconsistent communication schedule: not all processes return to CallFunction at the same time");
+      }
+      ++ magic;
+      Checkpoint ("About to Barrier");
+      MPI_Barrier (dist::comm());
+      Checkpoint ("Finished Barrier");
+    }
     
     total_timer.stop();
     
@@ -335,12 +295,29 @@ namespace Carpet {
     // 1: we did the synchronisation
     return 1;
   }
-
-  struct typed_group {
-    int vartype;
-    vector<int> members;
-  };
-
+  
+  
+  
+  void
+  CallScheduledFunction (char const * restrict const time_and_mode,
+                         void * const function,
+                         cFunctionData * const attribute,
+                         void * const data,
+                         Timer & user_timer)
+  {
+    cGH const * const cctkGH = static_cast <cGH const *> (data);
+    Checkpoint ("%s call at %s to %s::%s",
+                time_and_mode,
+                attribute->where,
+                attribute->thorn, attribute->routine);
+    user_timer.start();
+    int const res = CCTK_CallFunction (function, attribute, data);
+    user_timer.stop();
+    assert (res==0);
+  }
+  
+  
+  
   void SyncGroupsInScheduleBlock (cFunctionData* attribute, cGH* cctkGH)
   {
     // check if there is anything to do
