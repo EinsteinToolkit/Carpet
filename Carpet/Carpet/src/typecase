@@ -118,6 +118,11 @@
 
 // Typecase the desired types
 
+// TODO: Find a way to collapse e.g. CCTK_INT and CCTK_INT4, if both
+// are the same.  Remember that the TYPECASE statements need not be
+// executable.  Maybe find a way to convert CCTK_VARIABLE_INT to
+// CCTK_VARIABLE_INT4?
+
 #ifdef CARPET_BYTE
 TYPECASE(CCTK_VARIABLE_BYTE, CCTK_BYTE)
 #endif
