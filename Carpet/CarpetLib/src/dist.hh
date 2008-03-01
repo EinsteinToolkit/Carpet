@@ -168,10 +168,10 @@ namespace dist {
   { return MPI_CHAR; }
   
   inline MPI_Datatype datatype (const signed char&)
-  { return MPI_UNSIGNED_CHAR; }
+  { return MPI_CHAR; }
   
   inline MPI_Datatype datatype (const unsigned char&)
-  { return MPI_BYTE; }
+  { return MPI_UNSIGNED_CHAR; }
   
   inline MPI_Datatype datatype (const short&)
   { return MPI_SHORT; }
