@@ -153,7 +153,7 @@ protected:
   void
   transfer_from_all (comm_state & state,
                      int tl1, int rl1, int ml1,
-                     srpvect const dh::dboxes::* sendrecvs,
+                     srpvect const dh::fast_dboxes::* sendrecvs,
                      vector<int> const & tl2s, int rl2, int ml2,
                      CCTK_REAL const & time,
                      mdata * srcstorage = 0);
@@ -161,7 +161,7 @@ protected:
   void
   transfer_from_all (comm_state & state,
                      int tl1, int rl1, int ml1,
-                     srpvect const dh::dboxes::* sendrecvs,
+                     srpvect const dh::fast_dboxes::* sendrecvs,
                      int tl2, int rl2, int ml2,
                      mdata * srcstorage = 0)
   {

@@ -61,6 +61,12 @@ public:
     ibset ghosts;               // ghost zones, as seen from Cactus
     ibbox interior;             // interior (without ghost zones)
     
+    size_t memory () const;
+    ostream & output (ostream & os) const;
+  };
+  
+  struct fast_dboxes {
+    
     // Communication schedule:
     
     srpvect fast_mg_rest_sendrecv;
@@ -85,6 +91,10 @@ private:
   typedef vector<cboxes> rboxes; // ... for each refinement level
   typedef vector<rboxes> mboxes; // ... for each multigrid level
   
+  typedef vector<fast_dboxes> fast_cboxes; // ... for each component
+  typedef vector<fast_cboxes> fast_rboxes; // ... for each refinement level
+  typedef vector<fast_rboxes> fast_mboxes; // ... for each multigrid level
+  
   
   
   void
@@ -101,6 +111,8 @@ public:                         // should be readonly
   
   mboxes boxes;                 // grid hierarchy
   mboxes oldboxes;              // old grid hierarchy, used during regridding
+  fast_mboxes fast_boxes;       // grid hierarchy
+  fast_mboxes fast_oldboxes;
   
   list<ggf*> gfs;               // list of all grid functions
   
@@ -121,6 +133,12 @@ public:
   void regrid ();
   void recompose (int rl, bool do_prolongate);
   
+private:
+  int this_proc (int rl, int c) const;
+  bool on_this_proc (int rl, int c) const;
+  bool on_this_proc (int rl, int c, int cc) const;
+  
+public:
   // Grid function management
   void add (ggf * f);
   void remove (ggf * f);
@@ -137,12 +155,22 @@ inline size_t memoryof (dh::dboxes const & b)
   return b.memory ();
 }
 
+inline size_t memoryof (dh::fast_dboxes const & b)
+{
+  return b.memory ();
+}
+
 inline size_t memoryof (dh const & d)
 {
   return d.memory ();
 }
 
 inline ostream & operator<< (ostream & os, dh::dboxes const & b)
+{
+  return b.output (os);
+}
+
+inline ostream & operator<< (ostream & os, dh::fast_dboxes const & b)
 {
   return b.output (os);
 }

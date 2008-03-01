@@ -175,7 +175,7 @@ void ggf::recompose_fill (comm_state & state, int const rl,
       for (int tl = 0; tl < timelevels (ml, rl); ++tl) {
         transfer_from_all (state,
                            tl, rl, ml,
-                           & dh::dboxes::fast_old2new_sync_sendrecv,
+                           & dh::fast_dboxes::fast_old2new_sync_sendrecv,
                            tl, rl, ml,
                            & oldstorage);
       } // for tl
@@ -189,7 +189,7 @@ void ggf::recompose_fill (comm_state & state, int const rl,
           for (int tl = 0; tl < timelevels (ml, rl); ++tl) {
             transfer_from_all (state,
                                tl, rl, ml,
-                               & dh::dboxes::fast_old2new_ref_prol_sendrecv,
+                               & dh::fast_dboxes::fast_old2new_ref_prol_sendrecv,
                                tls, rl - 1, ml,
                                t.time (tl, rl, ml));
           } // for tl
@@ -306,7 +306,7 @@ sync_all (comm_state & state,
   timer.start ();
   transfer_from_all (state,
                      tl,rl,ml,
-                     & dh::dboxes::fast_sync_sendrecv,
+                     & dh::fast_dboxes::fast_sync_sendrecv,
                      tl,rl,ml);
   timer.stop (0);
 }
@@ -346,7 +346,7 @@ ref_bnd_prolongate_all (comm_state & state,
   }
   transfer_from_all (state,
                      tl  ,rl  ,ml,
-                     & dh::dboxes::fast_ref_bnd_prol_sendrecv,
+                     & dh::fast_dboxes::fast_ref_bnd_prol_sendrecv,
                      tl2s,rl-1,ml,
                      time);
   timer.stop (0);
@@ -370,7 +370,7 @@ mg_restrict_all (comm_state & state,
   vector<int> const tl2s(1,tl);
   transfer_from_all (state,
                      tl  ,rl,ml,
-                     & dh::dboxes::fast_mg_rest_sendrecv,
+                     & dh::fast_dboxes::fast_mg_rest_sendrecv,
                      tl2s,rl,ml-1,
                      time);
   timer.stop (0);
@@ -394,7 +394,7 @@ mg_prolongate_all (comm_state & state,
   vector<int> const tl2s(1,tl);
   transfer_from_all (state,
                      tl  ,rl,ml,
-                     & dh::dboxes::fast_mg_prol_sendrecv,
+                     & dh::fast_dboxes::fast_mg_prol_sendrecv,
                      tl2s,rl,ml+1,
                      time);
   timer.stop (0);
@@ -419,7 +419,7 @@ ref_restrict_all (comm_state & state,
   vector<int> const tl2s(1,tl);
   transfer_from_all (state,
                      tl  ,rl  ,ml,
-                     & dh::dboxes::fast_ref_rest_sendrecv,
+                     & dh::fast_dboxes::fast_ref_rest_sendrecv,
                      tl2s,rl+1,ml,
                      time);
   timer.stop (0);
@@ -445,7 +445,7 @@ ref_prolongate_all (comm_state & state,
   for (int i=0; i<=prolongation_order_time; ++i) tl2s.AT(i) = i;
   transfer_from_all (state,
                      tl  ,rl  ,ml,
-                     & dh::dboxes::fast_ref_prol_sendrecv,
+                     & dh::fast_dboxes::fast_ref_prol_sendrecv,
                      tl2s,rl-1,ml,
                      time);
   timer.stop (0);
@@ -458,7 +458,7 @@ void
 ggf::
 transfer_from_all (comm_state & state,
                    int const tl1, int const rl1, int const ml1,
-                   srpvect const dh::dboxes::* sendrecvs,
+                   srpvect const dh::fast_dboxes::* sendrecvs,
                    vector<int> const & tl2s, int const rl2, int const ml2,
                    CCTK_REAL const & time,
                    mdata * const srcstorage_)
@@ -468,7 +468,7 @@ transfer_from_all (comm_state & state,
   assert (tl1>=0 and tl1<timelevels(ml1,rl1));
   
   int const p = dist::rank();
-  srpvect const & psendrecvs = d.boxes.AT(ml1).AT(rl1).AT(p).*sendrecvs;
+  srpvect const & psendrecvs = d.fast_boxes.AT(ml1).AT(rl1).AT(p).*sendrecvs;
   
   // Return early if this communication does not concern us
   if (psendrecvs.empty()) return;

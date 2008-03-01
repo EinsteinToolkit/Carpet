@@ -67,25 +67,26 @@ prolongation_stencil_size ()
 
 // Calculate this quantity on this processor?  It does not need to be
 // calculated if it won't be used later on.
-static inline
+inline
 int
-this_proc (int const c)
+dh::this_proc (int const rl, int const c) const
 {
-  return c % dist::size();
+  // return c % dist::size();
+  return h.processor (rl, c);
 }
 
-static inline
+inline
 bool
-on_this_proc (int const c)
+dh::on_this_proc (int const rl, int const c) const
 {
-  return this_proc (c) == dist::rank();
+  return this_proc (rl, c) == dist::rank();
 }
 
-static inline
+inline
 bool
-on_this_proc (int const c, int const cc)
+dh::on_this_proc (int const rl, int const c, int const cc) const
 {
-  return on_this_proc (c) or on_this_proc (cc);
+  return on_this_proc (rl, c) or on_this_proc (rl, cc);
 }
 
 
@@ -164,16 +165,22 @@ regrid ()
   
   oldboxes.clear();
   swap (boxes, oldboxes);
+  fast_oldboxes.clear();
+  swap (fast_boxes, fast_oldboxes);
   
   
   
   boxes.resize (h.mglevels());
+  fast_boxes.resize (h.mglevels());
   for (int ml = 0; ml < h.mglevels(); ++ ml) {
     boxes.AT(ml).resize (h.reflevels());
+    fast_boxes.AT(ml).resize (h.reflevels());
     for (int rl = 0; rl < h.reflevels(); ++ rl) {
       boxes.AT(ml).AT(rl).resize (h.components(rl));
+      fast_boxes.AT(ml).AT(rl).resize (dist::size());
       
       cboxes & level = boxes.AT(ml).AT(rl);
+      fast_cboxes & fast_level = fast_boxes.AT(ml).AT(rl);
       
       
       
@@ -500,9 +507,9 @@ regrid ()
             ibbox const send = recv.expanded_for (obox.interior);
             ASSERT_c (send <= obox.exterior,
                       "Multigrid restriction: Send region must be contained in exterior");
-            if (on_this_proc (c)) {
+            if (on_this_proc (rl, c)) {
               int const p = dist::rank();
-              level.AT(p).fast_mg_rest_sendrecv.push_back
+              fast_level.AT(p).fast_mg_rest_sendrecv.push_back
                 (sendrecv_pseudoregion_t (send, c, recv, c));
             }
           }
@@ -552,9 +559,9 @@ regrid ()
               recv.expanded_for (box.interior).expand (stencil_size);
             ASSERT_c (send <= box.exterior,
                       "Multigrid prolongation: Send region must be contained in exterior");
-            if (on_this_proc (c)) {
+            if (on_this_proc (rl, c)) {
               int const p = dist::rank();
-              level.AT(p).fast_mg_prol_sendrecv.push_back
+              fast_level.AT(p).fast_mg_prol_sendrecv.push_back
                 (sendrecv_pseudoregion_t (send, c, recv, c));
             }
           }
@@ -611,9 +618,9 @@ regrid ()
                 recv.expanded_for (obox.interior).expand (stencil_size);
               ASSERT_c (send <= obox.exterior,
                         "Refinement prolongation: Send region must be contained in exterior");
-              if (on_this_proc (c, cc)) {
+              if (on_this_proc (rl, c, cc)) {
                 int const p = dist::rank();
-                level.AT(p).fast_ref_prol_sendrecv.push_back
+                fast_level.AT(p).fast_ref_prol_sendrecv.push_back
                   (sendrecv_pseudoregion_t (send, cc, recv, c));
               }
             }
@@ -670,9 +677,9 @@ regrid ()
           {
             ibbox const & recv = * ri;
             ibbox const & send = recv;
-            if (on_this_proc (c, cc)) {
+            if (on_this_proc (rl, c, cc)) {
               int const p = dist::rank();
-              level.AT(p).fast_sync_sendrecv.push_back
+              fast_level.AT(p).fast_sync_sendrecv.push_back
                 (sendrecv_pseudoregion_t (send, cc, recv, c));
             }
           }
@@ -734,9 +741,9 @@ regrid ()
                 recv.expanded_for (obox.interior).expand (stencil_size);
               ASSERT_c (send <= obox.exterior,
                         "Boundary prolongation: Send region must be contained in exterior");
-              if (on_this_proc (c, cc)) {
+              if (on_this_proc (rl, c, cc)) {
                 int const p = dist::rank();
-                level.AT(p).fast_ref_bnd_prol_sendrecv.push_back
+                fast_level.AT(p).fast_ref_bnd_prol_sendrecv.push_back
                   (sendrecv_pseudoregion_t (send, cc, recv, c));
               }
             }
@@ -764,7 +771,7 @@ regrid ()
       
       if (rl > 0) {
         int const orl = rl - 1;
-        cboxes & olevel = boxes.AT(ml).AT(orl);
+        fast_cboxes & fast_olevel = fast_boxes.AT(ml).AT(orl);
         
         ibset needrecv;
         for (int c = 0; c < h.components(rl); ++ c) {
@@ -808,9 +815,9 @@ regrid ()
               ibbox const send = recv.expanded_for (box.interior);
               ASSERT_c (send <= box.active,
                         "Refinement restriction: Send region must be contained in active part");
-              if (on_this_proc (c, cc)) {
+              if (on_this_proc (rl, c, cc)) {
                 int const p = dist::rank();
-                olevel.AT(p).fast_ref_rest_sendrecv.push_back
+                fast_olevel.AT(p).fast_ref_rest_sendrecv.push_back
                   (sendrecv_pseudoregion_t (send, c, recv, cc));
               }
             }
@@ -843,9 +850,11 @@ regrid ()
           
         // Synchronisation:
         
-        if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > rl) {
+        if (int (fast_oldboxes.size()) > ml and
+            int (fast_oldboxes.AT(ml).size()) > rl)
+        {
           
-          int const oldcomponents = oldboxes.AT(ml).AT(rl).size();
+          int const oldcomponents = fast_oldboxes.AT(ml).AT(rl).size();
           
           // Synchronisation copies from the same level of the old
           // grid structure.  It should fill as many active points as
@@ -862,9 +871,9 @@ regrid ()
             {
               ibbox const & recv = * ri;
               ibbox const & send = recv;
-              if (on_this_proc (c, cc)) {
+              if (on_this_proc (rl, c, cc)) {
                 int const p = dist::rank();
-                level.AT(p).fast_old2new_sync_sendrecv.push_back
+                fast_level.AT(p).fast_old2new_sync_sendrecv.push_back
                   (sendrecv_pseudoregion_t (send, cc, recv, c));
               }
             }
@@ -920,9 +929,9 @@ regrid ()
                 recv.expanded_for (obox.interior).expand (stencil_size);
               ASSERT_c (send <= obox.exterior,
                         "Regridding prolongation: Send region must be contained in exterior");
-              if (on_this_proc (c, cc)) {
+              if (on_this_proc (rl, c, cc)) {
                 int const p = dist::rank();
-                level.AT(p).fast_old2new_ref_prol_sendrecv.push_back
+                fast_level.AT(p).fast_old2new_ref_prol_sendrecv.push_back
                   (sendrecv_pseudoregion_t (send, cc, recv, c));
               }
             }
@@ -935,7 +944,9 @@ regrid ()
           
         } // if rl > 0
         
-        if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > 0) {
+        if (int (fast_oldboxes.size()) > ml and
+            int (fast_oldboxes.AT(ml).size()) > 0)
+        {
           // All points must now have been received, either through
           // synchronisation or through prolongation
           ASSERT_c (needrecv.empty(),
@@ -1038,7 +1049,8 @@ memory ()
     memoryof (buffer_width) +
     memoryof (prolongation_order_space) +
     memoryof (boxes) +
-    memoryof (oldboxes) +
+    memoryof (fast_boxes) +
+    memoryof (fast_oldboxes) +
     memoryof (gfs);
 }
 
@@ -1059,7 +1071,15 @@ memory ()
     memoryof (sync) +
     memoryof (bndref) +
     memoryof (ghosts) +
-    memoryof (interior) +
+    memoryof (interior);
+}
+
+size_t
+dh::fast_dboxes::
+memory ()
+  const
+{
+  return
     memoryof (fast_mg_rest_sendrecv) +
     memoryof (fast_mg_prol_sendrecv) +
     memoryof (fast_ref_prol_sendrecv) +
@@ -1084,6 +1104,7 @@ output (ostream & os)
      << "buffer_width=" << buffer_width << ","
      << "prolongation_order_space=" << prolongation_order_space << ","
      << "boxes=" << boxes << ","
+     << "fast_boxes=" << fast_boxes << ","
      << "gfs={";
   {
     bool isfirst = true;
@@ -1103,11 +1124,8 @@ dh::dboxes::
 output (ostream & os)
   const
 {
-  os << "dh::dboxes:" << eol;
-  
   // Regions:
-  
-  os << "regions:" << eol;
+  os << "dh::dboxes:" << eol;
   os << "exterior:" << exterior << eol;
   os << "is_outer_boundary:" << is_outer_boundary << eol;
   os << "outer_boundaries:" << outer_boundaries << eol;
@@ -1120,21 +1138,23 @@ output (ostream & os)
   os << "bndref:" << bndref << eol;
   os << "ghosts:" << ghosts << eol;
   os << "interior:" << interior << eol;
-  
+  return os;
+}
+
+ostream &
+dh::fast_dboxes::
+output (ostream & os)
+  const
+{
   // Communication schedule:
-  
-  os << "communication:" << eol;
+  os << "dh::fast_dboxes:" << eol;
   os << "fast_mg_rest_sendrecv: " << fast_mg_rest_sendrecv << eol;
   os << "fast_mg_prol_sendrecv: " << fast_mg_prol_sendrecv << eol;
   os << "fast_ref_prol_sendrecv: " << fast_ref_prol_sendrecv << eol;
   os << "fast_ref_rest_sendrecv: " << fast_ref_rest_sendrecv << eol;
   os << "fast_sync_sendrecv: " << fast_sync_sendrecv << eol;
   os << "fast_ref_bnd_prol_sendrecv: " << fast_ref_bnd_prol_sendrecv << eol;
-  
-  // Regridding schedule:
-  
   os << "fast_old2new_sync_sendrecv:" << fast_old2new_sync_sendrecv << eol;
   os << "fast_old2new_ref_prol_sendrecv:" << fast_old2new_ref_prol_sendrecv << eol;
-  
   return os;
 }
