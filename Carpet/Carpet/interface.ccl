@@ -39,6 +39,25 @@ PROVIDES FUNCTION GetMPICommWorld WITH Carpet_GetMPICommWorld LANGUAGE C
 
 
 
+# Register and unregister routines which are called before and after
+# every scheduled routine
+CCTK_INT \
+FUNCTION RegisterScheduleWrapper \
+  (CCTK_INT IN CCTK_FPOINTER func_before (CCTK_POINTER_TO_CONST IN cctkGH), \
+   CCTK_INT IN CCTK_FPOINTER func_after  (CCTK_POINTER_TO_CONST IN cctkGH))
+CCTK_INT \
+FUNCTION UnRegisterScheduleWrapper \
+  (CCTK_INT IN CCTK_FPOINTER func_before (CCTK_POINTER_TO_CONST IN cctkGH), \
+   CCTK_INT IN CCTK_FPOINTER func_after  (CCTK_POINTER_TO_CONST IN cctkGH))
+PROVIDES FUNCTION RegisterScheduleWrapper \
+  WITH Carpet_RegisterScheduleWrapper \
+  LANGUAGE C
+PROVIDES FUNCTION UnRegisterScheduleWrapper \
+  WITH Carpet_UnRegisterScheduleWrapper \
+  LANGUAGE C
+
+
+
 # Provide the function to en-/disable prolongation
 CCTK_INT FUNCTION EnableProlongating(CCTK_INT IN flag)
 PROVIDES FUNCTION EnableProlongating WITH CarpetEnableProlongating LANGUAGE C

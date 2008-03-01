@@ -59,6 +59,10 @@ namespace Carpet {
   void CalculateChecksums (const cGH* cgh, checktimes where);
   void CheckChecksums (const cGH* cgh, checktimes where);
   
+  // Schedule
+  void CallBeforeRoutines (cGH const * restrict cctkGH);
+  void CallAfterRoutines (cGH const * restrict cctkGH);
+  
   // Debugging output
   void Output (const char* fmt, ...);
   void Waypoint (const char* fmt, ...);
