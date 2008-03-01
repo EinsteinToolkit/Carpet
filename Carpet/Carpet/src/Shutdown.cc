@@ -65,8 +65,6 @@ namespace Carpet {
     // earlier checkpoint before finalising MPI
     Waypoint ("Done with shutdown");
     
-    dist::finalize();
-    
     return 0;
   }
   
