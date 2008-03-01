@@ -890,10 +890,6 @@ namespace CarpetIOASCII {
 
                   ivect offset1;
                   if (grouptype == CCTK_GF) {
-#if 0                           // dh::dbases
-                    const ibbox& baseext
-                      = vdd.at(Carpet::map)->bases.at(mglevel).at(reflevel).exterior;
-#endif
                     const ibbox& baseext
                       = vhh.at(Carpet::map)->baseextents.at(mglevel).at(reflevel);
                     offset1 = baseext.lower() + offset * ext.stride();
