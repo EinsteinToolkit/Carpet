@@ -1,0 +1,8 @@
+# Main make.code.defn file for thorn ReductionTest
+# $Header:$
+
+# Source files in this directory
+SRCS = CoM.c
+
+# Subdirectories containing source files
+SUBDIRS = 

@@ -1,0 +1,112 @@
+ 
+#--- Base and Driver Thorns
+
+ActiveThorns	=  "	time 
+			carpet 
+			carpetlib 
+			carpetregrid 
+			carpetreduce 
+			carpetslab 
+			cartgrid3d 
+			coordbase 
+			mol 
+			boundary 
+			spacemask 
+			carpetiobasic 
+			ioutil 
+			symbase 
+			aeilocalinterp 
+			carpetinterp 
+			carpetioscalar
+		   "
+
+
+
+ActiveThorns	=  "
+			reductiontest2
+		   "
+
+
+################## Output Related Stuff ##################################
+
+IOBasic::outInfo_vars			=	"ReductionTest2::redvars"
+iobasic::outInfo_every			= 	1
+carpetioscalar::outScalar_every		=	1
+carpetioscalar::outScalar_vars		=	"ReductionTest2::redvars"
+
+#--- general
+
+io::out_single_precision = "yes"
+
+
+#--- output directories
+IO::out_dir					=	$parfile
+
+#--- checkpoint recovery
+io::recover 					= 	"no"
+
+
+#--- output frequency
+
+
+
+
+
+
+############################# DRIVER  #####################################
+
+#--- Benchmarking
+
+
+#--- performance & infrastructure
+
+carpetlib::use_collective_communication_buffers = "yes"
+carpet::enable_all_storage 			= "no"
+CarpetLib::save_memory_during_regridding 	= "yes"
+
+#--- Carpet prolongation order settings
+
+Carpet::prolongation_order_space		= 3
+Carpet::prolongation_order_time			= 2
+
+
+#--- Carpet initial data setup parameters
+
+Carpet::init_3_timelevels 			= "yes"
+Carpet::init_each_timelevel 			= "no"
+
+
+#--- Grid Setup and carpet parameters
+
+
+carpet::buffer_width 				= 6
+
+driver::ghost_size                      	= 3
+
+cartgrid3d::type                        	= "box"
+cartgrid3d::domain                      	= "full"
+cartgrid3d::avoid_origin			= "no"
+
+cartgrid3d::dxyz				= 1.0
+driver::global_nx                  		= 30
+driver::global_ny                  		= 30
+driver::global_nz                  		= 30
+
+cactus::cctk_itlast                     	= 4
+
+Carpet::domain_from_coordbase 			= "no"
+
+carpet::max_refinement_levels           	= 3
+carpetregrid::refinement_levels         	= 3
+
+carpetregrid::regrid_every = 32
+carpetregrid::num_new_levels = 1
+carpetregrid::keep_same_grid_structure = "yes"
+carpetregrid::activate_levels_on_regrid 	= "fixed"
+
+carpet::veryverbose 				= "no"
+carpet::verbose					= "no"
+
+
+carpetiobasic::real_min                         =       1.0e-2
+

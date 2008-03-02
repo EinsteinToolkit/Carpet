@@ -1,0 +1,11 @@
+# Interface definition for thorn ReductionTest2
+# $Header:$
+
+implements: ReductionTest2
+
+
+CCTK_REAL redvars TYPE=GF TIMELEVELS=3 
+{
+ redvar
+}
+
