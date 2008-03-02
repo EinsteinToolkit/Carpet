@@ -68,11 +68,11 @@ namespace CarpetIOF5 {
         = m_tensor_component.get_hdf5_tensor_component();
       
       herr_t const herr
-        = H5Lcreate_external(filename.c_str(),
-                             objectname.c_str(),
-                             hdf5_tensor_component,
-                             name.c_str(),
-                             H5P_DEFAULT, H5P_DEFAULT);
+        = H5Lcreate_external (filename.c_str(),
+                              objectname.c_str(),
+                              hdf5_tensor_component,
+                              name.c_str(),
+                              H5P_DEFAULT, H5P_DEFAULT);
       assert (not herr);
     }
     
