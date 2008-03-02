@@ -88,7 +88,6 @@ public:
     typebufdesc() : in_use(false), datatypesize(0),
                     mpi_datatype(MPI_DATATYPE_NULL)
     {
-      procbufs.resize (dist::size());
     }
   };
 

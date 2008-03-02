@@ -35,16 +35,14 @@ comm_state::comm_state ()
   thestate = state_get_buffer_sizes;
 
   typebufs.resize (dist::c_ndatatypes());
-  for (size_t type = 0; type < typebufs.size(); type++) {
-    typebufs.AT(type).procbufs.resize(dist::size());
-  }
-
-#define INSTANTIATE(T)                                                 \
-  {                                                                    \
-    T dummy;                                                           \
-    int type = dist::c_datatype (dummy);                               \
-    typebufs.AT(type).datatypesize = sizeof (dummy);                   \
-    typebufs.AT(type).mpi_datatype = dist::datatype (dummy);           \
+#define INSTANTIATE(T)                                          \
+  {                                                             \
+    T dummy;                                                    \
+    int const type = dist::c_datatype (dummy);                  \
+    assert (typebufs.AT(type).datatypesize == 0);               \
+    typebufs.AT(type).datatypesize = sizeof dummy;              \
+    typebufs.AT(type).mpi_datatype = dist::datatype (dummy);    \
+    typebufs.AT(type).procbufs.resize (dist::size());           \
   }
 #include "instantiate"
 #undef INSTANTIATE
@@ -107,12 +105,16 @@ void comm_state::step ()
             vary_tags
             ? (dist::rank() + dist::size() * (proc + dist::size() * type)) % 32768
             : type;
-//           CCTK_VWarn (3, __LINE__, __FILE__, CCTK_THORNSTRING,
-//                       "About to MPI_Irecv from %d", (int)proc);
+          if (commstate_verbose) {
+            CCTK_VInfo (CCTK_THORNSTRING,
+                        "About to MPI_Irecv from %d", (int)proc);
+          }
           MPI_Irecv (&procbuf.recvbufbase.front(), procbuf.recvbufsize,
                      typebufs.AT(type).mpi_datatype, proc, tag,
                      dist::comm(), &rrequests.AT(dist::size()*type + proc));
-//           CCTK_WARN (3, "Finished MPI_Irecv");
+          if (commstate_verbose) {
+            CCTK_INFO ("Finished MPI_Irecv");
+          }
           timer.stop (0);
           num_posted_recvs++;
         }
@@ -163,39 +165,51 @@ void comm_state::step ()
               // use MPI_Send
               static Timer timer ("commstate_send");
               timer.start ();
-//               CCTK_VWarn (3, __LINE__, __FILE__, CCTK_THORNSTRING,
-//                           "About to MPI_Send to %d", (int)proc);
+              if (commstate_verbose) {
+                CCTK_VInfo (CCTK_THORNSTRING,
+                            "About to MPI_Send to %d", (int)proc);
+              }
               MPI_Send (const_cast<char*>(&procbuf.sendbufbase.front()),
                         procbuf.sendbufsize,
                         typebufs.AT(type).mpi_datatype, proc, tag,
                         dist::comm());
-//               CCTK_WARN (3, "Finished MPI_Send");
+              if (commstate_verbose) {
+                CCTK_INFO ("Finished MPI_Send");
+              }
               srequests.AT(dist::size()*type + proc) = MPI_REQUEST_NULL;
               timer.stop (procbuf.sendbufsize * datatypesize);
             } else if (use_mpi_ssend) {
               // use MPI_Ssend
               static Timer timer ("commstate_ssend");
               timer.start ();
-//               CCTK_VWarn (3, __LINE__, __FILE__, CCTK_THORNSTRING,
-//                           "About to MPI_Ssend to %d", (int)proc);
+              if (commstate_verbose) {
+                CCTK_VInfo (CCTK_THORNSTRING,
+                            "About to MPI_Ssend to %d", (int)proc);
+              }
               MPI_Ssend (const_cast<char*>(&procbuf.sendbufbase.front()),
                          procbuf.sendbufsize,
                          typebufs.AT(type).mpi_datatype, proc, tag,
                          dist::comm());
-//               CCTK_WARN (3, "Finished MPI_Ssend");
+              if (commstate_verbose) {
+                CCTK_INFO ("Finished MPI_Ssend");
+              }
               srequests.AT(dist::size()*type + proc) = MPI_REQUEST_NULL;
               timer.stop (procbuf.sendbufsize * datatypesize);
             } else {
               // use MPI_Isend
               static Timer timer ("commstate_isend");
               timer.start ();
-//               CCTK_VWarn (3, __LINE__, __FILE__, CCTK_THORNSTRING,
-//                           "About to MPI_Isend to %d", (int)proc);
+              if (commstate_verbose) {
+                CCTK_VWarn (3, __LINE__, __FILE__, CCTK_THORNSTRING,
+                            "About to MPI_Isend to %d", (int)proc);
+              }
               MPI_Isend (const_cast<char*>(&procbuf.sendbufbase.front()),
                          procbuf.sendbufsize,
                          typebufs.AT(type).mpi_datatype, proc, tag,
                          dist::comm(), &srequests.AT(dist::size()*type + proc));
-//               CCTK_WARN (3, "Finished MPI_Isend");
+              if (commstate_verbose) {
+                CCTK_INFO ("Finished MPI_Isend");
+              }
               timer.stop (procbuf.sendbufsize * datatypesize);
             }
           }
@@ -286,16 +300,24 @@ bool comm_state::AllPostedCommunicationsFinished ()
       assert (nreqs == reqs.size());
       static Timer timer ("commstate_waitall_final");
       timer.start ();
-//       CCTK_WARN (3, "About to MPI_Waitall");
+      if (commstate_verbose) {
+        CCTK_INFO ("About to MPI_Waitall");
+      }
       MPI_Waitall (reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE);
-//       CCTK_WARN (3, "Finished MPI_Waitall");
+      if (commstate_verbose) {
+        CCTK_INFO ("Finished MPI_Waitall");
+      }
       timer.stop (0);
     } else {
       static Timer timer ("commstate_waitall_final");
       timer.start ();
-//       CCTK_WARN (3, "About to MPI_Waitall");
+      if (commstate_verbose) {
+        CCTK_INFO ("About to MPI_Waitall");
+      }
       MPI_Waitall (srequests.size(), &srequests.front(), MPI_STATUSES_IGNORE);
-//       CCTK_WARN (3, "Finished MPI_Waitall");
+      if (commstate_verbose) {
+        CCTK_INFO ("Finished MPI_Waitall");
+      }
       timer.stop (0);
     }
 
@@ -321,16 +343,24 @@ bool comm_state::AllPostedCommunicationsFinished ()
     assert (nreqs == reqs.size());
     static Timer timer ("commstate_waitall");
     timer.start ();
-//     CCTK_WARN (3, "About to MPI_Waitall");
+    if (commstate_verbose) {
+      CCTK_INFO ("About to MPI_Waitall");
+    }
     MPI_Waitall (reqs.size(), &reqs.front(), MPI_STATUSES_IGNORE);
-//     CCTK_WARN (3, "Finished MPI_Waitall");
+    if (commstate_verbose) {
+      CCTK_INFO ("Finished MPI_Waitall");
+    }
     timer.stop (0);
   } else {
     static Timer timer ("commstate_waitall");
     timer.start ();
-//     CCTK_WARN (3, "About to MPI_Waitall");
+    if (commstate_verbose) {
+      CCTK_INFO ("About to MPI_Waitall");
+    }
     MPI_Waitall (rrequests.size(), &rrequests.front(), MPI_STATUSES_IGNORE);
-//     CCTK_WARN (3, "Finished MPI_Waitall");
+    if (commstate_verbose) {
+      CCTK_INFO ("Finished MPI_Waitall");
+    }
     timer.stop (0);
   }
   num_completed_recvs = num_posted_recvs;
@@ -432,13 +462,17 @@ commit_send_space (unsigned int const type,
     {
       static Timer timer ("commit_send_space::isend");
       timer.start ();
-//       CCTK_VWarn (3, __LINE__, __FILE__, CCTK_THORNSTRING,
-//                   "About to MPI_Isend to %d", (int)proc);
+      if (commstate_verbose) {
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "About to MPI_Isend to %d", (int)proc);
+      }
       MPI_Isend (&procbuf.sendbufbase.front(),
                  procbuf.sendbufsize, typebuf.mpi_datatype,
                  proc, type, dist::comm(),
                  & srequests.AT(type * dist::size() + proc));
-//       CCTK_WARN (3, "Finished MPI_Isend");
+      if (commstate_verbose) {
+        CCTK_INFO ("Finished MPI_Isend");
+      }
       timer.stop (procbuf.sendbufsize * typebuf.datatypesize);
     }
   }

@@ -10,6 +10,10 @@ BOOLEAN barriers "Insert barriers at strategic places for debugging purposes (sl
 {
 } "no"
 
+BOOLEAN commstate_verbose "Print debug info from the commstate class" STEERABLE=always
+{
+} "no"
+
 
 
 #BOOLEAN omit_prolongation_points_when_restricting "Do not restrict to points which are used to prolongate the boundary" STEERABLE=always
