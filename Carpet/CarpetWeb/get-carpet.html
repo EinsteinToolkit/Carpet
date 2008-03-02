@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="ISO-8859-15"?>
+<!DOCTYPE html
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15" />
+    <title>Obtaining Carpet</title>
+  </head>
+
+  <body>
+    <h1>Obtaining Carpet</h1>
+
+
+
+    <h2>Available Versions</h2>
+
+    <p>Carpet is distributed under the <a
+    href="http://www.gnu.org/licenses/licenses.html">GNU General
+    Public License (GPL)</a>.  It might be released under the GNU
+    Lesser General Public License (LGPL) in the future, to match the
+    distribution terms of Cactus.</p>
+
+    <p>There are currently three stable versions of Carpet available,
+    plus the current development version.  Versions 1 and 2 have been
+    unchanged for quite some time, and should be considered outdated.
+    There are no plans to make any further changes to these
+    versions.</p>
+
+    <p>Version 3 is the current stable version.  There are no plans to
+    make further changes to this version unless a serious error is
+    detected.  We recommend this version for the casual users and for
+    production runs.</p>
+
+    <p>The development version will always see changes, some of which
+    might surprise you.  You should not use it without keeping in
+    close contact with the developers.</p>
+
+
+
+    <h2>Downloading the Code</h2>
+
+    <p>Carpet is a driver for Cactus.  It works as a part of Cactus,
+    and you will need to have the developers' version of Cactus
+    installed before you can use Carpet.  Please look at the <a
+    href="http://www.cactuscode.org/">Cactus web pages</a> for an
+    introduction to Cactus and for installation instructions.</p>
+
+    <p>Carpet consists of several arrangements, each living in a
+    directory.  The arrangement <code>Carpet</code> contains the basic
+    driver part that everybody needs.  The arrangement
+    <code>CarpetExtra</code> contains useful add-ons and some example
+    code.  Development of experimental thorns happens in the
+    <code>CarpetDev</code> arrangement, which means that the code in
+    there is not to be trusted.  And finally, there is a graveyard
+    arrangement <code>CarpetAttic</code> of things that only used to
+    be useful and are now in a state of decay.</p>
+
+    <h3>Version 1 (outdated)</h3>
+
+    <p>Version 1 of Carpet is available via anonymous <a
+    href="http://www.cvshome.org/">CVS</a>:</p>
+<pre>        cd Cactus/arrangements
+        cvs -d :pserver:cvs_anon@cvs.carpetcode.org:/home/cvs/carpet login
+        cvs -d :pserver:cvs_anon@cvs.carpetcode.org:/home/cvs/carpet checkout Carpet
+        cvs -d :pserver:cvs_anon@cvs.carpetcode.org:/home/cvs/carpet checkout CarpetExtra
+        cvs -d :pserver:cvs_anon@cvs.carpetcode.org:/home/cvs/carpet checkout CarpetDev</pre>
+    <p>The password for anonymous CVS access is <code>anon</code>.
+    Instructions for dealing with CVS are available everywhere on the
+    web, e.g. also on the <a href="http://www.cactuscode.org/">Cactus
+    pages</a>.</p>
+
+    <h3>Version 2 (outdated)</h3>
+
+    <p>Version 2 of Carpet is available via anonymous <a
+    href="http://www.darcs.net/">darcs</a>:</p>
+<pre>        cd Cactus
+        darcs get http://www.carpetcode.org/~darcs/carpet-stable-2/
+        cd arrangements
+        ln -s ../carpet-stable-2/Carpet* .</pre>
+    <p>(Don't miss the dot after the <code>Carpet*</code> in the last
+    line.)  Instructions for using darcs are
+    given <a href="#darcs">below</a>.  You can also have a look at
+    the <a
+    href="http://www.carpetcode.org/~darcs/carpet-stable-2/">version 2
+    source tree</a> in your web browser.</p>
+
+    <h3>Version 3 (current stable version)</h3>
+
+    <p>Version 3 of Carpet is available via anonymous <a
+    href="http://www.darcs.net/">darcs</a>:</p>
+<pre>        cd Cactus
+        darcs get http://www.carpetcode.org/~darcs/carpet-stable-3/
+        cd arrangements
+        ln -s ../carpet-stable-3/Carpet* .</pre>
+    <p>(Don't miss the dot after the <code>Carpet*</code> in the last
+    line.)  Instructions for using darcs are
+    given <a href="#darcs">below</a>.  You can also have a look at
+    the <a
+    href="http://www.carpetcode.org/~darcs/carpet-stable-3/">version 3
+    source tree</a> in your web browser.</p>
+
+    <p>You can also obtain the darcs repository using <tt>wget</tt>
+    instead of <tt>darcs</tt>.  For this, use the command</p>
+<pre>        wget -r -nH -np --cut-dirs=1 -R "index.html*" http://www.carpetcode.org/\~darcs/carpet-stable-3/</pre>
+    <p>This copies the darcs repository into a subdirectory
+    called <tt>carpet-stable-3</tt>, in much the same way as
+    the <tt>darcs get</tt> command above would.  That is, you also end
+    up with a fully functional local repository.</p>
+
+    <h3>Development Version</h3>
+
+    <p>The development version of Carpet is available via
+    <a href="http://git.or.cz/">git</a>:</p>
+<pre>        cd Cactus
+        git clone -o carpet git://carpetcode.dyndns.org/carpet.git
+        cd arrangements
+        ln -s ../carpet/Carpet* .</pre>
+    <p>(Don't miss the dot after the <code>Carpet*</code> in the last
+    line.)  Instructions for using git are
+    given <a href="#git">below</a>.</p>
+<!-- This doesn't work yet
+    You can also have a look at
+    the <a href="http://carpetcode.dyndns.org/~carpet/git/">development
+    source tree</a> in your web browser.</p>
+-->
+
+<!-- Should we also allow download via wget? -->
+
+
+
+    <h2>Write Access</h2>
+   
+    <h3>Darcs Repositories</h3>
+
+    <p>Write access to Carpet darcs repositories is handled via ssh.
+    Once you have an account set up, you obtain e.g. the third stable
+    version with</p>
+<pre>        cd Cactus
+        darcs get darcs@cvs.carpetcode.org:/home/darcs/carpet-stable-3
+        cd arrangements
+        ln -s ../carpet-stable-3/Carpet* .</pre>
+    <p>(Don't miss the dot after the <code>Carpet*</code> in the last
+    line.)  Further instructions for using darcs are
+    given <a href="#darcs">below</a>.</p>
+
+    <p>You can also obtain the darcs repository using <tt>rsync</tt>
+    instead of <tt>darcs</tt>.  For this, use the command</p>
+<pre>        rsync -Paz darcs@cvs.carpetcode.org:carpet-stable-3 .</pre>
+    <p>This copies the darcs repository into a subdirectory
+    called <tt>carpet-stable-3</tt>, in much the same way as
+    the <tt>darcs get</tt> command above would.  That is, you also end
+    up with a fully functional local repository.</p>
+
+    <p>We thank
+    the <a href="http://www.tat.physik.cct.lsu.edu/">Institut für
+    Astronomie und Astrophysik</a> of the Universität Tübingen for
+    hosting the CVS and darcs servers.</p>
+
+    <h3>Git Repository</3>
+
+    <p>Write access to Carpet git repositories is also handled via
+    ssh.  Once you have an account set up, you obtain e.g. the
+    development version with</p>
+<pre>        cd Cactus
+        git clone carpetgit@carpetcode.dyndns.org:carpet.git
+        cd arrangements
+        ln -s ../carpet/Carpet* .</pre>
+    <p>(Don't miss the dot after the <code>Carpet*</code> in the last
+    line.)  Further instructions for using darcs are
+    given <a href="#darcs">below</a>.</p>
+
+<!-- rsync access is not yet set up
+    <p>You can also obtain the darcs repository using <tt>rsync</tt>
+    instead of <tt>darcs</tt>.  For this, use the command</p>
+<pre>        rsync -Paz darcs@cvs.carpetcode.org:carpet-stable-3 .</pre>
+    <p>This copies the darcs repository into a subdirectory
+    called <tt>carpet-stable-3</tt>, in much the same way as
+    the <tt>darcs get</tt> command above would.  That is, you also end
+    up with a fully functional local repository.</p>
+-->
+
+    <p>The Carpet git server is a courtesy
+    of <a href="http://proteus.as.arizona.edu/~cott">Christian
+    D. Ott</a>.</p>
+
+
+
+    <hr />
+
+    <h2>Modern Version Control Systems</h2>
+
+    <p>Carpet is managed in <a href="http://darcs.net/">darcs</a> and 
+    <a href="http://git.or.cz/">git</a> repositories instead of a CVS
+    repository.  Darcs and git have a number of advantages over CVS
+    for developers, such as:</p>
+
+    <ul>
+      <li>You have a local copy of the repository, and can therefore
+          work offline</li>
+      <li>You can decide which changes you want to import and export,
+          so that you can omit dangerous changes, or keep changes to
+          yourself until you are ready to publish them</li>
+      <li>You can undo all changes</li>
+      <li>You can easily rename files and directories</li>
+      <li>You can work in a decentralised manner, which suits large
+          collaborations which may want to avoid a central point of
+          control</li>
+    </ul>
+
+    <p>and then some more, as described in
+    the <a href="http://darcs.net/manual/">darcs manual</a> and
+    the <a href="http://git.or.cz/">git web pages</a>.</p>
+
+
+
+    <h2 id="darcs">Using Darcs</h2>
+
+    <p>The foremost source of information about darcs is
+    the <a href="http://darcs.net/DarcsWiki">darcs wiki</a>,
+    especially
+    its <a href="http://darcs.net/DarcsWiki/GettingStarted">Getting
+    Started</a> pages, and the
+    <a
+    href="http://darcs.net/DarcsWiki/FrequentlyAskedQuestions">Frequently
+    Asked Questions</a>.</p>
+
+    <p>If darcs is not already installed on your system, you need to
+    do so yourself.  This is described on
+    the <a href="http://darcs.net/">darcs home page</a>, and some
+    links to binaries are given in the darcs wiki.</p>
+
+    <h3>Updating the Repository from the Master Repository</h3>
+
+    <p>At some time you will want to update your version of Carpet and
+    incorporate some changes from the main Carpet repository.  You do
+    this with the command</p>
+<pre>cd Cactus/carpet-stable-3
+darcs pull</pre>
+      <p>which will look for new changes, and then ask you which of these
+      you want to obtain.  Normally, you will want all changes.</p>
+
+    <h3>Working with Darcs</h3>
+
+    <p>We have some instructions on how
+    to <a href="work-with-darcs.html">develop Carpet with
+    darcs</a>.</p>
+
+
+
+    <h2 id="git">Using Git</h2>
+
+    <p>The <a href="http://git.or.cz/">git web site</a> contains
+    introductions and documentation for git.  The Linux kernel
+    developers also maintain
+    a <a href="http://www.kernel.org/pub/software/scm/git/docs/tutorial.html">tutorial</a for
+    git.  Git should be available for all modern operating systems.
+    It is also not difficult to install manually.</p>
+
+    <p>Git comes with a convenient graphical user interface
+    called <code>git-gui</code>.  It allows you to update your code
+    from the master, commit local changes, compare branches, or push
+    local changes back to the master repository.</p>
+
+    <h3>Updating the Repository from the Master Repository</h3>
+
+    <p>At some time you will want to update your version of Carpet and
+    incorporate some changes from the main Carpet repository.  If you
+    are not using the graphical user interface, then you do this with
+    the command</p>
+<pre>cd Cactus/carpet
+git pull</pre>
+    <p>which will download and merge the current version.  Git will
+    refuse to overwrite any conflicting local changes that you may
+    have.</p>
+
+
+
+    <h2>Convenient SSH Key Management</h3>
+
+    <p>SSH has two mechanisms for authentication, typing a password,
+    or using ssh keys.  When you use ssh keys, your private key is
+    (<em>should</em>) be protected by a password.  That means that you
+    have to type this password every time you log into a different
+    machine.  Some people protect their private ssh key with an empty
+    password --- in this way, they don't have to type a password, but
+    this is not very secure.  If somebody is able to copy the private
+    ssh key, they have access to your remote accounts.  Intruders can
+    use this hop from one machine to the next.  Please do not use
+    empty passwords on your ssh keys.</p>
+
+    <p>SSH-agent is a convenient way to make things safe.  It is an
+    agent that starts automatically when you log in, and asks you for
+    your ssh key password once.  It remembers this password in memory,
+    and whenever you use ssh to log into a remote account, ssh
+    contacts the ssh-agent for the password to the key.  If this
+    password is accepted, you don't have to type anything.</p>
+
+    <p>I use the following lines in my <code>.bash_profile</code> to
+    make this happen:</p>
+    <pre>keychain id_dsa
+test -f $HOME/.keychain/$(hostname)-sh &amp;&amp; source $HOME/.keychain/$(hostname)-sh > /dev/null
+</pre>
+    <p>Keychain starts the ssh-agent.  Keychain can also handle gpg
+    key passwords for your encrypted and/or signed emails.</p>
+
+
+
+    <hr />
+
+    <p>Go back to the <a href=".">Carpet home page</a>.</p>
+
+    <hr />
+
+    <p>
+      <a href="http://validator.w3.org/check?uri=referer"><img
+          src="http://www.w3.org/Icons/valid-xhtml10"
+          alt="Valid XHTML 1.0!" height="31" width="88" /></a>
+    </p>
+
+    <hr />
+    <address><a href="mailto:schnetter@cct.lsu.edu">Erik Schnetter</a></address>
+<!-- Created: Tue Sep 28 16:52:20 CEST 2004 -->
+<!-- hhmts start -->
+Last modified: Sat Mar 01 2008
+<!-- hhmts end -->
+  </body>
+</html>
