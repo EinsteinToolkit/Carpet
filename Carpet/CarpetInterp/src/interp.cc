@@ -327,18 +327,18 @@ namespace CarpetInterp {
     // Find range of refinement levels
     assert (maps > 0);
     for (int m=1; m<maps; ++m) {
-      assert (arrdata.at(coord_group).at(0).hh->reflevels() ==
-              arrdata.at(coord_group).at(m).hh->reflevels());
+      assert (arrdata.AT(coord_group).AT(0).hh->reflevels() ==
+              arrdata.AT(coord_group).AT(m).hh->reflevels());
     }
     int const minrl = want_global_mode ? 0 : reflevel;
     int const maxrl = want_global_mode ?
-      arrdata.at(coord_group).at(0).hh->reflevels() : reflevel+1;
+      arrdata.AT(coord_group).AT(0).hh->reflevels() : reflevel+1;
 
     // Find maximum number of components over all levels and maps
     int maxncomps = 0;
     for (int rl=minrl; rl<maxrl; ++rl) {
       for (int m=0; m<maps; ++m) {
-        maxncomps = max(maxncomps, arrdata.at(coord_group).at(m).hh->components(rl));
+        maxncomps = max(maxncomps, arrdata.AT(coord_group).AT(m).hh->components(rl));
       }
     }
 
@@ -395,6 +395,10 @@ namespace CarpetInterp {
     // N_points_from denotes the number of points
     // that this processor is to receive from others
     vector<int> N_points_from (dist::size());
+    {
+      assert (N_points_from.size() == dist::size());
+      assert (N_points_to.size() == dist::size());
+    }
     MPI_Alltoall (&N_points_to[0],   1, dist::datatype (N_points_to[0]),
                   &N_points_from[0], 1, dist::datatype (N_points_from[0]),
                   dist::comm());
@@ -408,16 +412,16 @@ namespace CarpetInterp {
     vector<int> recvdispl (dist::size());
 
     // Set up counts and displacements for MPI_Alltoallv()
-    sendcnt.at(0) = N_dims * N_points_to.at(0);
-    recvcnt.at(0) = N_dims * N_points_from.at(0);
-    senddispl.at(0) = recvdispl.at(0) = 0;
-    int N_points_local = recvcnt.at(0);
+    sendcnt.AT(0) = N_dims * N_points_to.AT(0);
+    recvcnt.AT(0) = N_dims * N_points_from.AT(0);
+    senddispl.AT(0) = recvdispl.AT(0) = 0;
+    int N_points_local = recvcnt.AT(0);
     for (int p = 1; p < dist::size(); p++) {
-      sendcnt.at(p) = N_dims * N_points_to.at(p);
-      recvcnt.at(p) = N_dims * N_points_from.at(p);
-      N_points_local += recvcnt.at(p);
-      senddispl.at(p) = senddispl.at(p-1) + sendcnt.at(p-1);
-      recvdispl.at(p) = recvdispl.at(p-1) + recvcnt.at(p-1);
+      sendcnt.AT(p) = N_dims * N_points_to.AT(p);
+      recvcnt.AT(p) = N_dims * N_points_from.AT(p);
+      N_points_local += recvcnt.AT(p);
+      senddispl.AT(p) = senddispl.AT(p-1) + sendcnt.AT(p-1);
+      recvdispl.AT(p) = recvdispl.AT(p-1) + recvcnt.AT(p-1);
     }
     if (N_dims > 0) assert (N_points_local % N_dims == 0);
     // N_points_local is the total number of points to receive
@@ -430,8 +434,8 @@ namespace CarpetInterp {
     {
       int offset = 0;
       for (int c = 0; c < (int)allhomecnts.size(); c++) {
-        coords.at(c) = &coords_buffer.front() + N_dims*offset;
-        offset += allhomecnts.at(c);
+        coords.AT(c) = &coords_buffer.front() + N_dims*offset;
+        offset += allhomecnts.AT(c);
       }
       assert (offset == N_interp_points);
     }
@@ -443,20 +447,20 @@ namespace CarpetInterp {
       // totalhomecnts is the accumulated number of points over all components
       vector<int> totalhomecnts (allhomecnts.size());
       for (int idx = 1; idx < (int)allhomecnts.size(); idx++) {
-        totalhomecnts.at(idx) = totalhomecnts.at(idx-1) + allhomecnts.at(idx-1);
+        totalhomecnts.AT(idx) = totalhomecnts.AT(idx-1) + allhomecnts.AT(idx-1);
       }
 
       vector<int> tmpcnts (allhomecnts.size(), 0);
       for (int n = 0; n < N_interp_points; n++) {
         int const idx = component_idx
-          (dstprocs.at(n), source_map.at(n), rlev.at(n), home.at(n));
+          (dstprocs.AT(n), source_map.AT(n), rlev.AT(n), home.AT(n));
         for (int d = 0; d < N_dims; d++) {
-          assert (d + N_dims*tmpcnts.at(idx) < N_dims*allhomecnts.at(idx));
-          coords.at(idx)[d + N_dims*tmpcnts.at(idx)] =
+          assert (d + N_dims*tmpcnts.AT(idx) < N_dims*allhomecnts.AT(idx));
+          coords.AT(idx)[d + N_dims*tmpcnts.AT(idx)] =
             static_cast<CCTK_REAL const *>(coords_list[d])[n];
         }
-        indices.at(n) = totalhomecnts.at(idx) + tmpcnts.at(idx);
-        tmpcnts.at(idx)++;
+        indices.AT(n) = totalhomecnts.AT(idx) + tmpcnts.AT(idx);
+        tmpcnts.AT(idx)++;
       }
       assert (tmpcnts == allhomecnts);
     }
@@ -466,6 +470,22 @@ namespace CarpetInterp {
     {
       vector<CCTK_REAL> tmp (N_dims * N_points_local);
       MPI_Datatype const datatype = dist::datatype (tmp[0]);
+      {
+        assert (sendcnt.size() == dist::size());
+        assert (recvcnt.size() == dist::size());
+        assert (senddispl.size() == dist::size());
+        assert (recvdispl.size() == dist::size());
+        int const sendbufsize = (int)coords_buffer.size();
+        int const recvbufsize = (int)tmp.size();
+        for (int n=0; n<dist::size(); ++n) {
+          assert (sendcnt.AT(n) >= 0);
+          assert (senddispl.AT(n) >= 0);
+          assert (senddispl.AT(n) + sendcnt.AT(n) <= sendbufsize);
+          assert (recvcnt.AT(n) >= 0);
+          assert (recvdispl.AT(n) >= 0);
+          assert (recvdispl.AT(n) + recvcnt.AT(n) <= recvbufsize);
+        }
+      }
       MPI_Alltoallv (&coords_buffer[0], &sendcnt[0], &senddispl[0], datatype,
                      &tmp[0],           &recvcnt[0], &recvdispl[0], datatype,
                      dist::comm());
@@ -477,30 +497,46 @@ namespace CarpetInterp {
     //////////////////////////////////////////////////////////////////////
     if (have_source_map) {
       // Calculate displacements and lengths
-      sendcnt.at(0) = N_points_to.at(0);
-      recvcnt.at(0) = N_points_from.at(0);
-      senddispl.at(0) = recvdispl.at(0) = 0;
+      sendcnt.AT(0) = N_points_to.AT(0);
+      recvcnt.AT(0) = N_points_from.AT(0);
+      senddispl.AT(0) = recvdispl.AT(0) = 0;
       for (int p = 1; p < dist::size(); p++) {
-        sendcnt.at(p) = N_points_to.at(p);
-        recvcnt.at(p) = N_points_from.at(p);
-        senddispl.at(p) = senddispl.at(p-1) + sendcnt.at(p-1);
-        recvdispl.at(p) = recvdispl.at(p-1) + recvcnt.at(p-1);
+        sendcnt.AT(p) = N_points_to.AT(p);
+        recvcnt.AT(p) = N_points_from.AT(p);
+        senddispl.AT(p) = senddispl.AT(p-1) + sendcnt.AT(p-1);
+        recvdispl.AT(p) = recvdispl.AT(p-1) + recvcnt.AT(p-1);
       }
 
       // Re-order source maps into a temporary buffer
       vector<CCTK_INT> tmp (N_interp_points);
       vector<int> tmpcnts (N_points_to.size());
       for (int n = 0; n < N_interp_points; n++) {
-        int const p = dstprocs.at(n);
-        int const offset = senddispl.at(p) + tmpcnts.at(p);
-        tmp.at(offset) = source_map.at(n);
-        tmpcnts.at(p)++;
+        int const p = dstprocs.AT(n);
+        int const offset = senddispl.AT(p) + tmpcnts.AT(p);
+        tmp.AT(offset) = source_map.AT(n);
+        tmpcnts.AT(p)++;
       }
       assert (tmpcnts == N_points_to);
 
       // Transmit the source maps
       source_map.resize (N_points_local);
       MPI_Datatype const datatype = dist::datatype (tmp[0]);
+      {
+        assert (sendcnt.size() == dist::size());
+        assert (recvcnt.size() == dist::size());
+        assert (senddispl.size() == dist::size());
+        assert (recvdispl.size() == dist::size());
+        int const sendbufsize = (int)tmp.size();
+        int const recvbufsize = (int)source_map.size();
+        for (int n=0; n<dist::size(); ++n) {
+          assert (sendcnt.AT(n) >= 0);
+          assert (senddispl.AT(n) >= 0);
+          assert (senddispl.AT(n) + sendcnt.AT(n) <= sendbufsize);
+          assert (recvcnt.AT(n) >= 0);
+          assert (recvdispl.AT(n) >= 0);
+          assert (recvdispl.AT(n) + recvcnt.AT(n) <= recvbufsize);
+        }
+      }
       MPI_Alltoallv (&tmp[0],        &sendcnt[0], &senddispl[0], datatype,
                      &source_map[0], &recvcnt[0], &recvdispl[0], datatype,
                      dist::comm());
@@ -529,8 +565,8 @@ namespace CarpetInterp {
     {
       int offset = 0;
       for (int p = 0; p < (int)N_points_from.size(); p++) {
-        for (int n = 0; n < N_points_from.at(p); n++) {
-          srcprocs.at(offset++) = p;
+        for (int n = 0; n < N_points_from.AT(p); n++) {
+          srcprocs.AT(offset++) = p;
         }
       }
       assert (offset == N_points_local);
@@ -569,10 +605,10 @@ namespace CarpetInterp {
       int offset = 0;
       vector<CCTK_REAL> tmp (coords_buffer.size());
       for (int c = 0; c < (int)homecnts.size(); c++) {
-        for (int n = 0; n < homecnts.at(c); n++) {
+        for (int n = 0; n < homecnts.AT(c); n++) {
           for (int d = 0; d < N_dims; d++) {
-            tmp.at(d*homecnts.at(c) + n + offset) =
-              coords_buffer.at(n*N_dims + d + offset);
+            tmp.AT(d*homecnts.AT(c) + n + offset) =
+              coords_buffer.AT(n*N_dims + d + offset);
           }
         }
         offset += N_dims * homecnts[c];
@@ -598,9 +634,9 @@ namespace CarpetInterp {
     {
       int offset = 0;
       for (int c = 0; c < (int)homecnts.size(); c++) {
-        coords.at(c)  = &coords_buffer.front()  + N_dims*offset;
-        outputs.at(c) = &outputs_buffer.front() + N_output_arrays*offset*vtypesize;
-        offset += homecnts.at(c);
+        coords.AT(c)  = &coords_buffer.front()  + N_dims*offset;
+        outputs.AT(c) = &outputs_buffer.front() + N_output_arrays*offset*vtypesize;
+        offset += homecnts.AT(c);
       }
       assert (offset == N_points_local);
     }
@@ -630,14 +666,14 @@ namespace CarpetInterp {
     //////////////////////////////////////////////////////////////////////
     // Communicate interpolation results
     //////////////////////////////////////////////////////////////////////
-    sendcnt.at(0) = N_output_arrays * N_points_from.at(0);
-    recvcnt.at(0) = N_output_arrays * N_points_to.at(0);
-    senddispl.at(0) = recvdispl.at(0) = 0;
+    sendcnt.AT(0) = N_output_arrays * N_points_from.AT(0);
+    recvcnt.AT(0) = N_output_arrays * N_points_to.AT(0);
+    senddispl.AT(0) = recvdispl.AT(0) = 0;
     for (int p = 1; p < dist::size(); p++) {
-      sendcnt.at(p) = N_output_arrays * N_points_from.at(p);
-      recvcnt.at(p) = N_output_arrays * N_points_to.at(p);
-      senddispl.at(p) = senddispl.at(p-1) + sendcnt.at(p-1);
-      recvdispl.at(p) = recvdispl.at(p-1) + recvcnt.at(p-1);
+      sendcnt.AT(p) = N_output_arrays * N_points_from.AT(p);
+      recvcnt.AT(p) = N_output_arrays * N_points_to.AT(p);
+      senddispl.AT(p) = senddispl.AT(p-1) + sendcnt.AT(p-1);
+      recvdispl.AT(p) = recvdispl.AT(p-1) + recvcnt.AT(p-1);
     }
 
     {
@@ -651,6 +687,22 @@ namespace CarpetInterp {
       }
 
       vector<char> tmp (N_interp_points * N_output_arrays * vtypesize);
+      {
+        assert (sendcnt.size() == dist::size());
+        assert (recvcnt.size() == dist::size());
+        assert (senddispl.size() == dist::size());
+        assert (recvdispl.size() == dist::size());
+        int const sendbufsize = (int)outputs_buffer.size();
+        int const recvbufsize = (int)tmp.size() / vtypesize;
+        for (int n=0; n<dist::size(); ++n) {
+          assert (sendcnt.AT(n) >= 0);
+          assert (senddispl.AT(n) >= 0);
+          assert (senddispl.AT(n) + sendcnt.AT(n) <= sendbufsize);
+          assert (recvcnt.AT(n) >= 0);
+          assert (recvdispl.AT(n) >= 0);
+          assert (recvdispl.AT(n) + recvcnt.AT(n) <= recvbufsize);
+        }
+      }
       MPI_Alltoallv (&outputs_buffer[0], &sendcnt[0], &senddispl[0], datatype,
                      &tmp[0],            &recvcnt[0], &recvdispl[0], datatype,
                      dist::comm());
@@ -665,6 +717,9 @@ namespace CarpetInterp {
       // is defined as the minimum over all local interpolator status and
       // return codes across all processors for that processor
       vector<CCTK_INT> tmp (status_and_retval_buffer.size());
+      {
+        assert (status_and_retval_buffer.size() == tmp.size());
+      }
       MPI_Allreduce (&status_and_retval_buffer[0], &tmp[0], tmp.size(),
                      dist::datatype (tmp[0]), MPI_MIN, dist::comm());
       status_and_retval_buffer.swap (tmp);
@@ -679,22 +734,30 @@ namespace CarpetInterp {
     // Sorting is done with the help of the inverse indices vector
     vector<int> reverse_indices(indices.size());
     for (int i = 0; i < (int)indices.size(); i++) {
-      reverse_indices.at(indices[i]) = i;
+      reverse_indices.AT(indices[i]) = i;
     }
 
     for (int d = 0; d < N_output_arrays; d++) {
       char* output_array = static_cast<char*>(output_arrays[d]);
       size_t offset = 0;
       for (int c = 0, i = 0; c < (int)allhomecnts.size(); c++) {
-        assert ((int) (allhomecnts.at(c)*(d+1) + offset) <=
+        assert ((int) (allhomecnts.AT(c)*(d+1) + offset) <=
                 N_output_arrays*N_interp_points);
-        for (int n = 0; n < allhomecnts.at(c); n++, i++) {
-          memcpy (output_array + reverse_indices.at(i)*vtypesize,
+        assert (d >= 0);
+        for (int n = 0; n < allhomecnts.AT(c); n++, i++) {
+          {
+            assert (reverse_indices.AT(i) >= 0 and
+                    reverse_indices.AT(i) < N_interp_points);
+            assert (allhomecnts.AT(c) >= 0);
+            assert (allhomecnts.AT(c)*d + offset + n <
+                    (int) outputs_buffer.size() / vtypesize);
+          }
+          memcpy (output_array + reverse_indices.AT(i)*vtypesize,
                   &outputs_buffer.front() +
-                  (allhomecnts.at(c)*d + offset + n) * vtypesize,
+                  (allhomecnts.AT(c)*d + offset + n) * vtypesize,
                   vtypesize);
         }
-        offset += N_output_arrays * allhomecnts.at(c);
+        offset += N_output_arrays * allhomecnts.AT(c);
       }
       assert ((int) offset == N_output_arrays * N_interp_points);
     }
@@ -758,7 +821,7 @@ namespace CarpetInterp {
       assert (iret == (int)source_map.size());
       // Check source map
       for (int n = 0; n < (int)source_map.size(); ++n) {
-        assert (source_map.at(n) >= 0 and source_map.at(n) < maps);
+        assert (source_map.AT(n) >= 0 and source_map.AT(n) < maps);
       }
     }
 
@@ -848,8 +911,8 @@ namespace CarpetInterp {
         jvect gsh;
         GetCoordRange (cctkGH, m, mglevel, dim,
                        & gsh[0],
-                       & lower.at(m)[0], & upper.at(m)[0], & delta.at(m)[0]);
-        delta.at(m) /= maxspacereflevelfact;
+                       & lower.AT(m)[0], & upper.AT(m)[0], & delta.AT(m)[0]);
+        delta.AT(m) /= maxspacereflevelfact;
       }
       break;
     }
@@ -870,10 +933,10 @@ namespace CarpetInterp {
       
       for (int m = 0; m < maps; ++m) {
         ibbox const & baseextent =
-          arrdata.at(coord_group).at(m).hh->baseextents.at(mglevel).at(0);
-        lower.at(m) = coord_lower;
-        upper.at(m) = coord_upper;
-        delta.at(m) = ((coord_upper - coord_lower) /
+          arrdata.AT(coord_group).AT(m).hh->baseextents.AT(mglevel).AT(0);
+        lower.AT(m) = coord_lower;
+        upper.AT(m) = coord_upper;
+        delta.AT(m) = ((coord_upper - coord_lower) /
                        rvect (baseextent.upper() - baseextent.lower()));
       }
       break;
@@ -886,9 +949,9 @@ namespace CarpetInterp {
     // Assign interpolation points to processors/components
     for (int n = 0; n < npoints; ++n) {
 
-      int const m = source_map.at(n);
+      int const m = source_map.AT(n);
 
-      gh const * const hh = arrdata.at(coord_group).at(m).hh;
+      gh const * const hh = arrdata.AT(coord_group).AT(m).hh;
 
       // Find the grid point closest to the interpolation point
       rvect pos;
@@ -902,15 +965,15 @@ namespace CarpetInterp {
 
       // Find the component that this grid point belongs to
       int rl = -1, c = -1;
-      if (all (pos >= lower.at(m) and pos <= upper.at(m))) {
+      if (all (pos >= lower.AT(m) and pos <= upper.AT(m))) {
         // Try finer levels first
         for (rl = maxrl-1; rl >= minrl; --rl) {
 
-          ivect const fact = maxspacereflevelfact / spacereffacts.at(rl) *
+          ivect const fact = maxspacereflevelfact / spacereffacts.AT(rl) *
                              ipow(mgfact, mglevel);
-          ivect const ipos = ivect(floor((pos - lower.at(m)) / (delta.at(m) *
+          ivect const ipos = ivect(floor((pos - lower.AT(m)) / (delta.AT(m) *
                              rvect(fact)) + (CCTK_REAL) 0.5)) * fact;
-          assert (all (ipos % hh->baseextents.at(ml).at(rl).stride() == 0));
+          assert (all (ipos % hh->baseextents.AT(ml).AT(rl).stride() == 0));
 
           // TODO: use something faster than a linear search
           for (c = 0; c < hh->components(rl); ++c) {
@@ -937,12 +1000,12 @@ namespace CarpetInterp {
       assert (c >= 0 and c < hh->components(rl));
 
       if (map_onto_processors) {
-        procs.at(n) = hh->processor(rl, c);
-        ++ N_points_to[procs.at(n)];
+        procs.AT(n) = hh->processor(rl, c);
+        ++ N_points_to[procs.AT(n)];
       }
-      rlev.at(n) = rl;
-      home.at(n) = c;
-      ++ homecnts.at(component_idx (procs.at(n), m, rl, c));
+      rlev.AT(n) = rl;
+      home.AT(n) = c;
+      ++ homecnts.AT(component_idx (procs.AT(n), m, rl, c));
 
     } // for n
   }
@@ -997,11 +1060,11 @@ namespace CarpetInterp {
       // this processor
       for (int rl=minrl; rl<maxrl; ++rl) {
         for (int m=0; m<maps; ++m) {
-          gh const * const hh = arrdata.at(coord_group).at(m).hh;
+          gh const * const hh = arrdata.AT(coord_group).AT(m).hh;
           for (int c=0; c<hh->components(rl); ++c) {
             for (int p=0; p<dist::size(); ++p) {
               int const idx = component_idx (p, m, rl, c);
-              assert (hh->is_local(rl, c) or homecnts.at(idx) == 0);
+              assert (hh->is_local(rl, c) or homecnts.AT(idx) == 0);
             }
           }
         }
@@ -1034,11 +1097,11 @@ namespace CarpetInterp {
               for (int p = 0; p < dist::size(); p++) {
                 int const idx =
                   component_idx (p, Carpet::map,reflevel,component);
-                if (homecnts.at(idx) > 0) {
+                if (homecnts.AT(idx) > 0) {
                   interpolate_single_component
                     (cctkGH, coord_system_handle, coord_group,
                      N_dims,
-                     homecnts.at(idx), coords.at(idx), outputs.at(idx),
+                     homecnts.AT(idx), coords.AT(idx), outputs.AT(idx),
                      per_proc_statuses[p], per_proc_retvals[p],
                      operand_indices, time_deriv_order, interp_num_time_levels,
                      local_interp_handle, param_table_handle,
@@ -1073,7 +1136,7 @@ namespace CarpetInterp {
       : vector<CCTK_REAL> (num_timelevels_ )
     {
       for (int tl=0; tl<num_timelevels_; ++tl) {
-        at(tl) = vtt.at(Carpet::map)->time (tl, reflevel, mglevel);
+        at(tl) = vtt.AT(Carpet::map)->time (tl, reflevel, mglevel);
       }
     }
 
@@ -1276,7 +1339,7 @@ namespace CarpetInterp {
       int const m = 0;
       // delta for the Carpet grid indices
       ibbox const & baseextent =
-        arrdata.at(coord_group).at(m).hh->baseextents.at(mglevel).at(0);
+        arrdata.AT(coord_group).AT(m).hh->baseextents.AT(mglevel).AT(0);
       delta = (upper - lower) / rvect (baseextent.upper() - baseextent.lower());
 #endif
       break;
@@ -1344,7 +1407,7 @@ namespace CarpetInterp {
           int const gi = CCTK_GroupIndexFromVarI (vi);
           int const vi0 = CCTK_FirstVarIndexI (gi);
           input_arrays[n]
-            = ((*arrdata.at(gi).at(Carpet::map).data.at(vi-vi0))
+            = ((*arrdata.AT(gi).AT(Carpet::map).data.AT(vi-vi0))
                (my_tl, reflevel, component, mglevel)->storage());
 #endif
         }
@@ -1372,7 +1435,7 @@ namespace CarpetInterp {
 
       vector<CCTK_INT> lsh(N_dims);
       for (int d=0; d<N_dims; ++d) {
-        lsh.at(d) = coord_group_data.lsh[d];
+        lsh.AT(d) = coord_group_data.lsh[d];
       }
       const int retval = CCTK_InterpLocalUniform
         (N_dims, local_interp_handle, param_table_handle,
@@ -1403,11 +1466,11 @@ namespace CarpetInterp {
       for (int j=0; j<N_output_arrays; ++j) {
 
         // Find input array for this output array
-        int const n = operand_indices.at(j);
-        CCTK_INT const deriv_order = time_deriv_order.at(j);
+        int const n = operand_indices.AT(j);
+        CCTK_INT const deriv_order = time_deriv_order.AT(j);
 
-        int const interp_num_tl = interp_num_time_levels.at(n) > 0 ?
-                                  interp_num_time_levels.at(n) : num_tl;
+        int const interp_num_tl = interp_num_time_levels.AT(n) > 0 ?
+                                  interp_num_time_levels.AT(n) : num_tl;
         const InterpolationTimes times (interp_num_tl);
         const InterpolationWeights tfacs (deriv_order, times, current_time,
                                           delta_time);
