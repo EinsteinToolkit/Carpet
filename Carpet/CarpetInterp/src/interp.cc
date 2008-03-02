@@ -589,7 +589,7 @@ namespace CarpetInterp {
     assert (vtypesize > 0);
     vector<char>  outputs_buffer (N_points_local * N_output_arrays * vtypesize);
     vector<char*> outputs (homecnts.size());
-    vector<CCTK_INT> status_and_retval_buffer (2 * dist::size());
+    vector<CCTK_INT> status_and_retval_buffer (2 * dist::size(), 0);
     CCTK_INT* per_proc_statuses = &status_and_retval_buffer.front();
     CCTK_INT* per_proc_retvals  = per_proc_statuses + dist::size();
 
