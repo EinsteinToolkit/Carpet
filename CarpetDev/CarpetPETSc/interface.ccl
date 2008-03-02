@@ -1,0 +1,4 @@
+# Interface definition for thorn CarpetPETSc
+
+IMPLEMENTS: CarpetPETSc
+INHERITS: grid
