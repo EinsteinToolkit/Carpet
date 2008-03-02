@@ -14,6 +14,29 @@
 
     <p><a href="index.html"><b>New News...</b></a></p>
 
+    <p><b>February 26, 2007:</b> The thorn <tt>LSUPETSc</tt>
+      implements a generic elliptic solver for Carpet's multi-patch
+      infrastructure, based
+      on <a
+      href="http://www-unix.mcs.anl.gov/petsc/petsc-as/">PETSc</a>.
+      It assumes touching (not overlapping) patches, and uses
+      inter-patch interface conditions very similar to those developed
+      by <a href="http://arxiv.org/abs/gr-qc/0510016">Harald
+      Pfeiffer</a>.  <tt>LSUPETSc</tt> can solve "arbitrary" systems
+      of coupled, non-linear elliptic equations.  It does not support
+      mesh refinement.</p>
+
+    <p><b>January 12, 2007:</b> In order to be able to restructure
+      some of Carpet's internals without disturbing ongoing production
+      simulations, we have created an <i>experimental version</i>.
+      The main goals of this experimental version are to improve its
+      performance on many (&gt;100) processors and to re-arrange some
+      internal details to simplify future development.  Few new
+      features are planned, but some of the changes may be
+      incompatible.</p>
+
+    <hr />
+
     <p><b>December 15, 2006:</b>
       The <a href="http://numrel.aei.mpg.de/">AEI</a> hosted a small
       workshop to improve the performance of the AEI/LSU CCATIE code
@@ -179,11 +202,11 @@
       width="88" /></a>
     </p>
     
-    <address><a href="mailto:schnetter@uni-tuebingen.de">Erik Schnetter</a></address>
+    <address><a href="mailto:schnetter@cct.lsu.edu">Erik Schnetter</a></address>
 <p>
 <!-- Created: Tue Aug 12 12:12:08 CEST 2003 -->
 <!-- hhmts start -->
-Last modified: Mon Jan 14 2008
+Last modified: Sat Mar 01 2008
 <!-- hhmts end -->
 </p>
 

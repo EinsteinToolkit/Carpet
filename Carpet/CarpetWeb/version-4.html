@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="ISO-8859-15"?>
+<!DOCTYPE html
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15" />
+    <title>Carpet Version 4</title>
+  </head>
+
+  <body>
+    <h1>Carpet Version 4</h1>
+
+    <p>Version 4 will be the next release of Carpet, which is still
+    under development.  This page describes the current state of the
+    development version and lists the changes from Version 3.</p>
+
+    <p>Main contributors to this version were, so far,
+    <a href="http://www.cct.lsu.edu/~eschnett/">Erik Schnetter</a>
+    (LSU),
+    <a href="http://www.aei.mpg.de/~tradke/">Thomas Radke</a> (AEI), and
+    <a href="http://proteus.as.arizona.edu/~cott">Christian D. Ott</a>
+    (UA).  Special thanks go to Luca Baiotti, Denis Pollney, Christian
+    Reisswig, Jian Tao, and also to
+    the <a href="http://www.cct.lsu.edu/numerical/">CCT numerical
+    relativity group</a>, the <a href="http://numrel.aei.mpg.de/">AEI
+    numerical relativity group</a>, and
+    the <a href="http://www.cct.lsu.edu/~gallen/XiRelWeb/XiRel.html">XiRel
+    collaboration</a>.</p>
+
+
+
+    <h2>Major changes</h2>
+
+    <ul>
+      <li><p>The data structures and algorithms storing and handling
+      the communication schedule are much more efficient on large
+      numbers (several hundred or more) processors.  This makes Carpet
+      scale to more than 8,000 cores.</p></li>
+
+      <li><p>The interface for defining and making dynamic changes to
+      grid hierarchies is simpler, and buffer zones are handled in a
+      cleaner manner.  This makes it easier to write user code which
+      defines or updates the grid hierarchy, and reduces the chance of
+      inconsistencies therein.</p></li>
+
+      <li></p>During checkpointing and recovery, the grid structure is
+      saved and restored by default.  This avoids accidental changes
+      upon recovery.</p></li>
+
+      <li></p>The efficiency of I/O has been increased, especially for
+      HDF5 based binary I/O.  It is possible to combine several
+      variables into one file to reduce the number of output
+      files.</p></li>
+
+      <li></p>A new thorn LoopControl offers iterators over grid
+      points, implemented as C-style macros.  These iterators allow
+      additional important loop-level optimisations, such
+      as <a href="http://en.wikipedia.org/wiki/Loop_tiling">loop
+      tiling</a> or
+      <a href="http://www.openmp.org/">OpenMP</a> parallelisation.
+      Efficient cache handling and hybrid communication models have a
+      large potential for performance improvements on current and
+      future architectures.</p></li>
+    </ul>
+
+
+
+    <h2>Changes in Detail</h2>
+
+    <h3>Initial Data</h3>
+
+    <ul>
+      <li><p>The parameter <code>Carpet::enable_all_storabe</code> is
+      off by default, reducing memory usage.  This can uncover hidden
+      errors in schedule.ccl files.  You can use poisoning
+      (<code>Carpet::poison_new_timelevels = yes</code>) to find these
+      problems.</p></li>
+
+      <li><p>The parameter <code>Carpet::regrid_in_level_mode</code>
+      is on by default.  This balances the load more efficiently
+      between processors, especially for multi-patch
+      simulations.</p></li>
+
+      <li><p>Carpet requires thorn InitBase.  This allows Carpet to
+      check whether its handling of initial data is consistent with
+      other thorns, assuming that the other thorns also use InitBase.
+      A new parameter <code>Carpet::init_fill_timelevels</code>
+      instructs Carpet to initialise all past time levels by making
+      copies of the current time level, very similar to
+      what <code>MoL::initial_data_is_crap</code> does.</p></li>
+
+      <li><p>Buffer zones are specified differently.  Buffer zones are
+      enabled by setting <code>use_buffer_zones</code>, and outer
+      buffer zones are now the default.  (Outer buffer zones are added
+      to the outside of the refined levels, instead of taking away
+      grid points from the interior of the refined levels.)  The
+      necessary number of buffer zones is calculated automatically if
+      thorn MoL is used for time evolution.</p></li>
+
+      <li><p>There are new schedule
+      bins <code>CCTK_PREREGRIDINITIAL</code>
+      and <code>CCTK_POSTREGRIDINITIAL</code>, called before and after
+      regridding during initial data setup, respectively.  As a rule
+      of thumb, routines scheduled in <code>CCTK_BASEGRID</code> must
+      also be scheduled in both <code>CCTK_POSTREGRID</code>
+      and <code>CCTK_POSTREGRIDINITIAL</code>.  You can use poisoning
+      (see above) to catch errors in your schedule.ccl files.</p></li>
+    </ul>
+    
+    <h3>Grid Structure</h3>
+
+    <ul>
+      <li><p>Thorn CarpetRegrid2 stores its state in grid variables
+      instead of in parameters.  This makes it easier to modify the
+      grid hierarchy from other thorns, and is automatically
+      consistent upon checkpointing and recovery.  It also simplifies
+      outputting the grid structure to files.  These state variables
+      can be modified at any time, but their values are only
+      significant during regridding.</p></li>
+
+      <li><p>There is a new
+      parameter <code>CarpetRegrid2::symmetry_rotating180</code>,
+      which forces the generated grid structure to have the correct
+      symmetry for a 180 degree rotational symmetry about
+      the <code>z</code> axis.  (It is unfortunate that errors in the
+      symmetry of the grid structure do not lead to errors but are
+      currently silently ignored.  You can use poisoning -- see above
+      -- to catch errors in the grid structure.)  A
+      parameter <code>CarpetRegrid2::symmetry_rotating90</code> is
+      planned, but not yet implemented.</p></li>
+
+      <li><p>Checkpointing saves and restores the grid structure by
+      default.</p></li>
+    </ul>
+
+    <h3>I/O</h3>
+
+    <ul>
+      <li><p>All Carpet I/O thorns support the new
+      parameter <code>one_file_per_group</code>, which combines all
+      variables from a variable group into a single file.  This
+      reduces the number of output files.</p></li>
+    </ul>
+
+    <h3><Communication, Mesh Refinement</h3>
+
+    <ul>
+      <li><p>The algorithm determining the communication schedule is
+      new and much more fussy.  It will detect all (one hopes)
+      inconsistencies in the grid structure.  (Note that this does
+      unfortunately not include errors regarding the outer or symmetry
+      boundaries.)</p></li>
+
+      <li><p>The communication schedule is stored in a compressed
+      (sparse) form.  This is necessary since the communication
+      schedule between N processors has N<sup>2</sup> entries, which
+      cannot be handled efficiently in full.</p></li>
+
+      <li><p>The prolongation operators have been rewritten.  Time
+      interpolation is now handled separately, reducing the number of
+      operators.</p></li>
+
+      <li><p>Some unused CarpetLib parameters have been removed, some
+      new CarpetLib parameters have been introduced.  The default
+      settings should be reasonable.</p></li>
+    </ul>
+
+    <h3>New Thorns</h3>
+
+    <ul>
+      <li><p>Carpet uses the new
+      thorn <code>CactusBase/InitBase</code>.  Update from the Cactus
+      CVS repository to obtain this thorn.</p></li>
+
+      <li><p>A new thorn <code>Carpet/CarpetMask</code> can be used to
+      exclude certain regions, such as e.g. the interior of black
+      holes, from global reduction operations.  This allows meaningful
+      norms of constraints
+      when <a href="http://arxiv.org/abs/0707.3101">Turduckened</a>
+      initial data are used.</p></li>
+
+      <li><p>Carpet offers a new thorn <code>Carpet/LoopControl</code>
+      providing iterators over grid points.  These iterators are
+      implemented as C-style macros which can replace <code>for</code>
+      or <code>do</code> loops over grid functions.  LoopControl
+      provides loop tiling for increased cache efficiency, and OpenMP
+      parallelisation to reduce parallelisation overhead on multi-core
+      machines.</p></li>
+    </ul>
+
+
+    <hr />
+
+    <p>Go back to the <a href=".">Carpet home page</a>.</p>
+
+    <hr />
+
+    <p>
+      <a href="http://www.xemacs.org/About/created.html"><img
+      src="cbxSmall.jpg" alt="Created with XEmacs!" height="36"
+      width="100" /></a>
+      
+      <a href="http://www.anybrowser.org/campaign/"><img
+      src="logoab8.png" alt="Best Viewed With Any Browser" height="31"
+      width="88" /></a>
+
+      <a href="http://validator.w3.org/check?uri=referer"><img
+          src="http://www.w3.org/Icons/valid-xhtml10"
+          alt="Valid XHTML 1.0!" height="31" width="88" /></a>
+    </p>
+
+    <hr />
+    <address><a href="mailto:schnetter@cct.lsu.edu">Erik Schnetter</a></address>
+<!-- Created: Sat Mar 01 2008 -->
+<!-- hhmts start -->
+Last modified: Sat Mar 01 2008
+<!-- hhmts end -->
+  </body>
+</html>
