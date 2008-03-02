@@ -13,10 +13,9 @@
 
 
 
-extern "C" { CCTK_INT CarpetIntegrate_Global(CCTK_ARGUMENTS);
-}
+extern "C" void CarpetIntegrate_Global(CCTK_ARGUMENTS);
 
-CCTK_INT CarpetIntegrate_Global(CCTK_ARGUMENTS)
+void CarpetIntegrate_Global(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -40,7 +39,5 @@ CCTK_INT CarpetIntegrate_Global(CCTK_ARGUMENTS)
   CCTK_REAL d3x = cctk_delta_space[0]*cctk_delta_space[1]*cctk_delta_space[2];
   integral *= d3x;
 
-  printf("Integral: %g\n", integral);
-
-  return 0;
+  printf("Integral: %g\n", (double)integral);
 }
