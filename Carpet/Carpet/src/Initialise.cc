@@ -158,6 +158,8 @@ namespace Carpet {
       ScheduleTraverse (where, "CCTK_PARAMCHECK", cctkGH);
     } END_MGLEVEL_LOOP;
     
+    Requirements::CheckRequirements (cctkGH);
+    
     CCTKi_FinaliseParamWarn();
     
     timer.stop();
