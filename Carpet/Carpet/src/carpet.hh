@@ -64,6 +64,11 @@ namespace Carpet {
   void CallBeforeRoutines (cGH const * restrict cctkGH);
   void CallAfterRoutines (cGH const * restrict cctkGH);
   
+  // Requirements
+  namespace Requirements {
+    void CheckRequirements (cGH const * cctkGH);
+  }
+  
   // Debugging output
   void Output (const char* fmt, ...);
   void Waypoint (const char* fmt, ...);
