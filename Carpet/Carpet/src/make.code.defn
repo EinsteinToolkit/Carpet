@@ -3,6 +3,7 @@
 # Source files in this directory
 SRCS =	AllGatherString.cc			\
 	CallFunction.cc				\
+	CarpetBasegrid.cc			\
 	CarpetParamCheck.cc			\
 	CarpetStartup.cc			\
 	Checksum.cc				\

@@ -22,6 +22,7 @@ namespace Carpet {
     int CarpetStartup (void);
     int CarpetMultiModelStartup (void);
     void CarpetParamCheck (CCTK_ARGUMENTS);
+    void CarpetRefineTimeStep (CCTK_ARGUMENTS);
   }
   
   // Registered functions

@@ -132,6 +132,10 @@ STRING time_refinement_factors "Temporal refinement factors over the coarsest le
   "^[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*(,[[:space:]]*[[:digit:]]+[[:space:]]*)*\][[:space:]]*$" :: "[ <tfact>, ... ]"
 } ""
 
+BOOLEAN refine_timestep "Correct Time::dtfac for spacings on finer grids"
+{
+} "no"
+
 
 
 CCTK_INT convergence_level "Convergence level"

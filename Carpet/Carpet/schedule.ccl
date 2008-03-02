@@ -16,3 +16,17 @@ schedule CarpetParamCheck at PARAMCHECK
 {
   LANG: C
 } "Parameter checking routine"
+
+
+
+# Correct time step for finer levels when there are non-trivial
+# time refinement factors
+
+if (refine_timestep)
+{
+  SCHEDULE CarpetRefineTimeStep AT basegrid AFTER Time_Simple
+  {
+    LANG: C
+    OPTIONS: singlemap
+  } "Correct time step size for spacing on finer grids"
+}
