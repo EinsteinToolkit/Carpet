@@ -83,7 +83,6 @@ Carpet::convergence_level = 0
 Carpet::output_timers_every      = 1024
 CarpetLib::print_timestats_every = 1024
 Carpet::print_timestats_every = 1
-CarpetLib::timestat_timer         = "rdtsc"
 CarpetLib::print_memstats_every  = 1024
 Carpet::regrid_in_level_mode                    = no
 Carpet::num_integrator_substeps                 = 3
