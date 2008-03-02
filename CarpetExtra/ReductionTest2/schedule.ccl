@@ -1,0 +1,32 @@
+# Schedule definitions for thorn ReductionTest2
+# $Header:$
+
+STORAGE: redvars[3]
+
+SCHEDULE CoM2_Local AT CCTK_INITIAL AFTER Whisky_Initial
+{
+  
+  LANG: C
+  SYNC: redvars
+} "Setup integrands for CoM calculation"
+
+SCHEDULE CoM2_Local AT CCTK_EVOL AFTER MoL_Evolution
+{
+  
+  LANG: C
+  SYNC: redvars
+} "Setup integrands for CoM calculation"
+
+SCHEDULE CoM2_Local AT Postregridinitial
+{
+  
+  LANG: C
+  SYNC: redvars
+} "Setup integrands for CoM calculation"
+
+SCHEDULE CoM2_Local AT Postregrid
+{
+  
+  LANG: C
+  SYNC: redvars
+} "Setup integrands for CoM calculation"
