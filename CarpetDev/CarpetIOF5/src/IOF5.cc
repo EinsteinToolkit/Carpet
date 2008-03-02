@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -81,6 +82,12 @@ namespace CarpetIOF5 {
   
   static void
   WriteParameters (F5::file_t & file);
+  
+  
+  
+  static string
+  generate_filename (cGH const * cctkGH,
+                     int variable);
   
   
   
@@ -316,17 +323,17 @@ namespace CarpetIOF5 {
     assert (cctkGH != 0);
     assert (variable >= 0 and variable < CCTK_NumVars());
     
-    if (verbose)
-    {
-      char * const fullname = CCTK_FullName(variable);
-      CCTK_VInfo (CCTK_THORNSTRING, "TriggerOutput \"%s\"", fullname);
-      free (fullname);
-    }
-    
-    char * fullname = CCTK_FullName (variable);
+    char * const fullname = CCTK_FullName (variable);
     assert (fullname);
     
-    int const ierr = OutputVarAs (cctkGH, fullname, out_filename);
+    if (verbose)
+    {
+      CCTK_VInfo (CCTK_THORNSTRING, "TriggerOutput \"%s\"", fullname);
+    }
+    
+    string const alias = generate_filename (cctkGH, variable);
+    
+    int const ierr = OutputVarAs (cctkGH, fullname, alias.c_str());
     
     free (fullname);
     
@@ -369,18 +376,34 @@ namespace CarpetIOF5 {
     
     extending_t extending (cctkGH);
     
-    bool const use_IO_out_dir = std::strcmp (out_dir, "") == 0;
+    bool const use_IO_out_dir = strcmp (out_dir, "") == 0;
     string const basename
       = (use_IO_out_dir ? IO_out_dir : out_dir) + string ("/") + alias;
-    bool const want_metafile = CCTK_MyProc (cctkGH) == 0;
     
     bool const did_truncate = extending.get_did_truncate (basename);
     bool const do_truncate
       = not did_truncate and IO_TruncateOutputFiles (cctkGH);
     extending.set_did_truncate (basename);
     
-    F5::file_t file (cctkGH, basename, string (out_extension),
-                     want_metafile, do_truncate);
+    F5::file_t file (cctkGH, basename, string (out_extension), do_truncate);
+    
+    if (do_truncate)
+    {
+      // Output parameters once after the output file has been created
+      if (CCTK_EQUALS (out_save_parameters, "all") or
+          CCTK_EQUALS (out_save_parameters, "only set"))
+      {
+        WriteParameters (file);
+      }
+      else if (CCTK_EQUALS (out_save_parameters, "no"))
+      {
+        // do nothing
+      }
+      else
+      {
+        assert (0);
+      }
+    }
     
     writer_t writer (cctkGH, variable);
     writer.write (file);
@@ -393,8 +416,12 @@ namespace CarpetIOF5 {
   void
   WriteParameters (F5::file_t & file)
   {
+    bool const use_metafile = file.get_have_metafile();
+    hid_t const hdf5_file
+      = use_metafile ? file.get_hdf5_metafile() : file.get_hdf5_file();
+    
     hid_t const parameter_group
-      = F5::open_or_create_group (file.get_hdf5_file(), "Cactus parameters");
+      = F5::open_or_create_group (hdf5_file, "Cactus parameters");
     
     int first = 1;
     for (;;)
@@ -454,6 +481,75 @@ namespace CarpetIOF5 {
     
     herr_t const herr = H5Gclose (parameter_group);
     assert (not herr);
+  }
+  
+  
+  
+  string
+  generate_filename (cGH const * const cctkGH,
+                     int const variable)
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    assert (variable >= 0);
+    
+    ostringstream filename_buf;
+    
+    if (CCTK_EQUALS (file_content, "variable"))
+    {
+      char * const varname = CCTK_FullName (variable);
+      assert (varname);
+      for (char * p = varname; * p; ++ p)
+      {
+        *p = tolower (* p);
+      }
+      filename_buf << varname;
+      free (varname);
+    }
+    else if (CCTK_EQUALS (file_content, "group"))
+    {
+      char * const groupname = CCTK_GroupNameFromVarI (variable);
+      assert (groupname);
+      for (char * p = groupname; * p; ++ p)
+      {
+        *p = tolower (* p);
+      }
+      filename_buf << groupname;
+      free (groupname);
+    }
+    else if (CCTK_EQUALS (file_content, "thorn"))
+    {
+      char const * const impname = CCTK_ImpFromVarI (variable);
+      char * const thornname = strdup (impname);
+      assert (thornname);
+      char * const colon = strchr (thornname, ':');
+      assert (colon);
+      * colon = '\0';
+      for (char * p = thornname; * p; ++ p)
+      {
+        *p = tolower (* p);
+      }
+      filename_buf << thornname;
+      free (thornname);
+    }
+    else if (CCTK_EQUALS (file_content, "everything"))
+    {
+      filename_buf << out_filename;
+    }
+    else
+    {
+      assert (0);
+    }
+    
+    if (out_timesteps_per_file > 0)
+    {
+      int const iteration = (cctkGH->cctk_iteration
+                             / out_timesteps_per_file * out_timesteps_per_file);
+      filename_buf << ".it"
+                   << setw (iteration_digits) << setfill ('0') << iteration;
+    }
+    
+    return filename_buf.str();
   }
   
 } // namespace CarpetIOF5

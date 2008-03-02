@@ -8,6 +8,7 @@
 #include <hdf5.h>
 
 #include "cctk.h"
+#include "cctk_Parameters.h"
 
 #include "file.hh"
 
@@ -23,16 +24,17 @@ namespace CarpetIOF5 {
     file_t (cGH const * const cctkGH,
             string const basename,
             string const extension,
-            bool const want_metafile,
             bool const do_truncate)
       : m_cctkGH (cctkGH),
-        m_have_metafile (want_metafile),
         m_basename (basename),
         m_extension (extension)
     {
       assert (cctkGH);
       
       int const proc = CCTK_MyProc (cctkGH);
+      m_have_metafile = determine_want_metafile (proc);
+      m_output_processor = determine_output_processor (proc);
+      
       m_metafilename = make_metafilename ();
       m_filename = make_filename (proc);
       
@@ -92,17 +94,51 @@ namespace CarpetIOF5 {
     
     
     
-    int file_t::
-    base_10_digits (int number)
+    bool file_t::
+    determine_want_metafile (int const proc)
+      const
     {
-      number = abs (number);
-      int digits = 1;
-      while (number >= 10)
+      DECLARE_CCTK_PARAMETERS;
+      
+      if (CCTK_EQUALS (out_mode, "proc") or
+          CCTK_EQUALS (out_mode, "np"))
       {
-        number /= 10;
-        ++ digits;
+        return proc == 0;
       }
-      return digits;
+      else if (CCTK_EQUALS (out_mode, "onefile"))
+      {
+        return false;
+      }
+      else
+      {
+        assert (0);
+      }
+    }
+    
+    
+    
+    int file_t::
+    determine_output_processor (int const proc)
+      const
+    {
+      DECLARE_CCTK_PARAMETERS;
+      
+      if (CCTK_EQUALS (out_mode, "proc"))
+      {
+        return proc;
+      }
+      else if (CCTK_EQUALS (out_mode, "np"))
+      {
+        return proc / out_proc_every * out_proc_every;
+      }
+      else if (CCTK_EQUALS (out_mode, "onefile"))
+      {
+        return 0;
+      }
+      else
+      {
+        assert (0);
+      }
     }
     
     
@@ -120,12 +156,28 @@ namespace CarpetIOF5 {
     make_filename (int const proc)
       const
     {
-      int const digits = base_10_digits (CCTK_nProcs (m_cctkGH) - 1);
+      DECLARE_CCTK_PARAMETERS;
+      
       ostringstream filenamebuf;
-      filenamebuf << m_basename
-                  << "."
-                  << setw (digits) << setfill ('0') << proc
-                  << m_extension;
+      
+      filenamebuf << m_basename;
+      
+      if (CCTK_EQUALS (out_mode, "proc") or
+          CCTK_EQUALS (out_mode, "np"))
+      {
+        filenamebuf << ".p" << setw (processor_digits) << setfill ('0') << proc;
+      }
+      else if (CCTK_EQUALS (out_mode, "onefile"))
+      {
+        // do nothing
+      }
+      else
+      {
+        assert (0);
+      }
+      
+      filenamebuf << m_extension;
+      
       return filenamebuf.str();
     }
     
@@ -145,6 +197,15 @@ namespace CarpetIOF5 {
       const
     {
       return m_have_metafile;
+    }
+    
+    
+    
+    int file_t::
+    get_output_processor ()
+      const
+    {
+      return m_output_processor;
     }
     
     

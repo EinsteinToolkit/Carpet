@@ -3,6 +3,10 @@
 
 #include "cctk.h"
 
+#include "bbox.hh"
+#include "defs.hh"
+#include "dh.hh"
+
 #include "file.hh"
 #include "simulation.hh"
 #include "tensor_component.hh"
@@ -57,6 +61,10 @@ namespace CarpetIOF5 {
     void
     write_one_component (F5::tensor_component_t & tensor_component,
                          bool have_metafile)
+      const;
+    
+    bbox<int,dim> const &
+    determine_region (dh::dboxes const & boxes)
       const;
     
   };
