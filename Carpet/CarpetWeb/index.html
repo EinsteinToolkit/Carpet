@@ -91,7 +91,7 @@
     multi-patch capability, as well as parallelisation and efficient
     I/O.</p>
 
-    </p>Carpet was created in 2001
+    <p>Carpet was created in 2001
     by <a href="http://www.cct.lsu.edu/~eschnett/">Erik Schnetter</a>
     at the <a href="http://www.tat.physik.uni-tuebingen.de/">TAT</a>
     (Theoretische Astrophysik Tübingen) and subsequently brought into
@@ -134,16 +134,16 @@
       defines or updates the grid hierarchy, and reduces the chance of
       inconsistencies therein.</p></li>
 
-      <li></p>During checkpointing and recovery, the grid structure is
+      <li><p>During checkpointing and recovery, the grid structure is
       saved and restored by default.  This avoids accidental changes
       upon recovery.</p></li>
 
-      <li></p>The efficiency of I/O has been increased, especially for
+      <li><p>The efficiency of I/O has been increased, especially for
       HDF5 based binary I/O.  It is possible to combine several
       variables into one file to reduce the number of output
       files.</p></li>
 
-      <li></p>A new thorn LoopControl offers iterators over grid
+      <li><p>A new thorn LoopControl offers iterators over grid
       points, implemented as C-style macros.  These iterators allow
       additional important loop-level optimisations, such
       as <a href="http://en.wikipedia.org/wiki/Loop_tiling">loop
@@ -318,24 +318,19 @@
       most critically needed.</p>
 
     <p><b>July 31, 2007:</b> We are happy to hear that our
-      proposal <i>XiRel: Cyberinfrastructure for Numerical
-      Relativity</i> will be funded by
-      <a
-      href="http://www.nsf.gov/">NSF's</a> <a
-      href="http://www.nsf.gov/funding/pgm_summ.jsp?pims_id=6681">PIF</a>
-      programme for three
-      years.  <a
-      href="http://www.cactuscode.org/Development/xirel">XiRel</a> is
-      collaborative proposal
-      by <a
-      href="http://www.cct.lsu.edu/">LSU</a>, <a
-      href="http://gravity.psu.edu/numrel/">PSU</a>,
-      and <a href="http://www.phys.utb.edu/numrel/">UTB</a>
-      (now <a href="http://ccrg.rit.edu/">RIT</a>).  The central goal
-      of XiRel is the development of a highly scalable, efficient, and
-      accurate adaptive mesh refinement layer based on the current
-      Carpet driver, which will be fully integrated and supported in
-      Cactus and optimised for numerical relativity.</p>
+    proposal <i>XiRel: Cyberinfrastructure for Numerical
+    Relativity</i> will be funded by
+    <a href="http://www.nsf.gov/">NSF's</a> <a href="http://www.nsf.gov/funding/pgm_summ.jsp?pims_id=6681">PIF</a>
+    programme for three
+    years.  <a href="http://www.cct.lsu.edu/xirel/">XiRel</a> is
+    collaborative proposal
+    by <a href="http://www.cct.lsu.edu/">LSU</a>, <a href="http://gravity.psu.edu/numrel/">PSU</a>,
+    and <a href="http://www.phys.utb.edu/numrel/">UTB</a>
+    (now <a href="http://ccrg.rit.edu/">RIT</a>).  The central goal of
+    XiRel is the development of a highly scalable, efficient, and
+    accurate adaptive mesh refinement layer based on the current
+    Carpet driver, which will be fully integrated and supported in
+    Cactus and optimised for numerical relativity.</p>
 
     <p><a href="olds.html"><b>Old News...</b></a></p>
 
@@ -533,12 +528,17 @@
     to use professional tools to examine the data.  This is not only
     the case for "big physics runs", where one (should) know in
     advance what to expect, but especially during development, where
-    things do not always go as planned.  <a
-    href="http://www.aei.mpg.de/~tradke/">Thomas Radke</a> was kind
-    enough to write an <a
-    href="http://www.cactuscode.org/Visualization/ImportCarpetHDF5">import
-    module</a> for the visualisation tool <a
-    href="http://www.research.ibm.com/dx/">OpenDX</a>.</p>
+    things do not always go as planned.
+    Christian Reisswig was kind enough to write
+    a <a href="http://www.cactuscode.org/Visualization/VisIt/">database
+    plugin</a> for the visualisation
+    tool <a href="https://www.llnl.gov/visit/">VisIt</a>.  There is
+    also
+    an <a href="http://www.cactuscode.org/Visualization/ImportCarpetHDF5">import
+    module</a> for the visualisation
+    tool <a href="http://www.research.ibm.com/dx/">OpenDX</a>
+    available, implemented by
+    <a href="http://www.aei.mpg.de/~tradke/">Thomas Radke</a>.</p>
 
     <hr />
 
@@ -553,7 +553,8 @@
     href="http://www.fiberbundle.net/">F5</a></li>
 
     <li>Visualisation: <a href="http://www.amiravis.com/">Amira</a>,
-    <a href="http://www.opendx.org/">OpenDX</a></li>
+    <a href="https://www.llnl.gov/visit/">VisIt</a>,
+    (<a href="http://www.opendx.org/">OpenDX</a>)</li>
     </ul>
 
     <hr />
