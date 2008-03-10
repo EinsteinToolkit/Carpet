@@ -421,7 +421,7 @@ namespace CarpetIOASCII {
     basefilename.append ("/");
     basefilename.append (alias);
     filelist::iterator thisfile = created_files.find (basefilename);
-    bool is_new_file = thisfile == created_files.end();
+    bool const is_new_file = thisfile == created_files.end();
     if (is_new_file) {
       int numelems;
       if (one_file_per_group) {
@@ -444,7 +444,7 @@ namespace CarpetIOASCII {
                                                              last_outputs));
       assert (thisfile != created_files.end());
     }
-    is_new_file &= IO_TruncateOutputFiles (cctkGH);
+    bool const truncate_file = is_new_file and IO_TruncateOutputFiles (cctkGH);
 
     // check if this variable has been output already during this iteration
     int elem;
@@ -661,16 +661,6 @@ namespace CarpetIOASCII {
                   const char* const coords = "xyzd";
                   filenamebuf << coords[dirs[d]];
                 }
-// The offsets differ per level
-//                 for (int dd=0; dd<groupdim; ++dd) {
-//                   bool print_dir = true;
-//                   for (int d=0; d<outdim; ++d) {
-//                     print_dir = print_dir and dirs[d] != dd;
-//                   }
-//                   if (print_dir) {
-//                     filenamebuf << "." << offset[dd];
-//                   }
-//                 }
                 filenamebuf << ".asc";
               } else {
                 for (int d=0; d<outdim; ++d) {
@@ -687,7 +677,7 @@ namespace CarpetIOASCII {
 
               // Open the file
               file.open (filename, ios::out |
-                         (is_new_file ? ios::trunc : ios::app));
+                         (truncate_file ? ios::trunc : ios::app));
               if (not file.good()) {
                 CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                             "Could not open output file '%s' for variable '%s'",
@@ -721,11 +711,7 @@ namespace CarpetIOASCII {
                 if (want_date) {
                   char run_host [1000];
                   Util_GetHostName (run_host, sizeof run_host);
-#if 0
-                  char const * const run_user = CCTK_RunUser();
-#else
                   char const * const run_user = getenv ("USER");
-#endif
                   char run_date [1000];
                   Util_CurrentDate (sizeof run_date, run_date);
                   char run_time [1000];
@@ -949,11 +935,6 @@ namespace CarpetIOASCII {
             assert (not file.is_open());
 
             CCTK_REAL const io_bytes = io_bytes_end - io_bytes_begin;
-#if 0
-            // Broadcast I/O size and synchronise processes
-            MPI_Bcast (& io_files, 1, dist::datatype (io_files), 0, dist::comm());
-            MPI_Bcast (& io_bytes, 1, dist::datatype (io_bytes), 0, dist::comm());
-#endif
             EndTimingIO (cctkGH, io_files, io_bytes, false);
 
           } END_MAP_LOOP;
