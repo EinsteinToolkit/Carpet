@@ -4,6 +4,7 @@
 #include <string>
 
 #include "cctk.h"
+#include "cctk_Parameters.h"
 
 #include "carpet.hh"
 
@@ -25,6 +26,8 @@ namespace CarpetIOF5 {
       : m_tensor_component (tensor_component),
         m_region (region)
     {
+      DECLARE_CCTK_PARAMETERS;
+      
       assert (not region.empty());
       
       ostringstream namebuf;
@@ -43,13 +46,20 @@ namespace CarpetIOF5 {
       hid_t const hdf5_datatype = hdf5_datatype_from_cactus_datatype (vartype);
       assert (hdf5_datatype >= 0);
       
-      m_properties = H5Pcreate (H5P_DATASET_CREATE);
-      assert (m_properties >= 0);
-      
       vect<hsize_t, dim> const dims
         = (region.shape() / region.stride()).reverse();
       m_dataspace = H5Screate_simple (dim, & dims [0], 0);
       assert (m_dataspace >= 0);
+      
+      m_properties = H5Pcreate (H5P_DATASET_CREATE);
+      assert (m_properties >= 0);
+      if (compression_level > 0)
+      {
+        herr_t const herr1 = H5Pset_chunk (m_properties, dim, & dims [0]);
+        assert (not herr1);
+        herr_t const herr2 = H5Pset_deflate (m_properties, compression_level);
+        assert (not herr2);
+      }
       
       m_dataset
         = H5Dcreate (m_tensor_component.get_hdf5_tensor_component(), name,

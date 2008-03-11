@@ -1,0 +1,67 @@
+Cactus::cctk_run_title    = "Benchmark of WaveToy using Carpet with one refinement level"
+Cactus::cctk_timer_output = "full"
+
+Cactus::cctk_itlast = 10000
+
+
+
+#ActiveThorns = "MPIClock"
+
+
+
+ActiveThorns = "IOUtil"
+
+#IO::print_timing_info = yes
+
+
+
+Activethorns = "LoopControl"
+
+LoopControl::printstats = yes
+#LoopControl::verbose    = yes
+#LoopControl::debug      = yes
+
+
+
+ActiveThorns = "InitBase"
+
+InitBase::initial_data_setup_method = "init_two_levels"
+
+
+
+ActiveThorns = "Carpet CarpetLib CarpetReduce"
+
+Carpet::constant_load_per_processor = yes
+driver::global_nsize                = 80
+driver::ghost_size                  = 1
+
+
+
+ActiveThorns = "Boundary CartGrid3D CoordBase SymBase"
+
+grid::type = "box"
+
+
+
+ActiveThorns = "IDScalarWaveC WaveToyC"
+
+WaveToy::bound = "zero"
+
+
+
+ActiveThorns = "Time"
+
+Time::dtfac = 0.5
+
+
+
+ActiveThorns = "CarpetIOBasic"
+
+IOBasic::outInfo_every      = 1000
+IOBasic::outInfo_reductions = "maximum"
+IOBasic::outInfo_vars       = "
+        Carpet::grid_points_per_second
+        Carpet::grid_point_updates_count
+        Carpet::time_total
+        Carpet::time_computing
+"

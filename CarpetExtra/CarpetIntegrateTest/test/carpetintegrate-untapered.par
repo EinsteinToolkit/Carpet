@@ -1,0 +1,89 @@
+#==============================================================================
+# --- Test file for Carpet integration ---
+#==============================================================================
+
+
+#==============================================================================
+# Thorn activation
+#==============================================================================
+
+ActiveThorns = "time carpet carpetlib carpetregrid2 carpetreduce carpetslab carpetinterp cartgrid3d coordbase initbase symbase boundary carpetiobasic carpetioascii carpetioscalar ioutil carpetintegratetest"
+
+#==============================================================================
+# Directories and recovery
+#==============================================================================
+
+io::out_fileinfo			=	 "none"
+io::out_dir				=	$parfile
+
+#==============================================================================
+# Time
+#==============================================================================
+
+# cactus::terminate			=	"never"
+cactus::cctk_itlast			=	10000
+
+time::dtfac              		= 	0.375             
+
+#==============================================================================
+# Grid setup
+#==============================================================================
+
+grid::type                    = "coordbase"
+grid::domain                  = "bitant"
+grid::avoid_origin            = "no"
+
+carpet::domain_from_coordbase = yes
+driver::ghost_size            = 3
+
+coordbase::domainsize = minmax
+coordbase::xmin = -0.5
+coordbase::xmax =  0.5
+coordbase::ymin = -0.5
+coordbase::ymax =  0.5
+coordbase::zmin = -0.0
+coordbase::zmax =  0.5
+
+coordbase::spacing = numcells
+coordbase::ncells_x = 89
+coordbase::ncells_y = 89
+coordbase::ncells_z = 45
+
+coordbase::boundary_size_z_lower     = 3
+coordbase::boundary_shiftout_z_lower = 1
+
+carpet::use_buffer_zones        = yes
+carpet::num_integrator_substeps = 3
+carpet::use_tapered_grids       = no
+
+carpet::max_refinement_levels   = 12
+
+carpetregrid2::num_centres = 1
+carpetregrid2::num_levels_1 = 3
+carpetregrid2::radius_1[1] = 0.2
+carpetregrid2::radius_1[2] = 0.1
+
+#==============================================================================
+# Carpet parameters
+#==============================================================================
+
+carpet::init_3_timelevels                = 	yes
+Carpet::prolongation_order_space	 =	3
+Carpet::prolongation_order_time		 =	2
+
+#==============================================================================
+# Output: Scalar and 1D
+#==============================================================================
+
+iobasic::outinfo_every   		= 	1
+
+carpetioscalar::outscalar_every		=	1
+
+ioascii::out1d_every			=	1
+ioascii::out1d_criterion		=	"divisor"
+
+iobasic::outinfo_vars = "carpetreduce::weight carpetintegratetest::integrand"
+
+carpetioscalar::outscalar_vars= "carpetreduce::weight carpetintegratetest::integrand"
+
+ioascii::out1d_vars = "carpetreduce::weight carpetintegratetest::integrand"

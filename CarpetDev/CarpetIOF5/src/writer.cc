@@ -164,8 +164,9 @@ namespace CarpetIOF5 {
     int const reflevel = 0;
     int const myproc = CCTK_MyProc (m_cctkGH);
     dh * const dd = Carpet::arrdata.at(group).at(map).dd;
-    bbox<int, dim> const & region
-      = dd->boxes.at(Carpet::mglevel).at(reflevel).at(myproc).exterior;
+    dh::dboxes const & boxes
+      = dd->boxes.at(Carpet::mglevel).at(reflevel).at(myproc);
+    bbox<int, dim> const & region = determine_region (boxes);
     
     if (have_metafile)
     {
@@ -318,6 +319,39 @@ namespace CarpetIOF5 {
         data_region.write (varptr, vartype);
       }
     }
+  }
+  
+  
+  
+  bbox<int,dim> const & writer_t::
+  determine_region (dh::dboxes const & boxes)
+    const
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    bbox<int,dim> dh::dboxes::* boxptr;
+    if (CCTK_EQUALS (output_regions, "exterior"))
+    {
+      boxptr = & dh::dboxes::exterior;
+    }
+    else if (CCTK_EQUALS (output_regions, "communicated"))
+    {
+      boxptr = & dh::dboxes::communicated;
+    }
+    else if (CCTK_EQUALS (output_regions, "owned"))
+    {
+      boxptr = & dh::dboxes::owned;
+    }
+    else if (CCTK_EQUALS (output_regions, "interior"))
+    {
+      boxptr = & dh::dboxes::interior;
+    }
+    else
+    {
+      assert (0);
+    }
+    
+    return boxes.*boxptr;
   }
   
 } // namespace CarpetIOF5

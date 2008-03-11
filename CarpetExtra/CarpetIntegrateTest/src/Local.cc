@@ -4,10 +4,9 @@
 
 
 
-extern "C" { CCTK_INT CarpetIntegrate_Local(CCTK_ARGUMENTS);
-}
+extern "C" void CarpetIntegrate_Local(CCTK_ARGUMENTS);
 
-CCTK_INT CarpetIntegrate_Local(CCTK_ARGUMENTS)
+void CarpetIntegrate_Local(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
@@ -25,6 +24,4 @@ CCTK_INT CarpetIntegrate_Local(CCTK_ARGUMENTS)
       }
     }
   }
-  
-  return 0;
 }

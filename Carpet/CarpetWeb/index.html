@@ -26,22 +26,24 @@
 <a href="doc/scheduling.pdf">Scheduling</a>&nbsp;(PDF,&nbsp;120&nbsp;kB)<br />
 <a href="humour.html">Other Carpets</a></p>
 
-<p><b>Mailing lists</b><br />
+<p><b>Mailing Lists</b><br />
 <a href="http://lists.carpetcode.org/listinfo/developers/">Subscribe</a><br />
-<a href="http://lists.carpetcode.org/archives/developers/">Archive</a><br />
+<a href="http://lists.carpetcode.org/archives/developers/">List&nbsp;Archive</a><br />
 <a href="http://lists.carpetcode.org/listinfo/carpet-cvs/">CVS&nbsp;messages</a><br />
-<a href="http://lists.carpetcode.org/listinfo/carpet-darcs/">darcs&nbsp;messages</a></p>
+<a href="http://lists.carpetcode.org/listinfo/carpet-darcs/">darcs/git&nbsp;messages</a></p>
 
 <p><b>Development</b><br />
-<a href="status-reports.html">Status&nbsp;reports</a><br />
-<a href="get-carpet-darcs.html">Download</a><br />
-<a href="http://bugs.carpetcode.org/">Bugzilla</a><br />
-<a href="feature-requests.html">Missing&nbsp;features</a><br />
+<a href="get-carpet.html">Download</a><br />
+<a href="http://bugs.carpetcode.org/">Bug&nbsp;Reports</a><br />
 <a href="contributors.html">Contributors</a></p>
+<!-- These are outdated
+<a href="feature-requests.html">Missing&nbsp;features</a><br />
+<a href="status-reports.html">Status&nbsp;reports</a><br />
+-->
 
 <p><b>Visualisation</b><br />
 <a href="visualisation-tools.html">Tools</a><br />
-<a href="https://mailserv.aei.mpg.de/mailman/listinfo/visualization/">Mailing&nbsp;list</a></p>
+<a href="https://mailserv.aei.mpg.de/mailman/listinfo/visualization/">Mailing&nbsp;List</a></p>
 
 <p><b>Results</b><br />
 <a href="publications.html">Publications</a></p>
@@ -58,11 +60,11 @@
 <p><b>Carpet Users</b><br />
 <a href="http://numrel.aei.mpg.de/">AEI&nbsp;Potsdam</a><br />
 <a href="http://www.as.arizona.edu/">University&nbsp;of&nbsp;Arizona</a><br />
-<a href="http://www.astro.auth.gr/Science-Subjects/Gravity.html">AUTH</a><br />
+<!-- <a href="http://www.astro.auth.gr/Science-Subjects/Gravity.html">AUTH</a><br /> -->
 <a href="http://ww2.tpi.uni-jena.de/gravity/">Jena</a><br />
 <a href="http://www.kisti.re.kr/english/">KISTI</a><br />
 <a href="http://www.cct.lsu.edu/">LSU</a><br />
-<a href="http://www.mpa-garching.mpg.de/hydro/index.shtml">MPA&nbsp;Garching</a><br />
+<!-- <a href="http://www.mpa-garching.mpg.de/hydro/index.shtml">MPA&nbsp;Garching</a><br /> -->
 <a href="http://www.fis.unipr.it/numrel/">Parma</a><br />
 <a href="http://www.gravity.psu.edu/numrel/">Penn&nbsp;State</a><br />
 <a href="http://astrophysics.rit.edu/">RIT</a><br />
@@ -81,17 +83,18 @@
 </td>
 <td valign="top">
 
-    <p>Carpet is a mesh refinement driver
-    for <a href="http://www.cactuscode.org/">Cactus</a>.  Cactus is a
-    framework for solving time-dependent partial differential
-    equations on uniform grids, and Carpet is an extension of Cactus
-    that makes mesh refinement possible.  Carpet was originally written
-    in 2001
-    by <a
-    href="http://www.cct.lsu.edu/~eschnett/">Erik
-    Schnetter</a> at
-    the <a href="http://www.tat.physik.uni-tuebingen.de/">TAT</a>
-    (Theoretische Astrophysik Tübingen) and later brought into
+    <p>Carpet is an adaptive mesh refinement driver for
+    the <a href="http://www.cactuscode.org/">Cactus Framework</a>.
+    Cactus is a software framework for solving time-dependent partial
+    differential equations on block-structured grids, and Carpet acts
+    as <i>driver layer</i> providing adaptive mesh refinement,
+    multi-patch capability, as well as parallelisation and efficient
+    I/O.</p>
+
+    <p>Carpet was created in 2001
+    by <a href="http://www.cct.lsu.edu/~eschnett/">Erik Schnetter</a>
+    at the <a href="http://www.tat.physik.uni-tuebingen.de/">TAT</a>
+    (Theoretische Astrophysik Tübingen) and subsequently brought into
     production use by Erik Schnetter, Scott Hawley, and Ian Hawke at
     the <a href="http://www.aei.mpg.de/">AEI</a> (Max-Planck-Institut
     für Gravitationsphysik, Albert-Einstein-Institut).  Carpet is
@@ -99,12 +102,85 @@
     the <a href="http://www.cct.lsu.edu/">CCT</a> (Center for
     Computation &amp; Technology)
     at <a href="http://www.lsu.edu/">LSU</a>.  These pages describe
-    Carpet
-    and its current development.</p>
+    Carpet and its current development.</p>
 
     <hr />
 
     <h2>News</h2>
+
+    <table><tr><td valign="top">
+    <p><b>March 1, 2008:</b> Carpet has a logo!  This logo is
+      a <a href="http://en.wikipedia.org/wiki/Sierpinski_carpet">Sierpiński
+      carpet</a>, which is a fractal pattern with
+      a <a href="http://en.wikipedia.org/wiki/Hausdorff_dimension">Hausdorff
+      dimension</a> of 1.89279.</p>
+    </td><td valign="top">
+        <p><a href="logo/Sierpinski.pdf"><img src="logo/Sierpinski.png"
+              width="100" alt="Carpet logo (a Sierpiński
+              carpet)"/></a></p>
+    </td></tr></table>
+
+    <p><b>March 1, 2008:</b> We have improved the development version
+    of Carpet significantly:<br /></p>
+    <ul>
+      <li><p>The data structures and algorithms storing and handling
+      the communication schedule are much more efficient on large
+      numbers (several hundred or more) processors.  This makes Carpet
+      scale to more than 8,000 cores.</p></li>
+
+      <li><p>The interface for defining and making dynamic changes to
+      grid hierarchies is simpler, and buffer zones are handled in a
+      cleaner manner.  This makes it easier to write user code which
+      defines or updates the grid hierarchy, and reduces the chance of
+      inconsistencies therein.</p></li>
+
+      <li><p>During checkpointing and recovery, the grid structure is
+      saved and restored by default.  This avoids accidental changes
+      upon recovery.</p></li>
+
+      <li><p>The efficiency of I/O has been increased, especially for
+      HDF5 based binary I/O.  It is possible to combine several
+      variables into one file to reduce the number of output
+      files.</p></li>
+
+      <li><p>A new thorn LoopControl offers iterators over grid
+      points, implemented as C-style macros.  These iterators allow
+      additional important loop-level optimisations, such
+      as <a href="http://en.wikipedia.org/wiki/Loop_tiling">loop
+      tiling</a> or
+      <a href="http://www.openmp.org/">OpenMP</a> parallelisation.
+      Efficient cache handling and hybrid communication models have a
+      large potential for performance improvements on current and
+      future architectures.</p></li>
+    </ul>
+    <p>More details can be found <a href="version-4.html">here</a>.
+    These improvements are largely due
+    to <a href="http://www.cct.lsu.edu/~eschnett/">Erik Schnetter</a>
+    (LSU),
+    <a href="http://www.aei.mpg.de/~tradke/">Thomas Radke</a> (AEI), and
+    <a href="http://proteus.as.arizona.edu/~cott">Christian D. Ott</a>
+    (UA).  Special thanks go to Christian Reisswig and Luca
+    Baiotti.</p>
+
+    <p><b>March 1, 2008:</b> The development version of Carpet is now
+    maintained using <a href="http://git.or.cz/">git</a> instead
+    of <a href="http://www.darcs.net/">darcs</a>.  Git offers a very
+    similar set of features to darcs, most importantly supporting
+    decentralised development.  Git has a much larger user community
+    than darcs, and we hope that this makes it easier to use.
+    The <a href="get-carpet.html">download instructions</a> contain
+    details on using git to obtain Carpet, and point to further
+    information.  (The darcs repository for the development version
+    will not see any further changes.)</p>
+
+    <p><b>March 1, 2008:</b> The repository for the development
+    version of Carpet moved today to
+    a <a href="http://carpetcode.dyndns.org/">new server</a>.  The
+    stable versions of Carpet continue to be served from the old
+    server for the time being.  We plan to move all of carpetcode.org
+    to this new server in the future.  The new server is a courtesy
+    of <a href="http://proteus.as.arizona.edu/~cott">Christian
+    D. Ott</a>.</p>
 
     <table><tr><td valign="top">
       <p><b>January 14, 2008:</b> Carpet's communication
@@ -242,45 +318,19 @@
       most critically needed.</p>
 
     <p><b>July 31, 2007:</b> We are happy to hear that our
-      proposal <i>XiRel: Cyberinfrastructure for Numerical
-      Relativity</i> will be funded by
-      <a
-      href="http://www.nsf.gov/">NSF's</a> <a
-      href="http://www.nsf.gov/funding/pgm_summ.jsp?pims_id=6681">PIF</a>
-      programme for three
-      years.  <a
-      href="http://www.cactuscode.org/Development/xirel">XiRel</a> is
-      collaborative proposal
-      by <a
-      href="http://www.cct.lsu.edu/">LSU</a>, <a
-      href="http://gravity.psu.edu/numrel/">PSU</a>,
-      and <a href="http://www.phys.utb.edu/numrel/">UTB</a>
-      (now <a href="http://ccrg.rit.edu/">RIT</a>).  The central goal
-      of XiRel is the development of a highly scalable, efficient, and
-      accurate adaptive mesh refinement layer based on the current
-      Carpet driver, which will be fully integrated and supported in
-      Cactus and optimised for numerical relativity.</p>
-
-    <p><b>February 26, 2007:</b> The thorn <tt>LSUPETSc</tt>
-      implements a generic elliptic solver for Carpet's multi-patch
-      infrastructure, based
-      on <a
-      href="http://www-unix.mcs.anl.gov/petsc/petsc-as/">PETSc</a>.
-      It assumes touching (not overlapping) patches, and uses
-      inter-patch interface conditions very similar to those developed
-      by <a href="http://arxiv.org/abs/gr-qc/0510016">Harald
-      Pfeiffer</a>.  <tt>LSUPETSc</tt> can solve "arbitrary" systems
-      of coupled, non-linear elliptic equations.  It does not support
-      mesh refinement.</p>
-
-    <p><b>January 12, 2007:</b> In order to be able to restructure
-      some of Carpet's internals without disturbing ongoing production
-      simulations, we have created an <i>experimental version</i>.
-      The main goals of this experimental version are to improve its
-      performance on many (&gt;100) processors and to re-arrange some
-      internal details to simplify future development.  Few new
-      features are planned, but some of the changes may be
-      incompatible.</p>
+    proposal <i>XiRel: Cyberinfrastructure for Numerical
+    Relativity</i> will be funded by
+    <a href="http://www.nsf.gov/">NSF's</a> <a href="http://www.nsf.gov/funding/pgm_summ.jsp?pims_id=6681">PIF</a>
+    programme for three
+    years.  <a href="http://www.cct.lsu.edu/xirel/">XiRel</a> is
+    collaborative proposal
+    by <a href="http://www.cct.lsu.edu/">LSU</a>, <a href="http://gravity.psu.edu/numrel/">PSU</a>,
+    and <a href="http://www.phys.utb.edu/numrel/">UTB</a>
+    (now <a href="http://ccrg.rit.edu/">RIT</a>).  The central goal of
+    XiRel is the development of a highly scalable, efficient, and
+    accurate adaptive mesh refinement layer based on the current
+    Carpet driver, which will be fully integrated and supported in
+    Cactus and optimised for numerical relativity.</p>
 
     <p><a href="olds.html"><b>Old News...</b></a></p>
 
@@ -478,12 +528,17 @@
     to use professional tools to examine the data.  This is not only
     the case for "big physics runs", where one (should) know in
     advance what to expect, but especially during development, where
-    things do not always go as planned.  <a
-    href="http://www.aei.mpg.de/~tradke/">Thomas Radke</a> was kind
-    enough to write an <a
-    href="http://www.cactuscode.org/Visualization/ImportCarpetHDF5">import
-    module</a> for the visualisation tool <a
-    href="http://www.research.ibm.com/dx/">OpenDX</a>.</p>
+    things do not always go as planned.
+    Christian Reisswig was kind enough to write
+    a <a href="http://www.cactuscode.org/Visualization/VisIt/">database
+    plugin</a> for the visualisation
+    tool <a href="https://www.llnl.gov/visit/">VisIt</a>.  There is
+    also
+    an <a href="http://www.cactuscode.org/Visualization/ImportCarpetHDF5">import
+    module</a> for the visualisation
+    tool <a href="http://www.research.ibm.com/dx/">OpenDX</a>
+    available, implemented by
+    <a href="http://www.aei.mpg.de/~tradke/">Thomas Radke</a>.</p>
 
     <hr />
 
@@ -498,7 +553,8 @@
     href="http://www.fiberbundle.net/">F5</a></li>
 
     <li>Visualisation: <a href="http://www.amiravis.com/">Amira</a>,
-    <a href="http://www.opendx.org/">OpenDX</a></li>
+    <a href="https://www.llnl.gov/visit/">VisIt</a>,
+    (<a href="http://www.opendx.org/">OpenDX</a>)</li>
     </ul>
 
     <hr />
@@ -522,11 +578,11 @@
 -->
     </p>
     
-    <address><a href="mailto:schnetter@uni-tuebingen.de">Erik Schnetter</a></address>
+    <address><a href="mailto:schnetter@cct.lsu.edu">Erik Schnetter</a></address>
 <p>
 <!-- Created: Tue Aug 12 12:12:08 CEST 2003 -->
 <!-- hhmts start -->
-Last modified: Mon Jan 14 2008
+Last modified: Sat Mar 01 2008
 <!-- hhmts end -->
 </p>
 

@@ -25,7 +25,8 @@ namespace CarpetIOF5 {
       
       cGH const * const m_cctkGH;
       
-      bool const m_have_metafile;
+      bool m_have_metafile;
+      int m_output_processor;
       
       string const m_basename;
       string const m_extension;
@@ -33,7 +34,7 @@ namespace CarpetIOF5 {
       string m_metafilename;
       string m_filename;
       
-      mutable vector <string> m_filenames;
+      vector <string> mutable m_filenames;
       
       hid_t m_hdf5_metafile;
       hid_t m_hdf5_file;
@@ -42,8 +43,13 @@ namespace CarpetIOF5 {
       file_t (file_t const &);
       file_t operator= (file_t const &);
       
-      static int
-      base_10_digits (int number);
+      bool
+      determine_want_metafile (int proc)
+        const;
+      
+      int
+      determine_output_processor (int proc)
+        const;
       
       string
       make_metafilename ()
@@ -58,7 +64,6 @@ namespace CarpetIOF5 {
       file_t (cGH const * cctkGH,
               string filename,
               string extension,
-              bool want_metafile,
               bool do_truncate);
       
       virtual
@@ -70,6 +75,10 @@ namespace CarpetIOF5 {
       
       bool
       get_have_metafile ()
+        const;
+      
+      int
+      get_output_processor ()
         const;
       
       string
