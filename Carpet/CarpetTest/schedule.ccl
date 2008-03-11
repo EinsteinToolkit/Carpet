@@ -1,6 +1,6 @@
 # Schedule definitions for thorn CarpetTest
 
-STORAGE: gfg arrg1 arrg2 arrg3
+STORAGE: gfg arrg1 arrg2 arrg3 scg yy
 
 schedule carpettest_check_sizes AT initial
 {
