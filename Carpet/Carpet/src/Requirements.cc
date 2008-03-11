@@ -14,6 +14,8 @@ using namespace std;
 
 
 
+#ifdef CACTUS_HAS_REQUIRES_CLAUSES
+
 // Illegally copied from ScheduleInterface.c:
 
 typedef enum {sched_none, sched_group, sched_function} iSchedType;
@@ -94,11 +96,9 @@ namespace Carpet {
       
       // Gather all required items
       set <string> requires;
-#ifdef CACTUS_HAS_REQUIRES_CLAUSES
       for (int n = 0; n < function_data.n_RequiresClauses; ++ n) {
         requires.insert (string (function_data.RequiresClauses[n]));
       }
-#endif
       
       // Check whether all required items have already been provided
       set <string> required_but_not_provided;
@@ -145,17 +145,13 @@ namespace Carpet {
       
       // Gather all required and provided items
       set <string> requires;
-#ifdef CACTUS_HAS_REQUIRES_CLAUSES
       for (int n = 0; n < function_data.n_RequiresClauses; ++ n) {
         requires.insert (string (function_data.RequiresClauses[n]));
       }
-#endif
       set <string> provides;
-#ifdef CACTUS_HAS_REQUIRES_CLAUSES
       for (int n = 0; n < function_data.n_ProvidesClauses; ++ n) {
         provides.insert (string (function_data.ProvidesClauses[n]));
       }
-#endif
       
       // Check whether any of the providions have already been
       // provided.  (We disallow this as well, so that a routine
@@ -312,3 +308,25 @@ namespace Carpet {
     
   };                            // namespace Carpet
 };                              // namespace Requirements
+
+
+
+#else // #ifndef CACTUS_HAS_REQUIRES_CLAUSES
+
+
+
+namespace Carpet {
+  namespace Requirements {
+    // Check one schedule bin
+    void
+    CheckRequirements (cGH const * const cctkGH)
+    {
+      Checkpoint ("Skipping check of schedule requirements (no flesh support)");
+      // do nothing
+    }
+  };                            // namespace Carpet
+};                              // namespace Requirements
+
+
+
+#endif // #ifdef CACTUS_HAS_REQUIRES_CLAUSES
