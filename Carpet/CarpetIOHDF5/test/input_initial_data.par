@@ -1,7 +1,7 @@
 # deactivate the IDScalarWaveMoL thorn
 # initial data is read from files using the filereader
-ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce CarpetSlab Boundary CoordBase SymBase CartGrid3D Periodic LocalInterp NaNChecker Slab Time MoL WaveToyMoL IOUtil CarpetIOBasic CarpetIOScalar CarpetIOHDF5"
-#ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce CarpetSlab Boundary CoordBase SymBase CartGrid3D Periodic LocalInterp NaNChecker Slab Time MoL WaveToyMoL IOUtil CarpetIOBasic CarpetIOScalar CarpetIOHDF5 IDScalarWaveMoL"
+ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce CarpetSlab Boundary CoordBase InitBase SymBase CartGrid3D Periodic LocalInterp NaNChecker Slab Time MoL WaveToyMoL IOUtil CarpetIOBasic CarpetIOScalar CarpetIOHDF5"
+#ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetInterp CarpetReduce CarpetSlab Boundary CoordBase InitBase SymBase CartGrid3D Periodic LocalInterp NaNChecker Slab Time MoL WaveToyMoL IOUtil CarpetIOBasic CarpetIOScalar CarpetIOHDF5 IDScalarWaveMoL"
 
 
 Cactus::cctk_itlast = 128
@@ -11,10 +11,11 @@ Driver::global_ny  = 5
 Driver::global_nz  = 5
 Driver::ghost_size = 2
 
+InitBase::initial_data_setup_method = "init_all_levels"
+
 Carpet::max_refinement_levels    = 3
 Carpet::prolongation_order_space = 3
 Carpet::prolongation_order_time  = 2
-Carpet::init_each_timelevel      = "yes"
 
 CarpetRegrid::refinement_levels = 1
 CarpetRegrid::refined_regions   = "manual-gridpoint-list"

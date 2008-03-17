@@ -1,4 +1,4 @@
-ActiveThorns = "Boundary CartGrid3D Time CoordBase SymBase Carpet CarpetLib CarpetRegrid CarpetReduce CarpetSlab IOUtil CarpetIOBasic CarpetIOScalar CarpetIOASCII CarpetIOHDF5 IDScalarWaveC WaveToyC"
+ActiveThorns = "Boundary CartGrid3D Time CoordBase InitBase SymBase Carpet CarpetLib CarpetRegrid CarpetReduce CarpetSlab IOUtil CarpetIOBasic CarpetIOScalar CarpetIOASCII CarpetIOHDF5 IDScalarWaveC WaveToyC"
 
 
 Cactus::cctk_itlast = 64
@@ -9,6 +9,8 @@ Grid::avoid_origin = "no"
 Grid::type         = "byrange"
 Grid::dxyz         = 1
 
+InitBase::initial_data_setup_method = "init_all_levels"
+
 IDScalarWave::initial_data = "gaussian"
 IDScalarWave::sigma        = 2.8
 IDScalarWave::radius       = 0.0
@@ -18,7 +20,6 @@ Driver::ghost_size   = 2
 
 Carpet::prolongation_order_space = 3
 Carpet::prolongation_order_time  = 2
-Carpet::init_each_timelevel      = "yes"
 Carpet::max_refinement_levels    = 4
 CarpetRegrid::refinement_levels  = 4
 
@@ -31,7 +32,7 @@ IOBasic::outInfo_every         = 1
 IOBasic::outInfo_vars          = "wavetoy::phi"
 IOScalar::outScalar_every      = 32
 IOScalar::outScalar_vars       = "wavetoy::phi"
-IOScalar::outScalar_reductions = "average count maximum minimum  norm1 norm2 norm_inf product sum sum_abs sum_squared"
+IOScalar::outScalar_reductions = "average count maximum minimum  norm1 norm2 norm_inf product"
 
 IOASCII::out1D_vars  = "wavetoy::phi"
 IOASCII::out1D_every = 32
