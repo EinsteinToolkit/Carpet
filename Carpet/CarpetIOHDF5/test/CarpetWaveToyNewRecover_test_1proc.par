@@ -1,4 +1,4 @@
-ActiveThorns = "Boundary CartGrid3D Time CoordBase SymBase Carpet CarpetLib CarpetRegrid CarpetReduce CarpetSlab IOUtil CarpetIOBasic CarpetIOScalar CarpetIOASCII CarpetIOHDF5 IDScalarWaveC WaveToyC"
+ActiveThorns = "Boundary CartGrid3D Time CoordBase InitBase SymBase Carpet CarpetLib CarpetRegrid CarpetReduce CarpetSlab IOUtil CarpetIOBasic CarpetIOScalar CarpetIOASCII CarpetIOHDF5 IDScalarWaveC WaveToyC"
 
 
 Cactus::cctk_itlast = 128
@@ -13,8 +13,5 @@ IO::recover_file = "CarpetWaveToyCheckpoint_test.it_64"
 
 Carpet::regrid_during_recovery                   = no
 CarpetIOHDF5::use_grid_structure_from_checkpoint = yes
-
-# omit sum norms in the reduction output
-IOScalar::outScalar_reductions = "average count maximum minimum norm1 norm2 norm_inf product"
 
 IOHDF5::checkpoint = "no"
