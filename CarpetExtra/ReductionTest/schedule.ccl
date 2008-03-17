@@ -1,0 +1,41 @@
+# Schedule definitions for thorn ReductionTest
+# $Header:$
+
+STORAGE: center_of_mass center_of_mass_helpers[3]
+
+SCHEDULE CoM_Local AT CCTK_INITIAL AFTER Whisky_Initial
+{
+  
+  LANG: C
+  SYNC: center_of_mass_helpers
+} "Setup integrands for CoM calculation"
+
+SCHEDULE CoM_Local AT CCTK_EVOL AFTER MoL_Evolution
+{
+  
+  LANG: C
+  SYNC: center_of_mass_helpers
+} "Setup integrands for CoM calculation"
+
+SCHEDULE CoM_Local AT Postregridinitial
+{
+  
+  LANG: C
+  SYNC: center_of_mass_helpers
+} "Setup integrands for CoM calculation"
+
+SCHEDULE CoM_Local AT Postregrid
+{
+  
+  LANG: C
+  SYNC: center_of_mass_helpers
+} "Setup integrands for CoM calculation"
+
+
+
+SCHEDULE CoM AT CCTK_ANALYSIS 
+{
+  
+  LANG: C
+  OPTIONS: GLOBAL
+} "CoM Reductions"

@@ -8,12 +8,23 @@ BOOLEAN veryverbose "Produce much screen output while running"
 {
 } no
 
+
+
 SHARES: IO
+
+USES KEYWORD out_mode
+USES INT     out_proc_every
+
+USES INT     out_timesteps_per_file
+
+USES KEYWORD out_save_parameters
 
 USES STRING  out_dir       AS IO_out_dir
 USES KEYWORD out_criterion AS IO_out_criterion
 USES INT     out_every     AS IO_out_every
 USES REAL    out_dt        AS IO_out_dt
+
+
 
 PRIVATE:
 
@@ -23,15 +34,35 @@ STRING out_dir "Output directory (overrides IO::out_dir)" STEERABLE=always
   ".+" :: "Not empty: directory name"
 } ""
 
-STRING out_filename "File name (without extension)" STEERABLE=always
+KEYWORD file_content "Create one file for every x" STEERABLE=always
+{
+  "variable"   :: ""
+  "group"      :: ""
+  "thorn"      :: ""
+  "everything" :: ""
+} "group"
+
+INT iteration_digits "Minimum number of digits for iteration number" STEERABLE=always
+{
+  0:* :: ""
+} 10
+
+STRING out_filename "File name (without extension) for file_content='everything'" STEERABLE=always
 {
   "" :: ""
 } "output"
+
+INT processor_digits "Minimum number of digits for processor number" STEERABLE=always
+{
+  0:* :: ""
+} 6
 
 STRING out_extension "File name extension" STEERABLE=always
 {
   "" :: "File extension (including a leading dot, if desired)"
 } ".f5"
+
+
 
 STRING out_vars "Variables and groups which should be output in the F5 file format" STEERABLE=always
 {
@@ -67,3 +98,21 @@ REAL dt_fudge "Fudge factor for time comparisons" STEERABLE=always
 {
   0:* :: ""
 } 1.0e-12
+
+
+
+INT compression_level "Compression level to use for writing HDF5 data" STEERABLE=always
+{
+  0:9 :: "Higher numbers compress better, a value of zero disables compression"
+} 0
+
+
+
+KEYWORD output_regions "Regions which should be output" STEERABLE=always
+{
+  "exterior"     :: "whole region (including boundaries)"
+  "communicated" :: "exterior without outer boundary"
+  "owned"        :: "evolved in time"
+  # "active"       :: "owned minus buffers"
+  "interior"     :: "interior (without ghost zones)"
+} "exterior"

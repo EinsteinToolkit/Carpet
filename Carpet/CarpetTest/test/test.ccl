@@ -1,0 +1,4 @@
+TEST arraysizes
+{
+  NPROCS 1
+}

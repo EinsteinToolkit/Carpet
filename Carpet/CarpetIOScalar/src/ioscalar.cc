@@ -194,7 +194,7 @@ namespace CarpetIOScalar {
     assert (num_tl>=1);
 
     // Check for storage
-    if (! CCTK_QueryGroupStorageI(cctkGH, group)) {
+    if (not CCTK_QueryGroupStorageI(cctkGH, group)) {
       CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
 		  "Cannot output variable \"%s\" because it has no storage",
 		  varname);
@@ -239,7 +239,7 @@ namespace CarpetIOScalar {
       while (p!=redlist.end() and isspace(*p)) ++p;
       if (p==redlist.end()) break;
       string::const_iterator const start = p;
-      while (p!=redlist.end() and !isspace(*p)) ++p;
+      while (p!=redlist.end() and not isspace(*p)) ++p;
       string::const_iterator const end = p;
       string const reduction (start, end);
       int const handle = CCTK_ReductionHandle (reduction.c_str());
@@ -278,102 +278,97 @@ namespace CarpetIOScalar {
           string filenamestr = filenamebuf.str();
           const char* const filename = filenamestr.c_str();
 
-          // If this is the first time, then write a nice header
           if (do_truncate.at(n) and IO_TruncateOutputFiles (cctkGH)) {
             file.open (filename, ios::out | ios::trunc);
-            io_files += 1;
-            io_bytes_begin = file.tellg();
-            {
-              bool want_labels = false;
-              bool want_date = false;
-              bool want_parfilename = false;
-              bool want_other = false;
-              if (CCTK_EQUALS (out_fileinfo, "none")) {
-                // do nothing
-              } else if (CCTK_EQUALS (out_fileinfo, "axis labels")) {
-                want_labels = true;
-              } else if (CCTK_EQUALS (out_fileinfo, "creation date")) {
-                want_date = true;
-              } else if (CCTK_EQUALS (out_fileinfo, "parameter filename")) {
-                want_parfilename = true;
-              } else if (CCTK_EQUALS (out_fileinfo, "all")) {
-                want_labels = true;
-                want_date = true;
-                want_parfilename = true;
-                want_other = true;
-              } else {
-                CCTK_WARN (0, "internal error");
-              }
-              file << "# Scalar ASCII output created by CarpetIOScalar" << eol;
-              if (want_date) {
-                char run_host [1000];
-                Util_GetHostName (run_host, sizeof run_host);
-#if 0
-                char const * const run_user = CCTK_RunUser();
-#else
-                char const * const run_user = getenv ("USER");
-#endif
-                char run_date [1000];
-                Util_CurrentDate (sizeof run_date, run_date);
-                char run_time [1000];
-                Util_CurrentTime (sizeof run_time, run_time);
-                file << "# created on " << run_host
-                     << " by " << run_user
-                     << " on " << run_date
-                     << " at " << run_time << eol;
-              }
-              if (want_parfilename) {
-                char parameter_filename [10000];
-                CCTK_ParameterFilename
-                  (sizeof parameter_filename, parameter_filename);
-                file << "# parameter filename: \"" << parameter_filename << "\"" << eol;
-              }
-              if (want_other) {
-                if (CCTK_IsFunctionAliased ("UniqueBuildID")) {
-                  char const * const build_id
-                    = (char const *) UniqueBuildID (cctkGH);
-                  file << "# Build ID: " << build_id << eol;
-                }
-                if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
-                  char const * const job_id
-                    = static_cast<char const *> (UniqueSimulationID (cctkGH));
-                  file << "# Simulation ID: " << job_id << eol;
-                }
-                if (CCTK_IsFunctionAliased ("UniqueRunID")) {
-                  char const * const job_id
-                    = static_cast<char const *> (UniqueRunID (cctkGH));
-                  file << "# Run ID: " << job_id << eol;
-                }
-              }
-              file << "#" << eol;
-              if (want_labels) {
-                file << "# " << varname << " (" << alias << ")" << eol;
-                file << "# 1:iteration 2:time 3:data" << eol;
-                int col = 3;
-                if (one_file_per_group) {
-                  file << "# data columns:";
-                  int const firstvar = CCTK_FirstVarIndexI(group);
-                  int const numvars = CCTK_NumVarsInGroupI(group);
-                  for (int n=firstvar; n<firstvar+numvars; ++n) {
-                    file << " " << col << ":" << CCTK_VarName(n);
-                    col += CarpetSimpleMPIDatatypeLength (vartype);
-                  }
-                  file << eol;
-                }
-              }
-            }
           } else {
             file.open (filename, ios::out | ios::app);
-            io_files += 1;
-            io_bytes_begin = file.tellg();
           }
-          if (! file.good()) {
+          if (not file.good()) {
             CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                         "Could not open output file \"%s\" for variable \"%s\"",
                         filename, varname);
           }
-
           assert (file.is_open());
+
+          io_files += 1;
+          io_bytes_begin = file.tellg();
+
+          // If this is the first time, then write a nice header
+          if (do_truncate.at(n)) {
+            bool want_labels = false;
+            bool want_date = false;
+            bool want_parfilename = false;
+            bool want_other = false;
+            if (CCTK_EQUALS (out_fileinfo, "none")) {
+              // do nothing
+            } else if (CCTK_EQUALS (out_fileinfo, "axis labels")) {
+              want_labels = true;
+            } else if (CCTK_EQUALS (out_fileinfo, "creation date")) {
+              want_date = true;
+            } else if (CCTK_EQUALS (out_fileinfo, "parameter filename")) {
+              want_parfilename = true;
+            } else if (CCTK_EQUALS (out_fileinfo, "all")) {
+              want_labels = true;
+              want_date = true;
+              want_parfilename = true;
+              want_other = true;
+            } else {
+              CCTK_WARN (0, "internal error");
+            }
+            file << "# Scalar ASCII output created by CarpetIOScalar" << eol;
+            if (want_date) {
+              char run_host [1000];
+              Util_GetHostName (run_host, sizeof run_host);
+              char const * const run_user = getenv ("USER");
+              char run_date [1000];
+              Util_CurrentDate (sizeof run_date, run_date);
+              char run_time [1000];
+              Util_CurrentTime (sizeof run_time, run_time);
+              file << "# created on " << run_host
+                   << " by " << run_user
+                   << " on " << run_date
+                   << " at " << run_time << eol;
+            }
+            if (want_parfilename) {
+              char parameter_filename [10000];
+              CCTK_ParameterFilename
+                (sizeof parameter_filename, parameter_filename);
+              file << "# parameter filename: \"" << parameter_filename << "\"" << eol;
+            }
+            if (want_other) {
+              if (CCTK_IsFunctionAliased ("UniqueBuildID")) {
+                char const * const build_id
+                  = (char const *) UniqueBuildID (cctkGH);
+                file << "# Build ID: " << build_id << eol;
+              }
+              if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
+                char const * const job_id
+                  = static_cast<char const *> (UniqueSimulationID (cctkGH));
+                file << "# Simulation ID: " << job_id << eol;
+              }
+              if (CCTK_IsFunctionAliased ("UniqueRunID")) {
+                char const * const job_id
+                  = static_cast<char const *> (UniqueRunID (cctkGH));
+                file << "# Run ID: " << job_id << eol;
+              }
+            }
+            file << "#" << eol;
+            if (want_labels) {
+              file << "# " << varname << " (" << alias << ")" << eol;
+              file << "# 1:iteration 2:time 3:data" << eol;
+              int col = 3;
+              if (one_file_per_group) {
+                file << "# data columns:";
+                int const firstvar = CCTK_FirstVarIndexI(group);
+                int const numvars = CCTK_NumVarsInGroupI(group);
+                for (int n=firstvar; n<firstvar+numvars; ++n) {
+                  file << " " << col << ":" << CCTK_VarName(n);
+                  col += CarpetSimpleMPIDatatypeLength (vartype);
+                }
+                file << eol;
+              }
+            }
+          }
 
           file << setprecision(15);
           assert (file.good());
@@ -430,22 +425,15 @@ namespace CarpetIOScalar {
         if (CCTK_MyProc(cctkGH)==0) {
           file << eol;
           assert (file.good());
-        }
-        
-        if (CCTK_MyProc(cctkGH)==0) {
+
           io_bytes_end = file.tellg();
           file.close();
           assert (file.good());
         }
 
-        assert (! file.is_open());
+        assert (not file.is_open());
 
         CCTK_REAL const io_bytes = io_bytes_end - io_bytes_begin;
-#if 0
-        // Broadcast I/O size and synchronise processes
-        MPI_Bcast (& io_files, 1, dist::datatype (io_files), 0, dist::comm());
-        MPI_Bcast (& io_bytes, 1, dist::datatype (io_bytes), 0, dist::comm());
-#endif
         EndTimingIO (cctkGH, io_files, io_bytes, false);
 
       } // for reductions
@@ -470,12 +458,12 @@ namespace CarpetIOScalar {
 
     assert (vindex>=0 and vindex<CCTK_NumVars());
 
-    if (! do_global_mode) return 0;
+    if (not do_global_mode) return 0;
 
     CheckSteerableParameters (cctkGH);
 
     // check if output for this variable was requested
-    if (! IOparameters.requests[vindex])
+    if (not IOparameters.requests[vindex])
     {
       return (0);
     }
@@ -564,7 +552,7 @@ namespace CarpetIOScalar {
 
     } // select output criterion
 
-    if (! output_this_iteration) return 0;
+    if (not output_this_iteration) return 0;
 
 
 
@@ -588,7 +576,7 @@ namespace CarpetIOScalar {
       output_variables_iteration = cctk_iteration;
     }
 
-    if (! output_variables.at(vindex)) return 0;
+    if (not output_variables.at(vindex)) return 0;
 #endif
 
 
@@ -665,7 +653,7 @@ namespace CarpetIOScalar {
                                  outScalar_vars, -1, IOparameters.requests);
 
       // notify the user about the new setting
-      if (! CCTK_Equals (verbose, "none")) {
+      if (not CCTK_Equals (verbose, "none")) {
         int count = 0;
         string msg ("Periodic scalar output requested for '");
         for (int i = CCTK_NumVars () - 1; i >= 0; i--) {
