@@ -1,9 +1,11 @@
-ActiveThorns = "Boundary CoordBase CartGrid3D SymBase Time Carpet CarpetReduce CarpetSlab CarpetLib CarpetRegrid IOUtil IOBasic CarpetIOASCII CarpetIOHDF5 IDScalarWaveC WaveToyC"
+ActiveThorns = "Boundary CartGrid3D Time CoordBase InitBase SymBase Carpet CarpetReduce CarpetSlab CarpetLib CarpetRegrid IOUtil CarpetIOBasic CarpetIOASCII CarpetIOHDF5 IDScalarWaveC WaveToyC"
 
 
 Cactus::cctk_itlast = 12
 
 Time::dtfac = 0.5
+
+InitBase::initial_data_setup_method = "init_all_levels"
 
 IDScalarWave::initial_data = "gaussian"
 IDScalarWave::sigma        = 2.8
@@ -18,8 +20,6 @@ Driver::ghost_size   = 2
 
 Carpet::prolongation_order_space = 3
 Carpet::prolongation_order_time  = 2
-Carpet::init_each_timelevel      = "yes"
-Carpet::buffer_width             = 6
 Carpet::max_refinement_levels    = 2
 
 CarpetRegrid::refinement_levels  = 2

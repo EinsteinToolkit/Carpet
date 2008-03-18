@@ -8,10 +8,10 @@
 #   @enddesc
 # @@*/
 
-ActiveThorns = "Boundary Time CartGrid3D CoordBase SymBase"
-ActiveThorns = "IOUtil IOBasic"
+ActiveThorns = "Boundary Time CartGrid3D CoordBase InitBase SymBase"
+ActiveThorns = "IOUtil"
 ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetReduce CarpetSlab"
-ActiveThorns = "CarpetIOHDF5"
+ActiveThorns = "CarpetIOHDF5 CarpetIOBasic"
 ActiveThorns = "IDScalarWaveC WaveToyC WaveBinarySource"
 
 ####################
@@ -40,6 +40,8 @@ Grid::domain = "full"
 Grid::dxyz   = 0.005
 
 Time::dtfac = 0.5
+
+InitBase::initial_data_setup_method = "init_all_levels"
 
 WaveToy::bound = "radiation"
 
