@@ -11,7 +11,7 @@
 ActiveThorns = "Boundary Time CartGrid3D CoordBase InitBase SymBase"
 ActiveThorns = "IOUtil"
 ActiveThorns = "Carpet CarpetLib CarpetRegrid CarpetReduce CarpetSlab"
-ActiveThorns = "CarpetIOHDF5 CarpetIOBasic"
+ActiveThorns = "HDF5 CarpetIOHDF5 CarpetIOBasic"
 ActiveThorns = "IDScalarWaveC WaveToyC WaveBinarySource"
 
 ####################
