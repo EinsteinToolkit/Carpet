@@ -271,6 +271,19 @@ namespace Carpet {
       CallRegridInitialMeta (cctkGH);
     }
     
+    // Poison early, since grid functions may be initialised in global
+    // loop-local mode, ane we must not overwrite them accidentally
+    for (int rl=0; rl<reflevels; ++rl) {
+      BEGIN_MGLEVEL_LOOP(cctkGH) {
+        ENTER_LEVEL_MODE (cctkGH, rl) {
+          
+          // Checking
+          Poison (cctkGH, alltimes, CCTK_GF);
+          
+        } LEAVE_LEVEL_MODE;
+      } END_MGLEVEL_LOOP;
+    } // for rl
+    
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cctkGH) {
         ENTER_LEVEL_MODE (cctkGH, rl) {
@@ -283,9 +296,6 @@ namespace Carpet {
                     cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
                     (do_global_mode ? " (global)" : ""),
                     (do_meta_mode ? " (meta)" : ""));
-          
-          // Checking
-          Poison (cctkGH, alltimes, CCTK_GF);
           
           // Timing statistics
           if (do_global_mode) {
