@@ -44,16 +44,16 @@
       defines or updates the grid hierarchy, and reduces the chance of
       inconsistencies therein.</p></li>
 
-      <li></p>During checkpointing and recovery, the grid structure is
+      <li><p>During checkpointing and recovery, the grid structure is
       saved and restored by default.  This avoids accidental changes
       upon recovery.</p></li>
 
-      <li></p>The efficiency of I/O has been increased, especially for
+      <li><p>The efficiency of I/O has been increased, especially for
       HDF5 based binary I/O.  It is possible to combine several
       variables into one file to reduce the number of output
       files.</p></li>
 
-      <li></p>A new thorn LoopControl offers iterators over grid
+      <li><p>A new thorn LoopControl offers iterators over grid
       points, implemented as C-style macros.  These iterators allow
       additional important loop-level optimisations, such
       as <a href="http://en.wikipedia.org/wiki/Loop_tiling">loop
@@ -143,7 +143,7 @@
       reduces the number of output files.</p></li>
     </ul>
 
-    <h3><Communication, Mesh Refinement</h3>
+    <h3>Communication, Mesh Refinement</h3>
 
     <ul>
       <li><p>The algorithm determining the communication schedule is
