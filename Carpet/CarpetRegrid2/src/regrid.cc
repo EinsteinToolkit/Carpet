@@ -174,6 +174,68 @@ namespace CarpetRegrid2 {
   
   
   
+  void
+  get_physical_boundary (rvect & physical_lower,
+                         rvect & physical_upper,
+                         rvect & spacing)
+  {
+    rvect interior_lower, interior_upper;
+    rvect exterior_lower, exterior_upper;
+    if (CCTK_IsFunctionAliased ("MultiPatch_GetDomainSpecification")) {
+      assert (Carpet::map >= 0);
+      CCTK_INT const ierr = MultiPatch_GetDomainSpecification
+        (Carpet::map, dim,
+         & physical_lower[0], & physical_upper[0],
+         & interior_lower[0], & interior_upper[0],
+         & exterior_lower[0], & exterior_upper[0],
+         & spacing[0]);
+      assert (not ierr);
+    } else if (CCTK_IsFunctionAliased ("GetDomainSpecification")) {
+      CCTK_INT const ierr = GetDomainSpecification
+        (dim,
+         & physical_lower[0], & physical_upper[0],
+         & interior_lower[0], & interior_upper[0],
+         & exterior_lower[0], & exterior_upper[0],
+         & spacing[0]);
+      assert (not ierr);
+    } else {
+      assert (0);
+    }
+  }
+  
+  void
+  calculate_exterior_boundary (rvect const & physical_lower,
+                               rvect const & physical_upper,
+                               rvect       & exterior_lower,
+                               rvect       & exterior_upper,
+                               rvect const & spacing)
+  {
+    rvect interior_lower, interior_upper;
+    if (CCTK_IsFunctionAliased ("MultiPatch_ConvertFromPhysicalBoundary")) {
+      assert (Carpet::map >= 0);
+      CCTK_INT const ierr = MultiPatch_ConvertFromPhysicalBoundary
+        (Carpet::map, dim,
+         & physical_lower[0], & physical_upper[0],
+         & interior_lower[0], & interior_upper[0],
+         & exterior_lower[0], & exterior_upper[0],
+         & spacing[0]);
+      assert (not ierr);
+    } else if (CCTK_IsFunctionAliased ("ConvertFromPhysicalBoundary")) {
+      CCTK_INT const ierr =
+        ConvertFromPhysicalBoundary
+        (dim,
+         & physical_lower[0], & physical_upper[0],
+         & interior_lower[0], & interior_upper[0],
+         & exterior_lower[0], & exterior_upper[0],
+         & spacing[0]);
+      assert (not ierr);
+    } else {
+      assert (0);
+    }
+  }
+  
+  
+  
   extern "C" {
     CCTK_INT
     CarpetRegrid2_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
@@ -208,6 +270,7 @@ namespace CarpetRegrid2 {
 #warning "TODO: check this (for Carpet, and maybe also for CartGrid3D)"
 #warning "TODO: (the check that these two are consistent should be in Carpet)"
     
+#if 0
     typedef vect<vect<CCTK_INT,2>,3> jjvect;
     jjvect nboundaryzones;
     jjvect is_internal;
@@ -222,7 +285,9 @@ namespace CarpetRegrid2 {
          & shiftout[0][0]);
       assert (not ierr);
     }
+#endif
     
+#if 0
     rvect physical_lower, physical_upper;
     rvect interior_lower, interior_upper;
     rvect exterior_lower, exterior_upper;
@@ -236,10 +301,16 @@ namespace CarpetRegrid2 {
          & spacing[0]);
       assert (not ierr);
     }
+#endif
+    rvect physical_lower, physical_upper;
+    rvect spacing;
+    get_physical_boundary (physical_lower, physical_upper,
+                           spacing);
     
     // Adapt spacing for convergence level
     spacing *= ipow ((CCTK_REAL) Carpet::mgfact, Carpet::basemglevel);
     
+#if 0
     {
       CCTK_INT const ierr =
         ConvertFromPhysicalBoundary
@@ -250,6 +321,11 @@ namespace CarpetRegrid2 {
          & spacing[0]);
       assert (not ierr);
     }
+#endif
+    rvect exterior_lower, exterior_upper;
+    calculate_exterior_boundary (physical_lower, physical_upper,
+                                 exterior_lower, exterior_upper,
+                                 spacing);
     
     //
     // Calculate the union of the bounding boxes for all levels
@@ -274,38 +350,43 @@ namespace CarpetRegrid2 {
     }
     regions.at(0).normalize();
     
-    // Loop over all centres
-    for (int n = 0; n < num_centres; ++ n) {
-      centre_description centre (cctkGH, n);
-      if (centre.active) {
-        
-        // Loop over all levels for this centre
-        for (int rl = 1; rl < centre.num_levels; ++ rl) {
+    // Refine only patch 0
+    if (Carpet::map == 0) {
+      // Loop over all centres
+      for (int n = 0; n < num_centres; ++ n) {
+        centre_description centre (cctkGH, n);
+        if (centre.active) {
           
-          // Calculate a bbox for this region
-          rvect const rmin = centre.position - centre.radius.at(rl);
-          rvect const rmax = centre.position + centre.radius.at(rl);
+          // Loop over all levels for this centre
+          for (int rl = 1; rl < centre.num_levels; ++ rl) {
+            
+            // Calculate a bbox for this region
+            rvect const rmin = centre.position - centre.radius.at(rl);
+            rvect const rmax = centre.position + centre.radius.at(rl);
+            
+            // Convert to an integer bbox
+            ivect const istride = hh.baseextents.at(0).at(rl).stride();
+            ivect const imin =
+              rpos2ipos (rmin, origin, scale, hh, rl)
+              - boundary_shiftout * istride;
+            ivect const imax =
+              rpos2ipos1 (rmax, origin, scale, hh, rl)
+              + boundary_shiftout * istride;
+            
+            ibbox const region (imin, imax, istride);
+            
+            // Add this region to the list of regions
+            if (static_cast <int> (regions.size()) < rl+1) {
+              regions.resize (rl+1);
+            }
+            regions.at(rl) |= region;
+            regions.at(rl).normalize();
+            
+          } // for rl
           
-          // Convert to an integer bbox
-          ivect const istride = hh.baseextents.at(0).at(rl).stride();
-          ivect const imin =
-            rpos2ipos (rmin, origin, scale, hh, rl)
-            - boundary_shiftout * istride;
-          ivect const imax =
-            rpos2ipos1 (rmax, origin, scale, hh, rl)
-            + boundary_shiftout * istride;
-          
-          ibbox const region (imin, imax, istride);
-          
-          // Add this region to the list of regions
-          if (static_cast <int> (regions.size()) < rl+1) regions.resize (rl+1);
-          regions.at(rl) |= region;
-          regions.at(rl).normalize();
-          
-        } // for rl
-        
-      } // if centre is active
-    }   // for n
+        } // if centre is active
+      }   // for n
+    }     // if map==0
     
     
       
@@ -448,6 +529,7 @@ namespace CarpetRegrid2 {
       rvect const level_physical_lower = physical_lower;
       rvect const level_physical_upper = physical_upper;
       rvect const level_spacing = spacing / rvect (hh.reffacts.at(rl));
+#if 0
       rvect level_interior_lower, level_interior_upper;
       rvect level_exterior_lower, level_exterior_upper;
       {
@@ -460,6 +542,11 @@ namespace CarpetRegrid2 {
            & level_spacing[0]);
         assert (not ierr);
       }
+#endif
+      rvect level_exterior_lower, level_exterior_upper;
+      calculate_exterior_boundary (level_physical_lower, level_physical_upper,
+                                   level_exterior_lower, level_exterior_upper,
+                                   level_spacing);
       
       ivect const level_exterior_ilower =
         rpos2ipos (level_exterior_lower, origin, scale, hh, rl);
@@ -975,20 +1062,20 @@ namespace CarpetRegrid2 {
       for (int m = 0; m < maps; ++ m) {
         maxrl = max (maxrl, rls.at(m));
       }
+      // All maps must have the same number of levels
+      for (int m = 0; m < maps; ++ m) {
+        regsss.at(m).resize (maxrl);
+      }
       
       // Make multiprocessor aware
       for (int rl = 0; rl < maxrl; ++ rl) {
         vector <vector <region_t> > regss (maps);
         for (int m = 0; m < maps; ++ m) {
-          if (rl < rls.at(m)) {
-            regss.at(m) = regsss.at(m).at(rl);
-          }
+          regss.at(m) = regsss.at(m).at(rl);
         }
         Carpet::SplitRegionsMaps (cctkGH, regss);
         for (int m = 0; m < maps; ++ m) {
-          if (rl < rls.at(m)) {
-            regsss.at(m).at(rl) = regss.at(m);
-          }
+          regsss.at(m).at(rl) = regss.at(m);
         }
       } // for rl
       

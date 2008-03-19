@@ -46,12 +46,12 @@ namespace CarpetIOASCII {
     static int TimeToOutput (const cGH* cctkGH, int vindex);
     static int TriggerOutput (const cGH* cctkGH, int vindex);
 
-    static int GetGridOffset (const cGH* cctkGH, int dir,
+    static int GetGridOffset (const cGH* cctkGH, int m, int dir,
                               const char* itempl, const char* iglobal,
                               const char* ctempl, const char* cglobal,
                               CCTK_REAL cfallback);
-    static int CoordToOffset (const cGH* cctkGH, int dir, CCTK_REAL coord,
-                              int ifallback);
+    static int CoordToOffset (const cGH* cctkGH, int m, int dir,
+                              CCTK_REAL coord, int ifallback);
 
     static void CheckSteerableParameters (const cGH* cctkGH);
     static const char* GetStringParameter (const char* parametertemplate);

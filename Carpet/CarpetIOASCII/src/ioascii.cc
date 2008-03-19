@@ -358,7 +358,6 @@ namespace CarpetIOASCII {
   ::OutputVarAs (const cGH* const cctkGH,
 		 const char* const varname, const char* const alias)
   {
-    DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
 
     int vindex = -1;
@@ -434,7 +433,7 @@ namespace CarpetIOASCII {
       for (int ml = 0; ml < mglevels; ++ml) {
         last_outputs[ml].resize (maxreflevels);
         for (int rl = 0; rl < maxreflevels; ++rl) {
-          last_outputs[ml][rl].resize (numelems, cctk_iteration - 1);
+          last_outputs[ml][rl].resize (numelems, cctkGH->cctk_iteration - 1);
         }
       }
       // TODO: this makes a copy of last_outputs, which is expensive
@@ -454,7 +453,7 @@ namespace CarpetIOASCII {
       elem = vindex;
     }
     int& last_output = thisfile->second.at(mglevel).at(reflevel).at(elem);
-    if (last_output == cctk_iteration) {
+    if (last_output == cctkGH->cctk_iteration) {
       // Has already been output during this iteration
       char * const fullname = CCTK_FullName (vindex);
       CCTK_VWarn (5, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -465,8 +464,8 @@ namespace CarpetIOASCII {
       free (fullname);
       return 0;
     }
-    assert (last_output < cctk_iteration);
-    last_output = cctk_iteration;
+    assert (last_output < cctkGH->cctk_iteration);
+    last_output = cctkGH->cctk_iteration;
 
     // Check for storage
     if (not CCTK_QueryGroupStorageI (cctkGH, group)) {
@@ -547,7 +546,9 @@ namespace CarpetIOASCII {
 	if (desired) {
 
 	  // Traverse all maps on this refinement and multigrid level
-	  BEGIN_MAP_LOOP(cctkGH, grouptype) {
+          int const m_min = 0;
+          int const m_max = grouptype == CCTK_GF ? Carpet::maps : 1;
+          for (int m = m_min; m < m_max; ++ m) {
 
             // Find the output offset.
             ivect offset(0);
@@ -555,17 +556,17 @@ namespace CarpetIOASCII {
               switch (outdim) {
               case 0:
                 offset[0] = GetGridOffset
-                  (cctkGH, 1,
+                  (cctkGH, m, 1,
                    "out%dD_point_xi", /*"out_point_xi"*/ NULL,
                    "out%dD_point_x",  /*"out_point_x"*/  NULL,
                    /*out_point_x*/ 0.0);
                 offset[1] = GetGridOffset
-                  (cctkGH, 2,
+                  (cctkGH, m, 2,
                    "out%dD_point_yi", /*"out_point_yi"*/ NULL,
                    "out%dD_point_y",  /*"out_point_y"*/  NULL,
                    /*out_point_y*/ 0.0);
                 offset[2] = GetGridOffset
-                  (cctkGH, 3,
+                  (cctkGH, m, 3,
                    "out%dD_point_zi", /*"out_point_zi"*/ NULL,
                    "out%dD_point_z",  /*"out_point_z"*/  NULL,
                    /*out_point_z*/ 0.0);
@@ -573,31 +574,31 @@ namespace CarpetIOASCII {
               case 1:
                 switch (dirs[0]) {
                 case 0:
-                  offset[1] = GetGridOffset (cctkGH, 2,
+                  offset[1] = GetGridOffset (cctkGH, m, 2,
                                              "out%dD_xline_yi", "out_xline_yi",
                                              "out%dD_xline_y",  "out_xline_y",
                                              out_xline_y);
-                  offset[2] = GetGridOffset (cctkGH, 3,
+                  offset[2] = GetGridOffset (cctkGH, m, 3,
                                              "out%dD_xline_zi", "out_xline_zi",
                                              "out%dD_xline_z",  "out_xline_z",
                                              out_xline_z);
                   break;
                 case 1:
-                  offset[0] = GetGridOffset (cctkGH, 1,
+                  offset[0] = GetGridOffset (cctkGH, m, 1,
                                              "out%dD_yline_xi", "out_yline_xi",
                                              "out%dD_yline_x",  "out_yline_x",
                                              out_yline_x);
-                  offset[2] = GetGridOffset (cctkGH, 3,
+                  offset[2] = GetGridOffset (cctkGH, m, 3,
                                              "out%dD_yline_zi", "out_yline_zi",
                                              "out%dD_yline_z",  "out_yline_z",
                                              out_yline_z);
                   break;
                 case 2:
-                  offset[0] = GetGridOffset (cctkGH, 1,
+                  offset[0] = GetGridOffset (cctkGH, m, 1,
                                              "out%dD_zline_xi", "out_zline_xi",
                                              "out%dD_zline_x",  "out_zline_x",
                                              out_zline_x);
-                  offset[1] = GetGridOffset (cctkGH, 2,
+                  offset[1] = GetGridOffset (cctkGH, m, 2,
                                              "out%dD_zline_yi", "out_zline_yi",
                                              "out%dD_zline_y",  "out_zline_y",
                                              out_zline_y);
@@ -615,19 +616,19 @@ namespace CarpetIOASCII {
               case 2:
                 if (dirs[0]==0 and dirs[1]==1) {
                   offset[2] = GetGridOffset
-                    (cctkGH, 3,
+                    (cctkGH, m, 3,
                      "out%dD_xyplane_zi", "out_xyplane_zi",
                      "out%dD_xyplane_z",  "out_xyplane_z",
                      out_xyplane_z);
                 } else if (dirs[0]==0 and dirs[1]==2) {
                   offset[1] = GetGridOffset
-                    (cctkGH, 2,
+                    (cctkGH, m, 2,
                      "out%dD_xzplane_yi", "out_xzplane_yi",
                      "out%dD_xzplane_y",  "out_xzplane_y",
                      out_xzplane_y);
                 } else if (dirs[0]==1 and dirs[1]==2) {
                   offset[0] = GetGridOffset
-                    (cctkGH, 1,
+                    (cctkGH, m, 1,
                      "out%dD_yzplane_xi", "out_yzplane_xi",
                      "out%dD_yzplane_x",  "out_yzplane_x",
                      out_yzplane_x);
@@ -653,7 +654,7 @@ namespace CarpetIOASCII {
               ostringstream filenamebuf;
               filenamebuf << my_out_dir << "/" << alias;
               if (maps > 1 and grouptype == CCTK_GF) {
-                filenamebuf << "." << Carpet::map;
+                filenamebuf << "." << m;
               }
               filenamebuf << ".";
               if (new_filename_scheme) {
@@ -766,7 +767,12 @@ namespace CarpetIOASCII {
 
             // Traverse and components on this multigrid and
             // refinement level and map
-            BEGIN_COMPONENT_LOOP(cctkGH, grouptype) {
+            int const c_min = 0;
+            int const c_max =
+              grouptype == CCTK_GF ?
+              vhh.at(m)->components(reflevel) :
+              CCTK_nProcs(cctkGH);
+            for (int c = c_min; c < c_max; ++ c) {
 
               cGroup groupdata;
               {
@@ -781,18 +787,14 @@ namespace CarpetIOASCII {
                 assert (not ierr);
               }
 
-              if (groupdata.disttype != CCTK_DISTRIB_CONSTANT
-                  or component == 0)
-              {
+              if (groupdata.disttype != CCTK_DISTRIB_CONSTANT or c == 0) {
 
-                const ggf* const ff
-                  = arrdata.at(group).at(Carpet::map).data.at(var);
+                const ggf* const ff = arrdata.at(group).at(m).data.at(var);
 
                 const int maxtl = output_all_timelevels ? num_tl : 1;
                 for (int tl=0; tl<maxtl; ++tl) {
 
-                  const gdata* const data
-                    = (*ff) (tl, my_reflevel, component, mglevel);
+                  const gdata* const data = (*ff) (tl, my_reflevel, c, mglevel);
                   ibbox ext = data->extent();
 
                   ivect lo = ext.lower();
@@ -855,13 +857,17 @@ namespace CarpetIOASCII {
                   rvect global_lower;
                   rvect coord_delta;
                   if (grouptype == CCTK_GF) {
+                    rvect const cctk_origin_space =
+                      origin_space.at(m).at(mglevel);
+                    rvect const cctk_delta_space =
+                      delta_space.at(m) * rvect (mglevelfact);
                     for (int d=0; d<dim; ++d) {
                       // lower boundary of Carpet's integer indexing
-                      global_lower[d] = cctkGH->cctk_origin_space[d];
+                      global_lower[d] = cctk_origin_space[d];
                       // grid spacing of Carpet's integer indexing
                       coord_delta[d] =
-                        cctkGH->cctk_delta_space[d] /
-                        vhh.at(Carpet::map)->baseextents.at(0).at(0).stride()[d];
+                        cctk_delta_space[d] /
+                        vhh.at(m)->baseextents.at(0).at(0).stride()[d];
                     }
                   } else {
                     for (int d=0; d<dim; ++d) {
@@ -877,7 +883,7 @@ namespace CarpetIOASCII {
                   ivect offset1;
                   if (grouptype == CCTK_GF) {
                     const ibbox& baseext
-                      = vhh.at(Carpet::map)->baseextents.at(mglevel).at(reflevel);
+                      = vhh.at(m)->baseextents.at(mglevel).at(reflevel);
                     offset1 = baseext.lower() + offset * ext.stride();
                   } else {
                     offset1 = offset * ext.stride();
@@ -893,9 +899,8 @@ namespace CarpetIOASCII {
                     int const numvars = CCTK_NumVarsInGroupI(group);
                     datas.resize (numvars);
                     for (int n=0; n<numvars; ++n) {
-                      const ggf* const ff1
-                        = arrdata.at(group).at(Carpet::map).data.at(n);
-                      datas.at(n) = (*ff1) (tl, my_reflevel, component, mglevel);
+                      const ggf* const ff1 = arrdata.at(group).at(m).data.at(n);
+                      datas.at(n) = (*ff1) (tl, my_reflevel, c, mglevel);
                     }
                   } else {
                     datas.resize (1);
@@ -903,7 +908,7 @@ namespace CarpetIOASCII {
                   }
                   WriteASCII (file, datas, ext, vindex, cctkGH->cctk_iteration,
                               offset1, dirs,
-                              my_reflevel, mglevel, Carpet::map, component, tl,
+                              my_reflevel, mglevel, m, c, tl,
                               coord_time, coord_lower, coord_upper);
 
                   // Append EOL after every component
@@ -917,9 +922,9 @@ namespace CarpetIOASCII {
 
                 } // for tl
 
-              } // if distrib!=CONSTANT or component==0
+              } // if distrib!=CONSTANT or c==0
 
-            } END_COMPONENT_LOOP;
+            } // for c
 
             // Append EOL after every complete set of components
             if (dist::rank()==ioproc) {
@@ -937,7 +942,7 @@ namespace CarpetIOASCII {
             CCTK_REAL const io_bytes = io_bytes_end - io_bytes_begin;
             EndTimingIO (cctkGH, io_files, io_bytes, false);
 
-          } END_MAP_LOOP;
+          } // for m
 
 	} // if (desired)
 
@@ -993,7 +998,7 @@ namespace CarpetIOASCII {
 
   template<int outdim>
   int IOASCII<outdim>
-  ::GetGridOffset (const cGH* const cctkGH, const int dir,
+  ::GetGridOffset (const cGH* const cctkGH, const int m, const int dir,
 		   const char* const itempl, const char* const iglobal,
 		   const char* const ctempl, const char* const cglobal,
 		   const CCTK_REAL cfallback)
@@ -1011,7 +1016,7 @@ namespace CarpetIOASCII {
       assert (pcoord);
       const CCTK_REAL coord = *pcoord;
       assert (ptype == PARAMETER_REAL);
-      return CoordToOffset (cctkGH, dir, coord, 0);
+      return CoordToOffset (cctkGH, m, dir, coord, 0);
     }
 
     // Second choice: explicit index
@@ -1042,7 +1047,7 @@ namespace CarpetIOASCII {
         assert (pcoord);
         const CCTK_REAL coord = *pcoord;
         assert (ptype == PARAMETER_REAL);
-        return CoordToOffset (cctkGH, dir, coord, 0);
+        return CoordToOffset (cctkGH, m, dir, coord, 0);
       }
     }
 
@@ -1062,22 +1067,30 @@ namespace CarpetIOASCII {
     }
 
     // Fifth choice: default coordinate
-    return CoordToOffset (cctkGH, dir, cfallback, 0);
+    return CoordToOffset (cctkGH, m, dir, cfallback, 0);
   }
 
 
 
   template<int outdim>
   int IOASCII<outdim>
-  ::CoordToOffset (const cGH* cctkGH, const int dir, const CCTK_REAL coord,
-		   const int ifallback)
+  ::CoordToOffset (const cGH* cctkGH, const int m, const int dir,
+                   const CCTK_REAL coord, const int ifallback)
   {
-    assert (dir>=1 and dir<=dim);
+    assert (m>=0 and m<Carpet::maps and dir>=1 and dir<=dim);
 
-    assert (mglevel!=-1 and reflevel!=-1 and Carpet::map!=-1);
+    assert (mglevel!=-1 and reflevel!=-1 and Carpet::map==-1);
 
-    const CCTK_REAL delta = cctkGH->cctk_delta_space[dir-1] / cctkGH->cctk_levfac[dir-1];
-    const CCTK_REAL lower = cctkGH->cctk_origin_space[dir-1] + cctkGH->cctk_delta_space[dir-1] / cctkGH->cctk_levfac[dir-1] * cctkGH->cctk_levoff[dir-1] / cctkGH->cctk_levoffdenom[dir-1];
+    rvect const cctk_origin_space = origin_space.at(m).at(mglevel);
+    rvect const cctk_delta_space  = delta_space.at(m) * rvect (mglevelfact);
+    ivect const cctk_levfac = spacereffacts.at (reflevel);
+    ibbox const & coarseext = vhh.at(m)->baseextents.at(mglevel).at(0       );
+    ibbox const & baseext   = vhh.at(m)->baseextents.at(mglevel).at(reflevel);
+    ivect const cctk_levoff      = baseext.lower() - coarseext.lower();
+    ivect const cctk_levoffdenom = baseext.stride();
+
+    const CCTK_REAL delta = cctk_delta_space[dir-1] / cctk_levfac[dir-1];
+    const CCTK_REAL lower = cctk_origin_space[dir-1] + cctk_delta_space[dir-1] / cctk_levfac[dir-1] * cctk_levoff[dir-1] / cctk_levoffdenom[dir-1];
 
     const CCTK_REAL rindex = (coord - lower) / delta;
     int cindex = (int)floor(rindex + 0.75);
@@ -1317,7 +1330,7 @@ namespace CarpetIOASCII {
 	  const vect<int,3> str = gfext.stride();
 	  const bbox<int,3> ext(lo,up,str);
           
-	  gh const & hh = *vhh.at(Carpet::map);
+	  gh const & hh = *vhh.at(m);
 	  ibbox const & base = hh.baseextents.at(mglevel).at(reflevel);
           
        	  assert (base.stride()[0] ==  base.stride()[1]

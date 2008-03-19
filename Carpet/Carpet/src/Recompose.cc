@@ -91,13 +91,17 @@ namespace Carpet {
     }
     assert ((int)regsss.at(0).size() <= maxreflevels);
     for (int ml=0; ml<(int)regsss.size(); ++ml) {
+      int num_regions = 0;
       for (int rl=0; rl<(int)regsss.at(0).size(); ++rl) {
         // No empty levels
-        assert (regsss.at(ml).at(rl).size() > 0);
+        // (but allow some empty maps)
+        // assert (regsss.at(ml).at(rl).size() > 0);
+        num_regions += regsss.at(ml).at(rl).size();
         for (int c=0; c<(int)regsss.at(ml).at(rl).size(); ++c) {
           // Check sizes
-          // Do allow processors with zero grid points
-//           assert (all(regsss.at(rl).at(c).at(ml).extent.lower() <= regsss.at(rl).at(c).at(ml).extent.upper()));
+          // (but allow processors with zero grid points)
+          // assert (all(regsss.at(rl).at(c).at(ml).extent.lower() <=
+          //             regsss.at(rl).at(c).at(ml).extent.upper()));
           // Check strides
           const ivect str
             = (maxspacereflevelfact / spacereffacts.at(rl) * ipow(mgfact, ml));
@@ -107,6 +111,8 @@ namespace Carpet {
           assert (all(regsss.at(ml).at(rl).at(c).extent.upper() % str == 0));
         }
       }
+      // No empty levels
+      assert (num_regions > 0);
     }
   }
   
@@ -782,7 +788,7 @@ namespace Carpet {
           }
           for (int c=0; c<hh->components(rl); ++c) {
             ++ num_comps;
-            dh::dboxes const & b = dd->boxes.AT(m).AT(rl).AT(c);
+            dh::dboxes const & b = dd->boxes.AT(ml).AT(rl).AT(c);
             num_active_mem_points += num_gfs * b.active.size();
             num_owned_mem_points  += num_gfs * b.owned.size();
             num_total_mem_points  += num_gfs * b.exterior.size();
