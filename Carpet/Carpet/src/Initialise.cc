@@ -337,6 +337,7 @@ namespace Carpet {
             
             // Set up the initial data
             ScheduleTraverse (where, "CCTK_INITIAL", cctkGH);
+            ScheduleTraverse (where, "CCTK_POSTINITIAL", cctkGH);
             
             if (init_fill_timelevels) {
               assert (tl==0);
@@ -357,7 +358,6 @@ namespace Carpet {
           
         } LEAVE_LEVEL_MODE;
       } END_MGLEVEL_LOOP;
-      
     } // for rl
     
     timer.stop();
@@ -406,7 +406,6 @@ namespace Carpet {
             ScheduleTraverse (where, "CCTK_POSTRESTRICTINITIAL", cctkGH);
           }
           
-          ScheduleTraverse (where, "CCTK_POSTINITIAL", cctkGH);
           ScheduleTraverse (where, "CCTK_POSTSTEP", cctkGH);
           
           PoisonCheck (cctkGH, alltimes);
@@ -677,7 +676,6 @@ namespace Carpet {
           
         } LEAVE_LEVEL_MODE;
       } END_MGLEVEL_LOOP;
-      
     } // for rl
     
     do_global_mode = old_do_global_mode;
