@@ -1,0 +1,10 @@
+# Schedule definitions for thorn TestCarpetGridInfo
+# $Header: /numrelcvs/ThornburgCVS/TestCarpetGridInfo/schedule.ccl,v 1.1 2006/07/03 14:41:50 jthorn Exp $
+
+schedule TestCarpetGridInfo_test					\
+      at BASEGRID							\
+   after SpatialCoordinates
+	{
+	LANG: C
+	OPTIONS: level
+	} "test grid info"
