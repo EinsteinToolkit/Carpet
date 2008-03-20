@@ -1137,7 +1137,6 @@ namespace Carpet {
     for (int n=0; n<nslices; ++n) {
       mynpoints.at(n) = int (floor (CCTK_REAL(1) * npoints_left * mynprocs.at(n)
                                     / nprocs_left + CCTK_REAL(0.5)));
-      assert (mynpoints.at(n) > 0);
       assert (mynprocs .at(n) > 0);
       npoints_left -= mynpoints.at(n);
       nprocs_left  -= mynprocs.at(n);
