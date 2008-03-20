@@ -1,86 +1,128 @@
-\documentclass[nofootinbib, twocolumn]{revtex4}
+\documentclass[oneside]{amsart}
 
+\usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{color}
+\usepackage{graphicx}
+\usepackage[latin9]{inputenc}
 \usepackage{mathpazo}
+\usepackage[hyphens]{url}
+
+% Put this package last
+\usepackage[bookmarks, bookmarksopen, bookmarksnumbered]{hyperref}
+% Put this package after hyperref
+\usepackage[all]{hypcap}
+% Don't use tt font for urls
+\urlstyle{rm}
+
+
 
 % Make a comment stand out visually
 \newcommand{\todo}[1]{{\color{blue}$\blacksquare$~\textsf{[TODO: #1]}}}
 
+% Name of a code
+\newcommand{\code}[1]{\texttt{#1}}
+
+
+
+\hyphenation{Cac-tus-Ein-stein Schwarz-schild South-amp-ton}
+
+\sloppypar
+
+
+
 \begin{document}
 
-\title{Domain Decomposition in Carpet:\\Regridding and Determination
-  of the Communication Schedule}
+\title[Domain Decomposition in Carpet]{Domain Decomposition in
+  Carpet:\\Regridding and Determination of the Communication Schedule}
 
-\author{Erik Schnetter}
+\author{Erik Schnetter$^{(1,2)}$}
 
-\email{schnetter@cct.lsu.edu}
+% \email
+\thanks{\emph{Email}:~\url{mailto:schnetter@cct.lsu.edu}}
 
-\affiliation{Center for Computation \& Technology, 216 Johnston Hall,
-  Louisiana State University, Baton Rouge, LA 70803, USA}
+% \urladdr
+\thanks{\emph{Web}:~\url{http://www.cct.lsu.edu/}}
 
-\homepage{http://www.cct.lsu.edu/about/focus/numerical}
+% \address
+\thanks{{}$^{(1)}$ Center for Computation \& Technology,
+  Louisiana State University, Baton Rouge, LA, USA}
 
-\affiliation{Department of Physics and Astronomy, 202 Nicholson Hall,
-  Louisiana State University, Baton Rouge, LA 70803, USA}
+\thanks{{}$^{(2)}$ Department of Physics and Astronomy,
+  Louisiana State University, Baton Rouge LA, USA}
 
-\homepage{http://relativity.phys.lsu.edu/}
 
-\date{March 24, 2007}
+
+\date{March 9, 2008}
 
 
 
 \begin{abstract}
-  This paper describes the algorithms that Carpet
+  This text describes the algorithms that Carpet
   \cite{Schnetter-etal-03b, carpetweb} uses for regridding, domain
-  decomposition, and to set up the communication schedule.
+  decomposition, and setting up the communication schedule.  It is
+  intended for readers interested more details than a casual user
+  would need.  This text explains the concepts that Carpet uses
+  internally to describe the grid hierarchy and to ensure its
+  consistency.
 \end{abstract}
 
 \maketitle
-
-\todo{Submit this paper to Tom}
 
 
 
 \section{Introduction}
 
-Regridding in Carpet is handled by three entities: A \emph{regridding
-  thorn} which is responsible for deciding on a grid hierarchy and for
-the domain decomposition, \emph{Carpet} itself which decides the
-extent of the domain and the type of outer boundary conditions, and
-\emph{CarpetLib} which handles the details.
+Setting up a grid hierarch (``regridding'') is in Carpet handled by
+three different entities: \emph{Carpet} itself decides the extent of
+the domain, the type of outer boundary conditions, and distributes the
+domain onto processors; a \emph{regridding thorn} is responsible for
+deciding the shape of the grid hierarchy, and \emph{CarpetLib} handles
+the details and actually manages the data.  (Technically speaking, it
+is the regridding thorn which has to do the domain decomposition;
+however, it can simply call a convenient helper routine in Carpet for
+this task.)
 
-In the following we concentrated on a single patch which contains a
-mesh refinement hierarchy.  If there are multiple patches, then each
-patch is conceptually handled independently.  Certain conditions may
-have to be satisfied if a refined mesh touches an inter-patch
-boundary, but these is not discussed here.
+This separation leaves the decision on the shape of the grid hiearchy
+to a thorn which can be replaced or augmented as necessary.  All
+handling of data happens in CarpetLib, which is thus the only entity
+which needs to be optimised for speed.  Finally, Carpet retains the
+overview over the regridding process.
 
-We assume that the domain has $D$ spatial dimensions.  Usually $D=3$.
+In the following we assume that there is a single patch (block) which
+contains a mesh refinement hierarchy.  If there are multiple patches,
+then each patch is conceptually handled independently.  Certain
+conditions may have to be satisfied if a refined mesh touches an
+inter-patch boundary, but these are not discussed here.
+
+We assume that the domain has $D$ spatial dimensions, usually $D=3$.
 
 
 
 \section{Domain description}
+
+We assume that boundary location and boundary discretisation are set
+up via \emph{CoordBase}.  This is necessary since other methods do not
+allow specifying sufficient details to handle e.g.\ refined regions
+intersecting mesh refinement boundaries.  Below we give an overview
+over the information that needs to be specified to describe a
+boundary.  See the CoordBase thorn guide for details.
 
 The extent of the overall simulation domain is described in terms or
 real-valued coordinates.  The domain is cuboidal, i.e., it can be
 described in terms of two vectors $x^i_\mathrm{min}$ and
 $x^i_\mathrm{max}$.
 
-The thorn \textrm{CoordBase} has facilities to describe the domain
-extent in this manner.  Thorn \textrm{CartGrid3D} can also be used
-instead.
-
 The type of boundary conditions for each of the $2D$ faces is
 described by three quantities:
 \begin{itemize}
-  \item the total number of boundary points,
-  \item how many of these are outside of the domain boundary,
-  \item whether the boundary is staggered with respect to the domain
-    boundary, or whether one of the boundary points is located at the
-    domain boundary.
+\item the total number of boundary points,
+\item how many of these points are outside of the domain boundary,
+\item whether the boundary is staggered with respect to the domain
+  boundary, or whether one of the boundary points is located on the
+  domain boundary.
 \end{itemize}
-\todo{Show figure.}
+\todo{Show the relevant figures from the CoordBase thorn guide.}
 
 The extent of the domain $L^i := x^i_\mathrm{max} - x^i_\mathrm{min}$
 must be commensurate with the coarse grid spacing $h^i$.  This means
@@ -88,28 +130,36 @@ that $L^i$ must be a multiple of $h^i$, modulo the fact that the
 boundary may be staggered.
 
 An \emph{outer boundary condition} can either be a \emph{physical}
-boundary condition, such as e.g.\ a Sommerfeld condition, or a
+boundary condition, such as e.g.\ a Direchlet condition, or a
 \emph{symmetry} boundary condition, such as e.g.\ a reflection
 symmetry.  This distinction is irrelevant for Carpet.  Both kinds of
 outer boundary conditions are applied by thorns which are scheduled in
 the appropriate way.
 
-Note that Carpet does currently not support evolving outer boundary
-points in time if there is a mesh refinement boundary touching the
-refined region.  Carpet cannot fill the overlap of the outer boundary
-and the mesh refinement boundary through interpolation, because this
-requires off-centred interpolation stencils, which are not implemented
-at the moment.  Therefore Carpet does not fill any outer boundary
-points through interpolation.
-  
-Carpet also does not fill outer boundary points through
-synchronisation.  The outer boundary condition is supposed to handle
-these.  This requires that the outer boundary condition is apply after
-synchronisation.  This is usally automatically the case when using the
-Cactus boundary condition selection mechanism, i.e., when the group
-\texttt{ApplyBCs} is scheduled.  Synchronising outer boundary points
-would be possible, but is not done so that refinement boundaries and
-inter-processor boundaries are treated in the same way.
+The main distinction between an \emph{outer boundary point} and an
+\emph{interior point} from Carpet's point of view is that an outer
+boundary point is not evolved in time.  Instead, the value of boundary
+points must be completely determined by the value of interior points.
+(This is clearly the case for Direchlet or symmetry boundary
+conditions.)  The reason for this distinction is that Carpet cannot
+fill outer boundary points on refined grids via interpolation, because
+this requires off-centred interpolation stencils which are not
+implemented at the moment.  Therefore, Carpet does not fill any outer
+boundary points through interpolation.
+
+\todo{We should introduce mesh refinement and parallelisation before
+  this paragraph.}
+%
+If the refined region abuts the outer boundary, then outer boundary
+points can also be refinement boundary points.  Carpet does not fill
+these outer boundary points through synchronisation (prolongation)
+either.  This requires that the outer boundary condition is applied
+after every synchronisation.  This is usally automatically the case
+when using the Cactus boundary condition selection mechanism, i.e.,
+when the group \texttt{ApplyBCs} is scheduled.  Synchronising outer
+boundary points would be possible, but this is not done so that
+refinement boundaries and inter-processor boundaries are treated in
+the same way.
 
 
 
@@ -120,41 +170,46 @@ A regridding thorn, such as e.g.\ \texttt{CarpetRegrid} or
 hierarchy consists of several \emph{refinement levels}, and each
 refinement level consists of several \emph{refined regions}.  A
 refined region is a cuboid set of grid points which is assigned to a
-particular processor.  The refined regions on one level may not
-overlap.  (If they do not touch each other or the outer boundary, then
-they usually have to keep a certain minimum distance, as described
-below.)
+particular processor.  (The ``refined regions'' which are specified
+e.g.\ in a parameter file are broken up during domain is decomposition
+into a set of regions, so that each region is assigned to exactly one
+processor.)  There can be zero or multiple regions per processor, and
+differnet processors may own different numbers of regions.  Each face
+of a region is either an outer or an internal boundary.  Refined
+regions are described by the data structure \code{region\_t}, which is
+declared in \code{CarpetLib/src/region.hh}.
 
-Refined regions are described by the data structure
-\texttt{region\_t}, which is declared in
-\texttt{CarpetLib/src/region.hh}.
+The refined regions on one level may not overlap.  (If they do not
+touch each other or the outer boundary, then they usually even have to
+keep a certain minimum distance, as described below.)
 
-The semantics of a grid hierarchy is independent of the number of
-refined regions, or of the processors which are assigned to them.  The
-only relevant quantity is the set of refined grid points, i.e., the
-conjunction of all refined regions.  For example, when running on more
-processors, then regions will be split up so that there are more and
-smaller regions.  There can be more than one region per processor for
-each level.
+The ``semantics'' (the result obtained in a simulation) of a grid
+hierarchy is independent of the number of refined regions, or of the
+processors which are assigned to them.  The only relevant quantity is
+the set of refined grid points, i.e., the conjunction of all refined
+regions.  When running on more processors, then regions will be split
+up so that there are more and smaller regions.
 
 The assignment of regions to processors is handled during regridding
 because it affects performance.  When there are only few processors
 available, then it may be more efficient to use fewer regions.
 Combining regions may require some fill-in.  \todo{Show figure.}  No
-current regridding thorn in Carpet uses this at the moment; currently,
-the set of refined points is independent of the number of processors.
+current regridding thorn in Carpet offers this at the moment;
+currently, the set of refined points is independent of the number of
+processors.
 
-Each face of a refined region can be an outer boundary face.  This
-means that Carpet will add no ghost or buffer zones there, and will
-mark this face as outer boundary when calling thorns.  An outer
-boundary face must extend up to the outermost outer boundary point,
-since otherwise thorns will apply the outer boundary conditions
-incorrectly.  The regridding thorn has to ensure this.  Faces which
-are not outer boundary faces must be sufficiently far away from outer
-boundaries, so that any ghost or buffer zones which are added to that
-face do not intersect the outer boundary.  \todo{Show figure.}
+Each face of a refined region is either an interior or an outer
+boundary face.  Carpet adds no ghost or buffer zones to outer boundary
+faces, and marks this face as outer boundary when calling thorns.  An
+outer boundary face must extend up to the outermost outer boundary
+point, since otherwise thorns will apply the outer boundary conditions
+incorrectly.  The regridding thorn has to ensure this property.  Faces
+which are not outer boundary faces must be sufficiently far away from
+outer boundaries, so that any ghost or buffer zones which are added to
+that face do not intersect the outer boundary.  \todo{Show figure.}
+The regridding thorn also has to ensure this property.
 
-Each face which is not an outer boundary face can be either an
+Each face which is not an outer boundary face is either an
 inter-processor or a refinement boundary face.  Inter-processor faces
 have no buffer zones, and the ghost zones can be filled in completely
 from other refined regions on the same level.  Refinement boundary
@@ -163,22 +218,27 @@ be filled via prolongation from the next coarser grid.  It is possible
 to have faces which are partly an inter-processor boundary and partly
 a refinement boundary.  These are counted as and handled as refinement
 boundaries, although some of the ghost zones may still be filled via
-synchronisation.  This is explained in more detail below.
+synchronisation.  (Any grid points which can be filled via
+synchronisation are always also filled via synchronisation.)  This is
+explained in more detail below.
 
-As described below, ghost zones are added at the outside of grids by
+As described below, ghost zones are added at the outside of regions by
 Carpet.  Buffer zones need to be taken into account by the regridding
 thorn, most likely by extending the regined regions appropriately.
-(In terms of previous terminology: buffer zones are ``inner'' buffer
-zones; ``outer'' buffer zones do not exist any more.  However, since
-they are added by the regridding thorn, they do not need to be taken
-into account when specifying the refinement hierarchy.)  Carpet places
-buffer zones at all faces which are marked as refinement boundaries.
+(In terms of previous terminology: buffer zones are always ``inner''
+buffer zones; ``outer'' buffer zones do not exist any more.  However,
+if they are added by the regridding thorn, they do not need to be
+taken into account when specifying the refinement hierarchy in a
+parameter file -- this depends on the regridding thorn.
+\todo{CarpetRegrid2 does this, CarpetRegrid does this not.})  Carpet
+assumes buffer zones at all faces which are marked as refinement
+boundaries.
 
 It is the responsibility of the regridding thorn to mark outer
 boundaries and refinement boundaries appropriately.  If the outer
-boundary mark is chosen wrong, then the simulation is inconsistent,
+boundary mark is chosen wrongly, then the simulation is inconsistent,
 since the outer boundary condition may be applied at a the wrong
-location, or the outer boundary may be filled by interpolation, which
+location, or the outer boundary may be filled by interpolation which
 is less accurate.  Depending on the number of boundary points and
 stencil sizes, this may or may not be detected later by
 self-consistency checks.
@@ -187,18 +247,31 @@ self-consistency checks.
 
 \section{Zoning}
 
-Consider a single refinement level.
+This section defines the algorithm which Carpet uses to define which
+grid points are defined by what action.  This algorithm is codified in
+\code{dh.cc}.  Since the code in \code{dh.cc} is tested, it should be
+assumed to be correct where it differs with this description.  This
+algorithm is applied to every refinement level.
+
+\emph{Grid arrays} are handled in the same way as grid functions,
+except that there are no refined regions.  This may seem like overkill
+at first, but in fact it greatly simplifies the implementation since
+grid arrays have (almost) only a subset of the capabilities of grid
+functions.
 
 \subsection{Domain}
 
 Let $dom$ be the simulation domain.  Let $domact$ be the set of grid
-points which are evolved in time, which is required to be cuboidal and
-not empty.  (An empty region is also counted as cuboidal.)
+points which are evolved in time, and which is required to be cuboidal
+and not empty.\footnote{While grid functions cannot be empty, $domact$
+  for grid arrays can be empty.}  (An empty region is also counted as
+cuboidal.)
 
 Each face has a layer of outer boundary points.  Let $domob$ be the
 set of these layers.  We require that all values in $domob$ can be
-calculated from the values in $domact$.  Let $domext :=domact \cup
-domob$.  It follows that $domext$ is cuboidal and not empty.
+calculated from the values in $domact$.  Let $domext := domact \cup
+domob$.  It follows that $domext$ is cuboidal and not
+empty.
 
 \todo{Show figure.}
 
@@ -206,11 +279,11 @@ The following properties hold for $dom$:
 \begin{itemize}
 \item $domact$ is cuboidal and not empty
 \item $domob$ is a possibly empty layer around $domact$
-\item $domob$ has a width of \texttt{nboundaryzones} as obtained from
-  \texttt{GetBoundarySpecification}
+\item $domob$ has a width of \code{nboundaryzones} as obtained from
+  \code{GetBoundarySpecification}
 \item $domact \cap domob = \emptyset$
 \item $domext = domact \cup domob$ is cuboidal and not empty
-\item $domext$ has the size \texttt{cctk\_gsh}
+\item $domext$ has the size \code{cctk\_gsh}
 \end{itemize}
 For completeness, one can define $dombnd = dombuf = \emptyset$, and
 $domint = domown = domact$.  Then the same relations hold for $dom$ as
@@ -226,69 +299,80 @@ There may be other refined regions $reg'$ on the same level.  We
 require that $\forall_{reg' \ne reg}: regint \cap regint' =
 \emptyset$.
 
-Each face of $regown$ which is not an outer boundary face has a layer
-of ghost zones.  Let $regghost$ be the set of these layers.  We
-require that $regghost \subseteq domact$.  Let $regext := regint \cup
-regghost$.  It follows that $regext$ is cuboidal and not empty.  We
-require that $regext \subseteq domext$.
+Each face of $regint$ which is not an outer boundary face has a layer
+of \code{cctk\_nghostzones} ghost zones added to it.  (These are what
+Cactus calls ``ghost zones'', but note that not all ghost zones are
+filled via synchronisation.)  Let $regghost$ be the set of these
+layers.  We require that $regghost \subseteq domact$.  Let $regext :=
+regint \cup regghost$ be the interior with the ghost zones added.  It
+follows that $regext$ is cuboidal and not empty.  We require that
+$regext \subseteq domext$.
 
 \todo{Show figure.}
 
-Let $regown := regint - regbnd$.  Then $regown$ is cuboidal, and we
-require it to be not empty.
+On each face of $regext$, the outermost layer of \code{nboundaryzones}
+points are not communicated.  Let $regcomm$ be the set of communicated
+points.  The $regcomm \subseteq regext$, we require it to be not
+empty, and we require that $recomm \subseteq domact$.
 
-Each face of $regown$ which is not an outer boundary face has a layer
-of ghost zones.  Let $regbnd$ be the set of these layers.  Let
-$regouter := regint \cup regbnd$.  It follows that $regouter$ is
-cuboidal and not empty.  We require that $regouter \subseteq domact$.
-It follows that $regouter \subseteq regext$.
+Let $regob := regext - regcomm$ be the set of outer boundary points.
+It follows that $regob \subseteq domob$.
 
-Let $regob := regext - regouter$.  It follows that $regob \subseteq
-domob$.
+The owned region $regown$ is the interior region, extended up to the
+boundary, i.e., $regint$ with a layer of \code{nboundaryzones} points
+added to it at all outer boundary faces.  Thus $regown$ is cuboidal,
+and we require it to be not empty.  It is also $regown \subseteq
+domact$, and $regown \subseteq regext$.  It is also $\forall_{reg' \ne
+  reg}: regown \cap regown = \emptyset$.
 
-Wherever a face which is not an outer boundary face does not touch
-another refined region, buffer zones exist in $regown$.  Let $allown
-:= \bigcup regown$.  Let $allbuf$ be the layer of outermost grid
-points of $allown$ on those faces which do not touch the outer
-boundary.  Then $regbuf := allbuf \cup regown$.  It follows that
-$regbuf \subseteq domact$.  Let $regact := regown - rebuf$.  It
-follows that $regact$ is cuboidal.  (Should we required that $regact$
-be not empty?)
+Let $regbnd := regcomm - regown$.  Then $regbnd \subseteq domact$.
+\todo{Does this follow, or is this a requirement?}  These points are
+filled via synchronisation \todo{Is this so?  Is this always via
+  inter-processor communiocation, or also via prolongation?}, and they
+cannot be too close to the outer boundary.
+
+Let $regbuf$ be the set of grid points which have a distance less than
+\code{buffer\_width} from the boundary of the conjunction of all
+active grid points.  Then $regbuf \subseteq regown$.  Let $regact :=
+regown - regbuf$.  Then also $regact \subseteq regown$.  In general,
+$regact$ is not cuboidal.  $regact$ can be empty.  \todo{This may be
+  controversial.}
 
 \todo{Show figure.}
 
 Let $regsync := regbnd \cap allown$ be the boundary points which can
 be filled via synchronisation.  Note that $regbnd \cap regown =
 \emptyset$ by construction, which means that a region cannot
-synchronise from itself.
+synchronise from itself.  Note that outer boundary points are
+synchronised for backward compatibility.
 
 Let $regref := (regbnd - regsync) \cup regbuf$ be the set of all
-points which need to be filled via prolongation.  Note that now
-$regref \cap regsync = \emptyset$, which means that no point is both
-synchronised and prolongated.  Note also that $regsync \cap regob =
-\emptyset$ and $regref \cap regob = \emptyset$, which means that no
-outer boundary point is synchronised or prolongated.
+points which need to be filled via prolongation.  Note that $regref
+\cap regsync = \emptyset$, which means that no point is both
+synchronised and prolongated.  Note also that $regref \cap regob =
+\emptyset$, which means that no outer boundary point is prolongated.
 
 \todo{Show figure.}
 
 The following properties hold for $reg$:
 \begin{itemize}
-\item $regact$ is cuboidal
-\item $regbuf$ is a layer around $regact$ on those faces which are
-  marked ``refinement boundary''
-\item $regown = regact \cup regbuf$ is cuboidal and not empty
+\item $regint \subseteq domext$ is cuboidal and not empty
+\item $regghost$ is a layer on the outside of $regint$ on those faces
+  which are not marked ``outer boundary''
+\item $regext = regint \cup regghost \subseteq domext$ is cuboidal and
+  not empty
+\item $recgomm \subseteq domact$
+\item $regob \subseteq domob$
+\item $regown \subseteq domact$ is cuboidal and not empty
 \item $\forall_{reg' \ne reg}: regown \cup regown' = \emptyset$
 \item $regbnd$ is a layer around $regown$ on those faces which are not
   marked ``outer boundary''
-\item $regouter = regown \cup regbnd$ is cuboidal and not empty
-\item $regouter \subseteq domact$
-\item $regob \subseteq domob$
-\item $regext = regint \cup regob$ is cuboidal and not empty
-\item $regext \subseteq domext$
-
-\item $regghost$ is a layer on the outside of $regext$ on those faces
-  which are not marked ``outer boundary''
-\item $regint = regext - regghost$ is cuboidal and not empty
+\item $regbuf$ is a layer around $regact$ on those faces which are
+  marked ``refinement boundary''
+\item $regsync$ are those boundary points which can be filled via
+  synchronisation
+\item $regref$ are those boundary or buffer points which are filled
+  via prolongation
 \end{itemize}
 $regint$ is not important for Carpet's working, but only for Cactus.
 Since Cactus has no notion of outer boundaries, we introduce $regint$,
@@ -345,7 +429,7 @@ number of buffer zones.  Then $allbuf := allown - notact$.
 
 
 % With titles and urls
-\bibliographystyle{bibtex/apsrev-titles}
+\bibliographystyle{bibtex/amsplain-url}
 \bibliography{bibtex/references}
 
 \end{document}

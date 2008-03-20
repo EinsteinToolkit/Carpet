@@ -111,7 +111,7 @@ namespace Carpet {
         break;
       case all_timelevels:
         if (setup_method != init_all_levels) {
-          CCTK_PARAMWARN ("When you set neither Carpet::init_each_timelevel=yes nor Carpet::init_fill_timelevels=yes nor Carpet::init_3_timelevel=yes, then you must also use InitBase::initial_data_setup_method=\"init_all_levels\"");
+          CCTK_PARAMWARN ("When you set neither Carpet::init_each_timelevel=yes nor Carpet::init_fill_timelevels=yes nor Carpet::init_3_timelevels=yes, then you must also use InitBase::initial_data_setup_method=\"init_all_levels\"");
         }
         break;
       default:

@@ -1,0 +1,82 @@
+# this parameter sets up a 6-patch Carpet grid
+# and tests the grid info for it
+
+cactus::highlight_warning_messages = false
+
+# flesh
+cactus::cctk_itlast = 0
+
+########################################
+
+ActiveThorns = "IOUtil IOBasic"
+IOUtil::parfile_write = "no"
+IO::out_dir = $parfile
+
+########################################
+
+#
+# ***** multipatch system *****
+#
+
+# 6 patches, full-sphere, no symmetries
+ActiveThorns = "Carpet CarpetLib CarpetReduce"
+Carpet::num_maps = 6			# number of patches
+Carpet::domain_from_coordbase = true
+
+# specify the continuum (= nominal-grid) size/shape of each patch
+# (i.e. this specification does *not* include ghost zones)
+# ... n.b. we label the coordinate axes (x,y,z) = (rho,sigma,wr)
+ActiveThorns = "SymBase"
+ActiveThorns = "CoordBase"
+CoordBase::domainsize = "minmax"	# specify continuum patch size
+CoordBase::xmin = -0.785398163397448	# -45 degrees
+CoordBase::xmax = +0.785398163397448	# +45 degrees
+CoordBase::ymin = -0.785398163397448	# -45 degrees
+CoordBase::ymax = +0.785398163397448	# +45 degrees
+CoordBase::zmin =  0.12			# inner wr (rmin = 1.37)
+CoordBase::zmax =  1.12			# outer wr (rmax = 27.5)
+
+# grid spacing
+CoordBase::spacing = "numcells"
+CoordBase::ncells_x = 21		# delta_rho   = 4.286 degrees
+CoordBase::ncells_y = 21		# delta_sigma = 4.286 degrees
+CoordBase::ncells_z = 25		# delta_wr    = 0.04
+
+#
+# ghost zones
+#
+
+driver::ghost_size_x = 2
+driver::ghost_size_y = 2
+driver::ghost_size_z = 3		# for radial upwind FD
+
+# ghost zones are outside the nominal grid
+CoordBase::boundary_internal_x_lower = false
+CoordBase::boundary_internal_x_upper = false
+CoordBase::boundary_internal_y_lower = false
+CoordBase::boundary_internal_y_upper = false
+CoordBase::boundary_internal_z_lower = false
+CoordBase::boundary_internal_z_upper = false
+
+# ghost zone widths
+CoordBase::boundary_size_x_lower     = 2
+CoordBase::boundary_size_x_upper     = 2
+CoordBase::boundary_size_y_lower     = 2
+CoordBase::boundary_size_y_upper     = 2
+CoordBase::boundary_size_z_lower     = 2
+CoordBase::boundary_size_z_upper     = 3
+
+# ghost zones start 1 point outside nominal grid boundary
+CoordBase::boundary_shiftout_x_lower = 1
+CoordBase::boundary_shiftout_x_upper = 1
+CoordBase::boundary_shiftout_y_lower = 1
+CoordBase::boundary_shiftout_y_upper = 1
+CoordBase::boundary_shiftout_z_lower = 1
+CoordBase::boundary_shiftout_z_upper = 1
+
+ActiveThorns = "Boundary CartGrid3D"
+CartGrid3D::type = "CoordBase"
+
+ActiveThorns = "TestCarpetGridInfo"
+TestCarpetGridInfo::N_maps          = 6
+TestCarpetGridInfo::test_local_mode = true

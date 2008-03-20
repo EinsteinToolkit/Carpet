@@ -639,20 +639,25 @@ PARAMCHECK
 \fbox{\begin{minipage}[t]{\textwidth}
 Recover? (yes/no)
 \\
+\fbox{\begin{minipage}[t]{0.47\textwidth}
+PREREGRIDINITIAL\\
+Regrid\\
+POSTREGRIDINITIAL
+\end{minipage}}
+\fbox{\begin{minipage}[t]{0.47\textwidth}
+Recover grid structure
+\end{minipage}}\\
 \fbox{\begin{minipage}[t]{0.1\textwidth}
 initial\\
 loop
 \end{minipage}
 \fbox{\begin{minipage}[t]{0.345\textwidth}
-PREREGRIDINITIAL\\
-Regrid\\
-POSTREGRIDINITIAL\\
 BASEGRID\\
 INITIAL\\
+POSTINITIAL\\
 $\longrightarrow$ Recurse\\
 Restrict\\
 POSTRESTRICTINITIAL\\
-POSTINITIAL\\
 POSTSTEP
 \end{minipage}}}
 \fbox{\begin{minipage}[t]{0.1\textwidth}
@@ -784,6 +789,7 @@ SHUTDOWN
         \begin{minipage}[c]{0.6\textwidth}
          BASEGRID\\
          INITIAL
+         POSTINITIAL\\
         \end{minipage}
        }
       }
@@ -846,7 +852,6 @@ SHUTDOWN
      \fbox{
       \begin{minipage}[c]{0.49\textwidth}
        POSTRESTRICTINITIAL\\
-       POSTINITIAL\\
        POSTSTEP
       \end{minipage}
      }

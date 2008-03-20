@@ -1,0 +1,8 @@
+# Main make.code.defn file for thorn TestCarpetGridInfo
+# $Header: /numrelcvs/ThornburgCVS/TestCarpetGridInfo/src/make.code.defn,v 1.1 2006/07/03 14:41:50 jthorn Exp $
+
+# Source files in this directory
+SRCS = test.cc
+
+# Subdirectories containing source files
+SUBDIRS = 

@@ -1221,6 +1221,8 @@ namespace Carpet {
       
     } else if (domain_from_coordbase) {
       
+      assert (not CCTK_IsFunctionAliased ("MultiPatch_GetDomainSpecification"));
+      
       // Ensure that CartGrid3D::type = "coordbase"
       ensure_CartGrid3D_type ();
       
@@ -1234,6 +1236,8 @@ namespace Carpet {
       
     } else {
       // Legacy code
+      
+      assert (not CCTK_IsFunctionAliased ("MultiPatch_GetDomainSpecification"));
       
       if (max_refinement_levels > 1) {
         // Ensure that CartGrid3D::avoid_origin = no
