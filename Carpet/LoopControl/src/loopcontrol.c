@@ -295,10 +295,8 @@ lc_stattime_init (lc_stattime_t * restrict const lt,
   
   
   /* Append to loop statistics list */
-/*   _Pragma ("omp critical") { */
-    lt->next = ls->stattime_list;
-    ls->stattime_list = lt;
-/*   } */
+  lt->next = ls->stattime_list;
+  ls->stattime_list = lt;
 }
 
 lc_stattime_t *
@@ -450,10 +448,8 @@ lc_statset_init (lc_statset_t * restrict const ls,
   ls->time_calc_sum2  = 0.0;
   
   /* Append to loop statistics list */
-/*   _Pragma ("omp critical") { */
-    ls->next = lm->statset_list;
-    lm->statset_list = ls;
-/*   } */
+  ls->next = lm->statset_list;
+  lm->statset_list = ls;
 }
 
 lc_statset_t *
@@ -510,21 +506,34 @@ lc_statset_find_create (lc_statmap_t * restrict const lm,
 
 /* Initialise loop statistics */
 void
-lc_statmap_init (lc_statmap_t * restrict const lm,
+lc_statmap_init (int * restrict const initialised,
+                 lc_statmap_t * restrict const lm,
                  char const * restrict const name)
 {
   /* Check arguments */
+  assert (initialised);
   assert (lm);
   
-  /* Set name */
-  lm->name = strdup (name);
+#pragma omp single
+  {
+    
+    /* Set name */
+    lm->name = strdup (name);
+    
+    /* Initialise list */
+    lm->statset_list = NULL;
+    
+    /* Append to loop statistics list */
+    lm->next = lc_statmap_list;
+    lc_statmap_list = lm;
+    
+  }
   
-  /* Initialise list */
-  lm->statset_list = NULL;
-  
-  /* Append to loop statistics list */
-  lm->next = lc_statmap_list;
-  lc_statmap_list = lm;
+#pragma omp single
+  {
+    /* Set this flag only after initialising */
+    * initialised = 1;
+  }
 }
 
 
@@ -563,7 +572,8 @@ lc_control_init (lc_control_t * restrict const lc,
   
   
   lc_statset_t * restrict ls;
-  _Pragma ("omp single copyprivate (ls)") {
+#pragma omp single copyprivate (ls)
+  {
     /* Get number of threads */
     int const num_threads = omp_get_num_threads();
     
@@ -579,7 +589,8 @@ lc_control_init (lc_control_t * restrict const lc,
   
   
   lc_stattime_t * restrict lt;
-  _Pragma ("omp single copyprivate (lt)") {
+#pragma omp single copyprivate (lt)
+  {
     
     lc_state_t state;
     
@@ -778,7 +789,8 @@ lc_control_finish (lc_control_t * restrict const lc)
   lc_statset_t * restrict const ls = lc->statset;
   
   int ignore_iteration;
-  _Pragma ("omp single copyprivate (ignore_iteration)") {
+#pragma omp single copyprivate (ignore_iteration)
+  {
     DECLARE_CCTK_PARAMETERS;
     ignore_iteration = ignore_initial_overhead && lt->time_count == 0.0;
   }
@@ -798,7 +810,8 @@ lc_control_finish (lc_control_t * restrict const lc)
   double const time_calc_sum2 = pow (time_calc_sum, 2);
 
   /* Update statistics */
-  _Pragma ("omp critical") {
+#pragma omp critical
+  {
     lt->time_count += 1.0;
     
     lt->time_setup_sum  += time_setup_sum;
@@ -816,21 +829,24 @@ lc_control_finish (lc_control_t * restrict const lc)
     ls->time_calc_sum2 += time_calc_sum2;
   }
   
-  _Pragma ("omp master") {
+#pragma omp master
+  {
     lt->last_updated = time_calc_end;
   }
   
-  _Pragma ("omp barrier");
+#pragma omp barrier
   
   {
     DECLARE_CCTK_PARAMETERS;
     if (use_simulated_annealing) {
-      _Pragma ("omp single") {
+#pragma omp single
+      {
         lc_auto_finish (ls, lt);
       }
     }
     if (use_random_restart_hill_climbing) {
-      _Pragma ("omp single") {
+#pragma omp single
+      {
         lc_hill_finish (ls, lt);
       }
     }
@@ -912,11 +928,12 @@ lc_printstats (CCTK_ARGUMENTS)
 
 CCTK_FCALL
 void
-CCTK_FNAME (lc_statmap_init) (lc_statmap_t * restrict const lm,
+CCTK_FNAME (lc_statmap_init) (int * restrict const initialised,
+                              lc_statmap_t * restrict const lm,
                               ONE_FORTSTRING_ARG)
 {
   ONE_FORTSTRING_CREATE (name);
-  lc_statmap_init (lm, name);
+  lc_statmap_init (initialised, lm, name);
   free (name);
 }
 

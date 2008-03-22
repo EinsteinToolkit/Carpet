@@ -34,9 +34,9 @@ drand (void)
 
 static
 int
-irand (int const imax)
+irand (int const imaxval)
 {
-  return rand() / (RAND_MAX + 1.0) * imax;
+  return rand() / (RAND_MAX + 1.0) * imaxval;
 }
 
 
