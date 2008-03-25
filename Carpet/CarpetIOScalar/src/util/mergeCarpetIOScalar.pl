@@ -45,7 +45,7 @@ while (<>) {
 
   # falls diese Zeile eine Datenzeile ist:
   # merke den Datensatz mit seinem Zeitschritt
-  $timesteps{$1} = $_ if (/^(\d+(.\d+)?)\s/);
+  $timesteps{$1} = $_ if (/^(\d+)\s+/);
 }
 
 # stelle die Liste aller Eingabe-Dateien wieder her
@@ -54,7 +54,7 @@ while (<>) {
 # lies zeilenweise alle Eingabe-Dateien
 while (<>) {
   # gib alle Zeilen bis zur ersten Datenzeile aus
-  last if (/^(\d+(.\d+)?)\s/);
+  last if (/^\d+\s+/);
   print;
 }
 
