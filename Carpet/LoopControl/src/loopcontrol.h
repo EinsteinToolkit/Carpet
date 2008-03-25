@@ -10,6 +10,10 @@
 
 #include <cctk_Arguments.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 
 #if 0
@@ -247,7 +251,8 @@ lc_max (int const i, int const j)
 
 
 void
-lc_statmap_init (lc_statmap_t * restrict ls,
+lc_statmap_init (int * restrict initialised,
+                 lc_statmap_t * restrict ls,
                  char const * restrict name);
 
 void
@@ -264,16 +269,10 @@ lc_control_finish (lc_control_t * restrict lc);
 
 #define LC_LOOP3(name, i,j,k, imin,jmin,kmin, imax,jmax,kmax, ilsh,jlsh,klsh) \
   do {                                                                  \
-    static lc_statmap_t lc_lm;                                          \
     static int lc_initialised = 0;                                      \
+    static lc_statmap_t lc_lm;                                          \
     if (! lc_initialised) {                                             \
-      _Pragma ("omp single") {                                          \
-        lc_statmap_init (& lc_lm, #name);                               \
-      }                                                                 \
-      _Pragma ("omp single") {                                          \
-        /* Set this flag only after initialising */                     \
-        lc_initialised = 1;                                             \
-      }                                                                 \
+      lc_statmap_init (& lc_initialised, & lc_lm, #name);               \
     }                                                                   \
     lc_control_t lc_lc;                                                 \
     lc_control_init (& lc_lc, & lc_lm,                                  \
@@ -314,6 +313,10 @@ lc_control_finish (lc_control_t * restrict lc);
 
 void
 lc_printstats (CCTK_ARGUMENTS);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

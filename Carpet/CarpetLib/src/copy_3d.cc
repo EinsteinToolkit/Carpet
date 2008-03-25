@@ -103,9 +103,9 @@ namespace CarpetLib {
     
     // Loop over region
 #pragma omp parallel for
-    for (ptrdiff_t k=0; k<regkext; ++k) {
-      for (ptrdiff_t j=0; j<regjext; ++j) {
-        for (ptrdiff_t i=0; i<regiext; ++i) {
+    for (int k=0; k<regkext; ++k) {
+      for (int j=0; j<regjext; ++j) {
+        for (int i=0; i<regiext; ++i) {
           
           dst [DSTIND3(i, j, k)] = src [SRCIND3(i, j, k)];
           

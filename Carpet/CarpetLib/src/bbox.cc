@@ -2,6 +2,7 @@
 #include <cassert>
 #include <iostream>
 #include <limits>
+#include <typeinfo>
 
 #include "cctk.h"
 
@@ -27,8 +28,9 @@ void bbox<T,D>::assert_bbox_limits () const
         any (_upper >= numeric_limits<T>::max() / 2) or
         any (_upper <= numeric_limits<T>::min() / 2))
     {
-      CCTK_WARN (CCTK_WARN_ABORT,
-                 "Tried to create a very large bbox -- it is likely that this would lead to an integer overflow");
+      CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Tried to create a very large bbox of type %s -- it is likely that this would lead to an integer overflow",
+                  typeid(*this).name());
     }
   }
 }
@@ -46,8 +48,9 @@ typename bbox<T,D>::size_type bbox<T,D>::size () const {
   size_type sz = 1, max = numeric_limits<size_type>::max();
   for (int d=0; d<D; ++d) {
     if (sh[d] > max) {
-      CCTK_WARN (CCTK_WARN_ABORT,
-                 "bbox size is too large -- integer overflow");
+      CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "size of bbox of type %s is too large -- integer overflow",
+                  typeid(*this).name());
     }
     sz *= sh[d];
     max /= sh[d];

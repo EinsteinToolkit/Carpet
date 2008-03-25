@@ -271,6 +271,19 @@ namespace Carpet {
       CallRegridInitialMeta (cctkGH);
     }
     
+    // Poison early, since grid functions may be initialised in global
+    // loop-local mode, ane we must not overwrite them accidentally
+    for (int rl=0; rl<reflevels; ++rl) {
+      BEGIN_MGLEVEL_LOOP(cctkGH) {
+        ENTER_LEVEL_MODE (cctkGH, rl) {
+          
+          // Checking
+          Poison (cctkGH, alltimes, CCTK_GF);
+          
+        } LEAVE_LEVEL_MODE;
+      } END_MGLEVEL_LOOP;
+    } // for rl
+    
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cctkGH) {
         ENTER_LEVEL_MODE (cctkGH, rl) {
@@ -283,9 +296,6 @@ namespace Carpet {
                     cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
                     (do_global_mode ? " (global)" : ""),
                     (do_meta_mode ? " (meta)" : ""));
-          
-          // Checking
-          Poison (cctkGH, alltimes, CCTK_GF);
           
           // Timing statistics
           if (do_global_mode) {
@@ -327,6 +337,7 @@ namespace Carpet {
             
             // Set up the initial data
             ScheduleTraverse (where, "CCTK_INITIAL", cctkGH);
+            ScheduleTraverse (where, "CCTK_POSTINITIAL", cctkGH);
             
             if (init_fill_timelevels) {
               assert (tl==0);
@@ -347,7 +358,6 @@ namespace Carpet {
           
         } LEAVE_LEVEL_MODE;
       } END_MGLEVEL_LOOP;
-      
     } // for rl
     
     timer.stop();
@@ -396,7 +406,6 @@ namespace Carpet {
             ScheduleTraverse (where, "CCTK_POSTRESTRICTINITIAL", cctkGH);
           }
           
-          ScheduleTraverse (where, "CCTK_POSTINITIAL", cctkGH);
           ScheduleTraverse (where, "CCTK_POSTSTEP", cctkGH);
           
           PoisonCheck (cctkGH, alltimes);
@@ -667,7 +676,6 @@ namespace Carpet {
           
         } LEAVE_LEVEL_MODE;
       } END_MGLEVEL_LOOP;
-      
     } // for rl
     
     do_global_mode = old_do_global_mode;

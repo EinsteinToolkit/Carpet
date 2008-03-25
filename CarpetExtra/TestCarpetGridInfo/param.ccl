@@ -1,0 +1,11 @@
+# Parameter definitions for thorn TestCarpetGridInfo
+# $Header: /numrelcvs/ThornburgCVS/TestCarpetGridInfo/param.ccl,v 1.1 2006/07/03 14:41:50 jthorn Exp $
+
+int N_maps "number of Carpet maps to test"
+{
+0:* :: "any integer >= 0"
+} 6
+
+Boolean test_local_mode "should we test grid info in local mode as well?"
+{
+} false

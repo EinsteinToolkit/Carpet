@@ -1,0 +1,5 @@
+# Interface definition for thorn TestCarpetGridInfo
+# $Header: /numrelcvs/ThornburgCVS/TestCarpetGridInfo/interface.ccl,v 1.1 2006/07/03 14:41:50 jthorn Exp $
+
+implements: TestCarpetGridInfo
+uses include: carpet.hh		# from Carpet/Carpet

@@ -108,7 +108,7 @@ regrid (mregs const & regs)
   // Check component consistency
   for (int ml=0; ml<mglevels(); ++ml) {
     for (int rl=0; rl<reflevels(); ++rl) {
-      assert (components(rl)>0);
+      assert (components(rl)>=0);
       for (int c=0; c<components(rl); ++c) {
         ibbox const & b  = extent(ml,rl,c);
         ibbox const & b0 = extent(ml,rl,0);
@@ -136,31 +136,34 @@ regrid (mregs const & regs)
     bool have_error = false;
     for (int ml=0; ml<mglevels(); ++ml) {
       for (int rl=1; rl<reflevels(); ++rl) {
-        assert (all (extent(ml,rl,0).stride() * reffacts.AT(rl) ==
-                     extent(ml,rl-1,0).stride() * reffacts.AT(rl-1)));
-        // Check contained-ness:
-        // first take all coarse grids
-        ibset coarse;
-        for (int c=0; c<components(rl-1); ++c) {
-          coarse += extent(ml,rl-1,c);
-        }
-        coarse.normalize();
-        // then check all fine grids
-        for (int c=0; c<components(rl); ++c) {
-          ibbox const & fine =
-            extent(ml,rl,c).contracted_for(extent(ml,rl-1,0));
-          if (not (fine <= coarse)) {
-            if (not have_error) {
-              cout << "The following components are not properly nested, i.e.," << endl
-                   << "they are not contained within the next coarser level's components:" << endl;
-              have_error = true;
-            }
-            cout << "   ml " << ml << " rl " << rl << " c " << c << ":   "
-                 << fine << endl;
+        if (components(rl)>0) {
+          assert (components(rl-1)>0);
+          assert (all (extent(ml,rl,0).stride() * reffacts.AT(rl) ==
+                       extent(ml,rl-1,0).stride() * reffacts.AT(rl-1)));
+          // Check contained-ness:
+          // first take all coarse grids
+          ibset coarse;
+          for (int c=0; c<components(rl-1); ++c) {
+            coarse += extent(ml,rl-1,c);
           }
-        } // for c
-      }   // for rl
-    }     // for ml
+          coarse.normalize();
+          // then check all fine grids
+          for (int c=0; c<components(rl); ++c) {
+            ibbox const & fine =
+              extent(ml,rl,c).contracted_for(extent(ml,rl-1,0));
+            if (not (fine <= coarse)) {
+              if (not have_error) {
+                cout << "The following components are not properly nested, i.e.," << endl
+                     << "they are not contained within the next coarser level's components:" << endl;
+                have_error = true;
+              }
+              cout << "   ml " << ml << " rl " << rl << " c " << c << ":   "
+                   << fine << endl;
+            }
+          } // for c
+        }   // if c
+      }     // for rl
+    }       // for ml
     if (have_error) {
       cout << "The grid hierarchy is:" << endl;
       for (int ml=0; ml<mglevels(); ++ml) {

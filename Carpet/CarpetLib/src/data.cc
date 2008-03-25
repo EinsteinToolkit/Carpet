@@ -58,7 +58,8 @@ call_operator (void
 #  if ! defined (CARPET_OPTIMISE)
   ibset allregbboxes;
 #  endif
-  _Pragma ("omp parallel") {
+#pragma omp parallel
+  {
     int const num_threads = omp_get_num_threads();
     int const thread_num = omp_get_thread_num();
     // Parallelise in z direction
@@ -83,9 +84,8 @@ call_operator (void
     if (not myregbbox.empty()) {
       (* the_operator) (src, srcext, dst, dstext, srcbbox, dstbbox, myregbbox);
 #  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
-      _Pragma ("omp critical") {
-        allregbboxes += myregbbox;
-      }
+#pragma omp critical
+      allregbboxes += myregbbox;
 #  endif
     }
   }
