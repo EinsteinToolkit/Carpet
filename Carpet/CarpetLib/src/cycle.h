@@ -511,3 +511,21 @@ INLINE_ELAPSED(inline)
 #define HAVE_TICK_COUNTER
 #endif
 #endif /* HAVE_MIPS_ZBUS_TIMER */
+
+/*----------------------------------------------------------------*/
+/* Fallback -- this must be the last entry in this file */
+#if !defined(HAVE_TICK_COUNTER)
+
+typedef double ticks;
+
+static inline ticks getticks(void)
+{
+  static ticks counter = 0;
+
+  return ++ counter;
+}
+
+INLINE_ELAPSED(inline)
+
+#define HAVE_TICK_COUNTER
+#endif
