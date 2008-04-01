@@ -2,6 +2,8 @@
 #include <cassert>
 #include <iostream>
 #include <limits>
+#include <sstream>
+#include <string>
 #include <typeinfo>
 
 #include "cctk.h"
@@ -28,8 +30,16 @@ void bbox<T,D>::assert_bbox_limits () const
         any (_upper >= numeric_limits<T>::max() / 2) or
         any (_upper <= numeric_limits<T>::min() / 2))
     {
+      ostringstream lbuf, ubuf, sbuf;
+      lbuf << _lower;
+      ubuf << _upper;
+      sbuf << _stride;
+      string const lstr = lbuf.str();
+      string const ustr = ubuf.str();
+      string const sstr = sbuf.str();
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Tried to create a very large bbox of type %s -- it is likely that this would lead to an integer overflow",
+                  "Tried to create a very large bbox [%s,%s,%s] of type %s -- it is likely that this would lead to an integer overflow",
+                  lstr.c_str(), ustr.c_str(), sstr.c_str(),
                   typeid(*this).name());
     }
   }
