@@ -61,7 +61,7 @@
   This text describes the algorithms that Carpet
   \cite{Schnetter-etal-03b, carpetweb} uses for regridding, domain
   decomposition, and setting up the communication schedule.  It is
-  intended for readers interested more details than a casual user
+  intended for readers interested in more details than a casual user
   would need.  This text explains the concepts that Carpet uses
   internally to describe the grid hierarchy and to ensure its
   consistency.
@@ -73,7 +73,7 @@
 
 \section{Introduction}
 
-Setting up a grid hierarch (``regridding'') is in Carpet handled by
+Setting up a grid hierarchy (``regridding'') is in Carpet handled by
 three different entities: \emph{Carpet} itself decides the extent of
 the domain, the type of outer boundary conditions, and distributes the
 domain onto processors; a \emph{regridding thorn} is responsible for
@@ -87,7 +87,7 @@ This separation leaves the decision on the shape of the grid hiearchy
 to a thorn which can be replaced or augmented as necessary.  All
 handling of data happens in CarpetLib, which is thus the only entity
 which needs to be optimised for speed.  Finally, Carpet retains the
-overview over the regridding process.
+overview of the regridding process.
 
 In the following we assume that there is a single patch (block) which
 contains a mesh refinement hierarchy.  If there are multiple patches,
@@ -105,10 +105,10 @@ We assume that boundary location and boundary discretisation are set
 up via \emph{CoordBase}.  This is necessary since other methods do not
 allow specifying sufficient details to handle e.g.\ refined regions
 intersecting mesh refinement boundaries.  Below we give an overview
-over the information that needs to be specified to describe a
+of the information that needs to be specified to describe a
 boundary.  See the CoordBase thorn guide for details.
 
-The extent of the overall simulation domain is described in terms or
+The extent of the overall simulation domain is described in terms of
 real-valued coordinates.  The domain is cuboidal, i.e., it can be
 described in terms of two vectors $x^i_\mathrm{min}$ and
 $x^i_\mathrm{max}$.
@@ -130,7 +130,7 @@ that $L^i$ must be a multiple of $h^i$, modulo the fact that the
 boundary may be staggered.
 
 An \emph{outer boundary condition} can either be a \emph{physical}
-boundary condition, such as e.g.\ a Direchlet condition, or a
+boundary condition, such as e.g.\ a Dirichlet condition, or a
 \emph{symmetry} boundary condition, such as e.g.\ a reflection
 symmetry.  This distinction is irrelevant for Carpet.  Both kinds of
 outer boundary conditions are applied by thorns which are scheduled in
@@ -140,7 +140,7 @@ The main distinction between an \emph{outer boundary point} and an
 \emph{interior point} from Carpet's point of view is that an outer
 boundary point is not evolved in time.  Instead, the value of boundary
 points must be completely determined by the value of interior points.
-(This is clearly the case for Direchlet or symmetry boundary
+(This is clearly the case for Dirichlet or symmetry boundary
 conditions.)  The reason for this distinction is that Carpet cannot
 fill outer boundary points on refined grids via interpolation, because
 this requires off-centred interpolation stencils which are not
@@ -174,7 +174,7 @@ particular processor.  (The ``refined regions'' which are specified
 e.g.\ in a parameter file are broken up during domain is decomposition
 into a set of regions, so that each region is assigned to exactly one
 processor.)  There can be zero or multiple regions per processor, and
-differnet processors may own different numbers of regions.  Each face
+different processors may own different numbers of regions.  Each face
 of a region is either an outer or an internal boundary.  Refined
 regions are described by the data structure \code{region\_t}, which is
 declared in \code{CarpetLib/src/region.hh}.
@@ -187,7 +187,7 @@ The ``semantics'' (the result obtained in a simulation) of a grid
 hierarchy is independent of the number of refined regions, or of the
 processors which are assigned to them.  The only relevant quantity is
 the set of refined grid points, i.e., the conjunction of all refined
-regions.  When running on more processors, then regions will be split
+regions.  When running on more processors, the regions will be split
 up so that there are more and smaller regions.
 
 The assignment of regions to processors is handled during regridding
@@ -224,7 +224,7 @@ explained in more detail below.
 
 As described below, ghost zones are added at the outside of regions by
 Carpet.  Buffer zones need to be taken into account by the regridding
-thorn, most likely by extending the regined regions appropriately.
+thorn, most likely by extending the refined regions appropriately.
 (In terms of previous terminology: buffer zones are always ``inner''
 buffer zones; ``outer'' buffer zones do not exist any more.  However,
 if they are added by the regridding thorn, they do not need to be
