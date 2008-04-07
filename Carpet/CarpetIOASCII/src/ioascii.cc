@@ -917,8 +917,8 @@ namespace CarpetIOASCII {
                       assert (file.good());
                       file << eol;
                     }
+                    assert (file.good());
                   }
-                  assert (file.good());
 
                 } // for tl
 
