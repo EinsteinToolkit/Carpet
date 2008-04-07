@@ -489,9 +489,33 @@ namespace CarpetInterp {
           assert (recvdispl.AT(n) + recvcnt.AT(n) <= recvbufsize);
         }
       }
+#ifndef _NDEBUG
+      for (size_t i=0; i<tmp.size(); ++i) {
+        tmp.AT(i) = poison;
+      }
+#endif
       MPI_Alltoallv (&coords_buffer[0], &sendcnt[0], &senddispl[0], datatype,
                      &tmp[0],           &recvcnt[0], &recvdispl[0], datatype,
                      dist::comm());
+#ifndef _NDEBUG
+      {
+        vector<bool> filled(tmp.size(), false);
+        for (size_t n=0; n<dist::size(); ++n) {
+          for (size_t i=0; i<recvcnt.AT(n); ++i) {
+            assert (not filled.AT(recvdispl.AT(n)+i));
+            filled.AT(recvdispl.AT(n)+i) = true;
+          }
+        }
+        for (size_t i=0; i<filled.size(); ++i) {
+          assert (filled.AT(i));
+        }
+      }
+#endif
+#ifndef _NDEBUG
+      for (size_t i=0; i<tmp.size(); ++i) {
+        assert (tmp.AT(i) != poison);
+      }
+#endif
       coords_buffer.swap (tmp);
     }
 
@@ -562,9 +586,33 @@ namespace CarpetInterp {
           assert (recvdispl.AT(n) + recvcnt.AT(n) <= recvbufsize);
         }
       }
+#ifndef _NDEBUG
+      for (size_t i=0; i<source_map.size(); ++i) {
+        source_map[i] = ipoison;
+      }
+#endif
       MPI_Alltoallv (&tmp[0],        &sendcnt[0], &senddispl[0], datatype,
                      &source_map[0], &recvcnt[0], &recvdispl[0], datatype,
                      dist::comm());
+#ifndef _NDEBUG
+      {
+        vector<bool> filled(source_map.size(), false);
+        for (size_t n=0; n<dist::size(); ++n) {
+          for (size_t i=0; i<recvcnt.AT(n); ++i) {
+            assert (not filled.AT(recvdispl.AT(n)+i));
+            filled.AT(recvdispl.AT(n)+i) = true;
+          }
+        }
+        for (size_t i=0; i<filled.size(); ++i) {
+          assert (filled.AT(i));
+        }
+      }
+#endif
+#ifndef _NDEBUG
+      for (size_t i=0; i<source_map.size(); ++i) {
+        assert (source_map[i] != poison);
+      }
+#endif
     } else {
       // No explicit source map specified
       if (Carpet::map != -1) {
@@ -1109,6 +1157,8 @@ namespace CarpetInterp {
       }
     }
 
+    // TODO: Don't use explicit mode switching; code the loops
+    // manually
     BEGIN_GLOBAL_MODE(cctkGH) {
       for (int rl=minrl; rl<maxrl; ++rl) {
         ENTER_LEVEL_MODE (cctkGH, rl) {

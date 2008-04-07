@@ -4,6 +4,16 @@ BOOLEAN barriers "Insert barriers at strategic places for debugging purposes (sl
 {
 } "no"
 
+CCTK_REAL poison "Poison value" STEERABLE=always
+{
+  *:* :: ""
+} -4.20042e+30
+
+CCTK_REAL ipoison "Integer poison value" STEERABLE=always
+{
+  *:* :: ""
+} -420042
+
 SHARES: Cactus
 
 USES CCTK_REAL cctk_initial_time
