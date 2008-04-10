@@ -490,7 +490,8 @@ namespace CarpetInterp {
         }
       }
 #ifndef _NDEBUG
-      for (size_t i=0; i<tmp.size(); ++i) {
+#pragma omp parallel for
+      for (int i=0; i<tmp.size(); ++i) {
         tmp.AT(i) = poison;
       }
 #endif
@@ -501,18 +502,21 @@ namespace CarpetInterp {
       {
         vector<bool> filled(tmp.size(), false);
         for (size_t n=0; n<dist::size(); ++n) {
-          for (size_t i=0; i<recvcnt.AT(n); ++i) {
+#pragma omp parallel for
+          for (int i=0; i<recvcnt.AT(n); ++i) {
             assert (not filled.AT(recvdispl.AT(n)+i));
             filled.AT(recvdispl.AT(n)+i) = true;
           }
         }
-        for (size_t i=0; i<filled.size(); ++i) {
+#pragma omp parallel for
+        for (int i=0; i<filled.size(); ++i) {
           assert (filled.AT(i));
         }
       }
 #endif
 #ifndef _NDEBUG
-      for (size_t i=0; i<tmp.size(); ++i) {
+#pragma omp parallel for
+      for (int i=0; i<tmp.size(); ++i) {
         assert (tmp.AT(i) != poison);
       }
 #endif
@@ -587,7 +591,8 @@ namespace CarpetInterp {
         }
       }
 #ifndef _NDEBUG
-      for (size_t i=0; i<source_map.size(); ++i) {
+#pragma omp parallel for
+      for (int i=0; i<source_map.size(); ++i) {
         source_map[i] = ipoison;
       }
 #endif
@@ -598,18 +603,21 @@ namespace CarpetInterp {
       {
         vector<bool> filled(source_map.size(), false);
         for (size_t n=0; n<dist::size(); ++n) {
-          for (size_t i=0; i<recvcnt.AT(n); ++i) {
+#pragma omp parallel for
+          for (int i=0; i<recvcnt.AT(n); ++i) {
             assert (not filled.AT(recvdispl.AT(n)+i));
             filled.AT(recvdispl.AT(n)+i) = true;
           }
         }
-        for (size_t i=0; i<filled.size(); ++i) {
+#pragma omp parallel for
+        for (int i=0; i<filled.size(); ++i) {
           assert (filled.AT(i));
         }
       }
 #endif
 #ifndef _NDEBUG
-      for (size_t i=0; i<source_map.size(); ++i) {
+#pragma omp parallel for
+      for (int i=0; i<source_map.size(); ++i) {
         assert (source_map[i] != poison);
       }
 #endif
@@ -678,6 +686,7 @@ namespace CarpetInterp {
       int offset = 0;
       vector<CCTK_REAL> tmp (coords_buffer.size());
       for (int c = 0; c < (int)homecnts.size(); c++) {
+#pragma omp parallel for
         for (int n = 0; n < homecnts.AT(c); n++) {
           for (int d = 0; d < N_dims; d++) {
             tmp.AT(d*homecnts.AT(c) + n + offset) =
@@ -806,6 +815,7 @@ namespace CarpetInterp {
 
     // Sorting is done with the help of the inverse indices vector
     vector<int> reverse_indices(indices.size());
+#pragma omp parallel for
     for (int i = 0; i < (int)indices.size(); i++) {
       reverse_indices.AT(indices[i]) = i;
     }
@@ -817,19 +827,21 @@ namespace CarpetInterp {
         assert ((int) (allhomecnts.AT(c)*(d+1) + offset) <=
                 N_output_arrays*N_interp_points);
         assert (d >= 0);
-        for (int n = 0; n < allhomecnts.AT(c); n++, i++) {
+#pragma omp parallel for
+        for (int n = 0; n < allhomecnts.AT(c); n++) {
           {
-            assert (reverse_indices.AT(i) >= 0 and
-                    reverse_indices.AT(i) < N_interp_points);
+            assert (reverse_indices.AT(i+n) >= 0 and
+                    reverse_indices.AT(i+n) < N_interp_points);
             assert (allhomecnts.AT(c) >= 0);
             assert (allhomecnts.AT(c)*d + offset + n <
                     (int) outputs_buffer.size() / vtypesize);
           }
-          memcpy (output_array + reverse_indices.AT(i)*vtypesize,
+          memcpy (output_array + reverse_indices.AT(i+n)*vtypesize,
                   &outputs_buffer.front() +
                   (allhomecnts.AT(c)*d + offset + n) * vtypesize,
                   vtypesize);
         }
+        i += allhomecnts.AT(c);
         offset += N_output_arrays * allhomecnts.AT(c);
       }
       assert ((int) offset == N_output_arrays * N_interp_points);
@@ -893,6 +905,7 @@ namespace CarpetInterp {
                                     &source_map.front(), "source_map");
       assert (iret == (int)source_map.size());
       // Check source map
+#pragma omp parallel for
       for (int n = 0; n < (int)source_map.size(); ++n) {
         assert (source_map.AT(n) >= 0 and source_map.AT(n) < maps);
       }
@@ -1021,16 +1034,17 @@ namespace CarpetInterp {
       assert (0);
     }
 
-    for (int m=0; m<maps; ++m) {
-      gh const * const hh = arrdata.AT(coord_group).AT(m).hh;
-      for (int rl=minrl; rl<maxrl; ++rl) {
-        for (int c = 0; c < hh->components(rl); ++c) {
-          //cout << "CarpetInterp: gh: m=" << m << " rl=" << rl << " c=" << c << " ext=" << hh->extent(0,rl,c) << " ob=" << hh->outer_boundaries(rl,c) << " p=" << hh->processor(rl, c) << " local=" << hh->is_local(rl,c) << endl;
-        }
-      }
-    }
+    //for (int m=0; m<maps; ++m) {
+    //  gh const * const hh = arrdata.AT(coord_group).AT(m).hh;
+    //  for (int rl=minrl; rl<maxrl; ++rl) {
+    //    for (int c = 0; c < hh->components(rl); ++c) {
+    //      cout << "CarpetInterp: gh: m=" << m << " rl=" << rl << " c=" << c << " ext=" << hh->extent(0,rl,c) << " ob=" << hh->outer_boundaries(rl,c) << " p=" << hh->processor(rl, c) << " local=" << hh->is_local(rl,c) << endl;
+    //    }
+    //  }
+    //}
 
     // Assign interpolation points to processors/components
+#pragma omp parallel for
     for (int n = 0; n < npoints; ++n) {
 
       int const m = source_map.AT(n);
@@ -1076,6 +1090,7 @@ namespace CarpetInterp {
       c = 0;
       // Only warn once
       if (map_onto_processors) {
+#pragma omp critical
         CCTK_VWarn (CCTK_WARN_PICKY, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Interpolation point #%d at [%g,%g,%g] of patch #%d is not on any component",
                     n, (double)pos[0], (double)pos[1], (double)pos[2], (int)m);
@@ -1086,11 +1101,15 @@ namespace CarpetInterp {
 
       if (map_onto_processors) {
         procs.AT(n) = hh->processor(rl, c);
-        ++ N_points_to[procs.AT(n)];
+        int & this_N_points_to = N_points_to.AT(procs.AT(n));
+#pragma omp atomic
+        ++ this_N_points_to;
       }
       rlev.AT(n) = rl;
       home.AT(n) = c;
-      ++ homecnts.AT(component_idx (procs.AT(n), m, rl, c));
+      int & this_homecnts = homecnts.AT(component_idx (procs.AT(n), m, rl, c));
+#pragma omp atomic
+      ++ this_homecnts;
       //cout << "   p=" << procs.AT(n) << endl;
 
     } // for n
