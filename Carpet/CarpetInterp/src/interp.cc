@@ -502,11 +502,21 @@ namespace CarpetInterp {
       {
         vector<bool> filled(tmp.size(), false);
         for (size_t n=0; n<dist::size(); ++n) {
-#pragma omp parallel for
+          //#pragma omp parallel for
           for (int i=0; i<recvcnt.AT(n); ++i) {
             assert (not filled.AT(recvdispl.AT(n)+i));
             filled.AT(recvdispl.AT(n)+i) = true;
           }
+        }
+        bool error = false;
+        for (int i=0; i<filled.size(); ++i) {
+          error = error or not (filled.AT(i));
+        }
+        if (error) {
+          cerr << "error" << endl;
+          cerr << "recvdispl: " << recvdispl << endl;
+          cerr << "recvcnt: " << recvcnt << endl;
+          cerr << "filled: " << filled << endl;
         }
 #pragma omp parallel for
         for (int i=0; i<filled.size(); ++i) {
@@ -603,7 +613,7 @@ namespace CarpetInterp {
       {
         vector<bool> filled(source_map.size(), false);
         for (size_t n=0; n<dist::size(); ++n) {
-#pragma omp parallel for
+          //#pragma omp parallel for
           for (int i=0; i<recvcnt.AT(n); ++i) {
             assert (not filled.AT(recvdispl.AT(n)+i));
             filled.AT(recvdispl.AT(n)+i) = true;
