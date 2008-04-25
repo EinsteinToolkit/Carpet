@@ -599,6 +599,36 @@ transfer_prolongate (data const * const src,
                         this->extent(),
                         box);
       break;
+    case 7:
+      call_operator<T> (& prolongate_3d_o7_rf2,
+                        static_cast <T const *> (src->storage()),
+                        src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        box);
+      break;
+    case 9:
+      call_operator<T> (& prolongate_3d_o9_rf2,
+                        static_cast <T const *> (src->storage()),
+                        src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        box);
+      break;
+    case 11:
+      call_operator<T> (& prolongate_3d_o11_rf2,
+                        static_cast <T const *> (src->storage()),
+                        src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        box);
+      break;
     default:
       CCTK_WARN (CCTK_WARN_ABORT,
                  "There is no stencil for op=\"LAGRANGE\" with order_space not in {1, 3, 5}");
