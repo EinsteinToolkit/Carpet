@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="ISO-8859-15"?>
+<!DOCTYPE html
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15" />
+    <title>Working with Git</title>
+  </head>
+
+  <body>
+    <h1>Working with Git</h1>
+
+
+
+    <p>This page assumes that you are already familiar with the basic
+    workings of <a href="http://git.or.cz/">git</a> and
+    have <a href="get-carpet.html">obtained</a> the development
+    version of Carpet.  Please contribute to this page.</p>
+
+
+
+    <h2>Finding an Offending Patch</h2>
+
+    <p>It happens that you notice that something that used to work in
+    a previous version of your code does not work any more in the
+    current version.  Git offers the command <tt>git bisect</tt> to
+    help find the particular patch which broke your code.</p>
+
+    <p>This is what you can do:</p>
+
+    <ul>
+
+      <li>Go to the git tree directory</li>
+
+      <li>Run: <tt>git log</tt></li>
+
+      <li>In the output of the above command select a version that you
+        think is "good" (i.e. still works); the version format is
+        something
+        like <tt>6b93d4531de10266355867d0d04e093b13aa8bda</tt> and
+        follows the keyword <tt>commit</tt> in the above output</li>
+
+      <li>Run: <tt>git bisect start</tt></li>
+
+      <li>Run: <tt>git bisect good
+          b93d4531de10266355867d0d04e093b13aa8bda</tt> (for
+        example)</li>
+
+      <li>Run: <tt>git bisect bad master</tt></li>
+
+      <li>This will make git remove half of the commits from the most
+        recent version to
+        version <tt>6b93d4531de10266355867d0d04e093b13aa8bda</tt></li>
+
+      <li>(*) Recompile your code and test it</li>
+
+      <li>(**) If the test is OK, run: <tt>git bisect good</tt>; if
+        the test still fails, run: <tt>git bisect bad</tt></li>
+
+      <li>Repeat steps (*) and (**) until git tells you something like:
+<pre>1dd96e20cb7a87d294c5298b46f01dff97b0da53 is first bad commit
+commit 1dd96e20cb7a87d294c5298b46f01dff97b0da53
+[...]</pre></li>
+
+      <li>You have found the first "bad" commit!</li>
+
+      <li>(The following are words of the on-line documentation.)  You
+        can then examine the commit with <tt>git-show(1)</tt>, find
+        out who wrote it, and mail them your bug report with the
+        commit id</li>
+
+      <li>In order to go back to the most recent version, run: <tt>git
+          bisect reset</tt></li>
+
+    </ul>
+
+    <p>(Thanks to Luca Baiotti for this description.)</p>
+
+
+
+    <hr />
+
+    <p>Go back to the <a href=".">Carpet home page</a>.</p>
+
+    <hr />
+
+    <p>
+      <a href="http://validator.w3.org/check?uri=referer"><img
+          src="http://www.w3.org/Icons/valid-xhtml10"
+          alt="Valid XHTML 1.0!" height="31" width="88" /></a>
+    </p>
+
+    <hr />
+    <address><a href="mailto:schnetter@cct.lsu.edu">Erik Schnetter</a></address>
+<!-- Created: Thu Apr 24 2008 -->
+<!-- hhmts start -->
+Last modified: Thu Apr 24 2008
+<!-- hhmts end -->
+  </body>
+</html>
