@@ -46,7 +46,7 @@ ostream & operator<< (ostream & os, region_t const & reg);
 // A pseudoregion is almost a region; it is a bbox that lives on a
 // certain processor.  Pseudoregions are a compact way to store
 // information about what processors needs to send data to what other
-// processor during synchronisation or regridding.
+// processors during synchronisation or regridding.
 struct pseudoregion_t {
   ibbox extent;
   int processor;
