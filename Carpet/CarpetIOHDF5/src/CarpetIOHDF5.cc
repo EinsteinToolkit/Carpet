@@ -131,9 +131,21 @@ void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS)
   DECLARE_CCTK_PARAMETERS;
 
 
+  static CCTK_INT last_checkpoint_iteration = 0;
+  static CCTK_REAL last_checkpoint_walltime = 0.0;
+  CCTK_INT const iteration = cctk_iteration;
+  CCTK_REAL const walltime = CCTK_RunTime() / 3600.0;
+
+  bool const checkpoint_by_iteration =
+    checkpoint_every > 0 and
+    iteration >= last_checkpoint_iteration + checkpoint_every;
+  bool const checkpoint_by_walltime =
+    checkpoint_every_walltime_hours > 0 and
+    walltime >= last_checkpoint_walltime + checkpoint_every_walltime_hours;
+
   if (checkpoint and
-    ((checkpoint_every > 0 and cctk_iteration % checkpoint_every == 0) or
-     checkpoint_next)) {
+      (checkpoint_by_iteration or checkpoint_by_walltime or checkpoint_next))
+  {
     if (not CCTK_Equals (verbose, "none")) {
       CCTK_INFO ("---------------------------------------------------------");
       CCTK_VInfo (CCTK_THORNSTRING, "Dumping periodic checkpoint at "
@@ -143,6 +155,8 @@ void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS)
 
     Checkpoint (cctkGH, CP_EVOLUTION_DATA);
 
+    last_checkpoint_iteration = iteration;
+    last_checkpoint_walltime = walltime;
     if (checkpoint_next) {
       CCTK_ParameterSet ("checkpoint_next", CCTK_THORNSTRING, "no");
     }

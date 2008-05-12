@@ -17,6 +17,7 @@ USES KEYWORD out_save_parameters
 USES BOOLEAN abort_on_io_errors 
 
 USES INT     checkpoint_every
+USES REAL    checkpoint_every_walltime_hours
 USES INT     checkpoint_keep
 USES BOOLEAN checkpoint_ID
 USES BOOLEAN recover_and_remove
