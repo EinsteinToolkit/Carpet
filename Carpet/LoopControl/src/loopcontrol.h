@@ -16,6 +16,14 @@ extern "C" {
 
 
 
+#ifdef __cplusplus
+#  ifdef CCTK_CXX_RESTRICT
+#    define restrict CCTK_CXX_RESTRICT
+#  endif
+#endif
+
+
+
 #if 0
 /* The most simple implementation */
 
