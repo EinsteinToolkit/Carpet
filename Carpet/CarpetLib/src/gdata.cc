@@ -253,8 +253,11 @@ find_source_timelevel (vector <CCTK_REAL> const & times,
   CCTK_REAL const eps = 1.0e-12;
   CCTK_REAL const min_time = * min_element (times.begin(), times.end());
   CCTK_REAL const max_time = * max_element (times.begin(), times.end());
+  CCTK_REAL const some_time = abs (min_time) + abs (max_time);
   if (transport_operator != op_copy) {
-    if (time < min_time - eps or time > max_time + eps) {
+    if (time < min_time - eps * some_time or
+        time > max_time + eps * some_time)
+    {
       ostringstream buf;
       buf << setprecision (17)
           << "Internal error: extrapolation in time."
@@ -282,7 +285,7 @@ find_source_timelevel (vector <CCTK_REAL> const & times,
     for (size_t tl=0; tl<times.size(); ++tl) {
       static_assert (abs(0.1) > 0,
                      "Function CarpetLib::abs has wrong signature");
-      if (abs (times.AT(tl) - time) < eps) {
+      if (abs (times.AT(tl) - time) < eps * some_time) {
         timelevel = tl;
         break;
       }
