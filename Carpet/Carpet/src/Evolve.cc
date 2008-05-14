@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 #include <map>
 #include <string>
 #include <sstream>
@@ -87,6 +88,24 @@ namespace Carpet {
             cctkGH->cctk_iteration % do_every == 0)
         {
           TimerSet::writeData (cctkGH, timer_file);
+        }
+      }
+      
+      // Ensure that all levels have consistent times
+      {
+        // This is dangerouse because it compares floating point
+        // numbers for equality
+        assert (cctkGH->cctk_time == global_time);
+        for (int ml=0; ml<mglevels; ++ml) {
+          for (int rl=0; rl<reflevels; ++rl) {
+            int const do_every =
+              ipow (mgfact, ml) * (maxtimereflevelfact / timereffacts.at(rl));
+            if (cctkGH->cctk_iteration % do_every == 0) {
+              // This is dangerouse because it compares floating point
+              // numbers for equality
+              assert (leveltimes.at(ml).at(rl) == global_time);
+            }
+          }
         }
       }
       
@@ -366,13 +385,23 @@ namespace Carpet {
               CCTK_REAL const carpet_time = cctkGH->cctk_time / delta_time;
               for (int m=0; m<maps; ++m) {
                 vtt.at(m)->advance_time (reflevel, mglevel);
-                CCTK_REAL const eps = 1.0e-12;
-                static_assert (abs(0.1) > 0,
-                               "Function CarpetLib::abs has wrong signature");
-                CCTK_REAL const level_time =
-                  vtt.at(m)->get_time (reflevel, mglevel);
-                assert (abs (level_time - carpet_time) < eps);
-                vtt.at(m)->set_time (reflevel, mglevel, carpet_time);
+                if (not adaptive_stepsize) {
+                  CCTK_REAL const eps = 1.0e-12;
+                  static_assert (abs(0.1) > 0,
+                                 "Function CarpetLib::abs has wrong signature");
+                  CCTK_REAL const level_time =
+                    vtt.at(m)->get_time (reflevel, mglevel);
+                  if (not (abs (level_time - carpet_time) < eps)) {
+                    cerr << "ml: " << ml << endl
+                         << "rl: " << rl << endl
+                         << "m: " << m << endl
+                         << "level_time: " << level_time << endl
+                         << "carpet_time: " << carpet_time << endl;
+                  }
+                  assert (abs (level_time - carpet_time) <
+                          eps * max (carpet_time, 1.0));
+                  vtt.at(m)->set_time (reflevel, mglevel, carpet_time);
+                }
               }
               CycleTimeLevels (cctkGH);
               
