@@ -100,7 +100,7 @@ namespace Carpet {
             int const do_every =
               ipow (mgfact, ml) * (maxtimereflevelfact / timereffacts.at(rl));
             if (cctkGH->cctk_iteration % do_every == 0) {
-              assert (abs (leveltimes.at(ml).at(rl) - global_time) ==
+              assert (abs (leveltimes.at(ml).at(rl) - global_time) <
                       eps * global_time);
             }
           }
