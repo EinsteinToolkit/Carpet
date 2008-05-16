@@ -93,17 +93,15 @@ namespace Carpet {
       
       // Ensure that all levels have consistent times
       {
-        // This is dangerouse because it compares floating point
-        // numbers for equality
-        assert (cctkGH->cctk_time == global_time);
+        CCTK_REAL const eps = 1.0e-12;
+        assert (abs (cctkGH->cctk_time - global_time) < eps * global_time);
         for (int ml=0; ml<mglevels; ++ml) {
           for (int rl=0; rl<reflevels; ++rl) {
             int const do_every =
               ipow (mgfact, ml) * (maxtimereflevelfact / timereffacts.at(rl));
             if (cctkGH->cctk_iteration % do_every == 0) {
-              // This is dangerouse because it compares floating point
-              // numbers for equality
-              assert (leveltimes.at(ml).at(rl) == global_time);
+              assert (abs (leveltimes.at(ml).at(rl) - global_time) ==
+                      eps * global_time);
             }
           }
         }
