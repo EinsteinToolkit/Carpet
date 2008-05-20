@@ -89,6 +89,20 @@ dh::on_this_proc (int const rl, int const c, int const cc) const
   return on_this_proc (rl, c) or on_this_proc (rl, cc);
 }
 
+inline
+int
+dh::this_oldproc (int const rl, int const c) const
+{
+  return h.old_processor (rl, c);
+}
+
+inline
+bool
+dh::on_this_oldproc (int const rl, int const c) const
+{
+  return this_oldproc (rl, c) == dist::rank();
+}
+
 
 
 bool there_was_an_error = false;
@@ -850,11 +864,9 @@ regrid ()
           
         // Synchronisation:
         
-        if (int (fast_oldboxes.size()) > ml and
-            int (fast_oldboxes.AT(ml).size()) > rl)
-        {
+        if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > rl) {
           
-          int const oldcomponents = fast_oldboxes.AT(ml).AT(rl).size();
+          int const oldcomponents = oldboxes.AT(ml).AT(rl).size();
           
           // Synchronisation copies from the same level of the old
           // grid structure.  It should fill as many active points as
@@ -871,7 +883,7 @@ regrid ()
             {
               ibbox const & recv = * ri;
               ibbox const & send = recv;
-              if (on_this_proc (rl, c, cc)) {
+              if (on_this_proc (rl, c) or on_this_oldproc (rl, cc)) {
                 int const p = dist::rank();
                 fast_level.AT(p).fast_old2new_sync_sendrecv.push_back
                   (sendrecv_pseudoregion_t (send, cc, recv, c));
@@ -944,9 +956,7 @@ regrid ()
           
         } // if rl > 0
         
-        if (int (fast_oldboxes.size()) > ml and
-            int (fast_oldboxes.AT(ml).size()) > 0)
-        {
+        if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > 0) {
           // All points must now have been received, either through
           // synchronisation or through prolongation
           ASSERT_c (needrecv.empty(),

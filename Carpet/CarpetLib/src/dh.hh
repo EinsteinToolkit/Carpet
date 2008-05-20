@@ -137,6 +137,8 @@ private:
   int this_proc (int rl, int c) const;
   bool on_this_proc (int rl, int c) const;
   bool on_this_proc (int rl, int c, int cc) const;
+  int this_oldproc (int rl, int c) const;
+  bool on_this_oldproc (int rl, int c) const;
   
 public:
   // Grid function management

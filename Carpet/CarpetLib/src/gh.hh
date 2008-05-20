@@ -96,6 +96,11 @@ public:
     return regions.AT(0).AT(rl).AT(c).processor;
   }
 
+  int old_processor (const int rl, const int c) const
+  {
+    return oldregions.AT(0).AT(rl).AT(c).processor;
+  }
+
   int mglevels () const
   {
     return (int)regions.size();
