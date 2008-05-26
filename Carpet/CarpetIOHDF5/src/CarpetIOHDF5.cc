@@ -204,11 +204,6 @@ hid_t CCTKtoHDF5_Datatype (const cGH* const cctkGH,
     case CCTK_VARIABLE_CHAR:      retval = HDF5_CHAR; break;
 
     case CCTK_VARIABLE_INT:       retval = HDF5_INT;
-#ifdef CCTK_INT2
-                                  if (single_precision) {
-                                    retval = H5T_NATIVE_SHORT;
-                                  }
-#endif
                                   break;
 #ifdef CCTK_INT1
     case CCTK_VARIABLE_INT1:      retval = H5T_NATIVE_CHAR; break;
