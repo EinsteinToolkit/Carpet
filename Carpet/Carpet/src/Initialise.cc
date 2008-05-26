@@ -406,6 +406,7 @@ namespace Carpet {
             ScheduleTraverse (where, "CCTK_POSTRESTRICTINITIAL", cctkGH);
           }
           
+          ScheduleTraverse (where, "CCTK_POSTPOSTINITIAL", cctkGH);
           ScheduleTraverse (where, "CCTK_POSTSTEP", cctkGH);
           
           PoisonCheck (cctkGH, alltimes);
