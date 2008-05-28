@@ -94,13 +94,13 @@ namespace Carpet {
       // Ensure that all levels have consistent times
       {
         CCTK_REAL const eps = 1.0e-12;
-        assert (abs (cctkGH->cctk_time - global_time) < eps * global_time);
+        assert (abs (cctkGH->cctk_time - global_time) <= eps * global_time);
         for (int ml=0; ml<mglevels; ++ml) {
           for (int rl=0; rl<reflevels; ++rl) {
             int const do_every =
               ipow (mgfact, ml) * (maxtimereflevelfact / timereffacts.at(rl));
             if (cctkGH->cctk_iteration % do_every == 0) {
-              assert (abs (leveltimes.at(ml).at(rl) - global_time) <
+              assert (abs (leveltimes.at(ml).at(rl) - global_time) <=
                       eps * global_time);
             }
           }
@@ -384,20 +384,31 @@ namespace Carpet {
               for (int m=0; m<maps; ++m) {
                 vtt.at(m)->advance_time (reflevel, mglevel);
                 if (not adaptive_stepsize) {
+#if 0
+                  // We must not perform this check, since the
+                  // relative accuracy of incrementally adding to the
+                  // current time cannot be good enough.  Just setting
+                  // the time (see below) is fine.
                   CCTK_REAL const eps = 1.0e-12;
                   static_assert (abs(0.1) > 0,
                                  "Function CarpetLib::abs has wrong signature");
                   CCTK_REAL const level_time =
                     vtt.at(m)->get_time (reflevel, mglevel);
-                  if (not (abs (level_time - carpet_time) < eps)) {
+                  if (not (abs (level_time - carpet_time) <=
+                           eps * max (carpet_time, 1.0))) {
+                    int const oldprecision = cerr.precision();
+                    cerr.precision (17);
                     cerr << "ml: " << ml << endl
                          << "rl: " << rl << endl
                          << "m: " << m << endl
                          << "level_time: " << level_time << endl
-                         << "carpet_time: " << carpet_time << endl;
+                         << "carpet_time: " << carpet_time << endl
+                         << "(level_time - carpet_time): " << (level_time - carpet_time) << endl;
+                    cerr.precision (oldprecision);
                   }
-                  assert (abs (level_time - carpet_time) <
+                  assert (abs (level_time - carpet_time) <=
                           eps * max (carpet_time, 1.0));
+#endif
                   vtt.at(m)->set_time (reflevel, mglevel, carpet_time);
                 }
               }
