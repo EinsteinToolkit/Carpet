@@ -13,14 +13,11 @@ schedule CarpetIOHDF5_Init at BASEGRID
   OPTIONS: global
 } "Initialisation routine"
 
-if (checkpoint && checkpoint_ID)
+schedule CarpetIOHDF5_InitialDataCheckpoint at CPINITIAL
 {
-  schedule CarpetIOHDF5_InitialDataCheckpoint at CPINITIAL
-  {
-    LANG: C
-    OPTIONS: meta
-  } "Initial data checkpoint routine"
-}
+  LANG: C
+  OPTIONS: meta
+} "Initial data checkpoint routine"
 
 schedule CarpetIOHDF5_EvolutionCheckpoint at CHECKPOINT
 {

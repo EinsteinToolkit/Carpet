@@ -35,6 +35,7 @@ using namespace Carpet;
 
 // when was the last checkpoint written ?
 static int last_checkpoint_iteration = -1;
+static CCTK_REAL last_checkpoint_walltime;
 
 
 // registered GH extension setup routine
@@ -108,6 +109,10 @@ void CarpetIOHDF5_Init (CCTK_ARGUMENTS)
   *this_iteration = -1;
   *next_output_iteration = 0;
   *next_output_time = cctk_time;
+
+  // Initialise checkpointing intervals
+  last_checkpoint_iteration = cctk_iteration;
+  last_checkpoint_walltime = CCTK_RunTime() / 3600.0;
 }
 
 
@@ -116,12 +121,14 @@ void CarpetIOHDF5_InitialDataCheckpoint (CCTK_ARGUMENTS)
   DECLARE_CCTK_PARAMETERS;
 
 
-  if (not CCTK_Equals (verbose, "none")) {
-    CCTK_INFO ("---------------------------------------------------------");
-    CCTK_INFO ("Dumping initial data checkpoint");
-    CCTK_INFO ("---------------------------------------------------------");
+  if (checkpoint and checkpoint_ID) {
+    if (not CCTK_Equals (verbose, "none")) {
+      CCTK_INFO ("---------------------------------------------------------");
+      CCTK_INFO ("Dumping initial data checkpoint");
+      CCTK_INFO ("---------------------------------------------------------");
+    }
+    Checkpoint (cctkGH, CP_INITIAL_DATA);
   }
-  Checkpoint (cctkGH, CP_INITIAL_DATA);
 }
 
 
@@ -131,8 +138,6 @@ void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS)
   DECLARE_CCTK_PARAMETERS;
 
 
-  static CCTK_INT last_checkpoint_iteration = 0;
-  static CCTK_REAL last_checkpoint_walltime = 0.0;
   CCTK_INT const iteration = cctk_iteration;
   CCTK_REAL const walltime = CCTK_RunTime() / 3600.0;
 
@@ -154,12 +159,6 @@ void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS)
     }
 
     Checkpoint (cctkGH, CP_EVOLUTION_DATA);
-
-    last_checkpoint_iteration = iteration;
-    last_checkpoint_walltime = walltime;
-    if (checkpoint_next) {
-      CCTK_ParameterSet ("checkpoint_next", CCTK_THORNSTRING, "no");
-    }
   }
 }
 
@@ -785,6 +784,9 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
     error_count += WriteMetadata (cctkGH, nioprocs, -1, -1, true, file);
   }
 
+  // remember the current wall time
+  CCTK_REAL const walltime = CCTK_RunTime() / 3600.0;
+
   // now dump the grid variables on all mglevels, reflevels, maps and components
   BEGIN_MGLEVEL_LOOP (cctkGH) {
 
@@ -961,6 +963,10 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
 
   // save the iteration number of this checkpoint
   last_checkpoint_iteration = cctkGH->cctk_iteration;
+  last_checkpoint_walltime = walltime;
+  if (checkpoint_next) {
+    CCTK_ParameterSet ("checkpoint_next", CCTK_THORNSTRING, "no");
+  }
 
   // free allocated resources
   free (tempname);
