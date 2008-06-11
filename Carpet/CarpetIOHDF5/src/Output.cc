@@ -698,11 +698,31 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
 
     const ivect pos = (bbox.lower() - baseext.lower()) / bbox.stride();
 
-    for (int d = 0; d < vdim; d++) {
-      Util_TableGetReal (coord_handles[d], &origin[d], "COMPMIN");
-      Util_TableGetReal (coord_handles[d], &delta[d], "DELTA");
-      delta[d]  /= cctkGH->cctk_levfac[d];
-      origin[d] += delta[d] * (cctkGH->cctk_levoff[d] / cctkGH->cctk_levoffdenom[d] + pos[d]);
+    rvect global_lower;
+    rvect coord_delta;
+    const int m = Carpet::map;
+    if (CCTK_GroupTypeFromVarI (request->vindex) == CCTK_GF) {
+      rvect const cctk_origin_space =
+        origin_space.at(m).at(mglevel);
+      rvect const cctk_delta_space =
+        delta_space.at(m) * rvect (mglevelfact);
+      for (int d=0; d<dim; ++d) {
+         // lower boundary of Carpet's integer indexing
+         global_lower[d] = cctk_origin_space[d];
+         // grid spacing of Carpet's integer indexing
+         coord_delta[d] =
+            cctk_delta_space[d] / cctkGH->cctk_levfac[d];
+      }
+    } else {
+      for (int d=0; d<dim; ++d) {
+        global_lower[d] = 0.0;
+        coord_delta[d] = 1.0;
+      }
+    }
+    
+    for (int d=0; d<dim; ++d) {
+        origin[d] = global_lower[d] + coord_delta[d] * (cctkGH->cctk_levoff[d] / cctkGH->cctk_levoffdenom[d] + pos[d]);
+        delta[d] = coord_delta[d];
     }
 
     HDF5_ERROR (attr = H5Acreate (dataset, "origin", HDF5_REAL,
