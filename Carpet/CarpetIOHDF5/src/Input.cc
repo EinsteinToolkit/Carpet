@@ -131,7 +131,7 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
       } // for rl
       
       // Make multigrid aware
-      Carpet::MakeMultigridBoxes (cctkGH, Carpet::map, regss, regsss);
+      Carpet::MakeMultigridBoxes (cctkGH, Carpet::map, regss, regssss.at(m));
       
     } // for m
     
