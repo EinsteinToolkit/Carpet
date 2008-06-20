@@ -57,14 +57,19 @@ const int dim = 3;
 
 
 // Some shortcuts for type names
+template<typename T, int D> class vect;
 template<typename T, int D> class bbox;
 template<typename T, int D> class bboxset;
-template<typename T, int D> class vect;
+template<typename T, int D, typename P> class fulltree;
+
+struct pseudoregion_t;
+struct region_t;
 
 typedef vect<bool,dim>   bvect;
 typedef vect<int,dim>    ivect;
 typedef bbox<int,dim>    ibbox;
 typedef bboxset<int,dim> ibset;
+typedef fulltree<int,dim,pseudoregion_t> ipfulltree;
 
 // (Try to replace these by b2vect and i2vect)
 typedef vect<vect<bool,2>,dim> bbvect;

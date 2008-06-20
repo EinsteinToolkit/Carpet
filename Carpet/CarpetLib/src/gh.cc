@@ -15,6 +15,8 @@
 
 using namespace std;
 
+using namespace CarpetLib;
+
 
 
   // Constructors
@@ -76,9 +78,11 @@ gh::
 // Modifiers
 void
 gh::
-regrid (mregs const & regs)
+regrid (rregs const & superregs, mregs const & regs)
 {
   DECLARE_CCTK_PARAMETERS;
+  
+  superregions = superregs;
   
   // Save the grid hierarchy
   oldregions.clear ();

@@ -224,6 +224,7 @@ ostream& output (ostream& os, const vector<T>& v) {
 #include "bbox.hh"
 #include "bboxset.hh"
 #include "dh.hh"
+#include "fulltree.hh"
 #include "gdata.hh"
 #include "ggf.hh"
 #include "region.hh"
@@ -245,6 +246,7 @@ template size_t memoryof (vector<int> const & v);
 template size_t memoryof (vector<CCTK_REAL> const & v);
 template size_t memoryof (vector<bbox<int,3> > const & v);
 template size_t memoryof (vector<vect<int,3> > const & v);
+template size_t memoryof (vector<fulltree <int,3,pseudoregion_t> *> const & f);
 template size_t memoryof (vector<pseudoregion_t> const & v);
 template size_t memoryof (vector<region_t> const & v);
 template size_t memoryof (vector<sendrecv_pseudoregion_t> const & v);

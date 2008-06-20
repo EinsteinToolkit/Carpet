@@ -512,8 +512,8 @@ transfer_from_all (comm_state & state,
     pseudoregion_t const & precv = (* ipsendrecv).recv;
     ibbox const & send = psend.extent;
     ibbox const & recv = precv.extent;
-    int const c2 = psend.processor;
-    int const c1 = precv.processor;
+    int const c2 = psend.component;
+    int const c1 = precv.component;
     
     // Source and destination data
     gdata * const dst = storage.AT(ml1).AT(rl1).AT(c1).AT(tl1);

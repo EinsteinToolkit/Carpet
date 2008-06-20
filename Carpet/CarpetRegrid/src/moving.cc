@@ -20,15 +20,12 @@ namespace CarpetRegrid {
   
   int Moving (cGH const * const cctkGH,
               gh const & hh,
-              gh::mregs & regsss)
+              gh::rregs & regss)
   {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
     assert (refinement_levels >= 1);
-    
-    assert (regsss.size() >= 1);
-    vector<vector<region_t> > regss = regsss.at(0);
     
     regss.resize (refinement_levels);
     
@@ -60,15 +57,9 @@ namespace CarpetRegrid {
       ManualCoordinates_OneLevel
         (cctkGH, hh, rl, refinement_levels, rlb, rub, reg, regs);
       
-      // make multiprocessor aware
-      SplitRegions (cctkGH, regs);
-      
       regss.at(rl) = regs;
       
     } // for rl
-    
-    // make multigrid aware
-    MakeMultigridBoxes (cctkGH, Carpet::map, regss, regsss);
     
     return 1;
   }

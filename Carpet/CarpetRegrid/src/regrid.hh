@@ -31,8 +31,10 @@ namespace CarpetRegrid {
     
     // Aliased functions
 //     CCTK_INT CarpetRegrid_Regrid (const cGH * const cctkGH,
+//                                   gh<dim>::rregs * superregss,
 //                                   gh<dim>::mregs * regsss);
     CCTK_INT CarpetRegrid_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
+                                  CCTK_POINTER const superregss_,
                                   CCTK_POINTER const regsss_,
 				  CCTK_INT force);
   }
@@ -41,15 +43,15 @@ namespace CarpetRegrid {
   
   int BaseLevel (cGH const * const cctkGH,
                  gh const & hh,
-                 gh::mregs & regsss);
+                 gh::rregs & regss);
 
   int Centre (cGH const * const cctkGH,
               gh const & hh,
-              gh::mregs & regsss);
+              gh::rregs & regss);
 
   int ManualGridpoints (cGH const * const cctkGH,
                         gh const & hh,
-                        gh::mregs & regsss);
+                        gh::rregs & regss);
   
   void ManualGridpoints_OneLevel (const cGH * const cctkGH,
                                   const gh & hh,
@@ -62,7 +64,7 @@ namespace CarpetRegrid {
 
   int ManualCoordinates (cGH const * const cctkGH,
                          gh const & hh,
-                         gh::mregs & regsss);
+                         gh::rregs & regss);
   
   void ManualCoordinates_OneLevel (const cGH * const cctkGH,
                                    const gh & hh,
@@ -84,19 +86,19 @@ namespace CarpetRegrid {
 
   int ManualGridpointList (cGH const * const cctkGH,
                            gh const & hh,
-                           gh::mregs & regsss);
+                           gh::rregs & regss);
   
   int ManualCoordinateList (cGH const * const cctkGH,
                             gh const & hh,
-                            gh::mregs & regsss);
+                            gh::rregs & regss);
 
   int Moving (cGH const * const cctkGH,
               gh const & hh,
-              gh::mregs & regsss);
+              gh::rregs & regss);
   
   int Automatic (cGH const * const cctkGH,
                  gh const & hh,
-                 gh::mregs & regsss);
+                 gh::rregs & regss);
   
   void Automatic_OneLevel (const cGH * const cctkGH,
                            const gh & hh,

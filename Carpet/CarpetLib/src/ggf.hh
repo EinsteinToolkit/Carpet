@@ -62,7 +62,7 @@ protected:
 public:
   const int vectorlength;       // vector length
   const int vectorindex;        // index of *this
-  const ggf* vectorleader;      // first vector element
+  ggf* const vectorleader;      // first vector element
   
 private:
   mdata oldstorage;             // temporary storage

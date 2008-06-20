@@ -19,6 +19,7 @@ namespace CarpetRegrid {
   using namespace Carpet;
   
   CCTK_INT CarpetRegrid_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
+                                CCTK_POINTER const superregss_,
                                 CCTK_POINTER const regsss_,
 				CCTK_INT force)
   {
@@ -26,6 +27,7 @@ namespace CarpetRegrid {
     
     const cGH * const cctkGH = (const cGH *) cctkGH_;
     
+    gh::rregs & superregss = * (gh::rregs *) superregss_;
     gh::mregs & regsss = * (gh::mregs *) regsss_;
     
     gh const & hh = *vhh.at(Carpet::map);
@@ -151,43 +153,53 @@ namespace CarpetRegrid {
     
     if (CCTK_EQUALS(refined_regions, "none")) {
       
-      do_recompose = BaseLevel (cctkGH, hh, regsss);
+      do_recompose = BaseLevel (cctkGH, hh, superregss);
                  
     } else if (CCTK_EQUALS(refined_regions, "centre")) {
       
-      do_recompose = Centre (cctkGH, hh, regsss);
+      do_recompose = Centre (cctkGH, hh, superregss);
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-gridpoints")) {
       
       do_recompose
-        = ManualGridpoints (cctkGH, hh, regsss);
+        = ManualGridpoints (cctkGH, hh, superregss);
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-coordinates")) {
       
       do_recompose
-        = ManualCoordinates (cctkGH, hh, regsss);
+        = ManualCoordinates (cctkGH, hh, superregss);
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-gridpoint-list")) {
       
       do_recompose
-        = ManualGridpointList (cctkGH, hh, regsss);
+        = ManualGridpointList (cctkGH, hh, superregss);
                  
     } else if (CCTK_EQUALS(refined_regions, "manual-coordinate-list")) {
       
       do_recompose
-        = ManualCoordinateList (cctkGH, hh, regsss);
+        = ManualCoordinateList (cctkGH, hh, superregss);
                  
     } else if (CCTK_EQUALS(refined_regions, "moving")) {
       
-      do_recompose = Moving (cctkGH, hh, regsss);
+      do_recompose = Moving (cctkGH, hh, superregss);
                  
     } else if (CCTK_EQUALS(refined_regions, "automatic")) {
       
-      do_recompose = Automatic (cctkGH, hh, regsss);
+      do_recompose = Automatic (cctkGH, hh, superregss);
                  
     } else {
       assert (0);
     }
+    
+    // make multiprocessor aware
+    vector<vector<region_t> > regss(superregss.size());
+    for (size_t rl=0; rl<superregss.size(); ++rl) {
+#warning "TODO: delete .processors"
+      SplitRegions (cctkGH, superregss.at(rl), regss.at(rl));
+    }
+    
+    // make multigrid aware
+    MakeMultigridBoxes (cctkGH, Carpet::map, regss, regsss);
     
     assert (regsss.size() > 0);
     

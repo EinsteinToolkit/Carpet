@@ -12,10 +12,12 @@ uses include header: dist.hh
 
 uses include header: bbox.hh
 uses include header: bboxset.hh
+uses include header: fulltree.hh
 uses include header: region.hh
 uses include header: vect.hh
 
 uses include header: data.hh
+
 uses include header: dh.hh
 uses include header: gf.hh
 uses include header: ggf.hh
@@ -205,18 +207,22 @@ PROVIDES FUNCTION GetRefinementLevels \
 
 # The true prototype of the routine below:
 #   int Carpet_Regrid (const cGH * cctkGH,
+#                      gh::rregs * superregss,
 #                      gh::mregs * regsss,
 #                      int         force);
 CCTK_INT FUNCTION Carpet_Regrid (CCTK_POINTER_TO_CONST IN cctkGH, \
+                                 CCTK_POINTER IN superregss,      \
                                  CCTK_POINTER IN regsss,          \
                                  CCTK_INT IN force)
 USES FUNCTION Carpet_Regrid
 
 # The true prototype of the routine below:
 #   int Carpet_Regrid (const cGH * cctkGH,
+#                      vector<gh::rregs> * superregsss,
 #                      vector<gh::mregs> * regssss,
 #                      int                  force);
 CCTK_INT FUNCTION Carpet_RegridMaps (CCTK_POINTER_TO_CONST IN cctkGH, \
+                                     CCTK_POINTER IN superregsss,     \
                                      CCTK_POINTER IN regssss,         \
                                      CCTK_INT IN force)
 USES FUNCTION Carpet_RegridMaps

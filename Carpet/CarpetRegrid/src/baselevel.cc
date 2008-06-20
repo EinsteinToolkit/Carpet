@@ -19,13 +19,11 @@ namespace CarpetRegrid {
   
   int BaseLevel (cGH const * const cctkGH,
                  gh const & hh,
-                 gh::mregs & regsss)
+                 gh::rregs & regss)
   {
     DECLARE_CCTK_PARAMETERS;
     
     assert (refinement_levels == 1);
-    
-    assert (regsss.size() == 1);
     
     return 0;
   }

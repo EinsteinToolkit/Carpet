@@ -87,21 +87,25 @@ USES FUNCTION MultiPatch_ConvertFromPhysicalBoundary
 
 # The true prototype of the routine below:
 #   int Carpet_Regrid (cGH const * cctkGH,
+#                      gh::rregs * superregss,
 #                      gh::mregs * regsss,
 #                      int         force);
-CCTK_INT FUNCTION Carpet_Regrid       \
-    (CCTK_POINTER_TO_CONST IN cctkGH, \
-     CCTK_POINTER          IN regsss, \
+CCTK_INT FUNCTION Carpet_Regrid           \
+    (CCTK_POINTER_TO_CONST IN cctkGH,     \
+     CCTK_POINTER          IN superregss, \
+     CCTK_POINTER          IN regsss,     \
      CCTK_INT              IN force)
 PROVIDES FUNCTION Carpet_Regrid WITH CarpetRegrid2_Regrid LANGUAGE C
 
 # The true prototype of the routine below:
 #   int Carpet_Regrid (cGH const          * cctkGH,
+#                      vector <gh::rregs> * superregsss,
 #                      vector <gh::mregs> * regssss,
 #                      int                  force)
-CCTK_INT FUNCTION Carpet_RegridMaps    \
-    (CCTK_POINTER_TO_CONST IN cctkGH,  \
-     CCTK_POINTER          IN regssss, \
+CCTK_INT FUNCTION Carpet_RegridMaps        \
+    (CCTK_POINTER_TO_CONST IN cctkGH,      \
+     CCTK_POINTER          IN superregsss, \
+     CCTK_POINTER          IN regssss,     \
      CCTK_INT              IN force)
 PROVIDES FUNCTION Carpet_RegridMaps WITH CarpetRegrid2_RegridMaps LANGUAGE C
 
