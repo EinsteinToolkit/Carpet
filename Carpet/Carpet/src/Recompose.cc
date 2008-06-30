@@ -1288,6 +1288,12 @@ namespace Carpet {
     if (DEBUG) cout << "SRMA enter" << endl;
     
     int const nmaps = superregss.size();
+    int minmap = 1000000000;
+    for (int m=0; m<nmaps; ++m) {
+      for (int r=0; r<int(superregss.at(m).size()); ++r) {
+        minmap = min (minmap, superregss.at(m).at(r).map);
+      }
+    }
     int nregs = 0;
     for (int m=0; m<nmaps; ++m) {
       nregs += superregss.at(m).size();
@@ -1383,13 +1389,13 @@ namespace Carpet {
     // Count components per map
     vector<int> myncomps(nmaps, 0);
     for (int r=0; r<newnregs; ++r) {
-      int const m = newregs.at(r).map;
+      int const m = newregs.at(r).map - minmap;
       assert (m>=0 and m<nmaps);
       ++ myncomps.at(m);
     }
     vector<int> mynregs(nmaps, 0);
     for (int r=0; r<nregs; ++r) {
-      int const m = superregs.at(r).map;
+      int const m = superregs.at(r).map - minmap;
       assert (m>=0 and m<nmaps);
       ++ mynregs.at(m);
     }
@@ -1403,7 +1409,7 @@ namespace Carpet {
     {
       vector<int> tmpncomps(nmaps, 0);
       for (int r=0; r<nregs; ++r) {
-        int const m = superregs.at(r).map;
+        int const m = superregs.at(r).map - minmap;
         ipfulltree * const regf = superregs.at(r).processors;
         assert (regf != NULL);
         for (ipfulltree::iterator
@@ -1430,12 +1436,12 @@ namespace Carpet {
     }
     // Assign regions
     for (int r=0; r<newnregs; ++r) {
-      int const m = newregs.at(r).map;
+      int const m = newregs.at(r).map - minmap;
       assert (m>=0 and m<nmaps);
       regss.at(m).push_back (newregs.at(r));
     }
     for (int r=0; r<nregs; ++r) {
-      int const m = superregs.at(r).map;
+      int const m = superregs.at(r).map - minmap;
       assert (m>=0 and m<nmaps);
       superregss.at(m).push_back (superregs.at(r));
     }
