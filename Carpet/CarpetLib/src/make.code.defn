@@ -8,6 +8,7 @@ SRCS =	bbox.cc					\
 	defs.cc					\
 	dh.cc					\
 	dist.cc					\
+	fulltree.cc				\
 	gdata.cc				\
 	gf.cc					\
 	ggf.cc					\

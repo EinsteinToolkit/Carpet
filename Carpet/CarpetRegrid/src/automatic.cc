@@ -26,14 +26,11 @@ namespace CarpetRegrid {
   
   int Automatic (cGH const * const cctkGH,
                  gh const & hh,
-                 gh::mregs & regsss)
+                 gh::rregs & regss)
   {
     DECLARE_CCTK_PARAMETERS;
     
     assert (refinement_levels >= 1);
-    
-    assert (regsss.size() >= 1);
-    vector<vector<region_t> > regss = regsss.at(0);
     
     
     
@@ -60,9 +57,6 @@ namespace CarpetRegrid {
       (cctkGH, hh, reflevel, min(reflevels+1, (int)refinement_levels),
        errorgf, regs);
     
-    // make multiprocessor aware
-    SplitRegions (cctkGH, regs);
-    
     if (regs.size() == 0) {
       // remove all finer levels
       regss.resize(reflevel+1);
@@ -76,9 +70,6 @@ namespace CarpetRegrid {
 	regss.at(reflevel+1) = regs;
       }
     }
-    
-    // make multigrid aware
-    MakeMultigridBoxes (cctkGH, Carpet::map, regss, regsss);
     
     return 1;
   }

@@ -60,12 +60,14 @@ namespace Carpet {
   
   
   static void
-  SplitRegionsMaps_Automatic_Recursively (bvect    const & dims,
-                                          int      const   nprocs,
-                                          region_t const & reg,
+  SplitRegionsMaps_Automatic_Recursively (bvect    const   & dims,
+                                          int      const     firstproc,
+                                          int      const     nprocs,
+                                          region_t         & superreg,
                                           vector<region_t> & newregs);
   static void
   SplitRegions_AsSpecified (cGH const * cctkGH,
+                            vector<region_t> & superregs,
                             vector<region_t> & regs);
   
   
@@ -124,6 +126,8 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
+    Checkpoint ("Regridding level %d...", reflevel);
+    
     assert (is_level_mode());
     
     bool const have_regrid     = CCTK_IsFunctionAliased ("Carpet_Regrid");
@@ -155,37 +159,40 @@ namespace Carpet {
       
       BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
         
-        gh::mregs regsss = vhh.at(map)->regions;
+        gh::rregs superregss = vhh.at(map)->superregions;
+        gh::mregs regsss;
         
         // Check whether to recompose
         CCTK_INT const do_recompose =
-          Carpet_Regrid (cctkGH, & regsss, force_recompose);
+          Carpet_Regrid (cctkGH, & superregss, & regsss, force_recompose);
         assert (do_recompose >= 0);
         did_change = did_change or do_recompose;
         
         if (do_recompose) {
-          RegridMap (cctkGH, map, regsss);
+          RegridMap (cctkGH, map, superregss, regsss);
         }
         
       } END_MAP_LOOP;
       
     } else {
       
+      vector<gh::rregs> superregsss (maps);
       vector<gh::mregs> regssss (maps);
       BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
-        regssss.at(map) = vhh.at(map)->regions;
+        superregsss.at(map) = vhh.at(map)->superregions;
       } END_MAP_LOOP;
       
       // Check whether to recompose
       CCTK_INT const do_recompose =
-        Carpet_RegridMaps (cctkGH, & regssss, force_recompose);
+        Carpet_RegridMaps (cctkGH, & superregsss, & regssss, force_recompose);
       assert (do_recompose >= 0);
       did_change = did_change or do_recompose;
       
       if (do_recompose) {
         BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+          gh::rregs const & superregss = superregsss.at(map);
           gh::mregs const & regsss = regssss.at(map);
-          RegridMap (cctkGH, map, regsss);
+          RegridMap (cctkGH, map, superregss, regsss);
         } END_MAP_LOOP;
       }
       
@@ -209,6 +216,7 @@ namespace Carpet {
   void
   RegridMap (cGH const * const cctkGH,
              int const m,
+             gh::rregs const & superregss,
              gh::mregs const & regsss)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -221,13 +229,15 @@ namespace Carpet {
     // not change
     
     // Regrid
-    vhh.at(m)->regrid (regsss);
+    vhh.at(m)->regrid (superregss, regsss);
     
     // Write grid structure to file
     OutputGridStructure (cctkGH, m, regsss);
     OutputGridCoordinates (cctkGH, m, regsss);
     
-    if (verbose) OutputGrids (cctkGH, m, * vhh.at(m), * vdd.at(m));
+    if (verbose or veryverbose) {
+      OutputGrids (cctkGH, m, * vhh.at(m), * vdd.at(m));
+    }
     
     Waypoint ("Done regridding map %d.", m);
   }
@@ -717,18 +727,20 @@ namespace Carpet {
   // SplitRegions_AlongZ for grid arrays)
   void
   SplitRegions (cGH const * const cctkGH,
+                vector<region_t> & superregs,
                 vector<region_t> & regs)
   {
     DECLARE_CCTK_PARAMETERS;
     
+    assert (regs.empty());
     if (CCTK_EQUALS (processor_topology, "along-z")) {
-      SplitRegions_AlongZ (cctkGH, regs);
+      SplitRegions_AlongZ (cctkGH, superregs, regs);
     } else if (CCTK_EQUALS (processor_topology, "along-dir")) {
-      SplitRegions_AlongDir (cctkGH, regs, split_direction);
+      SplitRegions_AlongDir (cctkGH, superregs, regs, split_direction);
     } else if (CCTK_EQUALS (processor_topology, "automatic")) {
-      SplitRegions_Automatic (cctkGH, regs);
+      SplitRegions_Automatic (cctkGH, superregs, regs);
     } else if (CCTK_EQUALS (processor_topology, "manual")) {
-      SplitRegions_AsSpecified (cctkGH, regs);
+      SplitRegions_AsSpecified (cctkGH, superregs, regs);
     } else {
       assert (0);
     }
@@ -835,29 +847,38 @@ namespace Carpet {
   
   void
   SplitRegions_AlongZ (cGH const * const cctkGH,
+                       vector<region_t> & superregs,
                        vector<region_t> & regs)
   {
-    SplitRegions_AlongDir (cctkGH, regs, dim - 1);
+    assert (regs.empty());
+    SplitRegions_AlongDir (cctkGH, superregs, regs, dim - 1);
   }
   
   
   
   void
   SplitRegions_AlongDir (cGH const * const cctkGH,
+                         vector<region_t> & superregs,
                          vector<region_t> & regs,
                          int const dir)
   {
+    assert (regs.empty());
+    
     // Something to do?
-    if (regs.size() == 0) {
+    if (superregs.size() == 0) {
       return;
     }
     
     const int nprocs = CCTK_nProcs (cctkGH);
     
-    assert (regs.size() == 1);
+    assert (superregs.size() == 1);
+    regs = superregs;
     
     if (nprocs == 1) {
       regs.at(0).processor = 0;
+      pseudoregion_t const preg (regs.at(0).extent, regs.at(0).processor);
+      assert (superregs.at(0).processors == NULL);
+      superregs.at(0).processors = new ipfulltree (preg);
       return;
     }
     
@@ -870,6 +891,8 @@ namespace Carpet {
     const b2vect obnd0 = reg0.outer_boundaries;
     
     regs.resize (nprocs);
+    vector<int> bounds (nprocs+1);
+    vector<ipfulltree *> subtrees (nprocs);
     for (int c=0; c<nprocs; ++c) {
       ivect cstr = rstr0;
       ivect clb  = rlb0;
@@ -892,7 +915,14 @@ namespace Carpet {
       obnd[0][dir] &= clb[dir] == rlb0[dir];
       obnd[1][dir] &= cub[dir] == rub0[dir];
       proc = c;
+      pseudoregion_t const preg (reg.extent, c);
+      bounds.at(c) = reg.extent.lower()[dir];
+      subtrees.at(c) = new ipfulltree (preg);
     }
+    bounds.at(nprocs) = rub0[dir] + rstr0[dir];
+    
+    assert (superregs.at(0).processors == NULL);
+    superregs.at(0).processors = new ipfulltree (dir, bounds, subtrees);
     
     for (int c=0; c<(int)regs.size(); ++c) {
       assert (regs.at(c).processor == c);
@@ -903,10 +933,15 @@ namespace Carpet {
   
   void
   SplitRegions_Automatic (cGH const * const cctkGH,
+                          vector<region_t> & superregs,
                           vector<region_t> & regs)
   {
-    vector<vector<region_t> > regss (1, regs);
-    SplitRegionsMaps_Automatic (cctkGH, regss);
+    assert (regs.empty());
+    vector<vector<region_t> > superregss (1, superregs);
+    vector<vector<region_t> > regss (1);
+    SplitRegionsMaps_Automatic (cctkGH, superregss, regss);
+    assert (superregss.size() == 1);
+    superregs = regss.at(0);
     assert (regss.size() == 1);
     regs = regss.at(0);
   }
@@ -915,20 +950,23 @@ namespace Carpet {
   
   static void
   SplitRegions_AsSpecified (cGH const * const cctkGH,
+                            vector<region_t> & superregs,
                             vector<region_t> & regs)
   {
     DECLARE_CCTK_PARAMETERS;
     
+    assert (regs.empty());
+    
     // Something to do?
-    if (regs.size() == 0) {
+    if (superregs.size() == 0) {
       return;
     }
     
     const int nprocs = CCTK_nProcs (cctkGH);
     
-    assert (regs.size() == 1);
+    assert (superregs.size() == 1);
     
-    region_t const & reg0 = regs.at(0);
+    region_t const & reg0 = superregs.at(0);
     const ivect rstr0  = reg0.extent.stride();
     const ivect rlb0   = reg0.extent.lower();
     const ivect rub0   = reg0.extent.upper() + rstr0;
@@ -956,9 +994,17 @@ namespace Carpet {
     const ivect rem = glonp % nprocs_dir;
     const ivect step = locnp * cstr;
     assert (dim==3);
+    
+    vector<int> boundsz(nprocs_dir[2]);
+    vector<ipfulltree *> subtreesz(nprocs_dir[2]+1);
     for (int k=0; k<nprocs_dir[2]; ++k) {
+      vector<int> boundsy(nprocs_dir[2]);
+      vector<ipfulltree *> subtreesy(nprocs_dir[2]+1);
       for (int j=0; j<nprocs_dir[1]; ++j) {
+        vector<int> boundsx(nprocs_dir[2]);
+        vector<ipfulltree *> subtreesx(nprocs_dir[2]+1);
 	for (int i=0; i<nprocs_dir[0]; ++i) {
+          
 	  const int c = i + nprocs_dir[0] * (j + nprocs_dir[1] * k);
 	  const ivect ipos (i, j, k);
 	  ivect clb = rlb0 + step *  ipos;
@@ -988,9 +1034,20 @@ namespace Carpet {
           obnd[0] &= clb == rlb0;
           obnd[1] &= cub == rub0;
           proc = c;
+          
+          pseudoregion_t preg (reg.extent, c);
+          subtreesx.at(i) = new ipfulltree (preg);
 	}
+        boundsx.at(nprocs_dir[0]) = rub0[0] + rstr0[0];
+        subtreesy.at(j) = new ipfulltree (0, boundsx, subtreesx);
       }
+      boundsy.at(nprocs_dir[1]) = rub0[1] + rstr0[1];
+      subtreesz.at(k) = new ipfulltree (1, boundsy, subtreesy);
     }
+    boundsz.at(nprocs_dir[2]) = rub0[2] + rstr0[2];
+    
+    assert (superregs.at(0).processors == NULL);
+    superregs.at(0).processors = new ipfulltree (2, boundsz, subtreesz);
     
     for (int c=0; c<(int)regs.size(); ++c) {
       assert (regs.at(c).processor == c);
@@ -1003,21 +1060,26 @@ namespace Carpet {
   // SplitRegions_AlongZ for grid arrays)
   void
   SplitRegionsMaps (cGH const * const cctkGH,
+                    vector<vector<region_t> > & superregss,
                     vector<vector<region_t> > & regss)
   {
     DECLARE_CCTK_PARAMETERS;
     
+    assert (regss.size() == superregss.size());
+    for (size_t m=0; m<regss.size(); ++m) {
+      assert (regss.AT(m).empty());
+    }
     if (CCTK_EQUALS (processor_topology, "along-z")) {
       assert (0);
-//       SplitRegionsMaps_AlongZ (cctkGH, regss);
+//       SplitRegionsMaps_AlongZ (cctkGH, superregss, regss);
     } else if (CCTK_EQUALS (processor_topology, "along-dir")) {
       assert (0);
-//       SplitRegionsMaps_AlongDir (cctkGH, regss, split_direction);
+//       SplitRegionsMaps_AlongDir (cctkGH, superregss, regss, split_direction);
     } else if (CCTK_EQUALS (processor_topology, "automatic")) {
-      SplitRegionsMaps_Automatic (cctkGH, regss);
+      SplitRegionsMaps_Automatic (cctkGH, superregss, regss);
     } else if (CCTK_EQUALS (processor_topology, "manual")) {
       assert (0);
-//       SplitRegionsMaps_AsSpecified (cctkGH, regss);
+//       SplitRegionsMaps_AsSpecified (cctkGH, superregss, regss);
     } else {
       assert (0);
     }
@@ -1026,9 +1088,10 @@ namespace Carpet {
   
   
   static void
-  SplitRegionsMaps_Automatic_Recursively (bvect    const & dims,
-                                          int      const   nprocs,
-                                          region_t const & reg,
+  SplitRegionsMaps_Automatic_Recursively (bvect    const   & dims,
+                                          int      const     firstproc,
+                                          int      const     nprocs,
+                                          region_t         & superreg,
                                           vector<region_t> & newregs)
   {
     if (DEBUG) cout << "SRMAR enter" << endl;
@@ -1046,7 +1109,11 @@ namespace Carpet {
       assert (nprocs == 1);
       
       // Return argument
-      newregs.push_back (reg);
+      region_t newreg = superreg;
+      newreg.processor = firstproc;
+      newregs.push_back (newreg);
+      pseudoregion_t const preg (newreg.extent, newreg.processor);
+      superreg.processors = new ipfulltree (preg);
       
       // Check postcondition
       assert (newregs.size() == oldsize + nprocs);
@@ -1056,19 +1123,21 @@ namespace Carpet {
     }
     
     // Special case
-    if (reg.extent.empty()) {
+    if (superreg.extent.empty()) {
       if (DEBUG) cout << "SRMAR empty" << endl;
       
       // Create a new region
-      region_t newreg (reg);
-      newreg.outer_boundaries      = b2vect(false);
+      region_t newreg (superreg);
+      newreg.outer_boundaries = b2vect(false);
       if (DEBUG) cout << "SRMAR newreg " << newreg << endl;
       
       // Store
       for (int p=0; p<nprocs; ++p) {
-        newreg.processor = reg.processor + p;
+        newreg.processor = firstproc + p;
         newregs.push_back (newreg);
       }
+      // Do not set any superreg.processors information
+      // TODO: Maybe create an empty tree for this?
       
       // Check postcondition
       assert (newregs.size() == oldsize + nprocs);
@@ -1078,10 +1147,10 @@ namespace Carpet {
     }
     
     // Calculate cost factors
-    rvect rcost = cost (reg);
+    rvect rcost = cost (superreg);
     CCTK_REAL const rfact = pow (nprocs / prod(rcost), CCTK_REAL(1)/dim);
     rcost *= rfact;
-    assert (abs (prod (rcost) - nprocs) < 1.0e-6);
+    assert (abs (prod (rcost) - nprocs) <= 1.0e-6);
     if (DEBUG) cout << "SRMA shapes " << rcost << endl;
     
     // Choose a direction
@@ -1134,7 +1203,8 @@ namespace Carpet {
     
     // Split the region
     vector<int> mynpoints(nslices);
-    int const npoints = (reg.extent.shape() / reg.extent.stride())[mydim];
+    int const npoints =
+      (superreg.extent.shape() / superreg.extent.stride())[mydim];
     
     // Keep track of how many points and processors we have left to
     // distribute
@@ -1155,16 +1225,18 @@ namespace Carpet {
     
     // Create the regions and recurse
     if (DEBUG) cout << "SRMAR " << mydim << ": create bboxes" << endl;
-    ivect lo = reg.extent.lower();
-    ivect up = reg.extent.upper();
-    ivect const str = reg.extent.stride();
-    int p = reg.processor;
+    ivect lo = superreg.extent.lower();
+    ivect up = superreg.extent.upper();
+    ivect const str = superreg.extent.stride();
+    int p = firstproc;
+    vector<int> bounds (nslices+1);
+    vector<ipfulltree *> subtrees (nslices);
     for (int n=0; n<nslices; ++n) {
       if (DEBUG) cout << "SRMAR " << mydim << " n " << n << endl;
       
       // Create a new region
       up[mydim] = lo[mydim] + (mynpoints.at(n) - 1) * str[mydim];
-      b2vect newob (reg.outer_boundaries);
+      b2vect newob (superreg.outer_boundaries);
       if (n > 0) {
         newob[0][mydim] = false;
       }
@@ -1172,23 +1244,33 @@ namespace Carpet {
         up[mydim] = lo[mydim] + (mynpoints.at(n) - 1) * str[mydim];
         newob[1][mydim] = false;
       }
-      region_t newreg (reg);
+      region_t newreg (superreg);
       newreg.extent = ibbox(lo, up, str);
-      newreg.outer_boundaries      = newob;
-      newreg.processor = p;
+      newreg.outer_boundaries = newob;
       if (DEBUG) cout << "SRMAR " << mydim << " newreg " << newreg << endl;
       
       // Recurse
+      bounds.at(n) = lo[mydim];
       SplitRegionsMaps_Automatic_Recursively
-        (newdims, mynprocs.at(n), newreg, newregs);
+        (newdims, p, mynprocs.at(n), newreg, newregs);
       if (DEBUG) cout << "SRMAR " << mydim << " newregs " << newregs << endl;
+      
+      assert (newreg.processors != NULL);
+      subtrees.at(n) = newreg.processors;
+      newreg.processors = NULL;
+      newreg.processor = p;
       
       // Next slice
       lo[mydim] = up[mydim] + str[mydim];
       p += mynprocs.at(n);
     }
-    assert (up[mydim] == reg.extent.upper()[mydim]);
-    assert (p == reg.processor + nprocs);
+    assert (up[mydim] == superreg.extent.upper()[mydim]);
+    assert (p == firstproc + nprocs);
+    bounds.at(nslices) = up[mydim] + str[mydim];
+    
+    // Create tree
+    assert (superreg.processors == NULL);
+    superreg.processors = new ipfulltree (mydim, bounds, subtrees);
     
     // Check postcondition
     assert (newregs.size() == oldsize + nprocs);
@@ -1200,14 +1282,21 @@ namespace Carpet {
   
   void
   SplitRegionsMaps_Automatic (cGH const * const cctkGH,
+                              vector<vector<region_t> > & superregss,
                               vector<vector<region_t> > & regss)
   {
     if (DEBUG) cout << "SRMA enter" << endl;
     
-    int const nmaps = regss.size();
+    int const nmaps = superregss.size();
+    int minmap = 1000000000;
+    for (int m=0; m<nmaps; ++m) {
+      for (int r=0; r<int(superregss.at(m).size()); ++r) {
+        minmap = min (minmap, superregss.at(m).at(r).map);
+      }
+    }
     int nregs = 0;
     for (int m=0; m<nmaps; ++m) {
-      nregs += regss.at(m).size();
+      nregs += superregss.at(m).size();
     }
     if (DEBUG) cout << "SRMA nregs " << nregs << endl;
     
@@ -1217,84 +1306,12 @@ namespace Carpet {
     }
     
     // Collect slices
-    vector<region_t> regs;
+    vector<region_t> superregs;
     {
-#if 0
-      regs.resize (nregs);
-      int r=0;
       for (int m=0; m<nmaps; ++m) {
-        for (int c=0; c<int(regss.at(m).size()); ++c, ++r) {
-          regs.at(r) = regss.at(m).at(c);
-          regs.at(r).map       = m;
-          regs.at(r).processor = -1;
-        }
+        combine_regions (superregss.at(m), superregs);
       }
-      assert (r == nregs);
-#endif
-      for (int m=0; m<nmaps; ++m) {
-        ibset comps;
-        ibset cobnds[2][dim];
-        for (size_t c=0; c<regss.at(m).size(); ++c) {
-          region_t const & reg = regss.at(m).at(c);
-          comps += reg.extent;
-          for (int f = 0; f < 2; ++ f) {
-            for (int d = 0; d < dim; ++ d) {
-              if (reg.outer_boundaries[f][d]) {
-                ibbox bnd = reg.extent;
-                ivect lo = bnd.lower();
-                ivect up = bnd.upper();
-                if (f==0) {
-                  up[d] = lo[d];
-                } else {
-                  lo[d] = up[d];
-                }
-                bnd = ibbox (lo, up, bnd.stride());
-                cobnds[f][d] += bnd;
-              }
-            }
-          }
-        }
-        comps.normalize();
-        for (int f = 0; f < 2; ++ f) {
-          for (int d = 0; d < dim; ++ d) {
-            cobnds[f][d].normalize();
-          }
-        }
-        size_t const needsize = regs.size() + comps.setsize();
-        if (regs.capacity() < needsize) {
-          regs.reserve (1000 + 2 * needsize);
-        }
-        for (ibset::const_iterator ci = comps.begin(); ci != comps.end(); ++ ci)
-        {
-          ibbox const & c = * ci;
-          b2vect obnds;
-          for (int f = 0; f < 2; ++ f) {
-            for (int d = 0; d < dim; ++ d) {
-              obnds[f][d] = cobnds[f][d].intersects (c);
-              if (obnds[f][d]) {
-                ivect lo = c.lower();
-                ivect up = c.upper();
-                if (f) lo[d]=up[d]; else up[d]=lo[d];
-                ibbox const cbnds (lo, up, c.stride());
-                if (not ((cobnds[f][d] & ibset(c)) == ibset(cbnds))) {
-                  cout << "cobnds[f][d] = " << cobnds[f][d] << endl
-                       << "ibset(c) = " << ibset(c) << endl
-                       << "(cobnds[f][d] & ibset(c)) = " << (cobnds[f][d] & ibset(c)) << endl
-                       << "ibset(cbnds) = " << ibset(cbnds) << endl;
-                }
-                assert ((cobnds[f][d] & ibset(c)) == ibset(cbnds));
-              }
-            }
-          }
-          region_t reg;
-          reg.extent           = c;
-          reg.outer_boundaries = obnds;
-          reg.map              = m;
-          reg.processor        = -1;
-          regs.push_back (reg);
-        }
-      } // for m
-      nregs = regs.size();
+      nregs = superregs.size();
       
       // If the last region was removed, add a new empty region again.
       // A set of regions (corresponding to a refinement level or a
@@ -1307,8 +1324,8 @@ namespace Carpet {
         reg.outer_boundaries = b2vect (bvect (true), bvect (true));
         reg.map              = 0;
         reg.processor        = -1;
-        regs.push_back (reg);
-        nregs = regs.size();
+        superregs.push_back (reg);
+        nregs = superregs.size();
       }
     }
     
@@ -1326,7 +1343,7 @@ namespace Carpet {
     if (DEBUG) cout << "SRMA: distributing processors to regions" << endl;
     vector<CCTK_REAL> mycosts(nregs);
     for (int r=0; r<nregs; ++r) {
-      mycosts.at(r) = prod (cost (regs.at(r)));
+      mycosts.at(r) = prod (cost (superregs.at(r)));
     }
     int nregs_left = newnregs;
     vector<int> mynprocs(nregs);
@@ -1361,14 +1378,27 @@ namespace Carpet {
     vector<region_t> newregs;
     newregs.reserve (newnregs);
     for (int r=0, p=0; r<nregs; p+=mynprocs.at(r), ++r) {
-      regs.at(r).processor = p;
-      if (DEBUG) cout << "SRMA reg[" << r << "] " << regs.at(r) << endl;
+      if (DEBUG) cout << "SRMA superreg[" << r << "] " << superregs.at(r) << endl;
       bvect const dims = false;
       SplitRegionsMaps_Automatic_Recursively
-        (dims, mynprocs.at(r), regs.at(r), newregs);
+        (dims, p, mynprocs.at(r), superregs.at(r), newregs);
     } // for r
     if (DEBUG) cout << "SRMA newregs " << newregs << endl;
     assert (int(newregs.size()) == newnregs);
+    
+    // Count components per map
+    vector<int> myncomps(nmaps, 0);
+    for (int r=0; r<newnregs; ++r) {
+      int const m = newregs.at(r).map - minmap;
+      assert (m>=0 and m<nmaps);
+      ++ myncomps.at(m);
+    }
+    vector<int> mynregs(nmaps, 0);
+    for (int r=0; r<nregs; ++r) {
+      int const m = superregs.at(r).map - minmap;
+      assert (m>=0 and m<nmaps);
+      ++ mynregs.at(m);
+    }
     
     // Convert virtual to real processors
     for (int r=0; r<newnregs; ++r) {
@@ -1376,29 +1406,49 @@ namespace Carpet {
       assert (newregs.at(r).processor >= 0 and
               newregs.at(r).processor < nprocs);
     }
+    {
+      vector<int> tmpncomps(nmaps, 0);
+      for (int r=0; r<nregs; ++r) {
+        int const m = superregs.at(r).map - minmap;
+        ipfulltree * const regf = superregs.at(r).processors;
+        assert (regf != NULL);
+        for (ipfulltree::iterator
+               fti = regf->begin(); fti != regf->end(); ++ fti)
+        {
+          pseudoregion_t & preg = (* fti).payload();
+          preg.component = tmpncomps.at(m)++;
+          // preg.processor /= ncomps;
+        }
+      }
+      for (int m=0; m<nmaps; ++m) {
+        assert (tmpncomps.at(m) == myncomps.at(m));
+      }
+    }
     
     // Distribute regions
-    // Count components per map
-    vector<int> myncomps(nmaps);
-    for (int r=0; r<newnregs; ++r) {
-      int const m = newregs.at(r).map;
-      assert (m>=0 and m<nmaps);
-      ++ myncomps.at(m);
-    }
     // Allocate regions
+    assert ((int)regss.size() == nmaps);
     for (int m=0; m<nmaps; ++m) {
-      regss.at(m).resize (0);
+      assert (regss.at(m).empty());
       regss.at(m).reserve (myncomps.at(m));
+      superregss.at(m).clear();
+      superregss.at(m).reserve (mynregs.at(m));
     }
     // Assign regions
     for (int r=0; r<newnregs; ++r) {
-      int const m = newregs.at(r).map;
+      int const m = newregs.at(r).map - minmap;
       assert (m>=0 and m<nmaps);
       regss.at(m).push_back (newregs.at(r));
+    }
+    for (int r=0; r<nregs; ++r) {
+      int const m = superregs.at(r).map - minmap;
+      assert (m>=0 and m<nmaps);
+      superregss.at(m).push_back (superregs.at(r));
     }
     // Check sizes
     for (int m=0; m<nmaps; ++m) {
       assert (int(regss.at(m).size()) == myncomps.at(m));
+      assert (int(superregss.at(m).size()) == mynregs.at(m));
     }
     
     if (DEBUG) cout << "SRMA exit" << endl;
@@ -1477,7 +1527,7 @@ namespace Carpet {
   void
   MakeMultigridBoxes (cGH const * const cctkGH,
                       int const m,
-                      vector<vector<region_t> >  const & regss,
+                      vector<vector<region_t> > const & regss,
                       vector<vector<vector<region_t> > > & regsss)
   {
     regsss.resize (mglevels);

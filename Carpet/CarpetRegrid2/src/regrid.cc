@@ -239,11 +239,13 @@ namespace CarpetRegrid2 {
   extern "C" {
     CCTK_INT
     CarpetRegrid2_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
+                          CCTK_POINTER          const superregss_,
                           CCTK_POINTER          const regsss_,
                           CCTK_INT              const force);
     
     CCTK_INT
     CarpetRegrid2_RegridMaps (CCTK_POINTER_TO_CONST const cctkGH_,
+                              CCTK_POINTER          const superregsss_,
                               CCTK_POINTER          const regssss_,
                               CCTK_INT              const force);
   }
@@ -759,6 +761,7 @@ namespace CarpetRegrid2 {
   
   CCTK_INT
   CarpetRegrid2_Regrid (CCTK_POINTER_TO_CONST const cctkGH_,
+                        CCTK_POINTER          const superregss_,
                         CCTK_POINTER          const regsss_,
                         CCTK_INT              const force)
   {
@@ -882,16 +885,15 @@ namespace CarpetRegrid2 {
     
     if (do_recompose) {
       
-      gh::mregs & regsss = * static_cast <gh::mregs *> (regsss_);
+      gh::rregs & superregss = * static_cast <gh::rregs *> (superregss_);
+      gh::mregs & regsss     = * static_cast <gh::mregs *> (regsss_);
       
-      // Make multigrid unaware
-      vector <vector <region_t> > regss = regsss.at(0);
-      
-      Regrid (cctkGH, regss);
+      Regrid (cctkGH, superregss);
       
       // Make multiprocessor aware
+      vector <vector <region_t> > regss;
       for (size_t rl = 0; rl < regss.size(); ++ rl) {
-        Carpet::SplitRegions (cctkGH, regss.at(rl));
+        Carpet::SplitRegions (cctkGH, superregss.at(rl), regss.at(rl));
       } // for rl
       
       // Make multigrid aware
@@ -919,6 +921,7 @@ namespace CarpetRegrid2 {
   
   CCTK_INT
   CarpetRegrid2_RegridMaps (CCTK_POINTER_TO_CONST const cctkGH_,
+                            CCTK_POINTER          const superregsss_,
                             CCTK_POINTER          const regssss_,
                             CCTK_INT              const force)
   {
@@ -1040,23 +1043,21 @@ namespace CarpetRegrid2 {
     
     if (do_recompose) {
       
+      vector <gh::rregs> & superregsss =
+        * static_cast <vector <gh::rregs>  *> (superregsss_);
       vector <gh::mregs> & regssss =
         * static_cast <vector <gh::mregs>  *> (regssss_);
       
-      // Make multigrid unaware
-      vector< vector <vector <region_t> > > regsss (Carpet::maps);
-      for (int m = 0; m < maps; ++ m) {
-        regsss.at(m) = regssss.at(m).at(0);
-      }
-      
       BEGIN_MAP_LOOP (cctkGH, CCTK_GF) {
-        Regrid (cctkGH, regsss.at(Carpet::map));
+        Regrid (cctkGH, superregsss.at(Carpet::map));
       } END_MAP_LOOP;
+      
+      vector< vector <vector <region_t> > > regsss (Carpet::maps);
       
       // Count levels
       vector <int> rls (maps);
       for (int m = 0; m < maps; ++ m) {
-        rls.at(m) = regsss.at(m).size();
+        rls.at(m) = superregsss.at(m).size();
       }
       int maxrl = 0;
       for (int m = 0; m < maps; ++ m) {
@@ -1064,17 +1065,21 @@ namespace CarpetRegrid2 {
       }
       // All maps must have the same number of levels
       for (int m = 0; m < maps; ++ m) {
+        superregsss.at(m).resize (maxrl);
         regsss.at(m).resize (maxrl);
       }
       
       // Make multiprocessor aware
       for (int rl = 0; rl < maxrl; ++ rl) {
-        vector <vector <region_t> > regss (maps);
+        vector <vector <region_t> > superregss (maps);
         for (int m = 0; m < maps; ++ m) {
-          regss.at(m) = regsss.at(m).at(rl);
+          superregss.at(m) = superregsss.at(m).at(rl);
         }
-        Carpet::SplitRegionsMaps (cctkGH, regss);
+        vector <vector <region_t> > regss (maps);
+        Carpet::SplitRegionsMaps (cctkGH, superregss, regss);
+        
         for (int m = 0; m < maps; ++ m) {
+          superregsss.at(m).at(rl) = superregss.at(m);
           regsss.at(m).at(rl) = regss.at(m);
         }
       } // for rl

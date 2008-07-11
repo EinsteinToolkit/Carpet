@@ -47,6 +47,10 @@ public:				// should be readonly
   vector<vector<ibbox> > baseextents; // [ml][rl]
   const i2vect boundary_width;
   
+  // Extents of the regions before distributing them over the
+  // processors
+  rregs superregions;
+  
   mregs regions;                // extents and properties of all grids
   mregs oldregions;             // a copy, used during regridding
   
@@ -65,7 +69,7 @@ public:
   ~gh ();
   
   // Modifiers
-  void regrid (mregs const & regs);
+  void regrid (rregs const & superregs, mregs const & regs);
   bool recompose (int rl, bool do_prolongate);
   
 private:

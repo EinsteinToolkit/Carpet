@@ -128,7 +128,7 @@ namespace Carpet {
   static void
   find_processor_decomposition
   (cGH const * cctkGH,
-   vector<vector<vector<region_t> > >          & regsss,
+   vector<vector<vector<region_t> > >          & superregsss,
    vector<vector<vector<vector<region_t> > > > & regssss);
   
   static void
@@ -204,7 +204,7 @@ namespace Carpet {
       // Do not call Util_GetHostName.  Certain InfiniBand libraries
       // do not allow calling fork or exec, and getting the host name
       // seems also not allowed.  It leads to random crashes.
-      if (verbose) {
+      if (verbose or veryverbose) {
         // Collect host names
         char hostnamebuf[1000];
         Util_GetHostName (hostnamebuf, sizeof hostnamebuf);
@@ -572,13 +572,13 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    vector<vector<vector<region_t> > > regsss (maps);
+    vector<vector<vector<region_t> > > superregsss (maps);
     for (int m=0; m<maps; ++m) {
-      set_base_extent (m, regsss.at(m));
+      set_base_extent (m, superregsss.at(m));
     }
     
     vector<vector<vector<vector<region_t> > > > regssss;
-    find_processor_decomposition (cctkGH, regsss, regssss);
+    find_processor_decomposition (cctkGH, superregsss, regssss);
     
     for (int m=0; m<maps; ++m) {
       
@@ -586,7 +586,7 @@ namespace Carpet {
       CheckRegions (regssss.at(m));
       
       // Recompose grid hierarchy
-      vhh.at(m)->regrid (regssss.at(m));
+      vhh.at(m)->regrid (superregsss.at(m), regssss.at(m));
       int const rl = 0;
       vhh.at(m)->recompose (rl, false);
       
@@ -827,21 +827,25 @@ namespace Carpet {
                               ivect const & convoffsets)
   {
     // Set refinement structure for scalars and arrays
-    vector<region_t> regs(1);
-    int const m=0;
-    regs.at(0).extent = arrdata.at(group).at(m).hh->baseextents.at(0).at(0);
-    regs.at(0).outer_boundaries = b2vect(true);
-    regs.at(m).map = m;
+    vector<region_t> superregs(1);
+    int const m = 0;
+    int const rl = 0;
+    int const c = 0;
+    superregs.at(c).extent =
+      arrdata.at(group).at(m).hh->baseextents.at(rl).at(c);
+    superregs.at(c).outer_boundaries = b2vect(true);
+    superregs.at(c).map = m;
+    vector<region_t> regs;
     
     // Split it into components, one for each processor
     switch (gdata.disttype) {
     case CCTK_DISTRIB_DEFAULT: {
-      SplitRegions_Automatic (cctkGH, regs);
+      SplitRegions_Automatic (cctkGH, superregs, regs);
       break;
     }
     case CCTK_DISTRIB_CONSTANT: {
       int const d = gdata.dim==0 ? 0 : gdata.dim-1;
-      SplitRegions_AlongDir (cctkGH, regs, d);
+      SplitRegions_AlongDir (cctkGH, superregs, regs, d);
       break;
     }
     default:
@@ -849,8 +853,10 @@ namespace Carpet {
     }
     
     // Only one refinement level
+    vector<vector<region_t> > superregss(1);
+    superregss.at(rl) = superregs;
     vector<vector<region_t> > regss(1);
-    regss.at(0) = regs;
+    regss.at(rl) = regs;
     
     // Create all multigrid levels
     vector<vector<vector<region_t> > > regsss (mglevels);
@@ -895,7 +901,7 @@ namespace Carpet {
       char * const groupname = CCTK_GroupName (group);
       assert (groupname);
       Checkpoint ("Recomposing grid array group \"%s\"...", groupname);
-      arrdata.at(group).at(0).hh->regrid (regsss);
+      arrdata.at(group).at(0).hh->regrid (superregss, regsss);
       arrdata.at(group).at(0).hh->recompose (0, false);
       Checkpoint ("Done recomposing grid array group \"%s\".", groupname);
       free (groupname);
@@ -1445,7 +1451,7 @@ namespace Carpet {
   void
   find_processor_decomposition
   (cGH const * const cctkGH,
-   vector<vector<vector<region_t> > >          & regsss,
+   vector<vector<vector<region_t> > >          & superregsss,
    vector<vector<vector<vector<region_t> > > > & regssss)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -1459,11 +1465,13 @@ namespace Carpet {
       for (int m=0; m<maps; ++m) {
         int const rl=0;
         
+        vector<vector<region_t> > regss(1);
+        
         // Distribute onto the processors
-        SplitRegions (cctkGH, regsss.at(m).at(rl));
+        SplitRegions (cctkGH, superregsss.at(m).at(rl), regss.at(rl));
         
         // Create all multigrid levels
-        MakeMultigridBoxes (cctkGH, m, regsss.at(m), regssss.at(m));
+        MakeMultigridBoxes (cctkGH, m, regss, regssss.at(m));
       } // for m
       
     } else {
@@ -1471,14 +1479,18 @@ namespace Carpet {
       
       int const rl=0;
       
-      vector<vector<region_t> >  regss(maps);
+      vector<vector<region_t> > superregss(maps);
       for (int m=0; m<maps; ++m) {
-        regss.at(m) = regsss.at(m).at(rl);
+        superregss.at(m) = superregsss.at(m).at(rl);
       }
       
-      SplitRegionsMaps (cctkGH, regss);
+      vector<vector<region_t> > regss(maps);
+      SplitRegionsMaps (cctkGH, superregss, regss);
       
+      vector<vector<vector<region_t> > > regsss(maps);
       for (int m=0; m<maps; ++m) {
+        superregsss.at(m).at(rl) = superregss.at(m);
+        regsss.at(m).resize(1);
         regsss.at(m).at(rl) = regss.at(m);
       }
       

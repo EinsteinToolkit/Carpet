@@ -108,7 +108,7 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
   // checkpoint file, or if the number of maps is wrong
   assert (int(fileset.grid_structure.size()) == maps);
   
-  vector<vector<vector<region_t> > > regsss = fileset.grid_structure;
+  vector<vector<vector<region_t> > > superregsss = fileset.grid_structure;
   vector<vector<vector<vector<region_t> > > > regssss (maps);
   
   int type;
@@ -122,26 +122,28 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
     // Distribute each map independently
     
     for (int m = 0; m < maps; ++ m) {
-      
-      vector <vector <region_t> > & regss = regsss.at(m);
+      vector <vector <region_t> > & superregss = superregsss.at(m);
       
       // Make multiprocessor aware
-      for (size_t rl = 0; rl < regss.size(); ++ rl) {
-        Carpet::SplitRegions (cctkGH, regss.at(rl));
+      vector <vector <region_t> > regss(superregss.size());
+      for (size_t rl = 0; rl < superregss.size(); ++ rl) {
+        Carpet::SplitRegions (cctkGH, superregss.at(rl), regss.at(rl));
       } // for rl
       
       // Make multigrid aware
-      Carpet::MakeMultigridBoxes (cctkGH, Carpet::map, regss, regssss.at(m));
+      Carpet::MakeMultigridBoxes (cctkGH, m, regss, regssss.at(m));
       
     } // for m
     
-  } else {
+  } else {                     // if regrid_in_level_mode
     // Distribute all maps at the same time
+    
+    vector<vector<vector<region_t> > > regsss(maps);
     
     // Count levels
     vector <int> rls (maps);
     for (int m = 0; m < maps; ++ m) {
-      rls.at(m) = regsss.at(m).size();
+      rls.at(m) = superregsss.at(m).size();
     }
     int maxrl = 0;
     for (int m = 0; m < maps; ++ m) {
@@ -149,30 +151,33 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
     }
     // All maps must have the same number of levels
     for (int m = 0; m < maps; ++ m) {
+      superregsss.at(m).resize (maxrl);
       regsss.at(m).resize (maxrl);
     }
     
     // Make multiprocessor aware
     for (int rl = 0; rl < maxrl; ++ rl) {
-      vector <vector <region_t> > regss (maps);
+      vector <vector <region_t> > superregss (maps);
       for (int m = 0; m < maps; ++ m) {
-        regss.at(m) = regsss.at(m).at(rl);
+        superregss.at(m) = superregsss.at(m).at(rl);
       }
-      Carpet::SplitRegionsMaps (cctkGH, regss);
+      vector <vector <region_t> > regss (maps);
+      Carpet::SplitRegionsMaps (cctkGH, superregss, regss);
       for (int m = 0; m < maps; ++ m) {
+        superregsss.at(m).at(rl) = superregss.at(m);
         regsss.at(m).at(rl) = regss.at(m);
       }
     } // for rl
     
-      // Make multigrid aware
+    // Make multigrid aware
     Carpet::MakeMultigridBoxesMaps (cctkGH, regsss, regssss);
     
-  } // if
+  } // if regrid_in_level_mode
   
   for (int m = 0; m < maps; ++ m) {
     
     // Regrid
-    RegridMap (cctkGH, m, regssss.at(m));
+    RegridMap (cctkGH, m, superregsss.at(m), regssss.at(m));
     
     // Set time hierarchy correctly after RegridMap created it
     for (int ml = 0; ml < mglevels; ++ ml) {

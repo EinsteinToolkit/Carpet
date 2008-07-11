@@ -22,6 +22,7 @@
 namespace Carpet {
   
   using namespace std;
+  using namespace CarpetLib;
   
   int SyncGroupsByDirI (const cGH* cctkGH, int num_groups,
                         const int* groups, const int* directions);
@@ -102,6 +103,7 @@ namespace Carpet {
   void
   RegridMap (cGH const * cctkGH,
              int m,
+             gh::rregs const & supeerregss,
              gh::mregs const & regsss);
   void
   PostRegrid (cGH const * cctkGH);
@@ -137,28 +139,30 @@ namespace Carpet {
   // Functions for recomposing the grid hierarchy
   void
   SplitRegions (cGH const * cctkGH,
+                vector<region_t> & superregs,
                 vector<region_t> & regs);
   void
   SplitRegions_AlongZ (cGH const * cctkGH,
+                       vector<region_t> & superregs,
                        vector<region_t> & regs);
   void
   SplitRegions_AlongDir (cGH const * cctkGH,
+                         vector<region_t> & superregs,
                          vector<region_t> & regs,
-                         int const dir);
+                         int dir);
   void
   SplitRegions_Automatic (cGH const * cctkGH,
+                          vector<region_t> & superregs,
                           vector<region_t> & regs);
-  void
-  SplitRegions (cGH const * cctkGH,
-                vector<region_t> & regss);
-  
-  void
-  SplitRegionsMaps_Automatic (cGH const * cctkGH,
-                              vector<vector<region_t> > & regss);
   
   void
   SplitRegionsMaps (cGH const * cctkGH,
+                    vector<vector<region_t> > & superregss,
                     vector<vector<region_t> > & regss);
+  void
+  SplitRegionsMaps_Automatic (cGH const * cctkGH,
+                              vector<vector<region_t> > & superregss,
+                              vector<vector<region_t> > & regss);
   
   void
   MakeMultigridBoxes (cGH const * cctkGH,

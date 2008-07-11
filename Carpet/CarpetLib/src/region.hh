@@ -2,20 +2,29 @@
 #define REGION_HH
 
 #include <iostream>
+#include <vector>
 
 #include "defs.hh"
 #include "bbox.hh"
+#include "fulltree.hh"
 #include "vect.hh"
 
 
 
 // Region description
 struct region_t {
-  ibbox  extent;                            // extent
-  b2vect outer_boundaries;                  // outer boundaries
-  int    map;                               // map to which this
-                                            // region belongs
-  int    processor;                         // processor number
+  ibbox        extent;           // extent
+  b2vect       outer_boundaries; // outer boundaries
+  int          map;              // map to which this region belongs
+  int          processor;        // processor number
+  ipfulltree * processors;       // processor decomposition
+  
+  region_t ();
+  region_t (region_t const & a);
+  region_t & operator= (region_t const & a);
+  ~region_t ();
+  
+  bool invariant () const;
 };
 
 
@@ -29,54 +38,62 @@ bool operator!= (region_t const & a, region_t const & b)
 
 
 
-inline size_t memoryof (region_t const & reg)
-{
-  return
-    memoryof (reg.extent) +
-    memoryof (reg.outer_boundaries) +
-    memoryof (reg.map) +
-    memoryof (reg.processor);
-}
+void
+combine_regions (vector<region_t> const & oldregs,
+                 vector<region_t> & newregs);
+
+
+
+size_t memoryof (region_t const & reg);
 
 istream & operator>> (istream & is, region_t       & reg);
 ostream & operator<< (ostream & os, region_t const & reg);
 
 
 
-// A pseudoregion is almost a region; it is a bbox that lives on a
-// certain processor.  Pseudoregions are a compact way to store
-// information about what processors needs to send data to what other
-// processors during synchronisation or regridding.
+// A pseudoregion is almost a region; it is a bbox that belongs to a
+// certain component.  Pseudoregions are a compact way to store
+// information about what components needs to send data to what other
+// components during synchronisation or regridding.
 struct pseudoregion_t {
   ibbox extent;
-  int processor;
+  int component;
   pseudoregion_t ()
   {
   }
-  pseudoregion_t (ibbox const & extent_, int const processor_)
-    : extent (extent_), processor (processor_)
+  pseudoregion_t (ibbox const & extent_, int const component_)
+    : extent (extent_), component (component_)
   {
   }
 };
+
+bool operator== (pseudoregion_t const & a, pseudoregion_t const & b);
+inline
+bool operator!= (pseudoregion_t const & a, pseudoregion_t const & b)
+{
+  return not (a == b);
+}
 
 inline size_t memoryof (pseudoregion_t const & p)
 {
   return
     memoryof (p.extent) +
-    memoryof (p.processor);
+    memoryof (p.component);
 }
 
 ostream & operator<< (ostream & os, pseudoregion_t const & p);
+
+
 
 struct sendrecv_pseudoregion_t {
   pseudoregion_t send, recv;
   sendrecv_pseudoregion_t ()
   {
   }
-  sendrecv_pseudoregion_t (ibbox const & send_extent, int const send_processor,
-                           ibbox const & recv_extent, int const recv_processor)
-    : send (pseudoregion_t (send_extent, send_processor)),
-      recv (pseudoregion_t (recv_extent, recv_processor))
+  sendrecv_pseudoregion_t (ibbox const & send_extent, int const send_component,
+                           ibbox const & recv_extent,  int const recv_component)
+    : send (pseudoregion_t (send_extent, send_component)),
+      recv (pseudoregion_t (recv_extent, recv_component))
   {
   }
 };

@@ -23,7 +23,7 @@ namespace CarpetRegrid {
   
   int ManualCoordinateList (cGH const * const cctkGH,
                             gh const & hh,
-                            gh::mregs & regsss)
+                            gh::rregs & regss)
   {
     DECLARE_CCTK_PARAMETERS;
     int ierr;
@@ -32,9 +32,6 @@ namespace CarpetRegrid {
     
     // do nothing if the levels already exist
     if (reflevel == refinement_levels && !tracking) return 0;
-    
-    assert (regsss.size() >= 1);
-    vector<vector<region_t> > regss = regsss.at(0);
     
     jjvect nboundaryzones, is_internal, is_staggered, shiftout;
     ierr = GetBoundarySpecification
@@ -116,7 +113,7 @@ namespace CarpetRegrid {
         } // for c
       } // for rl
       
-    } else {                    // if ! smart_outer_boundaries
+    } else {                    // if not smart_outer_boundaries
       
       vector<vector<bbvect> > newobss1;
       if (strcmp(outerbounds, "") != 0) {
@@ -159,7 +156,7 @@ namespace CarpetRegrid {
         }
       }
 
-    } // if ! smart_outer_boundaries
+    } // if not smart_outer_boundaries
     
     for (int rl=1; rl<refinement_levels; ++rl) {
       
@@ -224,16 +221,10 @@ namespace CarpetRegrid {
         }
         
       } // if merge_overlapping_components
-
-      // make multiprocessor aware
-      SplitRegions (cctkGH, regs);
       
       regss.at(rl) = regs;
       
     } // for rl
-    
-    // make multigrid aware
-    MakeMultigridBoxes (cctkGH, Carpet::map, regss, regsss);
     
     return 1;
   }

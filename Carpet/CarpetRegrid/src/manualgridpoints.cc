@@ -22,7 +22,7 @@ namespace CarpetRegrid {
   
   int ManualGridpoints (cGH const * const cctkGH,
                         gh const & hh,
-                        gh::mregs & regsss)
+                        gh::rregs & regss)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -34,9 +34,6 @@ namespace CarpetRegrid {
     // do nothing if the levels already exist
     if (reflevel == refinement_levels) return 0;
     
-    assert (regsss.size() >= 1);
-    vector<vector<region_t> > regss = regsss.at(0);
-    
     regss.resize (refinement_levels);
     
     vector<ivect> ilower(3), iupper(3);
@@ -47,7 +44,7 @@ namespace CarpetRegrid {
     ilower.at(2) = ivect (l3ixmin, l3iymin, l3izmin);
     iupper.at(2) = ivect (l3ixmax, l3iymax, l3izmax);
     
-    assert (! smart_outer_boundaries);
+    assert (not smart_outer_boundaries);
     
     for (size_t rl=1; rl<regss.size(); ++rl) {
       
@@ -61,15 +58,9 @@ namespace CarpetRegrid {
         (cctkGH, hh, rl,refinement_levels,
          ilower.at(rl-1), iupper.at(rl-1), reg, regs);
       
-      // make multiprocessor aware
-      SplitRegions (cctkGH, regs);
-      
       regss.at(rl) = regs;
       
     } // for rl
-    
-    // make multigrid aware
-    MakeMultigridBoxes (cctkGH, Carpet::map, regss, regsss);
     
     return 1;
   }
