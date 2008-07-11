@@ -73,7 +73,7 @@ namespace Carpet {
     int CheckEntry (void * attribute, void * data);
     int CheckExit  (void * attribute, void * data);
     int CheckWhile (int n_whiles, char ** whiles, void * attribute, void * data, int first);
-    int CheckIf    (int n_ifs, char ** ifs, void * attribute, void * data);
+    int CheckIf    (int n_ifs, char ** ifs, void * attribute, void * data, int first);
     int CheckCall  (void * function, void * attribute, void * data);
     
     void CheckOneGroup (cGH const * cctkGH, char const * where);
@@ -214,7 +214,8 @@ namespace Carpet {
     int
     CheckIf (int const n_ifs, char ** const ifs,
              void * const attribute,
-             void * const data)
+             void * const data,
+             int const first)
     {
       // Execute item
       return 1;
