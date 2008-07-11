@@ -1,0 +1,5 @@
+# Configuration definitions for thorn CarpetInterp2
+
+REQUIRES Carpet CarpetLib
+
+REQUIRES THORNS: Carpet CarpetLib

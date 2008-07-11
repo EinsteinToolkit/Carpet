@@ -1,0 +1,8 @@
+Cactus Code Thorn CarpetInterp2
+Thorn Author(s)     : Erik Schnetter <schnetter@cct.lsu.edu>
+Thorn Maintainer(s) : Erik Schnetter <schnetter@cct.lsu.edu>
+--------------------------------------------------------------------------
+
+Purpose of the thorn:
+
+This thorn provides a parallel interpolator for Carpet.
