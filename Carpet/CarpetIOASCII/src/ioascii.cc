@@ -205,7 +205,7 @@ namespace CarpetIOASCII {
       IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING,
                                  parameter_name.str().c_str(),
                                  stop_on_parse_errors, out_vars,
-                                 -1, &requests[0]);
+                                 -1, -1.0, &requests[0]);
 
       // notify the user about the new setting
       if (not CCTK_Equals (verbose, "none")) {
@@ -410,7 +410,7 @@ namespace CarpetIOASCII {
     // get the default I/O request for this variable
     ioRequest* request = requests[vindex];
     if (not request) {
-      request = IOUtil_DefaultIORequest (cctkGH, vindex, 1);
+      request = IOUtil_DefaultIORequest (cctkGH, vindex, 1, -1.0);
     }
 
     // check if the file has been created already

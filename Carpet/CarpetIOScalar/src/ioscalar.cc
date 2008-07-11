@@ -650,7 +650,8 @@ namespace CarpetIOScalar {
       IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING,
                                  "IOScalar::outScalar_vars",
                                  IOparameters.stop_on_parse_errors,
-                                 outScalar_vars, -1, IOparameters.requests);
+                                 outScalar_vars, -1, -1.0,
+                                 IOparameters.requests);
 
       // notify the user about the new setting
       if (not CCTK_Equals (verbose, "none")) {
