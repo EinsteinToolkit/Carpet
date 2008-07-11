@@ -80,7 +80,11 @@ namespace Carpet {
   
   // Is this the time for a global mode call?
   bool do_meta_mode;
+  bool do_early_meta_mode;
+  bool do_late_meta_mode;
   bool do_global_mode;
+  bool do_early_global_mode;
+  bool do_late_global_mode;
   
   // Can past time levels be accessed?
   bool do_allow_past_timelevels;

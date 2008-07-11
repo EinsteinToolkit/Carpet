@@ -499,9 +499,3 @@ BOOLEAN init_3_timelevels "Set up 3 timelevels of initial data" STEERABLE=always
 BOOLEAN adaptive_stepsize "Allow adaptive timestep sizes"
 {
 } "no"
-
-
-
-BOOLEAN global_mode_on_finest_grid "Run global mode routines on the finest grin" STEERABLE=always
-{
-} "no"

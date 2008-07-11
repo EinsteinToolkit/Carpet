@@ -46,7 +46,11 @@ namespace Carpet {
     cGH * cctkGH = static_cast<cGH *> (data);
     
     assert (int (not not attribute->meta) +
+            int (not not attribute->meta_early) +
+            int (not not attribute->meta_late) +
             int (not not attribute->global) +
+            int (not not attribute->global_early) +
+            int (not not attribute->global_late) +
             int (not not attribute->level) +
             int (not not attribute->singlemap) +
             int (not not attribute->local)
@@ -58,10 +62,16 @@ namespace Carpet {
             not not attribute->loop_local
             <= 1);
     
-    if (attribute->meta or is_meta_mode()) {
+    if (attribute->meta or attribute->meta_early or attribute->meta_late or
+        is_meta_mode())
+    {
       // Convtest operation
       
-      if (do_meta_mode) {
+      if ((attribute->meta and do_meta_mode) or
+          (attribute->meta_early and do_early_meta_mode) or
+          (attribute->meta_late and do_late_meta_mode) or
+          is_meta_mode())
+      {
         if (attribute->loop_local) {
           BEGIN_META_MODE(cctkGH) {
             BEGIN_MGLEVEL_LOOP(cctkGH) {
@@ -136,12 +146,16 @@ namespace Carpet {
         }
       }
       
-    } else if (attribute->global or is_global_mode()) {
+    } else if (attribute->global or attribute->global_early or
+               attribute->global_late or is_global_mode())
+    {
       // Global operation: call once
       
-      assert (not attribute->loop_meta);
-      
-      if (do_global_mode) {
+      if ((attribute->global and do_global_mode) or
+          (attribute->global_early and do_early_global_mode) or
+          (attribute->global_late and do_late_global_mode) or
+          is_global_mode())
+      {
         if (attribute->loop_local) {
           BEGIN_GLOBAL_MODE(cctkGH) {
             BEGIN_REFLEVEL_LOOP(cctkGH) {
@@ -198,9 +212,6 @@ namespace Carpet {
     } else if (attribute->level) {
       // Level operation: call once per refinement level
       
-      assert (not attribute->loop_meta);
-      assert (not attribute->loop_global);
-      
       if (attribute->loop_local) {
         BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
           BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
@@ -227,10 +238,6 @@ namespace Carpet {
     } else if (attribute->singlemap) {
       // Single map operation: call once per refinement level and map
       
-      assert (not attribute->loop_meta);
-      assert (not attribute->loop_global);
-      assert (not attribute->loop_level);
-      
       if (attribute->loop_local) {
         BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
           BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
@@ -252,11 +259,6 @@ namespace Carpet {
       
     } else {
       // Local operation: call once per component
-      
-      assert (not attribute->loop_meta);
-      assert (not attribute->loop_global);
-      assert (not attribute->loop_level);
-      assert (not attribute->loop_singlemap);
       
       BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
         BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
