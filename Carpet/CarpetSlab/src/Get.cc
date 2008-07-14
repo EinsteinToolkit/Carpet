@@ -30,7 +30,7 @@ namespace CarpetSlab {
     // Check arguments
     assert (cctkGH);
     assert (mapping_handle>=0);
-    assert (proc==-1 || proc>=0 && proc<CCTK_nProcs(cctkGH));
+    assert (proc==-1 || (proc>=0 && proc<CCTK_nProcs(cctkGH)));
     assert (vindex>=0 && vindex<CCTK_NumVars());
     assert (timelevel>=0);
     assert (hdatatype>=0);
