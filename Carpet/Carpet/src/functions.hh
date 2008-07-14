@@ -15,8 +15,6 @@
 #include "gh.hh"
 #include "vect.hh"
 
-#include "defines.hh"
-
 
   
 namespace Carpet {
