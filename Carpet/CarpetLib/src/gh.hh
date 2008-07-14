@@ -128,6 +128,16 @@ public:
   
   int local_components (const int rl) const;
   
+  void locate_position (rvect const & rpos,
+                        int const ml,
+                        int const minrl, int const maxrl,
+                        int & rl, int & c, ivect & aligned_ipos) const;
+  
+  void locate_position (ivect const & ipos,
+                        int const ml,
+                        int const minrl, int const maxrl,
+                        int & rl, int & c, ivect & aligned_ipos) const;
+  
   // Time hierarchy management
   void add (th * t);
   void remove (th * t);
