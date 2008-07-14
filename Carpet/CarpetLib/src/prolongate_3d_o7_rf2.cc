@@ -35,16 +35,15 @@ namespace CarpetLib {
   RT
   coeff (int const i)
   {
-    RT const one = 1;
     static const RT coeffs[ncoeffs] = {
-      -   5*one/2048,
-         49*one/2048,
-      - 245*one/2048,
-       1225*one/2048,
-       1225*one/2048,
-      - 245*one/2048,
-         49*one/2048,
-      -   5*one/2048
+      -   5/RT(2048.0),
+         49/RT(2048.0),
+      - 245/RT(2048.0),
+       1225/RT(2048.0),
+       1225/RT(2048.0),
+      - 245/RT(2048.0),
+         49/RT(2048.0),
+      -   5/RT(2048.0)
     };
     return coeffs[i];
   }
