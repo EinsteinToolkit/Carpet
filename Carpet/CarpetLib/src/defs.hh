@@ -62,21 +62,29 @@ template<typename T, int D> class bbox;
 template<typename T, int D> class bboxset;
 template<typename T, int D, typename P> class fulltree;
 
-struct pseudoregion_t;
-struct region_t;
-
-typedef vect<bool,dim>   bvect;
-typedef vect<int,dim>    ivect;
-typedef bbox<int,dim>    ibbox;
-typedef bboxset<int,dim> ibset;
-typedef fulltree<int,dim,pseudoregion_t> ipfulltree;
-
+typedef vect<bool,dim>      bvect;
+typedef vect<int,dim>       ivect;
+typedef vect<CCTK_INT,dim>  jvect;
+typedef vect<CCTK_REAL,dim> rvect;
+typedef bbox<int,dim>       ibbox;
+typedef bbox<CCTK_INT,dim>  jbbox;
+typedef bbox<CCTK_REAL,dim> rbbox;
+typedef bboxset<int,dim>    ibset;
+  
 // (Try to replace these by b2vect and i2vect)
 typedef vect<vect<bool,2>,dim> bbvect;
 typedef vect<vect<int,2>,dim>  iivect;
+typedef vect<vect<CCTK_INT,2>,dim> jjvect;
 
 typedef vect<vect<bool,dim>,2> b2vect;
 typedef vect<vect<int,dim>,2>  i2vect;
+
+
+
+struct pseudoregion_t;
+struct region_t;
+
+typedef fulltree<int,dim,pseudoregion_t> ipfulltree;
 
 
 

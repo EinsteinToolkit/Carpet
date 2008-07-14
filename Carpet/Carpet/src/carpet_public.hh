@@ -9,6 +9,4 @@
 #include "modes.hh"
 #include "variables.hh"
 
-#include "defines.hh"
-
 #endif // !defined(CARPET_PUBLIC_HH)
