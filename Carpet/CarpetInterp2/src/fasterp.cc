@@ -26,10 +26,10 @@ namespace CarpetInterp2 {
     if (not initialised) {
       static fasterp_iloc_t s;
 #define ARRSIZE(m) (sizeof(s.m) / sizeof(s.m[0]))
-#define OFFSET(m)  ((char*)&(s.m) - (char*)&(s))
+#define OFFSET(m)  ((char*)&(s.m) - (char*)&(s)) // offsetof doesn't work (why?)
 #define SIZE       (sizeof(s))
       CCTK_REAL rdummy;
-      mpi_struct_descr_t const descr[] = {
+      dist::mpi_struct_descr_t const descr[] = {
         {              1, OFFSET(m     ), MPI_INT               },
         {              1, OFFSET(rl    ), MPI_INT               },
         {              1, OFFSET(c     ), MPI_INT               },
@@ -40,7 +40,8 @@ namespace CarpetInterp2 {
 #undef ARRSIZE
 #undef OFFSET
 #undef SIZE
-      create_mpi_datatype (sizeof(descr) / sizeof(descr[0]), descr, newtype);
+      dist::create_mpi_datatype
+        (sizeof(descr) / sizeof(descr[0]), descr, newtype);
       initialised = true;
     }
     return newtype;
