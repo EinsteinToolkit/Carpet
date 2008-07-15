@@ -881,12 +881,7 @@ namespace Carpet {
         
         if (did_regrid) {
           for (int rl=0; rl<reflevels; ++rl) {
-            
-            bool did_recompose = false;
-            if (did_regrid) {
-              did_recompose = Recompose (cctkGH, rl, prolongate_initial_data);
-            }
-            
+            Recompose (cctkGH, rl, prolongate_initial_data);
           } // for rl
         } // if did_regrid
         
