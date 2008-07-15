@@ -24,8 +24,15 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
   
   
   
-  ierr = GetBoundarySpecification
-    (6, nboundaryzones, is_internal, is_staggered, shiftout);
+  if (CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification")) {
+    int const m = MultiPatch_GetMap (cctkGH);
+    assert (m >= 0);
+    ierr = MultiPatch_GetBoundarySpecification
+      (m, 6, nboundaryzones, is_internal, is_staggered, shiftout);
+  } else {
+    ierr = GetBoundarySpecification
+      (6, nboundaryzones, is_internal, is_staggered, shiftout);
+  }
   if (ierr != 0) {
     CCTK_WARN (0, "Could not get boundary specification");
   }
