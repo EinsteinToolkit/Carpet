@@ -71,7 +71,6 @@ inline
 int
 dh::this_proc (int const rl, int const c) const
 {
-  // return c % dist::size();
   return h.processor (rl, c);
 }
 
@@ -1006,6 +1005,8 @@ void
 dh::
 recompose (int const rl, bool const do_prolongate)
 {
+  DECLARE_CCTK_PARAMETERS;
+  
   assert (rl>=0 and rl<h.reflevels());
   
   static Timer timer ("dh::recompose");
@@ -1015,13 +1016,31 @@ recompose (int const rl, bool const do_prolongate)
     (*f)->recompose_crop ();
   }
   
-  for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
-    (*f)->recompose_allocate (rl);
-    for (comm_state state; not state.done(); state.step()) {
-      (*f)->recompose_fill (state, rl, do_prolongate);
+  if (combine_recompose) {
+    // Recompose all grid functions of this refinement levels at once.
+    // This may be faster, but requires more memory.
+    for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+      (*f)->recompose_allocate (rl);
     }
-    (*f)->recompose_free_old (rl);
-  } // for all grid functions of same vartype
+    for (comm_state state; not state.done(); state.step()) {
+      for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+        (*f)->recompose_fill (state, rl, do_prolongate);
+      }
+    }
+    for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+      (*f)->recompose_free_old (rl);
+    }
+  } else {
+    // Recompose the grid functions sequentially.  This may be slower,
+    // but requires less memory.  This is the default.
+    for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+      (*f)->recompose_allocate (rl);
+      for (comm_state state; not state.done(); state.step()) {
+        (*f)->recompose_fill (state, rl, do_prolongate);
+      }
+      (*f)->recompose_free_old (rl);
+    }
+  }
   
   timer.stop (0);
 }

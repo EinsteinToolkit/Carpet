@@ -85,6 +85,14 @@ STRING memstat_file "File name in which memstat output is collected (because std
 
 
 
+# Experimental recomposing parameters
+
+BOOLEAN combine_recompose "Recompose all grid functions of one refinement levels at once" STEERABLE=always
+{
+} "no"
+
+
+
 # Experimental communication parameters
 
 BOOLEAN interleave_communications "Try to interleave communications with each other; each processor begins to communicate with its 'right neighbour' in rank, instead of with the root processor" STEERABLE=always
