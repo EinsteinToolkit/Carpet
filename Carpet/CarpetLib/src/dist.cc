@@ -53,6 +53,27 @@ namespace dist {
     MPI_Finalize ();
   }
   
+  
+  
+  // Create an MPI datatype from a C datatype description
+  void create_mpi_datatype (size_t const count,
+                            mpi_struct_descr_t const descr[],
+                            MPI_Datatype & newtype)
+  {
+    int blocklengths[count];
+    MPI_Aint displacements[count];
+    MPI_Datatype types[count];
+    for (size_t n=0; n<count; ++n) {
+      blocklengths [n] = descr[n].blocklength;
+      displacements[n] = descr[n].displacement;
+      types        [n] = descr[n].type;
+    }
+    MPI_Type_struct (count, blocklengths, displacements, types, &newtype);
+    MPI_Type_commit (&newtype);
+  }
+  
+  
+  
   void checkpoint (const char* file, int line) {
     DECLARE_CCTK_PARAMETERS;
     if (verbose) {
