@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
@@ -16,6 +17,7 @@
 namespace Carpet {
 
   using namespace std;
+
 
 
   static void ProlongateGroupBoundaries (const cGH* cctkGH,
