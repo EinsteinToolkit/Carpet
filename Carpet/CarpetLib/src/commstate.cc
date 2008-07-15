@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 
 #include "cctk.h"
 #include "cctk_Parameters.h"
@@ -115,7 +116,7 @@ void comm_state::step ()
           if (commstate_verbose) {
             CCTK_INFO ("Finished MPI_Irecv");
           }
-          timer.stop (0);
+          timer.stop (procbuf.recvbufsize * datatypesize);
           num_posted_recvs++;
         }
       }
