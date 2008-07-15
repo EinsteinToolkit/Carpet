@@ -1,6 +1,7 @@
 #ifndef COMMSTATE_HH
 #define COMMSTATE_HH
 
+#include <cstdlib>
 #include <queue>
 #include <vector>
 
