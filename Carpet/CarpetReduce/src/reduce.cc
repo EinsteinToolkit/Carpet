@@ -776,22 +776,24 @@ namespace CarpetReduce {
     const MPI_Datatype mpitype = CarpetSimpleMPIDatatype(outtype);
     const int mpilength = CarpetSimpleMPIDatatypeLength(outtype);
     if (proc == -1) {
-      MPI_Allreduce ((void*)myoutvals, outvals, mpilength*num_outvals,
+      MPI_Allreduce (const_cast<void*>(myoutvals), outvals,
+                     mpilength*num_outvals,
 		     mpitype, red->mpi_op(),
 		     CarpetMPIComm());
       if (red->uses_cnt()) {
-	MPI_Allreduce ((void*)mycounts, &counts[0], num_outvals*mpilength,
+	MPI_Allreduce (const_cast<void*>(mycounts), &counts[0],
+                       num_outvals*mpilength,
 		       mpitype, MPI_SUM,
 		       CarpetMPIComm());
       }
     } else {
-      MPI_Reduce ((void*)myoutvals, outvals, num_outvals*mpilength,
-		  mpitype, red->mpi_op(),
-		  proc, CarpetMPIComm());
+      MPI_Reduce (const_cast<void*>(myoutvals), outvals,
+                  num_outvals*mpilength,
+		  mpitype, red->mpi_op(), proc, CarpetMPIComm());
       if (red->uses_cnt()) {
-	MPI_Reduce ((void*)mycounts, &counts[0], num_outvals*mpilength,
-		    mpitype, MPI_SUM,
-		    proc, CarpetMPIComm());
+	MPI_Reduce (const_cast<void*>(mycounts), &counts[0],
+                    num_outvals*mpilength,
+		    mpitype, MPI_SUM, proc, CarpetMPIComm());
       }
     }
     
