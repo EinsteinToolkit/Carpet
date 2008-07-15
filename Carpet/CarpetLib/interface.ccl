@@ -4,6 +4,7 @@ IMPLEMENTS: CarpetLib
 
 includes header: defs.hh in defs.hh
 includes header: dist.hh in dist.hh
+includes header: typeprops.hh in typeprops.hh
 
 includes header: bbox.hh in bbox.hh
 includes header: bboxset.hh in bboxset.hh
