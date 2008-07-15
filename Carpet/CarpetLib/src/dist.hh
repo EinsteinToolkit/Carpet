@@ -30,6 +30,19 @@ namespace dist {
   void pseudoinit (MPI_Comm const c);
   void finalize ();
   
+  // Create MPI datatypes from C structures
+  struct mpi_struct_descr_t {
+    int          blocklength;
+    MPI_Aint     displacement;
+    MPI_Datatype type;
+  };
+  
+  void create_mpi_datatype (size_t const count,
+                            mpi_struct_descr_t const descr[],
+                            MPI_Datatype & newtype);
+  
+  
+  
   // Debugging output
 #define CHECKPOINT dist::checkpoint(__FILE__, __LINE__)
   void checkpoint (const char* file, int line);
