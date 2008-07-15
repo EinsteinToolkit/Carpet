@@ -144,8 +144,9 @@ namespace Carpet {
               mytime = vtt.at(map)->time (0, reflevel, mglevel);
               parenttime = vtt.at(map)->time (0, reflevel - 1, mglevel);
             }
+            CCTK_REAL const eps = 1.0e-12;
             bool const in_sync =
-              abs (mytime - parenttime) < 1.0e-10 * abs (delta_time);
+              abs (mytime - parenttime) <= eps * abs (delta_time);
             local_do_prolongate = in_sync;
           }
         } else {                // no tapered grids

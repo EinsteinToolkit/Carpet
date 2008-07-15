@@ -76,7 +76,9 @@ namespace Carpet {
           const CCTK_REAL time1 = vtt.at(m)->time (0, reflevel, mglevel);
           const CCTK_REAL time2
             = (cgh->cctk_time - cctk_initial_time) / delta_time;
-          assert (abs(time1 - time2) / (abs(time1) + abs(time2) + abs(cgh->cctk_delta_time)) < 1e-12);
+          const CCTK_REAL eps = 1.0e-12;
+          assert (abs(time1 - time2) <= 
+                  eps * (abs(time1) + abs(time2) + abs(cgh->cctk_delta_time)));
 
           for (int v = 0; v < (int)arrdata.at(group).at(m).data.size(); ++v) {
             ggf *const gv = arrdata.at(group).at(m).data.at(v);
