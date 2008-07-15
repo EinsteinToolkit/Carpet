@@ -27,20 +27,6 @@ namespace CarpetInterp2 {
   
   
   
-  // Map C structures to MPI datatypes
-  struct mpi_struct_descr_t {
-    int          blocklength;
-    MPI_Aint     displacement;
-    MPI_Datatype type;
-  };
-  
-  void
-  create_mpi_datatype (size_t count,
-                       mpi_struct_descr_t const descr[],
-                       MPI_Datatype & newtype);
-  
-  
-  
   // A global location, given by its global coordinates
   struct fasterp_glocs_t {
     vector<CCTK_REAL> coords[dim];
