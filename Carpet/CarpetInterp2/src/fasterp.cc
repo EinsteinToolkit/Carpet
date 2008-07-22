@@ -231,7 +231,7 @@ namespace CarpetInterp2 {
   
   
   
-  // Set up an interpolation
+  // Set up an interpolation starting from global coordinates
   fasterp_setup_t::
   fasterp_setup_t (cGH const * restrict const cctkGH,
                    fasterp_glocs_t const & locations,
@@ -240,8 +240,6 @@ namespace CarpetInterp2 {
   {
     // Some global properties
     int const npoints = locations.size();
-    int const nprocs = CCTK_nProcs (cctkGH);
-    // int const myproc = CCTK_MyProc (cctkGH);
     
     
     
@@ -280,6 +278,36 @@ namespace CarpetInterp2 {
       
     } // if not multi-patch
     
+    setup (cctkGH, local_locations);
+  }
+  
+  
+  
+  // Set up an interpolation starting from local coordinates
+  fasterp_setup_t::
+  fasterp_setup_t (cGH const * restrict const cctkGH,
+                   fasterp_llocs_t const & locations,
+                   int const order_)
+    : order (order_)
+  {
+    setup (cctkGH, locations);
+  }
+  
+  
+  
+  // Helper for setting up an interpolation
+  void
+  fasterp_setup_t::
+  setup (cGH const * restrict const cctkGH,
+         fasterp_llocs_t const & locations)
+  {
+    // Some global properties
+    int const npoints = locations.size();
+    int const nprocs = CCTK_nProcs (cctkGH);
+    // int const myproc = CCTK_MyProc (cctkGH);
+    
+    
+    
     // Obtain the coordinate ranges for all patches
     vector<rvect> lower (Carpet::maps);
     vector<rvect> upper (Carpet::maps);
@@ -302,10 +330,10 @@ namespace CarpetInterp2 {
     int n_nz_nlocs = 0;
     assert (Carpet::is_level_mode());
     for (int n=0; n<npoints; ++n) {
-      int const m = local_locations.maps.AT(n);
-      rvect const pos (local_locations.coords[0].AT(n),
-                       local_locations.coords[1].AT(n),
-                       local_locations.coords[2].AT(n));
+      int const m = locations.maps.AT(n);
+      rvect const pos (locations.coords[0].AT(n),
+                       locations.coords[1].AT(n),
+                       locations.coords[2].AT(n));
       
       gh const * const hh = Carpet::vhh.AT(m);
       ibbox const & baseext = hh->baseextent(Carpet::mglevel, 0);
