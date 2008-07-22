@@ -234,6 +234,7 @@ namespace Carpet {
     // Write grid structure to file
     OutputGridStructure (cctkGH, m, regsss);
     OutputGridCoordinates (cctkGH, m, regsss);
+#warning "TODO: output superregss"
     
     if (verbose or veryverbose) {
       OutputGrids (cctkGH, m, * vhh.at(m), * vdd.at(m));
@@ -1375,6 +1376,9 @@ namespace Carpet {
     if (DEBUG) cout << "SRMA mynprocs " << mynprocs << endl;
     
     if (DEBUG) cout << "SRMA: splitting work units" << endl;
+#warning "TODO: rename newregs to regs"
+#warning "TODO: rename nregs to nsuperregs"
+#warning "TODO: rename newnregs to nregs"
     vector<region_t> newregs;
     newregs.reserve (newnregs);
     for (int r=0, p=0; r<nregs; p+=mynprocs.at(r), ++r) {

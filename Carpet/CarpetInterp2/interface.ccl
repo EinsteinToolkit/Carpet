@@ -1,0 +1,42 @@
+# Interface definition for thorn CarpetInterp
+
+IMPLEMENTS: interp2
+
+USES INCLUDE HEADER: defs.hh
+USES INCLUDE HEADER: typeprops.hh
+USES INCLUDE HEADER: vect.hh
+
+USES INCLUDE HEADER: carpet.hh
+
+
+
+# Get access to communicators
+CCTK_POINTER_TO_CONST \
+FUNCTION GetMPICommWorld (CCTK_POINTER_TO_CONST IN cctkGH)
+REQUIRES FUNCTION GetMPICommWorld
+
+# Access coordinate information (on the coarse level)
+CCTK_INT FUNCTION GetCoordRange        \
+    (CCTK_POINTER_TO_CONST IN  cctkGH, \
+     CCTK_INT              IN  m,      \
+     CCTK_INT              IN  ml,     \
+     CCTK_INT              IN  size,   \
+     CCTK_INT        ARRAY OUT gsh,    \
+     CCTK_REAL       ARRAY OUT lower,  \
+     CCTK_REAL       ARRAY OUT upper,  \
+     CCTK_REAL       ARRAY OUT delta)
+REQUIRES FUNCTION GetCoordRange
+
+
+
+CCTK_INT FUNCTION                                \
+    MultiPatch_GlobalToLocal                     \
+        (CCTK_POINTER_TO_CONST IN  cctkGH,       \
+         CCTK_INT              IN  ndims,        \
+         CCTK_INT              IN  npoints,      \
+         CCTK_POINTER_TO_CONST IN  globalcoords, \
+         CCTK_INT        ARRAY OUT patch,        \
+         CCTK_POINTER          IN localcoords,   \
+         CCTK_POINTER          IN dadx,          \
+         CCTK_POINTER          IN ddadxdx)
+USES FUNCTION MultiPatch_GlobalToLocal

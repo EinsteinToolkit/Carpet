@@ -1104,9 +1104,7 @@ namespace Carpet {
     if (domain_from_multipatch or domain_from_coordbase) {
       
       jjvect nboundaryzones_, is_internal_, is_staggered_, shiftout_;
-      if (domain_from_multipatch and
-          CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification"))
-      {
+      if (CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification")) {
         int const ierr =
           MultiPatch_GetBoundarySpecification (m,
                                                2*dim,

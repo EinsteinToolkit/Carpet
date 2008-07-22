@@ -28,7 +28,6 @@
 #include "vect.hh"
 
 #include "carpet_public.h"
-#include "defines.hh"
 
 
 

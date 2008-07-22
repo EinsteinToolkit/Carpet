@@ -35,16 +35,15 @@ namespace CarpetLib {
   RT
   coeff (int const i)
   {
-    RT const one = 1;
     static const RT coeffs[ncoeffs] = {
-      -   5*one/2048,
-         49*one/2048,
-      - 245*one/2048,
-       1225*one/2048,
-       1225*one/2048,
-      - 245*one/2048,
-         49*one/2048,
-      -   5*one/2048
+      -   5/RT(2048.0),
+         49/RT(2048.0),
+      - 245/RT(2048.0),
+       1225/RT(2048.0),
+       1225/RT(2048.0),
+      - 245/RT(2048.0),
+         49/RT(2048.0),
+      -   5/RT(2048.0)
     };
     return coeffs[i];
   }
@@ -70,7 +69,7 @@ namespace CarpetLib {
     typedef typename typeprops<T>::real RT;
     T res = typeprops<T>::fromreal (0);
     for (int i=0; i<ncoeffs; ++i) {
-      res += coeff<RT>(i) * interp0 (p + i*d1);
+      res += coeff<RT>(i) * interp0<T> (p + i*d1);
     }
     return res;
   }
@@ -86,7 +85,7 @@ namespace CarpetLib {
     typedef typename typeprops<T>::real RT;
     T res = typeprops<T>::fromreal (0);
     for (int i=0; i<ncoeffs; ++i) {
-      res += coeff<RT>(i) * interp1 (p + i*d2, d1);
+      res += coeff<RT>(i) * interp1<T> (p + i*d2, d1);
     }
     return res;
   }
@@ -103,7 +102,7 @@ namespace CarpetLib {
     typedef typename typeprops<T>::real RT;
     T res = typeprops<T>::fromreal (0);
     for (int i=0; i<ncoeffs; ++i) {
-      res += coeff<RT>(i) * interp2 (p + i*d3, d1, d2);
+      res += coeff<RT>(i) * interp2<T> (p + i*d3, d1, d2);
     }
     return res;
   }
@@ -241,7 +240,7 @@ namespace CarpetLib {
     
     // kernel
    l8000:
-    dst[DSTIND3(id,jd,kd)] = interp0 (& src[SRCIND3(is,js,ks)]);
+    dst[DSTIND3(id,jd,kd)] = interp0<T> (& src[SRCIND3(is,js,ks)]);
     i = i+1;
     id = id+1;
     if (i < regiext) goto l8001;
@@ -249,7 +248,7 @@ namespace CarpetLib {
     
     // kernel
    l8001:
-    dst[DSTIND3(id,jd,kd)] = interp1 (& src[SRCIND3(is-3,js,ks)], srcdi);
+    dst[DSTIND3(id,jd,kd)] = interp1<T> (& src[SRCIND3(is-3,js,ks)], srcdi);
     i = i+1;
     id = id+1;
     is = is+1;
@@ -273,7 +272,7 @@ namespace CarpetLib {
     
     // kernel
    l8010:
-    dst[DSTIND3(id,jd,kd)] = interp1 (& src[SRCIND3(is,js-3,ks)], srcdj);
+    dst[DSTIND3(id,jd,kd)] = interp1<T> (& src[SRCIND3(is,js-3,ks)], srcdj);
     i = i+1;
     id = id+1;
     if (i < regiext) goto l8011;
@@ -282,7 +281,7 @@ namespace CarpetLib {
     // kernel
    l8011:
     dst[DSTIND3(id,jd,kd)] =
-      interp2 (& src[SRCIND3(is-3,js-3,ks)], srcdi, srcdj);
+      interp2<T> (& src[SRCIND3(is-3,js-3,ks)], srcdi, srcdj);
     i = i+1;
     id = id+1;
     is = is+1;
@@ -322,7 +321,7 @@ namespace CarpetLib {
     
     // kernel
    l8100:
-    dst[DSTIND3(id,jd,kd)] = interp1 (& src[SRCIND3(is,js,ks-3)], srcdk);
+    dst[DSTIND3(id,jd,kd)] = interp1<T> (& src[SRCIND3(is,js,ks-3)], srcdk);
     i = i+1;
     id = id+1;
     if (i < regiext) goto l8101;
@@ -331,7 +330,7 @@ namespace CarpetLib {
     // kernel
    l8101:
     dst[DSTIND3(id,jd,kd)] =
-      interp2 (& src[SRCIND3(is-3,js,ks-3)], srcdi, srcdj);
+      interp2<T> (& src[SRCIND3(is-3,js,ks-3)], srcdi, srcdj);
     i = i+1;
     id = id+1;
     is = is+1;
@@ -356,7 +355,7 @@ namespace CarpetLib {
     // kernel
    l8110:
     dst[DSTIND3(id,jd,kd)] =
-      interp2 (& src[SRCIND3(is,js-3,ks-3)], srcdj, srcdk);
+      interp2<T> (& src[SRCIND3(is,js-3,ks-3)], srcdj, srcdk);
     i = i+1;
     id = id+1;
     if (i < regiext) goto l8111;
@@ -366,7 +365,7 @@ namespace CarpetLib {
    l8111:
     {
       dst[DSTIND3(id,jd,kd)] =
-        interp3 (& src[SRCIND3(is-3,js-3,ks-3)], srcdi, srcdj, srcdk);
+        interp3<T> (& src[SRCIND3(is-3,js-3,ks-3)], srcdi, srcdj, srcdk);
     }
     i = i+1;
     id = id+1;

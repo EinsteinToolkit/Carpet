@@ -50,7 +50,7 @@ namespace CarpetRegrid {
       = (*dynamic_cast<const gf<CCTK_REAL>*>
          (arrdata.at(gi).at(Carpet::map).data.at(vi-v1)));
     
-    assert (! smart_outer_boundaries);
+    assert (not smart_outer_boundaries);
     
     vector<region_t> regs;
     Automatic_OneLevel
