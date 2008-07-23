@@ -17,6 +17,17 @@ namespace CarpetInterp2 {
   
   
   
+  // Erik's gdb cannot print local variables in functions where an
+  // assert fails.  Hence the calls to assert are temporarily moved
+  // into a function of their own.
+  void ASSERT (bool const cond)
+  {
+    if (cond) return;
+    abort();
+  }
+  
+  
+  
   // Create an MPI datatype for location information
   MPI_Datatype
   fasterp_iloc_t::mpi_datatype ()
@@ -61,21 +72,17 @@ namespace CarpetInterp2 {
   calc_stencil (fasterp_iloc_t const & iloc,
                 int const order)
   {
-    assert (order <= max_order);
+    ASSERT (order <= max_order);
     CCTK_REAL const rone = 1.0;
     CCTK_REAL const eps = 1.0e-12;
     int const n0 = (order+1) / 2;
-    CCTK_REAL const offset = order % 2 == 0 ? 0.5 : 0.0;
     for (int d=0; d<dim; ++d) {
       // C_n = Pi_m[m!=n] [(x_i - x_m) / (x_n - x_m)]
-      CCTK_REAL const xi = iloc.offset[d] - offset;
-      if (order % 2 == 0) {
-        assert (xi >= -rone/2 and xi < +rone/2);
-      } else {
-        assert (xi >= 0 and xi < rone);
-      }
+      CCTK_REAL const xi = iloc.offset[d];
       if (fabs(xi) >= eps) {
-        assert (fabs(fmod(xi, rone)) <= eps/2);
+        // The interpolation point does not coincide with the anchor
+        // (this is the regular case):
+        ASSERT (fabs(remainder(xi, rone)) > eps/2);
         for (int n=0; n<=order; ++n) {
           CCTK_REAL const xn = n - n0;
           CCTK_REAL c = 1.0;
@@ -93,8 +100,10 @@ namespace CarpetInterp2 {
         for (int n=0; n<=order; ++n) {
           s += coeffs[d][n];
         }
-        assert (fabs(s - rone) <= eps);
+        ASSERT (fabs(s - rone) <= eps);
       } else {
+        // The interpolation point coincides with the anchor; no
+        // interpolation is necessary (this is a special case)
         exact[d] = true;
       }
     }
@@ -219,7 +228,7 @@ namespace CarpetInterp2 {
     default:
       // Add higher orders here as desired
       CCTK_WARN (CCTK_WARN_ABORT, "Interpolation orders larger than 11 are not yet implemented");
-      assert (0);
+      ASSERT (0);
     }
   }
   
@@ -261,7 +270,7 @@ namespace CarpetInterp2 {
         (cctkGH, dim, npoints,
          coords,
          &local_locations.maps.front(), local_coords, NULL, NULL);
-      assert (not ierr);
+      ASSERT (not ierr);
       
     } else {
       // This is a single-patch simulation
@@ -318,7 +327,7 @@ namespace CarpetInterp2 {
         GetCoordRange (cctkGH, m, Carpet::mglevel, dim,
                        & gsh[0],
                        & lower.AT(m)[0], & upper.AT(m)[0], & delta.AT(m)[0]);
-      assert (not ierr);
+      ASSERT (not ierr);
       delta.AT(m) /= Carpet::maxspacereflevelfact;
     }
     
@@ -328,7 +337,7 @@ namespace CarpetInterp2 {
     vector<int> proc (npoints);
     vector<int> nlocs (nprocs, 0);
     int n_nz_nlocs = 0;
-    assert (Carpet::is_level_mode());
+    ASSERT (Carpet::is_level_mode());
     for (int n=0; n<npoints; ++n) {
       int const m = locations.maps.AT(n);
       rvect const pos (locations.coords[0].AT(n),
@@ -351,13 +360,20 @@ namespace CarpetInterp2 {
       
       ibbox const & ext =
         Carpet::vdd.AT(m)->boxes.AT(Carpet::mglevel).AT(rl).AT(c).exterior;
-      
       rvect dpos = rpos - rvect(ipos);
+      
+      ASSERT (all (ipos % ext.stride() == ivect(0)));
+      ipos /= ext.stride();
+      dpos /= rvect(ext.stride());
+      ASSERT (all (abs(dpos) <= rvect(0.5)));
+      
       if (order % 2 != 0) {
         // Potentially shift the stencil anchor for odd interpolation
         // orders (i.e., for even numbers of stencil points)
-        ipos -= either (dpos > rvect(0), ext.stride(), ivect(0));
-        dpos = rpos - rvect(ipos);
+        ivect const ioff = either (dpos > rvect(0.0), ivect(1), ivect(0));
+        ipos -= ioff;
+        dpos += rvect(ioff);
+        ASSERT (all (dpos >= rvect(0.0) and dpos < rvect(1.0)));
       }
       
       ivect const ind = ipos - ext.lower() / ext.stride();
@@ -400,8 +416,8 @@ namespace CarpetInterp2 {
           offset += nlocs.AT(p);
         }
       }
-      assert (pp == n_nz_nlocs);
-      assert (offset == npoints);
+      ASSERT (pp == n_nz_nlocs);
+      ASSERT (offset == npoints);
       recv_descr.npoints = npoints;
     }
     
@@ -417,13 +433,13 @@ namespace CarpetInterp2 {
       for (int n=0; n<npoints; ++n) {
         int const p = proc.AT(n);
         int const pp = recv_descr.procinds.AT(p);
-        assert (pp >= 0);
+        ASSERT (pp >= 0);
         recv_descr.index.AT(n) = index.AT(pp);
         ++index.AT(pp);
       }
       for (int pp=0; pp<int(recv_descr.procs.size()); ++pp) {
         int const recv_npoints = index.AT(pp) - recv_descr.procs.AT(pp).offset;
-        assert (recv_npoints == recv_descr.procs.AT(pp).npoints);
+        ASSERT (recv_npoints == recv_descr.procs.AT(pp).npoints);
       }
     }
     
@@ -440,7 +456,7 @@ namespace CarpetInterp2 {
         send_offsets.AT(p) = offset;
         offset += send_npoints.AT(p);
       }
-      assert (offset == npoints);
+      ASSERT (offset == npoints);
     }
     vector<int> recv_npoints (nprocs), recv_offsets (nprocs);
     MPI_Alltoall (&send_npoints.front(), 1, MPI_INT,
@@ -488,7 +504,7 @@ namespace CarpetInterp2 {
           ++pp;
         }
       }
-      assert (pp == n_nz_recv_npoints);
+      ASSERT (pp == n_nz_recv_npoints);
     }
     
     for (size_t pp=0; pp<send_descr.procs.size(); ++pp) {
@@ -590,13 +606,30 @@ namespace CarpetInterp2 {
     const
   {
     size_t const nvars = varinds.size();
-    assert (values.size() == nvars);
+    ASSERT (values.size() == nvars);
     for (size_t v=0; v<values.size(); ++v) {
-      assert (varinds.AT(v) >= 0 and varinds.AT(v) <= CCTK_NumVars());
-      // Ensure that variable is GF
-      // Ensure that variable has "good" type
-      // Ensure that variable has storage
-      assert (values.AT(v) != NULL);
+      int const vi = varinds.AT(v);
+      ASSERT (vi >= 0 and vi <= CCTK_NumVars());
+      int const gi = CCTK_GroupIndexFromVarI (vi);
+      ASSERT (gi >= 0);
+      cGroup group;
+      {
+        int const ierr = CCTK_GroupData (gi, &group);
+        ASSERT (not ierr);
+      }
+      ASSERT (group.grouptype == CCTK_GF);
+      ASSERT (group.vartype == CCTK_VARIABLE_REAL);
+      ASSERT (group.dim == dim);
+#if 0
+      // Cannot be called in level mode
+      cGroupDynamicData dyndata;
+      {
+        int const ierr = CCTK_GroupDynamicData (cctkGH, gi, &dyndata);
+        ASSERT (not ierr);
+      }
+      ASSERT (dyndata.activetimelevels >= 1);
+#endif
+      ASSERT (values.AT(v) != NULL);
     }
     
     MPI_Comm & comm_world = * (MPI_Comm *) GetMPICommWorld (cctkGH);
@@ -616,7 +649,7 @@ namespace CarpetInterp2 {
     }
     
     // Interpolate data and post Isends
-    vector<CCTK_REAL> send_points (send_descr.npoints);
+    vector<CCTK_REAL> send_points (send_descr.npoints * nvars);
     vector<CCTK_REAL>::iterator destit = send_points.begin();
     vector<MPI_Request> send_reqs (send_descr.procs.size());
     for (size_t pp=0; pp<send_descr.procs.size(); ++pp) {
@@ -639,19 +672,19 @@ namespace CarpetInterp2 {
             vector<CCTK_REAL const *> varptrs (nvars);
             for (size_t v=0; v<nvars; ++v) {
               int const gi = CCTK_GroupIndexFromVarI (varinds.AT(v));
-              assert (gi >= 0);
+              ASSERT (gi >= 0);
               int const vi = varinds.AT(v) - CCTK_FirstVarIndexI (gi);
-              assert (vi >= 0);
+              ASSERT (vi >= 0);
               int const tl = 0;
               varptrs.AT(v) =
                 (CCTK_REAL const *)
                 (* Carpet::arrdata.AT(gi).AT(m).data.AT(vi))
                 (tl, rl, c, Carpet::mglevel)->storage();
-              assert (varptrs.AT(v));
+              ASSERT (varptrs.AT(v));
             }
             
             for (size_t n=0; n<send_comp.locs.size(); ++n) {
-              assert (destit + nvars <= send_points.end());
+              ASSERT (destit + nvars <= send_points.end());
               send_comp.locs.AT(n).interpolate
                 (lsh, order, varptrs, & * destit);
               destit += nvars;
@@ -668,16 +701,16 @@ namespace CarpetInterp2 {
                  dist::datatype (rdummy), send_proc.p, tag,
                  comm_world, & send_reqs.AT(pp));
     } // for pp
-    assert (destit == send_points.end());
+    ASSERT (destit == send_points.end());
     
     // Wait for Irecvs to complete
     MPI_Waitall (recv_reqs.size(), & recv_reqs.front(), MPI_STATUSES_IGNORE);
     
     // Gather data
     for (int n=0; n<recv_descr.npoints; ++n) {
-      int const nn = recv_descr.index.AT(n);
+      size_t const nn = recv_descr.index.AT(n);
       for (size_t v=0; v<nvars; ++v) {
-        values.AT(v)[n] = recv_points.AT(nn);
+        values.AT(v)[n] = recv_points.AT(nn * nvars + v);
       }
     }
     
