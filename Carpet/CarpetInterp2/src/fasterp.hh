@@ -165,9 +165,17 @@ namespace CarpetInterp2 {
     send_descr_t send_descr;
     int order;
     
+    void
+    setup (cGH const * restrict cctkGH,
+           fasterp_llocs_t const & locations);
+    
   public:
     fasterp_setup_t (cGH const * restrict cctkGH,
                      fasterp_glocs_t const & locations,
+                     int order);
+    
+    fasterp_setup_t (cGH const * restrict cctkGH,
+                     fasterp_llocs_t const & locations,
                      int order);
     
     ~ fasterp_setup_t ();
@@ -177,6 +185,12 @@ namespace CarpetInterp2 {
                  vector<int> const & varinds,
                  vector<CCTK_REAL *> & values)
       const;
+    
+    size_t get_npoints ()
+      const
+    {
+      return recv_descr.npoints;
+    }
   };
   
   
