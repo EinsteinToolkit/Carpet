@@ -1,7 +1,9 @@
 #ifndef FASTERP_HH
 #define FASTERP_HH
 
+#include <cassert>
 #include <cstdlib>
+#include <iostream>
 #include <vector>
 
 #include <cctk.h>
@@ -27,6 +29,52 @@ namespace CarpetInterp2 {
   
   
   
+  // Keep a map, refinement level, and component index together
+  struct mrc_t {
+    static int maps;
+    static int reflevels;
+    static int components;
+    
+    static void determine_mrc_info ();
+    static int get_max_ind ()
+    {
+      return maps * reflevels * components;
+    }
+    
+    int m;
+    int rl;
+    int c;
+    
+    mrc_t ()
+    {
+    }
+    
+    mrc_t (int const m_, int const rl_, int const c_)
+      : m(m_), rl(rl_), c(c_)
+    {
+      assert (m>=0 and m<maps);
+      assert (rl>=0 and rl<reflevels);
+      assert (c>=0 and c<components);
+    }
+    
+    // Create a mrc from an integer index
+    mrc_t (int ind);
+    
+    // Convert a mrc into an integer index
+    int get_ind () const
+    {
+      return c + components * (rl + reflevels * m);
+    }
+    
+    void output (ostream& os) const;
+  };
+  
+  inline
+  ostream& operator<< (ostream& os, mrc_t const & mrc)
+  { mrc.output(os); return os; }
+  
+    
+    
   // A global location, given by its global coordinates
   struct fasterp_glocs_t {
     vector<CCTK_REAL> coords[dim];
@@ -56,14 +104,20 @@ namespace CarpetInterp2 {
   // An integer location, given by map, refinement level, and
   // component
   struct fasterp_iloc_t {
-    int m, rl, c;
+    mrc_t mrc;                  // map, refinement level, component
     
     // ivect idx;
     int ind3d;
     rvect offset;               // in terms of grid points
     
     static MPI_Datatype mpi_datatype ();
+    
+    void output (ostream& os) const;
   };
+  
+  inline
+  ostream& operator<< (ostream& os, fasterp_iloc_t const & iloc)
+  { iloc.output(os); return os; }
   
   
   
@@ -82,6 +136,7 @@ namespace CarpetInterp2 {
   public:
     void
     calc_stencil (fasterp_iloc_t const & iloc,
+                  ivect const & lsh,
                   int order);
     void
     interpolate (ivect const & lsh,
@@ -103,7 +158,14 @@ namespace CarpetInterp2 {
                  vector<CCTK_REAL const *> const & varptrs,
                  CCTK_REAL * restrict vals)
       const;
+    
+  public:
+    void output (ostream& os) const;
   };
+  
+  inline
+  ostream& operator<< (ostream& os, fasterp_src_loc_t const & sloc)
+  { sloc.output(os); return os; }
   
   
   
@@ -120,36 +182,37 @@ namespace CarpetInterp2 {
     vector<int> procinds;
     int npoints;                // total number of received points
     
-    vector<int> index;          // gather index list
+    vector<int> index;   // gather index list: index[user-location] =
+                         // mpi-location
   };
   
   // A send descriptor; describing what to send to other processors
   struct send_comp_t {
     // This structure does not exist for all components -- components
     // which are not accessed are not described, making this a sparse
-    // data structure.  The field c contains the component number.
+    // data structure.  The fields m, rl, and c identify the
+    // component.
     vector<fasterp_src_loc_t> locs;
-    int c;                      // source component
+    
+    mrc_t mrc;                  // source map, refinement level, component
+    ivect lsh;
+    int offset;
+    int npoints;
   };
   
-  struct send_rl_t {
-    vector<send_comp_t> comps;
-    vector<int> compinds;
-  };
-  
-  struct send_map_t {
-    vector<send_rl_t> rls;
-  };
-
   struct send_proc_t {
     // This structure does not exist for all processors -- processors
     // with which there is no communication are not described, making
     // this a sparse data structure.  The field p contains the
     // processor number.
-    vector<send_map_t> maps;
+    vector<send_comp_t> comps;
+    
     int p;                      // receiving processor
     int offset;
     int npoints;                // total number of sent points
+    
+    vector<int> index;   // gather index list: index[mpi-location] =
+                         // calculation-location
   };
   
   struct send_descr_t {
