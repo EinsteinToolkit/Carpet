@@ -434,6 +434,20 @@ inline int minloc (const vect<T,D>& a) {
   return r;
 }
 
+/** Return the n-dimensional linear array index.  */
+template<typename T,int D>
+inline T index (const vect<T,D>& lsh, const vect<T,D>& ind) PURE;
+template<typename T,int D>
+inline T index (const vect<T,D>& lsh, const vect<T,D>& ind) {
+  T r(0);
+  for (int d=D-1; d>=0; --d) {
+    assert (lsh[d]>=0);
+    assert (ind[d]>=0 and ind[d]<lsh[d]);
+    r = r * lsh[d] + ind[d];
+  }
+  return r;
+}
+
 
 
 // Higher order functions
