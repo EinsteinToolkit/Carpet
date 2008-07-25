@@ -160,7 +160,6 @@ namespace CarpetInterp2 {
                 int const order)
   {
     ASSERT (order <= max_order);
-    CCTK_REAL const rone = 1.0;
     CCTK_REAL const eps = 1.0e-12;
     
 #ifndef NDEBUG
@@ -191,18 +190,25 @@ namespace CarpetInterp2 {
       iorigin = - ivect((order-1)/2) - ioffset;
     }
     rvect const offset = iloc.offset - rvect(iorigin);
+    // Ensure that the stencil is centred
+    ASSERT (all (offset >= 0.5*(order-1) and offset < 0.5*(order+1)));
     
     for (int d=0; d<dim; ++d) {
-      // C_n = Pi_m[m!=n] [(x_i - x_m) / (x_n - x_m)]
-      CCTK_REAL const xi = offset[d];
-      if (abs(remainder(xi, rone)) < eps) {
+      // C_n = PRODUCT_m,m!=n [(x - x_m) / (x_n - x_m)]
+      CCTK_REAL const x = offset[d];
+      if (abs(x - round(x)) < eps) {
+        // The interpolation point coincides with a grid point; no
+        // interpolation is necessary (this is a special case)
+        iorigin[d] += int(round(x));
+        exact[d] = true;
+      } else {
         for (int n=0; n<=order; ++n) {
           CCTK_REAL const xn = n;
           CCTK_REAL c = 1.0;
           for (int m=0; m<=order; ++m) {
             if (m != n) {
               CCTK_REAL const xm = m;
-              c *= (xi - xm) / (xn - xm);
+              c *= (x - xm) / (xn - xm);
             }
           }
           coeffs[d][n] = c;
@@ -213,12 +219,7 @@ namespace CarpetInterp2 {
         for (int n=0; n<=order; ++n) {
           s += coeffs[d][n];
         }
-        ASSERT (fabs(s - rone) <= eps);
-      } else {
-        // The interpolation point coincides with a grid point; no
-        // interpolation is necessary (this is a special case)
-        iorigin[d] += int(round(xi));
-        exact[d] = true;
+        ASSERT (abs(s - 1.0) <= eps);
       }
     }
     
