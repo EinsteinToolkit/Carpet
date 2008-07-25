@@ -442,7 +442,9 @@ inline T index (const vect<T,D>& lsh, const vect<T,D>& ind) {
   T r(0);
   for (int d=D-1; d>=0; --d) {
     assert (lsh[d]>=0);
-    assert (ind[d]>=0 and ind[d]<lsh[d]);
+    // Be generous, and allow relative indices which may be negtive
+    // assert (ind[d]>=0 and ind[d]<lsh[d]);
+    assert (abs(ind[d])<=lsh[d]);
     r = r * lsh[d] + ind[d];
   }
   return r;
