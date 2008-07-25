@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include <cctk.h>
+#include <cctk_Parameters.h>
 
 #include <mpi.h>
 
@@ -436,6 +437,10 @@ namespace CarpetInterp2 {
   {
     DECLARE_CCTK_PARAMETERS;
     
+    if (verbose) CCTK_VInfo (CCTK_THORNSTRING,
+                             "Setting up interpolation for %d grid points",
+                             int(locations.size()));
+    
     // Some global properties
     int const npoints = locations.size();
     int const nprocs = CCTK_nProcs (cctkGH);
@@ -464,6 +469,7 @@ namespace CarpetInterp2 {
     
     // Calculate refinement levels, components, and integer grid point
     // indices
+    if (verbose) CCTK_INFO ("Mapping points onto components");
     vector<fasterp_iloc_t> ilocs (npoints);
     vector<int> proc (npoints);
     fill_with_poison (proc);
@@ -530,6 +536,7 @@ namespace CarpetInterp2 {
     // too expensive to store data for all processors, so we store
     // only data about those processors with which we actually
     // communicate.
+    if (verbose) CCTK_INFO ("Determine set of communicating processors");
     {
       recv_descr.procs.resize (n_nz_nlocs);
       recv_descr.procinds.resize (nprocs, -1);
@@ -553,6 +560,9 @@ namespace CarpetInterp2 {
     // Create a mapping "index" from location index, as specified by
     // the user, to the index order in which the data are received
     // from the other processors.
+    if (verbose) {
+      CCTK_INFO ("Determine inter-processor gather index permutation");
+    }
     {
       vector<int> index (recv_descr.procs.size());
       fill_with_poison (index);
@@ -585,28 +595,31 @@ namespace CarpetInterp2 {
     
     // Count the number of points which have to be sent to other
     // processors, and exchange this information with MPI
-    vector<int> send_npoints (nprocs, 0), send_offsets (nprocs);
-    fill_with_poison (send_offsets);
+    if (verbose) {
+      CCTK_INFO ("Count and exchange number of communicated grid points");
+    }
+    vector<int> recv_npoints (nprocs, 0), recv_offsets (nprocs);
+    fill_with_poison (recv_offsets);
     {
       int offset = 0;
       for (int pp=0; pp<int(recv_descr.procs.size()); ++pp) {
         int const p = recv_descr.procs.AT(pp).p;
-        send_npoints.AT(p) = recv_descr.procs.AT(pp).npoints;
-        send_offsets.AT(p) = offset;
-        offset += send_npoints.AT(p);
+        recv_npoints.AT(p) = recv_descr.procs.AT(pp).npoints;
+        recv_offsets.AT(p) = offset;
+        offset += recv_npoints.AT(p);
       }
       ASSERT (offset == npoints);
     }
-    vector<int> recv_npoints (nprocs), recv_offsets (nprocs);
-    fill_with_poison (recv_npoints);
-    fill_with_poison (recv_offsets);
-    MPI_Alltoall (&send_npoints.front(), 1, MPI_INT,
-                  &recv_npoints.front(), 1, MPI_INT,
+    vector<int> send_npoints (nprocs), send_offsets (nprocs);
+    fill_with_poison (send_npoints);
+    fill_with_poison (send_offsets);
+    MPI_Alltoall (&recv_npoints.front(), 1, MPI_INT,
+                  &send_npoints.front(), 1, MPI_INT,
                   comm_world);
-    int npoints_source = 0;
+    int npoints_send = 0;
     for (int p=0; p<nprocs; ++p) {
-      recv_offsets.AT(p) = npoints_source;
-      npoints_source += recv_npoints.AT(p);
+      send_offsets.AT(p) = npoints_send;
+      npoints_send += send_npoints.AT(p);
     }
     
     // Scatter the location information into a send-array, and
@@ -615,18 +628,18 @@ namespace CarpetInterp2 {
     for (int n=0; n<npoints; ++n) {
       scattered_ilocs.AT(recv_descr.index.AT(n)) = ilocs.AT(n);
     }
-    vector<fasterp_iloc_t> gathered_ilocs(npoints_source);
+    vector<fasterp_iloc_t> gathered_ilocs(npoints_send);
     MPI_Alltoallv
-      (&scattered_ilocs.front(), &send_npoints.front(), &send_offsets.front(),
+      (&scattered_ilocs.front(), &recv_npoints.front(), &recv_offsets.front(),
        fasterp_iloc_t::mpi_datatype(),
-       &gathered_ilocs.front(),  &recv_npoints.front(), &recv_offsets.front(),
+       &gathered_ilocs.front(),  &send_npoints.front(), &send_offsets.front(),
        fasterp_iloc_t::mpi_datatype(),
        comm_world);
     
     
     
     // Fill in send descriptors
-    send_descr.npoints = npoints_source;
+    send_descr.npoints = npoints_send;
     
     {
       int n_nz_recv_npoints = 0;
@@ -650,6 +663,7 @@ namespace CarpetInterp2 {
     
     
     // Calculate stencil coefficients
+    if (verbose) CCTK_INFO ("Calculate stencil coefficients");
     
     for (size_t pp=0; pp<send_descr.procs.size(); ++pp) {
       send_proc_t & send_proc = send_descr.procs.AT(pp);
@@ -715,6 +729,8 @@ namespace CarpetInterp2 {
       }
       
     } // for pp
+    
+    if (verbose) CCTK_INFO ("Done.");
   }
   
   
@@ -736,7 +752,11 @@ namespace CarpetInterp2 {
                vector<CCTK_REAL *> & values)
     const
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     size_t const nvars = varinds.size();
+    if (verbose) CCTK_VInfo (CCTK_THORNSTRING,
+                             "Interpolating %d variables", int(nvars));
     ASSERT (values.size() == nvars);
     for (size_t v=0; v<values.size(); ++v) {
       int const vi = varinds.AT(v);
@@ -767,6 +787,7 @@ namespace CarpetInterp2 {
     int const mpi_tag = 0;
     
     // Post Irecvs
+    if (verbose) CCTK_INFO ("Posting MPI_Irecvs");
     vector<CCTK_REAL> recv_points (recv_descr.npoints * nvars);
     fill_with_poison (recv_points);
     vector<MPI_Request> recv_reqs (recv_descr.procs.size());
@@ -780,6 +801,7 @@ namespace CarpetInterp2 {
     }
     
     // Interpolate data and post Isends
+    if (verbose) CCTK_INFO ("Interpolating and posting MPI_Isends");
     vector<CCTK_REAL> send_points (send_descr.npoints * nvars);
     fill_with_poison (send_points);
     vector<MPI_Request> send_reqs (send_descr.procs.size());
@@ -848,9 +870,11 @@ namespace CarpetInterp2 {
     } // for pp
     
     // Wait for Irecvs to complete
+    if (verbose) CCTK_INFO ("Waiting for MPI_Irevcs to complete");
     MPI_Waitall (recv_reqs.size(), & recv_reqs.front(), MPI_STATUSES_IGNORE);
     
     // Gather data
+    if (verbose) CCTK_INFO ("Gathering data");
     for (int n=0; n<recv_descr.npoints; ++n) {
       size_t const nn = recv_descr.index.AT(n);
       for (size_t v=0; v<nvars; ++v) {
@@ -862,7 +886,10 @@ namespace CarpetInterp2 {
     }
     
     // Wait for Isends to complete
+    if (verbose) CCTK_INFO ("Waiting for MPI_Isends to complete");
     MPI_Waitall (send_reqs.size(), & send_reqs.front(), MPI_STATUSES_IGNORE);
+    
+    if (verbose) CCTK_INFO ("Done.");
   }
   
   
