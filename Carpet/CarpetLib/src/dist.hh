@@ -172,7 +172,30 @@ namespace dist {
   inline unsigned int c_ndatatypes ()
   { return 16; }
 
-
+  template <typename T> unsigned int c_datatype () { abort(); }
+  template<> inline unsigned int c_datatype <char>           () { return  0; }
+  template<> inline unsigned int c_datatype <signed char>    () { return  1; }
+  template<> inline unsigned int c_datatype <unsigned char>  () { return  2; }
+  template<> inline unsigned int c_datatype <short>          () { return  3; }
+  template<> inline unsigned int c_datatype <unsigned short> () { return  4; }
+  template<> inline unsigned int c_datatype <int>            () { return  5; }
+  template<> inline unsigned int c_datatype <unsigned int>   () { return  6; }
+  template<> inline unsigned int c_datatype <long>           () { return  7; }
+  template<> inline unsigned int c_datatype <unsigned long>  () { return  8; }
+  template<> inline unsigned int c_datatype <long long>      () { return  9; }
+  template<> inline unsigned int c_datatype <float>          () { return 10; }
+  template<> inline unsigned int c_datatype <double>         () { return 11; }
+  template<> inline unsigned int c_datatype <long double>    () { return 12; }
+#ifdef HAVE_CCTK_COMPLEX8
+  template<> inline unsigned int c_datatype <CCTK_COMPLEX8>  () { return 13; }
+#endif
+#ifdef HAVE_CCTK_COMPLEX16
+  template<> inline unsigned int c_datatype <CCTK_COMPLEX16> () { return 14; }
+#endif
+#ifdef HAVE_CCTK_COMPLEX32
+  template<> inline unsigned int c_datatype <CCTK_COMPLEX32> () { return 15; }
+#endif
+  
   /////////////////////////////////////////////////////////////////
   // MPI Datatype helpers
   // Map a C datatype to its corresponding MPI datatype.
@@ -229,6 +252,30 @@ namespace dist {
 #ifdef HAVE_CCTK_COMPLEX32
   inline MPI_Datatype datatype (const CCTK_COMPLEX32&)
   { return mpi_complex32; }
+#endif
+  
+  template <typename T> MPI_Datatype datatype () { abort(); }
+  template<> inline MPI_Datatype datatype <char>           () { return MPI_CHAR; }
+  template<> inline MPI_Datatype datatype <signed char>    () { return MPI_CHAR; }
+  template<> inline MPI_Datatype datatype <unsigned char>  () { return MPI_UNSIGNED_CHAR; }
+  template<> inline MPI_Datatype datatype <short>          () { return MPI_SHORT; }
+  template<> inline MPI_Datatype datatype <unsigned short> () { return MPI_UNSIGNED_SHORT; }
+  template<> inline MPI_Datatype datatype <int>            () { return MPI_INT; }
+  template<> inline MPI_Datatype datatype <unsigned int>   () { return MPI_UNSIGNED; }
+  template<> inline MPI_Datatype datatype <long>           () { return MPI_LONG; }
+  template<> inline MPI_Datatype datatype <unsigned long>  () { return MPI_UNSIGNED_LONG; }
+  template<> inline MPI_Datatype datatype <long long>      () { return MPI_LONG_LONG_INT; }
+  template<> inline MPI_Datatype datatype <float>          () { return MPI_FLOAT; }
+  template<> inline MPI_Datatype datatype <double>         () { return MPI_DOUBLE; }
+  template<> inline MPI_Datatype datatype <long double>    () { return MPI_LONG_DOUBLE; }
+#ifdef HAVE_CCTK_COMPLEX8
+  template<> inline MPI_Datatype datatype <CCTK_COMPLEX8>  () { return mpi_complex8; }
+#endif
+#ifdef HAVE_CCTK_COMPLEX16
+  template<> inline MPI_Datatype datatype <CCTK_COMPLEX16> () { return mpi_complex16; }
+#endif
+#ifdef HAVE_CCTK_COMPLEX32
+  template<> inline MPI_Datatype datatype <CCTK_COMPLEX32> () { return mpi_complex32; }
 #endif
   
 } // namespace dist
