@@ -119,7 +119,6 @@ namespace Carpet {
   }
   
   
-  
   bool
   Regrid (cGH const * const cctkGH,
           bool const force_recompose)
