@@ -188,7 +188,7 @@ regrid (rregs const & superregs, mregs const & regs)
     do_output_bases (cout);
   }
   
-  // Recompose the other hierarchies
+  // Regrid the other hierarchies
   for (list<th*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
     (*t)->regrid();
   }
