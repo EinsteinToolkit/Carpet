@@ -65,9 +65,9 @@ namespace Carpet {
     const int tl = 0;
 
     for (comm_state state; not state.done(); state.step()) {
-      for (int g = 0; g < (int)groups.size(); ++g) {
-        const int group = groups[g];
-        for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
+      for (int group = 0; group < (int)groups.size(); ++group) {
+        const int g = groups[group];
+        for (int m=0; m<(int)arrdata.at(g).size(); ++m) {
 
           // use background time here (which may not be modified
           // by the user)
