@@ -513,12 +513,17 @@ static int TimeToOutput (const cGH* const cctkGH, const int vindex)
     CCTK_REAL myoutdt = out_dt == -2 ? io_out_dt : out_dt;
     if (myoutdt == 0 or *this_iteration == cctk_iteration) {
       output_this_iteration = true;
-    } else if (myoutdt > 0 and (cctk_time / cctk_delta_time
-                             >= *next_output_time / cctk_delta_time - 1.0e-12)) {
-      // it is time for the next output
-      output_this_iteration = true;
-      *this_iteration = cctk_iteration;
-      *next_output_time = cctk_time + myoutdt;
+    } else if (myoutdt > 0) {
+      int do_output =
+        (cctk_time / cctk_delta_time >=
+         *next_output_time / cctk_delta_time - 1.0e-12);
+      MPI_Bcast (&do_output, 1, MPI_INT, 0, dist::comm());
+      if (do_output) {
+        // it is time for the next output
+        output_this_iteration = true;
+        *this_iteration = cctk_iteration;
+        *next_output_time = cctk_time + myoutdt;
+      }
     }
   }
 
