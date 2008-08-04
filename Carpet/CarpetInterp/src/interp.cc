@@ -187,16 +187,6 @@ namespace CarpetInterp {
 
 
 
-  static void timer_CDI (bool const dostart)
-  {
-    static Timer timer_CDI ("CarpetInterp::Carpet_DriverInterpolate");
-    if (dostart) {
-      timer_CDI.start ();
-    } else {
-      timer_CDI.stop (0);
-    }
-  }
-
   extern "C" CCTK_INT
   Carpet_DriverInterpolate (CCTK_POINTER_TO_CONST const cctkGH_,
                             CCTK_INT const N_dims,
@@ -214,7 +204,11 @@ namespace CarpetInterp {
   {
     DECLARE_CCTK_PARAMETERS;
 
-    timer_CDI (true);
+    static Timer * timer_CDI = NULL;
+    if (not timer_CDI) {
+      timer_CDI = new Timer ("CarpetInterp::Carpet_DriverInterpolate");
+    }
+    timer_CDI->start();
 
     cGH const * const cctkGH = static_cast<cGH const *> (cctkGH_);
     assert (cctkGH);
@@ -379,7 +373,7 @@ namespace CarpetInterp {
          prolongation_order_time, current_time, delta_time,
          source_map, operand_indices, time_deriv_order);
       if (iret < 0) {
-        timer_CDI (false);
+        timer_CDI->stop (0);
         return iret;
       }
     }
@@ -901,7 +895,7 @@ namespace CarpetInterp {
 
     // Done.
     {
-      timer_CDI (false);
+      timer_CDI->stop (0);
       int const iret = per_proc_retvals[dist::rank()];
       return iret;
     }
