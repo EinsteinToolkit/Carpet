@@ -222,6 +222,34 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     Waypoint ("Regridding map %d...", m);
+
+    
+#warning "TODO: keep levels fixed here"
+#if 0
+    //
+    // Keep this level fixed if it is not evolved
+    //
+    if (regrid_only_evolved_levels) {
+      int type;
+      bool const use_tapered_grids =
+        * static_cast<CCTK_INT const *>
+        (CCTK_ParameterGet ("use_tapered_grids", "Carpet", &type));
+      assert (type == PARAMETER_BOOLEAN);
+      
+      int const do_every =
+        use_tapered_grids ?
+        maxtimereflevelfact / timereffacts.at(max(0,rl-1)):
+        maxtimereflevelfact / timereffacts.at(      rl   );
+      
+      bool const regrid_this_level =
+        (cctkGH->cctk_iteration - 1) % do_every == 0;
+      
+      if (not regrid_this_level) {
+        // Set regions from current grid structure
+        regions.at(rl) = ...;
+      }
+    }
+#endif
     
     // Check the regions
     CheckRegions (regsss);
@@ -1137,8 +1165,7 @@ namespace Carpet {
         newreg.processor = firstproc + p;
         newregs.push_back (newreg);
       }
-      // Do not set any superreg.processors information
-      // TODO: Maybe create an empty tree for this?
+      superreg.processors = new ipfulltree ();
       
       // Check postcondition
       assert (newregs.size() == oldsize + nprocs);
@@ -1392,10 +1419,16 @@ namespace Carpet {
     
     // Count components per map
     vector<int> myncomps(nmaps, 0);
+    vector<int> empty_comps(nmaps, 0);
     for (int r=0; r<newnregs; ++r) {
       int const m = newregs.at(r).map - minmap;
       assert (m>=0 and m<nmaps);
-      ++ myncomps.at(m);
+      if (not newregs.at(r).extent.empty()) {
+        // Ignore empty regions, which may come from empty grid arrays
+        ++ myncomps.at(m);
+      } else {
+        ++ empty_comps.at(m);
+      }
     }
     vector<int> mynregs(nmaps, 0);
     for (int r=0; r<nregs; ++r) {
@@ -1451,7 +1484,7 @@ namespace Carpet {
     }
     // Check sizes
     for (int m=0; m<nmaps; ++m) {
-      assert (int(regss.at(m).size()) == myncomps.at(m));
+      assert (int(regss.at(m).size()) == myncomps.at(m) + empty_comps.at(m));
       assert (int(superregss.at(m).size()) == mynregs.at(m));
     }
     
