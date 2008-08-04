@@ -63,10 +63,8 @@ private:
   
 public:
   
-#if 0
   // Create an empty tree
   fulltree ();
-#endif
   
   // Create a tree branch from a list of bounds and subtrees
   fulltree (int dir_, vector <T> const & bounds_,

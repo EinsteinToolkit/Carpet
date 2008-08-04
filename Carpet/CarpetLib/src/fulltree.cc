@@ -9,7 +9,6 @@
 
 
 
-#if 0
 // Create an empty tree
 template <typename T, int D, typename P>
 fulltree<T,D,P>::fulltree ()
@@ -17,7 +16,6 @@ fulltree<T,D,P>::fulltree ()
 {
   assert (invariant());
 }
-#endif
 
 
 
