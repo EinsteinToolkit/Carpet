@@ -535,15 +535,20 @@ namespace CarpetIOScalar {
       } else if (cctk_iteration == *this_iteration) {
         // we already decided to output this iteration
         output_this_iteration = true;
-      } else if (cctk_time / cctk_delta_time
-                 >= (*last_output_time + myoutdt) / cctk_delta_time - 1.0e-12) {
-        // it is time for the next output
-        output_this_iteration = true;
-        *last_output_time = cctk_time;
-        *this_iteration = cctk_iteration;
       } else {
-        // we want no output at this iteration
-        output_this_iteration = false;
+        int do_output =
+          (cctk_time / cctk_delta_time >=
+           (*last_output_time + myoutdt) / cctk_delta_time - 1.0e-12);
+        MPI_Bcast (&do_output, 1, MPI_INT, 0, dist::comm());
+        if (do_output) {
+          // it is time for the next output
+          output_this_iteration = true;
+          *last_output_time = cctk_time;
+          *this_iteration = cctk_iteration;
+        } else {
+          // we want no output at this iteration
+          output_this_iteration = false;
+        }
       }
 
     } else {
