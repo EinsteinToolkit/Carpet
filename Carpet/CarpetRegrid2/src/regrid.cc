@@ -391,7 +391,7 @@ namespace CarpetRegrid2 {
     }     // if map==0
     
     
-      
+    
     regss.resize (regions.size());
     
     assert (regions.size() > 0);
