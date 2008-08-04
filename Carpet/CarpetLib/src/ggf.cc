@@ -366,7 +366,7 @@ mg_restrict_all (comm_state & state,
   // Require same times
   static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
   assert (abs(t.get_time(rl,ml) - t.get_time(rl,ml-1))
-	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
+	  <= 1.0e-8 * (1.0 + abs(t.get_time(rl,ml))));
   vector<int> const tl2s(1,tl);
   transfer_from_all (state,
                      tl  ,rl,ml,
@@ -390,7 +390,7 @@ mg_prolongate_all (comm_state & state,
   // Require same times
   static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
   assert (abs(t.get_time(rl,ml) - t.get_time(rl,ml+1))
-	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
+	  <= 1.0e-8 * (1.0 + abs(t.get_time(rl,ml))));
   vector<int> const tl2s(1,tl);
   transfer_from_all (state,
                      tl  ,rl,ml,
@@ -412,7 +412,7 @@ ref_restrict_all (comm_state & state,
   // Require same times
   static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
   assert (abs(t.get_time(rl,ml) - t.get_time(rl+1,ml))
-	  <= 1.0e-8 * abs(t.get_time(rl,ml)));
+	  <= 1.0e-8 * (1.0 + abs(t.get_time(rl,ml))));
   if (transport_operator == op_none or transport_operator == op_sync) return;
   static Timer timer ("ref_restrict_all");
   timer.start ();
