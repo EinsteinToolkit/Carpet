@@ -339,12 +339,17 @@ namespace CarpetIOASCII {
       }
       if (myoutdt == 0 or cctk_iteration == this_iteration[outdim]) {
         output_this_iteration = true;
-      } else if (myoutdt > 0 and (cctk_time / cctk_delta_time
-                 >= (last_output_time[outdim] + myoutdt) / cctk_delta_time - 1.0e-12)) {
-        // it is time for the next output
-        output_this_iteration = true;
-        last_output_time[outdim] = cctk_time;
-        this_iteration[outdim] = cctk_iteration;
+      } else if (myoutdt > 0) {
+        int do_output =
+          cctk_time / cctk_delta_time >=
+          (last_output_time[outdim] + myoutdt) / cctk_delta_time - 1.0e-12;
+        MPI_Bcast (&do_output, 1, MPI_INT, 0, dist::comm());
+        if (do_output) {
+          // it is time for the next output
+          output_this_iteration = true;
+          last_output_time[outdim] = cctk_time;
+          this_iteration[outdim] = cctk_iteration;
+        }
       }
     } // select output criterion
 
