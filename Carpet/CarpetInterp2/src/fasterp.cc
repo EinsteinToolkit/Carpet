@@ -39,17 +39,18 @@ namespace CarpetInterp2 {
   template<> int get_poison () { return ipoison; }
   template<> CCTK_REAL get_poison () { return poison; }
   
-  template <typename T>
-  void fill (vector<T> & v, T const & val)
-  {
-    fill (v.begin(), v.end(), val);
-  }
+  // template <typename T>
+  // void fill (vector<T> & v, T const & val)
+  // {
+  //   fill (v.begin(), v.end(), val);
+  // }
   
   template <typename T>
   void fill_with_poison (vector<T> & v)
   {
 #ifndef NDEBUG
-    fill (v, get_poison<T>());
+    // fill (v, get_poison<T>());
+    fill (v.begin(), v.end(), get_poison<T>());
 #endif
   }
   
@@ -197,10 +198,13 @@ namespace CarpetInterp2 {
     for (int d=0; d<dim; ++d) {
       // C_n = PRODUCT_m,m!=n [(x - x_m) / (x_n - x_m)]
       CCTK_REAL const x = offset[d];
-      if (abs(x - round(x)) < eps) {
+      // round is not available with PGI compilers
+      // CCTK_REAL const rx = round(x);
+      CCTK_REAL const rx = floor(x+0.5);
+      if (abs(x - rx) < eps) {
         // The interpolation point coincides with a grid point; no
         // interpolation is necessary (this is a special case)
-        iorigin[d] += int(round(x));
+        iorigin[d] += int(rx);
         exact[d] = true;
       } else {
         for (int n=0; n<=order; ++n) {
