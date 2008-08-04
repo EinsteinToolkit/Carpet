@@ -147,10 +147,17 @@ void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS)
   bool const checkpoint_by_walltime =
     checkpoint_every_walltime_hours > 0 and
     walltime >= last_checkpoint_walltime + checkpoint_every_walltime_hours;
-
-  if (checkpoint and
-      (checkpoint_by_iteration or checkpoint_by_walltime or checkpoint_next))
-  {
+  
+  int do_checkpoint =
+    checkpoint and
+    (checkpoint_by_iteration or checkpoint_by_walltime or checkpoint_next);
+  if (checkpoint_every_walltime_hours > 0) {
+    // broadcast the decision since comparing wall times may differ on
+    // different processors
+    MPI_Bcast (&do_checkpoint, 1, MPI_INT, 0, dist::comm());
+  }
+  
+  if (do_checkpoint) {
     if (not CCTK_Equals (verbose, "none")) {
       CCTK_INFO ("---------------------------------------------------------");
       CCTK_VInfo (CCTK_THORNSTRING, "Dumping periodic checkpoint at "
