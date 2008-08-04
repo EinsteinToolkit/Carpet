@@ -414,8 +414,11 @@ lc_statset_init (lc_statset_t * restrict const ls,
           break;
         }
       }
-      /* Always allow at least one tiling */
-      ls->topology_ntilings[d][n] = tiling == 0 ? 1 : tiling;
+      if (tiling == 0) {
+        /* Always allow at least one tiling */
+        tiling = 1;
+      }
+      ls->topology_ntilings[d][n] = tiling;
     }
     if (debug) {
       printf ("   Found %d possible tilings\n", ls->ntilings[d]);
