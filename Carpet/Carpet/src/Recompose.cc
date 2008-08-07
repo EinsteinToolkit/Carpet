@@ -361,7 +361,8 @@ namespace Carpet {
                << upper / stride
                << "   ("
                << (upper - lower) / stride + 1
-               << ")"
+               << ") "
+               << prod ((upper - lower) / stride + 1)
                << endl;
         }
       }

@@ -614,7 +614,9 @@ namespace Carpet {
                << upper / maxspacereflevelfact
                << "   ("
                << (upper - lower) / maxspacereflevelfact / convfact + 1
-               << ")" << endl;
+               << ") "
+               << prod ((upper - lower) / maxspacereflevelfact / convfact + 1)
+               << endl;
         }
       }
     }
