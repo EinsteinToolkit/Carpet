@@ -39,18 +39,22 @@ namespace CarpetInterp2 {
   template<> int get_poison () { return ipoison; }
   template<> CCTK_REAL get_poison () { return poison; }
   
-  // template <typename T>
-  // void fill (vector<T> & v, T const & val)
-  // {
-  //   fill (v.begin(), v.end(), val);
-  // }
+  template <typename T>
+  void fill (vector<T> & v, T const & val)
+  {
+    // fill (v.begin(), v.end(), val);
+#pragma omp parallel for
+    for (int n=0; n<int(v.size()); ++n) {
+      v.AT(n) = val;
+    }
+  }
   
   template <typename T>
   void fill_with_poison (vector<T> & v)
   {
 #ifndef NDEBUG
-    // fill (v, get_poison<T>());
-    fill (v.begin(), v.end(), get_poison<T>());
+    fill (v, get_poison<T>());
+    // fill (v.begin(), v.end(), get_poison<T>());
 #endif
   }
   
@@ -585,14 +589,19 @@ namespace CarpetInterp2 {
         int const recv_npoints = index.AT(pp) - recv_descr.procs.AT(pp).offset;
         ASSERT (recv_npoints == recv_descr.procs.AT(pp).npoints);
       }
-      vector<bool> received (npoints, false);
+#ifndef NDEBUG
+      vector<bool> received (npoints);
+      fill (received, false);
+#pragma omp parallel for
       for (int n=0; n<npoints; ++n) {
         assert (not received.AT(n));
         received.AT(n) = true;
       }
+#pragma omp parallel for
       for (int n=0; n<npoints; ++n) {
         assert (received.AT(n));
       }
+#endif
     }
     
     
@@ -602,7 +611,8 @@ namespace CarpetInterp2 {
     if (verbose) {
       CCTK_INFO ("Count and exchange number of communicated grid points");
     }
-    vector<int> recv_npoints (nprocs, 0), recv_offsets (nprocs);
+    vector<int> recv_npoints (nprocs), recv_offsets (nprocs);
+    fill (recv_npoints, 0);
     fill_with_poison (recv_offsets);
     {
       int offset = 0;
@@ -629,6 +639,7 @@ namespace CarpetInterp2 {
     // Scatter the location information into a send-array, and
     // exchange it with MPI
     vector<fasterp_iloc_t> scattered_ilocs(npoints);
+#pragma omp parallel for
     for (int n=0; n<npoints; ++n) {
       scattered_ilocs.AT(recv_descr.index.AT(n)) = ilocs.AT(n);
     }
@@ -677,8 +688,10 @@ namespace CarpetInterp2 {
       fill_with_poison (comp2mrc);
       int comps = 0;
       
-      vector<int> npoints_comp (maxmrc, 0);
+      vector<int> npoints_comp (maxmrc);
+      fill (npoints_comp, 0);
       
+      // TODO: parallelise with OpenMP
       for (int n=0; n<send_proc.npoints; ++n) {
         fasterp_iloc_t const & iloc = gathered_ilocs.AT(send_proc.offset + n);
         int const mrc = iloc.mrc.get_ind();
@@ -714,6 +727,7 @@ namespace CarpetInterp2 {
       
       send_proc.index.resize (send_proc.npoints);
       fill_with_poison (send_proc.index);
+#pragma omp parallel for
       for (int n=0; n<send_proc.npoints; ++n) {
         fasterp_iloc_t const & iloc = gathered_ilocs.AT(send_proc.offset + n);
         int const mrc = iloc.mrc.get_ind();
@@ -724,6 +738,7 @@ namespace CarpetInterp2 {
         
         fasterp_src_loc_t sloc;
         sloc.calc_stencil (iloc, send_comp.lsh, order);
+#pragma omp critical
         send_comp.locs.push_back (sloc);
       }
       
@@ -839,12 +854,14 @@ namespace CarpetInterp2 {
           ASSERT (varptrs.AT(v));
         }
         
-        for (size_t n=0; n<send_comp.locs.size(); ++n) {
-          ASSERT (destit + nvars <= endit);
+#pragma omp parallel for
+        for (int n=0; n<int(send_comp.locs.size()); ++n) {
+          vector<CCTK_REAL>::iterator const destit2 = destit + n * nvars;
+          ASSERT (destit2 + nvars <= endit);
           send_comp.locs.AT(n).interpolate
-            (send_comp.lsh, order, varptrs, & * destit);
-          destit += nvars;
+            (send_comp.lsh, order, varptrs, & * destit2);
         }
+        destit += nvars * send_comp.locs.size();
         
       } // for comps
       
@@ -853,6 +870,7 @@ namespace CarpetInterp2 {
       // Gather send points
       vector<CCTK_REAL> gathered_send_points (send_proc.npoints * nvars);
       fill_with_poison (gathered_send_points);
+#pragma omp parallel for
       for (int n=0; n<send_proc.npoints; ++n) {
         int const nn = send_proc.offset + send_proc.index.AT(n);
         for (size_t v=0; v<nvars; ++v) {
@@ -860,6 +878,7 @@ namespace CarpetInterp2 {
             send_points.AT(nn * nvars + v);
         }
       }
+#pragma omp parallel for
       for (int n=0; n<int(send_proc.npoints * nvars); ++n) {
         int const nn = send_proc.offset * nvars + n;
         send_points.AT(nn) = gathered_send_points.AT(n);
@@ -879,6 +898,7 @@ namespace CarpetInterp2 {
     
     // Gather data
     if (verbose) CCTK_INFO ("Gathering data");
+#pragma omp parallel for
     for (int n=0; n<recv_descr.npoints; ++n) {
       size_t const nn = recv_descr.index.AT(n);
       for (size_t v=0; v<nvars; ++v) {
