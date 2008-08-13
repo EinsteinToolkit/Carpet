@@ -161,7 +161,8 @@ void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS)
     if (not CCTK_Equals (verbose, "none")) {
       CCTK_INFO ("---------------------------------------------------------");
       CCTK_VInfo (CCTK_THORNSTRING, "Dumping periodic checkpoint at "
-                  "iteration %d", cctk_iteration);
+                  "iteration %d, simulation time %g",
+                  cctk_iteration, double(cctk_time));
       CCTK_INFO ("---------------------------------------------------------");
     }
 
