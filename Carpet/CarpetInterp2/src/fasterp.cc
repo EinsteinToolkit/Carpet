@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
@@ -21,14 +22,19 @@ namespace CarpetInterp2 {
   
   
   
+#if 0
   // Erik's gdb cannot print local variables in functions where an
   // assert fails.  Hence the calls to assert are temporarily moved
   // into a function of their own.
   void ASSERT (bool const cond)
   {
+#ifndef NDEBUG
     if (cond) return;
     abort();
+#endif
   }
+#endif
+#define ASSERT(x) assert(x)
   
   
   
@@ -657,14 +663,14 @@ namespace CarpetInterp2 {
     send_descr.npoints = npoints_send;
     
     {
-      int n_nz_recv_npoints = 0;
+      int n_nz_send_npoints = 0;
       for (int p=0; p<nprocs; ++p) {
-        if (recv_npoints.AT(p) > 0) ++n_nz_recv_npoints;
+        if (send_npoints.AT(p) > 0) ++n_nz_send_npoints;
       }
-      send_descr.procs.resize (n_nz_recv_npoints);
+      send_descr.procs.resize (n_nz_send_npoints);
       int pp = 0;
       for (int p=0; p<nprocs; ++p) {
-        if (recv_npoints.AT(p) > 0) {
+        if (send_npoints.AT(p) > 0) {
           send_proc_t & send_proc = send_descr.procs.AT(pp);
           send_proc.p       = p;
           send_proc.offset  = send_offsets.AT(p);
@@ -672,7 +678,7 @@ namespace CarpetInterp2 {
           ++pp;
         }
       }
-      ASSERT (pp == n_nz_recv_npoints);
+      ASSERT (pp == n_nz_send_npoints);
     }
     
     
@@ -748,6 +754,53 @@ namespace CarpetInterp2 {
       }
       
     } // for pp
+    
+    // TODO: Disable this once we are sure this works
+#if 1
+    {
+      if (verbose) CCTK_INFO ("Compare send and receive counts");
+      
+      vector<int> recv_count (dist::size());
+      fill (recv_count, 0);
+      for (size_t pp=0; pp<recv_descr.procs.size(); ++pp) {
+        recv_proc_t const & recv_proc = recv_descr.procs.AT(pp);
+        ASSERT (recv_count.AT(recv_proc.p) == 0);
+        ASSERT (recv_proc.npoints > 0);
+        recv_count.AT(recv_proc.p) = recv_proc.npoints;
+      }
+      
+      vector<int> send_count (dist::size());
+      fill (send_count, 0);
+      for (size_t pp=0; pp<send_descr.procs.size(); ++pp) {
+        send_proc_t const & send_proc = send_descr.procs.AT(pp);
+        ASSERT (send_count.AT(send_proc.p) == 0);
+        ASSERT (send_proc.npoints > 0);
+        send_count.AT(send_proc.p) = send_proc.npoints;
+      }
+      
+      {
+        vector<int> tmp_count (dist::size());
+        MPI_Alltoall (&send_count.front(), 1, MPI_INT,
+                      &tmp_count .front(), 1, MPI_INT,
+                      dist::comm());
+        swap (send_count, tmp_count);
+      }
+      bool error = false;
+      for (int p=0; p<dist::size(); ++p) {
+        if (not (send_count.AT(p) == recv_count.AT(p))) {
+          ostringstream buf;
+          buf << "Error: processor " << p << " "
+              << "sends me " << send_count.AT(p) << " points, "
+              << "while I receive " << recv_count.AT(p) << " from it";
+          CCTK_WARN (CCTK_WARN_ALERT, buf.str().c_str());
+          error = true;
+        }
+      }
+      if (error) {
+        CCTK_WARN (CCTK_WARN_ABORT, "Internal error in interpolation setup");
+      }
+    }
+#endif
     
     if (verbose) CCTK_INFO ("Done.");
   }
