@@ -35,7 +35,7 @@ namespace CarpetLib {
   RT
   coeff (int const i)
   {
-    static const RT coeffs[ncoeffs] = {
+    static const RT coeffs[] = {
            63/RT(524288.0),
       -   819/RT(524288.0),
          5005/RT(524288.0),
@@ -49,6 +49,10 @@ namespace CarpetLib {
       -  1287/RT(524288.0),
            91/RT(524288.0)
     };
+#ifdef CARPET_DEBUG
+    assert (sizeof coeffs / sizeof *coeffs == ncoeffs);
+    assert (i>=0 and i<ncoeffs);
+#endif
     return coeffs[i];
   }
   
@@ -155,8 +159,8 @@ namespace CarpetLib {
     
     bvect3 const needoffsetlo = srcoff % reffact2 != 0 or regext > 1;
     bvect3 const needoffsethi = (srcoff + regext - 1) % reffact2 != 0 or regext > 1;
-    ivect3 const offsetlo = either (needoffsetlo, 2 /* 1 */, 0);
-    ivect3 const offsethi = either (needoffsethi, 2 /* 1 */, 0);
+    ivect3 const offsetlo = either (needoffsetlo, 6, 0);
+    ivect3 const offsethi = either (needoffsethi, 6, 0);
     
     
     
@@ -252,7 +256,7 @@ namespace CarpetLib {
     
     // kernel
    l8001:
-    dst[DSTIND3(id,jd,kd)] = interp1<T> (& src[SRCIND3(is-3,js,ks)], srcdi);
+    dst[DSTIND3(id,jd,kd)] = interp1<T> (& src[SRCIND3(is-5,js,ks)], srcdi);
     i = i+1;
     id = id+1;
     is = is+1;
@@ -276,7 +280,7 @@ namespace CarpetLib {
     
     // kernel
    l8010:
-    dst[DSTIND3(id,jd,kd)] = interp1<T> (& src[SRCIND3(is,js-3,ks)], srcdj);
+    dst[DSTIND3(id,jd,kd)] = interp1<T> (& src[SRCIND3(is,js-5,ks)], srcdj);
     i = i+1;
     id = id+1;
     if (i < regiext) goto l8011;
@@ -285,7 +289,7 @@ namespace CarpetLib {
     // kernel
    l8011:
     dst[DSTIND3(id,jd,kd)] =
-      interp2<T> (& src[SRCIND3(is-3,js-3,ks)], srcdi, srcdj);
+      interp2<T> (& src[SRCIND3(is-5,js-5,ks)], srcdi, srcdj);
     i = i+1;
     id = id+1;
     is = is+1;
@@ -325,7 +329,7 @@ namespace CarpetLib {
     
     // kernel
    l8100:
-    dst[DSTIND3(id,jd,kd)] = interp1<T> (& src[SRCIND3(is,js,ks-3)], srcdk);
+    dst[DSTIND3(id,jd,kd)] = interp1<T> (& src[SRCIND3(is,js,ks-5)], srcdk);
     i = i+1;
     id = id+1;
     if (i < regiext) goto l8101;
@@ -334,7 +338,7 @@ namespace CarpetLib {
     // kernel
    l8101:
     dst[DSTIND3(id,jd,kd)] =
-      interp2<T> (& src[SRCIND3(is-3,js,ks-3)], srcdi, srcdj);
+      interp2<T> (& src[SRCIND3(is-5,js,ks-5)], srcdi, srcdj);
     i = i+1;
     id = id+1;
     is = is+1;
@@ -359,7 +363,7 @@ namespace CarpetLib {
     // kernel
    l8110:
     dst[DSTIND3(id,jd,kd)] =
-      interp2<T> (& src[SRCIND3(is,js-3,ks-3)], srcdj, srcdk);
+      interp2<T> (& src[SRCIND3(is,js-5,ks-5)], srcdj, srcdk);
     i = i+1;
     id = id+1;
     if (i < regiext) goto l8111;
@@ -369,7 +373,7 @@ namespace CarpetLib {
    l8111:
     {
       dst[DSTIND3(id,jd,kd)] =
-        interp3<T> (& src[SRCIND3(is-3,js-3,ks-3)], srcdi, srcdj, srcdk);
+        interp3<T> (& src[SRCIND3(is-5,js-5,ks-5)], srcdi, srcdj, srcdk);
     }
     i = i+1;
     id = id+1;

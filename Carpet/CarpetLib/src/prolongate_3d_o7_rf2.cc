@@ -28,14 +28,14 @@ namespace CarpetLib {
   
   // 1D interpolation coefficients
   static
-  int const ncoeffs = 10;
+  int const ncoeffs = 8;
   
   template <typename RT>
   static inline
   RT
   coeff (int const i)
   {
-    static const RT coeffs[ncoeffs] = {
+    static const RT coeffs[] = {
       -   5/RT(2048.0),
          49/RT(2048.0),
       - 245/RT(2048.0),
@@ -45,6 +45,10 @@ namespace CarpetLib {
          49/RT(2048.0),
       -   5/RT(2048.0)
     };
+#ifdef CARPET_DEBUG
+    assert (sizeof coeffs / sizeof *coeffs == ncoeffs);
+    assert (i>=0 and i<ncoeffs);
+#endif
     return coeffs[i];
   }
   
@@ -151,8 +155,8 @@ namespace CarpetLib {
     
     bvect3 const needoffsetlo = srcoff % reffact2 != 0 or regext > 1;
     bvect3 const needoffsethi = (srcoff + regext - 1) % reffact2 != 0 or regext > 1;
-    ivect3 const offsetlo = either (needoffsetlo, 2 /* 1 */, 0);
-    ivect3 const offsethi = either (needoffsethi, 2 /* 1 */, 0);
+    ivect3 const offsetlo = either (needoffsetlo, 4, 0);
+    ivect3 const offsethi = either (needoffsethi, 4, 0);
     
     
     
