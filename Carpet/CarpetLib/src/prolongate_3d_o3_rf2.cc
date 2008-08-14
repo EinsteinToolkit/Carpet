@@ -70,8 +70,8 @@ namespace CarpetLib {
     
     bvect3 const needoffsetlo = srcoff % reffact2 != 0 or regext > 1;
     bvect3 const needoffsethi = (srcoff + regext - 1) % reffact2 != 0 or regext > 1;
-    ivect3 const offsetlo = either (needoffsetlo, 2 /* 1 */, 0);
-    ivect3 const offsethi = either (needoffsethi, 2 /* 1 */, 0);
+    ivect3 const offsetlo = either (needoffsetlo, 2, 0);
+    ivect3 const offsethi = either (needoffsethi, 2, 0);
     
     
     
