@@ -149,6 +149,27 @@ namespace Carpet {
             CCTK_REAL const eps = 1.0e-12;
             bool const in_sync =
               abs (mytime - parenttime) <= eps * abs (delta_time);
+#if 0
+            int const parent_do_every =
+              ipow(mgfact, mglevel) *
+              (maxtimereflevelfact / timereffacts.at(reflevel-1));
+            bool const parent_is_active =
+              cctkGH->cctk_iteration == 0 or
+              (cctkGH->cctk_iteration-1) % parent_do_every == 0;
+            int const do_every =
+              ipow(mgfact, mglevel) *
+              (maxtimereflevelfact / timereffacts.at(reflevel));
+            bool const is_active =
+              cctkGH->cctk_iteration == 0 or
+              (cctkGH->cctk_iteration-1) % do_every == 0;
+            bool const new_in_sync = is_active and parent_is_active;
+#warning "just for testing"
+#warning "if this breaks, fix also CarpetRegrid2"
+            assert (new_in_sync == in_sync);
+            if (not (new_in_sync == in_sync)) {
+              CCTK_WARN (CCTK_WARN_ABORT, "assert (new_in_sync == in_sync)");
+            }
+#endif
             local_do_prolongate = in_sync;
           }
         } else {                // no tapered grids
