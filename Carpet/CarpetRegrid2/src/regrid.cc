@@ -260,9 +260,9 @@ namespace CarpetRegrid2 {
     
     if (verbose) CCTK_INFO ("Regridding");
     
-    assert (Carpet::is_singlemap_mode());
-    gh const & hh = * Carpet::vhh.at (Carpet::map);
-    dh const & dd = * Carpet::vdd.at (Carpet::map);
+    assert (is_singlemap_mode());
+    gh const & hh = * vhh.at (Carpet::map);
+    dh const & dd = * vdd.at (Carpet::map);
     
     //
     // Find extent of domain
@@ -310,7 +310,7 @@ namespace CarpetRegrid2 {
                            spacing);
     
     // Adapt spacing for convergence level
-    spacing *= ipow ((CCTK_REAL) Carpet::mgfact, Carpet::basemglevel);
+    spacing *= ipow ((CCTK_REAL) mgfact, basemglevel);
     
 #if 0
     {
@@ -328,6 +328,54 @@ namespace CarpetRegrid2 {
     calculate_exterior_boundary (physical_lower, physical_upper,
                                  exterior_lower, exterior_upper,
                                  spacing);
+    
+    //
+    // Determine which refinement levels may be changed
+    //
+    int min_rl = 1;             // we cannot change the coarsest level
+    if (freeze_unaligned_levels or freeze_unaligned_parent_levels) {
+      while (min_rl < maxreflevels) {
+        // Increase min_rl until we find a level that can be changed
+#if 0
+#warning "think about this a bit more"
+#warning "use this taper-checking also in Comm.cc"
+        bool in_sync = true;
+        if (freeze_unaligned_parent_levels) {
+          int const parent_do_every =
+            ipow(mgfact, mglevel) *
+            (maxtimereflevelfact / timereffacts.at(min_rl-1));
+          in_sync =
+            cctkGH->cctk_iteration == 0 or
+            (cctkGH->cctk_iteration-1) % parent_do_every == 0;
+        }
+#else
+        bool in_sync = true;
+        if (freeze_unaligned_parent_levels) {
+          // Assume that non-existing levels are always aligned
+          if (min_rl < reflevels) {
+            CCTK_REAL const mytime =
+              vtt.at(Carpet::map)->time (0, min_rl, mglevel);
+            CCTK_REAL const parenttime =
+              vtt.at(Carpet::map)->time (0, min_rl - 1, mglevel);
+            CCTK_REAL const eps = 1.0e-12;
+            in_sync =
+              abs (mytime - parenttime) <= eps * abs (delta_time);
+          }
+        }
+#endif
+        int const do_every =
+          ipow(mgfact, mglevel) *
+          (maxtimereflevelfact / timereffacts.at(min_rl));
+        bool const is_active =
+          cctkGH->cctk_iteration == 0 or
+          (cctkGH->cctk_iteration-1) % do_every == 0;
+        if (is_active and in_sync) break;
+        ++ min_rl;
+      }
+      if (verbose) {
+        CCTK_VInfo (CCTK_THORNSTRING, "Regridding levels %d and up", min_rl);
+      }
+    }
     
     //
     // Calculate the union of the bounding boxes for all levels
@@ -360,7 +408,7 @@ namespace CarpetRegrid2 {
         if (centre.active) {
           
           // Loop over all levels for this centre
-          for (int rl = 1; rl < centre.num_levels; ++ rl) {
+          for (int rl = min_rl; rl < centre.num_levels; ++ rl) {
             
             // Calculate a bbox for this region
             rvect const rmin = centre.position - centre.radius.at(rl);
@@ -395,7 +443,7 @@ namespace CarpetRegrid2 {
     regss.resize (regions.size());
     
     assert (regions.size() > 0);
-    for (size_t rl = regions.size() - 1; rl >= 1; -- rl) {
+    for (int rl = regions.size() - 1; rl >= min_rl; -- rl) {
       
       // Sanity check
       assert (not regions.at(rl).empty());
@@ -405,15 +453,14 @@ namespace CarpetRegrid2 {
       //
       // Ensure that this grid contains the next finer grid
       //
-      if (rl < regions.size() - 1) {
-        
-        ibbox const coarse0 = * regions.at(rl).begin();
-        
-        i2vect const fdistance = dd.ghost_width;
-        i2vect const cdistance =
-          i2vect (min_distance + dd.prolongation_stencil_size());
-        
-        if (ensure_proper_nesting) {
+      if (ensure_proper_nesting) {
+        if (rl < int(regions.size()) - 1) {
+          
+          ibbox const coarse0 = * regions.at(rl).begin();
+          
+          i2vect const fdistance = dd.ghost_width;
+          i2vect const cdistance =
+            i2vect (min_distance + dd.prolongation_stencil_size());
           
           for (ibboxset::const_iterator ibb = regions.at(rl+1).begin();
                ibb != regions.at(rl+1).end();
@@ -435,36 +482,8 @@ namespace CarpetRegrid2 {
           
           regions.at(rl).normalize();
           
-        } // if ensure proper nesting
-        
-        {
-          bool is_properly_nested = true;
-          
-          for (ibboxset::const_iterator ibb = regions.at(rl+1).begin();
-               ibb != regions.at(rl+1).end();
-               ++ ibb)
-          {
-            ibbox const & fbb = * ibb;
-            
-            bvect const lower_is_outer = fbb.lower() <= physical_ilower;
-            bvect const upper_is_outer = fbb.upper() >= physical_iupper;
-            b2vect const ob (lower_is_outer, upper_is_outer);
-            
-            ibbox const ebb = fbb.expand (i2vect (ob) * fdistance);
-            ibbox const cbb = ebb.expanded_for (coarse0);
-            ibbox const ecbb = cbb.expand (i2vect (ob) * cdistance);
-            
-            is_properly_nested = is_properly_nested and ecbb <= regions.at(rl);
-          }
-          
-          if (not is_properly_nested) {
-            ostringstream msg;
-            msg << "Level " << rl << " of the refinement hierarchy is not properly nested.  It does not contain level " << (rl+1) << ".";
-            CCTK_WARN (CCTK_WARN_ALERT, msg.str().c_str());
-          }
         }
-        
-      }
+      } // if ensure proper nesting
       
       
       
@@ -755,6 +774,45 @@ namespace CarpetRegrid2 {
       }
       
     } // for rl
+    
+    //
+    // Check whether all grids are contained in the next coarser grid
+    //
+#warning "TODO: This uses the wrong grid sizes; it should subtract buffer zones etc. before checking"
+    for (int rl = regions.size() - 1; rl >= min_rl; -- rl) {
+      
+      ibbox const coarse0 = * regions.at(rl-1).begin();
+      
+      i2vect const fdistance = dd.ghost_width;
+      i2vect const cdistance =
+        i2vect (min_distance + dd.prolongation_stencil_size());
+      
+      bool is_properly_nested = true;
+      
+      for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+           ibb != regions.at(rl).end();
+           ++ ibb)
+      {
+        ibbox const & fbb = * ibb;
+        
+        bvect const lower_is_outer = fbb.lower() <= physical_ilower;
+        bvect const upper_is_outer = fbb.upper() >= physical_iupper;
+        b2vect const ob (lower_is_outer, upper_is_outer);
+        
+        ibbox const ebb = fbb.expand (i2vect (ob) * fdistance);
+        ibbox const cbb = ebb.expanded_for (coarse0);
+        ibbox const ecbb = cbb.expand (i2vect (ob) * cdistance);
+        
+        is_properly_nested = is_properly_nested and ecbb <= regions.at(rl-1);
+      }
+      
+      if (not is_properly_nested) {
+        ostringstream msg;
+        msg << "Level " << rl << " of the refinement hierarchy is not properly nested.  It is not contained in level " << (rl-1) << ".";
+        CCTK_WARN (CCTK_WARN_ALERT, msg.str().c_str());
+      }
+    } // for rl
+    
   }
   
   
@@ -770,7 +828,7 @@ namespace CarpetRegrid2 {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    assert (Carpet::is_singlemap_mode());
+    assert (is_singlemap_mode());
     
     // Decide whether to change the grid hierarchy
     bool do_recompose;
@@ -822,7 +880,7 @@ namespace CarpetRegrid2 {
         if (do_recompose) break;
         
         // Check only active regions
-        if (! active[n]) continue;
+        if (not active[n]) continue;
         
         // Regrid if the number of levels changed
         do_recompose = num_levels[n] != old_num_levels[n];
@@ -893,11 +951,11 @@ namespace CarpetRegrid2 {
       // Make multiprocessor aware
       vector <vector <region_t> > regss;
       for (size_t rl = 0; rl < regss.size(); ++ rl) {
-        Carpet::SplitRegions (cctkGH, superregss.at(rl), regss.at(rl));
+        SplitRegions (cctkGH, superregss.at(rl), regss.at(rl));
       } // for rl
       
       // Make multigrid aware
-      Carpet::MakeMultigridBoxes (cctkGH, Carpet::map, regss, regsss);
+      MakeMultigridBoxes (cctkGH, Carpet::map, regss, regsss);
       
       // Remember current positions
       for (int n = 0; n < num_centres; ++ n) {
@@ -930,7 +988,7 @@ namespace CarpetRegrid2 {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
-    assert (Carpet::is_level_mode());
+    assert (is_level_mode());
     
     // Decide whether to change the grid hierarchy
     assert (* last_map == -1);  // ensure this remains unused
@@ -981,7 +1039,7 @@ namespace CarpetRegrid2 {
         if (do_recompose) break;
         
         // Check only active regions
-        if (! active[n]) continue;
+        if (not active[n]) continue;
         
         // Regrid if the number of levels changed
         do_recompose = num_levels[n] != old_num_levels[n];
@@ -1052,7 +1110,7 @@ namespace CarpetRegrid2 {
         Regrid (cctkGH, superregsss.at(Carpet::map));
       } END_MAP_LOOP;
       
-      vector< vector <vector <region_t> > > regsss (Carpet::maps);
+      vector< vector <vector <region_t> > > regsss (maps);
       
       // Count levels
       vector <int> rls (maps);
@@ -1076,7 +1134,7 @@ namespace CarpetRegrid2 {
           superregss.at(m) = superregsss.at(m).at(rl);
         }
         vector <vector <region_t> > regss (maps);
-        Carpet::SplitRegionsMaps (cctkGH, superregss, regss);
+        SplitRegionsMaps (cctkGH, superregss, regss);
         
         for (int m = 0; m < maps; ++ m) {
           superregsss.at(m).at(rl) = superregss.at(m);
@@ -1085,7 +1143,7 @@ namespace CarpetRegrid2 {
       } // for rl
       
       // Make multigrid aware
-      Carpet::MakeMultigridBoxesMaps (cctkGH, regsss, regssss);
+      MakeMultigridBoxesMaps (cctkGH, regsss, regssss);
       
       // Remember current positions
       for (int n = 0; n < num_centres; ++ n) {
