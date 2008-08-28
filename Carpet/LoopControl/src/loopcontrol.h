@@ -46,6 +46,14 @@ extern "C" {
 
 
 
+#if 0
+/* Vector size */
+#define LC_VECTORSIZE 2         /* Correct for double precision on
+                                   Intel */
+#endif
+
+
+
 /* A topology */
 typedef struct lc_topology_t {
   int nthreads[3];
@@ -306,16 +314,29 @@ lc_control_finish (lc_control_t * restrict lc);
           int const lc_imax = lc_min (lc_ii + lc_lc.iistep, lc_lc.iimax); \
                                                                         \
           /* Fine loop */                                               \
-          for (int k = lc_kk; k < lc_kmax; ++k)                         \
-            for (int j = lc_jj; j < lc_jmax; ++j)                       \
-              for (int i = lc_ii; i < lc_imax; ++i)
+          for (int k = lc_kk; k < lc_kmax; ++k) {                       \
+            for (int j = lc_jj; j < lc_jmax; ++j) {                     \
+              int const lc_imin = lc_ii;                                \
+              LC_PRELOOP_STATEMENTS                                     \
+              {                                                         \
+                for (int i = lc_imin; i < lc_imax; ++i) {
 
 #define LC_ENDLOOP3(name)                       \
   }                                             \
-  }                                             \
-  }                                             \
-  lc_control_finish (& lc_lc);                  \
-  } while (0)
+                }                               \
+              LC_POSTLOOP_STATEMENTS            \
+              }                                 \
+            }                                   \
+          }                                     \
+        }                                       \
+      }                                         \
+    lc_control_finish (& lc_lc);                \
+    } while (0)
+
+/* Pre- and post loop statements are inserted around the innermost
+   loop, which is executed serially.  By default these are empty.  */
+#define LC_PRELOOP_STATEMENTS
+#define LC_POSTLOOP_STATEMENTS
 
 
 
