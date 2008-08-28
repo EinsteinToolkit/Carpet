@@ -15,6 +15,14 @@ BOOLEAN ensure_proper_nesting "Ensure proper nesting automatically" STEERABLE=al
 {
 } "yes"
 
+BOOLEAN freeze_unaligned_levels "Do not change refinement levels that do not exist at this time" STEERABLE=always
+{
+} "no"
+
+BOOLEAN freeze_unaligned_parent_levels "Do not change refinement levels where the parent does not exist at this time" STEERABLE=always
+{
+} "no"
+
 
 
 CCTK_REAL min_fraction "Minimum fraction of required refined points that need to be present in a refined region" STEERABLE=always
