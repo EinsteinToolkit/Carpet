@@ -143,7 +143,7 @@ void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS)
 
   bool const checkpoint_by_iteration =
     checkpoint_every > 0 and
-    iteration % (last_checkpoint_iteration + checkpoint_every) == 0;
+    iteration >= last_checkpoint_iteration + checkpoint_every;
   bool const checkpoint_by_walltime =
     checkpoint_every_walltime_hours > 0 and
     walltime >= last_checkpoint_walltime + checkpoint_every_walltime_hours;
