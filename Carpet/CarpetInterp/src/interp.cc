@@ -1151,8 +1151,9 @@ namespace CarpetInterp {
   {
     DECLARE_CCTK_PARAMETERS;
 
-    static Timer timer ("CarpetInterp::map_points");
-    timer.start ();
+    static Timer * timer = NULL;
+    if (not timer) timer = new Timer ("CarpetInterp::map_points");
+    timer->start ();
 
     bool const map_onto_processors = coords_list != NULL;
 
@@ -1313,7 +1314,7 @@ namespace CarpetInterp {
       ++ this_homecnts;
       
     } // for n
-    timer.stop (npoints);
+    timer->stop (npoints);
   }
 
 
