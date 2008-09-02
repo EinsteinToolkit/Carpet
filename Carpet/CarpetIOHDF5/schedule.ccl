@@ -13,6 +13,12 @@ schedule CarpetIOHDF5_Init at BASEGRID
   OPTIONS: global
 } "Initialisation routine"
 
+schedule CarpetIOHDF5_InitCheckpointingIntervals at POST_RECOVER_VARIABLES
+{
+  LANG: C
+  OPTIONS: global
+} "Initialisation of checkpointing intervals after recovery"
+
 schedule CarpetIOHDF5_InitialDataCheckpoint at CPINITIAL
 {
   LANG: C
