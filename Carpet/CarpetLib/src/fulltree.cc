@@ -151,7 +151,7 @@ template <typename T, int D, typename P>
 bool
 fulltree<T,D,P>::invariant () const
 {
-  return empty() or is_branch() or is_leaf();
+  return empty() + is_branch() + is_leaf() == 1;
 }
 
 
@@ -221,10 +221,12 @@ template <typename T, int D, typename P>
 fulltree<T,D,P> const & 
 fulltree<T,D,P>::const_iterator::operator* () const
 {
+  assert (not done());
   assert (not f.empty());
   if (f.is_leaf()) {
     return f;
   } else {
+    assert (it);
     return **it;
   }
 }
@@ -315,10 +317,12 @@ template <typename T, int D, typename P>
 fulltree<T,D,P> & 
 fulltree<T,D,P>::iterator::operator* ()
 {
+  assert (not done());
   assert (not f.empty());
   if (f.is_leaf()) {
     return f;
   } else {
+    assert (it);
     return **it;
   }
 }
