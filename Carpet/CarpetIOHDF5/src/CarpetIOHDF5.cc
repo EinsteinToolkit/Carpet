@@ -110,8 +110,8 @@ void CarpetIOHDF5_Init (CCTK_ARGUMENTS)
   *next_output_iteration = 0;
   *next_output_time = cctk_time;
 
-  // Initialise checkpointing intervals
-  CarpetIOHDF5_InitCheckpointingIntervals (CCTK_PASS_CTOC);
+  last_checkpoint_iteration = cctk_iteration;
+  last_checkpoint_walltime = CCTK_RunTime() / 3600.0;
 }
 
 
