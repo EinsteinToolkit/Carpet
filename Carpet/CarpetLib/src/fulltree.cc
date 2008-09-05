@@ -315,7 +315,7 @@ fulltree<T,D,P>::iterator::~iterator ()
 
 template <typename T, int D, typename P>
 fulltree<T,D,P> & 
-fulltree<T,D,P>::iterator::operator* ()
+fulltree<T,D,P>::iterator::operator* () const
 {
   assert (not done());
   assert (not f.empty());
