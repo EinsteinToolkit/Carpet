@@ -122,16 +122,16 @@ namespace CarpetIOHDF5
   // scheduled routines (must be declared as C according to schedule.ccl)
   extern "C" {
 
+    int CarpetIOHDF5_RecoverParameters (void);
+    int CarpetIOHDF5_SetNumRefinementLevels (void);
     int CarpetIOHDF5_Startup (void);
     void CarpetIOHDF5_Init (CCTK_ARGUMENTS);
     void CarpetIOHDF5_InitCheckpointingIntervals (CCTK_ARGUMENTS);
-    int CarpetIOHDF5_SetNumRefinementLevels (void);
+    void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS);
     void CarpetIOHDF5_CloseFiles (CCTK_ARGUMENTS);
     void CarpetIOHDF5_InitialDataCheckpoint (CCTK_ARGUMENTS);
     void CarpetIOHDF5_EvolutionCheckpoint (CCTK_ARGUMENTS);
     void CarpetIOHDF5_TerminationCheckpoint (CCTK_ARGUMENTS);
-    int CarpetIOHDF5_RecoverParameters (void);
-    void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS);
 
   } // extern "C"
 
