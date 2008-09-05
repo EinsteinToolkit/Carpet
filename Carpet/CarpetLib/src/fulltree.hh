@@ -127,13 +127,19 @@ public:
     iterator (fulltree & f_);
     iterator (fulltree & f_, int);
     ~iterator ();
-    fulltree & operator* ();
+    fulltree & operator* () const;
     bool operator== (iterator const & it2) const;
     bool operator!= (iterator const & it2) const
     { return not (*this == it2); }
     iterator & operator++ ();
     bool done () const;
   };
+  
+#if 0
+  // ES 2008-09-04:
+  // It seems that PGI does not handle comparisons to end() correctly.
+  // We therefore disable these; please use the iterators'
+  // constructors and their done() methods instead.
   
   const_iterator begin() const
   { return const_iterator (*this); }
@@ -146,6 +152,7 @@ public:
   
   iterator end()
   { return iterator (*this, 0); }
+#endif
   
   // Memory usage
   size_t memory () const;
