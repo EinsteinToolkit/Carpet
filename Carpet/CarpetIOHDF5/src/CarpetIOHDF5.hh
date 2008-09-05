@@ -124,6 +124,7 @@ namespace CarpetIOHDF5
 
     int CarpetIOHDF5_Startup (void);
     void CarpetIOHDF5_Init (CCTK_ARGUMENTS);
+    void CarpetIOHDF5_InitCheckpointingIntervals (CCTK_ARGUMENTS);
     int CarpetIOHDF5_SetNumRefinementLevels (void);
     void CarpetIOHDF5_CloseFiles (CCTK_ARGUMENTS);
     void CarpetIOHDF5_InitialDataCheckpoint (CCTK_ARGUMENTS);
