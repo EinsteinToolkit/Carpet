@@ -1450,9 +1450,7 @@ namespace Carpet {
         int const m = superregs.at(r).map - minmap;
         ipfulltree * const regf = superregs.at(r).processors;
         assert (regf != NULL);
-        for (ipfulltree::iterator
-               fti = regf->begin(); fti != regf->end(); ++ fti)
-        {
+        for (ipfulltree::iterator fti (* regf); not fti.done(); ++ fti) {
           pseudoregion_t & preg = (* fti).payload();
           preg.component = tmpncomps.at(m)++;
           // preg.processor /= ncomps;
