@@ -82,13 +82,6 @@ dh::on_this_proc (int const rl, int const c) const
 }
 
 inline
-bool
-dh::on_this_proc (int const rl, int const c, int const cc) const
-{
-  return on_this_proc (rl, c) or on_this_proc (rl, cc);
-}
-
-inline
 int
 dh::this_oldproc (int const rl, int const c) const
 {
@@ -631,7 +624,7 @@ regrid ()
                 recv.expanded_for (obox.interior).expand (stencil_size);
               ASSERT_c (send <= obox.exterior,
                         "Refinement prolongation: Send region must be contained in exterior");
-              if (on_this_proc (rl, c, cc)) {
+              if (on_this_proc (rl, c) or on_this_proc (orl, cc)) {
                 int const p = dist::rank();
                 fast_level.AT(p).fast_ref_prol_sendrecv.push_back
                   (sendrecv_pseudoregion_t (send, cc, recv, c));
@@ -690,7 +683,7 @@ regrid ()
           {
             ibbox const & recv = * ri;
             ibbox const & send = recv;
-            if (on_this_proc (rl, c, cc)) {
+            if (on_this_proc (rl, c) or on_this_proc (rl, cc)) {
               int const p = dist::rank();
               fast_level.AT(p).fast_sync_sendrecv.push_back
                 (sendrecv_pseudoregion_t (send, cc, recv, c));
@@ -754,7 +747,7 @@ regrid ()
                 recv.expanded_for (obox.interior).expand (stencil_size);
               ASSERT_c (send <= obox.exterior,
                         "Boundary prolongation: Send region must be contained in exterior");
-              if (on_this_proc (rl, c, cc)) {
+              if (on_this_proc (rl, c) or on_this_proc (orl, cc)) {
                 int const p = dist::rank();
                 fast_level.AT(p).fast_ref_bnd_prol_sendrecv.push_back
                   (sendrecv_pseudoregion_t (send, cc, recv, c));
@@ -828,7 +821,7 @@ regrid ()
               ibbox const send = recv.expanded_for (box.interior);
               ASSERT_c (send <= box.active,
                         "Refinement restriction: Send region must be contained in active part");
-              if (on_this_proc (rl, c, cc)) {
+              if (on_this_proc (rl, c) or on_this_proc (orl, cc)) {
                 int const p = dist::rank();
                 fast_olevel.AT(p).fast_ref_rest_sendrecv.push_back
                   (sendrecv_pseudoregion_t (send, c, recv, cc));
@@ -940,7 +933,7 @@ regrid ()
                 recv.expanded_for (obox.interior).expand (stencil_size);
               ASSERT_c (send <= obox.exterior,
                         "Regridding prolongation: Send region must be contained in exterior");
-              if (on_this_proc (rl, c, cc)) {
+              if (on_this_proc (rl, c) or on_this_proc (orl, cc)) {
                 int const p = dist::rank();
                 fast_level.AT(p).fast_old2new_ref_prol_sendrecv.push_back
                   (sendrecv_pseudoregion_t (send, cc, recv, c));
@@ -976,10 +969,12 @@ regrid ()
       for (int rl = 0; rl < h.reflevels(); ++ rl) {
         for (int c = 0; c < h.components(rl); ++ c) {
           dboxes const & box = boxes.AT(ml).AT(rl).AT(c);
+          fast_dboxes const & fast_box = fast_boxes.AT(ml).AT(rl).AT(c);
           
           cout << eol;
           cout << "ml=" << ml << " rl=" << rl << " c=" << c << eol;
           cout << box;
+          cout << fast_box;
           cout << endl;
           
         } // for c
