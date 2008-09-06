@@ -1335,7 +1335,6 @@ namespace Carpet {
     static Timer timer (timername.c_str());
     
     timer.start();
-    Checkpoint ("OutputGH");
     CCTK_OutputGH (cctkGH);
     timer.stop();
   }

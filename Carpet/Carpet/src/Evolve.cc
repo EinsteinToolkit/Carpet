@@ -211,6 +211,8 @@ namespace Carpet {
     static Timer timer ("Evolve::AdvanceTime");
     timer.start();
     
+    Checkpoint ("AdvanceTime");
+    
     ++ cctkGH->cctk_iteration;
     
     if (not adaptive_stepsize) {
@@ -631,7 +633,6 @@ namespace Carpet {
     static Timer timer (timername.c_str());
     
     timer.start();
-    Checkpoint ("OutputGH");
     CCTK_OutputGH (cctkGH);
     timer.stop();
   }
