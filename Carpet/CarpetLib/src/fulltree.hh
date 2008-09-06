@@ -111,6 +111,10 @@ public:
     const_iterator (fulltree const & f_);
     const_iterator (fulltree const & f_, int);
     ~const_iterator ();
+  private:
+    const_iterator (const_iterator const &);
+    const_iterator & operator= (const_iterator const &);
+  public:
     fulltree const & operator* () const;
     bool operator== (const_iterator const & it2) const;
     bool operator!= (const_iterator const & it2) const
@@ -127,6 +131,10 @@ public:
     iterator (fulltree & f_);
     iterator (fulltree & f_, int);
     ~iterator ();
+  private:
+    iterator (iterator const &);
+    iterator & operator= (iterator const &);
+  public:
     fulltree & operator* () const;
     bool operator== (iterator const & it2) const;
     bool operator!= (iterator const & it2) const
