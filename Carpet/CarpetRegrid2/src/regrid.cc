@@ -857,7 +857,7 @@ namespace CarpetRegrid2 {
           if (active[n]) {
             CCTK_VInfo (CCTK_THORNSTRING,
                         "Centre %d is at position [%g,%g,%g]",
-                        n,
+                        n + 1,
                         static_cast <double> (position_x[n]),
                         static_cast <double> (position_y[n]),
                         static_cast <double> (position_z[n]));
@@ -1016,7 +1016,7 @@ namespace CarpetRegrid2 {
           if (active[n]) {
             CCTK_VInfo (CCTK_THORNSTRING,
                         "Centre %d is at position [%g,%g,%g]",
-                        n,
+                        n + 1,
                         static_cast <double> (position_x[n]),
                         static_cast <double> (position_y[n]),
                         static_cast <double> (position_z[n]));
