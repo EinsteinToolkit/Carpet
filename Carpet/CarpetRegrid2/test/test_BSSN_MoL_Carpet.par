@@ -3,12 +3,11 @@
 
 # Required thorns
 
-ActiveThorns = "CoordBase SymBase time carpet carpetlib carpetregrid2 carpetreduce carpetslab boundary cartgrid3d bssn_mol mol nanchecker idanalyticbh carpetioascii ioutil carpetiobasic carpetioscalar admcoupling admbase admmacros coordgauge spacemask staticconformal"
+ActiveThorns = "CoordBase InitBase SymBase time carpet carpetlib carpetregrid2 carpetreduce carpetslab boundary cartgrid3d bssn_mol mol nanchecker idanalyticbh carpetioascii ioutil carpetiobasic carpetioscalar admcoupling admbase admmacros coordgauge spacemask staticconformal"
 
 # Grid
 
 driver::ghost_size   = 2
-Carpet::buffer_width = 2
 
 CartGrid3D::avoid_origin = no
 
@@ -17,7 +16,8 @@ Carpet::prolongation_order_space = 3
 Carpet::prolongation_order_time = 2
 Carpet::domain_from_coordbase = yes
 
-Carpet::init_each_timelevel = yes
+InitBase::initial_data_setup_method = init_some_levels
+Carpet::init_fill_timelevels = yes
 
 CarpetRegrid2::num_centres  = 1
 CarpetRegrid2::regrid_every = 0
@@ -50,6 +50,7 @@ admbase::initial_data = "schwarzschild"
 # Evolution
 
 admbase::evolution_method = "adm_bssn" 
+adm_bssn::timelevels      = 3
 
 MoL::ODE_Method = "ICN"
 MoL::MoL_Intermediate_Steps = 3
