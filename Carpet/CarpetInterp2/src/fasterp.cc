@@ -22,22 +22,6 @@ namespace CarpetInterp2 {
   
   
   
-#if 0
-  // Erik's gdb cannot print local variables in functions where an
-  // assert fails.  Hence the calls to assert are temporarily moved
-  // into a function of their own.
-  void ASSERT (bool const cond)
-  {
-#ifndef NDEBUG
-    if (cond) return;
-    abort();
-#endif
-  }
-#endif
-#define ASSERT(x) assert(x)
-  
-  
-  
   int const ipoison = -1234567890;
   CCTK_REAL const poison = -1.0e+12;
   
@@ -64,6 +48,15 @@ namespace CarpetInterp2 {
 #endif
   }
   
+  template <typename T>
+  void check_for_poison (vector<T> const & v)
+  {
+#pragma omp parallel for
+    for (int n=0; n<int(v.size()); ++n) {
+      assert (v.AT(n) != get_poison<T>());
+    }
+  }
+  
   
   
   // Create an MPI datatype for location information
@@ -74,18 +67,24 @@ namespace CarpetInterp2 {
     static MPI_Datatype newtype;
     if (not initialised) {
       static fasterp_iloc_t s;
-#define ARRSIZE(m) (sizeof(s.m) / sizeof(s.m[0]))
-#define OFFSET(m)  ((char*)&(s.m) - (char*)&(s)) // offsetof doesn't work (why?)
-#define SIZE       (sizeof(s))
+#define ENTRY(type, name)                                               \
+      {                                                                 \
+        sizeof s.name / sizeof(type), /* count elements */              \
+          (char*)&s.name - (char*)&s, /* offsetof doesn't work (why?) */ \
+          dist::datatype<type>()      /* find MPI datatype */           \
+          }
       dist::mpi_struct_descr_t const descr[] = {
-        {              3, OFFSET(mrc   ), MPI_INT                    },
-        {              1, OFFSET(ind3d ), MPI_INT                    },
-        {ARRSIZE(offset), OFFSET(offset), dist::datatype<CCTK_REAL>()},
-        {              1, SIZE          , MPI_UB                     }
+        ENTRY(int, mrc),
+#ifdef CARPET_DEBUG
+        ENTRY(int, pn),
+        ENTRY(int, ipos),
+        ENTRY(int, ind),
+#endif
+        ENTRY(int, ind3d),
+        ENTRY(CCTK_REAL, offset),
+        {1, sizeof(s), MPI_UB}
       };
-#undef ARRSIZE
-#undef OFFSET
-#undef SIZE
+#undef ENTRY
       dist::create_mpi_datatype
         (sizeof(descr) / sizeof(descr[0]), descr, newtype);
       initialised = true;
@@ -100,6 +99,11 @@ namespace CarpetInterp2 {
   {
     os << "fasterp_iloc_t{"
        << "mrc=" << mrc << ","
+#ifdef CARPET_DEBUG
+       << "pn=" << pn << ","
+       << "ipos=" << ipos << ","
+       << "ind=" << ind << ","
+#endif
        << "ind3d=" << ind3d << ","
        << "offset=" << offset << "}";
   }
@@ -134,7 +138,7 @@ namespace CarpetInterp2 {
   mrc_t::
   mrc_t (int ind)
   {
-    ASSERT (ind >= 0);
+    assert (ind >= 0);
     int const ind0 = ind;
     c = ind % components;
     ind /= components;
@@ -142,8 +146,8 @@ namespace CarpetInterp2 {
     ind /= reflevels;
     m = ind % maps;
     ind /= maps;
-    ASSERT (ind == 0);
-    ASSERT (get_ind() == ind0);
+    assert (ind == 0);
+    assert (get_ind() == ind0);
   }
   
   void
@@ -152,6 +156,16 @@ namespace CarpetInterp2 {
     const
   {
     os << "mrc{m=" << m << ",rl=" << rl << ",c=" << c << "}";
+  }
+  
+  
+  
+  void
+  pn_t::
+  output (ostream& os)
+    const
+  {
+    os << "pn{p=" << p << ",n=" << n << "}";
   }
   
   
@@ -171,8 +185,17 @@ namespace CarpetInterp2 {
                 ivect const & lsh,
                 int const order)
   {
-    ASSERT (order <= max_order);
+    assert (order <= max_order);
     CCTK_REAL const eps = 1.0e-12;
+    
+#ifdef CARPET_DEBUG
+    mrc  = iloc.mrc;
+    pn   = iloc.pn;
+    ipos = iloc.ipos;
+    
+    // Save lsh
+    saved_lsh = lsh;
+#endif
     
 #ifndef NDEBUG
     // Poison all coefficients
@@ -184,9 +207,14 @@ namespace CarpetInterp2 {
 #endif
     
     if (order == 0) {
+      // Special case
       for (int d=0; d<dim; ++d) {
         exact[d] = true;
       }
+      
+#ifdef CARPET_DEBUG
+      ind   = iloc.ind;
+#endif
       ind3d = iloc.ind3d;
       return;
     }
@@ -203,7 +231,7 @@ namespace CarpetInterp2 {
     }
     rvect const offset = iloc.offset - rvect(iorigin);
     // Ensure that the stencil is centred
-    ASSERT (all (offset >= 0.5*(order-1) and offset < 0.5*(order+1)));
+    assert (all (offset >= 0.5*(order-1) and offset < 0.5*(order+1)));
     
     for (int d=0; d<dim; ++d) {
       // C_n = PRODUCT_m,m!=n [(x - x_m) / (x_n - x_m)]
@@ -234,12 +262,22 @@ namespace CarpetInterp2 {
         for (int n=0; n<=order; ++n) {
           s += coeffs[d][n];
         }
-        ASSERT (abs(s - 1.0) <= eps);
+        assert (abs(s - 1.0) <= eps);
       }
     }
     
     // Set 3D location of stencil anchor
+#ifdef CARPET_DEBUG
+    ind = iloc.ind + iorigin;
+    if (not (all (ind>=0 and ind+either(exact,0,order)<lsh))) {
+      cout << "*this=" << *this << " order=" << order << " lsh=" << lsh << endl;
+    }
+    assert (all (ind>=0 and ind+either(exact,0,order)<lsh));
+#endif
     ind3d = iloc.ind3d + index(lsh, iorigin);
+#ifdef CARPET_DEBUG
+    assert (index(lsh,ind) == ind3d);
+#endif
   }
   
   
@@ -260,26 +298,35 @@ namespace CarpetInterp2 {
                CCTK_REAL * restrict const vals)
     const
   {
-    ASSERT (O0 == 0 or not exact[0]);
-    ASSERT (O1 == 0 or not exact[1]);
-    ASSERT (O2 == 0 or not exact[2]);
+#ifdef CARPET_DEBUG
+    assert (all (lsh == saved_lsh));
+#endif
+    assert (O0 == 0 or not exact[0]);
+    assert (O1 == 0 or not exact[1]);
+    assert (O2 == 0 or not exact[2]);
     
     size_t const di = 1;
     size_t const dj = di * lsh[0];
     size_t const dk = dj * lsh[1];
+    
+#ifdef CARPET_DEBUG
+    assert (all (ind>=0 and ind+ivect(O0,O1,O2)<lsh));
+    assert (ind3d == index(lsh,ind));
+    assert (int(di*ind[0] + dj*ind[1] + dk*ind[2]) == index(lsh,ind));
+#endif
     
     for (size_t v=0; v<varptrs.size(); ++v) {
       vals[v] = 0.0;
     }
     
     for (size_t k=0; k<=O2; ++k) {
-      ASSERT (O2 == 0 or coeffs[2][k] != poison);
+      assert (O2 == 0 or coeffs[2][k] != poison);
       CCTK_REAL const coeff_k = (O2==0 ? 1.0 : coeffs[2][k]);
       for (size_t j=0; j<=O1; ++j) {
-        ASSERT (O1 == 0 or coeffs[1][j] != poison);
+        assert (O1 == 0 or coeffs[1][j] != poison);
         CCTK_REAL const coeff_jk = coeff_k * (O1==0 ? 1.0 : coeffs[1][j]);
         for (size_t i=0; i<=O0; ++i) {
-          ASSERT (O0 == 0 or coeffs[0][i] != poison);
+          assert (O0 == 0 or coeffs[0][i] != poison);
           CCTK_REAL const coeff_ijk = coeff_jk * (O0==0 ? 1.0 : coeffs[0][i]);
           
           for (size_t v=0; v<varptrs.size(); ++v) {
@@ -289,6 +336,18 @@ namespace CarpetInterp2 {
         }
       }
     }
+#ifdef CARPET_DEBUG
+#  if 0
+    for (size_t v=0; v<varptrs.size(); ++v) {
+      vals[v] = ind[0] + 1000 * (ind[1] + 1000 * ind[2]);
+    } // for v
+#  endif
+#  if 0
+    for (size_t v=0; v<varptrs.size(); ++v) {
+      vals[v] = pn.p * 1000000 + pn.n;
+    } // for v
+#  endif
+#endif
   }
   
   
@@ -367,8 +426,41 @@ namespace CarpetInterp2 {
     default:
       // Add higher orders here as desired
       CCTK_WARN (CCTK_WARN_ABORT, "Interpolation orders larger than 11 are not yet implemented");
-      ASSERT (0);
+      assert (0);
     }
+  }
+  
+  
+  
+  void
+  fasterp_src_loc_t::
+  output (ostream& os)
+    const
+  {
+    os << "fasterp_src_loc_t{";
+    os << "coeffs=[";
+    for (int d=0; d<dim; ++d) {
+      if (d>0) os << ",";
+      os << "[";
+      for (int n=0; n<=max_order; ++n) {
+        if (n>0) os << ",";
+        os << coeffs[d][n];
+      }
+      os << "]";
+    }
+    os << "],";
+    os << "exact=" << exact << ",";
+#ifdef CARPET_DEBUG
+    os << "pn=" << pn << ",";
+    os << "mrc=" << mrc << ",";
+    os << "ipos=" << ipos << ",";
+    os << "ind=" << ind << ",";
+#endif
+    os << "ind3d=" << ind3d;
+#ifdef CARPET_DEBUG
+    os << "," << "saved_lsh=" << saved_lsh;
+#endif
+    os << "}";
   }
   
   
@@ -409,7 +501,7 @@ namespace CarpetInterp2 {
         (cctkGH, dim, npoints,
          coords,
          &local_locations.maps.front(), local_coords, NULL, NULL);
-      ASSERT (not ierr);
+      assert (not ierr);
       
     } else {
       // This is a single-patch simulation
@@ -471,14 +563,21 @@ namespace CarpetInterp2 {
     vector<rvect> lower (Carpet::maps);
     vector<rvect> upper (Carpet::maps);
     vector<rvect> delta (Carpet::maps); // spacing on finest possible grid
+    vector<rvect> idelta (Carpet::maps); // inverse spacing
     for (int m=0; m<Carpet::maps; ++m) {
       jvect gsh;
       int const ierr =
         GetCoordRange (cctkGH, m, Carpet::mglevel, dim,
                        & gsh[0],
                        & lower.AT(m)[0], & upper.AT(m)[0], & delta.AT(m)[0]);
-      ASSERT (not ierr);
+      assert (not ierr);
       delta.AT(m) /= Carpet::maxspacereflevelfact;
+      idelta.AT(m) = 1.0 / delta.AT(m);
+      if (veryverbose) {
+        cout << "GetCoordRange[" << m << "]: lower=" << lower.AT(m) << " upper=" << upper.AT(m) << " delta=" << delta.AT(m) << endl;
+      }
+
+
     }
     
     // Calculate refinement levels, components, and integer grid point
@@ -488,8 +587,8 @@ namespace CarpetInterp2 {
     vector<int> proc (npoints);
     fill_with_poison (proc);
     vector<int> nlocs (nprocs, 0);
-    int n_nz_nlocs = 0;
-    ASSERT (Carpet::is_level_mode());
+    assert (Carpet::is_level_mode());
+#pragma omp parallel for
     for (int n=0; n<npoints; ++n) {
       int const m = locations.maps.AT(n);
       rvect const pos (locations.coords[0].AT(n),
@@ -497,10 +596,11 @@ namespace CarpetInterp2 {
                        locations.coords[2].AT(n));
       
       gh const * const hh = Carpet::vhh.AT(m);
-      ibbox const & baseext = hh->baseextent(Carpet::mglevel, 0);
-      rvect const rpos =
-        (pos - lower.AT(m)) / (upper.AT(m) - lower.AT(m)) *
-        rvect (baseext.upper() - baseext.lower());
+      // ibbox const & baseext = hh->baseextent(Carpet::mglevel, 0);
+      // rvect const rpos =
+      //   (pos - lower.AT(m)) / (upper.AT(m) - lower.AT(m)) *
+      //   rvect (baseext.upper() - baseext.lower());
+      rvect const rpos = (pos - lower.AT(m)) * idelta.AT(m);
       
       // Find refinement level and component
       int rl, c;
@@ -509,38 +609,69 @@ namespace CarpetInterp2 {
                            Carpet::mglevel,
                            Carpet::reflevel, Carpet::reflevel+1,
                            rl, c, ipos);
-      ASSERT (rl>=0 and c>=0);
+      if (not (rl>=0 and c>=0)) {
+#pragma omp critical
+        {
+          ostringstream msg;
+          msg << "Interpolation point " << n << " on map " << m << " "
+              << "at " << pos << " is outside of the grid hierarchy";
+          CCTK_WARN (CCTK_WARN_ABORT, msg.str().c_str());
+        }
+      }
+      assert (rl>=0 and c>=0);
       
       ibbox const & ext =
         Carpet::vdd.AT(m)->boxes.AT(Carpet::mglevel).AT(rl).AT(c).exterior;
       rvect dpos = rpos - rvect(ipos);
       
       // Convert from Carpet indexing to grid point indexing
-      ASSERT (all (ipos % ext.stride() == ivect(0)));
+      assert (all (ipos % ext.stride() == ivect(0)));
       ipos /= ext.stride();
       dpos /= rvect(ext.stride());
-      ASSERT (all (abs(dpos) <= rvect(0.5)));
+      assert (all (abs(dpos) <= rvect(0.5)));
       
       ivect const ind = ipos - ext.lower() / ext.stride();
       ivect const lsh = ext.shape() / ext.stride();
-      int const ind3d = index (lsh, ind);
-      // TODO: ASSERT that there are enough ghost zones
+      int const ind3d = index(lsh, ind);
+#if 0
+      ENTER_SINGLEMAP_MODE (cctkGH, m, CCTK_GF) {
+        ENTER_LOCAL_MODE (cctkGH, c, CCTK_GF) {
+          CCTK_REAL const * restrict const xptr = (CCTK_REAL const *) CCTK_VarDataPtr (cctkGH, 0, "grid::x");
+          CCTK_REAL const * restrict const yptr = (CCTK_REAL const *) CCTK_VarDataPtr (cctkGH, 0, "grid::y");
+          CCTK_REAL const * restrict const zptr = (CCTK_REAL const *) CCTK_VarDataPtr (cctkGH, 0, "grid::z");
+          assert (xptr);
+          assert (yptr);
+          assert (zptr);
+          cout << "CI2 map=" << m << " pos=" << pos << " ind=" << ind << " x=" << xptr[ind3d] << " y=" << yptr[ind3d] << " z=" << zptr[ind3d] << endl;
+        } LEAVE_LOCAL_MODE;
+      } LEAVE_SINGLEMAP_MODE;
+#endif
+      // TODO: assert that there are enough ghost zones
       
       // Store result
       fasterp_iloc_t & iloc = ilocs.AT(n);
       iloc.mrc    = mrc_t(m, rl, c);
+#ifdef CARPET_DEBUG
+      iloc.pn.p   = dist::rank();
+      iloc.pn.n   = n;
+      iloc.ipos   = ipos * ext.stride();
+      iloc.ind    = ind;
+#endif
       iloc.ind3d  = ind3d;
       iloc.offset = dpos;
       
       // Find source processor
       int const p = Carpet::vhh.AT(m)->processor(rl,c);
       proc.AT(n) = p;
-      if (nlocs.AT(p) == 0) ++n_nz_nlocs;
+#pragma omp atomic
       ++ nlocs.AT(p);
       
       // Output
       if (veryverbose) {
-        cout << "Point #" << n << " at " << pos << ": iloc " << iloc << endl;
+#pragma omp critical
+        {
+          cout << "Point #" << n << " at " << pos << ": iloc " << iloc << endl;
+        }
       }
     }
     
@@ -552,6 +683,12 @@ namespace CarpetInterp2 {
     // communicate.
     if (verbose) CCTK_INFO ("Determine set of communicating processors");
     {
+      int n_nz_nlocs = 0;
+      for (int p=0; p<nprocs; ++p) {
+        if (nlocs.AT(p) > 0) {
+          ++ n_nz_nlocs;
+        }
+      }
       recv_descr.procs.resize (n_nz_nlocs);
       recv_descr.procinds.resize (nprocs, -1);
       int pp = 0;
@@ -566,8 +703,8 @@ namespace CarpetInterp2 {
           offset += nlocs.AT(p);
         }
       }
-      ASSERT (pp == n_nz_nlocs);
-      ASSERT (offset == npoints);
+      assert (pp == n_nz_nlocs);
+      assert (offset == npoints);
       recv_descr.npoints = npoints;
     }
     
@@ -584,16 +721,17 @@ namespace CarpetInterp2 {
         index.AT(pp) = recv_descr.procs.AT(pp).offset;
       }
       recv_descr.index.resize (npoints);
+      // TODO: parallelise with OpenMP
       for (int n=0; n<npoints; ++n) {
         int const p = proc.AT(n);
         int const pp = recv_descr.procinds.AT(p);
-        ASSERT (pp >= 0);
+        assert (pp >= 0);
         recv_descr.index.AT(n) = index.AT(pp);
         ++index.AT(pp);
       }
       for (int pp=0; pp<int(recv_descr.procs.size()); ++pp) {
         int const recv_npoints = index.AT(pp) - recv_descr.procs.AT(pp).offset;
-        ASSERT (recv_npoints == recv_descr.procs.AT(pp).npoints);
+        assert (recv_npoints == recv_descr.procs.AT(pp).npoints);
       }
 #ifndef NDEBUG
       vector<bool> received (npoints);
@@ -628,7 +766,7 @@ namespace CarpetInterp2 {
         recv_offsets.AT(p) = offset;
         offset += recv_npoints.AT(p);
       }
-      ASSERT (offset == npoints);
+      assert (offset == npoints);
     }
     vector<int> send_npoints (nprocs), send_offsets (nprocs);
     fill_with_poison (send_npoints);
@@ -657,6 +795,21 @@ namespace CarpetInterp2 {
        fasterp_iloc_t::mpi_datatype(),
        comm_world);
     
+#ifdef CARPET_DEBUG
+    // Ensure that the ilocs were sent to the right processor
+    for (int p=0; p<nprocs; ++p) {
+#pragma omp parallel for
+      for (int n=0; n<send_npoints.at(p); ++n) {
+        fasterp_iloc_t const & iloc = gathered_ilocs.at(send_offsets.at(p) + n);
+        mrc_t const & mrc = iloc.mrc;
+        int const m  = mrc.m;
+        int const rl = mrc.rl;
+        int const c  = mrc.c;
+        assert (Carpet::vhh.AT(m)->is_local(rl,c));
+      }
+    }
+#endif
+    
     
     
     // Fill in send descriptors
@@ -678,7 +831,7 @@ namespace CarpetInterp2 {
           ++pp;
         }
       }
-      ASSERT (pp == n_nz_send_npoints);
+      assert (pp == n_nz_send_npoints);
     }
     
     
@@ -692,7 +845,7 @@ namespace CarpetInterp2 {
       vector<int> mrc2comp (maxmrc, -1);
       vector<int> comp2mrc (maxmrc);
       fill_with_poison (comp2mrc);
-      int comps = 0;
+      int ncomps = 0;
       
       vector<int> npoints_comp (maxmrc);
       fill (npoints_comp, 0);
@@ -702,16 +855,17 @@ namespace CarpetInterp2 {
         fasterp_iloc_t const & iloc = gathered_ilocs.AT(send_proc.offset + n);
         int const mrc = iloc.mrc.get_ind();
         if (mrc2comp.AT(mrc) == -1) {
-          mrc2comp.AT(mrc) = comps;
-          comp2mrc.AT(comps) = mrc;
-          ++ comps;
+          mrc2comp.AT(mrc) = ncomps;
+          comp2mrc.AT(ncomps) = mrc;
+          ++ ncomps;
         }
         ++ npoints_comp.AT(mrc);
       }
-      send_proc.comps.resize(comps);
+      assert (ncomps <= maxmrc);
+      send_proc.comps.resize(ncomps);
       
       int offset = 0;
-      for (int comp=0; comp<comps; ++comp) {
+      for (int comp=0; comp<ncomps; ++comp) {
         send_comp_t & send_comp = send_proc.comps.AT(comp);
         int const mrc = comp2mrc.AT(comp);
         send_comp.mrc = mrc;
@@ -721,6 +875,7 @@ namespace CarpetInterp2 {
         int const m  = themrc.m;
         int const rl = themrc.rl;
         int const c  = themrc.c;
+        assert (Carpet::vhh.AT(m)->is_local(rl,c));
         ibbox const & ext =
           Carpet::vdd.AT(m)->boxes.AT(Carpet::mglevel).AT(rl).AT(c).exterior;
         send_comp.lsh = ext.shape() / ext.stride();
@@ -729,11 +884,12 @@ namespace CarpetInterp2 {
         send_comp.npoints = npoints_comp.AT(mrc);
         offset += send_comp.npoints;
       }
-      ASSERT (offset == send_proc.npoints);
+      assert (offset == send_proc.npoints);
       
       send_proc.index.resize (send_proc.npoints);
       fill_with_poison (send_proc.index);
-#pragma omp parallel for
+      // TODO: This is not parallel!  Loop over comps instead?
+      // #pragma omp parallel for
       for (int n=0; n<send_proc.npoints; ++n) {
         fasterp_iloc_t const & iloc = gathered_ilocs.AT(send_proc.offset + n);
         int const mrc = iloc.mrc.get_ind();
@@ -744,19 +900,42 @@ namespace CarpetInterp2 {
         
         fasterp_src_loc_t sloc;
         sloc.calc_stencil (iloc, send_comp.lsh, order);
-#pragma omp critical
         send_comp.locs.push_back (sloc);
       }
       
-      for (int comp=0; comp<comps; ++comp) {
+      for (int comp=0; comp<ncomps; ++comp) {
         send_comp_t & send_comp = send_proc.comps.AT(comp);
         assert (int(send_comp.locs.size()) == send_comp.npoints);
       }
       
+#ifndef NDEBUG
+      {
+        vector<bool> used(send_proc.npoints, false);
+        for (int n=0; n<send_proc.npoints; ++n) {
+          assert (not used.AT(send_proc.index.AT(n)));
+          used.AT(send_proc.index.AT(n)) = true;
+        }
+        for (int n=0; n<send_proc.npoints; ++n) {
+          assert (used.AT(send_proc.index.AT(n)));
+        }
+      }
+#endif
+      
+#ifdef CARPET_DEBUG
+      for (int comp=0; comp<ncomps; ++comp) {
+        send_comp_t const & send_comp = send_proc.comps.at(comp);
+        assert (int(send_comp.locs.size()) == send_comp.npoints);
+        for (int n=0; n<send_comp.npoints; ++n) {
+          fasterp_src_loc_t const & sloc = send_comp.locs.at(n);
+          assert (sloc.mrc == send_comp.mrc);
+          assert (all (sloc.saved_lsh == send_comp.lsh));
+        }
+      }
+#endif
+      
     } // for pp
     
-    // TODO: Disable this once we are sure this works
-#if 1
+#ifdef CARPET_DEBUG
     {
       if (verbose) CCTK_INFO ("Compare send and receive counts");
       
@@ -764,8 +943,8 @@ namespace CarpetInterp2 {
       fill (recv_count, 0);
       for (size_t pp=0; pp<recv_descr.procs.size(); ++pp) {
         recv_proc_t const & recv_proc = recv_descr.procs.AT(pp);
-        ASSERT (recv_count.AT(recv_proc.p) == 0);
-        ASSERT (recv_proc.npoints > 0);
+        assert (recv_count.AT(recv_proc.p) == 0);
+        assert (recv_proc.npoints > 0);
         recv_count.AT(recv_proc.p) = recv_proc.npoints;
       }
       
@@ -773,8 +952,8 @@ namespace CarpetInterp2 {
       fill (send_count, 0);
       for (size_t pp=0; pp<send_descr.procs.size(); ++pp) {
         send_proc_t const & send_proc = send_descr.procs.AT(pp);
-        ASSERT (send_count.AT(send_proc.p) == 0);
-        ASSERT (send_proc.npoints > 0);
+        assert (send_count.AT(send_proc.p) == 0);
+        assert (send_proc.npoints > 0);
         send_count.AT(send_proc.p) = send_proc.npoints;
       }
       
@@ -826,33 +1005,36 @@ namespace CarpetInterp2 {
   {
     DECLARE_CCTK_PARAMETERS;
     
+    // Desired time level
+    int const tl = 0;           // current time
+    
     size_t const nvars = varinds.size();
     if (verbose) CCTK_VInfo (CCTK_THORNSTRING,
                              "Interpolating %d variables", int(nvars));
-    ASSERT (values.size() == nvars);
+    assert (values.size() == nvars);
     for (size_t v=0; v<values.size(); ++v) {
       int const vi = varinds.AT(v);
-      ASSERT (vi >= 0 and vi <= CCTK_NumVars());
+      assert (vi >= 0 and vi <= CCTK_NumVars());
       int const gi = CCTK_GroupIndexFromVarI (vi);
-      ASSERT (gi >= 0);
+      assert (gi >= 0);
       cGroup group;
       {
         int const ierr = CCTK_GroupData (gi, &group);
-        ASSERT (not ierr);
+        assert (not ierr);
       }
-      ASSERT (group.grouptype == CCTK_GF);
-      ASSERT (group.vartype == CCTK_VARIABLE_REAL);
-      ASSERT (group.dim == dim);
+      assert (group.grouptype == CCTK_GF);
+      assert (group.vartype == CCTK_VARIABLE_REAL);
+      assert (group.dim == dim);
 #if 0
       // Cannot be called in level mode
       cGroupDynamicData dyndata;
       {
         int const ierr = CCTK_GroupDynamicData (cctkGH, gi, &dyndata);
-        ASSERT (not ierr);
+        assert (not ierr);
       }
-      ASSERT (dyndata.activetimelevels >= 1);
+      assert (dyndata.activetimelevels > tl);
 #endif
-      ASSERT (values.AT(v) != NULL);
+      assert (values.AT(v) != NULL);
     }
     
     MPI_Comm & comm_world = * (MPI_Comm *) GetMPICommWorld (cctkGH);
@@ -863,6 +1045,10 @@ namespace CarpetInterp2 {
     vector<CCTK_REAL> recv_points (recv_descr.npoints * nvars);
     fill_with_poison (recv_points);
     vector<MPI_Request> recv_reqs (recv_descr.procs.size());
+#ifdef CARPET_DEBUG
+    vector<pn_t> recv_pn (recv_descr.npoints);
+    vector<MPI_Request> recv_reqs_pn (recv_descr.procs.size());
+#endif
     for (size_t pp=0; pp<recv_descr.procs.size(); ++pp) {
       recv_proc_t const & recv_proc = recv_descr.procs.AT(pp);
       
@@ -870,84 +1056,109 @@ namespace CarpetInterp2 {
                  recv_proc.npoints * nvars,
                  dist::datatype<CCTK_REAL>(), recv_proc.p, mpi_tag,
                  comm_world, & recv_reqs.AT(pp));
+#ifdef CARPET_DEBUG
+      MPI_Irecv (& recv_pn.AT(recv_proc.offset),
+                 recv_proc.npoints * 2,
+                 dist::datatype<int>(), recv_proc.p, mpi_tag,
+                 comm_world, & recv_reqs_pn.AT(pp));
+#endif
     }
     
     // Interpolate data and post Isends
     if (verbose) CCTK_INFO ("Interpolating and posting MPI_Isends");
+    // TODO: Use one arrays per processor?
     vector<CCTK_REAL> send_points (send_descr.npoints * nvars);
     fill_with_poison (send_points);
     vector<MPI_Request> send_reqs (send_descr.procs.size());
+#ifdef CARPET_DEBUG
+    vector<pn_t> send_pn (send_descr.npoints);
+    vector<MPI_Request> send_reqs_pn (send_descr.procs.size());
+#endif
     for (size_t pp=0; pp<send_descr.procs.size(); ++pp) {
       send_proc_t const & send_proc = send_descr.procs.AT(pp);
       
-      vector<CCTK_REAL>::iterator
-        destit = send_points.begin() + send_proc.offset * nvars;
-      vector<CCTK_REAL>::iterator const
-        endit = destit + send_proc.npoints * nvars;
-      
+      vector<CCTK_REAL> computed_points (send_proc.npoints * nvars);
+      fill_with_poison (computed_points);
+#ifdef CARPET_DEBUG
+      vector<pn_t> computed_pn (send_descr.npoints);
+#endif
       for (size_t comp=0; comp<send_proc.comps.size(); ++comp) {
         send_comp_t const & send_comp = send_proc.comps.AT(comp);
         
         int const m  = send_comp.mrc.m;
         int const rl = send_comp.mrc.rl;
         int const c  = send_comp.mrc.c;
-        int const tl = 0;
         
         // Get pointers to 3D data
         vector<CCTK_REAL const *> varptrs (nvars);
         for (size_t v=0; v<nvars; ++v) {
           int const gi = CCTK_GroupIndexFromVarI (varinds.AT(v));
-          ASSERT (gi >= 0);
+          assert (gi >= 0);
           int const vi = varinds.AT(v) - CCTK_FirstVarIndexI (gi);
-          ASSERT (vi >= 0);
+          assert (vi >= 0);
           varptrs.AT(v) =
             (CCTK_REAL const *)
             (* Carpet::arrdata.AT(gi).AT(m).data.AT(vi))
             (tl, rl, c, Carpet::mglevel)->storage();
-          ASSERT (varptrs.AT(v));
+          assert (varptrs.AT(v));
         }
         
 #pragma omp parallel for
         for (int n=0; n<int(send_comp.locs.size()); ++n) {
-          vector<CCTK_REAL>::iterator const destit2 = destit + n * nvars;
-          ASSERT (destit2 + nvars <= endit);
+          size_t const ind = (send_comp.offset + n) * nvars;
           send_comp.locs.AT(n).interpolate
-            (send_comp.lsh, order, varptrs, & * destit2);
+            (send_comp.lsh, order, varptrs, &computed_points.AT(ind));
+#ifdef CARPET_DEBUG
+          computed_pn.AT(send_comp.offset + n) = send_comp.locs.AT(n).pn;
+#endif
         }
-        destit += nvars * send_comp.locs.size();
         
-      } // for comps
-      
-      ASSERT (destit == endit);
+      } // for comp
       
       // Gather send points
-      vector<CCTK_REAL> gathered_send_points (send_proc.npoints * nvars);
-      fill_with_poison (gathered_send_points);
 #pragma omp parallel for
       for (int n=0; n<send_proc.npoints; ++n) {
-        int const nn = send_proc.offset + send_proc.index.AT(n);
+        size_t const nn = send_proc.index.AT(n);
         for (size_t v=0; v<nvars; ++v) {
-          gathered_send_points.AT(n * nvars + v) =
-            send_points.AT(nn * nvars + v);
+          send_points.AT((send_proc.offset + n) * nvars + v) =
+            computed_points.AT(nn * nvars + v);
         }
-      }
-#pragma omp parallel for
-      for (int n=0; n<int(send_proc.npoints * nvars); ++n) {
-        int const nn = send_proc.offset * nvars + n;
-        send_points.AT(nn) = gathered_send_points.AT(n);
+#ifdef CARPET_DEBUG
+        send_pn.AT(send_proc.offset + n) = computed_pn.AT(nn);
+#endif
       }
       // TODO: Use a scatter index list instead of a gather index
       // list, and combine the scattering with the calculation
+      
+#ifdef CARPET_DEBUG
+#pragma omp parallel for
+      for (int n=0; n<send_proc.npoints; ++n) {
+        assert (send_pn.AT(send_proc.offset + n).p == send_proc.p);
+        if (n>0) {
+          assert (send_pn.AT(send_proc.offset + n  ).n >
+                  send_pn.AT(send_proc.offset + n-1).n);
+        }
+      }
+#endif
       
       MPI_Isend (& send_points.AT(send_proc.offset * nvars),
                  send_proc.npoints * nvars,
                  dist::datatype<CCTK_REAL>(), send_proc.p, mpi_tag,
                  comm_world, & send_reqs.AT(pp));
+#ifdef CARPET_DEBUG
+      MPI_Isend (& send_pn.AT(send_proc.offset),
+                 send_proc.npoints * 2,
+                 dist::datatype<int>(), send_proc.p, mpi_tag,
+                 comm_world, & send_reqs_pn.AT(pp));
+#endif
     } // for pp
     
     // Wait for Irecvs to complete
     if (verbose) CCTK_INFO ("Waiting for MPI_Irevcs to complete");
     MPI_Waitall (recv_reqs.size(), & recv_reqs.front(), MPI_STATUSES_IGNORE);
+#ifdef CARPET_DEBUG
+    MPI_Waitall (recv_reqs.size(), & recv_reqs_pn.front(), MPI_STATUSES_IGNORE);
+#endif
     
     // Gather data
     if (verbose) CCTK_INFO ("Gathering data");
@@ -960,11 +1171,18 @@ namespace CarpetInterp2 {
         recv_points.AT(nn * nvars + v) = poison;
 #endif
       }
+#ifdef CARPET_DEBUG
+      assert (recv_pn.AT(nn).p == dist::rank());
+      assert (recv_pn.AT(nn).n == n);
+#endif
     }
     
     // Wait for Isends to complete
     if (verbose) CCTK_INFO ("Waiting for MPI_Isends to complete");
     MPI_Waitall (send_reqs.size(), & send_reqs.front(), MPI_STATUSES_IGNORE);
+#ifdef CARPET_DEBUG
+    MPI_Waitall (send_reqs.size(), & send_reqs_pn.front(), MPI_STATUSES_IGNORE);
+#endif
     
     if (verbose) CCTK_INFO ("Done.");
   }
