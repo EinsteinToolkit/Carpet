@@ -23,13 +23,15 @@ namespace CarpetInterp2 {
   
   int const dim = 3;
   
-  // An interpolation point descriptor requires (3 * (max_order+1) +
-  // 1) double precision values of memory
+  // Each interpolation point descriptor requires
+  //    (dim * (max_order+1) + 1)
+  // CCTK_REAL values of memory
   int const max_order = 5;
   
   
   
-  // Keep a map, refinement level, and component index together
+  // Keep a map, refinement level, and component index together, and
+  // map the triple to small integers
   struct mrc_t {
     static int maps;
     static int reflevels;
@@ -66,6 +68,11 @@ namespace CarpetInterp2 {
       return c + components * (rl + reflevels * m);
     }
     
+    bool operator== (mrc_t const & a) const
+    {
+      return m == a.m and rl == a.rl and c == a.c;
+    }
+    
     void output (ostream& os) const;
   };
   
@@ -73,8 +80,33 @@ namespace CarpetInterp2 {
   ostream& operator<< (ostream& os, mrc_t const & mrc)
   { mrc.output(os); return os; }
   
+  
+  
+  // Keep a processor and an integer index together
+  struct pn_t {
+    int p;
+    int n;
     
+    pn_t ()
+    {
+    }
     
+    pn_t (int const p_, int const n_)
+      : p(p_), n(n_)
+    {
+      assert (p>=0 and p<dist::size());
+      assert (n>=0);
+    }
+    
+    void output (ostream& os) const;
+  };
+  
+  inline
+  ostream& operator<< (ostream& os, pn_t const & pn)
+  { pn.output(os); return os; }
+  
+  
+  
   // A global location, given by its global coordinates
   struct fasterp_glocs_t {
     vector<CCTK_REAL> coords[dim];
@@ -106,8 +138,12 @@ namespace CarpetInterp2 {
   struct fasterp_iloc_t {
     mrc_t mrc;                  // map, refinement level, component
     
-    // ivect idx;
-    int ind3d;
+#ifdef CARPET_DEBUG
+    pn_t pn;                    // origin of this point
+    ivect ipos;                 // closest grid point (Carpet indexing)
+    ivect ind;                  // closest grid point (local indexing)
+#endif
+    int ind3d;                  // closest grid point
     rvect offset;               // in terms of grid points
     
     static MPI_Datatype mpi_datatype ();
@@ -130,8 +166,21 @@ namespace CarpetInterp2 {
     CCTK_REAL coeffs[dim][max_order+1]; // interpolation coefficients
     bvect exact;
     
-    // ivect idx;
+#ifdef CARPET_DEBUG
+  public:
+    pn_t pn;                    // origin of this point
+    mrc_t mrc;                  // map, refinement level, component
+    ivect ipos;                 // closest grid point (Carpet indexing)
+    ivect ind;                  // source grid point offset
+  private:
+#endif
     int ind3d;                  // source grid point offset
+    
+#ifdef CARPET_DEBUG
+  public:
+    ivect saved_lsh;            // copy of lsh
+  private:
+#endif
     
   public:
     void
@@ -211,8 +260,8 @@ namespace CarpetInterp2 {
     int offset;
     int npoints;                // total number of sent points
     
-    vector<int> index;   // gather index list: index[mpi-location] =
-                         // calculation-location
+    // gather index list: index[mpi-location] = calculation-location
+    vector<int> index;
   };
   
   struct send_descr_t {
@@ -249,7 +298,8 @@ namespace CarpetInterp2 {
                  vector<CCTK_REAL *> & values)
       const;
     
-    size_t get_npoints ()
+    size_t
+    get_npoints ()
       const
     {
       return recv_descr.npoints;
