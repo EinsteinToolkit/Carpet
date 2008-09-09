@@ -1,0 +1,6 @@
+ActiveThorns = "LoopControl GSL"
+
+LoopControl::run_demo = yes
+LoopControl::nx = 300
+LoopControl::ny = 300
+LoopControl::nz = 300
