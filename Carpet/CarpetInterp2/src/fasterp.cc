@@ -425,7 +425,8 @@ namespace CarpetInterp2 {
     case 11: interpolate<11> (lsh, varptrs, vals); break;
     default:
       // Add higher orders here as desired
-      CCTK_WARN (CCTK_WARN_ABORT, "Interpolation orders larger than 11 are not yet implemented");
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "Interpolation orders larger than 11 are not yet implemented");
       assert (0);
     }
   }
@@ -546,6 +547,20 @@ namespace CarpetInterp2 {
     if (verbose) CCTK_VInfo (CCTK_THORNSTRING,
                              "Setting up interpolation for %d grid points",
                              int(locations.size()));
+    
+    if (order < 0) {
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "Interpolation order must be non-negative");
+    }
+    if (order > max_order) {
+      CCTK_VWarn (CCTK_WARN_ABORT,
+                  __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Interpolation order cannot be larger than max_order=%d; "
+                  "order=%d was requested.  "
+                  "(You can increase the compile time constant max_order "
+                  "in thorn CarpetInterp2.)",
+                  max_order, order);
+    }
     
     // Some global properties
     int const npoints = locations.size();
