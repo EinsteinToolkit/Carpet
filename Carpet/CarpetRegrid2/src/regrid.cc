@@ -334,7 +334,7 @@ namespace CarpetRegrid2 {
     //
     int min_rl = 1;             // we cannot change the coarsest level
     if (freeze_unaligned_levels or freeze_unaligned_parent_levels) {
-      while (min_rl < maxreflevels) {
+      while (min_rl < int(regss.size())) {
         // Increase min_rl until we find a level that can be changed
 #if 0
 #warning "think about this a bit more"
@@ -392,13 +392,15 @@ namespace CarpetRegrid2 {
     i2vect const physical_ibounds = i2vect (physical_ilower, physical_iupper);
     
     // The set of refined regions
-    vector <ibboxset> regions (1);
+    vector <ibboxset> regions (min_rl);
     
-    // Set up coarsest level
-    for (size_t c = 0; c < regss.at(0).size(); ++ c) {
-      regions.at(0) += regss.at(0).at(c).extent;
+    // Set up coarse levels
+    for (int rl = 0; rl < min_rl; ++ rl) {
+      for (size_t c = 0; c < regss.at(rl).size(); ++ c) {
+        regions.at(rl) += regss.at(rl).at(c).extent;
+      }
+      regions.at(rl).normalize();
     }
-    regions.at(0).normalize();
     
     // Refine only patch 0
     if (Carpet::map == 0) {
@@ -456,6 +458,7 @@ namespace CarpetRegrid2 {
       if (ensure_proper_nesting) {
         if (rl < int(regions.size()) - 1) {
           
+          assert (not regions.at(rl).empty());
           ibbox const coarse0 = * regions.at(rl).begin();
           
           i2vect const fdistance = dd.ghost_width;
@@ -778,9 +781,9 @@ namespace CarpetRegrid2 {
     //
     // Check whether all grids are contained in the next coarser grid
     //
-#warning "TODO: This uses the wrong grid sizes; it should subtract buffer zones etc. before checking"
     for (int rl = regions.size() - 1; rl >= min_rl; -- rl) {
       
+      assert (not regions.at(rl-1).empty());
       ibbox const coarse0 = * regions.at(rl-1).begin();
       
       i2vect const fdistance = dd.ghost_width;
