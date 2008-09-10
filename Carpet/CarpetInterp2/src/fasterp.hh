@@ -26,7 +26,7 @@ namespace CarpetInterp2 {
   // Each interpolation point descriptor requires
   //    (dim * (max_order+1) + 1)
   // CCTK_REAL values of memory
-  int const max_order = 5;
+  int const max_order = 11;
   
   
   
