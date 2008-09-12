@@ -825,6 +825,8 @@ namespace CarpetIOASCII {
 
                   b2vect const & obnds =
                     vhh.at(m)->outer_boundaries(reflevel,c);
+                  i2vect const & ghost_width =
+                    arrdata.at(group).at(m).dd->ghost_width;
                   for (int d=0; d<groupdata.dim; ++d) {
                     bool const output_lower_ghosts =
                       obnds[0][d]
@@ -839,8 +841,6 @@ namespace CarpetIOASCII {
                          : out3D_outer_ghosts)
                       : out3D_ghosts;
 
-                    i2vect const & ghost_width =
-                      arrdata.at(group).at(m).dd->ghost_width;
                     if (not output_lower_ghosts) {
                       lo[d] += ghost_width[0][d] * str[d];
                     }
