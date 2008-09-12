@@ -396,8 +396,12 @@ namespace CarpetIOASCII {
     const int var = vindex - vindex0;
     const int num_tl = CCTK_NumTimeLevelsFromVarI (vindex);
     assert (num_tl >= 1);
-
-    const int grouptype = CCTK_GroupTypeI (group);
+    cGroup groupdata;
+    {
+      int const ierr = CCTK_GroupData (group, & groupdata);
+      assert (not ierr);
+    }
+    const int grouptype = groupdata.grouptype;
     if (grouptype != CCTK_GF) {
       assert (do_global_mode);
     }
@@ -776,158 +780,147 @@ namespace CarpetIOASCII {
             int const c_max =
               grouptype == CCTK_GF ?
               vhh.at(m)->components(reflevel) :
-              CCTK_nProcs(cctkGH);
+              groupdata.disttype != CCTK_DISTRIB_CONSTANT ?
+              CCTK_nProcs(cctkGH) :
+              0;
             for (int c = c_min; c < c_max; ++ c) {
 
-              cGroup groupdata;
-              {
-                int const ierr = CCTK_GroupData (group, & groupdata);
-                assert (not ierr);
-              }
+              const ggf* const ff = arrdata.at(group).at(m).data.at(var);
 
-              cGroupDynamicData dyndata;
-              {
-                int const ierr = CCTK_GroupDynamicData
-                  (cctkGH, group, & dyndata);
-                assert (not ierr);
-              }
+              const int maxtl = output_all_timelevels ? num_tl : 1;
+              for (int tl=0; tl<maxtl; ++tl) {
 
-              if (groupdata.disttype != CCTK_DISTRIB_CONSTANT or c == 0) {
+                const gdata* const data = (*ff) (tl, my_reflevel, c, mglevel);
+                ibbox ext = data->extent();
 
-                const ggf* const ff = arrdata.at(group).at(m).data.at(var);
+                ivect lo = ext.lower();
+                ivect hi = ext.upper();
+                ivect str = ext.stride();
 
-                const int maxtl = output_all_timelevels ? num_tl : 1;
-                for (int tl=0; tl<maxtl; ++tl) {
-
-                  const gdata* const data = (*ff) (tl, my_reflevel, c, mglevel);
-                  ibbox ext = data->extent();
-
-                  ivect lo = ext.lower();
-                  ivect hi = ext.upper();
-                  ivect str = ext.stride();
-                  
-                  // Ignore symmetry and ghost zones if desired
+                // Ignore symmetry and ghost zones if desired
+                {
+                  CCTK_INT symtable;
+                  // TODO: This is a bit ad hoc
+                  if (groupdata.grouptype == CCTK_GF
+                      and groupdata.dim == cctkGH->cctk_dim)
                   {
-                    CCTK_INT symtable;
-                    // TODO: This is a bit ad hoc
-                    if (groupdata.grouptype == CCTK_GF
-                        and groupdata.dim == cctkGH->cctk_dim)
-                    {
-                      symtable
-                        = SymmetryTableHandleForGrid (cctkGH);
-                      if (symtable < 0) CCTK_WARN (0, "internal error");
-                    } else {
-                      symtable
-                        = SymmetryTableHandleForGI (cctkGH, group);
-                      if (symtable < 0) CCTK_WARN (0, "internal error");
-                    }
-                    CCTK_INT symbnd[2*dim];
-                    int const ierr = Util_TableGetIntArray
-                      (symtable, 2*groupdata.dim, symbnd, "symmetry_handle");
-                    if (ierr != 2*groupdata.dim) {
-                      CCTK_WARN (0, "internal error");
-                    }
-                    bool is_symbnd[2*dim];
-                    for (int d=0; d<2*groupdata.dim; ++d) {
-                      is_symbnd[d] = symbnd[d] >= 0;
-                    }
-                    
-                    for (int d=0; d<groupdata.dim; ++d) {
-                      bool const output_lower_ghosts =
-                        dyndata.bbox[2*d]
-                        ? (is_symbnd[2*d]
-                           ? output_symmetry_points
-                           : out3D_outer_ghosts)
-                        : out3D_ghosts;
-                      bool const output_upper_ghosts =
-                        dyndata.bbox[2*d+1]
-                        ? (is_symbnd[2*d+1]
-                           ? output_symmetry_points
-                           : out3D_outer_ghosts)
-                        : out3D_ghosts;
-                      
-                      if (not output_lower_ghosts) {
-                        lo[d] += dyndata.nghostzones[d] * str[d];
-                      }
-                      if (not output_upper_ghosts) {
-                        hi[d] -= dyndata.nghostzones[d] * str[d];
-                      }
-                    }
-                  }
-                  
-                  ext = ibbox(lo,hi,str);
-                  
-                  // coordinates
-                  const CCTK_REAL coord_time = cctkGH->cctk_time;
-                  rvect global_lower;
-                  rvect coord_delta;
-                  if (grouptype == CCTK_GF) {
-                    rvect const cctk_origin_space =
-                      origin_space.at(m).at(mglevel);
-                    rvect const cctk_delta_space =
-                      delta_space.at(m) * rvect (mglevelfact);
-                    for (int d=0; d<dim; ++d) {
-                      // lower boundary of Carpet's integer indexing
-                      global_lower[d] = cctk_origin_space[d];
-                      // grid spacing of Carpet's integer indexing
-                      coord_delta[d] =
-                        cctk_delta_space[d] /
-                        vhh.at(m)->baseextents.at(0).at(0).stride()[d];
-                    }
+                    symtable
+                      = SymmetryTableHandleForGrid (cctkGH);
+                    if (symtable < 0) CCTK_WARN (0, "internal error");
                   } else {
-                    for (int d=0; d<dim; ++d) {
-                      global_lower[d] = 0.0;
-                      coord_delta[d] = 1.0;
+                    symtable
+                      = SymmetryTableHandleForGI (cctkGH, group);
+                    if (symtable < 0) CCTK_WARN (0, "internal error");
+                  }
+                  CCTK_INT symbnd[2*dim];
+                  int const ierr = Util_TableGetIntArray
+                    (symtable, 2*groupdata.dim, symbnd, "symmetry_handle");
+                  if (ierr != 2*groupdata.dim) {
+                    CCTK_WARN (0, "internal error");
+                  }
+                  bool is_symbnd[2*dim];
+                  for (int d=0; d<2*groupdata.dim; ++d) {
+                    is_symbnd[d] = symbnd[d] >= 0;
+                  }
+
+                  b2vect const & obnds =
+                    vhh.at(m)->outer_boundaries(reflevel,c);
+                  for (int d=0; d<groupdata.dim; ++d) {
+                    bool const output_lower_ghosts =
+                      obnds[0][d]
+                      ? (is_symbnd[2*d]
+                         ? output_symmetry_points
+                         : out3D_outer_ghosts)
+                      : out3D_ghosts;
+                    bool const output_upper_ghosts =
+                      obnds[1][d]
+                      ? (is_symbnd[2*d+1]
+                         ? output_symmetry_points
+                         : out3D_outer_ghosts)
+                      : out3D_ghosts;
+
+                    i2vect const & ghost_width =
+                      arrdata.at(group).at(m).dd->ghost_width;
+                    if (not output_lower_ghosts) {
+                      lo[d] += ghost_width[0][d] * str[d];
+                    }
+                    if (not output_upper_ghosts) {
+                      hi[d] -= ghost_width[1][d] * str[d];
                     }
                   }
-                  const rvect coord_lower
-                    = global_lower + coord_delta * rvect(lo);
-                  const rvect coord_upper
-                    = global_lower + coord_delta * rvect(hi);
+                }
 
-                  ivect offset1;
-                  if (grouptype == CCTK_GF) {
-                    const ibbox& baseext
-                      = vhh.at(m)->baseextents.at(mglevel).at(reflevel);
-                    offset1 = baseext.lower() + offset * ext.stride();
-                  } else {
-                    offset1 = offset * ext.stride();
+                ext = ibbox(lo,hi,str);
+
+                // coordinates
+                const CCTK_REAL coord_time = cctkGH->cctk_time;
+                rvect global_lower;
+                rvect coord_delta;
+                if (grouptype == CCTK_GF) {
+                  rvect const cctk_origin_space =
+                    origin_space.at(m).at(mglevel);
+                  rvect const cctk_delta_space =
+                    delta_space.at(m) * rvect (mglevelfact);
+                  for (int d=0; d<dim; ++d) {
+                    // lower boundary of Carpet's integer indexing
+                    global_lower[d] = cctk_origin_space[d];
+                    // grid spacing of Carpet's integer indexing
+                    coord_delta[d] =
+                      cctk_delta_space[d] /
+                      vhh.at(m)->baseextents.at(0).at(0).stride()[d];
                   }
-
-                  for (int d=0; d<outdim; ++d) {
-		    if(dirs[d] < 3)
-		      offset1[dirs[d]] = ext.lower()[dirs[d]];
+                } else {
+                  for (int d=0; d<dim; ++d) {
+                    global_lower[d] = 0.0;
+                    coord_delta[d] = 1.0;
                   }
+                }
+                const rvect coord_lower
+                  = global_lower + coord_delta * rvect(lo);
+                const rvect coord_upper
+                  = global_lower + coord_delta * rvect(hi);
 
-                  vector<const gdata*> datas;
-                  if (one_file_per_group) {
-                    int const numvars = CCTK_NumVarsInGroupI(group);
-                    datas.resize (numvars);
-                    for (int n=0; n<numvars; ++n) {
-                      const ggf* const ff1 = arrdata.at(group).at(m).data.at(n);
-                      datas.at(n) = (*ff1) (tl, my_reflevel, c, mglevel);
-                    }
-                  } else {
-                    datas.resize (1);
-                    datas.at(0) = data;
+                ivect offset1;
+                if (grouptype == CCTK_GF) {
+                  const ibbox& baseext
+                    = vhh.at(m)->baseextents.at(mglevel).at(reflevel);
+                  offset1 = baseext.lower() + offset * ext.stride();
+                } else {
+                  offset1 = offset * ext.stride();
+                }
+
+                for (int d=0; d<outdim; ++d) {
+                  if(dirs[d] < 3)
+                    offset1[dirs[d]] = ext.lower()[dirs[d]];
+                }
+
+                vector<const gdata*> datas;
+                if (one_file_per_group) {
+                  int const numvars = CCTK_NumVarsInGroupI(group);
+                  datas.resize (numvars);
+                  for (int n=0; n<numvars; ++n) {
+                    const ggf* const ff1 = arrdata.at(group).at(m).data.at(n);
+                    datas.at(n) = (*ff1) (tl, my_reflevel, c, mglevel);
                   }
-                  WriteASCII (file, datas, ext, vindex, cctkGH->cctk_iteration,
-                              offset1, dirs,
-                              my_reflevel, mglevel, m, c, tl,
-                              coord_time, coord_lower, coord_upper);
+                } else {
+                  datas.resize (1);
+                  datas.at(0) = data;
+                }
+                WriteASCII (file, datas, ext, vindex, cctkGH->cctk_iteration,
+                            offset1, dirs,
+                            my_reflevel, mglevel, m, c, tl,
+                            coord_time, coord_lower, coord_upper);
 
-                  // Append EOL after every component
-                  if (dist::rank()==ioproc) {
-                    if (separate_components) {
-                      assert (file.good());
-                      file << eol;
-                    }
+                // Append EOL after every component
+                if (dist::rank()==ioproc) {
+                  if (separate_components) {
                     assert (file.good());
+                    file << eol;
                   }
+                  assert (file.good());
+                }
 
-                } // for tl
-
-              } // if distrib!=CONSTANT or c==0
+              } // for tl
 
             } // for c
 
