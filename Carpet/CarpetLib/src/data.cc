@@ -631,7 +631,7 @@ transfer_prolongate (data const * const src,
       break;
     default:
       CCTK_WARN (CCTK_WARN_ABORT,
-                 "There is no stencil for op=\"LAGRANGE\" with order_space not in {1, 3, 5}");
+                 "There is no stencil for op=\"LAGRANGE\" with order_space not in {1, 3, 5, 7, 9, 11}");
       break;
     }
     timer.stop (0);
