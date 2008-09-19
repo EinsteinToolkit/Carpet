@@ -802,11 +802,9 @@ namespace CarpetRegrid2 {
         bvect const upper_is_outer = fbb.upper() >= physical_iupper;
         b2vect const ob (lower_is_outer, upper_is_outer);
         
-        ibbox const ebb = fbb.expand (i2vect (ob) * fdistance);
-        ibbox const cbb = ebb.expanded_for (coarse0);
-        ibbox const ecbb = cbb.expand (i2vect (ob) * cdistance);
+        ibbox const cbb = fbb.expanded_for (coarse0);
         
-        is_properly_nested = is_properly_nested and ecbb <= regions.at(rl-1);
+        is_properly_nested = is_properly_nested and cbb <= regions.at(rl-1);
       }
       
       if (not is_properly_nested) {
