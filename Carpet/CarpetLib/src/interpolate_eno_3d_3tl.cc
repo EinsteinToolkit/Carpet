@@ -126,7 +126,9 @@ namespace CarpetLib {
     
     // Quadratic (second order) interpolation
     
-    RT const eps = 1.0e-10;
+    RT const tmin = min3 (t1, t2, t3);
+    RT const tmax = max3 (t1, t2, t3);
+    RT const eps = 1.0e-10 * (tmax - tmin);
     
     if (abs (t1 - t2) < eps or abs (t1 - t3) < eps or abs (t2 - t3) < eps) {
       CCTK_WARN (0, "Internal error: arrays have same time");
@@ -135,6 +137,8 @@ namespace CarpetLib {
       CCTK_WARN (0, "Internal error: extrapolation in time");
     }
     
+    // Calculate stencil coefficients for 3-point and 2-point
+    // interpolations
     RT const s1fac3 = (t - t2) * (t - t3) / ((t1 - t2) * (t1 - t3));
     RT const s2fac3 = (t - t1) * (t - t3) / ((t2 - t1) * (t2 - t3));
     RT const s3fac3 = (t - t1) * (t - t2) / ((t3 - t1) * (t3 - t2));
@@ -145,11 +149,16 @@ namespace CarpetLib {
     RT const s2fac2_23 = (t - t3) / (t2 - t3);
     RT const s3fac2_23 = (t - t2) / (t3 - t2);
     
+    // Choose which two time levels should be used for linear
+    // interpolation
     bool const use_12 =
       t >= min (t1, t2) - eps and t <= max (t1, t2) + eps;
     bool const use_23 =
       t >= min (t2, t3) - eps and t <= max (t2, t3) + eps;
     assert (use_12 or use_23);
+    // TODO: Instead of use_12, calculate 3 coefficents that perform
+    // the desired 2-point interpolation, which would avoid the if
+    // statement in the loop, simplifying the code.
     
     
     
@@ -163,8 +172,11 @@ namespace CarpetLib {
           T const s2 = src2 [SRCIND3(i, j, k)];
           T const s3 = src3 [SRCIND3(i, j, k)];
           
+          // 3-point interpolation
           T d = s1fac3 * s1 + s2fac3 * s2 + s3fac3 * s3;
           
+          // If the 3-point interpolation leads to a new extremum,
+          // fall back to 2-point interpolation instead
           if (d > max3 (s1, s2, s3) or d < min3 (s1, s2, s3)) {
             if (use_12) {
               d = s1fac2_12 * s1 + s2fac2_12 * s2;
