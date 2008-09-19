@@ -17,6 +17,10 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
   CCTK_INT is_staggered[6];
   CCTK_INT shiftout[6];
   
+  int bnd_points[6];            /* points outside the domain */
+  int int_points[3];            /* global interior points */
+  
+  int gmin[3], gmax[3];         /* global domain extent */
   int imin[3], imax[3];         /* domain extent */
   int bmin[3], bmax[3];         /* boundary extent */
   
@@ -37,26 +41,51 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
     CCTK_WARN (0, "Could not get boundary specification");
   }
   
+  
+  
+  /* Calculate the number of boundary points */
+  for (int d=0; d<3; ++d) {
+    for (int f=0; f<2; ++f) {
+      
+      if (is_internal[2*d+f]) {
+        /* The boundary extends inwards */
+        bnd_points[2*d+f] = shiftout[2*d+f];
+      } else {
+        /* The boundary extends outwards */
+        bnd_points[2*d+f] =
+          nboundaryzones[2*d+f] + shiftout[2*d+f] + is_staggered[2*d+f] - 1;
+      }
+      
+    }
+  }
+  
+  /* Calculate the global extent of the domain */
+  for (int d=0; d<3; ++d) {
+    gmin[d] = 0;
+    gmax[d] = cctk_gsh[d];
+  }
+  
+  /* Ensure that the domain specification is consistent */
+  for (int d=0; d<3; ++d) {
+    int_points[d] =
+      (gmax[d] - bnd_points[2*d]) - (gmin[d] + bnd_points[2*d+1]);
+    if (int_points[d] < 0) {
+      CCTK_WARN (0, "Number of internal grid points is negative");
+    }
+  }
+  
+  
+  
   /* Loop over all dimensions and faces */
   for (int d=0; d<3; ++d) {
     for (int f=0; f<2; ++f) {
       /* If this processor has the outer boundary */
       if (cctk_bbox[2*d+f]) {
         
-        int npoints;
-        
-        if (is_internal[2*d+f]) {
-          /* The boundary extends inwards */
-          npoints = - nboundaryzones[2*d+f] + shiftout[2*d+f];
-        } else {
-          /* The boundary extends outwards */
-          npoints = nboundaryzones[2*d+f] + shiftout[2*d+f] - 1;
-        }
-        
         /* If there are boundary that should be ignored */
-        if (npoints >= 0) {
+        if (bnd_points[2*d+f] >= 0) {
           
-          if (npoints < 0 || npoints > cctk_lsh[d]) {
+          if (bnd_points[2*d+f] < 0 || bnd_points[2*d+f] > cctk_lsh[d]) {
             CCTK_WARN (0, "Illegal number of boundary points");
           }
           
@@ -73,10 +102,10 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
           }
           if (f==0) {
             /* lower face */
-            bmax[d] = imin[d] + npoints;
+            bmax[d] = imin[d] + bnd_points[2*d+f];
           } else {
             /* upper face */
-            bmin[d] = imax[d] - npoints;
+            bmin[d] = imax[d] - bnd_points[2*d+f];
           }
           
           /* Loop over the boundary */
@@ -101,8 +130,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
           if (! is_staggered[2*d+f]) {
             
             /* Check whether the domain is empty */
-            /* TODO: This check is flawed, and therefore disabled */
-            if (0 && imin[d] == imax[d] - 1) {
+            if (int_points[d] == 0) {
               
               /* The domain is empty.  The correct thing to do would
                  be to set the weights to 0.  But this is boring,
@@ -114,7 +142,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
               /* do nothing */
               
             } else {
-            
+              
               /* Adapt the extent of the boundary */
               if (f==0) {
                 /* lower face */
@@ -125,7 +153,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
                 bmax[d] = bmin[d];
                 bmin[d] = bmax[d] - 1;
               }
-          
+              
               /* Loop over the points next to boundary */
               if (verbose) {
                 CCTK_VInfo (CCTK_THORNSTRING,
@@ -135,14 +163,14 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
               for (int k=bmin[2]; k<bmax[2]; ++k) {
                 for (int j=bmin[1]; j<bmax[1]; ++j) {
                   for (int i=bmin[0]; i<bmax[0]; ++i) {
-                  
+                    
                     int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                     weight[ind] *= 0.5;
-                  
+                    
                   }
                 }
               }
-
+              
             } /* if the domain is not empty */
             
           } /* if the boundary is not staggered */
