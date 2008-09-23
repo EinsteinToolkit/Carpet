@@ -1,5 +1,6 @@
 # Parameter definitions for thorn LoopControl
 
+#################
 # General options
 
 BOOLEAN printstats "Output timing statistics at shutdown" STEERABLE=recover
@@ -14,8 +15,31 @@ BOOLEAN debug "Output debug information" STEERABLE=always
 {
 } "no"
 
+######################################
+# LoopControl demonstration parameters
 
+BOOLEAN run_demo "Run the embedded wavetoy as a LoopControl demo application"
+{
+} "no"
 
+CCTK_INT nx "Number of grid points in X dimension (for the embedded wavetoy example)"
+{
+  1:* :: "a positive integer"
+} 100
+CCTK_INT ny "Number of grid points in Y dimension (for the embedded wavetoy example)"
+{
+  1:* :: "a positive integer"
+} 100
+CCTK_INT nz "Number of grid points in Z dimension (for the embedded wavetoy example)"
+{
+  1:* :: "a positive integer"
+} 100
+CCTK_INT nsteps "Number of time steps (for the embedded wavetoy example)"
+{
+  1:* :: "a positive integer"
+} 100
+
+#################
 # Thread topology
 
 CCTK_INT lc_inthreads "Number of threads in the i-direction" STEERABLE=recover
@@ -38,6 +62,7 @@ CCTK_INT lc_knthreads "Number of threads in the k-direction" STEERABLE=recover
 
 
 
+######################
 # Tiling specification
 
 CCTK_INT lc_inpoints "Number of grid points in the i-direction" STEERABLE=recover
@@ -60,6 +85,7 @@ CCTK_INT lc_knpoints "Number of grid points in the k-direction" STEERABLE=recove
 
 
 
+##########################
 # Use legacy configuration
 
 BOOLEAN legacy_init "Initialise with legacy configuration (usually slower)" STEERABLE=recover
@@ -68,6 +94,7 @@ BOOLEAN legacy_init "Initialise with legacy configuration (usually slower)" STEE
 
 
 
+###########################
 # Automatic: simple cycling
 
 BOOLEAN cycle_j_tilings "Cycle through all available tilings in the j-direction" STEERABLE=recover
@@ -76,6 +103,7 @@ BOOLEAN cycle_j_tilings "Cycle through all available tilings in the j-direction"
 
 
 
+################################
 # Automatic: simulated annealing
 
 BOOLEAN use_simulated_annealing "Find a good loop configuration through simulated annealing" STEERABLE=recover
@@ -119,6 +147,7 @@ CCTK_REAL siman_T_min "stopping criterion" STEERABLE=recover
 
 
 
+#########################################
 # Automatic: random restart hill climbing
 
 BOOLEAN use_random_restart_hill_climbing "http://en.wikipedia.org/wiki/Hill_climbing http://en.wikipedia.org/wiki/Tabu_search" STEERABLE=always

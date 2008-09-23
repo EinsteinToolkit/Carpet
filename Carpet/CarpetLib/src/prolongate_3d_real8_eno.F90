@@ -60,7 +60,7 @@ function eno1d(q)
 
 !!$    Check that the quadratic is reasonable
 
-  if ( (q(2)-eno1d) * (q(3)-eno1d) .lt. zero ) then
+  if ( (eno1d-q(2)) * (q(3)-eno1d) .lt. zero ) then
       
 !!$      Not reasonable. Linear interpolation
 

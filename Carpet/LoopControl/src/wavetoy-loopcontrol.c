@@ -37,15 +37,21 @@
 #include "loopcontrol.h"
 
 
+/***
+ define this if you want to build a standalone demo
+ (but beware of hidden LoopControl dependencies on Cactus)
+#define BUILD_STANDALONE
+ ***/
 
-int NI;
-int NJ;
-int NK;
+static int NI;
+static int NJ;
+static int NK;
 
-int NSTEPS;
+static int NSTEPS;
 
 
 
+#ifdef BUILD_STANDALONE
 static
 int
 getint (char const * restrict const string)
@@ -62,6 +68,11 @@ getint (char const * restrict const string)
   }
   return n;
 }
+#else
+
+#include "cctk_Parameters.h"
+
+#endif
 
 
 
@@ -74,10 +85,16 @@ ind3d (int const i, int const j, int const k)
 
 
 
-int
-main (int argc, char **argv)
+#ifdef BUILD_STANDALONE
+int main (int argc, char **argv)
 {
+#else
+int lc_demo (void)
+{
+  DECLARE_CCTK_PARAMETERS
+#endif
   printf ("WaveToy\n");
+#if 0
   if (argc != 5) {
     fprintf (stderr,
              "Synopsis:\n"
@@ -91,6 +108,12 @@ main (int argc, char **argv)
   NJ = getint (argv[2]);
   NK = getint (argv[3]);
   NSTEPS = getint (argv[4]);
+#else
+  NI = nx;
+  NJ = ny;
+  NK = nz;
+  NSTEPS = nsteps;
+#endif
   printf ("   NI=%d NJ=%d NK=%d\n", NI, NJ, NK);
   printf ("   NSTEPS=%d\n", NSTEPS);
   
@@ -202,7 +225,7 @@ main (int argc, char **argv)
   printf ("Analysis time: %g\n", time_analysis_end - time_analysis_start);
   printf ("Result: %.15g\n", avg);
   
-  lc_printstats();
+  lc_printstats(0);
   
   //
   // Shutdown
