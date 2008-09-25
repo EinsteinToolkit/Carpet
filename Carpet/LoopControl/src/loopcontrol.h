@@ -39,7 +39,7 @@ extern "C" {
       for (int j = lc_jmin; j < lc_jmax; ++j)                           \
         for (int i = lc_imin; i < lc_imax; ++i)
 
-#define LC_ENDLOOP3                             \
+#define LC_ENDLOOP3(name)                       \
   } while (0)
 
 #endif
