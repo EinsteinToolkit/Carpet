@@ -32,7 +32,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <omp.h>
+#ifdef _OPENMP
+#  include <omp.h>
+#endif
 
 #include "loopcontrol.h"
 
@@ -42,6 +44,38 @@
  (but beware of hidden LoopControl dependencies on Cactus)
 #define BUILD_STANDALONE
  ***/
+
+
+
+#ifndef _OPENMP
+/* Replacements for some OpenMP routines if OpenMP is not available */
+
+static inline
+int
+omp_get_thread_num (void)
+{
+  return 0;
+}
+
+static inline
+int
+omp_get_num_threads (void)
+{
+  return 1;
+}
+
+static inline
+double
+omp_get_wtime (void)
+{
+  struct timeval tv;
+  gettimeofday (& tv, NULL);
+  return tv.tv_sec + 1.0e-6 * tv.tv_usec;
+}
+
+#endif
+
+
 
 static int NI;
 static int NJ;
