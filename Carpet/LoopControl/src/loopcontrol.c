@@ -102,7 +102,7 @@ find_thread_topologies (lc_topology_t * restrict const topologies,
    One aim is to reduce the search space by disregarding some
    specifications.  The other aim is to distribute the specifications
    "equally", so that one does not have to spend much effort
-   investigating tilign specifications with very similar properties.
+   investigating tiling specifications with very similar properties.
    For example, if there are 200 grid points, then half of the
    possible tiling specifications consists of splitting the domain
    into two subdomains with [100+N, 100-N] points.  This is avoided by
@@ -125,11 +125,11 @@ find_tiling_specifications (lc_tiling_t * restrict const tilings,
                             int const npoints)
 {
   /* In order to reduce the number of possible tilings, require that
-     the step sizes differ by more than 10% */
+     the step sizes differ by more than 10%.  */
   double const distance_factor = 1.1;
   /* Determine the "good" step sizes in two passes: first small step
      sizes from 1 up to snpoints, then large step sizes from npoints
-     down to snpoints+1 */
+     down to snpoints+1.  */
   int const snpoints = floor (sqrt (npoints));
   /* For N grid points and a minimum spacing factor F, there are at
      most log(N) / log(F) possible tilings.  There will be fewer,
@@ -172,7 +172,7 @@ find_tiling_specifications (lc_tiling_t * restrict const tilings,
                             int const npoints)
 {
   /* In order to reduce the number of possible tilings, require that
-     the step sizes differ by more than 10% */
+     the step sizes differ by more than 10%.  */
   double const distance_factor = 1.1;
   /* For N grid points and a minimum spacing factor F, there are at
      most log(N) / log(F) possible tilings.  There will be fewer,
@@ -191,8 +191,9 @@ find_tiling_specifications (lc_tiling_t * restrict const tilings,
   }
   
   assert (* ntilings < maxntilings);
-  tilings[* ntilings].npoints = npoints;
-  minnpoints = npoints;
+  /* step size should be at least 1, even if there are only 0
+     points */
+  tilings[* ntilings].npoints = lc_max (npoints, 1);
   ++ * ntilings;
 }
 
