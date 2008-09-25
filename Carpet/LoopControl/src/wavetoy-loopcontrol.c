@@ -235,12 +235,18 @@ int lc_demo (void)
   return 0;
 }
 #else
+#ifdef BUILD_STANDALONE
  int main(void) {
-
    printf("\n We do not have OpenMP. Can't do anything. \n");
    return 0;
  }
-
+#else
+ int lc_demo (void)
+ {
+   printf("\n We do not have OpenMP. Can't do anything. \n");
+   return 0;
+ }
+#endif
 
 
 #endif
