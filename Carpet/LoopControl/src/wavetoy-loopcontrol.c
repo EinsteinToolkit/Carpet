@@ -32,6 +32,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef _OPENMP
+
 #include <omp.h>
 
 #include "loopcontrol.h"
@@ -232,3 +234,13 @@ int lc_demo (void)
   //
   return 0;
 }
+#else
+ int main(void) {
+
+   printf("\n We do not have OpenMP. Can't do anything. \n");
+   return 0;
+ }
+
+
+
+#endif
