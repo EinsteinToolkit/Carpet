@@ -43,7 +43,7 @@ namespace CarpetRegrid2 {
         position_x[N-1] = position_x_##N;                       \
         position_y[N-1] = position_y_##N;                       \
         position_z[N-1] = position_z_##N;                       \
-        for (int rl = 0; rl < num_levels[N-1]; ++ rl) {         \
+        for (int rl = 0; rl < 30; ++ rl) {                      \
           radius[index2 (lsh, rl, N-1)] = radius_##N[rl];       \
         }                                                       \
         old_position_x[N-1] = position_x[N-1];                  \
