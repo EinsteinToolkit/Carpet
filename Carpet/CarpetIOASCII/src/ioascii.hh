@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <cctk.h>
+#include <cctk_Arguments.h>
 
 
 
@@ -15,7 +16,7 @@ namespace CarpetIOASCII {
   
   // Scheduled functions
   extern "C" {
-    int CarpetIOASCIIStartup ();
+    int CarpetIOASCIIStartup (void);
     void CarpetIOASCIIInit (CCTK_ARGUMENTS);
   }
   
