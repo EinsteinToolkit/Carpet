@@ -105,8 +105,8 @@ namespace Carpet {
           // assert (all(regsss.at(rl).at(c).at(ml).extent.lower() <=
           //             regsss.at(rl).at(c).at(ml).extent.upper()));
           // Check strides
-          const ivect str
-            = (maxspacereflevelfact / spacereffacts.at(rl) * ipow(mgfact, ml));
+          ivect const str =
+            (maxspacereflevelfact / spacereffacts.at(rl) * ipow(mgfact, ml));
           assert (all(regsss.at(ml).at(rl).at(c).extent.stride() % str == 0));
           // Check alignments
           assert (all(regsss.at(ml).at(rl).at(c).extent.lower() % str == 0));
@@ -1314,6 +1314,8 @@ namespace Carpet {
                               vector<vector<region_t> > & superregss,
                               vector<vector<region_t> > & regss)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     if (DEBUG) cout << "SRMA enter" << endl;
     
     int const nmaps = superregss.size();
@@ -1358,7 +1360,21 @@ namespace Carpet {
       }
     }
     
-    const int nprocs = CCTK_nProcs (cctkGH);
+    int const real_nprocs = CCTK_nProcs (cctkGH);
+    if (DEBUG) cout << "SRMA real_nprocs " << real_nprocs << endl;
+    
+    // Deactivate some processors if there are too many
+    int nprocs;
+    if (min_points_per_proc < 0) {
+      nprocs = real_nprocs;
+    } else {
+      CCTK_REAL mycost = 0;
+      for (int r=0; r<nregs; ++r) {
+        mycost += prod (cost (superregs.at(r)));
+      }
+      int const goodnprocs = int (floor (mycost / min_points_per_proc));
+      nprocs = max (1, min (real_nprocs, goodnprocs));
+    }
     if (DEBUG) cout << "SRMA nprocs " << nprocs << endl;
     
     // ncomps: number of components per processor
@@ -1453,7 +1469,6 @@ namespace Carpet {
         for (ipfulltree::iterator fti (* regf); not fti.done(); ++ fti) {
           pseudoregion_t & preg = (* fti).payload();
           preg.component = tmpncomps.at(m)++;
-          // preg.processor /= ncomps;
         }
       }
       for (int m=0; m<nmaps; ++m) {
@@ -1480,6 +1495,11 @@ namespace Carpet {
       int const m = superregs.at(r).map - minmap;
       assert (m>=0 and m<nmaps);
       superregss.at(m).push_back (superregs.at(r));
+    }
+    // Output regions
+    if (DEBUG) {
+      cout << "SRMA superregss " << superregss << endl;
+      cout << "SRMA regss " << regss << endl;
     }
     // Check sizes
     for (int m=0; m<nmaps; ++m) {
