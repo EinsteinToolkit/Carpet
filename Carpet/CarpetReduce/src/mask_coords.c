@@ -4,6 +4,8 @@
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 
+#include <loopcontrol.h>
+
 
 
 void
@@ -49,7 +51,7 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
       
       if (is_internal[2*d+f]) {
         /* The boundary extends inwards */
-        bnd_points[2*d+f] = shiftout[2*d+f];
+        bnd_points[2*d+f] = shiftout[2*d+f] - is_staggered[2*d+f];
       } else {
         /* The boundary extends outwards */
         bnd_points[2*d+f] =
@@ -113,17 +115,17 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
             CCTK_VInfo (CCTK_THORNSTRING,
                         "Setting boundary points in direction %d face %d to weight 0", d, f);
           }
-#pragma omp parallel for
-          for (int k=bmin[2]; k<bmax[2]; ++k) {
-            for (int j=bmin[1]; j<bmax[1]; ++j) {
-              for (int i=bmin[0]; i<bmax[0]; ++i) {
-                
-                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                weight[ind] = 0.0;
-                
-              }
-            }
-          }
+#pragma omp parallel
+          LC_LOOP3(CoordBase_SetupMask_boundary,
+                   i,j,k,
+                   bmin[0],bmin[1],bmin[2], bmax[0],bmax[1],bmax[2],
+                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+          {
+            
+            int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+            weight[ind] = 0.0;
+            
+          } LC_ENDLOOP3(CoordBase_SetupMask);
           
           /* When the boundary is not staggered, then give the points
              on the boundary the weight 1/2 */
@@ -159,17 +161,17 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
                 CCTK_VInfo (CCTK_THORNSTRING,
                             "Setting non-staggered boundary points in direction %d face %d to weight 1/2", d, f);
               }
-#pragma omp parallel for
-              for (int k=bmin[2]; k<bmax[2]; ++k) {
-                for (int j=bmin[1]; j<bmax[1]; ++j) {
-                  for (int i=bmin[0]; i<bmax[0]; ++i) {
-                    
-                    int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                    weight[ind] *= 0.5;
-                    
-                  }
-                }
-              }
+#pragma omp parallel
+              LC_LOOP3(CoordBase_SetupMask_boundary2,
+                       i,j,k,
+                       bmin[0],bmin[1],bmin[2], bmax[0],bmax[1],bmax[2],
+                       cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+              {
+                
+                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                weight[ind] *= 0.5;
+                
+              } LC_ENDLOOP3(CoordBase_SetupMask_boundary2);
               
             } /* if the domain is not empty */
             
