@@ -854,6 +854,45 @@ namespace Carpet {
       assert (0);
     }
     
+    // Add empty regions if there are fewer regions than processors
+    {
+      int const nprocs = CCTK_nProcs (cctkGH);
+      int const oldsize = regs.size();
+      if (oldsize < nprocs) {
+        // Ensure that there are at least nprocs components
+        
+        // Construct an empty bbox that is just to the right of the
+        // last bbox, and which has the correct stride
+        assert (not regs.empty());
+        ibbox const & lbox = (*regs.rbegin()).extent;
+        ibbox const ebox
+          (lbox.upper() + lbox.stride(), lbox.upper(), lbox.stride());
+        
+        regs.resize (nprocs);
+        for (int c=oldsize; c<nprocs; ++c) {
+          region_t empty;
+          empty.extent = ebox;
+          empty.processor = c;
+          regs.at(c) = empty;
+        }
+      }
+    }
+    
+    // Check processor distribution
+    {
+      int const nprocs = CCTK_nProcs (cctkGH);
+      vector<bool> used (nprocs, false);
+      for (int c=0; c<nprocs; ++c) {
+        int const p = regs.at(c).processor;
+        assert (p >= 0 and p < nprocs);
+        assert (not used.at(p));
+        used.at(p) = true;
+      }
+      for (int c=0; c<nprocs; ++c) {
+        assert (used.at(c));
+      }
+    }
+    
     // Only one refinement level
     vector<vector<region_t> > superregss(1);
     superregss.at(rl) = superregs;
