@@ -160,7 +160,8 @@ bool bbox<T,D>::operator> (const bbox& b) const {
 template<class T, int D>
 bbox<T,D> bbox<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi) const {
   // Allow expansion only into directions where the extent is not negative
-  assert (all(lower()<=upper() or (lo==T(0) and hi==T(0))));
+  // assert (all(lower()<=upper() or (lo==T(0) and hi==T(0))));
+  assert (all(shape()>=vect<T,D>(0) or (lo==T(0) and hi==T(0))));
   const vect<T,D> str = stride();
   const vect<T,D> lb = lower() - lo * str;
   const vect<T,D> ub = upper() + hi * str;
