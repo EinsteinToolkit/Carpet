@@ -10,6 +10,8 @@ uses include header: carpet.hh
 
 uses include header: carpet_typecase.hh
 
+uses include header: loopcontrol.h
+
 CCTK_INT FUNCTION \
     SymmetryTableHandleForGrid (CCTK_POINTER_TO_CONST IN cctkGH)
 REQUIRES FUNCTION SymmetryTableHandleForGrid

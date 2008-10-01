@@ -7,6 +7,8 @@
 
 #include <carpet.hh>
 
+#include <loopcontrol.h>
+
 #include "mask_carpet.hh"
 
 
@@ -133,15 +135,15 @@ namespace CarpetMask {
                 
                 // Set weight on the boundary to 1/2
                 assert (dim == 3);
-#pragma omp parallel for
-                for (int k=imin[2]; k<imax[2]; ++k) {
-                  for (int j=imin[1]; j<imax[1]; ++j) {
-                    for (int i=imin[0]; i<imax[0]; ++i) {
-                      int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                      weight[ind] *= 0.5;
-                    }
-                  }
-                }
+#pragma omp parallel
+                LC_LOOP3(CarpetMaskSetup_prolongation,
+                         i,j,k,
+                         imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                         cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+                {
+                  int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                  weight[ind] *= 0.5;
+                } LC_ENDLOOP3(CarpetMaskSetup_prolongation);
                 
               } // if box not empty
               
@@ -196,15 +198,15 @@ namespace CarpetMask {
               
               // Set weight in the restricted region to 0
               assert (dim == 3);
-#pragma omp parallel for
-              for (int k=imin[2]; k<imax[2]; ++k) {
-                for (int j=imin[1]; j<imax[1]; ++j) {
-                  for (int i=imin[0]; i<imax[0]; ++i) {
-                    int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                    weight[ind] = 0;
-                  }
-                }
-              }
+#pragma omp parallel
+              LC_LOOP3(CarpetMaskSetup_restriction,
+                       i,j,k,
+                       imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                       cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+              {
+                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                weight[ind] = 0;
+              } LC_ENDLOOP3(CarpetMaskSetup_restriction);
               
             } // if box not empty
               
@@ -214,15 +216,15 @@ namespace CarpetMask {
           vector<int> mask (cctk_lsh[0] * cctk_lsh[1] * cctk_lsh[2]);
           
           assert (dim == 3);
-#pragma omp parallel for
-          for (int k=0; k<cctk_lsh[2]; ++k) {
-            for (int j=0; j<cctk_lsh[1]; ++j) {
-              for (int i=0; i<cctk_lsh[0]; ++i) {
-                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                mask[ind] = 0;
-              }
-            }
-          }
+#pragma omp parallel
+          LC_LOOP3(CarpetMaskSetup_restriction_boundary_init,
+                   i,j,k,
+                   0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
+                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+          {
+            int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+            mask[ind] = 0;
+          } LC_ENDLOOP3(CarpetMaskSetup_restriction_boundary_init);
           
           for (int d=0; d<dim; ++d) {
             for (ibset::const_iterator bi = boundaries[d].begin();
@@ -251,18 +253,18 @@ namespace CarpetMask {
                 
                 // Set weight on the boundary to 1/2
                 assert (dim == 3);
-#pragma omp parallel for
-                for (int k=imin[2]; k<imax[2]; ++k) {
-                  for (int j=imin[1]; j<imax[1]; ++j) {
-                    for (int i=imin[0]; i<imax[0]; ++i) {
-                      int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                      if (mask[ind] == 0) {
-                        mask[ind] = 1;
-                      }
-                      mask[ind] *= 2;
-                    }
+#pragma omp parallel
+                LC_LOOP3(CarpetMaskSetup_restriction_boundary_partial,
+                         i,j,k,
+                         imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                         cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+                {
+                  int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+                  if (mask[ind] == 0) {
+                    mask[ind] = 1;
                   }
-                }
+                  mask[ind] *= 2;
+                } LC_ENDLOOP3(CarpetMaskSetup_restriction_boundary_partial);
                 
               } // if box not empty
               
@@ -270,17 +272,17 @@ namespace CarpetMask {
           } // for d
           
           assert (dim == 3);
-#pragma omp parallel for
-          for (int k=0; k<cctk_lsh[2]; ++k) {
-            for (int j=0; j<cctk_lsh[1]; ++j) {
-              for (int i=0; i<cctk_lsh[0]; ++i) {
-                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                if (mask[ind] > 0) {
-                  weight[ind] *= 1.0 - 1.0 / mask[ind];
-                }
-              }
+#pragma omp parallel
+          LC_LOOP3(CarpetMaskSetup_restriction_boundary_apply,
+                   i,j,k,
+                   0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
+                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+          {
+            int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+            if (mask[ind] > 0) {
+              weight[ind] *= 1.0 - 1.0 / mask[ind];
             }
-          }
+          } LC_ENDLOOP3(CarpetMaskSetup_restriction_boundary_apply);
           
         } END_LOCAL_COMPONENT_LOOP;
         
