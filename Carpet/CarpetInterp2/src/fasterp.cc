@@ -602,7 +602,14 @@ namespace CarpetInterp2 {
     vector<int> proc (npoints);
     fill_with_poison (proc);
     vector<int> nlocs (nprocs, 0);
-    assert (Carpet::is_level_mode());
+    int min_rl, max_rl;
+    if (Carpet::is_level_mode()) {
+      min_rl = Carpet::reflevel;
+      max_rl = Carpet::reflevel + 1;
+    } else if (Carpet::is_global_mode()) {
+      min_rl = 0;
+      max_rl = Carpet::reflevels;
+    }
 #pragma omp parallel for
     for (int n=0; n<npoints; ++n) {
       int const m = locations.maps.AT(n);
@@ -620,9 +627,7 @@ namespace CarpetInterp2 {
       // Find refinement level and component
       int rl, c;
       ivect ipos;
-      hh->locate_position (rpos,
-                           Carpet::mglevel,
-                           Carpet::reflevel, Carpet::reflevel+1,
+      hh->locate_position (rpos, Carpet::mglevel, min_rl, max_rl,
                            rl, c, ipos);
       if (not (rl>=0 and c>=0)) {
 #pragma omp critical

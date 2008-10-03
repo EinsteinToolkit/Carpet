@@ -55,7 +55,7 @@ call_operator (void
 #ifndef _OPENMP
   (* the_operator) (src, srcext, dst, dstext, srcbbox, dstbbox, regbbox);
 #else
-#  if ! defined (CARPET_OPTIMISE)
+#  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
   ibset allregbboxes;
 #  endif
 #pragma omp parallel
@@ -89,7 +89,7 @@ call_operator (void
 #  endif
     }
   }
-#  if ! defined (CARPET_OPTIMISE)
+#  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
   if (not (allregbboxes == ibset (regbbox))) {
     allregbboxes.normalize();
     cout << "allregbboxes=" << allregbboxes << endl
