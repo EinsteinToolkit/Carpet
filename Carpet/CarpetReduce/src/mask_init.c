@@ -4,6 +4,8 @@
 
 #include <util_Table.h>
 
+#include <loopcontrol.h>
+
 
 
 void
@@ -29,17 +31,17 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
     CCTK_INFO ("Initialising to weight 1");
   }
   
-#pragma omp parallel for
-  for (int k=0; k<cctk_lsh[2]; ++k) {
-    for (int j=0; j<cctk_lsh[1]; ++j) {
-      for (int i=0; i<cctk_lsh[0]; ++i) {
-        
-        int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-        weight[ind] = 1.0;
-        
-      }
-    }
-  }
+#pragma omp parallel
+  LC_LOOP3(MaskBase_InitMask_interior,
+           i,j,k,
+           0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
+           cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+  {
+    
+    int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+    weight[ind] = 1.0;
+    
+  } LC_ENDLOOP3(MaskBase_InitMask_interior);
   
   
   
@@ -69,17 +71,17 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
         }
         
         /* Loop over the boundary slab */
-#pragma omp parallel for
-        for (int k=imin[2]; k<imax[2]; ++k) {
-          for (int j=imin[1]; j<imax[1]; ++j) {
-            for (int i=imin[0]; i<imax[0]; ++i) {
-              
-              int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-              weight[ind] = 0.0;
-              
-            }
-          }
-        }
+#pragma omp parallel
+        LC_LOOP3(MaskBase_InitMask_ghosts,
+                 i,j,k,
+                 imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                 cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+        {
+          
+          int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+          weight[ind] = 0.0;
+          
+        } LC_ENDLOOP3(MaskBase_InitMask_ghosts);
         
       }
     }
@@ -138,17 +140,17 @@ MaskBase_InitMask (CCTK_ARGUMENTS)
           }
           
           /* Loop over the boundary slab */
-#pragma omp parallel for
-          for (int k=imin[2]; k<imax[2]; ++k) {
-            for (int j=imin[1]; j<imax[1]; ++j) {
-              for (int i=imin[0]; i<imax[0]; ++i) {
-        
-                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                weight[ind] = 0.0;
-                
-              }
-            }
-          }
+#pragma omp parallel
+          LC_LOOP3(MaskBase_InitMask_boundary,
+                   i,j,k,
+                   imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+          {
+            
+            int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+            weight[ind] = 0.0;
+            
+          } LC_ENDLOOP3(MaskBase_InitMask_boundary);
           
         }
       }

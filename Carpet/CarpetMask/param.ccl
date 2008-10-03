@@ -36,6 +36,10 @@ CCTK_REAL excluded_radius[10] "radius of excluded region" STEERABLE=always
   0.0:* :: ""
 } -1.0
 
+BOOLEAN exclude_exterior[10] "exclude the exterior of this radius, otherwise the interior" STEERABLE=always
+{
+} no
+
 
 
 # Exclude spherical surfaces

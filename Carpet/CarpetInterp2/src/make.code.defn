@@ -1,7 +1,7 @@
 # Main make.code.defn file for thorn CarpetInterp2
 
 # Source files in this directory
-SRCS = fasterp.cc
+SRCS = fasterp.cc interp2.cc
 
 # Subdirectories containing source files
 SUBDIRS = 
