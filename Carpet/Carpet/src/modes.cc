@@ -176,10 +176,11 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     assert (is_global_mode() or is_meta_mode());
-    Checkpoint ("Leaving global mode");
     
     if (mglevel == -1) return;  // early return
     
+    Checkpoint ("Leaving global mode");
+
     // Save and unset time delta
     delta_time = cctkGH->cctk_delta_time / mglevelfact;
     cctkGH->cctk_delta_time = 0.0;
@@ -286,10 +287,11 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     assert (is_level_mode() or is_global_mode());
-    Checkpoint ("Leaving level mode");
     
     if (reflevel == -1) return; // early return
     
+    Checkpoint ("Leaving level mode");
+
     // Save and unset current time
     assert (mglevel>=0 and mglevel<(int)leveltimes.size());
     assert (reflevel>=0 and reflevel<(int)leveltimes.at(mglevel).size());
@@ -374,10 +376,11 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     assert (is_singlemap_mode() or is_level_mode());
-    Checkpoint ("Leaving singlemap mode");
     
     if (map == -1) return;      // early return
     
+    Checkpoint ("Leaving singlemap mode");
+
     assert (mc_grouptype == CCTK_SCALAR or mc_grouptype == CCTK_ARRAY
             or mc_grouptype == CCTK_GF);
     
@@ -538,9 +541,10 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     assert (is_local_mode() or is_singlemap_mode());
-    Checkpoint ("Leaving local mode");
     
     if (component == -1) return; // early return
+
+    Checkpoint ("Leaving local mode");
     
     if (mc_grouptype == CCTK_GF) {
       

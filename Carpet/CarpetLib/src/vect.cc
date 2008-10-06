@@ -55,6 +55,7 @@ template void vect<vect<bool,3>,2>::input (istream& is);
 
 template void vect<bool,2>::output (ostream& os) const;
 template void vect<bool,3>::output (ostream& os) const;
+template void vect<CCTK_REAL,2>::output (ostream& os) const;
 template void vect<CCTK_REAL,3>::output (ostream& os) const;
 template void vect<vect<bool,2>,3>::output (ostream& os) const;
 template void vect<vect<int,2>,3>::output (ostream& os) const;
