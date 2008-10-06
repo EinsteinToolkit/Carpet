@@ -756,12 +756,12 @@ namespace CarpetInterp2 {
 #ifndef NDEBUG
       vector<bool> received (npoints);
       fill (received, false);
-#pragma omp parallel for
+      // NOTE: Can't use OMP parallel here -- vector<bool> has the
+      // wrong memory layout for this
       for (int n=0; n<npoints; ++n) {
         assert (not received.AT(n));
         received.AT(n) = true;
       }
-#pragma omp parallel for
       for (int n=0; n<npoints; ++n) {
         assert (received.AT(n));
       }
