@@ -310,11 +310,11 @@ namespace Carpet {
                 time_and_mode,
                 attribute->where,
                 attribute->thorn, attribute->routine);
-    CallBeforeRoutines (cctkGH);
+    CallBeforeRoutines (cctkGH, function, attribute, data);
     user_timer.start();
     int const res = CCTK_CallFunction (function, attribute, data);
     user_timer.stop();
-    CallAfterRoutines (cctkGH);
+    CallAfterRoutines (cctkGH, function, attribute, data);
     assert (res==0);
   }
   
