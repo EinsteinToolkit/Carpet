@@ -261,8 +261,7 @@ void CarpetLib_setmemlimit (CCTK_ARGUMENTS)
   // Set address space limit
   struct rlimit aslimit;
   {
-    int const ierr = getrlimit (RLIMIT_AS, & aslimit);
-    assert (not ierr);
+    check (not getrlimit (RLIMIT_AS, & aslimit));
   }
   CCTK_VInfo (CCTK_THORNSTRING,
               "Old address space size limit: hard=%lld, soft=%lld",
@@ -271,12 +270,10 @@ void CarpetLib_setmemlimit (CCTK_ARGUMENTS)
     aslimit.rlim_cur = max_allowed_memory_MB * 1000000LL;
   }
   {
-    int const ierr = setrlimit (RLIMIT_AS, & aslimit);
-    assert (not ierr);
+    check (not setrlimit (RLIMIT_AS, & aslimit));
   }
   {
-    int const ierr = getrlimit (RLIMIT_AS, & aslimit);
-    assert (not ierr);
+    check (not getrlimit (RLIMIT_AS, & aslimit));
   }
   CCTK_VInfo (CCTK_THORNSTRING,
               "Old address space size limit: hard=%lld, soft=%lld",
