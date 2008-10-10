@@ -73,8 +73,7 @@ namespace Carpet {
       }
       
       cGroup gp;
-      const int ierr = CCTK_GroupData (group, &gp);
-      assert (not ierr);
+      check (not CCTK_GroupData (group, &gp));
       
       bool const all_rl = is_meta_mode() or is_global_mode();
       bool const is_array = gp.grouptype != CCTK_GF;
@@ -356,8 +355,7 @@ namespace Carpet {
     if (max_refinement_levels == 1) return;
     
     cGroup gp;
-    const int ierr = CCTK_GroupData (group, & gp);
-    assert (not ierr);
+    check (not CCTK_GroupData (group, & gp));
     
     if (gp.grouptype == CCTK_GF) {
       if (groupdata.at(group).transport_operator != op_none and

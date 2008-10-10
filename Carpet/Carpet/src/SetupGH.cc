@@ -390,8 +390,7 @@ namespace Carpet {
       assert (num_maps == 1);   // must be the default to avoid confusion
       assert (CCTK_IsFunctionAliased ("MultiPatch_GetSystemSpecification"));
       CCTK_INT maps1;
-      int const ierr = MultiPatch_GetSystemSpecification (& maps1);
-      assert (not ierr);
+      check (not MultiPatch_GetSystemSpecification (& maps1));
       maps = maps1;
     } else {
       maps = num_maps;
@@ -698,8 +697,7 @@ namespace Carpet {
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       
       cGroup gdata;
-      int const ierr = CCTK_GroupData (group, &gdata);
-      assert (not ierr);
+      check (not CCTK_GroupData (group, &gdata));
       
       // Check for compact, contiguous, and staggered groups
       ensure_group_options (group, gdata);
@@ -1146,22 +1144,18 @@ namespace Carpet {
       
       jjvect nboundaryzones_, is_internal_, is_staggered_, shiftout_;
       if (CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification")) {
-        int const ierr =
-          MultiPatch_GetBoundarySpecification (m,
-                                               2*dim,
-                                               &nboundaryzones_[0][0],
-                                               &is_internal_[0][0],
-                                               &is_staggered_[0][0],
-                                               &shiftout_[0][0]);
-        assert (not ierr);
+        check (not MultiPatch_GetBoundarySpecification (m,
+                                                        2*dim,
+                                                        &nboundaryzones_[0][0],
+                                                        &is_internal_[0][0],
+                                                        &is_staggered_[0][0],
+                                                        &shiftout_[0][0]));
       } else {
-        int const ierr =
-          GetBoundarySpecification (2*dim,
-                                    &nboundaryzones_[0][0],
-                                    &is_internal_[0][0],
-                                    &is_staggered_[0][0],
-                                    &shiftout_[0][0]);
-        assert (not ierr);
+        check (not GetBoundarySpecification (2*dim,
+                                             &nboundaryzones_[0][0],
+                                             &is_internal_[0][0],
+                                             &is_staggered_[0][0],
+                                             &shiftout_[0][0]));
       }
       nboundaryzones = xpose (nboundaryzones_);
       is_internal    = xpose (is_internal_);
@@ -1178,8 +1172,7 @@ namespace Carpet {
       // We cannot call GetSymmetryBoundaries boundaries here, since
       // the symmetry boundaries have not yet been registered.
       jjvect symbnd_;
-      int const ierr = GetSymmetryBoundaries (cctkGH, 2*dim, &symbnd_[0][0]);
-      assert (not ierr);
+      check (not GetSymmetryBoundaries (cctkGH, 2*dim, &symbnd_[0][0]));
       b2vect const symbnd = xpose (symbnd_);
 #else
       b2vect const symbnd = b2vect (true);
@@ -1257,12 +1250,11 @@ namespace Carpet {
       // altogether, maybe creating a new thorn
       
       assert (CCTK_IsFunctionAliased ("MultiPatch_GetDomainSpecification"));
-      int const ierr = MultiPatch_GetDomainSpecification
-        (m, dim,
-         &physical_min[0], &physical_max[0],
-         &interior_min[0], &interior_max[0],
-         &exterior_min[0], &exterior_max[0], &base_spacing[0]);
-      assert (not ierr);
+      check (not MultiPatch_GetDomainSpecification
+             (m, dim,
+              &physical_min[0], &physical_max[0],
+              &interior_min[0], &interior_max[0],
+              &exterior_min[0], &exterior_max[0], &base_spacing[0]));
       
     } else if (domain_from_coordbase) {
       
@@ -1271,13 +1263,12 @@ namespace Carpet {
       // Ensure that CartGrid3D::type = "coordbase"
       ensure_CartGrid3D_type ();
       
-      int const ierr = GetDomainSpecification
-        (dim,
-         &physical_min[0], &physical_max[0],
-         &interior_min[0], &interior_max[0],
-         &exterior_min[0], &exterior_max[0],
-         &base_spacing[0]);
-      assert (not ierr);
+      check (not GetDomainSpecification
+             (dim,
+              &physical_min[0], &physical_max[0],
+              &interior_min[0], &interior_max[0],
+              &exterior_min[0], &exterior_max[0],
+              &base_spacing[0]));
       
     } else {
       // Legacy code
@@ -1301,13 +1292,12 @@ namespace Carpet {
       exterior_min = 0.0;
       exterior_max = rvect (npoints - 1);
       base_spacing = 1.0;
-      int const ierr = ConvertFromExteriorBoundary
-        (dim,
-         &physical_min[0], &physical_max[0],
-         &interior_min[0], &interior_max[0],
-         &exterior_min[0], &exterior_max[0],
-         &base_spacing[0]);
-      assert (not ierr);
+      check (not ConvertFromExteriorBoundary
+             (dim,
+              &physical_min[0], &physical_max[0],
+              &interior_min[0], &interior_max[0],
+              &exterior_min[0], &exterior_max[0],
+              &base_spacing[0]));
       
     } // if legacy domain specification
     
@@ -1346,24 +1336,20 @@ namespace Carpet {
         CCTK_IsFunctionAliased ("MultiPatch_ConvertFromPhysicalBoundary"))
     {
       assert (not domain_from_coordbase);
-      int const ierr =
-        MultiPatch_ConvertFromPhysicalBoundary
-        (m,
-         dim,
-         &physical_min[0], &physical_max[0],
-         &interior_min[0], &interior_max[0],
-         &exterior_min[0], &exterior_max[0],
-         &spacing[0]);
-      assert (not ierr);
+      check (not MultiPatch_ConvertFromPhysicalBoundary
+             (m,
+              dim,
+              &physical_min[0], &physical_max[0],
+              &interior_min[0], &interior_max[0],
+              &exterior_min[0], &exterior_max[0],
+              &spacing[0]));
     } else {
-      int const ierr =
-        ConvertFromPhysicalBoundary
-        (dim,
-         &physical_min[0], &physical_max[0],
-         &interior_min[0], &interior_max[0],
-         &exterior_min[0], &exterior_max[0],
-         &spacing[0]);
-      assert (not ierr);
+      check (not ConvertFromPhysicalBoundary
+             (dim,
+              &physical_min[0], &physical_max[0],
+              &interior_min[0], &interior_max[0],
+              &exterior_min[0], &exterior_max[0],
+              &spacing[0]));
     }
     
     ostringstream buf;
@@ -1741,8 +1727,7 @@ namespace Carpet {
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       
       cGroup gdata;
-      int const ierr = CCTK_GroupData (group, & gdata);
-      assert (not ierr);
+      check (not CCTK_GroupData (group, & gdata));
       
       switch (gdata.grouptype) {
       case CCTK_GF:
@@ -1838,9 +1823,9 @@ namespace Carpet {
     if (have_prolong_param_string) {
       char * thorn;
       char * name;
-      int const ierr2
+      int const ierr
         = CCTK_DecomposeName (prolong_param_string, &thorn, &name);
-      if (ierr2 < 0) {
+      if (ierr < 0) {
         char * const groupname = CCTK_GroupName (group);
         CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Group \"%s\" has the \"ProlongationParameter\" tag \"%s\".  This is not a valid parameter name.",

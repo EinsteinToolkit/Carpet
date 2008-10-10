@@ -6,6 +6,8 @@
 #include <iostream>
 #include <sys/resource.h>
 
+#include "defs.hh"
+
 namespace Carpet {
   
   using namespace std;
@@ -40,8 +42,7 @@ namespace Carpet {
   set_limit (int const resource, char const * const name, CCTK_INT const value)
   {
     struct rlimit limit;
-    int const ierr1 = getrlimit (resource, & limit);
-    assert (not ierr1);
+    check (not getrlimit (resource, & limit));
     
     if (value == -2 ) {
       // Only show limit
@@ -57,11 +58,8 @@ namespace Carpet {
       limit.rlim_cur = min ((rlim_t) value * 1024 * 1024, limit.rlim_max);
     }
     
-    int const ierr2 = setrlimit (resource, & limit);
-    assert (not ierr2);
-    
-    int const ierr3 = getrlimit (resource, & limit);
-    assert (not ierr3);
+    check (not setrlimit (resource, & limit));
+    check (not getrlimit (resource, & limit));
     
     cout << "New " << name << " limit: " << limit << endl;
   }

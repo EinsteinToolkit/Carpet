@@ -89,8 +89,7 @@ namespace Carpet {
     // Set array information
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       cGroup gp;
-      const int ierr = CCTK_GroupData (group, &gp);
-      assert (not ierr);
+      check (not CCTK_GroupData (group, &gp));
       if (gp.grouptype != CCTK_GF) {
         
         const int rl = 0;
