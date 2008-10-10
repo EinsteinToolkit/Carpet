@@ -190,12 +190,12 @@ namespace CarpetIOASCII {
       if (not CCTK_Equals (verbose, "none")) {
         int count = 0;
         ostringstream msg;
-        msg << "Periodic " << outdim << "D AMR output requested for:" << eol;
+        msg << "Periodic " << outdim << "D AMR output requested for:";
         for (int vi=0; vi< CCTK_NumVars(); ++vi) {
           if (requests.at(vi)) {
             ++count;
             char* const fullname = CCTK_FullName(vi);
-            msg << "   " << fullname << eol;
+            msg << eol << "   " << fullname;
             free (fullname);
           }
         }
