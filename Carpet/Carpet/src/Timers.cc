@@ -13,6 +13,8 @@
 #  include <unistd.h>
 #endif
 
+#include <defs.hh>
+
 #include "Timers.hh"
 
 
@@ -178,8 +180,7 @@ namespace Carpet {
   Timer::~Timer ()
   {
     timerSet.remove (this);
-    int const ierr = CCTK_TimerDestroyI (handle);
-    assert (not ierr);
+    check (not CCTK_TimerDestroyI (handle));
   }
   
   
@@ -204,8 +205,7 @@ namespace Carpet {
     if (was_running) stop();
     
 #if 0
-    int const ierr = CCTK_TimerPrintDataI (handle, -1); // -1 means: all clocks
-    assert (not ierr);
+    check (not CCTK_TimerPrintDataI (handle, -1)); // -1 means: all clocks
 #endif
     
     static cTimerData * timer = 0;
