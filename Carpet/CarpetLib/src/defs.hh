@@ -28,6 +28,11 @@ using namespace std;
 
 
 
+// Check a return value
+#define check(_expr) do { bool const _val = (_expr); assert(_val); } while(0)
+
+
+
 // Define the restrict qualifier
 #ifdef CCTK_CXX_RESTRICT
 #  define restrict CCTK_CXX_RESTRICT
