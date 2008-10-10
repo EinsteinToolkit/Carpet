@@ -175,9 +175,6 @@ public:
 template <typename T, int D, typename P>
 inline size_t memoryof (fulltree<T,D,P> const & f) { return f.memory(); }
 
-template <typename T, int D, typename P>
-inline size_t memoryof (fulltree<T,D,P> * const & fp) { return sizeof fp; }
-
 
 
 // Output
