@@ -40,6 +40,8 @@ function eno1d(q)
   CCTK_REAL8 :: diffleft, diffright
 
 !!$  Directly find the second undivided differences
+!!$  We need to pick between discrete values at
+!!$  1 2 3 4 for the interpolation between 2 and 3.
 
   diffleft  = q(1) + q(3) - two * q(2)
   diffright = q(2) + q(4) - two * q(3)
@@ -58,9 +60,15 @@ function eno1d(q)
     
   end if
 
-!!$    Check that the quadratic is reasonable
+!!$    Check that the quadratic is reasonable:
+!!$    Check 1: interpolated value between
+!!$             values at interpolation points
+!!$    Check 2: sign of the curvature of the interpolating 
+!!$             polynomial does not change.
 
-  if ( (eno1d-q(2)) * (q(3)-eno1d) .lt. zero ) then
+  if ( ((eno1d-q(2)) * (q(3)-eno1d) .lt. zero) &
+       .or. &
+       (diffleft*diffright .le. zero) ) then
       
 !!$      Not reasonable. Linear interpolation
 
