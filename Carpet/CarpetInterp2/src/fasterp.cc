@@ -1054,7 +1054,7 @@ namespace CarpetInterp2 {
       }
       assert (dyndata.activetimelevels > tl);
 #endif
-      assert (values.AT(v) != NULL);
+      assert (recv_descr.npoints == 0 or values.AT(v) != NULL);
     }
     
     MPI_Comm & comm_world = * (MPI_Comm *) GetMPICommWorld (cctkGH);
