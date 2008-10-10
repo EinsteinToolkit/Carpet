@@ -164,7 +164,7 @@ fulltree<T,D,P>::search (tvect const & ipos) const
   assert (not empty());
   // cout << "fulltree::search ipos=" << ipos << endl;
   if (is_leaf()) return & p;
-  int const i = asearch (ipos[dir], bounds);
+  int const i = ::asearch (ipos[dir], bounds);
   // cout << "fulltree::search i=" << i << " size=" << subtrees.size() << endl;
   if (i<0 or i>=int(subtrees.size())) return NULL; // not found
   return subtrees.AT(i)->search(ipos);
@@ -177,7 +177,7 @@ fulltree<T,D,P>::search (tvect const & ipos)
   assert (not empty());
   // cout << "fulltree::search ipos=" << ipos << endl;
   if (is_leaf()) return & p;
-  int const i = asearch (ipos[dir], bounds);
+  int const i = ::asearch (ipos[dir], bounds);
   // cout << "fulltree::search i=" << i << " size=" << subtrees.size() << endl;
   if (i<0 or i>=int(subtrees.size())) return NULL; // not found
   return subtrees.AT(i)->search(ipos);
@@ -489,6 +489,5 @@ int asearch (T const t, vector <T> const & ts)
 template class fulltree <int, dim, pseudoregion_t>;
 
 template size_t memoryof (fulltree <int, dim, pseudoregion_t> const & f);
-template size_t memoryof (fulltree <int, dim, pseudoregion_t> * const & f);
 
 template ostream & operator<< (ostream & os, fulltree <int, dim, pseudoregion_t> const & f);
