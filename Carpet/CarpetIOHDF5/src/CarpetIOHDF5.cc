@@ -826,7 +826,7 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
       for (int group = CCTK_NumGroups () - 1; group >= 0; group--) {
         /* only dump groups which have storage assigned */
         if (CCTK_QueryGroupStorageI (cctkGH, group) <= 0 or
-	    CCTK_NumVarsInGroupI(group) == 0) {
+          CCTK_NumVarsInGroupI(group) == 0) {
           continue;
         }
 
@@ -846,6 +846,7 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
           char* value = new char[len + 1];
           Util_TableGetString (gdata.tagstable, len + 1, value, "checkpoint");
           if (len == sizeof ("no") - 1 and CCTK_Equals (value, "no")) {
+            delete[] value;
             continue;
           } else if (not CCTK_Equals (value, "yes")) {
             char* groupname = CCTK_GroupName (group);
@@ -916,7 +917,6 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
     EndTimingIO (cctkGH, io_files, io_bytes, true);
 
   } END_MGLEVEL_LOOP;
-
 
   // Close the file
   if (file >= 0) {
@@ -1222,6 +1222,7 @@ static int WriteAttribute (hid_t const group,
   HDF5_ERROR (H5Awrite (attribute, datatype, svalue));
   HDF5_ERROR (H5Aclose (attribute));
   HDF5_ERROR (H5Sclose (dataspace));
+  HDF5_ERROR (H5Tclose (datatype));
   
   return error_count;
 }
@@ -1296,6 +1297,7 @@ static int WriteAttribute (hid_t const group,
   HDF5_ERROR (H5Awrite (attribute, datatype, &svalue.front()));
   HDF5_ERROR (H5Aclose (attribute));
   HDF5_ERROR (H5Sclose (dataspace));
+  HDF5_ERROR (H5Tclose (datatype));
   
   return error_count;
 }
