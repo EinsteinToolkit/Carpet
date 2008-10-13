@@ -25,9 +25,8 @@ namespace CarpetInterp2 {
   int const ipoison = -1234567890;
   CCTK_REAL const poison = -1.0e+12;
   
-  template <typename T> T get_poison () { abort(); }
-  template<> int get_poison () { return ipoison; }
-  template<> CCTK_REAL get_poison () { return poison; }
+  int get_poison (int const &) { return ipoison; }
+  CCTK_REAL get_poison (CCTK_REAL const &) { return poison; }
   
   template <typename T>
   void fill (vector<T> & v, T const & val)
@@ -43,8 +42,9 @@ namespace CarpetInterp2 {
   void fill_with_poison (vector<T> & v)
   {
 #ifndef NDEBUG
-    fill (v, get_poison<T>());
-    // fill (v.begin(), v.end(), get_poison<T>());
+    T dummy;
+    fill (v, get_poison(dummy));
+    // fill (v.begin(), v.end(), get_poison(dummy));
 #endif
   }
   
@@ -53,7 +53,8 @@ namespace CarpetInterp2 {
   {
 #pragma omp parallel for
     for (int n=0; n<int(v.size()); ++n) {
-      assert (v.AT(n) != get_poison<T>());
+      T dummy;
+      assert (v.AT(n) != get_poison(dummy));
     }
   }
   
@@ -1038,10 +1039,7 @@ namespace CarpetInterp2 {
       int const gi = CCTK_GroupIndexFromVarI (vi);
       assert (gi >= 0);
       cGroup group;
-      {
-        int const ierr = CCTK_GroupData (gi, &group);
-        assert (not ierr);
-      }
+      check (not CCTK_GroupData (gi, &group));
       assert (group.grouptype == CCTK_GF);
       assert (group.vartype == CCTK_VARIABLE_REAL);
       assert (group.dim == dim);
@@ -1054,7 +1052,7 @@ namespace CarpetInterp2 {
       }
       assert (dyndata.activetimelevels > tl);
 #endif
-      assert (values.AT(v) != NULL);
+      assert (recv_descr.npoints == 0 or values.AT(v) != NULL);
     }
     
     MPI_Comm & comm_world = * (MPI_Comm *) GetMPICommWorld (cctkGH);

@@ -635,44 +635,34 @@ namespace Carpet {
     jjvect is_internal;
     jjvect is_staggered;
     jjvect shiftout;
-    {
-      CCTK_INT const ierr = GetBoundarySpecification
-        (2*dim,
-         & nboundaryzones[0][0],
-         & is_internal[0][0],
-         & is_staggered[0][0],
-         & shiftout[0][0]);
-      assert (not ierr);
-    }
+    check (not GetBoundarySpecification
+           (2*dim,
+            & nboundaryzones[0][0],
+            & is_internal[0][0],
+            & is_staggered[0][0],
+            & shiftout[0][0]));
     
     rvect physical_lower, physical_upper;
     rvect interior_lower, interior_upper;
     rvect exterior_lower, exterior_upper;
     rvect spacing;
-    {
-      CCTK_INT const ierr = GetDomainSpecification
-        (dim,
-         & physical_lower[0], & physical_upper[0],
-         & interior_lower[0], & interior_upper[0],
-         & exterior_lower[0], & exterior_upper[0],
-         & spacing[0]);
-      assert (not ierr);
-    }
+    check (not GetDomainSpecification
+           (dim,
+            & physical_lower[0], & physical_upper[0],
+            & interior_lower[0], & interior_upper[0],
+            & exterior_lower[0], & exterior_upper[0],
+            & spacing[0]));
     
     // Adapt spacing for convergence level
 #warning "TODO: take ml into account"
     spacing *= ipow ((CCTK_REAL) mgfact, basemglevel);
     
-    {
-      CCTK_INT const ierr =
-        ConvertFromPhysicalBoundary
-        (dim,
-         & physical_lower[0], & physical_upper[0],
-         & interior_lower[0], & interior_upper[0],
-         & exterior_lower[0], & exterior_upper[0],
-         & spacing[0]);
-      assert (not ierr);
-    }
+    check (not ConvertFromPhysicalBoundary
+           (dim,
+            & physical_lower[0], & physical_upper[0],
+            & interior_lower[0], & interior_upper[0],
+            & exterior_lower[0], & exterior_upper[0],
+            & spacing[0]));
     
     // Affine transformation between index space and coordinate space
     rvect const origin = exterior_lower;
@@ -1532,15 +1522,13 @@ namespace Carpet {
       if (domain_from_multipatch and
           CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification"))
       {
-        const int ierr = MultiPatch_GetBoundarySpecification
-          (m, 2*dim, &nboundaryzones[0][0], &is_internal[0][0],
-           &is_staggered[0][0], &shiftout[0][0]);
-        assert (not ierr);
+        check (not MultiPatch_GetBoundarySpecification
+               (m, 2*dim, &nboundaryzones[0][0], &is_internal[0][0],
+                &is_staggered[0][0], &shiftout[0][0]));
       } else {
-        const int ierr = GetBoundarySpecification
-          (2*dim, &nboundaryzones[0][0], &is_internal[0][0],
-           &is_staggered[0][0], &shiftout[0][0]);
-        assert (not ierr);
+        check (not GetBoundarySpecification
+               (2*dim, &nboundaryzones[0][0], &is_internal[0][0],
+                &is_staggered[0][0], &shiftout[0][0]));
       }
       // (distance in grid points between the exterior and the physical boundary)
       iivect offset;

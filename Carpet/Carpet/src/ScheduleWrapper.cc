@@ -12,7 +12,10 @@ namespace Carpet {
   
   
   
-  typedef CCTK_INT (* func) (CCTK_POINTER_TO_CONST cctkGH);
+  typedef CCTK_INT (* func) (CCTK_POINTER_TO_CONST cctkGH,
+                             CCTK_POINTER          function,
+                             CCTK_POINTER          attribute,
+                             CCTK_POINTER          data);
   typedef list <func> flist;
   
   static flist func_befores, func_afters;
@@ -44,22 +47,28 @@ namespace Carpet {
   
   
   void
-  CallBeforeRoutines (cGH const * restrict const cctkGH)
+  CallBeforeRoutines (cGH const * const cctkGH,
+                      void * const function,
+                      cFunctionData * const attribute,
+                      void * const data)
   {
     for (flist::const_iterator
            fli = func_befores.begin(); fli != func_befores.end(); ++ fli)
     {
-      (* fli) (cctkGH);
+      (* fli) (cctkGH, function, attribute, data);
     }
   }
   
   void
-  CallAfterRoutines (cGH const * restrict const cctkGH)
+  CallAfterRoutines (cGH const * const cctkGH,
+                     void * const function,
+                     cFunctionData * const attribute,
+                     void * const data)
   {
     for (flist::const_iterator
            fli = func_afters.begin(); fli != func_afters.end(); ++ fli)
     {
-      (* fli) (cctkGH);
+      (* fli) (cctkGH, function, attribute, data);
     }
   }
   

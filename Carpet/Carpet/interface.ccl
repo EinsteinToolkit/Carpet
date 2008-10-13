@@ -45,12 +45,24 @@ PROVIDES FUNCTION GetMPICommWorld WITH Carpet_GetMPICommWorld LANGUAGE C
 # every scheduled routine
 CCTK_INT \
 FUNCTION RegisterScheduleWrapper \
-  (CCTK_INT IN CCTK_FPOINTER func_before (CCTK_POINTER_TO_CONST IN cctkGH), \
-   CCTK_INT IN CCTK_FPOINTER func_after  (CCTK_POINTER_TO_CONST IN cctkGH))
+  (CCTK_INT IN CCTK_FPOINTER func_before (CCTK_POINTER_TO_CONST IN cctkGH,    \
+                                          CCTK_POINTER          IN function,  \
+                                          CCTK_POINTER          IN attribute, \
+                                          CCTK_POINTER          IN data),     \
+   CCTK_INT IN CCTK_FPOINTER func_after  (CCTK_POINTER_TO_CONST IN cctkGH,    \
+                                          CCTK_POINTER          IN function,  \
+                                          CCTK_POINTER          IN attribute, \
+                                          CCTK_POINTER          IN data))
 CCTK_INT \
 FUNCTION UnRegisterScheduleWrapper \
-  (CCTK_INT IN CCTK_FPOINTER func_before (CCTK_POINTER_TO_CONST IN cctkGH), \
-   CCTK_INT IN CCTK_FPOINTER func_after  (CCTK_POINTER_TO_CONST IN cctkGH))
+  (CCTK_INT IN CCTK_FPOINTER func_before (CCTK_POINTER_TO_CONST IN cctkGH,    \
+                                          CCTK_POINTER          IN function,  \
+                                          CCTK_POINTER          IN attribute, \
+                                          CCTK_POINTER          IN data),     \
+   CCTK_INT IN CCTK_FPOINTER func_after  (CCTK_POINTER_TO_CONST IN cctkGH,    \
+                                          CCTK_POINTER          IN function,  \
+                                          CCTK_POINTER          IN attribute, \
+                                          CCTK_POINTER          IN data))
 PROVIDES FUNCTION RegisterScheduleWrapper \
   WITH Carpet_RegisterScheduleWrapper \
   LANGUAGE C
