@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -861,6 +862,12 @@ namespace Carpet {
                 double (num_active_array_points / 1000000),
                 double (num_total_array_points / 1000000),
                 double (num_total_array_points / num_active_array_points * 100 - 100));
+    
+    // After this, we will begin to allocate memory for the grid
+    // structure.  If we run out of memory, ensure that this output
+    // still makes it to disk.
+    fflush (stdout);
+    fflush (stderr);
   }
   
   
