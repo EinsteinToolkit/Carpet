@@ -428,7 +428,9 @@ namespace CarpetIOASCII {
       
       // Check for storage
       if (not CCTK_QueryGroupStorageI (cctkGH, group)) {
-        CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+        // This may be okay if storage is e.g. scheduled only in the
+        // analysis bin
+        CCTK_VWarn (4, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Cannot output variable '%s' because it has no storage",
                     varname);
         return 0;
