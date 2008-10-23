@@ -57,6 +57,7 @@ namespace Carpet {
     do_taper = use_tapered_grids;
     
     // Main loop
+    BeginTiming (cctkGH);
     static Timer timer ("Evolve");
     timer.start();
     while (not do_terminate (cctkGH)) {

@@ -136,9 +136,6 @@ namespace Carpet {
   {
     DECLARE_CCTK_ARGUMENTS;
     
-    initial_walltime = get_walltime();
-    initial_phystime = cctkGH->cctk_time;
-    
     * physical_time_per_hour = 0.0;
     
     * time_total         = 0.0;
@@ -167,6 +164,19 @@ namespace Carpet {
     
     * grid_points_per_second   = 0.0;
     * grid_point_updates_count = 0.0;
+  }
+  
+  
+  
+  // Begin timing (to be called after initialisation, just before the
+  // main evolution begins)
+  void
+  BeginTiming (cGH const * const cctkGH)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    
+    initial_walltime = get_walltime();
+    initial_phystime = cctkGH->cctk_time;
   }
   
   
