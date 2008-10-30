@@ -1,5 +1,5 @@
 ActiveThorns = "IOUtil Boundary CartGrid3D CoordBase SymBase MoL InitBase"
-ActiveThorns = "Carpet CarpetLib CarpetInterp CarpetReduce CarpetSlab"
+ActiveThorns = "Carpet CarpetLib CarpetInterp GSL LoopControl CarpetReduce CarpetSlab"
 
 #---Geometry---
 
