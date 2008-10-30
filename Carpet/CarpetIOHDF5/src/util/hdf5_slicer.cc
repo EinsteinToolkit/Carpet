@@ -58,6 +58,8 @@ using namespace std;
           }                                                                   \
         }
 
+// the name of the group containing file metadata
+#define METADATA_GROUP "Parameters and Global Attributes"
 
 /*****************************************************************************
  *************************       Global Data         *************************
@@ -335,6 +337,7 @@ static herr_t ProcessDataset (hid_t group, const char *datasetname, void *_file)
   hsize_t dims[3];
   int iorigin[3];
   double origin[3], delta[3];
+  int itimestep = 0, level = 0;
 
   bool is_okay = false;
   if (typeclass != H5T_FLOAT and typeclass != H5T_INTEGER) {
@@ -367,6 +370,12 @@ static herr_t ProcessDataset (hid_t group, const char *datasetname, void *_file)
     CHECK_HDF5 (H5Aclose (attr));
     CHECK_HDF5 (attr = H5Aopen_name (dataset, "delta"));
     CHECK_HDF5 (H5Aread (attr, H5T_NATIVE_DOUBLE, delta));
+    CHECK_HDF5 (H5Aclose (attr));
+    CHECK_HDF5 (attr = H5Aopen_name (dataset, "timestep"));
+    CHECK_HDF5 (H5Aread (attr, H5T_NATIVE_INT, &itimestep));
+    CHECK_HDF5 (H5Aclose (attr));
+    CHECK_HDF5 (attr = H5Aopen_name (dataset, "level"));
+    CHECK_HDF5 (H5Aread (attr, H5T_NATIVE_INT, &level));
     CHECK_HDF5 (H5Aclose (attr));
     CHECK_HDF5 (H5Sget_simple_extent_dims (dataspace, dims, NULL));
 
@@ -405,6 +414,7 @@ static herr_t ProcessDataset (hid_t group, const char *datasetname, void *_file)
   hsize_t slabcount[3] = {dims[0], dims[1], dims[2]};
   hsize_t outslabcount[3];
   double slice_origin[3], slice_delta[3];
+  int slice_iorigin[3];
   int j = 0;
   for (int i = 0; i < 3; i++) {
     if (slab_coord[i] != PARAMETER_UNSET) {
@@ -413,7 +423,9 @@ static herr_t ProcessDataset (hid_t group, const char *datasetname, void *_file)
     } else {
       outslabcount[outrank-j-1] = dims[2-i];
       slice_origin[j] = origin[i];
-      slice_delta[j++] = delta[i];
+      slice_delta[j] = delta[i];
+      slice_iorigin[j] = iorigin[i];
+      j++;
     }
   }
   assert(j == outrank);
@@ -440,7 +452,23 @@ static herr_t ProcessDataset (hid_t group, const char *datasetname, void *_file)
   CHECK_HDF5 (H5Tclose (datatype));
   CHECK_HDF5 (H5Sclose (dataspace));
 
-  // write basic attributes
+  // write global attributes (only on the first time through)
+  static bool first_time_through = true;
+  if (first_time_through) {
+    hid_t metadata_group;
+    CHECK_HDF5 (metadata_group = H5Gcreate(outfile, METADATA_GROUP, 0));
+    CHECK_HDF5 (dataspace = H5Screate(H5S_SCALAR));
+    CHECK_HDF5 (attr = H5Acreate(metadata_group, "nioprocs", H5T_NATIVE_INT,
+                                 dataspace, H5P_DEFAULT));
+    const int nioprocs = 1;
+    CHECK_HDF5 (H5Awrite(attr, H5T_NATIVE_INT, &nioprocs));
+    CHECK_HDF5 (H5Aclose(attr));
+    CHECK_HDF5 (H5Sclose(dataspace));
+    CHECK_HDF5 (H5Gclose(metadata_group));
+    first_time_through = false;
+  }
+  
+  // write basic dataset attributes
   CHECK_HDF5 (dataspace = H5Screate_simple (1, &outrank, NULL));
   CHECK_HDF5 (attr = H5Acreate (dataset, "origin", H5T_NATIVE_DOUBLE,
                                 dataspace, H5P_DEFAULT));
@@ -450,11 +478,23 @@ static herr_t ProcessDataset (hid_t group, const char *datasetname, void *_file)
                                 dataspace, H5P_DEFAULT));
   CHECK_HDF5 (H5Awrite (attr, H5T_NATIVE_DOUBLE, slice_delta));
   CHECK_HDF5 (H5Aclose (attr));
+  CHECK_HDF5 (attr = H5Acreate (dataset, "iorigin", H5T_NATIVE_INT,
+                                dataspace, H5P_DEFAULT));
+  CHECK_HDF5 (H5Awrite (attr, H5T_NATIVE_INT, slice_iorigin));
+  CHECK_HDF5 (H5Aclose (attr));
   CHECK_HDF5 (H5Sclose (dataspace));
   CHECK_HDF5 (dataspace = H5Screate (H5S_SCALAR));
   CHECK_HDF5 (attr = H5Acreate (dataset, "time", H5T_NATIVE_DOUBLE,
                                 dataspace, H5P_DEFAULT));
   CHECK_HDF5 (H5Awrite (attr, H5T_NATIVE_DOUBLE, &time));
+  CHECK_HDF5 (H5Aclose (attr));
+  CHECK_HDF5 (attr = H5Acreate (dataset, "timestep", H5T_NATIVE_INT,
+                                dataspace, H5P_DEFAULT));
+  CHECK_HDF5 (H5Awrite (attr, H5T_NATIVE_INT, &itimestep));
+  CHECK_HDF5 (H5Aclose (attr));
+  CHECK_HDF5 (attr = H5Acreate (dataset, "level", H5T_NATIVE_INT,
+                                dataspace, H5P_DEFAULT));
+  CHECK_HDF5 (H5Awrite (attr, H5T_NATIVE_INT, &level));
   CHECK_HDF5 (H5Aclose (attr));
   CHECK_HDF5 (attr = H5Acreate (dataset, "name", stringdatatype,
                                 dataspace, H5P_DEFAULT));
