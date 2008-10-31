@@ -18,7 +18,7 @@ ActiveThorns = "LocalInterp AEILocalInterp LocalReduce"
 
 
 
-ActiveThorns = "Carpet CarpetLib CarpetInterp CarpetReduce CarpetSlab"
+ActiveThorns = "Carpet CarpetLib CarpetInterp GSL LoopControl CarpetReduce CarpetSlab"
 
 Carpet::domain_from_coordbase = yes
 Carpet::max_refinement_levels = 20

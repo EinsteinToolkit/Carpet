@@ -3,7 +3,7 @@
 
 # Required thorns
 
-ActiveThorns = "CoordBase SymBase time carpet carpetlib carpetregrid carpetreduce carpetslab boundary cartgrid3d bssn_mol mol nanchecker idanalyticbh carpetioascii ioutil carpetiobasic carpetioscalar admcoupling admbase admmacros coordgauge spacemask staticconformal carpetevolutionmask"
+ActiveThorns = "CoordBase SymBase time carpet carpetlib carpetregrid GSL LoopControl carpetreduce carpetslab boundary cartgrid3d bssn_mol mol nanchecker idanalyticbh carpetioascii ioutil carpetiobasic carpetioscalar admcoupling admbase admmacros coordgauge spacemask staticconformal carpetevolutionmask"
 
 # CarpetEvolutionMask 
 
