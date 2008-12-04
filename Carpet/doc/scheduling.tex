@@ -642,8 +642,8 @@ Recover? (yes/no)
 \\
 \fbox{\begin{minipage}[t]{0.47\textwidth}
 PREREGRIDINITIAL\\
-Regrid\\
-POSTREGRIDINITIAL
+const bool did\_regrid = Regrid()\\
+if (did\_regrid) POSTREGRIDINITIAL
 \end{minipage}}
 \fbox{\begin{minipage}[t]{0.47\textwidth}
 Recover grid structure
@@ -696,8 +696,8 @@ time steps
 \end{minipage}
 \fbox{\begin{minipage}[t]{0.875\textwidth}
 PREREGRID\\
-Regrid\\
-POSTREGRID\\
+const bool did\_regrid = Regrid()\\
+if (did\_regrid) POSTREGRID\\
 Advance time\\
 PRESTEP\\
 EVOL\\
@@ -790,7 +790,7 @@ SHUTDOWN
        \fbox{
         \begin{minipage}[c]{0.6\textwidth}
          BASEGRID\\
-         INITIAL
+         INITIAL\\
          POSTINITIAL\\
         \end{minipage}
        }
@@ -804,14 +804,14 @@ SHUTDOWN
 %    
        \fbox{
         \begin{minipage}[c]{0.6\textwidth}
-         PREREGRID
+         PREREGRIDINITIAL
         \end{minipage}
        }
       }
 \\
       \fbox{
        \begin{minipage}[c]{0.94\textwidth}
-        Regrid
+        const bool did\_regrid = Regrid()
        \end{minipage}
       }
 \\
@@ -823,7 +823,7 @@ SHUTDOWN
 %
        \fbox{
         \begin{minipage}[c]{0.6\textwidth}
-         POSTREGRIDINITIAL
+         if (did\_regrid) POSTREGRIDINITIAL
         \end{minipage}
        }
       }
@@ -907,7 +907,7 @@ SHUTDOWN
 \\
       \fbox{
        \begin{minipage}[c]{0.94\textwidth}
-        Regrid
+        const bool did\_regrid = Regrid()
        \end{minipage}
       }
 \\
@@ -919,7 +919,7 @@ SHUTDOWN
 %
        \fbox{
         \begin{minipage}[c]{0.6\textwidth}
-         POSTREGRID
+         if (did\_regrid) POSTREGRID
         \end{minipage}
        }
       }
@@ -997,7 +997,7 @@ SHUTDOWN
 %
     \fbox{
      \begin{minipage}[c]{0.41\textwidth}
-      Regrid
+      const bool did\_regrid = Regrid()
      \end{minipage}
     }
    }
@@ -1012,7 +1012,7 @@ SHUTDOWN
 %
     \fbox{
      \begin{minipage}[c]{0.41\textwidth}
-      POSTREGRID
+      if (did\_regrid) POSTREGRID
      \end{minipage}
     }
    }
@@ -1318,6 +1318,56 @@ flag = false;
 	  in the case that the scheduling of thorn B cannot be modified.
 	}
 \label{fig-example1}
+\end{figure}
+
+\begin{figure}
+\begin{verbatim}
+// import header file exported by Carpet
+// This also requires the following line in this thorn's interface.ccl:
+//   "using include header: carpet.hh"
+#include "carpet.hh"
+
+extern "C" void A(CCTK_ARGUMENTS)
+{
+  // do nothing if the global mode routine B hasn't been called yet
+  // (ie. if not yet on the finest refinement level)
+  if (Carpet::reflevel < Carpet::reflevels-1) return;
+
+  // temporarily leave the current scheduling mode
+  BEGIN_GLOBAL_MODE(cctkGH) {
+
+    // now loop over all refinement levels and do the local operation
+    BEGIN_REFLEVEL_LOOP (cctkGH) {
+      BEGIN_MAP_LOOP (cctkGH, CCTK_GF) {
+        BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, CCTK_GF) {
+  
+          // redeclare CCTK arguments which change for each level/map/component
+          DECLARE_CCTK_ARGUMENTS;
+  
+          // Do the local operation
+          // (eg. use the integration result to adjust some mask grid function)
+          ...
+  
+        } END_LOCAL_COMPONENT_LOOP;
+      } END_MAP_LOOP;
+    } END_REFLEVEL_LOOP;
+
+  // switch back to where we came from
+  } END_GLOBAL_MODE;
+
+}
+\end{verbatim}
+\caption[Example2]
+  {
+    Example2: perform a local operation A on all refinement levels,
+    after global mode routine B within the same schedule group G
+    (eg. call B to integrate some grid function, then call A to apply the
+     integration result to some other grid function).
+	  It is assumed that group G is scheduled in INITIAL (where the loop over
+    refinement levels is iterated upwards) and the scheduling of routine B
+    cannot be modified.
+  }
+\label{fig-example2}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
