@@ -106,7 +106,14 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
   
   // Abort with an error if there is no grid structure in the
   // checkpoint file, or if the number of maps is wrong
-  assert (int(fileset.grid_structure.size()) == maps);
+  if (fileset.grid_structure.empty()) {
+    CCTK_WARN(0, "No grid structure information found in checkpoint file !");
+  } else if (int(fileset.grid_structure.size()) != maps) {
+    CCTK_VWarn(0, __LINE__, __FILE__, CCTK_THORNSTRING,
+               "Number of maps in the checkpoint's grid structure information "
+               "(%d) doesn't match current number of maps (%d) !",
+               int(fileset.grid_structure.size()), maps);
+  }
   
   vector<vector<vector<region_t> > > superregsss = fileset.grid_structure;
   vector<vector<vector<vector<region_t> > > > regssss (maps);
