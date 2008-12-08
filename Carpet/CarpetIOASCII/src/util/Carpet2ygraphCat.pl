@@ -102,7 +102,6 @@ if ($direction == 0) {
 my %data;
 my $time = -1;
 my $new = 0;
-my $currentit = -1;
 my $lastit = -1;
 
 my @datatoprint;
@@ -117,22 +116,19 @@ while (<CARPETFILE>)
   chomp;
   next if (/^$/);
 
-  if (/iteration/) {
-    @itline = split(/ +/);
-    $currentit = $itline[2];
-  }
   @dataColumns = split(/[ :]/, $1) if (/^# data columns: (.+)/);
 
   #Do nothing for headers!
   next if (/^#/);
 
-  @dataline = split(/[ \t]+/);
+  my @dataline = split(/[ \t]+/);
+  my $currentit = $dataline[0];
   if ($currentit != $lastit) {
     if ($new) {
       # do not print "Time..." for zero-D data
-      push(@datatoprint,"\n\n\#Time = ".$time."\n") if ($direction !~ 8);
+      push(@datatoprint,"\n\n\#Time = $time\n") if ($direction !~ 8);
 
-      my @sortedcoords = sort numerically (keys %data);
+      my @sortedcoords = sort {$a <=> $b} (keys %data);
       foreach my $localcoord (@sortedcoords) {
         push(@datatoprint, $localcoord." ".$data{$localcoord}."\n");
       }
@@ -158,9 +154,9 @@ while (<CARPETFILE>)
 }
 
 # do not print "Time..." for zero-D data
-push(@datatoprint,"\n\n\#Time = ".$time."\n") if ($direction !~ 8);
+push(@datatoprint,"\n\n\#Time = $time\n") if ($direction !~ 8);
 
-my @sortedcoords = sort numerically (keys %data);
+my @sortedcoords = sort {$a <=> $b} (keys %data);
 foreach my $localcoord (@sortedcoords) {
   push(@datatoprint, $localcoord." ".$data{$localcoord}."\n");
 }
@@ -214,5 +210,3 @@ foreach $line (@datatoprint) {
 #  $nouts++;
 #  print $fh $oldline;
 #}
-
-sub numerically {$a <=> $b;}
