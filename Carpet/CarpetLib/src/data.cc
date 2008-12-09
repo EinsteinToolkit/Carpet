@@ -656,6 +656,17 @@ transfer_prolongate (data const * const src,
                         this->extent(),
                         box);
       break;
+    case 5:
+      // there is only a parameter for the prolongation order, but Whisky may want 5th order for spacetime and 3rd order for hydro; so this is a trick.
+      call_operator<T> (& prolongate_3d_eno,
+			static_cast <T const *> (src->storage()),
+			src->shape(),
+			static_cast <T *> (this->storage()),
+			this->shape(),
+			src->extent(),
+			this->extent(),
+			box);
+      break;
     default:
       CCTK_WARN (CCTK_WARN_ABORT,
                  "There is no stencil for op=\"ENO\" with order_space!=3");
