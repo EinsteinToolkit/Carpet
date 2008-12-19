@@ -771,7 +771,8 @@ namespace Carpet {
   {
     assert (grouptype == CCTK_GF
             or grouptype == CCTK_ARRAY or grouptype == CCTK_SCALAR);
-    enter_local_mode (cctkGH, c, grouptype);
+    assert (is_singlemap_mode());
+    step ();
   }
   
   component_iterator::~component_iterator ()
@@ -781,9 +782,10 @@ namespace Carpet {
   
   bool component_iterator::done () const
   {
-    return (grouptype == CCTK_GF
-            ? c >= vhh.at(map)->components(reflevel)
-            : c >= CCTK_nProcs(cctkGH));
+    int const maxc = (grouptype == CCTK_GF
+                      ? vhh.AT(map)->components(reflevel)
+                      : dist::size());
+    return c >= maxc;
   }
   
   void component_iterator::step ()
@@ -816,9 +818,10 @@ namespace Carpet {
   
   bool local_component_iterator::done () const
   {
-    return c >= (grouptype == CCTK_GF
-                 ? vhh.at(map)->components(reflevel)
-                 : CCTK_nProcs(cctkGH));
+    int const maxc = (grouptype == CCTK_GF
+                      ? vhh.AT(map)->components(reflevel)
+                      : dist::size());
+    return c >= maxc;
   }
   
   void local_component_iterator::step ()
