@@ -767,7 +767,7 @@ namespace Carpet {
   
   component_iterator::component_iterator (cGH const * const cctkGH_,
                                           int const grouptype_)
-    : cctkGH(const_cast<cGH*>(cctkGH_)), grouptype(grouptype_), c(0)
+    : cctkGH(const_cast<cGH*>(cctkGH_)), grouptype(grouptype_), c(-1)
   {
     assert (grouptype == CCTK_GF
             or grouptype == CCTK_ARRAY or grouptype == CCTK_SCALAR);
