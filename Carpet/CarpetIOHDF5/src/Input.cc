@@ -188,7 +188,7 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
     
     // Set time hierarchy correctly after RegridMap created it
     for (int ml = 0; ml < mglevels; ++ ml) {
-      for (int rl = 0; rl < int(fileset.grid_times.at(m).size()); ++ rl) {
+      for (size_t rl = 0; rl < fileset.grid_times.at(m).at(mglevel).size(); ++ rl) {
         vtt.at(m)->set_time (rl, ml, fileset.grid_times.at(m).at(ml).at(rl));
       }
     }
