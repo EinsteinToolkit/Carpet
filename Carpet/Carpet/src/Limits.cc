@@ -86,7 +86,7 @@ namespace Carpet {
     if (value == RLIM_INFINITY) {
       s << "[unlimited]";
     } else {
-      s << ((CCTK_REAL) value / 1.0e+6) << " MB";
+      s << (value / (CCTK_REAL) (1024*1024)) << " MB";
     }
   }
   
