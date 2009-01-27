@@ -30,9 +30,9 @@
 
 #include <cctk.h>
 
-#ifdef HAVE_TGMATH_H
-#  include <tgmath.h>
-#endif
+/* #ifdef HAVE_TGMATH_H */
+/* #  include <tgmath.h> */
+/* #endif */
 
 #include "lc_siman.h"
 
