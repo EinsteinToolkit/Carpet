@@ -15,9 +15,9 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
-#ifdef HAVE_TGMATH_H
-#  include <tgmath.h>
-#endif
+/* #ifdef HAVE_TGMATH_H */
+/* #  include <tgmath.h> */
+/* #endif */
 
 #include "loopcontrol.h"
 

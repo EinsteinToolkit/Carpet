@@ -644,7 +644,7 @@ transfer_prolongate (data const * const src,
     switch (order_space) {
     case 1:
       CCTK_WARN (CCTK_WARN_ABORT,
-                 "There is no stencil for op=\"ENO\" with order_space==1");
+                 "There is no stencil for op=\"ENO\" with order_space=1");
       break;
     case 3:
       call_operator<T> (& prolongate_3d_eno,
