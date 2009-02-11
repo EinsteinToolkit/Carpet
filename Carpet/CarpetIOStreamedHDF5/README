@@ -1,9 +1,10 @@
 Cactus Code Thorn CarpetIOStreamedHDF5
-Thorn Author(s)     : Thomas Radke <tradke@aei.mpg.de>
-Thorn Maintainer(s) : Thomas Radke <tradke@aei.mpg.de>
+Author(s)    : Thomas Radke <tradke@aei.mpg.de>
+Maintainer(s): Thomas Radke <tradke@aei.mpg.de>
+Licence      : GPLv2+
 --------------------------------------------------------------------------
 
-Purpose of the thorn:
+1. Purpose
 
 This thorn uses the HDF5 Stream Virtual File Driver to stream Carpet HDF5 data
 files via a socket to any connected clients.

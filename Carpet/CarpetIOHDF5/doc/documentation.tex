@@ -25,7 +25,12 @@
 % Do not delete next line
 % START CACTUS THORNGUIDE
 
+\ifx\ThisThorn\undefined
 \newcommand{\ThisThorn}{{\it CarpetIOHDF5}}
+\else
+\renewcommand{\ThisThorn}{{\it CarpetIOHDF5}}
+\fi
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
