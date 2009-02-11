@@ -1,11 +1,12 @@
 Cactus Code Thorn CarpetEvolutionMask
-Thorn Author(s)     : Christian D. Ott <cott@aei.mpg.de>
-                      Erik Schnetter <schnetter@cct.lsu.edu>
-Thorn Maintainer(s) : Christian D. Ott <cott@aei.mpg.de>
-                      Erik Schnetter <schnetter@cct.lsu.edu>
+Author(s)    : Christian D. Ott <cott@aei.mpg.de>
+               Erik Schnetter <schnetter@cct.lsu.edu>
+Maintainer(s): Christian D. Ott <cott@aei.mpg.de>
+               Erik Schnetter <schnetter@cct.lsu.edu>
+Licence      : GPLv2+
 --------------------------------------------------------------------------
 
-Purpose of the thorn:
+1. Purpose
 
 Provide a grid function "evolution_mask" which is zero for all grid
 points that do not need to be evolved because they are going to be
