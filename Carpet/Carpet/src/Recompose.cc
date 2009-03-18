@@ -968,7 +968,7 @@ namespace Carpet {
     vector<vector<region_t> > regss (1);
     SplitRegionsMaps_Automatic (cctkGH, superregss, regss);
     assert (superregss.size() == 1);
-    superregs = regss.at(0);
+    superregs = superregss.at(0);
     assert (regss.size() == 1);
     regs = regss.at(0);
   }
