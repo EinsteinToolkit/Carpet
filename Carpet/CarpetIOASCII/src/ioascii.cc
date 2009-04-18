@@ -34,6 +34,10 @@ namespace Carpet {
 }
 
 
+#define GetParameter(parameter) \
+  outdim == 0 ? out0D_##parameter : \
+  outdim == 1 ? out1D_##parameter : \
+  outdim == 2 ? out2D_##parameter : out3D_##parameter
 
 namespace CarpetIOASCII {
   
@@ -154,7 +158,7 @@ namespace CarpetIOASCII {
     DECLARE_CCTK_PARAMETERS;
     
     // re-parse the 'IOASCII::out%dD_dir' parameter if it has changed
-    const char* the_out_dir = GetStringParameter("out%dD_dir");
+    const char* the_out_dir = GetParameter(dir);
     if (CCTK_EQUALS (the_out_dir, "")) {
       the_out_dir = out_dir;
     }
@@ -177,7 +181,7 @@ namespace CarpetIOASCII {
     }
     
     // re-parse the 'IOASCII::out%d_vars' parameter if it has changed
-    const char* const out_vars = GetStringParameter("out%dD_vars");
+    const char* const out_vars = GetParameter(vars);
     if (strcmp (out_vars, my_out_vars)) {
       ostringstream parameter_name;
       parameter_name << "IOASCII::out" << outdim << "D_vars";
@@ -225,7 +229,7 @@ namespace CarpetIOASCII {
     timer->start();
     for (int vi=0; vi<CCTK_NumVars(); ++vi) {
       if (TimeToOutput(cctkGH, vi)) {
-	TriggerOutput(cctkGH, vi);
+        TriggerOutput(cctkGH, vi);
       }
     }
     timer->stop();
@@ -262,7 +266,7 @@ namespace CarpetIOASCII {
     // check if output for this variable was requested individually by
     // a "<varname>{ out_every = <number> }" option string
     // this will overwrite the output criterion setting
-    const char* myoutcriterion = GetStringParameter("out%dD_criterion");
+    const char* myoutcriterion = GetParameter(criterion);
     if (CCTK_EQUALS(myoutcriterion, "default")) {
       myoutcriterion = out_criterion;
     }
@@ -278,7 +282,7 @@ namespace CarpetIOASCII {
     bool output_this_iteration = false;
     
     if (CCTK_EQUALS (myoutcriterion, "iteration")) {
-      int myoutevery = GetIntParameter("out%dD_every");
+      int myoutevery = GetParameter(every);
       if (myoutevery == -2) {
         myoutevery = out_every;
       }
@@ -295,7 +299,7 @@ namespace CarpetIOASCII {
         }
       }
     } else if (CCTK_EQUALS (myoutcriterion, "divisor")) {
-      int myoutevery = GetIntParameter("out%dD_every");
+      int myoutevery = GetParameter(every);
       if (myoutevery == -2) {
         myoutevery = out_every;
       }
@@ -307,7 +311,7 @@ namespace CarpetIOASCII {
         output_this_iteration = true;
       }
     } else if (CCTK_EQUALS (myoutcriterion, "time")) {
-      CCTK_REAL myoutdt = GetRealParameter("out%dD_dt");
+      CCTK_REAL myoutdt = GetParameter(dt);
       if (myoutdt == -2) {
         myoutdt = out_dt;
       }
@@ -895,6 +899,8 @@ namespace CarpetIOASCII {
       
     default:
       assert (0);
+      // Prevent compiler warning about missing return statement
+      return false;
     }
   }
   
@@ -1208,59 +1214,6 @@ namespace CarpetIOASCII {
     int cindex = (int)floor(rindex + 0.75);
 
     return cindex;
-  }
-
-
-
-  template<int outdim>
-  const char* IOASCII<outdim>
-  ::GetStringParameter (const char* const parametertemplate)
-  {
-    char parametername[1000];
-    snprintf (parametername, sizeof parametername, parametertemplate, outdim);
-    int ptype;
-    const char* const* const ppval = (const char* const*)CCTK_ParameterGet
-      (parametername, CCTK_THORNSTRING, &ptype);
-    assert (ppval);
-    const char* const pval = *ppval;
-    assert (ptype == PARAMETER_STRING or ptype == PARAMETER_KEYWORD);
-    return pval;
-  }
-
-
-
-  template<int outdim>
-  CCTK_INT IOASCII<outdim>
-  ::GetIntParameter (const char* const parametertemplate)
-  {
-    char parametername[1000];
-    snprintf (parametername, sizeof parametername, parametertemplate, outdim);
-    int ptype;
-    const CCTK_INT* const ppval
-      = (const CCTK_INT*)CCTK_ParameterGet
-      (parametername, CCTK_THORNSTRING, &ptype);
-    assert (ppval);
-    assert (ptype == PARAMETER_INT or ptype == PARAMETER_BOOLEAN);
-    const CCTK_INT pval = *ppval;
-    return pval;
-  }
-
-
-
-  template<int outdim>
-  CCTK_REAL IOASCII<outdim>
-  ::GetRealParameter (const char* const parametertemplate)
-  {
-    char parametername[1000];
-    snprintf (parametername, sizeof parametername, parametertemplate, outdim);
-    int ptype;
-    const CCTK_REAL* const ppval
-      = (const CCTK_REAL*)CCTK_ParameterGet
-      (parametername, CCTK_THORNSTRING, &ptype);
-    assert (ppval);
-    assert (ptype == PARAMETER_REAL);
-    const CCTK_REAL pval = *ppval;
-    return pval;
   }
 
 
