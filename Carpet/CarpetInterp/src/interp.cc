@@ -65,6 +65,7 @@ namespace CarpetInterp {
                                    int const N_interp_points,
                                    int const N_input_arrays,
                                    int const N_output_arrays,
+                                   bool& want_global_mode,
                                    bool& have_source_map,
                                    vector<int> & num_time_derivs,
                                    int & prolongation_order_time,
@@ -293,8 +294,6 @@ namespace CarpetInterp {
                  "It is not possible to interpolate in meta mode");
     }
 
-    bool const want_global_mode = is_global_mode();
-
 
     // Multiple convergence levels are not supported
     assert (mglevels == 1);
@@ -335,6 +334,34 @@ namespace CarpetInterp {
       MPI_Barrier (dist::comm());
     }
 
+    //////////////////////////////////////////////////////////////////////
+    // Extract parameter table options:
+    //   - source map
+    //   - output array operand indices
+    //   - time interpolation order
+    //////////////////////////////////////////////////////////////////////
+    bool want_global_mode;
+    vector<CCTK_INT> source_map (N_interp_points);
+    vector<CCTK_INT> operand_indices (N_output_arrays);
+    vector<CCTK_INT> time_deriv_order (N_output_arrays);
+    bool have_source_map;
+    vector<int> num_time_derivs;
+    CCTK_REAL current_time, delta_time;
+    int prolongation_order_time;
+
+    {
+      int const iret = extract_parameter_table_options
+        (cctkGH,
+         param_table_handle,
+         N_interp_points, N_input_arrays, N_output_arrays,
+         want_global_mode, have_source_map, num_time_derivs,
+         prolongation_order_time, current_time, delta_time,
+         source_map, operand_indices, time_deriv_order);
+      if (iret < 0) {
+        timer_CDI->stop (0);
+        return iret;
+      }
+    }
 
     // Find range of refinement levels
     assert (maps > 0);
@@ -351,34 +378,6 @@ namespace CarpetInterp {
     for (int rl=minrl; rl<maxrl; ++rl) {
       for (int m=0; m<maps; ++m) {
         maxncomps = max(maxncomps, arrdata.AT(coord_group).AT(m).hh->components(rl));
-      }
-    }
-
-    //////////////////////////////////////////////////////////////////////
-    // Extract parameter table options:
-    //   - source map
-    //   - output array operand indices
-    //   - time interpolation order
-    //////////////////////////////////////////////////////////////////////
-    vector<CCTK_INT> source_map (N_interp_points);
-    vector<CCTK_INT> operand_indices (N_output_arrays);
-    vector<CCTK_INT> time_deriv_order (N_output_arrays);
-    bool have_source_map;
-    vector<int> num_time_derivs;
-    CCTK_REAL current_time, delta_time;
-    int prolongation_order_time;
-
-    {
-      int const iret = extract_parameter_table_options
-        (cctkGH,
-         param_table_handle,
-         N_interp_points, N_input_arrays, N_output_arrays,
-         have_source_map, num_time_derivs,
-         prolongation_order_time, current_time, delta_time,
-         source_map, operand_indices, time_deriv_order);
-      if (iret < 0) {
-        timer_CDI->stop (0);
-        return iret;
       }
     }
 
@@ -793,6 +792,7 @@ namespace CarpetInterp {
                                    int const N_interp_points,
                                    int const N_input_arrays,
                                    int const N_output_arrays,
+                                   bool& want_global_mode,
                                    bool& have_source_map,
                                    vector<int>& num_time_derivs,
                                    int& prolongation_order_time,
@@ -804,10 +804,29 @@ namespace CarpetInterp {
   {
     DECLARE_CCTK_PARAMETERS;
 
+    int iret;
+
+    // Do we want to interpolate in global mode, i.e., from all
+    // refinement levels?
+    CCTK_INT want_global_mode1;
+    iret = Util_TableGetInt (param_table_handle,
+                             &want_global_mode1, "want_global_mode");
+    if (iret == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+      want_global_mode = is_global_mode();
+    } else if (iret < 0) {
+      CCTK_WARN (CCTK_WARN_ALERT, "internal error");
+      return -1;
+    } else if (iret != 1) {
+      CCTK_WARN (CCTK_WARN_ALERT, "internal error");
+      return -1;
+    } else {
+      want_global_mode = want_global_mode1;
+    }
+
     // Find source map
     assert ((int)source_map.size() == N_interp_points);
-    int iret = Util_TableGetIntArray (param_table_handle, N_interp_points,
-                                      &source_map.front(), "source_map");
+    iret = Util_TableGetIntArray (param_table_handle, N_interp_points,
+                                  &source_map.front(), "source_map");
     have_source_map = not (iret == UTIL_ERROR_TABLE_NO_SUCH_KEY);
     if (not have_source_map) {
       // No explicit source map specified
