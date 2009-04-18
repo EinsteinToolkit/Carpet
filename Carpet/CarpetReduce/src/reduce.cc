@@ -762,47 +762,42 @@ namespace CarpetReduce {
     assert (num_outvals>=0);
     assert (outvals or (proc!=-1 and proc!=CCTK_MyProc(cgh)));
     
-    const int vartypesize = CCTK_VarTypeSize(outtype);
-    assert (vartypesize>=0);
-    
     assert (num_outvals==0 or myoutvals);
     assert (num_outvals==0 or mycounts);
     
-    vector<char> counts;
-    if (proc==-1 or proc==CCTK_MyProc(cgh)) {
-      counts.resize(vartypesize * num_outvals);
-    }
-    
-    const MPI_Datatype mpitype = CarpetSimpleMPIDatatype(outtype);
+    const int vartypesize = CCTK_VarTypeSize(outtype);
+    assert (vartypesize>=0);
     const int mpilength = CarpetSimpleMPIDatatypeLength(outtype);
+    
+    char* sendbuf = static_cast<char*>(const_cast<void*>(myoutvals));
+    char* recvbuf = static_cast<char*>(outvals);
+    const int bufsize = num_outvals * mpilength * vartypesize;
+    const int mpicount = num_outvals * mpilength * (red->uses_cnt() ? 2 : 1);
+    if (red->uses_cnt()) {
+      assert (sendbuf + bufsize == static_cast<const char*>(mycounts));
+      assert (red->mpi_op() == MPI_SUM);
+      recvbuf = new char[2*bufsize];
+    }
+
+    const MPI_Datatype mpitype = CarpetSimpleMPIDatatype(outtype);
     if (proc == -1) {
-      MPI_Allreduce (const_cast<void*>(myoutvals), outvals,
-                     mpilength*num_outvals,
-		     mpitype, red->mpi_op(),
-		     CarpetMPIComm());
-      if (red->uses_cnt()) {
-	MPI_Allreduce (const_cast<void*>(mycounts), &counts[0],
-                       num_outvals*mpilength,
-		       mpitype, MPI_SUM,
-		       CarpetMPIComm());
-      }
+      MPI_Allreduce (sendbuf, recvbuf, mpicount,
+		     mpitype, red->mpi_op(), CarpetMPIComm());
     } else {
-      MPI_Reduce (const_cast<void*>(myoutvals), outvals,
-                  num_outvals*mpilength,
+      MPI_Reduce (sendbuf, recvbuf, mpicount,
 		  mpitype, red->mpi_op(), proc, CarpetMPIComm());
-      if (red->uses_cnt()) {
-	MPI_Reduce (const_cast<void*>(mycounts), &counts[0],
-                    num_outvals*mpilength,
-		    mpitype, MPI_SUM, proc, CarpetMPIComm());
-      }
     }
     
     if (proc==-1 or proc==CCTK_MyProc(cgh)) {
       
+      assert (outvals);
+      char* counts = NULL;
+      if (red->uses_cnt()) {
+        memcpy (outvals, recvbuf, bufsize);
+        counts = recvbuf + bufsize;
+      }
+
       for (int n=0; n<num_outvals; ++n) {
-	
-	assert (outvals);
-	assert ((int)counts.size() == vartypesize * num_outvals);
 	
 	switch (outtype) {
 #define FINALISE(OP,S)                                                  \
@@ -842,6 +837,10 @@ namespace CarpetReduce {
       } // for n
       
     } // if
+
+    if (red->uses_cnt()) {
+      delete[] recvbuf;
+    }
   }
   
   
@@ -915,24 +914,27 @@ namespace CarpetReduce {
     const int vartypesize = CCTK_VarTypeSize(outtype);
     assert (vartypesize>=0);
     
-    vector<char> myoutvals (vartypesize * num_inarrays * num_outvals);
-    vector<char> mycounts  (vartypesize * num_inarrays * num_outvals);
+    // keep local outvals and counts in a single buffer
+    // to save a copy operation in the Finalise() step
+    vector<char> buffer (2 * vartypesize * num_inarrays * num_outvals);
+    char* const myoutvals = &buffer[0];
+    char* const mycounts  = &buffer[vartypesize * num_inarrays * num_outvals];
     
-    Initialise (cgh, proc, num_inarrays * num_outvals, &myoutvals[0], outtype,
-                &mycounts[0], red);
+    Initialise (cgh, proc, num_inarrays * num_outvals, myoutvals, outtype,
+                mycounts, red);
     if (do_local_reduction) {
       Reduce   (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
                 num_inarrays, myinarrays, tfacs, intype,
-                num_inarrays * num_outvals, &myoutvals[0], outtype,
-                &mycounts[0], red,
+                num_inarrays * num_outvals, myoutvals, outtype,
+                mycounts, red,
                 NULL, 1.0);
     } else {
       Copy     (cgh, proc, lsize, num_inarrays, inarrays, intype,
-                num_inarrays * num_outvals, &myoutvals[0], outtype,
-                &mycounts[0]);
+                num_inarrays * num_outvals, myoutvals, outtype,
+                mycounts);
     }
     Finalise   (cgh, proc, num_inarrays * num_outvals, outvals, outtype,
-                &myoutvals[0], &mycounts[0], red);
+                myoutvals, mycounts, red);
     
     return 0;
   }
@@ -1020,11 +1022,14 @@ namespace CarpetReduce {
     
     
     
-    vector<char> myoutvals (vartypesize * num_invars * num_outvals);
-    vector<char> mycounts  (vartypesize * num_invars * num_outvals);
+    // keep local outvals and counts in a single buffer
+    // to save a copy operation in the Finalise() step
+    vector<char> buffer (2 * vartypesize * num_invars * num_outvals);
+    char* const myoutvals = &buffer[0];
+    char* const mycounts  = &buffer[vartypesize * num_invars * num_outvals];
     
-    Initialise (cgh, proc, num_invars * num_outvals, &myoutvals[0], outtype,
-                &mycounts[0], red);
+    Initialise (cgh, proc, num_invars * num_outvals, myoutvals, outtype,
+                mycounts, red);
     
     BEGIN_GLOBAL_MODE(cgh) {
       for (int rl=minrl; rl<maxrl; ++rl) {
@@ -1234,8 +1239,8 @@ namespace CarpetReduce {
                 
                 Reduce (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
                         num_invars, inarrays, tfacs, intype,
-                        num_invars * num_outvals, &myoutvals[0], outtype,
-                        &mycounts[0], red,
+                        num_invars * num_outvals, myoutvals, outtype,
+                        mycounts, red,
                         weight, levfac);
                 
                 
@@ -1249,7 +1254,7 @@ namespace CarpetReduce {
     } END_GLOBAL_MODE;
     
     Finalise (cgh, proc, num_invars * num_outvals, outvals, outtype,
-              &myoutvals[0], &mycounts[0], red);
+              myoutvals, mycounts, red);
     
     return 0;
   }
