@@ -267,7 +267,7 @@ void CarpetLib_setmemlimit (CCTK_ARGUMENTS)
               "Old address space size limit: hard=%lld, soft=%lld",
               (long long) aslimit.rlim_max, (long long) aslimit.rlim_cur);
   if (max_allowed_memory_MB > 0) {
-    aslimit.rlim_cur = max_allowed_memory_MB * 1000000LL;
+    aslimit.rlim_cur = max_allowed_memory_MB * 1024LL * 1024LL;
   }
   {
     check (not setrlimit (RLIMIT_AS, & aslimit));
@@ -276,7 +276,7 @@ void CarpetLib_setmemlimit (CCTK_ARGUMENTS)
     check (not getrlimit (RLIMIT_AS, & aslimit));
   }
   CCTK_VInfo (CCTK_THORNSTRING,
-              "Old address space size limit: hard=%lld, soft=%lld",
+              "New address space size limit: hard=%lld, soft=%lld",
               (long long) aslimit.rlim_max, (long long) aslimit.rlim_cur);
   CCTK_VInfo (CCTK_THORNSTRING,
               "(Unlimited address space size indicated by %lld)",
