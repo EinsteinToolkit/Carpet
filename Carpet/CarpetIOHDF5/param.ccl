@@ -110,3 +110,8 @@ INT compression_level "Compression level to use for writing HDF5 data" STEERABLE
 {
   0:9 :: "Higher numbers compress better, a value of zero disables compression"
 } 0
+
+BOOLEAN use_checksums "Use checksums for the HDF5 data" STEERABLE = ALWAYS
+{
+} "no"
+
