@@ -8,6 +8,7 @@
 #include <complex>
 #include <limits>
 #include <vector>
+#include <cstring>
 
 #include <mpi.h>
 
