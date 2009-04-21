@@ -103,10 +103,6 @@ namespace CarpetIOASCII {
     static int CoordToOffset (const cGH* cctkGH, int m, int dir,
                               CCTK_REAL coord, int ifallback);
     
-    static const char* GetStringParameter (const char* parametertemplate);
-    static CCTK_INT GetIntParameter (const char* parametertemplate);
-    static CCTK_REAL GetRealParameter (const char* parametertemplate);
-    
   };                            // struct IOASCII
   
 } // namespace CarpetIOASCII

@@ -24,7 +24,6 @@ Carpet::domain_from_coordbase = yes
 Carpet::max_refinement_levels = 20
 
 driver::ghost_size   = 2
-Carpet::buffer_width = 4
 
 Carpet::prolongation_order_space = 3
 Carpet::prolongation_order_time  = 2
@@ -32,8 +31,6 @@ Carpet::prolongation_order_time  = 2
 Carpet::convergence_level = 0
 
 Carpet::init_3_timelevels = yes
-
-CarpetLib::save_memory_during_regridding = yes
 
 
 
