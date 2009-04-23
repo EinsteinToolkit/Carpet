@@ -999,6 +999,9 @@ static int ReadVar (const cGH* const cctkGH,
 
   // Traverse all local components on all maps
   hid_t filespace = -1, dataset = -1;
+  hid_t xfer = H5P_DEFAULT;
+  H5Z_EDC_t checksums = H5Z_NO_EDC;
+
   BEGIN_MAP_LOOP (cctkGH, group.grouptype) {
 
     // skip this dataset if it belongs to another map
@@ -1073,6 +1076,14 @@ static int ReadVar (const cGH* const cctkGH,
       if (dataset < 0) {
         HDF5_ERROR (dataset = H5Dopen (file, patch->patchname.c_str()));
         HDF5_ERROR (filespace = H5Dget_space (dataset));
+        xfer = H5Pcreate (H5P_DATASET_XFER);
+        checksums = H5Pget_edc_check (xfer);
+        if (use_checksums && (checksums == H5Z_DISABLE_EDC))
+          CCTK_WARN(1, "Checksums not enabled in HDF5 library, but "
+                       "requested in parameter, reading data without "
+                       "tests on checksums.");
+        if (!use_checksums && (checksums == H5Z_ENABLE_EDC))
+          H5Pset_edc_check(xfer, H5Z_DISABLE_EDC);
       }
 
       // read the hyperslab
@@ -1082,7 +1093,7 @@ static int ReadVar (const cGH* const cctkGH,
                                        NULL, count, NULL));
       HDF5_ERROR (H5Sselect_hyperslab (memspace, H5S_SELECT_SET, memorigin,
                                        NULL, count, NULL));
-      HDF5_ERROR (H5Dread (dataset, datatype, memspace, filespace, H5P_DEFAULT,
+      HDF5_ERROR (H5Dread (dataset, datatype, memspace, filespace, xfer,
                            cctkGH->data[patch->vindex][timelevel]));
       hid_t datatype;
       HDF5_ERROR (datatype = H5Dget_type (dataset));

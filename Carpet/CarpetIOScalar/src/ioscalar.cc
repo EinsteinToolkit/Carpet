@@ -54,6 +54,7 @@ namespace CarpetIOScalar {
   static void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cctkGH);
   static int OutputGH (const cGH* cctkGH);
   static int OutputVarAs (const cGH* cctkGH, const char* varname, const char* alias);
+  static int OutputVarAs (const cGH* cctkGH, const char* varname, const char* alias, const char* out_reductions);
   static int TimeToOutput (const cGH* cctkGH, int vindex);
   static int TriggerOutput (const cGH* cctkGH, int vindex);
 
@@ -169,6 +170,19 @@ namespace CarpetIOScalar {
   OutputVarAs (const cGH * const cctkGH,
                const char* const varname, const char* const alias)
   {
+    DECLARE_CCTK_PARAMETERS;
+
+    int const retval = OutputVarAs (cctkGH, varname, alias,
+                                    outScalar_reductions);
+
+    return retval;
+  }
+
+  int
+  OutputVarAs (const cGH * const cctkGH,
+               const char* const varname, const char* const alias,
+               const char* out_reductions)
+  {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
 
@@ -233,7 +247,7 @@ namespace CarpetIOScalar {
 
     // Find the set of desired reductions
     list<info> reductions;
-    string const redlist (outScalar_reductions);
+    string const redlist (out_reductions);
     string::const_iterator p = redlist.begin();
     while (p!=redlist.end()) {
       while (p!=redlist.end() and isspace(*p)) ++p;
@@ -613,6 +627,11 @@ namespace CarpetIOScalar {
 
     assert (vindex>=0 and vindex<CCTK_NumVars());
     
+    // use individual reductions list for this variable when given
+    // otherwise IOScalar::outScalar_reductions
+    const char* out_reductions = IOparameters.requests[vindex]->reductions;
+    if (not out_reductions) out_reductions = outScalar_reductions;
+
     int retval;
     
     if (one_file_per_group) {
@@ -621,7 +640,7 @@ namespace CarpetIOScalar {
       int const gindex = CCTK_GroupIndexFromVarI(vindex);
       char* const groupname = CCTK_GroupName(gindex);
       for (char* p=groupname; *p; ++p) *p=tolower(*p);
-      retval = OutputVarAs (cctkGH, fullname, groupname);
+      retval = OutputVarAs (cctkGH, fullname, groupname, out_reductions);
       free (fullname);
       free (groupname);
       
@@ -635,7 +654,7 @@ namespace CarpetIOScalar {
       
       char* const fullname = CCTK_FullName(vindex);
       char const* const varname = CCTK_VarName(vindex);
-      retval = OutputVarAs (cctkGH, fullname, varname);
+      retval = OutputVarAs (cctkGH, fullname, varname, out_reductions);
       free (fullname);
       
       last_output.at(vindex) = cctk_iteration;
