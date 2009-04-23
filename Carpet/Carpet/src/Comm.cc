@@ -11,6 +11,7 @@
 #include "gh.hh"
 
 #include "carpet.hh"
+#include "Timers.hh"
 
 
 
@@ -182,13 +183,19 @@ namespace Carpet {
       // prolongate boundaries
       if (local_do_prolongate) {
         if (reflevel > 0) {
+          static Timer timer ("Evolve::Prolongate");
+          timer.start();
           ProlongateGroupBoundaries (cctkGH, cctk_initial_time, goodgroups);
+          timer.stop();
         }
       }
       
       // synchronise ghostzones
       if (sync_during_time_integration or local_do_prolongate) {
+        static Timer timer ("Evolve::Sync");
+        timer.start();
         SyncGroups (cctkGH, goodgroups);
+        timer.stop();
       }
 
     } // for g
