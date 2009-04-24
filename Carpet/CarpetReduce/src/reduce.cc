@@ -772,7 +772,7 @@ namespace CarpetReduce {
     
     char* sendbuf = static_cast<char*>(const_cast<void*>(myoutvals));
     char* recvbuf = static_cast<char*>(outvals);
-    const int bufsize = num_outvals * mpilength * vartypesize;
+    const int bufsize = num_outvals * vartypesize;
     const int mpicount = num_outvals * mpilength * (red->uses_cnt() ? 2 : 1);
     if (red->uses_cnt()) {
       assert (sendbuf + bufsize == static_cast<const char*>(mycounts));
