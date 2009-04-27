@@ -21,6 +21,25 @@ namespace CarpetIOASCII {
   }
 
 
+  // routines which are independent of the output dimension
+  static ibbox GetOutputBBox (const cGH* cctkGH,
+                              int group,
+                              int m, int c,
+                              const ibbox& ext);
+
+  static void GetCoordinates (const cGH* cctkGH, int m,
+                              const cGroup& groupdata,
+                              const ibbox& ext,
+                              CCTK_REAL& coord_time,
+                              rvect& coord_lower, rvect& coord_upper);
+
+  static int GetGridOffset (const cGH* cctkGH, int m, int dir,
+                            const char* itempl, const char* iglobal,
+                            const char* ctempl, const char* cglobal,
+                            CCTK_REAL cfallback);
+  static int CoordToOffset (const cGH* cctkGH, int m, int dir,
+                            CCTK_REAL coord, int ifallback);
+
 
   // Everything is a class template, so that it can easily be
   // instantiated for all output dimensions
@@ -84,24 +103,6 @@ namespace CarpetIOASCII {
 
     static ivect GetOutputOffset (const cGH* cctkGH, int m,
                                   const vect<int,outdim>& dirs);
-
-    static ibbox GetOutputBBox (const cGH* cctkGH,
-                                int group,
-                                int m, int c,
-                                const ibbox& ext);
-
-    static void GetCoordinates (const cGH* cctkGH, int m,
-                                const cGroup& groupdata,
-                                const ibbox& ext,
-                                CCTK_REAL& coord_time,
-                                rvect& coord_lower, rvect& coord_upper);
-
-    static int GetGridOffset (const cGH* cctkGH, int m, int dir,
-                              const char* itempl, const char* iglobal,
-                              const char* ctempl, const char* cglobal,
-                              CCTK_REAL cfallback);
-    static int CoordToOffset (const cGH* cctkGH, int m, int dir,
-                              CCTK_REAL coord, int ifallback);
 
   };                            // struct IOASCII
 

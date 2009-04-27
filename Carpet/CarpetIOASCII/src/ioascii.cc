@@ -922,16 +922,16 @@ namespace CarpetIOASCII {
     case 0:
       // 0D output
       offset[0] = GetGridOffset (cctkGH, m, 1,
-                                 "out%dD_point_xi", /*"out_point_xi"*/ NULL,
-                                 "out%dD_point_x",  /*"out_point_x"*/  NULL,
+                                 "out0D_point_xi", /*"out_point_xi"*/ NULL,
+                                 "out0D_point_x",  /*"out_point_x"*/  NULL,
                                  /*out_point_x*/ 0.0);
       offset[1] = GetGridOffset (cctkGH, m, 2,
-                                 "out%dD_point_yi", /*"out_point_yi"*/ NULL,
-                                 "out%dD_point_y",  /*"out_point_y"*/  NULL,
+                                 "out0D_point_yi", /*"out_point_yi"*/ NULL,
+                                 "out0D_point_y",  /*"out_point_y"*/  NULL,
                                  /*out_point_y*/ 0.0);
       offset[2] = GetGridOffset (cctkGH, m, 3,
-                                 "out%dD_point_zi", /*"out_point_zi"*/ NULL,
-                                 "out%dD_point_z",  /*"out_point_z"*/  NULL,
+                                 "out0D_point_zi", /*"out_point_zi"*/ NULL,
+                                 "out0D_point_z",  /*"out_point_z"*/  NULL,
                                  /*out_point_z*/ 0.0);
       break;
 
@@ -940,32 +940,32 @@ namespace CarpetIOASCII {
       switch (dirs[0]) {
       case 0:
         offset[1] = GetGridOffset (cctkGH, m, 2,
-                                   "out%dD_xline_yi", "out_xline_yi",
-                                   "out%dD_xline_y",  "out_xline_y",
+                                   "out1D_xline_yi", "out_xline_yi",
+                                   "out1D_xline_y",  "out_xline_y",
                                    out_xline_y);
         offset[2] = GetGridOffset (cctkGH, m, 3,
-                                   "out%dD_xline_zi", "out_xline_zi",
-                                   "out%dD_xline_z",  "out_xline_z",
+                                   "out1D_xline_zi", "out_xline_zi",
+                                   "out1D_xline_z",  "out_xline_z",
                                    out_xline_z);
         break;
       case 1:
         offset[0] = GetGridOffset (cctkGH, m, 1,
-                                   "out%dD_yline_xi", "out_yline_xi",
-                                   "out%dD_yline_x",  "out_yline_x",
+                                   "out1D_yline_xi", "out_yline_xi",
+                                   "out1D_yline_x",  "out_yline_x",
                                    out_yline_x);
         offset[2] = GetGridOffset (cctkGH, m, 3,
-                                   "out%dD_yline_zi", "out_yline_zi",
-                                   "out%dD_yline_z",  "out_yline_z",
+                                   "out1D_yline_zi", "out_yline_zi",
+                                   "out1D_yline_z",  "out_yline_z",
                                    out_yline_z);
         break;
       case 2:
         offset[0] = GetGridOffset (cctkGH, m, 1,
-                                   "out%dD_zline_xi", "out_zline_xi",
-                                   "out%dD_zline_x",  "out_zline_x",
+                                   "out1D_zline_xi", "out_zline_xi",
+                                   "out1D_zline_x",  "out_zline_x",
                                    out_zline_x);
         offset[1] = GetGridOffset (cctkGH, m, 2,
-                                   "out%dD_zline_yi", "out_zline_yi",
-                                   "out%dD_zline_y",  "out_zline_y",
+                                   "out1D_zline_yi", "out_zline_yi",
+                                   "out1D_zline_y",  "out_zline_y",
                                    out_zline_y);
         break;
       case 3:
@@ -980,18 +980,18 @@ namespace CarpetIOASCII {
       // 2D output
       if (dirs[0]==0 and dirs[1]==1) {
         offset[2] = GetGridOffset (cctkGH, m, 3,
-                                   "out%dD_xyplane_zi", "out_xyplane_zi",
-                                   "out%dD_xyplane_z",  "out_xyplane_z",
+                                   "out2D_xyplane_zi", "out_xyplane_zi",
+                                   "out2D_xyplane_z",  "out_xyplane_z",
                                    out_xyplane_z);
       } else if (dirs[0]==0 and dirs[1]==2) {
         offset[1] = GetGridOffset (cctkGH, m, 2,
-                                   "out%dD_xzplane_yi", "out_xzplane_yi",
-                                   "out%dD_xzplane_y",  "out_xzplane_y",
+                                   "out2D_xzplane_yi", "out_xzplane_yi",
+                                   "out2D_xzplane_y",  "out_xzplane_y",
                                    out_xzplane_y);
       } else if (dirs[0]==1 and dirs[1]==2) {
         offset[0] = GetGridOffset (cctkGH, m, 1,
-                                   "out%dD_yzplane_xi", "out_yzplane_xi",
-                                   "out%dD_yzplane_x",  "out_yzplane_x",
+                                   "out2D_yzplane_xi", "out_yzplane_xi",
+                                   "out2D_yzplane_x",  "out_yzplane_x",
                                    out_yzplane_x);
       } else {
         assert (0);
@@ -1012,11 +1012,10 @@ namespace CarpetIOASCII {
 
 
   // Omit symmetry and ghost zones if requested
-  template<int outdim>
-  ibbox IOASCII<outdim>::GetOutputBBox (const cGH* const cctkGH,
-                                        const int group,
-                                        const int m, const int c,
-                                        const ibbox& ext)
+  ibbox GetOutputBBox (const cGH* const cctkGH,
+                       const int group,
+                       const int m, const int c,
+                       const ibbox& ext)
   {
     DECLARE_CCTK_PARAMETERS;
 
@@ -1080,12 +1079,11 @@ namespace CarpetIOASCII {
 
 
   // Determine coordinates
-  template<int outdim>
-  void IOASCII<outdim>::GetCoordinates (const cGH* const cctkGH, const int m,
-                                        const cGroup& groupdata,
-                                        const ibbox& ext,
-                                        CCTK_REAL& coord_time,
-                                        rvect& coord_lower, rvect& coord_upper)
+  void GetCoordinates (const cGH* const cctkGH, const int m,
+                       const cGroup& groupdata,
+                       const ibbox& ext,
+                       CCTK_REAL& coord_time,
+                       rvect& coord_lower, rvect& coord_upper)
   {
     coord_time = cctkGH->cctk_time;
 
@@ -1114,16 +1112,12 @@ namespace CarpetIOASCII {
 
 
 
-  template<int outdim>
-  int IOASCII<outdim>
-  ::GetGridOffset (const cGH* const cctkGH, const int m, const int dir,
-                   const char* const itempl, const char* const iglobal,
-                   const char* const ctempl, const char* const cglobal,
-                   const CCTK_REAL cfallback)
+  int GetGridOffset (const cGH* const cctkGH, const int m, const int dir,
+                     const char* const iparam, const char* const iglobal,
+                     const char* const cparam, const char* const cglobal,
+                     const CCTK_REAL cfallback)
   {
     // First choice: explicit coordinate
-    char cparam[1000];
-    snprintf (cparam, sizeof cparam, ctempl, outdim);
     const int ncparam = CCTK_ParameterQueryTimesSet (cparam, CCTK_THORNSTRING);
     assert (ncparam >= 0);
     if (ncparam > 0) {
@@ -1138,8 +1132,6 @@ namespace CarpetIOASCII {
     }
 
     // Second choice: explicit index
-    char iparam[1000];
-    snprintf (iparam, sizeof iparam, itempl, outdim);
     const int niparam = CCTK_ParameterQueryTimesSet (iparam, CCTK_THORNSTRING);
     assert (niparam >= 0);
     if (niparam > 0) {
@@ -1190,10 +1182,8 @@ namespace CarpetIOASCII {
 
 
 
-  template<int outdim>
-  int IOASCII<outdim>
-  ::CoordToOffset (const cGH* cctkGH, const int m, const int dir,
-                   const CCTK_REAL coord, const int ifallback)
+  int CoordToOffset (const cGH* cctkGH, const int m, const int dir,
+                     const CCTK_REAL coord, const int ifallback)
   {
     assert (m>=0 and m<Carpet::maps and dir>=1 and dir<=dim);
 
