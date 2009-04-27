@@ -9,58 +9,58 @@
 
 
 namespace CarpetIOASCII {
-  
+
   using namespace std;
-  
-  
-  
+
+
+
   // Scheduled functions
   extern "C" {
     int CarpetIOASCIIStartup (void);
     void CarpetIOASCIIInit (CCTK_ARGUMENTS);
   }
-  
-  
-  
+
+
+
   // Everything is a class template, so that it can easily be
   // instantiated for all output dimensions
-  
+
   template<int outdim>
   struct IOASCII {
-    
+
     // name of the output directory
     static char* my_out_dir;
-    
+
     // list of variables to output
     static char* my_out_vars;
-    
+
     // I/O request description list (for all variables)
     static vector<ioRequest*> requests;
-    
-    
-    
+
+
+
     // Scheduled functions
     static int Startup();
-    
+
     // Registered functions
     static void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cctkGH);
-    
+
     static int OutputGH (const cGH* cctkGH);
     static int OutputVarAs (const cGH* cctkGH,
                             const char* varname, const char* alias);
     static int TimeToOutput (const cGH* cctkGH, int vindex);
     static int TriggerOutput (const cGH* cctkGH, int vindex);
-    
+
     // Other functions
     static void CheckSteerableParameters (const cGH* cctkGH);
-    
+
     static bool DidOutput (const cGH* cctkGH,
                            int vindex,
                            string basefilename,
                            bool& is_new_file, bool& truncate_file);
-    
+
     static bool DirectionIsRequested (const vect<int,outdim>& dirs);
-    
+
     static void OutputDirection (const cGH* cctkGH,
                                  int vindex,
                                  string alias,
@@ -78,33 +78,33 @@ namespace CarpetIOASCII {
                           bool is_new_file,
                           bool truncate_file,
                           fstream& file);
-    
+
     static void CloseFile (const cGH* cctkGH,
                            fstream& file);
-    
+
     static ivect GetOutputOffset (const cGH* cctkGH, int m,
                                   const vect<int,outdim>& dirs);
-    
+
     static ibbox GetOutputBBox (const cGH* cctkGH,
                                 int group,
                                 int m, int c,
                                 const ibbox& ext);
-    
+
     static void GetCoordinates (const cGH* cctkGH, int m,
                                 const cGroup& groupdata,
                                 const ibbox& ext,
                                 CCTK_REAL& coord_time,
                                 rvect& coord_lower, rvect& coord_upper);
-    
+
     static int GetGridOffset (const cGH* cctkGH, int m, int dir,
                               const char* itempl, const char* iglobal,
                               const char* ctempl, const char* cglobal,
                               CCTK_REAL cfallback);
     static int CoordToOffset (const cGH* cctkGH, int m, int dir,
                               CCTK_REAL coord, int ifallback);
-    
+
   };                            // struct IOASCII
-  
+
 } // namespace CarpetIOASCII
 
 #endif // ! defined CARPETIOASCII_HH
