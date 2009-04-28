@@ -1243,7 +1243,46 @@ namespace CarpetIOASCII {
     for (size_t n=0; n<gfdatas.size(); ++n) {
       all_on_root &= gfdatas.at(n)->proc() == ioproc;
     }
-    if (all_on_root) {
+
+    // boolean that says if we are doing 1D-diagonal output
+    // This is not beautiful, but works for the moment
+    bool const diagonal_output = outdim == 1 and dirs[0] == 3;
+
+    // Check whether the output bbox overlaps
+    // with the extent of the data to be output
+    bool output_bbox_overlaps_data_extent;
+    if (not diagonal_output) {
+
+      const vect<int,outdim> lo = gfext.lower()[dirs];
+      const vect<int,outdim> up = gfext.upper()[dirs];
+      const vect<int,outdim> str = gfext.stride()[dirs];
+      const bbox<int,outdim> ext(lo,up,str);
+
+      // Check whether the output origin is contained in the extent
+      // of the data that should be output
+      ivect org1(org);
+      for (int d=0; d<outdim; ++d) org1[dirs[d]] = ext.lower()[d];
+      output_bbox_overlaps_data_extent = gfext.contains(org1);
+
+    } else {
+
+      gh const & hh = *vhh.at(m);
+      ibbox const & base = hh.baseextents.at(mglevel).at(reflevel);
+
+      assert (base.stride()[0] ==  base.stride()[1]
+              and base.stride()[0] == base.stride()[2]);
+
+      // Check if any point on the diagonal is in our gf's extent
+      output_bbox_overlaps_data_extent = false;
+      for (int i=maxval(base.lower());
+           i<=minval(base.upper()); i+=base.stride()[0]) {
+
+        ivect const pos = ivect(i,i,i);
+        output_bbox_overlaps_data_extent |= gfext.contains(pos);
+      }
+    }
+
+    if (all_on_root or not output_bbox_overlaps_data_extent) {
       // output on processor 0
 
       if (dist::rank() == ioproc) {
@@ -1287,10 +1326,6 @@ namespace CarpetIOASCII {
 
         } // if out_fileinfo
 
-        // boolean that says if we are doing 1D-diagonal output
-        // This is not beautiful, but works for the moment
-        bool const diagonal_output = outdim == 1 and dirs[0] == 3;
-
         if (not diagonal_output) { // not outputting the diagonal
 
           const vect<int,outdim> lo = gfext.lower()[dirs];
@@ -1302,6 +1337,7 @@ namespace CarpetIOASCII {
           // of the data that should be output
           ivect org1(org);
           for (int d=0; d<outdim; ++d) org1[dirs[d]] = ext.lower()[d];
+          assert (gfext.contains(org1) == output_bbox_overlaps_data_extent);
           if (gfext.contains(org1)) {
 
             typename bbox<int,outdim>::iterator it=ext.begin();
@@ -1364,10 +1400,7 @@ namespace CarpetIOASCII {
 
         } else { // taking care of the diagonal
 
-          const vect<int,3> lo = gfext.lower();
-          const vect<int,3> up = gfext.upper();
-          const vect<int,3> str = gfext.stride();
-          const bbox<int,3> ext(lo,up,str);
+          const bbox<int,3>& ext = gfext;
 
           gh const & hh = *vhh.at(m);
           ibbox const & base = hh.baseextents.at(mglevel).at(reflevel);
