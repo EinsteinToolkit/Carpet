@@ -222,7 +222,7 @@ namespace CarpetIOASCII {
     static Carpet::Timer * timer = NULL;
     if (not timer) {
       ostringstream timer_name;
-      timer_name << "CarpetIOASCII<" << outdim << ">::OutputVarAs";
+      timer_name << "CarpetIOASCII<" << outdim << ">::OutputGH";
       timer = new Carpet::Timer (timer_name.str().c_str());
     }
 
