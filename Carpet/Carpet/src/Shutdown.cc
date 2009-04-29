@@ -47,6 +47,15 @@ namespace Carpet {
       } END_REVERSE_MGLEVEL_LOOP;
     } // for rl
     
+    // Stop all timers before shutdown, since timers may rely on data
+    // structures which are destroyed during shutdown
+    int const ierr = CCTK_TimerStop ("CCTK total time");
+    assert (not ierr);
+    timer.stop();
+    if (output_timers_every > 0) {
+      TimerSet::writeData (cctkGH, timer_file);
+    }
+    
     BEGIN_REVERSE_MGLEVEL_LOOP(cctkGH) {
       do_global_mode = true;
       do_meta_mode = mglevel==mglevels-1;
@@ -56,10 +65,6 @@ namespace Carpet {
       CCTK_ScheduleTraverse ("CCTK_SHUTDOWN", cctkGH, CallFunction);
       
     } END_REVERSE_MGLEVEL_LOOP;
-    timer.stop();
-    if (output_timers_every > 0) {
-      TimerSet::writeData (cctkGH, timer_file);
-    }
     
     // earlier checkpoint before finalising MPI
     Waypoint ("Done with shutdown");
