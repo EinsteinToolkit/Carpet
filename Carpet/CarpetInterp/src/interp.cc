@@ -412,12 +412,15 @@ namespace CarpetInterp {
     // that this processor is to receive from others
     vector<int> recvcnt (dist::size());
     {
-      static Timer timer ("CarpetInterp::send_npoints");
-      timer.start ();
+      static Timer * timer = NULL;
+      if (not timer) {
+        timer = new Timer ("CarpetInterp::send_npoints");
+      }
+      timer->start ();
       MPI_Alltoall (&sendcnt[0], 1, dist::datatype (sendcnt[0]),
                     &recvcnt[0], 1, dist::datatype (recvcnt[0]),
                     dist::comm());
-      timer.stop (dist::size() * sizeof(CCTK_INT));
+      timer->stop (dist::size() * sizeof(CCTK_INT));
     }
     //cout << "CarpetInterp: recvcnt=" << recvcnt << endl;
 
@@ -506,12 +509,15 @@ namespace CarpetInterp {
         MPI_Type_vector(1, ndims, 0, datatype, &datatype);
         MPI_Type_commit(&datatype);
 
-        static Timer timer ("CarpetInterp::send_coordinates");
-        timer.start ();
+        static Timer * timer = NULL;
+        if (not timer) {
+          timer = new Timer ("CarpetInterp::send_coordinates");
+        }
+        timer->start ();
         MPI_Alltoallv (&coords_buffer[0], &sendcnt[0], &senddispl[0], datatype,
                        &tmp[0],           &recvcnt[0], &recvdispl[0], datatype,
                        dist::comm());
-        timer.stop (coords_buffer.size() * sizeof(CCTK_REAL));
+        timer->stop (coords_buffer.size() * sizeof(CCTK_REAL));
 
         MPI_Type_free(&datatype);
       }
@@ -700,14 +706,17 @@ namespace CarpetInterp {
       MPI_Type_vector(1, N_output_arrays, 0, datatype, &datatype);
       MPI_Type_commit(&datatype);
 
-      static Timer timer ("CarpetInterp::recv_points");
-      timer.start ();
+      static Timer * timer = NULL;
+      if (not timer) {
+        timer = new Timer ("CarpetInterp::recv_points");
+      }
+      timer->start ();
       // distribute the results the same way as the coordinates were gathered
       // simply by interchanging the send/recv counts/displacements
       MPI_Alltoallv (&outputs_buffer[0], &recvcnt[0], &recvdispl[0], datatype,
                      &tmp[0],            &sendcnt[0], &senddispl[0], datatype,
                      dist::comm());
-      timer.stop (N_interp_points * N_output_arrays * vtypesize);
+      timer->stop (N_interp_points * N_output_arrays * vtypesize);
 
       MPI_Type_free(&datatype);
 
