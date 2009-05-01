@@ -25,6 +25,7 @@
 #include "mem.hh"
 
 
+#define MEGABYTE  (double (1024*1024))
 
 using namespace std;
 
@@ -71,15 +72,15 @@ mem (size_t const vectorlength, size_t const nelems,
   if (memptr == NULL) {
     const double nbytes = vectorlength * nelems * sizeof (T);
     if (max_allowed_memory_MB > 0
-        and (total_allocated_bytes + nbytes > 1.0e6 * max_allowed_memory_MB))
+        and (total_allocated_bytes + nbytes > MEGABYTE * max_allowed_memory_MB))
     {
       T Tdummy;
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Refusing to allocate %.0f bytes (%.3f MB) of memory for type %s.  %.0f bytes (%.3f MB) are currently allocated in %d objects.  The parameter file specifies a maximum of %d MB",
-                  double(nbytes), double(nbytes/1.0e6),
+                  double(nbytes), double(nbytes/MEGABYTE),
                   typestring(Tdummy),
                   double(total_allocated_bytes),
-                  double(total_allocated_bytes/1.0e6),
+                  double(total_allocated_bytes/MEGABYTE),
                   int(total_allocated_objects),
                   int(max_allowed_memory_MB));
     }
@@ -90,10 +91,10 @@ mem (size_t const vectorlength, size_t const nelems,
       T Tdummy;
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Failed to allocate %.0f bytes (%.3f MB) of memory for type %s.  %.0f bytes (%.3f MB) are currently allocated in %d objects",
-                  double(nbytes), double(nbytes/1.0e6),
+                  double(nbytes), double(nbytes/MEGABYTE),
                   typestring(Tdummy),
                   double(total_allocated_bytes),
-                  double(total_allocated_bytes/1.0e6),
+                  double(total_allocated_bytes/MEGABYTE),
                   int(total_allocated_objects));
     }
     total_allocated_bytes += nbytes;
@@ -214,7 +215,7 @@ alloc (size_t nbytes)
     if (not freeptr) {
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Failed to allocate %.3f MB of memory",
-                  double(freesize/1.0e6));
+                  double(freesize/MEGABYTE));
     }
     // Remember the pointer so that it can be freed
     chunks.push (freeptr);
@@ -316,14 +317,14 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
     cout << "Memory statistics from CarpetLib:" << eol
          << "   Current number of objects: " << total_allocated_objects << eol
          << "   Current allocated memory:  "
-         << setprecision(3) << total_allocated_bytes / 1.0e6 << " MB" << eol
+         << setprecision(3) << total_allocated_bytes / MEGABYTE << " MB" << eol
          << "   Maximum number of objects: " << max_allocated_objects << eol
          << "   Maximum allocated memory:  "
-         << setprecision(3) << max_allocated_bytes / 1.0e6 << " MB" << eol
+         << setprecision(3) << max_allocated_bytes / MEGABYTE << " MB" << eol
          << "   Total allocated used system memory: "
-         << setprecision(3) << mybuf.malloc_used_bytes / 1.0e6 << " MB" << eol
+         << setprecision(3) << mybuf.malloc_used_bytes / MEGABYTE << " MB" << eol
          << "   Total allocated free system memory: "
-         << setprecision(3) << mybuf.malloc_free_bytes / 1.0e6 << " MB" << endl;
+         << setprecision(3) << mybuf.malloc_free_bytes / MEGABYTE << " MB" << endl;
     
     if (strcmp (memstat_file, "") != 0) {
       vector<mstat> allbuf (dist::size());
