@@ -236,6 +236,8 @@ namespace Carpet {
       case val_double:
         printf (" %g", timer->vals[i].val.d);
         break;
+      case val_none:
+        break;
       default:
         assert (0);
       }
