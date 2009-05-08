@@ -212,12 +212,7 @@ int WriteVarUnchunked (const cGH* const cctkGH,
 
             // before HDF5-1.6.4 the H5Sselect_hyperslab() function expected
             // the 'start' argument to be of type 'hssize_t'
-#if (H5_VERS_MAJOR == 1 && \
-     (H5_VERS_MINOR < 6 || (H5_VERS_MINOR == 6 && H5_VERS_RELEASE < 4)))
-            hssize_t overlaporigin[dim];
-#else
-            hsize_t overlaporigin[dim];
-#endif
+            slice_start_size_t overlaporigin[dim];
             for (int d = 0; d < group.dim; ++d) {
               assert (group.dim-1-d>=0 and group.dim-1-d<dim);
               overlaporigin[group.dim-1-d] =
@@ -761,6 +756,5 @@ static int AddAttributes (const cGH *const cctkGH, const char *fullname,
   // return the number of errors that occured during this output
   return error_count;
 }
-
 
 } // namespace CarpetIOHDF5

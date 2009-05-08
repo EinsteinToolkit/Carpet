@@ -4,6 +4,8 @@
 #define H5_USE_16_API 1
 #include <hdf5.h>
 
+#include <vector>
+
 #include "cctk_Arguments.h"
 #include "CactusBase/IOUtil/src/ioutil_Utils.h"
 #include "carpet.hh"
@@ -54,6 +56,16 @@
             error_count++;                                                    \
           }                                                                   \
         } while (0)
+
+
+// datatype of the start[] parameter in a call to H5Sselect_hyperslab()
+// (the HDF5 API has changed in this respect after version 1.6.3)
+#if (H5_VERS_MAJOR == 1 && \
+     (H5_VERS_MINOR < 6 || (H5_VERS_MINOR == 6 && H5_VERS_RELEASE < 4)))
+#define  slice_start_size_t  hssize_t
+#else
+#define  slice_start_size_t  hsize_t
+#endif
 
 
 // CarpetIOHDF5 GH extension structure
@@ -114,10 +126,123 @@ namespace CarpetIOHDF5
                                const ioRequest* const request,
                                bool called_from_checkpoint);
 
+  int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
+                     int const firstvar, int const numvars,
+                     bool const called_from_checkpoint, hid_t const file);
+
+  int AddSliceAttributes(const cGH* const cctkGH,
+                         const char* const fullname,
+                         const int refinementlevel,
+                         const vector<double>& origin,
+                         const vector<double>& delta,
+                         const vector<int>& iorigin,
+                         hid_t& dataset);
+
   // returns an HDF5 datatype corresponding to the given CCTK datatype
   hid_t CCTKtoHDF5_Datatype (const cGH* const cctkGH,
                              int cctk_type,
                              bool single_precision);
+
+  // routines which are independent of the output dimension
+  static ibbox GetOutputBBox (const cGH* cctkGH,
+                              int group,
+                              int m, int c,
+                              const ibbox& ext);
+
+  static void GetCoordinates (const cGH* cctkGH, int m,
+                              const cGroup& groupdata,
+                              const ibbox& ext,
+                              rvect& coord_lower, rvect& coord_upper);
+
+  static int GetGridOffset (const cGH* cctkGH, int m, int dir,
+                            const char* itempl, const char* iglobal,
+                            const char* ctempl, const char* cglobal,
+                            CCTK_REAL cfallback);
+  static int CoordToOffset (const cGH* cctkGH, int m, int dir,
+                            CCTK_REAL coord, int ifallback);
+
+
+  // Everything is a class template, so that it can easily be
+  // instantiated for all output dimensions
+
+  template<int outdim>
+  struct IOHDF5 {
+
+    // name of the output directory
+    static char* my_out_slice_dir;
+
+    // list of variables to output
+    static char* my_out_slice_vars;
+
+    // I/O request description list (for all variables)
+    static vector<ioRequest*> slice_requests;
+
+
+
+    // Scheduled functions
+    static int Startup();
+
+    // Registered functions
+    static void* SetupGH (tFleshConfig* fc, int convLevel, cGH* cctkGH);
+
+    static int OutputGH (const cGH* cctkGH);
+    static int OutputVarAs (const cGH* cctkGH,
+                            const char* varname, const char* alias);
+    static int TimeToOutput (const cGH* cctkGH, int vindex);
+    static int TriggerOutput (const cGH* cctkGH, int vindex);
+
+    // Other functions
+    static void CheckSteerableParameters (const cGH* cctkGH);
+
+    static bool DidOutput (const cGH* cctkGH,
+                           int vindex,
+                           string basefilename,
+                           bool& is_new_file, bool& truncate_file);
+
+    static bool DirectionIsRequested (const vect<int,outdim>& dirs);
+
+    static void OutputDirection (const cGH* cctkGH,
+                                 int vindex,
+                                 string alias,
+                                 string basefilename,
+                                 const vect<int,outdim>& dirs,
+                                 bool is_new_file,
+                                 bool truncate_file);
+
+    static int OpenFile (const cGH* cctkGH,
+                         int m,
+                         int vindex,
+                         int numvars,
+                         string alias,
+                         string basefilename,
+                         const vect<int,outdim>& dirs,
+                         bool is_new_file,
+                         bool truncate_file,
+                         hid_t& file);
+
+     static int WriteHDF5 (const cGH* cctkGH,
+                           hid_t& file,
+                           vector<const gdata*> const gfdatas,
+                           const bbox<int,dim>& gfext,
+                           const int vi,
+                           const cGroup& groupdata,
+                           const vect<int,dim>& org,
+                           const vect<int,outdim>& dirs,
+                           const int rl,
+                           const int ml,
+                           const int m,
+                           const int c,
+                           const int tl,
+                           const vect<CCTK_REAL,dim>& coord_lower,
+                           const vect<CCTK_REAL,dim>& coord_upper);
+
+    static int CloseFile (const cGH* cctkGH,
+                          hid_t& file);
+
+    static ivect GetOutputOffset (const cGH* cctkGH, int m,
+                                  const vect<int,outdim>& dirs);
+
+  };                            // struct IOHDF5
 
   // scheduled routines (must be declared as C according to schedule.ccl)
   extern "C" {

@@ -1053,12 +1053,7 @@ static int ReadVar (const cGH* const cctkGH,
 
       // before HDF5-1.6.4 the H5Sselect_hyperslab() function expected
       // the 'start' argument to be of type 'hssize_t'
-#if (H5_VERS_MAJOR == 1 && \
-     (H5_VERS_MINOR < 6 || (H5_VERS_MINOR == 6 && H5_VERS_RELEASE < 4)))
-      hssize_t memorigin[dim], fileorigin[dim];
-#else
-      hsize_t memorigin[dim], fileorigin[dim];
-#endif
+      slice_start_size_t memorigin[dim], fileorigin[dim];
       hsize_t memdims[dim], count[dim];
       for (int i = 0; i < patch->rank; i++) {
         memdims[patch->rank-i-1] =
