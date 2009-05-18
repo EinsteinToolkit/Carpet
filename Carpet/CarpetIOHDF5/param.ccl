@@ -280,10 +280,6 @@ CCTK_INT out1D_zline_yi "y-index (counting from 0) for 1D lines in z-direction" 
 {
   0:* :: ""
 } 0
-CCTK_INT out1D_zline_yi "y-index (counting from 0) for 1D lines in z-direction" STEERABLE = ALWAYS
-{
-  0:* :: ""
-} 0
 
 CCTK_REAL out1D_xline_y "y coordinate for 1D lines in x-direction" STEERABLE = ALWAYS
 {
