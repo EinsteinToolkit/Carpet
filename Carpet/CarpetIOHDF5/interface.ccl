@@ -24,6 +24,10 @@ CCTK_INT next_output_iteration TYPE=scalar
 CCTK_REAL next_output_time TYPE=scalar
 CCTK_INT this_iteration TYPE=scalar
 
+CCTK_INT last_output_iteration_slice[3] TYPE=scalar
+CCTK_REAL last_output_time_slice[3] TYPE=scalar
+CCTK_INT this_iteration_slice[3] TYPE=scalar
+
 
 CCTK_INT FUNCTION Coord_GroupSystem    \
   (CCTK_POINTER_TO_CONST IN GH,        \
@@ -36,6 +40,16 @@ CCTK_INT FUNCTION             \
         (CCTK_INT IN map)
 USES FUNCTION MultiPatch_MapIsCartesian
 
+
+# Determine which boundaries are symmetry boundaries
+CCTK_INT FUNCTION \
+    SymmetryTableHandleForGrid (CCTK_POINTER_TO_CONST IN cctkGH)
+REQUIRES FUNCTION SymmetryTableHandleForGrid
+
+CCTK_INT FUNCTION \
+    SymmetryTableHandleForGI (CCTK_POINTER_TO_CONST IN cctkGH, \
+                              CCTK_INT IN group_index)
+REQUIRES FUNCTION SymmetryTableHandleForGI
 
 
 # Check whether existing output files should be truncated or not

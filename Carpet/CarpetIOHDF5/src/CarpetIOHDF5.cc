@@ -57,9 +57,6 @@ static void GetVarIndex (int vindex, const char* optstring, void* arg);
 
 static void CheckSteerableParameters (const cGH *const cctkGH,
                                       CarpetIOHDF5GH *myGH);
-static int WriteMetadata (const cGH *cctkGH, int nioprocs,
-                          int firstvar, int numvars,
-                          bool called_from_checkpoint, hid_t file);
 
 static int WriteAttribute (hid_t const group,
                            char const * const name,
@@ -98,6 +95,10 @@ int CarpetIOHDF5_Startup (void)
   const int GHExtension = CCTK_RegisterGHExtension (CCTK_THORNSTRING);
   CCTK_RegisterGHExtensionSetupGH (GHExtension, SetupGH);
 
+  IOHDF5<0>::Startup();
+  IOHDF5<1>::Startup();
+  IOHDF5<2>::Startup();
+
   return (0);
 }
 
@@ -109,6 +110,12 @@ void CarpetIOHDF5_Init (CCTK_ARGUMENTS)
   *this_iteration = -1;
   *next_output_iteration = 0;
   *next_output_time = cctk_time;
+
+  for (int d=0; d<3; ++d) {
+    this_iteration_slice[d]        = 0;
+    last_output_iteration_slice[d] = 0;
+    last_output_time_slice[d]      = cctk_time;
+  }
 
   last_checkpoint_iteration = cctk_iteration;
   last_checkpoint_walltime = CCTK_RunTime() / 3600.0;
@@ -268,6 +275,29 @@ hid_t CCTKtoHDF5_Datatype (const cGH* const cctkGH,
   }
 
   return (retval);
+}
+
+
+// add attributes to an HDF5 slice dataset
+int AddSliceAttributes(const cGH* const cctkGH,
+                       const char* const fullname,
+                       const int refinementlevel,
+                       const vector<double>& origin,
+                       const vector<double>& delta,
+                       const vector<int>& iorigin,
+                       hid_t& dataset)
+{
+  int error_count = 0;
+
+  error_count += WriteAttribute(dataset, "time", cctkGH->cctk_time);
+  error_count += WriteAttribute(dataset, "timestep", cctkGH->cctk_iteration);
+  error_count += WriteAttribute(dataset, "name", fullname);
+  error_count += WriteAttribute(dataset, "level", refinementlevel);
+  error_count += WriteAttribute(dataset, "origin", &origin[0], origin.size());
+  error_count += WriteAttribute(dataset, "delta", &delta[0], delta.size());
+  error_count += WriteAttribute(dataset, "iorigin", &iorigin[0], iorigin.size());
+
+  return error_count;
 }
 
 
@@ -1001,9 +1031,9 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
 } // Checkpoint
 
 
-static int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
-                          int const firstvar, int const numvars,
-                          bool const called_from_checkpoint, hid_t const file)
+int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
+                   int const firstvar, int const numvars,
+                   bool const called_from_checkpoint, hid_t const file)
 {
   DECLARE_CCTK_PARAMETERS;
   hid_t group;
