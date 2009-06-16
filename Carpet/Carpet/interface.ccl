@@ -223,6 +223,7 @@ CCTK_POINTER FUNCTION                     \
         (CCTK_POINTER_TO_CONST IN cctkGH, \
          CCTK_INT IN map,                 \
          CCTK_INT IN reflevel,            \
+         CCTK_INT IN component,           \
          CCTK_INT IN timelevel,           \
          CCTK_INT IN varindex)
 PROVIDES FUNCTION VarDataPtrI \
