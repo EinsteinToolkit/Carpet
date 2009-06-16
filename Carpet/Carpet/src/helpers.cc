@@ -64,9 +64,41 @@ namespace Carpet {
   {
     return do_prolongate;
   }
-
-
-
+  
+  
+  
+  // Get pointer to grid variable for a specific map and refinement level
+  CCTK_POINTER
+  Carpet_VarDataPtrI (CCTK_POINTER_TO_CONST const cctkGH,
+                      CCTK_INT const map,
+                      CCTK_INT const reflevel,
+                      CCTK_INT const timelevel,
+                      CCTK_INT const varindex)
+  {
+    assert (cctkGH);
+    assert (varindex >= 0 and varindex < CCTK_NumVars());
+    int const groupindex = CCTK_GropuIndexFromVarI (varindex);
+    assert (groupindex >= 0);
+    int const grouptype = CCTK_GroupTypeI (groupindex);
+    if (grouptype == CCTK_GF) {
+      assert (map >= 0 and map < maps);
+      assert (reflevel >= 0 and reflevel < reflevels);
+    } else {
+      assert (map == 0);
+      assert (reflevel == 0);
+    }
+    int const var = varindex - CCTK_FirstVarIndexI (varindex);
+    int activetimelevels =
+      groupdata.AT(groupindex).activetimelevels.AT(0).AT(reflevel);
+    assert (timelevel >= 0 and timelevel < activetimelevels);
+    
+    ggf * const ff = arrdata.at(group).at(map).data.at(var);
+    gdata * const data = (*ff) (tl, rl, c, ml);
+    return data->storage();
+  }
+  
+  
+  
   // Multi-Model
   CCTK_POINTER_TO_CONST
   Carpet_GetMPICommUniverse (CCTK_POINTER_TO_CONST const cctkGH)
