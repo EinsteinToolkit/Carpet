@@ -86,6 +86,16 @@ namespace Carpet {
     
     
     
+    /* Grid function access */
+    CCTK_POINTER Carpet_VarDataPtrI (CCTK_POINTER_TO_CONST const cctkGH,
+                                     CCTK_INT const m,
+                                     CCTK_INT const rl,
+                                     CCTK_INT const c,
+                                     CCTK_INT const tl,
+                                     CCTK_INT const varindex);
+    
+    
+    
     /* Call a schedule group */
     int CallScheduleGroup (cGH * const cgh, const char * const group);
     
