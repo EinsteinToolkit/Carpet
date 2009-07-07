@@ -246,6 +246,15 @@ namespace CarpetLib {
                       ibbox3 const & restrict dstbbox,
                       ibbox3 const & restrict regbbox);
   
+  template <typename T>
+  void
+  prolongate_3d_o5_monotone_rf2 (T const * restrict const src,
+                                 ivect3 const & restrict srcext,
+                                 T * restrict const dst,
+                                 ivect3 const & restrict dstext,
+                                 ibbox3 const & restrict srcbbox,
+                                 ibbox3 const & restrict dstbbox,
+                                 ibbox3 const & restrict regbbox);
   
   
 } // namespace CarpetLib
