@@ -1903,6 +1903,8 @@ namespace Carpet {
       return op_ENO;
     } else if (CCTK_Equals(prolong_string, "WENO")) {
       return op_WENO;
+    } else if (CCTK_Equals(prolong_string, "Lagrange_monotone")) {
+      return op_Lagrange_monotone;
     } else {
       char * const groupname = CCTK_GroupName (group);
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
