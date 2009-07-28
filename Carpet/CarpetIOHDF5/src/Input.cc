@@ -513,9 +513,9 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
 
       // actually read the patch
       if (not read_completely.at(patch->vindex).at(patch->timelevel)) {
-        ReadVar (cctkGH, file.file, io_bytes, patch,
-                 bboxes_read.at(patch->vindex).at(patch->timelevel),
-                 in_recovery);
+        error_count += ReadVar (cctkGH, file.file, io_bytes, patch,
+                                bboxes_read.at(patch->vindex).at(patch->timelevel),
+                                in_recovery);
 
         // update the read_completely entry
         const int gindex = CCTK_GroupIndexFromVarI (patch->vindex);
@@ -644,6 +644,9 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
         }
       }
     }
+  }
+  if (error_count and abort_on_io_errors) {
+    CCTK_WARN(0, "Found errors while trying to restart from checkpoint, aborting.");
   }
   
   if (in_recovery and not CCTK_Equals (verbose, "none")) {
@@ -975,7 +978,7 @@ static int ReadVar (const cGH* const cctkGH,
     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                 "Cannot input variable '%s' (no storage)", fullname);
     free (fullname);
-    return 0;
+    return 1;
   }
 
   // filereader reads the current timelevel
@@ -1111,7 +1114,7 @@ static int ReadVar (const cGH* const cctkGH,
     HDF5_ERROR (H5Sclose (filespace));
   }
 
-  return 1;
+  return error_count;
 }
 
 } // namespace CarpetIOHDF5
