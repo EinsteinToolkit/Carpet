@@ -7,6 +7,8 @@
 
 #include "cctk.h"
 
+#include "CarpetTimers.hh"
+
 #include "defs.hh"
 #include "dh.hh"
 #include "th.hh"
@@ -16,6 +18,10 @@
 
 using namespace std;
 using namespace CarpetLib;
+
+
+
+list<ggf*> ggf::allggf;
 
 
 
@@ -44,12 +50,15 @@ ggf::ggf (const int varindex_, const operator_type transport_operator_,
     timelevels_.AT(ml).resize(d.h.reflevels(), 0);
   }
   
-  d.add(this);
+  allggfi = allggf.insert(allggf.end(), this);
+  
+  dh_handle = d.add(this);
 }
 
 // Destructors
 ggf::~ggf () {
-  d.remove(this);
+  d.erase(dh_handle);
+  allggf.erase(allggfi);
 }
 
 // Comparison
@@ -69,23 +78,24 @@ void ggf::set_timelevels (const int ml, const int rl, const int new_timelevels)
   
   if (new_timelevels < timelevels(ml,rl)) {
     
-    for (int c=0; c<(int)storage.AT(ml).AT(rl).size(); ++c) {
+    for (int lc=0; lc<h.local_components(rl); ++ lc) {
       for (int tl=new_timelevels; tl<timelevels(ml,rl); ++tl) {
-        delete storage.AT(ml).AT(rl).AT(c).AT(tl);
+        delete storage.AT(ml).AT(rl).AT(lc).AT(tl);
       }
-      storage.AT(ml).AT(rl).AT(c).resize (new_timelevels);
-    } // for c
+      storage.AT(ml).AT(rl).AT(lc).resize (new_timelevels);
+    } // for lc
     
   } else if (new_timelevels > timelevels(ml,rl)) {
     
-    for (int c=0; c<(int)storage.AT(ml).AT(rl).size(); ++c) {
-      storage.AT(ml).AT(rl).AT(c).resize (new_timelevels);
+    for (int lc=0; lc<h.local_components(rl); ++ lc) {
+      int const c = h.get_component(rl,lc);
+      storage.AT(ml).AT(rl).AT(lc).resize (new_timelevels);
       for (int tl=timelevels(ml,rl); tl<new_timelevels; ++tl) {
-        storage.AT(ml).AT(rl).AT(c).AT(tl) = typed_data(tl,rl,c,ml);
-        storage.AT(ml).AT(rl).AT(c).AT(tl)->allocate
-          (d.boxes.AT(ml).AT(rl).AT(c).exterior, h.processor(rl,c));
+        storage.AT(ml).AT(rl).AT(lc).AT(tl) = typed_data(tl,rl,lc,ml);
+        storage.AT(ml).AT(rl).AT(lc).AT(tl)->allocate
+          (d.boxes.AT(ml).AT(rl).AT(c).exterior, dist::rank());
       } // for tl
-    } // for c
+    } // for lc
     
   }
   
@@ -97,34 +107,39 @@ void ggf::set_timelevels (const int ml, const int rl, const int new_timelevels)
 void ggf::recompose_crop ()
 {
   // Free storage that will not be needed
-  static Timer timer ("ggf::recompose_crop");
+  static Carpet::Timer timer ("CarpetLib::ggf::recompose_crop");
   timer.start ();
   
   for (int ml=0; ml<h.mglevels(); ++ml) {
     for (int rl=h.reflevels(); rl<(int)storage.AT(ml).size(); ++rl) {
-      for (int c=0; c<(int)storage.AT(ml).AT(rl).size(); ++c) {
-        for (int tl=0; tl<(int)storage.AT(ml).AT(rl).AT(c).size(); ++tl) {
-          delete storage.AT(ml).AT(rl).AT(c).AT(tl);
+      for (int lc=0; lc<(int)storage.AT(ml).AT(rl).size(); ++lc) {
+        for (int tl=0; tl<(int)storage.AT(ml).AT(rl).AT(lc).size(); ++tl) {
+          delete storage.AT(ml).AT(rl).AT(lc).AT(tl);
         } // for tl
-      } // for c
+      } // for lc
     } // for rl
     storage.AT(ml).resize(h.reflevels());
   } // for ml
   
-  timer.stop (0);
+  timer.stop ();
 }
 
 void ggf::recompose_allocate (const int rl)
 {
   // Retain storage that might be needed
-  static Timer timer ("ggf::recompose_allocate");
+  static Carpet::Timer timer ("CarpetLib::ggf::recompose_allocate");
   timer.start ();
   
   oldstorage.resize(storage.size());
   for (int ml=0; ml<(int)storage.size(); ++ml) {
     oldstorage.AT(ml).resize(storage.AT(ml).size());
+#if 0
     oldstorage.AT(ml).AT(rl) = storage.AT(ml).AT(rl);
     storage.AT(ml).AT(rl).clear();
+#else
+    oldstorage.AT(ml).AT(rl).clear();
+    swap (storage.AT(ml).AT(rl), oldstorage.AT(ml).AT(rl));
+#endif
   }
   
   for (int ml=0; ml<d.h.mglevels(); ++ml) {
@@ -135,32 +150,36 @@ void ggf::recompose_allocate (const int rl)
   storage.resize(h.mglevels());
   for (int ml=0; ml<h.mglevels(); ++ml) {
     storage.AT(ml).resize(h.reflevels());
-    storage.AT(ml).AT(rl).resize(h.components(rl));
-    for (int c=0; c<h.components(rl); ++c) {
-      storage.AT(ml).AT(rl).AT(c).resize(timelevels(ml,rl));
+    storage.AT(ml).AT(rl).resize(h.local_components(rl));
+    for (int lc=0; lc<h.local_components(rl); ++ lc) {
+      int const c = h.get_component(rl,lc);
+      storage.AT(ml).AT(rl).AT(lc).resize(timelevels(ml,rl));
       for (int tl=0; tl<timelevels(ml,rl); ++tl) {
-        storage.AT(ml).AT(rl).AT(c).AT(tl) = typed_data(tl,rl,c,ml);
-        storage.AT(ml).AT(rl).AT(c).AT(tl)->allocate
-          (d.boxes.AT(ml).AT(rl).AT(c).exterior, h.processor(rl,c));
+        storage.AT(ml).AT(rl).AT(lc).AT(tl) = typed_data(tl,rl,lc,ml);
+        storage.AT(ml).AT(rl).AT(lc).AT(tl)->allocate
+          (d.boxes.AT(ml).AT(rl).AT(c).exterior, dist::rank());
       } // for tl
-    } // for c
+    } // for lc
   } // for ml
   
-  timer.stop (0);
+  timer.stop ();
 }
 
 void ggf::recompose_fill (comm_state & state, int const rl,
                           bool const do_prolongate)
 {
   // Initialise the new storage
-  static Timer timer ("ggf::recompose_fill");
+  static Carpet::Timer timer ("CarpetLib::ggf::recompose_fill");
   timer.start ();
-
+  
   for (int ml = 0; ml < h.mglevels(); ++ ml) {
+    
+    assert (d.fast_boxes.AT(ml).AT(rl).do_init);
     
     vector <int> tls;
     if (do_prolongate and rl > 0 and
-        transport_operator != op_none and transport_operator != op_sync)
+        transport_operator != op_none and transport_operator != op_sync and
+        transport_operator != op_restrict)
     {
       int const numtl = timelevels (ml, rl);
       tls.resize (numtl);
@@ -185,7 +204,9 @@ void ggf::recompose_fill (comm_state & state, int const rl,
       // Initialise from a coarser level of the new hierarchy, where
       // possible
       if (rl > 0) {
-        if (transport_operator != op_none and transport_operator != op_sync) {
+        if (transport_operator != op_none and transport_operator != op_sync and
+            transport_operator != op_restrict)
+        {
           for (int tl = 0; tl < timelevels (ml, rl); ++tl) {
             transfer_from_all (state,
                                tl, rl, ml,
@@ -199,43 +220,43 @@ void ggf::recompose_fill (comm_state & state, int const rl,
     
   } // for ml
   
-  timer.stop (0);
+  timer.stop ();
 }
 
 void ggf::recompose_free_old (const int rl)
 {
   // Delete old storage
-  static Timer timer ("dh::recompose_free_old");
+  static Carpet::Timer timer ("dh::recompose_free_old");
   timer.start ();
 
   for (int ml=0; ml<(int)oldstorage.size(); ++ml) {
-    for (int c=0; c<(int)oldstorage.AT(ml).AT(rl).size(); ++c) {
-      for (int tl=0; tl<timelevels(ml,rl); ++tl) {
-        delete oldstorage.AT(ml).AT(rl).AT(c).AT(tl);
+    for (int lc=0; lc<(int)oldstorage.AT(ml).AT(rl).size(); ++lc) {
+      for (int tl=0; tl<(int)oldstorage.AT(ml).AT(rl).AT(lc).size(); ++tl) {
+        delete oldstorage.AT(ml).AT(rl).AT(lc).AT(tl);
       } // for tl
-    } // for c
+    } // for lc
     oldstorage.AT(ml).AT(rl).clear();
   } // for ml
   
-  timer.stop (0);
+  timer.stop ();
 }
 
 void ggf::recompose_free (const int rl)
 {
   // Delete old storage
-  static Timer timer ("dh::recompose_free");
+  static Carpet::Timer timer ("dh::recompose_free");
   timer.start ();
   
   for (int ml=0; ml<(int)storage.size(); ++ml) {
-    for (int c=0; c<(int)storage.AT(ml).AT(rl).size(); ++c) {
+    for (int lc=0; lc<h.local_components(rl); ++ lc) {
       for (int tl=0; tl<timelevels(ml,rl); ++tl) {
-        delete storage.AT(ml).AT(rl).AT(c).AT(tl);
+        delete storage.AT(ml).AT(rl).AT(lc).AT(tl);
       } // for tl
-    } // for c
+    } // for lc
     storage.AT(ml).AT(rl).clear();
   } // for ml
   
-  timer.stop (0);
+  timer.stop ();
 }
 
 
@@ -246,8 +267,8 @@ void ggf::cycle_all (int const rl, int const ml) {
   assert (ml>=0 and ml<h.mglevels());
   int const ntl = timelevels(ml,rl);
   assert (ntl > 0);
-  for (int c=0; c<(int)storage.AT(ml).AT(rl).size(); ++c) {
-    fdata & fdatas = storage.AT(ml).AT(rl).AT(c);
+  for (int lc=0; lc<(int)storage.AT(ml).AT(rl).size(); ++lc) {
+    fdata & fdatas = storage.AT(ml).AT(rl).AT(lc);
     gdata * const tmpdata = fdatas.AT(ntl-1);
     for (int tl=ntl-1; tl>0; --tl) {
       fdatas.AT(tl) = fdatas.AT(tl-1);
@@ -260,8 +281,8 @@ void ggf::cycle_all (int const rl, int const ml) {
 void ggf::flip_all (int const rl, int const ml) {
   assert (rl>=0 and rl<h.reflevels());
   assert (ml>=0 and ml<h.mglevels());
-  for (int c=0; c<(int)storage.AT(ml).AT(rl).size(); ++c) {
-    fdata & fdatas = storage.AT(ml).AT(rl).AT(c);
+  for (int lc=0; lc<(int)storage.AT(ml).AT(rl).size(); ++lc) {
+    fdata & fdatas = storage.AT(ml).AT(rl).AT(lc);
     for (int tl=0; tl<(timelevels(ml,rl)-1)/2; ++tl) {
       const int tl1 =                       tl;
       const int tl2 = timelevels(ml,rl)-1 - tl;
@@ -279,15 +300,13 @@ void ggf::flip_all (int const rl, int const ml) {
 void ggf::fill_all (int const rl, int const ml) {
   assert (rl>=0 and rl<h.reflevels());
   assert (ml>=0 and ml<h.mglevels());
-  for (int c=0; c<(int)storage.AT(ml).AT(rl).size(); ++c) {
-    if (h.is_local(rl,c)) {
-      fdata const & fdatas = storage.AT(ml).AT(rl).AT(c);
-      void const * const srcptr = fdatas.AT(0)->storage();
-      size_t const size = fdatas.AT(0)->size() * fdatas.AT(0)->elementsize();
-      for (int tl=1; tl<timelevels(ml,rl); ++tl) {
-        void * const dstptr = fdatas.AT(tl)->storage();
-        memcpy (dstptr, srcptr, size);
-      }
+  for (int lc=0; lc<(int)storage.AT(ml).AT(rl).size(); ++lc) {
+    fdata const & fdatas = storage.AT(ml).AT(rl).AT(lc);
+    void const * const srcptr = fdatas.AT(0)->storage();
+    size_t const size = fdatas.AT(0)->size() * fdatas.AT(0)->elementsize();
+    for (int tl=1; tl<timelevels(ml,rl); ++tl) {
+      void * const dstptr = fdatas.AT(tl)->storage();
+      memcpy (dstptr, srcptr, size);
     }
   }
 }
@@ -322,7 +341,9 @@ ref_bnd_prolongate_all (comm_state & state,
 {
   // Interpolate
   assert (rl>=1);
-  if (transport_operator == op_none or transport_operator == op_sync) return;
+  if (transport_operator == op_none or transport_operator == op_sync or
+      transport_operator == op_restrict)
+    return;
   vector<int> tl2s;
   static Timer timer ("ref_bnd_prolongate_all");
   timer.start ();
@@ -435,7 +456,9 @@ ref_prolongate_all (comm_state & state,
                     CCTK_REAL const time)
 {
   assert (rl>=1);
-  if (transport_operator == op_none or transport_operator == op_sync) return;
+  if (transport_operator == op_none or transport_operator == op_sync or
+      transport_operator == op_restrict)
+    return;
   static Timer timer ("ref_prolongate_all");
   timer.start ();
   vector<int> tl2s;
@@ -467,8 +490,7 @@ transfer_from_all (comm_state & state,
   assert (ml1>=0 and ml1<h.mglevels());
   assert (tl1>=0 and tl1<timelevels(ml1,rl1));
   
-  int const p = dist::rank();
-  srpvect const & psendrecvs = d.fast_boxes.AT(ml1).AT(rl1).AT(p).*sendrecvs;
+  srpvect const & psendrecvs = d.fast_boxes.AT(ml1).AT(rl1).*sendrecvs;
   
   // Return early if this communication does not concern us
   if (psendrecvs.empty()) return;
@@ -482,7 +504,11 @@ transfer_from_all (comm_state & state,
   assert (rl2>=0 and rl2<(int)srcstorage.AT(ml2).size());
   for (size_t i = 0; i < tl2s.size(); ++ i) {
     int const tl2 = tl2s.AT(i);
-    assert (tl2>=0 and tl2<(int)srcstorage.AT(ml2).AT(rl2).AT(0).size());
+    assert (tl2>=0);
+    int const lc = 0;
+    if (lc < int(srcstorage.AT(ml2).AT(rl2).size())) {
+      assert (tl2<(int)srcstorage.AT(ml2).AT(rl2).AT(lc).size());
+    }
   }
   
   // Set up source times
@@ -514,14 +540,21 @@ transfer_from_all (comm_state & state,
     ibbox const & recv = precv.extent;
     int const c2 = psend.component;
     int const c1 = precv.component;
+    int const lc2 = h.get_local_component(rl2,c2);
+    int const lc1 = h.get_local_component(rl1,c1);
+    int const p2 = h.processor(rl2,c2);
+    int const p1 = h.processor(rl1,c1);
     
     // Source and destination data
-    gdata * const dst = storage.AT(ml1).AT(rl1).AT(c1).AT(tl1);
+    gdata * const dst =
+      lc1>=0 ? storage.AT(ml1).AT(rl1).AT(lc1).AT(tl1) : NULL;
     cdata const & srcs = srcstorage.AT(ml2).AT(rl2);
     for (int i=0; i<(int)gsrcs.size(); ++i) {
-      gsrcs.AT(i) = srcs.AT(c2).AT(tl2s.AT(i));
+      gsrcs.AT(i) = lc2>=0 ? srcs.AT(lc2).AT(tl2s.AT(i)) : NULL;
     }
-    dst->transfer_from (state, gsrcs, times, recv, send, time, pos, pot);
+    
+    dst->transfer_from
+      (state, gsrcs, times, recv, send, p1, p2 , time, pos, pot);
   }
   
   total.stop (0);
@@ -545,4 +578,17 @@ memory ()
     memoryof (vectorindex) +
     memoryof (vectorleader) +
     memoryof (oldstorage);
+}
+
+size_t
+ggf::
+allmemory ()
+{
+  size_t mem = memoryof(allggf);
+  for (list<ggf*>::const_iterator
+         ggfi = allggf.begin(); ggfi != allggf.end(); ++ ggfi)
+  {
+    mem += memoryof(**ggfi);
+  }
+  return mem;
 }

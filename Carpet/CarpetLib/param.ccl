@@ -41,19 +41,48 @@ BOOLEAN poison_new_memory "Try to catch uninitialised data by setting newly allo
 {
 } "no"
 
+RESTRICTED:
+
 CCTK_INT poison_value "Integer value (0..255) used to poison new timelevels (with memset)" STEERABLE=always
 {
   0:255 :: "Must fit into a byte.  Use 0 for zero, 255 for nan, and e.g. 113 for a large value."
 } 255
 
+CCTK_INT deadbeef "A strange integer value that indicates that something has gone wrong; the integer equivalent of a nan" STEERABLE=always
+{
+  *:* :: "should be large and positive"
+} 666 # 7353315
 
+PRIVATE:
+
+
+
+# System limits
+
+INT max_core_size_MB "Maximum size of a core file, set via setrlimit" STEERABLE=recover
+{
+  -2  :: "unchanged"
+  -1  :: "unlimited"
+  0:* :: "limited"
+} -2
+
+INT max_memory_size_MB "Maximum amount of memory per MPI process, set via setrlimit" STEERABLE=recover
+{
+  -2  :: "unchanged"
+  -1  :: "unlimited"
+  0:* :: "limited"
+} -2
+
+
+
+# Statistics
 
 INT print_timestats_every "Print timing statistics periodically" STEERABLE=always
 {
   -1  :: "don't report"
-  0   :: "don't report"
+  0   :: "report after initialisation"
   1:* :: "report every so many iterations"
-} 0
+} -1
 
 STRING timestat_file "File name in which timestat output is collected (because stdout from the root node may not be enough)" STEERABLE=always
 {
@@ -70,7 +99,7 @@ INT print_memstats_every "Report periodically how much memory is used per proces
   1:* :: "report every so many iterations"
 } 0
 
-INT max_allowed_memory_MB "Maximum allowed amount of memory per process (in Megabytes)" STEERABLE=always
+INT max_allowed_memory_MB "Maximum allowed amount of memory per process that can be allocated for grid variables (in Megabytes)" STEERABLE=always
 {
   -1  :: "no maximum"
   0   :: "no maximum"
@@ -85,11 +114,23 @@ STRING memstat_file "File name in which memstat output is collected (because std
 
 
 
-# Experimental recomposing parameters
-
 BOOLEAN combine_recompose "Recompose all grid functions of one refinement levels at once" STEERABLE=always
 {
-} "no"
+} "yes"
+
+
+
+# Communication experiment parameters
+
+INT message_size_multiplier "Enlarge size of transmitted messages by this factor" STEERABLE=always
+{
+  1:* :: ""
+} 1
+
+INT message_count_multiplier "Transmit messages this many times" STEERABLE=always
+{
+  1:* :: ""
+} 1
 
 
 
@@ -99,19 +140,15 @@ BOOLEAN interleave_communications "Try to interleave communications with each ot
 {
 } "no"
 
-BOOLEAN vary_tags "Use different tags for each communication" STEERABLE=always
-{
-} "no"
-
 BOOLEAN barrier_between_stages "Add a barrier between the communication stages (slows down, but may make timing numbers easier to interpret)" STEERABLE=always
 {
 } "no"
 
-BOOLEAN combine_sends "Send data together and in order of processor ranks" STEERABLE=always
+BOOLEAN check_communication_schedule "Check the communication schedule at run time (expensive)" STEERABLE=always
 {
 } "no"
 
-BOOLEAN reduce_mpi_waitall "Call MPI_Waitall only for requests that are not null" STEERABLE=always
+BOOLEAN combine_sends "Send data together and in order of processor ranks" STEERABLE=always
 {
 } "no"
 

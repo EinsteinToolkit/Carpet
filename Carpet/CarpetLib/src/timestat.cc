@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
 
 #include <sys/time.h>
@@ -32,6 +33,7 @@ namespace CarpetLib {
   static
   bool have_cputick = false;
   
+  // CPU tick time in seconts
   static
   double cputick = 0.0;
   
@@ -266,11 +268,11 @@ namespace CarpetLib {
     
     os << timername << ":"
        << " cnt: " << count
-       << "   time: sum: " << wtime
-       << " avg: " << avg
-       << " stddev: " << stddev
-       << " min: " << wmin
-       << " max: " << wmax
+       << "   time: sum: " << cputick * wtime
+       << " avg: " << cputick * avg
+       << " stddev: " << cputick * stddev
+       << " min: " << cputick * wmin
+       << " max: " << cputick * wmax
        << "   bytes: sum: " << bytes
        << " avg: " << bavg
        << " stddev: " << bstddev
@@ -324,11 +326,11 @@ namespace CarpetLib {
           file << "Build ID: " << build_id << eol;
         }
         if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
-          char const * const job_id =
+          char const * const sim_id =
             static_cast <char const *> (UniqueSimulationID (cctkGH));
-          file << "Simulation ID: " << job_id << eol;
+          file << "Simulation ID: " << sim_id << eol;
         }
-        file << "Running on " << dist::size() << " processors" << eol;
+        file << "Running with " << dist::size() << " processes and " << dist::total_num_threads() << " threads" << eol;
       } // if do_print_info
       
       file << "********************************************************************************" << eol
@@ -339,6 +341,163 @@ namespace CarpetLib {
       
     } // if print_timestats
     
+  }
+  
+  
+  
+  struct t_cycleclock {
+    double total;
+    double total_squared;
+    double min_total;
+    double max_total;
+    double count;
+    ticks last;
+    
+    t_cycleclock ()
+    {
+      reset();
+    }
+    
+    ~t_cycleclock ()
+    {
+    }
+    
+    void start ()
+    {
+      last = getticks();
+    }
+    
+    void stop ()
+    {
+      ticks const current = getticks();
+      double const difference = elapsed (current, last);
+      total += difference;
+      total_squared += pow (difference, 2);
+      min_total = min_total == 0.0 ? difference : min (min_total, difference);
+      max_total = max (min_total, difference);
+      count += 1;
+    }
+    
+    void reset ()
+    {
+      total         = 0.0;
+      total_squared = 0.0;
+      min_total     = 0.0;      // numeric_limits<double>::max();
+      max_total     = 0.0;
+      count         = 0.0;
+      // last          = 0.0;
+    }
+    
+  };
+  
+  
+  
+  void * cycleclock_create (int const timernum)
+  {
+    return new t_cycleclock;
+  }
+  
+  void cycleclock_destroy (int const timernum, void * const data)
+  {
+    if (data) {
+      delete static_cast<t_cycleclock*> (data);
+    }
+  }
+  
+  void cycleclock_start (int const timernum, void * const data)
+  {
+    static_cast<t_cycleclock*> (data) -> start();
+  }
+  
+  void cycleclock_stop (int const timernum, void * const data)
+  {
+    static_cast<t_cycleclock*> (data) -> stop();
+  }
+  
+  void cycleclock_reset (int const timernum, void * const data)
+  {
+    static_cast<t_cycleclock*> (data) -> reset();
+  }
+  
+  void cycleclock_get (int const timernum, void * const data_,
+                       cTimerVal * const vals)
+  {
+    t_cycleclock const & data = * static_cast<t_cycleclock const *> (data_);
+    
+    // Total time
+    vals[0].type       = val_double;
+    vals[0].heading    = "cycle";
+    vals[0].units      = "secs";
+    vals[0].val.d      = data.total;
+    vals[0].seconds    = cputick * vals[0].val.d;
+    vals[0].resolution = cputick;
+    
+    // Average
+    vals[1].type       = val_double;
+    vals[1].heading    = "cycle[avg]";
+    vals[1].units      = "secs";
+    vals[1].val.d      = data.count == 0.0 ? 0.0 : data.total / data.count;
+    vals[1].seconds    = cputick * vals[1].val.d;
+    vals[1].resolution = cputick;
+    
+    // Standard deviation
+    vals[2].type       = val_double;
+    vals[2].heading    = "cycle[stddev]";
+    vals[2].units      = "secs";
+    vals[2].val.d      = (data.count == 0.0
+                          ? 0.0
+                          : sqrt (abs (data.total_squared * data.count -
+                                       pow (data.total, 2)) / data.count));
+    vals[2].seconds    = cputick * vals[2].val.d;
+    vals[2].resolution = cputick;
+    
+    // Minimum
+    vals[3].type       = val_double;
+    vals[3].heading    = "cycle[min]";
+    vals[3].units      = "secs";
+    vals[3].val.d      = data.min_total;
+    vals[3].seconds    = cputick * vals[3].val.d;
+    vals[3].resolution = cputick;
+    
+    // Maximum
+    vals[4].type       = val_double;
+    vals[4].heading    = "cycle[max]";
+    vals[4].units      = "secs";
+    vals[4].val.d      = data.max_total;
+    vals[4].seconds    = cputick * vals[4].val.d;
+    vals[4].resolution = cputick;
+  }
+  
+  void cycleclock_set (int const timernum, void * const data_,
+                       cTimerVal * const vals)
+  {
+    t_cycleclock & data = * static_cast<t_cycleclock * restrict> (data_);
+    
+    data.reset();               // punt
+    data.total = vals[0].val.d;
+  }
+  
+  extern "C" {
+    int CarpetLib_registercycleclock (void);
+  }
+  
+  int CarpetLib_registercycleclock (void)
+  {
+    if (not have_cputick) calculate_cputick ();
+    
+    cClockFuncs functions;
+    functions.n_vals  = 5;
+    functions.create  = cycleclock_create;
+    functions.destroy = cycleclock_destroy;
+    functions.start   = cycleclock_start;
+    functions.stop    = cycleclock_stop;
+    functions.reset   = cycleclock_reset;
+    functions.get     = cycleclock_get;
+    functions.set     = cycleclock_set;
+    
+    CCTK_ClockRegister("cycle", &functions);
+    
+    return 0;
   }
   
 } // namespace CarpetLib

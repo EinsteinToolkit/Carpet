@@ -162,6 +162,11 @@ static inline
 int
 lc_state_valid (lc_statset_t const * restrict const ls,
                 lc_state_t const * restrict const state)
+  CCTK_ATTRIBUTE_PURE;
+static inline
+int
+lc_state_valid (lc_statset_t const * restrict const ls,
+                lc_state_t const * restrict const state)
 {
   if (state->topology >= 0 && state->topology < ls->ntopologies) {
     int const * restrict const ntilings =
@@ -173,6 +178,11 @@ lc_state_valid (lc_statset_t const * restrict const ls,
   return 0;
 }
 
+static inline
+int
+lc_state_equal (lc_state_t const * restrict const state1,
+                lc_state_t const * restrict const state2)
+  CCTK_ATTRIBUTE_PURE;
 static inline
 int
 lc_state_equal (lc_state_t const * restrict const state1,
@@ -193,7 +203,8 @@ lc_stattime_init (lc_stattime_t * restrict const lt,
 
 lc_stattime_t *
 lc_stattime_find (lc_statset_t const * restrict const ls,
-                  lc_state_t const * restrict const state);
+                  lc_state_t const * restrict const state)
+  CCTK_ATTRIBUTE_PURE;
 
 lc_stattime_t *
 lc_stattime_find_create (lc_statset_t * restrict const ls,
@@ -211,7 +222,8 @@ lc_statset_init (lc_statset_t * restrict const ls,
 lc_statset_t *
 lc_statset_find (lc_statmap_t const * restrict const lm,
                  int const num_threads,
-                 int const npoints[3]);
+                 int const npoints[3])
+  CCTK_ATTRIBUTE_PURE;
 
 lc_statset_t *
 lc_statset_find_create (lc_statmap_t * restrict const lm,
@@ -253,10 +265,18 @@ typedef struct lc_control_t {
 static inline
 int
 lc_min (int const i, int const j)
+  CCTK_ATTRIBUTE_CONST;
+static inline
+int
+lc_min (int const i, int const j)
 {
   return i < j ? i : j;
 }
 
+static inline
+int
+lc_max (int const i, int const j)
+  CCTK_ATTRIBUTE_CONST;
 static inline
 int
 lc_max (int const i, int const j)

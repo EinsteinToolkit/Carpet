@@ -2,10 +2,8 @@
 
 PROVIDES Carpet
 {
-  SCRIPT
-  LANG
 }
 
-REQUIRES IOUtil CarpetLib
+REQUIRES IOUtil CarpetLib LoopControl
 
-REQUIRES THORNS: IOUtil CarpetLib
+REQUIRES THORNS: IOUtil CarpetLib LoopControl

@@ -21,6 +21,11 @@
 
 #include "defs.hh"
 #include "dist.hh"
+#include "dh.hh"
+#include "gdata.hh"
+#include "ggf.hh"
+#include "gh.hh"
+#include "th.hh"
 
 #include "mem.hh"
 
@@ -30,12 +35,18 @@ using namespace std;
 
 
 
+double const MEGA = 1024*1024;
+
+
+
 struct mstat {
-  // Carpet statistics
+  // Carpet object statistics
   double total_bytes;
   double total_objects;
   double max_bytes;
   double max_objects;
+  // Carpet administrative data structure statistics
+  double total_admin_bytes;
   // malloc statistics
   double malloc_used_bytes;
   double malloc_free_bytes;
@@ -71,15 +82,15 @@ mem (size_t const vectorlength, size_t const nelems,
   if (memptr == NULL) {
     const double nbytes = vectorlength * nelems * sizeof (T);
     if (max_allowed_memory_MB > 0
-        and (total_allocated_bytes + nbytes > 1.0e6 * max_allowed_memory_MB))
+        and (total_allocated_bytes + nbytes > MEGA * max_allowed_memory_MB))
     {
       T Tdummy;
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Refusing to allocate %.0f bytes (%.3f MB) of memory for type %s.  %.0f bytes (%.3f MB) are currently allocated in %d objects.  The parameter file specifies a maximum of %d MB",
-                  double(nbytes), double(nbytes/1.0e6),
+                  double(nbytes), double(nbytes/MEGA),
                   typestring(Tdummy),
                   double(total_allocated_bytes),
-                  double(total_allocated_bytes/1.0e6),
+                  double(total_allocated_bytes/MEGA),
                   int(total_allocated_objects),
                   int(max_allowed_memory_MB));
     }
@@ -90,10 +101,10 @@ mem (size_t const vectorlength, size_t const nelems,
       T Tdummy;
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Failed to allocate %.0f bytes (%.3f MB) of memory for type %s.  %.0f bytes (%.3f MB) are currently allocated in %d objects",
-                  double(nbytes), double(nbytes/1.0e6),
+                  double(nbytes), double(nbytes/MEGA),
                   typestring(Tdummy),
                   double(total_allocated_bytes),
-                  double(total_allocated_bytes/1.0e6),
+                  double(total_allocated_bytes/MEGA),
                   int(total_allocated_objects));
     }
     total_allocated_bytes += nbytes;
@@ -214,7 +225,7 @@ alloc (size_t nbytes)
     if (not freeptr) {
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Failed to allocate %.3f MB of memory",
-                  double(freesize/1.0e6));
+                  double(freesize/MEGA));
     }
     // Remember the pointer so that it can be freed
     chunks.push (freeptr);
@@ -251,40 +262,6 @@ memory ()
 
 
 
-extern "C" void CarpetLib_setmemlimit (CCTK_ARGUMENTS);
-
-void CarpetLib_setmemlimit (CCTK_ARGUMENTS)
-{
-  DECLARE_CCTK_ARGUMENTS;
-  DECLARE_CCTK_PARAMETERS;
-  
-  // Set address space limit
-  struct rlimit aslimit;
-  {
-    check (not getrlimit (RLIMIT_AS, & aslimit));
-  }
-  CCTK_VInfo (CCTK_THORNSTRING,
-              "Old address space size limit: hard=%lld, soft=%lld",
-              (long long) aslimit.rlim_max, (long long) aslimit.rlim_cur);
-  if (max_allowed_memory_MB > 0) {
-    aslimit.rlim_cur = max_allowed_memory_MB * 1000000LL;
-  }
-  {
-    check (not setrlimit (RLIMIT_AS, & aslimit));
-  }
-  {
-    check (not getrlimit (RLIMIT_AS, & aslimit));
-  }
-  CCTK_VInfo (CCTK_THORNSTRING,
-              "Old address space size limit: hard=%lld, soft=%lld",
-              (long long) aslimit.rlim_max, (long long) aslimit.rlim_cur);
-  CCTK_VInfo (CCTK_THORNSTRING,
-              "(Unlimited address space size indicated by %lld)",
-              (long long) RLIM_INFINITY);
-}
-
-
-
 extern "C" void CarpetLib_printmemstats (CCTK_ARGUMENTS);
 
 void CarpetLib_printmemstats (CCTK_ARGUMENTS)
@@ -294,14 +271,17 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
   
   int const ioproc = 0;
   
-  if (print_memstats_every > 0
-      and cctk_iteration % print_memstats_every == 0)
+  if ((print_memstats_every == 0 and cctk_iteration == 0) or
+      (print_memstats_every > 0 and cctk_iteration % print_memstats_every == 0))
   {
     mstat mybuf;
     mybuf.total_bytes   = total_allocated_bytes;
     mybuf.total_objects = total_allocated_objects;
     mybuf.max_bytes     = max_allocated_bytes;
     mybuf.max_objects   = max_allocated_objects;
+    mybuf.total_admin_bytes =
+      gh::allmemory() + dh::allmemory() + th::allmemory() +
+      ggf::allmemory() + gdata::allmemory();
 #ifdef HAVE_MALLINFO
     // NOTE: struct mallinfo returns byte-counts as int, which can
     // overflow.  In this case, the information is incorrect.
@@ -316,14 +296,23 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
     cout << "Memory statistics from CarpetLib:" << eol
          << "   Current number of objects: " << total_allocated_objects << eol
          << "   Current allocated memory:  "
-         << setprecision(3) << total_allocated_bytes / 1.0e6 << " MB" << eol
+         << setprecision(3) << total_allocated_bytes / MEGA << " MB" << eol
          << "   Maximum number of objects: " << max_allocated_objects << eol
          << "   Maximum allocated memory:  "
-         << setprecision(3) << max_allocated_bytes / 1.0e6 << " MB" << eol
+         << setprecision(3) << max_allocated_bytes / MEGA << " MB" << eol
+         << "   Current administrative memory: "
+         << setprecision(3) << mybuf.total_admin_bytes / MEGA << " MB" << eol
          << "   Total allocated used system memory: "
-         << setprecision(3) << mybuf.malloc_used_bytes / 1.0e6 << " MB" << eol
+         << setprecision(3) << mybuf.malloc_used_bytes / MEGA << " MB" << eol
          << "   Total allocated free system memory: "
-         << setprecision(3) << mybuf.malloc_free_bytes / 1.0e6 << " MB" << endl;
+         << setprecision(3) << mybuf.malloc_free_bytes / MEGA << " MB" << endl;
+    
+#warning "TODO"
+    cout << "   gh::allmemory:    " << gh   ::allmemory() << eol
+         << "   dh::allmemory:    " << dh   ::allmemory() << eol
+         << "   th::allmemory:    " << th   ::allmemory() << eol
+         << "   ggf::allmemory:   " << ggf  ::allmemory() << eol
+         << "   gdata::allmemory: " << gdata::allmemory() << endl;
     
     if (strcmp (memstat_file, "") != 0) {
       vector<mstat> allbuf (dist::size());
@@ -333,9 +322,15 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
       
       if (dist::rank() == ioproc) {
         
+        double max_total_bytes = 0;
+        double avg_total_bytes = 0;
+        double cnt_total_bytes = 0;
         double max_max_bytes = 0;
         double avg_max_bytes = 0;
         double cnt_max_bytes = 0;
+        double max_admin_bytes = 0;
+        double avg_admin_bytes = 0;
+        double cnt_admin_bytes = 0;
         double max_used_bytes = 0;
         double avg_used_bytes = 0;
         double cnt_used_bytes = 0;
@@ -343,9 +338,15 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
         double avg_free_bytes = 0;
         double cnt_free_bytes = 0;
         for (size_t n=0; n<allbuf.size(); ++n) {
+          max_total_bytes = max (max_total_bytes, allbuf[n].total_bytes);
+          avg_total_bytes += allbuf[n].total_bytes;
+          ++ cnt_total_bytes;
           max_max_bytes = max (max_max_bytes, allbuf[n].max_bytes);
           avg_max_bytes += allbuf[n].max_bytes;
           ++ cnt_max_bytes;
+          max_admin_bytes = max (max_admin_bytes, allbuf[n].total_admin_bytes);
+          avg_admin_bytes += allbuf[n].total_admin_bytes;
+          ++ cnt_admin_bytes;
           max_used_bytes = max (max_used_bytes, allbuf[n].malloc_used_bytes);
           avg_used_bytes += allbuf[n].malloc_used_bytes;
           ++ cnt_used_bytes;
@@ -353,7 +354,9 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
           avg_free_bytes += allbuf[n].malloc_free_bytes;
           ++ cnt_free_bytes;
         }
+        avg_total_bytes /= cnt_total_bytes;
         avg_max_bytes /= cnt_max_bytes;
+        avg_admin_bytes /= cnt_admin_bytes;
         avg_used_bytes /= cnt_used_bytes;
         avg_free_bytes /= cnt_free_bytes;
         
@@ -377,13 +380,15 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
           }
           file << "# Running on " << dist::size() << " processors" << eol;
           file << "#" << eol;
-          file << "# iteration   maxmaxbytes avgmaxbytes   maxusedbytes avgusedbytes   maxfreebytes avgfreebytes" << eol;
+          file << "# iteration   maxtotalbytes avgtotalbytes   maxmaxbytes avgm avgfreebytes" << eol;
         } else {
           file.open (filename.c_str(), ios::out | ios::app);
         }
         
         file << cctk_iteration
+              << "\t "<< max_total_bytes << " " << avg_total_bytes
               << "\t "<< max_max_bytes << " " << avg_max_bytes
+              << "\t "<< max_admin_bytes << " " << avg_admin_bytes
               << "\t "<< max_used_bytes << " " << avg_used_bytes
               << "\t "<< max_free_bytes << " " << avg_free_bytes
              << eol;

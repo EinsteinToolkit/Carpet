@@ -28,6 +28,10 @@ template<class T, int D> class bboxset;
 // template<class T,int D>
 // bboxset<T,D> operator- (const bbox<T,D>& b, const bboxset<T,D>& s);
 
+// Input
+template<class T,int D>
+istream& operator>> (istream& is, bboxset<T,D>& s);
+
 // Output
 template<class T,int D>
 ostream& operator<< (ostream& os, const bboxset<T,D>& s);
@@ -59,6 +63,8 @@ public:
   
   bboxset (const list<box>& lb);
   bboxset (const vector<list<box> >& vlb);
+  
+  static bboxset poison ();
   
   // Invariant
   bool invariant () const;
@@ -143,10 +149,13 @@ public:
 //   iterator end () const   { return bs.end(); }
   
   // Memory usage
-  size_t memory () const { return memoryof (bs); }
+  size_t memory () const CCTK_ATTRIBUTE_PURE { return memoryof (bs); }
+  
+  // Input
+  istream& input (istream& is);
   
   // Output
-  void output (ostream& os) const;
+  ostream& output (ostream& os) const;
 };
 
 
@@ -186,64 +195,112 @@ inline bboxset<T,D> operator& (const bbox<T,D>& b, const bboxset<T,D>& s) {
 
 
 template<class T,int D>
-inline bool operator== (const bbox<T,D>& b, const bboxset<T,D>& s) {
+inline bool operator== (const bbox<T,D>& b, const bboxset<T,D>& s)
+  CCTK_ATTRIBUTE_PURE;
+template<class T,int D>
+inline bool operator== (const bbox<T,D>& b, const bboxset<T,D>& s)
+{
   return bboxset<T,D>(b) == s;
 }
 
 template<class T,int D>
-inline bool operator!= (const bbox<T,D>& b, const bboxset<T,D>& s) {
+inline bool operator!= (const bbox<T,D>& b, const bboxset<T,D>& s)
+  CCTK_ATTRIBUTE_PURE;
+template<class T,int D>
+inline bool operator!= (const bbox<T,D>& b, const bboxset<T,D>& s)
+{
   return bboxset<T,D>(b) != s;
 }
 
 template<class T,int D>
-inline bool operator< (const bbox<T,D>& b, const bboxset<T,D>& s) {
+inline bool operator< (const bbox<T,D>& b, const bboxset<T,D>& s)
+  CCTK_ATTRIBUTE_PURE;
+template<class T,int D>
+inline bool operator< (const bbox<T,D>& b, const bboxset<T,D>& s)
+{
   return bboxset<T,D>(b) < s;
 }
 
 template<class T,int D>
-inline bool operator<= (const bbox<T,D>& b, const bboxset<T,D>& s) {
+inline bool operator<= (const bbox<T,D>& b, const bboxset<T,D>& s)
+  CCTK_ATTRIBUTE_PURE;
+template<class T,int D>
+inline bool operator<= (const bbox<T,D>& b, const bboxset<T,D>& s)
+{
   return bboxset<T,D>(b) <= s;
 }
 
 template<class T,int D>
-inline bool operator> (const bbox<T,D>& b, const bboxset<T,D>& s) {
+inline bool operator> (const bbox<T,D>& b, const bboxset<T,D>& s)
+  CCTK_ATTRIBUTE_PURE;
+template<class T,int D>
+inline bool operator> (const bbox<T,D>& b, const bboxset<T,D>& s)
+{
   return bboxset<T,D>(b) > s;
 }
 
 template<class T,int D>
-inline bool operator>= (const bbox<T,D>& b, const bboxset<T,D>& s) {
+inline bool operator>= (const bbox<T,D>& b, const bboxset<T,D>& s)
+  CCTK_ATTRIBUTE_PURE;
+template<class T,int D>
+inline bool operator>= (const bbox<T,D>& b, const bboxset<T,D>& s)
+{
   return bboxset<T,D>(b) >= s;
 }
 
 
 
 template<class T,int D>
-inline bool operator== (const bboxset<T,D>& s, const bbox<T,D>& b) {
+inline bool operator== (const bboxset<T,D>& s, const bbox<T,D>& b)
+  CCTK_ATTRIBUTE_PURE;
+template<class T,int D>
+inline bool operator== (const bboxset<T,D>& s, const bbox<T,D>& b)
+{
   return s == bboxset<T,D>(b);
 }
 
 template<class T,int D>
-inline bool operator!= (const bboxset<T,D>& s, const bbox<T,D>& b) {
+inline bool operator!= (const bboxset<T,D>& s, const bbox<T,D>& b)
+  CCTK_ATTRIBUTE_PURE;
+template<class T,int D>
+inline bool operator!= (const bboxset<T,D>& s, const bbox<T,D>& b)
+{
   return s != bboxset<T,D>(b);
 }
 
 template<class T,int D>
-inline bool operator< (const bboxset<T,D>& s, const bbox<T,D>& b) {
+inline bool operator< (const bboxset<T,D>& s, const bbox<T,D>& b)
+  CCTK_ATTRIBUTE_PURE;
+template<class T,int D>
+inline bool operator< (const bboxset<T,D>& s, const bbox<T,D>& b)
+{
   return s < bboxset<T,D>(b);
 }
 
 template<class T,int D>
-inline bool operator<= (const bboxset<T,D>& s, const bbox<T,D>& b) {
+inline bool operator<= (const bboxset<T,D>& s, const bbox<T,D>& b)
+  CCTK_ATTRIBUTE_PURE;
+template<class T,int D>
+inline bool operator<= (const bboxset<T,D>& s, const bbox<T,D>& b)
+{
   return s <= bboxset<T,D>(b);
 }
 
 template<class T,int D>
-inline bool operator> (const bboxset<T,D>& s, const bbox<T,D>& b) {
+inline bool operator> (const bboxset<T,D>& s, const bbox<T,D>& b)
+  CCTK_ATTRIBUTE_PURE;
+template<class T,int D>
+inline bool operator> (const bboxset<T,D>& s, const bbox<T,D>& b)
+{
   return s > bboxset<T,D>(b);
 }
 
 template<class T,int D>
-inline bool operator>= (const bboxset<T,D>& s, const bbox<T,D>& b) {
+inline bool operator>= (const bboxset<T,D>& s, const bbox<T,D>& b)
+  CCTK_ATTRIBUTE_PURE;
+template<class T,int D>
+inline bool operator>= (const bboxset<T,D>& s, const bbox<T,D>& b)
+{
   return s >= bboxset<T,D>(b);
 }
 
@@ -251,15 +308,26 @@ inline bool operator>= (const bboxset<T,D>& s, const bbox<T,D>& b) {
 
 // Memory usage
 template<class T, int D>
-inline size_t memoryof (bboxset<T,D> const & s) { return s.memory(); }
+inline size_t memoryof (bboxset<T,D> const & s)
+  CCTK_ATTRIBUTE_PURE;
+template<class T, int D>
+inline size_t memoryof (bboxset<T,D> const & s)
+{ return s.memory(); }
+
+
+
+// Input
+template<class T,int D>
+inline istream& operator>> (istream& is, bboxset<T,D>& s) {
+  return s.input(is);
+}
 
 
 
 // Output
 template<class T,int D>
 inline ostream& operator<< (ostream& os, const bboxset<T,D>& s) {
-  s.output(os);
-  return os;
+  return s.output(os);
 }
 
 

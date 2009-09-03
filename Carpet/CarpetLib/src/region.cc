@@ -251,6 +251,67 @@ operator<< (ostream & os, region_t const & reg)
 
 
 
+// Create an MPI datatype for a pseudoretion
+MPI_Datatype
+mpi_datatype (pseudoregion_t const &)
+{
+  static bool initialised = false;
+  static MPI_Datatype newtype;
+  if (not initialised) {
+    static pseudoregion_t s;
+#define ENTRY(type, name)                                               \
+    {                                                                   \
+      sizeof s.name / sizeof(type), /* count elements */                \
+        (char*)&s.name - (char*)&s, /* offsetof doesn't work (why?) */  \
+        dist::mpi_datatype<type>(), /* find MPI datatype */             \
+        STRINGIFY(name), /* field name */                               \
+        STRINGIFY(type), /* type name */                                \
+        }
+    dist::mpi_struct_descr_t const descr[] = {
+      ENTRY(int, extent),
+      ENTRY(int, component),
+      {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}
+    };
+#undef ENTRY
+    newtype =
+      dist::create_mpi_datatype (sizeof descr / sizeof descr[0], descr,
+                                 "pseudoregion_t", sizeof s);
+    initialised = true;
+  }
+  return newtype;
+}
+
+MPI_Datatype
+mpi_datatype (sendrecv_pseudoregion_t const &)
+{
+  static bool initialised = false;
+  static MPI_Datatype newtype;
+  if (not initialised) {
+    static sendrecv_pseudoregion_t s;
+#define ENTRY(type, name)                                               \
+    {                                                                   \
+      sizeof s.name / sizeof(type), /* count elements */                \
+        (char*)&s.name - (char*)&s, /* offsetof doesn't work (why?) */  \
+        dist::mpi_datatype<type>(), /* find MPI datatype */             \
+        STRINGIFY(name), /* field name */                               \
+        STRINGIFY(type), /* type name */                                \
+        }
+    dist::mpi_struct_descr_t const descr[] = {
+      ENTRY(pseudoregion_t, send),
+      ENTRY(pseudoregion_t, recv),
+      {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}
+    };
+#undef ENTRY
+    newtype =
+      dist::create_mpi_datatype (sizeof descr / sizeof descr[0], descr,
+                                 "sendrecv_pseudoregion_t", sizeof s);
+    initialised = true;
+  }
+  return newtype;
+}
+
+
+
 // Compare two pseudoregions for equality.
 bool
 operator== (pseudoregion_t const & a, pseudoregion_t const & b)
@@ -262,9 +323,45 @@ operator== (pseudoregion_t const & a, pseudoregion_t const & b)
 
 
 
+istream & operator>> (istream & is, pseudoregion_t & p)
+{
+  try {
+    skipws (is);
+    consume (is, "(ext:");
+    is >> p.extent;
+    skipws (is);
+    consume (is, ",c:");
+    is >> p.component;
+    skipws (is);
+    consume (is, ")");
+  } catch (input_error & err) {
+    cout << "Input error while reading a pseudoregion_t" << endl;
+    throw err;
+  }
+  return is;
+}
+
+istream & operator>> (istream & is, sendrecv_pseudoregion_t & srp)
+{
+  try {
+    skipws (is);
+    consume (is, "(send:");
+    is >> srp.send;
+    consume (is, ",recv:");
+    is >> srp.recv;
+    consume (is, ")");
+  } catch (input_error & err) {
+    cout << "Input error while reading a sendrecv_pseudoregion_t" << endl;
+    throw err;
+  }
+  return is;
+}
+
+
+
 ostream & operator<< (ostream & os, pseudoregion_t const & p)
 {
-  return os << p.extent << "/c:" << p.component;
+  return os << "(ext:" << p.extent << ",c:" << p.component << ")";
 }
 
 ostream & operator<< (ostream & os, sendrecv_pseudoregion_t const & srp)

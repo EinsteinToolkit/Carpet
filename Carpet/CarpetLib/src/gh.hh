@@ -28,6 +28,9 @@ class gh;
 // level.  The extents do not include ghost zones.
 class gh {
   
+  static list<gh*> allgh;
+  list<gh*>::iterator allghi;
+  
 public:
   
   // Types
@@ -47,14 +50,21 @@ public:				// should be readonly
   vector<vector<ibbox> > baseextents; // [ml][rl]
   const i2vect boundary_width;
   
+private:
+  vector<vector<int> > global_components_; // [rl][lc]
+  vector<vector<int> > local_components_;  // [rl][c]
+public:
+  
   // Extents of the regions before distributing them over the
   // processors
   rregs superregions;
   
   mregs regions;                // extents and properties of all grids
-  mregs oldregions;             // a copy, used during regridding
+  mregs oldregions;             // extents and properties of all grids
   
+  typedef list<th*>::iterator th_handle;
   list<th*> ths;		// list of all time hierarchies
+  typedef list<dh*>::iterator dh_handle;
   list<dh*> dhs;		// list of all data hierarchies
   
 public:
@@ -69,64 +79,67 @@ public:
   ~gh ();
   
   // Modifiers
-  void regrid (rregs const & superregs, mregs const & regs);
+  void regrid (rregs const & superregs, mregs const & regs, bool do_init);
+  void regrid_free (bool do_init);
   bool recompose (int rl, bool do_prolongate);
   
 private:
   
-  bool level_did_change (int rl) const;
+  bool level_did_change (int rl) CCTK_ATTRIBUTE_PURE;
   
   // Accessors
   
 public:
   
-  ibbox const & extent (const int ml, const int rl, const int c) const
+  ibbox const & extent (const int ml, const int rl, const int c) const CCTK_ATTRIBUTE_PURE
   {
     return regions.AT(ml).AT(rl).AT(c).extent;
   }
   
-  ibbox const & baseextent (const int ml, const int rl) const
+  ibbox const & baseextent (const int ml, const int rl) const CCTK_ATTRIBUTE_PURE
   {
     return baseextents.AT(ml).AT(rl);
   }
   
-  b2vect const & outer_boundaries (const int rl, const int c) const
+  b2vect const & outer_boundaries (const int rl, const int c) const CCTK_ATTRIBUTE_PURE
   {
     return regions.AT(0).AT(rl).AT(c).outer_boundaries;
   }
   
-  int processor (const int rl, const int c) const
+  int processor (const int rl, const int c) const CCTK_ATTRIBUTE_PURE
   {
     return regions.AT(0).AT(rl).AT(c).processor;
   }
 
-  int old_processor (const int rl, const int c) const
+  int old_processor (const int rl, const int c) const CCTK_ATTRIBUTE_PURE
   {
     return oldregions.AT(0).AT(rl).AT(c).processor;
   }
 
-  int mglevels () const
+  int mglevels () const CCTK_ATTRIBUTE_PURE
   {
     return (int)regions.size();
   }
   
-  int reflevels () const
+  int reflevels () const CCTK_ATTRIBUTE_PURE
   {
     if (mglevels() == 0) return 0;
     return (int)regions.AT(0).size();
   }
   
-  int components (const int rl) const
+  int components (const int rl) const CCTK_ATTRIBUTE_PURE
   {
     return (int)regions.AT(0).AT(rl).size();
   }
   
-  bool is_local (const int rl, const int c) const
+  bool is_local (const int rl, const int c) const CCTK_ATTRIBUTE_PURE
   {
     return processor(rl,c) == dist::rank();
   }
   
-  int local_components (const int rl) const;
+  int local_components (int rl) const CCTK_ATTRIBUTE_PURE;
+  int get_component (int rl, int lc) const CCTK_ATTRIBUTE_PURE;
+  int get_local_component (int rl, int c) const CCTK_ATTRIBUTE_PURE;
   
   void locate_position (rvect const & rpos,
                         int const ml,
@@ -139,15 +152,16 @@ public:
                         int & rl, int & c, ivect & aligned_ipos) const;
   
   // Time hierarchy management
-  void add (th * t);
-  void remove (th * t);
+  th_handle add (th * t);
+  void erase (th_handle ti);
   
   // Data hierarchy management
-  void add (dh * d);
-  void remove (dh * d);
+  dh_handle add (dh * d);
+  void erase (dh_handle di);
   
   // Output
-  size_t memory () const;
+  size_t memory () const CCTK_ATTRIBUTE_PURE;
+  static size_t allmemory () CCTK_ATTRIBUTE_PURE;
   ostream & output (ostream & os) const;
 
 private:
@@ -158,6 +172,7 @@ private:
 
 
 
+inline size_t memoryof (gh const & g) CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (gh const & g)
 {
   return g.memory ();

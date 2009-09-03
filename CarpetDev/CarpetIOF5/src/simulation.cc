@@ -4,6 +4,8 @@
 
 #include "cctk.h"
 
+#include "defs.hh"
+
 #include "simulation.hh"
 #include "utils.hh"
 
@@ -28,6 +30,10 @@ namespace CarpetIOF5 {
                                 m_name.c_str());
       assert (m_hdf5_simulation >= 0);
       
+      cGH const * const cctkGH = m_timestep.get_file().get_cctkGH();
+      write_or_check_attribute
+        (m_hdf5_simulation, "TimeStep", cctkGH->cctk_iteration);
+      
       assert (invariant());
     }
     
@@ -36,8 +42,7 @@ namespace CarpetIOF5 {
     simulation_t::
     ~ simulation_t()
     {
-      herr_t const herr = H5Gclose (m_hdf5_simulation);
-      assert (not herr);
+      check (not H5Gclose (m_hdf5_simulation));
     }
     
     
@@ -61,21 +66,20 @@ namespace CarpetIOF5 {
     
     
     void simulation_t::
-    get_link_destination (string & filename,
+    get_link_destination (int const proc,
+                          string & filename,
                           string & objectname)
       const
     {
-      static bool initialised = false;
-      static string l_filename;
-      static string l_objectname;
-      if (not initialised)
+      get_timestep().get_link_destination (proc, filename, objectname);
+      if (objectname.empty())
       {
-        initialised = true;
-        get_timestep().get_link_destination (l_filename, l_objectname);
-        l_objectname += string ("/") + m_name;
+        objectname = m_name;
       }
-      filename = l_filename;
-      objectname = l_objectname;
+      else
+      {
+        objectname += string ("/") + m_name;
+      }
     }
     
     

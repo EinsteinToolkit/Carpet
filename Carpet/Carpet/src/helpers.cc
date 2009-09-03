@@ -6,15 +6,15 @@
 
 #include <mpi.h>
 
-#include "cctk.h"
-#include "cctk_FortranString.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_FortranString.h>
+#include <cctk_Parameters.h>
 
-#include "defs.hh"
-#include "dist.hh"
-#include "ggf.hh"
+#include <defs.hh>
+#include <dist.hh>
+#include <ggf.hh>
 
-#include "carpet.hh"
+#include <carpet.hh>
 
 
 
@@ -64,9 +64,51 @@ namespace Carpet {
   {
     return do_prolongate;
   }
-
-
-
+  
+  
+  
+  // Get pointer to grid variable for a specific map and refinement level
+  CCTK_POINTER
+  Carpet_VarDataPtrI (CCTK_POINTER_TO_CONST const cctkGH,
+                      CCTK_INT const m,
+                      CCTK_INT const rl,
+                      CCTK_INT const c,
+                      CCTK_INT const tl,
+                      CCTK_INT const varindex)
+  {
+    assert (cctkGH);
+    assert (varindex >= 0 and varindex < CCTK_NumVars());
+    int const groupindex = CCTK_GroupIndexFromVarI (varindex);
+    assert (groupindex >= 0);
+    int const grouptype = CCTK_GroupTypeI (groupindex);
+    assert (mglevel >= 0);
+    if (grouptype == CCTK_GF) {
+      assert (m >= 0 and m < maps);
+      assert (rl >= 0 and rl < reflevels);
+      assert (c >= 0 and c < arrdata.AT(groupindex).AT(m).hh->components(reflevel));
+      assert (arrdata.AT(groupindex).AT(m).hh->is_local(rl, c));
+    } else {
+      assert (m == 0);
+      assert (rl == 0);
+      assert (c == CCTK_MyProc (NULL));
+    }
+    int const maxtimelevels = CCTK_MaxTimeLevelsGI (groupindex);
+    assert (tl >= 0 and tl < maxtimelevels);
+    
+    int const activetimelevels =
+      groupdata.AT(groupindex).activetimelevels.AT(mglevel).AT(rl);
+    if (tl < activetimelevels) {
+      int const var = varindex - CCTK_FirstVarIndexI (groupindex);
+      ggf * const ff = arrdata.AT(groupindex).AT(m).data.AT(var);
+      gdata * const data = (*ff) (tl, rl, c, mglevel);
+      return data->storage();
+    } else {
+      return NULL;
+    }
+  }
+  
+  
+  
   // Multi-Model
   CCTK_POINTER_TO_CONST
   Carpet_GetMPICommUniverse (CCTK_POINTER_TO_CONST const cctkGH)
@@ -106,13 +148,13 @@ namespace Carpet {
     
     assert (size == dim);
     
-    ibbox const & baseext = vhh.at(m)->baseextents.at(ml).at(0);
+    ibbox const & baseext = vhh.AT(m)->baseextents.AT(ml).AT(0);
     ivect const igsh = baseext.shape() / baseext.stride();
     
     for (int d = 0; d < dim; ++ d) {
       gsh[d] = igsh[d];
-      lower[d] = origin_space.at(m).at(ml)[d];
-      delta[d] = delta_space.at(m)[d] * mglevelfact;
+      lower[d] = origin_space.AT(m).AT(ml)[d];
+      delta[d] = delta_space.AT(m)[d] * mglevelfact;
       upper[d] = lower[d] + delta[d] * (gsh[d] - 1);
     }
     
@@ -125,16 +167,37 @@ namespace Carpet {
 
   int Barrier (const cGH* cgh)
   {
-    void *dummy = &dummy;
+    const void *dummy = &dummy;
     dummy = &cgh;
 
     MPI_Barrier (dist::comm());
     return 0;
   }
 
+  int NamedBarrier (const cGH* const cgh, const int id)
+  {
+    const void *dummy = &dummy;
+    dummy = &cgh;
+
+    assert (id >= 0);
+    const int root = 0;
+    int my_id = dist::rank()==root ? id : -1;
+    Checkpoint ("About to Bcast %d", id);
+    MPI_Bcast (&my_id, 1, MPI_INT, root, dist::comm());
+    Checkpoint ("Finished Bcast");
+    if (my_id != id) {
+      CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Wrong Barrier name: expected %d, found %d", id, my_id);
+    }
+    Checkpoint ("About to Barrier %d", id);
+    MPI_Barrier (dist::comm());
+    Checkpoint ("Finished Barrier");
+    return 0;
+  }
 
 
-  int Exit (cGH* cgh, int retval)
+
+  int Exit (const cGH* cgh, int retval)
   {
     CCTK_Barrier (cgh);
     dist::finalize();
@@ -142,7 +205,7 @@ namespace Carpet {
     return -1;
   }
 
-  int Abort (cGH* cgh, int retval)
+  int Abort (const cGH* cgh, int retval)
   {
     void *dummy = &dummy;
     dummy = &cgh;
@@ -189,7 +252,7 @@ namespace Carpet {
 #define TYPECASE(N,T)				\
     case N: {					\
       T dummy;					\
-      return dist::datatype(dummy);		\
+      return dist::mpi_datatype(dummy);		\
     }
 #include "typecase"
 #undef TYPECASE
@@ -266,15 +329,17 @@ namespace Carpet {
 
   // Timelevels
 
-  int min_timelevel (const checktimes where, const int num_tl)
+  int min_timelevel (const checktimes where, const int num_tl,
+                     const bool persistent)
   {
     assert (num_tl>0);
     switch (where) {
     case currenttime:
       return 0;
     case currenttimebutnotifonly:
-      // don't include current time if there is only one time level
-      return num_tl>1 ? 0 : 1;
+      // don't include current time if there is only one (persistent)
+      // time level
+      return (not persistent or num_tl>1) ? 0 : 1;
     case previoustime:
       return 1;
     case allbutlasttime:
@@ -290,7 +355,8 @@ namespace Carpet {
     return -999;
   }
 
-  int max_timelevel (const checktimes where, const int num_tl)
+  int max_timelevel (const checktimes where, const int num_tl,
+                     const bool persistent)
   {
     assert (num_tl>0);
     switch (where) {

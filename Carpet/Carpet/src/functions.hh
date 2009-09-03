@@ -7,13 +7,13 @@
 
 #include <mpi.h>
 
-#include "cctk.h"
-#include "cctk_Schedule.h"
+#include <cctk.h>
+#include <cctk_Schedule.h>
 
-#include "bbox.hh"
-#include "dh.hh"
-#include "gh.hh"
-#include "vect.hh"
+#include <bbox.hh>
+#include <dh.hh>
+#include <gh.hh>
+#include <vect.hh>
 
 
   
@@ -33,23 +33,19 @@ namespace Carpet {
   int GroupStorageDecrease (const cGH* cgh, int n_groups, const int* groups,
                             const int* timelevels, int* status);
   int Barrier (const cGH* cgh);
-  int Exit (cGH* cgh, int retval);
-  int Abort (cGH* cgh, int retval);
-  int MyProc (const cGH* cgh);
-  int nProcs (const cGH* cgh);
+  int NamedBarrier (const cGH* cgh, int id);
+  int Exit (const cGH* cgh, int retval);
+  int Abort (const cGH* cgh, int retval);
+  int MyProc (const cGH* cgh) CCTK_ATTRIBUTE_CONST;
+  int nProcs (const cGH* cgh) CCTK_ATTRIBUTE_CONST;
   const int* ArrayGroupSizeB (const cGH* cgh, int dir, int group,
-			      const char* groupname);
-  int QueryGroupStorageB (const cGH* cgh, int group, const char* groupname);
+			      const char* groupname) CCTK_ATTRIBUTE_PURE;
+  int QueryGroupStorageB (const cGH* cgh, int group, const char* groupname) CCTK_ATTRIBUTE_PURE;
   int GroupDynamicData (const cGH* cgh, int group, cGroupDynamicData* data);
   
   void Restrict (const cGH* cgh);
   
   
-  
-  // Strings
-  vector <string>
-  AllGatherString (MPI_Comm const world,
-                   string const & data);
   
   // Multi-Model
   void
@@ -58,19 +54,19 @@ namespace Carpet {
   
   // Model id to model name
   vector <string> Models ();
-  string Model (int id);
+  string Model (int id) CCTK_ATTRIBUTE_PURE;
   
   // Model name to model id
   std::map <string, int> ModelMap ();
-  int ModelMap (string name);
+  int ModelMap (string name) CCTK_ATTRIBUTE_PURE;
   
   // Processor to model id
   vector <int> ModelIds ();
-  int ModelId (int proc);
+  int ModelId (int proc) CCTK_ATTRIBUTE_PURE;
   
   // Model id to processors
-  vector <vector <int> > ModelProcs ();
-  vector <int> ModelProcs (int proc);
+  vector <vector <int> > ModelProcs () CCTK_ATTRIBUTE_PURE;
+  vector <int> ModelProcs (int proc) CCTK_ATTRIBUTE_PURE;
   
   extern "C" {
     CCTK_POINTER_TO_CONST
@@ -90,10 +86,6 @@ namespace Carpet {
   
   
   
-  void SetSystemLimits ();
-  
-  
-  
   // Helpers for storage
   void GroupsStorageCheck (cGH const * const cctkGH);
 
@@ -102,17 +94,26 @@ namespace Carpet {
   RegridMap (cGH const * cctkGH,
              int m,
              gh::rregs const & supeerregss,
-             gh::mregs const & regsss);
+             gh::mregs const & regsss,
+             bool do_init);
   void
   PostRegrid (cGH const * cctkGH);
   bool
   Recompose (cGH const * cctkGH,
              int rl,
              bool do_init);
+  void
+  RegridFree (cGH const * cctkGH,
+              bool do_init);
   
   void
   CheckRegions (gh::mregs const & regsss);
   
+  void
+  OutputSuperregions (cGH const * cctkGH,
+                      int m,
+                      gh const & hh,
+                      gh::rregs const & superregss);
   void
   OutputGrids (cGH const * cctkGH,
                int const m,
@@ -177,8 +178,8 @@ namespace Carpet {
   
   // Timing statistics functions
   void InitTimingStats (cGH const * cctkGH);
-  void BeginTiming (cGH const * cctkGH);
-  void StepTiming (cGH const * cctkGH);
+  void BeginTimingEvolution (cGH const * cctkGH);
+  void StepTimingEvolution (cGH const * cctkGH);
   void BeginTimingIO (cGH const * cctkGH);
   void EndTimingIO (cGH const * cctkGH,
                     CCTK_REAL files, CCTK_REAL bytes, bool is_binary);

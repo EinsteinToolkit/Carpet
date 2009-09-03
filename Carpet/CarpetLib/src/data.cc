@@ -25,7 +25,8 @@
 #include "vect.hh"
 
 #include "data.hh"
-#include "operator_prototypes.hh"
+#include "operator_prototypes_3d.hh"
+#include "operator_prototypes_4d.hh"
 
 using namespace std;
 
@@ -78,6 +79,73 @@ call_operator (void
     int const my_last_point =
       max (my_first_point, min (last_point, my_first_point + my_num_points));
     ibbox3 const myregbbox
+      (regbbox.lower().replace (dir, my_first_point),
+       regbbox.upper().replace (dir, my_last_point - stride),
+       regbbox.stride());
+    if (not myregbbox.empty()) {
+      (* the_operator) (src, srcext, dst, dstext, srcbbox, dstbbox, myregbbox);
+#  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
+#pragma omp critical
+      allregbboxes += myregbbox;
+#  endif
+    }
+  }
+#  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
+  if (not (allregbboxes == ibset (regbbox))) {
+    allregbboxes.normalize();
+    cout << "allregbboxes=" << allregbboxes << endl
+         << "regbbox=" << regbbox << endl;
+  }
+  assert (allregbboxes == ibset (regbbox));
+#  endif
+#endif
+}
+
+template <typename T>
+static
+void
+call_operator (void
+               (* the_operator) (T const * restrict const src,
+                                 ivect4 const & restrict srcext,
+                                 T * restrict const dst,
+                                 ivect4 const & restrict dstext,
+                                 ibbox4 const & restrict srcbbox,
+                                 ibbox4 const & restrict dstbbox,
+                                 ibbox4 const & restrict regbbox),
+               T const * restrict const src,
+               ivect4 const & restrict srcext,
+               T * restrict const dst,
+               ivect4 const & restrict dstext,
+               ibbox4 const & restrict srcbbox,
+               ibbox4 const & restrict dstbbox,
+               ibbox4 const & restrict regbbox)
+{
+#ifndef _OPENMP
+  (* the_operator) (src, srcext, dst, dstext, srcbbox, dstbbox, regbbox);
+#else
+#  if ! defined (NDEBUG) && ! defined (CARPET_OPTIMISE)
+  ibset allregbboxes;
+#  endif
+#pragma omp parallel
+  {
+    int const num_threads = omp_get_num_threads();
+    int const thread_num = omp_get_thread_num();
+    // Parallelise in z direction
+    // TODO: parallelise along longest extent
+    int const dir = 2;
+    int const stride = regbbox.stride()[dir];
+    int const first_point = regbbox.lower()[dir];
+    int const last_point = regbbox.upper()[dir] + stride;
+    int const num_points = last_point - first_point;
+    assert (num_points >= 0);
+    assert (num_points % stride == 0);
+    int const my_num_points =
+      (num_points / stride + num_threads - 1) / num_threads * stride;
+    int const my_first_point =
+      min (last_point, first_point + thread_num * my_num_points);
+    int const my_last_point =
+      max (my_first_point, min (last_point, my_first_point + my_num_points));
+    ibbox4 const myregbbox
       (regbbox.lower().replace (dir, my_first_point),
        regbbox.upper().replace (dir, my_last_point - stride),
        regbbox.stride());
@@ -200,16 +268,13 @@ prolongate_3d_weno (CCTK_REAL8 const * restrict const src,
 
 
 
-static const CCTK_REAL eps = 1.0e-10;
-
 // Constructors
 template<typename T>
 data<T>::data (const int varindex_,
                const centering cent_, const operator_type transport_operator_,
                const int vectorlength_, const int vectorindex_,
-               data* const vectorleader_,
-               const int tag_)
-  : gdata(varindex_, cent_, transport_operator_, tag_),
+               data* const vectorleader_)
+  : gdata(varindex_, cent_, transport_operator_),
     _memory(NULL),
     vectorlength(vectorlength_), vectorindex(vectorindex_),
     vectorleader(vectorleader_)
@@ -249,11 +314,10 @@ data<T>::~data ()
 template<typename T>
 data<T>* data<T>::make_typed (const int varindex_,
                               const centering cent_,
-                              const operator_type transport_operator_,
-                              const int tag_)
+                              const operator_type transport_operator_)
   const
 {
-  return new data(varindex_, cent_, transport_operator_, 1, 0, NULL, tag_);
+  return new data(varindex_, cent_, transport_operator_, 1, 0, NULL);
 }
 
 
@@ -335,6 +399,7 @@ copy_from_innerloop (gdata const * const gsrc,
   assert (proc() == src->proc());
   assert (dist::rank() == proc());
   
+#if CARPET_DIM == 3
   copy_3d (static_cast <T const *> (src->storage()),
            src->shape(),
            static_cast <T *> (this->storage()),
@@ -342,6 +407,17 @@ copy_from_innerloop (gdata const * const gsrc,
            src->extent(),
            this->extent(),
            box);
+#elif CARPET_DIM == 4
+  copy_4d (static_cast <T const *> (src->storage()),
+           src->shape(),
+           static_cast <T *> (this->storage()),
+           this->shape(),
+           src->extent(),
+           this->extent(),
+           box);
+#else
+#  error "Value for CARPET_DIM not supported"
+#endif
 }
 
 
@@ -382,7 +458,8 @@ transfer_time (vector <gdata const *> const & gsrcs,
 {
   // Use this timelevel, or interpolate in time if set to -1
   int timelevel0, ntimelevels;
-  find_source_timelevel (times, time, order_time, timelevel0, ntimelevels);
+  find_source_timelevel
+    (times, time, order_time, transport_operator, timelevel0, ntimelevels);
   
   if (ntimelevels > 1) {
     // Time interpolation is necessary
@@ -437,7 +514,8 @@ transfer_p_r (data const * const src,
     copy_from_innerloop (src, box);
   } else if (all (src->extent().stride() > this->extent().stride())) {
     // Prolongate
-    assert (transport_operator != op_sync);
+    assert (transport_operator != op_sync and
+            transport_operator != op_restrict);
     transfer_p_vc_cc (src, box, order_space);
   } else if (all (src->extent().stride() < this->extent().stride())) {
     // Restrict
@@ -457,6 +535,9 @@ transfer_p_vc_cc (data const * const src,
                   ibbox const & box,
                   int const order_space)
 {
+  transfer_prolongate (src, box, order_space);
+  
+#if 0
   if (cent == vertex_centered) {
     // Vertex centred
     
@@ -501,6 +582,8 @@ transfer_p_vc_cc (data const * const src,
       newdstbox .contracted_for (tmpsrcbox) .expand (offsetlo, offsethi);
     
     // Allocate temporary storage
+    // TODO: This may not be necessary if the source is already a
+    // temporary
     data * const newsrc =
       new data (src->varindex, vertex_centered, src->transport_operator);
     newsrc->allocate (newsrcbox, src->proc());
@@ -538,6 +621,7 @@ transfer_p_vc_cc (data const * const src,
   } else {
     assert (0);
   }
+#endif
 }
 
 template <>
@@ -562,77 +646,124 @@ transfer_prolongate (data const * const src,
   static Timer total ("prolongate");
   total.start ();
   
+#if CARPET_DIM == 3
+  
   switch (transport_operator) {
     
   case op_copy:
   case op_Lagrange: {
     static Timer timer ("prolongate_Lagrange");
     timer.start ();
-    switch (order_space) {
-    case 1:
-      call_operator<T> (& prolongate_3d_o1_rf2,
-                        static_cast <T const *> (src->storage()),
-                        src->shape(),
-                        static_cast <T *> (this->storage()),
-                        this->shape(),
-                        src->extent(),
-                        this->extent(),
-                        box);
+    // enum centering { vertex_centered, cell_centered };
+    switch (cent) {
+    case vertex_centered:
+      switch (order_space) {
+      case 1:
+        call_operator<T> (& prolongate_3d_o1_rf2,
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+        break;
+      case 3:
+        call_operator<T> (& prolongate_3d_o3_rf2, 
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+        break;
+      case 5:
+        call_operator<T> (& prolongate_3d_o5_rf2,
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+        break;
+      case 7:
+        call_operator<T> (& prolongate_3d_o7_rf2,
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+        break;
+      case 9:
+        call_operator<T> (& prolongate_3d_o9_rf2,
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+        break;
+      case 11:
+        call_operator<T> (& prolongate_3d_o11_rf2,
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+        break;
+      default:
+        CCTK_WARN (CCTK_WARN_ABORT,
+                   "There is no vertex-centred stencil for op=\"LAGRANGE\" with order_space not in {1, 3, 5, 7, 9, 11}");
+        break;
+      }
       break;
-    case 3:
-      call_operator<T> (& prolongate_3d_o3_rf2, 
-                        static_cast <T const *> (src->storage()),
-                        src->shape(),
-                        static_cast <T *> (this->storage()),
-                        this->shape(),
-                        src->extent(),
-                        this->extent(),
-                        box);
-      break;
-    case 5:
-      call_operator<T> (& prolongate_3d_o5_rf2,
-                        static_cast <T const *> (src->storage()),
-                        src->shape(),
-                        static_cast <T *> (this->storage()),
-                        this->shape(),
-                        src->extent(),
-                        this->extent(),
-                        box);
-      break;
-    case 7:
-      call_operator<T> (& prolongate_3d_o7_rf2,
-                        static_cast <T const *> (src->storage()),
-                        src->shape(),
-                        static_cast <T *> (this->storage()),
-                        this->shape(),
-                        src->extent(),
-                        this->extent(),
-                        box);
-      break;
-    case 9:
-      call_operator<T> (& prolongate_3d_o9_rf2,
-                        static_cast <T const *> (src->storage()),
-                        src->shape(),
-                        static_cast <T *> (this->storage()),
-                        this->shape(),
-                        src->extent(),
-                        this->extent(),
-                        box);
-      break;
-    case 11:
-      call_operator<T> (& prolongate_3d_o11_rf2,
-                        static_cast <T const *> (src->storage()),
-                        src->shape(),
-                        static_cast <T *> (this->storage()),
-                        this->shape(),
-                        src->extent(),
-                        this->extent(),
-                        box);
+    case cell_centered:
+      switch (order_space) {
+      case 0:
+        call_operator<T> (& prolongate_3d_cc_o0_rf2,
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+        break;
+      case 1:
+        call_operator<T> (& prolongate_3d_cc_o1_rf2,
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+        break;
+      case 2:
+        call_operator<T> (& prolongate_3d_cc_o2_rf2,
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+        break;
+      default:
+        CCTK_WARN (CCTK_WARN_ABORT,
+                   "There is no cell-centred stencil for op=\"LAGRANGE\" with order_space not in {0, 1, 2}");
+        break;
+      }
       break;
     default:
-      CCTK_WARN (CCTK_WARN_ABORT,
-                 "There is no stencil for op=\"LAGRANGE\" with order_space not in {1, 3, 5, 7, 9, 11}");
-      break;
+      assert (0);
     }
     timer.stop (0);
     break;
@@ -657,15 +788,17 @@ transfer_prolongate (data const * const src,
                         box);
       break;
     case 5:
-      // there is only a parameter for the prolongation order, but Whisky may want 5th order for spacetime and 3rd order for hydro; so this is a trick.
+      // There is only one parameter for the prolongation order, but
+      // Whisky may want 5th order for spacetime and 3rd order for
+      // hydro, so we cheat here.
       call_operator<T> (& prolongate_3d_eno,
-			static_cast <T const *> (src->storage()),
-			src->shape(),
-			static_cast <T *> (this->storage()),
-			this->shape(),
-			src->extent(),
-			this->extent(),
-			box);
+                        static_cast <T const *> (src->storage()),
+                        src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        box);
       break;
     default:
       CCTK_WARN (CCTK_WARN_ABORT,
@@ -707,9 +840,82 @@ transfer_prolongate (data const * const src,
     break;
   }
     
+  case op_Lagrange_monotone: {
+    static Timer timer ("prolongate_Lagrange_monotone");
+    timer.start ();
+    switch (order_space) {
+    case 1:
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "There is no stencil for op=\"Lagrange_monotone\" with order_space=1");
+      break;
+    case 3:
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "There is no stencil for op=\"Lagrange_monotone\" with order_space=3");
+      break;
+    case 5:
+      call_operator<T> (& prolongate_3d_o5_monotone_rf2,
+                        static_cast <T const *> (src->storage()),
+                        src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        box);
+      break;
+    default:
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "There is no stencil for op=\"Lagrange_monotone\" with order_space!=5");
+      break;
+    }
+    timer.stop (0);
+    break;
+  }
+    
   default:
     assert (0);
   } // switch (transport_operator)
+  
+#elif CARPET_DIM == 4
+  
+  switch (transport_operator) {
+    
+  case op_copy:
+  case op_Lagrange: {
+    static Timer timer ("prolongate_Lagrange");
+    timer.start ();
+    // enum centering { vertex_centered, cell_centered };
+    switch (cent) {
+    case vertex_centered:
+      switch (order_space) {
+      case 1:
+        call_operator<T> (& prolongate_4d_o1_rf2,
+                          static_cast <T const *> (src->storage()),
+                          src->shape(),
+                          static_cast <T *> (this->storage()),
+                          this->shape(),
+                          src->extent(),
+                          this->extent(),
+                          box);
+        break;
+      default:
+        CCTK_WARN (CCTK_WARN_ABORT,
+                   "There is no vertex-centred stencil for op=\"LAGRANGE\" with order_space not in {1}");
+        break;
+      }
+      break;
+    default:
+      assert (0);
+    }
+    timer.stop (0);
+    break;
+  }
+  default:
+    assert (0);
+  } // switch (transport_operator)
+  
+#else
+#  error "Value for CARPET_DIM not supported"
+#endif
   
   total.stop (0);
 }
@@ -736,12 +942,15 @@ transfer_restrict (data const * const src,
   static Timer total ("restrict");
   total.start ();
   
+#if CARPET_DIM == 3
+  
   switch (transport_operator) {
     
   case op_copy:
   case op_Lagrange:
   case op_ENO:
   case op_WENO:
+  case op_Lagrange_monotone:
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
     case vertex_centered:
@@ -771,6 +980,36 @@ transfer_restrict (data const * const src,
     assert (0);
   }
   
+#elif CARPET_DIM == 4
+  
+  switch (transport_operator) {
+    
+  case op_copy:
+  case op_Lagrange:
+    // enum centering { vertex_centered, cell_centered };
+    switch (cent) {
+    case vertex_centered:
+      restrict_4d_rf2 (static_cast <T const *> (src->storage()),
+                       src->shape(),
+                       static_cast <T *> (this->storage()),
+                       this->shape(),
+                       src->extent(),
+                       this->extent(),
+                       box);
+      break;
+    default:
+      assert (0);
+    }
+    break;
+    
+  default:
+    assert (0);
+  }
+
+#else
+#  error "Value for CARPET_DIM not supported"
+#endif
+  
   total.stop (0);
 }
 
@@ -797,7 +1036,9 @@ time_interpolate (vector <data *> const & srcs,
 {
   static Timer total ("time_interpolate");
   total.start ();
-
+  
+#if CARPET_DIM == 3
+  
   switch (transport_operator) {
     
   case op_copy:
@@ -886,8 +1127,10 @@ time_interpolate (vector <data *> const & srcs,
   }
     
   case op_ENO:
-  case op_WENO: {
-    // ENO and WENO timer interpolation is the same for order_time <= 2
+  case op_WENO:
+  case op_Lagrange_monotone: {
+    // ENO, WENO, and Lagrange_monotone time interpolation is the same
+    // for order_time <= 2
     static Timer timer ("time_interpolate_ENO");
     timer.start ();
     switch (order_time) {
@@ -934,6 +1177,14 @@ time_interpolate (vector <data *> const & srcs,
   default:
     assert (0);
   } // switch (transport_operator)
+  
+#elif CARPET_DIM == 4
+  
+  assert (0);
+  
+#else
+#  error "Value for CARPET_DIM not supported"
+#endif
   
   total.stop (0);
 }
@@ -982,22 +1233,9 @@ output (ostream & os)
   return os;
 }
 
-template<typename T>
-ostream &
-operator << (ostream & os, data<T> const & d)
-{
-  char const * space = "";
-  for (int i = 0; i < d.vectorlength; i++) {
-    os << space << d[i];
-    space = " ";
-  }
-  return os;
-}
-
 
 
 #define INSTANTIATE(T)                                                  \
-template class data<T>;                                                 \
-template ostream & operator << <T> (ostream & os, data<T> const & d);
+template class data<T>;
 #include "instantiate"
 #undef INSTANTIATE

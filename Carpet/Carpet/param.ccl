@@ -171,21 +171,12 @@ STRING model "Model name for multi-model simulations -- the model name is used t
 
 CCTK_INT prolongation_order_space "Order of prolongation operator in space" STEERABLE=recover
 {
-  1  :: "first order (linear)"
-  3  :: "third order (cubic)"
-  5  :: "fifth order"
-  7  :: "seventh order"
-  9  :: "ninth order"
-  11 :: "eleventh order (one more than tenth)"
+  0:* :: "vertex centred orders must be odd"
 } 1
 
 CCTK_INT prolongation_order_time "Order of prolongation operator in time" STEERABLE=recover
 {
-  0 :: "zeroth order (constant)"
-  1 :: "first order (linear)"
-  2 :: "second order (quadratic)"
-  3 :: "third order (cubic)"
-  4 :: "fourth order (quartic)"
+  0:* :: ""
 } 1
 
 
@@ -291,33 +282,25 @@ BOOLEAN enable_all_storage "Enable storage for all grid functions" STEERABLE=rec
 {
 } "no"
 
+BOOLEAN enable_no_storage "Exit before beginning to enable storage for grid functions" STEERABLE=recover
+{
+} "no"
+
 
 
 BOOLEAN poison_new_timelevels "Try to catch uninitialised grid elements by setting new timelevels to values that will catch your attention" STEERABLE=always
 {
-} "no"
+} "yes"
 
 BOOLEAN check_for_poison "Explicitely check for the poison value after every time step" STEERABLE=always
 {
 } "no"
-
-CCTK_INT poison_value "Integer value (0..255) used to poison new timelevels (with memset)" STEERABLE=always
-{
-  0:255 :: "Must fit into a byte.  Use 0 for zero, 255 for nan, and e.g. 113 for a large value."
-} 255
 
 CCTK_INT max_poison_locations "Maximum number of poison locations that are printed to the screen" STEERABLE=always
 {
   -1  :: "print all locations"
   0:* :: "print only that many locations"
 } 10
-
-
-
-CCTK_INT deadbeef "A strange integer value that indicates that something has gone wrong; the integer equivalent of a nan"
-{
-  *:* :: "should be large and positive"
-} 666 # 7353315
 
 
 
@@ -357,6 +340,11 @@ BOOLEAN output_internal_data "Periodically print internal data to the screen for
 {
 } "no"
 
+REAL timing_average_window_minutes "Time interval (in wall time minutes) for calculating the current physics time per hour" STEERABLE=always
+{
+  (0.0:* :: ""
+} 10.0
+
 INT print_timestats_every "Print interesting timing statistics periodically" STEERABLE=always
 {
   -1  :: "don't report"
@@ -377,21 +365,15 @@ STRING timer_file "File name in which detailed timing statistics are collected" 
   "^.+$" :: "file name"
 } "carpet-timing-statistics"
 
-INT max_core_size_MB "Maximum size of a core file" STEERABLE=recover
+BOOLEAN timers_verbose "Output (debug) messages when a timer is started or stopped" STEERABLE=always
 {
-  -2  :: "unchanged"
-  -1  :: "unlimited"
-  0:* :: "limited"
-} -2
+} "no"
 
-INT max_memory_size_MB "Maximum amount of memory per MPI process" STEERABLE=recover
+
+
+BOOLEAN recompose_verbose "Output debug information during recomposing" STEERABLE=ALWAYS
 {
-  -2  :: "unchanged"
-  -1  :: "unlimited"
-  0:* :: "limited"
-} -2
-
-
+} "no"
 
 KEYWORD processor_topology "How to determine the processor topology" STEERABLE=recover
 {

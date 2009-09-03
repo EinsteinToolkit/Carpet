@@ -3,11 +3,11 @@
 
 #include <vector>
 
-#include "cctk.h"
-#include "cctk_Arguments.h"
-#include "cctk_Functions.h"
+#include <cctk.h>
+#include <cctk_Arguments.h>
+#include <cctk_Functions.h>
 
-#include "gh.hh"
+#include <gh.hh>
 
 #include "carpet_public.hh"
 
@@ -36,7 +36,7 @@ namespace Carpet {
   int CallFunction (void* function, cFunctionData* attribute, void* data);
   
   // Other functions
-  bool Regrid (cGH const * cctkGH, bool force_recompose);
+  bool Regrid (cGH const * cctkGH, bool force_recompose, bool do_init);
   
   void CycleTimeLevels (const cGH* cgh);
   void FlipTimeLevels (const cGH* cgh);
@@ -52,8 +52,8 @@ namespace Carpet {
 		    allbutcurrenttime,
 		    alltimes };
   
-  int min_timelevel (checktimes where, int num_tl);
-  int max_timelevel (checktimes where, int num_tl);
+  int min_timelevel (checktimes where, int num_tl, bool persistent) CCTK_ATTRIBUTE_CONST;
+  int max_timelevel (checktimes where, int num_tl, bool persistent) CCTK_ATTRIBUTE_CONST;
   
   void Poison (const cGH* cgh, checktimes where, int what = 0);
   void PoisonGroup (const cGH* cgh, int group, checktimes where);

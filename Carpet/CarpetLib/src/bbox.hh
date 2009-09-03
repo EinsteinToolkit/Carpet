@@ -13,6 +13,14 @@ using namespace std;
 
 
 
+#ifdef CARPET_DEBUG
+#  define ASSERT_BBOX(x) assert(x)
+#else
+#  define ASSERT_BBOX(x)
+#endif
+
+
+
 // Forward declaration
 template<class T, int D> class bbox;
 
@@ -69,10 +77,13 @@ public:
 	const vect<T,D>& stride_)
     : _lower(lower_), _upper(upper_), _stride(stride_)
   {
-#ifndef NDEBUG
+#ifndef CARPET_DEBUG
     assert_bbox_limits();
 #endif
   }
+  
+  // Poison
+  static bbox poison ();
   
   // Accessors
   // (Don't return references; *this might be a temporary)
@@ -131,7 +142,7 @@ public:
       bbox b.  */
   bbox operator& (const bbox& b) const
   {
-    assert (all(stride()==b.stride()));
+    ASSERT_BBOX (all(stride()==b.stride()));
     vect<T,D> lo = max(lower(),b.lower());
     vect<T,D> up = min(upper(),b.upper());
     return bbox(lo,up,stride());
@@ -179,7 +190,7 @@ public:
   iterator end () const;
   
   // Memory usage
-  size_t memory () const
+  size_t memory () const CCTK_ATTRIBUTE_CONST
   {
     return memoryof (_lower) + memoryof (_upper) + memoryof (_stride);
   }
@@ -193,6 +204,8 @@ public:
 
 // Memory usage
 
+template<class T, int D>
+inline size_t memoryof (bbox<T,D> const & b) CCTK_ATTRIBUTE_CONST;
 template<class T, int D>
 inline size_t memoryof (bbox<T,D> const & b) { return b.memory(); }
 

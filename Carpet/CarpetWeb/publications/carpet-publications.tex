@@ -1,0 +1,81 @@
+\documentclass[11pt, tightenlines]{revtex4}
+
+\usepackage[english]{babel}
+\usepackage[latin9]{inputenc}
+\usepackage{mathpazo}
+\usepackage{url}
+\urlstyle{rm}
+
+% \textwidth = 6.5 in
+% \textheight = 9.1 in
+% \oddsidemargin = 0.0 in
+% \evensidemargin = 0.0 in
+% \topmargin = 0.0 in
+% \headheight = 0.0 in
+% \headsep = 0.0 in
+% \parskip = 0.1in
+% \parindent = 0.0in
+
+% Included bibliographies
+\newcommand{\blurb}[2][]{\frenchspacing\item}
+
+\pagestyle{empty}
+
+\begin{document}
+
+{\LARGE\bf Carpet Publications}
+
+
+
+\hrulefill
+
+{\large\bf Background Publications and Web Pages}
+
+\begin{enumerate}
+  \input{citations-background.bibitems}
+  \input{citations-webpage.bibitems}
+\end{enumerate}
+
+
+
+\hrulefill
+
+{\large\bf Publications in Refereed Journals}
+
+\begin{enumerate}
+  \input{citations-refereed.bibitems}
+\end{enumerate}
+
+
+
+\hrulefill
+
+{\large\bf Book Chapters}
+
+\begin{enumerate}
+  \input{citations-book.bibitems}
+\end{enumerate}
+
+
+
+\hrulefill
+
+{\large\bf Theses}
+
+\begin{enumerate}
+  \input{citations-thesis.bibitems}
+\end{enumerate}
+
+
+
+\hrulefill
+
+{\large\bf Conference Proceedings and Technical Reports}
+
+\begin{enumerate}
+  \input{citations-report.bibitems}
+\end{enumerate}
+
+
+
+\end{document}

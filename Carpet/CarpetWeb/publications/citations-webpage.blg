@@ -1,0 +1,46 @@
+This is BibTeX, Version 0.99c (Web2C 7.5.6)
+The top-level auxiliary file: citations-webpage.aux
+The style file: apsrev-titles-manyauthors.bst
+Database file #1: citations-webpage.bib
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+You've used 2 entries,
+            3482 wiz_defined-function locations,
+            1163 strings with 10236 characters,
+and the built_in function-call counts, 566 in all, are:
+= -- 40
+> -- 0
+< -- 0
++ -- 5
+- -- 0
+* -- 50
+:= -- 73
+add.period$ -- 2
+call.type$ -- 2
+change.case$ -- 10
+chr.to.int$ -- 1
+cite$ -- 6
+duplicate$ -- 48
+empty$ -- 59
+format.name$ -- 0
+if$ -- 103
+int.to.chr$ -- 2
+int.to.str$ -- 3
+missing$ -- 4
+newline$ -- 21
+num.names$ -- 0
+pop$ -- 24
+preamble$ -- 1
+purify$ -- 8
+quote$ -- 0
+skip$ -- 20
+stack$ -- 0
+substring$ -- 26
+swap$ -- 16
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 12
+warning$ -- 0
+while$ -- 0
+width$ -- 0
+write$ -- 30

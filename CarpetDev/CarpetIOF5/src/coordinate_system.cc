@@ -102,8 +102,7 @@ namespace CarpetIOF5 {
     Cartesian_coordinate_system_t::
     ~ Cartesian_coordinate_system_t ()
     {
-      herr_t const herr = H5Gclose (m_hdf5_coordinate_system);
-      assert (not herr);
+      check (not H5Gclose (m_hdf5_coordinate_system));
     }
     
     
@@ -114,8 +113,10 @@ namespace CarpetIOF5 {
       assert (all (m_level_delta > (CCTK_REAL) 0));
       
       ostringstream namebuf;
-      namebuf << "Cartesian 3D, x0=" << m_level_origin
-              << ", dx=" << m_level_delta;
+      namebuf << "Cartesian3D-"
+              << name_from_ivect (m_level_origin)
+              << "-"
+              << name_from_ivect (m_level_delta);
       string const namestr = namebuf.str();
       m_name = namestr;
       char const * const name = namestr.c_str();
@@ -124,6 +125,7 @@ namespace CarpetIOF5 {
         = open_or_create_group (m_topology.get_hdf5_topology(), name);
       assert (m_hdf5_coordinate_system >= 0);
       
+#warning "TODO: don't output coordinates as attributes"
       write_or_check_attribute
         (m_hdf5_coordinate_system, "origin", m_level_origin);
       write_or_check_attribute
@@ -133,21 +135,20 @@ namespace CarpetIOF5 {
     
     
     void coordinate_system_t::
-    get_link_destination (string & filename,
+    get_link_destination (int const proc,
+                          string & filename,
                           string & objectname)
       const
     {
-      static bool initialised = false;
-      static string l_filename;
-      static string l_objectname;
-      if (not initialised)
+      get_topology().get_link_destination (proc, filename, objectname);
+      if (objectname.empty())
       {
-        initialised = true;
-        get_topology().get_link_destination (l_filename, l_objectname);
-        l_objectname += string ("/") + m_name;
+        objectname = m_name;
       }
-      filename = l_filename;
-      objectname = l_objectname;
+      else
+      {
+        objectname += string ("/") + m_name;
+      }
     }
     
     

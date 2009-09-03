@@ -23,6 +23,33 @@ namespace CarpetMask {
   
   
   /**
+   * Check parameters.
+   */
+  
+  void
+  CarpetSurfaceParamCheck (CCTK_ARGUMENTS)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    DECLARE_CCTK_PARAMETERS;
+    
+    for (int n = 0; n < num_excluded; ++ n) {
+      
+      int const sn = excluded_surface[n];
+      if (sn >= 0) {
+        
+        if (not (sn < nsurfaces)) {
+          CCTK_VParamWarn (CCTK_THORNSTRING,
+                           "Mask %d depends on spherical surface %d, but there are only %d spherical surfaces",
+                           n, sn, int(nsurfaces));
+        }
+        
+      } // if sn >= 0
+    }   // for n
+  }
+  
+  
+  
+  /**
    * Set the weight in the excluded regions to zero.
    */
   
@@ -52,6 +79,11 @@ namespace CarpetMask {
       int const sn = excluded_surface[n];
       if (sn >= 0) {
         
+        if (not (sn < nsurfaces)) {
+          CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "Mask %d depends on spherical surface %d, but there are only %d spherical surfaces",
+                      n, sn, int(nsurfaces));
+        }
         assert (sn < nsurfaces);
         
         if (sf_active[sn]) {
@@ -81,6 +113,7 @@ namespace CarpetMask {
             }
           }
           
+#pragma omp parallel for
           for (int k = 0; k < cctk_lsh[2]; ++ k) {
             for (int j = 0; j < cctk_lsh[1]; ++ j) {
               for (int i = 0; i < cctk_lsh[0]; ++ i) {

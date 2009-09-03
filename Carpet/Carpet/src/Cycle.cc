@@ -1,12 +1,12 @@
 #include <cassert>
 #include <cstdlib>
 
-#include "cctk.h"
+#include <cctk.h>
 
-#include "ggf.hh"
-#include "gh.hh"
+#include <ggf.hh>
+#include <gh.hh>
 
-#include "carpet.hh"
+#include <carpet.hh>
 
 
 
@@ -27,9 +27,9 @@ namespace Carpet {
           
         case CCTK_GF:
           assert (reflevel>=0 and reflevel<reflevels);
-	  for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
+	  for (int m=0; m<(int)arrdata.AT(group).size(); ++m) {
 	    for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-              arrdata.at(group).at(m).data.at(var)->
+              arrdata.AT(group).AT(m).data.AT(var)->
                 cycle_all (reflevel, mglevel);
             }
           }
@@ -41,15 +41,14 @@ namespace Carpet {
 	    int const numtimelevels = CCTK_NumTimeLevelsI (group);
 	    int const firstvarindex = CCTK_FirstVarIndexI (group);
             for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-              arrdata.at(group).at(0).data.at(var)->cycle_all (0, mglevel);
+              arrdata.AT(group).AT(0).data.AT(var)->cycle_all (0, mglevel);
 	      {
                 int const varindex = firstvarindex + var;
-		int const c = CCTK_MyProc(cgh);
 		for (int tl=0; tl<numtimelevels; ++tl) {
 		  cgh->data[varindex][tl]
-		    = (tl < groupdata.at(group).info.activetimelevels
-		       ? ((*arrdata.at(group).at(0).data.at(var))
-			  (tl, 0, c, 0)->storage())
+		    = (tl < groupdata.AT(group).info.activetimelevels
+		       ? ((*arrdata.AT(group).AT(0).data.AT(var))
+			  (tl, 0, 0, 0)->storage())
 		       : NULL);
 		}
 	      }
@@ -77,9 +76,9 @@ namespace Carpet {
           
         case CCTK_GF:
           assert (reflevel>=0 and reflevel<reflevels);
-          for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
+          for (int m=0; m<(int)arrdata.AT(group).size(); ++m) {
             for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-              arrdata.at(group).at(m).data.at(var)->
+              arrdata.AT(group).AT(m).data.AT(var)->
                 flip_all (reflevel, mglevel);
             }
           }
@@ -91,15 +90,14 @@ namespace Carpet {
 	    int const numtimelevels = CCTK_NumTimeLevelsI (group);
 	    int const firstvarindex = CCTK_FirstVarIndexI (group);
             for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-              arrdata.at(group).at(0).data.at(var)->flip_all (0, mglevel);
+              arrdata.AT(group).AT(0).data.AT(var)->flip_all (0, mglevel);
 	      {
                 int const varindex = firstvarindex + var;
-		int const c = CCTK_MyProc(cgh);
 		for (int tl=0; tl<numtimelevels; ++tl) {
 		  cgh->data[varindex][tl]
-		    = (tl < groupdata.at(group).info.activetimelevels
-		       ? ((*arrdata.at(group).at(0).data.at(var))
-			  (tl, 0, c, 0)->storage())
+		    = (tl < groupdata.AT(group).info.activetimelevels
+		       ? ((*arrdata.AT(group).AT(0).data.AT(var))
+			  (tl, 0, 0, 0)->storage())
 		       : NULL);
 		}
 	      }
@@ -127,9 +125,9 @@ namespace Carpet {
           
         case CCTK_GF:
           assert (reflevel>=0 and reflevel<reflevels);
-	  for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
+	  for (int m=0; m<(int)arrdata.AT(group).size(); ++m) {
 	    for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-              arrdata.at(group).at(m).data.at(var)->
+              arrdata.AT(group).AT(m).data.AT(var)->
                 fill_all (reflevel, mglevel);
             }
           }
@@ -139,7 +137,7 @@ namespace Carpet {
         case CCTK_ARRAY:
           if (do_global_mode) {
             for (int var=0; var<CCTK_NumVarsInGroupI(group); ++var) {
-              arrdata.at(group).at(0).data.at(var)->fill_all (0, mglevel);
+              arrdata.AT(group).AT(0).data.AT(var)->fill_all (0, mglevel);
             }
           }
           break;

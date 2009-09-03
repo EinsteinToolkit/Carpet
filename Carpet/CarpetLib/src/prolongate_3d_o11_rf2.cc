@@ -6,7 +6,7 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
-#include "operator_prototypes.hh"
+#include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
 using namespace std;
@@ -231,7 +231,7 @@ namespace CarpetLib {
     goto l81;
     
     // begin j loop
-   l80:
+  l80:
     j = 0;
     js = j0;
     jd = dstjoff;
@@ -239,7 +239,7 @@ namespace CarpetLib {
     goto l801;
     
     // begin i loop
-   l800:
+  l800:
     i = 0;
     is = i0;
     id = dstioff;
@@ -247,7 +247,7 @@ namespace CarpetLib {
     goto l8001;
     
     // kernel
-   l8000:
+  l8000:
     dst[DSTIND3(id,jd,kd)] = interp0<T> (& src[SRCIND3(is,js,ks)]);
     i = i+1;
     id = id+1;
@@ -255,7 +255,7 @@ namespace CarpetLib {
     goto l900;
     
     // kernel
-   l8001:
+  l8001:
     dst[DSTIND3(id,jd,kd)] = interp1<T> (& src[SRCIND3(is-5,js,ks)], srcdi);
     i = i+1;
     id = id+1;
@@ -264,14 +264,14 @@ namespace CarpetLib {
     goto l900;
     
     // end i loop
-   l900:
+  l900:
     j = j+1;
     jd = jd+1;
     if (j < regjext) goto l801;
     goto l90;
     
     // begin i loop
-   l801:
+  l801:
     i = 0;
     is = i0;
     id = dstioff;
@@ -279,7 +279,7 @@ namespace CarpetLib {
     goto l8011;
     
     // kernel
-   l8010:
+  l8010:
     dst[DSTIND3(id,jd,kd)] = interp1<T> (& src[SRCIND3(is,js-5,ks)], srcdj);
     i = i+1;
     id = id+1;
@@ -287,7 +287,7 @@ namespace CarpetLib {
     goto l901;
     
     // kernel
-   l8011:
+  l8011:
     dst[DSTIND3(id,jd,kd)] =
       interp2<T> (& src[SRCIND3(is-5,js-5,ks)], srcdi, srcdj);
     i = i+1;
@@ -297,7 +297,7 @@ namespace CarpetLib {
     goto l901;
     
     // end i loop
-   l901:
+  l901:
     j = j+1;
     jd = jd+1;
     js = js+1;
@@ -305,14 +305,14 @@ namespace CarpetLib {
     goto l90;
     
     // end j loop
-   l90:
+  l90:
     k = k+1;
     kd = kd+1;
     if (k < regkext) goto l81;
     goto l9;
     
     // begin j loop
-   l81:
+  l81:
     j = 0;
     js = j0;
     jd = dstjoff;
@@ -320,7 +320,7 @@ namespace CarpetLib {
     goto l811;
     
     // begin i loop
-   l810:
+  l810:
     i = 0;
     is = i0;
     id = dstioff;
@@ -328,7 +328,7 @@ namespace CarpetLib {
     goto l8101;
     
     // kernel
-   l8100:
+  l8100:
     dst[DSTIND3(id,jd,kd)] = interp1<T> (& src[SRCIND3(is,js,ks-5)], srcdk);
     i = i+1;
     id = id+1;
@@ -336,7 +336,7 @@ namespace CarpetLib {
     goto l910;
     
     // kernel
-   l8101:
+  l8101:
     dst[DSTIND3(id,jd,kd)] =
       interp2<T> (& src[SRCIND3(is-5,js,ks-5)], srcdi, srcdj);
     i = i+1;
@@ -346,14 +346,14 @@ namespace CarpetLib {
     goto l910;
     
     // end i loop
-   l910:
+  l910:
     j = j+1;
     jd = jd+1;
     if (j < regjext) goto l811;
     goto l91;
     
     // begin i loop
-   l811:
+  l811:
     i = 0;
     is = i0;
     id = dstioff;
@@ -361,7 +361,7 @@ namespace CarpetLib {
     goto l8111;
     
     // kernel
-   l8110:
+  l8110:
     dst[DSTIND3(id,jd,kd)] =
       interp2<T> (& src[SRCIND3(is,js-5,ks-5)], srcdj, srcdk);
     i = i+1;
@@ -370,7 +370,7 @@ namespace CarpetLib {
     goto l911;
     
     // kernel
-   l8111:
+  l8111:
     {
       dst[DSTIND3(id,jd,kd)] =
         interp3<T> (& src[SRCIND3(is-5,js-5,ks-5)], srcdi, srcdj, srcdk);
@@ -382,7 +382,7 @@ namespace CarpetLib {
     goto l911;
     
     // end i loop
-   l911:
+  l911:
     j = j+1;
     jd = jd+1;
     js = js+1;
@@ -390,7 +390,7 @@ namespace CarpetLib {
     goto l91;
     
     // end j loop
-   l91:
+  l91:
     k = k+1;
     kd = kd+1;
     ks = ks+1;
@@ -398,7 +398,7 @@ namespace CarpetLib {
     goto l9;
     
     // end k loop
-   l9:;
+  l9:;
     
   }
   

@@ -75,9 +75,8 @@ namespace CarpetMask {
       // Enlarge this set
       ibset enlarged[dim];
       for (int d=0; d<dim; ++d) {
-        for (ibset::const_iterator bi = notrefined.begin();
-             bi != notrefined.end();
-             ++bi)
+        for (ibset::const_iterator
+               bi = notrefined.begin(); bi != notrefined.end(); ++bi)
         {
           enlarged[d] |= (*bi).expand(ivect::dir(d), ivect::dir(d));
         }

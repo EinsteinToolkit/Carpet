@@ -1,0 +1,16 @@
+# Cactus benchmark results
+#    processes = procs
+#    nodes     = procs / ppn
+#
+# benchmark steps size machine   procs ppn tpp iter   walltime cputime
+
+
+
+# Select output for original
+awk '/^Bench_McLachlan_Carpet_9lev/ { if ($2==128 && $3==25 && ($6== 4 || $6==$5) && $7== 1 && $8==50) print; }' results-kraken.out > results-whatif-orig.out
+
+# Select output for increased bandwidth
+awk '/^Bench_McLachlan_Carpet_9lev/ { if ($2==128 && $3==25 && ($6== 4 || $6==$5) && $7== 1 && $8==51) print; }' results-kraken.out > results-whatif-bw.out
+
+# Select output for increased bandwidth and latency
+awk '/^Bench_McLachlan_Carpet_9lev/ { if ($2==128 && $3==25 && ($6== 4 || $6==$5) && $7== 1 && $8==52) print; }' results-kraken.out > results-whatif-bwlat.out

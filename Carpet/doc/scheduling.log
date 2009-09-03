@@ -1,0 +1,355 @@
+This is pdfTeX, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2008.7.9)  28 AUG 2008 15:53
+entering extended mode
+**\nonstopmode \input{/Users/eschnett/Calpha/carpet/Carpet/doc/scheduling.tex}
+(/Users/eschnett/Calpha/carpet/Carpet/doc/scheduling.tex
+(/opt/local/share/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2005/09/16 v1.4f Standard LaTeX document class
+(/opt/local/share/texmf-dist/tex/latex/base/size10.clo
+File: size10.clo 2005/09/16 v1.4f Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+(/Users/eschnett/Calpha/carpet/Carpet/doc/scheduling.aux)
+\openout1 = `scheduling.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <12> on input line 31.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <8> on input line 31.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <6> on input line 31.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 50.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 50.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 62.
+
+(/opt/local/share/texmf-dist/tex/latex/base/omscmr.fd
+File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 62.
+
+Overfull \hbox (6.79999pt too wide) in paragraph at lines 118--119
+ [] 
+ []
+
+
+Overfull \hbox (6.79999pt too wide) in paragraph at lines 133--134
+ [][] 
+ []
+
+
+Overfull \hbox (6.79999pt too wide) in paragraph at lines 139--140
+ [][] 
+ []
+
+
+Overfull \hbox (2.31596pt too wide) in paragraph at lines 154--155
+ [][] 
+ []
+
+
+Overfull \hbox (6.79999pt too wide) in paragraph at lines 159--160
+ [][] 
+ []
+
+[1
+
+{/opt/local/share/texmf/fonts/map/pdftex/updmap/pdftex.map}]
+LaTeX Font Info:    Font shape `OT1/cmtt/bx/n' in size <10> not available
+(Font)              Font shape `OT1/cmtt/m/n' tried instead on input line 246.
+ [2] [3] [4]
+[5] [6]
+Overfull \hbox (6.79999pt too wide) in paragraph at lines 638--639
+ [] 
+ []
+
+
+Underfull \hbox (badness 3579) in paragraph at lines 679--679
+\OT1/cmr/m/n/10 POST[]RECOVER[]VARIABLES $[][]\OMS/cmsy/m/n/10 !$
+ []
+
+
+Overfull \hbox (6.79999pt too wide) in paragraph at lines 679--680
+ [][] 
+ []
+
+
+Overfull \hbox (2.31596pt too wide) in paragraph at lines 690--691
+ [][] 
+ []
+
+
+Overfull \hbox (4.75467pt too wide) in paragraph at lines 711--712
+ [][] 
+ []
+
+
+Overfull \hbox (2.31596pt too wide) in paragraph at lines 720--721
+ [][] 
+ []
+
+
+Overfull \hbox (6.79999pt too wide) in paragraph at lines 724--725
+ [][] 
+ []
+
+
+Overfull \hbox (13.46664pt too wide) in paragraph at lines 750--751
+ [] 
+ []
+
+
+Overfull \hbox (3.21214pt too wide) in paragraph at lines 767--767
+[]$[]$ [] 
+ []
+
+
+Overfull \hbox (13.46664pt too wide) in paragraph at lines 767--768
+ [][] 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 946--946
+[]\OT1/cmtt/m/n/10 loop $\OMS/cmsy/m/n/10 "$
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 946--946
+\OT1/cmr/m/n/10 INITIAL POS-TINI-
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 946--946
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 946--946
+[]\OT1/cmtt/m/n/10 loop $\OMS/cmsy/m/n/10 "$
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 946--946
+[]\OT1/cmtt/m/n/10 loop $\OMS/cmsy/m/n/10 "$
+ []
+
+
+Overfull \hbox (6.98305pt too wide) in paragraph at lines 946--946
+[]\OT1/cmr/m/n/10 POSTREGRIDINITIAL 
+ []
+
+
+Overfull \hbox (6.45119pt too wide) in paragraph at lines 946--946
+[][] 
+ []
+
+
+Overfull \hbox (6.45119pt too wide) in paragraph at lines 946--946
+[] 
+ []
+
+
+Overfull \hbox (3.43626pt too wide) in paragraph at lines 946--946
+[] 
+ []
+
+
+Overfull \hbox (6.45119pt too wide) in paragraph at lines 946--946
+[] 
+ []
+
+
+Overfull \hbox (6.80959pt too wide) in paragraph at lines 946--946
+[]\OT1/cmr/m/n/10 POSTRESTRICTINITIAL 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 946--946
+\OT1/cmr/m/n/10 POSTPOSTINITIAL
+ []
+
+
+Overfull \hbox (6.63156pt too wide) in paragraph at lines 946--946
+[][] 
+ []
+
+
+Overfull \hbox (8.19237pt too wide) in paragraph at lines 946--946
+[] 
+ []
+
+
+Overfull \hbox (8.19237pt too wide) in paragraph at lines 946--946
+[] 
+ []
+
+
+Overfull \hbox (2.01521pt too wide) in paragraph at lines 946--946
+[] 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 946--946
+[]\OT1/cmtt/m/n/10 loop $\OMS/cmsy/m/n/10 "$
+ []
+
+
+Overfull \hbox (11.90251pt too wide) in paragraph at lines 946--946
+\OT1/cmr/m/n/10 RECOVER[]VARIABLES 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 946--946
+[]\OT1/cmtt/m/n/10 loop $\OMS/cmsy/m/n/10 "$
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 946--946
+[]\OT1/cmtt/m/n/10 loop $\OMS/cmsy/m/n/10 "$
+ []
+
+
+Overfull \hbox (6.45119pt too wide) in paragraph at lines 946--946
+[][] 
+ []
+
+
+Overfull \hbox (6.45119pt too wide) in paragraph at lines 946--946
+[] 
+ []
+
+
+Overfull \hbox (3.43626pt too wide) in paragraph at lines 946--946
+[] 
+ []
+
+
+Overfull \hbox (6.45119pt too wide) in paragraph at lines 946--946
+[] 
+ []
+
+
+Overfull \hbox (30.9541pt too wide) in paragraph at lines 946--946
+[]\OT1/cmr/m/n/10 POST[]RECOVER[]VARIABLES 
+ []
+
+
+Overfull \hbox (6.63156pt too wide) in paragraph at lines 946--946
+[][] 
+ []
+
+
+Overfull \hbox (8.19237pt too wide) in paragraph at lines 946--946
+[] 
+ []
+
+
+Overfull \hbox (13.46664pt too wide) in paragraph at lines 946--947
+ [][] 
+ []
+
+
+Overfull \hbox (3.21214pt too wide) in paragraph at lines 965--965
+[]$[]$ [] 
+ []
+
+
+Overfull \hbox (13.46664pt too wide) in paragraph at lines 965--966
+ [][] 
+ []
+
+
+Overfull \hbox (333.56543pt too wide) in paragraph at lines 1072--1072
+[]$[]$ $[]$ 
+ []
+
+
+Overfull \hbox (13.46664pt too wide) in paragraph at lines 1072--1073
+ [][] 
+ []
+
+
+Overfull \hbox (3.21214pt too wide) in paragraph at lines 1090--1090
+[]$[]$ [] 
+ []
+
+
+Overfull \hbox (13.46664pt too wide) in paragraph at lines 1090--1091
+ [][] 
+ []
+
+
+Overfull \hbox (3.21214pt too wide) in paragraph at lines 1106--1106
+[]$[]$ [] 
+ []
+
+
+Overfull \hbox (13.46664pt too wide) in paragraph at lines 1106--1107
+ [][] 
+ []
+
+
+LaTeX Warning: Float too large for page by 56.33575pt on input line 1133.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1237--1240
+
+ []
+
+
+LaTeX Warning: Float too large for page by 18.68066pt on input line 1321.
+
+(/Users/eschnett/Calpha/carpet/Carpet/doc/scheduling.bbl [7] [8] [9] [10]
+[11]) [12] (/Users/eschnett/Calpha/carpet/Carpet/doc/scheduling.aux) ) 
+Here is how much of TeX's memory you used:
+ 295 strings out of 94073
+ 3762 string characters out of 1164798
+ 71804 words of memory out of 1500000
+ 3642 multiletter control sequences out of 10000+50000
+ 9493 words of font info for 34 fonts, out of 1200000 for 2000
+ 645 hyphenation exceptions out of 8191
+ 25i,16n,19p,239b,380s stack positions out of 5000i,500n,6000p,200000b,5000s
+</opt/loc
+al/share/texmf-dist/fonts/type1/bluesky/cm/cmbx10.pfb></opt/local/share/texmf-d
+ist/fonts/type1/bluesky/cm/cmbx12.pfb></opt/local/share/texmf-dist/fonts/type1/
+bluesky/cm/cmbx8.pfb></opt/local/share/texmf-dist/fonts/type1/bluesky/cm/cmbx9.
+pfb></opt/local/share/texmf-dist/fonts/type1/bluesky/cm/cmmi10.pfb></opt/local/
+share/texmf-dist/fonts/type1/bluesky/cm/cmr10.pfb></opt/local/share/texmf-dist/
+fonts/type1/bluesky/cm/cmr12.pfb></opt/local/share/texmf-dist/fonts/type1/blues
+ky/cm/cmr17.pfb></opt/local/share/texmf-dist/fonts/type1/bluesky/cm/cmr6.pfb></
+opt/local/share/texmf-dist/fonts/type1/bluesky/cm/cmr7.pfb></opt/local/share/te
+xmf-dist/fonts/type1/bluesky/cm/cmr8.pfb></opt/local/share/texmf-dist/fonts/typ
+e1/bluesky/cm/cmr9.pfb></opt/local/share/texmf-dist/fonts/type1/bluesky/cm/cmsy
+10.pfb></opt/local/share/texmf-dist/fonts/type1/bluesky/cm/cmti10.pfb></opt/loc
+al/share/texmf-dist/fonts/type1/bluesky/cm/cmtt10.pfb></opt/local/share/texmf-d
+ist/fonts/type1/bluesky/cm/cmtt8.pfb>
+Output written on scheduling.pdf (12 pages, 153691 bytes).
+PDF statistics:
+ 105 PDF objects out of 1000 (max. 8388607)
+ 0 named destinations out of 1000 (max. 131072)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+

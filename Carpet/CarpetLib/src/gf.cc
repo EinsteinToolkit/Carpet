@@ -41,23 +41,23 @@ gf<T>::~gf ()
 
 // Access to the data
 template<typename T>
-const data<T>* gf<T>::operator() (int tl, int rl, int c, int ml) const
+const data<T>* gf<T>::operator() (int tl, int rl, int lc, int ml) const
 {
   assert (rl>=0 and rl<h.reflevels());
-  assert (c>=0 and c<h.components(rl));
+  assert (lc>=0 and lc<h.local_components(rl));
   assert (ml>=0 and ml<h.mglevels());
   assert (tl>=0 and tl<timelevels(ml, rl));
-  return (const data<T>*)storage.AT(ml).AT(rl).AT(c).AT(tl);
+  return (const data<T>*)storage.AT(ml).AT(rl).AT(lc).AT(tl);
 }
 
 template<typename T>
-data<T>* gf<T>::operator() (int tl, int rl, int c, int ml)
+data<T>* gf<T>::operator() (int tl, int rl, int lc, int ml)
 {
   assert (rl>=0 and rl<h.reflevels());
-  assert (c>=0 and c<h.components(rl));
+  assert (lc>=0 and lc<h.local_components(rl));
   assert (ml>=0 and ml<h.mglevels());
   assert (tl>=0 and tl<timelevels(ml, rl));
-  return (data<T>*)storage.AT(ml).AT(rl).AT(c).AT(tl);
+  return (data<T>*)storage.AT(ml).AT(rl).AT(lc).AT(tl);
 }
 
 

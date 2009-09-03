@@ -1,5 +1,4 @@
-
-#include "variables.hh"
+#include <variables.hh>
 
 
 
@@ -51,6 +50,7 @@ namespace Carpet {
   int mc_grouptype;
   int map;
   int component;
+  int local_component;
   
   // Current refinement factors
   int timereflevelfact;
@@ -90,9 +90,13 @@ namespace Carpet {
   bool do_allow_past_timelevels;
   
   // Is prolongation enabled?
+  // (This flag disables prolongation during MoL integration
+  // substeps.)
   bool do_prolongate;
   
   // Is tapering enabled?
+  // (This flag disables prolongation while the current refinement
+  // level is not aligned with the parent.)
   bool do_taper;
   
   // Should we warn about groups with insufficiently many time levels?
@@ -106,6 +110,7 @@ namespace Carpet {
   vector<gh*> vhh;              // [map]
   vector<dh*> vdd;              // [map]
   vector<th*> vtt;              // [map]
+  int regridding_epoch;
 
   // Data for the groups
   vector<groupdesc> groupdata;  // [group]

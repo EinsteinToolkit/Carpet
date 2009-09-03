@@ -1,18 +1,14 @@
 #ifndef DATA_REGION_HH
 #define DATA_REGION_HH
 
-// force HDF5 1.8.x installations to use the new API
-#ifdef H5Dcreate_vers
-#undef H5Dcreate_vers
-#endif
-#define H5Dcreate_vers 2
+#include <string>
 
 #include <hdf5.h>
 
 #include "bbox.hh"
 #include "defs.hh"
 
-#include "tensor_component.hh"
+#include "physical_quantity.hh"
 
 
 
@@ -20,15 +16,16 @@ namespace CarpetIOF5 {
   
   namespace F5 {
     
+    using std::string;
+    
     class data_region_t {
       
-      tensor_component_t & m_tensor_component;
+      physical_quantity_t & m_physical_quantity;
       
       bbox<int, dim> const m_region;
+      string const m_name;
       
-      hid_t m_properties;
-      hid_t m_dataset;
-      hid_t m_dataspace;
+      hid_t m_hdf5_data_region;
       
       data_region_t ();
       data_region_t (data_region_t const &);
@@ -36,22 +33,22 @@ namespace CarpetIOF5 {
       
     public:
       
-      data_region_t (tensor_component_t & tensor_component,
+      data_region_t (physical_quantity_t & physical_quantity,
                      bbox<int, dim> const & region);
       
       virtual
       ~ data_region_t ();
       
-      static string
-      name_from_region (bbox<int, dim> const & region);
-      
-      tensor_component_t &
-      get_tensor_component ()
+      physical_quantity_t &
+      get_physical_quantity ()
         const;
       
-      void
-      write (void const * data,
-             int cactus_datatype)
+      bbox<int, dim> const &
+      get_region ()
+        const;
+      
+      hid_t
+      get_hdf5_data_region ()
         const;
       
       virtual bool

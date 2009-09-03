@@ -25,7 +25,9 @@ namespace CarpetInterp2 {
   int const ipoison = -1234567890;
   CCTK_REAL const poison = -1.0e+12;
   
+  int get_poison (int const &) CCTK_ATTRIBUTE_CONST;
   int get_poison (int const &) { return ipoison; }
+  CCTK_REAL get_poison (CCTK_REAL const &) CCTK_ATTRIBUTE_CONST;
   CCTK_REAL get_poison (CCTK_REAL const &) { return poison; }
   
   template <typename T>
@@ -72,7 +74,9 @@ namespace CarpetInterp2 {
       {                                                                 \
         sizeof s.name / sizeof(type), /* count elements */              \
           (char*)&s.name - (char*)&s, /* offsetof doesn't work (why?) */ \
-          dist::datatype<type>()      /* find MPI datatype */           \
+          dist::mpi_datatype<type>(), /* find MPI datatype */           \
+          STRINGIFY(name), /* field name */                             \
+          STRINGIFY(type), /* type name */                              \
           }
       dist::mpi_struct_descr_t const descr[] = {
         ENTRY(int, mrc),
@@ -83,11 +87,12 @@ namespace CarpetInterp2 {
 #endif
         ENTRY(int, ind3d),
         ENTRY(CCTK_REAL, offset),
-        {1, sizeof(s), MPI_UB}
+        {1, sizeof(s), MPI_UB, "MPI_UB", "MPI_UB"}
       };
 #undef ENTRY
-      dist::create_mpi_datatype
-        (sizeof(descr) / sizeof(descr[0]), descr, newtype);
+      newtype =
+        dist::create_mpi_datatype (sizeof descr / sizeof descr[0], descr,
+                                   "fasterp_iloc_t::mpi_datatype", sizeof s);
       initialised = true;
     }
     return newtype;
@@ -240,6 +245,7 @@ namespace CarpetInterp2 {
       // round is not available with PGI compilers
       // CCTK_REAL const rx = round(x);
       CCTK_REAL const rx = floor(x+0.5);
+#warning "TODO: make eps a relative error my taking max(abs(xmin),abs(xmax)) into account"
       if (abs(x - rx) < eps) {
         // The interpolation point coincides with a grid point; no
         // interpolation is necessary (this is a special case)
@@ -478,7 +484,8 @@ namespace CarpetInterp2 {
   fasterp_setup_t (cGH const * restrict const cctkGH,
                    fasterp_glocs_t const & locations,
                    int const order_)
-    : order (order_)
+    : order (order_),
+      regridding_epoch (Carpet::regridding_epoch)
   {
     // Some global properties
     int const npoints = locations.size();
@@ -1026,6 +1033,12 @@ namespace CarpetInterp2 {
   {
     DECLARE_CCTK_PARAMETERS;
     
+    // Check regridding epoch
+    if (regridding_epoch != Carpet::regridding_epoch) {
+      CCTK_WARN (CCTK_WARN_ALERT,
+                 "The Carpet grid structure was changed since this fasterp_setup was created");
+    }
+    
     // Desired time level
     int const tl = 0;           // current time
     
@@ -1072,19 +1085,19 @@ namespace CarpetInterp2 {
       
       MPI_Irecv (& recv_points.AT(recv_proc.offset * nvars),
                  recv_proc.npoints * nvars,
-                 dist::datatype<CCTK_REAL>(), recv_proc.p, mpi_tag,
+                 dist::mpi_datatype<CCTK_REAL>(), recv_proc.p, mpi_tag,
                  comm_world, & recv_reqs.AT(pp));
 #ifdef CARPET_DEBUG
       MPI_Irecv (& recv_pn.AT(recv_proc.offset),
                  recv_proc.npoints * 2,
-                 dist::datatype<int>(), recv_proc.p, mpi_tag,
+                 dist::mpi_datatype<int>(), recv_proc.p, mpi_tag,
                  comm_world, & recv_reqs_pn.AT(pp));
 #endif
     }
     
     // Interpolate data and post Isends
     if (verbose) CCTK_INFO ("Interpolating and posting MPI_Isends");
-    // TODO: Use one arrays per processor?
+    // TODO: Use one array per processor?
     vector<CCTK_REAL> send_points (send_descr.npoints * nvars);
     fill_with_poison (send_points);
     vector<MPI_Request> send_reqs (send_descr.procs.size());
@@ -1107,6 +1120,8 @@ namespace CarpetInterp2 {
         int const rl = send_comp.mrc.rl;
         int const c  = send_comp.mrc.c;
         
+        int const lc = Carpet::vhh.AT(m)->get_local_component(rl,c);
+        
         // Get pointers to 3D data
         vector<CCTK_REAL const *> varptrs (nvars);
         for (size_t v=0; v<nvars; ++v) {
@@ -1117,11 +1132,13 @@ namespace CarpetInterp2 {
           varptrs.AT(v) =
             (CCTK_REAL const *)
             (* Carpet::arrdata.AT(gi).AT(m).data.AT(vi))
-            (tl, rl, c, Carpet::mglevel)->storage();
+            (tl, rl, lc, Carpet::mglevel)->storage();
           assert (varptrs.AT(v));
         }
         
-#pragma omp parallel for
+        // TODO: This loops seems unbalanced.  Maybe the different
+        // interpolations have different costs.
+#pragma omp parallel for schedule (dynamic, 1000)
         for (int n=0; n<int(send_comp.locs.size()); ++n) {
           size_t const ind = (send_comp.offset + n) * nvars;
           send_comp.locs.AT(n).interpolate
@@ -1161,12 +1178,12 @@ namespace CarpetInterp2 {
       
       MPI_Isend (& send_points.AT(send_proc.offset * nvars),
                  send_proc.npoints * nvars,
-                 dist::datatype<CCTK_REAL>(), send_proc.p, mpi_tag,
+                 dist::mpi_datatype<CCTK_REAL>(), send_proc.p, mpi_tag,
                  comm_world, & send_reqs.AT(pp));
 #ifdef CARPET_DEBUG
       MPI_Isend (& send_pn.AT(send_proc.offset),
                  send_proc.npoints * 2,
-                 dist::datatype<int>(), send_proc.p, mpi_tag,
+                 dist::mpi_datatype<int>(), send_proc.p, mpi_tag,
                  comm_world, & send_reqs_pn.AT(pp));
 #endif
     } // for pp

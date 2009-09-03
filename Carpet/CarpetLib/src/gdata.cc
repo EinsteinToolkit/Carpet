@@ -26,34 +26,25 @@ using namespace CarpetLib;
 
 
 
-// Hand out the next MPI tag
-static int nexttag ()
-{
-  DECLARE_CCTK_PARAMETERS;
-
-  int const min_tag = 100;
-  static int last = 0;
-  ++last;
-  if (last >= 30000) last = 0;
-  return min_tag + last;
-}
+list<gdata*> gdata::allgdata;
 
 
 
 // Constructors
 gdata::gdata (const int varindex_,
               const centering cent_,
-              const operator_type transport_operator_,
-              const int tag_)
+              const operator_type transport_operator_)
   : _storage(NULL),
     varindex(varindex_),
     cent(cent_),
     transport_operator(transport_operator_),
     _has_storage(false),
-    comm_active(false),
-    tag(tag_ >= 0 ? tag_ : nexttag())
+    comm_active(false)
 {
   DECLARE_CCTK_PARAMETERS;
+  
+  allgdatai = allgdata.insert(allgdata.end(), this);
+  
   if (barriers) {
     MPI_Barrier (dist::comm());
   }
@@ -63,6 +54,9 @@ gdata::gdata (const int varindex_,
 gdata::~gdata ()
 {
   DECLARE_CCTK_PARAMETERS;
+  
+  allgdata.erase(allgdatai);
+  
   if (barriers) {
     MPI_Barrier (dist::comm());
   }
@@ -76,14 +70,17 @@ void
 gdata::
 copy_from (comm_state & state,
            gdata const * const src,
-           ibbox const & box)
+           ibbox const & box,
+           int const dstproc,
+           int const srcproc)
 {
-  vector <gdata const *> srcs (1, src);
+  vector <gdata const *> const srcs (1, src);
   CCTK_REAL const time = 0.0;
-  vector <CCTK_REAL> times (1, time);
+  vector <CCTK_REAL> const times (1, time);
   transfer_from (state,
                  srcs, times,
                  box, box,
+                 dstproc, srcproc,
                  time, 0, 0);
 }
 
@@ -96,37 +93,52 @@ transfer_from (comm_state & state,
                vector<CCTK_REAL>     const & times,
                ibbox const & dstbox,
                ibbox const & srcbox,
+               int const dstproc,
+               int const srcproc,
                CCTK_REAL const time,
                int const order_space,
                int const order_time)
 {
-  assert (has_storage());
-  assert (not dstbox.empty());
-  assert (all(dstbox.lower() >= extent().lower()));
-  assert (all(dstbox.upper() <= extent().upper()));
-  assert (all(dstbox.stride() == extent().stride()));
-  assert (all((dstbox.lower() - extent().lower()) % dstbox.stride() == 0));
-  
-  assert (not srcbox.empty());
-  assert (srcs.size() == times.size() and srcs.size() > 0);
-  for (int t=0; t<(int)srcs.size(); ++t) {
-    assert (srcs.AT(t)->has_storage());
-    assert (all(srcbox.lower() >= srcs.AT(t)->extent().lower()));
-    assert (all(srcbox.upper() <= srcs.AT(t)->extent().upper()));
-  }
-  gdata const * const src = srcs.AT(0);
-  
-  assert (transport_operator != op_error);
-  if (transport_operator == op_none) return;
-  
+  bool const is_dst = dist::rank() == dstproc;
+  bool const is_src = dist::rank() == srcproc;
   // Return early if this communication does not concern us
-  if (dist::rank() != proc() and dist::rank() != src->proc()) return;
+  assert (is_dst or is_src);    // why should we be here?
+  if (not is_dst and not is_src) return;
+
+  if (is_dst) {
+    assert (proc() == dstproc);
+    assert (has_storage());
+    assert (not dstbox.empty());
+    assert (all(dstbox.lower() >= extent().lower()));
+    assert (all(dstbox.upper() <= extent().upper()));
+    assert (all(dstbox.stride() == extent().stride()));
+    assert (all((dstbox.lower() - extent().lower()) % dstbox.stride() == 0));
+  }
+  
+  if (is_src) {
+    assert (not srcbox.empty());
+    assert (srcs.size() == times.size() and srcs.size() > 0);
+    for (int t=0; t<(int)srcs.size(); ++t) {
+      assert (srcs.AT(t)->proc() == srcproc);
+      assert (srcs.AT(t)->has_storage());
+      assert (all(srcbox.lower() >= srcs.AT(t)->extent().lower()));
+      assert (all(srcbox.upper() <= srcs.AT(t)->extent().upper()));
+    }
+  }
+  gdata const * const src = is_src ? srcs.AT(0) : NULL;
+  
+  operator_type const my_transport_operator =
+    is_dst ? transport_operator : src->transport_operator;
+  assert (my_transport_operator != op_error);
+  assert (my_transport_operator != op_none); // why should we be here?
+  if (my_transport_operator == op_none) return;
   
   // Interpolate either on the source or on the destination processor,
   // depending on whether this increases or reduces the amount of data
   int timelevel0, ntimelevels;
-  find_source_timelevel (times, time, order_time, timelevel0, ntimelevels);
-  assert (int (srcs.size()) >= ntimelevels);
+  find_source_timelevel
+    (times, time, order_time, my_transport_operator, timelevel0, ntimelevels);
+  if (is_src) assert (int (srcs.size()) >= ntimelevels);
   int const dstpoints = dstbox.size();
   int const srcpoints = srcbox.size() * ntimelevels;
   bool const interp_on_src = dstpoints <= srcpoints;
@@ -136,46 +148,45 @@ transfer_from (comm_state & state,
     
   case state_get_buffer_sizes:
     // don't count processor-local copies
-    if (proc() != src->proc()) {
-      // if this is a destination processor: advance its recv buffer
-      // size
-      if (proc() == dist::rank()) {
-        state.reserve_recv_space (c_datatype(), src->proc(), npoints);
+    if (not (is_dst and is_src)) {
+      if (is_dst) {
+        // increment the recv buffer size
+        state.reserve_recv_space (c_datatype(), srcproc, npoints);
       }
-      // if this is a source processor: increment its send buffer size
-      if (src->proc() == dist::rank()) {
-        state.reserve_send_space (c_datatype(), proc(), npoints);
+      if (is_src) {
+        // increment the send buffer size
+        state.reserve_send_space (src->c_datatype(), dstproc, npoints);
       }
     }
     break;
     
   case state_fill_send_buffers:
-    // if this is a source processor: copy its data into the send
-    // buffer
-    if (proc() != src->proc()) {
-      if (src->proc() == dist::rank()) {
+    if (not (is_dst and is_src)) {
+      if (is_src) {
+        // copy the data into the send buffer
         if (interp_on_src) {
-          size_t const sendbufsize = c_datatype_size() * dstbox.size();
+          size_t const sendbufsize = src->c_datatype_size() * dstbox.size();
           void * const sendbuf =
-            state.send_buffer (c_datatype(), proc(), dstbox.size());
+            state.send_buffer (src->c_datatype(), dstproc, dstbox.size());
           gdata * const buf =
-            make_typed (varindex, cent, transport_operator, tag);
-          buf->allocate (dstbox, src->proc(), sendbuf, sendbufsize);
+            src->make_typed (src->varindex, src->cent, src->transport_operator);
+          buf->allocate (dstbox, srcproc, sendbuf, sendbufsize);
           buf->transfer_from_innerloop
             (srcs, times, dstbox, time, order_space, order_time);
           delete buf;
-          state.commit_send_space (c_datatype(), proc(), dstbox.size());
+          state.commit_send_space (src->c_datatype(), dstproc, dstbox.size());
         } else {
           for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
-            size_t const sendbufsize = c_datatype_size() * srcbox.size();
+            size_t const sendbufsize = src->c_datatype_size() * srcbox.size();
             void * const sendbuf =
-              state.send_buffer (c_datatype(), proc(), srcbox.size());
+              state.send_buffer (src->c_datatype(), dstproc, srcbox.size());
             gdata * const buf =
-              make_typed (varindex, cent, transport_operator, tag);
-            buf->allocate (srcbox, src->proc(), sendbuf, sendbufsize);
+              src->make_typed (src->varindex, src->cent,
+                               src->transport_operator);
+            buf->allocate (srcbox, srcproc, sendbuf, sendbufsize);
             buf->copy_from_innerloop (srcs.AT(tl), srcbox);
             delete buf;
-            state.commit_send_space (c_datatype(), proc(), srcbox.size());
+            state.commit_send_space (src->c_datatype(), dstproc, srcbox.size());
           }
         }
       }
@@ -184,45 +195,42 @@ transfer_from (comm_state & state,
     
   case state_do_some_work:
     // handle the processor-local case
-    if (proc() == src->proc()) {
-      if (proc() == dist::rank()) {
-        transfer_from_innerloop
-          (srcs, times, dstbox, time, order_space, order_time);
-      }
+    if (is_dst and is_src) {
+      transfer_from_innerloop
+        (srcs, times, dstbox, time, order_space, order_time);
     }
     break;
     
   case state_empty_recv_buffers:
-    // if this is a destination processor: copy it from the recv
-    // buffer
-    if (proc() != src->proc()) {
-      if (proc() == dist::rank()) {
+    if (not (is_dst and is_src)) {
+      if (is_dst) {
+        // copy from the recv buffer
         if (interp_on_src) {
           size_t const recvbufsize = c_datatype_size() * dstbox.size();
           void * const recvbuf =
-            state.recv_buffer (c_datatype(), src->proc(), dstbox.size());
-          gdata * const buf =
-            make_typed (varindex, cent, transport_operator, tag);
-          buf->allocate (dstbox, proc(), recvbuf, recvbufsize);
-          state.commit_recv_space (c_datatype(), src->proc(), dstbox.size());
+            state.recv_buffer (c_datatype(), srcproc, dstbox.size());
+          gdata * const buf = make_typed (varindex, cent, transport_operator);
+          buf->allocate (dstbox, dstproc, recvbuf, recvbufsize);
+          state.commit_recv_space (c_datatype(), srcproc, dstbox.size());
           copy_from_innerloop (buf, dstbox);
           delete buf;
         } else {
-          gdata const * const null = 0;
-          vector <gdata const *> bufs (timelevel0 + ntimelevels, null);
-          for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
+          gdata const * const null = NULL;
+          vector <gdata const *> bufs (ntimelevels, null);
+          vector <CCTK_REAL> timebuf (ntimelevels);
+          for (int tl = 0; tl < ntimelevels; ++ tl) {
             size_t const recvbufsize = c_datatype_size() * srcbox.size();
             void * const recvbuf =
-              state.recv_buffer (c_datatype(), src->proc(), srcbox.size());
-            gdata * const buf =
-              make_typed (varindex, cent, transport_operator, tag);
-            buf->allocate (srcbox, proc(), recvbuf, recvbufsize);
-            state.commit_recv_space (c_datatype(), src->proc(), srcbox.size());
+              state.recv_buffer (c_datatype(), srcproc, srcbox.size());
+            gdata * const buf = make_typed (varindex, cent, transport_operator);
+            buf->allocate (srcbox, dstproc, recvbuf, recvbufsize);
+            state.commit_recv_space (c_datatype(), srcproc, srcbox.size());
             bufs.AT(tl) = buf;
+            timebuf.AT(tl) = times.AT(timelevel0 + tl);
           }
           transfer_from_innerloop
-            (bufs, times, dstbox, time, order_space, order_time);
-          for (int tl = timelevel0; tl < timelevel0 + ntimelevels; ++ tl) {
+            (bufs, timebuf, dstbox, time, order_space, order_time);
+          for (int tl = 0; tl < ntimelevels; ++ tl) {
             delete bufs.AT(tl);
           }
         }
@@ -231,7 +239,7 @@ transfer_from (comm_state & state,
     break;
     
   default:
-    assert (0);
+    assert (0); abort();
   }
 }
 
@@ -242,9 +250,9 @@ gdata::
 find_source_timelevel (vector <CCTK_REAL> const & times,
                        CCTK_REAL const time,
                        int const order_time,
+                       operator_type const transport_operator,
                        int & timelevel0,
                        int & ntimelevels)
-  const
 {
   // Ensure that the times are consistent
   assert (times.size() > 0);
@@ -253,7 +261,8 @@ find_source_timelevel (vector <CCTK_REAL> const & times,
   CCTK_REAL const eps = 1.0e-12;
   CCTK_REAL const min_time = * min_element (times.begin(), times.end());
   CCTK_REAL const max_time = * max_element (times.begin(), times.end());
-  CCTK_REAL const some_time = abs (min_time) + abs (max_time);
+  // TODO: Use a real delta-time from somewhere instead of 1.0
+  CCTK_REAL const some_time = abs (min_time) + abs (max_time) + 1.0;
   if (transport_operator != op_copy) {
     if (time < min_time - eps * some_time or
         time > max_time + eps * some_time)
@@ -302,4 +311,19 @@ find_source_timelevel (vector <CCTK_REAL> const & times,
   
   assert (timelevel0 >= 0 and timelevel0 < (int)times.size());
   assert (ntimelevels > 0);
+}
+
+
+
+size_t
+gdata::
+allmemory ()
+{
+  size_t mem = memoryof(allgdata);
+  for (list<gdata*>::const_iterator
+         gdatai = allgdata.begin(); gdatai != allgdata.end(); ++ gdatai)
+  {
+    mem += memoryof(**gdatai);
+  }
+  return mem;
 }

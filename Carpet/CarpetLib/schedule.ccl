@@ -1,10 +1,10 @@
 # Schedule definitions for thorn CarpetLib
 
-SCHEDULE CarpetLib_setmemlimit AT WRAGH
+SCHEDULE CarpetLib_registercycleclock AT startup BEFORE Driver_Startup
 {
   LANG: C
   OPTIONS: global
-} "Set operating system memory limit"
+} "Register cycle based timer"
 
 SCHEDULE CarpetLib_printtimestats AT analysis
 {

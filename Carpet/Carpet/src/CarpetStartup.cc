@@ -1,12 +1,12 @@
 #include <cassert>
 #include <cstdlib>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
 
-#include "carpet.hh"
+#include <dist.hh>
 
-#include "dist.hh"
+#include <carpet.hh>
 
 
 
@@ -19,8 +19,11 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     comm_universe = MPI_COMM_WORLD;
+    // cerr << "QQQ: CarpetMultiModelStartup[1]" << endl;
     SplitUniverse (comm_universe, model, comm_world, true);
+    // cerr << "QQQ: CarpetMultiModelStartup[2]" << endl;
     dist::pseudoinit (comm_world);
+    // cerr << "QQQ: CarpetMultiModelStartup[3]" << endl;
     
     return 0;
   }
@@ -46,6 +49,7 @@ namespace Carpet {
     CCTK_OverloadEnableGroupComm (EnableGroupComm);
     CCTK_OverloadDisableGroupComm (DisableGroupComm);
     CCTK_OverloadBarrier (Barrier);
+    CCTK_OverloadNamedBarrier (NamedBarrier);
     CCTK_OverloadExit (Exit);
     CCTK_OverloadAbort (Abort);
     CCTK_OverloadMyProc (MyProc);

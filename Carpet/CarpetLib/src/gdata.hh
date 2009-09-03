@@ -24,14 +24,19 @@ using namespace std;
 
 // A generic data storage without type information
 class gdata {
+  
+  static list<gdata*> allgdata;
+  list<gdata*>::iterator allgdatai;
 
 protected:                      // should be readonly
 
   // Fields
   void * _storage;              // A copy of the storage pointer
-  
+
+public:
   const int varindex;           // Cactus variable index, or -1
 
+protected:
   centering cent;
   operator_type transport_operator;
   
@@ -47,8 +52,6 @@ protected:                      // should be readonly
   bool comm_active;             // a communication is going on
   MPI_Request request;          // outstanding MPI request
   
-  int tag;                      // MPI tag for this object
-  
 private:
   // Forbid copying and passing by value
   gdata (gdata const &);
@@ -59,8 +62,7 @@ public:
   // Constructors
   gdata (const int varindex,
          const centering cent = error_centered,
-         const operator_type transport_operator = op_error,
-         const int tag = -1);
+         const operator_type transport_operator = op_error);
 
   // Destructors
   virtual ~gdata ();
@@ -69,8 +71,7 @@ public:
   virtual gdata*
   make_typed (const int varindex,
               const centering cent = error_centered,
-              const operator_type transport_operator = op_error,
-              const int tag = -1) const = 0;
+              const operator_type transport_operator = op_error) const = 0;
   
   // Storage management
   virtual void allocate (const ibbox& extent, const int proc,
@@ -148,7 +149,9 @@ public:
   void
   copy_from (comm_state & state,
              gdata const * src,
-             ibbox const & box);
+             ibbox const & box,
+             int dstproc,
+             int srcproc);
   
   void
   transfer_from (comm_state & state,
@@ -156,18 +159,21 @@ public:
                  vector<CCTK_REAL>     const & times,
                  ibbox const & dstbox,
                  ibbox const & srcbox,
+                 int dstproc,
+                 int srcproc,
                  CCTK_REAL time,
                  int order_space,
                  int order_time);
   
 protected:
+  static
   void
   find_source_timelevel (vector <CCTK_REAL> const & times,
                          CCTK_REAL time,
                          int order_time,
+                         operator_type transport_operator,
                          int & timelevel0,
-                         int & ntimelevels)
-    const;
+                         int & ntimelevels);
   
 private:
   virtual
@@ -186,7 +192,24 @@ private:
                            int order_time)
     = 0;
   
+public:
+  virtual size_t memory () const CCTK_ATTRIBUTE_PURE = 0;
+  static size_t allmemory () CCTK_ATTRIBUTE_PURE;
+  virtual ostream& output (ostream& os) const = 0;
 };
+
+
+
+inline size_t memoryof (gdata const & d) CCTK_ATTRIBUTE_PURE;
+inline size_t memoryof (gdata const & d)
+{
+  return d.memory ();
+}
+
+inline ostream& operator<< (ostream& os, const gdata& d)
+{
+  return d.output(os);
+}
 
 
 

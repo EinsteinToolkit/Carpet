@@ -28,6 +28,9 @@ ostream& operator<< (ostream& os, const ggf& f);
 
 // A generic grid function without type information
 class ggf {
+  
+  static list<ggf*> allggf;
+  list<ggf*>::iterator allggfi;
 
   // Types
   typedef list<ibbox>    iblist;
@@ -38,7 +41,7 @@ class ggf {
   
   typedef gdata*        tdata;  // data ...
   typedef vector<tdata> fdata;  // ... for each time level
-  typedef vector<fdata> cdata;  // ... for each component
+  typedef vector<fdata> cdata;  // ... for each local component
   typedef vector<cdata> rdata;  // ... for each refinement level
   typedef vector<rdata> mdata;  // ... for each multigrid level
   
@@ -53,6 +56,7 @@ public:				// should be readonly
   
   const gh &h;                  // grid hierarchy
   dh &d;			// data hierarchy
+  dh::ggf_handle dh_handle;
 
 protected:
   vector<vector<int> > timelevels_; // time levels [ml][rl]
@@ -80,10 +84,10 @@ public:
   virtual ~ggf ();
 
   // Comparison
-  bool operator== (const ggf& f) const;
+  bool operator== (const ggf& f) const CCTK_ATTRIBUTE_PURE;
   
   // Querying
-  int timelevels (int const ml, int const rl) const
+  int timelevels (int const ml, int const rl) const CCTK_ATTRIBUTE_PURE
   {
     return timelevels_.AT(ml).AT(rl);
   }
@@ -141,9 +145,7 @@ public:
   
   // Helpers
   
-protected:
-  
-  virtual gdata* typed_data (int tl, int rl, int c, int ml) = 0;
+  virtual gdata* typed_data (int tl, int rl, int lc, int ml) const = 0;
   
   
   
@@ -181,13 +183,14 @@ protected:
 public:
   
   // Access to the data
-  virtual const gdata* operator() (int tl, int rl, int c, int ml) const = 0;
-  virtual gdata* operator() (int tl, int rl, int c, int ml) = 0;
+  virtual const gdata* operator() (int tl, int rl, int lc, int ml) const CCTK_ATTRIBUTE_PURE = 0;
+  virtual gdata* operator() (int tl, int rl, int lc, int ml) CCTK_ATTRIBUTE_PURE = 0;
   
   
   
   // Output
-  virtual size_t memory () const;
+  virtual size_t memory () const CCTK_ATTRIBUTE_PURE = 0;
+  static size_t allmemory () CCTK_ATTRIBUTE_PURE;
   virtual ostream& output (ostream& os) const = 0;
 
 private:
@@ -199,6 +202,7 @@ private:
 
 
 
+inline size_t memoryof (ggf const & f) CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (ggf const & f)
 {
   return f.memory ();

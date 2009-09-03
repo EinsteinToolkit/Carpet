@@ -2,7 +2,7 @@
 #define COMMSTATE_HH
 
 #include <cstdlib>
-#include <queue>
+#include <iostream>
 #include <vector>
 
 #include <mpi.h>
@@ -29,115 +29,132 @@ enum astate {
   state_done
 };
 
+char const * tostring (astate const & thestate);
+
+inline ostream& operator<< (ostream& os, astate const & thestate)
+{
+  return os << tostring(thestate);
+}
+
+
+
 struct comm_state {
   astate thestate;
-
+  
   comm_state ();
   void step ();
-  bool done ();
+  bool done () const;
   ~comm_state ();
-
+  
 private:
   // Forbid copying and passing by value
   comm_state (comm_state const &);
   comm_state& operator= (comm_state const &);
-
-public:
-
-  //////////////////////////////////////////////////////////////////////////
-  // the following members are used for collective communications
-  //////////////////////////////////////////////////////////////////////////
-
-public:
-  // structure describing a per-processor buffer for collective communications
+  
+  
+  
+  // structure describing a per-processor buffer
   struct procbufdesc {
-    // the allocated communication buffers
+    // allocated communication buffers
     vector<char> sendbufbase;
     vector<char> recvbufbase;
-
-    // the sizes of communication buffers (in elements of type <datatype>)
+    
+    // sizes of the communication buffers (in elements of type <datatype>)
     size_t sendbufsize;
     size_t recvbufsize;
-
+    
     // pointers to step through the communication buffers
     // (these get advanced by the routines which fill/empty the buffers)
     char* sendbuf;
     char* recvbuf;
-
+    
+    bool did_post_send;
+    bool did_post_recv;
+    
     // constructor for an instance of this structure
-    procbufdesc() : sendbufsize(0), recvbufsize(0),
-                    sendbuf(NULL), recvbuf(NULL)
+    procbufdesc() :
+      sendbufsize(0), recvbufsize(0),
+      sendbuf(NULL), recvbuf(NULL),
+      did_post_send(false), did_post_recv(false)
     {
     }
   };
-
+  
+  
+  
   // structure describing a collective communications buffer for a C datatype
   struct typebufdesc {
     // flag indicating whether this buffer is in use
     bool in_use;
-
+    
+    // the MPI datatype
+    MPI_Datatype mpi_datatype;
+    
     // the size of this datatype (in bytes)
     int datatypesize;
-
-    // the corresponding MPI datatype
-    MPI_Datatype mpi_datatype;
-
+    
     // per-processor buffers
-    vector<procbufdesc> procbufs;      // [dist::size()]
-
+    vector<procbufdesc> procbufs; // [dist::size()]
+    
     // constructor for an instance of this structure
-    typebufdesc() : in_use(false), datatypesize(0),
-                    mpi_datatype(MPI_DATATYPE_NULL)
+    typebufdesc() :
+      in_use(false),
+      mpi_datatype(MPI_DATATYPE_NULL), datatypesize(0)
     {
     }
   };
-
-  // list of datatype buffers
-  vector<typebufdesc> typebufs;        // [dist::c_ndatatypes()]
-
+  
+  
+  
+  // datatype buffers
+  vector<typebufdesc> typebufs; // [type]
+  
+  
+  
+  // outstanding requests for posted send/recv communications
+  vector<MPI_Request> srequests;
+  vector<MPI_Request> rrequests;
+  
+  static inline
+  MPI_Request & push_back (vector<MPI_Request> & reqs)
+  {
+    reqs.push_back (MPI_REQUEST_NULL);
+    return reqs.back();
+  }
+  
+  
+  
+public:
+  
   void
-  reserve_send_space (unsigned int type,
+  reserve_send_space (unsigned type,
                       int proc,
                       int npoints);
-
+  
   void
-  reserve_recv_space (unsigned int type,
+  reserve_recv_space (unsigned type,
                       int proc,
                       int npoints);
-
+  
   void *
-  send_buffer (unsigned int type,
+  send_buffer (unsigned type,
                int proc,
                int npoints);
-
+  
   void *
-  recv_buffer (unsigned int type,
+  recv_buffer (unsigned type,
                int proc,
                int npoints);
-
+  
   void
-  commit_send_space (unsigned int type,
+  commit_send_space (unsigned type,
                      int proc,
                      int npoints);
-
+  
   void
-  commit_recv_space (unsigned int type,
+  commit_recv_space (unsigned type,
                      int proc,
                      int npoints);
-
-private:
-  // lists of outstanding requests for posted send/recv communications
-  vector<MPI_Request> srequests;       // [dist::size() * dist::c_ndatatypes()]
-  vector<MPI_Request> rrequests;       // [dist::size() * dist::c_ndatatypes()]
-
-  // number of posted and already completed receive communications
-  int num_posted_recvs;
-  int num_completed_recvs;
-
-  // wait for completion of posted collective buffer sends/receives
-  bool AllPostedCommunicationsFinished();
 };
-
-
 
 #endif  // COMMSTATE_HH

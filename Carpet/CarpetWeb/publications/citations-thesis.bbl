@@ -1,0 +1,101 @@
+\begin{thebibliography}{12}
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+\expandafter\ifx\csname bibnamefont\endcsname\relax
+  \def\bibnamefont#1{#1}\fi
+\expandafter\ifx\csname bibfnamefont\endcsname\relax
+  \def\bibfnamefont#1{#1}\fi
+\expandafter\ifx\csname citenamefont\endcsname\relax
+  \def\citenamefont#1{#1}\fi
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+\providecommand{\bibinfo}[2]{#2}
+\providecommand{\eprint}[2][]{\url{#2}}
+
+\bibitem[{\citenamefont{Bentivegna}(2008)}]{carpet-bentivegna2008b}
+\bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Bentivegna}},
+  \emph{\bibinfo{title}{Ringing in unison: exploring black hole coalescence
+  with quasinormal modes}}, Ph.D. thesis, \bibinfo{school}{Pennsylvania State
+  University} (\bibinfo{year}{2008}),
+  \urlprefix\url{http://etda.libraries.psu.edu/
+  theses/approved/WorldWideIndex/ETD-2570/index.html}.
+
+\bibitem[{\citenamefont{Jasiulek}(2008)}]{carpet-jasiulek2008a}
+\bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Jasiulek}},
+  \emph{\bibinfo{title}{Spin measures on isolated and dynamical horizons in
+  numerical relativity}}, Master's thesis,
+  \bibinfo{school}{Humboldt-Universit{\"a}t zu Berlin} (\bibinfo{year}{2008}).
+
+\bibitem[{\citenamefont{Dorband}(2007)}]{carpet-dorband2007a}
+\bibinfo{author}{\bibfnamefont{E.~N.} \bibnamefont{Dorband}},
+  \emph{\bibinfo{title}{Computing and analyzing gravitational radiation in
+  black hole simulations using a new multi-block approach to numerical
+  relativity}}, Ph.D. thesis, \bibinfo{school}{Louisiana State University}
+  (\bibinfo{year}{2007}),
+  \urlprefix\url{http://www.cct.lsu.edu/~dorband/thesis.pdf}.
+
+\bibitem[{\citenamefont{Kastaun}(2007)}]{carpet-kastaun2007a}
+\bibinfo{author}{\bibfnamefont{W.}~\bibnamefont{Kastaun}},
+  \emph{\bibinfo{title}{Developing a code for general relativistic
+  hydrodynamics with application to neutron star oscillations}}, Ph.D. thesis,
+  \bibinfo{school}{Universit{\"a}t T{\"u}bingen} (\bibinfo{year}{2007}),
+  \urlprefix\url{http://tobias-lib.ub.uni-tuebingen.de/ volltexte/2007/2803/}.
+
+\bibitem[{\citenamefont{Manca}(2007)}]{carpet-manca2007a}
+\bibinfo{author}{\bibfnamefont{G.~M.} \bibnamefont{Manca}},
+  \emph{\bibinfo{title}{Dynamical instabilities in rapidly rotating neutron
+  star models}}, Ph.D. thesis, \bibinfo{school}{Universit{\`a} di Parma}
+  (\bibinfo{year}{2007}).
+
+\bibitem[{\citenamefont{Ott}(2007)}]{carpet-ott2007a}
+\bibinfo{author}{\bibfnamefont{C.~D.} \bibnamefont{Ott}},
+  \emph{\bibinfo{title}{Stellar iron core collapse in \{3+1\} general
+  relativity and the gravitational wave signature of core-collapse
+  supernovae}}, Ph.D. thesis, \bibinfo{school}{Universit{\"a}t Potsdam}
+  (\bibinfo{year}{2007}),
+  \urlprefix\url{http://stellarcollapse.org/papers/thesis_final.pdf}.
+
+\bibitem[{\citenamefont{Zengino{\u{g}}lu}(2007)}]{carpet-2007a}
+\bibinfo{author}{\bibfnamefont{A.}~\bibnamefont{Zengino{\u{g}}lu}},
+  \emph{\bibinfo{title}{A conformal approach to numerical calculations of
+  asymptotically flat spacetimes}}, Ph.D. thesis,
+  \bibinfo{school}{Universit{\"a}t Potsdam} (\bibinfo{year}{2007}),
+  \eprint{arXiv:0711.0873 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0711.0873}.
+
+\bibitem[{\citenamefont{L{\"o}ffler}(2006)}]{carpet-loeffler2005a}
+\bibinfo{author}{\bibfnamefont{F.}~\bibnamefont{L{\"o}ffler}},
+  \emph{\bibinfo{title}{Numerical simulations of neutron star-black hole
+  mergers}}, Ph.D. thesis, \bibinfo{school}{Universit{\"a}t Potsdam}
+  (\bibinfo{year}{2006}),
+  \urlprefix\url{http://opus.kobv.de/ubp/volltexte/2006/774/}.
+
+\bibitem[{\citenamefont{Madiraju}(2006)}]{carpet-madiraju2006a}
+\bibinfo{author}{\bibfnamefont{S.}~\bibnamefont{Madiraju}},
+  \emph{\bibinfo{title}{Performance profiling with {Cactus} benchmarks}},
+  Master's thesis, \bibinfo{school}{Louisiana State University}
+  (\bibinfo{year}{2006}), \urlprefix\url{http://www.cactuscode.org/
+  Articles/Cactus_Madiraju06.pdf}.
+
+\bibitem[{\citenamefont{Zink}(2006)}]{carpet-zink2006d}
+\bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Zink}},
+  \emph{\bibinfo{title}{Black hole formation from non-axisymmetric
+  instabilities in quasi-toroidal stars}}, Ph.D. thesis,
+  \bibinfo{school}{Technische Universit{\"a}t M{\"u}nchen}
+  (\bibinfo{year}{2006}),
+  \urlprefix\url{http://nbn-resolving.de/urn/resolver.pl
+  ?urn=urn:nbn:de:bvb:91-diss20060623-1915123970}.
+
+\bibitem[{\citenamefont{Herrmann}(2005)}]{carpet-herrmann2005a}
+\bibinfo{author}{\bibfnamefont{F.}~\bibnamefont{Herrmann}},
+  \emph{\bibinfo{title}{Evolution and analysis of binary black hole
+  spacetimes}}, Ph.D. thesis, \bibinfo{school}{Universit{\"a}t Potsdam}
+  (\bibinfo{year}{2005}).
+
+\bibitem[{\citenamefont{Koppitz}(2004)}]{carpet-koppitz2004a}
+\bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Koppitz}},
+  \emph{\bibinfo{title}{Numerical studies of black hole initial data}}, Ph.D.
+  thesis, \bibinfo{school}{Universit{\"a}t Potsdam} (\bibinfo{year}{2004}),
+  \urlprefix\url{http://opus.kobv.de/ubp/volltexte/2005/134/}.
+
+\end{thebibliography}

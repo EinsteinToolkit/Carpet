@@ -40,12 +40,17 @@ namespace CarpetIOF5 {
       get_group ()
         const;
       
+      string
+      get_name ()
+        const;
+      
       hid_t
       get_hdf5_physical_quantity ()
         const;
       
       void
-      get_link_destination (string & filename,
+      get_link_destination (int proc,
+                            string & filename,
                             string & objectname)
         const;
       

@@ -7,6 +7,10 @@ include header: carpet_public.h in carpet.h
 
 include header: Timers.hh in CarpetTimers.hh
 
+uses include header: loopcontrol.h
+
+uses include header: mpi_string.hh
+
 uses include header: defs.hh
 uses include header: dist.hh
 
@@ -217,6 +221,21 @@ PROVIDES FUNCTION GetRefinementLevels \
 
 
 
+# Get pointer to grid variable for a specific map and refinement level
+CCTK_POINTER FUNCTION                     \
+    VarDataPtrI                           \
+        (CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_INT IN map,                 \
+         CCTK_INT IN reflevel,            \
+         CCTK_INT IN component,           \
+         CCTK_INT IN timelevel,           \
+         CCTK_INT IN varindex)
+PROVIDES FUNCTION VarDataPtrI \
+    WITH Carpet_VarDataPtrI   \
+    LANGUAGE C
+
+
+
 # The true prototype of the routine below:
 #   int Carpet_Regrid (const cGH * cctkGH,
 #                      gh::rregs * superregss,
@@ -249,11 +268,32 @@ REQUIRES FUNCTION IO_TruncateOutputFiles
 
 
 
+# TODO: make this somehow public, e.g. by moving it into its own thorn
+
+CCTK_INT point_classification TYPE=gf TAGS='checkpoint="no" prolongation="none"'
+{
+  point_class
+  # negative: needs to be set explicitly (e.g. boundary)
+  # zero:     unused (e.g. ghost)
+  # positive: needs to be evolved
+  # -1:      boundary point (needs to be set explicitly)
+  #  0:      unused (e.g. ghost point, or restriction target)
+  #  n=1..N: evolved, used for integrator substeps i<=n
+  #          (i=N..1, counting backwards; see MoL documentation) 
+  #          i.e.: n=1: used between time steps (i.e., should be visualised)
+  #                n>1: used only while time stepping (e.g. buffer zones)
+} "Grid point classification"
+
+
+
 CCTK_REAL timing TAGS='checkpoint="no"'
 {
   physical_time_per_hour
+  current_physical_time_per_hour
   
-  time_total time_computing time_communicating time_io
+  time_total time_evolution time_computing time_communicating time_io
+  
+  evolution_steps_count
   
   local_grid_points_per_second total_grid_points_per_second
   local_grid_point_updates_count total_grid_point_updates_count

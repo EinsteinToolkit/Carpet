@@ -51,6 +51,11 @@ bboxset<T,D>::bboxset (const vector<list<box> >& vlb) {
   normalize();
 }
 
+template<class T, int D>
+bboxset<T,D> bboxset<T,D>::poison () {
+  return bboxset (bbox<T,D>::poison());
+}
+
 
 
 // Invariant
@@ -455,16 +460,54 @@ bool bboxset<T,D>::operator!= (const bboxset<T,D>& s) const {
 
 
 
-// Output
+// Input
 template<class T,int D>
-void bboxset<T,D>::output (ostream& os) const {
+istream& bboxset<T,D>::input (istream& is) {
   T Tdummy;
-  os << "bboxset<" << typestring(Tdummy) << "," << D << ">:"
-     << "size=" << size() << ","
-     << "setsize=" << setsize() << ","
-     << "set=" << bs;
+  try {
+    skipws (is);
+    consume (is, "bboxset<");
+    consume (is, typestring(Tdummy));
+    consume (is, ",");
+    int D_;
+    is >> D_;
+    if (D_ != D) {
+      cout << "Input error: Wrong bboxset dimension " << D_ << ", expected " << D << endl;
+      throw input_error();
+    }
+    consume (is, ">:{");
+    consume (is, "size=");
+    size_type size_;
+    is >> size_;
+    consume (is, ",");
+    consume (is, "setsize=");
+    int setsize_;
+    is >> setsize_;
+    consume (is, ",");
+    consume (is, "set=");
+    is >> bs;
+    consume (is, "}");
+  } catch (input_error & err) {
+    cout << "Input error while reading a bboxset<" << typestring(Tdummy) << "," << D << ">" << endl;
+    throw err;
+  }
+  return is;
 }
 
 
 
-template class bboxset<int,3>;
+// Output
+template<class T,int D>
+ostream& bboxset<T,D>::output (ostream& os) const {
+  T Tdummy;
+  os << "bboxset<" << typestring(Tdummy) << "," << D << ">:{"
+     << "size=" << size() << ","
+     << "setsize=" << setsize() << ","
+     << "set=" << bs
+     << "}";
+  return os;
+}
+
+
+
+template class bboxset<int,dim>;

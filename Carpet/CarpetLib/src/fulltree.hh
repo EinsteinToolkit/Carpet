@@ -163,7 +163,7 @@ public:
 #endif
   
   // Memory usage
-  size_t memory () const;
+  size_t memory () const CCTK_ATTRIBUTE_PURE;
   
   // Output helper
   void output (ostream & os) const;
@@ -172,6 +172,8 @@ public:
 
 
 // Memory usage
+template <typename T, int D, typename P>
+inline size_t memoryof (fulltree<T,D,P> const & f) CCTK_ATTRIBUTE_PURE;
 template <typename T, int D, typename P>
 inline size_t memoryof (fulltree<T,D,P> const & f) { return f.memory(); }
 

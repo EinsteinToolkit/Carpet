@@ -14,6 +14,10 @@ using namespace std;
 
 
 
+list<th*> th::allth;
+
+
+
 // Constructors
 th::th (gh& h_, const vector<int> & reffacts_, const CCTK_REAL basedelta)
   : h(h_), reffacts(reffacts_), delta(basedelta)
@@ -24,13 +28,15 @@ th::th (gh& h_, const vector<int> & reffacts_, const CCTK_REAL basedelta)
     assert (reffacts.AT(n) >= reffacts.AT(n-1));
     assert (reffacts.AT(n) % reffacts.AT(n-1) == 0);
   }
-  h.add(this);
+  allthi = allth.insert(allth.end(), this);
+  gh_handle = h.add(this);
 }
 
 // Destructors
 th::~th ()
 {
-  h.remove(this);
+  h.erase(gh_handle);
+  allth.erase(allthi);
 }
 
 // Modifiers
@@ -60,6 +66,10 @@ void th::regrid ()
   }
 }
 
+void th::regrid_free ()
+{
+}
+
 
 
 // Memory usage
@@ -73,6 +83,19 @@ memory ()
     memoryof (delta) +
     memoryof (times) +
     memoryof (deltas);
+}
+
+size_t
+th::
+allmemory ()
+{
+  size_t mem = memoryof(allth);
+  for (list<th*>::const_iterator
+         thi = allth.begin(); thi != allth.end(); ++ thi)
+  {
+    mem += memoryof(**thi);
+  }
+  return mem;
 }
 
 

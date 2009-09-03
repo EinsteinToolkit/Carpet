@@ -2,11 +2,13 @@
 #include <cctype>
 #include <iostream>
 #include <list>
+#include <map>
 #include <set>
 #include <stack>
 #include <vector>
 
 #include "cctk.h"
+#include "cctk_Parameters.h"
 
 #include "bbox.hh"
 #include "defs.hh"
@@ -18,6 +20,8 @@ using namespace std;
 
 
 
+template <typename T>
+inline T ipow_helper (T x, unsigned int y) CCTK_ATTRIBUTE_CONST;
 template <typename T>
 inline T ipow_helper (T x, unsigned int y)
 {
@@ -31,7 +35,7 @@ inline T ipow_helper (T x, unsigned int y)
 }
 
 template<class T>
-T ipow (T x, int y)
+T ipow (T const x, int const y)
 {
   if (y < 0)
     return T(1) / ipow_helper(x, -y);
@@ -41,8 +45,23 @@ T ipow (T x, int y)
 
 
 
+// Access to CarpetLib parameters
+CCTK_INT get_poison_value()
+{
+  DECLARE_CCTK_PARAMETERS;
+  return poison_value;
+}
+
+CCTK_INT get_deadbeef()
+{
+  DECLARE_CCTK_PARAMETERS;
+  return deadbeef;
+}
+
+
+
 void skipws (istream& is) {
-  while (is.good() && isspace(is.peek())) {
+  while (is.good() and isspace(is.peek())) {
     is.get();
   }
 }
@@ -138,6 +157,60 @@ memoryof (vector<T> const & c)
 
 
 
+// List input
+template<class T>
+istream& input (istream& is, list<T>& l) {
+  l.clear();
+  try {
+    skipws (is);
+    consume (is, '[');
+    skipws (is);
+    while (is.good() and is.peek() != ']') {
+      T elem;
+      is >> elem;
+      l.push_back (elem);
+      skipws (is);
+      if (is.peek() != ',') break;
+      is.get();
+      skipws (is);
+    }
+    skipws (is);
+    consume (is, ']');
+  } catch (input_error &err) {
+    cout << "Input error while reading a list<>" << endl
+         << "   The following elements have been read so far: " << l << endl;
+    throw err;
+  }
+  return is;
+}
+
+// Set input
+template<class T>
+istream& input (istream& is, set<T>& s) {
+  s.clear();
+  try {
+    skipws (is);
+    consume (is, '{');
+    skipws (is);
+    while (is.good() and is.peek() != '}') {
+      T elem;
+      is >> elem;
+      s.insert (elem);
+      skipws (is);
+      if (is.peek() != ',') break;
+      is.get();
+      skipws (is);
+    }
+    skipws (is);
+    consume (is, ']');
+  } catch (input_error &err) {
+    cout << "Input error while reading a set<>" << endl
+         << "   The following elements have been read so far: " << s << endl;
+    throw err;
+  }
+  return is;
+}
+
 // Vector input
 template<class T>
 istream& input (istream& is, vector<T>& v) {
@@ -146,7 +219,7 @@ istream& input (istream& is, vector<T>& v) {
     skipws (is);
     consume (is, '[');
     skipws (is);
-    while (is.good() && is.peek() != ']') {
+    while (is.good() and is.peek() != ']') {
       T elem;
       is >> elem;
       v.push_back (elem);
@@ -179,6 +252,25 @@ ostream& output (ostream& os, const list<T>& l) {
   return os;
 }
 
+// Map output
+template<class S, class T>
+ostream& output (ostream& os, const map<S,T>& m) {
+  os << "{";
+  for (typename map<S,T>::const_iterator ti=m.begin(); ti!=m.end(); ++ti) {
+    if (ti!=m.begin()) os << ",";
+    os << ti->first << ":" << ti->second;
+  }
+  os << "}";
+  return os;
+}
+
+// Pair output
+template<class S, class T>
+ostream& output (ostream& os, const pair<S,T>& p) {
+  os << "(" << p.first << "," << p.second << ")";
+  return os;
+}
+
 // Set output
 template<class T>
 ostream& output (ostream& os, const set<T>& s) {
@@ -196,7 +288,7 @@ template<class T>
 ostream& output (ostream& os, const stack<T>& s) {
   stack<T> s2 (s);
   list<T> l;
-  while (! s2.empty()) {
+  while (not s2.empty()) {
     l.insert (l.begin(), s2.top());
     s2.pop();
   }
@@ -231,28 +323,32 @@ ostream& output (ostream& os, const vector<T>& v) {
 #include "th.hh"
 #include "vect.hh"
 
+#include "CarpetTimers.hh"
+
 template int ipow (int x, int y);
 template CCTK_REAL ipow (CCTK_REAL x, int y);
-template vect<int,3> ipow (vect<int,3> x, int y);
+template vect<int,dim> ipow (vect<int,dim> x, int y);
 
-template size_t memoryof (list<bbox<int,3> > const & l);
-template size_t memoryof (list<vect<int,3> > const & l);
+template size_t memoryof (list<bbox<int,dim> > const & l);
+template size_t memoryof (list<vect<int,dim> > const & l);
 template size_t memoryof (list<dh*> const & l);
+template size_t memoryof (list<gh*> const & l);
+template size_t memoryof (list<gdata*> const & l);
 template size_t memoryof (list<ggf*> const & l);
 template size_t memoryof (list<th*> const & l);
 template size_t memoryof (stack<void*> const & s);
 template size_t memoryof (vector<bool> const & v);
 template size_t memoryof (vector<int> const & v);
 template size_t memoryof (vector<CCTK_REAL> const & v);
-template size_t memoryof (vector<bbox<int,3> > const & v);
-template size_t memoryof (vector<vect<int,3> > const & v);
-template size_t memoryof (vector<fulltree <int,3,pseudoregion_t> *> const & f);
+template size_t memoryof (vector<bbox<int,dim> > const & v);
+template size_t memoryof (vector<vect<int,dim> > const & v);
+template size_t memoryof (vector<fulltree <int,dim,pseudoregion_t> *> const & f);
 template size_t memoryof (vector<pseudoregion_t> const & v);
 template size_t memoryof (vector<region_t> const & v);
 template size_t memoryof (vector<sendrecv_pseudoregion_t> const & v);
 template size_t memoryof (vector<vector<int> > const & v);
 template size_t memoryof (vector<vector<CCTK_REAL> > const & v);
-template size_t memoryof (vector<vector<bbox<int,3> > > const & v);
+template size_t memoryof (vector<vector<bbox<int,dim> > > const & v);
 template size_t memoryof (vector<vector<dh::dboxes> > const & v);
 template size_t memoryof (vector<vector<dh::fast_dboxes> > const & v);
 template size_t memoryof (vector<vector<region_t> > const & v);
@@ -262,49 +358,54 @@ template size_t memoryof (vector<vector<vector<region_t> > > const & v);
 template size_t memoryof (vector<vector<vector<gdata*> > > const & v);
 template size_t memoryof (vector<vector<vector<vector<gdata*> > > > const & v);
 
+template istream& input (istream& os, list<bbox<int,dim> >& l);
+template istream& input (istream& os, set<bbox<int,dim> >& s);
 template istream& input (istream& os, vector<int>& v);
 template istream& input (istream& os, vector<CCTK_REAL>& v);
-template istream& input (istream& os, vector<bbox<int,3> >& v);
-template istream& input (istream& os, vector<bbox<CCTK_REAL,3> >& v);
-template istream& input (istream& os, vector<vect<int,3> >& v);
-template istream& input (istream& os, vector<vect<vect<bool,2>,3> >& v);
+template istream& input (istream& os, vector<bbox<int,dim> >& v);
+template istream& input (istream& os, vector<bbox<CCTK_REAL,dim> >& v);
+template istream& input (istream& os, vector<vect<int,dim> >& v);
+template istream& input (istream& os, vector<vect<vect<bool,2>,dim> >& v);
 template istream& input (istream& os, vector<region_t>& v);
+template istream& input (istream& os, vector<pseudoregion_t>& v);
+template istream& input (istream& os, vector<sendrecv_pseudoregion_t>& v);
 template istream& input (istream& os, vector<vector<CCTK_REAL> >& v);
-template istream& input (istream& os, vector<vector<bbox<int,3> > >& v);
-template istream& input (istream& os, vector<vector<bbox<CCTK_REAL,3> > >& v);
-template istream& input (istream& os, vector<vector<vect<vect<bool,2>,3> > >& v);
+template istream& input (istream& os, vector<vector<bbox<int,dim> > >& v);
+template istream& input (istream& os, vector<vector<bbox<CCTK_REAL,dim> > >& v);
+template istream& input (istream& os, vector<vector<vect<vect<bool,2>,dim> > >& v);
 template istream& input (istream& os, vector<vector<region_t> >& v);
 template istream& input (istream& os, vector<vector<vector<CCTK_REAL> > >& v);
 template istream& input (istream& os, vector<vector<vector<region_t> > >& v);
 
-template ostream& output (ostream& os, const list<bbox<int,3> >& l);
+template ostream& output (ostream& os, const list<bbox<int,dim> >& l);
 template ostream& output (ostream& os, const list<region_t>& l);
-template ostream& output (ostream& os, const set<bbox<int,3> >& s);
-template ostream& output (ostream& os, const set<bboxset<int,3> >& s);
-template ostream& output (ostream& os, const stack<bbox<int,3> >& s);
+template ostream& output (ostream& os, const map<string,Carpet::Timer*>& m);
+template ostream& output (ostream& os, const set<bbox<int,dim> >& s);
+template ostream& output (ostream& os, const set<bboxset<int,dim> >& s);
+template ostream& output (ostream& os, const stack<bbox<int,dim> >& s);
 template ostream& output (ostream& os, const vector<bool>& v);
 template ostream& output (ostream& os, const vector<int>& v);
 template ostream& output (ostream& os, const vector<CCTK_REAL>& v);
-template ostream& output (ostream& os, const vector<bbox<int,3> >& v);
-template ostream& output (ostream& os, const vector<bbox<CCTK_REAL,3> >& v);
-template ostream& output (ostream& os, const vector<vect<int,3> >& v);
-template ostream& output (ostream& os, const vector<vect<vect<bool,2>,3> >& v);
+template ostream& output (ostream& os, const vector<bbox<int,dim> >& v);
+template ostream& output (ostream& os, const vector<bbox<CCTK_REAL,dim> >& v);
+template ostream& output (ostream& os, const vector<vect<int,dim> >& v);
+template ostream& output (ostream& os, const vector<vect<vect<bool,2>,dim> >& v);
 template ostream& output (ostream& os, const vector<dh::dboxes> & v);
 template ostream& output (ostream& os, const vector<dh::fast_dboxes> & v);
 template ostream& output (ostream& os, const vector<region_t>& v);
 template ostream& output (ostream& os, const vector<pseudoregion_t>& v);
 template ostream& output (ostream& os, const vector<sendrecv_pseudoregion_t>& v);
-template ostream& output (ostream& os, const vector<list<bbox<int,3> > >& v);
+template ostream& output (ostream& os, const vector<list<bbox<int,dim> > >& v);
 template ostream& output (ostream& os, const vector<vector<int> >& v);
 template ostream& output (ostream& os, const vector<vector<CCTK_REAL> >& v);
-template ostream& output (ostream& os, const vector<vector<bbox<int,3> > >& v);
-template ostream& output (ostream& os, const vector<vector<bbox<CCTK_REAL,3> > >& v);
-template ostream& output (ostream& os, const vector<vector<vect<vect<bool,2>,3> > >& v);
+template ostream& output (ostream& os, const vector<vector<bbox<int,dim> > >& v);
+template ostream& output (ostream& os, const vector<vector<bbox<CCTK_REAL,dim> > >& v);
+template ostream& output (ostream& os, const vector<vector<vect<vect<bool,2>,dim> > >& v);
 template ostream& output (ostream& os, const vector<vector<dh::dboxes> > & b);
 template ostream& output (ostream& os, const vector<vector<dh::fast_dboxes> > & b);
 template ostream& output (ostream& os, const vector<vector<region_t> >& v);
 template ostream& output (ostream& os, const vector<vector<vector<CCTK_REAL> > >& v);
-template ostream& output (ostream& os, const vector<vector<vector<bbox<int,3> > > >& v);
+template ostream& output (ostream& os, const vector<vector<vector<bbox<int,dim> > > >& v);
 template ostream& output (ostream& os, const vector<vector<vector<dh::dboxes> > > & b);
 template ostream& output (ostream& os, const vector<vector<vector<dh::fast_dboxes> > > & b);
 template ostream& output (ostream& os, const vector<vector<vector<region_t> > >& v);

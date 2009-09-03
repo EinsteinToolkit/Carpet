@@ -13,12 +13,16 @@ SRCS =	bbox.cc					\
 	gf.cc					\
 	ggf.cc					\
 	gh.cc					\
+	limits.cc				\
 	mem.cc					\
+	mpi_string.cc				\
 	region.cc				\
+	startup_time.cc				\
 	th.cc					\
 	timestat.cc				\
 	vect.cc					\
 	copy_3d.cc				\
+	copy_4d.cc				\
 	interpolate_3d_2tl.cc			\
 	interpolate_3d_3tl.cc			\
 	interpolate_3d_4tl.cc			\
@@ -26,6 +30,7 @@ SRCS =	bbox.cc					\
 	interpolate_eno_3d_3tl.cc		\
 	restrict_3d_cc_rf2.cc			\
 	restrict_3d_rf2.cc			\
+	restrict_4d_rf2.cc			\
 	prolongate_3d_cc_rf2.cc			\
 	prolongate_3d_o1_rf2.cc			\
 	prolongate_3d_o3_rf2.cc			\
@@ -33,8 +38,13 @@ SRCS =	bbox.cc					\
 	prolongate_3d_o7_rf2.cc			\
 	prolongate_3d_o9_rf2.cc			\
 	prolongate_3d_o11_rf2.cc		\
+	prolongate_3d_cc_o0_rf2.cc		\
+	prolongate_3d_cc_o1_rf2.cc		\
+	prolongate_3d_cc_o2_rf2.cc		\
+	prolongate_3d_o5_monotone_rf2.cc	\
 	prolongate_3d_real8_eno.F90		\
-	prolongate_3d_real8_weno.F90
+	prolongate_3d_real8_weno.F90		\
+	prolongate_4d_o1_rf2.cc
 
 # Subdirectories containing source files
 SUBDIRS = 

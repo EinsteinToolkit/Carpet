@@ -1,11 +1,23 @@
 #include <cassert>
 #include <complex>
 #include <cstring>
+#include <sstream>
 #include <vector>
 
-#include "cctk.h"
+// force HDF5 1.8.x installations to use the new API
+#define H5Acreate_vers 2
+#define H5Gcreate_vers 2
+#define H5Gopen_vers 2
+#define H5Tarray_create_vers 2
 
+#include <hdf5.h>
+
+#include "cctk.h"
+#include "cctk_Parameters.h"
+
+#include "bbox.hh"
 #include "defs.hh"
+#include "vect.hh"
 
 #include "utils.hh"
 
@@ -175,28 +187,96 @@ namespace CarpetIOF5 {
     
     
     
+    template <typename T, int D>
+    string
+    name_from_ivect (vect <T, D> const & ivect)
+    {
+      ostringstream buf;
+      for (int d = 0; d < dim; ++ d)
+      {
+        if (d > 0)
+        {
+          buf << ":";
+        }
+        buf << ivect[d];
+      }
+      return buf.str ();
+    }
+    
+    template
+    string
+    name_from_ivect (vect <int, dim> const & ivect);
+    
+    template
+    string
+    name_from_ivect (vect <CCTK_REAL, dim> const & ivect);
+    
+    
+    
+    template <typename T, int D>
+    string
+    name_from_ibbox (bbox <T, D> const & ibbox)
+    {
+      ostringstream buf;
+      buf << name_from_ivect (ibbox.lower ())
+          << "-"
+          << name_from_ivect (ibbox.upper ())
+          << "-"
+          << name_from_ivect (ibbox.stride ());
+      return buf.str ();
+    }
+    
+    template
+    string
+    name_from_ibbox (bbox <int, dim> const & ivect);
+    
+    
+    
     hid_t
     open_or_create_group (hid_t const where,
                           char const * const name)
     {
+      DECLARE_CCTK_PARAMETERS;
+      
       assert (where >= 0);
       assert (name != 0);
       
+      // bool group_exists;
+      // H5E_BEGIN_TRY {
+      //   H5G_stat_t statbuf;
+      //   herr_t const herr = H5Gget_objinfo (where, name, true, & statbuf);
+      //   group_exists = herr == 0;
+      // } H5E_END_TRY;
       bool group_exists;
       H5E_BEGIN_TRY {
-        H5G_stat_t statbuf;
+        H5G_info_t groupinfo;
         herr_t const herr
-          = H5Gget_objinfo (where, name, true, & statbuf);
+          = H5Gget_info_by_name (where, name, & groupinfo, H5P_DEFAULT);
         group_exists = herr == 0;
       } H5E_END_TRY;
+      if (veryverbose)
+      {
+        CCTK_VInfo (CCTK_THORNSTRING,
+                    "Group \"%s\" %s",
+                    name,
+                    group_exists ? "exists" : "does not exist");
+      }
       
       hid_t group;
       if (group_exists)
       {
+        if (veryverbose)
+        {
+          CCTK_VInfo (CCTK_THORNSTRING, "H5Gopen (name=\"%s\")", name);
+        }
         group = H5Gopen (where, name, H5P_DEFAULT);
       }
       else
       {
+        if (veryverbose)
+        {
+          CCTK_VInfo (CCTK_THORNSTRING, "H5Gcreate (name=\"%s\")", name);
+        }
         group = H5Gcreate (where, name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       }
       

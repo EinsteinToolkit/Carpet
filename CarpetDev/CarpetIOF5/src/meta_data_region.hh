@@ -1,12 +1,14 @@
 #ifndef META_DATA_REGION_HH
 #define META_DATA_REGION_HH
 
+#include <string>
+
 #include <hdf5.h>
 
 #include "bbox.hh"
 #include "defs.hh"
 
-#include "tensor_component.hh"
+#include "physical_quantity.hh"
 
 
 
@@ -14,11 +16,14 @@ namespace CarpetIOF5 {
   
   namespace F5 {
     
+    using std::string;
+    
     class meta_data_region_t {
       
-      tensor_component_t & m_tensor_component;
+      physical_quantity_t & m_physical_quantity;
       
       bbox<int, dim> const m_region;
+      string const m_name;
       
       hid_t m_properties;
       hid_t m_dataset;
@@ -30,14 +35,14 @@ namespace CarpetIOF5 {
       
     public:
       
-      meta_data_region_t (tensor_component_t & tensor_component,
+      meta_data_region_t (physical_quantity_t & physical_quantity,
                           bbox<int, dim> const & region);
       
       virtual
       ~ meta_data_region_t ();
       
-      tensor_component_t &
-      get_tensor_component ()
+      physical_quantity_t &
+      get_physical_quantity ()
         const;
       
       void

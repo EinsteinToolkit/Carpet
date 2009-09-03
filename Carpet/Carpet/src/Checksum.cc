@@ -2,12 +2,14 @@
 #include <cstdlib>
 #include <vector>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
+#include <util_ErrorCodes.h>
+#include <util_Table.h>
 
-#include "gh.hh"
+#include <gh.hh>
 
-#include "carpet.hh"
+#include <carpet.hh>
 
 
 
@@ -20,7 +22,7 @@ namespace Carpet {
   // Checksum information
   struct ckdesc {
     bool valid;
-    unsigned int sum;
+    unsigned long sum;
   };
   
   // Helper class
@@ -30,6 +32,30 @@ namespace Carpet {
   
   // Checksum information
   vector<vector<vector<ckdesc4> > > checksums; // [rl][ml][group]
+  
+  
+  
+  // Calculate the internet checksum (see RFC 1071)
+  static unsigned short
+  internet_checksum (void const * restrict const addr,
+                     size_t const len)
+  {
+    unsigned long chk = 0;
+#pragma omp parallel for reduction (+: chk)
+    for (ptrdiff_t i=0; i<(ptrdiff_t)len; i+=2) {
+      unsigned long const lb = ((unsigned char const*)addr)[i];
+      unsigned long const ub = ((unsigned char const*)addr)[i+1];
+      chk += lb + (ub << 8);
+    }
+    if (len % 1) {
+      unsigned long const lb = ((unsigned char const*)addr)[len-1];
+      chk += lb;
+    }
+    while (chk >> 16) {
+      chk = (chk & 0xffffUL) + (chk >> 16);
+    }
+    return ~chk;
+  }
   
   
   
@@ -52,11 +78,11 @@ namespace Carpet {
         const int grouptype = CCTK_GroupTypeI(group);
         if (reflevel == 0 or grouptype == CCTK_GF) {
           checksums.at(reflevel).at(mglevel).at(group).a.resize(arrdata.at(group).size());
-          BEGIN_MAP_LOOP(cgh, grouptype) {
-            checksums.at(reflevel).at(mglevel).at(group).a.at(map).resize(arrdata.at(group).at(map).hh->components(reflevel));
+          BEGIN_LOCAL_MAP_LOOP(cgh, grouptype) {
+            checksums.at(reflevel).at(mglevel).at(group).a.at(map).resize(arrdata.at(group).at(map).hh->local_components(reflevel));
             BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype) {
               const int nvars = CCTK_NumVarsInGroupI(group);
-              checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(component).resize(nvars);
+              checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(local_component).resize(nvars);
               if (nvars > 0) {
                 
                 const int n0 = CCTK_FirstVarIndexI(group);
@@ -70,30 +96,48 @@ namespace Carpet {
                 }
                 const int np = prod(size);
                 
+                int const table = CCTK_GroupTagsTableI (group);
+                assert (table >= 0);
+                bool persistent;
+                char buf[100];
+                int const ilen =
+                  Util_TableGetString (table, sizeof buf, buf, "Persistent");
+                if (ilen > 0) {
+                  if (CCTK_EQUALS(buf, "yes")) {
+                    persistent = true;
+                  } else if (CCTK_EQUALS(buf, "no")) {
+                    persistent = false;
+                  } else {
+                    assert (0);
+                  }
+                } else if (ilen == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+                  // default
+                  persistent = true;
+                } else {
+                  assert (0);
+                }
+                
                 const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
                 assert (num_tl>0);
-                const int min_tl = min_timelevel(where, num_tl);
-                const int max_tl = max_timelevel(where, num_tl);
+                const int min_tl = min_timelevel(where, num_tl, persistent);
+                const int max_tl = max_timelevel(where, num_tl, persistent);
                 
                 for (int var=0; var<nvars; ++var) {
-                  checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(component).at(var).resize(num_tl);
+                  checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(local_component).at(var).resize(num_tl);
                   for (int tl=min_tl; tl<=max_tl; ++tl) {
                     
                     const int n = n0 + var;
                     const void* data = cgh->data[n][tl];
-                    unsigned int chk = 0;
-                    for (int i=0; i<np*sz/(int)sizeof chk; ++i) {
-                      chk += ((const unsigned int*)data)[i];
-                    }
+                    unsigned long const chk = internet_checksum (data, np*sz);
                     
-                    checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(component).at(var).at(tl).sum = chk;
-                    checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(component).at(var).at(tl).valid = true;
+                    checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(local_component).at(var).at(tl).sum = chk;
+                    checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(local_component).at(var).at(tl).valid = true;
                     
                   } // for tl
                 } // for var
               } // if group has vars
             } END_LOCAL_COMPONENT_LOOP;
-          } END_MAP_LOOP;
+          } END_LOCAL_MAP_LOOP;
         } // if grouptype fits
       } // if storage
     } // for group
@@ -118,11 +162,11 @@ namespace Carpet {
         const int grouptype = CCTK_GroupTypeI(group);
         if (reflevel == 0 or grouptype == CCTK_GF) {
           assert (checksums.at(reflevel).at(mglevel).at(group).a.size()==arrdata.at(group).size());
-          BEGIN_MAP_LOOP(cgh, grouptype) {
-            assert ((int)checksums.at(reflevel).at(mglevel).at(group).a.at(map).size()==arrdata.at(group).at(map).hh->components(reflevel));
+          BEGIN_LOCAL_MAP_LOOP(cgh, grouptype) {
+            assert ((int)checksums.at(reflevel).at(mglevel).at(group).a.at(map).size()==arrdata.at(group).at(map).hh->local_components(reflevel));
             BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype) {
               const int nvars = CCTK_NumVarsInGroupI(group);
-              assert ((int)checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(component).size()==nvars);
+              assert ((int)checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(local_component).size()==nvars);
               if (nvars > 0) {
                 
                 const int n0 = CCTK_FirstVarIndexI(group);
@@ -136,24 +180,42 @@ namespace Carpet {
                 }
                 const int np = prod(size);
                 
+                int const table = CCTK_GroupTagsTableI (group);
+                assert (table >= 0);
+                bool persistent;
+                char buf[100];
+                int const ilen =
+                  Util_TableGetString (table, sizeof buf, buf, "Persistent");
+                if (ilen > 0) {
+                  if (CCTK_EQUALS(buf, "yes")) {
+                    persistent = true;
+                  } else if (CCTK_EQUALS(buf, "no")) {
+                    persistent = false;
+                  } else {
+                    assert (0);
+                  }
+                } else if (ilen == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+                  // default
+                  persistent = true;
+                } else {
+                  assert (0);
+                }
+                
                 const int num_tl = CCTK_NumTimeLevelsFromVarI(n0);
                 assert (num_tl>0);
-                const int min_tl = min_timelevel(where, num_tl);
-                const int max_tl = max_timelevel(where, num_tl);
+                const int min_tl = min_timelevel(where, num_tl, persistent);
+                const int max_tl = max_timelevel(where, num_tl, persistent);
                 
                 for (int var=0; var<nvars; ++var) {
-                  assert ((int)checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(component).at(var).size()==num_tl);
+                  assert ((int)checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(local_component).at(var).size()==num_tl);
                   for (int tl=min_tl; tl<=max_tl; ++tl) {
-                    if (checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(component).at(var).at(tl).valid) {
+                    if (checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(local_component).at(var).at(tl).valid) {
                       
                       const int n = n0 + var;
                       const void* data = cgh->data[n][tl];
-                      unsigned int chk = 0;
-                      for (int i=0; i<np*sz/(int)sizeof chk; ++i) {
-                        chk += ((const unsigned int*)data)[i];
-                      }
+                      unsigned long const chk = internet_checksum (data, np*sz);
                       const bool unexpected_change =
-                        chk != checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(component).at(var).at(tl).sum;
+                        chk != checksums.at(reflevel).at(mglevel).at(group).a.at(map).at(local_component).at(var).at(tl).sum;
                       
                       if (unexpected_change) {
                         char* fullname = CCTK_FullName(n);
@@ -168,7 +230,7 @@ namespace Carpet {
                 } // for var
               } // if group has vars
             } END_LOCAL_COMPONENT_LOOP;
-          } END_MAP_LOOP;
+          } END_LOCAL_MAP_LOOP;
         } // if grouptype fits
       } // if storage
     } // for group

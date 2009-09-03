@@ -57,9 +57,6 @@ static void GetVarIndex (int vindex, const char* optstring, void* arg);
 
 static void CheckSteerableParameters (const cGH *const cctkGH,
                                       CarpetIOHDF5GH *myGH);
-static int WriteMetadata (const cGH *cctkGH, int nioprocs,
-                          int firstvar, int numvars,
-                          bool called_from_checkpoint, hid_t file);
 
 static int WriteAttribute (hid_t const group,
                            char const * const name,
@@ -98,6 +95,10 @@ int CarpetIOHDF5_Startup (void)
   const int GHExtension = CCTK_RegisterGHExtension (CCTK_THORNSTRING);
   CCTK_RegisterGHExtensionSetupGH (GHExtension, SetupGH);
 
+  IOHDF5<0>::Startup();
+  IOHDF5<1>::Startup();
+  IOHDF5<2>::Startup();
+
   return (0);
 }
 
@@ -109,6 +110,12 @@ void CarpetIOHDF5_Init (CCTK_ARGUMENTS)
   *this_iteration = -1;
   *next_output_iteration = 0;
   *next_output_time = cctk_time;
+
+  for (int d=0; d<3; ++d) {
+    this_iteration_slice[d]        = 0;
+    last_output_iteration_slice[d] = 0;
+    last_output_time_slice[d]      = cctk_time;
+  }
 
   last_checkpoint_iteration = cctk_iteration;
   last_checkpoint_walltime = CCTK_RunTime() / 3600.0;
@@ -271,6 +278,29 @@ hid_t CCTKtoHDF5_Datatype (const cGH* const cctkGH,
 }
 
 
+// add attributes to an HDF5 slice dataset
+int AddSliceAttributes(const cGH* const cctkGH,
+                       const char* const fullname,
+                       const int refinementlevel,
+                       const vector<double>& origin,
+                       const vector<double>& delta,
+                       const vector<int>& iorigin,
+                       hid_t& dataset)
+{
+  int error_count = 0;
+
+  error_count += WriteAttribute(dataset, "time", cctkGH->cctk_time);
+  error_count += WriteAttribute(dataset, "timestep", cctkGH->cctk_iteration);
+  error_count += WriteAttribute(dataset, "name", fullname);
+  error_count += WriteAttribute(dataset, "level", refinementlevel);
+  error_count += WriteAttribute(dataset, "origin", &origin[0], origin.size());
+  error_count += WriteAttribute(dataset, "delta", &delta[0], delta.size());
+  error_count += WriteAttribute(dataset, "iorigin", &iorigin[0], iorigin.size());
+
+  return error_count;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 // private routines
 //////////////////////////////////////////////////////////////////////////////
@@ -422,20 +452,18 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
     // notify the user about the new setting
     if (not CCTK_Equals (verbose, "none")) {
       int count = 0;
-      string msg ("Periodic HDF5 output requested for '");
-      for (int i = CCTK_NumVars () - 1; i >= 0; i--) {
-        if (myGH->requests[i]) {
-          if (count++) {
-            msg += "', '";
-          }
-          char *fullname = CCTK_FullName (i);
-          msg += fullname;
+      ostringstream msg;
+      msg << "Periodic scalar output requested for:";
+      for (int vi=0; vi<CCTK_NumVars(); ++vi) {
+        if (myGH->requests[vi]) {
+          ++count;
+          char* const fullname = CCTK_FullName(vi);
+          msg << eol << "   " << fullname;
           free (fullname);
         }
       }
-      if (count) {
-        msg += "'";
-        CCTK_INFO (msg.c_str());
+      if (count > 0) {
+        CCTK_INFO (msg.str().c_str());
       }
     }
 
@@ -756,7 +784,7 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
     CCTK_REAL local[2], global[2];
     local[0] = io_files;
     local[1] = io_bytes;
-    MPI_Allreduce (local, global, 2, dist::datatype (local[0]), MPI_SUM, dist::comm());
+    MPI_Allreduce (local, global, 2, dist::mpi_datatype (local[0]), MPI_SUM, dist::comm());
     io_files = global[0];
     io_bytes = global[1];
   }
@@ -910,7 +938,7 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
       CCTK_REAL local[2], global[2];
       local[0] = io_files;
       local[1] = io_bytes;
-      MPI_Allreduce (local, global, 2, dist::datatype (local[0]), MPI_SUM, dist::comm());
+      MPI_Allreduce (local, global, 2, dist::mpi_datatype (local[0]), MPI_SUM, dist::comm());
       io_files = global[0];
       io_bytes = global[1];
     }
@@ -1001,9 +1029,9 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
 } // Checkpoint
 
 
-static int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
-                          int const firstvar, int const numvars,
-                          bool const called_from_checkpoint, hid_t const file)
+int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
+                   int const firstvar, int const numvars,
+                   bool const called_from_checkpoint, hid_t const file)
 {
   DECLARE_CCTK_PARAMETERS;
   hid_t group;
@@ -1046,12 +1074,6 @@ static int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
   if (CCTK_IsFunctionAliased ("UniqueConfigID")) {
     error_count += WriteAttribute
       (group, "config id", static_cast<char const *> (UniqueConfigID (cctkGH)));
-  }
-
-  // Unique source tree identifier
-  if (CCTK_IsFunctionAliased ("UniqueSourceID")) {
-    error_count += WriteAttribute
-      (group, "source id", static_cast<char const *> (UniqueSourceID (cctkGH)));
   }
 
   // unique build identifier
@@ -1142,9 +1164,11 @@ static int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
 
   // Save grid structure
   if (called_from_checkpoint or not CCTK_Equals (out_save_parameters, "no")) {
+    vector <vector <vector <region_t> > > grid_superstructure (maps);
     vector <vector <vector <region_t> > > grid_structure (maps);
     vector <vector <vector <CCTK_REAL> > > grid_times (maps);
     for (int m = 0; m < maps; ++ m) {
+      grid_superstructure.at(m) = vhh.at(m)->superregions;
       grid_structure.at(m) = vhh.at(m)->regions.at(0);
       grid_times.at(m).resize(mglevels);
       for  (int ml = 0; ml < mglevels; ++ ml) {
@@ -1155,6 +1179,12 @@ static int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
       }
     }
     ostringstream gs_buf;
+    // We could write this information only into one of the checkpoint
+    // files (to save space), or write it into a separate metadata
+    // file
+    gs_buf << grid_superstructure;
+    // We could omit the grid structure (to save space), or write it
+    // only into one of the checkpoint files
     gs_buf << grid_structure;
     gs_buf << grid_times;
     gs_buf << leveltimes;

@@ -1,0 +1,53 @@
+\begin{thebibliography}{3}
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+\expandafter\ifx\csname bibnamefont\endcsname\relax
+  \def\bibnamefont#1{#1}\fi
+\expandafter\ifx\csname bibfnamefont\endcsname\relax
+  \def\bibfnamefont#1{#1}\fi
+\expandafter\ifx\csname citenamefont\endcsname\relax
+  \def\citenamefont#1{#1}\fi
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+\providecommand{\bibinfo}[2]{#2}
+\providecommand{\eprint}[2][]{\url{#2}}
+
+\bibitem[{\citenamefont{Goodale et~al.}(2003)\citenamefont{Goodale, Allen,
+  Lanfermann, Mass{\'o}, Radke, Seidel, and Shalf}}]{carpet-goodale2002a}
+\bibinfo{author}{\bibfnamefont{T.}~\bibnamefont{Goodale}},
+  \bibinfo{author}{\bibfnamefont{G.}~\bibnamefont{Allen}},
+  \bibinfo{author}{\bibfnamefont{G.}~\bibnamefont{Lanfermann}},
+  \bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Mass{\'o}}},
+  \bibinfo{author}{\bibfnamefont{T.}~\bibnamefont{Radke}},
+  \bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Seidel}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Shalf}},
+  \emph{\bibinfo{title}{The {Cactus} framework and toolkit: Design and
+  applications}}, in \emph{\bibinfo{booktitle}{Vector and Parallel Processing
+  -- VECPAR'2002, 5th International Conference, Lecture Notes in Computer
+  Science}} (\bibinfo{publisher}{Springer}, \bibinfo{address}{Berlin},
+  \bibinfo{year}{2003}), \urlprefix\url{http://edoc.mpg.de/3341}.
+
+\bibitem[{\citenamefont{Schnetter et~al.}(2006)\citenamefont{Schnetter, Diener,
+  Dorband, and Tiglio}}]{carpet-schnetter2006a}
+\bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Schnetter}},
+  \bibinfo{author}{\bibfnamefont{P.}~\bibnamefont{Diener}},
+  \bibinfo{author}{\bibfnamefont{E.~N.} \bibnamefont{Dorband}},
+  \bibnamefont{and} \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Tiglio}},
+  \emph{\bibinfo{title}{A multi-block infrastructure for three-dimensional
+  time-dependent numerical relativity}}, \bibinfo{journal}{Class. Quantum
+  Grav.} \textbf{\bibinfo{volume}{23}}, \bibinfo{pages}{S553}
+  (\bibinfo{year}{2006}), \eprint{arXiv:gr-qc/0602104},
+  \urlprefix\url{http://arxiv.org/abs/gr-qc/0602104}.
+
+\bibitem[{\citenamefont{Schnetter et~al.}(2004)\citenamefont{Schnetter, Hawley,
+  and Hawke}}]{carpet-schnetter2003a}
+\bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Schnetter}},
+  \bibinfo{author}{\bibfnamefont{S.~H.} \bibnamefont{Hawley}},
+  \bibnamefont{and} \bibinfo{author}{\bibfnamefont{I.}~\bibnamefont{Hawke}},
+  \emph{\bibinfo{title}{Evolutions in 3d numerical relativity using fixed mesh
+  refinement}}, \bibinfo{journal}{Class. Quantum Grav.}
+  \textbf{\bibinfo{volume}{21}}, \bibinfo{pages}{1465} (\bibinfo{year}{2004}),
+  \eprint{arXiv:gr-qc/0310042},
+  \urlprefix\url{http://arxiv.org/abs/gr-qc/0310042}.
+
+\end{thebibliography}

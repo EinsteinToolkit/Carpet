@@ -1,4 +1,4 @@
-
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <limits>
@@ -6,7 +6,8 @@
 #include <string>
 #include <typeinfo>
 
-#include "cctk.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
 
 #include "defs.hh"
 #include "vect.hh"
@@ -21,8 +22,8 @@ using namespace std;
 template<class T, int D>
 void bbox<T,D>::assert_bbox_limits () const
 {
-  assert (all(_stride>T(0)));
-  assert (all((_upper-_lower)%_stride == T(0)));
+  ASSERT_BBOX (all(_stride>T(0)));
+  ASSERT_BBOX (all((_upper-_lower)%_stride == T(0)));
   if (numeric_limits<T>::is_integer) {
     // prevent accidental wrap-around
     if (any (_lower >= numeric_limits<T>::max() / 2) or
@@ -30,19 +31,24 @@ void bbox<T,D>::assert_bbox_limits () const
         any (_upper >= numeric_limits<T>::max() / 2) or
         any (_upper <= numeric_limits<T>::min() / 2))
     {
-      ostringstream lbuf, ubuf, sbuf;
-      lbuf << _lower;
-      ubuf << _upper;
-      sbuf << _stride;
-      string const lstr = lbuf.str();
-      string const ustr = ubuf.str();
-      string const sstr = sbuf.str();
-      CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "Tried to create a very large bbox [%s,%s,%s] of type %s -- it is likely that this would lead to an integer overflow",
-                  lstr.c_str(), ustr.c_str(), sstr.c_str(),
-                  typeid(*this).name());
+      ostringstream buf;
+      T dummy;
+      buf << "Tried to create a very large bbox [" << _lower << "," << _upper << "," << _stride << "] for the type " << typeid(dummy).name() << " -- it is likely that this would lead to an integer overflow";
+      CCTK_WARN (CCTK_WARN_ABORT, buf.str().c_str());
     }
   }
+}
+
+
+
+// Poison
+template<class T, int D>
+bbox<T,D> bbox<T,D>::poison ()
+{
+  DECLARE_CCTK_PARAMETERS;
+  
+  vect<T,D> const v (deadbeef);
+  return bbox (v, v, v);
 }
 
 
@@ -52,7 +58,7 @@ template<class T, int D>
 typename bbox<T,D>::size_type bbox<T,D>::size () const {
   if (empty()) return 0;
   const vect<T,D> sh(shape()/stride());
-#ifdef NDEBUG
+#ifndef CARPET_DEBUG
   return prod(vect<size_type,D>(sh));
 #else
   size_type sz = 1, max = numeric_limits<size_type>::max();
@@ -103,7 +109,7 @@ bool bbox<T,D>::is_aligned_with (const bbox& b) const {
 template<class T, int D>
 bool bbox<T,D>::operator== (const bbox& b) const {
   if (empty() and b.empty()) return true;
-  assert (all(stride()==b.stride()));
+  ASSERT_BBOX (all(stride()==b.stride()));
   return all(lower()==b.lower() and upper()==b.upper());
 }
 
@@ -160,8 +166,8 @@ bool bbox<T,D>::operator> (const bbox& b) const {
 template<class T, int D>
 bbox<T,D> bbox<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi) const {
   // Allow expansion only into directions where the extent is not negative
-  // assert (all(lower()<=upper() or (lo==T(0) and hi==T(0))));
-  assert (all(shape()>=vect<T,D>(0) or (lo==T(0) and hi==T(0))));
+  // ASSERT_BBOX (all(lower()<=upper() or (lo==T(0) and hi==T(0))));
+  ASSERT_BBOX (all(shape()>=vect<T,D>(0) or (lo==T(0) and hi==T(0))));
   const vect<T,D> str = stride();
   const vect<T,D> lb = lower() - lo * str;
   const vect<T,D> ub = upper() + hi * str;
@@ -197,7 +203,7 @@ template<class T, int D>
 bbox<T,D> bbox<T,D>::expanded_containing (const bbox& b) const {
   if (empty()) return b;
   if (b.empty()) return *this;
-  assert (is_aligned_with(b));
+  ASSERT_BBOX (is_aligned_with(b));
   const vect<T,D> lo = min(lower(), b.lower());
   const vect<T,D> up = max(upper(), b.upper());
   const vect<T,D> str = min(stride(), b.stride());
@@ -268,12 +274,13 @@ void bbox<T,D>::input (istream& is) {
       consume (is, '/');
       size_type size_dummy;
       is >> size_dummy;
-      assert (is.good());
+      ASSERT_BBOX (is.good());
       skipws (is);
     }
     consume (is, ')');
   } catch (input_error &err) {
-    cout << "Input error while reading a bbox" << endl;
+    T Tdummy;
+    cout << "Input error while reading a bbox<" << typestring(Tdummy) << "," << D << ">" << endl;
     throw err;
   }
   if (any(_stride<=T(0))) {
@@ -286,8 +293,8 @@ void bbox<T,D>::input (istream& is) {
          << "   The stride does not evenly divide the extent." << endl;
     throw input_error();
   }
-  assert (all(_stride>T(0)));
-  assert (all((_upper-_lower)%_stride == T(0)));
+  ASSERT_BBOX (all(_stride>T(0)));
+  ASSERT_BBOX (all((_upper-_lower)%_stride == T(0)));
 }
 
 
@@ -308,4 +315,5 @@ template class bbox<int,0>;
 template class bbox<int,1>;
 template class bbox<int,2>;
 template class bbox<int,3>;
-template class bbox<CCTK_REAL,3>;
+template class bbox<int,4>;
+template class bbox<CCTK_REAL,dim>;

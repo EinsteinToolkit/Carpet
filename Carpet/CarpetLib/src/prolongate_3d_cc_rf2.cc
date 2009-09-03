@@ -11,7 +11,7 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
-#include "operator_prototypes.hh"
+#include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
 using namespace std;
@@ -120,7 +120,7 @@ namespace CarpetLib {
     
     
     
-#pragma omp parallel for
+    // NOTE: This loop is not parallel
     for (int k=0; k<regkext; ++k) {
       for (int j=0; j<regjext; ++j) {
         for (int i=0; i<regiext; ++i) {
@@ -139,13 +139,13 @@ namespace CarpetLib {
             //   + src [SRCIND2(i-1, j-1)];
             // 3D
             dst [DSTIND3(i, j, k)] =
-              + dst [DSTIND3(i-1, j, k)]
-              + dst [DSTIND3(i, j-1, k)]
-              + dst [DSTIND3(i, j, k-1)]
-              - dst [DSTIND3(i, j-1, k-1)]
-              - dst [DSTIND3(i-1, j, k-1)]
-              - dst [DSTIND3(i-1, j-1, k)]
               + dst [DSTIND3(i-1, j-1, k-1)]
+              - dst [DSTIND3(i  , j-1, k-1)]
+              - dst [DSTIND3(i-1, j  , k-1)]
+              + dst [DSTIND3(i  , j  , k-1)]
+              - dst [DSTIND3(i-1, j-1, k  )]
+              + dst [DSTIND3(i  , j-1, k  )]
+              + dst [DSTIND3(i-1, j  , k  )]
               + src [SRCIND3(i-1, j-1, k-1)];
           }
         }
@@ -172,14 +172,14 @@ namespace CarpetLib {
   
   
   // Convert from the "primitive" form of the grid function to the
-  // "standard" version
+  // "standard" version, i.e., the derivative
   
   template <typename T>
   void
   prolongate_3d_cc_rf2_prim2std (T const * restrict const src,
-                                 ivect const & restrict srcext,
+                                 ivect3 const & restrict srcext,
                                  T * restrict const dst,
-                                 ivect const & restrict dstext,
+                                 ivect3 const & restrict dstext,
                                  ibbox3 const & restrict srcbbox,
                                  ibbox3 const & restrict dstbbox,
                                  ibbox3 const & restrict regbbox)
@@ -253,18 +253,19 @@ namespace CarpetLib {
     
     
     
-#pragma omp parallel for
+    // NOTE: This loop is not parallel
     for (int k=0; k<regkext; ++k) {
       for (int j=0; j<regjext; ++j) {
         for (int i=0; i<regiext; ++i) {
-          dst [DSTIND3(i, j, k)] = reffact2 *
-            (- src [SRCIND3(i, j+1, k+1)]
-             - src [SRCIND3(i+1, j, k+1)]
-             - src [SRCIND3(i+1, j+1, k)]
-             + src [SRCIND3(i+1, j, k)]
-             + src [SRCIND3(i, j+1, k)]
-             + src [SRCIND3(i, j, k+1)]
-             - src [SRCIND3(i, j, k)]
+          dst [DSTIND3(i, j, k)] =
+            (reffact2 * reffact2 * reffact2) *
+            (- src [SRCIND3(i  , j  , k  )]
+             + src [SRCIND3(i+1, j  , k  )]
+             + src [SRCIND3(i  , j+1, k  )]
+             - src [SRCIND3(i+1, j+1, k  )]
+             + src [SRCIND3(i  , j  , k+1)]
+             - src [SRCIND3(i+1, j  , k+1)]
+             - src [SRCIND3(i  , j+1, k+1)]
              + src [SRCIND3(i+1, j+1, k+1)]);
         }
       }
@@ -278,9 +279,9 @@ namespace CarpetLib {
   template                                                              \
   void                                                                  \
   prolongate_3d_cc_rf2_prim2std (T const * restrict const src,          \
-                                 ivect const & restrict srcext,         \
+                                 ivect3 const & restrict srcext,         \
                                  T * restrict const dst,                \
-                                 ivect const & restrict dstext,         \
+                                 ivect3 const & restrict dstext,         \
                                  ibbox3 const & restrict srcbbox,       \
                                  ibbox3 const & restrict dstbbox,       \
                                  ibbox3 const & restrict regbbox);

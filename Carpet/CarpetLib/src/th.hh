@@ -25,10 +25,14 @@ ostream& operator<< (ostream& os, const th& t);
 // The time hierarchy (information about the current time)
 class th {
   
+  static list<th*> allth;
+  list<th*>::iterator allthi;
+  
 public:				// should be readonly
   
   // Fields
   gh& h;                        // hierarchy
+  gh::th_handle gh_handle;
   
 private:
   
@@ -48,9 +52,10 @@ public:
   
   // Modifiers
   void regrid ();
+  void regrid_free ();
   
   // Time management
-  CCTK_REAL get_time (const int rl, const int ml) const
+  CCTK_REAL get_time (const int rl, const int ml) const CCTK_ATTRIBUTE_PURE
   {
     assert (rl>=0 and rl<h.reflevels());
     assert (ml>=0 and ml<h.mglevels());
@@ -69,7 +74,7 @@ public:
     set_time(rl,ml, get_time(rl,ml) + get_delta(rl,ml));
   }
   
-  CCTK_REAL get_delta (const int rl, const int ml) const
+  CCTK_REAL get_delta (const int rl, const int ml) const CCTK_ATTRIBUTE_PURE
   {
     assert (rl>=0 and rl<h.reflevels());
     assert (ml>=0 and ml<h.mglevels());
@@ -83,7 +88,7 @@ public:
     deltas.AT(ml).AT(rl) = dt;
   }
   
-  CCTK_REAL time (const int tl, const int rl, const int ml) const
+  CCTK_REAL time (const int tl, const int rl, const int ml) const CCTK_ATTRIBUTE_PURE
   {
     assert (rl>=0 and rl<h.reflevels());
     assert (ml>=0 and ml<h.mglevels());
@@ -91,12 +96,14 @@ public:
   }
   
   // Output
-  size_t memory () const;
+  size_t memory () const CCTK_ATTRIBUTE_PURE;
+  static size_t allmemory () CCTK_ATTRIBUTE_PURE;
   void output (ostream& os) const;
 };
 
 
 
+inline size_t memoryof (th const & t) CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (th const & t)
 {
   return t.memory ();

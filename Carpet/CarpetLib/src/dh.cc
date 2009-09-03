@@ -3,6 +3,9 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
+#include "CarpetTimers.hh"
+
+#include "mpi_string.hh"
 #include "bbox.hh"
 #include "bboxset.hh"
 #include "defs.hh"
@@ -19,6 +22,10 @@ using namespace CarpetLib;
 
 
 
+list<dh*> dh::alldh;
+
+
+
 // Constructors
 dh::
 dh (gh & h_,
@@ -31,12 +38,14 @@ dh (gh & h_,
   assert (all (all (ghost_width >= 0)));
   assert (all (all (buffer_width >= 0)));
   assert (prolongation_order_space >= 0);
-  h.add (this);
+  alldhi = alldh.insert(alldh.end(), this);
+  gh_handle = h.add (this);
   CHECKPOINT;
-  regrid ();
+  regrid (false);
   for (int rl = 0; rl < h.reflevels(); ++ rl) {
     recompose (rl, false);
   }
+  regrid_free (false);
 }
 
 
@@ -46,7 +55,8 @@ dh::
 ~dh ()
 {
   CHECKPOINT;
-  h.remove (this);
+  h.erase (gh_handle);
+  alldh.erase(alldhi);
 }
 
 
@@ -135,6 +145,15 @@ assert_error (char const * restrict const checkstring,
   there_was_an_error = true;
 }
 
+#ifdef CARPET_OPTIMISE
+
+// For highest efficiency, omit all self-checks
+#define ASSERT_rl(check, message)
+#define ASSERT_c(check, message)
+#define ASSERT_cc(check, message)
+
+#else
+
 #define ASSERT_rl(check, message)                       \
   do {                                                  \
     if (not (check)) {                                  \
@@ -156,41 +175,60 @@ assert_error (char const * restrict const checkstring,
     }                                                   \
   } while (false)
 
+#endif
+
 
 
 void
 dh::
-regrid ()
+regrid (bool const do_init)
 {
   DECLARE_CCTK_PARAMETERS;
+    
+  static Carpet::Timer timer ("CarpetLib::dh::regrid");
+  timer.start();
   
   CHECKPOINT;
   
-  static Timer total ("dh::regrid");
+  static Timer total ("CarpetLib::dh::regrid");
   total.start ();
   
-  oldboxes.clear();
+  mboxes oldboxes;
   swap (boxes, oldboxes);
-  fast_oldboxes.clear();
-  swap (fast_boxes, fast_oldboxes);
+  
+  full_mboxes full_boxes;
+  
+  fast_boxes.clear();
   
   
   
+  // cerr << "QQQ: regrid[1]" << endl;
   boxes.resize (h.mglevels());
+  full_boxes.resize (h.mglevels());
   fast_boxes.resize (h.mglevels());
   for (int ml = 0; ml < h.mglevels(); ++ ml) {
+    // cerr << "QQQ: regrid[2] ml=" << ml << endl;
     boxes.AT(ml).resize (h.reflevels());
+    full_boxes.AT(ml).resize (h.reflevels());
     fast_boxes.AT(ml).resize (h.reflevels());
     for (int rl = 0; rl < h.reflevels(); ++ rl) {
+      // cerr << "QQQ: regrid[3] rl=" << rl << endl;
       boxes.AT(ml).AT(rl).resize (h.components(rl));
-      fast_boxes.AT(ml).AT(rl).resize (dist::size());
+      full_boxes.AT(ml).AT(rl).resize (h.components(rl));
       
       cboxes & level = boxes.AT(ml).AT(rl);
-      fast_cboxes & fast_level = fast_boxes.AT(ml).AT(rl);
+      full_cboxes & full_level = full_boxes.AT(ml).AT(rl);
+      fast_dboxes & fast_level = fast_boxes.AT(ml).AT(rl);
+      
+      vector<fast_dboxes> fast_level_otherprocs (dist::size());
       
       
       
       // Domain:
+      // cerr << "QQQ: regrid[a]" << endl;
+      
+      static Carpet::Timer timer_domain ("CarpetLib::dh::regrid::domain");
+      timer_domain.start();
       
       ibbox const & domain_exterior = h.baseextent(ml,rl);
       // Variables may have size zero
@@ -211,17 +249,24 @@ regrid ()
       ibset domain_boundary = domain_exterior - domain_active;
       domain_boundary.normalize();
       
+      timer_domain.stop();
       
       
+      
+      static Carpet::Timer timer_region ("CarpetLib::dh::regrid::region");
+      timer_region.start();
+      
+      // cerr << "QQQ: regrid[b]" << endl;
       for (int c = 0; c < h.components(rl); ++ c) {
         
-        dboxes & box = boxes.AT(ml).AT(rl).AT(c);
+        full_dboxes & box = full_level.AT(c);
         
         
         
         // Interior:
         
         ibbox & intr = box.interior;
+        intr = ibbox::poison();
         
         // The interior of the grid has the extent as specified by the
         // regridding thorn
@@ -237,10 +282,12 @@ regrid ()
                   "The interior must be contained in the domain");
         
         // All interiors must be disjunct
+#ifdef CARPET_DEBUG
         for (int cc = 0; cc < c; ++ cc) {
-          ASSERT_cc (not intr.intersects (level.AT(cc).interior),
+          ASSERT_cc (not intr.intersects (full_level.AT(cc).interior),
                      "All interiors must be disjunct");
         }
+#endif
         
         
         
@@ -261,6 +308,7 @@ regrid ()
         // Exterior:
         
         ibbox & extr = box.exterior;
+        extr = ibbox::poison();
         
         ASSERT_c (all (all (ghost_width >= 0)),
                   "The gh ghost widths must not be negative");
@@ -280,6 +328,7 @@ regrid ()
         // Cactus ghost zones (which include outer boundaries):
         
         ibset & ghosts = box.ghosts;
+        ghosts = ibset::poison();
         
         ghosts = extr - intr;
         ghosts.normalize();
@@ -295,6 +344,7 @@ regrid ()
         // Communicated region:
         
         ibbox & comm = box.communicated;
+        comm = ibbox::poison();
         
         comm = extr.expand (i2vect (is_outer_boundary) * (- boundary_width));
         
@@ -313,6 +363,7 @@ regrid ()
         // Outer boundary:
         
         ibset & outer_boundaries = box.outer_boundaries;
+        outer_boundaries = ibset::poison();
         
         outer_boundaries = extr - comm;
         outer_boundaries.normalize();
@@ -327,6 +378,7 @@ regrid ()
         // Owned region:
         
         ibbox & owned = box.owned;
+        owned = ibbox::poison();
         
         owned = intr.expand (i2vect (is_outer_boundary) * (- boundary_width));
         
@@ -341,10 +393,12 @@ regrid ()
                   "The owned region must be contained in the active part of the domain");
         
         // All owned regions must be disjunct
+#ifdef CARPET_DEBUG
         for (int cc = 0; cc < c; ++ cc) {
-          ASSERT_cc (not owned.intersects (level.AT(cc).owned),
+          ASSERT_cc (not owned.intersects (full_level.AT(cc).owned),
                      "All owned regions must be disjunct");
         }
+#endif
         
         
         
@@ -352,6 +406,7 @@ regrid ()
         // boundaries):
         
         ibset & boundaries = box.boundaries;
+        boundaries = ibset::poison();
         
         boundaries = comm - owned;
         boundaries.normalize();
@@ -365,9 +420,15 @@ regrid ()
         
       } // for c
       
+      timer_region.stop();
+      
       
       
       // Conjunction of all buffer zones:
+      // cerr << "QQQ: regrid[c]" << endl;
+      
+      static Carpet::Timer timer_buffers ("CarpetLib::dh::regrid::buffers");
+      timer_buffers.start();
       
       // Enlarge active part of domain
       i2vect const safedist = i2vect (0);
@@ -376,7 +437,7 @@ regrid ()
       // All owned regions
       ibset allowned;
       for (int c = 0; c < h.components(rl); ++ c) {
-        dboxes const & box = boxes.AT(ml).AT(rl).AT(c);
+        full_dboxes const & box = full_level.AT(c);
         allowned += box.owned;
       }
       allowned.normalize();
@@ -409,20 +470,13 @@ regrid ()
       
       
       for (int c = 0; c < h.components(rl); ++ c) {
-        
-        dboxes & box = boxes.AT(ml).AT(rl).AT(c);
-        
-        
+        full_dboxes & box = full_level.AT(c);
         
         // Buffer zones:
-        
         box.buffers = box.owned & allbuffers;
         box.buffers.normalize();
         
-        
-        
         // Active region:
-        
         box.active = box.owned - box.buffers;
         box.active.normalize();
         
@@ -431,22 +485,29 @@ regrid ()
       
       
       // The conjunction of all buffer zones must equal allbuffers
+      // cerr << "QQQ: regrid[d]" << endl;
       
       ibset allbuffers1;
       for (int c = 0; c < h.components(rl); ++ c) {
-        dboxes const & box = boxes.AT(ml).AT(rl).AT(c);
+        full_dboxes const & box = full_level.AT(c);
         allbuffers1 += box.buffers;
       }
       allbuffers1.normalize();
       ASSERT_rl (allbuffers1 == allbuffers,
                  "Buffer zone consistency check");
       
+      timer_buffers.stop();
+      
       
       
       // Test constituency relations:
+      // cerr << "QQQ: regrid[e]" << endl;
+      
+      static Carpet::Timer timer_test ("CarpetLib::dh::regrid::test");
+      timer_test.start();
       
       for (int c = 0; c < h.components(rl); ++ c) {
-        dboxes const & box = boxes.AT(ml).AT(rl).AT(c);
+        full_dboxes const & box = full_level.AT(c);
         
         ASSERT_c ((box.active & box.buffers).empty(),
                   "Consistency check");
@@ -473,24 +534,36 @@ regrid ()
         
       } // for c
       
+      timer_test.stop();
+      
       
       
       // Communication schedule:
+      // cerr << "QQQ: regrid[4]" << endl;
       
-      for (int c = 0; c < h.components(rl); ++ c) {
+      static Carpet::Timer timer_comm ("CarpetLib::dh::regrid::comm");
+      timer_comm.start();
+      
+      for (int lc = 0; lc < h.local_components(rl); ++ lc) {
+        int const c = h.get_component (rl, lc);
+        // cerr << "QQQ: regrid[4a] lc=" << lc << " c=" << c << endl;
         
-        dboxes & box = boxes.AT(ml).AT(rl).AT(c);
+        full_dboxes & box = full_level.AT(c);
         
         
         
         // Multigrid restriction:
+        
+        static Carpet::Timer timer_comm_mgrest
+          ("CarpetLib::dh::regrid::comm::mgrest");
+        timer_comm_mgrest.start();
         
         if (ml > 0) {
           int const oml = ml - 1;
           
           // Multigrid restriction must fill all active points
           
-          dboxes const & obox = boxes.AT(oml).AT(rl).AT(c);
+          full_dboxes const & obox = full_boxes.AT(oml).AT(rl).AT(c);
           
           ibset needrecv = box.active;
           
@@ -513,11 +586,8 @@ regrid ()
             ibbox const send = recv.expanded_for (obox.interior);
             ASSERT_c (send <= obox.exterior,
                       "Multigrid restriction: Send region must be contained in exterior");
-            if (on_this_proc (rl, c)) {
-              int const p = dist::rank();
-              fast_level.AT(p).fast_mg_rest_sendrecv.push_back
-                (sendrecv_pseudoregion_t (send, c, recv, c));
-            }
+            fast_level.fast_mg_rest_sendrecv.push_back
+              (sendrecv_pseudoregion_t (send, c, recv, c));
           }
           
           needrecv -= ovlp;
@@ -529,9 +599,16 @@ regrid ()
           
         } // if ml > 0
         
+        timer_comm_mgrest.stop();
+        
         
         
         // Multigrid prolongation:
+        // cerr << "QQQ: regrid[f]" << endl;
+        
+        static Carpet::Timer timer_comm_mgprol
+          ("CarpetLib::dh::regrid::comm::mprol");
+        timer_comm_mgprol.start();
         
         if (ml > 0) {
           int const oml = ml - 1;
@@ -539,7 +616,7 @@ regrid ()
           // Multigrid prolongation must fill all active points
           // (this could probably be relaxed)
           
-          dboxes const & obox = boxes.AT(oml).AT(rl).AT(c);
+          full_dboxes const & obox = full_boxes.AT(oml).AT(rl).AT(c);
           
           ibset oneedrecv = obox.active;
           
@@ -565,11 +642,8 @@ regrid ()
               recv.expanded_for (box.interior).expand (stencil_size);
             ASSERT_c (send <= box.exterior,
                       "Multigrid prolongation: Send region must be contained in exterior");
-            if (on_this_proc (rl, c)) {
-              int const p = dist::rank();
-              fast_level.AT(p).fast_mg_prol_sendrecv.push_back
-                (sendrecv_pseudoregion_t (send, c, recv, c));
-            }
+            fast_level.fast_mg_prol_sendrecv.push_back
+              (sendrecv_pseudoregion_t (send, c, recv, c));
           }
           
           oneedrecv -= ovlp;
@@ -581,9 +655,16 @@ regrid ()
           
         } // if ml > 0
         
+        timer_comm_mgprol.stop();
+        
         
         
         // Refinement prolongation:
+        // cerr << "QQQ: regrid[g]" << endl;
+        
+        static Carpet::Timer timer_comm_refprol
+          ("CarpetLib::dh::regrid::comm::refprol");
+        timer_comm_refprol.start();
         
         if (rl > 0) {
           int const orl = rl - 1;
@@ -600,7 +681,7 @@ regrid ()
             i2vect (h.reffacts.at(rl) / h.reffacts.at(orl));
           
           for (int cc = 0; cc < h.components(orl); ++ cc) {
-            dboxes const & obox = boxes.AT(ml).AT(orl).AT(cc);
+            full_dboxes const & obox = full_boxes.AT(ml).AT(orl).AT(cc);
             
             ibset contracted_oactive;
             for (ibset::const_iterator
@@ -617,16 +698,19 @@ regrid ()
             ovlp.normalize();
             
             for (ibset::const_iterator
-                   ri =ovlp.begin(); ri != ovlp.end(); ++ ri)
+                   ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
             {
               ibbox const & recv = * ri;
               ibbox const send =
                 recv.expanded_for (obox.interior).expand (stencil_size);
               ASSERT_c (send <= obox.exterior,
                         "Refinement prolongation: Send region must be contained in exterior");
-              if (on_this_proc (rl, c) or on_this_proc (orl, cc)) {
-                int const p = dist::rank();
-                fast_level.AT(p).fast_ref_prol_sendrecv.push_back
+              fast_level.fast_ref_prol_sendrecv.push_back
+                (sendrecv_pseudoregion_t (send, cc, recv, c));
+              if (not on_this_proc (orl, cc)) {
+                fast_dboxes & fast_level_otherproc =
+                  fast_level_otherprocs.AT(this_proc(orl, cc));
+                fast_level_otherproc.fast_ref_prol_sendrecv.push_back
                   (sendrecv_pseudoregion_t (send, cc, recv, c));
               }
             }
@@ -635,75 +719,110 @@ regrid ()
             
           } // for cc
           
-          needrecv.normalize();
-          
           // All points must have been received
+          needrecv.normalize();
           ASSERT_c (needrecv.empty(),
                     "Refinement prolongation: All points must have been received");
           
         } // if rl > 0
         
+        timer_comm_refprol.stop();
+        
         
         
         // Synchronisation:
+        // cerr << "QQQ: regrid[h]" << endl;
         
-        // Synchronisation should fill as many boundary points as
-        // possible
+        static Carpet::Timer timer_comm_sync
+          ("CarpetLib::dh::regrid::comm::sync");
+        timer_comm_sync.start();
         
-#if 0
-        // Outer boundaries are not synchronised, since they cannot be
-        // filled by boundary prolongation either, and therefore the
-        // user code must set them anyway.
-        ibset needrecv = box.boundaries;
-#else
-        // Outer boundaries are synchronised for backward
-        // compatibility.
-        ibset needrecv = box.ghosts;
-#endif
-        
-        ibset & sync = box.sync;
-        
-        for (int cc = 0; cc < h.components(rl); ++ cc) {
-          dboxes const & obox = boxes.AT(ml).AT(rl).AT(cc);
+        {
+          
+          // Synchronisation should fill as many boundary points as
+          // possible
           
 #if 0
-          ibset ovlp = needrecv & obox.owned;
+          // Outer boundaries are not synchronised, since they cannot
+          // be filled by boundary prolongation either, and therefore
+          // the user code must set them anyway.
+          ibset needrecv = box.boundaries;
 #else
-          ibset ovlp = needrecv & obox.interior;
+          // Outer boundaries are synchronised for backward
+          // compatibility.
+          ibset needrecv = box.ghosts;
 #endif
-          ovlp.normalize();
+          ibset const needrecv_orig = needrecv;
           
-          if (cc == c) {
-            ASSERT_cc (ovlp.empty(),
-                       "A region may not synchronise from itself");
-          }
+          ibset & sync = box.sync;
           
-          for (ibset::const_iterator
-                 ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
-          {
-            ibbox const & recv = * ri;
-            ibbox const & send = recv;
-            if (on_this_proc (rl, c) or on_this_proc (rl, cc)) {
-              int const p = dist::rank();
-              fast_level.AT(p).fast_sync_sendrecv.push_back
-                (sendrecv_pseudoregion_t (send, cc, recv, c));
+          for (int cc = 0; cc < h.components(rl); ++ cc) {
+            full_dboxes const & obox = full_level.AT(cc);
+            
+#if 0
+            ibset ovlp = needrecv & obox.owned;
+#else
+            ibset ovlp = needrecv & obox.interior;
+#endif
+            ovlp.normalize();
+            
+            if (cc == c) {
+              ASSERT_cc (ovlp.empty(),
+                         "A region may not synchronise from itself");
             }
-          }
+            
+            for (ibset::const_iterator
+                   ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
+            {
+              ibbox const & recv = * ri;
+              ibbox const & send = recv;
+              fast_level.fast_sync_sendrecv.push_back
+                (sendrecv_pseudoregion_t (send, cc, recv, c));
+              if (not on_this_proc (rl, cc)) {
+                fast_dboxes & fast_level_otherproc =
+                  fast_level_otherprocs.AT(this_proc(rl, cc));
+                fast_level_otherproc.fast_sync_sendrecv.push_back
+                  (sendrecv_pseudoregion_t (send, cc, recv, c));
+              }
+            }
+            
+            needrecv -= ovlp;
+            sync += ovlp;
+            
+          } // for cc
           
-          needrecv -= ovlp;
-          sync += ovlp;
+          sync.normalize();
           
-        } // for cc
+        }
         
-        needrecv.normalize();
-        sync.normalize();
+        timer_comm_sync.stop();
         
         
         
         // Boundary prolongation:
+        // cerr << "QQQ: regrid[i]" << endl;
+        
+        static Carpet::Timer timer_comm_refbndprol
+          ("CarpetLib::dh::regrid::comm::refbndprol");
+        timer_comm_refbndprol.start();
         
         if (rl > 0) {
           int const orl = rl - 1;
+          
+#if 0
+          // Outer boundaries are not synchronised, since they cannot
+          // be filled by boundary prolongation either, and therefore
+          // the user code must set them anyway.
+          ibset needrecv = box.boundaries;
+#else
+          // Outer boundaries are synchronised for backward
+          // compatibility.
+          ibset needrecv = box.ghosts;
+#endif
+          
+          // Points which are synchronised need not be boundary
+          // prolongated
+          needrecv -= box.sync;
           
           // Outer boundary points cannot be boundary prolongated
           needrecv &= box.communicated;
@@ -711,7 +830,9 @@ regrid ()
           // Prolongation must fill what cannot be synchronised, and
           // also all buffer zones
           needrecv += box.buffers;
+          
           needrecv.normalize();
+          ibset const needrecv_orig = needrecv;
           
           ibset & bndref = box.bndref;
           
@@ -721,9 +842,10 @@ regrid ()
                     "Refinement factors must be integer multiples of each other");
           i2vect const reffact =
             i2vect (h.reffacts.at(rl) / h.reffacts.at(orl));
+          ivect const reffact1 = h.reffacts.at(rl) / h.reffacts.at(orl);
           
           for (int cc = 0; cc < h.components(orl); ++ cc) {
-            dboxes const & obox = boxes.AT(ml).AT(orl).AT(cc);
+            full_dboxes const & obox = full_boxes.AT(ml).AT(orl).AT(cc);
             
             ibset contracted_oactive;
             for (ibset::const_iterator
@@ -747,251 +869,522 @@ regrid ()
                 recv.expanded_for (obox.interior).expand (stencil_size);
               ASSERT_c (send <= obox.exterior,
                         "Boundary prolongation: Send region must be contained in exterior");
-              if (on_this_proc (rl, c) or on_this_proc (orl, cc)) {
-                int const p = dist::rank();
-                fast_level.AT(p).fast_ref_bnd_prol_sendrecv.push_back
+              fast_level.fast_ref_bnd_prol_sendrecv.push_back
+                (sendrecv_pseudoregion_t (send, cc, recv, c));
+              if (not on_this_proc (orl, cc)) {
+                fast_dboxes & fast_level_otherproc =
+                  fast_level_otherprocs.AT(this_proc(orl, cc));
+                fast_level_otherproc.fast_ref_bnd_prol_sendrecv.push_back
                   (sendrecv_pseudoregion_t (send, cc, recv, c));
               }
             }
             
             needrecv -= ovlp;
             bndref += ovlp;
-              
+            
           } // for cc
           
-          needrecv.normalize();
           bndref.normalize();
+          
+          // All points must now have been received, either through
+          // synchronisation or through boundary prolongation
+          needrecv.normalize();
+          ASSERT_c (needrecv.empty(),
+                    "Synchronisation and boundary prolongation: All points must have been received");
           
         } // if rl > 0
         
-        // All points must now have been received, either through
-        // synchronisation or through boundary prolongation
-        ASSERT_c (needrecv.empty(),
-                  "Synchronisation and boundary prolongation: All points must have been received");
+        timer_comm_refbndprol.stop();
         
-      } // for c
+      } // for lc
       
       
       
       // Refinement restriction:
+      // cerr << "QQQ: regrid[j]" << endl;
+      
+      static Carpet::Timer timer_comm_refrest
+        ("CarpetLib::dh::regrid::comm::refrest");
+      timer_comm_refrest.start();
       
       if (rl > 0) {
         int const orl = rl - 1;
-        fast_cboxes & fast_olevel = fast_boxes.AT(ml).AT(orl);
+        fast_dboxes & fast_olevel = fast_boxes.AT(ml).AT(orl);
         
-        ibset needrecv;
-        for (int c = 0; c < h.components(rl); ++ c) {
-          dboxes const & box = boxes.AT(ml).AT(rl).AT(c);
-          dboxes const & obox0 = boxes.AT(ml).AT(orl).AT(0);
-          
-          // Refinement restriction may fill all active points, and
-          // must use all active points
-          
-          for (ibset::const_iterator
-                 ai = box.active.begin(); ai != box.active.end(); ++ ai)
-          {
-            ibbox const & active = * ai;
-            needrecv += active.contracted_for (obox0.interior);
-          }
-          needrecv.normalize();
-        } // for c
-        
-        for (int cc = 0; cc < h.components(orl); ++ cc) {
-          dboxes & obox = boxes.AT(ml).AT(orl).AT(cc);
-          
-          for (int c = 0; c < h.components(rl); ++ c) {
-            dboxes const & box = boxes.AT(ml).AT(rl).AT(c);
+        if (h.components(orl) > 0) {
+          for (int lc = 0; lc < h.local_components(rl); ++ lc) {
+            int const c = h.get_component (rl, lc);
             
-            ibset contracted_active;
+            full_dboxes const & box = full_level.AT(c);
+            full_dboxes const & obox0 = full_boxes.AT(ml).AT(orl).AT(0);
+            
+            // Refinement restriction may fill all active points, and
+            // must use all active points
+            
+            ibset needrecv;
             for (ibset::const_iterator
                    ai = box.active.begin(); ai != box.active.end(); ++ ai)
             {
               ibbox const & active = * ai;
-              contracted_active += active.contracted_for (obox.interior);
+              needrecv += active.contracted_for (obox0.interior);
             }
-            contracted_active.normalize();
+            needrecv.normalize();
             
-            ibset ovlp = obox.active & contracted_active;
-            ovlp.normalize();
-            
-            for (ibset::const_iterator
-                   ri =ovlp.begin(); ri != ovlp.end(); ++ ri)
-            {
-              ibbox const & recv = * ri;
-              ibbox const send = recv.expanded_for (box.interior);
-              ASSERT_c (send <= box.active,
-                        "Refinement restriction: Send region must be contained in active part");
-              if (on_this_proc (rl, c) or on_this_proc (orl, cc)) {
-                int const p = dist::rank();
-                fast_olevel.AT(p).fast_ref_rest_sendrecv.push_back
-                  (sendrecv_pseudoregion_t (send, c, recv, cc));
-              }
-            }
-            
-            needrecv -= ovlp;
+            for (int cc = 0; cc < h.components(orl); ++ cc) {
+              full_dboxes & obox = full_boxes.AT(ml).AT(orl).AT(cc);
               
-          } // for c
-          
-        } // for cc
-        
-        needrecv.normalize();
-        
-        // All points must have been received
-        ASSERT_rl (needrecv.empty(),
-                   "Refinement restriction: All points must have been received");
+              ibset contracted_active;
+              for (ibset::const_iterator
+                     ai = box.active.begin(); ai != box.active.end(); ++ ai)
+              {
+                ibbox const & active = * ai;
+                contracted_active += active.contracted_for (obox0.interior);
+              }
+              contracted_active.normalize();
+              
+              ibset ovlp = obox.active & contracted_active;
+              ovlp.normalize();
+              
+              for (ibset::const_iterator
+                     ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
+              {
+                ibbox const & recv = * ri;
+                ibbox const send = recv.expanded_for (box.interior);
+                ASSERT_c (send <= box.active,
+                          "Refinement restriction: Send region must be contained in active part");
+                fast_olevel.fast_ref_rest_sendrecv.push_back
+                  (sendrecv_pseudoregion_t (send, c, recv, cc));
+                if (not on_this_proc (orl, cc)) {
+                  fast_dboxes & fast_level_otherproc =
+                    fast_level_otherprocs.AT(this_proc(orl, cc));
+                  fast_level_otherproc.fast_ref_rest_sendrecv.push_back
+                    (sendrecv_pseudoregion_t (send, c, recv, cc));
+                }
+              }
+              
+              needrecv -= ovlp;
+              
+            } // for cc
+            
+            // All points must have been received
+            needrecv.normalize();
+            ASSERT_rl (needrecv.empty(),
+                       "Refinement restriction: All points must have been received");
+            
+          } // for lc
+        }   // if orl not empty
         
       } // if rl > 0
+      
+      timer_comm_refrest.stop();
+        
+      timer_comm.stop();
       
       
       
       // Regridding schedule:
+      // cerr << "QQQ: regrid[5]" << endl;
       
-      for (int c = 0; c < h.components(rl); ++ c) {
+      fast_level.do_init = do_init;
+      if (do_init) {
         
-        dboxes & box = boxes.AT(ml).AT(rl).AT(c);
+        static Carpet::Timer timer_regrid ("CarpetLib::dh::regrid::regrid");
+        timer_regrid.start();
         
-        ibset needrecv = box.active;
-        
-        
+        for (int lc = 0; lc < h.local_components(rl); ++ lc) {
+          int const c = h.get_component (rl, lc);
+          // cerr << "QQQ: regrid[5a] lc=" << lc << " c=" << c << endl;
           
-        // Synchronisation:
-        
-        if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > rl) {
+          full_dboxes & box = full_level.AT(c);
           
-          int const oldcomponents = oldboxes.AT(ml).AT(rl).size();
+          ibset needrecv = box.active;
           
-          // Synchronisation copies from the same level of the old
-          // grid structure.  It should fill as many active points as
-          // possible
           
-          for (int cc = 0; cc < oldcomponents; ++ cc) {
-            dboxes const & obox = oldboxes.AT(ml).AT(rl).AT(cc);
+          
+          // Synchronisation:
+          // cerr << "QQQ: regrid[k]" << endl;
+          
+          static Carpet::Timer timer_regrid_sync
+            ("CarpetLib::dh::regrid::regrid::sync");
+          timer_regrid_sync.start();
+          
+          if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > rl)
+          {
             
-            ibset ovlp = needrecv & obox.owned;
-            ovlp.normalize();
+            int const oldcomponents = oldboxes.AT(ml).AT(rl).size();
             
-            for (ibset::const_iterator
-                   ri =ovlp.begin(); ri != ovlp.end(); ++ ri)
-            {
-              ibbox const & recv = * ri;
-              ibbox const & send = recv;
-              if (on_this_proc (rl, c) or on_this_oldproc (rl, cc)) {
-                int const p = dist::rank();
-                fast_level.AT(p).fast_old2new_sync_sendrecv.push_back
+            // Synchronisation copies from the same level of the old
+            // grid structure.  It should fill as many active points
+            // as possible.
+            
+            for (int cc = 0; cc < oldcomponents; ++ cc) {
+              dboxes const & obox = oldboxes.AT(ml).AT(rl).AT(cc);
+              
+              ibset ovlp = needrecv & obox.owned;
+              ovlp.normalize();
+              
+              for (ibset::const_iterator
+                     ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
+              {
+                ibbox const & recv = * ri;
+                ibbox const & send = recv;
+                fast_level.fast_old2new_sync_sendrecv.push_back
                   (sendrecv_pseudoregion_t (send, cc, recv, c));
+                if (not on_this_oldproc (rl, cc)) {
+                  fast_dboxes & fast_level_otherproc =
+                    fast_level_otherprocs.AT(this_proc(rl, cc));
+                  fast_level_otherproc.fast_old2new_sync_sendrecv.push_back
+                    (sendrecv_pseudoregion_t (send, cc, recv, c));
+                }
               }
-            }
+              
+              needrecv -= ovlp;
+              
+            } // for cc
             
-            needrecv -= ovlp;
+            needrecv.normalize();
             
-          } // for cc
+          } // if not oldboxes.empty
           
-          needrecv.normalize();
+          timer_regrid_sync.stop();
+          
+          
+          
+          // Prolongation:
+          // cerr << "QQQ: regrid[l]" << endl;
+          
+          static Carpet::Timer timer_regrid_prolongate
+            ("CarpetLib::dh::regrid::regrid::prolongate");
+          timer_regrid_prolongate.start();
+          
+          if (rl > 0) {
+            int const orl = rl - 1;
+            
+            // Prolongation interpolates from the next coarser level
+            // of the new grid structure.  It must fill what cannot be
+            // synchronised.
+            
+            i2vect const stencil_size = i2vect (prolongation_stencil_size());
+            
+            ASSERT_c (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
+                      "Refinement factors must be integer multiples of each other");
+            i2vect const reffact =
+              i2vect (h.reffacts.at(rl) / h.reffacts.at(orl));
+            
+            for (int cc = 0; cc < h.components(orl); ++ cc) {
+              full_dboxes const & obox = full_boxes.AT(ml).AT(orl).AT(cc);
+              
+              ibset contracted_oactive;
+              for (ibset::const_iterator
+                     ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
+              {
+                ibbox const & oactive = * ai;
+                // untested for cell centering
+                contracted_oactive +=
+                  oactive.contracted_for (box.interior).expand (reffact);
+              }
+              contracted_oactive.normalize();
+              
+              ibset ovlp = needrecv & contracted_oactive;
+              ovlp.normalize();
+              
+              for (ibset::const_iterator
+                     ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
+              {
+                ibbox const & recv = * ri;
+                ibbox const send =
+                  recv.expanded_for (obox.interior).expand (stencil_size);
+                ASSERT_c (send <= obox.exterior,
+                          "Regridding prolongation: Send region must be contained in exterior");
+                fast_level.fast_old2new_ref_prol_sendrecv.push_back
+                  (sendrecv_pseudoregion_t (send, cc, recv, c));
+                if (not on_this_proc (orl, cc)) {
+                  fast_dboxes & fast_level_otherproc =
+                    fast_level_otherprocs.AT(this_proc(orl, cc));
+                  fast_level_otherproc.fast_old2new_ref_prol_sendrecv.
+                    push_back (sendrecv_pseudoregion_t (send, cc, recv, c));
+                }
+              }
+              
+              needrecv -= ovlp;
+              
+            } // for cc
+            
+            needrecv.normalize();
+            
+          } // if rl > 0
+          
+          if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > 0) {
+            // All points must now have been received, either through
+            // synchronisation or through prolongation
+            ASSERT_c (needrecv.empty(),
+                      "Regridding prolongation: All points must have been received");
+          }
+          
+          timer_regrid_prolongate.stop();
+          
+        } // for lc
         
-        } // if not oldboxes.empty
+        timer_regrid.stop();
         
+      } // if do_init
+      
+      
+      
+      // cerr << "QQQ: regrid[6]" << endl;
+      for (int lc = 0; lc < h.local_components(rl); ++ lc) {
+        int const c = h.get_component (rl, lc);
         
+        level.AT(c).exterior = full_level.AT(c).exterior;
+        level.AT(c).owned    = full_level.AT(c).owned;
+        level.AT(c).interior = full_level.AT(c).interior;
         
-        // Prolongation:
+        level.AT(c).exterior_size = full_level.AT(c).exterior.size();
+        level.AT(c).owned_size    = full_level.AT(c).owned.size();
+        level.AT(c).active_size   = full_level.AT(c).active.size();
+        
+      } // for lc
+      
+      
+      
+      // Broadcast grid structure and communication schedule
+      // cerr << "QQQ: regrid[7]" << endl;
+      
+      {
+        
+        static Carpet::Timer timer_bcast_boxes
+          ("CarpetLib::dh::regrid::bcast_boxes");
+        timer_bcast_boxes.start();
+        
+        int const count_send = h.local_components(rl);
+        vector<dboxes> level_send (count_send);
+        for (int lc = 0; lc < h.local_components(rl); ++ lc) {
+          int const c = h.get_component (rl, lc);
+          level_send.AT(lc) = level.AT(c);
+        }
+        // cerr << "QQQ: regrid[7a]" << endl;
+        vector<vector<dboxes> > const level_recv =
+          allgatherv (dist::comm(), level_send);
+        // cerr << "QQQ: regrid[7b]" << endl;
+        vector<int> count_recv (dist::size(), 0);
+        for (int c = 0; c < h.components(rl); ++ c) {
+          int const p = this_proc (rl, c);
+          if (p != dist::rank()) {
+            level.AT(c) = level_recv.AT(p).AT(count_recv.AT(p));
+            ++ count_recv.AT(p);
+          }
+        }
+        for (int p = 0; p < dist::size(); ++ p) {
+          if (p != dist::rank()) {
+            assert (count_recv.AT(p) == int(level_recv.AT(p).size()));
+          }
+        }
+        // cerr << "QQQ: regrid[7c]" << endl;
+        
+        timer_bcast_boxes.stop();
+        
+      }
+      
+      {
+        
+        static Carpet::Timer timer_bcast_comm
+          ("CarpetLib::dh::regrid::bcast_comm");
+        timer_bcast_comm.start();
+        
+        static Carpet::Timer timer_bcast_comm_ref_prol
+          ("CarpetLib::dh::regrid::bcast_comm::ref_prol");
+        timer_bcast_comm_ref_prol.start();
+        broadcast_schedule (fast_level_otherprocs, fast_level,
+                            & fast_dboxes::fast_ref_prol_sendrecv);
+        timer_bcast_comm_ref_prol.stop();
+        
+        static Carpet::Timer timer_bcast_comm_sync
+          ("CarpetLib::dh::regrid::bcast_comm::sync");
+        timer_bcast_comm_sync.start();
+        broadcast_schedule (fast_level_otherprocs, fast_level,
+                            & fast_dboxes::fast_sync_sendrecv);
+        timer_bcast_comm_sync.stop();
+        
+        static Carpet::Timer timer_bcast_comm_ref_bnd_prol
+          ("CarpetLib::dh::regrid::bcast_comm::ref_bnd_prol");
+        timer_bcast_comm_ref_bnd_prol.start();
+        broadcast_schedule (fast_level_otherprocs, fast_level,
+                            & fast_dboxes::fast_ref_bnd_prol_sendrecv);
+        timer_bcast_comm_ref_bnd_prol.stop();
         
         if (rl > 0) {
           int const orl = rl - 1;
-          
-          // Prolongation interpolates from the next coarser level of
-          // the new grid structure.  It must fill what cannot be
-          // synchronised
-            
-          i2vect const stencil_size = i2vect (prolongation_stencil_size());
-          
-          ASSERT_c (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
-                    "Refinement factors must be integer multiples of each other");
-          i2vect const reffact =
-            i2vect (h.reffacts.at(rl) / h.reffacts.at(orl));
-          
-          for (int cc = 0; cc < h.components(orl); ++ cc) {
-            dboxes const & obox = boxes.AT(ml).AT(orl).AT(cc);
-            
-            ibset contracted_oactive;
-            for (ibset::const_iterator
-                   ai = obox.active.begin(); ai != obox.active.end(); ++ ai)
-            {
-              ibbox const & oactive = * ai;
-              // untested for cell centering
-              contracted_oactive +=
-                oactive.contracted_for (box.interior).expand (reffact);
-            }
-            contracted_oactive.normalize();
-            
-            ibset ovlp = needrecv & contracted_oactive;
-            ovlp.normalize();
-            
-            for (ibset::const_iterator
-                   ri = ovlp.begin(); ri != ovlp.end(); ++ ri)
-            {
-              ibbox const & recv = * ri;
-              ibbox const send =
-                recv.expanded_for (obox.interior).expand (stencil_size);
-              ASSERT_c (send <= obox.exterior,
-                        "Regridding prolongation: Send region must be contained in exterior");
-              if (on_this_proc (rl, c) or on_this_proc (orl, cc)) {
-                int const p = dist::rank();
-                fast_level.AT(p).fast_old2new_ref_prol_sendrecv.push_back
-                  (sendrecv_pseudoregion_t (send, cc, recv, c));
-              }
-            }
-            
-            needrecv -= ovlp;
-            
-          } // for cc
-          
-          needrecv.normalize();
-          
-        } // if rl > 0
-        
-        if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > 0) {
-          // All points must now have been received, either through
-          // synchronisation or through prolongation
-          ASSERT_c (needrecv.empty(),
-                        "Regridding prolongation: All points must have been received");
+          fast_dboxes & fast_olevel = fast_boxes.AT(ml).AT(orl);
+          static Carpet::Timer timer_bcast_comm_ref_rest
+            ("CarpetLib::dh::regrid::bcast_comm::ref_rest");
+          timer_bcast_comm_ref_rest.start();
+          broadcast_schedule (fast_level_otherprocs, fast_olevel,
+                              & fast_dboxes::fast_ref_rest_sendrecv);
+        timer_bcast_comm_ref_rest.stop();
         }
         
-      } // for c
+        // TODO: Maybe broadcast old2new schedule only if do_init is
+        // set
+        static Carpet::Timer timer_bcast_comm_old2new_sync
+          ("CarpetLib::dh::regrid::bcast_comm::old2new_sync");
+        timer_bcast_comm_old2new_sync.start();
+        broadcast_schedule (fast_level_otherprocs, fast_level,
+                            & fast_dboxes::fast_old2new_sync_sendrecv);
+        timer_bcast_comm_old2new_sync.stop();
+        
+        static Carpet::Timer timer_bcast_comm_old2new_ref_prol
+          ("CarpetLib::dh::regrid::bcast_comm::old2new_ref_prol");
+        timer_bcast_comm_old2new_ref_prol.start();
+        broadcast_schedule (fast_level_otherprocs, fast_level,
+                            & fast_dboxes::fast_old2new_ref_prol_sendrecv);
+        timer_bcast_comm_old2new_ref_prol.stop();
+        
+        timer_bcast_comm.stop();
+        
+      }
+      
+      
+      
+      // Output:
+      if (output_bboxes or there_was_an_error) {
+        
+        for (int c = 0; c < h.components(rl); ++ c) {
+          full_dboxes const & box = full_boxes.AT(ml).AT(rl).AT(c);
+          
+          cout << eol;
+          cout << "ml=" << ml << " rl=" << rl << " c=" << c << eol;
+          cout << box;
+          
+        } // for c
+        
+        fast_dboxes const & fast_box = fast_boxes.AT(ml).AT(rl);
+        
+        cout << eol;
+        cout << "ml=" << ml << " rl=" << rl << eol;
+        cout << fast_box;
+        
+      } // if output_bboxes
+      
+      
+      
+      // Free memory early to save space
+      if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > rl) {
+        oldboxes.AT(ml).AT(rl).clear();
+      }
+      
+      if (ml > 0) {
+        if (rl > 0) {
+          full_boxes.AT(ml-1).AT(rl-1).clear();
+        }
+        if (rl == h.reflevels()-1) {
+          full_boxes.AT(ml-1).AT(rl).clear();
+        }
+      }
+      if (ml == h.mglevels()-1) {
+        if (rl > 0) {
+          full_boxes.AT(ml).AT(rl-1).clear();
+        }
+        if (rl == h.reflevels()-1) {
+          full_boxes.AT(ml).AT(rl).clear();
+        }
+      }
       
     } // for rl
-  }   // for m
+    
+    if (ml > 0) {
+      full_boxes.AT(ml-1).clear();
+    }
+    if (ml == h.mglevels()-1) {
+      full_boxes.AT(ml).clear();
+    }
+    
+  } // for ml
   
   
   
   // Output:
   if (output_bboxes or there_was_an_error) {
     
-    for (int ml = 0; ml < h.mglevels(); ++ ml) {
-      for (int rl = 0; rl < h.reflevels(); ++ rl) {
-        for (int c = 0; c < h.components(rl); ++ c) {
-          dboxes const & box = boxes.AT(ml).AT(rl).AT(c);
-          fast_dboxes const & fast_box = fast_boxes.AT(ml).AT(rl).AT(c);
-          
-          cout << eol;
-          cout << "ml=" << ml << " rl=" << rl << " c=" << c << eol;
-          cout << box;
-          cout << fast_box;
-          cout << endl;
-          
-        } // for c
-      }   // for rl
-    }     // for m
+    cout << eol;
+    cout << "memoryof(gh)=" << memoryof(h) << eol;
+    cout << "memoryof(dh)=" << memoryof(*this) << eol;
+    cout << "memoryof(dh.boxes)=" << memoryof(boxes) << eol;
+    cout << "memoryof(dh.fast_boxes)=" << memoryof(fast_boxes) << eol;
+    int gfcount = 0;
+    size_t gfmemory = 0;
+    for (list<ggf*>::const_iterator
+           gfi = gfs.begin(); gfi != gfs.end(); ++ gfi)
+    {
+      ++ gfcount;
+      gfmemory += memoryof(**gfi);
+    }
+    cout << "#gfs=" << gfcount << eol;
+    cout << "memoryof(gfs)=" << gfmemory << eol;
     
   } // if output_bboxes
   
   if (there_was_an_error) {
     CCTK_WARN (CCTK_WARN_ABORT,
-               "The grid structure is inconsistent.  "
-               "It is impossible to continue.");
+               "The grid structure is inconsistent.  It is impossible to continue.");
   }
   
   
   
   total.stop (0);
+  timer.stop();
+}
+
+
+
+void
+dh::
+broadcast_schedule (vector<fast_dboxes> & fast_level_otherprocs,
+                    fast_dboxes & fast_level,
+                    srpvect fast_dboxes::* const schedule_item)
+{
+  // cerr << "QQQ: broadcast_schedule[1]" << endl;
+  static Carpet::Timer timer_bs1 ("CarpetLib::dh::bs1");
+  timer_bs1.start();
+  vector <srpvect> send (dist::size());
+  for (int p=0; p<dist::size(); ++p) {
+    swap (send.AT(p), fast_level_otherprocs.AT(p).*schedule_item);
+  }
+  timer_bs1.stop();
+  
+  static Carpet::Timer timer_bs2 ("CarpetLib::dh::bs2");
+  timer_bs2.start();
+  srpvect const recv = alltoallv1 (dist::comm(), send);
+  timer_bs2.stop();
+  
+  static Carpet::Timer timer_bs3 ("CarpetLib::dh::bs3");
+  timer_bs3.start();
+  (fast_level.*schedule_item).insert
+    ((fast_level.*schedule_item).end(), recv.begin(), recv.end());
+  timer_bs3.stop();
+  // cerr << "QQQ: broadcast_schedule[2]" << endl;
+}
+
+
+
+void
+dh::
+regrid_free (bool const do_init)
+{
+  if (do_init) {
+    for (int ml = 0; ml < h.mglevels(); ++ ml) {
+      for (int rl = 0; rl < h.reflevels(); ++ rl) {
+        fast_boxes.AT(ml).AT(rl).fast_old2new_sync_sendrecv.clear();
+        fast_boxes.AT(ml).AT(rl).fast_old2new_ref_prol_sendrecv.clear();
+      }
+    }
+  } else {
+    for (int ml = 0; ml < h.mglevels(); ++ ml) {
+      for (int rl = 0; rl < h.reflevels(); ++ rl) {
+        assert (fast_boxes.AT(ml).AT(rl).fast_old2new_sync_sendrecv.empty());
+        assert (fast_boxes.AT(ml).AT(rl).fast_old2new_ref_prol_sendrecv.empty());
+      }
+    }
+  }
 }
 
 
@@ -1004,7 +1397,7 @@ recompose (int const rl, bool const do_prolongate)
   
   assert (rl>=0 and rl<h.reflevels());
   
-  static Timer timer ("dh::recompose");
+  static Carpet::Timer timer ("CarpetLib::dh::recompose");
   timer.start ();
   
   for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
@@ -1017,9 +1410,19 @@ recompose (int const rl, bool const do_prolongate)
     for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
       (*f)->recompose_allocate (rl);
     }
+#warning "TODO: If this works, rename do_prolongate to do_init here, and remove the do_prolongate parameter from ggf::recompose_fill"
+#if 0
     for (comm_state state; not state.done(); state.step()) {
       for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
         (*f)->recompose_fill (state, rl, do_prolongate);
+      }
+    }
+#endif
+    if (do_prolongate) {
+      for (comm_state state; not state.done(); state.step()) {
+        for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
+          (*f)->recompose_fill (state, rl, true);
+        }
       }
     }
     for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
@@ -1030,33 +1433,144 @@ recompose (int const rl, bool const do_prolongate)
     // but requires less memory.  This is the default.
     for (list<ggf*>::iterator f=gfs.begin(); f!=gfs.end(); ++f) {
       (*f)->recompose_allocate (rl);
+#if 0
       for (comm_state state; not state.done(); state.step()) {
         (*f)->recompose_fill (state, rl, do_prolongate);
+      }
+#endif
+      if (do_prolongate) {
+        for (comm_state state; not state.done(); state.step()) {
+          (*f)->recompose_fill (state, rl, true);
+        }
       }
       (*f)->recompose_free_old (rl);
     }
   }
   
-  timer.stop (0);
+  timer.stop ();
 }
 
 
 
 // Grid function management
-void
+dh::ggf_handle
 dh::
 add (ggf * const f)
 {
   CHECKPOINT;
-  gfs.push_back (f);
+  return gfs.insert (gfs.end(), f);
 }
 
 void
 dh::
-remove (ggf * const f)
+erase (ggf_handle const fi)
 {
   CHECKPOINT;
-  gfs.remove (f);
+  gfs.erase (fi);
+}
+
+
+
+// Equality
+
+bool
+dh::full_dboxes::
+operator== (full_dboxes const & b) const
+{
+  return
+    exterior         == b.exterior         and
+    all(all(is_outer_boundary == b.is_outer_boundary)) and
+    outer_boundaries == b.outer_boundaries and
+    communicated     == b.communicated     and
+    boundaries       == b.boundaries       and
+    owned            == b.owned            and
+    buffers          == b.buffers          and
+    active           == b.active           and
+    sync             == b.sync             and
+    bndref           == b.bndref           and
+    ghosts           == b.ghosts           and
+    interior         == b.interior;
+}
+
+
+
+// MPI datatypes
+
+MPI_Datatype
+mpi_datatype (dh::dboxes const &)
+{
+  static bool initialised = false;
+  static MPI_Datatype newtype;
+  if (not initialised) {
+    static dh::dboxes s;
+#define ENTRY(type, name)                                               \
+    {                                                                   \
+      sizeof s.name / sizeof(type), /* count elements */                \
+        (char*)&s.name - (char*)&s, /* offsetof doesn't work (why?) */  \
+        dist::mpi_datatype<type>(), /* find MPI datatype */             \
+        STRINGIFY(name),    /* field name */                            \
+        STRINGIFY(type),    /* type name */                             \
+        }
+    dist::mpi_struct_descr_t const descr[] = {
+      ENTRY(int, exterior),
+      ENTRY(int, owned),
+      ENTRY(int, interior),
+      ENTRY(dh::dboxes::size_type, exterior_size),
+      ENTRY(dh::dboxes::size_type, owned_size),
+      ENTRY(dh::dboxes::size_type, active_size),
+      {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}
+    };
+#undef ENTRY
+    newtype =
+      dist::create_mpi_datatype (sizeof descr / sizeof descr[0], descr,
+                                 "dh::dboxes", sizeof s);
+#if 0
+    int type_size;
+    MPI_Type_size (newtype, & type_size);
+    assert (type_size <= sizeof s);
+    MPI_Aint type_lb, type_ub;
+    MPI_Type_lb (newtype, & type_lb);
+    MPI_Type_ub (newtype, & type_ub);
+    assert (type_ub - type_lb == sizeof s);
+#endif
+    initialised = true;
+  }
+  return newtype;
+}
+
+MPI_Datatype
+mpi_datatype (dh::fast_dboxes const &)
+{
+  static bool initialised = false;
+  static MPI_Datatype newtype;
+  if (not initialised) {
+    static dh::fast_dboxes s;
+#define ENTRY(type, name)                                               \
+    {                                                                   \
+      sizeof s.name / sizeof(type), /* count elements */                \
+        (char*)&s.name - (char*)&s, /* offsetof doesn't work (why?) */  \
+        dist::mpi_datatype<type>(), /* find MPI datatype */             \
+        STRINGIFY(name),    /* field name */                            \
+        STRINGIFY(type),    /* type name */                             \
+        }
+    dist::mpi_struct_descr_t const descr[] = {
+      ENTRY (dh::srpvect, fast_mg_rest_sendrecv),
+      ENTRY (dh::srpvect, fast_mg_prol_sendrecv),
+      ENTRY (dh::srpvect, fast_ref_prol_sendrecv),
+      ENTRY (dh::srpvect, fast_ref_rest_sendrecv),
+      ENTRY (dh::srpvect, fast_sync_sendrecv),
+      ENTRY (dh::srpvect, fast_ref_bnd_prol_sendrecv),
+      ENTRY (dh::srpvect, fast_old2new_sync_sendrecv),
+      ENTRY (dh::srpvect, fast_old2new_ref_prol_sendrecv),
+      {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}
+    };
+#undef ENTRY
+    newtype =
+      dist::create_mpi_datatype (sizeof descr / sizeof descr[0], descr,
+                                 "dh::fast_dboxes", sizeof s);
+    initialised = true;
+  }
+  return newtype;
 }
 
 
@@ -1069,17 +1583,43 @@ memory ()
   const
 {
   return
+    sizeof alldhi +             // memoryof (alldhi) +
+    sizeof & h +                // memoryof (& h) +
+    sizeof gh_handle +          // memoryof (gh_handle) +
     memoryof (ghost_width) +
     memoryof (buffer_width) +
     memoryof (prolongation_order_space) +
     memoryof (boxes) +
     memoryof (fast_boxes) +
-    memoryof (fast_oldboxes) +
     memoryof (gfs);
 }
 
 size_t
+dh::
+allmemory ()
+{
+  size_t mem = memoryof(alldh);
+  for (list<dh*>::const_iterator
+         dhi = alldh.begin(); dhi != alldh.end(); ++ dhi)
+  {
+    mem += memoryof(**dhi);
+  }
+  return mem;
+}
+
+size_t
 dh::dboxes::
+memory ()
+  const
+{
+  return
+    memoryof (exterior) +
+    memoryof (owned) +
+    memoryof (interior);
+}
+
+size_t
+dh::full_dboxes::
 memory ()
   const
 {
@@ -1112,6 +1652,135 @@ memory ()
     memoryof (fast_ref_bnd_prol_sendrecv) +
     memoryof (fast_old2new_sync_sendrecv) +
     memoryof (fast_old2new_ref_prol_sendrecv);
+}
+
+
+
+// Input
+
+istream &
+dh::dboxes::
+input (istream & is)
+{
+  // Regions:
+  try {
+    skipws (is);
+    consume (is, "dh::dboxes:{");
+    skipws (is);
+    consume (is, "exterior:");
+    is >> exterior;
+    exterior_size = exterior.size();
+    skipws (is);
+    consume (is, "owned:");
+    is >> owned;
+    owned_size = owned.size();
+    skipws (is);
+    consume (is, "interior:");
+    is >> interior;
+    skipws (is);
+    consume (is, "active_size:");
+    is >> active_size;
+    skipws (is);
+    consume (is, "}");
+  } catch (input_error & err) {
+    cout << "Input error while reading a dh::full_dboxes" << endl;
+    throw err;
+  }
+  return is;
+}
+
+istream &
+dh::full_dboxes::
+input (istream & is)
+{
+  // Regions:
+  try {
+    skipws (is);
+    consume (is, "dh::full_dboxes:{");
+    skipws (is);
+    consume (is, "exterior:");
+    is >> exterior;
+    skipws (is);
+    consume (is, "is_outer_boundary:");
+    is >> is_outer_boundary;
+    skipws (is);
+    consume (is, "outer_boundaries:");
+    is >> outer_boundaries;
+    skipws (is);
+    consume (is, "communicated:");
+    is >> communicated;
+    skipws (is);
+    consume (is, "boundaries:");
+    is >> boundaries;
+    skipws (is);
+    consume (is, "owned:");
+    is >> owned;
+    skipws (is);
+    consume (is, "buffers:");
+    is >> buffers;
+    skipws (is);
+    consume (is, "active:");
+    is >> active;
+    skipws (is);
+    consume (is, "sync:");
+    is >> sync;
+    skipws (is);
+    consume (is, "bndref:");
+    is >> bndref;
+    skipws (is);
+    consume (is, "ghosts:");
+    is >> ghosts;
+    skipws (is);
+    consume (is, "interior:");
+    is >> interior;
+    skipws (is);
+    consume (is, "}");
+  } catch (input_error & err) {
+    cout << "Input error while reading a dh::full_dboxes" << endl;
+    throw err;
+  }
+  return is;
+}
+
+istream &
+dh::fast_dboxes::
+input (istream & is)
+{
+  // Communication schedule:
+  try {
+    skipws (is);
+    consume (is, "dh::fast_dboxes:{");
+    skipws (is);
+    consume (is, "fast_mg_rest_sendrecv:");
+    is >> fast_mg_rest_sendrecv;
+    skipws (is);
+    consume (is, "fast_mg_prol_sendrecv:");
+    is >> fast_mg_prol_sendrecv;
+    skipws (is);
+    consume (is, "fast_ref_prol_sendrecv:");
+    is >> fast_ref_prol_sendrecv;
+    skipws (is);
+    consume (is, "fast_ref_rest_sendrecv:");
+    is >> fast_ref_rest_sendrecv;
+    skipws (is);
+    consume (is, "fast_sync_sendrecv:");
+    is >> fast_sync_sendrecv;
+    skipws (is);
+    consume (is, "fast_ref_bnd_prol_sendrecv:");
+    is >> fast_ref_bnd_prol_sendrecv;
+    skipws (is);
+    consume (is, "fast_old2new_sync_sendrecv:");
+    is >> fast_old2new_sync_sendrecv;
+    skipws (is);
+    consume (is, "fast_old2new_ref_prol_sendrecv:");
+    is >> fast_old2new_ref_prol_sendrecv;
+    skipws (is);
+    consume (is, "}");
+  } catch (input_error & err) {
+    cout << "Input error while reading a dh::fast_dboxes" << endl;
+    throw err;
+  }
+  return is;
 }
 
 
@@ -1149,19 +1818,35 @@ output (ostream & os)
   const
 {
   // Regions:
-  os << "dh::dboxes:" << eol;
-  os << "exterior:" << exterior << eol;
-  os << "is_outer_boundary:" << is_outer_boundary << eol;
-  os << "outer_boundaries:" << outer_boundaries << eol;
-  os << "communicated:" << communicated << eol;
-  os << "boundaries:" << boundaries << eol;
-  os << "owned:" << owned << eol;
-  os << "buffers:" << buffers << eol;
-  os << "active:" << active << eol;
-  os << "sync:" << sync << eol;
-  os << "bndref:" << bndref << eol;
-  os << "ghosts:" << ghosts << eol;
-  os << "interior:" << interior << eol;
+  os << "dh::dboxes:{" << eol
+     << "   exterior: " << exterior << eol
+     << "   owned: " << owned << eol
+     << "   interior: " << interior << eol
+     << "   active_size: " << active_size << eol
+     << "}" << eol;
+  return os;
+}
+
+ostream &
+dh::full_dboxes::
+output (ostream & os)
+  const
+{
+  // Regions:
+  os << "dh::full_dboxes:{" << eol
+     << "   exterior: " << exterior << eol
+     << "   is_outer_boundary: " << is_outer_boundary << eol
+     << "   outer_boundaries: " << outer_boundaries << eol
+     << "   communicated: " << communicated << eol
+     << "   boundaries: " << boundaries << eol
+     << "   owned: " << owned << eol
+     << "   buffers: " << buffers << eol
+     << "   active: " << active << eol
+     << "   sync: " << sync << eol
+     << "   bndref: " << bndref << eol
+     << "   ghosts: " << ghosts << eol
+     << "   interior: " << interior << eol
+     << "}" << eol;
   return os;
 }
 
@@ -1171,14 +1856,15 @@ output (ostream & os)
   const
 {
   // Communication schedule:
-  os << "dh::fast_dboxes:" << eol;
-  os << "fast_mg_rest_sendrecv: " << fast_mg_rest_sendrecv << eol;
-  os << "fast_mg_prol_sendrecv: " << fast_mg_prol_sendrecv << eol;
-  os << "fast_ref_prol_sendrecv: " << fast_ref_prol_sendrecv << eol;
-  os << "fast_ref_rest_sendrecv: " << fast_ref_rest_sendrecv << eol;
-  os << "fast_sync_sendrecv: " << fast_sync_sendrecv << eol;
-  os << "fast_ref_bnd_prol_sendrecv: " << fast_ref_bnd_prol_sendrecv << eol;
-  os << "fast_old2new_sync_sendrecv:" << fast_old2new_sync_sendrecv << eol;
-  os << "fast_old2new_ref_prol_sendrecv:" << fast_old2new_ref_prol_sendrecv << eol;
+  os << "dh::fast_dboxes:{" << eol
+     << "   fast_mg_rest_sendrecv: " << fast_mg_rest_sendrecv << eol
+     << "   fast_mg_prol_sendrecv: " << fast_mg_prol_sendrecv << eol
+     << "   fast_ref_prol_sendrecv: " << fast_ref_prol_sendrecv << eol
+     << "   fast_ref_rest_sendrecv: " << fast_ref_rest_sendrecv << eol
+     << "   fast_sync_sendrecv: " << fast_sync_sendrecv << eol
+     << "   fast_ref_bnd_prol_sendrecv: " << fast_ref_bnd_prol_sendrecv << eol
+     << "   fast_old2new_sync_sendrecv: " << fast_old2new_sync_sendrecv << eol
+     << "   fast_old2new_ref_prol_sendrecv: " << fast_old2new_ref_prol_sendrecv << eol
+     << "}" << eol;
   return os;
 }

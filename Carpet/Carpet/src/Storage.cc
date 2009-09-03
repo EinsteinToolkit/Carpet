@@ -1,14 +1,15 @@
 #include <cassert>
 #include <cstdlib>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
 
-#include "dh.hh"
-#include "gf.hh"
-#include "operators.hh"
+#include <defs.hh>
+#include <dh.hh>
+#include <gf.hh>
+#include <operators.hh>
 
-#include "carpet.hh"
+#include <carpet.hh>
 
 
 
@@ -94,16 +95,16 @@ namespace Carpet {
           // Record previous number of allocated time levels
           if (status) {
             // Note: This remembers only the last level
-            status[n] = groupdata.at(group).activetimelevels.at(ml).at(rl);
+            status[n] = groupdata.AT(group).activetimelevels.AT(ml).AT(rl);
           }
           
           // Only do something if the number of time levels actually
           // needs to be changed -- do nothing otherwise
           
           const bool do_increase
-            =     inc and timelevels[n] > groupdata.at(group).activetimelevels.at(ml).at(rl);
+            =     inc and timelevels[n] > groupdata.AT(group).activetimelevels.AT(ml).AT(rl);
           const bool do_decrease
-            = not inc and timelevels[n] < groupdata.at(group).activetimelevels.at(ml).at(rl);
+            = not inc and timelevels[n] < groupdata.AT(group).activetimelevels.AT(ml).AT(rl);
           if (do_increase or do_decrease) {
             
             if (not can_do) {
@@ -127,13 +128,13 @@ namespace Carpet {
             if (gp.grouptype == CCTK_GF) {
               assert ((map == -1 or maps == 1)
                       and (component == -1
-                           or vhh.at(0)->local_components(reflevel) == 1));
+                           or vhh.AT(0)->local_components(reflevel) == 1));
             }
             
             // Set the new number of active time levels
-            groupdata.at(group).activetimelevels.at(ml).at(rl) = timelevels[n];
+            groupdata.AT(group).activetimelevels.AT(ml).AT(rl) = timelevels[n];
             
-            for (int m=0; m<(int)arrdata.at(group).size(); ++m) {
+            for (int m=0; m<(int)arrdata.AT(group).size(); ++m) {
               for (int var=0; var<gp.numvars; ++var) {
 #ifdef CCTK_HAVE_CONTIGUOUS_GROUPS
                 bool const contiguous = gp.contiguous;
@@ -152,19 +153,19 @@ namespace Carpet {
                 assert (vectorlength>0 and vectorlength<=gp.numvars);
                 ggf* const vectorleader
                   = (vectorindex>0
-                     ? arrdata.at(group).at(m).data.at(var - vectorindex)
+                     ? arrdata.AT(group).AT(m).data.AT(var - vectorindex)
                      : NULL);
                 const int varindex = firstvarindex + var;
 #warning "TODO: allocate these in SetupGH, and after recomposing"
-                if (not arrdata.at(group).at(m).data.at(var)) {
+                if (not arrdata.AT(group).AT(m).data.AT(var)) {
                   switch (gp.vartype) {
 #define TYPECASE(N,T)                                                   \
                     case N:                                             \
-                      arrdata.at(group).at(m).data.at(var) = new gf<T>  \
+                      arrdata.AT(group).AT(m).data.AT(var) = new gf<T>  \
                       (varindex,                                        \
-                       groupdata.at(group).transport_operator,          \
-                       *arrdata.at(group).at(m).tt,                     \
-                       *arrdata.at(group).at(m).dd,                     \
+                       groupdata.AT(group).transport_operator,          \
+                       *arrdata.AT(group).AT(m).tt,                     \
+                       *arrdata.AT(group).AT(m).dd,                     \
                        prolongation_order_time,                         \
                        vectorlength, vectorindex, (gf<T>*)vectorleader); \
                     break;
@@ -175,18 +176,17 @@ namespace Carpet {
                   } // switch gp.vartype
                 } // if not allocated
                 
-                arrdata.at(group).at(m).data.at(var)->set_timelevels
+                arrdata.AT(group).AT(m).data.AT(var)->set_timelevels
                   (ml, rl, timelevels[n]);
                 
                 // Set the data pointers for grid arrays
                 if (gp.grouptype != CCTK_GF) {
                   assert (rl==0 and m==0);
-                  int const c = CCTK_MyProc(cgh);
                   for (int tl=0; tl<gp.numtimelevels; ++tl) {
                     cgh->data[varindex][tl]
-                      = (tl < groupdata.at(group).activetimelevels.at(ml).at(rl)
-                         ? ((*arrdata.at(group).at(m).data.at(var))
-                            (tl, 0, c, 0)->storage())
+                      = (tl < groupdata.AT(group).activetimelevels.AT(ml).AT(rl)
+                         ? ((*arrdata.AT(group).AT(m).data.AT(var))
+                            (tl, 0, 0, 0)->storage())
                          : NULL);
                   }
                 } // if grouptype != GF
@@ -202,7 +202,7 @@ namespace Carpet {
           // Record current number of time levels
           // Note: This adds the time levels of all refinement levels
           total_num_timelevels
-            += groupdata.at(group).activetimelevels.at(ml).at(rl);
+            += groupdata.AT(group).activetimelevels.AT(ml).AT(rl);
           
         } // for rl
       } // for ml
@@ -292,8 +292,9 @@ namespace Carpet {
     if (groupdata.size() == 0) return -3;
     int const rl = grouptype == CCTK_GF ? reflevel : 0;
     // Return whether storage is allocated
-    assert (groupdata.at(group).activetimelevels.at(mglevel).at(rl) != deadbeef);
-    return groupdata.at(group).activetimelevels.at(mglevel).at(rl) > 0;
+    CCTK_INT const deadbeef = get_deadbeef();
+    assert (groupdata.AT(group).activetimelevels.AT(mglevel).AT(rl) != deadbeef);
+    return groupdata.AT(group).activetimelevels.AT(mglevel).AT(rl) > 0;
   }
   
   
@@ -318,12 +319,12 @@ namespace Carpet {
       return &error;            // global or level mode for a GF
     }
     
-    const int gpdim = groupdata.at(group).info.dim;
+    const int gpdim = groupdata.AT(group).info.dim;
     assert (dir>=0 and dir<gpdim);
     
     if (CCTK_QueryGroupStorageI(cgh, group)) {
       
-      return &groupdata.at(group).info.lsh[dir];
+      return &groupdata.AT(group).info.lsh[dir];
       
     } else {
       
@@ -337,8 +338,19 @@ namespace Carpet {
   
   int GroupDynamicData (const cGH* cgh, int group, cGroupDynamicData* data)
   {
+    // Return values:
+    //  0 for success
+    // -1 if given pointer to data structure is NULL
+    // -3 if given GH pointer is invalid
+    // (-77 if group has zero variables)
+    // -78 if group does not exist
+    if (not cgh) return -3;
+    if (not (group>=0 and group<CCTK_NumGroups())) return -78;
+    if (not data) return -1;
+    assert (cgh);
     assert (group>=0 and group<CCTK_NumGroups());
-    *data = groupdata.at(group).info;
+    assert (data);
+    *data = groupdata.AT(group).info;
     return 0;
   }
   
@@ -358,12 +370,13 @@ namespace Carpet {
     check (not CCTK_GroupData (group, & gp));
     
     if (gp.grouptype == CCTK_GF) {
-      if (groupdata.at(group).transport_operator != op_none and
-          groupdata.at(group).transport_operator != op_sync and
-          groupdata.at(group).transport_operator != op_copy)
+      if (groupdata.AT(group).transport_operator != op_none and
+          groupdata.AT(group).transport_operator != op_sync and
+          groupdata.AT(group).transport_operator != op_restrict and
+          groupdata.AT(group).transport_operator != op_copy)
       {
-        if (groupdata.at(group).activetimelevels.at(ml).at(rl) != 0 and
-            (groupdata.at(group).activetimelevels.at(ml).at(rl) <
+        if (groupdata.AT(group).activetimelevels.AT(ml).AT(rl) != 0 and
+            (groupdata.AT(group).activetimelevels.AT(ml).AT(rl) <
              prolongation_order_time+1))
         {
           static vector<bool> didwarn;
@@ -371,9 +384,9 @@ namespace Carpet {
           if ((int)didwarn.size() < numgroups) {
             didwarn.resize (numgroups, false);
           }
-          if (not didwarn.at(group)) {
+          if (not didwarn.AT(group)) {
             // Warn only once per group
-            didwarn.at(group) = true;
+            didwarn.AT(group) = true;
             char * const groupname = CCTK_GroupName (group);
             CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                         "There are not enough time levels for the desired temporal prolongation order in the grid function group \"%s\".  With Carpet::prolongation_order_time=%d, you need at least %d time levels.",

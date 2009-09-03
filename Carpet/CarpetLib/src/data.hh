@@ -20,9 +20,6 @@ using namespace std;
 template<typename T>
 class data;
 
-template<typename T>
-ostream & operator << ( ostream & os, const data<T> & d );
-
 // A distributed multi-dimensional array
 template<typename T>
 class data: public gdata
@@ -35,7 +32,7 @@ class data: public gdata
   int vectorlength;             // number of vector elements
   int vectorindex;              // index of this vector element
   data* vectorleader;           // if index!=0: first vector element
-   
+  
 private:
   // Forbid copying and passing by value
   data (data const &);
@@ -48,23 +45,21 @@ public:
         const centering cent = error_centered,
         const operator_type transport_operator = op_error,
         const int vectorlength = 1, const int vectorindex = 0,
-        data* const vectorleader = NULL,
-        const int tag = -1);
+        data* const vectorleader = NULL);
   data (const int varindex,
         const centering cent, const operator_type transport_operator,
         const int vectorlength, const int vectorindex,
         data* const vectorleader,
         const ibbox& extent, const int proc);
-
+  
   // Destructors
   virtual ~data ();
-
+  
   // Pseudo constructors
   virtual data* make_typed (const int varindex,
                             const centering cent,
-                            const operator_type transport_operator,
-                            const int tag) const;
-
+                            const operator_type transport_operator) const;
+  
   // Storage management
   virtual void allocate (const ibbox& extent, const int proc,
 			 void* const memptr = NULL, size_t const memsize = 0);
@@ -156,19 +151,10 @@ private:
 public:
   
   // Memory usage
-  size_t memory () const;
+  virtual size_t memory () const CCTK_ATTRIBUTE_PURE;
   
   // Output
-  ostream & output (ostream& os) const;
-  
-  friend ostream & operator<< <T> (ostream & os, data<T> const & d);
+  virtual ostream & output (ostream& os) const;
 };
-  
-// Memory usage
-template<typename T>
-inline size_t memoryof (data<T> const & d)
-{
-  return d.memory();
-}
 
 #endif // DATA_HH

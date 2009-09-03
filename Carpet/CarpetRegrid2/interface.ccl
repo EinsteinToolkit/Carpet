@@ -11,6 +11,7 @@ USES INCLUDE HEADER: region.hh
 USES INCLUDE HEADER: vect.hh
 
 USES INCLUDE HEADER: carpet.hh
+USES INCLUDE HEADER: CarpetTimers.hh
 
 
 

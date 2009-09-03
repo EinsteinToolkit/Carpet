@@ -16,8 +16,8 @@
 #include <dist.hh>
 #include <th.hh>
 
-#include "carpet.hh"
-#include "Timers.hh"
+#include <carpet.hh>
+#include <Timers.hh>
 
 
 
@@ -53,27 +53,21 @@ namespace Carpet {
     int const convlev = 0;
     cGH* cctkGH = fc->GH[convlev];
     
-    // Tapered grids
-    do_taper = use_tapered_grids;
-    
     // Main loop
-    BeginTiming (cctkGH);
+    BeginTimingEvolution (cctkGH);
     static Timer timer ("Evolve");
     timer.start();
     while (not do_terminate (cctkGH)) {
       
       AdvanceTime (cctkGH);
       {
-        int const do_every = maxtimereflevelfact / timereffacts.at(reflevels-1);
+        int const do_every = maxtimereflevelfact / timereffacts.AT(reflevels-1);
         if ((cctkGH->cctk_iteration - 1) % do_every == 0) {
-          bool const old_do_taper = do_taper;
-          do_taper = false;
           ENTER_GLOBAL_MODE (cctkGH, 0) {
             BEGIN_REFLEVEL_LOOP (cctkGH) {
               CallRegrid (cctkGH);
             } END_REFLEVEL_LOOP;
           } LEAVE_GLOBAL_MODE;
-          do_taper = old_do_taper;
         }
       }
       CallEvol (cctkGH);
@@ -83,7 +77,7 @@ namespace Carpet {
       
       // Print timer values
       {
-        int const do_every = maxtimereflevelfact / timereffacts.at(reflevels-1);
+        int const do_every = maxtimereflevelfact / timereffacts.AT(reflevels-1);
         if (output_timers_every > 0 and
             cctkGH->cctk_iteration % output_timers_every == 0 and
             cctkGH->cctk_iteration % do_every == 0)
@@ -99,9 +93,9 @@ namespace Carpet {
         for (int ml=0; ml<mglevels; ++ml) {
           for (int rl=0; rl<reflevels; ++rl) {
             int const do_every =
-              ipow (mgfact, ml) * (maxtimereflevelfact / timereffacts.at(rl));
+              ipow (mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
             if (cctkGH->cctk_iteration % do_every == 0) {
-              assert (abs (leveltimes.at(ml).at(rl) - global_time) <=
+              assert (abs (leveltimes.AT(ml).AT(rl) - global_time) <=
                       eps * global_time);
             }
           }
@@ -110,8 +104,6 @@ namespace Carpet {
       
     } // end main loop
     timer.stop();
-    
-    do_taper = false;
     
     Waypoint ("Done with evolution loop");
     
@@ -132,7 +124,7 @@ namespace Carpet {
     
     // Do not test on non-active reflevels to save the call to
     // MPI_Allreduce below
-    int const do_every = maxtimereflevelfact / timereffacts.at(reflevels-1);
+    int const do_every = maxtimereflevelfact / timereffacts.AT(reflevels-1);
     if (cctkGH->cctk_iteration % do_every != 0)
     {
       
@@ -228,7 +220,7 @@ namespace Carpet {
     }
     
     if ((cctkGH->cctk_iteration-1)
-        % (maxtimereflevelfact / timereffacts.at(reflevels-1)) == 0) {
+        % (maxtimereflevelfact / timereffacts.AT(reflevels-1)) == 0) {
       Waypoint ("Evolving iteration %d at t=%g",
                 cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
     }
@@ -273,25 +265,31 @@ namespace Carpet {
     // Regrid
     Checkpoint ("Regrid");
     int const oldreflevels = reflevels;
-    bool const did_regrid = Regrid (cctkGH, false);
+    bool const did_regrid = Regrid (cctkGH, false, true);
     bool const did_remove_level = reflevels < oldreflevels;
     assert (not did_remove_level or did_regrid);
     
     if (did_regrid) {
+      bool did_any_recompose = false;
       BEGIN_META_MODE (cctkGH) {
         for (int rl=0; rl<reflevels; ++rl) {
           
           bool const did_recompose = Recompose (cctkGH, rl, true);
+          did_any_recompose = did_any_recompose or did_recompose;
           
           // Do not omit the global mode call when the finest level
           // does not change:
           // if (did_recompose or (did_remove_level and rl == reflevels - 1)) {
-          if (did_recompose or rl == reflevels - 1) {
+          if (did_recompose or
+              ((did_remove_level or did_any_recompose) and
+               rl == reflevels - 1))
+          {
             BEGIN_MGLEVEL_LOOP (cctkGH) {
               ENTER_LEVEL_MODE (cctkGH, rl) {
                 do_early_global_mode = reflevel==0;
                 do_late_global_mode = reflevel==reflevels-1;
-                do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
+                do_early_meta_mode =
+                  do_early_global_mode and mglevel==mglevels-1;
                 do_late_meta_mode = do_late_global_mode and mglevel==0;
                 do_global_mode = do_late_global_mode;
                 do_meta_mode = do_late_meta_mode;
@@ -309,17 +307,17 @@ namespace Carpet {
                 
                 // Rewind times
                 for (int m=0; m<maps; ++m) {
-                  vtt.at(m)->set_delta
+                  vtt.AT(m)->set_delta
                     (reflevel, mglevel,
-                     - vtt.at(m)->get_delta (reflevel, mglevel));
+                     - vtt.AT(m)->get_delta (reflevel, mglevel));
                   FlipTimeLevels (cctkGH);
                   for (int tl=0; tl<num_tl; ++tl) {
-                    vtt.at(m)->advance_time (reflevel, mglevel);
+                    vtt.AT(m)->advance_time (reflevel, mglevel);
                     CycleTimeLevels (cctkGH);
                   }
-                  vtt.at(m)->set_delta
+                  vtt.AT(m)->set_delta
                     (reflevel, mglevel,
-                     - vtt.at(m)->get_delta (reflevel, mglevel));
+                     - vtt.AT(m)->get_delta (reflevel, mglevel));
                   FlipTimeLevels (cctkGH);
                 } // for m
                 CCTK_REAL const old_cctk_time = cctkGH->cctk_time;
@@ -330,7 +328,7 @@ namespace Carpet {
                   
                   // Advance times
                   for (int m=0; m<maps; ++m) {
-                    vtt.at(m)->advance_time (reflevel, mglevel);
+                    vtt.AT(m)->advance_time (reflevel, mglevel);
                   }
                   CycleTimeLevels (cctkGH);
                   cctkGH->cctk_time +=
@@ -351,6 +349,8 @@ namespace Carpet {
         } // for rl
       } END_META_MODE;
     } // if did_regrid
+    
+    RegridFree (cctkGH, true);
     
     do_global_mode = old_do_global_mode;
     do_early_global_mode = old_do_early_global_mode;
@@ -380,7 +380,7 @@ namespace Carpet {
       
       for (int rl=0; rl<reflevels; ++rl) {
         int const do_every
-          = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.at(rl));
+          = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
         if ((cctkGH->cctk_iteration-1) % do_every == 0) {
           ENTER_GLOBAL_MODE (cctkGH, ml) {
             ENTER_LEVEL_MODE (cctkGH, rl) {
@@ -395,6 +395,15 @@ namespace Carpet {
               have_done_global_mode |= do_global_mode;
               have_done_anything = true;
               
+              if (use_tapered_grids and reflevel > 0) {
+                int const parent_do_every =
+                  ipow(mgfact, mglevel) *
+                  (maxtimereflevelfact / timereffacts.AT(reflevel-1));
+                bool const parent_is_active =
+                  (cctkGH->cctk_iteration-1) % parent_do_every == 0;
+                do_taper = not parent_is_active;
+              }
+              
               // Advance times
               cctkGH->cctk_time
                 = (global_time
@@ -402,7 +411,7 @@ namespace Carpet {
                    + delta_time * mglevelfact / timereflevelfact);
               CCTK_REAL const carpet_time = cctkGH->cctk_time / delta_time;
               for (int m=0; m<maps; ++m) {
-                vtt.at(m)->advance_time (reflevel, mglevel);
+                vtt.AT(m)->advance_time (reflevel, mglevel);
                 if (not adaptive_stepsize) {
 #if 0
                   // We must not perform this check, since the
@@ -413,7 +422,7 @@ namespace Carpet {
                   static_assert (abs(0.1) > 0,
                                  "Function CarpetLib::abs has wrong signature");
                   CCTK_REAL const level_time =
-                    vtt.at(m)->get_time (reflevel, mglevel);
+                    vtt.AT(m)->get_time (reflevel, mglevel);
                   if (not (abs (level_time - carpet_time) <=
                            eps * max (carpet_time, 1.0))) {
                     int const oldprecision = cerr.precision();
@@ -429,15 +438,16 @@ namespace Carpet {
                   assert (abs (level_time - carpet_time) <=
                           eps * max (carpet_time, 1.0));
 #endif
-                  vtt.at(m)->set_time (reflevel, mglevel, carpet_time);
+                  vtt.AT(m)->set_time (reflevel, mglevel, carpet_time);
                 }
               }
               CycleTimeLevels (cctkGH);
               
-              Waypoint ("Evolution I at iteration %d time %g%s%s",
+              Waypoint ("Evolution I at iteration %d time %g%s%s%s",
                         cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
                         (do_global_mode ? " (global)" : ""),
-                        (do_meta_mode ? " (meta)" : ""));
+                        (do_meta_mode ? " (meta)" : ""),
+                        (do_taper ? " (tapering)" : ""));
               
               // Checking
               CalculateChecksums (cctkGH, allbutcurrenttime);
@@ -451,7 +461,9 @@ namespace Carpet {
               PoisonCheck (cctkGH, currenttime);
               
               // Timing statistics
-              StepTiming (cctkGH);
+              StepTimingEvolution (cctkGH);
+              
+              do_taper = false;
               
             } LEAVE_LEVEL_MODE;
           } LEAVE_GLOBAL_MODE;
@@ -476,7 +488,7 @@ namespace Carpet {
     for (int ml=mglevels-1; ml>=0; --ml) {
       for (int rl=reflevels-1; rl>=0; --rl) {
         int const do_every
-          = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.at(rl));
+          = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
         if (cctkGH->cctk_iteration % do_every == 0) {
           ENTER_GLOBAL_MODE (cctkGH, ml) {
             ENTER_LEVEL_MODE (cctkGH, rl) {
@@ -513,7 +525,7 @@ namespace Carpet {
       
       for (int rl=0; rl<reflevels; ++rl) {
         int const do_every
-          = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.at(rl));
+          = ipow(mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
         if (cctkGH->cctk_iteration % do_every == 0) {
           ENTER_GLOBAL_MODE (cctkGH, ml) {
             ENTER_LEVEL_MODE (cctkGH, rl) {
@@ -528,10 +540,20 @@ namespace Carpet {
               have_done_global_mode |= do_global_mode;
               have_done_anything = true;
               
-              Waypoint ("Evolution II at iteration %d time %g%s%s",
+              if (use_tapered_grids and reflevel > 0) {
+                int const parent_do_every =
+                  ipow(mgfact, mglevel) *
+                  (maxtimereflevelfact / timereffacts.AT(reflevel-1));
+                bool const parent_is_active =
+                  (cctkGH->cctk_iteration-1) % parent_do_every == 0;
+                do_taper = not parent_is_active;
+              }
+              
+              Waypoint ("Evolution II at iteration %d time %g%s%s%s",
                         cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
                         (do_global_mode ? " (global)" : ""),
-                        (do_meta_mode ? " (meta)" : ""));
+                        (do_meta_mode ? " (meta)" : ""),
+                        (do_taper ? " (tapering)" : ""));
               
               if (reflevel < reflevels-1) {
                 ScheduleTraverse (where, "CCTK_POSTRESTRICT", cctkGH);
@@ -565,6 +587,8 @@ namespace Carpet {
                 // Timing statistics
                 PrintTimingStats (cctkGH);
               }
+              
+              do_taper = false;
               
             } LEAVE_LEVEL_MODE;
           } LEAVE_GLOBAL_MODE;
@@ -607,15 +631,27 @@ namespace Carpet {
   void ScheduleTraverse (char const * const where, char const * const name,
                          cGH * const cctkGH)
   {
+    // Obtain the set of timers, creating it explicitly if it does not
+    // yet exist
+    typedef std::map <string, Timer *> timers_t;
+    // static timers_t timers;
+    static timers_t * timersp = NULL;
+    if (not timersp) timersp = new timers_t;
+    timers_t & timers = * timersp;
+    
+    // Obtain timer, creating a new one if it does not yet exist
     ostringstream timernamebuf;
     timernamebuf << where << "::" << name;
     string const timername = timernamebuf.str();
-    static std::map <string, Timer *> timers;
-    Timer * & mapped = timers[timername];
-    if (not mapped) {
-      mapped = new Timer (timername.c_str());
+    timers_t::iterator ti = timers.find (timername);
+    if (ti == timers.end()) {
+      pair <string, Timer *> const
+        newtimer (timername, new Timer (timername.c_str()));
+      ti = timers.insert(newtimer).first;
+      // It is possible to find and insert with the same function
+      // call, but this makes the code significantly more complicated
     }
-    Timer & timer = * mapped;
+    Timer & timer = * ti->second;
     
     timer.start();
     ostringstream infobuf;

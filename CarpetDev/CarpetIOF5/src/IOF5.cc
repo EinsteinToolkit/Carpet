@@ -9,11 +9,21 @@
 #include <string>
 #include <vector>
 
+// force HDF5 1.8.x installations to use the new API
+#define H5Dcreate_vers 2
+
+#include <hdf5.h>
+
 #include "cctk.h"
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
 
+#include "CactusBase/IOUtil/src/ioGH.h"
+#include "CactusBase/IOUtil/src/ioutil_CheckpointRecovery.h"
+
 #include "carpet.hh"
+
+#include "defs.hh"
 
 #include "extending.hh"
 #include "file.hh"
@@ -377,36 +387,93 @@ namespace CarpetIOF5 {
     extending_t extending (cctkGH);
     
     bool const use_IO_out_dir = strcmp (out_dir, "") == 0;
-    string const basename
-      = (use_IO_out_dir ? IO_out_dir : out_dir) + string ("/") + alias;
+    string const path = use_IO_out_dir ? IO_out_dir : out_dir;
+    string const basename = alias;
     
     bool const did_truncate = extending.get_did_truncate (basename);
     bool const do_truncate
       = not did_truncate and IO_TruncateOutputFiles (cctkGH);
     extending.set_did_truncate (basename);
     
-    F5::file_t file (cctkGH, basename, string (out_extension), do_truncate);
+    int const proc = CCTK_MyProc (cctkGH);
+    bool have_metafile;         // whether there is a metadata file
+    int metadata_processor;     // the processor which outputs the metadata file
+    int output_processor;       // the processor which outputs our data
+    if (CCTK_EQUALS (out_mode, "proc"))
+    {
+      have_metafile = true;
+      metadata_processor = 0;
+      output_processor = proc;
+    }
+    else if (CCTK_EQUALS (out_mode, "np"))
+    {
+      have_metafile = true;
+      metadata_processor = 0;
+      output_processor = proc / out_proc_every * out_proc_every;
+    }
+    else if (CCTK_EQUALS (out_mode, "onefile"))
+    {
+      have_metafile = false;
+      metadata_processor = 0;
+      output_processor = 0;
+    }
+    else
+    {
+      assert (0);
+    }
+    
+    F5::file_t * metafile = NULL;
+    if (have_metafile and proc == metadata_processor)
+    {
+      metafile
+        = new F5::file_t (cctkGH, path, basename, string (out_extension),
+                          do_truncate, true, false);
+    }
+    
+    F5::file_t * file = NULL;
+    if (proc == output_processor)
+    {
+      file = new F5::file_t (cctkGH, path, basename, string (out_extension),
+                             do_truncate, not have_metafile, true);
+    }
     
     if (do_truncate)
     {
       // Output parameters once after the output file has been created
-      if (CCTK_EQUALS (out_save_parameters, "all") or
-          CCTK_EQUALS (out_save_parameters, "only set"))
+      if (proc == metadata_processor)
       {
-        WriteParameters (file);
-      }
-      else if (CCTK_EQUALS (out_save_parameters, "no"))
-      {
-        // do nothing
-      }
-      else
-      {
-        assert (0);
+        if (CCTK_EQUALS (out_save_parameters, "all") or
+            CCTK_EQUALS (out_save_parameters, "only set"))
+        {
+          WriteParameters (have_metafile ? * metafile : * file);
+        }
+        else if (CCTK_EQUALS (out_save_parameters, "no"))
+        {
+          // do nothing
+        }
+        else
+        {
+          assert (0);
+        }
       }
     }
     
-    writer_t writer (cctkGH, variable);
-    writer.write (file);
+    if (metafile)
+    {
+      writer_t writer (cctkGH, variable);
+      writer.write (* metafile);
+      delete metafile;
+      metafile = NULL;
+    }
+    {
+      writer_t writer (cctkGH, variable);
+#warning "TODO: handle the case where not all processors are writing to their own file"
+      assert (proc == output_processor);
+      assert (file);
+      writer.write (* file);
+      delete file;
+      file = NULL;
+    }
     
     return Error_none;
   }
@@ -416,12 +483,84 @@ namespace CarpetIOF5 {
   void
   WriteParameters (F5::file_t & file)
   {
-    bool const use_metafile = file.get_have_metafile();
-    hid_t const hdf5_file
-      = use_metafile ? file.get_hdf5_metafile() : file.get_hdf5_file();
+    DECLARE_CCTK_PARAMETERS;
     
+    cGH const * const cctkGH = file.get_cctkGH ();
+    
+    hid_t const hdf5_file = file.get_hdf5_file();
+    
+    hid_t const attribute_group
+      = F5::open_or_create_group (hdf5_file,
+                                  "Parameters and Global Attributes");
+    assert (attribute_group >= 0);
+    
+    // unique configuration identifier
+    if (CCTK_IsFunctionAliased ("UniqueConfigID")) {
+      F5::write_or_check_attribute
+        (attribute_group, "config id",
+         static_cast<char const *> (UniqueConfigID (cctkGH)));
+    }
+    
+    // unique build identifier
+    if (CCTK_IsFunctionAliased ("UniqueBuildID")) {
+      F5::write_or_check_attribute
+        (attribute_group, "build id",
+         static_cast<char const *> (UniqueBuildID (cctkGH)));
+    }
+    
+    // unique simulation identifier
+    if (CCTK_IsFunctionAliased ("UniqueSimulationID")) {
+      F5::write_or_check_attribute
+        (attribute_group, "simulation id",
+         static_cast<char const *> (UniqueSimulationID (cctkGH)));
+    }
+    
+    // unique run identifier
+    if (CCTK_IsFunctionAliased ("UniqueRunID")) {
+      F5::write_or_check_attribute
+        (attribute_group, "run id",
+         static_cast<char const *> (UniqueRunID (cctkGH)));
+    }
+    
+    // Output Cactus parameters as single string
+    {
+      char * const parameters = IOUtil_GetAllParameters (cctkGH, true);
+      assert (parameters);
+      // Create a dataset, since the data may not fit into an attribute
+      hsize_t const size = strlen (parameters) + 1;
+      hid_t const dataspace = H5Screate_simple (1, & size, NULL);
+      assert (dataspace >= 0);
+      hid_t properties = H5Pcreate (H5P_DATASET_CREATE);
+      assert (properties >= 0);
+      check (not H5Pset_chunk (properties, 1, & size));
+      if (compression_level > 0)
+      {
+        check (not H5Pset_deflate (properties, compression_level));
+      }
+      if (write_checksum)
+      {
+        check (not H5Pset_fletcher32 (properties));
+      }
+      hid_t const dataset
+        = H5Dcreate (attribute_group, "All Parameters", H5T_NATIVE_CHAR,
+                     dataspace, H5P_DEFAULT,
+                     properties, H5P_DEFAULT);
+      assert (dataset >= 0);
+      check (not H5Dwrite (dataset, H5T_NATIVE_CHAR, H5S_ALL, H5S_ALL,
+                           H5P_DEFAULT, parameters));
+      check (not H5Dclose (dataset));
+      check (not H5Pclose (properties));
+      check (not H5Sclose (dataspace));
+      free (parameters);
+    }
+    
+    check (not H5Gclose (attribute_group));
+    
+    // This is far too slow to be useful
+#if 0
     hid_t const parameter_group
       = F5::open_or_create_group (hdf5_file, "Cactus parameters");
+    assert (parameter_group >= 0);
     
     int first = 1;
     for (;;)
@@ -479,8 +618,8 @@ namespace CarpetIOF5 {
       first = 0;
     }
     
-    herr_t const herr = H5Gclose (parameter_group);
-    assert (not herr);
+    check (not H5Gclose (parameter_group));
+#endif
   }
   
   

@@ -1,6 +1,7 @@
+#include <iostream>
 #include <list>
 
-#include "cctk.h"
+#include <cctk.h>
 
 
 
@@ -79,6 +80,7 @@ namespace Carpet {
     void
     start ()
     {
+      msgStart ();
       running = true;
       CCTK_TimerStartI (handle);
     }
@@ -89,6 +91,7 @@ namespace Carpet {
     {
       CCTK_TimerStopI (handle);
       running = false;
+      msgStop ();
     }
     
     // Reset the timer
@@ -107,6 +110,32 @@ namespace Carpet {
     void
     printData ();
     
+  private:
+    
+    // Output (debug) messages that a timer is starting or stopping
+    void
+    msgStart ()
+      const;
+    
+    void
+    msgStop ()
+      const;
+    
   };
+  
+  
+  
+  // Macros for using timers in a convenient manner
+  
+#define TIMING_BEGIN(name)                                \
+  {                                                       \
+    static Carpet::Timer timer (name);                    \
+    timer.start();                                        \
+    {
+  
+#define TIMING_END                              \
+  }                                             \
+    timer.stop();                               \
+} while (0)
   
 } // namespace Carpet

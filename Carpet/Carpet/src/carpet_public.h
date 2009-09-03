@@ -3,7 +3,7 @@
 
 #include <mpi.h>
 
-#include "cctk.h"
+#include <cctk.h>
 
 
 
@@ -76,13 +76,23 @@ namespace Carpet {
       
     };
     
-    struct CarpetGH const * GetCarpetGH (const cGH * const cgh);
+    struct CarpetGH const * GetCarpetGH (const cGH * const cgh) CCTK_ATTRIBUTE_CONST;
     
     
     
     /* Prolongation management */
     CCTK_INT CarpetEnableProlongating (const CCTK_INT flag);
     CCTK_INT CarpetQueryProlongating (void);
+    
+    
+    
+    /* Grid function access */
+    CCTK_POINTER Carpet_VarDataPtrI (CCTK_POINTER_TO_CONST const cctkGH,
+                                     CCTK_INT const m,
+                                     CCTK_INT const rl,
+                                     CCTK_INT const c,
+                                     CCTK_INT const tl,
+                                     CCTK_INT const varindex);
     
     
     
@@ -104,10 +114,10 @@ namespace Carpet {
     
     
     /* Helper functions */
-    MPI_Comm CarpetMPIComm (void);
-    MPI_Datatype CarpetMPIDatatype (int vartype);
-    MPI_Datatype CarpetSimpleMPIDatatype (int vartype);
-    int CarpetSimpleMPIDatatypeLength (int vartype);
+    MPI_Comm CarpetMPIComm (void) CCTK_ATTRIBUTE_CONST;
+    MPI_Datatype CarpetMPIDatatype (int vartype) CCTK_ATTRIBUTE_CONST;
+    MPI_Datatype CarpetSimpleMPIDatatype (int vartype) CCTK_ATTRIBUTE_CONST;
+    int CarpetSimpleMPIDatatypeLength (int vartype) CCTK_ATTRIBUTE_CONST;
     
     
     

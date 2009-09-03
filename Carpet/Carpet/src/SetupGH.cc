@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <stack>
 #include <string>
@@ -13,7 +14,6 @@
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
-
 #include <util_ErrorCodes.h>
 #include <util_Network.h>
 #include <util_Table.h>
@@ -23,10 +23,11 @@
 #include <dist.hh>
 #include <ggf.hh>
 #include <gh.hh>
+#include <mpi_string.hh>
 #include <region.hh>
 #include <vect.hh>
 
-#include "carpet.hh"
+#include <carpet.hh>
 
 
 
@@ -181,9 +182,6 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
-    // Check and/or modify system limits
-    SetSystemLimits ();
-    
     // Some statistics
     {
       int const nprocs = dist::size();
@@ -191,14 +189,42 @@ namespace Carpet {
       dist::set_num_threads (num_threads);
       int const mynthreads = dist::num_threads();
       int const nthreads_total = dist::total_num_threads();
+#ifdef CCTK_MPI
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "MPI is enabled");
       CCTK_VInfo (CCTK_THORNSTRING,
                   "Carpet is running on %d processes", nprocs);
       CCTK_VInfo (CCTK_THORNSTRING,
                   "This is process %d", myproc);
+#else
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "MPI is disabled");
+#endif
+      char const * const OMP_NUM_THREADS = getenv ("OMP_NUM_THREADS");
+#ifdef _OPENMP
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "OpenMP is enabled");
+      if (not OMP_NUM_THREADS and num_threads == -1) {
+        CCTK_VWarn (CCTK_WARN_COMPLAIN, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Although OpenMP is enabled, neither the environment variable OMP_NUM_THREADS nor the parameter Carpet::num_threads are set.  A system-specific default value is used instead.");
+      }
       CCTK_VInfo (CCTK_THORNSTRING,
                   "This process contains %d threads", mynthreads);
       CCTK_VInfo (CCTK_THORNSTRING,
                   "There are %d threads in total", nthreads_total);
+#else
+      CCTK_VInfo (CCTK_THORNSTRING,
+                  "OpenMP is disabled");
+      int const omp_num_threads = OMP_NUM_THREADS ? atoi (OMP_NUM_THREADS) : 0;
+      if (omp_num_threads > 0) {
+        CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Although OpenMP is disabled, the environment variable OMP_NUM_THREADS is set to %d.  It will be ignored.", omp_num_threads);
+      }
+      if (num_threads > 0) {
+        CCTK_VWarn (CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Although OpenMP is disabled, the parameter Carpet::num_threads is set to %d.  It will be ignored.", num_threads);
+      }
+#endif
       
 #if 0
       // Do not call Util_GetHostName.  Certain InfiniBand libraries
@@ -209,7 +235,7 @@ namespace Carpet {
         char hostnamebuf[1000];
         Util_GetHostName (hostnamebuf, sizeof hostnamebuf);
         string const hostname (hostnamebuf);
-        vector <string> hostnames = AllGatherString (dist::comm(), hostname);
+        vector <string> hostnames = allgather_string (dist::comm(), hostname);
         // Collect process ids
         int const mypid = getpid ();
         vector <int> pids (nprocs);
@@ -227,7 +253,7 @@ namespace Carpet {
         for (int n = 0; n < nprocs; ++ n) {
           CCTK_VInfo (CCTK_THORNSTRING,
                       "   %6d: %s, pid=%d, num_threads=%d",
-                      n, hostnames.at(n).c_str(), pids.at(n), nthreads.at(n));
+                      n, hostnames.AT(n).c_str(), pids.AT(n), nthreads.AT(n));
         }
       }
 #endif
@@ -240,6 +266,7 @@ namespace Carpet {
     mc_grouptype = -1;
     map          = -1;
     component    = -1;
+    cctkGH->cctk_mode = CCTK_MODE_META;
     
     // Say hello
     Waypoint ("Setting up the grid hierarchy");
@@ -275,7 +302,9 @@ namespace Carpet {
     do_warn_about_storage = false; // This is enabled later
     
     if (enable_all_storage) {
-      enable_storage_for_all_groups (cctkGH);
+      if (not enable_no_storage) {
+        enable_storage_for_all_groups (cctkGH);
+      }
     }
     
     Waypoint ("Done with setting up the grid hierarchy");
@@ -327,8 +356,11 @@ namespace Carpet {
     if (CCTK_EQUALS (space_refinement_factors, "")) {
       // Calculate them from the default refinement factor
       spacereffacts.resize (maxreflevels);
-      for (int n=0; n<maxreflevels; ++n) {
-        spacereffacts.at(n) = ivect (ipow (int(refinement_factor), n));
+      assert (ipow (2, 0) ==  1);
+      assert (ipow (3, 1) ==  3);
+      assert (ipow (4, 2) == 16);
+      for (int rl=0; rl<maxreflevels; ++rl) {
+        spacereffacts.AT(rl) = ivect (ipow (int(refinement_factor), rl));
       }
     } else {
       // Read them from the parameter
@@ -342,10 +374,10 @@ namespace Carpet {
     }
     // TODO: turn these into real error messages
     assert (int(spacereffacts.size()) >= maxreflevels);
-    assert (all (spacereffacts.front() == 1));
-    for (int n=1; n<maxreflevels; ++n) {
-      assert (all (spacereffacts.at(n) >= spacereffacts.at(n-1)));
-      assert (all (spacereffacts.at(n) % spacereffacts.at(n-1) == 0));
+    assert (all (spacereffacts.AT(0) == 1));
+    for (int rl=1; rl<maxreflevels; ++rl) {
+      assert (all (spacereffacts.AT(rl) >= spacereffacts.AT(rl-1)));
+      assert (all (spacereffacts.AT(rl) % spacereffacts.AT(rl-1) == 0));
     }
     spacereffacts.resize (maxreflevels);
     
@@ -353,8 +385,8 @@ namespace Carpet {
     if (CCTK_EQUALS (time_refinement_factors, "")) {
       // Calculate them from the default refinement factor
       timereffacts.resize (maxreflevels);
-      for (int n=0; n<maxreflevels; ++n) {
-        timereffacts.at(n) = ipow (int(refinement_factor), n);
+      for (int rl=0; rl<maxreflevels; ++rl) {
+        timereffacts.AT(rl) = ipow (int(refinement_factor), rl);
       }
     } else {
       // Read them from the parameter
@@ -367,16 +399,16 @@ namespace Carpet {
     }
     // TODO: turn these into real error messages
     assert (int(timereffacts.size()) >= maxreflevels);
-    assert (timereffacts.front() == 1);
-    for (int n=1; n<maxreflevels; ++n) {
-      assert (timereffacts.at(n) >= timereffacts.at(n-1));
-      assert (timereffacts.at(n) % timereffacts.at(n-1) == 0);
+    assert (timereffacts.AT(0) == 1);
+    for (int rl=1; rl<maxreflevels; ++rl) {
+      assert (timereffacts.AT(rl) >= timereffacts.AT(rl-1));
+      assert (timereffacts.AT(rl) % timereffacts.AT(rl-1) == 0);
     }
     timereffacts.resize (maxreflevels);
     
     // Calculate the maximum refinement factors
-    maxtimereflevelfact = timereffacts.at (maxreflevels-1);
-    maxspacereflevelfact = spacereffacts.at (maxreflevels-1);
+    maxtimereflevelfact = timereffacts.AT(maxreflevels-1);
+    maxspacereflevelfact = spacereffacts.AT(maxreflevels-1);
   }
   
   
@@ -502,7 +534,7 @@ namespace Carpet {
     
     // Allocate grid hierarchy
     vhh.resize(maps);
-    vhh.at(m) = new gh (spacereffacts, refcentering,
+    vhh.AT(m) = new gh (spacereffacts, refcentering,
                         convergence_factor, mgcentering,
                         baseexts, nboundaryzones);
   }
@@ -541,7 +573,7 @@ namespace Carpet {
     assert (all (all (buffers >= 0)));
     
     vdd.resize(maps);
-    vdd.at(m) = new dh (* vhh.at(m),
+    vdd.AT(m) = new dh (* vhh.AT(m),
                         ghosts, buffers,
                         prolongation_order_space);
     
@@ -559,7 +591,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     vtt.resize (maps);
-    vtt.at(m) = new th (* vhh.at(m),
+    vtt.AT(m) = new th (* vhh.AT(m),
                         timereffacts,
                         1.0);
   }
@@ -573,7 +605,7 @@ namespace Carpet {
     
     vector<vector<vector<region_t> > > superregsss (maps);
     for (int m=0; m<maps; ++m) {
-      set_base_extent (m, superregsss.at(m));
+      set_base_extent (m, superregsss.AT(m));
     }
     
     vector<vector<vector<vector<region_t> > > > regssss;
@@ -582,40 +614,45 @@ namespace Carpet {
     for (int m=0; m<maps; ++m) {
       
       // Check the regions
-      CheckRegions (regssss.at(m));
+      CheckRegions (regssss.AT(m));
       
       // Recompose grid hierarchy
-      vhh.at(m)->regrid (superregsss.at(m), regssss.at(m));
+      vhh.AT(m)->regrid (superregsss.AT(m), regssss.AT(m), false);
       int const rl = 0;
-      vhh.at(m)->recompose (rl, false);
+      vhh.AT(m)->recompose (rl, false);
+      vhh.AT(m)->regrid_free (false);
       
     } // for m
     
-    CCTK_INFO ("Grid structure (grid points):");
-    for (int ml=0; ml<mglevels; ++ml) {
-      int const rl = 0;
-      for (int m=0; m<maps; ++m) {
-        for (int c=0; c<vhh.at(m)->components(rl); ++c) {
-          ibbox const ext = vhh.at(m)->extent(ml,rl,c);
-          ivect const lower = ext.lower();
-          ivect const upper = ext.upper();
-          int const convfact = ipow(mgfact, ml);
-          assert (all(lower % maxspacereflevelfact == 0));
-          assert (all(upper % maxspacereflevelfact == 0));
-          assert (all(((upper - lower) / maxspacereflevelfact) % convfact == 0));
-          cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
-               << "   exterior: "
-               << "proc "
-               << vhh.at(m)->processor(rl,c)
-               << "   "
-               << lower / maxspacereflevelfact
-               << " : "
-               << upper / maxspacereflevelfact
-               << "   ("
-               << (upper - lower) / maxspacereflevelfact / convfact + 1
-               << ") "
-               << prod ((upper - lower) / maxspacereflevelfact / convfact + 1)
-               << endl;
+    regridding_epoch = 0;
+    
+    if (verbose or veryverbose) {
+      CCTK_INFO ("Grid structure (grid points):");
+      for (int ml=0; ml<mglevels; ++ml) {
+        int const rl = 0;
+        for (int m=0; m<maps; ++m) {
+          for (int c=0; c<vhh.AT(m)->components(rl); ++c) {
+            ibbox const ext = vhh.AT(m)->extent(ml,rl,c);
+            ivect const lower = ext.lower();
+            ivect const upper = ext.upper();
+            int const convfact = ipow(mgfact, ml);
+            assert (all(lower % maxspacereflevelfact == 0));
+            assert (all(upper % maxspacereflevelfact == 0));
+            assert (all(((upper - lower) / maxspacereflevelfact) % convfact == 0));
+            cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
+                 << "   exterior: "
+                 << "proc "
+                 << vhh.AT(m)->processor(rl,c)
+                 << "   "
+                 << lower / maxspacereflevelfact
+                 << " : "
+                 << upper / maxspacereflevelfact
+                 << "   ("
+                 << (upper - lower) / maxspacereflevelfact / convfact + 1
+                 << ") "
+                 << prod ((upper - lower) / maxspacereflevelfact / convfact + 1)
+                 << endl;
+          }
         }
       }
     }
@@ -623,7 +660,7 @@ namespace Carpet {
     // Assert that all maps have one refinement level
     reflevels = 1;
     for (int m=0; m<maps; ++m) {
-      assert (vhh.at(m)->reflevels() == reflevels);
+      assert (vhh.AT(m)->reflevels() == reflevels);
     }
   }
   
@@ -638,13 +675,13 @@ namespace Carpet {
     // Create one refinement level
     int const rl = 0;
     regss.resize(1);
-    vector<region_t> & regs = regss.at(rl);
+    vector<region_t> & regs = regss.AT(rl);
     
     if (CCTK_EQUALS (base_extents, "")) {
       
       // Default: one grid component covering everything
       region_t reg;
-      reg.extent = vhh.at(m)->baseextents.at(0).at(0);
+      reg.extent = vhh.AT(m)->baseextents.AT(0).AT(0);
       reg.outer_boundaries = b2vect (bvect (true));
       reg.map = m;
       regs.push_back (reg);
@@ -677,8 +714,8 @@ namespace Carpet {
       
       for (size_t n=0; n<exts.size(); ++n) {
         region_t reg;
-        reg.extent = exts.at(n);
-        reg.outer_boundaries = xpose(obs.at(n));
+        reg.extent = exts.AT(n);
+        reg.outer_boundaries = xpose(obs.AT(n));
         reg.map = m;
         regs.push_back (reg);
       }
@@ -711,17 +748,17 @@ namespace Carpet {
         assert (gdata.dim == dim);
         
         // Set up one refinement level
-        groupdata.at(group).activetimelevels.resize(mglevels);
+        groupdata.AT(group).activetimelevels.resize(mglevels);
         for (int ml=0; ml<mglevels; ++ml) {
-          groupdata.at(group).activetimelevels.at(ml).resize(1);
+          groupdata.AT(group).activetimelevels.AT(ml).resize(1);
         }
         
         // Grid function groups use the global grid descriptors
-        arrdata.at(group).resize(maps);
+        arrdata.AT(group).resize(maps);
         for (int m=0; m<maps; ++m) {
-          arrdata.at(group).at(m).hh = vhh.at(m);
-          arrdata.at(group).at(m).dd = vdd.at(m);
-          arrdata.at(group).at(m).tt = vtt.at(m);
+          arrdata.AT(group).AT(m).hh = vhh.AT(m);
+          arrdata.AT(group).AT(m).dd = vdd.AT(m);
+          arrdata.AT(group).AT(m).tt = vtt.AT(m);
         }
         
         break;
@@ -735,13 +772,13 @@ namespace Carpet {
         assert (gdata.dim >= 0 and gdata.dim <= dim);
         
         // Use only one refinement level for grid arrays
-        groupdata.at(group).activetimelevels.resize(mglevels);
+        groupdata.AT(group).activetimelevels.resize(mglevels);
         for (int ml=0; ml<mglevels; ++ml) {
-          groupdata.at(group).activetimelevels.at(ml).resize(1);
+          groupdata.AT(group).activetimelevels.AT(ml).resize(1);
         }
         
         // Use only one map for grid arrays
-        arrdata.at(group).resize(1);
+        arrdata.AT(group).resize(1);
         
         ivect sizes;
         i2vect ghosts;
@@ -788,33 +825,33 @@ namespace Carpet {
     ivect const str(1);
     ibbox const baseext(lb, ub, str);
     vector <vector <ibbox> > baseexts (1);
-    baseexts.at(0).resize (1);
-    baseexts.at(0).at(0) = baseext;
+    baseexts.AT(0).resize (1);
+    baseexts.AT(0).AT(0) = baseext;
     i2vect const nboundaryzones(0);
     
     // One refinement level
     vector<int> grouptimereffacts(1);
-    grouptimereffacts.at(0) = 1;
+    grouptimereffacts.AT(0) = 1;
     vector<ivect> groupspacereffacts(1);
-    groupspacereffacts.at(0) = ivect(1);
+    groupspacereffacts.AT(0) = ivect(1);
     
     // There is only one map
-    int const m=0;
+    int const m = 0;
     
-    arrdata.at(group).at(m).hh =
+    arrdata.AT(group).AT(m).hh =
       new gh (groupspacereffacts, vertex_centered,
               convergence_factor, vertex_centered,
               baseexts, nboundaryzones);
     
     i2vect const buffers = i2vect (0);
     int const my_prolongation_order_space = 0;
-    arrdata.at (group).at(m).dd =
-      new dh (*arrdata.at (group).at(m).hh,
+    arrdata.AT(group).AT(m).dd =
+      new dh (*arrdata.AT(group).AT(m).hh,
               ghosts, buffers, my_prolongation_order_space);
     
     CCTK_REAL const basedelta = 1.0;
-    arrdata.at (group).at(m).tt =
-      new th (*arrdata.at (group).at(m).hh, grouptimereffacts, basedelta);
+    arrdata.AT(group).AT(m).tt =
+      new th (*arrdata.AT(group).AT(m).hh, grouptimereffacts, basedelta);
   }
   
   
@@ -826,15 +863,26 @@ namespace Carpet {
                               ivect const & convpowers,
                               ivect const & convoffsets)
   {
+#if 0
+    // Do not set up anything for groups that have zero variables
+    // TODO: To do this, need to change modes.cc to provide illegal
+    // entries for GroupDynamicData
+    int const nvars = CCTK_NumVarsInGroupI (group);
+    assert (nvars >= 0);
+    if (nvars == 0) return;
+#endif
+    
     // Set refinement structure for scalars and arrays
     vector<region_t> superregs(1);
     int const m = 0;
     int const rl = 0;
-    int const c = 0;
-    superregs.at(c).extent =
-      arrdata.at(group).at(m).hh->baseextents.at(rl).at(c);
-    superregs.at(c).outer_boundaries = b2vect(true);
-    superregs.at(c).map = m;
+    {
+      int const c = 0;
+      superregs.AT(c).extent =
+        arrdata.AT(group).AT(m).hh->baseextents.AT(rl).AT(c);
+      superregs.AT(c).outer_boundaries = b2vect(true);
+      superregs.AT(c).map = m;
+    }
     vector<region_t> regs;
     
     // Split it into components, one for each processor
@@ -871,7 +919,7 @@ namespace Carpet {
           region_t empty;
           empty.extent = ebox;
           empty.processor = c;
-          regs.at(c) = empty;
+          regs.AT(c) = empty;
         }
       }
     }
@@ -881,21 +929,21 @@ namespace Carpet {
       int const nprocs = CCTK_nProcs (cctkGH);
       vector<bool> used (nprocs, false);
       for (int c=0; c<nprocs; ++c) {
-        int const p = regs.at(c).processor;
+        int const p = regs.AT(c).processor;
         assert (p >= 0 and p < nprocs);
-        assert (not used.at(p));
-        used.at(p) = true;
+        assert (not used.AT(p));
+        used.AT(p) = true;
       }
       for (int c=0; c<nprocs; ++c) {
-        assert (used.at(c));
+        assert (used.AT(c));
       }
     }
     
     // Only one refinement level
     vector<vector<region_t> > superregss(1);
-    superregss.at(rl) = superregs;
+    superregss.AT(rl) = superregs;
     vector<vector<region_t> > regss(1);
-    regss.at(rl) = regs;
+    regss.AT(rl) = regs;
     
     // Create all multigrid levels
     vector<vector<vector<region_t> > > regsss (mglevels);
@@ -906,32 +954,31 @@ namespace Carpet {
       offset[0][d] = 0;
       offset[1][d] = convoffsets[d];
     }
-    regsss.at(0) = regss;
+    regsss.AT(0) = regss;
     
     for (int ml=1; ml<mglevels; ++ml) {
-      int const rl = 0;
-      for (int c=0; c<int(regss.at(rl).size()); ++c) {
+      for (int c=0; c<int(regss.AT(rl).size()); ++c) {
         // this base
         ivect const baselo = ivect(0);
         ivect const baselo1 = baselo;
         // next finer grid
-        ivect const flo = regsss.at(ml-1).at(rl).at(c).extent.lower();
-        ivect const fhi = regsss.at(ml-1).at(rl).at(c).extent.upper();
-        ivect const fstr = regsss.at(ml-1).at(rl).at(c).extent.stride();
+        ivect const flo = regsss.AT(ml-1).AT(rl).AT(c).extent.lower();
+        ivect const fhi = regsss.AT(ml-1).AT(rl).AT(c).extent.upper();
+        ivect const fstr = regsss.AT(ml-1).AT(rl).AT(c).extent.stride();
         // this grid
         ivect const str = fstr * mgfact1;
         ivect const lo = flo +
-          either (regsss.at(ml-1).at(rl).at(c).outer_boundaries[0],
+          either (regsss.AT(ml-1).AT(rl).AT(c).outer_boundaries[0],
                   + (offset[0] - mgfact1 * offset[0]) * fstr,
                   ivect(0));
         ivect const hi = fhi +
-          either (regsss.at(ml-1).at(rl).at(c).outer_boundaries[1],
+          either (regsss.AT(ml-1).AT(rl).AT(c).outer_boundaries[1],
                   - (offset[1] - mgfact1 * offset[1]) * fstr,
                   ivect(0));
         ivect const lo1 = baselo1 + (lo - baselo1 + str - 1) / str * str;
         ivect const hi1 = lo1 + (hi - lo1) / str * str;
-        regsss.at(ml).at(rl).at(c) = regsss.at(ml-1).at(rl).at(c);
-        regsss.at(ml).at(rl).at(c).extent = ibbox(lo1, hi1, str);
+        regsss.AT(ml).AT(rl).AT(c) = regsss.AT(ml-1).AT(rl).AT(c);
+        regsss.AT(ml).AT(rl).AT(c).extent = ibbox(lo1, hi1, str);
       }
     }
     
@@ -940,8 +987,9 @@ namespace Carpet {
       char * const groupname = CCTK_GroupName (group);
       assert (groupname);
       Checkpoint ("Recomposing grid array group \"%s\"...", groupname);
-      arrdata.at(group).at(0).hh->regrid (superregss, regsss);
-      arrdata.at(group).at(0).hh->recompose (0, false);
+      arrdata.AT(group).AT(0).hh->regrid (superregss, regsss, false);
+      arrdata.AT(group).AT(0).hh->recompose (0, false);
+      arrdata.AT(group).AT(0).hh->regrid_free (false);
       Checkpoint ("Done recomposing grid array group \"%s\".", groupname);
       free (groupname);
     }
@@ -957,25 +1005,25 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     // Initialise group information
-    groupdata.at(group).info.dim         = gdata.dim;
-    groupdata.at(group).info.gsh         = new int [dim];
-    groupdata.at(group).info.lsh         = new int [dim];
-    groupdata.at(group).info.lbnd        = new int [dim];
-    groupdata.at(group).info.ubnd        = new int [dim];
-    groupdata.at(group).info.bbox        = new int [2*dim];
-    groupdata.at(group).info.nghostzones = new int [dim];
+    groupdata.AT(group).info.dim         = gdata.dim;
+    groupdata.AT(group).info.gsh         = new int [dim];
+    groupdata.AT(group).info.lsh         = new int [dim];
+    groupdata.AT(group).info.lbnd        = new int [dim];
+    groupdata.AT(group).info.ubnd        = new int [dim];
+    groupdata.AT(group).info.bbox        = new int [2*dim];
+    groupdata.AT(group).info.nghostzones = new int [dim];
     
-    groupdata.at(group).transport_operator =
+    groupdata.AT(group).transport_operator =
       get_transport_operator (cctkGH, group, gdata);
     
-    groupdata.at(group).info.activetimelevels = 0;
+    groupdata.AT(group).info.activetimelevels = 0;
     
     // Initialise group variables
-    for (size_t m=0; m<arrdata.at(group).size(); ++m) {
+    for (size_t m=0; m<arrdata.AT(group).size(); ++m) {
       
-      arrdata.at(group).at(m).data.resize(CCTK_NumVarsInGroupI(group));
-      for (size_t var=0; var<arrdata.at(group).at(m).data.size(); ++var) {
-        arrdata.at(group).at(m).data.at(var) = 0;
+      arrdata.AT(group).AT(m).data.resize(CCTK_NumVarsInGroupI(group));
+      for (size_t var=0; var<arrdata.AT(group).AT(m).data.size(); ++var) {
+        arrdata.AT(group).AT(m).data.AT(var) = 0;
       }
       
     }
@@ -989,14 +1037,14 @@ namespace Carpet {
     // Allocate level times
     leveltimes.resize (mglevels);
     for (int ml=0; ml<mglevels; ++ml) {
-      leveltimes.at(ml).resize (1);
+      leveltimes.AT(ml).resize (1);
     }
     
     // Allocate orgin and spacings
     origin_space.resize (maps);
     delta_space.resize (maps);
     for (int m=0; m<maps; ++m) {
-      origin_space.at(m).resize (mglevels);
+      origin_space.AT(m).resize (mglevels);
     }
     
     // Current state
@@ -1009,11 +1057,12 @@ namespace Carpet {
     }
     
     // Set up things as if in local mode
-    mglevel      = 0;
-    reflevel     = 0;
-    mc_grouptype = CCTK_GF;
-    map          = 0;
-    component    = 0;
+    mglevel         = 0;
+    reflevel        = 0;
+    mc_grouptype    = CCTK_GF;
+    map             = 0;
+    component       = 0;
+    local_component = -1;
     
     // Leave everything, so that everything is set up correctly
     leave_local_mode     (cctkGH);
@@ -1402,17 +1451,36 @@ namespace Carpet {
     
     // Sanity check
     assert (all (npoints <= INT_MAX));
+#if 0
     int max = INT_MAX;
     for (int d=0; d<dim; ++d) {
       assert (npoints[d] <= max);
       max /= npoints[d];
     }
+#endif
+    {
+      CCTK_REAL const total_npoints = prod(rvect(npoints));
+      CCTK_REAL const size_max = numeric_limits<ibbox::size_type>::max();
+      if (total_npoints > size_max) {
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "The domain for map %d contains %g grid points.  This number is larger than the maximum number supported by Carpet (%g).",
+                    m, double(total_npoints), double(size_max));
+      }
+      CCTK_REAL const int_max = numeric_limits<int>::max();
+      if (total_npoints > int_max) {
+        if (dist::rank() == 0) {
+          CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                      "The domain for map %d contains %g grid points.  This number is larger than the maximum number that can be represented as an integer (%g).  This can lead to strange problems in thorns which try to calculate the total number of grid points.",
+                      m, double(total_npoints), double(int_max));
+        }
+      }
+    }
     
     // Save domain specification
     domainspecs.resize(maps);
-    domainspecs.at(m).exterior_min = exterior_min;
-    domainspecs.at(m).exterior_max = exterior_max;
-    domainspecs.at(m).npoints = npoints;
+    domainspecs.AT(m).exterior_min = exterior_min;
+    domainspecs.AT(m).exterior_max = exterior_max;
+    domainspecs.AT(m).npoints = npoints;
   }
   
   
@@ -1432,26 +1500,53 @@ namespace Carpet {
     assert (baseextents.empty());
     baseextents.resize (num_convergence_levels);
     for (int ml=0; ml<num_convergence_levels; ++ml) {
-      baseextents.at(ml).resize (maxreflevels);
+      baseextents.AT(ml).resize (maxreflevels);
       for (int rl=0; rl<maxreflevels; ++rl) {
         if (ml == 0) {
           if (rl == 0) {
             // Use base extent
-            baseextents.at(ml).at(rl) = baseextent;
+            baseextents.AT(ml).AT(rl) = baseextent;
           } else {
             // Refine next coarser refinement level
-            assert (refcentering == vertex_centered);
-            assert (not any (any (is_staggered)));
-            i2vect const bnd_shift =
-              (nboundaryzones - 1) * i2vect (not is_internal) + shiftout;
-            ibbox const & cbox = baseextents.at(ml).at(rl-1);
-            ibbox const cbox_phys = cbox.expand (- bnd_shift);
-            assert (all (baseextent.stride() % spacereffacts.at(rl-1) == 0));
-            ivect const fstride = baseextent.stride() / spacereffacts.at(rl);
-            ibbox const fbox_phys =
-              ibbox (cbox_phys.lower(), cbox_phys.upper(), fstride);
-            ibbox const fbox = fbox_phys.expand (bnd_shift);
-            baseextents.at(ml).at(rl) = fbox;
+            if (refcentering == vertex_centered) {
+              ibbox const & cbox = baseextents.AT(ml).AT(rl-1);
+              assert (not any (any (is_staggered)));
+              i2vect const bnd_shift =
+                (nboundaryzones - 1) * i2vect (not is_internal) + shiftout;
+              ibbox const cbox_phys = cbox.expand (- bnd_shift);
+              assert (all (baseextent.stride() % spacereffacts.AT(rl-1) == 0));
+              ivect const fstride = baseextent.stride() / spacereffacts.AT(rl);
+              ibbox const fbox_phys =
+                ibbox (cbox_phys.lower(), cbox_phys.upper(), fstride);
+              ibbox const fbox = fbox_phys.expand (bnd_shift);
+              baseextents.AT(ml).AT(rl) = fbox;
+            } else {
+              ibbox const & cbox = baseextents.AT(ml).AT(rl-1);
+              assert (all (all (is_staggered)));
+              ivect const cstride = cbox.stride();
+              assert (all (cstride % 2 == 0));
+              i2vect const bnd_shift_cstride =
+                + (cstride / 2 - i2vect (is_internal) * cstride)
+                + (nboundaryzones - 1) * i2vect (not is_internal) * cstride
+                + shiftout * cstride;
+              ibbox const cbox_phys
+                (cbox.lower() - (- bnd_shift_cstride[0]),
+                 cbox.upper() + (- bnd_shift_cstride[1]),
+                 cbox.stride());
+              assert (all (baseextent.stride() % spacereffacts.AT(rl-1) == 0));
+              ivect const fstride = baseextent.stride() / spacereffacts.AT(rl);
+              ibbox const fbox_phys =
+                ibbox (cbox_phys.lower(), cbox_phys.upper(), fstride);
+              assert (all (cstride % fstride == 0));
+              assert (all (all (bnd_shift_cstride % (cstride / fstride) == 0)));
+              i2vect const bnd_shift_fstride =
+                bnd_shift_cstride / (cstride / fstride);
+              ibbox const fbox
+                (fbox_phys.lower() - bnd_shift_fstride[0],
+                 fbox_phys.upper() + bnd_shift_fstride[1],
+                 fbox_phys.stride());
+              baseextents.AT(ml).AT(rl) = fbox;
+            }
           }
         } else {
           // Coarsen next finer convergence level
@@ -1459,13 +1554,13 @@ namespace Carpet {
           assert (not any (any (is_staggered)));
           i2vect const bnd_shift =
             (nboundaryzones - 1) * i2vect (not is_internal) + shiftout;
-          ibbox const & fbox = baseextents.at(ml-1).at(rl);
+          ibbox const & fbox = baseextents.AT(ml-1).AT(rl);
           ibbox const fbox_phys = fbox.expand (- bnd_shift);
           ivect const cstride = fbox.stride() * int (convergence_factor);
           ibbox const cbox_phys =
             ibbox (fbox_phys.lower(), fbox_phys.upper(), cstride);
           ibbox const cbox = cbox_phys.expand (bnd_shift);
-          baseextents.at(ml).at(rl) = cbox;
+          baseextents.AT(ml).AT(rl) = cbox;
         }
       }
     }
@@ -1493,10 +1588,10 @@ namespace Carpet {
         vector<vector<region_t> > regss(1);
         
         // Distribute onto the processors
-        SplitRegions (cctkGH, superregsss.at(m).at(rl), regss.at(rl));
+        SplitRegions (cctkGH, superregsss.AT(m).AT(rl), regss.AT(rl));
         
         // Create all multigrid levels
-        MakeMultigridBoxes (cctkGH, m, regss, regssss.at(m));
+        MakeMultigridBoxes (cctkGH, m, regss, regssss.AT(m));
       } // for m
       
     } else {
@@ -1506,7 +1601,7 @@ namespace Carpet {
       
       vector<vector<region_t> > superregss(maps);
       for (int m=0; m<maps; ++m) {
-        superregss.at(m) = superregsss.at(m).at(rl);
+        superregss.AT(m) = superregsss.AT(m).AT(rl);
       }
       
       vector<vector<region_t> > regss(maps);
@@ -1514,9 +1609,9 @@ namespace Carpet {
       
       vector<vector<vector<region_t> > > regsss(maps);
       for (int m=0; m<maps; ++m) {
-        superregsss.at(m).at(rl) = superregss.at(m);
-        regsss.at(m).resize(1);
-        regsss.at(m).at(rl) = regss.at(m);
+        superregsss.AT(m).AT(rl) = superregss.AT(m);
+        regsss.AT(m).resize(1);
+        regsss.AT(m).AT(rl) = regss.AT(m);
       }
       
       // Create all multigrid levels
@@ -1583,8 +1678,7 @@ namespace Carpet {
     
     ivect baseconvpowers = convpowers * int(basemglevel);
     rvect real_sizes =
-      (((rvect (sizes)
-         - rvect (convoffsets))
+      (((rvect (sizes) - rvect (convoffsets))
         / ipow (rvect(convergence_factor), baseconvpowers))
        + rvect (convoffsets));
     // Do not modify extra dimensions
@@ -1720,8 +1814,8 @@ namespace Carpet {
     int num_gf_vars = 0;
     vector<int> num_array_groups(dim+1), num_array_vars(dim+1);
     for (int d=0; d<=dim; ++d) {
-      num_array_groups.at(d) = 0;
-      num_array_vars.at(d) = 0;
+      num_array_groups.AT(d) = 0;
+      num_array_vars.AT(d) = 0;
     }
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
@@ -1737,8 +1831,8 @@ namespace Carpet {
       case CCTK_SCALAR:
       case CCTK_ARRAY:
         assert (gdata.dim<=dim);
-        num_array_groups.at(gdata.dim) += 1;
-        num_array_vars.at(gdata.dim) += gdata.numvars * gdata.numtimelevels;
+        num_array_groups.AT(gdata.dim) += 1;
+        num_array_vars.AT(gdata.dim) += gdata.numvars * gdata.numtimelevels;
         break;
       default:
         assert (0);
@@ -1751,11 +1845,11 @@ namespace Carpet {
                 num_gf_vars, num_gf_groups);
     CCTK_VInfo (CCTK_THORNSTRING,
                 "   There are %d grid scalars in %d groups",
-                num_array_vars.at(0), num_array_groups.at(0));
+                num_array_vars.AT(0), num_array_groups.AT(0));
     for (int d=1; d<=dim; ++d) {
       CCTK_VInfo (CCTK_THORNSTRING,
                   "   There are %d %d-dimensional grid arrays in %d groups",
-                  num_array_vars.at(d), d, num_array_groups.at(d));
+                  num_array_vars.AT(d), d, num_array_groups.AT(d));
     }
     CCTK_VInfo (CCTK_THORNSTRING,
                 "   (The number of variables counts all time levels)");
@@ -1770,12 +1864,30 @@ namespace Carpet {
   {
     assert (group>=0 and group<CCTK_NumGroups());
     
-    if (CCTK_GroupTypeI(group) != CCTK_GF) {
+    if (gdata.grouptype != CCTK_GF) {
       // Ignore everything but true grid functions
-      return op_error;
+      return op_copy;
     }
     
     bool const can_transfer = can_transfer_variable_type (cctkGH, group, gdata);
+    
+    // Catch a common error (using the tag "prolongate" instead of
+    // "prolongation")
+    {
+      int const prolong_length = Util_TableGetString
+        (gdata.tagstable,  0, NULL, "Prolongate");
+      if (prolong_length >= 0) {
+        char * const groupname = CCTK_GroupName (group);
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "Group \"%s\" contains the illegal tag \"Prolongate\".  (Did you mean \"Prolongation\" instead?)",
+                    groupname);
+        free (groupname);
+      } else if (prolong_length == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+        // good -- do nothing
+      } else {
+        assert (0);
+      }
+    }
     
     // Get prolongation method
     char prolong_string[1000];
@@ -1861,6 +1973,7 @@ namespace Carpet {
     if (not have_prolong_string) {
       if (can_transfer) {
         // Use the default
+#if 0
         if (gdata.numtimelevels == 1) {
           // Only one time level:
           char * const groupname = CCTK_GroupName (group);
@@ -1873,6 +1986,8 @@ namespace Carpet {
           // Several time levels: use the default
           return op_Lagrange;
         }
+#endif
+        return op_Lagrange;
       } else {
         if (gdata.grouptype == CCTK_GF) {
           char * const groupname = CCTK_GroupName (group);
@@ -1895,6 +2010,8 @@ namespace Carpet {
       return op_sync;
     } else if (CCTK_Equals(prolong_string, "sync")) {
       return op_sync;
+    } else if (CCTK_Equals(prolong_string, "restrict")) {
+      return op_restrict;
     } else if (CCTK_Equals(prolong_string, "copy")) {
       return op_copy;
     } else if (CCTK_Equals(prolong_string, "Lagrange")) {
@@ -1903,6 +2020,8 @@ namespace Carpet {
       return op_ENO;
     } else if (CCTK_Equals(prolong_string, "WENO")) {
       return op_WENO;
+    } else if (CCTK_Equals(prolong_string, "Lagrange_monotone")) {
+      return op_Lagrange_monotone;
     } else {
       char * const groupname = CCTK_GroupName (group);
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
@@ -2170,7 +2289,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     int const prolongation_stencil_size
-      = vdd.at(m)->prolongation_stencil_size();
+      = vdd.AT(m)->prolongation_stencil_size();
     int const min_nghosts
       = ((prolongation_stencil_size + refinement_factor - 1)
          / (refinement_factor - 1));

@@ -1,0 +1,27 @@
+# Cactus benchmark results
+#    processes = procs
+#    nodes     = procs / ppn
+#
+# benchmark steps size machine   procs ppn tpp iter   walltime cputime
+Bench_McLachlan_Carpet_9lev 000016 0013 surveyor   000008 04 01 11   624.81453443 624.81587300
+Bench_McLachlan_Carpet_9lev 000016 0013 surveyor   000016 04 01 11   722.29658222 722.29789900
+Bench_McLachlan_Carpet_9lev 000016 0013 surveyor   000032 04 01 11   856.51289034 856.51418100
+Bench_McLachlan_Carpet_9lev 000016 0013 surveyor   000064 04 01 11   990.83257842 990.83382200
+Bench_McLachlan_Carpet_9lev 000128 0013 surveyor   000004 04 01 12   474.73102307 474.73792200
+Bench_McLachlan_Carpet_9lev 000128 0013 surveyor   000008 04 01 12   587.83344865 587.84038800
+Bench_McLachlan_Carpet_9lev 000128 0013 surveyor   000016 04 01 12   621.02077198 621.02724100
+Bench_McLachlan_Carpet_9lev 000128 0013 surveyor   000032 04 01 12   663.63607979 663.64234500
+Bench_McLachlan_Carpet_9lev 000128 0013 surveyor   000064 04 01 12   704.49752784 704.50370900
+Bench_McLachlan_Carpet_9lev 000128 0013 surveyor   000128 04 01 12   680.81795001 680.82374700
+Bench_McLachlan_Carpet_9lev 000128 0013 surveyor   000256 04 01 12   656.88587546 656.89153500
+Bench_McLachlan_Carpet_9lev 000128 0013 surveyor   000512 04 01 12   629.33461618 629.34111400
+Bench_McLachlan_Carpet_9lev 000128 0013 surveyor   001024 04 01 12   614.91167831 614.91829700
+Bench_McLachlan_Carpet_9lev 000128 0013 surveyor   002048 04 01 12   605.89694047 605.90319800
+Bench_McLachlan_Carpet_9lev 000128 0013 surveyor   004096 04 01 12   610.38005638 610.38661600
+Bench_McLachlan_Carpet_9lev 000128 0016 surveyor   000004 04 01 00   854.29521608 854.30252600
+Bench_McLachlan_Carpet_9lev 000128 0016 surveyor   000004 04 01 03   877.72644567 877.73262500
+Bench_McLachlan_Carpet_9lev 000128 0016 surveyor   000004 04 01 12   856.12551332 856.13247900
+Bench_McLachlan_Carpet_9lev 000128 0020 surveyor   000004 04 01 00   1737.21421933 1737.22385900
+Bench_McLachlan_Carpet_9lev 000128 0020 surveyor   000004 04 01 03   1771.05630064 1771.06430100
+Bench_McLachlan_Carpet_9lev 000128 0025 surveyor   000004 04 01 00   3050.30690145 3050.31646500
+Bench_McLachlan_Carpet_9lev 000128 0025 surveyor   000004 04 01 03   3093.32195663 3093.32960000

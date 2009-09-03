@@ -4,6 +4,8 @@
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 
+#include <loopcontrol.h>
+
 #include "mask_excluded.hh"
 
 
@@ -46,25 +48,26 @@ namespace CarpetMask {
         
         bool const exterior = exclude_exterior[n];
         
-        for (int k = 0; k < cctk_lsh[2]; ++ k) {
-          for (int j = 0; j < cctk_lsh[1]; ++ j) {
-            for (int i = 0; i < cctk_lsh[0]; ++ i) {
-              int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-              
-              CCTK_REAL const dx2 = pow (x[ind] - x0, 2);
-              CCTK_REAL const dy2 = pow (y[ind] - y0, 2);
-              CCTK_REAL const dz2 = pow (z[ind] - z0, 2);
-              
-              if (exterior ?
-                  dx2 + dy2 + dz2 >= r2 :
-                  dx2 + dy2 + dz2 <= r2)
-              {
-                weight[ind] = 0.0;
-              }
-              
-            }
+#pragma omp parallel
+        LC_LOOP3(CarpetExcludedSetup,
+                 i,j,k,
+                 0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
+                 cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+        {
+          int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+          
+          CCTK_REAL const dx2 = pow (x[ind] - x0, 2);
+          CCTK_REAL const dy2 = pow (y[ind] - y0, 2);
+          CCTK_REAL const dz2 = pow (z[ind] - z0, 2);
+          
+          if (exterior ?
+              dx2 + dy2 + dz2 >= r2 :
+              dx2 + dy2 + dz2 <= r2)
+          {
+            weight[ind] = 0.0;
           }
-        }
+          
+        } LC_ENDLOOP3(CarpetExcludedSetup);
         
       } // if r>=0
     }   // for n

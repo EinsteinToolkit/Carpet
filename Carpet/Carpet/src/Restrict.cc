@@ -2,13 +2,13 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
 
-#include "ggf.hh"
-#include "gh.hh"
+#include <ggf.hh>
+#include <gh.hh>
 
-#include "carpet.hh"
+#include <carpet.hh>
 
 
 
@@ -58,7 +58,7 @@ namespace Carpet {
   }
   
 
-  // restricts a set of groups which all have the same vartype
+  // restrict a set of groups
   static void RestrictGroups (const cGH* cctkGH, const vector<int>& groups) {
     DECLARE_CCTK_PARAMETERS;
 
@@ -66,14 +66,14 @@ namespace Carpet {
 
     for (comm_state state; not state.done(); state.step()) {
       for (int group = 0; group < (int)groups.size(); ++group) {
-        const int g = groups[group];
-        for (int m=0; m<(int)arrdata.at(g).size(); ++m) {
+        const int g = groups.AT(group);
+        for (int m=0; m<(int)arrdata.AT(g).size(); ++m) {
 
           // use background time here (which may not be modified
           // by the user)
-          const CCTK_REAL time = vtt.at(m)->time (tl, reflevel, mglevel);
+          const CCTK_REAL time = vtt.AT(m)->time (tl, reflevel, mglevel);
 
-          const CCTK_REAL time1 = vtt.at(m)->time (0, reflevel, mglevel);
+          const CCTK_REAL time1 = vtt.AT(m)->time (0, reflevel, mglevel);
           const CCTK_REAL time2 =
             (cctkGH->cctk_time - cctk_initial_time) / delta_time;
           const CCTK_REAL time0 =
@@ -81,8 +81,8 @@ namespace Carpet {
           const CCTK_REAL eps = 1.0e-12;
           assert (abs(time1 - time2) <= eps * time0);
 
-          for (int v = 0; v < (int)arrdata.at(g).at(m).data.size(); ++v) {
-            ggf *const gv = arrdata.at(g).at(m).data.at(v);
+          for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
+            ggf *const gv = arrdata.AT(g).AT(m).data.AT(v);
             gv->ref_restrict_all (state, tl, reflevel, mglevel, time);
           }
         }

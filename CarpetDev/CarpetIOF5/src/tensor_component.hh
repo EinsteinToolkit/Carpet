@@ -1,10 +1,11 @@
 #ifndef TENSOR_COMPONENT_HH
 #define TENSOR_COMPONENT_HH
 
+#include <string>
+
 #include <hdf5.h>
 
-#include "physical_quantity.hh"
-#include "utils.hh"
+#include "data_region.hh"
 
 
 
@@ -14,12 +15,14 @@ namespace CarpetIOF5 {
     
     class tensor_component_t {
       
-      physical_quantity_t & m_physical_quantity;
+      data_region_t & m_data_region;
       
       int const m_variable;
       string m_name;
       
-      hid_t m_hdf5_tensor_component;
+      hid_t m_dataspace;
+      hid_t m_properties;
+      hid_t m_dataset;
       
       tensor_component_t ();
       tensor_component_t (tensor_component_t const &);
@@ -27,27 +30,23 @@ namespace CarpetIOF5 {
       
     public:
       
-      tensor_component_t (physical_quantity_t & physical_quantity,
+      tensor_component_t (data_region_t & data_region,
                           int variable);
       
       virtual
       ~ tensor_component_t ();
       
-      physical_quantity_t &
-      get_physical_quantity ()
+      data_region_t &
+      get_data_region ()
         const;
       
       hid_t
       get_variable ()
         const;
       
-      hid_t
-      get_hdf5_tensor_component ()
-        const;
-      
       void
-      get_link_destination (string & filename,
-                            string & objectname)
+      write (void const * data,
+             int cactus_datatype)
         const;
       
       virtual bool

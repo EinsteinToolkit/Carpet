@@ -53,7 +53,8 @@ namespace CarpetIOF5 {
         const;
       
       void
-      get_link_destination (string & filename,
+      get_link_destination (int proc,
+                            string & filename,
                             string & objectname)
         const;
       

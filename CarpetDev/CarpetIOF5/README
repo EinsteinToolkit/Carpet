@@ -11,16 +11,20 @@ Input and output data using the HDF5 based F5 file format.
 
 An F5 file contains the following hierarchy:
 
+        Bundle
+        Slice
+        Grid
+        Topology
+        Representation
+        Field
+
+We have a class hierarchy:
+
         file
-        timestep
-        simulation
-        topology
-        coordinate_system
-        physical_quantity
-        tensor_component
+        timestep (slice)
+        simulation (grid) [grid hierarchy of one patch]
+        topology (topology) [one refinement level]
+        coordinate_system (representation)
+        physical_quantity (field)
         data_region
-
-2006-06-05: Werner says that tensor_component and data_region should
-be interchanged.
-
-2007-04-25: Werner confirms this.
+        tensor_component

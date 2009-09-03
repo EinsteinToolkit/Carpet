@@ -6,6 +6,8 @@
 #include "cctk.h"
 #include "cctk_Parameters.h"
 
+#include "CarpetTimers.hh"
+
 #include "defs.hh"
 #include "dh.hh"
 #include "th.hh"
@@ -19,7 +21,11 @@ using namespace CarpetLib;
 
 
 
-  // Constructors
+list<gh*> gh::allgh;
+
+
+
+// Constructors
 gh::
 gh (vector<ivect> const & reffacts_, centering const refcent_,
     int const mgfact_,  centering const mgcent_,
@@ -65,12 +71,15 @@ gh (vector<ivect> const & reffacts_, centering const refcent_,
                    boundary_width[0] + boundary_width[1]));
     }
   }
+  
+  allghi = allgh.insert(allgh.end(), this);
 }
 
 // Destructors
 gh::
 ~gh ()
 {
+  allgh.erase(allghi);
 }
 
 
@@ -78,14 +87,16 @@ gh::
 // Modifiers
 void
 gh::
-regrid (rregs const & superregs, mregs const & regs)
+regrid (rregs const & superregs, mregs const & regs, bool const do_init)
 {
   DECLARE_CCTK_PARAMETERS;
+    
+  static Carpet::Timer timer ("CarpetLib::gh::regrid");
+  timer.start();
   
   superregions = superregs;
   
-  // Save the grid hierarchy
-  oldregions.clear ();
+  assert (oldregions.empty());
   swap (oldregions, regions);
   regions = regs;
   
@@ -182,11 +193,43 @@ regrid (rregs const & superregs, mregs const & regs)
     }
   }
   
+  
+  
+  // Calculate global and local components
+  global_components_.resize(reflevels());
+  local_components_.resize(reflevels());
+  for (int rl=0; rl<reflevels(); ++rl) {
+    {
+      int lc = 0;
+      for (int c=0; c<components(rl); ++c) {
+        lc += is_local(rl,c);
+      }
+      global_components_.AT(rl).resize(lc);
+    }
+    local_components_.AT(rl).resize(components(rl));
+    {
+      int lc = 0;
+      for (int c=0; c<components(rl); ++c) {
+        if (is_local(rl,c)) {
+          global_components_.AT(rl).AT(lc) = c;
+          local_components_.AT(rl).AT(c) = lc;
+          ++lc;
+        } else {
+          local_components_.AT(rl).AT(c) = -1;
+        }
+      }
+    }
+  }
+  
+  
+  
   // Output
   if (output_bboxes) {
     do_output_bboxes (cout);
     do_output_bases (cout);
   }
+  
+  
   
   // Regrid the other hierarchies
   for (list<th*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
@@ -194,7 +237,26 @@ regrid (rregs const & superregs, mregs const & regs)
   }
   
   for (list<dh*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
-    (*d)->regrid();
+    (*d)->regrid(do_init);
+  }
+  
+  timer.stop();
+}
+
+
+
+void
+gh::
+regrid_free (bool const do_init)
+{
+  oldregions.clear();
+  
+  for (list<th*>::iterator t=ths.begin(); t!=ths.end(); ++t) {
+    (*t)->regrid_free();
+  }
+  
+  for (list<dh*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
+    (*d)->regrid_free(do_init);
   }
 }
 
@@ -205,11 +267,6 @@ gh::
 recompose (int const rl,
            bool const do_prolongate)
 {
-  // Handle changes in number of mglevels
-  if (oldregions.size() != regions.size()) {
-    oldregions.resize (regions.size());
-  }
-  
   bool const do_recompose = level_did_change(rl);
   
   if (do_recompose) {
@@ -217,12 +274,6 @@ recompose (int const rl,
     // Recompose the other hierarchies
     for (list<dh*>::iterator d=dhs.begin(); d!=dhs.end(); ++d) {
       (*d)->recompose (rl, do_prolongate);
-    }
-    
-    // Overwrite old with new grid hierarchy
-    for (int ml=0; ml<mglevels(); ++ml) {
-      oldregions.AT(ml).resize (regions.AT(ml).size());
-      oldregions.AT(ml).AT(rl) = regions.AT(ml).AT(rl);
     }
     
   }
@@ -235,7 +286,6 @@ recompose (int const rl,
 bool
 gh::
 level_did_change (int const rl)
-  const
 {
   // Find out whether this level changed
   if (regions.size() != oldregions.size()) return true;
@@ -263,11 +313,23 @@ gh::
 local_components (int const rl)
   const
 {
-  int lc = 0;
-  for (int c=0; c<components(rl); ++c) {
-    lc +=  is_local(rl,c);
-  }
-  return lc;
+  return global_components_.AT(rl).size();
+}
+
+int
+gh::
+get_component (int const rl, int const lc)
+  const
+{
+  return global_components_.AT(rl).AT(lc);
+}
+
+int
+gh::
+get_local_component (int const rl, int const c)
+  const
+{
+  return local_components_.AT(rl).AT(c);
 }
 
 
@@ -374,36 +436,36 @@ locate_position (ivect const & ipos,
 
 // Time hierarchy management
 
-void
+gh::th_handle
 gh::
 add (th * const t)
 {
-  ths.push_back (t);
+  return ths.insert(ths.end(), t);
 }
 
 void
 gh::
-remove (th * const t)
+erase (th_handle const ti)
 {
-  ths.remove (t);
+  ths.erase(ti);
 }
 
 
 
 // Data hierarchy management
 
-void
+gh::dh_handle
 gh::
 add (dh * const d)
 {
-  dhs.push_back (d);
+  return dhs.insert(dhs.end(), d);
 }
 
 void
 gh::
-remove (dh * const d)
+erase (dh_handle di)
 {
-  dhs.remove (d);
+  dhs.erase (di);
 }
 
 
@@ -416,6 +478,7 @@ memory ()
   const
 {
   return
+    sizeof allghi +             // memoryof (allghi) +
     memoryof (reffacts) +
     memoryof (refcent) +
     memoryof (mgfact) +
@@ -426,6 +489,19 @@ memory ()
     memoryof (oldregions) +
     memoryof (ths) +
     memoryof (dhs);
+}
+
+size_t
+gh::
+allmemory ()
+{
+  size_t mem = memoryof(allgh);
+  for (list<gh*>::const_iterator
+         ghi = allgh.begin(); ghi != allgh.end(); ++ ghi)
+  {
+    mem += memoryof(**ghi);
+  }
+  return mem;
 }
 
 

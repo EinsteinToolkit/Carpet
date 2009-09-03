@@ -228,7 +228,8 @@ namespace CarpetSlab {
              ++ext_iter) {
           
           // Copy data
-          alldata->copy_from (state, mydata, *ext_iter);
+          int const proc = myhh->processor(reflevel, component);
+          alldata->copy_from (state, mydata, *ext_iter, collect_proc, proc);
           
         }
         
@@ -239,26 +240,25 @@ namespace CarpetSlab {
     // Copy result to all processors
     if (dest_proc == -1) {
       vector<gdata*> tmpdata(CCTK_nProcs(cgh));
-      vector<comm_state> state;
       
       for (int proc=0; proc<CCTK_nProcs(cgh); ++proc) {
         if (proc != collect_proc) {
           void* myhdata = rank==proc ? hdata : 0;
           tmpdata.at(proc) = mydata->make_typed (-1, error_centered, op_sync);
           tmpdata.at(proc)->allocate (alldata->extent(), proc, myhdata);
-          tmpdata.at(proc)->copy_from (state.at(proc), alldata, alldata->extent());
+        }
+      }
+      
+      for (comm_state state; not state.done(); state.step()) {
+        for (int proc=0; proc<CCTK_nProcs(cgh); ++proc) {
+          if (proc != collect_proc) {
+            tmpdata.at(proc)->copy_from (state, alldata, alldata->extent(), proc, collect_proc);
+          }
         }
       }
       
       for (int proc=0; proc<CCTK_nProcs(cgh); ++proc) {
         if (proc != collect_proc) {
-          tmpdata.at(proc)->copy_from (state.at(proc), alldata, alldata->extent());
-        }
-      }
-      
-      for (int proc=0; proc<CCTK_nProcs(cgh); ++proc) {
-        if (proc != collect_proc) {
-          tmpdata.at(proc)->copy_from (state.at(proc), alldata, alldata->extent());
           delete tmpdata.at(proc);
         }
       }

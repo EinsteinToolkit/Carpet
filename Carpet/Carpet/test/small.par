@@ -1,0 +1,16 @@
+ActiveThorns = "
+        Boundary
+        CarpetLib
+        Carpet
+        CoordBase
+        IOUtil
+        InitBase
+        InterpToArray
+        LoopControl
+        SymBase
+"
+
+IO::out_dir = $parfile
+
+InterpToArray::nparrays1d         = 1
+InterpToArray::parray1d_npoints_i = 1

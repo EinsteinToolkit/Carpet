@@ -8,39 +8,17 @@
 
 #include "cctk.h"
 
+#include "defs.hh"
 #include "vect_helpers.hh"
 
 using namespace std;
 
 
 
-#if 0
-
-// A pure function returns a value that depends only on the function
-// arguments and on global variables, and the function has no side
-// effects.
-#ifdef HAVE_CCTK_CXX_ATTRIBUTE_PURE
-#  define PURE __attribute__((pure))
+#ifdef CARPET_DEBUG
+#  define ASSERT_VECT(x) assert(x)
 #else
-#  define PURE
-#endif
-
-// A const function returns a value that depends only on the function
-// arguments, and the function has no side effects.  This is even more
-// strict than pure functions.  Const functions cannot dereference
-// pointers or references (or this).
-#ifdef HAVE_CCTK_CXX_ATTRIBUTE_CONST
-#  define CONST __attribute__((const))
-#else
-#  define CONST
-#endif
-
-#else
-
-// Don't take any risks
-#  define PURE
-#  define CONST
-
+#  define ASSERT_VECT(x)
 #endif
 
 
@@ -72,38 +50,44 @@ public:
   // Constructors
   
   /** Explicit empty constructor.  */
-  explicit vect () CONST { }
+  explicit vect () CCTK_MEMBER_ATTRIBUTE_CONST { }
   
   /** Copy constructor.  */
-  vect (const vect& a) PURE {
+  vect (const vect& a) CCTK_MEMBER_ATTRIBUTE_PURE
+  {
     for (int d=0; d<D; ++d) elt[d]=a.elt[d];
   }
   
   /** Constructor from a single element.  This constructor might be
       confusing, but it is very convenient.  */
-  vect (const T& x) PURE {
+  vect (const T& x) CCTK_MEMBER_ATTRIBUTE_PURE
+  {
     for (int d=0; d<D; ++d) elt[d]=x;
   }
   
   /** Constructor for 2-element vectors from 2 elements.  */
-  vect (const T& x, const T& y) PURE {
-    assert (D==2);
+  vect (const T& x, const T& y) CCTK_MEMBER_ATTRIBUTE_PURE
+  {
+    ASSERT_VECT (D==2);
     // Note: this statement may give "index out of range" warnings.
     // You can safely ignore these.
     elt[0]=x; elt[1]=y;
   }
   
   /** Constructor for 3-element vectors from 3 elements.  */
-  vect (const T& x, const T& y, const T& z) PURE {
-    assert (D==3);
+  vect (const T& x, const T& y, const T& z) CCTK_MEMBER_ATTRIBUTE_PURE
+  {
+    ASSERT_VECT (D==3);
     // Note: this statement may give "index out of range" warnings.
     // You can safely ignore these.
     elt[0]=x; elt[1]=y; elt[2]=z;
   }
   
   /** Constructor for 4-element vectors from 4 elements.  */
-  vect (const T& x, const T& y, const T& z, const T& t) PURE {
-    assert (D==4);
+  vect (const T& x, const T& y, const T& z, const T& t)
+  CCTK_MEMBER_ATTRIBUTE_PURE
+  {
+    ASSERT_VECT (D==4);
     // Note: this statement may give "index out of range" warnings.
     // You can safely ignore these.
     elt[0]=x; elt[1]=y; elt[2]=z; elt[3]=t;
@@ -112,7 +96,8 @@ public:
 #if 0
   // This creates confusion
   /** Constructor from a pointer, i.e., a C array.  */
-  explicit vect (const T* const x) PURE {
+  explicit vect (const T* const x) CCTK_MEMBER_ATTRIBUTE_PURE
+  {
     for (int d=0; d<D; ++d) elt[d]=x[d];
   }
 #endif
@@ -120,7 +105,8 @@ public:
 #if 0
   // This leads to an ICE on AIX
   template<int E>
-  operator vect<vect<T,D>,E> () CONST {
+  operator vect<vect<T,D>,E> () CCTK_MEMBER_ATTRIBUTE_CONST
+  {
     vect<vect<T,D>,E> r;
     for (int e=0; e<E; ++e) r[e]=*this;
     return r;
@@ -129,74 +115,88 @@ public:
   
   /** Constructor from a vector with a different type.  */
   template<typename S>
-  /*explicit*/ vect (const vect<S,D>& a) /*PURE*/ {
+  /*explicit*/ vect (const vect<S,D>& a) /*CCTK_MEMBER_ATTRIBUTE_PURE*/
+  {
     for (int d=0; d<D; ++d) elt[d]=(T)a[d];
   }
   
   /** Create a new 0-element vector with a specific type.  */
-  static vect make () CONST {
-    assert (D==0);
+  static vect make () CCTK_MEMBER_ATTRIBUTE_CONST
+  {
+    ASSERT_VECT (D==0);
     return vect();
   }
   
   /** Create a new 1-element vector with a specific type.  */
-  static vect make (const T& x) PURE {
-    assert (D==1);
+  static vect make (const T& x) CCTK_MEMBER_ATTRIBUTE_PURE
+  {
+    ASSERT_VECT (D==1);
     return vect(x);
   }
   
   /** Create a new 2-element vector with a specific type.  */
-  static vect make (const T& x, const T& y) PURE {
-    assert (D==2);
+  static vect make (const T& x, const T& y) CCTK_MEMBER_ATTRIBUTE_PURE
+  {
+    ASSERT_VECT (D==2);
     return vect(x, y);
   }
   
   /** Create a new 3-element vector with a specific type.  */
-  static vect make (const T& x, const T& y, const T& z) PURE {
-    assert (D==3);
+  static vect make (const T& x, const T& y, const T& z)
+    CCTK_MEMBER_ATTRIBUTE_PURE
+  {
+    ASSERT_VECT (D==3);
     return vect(x, y, z);
   }
   
   /** Create a new 4-element vector with a specific type.  */
-  static vect make (const T& x, const T& y, const T& z, const T& t) PURE {
-    assert (D==4);
+  static vect make (const T& x, const T& y, const T& z, const T& t)
+    CCTK_MEMBER_ATTRIBUTE_PURE
+  {
+    ASSERT_VECT (D==4);
     return vect(x, y, z, t);
   }
   
   /** Treat a constant pointer as a reference to a constant vector.  */
-  static const vect& ref (const T* const x) PURE {
+  static const vect& ref (const T* const x) CCTK_MEMBER_ATTRIBUTE_PURE
+  {
     return *(const vect*)x;
   }
   
   /** Treat a pointer as a reference to a vector.  */
-  static vect& ref (T* const x) PURE {
+  static vect& ref (T* const x) CCTK_MEMBER_ATTRIBUTE_PURE
+  {
     return *(vect*)x;
   }
   
   /** Create a vector with one element set to 1 and all other elements
       set to zero.  */
-  static vect dir (const int d) CONST {
+  static vect dir (const int d) CCTK_MEMBER_ATTRIBUTE_CONST
+  {
     vect r=(T)0;
     r[d]=1;
     return r;
   }
   
   /** Create a vector with e[i] = i.  */
-  static vect seq () CONST {
+  static vect seq () CCTK_MEMBER_ATTRIBUTE_CONST
+  {
     vect r;
     for (int d=0; d<D; ++d) r[d]=d;
     return r;
   }
   
   /** Create a vector with e[i] = n + i.  */
-  static vect seq (const int n) CONST {
+  static vect seq (const int n) CCTK_MEMBER_ATTRIBUTE_CONST
+  {
     vect r;
     for (int d=0; d<D; ++d) r[d]=n+d;
     return r;
   }
   
   /** Create a vector with e[i] = n + s * i.  */
-  static vect seq (const int n, const int s) CONST {
+  static vect seq (const int n, const int s) CCTK_MEMBER_ATTRIBUTE_CONST
+  {
     vect r;
     for (int d=0; d<D; ++d) r[d]=n+s*d;
     return r;
@@ -207,21 +207,24 @@ public:
   /** Return a non-writable element of a vector.  */
   // (Don't return a reference; *this might be a temporary)
   // Do return a reference, so that a vector can be accessed as array
-  const T& operator[] (const int d) const PURE {
-    assert(d>=0 && d<D);
+  const T& operator[] (const int d) const CCTK_MEMBER_ATTRIBUTE_PURE
+  {
+    ASSERT_VECT(d>=0 && d<D);
     return elt[d];
   }
   
   /** Return a writable element of a vector as reference.  */
-  T& operator[] (const int d) PURE {
-    assert(d>=0 && d<D);
+  T& operator[] (const int d) CCTK_MEMBER_ATTRIBUTE_PURE
+  {
+    ASSERT_VECT(d>=0 && d<D);
     return elt[d];
   }
   
 #if 0
   // This creates confusion
   /** Return a pointer to a vector.  */
-  operator const T* () const PURE {
+  operator const T* () const CCTK_MEMBER_ATTRIBUTE_PURE
+  {
     return this;
   }
 #endif
@@ -229,7 +232,9 @@ public:
   /** Return a combination of the vector elements e[a[i]].  The
       element combination is selected by another vector.  */
   template<typename TT, int DD>
-  vect<T,DD> operator[] (const vect<TT,DD>& a) const /*PURE*/ {
+  vect<T,DD> operator[] (const vect<TT,DD>& a)
+    const /*CCTK_MEMBER_ATTRIBUTE_PURE*/
+  {
     vect<T,DD> r;
     // (*this)[] performs index checking
     for (int d=0; d<DD; ++d) r[d] = (*this)[a[d]];
@@ -249,14 +254,16 @@ public:
   // Non-modifying operators
   
   /** Return a new vector where one element has been replaced.  */
-  vect replace (const int d, const T& x) const PURE {
-    assert (d>=0 && d<D);
+  vect replace (const int d, const T& x) const CCTK_MEMBER_ATTRIBUTE_PURE
+  {
+    ASSERT_VECT (d>=0 && d<D);
     vect r;
     for (int dd=0; dd<D; ++dd) r[dd]=dd==d?x:elt[dd];
     return r;
   }
   
-  vect reverse () const PURE {
+  vect reverse () const CCTK_MEMBER_ATTRIBUTE_PURE
+  {
     vect r;
     for (int d=0; d<D; ++d) r[d]=elt[D-1-d];
     return r;
@@ -272,7 +279,9 @@ public:
       elements set to either a[i] or b[i], depending on whether
       (*this)[i] is true or not.  */
   template<typename TT>
-  vect<TT,D> ifthen (const vect<TT,D>& a, const vect<TT,D>& b) const /*PURE*/ {
+  vect<TT,D> ifthen (const vect<TT,D>& a, const vect<TT,D>& b)
+  const /*CCTK_MEMBER_ATTRIBUTE_PURE*/
+  {
     vect<TT,D> r;
     for (int d=0; d<D; ++d) r[d]=elt[d]?a[d]:b[d];
     return r;
@@ -286,15 +295,16 @@ public:
     vect &vec;
     int d;
   public:
-    iter (vect &a) PURE: vec(a), d(0) { }
-    iter& operator++ () { assert(d<D); ++d; return *this; }
-    bool operator bool () const PURE { return d==D; }
-    T& operator* () PURE { return vec[d]; }
+    iter (vect &a) CCTK_MEMBER_ATTRIBUTE_PURE: vec(a), d(0) { }
+    iter& operator++ () { ASSERT_VECT(d<D); ++d; return *this; }
+    bool operator bool () const CCTK_MEMBER_ATTRIBUTE_PURE { return d==D; }
+    T& operator* () CCTK_MEMBER_ATTRIBUTE_PURE { return vec[d]; }
   };
 #endif
   
   // Memory usage
-  size_t memory () const { return D * memoryof (*elt); }
+  size_t memory () const CCTK_MEMBER_ATTRIBUTE_CONST
+  { return D * memoryof (*elt); }
   
   // Input/Output helpers
   void input (istream& is);
@@ -310,7 +320,8 @@ public:
     true or not.  */
 template<typename S,typename T,int D>
 inline vect<T,D> either (const vect<S,D>& a,
-                         const vect<T,D>& b, const vect<T,D>& c) PURE;
+                         const vect<T,D>& b, const vect<T,D>& c)
+  CCTK_ATTRIBUTE_PURE;
 template<typename S,typename T,int D>
 inline vect<T,D> either (const vect<S,D>& a,
                          const vect<T,D>& b, const vect<T,D>& c)
@@ -322,7 +333,8 @@ inline vect<T,D> either (const vect<S,D>& a,
 
 template<typename S,typename T,int D>
 inline vect<T,D> either (const vect<S,D>& a,
-                         const T& b, const T& c) PURE;
+                         const T& b, const T& c)
+  CCTK_ATTRIBUTE_PURE;
 template<typename S,typename T,int D>
 inline vect<T,D> either (const vect<S,D>& a,
                          const T& b, const T& c)
@@ -332,9 +344,11 @@ inline vect<T,D> either (const vect<S,D>& a,
 
 /** Transpose a vector of a vector */
 template<typename T, int D, int DD>
-inline vect<vect<T,D>,DD> xpose (vect<vect<T,DD>,D> const & a) PURE;
+inline vect<vect<T,D>,DD> xpose (vect<vect<T,DD>,D> const & a)
+  CCTK_ATTRIBUTE_PURE;
 template<typename T, int D, int DD>
-inline vect<vect<T,D>,DD> xpose (vect<vect<T,DD>,D> const & a) {
+inline vect<vect<T,D>,DD> xpose (vect<vect<T,DD>,D> const & a)
+{
   vect<vect<T,D>,DD> r;
   for (int dd=0; dd<DD; ++dd) for (int d=0; d<D; ++d) r[dd][d] = a[d][dd];
   return r;
@@ -342,9 +356,11 @@ inline vect<vect<T,D>,DD> xpose (vect<vect<T,DD>,D> const & a) {
 
 /** Return the element-wise integer power of two vectors.  */
 template<typename T,int D>
-inline vect<T,D> ipow (const vect<T,D>& a, const vect<int,D>& b) PURE;
+inline vect<T,D> ipow (const vect<T,D>& a, const vect<int,D>& b)
+  CCTK_ATTRIBUTE_PURE;
 template<typename T,int D>
-inline vect<T,D> ipow (const vect<T,D>& a, const vect<int,D>& b) {
+inline vect<T,D> ipow (const vect<T,D>& a, const vect<int,D>& b)
+{
   vect<T,D> r;
   for (int d=0; d<D; ++d) r[d]=ipow(a[d],b[d]);
   return r;
@@ -398,26 +414,29 @@ DECLARE_REDUCTION_OPERATOR_2 (hypot,0,+=,*,sqrt)
 
 /** Count the number of elements in the vector.  */
 template<typename T,int D>
-inline int count (const vect<T,D>& a) PURE;
+inline int count (const vect<T,D>& a) CCTK_ATTRIBUTE_PURE;
 template<typename T,int D>
-inline int count (const vect<T,D>& a) {
+inline int count (const vect<T,D>& a)
+{
   return D;
 }
 
 /** Return the size (number of elements) of the vector.  */
 template<typename T,int D>
-inline int size (const vect<T,D>& a) CONST;
+inline int size (const vect<T,D>& a) CCTK_ATTRIBUTE_CONST;
 template<typename T,int D>
-inline int size (const vect<T,D>& a) {
+inline int size (const vect<T,D>& a)
+{
   return D;
 }
 
 /** Return the index of the first maximum element.  */
 template<typename T,int D>
-inline int maxloc (const vect<T,D>& a) PURE;
+inline int maxloc (const vect<T,D>& a) CCTK_ATTRIBUTE_PURE;
 template<typename T,int D>
-inline int maxloc (const vect<T,D>& a) {
-  assert (D>0);
+inline int maxloc (const vect<T,D>& a)
+{
+  ASSERT_VECT (D>0);
   int r(0);
   for (int d=1; d<D; ++d) if (a[d]>a[r]) r=d;
   return r;
@@ -425,10 +444,11 @@ inline int maxloc (const vect<T,D>& a) {
 
 /** Return the index of the first minimum element.  */
 template<typename T,int D>
-inline int minloc (const vect<T,D>& a) PURE;
+inline int minloc (const vect<T,D>& a) CCTK_ATTRIBUTE_PURE;
 template<typename T,int D>
-inline int minloc (const vect<T,D>& a) {
-  assert (D>0);
+inline int minloc (const vect<T,D>& a)
+{
+  ASSERT_VECT (D>0);
   int r(0);
   for (int d=1; d<D; ++d) if (a[d]<a[r]) r=d;
   return r;
@@ -436,15 +456,16 @@ inline int minloc (const vect<T,D>& a) {
 
 /** Return the n-dimensional linear array index.  */
 template<typename T,int D>
-inline T index (const vect<T,D>& lsh, const vect<T,D>& ind) PURE;
+inline T index (const vect<T,D>& lsh, const vect<T,D>& ind) CCTK_ATTRIBUTE_PURE;
 template<typename T,int D>
-inline T index (const vect<T,D>& lsh, const vect<T,D>& ind) {
+inline T index (const vect<T,D>& lsh, const vect<T,D>& ind)
+{
   T r(0);
   for (int d=D-1; d>=0; --d) {
-    assert (lsh[d]>=0);
+    ASSERT_VECT (lsh[d]>=0);
     // Be generous, and allow relative indices which may be negtive
-    // assert (ind[d]>=0 and ind[d]<lsh[d]);
-    assert (abs(ind[d])<=lsh[d]);
+    // ASSERT_VECT (ind[d]>=0 and ind[d]<lsh[d]);
+    ASSERT_VECT (abs(ind[d])<=lsh[d]);
     r = r * lsh[d] + ind[d];
   }
   return r;
@@ -460,7 +481,11 @@ inline T index (const vect<T,D>& lsh, const vect<T,D>& ind) {
 /** Return a new vector where the function func() has been applied to
     all elements.  */
 template<typename T, typename U, int D>
-inline vect<U,D> map (U (* const func)(T x), const vect<T,D>& a) {
+inline vect<U,D> map (U (* const func)(T x), const vect<T,D>& a)
+   CCTK_ATTRIBUTE_PURE;
+template<typename T, typename U, int D>
+inline vect<U,D> map (U (* const func)(T x), const vect<T,D>& a)
+{
   vect<U,D> r;
   for (int d=0; d<D; ++d) r[d] = func(a[d]);
   return r;
@@ -468,6 +493,10 @@ inline vect<U,D> map (U (* const func)(T x), const vect<T,D>& a) {
   
 /** Return a new vector where the function func() has been used
     element-wise to combine a and b.  */
+template<typename S, typename T, typename U, int D>
+inline vect<U,D> zip (U (* const func)(S x, T y),
+                      const vect<S,D>& a, const vect<T,D>& b)
+  CCTK_ATTRIBUTE_PURE;
 template<typename S, typename T, typename U, int D>
 inline vect<U,D> zip (U (* const func)(S x, T y),
                       const vect<S,D>& a, const vect<T,D>& b)
@@ -481,6 +510,9 @@ inline vect<U,D> zip (U (* const func)(S x, T y),
     the vector a, starting with the scalar value val.  */
 template<typename T, typename U, int D>
 inline U fold (U (* const func)(U val, T x), U val, const vect<T,D>& a)
+  CCTK_ATTRIBUTE_PURE;
+template<typename T, typename U, int D>
+inline U fold (U (* const func)(U val, T x), U val, const vect<T,D>& a)
 {
   for (int d=0; d<D; ++d) val = func(val, a[d]);
   return val;
@@ -490,8 +522,11 @@ inline U fold (U (* const func)(U val, T x), U val, const vect<T,D>& a)
     the vector a, starting with element 0.  */
 template<typename T, typename U, int D>
 inline U fold1 (U (* const func)(U val, T x), const vect<T,D>& a)
+   CCTK_ATTRIBUTE_PURE;
+template<typename T, typename U, int D>
+inline U fold1 (U (* const func)(U val, T x), const vect<T,D>& a)
 {
-  assert (D>=1);
+  ASSERT_VECT (D>=1);
   U val = a[0];
   for (int d=1; d<D; ++d) val = func(val, a[d]);
   return val;
@@ -499,6 +534,10 @@ inline U fold1 (U (* const func)(U val, T x), const vect<T,D>& a)
 
 /** Return a vector where the function func() has been used to scan
     the vector a, starting with the scalar value val.  */
+template<typename T, typename U, int D>
+inline vect<U,D> scan0 (U (* const func)(U val, T x), U val,
+                        const vect<T,D>& a)
+  CCTK_ATTRIBUTE_PURE;
 template<typename T, typename U, int D>
 inline vect<U,D> scan0 (U (* const func)(U val, T x), U val,
                         const vect<T,D>& a)
@@ -513,6 +552,10 @@ inline vect<U,D> scan0 (U (* const func)(U val, T x), U val,
 
 /** Return a vector where the function func() has been used to scan
     the vector a, starting with element 0.  */
+template<typename T, typename U, int D>
+inline vect<U,D> scan1 (U (* const func)(U val, T x), U val,
+                        const vect<T,D>& a)
+  CCTK_ATTRIBUTE_PURE;
 template<typename T, typename U, int D>
 inline vect<U,D> scan1 (U (* const func)(U val, T x), U val,
                         const vect<T,D>& a)
@@ -531,7 +574,10 @@ inline vect<U,D> scan1 (U (* const func)(U val, T x), U val,
 // Memory usage
 
 template<typename T,int D>
-inline size_t memoryof (vect<T,D> const & a) { return a.memory(); }
+inline size_t memoryof (vect<T,D> const & a) CCTK_ATTRIBUTE_CONST;
+template<typename T,int D>
+inline size_t memoryof (vect<T,D> const & a)
+{ return a.memory(); }
 
 
 
@@ -562,23 +608,26 @@ inline ostream& operator<< (ostream& os, const vect<T,D>& a) {
 
 /** Constructor for 2-element vectors from 2 elements.  */
 template<typename T>
-inline vect<T,2>::vect<T,2> (const T& x, const T& y) PURE;
+inline vect<T,2>::vect<T,2> (const T& x, const T& y) CCTK_ATTRIBUTE_PURE;
 template<typename T>
-inline vect<T,2>::vect<T,2> (const T& x, const T& y) {
+inline vect<T,2>::vect<T,2> (const T& x, const T& y)
+{
   elt[0]=x; elt[1]=y;
 }
 
 /** Constructor for 3-element vectors from 3 elements.  */
-vect (const T& x, const T& y, const T& z) PURE;
-vect (const T& x, const T& y, const T& z) {
-  assert (D==3);
+vect (const T& x, const T& y, const T& z) CCTK_ATTRIBUTE_PURE;
+vect (const T& x, const T& y, const T& z)
+{
+  ASSERT_VECT (D==3);
   elt[0]=x; elt[1]=y; elt[2]=z;
 }
 
 /** Constructor for 4-element vectors from 4 elements.  */
-vect (const T& x, const T& y, const T& z, const T& t) PURE;
-vect (const T& x, const T& y, const T& z, const T& t) {
-  assert (D==4);
+vect (const T& x, const T& y, const T& z, const T& t) CCTK_ATTRIBUTE_PURE;
+vect (const T& x, const T& y, const T& z, const T& t)
+{
+  ASSERT_VECT (D==4);
   elt[0]=x; elt[1]=y; elt[2]=z; elt[3]=t;
 }
 #endif
@@ -590,29 +639,30 @@ vect (const T& x, const T& y, const T& z, const T& t) {
 
 
 // Specialise some constructors for lower dimensions
-// These functions are declared, but never defined, so that using them
-// will result in a linker error
+// These functions are declared, but must not be used.
 
-template<> inline vect<int,0>::vect (const int& x, const int& y) { assert(0); }
-template<> inline vect<int,1>::vect (const int& x, const int& y) { assert(0); }
+template<> vect<int,0>::vect (const int& x, const int& y);
+template<> vect<int,1>::vect (const int& x, const int& y);
+template<> vect<int,3>::vect (const int& x, const int& y);
+template<> vect<int,4>::vect (const int& x, const int& y);
 
-template<> inline vect<int,0>::vect (const int& x, const int& y, const int& z) { assert(0); }
-template<> inline vect<int,1>::vect (const int& x, const int& y, const int& z) { assert(0); }
-template<> inline vect<int,2>::vect (const int& x, const int& y, const int& z) { assert(0); }
+template<> vect<int,0>::vect (const int& x, const int& y, const int& z);
+template<> vect<int,1>::vect (const int& x, const int& y, const int& z);
+template<> vect<int,2>::vect (const int& x, const int& y, const int& z);
+template<> vect<int,4>::vect (const int& x, const int& y, const int& z);
 
-template<> inline vect<int,0>::vect (const int& x, const int& y, const int& z, const int& t) { assert(0); }
-template<> inline vect<int,1>::vect (const int& x, const int& y, const int& z, const int& t) { assert(0); }
-template<> inline vect<int,2>::vect (const int& x, const int& y, const int& z, const int& t) { assert(0); }
-template<> inline vect<int,3>::vect (const int& x, const int& y, const int& z, const int& t) { assert(0); }
-
+template<> vect<int,0>::vect (const int& x, const int& y, const int& z, const int& t);
+template<> vect<int,1>::vect (const int& x, const int& y, const int& z, const int& t);
+template<> vect<int,2>::vect (const int& x, const int& y, const int& z, const int& t);
+template<> vect<int,3>::vect (const int& x, const int& y, const int& z, const int& t);
 
 
 
 // Specialise for CCTK_REAL
 
 template<>
-inline vect<CCTK_REAL,3>& vect<CCTK_REAL,3>::operator%=(const vect<CCTK_REAL,3>& a) {
-  for (int d=0; d<3; ++d) {
+inline vect<CCTK_REAL,dim>& vect<CCTK_REAL,dim>::operator%=(const vect<CCTK_REAL,dim>& a) {
+  for (int d=0; d<dim; ++d) {
     elt[d]=fmod(elt[d],a[d]);
     if (elt[d]>a[d]*(CCTK_REAL)(1.0-1.0e-10)) elt[d]=(CCTK_REAL)0;
     if (elt[d]<a[d]*(CCTK_REAL)(    1.0e-10)) elt[d]=(CCTK_REAL)0;
@@ -621,9 +671,9 @@ inline vect<CCTK_REAL,3>& vect<CCTK_REAL,3>::operator%=(const vect<CCTK_REAL,3>&
 }
 
 template<>
-inline vect<CCTK_REAL,3> operator%(const vect<CCTK_REAL,3>& a, const vect<CCTK_REAL,3>& b) {
-  vect<CCTK_REAL,3> r;
-  for (int d=0; d<3; ++d) {
+inline vect<CCTK_REAL,dim> operator%(const vect<CCTK_REAL,dim>& a, const vect<CCTK_REAL,dim>& b) {
+  vect<CCTK_REAL,dim> r;
+  for (int d=0; d<dim; ++d) {
     r[d]=fmod(a[d],b[d]);
     if (r[d]>b[d]*(CCTK_REAL)(1.0-1.0e-10)) r[d]=(CCTK_REAL)0;
     if (r[d]<b[d]*(CCTK_REAL)(    1.0e-10)) r[d]=(CCTK_REAL)0;

@@ -1,8 +1,7 @@
 # Main make.code.defn file for thorn Carpet   -*-Makefile-*-
 
 # Source files in this directory
-SRCS =	AllGatherString.cc			\
-	CallFunction.cc				\
+SRCS =	CallFunction.cc				\
 	CarpetBasegrid.cc			\
 	CarpetParamCheck.cc			\
 	CarpetStartup.cc			\
@@ -11,7 +10,6 @@ SRCS =	AllGatherString.cc			\
 	Cycle.cc				\
 	Evolve.cc				\
 	Initialise.cc				\
-	Limits.cc				\
 	MultiModel.cc				\
 	OutputGH.cc				\
 	Poison.cc				\

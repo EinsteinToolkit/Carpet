@@ -4,13 +4,14 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
 
-#include "ggf.hh"
-#include "gh.hh"
+#include <ggf.hh>
+#include <gh.hh>
 
-#include "carpet.hh"
+#include <carpet.hh>
+#include <Timers.hh>
 
 
 
@@ -75,10 +76,11 @@ namespace Carpet {
     // check consistency of all groups:
     // create a new set with empty and no-storage groups removed
     vector<int> goodgroups;
-    for (size_t g = 0; g < groups.size(); g++) {
-      const int group = groups[g];
-      const int grouptype = CCTK_GroupTypeI (group);
-      char* groupname = CCTK_GroupName (group);
+    goodgroups.reserve (groups.size());
+    for (size_t group = 0; group < groups.size(); group++) {
+      const int g = groups.AT(group);
+      const int grouptype = CCTK_GroupTypeI (g);
+      char* const groupname = CCTK_GroupName (g);
       Checkpoint ("SyncGroup \"%s\" time=%g",
                   groupname, (double) cctkGH->cctk_time);
 
@@ -102,7 +104,7 @@ namespace Carpet {
           }
         }
         if (component != -1) {
-          if (maps == 1 and vhh.at(map)->local_components(reflevel) == 1) {
+          if (maps == 1 and vhh.AT(map)->local_components(reflevel) == 1) {
             CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
                         "Synchronising group \"%s\" in local mode",
                         groupname);
@@ -115,83 +117,39 @@ namespace Carpet {
         }
       }
 
-      if (not CCTK_QueryGroupStorageI (cctkGH, group)) {
+      if (not CCTK_QueryGroupStorageI (cctkGH, g)) {
         CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "Cannot synchronise group \"%s\" because it has no storage",
                     groupname);
         retval = -1;
       }
-      else if (CCTK_NumVarsInGroupI (group) > 0) {
-        goodgroups.push_back(group);
+      else if (CCTK_NumVarsInGroupI (g) > 0) {
+        goodgroups.push_back(g);
       }
 
       free (groupname);
-    }
+    } // for g
 
     if (goodgroups.size() > 0) {
       
-      bool local_do_prolongate;
-      if (do_prolongate) {
-        if (do_taper) {
-          if (reflevel == 0) {
-            local_do_prolongate = true;
-          } else {              // on a fine level
-#warning "TODO: Check iteration number instead -- this is wrong while regridding"
-            CCTK_REAL mytime;
-            CCTK_REAL parenttime;
-            if (map == -1) {
-              mytime = vtt.at(0)->time (0, reflevel, mglevel);
-              parenttime = vtt.at(0)->time (0, reflevel - 1, mglevel);
-            } else {
-              mytime = vtt.at(map)->time (0, reflevel, mglevel);
-              parenttime = vtt.at(map)->time (0, reflevel - 1, mglevel);
-            }
-            CCTK_REAL const eps = 1.0e-12;
-            bool const in_sync =
-              abs (mytime - parenttime) <= eps * abs (delta_time);
-#if 0
-            int const parent_do_every =
-              ipow(mgfact, mglevel) *
-              (maxtimereflevelfact / timereffacts.at(reflevel-1));
-            bool const parent_is_active =
-              cctkGH->cctk_iteration == 0 or
-              (cctkGH->cctk_iteration-1) % parent_do_every == 0;
-            int const do_every =
-              ipow(mgfact, mglevel) *
-              (maxtimereflevelfact / timereffacts.at(reflevel));
-            bool const is_active =
-              cctkGH->cctk_iteration == 0 or
-              (cctkGH->cctk_iteration-1) % do_every == 0;
-            bool const new_in_sync = is_active and parent_is_active;
-#warning "just for testing"
-#warning "if this breaks, fix also CarpetRegrid2"
-            assert (new_in_sync == in_sync);
-            if (not (new_in_sync == in_sync)) {
-              CCTK_WARN (CCTK_WARN_ABORT, "assert (new_in_sync == in_sync)");
-            }
-#endif
-            local_do_prolongate = in_sync;
-          }
-        } else {                // no tapered grids
-          local_do_prolongate = true;
-        }
-      } else {                  // not do_prolongate
-        local_do_prolongate = false;
-      }
-      
       // prolongate boundaries
+      bool const local_do_prolongate = do_prolongate and not do_taper;
       if (local_do_prolongate) {
-        if (reflevel > 0) {
-          ProlongateGroupBoundaries (cctkGH, cctk_initial_time, goodgroups);
-        }
+        static Timer timer ("Evolve::Prolongate");
+        timer.start();
+        ProlongateGroupBoundaries (cctkGH, cctk_initial_time, goodgroups);
+        timer.stop();
       }
       
       // synchronise ghostzones
       if (sync_during_time_integration or local_do_prolongate) {
+        static Timer timer ("Evolve::Sync");
+        timer.start();
         SyncGroups (cctkGH, goodgroups);
+        timer.stop();
       }
 
-    } // for g
+    }
 
     return retval;
   }
@@ -204,10 +162,16 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     const int tl = 0;
     
-    // use the current time here (which may be modified by the user)
-    const CCTK_REAL time
-      = (cctkGH->cctk_time - initial_time) / delta_time;
+    if (reflevel == 0) return;
+    
+    Checkpoint ("ProlongateGroups");
 
+    assert (groups.size() > 0);
+
+    // use the current time here (which may be modified by the user)
+    const CCTK_REAL time =
+      (cctkGH->cctk_time - initial_time) / delta_time;
+    
     for (comm_state state; not state.done(); state.step()) {
       for (int group = 0; group < (int)groups.size(); ++group) {
         const int g = groups.AT(group);
@@ -216,10 +180,10 @@ namespace Carpet {
           continue;
         }
         assert (reflevel>=0 and reflevel<reflevels);
-
-        for (int m = 0; m < (int)arrdata.at(g).size(); ++m) {
-          for (int v = 0; v < (int)arrdata.at(g).at(m).data.size(); ++v) {
-            ggf *const gv = arrdata.at(g).at(m).data.at(v);
+        
+        for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
+          for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
+            ggf *const gv = arrdata.AT(g).AT(m).data.AT(v);
             gv->ref_bnd_prolongate_all (state, tl, reflevel, mglevel, time);
           }
         }
@@ -234,18 +198,20 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     const int tl = 0;
 
+    Checkpoint ("SyncGroups");
+
     assert (groups.size() > 0);
 
     for (comm_state state; not state.done(); state.step()) {
       for (int group = 0; group < (int)groups.size(); ++group) {
-        const int g = groups[group];
+        const int g = groups.AT(group);
         const int grouptype = CCTK_GroupTypeI (g);
         const int ml = grouptype == CCTK_GF ? mglevel : 0;
         const int rl = grouptype == CCTK_GF ? reflevel : 0;
-        for (int m = 0; m < (int)arrdata.at(g).size(); ++m) {
-          for (int v = 0; v < (int)arrdata.at(g).at(m).data.size(); ++v) {
-            arrdesc& array = arrdata.at(g).at(m);
-            array.data.at(v)->sync_all (state, tl, rl, ml);
+        for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
+          for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
+            arrdesc& array = arrdata.AT(g).AT(m);
+            array.data.AT(v)->sync_all (state, tl, rl, ml);
           }
         }
       }

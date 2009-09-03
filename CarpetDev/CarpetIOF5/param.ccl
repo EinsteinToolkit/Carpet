@@ -62,6 +62,15 @@ STRING out_extension "File name extension" STEERABLE=always
   "" :: "File extension (including a leading dot, if desired)"
 } ".f5"
 
+BOOLEAN create_subdirs "Create subdirectories for the output files to reduce the number of files per directory" STEERABLE=always
+{
+} "no"
+
+BOOLEAN one_dir_per_file "Create one subdirectory per output file to reduce locking overhead" STEERABLE=always
+{
+} "no"
+
+
 
 
 STRING out_vars "Variables and groups which should be output in the F5 file format" STEERABLE=always
@@ -101,17 +110,44 @@ REAL dt_fudge "Fudge factor for time comparisons" STEERABLE=always
 
 
 
+INT chunk_size_x "Chunk size for chunked datasets" STEERABLE=always
+{
+  -1  :: "no chunking (use actual dataset size)"
+  1:* :: "desired chunk size"
+} -1
+
+INT chunk_size_y "Chunk size for chunked datasets" STEERABLE=always
+{
+  -1  :: "no chunking (use actual dataset size)"
+  1:* :: "desired chunk size"
+} -1
+
+INT chunk_size_z "Chunk size for chunked datasets" STEERABLE=always
+{
+  -1  :: "no chunking (use actual dataset size)"
+  1:* :: "desired chunk size"
+} -1
+
 INT compression_level "Compression level to use for writing HDF5 data" STEERABLE=always
 {
-  0:9 :: "Higher numbers compress better, a value of zero disables compression"
+  0   :: "no compression"
+  1:9 :: "higher numbers compress better"
 } 0
+
+BOOLEAN write_checksum "Add a checksum when writing HDF5 files" STEERABLE=always
+{
+} "no"
+
+BOOLEAN check_checksum "Check checksum (if present) when reading HDF5 files" STEERABLE=always
+{
+} "no"
 
 
 
 KEYWORD output_regions "Regions which should be output" STEERABLE=always
 {
   "exterior"     :: "whole region (including boundaries)"
-  "communicated" :: "exterior without outer boundary"
+  #"communicated" :: "exterior without outer boundary"
   "owned"        :: "evolved in time"
   # "active"       :: "owned minus buffers"
   "interior"     :: "interior (without ghost zones)"

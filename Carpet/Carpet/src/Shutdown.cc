@@ -1,13 +1,13 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
 
-#include "dist.hh"
+#include <dist.hh>
 
-#include "carpet.hh"
-#include "Timers.hh"
+#include <carpet.hh>
+#include <Timers.hh>
 
 
 
@@ -52,6 +52,15 @@ namespace Carpet {
       } END_REVERSE_MGLEVEL_LOOP;
     } // for rl
     
+    // Stop all timers before shutdown, since timers may rely on data
+    // structures which are destroyed during shutdown
+    int const ierr = CCTK_TimerStop ("CCTK total time");
+    assert (not ierr);
+    timer.stop();
+    if (output_timers_every > 0) {
+      TimerSet::writeData (cctkGH, timer_file);
+    }
+    
     BEGIN_REVERSE_MGLEVEL_LOOP(cctkGH) {
       do_early_global_mode = true;
       do_late_global_mode = true;
@@ -65,10 +74,6 @@ namespace Carpet {
       CCTK_ScheduleTraverse ("CCTK_SHUTDOWN", cctkGH, CallFunction);
       
     } END_REVERSE_MGLEVEL_LOOP;
-    timer.stop();
-    if (output_timers_every > 0) {
-      TimerSet::writeData (cctkGH, timer_file);
-    }
     
     // earlier checkpoint before finalising MPI
     Waypoint ("Done with shutdown");

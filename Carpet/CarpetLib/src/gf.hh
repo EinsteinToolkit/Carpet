@@ -46,13 +46,11 @@ public:
   
   // Helpers
   
-protected:
-  
-  virtual gdata* typed_data (int tl, int rl, int c, int ml)
+  virtual gdata* typed_data (int tl, int rl, int lc, int ml) const
   {
     data<T>* const vl =
       this->vectorleader
-      ? (data<T>*)(*this->vectorleader)(tl,rl,c,ml)
+      ? (data<T>*)(*this->vectorleader)(tl,rl,lc,ml)
       : NULL;
     return new data<T>(this->varindex,
                        h.refcent, this->transport_operator,
@@ -64,11 +62,9 @@ protected:
   
   // Access to the data
   
-public:
+  virtual const data<T>* operator() (int tl, int rl, int lc, int ml) const;
   
-  virtual const data<T>* operator() (int tl, int rl, int c, int ml) const;
-  
-  virtual data<T>* operator() (int tl, int rl, int c, int ml);
+  virtual data<T>* operator() (int tl, int rl, int lc, int ml);
   
   
   

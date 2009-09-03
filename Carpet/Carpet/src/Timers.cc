@@ -3,10 +3,9 @@
 #include <cstring>
 #include <list>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
-
-#include "util_String.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
+#include <util_String.h>
 
 #if HAVE_UNISTD_H
 #  include <fcntl.h>
@@ -15,7 +14,7 @@
 
 #include <defs.hh>
 
-#include "Timers.hh"
+#include <Timers.hh>
 
 
 
@@ -236,6 +235,8 @@ namespace Carpet {
       case val_double:
         printf (" %g", timer->vals[i].val.d);
         break;
+      case val_none:
+        break;
       default:
         assert (0);
       }
@@ -243,6 +244,29 @@ namespace Carpet {
     printf ("\n");
     
     if (was_running) start();
+  }
+  
+  
+  
+  // Output (debug) messages that a timer is starting or stopping
+  void
+  Timer::msgStart ()
+    const
+  {
+    DECLARE_CCTK_PARAMETERS;
+    if (timers_verbose) {
+      CCTK_VInfo (CCTK_THORNSTRING, "Timer \"%s\" starting", name());
+    }
+  }
+  
+  void
+  Timer::msgStop ()
+    const
+  {
+    DECLARE_CCTK_PARAMETERS;
+    if (timers_verbose) {
+      CCTK_VInfo (CCTK_THORNSTRING, "Timer \"%s\" stopping", name());
+    }
   }
   
 } // namespace Carpet

@@ -1,0 +1,214 @@
+This is pdfTeX, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2009.7.3)  3 AUG 2009 22:08
+entering extended mode
+**\nonstopmode \input{/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publicatio
+ns/carpet-publications.tex}
+
+(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/carpet-publication
+s.tex (/opt/local/share/texmf-dist/tex/latex/revtex/revtex4.cls
+Document Class: revtex4 2001/08/02 v4.0 (http://publish.aps.org/revtex4/ for do
+cumentation)
+ Copyright (c) 2001 The American Physical Society.
+ mailto:revtex@aps.org
+ Licensed under the LPPL:
+http://www.ctan.org/tex-archive/macros/latex/base/lppl.txt
+ Arthur Ogawa <ogawa@teleport.com>
+ Based on work by David Carlisle <david@dcarlisle.demon.co.uk>.
+ltxutil: portions licensed from W. E. Baxter (web@superscript.com)
+Class revtex4 Info: Repairing broken LateX \@sect on input line 596.
+\intertabularlinepenalty=\count79
+\@tbpen=\count80
+\@arstrutbox@hline=\box26
+Class revtex4 Info: Repairing broken LaTeX \@xbitor on input line 1610.
+ltxgrid: portions licensed from W. E. Baxter (web@superscript.com)
+\c@linecount=\count81
+\output=\toks14
+\@protection@box=\box27
+\@topmark@saved=\toks15
+\footins@saved=\box28
+\pagesofar=\box29
+\footbox=\box30
+\pagegrid@col=\count82
+Class revtex4 Info: Incorporating package {textcase}  [1998/11/12 v0.06 Text on
+ly upper/lower case changing (DPC)]. on input line 3682.
+(/opt/local/share/texmf-local/tex/latex/html/url.sty
+Package: url 1999/03/02  ver 1.4  Verb mode for urls, email addresses, and file
+ names
+)
+\c@affil=\count83
+\absbox=\box31
+\c@part=\count84
+\c@section=\count85
+\c@subsection=\count86
+\c@subsubsection=\count87
+\c@paragraph=\count88
+\c@subparagraph=\count89
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\c@figure=\count90
+\c@table=\count91
+
+(/opt/local/share/texmf-dist/tex/latex/natbib/natbib.sty
+Package: natbib 2007/02/05 8.0 (PWD)
+\bibhang=\skip43
+\bibsep=\skip44
+LaTeX Info: Redefining \cite on input line 602.
+\c@NAT@ctr=\count92
+)
+\widetext@top=\box32
+\widetext@bot=\box33
+
+(/opt/local/share/texmf-dist/tex/latex/revtex/revsymb.sty
+Package: revsymb 2001/08/02 v4.0 (http://publish.aps.org/revtex4/ for documenta
+tion)
+LaTeX Info: Redefining \REV@mathfrak on input line 118.
+))
+
+Class revtex4 Warning: No Society specified, using generic APS style.
+
+(/opt/local/share/texmf-dist/tex/latex/revtex/aps.rtx
+File: aps.rtx 2001/08/02 v4.0 (http://publish.aps.org/revtex4/ for documentatio
+n)
+)
+(/opt/local/share/texmf-dist/tex/latex/revtex/11pt.rtx
+File: 11pt.rtx 2001/08/02 v4.0 (http://publish.aps.org/revtex4/ for documentati
+on)
+)
+(/opt/local/share/texmf-dist/tex/generic/babel/babel.sty
+Package: babel 2005/11/23 v3.8h The Babel package
+
+(/opt/local/share/texmf-dist/tex/generic/babel/english.ldf
+Language: english 2005/03/30 v3.3o English support from the babel system
+
+(/opt/local/share/texmf-dist/tex/generic/babel/babel.def
+File: babel.def 2005/11/23 v3.8h Babel common definitions
+\babel@savecnt=\count93
+\U@D=\dimen102
+)
+\l@british = a dialect from \language\l@english 
+\l@UKenglish = a dialect from \language\l@english 
+\l@canadian = a dialect from \language\l@american 
+\l@australian = a dialect from \language\l@british 
+\l@newzealand = a dialect from \language\l@british 
+))
+(/opt/local/share/texmf-dist/tex/latex/base/inputenc.sty
+Package: inputenc 2006/05/05 v1.1b Input encoding file
+\inpenc@prehook=\toks16
+\inpenc@posthook=\toks17
+
+(/opt/local/share/texmf-local/tex/latex/html/latin9.def
+File: latin1.def 1998/03/05 v0.97 Input encoding file(test version: still liabl
+e to change)
+))
+(/opt/local/share/texmf-dist/tex/latex/psnfss/mathpazo.sty
+Package: mathpazo 2005/04/12 PSNFSS-v9.2a Palatino w/ Pazo Math (D.Puga, WaS) 
+\symupright=\mathgroup4
+)
+(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/carpet-publication
+s.aux)
+\openout1 = `carpet-publications.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 24.
+LaTeX Font Info:    ... okay on input line 24.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 24.
+LaTeX Font Info:    ... okay on input line 24.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 24.
+LaTeX Font Info:    ... okay on input line 24.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 24.
+LaTeX Font Info:    ... okay on input line 24.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 24.
+LaTeX Font Info:    ... okay on input line 24.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 24.
+LaTeX Font Info:    ... okay on input line 24.
+LaTeX Font Info:    Try loading font information for OT1+ppl on input line 24.
+ (/opt/local/share/texmf-dist/tex/latex/psnfss/ot1ppl.fd
+File: ot1ppl.fd 2001/06/04 font definitions for OT1/ppl.
+)
+Class revtex4 Info: Patching LaTeX tabular. on input line 24.
+Class revtex4 Info: cite was not loaded (OK!) on input line 24.
+Class revtex4 Info: multicol was not loaded (OK!) on input line 24.
+\big@size=\dimen103
+LaTeX Font Info:    Font shape `OT1/ppl/bx/n' in size <17.28> not available
+(Font)              Font shape `OT1/ppl/b/n' tried instead on input line 26.
+LaTeX Font Info:    Font shape `OT1/ppl/bx/n' in size <12> not available
+(Font)              Font shape `OT1/ppl/b/n' tried instead on input line 32.
+
+(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-backgrou
+nd.bibitems
+LaTeX Font Info:    Try loading font information for OML+zplm on input line 27.
+
+ (/opt/local/share/texmf-dist/tex/latex/psnfss/omlzplm.fd
+File: omlzplm.fd 2002/09/08 Fontinst v1.914 font definitions for OML/zplm.
+)
+LaTeX Font Info:    Try loading font information for OMS+zplm on input line 27.
+
+
+(/opt/local/share/texmf-dist/tex/latex/psnfss/omszplm.fd
+File: omszplm.fd 2002/09/08 Fontinst v1.914 font definitions for OMS/zplm.
+)
+LaTeX Font Info:    Try loading font information for OMX+zplm on input line 27.
+
+
+(/opt/local/share/texmf-dist/tex/latex/psnfss/omxzplm.fd
+File: omxzplm.fd 2002/09/08 Fontinst v1.914 font definitions for OMX/zplm.
+)
+LaTeX Font Info:    Try loading font information for OT1+zplm on input line 27.
+
+
+(/opt/local/share/texmf-dist/tex/latex/psnfss/ot1zplm.fd
+File: ot1zplm.fd 2002/09/08 Fontinst v1.914 font definitions for OT1/zplm.
+)
+LaTeX Font Info:    Font shape `OT1/ppl/bx/n' in size <10.95> not available
+(Font)              Font shape `OT1/ppl/b/n' tried instead on input line 37.
+)
+(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-webpage.
+bibitems)
+(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-refereed
+.bibitems [1{/opt/local/share/texmf/fonts/map/pdftex/updmap/pdftex.map}]
+[2]
+Underfull \hbox (badness 1577) in paragraph at lines 403--412
+\OT1/ppl/m/it/10.95 from near-extremal-Bowen-York-spin black-hole bi-na-ries\OT
+1/ppl/m/n/10.95 , Phys. Rev. D \OT1/ppl/b/n/10.95 78\OT1/ppl/m/n/10.95 , 024039
+ (2008),
+ []
+
+[3] [4] [5] [6])
+(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-book.bib
+items)
+(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-thesis.b
+ibitems [7]
+LaTeX Font Info:    Try loading font information for OMS+ppl on input line 53.
+ (/opt/local/share/texmf-dist/tex/latex/psnfss/omsppl.fd
+File: omsppl.fd 
+)
+LaTeX Font Info:    Font shape `OMS/ppl/m/it' in size <10.95> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 53.
+)
+(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-report.b
+ibitems [8]
+Underfull \hbox (badness 1194) in paragraph at lines 77--83
+[]\OT1/ppl/m/n/10.95 J. Healy, J. Levin, and D. Shoe-maker, \OT1/ppl/m/it/10.95
+ Zoom-whirl or-bits in black hole bi-na-ries \OT1/ppl/m/n/10.95 (2009),
+ []
+
+[9]) [10]
+(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/carpet-publication
+s.aux) ) 
+Here is how much of TeX's memory you used:
+ 2247 strings out of 94073
+ 29343 string characters out of 1164798
+ 92868 words of memory out of 1500000
+ 5528 multiletter control sequences out of 10000+50000
+ 16601 words of font info for 45 fonts, out of 1200000 for 2000
+ 645 hyphenation exceptions out of 8191
+ 26i,4n,21p,290b,245s stack positions out of 5000i,500n,6000p,200000b,5000s
+{/opt/local/share/texmf-dist/fonts/enc/dvips/base/8r.enc}</opt/local/sh
+are/texmf-dist/fonts/type1/bluesky/cm/cmsy10.pfb></opt/local/share/texmf-dist/f
+onts/type1/urw/palatino/uplb8a.pfb></opt/local/share/texmf-dist/fonts/type1/urw
+/palatino/uplr8a.pfb></opt/local/share/texmf-dist/fonts/type1/urw/palatino/uplr
+i8a.pfb>
+Output written on carpet-publications.pdf (10 pages, 99221 bytes).
+PDF statistics:
+ 52 PDF objects out of 1000 (max. 8388607)
+ 0 named destinations out of 1000 (max. 131072)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+

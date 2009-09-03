@@ -16,11 +16,11 @@ CCTK_REAL ipoison "Integer poison value" STEERABLE=always
 
 BOOLEAN tree_search "Use a tree search to find the source processor" STEERABLE=always
 {
-} "no"
+} "yes"
 
 BOOLEAN check_tree_search "Cross-check the result of the tree search" STEERABLE=always
 {
-} "yes"
+} "no"
 
 SHARES: Cactus
 

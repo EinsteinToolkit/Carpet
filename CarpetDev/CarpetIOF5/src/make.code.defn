@@ -4,16 +4,16 @@
 SRCS =	IOF5.cc					\
 	coordinate_system.cc			\
 	data_region.cc				\
-        extending.cc				\
-        file.cc					\
+	extending.cc				\
+	file.cc					\
 	meta_data_region.cc			\
-        physical_quantity.cc 			\
-        simulation.cc 				\
-        tensor_component.cc			\
-        timestep.cc 				\
-        topology.cc 				\
-        utils.cc				\
-        writer.cc
+	physical_quantity.cc			\
+	simulation.cc				\
+	tensor_component.cc			\
+	timestep.cc				\
+	topology.cc				\
+	utils.cc				\
+	writer.cc
 
 # Subdirectories containing source files
 SUBDIRS = 

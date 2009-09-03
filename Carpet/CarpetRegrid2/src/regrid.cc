@@ -19,6 +19,7 @@
 #include <vect.hh>
 
 #include <carpet.hh>
+#include <CarpetTimers.hh>
 
 #include "indexing.hh"
 
@@ -829,6 +830,10 @@ namespace CarpetRegrid2 {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
+    char const * const where = "CarpetRegrid2::Regrid";
+    static Carpet::Timer timer (where);
+    timer.start();
+    
     assert (is_singlemap_mode());
     
     // Decide whether to change the grid hierarchy
@@ -950,7 +955,7 @@ namespace CarpetRegrid2 {
       Regrid (cctkGH, superregss);
       
       // Make multiprocessor aware
-      vector <vector <region_t> > regss;
+      vector <vector <region_t> > regss (superregss.size());
       for (size_t rl = 0; rl < regss.size(); ++ rl) {
         SplitRegions (cctkGH, superregss.at(rl), regss.at(rl));
       } // for rl
@@ -973,6 +978,8 @@ namespace CarpetRegrid2 {
       
     } // if do_recompose
     
+    timer.stop();
+    
     return do_recompose;
   }
   
@@ -988,6 +995,10 @@ namespace CarpetRegrid2 {
     
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
+    
+    char const * const where = "CarpetRegrid2::RegridMaps";
+    static Carpet::Timer timer (where);
+    timer.start();
     
     assert (is_level_mode());
     
@@ -1160,6 +1171,8 @@ namespace CarpetRegrid2 {
       }
       
     } // if do_recompose
+    
+    timer.stop();
     
     return do_recompose;
   }

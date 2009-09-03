@@ -1,6 +1,8 @@
 #include <cassert>
 #include <cstdlib>
 
+#include <hdf5.h>
+
 #include "cctk.h"
 
 #include "physical_quantity.hh"
@@ -67,6 +69,15 @@ namespace CarpetIOF5 {
     
     
     
+    string physical_quantity_t::
+    get_name ()
+      const
+    {
+      return m_name;
+    }
+    
+    
+    
     hid_t physical_quantity_t::
     get_hdf5_physical_quantity ()
       const
@@ -77,21 +88,20 @@ namespace CarpetIOF5 {
     
     
     void physical_quantity_t::
-    get_link_destination (string & filename,
+    get_link_destination (int const proc,
+                          string & filename,
                           string & objectname)
       const
     {
-      static bool initialised = false;
-      static string l_filename;
-      static string l_objectname;
-      if (not initialised)
+      get_coordinate_system().get_link_destination (proc, filename, objectname);
+      if (objectname.empty())
       {
-        initialised = true;
-        get_coordinate_system().get_link_destination (l_filename, l_objectname);
-        l_objectname += string ("/") + m_name;
+        objectname = m_name;
       }
-      filename = l_filename;
-      objectname = l_objectname;
+      else
+      {
+        objectname += string ("/") + m_name;
+      }
     }
     
     

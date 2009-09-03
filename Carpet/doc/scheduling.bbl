@@ -1,0 +1,38 @@
+\begin{thebibliography}{SHH04}
+
+\bibitem[BC89]{Berger89}
+Marsha~J. Berger and P.~Colella.
+\newblock Local adaptive mesh refinement for shock hydrodynamics.
+\newblock {\em J. Comput. Phys.}, 82:64--84, 1989.
+
+\bibitem[Ber82]{Berger-1982}
+Marsha~J. Berger.
+\newblock {\em Adaptive Mesh Refinement for Hyperbolic Partial Differential
+  Equations}.
+\newblock PhD thesis, Stanford University, 1982.
+\newblock {U}niversity {M}icrofilms \#DA 83-01196.
+
+\bibitem[Ber86]{Berger86}
+Marsha~J. Berger.
+\newblock Data structures for adaptive grid generation.
+\newblock {\em SIAM Journal of Scientific and Statistical Computing},
+  7(3):904--916, July 1986.
+
+\bibitem[BO84]{Berger84}
+Marsha~J. Berger and Joseph Oliger.
+\newblock Adaptive mesh refinement for hyperbolic partial differential
+  equations.
+\newblock {\em J. Comput. Phys.}, 53:484--512, 1984.
+
+\bibitem[BR91]{Berger91}
+M.~Berger and I.~Rigoutsos.
+\newblock Adaptive mesh refinement for hyperbolic partial differential
+  equations.
+\newblock {\em IEEE Transactions on Systems, Man and Cybernetics}, 21(5), 1991.
+
+\bibitem[SHH04]{Schnetter-etal-03b}
+Erik Schnetter, Scott~H. Hawley, and Ian Hawke.
+\newblock Evolutions in {3D} numerical relativity using fixed mesh refinement.
+\newblock {\em Class. Quantum Grav.}, 21(6):1465--1488, 21 March 2004.
+
+\end{thebibliography}

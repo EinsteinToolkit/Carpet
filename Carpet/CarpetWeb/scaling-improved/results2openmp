@@ -1,0 +1,19 @@
+# Cactus benchmark results
+#    processes = procs
+#    nodes     = procs / ppn
+#
+# benchmark steps size machine   procs ppn tpp iter   walltime cputime
+
+
+
+# Select output for 16 allocated cores
+awk '/^Bench_McLachlan_Carpet_9lev/ { if ($2==128 && $3==25 && $5==16 && $8==71) print; }' results-ranger.out |
+sort -n -k 7 |
+awk '{ if ($7!=old7) print ""; old7=$7; print; }' > results-ranger-openmp-procs.out
+
+
+
+# Select output for 1 node
+awk '/^Bench_McLachlan_Carpet_9lev/ { if ($2==128 && $3==25 && $5/$6==1 && $8==71) print; }' results-ranger.out |
+sort -n -k 7 |
+awk '{ if ($7!=old7) print ""; old7=$7; print; }' > results-ranger-openmp-node.out

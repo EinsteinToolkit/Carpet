@@ -2,6 +2,8 @@
 
 IMPLEMENTS: CarpetLib
 
+includes header: mpi_string.hh in mpi_string.hh
+
 includes header: defs.hh in defs.hh
 includes header: dist.hh in dist.hh
 includes header: typeprops.hh in typeprops.hh
@@ -28,6 +30,7 @@ includes header: th.hh in th.hh
 includes header: operators.hh in operators.hh
 
 uses include header: carpet_typecase.hh
+uses include header: CarpetTimers.hh
 
 
 

@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <complex>
 #include <limits>
 #include <vector>
@@ -53,6 +54,18 @@ namespace CarpetReduce {
   mymax (const T x, const T y)
   {
     return max(x, y);
+  }
+  
+  template<typename T> inline T
+  mysqr (const T x)
+  {
+    return x*x;
+  }
+  
+  template<typename T> inline T
+  mysqrabs (const T x)
+  {
+    return x*x;
   }
   
   template<typename T> inline T
@@ -112,9 +125,22 @@ namespace CarpetReduce {
 //     return 0;
 //   }
   
+  template<> inline CCTK_BYTE mysqr (CCTK_BYTE const x)
+  {
+    // prevent overflow
+    return 0;
+  }
+  
+  template<> inline CCTK_BYTE mysqrabs (CCTK_BYTE const x)
+  {
+    // prevent overflow
+    return 0;
+  }
+  
   template<> inline CCTK_BYTE mysqrt (CCTK_BYTE const x)
   {
-    return static_cast<CCTK_BYTE> (sqrt (static_cast<CCTK_REAL> (x)));
+    // return static_cast<CCTK_BYTE> (sqrt (static_cast<CCTK_REAL> (x)));
+    return 0;
   }
 #endif
   
@@ -124,9 +150,22 @@ namespace CarpetReduce {
 //     return 0;
 //   }
   
+  template<> inline CCTK_INT1 mysqr (CCTK_INT1 const x)
+  {
+    // prevent overflow
+    return 0;
+  }
+  
+  template<> inline CCTK_INT1 mysqrabs (CCTK_INT1 const x)
+  {
+    // prevent overflow
+    return 0;
+  }
+  
   template<> inline CCTK_INT1 mysqrt (CCTK_INT1 const x)
   {
-    return static_cast<CCTK_INT1> (sqrt (static_cast<CCTK_REAL> (x)));
+    // return static_cast<CCTK_INT1> (sqrt (static_cast<CCTK_REAL> (x)));
+    return 0;
   }
 #endif
   
@@ -136,23 +175,72 @@ namespace CarpetReduce {
 //     return 0;
 //   }
   
+  template<> inline CCTK_INT2 mysqr (CCTK_INT2 const x)
+  {
+    // prevent overflow
+    return 0;
+  }
+  
+  template<> inline CCTK_INT2 mysqrabs (CCTK_INT2 const x)
+  {
+    // prevent overflow
+    return 0;
+  }
+  
   template<> inline CCTK_INT2 mysqrt (CCTK_INT2 const x)
   {
-    return static_cast<CCTK_INT2> (sqrt (static_cast<CCTK_REAL> (x)));
+    // return static_cast<CCTK_INT2> (sqrt (static_cast<CCTK_REAL> (x)));
+    return 0;
   }
 #endif
   
 #ifdef HAVE_CCTK_INT4
+//   template<> inline int myisnan (CCTK_INT4 const x)
+//   {
+//     return 0;
+//   }
+  
+  template<> inline CCTK_INT4 mysqr (CCTK_INT4 const x)
+  {
+    // prevent overflow
+    return 0;
+  }
+  
+  template<> inline CCTK_INT4 mysqrabs (CCTK_INT4 const x)
+  {
+    // prevent overflow
+    return 0;
+  }
+  
   template<> inline CCTK_INT4 mysqrt (CCTK_INT4 const x)
   {
-    return static_cast<CCTK_INT4> (sqrt (static_cast<CCTK_REAL> (x)));
+    // return static_cast<CCTK_INT4> (sqrt (static_cast<CCTK_REAL> (x)));
+    return 0;
   }
 #endif
   
 #ifdef HAVE_CCTK_INT8
+//   template<> inline int myisnan (CCTK_INT8 const x)
+//   {
+//     return 0;
+//   }
+  
+  template<> inline CCTK_INT8 mysqr (CCTK_INT8 const x)
+  {
+    // prevent overflow
+    return 0;
+  }
+  
+  template<> inline CCTK_INT8 mysqrabs (CCTK_INT8 const x)
+  {
+    // prevent overflow
+    return 0;
+  }
+  
   template<> inline CCTK_INT8 mysqrt (CCTK_INT8 const x)
   {
-    return static_cast<CCTK_INT8> (sqrt (static_cast<CCTK_REAL> (x)));
+    // return static_cast<CCTK_INT8> (sqrt (static_cast<CCTK_REAL> (x)));
+    return 0;
   }
 #endif
   
@@ -179,6 +267,12 @@ namespace CarpetReduce {
   {
     return complex<CCTK_REAL4> (mymax(x.real(), y.real()),
                                 mymax(x.imag(), y.imag()));
+  }
+  
+  template<> inline complex<CCTK_REAL4>
+  mysqrabs (const complex<CCTK_REAL4> x)
+  {
+    return mysqr(abs(x));
   }
   
   template<>
@@ -224,6 +318,12 @@ namespace CarpetReduce {
                                 mymax(x.imag(), y.imag()));
   }
   
+  template<> inline complex<CCTK_REAL8>
+  mysqrabs (const complex<CCTK_REAL8> x)
+  {
+    return mysqr(abs(x));
+  }
+  
   template<>
   struct my_numeric_limits<complex<CCTK_REAL8> > {
     static complex<CCTK_REAL8> min ()
@@ -265,6 +365,12 @@ namespace CarpetReduce {
   {
     return complex<CCTK_REAL16> (mymax(x.real(), y.real()),
                                  mymax(x.imag(), y.imag()));
+  }
+  
+  template<> inline complex<CCTK_REAL16>
+  mysqrabs (const complex<CCTK_REAL16> x)
+  {
+    return mysqr(abs(x));
   }
   
   template<>
@@ -399,7 +505,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
-      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*val*val; cnt += T(weight); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*mysqr(val); cnt += T(weight); }
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -413,7 +519,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
-      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*abs(val*val); cnt += T(weight); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*mysqrabs(val); cnt += T(weight); }
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { }
     };
@@ -455,7 +561,7 @@ namespace CarpetReduce {
     template<class T>
     struct op {
       static inline void initialise (T& accum, T& cnt) { accum = T(0); cnt = T(0); }
-      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*abs(val)*abs(val); cnt += T(weight); }
+      static inline void reduce (T& accum, T& cnt, const T& val, const CCTK_REAL weight) { if (weight!=0) accum += weight*mysqrabs(val); cnt += T(weight); }
       static inline void combine (T& accum, T& cnt, const T& accum2, const T& cnt2) { accum += accum2; cnt += cnt2; }
       static inline void finalise (T& accum, const T& cnt) { accum = mysqrt(accum / cnt); }
     };
@@ -503,13 +609,13 @@ namespace CarpetReduce {
       imin[d] =          (bbox[2*d  ] ? 0 : nghostzones[d]);
       imax[d] = lsh[d] - (bbox[2*d+1] ? 0 : nghostzones[d]);
     }
-    static_assert (dim==3, "Only 3 dimensions are currently supported");
 #pragma omp parallel
     {
       T myoutval_local;
       T mycnt_local;
       OP::initialise (myoutval_local, mycnt_local);
 #pragma omp for nowait
+#if CARPET_DIM == 3
       for (int k=imin[2]; k<imax[2]; ++k) {
         for (int j=imin[1]; j<imax[1]; ++j) {
           for (int i=imin[0]; i<imax[0]; ++i) {
@@ -524,6 +630,26 @@ namespace CarpetReduce {
           }
         }
       }
+#elif CARPET_DIM == 4
+      for (int l=imin[3]; l<imax[3]; ++l) {
+        for (int k=imin[2]; k<imax[2]; ++k) {
+          for (int j=imin[1]; j<imax[1]; ++j) {
+            for (int i=imin[0]; i<imax[0]; ++i) {
+              const int index = i + lsh[0] * (j + lsh[1] * (k + lsh[2] * l));
+              CCTK_REAL const w = weight ? weight[index] * levfac : levfac;
+              T myinval = T(0);
+              for (size_t tl=0; tl<inarrays.size(); ++tl) {
+                myinval +=
+                  static_cast<const T*>(inarrays.AT(tl))[index] * tfacs.AT(tl);
+              }
+              OP::reduce (myoutval_local, mycnt_local, myinval, w);
+            }
+          }
+        }
+      }
+#else
+#  error "Value of CARPET_DIM is not supported"
+#endif
 #pragma omp critical
       {
         OP::combine (myoutval, mycnt, myoutval_local, mycnt_local);
@@ -762,47 +888,59 @@ namespace CarpetReduce {
     assert (num_outvals>=0);
     assert (outvals or (proc!=-1 and proc!=CCTK_MyProc(cgh)));
     
-    const int vartypesize = CCTK_VarTypeSize(outtype);
-    assert (vartypesize>=0);
-    
     assert (num_outvals==0 or myoutvals);
     assert (num_outvals==0 or mycounts);
     
-    vector<char> counts;
+    const int vartypesize = CCTK_VarTypeSize(outtype);
+    assert (vartypesize>=0);
+    const int mpilength = CarpetSimpleMPIDatatypeLength(outtype);
+    
+    char* const sendbuf = static_cast<char*>(const_cast<void*>(myoutvals));
+    const int bufsize = num_outvals * vartypesize;
+    const int mpicount = num_outvals * mpilength * (red->uses_cnt() ? 2 : 1);
+    if (red->uses_cnt()) {
+      if (not (sendbuf + bufsize == static_cast<const char*>(mycounts))) {
+        cerr << "sendbuf=" << (void*)sendbuf << endl
+             << "bufsize=" << bufsize << endl
+             << "mycounts=" << mycounts << endl
+             << "num_outvals=" << num_outvals << endl
+             << "outtype=" << outtype << endl
+             << "vartypesize=" << vartypesize << endl
+             << "mpilength=" << mpilength << endl
+             << "mpicount=" << mpicount << endl;
+      }
+      assert (sendbuf + bufsize == static_cast<const char*>(mycounts));
+      assert (red->mpi_op() == MPI_SUM);
+    }
+    
+    char* recvbuf = static_cast<char*>(outvals);
+    vector<char> buffer;
     if (proc==-1 or proc==CCTK_MyProc(cgh)) {
-      counts.resize(vartypesize * num_outvals);
+      if (red->uses_cnt()) {
+        buffer.resize (2*bufsize);
+        recvbuf = &buffer[0];
+      }
     }
     
     const MPI_Datatype mpitype = CarpetSimpleMPIDatatype(outtype);
-    const int mpilength = CarpetSimpleMPIDatatypeLength(outtype);
     if (proc == -1) {
-      MPI_Allreduce (const_cast<void*>(myoutvals), outvals,
-                     mpilength*num_outvals,
-		     mpitype, red->mpi_op(),
-		     CarpetMPIComm());
-      if (red->uses_cnt()) {
-	MPI_Allreduce (const_cast<void*>(mycounts), &counts[0],
-                       num_outvals*mpilength,
-		       mpitype, MPI_SUM,
-		       CarpetMPIComm());
-      }
+      MPI_Allreduce (sendbuf, recvbuf, mpicount,
+                     mpitype, red->mpi_op(), CarpetMPIComm());
     } else {
-      MPI_Reduce (const_cast<void*>(myoutvals), outvals,
-                  num_outvals*mpilength,
-		  mpitype, red->mpi_op(), proc, CarpetMPIComm());
-      if (red->uses_cnt()) {
-	MPI_Reduce (const_cast<void*>(mycounts), &counts[0],
-                    num_outvals*mpilength,
-		    mpitype, MPI_SUM, proc, CarpetMPIComm());
-      }
+      MPI_Reduce (sendbuf, recvbuf, mpicount,
+                  mpitype, red->mpi_op(), proc, CarpetMPIComm());
     }
     
     if (proc==-1 or proc==CCTK_MyProc(cgh)) {
       
+      assert (outvals);
+      char* counts = NULL;
+      if (red->uses_cnt()) {
+        memcpy (outvals, recvbuf, bufsize);
+        counts = recvbuf + bufsize;
+      }
+      
       for (int n=0; n<num_outvals; ++n) {
-	
-	assert (outvals);
-	assert ((int)counts.size() == vartypesize * num_outvals);
 	
 	switch (outtype) {
 #define FINALISE(OP,S)                                                  \
@@ -915,24 +1053,27 @@ namespace CarpetReduce {
     const int vartypesize = CCTK_VarTypeSize(outtype);
     assert (vartypesize>=0);
     
-    vector<char> myoutvals (vartypesize * num_inarrays * num_outvals);
-    vector<char> mycounts  (vartypesize * num_inarrays * num_outvals);
+    // keep local outvals and counts in a single buffer
+    // to save a copy operation in the Finalise() step
+    vector<char> buffer (2 * vartypesize * num_inarrays * num_outvals);
+    char* const myoutvals = &buffer[0];
+    char* const mycounts  = &buffer[vartypesize * num_inarrays * num_outvals];
     
-    Initialise (cgh, proc, num_inarrays * num_outvals, &myoutvals[0], outtype,
-                &mycounts[0], red);
+    Initialise (cgh, proc, num_inarrays * num_outvals, myoutvals, outtype,
+                mycounts, red);
     if (do_local_reduction) {
       Reduce   (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
                 num_inarrays, myinarrays, tfacs, intype,
-                num_inarrays * num_outvals, &myoutvals[0], outtype,
-                &mycounts[0], red,
+                num_inarrays * num_outvals, myoutvals, outtype,
+                mycounts, red,
                 NULL, 1.0);
     } else {
       Copy     (cgh, proc, lsize, num_inarrays, inarrays, intype,
-                num_inarrays * num_outvals, &myoutvals[0], outtype,
-                &mycounts[0]);
+                num_inarrays * num_outvals, myoutvals, outtype,
+                mycounts);
     }
     Finalise   (cgh, proc, num_inarrays * num_outvals, outvals, outtype,
-                &myoutvals[0], &mycounts[0], red);
+                myoutvals, mycounts, red);
     
     return 0;
   }
@@ -1020,11 +1161,14 @@ namespace CarpetReduce {
     
     
     
-    vector<char> myoutvals (vartypesize * num_invars * num_outvals);
-    vector<char> mycounts  (vartypesize * num_invars * num_outvals);
+    // keep local outvals and counts in a single buffer
+    // to save a copy operation in the Finalise() step
+    vector<char> buffer (2 * vartypesize * num_invars * num_outvals);
+    char* const myoutvals = &buffer[0];
+    char* const mycounts  = &buffer[vartypesize * num_invars * num_outvals];
     
-    Initialise (cgh, proc, num_invars * num_outvals, &myoutvals[0], outtype,
-                &mycounts[0], red);
+    Initialise (cgh, proc, num_invars * num_outvals, myoutvals, outtype,
+                mycounts, red);
     
     BEGIN_GLOBAL_MODE(cgh) {
       for (int rl=minrl; rl<maxrl; ++rl) {
@@ -1062,32 +1206,44 @@ namespace CarpetReduce {
             } else {
               assert (0);
             }
+            assert (num_tl >= 1);
             
-            // Are there enough time levels?
-            int const max_tl = CCTK_MaxTimeLevelsVI(vi);
-            int const active_tl = CCTK_ActiveTimeLevelsVI(cgh, vi);
-            if (max_tl == 1 and active_tl == 1) {
-              num_tl = 1;
+            if (num_tl == 1) {
+              // One time level does not count as interpolation
               need_time_interp = false;
-              static vector<bool> have_warned;
-              if (have_warned.empty()) {
-                have_warned.resize (CCTK_NumVars(), false);
+            } else {
+              // Are there enough time levels?
+              int const active_tl = CCTK_ActiveTimeLevelsVI(cgh, vi);
+              if (active_tl < num_tl) {
+                int const max_tl = CCTK_MaxTimeLevelsVI(vi);
+                if (max_tl == 1 and active_tl == 1) {
+                  static vector<bool> have_warned;
+                  if (have_warned.empty()) {
+                    have_warned.resize (CCTK_NumVars(), false);
+                  }
+                  if (not have_warned.at(vi)) {
+                    char * const fullname = CCTK_FullName(vi);
+                    CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                                "Grid function \"%s\" has only %d time levels on refinement level %d; this is not enough for time interpolation",
+                                fullname, max_tl, reflevel);
+                    free (fullname);
+                    have_warned.at(vi) = true;
+                  }
+                  // fall back to no time interpolation
+                  num_tl = 1;
+                  need_time_interp = false;
+                } else {
+                  char * const fullname = CCTK_FullName(vi);
+                  CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
+                              "Grid function \"%s\" has only %d active time levels out of %d maximum time levels on refinement level %d; this is not enough for time interpolation",
+                              fullname, active_tl, max_tl, reflevel);
+                  if (not do_allow_past_timelevels) {
+                    CCTK_WARN (1, "(Note: access to past time levels is disabled at this point, probably because of the schedule bin from which this code is called.)");
+                  }
+                  free (fullname);
+                  return 1;       // error
+                }
               }
-              if (not have_warned.at(vi)) {
-                char * const fullname = CCTK_FullName(vi);
-                CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                            "Grid function \"%s\" has only %d time levels on refinement level %d; this is not enough for time interpolation",
-                            fullname, max_tl, reflevel);
-                free (fullname);
-                have_warned.at(vi) = true;
-              }
-            } else if (active_tl < num_tl) {
-              char * const fullname = CCTK_FullName(vi);
-              CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
-                          "Grid function \"%s\" has only %d active time levels out of %d maximum time levels on refinement level %d; this is not enough for time interpolation",
-                          fullname, active_tl, max_tl, reflevel);
-              free (fullname);
-              return 1;         // error
             }
             
           } else {
@@ -1155,93 +1311,98 @@ namespace CarpetReduce {
           
           int const grouptype = reduce_arrays ? CCTK_ARRAY : CCTK_GF;
           for (int m=minm; m<maxm; ++m) {
-            ENTER_SINGLEMAP_MODE(cgh, m, grouptype) {
-              BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype) {
-                
-                
-                
-                assert (grpdim<=dim);
-                int lsh[dim], bbox[2*dim], nghostzones[dim];
-                ierr = CCTK_GrouplshVI(cgh, grpdim, lsh, vi);
-                assert (not ierr);
-                ierr = CCTK_GroupbboxVI(cgh, 2*grpdim, bbox, vi);
-                assert (not ierr);
-                ierr = CCTK_GroupnghostzonesVI(cgh, grpdim, nghostzones, vi);
-                assert (not ierr);
-                for (int d=0; d<grpdim; ++d) {
-                  assert (lsh[d]>=0);
-                  assert (nghostzones[d]>=0 and 2*nghostzones[d]<=lsh[d]);
-                }
-                
-                vect<int,dim> mylsh, mynghostzones;
-                vect<vect<int,2>,dim> mybbox;
-                for (int d=0; d<grpdim; ++d) {
-                  mylsh[d] = lsh[d];
-                  mybbox[d][0] = bbox[2*d  ];
-                  mybbox[d][1] = bbox[2*d+1];
-                  mynghostzones[d] = nghostzones[d];
-                }
-                for (int d=grpdim; d<dim; ++d) {
-                  mylsh[d] = 1;
-                  mybbox[d][0] = 0;
-                  mybbox[d][1] = 0;
-                  mynghostzones[d] = 0;
-                }
-                
-                
-                
-                CCTK_REAL const * weight;
-                CCTK_REAL levfac;
-                if (want_global_mode or want_level_mode) {
-                  static int iweight = -1;
-                  if (iweight == -1) {
-                    iweight = CCTK_VarIndex ("CarpetReduce::weight");
-                    assert (iweight >= 0);
+            int const maxlc =
+              grouptype == CCTK_GF ? vhh.AT(m)->local_components(reflevel) : 1;
+            if (maxlc > 0) {
+              ENTER_SINGLEMAP_MODE(cgh, m, grouptype) {
+                BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype) {
+                  
+                  
+                  
+                  assert (grpdim<=dim);
+                  int lsh[dim], bbox[2*dim], nghostzones[dim];
+                  ierr = CCTK_GrouplshVI(cgh, grpdim, lsh, vi);
+                  assert (not ierr);
+                  ierr = CCTK_GroupbboxVI(cgh, 2*grpdim, bbox, vi);
+                  assert (not ierr);
+                  ierr = CCTK_GroupnghostzonesVI(cgh, grpdim, nghostzones, vi);
+                  assert (not ierr);
+                  for (int d=0; d<grpdim; ++d) {
+                    assert (lsh[d]>=0);
+                    assert (nghostzones[d]>=0 and 2*nghostzones[d]<=lsh[d]);
                   }
-                  weight = (static_cast<CCTK_REAL const *>
-                            (CCTK_VarDataPtrI (cgh, 0, iweight)));
-                  assert (weight);
-                  CCTK_REAL const levfac1 =
-                    1.0 / prod (rvect (spacereflevelfact));
-                  levfac = want_level_mode or igrid ? 1.0 : levfac1;
-                } else {
-                  weight = NULL;
-                  levfac = 1.0;
-                }
-                
-                vector<vector<const void*> > myinarrays (num_tl);
-                vector<const void* const*> inarrays (num_tl);
-                for (int tl=0; tl<num_tl; ++tl) {
-                  myinarrays.at(tl).resize (num_invars);
-                  for (int n=0; n<num_invars; ++n) {
+                  
+                  vect<int,dim> mylsh, mynghostzones;
+                  vect<vect<int,2>,dim> mybbox;
+                  for (int d=0; d<grpdim; ++d) {
+                    mylsh[d] = lsh[d];
+                    mybbox[d][0] = bbox[2*d  ];
+                    mybbox[d][1] = bbox[2*d+1];
+                    mynghostzones[d] = nghostzones[d];
+                  }
+                  for (int d=grpdim; d<dim; ++d) {
+                    mylsh[d] = 1;
+                    mybbox[d][0] = 0;
+                    mybbox[d][1] = 0;
+                    mynghostzones[d] = 0;
+                  }
+                  
+                  
+                  
+                  CCTK_REAL const * weight;
+                  CCTK_REAL levfac;
+                  if (want_global_mode or want_level_mode) {
+                    static int iweight = -1;
+                    if (iweight == -1) {
+                      iweight = CCTK_VarIndex ("CarpetReduce::weight");
+                      assert (iweight >= 0);
+                    }
+                    weight = (static_cast<CCTK_REAL const *>
+                              (CCTK_VarDataPtrI (cgh, 0, iweight)));
+                    assert (weight);
+                    CCTK_REAL const levfac1 =
+                      1.0 / prod (rvect (spacereflevelfact));
+                    levfac = want_level_mode or igrid ? 1.0 : levfac1;
+                  } else {
+                    weight = NULL;
+                    levfac = 1.0;
+                  }
+                  
+                  vector<vector<const void*> > myinarrays (num_tl);
+                  vector<const void* const*> inarrays (num_tl);
+                  for (int tl=0; tl<num_tl; ++tl) {
+                    myinarrays.at(tl).resize (num_invars);
+                    for (int n=0; n<num_invars; ++n) {
 #if 0
-                    myinarrays.at(tl).at(n)
-                      = CCTK_VarDataPtrI(cgh, tl, invars[n]);
+                      myinarrays.at(tl).at(n)
+                        = CCTK_VarDataPtrI(cgh, tl, invars[n]);
 #else
-                    int const vi = invars[n];
-                    int const gi = CCTK_GroupIndexFromVarI (vi);
-                    int const vi0 = CCTK_FirstVarIndexI (gi);
-                    myinarrays.at(tl).at(n)
-                      = ((*arrdata.at(gi).at(Carpet::map).data.at(vi-vi0))
-                         (tl, reflevel, component, mglevel)->storage());
+                      int const vi = invars[n];
+                      int const gi = CCTK_GroupIndexFromVarI (vi);
+                      int const vi0 = CCTK_FirstVarIndexI (gi);
+                      myinarrays.at(tl).at(n)
+                        = ((*arrdata.at(gi).at(Carpet::map).data.at(vi-vi0))
+                           (tl, reflevel, local_component, mglevel)->storage());
 #endif
-                    assert (myinarrays.at(tl).at(n));
+                      assert (myinarrays.at(tl).at(n));
+                    }
+                    inarrays.at(tl) = &myinarrays.at(tl).at(0);
                   }
-                  inarrays.at(tl) = &myinarrays.at(tl).at(0);
-                }
-                
-                
-                
-                Reduce (cgh, proc, &mylsh[0], &mybbox[0][0], &mynghostzones[0],
-                        num_invars, inarrays, tfacs, intype,
-                        num_invars * num_outvals, &myoutvals[0], outtype,
-                        &mycounts[0], red,
-                        weight, levfac);
-                
-                
-                
-              } END_LOCAL_COMPONENT_LOOP;
-            } LEAVE_SINGLEMAP_MODE;
+                  
+                  
+                  
+                  Reduce (cgh, proc,
+                          &mylsh[0], &mybbox[0][0], &mynghostzones[0],
+                          num_invars, inarrays, tfacs, intype,
+                          num_invars * num_outvals, myoutvals, outtype,
+                          mycounts, red,
+                          weight, levfac);
+                  
+                  
+                  
+                } END_LOCAL_COMPONENT_LOOP;
+              } LEAVE_SINGLEMAP_MODE;
+            } // if maxlc > 0
           } // for m
           
         } LEAVE_LEVEL_MODE;
@@ -1249,7 +1410,7 @@ namespace CarpetReduce {
     } END_GLOBAL_MODE;
     
     Finalise (cgh, proc, num_invars * num_outvals, outvals, outtype,
-              &myoutvals[0], &mycounts[0], red);
+              myoutvals, mycounts, red);
     
     return 0;
   }

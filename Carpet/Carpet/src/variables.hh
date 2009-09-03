@@ -16,16 +16,16 @@
 
 #include <mpi.h>
 
-#include "cctk.h"
+#include <cctk.h>
 
-#include "bbox.hh"
-#include "data.hh"
-#include "dh.hh"
-#include "ggf.hh"
-#include "gh.hh"
-#include "operators.hh"
-#include "th.hh"
-#include "vect.hh"
+#include <bbox.hh>
+#include <data.hh>
+#include <dh.hh>
+#include <ggf.hh>
+#include <gh.hh>
+#include <operators.hh>
+#include <th.hh>
+#include <vect.hh>
 
 #include "carpet_public.h"
 
@@ -80,6 +80,7 @@ namespace Carpet {
   extern int mc_grouptype;      // -1, CCTK_SCALAR/CCTK_ARRAY, CCTK_GF
   extern int map;
   extern int component;
+  extern int local_component;   // -1 for non-local
   
   // Current refinement factors
   extern int timereflevelfact;
@@ -126,9 +127,13 @@ namespace Carpet {
   extern bool do_allow_past_timelevels;
   
   // Is prolongation enabled?
+  // (This flag disables prolongation during MoL integration
+  // substeps.)
   extern bool do_prolongate;
   
   // Is tapering enabled?
+  // (This flag disables prolongation while the current refinement
+  // level is not aligned with the parent.)
   extern bool do_taper;
   
   // Should we warn about groups with insufficiently many time levels?
@@ -142,6 +147,7 @@ namespace Carpet {
   extern vector<gh*> vhh;       // [map]
   extern vector<dh*> vdd;       // [map]
   extern vector<th*> vtt;       // [map]
+  extern int regridding_epoch;
   
   // Data for the groups
   struct groupdesc {

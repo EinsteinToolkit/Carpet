@@ -3,7 +3,7 @@
 IMPLEMENTS: IOF5
 
 USES INCLUDE: bbox.hh defs.hh dh.hh vect.hh
-USES INCLUDE: carpet.hh
+USES INCLUDE: carpet.hh modes.hh
 
 
 
@@ -26,7 +26,25 @@ REQUIRES FUNCTION IO_TruncateOutputFiles
 
 
 # Return a pointer to an unmodifiable C string
+# which contains a unique ID for this configuration
+CCTK_POINTER_TO_CONST \
+FUNCTION UniqueConfigID (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION UniqueConfigID
+
+# Return a pointer to an unmodifiable C string
+# which contains a unique ID for this build
+CCTK_POINTER_TO_CONST \
+FUNCTION UniqueBuildID (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION UniqueBuildID
+
+# Return a pointer to an unmodifiable C string
 # which contains a unique ID for this simulation
 CCTK_POINTER_TO_CONST \
-FUNCTION UniqueSimulationID (CCTK_POINTER_TO_CONST IN  cctkGH)
+FUNCTION UniqueSimulationID (CCTK_POINTER_TO_CONST IN cctkGH)
 USES FUNCTION UniqueSimulationID
+
+# Return a pointer to an unmodifiable C string
+# which contains a unique ID for this run
+CCTK_POINTER_TO_CONST \
+FUNCTION UniqueRunID (CCTK_POINTER_TO_CONST IN cctkGH)
+USES FUNCTION UniqueRunID

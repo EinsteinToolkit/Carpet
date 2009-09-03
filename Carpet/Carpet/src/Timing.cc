@@ -3,9 +3,9 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "cctk.h"
-#include "cctk_Arguments.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Arguments.h>
+#include <cctk_Parameters.h>
 
 // IRIX wants this before <time.h>
 #if HAVE_SYS_TYPES_H
@@ -27,10 +27,10 @@
 #  include <unistd.h>
 #endif
 
-#include "defs.hh"
-#include "dist.hh"
+#include <defs.hh>
+#include <dist.hh>
 
-#include "carpet.hh"
+#include <carpet.hh>
 
 
 
@@ -77,17 +77,17 @@ namespace Carpet {
     for (int m = 0; m < maps; ++ m) {
       assert (reflevel >= 0);
       int const rl = reflevel;
-      for (int c = 0; c < vhh.at(m)->components(rl); ++ c) {
+      for (int c = 0; c < vhh.AT(m)->components(rl); ++ c) {
         assert (mglevel >= 0);
         int const ml = mglevel;
         
         // Base region
-        ibbox const ext = vhh.at(m)->extent(ml,rl,c);
+        ibbox const ext = vhh.AT(m)->extent(ml,rl,c);
         
         // Count the grid points
         CCTK_REAL const domainsize = ext.size();
         
-        if (vhh.at(m)->is_local (rl, c)) {
+        if (vhh.AT(m)->is_local (rl, c)) {
           local_num_grid_points += domainsize;
         }
         global_num_grid_points += domainsize;
@@ -117,7 +117,11 @@ namespace Carpet {
   
   
   
+  // Time at which the simulation started
+  CCTK_REAL startup_walltime;   // in seconds
+  
   // Time at which the evolution started
+  bool in_evolution = false;
   CCTK_REAL initial_walltime;   // in seconds
   CCTK_REAL initial_phystime;
   
@@ -136,12 +140,18 @@ namespace Carpet {
   {
     DECLARE_CCTK_ARGUMENTS;
     
-    * physical_time_per_hour = 0.0;
+    startup_walltime = get_walltime();
+    
+    * physical_time_per_hour         = 0.0;
+    * current_physical_time_per_hour = 0.0;
     
     * time_total         = 0.0;
+    * time_evolution     = 0.0;
     * time_computing     = 0.0;
     * time_communicating = 0.0;
     * time_io            = 0.0;
+    
+    * evolution_steps_count = 0.0;
     
     * local_grid_points_per_second   = 0.0;
     * total_grid_points_per_second   = 0.0;
@@ -171,10 +181,11 @@ namespace Carpet {
   // Begin timing (to be called after initialisation, just before the
   // main evolution begins)
   void
-  BeginTiming (cGH const * const cctkGH)
+  BeginTimingEvolution (cGH const * const cctkGH)
   {
     DECLARE_CCTK_ARGUMENTS;
     
+    in_evolution = true;
     initial_walltime = get_walltime();
     initial_phystime = cctkGH->cctk_time;
   }
@@ -184,14 +195,17 @@ namespace Carpet {
   // Take a step on the current refinement and multigrid level (to be
   // called when EVOL is scheduled)
   void
-  StepTiming (cGH const * const cctkGH)
+  StepTimingEvolution (cGH const * const cctkGH)
   {
     DECLARE_CCTK_ARGUMENTS;
     
+    assert (in_evolution);
     assert (timing_state == state_computing);
     
     CCTK_REAL local_updates, global_updates;
     current_level_updates (cctkGH, local_updates, global_updates);
+    
+    ++ * evolution_steps_count;
     
     * local_grid_point_updates_count += local_updates;
     * total_grid_point_updates_count += global_updates;
@@ -266,7 +280,9 @@ namespace Carpet {
     assert (timing_state == state_computing);
     
     // Measure the elapsed time
-    * time_total = get_walltime() - initial_walltime;
+    double const walltime = get_walltime();
+    * time_total     = walltime - startup_walltime;
+    * time_evolution = in_evolution ? walltime - initial_walltime : 0.0;
     
     * time_computing = * time_total - (* time_communicating + * time_io);
   }
@@ -327,12 +343,52 @@ namespace Carpet {
   UpdatePhysicalTimePerHour (cGH const * const cctkGH)
   {
     DECLARE_CCTK_ARGUMENTS;
+    DECLARE_CCTK_PARAMETERS;
+    
+    if (not in_evolution) {
+      * physical_time_per_hour         = 0.0;
+      * current_physical_time_per_hour = 0.0;
+      return;
+    }
+    
+    static int last_iteration = -1;
+    static size_t num_samples = 0;
+    static CCTK_REAL last_physical_time;
+    static CCTK_REAL last_time_evolution;
+    assert (cctk_iteration > last_iteration); // expect progress
     
     // Calculate elapsed physical time
     CCTK_REAL const physical_time = cctkGH->cctk_time - initial_phystime;
     
-    // Calculate physical time per hour
-    * physical_time_per_hour = 3600.0 * physical_time / max (* time_total, eps);
+    // Calculate average physical time per hour
+    * physical_time_per_hour =
+      3600.0 * physical_time / max (* time_evolution, eps);
+    
+    // Calculate current physical time per hour as moving average
+    if (last_iteration < 0) {
+      // No past data are available
+      * current_physical_time_per_hour = * physical_time_per_hour;
+    } else if (num_samples < 3 or
+               * time_evolution < 0.01 * timing_average_window_minutes * 60.0)
+    {
+      // Less than three previous samples are available, or less thatn
+      // one percent of a window of past data are available
+      * current_physical_time_per_hour = * physical_time_per_hour;
+    } else {
+      CCTK_REAL const window =
+        min (* time_evolution, timing_average_window_minutes * 60.0);
+      CCTK_REAL const alpha =
+        exp (- (* time_evolution - last_time_evolution) / window);
+      * current_physical_time_per_hour =
+        (1.0 - alpha) * * physical_time_per_hour +
+        (      alpha) * * current_physical_time_per_hour;
+    }
+    
+    // Remember last iteration
+    last_iteration      = cctk_iteration;
+    ++ num_samples;
+    last_physical_time  = physical_time;
+    last_time_evolution = * time_evolution;
   }
   
   
@@ -357,7 +413,13 @@ namespace Carpet {
     DECLARE_CCTK_ARGUMENTS;
     
     CCTK_VInfo (CCTK_THORNSTRING,
-                "Total run time: %g h", double (* time_total / 3600.0));
+                "Total run       time: %g h   (iteration %d)",
+                double (* time_total     / 3600.0),
+                cctk_iteration);
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Total evolution time: %g h   (%d steps)",
+                double (* time_evolution / 3600.0),
+                int (* evolution_steps_count));
     CCTK_VInfo (CCTK_THORNSTRING,
                 "(Comp, Comm, I/O) fractions = (%3.1f%%, %3.1f%%, %3.1f%%)",
                 double (100.0 * * time_computing /
@@ -461,7 +523,10 @@ namespace Carpet {
     DECLARE_CCTK_ARGUMENTS;
     
     CCTK_VInfo (CCTK_THORNSTRING,
-                "Physical time per hour: %g",
+                "Current physical time per hour: %g",
+                double (* current_physical_time_per_hour));
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "Average physical time per hour: %g",
                 double (* physical_time_per_hour));
   }
   
@@ -479,25 +544,25 @@ namespace Carpet {
          << "Memory statistics:" << eol
          << "   Grid hierarchy:" << eol;
     for (int m = 0; m < Carpet::maps; ++ m) {
-      cout << "   gh[" << m << "]: " << PRINTMEM(*vhh.at(m)) << eol
-           << "   dh[" << m << "]: " << PRINTMEM(*vdd.at(m)) << eol
-           << "   th[" << m << "]: " << PRINTMEM(*vtt.at(m)) << eol;
+      cout << "   gh[" << m << "]: " << PRINTMEM(*vhh.AT(m)) << eol
+           << "   dh[" << m << "]: " << PRINTMEM(*vdd.AT(m)) << eol
+           << "   th[" << m << "]: " << PRINTMEM(*vtt.AT(m)) << eol;
     }
 #if 0
     for (int g = 0; g < (int)arrdata.size(); ++ g) {
       if (CCTK_GroupTypeI(g) != CCTK_GF) {
         char * const groupname = CCTK_GroupName(g);
-        for (int m = 0; m < (int)arrdata.at(g).size(); ++ m) {
+        for (int m = 0; m < (int)arrdata.AT(g).size(); ++ m) {
           cout << "   Group " << groupname << ":" << eol
-               << "   gh[" << m << "]: " << PRINTMEM(*arrdata.at(g).at(m).hh) << eol
-               << "   dh[" << m << "]: " << PRINTMEM(*arrdata.at(g).at(m).dd) << eol
-               << "   th[" << m << "]: " << PRINTMEM(*arrdata.at(g).at(m).tt) << eol;
-          for (int v = 0; v < (int)arrdata.at(g).at(m).data.size(); ++ v) {
+               << "   gh[" << m << "]: " << PRINTMEM(*arrdata.AT(g).AT(m).hh) << eol
+               << "   dh[" << m << "]: " << PRINTMEM(*arrdata.AT(g).AT(m).dd) << eol
+               << "   th[" << m << "]: " << PRINTMEM(*arrdata.AT(g).AT(m).tt) << eol;
+          for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++ v) {
             char * const fullname = CCTK_FullName(CCTK_FirstVarIndexI(g)+v);
             cout << "   Variable " << fullname << ":" << eol
                  << "   ggf[" << m << "]: ";
-            if (arrdata.at(g).at(m).data.at(v)) {
-              cout << PRINTMEM(*arrdata.at(g).at(m).data.at(v));
+            if (arrdata.AT(g).AT(m).data.AT(v)) {
+              cout << PRINTMEM(*arrdata.AT(g).AT(m).data.AT(v));
             } else {
               cout << "<null>";
             }

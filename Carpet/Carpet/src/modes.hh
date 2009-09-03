@@ -27,27 +27,27 @@ namespace Carpet {
   
   
   // Mode indicators
-  bool is_meta_mode ();
-  bool is_global_mode ();
-  bool is_level_mode ();
-  bool is_singlemap_mode ();
-  bool is_local_mode ();
+  bool is_meta_mode () CCTK_ATTRIBUTE_PURE;
+  bool is_global_mode () CCTK_ATTRIBUTE_PURE;
+  bool is_level_mode () CCTK_ATTRIBUTE_PURE;
+  bool is_singlemap_mode () CCTK_ATTRIBUTE_PURE;
+  bool is_local_mode () CCTK_ATTRIBUTE_PURE;
   
   
   
   // Mode setting
   
-  void enter_global_mode (cGH * const cctkGH, int const ml);
-  void leave_global_mode (cGH * const cctkGH);
+  void enter_global_mode (cGH * cctkGH, int ml);
+  void leave_global_mode (cGH * cctkGH);
   
-  void enter_level_mode (cGH * const cctkGH, int const rl);
-  void leave_level_mode (cGH * const cctkGH);
+  void enter_level_mode (cGH * cctkGH, int rl);
+  void leave_level_mode (cGH * cctkGH);
   
-  void enter_singlemap_mode (cGH * const cctkGH, int const m, int const grouptype);
-  void leave_singlemap_mode (cGH * const cctkGH);
+  void enter_singlemap_mode (cGH * cctkGH, int m, int grouptype);
+  void leave_singlemap_mode (cGH * cctkGH);
   
-  void enter_local_mode (cGH * const cctkGH, int const c, int const grouptype);
-  void leave_local_mode (cGH * const cctkGH);
+  void enter_local_mode (cGH * cctkGH, int c, int lc, int grouptype);
+  void leave_local_mode (cGH * cctkGH);
   
   
   
@@ -57,7 +57,7 @@ namespace Carpet {
     cGH * cctkGH;
     int ml;
   public:
-    mglevel_iterator (cGH const * const cctkGH);
+    mglevel_iterator (cGH const * cctkGH);
     ~mglevel_iterator ();
     bool done () const;
     void step ();
@@ -67,7 +67,7 @@ namespace Carpet {
     cGH * cctkGH;
     int ml;
   public:
-    reverse_mglevel_iterator (cGH const * const cctkGH);
+    reverse_mglevel_iterator (cGH const * cctkGH);
     ~reverse_mglevel_iterator ();
     bool done () const;
     void step ();
@@ -77,7 +77,7 @@ namespace Carpet {
     cGH * cctkGH;
     int rl;
   public:
-    reflevel_iterator (cGH const * const cctkGH);
+    reflevel_iterator (cGH const * cctkGH);
     ~reflevel_iterator ();
     bool done () const;
     void step ();
@@ -87,7 +87,7 @@ namespace Carpet {
     cGH * cctkGH;
     int rl;
   public:
-    reverse_reflevel_iterator (cGH const * const cctkGH);
+    reverse_reflevel_iterator (cGH const * cctkGH);
     ~reverse_reflevel_iterator ();
     bool done () const;
     void step ();
@@ -103,8 +103,19 @@ namespace Carpet {
     int grouptype;
     int m;
   public:
-    map_iterator (cGH const * const cctkGH, int const grouptype);
+    map_iterator (cGH const * cctkGH, int grouptype);
     ~map_iterator ();
+    bool done () const;
+    void step ();
+  };
+    
+  class local_map_iterator {
+    cGH * cctkGH;
+    int grouptype;
+    int m;
+  public:
+    local_map_iterator (cGH const * cctkGH, int grouptype);
+    ~local_map_iterator ();
     bool done () const;
     void step ();
   };
@@ -120,7 +131,7 @@ namespace Carpet {
     int grouptype;
     int c;
   public:
-    component_iterator (cGH const * const cctkGH, int const grouptype);
+    component_iterator (cGH const * cctkGH, int grouptype);
     ~component_iterator ();
     bool done () const;
     void step ();
@@ -129,9 +140,9 @@ namespace Carpet {
   class local_component_iterator {
     cGH * cctkGH;
     int grouptype;
-    int c;
+    int lc;
   public:
-    local_component_iterator (cGH const * const cctkGH, int const grouptype);
+    local_component_iterator (cGH const * cctkGH, int grouptype);
     ~local_component_iterator ();
     bool done () const;
     void step ();
@@ -201,6 +212,18 @@ namespace Carpet {
     map_loop_ = false;                          \
   } while (false)
 
+#define BEGIN_LOCAL_MAP_LOOP(cctkGH, grouptype)                         \
+  do {                                                                  \
+    bool local_map_loop_ = true;                                        \
+    for (Carpet::local_map_iterator local_map_iter_(cctkGH, grouptype); \
+         not local_map_iter_.done();                                    \
+         local_map_iter_.step()) {
+#define END_LOCAL_MAP_LOOP                      \
+    }                                           \
+    assert (local_map_loop_);                   \
+    local_map_loop_ = false;                    \
+  } while (false)
+
 #define BEGIN_COMPONENT_LOOP(cctkGH, grouptype)                         \
   do {                                                                  \
     bool component_loop_ = true;                                        \
@@ -232,8 +255,9 @@ namespace Carpet {
   class singlemap_escape {
     cGH * cctkGH;
     int c;
+    int lc;
   public:
-    singlemap_escape (cGH const * const cctkGH);
+    singlemap_escape (cGH const * cctkGH);
     ~singlemap_escape ();
   };
   
@@ -242,8 +266,9 @@ namespace Carpet {
     int grouptype;
     int m;
     int c;
+    int lc;
   public:
-    level_escape (cGH const * const cctkGH);
+    level_escape (cGH const * cctkGH);
     ~level_escape ();
   };
   
@@ -253,8 +278,9 @@ namespace Carpet {
     int grouptype;
     int m;
     int c;
+    int lc;
   public:
-    global_escape (cGH const * const cctkGH);
+    global_escape (cGH const * cctkGH);
     ~global_escape ();
   };
   
@@ -265,8 +291,9 @@ namespace Carpet {
     int grouptype;
     int m;
     int c;
+    int lc;
   public:
-    meta_escape (cGH const * const cctkGH);
+    meta_escape (cGH const * cctkGH);
     ~meta_escape ();
   };
   
@@ -325,30 +352,28 @@ namespace Carpet {
   class mglevel_setter {
     cGH * cctkGH;
   public:
-    mglevel_setter (cGH const * const cctkGH, int const ml);
+    mglevel_setter (cGH const * cctkGH, int ml);
     ~mglevel_setter ();
   };
   
   class reflevel_setter {
     cGH * cctkGH;
   public:
-    reflevel_setter (cGH const * const cctkGH, int const rl);
+    reflevel_setter (cGH const * cctkGH, int rl);
     ~reflevel_setter ();
   };
   
   class map_setter {
     cGH * cctkGH;
   public:
-    map_setter (cGH const * const cctkGH,
-                int const m, int const grouptype);
+    map_setter (cGH const * cctkGH, int m, int grouptype);
     ~map_setter ();
   };
   
   class component_setter {
     cGH * cctkGH;
   public:
-    component_setter (cGH const * const cctkGH,
-                      int const c, int const grouptype);
+    component_setter (cGH const * cctkGH, int c, int grouptype);
     ~component_setter ();
   };
   

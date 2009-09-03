@@ -8,7 +8,7 @@
 #include <cctki_GHExtensions.h>
 #include <cctki_Schedule.h>
 
-#include "carpet.hh"
+#include <carpet.hh>
 
 using namespace std;
 
@@ -20,6 +20,14 @@ using namespace std;
 
 typedef enum {sched_none, sched_group, sched_function} iSchedType;
 typedef enum {schedpoint_misc, schedpoint_analysis} iSchedPoint;
+
+typedef struct t_timer
+{
+  struct t_timer *next;
+  int timer_handle;
+  char *schedule_bin;
+  int has_been_output;
+} t_timer;
 
 typedef struct
 {
@@ -41,8 +49,7 @@ typedef struct
   int *comm_groups;
 
   /* Timer data */
-
-  int timer_handle;
+  t_timer *timers;
 
   /* Dynamic data */
   int *CommOnEntry;
@@ -67,6 +74,10 @@ namespace Carpet {
     //
     // 2. Things can be provided only once, not multiple times.
     //    Except when they are also provided.
+    
+    // Keep track of which time levels contain good data; modify this
+    // while time level cycling; routine specify how many time levels
+    // they require/provide
     
     
     
@@ -306,8 +317,8 @@ namespace Carpet {
       CheckOneGroup (cctkGH, "CCTK_TERMINATE");
     }
     
-  };                            // namespace Carpet
-};                              // namespace Requirements
+  } // namespace Carpet
+}   // namespace Requirements
 
 
 
@@ -324,8 +335,8 @@ namespace Carpet {
       Checkpoint ("Skipping check of schedule requirements (no flesh support)");
       // do nothing
     }
-  };                            // namespace Carpet
-};                              // namespace Requirements
+  } // namespace Carpet
+}   // namespace Requirements
 
 
 

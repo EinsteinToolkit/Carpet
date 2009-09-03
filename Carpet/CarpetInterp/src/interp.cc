@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <vector>
 
 #include <mpi.h>
@@ -65,6 +66,7 @@ namespace CarpetInterp {
                                    int const N_interp_points,
                                    int const N_input_arrays,
                                    int const N_output_arrays,
+                                   bool& want_global_mode,
                                    bool& have_source_map,
                                    vector<int> & num_time_derivs,
                                    int & prolongation_order_time,
@@ -83,14 +85,16 @@ namespace CarpetInterp {
               int const maxrl,
               int const maxncomps,
               int const N_dims,
+              int const ndims,
               int const npoints,
               vector<CCTK_INT> & source_map,
               void const * const coords_list[],
-              vector<CCTK_REAL> const& coords,
+              CCTK_REAL const * const coords,
               vector<int>& procs,
-              vector<int>& N_points_to,
+              vector<int>& sendcnt,
               vector<int>& rlev,
               vector<int>& home,
+              std::map<int, int>& homecntsmap,
               vector<int>& homecnts);
 
   static void
@@ -103,13 +107,15 @@ namespace CarpetInterp {
                           bool const want_global_mode,
                           int const prolongation_order_time,
                           int const N_dims,
-                          vector<int> & homecnts,
-                          vector<CCTK_REAL*> & coords,
-                          vector<char*> & outputs,
+                          vector<int> const & homecnts,
+                          std::map<int, int> const & homecntsmap,
+                          vector<CCTK_INT> const & recvcnt,
+                          vector<CCTK_REAL*> const & coords,
+                          vector<char*> const & outputs,
                           CCTK_INT* const per_proc_statuses,
                           CCTK_INT* const per_proc_retvals,
-                          vector<CCTK_INT> & operand_indices,
-                          vector<CCTK_INT> & time_deriv_order,
+                          vector<CCTK_INT> const & operand_indices,
+                          vector<CCTK_INT> const & time_deriv_order,
                           vector<int> const & num_time_derivs,
                           CCTK_INT const local_interp_handle,
                           CCTK_INT const param_table_handle,
@@ -130,9 +136,9 @@ namespace CarpetInterp {
                                 char* const outputs,
                                 CCTK_INT& overall_status,
                                 CCTK_INT& overall_retval,
-                                vector<CCTK_INT> & operand_indices,
-                                vector<CCTK_INT> & time_deriv_order,
-                                vector<CCTK_INT> & interp_num_time_levels,
+                                vector<CCTK_INT> const & operand_indices,
+                                vector<CCTK_INT> const & time_deriv_order,
+                                vector<CCTK_INT> const & interp_num_time_levels,
                                 CCTK_INT const local_interp_handle,
                                 CCTK_INT const param_table_handle,
                                 vector<int> const & num_tl,
@@ -289,8 +295,6 @@ namespace CarpetInterp {
                  "It is not possible to interpolate in meta mode");
     }
 
-    bool const want_global_mode = is_global_mode();
-
 
     // Multiple convergence levels are not supported
     assert (mglevels == 1);
@@ -331,6 +335,34 @@ namespace CarpetInterp {
       MPI_Barrier (dist::comm());
     }
 
+    //////////////////////////////////////////////////////////////////////
+    // Extract parameter table options:
+    //   - source map
+    //   - output array operand indices
+    //   - time interpolation order
+    //////////////////////////////////////////////////////////////////////
+    bool want_global_mode;
+    vector<CCTK_INT> source_map (N_interp_points);
+    vector<CCTK_INT> operand_indices (N_output_arrays);
+    vector<CCTK_INT> time_deriv_order (N_output_arrays);
+    bool have_source_map;
+    vector<int> num_time_derivs;
+    CCTK_REAL current_time, delta_time;
+    int prolongation_order_time;
+
+    {
+      int const iret = extract_parameter_table_options
+        (cctkGH,
+         param_table_handle,
+         N_interp_points, N_input_arrays, N_output_arrays,
+         want_global_mode, have_source_map, num_time_derivs,
+         prolongation_order_time, current_time, delta_time,
+         source_map, operand_indices, time_deriv_order);
+      if (iret < 0) {
+        timer_CDI->stop (0);
+        return iret;
+      }
+    }
 
     // Find range of refinement levels
     assert (maps > 0);
@@ -351,148 +383,114 @@ namespace CarpetInterp {
     }
 
     //////////////////////////////////////////////////////////////////////
-    // Extract parameter table options:
-    //   - source map
-    //   - output array operand indices
-    //   - time interpolation order
-    //////////////////////////////////////////////////////////////////////
-    vector<CCTK_INT> source_map (N_interp_points);
-    vector<CCTK_INT> operand_indices (N_output_arrays);
-    vector<CCTK_INT> time_deriv_order (N_output_arrays);
-    bool have_source_map;
-    vector<int> num_time_derivs;
-    CCTK_REAL current_time, delta_time;
-    int prolongation_order_time;
-
-    {
-      int const iret = extract_parameter_table_options
-        (cctkGH,
-         param_table_handle,
-         N_interp_points, N_input_arrays, N_output_arrays,
-         have_source_map, num_time_derivs,
-         prolongation_order_time, current_time, delta_time,
-         source_map, operand_indices, time_deriv_order);
-      if (iret < 0) {
-        timer_CDI->stop (0);
-        return iret;
-      }
-    }
-
-    //////////////////////////////////////////////////////////////////////
     // Map interpolation points to processors
     //////////////////////////////////////////////////////////////////////
-    vector<int> N_points_to (dist::size());
+    vector<int> sendcnt (dist::size());
+    vector<int> dstprocs (N_interp_points); // which processor owns point n
     vector<int> rlev (N_interp_points); // refinement level of point n
     vector<int> home (N_interp_points); // component of point n
-    vector<int> dstprocs (N_interp_points); // which processor owns point n
-    vector<int> allhomecnts ((maxrl-minrl) * maps * maxncomps * dist::size());
-                                            // number of points in component c
-    vector<CCTK_REAL> coords_buffer (N_dims * N_interp_points);
+    std::map<int, int> homecntsmap;     // components hash map
+    vector<int> allhomecnts;            // number of points in component
+                                        // homecntsmap.find(c)
+    int const ndims = have_source_map ? N_dims + 1 : N_dims;
 
     // Each point from coord_list is mapped onto the processor
     // that owns it (dstprocs)
-    // Also accumulate the number of points per processor (N_points_to)
+    // Also accumulate the number of points per processor (sendcnt)
     map_points (cctkGH, coord_system_handle, coord_group,
-                ml, minrl, maxrl, maxncomps, N_dims, N_interp_points,
+                ml, minrl, maxrl, maxncomps, N_dims, ndims, N_interp_points,
                 source_map,
-                coords_list, coords_buffer,
-                dstprocs, N_points_to,
-                rlev, home, allhomecnts);
-    //cout << "CarpetInterp: N_points_to=" << N_points_to << endl;
+                coords_list, NULL,
+                dstprocs, sendcnt,
+                rlev, home, homecntsmap, allhomecnts);
+    //cout << "CarpetInterp: sendcnt=" << sendcnt << endl;
 
     //////////////////////////////////////////////////////////////////////
     // Communicate the number of points each processor is going to communicate
     //////////////////////////////////////////////////////////////////////
 
-    // N_points_from denotes the number of points
+    // recvcnt denotes the number of points
     // that this processor is to receive from others
-    vector<int> N_points_from (dist::size());
+    vector<int> recvcnt (dist::size());
     {
-      assert ((int)N_points_from.size() == dist::size());
-      assert ((int)N_points_to.size() == dist::size());
-    }
-    {
-      static Timer timer ("CarpetInterp::send_npoints");
-      timer.start ();
-      MPI_Alltoall (&N_points_to[0],   1, dist::datatype (N_points_to[0]),
-                    &N_points_from[0], 1, dist::datatype (N_points_from[0]),
+      static Timer * timer = NULL;
+      if (not timer) {
+        timer = new Timer ("CarpetInterp::send_npoints");
+      }
+      timer->start ();
+      MPI_Alltoall (&sendcnt[0], 1, dist::mpi_datatype (sendcnt[0]),
+                    &recvcnt[0], 1, dist::mpi_datatype (recvcnt[0]),
                     dist::comm());
-      timer.stop (dist::size() * sizeof(CCTK_INT));
+      timer->stop (dist::size() * sizeof(CCTK_INT));
     }
-    //cout << "CarpetInterp: N_points_from=" << N_points_from << endl;
+    //cout << "CarpetInterp: recvcnt=" << recvcnt << endl;
 
     //////////////////////////////////////////////////////////////////////
     // Communicate the interpolation coordinates
     //////////////////////////////////////////////////////////////////////
-    vector<int> sendcnt (dist::size());
-    vector<int> recvcnt (dist::size());
-    vector<int> senddispl (dist::size());
-    vector<int> recvdispl (dist::size());
 
     // Set up counts and displacements for MPI_Alltoallv()
-    sendcnt.AT(0) = N_dims * N_points_to.AT(0);
-    recvcnt.AT(0) = N_dims * N_points_from.AT(0);
-    senddispl.AT(0) = recvdispl.AT(0) = 0;
+    // N_points_local is the total number of points to receive
+    // and thus the total number of points to interpolate on this processor
     int N_points_local = recvcnt.AT(0);
+    vector<int> senddispl (dist::size());
+    vector<int> recvdispl (dist::size());
     for (int p = 1; p < dist::size(); p++) {
-      sendcnt.AT(p) = N_dims * N_points_to.AT(p);
-      recvcnt.AT(p) = N_dims * N_points_from.AT(p);
       N_points_local += recvcnt.AT(p);
       senddispl.AT(p) = senddispl.AT(p-1) + sendcnt.AT(p-1);
       recvdispl.AT(p) = recvdispl.AT(p-1) + recvcnt.AT(p-1);
     }
-    if (N_dims > 0) assert (N_points_local % N_dims == 0);
-    // N_points_local is the total number of points to receive
-    // and thus the total number of points to interpolate on this processor
-    if (N_dims > 0) N_points_local /= N_dims;
 
-    // Set up the per-component coordinates
-    // as offset into the single communication send buffer
-    vector<CCTK_REAL*> coords (allhomecnts.size());
-    {
-      int offset = 0;
-      for (int c = 0; c < (int)allhomecnts.size(); c++) {
-        coords.AT(c) = &coords_buffer.front() + N_dims*offset;
-        offset += allhomecnts.AT(c);
-      }
-      assert (offset == N_interp_points);
-    }
-
-    // Copy the input coordinates into the communication send buffer
-    // also remember the position of each point in the original input arrays
+    // remember the position of each point in the original input arrays
     vector<int> indices (N_interp_points);
     {
       // totalhomecnts is the accumulated number of points over all components
       vector<int> totalhomecnts (allhomecnts.size());
-      for (int idx = 1; idx < (int)allhomecnts.size(); idx++) {
-        totalhomecnts.AT(idx) = totalhomecnts.AT(idx-1) + allhomecnts.AT(idx-1);
+      if (totalhomecnts.size() > 0) {
+        totalhomecnts.AT(0) = 0;
+        for (size_t c = 1; c < totalhomecnts.size(); c++) {
+          totalhomecnts.AT(c) = totalhomecnts.AT(c-1) + allhomecnts.AT(c-1);
+        }
       }
 
-      vector<int> tmpcnts (allhomecnts.size(), 0);
+      vector<int> tmpcnts (allhomecnts.size());
+#pragma omp parallel for
       for (int n = 0; n < N_interp_points; n++) {
-        int const idx = component_idx
+        int const cidx = component_idx
           (dstprocs.AT(n), source_map.AT(n), rlev.AT(n), home.AT(n));
-        for (int d = 0; d < N_dims; d++) {
-          assert (d + N_dims*tmpcnts.AT(idx) < N_dims*allhomecnts.AT(idx));
-          coords.AT(idx)[d + N_dims*tmpcnts.AT(idx)] =
-            static_cast<CCTK_REAL const *>(coords_list[d])[n];
+        std::map<int, int>::const_iterator it = homecntsmap.find(cidx);
+        assert (it != homecntsmap.end());
+        int const idx = it->second;
+        assert (idx < (int)totalhomecnts.size());
+#pragma omp critical
+        {
+          indices.AT(n) = totalhomecnts.AT(idx) + tmpcnts.AT(idx)++;
         }
-        indices.AT(n) = totalhomecnts.AT(idx) + tmpcnts.AT(idx);
-        tmpcnts.AT(idx)++;
       }
       assert (tmpcnts == allhomecnts);
+    }
+
+    // Allocate the communication send buffer
+    // and copy the input coordinates and the source map (if necessary) into it
+    vector<CCTK_REAL> coords_buffer (ndims * N_interp_points);
+#pragma omp parallel for
+    for (int n = 0; n < N_interp_points; n++) {
+      int const idx = indices.AT(n);
+      assert ((idx+1) * ndims <= (int)coords_buffer.size());
+      for (int d = 0; d < N_dims; d++) {
+        coords_buffer[d + ndims*idx] =
+          static_cast<CCTK_REAL const *>(coords_list[d])[n];
+      }
+      if (have_source_map) {
+        coords_buffer[N_dims + ndims*idx] = source_map.AT(n);
+      }
     }
 
     // Send this processor's points to owning processors,
     // receive other processors' points for interpolation on this processor
     {
-      vector<CCTK_REAL> tmp (N_dims * N_points_local);
-      MPI_Datatype const datatype = dist::datatype (tmp[0]);
+      vector<CCTK_REAL> tmp (ndims * N_points_local);
       {
-        assert ((int)sendcnt.size() == dist::size());
-        assert ((int)recvcnt.size() == dist::size());
-        assert ((int)senddispl.size() == dist::size());
-        assert ((int)recvdispl.size() == dist::size());
         int const sendbufsize = (int)coords_buffer.size();
         int const recvbufsize = (int)tmp.size();
         for (int n=0; n<dist::size(); ++n) {
@@ -511,16 +509,26 @@ namespace CarpetInterp {
       }
 #endif
       {
-        static Timer timer ("CarpetInterp::send_coordinates");
-        timer.start ();
-        MPI_Alltoallv (&coords_buffer[0], &sendcnt[0], &senddispl[0], datatype,
-                       &tmp[0],           &recvcnt[0], &recvdispl[0], datatype,
+        MPI_Datatype datatype = dist::mpi_datatype (tmp[0]);
+        MPI_Datatype vdatatype;
+        MPI_Type_vector(1, ndims, 0, datatype, &vdatatype);
+        MPI_Type_commit(&vdatatype);
+
+        static Timer * timer = NULL;
+        if (not timer) {
+          timer = new Timer ("CarpetInterp::send_coordinates");
+        }
+        timer->start ();
+        MPI_Alltoallv (&coords_buffer[0], &sendcnt[0], &senddispl[0], vdatatype,
+                       &tmp[0],           &recvcnt[0], &recvdispl[0], vdatatype,
                        dist::comm());
-        timer.stop (coords_buffer.size() * sizeof(CCTK_REAL));
+        timer->stop (coords_buffer.size() * sizeof(CCTK_REAL));
+
+        MPI_Type_free(&vdatatype);
       }
 #ifndef _NDEBUG
       {
-        vector<bool> filled(tmp.size(), false);
+        vector<bool> filled(N_points_local, false);
         for (int n=0; n<(int)dist::size(); ++n) {
           //#pragma omp parallel for
           for (int i=0; i<recvcnt.AT(n); ++i) {
@@ -530,7 +538,7 @@ namespace CarpetInterp {
         }
         bool error = false;
         for (int i=0; i<(int)filled.size(); ++i) {
-          error = error or not (filled.AT(i));
+          error = error or not filled.AT(i);
         }
         if (error) {
           cout << "error" << endl;
@@ -543,8 +551,6 @@ namespace CarpetInterp {
           assert (filled.AT(i));
         }
       }
-#endif
-#ifndef _NDEBUG
 #pragma omp parallel for
       for (int i=0; i<(int)tmp.size(); ++i) {
         assert (tmp.AT(i) != poison);
@@ -554,108 +560,14 @@ namespace CarpetInterp {
     }
 
     //////////////////////////////////////////////////////////////////////
-    // Communicate the source map (if neccessary)
+    // Set up (local) source map
     //////////////////////////////////////////////////////////////////////
     if (have_source_map) {
-      // Calculate displacements and lengths
-      sendcnt.AT(0) = N_points_to.AT(0);
-      recvcnt.AT(0) = N_points_from.AT(0);
-      senddispl.AT(0) = recvdispl.AT(0) = 0;
-      for (int p = 1; p < dist::size(); p++) {
-        sendcnt.AT(p) = N_points_to.AT(p);
-        recvcnt.AT(p) = N_points_from.AT(p);
-        senddispl.AT(p) = senddispl.AT(p-1) + sendcnt.AT(p-1);
-        recvdispl.AT(p) = recvdispl.AT(p-1) + recvcnt.AT(p-1);
-      }
-
-      // Set up the per-component maps
-      // as offset into the single communication send buffer
-      vector<CCTK_INT> tmp (source_map.size());
-      vector<CCTK_INT*> maps (allhomecnts.size());
-      {
-        int offset = 0;
-        for (int c = 0; c < (int)allhomecnts.size(); c++) {
-          maps.AT(c) = &tmp.front() + offset;
-          offset += allhomecnts.AT(c);
-        }
-        assert (offset == N_interp_points);
-      }
-  
-      // Copy the input maps into the communication send buffer
-      {
-        // totalhomecnts is the accumulated number of points over all components
-        vector<int> totalhomecnts (allhomecnts.size());
-        for (int idx = 1; idx < (int)allhomecnts.size(); idx++) {
-          totalhomecnts.AT(idx) =
-            totalhomecnts.AT(idx-1) + allhomecnts.AT(idx-1);
-        }
-  
-        vector<int> tmpcnts (allhomecnts.size(), 0);
-        for (int n = 0; n < N_interp_points; n++) {
-          int const idx = component_idx
-            (dstprocs.AT(n), source_map.AT(n), rlev.AT(n), home.AT(n));
-          assert (tmpcnts.AT(idx) < allhomecnts.AT(idx));
-          maps.AT(idx)[tmpcnts.AT(idx)] = source_map.AT(n);
-          tmpcnts.AT(idx)++;
-        }
-        assert (tmpcnts == allhomecnts);
-      }
-
-      // Transmit the source maps
       source_map.resize (N_points_local);
-      MPI_Datatype const datatype = dist::datatype (tmp[0]);
-      {
-        assert ((int)sendcnt.size() == dist::size());
-        assert ((int)recvcnt.size() == dist::size());
-        assert ((int)senddispl.size() == dist::size());
-        assert ((int)recvdispl.size() == dist::size());
-        int const sendbufsize = (int)tmp.size();
-        int const recvbufsize = (int)source_map.size();
-        for (int n=0; n<dist::size(); ++n) {
-          assert (sendcnt.AT(n) >= 0);
-          assert (senddispl.AT(n) >= 0);
-          assert (senddispl.AT(n) + sendcnt.AT(n) <= sendbufsize);
-          assert (recvcnt.AT(n) >= 0);
-          assert (recvdispl.AT(n) >= 0);
-          assert (recvdispl.AT(n) + recvcnt.AT(n) <= recvbufsize);
-        }
-      }
-#ifndef _NDEBUG
 #pragma omp parallel for
-      for (int i=0; i<(int)source_map.size(); ++i) {
-        source_map[i] = ipoison;
+      for (int n = 0; n < N_points_local; n++) {
+        source_map.AT(n) = static_cast<int>(coords_buffer[ndims*n + N_dims]);
       }
-#endif
-      {
-        static Timer timer ("CarpetInterp::send_maps");
-        timer.start ();
-        MPI_Alltoallv (&tmp[0],        &sendcnt[0], &senddispl[0], datatype,
-                       &source_map[0], &recvcnt[0], &recvdispl[0], datatype,
-                       dist::comm());
-        timer.stop (tmp.size() * sizeof(CCTK_INT));
-      }
-#ifndef _NDEBUG
-      {
-        vector<bool> filled(source_map.size(), false);
-        for (int n=0; n<(int)dist::size(); ++n) {
-          //#pragma omp parallel for
-          for (int i=0; i<recvcnt.AT(n); ++i) {
-            assert (not filled.AT(recvdispl.AT(n)+i));
-            filled.AT(recvdispl.AT(n)+i) = true;
-          }
-        }
-#pragma omp parallel for
-        for (int i=0; i<(int)filled.size(); ++i) {
-          assert (filled.AT(i));
-        }
-      }
-#endif
-#ifndef _NDEBUG
-#pragma omp parallel for
-      for (int i=0; i<(int)source_map.size(); ++i) {
-        assert (source_map[i] != poison);
-      }
-#endif
     } else {
       // No explicit source map specified
       if (Carpet::map != -1) {
@@ -672,13 +584,12 @@ namespace CarpetInterp {
     //////////////////////////////////////////////////////////////////////
     // Map (local) interpolation points to components
     //////////////////////////////////////////////////////////////////////
-    vector<int> srcprocs (N_points_local); // which processor requested point n
-
     // Remember from where point n came
+    vector<int> srcprocs (N_points_local); // which processor requested point n
     {
       int offset = 0;
-      for (int p = 0; p < (int)N_points_from.size(); p++) {
-        for (int n = 0; n < N_points_from.AT(p); n++) {
+      for (int p = 0; p < (int)recvcnt.size(); p++) {
+        for (int n = 0; n < recvcnt.AT(p); n++) {
           srcprocs.AT(offset++) = p;
         }
       }
@@ -701,15 +612,16 @@ namespace CarpetInterp {
     // (One could argue though that the per-point status codes as returned
     // by the local interpolator could be used to determine the global
     // interpolator return value instead.)
-    rlev.resize (N_points_local);          // reflevel of (local) point n
-    home.resize (N_points_local);          // component of (local) point n
-    vector<int> homecnts (allhomecnts.size(), 0);  // points per components
+    rlev.resize (N_points_local);       // reflevel of (local) point n
+    home.resize (N_points_local);       // component of (local) point n
+    vector<int> homecnts;               // number of points in component
+                                        // homecntsmap.find(c)
     map_points (cctkGH, coord_system_handle, coord_group,
-                ml, minrl, maxrl, maxncomps, N_dims, N_points_local,
+                ml, minrl, maxrl, maxncomps, N_dims, ndims, N_points_local,
                 source_map,
-                NULL, coords_buffer,
-                srcprocs, N_points_to,
-                rlev, home, homecnts);
+                NULL, &coords_buffer.front(),
+                srcprocs, sendcnt,
+                rlev, home, homecntsmap, homecnts);
 
     // Free some memory
     source_map.clear();
@@ -720,17 +632,17 @@ namespace CarpetInterp {
     {
       int offset = 0;
       vector<CCTK_REAL> tmp (coords_buffer.size());
-      for (int c = 0; c < (int)homecnts.size(); c++) {
+      for (size_t c = 0; c < homecnts.size(); c++) {
 #pragma omp parallel for
         for (int n = 0; n < homecnts.AT(c); n++) {
           for (int d = 0; d < N_dims; d++) {
-            tmp.AT(d*homecnts.AT(c) + n + offset) =
-              coords_buffer.AT(n*N_dims + d + offset);
+            tmp.AT(d*homecnts.AT(c) + n + N_dims*offset) =
+              coords_buffer.AT((n + offset)*ndims + d);
           }
         }
-        offset += N_dims * homecnts[c];
+        offset += homecnts.AT(c);
       }
-      assert (offset == N_dims * N_points_local);
+      assert (offset == N_points_local);
       coords_buffer.swap (tmp);
     }
 
@@ -741,7 +653,8 @@ namespace CarpetInterp {
     const int vtypesize = CCTK_VarTypeSize (vtype);
     assert (vtypesize > 0);
     vector<char>  outputs_buffer (N_points_local * N_output_arrays * vtypesize);
-    vector<char*> outputs (homecnts.size());
+    vector<char*> outputs (homecnts.size(), &outputs_buffer.front());
+    vector<CCTK_REAL*> coords(homecnts.size(), &coords_buffer.front());
     vector<CCTK_INT> status_and_retval_buffer (2 * dist::size(), 0);
     CCTK_INT* per_proc_statuses = &status_and_retval_buffer.front();
     CCTK_INT* per_proc_retvals  = per_proc_statuses + dist::size();
@@ -750,10 +663,10 @@ namespace CarpetInterp {
     // into the single communication buffers
     {
       int offset = 0;
-      for (int c = 0; c < (int)homecnts.size(); c++) {
-        coords.AT(c)  = &coords_buffer.front()  + N_dims*offset;
-        outputs.AT(c) = &outputs_buffer.front() + N_output_arrays*offset*vtypesize;
-        offset += homecnts.AT(c);
+      for (size_t c = 0; c < homecnts.size(); c++) {
+        coords[c]  += N_dims*offset;
+        outputs[c] += N_output_arrays*offset*vtypesize;
+        offset += homecnts[c];
       }
       assert (offset == N_points_local);
     }
@@ -765,7 +678,7 @@ namespace CarpetInterp {
        want_global_mode,
        prolongation_order_time,
        N_dims,
-       homecnts,
+       homecnts, homecntsmap, recvcnt,
        coords, outputs, per_proc_statuses, per_proc_retvals,
        operand_indices, time_deriv_order, num_time_derivs,
        local_interp_handle, param_table_handle,
@@ -783,51 +696,35 @@ namespace CarpetInterp {
     //////////////////////////////////////////////////////////////////////
     // Communicate interpolation results
     //////////////////////////////////////////////////////////////////////
-    sendcnt.AT(0) = N_output_arrays * N_points_from.AT(0);
-    recvcnt.AT(0) = N_output_arrays * N_points_to.AT(0);
-    senddispl.AT(0) = recvdispl.AT(0) = 0;
-    for (int p = 1; p < dist::size(); p++) {
-      sendcnt.AT(p) = N_output_arrays * N_points_from.AT(p);
-      recvcnt.AT(p) = N_output_arrays * N_points_to.AT(p);
-      senddispl.AT(p) = senddispl.AT(p-1) + sendcnt.AT(p-1);
-      recvdispl.AT(p) = recvdispl.AT(p-1) + recvcnt.AT(p-1);
-    }
 
     {
+      vector<char> tmp (N_interp_points * N_output_arrays * vtypesize);
+
       MPI_Datatype datatype;
       switch (vtype) {
-#define TYPECASE(N,T)                                                     \
-      case  N: { T dummy; datatype = dist::datatype(dummy); } break;
+#define TYPECASE(N,T)                                                   \
+        case  N: { T dummy; datatype = dist::mpi_datatype(dummy); break; }
 #include "carpet_typecase.hh"
 #undef TYPECASE
-      default: CCTK_WARN (0, "invalid datatype"); abort();
+      default: { CCTK_WARN (0, "invalid datatype"); abort(); }
       }
+      MPI_Type_vector(1, N_output_arrays, 0, datatype, &datatype);
+      MPI_Type_commit(&datatype);
 
-      vector<char> tmp (N_interp_points * N_output_arrays * vtypesize);
-      {
-        assert ((int)sendcnt.size() == dist::size());
-        assert ((int)recvcnt.size() == dist::size());
-        assert ((int)senddispl.size() == dist::size());
-        assert ((int)recvdispl.size() == dist::size());
-        int const sendbufsize = (int)outputs_buffer.size();
-        int const recvbufsize = (int)tmp.size() / vtypesize;
-        for (int n=0; n<dist::size(); ++n) {
-          assert (sendcnt.AT(n) >= 0);
-          assert (senddispl.AT(n) >= 0);
-          assert (senddispl.AT(n) + sendcnt.AT(n) <= sendbufsize);
-          assert (recvcnt.AT(n) >= 0);
-          assert (recvdispl.AT(n) >= 0);
-          assert (recvdispl.AT(n) + recvcnt.AT(n) <= recvbufsize);
-        }
+      static Timer * timer = NULL;
+      if (not timer) {
+        timer = new Timer ("CarpetInterp::recv_points");
       }
-      {
-        static Timer timer ("CarpetInterp::recv_points");
-        timer.start ();
-        MPI_Alltoallv (&outputs_buffer[0], &sendcnt[0], &senddispl[0], datatype,
-                       &tmp[0],            &recvcnt[0], &recvdispl[0], datatype,
-                       dist::comm());
-        timer.stop (N_interp_points * N_output_arrays * vtypesize);
-      }
+      timer->start ();
+      // distribute the results the same way as the coordinates were gathered
+      // simply by interchanging the send/recv counts/displacements
+      MPI_Alltoallv (&outputs_buffer[0], &recvcnt[0], &recvdispl[0], datatype,
+                     &tmp[0],            &sendcnt[0], &senddispl[0], datatype,
+                     dist::comm());
+      timer->stop (N_interp_points * N_output_arrays * vtypesize);
+
+      MPI_Type_free(&datatype);
+
       outputs_buffer.swap (tmp);
     }
 
@@ -843,7 +740,7 @@ namespace CarpetInterp {
         assert (status_and_retval_buffer.size() == tmp.size());
       }
       MPI_Allreduce (&status_and_retval_buffer[0], &tmp[0], tmp.size(),
-                     dist::datatype (tmp[0]), MPI_MIN, dist::comm());
+                     dist::mpi_datatype (tmp[0]), MPI_MIN, dist::comm());
       status_and_retval_buffer.swap (tmp);
       per_proc_statuses = &status_and_retval_buffer.front();
       per_proc_retvals  = per_proc_statuses + dist::size();
@@ -857,7 +754,7 @@ namespace CarpetInterp {
     vector<int> reverse_indices(indices.size());
 #pragma omp parallel for
     for (int i = 0; i < (int)indices.size(); i++) {
-      reverse_indices.AT(indices[i]) = i;
+      reverse_indices[indices[i]] = i;
     }
 
     for (int d = 0; d < N_output_arrays; d++) {
@@ -909,6 +806,7 @@ namespace CarpetInterp {
                                    int const N_interp_points,
                                    int const N_input_arrays,
                                    int const N_output_arrays,
+                                   bool& want_global_mode,
                                    bool& have_source_map,
                                    vector<int>& num_time_derivs,
                                    int& prolongation_order_time,
@@ -920,10 +818,29 @@ namespace CarpetInterp {
   {
     DECLARE_CCTK_PARAMETERS;
 
+    int iret;
+
+    // Do we want to interpolate in global mode, i.e., from all
+    // refinement levels?
+    CCTK_INT want_global_mode1;
+    iret = Util_TableGetInt (param_table_handle,
+                             &want_global_mode1, "want_global_mode");
+    if (iret == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+      want_global_mode = is_global_mode();
+    } else if (iret < 0) {
+      CCTK_WARN (CCTK_WARN_ALERT, "internal error");
+      return -1;
+    } else if (iret != 1) {
+      CCTK_WARN (CCTK_WARN_ALERT, "internal error");
+      return -1;
+    } else {
+      want_global_mode = want_global_mode1;
+    }
+
     // Find source map
     assert ((int)source_map.size() == N_interp_points);
-    int iret = Util_TableGetIntArray (param_table_handle, N_interp_points,
-                                      &source_map.front(), "source_map");
+    iret = Util_TableGetIntArray (param_table_handle, N_interp_points,
+                                  &source_map.front(), "source_map");
     have_source_map = not (iret == UTIL_ERROR_TABLE_NO_SUCH_KEY);
     if (not have_source_map) {
       // No explicit source map specified
@@ -948,14 +865,17 @@ namespace CarpetInterp {
       iret = Util_TableGetIntArray (param_table_handle, source_map.size(),
                                     &source_map.front(), "source_map");
       assert (iret == (int)source_map.size());
+
+#ifndef _NDEBUG
       // Check source map
 #pragma omp parallel for
       for (int n = 0; n < (int)source_map.size(); ++n) {
-        if (not (source_map.AT(n) >= 0 and source_map.AT(n) < maps)) {
-          cout << "CI: n=" << n << " map=" << source_map.AT(n) << endl;
+        if (not (source_map[n] >= 0 and source_map[n] < maps)) {
+          cout << "CI: n=" << n << " map=" << source_map[n] << endl;
         }
-        assert (source_map.AT(n) >= 0 and source_map.AT(n) < maps);
+        assert (source_map[n] >= 0 and source_map[n] < maps);
       }
+#endif
     }
 
     // Find the time interpolation order
@@ -997,8 +917,8 @@ namespace CarpetInterp {
 
     return 0;
   }
-  
-  
+
+
 
   // Find the component and integer index to which a grid point
   // belongs.  This uses a linear search over all components, which
@@ -1016,29 +936,29 @@ namespace CarpetInterp {
                         int & restrict c)
   {
     // cout << "CarpetInterp: assign: m=" << m << " pos=" << pos << endl;
-    
+
     assert (ml>=0 and ml<mglevels);
     assert (minrl>=0 and minrl<maxrl and maxrl<=reflevels);
-    
+
     CCTK_REAL const rone  = 1.0;
     CCTK_REAL const rhalf = rone / 2;
-    
+
     if (all (pos >= lower and pos <= upper)) {
       // The point is within the domain
-      
+
       // Try finer levels first
       for (rl = maxrl-1; rl >= minrl; --rl) {
-        
+
         ivect const fact =
           maxspacereflevelfact / spacereffacts.AT(rl) * ipow(mgfact, ml);
         ivect const ipos =
           ivect(floor((pos - lower) / (delta * rvect(fact)) + rhalf)) * fact;
-        
+
         ivect const & stride = hh->baseextent(ml,rl).stride();
         assert (all (ipos % stride == 0));
-        
+
         gh::cregs const & regs = hh->regions.AT(ml).AT(rl);
-        
+
         // Search all components linearly
         for (c = 0; c < int(regs.size()); ++c) {
           region_t const & reg = regs.AT(c);
@@ -1050,14 +970,14 @@ namespace CarpetInterp {
         }
       }
     }
-    
+
     // The point does not belong to any component.  This should happen
     // only rarely.
     rl = -1;
     c = -1;
   }
-  
-  
+
+
 
   // Find the component and integer index to which a grid point
   // belongs.  This uses a tree search over the superregions in the
@@ -1076,29 +996,29 @@ namespace CarpetInterp {
                       int & restrict c)
   {
     // cout << "CarpetInterp: assign: m=" << m << " pos=" << pos << endl;
-    
+
     assert (ml>=0 and ml<mglevels);
     assert (minrl>=0 and minrl<maxrl and maxrl<=reflevels);
-    
+
     CCTK_REAL const rone  = 1.0;
     CCTK_REAL const rhalf = rone / 2;
-    
+
     if (all (pos >= lower and pos <= upper)) {
       // The point is within the domain
-      
+
       // Try finer levels first
       for (rl = maxrl-1; rl >= minrl; --rl) {
-        
+
         ivect const fact =
           maxspacereflevelfact / spacereffacts.AT(rl) * ipow(mgfact, ml);
         ivect const ipos =
           ivect(floor((pos - lower) / (delta * rvect(fact)) + rhalf)) * fact;
-        
+
         ivect const & stride = hh->baseextent(ml,rl).stride();
         assert (all (ipos % stride == 0));
-        
+
         gh::cregs const & regs = hh->superregions.AT(rl);
-        
+
         // Search all superregions linearly.  Each superregion
         // corresponds to a "refined region", and the number of
         // superregions is thus presumably independent of the number
@@ -1108,11 +1028,11 @@ namespace CarpetInterp {
           if (reg.extent.contains(ipos)) {
             // We found the superregion to which this grid point
             // belongs
-            
+
             // Search the superregion hierarchically
             pseudoregion_t const * const preg = reg.processors->search(ipos);
             assert (preg);
-            
+
             // We now know the refinement level, component, and index
             // to which this grid point belongs
             c = preg->component;
@@ -1121,15 +1041,15 @@ namespace CarpetInterp {
         }
       }
     }
-    
+
     // The point does not belong to any component.  This should happen
     // only rarely.
     rl = -1;
     c = -1;
   }
-  
-  
-  
+
+
+
   static void
   map_points (cGH const* const cctkGH,
               int const coord_system_handle,
@@ -1139,14 +1059,16 @@ namespace CarpetInterp {
               int const maxrl,
               int const maxncomps,
               int const N_dims,
+              int const ndims,
               int const npoints,
               vector<CCTK_INT> & source_map,
               void const* const coords_list[],
-              vector<CCTK_REAL> const& coords,
+              CCTK_REAL const * const coords,
               vector<int>& procs,
-              vector<int>& N_points_to,
+              vector<int>& sendcnt,
               vector<int>& rlev,
               vector<int>& home,
+              std::map<int, int>& homecntsmap,
               vector<int>& homecnts)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -1155,13 +1077,11 @@ namespace CarpetInterp {
     if (not timer) timer = new Timer ("CarpetInterp::map_points");
     timer->start ();
 
+    assert (npoints == 0 or coords or coords_list);
     bool const map_onto_processors = coords_list != NULL;
 
-    if (not map_onto_processors) {
-      assert ((int)coords.size() == N_dims * npoints);
-    }
     assert ((int)procs.size() == npoints);
-    assert ((int)N_points_to.size() == dist::size());
+    assert ((int)sendcnt.size() == dist::size());
     assert ((int)rlev.size() == npoints);
     assert ((int)home.size() == npoints);
     assert ((int)source_map.size() == npoints);
@@ -1172,10 +1092,10 @@ namespace CarpetInterp {
     vector<rvect> lower (maps);
     vector<rvect> upper (maps);
     vector<rvect> delta (maps); // spacing on finest possible grid
-    
+
     int const grouptype = CCTK_GroupTypeI (coord_group);
     switch (grouptype) {
-      
+
     case CCTK_GF: {
       for (int m = 0; m < Carpet::maps; ++ m) {
         jvect gsh;
@@ -1186,21 +1106,21 @@ namespace CarpetInterp {
       }
       break;
     }
-      
+
     case CCTK_SCALAR:
     case CCTK_ARRAY: {
-      
+
       rvect coord_lower, coord_upper;
       char const * const coord_system_name =
         CCTK_CoordSystemName (coord_system_handle);
-      
+
       for (int d = 0; d < N_dims; ++ d) {
         int const iret = CCTK_CoordRange (cctkGH, &coord_lower[d],
                                           &coord_upper[d], d+1,
                                           NULL, coord_system_name);
         assert (iret == 0);
       }
-      
+
       assert (arrdata.AT(coord_group).size() == 1);
       int const m = 0;
       ibbox const & baseextent =
@@ -1211,10 +1131,13 @@ namespace CarpetInterp {
                      rvect (baseextent.upper() - baseextent.lower()));
       break;
     }
-      
+
     default:
       assert (0);
     }
+
+    // Clear the components hash map
+    homecntsmap.clear();
 
     // Assign interpolation points to processors/components
 #pragma omp parallel for
@@ -1226,20 +1149,20 @@ namespace CarpetInterp {
       gh const * hh = NULL;
 
       if (m >= 0) {
-        
+
         hh = arrdata.AT(coord_group).AT(m).hh;
-        
+
         // Find the grid point closest to the interpolation point
         for (int d = 0; d < N_dims; ++d) {
           if (map_onto_processors) {
             pos[d] = static_cast<CCTK_REAL const *>(coords_list[d])[n];
           } else {
-            pos[d] = coords[N_dims*n + d];
+            pos[d] = coords[ndims*n + d];
           }
         }
-        
+
         // Find the component that this grid point belongs to
-        
+
         // Calculate rl, c, and proc
         if (not tree_search) {
           find_location_linear
@@ -1262,12 +1185,12 @@ namespace CarpetInterp {
             }
           }
         }
-        
+
       } // if m >= 0
-      
+
       if (c == -1) {
         // The point could not be mapped onto any component
-        
+
         // Warn only once, namely when mapping points onto processors.
         // (This routine is called twice; first to map points onto
         // processors, then to map points onto components.)
@@ -1277,13 +1200,13 @@ namespace CarpetInterp {
                       "Interpolation point #%d at [%g,%g,%g] of patch #%d is not on any component",
                       n, (double)pos[0], (double)pos[1], (double)pos[2], (int)m);
         }
-        
+
         // Map the point (arbitrarily) to the first component of the
         // coarsest grid
         // TODO: Handle these points explicitly later on
         rl = minrl;
         c = 0;
-        
+
         // Find a patch which exists on this processor
         for (m=0; m<maps; ++m) {
           hh = arrdata.AT(coord_group).AT(m).hh;
@@ -1291,7 +1214,8 @@ namespace CarpetInterp {
         }
         assert (m < maps);
       }
-      
+
+#ifndef _NDEBUG
       if (not (rl >= minrl and rl < maxrl) or
           not (c >= 0 and c < hh->components(rl)))
       {
@@ -1299,21 +1223,42 @@ namespace CarpetInterp {
       }
       assert (rl >= minrl and rl < maxrl);
       assert (c >= 0 and c < hh->components(rl));
-      
+#endif
+
       if (map_onto_processors) {
         int const proc = hh->processor(rl,c);
         procs.AT(n) = proc;
-        int & this_N_points_to = N_points_to.AT(proc);
+        int & this_sendcnt = sendcnt.AT(proc);
 #pragma omp atomic
-        ++ this_N_points_to;
+        ++ this_sendcnt;
       }
       rlev.AT(n) = rl;
       home.AT(n) = c;
-      int & this_homecnts = homecnts.AT(component_idx (procs.AT(n), m, rl, c));
-#pragma omp atomic
-      ++ this_homecnts;
-      
+      int const cidx = component_idx (procs.AT(n), m, rl, c);
+// only scalars of intrinsic type can be atomically updated
+//#pragma omp atomic
+#pragma omp critical
+      {
+        homecntsmap[cidx]++;
+      }
+
     } // for n
+
+    // allocate and fill the (dense) homecnts vector from the hash map
+    homecnts.resize (homecntsmap.size());
+    {
+      int c = 0;
+      for (std::map<int, int>::iterator it = homecntsmap.begin();
+           it != homecntsmap.end(); it++) {
+        // store the number of points of this component in homecnts
+        assert (it->second > 0);
+        homecnts.AT(c) = it->second;
+        // save the homecnts index in the hash map
+        it->second = c++;
+      }
+      assert (c == (int)homecnts.size());
+    }
+
     timer->stop (npoints);
   }
 
@@ -1328,13 +1273,15 @@ namespace CarpetInterp {
                           bool const want_global_mode,
                           int const prolongation_order_time,
                           int const N_dims,
-                          vector<int> & homecnts,
-                          vector<CCTK_REAL*>& coords,
-                          vector<char*>& outputs,
+                          vector<int> const & homecnts,
+                          std::map<int, int> const & homecntsmap,
+                          vector<CCTK_INT> const & recvcnt,
+                          vector<CCTK_REAL*> const & coords,
+                          vector<char*> const & outputs,
                           CCTK_INT* const per_proc_statuses,
                           CCTK_INT* const per_proc_retvals,
-                          vector<CCTK_INT>& operand_indices,
-                          vector<CCTK_INT>& time_deriv_order,
+                          vector<CCTK_INT> const & operand_indices,
+                          vector<CCTK_INT> const & time_deriv_order,
                           vector<int> const & num_time_derivs,
                           CCTK_INT const local_interp_handle,
                           CCTK_INT const param_table_handle,
@@ -1364,22 +1311,24 @@ namespace CarpetInterp {
       }
     }
 
-    {
-      // Ensure that this processor is only supposed to interpolate
-      // points from maps and components that are actually located on
-      // this processor
-      for (int rl=minrl; rl<maxrl; ++rl) {
-        for (int m=0; m<maps; ++m) {
-          gh const * const hh = arrdata.AT(coord_group).AT(m).hh;
-          for (int c=0; c<hh->components(rl); ++c) {
-            for (int p=0; p<dist::size(); ++p) {
-              int const idx = component_idx (p, m, rl, c);
-              assert (hh->is_local(rl, c) or homecnts.AT(idx) == 0);
+#ifndef _NDEBUG
+    // Ensure that this processor is only supposed to interpolate
+    // points from maps and components that are actually located on
+    // this processor
+    for (int rl=minrl; rl<maxrl; ++rl) {
+      for (int m=0; m<maps; ++m) {
+        gh const * const hh = arrdata.AT(coord_group).AT(m).hh;
+        for (int c=0; c<hh->components(rl); ++c) {
+          for (int p=0; p<dist::size(); ++p) {
+            int const cidx = component_idx (p, m, rl, c);
+            if (homecntsmap.find(cidx) != homecntsmap.end()) {
+              assert (hh->is_local(rl, c));
             }
           }
         }
       }
     }
+#endif
 
     // TODO: Don't use explicit mode switching; code the loops
     // manually
@@ -1410,14 +1359,20 @@ namespace CarpetInterp {
                       : 1));
           }
 
-          BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+          BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
             BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
 
               for (int p = 0; p < dist::size(); p++) {
-                int const idx =
-                  component_idx (p, Carpet::map,reflevel,component);
-                //cout << "CarpetInterp: interpolate_single_component: rl=" << reflevel << " map=" << (Carpet::map) << " component=" << component << " p=" << p << endl;
-                if (homecnts.AT(idx) > 0) {
+                // short cut if there's nothing to interpolate for processor p
+                if (recvcnt[p] <= 0) continue;
+
+                int const cidx =
+                  component_idx (p, Carpet::map, reflevel, component);
+                std::map<int,int>::const_iterator it = homecntsmap.find(cidx);
+                if (it != homecntsmap.end()) {
+                  //cout << "CarpetInterp: interpolate_single_component: rl=" << reflevel << " map=" << (Carpet::map) << " component=" << component << " p=" << p << endl;
+                  int const idx = it->second;
+                  assert (idx < (int)homecnts.size());
                   interpolate_single_component
                     (cctkGH, coord_system_handle, coord_group,
                      N_dims,
@@ -1433,7 +1388,7 @@ namespace CarpetInterp {
               } // for p
 
             } END_LOCAL_COMPONENT_LOOP;
-          } END_MAP_LOOP;
+          } END_LOCAL_MAP_LOOP;
 
         } LEAVE_LEVEL_MODE;
       } // for rl
@@ -1599,9 +1554,9 @@ namespace CarpetInterp {
                                 char* const outputs,
                                 CCTK_INT& overall_status,
                                 CCTK_INT& overall_retval,
-                                vector<CCTK_INT>& operand_indices,
-                                vector<CCTK_INT>& time_deriv_order,
-                                vector<CCTK_INT>& interp_num_time_levels,
+                                vector<CCTK_INT> const & operand_indices,
+                                vector<CCTK_INT> const & time_deriv_order,
+                                vector<CCTK_INT> const & interp_num_time_levels,
                                 CCTK_INT const local_interp_handle,
                                 CCTK_INT const param_table_handle,
                                 vector<int> const & num_tl,
@@ -1633,7 +1588,7 @@ namespace CarpetInterp {
     // Get global origin and spacing of the underlying coordinate system
     int const grouptype = CCTK_GroupTypeI (coord_group);
     switch (grouptype) {
-      
+
     case CCTK_GF: {
       jvect gsh;
       GetCoordRange (cctkGH, Carpet::map, mglevel, dim,
@@ -1642,7 +1597,7 @@ namespace CarpetInterp {
       delta /= maxspacereflevelfact;
       break;
     }
-      
+
     case CCTK_SCALAR:
     case CCTK_ARRAY: {
 #ifdef NEW_COORD_API
@@ -1655,13 +1610,13 @@ namespace CarpetInterp {
       char const * const coord_system_name =
         CCTK_CoordSystemName (coord_system_handle);
       assert (CCTK_CoordSystemDim (coord_system_name) >= N_dims);
-      
+
       for (int d = 0; d < N_dims; ++ d) {
         int const iret = CCTK_CoordRange (cctkGH, &lower[d], &upper[d], d+1,
                                           NULL, coord_system_name);
         assert (iret == 0);
       }
-      
+
       int const m = 0;
       // delta for the Carpet grid indices
       ibbox const & baseextent =
@@ -1670,7 +1625,7 @@ namespace CarpetInterp {
 #endif
       break;
     }
-      
+
     default:
       assert (0);
     }
@@ -1721,7 +1676,7 @@ namespace CarpetInterp {
           // if the desired timelevel does not exist
           int const my_tl = tl >= interp_num_tl ? 0 : tl;
           assert (my_tl < num_tl.AT(n));
-          
+
           // Are there enough time levels?
           int const active_tl = CCTK_ActiveTimeLevelsVI (cctkGH, vi);
           if (active_tl <= my_tl) {
@@ -1731,7 +1686,7 @@ namespace CarpetInterp {
                         fullname, active_tl, reflevel);
             free (fullname);
           }
-          
+
 #if 0
           input_arrays[n] = CCTK_VarDataPtrI (cctkGH, my_tl, vi);
 #else
@@ -1739,7 +1694,7 @@ namespace CarpetInterp {
           int const vi0 = CCTK_FirstVarIndexI (gi);
           input_arrays[n]
             = ((*arrdata.AT(gi).AT(Carpet::map).data.AT(vi-vi0))
-               (my_tl, reflevel, component, mglevel)->storage());
+               (my_tl, reflevel, local_component, mglevel)->storage());
 #endif
         }
       } // for input arrays
@@ -1818,7 +1773,7 @@ namespace CarpetInterp {
             dest += tfacs[tl] * src;
           }
         }
-        
+
         for (int tl=0; tl<max_num_tl; ++tl) {
           delete [] (CCTK_REAL *)tmp_output_arrays[tl][j];
         }

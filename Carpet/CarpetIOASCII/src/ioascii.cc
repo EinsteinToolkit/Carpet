@@ -34,6 +34,10 @@ namespace Carpet {
 }
 
 
+#define GetParameter(parameter) \
+  outdim == 0 ? out0D_##parameter : \
+  outdim == 1 ? out1D_##parameter : \
+  outdim == 2 ? out2D_##parameter : out3D_##parameter
 
 namespace CarpetIOASCII {
   
@@ -154,7 +158,7 @@ namespace CarpetIOASCII {
     DECLARE_CCTK_PARAMETERS;
     
     // re-parse the 'IOASCII::out%dD_dir' parameter if it has changed
-    const char* the_out_dir = GetStringParameter("out%dD_dir");
+    const char* the_out_dir = GetParameter(dir);
     if (CCTK_EQUALS (the_out_dir, "")) {
       the_out_dir = out_dir;
     }
@@ -177,7 +181,7 @@ namespace CarpetIOASCII {
     }
     
     // re-parse the 'IOASCII::out%d_vars' parameter if it has changed
-    const char* const out_vars = GetStringParameter("out%dD_vars");
+    const char* const out_vars = GetParameter(vars);
     if (strcmp (out_vars, my_out_vars)) {
       ostringstream parameter_name;
       parameter_name << "IOASCII::out" << outdim << "D_vars";
@@ -191,7 +195,7 @@ namespace CarpetIOASCII {
         int count = 0;
         ostringstream msg;
         msg << "Periodic " << outdim << "D AMR output requested for:";
-        for (int vi=0; vi< CCTK_NumVars(); ++vi) {
+        for (int vi=0; vi<CCTK_NumVars(); ++vi) {
           if (requests.at(vi)) {
             ++count;
             char* const fullname = CCTK_FullName(vi);
@@ -218,7 +222,7 @@ namespace CarpetIOASCII {
     static Carpet::Timer * timer = NULL;
     if (not timer) {
       ostringstream timer_name;
-      timer_name << "CarpetIOASCII<" << outdim << ">::OutputVarAs";
+      timer_name << "CarpetIOASCII<" << outdim << ">::OutputGH";
       timer = new Carpet::Timer (timer_name.str().c_str());
     }
     
@@ -262,7 +266,7 @@ namespace CarpetIOASCII {
     // check if output for this variable was requested individually by
     // a "<varname>{ out_every = <number> }" option string
     // this will overwrite the output criterion setting
-    const char* myoutcriterion = GetStringParameter("out%dD_criterion");
+    const char* myoutcriterion = GetParameter(criterion);
     if (CCTK_EQUALS(myoutcriterion, "default")) {
       myoutcriterion = out_criterion;
     }
@@ -278,7 +282,7 @@ namespace CarpetIOASCII {
     bool output_this_iteration = false;
     
     if (CCTK_EQUALS (myoutcriterion, "iteration")) {
-      int myoutevery = GetIntParameter("out%dD_every");
+      int myoutevery = GetParameter(every);
       if (myoutevery == -2) {
         myoutevery = out_every;
       }
@@ -295,7 +299,7 @@ namespace CarpetIOASCII {
         }
       }
     } else if (CCTK_EQUALS (myoutcriterion, "divisor")) {
-      int myoutevery = GetIntParameter("out%dD_every");
+      int myoutevery = GetParameter(every);
       if (myoutevery == -2) {
         myoutevery = out_every;
       }
@@ -307,7 +311,7 @@ namespace CarpetIOASCII {
         output_this_iteration = true;
       }
     } else if (CCTK_EQUALS (myoutcriterion, "time")) {
-      CCTK_REAL myoutdt = GetRealParameter("out%dD_dt");
+      CCTK_REAL myoutdt = GetParameter(dt);
       if (myoutdt == -2) {
         myoutdt = out_dt;
       }
@@ -536,33 +540,28 @@ namespace CarpetIOASCII {
                 file);
       
       // Find the output offset
-      ivect offset;
-      if (groupdata.grouptype == CCTK_GF) {
-        offset = GetOutputOffset (cctkGH, m, dirs);
-      } else {
-        offset = 0;
-      }
+      const ivect offset =
+        groupdata.grouptype == CCTK_GF ? GetOutputOffset (cctkGH, m, dirs) : 0;
+      
+      const gh* const hh = arrdata.at(group).at(m).hh;
+      const dh* const dd = arrdata.at(group).at(m).dd;
       
       // Traverse all components on this multigrid level, refinement
       // level, and map
       const int c_min = 0;
       const int c_max =
         groupdata.grouptype == CCTK_GF ?
-        vhh.at(m)->components(reflevel) :
+        hh->components(reflevel) :
         groupdata.disttype != CCTK_DISTRIB_CONSTANT ?
         CCTK_nProcs(cctkGH) :
         1;
       for (int c = c_min; c < c_max; ++ c) {
-        
-        const ggf* const ff = arrdata.at(group).at(m).data.at(var);
-        
-        const int tl_min = 0;
-        const int tl_max = output_all_timelevels ? num_tl : 1;
-        for (int tl = tl_min; tl < tl_max; ++tl) {
+        int const lc = hh->get_local_component(rl,c);
+        int const proc = hh->processor(rl,c);
+        if (dist::rank() == proc or dist::rank() == ioproc) {
           
-          const gdata* const data = (*ff) (tl, rl, c, ml);
-          const ibbox ext = GetOutputBBox (cctkGH, group, m, c,
-                                           data->extent());
+          const ibbox& data_ext = dd->boxes.at(ml).at(rl).at(c).exterior;
+          const ibbox ext = GetOutputBBox (cctkGH, group, m, c, data_ext);
           
           CCTK_REAL coord_time;
           rvect coord_lower, coord_upper;
@@ -572,7 +571,7 @@ namespace CarpetIOASCII {
           // Apply offset
           ivect offset1;
           if (groupdata.grouptype == CCTK_GF) {
-            const ibbox& baseext = vhh.at(m)->baseextents.at(ml).at(rl);
+            const ibbox& baseext = hh->baseextents.at(ml).at(rl);
             offset1 = baseext.lower() + offset * ext.stride();
           } else {
             offset1 = offset * ext.stride();
@@ -583,35 +582,80 @@ namespace CarpetIOASCII {
             }
           }
           
-          vector<const gdata*> datas;
-          if (one_file_per_group) {
-            const int numvars = CCTK_NumVarsInGroupI(group);
-            datas.resize (numvars);
-            for (int n=0; n<numvars; ++n) {
-              const ggf* const ff1 = arrdata.at(group).at(m).data.at(n);
-              datas.at(n) = (*ff1) (tl, rl, c, ml);
+          const int tl_min = 0;
+          const int tl_max = output_all_timelevels ? num_tl : 1;
+          for (int tl = tl_min; tl < tl_max; ++tl) {
+            
+            mempool pool;
+            
+            const int n_min = one_file_per_group ? 0 : var;
+            const int n_max =
+              one_file_per_group ? CCTK_NumVarsInGroupI(group) : var+1;
+            vector<const gdata*> datas(n_max - n_min);
+            for (size_t n = 0; n < datas.size(); ++ n) {
+              if (dist::rank() == proc) {
+                const ggf* const ff =
+                  arrdata.at(group).at(m).data.at(n + n_min);
+                datas.at(n) = (*ff) (tl, rl, lc, ml);
+              } else {
+                datas.at(n) = NULL;
+              }
             }
-          } else {
-            datas.resize (1);
-            datas.at(0) = data;
-          }
-          
-          WriteASCII (file, datas, ext, vindex, cctkGH->cctk_iteration,
-                      offset1, dirs,
-                      rl, ml, m, c, tl,
-                      coord_time, coord_lower, coord_upper);
-          
-          // Append EOL after every component
-          if (dist::rank()==ioproc) {
-            if (separate_components) {
+            
+            vector<gdata*> tmpdatas(datas.size());
+            
+            if (proc != ioproc) {
+              
+              for (size_t n = 0; n < datas.size(); ++ n) {
+                const ggf* const ff =
+                  arrdata.at(group).at(m).data.at(n + n_min);
+                tmpdatas.at(n) = ff->typed_data (tl, rl, c, ml);
+                size_t const memsize =
+                  tmpdatas.at(n)->allocsize (data_ext, ioproc);
+                void * const memptr = pool.alloc (memsize);
+                tmpdatas.at(n)->allocate(data_ext, ioproc, memptr, memsize);
+              } // for n
+              
+              for (comm_state state; not state.done(); state.step()) {
+                for (size_t n=0; n<datas.size(); ++n) {
+                  tmpdatas.at(n)->copy_from
+                    (state, datas.at(n), data_ext, ioproc, proc);
+                }
+              }
+              
+            } else {
+              
+              for (size_t n=0; n<datas.size(); ++n) {
+                tmpdatas.at(n) = const_cast<gdata*> (datas.at(n));
+              }
+              
+            }
+            
+            if (dist::rank() == ioproc) {
+              WriteASCII (file, tmpdatas, ext, vindex, cctkGH->cctk_iteration,
+                          offset1, dirs,
+                          rl, ml, m, c, tl,
+                          coord_time, coord_lower, coord_upper);
+            }
+            
+            if (proc != ioproc) {
+              for (size_t n=0; n<tmpdatas.size(); ++n) {
+                delete tmpdatas.at(n);
+              }
+            }
+            
+            // Append EOL after every component
+            if (dist::rank() == ioproc) {
+              if (separate_components) {
+                assert (file.good());
+                file << eol;
+              }
               assert (file.good());
-              file << eol;
             }
-            assert (file.good());
-          }
+            
+          } // for tl
           
-        } // for tl
-        
+        }
       } // for c
       
       // Append EOL after every complete set of components
@@ -916,16 +960,16 @@ namespace CarpetIOASCII {
     case 0:
       // 0D output
       offset[0] = GetGridOffset (cctkGH, m, 1,
-                                 "out%dD_point_xi", /*"out_point_xi"*/ NULL,
-                                 "out%dD_point_x",  /*"out_point_x"*/  NULL,
+                                 "out0D_point_xi", /*"out_point_xi"*/ NULL,
+                                 "out0D_point_x",  /*"out_point_x"*/  NULL,
                                  /*out_point_x*/ 0.0);
       offset[1] = GetGridOffset (cctkGH, m, 2,
-                                 "out%dD_point_yi", /*"out_point_yi"*/ NULL,
-                                 "out%dD_point_y",  /*"out_point_y"*/  NULL,
+                                 "out0D_point_yi", /*"out_point_yi"*/ NULL,
+                                 "out0D_point_y",  /*"out_point_y"*/  NULL,
                                  /*out_point_y*/ 0.0);
       offset[2] = GetGridOffset (cctkGH, m, 3,
-                                 "out%dD_point_zi", /*"out_point_zi"*/ NULL,
-                                 "out%dD_point_z",  /*"out_point_z"*/  NULL,
+                                 "out0D_point_zi", /*"out_point_zi"*/ NULL,
+                                 "out0D_point_z",  /*"out_point_z"*/  NULL,
                                  /*out_point_z*/ 0.0);
       break;
       
@@ -934,32 +978,32 @@ namespace CarpetIOASCII {
       switch (dirs[0]) {
       case 0:
         offset[1] = GetGridOffset (cctkGH, m, 2,
-                                   "out%dD_xline_yi", "out_xline_yi",
-                                   "out%dD_xline_y",  "out_xline_y",
+                                   "out1D_xline_yi", "out_xline_yi",
+                                   "out1D_xline_y",  "out_xline_y",
                                    out_xline_y);
         offset[2] = GetGridOffset (cctkGH, m, 3,
-                                   "out%dD_xline_zi", "out_xline_zi",
-                                   "out%dD_xline_z",  "out_xline_z",
+                                   "out1D_xline_zi", "out_xline_zi",
+                                   "out1D_xline_z",  "out_xline_z",
                                    out_xline_z);
         break;
       case 1:
         offset[0] = GetGridOffset (cctkGH, m, 1,
-                                   "out%dD_yline_xi", "out_yline_xi",
-                                   "out%dD_yline_x",  "out_yline_x",
+                                   "out1D_yline_xi", "out_yline_xi",
+                                   "out1D_yline_x",  "out_yline_x",
                                    out_yline_x);
         offset[2] = GetGridOffset (cctkGH, m, 3,
-                                   "out%dD_yline_zi", "out_yline_zi",
-                                   "out%dD_yline_z",  "out_yline_z",
+                                   "out1D_yline_zi", "out_yline_zi",
+                                   "out1D_yline_z",  "out_yline_z",
                                    out_yline_z);
         break;
       case 2:
         offset[0] = GetGridOffset (cctkGH, m, 1,
-                                   "out%dD_zline_xi", "out_zline_xi",
-                                   "out%dD_zline_x",  "out_zline_x",
+                                   "out1D_zline_xi", "out_zline_xi",
+                                   "out1D_zline_x",  "out_zline_x",
                                    out_zline_x);
         offset[1] = GetGridOffset (cctkGH, m, 2,
-                                   "out%dD_zline_yi", "out_zline_yi",
-                                   "out%dD_zline_y",  "out_zline_y",
+                                   "out1D_zline_yi", "out_zline_yi",
+                                   "out1D_zline_y",  "out_zline_y",
                                    out_zline_y);
         break;
       case 3:
@@ -974,18 +1018,18 @@ namespace CarpetIOASCII {
       // 2D output
       if (dirs[0]==0 and dirs[1]==1) {
         offset[2] = GetGridOffset (cctkGH, m, 3,
-                                   "out%dD_xyplane_zi", "out_xyplane_zi",
-                                   "out%dD_xyplane_z",  "out_xyplane_z",
+                                   "out2D_xyplane_zi", "out_xyplane_zi",
+                                   "out2D_xyplane_z",  "out_xyplane_z",
                                    out_xyplane_z);
       } else if (dirs[0]==0 and dirs[1]==2) {
         offset[1] = GetGridOffset (cctkGH, m, 2,
-                                   "out%dD_xzplane_yi", "out_xzplane_yi",
-                                   "out%dD_xzplane_y",  "out_xzplane_y",
+                                   "out2D_xzplane_yi", "out_xzplane_yi",
+                                   "out2D_xzplane_y",  "out_xzplane_y",
                                    out_xzplane_y);
       } else if (dirs[0]==1 and dirs[1]==2) {
         offset[0] = GetGridOffset (cctkGH, m, 1,
-                                   "out%dD_yzplane_xi", "out_yzplane_xi",
-                                   "out%dD_yzplane_x",  "out_yzplane_x",
+                                   "out2D_yzplane_xi", "out_yzplane_xi",
+                                   "out2D_yzplane_x",  "out_yzplane_x",
                                    out_yzplane_x);
       } else {
         assert (0);
@@ -1006,11 +1050,10 @@ namespace CarpetIOASCII {
 
 
   // Omit symmetry and ghost zones if requested
-  template<int outdim>
-  ibbox IOASCII<outdim>::GetOutputBBox (const cGH* const cctkGH,
-                                        const int group,
-                                        const int m, const int c,
-                                        const ibbox& ext)
+  ibbox GetOutputBBox (const cGH* const cctkGH,
+                       const int group,
+                       const int m, const int c,
+                       const ibbox& ext)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -1074,12 +1117,11 @@ namespace CarpetIOASCII {
   
   
   // Determine coordinates
-  template<int outdim>
-  void IOASCII<outdim>::GetCoordinates (const cGH* const cctkGH, const int m,
-                                        const cGroup& groupdata,
-                                        const ibbox& ext,
-                                        CCTK_REAL& coord_time,
-                                        rvect& coord_lower, rvect& coord_upper)
+  void GetCoordinates (const cGH* const cctkGH, const int m,
+                       const cGroup& groupdata,
+                       const ibbox& ext,
+                       CCTK_REAL& coord_time,
+                       rvect& coord_lower, rvect& coord_upper)
   {
     coord_time = cctkGH->cctk_time;
     
@@ -1108,16 +1150,12 @@ namespace CarpetIOASCII {
   
   
   
-  template<int outdim>
-  int IOASCII<outdim>
-  ::GetGridOffset (const cGH* const cctkGH, const int m, const int dir,
-		   const char* const itempl, const char* const iglobal,
-		   const char* const ctempl, const char* const cglobal,
-		   const CCTK_REAL cfallback)
+  int GetGridOffset (const cGH* const cctkGH, const int m, const int dir,
+                     const char* const iparam, const char* const iglobal,
+                     const char* const cparam, const char* const cglobal,
+                     const CCTK_REAL cfallback)
   {
     // First choice: explicit coordinate
-    char cparam[1000];
-    snprintf (cparam, sizeof cparam, ctempl, outdim);
     const int ncparam = CCTK_ParameterQueryTimesSet (cparam, CCTK_THORNSTRING);
     assert (ncparam >= 0);
     if (ncparam > 0) {
@@ -1132,8 +1170,6 @@ namespace CarpetIOASCII {
     }
 
     // Second choice: explicit index
-    char iparam[1000];
-    snprintf (iparam, sizeof iparam, itempl, outdim);
     const int niparam = CCTK_ParameterQueryTimesSet (iparam, CCTK_THORNSTRING);
     assert (niparam >= 0);
     if (niparam > 0) {
@@ -1184,10 +1220,8 @@ namespace CarpetIOASCII {
 
 
 
-  template<int outdim>
-  int IOASCII<outdim>
-  ::CoordToOffset (const cGH* cctkGH, const int m, const int dir,
-                   const CCTK_REAL coord, const int ifallback)
+  int CoordToOffset (const cGH* cctkGH, const int m, const int dir,
+                     const CCTK_REAL coord, const int ifallback)
   {
     assert (m>=0 and m<Carpet::maps and dir>=1 and dir<=dim);
 
@@ -1212,59 +1246,6 @@ namespace CarpetIOASCII {
 
 
 
-  template<int outdim>
-  const char* IOASCII<outdim>
-  ::GetStringParameter (const char* const parametertemplate)
-  {
-    char parametername[1000];
-    snprintf (parametername, sizeof parametername, parametertemplate, outdim);
-    int ptype;
-    const char* const* const ppval = (const char* const*)CCTK_ParameterGet
-      (parametername, CCTK_THORNSTRING, &ptype);
-    assert (ppval);
-    const char* const pval = *ppval;
-    assert (ptype == PARAMETER_STRING or ptype == PARAMETER_KEYWORD);
-    return pval;
-  }
-
-
-
-  template<int outdim>
-  CCTK_INT IOASCII<outdim>
-  ::GetIntParameter (const char* const parametertemplate)
-  {
-    char parametername[1000];
-    snprintf (parametername, sizeof parametername, parametertemplate, outdim);
-    int ptype;
-    const CCTK_INT* const ppval
-      = (const CCTK_INT*)CCTK_ParameterGet
-      (parametername, CCTK_THORNSTRING, &ptype);
-    assert (ppval);
-    assert (ptype == PARAMETER_INT or ptype == PARAMETER_BOOLEAN);
-    const CCTK_INT pval = *ppval;
-    return pval;
-  }
-
-
-
-  template<int outdim>
-  CCTK_REAL IOASCII<outdim>
-  ::GetRealParameter (const char* const parametertemplate)
-  {
-    char parametername[1000];
-    snprintf (parametername, sizeof parametername, parametertemplate, outdim);
-    int ptype;
-    const CCTK_REAL* const ppval
-      = (const CCTK_REAL*)CCTK_ParameterGet
-      (parametername, CCTK_THORNSTRING, &ptype);
-    assert (ppval);
-    assert (ptype == PARAMETER_REAL);
-    const CCTK_REAL pval = *ppval;
-    return pval;
-  }
-
-
-
   CCTK_REAL nicelooking (const CCTK_REAL val,
                          const CCTK_REAL base)
   {
@@ -1276,7 +1257,7 @@ namespace CarpetIOASCII {
   // Output
   template<int outdim>
   void WriteASCII (ostream& os,
-		   vector<const gdata*> const gfdatas,
+		   vector<gdata*> const gfdatas,
 		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
@@ -1292,228 +1273,196 @@ namespace CarpetIOASCII {
 		   const vect<CCTK_REAL,dim>& coord_upper)
   {
     DECLARE_CCTK_PARAMETERS;
-
+    
     assert (outdim<=dim);
+    
     const int vartype = CCTK_VarTypeI(vi);
-
-    bool all_on_root = true;
-    for (size_t n=0; n<gfdatas.size(); ++n) {
-      all_on_root &= gfdatas.at(n)->proc() == ioproc;
-    }
-    if (all_on_root) {
-      // output on processor 0
-
-      if (dist::rank() == ioproc) {
-
-        if (CCTK_EQUALS (out_fileinfo, "axis labels") or
-            CCTK_EQUALS (out_fileinfo, "all"))
-        {
-
-          assert (os.good());
-
-          os << "# iteration " << time << eol
-             << "# refinement level " << rl
-             << "   multigrid level " << ml
-             << "   map " << m
-             << "   component " << c
-             << "   time level " << tl
-             << eol
-             << "# column format: 1:it\t2:tl 3:rl 4:c 5:ml";
-          int col=6;
-          assert (dim>=1 and dim<=3);
-          const char* const coords = "xyz";
+    
+    if (CCTK_EQUALS (out_fileinfo, "axis labels") or
+        CCTK_EQUALS (out_fileinfo, "all"))
+    {
+      
+      assert (os.good());
+      
+      os << "# iteration " << time << eol
+         << "# refinement level " << rl
+         << "   multigrid level " << ml
+         << "   map " << m
+         << "   component " << c
+         << "   time level " << tl
+         << eol
+         << "# column format: 1:it\t2:tl 3:rl 4:c 5:ml";
+      int col=6;
+      assert (dim>=1 and dim<=3);
+      const char* const coords = "xyz";
+      for (int d=0; d<dim; ++d) {
+        os << (d==0 ? "\t" : " ") << col++ << ":i" << coords[d];
+      }
+      os << "\t" << col++ << ":time";
+      for (int d=0; d<dim; ++d) {
+        os << (d==0 ? "\t" : " ") << col++ << ":" << coords[d];
+      }
+      os << "\t" << col << ":data" << eol;
+      if (one_file_per_group) {
+        os << "# data columns:";
+        int const gindex = CCTK_GroupIndexFromVarI(vi);
+        int const firstvar = CCTK_FirstVarIndexI(gindex);
+        int const numvars = CCTK_NumVarsInGroupI(gindex);
+        for (int n=firstvar; n<firstvar+numvars; ++n) {
+          os << " " << col << ":" << CCTK_VarName(n);
+          col += CarpetSimpleMPIDatatypeLength (vartype);
+        }
+        os << eol;
+      }
+      
+    } // if out_fileinfo
+    
+    // boolean that says if we are doing 1D-diagonal output
+    // This is not beautiful, but works for the moment
+    bool const diagonal_output = outdim == 1 and dirs[0] == 3;
+    
+    if (not diagonal_output) { // not outputting the diagonal
+      
+      const vect<int,outdim> lo = gfext.lower()[dirs];
+      const vect<int,outdim> up = gfext.upper()[dirs];
+      const vect<int,outdim> str = gfext.stride()[dirs];
+      const bbox<int,outdim> ext(lo,up,str);
+      
+      // Check whether the output origin is contained in the extent of
+      // the data that should be output
+      ivect org1(org);
+      for (int d=0; d<outdim; ++d) org1[dirs[d]] = ext.lower()[d];
+      if (gfext.contains(org1)) {
+        
+        typename bbox<int,outdim>::iterator it=ext.begin();
+        do {
+          
+          ivect index(org);
+          for (int d=0; d<outdim; ++d) index[dirs[d]] = (*it)[d];
+          os << time << "\t" << tl << " " << rl << " " << c << " " << ml
+             << "\t";
+          for (int d=0; d<dim-1; ++d) os << index[d] << " ";
+          os << index[dim-1];
+          os << "\t" << coord_time << "\t";
           for (int d=0; d<dim; ++d) {
-            os << (d==0 ? "\t" : " ") << col++ << ":i" << coords[d];
-          }
-          os << "\t" << col++ << ":time";
-          for (int d=0; d<dim; ++d) {
-            os << (d==0 ? "\t" : " ") << col++ << ":" << coords[d];
-          }
-          os << "\t" << col << ":data" << eol;
-          if (one_file_per_group) {
-            os << "# data columns:";
-            int const gindex = CCTK_GroupIndexFromVarI(vi);
-            int const firstvar = CCTK_FirstVarIndexI(gindex);
-            int const numvars = CCTK_NumVarsInGroupI(gindex);
-            for (int n=firstvar; n<firstvar+numvars; ++n) {
-              os << " " << col << ":" << CCTK_VarName(n);
-              col += CarpetSimpleMPIDatatypeLength (vartype);
+            if (d > 0) os << " ";
+            assert (gfext.upper()[d] - gfext.lower()[d] >= 0);
+            if (gfext.upper()[d] - gfext.lower()[d] == 0) {
+              os << coord_lower[d];
+            } else {
+              CCTK_REAL const dx
+                = ((coord_upper[d] - coord_lower[d])
+                   / (gfext.upper()[d] - gfext.lower()[d]));
+              os << (nicelooking
+                     (coord_lower[d] + (index[d] - gfext.lower()[d]) * dx,
+                      dx * 1.0e-8));
             }
+          }
+          os << "\t";
+          for (size_t n=0; n<gfdatas.size(); ++n) {
+            const gdata* gfdata = gfdatas.at(n);
+            if (n > 0) os << " ";
+            switch (vartype) {
+#define TYPECASE(N,T)                                           \
+              case N:                                           \
+                os << (*(const data<T>*)gfdata)[index];         \
+              break;
+#include "carpet_typecase.hh"
+#undef TYPECASE
+            default:
+              UnsupportedVarType(vi);
+            }
+          } // for n
+          os << eol;
+	  
+          ++it;
+          
+          for (int d=0; d<outdim; ++d) {
+            if ((*it)[d]!=(*ext.end())[d]) break;
             os << eol;
           }
-          
-        } // if out_fileinfo
-        
-	// boolean that says if we are doing 1D-diagonal output
-	// This is not beautiful, but works for the moment
-	bool const diagonal_output = outdim == 1 and dirs[0] == 3;
-        
-	if (not diagonal_output) { // not outputting the diagonal
-          
-	  const vect<int,outdim> lo = gfext.lower()[dirs];
-	  const vect<int,outdim> up = gfext.upper()[dirs];
-	  const vect<int,outdim> str = gfext.stride()[dirs];
-	  const bbox<int,outdim> ext(lo,up,str);
-          
-	  // Check whether the output origin is contained in the extent
-	  // of the data that should be output
-	  ivect org1(org);
-	  for (int d=0; d<outdim; ++d) org1[dirs[d]] = ext.lower()[d];
-	  if (gfext.contains(org1)) {
-	    
-	    typename bbox<int,outdim>::iterator it=ext.begin();
-	    do {
-	      
-	      ivect index(org);
-	      for (int d=0; d<outdim; ++d) index[dirs[d]] = (*it)[d];
-	      os << time << "\t" << tl << " " << rl << " " << c << " " << ml
-		 << "\t";
-	      for (int d=0; d<dim-1; ++d) os << index[d] << " ";
-              os << index[dim-1];
-	      os << "\t" << coord_time << "\t";
-	      for (int d=0; d<dim; ++d) {
-		if (d > 0) os << " ";
-		assert (gfext.upper()[d] - gfext.lower()[d] >= 0);
-		if (gfext.upper()[d] - gfext.lower()[d] == 0) {
-		  os << coord_lower[d];
-		} else {
-		  CCTK_REAL const dx
-                    = ((coord_upper[d] - coord_lower[d])
-                       / (gfext.upper()[d] - gfext.lower()[d]));
-		  os << (nicelooking
-			 (coord_lower[d] + (index[d] - gfext.lower()[d]) * dx,
-			  dx * 1.0e-8));
-		}
-	      }
-	      os << "\t";
-	      for (size_t n=0; n<gfdatas.size(); ++n) {
-		const gdata* gfdata = gfdatas.at(n);
-		if (n > 0) os << " ";
-		switch (vartype) {
-#define TYPECASE(N,T)                                           \
-                case N:                                         \
-                  os << (*(const data<T>*)gfdata)[index];	\
-                break;
-#include "carpet_typecase.hh"
-#undef TYPECASE
-		default:
-		  UnsupportedVarType(vi);
-		}
-	      } // for n
-	      os << eol;
-	      
-	      ++it;
-
-	      for (int d=0; d<outdim; ++d) {
-		if ((*it)[d]!=(*ext.end())[d]) break;
-		os << eol;
-	      }
-	          
-	    } while (it!=ext.end());
 	  
-	  } else {
-
-	    os << "#" << eol;
-	    
-	  } // if not ext contains org
-
-	  assert (os.good());
-
-	} else { // taking care of the diagonal
-          
-	  const vect<int,3> lo = gfext.lower();
-	  const vect<int,3> up = gfext.upper();
-	  const vect<int,3> str = gfext.stride();
-	  const bbox<int,3> ext(lo,up,str);
-          
-	  gh const & hh = *vhh.at(m);
-	  ibbox const & base = hh.baseextents.at(mglevel).at(reflevel);
-          
-       	  assert (base.stride()[0] ==  base.stride()[1]
-                  and base.stride()[0] == base.stride()[2]);
-          
-	  // output the data on the diagonal 
-	  for (int i=maxval(base.lower());
-               i<=minval(base.upper()); i+=base.stride()[0])
-          {
-            
-	    ivect const pos = ivect(i,i,i);
-            
-	    // check if the point in question is in our gf's extent
-	    if(gfext.contains(pos)) {
-	      os << time << "\t" << tl << " " << rl << " " << c << " " << ml
-		 << "\t";
-	      for (int d=0; d<dim-1; ++d) os << pos[d] << " "; os << pos[dim-1];
-	      os << "\t" << coord_time << "\t";
-	      for (int d=0; d<dim; ++d) {
-		if (d > 0) os << " ";
-		CCTK_REAL const dx = ((coord_upper[d] - coord_lower[d])
-				      / (gfext.upper()[d] - gfext.lower()[d]));
-		os << (nicelooking
-		       (coord_lower[d] + (pos[d] - gfext.lower()[d]) * dx,
-			dx * 1.0e-8));
-	      }
-	      os << "\t";
-	      for (size_t n=0; n<gfdatas.size(); ++n) {
-		const gdata* gfdata = gfdatas.at(n);
-		if (n > 0) os << " ";
-		switch (vartype) {
+        } while (it!=ext.end());
+	
+      } else {
+        
+        os << "#" << eol;
+	
+      } // if not ext contains org
+      
+      assert (os.good());
+      
+    } else { // taking care of the diagonal
+      
+      const ivect lo = gfext.lower();
+      const ivect up = gfext.upper();
+      const ivect str = gfext.stride();
+      const ibbox ext(lo,up,str);
+      
+      gh const & hh = *vhh.at(m);
+      ibbox const & base = hh.baseextents.at(mglevel).at(reflevel);
+      
+      assert (base.stride()[0] == base.stride()[1] and
+              base.stride()[0] == base.stride()[2]);
+      
+      // output the data on the diagonal 
+      for (int i=maxval(base.lower());
+           i<=minval(base.upper()); i+=base.stride()[0])
+      {
+        
+        ivect const pos = ivect(i,i,i);
+        
+        // check if the point in question is in our gf's extent
+        if(gfext.contains(pos)) {
+          os << time << "\t" << tl << " " << rl << " " << c << " " << ml
+             << "\t";
+          for (int d=0; d<dim-1; ++d) os << pos[d] << " "; os << pos[dim-1];
+          os << "\t" << coord_time << "\t";
+          for (int d=0; d<dim; ++d) {
+            if (d > 0) os << " ";
+            assert (gfext.upper()[d] - gfext.lower()[d] >= 0);
+            if (gfext.upper()[d] - gfext.lower()[d] == 0) {
+              os << coord_lower[d];
+            } else {
+              CCTK_REAL const dx = ((coord_upper[d] - coord_lower[d])
+                                    / (gfext.upper()[d] - gfext.lower()[d]));
+              os << (nicelooking
+                     (coord_lower[d] + (pos[d] - gfext.lower()[d]) * dx,
+                      dx * 1.0e-8));
+            }
+          }
+          os << "\t";
+          for (size_t n=0; n<gfdatas.size(); ++n) {
+            const gdata* gfdata = gfdatas.at(n);
+            if (n > 0) os << " ";
+            switch (vartype) {
 #define TYPECASE(N,T)                                           \
-                case N:                                         \
-                  os << (*(const data<T>*)gfdata)[pos];	        \
-                break;
+              case N:                                           \
+                os << (*(const data<T>*)gfdata)[pos];	        \
+              break;
 #include "carpet_typecase.hh"
 #undef TYPECASE
-		default:
-		  UnsupportedVarType(vi);
-		}
-	      } // for n
-              
-	      os << eol;
-              
-	    } else {
-              
-              os << "#" << eol;
-              
-            } // if not ext contains org
-	    
-	  } // end for loop  
+            default:
+              UnsupportedVarType(vi);
+            }
+          } // for n
           
-	  os << eol;
+          os << eol;
           
-	  assert (os.good());
+        } else {
           
-	} // if(dirs[0]<3)
-        
-      } // if(dist::...)
-    } else {
-      // copy to processor 0 and output there
+          os << "#" << eol;
+          
+        } // if not ext contains org
+	
+      } // end for loop  
       
-      mempool pool;
-      vector<gdata*> tmps (gfdatas.size());
-      for (size_t n=0; n<gfdatas.size(); ++n) {
-        tmps.at(n) = gfdatas.at(n)->make_typed (vi, error_centered, op_sync);
-        size_t const memsize =
-          tmps.at(n)->allocsize (gfdatas.at(n)->extent(), ioproc);
-        void * const memptr = pool.alloc (memsize);
-        tmps.at(n)->allocate(gfdatas.at(n)->extent(), ioproc, memptr, memsize);
-      }
-      for (comm_state state; not state.done(); state.step()) {
-        for (size_t n=0; n<gfdatas.size(); ++n) {
-          tmps.at(n)->copy_from (state, gfdatas.at(n), gfdatas.at(n)->extent());
-        }
-      }
-      vector<const gdata*> ctmps (gfdatas.size());
-      for (size_t n=0; n<gfdatas.size(); ++n) {
-        ctmps.at(n) = tmps.at(n);
-      }
-      WriteASCII (os, ctmps, gfext, vi, time, org, dirs, rl, ml, m, c, tl,
-                  coord_time, coord_lower, coord_upper);
-      for (size_t n=0; n<gfdatas.size(); ++n) {
-        delete tmps.at(n);
-      }
+      os << eol;
       
-    }
+      assert (os.good());
+      
+    } // if(dirs[0]<3)
+    
   }
   
   
@@ -1526,7 +1475,7 @@ namespace CarpetIOASCII {
 
   template
   void WriteASCII (ostream& os,
-		   vector<const gdata*> const gfdatas,
+		   vector<gdata*> const gfdatas,
 		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
@@ -1543,7 +1492,7 @@ namespace CarpetIOASCII {
 
   template
   void WriteASCII (ostream& os,
-		   vector<const gdata*> const gfdatas,
+		   vector<gdata*> const gfdatas,
 		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
@@ -1560,7 +1509,7 @@ namespace CarpetIOASCII {
 
   template
   void WriteASCII (ostream& os,
-		   vector<const gdata*> const gfdatas,
+		   vector<gdata*> const gfdatas,
 		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,
@@ -1577,7 +1526,7 @@ namespace CarpetIOASCII {
 
   template
   void WriteASCII (ostream& os,
-		   vector<const gdata*> const gfdatas,
+		   vector<gdata*> const gfdatas,
 		   const bbox<int,dim>& gfext,
 		   const int vi,
 		   const int time,

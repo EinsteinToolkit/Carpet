@@ -3,13 +3,13 @@
 #include <cstdlib>
 #include <sstream>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
 
-#include "dist.hh"
+#include <dist.hh>
 
-#include "carpet.hh"
-#include "Timers.hh"
+#include <carpet.hh>
+#include <Timers.hh>
 
 
 
@@ -42,18 +42,18 @@ namespace Carpet {
       IOMethod const * const method = CCTK_IOMethod (handle);
       assert (method);
       
-      if (not timers.at(handle)) {
+      if (not timers.AT(handle)) {
         ostringstream buf;
         buf << "OutputGH"
             << "::" << method->implementation
             << "::" << method->name
             << " [" << handle << "]";
-        timers.at(handle) = new Timer (buf.str().c_str());
+        timers.AT(handle) = new Timer (buf.str().c_str());
       }
       
-      timers.at(handle)->start();
+      timers.AT(handle)->start();
       num_vars += method->OutputGH (cctkGH);
-      timers.at(handle)->stop();
+      timers.AT(handle)->stop();
       
     } // for handle
     

@@ -2,10 +2,14 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
+#include <util_ErrorCodes.h>
+#include <util_Table.h>
 
-#include "carpet.hh"
+#include <defs.hh>
+
+#include <carpet.hh>
 
 
 
@@ -18,21 +22,25 @@ namespace Carpet {
   // The parameter where specifies which time levels should be
   // poisoned.  what specifies what kind of grid variables should be
   // poisoned.
-  void Poison (const cGH* cgh, const checktimes where, const int what)
+  void
+  Poison (cGH const * const cctkGH,
+          checktimes const where, int const what)
   {
     DECLARE_CCTK_PARAMETERS;
     
-    if (! poison_new_timelevels) return;
+    assert (what == 0 or what == CCTK_GF or what == CCTK_ARRAY);
+    
+    if (not poison_new_timelevels) return;
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
-      if (CCTK_QueryGroupStorageI(cgh, group)) {
+      if (CCTK_QueryGroupStorageI(cctkGH, group)) {
         int const grouptype = CCTK_GroupTypeI (group);
         if (what == 0 or
             (what == CCTK_GF and grouptype == CCTK_GF) or
             (what == CCTK_ARRAY and (grouptype == CCTK_ARRAY or
                                      grouptype == CCTK_SCALAR)))
         {
-          PoisonGroup (cgh, group, where);
+          PoisonGroup (cctkGH, group, where);
         }
       } // if has storage
     } // for group
@@ -40,34 +48,56 @@ namespace Carpet {
   
   
   
-  void PoisonGroup (const cGH* cgh, const int group, const checktimes where)
+  void
+  PoisonGroup (cGH const * const cctkGH,
+               int const group, checktimes const where)
   {
     DECLARE_CCTK_PARAMETERS;
     
     assert (group>=0 and group<CCTK_NumGroups());
     
-    if (! poison_new_timelevels) return;
+    if (not poison_new_timelevels) return;
     
-    if (! CCTK_QueryGroupStorageI(cgh, group)) {
+    if (not CCTK_QueryGroupStorageI(cctkGH, group)) {
       char * const groupname = CCTK_GroupName(group);
       CCTK_VWarn (2, __LINE__, __FILE__, CCTK_THORNSTRING,
-		  "Cannot poison group \"%s\" because it has no storage",
-		  groupname);
+                  "Cannot poison group \"%s\" because it has no storage",
+                  groupname);
       free (groupname);
       return;
     }
     
-    const int nvar = CCTK_NumVarsInGroupI(group);
+    int const nvar = CCTK_NumVarsInGroupI(group);
     if (nvar == 0) return;
-    const int n0 = CCTK_FirstVarIndexI(group);
+    int const n0 = CCTK_FirstVarIndexI(group);
     assert (n0>=0);
-    const int sz = CCTK_VarTypeSize(CCTK_VarTypeI(n0));
+    int const sz = CCTK_VarTypeSize(CCTK_VarTypeI(n0));
     assert (sz>0);
     
-    const int num_tl = CCTK_ActiveTimeLevelsVI(cgh, n0);
+    int const table = CCTK_GroupTagsTableI (group);
+    assert (table >= 0);
+    bool persistent;
+    char buf[100];
+    int const ilen = Util_TableGetString (table, sizeof buf, buf, "Persistent");
+    if (ilen > 0) {
+      if (CCTK_EQUALS(buf, "yes")) {
+        persistent = true;
+      } else if (CCTK_EQUALS(buf, "no")) {
+        persistent = false;
+      } else {
+        assert (0);
+      }
+    } else if (ilen == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+      // default
+      persistent = true;
+    } else {
+      assert (0);
+    }
+    
+    int const num_tl = CCTK_ActiveTimeLevelsVI(cctkGH, n0);
     assert (num_tl>0);
-    const int min_tl = min_timelevel(where, num_tl);
-    const int max_tl = max_timelevel(where, num_tl);
+    int const min_tl = min_timelevel(where, num_tl, persistent);
+    int const max_tl = max_timelevel(where, num_tl, persistent);
     
     if (min_tl <= max_tl) {
       
@@ -77,76 +107,102 @@ namespace Carpet {
         free (groupname);
       }
       
-      const int grouptype = CCTK_GroupTypeI(group);
+      CCTK_INT const poison_value = get_poison_value();
       
-      BEGIN_MAP_LOOP(cgh, grouptype) {
-        BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype) {
+      int const grouptype = CCTK_GroupTypeI(group);
+      
+      BEGIN_LOCAL_MAP_LOOP(cctkGH, grouptype) {
+        BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, grouptype) {
           
           ivect size(1);
-          const int gpdim = groupdata.at(group).info.dim;
+          int const gpdim = groupdata.AT(group).info.dim;
           for (int d=0; d<gpdim; ++d) {
-            size[d] = groupdata.at(group).info.lsh[d];
+            size[d] = groupdata.AT(group).info.lsh[d];
           }
-          const int np = prod(size);
+          int const np = prod(size);
           
           for (int var=0; var<nvar; ++var) {
-            const int n = n0 + var;
+            int const n = n0 + var;
             for (int tl=min_tl; tl<=max_tl; ++tl) {
-              memset (cgh->data[n][tl], poison_value, np*sz);
+              memset (cctkGH->data[n][tl], poison_value, np*sz);
             } // for tl
           } // for var
           
         } END_LOCAL_COMPONENT_LOOP;
-      } END_MAP_LOOP;
+      } END_LOCAL_MAP_LOOP;
       
     } // if tl
   }
   
   
   
-  void PoisonCheck (const cGH* cgh, const checktimes where)
+  void
+  PoisonCheck (cGH const * const cctkGH, checktimes const where)
   {
     DECLARE_CCTK_PARAMETERS;
     
-    if (! check_for_poison) return;
+    if (not check_for_poison) return;
     
     Checkpoint ("PoisonCheck");
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
-      const int nvar = CCTK_NumVarsInGroupI(group);
-      if (nvar > 0 && CCTK_QueryGroupStorageI(cgh, group)) {
+      int const nvar = CCTK_NumVarsInGroupI(group);
+      if (nvar > 0 and CCTK_QueryGroupStorageI(cctkGH, group)) {
         
-        const int grouptype = CCTK_GroupTypeI(group);
-        const int n0 = CCTK_FirstVarIndexI(group);
+        int const grouptype = CCTK_GroupTypeI(group);
+        int const n0 = CCTK_FirstVarIndexI(group);
         assert (n0>=0);
-        const int tp = CCTK_VarTypeI(n0);
-        const int gpdim = groupdata.at(group).info.dim;
+        int const tp = CCTK_VarTypeI(n0);
+        int const gpdim = groupdata.AT(group).info.dim;
         
-        const int num_tl = CCTK_ActiveTimeLevelsVI(cgh, n0);
+        int const table = CCTK_GroupTagsTableI (group);
+        assert (table >= 0);
+        bool persistent;
+        char buf[100];
+        int const ilen =
+          Util_TableGetString (table, sizeof buf, buf, "Persistent");
+        if (ilen > 0) {
+          if (CCTK_EQUALS(buf, "yes")) {
+            persistent = true;
+          } else if (CCTK_EQUALS(buf, "no")) {
+            persistent = false;
+          } else {
+            assert (0);
+          }
+        } else if (ilen == UTIL_ERROR_TABLE_NO_SUCH_KEY) {
+          // default
+          persistent = true;
+        } else {
+          assert (0);
+        }
+        
+        CCTK_INT const poison_value = get_poison_value();
+        
+        int const num_tl = CCTK_ActiveTimeLevelsVI(cctkGH, n0);
         assert (num_tl>0);
-        const int min_tl = min_timelevel(where, num_tl);
-        const int max_tl = max_timelevel(where, num_tl);
+        int const min_tl = min_timelevel(where, num_tl, persistent);
+        int const max_tl = max_timelevel(where, num_tl, persistent);
         
-        BEGIN_MAP_LOOP(cgh, grouptype) {
-          BEGIN_LOCAL_COMPONENT_LOOP(cgh, grouptype) {
+        BEGIN_LOCAL_MAP_LOOP(cctkGH, grouptype) {
+          BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, grouptype) {
             
             ivect size(1);
             for (int d=0; d<gpdim; ++d) {
-              size[d] = groupdata.at(group).info.lsh[d];
+              size[d] = groupdata.AT(group).info.lsh[d];
             }
-            const int np = prod(size);
+            int const np = prod(size);
             
             for (int var=0; var<nvar; ++var) {
-              const int n = n0 + var;
+              int const n = n0 + var;
               
               for (int tl=min_tl; tl<=max_tl; ++tl) {
                 
-                const void* const data = cgh->data[n][tl];
+                const void* const data = cctkGH->data[n][tl];
                 int numpoison=0;
                 for (int k=0; k<size[2]; ++k) {
                   for (int j=0; j<size[1]; ++j) {
                     for (int i=0; i<size[0]; ++i) {
-                      const int idx = i + size[0] * (j + size[1] * k);
+                      int const idx = i + size[0] * (j + size[1] * k);
                       bool poisoned=false;
                       switch (tp) {
 #define TYPECASE(N,T)                                                   \
@@ -169,7 +225,7 @@ namespace Carpet {
                           char* fullname = CCTK_FullName(n);
                           CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                                       "At iteration %d: timelevel %d, component %d, map %d, refinement level %d of the variable \"%s\" contains poison at [%d,%d,%d]",
-                                      cgh->cctk_iteration,
+                                      cctkGH->cctk_iteration,
                                       tl, component, map, reflevel,
                                       fullname, i,j,k);
                           free (fullname);
@@ -182,7 +238,7 @@ namespace Carpet {
                   char* fullname = CCTK_FullName(n);
                   CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                               "At iteration %d: timelevel %d, component %d, map %d, refinement level %d of the variable \"%s\" contains poison at %d of %d locations; not all locations were printed",
-                              cgh->cctk_iteration,
+                              cctkGH->cctk_iteration,
                               tl, component, map, reflevel,
                               fullname, numpoison, np);
                   free (fullname);
@@ -195,7 +251,7 @@ namespace Carpet {
               } // for tl
             } // for var
           } END_LOCAL_COMPONENT_LOOP;
-        } END_MAP_LOOP;
+        } END_LOCAL_MAP_LOOP;
         
       } // if has storage
     } // for group

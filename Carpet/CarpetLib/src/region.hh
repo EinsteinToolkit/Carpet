@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "defs.hh"
+#include "dist.hh"
 #include "bbox.hh"
 #include "fulltree.hh"
 #include "vect.hh"
@@ -24,12 +25,16 @@ struct region_t {
   region_t & operator= (region_t const & a);
   ~region_t ();
   
-  bool invariant () const;
+  bool invariant () const CCTK_ATTRIBUTE_PURE;
 };
 
 
 
-bool operator== (region_t const & a, region_t const & b);
+bool operator== (region_t const & a, region_t const & b)
+  CCTK_ATTRIBUTE_PURE;
+inline
+bool operator!= (region_t const & a, region_t const & b)
+  CCTK_ATTRIBUTE_PURE;
 inline
 bool operator!= (region_t const & a, region_t const & b)
 {
@@ -44,7 +49,7 @@ combine_regions (vector<region_t> const & oldregs,
 
 
 
-size_t memoryof (region_t const & reg);
+size_t memoryof (region_t const & reg) CCTK_ATTRIBUTE_PURE;
 
 istream & operator>> (istream & is, region_t       & reg);
 ostream & operator<< (ostream & os, region_t const & reg);
@@ -61,19 +66,37 @@ struct pseudoregion_t {
   pseudoregion_t ()
   {
   }
+  pseudoregion_t (pseudoregion_t const & p)
+    : extent (p.extent), component (p.component)
+  {
+  }
   pseudoregion_t (ibbox const & extent_, int const component_)
     : extent (extent_), component (component_)
   {
   }
 };
 
-bool operator== (pseudoregion_t const & a, pseudoregion_t const & b);
+MPI_Datatype mpi_datatype (pseudoregion_t const &)
+  CCTK_ATTRIBUTE_CONST;
+namespace dist {
+  template<> inline MPI_Datatype mpi_datatype<pseudoregion_t> ()
+  CCTK_ATTRIBUTE_CONST;
+  template<> inline MPI_Datatype mpi_datatype<pseudoregion_t> ()
+  { pseudoregion_t dummy; return mpi_datatype(dummy); }
+}
+
+bool operator== (pseudoregion_t const & a, pseudoregion_t const & b)
+  CCTK_ATTRIBUTE_PURE;
+inline
+bool operator!= (pseudoregion_t const & a, pseudoregion_t const & b)
+  CCTK_ATTRIBUTE_PURE;
 inline
 bool operator!= (pseudoregion_t const & a, pseudoregion_t const & b)
 {
   return not (a == b);
 }
 
+inline size_t memoryof (pseudoregion_t const & p) CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (pseudoregion_t const & p)
 {
   return
@@ -81,6 +104,7 @@ inline size_t memoryof (pseudoregion_t const & p)
     memoryof (p.component);
 }
 
+istream & operator>> (istream & is, pseudoregion_t       & p);
 ostream & operator<< (ostream & os, pseudoregion_t const & p);
 
 
@@ -90,19 +114,35 @@ struct sendrecv_pseudoregion_t {
   sendrecv_pseudoregion_t ()
   {
   }
+  sendrecv_pseudoregion_t (sendrecv_pseudoregion_t const & srp)
+    : send (srp.send), recv (srp.recv)
+  {
+  }
   sendrecv_pseudoregion_t (ibbox const & send_extent, int const send_component,
-                           ibbox const & recv_extent,  int const recv_component)
+                           ibbox const & recv_extent, int const recv_component)
     : send (pseudoregion_t (send_extent, send_component)),
       recv (pseudoregion_t (recv_extent, recv_component))
   {
   }
 };
 
+MPI_Datatype mpi_datatype (sendrecv_pseudoregion_t const &)
+  CCTK_ATTRIBUTE_CONST;
+namespace dist {
+  template<> inline MPI_Datatype mpi_datatype<sendrecv_pseudoregion_t> ()
+  CCTK_ATTRIBUTE_CONST;
+  template<> inline MPI_Datatype mpi_datatype<sendrecv_pseudoregion_t> ()
+  { sendrecv_pseudoregion_t dummy; return mpi_datatype(dummy); }
+}
+
+inline size_t memoryof (sendrecv_pseudoregion_t const & srp)
+  CCTK_ATTRIBUTE_PURE;
 inline size_t memoryof (sendrecv_pseudoregion_t const & srp)
 {
   return memoryof (srp.send) + memoryof (srp.recv);
 }
 
+istream & operator>> (istream & os, sendrecv_pseudoregion_t       & srp);
 ostream & operator<< (ostream & os, sendrecv_pseudoregion_t const & srp);
 
 

@@ -62,7 +62,7 @@ namespace CarpetIOF5 {
     unigrid_topology_t (simulation_t & simulation)
       : topology_t (simulation)
     {
-      char const * const name = "Vertices";
+      char const * const name = "uniform";
       m_name = string (name);
       m_hdf5_topology
         = open_or_create_group (m_simulation.get_hdf5_simulation(), name);
@@ -94,6 +94,7 @@ namespace CarpetIOF5 {
     mesh_refinement_topology_t::
     mesh_refinement_topology_t (simulation_t & simulation,
                                 int const map,
+                                int const maps,
                                 int const refinement_level,
                                 int const max_refinement_levels,
                                 vect<int, dim> const & level_refinement_factor,
@@ -110,7 +111,15 @@ namespace CarpetIOF5 {
       assert (all (level_refinement_factor <= max_refinement_factor));
       
       ostringstream namebuf;
-      namebuf << "Vertices map=" << map << " level=" << refinement_level;
+      namebuf << "Vertices";
+      if (maps > 1)
+      {
+        namebuf << "-map" << map;
+      }
+      if (max_refinement_levels > 1)
+      {
+        namebuf << "-level" << refinement_level;
+      }
       string const namestr = namebuf.str();
       m_name = namestr;
       char const * const name = namestr.c_str();
@@ -157,21 +166,20 @@ namespace CarpetIOF5 {
     
     
     void topology_t::
-    get_link_destination (string & filename,
+    get_link_destination (int const proc,
+                          string & filename,
                           string & objectname)
       const
     {
-      static bool initialised = false;
-      static string l_filename;
-      static string l_objectname;
-      if (not initialised)
+      get_simulation().get_link_destination (proc, filename, objectname);
+      if (objectname.empty())
       {
-        initialised = true;
-        get_simulation().get_link_destination (l_filename, l_objectname);
-        l_objectname += string ("/") + m_name;
+        objectname = m_name;
       }
-      filename = l_filename;
-      objectname = l_objectname;
+      else
+      {
+        objectname += string ("/") + m_name;
+      }
     }
     
     

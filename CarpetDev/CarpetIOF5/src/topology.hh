@@ -45,7 +45,8 @@ namespace CarpetIOF5 {
         const;
       
       void
-      get_link_destination (string & filename,
+      get_link_destination (int proc,
+                            string & filename,
                             string & objectname)
         const;
       
@@ -97,6 +98,7 @@ namespace CarpetIOF5 {
       
       mesh_refinement_topology_t (simulation_t & simulation,
                                   int map,
+                                  int maps,
                                   int refinement_level,
                                   int max_refinement_levels,
                                   vect<int, dim> const & level_refinement_factors,

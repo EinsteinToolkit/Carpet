@@ -72,18 +72,25 @@ int WriteVarUnchunked (const cGH* const cctkGH,
   BEGIN_MAP_LOOP (cctkGH, group.grouptype) {
     // Collect the set of all components' bboxes
     ibset bboxes;
-    BEGIN_COMPONENT_LOOP (cctkGH, group.grouptype) {
+    for (int c=0; c<arrdata.at(gindex).at(Carpet::map).hh->components(refinementlevel); ++c) {
       // Using "interior" removes ghost zones and refinement boundaries.
+#if 0
       bboxes += arrdata.at(gindex).at(Carpet::map).dd->
-                boxes.at(mglevel).at(refinementlevel).at(component).interior;
-    } END_COMPONENT_LOOP;
+                boxes.at(mglevel).at(refinementlevel).at(c).interior;
+#endif
+      bboxes += arrdata.at(gindex).at(Carpet::map).dd->
+                boxes.at(mglevel).at(refinementlevel).at(c).exterior;
+    }
 
     // Normalise the set, i.e., try to represent the set with fewer bboxes.
-    //
+    bboxes.normalize();
+
+#if 0
     // According to Cactus conventions, DISTRIB=CONSTANT arrays
     // (including grid scalars) are assumed to be the same on all
     // processors and are therefore stored only by processor 0.
-    if (group.disttype != CCTK_DISTRIB_CONSTANT) bboxes.normalize();
+    if (group.disttype != CCTK_DISTRIB_CONSTANT);
+#endif
 
     // Loop over all components in the bbox set
     int bbox_id = 0;
@@ -150,6 +157,11 @@ int WriteVarUnchunked (const cGH* const cctkGH,
           HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
           HDF5_ERROR (H5Pset_deflate (plist, compression_lvl));
         }
+        // enable checksums if requested
+        if (use_checksums) {
+          HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
+          HDF5_ERROR (H5Pset_filter (plist, H5Z_FILTER_FLETCHER32, 0, 0, NULL));
+        }
         HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
                                          filedatatype, dataspace, plist));
         HDF5_ERROR (H5Pclose (plist));
@@ -160,24 +172,33 @@ int WriteVarUnchunked (const cGH* const cctkGH,
       BEGIN_COMPONENT_LOOP (cctkGH, group.grouptype) {
         // Get the intersection of the current component with this combination
         // (use either the interior or exterior here, as we did above)
+        gh const * const hh = arrdata.at(gindex).at(Carpet::map).hh;
+        dh const * const dd = arrdata.at(gindex).at(Carpet::map).dd;
+#if 0
         ibbox const overlap = *bbox &
-          arrdata.at(gindex).at(Carpet::map).dd->
-          boxes.at(mglevel).at(refinementlevel).at(component).interior;
+          dd->boxes.at(mglevel).at(refinementlevel).at(component).interior;
+#endif
+        ibbox const overlap = *bbox &
+          dd->boxes.at(mglevel).at(refinementlevel).at(component).exterior;
 
         // Continue if this component is not part of this combination
         if (overlap.empty()) continue;
 
         // Copy the overlap to the local processor
         const ggf* ff = arrdata.at(gindex).at(Carpet::map).data.at(var);
-        const gdata* const data = (*ff) (request->timelevel,
-                                         refinementlevel,
-                                         component, mglevel);
+        const gdata* const data =
+          local_component >= 0
+          ? (*ff) (request->timelevel, refinementlevel,
+                   local_component, mglevel)
+          : NULL;
+        // TODO: This does not work; data may be NULL
         gdata* const processor_component =
           data->make_typed (request->vindex, error_centered, op_sync);
 
         processor_component->allocate (overlap, 0);
         for (comm_state state; not state.done(); state.step()) {
-          processor_component->copy_from (state, data, overlap);
+          int const p = hh->processor(refinementlevel,component);
+          processor_component->copy_from (state, data, overlap, 0, p);
         }
 
         // Write data
@@ -207,12 +228,7 @@ int WriteVarUnchunked (const cGH* const cctkGH,
 
             // before HDF5-1.6.4 the H5Sselect_hyperslab() function expected
             // the 'start' argument to be of type 'hssize_t'
-#if (H5_VERS_MAJOR == 1 && \
-     (H5_VERS_MINOR < 6 || (H5_VERS_MINOR == 6 && H5_VERS_RELEASE < 4)))
-            hssize_t overlaporigin[dim];
-#else
-            hsize_t overlaporigin[dim];
-#endif
+            slice_start_size_t overlaporigin[dim];
             for (int d = 0; d < group.dim; ++d) {
               assert (group.dim-1-d>=0 and group.dim-1-d<dim);
               overlaporigin[group.dim-1-d] =
@@ -321,8 +337,10 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
   BEGIN_MAP_LOOP (cctkGH, group.grouptype) {
     BEGIN_COMPONENT_LOOP (cctkGH, group.grouptype) {
       // Using "exterior" includes ghost zones and refinement boundaries.
-      ibbox& bbox = arrdata.at(gindex).at(Carpet::map).dd->
-                    boxes.at(mglevel).at(refinementlevel).at(component).exterior;
+      gh const * const hh = arrdata.at(gindex).at(Carpet::map).hh;
+      dh const * const dd = arrdata.at(gindex).at(Carpet::map).dd;
+      ibbox const& bbox =
+        dd->boxes.at(mglevel).at(refinementlevel).at(component).exterior;
 
       // Get the shape of the HDF5 dataset (in Fortran index order)
       hsize_t shape[dim];
@@ -338,14 +356,19 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
 
       // Copy the overlap to the local processor
       const ggf* ff = arrdata.at(gindex).at(Carpet::map).data.at(var);
-      const gdata* const data = (*ff) (request->timelevel, refinementlevel,
-                                       component, mglevel);
+      const gdata* const data =
+        local_component >= 0
+        ? (*ff) (request->timelevel, refinementlevel,
+                 local_component, mglevel)
+        : NULL;
+      // TODO: This does not work; data may be NULL
       gdata* const processor_component =
-        data->make_typed (request->vindex,error_centered, op_sync);
+        data->make_typed (request->vindex, error_centered, op_sync);
 
       processor_component->allocate (bbox, 0);
       for (comm_state state; not state.done(); state.step()) {
-        processor_component->copy_from (state, data, bbox);
+        int const p = hh->processor(refinementlevel,component);
+        processor_component->copy_from (state, data, bbox, 0, p);
       }
 
       // Write data on I/O processor 0
@@ -411,6 +434,11 @@ int WriteVarChunkedSequential (const cGH* const cctkGH,
           if (compression_lvl) {
             HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
             HDF5_ERROR (H5Pset_deflate (plist, compression_lvl));
+          }
+          // enable checksums if requested
+          if (use_checksums) {
+            HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
+            HDF5_ERROR (H5Pset_filter (plist, H5Z_FILTER_FLETCHER32, 0, 0, NULL));
           }
           HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
           HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
@@ -479,13 +507,17 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
                           out_single_precision and not called_from_checkpoint));
 
   // Traverse all maps
-  BEGIN_MAP_LOOP (cctkGH, group.grouptype) {
+  BEGIN_LOCAL_MAP_LOOP (cctkGH, group.grouptype) {
     BEGIN_LOCAL_COMPONENT_LOOP (cctkGH, group.grouptype) {
 
-      const ggf* ff = arrdata.at(gindex).at(Carpet::map).data.at(var);
-      const ibbox& bbox = (*ff) (request->timelevel, refinementlevel,
-                                 group.disttype == CCTK_DISTRIB_CONSTANT ?
-                                 0 : component, mglevel)->extent();
+      // const ggf* ff = arrdata.at(gindex).at(Carpet::map).data.at(var);
+      // const ibbox& bbox = (*ff) (request->timelevel, refinementlevel,
+      //                            group.disttype == CCTK_DISTRIB_CONSTANT ?
+      //                            0 : component, mglevel)->extent();
+      const dh* dd = arrdata.at(gindex).at(Carpet::map).dd;
+      const ibbox& bbox =
+        dd->boxes.AT(mglevel).AT(refinementlevel)
+        .AT(group.disttype == CCTK_DISTRIB_CONSTANT ? 0 : component).exterior;
 
       // Don't create zero-sized components
       if (bbox.empty()) continue;
@@ -499,8 +531,8 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
 
         MPI_Datatype datatype;
         switch (group.vartype) {
-#define TYPECASE(N,T)                                                     \
-          case  N: { T dummy; datatype = dist::datatype(dummy); } break;
+#define TYPECASE(N,T)                                                   \
+          case  N: { T dummy; datatype = dist::mpi_datatype(dummy); } break;
 #include "carpet_typecase.hh"
 #undef TYPECASE
           default: assert (0 and "invalid datatype");
@@ -565,6 +597,11 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
         HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
         HDF5_ERROR (H5Pset_deflate (plist, compression_lvl));
       }
+      // enable checksums if requested
+      if (use_checksums) {
+        HDF5_ERROR (H5Pset_chunk (plist, group.dim, shape));
+        HDF5_ERROR (H5Pset_filter (plist, H5Z_FILTER_FLETCHER32, 0, 0, NULL));
+      }
       HDF5_ERROR (dataspace = H5Screate_simple (group.dim, shape, NULL));
       HDF5_ERROR (dataset = H5Dcreate (outfile, datasetname.str().c_str(),
                                        filedatatype, dataspace, plist));
@@ -581,7 +618,7 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       if (data != mydata) free (data);
 
     } END_LOCAL_COMPONENT_LOOP;
-  } END_MAP_LOOP;
+  } END_LOCAL_MAP_LOOP;
 
   free (fullname);
 

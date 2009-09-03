@@ -8,8 +8,8 @@
 
 #include <gh.hh>
 
-#include "carpet.hh"
-#include "Timers.hh"
+#include <carpet.hh>
+#include <Timers.hh>
 
 
 
@@ -76,13 +76,13 @@ namespace Carpet {
           BEGIN_META_MODE(cctkGH) {
             BEGIN_MGLEVEL_LOOP(cctkGH) {
               BEGIN_REFLEVEL_LOOP(cctkGH) {
-                BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+                BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
                   BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
                     CallScheduledFunction
                       ("Meta time local mode",
                        function, attribute, data, user_timer);
                   } END_LOCAL_COMPONENT_LOOP;
-                } END_MAP_LOOP;
+                } END_LOCAL_MAP_LOOP;
                 sync_timer.start();
                 SyncGroupsInScheduleBlock (attribute, cctkGH) ;
                 sync_timer.stop();
@@ -159,13 +159,13 @@ namespace Carpet {
         if (attribute->loop_local) {
           BEGIN_GLOBAL_MODE(cctkGH) {
             BEGIN_REFLEVEL_LOOP(cctkGH) {
-              BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+              BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
                 BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
                   CallScheduledFunction
                     ("Global time local mode",
                      function, attribute, data, user_timer);
                 } END_LOCAL_COMPONENT_LOOP;
-              } END_MAP_LOOP;
+              } END_LOCAL_MAP_LOOP;
               sync_timer.start();
               SyncGroupsInScheduleBlock (attribute, cctkGH) ;
               sync_timer.stop();
@@ -213,13 +213,13 @@ namespace Carpet {
       // Level operation: call once per refinement level
       
       if (attribute->loop_local) {
-        BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+        BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
           BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
             CallScheduledFunction
               ("Level time local mode",
                function, attribute, data, user_timer);
           } END_LOCAL_COMPONENT_LOOP;
-        } END_MAP_LOOP;
+        } END_LOCAL_MAP_LOOP;
       } else if (attribute->loop_singlemap) {
         BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
           CallScheduledFunction
@@ -239,13 +239,13 @@ namespace Carpet {
       // Single map operation: call once per refinement level and map
       
       if (attribute->loop_local) {
-        BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+        BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
           BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
             CallScheduledFunction
               ("Singlemap time local mode",
                function, attribute, data, user_timer);
           } END_LOCAL_COMPONENT_LOOP;
-        } END_MAP_LOOP;
+        } END_LOCAL_MAP_LOOP;
       } else {
         BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
           CallScheduledFunction
@@ -260,13 +260,13 @@ namespace Carpet {
     } else {
       // Local operation: call once per component
       
-      BEGIN_MAP_LOOP(cctkGH, CCTK_GF) {
+      BEGIN_LOCAL_MAP_LOOP(cctkGH, CCTK_GF) {
         BEGIN_LOCAL_COMPONENT_LOOP(cctkGH, CCTK_GF) {
           CallScheduledFunction
             ("Local mode",
              function, attribute, data, user_timer);
         } END_LOCAL_COMPONENT_LOOP;
-      }	END_MAP_LOOP;
+      }	END_LOCAL_MAP_LOOP;
       sync_timer.start();
       SyncGroupsInScheduleBlock (attribute, cctkGH) ;
       sync_timer.stop();
@@ -274,6 +274,7 @@ namespace Carpet {
     }
     
     if (schedule_barriers) {
+#if 0
       static unsigned int magic = 0xe8932329UL; // a random starting value
       unsigned int recv = magic;
       Checkpoint ("About to Bcast %u", magic);
@@ -287,6 +288,9 @@ namespace Carpet {
       Checkpoint ("About to Barrier");
       MPI_Barrier (dist::comm());
       Checkpoint ("Finished Barrier");
+#endif
+      static int id = 513400912; // arbitrary starting value
+      CCTK_NamedBarrier (NULL, id++);
     }
     
     total_timer.stop();
