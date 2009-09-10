@@ -32,6 +32,11 @@ using namespace std;
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
+    static CCTK_INT cctk_iteration_done = -1;
+
+    if (cctk_iteration == cctk_iteration_done) return;
+    cctk_iteration_done = cctk_iteration;
+
     for (int n = 0; n < num_surfaces; ++ n) {
       int const sn = surface[n];
       if (sn >= 0) {
@@ -42,8 +47,11 @@ using namespace std;
             
             if (verbose) {
               CCTK_VInfo (CCTK_THORNSTRING,
-                          "Setting position of refined region #%d from surface #%d to (%g,%g,%g)",
+                          "Setting position of refined region #%d from surface #%d from (%g,%g,%g) to (%g,%g,%g)",
                           n + 1, sn,
+                          static_cast <double> (position_x[n]),
+                          static_cast <double> (position_y[n]),
+                          static_cast <double> (position_z[n]),
                           static_cast <double> (sf_centroid_x[sn]),
                           static_cast <double> (sf_centroid_y[sn]),
                           static_cast <double> (sf_centroid_z[sn]));
