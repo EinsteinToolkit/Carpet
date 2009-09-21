@@ -509,7 +509,7 @@ namespace CarpetInterp {
       }
 #endif
       {
-        MPI_Datatype datatype = dist::mpi_datatype (tmp[0]);
+        MPI_Datatype const datatype = dist::mpi_datatype (tmp[0]);
         MPI_Datatype vdatatype;
         MPI_Type_vector(1, ndims, 0, datatype, &vdatatype);
         MPI_Type_commit(&vdatatype);
@@ -708,8 +708,9 @@ namespace CarpetInterp {
 #undef TYPECASE
       default: { CCTK_WARN (0, "invalid datatype"); abort(); }
       }
-      MPI_Type_vector(1, N_output_arrays, 0, datatype, &datatype);
-      MPI_Type_commit(&datatype);
+      MPI_Datatype vdatatype;
+      MPI_Type_vector(1, N_output_arrays, 0, datatype, &vdatatype);
+      MPI_Type_commit(&vdatatype);
 
       static Timer * timer = NULL;
       if (not timer) {
@@ -718,12 +719,12 @@ namespace CarpetInterp {
       timer->start ();
       // distribute the results the same way as the coordinates were gathered
       // simply by interchanging the send/recv counts/displacements
-      MPI_Alltoallv (&outputs_buffer[0], &recvcnt[0], &recvdispl[0], datatype,
-                     &tmp[0],            &sendcnt[0], &senddispl[0], datatype,
+      MPI_Alltoallv (&outputs_buffer[0], &recvcnt[0], &recvdispl[0], vdatatype,
+                     &tmp[0],            &sendcnt[0], &senddispl[0], vdatatype,
                      dist::comm());
       timer->stop (N_interp_points * N_output_arrays * vtypesize);
 
-      MPI_Type_free(&datatype);
+      MPI_Type_free(&vdatatype);
 
       outputs_buffer.swap (tmp);
     }
