@@ -445,8 +445,11 @@ namespace CarpetInterp {
     {
       // totalhomecnts is the accumulated number of points over all components
       vector<int> totalhomecnts (allhomecnts.size());
-      for (size_t c = 1; c < totalhomecnts.size(); c++) {
-        totalhomecnts[c] = totalhomecnts[c-1] + allhomecnts[c-1];
+      if (totalhomecnts.size() > 0) {
+        totalhomecnts[0] = 0;
+        for (size_t c = 1; c < totalhomecnts.size(); c++) {
+          totalhomecnts[c] = totalhomecnts[c-1] + allhomecnts[c-1];
+        }
       }
 
       vector<int> tmpcnts (allhomecnts.size());
@@ -506,20 +509,21 @@ namespace CarpetInterp {
 #endif
       {
         MPI_Datatype datatype = dist::datatype (tmp[0]);
-        MPI_Type_vector(1, ndims, 0, datatype, &datatype);
-        MPI_Type_commit(&datatype);
+        MPI_Datatype vdatatype;
+        MPI_Type_vector(1, ndims, 0, datatype, &vdatatype);
+        MPI_Type_commit(&vdatatype);
 
         static Timer * timer = NULL;
         if (not timer) {
           timer = new Timer ("CarpetInterp::send_coordinates");
         }
         timer->start ();
-        MPI_Alltoallv (&coords_buffer[0], &sendcnt[0], &senddispl[0], datatype,
-                       &tmp[0],           &recvcnt[0], &recvdispl[0], datatype,
+        MPI_Alltoallv (&coords_buffer[0], &sendcnt[0], &senddispl[0], vdatatype,
+                       &tmp[0],           &recvcnt[0], &recvdispl[0], vdatatype,
                        dist::comm());
         timer->stop (coords_buffer.size() * sizeof(CCTK_REAL));
 
-        MPI_Type_free(&datatype);
+        MPI_Type_free(&vdatatype);
       }
 #ifndef _NDEBUG
       {
