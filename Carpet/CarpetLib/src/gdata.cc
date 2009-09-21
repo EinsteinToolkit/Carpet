@@ -64,6 +64,29 @@ gdata::~gdata ()
 
 
 
+// Storage management
+
+ivect
+gdata::
+allocated_memory_shape (ibbox const& extent)
+{
+  DECLARE_CCTK_PARAMETERS;
+  ivect shape = max (ivect(0), extent.shape() / extent.stride());
+  // Enlarge shape to avoid multiples of cache line colours
+  if (avoid_arraysize_bytes > 0) {
+    for (int d=0; d<dim; ++d) {
+      if (shape[d] > 0 and
+          shape[d] * sizeof(CCTK_REAL) % avoid_arraysize_bytes == 0)
+      {
+        ++shape[d];
+      }
+    }
+  }
+  return shape;
+}
+
+
+
 // Data manipulators
 
 void

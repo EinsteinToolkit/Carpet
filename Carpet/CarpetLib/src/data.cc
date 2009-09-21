@@ -336,15 +336,20 @@ void data<T>::allocate (const ibbox& extent_,
   assert (all(extent_.lower() > numeric_limits<int>::min() / 2));
   assert (all(extent_.upper() < numeric_limits<int>::max() / 2));
   assert (all(extent_.upper() > numeric_limits<int>::min() / 2));
+  
   // data
   _extent = extent_;
-  _shape = max(ivect(0), _extent.shape() / _extent.stride());
+  //_shape = max (ivect(0), _extent.shape() / _extent.stride());
+  _shape = allocated_memory_shape (_extent);
+  assert (all (_shape >= max (ivect(0), _extent.shape() / _extent.stride())));
+  
   _size = 1;
   for (int d=0; d<dim; ++d) {
     _stride[d] = _size;
     assert (_shape[d]==0 or _size <= numeric_limits<int>::max() / _shape[d]);
     _size *= _shape[d];
   }
+  
   _proc = proc_;
   if (dist::rank() == _proc) {
     if (vectorindex == 0) {
@@ -380,7 +385,9 @@ size_t data<T>::allocsize (const ibbox & extent_, const int proc_) const
   if (dist::rank() != proc_) return 0;
   if (vectorindex != 0) return 0;
   assert (not vectorleader);
-  return vectorlength * extent_.size() * sizeof (T);
+  ivect const shape_ = allocated_memory_shape (extent_);
+  //return vectorlength * extent_.size() * sizeof (T);
+  return vectorlength * prod(shape_) * sizeof (T);
 }
 
 

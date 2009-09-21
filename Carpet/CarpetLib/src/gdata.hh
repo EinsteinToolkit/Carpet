@@ -78,6 +78,7 @@ public:
 			 void* const memptr = NULL, size_t const memsize = 0) = 0;
   virtual void free () = 0;
   virtual size_t allocsize (const ibbox& extent, const int proc) const = 0;
+  static ivect allocated_memory_shape (ibbox const& extent);
   
   // Accessors
   bool has_storage () const {

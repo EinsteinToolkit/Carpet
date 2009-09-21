@@ -120,6 +120,16 @@ BOOLEAN combine_recompose "Recompose all grid functions of one refinement levels
 
 
 
+# Memory allocation parameters
+
+INT avoid_arraysize_bytes "Avoid array sizes that are multiples of this" STEERABLE=recover
+{
+  0   :: "don't avoid anything"
+  2:* :: ""
+} 0
+
+
+
 # Communication experiment parameters
 
 INT message_size_multiplier "Enlarge size of transmitted messages by this factor" STEERABLE=always
