@@ -21,6 +21,7 @@ uses include header: region.hh
 uses include header: vect.hh
 
 uses include header: data.hh
+uses include header: gdata.hh
 
 uses include header: dh.hh
 uses include header: gf.hh
