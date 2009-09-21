@@ -32,6 +32,11 @@ using namespace std;
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
+    static int cctk_iteration_done = -1;
+    
+    if (cctk_iteration == cctk_iteration_done) return;
+    cctk_iteration_done = cctk_iteration;
+    
     for (int n = 0; n < num_surfaces; ++ n) {
       int const sn = surface[n];
       if (sn >= 0) {
