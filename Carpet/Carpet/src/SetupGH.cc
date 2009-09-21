@@ -1895,6 +1895,8 @@ namespace Carpet {
       return op_sync;
     } else if (CCTK_Equals(prolong_string, "sync")) {
       return op_sync;
+    } else if (CCTK_Equals(prolong_string, "restrict")) {
+      return op_restrict;
     } else if (CCTK_Equals(prolong_string, "copy")) {
       return op_copy;
     } else if (CCTK_Equals(prolong_string, "Lagrange")) {

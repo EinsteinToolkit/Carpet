@@ -468,7 +468,8 @@ transfer_p_r (data const * const src,
     copy_from_innerloop (src, box);
   } else if (all (src->extent().stride() > this->extent().stride())) {
     // Prolongate
-    assert (transport_operator != op_sync);
+    assert (transport_operator != op_sync and
+            transport_operator != op_restrict);
     transfer_p_vc_cc (src, box, order_space);
   } else if (all (src->extent().stride() < this->extent().stride())) {
     // Restrict

@@ -160,7 +160,8 @@ void ggf::recompose_fill (comm_state & state, int const rl,
     
     vector <int> tls;
     if (do_prolongate and rl > 0 and
-        transport_operator != op_none and transport_operator != op_sync)
+        transport_operator != op_none and transport_operator != op_sync and
+        transport_operator != op_restrict)
     {
       int const numtl = timelevels (ml, rl);
       tls.resize (numtl);
@@ -185,7 +186,9 @@ void ggf::recompose_fill (comm_state & state, int const rl,
       // Initialise from a coarser level of the new hierarchy, where
       // possible
       if (rl > 0) {
-        if (transport_operator != op_none and transport_operator != op_sync) {
+        if (transport_operator != op_none and transport_operator != op_sync and
+            transport_operator != op_restrict)
+        {
           for (int tl = 0; tl < timelevels (ml, rl); ++tl) {
             transfer_from_all (state,
                                tl, rl, ml,
@@ -322,7 +325,9 @@ ref_bnd_prolongate_all (comm_state & state,
 {
   // Interpolate
   assert (rl>=1);
-  if (transport_operator == op_none or transport_operator == op_sync) return;
+  if (transport_operator == op_none or transport_operator == op_sync or
+      transport_operator == op_restrict)
+    return;
   vector<int> tl2s;
   static Timer timer ("ref_bnd_prolongate_all");
   timer.start ();
@@ -435,7 +440,9 @@ ref_prolongate_all (comm_state & state,
                     CCTK_REAL const time)
 {
   assert (rl>=1);
-  if (transport_operator == op_none or transport_operator == op_sync) return;
+  if (transport_operator == op_none or transport_operator == op_sync or
+      transport_operator == op_restrict)
+    return;
   static Timer timer ("ref_prolongate_all");
   timer.start ();
   vector<int> tl2s;

@@ -358,9 +358,10 @@ namespace Carpet {
     check (not CCTK_GroupData (group, & gp));
     
     if (gp.grouptype == CCTK_GF) {
-      if (groupdata.at(group).transport_operator != op_none and
-          groupdata.at(group).transport_operator != op_sync and
-          groupdata.at(group).transport_operator != op_copy)
+      if (groupdata.AT(group).transport_operator != op_none and
+          groupdata.AT(group).transport_operator != op_sync and
+          groupdata.AT(group).transport_operator != op_restrict and
+          groupdata.AT(group).transport_operator != op_copy)
       {
         if (groupdata.at(group).activetimelevels.at(ml).at(rl) != 0 and
             (groupdata.at(group).activetimelevels.at(ml).at(rl) <
