@@ -1008,7 +1008,9 @@ namespace Carpet {
     groupdata.AT(group).info.dim         = gdata.dim;
     groupdata.AT(group).info.gsh         = new int [dim];
     groupdata.AT(group).info.lsh         = new int [dim];
+#ifdef CCTK_HAVE_CGROUPDYNAMICDATA_LSSH
     groupdata.AT(group).info.lssh        = new int [CCTK_NSTAGGER*dim];
+#endif
     groupdata.AT(group).info.lbnd        = new int [dim];
     groupdata.AT(group).info.ubnd        = new int [dim];
     groupdata.AT(group).info.bbox        = new int [2*dim];
