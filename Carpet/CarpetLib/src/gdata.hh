@@ -124,7 +124,7 @@ public:
     assert (_has_storage);
     return _extent;
   }
-
+  
   int elementsize () const {
     return c_datatype_size();
   }
@@ -133,8 +133,8 @@ public:
   int offset (const ivect& index) const {
     assert (_has_storage);
     assert (all((index-extent().lower()) % extent().stride() == 0));
-    ivect ind = (index-extent().lower()) / extent().stride();
-    assert (all(ind>=0 && ind<=shape()));
+    ivect const ind = (index-extent().lower()) / extent().stride();
+    assert (all(ind>=0 and ind<=shape()));
     return dot(ind, stride());
   }
   
