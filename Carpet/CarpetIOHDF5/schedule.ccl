@@ -58,7 +58,7 @@ if (! CCTK_Equals (recover, "no") && *recover_file)
     {
       LANG:C
       OPTIONS: meta
-    } "Overwrite 'CarpetRegird::refinement_levels' with the number of levels found in the checkpoint file"
+    } "Overwrite 'CarpetRegrid::refinement_levels' with the number of levels found in the checkpoint file"
   }
 
   schedule CarpetIOHDF5_CloseFiles at POST_RECOVER_VARIABLES
