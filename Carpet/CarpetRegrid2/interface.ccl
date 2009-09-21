@@ -118,15 +118,9 @@ CCTK_INT last_map "Last map at which there was a regridding at last_iteration"
 
 PUBLIC:
 
-CCTK_INT active[10] TYPE=scalar
-{
-  active
-} "Whether this centre is active"
+CCTK_INT active[10] TYPE=scalar "Whether this centre is active"
 
-CCTK_INT num_levels[10] TYPE=scalar
-{
-  num_levels
-} "Number of refinement levels"
+CCTK_INT num_levels[10] TYPE=scalar "Number of refinement levels"
 
 CCTK_REAL positions[10] TYPE=scalar
 {
@@ -140,15 +134,9 @@ CCTK_REAL radii[10] TYPE=array DIM=1 SIZE=30 DISTRIB=constant
 
 PRIVATE:
 
-CCTK_INT old_active[10] TYPE=scalar
-{
-  old_active
-} "Old whether this centre is active"
+CCTK_INT old_active[10] TYPE=scalar "Old whether this centre is active"
 
-CCTK_INT old_num_levels[10] TYPE=scalar
-{
-  old_num_levels
-} "Old number of refinement levels"
+CCTK_INT old_num_levels[10] TYPE=scalar "Old number of refinement levels"
 
 CCTK_REAL old_positions[10] TYPE=scalar
 {
