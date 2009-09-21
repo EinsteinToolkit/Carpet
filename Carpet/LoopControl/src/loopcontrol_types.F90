@@ -37,11 +37,17 @@ module loopcontrol_types
      ! Control settings for current thread (useful for debugging)
      integer thread_num
      integer iii, jjj, kkk
+     integer iiii, jjjj, kkkk
      
      ! Control settings for tiling loop
      integer iimin, jjmin, kkmin
      integer iimax, jjmax, kkmax
      integer iistep, jjstep, kkstep
+     
+     ! Control settings for inner thread parallelism
+     integer iiiimin, jjjjmin, kkkkmin
+     integer iiiimax, jjjjmax, kkkkmax
+     integer iiiistep, jjjjstep, kkkkstep
      
      ! Timing statistics
      double precision time_setup_begin, time_calc_begin

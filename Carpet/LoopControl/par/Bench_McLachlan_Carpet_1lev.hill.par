@@ -1,5 +1,4 @@
-Cactus::cctk_run_title    = "Benchmark of McLachlan using Carpet with one refinement level"
-Cactus::cctk_timer_output = "full"
+Cactus::cctk_run_title = "Benchmark of McLachlan using Carpet with one refinement level"
 
 Cactus::cctk_itlast = @ITERATIONS@
 
@@ -11,7 +10,7 @@ ActiveThorns = "Fortran"
 
 ActiveThorns = "LoopControl"
 
-#LoopControl::printstats = yes
+LoopControl::printstats = yes
 
 LoopControl::legacy_init                      = no
 LoopControl::use_random_restart_hill_climbing = yes
@@ -20,7 +19,7 @@ LoopControl::use_random_restart_hill_climbing = yes
 
 ActiveThorns = "IOUtil"
 
-#IO::print_timing_info = yes
+IO::out_dir = $parfile
 
 
 
@@ -36,9 +35,7 @@ driver::ghost_size = 3
 
 Carpet::init_fill_timelevels = yes
 
-CarpetLib::combine_recompose = yes
-
-#CarpetLib::print_timestats_every = 1
+CarpetLib::print_timestats_every = @ITERATIONS@
 CarpetLib::print_memstats_every  = @ITERATIONS@
 
 
@@ -128,5 +125,10 @@ IOBasic::outInfo_every = @ITERATIONS@
 
 ActiveThorns = "TimerReport"
 
-TimerReport::output_all_timers = yes
-TimerReport::all_timers_clock  = "cycle"
+TimerReport::output_all_timers          = yes
+TimerReport::all_timers_clock           = "cycle"
+TimerReport::out_every                  = @ITERATIONS@
+TimerReport::out_filename               = "TimerReport"
+TimerReport::output_all_timers_together = yes
+TimerReport::output_all_timers_readable = yes
+TimerReport::n_top_timers               = 20

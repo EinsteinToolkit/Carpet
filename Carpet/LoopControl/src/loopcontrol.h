@@ -56,7 +56,7 @@ extern "C" {
 
 /* A topology */
 typedef struct lc_topology_t {
-  int nthreads[3];
+  int nthreads[2][3];           /* [0:outer|1:inner][ijk] */
 } lc_topology_t;
 
 /* A tiling specification */
@@ -90,6 +90,7 @@ typedef struct lc_stattime_t {
   
   lc_state_t state;
   int inthreads, jnthreads, knthreads;
+  int inithreads, jnithreads, knithreads;
   int inpoints, jnpoints, knpoints;
   
   /* Data */
@@ -250,11 +251,17 @@ typedef struct lc_control_t {
   /* Control settings for current thread (useful for debugging) */
   int thread_num;
   int iii, jjj, kkk;
+  int iiii, jjjj, kkkk;
   
   /* Control settings for tiling loop */
   int iimin, jjmin, kkmin;
   int iimax, jjmax, kkmax;
   int iistep, jjstep, kkstep;
+  
+  /* Control settings for inner thread parallelism */
+  int iiiimin, jjjjmin, kkkkmin;
+  int iiiimax, jjjjmax, kkkkmax;
+  int iiiistep, jjjjstep, kkkkstep;
   
   /* Timing statistics */
   double time_setup_begin, time_calc_begin;
@@ -319,39 +326,44 @@ lc_control_finish (lc_control_t * restrict lc);
          lc_kk < lc_lc.kkmax;                                           \
          lc_kk += lc_lc.kkstep)                                         \
     {                                                                   \
-      int const lc_kmax = lc_min (lc_kk + lc_lc.kkstep, lc_lc.kkmax);   \
+      int const lc_kmin = lc_kk + lc_lc.kkkkmin;                        \
+      int const lc_kmax =                                               \
+        lc_min (lc_kk + lc_lc.kkkkmax, lc_lc.kkmax);                    \
                                                                         \
       for (int lc_jj = lc_lc.jjmin;                                     \
            lc_jj < lc_lc.jjmax;                                         \
            lc_jj += lc_lc.jjstep)                                       \
       {                                                                 \
-        int const lc_jmax = lc_min (lc_jj + lc_lc.jjstep, lc_lc.jjmax); \
+        int const lc_jmin = lc_jj + lc_lc.jjjjmin;                      \
+        int const lc_jmax =                                             \
+          lc_min (lc_jj + lc_lc.jjjjmax, lc_lc.jjmax);                  \
                                                                         \
         for (int lc_ii = lc_lc.iimin;                                   \
              lc_ii < lc_lc.iimax;                                       \
              lc_ii += lc_lc.iistep)                                     \
         {                                                               \
-          int const lc_imax = lc_min (lc_ii + lc_lc.iistep, lc_lc.iimax); \
+          int const lc_imin = lc_ii + lc_lc.iiiimin;                    \
+          int const lc_imax =                                           \
+            lc_min (lc_ii + lc_lc.iiiimax, lc_lc.iimax);                \
                                                                         \
           /* Fine loop */                                               \
-          for (int k = lc_kk; k < lc_kmax; ++k) {                       \
-            for (int j = lc_jj; j < lc_jmax; ++j) {                     \
-              int const lc_imin = lc_ii;                                \
+          for (int k = lc_kmin; k < lc_kmax; ++k) {                     \
+            for (int j = lc_jmin; j < lc_jmax; ++j) {                   \
               LC_PRELOOP_STATEMENTS                                     \
               {                                                         \
                 for (int i = lc_imin; i < lc_imax; ++i) {
 
 #define LC_ENDLOOP3(name)                       \
-  }                                             \
                 }                               \
-              LC_POSTLOOP_STATEMENTS            \
               }                                 \
+              LC_POSTLOOP_STATEMENTS            \
             }                                   \
           }                                     \
         }                                       \
       }                                         \
+    }                                           \
     lc_control_finish (& lc_lc);                \
-    } while (0)
+  } while (0)
 
 /* Pre- and post loop statements are inserted around the innermost
    loop, which is executed serially.  By default these are empty.  */
