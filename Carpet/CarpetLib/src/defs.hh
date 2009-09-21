@@ -39,6 +39,14 @@ using namespace std;
 
 
 
+// Structure member offsets
+#undef offsetof
+#define offsetof(TYPE,MEMBER) ((size_t)&((TYPE*)0)->MEMBER)
+#undef __offsetof__
+#define __offsetof__ offsetof
+
+
+
 // Number of dimensions
 #ifndef CARPET_DIM
 #  define CARPET_DIM 3
