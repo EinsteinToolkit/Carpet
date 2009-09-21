@@ -189,6 +189,17 @@ public:
       which means that it also points to the first point.  */
   iterator end () const;
   
+  size_type index (const vect<T,D>& pos) const
+  {
+    assert (not empty());
+    bbox const posbox (pos, pos, stride());
+    assert (is_aligned_with (posbox));
+    assert (contains(pos));
+    size_type const i = ::index (shape(), (pos - lower()) / stride());
+    assert (i>=0 and i<size());
+    return i;
+  }
+  
   // Memory usage
   size_t memory () const CCTK_ATTRIBUTE_CONST
   {
