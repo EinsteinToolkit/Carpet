@@ -21,7 +21,7 @@ $(CARPETIOASCII_BUILD_DIR)/%.o: $(CARPETIOASCII_SRC_DIR)/%.c
 $(UTIL_DIR)/%: $(CARPETIOASCII_BUILD_DIR)/%.o
 	@echo "Creating $* in $(UTIL_DIR) from $<"
 	-$(MKDIR) $(MKDIRFLAGS) $(UTIL_DIR) 2> /dev/null
-	$(LD) $< $(CARPETIOASCII_LDFLAGS) -o $@
+	$(LD) $< $(CARPETIOASCII_LDFLAGS) $(GENERAL_LIBRARIES) -o $@
 
 
 # Special versions for carpet2sdf:
