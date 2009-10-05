@@ -6,6 +6,8 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <loopcontrol.h>
+
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
@@ -163,33 +165,31 @@ namespace CarpetLib {
     
     
     // Loop over region
-#pragma omp parallel for
-    for (int k=0; k<regkext; ++k) {
-      for (int j=0; j<regjext; ++j) {
-        for (int i=0; i<regiext; ++i) {
-          
-          T const s1 = src1 [SRCIND3(i, j, k)];
-          T const s2 = src2 [SRCIND3(i, j, k)];
-          T const s3 = src3 [SRCIND3(i, j, k)];
-          
-          // 3-point interpolation
-          T d = s1fac3 * s1 + s2fac3 * s2 + s3fac3 * s3;
-          
-          // If the 3-point interpolation leads to a new extremum,
-          // fall back to 2-point interpolation instead
-          if (d > max3 (s1, s2, s3) or d < min3 (s1, s2, s3)) {
-            if (use_12) {
-              d = s1fac2_12 * s1 + s2fac2_12 * s2;
-            } else {
-              d = s2fac2_23 * s2 + s3fac2_23 * s3;
-            }
-          }
-          
-          dst [DSTIND3(i, j, k)] = d;
-          
+#pragma omp parallel
+    LC_LOOP3 (interpolate_end_3d_3tl,
+              i,j,k, 0,0,0, regiext,regjext,regkext, regiext,regjext,regkext)
+    {
+      
+      T const s1 = src1 [SRCIND3(i, j, k)];
+      T const s2 = src2 [SRCIND3(i, j, k)];
+      T const s3 = src3 [SRCIND3(i, j, k)];
+      
+      // 3-point interpolation
+      T d = s1fac3 * s1 + s2fac3 * s2 + s3fac3 * s3;
+      
+      // If the 3-point interpolation leads to a new extremum,
+      // fall back to 2-point interpolation instead
+      if (d > max3 (s1, s2, s3) or d < min3 (s1, s2, s3)) {
+        if (use_12) {
+          d = s1fac2_12 * s1 + s2fac2_12 * s2;
+        } else {
+          d = s2fac2_23 * s2 + s3fac2_23 * s3;
         }
       }
-    }
+      
+      dst [DSTIND3(i, j, k)] = d;
+      
+    } LC_ENDLOOP3(interpolate_end_3d_3tl);
     
   }
   

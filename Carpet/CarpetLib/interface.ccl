@@ -2,6 +2,8 @@
 
 IMPLEMENTS: CarpetLib
 
+uses include header: loopcontrol.h
+
 includes header: mpi_string.hh in mpi_string.hh
 
 includes header: defs.hh in defs.hh

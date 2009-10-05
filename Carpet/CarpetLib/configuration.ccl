@@ -5,3 +5,5 @@ PROVIDES CarpetLib
   SCRIPT
   LANG
 }
+
+REQUIRES LoopControl

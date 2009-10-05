@@ -6,6 +6,8 @@
 #include <cctk.h>
 #include <cctk_Parameters.h>
 
+#include <loopcontrol.h>
+
 #include "operator_prototypes_3d.hh"
 #include "typeprops.hh"
 
@@ -120,18 +122,16 @@ namespace CarpetLib {
     
     
     // Loop over region
-#pragma omp parallel for
-    for (int k=0; k<regkext; ++k) {
-      for (int j=0; j<regjext; ++j) {
-        for (int i=0; i<regiext; ++i) {
-          
-          dst [DSTIND3(i, j, k)] =
-            + s1fac * src1 [SRCIND3(i, j, k)]
-            + s2fac * src2 [SRCIND3(i, j, k)];
-          
-        }
-      }
-    }
+#pragma omp parallel
+    LC_LOOP3 (interpolate_3d_2tl,
+              i,j,k, 0,0,0, regiext,regjext,regkext, regiext,regjext,regkext)
+    {
+      
+      dst [DSTIND3(i, j, k)] =
+        + s1fac * src1 [SRCIND3(i, j, k)]
+        + s2fac * src2 [SRCIND3(i, j, k)];
+      
+    } LC_ENDLOOP3 (interpolate_3d_2tl);
     
   }
   

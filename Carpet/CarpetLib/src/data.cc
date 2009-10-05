@@ -64,8 +64,9 @@ call_operator (void
     int const num_threads = omp_get_num_threads();
     int const thread_num = omp_get_thread_num();
     // Parallelise in z direction
-    // TODO: parallelise along longest extent
-    int const dir = 2;
+    // int const dir = 2;
+    // Parallelise along longest extent
+    int const dir = maxloc (regbbox.shape());
     int const stride = regbbox.stride()[dir];
     int const first_point = regbbox.lower()[dir];
     int const last_point = regbbox.upper()[dir] + stride;
@@ -407,21 +408,23 @@ copy_from_innerloop (gdata const * const gsrc,
   assert (dist::rank() == proc());
   
 #if CARPET_DIM == 3
-  copy_3d (static_cast <T const *> (src->storage()),
-           src->shape(),
-           static_cast <T *> (this->storage()),
-           this->shape(),
-           src->extent(),
-           this->extent(),
-           box);
+  call_operator<T> (& copy_3d,
+                    static_cast <T const *> (src->storage()),
+                    src->shape(),
+                    static_cast <T *> (this->storage()),
+                    this->shape(),
+                    src->extent(),
+                    this->extent(),
+                    box);
 #elif CARPET_DIM == 4
-  copy_4d (static_cast <T const *> (src->storage()),
-           src->shape(),
-           static_cast <T *> (this->storage()),
-           this->shape(),
-           src->extent(),
-           this->extent(),
-           box);
+  call_operator<T> (& copy_4d,
+                    static_cast <T const *> (src->storage()),
+                    src->shape(),
+                    static_cast <T *> (this->storage()),
+                    this->shape(),
+                    src->extent(),
+                    this->extent(),
+                    box);
 #else
 #  error "Value for CARPET_DIM not supported"
 #endif
@@ -600,27 +603,27 @@ transfer_p_vc_cc (data const * const src,
     newdst->allocate (newdstbox, this->proc());
     
     // Convert source to primitive representation
-    prolongate_3d_cc_rf2_std2prim
-      (static_cast <T const *> (src->storage()),
-       src->shape(),
-       static_cast <T *> (newsrc->storage()),
-       newsrc->shape(),
-       src->extent(),
-       newsrc->extent(),
-       newsrc->extent());
+    call_operator<T> (& prolongate_3d_cc_rf2_std2prim,
+                      static_cast <T const *> (src->storage()),
+                      src->shape(),
+                      static_cast <T *> (newsrc->storage()),
+                      newsrc->shape(),
+                      src->extent(),
+                      newsrc->extent(),
+                      newsrc->extent());
     
     // Interpolate
     newdst->transfer_prolongate (newsrc, newdstbox, order_space);
     
     // Convert destination to standard representation
-    prolongate_3d_cc_rf2_prim2std
-      (static_cast <T const *> (newdst->storage()),
-       newdst->shape(),
-       static_cast <T *> (this->storage()),
-       this->shape(),
-       newdst->extent(),
-       this->extent(),
-       box);
+    call_operator<T> (& prolongate_3d_cc_rf2_prim2std,
+                      static_cast <T const *> (newdst->storage()),
+                      newdst->shape(),
+                      static_cast <T *> (this->storage()),
+                      this->shape(),
+                      newdst->extent(),
+                      this->extent(),
+                      box);
     
     delete newsrc;
     delete newdst;
@@ -958,25 +961,28 @@ transfer_restrict (data const * const src,
   case op_ENO:
   case op_WENO:
   case op_Lagrange_monotone:
+  case op_restrict:
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
     case vertex_centered:
-      restrict_3d_rf2 (static_cast <T const *> (src->storage()),
-                       src->shape(),
-                       static_cast <T *> (this->storage()),
-                       this->shape(),
-                       src->extent(),
-                       this->extent(),
-                       box);
+      call_operator<T> (& restrict_3d_rf2,
+                        static_cast <T const *> (src->storage()),
+                        src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        box);
       break;
     case cell_centered:
-      restrict_3d_cc_rf2 (static_cast <T const *> (src->storage()),
-                          src->shape(),
-                          static_cast <T *> (this->storage()),
-                          this->shape(),
-                          src->extent(),
-                          this->extent(),
-                          box);
+      call_operator<T> (& restrict_3d_cc_rf2,
+                        static_cast <T const *> (src->storage()),
+                        src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        box);
       break;
     default:
       assert (0);
