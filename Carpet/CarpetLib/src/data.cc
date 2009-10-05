@@ -806,6 +806,7 @@ transfer_restrict (data const * const src,
   case op_ENO:
   case op_WENO:
   case op_Lagrange_monotone:
+  case op_restrict:
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
     case vertex_centered:
