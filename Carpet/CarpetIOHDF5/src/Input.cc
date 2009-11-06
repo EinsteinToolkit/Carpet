@@ -537,6 +537,11 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
 
       for (unsigned int tl = 0; tl < read_completely[vindex].size(); tl++) {
         all_done &= read_completely[vindex][tl];
+	if(not read_completely[vindex][tl]) {
+	  CCTK_VWarn(1,__LINE__,__FILE__, CCTK_THORNSTRING, "Variable %s on rl %d and tl %d not"
+		      " read completely. Will have to look for it in other files.", 
+		      CCTK_FullName(vindex),reflevel,tl);
+	}
       }
     }
     if (all_done) {
@@ -734,6 +739,7 @@ static list<fileset_t>::iterator OpenFileSet (const cGH* const cctkGH,
   // read all the metadata information
   ReadMetadata (fileset, file.file);
 
+  // first try to open a chunked file written on this processor
   // browse through all datasets contained in this file
   HDF5_ERROR (H5Giterate (file.file, "/", NULL, BrowseDatasets, &file));
   assert (file.patches.size() > 0);
