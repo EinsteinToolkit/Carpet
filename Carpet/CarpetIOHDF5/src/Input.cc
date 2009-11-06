@@ -538,9 +538,11 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
       for (unsigned int tl = 0; tl < read_completely[vindex].size(); tl++) {
         all_done &= read_completely[vindex][tl];
 	if(not read_completely[vindex][tl]) {
+	  char * const fullname = CCTK_FullName (vindex);
 	  CCTK_VWarn(1,__LINE__,__FILE__, CCTK_THORNSTRING, "Variable %s on rl %d and tl %d not"
 		      " read completely. Will have to look for it in other files.", 
-		      CCTK_FullName(vindex),reflevel,tl);
+		      fullname,reflevel,tl);
+	  free(fullname);
 	}
       }
     }
