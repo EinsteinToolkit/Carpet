@@ -45,6 +45,15 @@ namespace Carpet {
     return reflevels;
   }
 
+  // Get number of local components
+  extern "C"
+  CCTK_INT Carpet_GetLocalComponents (CCTK_POINTER_TO_CONST const cctkGH)
+  {
+    assert (reflevel >= 0);
+    assert (map >= 0);
+    return vhh.AT(map)->local_components(reflevel);
+  }
+
 
 
   // Enable or disable prolongating
