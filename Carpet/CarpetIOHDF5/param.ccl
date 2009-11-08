@@ -359,15 +359,23 @@ BOOLEAN output_all_timelevels "Output all timelevels instead of only the current
 {
 } "no"
 
-BOOLEAN output_symmetry_points "Output symmetry points (assuming that there are nghostzones symmetry points)"
+BOOLEAN output_symmetry_points "Output symmetry points (assuming that there are nghostzones symmetry points)" STEERABLE = ALWAYS
 {
 } "yes"
 
-BOOLEAN out3D_ghosts "Output ghost zones"
+BOOLEAN output_ghost_points "Output ghost points" STEERABLE = ALWAYS
 {
 } "yes"
 
-BOOLEAN out3D_outer_ghosts "Output outer boundary zones (assuming that there are nghostzones boundary points)"
+BOOLEAN output_boundary_points "Output outer boundary points (assuming that there are nghostzones boundary points)" STEERABLE = ALWAYS
+{
+} "yes"
+
+BOOLEAN out3D_ghosts "Output ghost zones (DEPRECATED)" STEERABLE = ALWAYS
+{
+} "yes"
+
+BOOLEAN out3D_outer_ghosts "Output outer boundary zones (assuming that there are nghostzones boundary points) (DEPRECATED)" STEERABLE = ALWAYS
 {
 } "yes"
 
