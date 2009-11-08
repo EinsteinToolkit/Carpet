@@ -1095,14 +1095,14 @@ namespace CarpetIOASCII {
         obnds[0][d]
         ? (is_symbnd[2*d]
            ? output_symmetry_points
-           : out3D_outer_ghosts)
-        : out3D_ghosts;
+           : (output_boundary_points and out3D_outer_ghosts))
+        : (output_ghost_points and out3D_ghosts);
       bool const output_upper_ghosts =
         obnds[1][d]
         ? (is_symbnd[2*d+1]
            ? output_symmetry_points
-           : out3D_outer_ghosts)
-        : out3D_ghosts;
+           : (output_boundary_points and out3D_outer_ghosts))
+        : (output_ghost_points and out3D_ghosts);
       
       if (not output_lower_ghosts) {
         lo[d] += ghost_width[0][d] * str[d];
