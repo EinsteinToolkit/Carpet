@@ -391,7 +391,7 @@ lc_statset_init (lc_statset_t * restrict const ls,
   for (int d=0; d<3; ++d) {
     assert (npoints[d] >= 0);
     assert (npoints[d] < 1000000000);
-    assert (npoints[d] < 1000000000 / total_npoints);
+    assert (total_npoints == 0 || npoints[d] < 1000000000 / total_npoints);
     total_npoints *= npoints[d];
   }
   
