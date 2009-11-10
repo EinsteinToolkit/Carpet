@@ -587,6 +587,134 @@ namespace CarpetRegrid2 {
       
       
       //
+      // Make the boxes rotating-90 symmetric
+      //
+      if (symmetry_rotating90) {
+        ibboxset added;
+        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+             ibb != regions.at(rl).end();
+             ++ ibb)
+        {
+          ibbox const & bb = * ibb;
+          
+          bvect const lower_is_outside_lower =
+            bb.lower() - min_bnd_dist_away[0] * bb.stride() <= physical_ilower;
+          
+          // Treat both x and y directions
+          for (int dir=0; dir<=1; ++dir) {
+            if (lower_is_outside_lower[dir]) {
+              ivect const ilo = bb.lower();
+              ivect const iup = bb.upper();
+              ivect const istr = bb.stride();
+              
+              // Origin
+              rvect const axis (physical_lower[0],
+                                physical_lower[1],
+                                physical_lower[2]); // z component is unused
+              ivect const iaxis0 = rpos2ipos  (axis, origin, scale, hh, rl);
+              assert (all (iaxis0 % istr == 0));
+              ivect const iaxis1 = rpos2ipos1 (axis, origin, scale, hh, rl);
+              assert (all (iaxis1 % istr == 0));
+              ivect const offset = iaxis1 - iaxis0;
+              assert (all (offset % istr == 0));
+              assert (all (offset >= 0 and offset < 2*istr));
+              assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == 0));
+              ivect const iaxis = (iaxis0 + iaxis1 - offset) / 2;
+              // negated (reflected) domain boundaries
+              ivect const neg_ilo = (2*iaxis+offset) - ilo;
+              ivect const neg_iup = (2*iaxis+offset) - iup;
+              // offset to add when permuting directions
+              ivect const permute01 (-iaxis[0]+iaxis[1], -iaxis[1]+iaxis[0], 0);
+              
+              // Rotate 90 degrees about z axis
+              ivect new_ilo, new_iup;
+              if (dir==0) {
+                // rotate clockwise
+                new_ilo = ivect (ilo[1], neg_iup[0], ilo[2]) + permute01;
+                new_iup = ivect (iup[1], neg_ilo[0], iup[2]) + permute01;
+              }
+              if (dir==1) {
+                // rotate counterclockwise
+                new_ilo = ivect (neg_iup[1], ilo[0],  ilo[2]) + permute01;
+                new_iup = ivect (neg_ilo[1],  iup[0],  iup[2]) + permute01;
+              }
+              ivect const new_istr (istr);
+              
+              ibbox const new_bb (new_ilo, new_iup, new_istr);
+              // Will be clipped later
+              //assert (new_bb.is_contained_in (hh.baseextents.at(0).at(rl)));
+              
+              added |= new_bb;
+            }
+          }
+        }
+          
+        regions.at(rl) |= added;
+        regions.at(rl).normalize();
+        
+      }
+      
+      
+      
+      //
+      // Make the boxes rotating-180 symmetric
+      //
+      if (symmetry_rotating180) {
+        
+        ibboxset added;
+        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
+             ibb != regions.at(rl).end();
+             ++ ibb)
+        {
+          ibbox const & bb = * ibb;
+          
+          bvect const lower_is_outside_lower =
+            bb.lower() - min_bnd_dist_away[0] * bb.stride() <= physical_ilower;
+          
+          // Treat x direction
+          int const dir = 0;
+          if (lower_is_outside_lower[dir]) {
+            ivect const ilo = bb.lower();
+            ivect const iup = bb.upper();
+            ivect const istr = bb.stride();
+            
+            // Origin
+            rvect const axis (physical_lower[0],
+                              (physical_lower[1] + physical_upper[1]) / 2,
+                              physical_lower[2]); // z component is unused
+            ivect const iaxis0 = rpos2ipos  (axis, origin, scale, hh, rl);
+            assert (all (iaxis0 % istr == 0));
+            ivect const iaxis1 = rpos2ipos1 (axis, origin, scale, hh, rl);
+            assert (all (iaxis1 % istr == 0));
+            ivect const offset = iaxis1 - iaxis0;
+            assert (all (offset % istr == 0));
+            assert (all (offset >= 0 and offset < 2*istr));
+            assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == 0));
+            ivect const iaxis = (iaxis0 + iaxis1 - offset) / 2;
+            ivect const neg_ilo = (2*iaxis+offset) - ilo;
+            ivect const neg_iup = (2*iaxis+offset) - iup;
+            
+            // Rotate 180 degrees about z axis
+            ivect const new_ilo (neg_iup[0], neg_iup[1], ilo[2]);
+            ivect const new_iup (neg_ilo[0], neg_ilo[1], iup[2]);
+            ivect const new_istr (istr);
+            
+            ibbox const new_bb (new_ilo, new_iup, new_istr);
+            // Will be clipped later
+            //assert (new_bb.is_contained_in (hh.baseextents.at(0).at(rl)));
+            
+            added |= new_bb;
+          }
+        }
+        
+        regions.at(rl) |= added;
+        regions.at(rl).normalize();
+        
+      } // if symmetry_rotating180
+      
+      
+      
+      //
       // Clip at the outer boundary
       //
       {
@@ -666,73 +794,6 @@ namespace CarpetRegrid2 {
         regions.at(rl) = clipped;
         regions.at(rl).normalize();
       }
-      
-      
-      
-      //
-      // Make the boxes rotating-90 symmetric
-      //
-      if (symmetry_rotating90) {
-        assert (0);            // There is also a paramwarn about this
-      }
-      
-      
-      
-      //
-      // Make the boxes rotating-180 symmetric
-      //
-      if (symmetry_rotating180) {
-        
-        ibboxset added;
-        for (ibboxset::const_iterator ibb = regions.at(rl).begin();
-             ibb != regions.at(rl).end();
-             ++ ibb)
-        {
-          ibbox const & bb = * ibb;
-          
-          bvect const lower_is_outside_lower =
-            bb.lower() - min_bnd_dist_away[0] * bb.stride() <= physical_ilower;
-          
-          if (lower_is_outside_lower[0]) {
-            ivect const ilo = bb.lower();
-            ivect const iup = bb.upper();
-            ivect const istr = bb.stride();
-            
-            // Origin
-            rvect const axis (physical_lower[0],
-                              (physical_lower[1] + physical_upper[1]) / 2,
-                              physical_lower[2]); // z component is unused
-            ivect const iaxis0 = rpos2ipos  (axis, origin, scale, hh, rl);
-            assert (all (iaxis0 % istr == 0));
-            ivect const iaxis1 = rpos2ipos1 (axis, origin, scale, hh, rl);
-            assert (all (iaxis1 % istr == 0));
-            ivect const offset = iaxis1 - iaxis0;
-            assert (all (offset % istr == 0));
-            assert (all (offset >= 0 and offset < 2*istr));
-            assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == 0));
-            ivect const iaxis = (iaxis0 + iaxis1 - offset) / 2;
-            
-            // Mirror about the y axis, cutting off most of the extent
-            // in the positive x direction
-            ivect const new_ilo (ilo[0],
-                                 (2*iaxis[1]+offset[1]) - iup[1],
-                                 ilo[2]);
-            ivect const new_iup ((2*iaxis[0]+offset[0]) - ilo[0],
-                                 (2*iaxis[1]+offset[1]) - ilo[1],
-                                 iup[2]);
-            ivect const new_istr (istr);
-            
-            ibbox const new_bb (new_ilo, new_iup, new_istr);
-            assert (new_bb.is_contained_in (hh.baseextents.at(0).at(rl)));
-            
-            added |= new_bb;
-          }
-        }
-        
-        regions.at(rl) |= added;
-        regions.at(rl).normalize();
-        
-      } // if symmetry_rotating180
       
       
       

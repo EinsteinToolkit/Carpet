@@ -38,10 +38,6 @@ namespace CarpetRegrid2 {
     {
       CCTK_PARAMWARN ("The number of requested refinement levels is larger than the maximum number of levels specified by Carpet::max_refinement_levels");
     }
-    
-    if (symmetry_rotating90) {
-      CCTK_PARAMWARN ("symmetry_rotating90 is not yet implemented");
-    }
   }
   
 } // namespace CarpetRegrid2
