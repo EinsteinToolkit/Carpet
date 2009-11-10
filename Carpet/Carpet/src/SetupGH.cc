@@ -166,7 +166,7 @@ namespace Carpet {
   static void
   ensure_CartGrid3D_avoid_origin ();
   static void
-  ensure_ReflectionSymmetry_avoid_origin ();
+  ensure_ReflectionSymmetry_avoid_origin (centering refcentering);
   static void
   ensure_ghostzones (int m,
                      i2vect const & ghosts);
@@ -457,6 +457,19 @@ namespace Carpet {
   {
     DECLARE_CCTK_PARAMETERS;
     
+    // Centering
+    centering refcentering;
+    int reffactdenom;
+    if (CCTK_EQUALS(refinement_centering, "vertex")) {
+      refcentering = vertex_centered;
+      reffactdenom = 1;
+    } else if (CCTK_EQUALS(refinement_centering, "cell")) {
+      refcentering = cell_centered;
+      reffactdenom = 2;
+    } else {
+      assert (0);
+    }
+    
     // Number of grid points
     ivect npoints = get_npoints ();
     
@@ -485,8 +498,8 @@ namespace Carpet {
        base_spacing);
     
     if (maxreflevels > 1) {
-      // Ensure that ReflectionSymmetry::avoid_origin = no
-      ensure_ReflectionSymmetry_avoid_origin ();
+      // Ensure that ReflectionSymmetry::avoid_origin is set correctly
+      ensure_ReflectionSymmetry_avoid_origin (refcentering);
     }
     
     // Adapt domain specification for convergence level
@@ -506,19 +519,6 @@ namespace Carpet {
        exterior_min, exterior_max,
        spacing,
        npoints);
-    
-    // Centering
-    centering refcentering;
-    int reffactdenom;
-    if (CCTK_EQUALS(refinement_centering, "vertex")) {
-      refcentering = vertex_centered;
-      reffactdenom = 1;
-    } else if (CCTK_EQUALS(refinement_centering, "cell")) {
-      refcentering = cell_centered;
-      reffactdenom = 2;
-    } else {
-      assert (0);
-    }
     
     centering const mgcentering = refcentering;
     
@@ -2238,9 +2238,10 @@ namespace Carpet {
   
   
   
-  // Ensure that ReflectionSymmetry::avoid_origin = no
+  // Ensure that ReflectionSymmetry::avoid_origin = no (if vertex
+  // centred)
   void
-  ensure_ReflectionSymmetry_avoid_origin ()
+  ensure_ReflectionSymmetry_avoid_origin (centering const refcentering)
   {
     if (CCTK_IsThornActive ("ReflectionSymmetry")) {
       int type;
@@ -2276,11 +2277,22 @@ namespace Carpet {
       assert (type == PARAMETER_BOOLEAN);
       CCTK_INT const reflection_z = * static_cast<CCTK_INT const *> (ptr);
       
-      if ((reflection_x and avoid_origin_x) or
-          (reflection_y and avoid_origin_y) or
-          (reflection_z and avoid_origin_z))
-      {
-        CCTK_WARN (0, "When Carpet::max_refinement_levels > 1, and when ReflectionSymmetry::symmetry_[xyz] = yes, then you also have to set ReflectionSymmetry::avoid_origin_[xyz] = no");
+      if (refcentering == vertex_centered) {
+        if ((reflection_x and avoid_origin_x) or
+            (reflection_y and avoid_origin_y) or
+            (reflection_z and avoid_origin_z))
+        {
+          CCTK_WARN (0, "When Carpet::max_refinement_levels > 1, and when ReflectionSymmetry::symmetry_[xyz] = yes, then you also have to set ReflectionSymmetry::avoid_origin_[xyz] = no");
+        }
+      } else if (refcentering == cell_centered) {
+        if ((reflection_x and not avoid_origin_x) or
+            (reflection_y and not avoid_origin_y) or
+            (reflection_z and not avoid_origin_z))
+        {
+          CCTK_WARN (0, "When Carpet::max_refinement_levels > 1, and when ReflectionSymmetry::symmetry_[xyz] = yes, then you have to set ReflectionSymmetry::avoid_origin_[xyz] = yes");
+        }
+      } else {
+        assert (0);
       }
     }
   }
