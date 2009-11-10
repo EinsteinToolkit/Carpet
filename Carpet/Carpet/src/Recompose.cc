@@ -781,28 +781,49 @@ namespace Carpet {
 #warning "TODO: check this (for Carpet, and maybe also for CartGrid3D)"
 #warning "TODO: (the check that these two are consistent should be in Carpet)"
     
-    typedef vect<vect<CCTK_INT,2>,3> jjvect;
     jjvect nboundaryzones;
     jjvect is_internal;
     jjvect is_staggered;
     jjvect shiftout;
-    check (not GetBoundarySpecification
-           (2*dim,
-            & nboundaryzones[0][0],
-            & is_internal[0][0],
-            & is_staggered[0][0],
-            & shiftout[0][0]));
+    if (domain_from_multipatch and
+        CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification"))
+    {
+      check (not MultiPatch_GetBoundarySpecification
+             (m, 2*dim,
+              & nboundaryzones[0][0],
+              & is_internal[0][0],
+              & is_staggered[0][0],
+              & shiftout[0][0]));
+    } else {
+      check (not GetBoundarySpecification
+             (2*dim,
+              & nboundaryzones[0][0],
+              & is_internal[0][0],
+              & is_staggered[0][0],
+              & shiftout[0][0]));
+    }
     
     rvect physical_lower, physical_upper;
     rvect interior_lower, interior_upper;
     rvect exterior_lower, exterior_upper;
     rvect spacing;
-    check (not GetDomainSpecification
-           (dim,
-            & physical_lower[0], & physical_upper[0],
-            & interior_lower[0], & interior_upper[0],
-            & exterior_lower[0], & exterior_upper[0],
-            & spacing[0]));
+    if (domain_from_multipatch and
+        CCTK_IsFunctionAliased ("MultiPatch_GetDomainSpecification"))
+    {
+      check (not MultiPatch_GetDomainSpecification
+             (m, dim,
+              & physical_lower[0], & physical_upper[0],
+              & interior_lower[0], & interior_upper[0],
+              & exterior_lower[0], & exterior_upper[0],
+              & spacing[0]));
+    } else {
+      check (not GetDomainSpecification
+             (dim,
+              & physical_lower[0], & physical_upper[0],
+              & interior_lower[0], & interior_upper[0],
+              & exterior_lower[0], & exterior_upper[0],
+              & spacing[0]));
+    }
     
     // Adapt spacing for convergence level
 #warning "TODO: take ml into account"
