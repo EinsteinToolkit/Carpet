@@ -895,7 +895,7 @@ namespace Carpet {
             CCTK_DELTA_SPACE;
 #endif
           
-          ibbox const & ext       = * bi;
+          ibbox const & ext = * bi;
           
           rvect const rlower = origin + rvect (ext.lower()) / scale;
           rvect const rupper = origin + rvect (ext.upper()) / scale;
@@ -1023,25 +1023,35 @@ namespace Carpet {
                 "GF: rhs: %.0fk active, %.0fk owned (+%.0f%%), %.0fk total (+%.0f%%), %.3g steps/time",
                 double (num_active_cpu_points / 1e+3),
                 double (num_owned_cpu_points / 1e+3),
-                double (num_owned_cpu_points / num_active_cpu_points * 100 - 100),
+                double (num_active_cpu_points == 0
+                        ? 0
+                        : num_owned_cpu_points / num_active_cpu_points * 100 - 100),
                 double (num_total_cpu_points / 1e+3),
-                double (num_total_cpu_points / num_owned_cpu_points * 100 - 100),
+                double (num_owned_cpu_points == 0
+                        ? 0
+                        : num_total_cpu_points / num_owned_cpu_points * 100 - 100),
                 double (num_steps / delta_time));
     CCTK_VInfo (CCTK_THORNSTRING,
                 "GF: vars: %d, pts: %.0fM active, %.0fM owned (+%.0f%%), %.0fM total (+%.0f%%), %.1f comp/proc",
                 num_gfs,
                 double (num_active_mem_points / 1e+6),
                 double (num_owned_mem_points / 1e+6),
-                double (num_owned_mem_points / num_active_mem_points * 100 - 100),
+                double (num_active_mem_points == 0
+                        ? 0
+                        : num_owned_mem_points / num_active_mem_points * 100 - 100),
                 double (num_total_mem_points / 1e+6),
-                double (num_total_mem_points / num_owned_mem_points * 100 - 100),
+                double (num_owned_mem_points == 0
+                        ? 0
+                        : num_total_mem_points / num_owned_mem_points * 100 - 100),
                 double (num_comps / (reflevels * CCTK_nProcs (cctkGH))));
     CCTK_VInfo (CCTK_THORNSTRING,
                 "GA: vars: %d, pts: %.0fM active, %.0fM total (+%.0f%%)",
                 num_arrays,
                 double (num_active_array_points / 1e+6),
                 double (num_total_array_points / 1e+6),
-                double (num_total_array_points / num_active_array_points * 100 - 100));
+                double (num_active_array_points == 0
+                        ? 0
+                        : num_total_array_points / num_active_array_points * 100 - 100));
     CCTK_VInfo (CCTK_THORNSTRING,
                 "Total required memory: %.3f GByte (for GAs and currently active GFs)",
                 double ((size_total_array_points + size_total_mem_points) / 1e+9));
