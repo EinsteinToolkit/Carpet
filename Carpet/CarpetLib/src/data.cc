@@ -733,7 +733,7 @@ transfer_prolongate (data const * const src,
         break;
       default:
         CCTK_WARN (CCTK_WARN_ABORT,
-                   "There is no vertex-centred stencil for op=\"LAGRANGE\" with order_space not in {1, 3, 5, 7, 9, 11}");
+                   "There is no vertex-centred stencil for op=\"LAGRANGE\" or op=\"COPY\" with order_space not in {1, 3, 5, 7, 9, 11}");
         break;
       }
       break;
@@ -771,7 +771,7 @@ transfer_prolongate (data const * const src,
         break;
       default:
         CCTK_WARN (CCTK_WARN_ABORT,
-                   "There is no cell-centred stencil for op=\"LAGRANGE\" with order_space not in {0, 1, 2}");
+                   "There is no cell-centred stencil for op=\"LAGRANGE\" or op=\"COPY\" with order_space not in {0, 1, 2}");
         break;
       }
       break;
