@@ -133,8 +133,9 @@ call_operator (void
     int const num_threads = omp_get_num_threads();
     int const thread_num = omp_get_thread_num();
     // Parallelise in z direction
-    // TODO: parallelise along longest extent
-    int const dir = 2;
+    // int const dir = 2;
+    // Parallelise along longest extent
+    int const dir = maxloc (regbbox.shape());
     int const stride = regbbox.stride()[dir];
     int const first_point = regbbox.lower()[dir];
     int const last_point = regbbox.upper()[dir] + stride;
