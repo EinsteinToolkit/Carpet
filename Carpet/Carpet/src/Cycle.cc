@@ -2,6 +2,7 @@
 #include <cstdlib>
 
 #include <cctk.h>
+#include <cctk_Parameters.h>
 
 #include <ggf.hh>
 #include <gh.hh>
@@ -18,11 +19,27 @@ namespace Carpet {
   
   void CycleTimeLevels (const cGH* cgh)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     Checkpoint ("CycleTimeLevels");
     assert (is_level_mode());
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cgh, group)) {
+        
+        int const activetimelevels = CCTK_ActiveTimeLevelsGI (cgh, group);
+        if (activetimelevels > 1) {
+          if (activetimelevels < prolongation_order_time+1) {
+            char * const groupname = CCTK_GroupName (group);
+            CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "Group \"%s\" has %d only active time levels.  Groups with more than one active time level need at least %d active time levels for prolongation_order_time=%d",
+                        groupname,
+                        activetimelevels, int(prolongation_order_time+1),
+                        int(prolongation_order_time));
+            free (groupname);
+          }
+        }
+        
         switch (CCTK_GroupTypeI(group)) {
           
         case CCTK_GF:
@@ -67,11 +84,27 @@ namespace Carpet {
   
   void FlipTimeLevels (const cGH* cgh)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     Checkpoint ("FlipTimeLevels");
     assert (is_level_mode());
     
     for (int group=0; group<CCTK_NumGroups(); ++group) {
       if (CCTK_QueryGroupStorageI(cgh, group)) {
+        
+        int const activetimelevels = CCTK_ActiveTimeLevelsGI (cgh, group);
+        if (activetimelevels > 1) {
+          if (activetimelevels < prolongation_order_time+1) {
+            char * const groupname = CCTK_GroupName (group);
+            CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                        "Group \"%s\" has %d only active time levels.  Groups with more than one active time level need at least %d active time levels for prolongation_order_time=%d",
+                        groupname,
+                        activetimelevels, int(prolongation_order_time+1),
+                        int(prolongation_order_time));
+            free (groupname);
+          }
+        }
+        
         switch (CCTK_GroupTypeI(group)) {
           
         case CCTK_GF:

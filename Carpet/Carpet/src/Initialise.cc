@@ -238,6 +238,8 @@ namespace Carpet {
   void
   CallPostRecoverVariables (cGH * const cctkGH)
   {
+    DECLARE_CCTK_PARAMETERS;
+    
     char const * const where = "Initialise::CallPostRecoverVariables";
     static Timer timer (where);
     timer.start();
@@ -257,11 +259,54 @@ namespace Carpet {
                     (do_global_mode ? " (global)" : ""),
                     (do_meta_mode ? " (meta)" : ""));
           
-          // Post recover variables
-          ScheduleTraverse (where, "CCTK_POST_RECOVER_VARIABLES", cctkGH);
+          int const num_tl = prolongation_order_time+1;
           
-          // Checking
-          PoisonCheck (cctkGH, alltimes);
+          bool const old_do_allow_past_timelevels = do_allow_past_timelevels;
+          do_allow_past_timelevels = false;
+          
+          // Rewind times
+          for (int m=0; m<maps; ++m) {
+            CCTK_REAL const old_delta =
+              vtt.AT(m)->get_delta (reflevel, mglevel);
+            vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
+          }
+          FlipTimeLevels (cctkGH);
+          for (int tl=0; tl<num_tl; ++tl) {
+            for (int m=0; m<maps; ++m) {
+              vtt.AT(m)->advance_time (reflevel, mglevel);
+            }
+            CycleTimeLevels (cctkGH);
+          }
+          for (int m=0; m<maps; ++m) {
+            CCTK_REAL const old_delta =
+              vtt.AT(m)->get_delta (reflevel, mglevel);
+            vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
+          }
+          FlipTimeLevels (cctkGH);
+          CCTK_REAL const old_cctk_time = cctkGH->cctk_time;
+          cctkGH->cctk_time -=
+            num_tl * (cctkGH->cctk_delta_time / cctkGH->cctk_timefac);
+          
+          for (int tl=0; tl<num_tl; ++tl) {
+            
+            // Advance times
+            for (int m=0; m<maps; ++m) {
+              vtt.AT(m)->advance_time (reflevel, mglevel);
+            }
+            CycleTimeLevels (cctkGH);
+            cctkGH->cctk_time += cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
+            
+            // Post recover variables
+            ScheduleTraverse (where, "CCTK_POST_RECOVER_VARIABLES", cctkGH);
+            
+            // Checking
+            PoisonCheck (cctkGH, currenttime);
+            
+          } // for tl
+          cctkGH->cctk_time = old_cctk_time;
+          
+          do_allow_past_timelevels = old_do_allow_past_timelevels;
+          
           CheckChecksums (cctkGH, allbutcurrenttime);
           
         } LEAVE_LEVEL_MODE;
@@ -327,33 +372,42 @@ namespace Carpet {
           
           int const num_tl =
             init_each_timelevel ? prolongation_order_time+1 : 1;
+          
           bool const old_do_allow_past_timelevels = do_allow_past_timelevels;
           do_allow_past_timelevels =
             not CCTK_EQUALS (initial_data_setup_method, "init_single_level");
           
+          // Rewind times
           for (int m=0; m<maps; ++m) {
-            vtt.AT(m)->set_delta
-              (reflevel, mglevel, - vtt.AT(m)->get_delta (reflevel, mglevel));
-            FlipTimeLevels (cctkGH);
-            for (int tl=0; tl<num_tl; ++tl) {
+            CCTK_REAL const old_delta =
+              vtt.AT(m)->get_delta (reflevel, mglevel);
+            vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
+          }
+          FlipTimeLevels (cctkGH);
+          for (int tl=0; tl<num_tl; ++tl) {
+            for (int m=0; m<maps; ++m) {
               vtt.AT(m)->advance_time (reflevel, mglevel);
-              CycleTimeLevels (cctkGH);
             }
-            vtt.AT(m)->set_delta
-              (reflevel, mglevel, - vtt.AT(m)->get_delta (reflevel, mglevel));
-            FlipTimeLevels (cctkGH);
-          } // for m
+            CycleTimeLevels (cctkGH);
+          }
+          for (int m=0; m<maps; ++m) {
+            CCTK_REAL const old_delta =
+              vtt.AT(m)->get_delta (reflevel, mglevel);
+            vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
+          }
+          FlipTimeLevels (cctkGH);
+          CCTK_REAL const old_cctk_time = cctkGH->cctk_time;
+          cctkGH->cctk_time -=
+            num_tl * (cctkGH->cctk_delta_time / cctkGH->cctk_timefac);
           
-          for (int tl=num_tl-1; tl>=0; --tl) {
+          for (int tl=0; tl<num_tl; ++tl) {
             
             // Advance times
             for (int m=0; m<maps; ++m) {
               vtt.AT(m)->advance_time (reflevel, mglevel);
             }
-            cctkGH->cctk_time =
-              (+ global_time
-               - tl * delta_time * mglevelfact / timereflevelfact);
             CycleTimeLevels (cctkGH);
+            cctkGH->cctk_time += cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
             
             // Set up the initial data
             ScheduleTraverse (where, "CCTK_INITIAL", cctkGH);
@@ -368,6 +422,7 @@ namespace Carpet {
             PoisonCheck (cctkGH, currenttime);
             
           } // for tl
+          cctkGH->cctk_time = old_cctk_time;
           
           do_allow_past_timelevels = old_do_allow_past_timelevels;
           
@@ -580,24 +635,28 @@ namespace Carpet {
                 
                 // Rewind times
                 for (int m=0; m<maps; ++m) {
-                  vtt.AT(m)->set_delta
-                    (reflevel, mglevel,
-                     - vtt.AT(m)->get_delta (reflevel, mglevel));
-                  FlipTimeLevels (cctkGH);
-                  for (int tl=0; tl<num_tl; ++tl) {
+                  CCTK_REAL const old_delta =
+                    vtt.AT(m)->get_delta (reflevel, mglevel);
+                  vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
+                }
+                FlipTimeLevels (cctkGH);
+                for (int tl=0; tl<num_tl; ++tl) {
+                  for (int m=0; m<maps; ++m) {
                     vtt.AT(m)->advance_time (reflevel, mglevel);
-                    CycleTimeLevels (cctkGH);
                   }
-                  vtt.AT(m)->set_delta
-                    (reflevel, mglevel,
-                     - vtt.AT(m)->get_delta (reflevel, mglevel));
-                  FlipTimeLevels (cctkGH);
-                } // for m
+                  CycleTimeLevels (cctkGH);
+                }
+                for (int m=0; m<maps; ++m) {
+                  CCTK_REAL const old_delta =
+                    vtt.AT(m)->get_delta (reflevel, mglevel);
+                  vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
+                }
+                FlipTimeLevels (cctkGH);
                 CCTK_REAL const old_cctk_time = cctkGH->cctk_time;
                 cctkGH->cctk_time -=
                   num_tl * (cctkGH->cctk_delta_time / cctkGH->cctk_timefac);
                 
-                for (int tl=num_tl-1; tl>=0; --tl) {
+                for (int tl=0; tl<num_tl; ++tl) {
                   
                   // Advance times
                   for (int m=0; m<maps; ++m) {
@@ -674,22 +733,28 @@ namespace Carpet {
           
           // Rewind times
           for (int m=0; m<maps; ++m) {
-            vtt.AT(m)->set_delta
-              (reflevel, mglevel, - vtt.AT(m)->get_delta (reflevel, mglevel));
-            FlipTimeLevels (cctkGH);
-            for (int tl=0; tl<num_tl; ++tl) {
+            CCTK_REAL const old_delta =
+              vtt.AT(m)->get_delta (reflevel, mglevel);
+            vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
+          }
+          FlipTimeLevels (cctkGH);
+          for (int tl=0; tl<num_tl; ++tl) {
+            for (int m=0; m<maps; ++m) {
               vtt.AT(m)->advance_time (reflevel, mglevel);
-              CycleTimeLevels (cctkGH);
             }
-            vtt.AT(m)->set_delta
-              (reflevel, mglevel, - vtt.AT(m)->get_delta (reflevel, mglevel));
-            FlipTimeLevels (cctkGH);
-          } // for m
+            CycleTimeLevels (cctkGH);
+          }
+          for (int m=0; m<maps; ++m) {
+            CCTK_REAL const old_delta =
+              vtt.AT(m)->get_delta (reflevel, mglevel);
+            vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
+          }
+          FlipTimeLevels (cctkGH);
           CCTK_REAL const old_cctk_time = cctkGH->cctk_time;
           cctkGH->cctk_time -=
             num_tl * (cctkGH->cctk_delta_time / cctkGH->cctk_timefac);
           
-          for (int tl=num_tl-1; tl>=0; --tl) {
+          for (int tl=0; tl<num_tl; ++tl) {
             
             // Advance times
             for (int m=0; m<maps; ++m) {
@@ -790,24 +855,28 @@ namespace Carpet {
                 
                 // Rewind times
                 for (int m=0; m<maps; ++m) {
-                  vtt.AT(m)->set_delta
-                    (reflevel, mglevel,
-                     - vtt.AT(m)->get_delta (reflevel, mglevel));
-                  FlipTimeLevels (cctkGH);
-                  for (int tl=0; tl<num_tl; ++tl) {
+                  CCTK_REAL const old_delta =
+                    vtt.AT(m)->get_delta (reflevel, mglevel);
+                  vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
+                }
+                FlipTimeLevels (cctkGH);
+                for (int tl=0; tl<num_tl; ++tl) {
+                  for (int m=0; m<maps; ++m) {
                     vtt.AT(m)->advance_time (reflevel, mglevel);
-                    CycleTimeLevels (cctkGH);
                   }
-                  vtt.AT(m)->set_delta
-                    (reflevel, mglevel,
-                     - vtt.AT(m)->get_delta (reflevel, mglevel));
-                  FlipTimeLevels (cctkGH);
-                } // for m
+                  CycleTimeLevels (cctkGH);
+                }
+                for (int m=0; m<maps; ++m) {
+                  CCTK_REAL const old_delta =
+                    vtt.AT(m)->get_delta (reflevel, mglevel);
+                  vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
+                }
+                FlipTimeLevels (cctkGH);
                 CCTK_REAL const old_cctk_time = cctkGH->cctk_time;
                 cctkGH->cctk_time -=
                   num_tl * (cctkGH->cctk_delta_time / cctkGH->cctk_timefac);
                 
-                for (int tl=num_tl-1; tl>=0; --tl) {
+                for (int tl=0; tl<num_tl; ++tl) {
                   
                   // Advance times
                   for (int m=0; m<maps; ++m) {
@@ -981,24 +1050,28 @@ namespace Carpet {
                 
                 // Rewind times
                 for (int m=0; m<maps; ++m) {
-                  vtt.AT(m)->set_delta
-                    (reflevel, mglevel,
-                     - vtt.AT(m)->get_delta (reflevel, mglevel));
-                  FlipTimeLevels (cctkGH);
-                  for (int tl=0; tl<num_tl; ++tl) {
+                  CCTK_REAL const old_delta =
+                    vtt.AT(m)->get_delta (reflevel, mglevel);
+                  vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
+                }
+                FlipTimeLevels (cctkGH);
+                for (int tl=0; tl<num_tl; ++tl) {
+                  for (int m=0; m<maps; ++m) {
                     vtt.AT(m)->advance_time (reflevel, mglevel);
-                    CycleTimeLevels (cctkGH);
                   }
-                  vtt.AT(m)->set_delta
-                    (reflevel, mglevel,
-                     - vtt.AT(m)->get_delta (reflevel, mglevel));
-                  FlipTimeLevels (cctkGH);
-                } // for m
+                  CycleTimeLevels (cctkGH);
+                }
+                for (int m=0; m<maps; ++m) {
+                  CCTK_REAL const old_delta =
+                    vtt.AT(m)->get_delta (reflevel, mglevel);
+                  vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
+                }
+                FlipTimeLevels (cctkGH);
                 CCTK_REAL const old_cctk_time = cctkGH->cctk_time;
                 cctkGH->cctk_time -=
                   num_tl * (cctkGH->cctk_delta_time / cctkGH->cctk_timefac);
                 
-                for (int tl=num_tl-1; tl>=0; --tl) {
+                for (int tl=0; tl<num_tl; ++tl) {
                   
                   // Advance times
                   for (int m=0; m<maps; ++m) {
