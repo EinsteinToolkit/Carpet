@@ -650,7 +650,7 @@ namespace CarpetRegrid2 {
           if (not clipped_bb.is_contained_in (hh.baseextents.at(0).at(rl))) {
             ostringstream msg;
             msg << "Level " << rl << " of the refinement hierarchy is not contained in the simulation domain."
-                << "  (There may be too many ghost of buffer zones.)"
+                << "  (There may be too many ghost or buffer zones.)"
                 << "  One bbox is " << clipped_bb << "."
                 << "  lower_is_outside_lower=" << lower_is_outside_lower
                 << "  upper_is_outside_upper=" << upper_is_outside_upper
