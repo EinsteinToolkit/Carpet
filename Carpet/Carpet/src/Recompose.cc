@@ -1399,7 +1399,8 @@ namespace Carpet {
     // Choose a number of slices for this direction
     CCTK_REAL const mycost1 =
       mycost * pow(nprocs / totalcost, CCTK_REAL(1) / alldims);
-    int const nslices = min (nprocs, int (floor (mycost1 + CCTK_REAL(0.5))));
+    int const nslices1 = min (nprocs, int (floor (mycost1 + CCTK_REAL(0.5))));
+    int const nslices = mydim==no_split_direction ? 1 : nslices1;
     assert (nslices <= nprocs);
     if (recompose_verbose) cout << "SRMAR " << mydim << " nprocs " << nprocs << endl;
     if (recompose_verbose) cout << "SRMAR " << mydim << " nslices " << nslices << endl;

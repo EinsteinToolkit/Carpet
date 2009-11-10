@@ -398,10 +398,16 @@ CCTK_INT processor_topology_3d_z "Number of processors in z-direction" STEERABLE
   1:* :: "must be positive"
 } 1
 
-CCTK_INT split_direction "Direction in which the domain should be split" STEERABLE=recover
+CCTK_INT split_direction "Direction in which the domain should be split (for processor_topology=along-dir)" STEERABLE=recover
 {
   0:* :: "0 for x, 1 for y, 2 for z, etc."
 } 2
+
+CCTK_INT no_split_direction "Direction in which the domain must not be split (for processor_topology=automatic)" STEERABLE=recover
+{
+  -1  :: "split in all directions"
+  0:* :: "0 for x, 1 for y, 2 for z, etc."
+} -1
 
 BOOLEAN constant_load_per_processor "Keep the load per processor constant -- this is meant for benchmarks" STEERABLE=recover
 {
