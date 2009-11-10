@@ -107,7 +107,6 @@ namespace CarpetLib {
     
     
     // Loop over region
-#pragma omp parallel for
     for (int l=0; l<reglext; ++l) {
       for (int k=0; k<regkext; ++k) {
         for (int j=0; j<regjext; ++j) {
