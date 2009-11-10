@@ -351,7 +351,7 @@ ref_bnd_prolongate_all (comm_state & state,
     // Interpolation in time
     if (not (timelevels(ml,rl) >= prolongation_order_time+1)) {
       char * const fullname = CCTK_FullName (varindex);
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+      CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "The variable \"%s\" has only %d active time levels, which is not enough for boundary prolongation of order %d",
                   fullname ? fullname : "<unknown variable>",
                   timelevels(ml,rl), prolongation_order_time);
