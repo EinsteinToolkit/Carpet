@@ -88,32 +88,19 @@ namespace CarpetRegrid2 {
     DECLARE_CCTK_PARAMETERS;
     
     ivect const istride = hh.baseextents.at(0).at(rl).stride();
-    
-    ivect ipos = (ivect (floor ((rpos - origin) * scale / rvect(istride) +
-                                static_cast<CCTK_REAL> (0.5))) *
-                  istride);
-    
-    if (snap_to_coarse) {
-      if (rl > 0) {
-        ivect const cistride = hh.baseextents.at(0).at(rl - 1).stride();
-        ipos = ipos / cistride * cistride;
-      }
-    }
+    ivect const cistride =
+      snap_to_coarse and rl > 0
+      ? hh.baseextents.at(0).at(rl-1).stride()
+      : istride;
     
     if (hh.refcent == cell_centered) {
-#if 0
-      if (rl > 0) {
-        ivect const cistride = hh.baseextents.at(0).at(rl - 1).stride();
-        
-        ivect const offset = (cistride / istride + 1) % 2;
-        
-        assert (all (istride % offset == 0));
-        ipos += offset;
-      }
-#endif
       assert (all (istride % 2 == 0));
-      ipos += istride / 2;
     }
+    
+    ivect const ipos =
+      hh.refcent == vertex_centered
+      ? ivect (floor ((rpos - origin) * scale / rvect(cistride) + rvect(0.5)                                       )) * cistride
+      : ivect (floor ((rpos - origin) * scale / rvect(cistride) + rvect(0.5) - rvect(istride / 2) / rvect(cistride))) * cistride + istride / 2;
     
     return ipos;
   }
@@ -128,32 +115,19 @@ namespace CarpetRegrid2 {
     DECLARE_CCTK_PARAMETERS;
     
     ivect const istride = hh.baseextents.at(0).at(rl).stride();
-    
-    ivect ipos = (ivect (ceil ((rpos - origin) * scale / rvect(istride) -
-                               static_cast<CCTK_REAL> (0.5))) *
-                  istride);
-    
-    if (snap_to_coarse) {
-      if (rl > 0) {
-        ivect const cistride = hh.baseextents.at(0).at(rl - 1).stride();
-        ipos = (ipos + cistride - 1) / cistride * cistride;
-      }
-    }
+    ivect const cistride =
+      snap_to_coarse and rl > 0
+      ? hh.baseextents.at(0).at(rl-1).stride()
+      : istride;
     
     if (hh.refcent == cell_centered) {
-#if 0
-      if (rl > 0) {
-        ivect const cistride = hh.baseextents.at(0).at(rl - 1).stride();
-        
-        ivect const offset = (cistride / istride + 1) % 2;
-        
-        assert (all (istride % offset == 0));
-        ipos -= offset;
-      }
-#endif
       assert (all (istride % 2 == 0));
-      ipos -= istride / 2;
     }
+    
+    ivect const ipos =
+      hh.refcent == vertex_centered
+      ? ivect (ceil ((rpos - origin) * scale / rvect(cistride) - rvect(0.5)                                       )) * cistride
+      : ivect (ceil ((rpos - origin) * scale / rvect(cistride) - rvect(0.5) + rvect(istride / 2) / rvect(cistride))) * cistride - istride / 2;
     
     return ipos;
   }
