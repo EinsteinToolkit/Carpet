@@ -1005,13 +1005,14 @@ transfer_restrict (data const * const src,
     // enum centering { vertex_centered, cell_centered };
     switch (cent) {
     case vertex_centered:
-      restrict_4d_rf2 (static_cast <T const *> (src->storage()),
-                       src->shape(),
-                       static_cast <T *> (this->storage()),
-                       this->shape(),
-                       src->extent(),
-                       this->extent(),
-                       box);
+      call_operator<T> (& restrict_4d_rf2,
+                        static_cast <T const *> (src->storage()),
+                        src->shape(),
+                        static_cast <T *> (this->storage()),
+                        this->shape(),
+                        src->extent(),
+                        this->extent(),
+                        box);
       break;
     default:
       assert (0);
