@@ -328,6 +328,7 @@ ostream& output (ostream& os, const vector<T>& v) {
 template int ipow (int x, int y);
 template CCTK_REAL ipow (CCTK_REAL x, int y);
 template vect<int,dim> ipow (vect<int,dim> x, int y);
+template vect<CCTK_REAL,dim> ipow (vect<CCTK_REAL,dim> x, int y);
 
 template size_t memoryof (list<bbox<int,dim> > const & l);
 template size_t memoryof (list<vect<int,dim> > const & l);
