@@ -33,6 +33,7 @@ namespace CarpetRegrid2 {
   
   
   typedef bboxset <int, dim> ibboxset;
+  typedef vect <vect <CCTK_INT, 2>, dim> jjvect;
   typedef vect <CCTK_REAL, dim> rvect;
   typedef bbox <CCTK_REAL, dim> rbbox;
   
@@ -176,6 +177,34 @@ namespace CarpetRegrid2 {
   
   
   void
+  get_boundary_specification (jjvect & nboundaryzones,
+                              jjvect & is_internal,
+                              jjvect & is_staggered,
+                              jjvect & shiftout)
+  {
+    if (CCTK_IsFunctionAliased ("MultiPatch_GetBoundarySpecification")) {
+      assert (Carpet::map >= 0);
+      CCTK_INT const ierr = MultiPatch_GetBoundarySpecification
+        (Carpet::map, 2*dim,
+         & nboundaryzones[0][0],
+         & is_internal[0][0],
+         & is_staggered[0][0],
+         & shiftout[0][0]);
+      assert (not ierr);
+    } else if (CCTK_IsFunctionAliased ("GetBoundarySpecification")) {
+      CCTK_INT const ierr = GetBoundarySpecification
+        (2*dim,
+         & nboundaryzones[0][0],
+         & is_internal[0][0],
+         & is_staggered[0][0],
+         & shiftout[0][0]);
+      assert (not ierr);
+    } else {
+      assert (0);
+    }
+  }
+  
+  void
   get_physical_boundary (rvect & physical_lower,
                          rvect & physical_upper,
                          rvect & spacing)
@@ -273,58 +302,18 @@ namespace CarpetRegrid2 {
 #warning "TODO: check this (for Carpet, and maybe also for CartGrid3D)"
 #warning "TODO: (the check that these two are consistent should be in Carpet)"
     
-#if 0
-    typedef vect<vect<CCTK_INT,2>,3> jjvect;
-    jjvect nboundaryzones;
-    jjvect is_internal;
-    jjvect is_staggered;
-    jjvect shiftout;
-    {
-      CCTK_INT const ierr = GetBoundarySpecification
-        (2*dim,
-         & nboundaryzones[0][0],
-         & is_internal[0][0],
-         & is_staggered[0][0],
-         & shiftout[0][0]);
-      assert (not ierr);
-    }
-#endif
+    jjvect nboundaryzones, is_internal;
+    jjvect is_staggered, shiftout;
+    get_boundary_specification (nboundaryzones, is_internal,
+                                is_staggered, shiftout);
     
-#if 0
-    rvect physical_lower, physical_upper;
-    rvect interior_lower, interior_upper;
-    rvect exterior_lower, exterior_upper;
-    rvect spacing;
-    {
-      CCTK_INT const ierr = GetDomainSpecification
-        (dim,
-         & physical_lower[0], & physical_upper[0],
-         & interior_lower[0], & interior_upper[0],
-         & exterior_lower[0], & exterior_upper[0],
-         & spacing[0]);
-      assert (not ierr);
-    }
-#endif
     rvect physical_lower, physical_upper;
     rvect spacing;
-    get_physical_boundary (physical_lower, physical_upper,
-                           spacing);
+    get_physical_boundary (physical_lower, physical_upper, spacing);
     
     // Adapt spacing for convergence level
     spacing *= ipow ((CCTK_REAL) mgfact, basemglevel);
     
-#if 0
-    {
-      CCTK_INT const ierr =
-        ConvertFromPhysicalBoundary
-        (dim,
-         & physical_lower[0], & physical_upper[0],
-         & interior_lower[0], & interior_upper[0],
-         & exterior_lower[0], & exterior_upper[0],
-         & spacing[0]);
-      assert (not ierr);
-    }
-#endif
     rvect exterior_lower, exterior_upper;
     calculate_exterior_boundary (physical_lower, physical_upper,
                                  exterior_lower, exterior_upper,
