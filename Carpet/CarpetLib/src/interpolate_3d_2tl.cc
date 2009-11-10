@@ -124,7 +124,7 @@ namespace CarpetLib {
     // Loop over region
 #pragma omp parallel
     LC_LOOP3 (interpolate_3d_2tl,
-              i,j,k, 0,0,0, regiext,regjext,regkext, regiext,regjext,regkext)
+              i,j,k, 0,0,0, regiext,regjext,regkext, srciext,srcjext,srckext)
     {
       
       dst [DSTIND3(i, j, k)] =

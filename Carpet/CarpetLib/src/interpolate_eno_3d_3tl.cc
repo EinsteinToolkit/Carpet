@@ -167,7 +167,7 @@ namespace CarpetLib {
     // Loop over region
 #pragma omp parallel
     LC_LOOP3 (interpolate_end_3d_3tl,
-              i,j,k, 0,0,0, regiext,regjext,regkext, regiext,regjext,regkext)
+              i,j,k, 0,0,0, regiext,regjext,regkext, srciext,srcjext,srckext)
     {
       
       T const s1 = src1 [SRCIND3(i, j, k)];
