@@ -78,7 +78,8 @@ call_operator (void
     int const my_first_point =
       min (last_point, first_point + thread_num * my_num_points);
     int const my_last_point =
-      max (my_first_point, min (last_point, my_first_point + my_num_points));
+      min (last_point, my_first_point + my_num_points);
+    assert (my_last_point >= my_first_point);
     ibbox3 const myregbbox
       (regbbox.lower().replace (dir, my_first_point),
        regbbox.upper().replace (dir, my_last_point - stride),
@@ -145,7 +146,8 @@ call_operator (void
     int const my_first_point =
       min (last_point, first_point + thread_num * my_num_points);
     int const my_last_point =
-      max (my_first_point, min (last_point, my_first_point + my_num_points));
+      min (last_point, my_first_point + my_num_points);
+    assert (my_last_point >= my_first_point);
     ibbox4 const myregbbox
       (regbbox.lower().replace (dir, my_first_point),
        regbbox.upper().replace (dir, my_last_point - stride),
