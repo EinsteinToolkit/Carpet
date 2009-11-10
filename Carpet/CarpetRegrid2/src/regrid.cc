@@ -40,10 +40,10 @@ namespace CarpetRegrid2 {
   
   
   struct centre_description {
-    int                num_levels;
-    int                active;
-    rvect              position;
-    vector <CCTK_REAL> radius;
+    int            num_levels;
+    int            active;
+    rvect          position;
+    vector <rvect> radius;
     
     centre_description (cGH const * cctkGH, int n);
   };
@@ -66,7 +66,12 @@ namespace CarpetRegrid2 {
     this->position = rvect (position_x[n], position_y[n], position_z[n]);
     this->radius.resize (this->num_levels);
     for (int rl = 0; rl < this->num_levels; ++ rl) {
-      this->radius.at(rl) = radius[index2 (lsh, rl, n)];
+      int const ind = index2 (lsh, rl, n);
+      CCTK_REAL const rx = radius_x[ind] < 0 ? radius[ind] : radius_x[ind];
+      CCTK_REAL const ry = radius_y[ind] < 0 ? radius[ind] : radius_y[ind];
+      CCTK_REAL const rz = radius_z[ind] < 0 ? radius[ind] : radius_z[ind];
+      rvect const rad (rx, ry, rz);
+      this->radius.at(rl) = rad;
     }
     
     assert (this->num_levels <= maxreflevels);
@@ -904,7 +909,12 @@ namespace CarpetRegrid2 {
         if (do_recompose) break;
         
         // Regrid if the radii have changed sufficiently
-        CCTK_REAL const dr = abs (radius[n] - old_radius[n]);
+        CCTK_REAL const rx = radius_x[n] < 0 ? radius[n] : radius_x[n];
+        CCTK_REAL const ry = radius_y[n] < 0 ? radius[n] : radius_y[n];
+        CCTK_REAL const rz = radius_z[n] < 0 ? radius[n] : radius_z[n];
+        rvect const rad (rx, ry, rz);
+        rvect const oldrad (old_radius_x[n], old_radius_y[n], old_radius_z[n]);
+        CCTK_REAL const dr = sqrt (sum (ipow (rad - oldrad, 2)));
         CCTK_REAL mindr;
         switch (n) {
         case 0: mindr = radius_change_threshold_1; break;
@@ -962,7 +972,9 @@ namespace CarpetRegrid2 {
         old_position_y[n] = position_y[n];
         old_position_z[n] = position_z[n];
         
-        old_radius[n] = radius[n];
+        old_radius_x[n] = radius_x[n] < 0 ? radius[n] : radius_x[n];
+        old_radius_y[n] = radius_y[n] < 0 ? radius[n] : radius_y[n];
+        old_radius_z[n] = radius_z[n] < 0 ? radius[n] : radius_z[n];
       }
       
     } // if do_recompose
@@ -1069,7 +1081,12 @@ namespace CarpetRegrid2 {
         if (do_recompose) break;
         
         // Regrid if the radii have changed sufficiently
-        CCTK_REAL const dr = abs (radius[n] - old_radius[n]);
+        CCTK_REAL const rx = radius_x[n] < 0 ? radius[n] : radius_x[n];
+        CCTK_REAL const ry = radius_y[n] < 0 ? radius[n] : radius_y[n];
+        CCTK_REAL const rz = radius_z[n] < 0 ? radius[n] : radius_z[n];
+        rvect const rad (rx, ry, rz);
+        rvect const oldrad (old_radius_x[n], old_radius_y[n], old_radius_z[n]);
+        CCTK_REAL const dr = sqrt (sum (ipow (rad - oldrad, 2)));
         CCTK_REAL mindr;
         switch (n) {
         case 0: mindr = radius_change_threshold_1; break;
@@ -1156,7 +1173,9 @@ namespace CarpetRegrid2 {
         old_position_y[n] = position_y[n];
         old_position_z[n] = position_z[n];
         
-        old_radius[n] = radius[n];
+        old_radius_x[n] = radius_x[n] < 0 ? radius[n] : radius_x[n];
+        old_radius_y[n] = radius_y[n] < 0 ? radius[n] : radius_y[n];
+        old_radius_z[n] = radius_z[n] < 0 ? radius[n] : radius_z[n];
       }
       
     } // if do_recompose

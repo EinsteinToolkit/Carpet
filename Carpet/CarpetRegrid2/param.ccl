@@ -102,6 +102,24 @@ CCTK_REAL radius_1[30] "Radius of refined region for this level of this centre"
   0:* :: ""
 } 1.0
 
+CCTK_REAL radius_x_1[30] "x-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_y_1[30] "y-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_z_1[30] "z-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
 
 
 CCTK_REAL movement_threshold_1 "Minimum movement to trigger a regridding" STEERABLE=always
@@ -150,6 +168,24 @@ CCTK_REAL radius_2[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
+
+CCTK_REAL radius_x_2[30] "x-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_y_2[30] "y-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_z_2[30] "z-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
 
 
 
@@ -200,6 +236,24 @@ CCTK_REAL radius_3[30] "Radius of refined region for this level of this centre"
   0:* :: ""
 } 1.0
 
+CCTK_REAL radius_x_3[30] "x-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_y_3[30] "y-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_z_3[30] "z-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
 
 
 CCTK_REAL movement_threshold_3 "Minimum movement to trigger a regridding" STEERABLE=always
@@ -248,6 +302,24 @@ CCTK_REAL radius_4[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
+
+CCTK_REAL radius_x_4[30] "x-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_y_4[30] "y-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_z_4[30] "z-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
 
 
 
@@ -298,6 +370,24 @@ CCTK_REAL radius_5[30] "Radius of refined region for this level of this centre"
   0:* :: ""
 } 1.0
 
+CCTK_REAL radius_x_5[30] "x-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_y_5[30] "y-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_z_5[30] "z-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
 
 
 CCTK_REAL movement_threshold_5 "Minimum movement to trigger a regridding" STEERABLE=always
@@ -346,6 +436,24 @@ CCTK_REAL radius_6[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
+
+CCTK_REAL radius_x_6[30] "x-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_y_6[30] "y-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_z_6[30] "z-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
 
 
 
@@ -396,6 +504,24 @@ CCTK_REAL radius_7[30] "Radius of refined region for this level of this centre"
   0:* :: ""
 } 1.0
 
+CCTK_REAL radius_x_7[30] "x-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_y_7[30] "y-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_z_7[30] "z-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
 
 
 CCTK_REAL movement_threshold_7 "Minimum movement to trigger a regridding" STEERABLE=always
@@ -444,6 +570,24 @@ CCTK_REAL radius_8[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
+
+CCTK_REAL radius_x_8[30] "x-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_y_8[30] "y-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_z_8[30] "z-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
 
 
 
@@ -494,6 +638,24 @@ CCTK_REAL radius_9[30] "Radius of refined region for this level of this centre"
   0:* :: ""
 } 1.0
 
+CCTK_REAL radius_x_9[30] "x-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_y_9[30] "y-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_z_9[30] "z-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
 
 
 CCTK_REAL movement_threshold_9 "Minimum movement to trigger a regridding" STEERABLE=always
@@ -542,6 +704,24 @@ CCTK_REAL radius_10[30] "Radius of refined region for this level of this centre"
 {
   0:* :: ""
 } 1.0
+
+CCTK_REAL radius_x_10[30] "x-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_y_10[30] "y-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
+
+CCTK_REAL radius_z_10[30] "z-radius of refined region for this level of this centre"
+{
+  -1  :: "ignore this radius"
+  0:* :: ""
+} -1.0
 
 
 
