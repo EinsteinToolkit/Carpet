@@ -272,6 +272,8 @@ namespace Carpet {
     Waypoint ("Setting up the grid hierarchy");
     
     // Check arguments:
+    CCTK_VInfo (CCTK_THORNSTRING,
+                "This simulation runs in %d dimensions", cctkGH->cctk_dim);
     // Only a specific number of dimensions is supported
     assert (cctkGH->cctk_dim == dim);
     // Not sure what to do with that
