@@ -281,13 +281,15 @@ void ggf::cycle_all (int const rl, int const ml) {
 void ggf::flip_all (int const rl, int const ml) {
   assert (rl>=0 and rl<h.reflevels());
   assert (ml>=0 and ml<h.mglevels());
+  int const ntl = timelevels(ml,rl);
+  assert (ntl > 0);
   for (int lc=0; lc<(int)storage.AT(ml).AT(rl).size(); ++lc) {
     fdata & fdatas = storage.AT(ml).AT(rl).AT(lc);
-    for (int tl=0; tl<(timelevels(ml,rl)-1)/2; ++tl) {
-      const int tl1 =                       tl;
-      const int tl2 = timelevels(ml,rl)-1 - tl;
+    for (int tl=0; tl<ntl/2; ++tl) {
+      const int tl1 =         tl;
+      const int tl2 = ntl-1 - tl;
       assert (tl1 < tl2);
-      gdata* tmpdata = fdatas.AT(tl1);
+      gdata * const tmpdata = fdatas.AT(tl1);
       fdatas.AT(tl1) = fdatas.AT(tl2);
       fdatas.AT(tl2) = tmpdata;
     }
@@ -300,11 +302,13 @@ void ggf::flip_all (int const rl, int const ml) {
 void ggf::fill_all (int const rl, int const ml) {
   assert (rl>=0 and rl<h.reflevels());
   assert (ml>=0 and ml<h.mglevels());
+  int const ntl = timelevels(ml,rl);
+  assert (ntl > 0);
   for (int lc=0; lc<(int)storage.AT(ml).AT(rl).size(); ++lc) {
     fdata const & fdatas = storage.AT(ml).AT(rl).AT(lc);
     void const * const srcptr = fdatas.AT(0)->storage();
     size_t const size = fdatas.AT(0)->size() * fdatas.AT(0)->elementsize();
-    for (int tl=1; tl<timelevels(ml,rl); ++tl) {
+    for (int tl=1; tl<ntl; ++tl) {
       void * const dstptr = fdatas.AT(tl)->storage();
       memcpy (dstptr, srcptr, size);
     }
