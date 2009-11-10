@@ -333,6 +333,28 @@ inline vect<T,D> either (const vect<S,D>& a,
 
 template<typename S,typename T,int D>
 inline vect<T,D> either (const vect<S,D>& a,
+                         const vect<T,D>& b, const T& c)
+  CCTK_ATTRIBUTE_PURE;
+template<typename S,typename T,int D>
+inline vect<T,D> either (const vect<S,D>& a,
+                         const vect<T,D>& b, const T& c)
+{
+  return either (a, b, vect<T,D>(c));
+}
+
+template<typename S,typename T,int D>
+inline vect<T,D> either (const vect<S,D>& a,
+                         const T& b, vect<T,D>& c)
+  CCTK_ATTRIBUTE_PURE;
+template<typename S,typename T,int D>
+inline vect<T,D> either (const vect<S,D>& a,
+                         const T& b, const vect<T,D>& c)
+{
+  return either (a, vect<T,D>(b), c);
+}
+
+template<typename S,typename T,int D>
+inline vect<T,D> either (const vect<S,D>& a,
                          const T& b, const T& c)
   CCTK_ATTRIBUTE_PURE;
 template<typename S,typename T,int D>
