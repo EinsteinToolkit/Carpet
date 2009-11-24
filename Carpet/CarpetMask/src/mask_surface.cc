@@ -8,6 +8,7 @@
 #include <cctk_Parameters.h>
 
 #include "mask_surface.hh"
+#include "loopcontrol.h"
 
 
 
@@ -81,9 +82,11 @@ namespace CarpetMask {
             }
           }
           
-          for (int k = 0; k < cctk_lsh[2]; ++ k) {
-            for (int j = 0; j < cctk_lsh[1]; ++ j) {
-              for (int i = 0; i < cctk_lsh[0]; ++ i) {
+              #pragma omp parallel
+              LC_LOOP3 (CarpetSurfaceSetup,
+                      i,j,k, 0,0,0, cctk_lsh[0], cctk_lsh[1], cctk_lsh[2],
+                      cctk_lssh[CCTK_LSSH_IDX(0,0)],cctk_lssh[CCTK_LSSH_IDX(0,1)],cctk_lssh[CCTK_LSSH_IDX(0,2)])
+              {
                 int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
                 
                 CCTK_REAL const dx = x[ind] - x0;
@@ -143,8 +146,7 @@ namespace CarpetMask {
                 }
                 
               }
-            }
-          }
+              LC_ENDLOOP3 (CarpetSurfaceSetup);
           
         } else {
           
