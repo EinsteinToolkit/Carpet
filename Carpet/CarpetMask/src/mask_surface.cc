@@ -7,6 +7,8 @@
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 
+#include <loopcontrol.h>
+
 #include "mask_surface.hh"
 
 
@@ -113,71 +115,70 @@ namespace CarpetMask {
             }
           }
           
-#pragma omp parallel for
-          for (int k = 0; k < cctk_lsh[2]; ++ k) {
-            for (int j = 0; j < cctk_lsh[1]; ++ j) {
-              for (int i = 0; i < cctk_lsh[0]; ++ i) {
-                int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
-                
-                CCTK_REAL const dx = x[ind] - x0;
-                CCTK_REAL const dy = y[ind] - y0;
-                CCTK_REAL const dz = z[ind] - z0;
-                
-                CCTK_REAL const rho =
-                  sqrt (pow (dx, 2) + pow (dy, 2) + pow (dz, 2));
-                if (rho < 1.0e-12) {
-                  // Always excise the surface origin
-                  weight[ind] = 0.0;
+#pragma omp parallel
+          LC_LOOP3(CarpetSurfaceSetup,
+                   i,j,k,
+                   0,0,0, cctk_lsh[0],cctk_lsh[1],cctk_lsh[2],
+                   cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+          {
+            int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+            
+            CCTK_REAL const dx = x[ind] - x0;
+            CCTK_REAL const dy = y[ind] - y0;
+            CCTK_REAL const dz = z[ind] - z0;
+            
+            CCTK_REAL const rho =
+              sqrt (pow (dx, 2) + pow (dy, 2) + pow (dz, 2));
+            if (rho < 1.0e-12) {
+              // Always excise the surface origin
+              weight[ind] = 0.0;
+            } else {
+              CCTK_REAL theta =
+                acos (min (CCTK_REAL (+1.0),
+                           max (CCTK_REAL (-1.0), dz / rho)));
+              if (symmetric_z[sn]) {
+                if (theta > M_PI/2.0) {
+                  theta = M_PI - theta;
+                }
+              }
+              
+              assert (not isnan (theta));
+              assert (theta >= 0);
+              assert (theta <= M_PI);
+              CCTK_REAL phi =
+                fmod (atan2 (dy, dx) + CCTK_REAL (2 * M_PI),
+                      CCTK_REAL (2 * M_PI));
+              if (symmetric_x[sn] or symmetric_y[sn]) {
+                if (symmetric_x[sn] and symmetric_y[sn]) {
+                  if (phi > M_PI / 2.0) {
+                    phi = M_PI - phi;
+                  }
                 } else {
-                  CCTK_REAL theta =
-                    acos (min (CCTK_REAL (+1.0),
-                               max (CCTK_REAL (-1.0), dz / rho)));
-                  if (symmetric_z[sn]) {
-                    if (theta > M_PI/2.0) {
-                      theta = M_PI - theta;
-                    }
-                  }
-                  
-                  assert (not isnan (theta));
-                  assert (theta >= 0);
-                  assert (theta <= M_PI);
-                  CCTK_REAL phi =
-                    fmod (atan2 (dy, dx) + CCTK_REAL (2 * M_PI),
-                          CCTK_REAL (2 * M_PI));
-                  if (symmetric_x[sn] or symmetric_y[sn]) {
-                    if (symmetric_x[sn] and symmetric_y[sn]) {
-                      if (phi > M_PI / 2.0) {
-                        phi = M_PI - phi;
-                      }
-                    } else {
-                      if (phi > M_PI) {
-                        phi = 2 * M_PI - phi;
-                      }
-                    }
-                  }
-                  assert (not isnan (phi));
-                  assert (phi >= 0);
-                  assert (phi < 2 * M_PI);
-                  int const a = floor ((theta - theta0) / dtheta + 0.5);
-                  assert (a >= 0);
-                  assert (a < ntheta);
-                  int const b = floor ((phi   - phi0  ) / dphi   + 0.5);
-                  assert (b >= 0);
-                  assert (b < nphi);
-                  
-                  assert (a >= 0 and a < ntheta);
-                  assert (b >= 0 and b < nphi  );
-                  
-                  CCTK_REAL const dr =
-                    sf_radius[a + maxntheta * (b + maxnphi * sn)];
-                  if (rho <= dr * shrink_factor) {
-                    weight[ind] = 0.0;
+                  if (phi > M_PI) {
+                    phi = 2 * M_PI - phi;
                   }
                 }
-                
+              }
+              assert (not isnan (phi));
+              assert (phi >= 0);
+              assert (phi < 2 * M_PI);
+              int const a = floor ((theta - theta0) / dtheta + 0.5);
+              assert (a >= 0);
+              assert (a < ntheta);
+              int const b = floor ((phi   - phi0  ) / dphi   + 0.5);
+              assert (b >= 0);
+              assert (b < nphi);
+              
+              assert (a >= 0 and a < ntheta);
+              assert (b >= 0 and b < nphi  );
+              
+              CCTK_REAL const dr =
+                sf_radius[a + maxntheta * (b + maxnphi * sn)];
+              if (rho <= dr * shrink_factor) {
+                weight[ind] = 0.0;
               }
             }
-          }
+          } LC_ENDLOOP3(CarpetSurfaceSetup);
           
         } else {
           
