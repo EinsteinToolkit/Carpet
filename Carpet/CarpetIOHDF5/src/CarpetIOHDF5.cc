@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <iomanip>
 #include <map>
 #include <sstream>
 #include <string>
@@ -1181,6 +1182,7 @@ int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
       }
     }
     ostringstream gs_buf;
+    gs_buf << setprecision(17);
     // We could write this information only into one of the checkpoint
     // files (to save space), or write it into a separate metadata
     // file
