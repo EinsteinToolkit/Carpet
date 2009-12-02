@@ -24,7 +24,7 @@ namespace CarpetIOASCII {
   // routines which are independent of the output dimension
   static ibbox GetOutputBBox (const cGH* cctkGH,
                               int group,
-                              int m, int c,
+                              int rl, int m, int c,
                               const ibbox& ext);
 
   static void GetCoordinates (const cGH* cctkGH, int m,

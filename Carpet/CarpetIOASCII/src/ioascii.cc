@@ -562,7 +562,7 @@ namespace CarpetIOASCII {
         if (dist::rank() == proc or dist::rank() == ioproc) {
           
           const ibbox& data_ext = dd->boxes.at(ml).at(rl).at(c).exterior;
-          const ibbox ext = GetOutputBBox (cctkGH, group, m, c, data_ext);
+          const ibbox ext = GetOutputBBox (cctkGH, group, rl, m, c, data_ext);
           
           CCTK_REAL coord_time;
           rvect coord_lower, coord_upper;
@@ -1053,7 +1053,7 @@ namespace CarpetIOASCII {
   // Omit symmetry and ghost zones if requested
   ibbox GetOutputBBox (const cGH* const cctkGH,
                        const int group,
-                       const int m, const int c,
+                       const int rl, const int m, const int c,
                        const ibbox& ext)
   {
     DECLARE_CCTK_PARAMETERS;
@@ -1087,8 +1087,8 @@ namespace CarpetIOASCII {
     ivect hi = ext.upper();
     const ivect str = ext.stride();
     
-    const b2vect obnds       = vhh.at(m)->outer_boundaries(reflevel,c);
-    const i2vect ghost_width = arrdata.at(group).at(m).dd->ghost_width;
+    const b2vect obnds       = vhh.at(m)->outer_boundaries(rl,c);
+    const i2vect ghost_width = arrdata.at(group).at(m).dd->ghost_widths.at(rl);
     
     for (int d=0; d<groupdim; ++d) {
       bool const output_lower_ghosts =
