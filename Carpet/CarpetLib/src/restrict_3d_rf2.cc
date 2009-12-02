@@ -72,31 +72,33 @@ namespace CarpetLib {
     
     ivect3 const regext = regbbox.shape() / regbbox.stride();
     assert (all ((regbbox.lower() - srcbbox.lower()) % srcbbox.stride() == 0));
-    ivect3 const srcoff = (regbbox.lower() - srcbbox.lower()) / srcbbox.stride();
+    ivect3 const srcoff =
+      (regbbox.lower() - srcbbox.lower()) / srcbbox.stride();
     assert (all ((regbbox.lower() - dstbbox.lower()) % dstbbox.stride() == 0));
-    ivect3 const dstoff = (regbbox.lower() - dstbbox.lower()) / dstbbox.stride();
+    ivect3 const dstoff =
+      (regbbox.lower() - dstbbox.lower()) / dstbbox.stride();
     
     
     
-    ptrdiff_t const srciext = srcext[0];
-    ptrdiff_t const srcjext = srcext[1];
-    ptrdiff_t const srckext = srcext[2];
+    int const srciext = srcext[0];
+    int const srcjext = srcext[1];
+    int const srckext = srcext[2];
     
-    ptrdiff_t const dstiext = dstext[0];
-    ptrdiff_t const dstjext = dstext[1];
-    ptrdiff_t const dstkext = dstext[2];
+    int const dstiext = dstext[0];
+    int const dstjext = dstext[1];
+    int const dstkext = dstext[2];
     
-    ptrdiff_t const regiext = regext[0];
-    ptrdiff_t const regjext = regext[1];
-    ptrdiff_t const regkext = regext[2];
+    int const regiext = regext[0];
+    int const regjext = regext[1];
+    int const regkext = regext[2];
     
-    ptrdiff_t const srcioff = srcoff[0];
-    ptrdiff_t const srcjoff = srcoff[1];
-    ptrdiff_t const srckoff = srcoff[2];
+    int const srcioff = srcoff[0];
+    int const srcjoff = srcoff[1];
+    int const srckoff = srcoff[2];
     
-    ptrdiff_t const dstioff = dstoff[0];
-    ptrdiff_t const dstjoff = dstoff[1];
-    ptrdiff_t const dstkoff = dstoff[2];
+    int const dstioff = dstoff[0];
+    int const dstjoff = dstoff[1];
+    int const dstkoff = dstoff[2];
     
     
     
