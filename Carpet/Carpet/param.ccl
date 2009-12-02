@@ -76,6 +76,12 @@ CCTK_INT ghost_size "Ghost zones in each spatial direction"
   -1  :: "use the per-dimension parameters"
 } -1
 
+STRING ghost_sizes "Number of ghost zones for each refinement level"
+{
+  "^$" :: "Use the value of ghost_size or ghost_size_[xyz]"
+  "^[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*(,[[:space:]]*[[:digit:]]+[[:space:]]*)*\][[:space:]]*$" :: "[ <ghost_size>, ... ]"
+} ""
+
 
 
 restricted:
@@ -173,6 +179,12 @@ CCTK_INT prolongation_order_space "Order of prolongation operator in space" STEE
 {
   0:* :: "vertex centred orders must be odd"
 } 1
+
+STRING prolongation_orders_space "Order of prolongation operator in space for each refinement level" STEERABLE=recover
+{
+  "^$" :: "Use the value of prolongation_order_space"
+  "^[[:space:]]*\[[[:space:]]*[[:digit:]]+[[:space:]]*(,[[:space:]]*[[:digit:]]+[[:space:]]*)*\][[:space:]]*$" :: "[ <order>, ... ]"
+} ""
 
 CCTK_INT prolongation_order_time "Order of prolongation operator in time" STEERABLE=recover
 {

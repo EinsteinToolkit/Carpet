@@ -67,7 +67,7 @@ namespace Carpet {
   static void
   allocate_group_hierarchies (int group,
                               ivect const & sizes,
-                              i2vect const & ghosts);
+                              vector<i2vect> const & ghosts);
   static void
   setup_group_grid_hierarchy (cGH const * cctkGH,
                               int group, cGroup const & gdata,
@@ -83,14 +83,16 @@ namespace Carpet {
   
   
   
-  static i2vect
+  static vector<i2vect>
   get_ghostzones ();
+  static vector<int>
+  get_prolongation_orders_space ();
   static ivect
   get_npoints ();
   static void
   get_boundary_specification (cGH const * cctkGH,
                               int m,
-                              i2vect const & ghosts,
+                              vector<i2vect> const & ghosts,
                               i2vect & nboundaryzones,
                               b2vect & is_internal,
                               b2vect & is_staggered,
@@ -112,7 +114,7 @@ namespace Carpet {
                               rvect & spacing);
   static void
   calculate_grid_points (int m,
-                         i2vect const & ghosts,
+                         vector<i2vect> const & ghosts,
                          rvect const & exterior_min,
                          rvect const & exterior_max,
                          rvect const & spacing,
@@ -135,7 +137,7 @@ namespace Carpet {
   static void
   get_group_size (int group, cGroup const & gdata,
                   ivect & sizes,
-                  i2vect & ghosts);
+                  vector<i2vect> & ghosts);
   static void
   adapt_group_size_mglevel (int group, cGroup const & gdata,
                             ivect & sizes,
@@ -149,7 +151,7 @@ namespace Carpet {
   adapt_group_size_disttype (cGH const * cctkGH,
                              int group, cGroup const & gdata,
                              ivect & sizes,
-                             i2vect const & ghosts);
+                             vector<i2vect> const & ghosts);
   static void
   output_group_statistics (cGH const * cctkGH);
   static operator_type
@@ -169,7 +171,7 @@ namespace Carpet {
   ensure_ReflectionSymmetry_avoid_origin (centering refcentering);
   static void
   ensure_ghostzones (int m,
-                     i2vect const & ghosts);
+                     vector<i2vect> const & ghosts);
   static void
   ensure_group_options (int group, cGroup const & gdata);
   
@@ -474,7 +476,7 @@ namespace Carpet {
     ivect npoints = get_npoints ();
     
     // Number of ghost zones
-    i2vect const ghosts = get_ghostzones ();
+    vector<i2vect> const ghosts = get_ghostzones ();
     
     // Boundary description
     i2vect nboundaryzones;
@@ -550,7 +552,7 @@ namespace Carpet {
     DECLARE_CCTK_PARAMETERS;
     
     // Number of ghost zones
-    i2vect const ghosts = get_ghostzones();
+    vector<i2vect> const ghosts = get_ghostzones();
     
     int buffer_factor;
     if (use_buffer_zones) {
@@ -566,18 +568,28 @@ namespace Carpet {
     assert (buffer_factor > 0);
     
     int const taper_factor = use_tapered_grids ? refinement_factor : 1;
-    assert (all (all (buffer_factor * ghosts + int (additional_buffer_zones) >=
-                      0)));
+    for (int rl=0; rl<maxreflevels; ++rl) {
+      assert (all (all (buffer_factor * ghosts.AT(rl) +
+                        int (additional_buffer_zones)
+                        >= 0)));
+    }
     
-    i2vect const buffers =
-      taper_factor * (buffer_factor * ghosts + int (additional_buffer_zones)) -
-      ghosts;
-    assert (all (all (buffers >= 0)));
+    vector<i2vect> buffers (maxreflevels);
+    for (int rl=0; rl<maxreflevels; ++rl) {
+      buffers.AT(rl) =
+        taper_factor * (buffer_factor * ghosts.AT(rl)
+                        + int (additional_buffer_zones))
+        - ghosts.AT(rl);
+      assert (all (all (buffers.AT(rl) >= 0)));
+    }
+    
+    vector<int> const my_prolongation_orders_space =
+      get_prolongation_orders_space ();
     
     vdd.resize(maps);
     vdd.AT(m) = new dh (* vhh.AT(m),
                         ghosts, buffers,
-                        prolongation_order_space);
+                        my_prolongation_orders_space);
     
     if (maxreflevels > 1) {
       ensure_ghostzones (m, ghosts);
@@ -783,7 +795,7 @@ namespace Carpet {
         arrdata.AT(group).resize(1);
         
         ivect sizes;
-        i2vect ghosts;
+        vector<i2vect> ghosts;
         get_group_size (group, gdata, sizes, ghosts);
         
         // Adapt group sizes for convergence level
@@ -817,7 +829,7 @@ namespace Carpet {
   void
   allocate_group_hierarchies (int const group,
                               ivect const & sizes,
-                              i2vect const & ghosts)
+                              vector<i2vect> const & ghosts)
   {
     DECLARE_CCTK_PARAMETERS;
     
@@ -845,11 +857,11 @@ namespace Carpet {
               convergence_factor, vertex_centered,
               baseexts, nboundaryzones);
     
-    i2vect const buffers = i2vect (0);
-    int const my_prolongation_order_space = 0;
+    vector<i2vect> const buffers (1, i2vect (0));
+    vector<int> const my_prolongation_orders_space (1, 0);
     arrdata.AT(group).AT(m).dd =
       new dh (*arrdata.AT(group).AT(m).hh,
-              ghosts, buffers, my_prolongation_order_space);
+              ghosts, buffers, my_prolongation_orders_space);
     
     CCTK_REAL const basedelta = 1.0;
     arrdata.AT(group).AT(m).tt =
@@ -1102,21 +1114,70 @@ namespace Carpet {
   
   
   
-  i2vect
+  vector<i2vect>
   get_ghostzones ()
   {
     DECLARE_CCTK_PARAMETERS;
     
+    vector<i2vect> ghostzones;
     // Decide which parameters to use
-    i2vect ghostzones;
-    if (ghost_size == -1) {
-      ghostzones = i2vect (ivect (ghost_size_x, ghost_size_y, ghost_size_z),
-                           ivect (ghost_size_x, ghost_size_y, ghost_size_z));
+    if (CCTK_EQUALS (ghost_sizes, "")) {
+      i2vect ghostzones1;
+      if (ghost_size == -1) {
+        ghostzones1 = i2vect (ivect (ghost_size_x, ghost_size_y, ghost_size_z),
+                              ivect (ghost_size_x, ghost_size_y, ghost_size_z));
+      } else {
+        ghostzones1 = i2vect (ivect (ghost_size, ghost_size, ghost_size),
+                              ivect (ghost_size, ghost_size, ghost_size));
+      }
+      ghostzones.resize (maxreflevels, ghostzones1);
     } else {
-      ghostzones = i2vect (ivect (ghost_size, ghost_size, ghost_size),
-                           ivect (ghost_size, ghost_size, ghost_size));
+      // Read them from the parameter
+      vector<int> ghostzones1;
+      try {
+        istringstream gs (ghost_sizes);
+        gs >> ghostzones1;
+      } catch (input_error) {
+        CCTK_WARN (CCTK_WARN_ABORT,
+                   "Could not parse parameter \"ghost_sizes\"");
+      }
+      assert (int(ghostzones1.size()) >= maxreflevels);
+      for (int rl=0; rl<maxreflevels; ++rl) {
+        ghostzones.AT(rl) = i2vect (ghostzones1.AT(rl));
+      }
+    }
+    for (int rl=0; rl<maxreflevels; ++rl) {
+      assert (all (all (ghostzones.AT(rl) >= 0)));
     }
     return ghostzones;
+  }
+  
+  
+  
+  vector<int>
+  get_prolongation_orders_space ()
+  {
+    DECLARE_CCTK_PARAMETERS;
+    
+    vector<int> orders;
+    // Decide which parameters to use
+    if (CCTK_EQUALS (prolongation_orders_space, "")) {
+      orders.resize (maxreflevels, prolongation_order_space);
+    } else {
+      // Read them from the parameter
+      try {
+        istringstream pos (prolongation_orders_space);
+        pos >> orders;
+      } catch (input_error) {
+        CCTK_WARN (CCTK_WARN_ABORT,
+                   "Could not parse parameter \"prolongation_orders_space\"");
+      }
+      assert (int(orders.size()) >= maxreflevels);
+      for (int rl=0; rl<maxreflevels; ++rl) {
+        assert (orders.AT(rl) >= 0);
+      }
+    }
+    return orders;
   }
   
   
@@ -1186,7 +1247,7 @@ namespace Carpet {
   void
   get_boundary_specification (cGH const * const cctkGH,
                               int const m,
-                              i2vect const & ghosts,
+                              vector<i2vect> const & ghosts,
                               i2vect & nboundaryzones,
                               b2vect & is_internal,
                               b2vect & is_staggered,
@@ -1222,6 +1283,11 @@ namespace Carpet {
       // Assume that there are 0 boundary points at outer boundaries
       // and nghostzones boundary points at symmetry boundaries
       
+      // Ensure that all levels have the same number of ghost zones
+      for (size_t rl=1; rl<ghosts.size(); ++rl) {
+        assert (all (all (ghosts.AT(rl) == ghosts.AT(0))));
+      }
+      
 #if 0
       // We cannot call GetSymmetryBoundaries boundaries here, since
       // the symmetry boundaries have not yet been registered.
@@ -1235,7 +1301,7 @@ namespace Carpet {
       for (int f=0; f<2; ++f) {
         for (int d=0; d<dim; ++d) {
           if (symbnd[f][d]) {
-            nboundaryzones[f][d] = ghosts[f][d];
+            nboundaryzones[f][d] = ghosts.AT(0)[f][d];
             is_internal   [f][d] = false;
             // TODO: Look at what CartGrid3D's avoid_origin
             // TODO: Take cell centring into account
@@ -1424,7 +1490,7 @@ namespace Carpet {
   
   void
   calculate_grid_points (int const m,
-                         i2vect const & ghosts,
+                         vector<i2vect> const & ghosts,
                          rvect const & exterior_min,
                          rvect const & exterior_max,
                          rvect const & spacing,
@@ -1439,8 +1505,8 @@ namespace Carpet {
     
     ostringstream buf;
     buf << "Base grid specification for map " << m << ":" << endl
-        << "   number of grid points : " << real_npoints << endl
-        << "   number of ghost points: " << ghosts;
+        << "   number of grid points             : " << real_npoints << endl
+        << "   number of coarse grid ghost points: " << ghosts.AT(0);
     Output (buf.str().c_str());
     
     npoints = floor (real_npoints + static_cast<CCTK_REAL> (0.5));
@@ -1631,11 +1697,11 @@ namespace Carpet {
   get_group_size (int const group,
                   cGroup const & gdata,
                   ivect & sizes,
-                  i2vect & ghosts)
+                  vector<i2vect> & ghosts)
   {
     // Default values
     sizes = 1;
-    ghosts = i2vect (ivect (0));
+    ghosts.resize (1, i2vect (ivect (0)));
     
     switch (gdata.grouptype) {
       
@@ -1655,8 +1721,8 @@ namespace Carpet {
           sizes[d] = *sz[d];
         }
         if (gsz) {
-          ghosts[0][d] = *gsz[d];
-          ghosts[1][d] = *gsz[d];
+          ghosts.AT(0)[0][d] = *gsz[d];
+          ghosts.AT(0)[1][d] = *gsz[d];
         }
       }
       break;
@@ -1774,7 +1840,7 @@ namespace Carpet {
                              int const group,
                              cGroup const & gdata,
                              ivect & sizes,
-                             i2vect const & ghosts)
+                             vector<i2vect> const & ghosts)
   {
     switch (gdata.disttype) {
       
@@ -1784,7 +1850,7 @@ namespace Carpet {
     }
       
     case CCTK_DISTRIB_CONSTANT: {
-      if (not all (all (ghosts == 0))) {
+      if (not all (all (ghosts.AT(0) == 0))) {
         char * const groupname = CCTK_GroupName (group);
         CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "The group \"%s\" has DISTRIB=constant, but its "
@@ -1792,15 +1858,16 @@ namespace Carpet {
                     groupname);
         free (groupname);
       }
-      assert (all (all (ghosts == 0)));
+      assert (all (all (ghosts.AT(0) == 0)));
       
       int const nprocs = CCTK_nProcs (cctkGH);
       
       // Find dimension which should be extended
       int const d = gdata.dim==0 ? 0 : gdata.dim-1;
       // Extend group sizes
-      sizes[d] = ((sizes[d] - (ghosts[0][d] + ghosts[1][d])) * nprocs
-                  + (ghosts[0][d] + ghosts[1][d]));
+      sizes[d] =
+        (sizes[d] - (ghosts.AT(0)[0][d] + ghosts.AT(0)[1][d])) * nprocs
+        + (ghosts.AT(0)[0][d] + ghosts.AT(0)[1][d]);
       assert (sizes[d] >= 0);
       break;
     }
@@ -2301,19 +2368,24 @@ namespace Carpet {
   
   void
   ensure_ghostzones (int const m,
-                     i2vect const & ghosts)
+                     vector<i2vect> const & ghosts)
   {
     DECLARE_CCTK_PARAMETERS;
     
-    int const prolongation_stencil_size
-      = vdd.AT(m)->prolongation_stencil_size();
-    int const min_nghosts
-      = ((prolongation_stencil_size + refinement_factor - 1)
+    int const rls = vhh.AT(m)->reffacts.size();
+    for (int rl=0; rl<rls; ++rl) {
+      int const my_prolongation_order_space =
+        vdd.AT(m)->prolongation_orders_space.AT(rl);
+      int const prolongation_stencil_size =
+        vdd.AT(m)->prolongation_stencil_size(rl);
+      int const min_nghosts =
+        ((prolongation_stencil_size + refinement_factor - 1)
          / (refinement_factor - 1));
-    if (any (any (ghosts < min_nghosts))) {
-      CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
-                  "There are not enough ghost zones for the desired spatial prolongation order on map %d.  With Carpet::prolongation_order_space=%d, you need at least %d ghost zones.",
-                  m, int(prolongation_order_space), min_nghosts);
+      if (any (any (ghosts.AT(rl) < i2vect (min_nghosts)))) {
+        CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "There are not enough ghost zones for the desired spatial prolongation order on map %d, refinement level %d.  With a spatial prolongation order of %d, you need at least %d ghost zones.",
+                    m, rl, my_prolongation_order_space, min_nghosts);
+      }
     }
   }
   

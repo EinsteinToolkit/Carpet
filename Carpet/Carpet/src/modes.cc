@@ -117,9 +117,9 @@ namespace Carpet {
         cGroupDynamicData & info = groupdata.AT(group).info;
         
         ivect_ref(info.nghostzones)
-          = arrdata.AT(group).AT(m).dd->ghost_width[0];
+          = arrdata.AT(group).AT(m).dd->ghost_widths.AT(0)[0];
         assert (all (ivect_ref(info.nghostzones)
-                     == arrdata.AT(group).AT(m).dd->ghost_width[1]));
+                     == arrdata.AT(group).AT(m).dd->ghost_widths.AT(0)[1]));
         ivect_ref(info.gsh)
           = baseext.shape() / baseext.stride();
         ivect_ref(info.lbnd)
@@ -246,7 +246,7 @@ namespace Carpet {
         
         // ivect_ref(info.nghostzones) = deadbeef;
         ivect_ref(info.nghostzones)
-          = arrdata.AT(group).AT(m).dd->ghost_width[0];
+          = arrdata.AT(group).AT(m).dd->ghost_widths.AT(0)[0];
         ivect_ref(info.gsh) = deadbeef;
         ivect_ref(info.lbnd) = -deadbeef;
         ivect_ref(info.ubnd) = deadbeef;
@@ -417,8 +417,10 @@ namespace Carpet {
       ivect_ref(cctkGH->cctk_levoff) = baseext.lower() - coarseext.lower();
       ivect_ref(cctkGH->cctk_levoffdenom) = baseext.stride();
       ivect_ref(cctkGH->cctk_gsh) = baseext.shape() / baseext.stride();
-      assert (all (vdd.AT(map)->ghost_width[0] == vdd.AT(map)->ghost_width[1]));
-      ivect_ref(cctkGH->cctk_nghostzones) = vdd.AT(map)->ghost_width[0];
+      assert (all (vdd.AT(map)->ghost_widths.AT(reflevel)[0]
+                   == vdd.AT(map)->ghost_widths.AT(reflevel)[1]));
+      ivect_ref(cctkGH->cctk_nghostzones)
+        = vdd.AT(map)->ghost_widths.AT(reflevel)[0];
       
       for (int group=0; group<CCTK_NumGroups(); ++group) {
         if (CCTK_GroupTypeI(group) == CCTK_GF) {
@@ -469,8 +471,7 @@ namespace Carpet {
       ivect_ref(cctkGH->cctk_levoff) = deadbeef;
       ivect_ref(cctkGH->cctk_levoffdenom) = 0;
       ivect_ref(cctkGH->cctk_gsh) = deadbeef;
-//       ivect_ref(cctkGH->cctk_nghostzones) = deadbeef;
-      ivect_ref(cctkGH->cctk_nghostzones) = vdd.AT(map)->ghost_width[0];
+      ivect_ref(cctkGH->cctk_nghostzones) = deadbeef;
       
       for (int group=0; group<CCTK_NumGroups(); ++group) {
         if (CCTK_GroupTypeI(group) == CCTK_GF) {
