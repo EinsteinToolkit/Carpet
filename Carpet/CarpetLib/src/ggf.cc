@@ -528,7 +528,7 @@ transfer_from_all (comm_state & state,
   // Interpolation orders
   assert (transport_operator != op_none);
   int const pos =
-    transport_operator == op_copy ? 0 : d.prolongation_order_space;
+    transport_operator == op_copy ? 0 : d.prolongation_orders_space.AT(rl2);
   int const pot =
     transport_operator == op_copy ? 0 : prolongation_order_time;
   

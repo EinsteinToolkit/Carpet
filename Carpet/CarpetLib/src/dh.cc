@@ -30,15 +30,22 @@ list<dh*> dh::alldh;
 // Constructors
 dh::
 dh (gh & h_,
-    i2vect const & ghost_width_, i2vect const & buffer_width_,
-    int const prolongation_order_space_)
+    vector<i2vect> const & ghost_widths_, vector<i2vect> const & buffer_widths_,
+    vector<int> const & prolongation_orders_space_)
   : h(h_),
-    ghost_width(ghost_width_), buffer_width(buffer_width_),
-    prolongation_order_space(prolongation_order_space_)
+    ghost_widths(ghost_widths_), buffer_widths(buffer_widths_),
+    prolongation_orders_space(prolongation_orders_space_)
 {
-  assert (all (all (ghost_width >= 0)));
-  assert (all (all (buffer_width >= 0)));
-  assert (prolongation_order_space >= 0);
+  size_t const maxreflevels = h.reffacts.size();
+  assert (ghost_widths.size() >= maxreflevels);
+  assert (buffer_widths.size() >= maxreflevels);
+  assert (prolongation_orders_space.size() >= maxreflevels);
+  for (size_t rl=0; rl<maxreflevels; ++rl) {
+    assert (all (all (ghost_widths.AT(rl) >= 0)));
+    assert (all (all (buffer_widths.AT(rl) >= 0)));
+    assert (prolongation_orders_space.AT(rl) >= 0);
+  }
+  
   alldhi = alldh.insert(alldh.end(), this);
   gh_handle = h.add (this);
   CHECKPOINT;
@@ -65,11 +72,11 @@ dh::
 // Helpers
 int
 dh::
-prolongation_stencil_size ()
+prolongation_stencil_size (int const rl)
   const
 {
-  assert (prolongation_order_space >= 0);
-  return prolongation_order_space / 2;
+  assert (prolongation_orders_space.AT(rl) >= 0);
+  return prolongation_orders_space.AT(rl) / 2;
 }
 
 
@@ -222,6 +229,11 @@ regrid (bool const do_init)
       fast_dboxes & fast_level = fast_boxes.AT(ml).AT(rl);
       
       vector<fast_dboxes> fast_level_otherprocs (dist::size());
+      
+      
+      
+      i2vect const& ghost_width = ghost_widths.AT(rl);
+      i2vect const& buffer_width = buffer_widths.AT(rl);
       
       
       
@@ -621,7 +633,7 @@ regrid (bool const do_init)
           
           ibset oneedrecv = obox.active;
           
-          i2vect const stencil_size = i2vect (prolongation_stencil_size());
+          i2vect const stencil_size = i2vect (prolongation_stencil_size(rl));
           
           ibset expanded_active;
           for (ibset::const_iterator
@@ -674,7 +686,7 @@ regrid (bool const do_init)
           
           ibset needrecv = box.active;
           
-          i2vect const stencil_size = i2vect (prolongation_stencil_size());
+          i2vect const stencil_size = i2vect (prolongation_stencil_size(rl));
           
           ASSERT_c (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
                     "Refinement factors must be integer multiples of each other");
@@ -837,7 +849,7 @@ regrid (bool const do_init)
           
           ibset & bndref = box.bndref;
           
-          i2vect const stencil_size = i2vect (prolongation_stencil_size());
+          i2vect const stencil_size = i2vect (prolongation_stencil_size(rl));
           
           ASSERT_c (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
                     "Refinement factors must be integer multiples of each other");
@@ -1065,7 +1077,7 @@ regrid (bool const do_init)
             // of the new grid structure.  It must fill what cannot be
             // synchronised.
             
-            i2vect const stencil_size = i2vect (prolongation_stencil_size());
+            i2vect const stencil_size = i2vect (prolongation_stencil_size(rl));
             
             ASSERT_c (all (h.reffacts.at(rl) % h.reffacts.at(orl) == 0),
                       "Refinement factors must be integer multiples of each other");
@@ -1587,9 +1599,9 @@ memory ()
     sizeof alldhi +             // memoryof (alldhi) +
     sizeof & h +                // memoryof (& h) +
     sizeof gh_handle +          // memoryof (gh_handle) +
-    memoryof (ghost_width) +
-    memoryof (buffer_width) +
-    memoryof (prolongation_order_space) +
+    memoryof (ghost_widths) +
+    memoryof (buffer_widths) +
+    memoryof (prolongation_orders_space) +
     memoryof (boxes) +
     memoryof (fast_boxes) +
     memoryof (gfs);
@@ -1794,9 +1806,9 @@ output (ostream & os)
   const
 {
   os << "dh:"
-     << "ghost_width=" << ghost_width << ","
-     << "buffer_width=" << buffer_width << ","
-     << "prolongation_order_space=" << prolongation_order_space << ","
+     << "ghost_widths=" << ghost_widths << ","
+     << "buffer_widths=" << buffer_widths << ","
+     << "prolongation_orders_space=" << prolongation_orders_space << ","
      << "boxes=" << boxes << ","
      << "fast_boxes=" << fast_boxes << ","
      << "gfs={";

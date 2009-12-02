@@ -73,6 +73,7 @@ template class vect<int,4>;
 template void vect<CCTK_REAL,dim>::input (istream& is);
 template void vect<vect<bool,2>,dim>::input (istream& is);
 template void vect<vect<bool,dim>,2>::input (istream& is);
+template void vect<vect<int,dim>,2>::input (istream& is);
 
 template void vect<bool,2>::output (ostream& os) const;
 template void vect<bool,dim>::output (ostream& os) const;

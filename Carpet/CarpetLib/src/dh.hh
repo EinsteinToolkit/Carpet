@@ -146,10 +146,15 @@ public:                         // should be readonly
   gh & h;                       // hierarchy
   gh::dh_handle gh_handle;
   
+#if 0
   i2vect ghost_width;           // number of ghost zones
   i2vect buffer_width;          // number of buffer zones
-  
   int prolongation_order_space; // order of spatial prolongation operator
+#endif
+  vector<i2vect> ghost_widths;  // number of ghost zones [rl]
+  vector<i2vect> buffer_widths; // number of buffer zones [rl]
+  vector<int> prolongation_orders_space; // order of spatial
+                                         // prolongation operator [rl]
   
   mboxes boxes;                 // grid hierarchy
   fast_mboxes fast_boxes;       // grid hierarchy
@@ -161,14 +166,14 @@ public:
   
   // Constructors
   dh (gh & h,
-      i2vect const & ghosts, i2vect const & buffers,
-      int prolongation_order_space);
+      vector<i2vect> const & ghost_widths, vector<i2vect> const & buffer_widths,
+      vector<int> const & prolongation_orders_space);
   
   // Destructors
   ~dh ();
   
   // Helpers
-  int prolongation_stencil_size () const CCTK_ATTRIBUTE_CONST;
+  int prolongation_stencil_size (int rl) const CCTK_ATTRIBUTE_CONST;
   
   // Modifiers
   void regrid (bool do_init);
