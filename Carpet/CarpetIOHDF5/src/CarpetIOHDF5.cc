@@ -1170,10 +1170,16 @@ int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
     vector <vector <vector <region_t> > > grid_superstructure (maps);
     vector <vector <vector <region_t> > > grid_structure (maps);
     vector <vector <vector <CCTK_REAL> > > grid_times (maps);
+    vector <vector <i2vect> > grid_ghosts (maps);
+    vector <vector <i2vect> > grid_buffers (maps);
+    vector <vector <int> > grid_prolongation_orders (maps);
     for (int m = 0; m < maps; ++ m) {
       grid_superstructure.at(m) = vhh.at(m)->superregions;
       grid_structure.at(m) = vhh.at(m)->regions.at(0);
       grid_times.at(m).resize(mglevels);
+      grid_ghosts.at(m) = vdd.at(m)->ghost_widths;
+      grid_buffers.at(m) = vdd.at(m)->buffer_widths;
+      grid_prolongation_orders.at(m) = vdd.at(m)->prolongation_orders_space;
       for  (int ml = 0; ml < mglevels; ++ ml) {
         grid_times.at(m).at(ml).resize(vhh.at(m)->reflevels());
         for (int rl = 0; rl < vhh.at(m)->reflevels(); ++ rl) {
@@ -1186,12 +1192,15 @@ int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
     // We could write this information only into one of the checkpoint
     // files (to save space), or write it into a separate metadata
     // file
-    gs_buf << grid_superstructure;
+    gs_buf << "grid_superstructure:" << grid_superstructure << ",";
     // We could omit the grid structure (to save space), or write it
     // only into one of the checkpoint files
-    gs_buf << grid_structure;
-    gs_buf << grid_times;
-    gs_buf << leveltimes;
+    gs_buf << "grid_structure:" << grid_structure << ",";
+    gs_buf << "grid_times:" << grid_times << ",";
+    gs_buf << "leveltimes:" << leveltimes << ",";
+    gs_buf << "grid_ghosts" << grid_ghosts << ",";
+    gs_buf << "grid_buffers" << grid_buffers << ",";
+    gs_buf << "grid_prolongation_orders" << grid_prolongation_orders << ".";
     string const gs_str = gs_buf.str();
     error_count += WriteLargeAttribute (group, GRID_STRUCTURE, gs_str.c_str());
   }

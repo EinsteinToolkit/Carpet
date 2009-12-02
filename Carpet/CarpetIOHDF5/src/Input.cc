@@ -65,6 +65,9 @@ typedef struct {
   vector<vector<vector<region_t> > > grid_structure; // [map][reflevel][component]
   vector<vector<vector<CCTK_REAL> > > grid_times;    // [map][mglevel][reflevel]
   vector<vector<CCTK_REAL> > leveltimes;             // [mglevel][reflevel]
+  vector <vector <i2vect> > grid_ghosts; // [map]
+  vector <vector <i2vect> > grid_buffers; // [map]
+  vector <vector <int> > grid_prolongation_orders; // [map]
 
 } fileset_t;
 
@@ -212,6 +215,33 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
   }
   
   RegridFree (cctkGH, false);
+
+  // Check ghost and buffer widths and prolongation orders
+  // TODO: Instead of only checking them, set them during regridding.
+  // (This requires setting them during regridding instead of during setup.)
+  for (int m = 0; m < maps; ++ m) {
+    assert (fileset.grid_ghosts.at(m).size()
+            == vdd.at(m)->ghost_widths.size());
+    for (size_t rl = 0; rl < fileset.grid_ghosts.at(m).size(); ++ rl) {
+      assert (all (all (fileset.grid_ghosts.at(m).at(rl)
+                        == vdd.at(m)->ghost_widths.at(rl))));
+    }
+    assert (fileset.grid_buffers.at(m).size()
+            == vdd.at(m)->buffer_widths.size());
+    for (size_t rl = 0; rl < fileset.grid_buffers.at(m).size(); ++ rl) {
+      assert (all (all (fileset.grid_buffers.at(m).at(rl)
+                        == vdd.at(m)->buffer_widths.at(rl))));
+    }
+    assert (fileset.grid_prolongation_orders.at(m).size()
+            == vdd.at(m)->prolongation_orders_space.size());
+    for (size_t rl = 0;
+         rl < fileset.grid_prolongation_orders.at(m).size();
+         ++ rl)
+    {
+      assert (fileset.grid_prolongation_orders.at(m).at(rl)
+              == vdd.at(m)->prolongation_orders_space.at(rl));
+    }
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -882,10 +912,55 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
                          H5P_DEFAULT, &gs_cstr.front()));
     HDF5_ERROR (H5Dclose (dataset));
     istringstream gs_buf (&gs_cstr.front());
+    
+    skipws (gs_buf);
+    consume (gs_buf, "grid_superstructure:");
+    skipws (gs_buf);
     gs_buf >> fileset.grid_superstructure;
+    skipws (gs_buf);
+    consume (gs_buf, ",");
+    
+    skipws (gs_buf);
+    consume (gs_buf, "grid_structure:");
+    skipws (gs_buf);
     gs_buf >> fileset.grid_structure;
+    skipws (gs_buf);
+    consume (gs_buf, ",");
+    
+    skipws (gs_buf);
+    consume (gs_buf, "grid_times:");
+    skipws (gs_buf);
     gs_buf >> fileset.grid_times;
+    skipws (gs_buf);
+    consume (gs_buf, ",");
+    
+    skipws (gs_buf);
+    consume (gs_buf, "grid_leveltimes:");
+    skipws (gs_buf);
     gs_buf >> fileset.leveltimes;
+    skipws (gs_buf);
+    consume (gs_buf, ",");
+    
+    skipws (gs_buf);
+    consume (gs_buf, "grid_ghosts:");
+    skipws (gs_buf);
+    gs_buf >> fileset.grid_ghosts;
+    skipws (gs_buf);
+    consume (gs_buf, ",");
+    
+    skipws (gs_buf);
+    consume (gs_buf, "grid_buffers:");
+    skipws (gs_buf);
+    gs_buf >> fileset.grid_buffers;
+    skipws (gs_buf);
+    consume (gs_buf, ",");
+    
+    skipws (gs_buf);
+    consume (gs_buf, "grid_prolongation_orders:");
+    skipws (gs_buf);
+    gs_buf >> fileset.grid_prolongation_orders;
+    skipws (gs_buf);
+    consume (gs_buf, ".");
   }
 
   fileset.mgleveltimes.resize (fileset.num_mglevels * fileset.num_reflevels);
