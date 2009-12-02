@@ -58,6 +58,8 @@ namespace CarpetRegrid2 {
     
     assert (n >= 0 and n < num_centres);
     
+    bool found_error = false;
+    
     int lsh[2];
     getvectorindex2 (cctkGH, "CarpetRegrid2::radii", lsh);
     
@@ -72,9 +74,28 @@ namespace CarpetRegrid2 {
       CCTK_REAL const rz = radius_z[ind] < 0 ? radius[ind] : radius_z[ind];
       rvect const rad (rx, ry, rz);
       this->radius.at(rl) = rad;
+      if (any (this->radius.at(rl) < 0.0)) {
+        CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "The radius of refinement level %d of region %d is [%g,%g,%g], which is non-negative",
+                    rl, n,
+                    double(this->radius.at(rl)[0]),
+                    double(this->radius.at(rl)[1]),
+                    double(this->radius.at(rl)[2]));
+        found_error = true;
+      }
     }
     
-    assert (this->num_levels <= maxreflevels);
+    if (this->num_levels > maxreflevels) {
+      CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "Region %d has %d levels active, which is larger than the maximum number of refinement levels %d",
+                  n, this->num_levels, maxreflevels);
+      found_error = true;
+    }
+    
+    if (found_error) {
+      CCTK_WARN (CCTK_WARN_ABORT,
+                 "Errors found in grid structure specification");
+    }
   }
   
   
