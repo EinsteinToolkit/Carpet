@@ -138,7 +138,7 @@ namespace CarpetEvolutionMask {
       //      cout << "notrefined: " << notrefined << endl;
 
       ivect enlargeby;
-      int stencil_size = dd.prolongation_stencil_size();
+      int stencil_size = dd.prolongation_stencil_size(reflevel);
       for (int d=0; d<dim;d++) {
 	enlargeby[d] = cctkGH->cctk_nghostzones[d] + buffer_width +
 	  stencil_size;
