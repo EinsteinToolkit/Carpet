@@ -430,9 +430,9 @@ namespace CarpetRegrid2 {
           assert (not regions.at(rl).empty());
           ibbox const coarse0 = * regions.at(rl).begin();
           
-          i2vect const fdistance = dd.ghost_width;
+          i2vect const fdistance = dd.ghost_widths.at(rl);
           i2vect const cdistance =
-            i2vect (min_distance + dd.prolongation_stencil_size());
+            i2vect (min_distance + dd.prolongation_stencil_size(rl));
           
           for (ibboxset::const_iterator ibb = regions.at(rl+1).begin();
                ibb != regions.at(rl+1).end();
@@ -477,7 +477,7 @@ namespace CarpetRegrid2 {
           // 
           // ibbox const bbb = bb.expand (i2vect (not ob) * dd.buffer_width);
           
-          ibbox const bbb = bb.expand (dd.buffer_width);
+          ibbox const bbb = bb.expand (dd.buffer_widths.at(rl));
 
           buffered |= bbb;
         }
@@ -550,12 +550,12 @@ namespace CarpetRegrid2 {
       // boundary due to buffer and ghost zones.  This is e.g. the
       // distance that the lower boundary of a bbox has to have from
       // the lower boundary.  This is in terms of grid points.
-      i2vect const min_bnd_dist_away = dd.ghost_width;
+      i2vect const min_bnd_dist_away = dd.ghost_widths.at(rl);
       // Find the minimum necessary distance from the outer boundary
       // due to buffer and ghost zones.  This is e.g. the distance
       // that the upper boundary of a bbox has to have from the lower
       // boundary.  This is in terms of grid points.
-      i2vect const min_bnd_dist_incl = dd.ghost_width;
+      i2vect const min_bnd_dist_incl = dd.ghost_widths.at(rl);
       // TODO: The above is required only near symmetry boundaries.
       
       
@@ -816,9 +816,9 @@ namespace CarpetRegrid2 {
       assert (not regions.at(rl-1).empty());
       ibbox const coarse0 = * regions.at(rl-1).begin();
       
-      i2vect const fdistance = dd.ghost_width;
+      i2vect const fdistance = dd.ghost_widths.at(rl);
       i2vect const cdistance =
-        i2vect (min_distance + dd.prolongation_stencil_size());
+        i2vect (min_distance + dd.prolongation_stencil_size(rl));
       
       bool is_properly_nested = true;
       
