@@ -88,7 +88,7 @@ namespace Carpet {
     cctkGH->cctk_convlevel = basemglevel + mglevel;
     
     // Set mode
-    cctkGH->cctk_mode = CCTK_MODE_GLOBAL;
+    // cctkGH->cctk_mode = CCTK_MODE_GLOBAL;
     
     // Set time delta
     cctkGH->cctk_delta_time = delta_time * mglevelfact;
@@ -284,7 +284,7 @@ namespace Carpet {
     } // for group
     
     // Set mode
-    cctkGH->cctk_mode = CCTK_MODE_META;
+    // cctkGH->cctk_mode = CCTK_MODE_META;
     
     mglevel = -1;
     mglevelfact = -deadbeef;
@@ -306,7 +306,7 @@ namespace Carpet {
     Checkpoint ("Entering level mode");
     
     // Set mode
-    cctkGH->cctk_mode = CCTK_MODE_LEVEL;
+    // cctkGH->cctk_mode = CCTK_MODE_LEVEL;
     
     reflevel = rl;
     timereflevelfact = timereffacts.AT (reflevel);
@@ -366,7 +366,7 @@ namespace Carpet {
     }
     
     // Set mode
-    cctkGH->cctk_mode = CCTK_MODE_GLOBAL;
+    // cctkGH->cctk_mode = CCTK_MODE_GLOBAL;
     
     reflevel = -1;
     timereflevelfact = timereffacts.AT (reflevels - 1);
@@ -393,7 +393,7 @@ namespace Carpet {
     Checkpoint ("Entering singlemap mode");
     
     // Set mode
-    cctkGH->cctk_mode = CCTK_MODE_SINGLEMAP;
+    // cctkGH->cctk_mode = CCTK_MODE_SINGLEMAP;
     
     assert (mc_grouptype == -1);
     mc_grouptype = grouptype;
@@ -484,7 +484,7 @@ namespace Carpet {
     } // if mc_grouptype
     
     // Set mode
-    cctkGH->cctk_mode = CCTK_MODE_LEVEL;
+    // cctkGH->cctk_mode = CCTK_MODE_LEVEL;
     
     mc_grouptype = -1;
     carpetGH.map = map = -1;
@@ -510,7 +510,7 @@ namespace Carpet {
     Checkpoint ("Entering local mode");
     
     // Set mode
-    cctkGH->cctk_mode = CCTK_MODE_LOCAL;
+    // cctkGH->cctk_mode = CCTK_MODE_LOCAL;
     
     assert (grouptype == mc_grouptype);
     component = c;
@@ -708,7 +708,7 @@ namespace Carpet {
     } // if mc_grouptype
     
     // Set mode
-    cctkGH->cctk_mode = CCTK_MODE_SINGLEMAP;
+    // cctkGH->cctk_mode = CCTK_MODE_SINGLEMAP;
     
     component = -1;
     local_component = -1;

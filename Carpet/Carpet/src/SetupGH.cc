@@ -268,7 +268,7 @@ namespace Carpet {
     mc_grouptype = -1;
     map          = -1;
     component    = -1;
-    cctkGH->cctk_mode = CCTK_MODE_META;
+    // cctkGH->cctk_mode = CCTK_MODE_META;
     
     // Say hello
     Waypoint ("Setting up the grid hierarchy");
