@@ -579,12 +579,12 @@ namespace Carpet {
             const_cast<int*>(info.bbox)[2*d+1] = cctkGH->cctk_bbox[2*d+1];
           }
       
-          for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
-            for (int d=0; d<dim; ++d) {
-              const_cast<int*>(info.lssh)[CCTK_LSSH_IDX(stg,d)]
-                = cctkGH->cctk_lssh[CCTK_LSSH_IDX(stg,d)];
-            }
-          }
+          // for (int stg=0; stg<CCTK_NSTAGGER; ++stg) {
+          //   for (int d=0; d<dim; ++d) {
+          //     const_cast<int*>(info.lssh)[CCTK_LSSH_IDX(stg,d)]
+          //       = cctkGH->cctk_lssh[CCTK_LSSH_IDX(stg,d)];
+          //   }
+          // }
           
           if (local_component != -1) {
             const int numvars = CCTK_NumVarsInGroupI (group);
