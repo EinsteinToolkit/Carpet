@@ -49,9 +49,9 @@ namespace Carpet {
     CCTK_OverloadEnableGroupComm (EnableGroupComm);
     CCTK_OverloadDisableGroupComm (DisableGroupComm);
     CCTK_OverloadBarrier (Barrier);
-    CCTK_OverloadNamedBarrier (NamedBarrier);
-    CCTK_OverloadExit (Exit);
-    CCTK_OverloadAbort (Abort);
+    // CCTK_OverloadNamedBarrier (NamedBarrier);
+    CCTK_OverloadExit ((int (*)(cGH*, int)) Exit);
+    CCTK_OverloadAbort ((int (*)(cGH*, int)) Abort);
     CCTK_OverloadMyProc (MyProc);
     CCTK_OverloadnProcs (nProcs);
     CCTK_OverloadArrayGroupSizeB (ArrayGroupSizeB);
