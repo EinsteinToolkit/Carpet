@@ -290,7 +290,7 @@ namespace Carpet {
       Checkpoint ("Finished Barrier");
 #endif
       static int id = 513400912; // arbitrary starting value
-      CCTK_NamedBarrier (NULL, id++);
+      Carpet::NamedBarrier (NULL, id++);
     }
     
     total_timer.stop();
