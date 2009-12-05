@@ -448,9 +448,15 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
 
   // re-parse the 'IOHDF5::out_vars' parameter if it has changed
   if (strcmp (out_vars, myGH->out_vars)) {
+#ifdef IOUTIL_PARSER_HAS_OUT_DT
     IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING, "IOHDF5::out_vars",
                                myGH->stop_on_parse_errors, out_vars,
                                -1, -1.0, &myGH->requests[0]);
+#else
+    IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING, "IOHDF5::out_vars",
+                               myGH->stop_on_parse_errors, out_vars,
+                               -1, &myGH->requests[0]);
+#endif
 
     // notify the user about the new setting
     if (not CCTK_Equals (verbose, "none")) {
@@ -647,7 +653,11 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
     (CarpetIOHDF5GH *) CCTK_GHExtension (cctkGH, CCTK_THORNSTRING);
   ioRequest* request = myGH->requests[vindex];
   if (not request) {
+#ifdef IOUTIL_PARSER_HAS_OUT_DT
     request = IOUtil_DefaultIORequest (cctkGH, vindex, 1, -1.0);
+#else
+    request = IOUtil_DefaultIORequest (cctkGH, vindex, 1);
+#endif
   }
 
   // Get grid hierarchy extentsion from IOUtil
@@ -757,7 +767,11 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
   for (int var = firstvar; var < firstvar + numvars; var++) {
     ioRequest* r = myGH->requests[var];
     if (not r) {
+#ifdef IOUTIL_PARSER_HAS_OUT_DT
       r = IOUtil_DefaultIORequest (cctkGH, var, 1, -1.0);
+#else
+      r = IOUtil_DefaultIORequest (cctkGH, var, 1);
+#endif
     }
     if ((CCTK_EQUALS (out_mode, "onefile") and io_out_unchunked) or
         r->out_unchunked or
@@ -895,8 +909,13 @@ static void Checkpoint (const cGH* const cctkGH, int called_from)
         int first_vindex = CCTK_FirstVarIndexI (group);
 
         /* get the default I/O request for this group */
+#ifdef IOUTIL_PARSER_HAS_OUT_DT
         ioRequest *request =
           IOUtil_DefaultIORequest (cctkGH, first_vindex, 1, -1.0);
+#else
+        ioRequest *request =
+          IOUtil_DefaultIORequest (cctkGH, first_vindex, 1);
+#endif
 
         /* disable checking for old data objects, disable datatype conversion
            and downsampling */
