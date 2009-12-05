@@ -11,15 +11,15 @@ c     -*-Fortran-*-
       DECLARE_CCTK_FUNCTIONS
       DECLARE_CCTK_PARAMETERS
       integer i,j,k
-      print *, "Xgfg ", cctk_lsh0, cctk_lsh1, cctk_lsh2
+      print *, "Xgfg ", X0gfg, X1gfg, X2gfg
       print *, "Xarrg3 ", X0arrg3, X1arrg3, X2arrg3
       print *, "Xarrg2 ", X0arrg2, X1arrg2
       print *, "Xarrg1 ", X0arrg1
       print *, "Xscg"
       print *
-      do k=1,cctk_lsh2
-         do j=1,cctk_lsh1
-            do i=1,cctk_lsh0
+      do k=1,X2gfg
+         do j=1,X1gfg
+            do i=1,X0gfg
                gf(i,j,k) = i*10000 + j*100 + k
             end do
          end do
