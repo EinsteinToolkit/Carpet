@@ -185,10 +185,17 @@ namespace CarpetIOASCII {
     if (strcmp (out_vars, my_out_vars)) {
       ostringstream parameter_name;
       parameter_name << "IOASCII::out" << outdim << "D_vars";
+#ifdef IOUTIL_PARSER_HAS_OUT_DT
       IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING,
                                  parameter_name.str().c_str(),
                                  stop_on_parse_errors, out_vars,
                                  -1, -1.0, &requests[0]);
+#else
+      IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING,
+                                 parameter_name.str().c_str(),
+                                 stop_on_parse_errors, out_vars,
+                                 -1, &requests[0]);
+#endif
       
       // notify the user about the new setting
       if (not CCTK_Equals (verbose, "none")) {
