@@ -149,10 +149,17 @@ namespace CarpetIOHDF5 {
     if (strcmp (out_slice_vars, my_out_slice_vars)) {
       ostringstream parameter_name;
       parameter_name << "IOHDF5::out" << outdim << "D_vars";
+#ifdef IOUTIL_PARSER_HAS_OUT_DT
+      IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING,
+                                 parameter_name.str().c_str(),
+                                 stop_on_parse_errors, out_slice_vars,
+                                 -1, -1.0, &slice_requests[0]);
+#else
       IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING,
                                  parameter_name.str().c_str(),
                                  stop_on_parse_errors, out_slice_vars,
                                  -1, &slice_requests[0]);
+#endif
 
       // notify the user about the new setting
       if (not CCTK_Equals (verbose, "none")) {
