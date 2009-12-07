@@ -598,10 +598,17 @@ namespace CarpetIOBasic {
 
     // re-parse the 'IOBasic::outInfo_vars' parameter if it has changed
     if (strcmp (outInfo_vars, IOparameters.out_vars)) {
+#ifdef IOUTIL_PARSER_HAS_OUT_DT
+      IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING,
+                                 "IOBasic::outInfo_vars",
+                                 IOparameters.stop_on_parse_errors,
+                                 outInfo_vars, -1, -1.0, IOparameters.requests);
+#else
       IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING,
                                  "IOBasic::outInfo_vars",
                                  IOparameters.stop_on_parse_errors,
                                  outInfo_vars, -1, IOparameters.requests);
+#endif
 
       // save the last setting of 'IOBasic::outInfo_vars' parameter
       free (IOparameters.out_vars);
