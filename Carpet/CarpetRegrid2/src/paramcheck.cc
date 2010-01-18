@@ -25,6 +25,57 @@ namespace CarpetRegrid2 {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
     
+    enum sym_t { sym_unknown, sym_90, sym_180 };
+    
+    int num_params = 0;
+    sym_t params = sym_unknown;
+    char const* param = "";
+    if (symmetry_rotating90) {
+      ++num_params;
+      params = sym_90;
+      param = "symmetry_rotating90";
+    }
+    if (symmetry_rotating180) {
+      ++num_params;
+      params = sym_180;
+      param = "symmetry_rotating180";
+    }
+    
+    int num_thorns = 0;
+    sym_t thorns = sym_unknown;
+    char const* thorn = "";
+    if (CCTK_IsThornActive ("RotatingSymmetry90")) {
+      ++num_thorns;
+      thorns = sym_90;
+      thorn = "RotatingSymmetry90";
+    }
+    if (CCTK_IsThornActive ("RotatingSymmetry90r")) {
+      ++num_thorns;
+      thorns = sym_90;
+      thorn = "RotatingSymmetry90r";
+    }
+    if (CCTK_IsThornActive ("RotatingSymmetry180")) {
+      ++num_thorns;
+      thorns = sym_180;
+      thorn = "RotatingSymmetry180";
+    }
+    
+    if (num_params > 1) {
+      CCTK_PARAMWARN ("Too many of the symmetry parameters symmetry_rotating90 and symmetry_rotating180 are specified.  (At most one of these can be specified.)");
+    }
+    
+    if (num_thorns > 1) {
+      CCTK_PARAMWARN ("Too many of the symmetry thorns RotatingSymmetry90, RotatingSymmetry90r, and RotatingSymmetry180 are active.  (At most one of these can be active.)");
+    }
+    
+    if (params != sym_unknown and thorns != sym_unknown and params != thorns) {
+      CCTK_VParamWarn (CCTK_THORNSTRING,
+                       "The symmetry parameters and the active thorns do not agree.  The symmetry parameter \"%s\" and the active thorn \"%s\" cannot be used together.",
+                       param, thorn);
+    }
+    
+    
+    
     if ((num_centres >= 1 and num_levels_1 > maxreflevels) or
         (num_centres >= 2 and num_levels_2 > maxreflevels) or
         (num_centres >= 3 and num_levels_3 > maxreflevels) or
