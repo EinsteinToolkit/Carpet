@@ -67,14 +67,14 @@ namespace CarpetRegrid2 {
     this->active = active[n];
     this->position = rvect (position_x[n], position_y[n], position_z[n]);
     this->radius.resize (this->num_levels);
-    for (int rl = 0; rl < this->num_levels; ++ rl) {
+    this->radius.at(0) = rvect(-1.0, -1.0, -1.0); // unused
+    for (int rl = 1; rl < this->num_levels; ++ rl) {
       int const ind = index2 (lsh, rl, n);
-      CCTK_REAL const rx = radius_x[ind] < 0 ? radius[ind] : radius_x[ind];
-      CCTK_REAL const ry = radius_y[ind] < 0 ? radius[ind] : radius_y[ind];
-      CCTK_REAL const rz = radius_z[ind] < 0 ? radius[ind] : radius_z[ind];
+      CCTK_REAL const rx = radius_x[ind] < 0.0 ? radius[ind] : radius_x[ind];
+      CCTK_REAL const ry = radius_y[ind] < 0.0 ? radius[ind] : radius_y[ind];
+      CCTK_REAL const rz = radius_z[ind] < 0.0 ? radius[ind] : radius_z[ind];
       rvect const rad (rx, ry, rz);
-      this->radius.at(rl) = rad;
-      if (any (this->radius.at(rl) < 0.0)) {
+      if (any (rad < 0.0)) {
         CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "The radius of refinement level %d of region %d is [%g,%g,%g], which is non-negative",
                     rl, n,
@@ -83,6 +83,7 @@ namespace CarpetRegrid2 {
                     double(this->radius.at(rl)[2]));
         found_error = true;
       }
+      this->radius.at(rl) = rad;
     }
     
     if (this->num_levels > maxreflevels) {
