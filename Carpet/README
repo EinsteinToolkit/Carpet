@@ -6,4 +6,4 @@ Arrangement Maintainer(s) : Erik Schnetter <schnetter@cct.lsu.edu>
 Purpose of the arrangement:
 
 This arrangement provides a parallel AMR (adaptive mesh refinement)
-driver with MPI.  See http://www.carpetcode.org/ for more information.
+driver.  See <http://www.carpetcode.org/> for more information.
