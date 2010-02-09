@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <iomanip>
 
 #include "util_Table.h"
 #include "cctk.h"
@@ -1184,6 +1185,7 @@ int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
       }
     }
     ostringstream gs_buf;
+    gs_buf << setprecision(17);
     gs_buf << grid_structure;
     gs_buf << grid_times;
     gs_buf << leveltimes;
