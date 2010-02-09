@@ -226,6 +226,7 @@ namespace Carpet {
   void
   CallPostRecoverVariables (cGH * const cctkGH)
   {
+    DECLARE_CCTK_PARAMETERS;
     char const * const where = "Initialise::CallPostRecoverVariables";
     static Timer timer (where);
     timer.start();
@@ -235,17 +236,60 @@ namespace Carpet {
         ENTER_LEVEL_MODE (cctkGH, rl) {
           do_global_mode = reflevel==reflevels-1; // on last iteration, finest grid
           do_meta_mode = do_global_mode and mglevel==mglevels-1; // on first iteration, coarsest grid
-          
-          Waypoint ("Recovering II at iteration %d time %g%s%s",
+
+	  Waypoint ("Recovering II at iteration %d time %g%s%s",
                     cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
                     (do_global_mode ? " (global)" : ""),
                     (do_meta_mode ? " (meta)" : ""));
           
-          // Post recover variables
-          ScheduleTraverse (where, "CCTK_POST_RECOVER_VARIABLES", cctkGH);
+          int const num_tl = prolongation_order_time+1;
           
-          // Checking
-          PoisonCheck (cctkGH, alltimes);
+          bool const old_do_allow_past_timelevels = do_allow_past_timelevels;
+          do_allow_past_timelevels = false;
+          
+          // Rewind times
+          for (int m=0; m<maps; ++m) {
+            CCTK_REAL const old_delta =
+              vtt.AT(m)->get_delta (reflevel, mglevel);
+            vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
+          }
+          FlipTimeLevels (cctkGH);
+          for (int tl=0; tl<num_tl; ++tl) {
+            for (int m=0; m<maps; ++m) {
+              vtt.AT(m)->advance_time (reflevel, mglevel);
+            }
+            CycleTimeLevels (cctkGH);
+          }
+          for (int m=0; m<maps; ++m) {
+            CCTK_REAL const old_delta =
+              vtt.AT(m)->get_delta (reflevel, mglevel);
+            vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
+          }
+          FlipTimeLevels (cctkGH);
+          CCTK_REAL const old_cctk_time = cctkGH->cctk_time;
+          cctkGH->cctk_time -=
+            num_tl * (cctkGH->cctk_delta_time / cctkGH->cctk_timefac);
+          
+          for (int tl=0; tl<num_tl; ++tl) {
+            
+            // Advance times
+            for (int m=0; m<maps; ++m) {
+              vtt.AT(m)->advance_time (reflevel, mglevel);
+            }
+            CycleTimeLevels (cctkGH);
+            cctkGH->cctk_time += cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
+            
+            // Post recover variables
+            ScheduleTraverse (where, "CCTK_POST_RECOVER_VARIABLES", cctkGH);
+            
+            // Checking
+            PoisonCheck (cctkGH, currenttime);
+            
+          } // for tl
+          cctkGH->cctk_time = old_cctk_time;
+          
+          do_allow_past_timelevels = old_do_allow_past_timelevels;
+          
           CheckChecksums (cctkGH, allbutcurrenttime);
           
         } LEAVE_LEVEL_MODE;

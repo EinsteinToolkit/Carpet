@@ -181,10 +181,17 @@ static void CheckSteerableParameters (const cGH *const cctkGH,
 
   // re-parse the 'IOHDF5::out_vars' parameter if it has changed
   if (strcmp (out_vars, myGH->out_vars)) {
+#ifdef IOUTIL_PARSER_HAS_OUT_DT
+    IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING,
+                               "IOStreamedHDF5::out_vars",
+                               myGH->stop_on_parse_errors, out_vars,
+                               -1, -1.0, &myGH->requests[0]);
+#else
     IOUtil_ParseVarsForOutput (cctkGH, CCTK_THORNSTRING,
                                "IOStreamedHDF5::out_vars",
                                myGH->stop_on_parse_errors, out_vars,
                                -1, &myGH->requests[0]);
+#endif
 
     // notify the user about the new setting
     if (not CCTK_Equals (verbose, "none")) {
