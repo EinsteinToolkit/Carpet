@@ -2,8 +2,6 @@
 
 IMPLEMENTS: CarpetLib
 
-uses include header: loopcontrol.h
-
 includes header: mpi_string.hh in mpi_string.hh
 
 includes header: defs.hh in defs.hh
@@ -33,6 +31,7 @@ includes header: th.hh in th.hh
 includes header: operators.hh in operators.hh
 
 uses include header: CarpetTimers.hh
+uses include header: loopcontrol.h
 
 
 
