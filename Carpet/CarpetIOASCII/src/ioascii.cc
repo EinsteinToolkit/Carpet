@@ -619,7 +619,7 @@ namespace CarpetIOASCII {
               for (size_t n = 0; n < datas.size(); ++ n) {
                 const ggf* const ff =
                   arrdata.at(group).at(m).data.at(n + n_min);
-                tmpdatas.at(n) = ff->typed_data (tl, rl, c, ml);
+                tmpdatas.at(n) = ff->new_typed_data ();
                 size_t const memsize =
                   tmpdatas.at(n)->allocsize (data_ext, ioproc);
                 void * const memptr = pool.alloc (memsize);

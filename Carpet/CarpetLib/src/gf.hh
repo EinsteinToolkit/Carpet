@@ -58,6 +58,13 @@ public:
                        vl);
   }
   
+  virtual gdata* new_typed_data () const
+  {
+    return new data<T>(this->varindex,
+                       h.refcent, this->transport_operator,
+                       1, 0, NULL);
+  }
+  
   
   
   // Access to the data
