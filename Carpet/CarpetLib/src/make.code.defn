@@ -30,6 +30,7 @@ SRCS =	bbox.cc					\
 	interpolate_eno_3d_3tl.cc		\
 	restrict_3d_cc_rf2.cc			\
 	restrict_3d_rf2.cc			\
+	restrict_3d_vc_rf2.cc			\
 	restrict_4d_rf2.cc			\
 	prolongate_3d_cc_rf2.cc			\
 	prolongate_3d_o1_rf2.cc			\
