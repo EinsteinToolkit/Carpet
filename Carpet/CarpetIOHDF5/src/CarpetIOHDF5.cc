@@ -669,6 +669,14 @@ static int OutputVarAs (const cGH* const cctkGH, const char* const fullname,
   string filename;
   filename.append (myGH->out_dir);
   filename.append (alias);
+  if (out_timesteps_per_file > 0) {
+    // Round down to nearest multiple of out_timesteps_per_file
+    int const iter =
+      cctk_iteration / out_timesteps_per_file * out_timesteps_per_file;
+    char buffer[32];
+    snprintf (buffer, sizeof (buffer), ".iter_%d", iter);
+    filename.append (buffer);
+  }
   if (not (CCTK_EQUALS (out_mode, "onefile") or
            request->out_unchunked or
            groupdata.disttype == CCTK_DISTRIB_CONSTANT or
