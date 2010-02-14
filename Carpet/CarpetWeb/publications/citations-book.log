@@ -1,11 +1,11 @@
-This is pdfTeX, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2009.7.3)  3 AUG 2009 22:08
+This is pdfTeX, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2009.9.23)  25 JAN 2010 21:32
 entering extended mode
-**\nonstopmode \input{/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publicatio
-ns/citations-book.tex}
+**\nonstopmode \input{/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/public
+ations/citations-book.tex}
 
-(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-book.tex
-(/opt/local/share/texmf-dist/tex/latex/revtex/revtex4.cls
-Document Class: revtex4 2001/08/02 v4.0 (http://publish.aps.org/revtex4/ for do
+(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-book
+.tex (/opt/local/share/texmf-local/tex/latex/revtex4/revtex4.cls
+Document Class: revtex4 2001/08/03 v4.0 (http://publish.aps.org/revtex4/ for do
 cumentation)
  Copyright (c) 2001 The American Physical Society.
  mailto:revtex@aps.org
@@ -30,9 +30,9 @@ ltxgrid: portions licensed from W. E. Baxter (web@superscript.com)
 \pagegrid@col=\count82
 Class revtex4 Info: Incorporating package {textcase}  [1998/11/12 v0.06 Text on
 ly upper/lower case changing (DPC)]. on input line 3682.
-(/opt/local/share/texmf-local/tex/latex/html/url.sty
-Package: url 1999/03/02  ver 1.4  Verb mode for urls, email addresses, and file
- names
+(/opt/local/share/texmf-dist/tex/latex/ltxmisc/url.sty
+\Urlmuskip=\muskip10
+Package: url 2005/06/27  ver 3.2  Verb mode for urls, etc.
 )
 \c@affil=\count83
 \absbox=\box31
@@ -57,20 +57,20 @@ LaTeX Info: Redefining \cite on input line 602.
 \widetext@top=\box32
 \widetext@bot=\box33
 
-(/opt/local/share/texmf-dist/tex/latex/revtex/revsymb.sty
-Package: revsymb 2001/08/02 v4.0 (http://publish.aps.org/revtex4/ for documenta
+(/opt/local/share/texmf-local/tex/latex/revtex4/revsymb.sty
+Package: revsymb 2001/08/03 v4.0 (http://publish.aps.org/revtex4/ for documenta
 tion)
 LaTeX Info: Redefining \REV@mathfrak on input line 118.
 ))
 
 Class revtex4 Warning: No Society specified, using generic APS style.
 
-(/opt/local/share/texmf-dist/tex/latex/revtex/aps.rtx
-File: aps.rtx 2001/08/02 v4.0 (http://publish.aps.org/revtex4/ for documentatio
+(/opt/local/share/texmf-local/tex/latex/revtex4/aps.rtx
+File: aps.rtx 2001/08/03 v4.0 (http://publish.aps.org/revtex4/ for documentatio
 n)
 )
-(/opt/local/share/texmf-dist/tex/latex/revtex/10pt.rtx
-File: 10pt.rtx 2001/08/02 v4.0 (http://publish.aps.org/revtex4/ for documentati
+(/opt/local/share/texmf-local/tex/latex/revtex4/10pt.rtx
+File: 10pt.rtx 2001/08/03 v4.0 (http://publish.aps.org/revtex4/ for documentati
 on)
 )
 (/opt/local/share/texmf-dist/tex/generic/babel/babel.sty
@@ -102,16 +102,15 @@ Package: inputenc 2006/05/05 v1.1b Input encoding file
 \inpenc@prehook=\toks16
 \inpenc@posthook=\toks17
 
-(/opt/local/share/texmf-local/tex/latex/html/latin9.def
-File: latin1.def 1998/03/05 v0.97 Input encoding file(test version: still liabl
-e to change)
+(/opt/local/share/texmf-dist/tex/latex/base/latin9.def
+File: latin9.def 2006/05/05 v1.1b Input encoding file
 ))
 (/opt/local/share/texmf-dist/tex/latex/psnfss/mathpazo.sty
 Package: mathpazo 2005/04/12 PSNFSS-v9.2a Palatino w/ Pazo Math (D.Puga, WaS) 
 \symupright=\mathgroup4
 )
-(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-book.aux
-)
+(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-book
+.aux)
 \openout1 = `citations-book.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 8.
@@ -135,9 +134,10 @@ Class revtex4 Info: cite was not loaded (OK!) on input line 8.
 Class revtex4 Info: multicol was not loaded (OK!) on input line 8.
 \big@size=\dimen103
 
-(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-book.bbl
+(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-book
+.bbl
 LaTeX Font Info:    Try loading font information for T1+cmtt on input line 32.
-(/opt/local/share/texmf-dist/tex/latex/base/t1cmtt.fd
+ (/opt/local/share/texmf-dist/tex/latex/base/t1cmtt.fd
 File: t1cmtt.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Try loading font information for OT1+ppl on input line 32.
@@ -169,21 +169,21 @@ LaTeX Font Info:    Try loading font information for OT1+zplm on input line 32.
 (/opt/local/share/texmf-dist/tex/latex/psnfss/ot1zplm.fd
 File: ot1zplm.fd 2002/09/08 Fontinst v1.914 font definitions for OT1/zplm.
 )) [1{/opt/local/share/texmf/fonts/map/pdftex/updmap/pdftex.map}]
-(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-book.aux
-) ) 
+(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-book
+.aux) ) 
 Here is how much of TeX's memory you used:
- 2443 strings out of 94073
- 30236 string characters out of 1164798
- 85894 words of memory out of 1500000
- 5735 multiletter control sequences out of 10000+50000
+ 2461 strings out of 94073
+ 30498 string characters out of 1164797
+ 86129 words of memory out of 1500000
+ 5753 multiletter control sequences out of 10000+50000
  15151 words of font info for 37 fonts, out of 1200000 for 2000
  645 hyphenation exceptions out of 8191
- 26i,4n,21p,306b,259s stack positions out of 5000i,500n,6000p,200000b,5000s
-{/opt/local/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}{/opt/
-local/share/texmf-dist/fonts/enc/dvips/base/8r.enc}</opt/local/share/texmf-dist
-/fonts/type1/public/cm-super/sftt0900.pfb></opt/local/share/texmf-dist/fonts/ty
-pe1/urw/palatino/uplr8a.pfb></opt/local/share/texmf-dist/fonts/type1/urw/palati
-no/uplri8a.pfb>
+ 26i,4n,21p,310b,374s stack positions out of 5000i,500n,6000p,200000b,5000s
+{/opt/local/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}{/
+opt/local/share/texmf-dist/fonts/enc/dvips/base/8r.enc}</opt/local/share/texmf-
+dist/fonts/type1/public/cm-super/sftt0900.pfb></opt/local/share/texmf-dist/font
+s/type1/urw/palatino/uplr8a.pfb></opt/local/share/texmf-dist/fonts/type1/urw/pa
+latino/uplri8a.pfb>
 Output written on citations-book.pdf (1 page, 65000 bytes).
 PDF statistics:
  20 PDF objects out of 1000 (max. 8388607)

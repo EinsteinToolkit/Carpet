@@ -30,6 +30,36 @@
   (\bibinfo{publisher}{ZITI}, \bibinfo{year}{2006}), pp.
   \bibinfo{pages}{155--160}.
 
+\blurb[{\citenamefont{Ajith et~al.}(2009)\citenamefont{Ajith, Hannam, Husa,
+  Chen, Br{\"u}gmann, Dorband, M{\"u}ller, Ohme, Pollney, Reisswig,
+  Santamar{\'i}a, and Seiler}}]{carpet-ajith2009a}
+\bibinfo{author}{\bibfnamefont{P.}~\bibnamefont{Ajith}},
+  \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Hannam}},
+  \bibinfo{author}{\bibfnamefont{S.}~\bibnamefont{Husa}},
+  \bibinfo{author}{\bibfnamefont{Y.}~\bibnamefont{Chen}},
+  \bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Br{\"u}gmann}},
+  \bibinfo{author}{\bibfnamefont{N.}~\bibnamefont{Dorband}},
+  \bibinfo{author}{\bibfnamefont{D.}~\bibnamefont{M{\"u}ller}},
+  \bibinfo{author}{\bibfnamefont{F.}~\bibnamefont{Ohme}},
+  \bibinfo{author}{\bibfnamefont{D.}~\bibnamefont{Pollney}},
+  \bibinfo{author}{\bibfnamefont{C.}~\bibnamefont{Reisswig}},
+  \bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Santamar{\'i}a}},
+  \bibnamefont{and} \bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Seiler}},
+  \emph{\bibinfo{title}{``complete'' gravitational waveforms for black-hole
+  binaries with non-precessing spins}} (\bibinfo{year}{2009}),
+  \bibinfo{note}{arXiv:0909.2867 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0909.2867}.
+
+\blurb[{\citenamefont{Vega et~al.}(2009)\citenamefont{Vega, Diener, Tichy,
+  and Detweiler}}]{carpet-vega2009a}
+\bibinfo{author}{\bibfnamefont{I.}~\bibnamefont{Vega}},
+  \bibinfo{author}{\bibfnamefont{P.}~\bibnamefont{Diener}},
+  \bibinfo{author}{\bibfnamefont{W.}~\bibnamefont{Tichy}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{S.}~\bibnamefont{Detweiler}},
+  \emph{\bibinfo{title}{Self-force with (3+1) codes: a primer for numerical
+  relativists}} (\bibinfo{year}{2009}), \bibinfo{note}{arXiv:0908.2138
+  [gr-qc]}, \urlprefix\url{http://arxiv.org/abs/0908.2138}.
+
 \blurb[{\citenamefont{Reisswig
   et~al.}(2009{\natexlab{a}})\citenamefont{Reisswig, Bishop, Pollney, and
   Szil{\'a}gyi}}]{carpet-reisswig2009b}
@@ -123,14 +153,6 @@
   \bibinfo{note}{arXiv:0904.3541 [gr-qc]},
   \urlprefix\url{http://arxiv.org/abs/0904.3541}.
 
-\blurb[{\citenamefont{Barausse and Rezzolla}(2009)}]{carpet-barausse2009a}
-\bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Barausse}} \bibnamefont{and}
-  \bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Rezzolla}},
-  \emph{\bibinfo{title}{Predicting the direction of the final spin from the
-  coalescence of two black holes}} (\bibinfo{year}{2009}),
-  \bibinfo{note}{arXiv:0904.2577 [gr-qc]},
-  \urlprefix\url{http://arxiv.org/abs/0904.2577}.
-
 \blurb[{\citenamefont{Bernuzzi et~al.}(2009)\citenamefont{Bernuzzi, Baiotti,
   Corvino, Pietri, and Nagar}}]{carpet-bernuzzi2009a}
 \bibinfo{author}{\bibfnamefont{S.}~\bibnamefont{Bernuzzi}},
@@ -173,7 +195,7 @@
   \bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Baiotti}},
   \emph{\bibinfo{title}{The influence of magnetic fields on the
   gravitational-wave emission from binary neutron stars}}
-  (\bibinfo{year}{2009}), \bibinfo{note}{arXiv:0901.2722v1 [gr-qc]},
+  (\bibinfo{year}{2009}), \bibinfo{note}{arXiv:0901.2722 [gr-qc]},
   \urlprefix\url{http://arxiv.org/abs/0901.2722}.
 
 \blurb[{\citenamefont{Tao et~al.}(2008)\citenamefont{Tao, Allen, Hinder,

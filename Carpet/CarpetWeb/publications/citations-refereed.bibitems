@@ -11,6 +11,24 @@
 \providecommand{\bibinfo}[2]{#2}
 \providecommand{\eprint}[2][]{\url{#2}}
 
+\blurb[{\citenamefont{Saijo and Hawke}(2009)}]{carpet-saijo2009a}
+\bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Saijo}} \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{I.}~\bibnamefont{Hawke}},
+  \emph{\bibinfo{title}{Collapse of differentially rotating supermassive stars:
+  Post black hole formation}}, \bibinfo{journal}{Phys. Rev. D}
+  \textbf{\bibinfo{volume}{80}}, \bibinfo{pages}{064001}
+  (\bibinfo{year}{2009}), \eprint{arXiv:0908.3002 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0908.3002}.
+
+\blurb[{\citenamefont{Barausse and Rezzolla}(2009)}]{carpet-barausse2009a}
+\bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Barausse}} \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Rezzolla}},
+  \emph{\bibinfo{title}{Predicting the direction of the final spin from the
+  coalescence of two black holes}}, \bibinfo{journal}{Astrophys. J.}
+  \textbf{\bibinfo{volume}{704}}, \bibinfo{pages}{L40} (\bibinfo{year}{2009}),
+  \eprint{arXiv:0904.2577 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0904.2577}.
+
 \blurb[{\citenamefont{Aylott et~al.}(2009{\natexlab{a}})\citenamefont{Aylott,
   Baker, Boggs, Boyle, Brady, Brown, Br{\"u}gmann, Buchman, Buonanno, Cadonati,
   Camp, Campanelli, Centrella, Chatterji, Christensen, Chu, Diener, Dorband,

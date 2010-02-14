@@ -1,11 +1,11 @@
-This is pdfTeX, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2009.7.3)  3 AUG 2009 22:08
+This is pdfTeX, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2009.9.23)  25 JAN 2010 21:32
 entering extended mode
-**\nonstopmode \input{/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publicatio
-ns/carpet-publications.tex}
+**\nonstopmode \input{/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/public
+ations/carpet-publications.tex}
 
-(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/carpet-publication
-s.tex (/opt/local/share/texmf-dist/tex/latex/revtex/revtex4.cls
-Document Class: revtex4 2001/08/02 v4.0 (http://publish.aps.org/revtex4/ for do
+(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/carpet-publica
+tions.tex (/opt/local/share/texmf-local/tex/latex/revtex4/revtex4.cls
+Document Class: revtex4 2001/08/03 v4.0 (http://publish.aps.org/revtex4/ for do
 cumentation)
  Copyright (c) 2001 The American Physical Society.
  mailto:revtex@aps.org
@@ -30,9 +30,9 @@ ltxgrid: portions licensed from W. E. Baxter (web@superscript.com)
 \pagegrid@col=\count82
 Class revtex4 Info: Incorporating package {textcase}  [1998/11/12 v0.06 Text on
 ly upper/lower case changing (DPC)]. on input line 3682.
-(/opt/local/share/texmf-local/tex/latex/html/url.sty
-Package: url 1999/03/02  ver 1.4  Verb mode for urls, email addresses, and file
- names
+(/opt/local/share/texmf-dist/tex/latex/ltxmisc/url.sty
+\Urlmuskip=\muskip10
+Package: url 2005/06/27  ver 3.2  Verb mode for urls, etc.
 )
 \c@affil=\count83
 \absbox=\box31
@@ -57,20 +57,20 @@ LaTeX Info: Redefining \cite on input line 602.
 \widetext@top=\box32
 \widetext@bot=\box33
 
-(/opt/local/share/texmf-dist/tex/latex/revtex/revsymb.sty
-Package: revsymb 2001/08/02 v4.0 (http://publish.aps.org/revtex4/ for documenta
+(/opt/local/share/texmf-local/tex/latex/revtex4/revsymb.sty
+Package: revsymb 2001/08/03 v4.0 (http://publish.aps.org/revtex4/ for documenta
 tion)
 LaTeX Info: Redefining \REV@mathfrak on input line 118.
 ))
 
 Class revtex4 Warning: No Society specified, using generic APS style.
 
-(/opt/local/share/texmf-dist/tex/latex/revtex/aps.rtx
-File: aps.rtx 2001/08/02 v4.0 (http://publish.aps.org/revtex4/ for documentatio
+(/opt/local/share/texmf-local/tex/latex/revtex4/aps.rtx
+File: aps.rtx 2001/08/03 v4.0 (http://publish.aps.org/revtex4/ for documentatio
 n)
 )
-(/opt/local/share/texmf-dist/tex/latex/revtex/11pt.rtx
-File: 11pt.rtx 2001/08/02 v4.0 (http://publish.aps.org/revtex4/ for documentati
+(/opt/local/share/texmf-local/tex/latex/revtex4/11pt.rtx
+File: 11pt.rtx 2001/08/03 v4.0 (http://publish.aps.org/revtex4/ for documentati
 on)
 )
 (/opt/local/share/texmf-dist/tex/generic/babel/babel.sty
@@ -95,16 +95,15 @@ Package: inputenc 2006/05/05 v1.1b Input encoding file
 \inpenc@prehook=\toks16
 \inpenc@posthook=\toks17
 
-(/opt/local/share/texmf-local/tex/latex/html/latin9.def
-File: latin1.def 1998/03/05 v0.97 Input encoding file(test version: still liabl
-e to change)
+(/opt/local/share/texmf-dist/tex/latex/base/latin9.def
+File: latin9.def 2006/05/05 v1.1b Input encoding file
 ))
 (/opt/local/share/texmf-dist/tex/latex/psnfss/mathpazo.sty
 Package: mathpazo 2005/04/12 PSNFSS-v9.2a Palatino w/ Pazo Math (D.Puga, WaS) 
 \symupright=\mathgroup4
 )
-(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/carpet-publication
-s.aux)
+(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/carpet-publica
+tions.aux)
 \openout1 = `carpet-publications.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 24.
@@ -132,8 +131,8 @@ LaTeX Font Info:    Font shape `OT1/ppl/bx/n' in size <17.28> not available
 LaTeX Font Info:    Font shape `OT1/ppl/bx/n' in size <12> not available
 (Font)              Font shape `OT1/ppl/b/n' tried instead on input line 32.
 
-(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-backgrou
-nd.bibitems
+(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-back
+ground.bibitems
 LaTeX Font Info:    Try loading font information for OML+zplm on input line 27.
 
  (/opt/local/share/texmf-dist/tex/latex/psnfss/omlzplm.fd
@@ -160,22 +159,22 @@ File: ot1zplm.fd 2002/09/08 Fontinst v1.914 font definitions for OT1/zplm.
 LaTeX Font Info:    Font shape `OT1/ppl/bx/n' in size <10.95> not available
 (Font)              Font shape `OT1/ppl/b/n' tried instead on input line 37.
 )
-(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-webpage.
-bibitems)
-(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-refereed
-.bibitems [1{/opt/local/share/texmf/fonts/map/pdftex/updmap/pdftex.map}]
+(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-webp
+age.bibitems)
+(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-refe
+reed.bibitems [1{/opt/local/share/texmf/fonts/map/pdftex/updmap/pdftex.map}]
 [2]
-Underfull \hbox (badness 1577) in paragraph at lines 403--412
+Underfull \hbox (badness 1577) in paragraph at lines 421--430
 \OT1/ppl/m/it/10.95 from near-extremal-Bowen-York-spin black-hole bi-na-ries\OT
 1/ppl/m/n/10.95 , Phys. Rev. D \OT1/ppl/b/n/10.95 78\OT1/ppl/m/n/10.95 , 024039
  (2008),
  []
 
 [3] [4] [5] [6])
-(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-book.bib
-items)
-(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-thesis.b
-ibitems [7]
+(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-book
+.bibitems)
+(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-thes
+is.bibitems [7]
 LaTeX Font Info:    Try loading font information for OMS+ppl on input line 53.
  (/opt/local/share/texmf-dist/tex/latex/psnfss/omsppl.fd
 File: omsppl.fd 
@@ -183,30 +182,30 @@ File: omsppl.fd
 LaTeX Font Info:    Font shape `OMS/ppl/m/it' in size <10.95> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 53.
 )
-(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/citations-report.b
-ibitems [8]
-Underfull \hbox (badness 1194) in paragraph at lines 77--83
+(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-repo
+rt.bibitems [8]
+Underfull \hbox (badness 1194) in paragraph at lines 107--113
 []\OT1/ppl/m/n/10.95 J. Healy, J. Levin, and D. Shoe-maker, \OT1/ppl/m/it/10.95
  Zoom-whirl or-bits in black hole bi-na-ries \OT1/ppl/m/n/10.95 (2009),
  []
 
 [9]) [10]
-(/Users/eschnett/Calpha/carpet/Carpet/CarpetWeb/publications/carpet-publication
-s.aux) ) 
+(/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/carpet-publica
+tions.aux) ) 
 Here is how much of TeX's memory you used:
- 2247 strings out of 94073
- 29343 string characters out of 1164798
- 92868 words of memory out of 1500000
- 5528 multiletter control sequences out of 10000+50000
+ 2264 strings out of 94073
+ 29633 string characters out of 1164797
+ 93103 words of memory out of 1500000
+ 5545 multiletter control sequences out of 10000+50000
  16601 words of font info for 45 fonts, out of 1200000 for 2000
  645 hyphenation exceptions out of 8191
- 26i,4n,21p,290b,245s stack positions out of 5000i,500n,6000p,200000b,5000s
-{/opt/local/share/texmf-dist/fonts/enc/dvips/base/8r.enc}</opt/local/sh
-are/texmf-dist/fonts/type1/bluesky/cm/cmsy10.pfb></opt/local/share/texmf-dist/f
-onts/type1/urw/palatino/uplb8a.pfb></opt/local/share/texmf-dist/fonts/type1/urw
-/palatino/uplr8a.pfb></opt/local/share/texmf-dist/fonts/type1/urw/palatino/uplr
-i8a.pfb>
-Output written on carpet-publications.pdf (10 pages, 99221 bytes).
+ 26i,4n,21p,294b,335s stack positions out of 5000i,500n,6000p,200000b,5000s
+{/opt/local/share/texmf-dist/fonts/enc/dvips/base/8r.enc}</opt/loca
+l/share/texmf-dist/fonts/type1/bluesky/cm/cmsy10.pfb></opt/local/share/texmf-di
+st/fonts/type1/urw/palatino/uplb8a.pfb></opt/local/share/texmf-dist/fonts/type1
+/urw/palatino/uplr8a.pfb></opt/local/share/texmf-dist/fonts/type1/urw/palatino/
+uplri8a.pfb>
+Output written on carpet-publications.pdf (10 pages, 100667 bytes).
 PDF statistics:
  52 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 131072)
