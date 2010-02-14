@@ -209,6 +209,28 @@ inline const char * typestring (const CCTK_COMPLEX32&)
 
 
 
+// Capture the system's isnan function
+
+#ifdef HAVE_CCTK_REAL4
+inline int myisnan (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
+int myisnan (CCTK_REAL4 const & x)
+{ return isnan (x); }
+#endif
+#ifdef HAVE_CCTK_REAL8
+inline int myisnan (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
+inline int myisnan (CCTK_REAL8 const & x)
+{ return isnan (x); }
+#endif
+#ifdef HAVE_CCTK_REAL16
+inline int myisnan (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
+inline int myisnan (CCTK_REAL16 const & x)
+{ return isnan (x); }
+#endif
+
+#undef isnan
+
+
+
 namespace CarpetLib {
   namespace good {
     
@@ -272,8 +294,6 @@ namespace CarpetLib {
     // isnan
     //
     
-#undef isnan
-    
     // Default implementation, only good for integers
     template <typename T>
     inline int isnan (T const & x) CCTK_ATTRIBUTE_CONST;
@@ -284,33 +304,33 @@ namespace CarpetLib {
 #ifdef HAVE_CCTK_REAL4
     template<> inline int isnan (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
     template<> inline int isnan (CCTK_REAL4 const & x)
-    { return ::isnan (x); }
+    { return myisnan (x); }
 #endif
 #ifdef HAVE_CCTK_REAL8
     template<> inline int isnan (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
     template<> inline int isnan (CCTK_REAL8 const & x)
-    { return ::isnan (x); }
+    { return myisnan (x); }
 #endif
 #ifdef HAVE_CCTK_REAL16
     template<> inline int isnan (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
     template<> inline int isnan (CCTK_REAL16 const & x)
-    { return ::isnan (x); }
+    { return myisnan (x); }
 #endif
     
 #ifdef HAVE_CCTK_COMPLEX8
     template<> inline int isnan (CCTK_COMPLEX8 const & x) CCTK_ATTRIBUTE_CONST;
     template<> inline int isnan (CCTK_COMPLEX8 const & x)
-    { return ::isnan (CCTK_Cmplx8Real (x)) or ::isnan (CCTK_Cmplx8Imag (x)); }
+    { return myisnan (CCTK_Cmplx8Real (x)) or myisnan (CCTK_Cmplx8Imag (x)); }
 #endif
 #ifdef HAVE_CCTK_COMPLEX16
     template<> inline int isnan (CCTK_COMPLEX16 const & x) CCTK_ATTRIBUTE_CONST;
     template<> inline int isnan (CCTK_COMPLEX16 const & x)
-    { return ::isnan (CCTK_Cmplx16Real (x)) or ::isnan (CCTK_Cmplx16Imag (x)); }
+    { return myisnan (CCTK_Cmplx16Real (x)) or myisnan (CCTK_Cmplx16Imag (x)); }
 #endif
 #ifdef HAVE_CCTK_COMPLEX32
     template<> inline int isnan (CCTK_COMPLEX32 const & x) CCTK_ATTRIBUTE_CONST;
     template<> inline int isnan (CCTK_COMPLEX32 const & x)
-    { return ::isnan (CCTK_Cmplx32Real (x)) or std::isnan (CCTK_Cmplx32Imag (x)); }
+    { return myisnan (CCTK_Cmplx32Real (x)) or myisnan (CCTK_Cmplx32Imag (x)); }
 #endif
     
   } // namespace good
