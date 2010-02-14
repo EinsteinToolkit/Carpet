@@ -9,7 +9,10 @@ template <typename T>
 struct typeprops {
   typedef T complex;
   typedef T real;
+  // Create a complex number from a real number
   static inline complex fromreal (real const x) { return x; }
+  // Return the specific Cactus variable type for a Cactus variable
+  // type
 };
 
 #ifdef HAVE_CCTK_COMPLEX8
