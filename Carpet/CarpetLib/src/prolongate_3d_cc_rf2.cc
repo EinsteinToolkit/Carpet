@@ -279,9 +279,9 @@ namespace CarpetLib {
   template                                                              \
   void                                                                  \
   prolongate_3d_cc_rf2_prim2std (T const * restrict const src,          \
-                                 ivect3 const & restrict srcext,         \
+                                 ivect3 const & restrict srcext,        \
                                  T * restrict const dst,                \
-                                 ivect3 const & restrict dstext,         \
+                                 ivect3 const & restrict dstext,        \
                                  ibbox3 const & restrict srcbbox,       \
                                  ibbox3 const & restrict dstbbox,       \
                                  ibbox3 const & restrict regbbox);
