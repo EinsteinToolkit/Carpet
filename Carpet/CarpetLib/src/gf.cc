@@ -87,9 +87,9 @@ ostream& gf<T>::output (ostream& os) const
 
 
 
-#define INSTANTIATE(T)				\
+#define TYPECASE(N,T)				\
 template class gf<T>;
 
-#include "instantiate"
+#include "typecase.hh"
 
-#undef INSTANTIATE
+#undef TYPECASE

@@ -8,7 +8,8 @@ uses include header: vect.hh
 
 uses include header: carpet.hh
 
-uses include header: carpet_typecase.hh
+uses include header: typecase.hh
+uses include header: typeprops.hh
 
 uses include header: loopcontrol.h
 

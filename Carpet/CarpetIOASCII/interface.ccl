@@ -15,7 +15,8 @@ uses include header: gdata.hh
 uses include header: gf.hh
 uses include header: ggf.hh
 
-uses include header: carpet_typecase.hh
+uses include header: typecase.hh
+uses include header: typeprops.hh
 
 CCTK_INT last_output_iteration[4] TYPE=scalar
 CCTK_REAL last_output_time[4] TYPE=scalar

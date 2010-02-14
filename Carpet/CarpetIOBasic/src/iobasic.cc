@@ -23,6 +23,8 @@
 #include "carpet.hh"
 #include "CarpetTimers.hh"
 
+#include "typeprops.hh"
+
 using namespace CarpetLib;
 
 
@@ -409,7 +411,7 @@ namespace CarpetIOBasic {
           void const * const vardataptr = CCTK_VarDataPtrI (cctkGH, 0, n);
           assert (vardataptr);
 
-          switch (vartype) {
+          switch (specific_cactus_type(vartype)) {
 #define TYPECASE(N,T)                                                   \
             case N:                                                     \
               {                                                         \
@@ -424,7 +426,7 @@ namespace CarpetIOBasic {
                 cout << val;                                            \
               }                                                         \
             break;
-#include "carpet_typecase.hh"
+#include "typecase.hh"
 #undef TYPECASE
           default:
             UnsupportedVarType (n);
@@ -444,7 +446,7 @@ namespace CarpetIOBasic {
         
           union {
 #define TYPECASE(N,T) T var_##T;
-#include "carpet_typecase.hh"
+#include "typecase.hh"
 #undef TYPECASE
           } result;
         
@@ -456,7 +458,7 @@ namespace CarpetIOBasic {
 
             cout << " " << setw(width);
           
-            switch (vartype) {
+            switch (specific_cactus_type(vartype)) {
 #define TYPECASE(N,T)                                                   \
               case N:                                                   \
                 {                                                       \
@@ -471,7 +473,7 @@ namespace CarpetIOBasic {
                   cout << val;                                          \
                 }                                                       \
               break;
-#include "carpet_typecase.hh"
+#include "typecase.hh"
 #undef TYPECASE
             default:
               UnsupportedVarType (n);

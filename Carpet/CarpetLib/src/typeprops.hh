@@ -41,4 +41,49 @@ struct typeprops <CCTK_COMPLEX32> {
 
 
 
+static inline int specific_cactus_type (int const vartype)
+{
+  switch (vartype) {
+  case CCTK_VARIABLE_INT:
+#ifdef CCTK_INTEGER_PRECISION_1
+    return CCTK_VARIABLE_INT1;
+#endif
+#ifdef CCTK_INTEGER_PRECISION_2
+    return CCTK_VARIABLE_INT2;
+#endif
+#ifdef CCTK_INTEGER_PRECISION_4
+    return CCTK_VARIABLE_INT4;
+#endif
+#ifdef CCTK_INTEGER_PRECISION_8
+    return CCTK_VARIABLE_INT8;
+#endif
+    return -1;
+  case CCTK_VARIABLE_REAL:
+#ifdef CCTK_REAL_PRECISION_4
+    return CCTK_VARIABLE_REAL4;
+#endif
+#ifdef CCTK_REAL_PRECISION_8
+    return CCTK_VARIABLE_REAL8;
+#endif
+#ifdef CCTK_REAL_PRECISION_16
+    return CCTK_VARIABLE_REAL16;
+#endif
+    return -1;
+  case CCTK_VARIABLE_COMPLEX:
+#ifdef CCTK_REAL_PRECISION_4
+    return CCTK_VARIABLE_COMPLEX8;
+#endif
+#ifdef CCTK_REAL_PRECISION_8
+    return CCTK_VARIABLE_COMPLEX16;
+#endif
+#ifdef CCTK_REAL_PRECISION_16
+    return CCTK_VARIABLE_COMPLEX32;
+#endif
+    return -1;
+  }
+  return vartype;
+}
+
+
+
 #endif // #ifndef TYPEPROPS_HH

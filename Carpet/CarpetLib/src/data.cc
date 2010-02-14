@@ -1252,7 +1252,7 @@ output (ostream & os)
 
 
 
-#define INSTANTIATE(T)                                                  \
+#define TYPECASE(N,T)                           \
 template class data<T>;
-#include "instantiate"
-#undef INSTANTIATE
+#include "typecase.hh"
+#undef TYPECASE

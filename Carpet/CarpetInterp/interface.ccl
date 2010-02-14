@@ -9,6 +9,8 @@ uses include header: defs.hh
 uses include header: dist.hh
 uses include header: ggf.hh
 uses include header: timestat.hh
+uses include header: typecase.hh
+uses include header: typeprops.hh
 uses include header: vect.hh
 
 uses include header: carpet.hh

@@ -15,6 +15,8 @@
 
 #include "CarpetTimers.hh"
 
+#include "typeprops.hh"
+
 #include "CarpetIOHDF5.hh"
 
 
@@ -1393,14 +1395,14 @@ namespace CarpetIOHDF5 {
         ivect const pos = ivect(i,i,i);
         if(gfext.contains(pos)) {
           for (size_t n = 0; n < gfdatas.size(); n++) {
-            switch (groupdata.vartype) {
+            switch (specific_cactus_type(groupdata.vartype)) {
 #define TYPECASE(N,T)                                                   \
               case N: { T* typed_buffer = (T*) &buffer.front();         \
                 typed_buffer[offset + n*npoints] =                      \
                   (*(const data<T>*)gfdatas.at(n))[pos];                \
                 break;                                                  \
               }
-#include "carpet_typecase.hh"
+#include "typecase.hh"
 #undef TYPECASE
             }
           }

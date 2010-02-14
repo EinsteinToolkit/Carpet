@@ -13,7 +13,6 @@ USES INCLUDE HEADER: dist.hh
 USES INCLUDE HEADER: vect.hh
 
 USES INCLUDE HEADER: carpet.hh
-USES INCLUDE HEADER: carpet_typecase.hh
 
 
 

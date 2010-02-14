@@ -156,7 +156,7 @@ namespace CarpetLib {
   
   
   
-#define INSTANTIATE(T)                                                  \
+#define TYPECASE(N,T)                                                   \
   template                                                              \
   void                                                                  \
   prolongate_3d_cc_rf2_std2prim (T const * restrict const src,          \
@@ -166,8 +166,8 @@ namespace CarpetLib {
                                  ibbox3 const & restrict srcbbox,       \
                                  ibbox3 const & restrict dstbbox,       \
                                  ibbox3 const & restrict regbbox);
-#include "instantiate"
-#undef INSTANTIATE
+#include "typecase.hh"
+#undef TYPECASE
   
   
   
@@ -275,7 +275,7 @@ namespace CarpetLib {
   
   
   
-#define INSTANTIATE(T)                                                  \
+#define TYPECASE(N,T)                                                   \
   template                                                              \
   void                                                                  \
   prolongate_3d_cc_rf2_prim2std (T const * restrict const src,          \
@@ -285,8 +285,8 @@ namespace CarpetLib {
                                  ibbox3 const & restrict srcbbox,       \
                                  ibbox3 const & restrict dstbbox,       \
                                  ibbox3 const & restrict regbbox);
-#include "instantiate"
-#undef INSTANTIATE
+#include "typecase.hh"
+#undef TYPECASE
   
   
   

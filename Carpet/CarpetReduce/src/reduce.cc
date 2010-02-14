@@ -687,7 +687,7 @@ namespace CarpetReduce {
     
     for (int n=0; n<num_outvals; ++n) {
       
-      switch (outtype) {
+      switch (specific_cactus_type(outtype)) {
 #define INITIALISE(OP,S)                                                \
       case do_##OP: {                                                   \
         typedef typeconv<S>::goodtype T;                                \
@@ -715,7 +715,7 @@ namespace CarpetReduce {
 	}					\
 	break;					\
       }
-#include "carpet_typecase.hh"
+#include "typecase.hh"
 #undef TYPECASE
 #undef INITIALISE
       default:
@@ -757,7 +757,7 @@ namespace CarpetReduce {
     for (int m=0; m<num_inarrays; ++m) {
       for (int n=0; n<lsize; ++n) {
         
-        switch (outtype) {
+        switch (specific_cactus_type(outtype)) {
 #define COPY(S)                                                         \
         {                                                               \
           typedef typeconv<S>::goodtype T;                              \
@@ -769,7 +769,7 @@ namespace CarpetReduce {
           COPY(T);                              \
           break;                                \
         }
-#include "carpet_typecase.hh"
+#include "typecase.hh"
 #undef TYPECASE
 #undef COPY
         default:
@@ -831,7 +831,7 @@ namespace CarpetReduce {
         myinarrays.at(tl) = inarrays.at(tl)[n];
       }
       
-      switch (outtype) {
+      switch (specific_cactus_type(outtype)) {
 #define REDUCE(OP,S)                                                    \
       case do_##OP: {                                                   \
         typedef typeconv<S>::goodtype T;                                \
@@ -862,7 +862,7 @@ namespace CarpetReduce {
 	}					\
 	break;					\
       }
-#include "carpet_typecase.hh"
+#include "typecase.hh"
 #undef TYPECASE
 #undef REDUCE
       default:
@@ -942,7 +942,7 @@ namespace CarpetReduce {
       
       for (int n=0; n<num_outvals; ++n) {
 	
-	switch (outtype) {
+	switch (specific_cactus_type(outtype)) {
 #define FINALISE(OP,S)                                                  \
 	case do_##OP: {                                                 \
           typedef typeconv<S>::goodtype T;                              \
@@ -970,7 +970,7 @@ namespace CarpetReduce {
 	  }					\
 	  break;				\
 	}
-#include "carpet_typecase.hh"
+#include "typecase.hh"
 #undef TYPECASE
 #undef FINALISE
 	default:

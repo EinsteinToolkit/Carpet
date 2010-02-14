@@ -28,10 +28,10 @@ uses include header: gf.hh
 uses include header: ggf.hh
 uses include header: gh.hh
 uses include header: th.hh
+uses include header: typecase.hh
+uses include header: typeprops.hh
 
 uses include header: operators.hh
-
-INCLUDE HEADER: typecase in carpet_typecase.hh
 
 
 

@@ -21,6 +21,8 @@
 #include "carpet.hh"
 #include "CarpetTimers.hh"
 
+#include "typeprops.hh"
+
 
 
 // That's a hack
@@ -397,7 +399,7 @@ namespace CarpetIOScalar {
 
         union {
 #define TYPECASE(N,T) T var_##T;
-#include "carpet_typecase.hh"
+#include "typecase.hh"
 #undef TYPECASE
         } result;
 
@@ -422,12 +424,12 @@ namespace CarpetIOScalar {
           if (CCTK_MyProc(cctkGH)==0) {
             file << " ";
             
-            switch (vartype) {
+            switch (specific_cactus_type(vartype)) {
 #define TYPECASE(N,T)                           \
               case N:                           \
                 file << result.var_##T;         \
               break;
-#include "carpet_typecase.hh"
+#include "typecase.hh"
 #undef TYPECASE
             default:
               UnsupportedVarType (n);

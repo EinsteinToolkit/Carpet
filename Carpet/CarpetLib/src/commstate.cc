@@ -46,15 +46,15 @@ comm_state::comm_state ()
   thestate = state_get_buffer_sizes;
   
   typebufs.resize (dist::c_ndatatypes());
-#define INSTANTIATE(T)                                                  \
+#define TYPECASE(N,T)                                                   \
   {                                                                     \
     T dummy;                                                            \
     unsigned const type = dist::c_datatype (dummy);                     \
     typebufs.AT(type).mpi_datatype = dist::mpi_datatype (dummy);        \
     typebufs.AT(type).datatypesize = sizeof dummy;                      \
   }
-#include "instantiate"
-#undef INSTANTIATE
+#include "typecase.hh"
+#undef TYPECASE
   
   srequests.reserve (dist::c_ndatatypes() * dist::size());
   rrequests.reserve (dist::c_ndatatypes() * dist::size());

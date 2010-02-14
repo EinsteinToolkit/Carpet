@@ -24,6 +24,8 @@
 #include "carpet.hh"
 #include "CarpetTimers.hh"
 
+#include "typeprops.hh"
+
 #include "ioascii.hh"
 
 
@@ -1370,12 +1372,12 @@ namespace CarpetIOASCII {
           for (size_t n=0; n<gfdatas.size(); ++n) {
             const gdata* gfdata = gfdatas.at(n);
             if (n > 0) os << " ";
-            switch (vartype) {
+            switch (specific_cactus_type(vartype)) {
 #define TYPECASE(N,T)                                           \
               case N:                                           \
                 os << (*(const data<T>*)gfdata)[index];         \
               break;
-#include "carpet_typecase.hh"
+#include "typecase.hh"
 #undef TYPECASE
             default:
               UnsupportedVarType(vi);
@@ -1443,12 +1445,12 @@ namespace CarpetIOASCII {
           for (size_t n=0; n<gfdatas.size(); ++n) {
             const gdata* gfdata = gfdatas.at(n);
             if (n > 0) os << " ";
-            switch (vartype) {
+            switch (specific_cactus_type(vartype)) {
 #define TYPECASE(N,T)                                           \
               case N:                                           \
                 os << (*(const data<T>*)gfdata)[pos];	        \
               break;
-#include "carpet_typecase.hh"
+#include "typecase.hh"
 #undef TYPECASE
             default:
               UnsupportedVarType(vi);

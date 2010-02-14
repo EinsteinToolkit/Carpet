@@ -18,6 +18,9 @@ uses include header: gdata.hh
 uses include header: ggf.hh
 uses include header: gh.hh
 
+uses include header: typecase.hh
+uses include header: typeprops.hh
+
 
 
 CCTK_INT next_output_iteration TYPE=scalar

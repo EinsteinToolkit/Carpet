@@ -21,6 +21,7 @@
 #include "dist.hh"
 #include "ggf.hh"
 #include "timestat.hh"
+#include "typeprops.hh"
 #include "vect.hh"
 
 #include "carpet.hh"
@@ -701,10 +702,10 @@ namespace CarpetInterp {
       vector<char> tmp (N_interp_points * N_output_arrays * vtypesize);
 
       MPI_Datatype datatype;
-      switch (vtype) {
+      switch (specific_cactus_type(vtype)) {
 #define TYPECASE(N,T)                                                   \
         case  N: { T dummy; datatype = dist::mpi_datatype(dummy); break; }
-#include "carpet_typecase.hh"
+#include "typecase.hh"
 #undef TYPECASE
       default: { CCTK_WARN (0, "invalid datatype"); abort(); }
       }

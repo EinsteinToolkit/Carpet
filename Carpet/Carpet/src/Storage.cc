@@ -8,6 +8,7 @@
 #include <dh.hh>
 #include <gf.hh>
 #include <operators.hh>
+#include <typeprops.hh>
 
 #include <carpet.hh>
 
@@ -158,7 +159,7 @@ namespace Carpet {
                 const int varindex = firstvarindex + var;
 #warning "TODO: allocate these in SetupGH, and after recomposing"
                 if (not arrdata.AT(group).AT(m).data.AT(var)) {
-                  switch (gp.vartype) {
+                  switch (specific_cactus_type(gp.vartype)) {
 #define TYPECASE(N,T)                                                   \
                     case N:                                             \
                       arrdata.AT(group).AT(m).data.AT(var) = new gf<T>  \
@@ -169,7 +170,7 @@ namespace Carpet {
                        prolongation_order_time,                         \
                        vectorlength, vectorindex, (gf<T>*)vectorleader); \
                     break;
-#include "typecase"
+#include "typecase.hh"
 #undef TYPECASE
                   default:
                     UnsupportedVarType (varindex);

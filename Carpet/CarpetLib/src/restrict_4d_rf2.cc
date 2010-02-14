@@ -122,7 +122,7 @@ namespace CarpetLib {
   
   
   
-#define INSTANTIATE(T)                                  \
+#define TYPECASE(N,T)                                   \
   template                                              \
   void                                                  \
   restrict_4d_rf2 (T const * restrict const src,        \
@@ -132,8 +132,8 @@ namespace CarpetLib {
                    ibbox4 const & restrict srcbbox,     \
                    ibbox4 const & restrict dstbbox,     \
                    ibbox4 const & restrict regbbox);
-#include "instantiate"
-#undef INSTANTIATE
+#include "typecase.hh"
+#undef TYPECASE
   
   
   

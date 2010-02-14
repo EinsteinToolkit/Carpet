@@ -403,9 +403,9 @@ void CarpetLib_printmemstats (CCTK_ARGUMENTS)
 
 
 
-#define INSTANTIATE(T)                          \
+#define TYPECASE(N,T)                           \
   template class mem<T>;
 
-#include "instantiate"
+#include "typecase.hh"
 
-#undef INSTANTIATE
+#undef TYPECASE

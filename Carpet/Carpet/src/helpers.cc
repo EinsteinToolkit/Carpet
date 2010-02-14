@@ -13,6 +13,7 @@
 #include <defs.hh>
 #include <dist.hh>
 #include <ggf.hh>
+#include <typeprops.hh>
 
 #include <carpet.hh>
 
@@ -257,13 +258,13 @@ namespace Carpet {
 
   MPI_Datatype CarpetMPIDatatype (const int vartype)
   {
-    switch (vartype) {
+    switch (specific_cactus_type(vartype)) {
 #define TYPECASE(N,T)				\
     case N: {					\
       T dummy;					\
       return dist::mpi_datatype(dummy);		\
     }
-#include "typecase"
+#include "typecase.hh"
 #undef TYPECASE
     default:
       CCTK_VWarn (0, __LINE__, __FILE__, CCTK_THORNSTRING,

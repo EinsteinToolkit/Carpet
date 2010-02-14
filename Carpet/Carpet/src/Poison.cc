@@ -8,6 +8,7 @@
 #include <util_Table.h>
 
 #include <defs.hh>
+#include <typeprops.hh>
 
 #include <carpet.hh>
 
@@ -204,7 +205,7 @@ namespace Carpet {
                     for (int i=0; i<size[0]; ++i) {
                       int const idx = i + size[0] * (j + size[1] * k);
                       bool poisoned=false;
-                      switch (tp) {
+                      switch (specific_cactus_type(tp)) {
 #define TYPECASE(N,T)                                                   \
                       case N: {                                         \
                         T worm;                                         \
@@ -213,7 +214,7 @@ namespace Carpet {
                         poisoned = memcmp (&worm, &val, sizeof worm) == 0; \
                         break;                                          \
                       }
-#include "typecase"
+#include "typecase.hh"
 #undef TYPECASE
                       default:
                         UnsupportedVarType(n);

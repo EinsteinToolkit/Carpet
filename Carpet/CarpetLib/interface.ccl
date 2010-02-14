@@ -8,6 +8,7 @@ includes header: mpi_string.hh in mpi_string.hh
 
 includes header: defs.hh in defs.hh
 includes header: dist.hh in dist.hh
+includes header: typecase.hh in typecase.hh
 includes header: typeprops.hh in typeprops.hh
 
 includes header: bbox.hh in bbox.hh
@@ -31,7 +32,6 @@ includes header: th.hh in th.hh
 
 includes header: operators.hh in operators.hh
 
-uses include header: carpet_typecase.hh
 uses include header: CarpetTimers.hh
 
 

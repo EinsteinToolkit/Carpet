@@ -9,6 +9,7 @@
 #include "util_Table.h"
 
 #include "operators.hh"
+#include "typeprops.hh"
 #include "CarpetIOHDF5.hh"
 #include "CactusBase/IOUtil/src/ioGH.h"
 
@@ -530,10 +531,10 @@ int WriteVarChunkedParallel (const cGH* const cctkGH,
       if (group.disttype == CCTK_DISTRIB_CONSTANT) {
 
         MPI_Datatype datatype;
-        switch (group.vartype) {
+        switch (specific_cactus_type(group.vartype)) {
 #define TYPECASE(N,T)                                                   \
           case  N: { T dummy; datatype = dist::mpi_datatype(dummy); } break;
-#include "carpet_typecase.hh"
+#include "typecase.hh"
 #undef TYPECASE
           default: assert (0 and "invalid datatype");
         }

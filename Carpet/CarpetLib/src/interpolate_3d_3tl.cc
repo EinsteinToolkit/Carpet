@@ -142,7 +142,7 @@ namespace CarpetLib {
   
   
   
-#define INSTANTIATE(T)                                  \
+#define TYPECASE(N,T)                                   \
   template                                              \
   void                                                  \
   interpolate_3d_3tl (T const * restrict const src1,    \
@@ -158,8 +158,8 @@ namespace CarpetLib {
                       ibbox3 const & restrict srcbbox,  \
                       ibbox3 const & restrict dstbbox,  \
                       ibbox3 const & restrict regbbox);
-#include "instantiate"
-#undef INSTANTIATE
+#include "typecase.hh"
+#undef TYPECASE
   
   
   

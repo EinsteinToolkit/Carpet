@@ -819,7 +819,7 @@ namespace CarpetLib {
   
   
   
-#define INSTANTIATE(T)                                          \
+#define TYPECASE(N,T)                                           \
   template                                                      \
   void                                                          \
   prolongate_3d_o5_monotone_rf2 (T const * restrict const src,           \
@@ -830,9 +830,9 @@ namespace CarpetLib {
                                  ibbox3 const & restrict dstbbox,       \
                                  ibbox3 const & restrict regbbox);
 #define CARPET_NO_COMPLEX
-#include "instantiate"
+#include "typecase.hh"
 #undef CARPET_NO_COMPLEX
-#undef INSTANTIATE
+#undef TYPECASE
   
   template <>
   void

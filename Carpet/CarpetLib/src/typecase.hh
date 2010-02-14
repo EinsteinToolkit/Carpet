@@ -1,26 +1,28 @@
-// Instantiate templates for all available types    -*-C++-*-
+// Instantiate type cases for all available types    -*-C++-*-
 // (C) 2001 Erik Schnetter <schnetter@uni-tuebingen.de>
 
 // Usage:
-// Define the macro INSTANTIATE(T) to instantiate for the type T,
+// Define the macro TYPECASE(N,T) to be a typecase for the type T with name N,
 // then include this file,
-// then undefine the macro INSTANTIATE.
+// then undefine the macro TYPECASE.
 
 
 
-// Decide which types to instantiate
+// Decide which types to typecase
 
+// Should all types be used?
 #ifdef CARPET_ALL
 #  undef CARPET_BYTE
-#  undef CARPET_INT
-#  undef CARPET_REAL
-#  undef CARPET_COMPLEX
+#  undef CARPET_ALL_INT
+#  undef CARPET_ALL_REAL
+#  undef CARPET_ALL_COMPLEX
 #  define CARPET_BYTE
-#  define CARPET_INT
-#  define CARPET_REAL
-#  define CARPET_COMPLEX
+#  define CARPET_ALL_INT
+#  define CARPET_ALL_REAL
+#  define CARPET_ALL_COMPLEX
 #endif
 
+// Should all integer/real/complex types be used?
 #ifdef CARPET_ALL_INT
 #  undef CARPET_INT1
 #  undef CARPET_INT2
@@ -50,16 +52,28 @@
 #  define CARPET_COMPLEX32
 #endif
 
-#if !defined(CARPET_BYTE) && !defined(CARPET_INT) && !defined(CARPET_INT1) && !defined(CARPET_INT2) && !defined(CARPET_INT4) && !defined(CARPET_INT8) && !defined(CARPET_REAL) && !defined(CARPET_REAL4) && !defined(CARPET_REAL8) && !defined(CARPET_REAL16) && !defined(CARPET_COMPLEX) && !defined(CARPET_COMPLEX8) && !defined(CARPET_COMPLEX16) && !defined(CARPET_COMPLEX32)
+// If no types are specified, use a sensible default
+#if ! defined(CARPET_BYTE)      &&              \
+    ! defined(CARPET_INT)       &&              \
+    ! defined(CARPET_INT1)      &&              \
+    ! defined(CARPET_INT2)      &&              \
+    ! defined(CARPET_INT4)      &&              \
+    ! defined(CARPET_INT8)      &&              \
+    ! defined(CARPET_REAL)      &&              \
+    ! defined(CARPET_REAL4)     &&              \
+    ! defined(CARPET_REAL8)     &&              \
+    ! defined(CARPET_REAL16)    &&              \
+    ! defined(CARPET_COMPLEX)   &&              \
+    ! defined(CARPET_COMPLEX8)  &&              \
+    ! defined(CARPET_COMPLEX16) &&              \
+    ! defined(CARPET_COMPLEX32)
 // Assume the user just wants INT, REAL, and COMPLEX
-#  undef CARPET_INT
 #  define CARPET_INT
-#  undef CARPET_REAL
 #  define CARPET_REAL
-#  undef CARPET_COMPLEX
 #  define CARPET_COMPLEX
 #endif
 
+// Translate the default types to their specific counterparts
 #ifdef CARPET_INT
 #  ifdef CCTK_INTEGER_PRECISION_1
 #    undef CARPET_INT1
@@ -109,70 +123,72 @@
 
 
 
-// // Check
-// #if !defined(CARPET_BYTE) && !defined(CARPET_INT1) && !defined(CARPET_INT2) && !defined(CARPET_INT4) && !defined(CARPET_INT8) && !defined(CARPET_REAL4) && !defined(CARPET_REAL8) && !defined(CARPET_REAL16) && !defined(CARPET_COMPLEX8) && !defined(CARPET_COMPLEX16) && !defined(CARPET_COMPLEX32)
-// #  error "You have not defined which grid function types to instantiate."
-// #endif
-
-
-
-// Instantiate the desired types
+// Typecase the desired types
 
 #ifdef CARPET_BYTE
-INSTANTIATE(CCTK_BYTE)
+TYPECASE(CCTK_VARIABLE_BYTE, CCTK_BYTE)
 #endif
 
+// #ifdef CARPET_INT
+// TYPECASE(CCTK_VARIABLE_INT, CCTK_INT)
+// #endif
 #ifdef CARPET_INT1
 #  ifdef HAVE_CCTK_INT1
-INSTANTIATE(CCTK_INT1)
+TYPECASE(CCTK_VARIABLE_INT1, CCTK_INT1)
 #  endif
 #endif
 #ifdef CARPET_INT2
 #  ifdef HAVE_CCTK_INT2
-INSTANTIATE(CCTK_INT2)
+TYPECASE(CCTK_VARIABLE_INT2, CCTK_INT2)
 #  endif
 #endif
 #ifdef CARPET_INT4
 #  ifdef HAVE_CCTK_INT4
-INSTANTIATE(CCTK_INT4)
+TYPECASE(CCTK_VARIABLE_INT4, CCTK_INT4)
 #  endif
 #endif
 #ifdef CARPET_INT8
 #  ifdef HAVE_CCTK_INT8
-INSTANTIATE(CCTK_INT8)
+TYPECASE(CCTK_VARIABLE_INT8, CCTK_INT8)
 #  endif
 #endif
 
+// #ifdef CARPET_REAL
+// TYPECASE(CCTK_VARIABLE_REAL, CCTK_REAL)
+// #endif
 #ifdef CARPET_REAL4
 #  ifdef HAVE_CCTK_REAL4
-INSTANTIATE(CCTK_REAL4)
+TYPECASE(CCTK_VARIABLE_REAL4, CCTK_REAL4)
 #  endif
 #endif
 #ifdef CARPET_REAL8
 #  ifdef HAVE_CCTK_REAL8
-INSTANTIATE(CCTK_REAL8)
+TYPECASE(CCTK_VARIABLE_REAL8, CCTK_REAL8)
 #  endif
 #endif
 #ifdef CARPET_REAL16
 #  ifdef HAVE_CCTK_REAL16
-INSTANTIATE(CCTK_REAL16)
+TYPECASE(CCTK_VARIABLE_REAL16, CCTK_REAL16)
 #  endif
 #endif
 
 #ifndef CARPET_NO_COMPLEX
+// #  ifdef CARPET_COMPLEX
+// TYPECASE(CCTK_VARIABLE_COMPLEX, CCTK_COMPLEX)
+// #  endif
 #  ifdef CARPET_COMPLEX8
 #    ifdef HAVE_CCTK_COMPLEX8
-INSTANTIATE(CCTK_COMPLEX8)
+TYPECASE(CCTK_VARIABLE_COMPLEX8, CCTK_COMPLEX8)
 #    endif
 #  endif
 #  ifdef CARPET_COMPLEX16
 #    ifdef HAVE_CCTK_COMPLEX16
-INSTANTIATE(CCTK_COMPLEX16)
+TYPECASE(CCTK_VARIABLE_COMPLEX16, CCTK_COMPLEX16)
 #    endif
 #  endif
 #  ifdef CARPET_COMPLEX32
 #    ifdef HAVE_CCTK_COMPLEX32
-INSTANTIATE(CCTK_COMPLEX32)
+TYPECASE(CCTK_VARIABLE_COMPLEX32, CCTK_COMPLEX32)
 #    endif
 #  endif
 #endif
