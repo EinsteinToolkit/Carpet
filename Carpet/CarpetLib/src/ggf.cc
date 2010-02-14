@@ -42,7 +42,7 @@ ggf::ggf (const int varindex_, const operator_type transport_operator_,
   
   assert (vectorlength >= 1);
   assert (vectorindex >= 0 and vectorindex < vectorlength);
-  assert ((vectorindex==0 and !vectorleader)
+  assert ((vectorindex==0 and not vectorleader)
           or (vectorindex!=0 and vectorleader));
   
   timelevels_.resize(d.h.mglevels());
