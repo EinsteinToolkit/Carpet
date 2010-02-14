@@ -17,7 +17,7 @@
 
 using namespace std;
 
-#define CARPET_HAVE_BUFFER_WIDTH
+#define CARPET_HAVE_BUFFER_WIDTHS
 
 // Forward declaration
 class ggf;
