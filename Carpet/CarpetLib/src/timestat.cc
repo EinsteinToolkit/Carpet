@@ -211,6 +211,9 @@ namespace CarpetLib {
     DECLARE_CCTK_PARAMETERS;
     assert (not running);
     running = true;
+    if (use_ipm_timing_regions) {
+      MPI_Pcontrol (+1, timername.c_str());
+    }
     starttime = call_timer ();
   }
   
@@ -224,6 +227,9 @@ namespace CarpetLib {
     assert (running);
     running = false;
     ticks const endtime = call_timer ();
+    if (use_ipm_timing_regions) {
+      MPI_Pcontrol (-1, timername.c_str());
+    }
     addstat (elapsed (endtime, starttime), b);
   }
   
