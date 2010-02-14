@@ -122,8 +122,6 @@ public:
     ostream & output (ostream & os) const;
   };
   
-private:
-  
   typedef vector<dboxes> cboxes; // ... for each component
   typedef vector<cboxes> rboxes; // ... for each refinement level
   typedef vector<rboxes> mboxes; // ... for each multigrid level
@@ -135,7 +133,7 @@ private:
   typedef vector<fast_dboxes> fast_rboxes; // ... for each refinement level
   typedef vector<fast_rboxes> fast_mboxes; // ... for each multigrid level
   
-  
+private:
   
   void
   setup_bboxes ();
