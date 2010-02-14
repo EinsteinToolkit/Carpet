@@ -1,7 +1,7 @@
 # Schedule definitions for thorn Carpet
 
 storage: point_classification
-storage: timing timing2
+storage: timing timing_procs timing_levels
 
 schedule CarpetMultiModelStartup at STARTUP as MultiModel_Startup before Driver_Startup
 {

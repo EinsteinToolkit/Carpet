@@ -286,6 +286,8 @@ namespace Carpet {
           {
             BEGIN_MGLEVEL_LOOP (cctkGH) {
               ENTER_LEVEL_MODE (cctkGH, rl) {
+                BeginTimingLevel (cctkGH);
+                
                 do_early_global_mode = reflevel==0;
                 do_late_global_mode = reflevel==reflevels-1;
                 do_early_meta_mode =
@@ -346,6 +348,7 @@ namespace Carpet {
                 
                 do_allow_past_timelevels = old_do_allow_past_timelevels;
                 
+                EndTimingLevel (cctkGH);
               } LEAVE_LEVEL_MODE;
             } END_MGLEVEL_LOOP;
           } // if did_recompose
@@ -388,6 +391,7 @@ namespace Carpet {
         if ((cctkGH->cctk_iteration-1) % do_every == 0) {
           ENTER_GLOBAL_MODE (cctkGH, ml) {
             ENTER_LEVEL_MODE (cctkGH, rl) {
+              BeginTimingLevel (cctkGH);
               
               do_early_global_mode = not have_done_global_mode;
               do_late_global_mode = reflevel==reflevels-1;
@@ -469,6 +473,7 @@ namespace Carpet {
               
               do_taper = false;
               
+              EndTimingLevel (cctkGH);
             } LEAVE_LEVEL_MODE;
           } LEAVE_GLOBAL_MODE;
         } // if do_every
@@ -496,12 +501,14 @@ namespace Carpet {
         if (cctkGH->cctk_iteration % do_every == 0) {
           ENTER_GLOBAL_MODE (cctkGH, ml) {
             ENTER_LEVEL_MODE (cctkGH, rl) {
+              BeginTimingLevel (cctkGH);
               
               Waypoint ("Evolution/Restrict at iteration %d time %g",
                         cctkGH->cctk_iteration, (double)cctkGH->cctk_time);
               
               Restrict (cctkGH);
               
+              EndTimingLevel (cctkGH);
             } LEAVE_LEVEL_MODE;
           } LEAVE_GLOBAL_MODE;
         } // if do_every
@@ -533,6 +540,7 @@ namespace Carpet {
         if (cctkGH->cctk_iteration % do_every == 0) {
           ENTER_GLOBAL_MODE (cctkGH, ml) {
             ENTER_LEVEL_MODE (cctkGH, rl) {
+              BeginTimingLevel (cctkGH);
               
               do_early_global_mode = not have_done_global_mode;
               do_late_global_mode = reflevel==reflevels-1;
@@ -594,6 +602,7 @@ namespace Carpet {
               
               do_taper = false;
               
+              EndTimingLevel (cctkGH);
             } LEAVE_LEVEL_MODE;
           } LEAVE_GLOBAL_MODE;
         } // if do_every

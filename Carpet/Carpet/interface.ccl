@@ -315,10 +315,17 @@ CCTK_REAL timing TAGS='checkpoint="no"'
   comm_bytes_per_second
   comm_count
   comm_bytes_count
+  
+  time_levels
 } "Physical timing information"
 
-CCTK_REAL timing2 TYPE=array DIM=1 SIZE=1 DISTRIB=constant TAGS='checkpoint="no"'
+CCTK_REAL timing_procs TYPE=array DIM=1 SIZE=1 DISTRIB=constant TAGS='checkpoint="no"'
 {
   grid_points_per_second
   grid_point_updates_count
 } "Per-processor timing information"
+
+CCTK_REAL timing_levels TYPE=array DIM=1 SIZE=max_refinement_levels DISTRIB=constant TAGS='checkpoint="no"'
+{
+  time_level time_level_count
+} "Per-level timing information"

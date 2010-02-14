@@ -132,6 +132,10 @@ namespace Carpet {
   timing_state_t timing_state = state_computing;
   CCTK_REAL time_start;
   
+  // Last starting time for this level
+  int timing_level = -1;
+  CCTK_REAL time_level_start;
+  
   
   
   // Initialise the timing variables (to be called before basegrid)
@@ -139,6 +143,7 @@ namespace Carpet {
   InitTimingStats (cGH const * const cctkGH)
   {
     DECLARE_CCTK_ARGUMENTS;
+    DECLARE_CCTK_PARAMETERS;
     
     startup_walltime = get_walltime();
     
@@ -172,8 +177,15 @@ namespace Carpet {
     * comm_count            = 0.0;
     * comm_bytes_count      = 0.0;
     
+    * time_levels = 0.0;
+    
     * grid_points_per_second   = 0.0;
     * grid_point_updates_count = 0.0;
+    
+    for (int rl=0; rl<max_refinement_levels; ++rl) {
+      time_level      [rl] = 0.0;
+      time_level_count[rl] = 0.0;
+    }
   }
   
   
@@ -211,6 +223,34 @@ namespace Carpet {
     * total_grid_point_updates_count += global_updates;
     
     * grid_point_updates_count = * local_grid_point_updates_count;
+  }
+  
+  
+  
+  // Count time spent on individual levels (to be called from Carpet's
+  // initialisation, evolution, and shutdown drivers)
+  void
+  BeginTimingLevel (cGH const * const cctkGH)
+  {
+    assert (reflevel != -1);
+    assert (timing_level == -1);
+    timing_level = reflevel;
+    time_level_start = get_walltime();
+  }
+  
+  void
+  EndTimingLevel (cGH const * const cctkGH)
+  {
+    DECLARE_CCTK_ARGUMENTS;
+    
+    assert (reflevel != -1);
+    assert (timing_level == reflevel);
+    timing_level = -1;
+    CCTK_REAL const time_level_end = get_walltime();
+    
+    time_level[reflevel] += time_level_end - time_level_start;
+    ++ time_level_count[reflevel];
+    * time_levels  += time_level_end - time_level_start;
   }
   
   

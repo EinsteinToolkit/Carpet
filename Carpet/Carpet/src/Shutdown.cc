@@ -30,25 +30,27 @@ namespace Carpet {
     timer.start();
     for (int rl=reflevels-1; rl>=0; --rl) {
       BEGIN_REVERSE_MGLEVEL_LOOP(cctkGH) {
-        enter_level_mode (cctkGH, rl);
-        
-        do_early_global_mode = reflevel==reflevels-1;
-        do_late_global_mode = reflevel==0;
-        do_early_meta_mode = do_early_global_mode and mglevel==0;
-        do_late_meta_mode = do_late_global_mode and mglevel==mglevels-1;
-        do_global_mode = do_late_global_mode;
-        do_meta_mode = do_late_meta_mode;
-        
-        Checkpoint ("Shutdown at iteration %d time %g%s%s",
-                    cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
-                    (do_global_mode ? " (global)" : ""),
-                    (do_meta_mode ? " (meta)" : ""));
-        
-        // Terminate
-        Checkpoint ("Scheduling TERMINATE");
-        CCTK_ScheduleTraverse ("CCTK_TERMINATE", cctkGH, CallFunction);
-        
-        leave_level_mode (cctkGH);
+        ENTER_LEVEL_MODE (cctkGH, rl) {
+          BeginTimingLevel (cctkGH);
+          
+          do_early_global_mode = reflevel==reflevels-1;
+          do_late_global_mode = reflevel==0;
+          do_early_meta_mode = do_early_global_mode and mglevel==0;
+          do_late_meta_mode = do_late_global_mode and mglevel==mglevels-1;
+          do_global_mode = do_late_global_mode;
+          do_meta_mode = do_late_meta_mode;
+          
+          Checkpoint ("Shutdown at iteration %d time %g%s%s",
+                      cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
+                      (do_global_mode ? " (global)" : ""),
+                      (do_meta_mode ? " (meta)" : ""));
+          
+          // Terminate
+          Checkpoint ("Scheduling TERMINATE");
+          CCTK_ScheduleTraverse ("CCTK_TERMINATE", cctkGH, CallFunction);
+          
+          EndTimingLevel (cctkGH);
+        } LEAVE_LEVEL_MODE;
       } END_REVERSE_MGLEVEL_LOOP;
     } // for rl
     

@@ -180,6 +180,8 @@ namespace Carpet {
   void InitTimingStats (cGH const * cctkGH);
   void BeginTimingEvolution (cGH const * cctkGH);
   void StepTimingEvolution (cGH const * cctkGH);
+  void BeginTimingLevel (cGH const * cctkGH);
+  void EndTimingLevel (cGH const * cctkGH);
   void BeginTimingIO (cGH const * cctkGH);
   void EndTimingIO (cGH const * cctkGH,
                     CCTK_REAL files, CCTK_REAL bytes, bool is_binary);
