@@ -5,6 +5,8 @@
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 
+#include <dh.hh>
+
 #include <carpet.hh>
 
 #include <loopcontrol.h>
@@ -17,6 +19,28 @@ namespace CarpetMask {
   
   using namespace std;
   using namespace Carpet;
+  
+  
+  
+  void ibbox2iminimax (ibbox const& ext, // component extent
+                       ibbox const& box, // this bbox
+                       ivect const& lsh, // component's lsh 
+                       ivect& imin, ivect& imax)
+  {
+    ivect const izero = ivect(0);
+    
+    assert (all ((box.lower() - ext.lower()               ) >= 0));
+    assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
+    assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
+    assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
+    
+    imin = (box.lower() - ext.lower()               ) / ext.stride();
+    imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
+    
+    assert (all (izero <= imin));
+    assert (box.empty() xor all (imin <= imax));
+    assert (all (imax <= lsh));
+  }
   
   
   
@@ -39,7 +63,6 @@ namespace CarpetMask {
     
     if (reflevel > 0) {
       
-      ivect const izero = ivect(0);
       ivect const ione  = ivect(1);
       
       gh const & hh = *vhh.at(Carpet::map);
@@ -56,7 +79,11 @@ namespace CarpetMask {
       // Calculate the union of all refined regions
       ibset refined;
       for (int c=0; c<hh.components(reflevel); ++c) {
-        refined |= hh.extent(mglevel,reflevel,c);
+        // refined |= hh.extent(mglevel,reflevel,c);
+        ibset active;
+        dh::dboxes const& box = dd.boxes.AT(mglevel).AT(reflevel).AT(c);
+        dh::dboxes::ibboxs2ibset (box.active, box.numactive, active);
+        refined += active;
       }
       refined.normalize();
       
@@ -78,12 +105,16 @@ namespace CarpetMask {
         for (ibset::const_iterator
                bi = notrefined.begin(); bi != notrefined.end(); ++bi)
         {
-          enlarged[d] |= (*bi).expand(ivect::dir(d), ivect::dir(d));
+          if (hh.refcent == vertex_centered) {
+            enlarged[d] |= (*bi).expand(ivect::dir(d), ivect::dir(d));
+          } else {
+            enlarged[d] |= *bi;
+          }
         }
         enlarged[d].normalize();
       }
       
-      // Intersect with the original union
+      // Intersect with the union of refined regions
       ibset boundaries[dim];
       for (int d=0; d<dim; ++d) {
         boundaries[d] = refined & enlarged[d];
@@ -107,6 +138,49 @@ namespace CarpetMask {
           ibbox const & ext
             = dd.boxes.at(mglevel).at(reflevel).at(component).exterior;
           
+          ibset active;
+          {
+            dh::dboxes const& box =
+              dd.boxes.AT(mglevel).AT(reflevel).AT(component);
+            dh::dboxes::ibboxs2ibset (box.active, box.numactive, active);
+          }
+          ibset const notactive = ext - active;
+          
+          for (int d=0; d<dim; ++d) {
+            assert ((notactive & boundaries[d]).empty());
+          }
+          
+          for (ibset::const_iterator bi = notactive.begin();
+               bi != notactive.end();
+               ++bi)
+          {
+            ibbox const& box = *bi;
+            assert (box <= ext);
+            assert (not box.empty());
+            
+            ivect imin, imax;
+            ibbox2iminimax (ext, box, ivect::ref(cctk_lsh), imin, imax);
+            
+            if (verbose) {
+              ostringstream buf;
+              buf << "Setting buffer region on level " << reflevel << " to weight 0: " << imin << ":" << imax-ione;
+              CCTK_INFO (buf.str().c_str());
+            }
+            
+            // Set weight on the boundary to 0
+            assert (dim == 3);
+#pragma omp parallel
+            LC_LOOP3(CarpetMaskSetup_buffers,
+                     i,j,k,
+                     imin[0],imin[1],imin[2], imax[0],imax[1],imax[2],
+                     cctk_lsh[0],cctk_lsh[1],cctk_lsh[2])
+            {
+              int const ind = CCTK_GFINDEX3D (cctkGH, i, j, k);
+              weight[ind] = 0.0;
+            } LC_ENDLOOP3(CarpetMaskSetup_buffers);
+            
+          } // for box
+          
           for (int d=0; d<dim; ++d) {
             for (ibset::const_iterator bi = boundaries[d].begin();
                  bi != boundaries[d].end();
@@ -116,15 +190,8 @@ namespace CarpetMask {
               ibbox const & box = (*bi) & ext;
               if (not box.empty()) {
                 
-                assert (all ((box.lower() - ext.lower()               ) >= 0));
-                assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
-                assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
-                assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
-                ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
-                ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
-                assert (all (izero <= imin));
-                assert (box.empty() or all (imin <= imax));
-                assert (all (imax <= ivect::ref(cctk_lsh)));
+                ivect imin, imax;
+                ibbox2iminimax (ext, box, ivect::ref(cctk_lsh), imin, imax);
                 
                 if (verbose) {
                   ostringstream buf;
@@ -179,15 +246,8 @@ namespace CarpetMask {
             ibbox const & box = (*bi).contracted_for(ext) & ext;
             if (not box.empty()) {
               
-              assert (all ((box.lower() - ext.lower()               ) >= 0));
-              assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
-              assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
-              assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
-              ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
-              ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
-              assert (all (izero <= imin));
-              assert (box.empty() or all (imin <= imax));
-              assert (all (imax <= ivect::ref(cctk_lsh)));
+              ivect imin, imax;
+              ibbox2iminimax (ext, box, ivect::ref(cctk_lsh), imin, imax);
               
               if (verbose) {
                 ostringstream buf;
@@ -234,15 +294,8 @@ namespace CarpetMask {
               ibbox const & box = (*bi).contracted_for(ext) & ext;
               if (not box.empty()) {
                 
-                assert (all ((box.lower() - ext.lower()               ) >= 0));
-                assert (all ((box.upper() - ext.lower() + ext.stride()) >= 0));
-                assert (all ((box.lower() - ext.lower()               ) % ext.stride() == 0));
-                assert (all ((box.upper() - ext.lower() + ext.stride()) % ext.stride() == 0));
-                ivect const imin = (box.lower() - ext.lower()               ) / ext.stride();
-                ivect const imax = (box.upper() - ext.lower() + ext.stride()) / ext.stride();
-                assert (all (izero <= imin));
-                assert (box.empty() or all (imin <= imax));
-                assert (all (imax <= ivect::ref(cctk_lsh)));
+                ivect imin, imax;
+                ibbox2iminimax (ext, box, ivect::ref(cctk_lsh), imin, imax);
                 
                 if (verbose) {
                   ostringstream buf;
