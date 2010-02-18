@@ -49,9 +49,18 @@ public:
     ibbox owned;                // evolved in time
     ibbox interior;             // interior (without ghost zones)
     
+    // TODO: Create a new datatype bboxarr for this?  Or get rid of
+    // it?
+    int numactive;
+    static int const maxactive = 4;
+    ibbox active[maxactive];    // owned minus buffers
+    
     // Region statistics:
     typedef ibbox::size_type size_type;
     size_type exterior_size, owned_size, active_size;
+    
+    static void ibset2ibboxs (ibset const& s, ibbox* bs, int& nbs);
+    static void ibboxs2ibset (ibbox const* bs, int const& nbs, ibset& s);
     
     size_t memory () const CCTK_ATTRIBUTE_PURE;
     istream & input (istream & is);

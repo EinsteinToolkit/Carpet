@@ -1151,6 +1151,8 @@ regrid (bool const do_init)
         level.AT(c).exterior = full_level.AT(c).exterior;
         level.AT(c).owned    = full_level.AT(c).owned;
         level.AT(c).interior = full_level.AT(c).interior;
+        dh::dboxes::ibset2ibboxs (full_level.AT(c).active,
+                                  level.AT(c).active, level.AT(c).numactive);
         
         level.AT(c).exterior_size = full_level.AT(c).exterior.size();
         level.AT(c).owned_size    = full_level.AT(c).owned.size();
@@ -1528,6 +1530,8 @@ mpi_datatype (dh::dboxes const &)
       ENTRY(int, exterior),
       ENTRY(int, owned),
       ENTRY(int, interior),
+      ENTRY(int, numactive),
+      ENTRY(int, active),
       ENTRY(dh::dboxes::size_type, exterior_size),
       ENTRY(dh::dboxes::size_type, owned_size),
       ENTRY(dh::dboxes::size_type, active_size),
@@ -1620,6 +1624,30 @@ allmemory ()
   return mem;
 }
 
+int const dh::dboxes::maxactive;
+
+void
+dh::dboxes::
+ibset2ibboxs (ibset const& s, ibbox* const bs, int& nbs)
+{
+  assert (s.setsize() <= maxactive);
+  nbs = 0;
+  for (ibset::const_iterator si = s.begin(); si != s.end(); ++si) {
+    bs[nbs++] = *si;
+  }
+}
+
+void
+dh::dboxes::
+ibboxs2ibset (ibbox const* const bs, int const& nbs, ibset& s)
+{
+  s = ibset();
+  assert (nbs>=0 and nbs<=maxactive);
+  for (int n=0; n<nbs; ++n) {
+    s += bs[n];
+  }
+}
+
 size_t
 dh::dboxes::
 memory ()
@@ -1628,7 +1656,8 @@ memory ()
   return
     memoryof (exterior) +
     memoryof (owned) +
-    memoryof (interior);
+    memoryof (interior) +
+    memoryof (active);
 }
 
 size_t
