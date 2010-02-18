@@ -1068,11 +1068,11 @@ namespace Carpet {
     
     // Current state
     mglevelfact = 1;
-    cctkGH->cctk_time = 0.0;
+    cctkGH->cctk_time       = 0.0;
     cctkGH->cctk_delta_time = 1.0;
     for (int d=0; d<dim; ++d) {
       cctkGH->cctk_origin_space[d] = 0.0;
-      cctkGH->cctk_delta_space[d] = 1.0;
+      cctkGH->cctk_delta_space [d] = 1.0;
     }
     
     // Set up things as if in local mode

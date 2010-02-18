@@ -98,7 +98,7 @@ namespace Carpet {
       // Set space delta
       for (int d=0; d<dim; ++d) {
         cctkGH->cctk_origin_space[d] = origin_space.AT(0).AT(mglevel)[d];
-        cctkGH->cctk_delta_space[d] = delta_space.AT(0)[d] * mglevelfact;
+        cctkGH->cctk_delta_space [d] = delta_space.AT(0)[d] * mglevelfact;
       }
     }
     
@@ -232,7 +232,7 @@ namespace Carpet {
         origin_space.AT(0).AT(mglevel)[d] = cctkGH->cctk_origin_space[d];
         delta_space.AT(mglevel)[d] = cctkGH->cctk_delta_space[d] / mglevelfact;
         cctkGH->cctk_origin_space[d] = -424242.0;
-        cctkGH->cctk_delta_space[d] = -424242.0;
+        cctkGH->cctk_delta_space [d] = -424242.0;
       }
     }
     
@@ -249,10 +249,10 @@ namespace Carpet {
         // ivect_ref(info.nghostzones) = deadbeef;
         ivect_ref(info.nghostzones)
           = arrdata.AT(group).AT(m).dd->ghost_widths.AT(0)[0];
-        ivect_ref(info.gsh) = deadbeef;
+        ivect_ref(info.gsh)  = deadbeef;
         ivect_ref(info.lbnd) = -deadbeef;
         ivect_ref(info.ubnd) = deadbeef;
-        ivect_ref(info.lsh) = deadbeef;
+        ivect_ref(info.lsh)  = deadbeef;
         for (int d=0; d<dim; ++d) {
           const_cast<int*>(info.bbox)[2*d  ] = deadbeef;
           const_cast<int*>(info.bbox)[2*d+1] = deadbeef;
@@ -415,7 +415,7 @@ namespace Carpet {
         // Set space delta
         for (int d=0; d<dim; ++d) {
           cctkGH->cctk_origin_space[d] = origin_space.AT(map).AT(mglevel)[d];
-          cctkGH->cctk_delta_space[d] = delta_space.AT(map)[d] * mglevelfact;
+          cctkGH->cctk_delta_space [d] = delta_space.AT(map)[d] * mglevelfact;
         }
       }
       
@@ -473,20 +473,20 @@ namespace Carpet {
         // Unset space delta
         for (int d=0; d<dim; ++d) {
           cctkGH->cctk_origin_space[d] = -424242.0;
-          cctkGH->cctk_delta_space[d] = -424242.0;
+          cctkGH->cctk_delta_space [d] = -424242.0;
         }
       }
       
       // Unset grid shape
-      ivect_ref(cctkGH->cctk_levoff) = deadbeef;
+      ivect_ref(cctkGH->cctk_levoff     ) = deadbeef;
       ivect_ref(cctkGH->cctk_levoffdenom) = 0;
-      ivect_ref(cctkGH->cctk_gsh) = deadbeef;
+      ivect_ref(cctkGH->cctk_gsh        ) = deadbeef;
       ivect_ref(cctkGH->cctk_nghostzones) = deadbeef;
       
       for (int group=0; group<CCTK_NumGroups(); ++group) {
         if (CCTK_GroupTypeI(group) == CCTK_GF) {
           cGroupDynamicData & info = groupdata.AT(group).info;
-          ivect_ref(info.gsh) = ivect_ref(cctkGH->cctk_gsh);
+          ivect_ref(info.gsh        ) = ivect_ref(cctkGH->cctk_gsh        );
           ivect_ref(info.nghostzones) = ivect_ref(cctkGH->cctk_nghostzones);
         }
       }
@@ -541,7 +541,6 @@ namespace Carpet {
         (ext.lower() - baseext.lower()) / ext.stride();
       ivect_ref(cctkGH->cctk_ubnd) =
         (ext.upper() - baseext.lower()) / ext.stride();
-      
       ivect_ref(cctkGH->cctk_lsh) = gdata::allocated_memory_shape (ext);
       
       for (int d=0; d<dim; ++d) {
@@ -658,9 +657,8 @@ namespace Carpet {
       ivect_ref(cctkGH->cctk_lbnd) = -deadbeef;
       ivect_ref(cctkGH->cctk_ubnd) = deadbeef;
       ivect_ref(cctkGH->cctk_from) = -deadbeef;
-      ivect_ref(cctkGH->cctk_to) = deadbeef;
-      
-      ivect_ref(cctkGH->cctk_lsh) = deadbeef;
+      ivect_ref(cctkGH->cctk_to  ) = deadbeef;
+      ivect_ref(cctkGH->cctk_lsh ) = deadbeef;
       
       for (int d=0; d<dim; ++d) {
         cctkGH->cctk_bbox[2*d  ] = deadbeef;
