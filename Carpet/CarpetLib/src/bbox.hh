@@ -77,7 +77,7 @@ public:
 	const vect<T,D>& stride_)
     : _lower(lower_), _upper(upper_), _stride(stride_)
   {
-#ifndef CARPET_DEBUG
+#ifdef CARPET_DEBUG
     assert_bbox_limits();
 #endif
   }
