@@ -77,15 +77,15 @@ namespace CarpetMask {
       
       
       // Calculate the union of all refined regions
-      ibset refined;
+      ibset active;
       for (int c=0; c<hh.components(reflevel); ++c) {
         // refined |= hh.extent(mglevel,reflevel,c);
-        ibset active;
+        ibset this_active;
         dh::dboxes const& box = dd.boxes.AT(mglevel).AT(reflevel).AT(c);
-        dh::dboxes::ibboxs2ibset (box.active, box.numactive, active);
-        refined += active;
+        dh::dboxes::ibboxs2ibset (box.active, box.numactive, this_active);
+        active += this_active;
       }
-      refined.normalize();
+      active.normalize();
       
       // Calculate the union of all coarse regions
       ibset parent;
@@ -96,7 +96,7 @@ namespace CarpetMask {
       parent.normalize();
       
       // Subtract the refined region
-      ibset notrefined = parent - refined;
+      ibset notrefined = parent - active;
       notrefined.normalize();
       
       // Enlarge this set
@@ -117,11 +117,12 @@ namespace CarpetMask {
       // Intersect with the union of refined regions
       ibset boundaries[dim];
       for (int d=0; d<dim; ++d) {
-        boundaries[d] = refined & enlarged[d];
+        boundaries[d] = active & enlarged[d];
         boundaries[d].normalize();
       }
       
       // Subtract the boundaries from the refined region
+      ibset refined = active;
       for (int d=0; d<dim; ++d) {
         refined -= boundaries[d];
       }
@@ -138,15 +139,18 @@ namespace CarpetMask {
           ibbox const & ext
             = dd.boxes.at(mglevel).at(reflevel).at(component).exterior;
           
-          ibset active;
-          {
-            dh::dboxes const& box =
-              dd.boxes.AT(mglevel).AT(reflevel).AT(component);
-            dh::dboxes::ibboxs2ibset (box.active, box.numactive, active);
-          }
-          ibset const notactive = ext - active;
+          ibset notactive = ext - active;
+          notactive.normalize();
           
           for (int d=0; d<dim; ++d) {
+            if (not ((notactive & boundaries[d]).empty())) {
+              cout << "mask_carpet.cc\n";
+              cout << "ext=" << ext << "\n";
+              cout << "active=" << active << "\n";
+              cout << "notactive=" << notactive << "\n";
+              cout << "boundaries[" << d << "]=" << boundaries[d] << "\n";
+              cout << "& = " << (notactive & boundaries[d]) << "\n";
+            }
             assert ((notactive & boundaries[d]).empty());
           }
           
