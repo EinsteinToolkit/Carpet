@@ -143,14 +143,6 @@ namespace CarpetMask {
           notactive.normalize();
           
           for (int d=0; d<dim; ++d) {
-            if (not ((notactive & boundaries[d]).empty())) {
-              cout << "mask_carpet.cc\n";
-              cout << "ext=" << ext << "\n";
-              cout << "active=" << active << "\n";
-              cout << "notactive=" << notactive << "\n";
-              cout << "boundaries[" << d << "]=" << boundaries[d] << "\n";
-              cout << "& = " << (notactive & boundaries[d]) << "\n";
-            }
             assert ((notactive & boundaries[d]).empty());
           }
           
