@@ -1225,9 +1225,9 @@ int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
     gs_buf << "grid_structure:" << grid_structure << ",";
     gs_buf << "grid_times:" << grid_times << ",";
     gs_buf << "grid_leveltimes:" << leveltimes << ",";
-    gs_buf << "grid_ghosts" << grid_ghosts << ",";
-    gs_buf << "grid_buffers" << grid_buffers << ",";
-    gs_buf << "grid_prolongation_orders" << grid_prolongation_orders << ".";
+    gs_buf << "grid_ghosts:" << grid_ghosts << ",";
+    gs_buf << "grid_buffers:" << grid_buffers << ",";
+    gs_buf << "grid_prolongation_orders:" << grid_prolongation_orders << ".";
     string const gs_str = gs_buf.str();
     error_count += WriteLargeAttribute (group, GRID_STRUCTURE, gs_str.c_str());
   }
