@@ -571,7 +571,7 @@ namespace Carpet {
       }
       
       CCTK_INFO ("Grid statistics:");
-      const int oldprecision = cout.precision();
+      const streamsize oldprecision = cout.precision();
       const ios_base::fmtflags oldflags = cout.flags();
       cout.setf (ios::fixed);
       for (int ml=0; ml<hh.mglevels(); ++ml) {

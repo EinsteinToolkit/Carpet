@@ -630,7 +630,7 @@ namespace Carpet {
     
     if (output_internal_data) {
       CCTK_INFO ("Internal data dump:");
-      int const oldprecision = cout.precision();
+      streamsize const oldprecision = cout.precision();
       cout.precision (17);
       cout << "   global_time: " << global_time << endl
            << "   leveltimes: " << leveltimes << endl
