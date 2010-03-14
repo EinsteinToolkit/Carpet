@@ -44,6 +44,13 @@ omp_get_num_threads (void)
 }
 
 static inline
+int
+omp_get_max_threads (void)
+{
+  return 1;
+}
+
+static inline
 double
 omp_get_wtime (void)
 {
@@ -397,12 +404,25 @@ lc_statset_init (lc_statset_t * restrict const ls,
   
   /*** Threads ****************************************************************/
   
-  static int saved_num_threads = -1;
-  static lc_topology_t * restrict saved_topologies;
-  static int saved_ntopologies;
+  static int saved_maxthreads = -1;
+  static lc_topology_t * restrict * saved_topologies = NULL;
+  static int * restrict saved_ntopologies = NULL;
   
-  if (saved_num_threads == -1) {
-    saved_num_threads = num_threads;
+  if (saved_maxthreads < 0) {
+    saved_maxthreads = omp_get_max_threads();
+    saved_topologies  = malloc (saved_maxthreads * sizeof * saved_topologies );
+    saved_ntopologies = malloc (saved_maxthreads * sizeof * saved_ntopologies);
+    for (int n=0; n<saved_maxthreads; ++n) {
+      saved_topologies [n] = NULL;
+      saved_ntopologies[n] = -1;
+    }
+  }
+  
+  if (num_threads > saved_maxthreads) {
+    CCTK_WARN (CCTK_WARN_ABORT, "Thread count inconsistency");
+  }
+  
+  if (! saved_topologies[num_threads-1]) {
     
     /* For up to 1024 threads, there are at most 611556 possible
        topologies */
@@ -411,32 +431,36 @@ lc_statset_init (lc_statset_t * restrict const ls,
       printf ("Running on %d threads\n", num_threads);
     }
     
-    saved_topologies = malloc (maxntopologies * sizeof * saved_topologies);
+    saved_topologies[num_threads-1] =
+      malloc (maxntopologies * sizeof * saved_topologies[num_threads-1]);
     find_thread_topologies
-      (saved_topologies, maxntopologies, & saved_ntopologies,
-       saved_num_threads);
-    saved_topologies =
-      realloc (saved_topologies, saved_ntopologies * sizeof * saved_topologies);
+      (saved_topologies[num_threads-1],
+       maxntopologies, & saved_ntopologies[num_threads-1],
+       num_threads);
+    saved_topologies[num_threads-1] =
+      realloc (saved_topologies[num_threads-1],
+               (saved_ntopologies[num_threads-1] *
+                sizeof * saved_topologies[num_threads-1]));
     
     if (debug) {
-      printf ("Found %d possible thread topologies\n", saved_ntopologies);
-      for (int n = 0; n < saved_ntopologies; ++n) {
+      printf ("Found %d possible thread topologies\n",
+              saved_ntopologies[num_threads-1]);
+      for (int n = 0; n < saved_ntopologies[num_threads-1]; ++n) {
         printf ("   %2d: %2d %2d %2d   %2d %2d %2d\n",
                 n,
-                saved_topologies[n].nthreads[0][0],
-                saved_topologies[n].nthreads[0][1],
-                saved_topologies[n].nthreads[0][2],
-                saved_topologies[n].nthreads[1][0],
-                saved_topologies[n].nthreads[1][1],
-                saved_topologies[n].nthreads[1][2]);
+                saved_topologies[num_threads-1][n].nthreads[0][0],
+                saved_topologies[num_threads-1][n].nthreads[0][1],
+                saved_topologies[num_threads-1][n].nthreads[0][2],
+                saved_topologies[num_threads-1][n].nthreads[1][0],
+                saved_topologies[num_threads-1][n].nthreads[1][1],
+                saved_topologies[num_threads-1][n].nthreads[1][2]);
       }
     }
   }
   
-  assert (saved_num_threads == num_threads);
-  ls->num_threads = saved_num_threads;
-  ls->topologies = saved_topologies;
-  ls->ntopologies = saved_ntopologies;
+  ls->num_threads = num_threads;
+  ls->topologies  = saved_topologies [num_threads-1];
+  ls->ntopologies = saved_ntopologies[num_threads-1];
   assert (ls->ntopologies > 0);
   
   /*** Tilings ****************************************************************/
@@ -628,11 +652,13 @@ lc_control_init (lc_control_t * restrict const lc,
   
   
   
+  int const num_threads = omp_get_num_threads();
   lc_statset_t * restrict ls;
 #pragma omp single copyprivate (ls)
   {
     /* Get number of threads */
-    int const num_threads = omp_get_num_threads();
+    /* int const num_threads = omp_get_num_threads(); */
+    /* int const num_threads = omp_get_max_threads(); */
     
     /* Calculate number of points */
     int npoints[3];
