@@ -195,6 +195,7 @@ namespace CarpetLib
     
     // Exchange the sizes of the data vectors
     int const size_in = data.size();
+    assert (size_in >= 0);
     vector <int> sizes_out (num_procs);
     // cerr << "QQQ: allgatherv[1] size_in=" << size_in << endl;
     MPI_Allgather (const_cast <int *> (& size_in), 1, MPI_INT,
@@ -207,7 +208,9 @@ namespace CarpetLib
     offsets_out.AT(0) = 0;
     for (int n = 0; n < num_procs; ++ n)
     {
+      assert (sizes_out.AT(n) >= 0);
       offsets_out.AT(n + 1) = offsets_out.AT(n) + sizes_out.AT(n);
+      assert (offsets_out.AT(n + 1) >= 0);
     }
     int const total_length_out = offsets_out.AT(num_procs);
     vector <T> alldata_buffer_out (total_length_out);
