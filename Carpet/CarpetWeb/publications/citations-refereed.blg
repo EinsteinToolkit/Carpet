@@ -3,44 +3,44 @@ The top-level auxiliary file: citations-refereed.aux
 The style file: apsrev-titles-manyauthors.bst
 Database file #1: citations-refereed.bib
 Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
-You've used 77 entries,
+You've used 90 entries,
             3482 wiz_defined-function locations,
-            1647 strings with 30568 characters,
-and the built_in function-call counts, 87653 in all, are:
-= -- 4124
-> -- 4362
-< -- 543
-+ -- 4007
-- -- 1073
-* -- 13466
-:= -- 8121
-add.period$ -- 77
-call.type$ -- 77
-change.case$ -- 385
-chr.to.int$ -- 65
-cite$ -- 77
-duplicate$ -- 7615
-empty$ -- 6745
-format.name$ -- 2384
-if$ -- 16212
-int.to.chr$ -- 13
-int.to.str$ -- 78
-missing$ -- 1157
-newline$ -- 246
-num.names$ -- 232
-pop$ -- 1799
+            1726 strings with 33535 characters,
+and the built_in function-call counts, 99455 in all, are:
+= -- 4754
+> -- 4821
+< -- 600
++ -- 4409
+- -- 1185
+* -- 15223
+:= -- 9290
+add.period$ -- 90
+call.type$ -- 90
+change.case$ -- 450
+chr.to.int$ -- 76
+cite$ -- 90
+duplicate$ -- 8654
+empty$ -- 7716
+format.name$ -- 2645
+if$ -- 18446
+int.to.chr$ -- 15
+int.to.str$ -- 91
+missing$ -- 1317
+newline$ -- 285
+num.names$ -- 271
+pop$ -- 2029
 preamble$ -- 1
-purify$ -- 308
+purify$ -- 360
 quote$ -- 0
-skip$ -- 3082
+skip$ -- 3507
 stack$ -- 0
-substring$ -- 2230
-swap$ -- 6931
-text.length$ -- 534
+substring$ -- 2636
+swap$ -- 7821
+text.length$ -- 590
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 462
+type$ -- 540
 warning$ -- 0
-while$ -- 233
+while$ -- 272
 width$ -- 0
-write$ -- 1014
+write$ -- 1181

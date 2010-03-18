@@ -1,7 +1,7 @@
-This is pdfTeX, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2009.9.23)  25 JAN 2010 21:32
+This is pdfTeX, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2009.9.23)  17 MAR 2010 12:20
 entering extended mode
-**\nonstopmode \input{/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/public
-ations/citations-thesis.tex}
+**\nonstopmode \input{"/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publi
+cations/citations-thesis.tex"}
 
 (/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-thes
 is.tex (/opt/local/share/texmf-local/tex/latex/revtex4/revtex4.cls
@@ -169,14 +169,14 @@ LaTeX Font Info:    Try loading font information for OT1+zplm on input line 21.
 (/opt/local/share/texmf-dist/tex/latex/psnfss/ot1zplm.fd
 File: ot1zplm.fd 2002/09/08 Fontinst v1.914 font definitions for OT1/zplm.
 )
-Underfull \hbox (badness 10000) in paragraph at lines 81--88
+Underfull \hbox (badness 10000) in paragraph at lines 104--111
 []\T1/ppl/m/n/9 B. Zink, \T1/ppl/m/it/9 Black hole for-ma-tion from non-axisymm
 etric in-sta-bil-i-ties in quasi-toroidal stars\T1/ppl/m/n/9 , Ph.D. the-sis, T
 ech-nis-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 81--88
+Underfull \hbox (badness 10000) in paragraph at lines 104--111
 \T1/ppl/m/n/9 che Uni-ver-sität München (2006), URL $\T1/cmtt/m/n/9 http : / / 
 nbn-[]resolving . de / urn / resolver . pl ? urn = urn : nbn : de : bvb :
  []
@@ -185,19 +185,19 @@ nbn-[]resolving . de / urn / resolver . pl ? urn = urn : nbn : de : bvb :
 (/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-thes
 is.aux) ) 
 Here is how much of TeX's memory you used:
- 2472 strings out of 94073
- 30740 string characters out of 1164797
- 90133 words of memory out of 1500000
- 5764 multiletter control sequences out of 10000+50000
+ 2475 strings out of 94073
+ 30801 string characters out of 1164797
+ 92137 words of memory out of 1500000
+ 5767 multiletter control sequences out of 10000+50000
  15151 words of font info for 37 fonts, out of 1200000 for 2000
  645 hyphenation exceptions out of 8191
- 26i,4n,21p,319b,376s stack positions out of 5000i,500n,6000p,200000b,5000s
+ 26i,4n,21p,314b,376s stack positions out of 5000i,500n,6000p,200000b,5000s
 {/opt/local/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}
 {/opt/local/share/texmf-dist/fonts/enc/dvips/base/8r.enc}</opt/local/share/texm
 f-dist/fonts/type1/public/cm-super/sftt0900.pfb></opt/local/share/texmf-dist/fo
 nts/type1/urw/palatino/uplr8a.pfb></opt/local/share/texmf-dist/fonts/type1/urw/
 palatino/uplri8a.pfb>
-Output written on citations-thesis.pdf (1 page, 80328 bytes).
+Output written on citations-thesis.pdf (1 page, 81323 bytes).
 PDF statistics:
  20 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 131072)

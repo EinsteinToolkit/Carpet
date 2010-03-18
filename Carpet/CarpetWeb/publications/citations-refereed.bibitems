@@ -11,6 +11,118 @@
 \providecommand{\bibinfo}[2]{#2}
 \providecommand{\eprint}[2][]{\url{#2}}
 
+\blurb[{\citenamefont{Reisswig et~al.}(2010)\citenamefont{Reisswig, Bishop,
+  Pollney, and Szil{\'a}gyi}}]{carpet-reisswig2009c}
+\bibinfo{author}{\bibfnamefont{C.}~\bibnamefont{Reisswig}},
+  \bibinfo{author}{\bibfnamefont{N.~T.} \bibnamefont{Bishop}},
+  \bibinfo{author}{\bibfnamefont{D.}~\bibnamefont{Pollney}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Szil{\'a}gyi}},
+  \emph{\bibinfo{title}{Characteristic extraction in numerical relativity:
+  binary black hole merger waveforms at null infinity}},
+  \bibinfo{journal}{Class. Quantum Grav.} \textbf{\bibinfo{volume}{27}},
+  \bibinfo{pages}{075014} (\bibinfo{year}{2010}), \eprint{arXiv:0912.1285
+  [gr-qc]}, \urlprefix\url{http://arxiv.org/abs/0912.1285}.
+
+\blurb[{\citenamefont{Liu et~al.}(2010)\citenamefont{Liu, Etienne, and
+  Shapiro}}]{carpet-liu2010a}
+\bibinfo{author}{\bibfnamefont{Y.~T.} \bibnamefont{Liu}},
+  \bibinfo{author}{\bibfnamefont{Z.~B.} \bibnamefont{Etienne}},
+  \bibnamefont{and} \bibinfo{author}{\bibfnamefont{S.~L.}
+  \bibnamefont{Shapiro}}, \emph{\bibinfo{title}{Evolution of near-extremal-spin
+  black holes using the moving puncture technique}}, \bibinfo{journal}{Phys.
+  Rev. D} \textbf{\bibinfo{volume}{80}}, \bibinfo{pages}{121503(R)}
+  (\bibinfo{year}{2010}), \eprint{arXiv:1001.4077 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/1001.4077}.
+
+\blurb[{\citenamefont{Vega et~al.}(2009)\citenamefont{Vega, Diener, Tichy,
+  and Detweiler}}]{carpet-vega2009a}
+\bibinfo{author}{\bibfnamefont{I.}~\bibnamefont{Vega}},
+  \bibinfo{author}{\bibfnamefont{P.}~\bibnamefont{Diener}},
+  \bibinfo{author}{\bibfnamefont{W.}~\bibnamefont{Tichy}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{S.}~\bibnamefont{Detweiler}},
+  \emph{\bibinfo{title}{Self-force with (3+1) codes: a primer for numerical
+  relativists}}, \bibinfo{journal}{Phys. Rev. D} \textbf{\bibinfo{volume}{80}},
+  \bibinfo{pages}{084021} (\bibinfo{year}{2009}), \eprint{arXiv:0908.2138
+  [gr-qc]}, \urlprefix\url{http://arxiv.org/abs/0908.2138}.
+
+\blurb[{\citenamefont{Pollney et~al.}(2009)\citenamefont{Pollney, Reisswig,
+  Dorband, Schnetter, and Diener}}]{carpet-pollney2009a}
+\bibinfo{author}{\bibfnamefont{D.}~\bibnamefont{Pollney}},
+  \bibinfo{author}{\bibfnamefont{C.}~\bibnamefont{Reisswig}},
+  \bibinfo{author}{\bibfnamefont{N.}~\bibnamefont{Dorband}},
+  \bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Schnetter}},
+  \bibnamefont{and} \bibinfo{author}{\bibfnamefont{P.}~\bibnamefont{Diener}},
+  \emph{\bibinfo{title}{The asymptotic falloff of local waveform measurements
+  in numerical relativity}}, \bibinfo{journal}{Phys. Rev. D}
+  \textbf{\bibinfo{volume}{80}}, \bibinfo{pages}{121502(R)}
+  (\bibinfo{year}{2009}), \eprint{arXiv:0910.3656 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0910.3656}.
+
+\blurb[{\citenamefont{Giacomazzo et~al.}(2009)\citenamefont{Giacomazzo,
+  Rezzolla, and Baiotti}}]{carpet-giacomazzo2009a}
+\bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Giacomazzo}},
+  \bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Rezzolla}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Baiotti}},
+  \emph{\bibinfo{title}{The influence of magnetic fields on the
+  gravitational-wave emission from binary neutron stars}},
+  \bibinfo{journal}{Mon. Not. Roy. Astron. Soc.}
+  \textbf{\bibinfo{volume}{339}}, \bibinfo{pages}{L164} (\bibinfo{year}{2009}),
+  \eprint{arXiv:0901.2722 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0901.2722}.
+
+\blurb[{\citenamefont{Reisswig
+  et~al.}(2009{\natexlab{a}})\citenamefont{Reisswig, Bishop, Pollney, and
+  Szil{\'a}gyi}}]{carpet-reisswig2009b}
+\bibinfo{author}{\bibfnamefont{C.}~\bibnamefont{Reisswig}},
+  \bibinfo{author}{\bibfnamefont{N.~T.} \bibnamefont{Bishop}},
+  \bibinfo{author}{\bibfnamefont{D.}~\bibnamefont{Pollney}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Szil{\'a}gyi}},
+  \emph{\bibinfo{title}{Unambiguous determination of gravitational waveforms
+  from binary black hole mergers}}, \bibinfo{journal}{Phys. Rev. Lett.}
+  \textbf{\bibinfo{volume}{103}}, \bibinfo{pages}{221101}
+  (\bibinfo{year}{2009}{\natexlab{a}}), \eprint{arXiv:0907.2637 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0907.2637}.
+
+\blurb[{\citenamefont{Reisswig
+  et~al.}(2009{\natexlab{b}})\citenamefont{Reisswig, Husa, Rezzolla, Dorband,
+  Pollney, and Seiler}}]{carpet-reisswig2009a}
+\bibinfo{author}{\bibfnamefont{C.}~\bibnamefont{Reisswig}},
+  \bibinfo{author}{\bibfnamefont{S.}~\bibnamefont{Husa}},
+  \bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Rezzolla}},
+  \bibinfo{author}{\bibfnamefont{E.~N.} \bibnamefont{Dorband}},
+  \bibinfo{author}{\bibfnamefont{D.}~\bibnamefont{Pollney}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Seiler}},
+  \emph{\bibinfo{title}{Gravitational-wave detectability of equal-mass
+  black-hole binaries with aligned spins}}, \bibinfo{journal}{Phys. Rev. D}
+  \textbf{\bibinfo{volume}{80}}, \bibinfo{pages}{124026}
+  (\bibinfo{year}{2009}{\natexlab{b}}), \eprint{arXiv:0907.0462 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0907.0462}.
+
+\blurb[{\citenamefont{Healy et~al.}(2009{\natexlab{a}})\citenamefont{Healy,
+  Levin, and Shoemaker}}]{carpet-healy2009a}
+\bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Healy}},
+  \bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Levin}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{D.}~\bibnamefont{Shoemaker}},
+  \emph{\bibinfo{title}{Zoom-whirl orbits in black hole binaries}},
+  \bibinfo{journal}{Phys. Rev. Lett.} \textbf{\bibinfo{volume}{103}},
+  \bibinfo{pages}{131101} (\bibinfo{year}{2009}{\natexlab{a}}),
+  \eprint{arXiv:0907.0671 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0907.0671}.
+
+\blurb[{\citenamefont{Sperhake et~al.}(2009)\citenamefont{Sperhake, Cardoso,
+  Pretorius, Berti, Hinderer, and Yunes}}]{carpet-sperhake2009a}
+\bibinfo{author}{\bibfnamefont{U.}~\bibnamefont{Sperhake}},
+  \bibinfo{author}{\bibfnamefont{V.}~\bibnamefont{Cardoso}},
+  \bibinfo{author}{\bibfnamefont{F.}~\bibnamefont{Pretorius}},
+  \bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Berti}},
+  \bibinfo{author}{\bibfnamefont{T.}~\bibnamefont{Hinderer}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{N.}~\bibnamefont{Yunes}},
+  \emph{\bibinfo{title}{Cross section, final spin and zoom-whirl behavior in
+  high-energy black hole collisions}}, \bibinfo{journal}{Phys. Rev. Lett.}
+  \textbf{\bibinfo{volume}{103}}, \bibinfo{pages}{131102}
+  (\bibinfo{year}{2009}), \eprint{arXiv:0907.1252 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0907.1252}.
+
 \blurb[{\citenamefont{Saijo and Hawke}(2009)}]{carpet-saijo2009a}
 \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Saijo}} \bibnamefont{and}
   \bibinfo{author}{\bibfnamefont{I.}~\bibnamefont{Hawke}},
@@ -19,6 +131,25 @@
   \textbf{\bibinfo{volume}{80}}, \bibinfo{pages}{064001}
   (\bibinfo{year}{2009}), \eprint{arXiv:0908.3002 [gr-qc]},
   \urlprefix\url{http://arxiv.org/abs/0908.3002}.
+
+\blurb[{\citenamefont{Ott}(2009)}]{carpet-ott2009a}
+\bibinfo{author}{\bibfnamefont{C.~D.} \bibnamefont{Ott}},
+  \emph{\bibinfo{title}{Probing the core-collapse supernova mechanism with
+  gravitational waves}}, \bibinfo{journal}{Class. Quantum Grav.}
+  \textbf{\bibinfo{volume}{26}}, \bibinfo{pages}{204015}
+  (\bibinfo{year}{2009}), \eprint{arXiv:0905.2797 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0905.2797}.
+
+\blurb[{\citenamefont{Vaishnav et~al.}(2009)\citenamefont{Vaishnav, Hinder,
+  Shoemaker, and Herrmann}}]{carpet-vaishnav2009a}
+\bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Vaishnav}},
+  \bibinfo{author}{\bibfnamefont{I.}~\bibnamefont{Hinder}},
+  \bibinfo{author}{\bibfnamefont{D.}~\bibnamefont{Shoemaker}},
+  \bibnamefont{and} \bibinfo{author}{\bibfnamefont{F.}~\bibnamefont{Herrmann}},
+  \emph{\bibinfo{title}{Gravitational waves from eccentric intermediate mass
+  binary black hole mergers}}, \bibinfo{journal}{Class. Quantum Grav.}
+  \textbf{\bibinfo{volume}{26}}, \bibinfo{pages}{204008}
+  (\bibinfo{year}{2009}).
 
 \blurb[{\citenamefont{Barausse and Rezzolla}(2009)}]{carpet-barausse2009a}
 \bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Barausse}} \bibnamefont{and}
@@ -123,6 +254,37 @@
   \textbf{\bibinfo{volume}{26}}, \bibinfo{pages}{114008}
   (\bibinfo{year}{2009}{\natexlab{a}}), \eprint{arXiv:0901.4399 [gr-qc]},
   \urlprefix\url{http://arxiv.org/abs/0905.4227}.
+
+\blurb[{\citenamefont{Bode et~al.}(2009)\citenamefont{Bode, Laguna,
+  Shoemaker, Hinder, Herrmann, and Vishnav}}]{carpet-bode2009a}
+\bibinfo{author}{\bibfnamefont{T.}~\bibnamefont{Bode}},
+  \bibinfo{author}{\bibfnamefont{P.}~\bibnamefont{Laguna}},
+  \bibinfo{author}{\bibfnamefont{D.~M.} \bibnamefont{Shoemaker}},
+  \bibinfo{author}{\bibfnamefont{I.}~\bibnamefont{Hinder}},
+  \bibinfo{author}{\bibfnamefont{F.}~\bibnamefont{Herrmann}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Vishnav}},
+  \emph{\bibinfo{title}{Binary black hole evolutions of approximate puncture
+  initial data}}, \bibinfo{journal}{Phys. Rev. D}
+  \textbf{\bibinfo{volume}{80}}, \bibinfo{pages}{024008}
+  (\bibinfo{year}{2009}), \eprint{arXiv:0902.1127 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0902.1127}.
+
+\blurb[{\citenamefont{Baumgarte et~al.}(2009)\citenamefont{Baumgarte,
+  Etienne, Liu, Matera, Murchadha, Shapiro, and
+  Taniguchi}}]{carpet-baumgarte2009a}
+\bibinfo{author}{\bibfnamefont{T.~W.} \bibnamefont{Baumgarte}},
+  \bibinfo{author}{\bibfnamefont{Z.~B.} \bibnamefont{Etienne}},
+  \bibinfo{author}{\bibfnamefont{Y.~T.} \bibnamefont{Liu}},
+  \bibinfo{author}{\bibfnamefont{K.}~\bibnamefont{Matera}},
+  \bibinfo{author}{\bibfnamefont{N.~{\'O}.} \bibnamefont{Murchadha}},
+  \bibinfo{author}{\bibfnamefont{S.~L.} \bibnamefont{Shapiro}},
+  \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{K.}~\bibnamefont{Taniguchi}},
+  \emph{\bibinfo{title}{Equilibrium initial data for moving puncture
+  simulations: the stationary 1+log slicing}}, \bibinfo{journal}{Class. Quantum
+  Grav.} \textbf{\bibinfo{volume}{26}}, \bibinfo{pages}{085007}
+  (\bibinfo{year}{2009}), \eprint{arXiv:0810.0006 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0810.0006}.
 
 \blurb[{\citenamefont{Baiotti
   et~al.}(2009{\natexlab{a}})\citenamefont{Baiotti, Giacomazzo, and
@@ -349,8 +511,8 @@
   (\bibinfo{year}{2009}{\natexlab{b}}), \eprint{arXiv:0808.0713 [gr-qc]},
   \urlprefix\url{http://arxiv.org/abs/0808.0713}.
 
-\blurb[{\citenamefont{Healy et~al.}(2009)\citenamefont{Healy, Herrmann,
-  Hinder, Shoemaker, Laguna, , and Matzner}}]{carpet-healy2008a}
+\blurb[{\citenamefont{Healy et~al.}(2009{\natexlab{b}})\citenamefont{Healy,
+  Herrmann, Hinder, Shoemaker, Laguna, , and Matzner}}]{carpet-healy2008a}
 \bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Healy}},
   \bibinfo{author}{\bibfnamefont{F.}~\bibnamefont{Herrmann}},
   \bibinfo{author}{\bibfnamefont{I.}~\bibnamefont{Hinder}},
@@ -359,8 +521,9 @@
   \bibinfo{author}{\bibfnamefont{R.~A.} \bibnamefont{Matzner}},
   \emph{\bibinfo{title}{Superkicks in hyperbolic encounters of binary black
   holes}}, \bibinfo{journal}{Phys. Rev. Lett.} \textbf{\bibinfo{volume}{102}},
-  \bibinfo{pages}{041101} (\bibinfo{year}{2009}), \eprint{arXiv:0807.3292
-  [gr-qc]}, \urlprefix\url{http://arxiv.org/abs/0807.3292}.
+  \bibinfo{pages}{041101} (\bibinfo{year}{2009}{\natexlab{b}}),
+  \eprint{arXiv:0807.3292 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0807.3292}.
 
 \blurb[{\citenamefont{Sperhake
   et~al.}(2008{\natexlab{a}})\citenamefont{Sperhake, Cardoso, Pretorius, Berti,

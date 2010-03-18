@@ -11,6 +11,29 @@
 \providecommand{\bibinfo}[2]{#2}
 \providecommand{\eprint}[2][]{\url{#2}}
 
+\blurb[{\citenamefont{Reisswig}(2010)}]{carpet-reisswig2010a}
+\bibinfo{author}{\bibfnamefont{C.}~\bibnamefont{Reisswig}},
+  \emph{\bibinfo{title}{Binary black hole mergers and novel approaches to
+  gravitational wave extraction in numerical relativity}}, Ph.D. thesis,
+  \bibinfo{school}{Leibniz Universit{\"a}t Hannover} (\bibinfo{year}{2010}),
+  \urlprefix\url{http://www.nullinfinity.net/~reisswig/
+  phd_thesis_published_christian_reisswig.pdf}.
+
+\blurb[{\citenamefont{Seiler}(2010)}]{carpet-seiler2010a}
+\bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Seiler}},
+  \emph{\bibinfo{title}{Numerical simulation of binary black hole spacetimes
+  and a novel approach to outer boundary conditions}}, Ph.D. thesis,
+  \bibinfo{school}{Gottfried Wilhelm Leibniz Universit{\"a}t Hannover}
+  (\bibinfo{year}{2010}),
+  \urlprefix\url{http://dl.dropbox.com/u/2021645/thesis.pdf}.
+
+\blurb[{\citenamefont{Pazos}(2009)}]{carpet-pazos2009a}
+\bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Pazos}},
+  \emph{\bibinfo{title}{Numerical studies on new techniques for gravitational
+  wave extraction and binary black hole simulations}}, Ph.D. thesis,
+  \bibinfo{school}{University of Maryland} (\bibinfo{year}{2009}),
+  \urlprefix\url{http://hdl.handle.net/1903/9974}.
+
 \blurb[{\citenamefont{Bentivegna}(2008)}]{carpet-bentivegna2008b}
 \bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Bentivegna}},
   \emph{\bibinfo{title}{Ringing in unison: exploring black hole coalescence

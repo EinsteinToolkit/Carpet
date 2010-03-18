@@ -1,7 +1,7 @@
-This is pdfTeX, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2009.9.23)  25 JAN 2010 21:32
+This is pdfTeX, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2009.9.23)  17 MAR 2010 12:20
 entering extended mode
-**\nonstopmode \input{/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/public
-ations/citations-background.tex}
+**\nonstopmode \input{"/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publi
+cations/citations-background.tex"}
 
 (/Users/eschnett/Calpha/carpet-new/Carpet/CarpetWeb/publications/citations-back
 ground.tex (/opt/local/share/texmf-local/tex/latex/revtex4/revtex4.cls
@@ -177,11 +177,11 @@ ground.aux) )
 Here is how much of TeX's memory you used:
  2467 strings out of 94073
  30645 string characters out of 1164797
- 87141 words of memory out of 1500000
+ 87145 words of memory out of 1500000
  5757 multiletter control sequences out of 10000+50000
  16600 words of font info for 39 fonts, out of 1200000 for 2000
  645 hyphenation exceptions out of 8191
- 26i,4n,21p,338b,376s stack positions out of 5000i,500n,6000p,200000b,5000s
+ 26i,4n,21p,340b,376s stack positions out of 5000i,500n,6000p,200000b,5000s
 {/opt/local/share/texmf-dist/fonts/enc/dvips/base/8r.enc}{/opt/loc
 al/share/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}</opt/local/share/
 texmf-dist/fonts/type1/public/cm-super/sftt0900.pfb></opt/local/share/texmf-dis

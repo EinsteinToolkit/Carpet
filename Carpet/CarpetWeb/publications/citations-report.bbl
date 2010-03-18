@@ -1,4 +1,4 @@
-\begin{thebibliography}{24}
+\begin{thebibliography}{26}
 \expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
 \expandafter\ifx\csname bibnamefont\endcsname\relax
   \def\bibnamefont#1{#1}\fi
@@ -31,6 +31,116 @@
   (\bibinfo{publisher}{ZITI}, \bibinfo{year}{2006}), pp.
   \bibinfo{pages}{155--160}.
 
+\bibitem[{\citenamefont{Rezzolla et~al.}(2010)\citenamefont{Rezzolla, Baiotti,
+  Giacomazzo, Link, and Font}}]{carpet-rezzolla2010a}
+\bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Rezzolla}},
+  \bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Baiotti}},
+  \bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Giacomazzo}},
+  \bibinfo{author}{\bibfnamefont{D.}~\bibnamefont{Link}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{J.~A.} \bibnamefont{Font}},
+  \emph{\bibinfo{title}{Accurate evolutions of unequal-mass neutron-star
+  binaries: properties of the torus and short {GRB} engines}}
+  (\bibinfo{year}{2010}), \bibinfo{note}{arXiv:1001.3074 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/1001.3074}.
+
+\bibitem[{\citenamefont{Hinder}(2010)}]{carpet-hinder2010a}
+\bibinfo{author}{\bibfnamefont{I.}~\bibnamefont{Hinder}},
+  \emph{\bibinfo{title}{The current status of binary black hole simulations in
+  numerical relativity}} (\bibinfo{year}{2010}), \bibinfo{note}{arXiv:1001.5161
+  [gr-qc]}, \urlprefix\url{http://arxiv.org/abs/1001.5161}.
+
+\bibitem[{\citenamefont{Sperhake et~al.}(2010)\citenamefont{Sperhake, Cardoso,
+  Pretorius, Berti, Hinderer, and Yunes}}]{carpet-sperhake2010a}
+\bibinfo{author}{\bibfnamefont{U.}~\bibnamefont{Sperhake}},
+  \bibinfo{author}{\bibfnamefont{V.}~\bibnamefont{Cardoso}},
+  \bibinfo{author}{\bibfnamefont{F.}~\bibnamefont{Pretorius}},
+  \bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Berti}},
+  \bibinfo{author}{\bibfnamefont{T.}~\bibnamefont{Hinderer}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{N.}~\bibnamefont{Yunes}},
+  \emph{\bibinfo{title}{Ultra-relativistic grazing collisions of black holes}}
+  (\bibinfo{year}{2010}), \bibinfo{note}{arXiv:1003.0882 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/1003.0882}.
+
+\bibitem[{\citenamefont{Corvino et~al.}(2010)\citenamefont{Corvino, Rezzolla,
+  Bernuzzi, Pietri, and Giacomazzo}}]{carpet-corvino2010a}
+\bibinfo{author}{\bibfnamefont{G.}~\bibnamefont{Corvino}},
+  \bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Rezzolla}},
+  \bibinfo{author}{\bibfnamefont{S.}~\bibnamefont{Bernuzzi}},
+  \bibinfo{author}{\bibfnamefont{R.~D.} \bibnamefont{Pietri}},
+  \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Giacomazzo}},
+  \emph{\bibinfo{title}{On the shear instability in relativistic neutron
+  stars}} (\bibinfo{year}{2010}), \bibinfo{note}{arXiv:1001.5281 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/1001.5281}.
+
+\bibitem[{\citenamefont{Campanelli et~al.}(2010)\citenamefont{Campanelli,
+  Lousto, Mundim, Nakano, Zlochower, and Bischof}}]{carpet-campanelli2010a}
+\bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Campanelli}},
+  \bibinfo{author}{\bibfnamefont{C.~O.} \bibnamefont{Lousto}},
+  \bibinfo{author}{\bibfnamefont{B.~C.} \bibnamefont{Mundim}},
+  \bibinfo{author}{\bibfnamefont{H.}~\bibnamefont{Nakano}},
+  \bibinfo{author}{\bibfnamefont{Y.}~\bibnamefont{Zlochower}},
+  \bibnamefont{and} \bibinfo{author}{\bibfnamefont{H.-P.}
+  \bibnamefont{Bischof}}, \emph{\bibinfo{title}{Advances in simulations of
+  generic black-hole binaries}} (\bibinfo{year}{2010}),
+  \bibinfo{note}{arXiv:1001.3834 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/1001.3834}.
+
+\bibitem[{\citenamefont{Zilh{\~a}o et~al.}(2010)\citenamefont{Zilh{\~a}o,
+  Witek, Sperhake, Cardoso, Gualtieri, Herdeiro, and
+  Nerozzi}}]{carpet-zilhao2010a}
+\bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Zilh{\~a}o}},
+  \bibinfo{author}{\bibfnamefont{H.}~\bibnamefont{Witek}},
+  \bibinfo{author}{\bibfnamefont{U.}~\bibnamefont{Sperhake}},
+  \bibinfo{author}{\bibfnamefont{V.}~\bibnamefont{Cardoso}},
+  \bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Gualtieri}},
+  \bibinfo{author}{\bibfnamefont{C.}~\bibnamefont{Herdeiro}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{A.}~\bibnamefont{Nerozzi}},
+  \emph{\bibinfo{title}{Numerical relativity for $d$ dimensional axially
+  symmetric space-times: formalism and code tests}} (\bibinfo{year}{2010}),
+  \bibinfo{note}{arXiv:1001.2302 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/1001.2302}.
+
+\bibitem[{\citenamefont{Lousto et~al.}(2010)\citenamefont{Lousto, Nakano,
+  Zlochower, and Campanelli}}]{carpet-lousto2010a}
+\bibinfo{author}{\bibfnamefont{C.~O.} \bibnamefont{Lousto}},
+  \bibinfo{author}{\bibfnamefont{H.}~\bibnamefont{Nakano}},
+  \bibinfo{author}{\bibfnamefont{Y.}~\bibnamefont{Zlochower}},
+  \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{M.}~\bibnamefont{Campanelli}},
+  \emph{\bibinfo{title}{Intermediate mass ratio black hole binaries: Numerical
+  relativity meets perturbation theory}} (\bibinfo{year}{2010}),
+  \bibinfo{note}{arXiv:1001.2316 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/1001.2316}.
+
+\bibitem[{\citenamefont{Duez}(2009)}]{carpet-duez2009a}
+\bibinfo{author}{\bibfnamefont{M.~D.} \bibnamefont{Duez}},
+  \emph{\bibinfo{title}{Numerical relativity confronts compact neutron star
+  binaries: a review and status report}} (\bibinfo{year}{2009}),
+  \bibinfo{note}{arXiv:0912.3529 [astro-ph.HE]},
+  \urlprefix\url{http://arxiv.org/abs/0912.3529}.
+
+\bibitem[{\citenamefont{Farris et~al.}(2009)\citenamefont{Farris, Liu, and
+  Shapiro}}]{carpet-farris2009a}
+\bibinfo{author}{\bibfnamefont{B.~D.} \bibnamefont{Farris}},
+  \bibinfo{author}{\bibfnamefont{Y.~T.} \bibnamefont{Liu}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{S.~L.} \bibnamefont{Shapiro}},
+  \emph{\bibinfo{title}{Binary black hole mergers in gaseous environments:
+  ``binary {Bondi''} and ``binary {Bondi}-{Hoyle}-{Lyttleton}'' accretion}}
+  (\bibinfo{year}{2009}), \bibinfo{note}{arXiv:0912.2096 [gr-qc]},
+  \urlprefix\url{http://arxiv.org/abs/0912.2096}.
+
+\bibitem[{\citenamefont{Pollney et~al.}(2009)\citenamefont{Pollney, Reisswig,
+  Schnetter, Dorband, and Diener}}]{carpet-pollney2009b}
+\bibinfo{author}{\bibfnamefont{D.}~\bibnamefont{Pollney}},
+  \bibinfo{author}{\bibfnamefont{C.}~\bibnamefont{Reisswig}},
+  \bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Schnetter}},
+  \bibinfo{author}{\bibfnamefont{N.}~\bibnamefont{Dorband}}, \bibnamefont{and}
+  \bibinfo{author}{\bibfnamefont{P.}~\bibnamefont{Diener}},
+  \emph{\bibinfo{title}{High accuracy binary black hole simulations with an
+  extended wave zone}} (\bibinfo{year}{2009}), \bibinfo{note}{arXiv:0910.3803
+  [gr-qc]}, \urlprefix\url{http://arxiv.org/abs/0910.3803}.
+
 \bibitem[{\citenamefont{Ajith et~al.}(2009)\citenamefont{Ajith, Hannam, Husa,
   Chen, Br{\"u}gmann, Dorband, M{\"u}ller, Ohme, Pollney, Reisswig,
   Santamar{\'i}a, and Seiler}}]{carpet-ajith2009a}
@@ -51,41 +161,6 @@
   \bibinfo{note}{arXiv:0909.2867 [gr-qc]},
   \urlprefix\url{http://arxiv.org/abs/0909.2867}.
 
-\bibitem[{\citenamefont{Vega et~al.}(2009)\citenamefont{Vega, Diener, Tichy,
-  and Detweiler}}]{carpet-vega2009a}
-\bibinfo{author}{\bibfnamefont{I.}~\bibnamefont{Vega}},
-  \bibinfo{author}{\bibfnamefont{P.}~\bibnamefont{Diener}},
-  \bibinfo{author}{\bibfnamefont{W.}~\bibnamefont{Tichy}}, \bibnamefont{and}
-  \bibinfo{author}{\bibfnamefont{S.}~\bibnamefont{Detweiler}},
-  \emph{\bibinfo{title}{Self-force with (3+1) codes: a primer for numerical
-  relativists}} (\bibinfo{year}{2009}), \bibinfo{note}{arXiv:0908.2138
-  [gr-qc]}, \urlprefix\url{http://arxiv.org/abs/0908.2138}.
-
-\bibitem[{\citenamefont{Reisswig
-  et~al.}(2009{\natexlab{a}})\citenamefont{Reisswig, Bishop, Pollney, and
-  Szil{\'a}gyi}}]{carpet-reisswig2009b}
-\bibinfo{author}{\bibfnamefont{C.}~\bibnamefont{Reisswig}},
-  \bibinfo{author}{\bibfnamefont{N.~T.} \bibnamefont{Bishop}},
-  \bibinfo{author}{\bibfnamefont{D.}~\bibnamefont{Pollney}}, \bibnamefont{and}
-  \bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Szil{\'a}gyi}},
-  \emph{\bibinfo{title}{Unambiguous determination of gravitational waveforms
-  from binary black hole mergers}} (\bibinfo{year}{2009}{\natexlab{a}}),
-  \bibinfo{note}{arXiv:0907.2637 [gr-qc]},
-  \urlprefix\url{http://arxiv.org/abs/0907.2637}.
-
-\bibitem[{\citenamefont{Sperhake et~al.}(2009)\citenamefont{Sperhake, Cardoso,
-  Pretorius, Berti, Hinderer, and Yunes}}]{carpet-sperhake2009a}
-\bibinfo{author}{\bibfnamefont{U.}~\bibnamefont{Sperhake}},
-  \bibinfo{author}{\bibfnamefont{V.}~\bibnamefont{Cardoso}},
-  \bibinfo{author}{\bibfnamefont{F.}~\bibnamefont{Pretorius}},
-  \bibinfo{author}{\bibfnamefont{E.}~\bibnamefont{Berti}},
-  \bibinfo{author}{\bibfnamefont{T.}~\bibnamefont{Hinderer}}, \bibnamefont{and}
-  \bibinfo{author}{\bibfnamefont{N.}~\bibnamefont{Yunes}},
-  \emph{\bibinfo{title}{Cross section, final spin and zoom-whirl behavior in
-  high-energy black hole collisions}} (\bibinfo{year}{2009}),
-  \bibinfo{note}{arXiv:0907.1252 [gr-qc]},
-  \urlprefix\url{http://arxiv.org/abs/0907.1252}.
-
 \bibitem[{\citenamefont{Lovelace et~al.}(2009)\citenamefont{Lovelace, Chen,
   Cohen, Kaplan, Keppel, Matthews, Nichols, Scheel, and
   Sperhake}}]{carpet-lovelace2009a}
@@ -103,45 +178,16 @@
   (\bibinfo{year}{2009}), \bibinfo{note}{arXiv:0907.0869 [gr-qc]},
   \urlprefix\url{http://arxiv.org/abs/0907.0869}.
 
-\bibitem[{\citenamefont{Healy et~al.}(2009{\natexlab{a}})\citenamefont{Healy,
-  Levin, and Shoemaker}}]{carpet-healy2009a}
-\bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Healy}},
-  \bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Levin}}, \bibnamefont{and}
-  \bibinfo{author}{\bibfnamefont{D.}~\bibnamefont{Shoemaker}},
-  \emph{\bibinfo{title}{Zoom-whirl orbits in black hole binaries}}
-  (\bibinfo{year}{2009}{\natexlab{a}}), \bibinfo{note}{arXiv:0907.0671
-  [gr-qc]}, \urlprefix\url{http://arxiv.org/abs/0907.0671}.
-
-\bibitem[{\citenamefont{Reisswig
-  et~al.}(2009{\natexlab{b}})\citenamefont{Reisswig, Husa, Rezzolla, Dorband,
-  Pollney, and Seiler}}]{carpet-reisswig2009a}
-\bibinfo{author}{\bibfnamefont{C.}~\bibnamefont{Reisswig}},
-  \bibinfo{author}{\bibfnamefont{S.}~\bibnamefont{Husa}},
-  \bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Rezzolla}},
-  \bibinfo{author}{\bibfnamefont{E.~N.} \bibnamefont{Dorband}},
-  \bibinfo{author}{\bibfnamefont{D.}~\bibnamefont{Pollney}}, \bibnamefont{and}
-  \bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Seiler}},
-  \emph{\bibinfo{title}{Gravitational-wave detectability of equal-mass
-  black-hole binaries with aligned spins}}
-  (\bibinfo{year}{2009}{\natexlab{b}}), \bibinfo{note}{arXiv:0907.0462
-  [gr-qc]}, \urlprefix\url{http://arxiv.org/abs/0907.0462}.
-
-\bibitem[{\citenamefont{Healy et~al.}(2009{\natexlab{b}})\citenamefont{Healy,
-  Laguna, Matzner, and Shoemaker}}]{carpet-healy2009b}
+\bibitem[{\citenamefont{Healy et~al.}(2009)\citenamefont{Healy, Laguna,
+  Matzner, and Shoemaker}}]{carpet-healy2009b}
 \bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Healy}},
   \bibinfo{author}{\bibfnamefont{P.}~\bibnamefont{Laguna}},
   \bibinfo{author}{\bibfnamefont{R.~A.} \bibnamefont{Matzner}},
   \bibnamefont{and} \bibinfo{author}{\bibfnamefont{D.~M.}
   \bibnamefont{Shoemaker}}, \emph{\bibinfo{title}{Final mass and spin of merged
-  black holes and the golden black hole}} (\bibinfo{year}{2009}{\natexlab{b}}),
+  black holes and the golden black hole}} (\bibinfo{year}{2009}),
   \bibinfo{note}{arXiv:0905.3914 [gr-qc]},
   \urlprefix\url{http://arxiv.org/abs/0905.3914}.
-
-\bibitem[{\citenamefont{Ott}(2009)}]{carpet-ott2009a}
-\bibinfo{author}{\bibfnamefont{C.~D.} \bibnamefont{Ott}},
-  \emph{\bibinfo{title}{Probing the core-collapse supernova mechanism with
-  gravitational waves}} (\bibinfo{year}{2009}), \bibinfo{note}{arXiv:0905.2797
-  [gr-qc]}, \urlprefix\url{http://arxiv.org/abs/0905.2797}.
 
 \bibitem[{\citenamefont{Lousto et~al.}(2009)\citenamefont{Lousto, Campanelli,
   and Zlochower}}]{carpet-lousto2009a}
@@ -165,18 +211,6 @@
   oscillations}} (\bibinfo{year}{2009}), \bibinfo{note}{arXiv:0902.2720
   [gr-qc]}, \urlprefix\url{http://arxiv.org/abs/0902.2720}.
 
-\bibitem[{\citenamefont{Bode et~al.}(2009)\citenamefont{Bode, Laguna,
-  Shoemaker, Hinder, Herrmann, and Vishnav}}]{carpet-bode2009a}
-\bibinfo{author}{\bibfnamefont{T.}~\bibnamefont{Bode}},
-  \bibinfo{author}{\bibfnamefont{P.}~\bibnamefont{Laguna}},
-  \bibinfo{author}{\bibfnamefont{D.~M.} \bibnamefont{Shoemaker}},
-  \bibinfo{author}{\bibfnamefont{I.}~\bibnamefont{Hinder}},
-  \bibinfo{author}{\bibfnamefont{F.}~\bibnamefont{Herrmann}}, \bibnamefont{and}
-  \bibinfo{author}{\bibfnamefont{J.}~\bibnamefont{Vishnav}},
-  \emph{\bibinfo{title}{Binary black hole evolutions of approximate puncture
-  initial data}} (\bibinfo{year}{2009}), \bibinfo{note}{arXiv:0902.1127
-  [gr-qc]}, \urlprefix\url{http://arxiv.org/abs/0902.1127}.
-
 \bibitem[{\citenamefont{Nakano et~al.}(2009)\citenamefont{Nakano, Campanelli,
   Lousto, and Zlochower}}]{carpetresult-nakano2008a}
 \bibinfo{author}{\bibfnamefont{H.}~\bibnamefont{Nakano}},
@@ -188,16 +222,6 @@
   of black-hole binaries}} (\bibinfo{year}{2009}),
   \bibinfo{note}{arXiv:0901.3861 [gr-qc]},
   \urlprefix\url{http://arxiv.org/abs/0901.3861}.
-
-\bibitem[{\citenamefont{Giacomazzo et~al.}(2009)\citenamefont{Giacomazzo,
-  Rezzolla, and Baiotti}}]{carpet-giacomazzo2009a}
-\bibinfo{author}{\bibfnamefont{B.}~\bibnamefont{Giacomazzo}},
-  \bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Rezzolla}}, \bibnamefont{and}
-  \bibinfo{author}{\bibfnamefont{L.}~\bibnamefont{Baiotti}},
-  \emph{\bibinfo{title}{The influence of magnetic fields on the
-  gravitational-wave emission from binary neutron stars}}
-  (\bibinfo{year}{2009}), \bibinfo{note}{arXiv:0901.2722 [gr-qc]},
-  \urlprefix\url{http://arxiv.org/abs/0901.2722}.
 
 \bibitem[{\citenamefont{Tao et~al.}(2008)\citenamefont{Tao, Allen, Hinder,
   Schnetter, and Zlochower}}]{carpet-tao2008a}
