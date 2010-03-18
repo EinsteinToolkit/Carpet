@@ -15,6 +15,7 @@ SRCS =	bbox.cc					\
 	gh.cc					\
 	limits.cc				\
 	mem.cc					\
+	memstat.cc				\
 	mpi_string.cc				\
 	region.cc				\
 	startup_time.cc				\

@@ -1,15 +1,39 @@
 #ifndef MEM_HH
 #define MEM_HH
 
+#include <cctk.h>
+
+#include <cassert>
 #include <cstdlib>
 #include <stack>
 #include <vector>
 
+#include "defs.hh"
+
 using namespace std;
 
+
+
 // A chunk of memory, possibly shared between some clients
+class gmem
+{
+public:
+  
+  static double const MEGA;
+  
+  // Total number of currently allocated bytes and objects
+  static double total_allocated_bytes;
+  static double total_allocated_objects;
+  
+  // Maximum of the above (over time)
+  static double max_allocated_bytes;
+  static double max_allocated_objects;
+};
+
+
+
 template<typename T>
-class mem
+class mem: gmem
 {
   T * storage_;
   size_t nelems_;
