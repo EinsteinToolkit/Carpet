@@ -66,6 +66,15 @@ namespace CarpetRegrid2 {
     this->num_levels = num_levels[n];
     this->active = active[n];
     this->position = rvect (position_x[n], position_y[n], position_z[n]);
+    if (any (not CarpetLib::good::isfinite(this->position))) {
+      CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                  "The position of region %d is [%g,%g,%g], which is not finite",
+                  n + 1,
+                  double(this->position[0]),
+                  double(this->position[1]),
+                  double(this->position[2]));
+      found_error = true;
+    }
     this->radius.resize (this->num_levels);
     this->radius.at(0) = rvect(-1.0, -1.0, -1.0); // unused
     for (int rl = 1; rl < this->num_levels; ++ rl) {
@@ -74,6 +83,15 @@ namespace CarpetRegrid2 {
       CCTK_REAL const ry = radius_y[ind] < 0.0 ? radius[ind] : radius_y[ind];
       CCTK_REAL const rz = radius_z[ind] < 0.0 ? radius[ind] : radius_z[ind];
       rvect const rad (rx, ry, rz);
+      if (any (not CarpetLib::good::isfinite(rad))) {
+        CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
+                    "The radius of refinement level %d of region %d is [%g,%g,%g], which is not finite",
+                    rl, n + 1,
+                    double(this->radius.at(rl)[0]),
+                    double(this->radius.at(rl)[1]),
+                    double(this->radius.at(rl)[2]));
+        found_error = true;
+      }
       if (any (rad < 0.0)) {
         CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "The radius of refinement level %d of region %d is [%g,%g,%g], which is non-negative",
