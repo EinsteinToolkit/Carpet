@@ -139,6 +139,8 @@ namespace CarpetLib {
     DECLARE_CCTK_PARAMETERS;
     
     typedef typename typeprops<T>::real RT;
+    
+    // false: vertex centered, true: cell centered
     ivect const icent (centi, centj, centk);
     assert (all (icent == 0 or icent == 1));
     bvect const cent (icent);
@@ -177,6 +179,15 @@ namespace CarpetLib {
     
     ivect3 const regext = regbbox.shape() / regbbox.stride();
     assert (all (either (cent, srcbbox.stride() % 2 == 0, true)));
+    if (not (all ((regbbox.lower() - srcbbox.lower() -
+                   either (cent, srcbbox.stride() / 2, 0)) %
+                  srcbbox.stride() == 0)))
+    {
+      cout << "restrict_3d_vc_rf2.cc\n";
+      cout << "regbbox=" << regbbox << "\n";
+      cout << "srcbbox=" << srcbbox << "\n";
+      cout << "cent=" << cent << "\n";
+    }
     assert (all ((regbbox.lower() - srcbbox.lower() -
                   either (cent, srcbbox.stride() / 2, 0)) %
                  srcbbox.stride() == 0));
