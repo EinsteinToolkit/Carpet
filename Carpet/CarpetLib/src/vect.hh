@@ -391,6 +391,16 @@ inline vect<T,D> ipow (const vect<T,D>& a, const vect<int,D>& b)
 DECLARE_FUNCTION_1 (abs)
 DECLARE_FUNCTION_1 (ceil)
 DECLARE_FUNCTION_1 (floor)
+DECLARE_FUNCTION_1 (sqrt)
+namespace CarpetLib {
+  namespace good {
+    DECLARE_FUNCTION_1_RET (fpclassify, int)
+    DECLARE_FUNCTION_1_RET (isfinite, int)
+    DECLARE_FUNCTION_1_RET (isinf, int)
+    DECLARE_FUNCTION_1_RET (isnan, int)
+    DECLARE_FUNCTION_1_RET (isnormal, int)
+  }
+}
 
 DECLARE_OPERATOR_1_RET (operator!, !, bool)
 
