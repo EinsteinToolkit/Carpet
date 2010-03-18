@@ -198,21 +198,27 @@ void CarpetIOHDF5_TerminationCheckpoint (CCTK_ARGUMENTS)
 
 
   if (checkpoint and checkpoint_on_terminate) {
-    if (last_checkpoint_iteration < cctk_iteration) {
+    
+    if (last_checkpoint_iteration < cctk_iteration or
+        (cctk_iteration == 0 and not checkpoint_ID))
+    {
       if (not CCTK_Equals (verbose, "none")) {
         CCTK_INFO ("---------------------------------------------------------");
         CCTK_VInfo (CCTK_THORNSTRING, "Dumping termination checkpoint at "
                     "iteration %d", cctk_iteration);
         CCTK_INFO ("---------------------------------------------------------");
       }
-
       Checkpoint (cctkGH, CP_EVOLUTION_DATA);
-    } else if (not CCTK_Equals (verbose, "none")) {
-      CCTK_INFO ("---------------------------------------------------------");
-      CCTK_VInfo (CCTK_THORNSTRING, "Termination checkpoint already dumped "
-                  "as last evolution checkpoint at iteration %d",
-                  last_checkpoint_iteration);
-      CCTK_INFO ("---------------------------------------------------------");
+      
+    } else {
+      if (not CCTK_Equals (verbose, "none")) {
+        CCTK_INFO ("---------------------------------------------------------");
+        CCTK_VInfo (CCTK_THORNSTRING, "Termination checkpoint already dumped "
+                    "as last evolution checkpoint at iteration %d",
+                    last_checkpoint_iteration);
+        CCTK_INFO ("---------------------------------------------------------");
+
+      }
     }
   }
 }
