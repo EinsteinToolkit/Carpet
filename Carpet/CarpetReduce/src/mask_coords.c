@@ -139,8 +139,8 @@ CoordBase_SetupMask (CCTK_ARGUMENTS)
                  because then there are no interior points left, and
                  all reductions become trivial.  Instead, leave the
                  non-staggered boundary points alone, and assume that
-                 the user wants to perform a reduction in one
-                 dimension less.  */
+                 the user wants to perform a reduction in one fewer
+                 dimensions.  */
               /* do nothing */
               
             } else {
