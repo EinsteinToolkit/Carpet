@@ -106,6 +106,7 @@ int CarpetIOHDF5_Startup (void)
 }
 
 
+// Called at basegrid during regular startup
 void CarpetIOHDF5_Init (CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
@@ -125,6 +126,7 @@ void CarpetIOHDF5_Init (CCTK_ARGUMENTS)
 }
 
 
+// Called after recovering
 void CarpetIOHDF5_InitCheckpointingIntervals (CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
@@ -228,8 +230,7 @@ hid_t CCTKtoHDF5_Datatype (const cGH* const cctkGH,
 
     case CCTK_VARIABLE_CHAR:      retval = HDF5_CHAR; break;
 
-    case CCTK_VARIABLE_INT:       retval = HDF5_INT;
-                                  break;
+    case CCTK_VARIABLE_INT:       retval = HDF5_INT; break;
 #ifdef CCTK_INT1
     case CCTK_VARIABLE_INT1:      retval = H5T_NATIVE_CHAR; break;
 #endif
