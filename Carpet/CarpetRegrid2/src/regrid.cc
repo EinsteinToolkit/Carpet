@@ -119,7 +119,8 @@ namespace CarpetRegrid2 {
   
   
   
-  // Convert a coordinate location to an index location
+  // Convert a coordinate location to an index location.  For cell
+  // centring, shift upwards.
   ivect
   rpos2ipos (rvect const & rpos,
              rvect const & origin, rvect const & scale,
@@ -136,7 +137,7 @@ namespace CarpetRegrid2 {
     if (hh.refcent == cell_centered) {
       assert (all (istride % 2 == 0));
     }
-    
+
     ivect const ipos =
       hh.refcent == vertex_centered
       ? ivect (floor ((rpos - origin) * scale / rvect(cistride) + rvect(0.5)                                       )) * cistride
@@ -146,7 +147,8 @@ namespace CarpetRegrid2 {
   }
   
   // Convert a coordinate location to an index location, rounding in
-  // the opposite manner as rpos2ipos
+  // the opposite manner as rpos2ipos.  For cell centring, shift
+  // downwards instead of upwards.
   ivect
   rpos2ipos1 (rvect const & rpos,
               rvect const & origin, rvect const & scale,
@@ -388,15 +390,25 @@ namespace CarpetRegrid2 {
     // Calculate the union of the bounding boxes for all levels
     //
     
+    // Find out whether the grid staggering corresponds to the
+    // boundary staggering.  If there is a mismatch, then there cannot
+    // be refinement near the corresponding boundary.
+    b2vect const boundary_staggering_mismatch =
+      xpose ((hh.refcent == vertex_centered) != (is_staggered == 0));
+#warning "TODO: This is too strict"
+    assert (all (all (not boundary_staggering_mismatch)));
+    
+    // This is the physical boundary
     rvect const origin (exterior_lower);
 #warning "TODO: use hh.baseextents[0] [rl] instead of [0]"
     rvect const scale (rvect (hh.baseextents.at(0).at(0).stride()) / spacing);
     
+    // This is the location of the outermost grid points.  For cell
+    // centring, these are 1/2 grid spacing inside of the boundary.
     ivect const physical_ilower =
       rpos2ipos (physical_lower, origin, scale, hh, 0);
     ivect const physical_iupper =
       rpos2ipos1 (physical_upper, origin, scale, hh, 0);
-    i2vect const physical_ibounds = i2vect (physical_ilower, physical_iupper);
     
     // The set of refined regions
     vector <ibboxset> regions (min_rl);
@@ -579,10 +591,15 @@ namespace CarpetRegrid2 {
                                    level_exterior_lower, level_exterior_upper,
                                    level_spacing);
       
+      ibbox const & baseextent = hh.baseextents.at(0).at(rl);
+      ivect const istride = baseextent.stride();
+      
       ivect const level_exterior_ilower =
         rpos2ipos (level_exterior_lower, origin, scale, hh, rl);
       ivect const level_exterior_iupper =
         rpos2ipos1 (level_exterior_upper, origin, scale, hh, rl);
+      assert (all (level_exterior_ilower >= baseextent.lower()));
+      assert (all (level_exterior_iupper <= baseextent.upper()));
       
       // Find the minimum necessary distance away from the outer
       // boundary due to buffer and ghost zones.  This is e.g. the
@@ -654,7 +671,7 @@ namespace CarpetRegrid2 {
               
               ibbox const new_bb (new_ilo, new_iup, new_istr);
               // Will be clipped later
-              //assert (new_bb.is_contained_in (hh.baseextents.at(0).at(rl)));
+              //assert (new_bb.is_contained_in (baseextent));
               
               added |= new_bb;
             }
@@ -689,19 +706,30 @@ namespace CarpetRegrid2 {
             ivect const ilo = bb.lower();
             ivect const iup = bb.upper();
             ivect const istr = bb.stride();
+            assert (istr[0] == istr[1]);
             
             // Origin
+            assert (hh.refcent == vertex_centered or all (istr % 2 == 0));
             rvect const axis (physical_lower[0],
                               (physical_lower[1] + physical_upper[1]) / 2,
                               physical_lower[2]); // z component is unused
             ivect const iaxis0 = rpos2ipos  (axis, origin, scale, hh, rl);
-            assert (all (iaxis0 % istr == 0));
+            assert (all ((iaxis0 - baseextent.lower()) % istr == 0));
             ivect const iaxis1 = rpos2ipos1 (axis, origin, scale, hh, rl);
-            assert (all (iaxis1 % istr == 0));
+            assert (all ((iaxis1 - baseextent.lower()) % istr == 0));
             ivect const offset = iaxis1 - iaxis0;
             assert (all (offset % istr == 0));
-            assert (all (offset >= 0 and offset < 2*istr));
-            assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == 0));
+            if (hh.refcent == vertex_centered) {
+              assert (all (offset >= 0 and offset < 2*istr));
+              assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == 0));
+            } else {
+              // The offset may be negative because both boundaries
+              // are shifted inwards by 1/2 grid spacing, and
+              // therefore iaxis0 < iaxis1 + istr
+              assert (all (offset >= -istr and offset < istr));
+              assert (all ((iaxis0 + iaxis1 - offset) % (2*istr) == istr));
+              assert (all (istr % 2 == 0));
+            }
             ivect const iaxis = (iaxis0 + iaxis1 - offset) / 2;
             ivect const neg_ilo = (2*iaxis+offset) - ilo;
             ivect const neg_iup = (2*iaxis+offset) - iup;
@@ -713,7 +741,7 @@ namespace CarpetRegrid2 {
             
             ibbox const new_bb (new_ilo, new_iup, new_istr);
             // Will be clipped later
-            //assert (new_bb.is_contained_in (hh.baseextents.at(0).at(rl)));
+            //assert (new_bb.is_contained_in (baseextent));
             
             added |= new_bb;
           }
@@ -767,6 +795,23 @@ namespace CarpetRegrid2 {
             continue;
           }
           
+          if (any ((lower_is_outside_lower and
+                    boundary_staggering_mismatch[0]) or
+                   (upper_is_outside_upper and
+                    boundary_staggering_mismatch[1])))
+          {
+            ostringstream msg;
+            msg << "Level " << rl << " of the refinement hierarchy has inconsistent bountary staggering."
+                << "  The refined region extends up to the boundary, but the staggering of the boundary is different from the staggering of the mesh refinement."
+                << "  lower_is_outside_lower=" << lower_is_outside_lower
+                << "  upper_is_outside_upper=" << upper_is_outside_upper
+                << "  boundary_staggering_mismatch=" << boundary_staggering_mismatch
+                << "  physical_ilower=" << physical_ilower
+                << "  physical_iupper=" << physical_iupper
+                << "  baseextent=" << baseextent;
+            CCTK_WARN (CCTK_WARN_ABORT, msg.str().c_str());
+          }
+          
           ibbox const clipped_bb
             (either (lower_is_outside_lower,
                      level_exterior_ilower,
@@ -781,7 +826,7 @@ namespace CarpetRegrid2 {
                               min_bnd_dist_incl[0] * bb.stride()),
                              bb.upper())),
              bb.stride());
-          if (not clipped_bb.is_contained_in (hh.baseextents.at(0).at(rl))) {
+          if (not clipped_bb.is_contained_in (baseextent)) {
             ostringstream msg;
             msg << "Level " << rl << " of the refinement hierarchy is not contained in the simulation domain."
                 << "  (There may be too many ghost or buffer zones.)"
@@ -794,10 +839,10 @@ namespace CarpetRegrid2 {
                 << "  level_exterior_iupper=" << level_exterior_iupper
                 << "  physical_ilower=" << physical_ilower
                 << "  physical_iupper=" << physical_iupper
-                << "  baseextent=" << hh.baseextents.at(0).at(rl);
+                << "  baseextent=" << baseextent;
             CCTK_WARN (CCTK_WARN_ABORT, msg.str().c_str());
           }
-          assert (clipped_bb.is_contained_in (hh.baseextents.at(0).at(rl)));
+          assert (clipped_bb.is_contained_in (baseextent));
           
           clipped |= clipped_bb;
           
