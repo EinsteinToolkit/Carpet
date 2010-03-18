@@ -13,9 +13,9 @@ using namespace std;
 
 
 
-// This is a "full tree" data structure, i.e., a tree data structure
+// This is a "full tree" data structure, i.e. a tree data structure
 // which decomposes a cuboid domain into a set of non-overlapping
-// cuboid subdomains.  It is an n-ary tree, i.e., each tree node can
+// cuboid subdomains.  It is an n-ary tree, i.e. each tree node can
 // have arbitrarily many subtrees.  Each node splits a domain in
 // exactly one direction.  Subdomains cannot be empty.
 

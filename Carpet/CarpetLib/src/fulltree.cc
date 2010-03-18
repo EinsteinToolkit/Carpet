@@ -23,7 +23,7 @@ fulltree<T,D,P>::fulltree ()
 
 // Create a tree branch from a list of bounds and subtrees
 template <typename T, int D, typename P>
-fulltree<T,D,P>::fulltree (int dir_, vector <T> const & bounds_,
+fulltree<T,D,P>::fulltree (int const dir_, vector <T> const & bounds_,
                            vector <fulltree *> const & subtrees_)
   : type (type_branch), dir (dir_), bounds (bounds_), subtrees (subtrees_)
 {
@@ -194,14 +194,14 @@ fulltree<T,D,P>::const_iterator::const_iterator (fulltree const & f_)
 {
   if (f.is_branch()) {
     assert (f.subtrees.size() > 0);
-    it = new const_iterator (* f.subtrees.at(i));
+    it = new const_iterator (* f.subtrees.AT(i));
     while ((*it).done()) {
       delete it;
       it = 0;
       ++ i;
       if (done()) break;
       // to do: use a new function "reset iterator" instead
-      it = new const_iterator (* f.subtrees.at(i));
+      it = new const_iterator (* f.subtrees.AT(i));
     }
     assert (done() or not (*it).done());
   }
@@ -271,7 +271,7 @@ fulltree<T,D,P>::const_iterator::operator++ ()
       ++ i;
       if (not done()) {
         // to do: use a new function "reset iterator" instead
-        it = new const_iterator (* f.subtrees.at(i));
+        it = new const_iterator (* f.subtrees.AT(i));
         assert (not (*it).done());
       }
     }
@@ -282,7 +282,7 @@ fulltree<T,D,P>::const_iterator::operator++ ()
       ++ i;
       if (done()) break;
       // to do: use a new function "reset iterator" instead
-      it = new const_iterator (* f.subtrees.at(i));
+      it = new const_iterator (* f.subtrees.AT(i));
     }
     assert (done() or not (*it).done());
   }
@@ -311,14 +311,14 @@ fulltree<T,D,P>::iterator::iterator (fulltree & f_)
 {
   if (f.is_branch()) {
     assert (f.subtrees.size() > 0);
-    it = new iterator (* f.subtrees.at(i));
+    it = new iterator (* f.subtrees.AT(i));
     while ((*it).done()) {
       delete it;
       it = 0;
       ++ i;
       if (done()) break;
       // to do: use a new function "reset iterator" instead
-      it = new iterator (* f.subtrees.at(i));
+      it = new iterator (* f.subtrees.AT(i));
     }
     assert (done() or not (*it).done());
   }
@@ -388,7 +388,7 @@ fulltree<T,D,P>::iterator::operator++ ()
       ++ i;
       if (not done()) {
         // to do: use a new function "reset iterator" instead
-        it = new iterator (* f.subtrees.at(i));
+        it = new iterator (* f.subtrees.AT(i));
         assert (not (*it).done());
       }
     }
@@ -399,7 +399,7 @@ fulltree<T,D,P>::iterator::operator++ ()
       ++ i;
       if (done()) break;
       // to do: use a new function "reset iterator" instead
-      it = new iterator (* f.subtrees.at(i));
+      it = new iterator (* f.subtrees.AT(i));
     }
     assert (done() or not (*it).done());
   }
@@ -453,9 +453,9 @@ fulltree<T,D,P>::output (ostream & os) const
        << "dir=" << dir << ","
        << "subtrees=[";
     for (size_t i=0; i<subtrees.size(); ++i) {
-      os << bounds.at(i) << ":[" << i << "]=" << *subtrees.at(i) << ":";
+      os << bounds.AT(i) << ":[" << i << "]=" << *subtrees.AT(i) << ":";
     }
-    os << bounds.at(subtrees.size()) << "]";
+    os << bounds.AT(subtrees.size()) << "]";
   } else {
     os << "leaf:"
        << "payload=" << p;
