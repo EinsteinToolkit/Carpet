@@ -95,7 +95,7 @@ namespace CarpetRegrid2 {
       if (any (rad < 0.0)) {
         CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "The radius of refinement level %d of region %d is [%g,%g,%g], which is non-negative",
-                    rl, n,
+                    rl, n + 1,
                     double(this->radius.at(rl)[0]),
                     double(this->radius.at(rl)[1]),
                     double(this->radius.at(rl)[2]));
@@ -107,7 +107,7 @@ namespace CarpetRegrid2 {
     if (this->num_levels > maxreflevels) {
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "Region %d has %d levels active, which is larger than the maximum number of refinement levels %d",
-                  n, this->num_levels, maxreflevels);
+                  n + 1, this->num_levels, maxreflevels);
       found_error = true;
     }
     
@@ -936,7 +936,7 @@ namespace CarpetRegrid2 {
                         static_cast <double> (position_z[n]));
           } else {
             CCTK_VInfo (CCTK_THORNSTRING,
-                        "Centre %d is not active", n);
+                        "Centre %d is not active", n + 1);
           }
         }
       }
@@ -1108,7 +1108,7 @@ namespace CarpetRegrid2 {
                         static_cast <double> (position_z[n]));
           } else {
             CCTK_VInfo (CCTK_THORNSTRING,
-                        "Centre %d is not active", n);
+                        "Centre %d is not active", n + 1);
           }
         }
       }
