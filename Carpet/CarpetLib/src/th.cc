@@ -19,8 +19,10 @@ list<th*> th::allth;
 
 
 // Constructors
-th::th (gh& h_, const vector<int> & reffacts_, const CCTK_REAL basedelta)
-  : h(h_), reffacts(reffacts_), delta(basedelta)
+th::th (gh& h_, int const timelevels_, vector<int> const& reffacts_,
+        bool const time_interpolation_during_regridding_)
+  : h(h_), timelevels(timelevels_), reffacts(reffacts_),
+    time_interpolation_during_regridding (time_interpolation_during_regridding_)
 {
   assert (reffacts.size() >= 1);
   assert (reffacts.front() == 1);
@@ -42,6 +44,9 @@ th::~th ()
 // Modifiers
 void th::regrid ()
 {
+  CCTK_REAL const basetime  = 0.0;
+  CCTK_REAL const basedelta = 1.0;
+  
   const int old_mglevels = times.size();
   times.resize(h.mglevels());
   deltas.resize(h.mglevels());
@@ -50,17 +55,64 @@ void th::regrid ()
     times.AT(ml).resize(h.reflevels());
     deltas.AT(ml).resize(h.reflevels());
     for (int rl=0; rl<h.reflevels(); ++rl) {
-      if (old_mglevels==0) {
-        times.AT(ml).AT(rl) = 0;
-      } else if (rl < old_reflevels) {
-        // do nothing
-      } else {
-        times.AT(ml).AT(rl) = times.AT(ml).AT(rl-1);
-      }
       if (ml==0) {
-	deltas.AT(ml).AT(rl) = delta / reffacts.AT(rl);
+	deltas.AT(ml).AT(rl) = basedelta / reffacts.AT(rl);
       } else {
 	deltas.AT(ml).AT(rl) = deltas.AT(ml-1).AT(rl) * h.mgfact;
+      }
+      if (old_mglevels==0) {
+        times.AT(ml).AT(rl).resize(timelevels);
+        for (int tl=0; tl<timelevels; ++tl) {
+          times.AT(ml).AT(rl).AT(tl) = basetime - tl * deltas.AT(ml).AT(rl);
+        }
+      } else if (rl < old_reflevels) {
+        // do nothing
+      } else if (rl == 0) {
+        assert (0);
+        times.AT(ml).AT(rl).resize(timelevels);
+        for (int tl=0; tl<timelevels; ++tl) {
+          times.AT(ml).AT(rl).AT(tl) = basetime - tl * deltas.AT(ml).AT(rl);
+        }
+      } else {
+        if (time_interpolation_during_regridding) {
+#warning "We probably don't want to do this, but it is nice for compatibility"
+          times.AT(ml).AT(rl).resize(timelevels);
+          for (int tl=0; tl<timelevels; ++tl) {
+            // linear interpolation between the two surrounding coarse
+            // grid times
+            assert (reffacts.AT(rl) % reffacts.AT(rl-1) == 0);
+            int const rf = reffacts.AT(rl) / reffacts.AT(rl-1);
+            int const ctl = tl / rf;
+            int const mtl = tl % rf;
+            if (mtl == 0) {
+              times.AT(ml).AT(rl).AT(tl) = times.AT(ml).AT(rl-1).AT(ctl);
+            } else {
+              assert (ctl+1<timelevels);
+              CCTK_REAL const alpha = (CCTK_REAL)mtl / rf;
+              assert (alpha>0 and alpha<1);
+              times.AT(ml).AT(rl).AT(tl) =
+                (1-alpha) * times.AT(ml).AT(rl-1).AT(ctl  ) +
+                (  alpha) * times.AT(ml).AT(rl-1).AT(ctl+1);
+            }
+          }
+        } else {
+          times.AT(ml).AT(rl) = times.AT(ml).AT(rl-1);
+        }
+      }
+    }
+  }
+  for (int ml=0; ml<h.mglevels(); ++ml) {
+    for (int rl=0; rl<h.reflevels(); ++rl) {
+      for (int tl=1; tl<timelevels; ++tl) {
+        assert (times.AT(ml).AT(rl).AT(tl) < times.AT(ml).AT(rl).AT(tl-1));
+      }
+    }
+  }
+  for (int ml=0; ml<h.mglevels(); ++ml) {
+    for (int rl=0; rl<h.reflevels(); ++rl) {
+      // assert (isfinite(deltas.AT(ml).AT(rl)));
+      for (int tl=0; tl<timelevels; ++tl) {
+        // assert (isfinite(times.AT(ml).AT(rl).AT(tl)));
       }
     }
   }
@@ -68,6 +120,37 @@ void th::regrid ()
 
 void th::regrid_free ()
 {
+}
+
+
+
+void th::advance_time (int const ml, int const rl)
+{
+  for (int tl=timelevels-1; tl>0; --tl) {
+    set_time (ml,rl,tl, get_time(ml,rl,tl-1));
+  }
+  set_time (ml,rl,0, get_time(ml,rl,0) + get_delta(ml,rl));
+}
+
+void th::retreat_time (int const ml, int const rl)
+{
+  CCTK_REAL const t = get_time(ml,rl,0);
+  for (int tl=0; tl<timelevels-1; ++tl) {
+    set_time (ml,rl,tl, get_time(ml,rl,tl+1));
+  }
+  set_time (ml,rl,timelevels-1, t);
+}
+
+void th::flip_timelevels (int const ml, int const rl)
+{
+  for (int tl=1; tl<(timelevels+1)/2; ++tl) {
+    int const tl2 = timelevels - tl;
+    CCTK_REAL const t  = get_time(ml,rl,tl );
+    CCTK_REAL const t2 = get_time(ml,rl,tl2);
+    set_time (ml,rl,tl ,t2);
+    set_time (ml,rl,tl2,t );
+  }
+  set_delta (ml,rl, -get_delta(ml,rl));
 }
 
 
@@ -80,7 +163,6 @@ memory ()
 {
   return
     memoryof (reffacts) +
-    memoryof (delta) +
     memoryof (times) +
     memoryof (deltas);
 }
@@ -100,19 +182,33 @@ allmemory ()
 
 
 
-// Output
-void th::output (ostream& os) const
+// Input
+istream& th::input (istream& is)
 {
-  os << "th:"
-     << "times={";
-  const char * sep = "";
-  for (int ml=0; ml<h.mglevels(); ++ml) {
-    for (int rl=0; rl<h.reflevels(); ++rl) {
-      os << sep
-         << ml << ":" << rl << ":"
-	 << times.AT(ml).AT(rl) << "(" << deltas.AT(ml).AT(rl) << ")";
-      sep = ",";
-    }
-  }
-  os << "}";
+  skipws (is);
+  consume (is, "th:{");
+  consume (is, "timelevels=");
+  is >> timelevels;
+  consume (is, ",");
+  consume (is, "reffacts=");
+  is >> reffacts;
+  consume (is, ",");
+  consume (is, "times=");
+  is >> times;
+  consume (is, ",");
+  consume (is, "deltas=");
+  is >> deltas;
+  consume (is, "}");
+  return is;
+}
+
+// Output
+ostream& th::output (ostream& os) const
+{
+  os << "th:{"
+     << "timelevels=" << timelevels << ","
+     << "reffacts=" << reffacts << ","
+     << "times=" << times << ","
+     << "deltas=" << deltas << "}";
+  return os;
 }

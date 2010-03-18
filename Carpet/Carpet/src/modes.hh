@@ -247,6 +247,25 @@ namespace Carpet {
     assert (local_component_loop_);             \
     local_component_loop_ = false;              \
   } while (false)
+
+#define BEGIN_TIMELEVEL_LOOP(cctkGH)                                    \
+  do {                                                                  \
+    bool timelevel_loop_ = true;                                        \
+    assert (do_allow_past_timelevels);                                  \
+    do_allow_past_timelevels = false;                                   \
+    assert (timelevel == 0);                                            \
+    for (timelevel = 0; timelevel < timelevels; ++ timelevel) {         \
+      cctkGH->cctk_time = tt->get_time (mglevel, reflevel, timelevel);  \
+      {
+#define END_TIMELEVEL_LOOP                                              \
+      }                                                                 \
+    }                                                                   \
+    assert (timelevel_loop_);                                           \
+    timelevel_loop_ = false;                                            \
+    timelevel = 0;                                                      \
+    cctkGH->cctk_time = tt->get_time (mglevel, reflevel, timelevel);    \
+    do_allow_past_timelevels = true;                                    \
+  } while (false)
   
   
   

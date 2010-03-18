@@ -64,8 +64,14 @@ namespace Carpet {
     global_time = cctk_initial_time;
     delta_time = 1.0;
     for (int ml = 0; ml < mglevel; ++ ml) {
-      assert (leveltimes.AT(ml).size() == 1);
-      leveltimes.AT(ml).AT(0) = global_time;
+      // assert (leveltimes.AT(ml).size() == 1);
+      // leveltimes.AT(ml).AT(0) = global_time;
+      for (int rl = 0; rl < reflevels; ++ rl) {
+        CCTK_REAL const dt = delta_time / timereffacts.AT(rl);
+        for (int tl = 0; tl < tt->timelevels; ++ tl) {
+          tt->set_time (ml, rl, tl, global_time - tl * dt);
+        }
+      }
     }
     
     cctkGH->cctk_iteration = 0;
@@ -99,6 +105,10 @@ namespace Carpet {
       
       CallRecoverVariables (cctkGH);
       CallPostRecoverVariables (cctkGH);
+      // TODO: We should probably restrict here.
+      // CallRestrict (cctkGH);
+      // TODO: Should we also execute another bin after this?
+      // CallPostRestrictRecover (cctkGH);
       print_internal_data ();
       
     } else {
@@ -263,47 +273,14 @@ namespace Carpet {
           do_global_mode = do_early_global_mode; // on first iteration, coarsest grid
           do_meta_mode = do_early_meta_mode; // on first iteration, coarsest grid
           
-          Waypoint ("Recovering II at iteration %d time %g%s%s",
-                    cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
-                    (do_global_mode ? " (global)" : ""),
-                    (do_meta_mode ? " (meta)" : ""));
-          
-          int const num_tl = prolongation_order_time+1;
-          
-          bool const old_do_allow_past_timelevels = do_allow_past_timelevels;
-          do_allow_past_timelevels = false;
-          
-          // Rewind times
-          for (int m=0; m<maps; ++m) {
-            CCTK_REAL const old_delta =
-              vtt.AT(m)->get_delta (reflevel, mglevel);
-            vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
-          }
-          FlipTimeLevels (cctkGH);
-          for (int tl=0; tl<num_tl; ++tl) {
-            for (int m=0; m<maps; ++m) {
-              vtt.AT(m)->advance_time (reflevel, mglevel);
-            }
-            CycleTimeLevels (cctkGH);
-          }
-          for (int m=0; m<maps; ++m) {
-            CCTK_REAL const old_delta =
-              vtt.AT(m)->get_delta (reflevel, mglevel);
-            vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
-          }
-          FlipTimeLevels (cctkGH);
-          CCTK_REAL const old_cctk_time = cctkGH->cctk_time;
-          cctkGH->cctk_time -=
-            num_tl * (cctkGH->cctk_delta_time / cctkGH->cctk_timefac);
-          
-          for (int tl=0; tl<num_tl; ++tl) {
+          BEGIN_TIMELEVEL_LOOP (cctkGH) {
             
-            // Advance times
-            for (int m=0; m<maps; ++m) {
-              vtt.AT(m)->advance_time (reflevel, mglevel);
-            }
-            CycleTimeLevels (cctkGH);
-            cctkGH->cctk_time += cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
+            Waypoint ("Recovering II at iteration %d time %g timelevel %d%s%s",
+                      cctkGH->cctk_iteration,
+                      (double)cctkGH->cctk_time,
+                      timelevel,
+                      (do_global_mode ? " (global)" : ""),
+                      (do_meta_mode ? " (meta)" : ""));
             
             // Post recover variables
             ScheduleTraverse (where, "CCTK_POST_RECOVER_VARIABLES", cctkGH);
@@ -311,10 +288,7 @@ namespace Carpet {
             // Checking
             PoisonCheck (cctkGH, currenttime);
             
-          } // for tl
-          cctkGH->cctk_time = old_cctk_time;
-          
-          do_allow_past_timelevels = old_do_allow_past_timelevels;
+          } END_TIMELEVEL_LOOP;
           
           CheckChecksums (cctkGH, allbutcurrenttime);
           
@@ -384,61 +358,36 @@ namespace Carpet {
           // Set up the grids
           ScheduleTraverse (where, "CCTK_BASEGRID", cctkGH);
           
-          int const num_tl =
-            init_each_timelevel ? prolongation_order_time+1 : 1;
-          
-          bool const old_do_allow_past_timelevels = do_allow_past_timelevels;
-          do_allow_past_timelevels =
-            not CCTK_EQUALS (initial_data_setup_method, "init_single_level");
-          
-          // Rewind times
-          for (int m=0; m<maps; ++m) {
-            CCTK_REAL const old_delta =
-              vtt.AT(m)->get_delta (reflevel, mglevel);
-            vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
-          }
-          FlipTimeLevels (cctkGH);
-          for (int tl=0; tl<num_tl; ++tl) {
-            for (int m=0; m<maps; ++m) {
-              vtt.AT(m)->advance_time (reflevel, mglevel);
-            }
-            CycleTimeLevels (cctkGH);
-          }
-          for (int m=0; m<maps; ++m) {
-            CCTK_REAL const old_delta =
-              vtt.AT(m)->get_delta (reflevel, mglevel);
-            vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
-          }
-          FlipTimeLevels (cctkGH);
-          CCTK_REAL const old_cctk_time = cctkGH->cctk_time;
-          cctkGH->cctk_time -=
-            num_tl * (cctkGH->cctk_delta_time / cctkGH->cctk_timefac);
-          
-          for (int tl=0; tl<num_tl; ++tl) {
+          if (init_each_timelevel) {
             
-            // Advance times
-            for (int m=0; m<maps; ++m) {
-              vtt.AT(m)->advance_time (reflevel, mglevel);
-            }
-            CycleTimeLevels (cctkGH);
-            cctkGH->cctk_time += cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
+            BEGIN_TIMELEVEL_LOOP (cctkGH) {
+              
+              // Set up the initial data
+              ScheduleTraverse (where, "CCTK_INITIAL", cctkGH);
+              ScheduleTraverse (where, "CCTK_POSTINITIAL", cctkGH);
+              
+            } END_TIMELEVEL_LOOP;
+            
+          } else {              // not init_each_timelevel
+            
+            assert (do_allow_past_timelevels);
+            do_allow_past_timelevels =
+              not CCTK_EQUALS (initial_data_setup_method, "init_single_level");
             
             // Set up the initial data
             ScheduleTraverse (where, "CCTK_INITIAL", cctkGH);
             ScheduleTraverse (where, "CCTK_POSTINITIAL", cctkGH);
             
-            if (init_fill_timelevels) {
-              assert (tl==0);
-              FillTimeLevels (cctkGH);
-            }
+            do_allow_past_timelevels = true;
             
-            // Checking
-            PoisonCheck (cctkGH, currenttime);
-            
-          } // for tl
-          cctkGH->cctk_time = old_cctk_time;
+          } // not init_each_timelevel
           
-          do_allow_past_timelevels = old_do_allow_past_timelevels;
+          if (init_fill_timelevels) {
+            FillTimeLevels (cctkGH);
+          }
+          
+          // Checking
+          PoisonCheck (cctkGH, currenttime);
           
           if (regrid_during_initialisation and mglevel==0) {
             // Regrid after initialising each level
@@ -875,57 +824,19 @@ namespace Carpet {
                 do_global_mode = do_late_global_mode;
                 do_meta_mode = do_late_meta_mode;
                 
-                Waypoint ("Postregrid at iteration %d time %g%s%s",
-                          cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
-                          (do_global_mode ? " (global)" : ""),
-                          (do_meta_mode ? " (meta)" : ""));
+                BEGIN_TIMELEVEL_LOOP (cctkGH) {
                 
-                int const num_tl = prolongation_order_time + 1;
-                
-                bool const old_do_allow_past_timelevels =
-                  do_allow_past_timelevels;
-                do_allow_past_timelevels = false;
-                
-                // Rewind times
-                for (int m=0; m<maps; ++m) {
-                  CCTK_REAL const old_delta =
-                    vtt.AT(m)->get_delta (reflevel, mglevel);
-                  vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
-                }
-                FlipTimeLevels (cctkGH);
-                for (int tl=0; tl<num_tl; ++tl) {
-                  for (int m=0; m<maps; ++m) {
-                    vtt.AT(m)->advance_time (reflevel, mglevel);
-                  }
-                  CycleTimeLevels (cctkGH);
-                }
-                for (int m=0; m<maps; ++m) {
-                  CCTK_REAL const old_delta =
-                    vtt.AT(m)->get_delta (reflevel, mglevel);
-                  vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
-                }
-                FlipTimeLevels (cctkGH);
-                CCTK_REAL const old_cctk_time = cctkGH->cctk_time;
-                cctkGH->cctk_time -=
-                  num_tl * (cctkGH->cctk_delta_time / cctkGH->cctk_timefac);
-                
-                for (int tl=0; tl<num_tl; ++tl) {
-                  
-                  // Advance times
-                  for (int m=0; m<maps; ++m) {
-                    vtt.AT(m)->advance_time (reflevel, mglevel);
-                  }
-                  CycleTimeLevels (cctkGH);
-                  cctkGH->cctk_time +=
-                    cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
+                  Waypoint ("Postregrid at iteration %d time %g timelevel %d%s%s",
+                            cctkGH->cctk_iteration,
+                            (double)cctkGH->cctk_time,
+                            timelevel,
+                            (do_global_mode ? " (global)" : ""),
+                            (do_meta_mode ? " (meta)" : ""));
                   
                   // Postregrid
                   ScheduleTraverse (where, "CCTK_POSTREGRID", cctkGH);
                   
-                } // for tl
-                cctkGH->cctk_time = old_cctk_time;
-                
-                do_allow_past_timelevels = old_do_allow_past_timelevels;
+                } END_TIMELEVEL_LOOP;
                 
                 EndTimingLevel (cctkGH);
               } LEAVE_LEVEL_MODE;
@@ -1079,53 +990,26 @@ namespace Carpet {
                           (do_global_mode ? " (global)" : ""),
                           (do_meta_mode ? " (meta)" : ""));
                 
-                int const num_tl =
-                  init_each_timelevel ? prolongation_order_time+1 : 1;
-                
-                bool const old_do_allow_past_timelevels =
-                  do_allow_past_timelevels;
-                do_allow_past_timelevels = false;
-                
-                // Rewind times
-                for (int m=0; m<maps; ++m) {
-                  CCTK_REAL const old_delta =
-                    vtt.AT(m)->get_delta (reflevel, mglevel);
-                  vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
-                }
-                FlipTimeLevels (cctkGH);
-                for (int tl=0; tl<num_tl; ++tl) {
-                  for (int m=0; m<maps; ++m) {
-                    vtt.AT(m)->advance_time (reflevel, mglevel);
-                  }
-                  CycleTimeLevels (cctkGH);
-                }
-                for (int m=0; m<maps; ++m) {
-                  CCTK_REAL const old_delta =
-                    vtt.AT(m)->get_delta (reflevel, mglevel);
-                  vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
-                }
-                FlipTimeLevels (cctkGH);
-                CCTK_REAL const old_cctk_time = cctkGH->cctk_time;
-                cctkGH->cctk_time -=
-                  num_tl * (cctkGH->cctk_delta_time / cctkGH->cctk_timefac);
-                
-                for (int tl=0; tl<num_tl; ++tl) {
+                if (init_each_timelevel) {
                   
-                  // Advance times
-                  for (int m=0; m<maps; ++m) {
-                    vtt.AT(m)->advance_time (reflevel, mglevel);
-                  }
-                  CycleTimeLevels (cctkGH);
-                  cctkGH->cctk_time +=
-                    cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
+                  BEGIN_TIMELEVEL_LOOP (cctkGH) {
+                    
+                    // Postregrid
+                    ScheduleTraverse (where, "CCTK_POSTREGRIDINITIAL", cctkGH);
+                    
+                  } END_TIMELEVEL_LOOP;
+                  
+                } else {        // not init_each_timelevel
+                  
+                  assert (do_allow_past_timelevels);
+                  do_allow_past_timelevels = false;
                   
                   // Postregrid
                   ScheduleTraverse (where, "CCTK_POSTREGRIDINITIAL", cctkGH);
                   
-                } // for tl
-                cctkGH->cctk_time = old_cctk_time;
-                
-                do_allow_past_timelevels = old_do_allow_past_timelevels;
+                  do_allow_past_timelevels = true;
+                  
+                } // not init_each_timelevel
                 
                 EndTimingLevel (cctkGH);
               } LEAVE_LEVEL_MODE;
@@ -1156,38 +1040,51 @@ namespace Carpet {
   
   
   
-  // Use Scott Hawley's algorithm to get two extra timelevels of data
-  
-  static void initialise_3tl_advance_time (cGH * const cctkGH);
-  static void initialise_3tl_evolve_Ia (cGH * const cctkGH);
   static void initialise_3tl_flip_timelevels (cGH * const cctkGH);
-  static void initialise_3tl_evolve_Ib (cGH * const cctkGH);
-  static void initialise_3tl_evolve_IIb (cGH * const cctkGH);
-  static void initialise_3tl_advance_time_2 (cGH * const cctkGH);
-  static void initialise_3tl_evolve_Ic (cGH * const cctkGH);
-  static void initialise_3tl_reset_time (cGH * const cctkGH);
+  static void initialise_3tl_evolve (cGH * const cctkGH);
+  static void initialise_3tl_recycle (cGH * const cctkGH);
+  
+  
   
   void
   Initialise3tl (cGH * const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
     
-    Waypoint ("Initialising three timelevels");
+    Waypoint ("Initialising three timelevels:");
     
-    // TODO: ensure that there are 3 timelevels
-    if (not (prolongation_order_time == 2)) {
-      CCTK_WARN (CCTK_WARN_ABORT,
-                 "The 3 timelevel initialisation scheme (init_3_timelevels=yes) requires 3 timelevels and a temporal prolongation order of 2 (prolongation_order_time=2)");
-    }
-    assert (prolongation_order_time == 2);
+    initialise_3tl_flip_timelevels (cctkGH);
+    initialise_3tl_evolve (cctkGH);
+    // TODO: May want to restrict here if possible (i.e. if the time
+    // refinement factor is one)
+    initialise_3tl_recycle (cctkGH);
+    initialise_3tl_flip_timelevels (cctkGH);
     
-    for (int rl=0; rl<int(timereffacts.size()); ++rl) {
-      if (not (timereffacts.AT(rl) == ipow (2, rl))) {
-        CCTK_WARN (CCTK_WARN_ABORT,
-                   "The 3 timelevel initialisation scheme (init_3_timelevels=yes) requires temporal refinement factors of 2 for all refinement levels (time_refinement_factors[rl]=pow(2,rl))");
-      }
-      assert (timereffacts.AT(rl) == ipow (2, rl));
-    }
+    Waypoint ("Finished initialising three timelevels");
+  }
+  
+  void
+  initialise_3tl_flip_timelevels (cGH * const cctkGH)
+  {
+    Waypoint ("Initialise3TL::Flip");
+    
+    delta_time *= -1;
+    
+    BEGIN_MGLEVEL_LOOP(cctkGH) {
+      BEGIN_REFLEVEL_LOOP (cctkGH) {
+        
+        FlipTimeLevels (cctkGH);
+        
+      } END_REFLEVEL_LOOP;
+    } END_MGLEVEL_LOOP;
+  }
+  
+  void
+  initialise_3tl_evolve (cGH * const cctkGH)
+  {
+    char const * const where = "Initialise3TL::Evolve";
+    static Timer timer (where);
+    timer.start();
     
     BEGIN_MGLEVEL_LOOP(cctkGH) {
       BEGIN_REFLEVEL_LOOP(cctkGH) {
@@ -1200,228 +1097,48 @@ namespace Carpet {
         do_global_mode = do_early_global_mode;
         do_meta_mode = do_early_meta_mode;
         
-        initialise_3tl_advance_time (cctkGH);
-        initialise_3tl_evolve_Ia (cctkGH);
-        initialise_3tl_flip_timelevels (cctkGH);
-        initialise_3tl_evolve_Ib (cctkGH);
-        initialise_3tl_flip_timelevels (cctkGH);
+        Waypoint ("Initialisation 3TL evolution",
+                  (do_global_mode ? " (global)" : ""),
+                  (do_meta_mode ? " (meta)" : ""));
+        
+        CycleTimeLevels (cctkGH);
+        
+        CalculateChecksums (cctkGH, allbutcurrenttime);
+        Poison (cctkGH, currenttimebutnotifonly);
+        
+        // Evolve
+        ScheduleTraverse (where, "CCTK_PRESTEP", cctkGH);
+        ScheduleTraverse (where, "CCTK_EVOL", cctkGH);
+        
+        PoisonCheck (cctkGH, currenttime);
         
         EndTimingLevel (cctkGH);
       } END_REFLEVEL_LOOP;
     } END_MGLEVEL_LOOP;
     
-    Waypoint ("Hourglass structure in place");
-    
-    initialise_3tl_flip_timelevels (cctkGH);
+    timer.stop();
+  }
+  
+  void
+  initialise_3tl_recycle (cGH * const cctkGH)
+  {
+    char const * const where = "Initialise3TL::Recycle";
+    static Timer timer (where);
+    timer.start();
     
     BEGIN_MGLEVEL_LOOP(cctkGH) {
-      BEGIN_REVERSE_REFLEVEL_LOOP(cctkGH) {
+      BEGIN_REFLEVEL_LOOP(cctkGH) {
         BeginTimingLevel (cctkGH);
         
-        do_early_global_mode = reflevel==reflevels-1;
-        do_late_global_mode = reflevel==0;
-        do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
-        do_late_meta_mode = do_late_global_mode and mglevel==0;
-        do_global_mode = do_early_global_mode;
-        do_meta_mode = do_early_meta_mode;
+        Waypoint ("Initialisation 3TL recycling");
         
-        initialise_3tl_evolve_IIb (cctkGH);
-        initialise_3tl_advance_time_2 (cctkGH);
-        initialise_3tl_evolve_Ic (cctkGH);
+        UncycleTimeLevels (cctkGH);
         
         EndTimingLevel (cctkGH);
-      } END_REVERSE_REFLEVEL_LOOP;
+      } END_REFLEVEL_LOOP;
     } END_MGLEVEL_LOOP;
     
-    initialise_3tl_flip_timelevels (cctkGH);
-    
-    BEGIN_MGLEVEL_LOOP(cctkGH) {
-      BEGIN_REVERSE_REFLEVEL_LOOP(cctkGH) {
-        BeginTimingLevel (cctkGH);
-        
-        do_early_global_mode = reflevel==reflevels-1;
-        do_late_global_mode = reflevel==0;
-        do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
-        do_late_meta_mode = do_late_global_mode and mglevel==0;
-        do_global_mode = do_early_global_mode;
-        do_meta_mode = do_early_meta_mode;
-        
-        initialise_3tl_reset_time (cctkGH);
-        
-        EndTimingLevel (cctkGH);
-      } END_REVERSE_REFLEVEL_LOOP;
-    } END_MGLEVEL_LOOP;
-    
-    Waypoint ("Finished initialising three timelevels");
-  }
-  
-  
-  
-  void
-  initialise_3tl_advance_time (cGH * const cctkGH)
-  {
-    Waypoint ("Advancing time");
-    
-    cctkGH->cctk_time
-      = global_time + delta_time * mglevelfact / timereflevelfact;
-    for (int m=0; m<maps; ++m) {
-      vtt.AT(m)->advance_time (reflevel, mglevel);
-    }
-    
-    CycleTimeLevels (cctkGH);
-  }
-  
-  void
-  initialise_3tl_evolve_Ia (cGH * const cctkGH)
-  {
-    char const * const where = "Initialise3TL::EvolveIa";
-    static Timer timer (where);
-    timer.start();
-    
-    Waypoint ("Initialisation 3TL evolution I (a) (forwards) at iteration"
-              " %d time %g%s%s",
-              cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
-              (do_global_mode ? " (global)" : ""),
-              (do_meta_mode ? " (meta)" : ""));
-    
-    CalculateChecksums (cctkGH, allbutcurrenttime);
-    Poison (cctkGH, currenttimebutnotifonly);
-    
-    // Evolve forward
-    ScheduleTraverse (where, "CCTK_PRESTEP", cctkGH);
-    ScheduleTraverse (where, "CCTK_EVOL", cctkGH);
-    
-    PoisonCheck (cctkGH, currenttime);
-    
     timer.stop();
-  }
-  
-  void
-  initialise_3tl_flip_timelevels (cGH * const cctkGH)
-  {
-    Waypoint ("Flipping timelevels");
-    
-    BEGIN_META_MODE(cctkGH) {
-      
-      delta_time *= -1;
-      
-      BEGIN_MGLEVEL_LOOP(cctkGH) {
-        BEGIN_REFLEVEL_LOOP (cctkGH) {
-          
-          cctkGH->cctk_time
-            = global_time + delta_time * mglevelfact / timereflevelfact;
-          
-          FlipTimeLevels (cctkGH);
-          
-        } END_REFLEVEL_LOOP;
-      } END_MGLEVEL_LOOP;
-    } END_META_MODE;
-  }
-  
-  void
-  initialise_3tl_evolve_Ib (cGH * const cctkGH)
-  {
-    char const * const where = "Initialise3TL::EvolveIb";
-    static Timer timer (where);
-    timer.start();
-    
-    Waypoint ("Initialisation 3TL evolution I (b) (backwards) at iteration"
-              " %d time %g%s%s",
-              cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
-              (do_global_mode ? " (global)" : ""),
-              (do_meta_mode ? " (meta)" : ""));
-    
-    // Checking
-    CalculateChecksums (cctkGH, allbutcurrenttime);
-    Poison (cctkGH, currenttimebutnotifonly);
-    
-    // Evolve backward
-    ScheduleTraverse (where, "CCTK_PRESTEP", cctkGH);
-    ScheduleTraverse (where, "CCTK_EVOL", cctkGH);
-    
-    // Checking
-    PoisonCheck (cctkGH, alltimes);
-    
-    timer.stop();
-  }
-  
-  // Evolve backwards one more timestep
-  // Starting with the finest level and proceeding to the coarsest
-  void
-  initialise_3tl_evolve_IIb (cGH * const cctkGH)
-  {
-    char const * const where = "Initialise3TL::EvolveIIb";
-    static Timer timer (where);
-    timer.start();
-    
-    Waypoint ("Initialisation 3TL evolution II (b) (backwards) at iteration"
-              " %d time %g%s%s",
-              cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
-              (do_global_mode ? " (global)" : ""),
-              (do_meta_mode ? " (meta)" : ""));
-    
-    Restrict (cctkGH);
-    
-    if (reflevel < reflevels-1) {
-      ScheduleTraverse (where, "CCTK_POSTRESTRICT", cctkGH);
-    }
-    
-    ScheduleTraverse (where, "CCTK_POSTSTEP", cctkGH);
-    
-    PoisonCheck (cctkGH, alltimes);
-    
-    timer.stop();
-  }
-  
-  void
-  initialise_3tl_advance_time_2 (cGH * const cctkGH)
-  {
-    Waypoint ("Advancing time");
-    
-    cctkGH->cctk_time
-      = global_time + 2 * delta_time * mglevelfact / timereflevelfact;
-    for (int m=0; m<maps; ++m) {
-      vtt.AT(m)->advance_time (reflevel, mglevel);
-    }
-    
-    CycleTimeLevels (cctkGH);
-  }
-  
-  void
-  initialise_3tl_evolve_Ic (cGH * const cctkGH)
-  {
-    char const * const where = "Initialise3TL::EvolveIc";
-    static Timer timer (where);
-    timer.start();
-    
-    Waypoint ("Initialisation 3TL evolution I (c) (backwards) at iteration"
-              " %d time %g%s%s",
-              cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
-              (do_global_mode ? " (global)" : ""),
-              (do_meta_mode ? " (meta)" : ""));
-    
-    CalculateChecksums (cctkGH, allbutcurrenttime);
-    Poison (cctkGH, currenttimebutnotifonly);
-    
-    // Evolve backward
-    ScheduleTraverse (where, "CCTK_PRESTEP", cctkGH);
-    ScheduleTraverse (where, "CCTK_EVOL", cctkGH);
-    ScheduleTraverse (where, "CCTK_POSTSTEP", cctkGH);
-    
-    PoisonCheck (cctkGH, alltimes);
-    
-    timer.stop();
-  }
-  
-  void
-  initialise_3tl_reset_time (cGH * const cctkGH)
-  {
-    Waypoint ("Resetting time");
-    
-    cctkGH->cctk_time = global_time;
-    for (int m=0; m<maps; ++m) {
-      vtt.AT(m)->set_time (reflevel, mglevel, 0);
-    }
   }
   
   
@@ -1442,7 +1159,7 @@ namespace Carpet {
       streamsize const oldprecision = cout.precision();
       cout.precision (17);
       cout << "   global_time: " << global_time << endl
-           << "   leveltimes: " << leveltimes << endl
+        // << "   leveltimes: " << leveltimes << endl
            << "   delta_time: " << delta_time << endl;
       cout.precision (oldprecision);
     }

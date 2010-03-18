@@ -330,12 +330,17 @@ namespace Carpet {
     }
     
     // Set current time
-    assert (mglevel>=0 and mglevel<(int)leveltimes.size());
-    assert (reflevel>=0 and reflevel<(int)leveltimes.AT(mglevel).size());
+    // assert (mglevel>=0 and mglevel<(int)leveltimes.size());
+    // assert (reflevel>=0 and reflevel<(int)leveltimes.AT(mglevel).size());
+    // if (not adaptive_stepsize) {
+    //   cctkGH->cctk_time = leveltimes.AT(mglevel).AT(reflevel);
+    // } else {
+    //   leveltimes.AT(mglevel).AT(reflevel) = cctkGH->cctk_time;
+    // }
     if (not adaptive_stepsize) {
-      cctkGH->cctk_time = leveltimes.AT(mglevel).AT(reflevel);
+      cctkGH->cctk_time = tt->get_time(mglevel, reflevel, timelevel);
     } else {
-      leveltimes.AT(mglevel).AT(reflevel) = cctkGH->cctk_time;
+      tt->set_time (mglevel, reflevel, timelevel, cctkGH->cctk_time);
     }
     
     assert (is_level_mode());
@@ -354,9 +359,15 @@ namespace Carpet {
     CCTK_INT const deadbeef = get_deadbeef();
     
     // Save and unset current time
-    assert (mglevel>=0 and mglevel<(int)leveltimes.size());
-    assert (reflevel>=0 and reflevel<(int)leveltimes.AT(mglevel).size());
-    leveltimes.AT(mglevel).AT(reflevel) = cctkGH->cctk_time;
+    // assert (mglevel>=0 and mglevel<(int)leveltimes.size());
+    // assert (reflevel>=0 and reflevel<(int)leveltimes.AT(mglevel).size());
+    // leveltimes.AT(mglevel).AT(reflevel) = cctkGH->cctk_time;
+    // if (not adaptive_stepsize) {
+    //   cctkGH->cctk_time = global_time;
+    // } else {
+    //   global_time = cctkGH->cctk_time;
+    // }
+    tt->set_time (mglevel, reflevel, timelevel, cctkGH->cctk_time);
     if (not adaptive_stepsize) {
       cctkGH->cctk_time = global_time;
     } else {
@@ -606,10 +617,30 @@ namespace Carpet {
               assert (firstvar>=0);
               const int max_tl = CCTK_MaxTimeLevelsGI (group);
               assert (max_tl>=0);
-              const int active_tl = CCTK_ActiveTimeLevelsGI (cctkGH, group);
+              const int active_tl =
+                groupdata.AT(group).activetimelevels.AT(mglevel).AT(reflevel);
               assert (active_tl>=0 and active_tl<=max_tl);
-              const int available_tl =
-                do_allow_past_timelevels ? active_tl : min (1, active_tl);
+              int available_tl;
+              int tl_offset;
+              if (active_tl == 0) {
+                // gropu has no storage
+                available_tl = active_tl;
+                tl_offset = 0;
+              } else if (do_allow_past_timelevels) {
+                // regular case; all timelevels are accessible
+                available_tl = active_tl;
+                tl_offset = 0;
+              } else {
+                // only one timelevel is accessible
+                available_tl = 1;
+                if (timelevel < active_tl) {
+                  // timelevel "timelevel" exists
+                  tl_offset = timelevel;
+                } else {
+                  // timelevel "timelevel" does not exist
+                  tl_offset = active_tl - 1;
+                }
+              }
               
               // assert (vhh.AT(map)->is_local(reflevel,component));
               
@@ -620,7 +651,7 @@ namespace Carpet {
                 for (int tl=0; tl<max_tl; ++tl) {
                   if (ff and tl<available_tl) {
                     gdata * const data =
-                      (*ff) (tl, reflevel, local_component, mglevel);
+                      (*ff) (tl_offset+tl, reflevel, local_component, mglevel);
                     assert (data);
                     cctkGH->data[firstvar+var][tl] = data->storage();
                   } else {

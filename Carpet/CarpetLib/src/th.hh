@@ -2,10 +2,11 @@
 #define TH_HH
 
 #include <cassert>
+#include <cmath>
 #include <iostream>
 #include <vector>
 
-#include "cctk.h"
+#include <cctk.h>
 
 #include "defs.hh"
 #include "gh.hh"
@@ -17,6 +18,8 @@ using namespace std;
 // Forward declaration
 class th;
 
+// Input
+istream& operator>> (istream& is, th& t);
 // Output
 ostream& operator<< (ostream& os, const th& t);
 
@@ -34,18 +37,22 @@ public:				// should be readonly
   gh& h;                        // hierarchy
   gh::th_handle gh_handle;
   
+  int timelevels;               // const
+  
 private:
   
-  const vector<int> reffacts;
-
-  CCTK_REAL delta;		// time step
-  vector<vector<CCTK_REAL> > times; // current times [ml][rl]
-  vector<vector<CCTK_REAL> > deltas; // time steps [ml][rl]
+  vector<int> reffacts;         // const
+  
+  bool const time_interpolation_during_regridding;
+  
+  vector<vector<vector<CCTK_REAL> > > times; // current times [ml][rl][tl]
+  vector<vector<CCTK_REAL> > deltas;         // time steps [ml][rl]
   
 public:
   
   // Constructors
-  th (gh& h, const vector<int> & reffacts, const CCTK_REAL basedelta);
+  th (gh& h, int timelevels, vector<int> const& reffacts,
+      bool time_interpolation_during_regridding);
   
   // Destructors
   ~th ();
@@ -55,50 +62,52 @@ public:
   void regrid_free ();
   
   // Time management
-  CCTK_REAL get_time (const int rl, const int ml) const CCTK_ATTRIBUTE_PURE
+  void set_time (int const ml, int const rl, int const tl, CCTK_REAL const& t)
   {
-    assert (rl>=0 and rl<h.reflevels());
     assert (ml>=0 and ml<h.mglevels());
-    return times.AT(ml).AT(rl);
+    assert (rl>=0 and rl<h.reflevels());
+    assert (tl>=0 and tl<timelevels);
+    // assert (isfinite(t));
+    times.AT(ml).AT(rl).AT(tl) = t;
   }
   
-  void set_time (const int rl, const int ml, const CCTK_REAL t)
+  CCTK_REAL get_time (int const ml, int const rl, int const tl)
+    const CCTK_ATTRIBUTE_PURE
   {
-    assert (rl>=0 and rl<h.reflevels());
     assert (ml>=0 and ml<h.mglevels());
-    times.AT(ml).AT(rl) = t;
+    assert (rl>=0 and rl<h.reflevels());
+    assert (tl>=0 and tl<timelevels);
+    CCTK_REAL const t = times.AT(ml).AT(rl).AT(tl);
+    // assert (isfinite(t));
+    return t;
   }
   
-  void advance_time (const int rl, const int ml)
+  void set_delta (int const ml, int const rl, CCTK_REAL const& dt)
   {
-    set_time(rl,ml, get_time(rl,ml) + get_delta(rl,ml));
-  }
-  
-  CCTK_REAL get_delta (const int rl, const int ml) const CCTK_ATTRIBUTE_PURE
-  {
-    assert (rl>=0 and rl<h.reflevels());
     assert (ml>=0 and ml<h.mglevels());
-    return deltas.AT(ml).AT(rl);
-  }
-  
-  void set_delta (const int rl, const int ml, const CCTK_REAL dt)
-  {
     assert (rl>=0 and rl<h.reflevels());
-    assert (ml>=0 and ml<h.mglevels());
+    // assert (isfinite(dt));
     deltas.AT(ml).AT(rl) = dt;
   }
   
-  CCTK_REAL time (const int tl, const int rl, const int ml) const CCTK_ATTRIBUTE_PURE
+  CCTK_REAL get_delta (int const ml, int const rl) const CCTK_ATTRIBUTE_PURE
   {
-    assert (rl>=0 and rl<h.reflevels());
     assert (ml>=0 and ml<h.mglevels());
-    return get_time(rl, ml) - tl * get_delta(rl, ml);
+    assert (rl>=0 and rl<h.reflevels());
+    CCTK_REAL const dt = deltas.AT(ml).AT(rl);
+    // assert (isfinite(dt));
+    return dt;
   }
+  
+  void advance_time (int const ml, int const rl);
+  void retreat_time (int const ml, int const rl);
+  void flip_timelevels (int const ml, int const rl);
   
   // Output
   size_t memory () const CCTK_ATTRIBUTE_PURE;
   static size_t allmemory () CCTK_ATTRIBUTE_PURE;
-  void output (ostream& os) const;
+  istream& input (istream& is);
+  ostream& output (ostream& os) const;
 };
 
 
@@ -108,9 +117,11 @@ inline size_t memoryof (th const & t)
 {
   return t.memory ();
 }
+inline istream& operator>> (istream& is, th& t) {
+  return t.input(is);
+}
 inline ostream& operator<< (ostream& os, const th& t) {
-  t.output(os);
-  return os;
+  return t.output(os);
 }
 
 

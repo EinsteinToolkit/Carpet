@@ -888,9 +888,8 @@ namespace CarpetInterp {
     assert (partype == PARAMETER_INTEGER);
     prolongation_order_time = *(CCTK_INT const*) parptr;
 
-    current_time =
-      (cctkGH->cctk_time - cctk_initial_time) / cctkGH->cctk_delta_time;
-    delta_time = cctkGH->cctk_delta_time;
+    current_time = cctkGH->cctk_time;
+    delta_time   = cctkGH->cctk_delta_time;
 
     iret = Util_TableGetIntArray (param_table_handle, N_output_arrays,
                                  &time_deriv_order.front(), "time_deriv_order");
@@ -956,8 +955,10 @@ namespace CarpetInterp {
         ivect const ipos =
           ivect(floor((pos - lower) / (delta * rvect(fact)) + rhalf)) * fact;
 
-        ivect const & stride = hh->baseextent(ml,rl).stride();
-        assert (all (ipos % stride == 0));
+        ivect const & istride = hh->baseextent(ml,rl).stride();
+        if (hh->refcent == cell_centered) {
+          assert (all (istride % 2 == 0));
+        }
 
         gh::cregs const & regs = hh->regions.AT(ml).AT(rl);
 
@@ -1011,13 +1012,15 @@ namespace CarpetInterp {
       // Try finer levels first
       for (rl = maxrl-1; rl >= minrl; --rl) {
 
+        ivect const & istride = hh->baseextent(ml,rl).stride();
+        if (hh->refcent == cell_centered) {
+          assert (all (istride % 2 == 0));
+        }
+
         ivect const fact =
           maxspacereflevelfact / spacereffacts.AT(rl) * ipow(mgfact, ml);
         ivect const ipos =
           ivect(floor((pos - lower) / (delta * rvect(fact)) + rhalf)) * fact;
-
-        ivect const & stride = hh->baseextent(ml,rl).stride();
-        assert (all (ipos % stride == 0));
 
         gh::cregs const & regs = hh->superregions.AT(rl);
 
@@ -1415,7 +1418,7 @@ namespace CarpetInterp {
       : vector<CCTK_REAL> (num_timelevels_ )
     {
       for (int tl=0; tl<num_timelevels_; ++tl) {
-        at(tl) = vtt.AT(Carpet::map)->time (tl, reflevel, mglevel);
+        at(tl) = tt->get_time (mglevel, reflevel, tl);
       }
     }
 

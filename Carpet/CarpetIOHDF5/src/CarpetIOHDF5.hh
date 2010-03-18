@@ -17,7 +17,7 @@
 // some macros for HDF5 group names
 #define METADATA_GROUP "Parameters and Global Attributes"
 #define ALL_PARAMETERS "All Parameters"
-#define GRID_STRUCTURE "Grid Structure v3"
+#define GRID_STRUCTURE "Grid Structure v4"
 
 // atomic HDF5 datatypes for the generic CCTK datatypes
 // (the one for CCTK_COMPLEX is created at startup as a compound HDF5 datatype)

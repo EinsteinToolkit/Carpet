@@ -549,7 +549,7 @@ gh::
 output (ostream & os)
   const
 {
-  os << "gh:"
+  os << "gh:{"
      << "reffacts=" << reffacts << ",refcentering=" << refcent << ","
      << "mgfactor=" << mgfact << ",mgcentering=" << mgcent << ","
      << "baseextents=" << baseextents << ","
@@ -565,6 +565,6 @@ output (ostream & os)
       os << *d;
     }
   }
-  os << "}";
+  os << "}}";
   return os;
 }

@@ -21,7 +21,3 @@ BOOLEAN tree_search "Use a tree search to find the source processor" STEERABLE=a
 BOOLEAN check_tree_search "Cross-check the result of the tree search" STEERABLE=always
 {
 } "no"
-
-SHARES: Cactus
-
-USES CCTK_REAL cctk_initial_time

@@ -54,8 +54,7 @@ namespace Carpet {
   allocate_data_hierarchy (cGH const * cctkGH,
                            int m);
   static void
-  allocate_time_hierarchy (cGH const * cctkGH,
-                           int m);
+  allocate_time_hierarchy (cGH const * cctkGH);
   static void
   setup_grid_hierarchy (cGH const * cctkGH);
   static void
@@ -272,6 +271,9 @@ namespace Carpet {
     cctkGH->cctk_mode = CCTK_MODE_META;
 #endif
     
+    timelevels = prolongation_order_time + 1;
+    timelevel  = 0;
+    
     // Say hello
     Waypoint ("Setting up the grid hierarchy");
     
@@ -448,9 +450,10 @@ namespace Carpet {
       // Allocate hierarchies
       allocate_grid_hierarchy (cctkGH, m);
       allocate_data_hierarchy (cctkGH, m);
-      allocate_time_hierarchy (cctkGH, m);
       
     } // for m
+    
+    allocate_time_hierarchy (cctkGH);
   }
   
   
@@ -601,15 +604,14 @@ namespace Carpet {
   
   
   void
-  allocate_time_hierarchy (cGH const * const cctkGH,
-                           int const m)
+  allocate_time_hierarchy (cGH const * const cctkGH)
   {
     DECLARE_CCTK_PARAMETERS;
     
-    vtt.resize (maps);
-    vtt.AT(m) = new th (* vhh.AT(m),
-                        timereffacts,
-                        1.0);
+    // We are using the gh of the first map.  This works because all
+    // maps have the same number of refinement levels.
+    tt = new th (* vhh.AT(0), timelevels, timereffacts,
+                 time_interpolation_during_regridding);
   }
   
   
@@ -774,7 +776,7 @@ namespace Carpet {
         for (int m=0; m<maps; ++m) {
           arrdata.AT(group).AT(m).hh = vhh.AT(m);
           arrdata.AT(group).AT(m).dd = vdd.AT(m);
-          arrdata.AT(group).AT(m).tt = vtt.AT(m);
+          arrdata.AT(group).AT(m).tt = tt;
         }
         
         break;
@@ -865,9 +867,9 @@ namespace Carpet {
       new dh (*arrdata.AT(group).AT(m).hh,
               ghosts, buffers, my_prolongation_orders_space);
     
-    CCTK_REAL const basedelta = 1.0;
     arrdata.AT(group).AT(m).tt =
-      new th (*arrdata.AT(group).AT(m).hh, grouptimereffacts, basedelta);
+      new th (*arrdata.AT(group).AT(m).hh, timelevels, grouptimereffacts,
+              time_interpolation_during_regridding);
   }
   
   
@@ -1053,11 +1055,11 @@ namespace Carpet {
   void
   set_state (cGH * const cctkGH)
   {
-    // Allocate level times
-    leveltimes.resize (mglevels);
-    for (int ml=0; ml<mglevels; ++ml) {
-      leveltimes.AT(ml).resize (1);
-    }
+    // // Allocate level times
+    // leveltimes.resize (mglevels);
+    // for (int ml=0; ml<mglevels; ++ml) {
+    //   leveltimes.AT(ml).resize (1);
+    // }
     
     // Allocate orgin and spacings
     origin_space.resize (maps);

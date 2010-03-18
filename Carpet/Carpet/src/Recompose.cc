@@ -356,10 +356,10 @@ namespace Carpet {
     }
     
     // Set new level times
-    for (int ml=0; ml<mglevels; ++ml) {
-      leveltimes.AT(ml).resize
-        (reflevels, leveltimes.AT(ml).AT(oldreflevels-1));
-    }
+    // for (int ml=0; ml<mglevels; ++ml) {
+    //   leveltimes.AT(ml).resize
+    //     (reflevels, leveltimes.AT(ml).AT(oldreflevels-1));
+    // }
     
     ++ regridding_epoch;
     

@@ -38,8 +38,9 @@ namespace Carpet {
   // Other functions
   bool Regrid (cGH const * cctkGH, bool force_recompose, bool do_init);
   
-  void CycleTimeLevels (const cGH* cgh);
-  void FlipTimeLevels (const cGH* cgh);
+  void CycleTimeLevels (cGH* cgh);
+  void UncycleTimeLevels (cGH* cgh);
+  void FlipTimeLevels (cGH* cgh);
   void FillTimeLevels (const cGH* cgh);
   void SyncGroups (const cGH* cgh, const vector<int>& groups);
   int  SyncProlongateGroups (const cGH* cgh, const vector<int>& groups);

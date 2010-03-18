@@ -22,7 +22,6 @@ namespace Carpet {
 
 
   static void ProlongateGroupBoundaries (const cGH* cctkGH,
-                                         CCTK_REAL initial_time,
                                          const vector<int>& groups);
 
 
@@ -137,7 +136,7 @@ namespace Carpet {
       if (local_do_prolongate) {
         static Timer timer ("Evolve::Prolongate");
         timer.start();
-        ProlongateGroupBoundaries (cctkGH, cctk_initial_time, goodgroups);
+        ProlongateGroupBoundaries (cctkGH, goodgroups);
         timer.stop();
       }
       
@@ -156,11 +155,9 @@ namespace Carpet {
 
   // Prolongate the boundaries of all CCTK_GF groups in the given set
   static void ProlongateGroupBoundaries (const cGH* cctkGH,
-                                         const CCTK_REAL initial_time,
                                          const vector<int>& groups)
   {
     DECLARE_CCTK_PARAMETERS;
-    const int tl = 0;
     
     if (reflevel == 0) return;
     
@@ -169,8 +166,7 @@ namespace Carpet {
     assert (groups.size() > 0);
 
     // use the current time here (which may be modified by the user)
-    const CCTK_REAL time =
-      (cctkGH->cctk_time - initial_time) / delta_time;
+    const CCTK_REAL time = cctkGH->cctk_time;
     
     for (comm_state state; not state.done(); state.step()) {
       for (int group = 0; group < (int)groups.size(); ++group) {
@@ -180,11 +176,16 @@ namespace Carpet {
           continue;
         }
         assert (reflevel>=0 and reflevel<reflevels);
+        const int active_tl =
+          groupdata.AT(g).activetimelevels.AT(mglevel).AT(reflevel);
+        assert (active_tl>=0);
+        const int tl = active_tl > 1 ? timelevel : 0;
         
         for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
           for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
             ggf *const gv = arrdata.AT(g).AT(m).data.AT(v);
-            gv->ref_bnd_prolongate_all (state, tl, reflevel, mglevel, time);
+            gv->ref_bnd_prolongate_all
+              (state, tl, reflevel, mglevel, time);
           }
         }
       }
@@ -196,7 +197,6 @@ namespace Carpet {
   void SyncGroups (const cGH* cctkGH, const vector<int>& groups)
   {
     DECLARE_CCTK_PARAMETERS;
-    const int tl = 0;
 
     Checkpoint ("SyncGroups");
 
@@ -208,6 +208,10 @@ namespace Carpet {
         const int grouptype = CCTK_GroupTypeI (g);
         const int ml = grouptype == CCTK_GF ? mglevel : 0;
         const int rl = grouptype == CCTK_GF ? reflevel : 0;
+        const int active_tl =
+          groupdata.AT(g).activetimelevels.AT(mglevel).AT(reflevel);
+        assert (active_tl>=0);
+        const int tl = active_tl > 1 ? timelevel : 0;
         for (int m = 0; m < (int)arrdata.AT(g).size(); ++m) {
           for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
             arrdesc& array = arrdata.AT(g).AT(m);

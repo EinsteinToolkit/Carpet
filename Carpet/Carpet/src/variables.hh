@@ -72,6 +72,9 @@ namespace Carpet {
   // Maps
   extern int maps;
   
+  // Timelevels
+  extern int timelevels;
+  
   
   
   // Current position on the grid hierarchy
@@ -81,6 +84,7 @@ namespace Carpet {
   extern int map;
   extern int component;
   extern int local_component;   // -1 for non-local
+  extern int timelevel;
   
   // Current refinement factors
   extern int timereflevelfact;
@@ -98,7 +102,7 @@ namespace Carpet {
   
   // Times and spaces on the refinement levels
   extern CCTK_REAL global_time;
-  extern vector<vector<CCTK_REAL> > leveltimes; // [mglevel][reflevel]
+  // extern vector<vector<CCTK_REAL> > leveltimes; // [mglevel][reflevel]
   extern CCTK_REAL delta_time;
   
   extern vector<vector<vect<CCTK_REAL,dim> > > origin_space; // [map][mglevel]
@@ -146,7 +150,7 @@ namespace Carpet {
   // The grid hierarchy
   extern vector<gh*> vhh;       // [map]
   extern vector<dh*> vdd;       // [map]
-  extern vector<th*> vtt;       // [map]
+  extern th* tt;
   extern int regridding_epoch;
   
   // Data for the groups

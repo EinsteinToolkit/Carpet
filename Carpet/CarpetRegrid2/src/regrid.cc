@@ -344,10 +344,8 @@ namespace CarpetRegrid2 {
         if (freeze_unaligned_parent_levels) {
           // Assume that non-existing levels are always aligned
           if (min_rl < reflevels) {
-            CCTK_REAL const mytime =
-              vtt.at(Carpet::map)->time (0, min_rl, mglevel);
-            CCTK_REAL const parenttime =
-              vtt.at(Carpet::map)->time (0, min_rl - 1, mglevel);
+            CCTK_REAL const mytime     = tt->get_time (mglevel, min_rl, 0);
+            CCTK_REAL const parenttime = tt->get_time (mglevel, min_rl - 1, 0);
             CCTK_REAL const eps = 1.0e-12;
             in_sync =
               abs (mytime - parenttime) <= eps * abs (delta_time);

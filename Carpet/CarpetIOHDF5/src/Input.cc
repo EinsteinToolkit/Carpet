@@ -59,12 +59,12 @@ typedef struct {
   int main_loop_index;
   double global_time;
   double delta_time;
-  vector<double> mgleveltimes;  // [num_mglevels*num_reflevels]
+  // vector<double> mgleveltimes;  // [num_mglevels*num_reflevels]
 
   vector<vector<vector<region_t> > > grid_superstructure; // [map][reflevel][component]
   vector<vector<vector<region_t> > > grid_structure; // [map][reflevel][component]
-  vector<vector<vector<CCTK_REAL> > > grid_times;    // [map][mglevel][reflevel]
-  vector<vector<CCTK_REAL> > leveltimes;             // [mglevel][reflevel]
+  vector<vector<vector<CCTK_REAL> > > grid_times;    // [mglevel][reflevel][timelevel]
+  // vector<vector<CCTK_REAL> > leveltimes;             // [mglevel][reflevel]
   vector <vector <i2vect> > grid_ghosts; // [map]
   vector <vector <i2vect> > grid_buffers; // [map]
   vector <vector <int> > grid_prolongation_orders; // [map]
@@ -193,23 +193,23 @@ void CarpetIOHDF5_RecoverGridStructure (CCTK_ARGUMENTS)
   } // if regrid_in_level_mode
   
   for (int m = 0; m < maps; ++ m) {
-    
     // Regrid
     RegridMap (cctkGH, m, superregsss.at(m), regssss.at(m), false);
-    
-    // Set time hierarchy correctly after RegridMap created it
-    for (int ml = 0; ml < mglevels; ++ ml) {
-      for (size_t rl = 0; rl < fileset.grid_times.at(m).at(mglevel).size(); ++ rl) {
-        vtt.at(m)->set_time (rl, ml, fileset.grid_times.at(m).at(ml).at(rl));
+  } // for m
+  
+  // Set time hierarchy correctly after RegridMap created it
+  for (int ml = 0; ml < vhh.at(0)->mglevels(); ++ ml) {
+    for (int rl = 0; rl < vhh.at(0)->reflevels(); ++ rl) {
+      for (int tl = 0; tl < tt->timelevels; ++ tl) {
+        tt->set_time (ml, rl, tl, fileset.grid_times.at(ml).at(rl).at(tl));
       }
     }
-    
-  } // for m
+  }
   
   PostRegrid (cctkGH);
   
   // Set level times correctly after PostRegrid created them
-  leveltimes = fileset.leveltimes;
+  // leveltimes = fileset.leveltimes;
   
   for (int rl = 0; rl < reflevels; ++ rl) {
     Recompose (cctkGH, rl, false);
@@ -363,13 +363,14 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
 
     cctkGH->cctk_iteration = fileset->cctk_iteration;
     int const idx = mglevel*fileset->num_reflevels + reflevel;
-    cctkGH->cctk_time = fileset->mgleveltimes.at(idx);
+    // cctkGH->cctk_time = fileset->mgleveltimes.at(idx);
+    cctkGH->cctk_time = global_time;
 
     if (use_grid_structure_from_checkpoint) {
       // recover the grid structure only once
-      static bool is_first = true;
-      if (is_first) {
-        is_first = false;
+      static bool have_grid_structure = false;
+      if (not have_grid_structure) {
+        have_grid_structure = true;
         CarpetIOHDF5_RecoverGridStructure (cctkGH);
       }
     }
@@ -886,9 +887,9 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
   HDF5_ERROR (attr = H5Aopen_name (metadata, "carpet_reflevels"));
   HDF5_ERROR (H5Aread (attr, H5T_NATIVE_INT, &fileset.num_reflevels));
   HDF5_ERROR (H5Aclose (attr));
-  HDF5_ERROR (attr = H5Aopen_name (metadata, "numberofmgtimes"));
-  HDF5_ERROR (H5Aread (attr, H5T_NATIVE_INT, &fileset.num_mglevels));
-  HDF5_ERROR (H5Aclose (attr));
+//   HDF5_ERROR (attr = H5Aopen_name (metadata, "numberofmgtimes"));
+//   HDF5_ERROR (H5Aread (attr, H5T_NATIVE_INT, &fileset.num_mglevels));
+//   HDF5_ERROR (H5Aclose (attr));
   HDF5_ERROR (attr = H5Aopen_name (metadata, "GH$iteration"));
   HDF5_ERROR (H5Aread (attr, H5T_NATIVE_INT, &fileset.cctk_iteration));
   HDF5_ERROR (H5Aclose (attr));
@@ -935,12 +936,12 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
     skipws (gs_buf);
     consume (gs_buf, ",");
     
-    skipws (gs_buf);
-    consume (gs_buf, "grid_leveltimes:");
-    skipws (gs_buf);
-    gs_buf >> fileset.leveltimes;
-    skipws (gs_buf);
-    consume (gs_buf, ",");
+    // skipws (gs_buf);
+    // consume (gs_buf, "grid_leveltimes:");
+    // skipws (gs_buf);
+    // gs_buf >> fileset.leveltimes;
+    // skipws (gs_buf);
+    // consume (gs_buf, ",");
     
     skipws (gs_buf);
     consume (gs_buf, "grid_ghosts:");
@@ -964,19 +965,19 @@ static void ReadMetadata (fileset_t& fileset, hid_t file)
     consume (gs_buf, ".");
   }
 
-  fileset.mgleveltimes.resize (fileset.num_mglevels * fileset.num_reflevels);
-  for (int i = 0; i < fileset.num_mglevels; i++) {
-    char buffer[32];
+//   fileset.mgleveltimes.resize (fileset.num_mglevels * fileset.num_reflevels);
+//   for (int i = 0; i < fileset.num_mglevels; i++) {
+//     char buffer[32];
 
-    snprintf (buffer, sizeof (buffer), "mgleveltimes %d", i);
-    HDF5_ERROR (attr = H5Aopen_name (metadata, buffer));
-    HDF5_ERROR (dataspace = H5Aget_space (attr));
-    assert (H5Sget_simple_extent_npoints (dataspace) == fileset.num_reflevels);
-    HDF5_ERROR (H5Sclose (dataspace));
-    HDF5_ERROR (H5Aread (attr, H5T_NATIVE_DOUBLE,
-                         &fileset.mgleveltimes[i * fileset.num_reflevels]));
-    HDF5_ERROR (H5Aclose (attr));
-  }
+//     snprintf (buffer, sizeof (buffer), "mgleveltimes %d", i);
+//     HDF5_ERROR (attr = H5Aopen_name (metadata, buffer));
+//     HDF5_ERROR (dataspace = H5Aget_space (attr));
+//     assert (H5Sget_simple_extent_npoints (dataspace) == fileset.num_reflevels);
+//     HDF5_ERROR (H5Sclose (dataspace));
+//     HDF5_ERROR (H5Aread (attr, H5T_NATIVE_DOUBLE,
+//                          &fileset.mgleveltimes[i * fileset.num_reflevels]));
+//     HDF5_ERROR (H5Aclose (attr));
+//   }
 
   if (is_old_fashioned_file) {
     HDF5_ERROR (H5Dclose (metadata));
@@ -1245,9 +1246,12 @@ static int ReadVar (const cGH* const cctkGH,
     } END_LOCAL_COMPONENT_LOOP;
 
     if (in_recovery) {
-      data.tt->set_time (reflevel, mglevel,
-                         ((cctkGH->cctk_time - cctk_initial_time)
-                          / (delta_time * mglevelfact)) );
+      if (group.grouptype != CCTK_GF) {
+        assert (data.tt->timelevels == 1);
+        data.tt->set_time (mglevel, reflevel, 0,
+                           ((cctkGH->cctk_time - cctk_initial_time)
+                            / (delta_time * mglevelfact)) );
+      }
     }
 
   } END_LOCAL_MAP_LOOP;

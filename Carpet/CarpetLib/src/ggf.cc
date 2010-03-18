@@ -38,7 +38,7 @@ ggf::ggf (const int varindex_, const operator_type transport_operator_,
     vectorlength(vectorlength_), vectorindex(vectorindex_),
     vectorleader(vectorleader_)
 {
-  assert (&t.h == &d.h);
+  // assert (&t.h == &d.h);
   
   assert (vectorlength >= 1);
   assert (vectorindex >= 0 and vectorindex < vectorlength);
@@ -176,18 +176,6 @@ void ggf::recompose_fill (comm_state & state, int const rl,
     
     assert (d.fast_boxes.AT(ml).AT(rl).do_init);
     
-    vector <int> tls;
-    if (do_prolongate and rl > 0 and
-        transport_operator != op_none and transport_operator != op_sync and
-        transport_operator != op_restrict)
-    {
-      int const numtl = timelevels (ml, rl);
-      tls.resize (numtl);
-      for (int tl = 0; tl < numtl; ++ tl) {
-        tls.AT(tl) = tl;
-      }
-    }
-    
     // Initialise from the same level of the old hierarchy, where
     // possible
     if (rl < (int)oldstorage.AT(ml).size()) {
@@ -207,12 +195,18 @@ void ggf::recompose_fill (comm_state & state, int const rl,
         if (transport_operator != op_none and transport_operator != op_sync and
             transport_operator != op_restrict)
         {
+          int const numtl = timelevels (ml, rl);
+          vector <int> tls (numtl);
+          for (int tl = 0; tl < numtl; ++ tl) {
+            tls.AT(tl) = tl;
+          }
+
           for (int tl = 0; tl < timelevels (ml, rl); ++tl) {
             transfer_from_all (state,
                                tl, rl, ml,
                                & dh::fast_dboxes::fast_old2new_ref_prol_sendrecv,
                                tls, rl - 1, ml,
-                               t.time (tl, rl, ml));
+                               t.get_time (ml, rl, tl));
           } // for tl
         } // if transport_operator
       } // if rl
@@ -277,6 +271,22 @@ void ggf::cycle_all (int const rl, int const ml) {
   }
 }
 
+// Uncycle the time levels by rotating the data sets
+void ggf::uncycle_all (int const rl, int const ml) {
+  assert (rl>=0 and rl<h.reflevels());
+  assert (ml>=0 and ml<h.mglevels());
+  int const ntl = timelevels(ml,rl);
+  assert (ntl > 0);
+  for (int lc=0; lc<(int)storage.AT(ml).AT(rl).size(); ++lc) {
+    fdata & fdatas = storage.AT(ml).AT(rl).AT(lc);
+    gdata * const tmpdata = fdatas.AT(0);
+    for (int tl=0; tl<ntl-1; ++tl) {
+      fdatas.AT(tl) = fdatas.AT(tl+1);
+    }
+    fdatas.AT(ntl-1) = tmpdata;
+  }
+}
+
 // Flip the time levels by exchanging the data sets
 void ggf::flip_all (int const rl, int const ml) {
   assert (rl>=0 and rl<h.reflevels());
@@ -285,9 +295,9 @@ void ggf::flip_all (int const rl, int const ml) {
   assert (ntl > 0);
   for (int lc=0; lc<(int)storage.AT(ml).AT(rl).size(); ++lc) {
     fdata & fdatas = storage.AT(ml).AT(rl).AT(lc);
-    for (int tl=0; tl<ntl/2; ++tl) {
-      const int tl1 =         tl;
-      const int tl2 = ntl-1 - tl;
+    for (int tl=1; tl<(ntl+1)/2; ++tl) {
+      const int tl1 =       tl;
+      const int tl2 = ntl - tl;
       assert (tl1 < tl2);
       gdata * const tmpdata = fdatas.AT(tl1);
       fdatas.AT(tl1) = fdatas.AT(tl2);
@@ -383,15 +393,15 @@ ref_bnd_prolongate_all (comm_state & state,
 void
 ggf::
 mg_restrict_all (comm_state & state,
-             int const tl, int const rl, int const ml,
+                 int const tl, int const rl, int const ml,
                  CCTK_REAL const time)
 {
   static Timer timer ("mg_restrict_all");
   timer.start ();
   // Require same times
   static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
-  assert (abs(t.get_time(rl,ml) - t.get_time(rl,ml-1))
-	  <= 1.0e-8 * (1.0 + abs(t.get_time(rl,ml))));
+  assert (abs(t.get_time(ml,rl,0) - t.get_time(ml-1,rl,0))
+	  <= 1.0e-8 * (1.0 + abs(t.get_time(ml,rl,0))));
   vector<int> const tl2s(1,tl);
   transfer_from_all (state,
                      tl  ,rl,ml,
@@ -414,8 +424,8 @@ mg_prolongate_all (comm_state & state,
   timer.start ();
   // Require same times
   static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
-  assert (abs(t.get_time(rl,ml) - t.get_time(rl,ml+1))
-	  <= 1.0e-8 * (1.0 + abs(t.get_time(rl,ml))));
+  assert (abs(t.get_time(ml,rl,0) - t.get_time(ml+1,rl,0))
+	  <= 1.0e-8 * (1.0 + abs(t.get_time(ml,rl,0))));
   vector<int> const tl2s(1,tl);
   transfer_from_all (state,
                      tl  ,rl,ml,
@@ -431,22 +441,19 @@ mg_prolongate_all (comm_state & state,
 void
 ggf::
 ref_restrict_all (comm_state & state,
-                  int const tl, int const rl, int const ml,
-                  CCTK_REAL const time)
+                  int const tl, int const rl, int const ml)
 {
   // Require same times
   static_assert (abs(0.1) > 0, "Function CarpetLib::abs has wrong signature");
-  assert (abs(t.get_time(rl,ml) - t.get_time(rl+1,ml))
-	  <= 1.0e-8 * (1.0 + abs(t.get_time(rl,ml))));
+  assert (abs(t.get_time(ml,rl,tl) - t.get_time(ml,rl+1,tl)) <=
+          1.0e-8 * (1.0 + abs(t.get_time(ml,rl,tl))));
   if (transport_operator == op_none or transport_operator == op_sync) return;
   static Timer timer ("ref_restrict_all");
   timer.start ();
-  vector<int> const tl2s(1,tl);
   transfer_from_all (state,
-                     tl  ,rl  ,ml,
+                     tl,rl  ,ml,
                      & dh::fast_dboxes::fast_ref_rest_sendrecv,
-                     tl2s,rl+1,ml,
-                     time);
+                     tl,rl+1,ml);
   timer.stop (0);
 }
 
@@ -522,7 +529,7 @@ transfer_from_all (comm_state & state,
     for (size_t j=0; j<i; ++j) {
       assert (tl2s.AT(i) != tl2s.AT(j));
     }
-    times.AT(i) = t.time(tl2s.AT(i),rl2,ml2);
+    times.AT(i) = t.get_time(ml2,rl2,tl2s.AT(i));
   }
   
   // Interpolation orders

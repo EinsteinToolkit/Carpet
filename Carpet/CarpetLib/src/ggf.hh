@@ -105,6 +105,9 @@ public:
 
   // Cycle the time levels by rotating the data sets
   void cycle_all (int rl, int ml);
+
+  // Uncycle the time levels by rotating the data sets
+  void uncycle_all (int rl, int ml);
   
   // Flip the time levels by exchanging the data sets
   void flip_all (int rl, int ml);
@@ -135,7 +138,7 @@ public:
 
   // Restrict a refinement level
   void ref_restrict_all (comm_state& state,
-                         int tl, int rl, int ml, CCTK_REAL time);
+                         int tl, int rl, int ml);
 
   // Prolongate a refinement level
   void ref_prolongate_all (comm_state& state,
@@ -171,7 +174,7 @@ protected:
   {
     vector <int> tl2s(1);
     tl2s.AT(0) = tl2;
-    CCTK_REAL const time = t.time (tl2,rl2,ml2);
+    CCTK_REAL const time = t.get_time (ml2,rl2,tl2);
     transfer_from_all (state,
                        tl1, rl1, ml1,
                        sendrecvs,

@@ -1275,7 +1275,7 @@ namespace CarpetReduce {
             CCTK_REAL const time = current_time;
             vector<CCTK_REAL> times(num_tl);
             for (int tl=0; tl<num_tl; ++tl) {
-              times.at(tl) = vtt.at(0)->time (tl, reflevel, mglevel);
+              times.at(tl) = tt->get_time (mglevel, reflevel, tl);
             }
             
             // Calculate interpolation weights

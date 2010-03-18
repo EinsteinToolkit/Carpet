@@ -62,28 +62,16 @@ namespace Carpet {
   static void RestrictGroups (const cGH* cctkGH, const vector<int>& groups) {
     DECLARE_CCTK_PARAMETERS;
 
-    const int tl = 0;
-
     for (comm_state state; not state.done(); state.step()) {
       for (int group = 0; group < (int)groups.size(); ++group) {
         const int g = groups.AT(group);
+        const int active_tl = CCTK_ActiveTimeLevelsGI (cctkGH, g);
+        assert (active_tl>=0);
+        const int tl = active_tl > 1 ? timelevel : 0;
         for (int m=0; m<(int)arrdata.AT(g).size(); ++m) {
-
-          // use background time here (which may not be modified
-          // by the user)
-          const CCTK_REAL time = vtt.AT(m)->time (tl, reflevel, mglevel);
-
-          const CCTK_REAL time1 = vtt.AT(m)->time (0, reflevel, mglevel);
-          const CCTK_REAL time2 =
-            (cctkGH->cctk_time - cctk_initial_time) / delta_time;
-          const CCTK_REAL time0 =
-            abs(time1) + abs(time2) + abs(cctkGH->cctk_delta_time);
-          const CCTK_REAL eps = 1.0e-12;
-          assert (abs(time1 - time2) <= eps * time0);
-
           for (int v = 0; v < (int)arrdata.AT(g).AT(m).data.size(); ++v) {
             ggf *const gv = arrdata.AT(g).AT(m).data.AT(v);
-            gv->ref_restrict_all (state, tl, reflevel, mglevel, time);
+            gv->ref_restrict_all (state, tl, reflevel, mglevel);
           }
         }
       } // loop over groups

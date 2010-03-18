@@ -585,9 +585,9 @@ namespace Carpet {
          << "   Grid hierarchy:" << eol;
     for (int m = 0; m < Carpet::maps; ++ m) {
       cout << "   gh[" << m << "]: " << PRINTMEM(*vhh.AT(m)) << eol
-           << "   dh[" << m << "]: " << PRINTMEM(*vdd.AT(m)) << eol
-           << "   th[" << m << "]: " << PRINTMEM(*vtt.AT(m)) << eol;
+           << "   dh[" << m << "]: " << PRINTMEM(*vdd.AT(m)) << eol;
     }
+    cout << "   th: " << PRINTMEM(*tt) << eol;
 #if 0
     for (int g = 0; g < (int)arrdata.size(); ++ g) {
       if (CCTK_GroupTypeI(g) != CCTK_GF) {

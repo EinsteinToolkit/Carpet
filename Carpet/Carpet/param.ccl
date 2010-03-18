@@ -494,6 +494,10 @@ BOOLEAN regrid_in_level_mode "Regrid in level mode (instead of singlemap mode), 
 {
 } "yes"
 
+BOOLEAN time_interpolation_during_regridding "Interpolate finer levels in time during regridding" STEERABLE=recover
+{
+} "yes"
+
 
 
 BOOLEAN init_3_timelevels "Set up 3 timelevels of initial data" STEERABLE=always

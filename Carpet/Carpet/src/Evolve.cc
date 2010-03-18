@@ -95,7 +95,9 @@ namespace Carpet {
             int const do_every =
               ipow (mgfact, ml) * (maxtimereflevelfact / timereffacts.AT(rl));
             if (cctkGH->cctk_iteration % do_every == 0) {
-              assert (abs (leveltimes.AT(ml).AT(rl) - global_time) <=
+              // assert (abs (leveltimes.AT(ml).AT(rl) - global_time) <=
+              //         eps * global_time);
+              assert (abs (tt->get_time(ml,rl,0) - global_time) <=
                       eps * global_time);
             }
           }
@@ -296,57 +298,19 @@ namespace Carpet {
                 do_global_mode = do_late_global_mode;
                 do_meta_mode = do_late_meta_mode;
                 
-                Waypoint ("Postregrid at iteration %d time %g%s%s",
-                          cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
-                          (do_global_mode ? " (global)" : ""),
-                          (do_meta_mode ? " (meta)" : ""));
-                
-                int const num_tl = prolongation_order_time+1;
-                
-                bool const old_do_allow_past_timelevels =
-                  do_allow_past_timelevels;
-                do_allow_past_timelevels = false;
-                
-                // Rewind times
-                for (int m=0; m<maps; ++m) {
-                  CCTK_REAL const old_delta =
-                    vtt.AT(m)->get_delta (reflevel, mglevel);
-                  vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
-                }
-                FlipTimeLevels (cctkGH);
-                for (int tl=0; tl<num_tl; ++tl) {
-                  for (int m=0; m<maps; ++m) {
-                    vtt.AT(m)->advance_time (reflevel, mglevel);
-                  }
-                  CycleTimeLevels (cctkGH);
-                }
-                for (int m=0; m<maps; ++m) {
-                  CCTK_REAL const old_delta =
-                    vtt.AT(m)->get_delta (reflevel, mglevel);
-                  vtt.AT(m)->set_delta (reflevel, mglevel, - old_delta);
-                }
-                FlipTimeLevels (cctkGH);
-                CCTK_REAL const old_cctk_time = cctkGH->cctk_time;
-                cctkGH->cctk_time -=
-                  num_tl * (cctkGH->cctk_delta_time / cctkGH->cctk_timefac);
-                
-                for (int tl=0; tl<num_tl; ++tl) {
+                BEGIN_TIMELEVEL_LOOP (cctkGH) {
                   
-                  // Advance times
-                  for (int m=0; m<maps; ++m) {
-                    vtt.AT(m)->advance_time (reflevel, mglevel);
-                  }
-                  CycleTimeLevels (cctkGH);
-                  cctkGH->cctk_time +=
-                    cctkGH->cctk_delta_time / cctkGH->cctk_timefac;
+                  Waypoint ("Postregrid at iteration %d time %g timelevel %d%s%s",
+                            cctkGH->cctk_iteration,
+                            (double)cctkGH->cctk_time,
+                            timelevel,
+                            (do_global_mode ? " (global)" : ""),
+                            (do_meta_mode ? " (meta)" : ""));
                   
                   // Postregrid
                   ScheduleTraverse (where, "CCTK_POSTREGRID", cctkGH);
                   
-                } // for tl
-                cctkGH->cctk_time = old_cctk_time;
-                
-                do_allow_past_timelevels = old_do_allow_past_timelevels;
+                } END_TIMELEVEL_LOOP;
                 
                 EndTimingLevel (cctkGH);
               } LEAVE_LEVEL_MODE;
@@ -413,43 +377,14 @@ namespace Carpet {
               }
               
               // Advance times
-              cctkGH->cctk_time
-                = (global_time
-                   - delta_time / maxtimereflevelfact
-                   + delta_time * mglevelfact / timereflevelfact);
-              CCTK_REAL const carpet_time = cctkGH->cctk_time / delta_time;
-              for (int m=0; m<maps; ++m) {
-                vtt.AT(m)->advance_time (reflevel, mglevel);
-                if (not adaptive_stepsize) {
-#if 0
-                  // We must not perform this check, since the
-                  // relative accuracy of incrementally adding to the
-                  // current time cannot be good enough.  Just setting
-                  // the time (see below) is fine.
-                  CCTK_REAL const eps = 1.0e-12;
-                  static_assert (abs(0.1) > 0,
-                                 "Function CarpetLib::abs has wrong signature");
-                  CCTK_REAL const level_time =
-                    vtt.AT(m)->get_time (reflevel, mglevel);
-                  if (not (abs (level_time - carpet_time) <=
-                           eps * max (carpet_time, 1.0))) {
-                    int const oldprecision = cerr.precision();
-                    cerr.precision (17);
-                    cerr << "ml: " << ml << endl
-                         << "rl: " << rl << endl
-                         << "m: " << m << endl
-                         << "level_time: " << level_time << endl
-                         << "carpet_time: " << carpet_time << endl
-                         << "(level_time - carpet_time): " << (level_time - carpet_time) << endl;
-                    cerr.precision (oldprecision);
-                  }
-                  assert (abs (level_time - carpet_time) <=
-                          eps * max (carpet_time, 1.0));
-#endif
-                  vtt.AT(m)->set_time (reflevel, mglevel, carpet_time);
-                }
-              }
               CycleTimeLevels (cctkGH);
+              if (not adaptive_stepsize) {
+                cctkGH->cctk_time
+                  = (global_time
+                     - delta_time / maxtimereflevelfact
+                     + delta_time * mglevelfact / timereflevelfact);
+                tt->set_time (mglevel, reflevel, timelevel, cctkGH->cctk_time);
+              }
               
               Waypoint ("Evolution I at iteration %d time %g%s%s%s",
                         cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
@@ -633,7 +568,7 @@ namespace Carpet {
       streamsize const oldprecision = cout.precision();
       cout.precision (17);
       cout << "   global_time: " << global_time << endl
-           << "   leveltimes: " << leveltimes << endl
+        // << "   leveltimes: " << leveltimes << endl
            << "   delta_time: " << delta_time << endl;
       cout.precision (oldprecision);
     }

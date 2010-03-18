@@ -1091,14 +1091,14 @@ int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
                                  "Cactus version", CCTK_FullVersion());
 
   // all times on all refinement levels
-  error_count += WriteAttribute (group,
-                                 "numberofmgtimes", mglevels);
-  for (int i = 0; i < mglevels; i++) {
-    char name[100];
-    snprintf (name, sizeof (name), "mgleveltimes %d", i);
-    error_count += WriteAttribute
-      (group, name, &leveltimes.at(i).front(), leveltimes.at(i).size());
-  }
+  // error_count += WriteAttribute (group,
+  //                                "numberofmgtimes", mglevels);
+  // for (int i = 0; i < mglevels; i++) {
+  //   char name[100];
+  //   snprintf (name, sizeof (name), "mgleveltimes %d", i);
+  //   error_count += WriteAttribute
+  //     (group, name, &leveltimes.at(i).front(), leveltimes.at(i).size());
+  // }
 
   // unique configuration identifier
   if (CCTK_IsFunctionAliased ("UniqueConfigID")) {
@@ -1196,21 +1196,23 @@ int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
   if (called_from_checkpoint or not CCTK_Equals (out_save_parameters, "no")) {
     vector <vector <vector <region_t> > > grid_superstructure (maps);
     vector <vector <vector <region_t> > > grid_structure (maps);
-    vector <vector <vector <CCTK_REAL> > > grid_times (maps);
     vector <vector <i2vect> > grid_ghosts (maps);
     vector <vector <i2vect> > grid_buffers (maps);
     vector <vector <int> > grid_prolongation_orders (maps);
     for (int m = 0; m < maps; ++ m) {
       grid_superstructure.at(m) = vhh.at(m)->superregions;
       grid_structure.at(m) = vhh.at(m)->regions.at(0);
-      grid_times.at(m).resize(mglevels);
       grid_ghosts.at(m) = vdd.at(m)->ghost_widths;
       grid_buffers.at(m) = vdd.at(m)->buffer_widths;
       grid_prolongation_orders.at(m) = vdd.at(m)->prolongation_orders_space;
-      for  (int ml = 0; ml < mglevels; ++ ml) {
-        grid_times.at(m).at(ml).resize(vhh.at(m)->reflevels());
-        for (int rl = 0; rl < vhh.at(m)->reflevels(); ++ rl) {
-          grid_times.at(m).at(ml).at(rl) = vtt.at(m)->get_time(rl, ml);
+    }
+    vector <vector <vector <CCTK_REAL> > > grid_times (mglevels);
+    for  (int ml = 0; ml < mglevels; ++ ml) {
+      grid_times.at(ml).resize(vhh.at(0)->reflevels());
+      for (int rl = 0; rl < vhh.at(0)->reflevels(); ++ rl) {
+        grid_times.at(ml).at(rl).resize(tt->timelevels);
+        for (int tl = 0; tl < tt->timelevels; ++ tl) {
+          grid_times.at(ml).at(rl).at(tl) = tt->get_time(ml, rl, tl);
         }
       }
     }
@@ -1224,7 +1226,7 @@ int WriteMetadata (const cGH * const cctkGH, int const nioprocs,
     // only into one of the checkpoint files
     gs_buf << "grid_structure:" << grid_structure << ",";
     gs_buf << "grid_times:" << grid_times << ",";
-    gs_buf << "grid_leveltimes:" << leveltimes << ",";
+    // gs_buf << "grid_leveltimes:" << leveltimes << ",";
     gs_buf << "grid_ghosts:" << grid_ghosts << ",";
     gs_buf << "grid_buffers:" << grid_buffers << ",";
     gs_buf << "grid_prolongation_orders:" << grid_prolongation_orders << ".";
