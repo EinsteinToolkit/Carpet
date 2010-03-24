@@ -1247,10 +1247,10 @@ static int ReadVar (const cGH* const cctkGH,
 
     if (in_recovery) {
       if (group.grouptype != CCTK_GF) {
-        assert (data.tt->timelevels == 1);
-        data.tt->set_time (mglevel, reflevel, 0,
-                           ((cctkGH->cctk_time - cctk_initial_time)
-                            / (delta_time * mglevelfact)) );
+        for (int tl=0; tl<data.tt->timelevels; ++tl) {
+          data.tt->set_time (mglevel, reflevel, tl,
+                             cctkGH->cctk_time - tl * cctkGH->cctk_delta_time);
+        }
       }
     }
 
