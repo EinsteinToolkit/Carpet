@@ -13,6 +13,7 @@ SRCS =	AllGatherString.cc			\
 	Initialise.cc				\
 	Limits.cc				\
 	MultiModel.cc				\
+	OutputGH.cc				\
 	Poison.cc				\
 	Recompose.cc				\
 	Requirements.cc				\

@@ -36,6 +36,8 @@ namespace Carpet {
     CCTK_OverloadEvolve (Evolve);
     CCTK_OverloadShutdown (Shutdown);
     
+    CCTK_OverloadOutputGH (OutputGH);
+    
     CCTK_OverloadSyncGroupsByDirI (SyncGroupsByDirI);
     CCTK_OverloadEnableGroupStorage (EnableGroupStorage);
     CCTK_OverloadDisableGroupStorage (DisableGroupStorage); 

@@ -81,10 +81,12 @@ copy_from (comm_state & state,
   vector <gdata const *> srcs (1, src);
   CCTK_REAL const time = 0.0;
   vector <CCTK_REAL> times (1, time);
+  int const order_space = cent == vertex_centered ? 1 : 0;
+  int const order_time = 0;
   transfer_from (state,
                  srcs, times,
                  box, box,
-                 time, 0, 0);
+                 time, order_space, order_time);
 }
 
 

@@ -99,8 +99,9 @@ CCTK_REAL position_z_1 "Position of this centre"
 
 CCTK_REAL radius_1[30] "Radius of refined region for this level of this centre"
 {
+  -1: :: "illegal value"
   0:* :: ""
-} 1.0
+} -1.0
 
 
 
@@ -148,8 +149,9 @@ CCTK_REAL position_z_2 "Position of this centre"
 
 CCTK_REAL radius_2[30] "Radius of refined region for this level of this centre"
 {
+  -1: :: "illegal value"
   0:* :: ""
-} 1.0
+} -1.0
 
 
 
@@ -197,8 +199,9 @@ CCTK_REAL position_z_3 "Position of this centre"
 
 CCTK_REAL radius_3[30] "Radius of refined region for this level of this centre"
 {
+  -1: :: "illegal value"
   0:* :: ""
-} 1.0
+} -1.0
 
 
 
@@ -246,8 +249,9 @@ CCTK_REAL position_z_4 "Position of this centre"
 
 CCTK_REAL radius_4[30] "Radius of refined region for this level of this centre"
 {
+  -1: :: "illegal value"
   0:* :: ""
-} 1.0
+} -1.0
 
 
 
@@ -295,8 +299,9 @@ CCTK_REAL position_z_5 "Position of this centre"
 
 CCTK_REAL radius_5[30] "Radius of refined region for this level of this centre"
 {
+  -1: :: "illegal value"
   0:* :: ""
-} 1.0
+} -1.0
 
 
 
@@ -344,8 +349,9 @@ CCTK_REAL position_z_6 "Position of this centre"
 
 CCTK_REAL radius_6[30] "Radius of refined region for this level of this centre"
 {
+  -1: :: "illegal value"
   0:* :: ""
-} 1.0
+} -1.0
 
 
 
@@ -393,8 +399,9 @@ CCTK_REAL position_z_7 "Position of this centre"
 
 CCTK_REAL radius_7[30] "Radius of refined region for this level of this centre"
 {
+  -1: :: "illegal value"
   0:* :: ""
-} 1.0
+} -1.0
 
 
 
@@ -442,8 +449,9 @@ CCTK_REAL position_z_8 "Position of this centre"
 
 CCTK_REAL radius_8[30] "Radius of refined region for this level of this centre"
 {
+  -1: :: "illegal value"
   0:* :: ""
-} 1.0
+} -1.0
 
 
 
@@ -491,8 +499,9 @@ CCTK_REAL position_z_9 "Position of this centre"
 
 CCTK_REAL radius_9[30] "Radius of refined region for this level of this centre"
 {
+  -1: :: "illegal value"
   0:* :: ""
-} 1.0
+} -1.0
 
 
 
@@ -540,8 +549,9 @@ CCTK_REAL position_z_10 "Position of this centre"
 
 CCTK_REAL radius_10[30] "Radius of refined region for this level of this centre"
 {
+  -1: :: "illegal value"
   0:* :: ""
-} 1.0
+} -1.0
 
 
 

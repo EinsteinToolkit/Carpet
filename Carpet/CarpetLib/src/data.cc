@@ -492,6 +492,8 @@ transfer_p_vc_cc (data const * const src,
   if (cent == vertex_centered) {
     // Vertex centred
     
+    // Ensure the order is odd
+    assert (order_space % 2 != 0);
     transfer_prolongate (src, box, order_space);
     
   } else if (cent == cell_centered) {
@@ -523,7 +525,7 @@ transfer_p_vc_cc (data const * const src,
     bvect const needoffsethi =
       (srcoff + regext - 1) % reffact != 0 or regext > 1;
     
-    assert (order_space % 2 == 1);
+    // Ensure the order is even
     int const stencil_size = (order_space + 1) / 2;
     
     ivect const offsetlo = either (needoffsetlo, stencil_size, 0);

@@ -56,7 +56,11 @@ namespace Carpet {
     CCTKi_AddGH (fc, convlev, cctkGH);
     
     do_global_mode = true;
+    do_early_global_mode = true;
+    do_late_global_mode = true;
     do_meta_mode = true;
+    do_early_meta_mode = true;
+    do_late_meta_mode = true;
     global_time = cctk_initial_time;
     delta_time = 1.0;
     for (int ml = 0; ml < mglevel; ++ ml) {
@@ -140,8 +144,12 @@ namespace Carpet {
     timer.start();
     
     BEGIN_MGLEVEL_LOOP(cctkGH) {
+      do_early_global_mode = true;
+      do_late_global_mode = true;
       do_global_mode = true;
-      do_meta_mode = mglevel==mglevels-1; // on first iteration, coarsest grid
+      do_early_meta_mode = mglevel==mglevels-1;
+      do_late_meta_mode = mglevel==0;
+      do_meta_mode = do_early_meta_mode; // on first iteration, coarsest grid
       
       // Checking
       {
@@ -179,8 +187,12 @@ namespace Carpet {
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cctkGH) {
         ENTER_LEVEL_MODE (cctkGH, rl) {
-          do_global_mode = reflevel==0; // on first iteration, coarsest grid
-          do_meta_mode = do_global_mode and mglevel==mglevels-1; // on first iteration, coarsest grid
+          do_early_global_mode = reflevel==0;
+          do_late_global_mode = reflevel==reflevels-1;
+          do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
+          do_late_meta_mode = do_late_global_mode and mglevel==0;
+          do_global_mode = do_early_global_mode; // on first iteration, coarsest grid
+          do_meta_mode = do_early_meta_mode; // on first iteration, coarsest grid
           
           // cctkGH->cctk_time = global_time;
           
@@ -200,7 +212,7 @@ namespace Carpet {
           
           // Timing statistics
           // (do this here, after cctk_time has been recovered)
-          if (do_global_mode) {
+          if (do_early_global_mode) {
             InitTimingStats (cctkGH);
           }
           
@@ -234,10 +246,14 @@ namespace Carpet {
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cctkGH) {
         ENTER_LEVEL_MODE (cctkGH, rl) {
-          do_global_mode = reflevel==reflevels-1; // on last iteration, finest grid
-          do_meta_mode = do_global_mode and mglevel==mglevels-1; // on first iteration, coarsest grid
-
-	  Waypoint ("Recovering II at iteration %d time %g%s%s",
+          do_early_global_mode = reflevel==0;
+          do_late_global_mode = reflevel==reflevels-1;
+          do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
+          do_late_meta_mode = do_late_global_mode and mglevel==0;
+          do_global_mode = do_early_global_mode; // on first iteration, coarsest grid
+          do_meta_mode = do_early_meta_mode; // on first iteration, coarsest grid
+          
+          Waypoint ("Recovering II at iteration %d time %g%s%s",
                     cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
                     (do_global_mode ? " (global)" : ""),
                     (do_meta_mode ? " (meta)" : ""));
@@ -331,8 +347,12 @@ namespace Carpet {
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cctkGH) {
         ENTER_LEVEL_MODE (cctkGH, rl) {
-          do_global_mode = reflevel==0; // on first iteration, coarsest grid
-          do_meta_mode = do_global_mode and mglevel==mglevels-1; // on first iteration, coarsest grid
+          do_early_global_mode = reflevel==0;
+          do_late_global_mode = reflevel==reflevels-1;
+          do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
+          do_late_meta_mode = do_late_global_mode and mglevel==0;
+          do_global_mode = do_early_global_mode; // on first iteration, coarsest grid
+          do_meta_mode = do_early_meta_mode; // on first iteration, coarsest grid
           
           // cctkGH->cctk_time = global_time;
           
@@ -342,7 +362,7 @@ namespace Carpet {
                     (do_meta_mode ? " (meta)" : ""));
           
           // Timing statistics
-          if (do_global_mode) {
+          if (do_early_global_mode) {
             InitTimingStats (cctkGH);
           }
           
@@ -438,8 +458,12 @@ namespace Carpet {
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cctkGH) {
         ENTER_LEVEL_MODE (cctkGH, rl) {
-          do_global_mode = reflevel==reflevels-1; // on last iteration, finest grid
-          do_meta_mode = do_global_mode and mglevel==mglevels-1; // on first iteration, coarsest grid
+          do_early_global_mode = reflevel==0;
+          do_late_global_mode = reflevel==reflevels-1;
+          do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
+          do_late_meta_mode = do_late_global_mode and mglevel==0;
+          do_global_mode = do_late_global_mode; // on last iteration, finest grid
+          do_meta_mode = do_late_meta_mode; // on last iteration, finest grid
           
           Waypoint ("Initialisation II at iteration %d time %g%s%s",
                     cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
@@ -475,8 +499,12 @@ namespace Carpet {
     for (int rl=0; rl<reflevels; ++rl) {
       BEGIN_MGLEVEL_LOOP(cctkGH) {
         ENTER_LEVEL_MODE (cctkGH, rl) {
-          do_global_mode = reflevel==reflevels-1; // last iteration, finest grid
-          do_meta_mode = do_global_mode and mglevel==mglevels-1; // first iteration, coarsest grid
+          do_early_global_mode = reflevel==0;
+          do_late_global_mode = reflevel==reflevels-1;
+          do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
+          do_late_meta_mode = do_late_global_mode and mglevel==0;
+          do_global_mode = do_late_global_mode; // on last iteration, finest grid
+          do_meta_mode = do_late_meta_mode; // on last iteration, finest grid
           
           Waypoint ("Initialisation III at iteration %d time %g%s%s",
                     cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
@@ -493,7 +521,7 @@ namespace Carpet {
             // Analysis
             ScheduleTraverse (where, "CCTK_ANALYSIS", cctkGH);
             
-            if (do_global_mode) {
+            if (do_late_global_mode) {
               // Timing statistics
               UpdateTimingStats (cctkGH);
             }
@@ -747,9 +775,17 @@ namespace Carpet {
     assert (is_level_mode());
     
     bool const old_do_global_mode = do_global_mode;
+    bool const old_do_early_global_mode = do_early_global_mode;
+    bool const old_do_late_global_mode = do_late_global_mode;
     bool const old_do_meta_mode = do_meta_mode;
+    bool const old_do_early_meta_mode = do_early_meta_mode;
+    bool const old_do_late_meta_mode = do_late_meta_mode;
     do_global_mode = true;
+    do_early_global_mode = true;
+    do_late_global_mode = true;
     do_meta_mode = true;
+    do_early_meta_mode = true;
+    do_late_meta_mode = true;
     
     // Preregrid
     Waypoint ("Preregrid at iteration %d time %g%s%s",
@@ -774,8 +810,12 @@ namespace Carpet {
           if (did_recompose) {
             BEGIN_MGLEVEL_LOOP (cctkGH) {
               ENTER_LEVEL_MODE (cctkGH, rl) {
-                do_global_mode = reflevel == reflevels - 1;
-                do_meta_mode = do_global_mode and mglevel==mglevels-1;
+                do_early_global_mode = reflevel==0;
+                do_late_global_mode = reflevel==reflevels-1;
+                do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
+                do_late_meta_mode = do_late_global_mode and mglevel==0;
+                do_global_mode = do_late_global_mode;
+                do_meta_mode = do_late_meta_mode;
                 
                 Waypoint ("Postregrid at iteration %d time %g%s%s",
                           cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
@@ -834,7 +874,11 @@ namespace Carpet {
     } // if did_regrid
     
     do_global_mode = old_do_global_mode;
+    do_early_global_mode = old_do_early_global_mode;
+    do_late_global_mode = old_do_late_global_mode;
     do_meta_mode = old_do_meta_mode;
+    do_early_meta_mode = old_do_early_meta_mode;
+    do_late_meta_mode = old_do_late_meta_mode;
     
     timer.stop();
   }
@@ -853,9 +897,17 @@ namespace Carpet {
     assert (is_meta_mode());
     
     bool const old_do_global_mode = do_global_mode;
+    bool const old_do_early_global_mode = do_early_global_mode;
+    bool const old_do_late_global_mode = do_late_global_mode;
     bool const old_do_meta_mode = do_meta_mode;
+    bool const old_do_early_meta_mode = do_early_meta_mode;
+    bool const old_do_late_meta_mode = do_late_meta_mode;
     do_global_mode = true;
+    do_early_global_mode = true;
+    do_late_global_mode = true;
     do_meta_mode = true;
+    do_early_meta_mode = true;
+    do_late_meta_mode = true;
     
     ENTER_GLOBAL_MODE (cctkGH, 0) {
       ENTER_LEVEL_MODE (cctkGH, 0) {
@@ -881,7 +933,11 @@ namespace Carpet {
     } LEAVE_GLOBAL_MODE;
     
     do_global_mode = old_do_global_mode;
+    do_early_global_mode = old_do_early_global_mode;
+    do_late_global_mode = old_do_late_global_mode;
     do_meta_mode = old_do_meta_mode;
+    do_early_meta_mode = old_do_early_meta_mode;
+    do_late_meta_mode = old_do_late_meta_mode;
     
     timer.stop();
   }
@@ -903,9 +959,17 @@ namespace Carpet {
     assert (is_level_mode());
     
     bool const old_do_global_mode = do_global_mode;
+    bool const old_do_early_global_mode = do_early_global_mode;
+    bool const old_do_late_global_mode = do_late_global_mode;
     bool const old_do_meta_mode = do_meta_mode;
+    bool const old_do_early_meta_mode = do_early_meta_mode;
+    bool const old_do_late_meta_mode = do_late_meta_mode;
     do_global_mode = true;
+    do_early_global_mode = true;
+    do_late_global_mode = true;
     do_meta_mode = true;
+    do_early_meta_mode = true;
+    do_late_meta_mode = true;
     
     // Preregrid
     Waypoint ("Preregridinitial at iteration %d time %g%s%s",
@@ -930,8 +994,12 @@ namespace Carpet {
           if (did_recompose) {
             BEGIN_MGLEVEL_LOOP (cctkGH) {
               ENTER_LEVEL_MODE (cctkGH, rl) {
-                do_global_mode = reflevel == reflevels - 1;
-                do_meta_mode = do_global_mode and mglevel==mglevels-1;
+                do_early_global_mode = reflevel==0;
+                do_late_global_mode = reflevel==reflevels-1;
+                do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
+                do_late_meta_mode = do_late_global_mode and mglevel==0;
+                do_global_mode = do_late_global_mode;
+                do_meta_mode = do_late_meta_mode;
                 
                 Waypoint ("Postregridinitial at iteration %d time %g%s%s",
                           cctkGH->cctk_iteration, (double)cctkGH->cctk_time,
@@ -991,7 +1059,11 @@ namespace Carpet {
     } // if did_regrid
     
     do_global_mode = old_do_global_mode;
+    do_early_global_mode = old_do_early_global_mode;
+    do_late_global_mode = old_do_late_global_mode;
     do_meta_mode = old_do_meta_mode;
+    do_early_meta_mode = old_do_early_meta_mode;
+    do_late_meta_mode = old_do_late_meta_mode;
     
     timer.stop();
   }
@@ -1027,8 +1099,12 @@ namespace Carpet {
     
     BEGIN_MGLEVEL_LOOP(cctkGH) {
       BEGIN_REFLEVEL_LOOP(cctkGH) {
-        do_global_mode = reflevel==0;
-        do_meta_mode = do_global_mode and mglevel==mglevels-1;
+        do_early_global_mode = reflevel==0;
+        do_late_global_mode = reflevel==reflevels-1;
+        do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
+        do_late_meta_mode = do_late_global_mode and mglevel==0;
+        do_global_mode = do_early_global_mode;
+        do_meta_mode = do_early_meta_mode;
         
         initialise_3tl_advance_time (cctkGH);
         initialise_3tl_evolve_Ia (cctkGH);
@@ -1045,8 +1121,12 @@ namespace Carpet {
     
     BEGIN_MGLEVEL_LOOP(cctkGH) {
       BEGIN_REVERSE_REFLEVEL_LOOP(cctkGH) {
-        do_global_mode = reflevel==0;
-        do_meta_mode = do_global_mode and mglevel==mglevels-1;
+        do_early_global_mode = reflevel==reflevels-1;
+        do_late_global_mode = reflevel==0;
+        do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
+        do_late_meta_mode = do_late_global_mode and mglevel==0;
+        do_global_mode = do_early_global_mode;
+        do_meta_mode = do_early_meta_mode;
         
         initialise_3tl_evolve_IIb (cctkGH);
         initialise_3tl_advance_time_2 (cctkGH);
@@ -1059,8 +1139,12 @@ namespace Carpet {
     
     BEGIN_MGLEVEL_LOOP(cctkGH) {
       BEGIN_REVERSE_REFLEVEL_LOOP(cctkGH) {
-        do_global_mode = reflevel==0;
-        do_meta_mode = do_global_mode and mglevel==mglevels-1;
+        do_early_global_mode = reflevel==reflevels-1;
+        do_late_global_mode = reflevel==0;
+        do_early_meta_mode = do_early_global_mode and mglevel==mglevels-1;
+        do_late_meta_mode = do_late_global_mode and mglevel==0;
+        do_global_mode = do_early_global_mode;
+        do_meta_mode = do_early_meta_mode;
         
         initialise_3tl_reset_time (cctkGH);
         
@@ -1295,7 +1379,6 @@ namespace Carpet {
     static Timer timer (timername.c_str());
     
     timer.start();
-    Checkpoint ("OutputGH");
     CCTK_OutputGH (cctkGH);
     timer.stop();
   }

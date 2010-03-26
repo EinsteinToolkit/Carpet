@@ -31,6 +31,8 @@ namespace Carpet {
   int Initialise (tFleshConfig* config);
   int Evolve (tFleshConfig* config);
   int Shutdown (tFleshConfig* config);
+  int OutputGH (const cGH* cgh);
+  
   int CallFunction (void* function, cFunctionData* attribute, void* data);
   
   // Other functions
