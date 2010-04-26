@@ -19,7 +19,7 @@ using namespace std;
 
 
 // Consistency checks
-template<class T, int D>
+template<typename T, int D>
 void bbox<T,D>::assert_bbox_limits () const
 {
   ASSERT_BBOX (all(_stride>T(0)));
@@ -42,7 +42,7 @@ void bbox<T,D>::assert_bbox_limits () const
 
 
 // Poison
-template<class T, int D>
+template<typename T, int D>
 bbox<T,D> bbox<T,D>::poison ()
 {
   DECLARE_CCTK_PARAMETERS;
@@ -54,7 +54,7 @@ bbox<T,D> bbox<T,D>::poison ()
 
 
 // Accessors
-template<class T, int D>
+template<typename T, int D>
 typename bbox<T,D>::size_type bbox<T,D>::size () const {
   if (empty()) return 0;
   const vect<T,D> sh(shape()/stride());
@@ -78,12 +78,12 @@ typename bbox<T,D>::size_type bbox<T,D>::size () const {
 // Queries
 
 // Containment
-template<class T, int D>
+template<typename T, int D>
 bool bbox<T,D>::contains (const vect<T,D>& x) const {
   return all(x>=lower() and x<=upper());
 }
 
-template<class T, int D>
+template<typename T, int D>
 bool bbox<T,D>::is_contained_in (const bbox& b) const {
   if (empty()) return true;
   // no alignment check
@@ -91,7 +91,7 @@ bool bbox<T,D>::is_contained_in (const bbox& b) const {
 }
 
 // Intersection
-template<class T, int D>
+template<typename T, int D>
 bool bbox<T,D>::intersects (const bbox& b) const {
   if (empty()) return false;
   if (b.empty()) return false;
@@ -100,27 +100,27 @@ bool bbox<T,D>::intersects (const bbox& b) const {
 }
 
 // Alignment check
-template<class T, int D>
+template<typename T, int D>
 bool bbox<T,D>::is_aligned_with (const bbox& b) const {
   return all(stride()==b.stride() and (lower()-b.lower()) % stride() == T(0));
 }
 
 // Operators
-template<class T, int D>
+template<typename T, int D>
 bool bbox<T,D>::operator== (const bbox& b) const {
   if (empty() and b.empty()) return true;
   ASSERT_BBOX (all(stride()==b.stride()));
   return all(lower()==b.lower() and upper()==b.upper());
 }
 
-template<class T, int D>
+template<typename T, int D>
 bool bbox<T,D>::operator!= (const bbox& b) const {
   return not (*this == b);
 }
 
 #if 0
 // Introduce an ordering on bboxes
-template<class T, int D>
+template<typename T, int D>
 bool bbox<T,D>::operator< (const bbox& b) const {
   // An arbitraty order: empty boxes come first, then sorted by lower
   // bound, then by upper bound, then by coarseness
@@ -142,28 +142,28 @@ bool bbox<T,D>::operator< (const bbox& b) const {
 }
 #endif
 
-template<class T, int D>
+template<typename T, int D>
 bool bbox<T,D>::operator<= (const bbox& b) const {
   return is_contained_in (b);
 }
 
-template<class T, int D>
+template<typename T, int D>
 bool bbox<T,D>::operator>= (const bbox& b) const {
   return b <= *this;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bool bbox<T,D>::operator< (const bbox& b) const {
   return *this <= b and *this != b;
 }
 
-template<class T, int D>
+template<typename T, int D>
 bool bbox<T,D>::operator> (const bbox& b) const {
   return b < *this;
 }
 
 // Expand the bbox a little by multiples of the stride
-template<class T, int D>
+template<typename T, int D>
 bbox<T,D> bbox<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi) const {
   // Allow expansion only into directions where the extent is not negative
   // ASSERT_BBOX (all(lower()<=upper() or (lo==T(0) and hi==T(0))));
@@ -175,7 +175,7 @@ bbox<T,D> bbox<T,D>::expand (const vect<T,D>& lo, const vect<T,D>& hi) const {
 }
 
 // Find the smallest b-compatible box around *this
-template<class T, int D>
+template<typename T, int D>
 bbox<T,D> bbox<T,D>::expanded_for (const bbox& b) const {
   if (empty()) return bbox(b.lower(), b.lower()-b.stride(), b.stride());
   const vect<T,D> str = b.stride();
@@ -187,7 +187,7 @@ bbox<T,D> bbox<T,D>::expanded_for (const bbox& b) const {
 }
 
 // Find the largest b-compatible box inside *this
-template<class T, int D>
+template<typename T, int D>
 bbox<T,D> bbox<T,D>::contracted_for (const bbox& b) const {
   if (empty()) return bbox(b.lower(), b.lower()-b.stride(), b.stride());
   const vect<T,D> str = b.stride();
@@ -199,7 +199,7 @@ bbox<T,D> bbox<T,D>::contracted_for (const bbox& b) const {
 }
 
 // Smallest bbox containing both boxes
-template<class T, int D>
+template<typename T, int D>
 bbox<T,D> bbox<T,D>::expanded_containing (const bbox& b) const {
   if (empty()) return b;
   if (b.empty()) return *this;
@@ -211,18 +211,18 @@ bbox<T,D> bbox<T,D>::expanded_containing (const bbox& b) const {
 }
 
 // Iterators
-template<class T, int D>
+template<typename T, int D>
 bbox<T,D>::iterator::iterator (const bbox& box_, const vect<T,D>& pos_)
   : box(box_), pos(pos_) {
   if (box.empty()) pos=box.upper();
 }
 
-template<class T, int D>
+template<typename T, int D>
 bool bbox<T,D>::iterator::operator!= (const iterator& i) const {
   return any(pos!=i.pos);
 }
 
-template<class T, int D>
+template<typename T, int D>
 typename bbox<T,D>::iterator& bbox<T,D>::iterator::operator++ () {
   for (int d=0; d<D; ++d) {
     pos[d]+=box.stride()[d];
@@ -232,12 +232,12 @@ typename bbox<T,D>::iterator& bbox<T,D>::iterator::operator++ () {
   return *this;
 }
 
-template<class T, int D>
+template<typename T, int D>
 typename bbox<T,D>::iterator bbox<T,D>::begin () const {
   return iterator(*this, lower());
 }
 
-template<class T, int D>
+template<typename T, int D>
 typename bbox<T,D>::iterator bbox<T,D>::end () const {
   return iterator(*this, lower());
 }
@@ -245,7 +245,7 @@ typename bbox<T,D>::iterator bbox<T,D>::end () const {
 
 
 // Input
-template<class T,int D>
+template<typename T,int D>
 void bbox<T,D>::input (istream& is) {
   try {
     skipws (is);
@@ -300,7 +300,7 @@ void bbox<T,D>::input (istream& is) {
 
 
 // Output
-template<class T,int D>
+template<typename T,int D>
 void bbox<T,D>::output (ostream& os) const {
   os << "(" << lower() << ":" << upper() << ":" << stride()
      << "/" << lower() / stride() << ":" << upper() / stride()
