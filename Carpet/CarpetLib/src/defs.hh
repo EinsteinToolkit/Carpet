@@ -214,23 +214,23 @@ inline const char * typestring (const CCTK_COMPLEX32&)
 // Capture the system's fpclassify, isfinite, isinf, isnan, and
 // isnormal functions
 
-#ifdef HAVE_CCTK_REAL4
-inline int myfpclassify (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
-int myfpclassify (CCTK_REAL4 const & x)
-{ return fpclassify (x); }
-#endif
-#ifdef HAVE_CCTK_REAL8
-inline int myfpclassify (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
-inline int myfpclassify (CCTK_REAL8 const & x)
-{ return fpclassify (x); }
-#endif
-#ifdef HAVE_CCTK_REAL16
-inline int myfpclassify (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
-inline int myfpclassify (CCTK_REAL16 const & x)
-{ return fpclassify (x); }
-#endif
-
-#undef fpclassify
+// #ifdef HAVE_CCTK_REAL4
+// inline int myfpclassify (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
+// int myfpclassify (CCTK_REAL4 const & x)
+// { return fpclassify (x); }
+// #endif
+// #ifdef HAVE_CCTK_REAL8
+// inline int myfpclassify (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
+// inline int myfpclassify (CCTK_REAL8 const & x)
+// { return fpclassify (x); }
+// #endif
+// #ifdef HAVE_CCTK_REAL16
+// inline int myfpclassify (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
+// inline int myfpclassify (CCTK_REAL16 const & x)
+// { return fpclassify (x); }
+// #endif
+// 
+// #undef fpclassify
 
 #ifdef HAVE_CCTK_REAL4
 inline int myisfinite (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
@@ -365,48 +365,48 @@ namespace CarpetLib {
     { return CCTK_Cmplx32Abs (x); }
 #endif
     
-    //
-    // fpclassify
-    //
-    
-    // Default implementation, only good for integers
-    template <typename T>
-    inline int fpclassify (T const & x) CCTK_ATTRIBUTE_CONST;
-    template <typename T>
-    inline int fpclassify (T const & x)
-    { return x ? FP_NORMAL : FP_ZERO; }
-    
-#ifdef HAVE_CCTK_REAL4
-    template<> inline int fpclassify (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int fpclassify (CCTK_REAL4 const & x)
-    { return myfpclassify (x); }
-#endif
-#ifdef HAVE_CCTK_REAL8
-    template<> inline int fpclassify (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int fpclassify (CCTK_REAL8 const & x)
-    { return myfpclassify (x); }
-#endif
-#ifdef HAVE_CCTK_REAL16
-    template<> inline int fpclassify (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int fpclassify (CCTK_REAL16 const & x)
-    { return myfpclassify (x); }
-#endif
-    
-#ifdef HAVE_CCTK_COMPLEX8
-    template<> inline int fpclassify (CCTK_COMPLEX8 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int fpclassify (CCTK_COMPLEX8 const & x)
-    { assert(0); }
-#endif
-#ifdef HAVE_CCTK_COMPLEX16
-    template<> inline int fpclassify (CCTK_COMPLEX16 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int fpclassify (CCTK_COMPLEX16 const & x)
-    { assert(0); }
-#endif
-#ifdef HAVE_CCTK_COMPLEX32
-    template<> inline int fpclassify (CCTK_COMPLEX32 const & x) CCTK_ATTRIBUTE_CONST;
-    template<> inline int fpclassify (CCTK_COMPLEX32 const & x)
-    { assert(0); }
-#endif
+//     //
+//     // fpclassify
+//     //
+//     
+//     // Default implementation, only good for integers
+//     template <typename T>
+//     inline int fpclassify (T const & x) CCTK_ATTRIBUTE_CONST;
+//     template <typename T>
+//     inline int fpclassify (T const & x)
+//     { return x ? FP_NORMAL : FP_ZERO; }
+//     
+// #ifdef HAVE_CCTK_REAL4
+//     template<> inline int fpclassify (CCTK_REAL4 const & x) CCTK_ATTRIBUTE_CONST;
+//     template<> inline int fpclassify (CCTK_REAL4 const & x)
+//     { return myfpclassify (x); }
+// #endif
+// #ifdef HAVE_CCTK_REAL8
+//     template<> inline int fpclassify (CCTK_REAL8 const & x) CCTK_ATTRIBUTE_CONST;
+//     template<> inline int fpclassify (CCTK_REAL8 const & x)
+//     { return myfpclassify (x); }
+// #endif
+// #ifdef HAVE_CCTK_REAL16
+//     template<> inline int fpclassify (CCTK_REAL16 const & x) CCTK_ATTRIBUTE_CONST;
+//     template<> inline int fpclassify (CCTK_REAL16 const & x)
+//     { return myfpclassify (x); }
+// #endif
+//     
+// #ifdef HAVE_CCTK_COMPLEX8
+//     template<> inline int fpclassify (CCTK_COMPLEX8 const & x) CCTK_ATTRIBUTE_CONST;
+//     template<> inline int fpclassify (CCTK_COMPLEX8 const & x)
+//     { assert(0); }
+// #endif
+// #ifdef HAVE_CCTK_COMPLEX16
+//     template<> inline int fpclassify (CCTK_COMPLEX16 const & x) CCTK_ATTRIBUTE_CONST;
+//     template<> inline int fpclassify (CCTK_COMPLEX16 const & x)
+//     { assert(0); }
+// #endif
+// #ifdef HAVE_CCTK_COMPLEX32
+//     template<> inline int fpclassify (CCTK_COMPLEX32 const & x) CCTK_ATTRIBUTE_CONST;
+//     template<> inline int fpclassify (CCTK_COMPLEX32 const & x)
+//     { assert(0); }
+// #endif
     
     //
     // isfinite
@@ -582,6 +582,52 @@ namespace CarpetLib {
     
   } // namespace good
 } // namespace CarpetLib
+
+
+
+// Use #defines to access the CarpetLib::good functions from the
+// global namespace.  Because macros are not scoped, this makes the
+// corresponding functions in CarpetLib::good inaccessible, so we
+// rename them by adding an underscore.
+
+namespace CarpetLib {
+  namespace good {
+    
+#define ALIAS_GOOD_FUNCTION(typ,func)                           \
+    template <typename T>                                       \
+    inline typ func##_ (T const & x) CCTK_ATTRIBUTE_CONST;      \
+    template <typename T>                                       \
+    inline typ func##_ (T const & x)                            \
+    { return func (x); }
+
+    // ALIAS_GOOD_FUNCTION(int,fpclassify)
+    ALIAS_GOOD_FUNCTION(int,isfinite)
+    ALIAS_GOOD_FUNCTION(int,isinf)
+    ALIAS_GOOD_FUNCTION(int,isnan)
+    ALIAS_GOOD_FUNCTION(int,isnormal)
+
+#undef ALIAS_GOOD_FUNCTION
+    
+  } // namespace good
+}   // namespace CarpetLib
+
+#define isfinite (::CarpetLib::good::isfinite_)
+#define isinf    (::CarpetLib::good::isinf_)
+#define isnan    (::CarpetLib::good::isnan_)
+#define isnormal (::CarpetLib::good::isnormal_)
+
+
+
+// Container equality
+template <typename T>
+bool equals (vector<T> const& v, vector<T> const& w)
+{
+  if (v.size() != w.size()) return false;
+  for (size_t i=0; i<v.size(); ++i) {
+    if (v.AT(i) != w.AT(i)) return false;
+  }
+  return true;
+}
 
 
 

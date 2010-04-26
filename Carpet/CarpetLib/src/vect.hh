@@ -394,11 +394,11 @@ DECLARE_FUNCTION_1 (floor)
 DECLARE_FUNCTION_1 (sqrt)
 namespace CarpetLib {
   namespace good {
-    DECLARE_FUNCTION_1_RET (fpclassify, int)
-    DECLARE_FUNCTION_1_RET (isfinite, int)
-    DECLARE_FUNCTION_1_RET (isinf, int)
-    DECLARE_FUNCTION_1_RET (isnan, int)
-    DECLARE_FUNCTION_1_RET (isnormal, int)
+    // DECLARE_FUNCTION_1_RET (fpclassify, int)
+    DECLARE_FUNCTION_1_RET (isfinite_, int)
+    DECLARE_FUNCTION_1_RET (isinf_, int)
+    DECLARE_FUNCTION_1_RET (isnan_, int)
+    DECLARE_FUNCTION_1_RET (isnormal_, int)
   }
 }
 
