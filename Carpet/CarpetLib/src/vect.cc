@@ -12,7 +12,7 @@ using namespace std;
 
 
 // Input
-template<class T,int D>
+template<typename T,int D>
 void vect<T,D>::input (istream& is) {
   skipws (is);
   consume (is, '[');
@@ -31,7 +31,7 @@ void vect<T,D>::input (istream& is) {
 
 
 // Output
-template<class T,int D>
+template<typename T,int D>
 void vect<T,D>::output (ostream& os) const {
   os << "[";
   for (int d=0; d<D; ++d) {
