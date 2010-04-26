@@ -103,6 +103,8 @@ typedef vect<vect<CCTK_INT,2>,dim> jjvect;
 
 typedef vect<vect<bool,dim>,2> b2vect;
 typedef vect<vect<int,dim>,2>  i2vect;
+typedef vect<vect<CCTK_INT,dim>,2>  j2vect;
+typedef vect<vect<CCTK_REAL,dim>,2> r2vect;
 
 
 
