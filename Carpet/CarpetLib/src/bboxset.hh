@@ -16,30 +16,30 @@ using namespace std;
 
 
 // Forward declaration
-template<class T, int D> class bboxset;
+template<typename T, int D> class bboxset;
 
-// template<class T,int D>
+// template<typename T,int D>
 // bboxset<T,D> operator+ (const bbox<T,D>& b1, const bbox<T,D>& b2);
-// template<class T,int D>
+// template<typename T,int D>
 // bboxset<T,D> operator+ (const bbox<T,D>& b, const bboxset<T,D>& s);
 
-// template<class T,int D>
+// template<typename T,int D>
 // bboxset<T,D> operator- (const bbox<T,D>& b1, const bbox<T,D>& b2);
-// template<class T,int D>
+// template<typename T,int D>
 // bboxset<T,D> operator- (const bbox<T,D>& b, const bboxset<T,D>& s);
 
 // Input
-template<class T,int D>
+template<typename T,int D>
 istream& operator>> (istream& is, bboxset<T,D>& s);
 
 // Output
-template<class T,int D>
+template<typename T,int D>
 ostream& operator<< (ostream& os, const bboxset<T,D>& s);
 
 
 
 // Bounding box class
-template<class T, int D>
+template<typename T, int D>
 class bboxset {
   
   // Types
@@ -160,89 +160,89 @@ public:
 
 
 
-template<class T,int D>
+template<typename T,int D>
 inline bboxset<T,D> operator+ (const bbox<T,D>& b1, const bbox<T,D>& b2) {
   return bboxset<T,D>(b1) + bboxset<T,D>(b2);
 }
 
-template<class T,int D>
+template<typename T,int D>
 inline bboxset<T,D> operator+ (const bbox<T,D>& b, const bboxset<T,D>& s) {
   return bboxset<T,D>(b) + s;
 }
 
-template<class T,int D>
+template<typename T,int D>
 inline bboxset<T,D> operator- (const bbox<T,D>& b1, const bbox<T,D>& b2) {
   return bboxset<T,D>::minus(b1,b2);
 }
 
-template<class T,int D>
+template<typename T,int D>
 inline bboxset<T,D> operator- (const bbox<T,D>& b, const bboxset<T,D>& s) {
   return bboxset<T,D>::minus(b,s);
 }
 
 
 
-template<class T,int D>
+template<typename T,int D>
 inline bboxset<T,D> operator| (const bbox<T,D>& b, const bboxset<T,D>& s) {
   return s | b;
 }
 
-template<class T,int D>
+template<typename T,int D>
 inline bboxset<T,D> operator& (const bbox<T,D>& b, const bboxset<T,D>& s) {
   return s & b;
 }
 
 
 
-template<class T,int D>
+template<typename T,int D>
 inline bool operator== (const bbox<T,D>& b, const bboxset<T,D>& s)
   CCTK_ATTRIBUTE_PURE;
-template<class T,int D>
+template<typename T,int D>
 inline bool operator== (const bbox<T,D>& b, const bboxset<T,D>& s)
 {
   return bboxset<T,D>(b) == s;
 }
 
-template<class T,int D>
+template<typename T,int D>
 inline bool operator!= (const bbox<T,D>& b, const bboxset<T,D>& s)
   CCTK_ATTRIBUTE_PURE;
-template<class T,int D>
+template<typename T,int D>
 inline bool operator!= (const bbox<T,D>& b, const bboxset<T,D>& s)
 {
   return bboxset<T,D>(b) != s;
 }
 
-template<class T,int D>
+template<typename T,int D>
 inline bool operator< (const bbox<T,D>& b, const bboxset<T,D>& s)
   CCTK_ATTRIBUTE_PURE;
-template<class T,int D>
+template<typename T,int D>
 inline bool operator< (const bbox<T,D>& b, const bboxset<T,D>& s)
 {
   return bboxset<T,D>(b) < s;
 }
 
-template<class T,int D>
+template<typename T,int D>
 inline bool operator<= (const bbox<T,D>& b, const bboxset<T,D>& s)
   CCTK_ATTRIBUTE_PURE;
-template<class T,int D>
+template<typename T,int D>
 inline bool operator<= (const bbox<T,D>& b, const bboxset<T,D>& s)
 {
   return bboxset<T,D>(b) <= s;
 }
 
-template<class T,int D>
+template<typename T,int D>
 inline bool operator> (const bbox<T,D>& b, const bboxset<T,D>& s)
   CCTK_ATTRIBUTE_PURE;
-template<class T,int D>
+template<typename T,int D>
 inline bool operator> (const bbox<T,D>& b, const bboxset<T,D>& s)
 {
   return bboxset<T,D>(b) > s;
 }
 
-template<class T,int D>
+template<typename T,int D>
 inline bool operator>= (const bbox<T,D>& b, const bboxset<T,D>& s)
   CCTK_ATTRIBUTE_PURE;
-template<class T,int D>
+template<typename T,int D>
 inline bool operator>= (const bbox<T,D>& b, const bboxset<T,D>& s)
 {
   return bboxset<T,D>(b) >= s;
@@ -250,55 +250,55 @@ inline bool operator>= (const bbox<T,D>& b, const bboxset<T,D>& s)
 
 
 
-template<class T,int D>
+template<typename T,int D>
 inline bool operator== (const bboxset<T,D>& s, const bbox<T,D>& b)
   CCTK_ATTRIBUTE_PURE;
-template<class T,int D>
+template<typename T,int D>
 inline bool operator== (const bboxset<T,D>& s, const bbox<T,D>& b)
 {
   return s == bboxset<T,D>(b);
 }
 
-template<class T,int D>
+template<typename T,int D>
 inline bool operator!= (const bboxset<T,D>& s, const bbox<T,D>& b)
   CCTK_ATTRIBUTE_PURE;
-template<class T,int D>
+template<typename T,int D>
 inline bool operator!= (const bboxset<T,D>& s, const bbox<T,D>& b)
 {
   return s != bboxset<T,D>(b);
 }
 
-template<class T,int D>
+template<typename T,int D>
 inline bool operator< (const bboxset<T,D>& s, const bbox<T,D>& b)
   CCTK_ATTRIBUTE_PURE;
-template<class T,int D>
+template<typename T,int D>
 inline bool operator< (const bboxset<T,D>& s, const bbox<T,D>& b)
 {
   return s < bboxset<T,D>(b);
 }
 
-template<class T,int D>
+template<typename T,int D>
 inline bool operator<= (const bboxset<T,D>& s, const bbox<T,D>& b)
   CCTK_ATTRIBUTE_PURE;
-template<class T,int D>
+template<typename T,int D>
 inline bool operator<= (const bboxset<T,D>& s, const bbox<T,D>& b)
 {
   return s <= bboxset<T,D>(b);
 }
 
-template<class T,int D>
+template<typename T,int D>
 inline bool operator> (const bboxset<T,D>& s, const bbox<T,D>& b)
   CCTK_ATTRIBUTE_PURE;
-template<class T,int D>
+template<typename T,int D>
 inline bool operator> (const bboxset<T,D>& s, const bbox<T,D>& b)
 {
   return s > bboxset<T,D>(b);
 }
 
-template<class T,int D>
+template<typename T,int D>
 inline bool operator>= (const bboxset<T,D>& s, const bbox<T,D>& b)
   CCTK_ATTRIBUTE_PURE;
-template<class T,int D>
+template<typename T,int D>
 inline bool operator>= (const bboxset<T,D>& s, const bbox<T,D>& b)
 {
   return s >= bboxset<T,D>(b);
@@ -307,17 +307,17 @@ inline bool operator>= (const bboxset<T,D>& s, const bbox<T,D>& b)
 
 
 // Memory usage
-template<class T, int D>
+template<typename T, int D>
 inline size_t memoryof (bboxset<T,D> const & s)
   CCTK_ATTRIBUTE_PURE;
-template<class T, int D>
+template<typename T, int D>
 inline size_t memoryof (bboxset<T,D> const & s)
 { return s.memory(); }
 
 
 
 // Input
-template<class T,int D>
+template<typename T,int D>
 inline istream& operator>> (istream& is, bboxset<T,D>& s) {
   return s.input(is);
 }
@@ -325,7 +325,7 @@ inline istream& operator>> (istream& is, bboxset<T,D>& s) {
 
 
 // Output
-template<class T,int D>
+template<typename T,int D>
 inline ostream& operator<< (ostream& os, const bboxset<T,D>& s) {
   return s.output(os);
 }
