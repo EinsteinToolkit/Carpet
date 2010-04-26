@@ -474,6 +474,18 @@ inline int maxloc (const vect<T,D>& a)
   return r;
 }
 
+/** Return the index of the last maximum element.  */
+template<typename T,int D>
+inline int maxloc1 (const vect<T,D>& a) CCTK_ATTRIBUTE_PURE;
+template<typename T,int D>
+inline int maxloc1 (const vect<T,D>& a)
+{
+  ASSERT_VECT (D>0);
+  int r(D-1);
+  for (int d=D-2; d>=0; --d) if (a[d]>a[r]) r=d;
+  return r;
+}
+
 /** Return the index of the first minimum element.  */
 template<typename T,int D>
 inline int minloc (const vect<T,D>& a) CCTK_ATTRIBUTE_PURE;
@@ -483,6 +495,18 @@ inline int minloc (const vect<T,D>& a)
   ASSERT_VECT (D>0);
   int r(0);
   for (int d=1; d<D; ++d) if (a[d]<a[r]) r=d;
+  return r;
+}
+
+/** Return the index of the last minimum element.  */
+template<typename T,int D>
+inline int minloc1 (const vect<T,D>& a) CCTK_ATTRIBUTE_PURE;
+template<typename T,int D>
+inline int minloc1 (const vect<T,D>& a)
+{
+  ASSERT_VECT (D>0);
+  int r(D-1);
+  for (int d=D-2; d>=0; --d) if (a[d]<a[r]) r=d;
   return r;
 }
 
