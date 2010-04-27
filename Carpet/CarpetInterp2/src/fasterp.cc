@@ -649,7 +649,7 @@ namespace CarpetInterp2 {
       assert (rl>=0 and c>=0);
       
       ibbox const & ext =
-        Carpet::vdd.AT(m)->boxes.AT(Carpet::mglevel).AT(rl).AT(c).exterior;
+        Carpet::vdd.AT(m)->light_boxes.AT(Carpet::mglevel).AT(rl).AT(c).exterior;
       rvect dpos = rpos - rvect(ipos);
       
       // Convert from Carpet indexing to grid point indexing
@@ -905,7 +905,7 @@ namespace CarpetInterp2 {
         int const c  = themrc.c;
         assert (Carpet::vhh.AT(m)->is_local(rl,c));
         ibbox const & ext =
-          Carpet::vdd.AT(m)->boxes.AT(Carpet::mglevel).AT(rl).AT(c).exterior;
+          Carpet::vdd.AT(m)->light_boxes.AT(Carpet::mglevel).AT(rl).AT(c).exterior;
         send_comp.lsh = ext.shape() / ext.stride();
         
         send_comp.offset = offset;
