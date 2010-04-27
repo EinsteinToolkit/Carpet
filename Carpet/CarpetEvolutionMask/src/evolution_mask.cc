@@ -161,7 +161,7 @@ namespace CarpetEvolutionMask {
           DECLARE_CCTK_ARGUMENTS;
           
           ibbox const & ext
-            = dd.boxes.at(mglevel).at(reflevel).at(component).exterior;
+            = dd.light_boxes.at(mglevel).at(reflevel).at(component).exterior;
           
           for (ibset::const_iterator bi = notevolveon.begin();
                bi != notevolveon.end();
