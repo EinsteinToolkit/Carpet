@@ -88,6 +88,50 @@ operator== (region_t const & a, region_t const & b)
 
 
 
+// Assign a load to a region
+CCTK_REAL
+region_t::load () const
+{
+  return extent.size();
+}
+
+
+
+// Split a region into two
+region_t
+region_t::split (CCTK_REAL const ratio_new_over_old)
+{
+  assert (ratio_new_over_old >= 0 and ratio_new_over_old <= 1);
+  if (extent.empty()) {
+    // Don't do anything for empty regions
+    return *this;
+  }
+  // Choose a direction (prefer the z direction)
+  int const idir = maxloc1 (extent.shape());
+  int const np = extent.shape()[idir];
+  // Keep the lower part, and split off the upper part
+  int const new_np = floor (np * ratio_new_over_old + 0.5);
+  int const keep_np = np - new_np;
+  // Calculate new region extents
+  ivect const lo = extent.lower();
+  ivect const up = extent.upper();
+  ivect const str = extent.stride();
+  ivect const cut = lo + str * ivect::dir(idir) * keep_np;
+  
+  // Copy the region
+  region_t newreg = *this;
+  // Set new extents
+  extent = ibbox (lo, cut-str, str);
+  newreg.extent = ibbox (cut, up, str);
+  // Mark cutting boundary as not outer boundary
+  outer_boundaries[idir][1] = false;
+  newreg.outer_boundaries[idir][0] = false;
+  
+  return newreg;
+}
+
+
+
 // Combine a collection of regions.  Regions can be combined if they
 // abutt on boundaries which are not outer boundaries, ignoring the
 // processor distribution.  This should lead to a canonical

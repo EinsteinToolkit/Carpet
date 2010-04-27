@@ -26,6 +26,10 @@ struct region_t {
   ~region_t ();
   
   bool invariant () const CCTK_ATTRIBUTE_PURE;
+  
+  // For regridding
+  CCTK_REAL load () const;
+  region_t split (CCTK_REAL ratio_new_over_old);
 };
 
 

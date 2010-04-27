@@ -1,8 +1,11 @@
 # Main make.code.defn file for thorn CarpetLib   -*-Makefile-*-
 
 # Source files in this directory
-SRCS =	bbox.cc					\
+SRCS =	balance.cc				\
+	bbox.cc					\
 	bboxset.cc				\
+	bboxtree.cc				\
+	bintree.cc				\
 	commstate.cc				\
 	data.cc					\
 	defs.cc					\
