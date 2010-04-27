@@ -1,8 +1,8 @@
 #include <cassert>
 #include <cstddef>
 
-#include "cctk.h"
-#include "cctk_Parameters.h"
+#include <cctk.h>
+#include <cctk_Parameters.h>
 
 #include "CarpetTimers.hh"
 
