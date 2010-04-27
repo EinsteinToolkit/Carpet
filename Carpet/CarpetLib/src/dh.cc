@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cstddef>
+#include <sstream>
 
 #include <cctk.h>
 #include <cctk_Parameters.h>
@@ -204,8 +205,8 @@ regrid (bool const do_init)
   static Timer total ("CarpetLib::dh::regrid");
   total.start ();
   
-  mboxes oldboxes;
-  swap (boxes, oldboxes);
+  light_mboxes old_light_boxes;
+  swap (light_boxes, old_light_boxes);
   
   full_mboxes full_boxes;
   
@@ -218,16 +219,17 @@ regrid (bool const do_init)
   full_boxes.resize (h.mglevels());
   fast_boxes.resize (h.mglevels());
   for (int ml = 0; ml < h.mglevels(); ++ ml) {
-    // cerr << "QQQ: regrid[2] ml=" << ml << endl;
-    boxes.AT(ml).resize (h.reflevels());
+    light_boxes.AT(ml).resize (h.reflevels());
+    local_boxes.AT(ml).resize (h.reflevels());
     full_boxes.AT(ml).resize (h.reflevels());
     fast_boxes.AT(ml).resize (h.reflevels());
     for (int rl = 0; rl < h.reflevels(); ++ rl) {
-      // cerr << "QQQ: regrid[3] rl=" << rl << endl;
-      boxes.AT(ml).AT(rl).resize (h.components(rl));
+      light_boxes.AT(ml).AT(rl).resize (h.components(rl));
+      local_boxes.AT(ml).AT(rl).resize (h.local_components(rl));
       full_boxes.AT(ml).AT(rl).resize (h.components(rl));
       
-      cboxes & level = boxes.AT(ml).AT(rl);
+      light_cboxes & light_level = light_boxes.AT(ml).AT(rl);
+      local_cboxes & local_level = local_boxes.AT(ml).AT(rl);
       full_cboxes & full_level = full_boxes.AT(ml).AT(rl);
       fast_dboxes & fast_level = fast_boxes.AT(ml).AT(rl);
       
@@ -452,23 +454,59 @@ regrid (bool const do_init)
       ibset const notowned = domain_enlarged - allowned;
       
       // All not-active points
-      ibset notactive;
-      for (ibset::const_iterator
-             ri = notowned.begin(); ri != notowned.end(); ++ ri)
-      {
-        ibbox const & r = * ri;
-        ibbox const r_enlarged = r.expand (buffer_width);
-        notactive |= r_enlarged;
+      ibset const notactive = notowned.expand (buffer_width);
+      
+      // All not-active points, in stages
+      int const num_substeps =
+        any (any (ghost_width == 0)) ?
+        0 :
+        minval (minval (buffer_width / ghost_width));
+      if (not all (all (buffer_width == num_substeps * ghost_width))) {
+        ostringstream buf;
+        buf << "The buffer width " << buffer_width << " is not a multiple of the ghost width " << ghost_width << " on level " << rl;
+        CCTK_WARN (CCTK_WARN_COMPLAIN, buf.str().c_str());
       }
-      notactive.normalize();
+      
+      vector<ibset> notactive_stepped (num_substeps+1);
+      notactive_stepped.AT(0) = notowned;
+      for (int substep = 1; substep <= num_substeps; ++ substep) {
+        notactive_stepped.AT(substep) =
+          notactive_stepped.AT(substep-1).expand (ghost_width);
+      }
+      if (all (all (buffer_width == num_substeps * ghost_width))) {
+        ASSERT_rl (notactive_stepped.AT(num_substeps) == notactive,
+                   "The stepped not-active region must be equal to the not-active region");
+      }
       
       // All buffer zones
-      ibset allbuffers = allowned & notactive;
-      allbuffers.normalize();
+      ibset const allbuffers = allowned & notactive;
+      
+      // All active points
+      ibset const allactive = allowned - notactive;
+      
+      // All stepped buffer zones
+      vector<ibset> allbuffers_stepped (num_substeps);
+      ibset allbuffers_stepped_combined;
+      for (int substep = 0; substep < num_substeps; ++ substep) {
+        allbuffers_stepped.AT(substep) = 
+          allowned &
+          (notactive_stepped.AT(substep+1) - notactive_stepped.AT(substep));
+        allbuffers_stepped_combined += allbuffers_stepped.AT(substep);
+      }
+      if (all (all (buffer_width == num_substeps * ghost_width))) {
+        ASSERT_rl (allbuffers_stepped_combined == allbuffers,
+                   "The stepped buffer zones must be equal to the buffer zones");
+      }
       
       // Buffer zones must be in the active part of the domain
+      ASSERT_rl (allactive <= domain_active,
+                 "The active region must be in the active part of the domain");
       ASSERT_rl (allbuffers <= domain_active,
                  "The buffer zones must be in the active part of the domain");
+      ASSERT_rl ((allactive & allbuffers).empty(), 
+                 "The active points and the buffer zones cannot overlap");
+      ASSERT_rl (allactive + allbuffers == allowned,
+                 "The active points and the buffer points together must be exactly the owned region");
       
       
       
@@ -483,6 +521,23 @@ regrid (bool const do_init)
         ASSERT_c (box.active == box.owned - box.buffers,
                   "The active region must equal the owned region minus the buffer zones");
       } // for c
+      
+      for (int lc = 0; lc < h.local_components(rl); ++ lc) {
+        int const c = h.get_component (rl, lc);
+        local_dboxes & local_box = local_level.AT(lc);
+        full_dboxes const& box = full_level.AT(c);
+        
+        // Stepped buffer zones:
+        local_box.buffers = box.buffers;
+        
+        local_box.buffers_stepped.resize (num_substeps);
+        for (int substep = 0; substep < num_substeps; ++ substep) {
+          local_box.buffers_stepped.AT(substep) =
+            box.owned & allbuffers_stepped.AT(substep);
+        }
+        
+        local_box.active = box.active;
+      } // for lc
       
       
       
@@ -940,17 +995,18 @@ regrid (bool const do_init)
             ("CarpetLib::dh::regrid::regrid::sync");
           timer_regrid_sync.start();
           
-          if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > rl)
+          if (int (old_light_boxes.size()) > ml and
+              int (old_light_boxes.AT(ml).size()) > rl)
           {
             
-            int const oldcomponents = oldboxes.AT(ml).AT(rl).size();
+            int const oldcomponents = old_light_boxes.AT(ml).AT(rl).size();
             
             // Synchronisation copies from the same level of the old
             // grid structure.  It should fill as many active points
             // as possible.
             
             for (int cc = 0; cc < oldcomponents; ++ cc) {
-              dboxes const & obox = oldboxes.AT(ml).AT(rl).AT(cc);
+              light_dboxes const & obox = old_light_boxes.AT(ml).AT(rl).AT(cc);
               
               ibset const ovlp = needrecv & obox.owned;
               
@@ -1036,7 +1092,9 @@ regrid (bool const do_init)
             
           } // if rl > 0
           
-          if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > 0) {
+          if (int (old_light_boxes.size()) > ml and
+              int (old_light_boxes.AT(ml).size()) > 0)
+          {
             // All points must now have been received, either through
             // synchronisation or through prolongation
             ASSERT_c (needrecv.empty(),
@@ -1056,15 +1114,18 @@ regrid (bool const do_init)
       for (int lc = 0; lc < h.local_components(rl); ++ lc) {
         int const c = h.get_component (rl, lc);
         
-        level.AT(c).exterior = full_level.AT(c).exterior;
-        level.AT(c).owned    = full_level.AT(c).owned;
-        level.AT(c).interior = full_level.AT(c).interior;
+        light_level.AT(c).exterior = full_level.AT(c).exterior;
+        light_level.AT(c).owned    = full_level.AT(c).owned;
+        light_level.AT(c).interior = full_level.AT(c).interior;
+#if 0
         dh::dboxes::ibset2ibboxs (full_level.AT(c).active,
-                                  level.AT(c).active, level.AT(c).numactive);
+                                  light_level.AT(c).active,
+                                  light_level.AT(c).numactive);
+#endif
         
-        level.AT(c).exterior_size = full_level.AT(c).exterior.size();
-        level.AT(c).owned_size    = full_level.AT(c).owned.size();
-        level.AT(c).active_size   = full_level.AT(c).active.size();
+        light_level.AT(c).exterior_size = full_level.AT(c).exterior.size();
+        light_level.AT(c).owned_size    = full_level.AT(c).owned.size();
+        light_level.AT(c).active_size   = full_level.AT(c).active.size();
         
       } // for lc
       
@@ -1079,19 +1140,18 @@ regrid (bool const do_init)
         timer_bcast_boxes.start();
         
         int const count_send = h.local_components(rl);
-        vector<dboxes> level_send (count_send);
+        vector<light_dboxes> level_send (count_send);
         for (int lc = 0; lc < h.local_components(rl); ++ lc) {
           int const c = h.get_component (rl, lc);
-          level_send.AT(lc) = level.AT(c);
+          level_send.AT(lc) = light_level.AT(c);
         }
-        // cerr << "QQQ: regrid[7a]" << endl;
-        vector<vector<dboxes> > const level_recv =
+        vector<vector<light_dboxes> > const level_recv =
           allgatherv (dist::comm(), level_send);
         vector<int> count_recv (dist::size(), 0);
         for (int c = 0; c < h.components(rl); ++ c) {
           int const p = this_proc (rl, c);
           if (p != dist::rank()) {
-            level.AT(c) = level_recv.AT(p).AT(count_recv.AT(p));
+            light_level.AT(c) = level_recv.AT(p).AT(count_recv.AT(p));
             ++ count_recv.AT(p);
           }
         }
@@ -1168,17 +1228,41 @@ regrid (bool const do_init)
       // Output:
       if (output_bboxes or there_was_an_error) {
         
+        cout << eol;
+        cout << "ml=" << ml << " rl=" << rl << eol;
+        cout << "baseextent=" << h.baseextent(ml,rl) << eol;
+        
+        for (int c = 0; c < h.components(rl); ++ c) {
+          cout << eol;
+          cout << "ml=" << ml << " rl=" << rl << " c=" << c << eol;
+          cout << "extent=" << h.extent(ml,rl,c) << eol;
+          cout << "outer_boundaries=" << h.outer_boundaries(rl,c) << eol;
+          cout << "processor=" << h.outer_boundaries(rl,c) << eol;
+        } // for c
+        
         for (int c = 0; c < h.components(rl); ++ c) {
           full_dboxes const & box = full_boxes.AT(ml).AT(rl).AT(c);
-          
           cout << eol;
           cout << "ml=" << ml << " rl=" << rl << " c=" << c << eol;
           cout << box;
-          
         } // for c
         
-        fast_dboxes const & fast_box = fast_boxes.AT(ml).AT(rl);
+        for (int c = 0; c < h.components(rl); ++ c) {
+          light_dboxes const & box = light_boxes.AT(ml).AT(rl).AT(c);
+          cout << eol;
+          cout << "ml=" << ml << " rl=" << rl << " c=" << c << eol;
+          cout << box;
+        } // for c
         
+        for (int lc = 0; lc < h.local_components(rl); ++ lc) {
+          int const c = h.get_component (rl, lc);
+          local_dboxes const & box = local_boxes.AT(ml).AT(rl).AT(lc);
+          cout << eol;
+          cout << "ml=" << ml << " rl=" << rl << " lc=" << lc << " c=" << c << eol;
+          cout << box;
+        } // for lc
+        
+        fast_dboxes const & fast_box = fast_boxes.AT(ml).AT(rl);
         cout << eol;
         cout << "ml=" << ml << " rl=" << rl << eol;
         cout << fast_box;
@@ -1188,8 +1272,10 @@ regrid (bool const do_init)
       
       
       // Free memory early to save space
-      if (int (oldboxes.size()) > ml and int (oldboxes.AT(ml).size()) > rl) {
-        oldboxes.AT(ml).AT(rl).clear();
+      if (int (old_light_boxes.size()) > ml and
+          int (old_light_boxes.AT(ml).size()) > rl)
+      {
+        old_light_boxes.AT(ml).AT(rl).clear();
       }
       
       if (ml > 0) {
@@ -1228,7 +1314,8 @@ regrid (bool const do_init)
     cout << eol;
     cout << "memoryof(gh)=" << memoryof(h) << eol;
     cout << "memoryof(dh)=" << memoryof(*this) << eol;
-    cout << "memoryof(dh.boxes)=" << memoryof(boxes) << eol;
+    cout << "memoryof(dh.light_boxes)=" << memoryof(light_boxes) << eol;
+    cout << "memoryof(dh.local_boxes)=" << memoryof(local_boxes) << eol;
     cout << "memoryof(dh.fast_boxes)=" << memoryof(fast_boxes) << eol;
     int gfcount = 0;
     size_t gfmemory = 0;
@@ -1415,12 +1502,12 @@ operator== (full_dboxes const & b) const
 // MPI datatypes
 
 MPI_Datatype
-mpi_datatype (dh::dboxes const &)
+mpi_datatype (dh::light_dboxes const &)
 {
   static bool initialised = false;
   static MPI_Datatype newtype;
   if (not initialised) {
-    static dh::dboxes s;
+    static dh::light_dboxes s;
 #define ENTRY(type, name)                                               \
     {                                                                   \
       sizeof s.name / sizeof(type), /* count elements */                \
@@ -1433,17 +1520,19 @@ mpi_datatype (dh::dboxes const &)
       ENTRY(int, exterior),
       ENTRY(int, owned),
       ENTRY(int, interior),
+#if 0
       ENTRY(int, numactive),
       ENTRY(int, active),
-      ENTRY(dh::dboxes::size_type, exterior_size),
-      ENTRY(dh::dboxes::size_type, owned_size),
-      ENTRY(dh::dboxes::size_type, active_size),
+#endif
+      ENTRY(dh::light_dboxes::size_type, exterior_size),
+      ENTRY(dh::light_dboxes::size_type, owned_size),
+      ENTRY(dh::light_dboxes::size_type, active_size),
       {1, sizeof s, MPI_UB, "MPI_UB", "MPI_UB"}
     };
 #undef ENTRY
     newtype =
       dist::create_mpi_datatype (sizeof descr / sizeof descr[0], descr,
-                                 "dh::dboxes", sizeof s);
+                                 "dh::light::dboxes", sizeof s);
 #if 0
     int type_size;
     MPI_Type_size (newtype, & type_size);
@@ -1509,7 +1598,7 @@ memory ()
     memoryof (ghost_widths) +
     memoryof (buffer_widths) +
     memoryof (prolongation_orders_space) +
-    memoryof (boxes) +
+    memoryof (light_boxes) +
     memoryof (fast_boxes) +
     memoryof (gfs);
 }
@@ -1527,10 +1616,11 @@ allmemory ()
   return mem;
 }
 
-int const dh::dboxes::maxactive;
+#if 0
+int const dh::light::dboxes::maxactive;
 
 void
-dh::dboxes::
+dh::light_dboxes::
 ibset2ibboxs (ibset const& s, ibbox* const bs, int& nbs)
 {
   assert (s.setsize() <= maxactive);
@@ -1541,7 +1631,7 @@ ibset2ibboxs (ibset const& s, ibbox* const bs, int& nbs)
 }
 
 void
-dh::dboxes::
+dh::light_dboxes::
 ibboxs2ibset (ibbox const* const bs, int const& nbs, ibset& s)
 {
   s = ibset();
@@ -1550,9 +1640,10 @@ ibboxs2ibset (ibbox const* const bs, int const& nbs, ibset& s)
     s += bs[n];
   }
 }
+#endif
 
 size_t
-dh::dboxes::
+dh::light_dboxes::
 memory ()
   const
 {
@@ -1560,7 +1651,29 @@ memory ()
     memoryof (exterior) +
     memoryof (owned) +
     memoryof (interior) +
-    memoryof (active);
+#if 0
+    memoryof (numactive) +
+    memoryof (active) +
+#endif
+    memoryof (exterior_size) +
+    memoryof (owned_size) +
+    memoryof (active_size);
+}
+
+size_t
+dh::local_dboxes::
+memory ()
+  const
+{
+  return
+    memoryof (buffers) +
+    memoryof (buffers_stepped) +
+    memoryof (active) +
+    memoryof (restricted_region) +
+    memoryof (restriction_boundaries) +
+    memoryof (prolongation_boundaries) +
+    memoryof (coarse_boundary) +
+    memoryof (fine_boundary);
 }
 
 size_t
@@ -1604,13 +1717,13 @@ memory ()
 // Input
 
 istream &
-dh::dboxes::
+dh::light_dboxes::
 input (istream & is)
 {
   // Regions:
   try {
     skipws (is);
-    consume (is, "dh::dboxes:{");
+    consume (is, "dh::light_dboxes:{");
     skipws (is);
     consume (is, "exterior:");
     is >> exterior;
@@ -1628,7 +1741,48 @@ input (istream & is)
     skipws (is);
     consume (is, "}");
   } catch (input_error & err) {
-    cout << "Input error while reading a dh::full_dboxes" << endl;
+    cout << "Input error while reading a dh::light_dboxes" << endl;
+    throw err;
+  }
+  return is;
+}
+
+istream &
+dh::local_dboxes::
+input (istream & is)
+{
+  // Regions:
+  try {
+    skipws (is);
+    consume (is, "dh::local_dboxes:{");
+    skipws (is);
+    consume (is, "buffers:");
+    is >> buffers;
+    skipws (is);
+    consume (is, "buffers_stepped:");
+    is >> buffers_stepped;
+    skipws (is);
+    consume (is, "active:");
+    is >> active;
+    skipws (is);
+    consume (is, "restricted_region:");
+    is >> restricted_region;
+    skipws (is);
+    consume (is, "restriction_boundaries:");
+    is >> restriction_boundaries;
+    skipws (is);
+    consume (is, "prolongation_boundaries:");
+    is >> prolongation_boundaries;
+    skipws (is);
+    consume (is, "coarse_boundary:");
+    is >> coarse_boundary;
+    skipws (is);
+    consume (is, "fine_boundary:");
+    is >> fine_boundary;
+    skipws (is);
+    consume (is, "}");
+  } catch (input_error & err) {
+    cout << "Input error while reading a dh::local_dboxes" << endl;
     throw err;
   }
   return is;
@@ -1741,7 +1895,7 @@ output (ostream & os)
      << "ghost_widths=" << ghost_widths << ","
      << "buffer_widths=" << buffer_widths << ","
      << "prolongation_orders_space=" << prolongation_orders_space << ","
-     << "boxes=" << boxes << ","
+     << "light_boxes=" << light_boxes << ","
      << "fast_boxes=" << fast_boxes << ","
      << "gfs={";
   {
@@ -1758,16 +1912,35 @@ output (ostream & os)
 }
 
 ostream &
-dh::dboxes::
+dh::light_dboxes::
 output (ostream & os)
   const
 {
   // Regions:
-  os << "dh::dboxes:{" << eol
+  os << "dh::light_dboxes:{" << eol
      << "   exterior: " << exterior << eol
      << "   owned: " << owned << eol
      << "   interior: " << interior << eol
      << "   active_size: " << active_size << eol
+     << "}" << eol;
+  return os;
+}
+
+ostream &
+dh::local_dboxes::
+output (ostream & os)
+  const
+{
+  // Regions:
+  os << "dh::local_dboxes:{" << eol
+     << "   buffers: " << buffers << eol
+     << "   buffers_stepped: " << buffers_stepped << eol
+     << "   active: " << active << eol
+     << "   restricted_region: " << restricted_region << eol
+     << "   restriction_boundaries: " << restriction_boundaries << eol
+     << "   prolongation_boundaries: " << prolongation_boundaries << eol
+     << "   coarse_boundary: " << coarse_boundary << eol
+     << "   fine_boundary: " << fine_boundary << eol
      << "}" << eol;
   return os;
 }

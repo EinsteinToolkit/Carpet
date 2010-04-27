@@ -41,7 +41,7 @@ public:
   
   
   
-  struct dboxes {
+  struct light_dboxes {
     
     // Region description:
     
@@ -49,18 +49,44 @@ public:
     ibbox owned;                // evolved in time
     ibbox interior;             // interior (without ghost zones)
     
+#if 0
     // TODO: Create a new datatype bboxarr for this?  Or get rid of
     // it?
     int numactive;
     static int const maxactive = 4;
     ibbox active[maxactive];    // owned minus buffers
+#endif
     
     // Region statistics:
     typedef ibbox::size_type size_type;
     size_type exterior_size, owned_size, active_size;
     
+#if 0
     static void ibset2ibboxs (ibset const& s, ibbox* bs, int& nbs);
     static void ibboxs2ibset (ibbox const* bs, int const& nbs, ibset& s);
+#endif
+    
+    size_t memory () const CCTK_ATTRIBUTE_PURE;
+    istream & input (istream & is);
+    ostream & output (ostream & os) const;
+  };
+  
+  struct local_dboxes {
+    
+    // Information about the processor-local region:
+    
+    ibset buffers;              // buffer zones
+    vector<ibset> buffers_stepped; // buffer zones [substep]
+    ibset active;               // owned minus buffers
+    
+    // Mask
+    ibset restricted_region;                // filled by restriction
+    vect<ibset,dim> restriction_boundaries; // partly filled by restriction
+    vect<ibset,dim> prolongation_boundaries; // partly used by prolongation
+    
+    // Refluxing
+    vect<vect<ibset,2>,dim> coarse_boundary;
+    vect<vect<ibset,2>,dim> fine_boundary;
     
     size_t memory () const CCTK_ATTRIBUTE_PURE;
     istream & input (istream & is);
@@ -131,9 +157,13 @@ public:
     ostream & output (ostream & os) const;
   };
   
-  typedef vector<dboxes> cboxes; // ... for each component
-  typedef vector<cboxes> rboxes; // ... for each refinement level
-  typedef vector<rboxes> mboxes; // ... for each multigrid level
+  typedef vector<light_dboxes> light_cboxes; // ... for each component
+  typedef vector<light_cboxes> light_rboxes; // ... for each refinement level
+  typedef vector<light_rboxes> light_mboxes; // ... for each multigrid level
+  
+  typedef vector<local_dboxes> local_cboxes; // ... for each component
+  typedef vector<local_cboxes> local_rboxes; // ... for each refinement level
+  typedef vector<local_rboxes> local_mboxes; // ... for each multigrid level
   
   typedef vector<full_dboxes> full_cboxes; // ... for each component
   typedef vector<full_cboxes> full_rboxes; // ... for each refinement level
@@ -163,8 +193,9 @@ public:                         // should be readonly
   vector<int> prolongation_orders_space; // order of spatial
                                          // prolongation operator [rl]
   
-  mboxes boxes;                 // grid hierarchy
-  fast_mboxes fast_boxes;       // grid hierarchy
+  light_mboxes light_boxes;     // grid hierarchy [ml][rl][c]
+  local_mboxes local_boxes;     // grid hierarchy [ml][rl][lc]
+  fast_mboxes fast_boxes;       // grid hierarchy [ml][rl][p]
   
   typedef list<ggf*>::iterator ggf_handle;
   list<ggf*> gfs;               // list of all grid functions
@@ -213,21 +244,27 @@ public:
 
 
 
-MPI_Datatype mpi_datatype (dh::dboxes const &) CCTK_ATTRIBUTE_CONST;
+MPI_Datatype mpi_datatype (dh::light_dboxes const &) CCTK_ATTRIBUTE_CONST;
 MPI_Datatype mpi_datatype (dh::fast_dboxes const &);
 namespace dist {
-  template<> inline MPI_Datatype mpi_datatype<dh::dboxes> ()
+  template<> inline MPI_Datatype mpi_datatype<dh::light_dboxes> ()
   CCTK_ATTRIBUTE_CONST;
-  template<> inline MPI_Datatype mpi_datatype<dh::dboxes> ()
-  { dh::dboxes dummy; return mpi_datatype(dummy); }
+  template<> inline MPI_Datatype mpi_datatype<dh::light_dboxes> ()
+  { dh::light_dboxes dummy; return mpi_datatype(dummy); }
   template<> inline MPI_Datatype mpi_datatype<dh::fast_dboxes> ()
   CCTK_ATTRIBUTE_CONST;
   template<> inline MPI_Datatype mpi_datatype<dh::fast_dboxes> ()
   { dh::fast_dboxes dummy; return mpi_datatype(dummy); }
 }
 
-inline size_t memoryof (dh::dboxes const & b) CCTK_ATTRIBUTE_PURE;
-inline size_t memoryof (dh::dboxes const & b)
+inline size_t memoryof (dh::light_dboxes const & b) CCTK_ATTRIBUTE_PURE;
+inline size_t memoryof (dh::light_dboxes const & b)
+{
+  return b.memory ();
+}
+
+inline size_t memoryof (dh::local_dboxes const & b) CCTK_ATTRIBUTE_PURE;
+inline size_t memoryof (dh::local_dboxes const & b)
 {
   return b.memory ();
 }
@@ -250,7 +287,12 @@ inline size_t memoryof (dh const & d)
   return d.memory ();
 }
 
-inline istream & operator>> (istream & is, dh::dboxes & b)
+inline istream & operator>> (istream & is, dh::light_dboxes & b)
+{
+  return b.input (is);
+}
+
+inline istream & operator>> (istream & is, dh::local_dboxes & b)
 {
   return b.input (is);
 }
@@ -265,7 +307,12 @@ inline istream & operator>> (istream & is, dh::fast_dboxes & b)
   return b.input (is);
 }
 
-inline ostream & operator<< (ostream & os, dh::dboxes const & b)
+inline ostream & operator<< (ostream & os, dh::light_dboxes const & b)
+{
+  return b.output (os);
+}
+
+inline ostream & operator<< (ostream & os, dh::local_dboxes const & b)
 {
   return b.output (os);
 }
