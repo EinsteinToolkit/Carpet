@@ -84,7 +84,6 @@ namespace CarpetEvolutionMask {
 	refcomp = refcomp.expand(expand_left,expand_right);
 	refined |= refcomp;
       }
-      refined.normalize();
       
 
       //      cout << "refined: " << refined << endl;
@@ -127,13 +126,11 @@ namespace CarpetEvolutionMask {
       for (int c=0; c<hh.components(reflevel-1); ++c) {
         parent |= hh.extent(mglevel,reflevel-1,c);
       }
-      parent.normalize();
 
       //      cout << "parent: " << parent << endl;
       
       // Subtract the refined region
-      ibset notrefined = parent - shrunk;
-      notrefined.normalize();
+      ibset const notrefined = parent - shrunk;
 
       //      cout << "notrefined: " << notrefined << endl;
 
@@ -155,11 +152,9 @@ namespace CarpetEvolutionMask {
       //      cout << "enlarged: " << enlarged << endl;
       
       // Intersect with the original union      
-      ibset evolveon = parent & enlarged;
-      evolveon.normalize();
+      ibset const evolveon = parent & enlarged;
 
-      ibset notevolveon = parent - evolveon;
-      notevolveon.normalize();
+      ibset const notevolveon = parent - evolveon;
 
       //      cout << "notevolveon: " << notevolveon << endl;
       
