@@ -113,7 +113,7 @@ namespace Carpet {
         const int c = dist::rank();
         
         const ibbox& baseext = arrdata.AT(group).AT(m).hh->baseextents.AT(ml).AT(rl);
-	const ibbox& ext = arrdata.AT(group).AT(m).dd->boxes.AT(ml).AT(rl).AT(c).exterior;
+	const ibbox& ext = arrdata.AT(group).AT(m).dd->light_boxes.AT(ml).AT(rl).AT(c).exterior;
         const b2vect& obnds = arrdata.AT(group).AT(m).hh->outer_boundaries(rl,c);
         
         cGroupDynamicData & info = groupdata.AT(group).info;
@@ -545,7 +545,7 @@ namespace Carpet {
       
       // Set cGH fields
       const ibbox& baseext = vhh.AT(map)->baseextents.AT(mglevel).AT(reflevel);
-      const ibbox& ext = vdd.AT(map)->boxes.AT(mglevel).AT(reflevel).AT(component).exterior;
+      const ibbox& ext = vdd.AT(map)->light_boxes.AT(mglevel).AT(reflevel).AT(component).exterior;
       const b2vect& obnds = vhh.AT(map)->outer_boundaries(reflevel,component);
       
       ivect_ref(cctkGH->cctk_lbnd) =

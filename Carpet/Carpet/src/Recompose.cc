@@ -556,8 +556,8 @@ namespace Carpet {
           for (int c=0; c<hh.components(rl); ++c) {
             const rvect origin = domainspecs.AT(m).exterior_min;
             const rvect delta  = (domainspecs.AT(m).exterior_max - domainspecs.AT(m).exterior_min) / rvect (domainspecs.AT(m).npoints - 1);
-            const ivect lower = dd.boxes.AT(ml).AT(rl).AT(c).exterior.lower();
-            const ivect upper = dd.boxes.AT(ml).AT(rl).AT(c).exterior.upper();
+            const ivect lower = dd.light_boxes.AT(ml).AT(rl).AT(c).exterior.lower();
+            const ivect upper = dd.light_boxes.AT(ml).AT(rl).AT(c).exterior.upper();
             const int convfact = ipow(mgfact, ml);
             const ivect levfact = spacereffacts.AT(rl);
             cout << "   [" << ml << "][" << rl << "][" << m << "][" << c << "]"
@@ -960,7 +960,7 @@ namespace Carpet {
         gh const * const hh = arrdata.AT(g).AT(0).hh;
         dh const * const dd = arrdata.AT(g).AT(0).dd;
         for (int c=0; c<hh->components(0); ++c) {
-          dh::dboxes const & b = dd->boxes.AT(0).AT(0).AT(c);
+          dh::light_dboxes const & b = dd->light_boxes.AT(0).AT(0).AT(c);
           num_active_array_points += num_tl * num_vars  * b.active_size;
           num_total_array_points  += num_tl * num_vars  * b.exterior_size;
           size_total_array_points += num_tl * size_vars * b.exterior_size;
@@ -997,7 +997,7 @@ namespace Carpet {
           }
           for (int c=0; c<hh->components(rl); ++c) {
             ++ num_comps;
-            dh::dboxes const & b = dd->boxes.AT(ml).AT(rl).AT(c);
+            dh::light_dboxes const & b = dd->light_boxes.AT(ml).AT(rl).AT(c);
             num_active_mem_points += num_gfs  * b.active_size;
             num_owned_mem_points  += num_gfs  * b.owned_size;
             num_total_mem_points  += num_gfs  * b.exterior_size;
@@ -1028,7 +1028,7 @@ namespace Carpet {
         for (int ml=0; ml<mglevels; ++ml) {
           for (int c=0; c<hh->components(rl); ++c) {
             int const p = hh->processor(rl,c);
-            dh::dboxes const & b = dd->boxes.AT(ml).AT(rl).AT(c);
+            dh::light_dboxes const & b = dd->light_boxes.AT(ml).AT(rl).AT(c);
             num_active_per_proc.AT(p) += num_gfs * b.active_size;
           }
         }
