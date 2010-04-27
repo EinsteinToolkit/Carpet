@@ -66,7 +66,7 @@ namespace CarpetRegrid2 {
     this->num_levels = num_levels[n];
     this->active = active[n];
     this->position = rvect (position_x[n], position_y[n], position_z[n]);
-    if (any (not CarpetLib::good::isfinite(this->position))) {
+    if (any (not isfinite(this->position))) {
       CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                   "The position of region %d is [%g,%g,%g], which is not finite",
                   n + 1,
@@ -83,7 +83,7 @@ namespace CarpetRegrid2 {
       CCTK_REAL const ry = radius_y[ind] < 0.0 ? radius[ind] : radius_y[ind];
       CCTK_REAL const rz = radius_z[ind] < 0.0 ? radius[ind] : radius_z[ind];
       rvect const rad (rx, ry, rz);
-      if (any (not CarpetLib::good::isfinite(rad))) {
+      if (any (not isfinite(rad))) {
         CCTK_VWarn (CCTK_WARN_ABORT, __LINE__, __FILE__, CCTK_THORNSTRING,
                     "The radius of refinement level %d of region %d is [%g,%g,%g], which is not finite",
                     rl, n + 1,
