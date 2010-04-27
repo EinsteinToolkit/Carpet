@@ -850,11 +850,7 @@ namespace Carpet {
     for (int ml=0; ml<(int)regsss.size(); ++ml) {
       file << m << " " << ml << " reflevels " << regsss.AT(ml).size() << eol;
       for (int rl=0; rl<(int)regsss.AT(ml).size(); ++rl) {
-        ibset extents;
-        for (int c=0; c<(int)regsss.AT(ml).AT(rl).size(); ++c) {
-          extents += regsss.AT(ml).AT(rl).AT(c).extent;
-        }
-        extents.normalize();
+        ibset const extents (regsss.AT(ml).AT(rl), & region_t::extent);
         file << m << " " << ml << " " << rl << " regions " << extents.setsize() << eol;
         int c=0;
         for (ibset::const_iterator
