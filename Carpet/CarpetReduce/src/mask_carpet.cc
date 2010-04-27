@@ -43,13 +43,11 @@ namespace CarpetMask {
       
       ivect const ione  = ivect(1);
       
-      gh const & hh = *vhh.at(Carpet::map);
-      dh const & dd = *vdd.at(Carpet::map);
+      gh const & hh = *vhh.AT(Carpet::map);
+      dh const & dd = *vdd.AT(Carpet::map);
       
-      ibbox const & base = hh.baseextents.at(mglevel).at(reflevel);
-      
-      ivect const reffact
-        = spacereffacts.at(reflevel) / spacereffacts.at(reflevel-1);
+      ivect const reffact =
+        spacereffacts.AT(reflevel) / spacereffacts.AT(reflevel-1);
       assert (all (reffact == 2));
       
       

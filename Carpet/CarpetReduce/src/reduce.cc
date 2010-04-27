@@ -599,7 +599,7 @@ namespace CarpetReduce {
                const CCTK_REAL* const weight, const CCTK_REAL levfac)
   {
     for (size_t tl=0; tl<inarrays.size(); ++tl) {
-      assert (inarrays.at(tl));
+      assert (inarrays.AT(tl));
     }
     assert (tfacs.size() == inarrays.size());
     T & myoutval = * static_cast<T*>(outval);
@@ -803,9 +803,9 @@ namespace CarpetReduce {
     assert (num_inarrays>=0);
     assert (num_inarrays == num_outvals);
     for (size_t tl=0; tl<inarrays.size(); ++tl) {
-      assert (inarrays.at(tl));
+      assert (inarrays.AT(tl));
       for (int n=0; n<num_inarrays; ++n) {
-        assert (inarrays.at(tl)[n]);
+        assert (inarrays.AT(tl)[n]);
       }
     }
     assert (tfacs.size() == inarrays.size());
@@ -828,7 +828,7 @@ namespace CarpetReduce {
     for (int n=0; n<num_outvals; ++n) {
       
       for (size_t tl=0; tl<inarrays.size(); ++tl) {
-        myinarrays.at(tl) = inarrays.at(tl)[n];
+        myinarrays.AT(tl) = inarrays.AT(tl)[n];
       }
       
       switch (specific_cactus_type(outtype)) {
@@ -1047,8 +1047,8 @@ namespace CarpetReduce {
     
     vector<const void* const*> myinarrays(1);
     vector<CCTK_REAL> tfacs(1);
-    myinarrays.at(0) = inarrays;
-    tfacs.at(0) = 1.0;
+    myinarrays.AT(0) = inarrays;
+    tfacs.AT(0) = 1.0;
     
     const int vartypesize = CCTK_VarTypeSize(outtype);
     assert (vartypesize>=0);
@@ -1140,10 +1140,10 @@ namespace CarpetReduce {
     
     // Ensure that all maps have the same number of refinement levels
     for (int m=0; m<(int)vhh.size(); ++m) {
-      assert (vhh.at(m)->reflevels() == vhh.at(0)->reflevels());
+      assert (vhh.AT(m)->reflevels() == vhh.AT(0)->reflevels());
     }
     int const minrl = reduce_arrays ? 0 : want_global_mode ? 0                      : reflevel;
-    int const maxrl = reduce_arrays ? 1 : want_global_mode ? vhh.at(0)->reflevels() : reflevel+1;
+    int const maxrl = reduce_arrays ? 1 : want_global_mode ? vhh.AT(0)->reflevels() : reflevel+1;
     int const minm = reduce_arrays ? 0 : want_global_mode or want_level_mode ? 0    : Carpet::map;
     int const maxm = reduce_arrays ? 1 : want_global_mode or want_level_mode ? maps : Carpet::map+1;
     
@@ -1221,13 +1221,13 @@ namespace CarpetReduce {
                   if (have_warned.empty()) {
                     have_warned.resize (CCTK_NumVars(), false);
                   }
-                  if (not have_warned.at(vi)) {
+                  if (not have_warned.AT(vi)) {
                     char * const fullname = CCTK_FullName(vi);
                     CCTK_VWarn (1, __LINE__, __FILE__, CCTK_THORNSTRING,
                                 "Grid function \"%s\" has only %d time levels on refinement level %d; this is not enough for time interpolation",
                                 fullname, max_tl, reflevel);
                     free (fullname);
-                    have_warned.at(vi) = true;
+                    have_warned.AT(vi) = true;
                   }
                   // fall back to no time interpolation
                   num_tl = 1;
@@ -1275,26 +1275,26 @@ namespace CarpetReduce {
             CCTK_REAL const time = current_time;
             vector<CCTK_REAL> times(num_tl);
             for (int tl=0; tl<num_tl; ++tl) {
-              times.at(tl) = tt->get_time (mglevel, reflevel, tl);
+              times.AT(tl) = tt->get_time (mglevel, reflevel, tl);
             }
             
             // Calculate interpolation weights
             switch (num_tl) {
             case 1:
               // no interpolation
-              assert (fabs((time - times.at(0)) / fabs(time + times.at(0) + cgh->cctk_delta_time)) < 1e-12);
-              tfacs.at(0) = 1.0;
+              assert (fabs((time - times.AT(0)) / fabs(time + times.AT(0) + cgh->cctk_delta_time)) < 1e-12);
+              tfacs.AT(0) = 1.0;
               break;
             case 2:
               // linear (2-point) interpolation
-              tfacs.at(0) = (time - times.at(1)) / (times.at(0) - times.at(1));
-              tfacs.at(1) = (time - times.at(0)) / (times.at(1) - times.at(0));
+              tfacs.AT(0) = (time - times.AT(1)) / (times.AT(0) - times.AT(1));
+              tfacs.AT(1) = (time - times.AT(0)) / (times.AT(1) - times.AT(0));
               break;
             case 3:
               // quadratic (3-point) interpolation
-              tfacs.at(0) = (time - times.at(1)) * (time - times.at(2)) / ((times.at(0) - times.at(1)) * (times.at(0) - times.at(2)));
-              tfacs.at(1) = (time - times.at(0)) * (time - times.at(2)) / ((times.at(1) - times.at(0)) * (times.at(1) - times.at(2)));
-              tfacs.at(2) = (time - times.at(0)) * (time - times.at(1)) / ((times.at(2) - times.at(0)) * (times.at(2) - times.at(1)));
+              tfacs.AT(0) = (time - times.AT(1)) * (time - times.AT(2)) / ((times.AT(0) - times.AT(1)) * (times.AT(0) - times.AT(2)));
+              tfacs.AT(1) = (time - times.AT(0)) * (time - times.AT(2)) / ((times.AT(1) - times.AT(0)) * (times.AT(1) - times.AT(2)));
+              tfacs.AT(2) = (time - times.AT(0)) * (time - times.AT(1)) / ((times.AT(2) - times.AT(0)) * (times.AT(2) - times.AT(1)));
               break;
             default:
               assert (0);
@@ -1303,7 +1303,7 @@ namespace CarpetReduce {
           } else { // if not need_time_interp
             
             assert (num_tl == 1);
-            tfacs.at(0) = 1;
+            tfacs.AT(0) = 1;
             
           } // if not need_time_interp
           
@@ -1371,22 +1371,22 @@ namespace CarpetReduce {
                   vector<vector<const void*> > myinarrays (num_tl);
                   vector<const void* const*> inarrays (num_tl);
                   for (int tl=0; tl<num_tl; ++tl) {
-                    myinarrays.at(tl).resize (num_invars);
+                    myinarrays.AT(tl).resize (num_invars);
                     for (int n=0; n<num_invars; ++n) {
 #if 0
-                      myinarrays.at(tl).at(n)
+                      myinarrays.AT(tl).AT(n)
                         = CCTK_VarDataPtrI(cgh, tl, invars[n]);
 #else
                       int const vi = invars[n];
                       int const gi = CCTK_GroupIndexFromVarI (vi);
                       int const vi0 = CCTK_FirstVarIndexI (gi);
-                      myinarrays.at(tl).at(n)
-                        = ((*arrdata.at(gi).at(Carpet::map).data.at(vi-vi0))
+                      myinarrays.AT(tl).AT(n)
+                        = ((*arrdata.AT(gi).AT(Carpet::map).data.AT(vi-vi0))
                            (tl, reflevel, local_component, mglevel)->storage());
 #endif
-                      assert (myinarrays.at(tl).at(n));
+                      assert (myinarrays.AT(tl).AT(n));
                     }
-                    inarrays.at(tl) = &myinarrays.at(tl).at(0);
+                    inarrays.AT(tl) = &myinarrays.AT(tl).AT(0);
                   }
                   
                   
