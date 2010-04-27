@@ -556,7 +556,7 @@ namespace CarpetIOHDF5 {
         int const proc = hh->processor(rl,c);
         if (dist::rank() == proc or dist::rank() == ioproc) {
           
-          const ibbox& data_ext = dd->boxes.at(ml).at(rl).at(c).exterior;
+          const ibbox& data_ext = dd->light_boxes.at(ml).at(rl).at(c).exterior;
           const ibbox ext = GetOutputBBox (cctkGH, group, rl, m, c, data_ext);
           
           CCTK_REAL coord_time;

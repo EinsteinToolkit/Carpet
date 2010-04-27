@@ -431,7 +431,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
         for (int lc=0; lc<data.hh->local_components(reflevel); ++lc) {
           int const c = data.hh->get_component(reflevel,lc);
           group_bboxes[gindex][m] |=
-            data.dd->boxes.at(mglevel).at(reflevel).at(c).exterior;
+            data.dd->light_boxes.at(mglevel).at(reflevel).at(c).exterior;
         }
       }
     } else {
@@ -1165,7 +1165,7 @@ static int ReadVar (const cGH* const cctkGH,
       }
 #endif
       const ibbox& exterior_membox =
-        data.dd->boxes.at(mglevel).at(reflevel).at(component).exterior;
+        data.dd->light_boxes.at(mglevel).at(reflevel).at(component).exterior;
 
       // skip this dataset if it doesn't overlap with this component's
       // exterior, or if it only reads what has already been read
@@ -1186,7 +1186,7 @@ static int ReadVar (const cGH* const cctkGH,
 
       // get the overlap with this component's exterior
       const ibbox& membox =
-        data.dd->boxes.at(mglevel).at(reflevel).at(component).exterior;
+        data.dd->light_boxes.at(mglevel).at(reflevel).at(component).exterior;
       const ibbox overlap = membox & filebox;
       // cout << "Overlap: " << overlap << endl;
       bboxes_read.at(Carpet::map) |= overlap;
