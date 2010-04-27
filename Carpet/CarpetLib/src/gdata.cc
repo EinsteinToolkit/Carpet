@@ -275,7 +275,7 @@ gdata::
 find_source_timelevel (vector <CCTK_REAL> const & times,
                        CCTK_REAL const time,
                        int const order_time,
-                       operator_type const transport_operator,
+                       operator_type const op,
                        int & timelevel0,
                        int & ntimelevels)
 {
@@ -288,7 +288,7 @@ find_source_timelevel (vector <CCTK_REAL> const & times,
   CCTK_REAL const max_time = * max_element (times.begin(), times.end());
   // TODO: Use a real delta-time from somewhere instead of 1.0
   CCTK_REAL const some_time = abs (min_time) + abs (max_time) + 1.0;
-  if (transport_operator != op_copy) {
+  if (op != op_copy) {
     if (time < min_time - eps * some_time or
         time > max_time + eps * some_time)
     {
@@ -311,7 +311,7 @@ find_source_timelevel (vector <CCTK_REAL> const & times,
     }
   }
   if (timelevel == -1) {
-    if (transport_operator == op_copy) {
+    if (op == op_copy) {
       timelevel = 0;
     }
   }
