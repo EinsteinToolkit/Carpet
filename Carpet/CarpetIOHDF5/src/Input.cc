@@ -362,7 +362,7 @@ int Recover (cGH* cctkGH, const char *basefilename, int called_from)
     CCTK_SetMainLoopIndex (fileset->main_loop_index);
 
     cctkGH->cctk_iteration = fileset->cctk_iteration;
-    int const idx = mglevel*fileset->num_reflevels + reflevel;
+    // int const idx = mglevel*fileset->num_reflevels + reflevel;
     // cctkGH->cctk_time = fileset->mgleveltimes.at(idx);
     cctkGH->cctk_time = global_time;
 
