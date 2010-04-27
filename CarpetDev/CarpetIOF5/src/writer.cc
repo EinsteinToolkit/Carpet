@@ -181,9 +181,9 @@ namespace CarpetIOF5 {
         BEGIN_COMPONENT_LOOP (m_cctkGH, grouptype)
         {
           dh * const dd = Carpet::arrdata.at(group).at(Carpet::map).dd;
-          dh::dboxes const & boxes
-            = dd->boxes.at(Carpet::mglevel).at(Carpet::reflevel).at(myproc);
-          bbox<int, dim> const & region = determine_region (boxes);
+          dh::light_dboxes const & light_boxes
+            = dd->light_boxes.at(Carpet::mglevel).at(Carpet::reflevel).at(myproc);
+          bbox<int, dim> const & region = determine_region (light_boxes);
           F5::meta_data_region_t meta_data_region (physical_quantity, region);
           
           gh * const hh = Carpet::vhh.at(Carpet::map);
@@ -199,9 +199,9 @@ namespace CarpetIOF5 {
         BEGIN_LOCAL_COMPONENT_LOOP (m_cctkGH, grouptype)
         {
           dh * const dd = Carpet::arrdata.at(group).at(Carpet::map).dd;
-          dh::dboxes const & boxes
-            = dd->boxes.at(Carpet::mglevel).at(Carpet::reflevel).at(myproc);
-          bbox<int, dim> const & region = determine_region (boxes);
+          dh::light_dboxes const & light_boxes
+            = dd->light_boxes.at(Carpet::mglevel).at(Carpet::reflevel).at(myproc);
+          bbox<int, dim> const & region = determine_region (light_boxes);
           F5::data_region_t data_region (physical_quantity, region);
           
           F5::tensor_component_t tensor_component (data_region, m_variable);
@@ -341,7 +341,7 @@ namespace CarpetIOF5 {
     {
       dh * const dd = Carpet::vdd.at(Carpet::map);
       bbox<int, dim> const & region
-        = (dd->boxes.at(Carpet::mglevel).at(Carpet::reflevel)
+        = (dd->light_boxes.at(Carpet::mglevel).at(Carpet::reflevel)
            .at(Carpet::component).exterior);
       
       if (write_metafile)
@@ -369,32 +369,32 @@ namespace CarpetIOF5 {
   
   
   bbox<int,dim> const & writer_t::
-  determine_region (dh::dboxes const & boxes)
+  determine_region (dh::light_dboxes const & light_boxes)
   {
     DECLARE_CCTK_PARAMETERS;
     
     // TODO: use superregions instead of regions (?  only if the
     // regions are on the same processor?)
     
-    bbox<int,dim> dh::dboxes::* boxptr;
+    bbox<int,dim> dh::light_dboxes::* boxptr;
     if (CCTK_EQUALS (output_regions, "exterior"))
     {
-      boxptr = & dh::dboxes::exterior;
+      boxptr = & dh::light_dboxes::exterior;
     }
     else if (CCTK_EQUALS (output_regions, "owned"))
     {
-      boxptr = & dh::dboxes::owned;
+      boxptr = & dh::light_dboxes::owned;
     }
     else if (CCTK_EQUALS (output_regions, "interior"))
     {
-      boxptr = & dh::dboxes::interior;
+      boxptr = & dh::light_dboxes::interior;
     }
     else
     {
       assert (0);
     }
     
-    return boxes.*boxptr;
+    return light_boxes.*boxptr;
   }
   
 } // namespace CarpetIOF5

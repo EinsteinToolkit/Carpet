@@ -61,7 +61,7 @@ namespace CarpetIOF5 {
     
     
     static bbox<int,dim> const &
-    determine_region (dh::dboxes const & boxes);
+    determine_region (dh::light_dboxes const & light_boxes);
     
   };
   
